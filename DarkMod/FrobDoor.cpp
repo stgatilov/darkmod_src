@@ -833,18 +833,15 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			if(m_SoundTimerStarted <= 0)
 			{
 				oPickSound = "snd_lockpick_pick_wrong";
-				PropPickSound(oPickSound, cType, LPSOUND_LOCK_PICKED, 0, HANDLE_POS_ORIGINAL, -1, -1);
+				PropPickSound(oPickSound, cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
 			}
 		}
-		else
+		else if (nSampleType == LPSOUND_PIN_SAMPLE || nSampleType == LPSOUND_WRONG_LOCKPICK)
 		{
-			if(nSampleType == LPSOUND_PIN_SAMPLE)
-			{
-				m_SoundTimerStarted--;
-				if(m_SoundTimerStarted <= 0)
-					m_SoundTimerStarted = 0;
-			}
+			m_SoundTimerStarted--;
+			if(m_SoundTimerStarted <= 0)
+				m_SoundTimerStarted = 0;
 		}
 
 		goto Quit;
