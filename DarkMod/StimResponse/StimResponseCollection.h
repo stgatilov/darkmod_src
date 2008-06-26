@@ -28,9 +28,6 @@
  */
 class CStimResponseCollection {
 public:
-	CStimResponseCollection(void);
-	~CStimResponseCollection(void);
-
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);
 

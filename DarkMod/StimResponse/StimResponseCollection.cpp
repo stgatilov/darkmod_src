@@ -14,14 +14,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "StimResponseCollection.h"
 #include "../AIComm_StimResponse.h"
 
-CStimResponseCollection::CStimResponseCollection(void)
-{
-}
-
-CStimResponseCollection::~CStimResponseCollection(void)
-{
-}
-
 void CStimResponseCollection::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(m_Stim.Num());
@@ -390,11 +382,10 @@ CResponse *CStimResponseCollection::GetResponse(int StimType)
 	return (CResponse *)GetStimResponse(StimType, false);
 }
 
-bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner, const char sr_class, int Counter)
+bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner, const char sr_class, int index)
 {
 	bool rc = false;
 	idStr str;
-	idStr name;
 	CStim *stim = NULL;
 	CResponse *resp = NULL;
 	CStimResponse *sr = NULL;
@@ -403,15 +394,14 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	StimType typeOfStim;
 	
 	// Check if the entity contains either a stim or a response.
-	if(sr_class != 'S' && sr_class != 'R')
+	if (sr_class != 'S' && sr_class != 'R')
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_class value [%s]\r", str.c_str());
 		goto Quit;
 	}
 
 	// Get the id of the stim/response type so we know what sub-class to create
-	sprintf(name, "sr_type_%u", Counter);
-	args->GetString(name, "-1", str);
+	args->GetString(va("sr_type_%u", index), "-1", str);
 
 	// This is invalid as an entity definition
 	if(str == "-1")
@@ -468,83 +458,58 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	sr->m_StimTypeName = str;
 
 	// Read stim response state from the def file
-	sprintf(name, "sr_state_%u", Counter);
-	args->GetInt(name, "1", (int &)state);
-	
-	if( args->GetBool(name, "1") )
-		sr->EnableSR(true);
-	else
-		sr->EnableSR(false);
+	state = static_cast<StimState>(args->GetInt(va("sr_state_%u", index), "1"));
 
-	sprintf(name, "sr_chance_%u", Counter);
-	sr->m_Chance = args->GetFloat(name, "1.0");
+	sr->EnableSR(state == SS_ENABLED);
+	
+	sr->m_Chance = args->GetFloat(va("sr_chance_%u", index), "1.0");
 
 	// A stim also may have a radius
 	if(sr_class == 'S')
 	{
-		sprintf(name, "sr_radius_%u", Counter);
-		args->GetFloat(name, "0.0", Radius);
-		stim->m_Radius = Radius;
+		stim->m_Radius = args->GetFloat(va("sr_radius_%u", index), "0.0");
 
-		sprintf(name, "sr_falloffexponent_%u", Counter);
-		stim->m_FallOffExponent = args->GetInt(name, "0");
+		stim->m_FallOffExponent = args->GetInt(va("sr_falloffexponent_%u", index), "0");
+		stim->m_bUseEntBounds = args->GetBool(va("sr_use_bounds_%u", index), "0");
+		stim->m_bCollisionBased = args->GetBool(va("sr_collision_%u", index), "0");
 
-		sprintf(name, "sr_use_bounds_%u", Counter);
-		stim->m_bUseEntBounds = args->GetBool(name, "0");
+		stim->m_Velocity = args->GetVector(va("sr_velocity_%u", index), "0 0 0");
 
-		sprintf(name, "sr_collision_%u", Counter);
-		stim->m_bCollisionBased = args->GetBool(name, "0");
-
-		sprintf(name, "sr_velocity_%u", Counter);
-		stim->m_Velocity = args->GetVector(name, "0 0 0");
-
-		sprintf(name, "sr_bounds_mins_%u", Counter);
-		stim->m_Bounds[0] = args->GetVector(name, "0 0 0");
-
-		sprintf(name, "sr_bounds_maxs_%u", Counter);
-		stim->m_Bounds[1] = args->GetVector(name, "0 0 0");
+		stim->m_Bounds[0] = args->GetVector(va("sr_bounds_mins_%u", index), "0 0 0");
+		stim->m_Bounds[1] = args->GetVector(va("sr_bounds_maxs_%u", index), "0 0 0");
 
 		// set up time interleaving so the stim isn't fired every frame
-		sprintf(name, "sr_time_interval_%u", Counter);
-		stim->m_TimeInterleave = args->GetInt(name, "0");
+		stim->m_TimeInterleave = args->GetInt(va("sr_time_interval_%u", index), "0");
 
 		// greebo: Add fuzzyness to the timer (ranging from 0.9 - 1.3);
 		stim->m_TimeInterleave = static_cast<int>(stim->m_TimeInterleave * (0.9f + gameLocal.random.RandomFloat()*0.4f));
 
 		// userfriendly stim duration time
-		sprintf(name, "sr_duration_%u", Counter);
-		stim->m_Duration = args->GetInt(name, "0");
+		stim->m_Duration = args->GetInt(va("sr_duration_%u", index), "0");
+		stim->m_Magnitude = args->GetFloat(va("sr_magnitude_%u", index), "1.0");
 
-		sprintf(name, "sr_magnitude_%u", Counter);
-		stim->m_Magnitude = args->GetFloat(name, "1.0");
-
-		sprintf(name, "sr_max_fire_count_%u", Counter);
-		stim->m_MaxFireCount = args->GetInt(name, "-1");
+		stim->m_MaxFireCount = args->GetInt(va("sr_max_fire_count_%u", index), "-1");
 
 		// Check if we have a timer on this stim.
-		CreateTimer(args, stim, Counter);
+		CreateTimer(args, stim, index);
 	}
 	else	// this is only for responses
 	{
-		sprintf(name, "sr_chance_timeout_%u", Counter);
-		sr->m_ChanceTimer = args->GetInt(name, "-1");
+		sr->m_ChanceTimer = args->GetInt(va("sr_chance_timeout_%u", index), "-1");
 
-		sprintf(name, "sr_random_effects_%u", Counter);
-		resp->m_NumRandomEffects = args->GetInt(name, "0");
+		resp->m_NumRandomEffects = args->GetInt(va("sr_random_effects_%u", index), "0");
 
 		// Get the name of the script function for processing the response
-		name = "sr_script_" + str;
-		args->GetString(name, "", str);
+		args->GetString("sr_script_" + str, "", str);
 		resp->m_ScriptFunction = str;
 
 		// Try to identify the ResponseEffect spawnargs
 		int effectIdx = 1;
 		while (effectIdx > 0) {
 			// Try to find a string like "sr_effect_2_1"
-			sprintf(name, "sr_effect_%u_%u", Counter, effectIdx);
-			args->GetString(name, "", str);
+			args->GetString(va("sr_effect_%u_%u", index, effectIdx), "", str);
 
-			if (str == "")
+			if (str.IsEmpty())
 			{
 				// Set the index to negative values to end the loop
 				effectIdx = -1;
@@ -552,11 +517,8 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 			else {
 				// Assemble the postfix of this effect for later key/value lookup
 				// This is passed to the effect script eventually
-				idStr effectPostfix;
-				sprintf(effectPostfix, "%u_%u", Counter, effectIdx);
-
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Adding response effect\r");
-				resp->addResponseEffect(str, effectPostfix, args);
+				resp->addResponseEffect(str, va("%u_%u", index, effectIdx), args);
 				effectIdx++;
 			}
 		}
@@ -598,7 +560,7 @@ void CStimResponseCollection::ParseSpawnArgsToStimResponse(const idDict *args, i
 	}
 
 	i = 1;
-	while(i != 0)
+	while (i != 0)
 	{
 		sprintf(name, "sr_class_%u", i);
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Looking for %s\r", name.c_str());
