@@ -5869,7 +5869,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			if (stim->m_RadiusFinal > 0 && stim->m_Duration != 0)
 			{
 				// Calculate how much of the stim duration has passed already
-				float timeFraction = (gameLocal.time - stim->m_EnabledTimeStamp) / stim->m_Duration;
+				float timeFraction = static_cast<float>(gameLocal.time - stim->m_EnabledTimeStamp) / stim->m_Duration;
 				timeFraction = idMath::ClampFloat(0, 1, timeFraction);
 
 				// Linearly interpolate the radius
@@ -5899,6 +5899,10 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 					}
 
 					bounds.ExpandSelf(radius);
+				}
+
+				if (stim->m_StimTypeId == ST_GAS) {
+					gameRenderWorld->DebugBox(colorGreen, idBox(bounds), 48);
 				}
 
 				// Collision-based stims
