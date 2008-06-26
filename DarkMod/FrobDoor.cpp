@@ -213,7 +213,7 @@ void CFrobDoor::Spawn( void )
 	// In that case we can ignore the pins, otherwise we must create the patterns.
 	if (!lockPins.IsEmpty())
 	{
-		idStr head = "lockpick_pin_";
+		idStr head = "snd_lockpick_pin_";
 		int b = cv_lp_pin_base_count.GetInteger();
 
 		if (b < MIN_CLICK_NUM)
@@ -849,7 +849,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 	// Now check if the pick is of the correct type. If no picktype is given, or
 	// the mapper doesn't care, we ignore it.
-	spawnArgs.GetString("snd_lock_picktype", "", pick);
+	spawnArgs.GetString("lock_picktype", "", pick);
 	if(m_FirstLockedPinIndex < pick.Length())
 	{
 		if(!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
