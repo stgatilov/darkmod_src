@@ -189,6 +189,8 @@ extern idCVar cv_lg_velocity_mod_min_velocity;
 extern idCVar cv_lg_velocity_mod_max_velocity;
 extern idCVar cv_lg_velocity_mod_amount;
 
+extern idCVar cv_empty_model;
+
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
 extern idCVar cv_lp_sample_delay;

@@ -7520,9 +7520,9 @@ void idEntity::Event_WaitForRender()
 	{
 		// Give the renderTrigger an invisible model to prevent a black cube from showing up.
 		if ( !m_renderTrigger.hModel )
-			m_renderTrigger.hModel = renderModelManager->FindModel( EMPTY_MODEL );
+			m_renderTrigger.hModel = renderModelManager->FindModel( cv_empty_model.GetString() );
 		if ( !m_renderTrigger.hModel )
-			gameLocal.Error( "Unable to load model: %s\n", EMPTY_MODEL );
+			gameLocal.Error( "Unable to load model: %s\n", cv_empty_model.GetString() );
 
 		m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
 		m_renderWaitingThread = idThread::CurrentThreadNum();

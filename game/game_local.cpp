@@ -1558,7 +1558,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	FindEntityDef( "player_tdm_thief", false );
 
 	// precache the empty model (used by idEntity::m_renderTrigger)
-	renderModelManager->FindModel( EMPTY_MODEL );
+	renderModelManager->FindModel( cv_empty_model.GetString() );
 
 	SpawnLightgemEntity();
 

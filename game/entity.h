@@ -186,9 +186,6 @@ typedef struct SAttachPosition_s
 	void			Restore( idRestoreGame *savefile );
 } SAttachPosition;
 
-// Used by m_renderTrigger
-#define EMPTY_MODEL "models/darkmod/misc/system/empty.lwo"
-
 class idEntity : public idClass {
 public:
 	static const int		MAX_PVS_AREAS = 4;
