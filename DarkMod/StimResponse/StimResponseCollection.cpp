@@ -467,7 +467,8 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	// A stim also may have a radius
 	if(sr_class == 'S')
 	{
-		stim->m_Radius = args->GetFloat(va("sr_radius_%u", index), "0.0");
+		stim->m_Radius = args->GetFloat(va("sr_radius_%u", index), "0");
+		stim->m_RadiusFinal = args->GetFloat(va("sr_radius_final_%u", index), "-1");
 
 		stim->m_FallOffExponent = args->GetInt(va("sr_falloffexponent_%u", index), "0");
 		stim->m_bUseEntBounds = args->GetBool(va("sr_use_bounds_%u", index), "0");

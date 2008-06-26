@@ -5865,6 +5865,17 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 
 			float radius = stim->m_Radius;
 
+			// greebo: Check for a time-dependent radius
+			if (stim->m_RadiusFinal > 0 && stim->m_Duration != 0)
+			{
+				// Calculate how much of the stim duration has passed already
+				float timeFraction = (gameLocal.time - stim->m_EnabledTimeStamp) / stim->m_Duration;
+				timeFraction = idMath::ClampFloat(0, 1, timeFraction);
+
+				// Linearly interpolate the radius
+				radius += (stim->m_RadiusFinal - stim->m_Radius) * timeFraction;
+			}
+
 			if (radius != 0.0 || stim->m_bCollisionBased ||
 				stim->m_bUseEntBounds || stim->m_Bounds.GetVolume() > 0)
 			{

@@ -17,13 +17,14 @@
  * are declared protected so that only the collection can actually create
  * destroy them.
  */
-class CStim : public CStimResponse {
-	
+class CStim : 
+	public CStimResponse
+{
 	friend class CStimResponseCollection;
 
 protected:
 	CStim(idEntity *, int Type, int uniqueId);
-	virtual ~CStim(void);
+	virtual ~CStim();
 
 public:
 	virtual void Save(idSaveGame *savefile) const;
@@ -112,6 +113,12 @@ public:
 	 * Radius defines the radius the action can reach out
 	 */
 	float				m_Radius;
+
+	/** 
+	 * greebo: The final radius the stim is reaching after its duration time.
+	 * A negative value is considered invalid (i.e. final radius is not set).
+	 */
+	float				m_RadiusFinal;
 
 	/**
 	* greebo: The stim bounds of this stim (can be used as alternative to

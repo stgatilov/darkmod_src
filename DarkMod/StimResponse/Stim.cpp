@@ -27,9 +27,10 @@ CStim::CStim(idEntity *e, int Type, int uniqueId)
 	m_CollisionEnts.Clear();
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
-	m_Radius = 0.0;
+	m_Radius = 0.0f;
+	m_RadiusFinal = -1.0f;
 	m_FallOffExponent = 0;
-	m_Magnitude = 0.0;
+	m_Magnitude = 0.0f;
 	m_MaxResponses = 0;
 	m_CurResponses = 0;
 	m_ApplyTimer = 0;
@@ -66,6 +67,7 @@ void CStim::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_TimeInterleaveStamp);
 	savefile->WriteInt(m_MaxFireCount);
 	savefile->WriteFloat(m_Radius);
+	savefile->WriteFloat(m_RadiusFinal);
 	savefile->WriteBounds(m_Bounds);
 	savefile->WriteVec3(m_Velocity);
 	savefile->WriteFloat(m_Magnitude);
@@ -100,6 +102,7 @@ void CStim::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(m_TimeInterleaveStamp);
 	savefile->ReadInt(m_MaxFireCount);
 	savefile->ReadFloat(m_Radius);
+	savefile->ReadFloat(m_RadiusFinal);
 	savefile->ReadBounds(m_Bounds);
 	savefile->ReadVec3(m_Velocity);
 	savefile->ReadFloat(m_Magnitude);
