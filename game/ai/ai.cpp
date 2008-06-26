@@ -2322,6 +2322,20 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 		return false;
 	}
 
+	// Sanity check the returned area. If the position isn't within the AI's height + vertical melee
+	// reach, then report it as unreachable.
+	const idVec3& grav = physicsObj.GetGravityNormal();
+
+	float height = fabs((goal - aas->AreaCenter(goalAreaNum)) * grav);
+
+	idBounds bounds = GetPhysics()->GetBounds();
+
+	if (height > bounds[1][2] + melee_range) {
+		goalAreaNum = 0;
+		return false;
+	}
+	
+
 	if ( move.moveType == MOVETYPE_FLY ) {
 		return aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	} else {
@@ -3116,22 +3130,6 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	if ( aas ) {
 		move.toAreaNum = PointReachableAreaNum( org );
 		aas->PushPointIntoAreaNum( move.toAreaNum, org );
-
-		if (move.toAreaNum != 0)
-		{
-			// Sanity check the returned area. If the position isn't within the AI's height + vertical melee
-			// reach, then report it as unreachable.
-			const idVec3& grav = physicsObj.GetGravityNormal();
-
-			float height = fabs((org - aas->AreaCenter(move.toAreaNum)) * grav);
-
-			idBounds bounds = GetPhysics()->GetBounds();
-
-			if (height > bounds[1][2] + melee_range) {
-				move.toAreaNum = 0;
-				return false;
-			}
-		}
 
 		int areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
@@ -6360,10 +6358,10 @@ bool idAI::TestMelee( void ) const {
 	// expand the bounds out by our melee range
 	bounds[0][0] = -melee_range;
 	bounds[0][1] = -melee_range;
-	bounds[0][2] = myBounds[0][2] - 4.0f;
+	bounds[0][2] = myBounds[0][2] - melee_range;
 	bounds[1][0] = melee_range;
 	bounds[1][1] = melee_range;
-	bounds[1][2] = myBounds[1][2] + 4.0f;
+	bounds[1][2] = myBounds[1][2] + melee_range;
 	bounds.TranslateSelf( org );
 
 	idVec3 enemyOrg = enemyEnt->GetPhysics()->GetOrigin();

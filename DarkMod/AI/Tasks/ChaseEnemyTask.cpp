@@ -166,6 +166,14 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			return true;
 		}
 	}
+	else
+	{
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
+		gameLocal.Printf("Destination unreachable... \n");
+		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+		return true;
+
+	}
 
 	return false; // not finished yet
 }
