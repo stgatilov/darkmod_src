@@ -5901,10 +5901,6 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 					bounds.ExpandSelf(radius);
 				}
 
-				if (stim->m_StimTypeId == ST_GAS) {
-					gameRenderWorld->DebugBox(colorGreen, idBox(bounds), 48);
-				}
-
 				// Collision-based stims
 				if (stim->m_bCollisionBased)
 				{
