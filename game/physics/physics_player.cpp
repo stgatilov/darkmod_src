@@ -275,8 +275,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	planes[numplanes].Normalize();
 	numplanes++;
 
-	for ( bumpcount = 0; bumpcount < numbumps; bumpcount++ ) {
-
+	for ( bumpcount = 0; bumpcount < numbumps; bumpcount++ )
+	{
 		// calculate position we are trying to move to
 		end = current.origin + time_left * current.velocity;
 
@@ -296,7 +296,6 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		// if we are allowed to step up
 		if ( stepUp ) 
 		{
-
 			nearGround = groundPlane || m_bOnClimb || m_bClimbDetachThisFrame;
 
 			if ( !nearGround ) 
@@ -314,21 +313,27 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 				// step up
 				stepEnd = current.origin - maxStepHeight * gravityNormal;
-
 				gameLocal.clip.Translation( downTrace, current.origin, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 
-				// trace along velocity
-				stepEnd = downTrace.endpos + time_left * current.velocity;
+				// greebo: Trace along the current velocity, but trace further ahead than we need to judge the situation
+				idVec3 velocityNorm(current.velocity);
+				velocityNorm.NormalizeFast();
 
-				gameLocal.clip.Translation( stepTrace, downTrace.endpos, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
+				idVec3 fullForward = downTrace.endpos + maxStepHeight * velocityNorm;
+				gameLocal.clip.Translation( stepTrace, downTrace.endpos, fullForward, clipModel, clipModel->GetAxis(), clipMask, self );
+
+				// This is the max. distance we can move forward in this frame
+				idVec3 forward = time_left * current.velocity;
+				float forwardDist = forward.LengthFast();
 
 				// step down
-				stepEnd = stepTrace.endpos + maxStepHeight * gravityNormal;
-				gameLocal.clip.Translation( downTrace, stepTrace.endpos, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
+				idVec3 topStartPoint = downTrace.endpos + forward;
+
+				stepEnd = topStartPoint + maxStepHeight * gravityNormal;
+				gameLocal.clip.Translation( downTrace, topStartPoint, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 
 				if ( downTrace.fraction >= 1.0f || (downTrace.c.normal * -gravityNormal) > MIN_WALK_NORMAL ) 
 				{
-
 					// if moved the entire distance
 					if ( stepTrace.fraction >= 1.0f ) 
 					{
@@ -352,6 +357,26 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 						stepped = true;
 					}
 				}
+				else
+				{
+					// greebo: We have a sloped obstacle in front of us
+
+					if (stepTrace.fraction >= 1.0f)
+					{
+						// We can step onto this obstacle, the stepTrace has shown that there is enough room 
+						// in front of us (if we translate a bit upwards)
+						current.stepUp -= ( downTrace.endpos - current.origin ) * gravityNormal;
+						//static int factor = 10;
+						current.origin = downTrace.endpos + time_left*current.velocity; //(fullForward - current.origin)*stepTrace.fraction;
+						time_left = 0;
+						current.movementFlags |= PMF_STEPPED_UP;
+						current.velocity *= PM_STEPSCALE;
+						// greebo: HACK ALARM: We add a "counter-gravity" this frame to avoid us from being dragged down again in the next frame
+						// TODO: Maybe we can do this somewhere else, where the player is sliding off slopes.
+						current.velocity -= gravityVector * frametime * 3;
+					}
+				}
+
 
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step up, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
 			}
