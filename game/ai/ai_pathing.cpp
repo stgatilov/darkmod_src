@@ -334,7 +334,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	clipBounds[1][0] += MAX_OBSTACLE_RADIUS;
 	clipBounds[1][1] += MAX_OBSTACLE_RADIUS;
 
-	clipBounds[0][2] -= bounds[0][2] - OBSTACLE_HEIGHT_EXPANSION;
+	clipBounds[0][2] -= bounds[0][2] + OBSTACLE_HEIGHT_EXPANSION;
 	clipBounds[1][2] += bounds[1][2] + OBSTACLE_HEIGHT_EXPANSION;
 
 	// clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
@@ -354,6 +354,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	{
 		idClipModel* clipModel = clipModelList[i];
 		idEntity* obEnt = clipModel->GetEntity();
+
+		// greebo: Immediately ignore self
+		if (obEnt == self) continue;
 
 		/*
 		* SZ: Oct 9, 2006: Not all binary frob movers have trace models as clip models
@@ -397,7 +400,11 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		{
 			// moveables are considered obstacles
 		} 
-		else 
+		else if (obEnt->IsType(idStaticEntity::Type))
+		{
+			// func_statics should be considered
+		}
+		else
 		{
 			// ignore everything else
 

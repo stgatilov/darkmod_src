@@ -195,7 +195,8 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	gameLocal.clip.Translation( tr, stepPos, down, clipModel, clipModel->GetAxis(), clipMask, self );
 	//gameRenderWorld->DebugArrow(colorGreen, stepPos, down, 2, 5000);
 	//gameRenderWorld->DebugArrow(colorBlue, tr.c.point, tr.c.point + 5 * tr.c.normal, 2, 5000);
-	stepPos = tr.endpos;
+	// greebo: Set the endposition a bit more upwards than necessary to prevent gravity from pulling us down immediately again
+	stepPos = tr.endpos - gravityNormal * 10;
 
 	// if the move is further without stepping up, or the slope is too steep, don't step up
 	nostepdist = ( noStepPos - start ).LengthSqr();
