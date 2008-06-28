@@ -232,11 +232,11 @@ void CFrobDoor::Spawn( void )
 				m_Pins.Append(pattern);
 				if (cv_lp_pawlow.GetBool() == false)
 				{
-					pattern->Insert("lockpick_pin_sweetspot");
+					pattern->Insert("snd_lockpick_pin_sweetspot");
 				}
 				else
 				{
-					pattern->Append("lockpick_pin_sweetspot");
+					pattern->Append("snd_lockpick_pin_sweetspot");
 				}
 			}
 			else
