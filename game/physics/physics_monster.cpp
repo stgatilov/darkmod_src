@@ -195,16 +195,27 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	gameLocal.clip.Translation( tr, stepPos, down, clipModel, clipModel->GetAxis(), clipMask, self );
 	//gameRenderWorld->DebugArrow(colorGreen, stepPos, down, 2, 5000);
 	//gameRenderWorld->DebugArrow(colorBlue, tr.c.point, tr.c.point + 5 * tr.c.normal, 2, 5000);
-	// greebo: Set the endposition a bit more upwards than necessary to prevent gravity from pulling us down immediately again
-	stepPos = tr.endpos - gravityNormal * 10;
+
+	float projection = tr.c.normal * -gravityNormal;
+
+	// greebo: We have collided with a steep slope in front of us
+	if (projection < minFloorCosine && projection > 0.06f)
+	{
+		// greebo: Set the endposition a bit more upwards than necessary to prevent gravity from pulling us down immediately again
+		stepPos = tr.endpos - gravityNormal * stepUpIncrease;
+	}
+	else
+	{
+		// No slope, just use the step position
+		stepPos = tr.endpos;
+	}
 
 	// if the move is further without stepping up, or the slope is too steep, don't step up
 	nostepdist = ( noStepPos - start ).LengthSqr();
 	stepdist = ( stepPos - start ).LengthSqr();
 	
-	// angua: added check for (almost) horizontal normals (they seem to happen sometimes)
-	float projection = tr.c.normal * -gravityNormal;
-	if (nostepdist >= stepdist || (projection < minFloorCosine && projection > 0.06f)) 
+	// Use the position that brought us the largest forward movement
+	if (nostepdist >= stepdist) 
 	{
 		start = noStepPos;
 		velocity = noStepVel;
@@ -261,6 +272,7 @@ idPhysics_Monster::idPhysics_Monster( void ) {
 	
 	delta.Zero();
 	maxStepHeight = 18.0f;
+	stepUpIncrease = 10.0f;
 	minFloorCosine = 0.7f;
 	moveResult = MM_OK;
 	forceDeltaMove = false;
@@ -309,6 +321,7 @@ void idPhysics_Monster::Save( idSaveGame *savefile ) const {
 	idPhysics_Monster_SavePState( savefile, saved );
 
 	savefile->WriteFloat( maxStepHeight );
+	savefile->WriteFloat(stepUpIncrease);
 	savefile->WriteFloat( minFloorCosine );
 	savefile->WriteVec3( delta );
 
@@ -332,6 +345,7 @@ void idPhysics_Monster::Restore( idRestoreGame *savefile ) {
 	idPhysics_Monster_RestorePState( savefile, saved );
 
 	savefile->ReadFloat( maxStepHeight );
+	savefile->ReadFloat(stepUpIncrease);
 	savefile->ReadFloat( minFloorCosine );
 	savefile->ReadVec3( delta );
 
@@ -372,6 +386,10 @@ idPhysics_Monster::GetMaxStepHeight
 */
 float idPhysics_Monster::GetMaxStepHeight( void ) const {
 	return maxStepHeight;
+}
+
+void idPhysics_Monster::SetStepUpIncrease(float incr) {
+	stepUpIncrease = incr;
 }
 
 /*

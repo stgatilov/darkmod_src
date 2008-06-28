@@ -400,10 +400,10 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		{
 			// moveables are considered obstacles
 		} 
-		else if (obEnt->IsType(idStaticEntity::Type))
+		/*else if (obEnt->IsType(idStaticEntity::Type))
 		{
-			// func_statics should be considered
-		}
+			// greebo: func_statics should be considered
+		}*/
 		else
 		{
 			// ignore everything else

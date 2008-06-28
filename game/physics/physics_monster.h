@@ -54,6 +54,10 @@ public:
 							// maximum step up the monster can take, default 18 units
 	void					SetMaxStepHeight( const float newMaxStepHeight );
 	float					GetMaxStepHeight( void ) const;
+	
+	// Translates the entity upwards by this amount when stepping up to fight gravity during stepping
+	void					SetStepUpIncrease(float incr);
+
 							// minimum cosine of floor angle to be able to stand on the floor
 	void					SetMinFloorCosine( const float newMinFloorCosine );
 							// set delta for next move
@@ -114,6 +118,7 @@ private:
 
 	// properties
 	float					maxStepHeight;		// maximum step height
+	float					stepUpIncrease;		// translates origin upwards by this amount when stepping
 	float					minFloorCosine;		// minimum cosine of floor angle
 	idVec3					delta;				// delta for next move
 

@@ -1401,6 +1401,7 @@ void idAI::Spawn( void )
 	physicsObj.SetSelf( this );
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetMass( spawnArgs.GetFloat( "mass", "100" ) );
+	physicsObj.SetStepUpIncrease(spawnArgs.GetFloat("step_up_increase", "0"));
 
 	if ( spawnArgs.GetBool( "big_monster" ) ) {
 		physicsObj.SetContents( 0 );
