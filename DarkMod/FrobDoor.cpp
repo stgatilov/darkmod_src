@@ -417,6 +417,11 @@ void CFrobDoor::OnLock(bool bMaster)
 	// Call the base class first
 	CBinaryFrobMover::OnLock(bMaster);
 
+	// greebo: Reset the lockpicking values
+	m_FirstLockedPinIndex = 0;
+	m_SoundTimerStarted = 0;
+	m_SoundPinSampleIndex = -1;
+
 	if (bMaster)
 	{
 		LockPeers();
