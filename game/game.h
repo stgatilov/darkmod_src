@@ -27,9 +27,9 @@
 */
 
 // default scripts
-#define SCRIPT_DEFAULTDEFS			"script/doom_defs.script"
-#define SCRIPT_DEFAULT				"script/doom_main.script"
-#define SCRIPT_DEFAULTFUNC			"doom_main"
+#define SCRIPT_DEFAULTDEFS			"script/tdm_defs.script"
+#define SCRIPT_DEFAULT				"script/tdm_main.script"
+#define SCRIPT_DEFAULTFUNC			"tdm_main"
 
 typedef struct {
 	char		sessionCommand[MAX_STRING_CHARS];	// "map", "disconnect", "victory", etc
