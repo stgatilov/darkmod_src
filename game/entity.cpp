@@ -8539,6 +8539,32 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 	}
 }
 
+void idEntity::AddFrobPeer(const idStr& frobPeerName)
+{
+	m_FrobPeers.AddUnique(frobPeerName);
+}
+
+void idEntity::AddFrobPeer(idEntity* peer)
+{
+	if (peer != NULL)
+	{
+		AddFrobPeer(peer->name);
+	}
+}
+
+void idEntity::RemoveFrobPeer(const idStr& frobPeerName)
+{
+	m_FrobPeers.Remove(frobPeerName);
+}
+
+void idEntity::RemoveFrobPeer(idEntity* peer)
+{
+	if (peer != NULL)
+	{
+		RemoveFrobPeer(peer->name);
+	}
+}
+
 void idEntity::Event_DestroyOverlay(int handle)
 {
 	DestroyOverlay(handle);

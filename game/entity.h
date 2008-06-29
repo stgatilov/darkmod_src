@@ -809,7 +809,11 @@ public:
 	 */
 	virtual bool			IsMantleable();
 
-	inline idStrList		GetFrobPeers(void) { return m_FrobPeers; }
+	// Accessors for the frob peer list
+	virtual void			AddFrobPeer(const idStr& frobPeerName);
+	virtual void			AddFrobPeer(idEntity* peer);
+	virtual void			RemoveFrobPeer(const idStr& frobPeerName);
+	virtual void			RemoveFrobPeer(idEntity* peer);
 
 protected:
 	/**

@@ -366,8 +366,8 @@ void CFrobDoor::PostSpawn()
 			{
 				// Set up the frob peer relationship between the door and the bar
 				m_FrobPeers.AddUnique(bar->name);
-				bar->GetFrobPeers().AddUnique(name);
-				bar->m_bFrobable = m_bFrobable;
+				bar->AddFrobPeer(name);
+				bar->SetFrobable(m_bFrobable);
 				bar->Bind(this, true);
 			}
 		}
@@ -1200,8 +1200,8 @@ void CFrobDoor::AddDoorhandle(CFrobDoorHandle* handle)
 
 	// Set up the frob peer relationship between the door and the handle
 	m_FrobPeers.AddUnique(handle->name);
-	handle->GetFrobPeers().AddUnique(name);
-	handle->m_bFrobable = m_bFrobable;
+	handle->AddFrobPeer(name);
+	handle->SetFrobable(m_bFrobable);
 }
 
 void CFrobDoor::AutoSetupDoorHandles()
@@ -1244,8 +1244,8 @@ void CFrobDoor::AutoSetupDoubleDoor()
 			m_FrobPeers.AddUnique(doubleDoor->name);
 
 			// Add ourselves to the double door as frob peer
-			doubleDoor->GetFrobPeers().AddUnique(name);
-			doubleDoor->m_bFrobable = m_bFrobable;
+			doubleDoor->AddFrobPeer(name);
+			doubleDoor->SetFrobable(m_bFrobable);
 		}
 
 		if (spawnArgs.GetBool("auto_setup_double_door_open_peer", "0"))
