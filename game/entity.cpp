@@ -6927,8 +6927,11 @@ void idEntity::LoadTDMSettings(void)
 	}
 
 	// Check if this entity can be used by others.
-	if(spawnArgs.GetString("used_by", "", str))
-		ParseUsedByList(m_UsedBy, str);
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))
+	{
+		// Add each entity name to the list
+		m_UsedBy.AddUnique(kv->GetValue());
+	}
 
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
@@ -7168,52 +7171,6 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 
 Quit:
 	return;
-}
-
-void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
-{
-	idStr str;
-	int i, n;
-	int x, y;
-	bool bFound;
-
-	DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Parsing [%s]\r", s.c_str());
-	i = 0;
-	while(1)
-	{
-//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 1: %u:%u [%s]\r", i, n, &s[i]);
-		// If no seperator is found, the remainder of the string
-		// is copied.
-		if((n = s.Find(';', i)) == -1)
-			n = s.Length();
-
-//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 2: %u:%u [%s]\r", i, n, &s[i]);
-		n -= i;
-		s.Mid(i, n, str);
-		i += n;
-		if(s[i] == ';')
-			i++;
-//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 3: %u:%u [%s]\r", i, n, &s[i]);
-		if(str.Length() == 0)
-			break;
-
-		y = list.Num();
-		bFound = false;
-		for(x = 0; x < y; x++)
-		{
-			if(list[x] == str)
-			{
-				bFound = true;
-				break;
-			}
-		}
-
-		if(bFound == false)
-		{
-			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Append [%s] to uselist\r", str.c_str());
-			list.Append(str);
-		}
-	}
 }
 
 bool idEntity::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)

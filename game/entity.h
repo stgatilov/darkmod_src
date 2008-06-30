@@ -606,12 +606,6 @@ public:
 	virtual bool UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
 	/**
-	 * Parses a used_by string. For a detailed information on how to use this feature
-	 * refer to the m_UsedBy description.
-	 */
-	void ParseUsedByList(idList<idStr> &, idStr &);
-
-	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob
 	**/
 	virtual void SetFrobbed( bool val );
