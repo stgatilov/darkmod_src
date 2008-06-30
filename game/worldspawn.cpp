@@ -51,10 +51,12 @@ void idWorldspawn::Spawn( void ) {
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
 
+	// Commented out by Dram. TDM does not use stamina
+	/*
 	// disable stamina on hell levels
 	if ( spawnArgs.GetBool( "no_stamina" ) ) {
 		pm_stamina.SetFloat( 0.0f );
-	}
+	}*/
 
 	// load script
 	scriptname = gameLocal.GetMapName();
@@ -105,10 +107,11 @@ void idWorldspawn::Restore( idRestoreGame *savefile ) {
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
 
-	// disable stamina on hell levels
+	// Commented out by Dram. TDM does not use stamina
+	/*// disable stamina on hell levels
 	if ( spawnArgs.GetBool( "no_stamina" ) ) {
 		pm_stamina.SetFloat( 0.0f );
-	}
+	}*/
 }
 
 /*

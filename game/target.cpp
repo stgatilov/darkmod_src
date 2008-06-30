@@ -1694,14 +1694,16 @@ idTarget_EnableStamina::Event_Activate
 */
 void idTarget_EnableStamina::Event_Activate( idEntity *activator ) {
 	for( int i = 0; i < gameLocal.numClients; i++ ) {
-		if ( gameLocal.entities[ i ] ) {
+		// Commented out by Dram. TDM does not use stamina
+		/*if ( gameLocal.entities[ i ] ) {
 			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
 			if ( spawnArgs.GetBool( "enable" ) ) {
 				pm_stamina.SetFloat( player->spawnArgs.GetFloat( "pm_stamina" ) );
 			} else {
 				pm_stamina.SetFloat( 0.0f );
 			}
-		}
+		}*/
+		return;
 	}
 }
 

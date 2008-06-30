@@ -364,9 +364,10 @@ extern idCVar	pm_spectatebbox;
 extern idCVar	pm_usecylinder;
 extern idCVar	pm_minviewpitch;
 extern idCVar	pm_maxviewpitch;
-extern idCVar	pm_stamina;
-extern idCVar	pm_staminathreshold;
-extern idCVar	pm_staminarate;
+// Commented out by Dram. Not needed as TDM does not use stamina
+//extern idCVar	pm_stamina;
+//extern idCVar	pm_staminathreshold;
+//extern idCVar	pm_staminarate;
 extern idCVar	pm_crouchheight;
 extern idCVar	pm_crouchviewheight;
 extern idCVar	pm_normalheight;
