@@ -158,6 +158,7 @@ sndPropLoader.cpp \
 TimerManager.cpp \
 Strip.cpp \
 ToUpper.cpp \
+UserManager.cpp \
 Inventory/Category.cpp \
 Inventory/Cursor.cpp \
 Inventory/Inventory.cpp \
