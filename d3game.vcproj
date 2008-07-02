@@ -1479,6 +1479,12 @@
 				<File
 					RelativePath=".\DarkMod\ToUpper.cpp">
 				</File>
+				<File
+					RelativePath=".\DarkMod\UserManager.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\UserManager.h">
+				</File>
 				<Filter
 					Name="SourceHook"
 					Filter="">
