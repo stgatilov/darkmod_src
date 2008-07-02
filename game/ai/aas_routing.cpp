@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/MultiStateMover.h"
 #include "../../DarkMod/MultiStateMoverPosition.h"
+#include "../../DarkMod/TimerManager.h"
 
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2
@@ -1037,6 +1038,15 @@ idAASLocal::RouteToGoalArea
 ============
 */
 bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const {
+
+#ifdef TIMING_BUILD
+	if (actor != NULL)
+	{
+		START_SCOPED_TIMING(actor->actorRouteToGoalTimer, scopedRouteToGoalTimer);
+	}
+#endif
+
+	
 	// Set the default return values
 	travelTime = 0;
 	*reach = NULL;

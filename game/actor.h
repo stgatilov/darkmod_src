@@ -516,9 +516,14 @@ public:
 public:
 	int actorGetObstaclesTimer;
 	int actorGetPointOutsideObstaclesTimer;
+	int actorGetWallEdgesTimer;
+	int actorSortWallEdgesTimer;
 	int actorBuildPathTreeTimer;
 	int actorPrunePathTreeTimer;
 	int actorFindOptimalPathTimer;
+	int actorRouteToGoalTimer;
+	int actorSubSampleWalkPathTimer;
+	int actorWalkPathValidTimer;
 #endif
 };
 

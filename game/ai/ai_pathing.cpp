@@ -521,8 +521,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		float halfBoundsSize = ( expBounds[ 1 ].x - expBounds[ 0 ].x ) * 0.5f;
 
 		int wallEdges[MAX_AAS_WALL_EDGES];
+		START_TIMING(self->actorGetWallEdgesTimer);
 		int numWallEdges = aas->GetWallEdges( areaNum, clipBounds, TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES );
+		STOP_TIMING(self->actorGetWallEdgesTimer);
+
+		START_TIMING(self->actorSortWallEdgesTimer);
 		aas->SortWallEdges( wallEdges, numWallEdges );
+		STOP_TIMING(self->actorSortWallEdgesTimer);
 
 		int lastVerts[2] = {0,0};
 		int nextVerts[2] = {0,0};

@@ -543,9 +543,15 @@ idActor::idActor( void ) {
 
 	INIT_TIMER_HANDLE(actorGetObstaclesTimer);
 	INIT_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer);
+	INIT_TIMER_HANDLE(actorGetWallEdgesTimer);
+	INIT_TIMER_HANDLE(actorSortWallEdgesTimer);
 	INIT_TIMER_HANDLE(actorBuildPathTreeTimer);
 	INIT_TIMER_HANDLE(actorPrunePathTreeTimer);
 	INIT_TIMER_HANDLE(actorFindOptimalPathTimer);
+	INIT_TIMER_HANDLE(actorRouteToGoalTimer);
+	INIT_TIMER_HANDLE(actorSubSampleWalkPathTimer);
+	INIT_TIMER_HANDLE(actorWalkPathValidTimer);
+
 }
 
 /*
@@ -726,9 +732,15 @@ void idActor::Spawn( void )
 
 	CREATE_TIMER(actorGetObstaclesTimer, name, "GetObstacles");
 	CREATE_TIMER(actorGetPointOutsideObstaclesTimer, name, "GetPointOutsideObstacles");
+	CREATE_TIMER(actorGetWallEdgesTimer, name, "GetWallEdges");
+	CREATE_TIMER(actorSortWallEdgesTimer, name, "SortWallEdges");
 	CREATE_TIMER(actorBuildPathTreeTimer, name, "BuildPathTree");
 	CREATE_TIMER(actorPrunePathTreeTimer, name, "PrunePathTree");
 	CREATE_TIMER(actorFindOptimalPathTimer, name, "FindOptimalPath");
+	CREATE_TIMER(actorRouteToGoalTimer, name, "RouteToGoal");
+	CREATE_TIMER(actorSubSampleWalkPathTimer, name, "SubSampleWalkPath");
+	CREATE_TIMER(actorWalkPathValidTimer, name, "WalkPathValid");
+
 }
 
 /*
@@ -1006,9 +1018,14 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorSortWallEdgesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
 	SAVE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
 	SAVE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
+	SAVE_TIMER_HANDLE(actorRouteToGoalTimer, savefile);
+	SAVE_TIMER_HANDLE(actorSubSampleWalkPathTimer, savefile);
+	SAVE_TIMER_HANDLE(actorWalkPathValidTimer, savefile);
 }
 
 /*
@@ -1138,9 +1155,15 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorSortWallEdgesTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorRouteToGoalTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorSubSampleWalkPathTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorWalkPathValidTimer, savefile);
+
 }
 
 /*
