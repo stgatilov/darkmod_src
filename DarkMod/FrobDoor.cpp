@@ -528,6 +528,25 @@ void CFrobDoor::OnClosedPositionReached()
 	UpdateSoundLoss();
 }
 
+bool CFrobDoor::CanBeUsedBy(idEntity* entity)
+{
+	// Check if this item is a lockpick. It has to be of the toolclass lockpick
+	// and the type must be set.
+	/*char type = 0;
+
+	idStr str = ent->spawnArgs.GetString("toolclass", "");
+	if (str == "lockpick")
+	{
+		str = ent->spawnArgs.GetString("type", "");
+		if (str.Length() == 1)
+		{
+			type = str[0];
+		}
+	}*/
+
+	return idEntity::CanBeUsedBy(entity);
+}
+
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
 	bool bRc = false;

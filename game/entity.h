@@ -595,6 +595,22 @@ public:
 	bool AddToMasterList(idList<idStr> &, idStr &name);
 
 	/**
+	 * greebo: Returns TRUE if the given inventory item matches this entity, i.e.
+	 * if the entity can be used by the given inventory item, FALSE otherwise.
+	 * Note: This just routes the call to the overloaded CanBeUsedBy(idEntity*);
+	 */
+	virtual bool CanBeUsedBy(CInventoryItem* item);
+
+	/**
+	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
+	 * if the entity can be used by the given enitty, FALSE otherwise.
+	 *
+	 * The standard entity returns FALSE, this method needs to be overridden 
+	 * by the subclasses.
+	 */
+	virtual bool CanBeUsedBy(idEntity* entity);
+
+	/**
 	 * UsedBy determines the behaviour when an entity is used against another one.
 	 * The inventory item passed in as an argument is the one that uses this entity. If the 
 	 * argument is NULL, then the called entity is the one being used.

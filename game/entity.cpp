@@ -7173,6 +7173,16 @@ Quit:
 	return;
 }
 
+bool idEntity::CanBeUsedBy(CInventoryItem* item) 
+{
+	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity()) : false;
+}
+
+bool idEntity::CanBeUsedBy(idEntity* entity) 
+{
+	return false;
+}
+
 bool idEntity::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
 	return false;
