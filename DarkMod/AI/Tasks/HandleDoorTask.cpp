@@ -60,6 +60,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->PushMove();
 	owner->m_HandlingDoor = true;
 	frobDoor->GetUserManager().AddUser(owner);
+	_doorInTheWay = false;
 
 
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
@@ -374,6 +375,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					if (contents)
 					{
+						// door is in the way
+						_doorInTheWay = true;
 						// check if the door swings towards or away from us
 						const idVec3& openDir = frobDoor->GetOpenDir();
 						if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
@@ -607,7 +610,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// reached back position
 				else if (owner->AI_MOVE_DONE)
 				{
-					if (owner->ShouldCloseDoor(frobDoor) && numUsers < 2)
+					if (_doorInTheWay || (owner->ShouldCloseDoor(frobDoor) && numUsers < 2))
 					{
 						// close the door
 						owner->StopMove(MOVE_STATUS_DONE);
@@ -624,13 +627,16 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				
 			case EStateWaitBeforeClose:
-				if (gameLocal.time >= _waitEndTime && numUsers < 2)
+				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
-					_doorHandlingState = EStateStartClose;
-					_waitEndTime = gameLocal.time + 500;
+					if (masterUser == owner)
+					{
+						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						_doorHandlingState = EStateStartClose;
+						_waitEndTime = gameLocal.time + 500;
+					}
 				}
-				else if (numUsers > 1)
+				else if (numUsers > 1 && !_doorInTheWay)
 				{
 					return true;
 				}
@@ -638,12 +644,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateStartClose:
-				if (gameLocal.time >= _waitEndTime && numUsers < 2)
+				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
 					frobDoor->Close(false);
 					_doorHandlingState = EStateClosingDoor;
 				}
-				else if (numUsers > 1)
+				else if (numUsers > 1 && !_doorInTheWay)
 				{
 					return true;
 				}
@@ -929,6 +935,8 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		owner->m_HandlingDoor = false;
 	}
 
+	_doorInTheWay = false;
+
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
 	if (frobDoor != NULL) 
@@ -955,6 +963,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(static_cast<int>(_doorHandlingState));
 	savefile->WriteInt(_waitEndTime);
 	savefile->WriteBool(_wasLocked);
+	savefile->WriteBool(_doorInTheWay);
 }
 
 void HandleDoorTask::Restore(idRestoreGame* savefile)
@@ -968,6 +977,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	_doorHandlingState = static_cast<EDoorHandlingState>(temp);
 	savefile->ReadInt(_waitEndTime);
 	savefile->ReadBool(_wasLocked);
+	savefile->ReadBool(_doorInTheWay);
 }
 
 HandleDoorTaskPtr HandleDoorTask::CreateInstance()
