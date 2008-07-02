@@ -59,6 +59,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Let the owner save its move
 	owner->PushMove();
 	owner->m_HandlingDoor = true;
+	frobDoor->GetUserManager().AddUser(owner);
 
 
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
@@ -108,6 +109,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	{
 		return true;
 	}
+
+	int numUsers = frobDoor->GetUserManager().GetNumUsers();
+	
+	idActor* masterUser = frobDoor->GetUserManager().GetMasterUser();
 
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
@@ -197,9 +202,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					// reached position
 					owner->StopMove(MOVE_STATUS_DONE);
-					owner->TurnToward(closedPos);
-					_waitEndTime = gameLocal.time + 750;
-					_doorHandlingState = EStateWaitBeforeOpen;
+					if (masterUser == owner)
+					{
+						owner->TurnToward(closedPos);
+						_waitEndTime = gameLocal.time + 750;
+						_doorHandlingState = EStateWaitBeforeOpen;
+					}
 				}
 				break;
 
@@ -213,10 +221,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				if (gameLocal.time >= _waitEndTime)
 				{
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					if (masterUser == owner)
+					{
+						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 
-					_doorHandlingState = EStateStartOpen;
-					_waitEndTime = gameLocal.time + 500;
+						_doorHandlingState = EStateStartOpen;
+						_waitEndTime = gameLocal.time + 500;
+					}
 				}
 				break;
 
@@ -230,9 +241,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				if (gameLocal.time >= _waitEndTime)
 				{
-					if (!OpenDoor())
+					if (masterUser == owner)
 					{
-						return true;
+						if (!OpenDoor())
+						{
+							return true;
+						}
 					}
 				}
 				break;
@@ -249,9 +263,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// try again
 				owner->StopMove(MOVE_STATUS_DONE);
 				owner->TurnToward(closedPos);
-				if (!OpenDoor())
+				if (masterUser == owner)
 				{
-					return true;
+					if (!OpenDoor())
+					{
+						return true;
+					}
 				}
 				break;
 
@@ -276,20 +293,24 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 
 			case EStateClosingDoor:
+
 				// we have moved through the door and closed it
-				if (_wasLocked && owner->CanUnlock(frobDoor))
+				if (numUsers < 2)
 				{
-					// if the door was locked before, lock it again
-					frobDoor->Lock(false);
-				}
-				if (doubleDoor != NULL && doubleDoor->IsOpen())
-				{
-					// the other part of the double door is still open
-					// we want to close this one too
-					ResetDoor(owner, doubleDoor);
-					owner->MoveToPosition(_backPos);
-					_doorHandlingState = EStateMovingToBackPos;
-					break;
+					if (_wasLocked && owner->CanUnlock(frobDoor))
+					{
+						// if the door was locked before, lock it again
+						frobDoor->Lock(false);
+					}
+					if (doubleDoor != NULL && doubleDoor->IsOpen())
+					{
+						// the other part of the double door is still open
+						// we want to close this one too
+						ResetDoor(owner, doubleDoor);
+						owner->MoveToPosition(_backPos);
+						_doorHandlingState = EStateMovingToBackPos;
+						break;
+					}
 				}
 				// continue what we were doing before.
 				return true;
@@ -323,7 +344,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else if (frobDoor->WasInterrupted())
 				{
-					if (FitsThrough())
+					if (FitsThrough() && masterUser == owner)
 					{
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
@@ -412,7 +433,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
-					if (FitsThrough())
+					if (FitsThrough() && masterUser == owner)
 					{
 						// gap is large enough, move to back position
 						owner->MoveToPosition(_backPos);
@@ -421,7 +442,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else
 					{
 						// need to open the door further when we reach the position for opening
-						if (owner->AI_MOVE_DONE)
+						if (owner->AI_MOVE_DONE && masterUser == owner)
 						{
 							// reached front position
 							owner->StopMove(MOVE_STATUS_DONE);
@@ -432,7 +453,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 				}
 				// door is already open, move to back position
-				else
+				else if (masterUser == owner)
 				{
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
@@ -446,7 +467,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
-					if (!FitsThrough())
+					if (!FitsThrough() && masterUser == owner)
 					{
 						if (gameLocal.time >= _waitEndTime)
 						{
@@ -457,7 +478,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				else
+				else if (masterUser == owner)
 				{
 					// no need for waiting, door is already open, let's move
 					owner->MoveToPosition(_backPos);
@@ -472,7 +493,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (!FitsThrough())
 					{
-						if (gameLocal.time >= _waitEndTime)
+						if (gameLocal.time >= _waitEndTime && masterUser == owner)
 						{
 							if (!OpenDoor())
 							{
@@ -481,9 +502,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				// no need for waiting, door is already open, let's move
-				owner->MoveToPosition(_backPos);
-				_doorHandlingState = EStateMovingToBackPos;
+				if (masterUser == owner)
+				{
+					// no need for waiting, door is already open, let's move
+					owner->MoveToPosition(_backPos);
+					_doorHandlingState = EStateMovingToBackPos;
+				}
 				break;
 
 
@@ -493,7 +517,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					(frobDoor->WasInterrupted() && 
 					frobDoor->WasStoppedDueToBlock()))
 				{
-					if (FitsThrough())
+					if (FitsThrough() && masterUser == owner)
 					{
 						// gap is large enough, move to back position
 						owner->MoveToPosition(_backPos);
@@ -506,12 +530,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							// we are blocking the door
 							owner->StopMove(MOVE_STATUS_DONE);
 							owner->TurnToward(closedPos);
-							if (!OpenDoor())
+							if (masterUser == owner)
 							{
-								return true;
+								if (!OpenDoor())
+								{
+									return true;
+								}
 							}
 						}
-						else
+						else if (masterUser == owner)
 						{
 							// something else is blocking the door
 							// possibly the player, another AI or an object
@@ -526,13 +553,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				//check interrupted
 				else if (frobDoor->WasInterrupted())
 				{
-					if (FitsThrough())
+					if (FitsThrough() && masterUser == owner)
 					{
 						// gap is large enough, move to back position
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
-					else
+					else if (masterUser == owner)
 					{
 						// can't move through already, need to open further
 						if (!OpenDoor())
@@ -542,7 +569,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 				}
 				// door is fully open, let's get moving
-				else if	(!frobDoor->IsChangingState())
+				else if	(!frobDoor->IsChangingState() && masterUser == owner)
 				{
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
@@ -561,23 +588,26 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// we are blocking the door
 						owner->StopMove(MOVE_STATUS_DONE);
 						owner->TurnToward(closedPos);
-						_doorHandlingState = EStateOpeningDoor;
-						if (!OpenDoor())
+						if (masterUser == owner)
 						{
-							return true;
+							_doorHandlingState = EStateOpeningDoor;
+							if (!OpenDoor())
+							{
+								return true;
+							}
 						}
 					}
 				}
 				else if (frobDoor->WasInterrupted() && !FitsThrough())
 				{
-					// end this, task, it will be reinitialized wehn needed
+					// end this, task, it will be reinitialized when needed
 					return true;
 				}
 				
 				// reached back position
 				else if (owner->AI_MOVE_DONE)
 				{
-					if (owner->ShouldCloseDoor(frobDoor))
+					if (owner->ShouldCloseDoor(frobDoor) && numUsers < 2)
 					{
 						// close the door
 						owner->StopMove(MOVE_STATUS_DONE);
@@ -594,20 +624,28 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				
 			case EStateWaitBeforeClose:
-				if (gameLocal.time >= _waitEndTime)
+				if (gameLocal.time >= _waitEndTime && numUsers < 2)
 				{
 					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 					_doorHandlingState = EStateStartClose;
 					_waitEndTime = gameLocal.time + 500;
-
 				}
+				else if (numUsers > 1)
+				{
+					return true;
+				}
+				
 				break;
 
 			case EStateStartClose:
-				if (gameLocal.time >= _waitEndTime)
+				if (gameLocal.time >= _waitEndTime && numUsers < 2)
 				{
 					frobDoor->Close(false);
 					_doorHandlingState = EStateClosingDoor;
+				}
+				else if (numUsers > 1)
+				{
+					return true;
 				}
 				break;
 
@@ -900,6 +938,8 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		doorInfo.lastTimeSeen = gameLocal.time;
 		doorInfo.wasLocked = frobDoor->IsLocked();
 		doorInfo.wasOpen = frobDoor->IsOpen();
+
+		frobDoor->GetUserManager().RemoveUser(owner);
 	}
 
 	memory.doorRelated.currentDoor = NULL;

@@ -1142,6 +1142,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	{
 		m_AttachPositions[i].Save( savefile );
 	}
+
+	m_userManager.Save(savefile);
 }
 
 /*
@@ -1323,6 +1325,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	if ( m_renderTriggerHandle != -1 ) {
 		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
 	}
+
+	m_userManager.Restore(savefile);
+
 }
 
 /*

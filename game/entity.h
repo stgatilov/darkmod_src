@@ -15,6 +15,7 @@
 #define __GAME_ENTITY_H__
 
 #include "../DarkMod/overlaySys.h"
+#include "../DarkMod/UserManager.h"
 
 class CStimResponseCollection;
 class CStim;
@@ -825,6 +826,11 @@ public:
 	virtual void			RemoveFrobPeer(const idStr& frobPeerName);
 	virtual void			RemoveFrobPeer(idEntity* peer);
 
+	inline UserManager&		GetUserManager()
+	{
+		return m_userManager;
+	}
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.
@@ -998,6 +1004,9 @@ protected:
 	* If the entity doesn't have joints, positions are relative to origin
 	**/
 	idList<SAttachPosition>	m_AttachPositions;
+
+	// angua: List of actors that currently use this entity
+	UserManager m_userManager;
 
 private:
 	idPhysics_Static	defaultPhysicsObj;		// default physics object
