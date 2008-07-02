@@ -8800,6 +8800,14 @@ void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int 
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
 
+	if (frob != NULL && itemIsUsable && frob->CanBeUsedBy(item))
+	{
+		gameRenderWorld->DebugArrow(colorGreen, frob->GetPhysics()->GetOrigin(), frob->GetPhysics()->GetOrigin() + idVec3(0,0,50), 0, 16);
+
+		// Pass the use call
+		frob->UseBy(nState, item);
+	}
+
 	if(nState == IS_PRESSED)
 	{
 		// greebo: Directly use the frobbed entity, if the spawnarg is set on the inventory item

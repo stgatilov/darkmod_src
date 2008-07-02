@@ -7185,6 +7185,17 @@ bool idEntity::CanBeUsedBy(CInventoryItem* item)
 
 bool idEntity::CanBeUsedBy(idEntity* entity) 
 {
+	if (entity == NULL) return false;
+
+	// Check if the entity's name is in the used_by list 
+	int idx = m_UsedBy.FindIndex(entity->name);
+
+	// FindIndex returns an index != -1 if found
+	return (idx != -1);
+}
+
+bool idEntity::UseBy(IMPULSE_STATE impulseState, CInventoryItem* item)
+{
 	return false;
 }
 

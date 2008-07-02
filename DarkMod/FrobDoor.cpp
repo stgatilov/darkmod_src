@@ -528,28 +528,90 @@ void CFrobDoor::OnClosedPositionReached()
 	UpdateSoundLoss();
 }
 
-bool CFrobDoor::CanBeUsedBy(idEntity* entity)
+bool CFrobDoor::CanBeUsedBy(CInventoryItem* item) 
 {
-	// Check if this item is a lockpick. It has to be of the toolclass lockpick
-	// and the type must be set.
-	/*char type = 0;
+	if (item == NULL) return false;
 
-	idStr str = ent->spawnArgs.GetString("toolclass", "");
-	if (str == "lockpick")
+	assert(item->Category() != NULL);
+
+	// TODO: Move this to idEntity to some sort of "usable_by_inv_category" list?
+	const idStr& name = item->Category()->GetName();
+	if (name == "Keys" || name == "Lockpicks")
 	{
-		str = ent->spawnArgs.GetString("type", "");
+		// Keys and lockpicks can be used on doors
+		return true;
+	}
+
+	return idEntity::CanBeUsedBy(item);
+}
+
+bool CFrobDoor::UseBy(IMPULSE_STATE impulseState, CInventoryItem* item)
+{
+	if (item == NULL) return false;
+
+	assert(item->Category() != NULL);
+
+	// Retrieve the entity behind that item and reject NULL entities
+	idEntity* itemEntity = item->GetItemEntity();
+	if (itemEntity == NULL) return false;
+
+	// Get the name of this inventory category
+	const idStr& name = item->Category()->GetName();
+	
+	if (name == "Keys" && impulseState == IS_PRESSED) 
+	{
+		// Keys can be used on button PRESS event, let's see if the key matches
+		if (idEntity::CanBeUsedBy(itemEntity))
+		{
+			// Toggle the lock, if the button is PRESSED
+			ToggleLock();
+			return true;
+		}
+		else
+		{
+			FrobMoverStartSound("snd_wrong_key");
+			return false;
+		}
+	}
+	else if (name == "Lockpicks")
+	{
+		// Lockpicks are different, we need to look at the button state
+		// First we check if this item is a lockpick. It has to be of the toolclass lockpick
+		// and the type must be set.
+		char type = 0;
+		idStr str = itemEntity->spawnArgs.GetString("type", "");
+
 		if (str.Length() == 1)
 		{
 			type = str[0];
-		}
-	}*/
 
-	return idEntity::CanBeUsedBy(entity);
+			ELockpickSoundsample sample;
+
+			switch (impulseState)
+			{
+			case IS_PRESSED:	sample = LPSOUND_INIT; 
+				break;
+			case IS_RELEASED:	sample = LPSOUND_RELEASED;
+				break;
+			default:			sample = LPSOUND_REPEAT;
+			};
+			
+			// Pass the call to the lockpick routine
+			ProcessLockpick(static_cast<int>(type), sample);
+
+			return true;
+		}
+		
+		// Wrong type...
+		return false;
+	}
+
+	return idEntity::UseBy(impulseState, item);
 }
 
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
-	bool bRc = false;
+	/*bool bRc = false;
 
 	if (item == NULL || item->GetItemEntity() == NULL)
 		return bRc;
@@ -611,7 +673,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 		FrobMoverStartSound("snd_wrong_key");
 	}
 
-	return bRc;
+	return bRc;*/return false;
 }
 
 void CFrobDoor::UpdateSoundLoss(void)

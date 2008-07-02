@@ -82,7 +82,8 @@ public:
 	// Adds a door handle to this door. A door can have multiple handles
 	void					AddDoorhandle(CFrobDoorHandle* handle);
 
-	virtual bool			CanBeUsedBy(idEntity* entity); // Overrides idEntity::CanBeUsedBy
+	virtual bool			CanBeUsedBy(CInventoryItem* item);					// Overrides idEntity::CanBeUsedBy
+	virtual bool			UseBy(IMPULSE_STATE impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 

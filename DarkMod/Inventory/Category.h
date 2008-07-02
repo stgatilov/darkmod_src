@@ -21,7 +21,7 @@ class CInventoryCategory
 	friend class CInventory;
 
 public:
-	inline idStr		&GetName() { return m_Name; }
+	inline const idStr&	GetName() { return m_Name; }
 	inline void			SetInventory(CInventory *Inventory) { m_Inventory = Inventory; };
 
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
