@@ -7199,11 +7199,6 @@ bool idEntity::UseBy(EImpulseState impulseState, CInventoryItem* item)
 	return false;
 }
 
-bool idEntity::UsedBy(EImpulseState nState, CInventoryItem* item)
-{
-	return false;
-}
-
 void idEntity::SetFrobbed( bool val )
 {
 	m_bFrobbed = val;

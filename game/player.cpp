@@ -8821,37 +8821,13 @@ void idPlayer::inventoryUseItem(EImpulseState nState, CInventoryItem* item, int 
 		frob->UseBy(nState, item);
 	}
 
-	if(nState == EPressed)
+	if (nState == EPressed)
 	{
-		// greebo: Directly use the frobbed entity, if the spawnarg is set on the inventory item
-		if (frob != NULL && itemIsUsable)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			frob->UsedBy(nState, item);
-		}
-
-		// greebo: Start tracking of this impulse when the button is pressed
-		m_ButtonStateTracker.startTracking(IMPULSE_51);
-
 		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, frob, nState);
 	}
 	else if(nState == EReleased)
 	{
-		if (frob != NULL && itemIsUsable)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			frob->UsedBy(nState, item);
-		}
-
 		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, frob, static_cast<float>(holdTime));
-	}
-	else
-	{
-		if (frob != NULL && itemIsUsable)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			frob->UsedBy(nState, item);
-		}
 	}
 
 	if (thread)
@@ -9746,21 +9722,25 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		target->ResponseTrigger(this, ST_FROB);
 	}
 
-	// Check if we have a "use" relationship with the currently selected inventory item (key => door)
-	CInventoryItem* item = InventoryCursor()->GetCurrentItem();
-
-	// Only allow items with UseOnFrob == TRUE to be used when frobbing
-	if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
+	// Do we allow use on frob?
+	if (cv_tdm_inv_use_on_frob.GetBool()) 
 	{
-		// Check the item entity for the right spawnargs
-		if (highlightedEntity->UseBy(impulseState, item))
-		{
-			// The highlighted entity could be used, we're done here
-			return;
-		}
+		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
+		CInventoryItem* item = InventoryCursor()->GetCurrentItem();
 
-		// item could not be used, although it should be use-able
-		// TODO: Send negative audio/visual feedback?
+		// Only allow items with UseOnFrob == TRUE to be used when frobbing
+		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
+		{
+			// Check the item entity for the right spawnargs
+			bool couldBeUsed = highlightedEntity->UseBy(impulseState, item);
+
+			if (impulseState == EPressed)
+			{
+				// Give optional visual feedback on the KeyDown event
+				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+				return;
+			}
+		}
 	}
 
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action

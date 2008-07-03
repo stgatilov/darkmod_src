@@ -622,19 +622,6 @@ public:
 	virtual bool UseBy(EImpulseState nState, CInventoryItem* item);
 
 	/**
-	 * UsedBy determines the behaviour when an entity is used against another one.
-	 * The inventory item passed in as an argument is the one that uses this entity. If the 
-	 * argument is NULL, then the called entity is the one being used.
-	 *
-	 * The return value indicates if the item could be used. If false the item is not
-	 * appropriate for usage on that entity and the default frobaction will be executed
-	 * instead.
-	 *
-	 * greebo: This function is DEPRECATED.
-	 */
-	virtual bool UsedBy(EImpulseState impulseState, CInventoryItem* item);
-
-	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob
 	**/
 	virtual void SetFrobbed( bool val );

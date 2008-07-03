@@ -596,9 +596,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, CInventoryItem* item)
 			};
 			
 			// Pass the call to the lockpick routine
-			ProcessLockpick(static_cast<int>(type), sample);
-
-			return true;
+			return ProcessLockpick(static_cast<int>(type), sample);
 		}
 		
 		// Wrong type...
@@ -606,73 +604,6 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, CInventoryItem* item)
 	}
 
 	return idEntity::UseBy(impulseState, item);
-}
-
-bool CFrobDoor::UsedBy(EImpulseState nState, CInventoryItem* item)
-{
-	/*bool bRc = false;
-
-	if (item == NULL || item->GetItemEntity() == NULL)
-		return bRc;
-
-	idEntity* ent = item->GetItemEntity();
-
-	// First we check if this item is a lockpick. It has to be of the toolclass lockpick
-	// and the type must be set.
-	char type = 0;
-
-	idStr str = ent->spawnArgs.GetString("toolclass", "");
-	if (str == "lockpick")
-	{
-		str = ent->spawnArgs.GetString("type", "");
-		if (str.Length() == 1)
-		{
-			type = str[0];
-		}
-	}
-
-	// Process the lockpick
-	if (type != 0)
-	{
-		ELockpickSoundsample sample;
-
-		switch (nState)
-		{
-		case IS_PRESSED:	sample = LPSOUND_INIT; 
-			break;
-		case IS_RELEASED:	sample = LPSOUND_RELEASED;
-			break;
-		default:			sample = LPSOUND_REPEAT;
-		};
-		
-		ProcessLockpick(static_cast<int>(type), sample);
-	}
-
-	// When we are here we know that the item is usable
-	// so we have to check if it is associated with this entity.
-	// We ignore all repeat or release events to make it a true 
-	// IMPULSE event.
-	if (nState != IS_PRESSED)
-		return bRc;
-
-	// Cycle through our known "UsedBy" names and see if we have a match
-	int n = m_UsedBy.Num();
-	for (int i = 0; i < n; i++)
-	{
-		if (ent->name == m_UsedBy[i])
-		{
-			ToggleLock();
-			bRc = true;
-		}
-	}
-
-	// angua: we can't unlock the door with this key
-	if (bRc == false && IsLocked() && item->Category()->GetName() == "Keys")
-	{
-		FrobMoverStartSound("snd_wrong_key");
-	}
-
-	return bRc;*/return false;
 }
 
 void CFrobDoor::UpdateSoundLoss(void)
@@ -892,7 +823,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 	}
 }
 
-void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
+bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
 	int sample_delay, pick_timeout;
 	idStr oPickSound;
@@ -901,6 +832,8 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	idStr pick;
 	idVec3 pos;
 	idAngles angle;
+
+	bool success = true;
 
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
@@ -924,6 +857,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				m_SoundTimerStarted = 0;
 		}
 
+		success = false;
 		goto Quit;
 	}
 
@@ -946,6 +880,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 					m_SoundTimerStarted--;
 			}
 
+			success = false;
 			goto Quit;
 		}
 	}
@@ -961,6 +896,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			// didn't release the key at all while playing the lockpick samples.
 			if(m_SoundTimerStarted > 0)
 			{
+				success = false;
 				goto Quit;
 			}
 
@@ -1069,7 +1005,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	}
 
 Quit:
-	return;
+	return success;
 }
 
 void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex)

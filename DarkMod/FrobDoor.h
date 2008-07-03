@@ -85,8 +85,6 @@ public:
 	virtual bool			CanBeUsedBy(CInventoryItem* item);					// Overrides idEntity::CanBeUsedBy
 	virtual bool			UseBy(EImpulseState impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
 
-	bool					UsedBy(EImpulseState nState, CInventoryItem* item);
-
 	/**
 	 * Write the proper sound loss value to the soundprop portal data
 	 * Called when door spawns, is and when it is opened or closed
@@ -107,7 +105,9 @@ public:
 	virtual void			SetFrobbed(bool val);
 	virtual bool			IsFrobbed();
 
-	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
+	// Returns TRUE if the correct lockpick is used, FALSE otherwise
+	bool					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
+
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
 	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
