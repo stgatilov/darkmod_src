@@ -942,7 +942,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			}
 			else
 			{
-				if(!(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT))
+				if (!(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT))
 					m_SoundTimerStarted--;
 			}
 
@@ -1084,7 +1084,10 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	}
 
-	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
+	if (nSampleType != LPSOUND_WRONG_LOCKPICK)
+	{
+		PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
+	}
 }
 
 void CFrobDoor::OpenPeers()
