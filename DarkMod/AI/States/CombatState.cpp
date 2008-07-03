@@ -244,7 +244,8 @@ void CombatState::Think(idAI* owner)
 			// Cheat a bit and take the last reachable position as "visible & reachable"
 			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
 		}
-		else
+		else if (owner->ReachedPos(owner->lastVisibleReachableEnemyPos, MOVE_TO_POSITION)  
+			|| gameLocal.time - memory.lastTimeEnemySeen > 2 * MAX_BLIND_CHASE_TIME)
 		{
 			// BLIND_CHASE_TIME has expired, we have lost the enemy!
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
