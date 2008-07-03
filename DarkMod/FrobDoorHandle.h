@@ -44,7 +44,11 @@ public:
 	 */
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed();
-	bool					UsedBy(EImpulseState nState, CInventoryItem* item);
+
+	// 
+	virtual bool			CanBeUsedBy(CInventoryItem* item);					// Overrides idEntity::CanBeUsedBy
+	virtual bool			UseBy(EImpulseState impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
+
 	void					FrobAction(bool bMaster);
 
 	// These functions need to be disabled on the handle. Therefore
