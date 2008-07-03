@@ -7194,12 +7194,12 @@ bool idEntity::CanBeUsedBy(idEntity* entity)
 	return (idx != -1);
 }
 
-bool idEntity::UseBy(IMPULSE_STATE impulseState, CInventoryItem* item)
+bool idEntity::UseBy(EImpulseState impulseState, CInventoryItem* item)
 {
 	return false;
 }
 
-bool idEntity::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
+bool idEntity::UsedBy(EImpulseState nState, CInventoryItem* item)
 {
 	return false;
 }
@@ -8065,7 +8065,7 @@ void idEntity::Event_Frob()
 	if (player != NULL)
 	{
 		// Let the player frob this entity.
-		player->PerformFrob(this);
+		player->PerformFrob(EPressed, this);
 	}
 }
 

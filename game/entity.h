@@ -126,11 +126,13 @@ enum {
 	TH_UPDATEPARTICLES		= 16
 };
 
-typedef enum {
-	IS_PRESSED,
-	IS_RELEASED,
-	IS_REPEAT
-} IMPULSE_STATE;
+// The impulse states a button can have
+enum EImpulseState {
+	EPressed,			// just pressed
+	EReleased,			// held down
+	ERepeat,			// just released
+	ENumImpulseStates,
+};
 
 //
 // Signals
@@ -617,7 +619,7 @@ public:
 	 *
 	 * @returns: TRUE if the item could be used, FALSE otherwise.
 	 */
-	virtual bool UseBy(IMPULSE_STATE nState, CInventoryItem* item);
+	virtual bool UseBy(EImpulseState nState, CInventoryItem* item);
 
 	/**
 	 * UsedBy determines the behaviour when an entity is used against another one.
@@ -630,7 +632,7 @@ public:
 	 *
 	 * greebo: This function is DEPRECATED.
 	 */
-	virtual bool UsedBy(IMPULSE_STATE impulseState, CInventoryItem* item);
+	virtual bool UsedBy(EImpulseState impulseState, CInventoryItem* item);
 
 	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob

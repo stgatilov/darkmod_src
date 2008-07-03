@@ -594,26 +594,23 @@ public:
 	**/
 	void					FrobCheck( void );
 
-	// Gets called when the player hits the frob button.
-	void					PerformFrob();
-	
 	/**
 	 * greebo: Performs a frob action on the given entity. The above method
-	 *         PerformFrob() without arguments redirects the call to this one.
-	 *         This method might be invoked by scripts as well to simulate a 
-	 *         frob action without having the player to hit any buttons.
+	 * PerformFrob() without arguments redirects the call to this one.
+	 * This method might be invoked by scripts as well to simulate 
+	 * a frob action without having the player to hit any buttons.
+	 * 
+	 * @impulseState: the button state of the frob key. Pass EPressed if you
+	 * want to simulate a one-time frob event.
 	 */
-	void					PerformFrob(idEntity* frobbed);
+	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed);
 
+	// Gets called when the player hits the frob button.
+	void					PerformFrob();
 	// Gets repeatedly called when the player holds down the frob button
 	void					PerformFrobKeyRepeat();
-	// Same as above, but specialised for taking the currently frobbed entity as argument
-	void					PerformFrobKeyRepeat(idEntity* frobbed);
-
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease();
-	// Same as above, but specialised for taking the currently frobbed entity as argument
-	void					PerformFrobKeyRelease(idEntity* frobbed);
 
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.
@@ -655,7 +652,7 @@ public:
 	void inventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific inventory item
-	void inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime);
+	void inventoryUseItem(EImpulseState nState, CInventoryItem* item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
 	void inventoryChangeSelection(const idStr& name);

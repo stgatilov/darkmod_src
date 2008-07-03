@@ -995,7 +995,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL)
 	{
 		// We already have a map selected, toggle it off
-		inventoryUseItem(IS_PRESSED, mapItem, 0); 
+		inventoryUseItem(EPressed, mapItem, 0); 
 	}
 
 	// Advance the cursor to the next item
@@ -1007,7 +1007,7 @@ void idPlayer::NextInventoryMap()
 	}
 	
 	// Use this item
-	inventoryUseItem(IS_PRESSED, mapItem, 0); 
+	inventoryUseItem(EPressed, mapItem, 0); 
 }
 
 void idPlayer::SetupInventory()
@@ -5235,7 +5235,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 			CInventoryCursor *crsr = InventoryCursor();
 			CInventoryItem *it = crsr->GetCurrentItem();
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-				inventoryUseItem(IS_REPEAT, it, holdTime);
+				inventoryUseItem(ERepeat, it, holdTime);
 		}
 		break;
 	}
@@ -8764,7 +8764,7 @@ void idPlayer::inventoryUseKeyRelease(int holdTime)
 
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(IS_RELEASED, it, holdTime);
+		inventoryUseItem(EReleased, it, holdTime);
 }
 
 void idPlayer::inventoryUseItem()
@@ -8786,12 +8786,12 @@ void idPlayer::inventoryUseItem()
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(IS_PRESSED, it, 0);
+		inventoryUseItem(EPressed, it, 0);
 }
 
-void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime)
+void idPlayer::inventoryUseItem(EImpulseState nState, CInventoryItem* item, int holdTime)
 {
-	if (nState == IS_PRESSED)
+	if (nState == EPressed)
 	{
 		// Pass the "inventoryUseItem" event to the GUIs
 		m_overlays.broadcastNamedEvent("inventoryUseItem");
@@ -8821,7 +8821,7 @@ void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int 
 		frob->UseBy(nState, item);
 	}
 
-	if(nState == IS_PRESSED)
+	if(nState == EPressed)
 	{
 		// greebo: Directly use the frobbed entity, if the spawnarg is set on the inventory item
 		if (frob != NULL && itemIsUsable)
@@ -8835,7 +8835,7 @@ void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int 
 
 		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, frob, nState);
 	}
-	else if(nState == IS_RELEASED)
+	else if(nState == EReleased)
 	{
 		if (frob != NULL && itemIsUsable)
 		{
@@ -9725,7 +9725,7 @@ CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 	return returnValue;
 }
 
-void idPlayer::PerformFrob(idEntity* target)
+void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 {
 	if (target == NULL || target->IsHidden()) {
 		// greebo: Don't perform frobs on hidden or NULL entities
@@ -9740,49 +9740,60 @@ void idPlayer::PerformFrob(idEntity* target)
 	// might be cleared after calling AddToInventory().
 	idEntity* highlightedEntity = pDM->m_FrobEntity.GetEntity();
 
-	// Fire the STIM_FROB response (if defined) on this entity
-	target->ResponseTrigger(this, ST_FROB);
+	if (impulseState == EPressed)
+	{
+		// Fire the STIM_FROB response on key down (if defined) on this entity
+		target->ResponseTrigger(this, ST_FROB);
+	}
 
-	// The entity was not added to the inventory, check if we have 
-	// a "use" relationship with the currently selected inventory item (key => door)
+	// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 	CInventoryItem* item = InventoryCursor()->GetCurrentItem();
-	if (item != NULL && item->UseOnFrob())
+
+	// Only allow items with UseOnFrob == TRUE to be used when frobbing
+	if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
 	{
 		// Check the item entity for the right spawnargs
-		if (highlightedEntity->UsedBy(IS_PRESSED, item))
+		if (highlightedEntity->UseBy(impulseState, item))
 		{
 			// The highlighted entity could be used, we're done here
 			return;
 		}
+
+		// item could not be used, although it should be use-able
+		// TODO: Send negative audio/visual feedback?
 	}
 
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
-	// Trigger the frob action script
-	target->FrobAction(true);
-	
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
+	// These actions are only applicable for EPressed buttonstate
+	if (impulseState == EPressed)
+	{
+		// Trigger the frob action script on key down
+		target->FrobAction(true);
 
-	// First we have to check whether that entity is an inventory 
-	// item. In that case, we have to add it to the inventory and
-	// hide the entity.
-	CInventoryItem* addedItem = AddToInventory(target, hud);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
-	// Check if the frobbed entity is the one currently highlighted by the player
-	if (addedItem != NULL && highlightedEntity == target) {
-		// Item has been added to the inventory, clear the entity pointer
-		pDM->m_FrobEntity = NULL;
+		// First we have to check whether that entity is an inventory 
+		// item. In that case, we have to add it to the inventory and
+		// hide the entity.
+		CInventoryItem* addedItem = AddToInventory(target, hud);
 
-		// greebo: Release any items from the grabber, this immobilized the player somehow before
-		pDM->grabber->Update( this, false );
+		// Check if the frobbed entity is the one currently highlighted by the player
+		if (addedItem != NULL && highlightedEntity == target) {
+			// Item has been added to the inventory, clear the entity pointer
+			pDM->m_FrobEntity = NULL;
 
-		// greebo: Prevent the grabber from checking the added entity (it may be 
-		// entirely removed from the game, which would cause crashes).
-		pDM->grabber->RemoveFromClipList(target);
+			// greebo: Release any items from the grabber, this immobilized the player somehow before
+			pDM->grabber->Update( this, false );
+
+			// greebo: Prevent the grabber from checking the added entity (it may be 
+			// entirely removed from the game, which would cause crashes).
+			pDM->grabber->RemoveFromClipList(target);
+		}
 	}
 }
 
-void idPlayer::PerformFrob(void)
+void idPlayer::PerformFrob()
 {
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
@@ -9804,7 +9815,7 @@ void idPlayer::PerformFrob(void)
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
-	PerformFrob(frob);
+	PerformFrob(EPressed, frob);
 }
 
 void idPlayer::PerformFrobKeyRepeat()
@@ -9817,15 +9828,7 @@ void idPlayer::PerformFrobKeyRepeat()
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
-	PerformFrobKeyRepeat(frob);
-}
-
-// Same as above, but specialised for taking the currently frobbed entity as argument
-void idPlayer::PerformFrobKeyRepeat(idEntity* frobbed)
-{
-	if (frobbed == NULL) return;
-
-	// TODO
+	PerformFrob(ERepeat, frob);
 }
 
 void idPlayer::PerformFrobKeyRelease()
@@ -9838,14 +9841,7 @@ void idPlayer::PerformFrobKeyRelease()
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
-	PerformFrobKeyRelease(frob);
-}
-
-void idPlayer::PerformFrobKeyRelease(idEntity* frobbed)
-{
-	if (frobbed == NULL) return;
-
-	// TODO
+	PerformFrob(EReleased, frob);
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount) {

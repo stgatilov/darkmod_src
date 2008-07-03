@@ -83,9 +83,9 @@ public:
 	void					AddDoorhandle(CFrobDoorHandle* handle);
 
 	virtual bool			CanBeUsedBy(CInventoryItem* item);					// Overrides idEntity::CanBeUsedBy
-	virtual bool			UseBy(IMPULSE_STATE impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
+	virtual bool			UseBy(EImpulseState impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
 
-	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
+	bool					UsedBy(EImpulseState nState, CInventoryItem* item);
 
 	/**
 	 * Write the proper sound loss value to the soundprop portal data
