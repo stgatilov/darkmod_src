@@ -194,6 +194,8 @@ idCVar cv_tdm_inv_fadein(	"tdm_inv_fade_in", "0",	CVAR_GAME | CVAR_ARCHIVE | CVA
 idCVar cv_tdm_inv_fadeout(	"tdm_inv_fade_out", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade out the inventory. 0 = immediately");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been aquired.");
 idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' currently selected inventory items will be used on frob.");
+idCVar cv_tdm_inv_use_on_frob_visual_feedback("tdm_inv_use_on_frob_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' the HUD is giving visual feedback when the currently highlighted item is used.");
+
 
 idCVar cv_tdm_rope_pull_force_factor("tdm_rope_pull_force_factor", "140", CVAR_GAME | CVAR_ARCHIVE, "The factor by which the pulling force when jumping on a rope gets multiplied.");
 

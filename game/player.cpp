@@ -9734,10 +9734,16 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 			// Check the item entity for the right spawnargs
 			bool couldBeUsed = highlightedEntity->UseBy(impulseState, item);
 
-			if (impulseState == EPressed)
+			if (impulseState == EPressed && cv_tdm_inv_use_on_frob_visual_feedback.GetBool())
 			{
 				// Give optional visual feedback on the KeyDown event
 				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+				return;
+			}
+			
+			if (couldBeUsed)
+			{
+				// Exit if the item could be used, the rest of this routine can be skipped
 				return;
 			}
 		}
