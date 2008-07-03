@@ -5077,6 +5077,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
+			// Register the button for tracking
+			m_ButtonStateTracker.startTracking(impulse);
+			// Perform the frob
 			PerformFrob();
 		}
 		break;
@@ -5222,6 +5225,11 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 {
 	switch (impulse)
 	{
+		case IMPULSE_41:		// TDM Use/Frob
+		{
+			PerformFrobKeyRepeat();
+		}
+		break;
 		case IMPULSE_51:
 		{
 			CInventoryCursor *crsr = InventoryCursor();
@@ -5240,6 +5248,11 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 	switch (impulse)
 	{
+		case IMPULSE_41:		// TDM Use/Frob
+		{
+			PerformFrobKeyRelease();
+		}
+		break;
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 				physicsObj.ToggleLean(90.0);
@@ -9792,6 +9805,47 @@ void idPlayer::PerformFrob(void)
 
 	// Relay the function to the specialised method
 	PerformFrob(frob);
+}
+
+void idPlayer::PerformFrobKeyRepeat()
+{
+	// Ignore frobs if player-frobbing is immobilized.
+	if ( GetImmobilization() & EIM_FROB ) return;
+
+	// Get the currently frobbed entity
+	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
+	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+
+	// Relay the function to the specialised method
+	PerformFrobKeyRepeat(frob);
+}
+
+// Same as above, but specialised for taking the currently frobbed entity as argument
+void idPlayer::PerformFrobKeyRepeat(idEntity* frobbed)
+{
+	if (frobbed == NULL) return;
+
+	// TODO
+}
+
+void idPlayer::PerformFrobKeyRelease()
+{
+	// Ignore frobs if player-frobbing is immobilized.
+	if ( GetImmobilization() & EIM_FROB ) return;
+
+	// Get the currently frobbed entity
+	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
+	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+
+	// Relay the function to the specialised method
+	PerformFrobKeyRelease(frob);
+}
+
+void idPlayer::PerformFrobKeyRelease(idEntity* frobbed)
+{
+	if (frobbed == NULL) return;
+
+	// TODO
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount) {

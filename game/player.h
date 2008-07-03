@@ -596,7 +596,7 @@ public:
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrob();
-
+	
 	/**
 	 * greebo: Performs a frob action on the given entity. The above method
 	 *         PerformFrob() without arguments redirects the call to this one.
@@ -604,6 +604,16 @@ public:
 	 *         frob action without having the player to hit any buttons.
 	 */
 	void					PerformFrob(idEntity* frobbed);
+
+	// Gets repeatedly called when the player holds down the frob button
+	void					PerformFrobKeyRepeat();
+	// Same as above, but specialised for taking the currently frobbed entity as argument
+	void					PerformFrobKeyRepeat(idEntity* frobbed);
+
+	// Gets called when the player releases the frob button
+	void					PerformFrobKeyRelease();
+	// Same as above, but specialised for taking the currently frobbed entity as argument
+	void					PerformFrobKeyRelease(idEntity* frobbed);
 
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.
