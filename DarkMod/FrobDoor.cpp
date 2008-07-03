@@ -71,7 +71,6 @@ CFrobDoor::CFrobDoor()
 	m_SoundTimerStarted = 0;
 	m_PinTranslationFractionFlag = false;
 	m_PinRotationFractionFlag = false;
-	m_KeyReleased = false;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -903,11 +902,6 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	idVec3 pos;
 	idAngles angle;
 
-	/*if (common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
-	{
-		m_KeyReleased = true;
-	}*/
-
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
 	// if there is not currently a sound sample still playing, in which case we 
@@ -967,7 +961,6 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			// didn't release the key at all while playing the lockpick samples.
 			if(m_SoundTimerStarted > 0)
 			{
-				m_KeyReleased = false;
 				goto Quit;
 			}
 

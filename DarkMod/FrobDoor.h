@@ -265,15 +265,13 @@ protected:
 	/**
 	 * These fractions define the stepping for a pin. These are recalculated
 	 * whenever a new pin is used, because they only make sense within a given
-	 * pin and each pin can have it's individual number of samples.
+	 * pin and each pin can have its individual number of samples.
 	 */
 	idVec3						m_SampleTranslationFraction;
 	idAngles					m_SampleRotationFraction;
 
 	idVec3						m_OriginalPosition;
 	idAngles					m_OriginalAngle;
-
-	bool						m_KeyReleased;
 };
 
 #endif /* FROBDOOR_H */
