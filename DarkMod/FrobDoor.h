@@ -153,6 +153,10 @@ protected:
 	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
 	virtual void			OnClosedPositionReached();
 
+	// Gets called when the mover is interrupted or blocked (virtual overrides)
+	virtual void			OnInterrupt();
+	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
+
 	// Helper functions to cycle through the m_OpenList members
 	void					OpenPeers();
 	void					ClosePeers();
@@ -207,6 +211,12 @@ protected:
 	idList<idStringList *>		m_Pins;
 	idList<idStringList *>		m_RandomPins;
 	bool						m_Pickable;
+
+	/**
+	 * greebo: This is set to TRUE when the door should be locked as soon as it has
+	 * reached its closed position.
+	 */
+	bool						m_CloseOnLock;
 
 	/**
 	 * FirstLockedPinIndex stores the index that is currently to be picked.

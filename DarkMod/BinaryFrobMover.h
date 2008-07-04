@@ -13,6 +13,16 @@
 #ifndef BINARYFROBMOVER_H
 #define BINARYFROBMOVER_H
 
+// Forward declare the events
+extern const idEventDef EV_TDM_FrobMover_Open;
+extern const idEventDef EV_TDM_FrobMover_Close;
+extern const idEventDef EV_TDM_FrobMover_ToggleOpen;
+extern const idEventDef EV_TDM_FrobMover_Lock;
+extern const idEventDef EV_TDM_FrobMover_Unlock;
+extern const idEventDef EV_TDM_FrobMover_ToggleLock;
+extern const idEventDef EV_TDM_FrobMover_IsOpen;
+extern const idEventDef EV_TDM_FrobMover_IsLocked;
+
 /**
  * CBinaryFrobMover is a replacement for idDoor. The reason for this replacement is
  * because idDoor is derived from idMover_binary and can only slide from one
