@@ -538,8 +538,8 @@ void CFrobDoor::OnClosedPositionReached()
 		// Clear the flag, regardless what happens
 		m_CloseOnLock = false;
 
-		// Post a lock event in 500 msecs
-		PostEventMS(&EV_TDM_FrobMover_Lock, 500);
+		// Post a lock event in 250 msecs
+		PostEventMS(&EV_TDM_FrobMover_Lock, 250);
 	}
 }
 
