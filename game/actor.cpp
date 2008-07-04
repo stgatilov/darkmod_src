@@ -23,6 +23,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/TimerManager.h"
 
+#define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
+
 // #include "logmgr.h"
 /***********************************************************************
 
@@ -807,8 +809,21 @@ void idActor::SetupHead( void ) {
 			}
 		}
 
+		// Setup the default spawnargs for all heads
+		idDict args;
+
+		const idDeclEntityDef* def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
+		if (def != NULL)
+		{
+			// Make a copy of the default spawnargs
+			args = def->dict;
+		}
+		else 
+		{
+			gameLocal.Warning("Could not find head entityDef %s!", TDM_HEAD_ENTITYDEF);
+		}
+		
 		// copy any sounds in case we have frame commands on the head
-		idDict	args;
 		sndKV = spawnArgs.MatchPrefix( "snd_", NULL );
 		while( sndKV ) {
 			args.Set( sndKV->GetKey(), sndKV->GetValue() );
