@@ -535,10 +535,15 @@ bool CFrobDoor::CanBeUsedBy(CInventoryItem* item)
 
 	// TODO: Move this to idEntity to some sort of "usable_by_inv_category" list?
 	const idStr& name = item->Category()->GetName();
-	if (name == "Keys" || name == "Lockpicks")
+	if (name == "Keys")
 	{
-		// Keys and lockpicks can be used on doors
+		// Keys can always be used on doors
 		return true;
+	}
+	else if (name == "Lockpicks")
+	{
+		// Lockpicks can be used on doors that are locked in the first place
+		return IsLocked();
 	}
 
 	return idEntity::CanBeUsedBy(item);
