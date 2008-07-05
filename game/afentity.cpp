@@ -553,6 +553,10 @@ void idAFAttachment::UnlinkCombat( void ) {
 	}
 }
 
+idEntity* idAFAttachment::GetResponseEntity()
+{
+	return body;
+}
 
 /*
 ===============================================================================

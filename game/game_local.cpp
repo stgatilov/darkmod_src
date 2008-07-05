@@ -5681,7 +5681,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 	{
 		// ignore the original entity because an entity shouldn't respond 
 		// to it's own stims.
-		if (srEntities[i] == originator)
+		if (srEntities[i] == originator || srEntities[i]->GetResponseEntity() == originator)
 			continue;
 
 		// Check for a shooter entity, these don't need to have a response

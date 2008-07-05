@@ -132,7 +132,7 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 	{
 		if(m_Stim[i]->m_StimTypeId == Type)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim of that type is already in collection, returning it");
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim of that type is already in collection, returning it.\r");
 			pRet = m_Stim[i];
 			break;
 		}

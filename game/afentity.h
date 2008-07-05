@@ -128,6 +128,12 @@ public:
 	virtual void			LinkCombat( void );
 	virtual void			UnlinkCombat( void );
 
+	/**
+	 * greebo: Virtual override of idEntity::GetResponseEntity(). This is used
+	 * to relay stims to the "body" entity.
+	 */
+	virtual idEntity* GetResponseEntity();
+
 protected:
 	idEntity *				body;
 	idClipModel *			combatModel;	// render model for hit detection of head

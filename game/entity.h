@@ -685,6 +685,15 @@ public:
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
 	/**
+	 * greebo: This allows an entity to "relay" the response to another entity.
+	 * The default implementation of this virtual function returns the <this> pointer,
+	 * but subclasses may return any other entity (but not NULL!).
+	 * 
+	 * Example: idAFAttachments return their "body" entity as response entity.
+	 */
+	virtual idEntity* GetResponseEntity() { return this; };
+
+	/**
 	 * Set the item this entity is currently pointing to. If the item is 
 	 * destroyed, the pointer must be set to NULL.
 	 */
@@ -1201,6 +1210,9 @@ public:			// Events should be public, so they can be used from other places as w
 	void					ResponseIgnore(int StimType, idEntity *);
 	void					ResponseAllow(int StimType, idEntity *);
 	void					ResponseSetAction(int StimType, const char *Action);
+
+	// Script event pendant to GetResponseEntity();
+	void					Event_GetResponseEntity();
 
 	void					Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
 	void					Event_TimerStop(int StimType);
