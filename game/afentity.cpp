@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
-
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -509,6 +509,12 @@ void idAFAttachment::SetCombatModel( void ) {
 	} else {
 		combatModel = new idClipModel( modelDefHandle );
 	}
+
+	if (m_StimResponseColl->HasResponse())
+	{
+		combatModel->SetContents( combatModel->GetContents() | CONTENTS_RESPONSE );
+	}
+
 	combatModel->SetOwner( body );
 }
 
