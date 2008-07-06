@@ -39,6 +39,13 @@ public:
 	bool CheckResponseIgnore(idEntity *);
 
 	/**
+	 * greebo: Returns the current radius value. Note that stims can have
+	 * their radius changing over time. This calculates the current value
+	 * based on the timestamps and returns it.
+	 */
+	float GetRadius();
+
+	/**
 	* greebo: This adds/removes the stim timer to/from the list 
 	*		  maintained by class gameLocal
 	*/

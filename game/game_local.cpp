@@ -5684,6 +5684,20 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 		if (srEntities[i] == originator || srEntities[i]->GetResponseEntity() == originator)
 			continue;
 
+		// Check if the radius is really fitting. EntitiesTouchingBounds is using a rectangular volume
+		if (!stim->m_bCollisionBased)
+		{
+			// take the square radius, is faster
+			float radiusSqr = stim->GetRadius();
+			radiusSqr *= radiusSqr; 
+
+			if ((srEntities[i]->GetPhysics()->GetOrigin() - originator->GetPhysics()->GetOrigin()).LengthSqr() > radiusSqr)
+			{
+				// Too far away
+				continue;
+			}
+		}
+
 		// Check for a shooter entity, these don't need to have a response
 		if (srEntities[i]->IsType(tdmFuncShooter::Type))
 		{
@@ -5863,18 +5877,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			if (stim->m_State == SS_DISABLED)
 				continue;
 
-			float radius = stim->m_Radius;
-
-			// greebo: Check for a time-dependent radius
-			if (stim->m_RadiusFinal > 0 && stim->m_Duration != 0)
-			{
-				// Calculate how much of the stim duration has passed already
-				float timeFraction = static_cast<float>(gameLocal.time - stim->m_EnabledTimeStamp) / stim->m_Duration;
-				timeFraction = idMath::ClampFloat(0, 1, timeFraction);
-
-				// Linearly interpolate the radius
-				radius += (stim->m_RadiusFinal - stim->m_Radius) * timeFraction;
-			}
+			float radius = stim->GetRadius();
 
 			if (radius != 0.0 || stim->m_bCollisionBased ||
 				stim->m_bUseEntBounds || stim->m_Bounds.GetVolume() > 0)

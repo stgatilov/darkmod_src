@@ -153,6 +153,23 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 	return rc;
 }
 
+float CStim::GetRadius()
+{
+	// greebo: Check for a time-dependent radius
+	if (m_RadiusFinal > 0 && m_Duration != 0)
+	{
+		// Calculate how much of the stim duration has passed already
+		float timeFraction = static_cast<float>(gameLocal.time - m_EnabledTimeStamp) / m_Duration;
+		timeFraction = idMath::ClampFloat(0, 1, timeFraction);
+
+		// Linearly interpolate the radius
+		return m_Radius + (m_RadiusFinal - m_Radius) * timeFraction;
+	}
+	else // constant radius
+	{
+		return m_Radius;
+	}
+}
 
 CStimResponseTimer* CStim::AddTimerToGame(void)
 {
