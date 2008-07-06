@@ -5201,6 +5201,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_51:	// Inventory use item
 		{
+			// Use key has "hold down" functions
+			m_ButtonStateTracker.startTracking(impulse);
+			// Pass the call
 			inventoryUseItem();
 		}
 		break;
