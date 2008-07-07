@@ -200,10 +200,7 @@ const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
 const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "fff" );
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
 const idEventDef AI_FoundBody( "foundBody", "e" );
-const idEventDef AI_IssueCommunication_IR_DOE ("issueCommunication_IR_DOE", "ffeev");
-const idEventDef AI_IssueCommunication_IR ( "issueCommunication_IR", "ffev");
-const idEventDef AI_IssueCommunication_DOE ( "issueCommunication_DOE", "ffev" );
-const idEventDef AI_IssueCommunication ("issueCommunication", "ffv" );
+const idEventDef AI_IssueCommunication ("issueCommunication", "ffeev" );
 
 /*!
 * A look at event that just looks at a position in space
@@ -543,9 +540,6 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
-	EVENT ( AI_IssueCommunication_IR_DOE,		idAI::Event_IssueCommunication_IR_DOE)
-	EVENT ( AI_IssueCommunication_DOE,			idAI::Event_IssueCommunication_DOE)
-	EVENT ( AI_IssueCommunication_IR,			idAI::Event_IssueCommunication_IR)
 	EVENT ( AI_IssueCommunication,				idAI::Event_IssueCommunication)
 
 END_CLASS
@@ -840,37 +834,14 @@ void idAI::Event_MuzzleFlash( const char *jointname )
 idAI::Event_IssueCommunication
 =====================
 */
-
-void idAI::Event_IssueCommunication_IR_DOE ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation)
+void idAI::Event_IssueCommunication(float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation)
 {
 	IssueCommunication_Internal (messageType, maxRadius, intendedRecipientEntity, directObjectEntity, directObjectLocation);
 }
 
 /*---------------------------------------------------------------------------------------------------*/
 
-void idAI::Event_IssueCommunication_IR ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, const idVec3& directObjectLocation)
-{
-	IssueCommunication_Internal (messageType, maxRadius, intendedRecipientEntity, NULL, directObjectLocation);
-}
-
-/*---------------------------------------------------------------------------------------------------*/
-
-void idAI::Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation)
-{
-	IssueCommunication_Internal (messageType, maxRadius, NULL, directObjectEntity, directObjectLocation);
-}
-
-/*---------------------------------------------------------------------------------------------------*/
-
-void idAI::Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation)
-{
-	IssueCommunication_Internal (messageType, maxRadius, NULL, NULL, directObjectLocation);
-}
-
-/*---------------------------------------------------------------------------------------------------*/
-
-void idAI::IssueCommunication_Internal
-( 
+void idAI::IssueCommunication_Internal( 
 	float messageType, 
 	float maxRadius, 
 	idEntity* intendedRecipientEntity, 

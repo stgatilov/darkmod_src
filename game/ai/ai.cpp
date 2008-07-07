@@ -27,6 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
 #include "../../DarkMod/DarkModGlobals.h"
+#include "../../DarkMod/MultiStateMover.h"
 #include "../../DarkMod/PlayerData.h"
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/EscapePointManager.h"
@@ -2697,6 +2698,17 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	AI_FORWARD				= true;
 
 	return true;
+}
+
+CMultiStateMover* idAI::OnElevator() const
+{
+	idEntity* ent = physicsObj.GetGroundEntity();
+
+	// Return false if ground entity is not a mover
+	if (ent == NULL || !ent->IsType(CMultiStateMover::Type)) return NULL;
+
+	CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
+	return (!mover->IsAtRest()) ? mover : NULL;
 }
 
 bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)

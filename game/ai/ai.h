@@ -1248,6 +1248,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
 
+	// Override idActor::OnElevator. See idActor class for documentation.
+	virtual CMultiStateMover* OnElevator() const;
+
 	/**
 	 * greebo: This moves the entity to the given point.
 	 *
@@ -1711,13 +1714,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void Event_GetAlertLevelOfOtherAI (idEntity* p_otherEntity);
 
 	/*!
-	* This event is used by an AI script to issue a message to other AI's through
+	* This event is used by AI to issue a message to other AI's through
 	* the communication stim/response mechanism.  The message is added to the
-	* caller's Communication Stim in their Stim/Response Collection. Because
-	* there is no way to pass a NULL entity, there are several forms of the
-	* functions. Here are the naming conventions:
-	*	IR = intended recipient included
-	*	DOE = direct object entity included
+	* caller's Communication Stim in their Stim/Response Collection.
 	* 
 	* @param a message type enumeration value
 	*
@@ -1731,13 +1730,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* @param directObjectLocation World position that the communication is aobut,
 	*		this can be null if it doesn't apply to the message type
-	*
 	*/
 	void IssueCommunication_Internal (float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
-	void Event_IssueCommunication_IR_DOE ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
-	void Event_IssueCommunication_IR ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, const idVec3& directObjectLocation);
-	void Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation);
-	void Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation);
+	void Event_IssueCommunication ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
 
 
 	void Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck);
