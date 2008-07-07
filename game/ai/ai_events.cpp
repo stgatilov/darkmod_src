@@ -879,10 +879,7 @@ void idAI::IssueCommunication_Internal
 )
 {
 	// Get the communication stim (outbound messgaes)
-	CStim* p_stim;
-	p_stim = NULL;
-    
-	p_stim = m_StimResponseColl->AddStim (this, ST_COMMUNICATION, g_Global.m_AICommStimRadius, true, false);
+	CStim* p_stim = m_StimResponseColl->AddStim(this, ST_COMMUNICATION, g_Global.m_AICommStimRadius, true, false);
 	p_stim->EnableSR(true);
 	
 	if (p_stim != NULL)

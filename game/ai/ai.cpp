@@ -7235,10 +7235,7 @@ bool idAI::CheckHearing( SSprParms *propParms )
 
 void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
-	float psychLoud(0.0f);
-
-	if( m_bIgnoreAlerts )
-		goto Quit;
+	if (m_bIgnoreAlerts) return;
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI Hear Sound called\r");
 	// TODO:
@@ -7254,16 +7251,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 	// and so alert units are born!
 
-
-
 	/**
 	* NOTE: an AlertLevel of 1 constitutes just barely seeing something
 	* out of the corner of your eye, or just barely hearing a whisper
 	* of a sound for a short instant.  An AlertLevel of 10 is seeing/hearing twice
 	* as much, 20 is four times as much, etc.
 	**/
-
-	psychLoud = 1 + (propParms->loudness - m_AudThreshold);
+	float psychLoud = 1 + (propParms->loudness - m_AudThreshold);
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	//	alert to overwrite another alert this frame
@@ -7272,9 +7266,19 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
 
-		if( propParms->maker->IsType(idActor::Type) )
+		if (propParms->maker->IsType(idActor::Type))
+		{
 			m_AlertedByActor = static_cast<idActor *>(propParms->maker);
-// TODO: For sounds from other entities, such as moveables, query the responsible actor
+		}
+		else
+		{
+			// greebo: Take the responsible actor for motion sound
+			idActor* responsibleActor = propParms->maker->m_SetInMotionByActor.GetEntity();
+			if (responsibleActor != NULL)
+			{
+				m_AlertedByActor = responsibleActor;
+			}
+		}
 
 		psychLoud *= GetAcuity("aud");
 
@@ -7287,9 +7291,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
-
-Quit:
-	return;
 }
 
 void idAI::AlertAI(const char *type, float amount)
