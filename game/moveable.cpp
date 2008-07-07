@@ -197,7 +197,9 @@ void idMoveable::Spawn( void ) {
 
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_RESPONSE );
+	{
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+	}
 
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
