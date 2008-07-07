@@ -49,13 +49,11 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 	// Can't respond if we are unconscious or dead
 	if (owner->IsKnockedOut() || owner->AI_DEAD)
 	{
+		DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("AI Comm Response targetting dead AI\r", owner->name.c_str());
 		return;
 	}
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
-
-	// Get the communications stim
-	CAIComm_Stim* p_CommStim = NULL;
 
 	CStimResponseCollection* p_StimResponseCollection = StimEnt->GetStimResponseCollection();
 	if (p_StimResponseCollection == NULL)
@@ -63,33 +61,16 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Entity has no stim response collection\r");
 		return;
 	}
-	else
+
+	// Get the communications stim
+	CStim* p_stim = p_StimResponseCollection->GetStim(ST_COMMUNICATION);
+	if (p_stim == NULL)
 	{
-		CStim* p_stim = p_StimResponseCollection->GetStim(ST_COMMUNICATION);
-		if (p_stim == NULL)
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Source entity has no communications stim\r");
-			return;
-		}
-		p_CommStim = static_cast<CAIComm_Stim*>(p_stim);
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Source entity has no communications stim\r");
+		return;
 	}
-
-	// Get the number of messages
-//	unsigned long numMessages = p_CommStim->getNumMessages();
-
-	// Get the script function specified in this response
-	/*const function_t *pScriptFkt = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
-	if (pScriptFkt == NULL)
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
-		pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
-
-		if (pScriptFkt == NULL)
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in global space\r", m_ScriptFunction.c_str());
-			return;
-		}
-	}*/
+	
+	CAIComm_Stim* p_CommStim = static_cast<CAIComm_Stim*>(p_stim);
 
 	// At this point, there is a script function in the response
 	unsigned long iterationHandle;
@@ -101,15 +82,6 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
 		
-		// Get the message parameters
-		/*CAIComm_Message::TCommType commType = p_message->getCommunicationType();
-		
-		idEntity* p_issuingEntity = p_message->getIssuingEntity();
-		idEntity* p_recipientEntity = p_message->getRecipientEntity();
-		idEntity* p_directObjectEntity = p_message->getDirectObjectEntity();
-		idVec3 directObjectLocation = p_message->getDirectObjectLocation();*/
-		
-
 		// Calculate distance of the owner of the response from the position of the message at issuance
 		float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
 		idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
@@ -128,33 +100,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		{
 			// Pass the AIComm_Message object to the AI's Mind
 			owner->GetMind()->GetState()->OnAICommMessage(p_message);
-
-			/*idThread *pThread = new idThread(pScriptFkt);
-			int n = pThread->GetThreadNum();
-
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running AIComm_StimResponse ResponseScript %s, threadID = %d, commType = %d \r", m_ScriptFunction.c_str(), n, commType);
-
-			pThread->CallFunctionArgs
-			(
-				pScriptFkt, 
-				true, 
-				"eeffeeev", 
-				owner, 
-				StimEnt, 
-				(float) n,
-				(float) commType,
-				p_issuingEntity,
-				p_recipientEntity,
-				p_directObjectEntity,
-				&directObjectLocation
-			);
-
-			// Run the response script
-			pThread->DelayedStart(0);
-
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Done running AIComm_StimResponse ResponseScript %s\r", m_ScriptFunction.c_str());*/
-
-		} // Responder was within maximum radius of message
+		}
 
 		// Get next message
 		p_message = p_CommStim->getNextMessage(iterationHandle);
