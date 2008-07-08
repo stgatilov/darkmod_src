@@ -2280,45 +2280,54 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
 			// the worldspawn.
 			const idDecl * diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
-			const idDeclEntityDef *diffDef = static_cast<const idDeclEntityDef *>( diffDecl );
-			idMapEntity* worldspawn = m_mapFile->GetEntity(0);
-			idDict worldspawnDict = worldspawn->epairs;
-			for (int diffLevel = 0; diffLevel < 3; diffLevel++)
+	
+			if (diffDecl != NULL)
 			{
-				const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
-					diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
-				gui->SetStateString(va("diff%dName",diffLevel), diffName);
+				const idDeclEntityDef *diffDef = static_cast<const idDeclEntityDef *>( diffDecl );
+				idMapEntity* worldspawn = m_mapFile->GetEntity(0);
+				idDict worldspawnDict = worldspawn->epairs;
+				for (int diffLevel = 0; diffLevel < 3; diffLevel++)
+				{
+					const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
+						diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
+					gui->SetStateString(va("diff%dName",diffLevel), diffName);
+				}
+
+				if (worldspawnDict.GetInt("shop_skip", "0") == 1) {
+					// skip the shop, so define the map start command now
+					gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", mapName));
+				} else {
+					// there will be a shop, so don't run the map right away
+					gui->SetStateString("mapStartCmdNow", "");
+				}
+
+				// Let the GUI know what the current difficulty level is
+				gui->SetStateInt("diffSelect", gameLocal.m_DifficultyManager.GetDifficultyLevel());
+
+				// Clear the flag so that the objectives get updated
+				ClearGUIState();
+
+				// Hide the briefing screen
+				gui->HandleNamedEvent("HideBriefingScreen");
+				gui->SetStateInt("BriefingIsVisible", 0);
+
+				// Display the Difficulty choices
+				gui->SetStateInt("DifficultyIsVisible", 1);
+
+				// Hide the objective checkboxes
+				gui->SetStateInt("ObjectiveBoxIsVisible", 0);
+
+				// Set the positioning according to the Difficulty screen
+				gui->SetStateInt("ObjXPos", gui->GetStateInt("DifficultyStartXPos"));
+				gui->SetStateInt("ParchmentXPos", gui->GetStateInt("DifficultyParchmentXPos"));
+				gui->SetStateString("ObjTitle", gui->GetStateString("DifficultyTitle"));
+				gui->SetStateInt("TitleXPos", gui->GetStateInt("DifficultyTitleXPos"));
 			}
-
-			if (worldspawnDict.GetInt("shop_skip", "0") == 1) {
-				// skip the shop, so define the map start command now
-				gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", mapName));
-			} else {
-				// there will be a shop, so don't run the map right away
-				gui->SetStateString("mapStartCmdNow", "");
-			}
-
-			// Let the GUI know what the current difficulty level is
-			gui->SetStateInt("diffSelect", gameLocal.m_DifficultyManager.GetDifficultyLevel());
-
-			// Clear the flag so that the objectives get updated
-			ClearGUIState();
-
-			// Hide the briefing screen
-			gui->HandleNamedEvent("HideBriefingScreen");
-			gui->SetStateInt("BriefingIsVisible", 0);
-
-			// Display the Difficulty choices
-			gui->SetStateInt("DifficultyIsVisible", 1);
-
-			// Hide the objective checkboxes
-			gui->SetStateInt("ObjectiveBoxIsVisible", 0);
-
-			// Set the positioning according to the Difficulty screen
-			gui->SetStateInt("ObjXPos", gui->GetStateInt("DifficultyStartXPos"));
-			gui->SetStateInt("ParchmentXPos", gui->GetStateInt("DifficultyParchmentXPos"));
-			gui->SetStateString("ObjTitle", gui->GetStateString("DifficultyTitle"));
-			gui->SetStateInt("TitleXPos", gui->GetStateInt("DifficultyTitleXPos"));
+			else
+			{
+				// This is critical, throw an error
+				gameLocal.Error("Could not find difficulty entityDef %s", "difficultyMenu");
+			}			
 		}
 		else
 		{
