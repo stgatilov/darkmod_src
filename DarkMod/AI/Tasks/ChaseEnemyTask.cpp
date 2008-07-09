@@ -138,7 +138,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		else
 		{
 			// Unreachable by walking, check if the opponent is on an elevator
-			CMultiStateMover* mover = enemy->OnElevator();
+			CMultiStateMover* mover = enemy->OnElevator(true);
 			if (mover != NULL)
 			{
 				//gameRenderWorld->DebugArrow(colorRed, owner->GetPhysics()->GetOrigin(), mover->GetPhysics()->GetOrigin(), 1, 48);

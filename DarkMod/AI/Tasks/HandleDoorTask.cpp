@@ -176,19 +176,31 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// the other part of the double door is already open
 					// no need to open this one
 					ResetDoor(owner, doubleDoor);
+					if (masterUser == owner)
+					{
+
+						if (!owner->MoveToPosition(_frontPos))
+						{
+							// TODO: position not reachable, need a better one
+						}
+						_doorHandlingState = EStateMovingToFrontPos;
+					}
+					break;
+				}
+
+				else if (masterUser == owner)
+				{
 					if (!owner->MoveToPosition(_frontPos))
 					{
 						// TODO: position not reachable, need a better one
 					}
 					_doorHandlingState = EStateMovingToFrontPos;
-					break;
 				}
-
-				if (!owner->MoveToPosition(_frontPos))
+				
+				else
 				{
-					// TODO: position not reachable, need a better one
+					owner->StopMove(MOVE_STATUS_WAITING);
 				}
-				_doorHandlingState = EStateMovingToFrontPos;
 				break;
 
 			case EStateMovingToFrontPos:
@@ -350,17 +362,20 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
-					else
+					else if (masterUser == owner)
 					{
 						owner->MoveToPosition(_frontPos);
 						_doorHandlingState = EStateMovingToFrontPos;
 					}
 				}
-
-				// door is open and possibly in the way, may need to close it
-				// check if there is a way around
-				else 
+				else if (masterUser != owner && owner->GetMoveStatus() == MOVE_STATUS_WAITING)
 				{
+
+				}
+				else
+				{
+					// door is open and possibly in the way, may need to close it
+					// check if there is a way around
 					idTraceModel trm(bounds);
 					idClipModel clip(trm);
 	

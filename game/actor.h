@@ -221,8 +221,9 @@ public:
 	idActor *				EnemyWithMostHealth();
 
 	virtual bool			OnLadder( void ) const;
-	// Returns the elevator entity if the actor is standing on a moving elevator
-	virtual CMultiStateMover* OnElevator() const;
+	// Returns the elevator entity if the actor is standing on an elevator
+	// angua: if mustBeMoving is true, the elevator is only returned when it is moving
+	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
 

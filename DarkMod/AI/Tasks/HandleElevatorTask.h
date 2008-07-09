@@ -39,6 +39,7 @@ private:
 		EMovingToRideButton,
 		EPressRideButton,
 		ERideOnElevator,
+		EGetOffElevator,
 		ENumStates,
 	} _state;
 

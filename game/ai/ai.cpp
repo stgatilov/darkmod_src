@@ -2700,7 +2700,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	return true;
 }
 
-CMultiStateMover* idAI::OnElevator() const
+CMultiStateMover* idAI::OnElevator(bool mustBeMoving) const
 {
 	idEntity* ent = physicsObj.GetGroundEntity();
 
@@ -2708,7 +2708,11 @@ CMultiStateMover* idAI::OnElevator() const
 	if (ent == NULL || !ent->IsType(CMultiStateMover::Type)) return NULL;
 
 	CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
-	return (!mover->IsAtRest()) ? mover : NULL;
+	if (mustBeMoving)
+	{
+		return (!mover->IsAtRest()) ? mover : NULL;
+	}
+	return mover;
 }
 
 bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)

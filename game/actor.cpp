@@ -2173,7 +2173,7 @@ bool idActor::OnLadder( void ) const {
 	return false;
 }
 
-CMultiStateMover* idActor::OnElevator() const
+CMultiStateMover* idActor::OnElevator(bool mustBeMoving) const
 {
 	return NULL;
 }

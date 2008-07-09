@@ -1249,7 +1249,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveToEntity( idEntity *ent );
 
 	// Override idActor::OnElevator. See idActor class for documentation.
-	virtual CMultiStateMover* OnElevator() const;
+	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
 
 	/**
 	 * greebo: This moves the entity to the given point.
