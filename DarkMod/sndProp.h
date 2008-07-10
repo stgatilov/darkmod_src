@@ -230,7 +230,7 @@ protected:
 	*
 	* Assumes a rectangular portal with 4 winding points.
 	**/
-	idVec3 OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVec3 WCenter );
+	idVec3 OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVec3 WCenter );
 
 	/**
 	* Draws debug lines between a list of points.  Used for soundprop debugging

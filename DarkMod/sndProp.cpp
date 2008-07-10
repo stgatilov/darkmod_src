@@ -1191,7 +1191,7 @@ Quit:
 * 
 * 6. Return this point in world coordinates, we're done.
 **/
-idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVec3 WCenter )
+idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVec3 WCenter )
 {
 	idVec3 line, u1, u2, v1, v2, edge, isect, lineSect;
 	idVec3 returnVec, tempVec, pointA;
@@ -1200,7 +1200,7 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 	int edgeStart(0), edgeStop(0);
 
 	// If the winding is not a rectangle, just return the center coordinate
-	if( wind->GetNumPoints() != 4 )
+	if( wind.GetNumPoints() != 4 )
 	{
 		returnVec = WCenter;
 		goto Quit;
@@ -1210,18 +1210,18 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 	line = p2 - p1;
 
 	// define the portal coordinates and extent of the two corners
-	u1 = (wind->operator[](0).ToVec3() - WCenter);
-	u2 = (wind->operator[](1).ToVec3() - WCenter);
+	u1 = (wind[0].ToVec3() - WCenter);
+	u2 = (wind[1].ToVec3() - WCenter);
 	u1.NormalizeFast();
 	u2.NormalizeFast();
 
 	// define other coordinates going to midpoint between two points (useful to see if point is on portal)
-	v1 = (wind->operator[](1).ToVec3() + wind->operator[](0).ToVec3()) / 2 - WCenter;
-	v2 = (wind->operator[](2).ToVec3() + wind->operator[](1).ToVec3()) / 2 - WCenter;
+	v1 = (wind[1].ToVec3() + wind[0].ToVec3()) / 2 - WCenter;
+	v2 = (wind[2].ToVec3() + wind[1].ToVec3()) / 2 - WCenter;
 	lenV1 = v1.LengthFast();
 	lenV2 = v2.LengthFast();
 
-	wind->GetPlane(WPlane);
+	wind.GetPlane(WPlane);
 
 	tempVec = p2-p1;
 	tempVec.NormalizeFast();
@@ -1234,8 +1234,8 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 
 	if( cv_spr_show.GetBool() )
 	{
-		gameRenderWorld->DebugLine( colorRed, WCenter, (wind->operator[](1).ToVec3() + wind->operator[](0).ToVec3()) / 2, 3000);
-		gameRenderWorld->DebugLine( colorRed, WCenter, (wind->operator[](2).ToVec3() + wind->operator[](1).ToVec3()) / 2, 3000);
+		gameRenderWorld->DebugLine( colorRed, WCenter, (wind[1].ToVec3() + wind[0].ToVec3()) / 2, 3000);
+		gameRenderWorld->DebugLine( colorRed, WCenter, (wind[2].ToVec3() + wind[1].ToVec3()) / 2, 3000);
 		//gameRenderWorld->DebugLine( colorYellow, WCenter, isect, 3000);
 	}
 
@@ -1276,8 +1276,8 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 		edgeStop = 0;
 	}
 
-	pointA = wind->operator[](edgeStart).ToVec3();
-	edge = wind->operator[](edgeStop).ToVec3() - pointA;
+	pointA = wind[edgeStart].ToVec3();
+	edge = wind[edgeStop].ToVec3() - pointA;
 
 	// Find the closest point on the edge to the isect point
 	// This is the point we're looking for
@@ -1322,7 +1322,7 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("ERROR: pPortEv->ThisPort is NULL\r" );
 
 		// calculate optimum point for this leg of the path
-		point = OptSurfPoint( p1, propParms->origin, pPortTest->ThisPort->winding, 
+		point = OptSurfPoint( p1, propParms->origin, *pPortTest->ThisPort->winding, 
 							  pPortTest->ThisPort->center );
 
 		pathPoints.Append(point);
@@ -1359,7 +1359,7 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 			p2 = AIpos;
 		
 		// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("2nd iter: Finding optimum surface point\r" );
-		point = OptSurfPoint( p1, p2, pPort2nd->winding, pPort2nd->center );
+		point = OptSurfPoint( p1, p2, *pPort2nd->winding, pPort2nd->center );
 		pathPoints[floods - k -1] = point;
 
 		p1 = point;
