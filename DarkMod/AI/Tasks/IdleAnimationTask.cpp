@@ -93,8 +93,6 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	if (gameLocal.time > _nextAnimationTime)
 	{
 		// Check if the AI is moving, this determines which channel we can play on
-		idStr animState(owner->GetAnimState(ANIMCHANNEL_LEGS));
-
 		if (!owner->AI_FORWARD)
 		{
 			// AI is not walking, play animations affecting all channels
