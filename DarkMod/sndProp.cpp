@@ -411,24 +411,18 @@ void CsndProp::Propagate
 
 {
 	bool bValidTeam(false),
-		// bSameArea(false),
 		bExpandFinished(false);
 	int			mteam;
-	float		range, vol0;
-	//float		propVol(0), noise(0)
-		
+	float		range;
 	
-	idTimer		timer_Prop;
 	UTeamMask	tmask, compMask;
-	SSprParms	propParms;
-	idBounds	bounds(origin), envBounds(origin);
-	idEntity *			testEnt;
+	
+	idBounds	envBounds(origin);
 	idAI				*testAI;
 	idList<idEntity *>	validTypeEnts, validEnts;
-	const idDict *		parms;
 	SPopArea			*pPopArea;
-	int areaNum;
 
+	idTimer timer_Prop;
 	timer_Prop.Clear();
 	timer_Prop.Start();
 
@@ -447,23 +441,23 @@ void CsndProp::Propagate
 	compMask.m_field = 0;
 	
 	// find the dict def for the specific sound
-	parms = gameLocal.FindEntityDefDict( va("sprGS_%s", sndName.c_str() ), false );
+	const idDict* parms = gameLocal.FindEntityDefDict( va("sprGS_%s", sndName.c_str() ), false );
 
-	// redundancy
-	if(!parms)
-		goto Quit;
+	// redundancy, this is already checked in CheckSound()
+	if (!parms) return;
 
-	propParms.name = sndName.c_str();
-
-	vol0 = parms->GetFloat("vol","0") + volMod;
+	float vol0 = parms->GetFloat("vol","0") + volMod;
 
 	// add the area-specific volMod, if we're in an area
-	areaNum = gameRenderWorld->PointInArea(origin);
-	if (areaNum >= 0) vol0 += m_AreaPropsG[areaNum].VolMod;
+	int areaNum = gameRenderWorld->PointInArea(origin);
+	vol0 += (areaNum >= 0) ? m_AreaPropsG[areaNum].VolMod : 0;
 
 	// scale the volume by some amount that is be a cvar for now for tweaking
 	// later we will put a permananet value in the def for globals->Vol
 	vol0 += cv_ai_sndvol.GetFloat();
+
+	SSprParms propParms;
+	propParms.name = sndName.c_str();
 
 	// set team alert and propagation flags from the parms
 	SetupParms( parms, &propParms, addFlags, &tmask );
@@ -489,16 +483,15 @@ void CsndProp::Propagate
 	// keep in mind that due to FOV compression, visual distances in FPS look shorter
 	// than they actually are.
 
-	range = pow((float)2, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
+	range = pow(2.0f, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7.0f) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
 
-	bounds.ExpandSelf( range );
+	idBounds bounds(origin);
+	bounds.ExpandSelf(range);
 
 	// get a list of all ents with type idAI's or Listeners
 	
-	for ( testEnt = gameLocal.spawnedEntities.Next(); 
-		  testEnt != NULL; testEnt = testEnt->spawnNode.Next() ) 
+	for (idEntity* testEnt = gameLocal.spawnedEntities.Next(); testEnt != NULL; testEnt = testEnt->spawnNode.Next()) 
 	{
-	
 		// TODO: Put in Listeners later
 
 		if ( testEnt->IsType( idAI::Type ) )
@@ -597,8 +590,7 @@ void CsndProp::Propagate
 	*/
 
 	// Don't bother propagation if no one is in range
-	if (validEnts.Num() == 0)
-		goto Quit;
+	if (validEnts.Num() == 0) return;
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Beginning propagation to %d targets\r", validEnts.Num() );
 
@@ -671,11 +663,6 @@ void CsndProp::Propagate
 
 	timer_Prop.Stop();
 	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Total TIME for propagation: %lf [ms]\r", timer_Prop.Milliseconds() );
-
-Quit:
-
-	return;
-
 }
 
 void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags *addFlags, UTeamMask *tmask )
