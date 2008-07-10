@@ -95,7 +95,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		// Check if the AI is moving, this determines which channel we can play on
 		idStr animState(owner->GetAnimState(ANIMCHANNEL_LEGS));
 
-		if (animState == "Legs_Idle")
+		if (!owner->AI_FORWARD)
 		{
 			// AI is not walking, play animations affecting all channels
 			int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
