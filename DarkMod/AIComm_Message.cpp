@@ -27,6 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DarkModGlobals.h"
 #include "AIComm_Message.h"
 
+namespace ai {
 
 /*
 *--------------------------------------------------------------------------
@@ -34,7 +35,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 *--------------------------------------------------------------------------
 */
 
-CAIComm_Message::CAIComm_Message
+CommMessage::CommMessage
 (
 	TCommType in_commType,
 	float in_maximumRadiusInWorldCoords,
@@ -76,14 +77,7 @@ CAIComm_Message::CAIComm_Message
 	// Done
 }
 
-/*--------------------------------------------------------------------------*/
-
-CAIComm_Message::~CAIComm_Message()
-{
-	// Nothing to do here 
-}
-
-void CAIComm_Message::Save(idSaveGame *savefile) const
+void CommMessage::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(static_cast<int>(m_commType));
 	m_p_issuingEntity.Save(savefile);
@@ -94,7 +88,7 @@ void CAIComm_Message::Save(idSaveGame *savefile) const
 	savefile->WriteFloat(m_maximumRadiusInWorldCoords);
 }
 
-void CAIComm_Message::Restore(idRestoreGame *savefile)
+void CommMessage::Restore(idRestoreGame *savefile)
 {
 	int tempInt;
 	savefile->ReadInt(tempInt);
@@ -106,3 +100,5 @@ void CAIComm_Message::Restore(idRestoreGame *savefile)
 	savefile->ReadVec3(m_positionOfIssuance);
 	savefile->ReadFloat(m_maximumRadiusInWorldCoords);
 }
+
+} // namespace ai

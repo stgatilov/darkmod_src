@@ -55,7 +55,7 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
-		static_cast<float>(CAIComm_Message::RequestForMissileHelp_CommType), 
+		static_cast<float>(ai::CommMessage::RequestForMissileHelp_CommType), 
 		YELL_STIM_RADIUS, 
 		NULL,
 		enemy,

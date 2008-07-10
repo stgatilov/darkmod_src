@@ -337,7 +337,7 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 		if (!memory.searchingDueToCommunication)
 		{
 			owner->IssueCommunication_Internal(
-				CAIComm_Message::DetectedSomethingSuspicious_CommType, 
+				ai::CommMessage::DetectedSomethingSuspicious_CommType, 
 				YELL_STIM_RADIUS, 
 				NULL,
 				NULL,

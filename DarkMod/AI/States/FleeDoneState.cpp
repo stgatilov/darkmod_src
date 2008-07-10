@@ -89,7 +89,7 @@ void FleeDoneState::Think(idAI* owner)
 			// Placeholder, replace with "snd_help" when available
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_somethingSuspicious")));
 			owner->IssueCommunication_Internal(
-				static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
+				static_cast<float>(ai::CommMessage::DetectedEnemy_CommType), 
 				distanceToFriend*1.2, 
 				friendlyAI,
 				owner->GetEnemy(),

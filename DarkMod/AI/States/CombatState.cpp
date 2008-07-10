@@ -120,7 +120,7 @@ void CombatState::Init(idAI* owner)
 
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
-		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
+		static_cast<float>(ai::CommMessage::DetectedEnemy_CommType), 
 		YELL_STIM_RADIUS, 
 		NULL,
 		enemy,

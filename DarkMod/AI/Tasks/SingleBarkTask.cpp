@@ -41,7 +41,7 @@ void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (!_soundName.IsEmpty())
 	{
-		int duration = owner->PlayAndLipSync(_soundName.c_str(), "talk1");
+		int duration = owner->PlayAndLipSync(_soundName, "talk1");
 		_endTime = gameLocal.time + duration;
 	}
 	else

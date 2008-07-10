@@ -21,42 +21,27 @@
 #ifndef COMMUNICATION_MESSAGE_HEADER
 #define COMMUNICATION_MESSAGE_HEADER
 
-
-/*
-*--------------------------------------------------------------------------
-* Required includes
-*--------------------------------------------------------------------------
-*/
-
+#include <boost/shared_ptr.hpp>
 #include "StimResponse/StimResponse.h"
 
+namespace ai {
 
-/*
-*--------------------------------------------------------------------------
-* Classes
-*--------------------------------------------------------------------------
-*/
-
-/*!
-* This class defines a type of CStim that carries information
-* between artificial intelligences.
-*
-*/
-class CAIComm_Message
+/**
+ * This struct carries information which is used by AI 
+ * to communicate with each other.
+ */
+struct CommMessage
 {
-public:
 	/*!
 	* This enumeration defines the meaning of the communication.
 	* Each enumeration value indicates 
-	*
 	*/
-	typedef enum
+	enum TCommType
 	{
 		/*!
 		* A friendly greeting, such as "hello"
 		*
 		* recipientEntity: The entity being greeted
-		*
 		*/
 		Greeting_CommType = 0x01,
 
@@ -64,7 +49,6 @@ public:
 		* A friendly joke not meant to insult anyone.
 		*
 		* recipientEntity: The entity meant to hear it
-		*
 		* directObjectEntity; The butt of the joke
 		*/
 		FriendlyJoke_CommType,
@@ -74,7 +58,6 @@ public:
 		* "<X>'s mother was a hamster, and his father smelt of elderberries!"
 		*
 		* recipientEntity: The entity meant to hear it
-		*
 		* directObjectEntity: The entity that is the subject of the insult
 		*/
 		Insult_CommType,
@@ -83,10 +66,8 @@ public:
 		* A request for help of any kind at issuing entity.
 		*
 		* directObjectEntity: The entity that caused the need for help
-		*
 		* directObjectLocation: The location of the enemy when the
 		*	request was issued
-		*	
 		*/
 		RequestForHelp_CommType,
 
@@ -94,10 +75,8 @@ public:
 		* A request for long range combat help at issuing entity.
 		*
 		* directObjectEntity: The entity that caused the need for help
-		*
 		* directObjectLocation: The location of the enemy when the
 		*	request was issued
-		* 
 		*/
 		RequestForMissileHelp_CommType,
 
@@ -105,7 +84,6 @@ public:
 		* A request for close range combat help at issuing entity.
 		*
 		* directObjectEntity: The entity that caused the need for help
-		*
 		* directObjectLocation: The location of the enemy when the
 		*	request was issued
 		*/
@@ -116,7 +94,6 @@ public:
 		*
 		* directObjectLocation: The location where the light
 		*	is needed
-		*
 		*/
 		RequestForLight_CommType,
 
@@ -125,10 +102,8 @@ public:
 		* detected.
 		*
 		* directObjectEntity: If not NULL, the entity that is suspicious
-		*
 		* directObjectLocation: The location of the detected suspicious
 		*	stimulus
-		*  
 		*/
 		DetectedSomethingSuspicious_CommType,
 
@@ -136,16 +111,13 @@ public:
 		* A general declaration that an enemy has been detected.
 		*
 		* directObjectEntity: The enemy that was detected
-		*
 		* directObjectLocation: The location of the enemy at the time
 		*	of detection
-		*
 		*/
 		DetectedEnemy_CommType,
 
 		/*!
 		* An order to follow the issuer.
-		*
 		*/
 		FollowOrder_CommType,	
 
@@ -153,7 +125,6 @@ public:
 		* An order to guard a location.
 		* 
 		* directObjectLocation: The location to be guarded
-		*
 		*/
 		GuardLocationOrder_CommType,
 
@@ -176,7 +147,6 @@ public:
 		*
 		* directObjectLocation: The point near which the
 		* search should be conducted.
-		*
 		*/
 		SearchOrder_CommType,
 
@@ -202,71 +172,13 @@ public:
 		ConveyWarning_EvidenceOfIntruders_CommType,
 		ConveyWarning_ItemsHaveBeenStolen_CommType,
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
-
-	} TCommType;
-
-
-	/*!
-	* Retrieves the type of communication
-	*/
-	TCommType getCommunicationType()
-	{
-		return m_commType;
 	};
 
-	/*!
-	* Retrieves a pointer to the issuing entity
-	*/
-	idEntity* getIssuingEntity()
-	{
-		return m_p_issuingEntity.GetEntity();
-	};
-
-	/*!
-	* Retrieves a pointer to the intended recipient
-	* entity. If NULL, then there is no specific
-	* recipient intended.
-	*/
-	idEntity* getRecipientEntity()
-	{
-		return m_p_recipientEntity.GetEntity();
-	};
-
-	/*!
-	* Retrieves a pointer to the entity to which
-	* the communication is referring.
-	*/
-	idEntity* getDirectObjectEntity()
-	{
-		return m_p_directObjectEntity.GetEntity();
-	};
-
-	/*!
-	* Retrieves the location to which the 
-	* communicatoin is referring
-	*/
-	idVec3 getDirectObjectLocation()
-	{
-		return m_directObjectLocation;
-	};
-
-	idVec3 getPositionOfIssuance()
-	{
-		return m_positionOfIssuance;
-	}
-
-	float getMaximumRadiusInWorldCoords()
-	{
-		return m_maximumRadiusInWorldCoords;
-	}
-
-public:
 
 	/*!
 	* public Constructor
 	*/
-	CAIComm_Message
-	(
+	CommMessage(
 		TCommType in_commType,
 		float in_maximumRadiusInWorldCoords,
 		idEntity* in_p_issuingEntity,
@@ -275,15 +187,8 @@ public:
 		const idVec3& in_directObjectLocation
 	);
 
-	/*!
-	* public destructor
-	*/
-	~CAIComm_Message();
-
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
-
-protected:
 
 	/*!
 	* This field indicates the type of communication. The value of this type defines
@@ -306,14 +211,12 @@ protected:
 	/*!
 	* This field indicates the entity which is the entity mentioned in the
 	* communication.
-	*
 	*/
 	idEntityPtr<idEntity> m_p_directObjectEntity;
 
 	/*!
 	* This field indicates the location which is the location mentioned in
 	* the communication.
-	*
 	*/
 	idVec3 m_directObjectLocation;
 
@@ -327,13 +230,8 @@ protected:
 	*/
 	float m_maximumRadiusInWorldCoords;
 };
+typedef boost::shared_ptr<CommMessage> CommMessagePtr;
 
+} // namespace ai
 
-
-
-/*
-*--------------------------------------------------------------------------
-* End header wrapper
-*--------------------------------------------------------------------------
-*/
 #endif

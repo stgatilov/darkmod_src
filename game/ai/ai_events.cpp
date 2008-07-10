@@ -857,7 +857,7 @@ void idAI::IssueCommunication_Internal(
 		p_stim->EnableSR(true);
 
 		CAIComm_Stim* p_commStim = static_cast<CAIComm_Stim*>(p_stim);
-		CAIComm_Message::TCommType messageTypeEnumVal = (CAIComm_Message::TCommType) (unsigned long) messageType;
+		ai::CommMessage::TCommType messageTypeEnumVal = (ai::CommMessage::TCommType) (unsigned long) messageType;
 
 		if (!p_commStim->addMessage ( messageTypeEnumVal, maxRadius, this, intendedRecipientEntity, directObjectEntity, directObjectLocation ))
 		{

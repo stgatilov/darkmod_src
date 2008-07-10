@@ -2608,8 +2608,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	idStr sprName, sprNameSG, sprNameEG;
 	bool bIsSusp(false), bIsEnv(false);
 
-	// uncomment for debugging (spams the logfile since it plays for every sound that happens)
-	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
 	
 	sprName = sndName;
 
@@ -2621,8 +2620,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	if ( bForceLocal && ( !(idStr::Icmpn( sndName, "snd_", 4 ) == 0)
 		 || ( !bIsSusp && !bIsEnv ) ) )  
 	{
-		// uncomment for debugging
-		// DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
 		// gameLocal.Warning("[PropSound] Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)", sndName );
 		goto Quit;
 	}

@@ -74,8 +74,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 
 	// At this point, there is a script function in the response
 	unsigned long iterationHandle;
-	CAIComm_Message* p_message = NULL;
-	p_message = p_CommStim->getFirstMessage(iterationHandle);
+	ai::CommMessage* p_message = p_CommStim->getFirstMessage(iterationHandle);
 
 	// Call the script function for each of the messages
 	while (p_message != NULL)
@@ -83,8 +82,8 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
 		
 		// Calculate distance of the owner of the response from the position of the message at issuance
-		float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
-		idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
+		float maxRadiusForResponse = p_message->m_maximumRadiusInWorldCoords;
+		idVec3 positionOfIssuance = p_message->m_positionOfIssuance;
 
 		float distanceFromIssuance = maxRadiusForResponse + 1.0;
 		
@@ -197,8 +196,8 @@ void CAIComm_Stim::Restore(idRestoreGame *savefile)
 		}
 
 		// Allocate an empty message class
-		cur->p_message = new CAIComm_Message(
-			static_cast<CAIComm_Message::TCommType>(0),
+		cur->p_message = new ai::CommMessage(
+			static_cast<ai::CommMessage::TCommType>(0),
 			0.0f,
 			NULL,
 			NULL,
@@ -253,7 +252,7 @@ unsigned long CAIComm_Stim::getNumMessages()
 
 bool CAIComm_Stim::addMessage
 (
-	CAIComm_Message::TCommType in_commType,
+	ai::CommMessage::TCommType in_commType,
 	float in_maximumRadiusOfResponse,
 	idEntity* in_p_issuingEntity,
 	idEntity* in_p_recipientEntity,
@@ -271,7 +270,7 @@ bool CAIComm_Stim::addMessage
 	}
 
 	// Initialize the communication message
-	p_node->p_message = new CAIComm_Message (in_commType, in_maximumRadiusOfResponse, in_p_issuingEntity, in_p_recipientEntity, in_p_directObjectEntity, in_directObjectLocation);
+	p_node->p_message = new ai::CommMessage(in_commType, in_maximumRadiusOfResponse, in_p_issuingEntity, in_p_recipientEntity, in_p_directObjectEntity, in_directObjectLocation);
 	if (p_node->p_message == NULL)
 	{
 		// Out of memory
@@ -313,7 +312,7 @@ bool CAIComm_Stim::addMessage
 
 /*-------------------------------------------------------------------------*/
 
-CAIComm_Message* CAIComm_Stim::getFirstMessage (unsigned long& out_iterationHandle)
+ai::CommMessage* CAIComm_Stim::getFirstMessage (unsigned long& out_iterationHandle)
 {
 	// Init iteration cursor
 	out_iterationHandle = (unsigned long) p_firstMessage;
@@ -331,7 +330,7 @@ CAIComm_Message* CAIComm_Stim::getFirstMessage (unsigned long& out_iterationHand
 
 /*-------------------------------------------------------------------------*/
 
-CAIComm_Message* CAIComm_Stim::getNextMessage (unsigned long& inout_iterationHandle)
+ai::CommMessage* CAIComm_Stim::getNextMessage (unsigned long& inout_iterationHandle)
 {
 	// Advance iteration cursor
 	TAICommMessageNode* p_cursor = (TAICommMessageNode*) inout_iterationHandle;
