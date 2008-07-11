@@ -201,8 +201,10 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 // Displays the current page of briefing text
 void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
+	gameLocal.Warning("DisplayBriefingPage: start");
 	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
 	idStr briefingData = idStr("maps/") + tdm_mapName.GetString() + "/mission_briefing";
+	gameLocal.Warning("DisplayBriefingPage: briefingData is " + briefingData);
 	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, briefingData, false ) );
 
 	const char * briefing = "";
@@ -210,8 +212,10 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 	bool scrollUp = false;
 	if (xd != NULL)
 	{
+		gameLocal.Warning("DisplayBriefingPage: xd is not null");
 		// get page count from xdata
 		int pages = xd->m_data.GetInt("num_pages");
+		gameLocal.Warning("DisplayBriefingPage: pages is " + idStr(pages));
 
 		// ensure current page is between 1 and page count, inclusive
 		if (briefingPage < 1) briefingPage = 1;
@@ -219,13 +223,18 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 
 		// load up page text
 		idStr page = idStr("page") + idStr(briefingPage) + "_body";
+		gameLocal.Warning("DisplayBriefingPage: page is " + page);
 		briefing = xd->m_data.GetString(page);
+		gameLocal.Warning("DisplayBriefingPage: briefing is " + idStr(briefing));
 
 		// set scroll button visibility
 		scrollDown = pages > briefingPage;
 		scrollUp = briefingPage > 1;
 	}
-
+	else
+	{
+		gameLocal.Warning("DisplayBriefingPage: xd is null");
+	}
 	// update GUI
 	gui->SetStateString("BriefingText", briefing);
 	gui->SetStateBool("ScrollDownVisible", scrollDown);
