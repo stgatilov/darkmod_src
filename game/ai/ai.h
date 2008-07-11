@@ -246,7 +246,7 @@ public:
 	CLASS_PROTOTYPE( idAI );
 
 							idAI();
-							~idAI();
+	virtual				~idAI();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -541,6 +541,9 @@ public:
 	// Virtual override of idActor method, routes the call into the current Mind State
 	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 
+
+public:
+	idLinkList<idAI>		aiNode;				// for being linked into gameLocal.spawnedAI list
 
 protected:
 	// navigation

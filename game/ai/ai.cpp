@@ -390,6 +390,8 @@ idAI::idAI
 */
 idAI::idAI()
 {
+	aiNode.SetOwner(this);
+
 	aas					= NULL;
 	travelFlags			= TFL_WALK|TFL_AIR|TFL_DOOR;
 	lastAreaReevaluationTime = -1;
@@ -566,6 +568,7 @@ idAI::~idAI() {
 	*/
 	destroyCurrentHidingSpotSearch();
 
+	aiNode.Remove();
 }
 
 /*
@@ -1142,6 +1145,8 @@ void idAI::Spawn( void )
 	jointHandle_t		joint;
 	idVec3				local_dir;
 	bool				talks;
+
+	aiNode.AddToEnd(gameLocal.spawnedAI);
 
 	// Allocate a new default mind
 	mind = ai::MindPtr(new ai::Mind(this));

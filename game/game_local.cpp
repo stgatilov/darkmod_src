@@ -285,6 +285,7 @@ void idGameLocal::Clear( void )
 	num_entities = 0;
 	spawnedEntities.Clear();
 	activeEntities.Clear();
+	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
 	sortPushers = false;
 	sortTeamMasters = false;
@@ -656,6 +657,11 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( activeEntities.Num() );
 	for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 		savegame.WriteObject( ent );
+	}
+
+	savegame.WriteInt(spawnedAI.Num());
+	for (idAI* ai = spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next()) {
+		savegame.WriteObject(ai);
 	}
 
 	savegame.WriteInt( numEntitiesToDeactivate );
@@ -1105,6 +1111,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	
 	spawnedEntities.Clear();
 	activeEntities.Clear();
+	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
 	sortTeamMasters = false;
 	sortPushers = false;
@@ -1617,6 +1624,19 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		assert( ent );
 		if ( ent ) {
 			ent->activeNode.AddToEnd( activeEntities );
+		}
+	}
+
+	savegame.ReadInt( num );
+	for( i = 0; i < num; i++ )
+	{
+		idAI* ai(NULL);
+		savegame.ReadObject(reinterpret_cast<idClass *&>(ai));
+		assert(ai != NULL);
+
+		if (ai != NULL)
+		{
+			ai->aiNode.AddToEnd(spawnedAI);
 		}
 	}
 

@@ -490,15 +490,16 @@ void CsndProp::Propagate
 
 	// get a list of all ents with type idAI's or Listeners
 	
-	for (idEntity* testEnt = gameLocal.spawnedEntities.Next(); testEnt != NULL; testEnt = testEnt->spawnNode.Next()) 
+	int count = 0;
+
+	for (idAI* ai = gameLocal.spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next())
 	{
 		// TODO: Put in Listeners later
-
-		if ( testEnt->IsType( idAI::Type ) )
-		{
-			validTypeEnts.Append( testEnt );
-		}
+		validTypeEnts.Append(ai);
+		count++;
 	}
+
+	
 	
 	if( cv_spr_debug.GetBool() )
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
