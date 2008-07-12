@@ -1726,28 +1726,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*/
 	void Event_GetAlertLevelOfOtherAI (idEntity* p_otherEntity);
 
-	/*!
-	* This event is used by AI to issue a message to other AI's through
-	* the communication stim/response mechanism.  The message is added to the
-	* caller's Communication Stim in their Stim/Response Collection.
-	* 
-	* @param a message type enumeration value
-	*
-	* @param The maximum distance of the communications stim
-	*
-	* @param Pointer to the intended recipient entity. This can be NULL if there
-	*		is no specific intended recipient.
-	*
-	* @param directObjectEntity Pointer to the entity this communication is about, 
-	*		this can be null if it doesn't apply to the message type
-	*
-	* @param directObjectLocation World position that the communication is aobut,
-	*		this can be null if it doesn't apply to the message type
-	*/
-	void IssueCommunication_Internal (float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
-	void Event_IssueCommunication ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
-
-
 	void Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck);
 	/**
 	 * greebo: Script event for processing a visual stim coming from the entity <stimSource>

@@ -200,7 +200,6 @@ const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
 const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "fff" );
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
 const idEventDef AI_FoundBody( "foundBody", "e" );
-const idEventDef AI_IssueCommunication ("issueCommunication", "ffeev" );
 
 /*!
 * A look at event that just looks at a position in space
@@ -540,7 +539,6 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
-	EVENT ( AI_IssueCommunication,				idAI::Event_IssueCommunication)
 
 END_CLASS
 
@@ -826,48 +824,6 @@ void idAI::Event_MuzzleFlash( const char *jointname )
 
 	GetMuzzle( jointname, muzzle, axis );
 	TriggerWeaponEffects( muzzle );
-}
-
-
-/*
-=====================
-idAI::Event_IssueCommunication
-=====================
-*/
-void idAI::Event_IssueCommunication(float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation)
-{
-	IssueCommunication_Internal(messageType, maxRadius, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-}
-
-/*---------------------------------------------------------------------------------------------------*/
-
-void idAI::IssueCommunication_Internal( 
-	float messageType, 
-	float maxRadius, 
-	idEntity* intendedRecipientEntity, 
-	idEntity* directObjectEntity, 
-	const idVec3& directObjectLocation
-)
-{
-	// Get the communication stim (outbound messgaes)
-	CStim* p_stim = m_StimResponseColl->AddStim(this, ST_COMMUNICATION, g_Global.m_AICommStimRadius, true, false);
-		
-	if (p_stim != NULL)
-	{
-		p_stim->EnableSR(true);
-
-		CAIComm_Stim* p_commStim = static_cast<CAIComm_Stim*>(p_stim);
-		ai::CommMessage::TCommType messageTypeEnumVal = (ai::CommMessage::TCommType) (unsigned long) messageType;
-
-		if (!p_commStim->addMessage ( messageTypeEnumVal, maxRadius, this, intendedRecipientEntity, directObjectEntity, directObjectLocation ))
-		{
-			DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Failed to add message to communication stim");
-		}
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Failed to make or get communication stim");
-	}
 }
 
 /*
