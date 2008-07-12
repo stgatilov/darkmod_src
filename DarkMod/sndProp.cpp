@@ -498,8 +498,6 @@ void CsndProp::Propagate
 		validTypeEnts.Append(ai);
 		count++;
 	}
-
-	
 	
 	if( cv_spr_debug.GetBool() )
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
@@ -596,9 +594,9 @@ void CsndProp::Propagate
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Beginning propagation to %d targets\r", validEnts.Num() );
 
 
-// ======================== BEGIN WAVEFRONT EXPANSION ===================
+	// ======================== BEGIN WAVEFRONT EXPANSION ===================
 
-// Populate the AI lists in the m_PopAreas array, use timestamp method to check if it's the first visit
+	// Populate the AI lists in the m_PopAreas array, use timestamp method to check if it's the first visit
 	
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Filling populated areas array with AI\r" );
 	for(int j = 0; j < validEnts.Num(); j++)
@@ -649,7 +647,7 @@ void CsndProp::Propagate
 	timer_Prop.Start();
 
 
-	bExpandFinished = ExpandWave( vol0, origin, &propParms );
+	bExpandFinished = ExpandWave( vol0, origin );
 
 	//TODO: If bExpandFinished == false, either fake propagation or
 	// delay further expansion until later frame
@@ -744,8 +742,7 @@ Quit:
 	return returnval;
 }
 
-bool CsndProp::ExpandWave( float volInit, idVec3 origin, 
-							SSprParms *propParms )
+bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 {
 	bool				returnval;
 	int					//popIndex(-1),
@@ -1416,8 +1413,7 @@ void CsndProp::SetPortalLoss( int handle, float value )
 	m_TimeStampPortLoss = gameLocal.time;
 }
 
-bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, 
-								SSprParms *propParms, float MaxDist, int MaxFloods )
+bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, float MaxDist, int MaxFloods )
 {
 	bool				bDistLimit(false);
 	int					//popIndex(-1),

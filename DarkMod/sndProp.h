@@ -175,9 +175,7 @@ protected:
 	* Returns true if the expansion died out naturally rather than being stopped
 	*	by a computation limit.
 	**/
-	bool ExpandWave
-		( float volInit, idVec3 origin, 
-		  SSprParms *propParms );
+	bool ExpandWave(float volInit, idVec3 origin);
 
 	/**
 	* Faster and less accurate wavefront expansion algorithm.
@@ -191,7 +189,7 @@ protected:
 	* If MaxFloods is set to -1, the global maximum flood limit is used.
 	**/
 	bool ExpandWaveFast( float volInit, idVec3 origin, 
-						SSprParms *propParms, float MaxDist = -1, int MaxFloods = -1 );
+						 float MaxDist = -1, int MaxFloods = -1 );
 	
 	/**
 	* Process the populated areas after a sound propagation event.
