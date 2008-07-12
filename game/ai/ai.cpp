@@ -741,10 +741,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_AlertGraceCount );
 	savefile->WriteInt( m_AlertGraceCountLimit );
 
-	savefile->WriteInt(m_Messages.size());
-	for (ai::MessageList::const_iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
+	savefile->WriteInt(m_Messages.Num());
+	for (i = 0; i < m_Messages.Num(); i++)
 	{
-		(*it)->Save(savefile);
+		m_Messages[i]->Save(savefile);
 	}
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
@@ -1022,12 +1022,12 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_AlertGraceCountLimit );
 
 	savefile->ReadInt(num);
-	m_Messages.clear();
+	m_Messages.Clear();
 	for (int i = 0; i < num; i++)
 	{
 		ai::CommMessagePtr message(new ai::CommMessage);
 		message->Restore(savefile);
-		m_Messages.push_back(message);
+		m_Messages.Append(message);
 	}
 
 	savefile->ReadBool( restorePhysics );
@@ -7324,6 +7324,15 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// greebo: Notify the currently active state
 		mind->GetState()->OnAudioAlert();
 
+		// Retrieve the messages from the other AI, if there are any
+		if (propParms->makerAI != NULL)
+		{
+			for (int i = 0; i < propParms->makerAI->m_Messages.Num(); i++)
+			{
+				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i]);
+			}
+		}
+
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
@@ -8668,6 +8677,17 @@ void idAI::FoundBody( idEntity *body )
 {
 	// TODO: Check if the player is responsible for the body
 	gameLocal.m_MissionData->MissionEvent( COMP_AI_FIND_BODY, body, true );
+}
+
+void idAI::AddMessage(const ai::CommMessagePtr& message)
+{
+	assert(message != NULL);
+	m_Messages.Append(message);
+}
+
+void idAI::ClearMessages()
+{
+	m_Messages.Clear();
 }
 
 /*

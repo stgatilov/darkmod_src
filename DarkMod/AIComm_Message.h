@@ -235,7 +235,7 @@ struct CommMessage
 	float m_maximumRadiusInWorldCoords;
 };
 typedef boost::shared_ptr<CommMessage> CommMessagePtr;
-typedef std::list<ai::CommMessagePtr> MessageList;
+typedef idList<ai::CommMessagePtr> MessageList;
 
 } // namespace ai
 

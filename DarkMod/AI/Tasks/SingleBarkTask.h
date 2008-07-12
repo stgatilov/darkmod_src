@@ -11,6 +11,7 @@
 #define __AI_SINGLE_BARK_TASK_H__
 
 #include "Task.h"
+#include "../../AIComm_Message.h"
 
 namespace ai
 {
@@ -28,12 +29,15 @@ class SingleBarkTask :
 	idStr _soundName;
 	int _endTime;
 
+	// The message which should be delivered when barking
+	CommMessagePtr _message;
+
 	// Default constructor
 	SingleBarkTask();
 
 public:
 	// Constructor taking a sound name as argument
-	SingleBarkTask(const idStr& soundName);
+	SingleBarkTask(const idStr& soundName, const CommMessagePtr& message = CommMessagePtr());
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

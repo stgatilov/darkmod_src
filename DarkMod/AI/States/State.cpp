@@ -549,7 +549,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
 					owner->IssueCommunication_Internal(
-						ai::CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
+						CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
 						TALK_STIM_RADIUS,
 						other, 
 						NULL,
@@ -564,7 +564,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
 					owner->IssueCommunication_Internal(
-						ai::CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType,
+						CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType,
 						TALK_STIM_RADIUS, 
 						other, 
 						NULL,
@@ -579,7 +579,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
 					owner->IssueCommunication_Internal(
-						ai::CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
+						CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
 						TALK_STIM_RADIUS, 
 						other, 
 						NULL,
@@ -593,7 +593,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				// Chance check passed, greetings!
 				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
 				owner->IssueCommunication_Internal(
-					ai::CommMessage::Greeting_CommType, 
+					CommMessage::Greeting_CommType, 
 					TALK_STIM_RADIUS, 
 					other, 
 					NULL,
@@ -1111,10 +1111,8 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	memory.searchingDueToCommunication = false;
 }
 
-void State::OnAICommMessage(CommMessage* message)
+void State::OnAICommMessage(CommMessage& message)
 {
-	assert(message); // Don't accept NULL messages
-
 	idAI* owner = _owner.GetEntity();
 	if (owner == NULL)
 	{
@@ -1123,12 +1121,12 @@ void State::OnAICommMessage(CommMessage* message)
 	}
 
 	// Get the message parameters
-	ai::CommMessage::TCommType commType = message->m_commType;
+	CommMessage::TCommType commType = message.m_commType;
 	
-	idEntity* issuingEntity = message->m_p_issuingEntity.GetEntity();
-	idEntity* recipientEntity = message->m_p_recipientEntity.GetEntity();
-	idEntity* directObjectEntity = message->m_p_directObjectEntity.GetEntity();
-	idVec3 directObjectLocation = message->m_directObjectLocation;
+	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
+	idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
+	idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
+	idVec3 directObjectLocation = message.m_directObjectLocation;
 
 	if (issuingEntity != NULL)
 	{
@@ -1139,7 +1137,7 @@ void State::OnAICommMessage(CommMessage* message)
 
 	switch (commType)
 	{
-		case ai::CommMessage::Greeting_CommType:
+		case CommMessage::Greeting_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: Greeting_CommType\r");
 			// Have seen a friend
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
@@ -1150,7 +1148,7 @@ void State::OnAICommMessage(CommMessage* message)
 				owner->Event_LookAtEntity(issuingEntity, 3.0); // 3 seconds
 			}
 			break;
-		case ai::CommMessage::FriendlyJoke_CommType:
+		case CommMessage::FriendlyJoke_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: FriendlyJoke_CommType\r");
 			// Have seen a friend
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
@@ -1164,7 +1162,7 @@ void State::OnAICommMessage(CommMessage* message)
 				gameLocal.Printf("Ha, yer right, they be an ass\n");
 			}
 			break;
-		case ai::CommMessage::Insult_CommType:
+		case CommMessage::Insult_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: Insult_CommType\r");
 			if (directObjectEntity == owner)
 			{
@@ -1179,7 +1177,7 @@ void State::OnAICommMessage(CommMessage* message)
 				gameLocal.Printf("I'm not gettin' involved\n");
 			}
 			break;
-		case ai::CommMessage::RequestForHelp_CommType:
+		case CommMessage::RequestForHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForHelp_CommType\r");
 			if (owner->IsFriend(issuingEntity))
 			{
@@ -1208,7 +1206,7 @@ void State::OnAICommMessage(CommMessage* message)
 				owner->SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f);
 			}
 			break;
-		case ai::CommMessage::RequestForMissileHelp_CommType:
+		case CommMessage::RequestForMissileHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMissileHelp_CommType\r");
 			// Respond if they are a friend and we have a ranged weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumRangedWeapons() > 0)
@@ -1242,7 +1240,7 @@ void State::OnAICommMessage(CommMessage* message)
 				}
 			}
 			break;
-		case ai::CommMessage::RequestForMeleeHelp_CommType:
+		case CommMessage::RequestForMeleeHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMeleeHelp_CommType\r");
 			// Respond if they are a friend and we have a melee weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumMeleeWeapons() > 0)
@@ -1276,15 +1274,15 @@ void State::OnAICommMessage(CommMessage* message)
 				}
 			}
 			break;
-		case ai::CommMessage::RequestForLight_CommType:
+		case CommMessage::RequestForLight_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForLight_CommType\r");
 			gameLocal.Printf("I don't know how to bring light!\n");
 			break;
-		case ai::CommMessage::DetectedSomethingSuspicious_CommType:
+		case CommMessage::DetectedSomethingSuspicious_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
 			OnMessageDetectedSomethingSuspicious(message);
 			break;
-		case ai::CommMessage::DetectedEnemy_CommType:
+		case CommMessage::DetectedEnemy_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedEnemy_CommType\r");
 			//gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
 	
@@ -1302,35 +1300,35 @@ void State::OnAICommMessage(CommMessage* message)
 				memory.alertPos = directObjectLocation;
 			}
 			break;
-		case ai::CommMessage::FollowOrder_CommType:
+		case CommMessage::FollowOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: FollowOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to follow somebody!\n");
 			}
 			break;
-		case ai::CommMessage::GuardLocationOrder_CommType:
+		case CommMessage::GuardLocationOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardLocationOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard a location!\n");
 			}
 			break;
-		case ai::CommMessage::GuardEntityOrder_CommType:
+		case CommMessage::GuardEntityOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardEntityOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard an entity!\n");
 			}
 			break;
-		case ai::CommMessage::PatrolOrder_CommType:
+		case CommMessage::PatrolOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: PatrolOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to switch my patrol route!\n");
 			}
 			break;
-		case ai::CommMessage::SearchOrder_CommType:
+		case CommMessage::SearchOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: SearchOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
@@ -1341,7 +1339,7 @@ void State::OnAICommMessage(CommMessage* message)
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 			}
 			break;
-		case ai::CommMessage::AttackOrder_CommType:
+		case CommMessage::AttackOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: AttackOrder_CommType\r");
 			// Set this as our enemy and enter combat
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
@@ -1359,10 +1357,10 @@ void State::OnAICommMessage(CommMessage* message)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 			break;
-		case ai::CommMessage::GetOutOfTheWayOrder_CommType:
+		case CommMessage::GetOutOfTheWayOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GetOutOfTheWayOrder_CommType\r");
 			break;
-		case ai::CommMessage::ConveyWarning_EvidenceOfIntruders_CommType:
+		case CommMessage::ConveyWarning_EvidenceOfIntruders_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
 			if (issuingEntity->IsType(idAI::Type))
 			{
@@ -1382,7 +1380,7 @@ void State::OnAICommMessage(CommMessage* message)
 				}
 			}
 			break;
-		case ai::CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
+		case CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if (!memory.itemsHaveBeenStolen)
@@ -1396,7 +1394,7 @@ void State::OnAICommMessage(CommMessage* message)
 				}
 			}
 			break;
-		case ai::CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType:
+		case CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EnemiesHaveBeenSeen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if (!memory.enemiesHaveBeenSeen)
@@ -1413,12 +1411,12 @@ void State::OnAICommMessage(CommMessage* message)
 	} // switch
 }
 
-void State::OnMessageDetectedSomethingSuspicious(CommMessage* message)
+void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 {
-	idEntity* issuingEntity = message->m_p_issuingEntity.GetEntity();
-	idEntity* recipientEntity = message->m_p_recipientEntity.GetEntity();
-	idEntity* directObjectEntity = message->m_p_directObjectEntity.GetEntity();
-	idVec3 directObjectLocation = message->m_directObjectLocation;
+	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
+	idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
+	idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
+	idVec3 directObjectLocation = message.m_directObjectLocation;
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

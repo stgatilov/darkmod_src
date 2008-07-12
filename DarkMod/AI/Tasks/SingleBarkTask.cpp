@@ -23,8 +23,9 @@ SingleBarkTask::SingleBarkTask() :
 	_soundName("")
 {}
 
-SingleBarkTask::SingleBarkTask(const idStr& soundName) :
-	_soundName(soundName)
+SingleBarkTask::SingleBarkTask(const idStr& soundName, const CommMessagePtr& message) :
+	_soundName(soundName),
+	_message(message)
 {}
 
 // Get the name of this task
@@ -41,6 +42,12 @@ void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (!_soundName.IsEmpty())
 	{
+		// Push the message and play the sound
+		if (_message != NULL)
+		{
+			owner->AddMessage(_message);
+		}
+
 		int duration = owner->PlayAndLipSync(_soundName, "talk1");
 		_endTime = gameLocal.time + duration;
 	}
@@ -75,6 +82,9 @@ void SingleBarkTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 	savefile->WriteString(_soundName);
 	savefile->WriteInt(_endTime);
+
+	savefile->WriteBool(_message != NULL);
+	_message->Save(savefile);
 }
 
 void SingleBarkTask::Restore(idRestoreGame* savefile)
@@ -82,6 +92,18 @@ void SingleBarkTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 	savefile->ReadString(_soundName);
 	savefile->ReadInt(_endTime);
+
+	bool hasMessage;
+	savefile->ReadBool(hasMessage);
+	if (hasMessage)
+	{
+		_message = CommMessagePtr(new CommMessage);
+		_message->Restore(savefile);
+	}
+	else
+	{
+		_message = CommMessagePtr();
+	}
 }
 
 SingleBarkTaskPtr SingleBarkTask::CreateInstance()

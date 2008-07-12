@@ -1111,7 +1111,13 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 			// TODO: Keep track of these areas for delayed calculation?
 		}
 	}
-} // End function
+
+	// greebo: We're done propagating, clear the message list of the issuing AI, if appropriate
+	if (propParms->makerAI != NULL)
+	{
+		propParms->makerAI->ClearMessages();
+	}
+}
 
 void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 {

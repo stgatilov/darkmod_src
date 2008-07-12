@@ -98,7 +98,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		if (distanceFromIssuance <= maxRadiusForResponse)
 		{
 			// Pass the AIComm_Message object to the AI's Mind
-			owner->GetMind()->GetState()->OnAICommMessage(p_message);
+			owner->GetMind()->GetState()->OnAICommMessage(*p_message);
 		}
 
 		// Get next message
