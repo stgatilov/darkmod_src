@@ -53,15 +53,6 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	_enemy = enemy;
 
-	// Issue a communication stim
-	owner->IssueCommunication_Internal(
-		static_cast<float>(ai::CommMessage::RequestForMissileHelp_CommType), 
-		YELL_STIM_RADIUS, 
-		NULL,
-		enemy,
-		memory.lastEnemyPos
-	);
-
 	// This checks if taking cover is possible and enabled for this AI
 	_takingCoverPossible = false;
 	if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
@@ -83,8 +74,17 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	// The communication system is barking 
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+
+	// Create the message
+	CommMessagePtr message(new CommMessage(
+		CommMessage::RequestForMissileHelp_CommType, 
+		owner, NULL, // from this AI to anyone 
+		enemy,
+		memory.lastEnemyPos
+	));
+
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_cantReachTarget"))
+		TaskPtr(new SingleBarkTask("snd_cantReachTarget", message))
 	);
 
 	// The sensory system does nothing so far

@@ -118,15 +118,6 @@ void CombatState::Init(idAI* owner)
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
-	// Issue a communication stim
-	owner->IssueCommunication_Internal(
-		static_cast<float>(ai::CommMessage::DetectedEnemy_CommType), 
-		YELL_STIM_RADIUS, 
-		NULL,
-		enemy,
-		memory.lastEnemyPos
-	);
-
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -136,9 +127,17 @@ void CombatState::Init(idAI* owner)
 
 	// Fill the subsystems with their tasks
 
+	// Setup the message to be delivered each time
+	CommMessagePtr message(new CommMessage(
+		CommMessage::DetectedEnemy_CommType, 
+		owner, NULL, // from this AI to anyone 
+		enemy,
+		memory.lastEnemyPos
+	));
+
 	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_combat"))
+		TaskPtr(new SingleBarkTask("snd_combat", message))
 	);
 
 	// Ranged combat

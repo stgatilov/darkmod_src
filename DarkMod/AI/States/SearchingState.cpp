@@ -333,18 +333,6 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 		// a way for different AIs to act differently
 		// TODO: Morale check etc...
 
-		// Yell that you noticed something if you are responding directly to a stimulus
-		if (!memory.searchingDueToCommunication)
-		{
-			owner->IssueCommunication_Internal(
-				ai::CommMessage::DetectedSomethingSuspicious_CommType, 
-				YELL_STIM_RADIUS, 
-				NULL,
-				NULL,
-				memory.alertPos
-			);
-		}
-
 		// Get location
 		memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
 	}

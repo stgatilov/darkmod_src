@@ -42,15 +42,6 @@ void FleeState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = false;
 
-	// Cry for help
-	owner->IssueCommunication_Internal(
-		static_cast<float>(ai::CommMessage::DetectedEnemy_CommType), 
-		YELL_STIM_RADIUS, 
-		NULL,
-		owner->GetEnemy(),
-		memory.lastEnemyPos
-	);
-
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should wait half a second before starting to run
@@ -64,8 +55,18 @@ void FleeState::Init(idAI* owner)
 	owner->StopSound(SND_CHANNEL_VOICE, false);
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));
-	// Placeholder, replace with "snd_flee" when available
-	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new RepeatedBarkTask("snd_flee", 4000,8000)));
+	
+	// Setup the message to be delivered each time
+	CommMessagePtr message(new CommMessage(
+		CommMessage::DetectedEnemy_CommType, 
+		owner, NULL, // from this AI to anyone 
+		owner->GetEnemy(),
+		memory.lastEnemyPos
+	));
+
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new RepeatedBarkTask("snd_flee", 4000,8000, message))
+	);
 
 	// The sensory system 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -77,7 +78,6 @@ void FleeState::Init(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Surprise", 5);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Surprise", 5);
 	owner->SetWaitState("surprise");
-
 }
 
 // Gets called each time the mind is thinking

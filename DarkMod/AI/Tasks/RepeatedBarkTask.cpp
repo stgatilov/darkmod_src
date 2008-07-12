@@ -26,10 +26,13 @@ RepeatedBarkTask::RepeatedBarkTask() :
 	_barkRepeatIntervalMax(0)
 {}
 
-RepeatedBarkTask::RepeatedBarkTask(const idStr& soundName, int barkRepeatIntervalMin, int barkRepeatIntervalMax) : 
+RepeatedBarkTask::RepeatedBarkTask(const idStr& soundName, 
+		int barkRepeatIntervalMin, int barkRepeatIntervalMax, 
+		const CommMessagePtr& message) : 
 	_soundName(soundName), 
 	_barkRepeatIntervalMin(barkRepeatIntervalMin), 
-	_barkRepeatIntervalMax(barkRepeatIntervalMax)
+	_barkRepeatIntervalMax(barkRepeatIntervalMax),
+	_message(message)
 {}
 
 // Get the name of this task
@@ -63,6 +66,13 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 	if (gameLocal.time >= _nextBarkTime)
 	{
 		// The time has come, bark now
+
+		// Setup the message to be propagated, if we have one
+		if (_message != NULL)
+		{
+			owner->AddMessage(_message);
+		}
+
 		int duration = owner->PlayAndLipSync(_soundName, "talk1");
 
 		// Reset the timer

@@ -11,6 +11,7 @@
 #define __AI_REPEATED_BARK_TASK_H__
 
 #include "Task.h"
+#include "../../AIComm_Message.h"
 
 namespace ai
 {
@@ -32,14 +33,21 @@ private:
 	int _barkRepeatIntervalMax;
 	int _nextBarkTime;
 
+	// The message which should be delivered when barking
+	CommMessagePtr _message;
+
 	// Default Constructor
 	RepeatedBarkTask();
 
 public:
 	/**
-	 * greebo: Pass the sound shader name plus the interval range in milliseconds
+	 * greebo: Pass the sound shader name plus the interval range in milliseconds.
+	 * The message argument is optional and can be used to let this Task emit messages
+	 * when playing the sound.
 	 */
-	RepeatedBarkTask(const idStr& soundName, int barkRepeatIntervalMin, int barkRepeatIntervalMax);
+	RepeatedBarkTask(const idStr& soundName, 
+					 int barkRepeatIntervalMin, int barkRepeatIntervalMax, 
+					 const CommMessagePtr& message = CommMessagePtr());
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
