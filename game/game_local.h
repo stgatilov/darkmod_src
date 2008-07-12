@@ -305,7 +305,7 @@ struct SSprParms
 {
 	USprFlags flags;
 
-	const char	*name; // sound name
+	idStr		name; // sound name
 	float		propVol; // propagated volume
 
 	// Apparent direction of the sound, determined by the path point on the portal

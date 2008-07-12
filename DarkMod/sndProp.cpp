@@ -405,7 +405,7 @@ Quit:
 //	calling Propagate, in order to make sure the sound exists somewhere.
 
 void CsndProp::Propagate 
-	( float volMod, float durMod, idStr sndName,
+	( float volMod, float durMod, const idStr& sndName,
 	 idVec3 origin, idEntity *maker,
 	 USprFlags *addFlags )
 
@@ -457,26 +457,19 @@ void CsndProp::Propagate
 	vol0 += cv_ai_sndvol.GetFloat();
 
 	SSprParms propParms;
-	propParms.name = sndName.c_str();
+	propParms.name = sndName;
 
 	// set team alert and propagation flags from the parms
 	SetupParms( parms, &propParms, addFlags, &tmask );
 
 	propParms.duration *= durMod;
-	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified duration %f\r", propParms.duration);
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified duration %f\r", propParms.duration);
 	propParms.maker = maker;
 	propParms.makerAI = (maker->IsType(idAI::Type)) ? static_cast<idAI*>(maker) : NULL;
-
 	propParms.origin = origin;
 
-	if( maker->IsType(idActor::Type) )
-	{
-		mteam = static_cast<idActor *>(maker)->team;
-	}
-	else
-	{
-		mteam = -1; // maker is an object, not an AI
-	}
+	// For objects (non-actors) the team will be set to -1
+	mteam = (maker->IsType(idActor::Type)) ? static_cast<idActor*>(maker)->team : -1;
 
 	// Calculate the range, assuming peceived loudness of a sound doubles every 7 dB
 	// (we want to overestimate a bit.  With the current settings, cutoff for a footstep
@@ -538,9 +531,6 @@ void CsndProp::Propagate
 		}
 		else
 		{
-			// generate the team comparison mask
-			testAI = static_cast<idAI *>( validTypeEnts[i] );
-
 			compMask.m_bits.same = ( testAI->team == mteam );
 			compMask.m_bits.friendly = gameLocal.m_RelationsManager->IsFriend( testAI->team, mteam );
 			compMask.m_bits.neutral = gameLocal.m_RelationsManager->IsNeutral( testAI->team, mteam );
