@@ -20,7 +20,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/DarkmodAASHidingSpotFinder.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../../DarkMod/AIComm_StimResponse.h"
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
 #include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/State.h"

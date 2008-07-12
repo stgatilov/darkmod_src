@@ -12,7 +12,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "StimResponseCollection.h"
-#include "../AIComm_StimResponse.h"
 
 void CStimResponseCollection::Save(idSaveGame *savefile) const
 {
