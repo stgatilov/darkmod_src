@@ -172,8 +172,12 @@ struct CommMessage
 		ConveyWarning_EvidenceOfIntruders_CommType,
 		ConveyWarning_ItemsHaveBeenStolen_CommType,
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
+
+		NumCommTypes, // invalid type
 	};
 
+	// Default constructor, only used for saving/restoring
+	CommMessage();
 
 	/*!
 	* public Constructor
@@ -231,6 +235,7 @@ struct CommMessage
 	float m_maximumRadiusInWorldCoords;
 };
 typedef boost::shared_ptr<CommMessage> CommMessagePtr;
+typedef std::list<ai::CommMessagePtr> MessageList;
 
 } // namespace ai
 

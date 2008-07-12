@@ -77,6 +77,17 @@ CommMessage::CommMessage
 	// Done
 }
 
+CommMessage::CommMessage()
+{
+	m_commType = NumCommTypes;
+	m_maximumRadiusInWorldCoords = 0;
+	m_p_issuingEntity = NULL;
+	m_p_recipientEntity = NULL;
+	m_p_directObjectEntity = NULL;
+	m_directObjectLocation.Zero();
+	m_positionOfIssuance.Zero();
+}
+
 void CommMessage::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(static_cast<int>(m_commType));

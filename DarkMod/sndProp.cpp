@@ -465,6 +465,8 @@ void CsndProp::Propagate
 	propParms.duration *= durMod;
 	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified duration %f\r", propParms.duration);
 	propParms.maker = maker;
+	propParms.makerAI = (maker->IsType(idAI::Type)) ? static_cast<idAI*>(maker) : NULL;
+
 	propParms.origin = origin;
 
 	if( maker->IsType(idActor::Type) )
@@ -707,9 +709,9 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	propParms->bandwidth = parms->GetFloat("width", "-1");
 	
 	if( cv_spr_debug.GetBool() )
+	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Finished transfering sound prop parms\r");
-
-	return;
+	}
 }
 
 bool CsndProp::CheckSound( const char *sndNameGlobal, bool isEnv )
@@ -1111,41 +1113,34 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 	}
 } // End function
 
-void CsndProp::ProcessAI( idAI *AI, idVec3 origin, SSprParms *propParms )
+void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 {
-	float noise(0);
+	if( ai == NULL ) return;
 
 	// check AI hearing, get environmental noise, etc
-	
-	if( AI == NULL )
-		goto Quit;
-
 	if( cv_spr_debug.GetBool() )
 	{
 		gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
-						  propParms->name, AI->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
+						  propParms->name, ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
 
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
-											  propParms->name, AI->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
+											  propParms->name, ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
 	}
 
 	// convert the SPL to loudness and store it in parms
-	AI->SPLtoLoudness( propParms );
+	ai->SPLtoLoudness( propParms );
 
-	if (  AI->CheckHearing( propParms ) )
+	if (ai->CheckHearing(propParms))
 	{
 		// TODO: Add env. sound masking check here
 		// GetEnvNoise should check all the env. noises on the list we made, plus global ones
 		
 		// noiseVol = GetEnvNoise( &propParms, origin, AI->GetEyePosition() );
-		noise = 0;
+		float noise = 0;
 		
 		//message the AI
-		AI->HearSound( propParms, noise, origin );
+		ai->HearSound( propParms, noise, origin );
 	}
-
-Quit:
-	return;
 }
 
 /**

@@ -301,7 +301,7 @@ typedef union USprFlags_s
 * Sound propagation parameters: needed for function arguments
 **/
 
-typedef struct SSprParms_s
+struct SSprParms
 {
 	USprFlags flags;
 
@@ -322,9 +322,9 @@ typedef struct SSprParms_s
 	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path
 	int			floods; // number of portals the sound travelled thru before it hit the AI
 
-	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
-
-} SSprParms;
+	idEntity*	maker;		// it turns out the AI needs to know who made the sound to avoid bugs in some cases
+	idAI*		makerAI;	// a shorthand of the above. If this is non NULL the <maker> entity is an AI.
+};
 
 //============================================================================
 

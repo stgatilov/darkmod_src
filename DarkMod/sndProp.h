@@ -202,7 +202,7 @@ protected:
 	*
 	* Called by ProcessPopulated
 	**/
-	void ProcessAI( idAI* AI, idVec3 origin, SSprParms *propParms );
+	void ProcessAI( idAI* ai, idVec3 origin, SSprParms *propParms );
 
 	/**
 	* Copy parms from loader object, and also initialize several member vars
