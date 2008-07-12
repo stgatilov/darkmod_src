@@ -111,7 +111,6 @@ for i in range( len( game_list ) ):
 
 darkModSrc = '\
 AIComm_Message.cpp \
-AIComm_StimResponse.cpp \
 AIVehicle.cpp \
 BinaryFrobMover.cpp \
 ButtonStateTracker.cpp \
