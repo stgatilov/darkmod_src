@@ -233,7 +233,7 @@ protected:
 	/**
 	* Draws debug lines between a list of points.  Used for soundprop debugging
 	**/
-	void DrawLines( idList<idVec3> *pointlist );
+	void DrawLines(idList<idVec3>& pointlist);
 
 
 protected:

@@ -646,7 +646,6 @@ void CsndProp::Propagate
 	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished filling populated areas, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
 
-
 	bExpandFinished = ExpandWave( vol0, origin );
 
 	//TODO: If bExpandFinished == false, either fake propagation or
@@ -658,6 +657,7 @@ void CsndProp::Propagate
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
 	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: COMPTIME=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
+
 	ProcessPopulated( vol0, origin, &propParms );
 
 	timer_Prop.Stop();
@@ -960,12 +960,10 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 	return returnval;
 } // end function
 
-void CsndProp::ProcessPopulated( float volInit, idVec3 origin, 
-								SSprParms *propParms )
+void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propParms )
 {
 	float LeastLoss, TestLoss, tempDist, tempAtt, tempLoss;
-	int area, LoudPort(0), portNum, i(0), j(0), k(0);
-	idAI *AIPtr;
+	int LoudPort(0), portNum;
 	idVec3 testLoc;
 	SPortEvent *pPortEv;
 	SPopArea *pPopArea;
@@ -973,9 +971,9 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 	
 	int initArea = gameRenderWorld->PointInArea( origin );
 
-	for( i=0; i < m_PopAreasInd.Num(); i++ )
+	for( int i=0; i < m_PopAreasInd.Num(); i++ )
 	{
-		area = m_PopAreasInd[i];
+		int area = m_PopAreasInd[i];
 
 		pPopArea = &m_PopAreas[area];
 
@@ -989,35 +987,34 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 			propParms->bSameArea = true;
 			propParms->direction = origin;
 
-			for( j=0; j < pPopArea->AIContents.Num(); j++)
+			for(int j=0; j < pPopArea->AIContents.Num(); j++)
 			{
-				AIPtr = pPopArea->AIContents[j].GetEntity();
+				idAI* ai = pPopArea->AIContents[j].GetEntity();
 				
-				if (AIPtr == NULL)
+				if (ai == NULL)
 					continue;
 
-				tempDist = (origin - AIPtr->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
+				tempDist = (origin - ai->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
 				tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;
 				tempLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
 
 				propParms->propVol = volInit - tempLoss;
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in (source area) area %d\r", AIPtr->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in (source area) area %d\r", ai->name.c_str(), area);
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist to AI: %f [m], Propagated volume found to be %f [dB]\r", tempDist, propParms->propVol);
 				
-				ProcessAI( AIPtr, origin, propParms );
+				ProcessAI( ai, origin, propParms );
 
 				// draw debug lines if show soundprop cvar is set
 				if( cv_spr_show.GetBool() )
 				{
 					showPoints.Clear();
-					showPoints.Append( AIPtr->GetEyePosition() );
+					showPoints.Append( ai->GetEyePosition() );
 					showPoints.Append( propParms->origin );
-					DrawLines( &showPoints );
+					DrawLines(showPoints);
 				}
 			}
 		}
-
 		// Normal propagation to a surrounding area
 		else if ( pPopArea->bVisited == true )
 		{
@@ -1030,19 +1027,19 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 
 			for( int aiNum = 0; aiNum < pPopArea->AIContents.Num(); aiNum++ )
 			{
-				AIPtr = pPopArea->AIContents[ aiNum ].GetEntity();
+				idAI* ai = pPopArea->AIContents[ aiNum ].GetEntity();
 
-				if (AIPtr == NULL)
+				if (ai == NULL)
 				{
 					DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("NULL AI pointer for AI %d in area %d\r", aiNum, area);
 					continue;
 				}
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Calculating least loss for AI %s in area %d\r", AIPtr->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Calculating least loss for AI %s in area %d\r", ai->name.c_str(), area);
 
-				LeastLoss = 999999999.0f;
+				LeastLoss = idMath::INFINITY;
 
-				for( k=0; k < pPopArea->VisitedPorts.Num(); k++ )
+				for(int k=0; k < pPopArea->VisitedPorts.Num(); k++ )
 				{	
 					portNum = pPopArea->VisitedPorts[ k ];
 					pPortEv = &m_EventAreas[area].PortalDat[ portNum ];
@@ -1051,7 +1048,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 
 					testLoc = m_sndAreas[area].portals[portNum].center;
 
-					tempDist = (testLoc - AIPtr->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
+					tempDist = (testLoc - ai->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI Calc: Distance to AI = %f [m]\r", tempDist);
 
 					tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;
@@ -1075,8 +1072,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 				pPortEv = &m_EventAreas[area].PortalDat[ LoudPort ];
 				propParms->floods = pPortEv->Floods;
 
-
-// Detailed Path Minimization: 
+				// Detailed Path Minimization: 
 
 				// check if AI is within the flood range for detailed path minimization	
 				if( pPortEv->Floods <= s_MAX_DETAILNODES )
@@ -1085,13 +1081,13 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 					propParms->bDetailedPath = true;
 
 					// call detailed path minimization, which writes results to propParms
-					DetailedMin( AIPtr, propParms, pPortEv, area, volInit ); 
+					DetailedMin( ai, propParms, pPortEv, area, volInit ); 
 
 					// message the AI
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated volume found to be %f\r", propParms->propVol);
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", AIPtr->name.c_str(), area);
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", ai->name.c_str(), area);
 					
-					ProcessAI( AIPtr, origin, propParms );
+					ProcessAI( ai, origin, propParms );
 					
 					continue;
 				}
@@ -1102,20 +1098,17 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated volume found to be %f\r", propParms->propVol);
 				
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", AIPtr->name.c_str(), area);
-				ProcessAI( AIPtr, origin, propParms );
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", ai->name.c_str(), area);
+				ProcessAI( ai, origin, propParms );
 			}
 		}
-
 		// Propagation was stopped before this area was reached
 		else if ( pPopArea->bVisited == false )
 		{
 			// Do nothing for now
 			// TODO: Keep track of these areas for delayed calculation?
 		}
-
 	}
-
 } // End function
 
 void CsndProp::ProcessAI( idAI *AI, idVec3 origin, SSprParms *propParms )
@@ -1389,7 +1382,7 @@ Quit:
 	{
 		pathPoints.Insert(AIpos, 0);
 		pathPoints.Append(propParms->origin);
-		DrawLines( &pathPoints );
+		DrawLines(pathPoints);
 	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Detailed path minimization for AI %s finished\r", AI->name.c_str() );
@@ -1397,11 +1390,11 @@ Quit:
 	return;
 }
 
-void CsndProp::DrawLines( idList<idVec3> *pointlist )
+void CsndProp::DrawLines(idList<idVec3>& pointlist)
 {
-	for( int i=0; i<( pointlist->Num() - 1 ); i++)
+	for (int i = 0; i < (pointlist.Num() - 1); i++)
 	{
-		gameRenderWorld->DebugLine( colorGreen, pointlist->operator[](i), pointlist->operator[](i+1), 3000);
+		gameRenderWorld->DebugLine( colorGreen, pointlist[i], pointlist[i+1], 3000);
 	}
 }
 
