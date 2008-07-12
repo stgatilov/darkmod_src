@@ -480,13 +480,10 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 
 	bool ignoreStimulusFromNowOn = true;
 	
-	idActor* other = dynamic_cast<idActor*>(stimSource);
+	if (!stimSource->IsType(idActor::Type)) return; // No Actor, quit
 
-	if (other == NULL)
-	{
-		// No Actor, quit
-		return;
-	}
+	// Hard-cast the stimsource onto an actor 
+	idActor* other = static_cast<idActor*>(stimSource);	
 
 	// Are they dead or unconscious?
 	if (other->health <= 0) 
@@ -498,7 +495,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		}
 		else
 		{
-				bool ignoreStimulusFromNowOn = false;
+			ignoreStimulusFromNowOn = false;
 		}
 	}
 	else if (other->IsKnockedOut())
@@ -510,7 +507,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		}
 		else
 		{
-				bool ignoreStimulusFromNowOn = false;
+			ignoreStimulusFromNowOn = false;
 		}
 	}
 	else
@@ -534,11 +531,15 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			// Remember last time a friendly AI was seen
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
-			idAI* otherAI = dynamic_cast<idAI*>(other);
-
+			if (!other->IsType(idAI::Type)) return; // safeguard
+			idAI* otherAI = static_cast<idAI*>(other);
+			
 			// Get the type of person
 			idStr personType(other->spawnArgs.GetString(PERSONTYPE_KEY));
+
+			// Variables for the sound and the conveyed message
 			idStr soundName;
+			CommMessagePtr message; 
 
 			// Issue a communication stim to the friend we spotted.
 			// We can issue warnings, greetings, etc...
@@ -548,13 +549,12 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().enemiesHaveBeenSeen)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
-					owner->IssueCommunication_Internal(
+					message = CommMessagePtr(new CommMessage(
 						CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
-						TALK_STIM_RADIUS,
-						other, 
+						owner, other, // from this AI to the other
 						NULL,
 						owner->GetPhysics()->GetOrigin()
-					);
+					));
 					soundName = "snd_warnSawEnemy";
 				}
 			}
@@ -563,13 +563,12 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().itemsHaveBeenStolen)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
-					owner->IssueCommunication_Internal(
-						CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType,
-						TALK_STIM_RADIUS, 
-						other, 
+					message = CommMessagePtr(new CommMessage(
+						CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType, 
+						owner, other, // from this AI to the other
 						NULL,
 						owner->GetPhysics()->GetOrigin()
-					);
+					));
 					soundName = "snd_warnMissingItem";
 				}
 			}
@@ -578,13 +577,12 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				if (otherAI != NULL && otherAI->GetMind()->GetMemory().countEvidenceOfIntruders < memory.countEvidenceOfIntruders)
 				{
 					gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
-					owner->IssueCommunication_Internal(
+					message = CommMessagePtr(new CommMessage(
 						CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
-						TALK_STIM_RADIUS, 
-						other, 
+						owner, other, // from this AI to the other
 						NULL,
 						owner->GetPhysics()->GetOrigin()
-					);
+					));
 					soundName = "snd_warnSawEvidence";
 				}
 			}
@@ -592,13 +590,12 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			{
 				// Chance check passed, greetings!
 				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
-				owner->IssueCommunication_Internal(
+				message = CommMessagePtr(new CommMessage(
 					CommMessage::Greeting_CommType, 
-					TALK_STIM_RADIUS, 
-					other, 
+					owner, other, // from this AI to the other
 					NULL,
 					owner->GetPhysics()->GetOrigin()
-				);
+				));
 
 				if (personType == PERSONTYPE_NOBLE)
 				{
@@ -646,7 +643,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			{
 				memory.lastTimeVisualStimBark = gameLocal.time;
 				owner->GetSubsystem(SubsysCommunication)->PushTask(
-					TaskPtr(new SingleBarkTask(soundName))
+					TaskPtr(new SingleBarkTask(soundName, message))
 				);
 			}
 			

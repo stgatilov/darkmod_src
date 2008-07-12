@@ -86,7 +86,6 @@ namespace ai
 
 // Stim radii for various communication styles
 #define YELL_STIM_RADIUS 400
-#define TALK_STIM_RADIUS 200
 
 enum EAlertClass 
 {

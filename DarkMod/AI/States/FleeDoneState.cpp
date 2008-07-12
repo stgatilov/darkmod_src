@@ -88,19 +88,14 @@ void FleeDoneState::Think(idAI* owner)
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			
 			// Create a new help message
-			CommMessagePtr message(new CommMessage(CommMessage::DetectedEnemy_CommType, 
-				distanceToFriend*1.2, owner, friendlyAI, owner->GetEnemy(), owner->lastVisibleEnemyPos)); 
+			CommMessagePtr message(new CommMessage(
+				CommMessage::DetectedEnemy_CommType, 
+				owner, friendlyAI, owner->GetEnemy(), owner->lastVisibleEnemyPos)
+			); 
 
 			// Placeholder, replace with "snd_help" when available
 			TaskPtr barkTask(new SingleBarkTask("snd_somethingSuspicious", message));
 			owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
-			/*owner->IssueCommunication_Internal(
-				static_cast<float>(ai::CommMessage::DetectedEnemy_CommType), 
-				distanceToFriend*1.2, 
-				friendlyAI,
-				owner->GetEnemy(),
-				owner->lastVisibleEnemyPos
-			);*/
 
 			// Go back to suspicious, 
 			// wait some time before going back to idle

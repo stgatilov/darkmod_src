@@ -82,7 +82,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
 		
 		// Calculate distance of the owner of the response from the position of the message at issuance
-		float maxRadiusForResponse = p_message->m_maximumRadiusInWorldCoords;
+		float maxRadiusForResponse = 5000; // greebo: TODO Remove this whole stuff!
 		idVec3 positionOfIssuance = p_message->m_positionOfIssuance;
 
 		float distanceFromIssuance = maxRadiusForResponse + 1.0;
@@ -198,7 +198,6 @@ void CAIComm_Stim::Restore(idRestoreGame *savefile)
 		// Allocate an empty message class
 		cur->p_message = new ai::CommMessage(
 			static_cast<ai::CommMessage::TCommType>(0),
-			0.0f,
 			NULL,
 			NULL,
 			NULL,
@@ -270,7 +269,7 @@ bool CAIComm_Stim::addMessage
 	}
 
 	// Initialize the communication message
-	p_node->p_message = new ai::CommMessage(in_commType, in_maximumRadiusOfResponse, in_p_issuingEntity, in_p_recipientEntity, in_p_directObjectEntity, in_directObjectLocation);
+	p_node->p_message = new ai::CommMessage(in_commType, in_p_issuingEntity, in_p_recipientEntity, in_p_directObjectEntity, in_directObjectLocation);
 	if (p_node->p_message == NULL)
 	{
 		// Out of memory

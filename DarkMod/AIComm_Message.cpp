@@ -38,7 +38,6 @@ namespace ai {
 CommMessage::CommMessage
 (
 	TCommType in_commType,
-	float in_maximumRadiusInWorldCoords,
 	idEntity* in_p_issuingEntity,
 	idEntity* in_p_recipientEntity,
 	idEntity* in_p_directObjectEntity,
@@ -47,7 +46,6 @@ CommMessage::CommMessage
 {
 	// Set member variables
 	m_commType = in_commType;
-	m_maximumRadiusInWorldCoords = in_maximumRadiusInWorldCoords;
 	m_p_issuingEntity = in_p_issuingEntity;
 	m_p_recipientEntity = in_p_recipientEntity;
 	m_p_directObjectEntity = in_p_directObjectEntity;
@@ -80,7 +78,6 @@ CommMessage::CommMessage
 CommMessage::CommMessage()
 {
 	m_commType = NumCommTypes;
-	m_maximumRadiusInWorldCoords = 0;
 	m_p_issuingEntity = NULL;
 	m_p_recipientEntity = NULL;
 	m_p_directObjectEntity = NULL;
@@ -96,7 +93,6 @@ void CommMessage::Save(idSaveGame *savefile) const
 	m_p_directObjectEntity.Save(savefile);
 	savefile->WriteVec3(m_directObjectLocation);
 	savefile->WriteVec3(m_positionOfIssuance);
-	savefile->WriteFloat(m_maximumRadiusInWorldCoords);
 }
 
 void CommMessage::Restore(idRestoreGame *savefile)
@@ -109,7 +105,6 @@ void CommMessage::Restore(idRestoreGame *savefile)
 	m_p_directObjectEntity.Restore(savefile);
 	savefile->ReadVec3(m_directObjectLocation);
 	savefile->ReadVec3(m_positionOfIssuance);
-	savefile->ReadFloat(m_maximumRadiusInWorldCoords);
 }
 
 } // namespace ai
