@@ -94,10 +94,13 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 void RepeatedBarkTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
-	savefile->WriteString(_soundName.c_str());
+	savefile->WriteString(_soundName);
 	savefile->WriteInt(_barkRepeatIntervalMin);
 	savefile->WriteInt(_barkRepeatIntervalMax);
 	savefile->WriteInt(_nextBarkTime);
+
+	savefile->WriteBool(_message != NULL);
+	_message->Save(savefile);
 }
 
 void RepeatedBarkTask::Restore(idRestoreGame* savefile)
@@ -107,6 +110,18 @@ void RepeatedBarkTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_barkRepeatIntervalMin);
 	savefile->ReadInt(_barkRepeatIntervalMax);
 	savefile->ReadInt(_nextBarkTime);
+
+	bool hasMessage;
+	savefile->ReadBool(hasMessage);
+	if (hasMessage)
+	{
+		_message = CommMessagePtr(new CommMessage);
+		_message->Restore(savefile);
+	}
+	else
+	{
+		_message = CommMessagePtr();
+	}
 }
 
 RepeatedBarkTaskPtr RepeatedBarkTask::CreateInstance()
