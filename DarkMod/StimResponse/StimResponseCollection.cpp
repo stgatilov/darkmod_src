@@ -42,15 +42,7 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 		// Allocate a new stim class (according to the type info)
 		int typeInt;
 		savefile->ReadInt(typeInt);
-		if (static_cast<StimType>(typeInt) == ST_COMMUNICATION)
-		{
-			m_Stim[i] = new CAIComm_Stim(NULL, 0, -1);
-		}
-		else 
-		{
-			m_Stim[i] = new CStim(NULL, 0, -1);
-		}
-		
+		m_Stim[i] = new CStim(NULL, 0, -1);
 		m_Stim[i]->Restore(savefile);
 	}
 
@@ -61,61 +53,33 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 		// Allocate a new response class (according to the type info)
 		int typeInt;
 		savefile->ReadInt(typeInt);
-		if (static_cast<StimType>(typeInt) == ST_COMMUNICATION)
-		{
-			m_Response[i] = new CAIComm_Response(NULL, 0, -1);
-		}
-		else 
-		{
-			m_Response[i] = new CResponse(NULL, 0, -1);
-		}
-		
+		m_Response[i] = new CResponse(NULL, 0, -1);
 		m_Response[i]->Restore(savefile);
 	}
 }
 
 CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
 {
-	CStim* pRet;
-
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Stim with ID: %d\r", gameLocal.m_HighestSRId);
 
-	if (type == ST_COMMUNICATION)
-	{
-		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CAIComm_Stim\r");
-		pRet = new CAIComm_Stim(p_owner, type, gameLocal.m_HighestSRId);
-	}
-	else
-	{
-		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CStim\r");
-		pRet = new CStim(p_owner, type, gameLocal.m_HighestSRId);
-	}
-
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CStim\r");
+	CStim* pRet = new CStim(p_owner, type, gameLocal.m_HighestSRId);
+	
 	return pRet;
 }
 
 CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType type)
 {
-	CResponse* pRet;
-
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Response with ID: %d\r", gameLocal.m_HighestSRId);
 
-	if (type == ST_COMMUNICATION)
-	{
-		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CAIComm_Response\r");
-		pRet = new CAIComm_Response (p_owner, type, gameLocal.m_HighestSRId);
-	}
-	else
-	{
-		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CResponse\r");
-		pRet = new CResponse(p_owner, type, gameLocal.m_HighestSRId);
-	}
-
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CResponse\r");
+	CResponse* pRet = new CResponse(p_owner, type, gameLocal.m_HighestSRId);
+	
 	// Optimization: Set contents to include CONTENTS_RESPONSE
 	p_owner->GetPhysics()->SetContents( p_owner->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
