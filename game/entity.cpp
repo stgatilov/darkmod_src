@@ -1126,7 +1126,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 	}
 
 	savefile->WriteInt( mpGUIState );
-	savefile->WriteObject(m_Inventory);
 
 	savefile->WriteBool(m_Inventory != NULL);
 	if (m_Inventory != NULL) {
@@ -1293,8 +1292,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 	}
 
 	savefile->ReadInt( mpGUIState );
-
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_Inventory ) );
 
 	bool hasInventory;
 	savefile->ReadBool(hasInventory);

@@ -1663,7 +1663,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		kv = spawnArgs.MatchPrefix( "pm_", kv );
 	}
 
-	savefile->ReadFloat( set );
+	// savefile->ReadFloat( set );
 	// Commented out by Dram. TDM does not use stamina
 	//pm_stamina.SetFloat( set );
 
