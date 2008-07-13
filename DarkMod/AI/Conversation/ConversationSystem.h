@@ -18,6 +18,9 @@ namespace ai {
 
 class ConversationSystem
 {
+	// The indexed list of conversations
+	idList<ConversationPtr> _conversations;
+
 public:
 	// Clears and removes all allocated data
 	void Clear();
