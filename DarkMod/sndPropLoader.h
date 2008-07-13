@@ -35,7 +35,7 @@ class CMatRUT;
 
 /**
 * Global soundprop settings
-* Populated from entityDef soundprop_globals
+* Populated from entityDef atdm:soundprop_globals
 **/
 class SsndPGlobals
 {
@@ -243,7 +243,7 @@ public:
 	* the base class, but just in case CsndProp needs it, it's here.
 	*
 	* Logs a warning and sets defaults if it cannot find the def
-	* for soundprop_globals.
+	* for atdm:soundprop_globals.
 	**/
 	void GlobalsFromDef( void );
 
@@ -269,7 +269,7 @@ protected:
 	void UpdateGlobals( void );
 
 	/**
-	* Set the globals to some default values if the soundprop_globals
+	* Set the globals to some default values if the atdm:soundprop_globals
 	* def is missing.
 	**/
 	void DefaultGlobals( void );

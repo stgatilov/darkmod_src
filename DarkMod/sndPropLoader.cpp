@@ -219,12 +219,12 @@ void CsndPropBase::GlobalsFromDef( void )
 {
 	const idDict *def;
 
-	def = gameLocal.FindEntityDefDict( "soundprop_globals", false );
+	def = gameLocal.FindEntityDefDict( "atdm:soundprop_globals", false );
 
 	if(!def)
 	{
-		gameLocal.Warning("[DarkMod Sound Prop] : Did not find def for soundprop_globals.  Bad or missing soundprop.def file.  Using default values.");
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Did not find def for soundprop_globals.  Using default values.\r");
+		gameLocal.Warning("[DarkMod Sound Prop] : Did not find def for atdm:soundprop_globals.  Bad or missing tdm_soundprop.def file.  Using default values.");
+		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Did not find def for atdm:soundprop_globals.  Using default values.\r");
 		DefaultGlobals();
 		goto Quit;
 	}
