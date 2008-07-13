@@ -30,6 +30,9 @@ class Conversation
 
 	float _talkDistance;
 
+	// All actors participating in this conversation
+	idStringList _actors;
+
 public:
 	Conversation();
 

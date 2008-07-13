@@ -39,6 +39,12 @@ void Conversation::Save(idSaveGame* savefile) const
 	savefile->WriteString(_name);
 	savefile->WriteBool(_isValid);
 	savefile->WriteFloat(_talkDistance);
+
+	savefile->WriteInt(_actors.Num());
+	for (int i = 0; i < _actors.Num(); i++)
+	{
+		savefile->WriteString(_actors[i]);
+	}
 }
 
 void Conversation::Restore(idRestoreGame* savefile)
@@ -46,6 +52,14 @@ void Conversation::Restore(idRestoreGame* savefile)
 	savefile->ReadString(_name);
 	savefile->ReadBool(_isValid);
 	savefile->ReadFloat(_talkDistance);
+
+	int num;
+	savefile->ReadInt(num);
+	_actors.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(_actors[i]);
+	}
 }
 
 void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
@@ -60,7 +74,17 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 		return;
 	}
 
+	// Parse "global" conversation settings 
 	_talkDistance = dict.GetFloat(prefix + "talk_distance");
+
+	// Parse participant actors
+	// Check if this entity can be used by others.
+	idStr actorPrefix = prefix + "actor_";
+	for (const idKeyValue* kv = dict.MatchPrefix(actorPrefix); kv != NULL; kv = dict.MatchPrefix(actorPrefix, kv))
+	{
+		// Add each actor name to the list
+		_actors.AddUnique(kv->GetValue());
+	}
 
 	// TODO: Add more sophisticated validity check here
 	_isValid = true;
