@@ -24,7 +24,7 @@ void ConversationSystem::Clear()
 
 void ConversationSystem::Init(idMapFile* mapFile)
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Searching for difficulty setting on worldspawn.\r");
+	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Searching for difficulty setting on worldspawn.\r");
 
 	if (mapFile->GetNumEntities() <= 0) {
 		return; // no entities!
@@ -57,7 +57,9 @@ void ConversationSystem::Restore(idRestoreGame* savefile)
 
 void ConversationSystem::LoadConversationEntity(idMapEntity* entity)
 {
-	// TODO
+	assert(entity != NULL);
+
+	float talkDistance = entity->epairs.GetFloat("talk_distance", "100");
 }
 
 } // namespace ai

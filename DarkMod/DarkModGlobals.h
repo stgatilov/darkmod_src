@@ -77,6 +77,7 @@ typedef enum {
 	LC_STIM_RESPONSE,
 	LC_OBJECTIVES,
 	LC_DIFFICULTY,		// anything difficulty-related
+	LC_CONVERSATION,	// conversation/dialogue stuff
 	LC_COUNT
 } LC_LogClass;
 
