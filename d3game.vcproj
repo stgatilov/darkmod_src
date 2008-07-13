@@ -606,6 +606,14 @@
 						RelativePath=".\DarkMod\AI\Conversation\Conversation.h"
 						>
 					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Conversation\ConversationCommand.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Conversation\ConversationCommand.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="EAS"
