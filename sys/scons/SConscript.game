@@ -181,6 +181,7 @@ AI/Mind.cpp \
 AI/Memory.cpp \
 AI/Subsystem.cpp \
 AI/Conversation/ConversationSystem.cpp \
+AI/Conversation/Conversation.cpp \
 AI/EAS/EAS.cpp \
 AI/EAS/RouteInfo.cpp \
 AI/EAS/RouteNode.cpp \

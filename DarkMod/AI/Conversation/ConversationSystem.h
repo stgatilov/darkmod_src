@@ -12,7 +12,7 @@
 
 #include "../../../idlib/precompiled.h"
 
-#include <boost/shared_ptr.hpp>
+#include "Conversation.h"
 
 namespace ai {
 
