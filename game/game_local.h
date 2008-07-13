@@ -196,6 +196,12 @@ class CMissionData;
 class CStimResponse;
 class CEscapePointManager;
 
+// Forward declare the Conversation System
+namespace ai { 
+	class ConversationSystem;
+	typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
+} // namespace
+
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
 const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
@@ -440,27 +446,31 @@ public:
 	// The object handling the difficulty settings
 	difficulty::DifficultyManager	m_DifficultyManager;
 
+	// The manager for handling AI => Area mappings (needed for AI to remember locked doors, for instance)
 	ai::AreaManager			m_AreaManager;
 
-/**
-* Pointer to global AI Relations object
-**/
+	// The manager class for all map conversations
+	ai::ConversationSystemPtr	m_ConversationSystem;
+
+	/**
+	* Pointer to global AI Relations object
+	**/
 	CRelations *			m_RelationsManager;
 
-/**
-* Pointer to global Mission Data object (objectives & stats)
-**/
+	/**
+	* Pointer to global Mission Data object (objectives & stats)
+	**/
 	CMissionData *			m_MissionData;
 	EMissionResult			m_MissionResult; // holds the global mission state
 
-/**
-* Pointer to global sound prop loader object
-**/
+	/**
+	* Pointer to global sound prop loader object
+	**/
 	CsndPropLoader *		m_sndPropLoader;
 
-/**
-* Pointer to global sound prop gameplay object
-**/
+	/**
+	* Pointer to global sound prop gameplay object
+	**/
 	CsndProp *				m_sndProp;
 
 	/**
@@ -474,10 +484,10 @@ public:
 	 */
 	GamePlayTimer m_GamePlayTimer;
 	
-/**
-* Temporary storage of the walkspeed.  This is a workaround
-*	because the walkspeed keeps getting reset.
-**/
+	/**
+	* Temporary storage of the walkspeed.  This is a workaround
+	*	because the walkspeed keeps getting reset.
+	**/
 	float					m_walkSpeed;
 
 	// The highest used unique stim/response id

@@ -1,9 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 2395 $
- * $Date: 2008-05-27 20:40:03 +0200 (Di, 27 Mai 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -18,6 +18,7 @@ namespace ai {
 
 class ConversationSystem
 {
+public:
 	// Clears and removes all allocated data
 	void Clear();
 
