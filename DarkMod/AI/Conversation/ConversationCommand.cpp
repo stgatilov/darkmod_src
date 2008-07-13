@@ -16,6 +16,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 namespace ai {
 
+bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
+{
+	return false;
+}
+
 void ConversationCommand::Save(idSaveGame* savefile) const
 {
 	// TODO

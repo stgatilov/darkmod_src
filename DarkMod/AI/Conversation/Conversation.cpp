@@ -97,10 +97,65 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 	for (const idKeyValue* kv = dict.MatchPrefix(actorPrefix); kv != NULL; kv = dict.MatchPrefix(actorPrefix, kv))
 	{
 		// Add each actor name to the list
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Adding actor %s to conversation %s.\r", kv->GetValue().c_str(), _name.c_str());
 		_actors.AddUnique(kv->GetValue());
 	}
 
-	// TODO: Add more sophisticated validity check here
+	DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s has %d actors.\r", _name.c_str(), _actors.Num());
+
+	if (_actors.Num() == 0)
+	{
+		_isValid = false; // no actors, no conversation
+		gameLocal.Warning("Ignoring conversation %s as it has no actors.\n", _name.c_str());
+		return;
+	}
+
+	// Start parsing the conversation scripts (i.e. the commands)
+	for (int i = 0; i < INT_MAX; i++)
+	{
+		idStr cmdPrefix = va(prefix + "cmd_%d_", i);
+
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Attempting to find command with index %d matching prefix %s.\r", i, cmdPrefix.c_str());
+
+		if (dict.MatchPrefix(cmdPrefix) != NULL)
+		{
+			// Found a matching "conv_N_cmd_M..." spawnarg, start parsing 
+			ConversationCommandPtr cmd(new ConversationCommand);
+
+			// Let the command parse itself
+			if (cmd->Parse(dict, cmdPrefix))
+			{
+				// Parsing succeeded, add this to the command list
+				_commands.Append(cmd);
+			}
+		}
+		else 
+		{
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("No match found, terminating loop on index %d.\r", i);
+			break;
+		}
+	}
+
+	DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("%d Commands found for Conversation %s.\r", _commands.Num(), _name.c_str());
+
+	// Sanity check the commands
+	if (_commands.Num() == 0) 
+	{
+		// No commands, what kind of conversation is this?
+		_isValid = false;
+		gameLocal.Warning("Ignoring conversation %s as it has no commands.\n", _name.c_str());
+		return;
+	}
+
+	// Sanity check the talk distance
+	if (_talkDistance <= 0.0f)
+	{
+		_isValid = false;
+		gameLocal.Warning("Ignoring conversation %s as it has a talk distance <= 0.\n", _name.c_str());
+		return;
+	}
+
+	// Seems like we have everything we need
 	_isValid = true;
 }
 
