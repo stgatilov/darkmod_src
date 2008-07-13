@@ -100,7 +100,10 @@ void RepeatedBarkTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_nextBarkTime);
 
 	savefile->WriteBool(_message != NULL);
-	_message->Save(savefile);
+	if (_message != NULL)
+	{
+		_message->Save(savefile);
+	}
 }
 
 void RepeatedBarkTask::Restore(idRestoreGame* savefile)

@@ -84,7 +84,10 @@ void SingleBarkTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_endTime);
 
 	savefile->WriteBool(_message != NULL);
-	_message->Save(savefile);
+	if (_message != NULL)
+	{
+		_message->Save(savefile);
+	}
 }
 
 void SingleBarkTask::Restore(idRestoreGame* savefile)
