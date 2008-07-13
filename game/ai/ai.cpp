@@ -4207,12 +4207,10 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		{
 			// Try to open doors
 			CFrobDoor* p_door = static_cast<CFrobDoor*>(obstacle);
-
-			if (m_bCanOperateDoors) 
-			{	
-				// We have a frobmover in our way, raise a signal to the current state
-				mind->GetState()->OnFrobDoorEncounter(p_door);
-			}
+		
+			// We have a frobmover in our way, raise a signal to the current state
+			mind->GetState()->OnFrobDoorEncounter(p_door);
+			
 		}
 		else
 		{

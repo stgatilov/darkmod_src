@@ -40,7 +40,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 */
 
 const float MAX_OBSTACLE_RADIUS			= 128.0f;
-const float OBSTACLE_HEIGHT_EXPANSION		= 20.0f;
+const float OBSTACLE_HEIGHT_EXPANSION	= 10.0f;
 const float PUSH_OUTSIDE_OBSTACLES		= 0.5f;
 const float CLIP_BOUNDS_EPSILON			= 10.0f;
 const int 	MAX_AAS_WALL_EDGES			= 256;
@@ -328,20 +328,32 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	// clip bounds for the obstacle search space
 	clipBounds[0] = clipBounds[1] = startPos;
 	clipBounds.AddPoint( seekPos );
-	idBounds bounds(physics->GetBounds());
-	clipBounds[0][0] -= MAX_OBSTACLE_RADIUS;
-	clipBounds[0][1] -= MAX_OBSTACLE_RADIUS;
-	clipBounds[1][0] += MAX_OBSTACLE_RADIUS;
-	clipBounds[1][1] += MAX_OBSTACLE_RADIUS;
+
+	const idBounds& bounds = physics->GetBounds();
+
+	idVec3 dir = seekDelta;
+	dir.z = 0;
+	dir.NormalizeFast();
+	idVec3 center = 0.5 * (startPos + seekPos);
+
+	idVec3 normal = dir.Cross(gameLocal.GetGravity());
+	normal.NormalizeFast();
+	clipBounds.AddPoint( center +  MAX_OBSTACLE_RADIUS * normal);
+	clipBounds.AddPoint( center -  MAX_OBSTACLE_RADIUS * normal);
+
+	clipBounds.AddPoint(seekPos + 2 * bounds[1][0] * dir);
+	clipBounds.AddPoint(startPos - 2 * bounds[1][0] * dir);
 
 	clipBounds[0][2] -= bounds[0][2] + OBSTACLE_HEIGHT_EXPANSION;
 	clipBounds[1][2] += bounds[1][2] + OBSTACLE_HEIGHT_EXPANSION;
+
+	clipBounds.ExpandSelf(CLIP_BOUNDS_EPSILON);
 
 	// clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
 	clipMask = physics->GetClipMask();
 
 	if ( ai_showObstacleAvoidance.GetBool() ) {
-		gameRenderWorld->DebugBox(colorBlue, idBox(clipBounds), 16);
+		gameRenderWorld->DebugBox(colorBlue, idBox(clipBounds), gameLocal.msec);
 	}
 
 	// find all obstacles touching the clip bounds
@@ -473,7 +485,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				silVerts[j].z = startPos.z;
 			}
 			for ( int j = 0; j < numVerts; j++ ) {
-				gameRenderWorld->DebugArrow( colorWhite, silVerts[j], silVerts[(j+1)%numVerts], 4 );
+				gameRenderWorld->DebugArrow( colorWhite, silVerts[j], silVerts[(j+1)%numVerts], 4 ,gameLocal.msec);
 			}
 		}
 
@@ -608,7 +620,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				silVerts[j].z = startPos.z;
 			}
 			for ( int j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
-				gameRenderWorld->DebugArrow( colorGreen, silVerts[j], silVerts[(j+1)%obstacle.winding.GetNumPoints()], 4 );
+				gameRenderWorld->DebugArrow( colorGreen, silVerts[j], silVerts[(j+1)%obstacle.winding.GetNumPoints()], 4, gameLocal.msec );
 			}
 		}
 	}
@@ -1029,7 +1041,10 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 	}
 
 	if ( !pathToGoalExists ) {
-		seekPos.ToVec2() = root->children[0]->pos;
+		if (root->children[0] != NULL)
+		{
+			seekPos.ToVec2() = root->children[0]->pos;
+		}
 	} else if ( !optimizedPathCalculated ) {
 		OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 		seekPos.ToVec2() = optimizedPath[1];
@@ -1042,7 +1057,7 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 		for ( i = 0; i < numPathPoints-1; i++ ) {
 			start.ToVec2() = optimizedPath[i];
 			end.ToVec2() = optimizedPath[i+1];
-			gameRenderWorld->DebugArrow( colorCyan, start, end, 1 );
+			gameRenderWorld->DebugArrow( colorCyan, start, end, 1, gameLocal.msec);
 		}
 	}
 
