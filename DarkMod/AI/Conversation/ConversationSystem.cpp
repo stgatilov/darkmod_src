@@ -64,7 +64,8 @@ void ConversationSystem::LoadConversationEntity(idMapEntity* entity)
 
 	DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Investigating conversation entity %s.\r", entity->epairs.GetString("name"));
 
-	for (int i = 0; i < INT_MAX; i++)
+	// The conversation index starts with 1, not zero
+	for (int i = 1; i < INT_MAX; i++)
 	{
 		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Attempting to parse using conversation index %d.\r", i);
 

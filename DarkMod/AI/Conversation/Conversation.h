@@ -22,6 +22,9 @@ namespace ai {
  */
 class Conversation
 {
+	// The name of this conversation
+	idStr _name;
+
 	// whether this conversation has errors or not
 	bool _isValid;
 
