@@ -12,7 +12,7 @@
 
 #include "../../../idlib/precompiled.h"
 
-#include <boost/shared_ptr.hpp>
+#include "ConversationCommand.h"
 
 namespace ai {
 
@@ -32,6 +32,9 @@ class Conversation
 
 	// All actors participating in this conversation
 	idStringList _actors;
+
+	// The list of commands this conversation consists of (this is the actual "script")
+	idList<ConversationCommandPtr> _commands;
 
 public:
 	Conversation();

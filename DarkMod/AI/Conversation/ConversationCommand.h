@@ -19,7 +19,9 @@ namespace ai {
 class ConversationCommand
 {
 public:
-	void Clear();
+	// Save/Restore routines
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 };
 typedef boost::shared_ptr<ConversationCommand> ConversationCommandPtr;
 

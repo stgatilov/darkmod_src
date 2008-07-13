@@ -16,5 +16,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 namespace ai {
 
+void ConversationCommand::Save(idSaveGame* savefile) const
+{
+	// TODO
+}
+
+void ConversationCommand::Restore(idRestoreGame* savefile)
+{
+	// TODO
+}
 
 } // namespace ai

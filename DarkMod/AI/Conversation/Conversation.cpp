@@ -45,6 +45,12 @@ void Conversation::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteString(_actors[i]);
 	}
+
+	savefile->WriteInt(_commands.Num());
+	for (int i = 0; i < _commands.Num(); i++)
+	{
+		_commands[i]->Save(savefile);
+	}
 }
 
 void Conversation::Restore(idRestoreGame* savefile)
@@ -59,6 +65,14 @@ void Conversation::Restore(idRestoreGame* savefile)
 	for (int i = 0; i < num; i++)
 	{
 		savefile->ReadString(_actors[i]);
+	}
+
+	savefile->ReadInt(num);
+	_commands.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		_commands[i] = ConversationCommandPtr(new ConversationCommand);
+		_commands[i]->Restore(savefile);
 	}
 }
 
