@@ -123,7 +123,7 @@ void idTestModel::Spawn( void ) {
 	// add the head model if it has one
 	headModel = spawnArgs.GetString( "def_head", "" );
 	if ( headModel[ 0 ] ) {
-		jointName = spawnArgs.GetString( "head_joint" );
+		jointName = "Head";//spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) {
 			gameLocal.Warning( "Joint '%s' not found for 'head_joint'", jointName.c_str() );
@@ -772,6 +772,7 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 
 	dict.Set( "origin", offset.ToString() );
 	dict.Set( "angle", va( "%f", player->viewAngles.yaw + 180.0f ) );
+	dict.Set( "def_head", g_testModelHead.GetString());
 	gameLocal.testmodel = ( idTestModel * )gameLocal.SpawnEntityType( idTestModel::Type, &dict );
 	gameLocal.testmodel->renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 }
