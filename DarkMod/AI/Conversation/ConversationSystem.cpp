@@ -20,6 +20,7 @@ namespace ai {
 
 void ConversationSystem::Clear()
 {
+	_conversations.Clear();
 }
 
 void ConversationSystem::Init(idMapFile* mapFile)
@@ -50,12 +51,26 @@ void ConversationSystem::Init(idMapFile* mapFile)
 
 void ConversationSystem::Save(idSaveGame* savefile) const
 {
-	// TODO
+	savefile->WriteInt(_conversations.Num());
+	for (int i = 0; i < _conversations.Num(); i++)
+	{
+		_conversations[i]->Save(savefile);
+	}
 }
 
 void ConversationSystem::Restore(idRestoreGame* savefile)
 {
-	// TODO
+	_conversations.Clear();
+
+	int num;
+	savefile->ReadInt(num);
+	_conversations.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		// Allocate a new conversation and restore it
+		_conversations[i] = ConversationPtr(new Conversation);
+		_conversations[i]->Restore(savefile);
+	}
 }
 
 void ConversationSystem::LoadConversationEntity(idMapEntity* entity)
