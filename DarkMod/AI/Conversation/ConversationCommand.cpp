@@ -87,6 +87,12 @@ bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 void ConversationCommand::Save(idSaveGame* savefile) const
 {
 	savefile->WriteInt(static_cast<int>(_type));
+
+	savefile->WriteInt(_arguments.Num());
+	for (int i = 0; i < _arguments.Num(); i++)
+	{
+		savefile->WriteString(_arguments[i]);
+	}
 }
 
 void ConversationCommand::Restore(idRestoreGame* savefile)
@@ -95,6 +101,14 @@ void ConversationCommand::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(typeInt);
 	assert(typeInt >= 0 && typeInt <= ENumCommands); // sanity check
 	_type = static_cast<Type>(typeInt);
+
+	int num;
+	savefile->ReadInt(num);
+	_arguments.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(_arguments[i]);
+	}
 }
 
 ConversationCommand::Type ConversationCommand::GetType(const idStr& cmdString)
