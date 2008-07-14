@@ -677,6 +677,12 @@
 						RelativePath=".\DarkMod\Ai\States\CombatState.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\ConversationState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\ConversationState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\DeadState.cpp">
 					</File>
 					<File
