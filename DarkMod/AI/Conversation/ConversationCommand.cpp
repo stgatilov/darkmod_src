@@ -39,6 +39,22 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 	"AttackEntity"
 };
 
+ConversationCommand::Type ConversationCommand::GetType()
+{
+	return _type;
+}
+
+int ConversationCommand::GetNumArguments()
+{
+	return _arguments.Num();
+}
+
+// Returns the given argument (starting with index 0) or "" if the argument doesn't exist
+idStr ConversationCommand::GetArgument(int index)
+{
+	return (index > 0 && index < _arguments.Num()) ? _arguments[index] : "";
+}
+
 bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 {
 	// Get the type

@@ -54,6 +54,15 @@ private:
 	idStringList _arguments;
 
 public:
+	// Returns the type of this conversation command
+	Type GetType();
+
+	// Returns the number of arguments
+	int GetNumArguments();
+
+	// Returns the given argument (starting with index 0) or "" if the argument doesn't exist
+	idStr GetArgument(int index);
+
 	/**
 	 * greebo: Parses the command parameters from the given idDict.
 	 * The prefix is something along the lines "conv_2_cmd_3_" and is
