@@ -52,6 +52,19 @@ bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 
 	DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Found command type %s for prefix %s.\r", TypeNames[_type], prefix.c_str());
 
+	// Parse the arguments
+	_arguments.Clear();
+
+	idStr argPrefix = prefix + "arg_";
+	for (const idKeyValue* kv = dict.MatchPrefix(argPrefix); kv != NULL; kv = dict.MatchPrefix(argPrefix, kv))
+	{
+		// Add each actor name to the list
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Adding argument %s to conversation command %s.\r", kv->GetValue().c_str(), TypeNames[_type]);
+		_arguments.Append(kv->GetValue());
+	}
+
+	DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Command type %s has %d arguments.\r", TypeNames[_type], _arguments.Num());
+
 	return true;
 }
 

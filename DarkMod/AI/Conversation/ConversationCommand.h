@@ -50,6 +50,9 @@ private:
 	// The type of this command
 	Type _type;
 
+	// Argument list
+	idStringList _arguments;
+
 public:
 	/**
 	 * greebo: Parses the command parameters from the given idDict.

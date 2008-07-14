@@ -110,8 +110,8 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 		return;
 	}
 
-	// Start parsing the conversation scripts (i.e. the commands)
-	for (int i = 0; i < INT_MAX; i++)
+	// Start parsing the conversation scripts (i.e. the commands), start with index 1
+	for (int i = 1; i < INT_MAX; i++)
 	{
 		idStr cmdPrefix = va(prefix + "cmd_%d_", i);
 
