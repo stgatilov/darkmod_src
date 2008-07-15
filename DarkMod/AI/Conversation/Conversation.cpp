@@ -18,12 +18,14 @@ namespace ai {
 
 Conversation::Conversation() :
 	_isValid(false),
-	_talkDistance(0.0f)
+	_talkDistance(0.0f),
+	_playCount(0)
 {}
 
 Conversation::Conversation(const idDict& spawnArgs, int index) :
 	_isValid(false),
-	_talkDistance(0.0f)
+	_talkDistance(0.0f),
+	_playCount(0)
 {
 	// Pass the call to the parser
 	InitFromSpawnArgs(spawnArgs, index);
@@ -37,6 +39,22 @@ bool Conversation::IsValid()
 const idStr& Conversation::GetName() const
 {
 	return _name;
+}
+
+int Conversation::GetPlayCount()
+{
+	return _playCount;
+}
+
+bool Conversation::CheckConditions()
+{
+	// TODO
+	return true;
+}
+
+void Conversation::Start()
+{
+
 }
 
 void Conversation::Save(idSaveGame* savefile) const
@@ -56,6 +74,8 @@ void Conversation::Save(idSaveGame* savefile) const
 	{
 		_commands[i]->Save(savefile);
 	}
+
+	savefile->WriteInt(_playCount);
 }
 
 void Conversation::Restore(idRestoreGame* savefile)
@@ -79,6 +99,8 @@ void Conversation::Restore(idRestoreGame* savefile)
 		_commands[i] = ConversationCommandPtr(new ConversationCommand);
 		_commands[i]->Restore(savefile);
 	}
+
+	savefile->ReadInt(_playCount);
 }
 
 void Conversation::InitFromSpawnArgs(const idDict& dict, int index)

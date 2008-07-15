@@ -85,7 +85,14 @@ void ConversationSystem::StartConversation(int index)
 
 	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Trying to start conversation %s.\r", conv->GetName().c_str());
 
+	// Check if the conditions to start the conversations is met
+	if (!conv->CheckConditions())
+	{
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Cannot start conversation %s, conditions are not met.\r", conv->GetName().c_str());
+	}
 
+	// Start the conversation
+	conv->Start();
 }
 
 void ConversationSystem::Save(idSaveGame* savefile) const
