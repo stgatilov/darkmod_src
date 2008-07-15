@@ -2951,14 +2951,19 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles
 	rotate = angles.ToMat3();
 	newAxis = rotate * axis;
 
-	ent->Unbind();
+	ent->Unbind(); 
+
+	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
+	// Hence, re-assign the attachment entity pointer (the index itself is ok)
+	attachment->ent = ent;
+
 	ent->SetAxis( newAxis );
 	// Use the local joint axis instead of the overall AI axis
 	ent->SetOrigin( origin + offset * axis );
 
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
-	
+
 	// set the spawnargs for later retrieval as well
 	ent->spawnArgs.Set( "joint", jointName.c_str() );
 	ent->spawnArgs.SetVector( "origin", offset );
