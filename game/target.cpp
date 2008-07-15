@@ -1932,6 +1932,39 @@ void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
 /*
 ===============================================================================
 
+CTarget_StartConversation
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_StartConversation )
+	EVENT( EV_Activate,	CTarget_StartConversation::Event_Activate )
+END_CLASS
+
+void CTarget_StartConversation::Spawn( void )
+{
+	if (spawnArgs.FindKey("conversation") == NULL) 
+	{
+		gameLocal.Warning("Target %s has no 'conversation' spawnarg set!", name.c_str());
+		return;
+	}
+}
+
+void CTarget_StartConversation::Event_Activate( idEntity *activator )
+{
+	idStr conversationName = spawnArgs.GetString("conversation");
+
+	if (conversationName.IsEmpty()) 
+	{
+		gameLocal.Printf("Target %s has no 'conversation' spawnarg set!\n", name.c_str());
+		return;
+	}
+
+	// Try to start conversation
+}
+
+/*
+===============================================================================
+
 CTarget_SetFrobable
 
 ===============================================================================

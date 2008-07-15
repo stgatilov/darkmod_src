@@ -604,6 +604,19 @@ private:
 };
 
 /**
+ * greebo: Target for triggerig conversations.
+ */
+class CTarget_StartConversation : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_StartConversation );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
 * CTarget_SetFrobable
 * Sets all items inside frobable or not when triggered
 **/
