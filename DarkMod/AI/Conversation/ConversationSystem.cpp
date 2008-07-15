@@ -57,7 +57,7 @@ ConversationPtr ConversationSystem::GetConversation(const idStr& name)
 
 ConversationPtr ConversationSystem::GetConversation(int index)
 {
-	return (index > 0 && index < _conversations.Num()) ? _conversations[index] : ConversationPtr();
+	return (index >= 0 && index < _conversations.Num()) ? _conversations[index] : ConversationPtr();
 }
 
 int ConversationSystem::GetConversationIndex(const idStr& name)
@@ -71,6 +71,21 @@ int ConversationSystem::GetConversationIndex(const idStr& name)
 	}
 
 	return -1;
+}
+
+void ConversationSystem::StartConversation(int index)
+{
+	ConversationPtr conv = GetConversation(index);
+
+	if (conv == NULL)
+	{
+		gameLocal.Warning("StartConversation: Can't find conversation with index %d\n", index);
+		return;
+	}
+
+	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Trying to start conversation %s.\r", conv->GetName().c_str());
+
+
 }
 
 void ConversationSystem::Save(idSaveGame* savefile) const

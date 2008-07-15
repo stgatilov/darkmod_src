@@ -1961,15 +1961,16 @@ void CTarget_StartConversation::Event_Activate( idEntity *activator )
 	}
 
 	// Try to find the conversation
-	ai::ConversationPtr conv = gameLocal.m_ConversationSystem->GetConversation(conversationName);
+	int convIndex = gameLocal.m_ConversationSystem->GetConversationIndex(conversationName);
 
-	if (conv == NULL)
+	if (convIndex == -1)
 	{
 		gameLocal.Printf("Target %s references non-existent conversation %s!\n", name.c_str(), conversationName.c_str());
 		return;
 	}
 
-
+	// Pass the torch to the conversationsystem to do the rest
+	gameLocal.m_ConversationSystem->StartConversation(convIndex);
 }
 
 /*

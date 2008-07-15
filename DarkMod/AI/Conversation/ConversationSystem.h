@@ -42,6 +42,13 @@ public:
 	 */
 	int GetConversationIndex(const idStr& name);
 
+	/**
+	 * greebo: This starts the conversation, after checking whether all conditions are met.
+	 *
+	 * @index: The conversation index. Use GetConversationIndex() to convert a conversation name to an index.
+	 */
+	void StartConversation(int index);
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
