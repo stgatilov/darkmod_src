@@ -8823,8 +8823,6 @@ void idPlayer::inventoryUseItem(EImpulseState nState, CInventoryItem* item, int 
 
 	if (frob != NULL && itemIsUsable && frob->CanBeUsedBy(item))
 	{
-		gameRenderWorld->DebugArrow(colorGreen, frob->GetPhysics()->GetOrigin(), frob->GetPhysics()->GetOrigin() + idVec3(0,0,50), 0, 16);
-
 		// Pass the use call
 		frob->UseBy(nState, item);
 	}
