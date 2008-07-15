@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
@@ -1959,7 +1960,16 @@ void CTarget_StartConversation::Event_Activate( idEntity *activator )
 		return;
 	}
 
-	// Try to start conversation
+	// Try to find the conversation
+	ai::ConversationPtr conv = gameLocal.m_ConversationSystem->GetConversation(conversationName);
+
+	if (conv == NULL)
+	{
+		gameLocal.Printf("Target %s references non-existent conversation %s!\n", name.c_str(), conversationName.c_str());
+		return;
+	}
+
+
 }
 
 /*

@@ -49,6 +49,9 @@ public:
 	 */
 	bool IsValid();
 
+	// Returns the name of this conversation
+	const idStr& GetName() const;
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);

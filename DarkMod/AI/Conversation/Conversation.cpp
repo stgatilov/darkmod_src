@@ -34,6 +34,11 @@ bool Conversation::IsValid()
 	return _isValid;
 }
 
+const idStr& Conversation::GetName() const
+{
+	return _name;
+}
+
 void Conversation::Save(idSaveGame* savefile) const
 {
 	savefile->WriteString(_name);

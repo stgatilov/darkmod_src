@@ -31,6 +31,17 @@ public:
 	 */
 	void Init(idMapFile* mapFile);
 
+	/**
+	 * greebo: Returns the conversation for the given name/index or NULL if not found.
+	 */
+	ConversationPtr GetConversation(const idStr& name);
+	ConversationPtr GetConversation(int index);
+
+	/**
+	 * Returns the numeric index for the given conversation name or -1 if not found.
+	 */
+	int GetConversationIndex(const idStr& name);
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);

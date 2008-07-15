@@ -49,6 +49,30 @@ void ConversationSystem::Init(idMapFile* mapFile)
 	gameLocal.Printf("ConversationManager: Found %d valid conversations.\n", _conversations.Num());
 }
 
+ConversationPtr ConversationSystem::GetConversation(const idStr& name)
+{
+	// Find the index and pass the call to the overload
+	return GetConversation(GetConversationIndex(name));
+}
+
+ConversationPtr ConversationSystem::GetConversation(int index)
+{
+	return (index > 0 && index < _conversations.Num()) ? _conversations[index] : ConversationPtr();
+}
+
+int ConversationSystem::GetConversationIndex(const idStr& name)
+{
+	for (int i = 0; i < _conversations.Num(); i++)
+	{
+		if (_conversations[i]->GetName() == name)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 void ConversationSystem::Save(idSaveGame* savefile) const
 {
 	savefile->WriteInt(_conversations.Num());
