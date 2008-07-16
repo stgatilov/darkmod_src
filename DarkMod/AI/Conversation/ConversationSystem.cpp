@@ -93,6 +93,35 @@ void ConversationSystem::StartConversation(int index)
 
 	// Start the conversation
 	conv->Start();
+
+	// Register this conversation for processing
+	_activeConversations.AddUnique(index);
+}
+
+void ConversationSystem::EndConversation(int index)
+{
+	_dyingConversations.AddUnique(index);
+}
+
+void ConversationSystem::ProcessConversations()
+{
+	// Remove the dying conversations first
+	for (int i = 0; i < _dyingConversations.Num(); i++)
+	{
+		// Remove the dying index from the active conversations list
+		_activeConversations.Remove(_dyingConversations[i]);
+	}
+
+	_dyingConversations.Clear();
+
+	// What remains is a list of active conversations
+	for (int i = 0; i < _activeConversations.Num(); i++)
+	{
+		ConversationPtr conv = GetConversation(_activeConversations[i]);
+
+		// Let the conversation do its job
+		conv->Process();
+	}
 }
 
 void ConversationSystem::Save(idSaveGame* savefile) const
@@ -101,6 +130,18 @@ void ConversationSystem::Save(idSaveGame* savefile) const
 	for (int i = 0; i < _conversations.Num(); i++)
 	{
 		_conversations[i]->Save(savefile);
+	}
+
+	savefile->WriteInt(_activeConversations.Num());
+	for (int i = 0; i < _activeConversations.Num(); i++)
+	{
+		savefile->WriteInt(_activeConversations[i]);
+	}
+
+	savefile->WriteInt(_dyingConversations.Num());
+	for (int i = 0; i < _dyingConversations.Num(); i++)
+	{
+		savefile->WriteInt(_dyingConversations[i]);
 	}
 }
 
@@ -116,6 +157,24 @@ void ConversationSystem::Restore(idRestoreGame* savefile)
 		// Allocate a new conversation and restore it
 		_conversations[i] = ConversationPtr(new Conversation);
 		_conversations[i]->Restore(savefile);
+	}
+
+	_activeConversations.Clear();
+
+	savefile->ReadInt(num);
+	_activeConversations.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(_activeConversations[i]);
+	}
+
+	_dyingConversations.Clear();
+
+	savefile->ReadInt(num);
+	_dyingConversations.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(_dyingConversations[i]);
 	}
 }
 

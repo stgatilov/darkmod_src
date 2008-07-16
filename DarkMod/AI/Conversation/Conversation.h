@@ -70,6 +70,11 @@ public:
 	 */
 	void Start();
 
+	/**
+	 * greebo: This is the "think" routine for conversations.
+	 */
+	void Process();
+
 	// Gets the actor with the given index/name
 	idActor* GetActor(int index);
 	idActor* GetActor(const idStr& name);

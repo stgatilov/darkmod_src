@@ -2844,6 +2844,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		timer_events.Stop();
 
+		// Process the active AI conversations
+		m_ConversationSystem->ProcessConversations();
+
 		// free the player pvs
 		FreePlayerPVS();
 

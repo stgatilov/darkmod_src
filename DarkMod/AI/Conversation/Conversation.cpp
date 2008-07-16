@@ -93,6 +93,13 @@ void Conversation::Start()
 			static_cast<idAI*>(actor)->SwitchToConversationState(_name);
 		}
 	}
+
+	_playCount++;
+}
+
+void Conversation::Process()
+{
+
 }
 
 idActor* Conversation::GetActor(int index)
