@@ -118,9 +118,15 @@ void ConversationSystem::ProcessConversations()
 	for (int i = 0; i < _activeConversations.Num(); i++)
 	{
 		ConversationPtr conv = GetConversation(_activeConversations[i]);
+		assert(conv != NULL);
 
 		// Let the conversation do its job
-		conv->Process();
+		if (!conv->Process())
+		{
+			// Job returned false, terminate this conversation
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Terminating conversation %s due to error.\r", conv->GetName().c_str());
+			EndConversation(_activeConversations[i]);
+		}
 	}
 }
 

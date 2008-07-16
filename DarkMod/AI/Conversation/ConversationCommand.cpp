@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
+#include "Conversation.h"
 #include "ConversationCommand.h"
 
 namespace ai {
@@ -60,6 +61,21 @@ idStr ConversationCommand::GetArgument(int index)
 	return (index > 0 && index < _arguments.Num()) ? _arguments[index] : "";
 }
 
+bool ConversationCommand::Execute(Conversation* conversation)
+{
+	idActor* actor = conversation->GetActor(_actor);
+
+	if (actor == NULL)
+	{
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Command on conversation %s could not find actor %d.\r", conversation->GetName().c_str(), _actor);
+		return false;
+	}
+
+	// TODO
+
+	return true;
+}
+
 bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 {
 	// Get the type
@@ -81,6 +97,9 @@ bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation command %s: Invalid actor index %d encountered.\r", TypeNames[_type], _actor);
 		return false;
 	}
+	
+	// Decrease the actor index, so that it can be used as index in the actors idList.
+	_actor--;
 
 	// Parse the arguments
 	_arguments.Clear();

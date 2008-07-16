@@ -100,7 +100,7 @@ void Conversation::Start()
 	_currentCommand = 0;
 }
 
-void Conversation::Process()
+bool Conversation::Process()
 {
 	// Check for index out of bounds in debug builds
 	assert(_currentCommand >= 0 && _currentCommand < _commands.Num());
@@ -108,7 +108,14 @@ void Conversation::Process()
 	// Get the command as specified by the pointer
 	const ConversationCommandPtr& command = _commands[_currentCommand];
 
-	//command->GetActor();
+	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Executing command %s in conversation %s.\r", 
+		ConversationCommand::TypeNames[command->GetType()], _name.c_str());
+
+	// Increase the iterator
+	_currentCommand++;
+
+	// Pass the call and return the result
+	return command->Execute(this);
 }
 
 idActor* Conversation::GetActor(int index)

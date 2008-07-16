@@ -16,6 +16,8 @@
 
 namespace ai {
 
+class Conversation;
+
 class ConversationCommand
 {
 public:
@@ -51,6 +53,8 @@ private:
 	Type _type;
 
 	// The index of the actor who is supposed to execute this command
+	// Note that the index as specified in the spawnargs is decreased by 1 to
+	// match the ones in the idList.
 	int _actor;
 
 	// Argument list
@@ -68,6 +72,15 @@ public:
 
 	// Returns the given argument (starting with index 0) or "" if the argument doesn't exist
 	idStr GetArgument(int index);
+
+	/**
+	 * Execute this command (i.e. tell the actor what to do)
+	 *
+	 * @conversation: the "parent" conversation we're belonging to, needed to get the actors.
+	 *
+	 * @returns: TRUE if the execution was successful, FALSE on error.
+	 */
+	bool Execute(Conversation* conversation);
 
 	/**
 	 * greebo: Parses the command parameters from the given idDict.

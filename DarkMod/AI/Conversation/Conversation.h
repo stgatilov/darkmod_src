@@ -75,8 +75,10 @@ public:
 
 	/**
 	 * greebo: This is the "think" routine for conversations.
+	 *
+	 * @returns: TRUE if the process was successful, FALSE on error.
 	 */
-	void Process();
+	bool Process();
 
 	// Gets the actor with the given index/name
 	idActor* GetActor(int index);
