@@ -547,6 +547,9 @@ public:
 	// Virtual override of idActor method, routes the call into the current Mind State
 	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 
+	// Switches this AI into conversation mode
+	virtual bool SwitchToConversationState(const idStr& conversationName);
+
 
 public:
 	idLinkList<idAI>		aiNode;				// for being linked into gameLocal.spawnedAI list

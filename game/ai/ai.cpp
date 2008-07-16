@@ -21,7 +21,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/KnockedOutState.h"
 #include "../../DarkMod/AI/States/DeadState.h"
+#include "../../DarkMod/AI/States/ConversationState.h"
 #include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
+#include "../../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
@@ -9504,4 +9506,27 @@ void idAI::ShowDebugInfo()
 
 		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
 	}
+}
+
+bool idAI::SwitchToConversationState(const idStr& conversationName)
+{
+	ai::ConversationStatePtr state = 
+		boost::static_pointer_cast<ai::ConversationState>(ai::ConversationState::CreateInstance());
+
+	// Convert the name to an index
+	int convIndex = gameLocal.m_ConversationSystem->GetConversationIndex(conversationName);
+
+	if (convIndex == -1) 
+	{
+		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Could not find conversation '%s'.\r", conversationName.c_str());
+		return false;
+	}
+
+	// Let the state know which conversation is about to be played
+	state->SetConversation(convIndex);
+
+	// Switch to this state
+	GetMind()->PushState(state);
+
+	return true;
 }

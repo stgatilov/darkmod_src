@@ -49,6 +49,7 @@ private:
 	// Returns true if the conversation can be started
 	bool CheckConversationPrerequisites();
 };
+typedef boost::shared_ptr<ConversationState> ConversationStatePtr;
 
 } // namespace ai
 

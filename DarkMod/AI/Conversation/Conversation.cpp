@@ -14,6 +14,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Conversation.h"
 
+const int MAX_ALERT_LEVEL_TO_START_CONVERSATION = 1;
+
 namespace ai {
 
 Conversation::Conversation() :
@@ -59,6 +61,17 @@ bool Conversation::CheckConditions()
 			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is KO or dead!.\r", _actors[i].c_str(), _name.c_str());
 			return false;
 		}
+
+		if (actor->IsType(idAI::Type))
+		{
+			idAI* ai = static_cast<idAI*>(actor);
+
+			if (ai->AI_AlertIndex > MAX_ALERT_LEVEL_TO_START_CONVERSATION)
+			{
+				// AI is too alerted to start this conversation
+				return false;
+			}
+		}
 	}
 
 	// All actors alive and kicking
@@ -70,7 +83,16 @@ bool Conversation::CheckConditions()
 
 void Conversation::Start()
 {
-	
+	// Switch all participating AI to conversation state
+	for (int i = 0; i < _actors.Num(); i++)
+	{
+		idActor* actor = GetActor(i);
+
+		if (actor->IsType(idAI::Type))
+		{
+			static_cast<idAI*>(actor)->SwitchToConversationState(_name);
+		}
+	}
 }
 
 idActor* Conversation::GetActor(int index)
@@ -86,7 +108,7 @@ idActor* Conversation::GetActor(int index)
 	if (ent == NULL || !ent->IsType(idActor::Type)) 
 	{
 		// not an actor!
-		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is not existing or of wrong type.\r", _actors[index].c_str(), _name.c_str());
+		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Actor %s in conversation %s is not existing or of wrong type.\r", _actors[index].c_str(), _name.c_str());
 		return NULL; 
 	}
 
