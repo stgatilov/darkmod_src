@@ -11,6 +11,7 @@
 #define __AI_CONVERSATION_STATE_H__
 
 #include "State.h"
+#include "../Conversation/ConversationCommand.h"
 
 namespace ai
 {
@@ -20,8 +21,21 @@ namespace ai
 class ConversationState :
 	public State
 {
+public:
+	enum Status
+	{
+		EDoingNothing = 0,
+		EExecuting,
+		EDone,
+		ENumConversationStati, // invalid index
+	};
+
+private:
 	// The conversation index
 	int _conversation;
+
+	// The current execution status (e.g. talking or waiting for something)
+	Status _status;
 
 public:
 	// Get the name of this state
@@ -35,6 +49,12 @@ public:
 
 	// Sets the conversation this state should handle
 	void SetConversation(int index);
+
+	// Handles the given command
+	void Execute(const ConversationCommandPtr& command);
+
+	// Returns the conversation status to let outsiders know if the current action is finished
+	Status GetStatus();
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

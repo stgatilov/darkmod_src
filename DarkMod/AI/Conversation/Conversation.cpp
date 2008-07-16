@@ -95,11 +95,20 @@ void Conversation::Start()
 	}
 
 	_playCount++;
+
+	// Set the index to the first command
+	_currentCommand = 0;
 }
 
 void Conversation::Process()
 {
+	// Check for index out of bounds in debug builds
+	assert(_currentCommand >= 0 && _currentCommand < _commands.Num());
 
+	// Get the command as specified by the pointer
+	const ConversationCommandPtr& command = _commands[_currentCommand];
+
+	//command->GetActor();
 }
 
 idActor* Conversation::GetActor(int index)
@@ -155,6 +164,7 @@ void Conversation::Save(idSaveGame* savefile) const
 		_commands[i]->Save(savefile);
 	}
 
+	savefile->WriteInt(_currentCommand);
 	savefile->WriteInt(_playCount);
 }
 
@@ -180,6 +190,7 @@ void Conversation::Restore(idRestoreGame* savefile)
 		_commands[i]->Restore(savefile);
 	}
 
+	savefile->ReadInt(_currentCommand);
 	savefile->ReadInt(_playCount);
 }
 

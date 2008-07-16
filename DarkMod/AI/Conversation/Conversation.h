@@ -36,6 +36,9 @@ class Conversation
 	// The list of commands this conversation consists of (this is the actual "script")
 	idList<ConversationCommandPtr> _commands;
 
+	// The current conversation command index
+	int _currentCommand;
+
 	// Counter to tell how often this conversation has been played
 	int _playCount;
 

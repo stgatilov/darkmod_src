@@ -98,18 +98,33 @@ bool ConversationState::CheckConversationPrerequisites()
 	return true;
 }
 
+void ConversationState::Execute(const ConversationCommandPtr& command)
+{
+
+}
+
+ConversationState::Status ConversationState::GetStatus()
+{
+	return _status;
+}
+
 void ConversationState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
 
-	// TODO
+	savefile->WriteInt(_conversation);
+	savefile->WriteInt(static_cast<int>(_status));
 }
 
 void ConversationState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
 
-	// TODO
+	savefile->ReadInt(_conversation);
+	int temp;
+	savefile->ReadInt(temp);
+	assert(temp >= EDoingNothing && temp < ENumConversationStati);
+	_status = static_cast<Status>(temp);
 }
 
 StatePtr ConversationState::CreateInstance()

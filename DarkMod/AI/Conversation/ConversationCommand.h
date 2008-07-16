@@ -50,12 +50,18 @@ private:
 	// The type of this command
 	Type _type;
 
+	// The index of the actor who is supposed to execute this command
+	int _actor;
+
 	// Argument list
 	idStringList _arguments;
 
 public:
 	// Returns the type of this conversation command
 	Type GetType();
+
+	// Returns the actor index of this command
+	int GetActor();
 
 	// Returns the number of arguments
 	int GetNumArguments();
