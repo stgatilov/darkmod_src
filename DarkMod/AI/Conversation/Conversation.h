@@ -80,6 +80,9 @@ public:
 	 */
 	bool Process();
 
+	// Returns TRUE if the conversation has no more commands to execute
+	bool IsDone();
+
 	// Gets the actor with the given index/name
 	idActor* GetActor(int index);
 	idActor* GetActor(const idStr& name);

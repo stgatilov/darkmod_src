@@ -98,9 +98,25 @@ bool ConversationState::CheckConversationPrerequisites()
 	return true;
 }
 
-void ConversationState::Execute(const ConversationCommandPtr& command)
+bool ConversationState::Execute(ConversationCommand& command)
 {
+	bool success = true;
 
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	switch (command.GetType())
+	{
+	case ConversationCommand::ETalk:
+		owner->PlayAndLipSync(command.GetArgument(0), "talk1");
+		break;
+	default:
+		gameLocal.Warning("Unknown command type found %d", command.GetType());
+		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Unknown command type found %d", command.GetType());
+		success = false;
+	};
+
+	return success;
 }
 
 ConversationState::Status ConversationState::GetStatus()

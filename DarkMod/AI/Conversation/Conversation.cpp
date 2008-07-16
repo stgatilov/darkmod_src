@@ -100,6 +100,11 @@ void Conversation::Start()
 	_currentCommand = 0;
 }
 
+bool Conversation::IsDone()
+{
+	return _currentCommand >= _commands.Num();
+}
+
 bool Conversation::Process()
 {
 	// Check for index out of bounds in debug builds
@@ -115,7 +120,7 @@ bool Conversation::Process()
 	_currentCommand++;
 
 	// Pass the call and return the result
-	return command->Execute(this);
+	return command->Execute(*this);
 }
 
 idActor* Conversation::GetActor(int index)

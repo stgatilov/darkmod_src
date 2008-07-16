@@ -126,6 +126,16 @@ void ConversationSystem::ProcessConversations()
 			// Job returned false, terminate this conversation
 			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Terminating conversation %s due to error.\r", conv->GetName().c_str());
 			EndConversation(_activeConversations[i]);
+			continue;
+		}
+		
+		// Check if the conversation is done
+		if (conv->IsDone())
+		{
+			// Job returned false, terminate this conversation
+			DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Conversation %s finished normally.\r", conv->GetName().c_str());
+			EndConversation(_activeConversations[i]);
+			continue;
 		}
 	}
 }

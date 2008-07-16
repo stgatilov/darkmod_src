@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Conversation.h"
 #include "ConversationCommand.h"
+#include "../States/ConversationState.h"
 
 namespace ai {
 
@@ -58,20 +59,29 @@ int ConversationCommand::GetNumArguments()
 // Returns the given argument (starting with index 0) or "" if the argument doesn't exist
 idStr ConversationCommand::GetArgument(int index)
 {
-	return (index > 0 && index < _arguments.Num()) ? _arguments[index] : "";
+	return (index >= 0 && index < _arguments.Num()) ? _arguments[index] : "";
 }
 
-bool ConversationCommand::Execute(Conversation* conversation)
+bool ConversationCommand::Execute(Conversation& conversation)
 {
-	idActor* actor = conversation->GetActor(_actor);
+	idActor* actor = conversation.GetActor(_actor);
 
 	if (actor == NULL)
 	{
-		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Command on conversation %s could not find actor %d.\r", conversation->GetName().c_str(), _actor);
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Command on conversation %s could not find actor %d.\r", conversation.GetName().c_str(), _actor);
 		return false;
 	}
 
-	// TODO
+	if (actor->IsType(idAI::Type))
+	{
+		idAI* ai = static_cast<idAI*>(actor);
+
+		// Let's see if the AI can handle this conversation command
+		ConversationStatePtr state = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+
+		// Pass the call to the AI
+		return state->Execute(*this);
+	}
 
 	return true;
 }

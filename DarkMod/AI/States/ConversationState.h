@@ -50,8 +50,8 @@ public:
 	// Sets the conversation this state should handle
 	void SetConversation(int index);
 
-	// Handles the given command
-	void Execute(const ConversationCommandPtr& command);
+	// Handles the given command, returns FALSE on failure
+	bool Execute(ConversationCommand& command);
 
 	// Returns the conversation status to let outsiders know if the current action is finished
 	Status GetStatus();

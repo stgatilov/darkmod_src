@@ -80,7 +80,7 @@ public:
 	 *
 	 * @returns: TRUE if the execution was successful, FALSE on error.
 	 */
-	bool Execute(Conversation* conversation);
+	bool Execute(Conversation& conversation);
 
 	/**
 	 * greebo: Parses the command parameters from the given idDict.
