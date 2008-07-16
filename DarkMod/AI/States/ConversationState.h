@@ -66,6 +66,9 @@ public:
 	static StatePtr CreateInstance();
 
 private:
+	// Plays the given sound (shader) and returns the length in msecs
+	int Talk(idAI* owner, const idStr& soundName);
+
 	// Returns true if the conversation can be started
 	bool CheckConversationPrerequisites();
 };

@@ -18,6 +18,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ObservantState.h"
 #include "../Library.h"
 
+// greebo: This spawnarg holds the currently played conversation sound
+#define CONVERSATION_SPAWNARG "snd_TEMP_conv"
+
 namespace ai
 {
 
@@ -108,7 +111,9 @@ bool ConversationState::Execute(ConversationCommand& command)
 	switch (command.GetType())
 	{
 	case ConversationCommand::ETalk:
-		owner->PlayAndLipSync(command.GetArgument(0), "talk1");
+		Talk(owner, command.GetArgument(0));
+		// TODO: Set end time
+		_status = EExecuting;
 		break;
 	default:
 		gameLocal.Warning("Unknown command type found %d", command.GetType());
@@ -117,6 +122,30 @@ bool ConversationState::Execute(ConversationCommand& command)
 	};
 
 	return success;
+}
+
+int ConversationState::Talk(idAI* owner, const idStr& soundName)
+{
+	const idKeyValue* kv = owner->spawnArgs.FindKey(soundName);
+
+	if (kv != NULL && kv->GetValue().Icmpn( "snd_", 4 ) == 0)
+	{
+		// The conversation argument is pointing to a valid spawnarg on the owner
+		owner->spawnArgs.Set(CONVERSATION_SPAWNARG, kv->GetValue());
+	}
+	else
+	{
+		// The spawnargs don't define the sound shader, set the shader directly
+		owner->spawnArgs.Set(CONVERSATION_SPAWNARG, soundName);
+	}
+
+	// Start the sound
+	int length = owner->PlayAndLipSync(CONVERSATION_SPAWNARG, "talk1");
+
+	// Clear the spawnarg again
+	owner->spawnArgs.Set(CONVERSATION_SPAWNARG, "");
+
+	return length;
 }
 
 ConversationState::Status ConversationState::GetStatus()
