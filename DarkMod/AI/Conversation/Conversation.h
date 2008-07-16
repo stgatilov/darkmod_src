@@ -70,6 +70,10 @@ public:
 	 */
 	void Start();
 
+	// Gets the actor with the given index/name
+	idActor* GetActor(int index);
+	idActor* GetActor(const idStr& name);
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
