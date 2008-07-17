@@ -159,11 +159,13 @@ void ConversationState::StartCommand(ConversationCommand& command)
 		if (ent != NULL)
 		{
 			// Start moving
-			idVec3 distance = ent->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
-			idVec3 distanceNorm(distance);
-			distanceNorm.NormalizeFast();
+			idVec3 delta = ent->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+			idVec3 deltaNorm(delta);
+			deltaNorm.NormalizeFast();
 
-			idVec3 goal = owner->GetPhysics()->GetOrigin() + distance - distanceNorm*100.0f;
+			float distance = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : 50.0f;
+			
+			idVec3 goal = owner->GetPhysics()->GetOrigin() + delta - deltaNorm*distance;
 
 			owner->GetSubsystem(SubsysMovement)->PushTask(
 				TaskPtr(new MoveToPositionTask(goal))

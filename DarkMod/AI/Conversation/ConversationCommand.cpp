@@ -83,6 +83,11 @@ idEntity* ConversationCommand::GetEntityArgument(int index)
 	return gameLocal.FindEntity(GetArgument(index));
 }
 
+float ConversationCommand::GetFloatArgument(int index)
+{
+	return atof(GetArgument(index));
+}
+
 bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 {
 	// Get the type

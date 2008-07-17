@@ -96,6 +96,9 @@ public:
 	// Tries to name in the given convert the argument to an entity pointer
 	idEntity* GetEntityArgument(int index);
 
+	// Casts the argument to a float (returns 0.0f if not existing)
+	float GetFloatArgument(int index);
+
 	/**
 	 * greebo: Parses the command parameters from the given idDict.
 	 * The prefix is something along the lines "conv_2_cmd_3_" and is
