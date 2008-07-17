@@ -39,6 +39,7 @@ extern idCVar cv_ai_debug;
 extern idCVar cv_ai_sight_thresh;
 extern idCVar cv_ai_sight_scale;
 extern idCVar cv_ai_show_enemy_visibility;
+extern idCVar cv_ai_show_conversationstate;
 extern idCVar cv_ai_acuity_L3;
 extern idCVar cv_ai_acuity_L4;
 extern idCVar cv_ai_acuity_L5;

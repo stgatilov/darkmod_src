@@ -113,14 +113,27 @@ bool Conversation::Process()
 	// Get the command as specified by the pointer
 	const ConversationCommandPtr& command = _commands[_currentCommand];
 
-	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Executing command %s in conversation %s.\r", 
-		ConversationCommand::TypeNames[command->GetType()], _name.c_str());
+	// Get the state of the current command
+	ConversationCommand::State state = command->GetState();
 
-	// Increase the iterator
-	_currentCommand++;
+	// If the command is not finished yet, execute it
+	if (state < ConversationCommand::EFinished)
+	{
+		DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Executing command %s in conversation %s.\r", 
+			ConversationCommand::TypeNames[command->GetType()], _name.c_str());
 
-	// Pass the call and return the result
-	return command->Execute(*this);
+		// Execute and get the new state
+		state = command->Execute(*this);
+	}
+
+	// If the command has returned "finished" by now, increase the iterator
+	if (state >= ConversationCommand::EFinished)
+	{
+		_currentCommand++;
+	}
+
+	// Pass the call and return a positive result if not aborted
+	return (state != ConversationCommand::EAborted);
 }
 
 idActor* Conversation::GetActor(int index)

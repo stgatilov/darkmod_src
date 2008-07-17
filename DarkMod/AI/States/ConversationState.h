@@ -21,21 +21,11 @@ namespace ai
 class ConversationState :
 	public State
 {
-public:
-	enum Status
-	{
-		EDoingNothing = 0,
-		EExecuting,
-		EDone,
-		ENumConversationStati, // invalid index
-	};
-
-private:
 	// The conversation index
 	int _conversation;
 
-	// The current execution status (e.g. talking or waiting for something)
-	Status _status;
+	// The state we're in
+	ConversationCommand::State _state;
 
 public:
 	// Get the name of this state
@@ -51,10 +41,7 @@ public:
 	void SetConversation(int index);
 
 	// Handles the given command, returns FALSE on failure
-	bool Execute(ConversationCommand& command);
-
-	// Returns the conversation status to let outsiders know if the current action is finished
-	Status GetStatus();
+	ConversationCommand::State Execute(ConversationCommand& command);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
@@ -71,6 +58,9 @@ private:
 
 	// Returns true if the conversation can be started
 	bool CheckConversationPrerequisites();
+
+	// Private helper for debug output
+	void DrawDebugOutput(idAI* owner);
 };
 typedef boost::shared_ptr<ConversationState> ConversationStatePtr;
 

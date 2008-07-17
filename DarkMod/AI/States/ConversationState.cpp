@@ -76,6 +76,9 @@ void ConversationState::Init(idAI* owner)
 		return;
 	}
 
+	// We haven't started doing our stuff yet
+	_state = ConversationCommand::ENotStartedYet;
+
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -93,6 +96,8 @@ void ConversationState::Think(idAI* owner)
 
 	// Let the AI check its senses
 	owner->PerformVisualScan();
+
+	DrawDebugOutput(owner);
 }
 
 bool ConversationState::CheckConversationPrerequisites()
@@ -101,9 +106,13 @@ bool ConversationState::CheckConversationPrerequisites()
 	return true;
 }
 
-bool ConversationState::Execute(ConversationCommand& command)
+ConversationCommand::State ConversationState::Execute(ConversationCommand& command)
 {
-	bool success = true;
+	if (_state == ConversationCommand::EExecuting)
+	{
+		// Still executing
+		return _state;
+	}
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -113,15 +122,15 @@ bool ConversationState::Execute(ConversationCommand& command)
 	case ConversationCommand::ETalk:
 		Talk(owner, command.GetArgument(0));
 		// TODO: Set end time
-		_status = EExecuting;
+		_state = ConversationCommand::EExecuting;
 		break;
 	default:
 		gameLocal.Warning("Unknown command type found %d", command.GetType());
 		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Unknown command type found %d", command.GetType());
-		success = false;
+		_state = ConversationCommand::EAborted;
 	};
 
-	return success;
+	return _state;
 }
 
 int ConversationState::Talk(idAI* owner, const idStr& soundName)
@@ -148,9 +157,22 @@ int ConversationState::Talk(idAI* owner, const idStr& soundName)
 	return length;
 }
 
-ConversationState::Status ConversationState::GetStatus()
+void ConversationState::DrawDebugOutput(idAI* owner)
 {
-	return _status;
+	if (!cv_ai_show_conversationstate.GetBool()) return;
+
+	idStr str;
+
+	switch (_state)
+	{
+		case ConversationCommand::ENotStartedYet: str = "Not Started Yet"; break;
+		case ConversationCommand::EExecuting: str = "Executing"; break;
+		case ConversationCommand::EFinished: str = "Finished"; break;
+		case ConversationCommand::EAborted: str = "Aborted"; break;
+		default:break;
+	};
+
+	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,10), 0.3f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
 }
 
 void ConversationState::Save(idSaveGame* savefile) const
@@ -158,7 +180,7 @@ void ConversationState::Save(idSaveGame* savefile) const
 	State::Save(savefile);
 
 	savefile->WriteInt(_conversation);
-	savefile->WriteInt(static_cast<int>(_status));
+	savefile->WriteInt(static_cast<int>(_state));
 }
 
 void ConversationState::Restore(idRestoreGame* savefile)
@@ -166,10 +188,11 @@ void ConversationState::Restore(idRestoreGame* savefile)
 	State::Restore(savefile);
 
 	savefile->ReadInt(_conversation);
+
 	int temp;
 	savefile->ReadInt(temp);
-	assert(temp >= EDoingNothing && temp < ENumConversationStati);
-	_status = static_cast<Status>(temp);
+	assert(temp >= 0 && temp <= ConversationCommand::ENumStates); // sanity check
+	_state = static_cast<ConversationCommand::State>(temp);
 }
 
 StatePtr ConversationState::CreateInstance()

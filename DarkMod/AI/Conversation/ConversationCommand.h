@@ -48,9 +48,22 @@ public:
 	// The string representations of the above (keep in sync please)
 	static const char* const TypeNames[ENumCommands];
 
+	// Each command can have several states
+	enum State
+	{
+		ENotStartedYet = 0,
+		EExecuting,
+		EFinished,
+		EAborted,
+		ENumStates, // invalid index
+	};
+
 private:
 	// The type of this command
 	Type _type;
+
+	// The state of this command
+	State _state;
 
 	// The index of the actor who is supposed to execute this command
 	// Note that the index as specified in the spawnargs is decreased by 1 to
@@ -61,8 +74,14 @@ private:
 	idStringList _arguments;
 
 public:
+	// Default constructor
+	ConversationCommand();
+
 	// Returns the type of this conversation command
 	Type GetType();
+
+	// The execution state of this command
+	State GetState();
 
 	// Returns the actor index of this command
 	int GetActor();
@@ -78,9 +97,9 @@ public:
 	 *
 	 * @conversation: the "parent" conversation we're belonging to, needed to get the actors.
 	 *
-	 * @returns: TRUE if the execution was successful, FALSE on error.
+	 * @returns: the execution state of this command.
 	 */
-	bool Execute(Conversation& conversation);
+	State Execute(Conversation& conversation);
 
 	/**
 	 * greebo: Parses the command parameters from the given idDict.

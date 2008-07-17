@@ -69,6 +69,7 @@ idCVar cv_ai_elevator_show(			"tdm_ai_showelevator",		"0",			CVAR_GAME | CVAR_AR
 idCVar cv_ai_sight_thresh	(		"tdm_ai_sight_thresh",		"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the minimum light per-AI-frame gem generated visual stimulus amount required for an AI to be able to see the player or another entity directly when searching.");
 idCVar cv_ai_sight_scale	(		"tdm_ai_sight_scale",		"1000.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the distance that is multiplied by the lightQuotient from the LAS and visual acuity of the AI scaled from 0 to 1, that indicates how far away the AI can be and see a location.");
 idCVar cv_ai_show_enemy_visibility ("tdm_ai_show_enemy_visibility",	"0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, the visibility of the AI's enemy is drawn (red = obscured or hidden in darkness, green = the opposite).");
+idCVar cv_ai_show_conversationstate("tdm_ai_show_conversationstate", "0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, the AI will draw debug output with regard to their conversation state.");
 
 idCVar cv_ai_acuity_L3	(			"tdm_ai_acuity_L3",			"1.1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 3 but not yet 4");
 idCVar cv_ai_acuity_L4	(			"tdm_ai_acuity_L4",			"1.3",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 4 but not yet 5");
