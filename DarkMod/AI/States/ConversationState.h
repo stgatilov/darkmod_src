@@ -49,10 +49,10 @@ public:
 	void SetConversation(int index);
 
 	// Starts execution of the given command, returns FALSE on failure
-	void StartCommand(ConversationCommand& command);
+	void StartCommand(ConversationCommand& command, Conversation& conversation);
 
 	// Handles the given command, returns FALSE on failure
-	void Execute(ConversationCommand& command);
+	void Execute(ConversationCommand& command, Conversation& conversation);
 
 	// Returns the current conversation command execution state
 	ConversationCommand::State GetExecutionState();

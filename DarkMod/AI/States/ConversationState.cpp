@@ -134,7 +134,7 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 	}
 }
 
-void ConversationState::StartCommand(ConversationCommand& command)
+void ConversationState::StartCommand(ConversationCommand& command, Conversation& conversation)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -179,12 +179,31 @@ void ConversationState::StartCommand(ConversationCommand& command)
 		}
 	}
 	break;
-	/*EWalkToEntity,
-	EStopMove,
-	ETalk,
+	case ConversationCommand::EStopMove:
+		owner->StopMove(MOVE_STATUS_DONE);
+		_state = ConversationCommand::EFinished;
+		break;
+	/*,
 	EPlayAnimOnce,
-	EPlayAnimCycle,
-	EActivateTarget,
+	EPlayAnimCycle,*/
+
+	case ConversationCommand::EActivateTarget:
+	{
+		idEntity* ent = command.GetEntityArgument(0);
+		if (ent != NULL)
+		{
+			// Post a trigger event
+			ent->PostEventMS(&EV_Activate, 0, owner);
+			// We're done
+			_state = ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'ActivateTarget' could not find entity: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+	/*EActivateTarget,
 	ELookAtActor,
 	ELookAtPosition,
 	ELookAtEntity,
@@ -213,7 +232,7 @@ void ConversationState::StartCommand(ConversationCommand& command)
 	_commandType = command.GetType();
 }
 
-void ConversationState::Execute(ConversationCommand& command)
+void ConversationState::Execute(ConversationCommand& command, Conversation& conversation)
 {
 
 }

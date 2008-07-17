@@ -139,11 +139,11 @@ bool Conversation::Process()
 	{
 		case ConversationCommand::ENotStartedYet:
 			// Start a new execution
-			convState->StartCommand(*command);
+			convState->StartCommand(*command, *this);
 			break;
 		case ConversationCommand::EExecuting:
 			// Continue execution
-			convState->Execute(*command);
+			convState->Execute(*command, *this);
 			break;
 		case ConversationCommand::EFinished:
 			// Increase the iterator, we continue next frame
