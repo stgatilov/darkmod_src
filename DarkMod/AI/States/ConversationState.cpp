@@ -23,6 +23,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 // greebo: This spawnarg holds the currently played conversation sound
 #define CONVERSATION_SPAWNARG "snd_TEMP_conv"
+#define DEFAULT_LOOKAT_DURATION 5.0f
+#define DEFAULT_WALKTOENTITY_DISTANCE 50.0f
 
 namespace ai
 {
@@ -164,7 +166,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			idVec3 deltaNorm(delta);
 			deltaNorm.NormalizeFast();
 
-			float distance = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : 50.0f;
+			float distance = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_WALKTOENTITY_DISTANCE;
 			
 			idVec3 goal = owner->GetPhysics()->GetOrigin() + delta - deltaNorm*distance;
 
@@ -211,7 +213,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 		if (ai != NULL)
 		{
-			owner->TurnToward(ai->GetEyePosition());
+			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
+			owner->Event_LookAtEntity(ai, duration);
 			_state = ConversationCommand::EFinished;
 		}
 		else
@@ -219,14 +222,59 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			gameLocal.Warning("Conversation Command: 'LookAtActor' could not find actor: %s", command.GetArgument(0).c_str());
 		}
 	}
-	/*,
-	ELookAtActor,
-	ELookAtPosition,
-	ELookAtEntity,
-	ETurnToActor,
-	ETurnToPosition,
-	ETurnToEntity,
-	EAttackActor,
+	break;
+	case ConversationCommand::ELookAtEntity:
+	{
+		idEntity* ent = command.GetEntityArgument(0);
+
+		if (ent != NULL)
+		{
+			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
+			owner->Event_LookAtEntity(ent, duration);
+			_state = ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'LookAtEntity' could not find entity: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+	case ConversationCommand::ETurnToActor:
+	{
+		// Reduce the actor index by 1 before passing them to the conversation
+		idAI* ai = conversation.GetActor(atoi(command.GetArgument(0)) - 1);
+
+		if (ai != NULL)
+		{
+			owner->TurnToward(ai->GetEyePosition());
+			_state = ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'TurnToActor' could not find actor: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+	case ConversationCommand::ETurnToEntity:
+	{
+		idEntity* ent = command.GetEntityArgument(0);
+
+		if (ent != NULL)
+		{
+			owner->TurnToward(ent->GetPhysics()->GetOrigin());
+			_state = ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'TurnToEntity' could not find entity: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+	
+	/*,ELookAtPosition,
+	ETurnToPosition,*/
+	
+	/*EAttackActor,
 	EAttackEntity,
 	*/
 	case ConversationCommand::ETalk:
