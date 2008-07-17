@@ -77,6 +77,7 @@ void ConversationState::Init(idAI* owner)
 	}
 
 	// We haven't started doing our stuff yet
+	_finishTime = -1;
 	_state = ConversationCommand::ENotStartedYet;
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -97,7 +98,17 @@ void ConversationState::Think(idAI* owner)
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
+	if (_finishTime > 0 && gameLocal.time > _finishTime)
+	{
+		_state = ConversationCommand::EFinished;
+	}
+
 	DrawDebugOutput(owner);
+}
+
+ConversationCommand::State ConversationState::GetExecutionState()
+{
+	return _state;
 }
 
 bool ConversationState::CheckConversationPrerequisites()
@@ -106,31 +117,35 @@ bool ConversationState::CheckConversationPrerequisites()
 	return true;
 }
 
-ConversationCommand::State ConversationState::Execute(ConversationCommand& command)
+void ConversationState::StartCommand(ConversationCommand& command)
 {
-	if (_state == ConversationCommand::EExecuting)
-	{
-		// Still executing
-		return _state;
-	}
-
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
 	switch (command.GetType())
 	{
 	case ConversationCommand::ETalk:
-		Talk(owner, command.GetArgument(0));
-		// TODO: Set end time
+	{
+		int length = Talk(owner, command.GetArgument(0));
+
+		// Set the finish conditions for the current action
 		_state = ConversationCommand::EExecuting;
-		break;
+		_finishTime = gameLocal.time + length;
+	}
+	break;
 	default:
 		gameLocal.Warning("Unknown command type found %d", command.GetType());
 		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Unknown command type found %d", command.GetType());
 		_state = ConversationCommand::EAborted;
 	};
+}
 
-	return _state;
+void ConversationState::Execute(ConversationCommand& command)
+{
+	if (_state == ConversationCommand::EExecuting)
+	{
+		return;
+	}
 }
 
 int ConversationState::Talk(idAI* owner, const idStr& soundName)
@@ -181,6 +196,7 @@ void ConversationState::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(_conversation);
 	savefile->WriteInt(static_cast<int>(_state));
+	savefile->WriteInt(_finishTime);
 }
 
 void ConversationState::Restore(idRestoreGame* savefile)
@@ -193,6 +209,8 @@ void ConversationState::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	assert(temp >= 0 && temp <= ConversationCommand::ENumStates); // sanity check
 	_state = static_cast<ConversationCommand::State>(temp);
+
+	savefile->ReadInt(_finishTime);
 }
 
 StatePtr ConversationState::CreateInstance()

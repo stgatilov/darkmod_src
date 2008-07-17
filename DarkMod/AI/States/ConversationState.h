@@ -27,6 +27,8 @@ class ConversationState :
 	// The state we're in
 	ConversationCommand::State _state;
 
+	int _finishTime;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -40,8 +42,14 @@ public:
 	// Sets the conversation this state should handle
 	void SetConversation(int index);
 
+	// Starts execution of the given command, returns FALSE on failure
+	void StartCommand(ConversationCommand& command);
+
 	// Handles the given command, returns FALSE on failure
-	ConversationCommand::State Execute(ConversationCommand& command);
+	void Execute(ConversationCommand& command);
+
+	// Returns the current conversation command execution state
+	ConversationCommand::State GetExecutionState();
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

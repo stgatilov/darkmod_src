@@ -84,8 +84,8 @@ public:
 	bool IsDone();
 
 	// Gets the actor with the given index/name
-	idActor* GetActor(int index);
-	idActor* GetActor(const idStr& name);
+	idAI* GetActor(int index);
+	idAI* GetActor(const idStr& name);
 
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
