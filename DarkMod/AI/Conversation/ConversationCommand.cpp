@@ -78,6 +78,11 @@ idStr ConversationCommand::GetArgument(int index)
 	return (index >= 0 && index < _arguments.Num()) ? _arguments[index] : "";
 }
 
+idEntity* ConversationCommand::GetEntityArgument(int index)
+{
+	return gameLocal.FindEntity(GetArgument(index));
+}
+
 bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 {
 	// Get the type

@@ -1936,6 +1936,7 @@ void idGameLocal::MapShutdown( void ) {
 
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();
+	m_ConversationSystem->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();

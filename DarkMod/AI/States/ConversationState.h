@@ -24,8 +24,11 @@ class ConversationState :
 	// The conversation index
 	int _conversation;
 
-	// The state we're in
+	// The execution state
 	ConversationCommand::State _state;
+
+	// The conversation command type
+	ConversationCommand::Type _commandType;
 
 	int _finishTime;
 
@@ -38,6 +41,9 @@ public:
 
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
+
+	// Incoming events issued by the Subsystems
+	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	// Sets the conversation this state should handle
 	void SetConversation(int index);

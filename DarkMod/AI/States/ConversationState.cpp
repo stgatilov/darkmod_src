@@ -15,8 +15,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ConversationState.h"
 #include "../Memory.h"
 #include "../Tasks/IdleAnimationTask.h"
+#include "../Tasks/MoveToPositionTask.h"
 #include "ObservantState.h"
 #include "../Library.h"
+#include "../Conversation/ConversationCommand.h"
 
 // greebo: This spawnarg holds the currently played conversation sound
 #define CONVERSATION_SPAWNARG "snd_TEMP_conv"
@@ -78,6 +80,7 @@ void ConversationState::Init(idAI* owner)
 
 	// We haven't started doing our stuff yet
 	_finishTime = -1;
+	_commandType = ConversationCommand::ENumCommands;
 	_state = ConversationCommand::ENotStartedYet;
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -117,6 +120,20 @@ bool ConversationState::CheckConversationPrerequisites()
 	return true;
 }
 
+void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
+{
+	if (_state != ConversationCommand::EExecuting) return;
+
+	if (subSystem == SubsysMovement)
+	{
+		// In case of active "walk" commands, set the state to "finished"
+		if (_commandType == ConversationCommand::EWalkToEntity || _commandType == ConversationCommand::EWalkToPosition)
+		{
+			_state = ConversationCommand::EFinished;
+		}
+	}
+}
+
 void ConversationState::StartCommand(ConversationCommand& command)
 {
 	idAI* owner = _owner.GetEntity();
@@ -124,13 +141,57 @@ void ConversationState::StartCommand(ConversationCommand& command)
 
 	switch (command.GetType())
 	{
+	case ConversationCommand::EWaitSeconds:
+		if (!idStr::IsNumeric(command.GetArgument(0)))
+		{
+			gameLocal.Warning("Conversation Command argument for 'WaitSeconds' is not numeric: %s", command.GetArgument(0).c_str());
+		}
+		_finishTime = gameLocal.time + SEC2MS(atof(command.GetArgument(0)));
+		_state = ConversationCommand::EExecuting;
+	break;
+	/*
+	EWaitForTrigger,
+	EWaitForActor,
+	EWalkToPosition*/
+	case ConversationCommand::EWalkToEntity:
+	{
+		idEntity* ent = command.GetEntityArgument(0);
+		if (ent != NULL)
+		{
+			// Start moving
+			owner->GetSubsystem(SubsysMovement)->PushTask(
+				TaskPtr(new MoveToPositionTask(ent->GetPhysics()->GetOrigin()))
+			);
+			_state = ConversationCommand::EExecuting;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'WalkToEntity' could not find entity: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+	/*EWalkToEntity,
+	EStopMove,
+	ETalk,
+	EPlayAnimOnce,
+	EPlayAnimCycle,
+	EActivateTarget,
+	ELookAtActor,
+	ELookAtPosition,
+	ELookAtEntity,
+	ETurnToActor,
+	ETurnToPosition,
+	ETurnToEntity,
+	EAttackActor,
+	EAttackEntity,
+	*/
 	case ConversationCommand::ETalk:
 	{
 		int length = Talk(owner, command.GetArgument(0));
 
 		// Set the finish conditions for the current action
 		_state = ConversationCommand::EExecuting;
-		_finishTime = gameLocal.time + length;
+		_finishTime = gameLocal.time + length + 200;
 	}
 	break;
 	default:
@@ -138,14 +199,14 @@ void ConversationState::StartCommand(ConversationCommand& command)
 		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Unknown command type found %d", command.GetType());
 		_state = ConversationCommand::EAborted;
 	};
+
+	// Store the command type
+	_commandType = command.GetType();
 }
 
 void ConversationState::Execute(ConversationCommand& command)
 {
-	if (_state == ConversationCommand::EExecuting)
-	{
-		return;
-	}
+
 }
 
 int ConversationState::Talk(idAI* owner, const idStr& soundName)
@@ -196,6 +257,7 @@ void ConversationState::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(_conversation);
 	savefile->WriteInt(static_cast<int>(_state));
+	savefile->WriteInt(static_cast<int>(_commandType));
 	savefile->WriteInt(_finishTime);
 }
 
@@ -209,6 +271,10 @@ void ConversationState::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	assert(temp >= 0 && temp <= ConversationCommand::ENumStates); // sanity check
 	_state = static_cast<ConversationCommand::State>(temp);
+
+	savefile->ReadInt(temp);
+	assert(temp >= 0 && temp <= ConversationCommand::ENumCommands); // sanity check
+	_commandType = static_cast<ConversationCommand::Type>(temp);
 
 	savefile->ReadInt(_finishTime);
 }

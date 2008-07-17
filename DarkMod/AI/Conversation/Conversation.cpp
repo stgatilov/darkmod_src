@@ -140,14 +140,10 @@ bool Conversation::Process()
 		case ConversationCommand::ENotStartedYet:
 			// Start a new execution
 			convState->StartCommand(*command);
-			// Update the state in the command
-			command->SetState(convState->GetExecutionState());
 			break;
 		case ConversationCommand::EExecuting:
 			// Continue execution
 			convState->Execute(*command);
-			// Update the state in the command
-			command->SetState(convState->GetExecutionState());
 			break;
 		case ConversationCommand::EFinished:
 			// Increase the iterator, we continue next frame
@@ -158,6 +154,9 @@ bool Conversation::Process()
 		default:
 			return false;
 	};
+
+	// Sync the command state with the AI conversation execution state
+	command->SetState(convState->GetExecutionState());
 
 	return (state != ConversationCommand::EAborted);
 }
