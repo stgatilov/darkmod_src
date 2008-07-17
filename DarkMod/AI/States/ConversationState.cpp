@@ -238,7 +238,11 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 	case ConversationCommand::ELookAtPosition:
 	{
-		// TODO
+		idVec3 pos = command.GetVectorArgument(0);
+		float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
+
+		owner->Event_LookAtPosition(pos, duration);
+		_state = ConversationCommand::EFinished;
 	}
 	break;
 
