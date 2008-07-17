@@ -21,6 +21,8 @@ namespace ai {
 void ConversationSystem::Clear()
 {
 	_conversations.Clear();
+	_activeConversations.Clear();
+	_dyingConversations.Clear();
 }
 
 void ConversationSystem::Init(idMapFile* mapFile)

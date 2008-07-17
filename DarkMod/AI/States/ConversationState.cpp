@@ -159,9 +159,16 @@ void ConversationState::StartCommand(ConversationCommand& command)
 		if (ent != NULL)
 		{
 			// Start moving
+			idVec3 distance = ent->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+			idVec3 distanceNorm(distance);
+			distanceNorm.NormalizeFast();
+
+			idVec3 goal = owner->GetPhysics()->GetOrigin() + distance - distanceNorm*100.0f;
+
 			owner->GetSubsystem(SubsysMovement)->PushTask(
-				TaskPtr(new MoveToPositionTask(ent->GetPhysics()->GetOrigin()))
+				TaskPtr(new MoveToPositionTask(goal))
 			);
+			//owner->MoveToPosition(ent->GetPhysics()->GetOrigin());
 			_state = ConversationCommand::EExecuting;
 		}
 		else
