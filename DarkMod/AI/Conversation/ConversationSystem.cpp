@@ -218,7 +218,7 @@ void ConversationSystem::LoadConversationEntity(idMapEntity* entity)
 		else
 		{
 			// This loop breaks on the first invalid conversation
-			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation entity %s: found %d valid conversations.\r", entity->epairs.GetString("name"), i);
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation entity %s: found %d valid conversations.\r", entity->epairs.GetString("name"), i-1);
 			break;
 		}
 	}
