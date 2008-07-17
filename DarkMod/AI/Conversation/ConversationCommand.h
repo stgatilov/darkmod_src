@@ -99,6 +99,9 @@ public:
 	// Casts the argument to a float (returns 0.0f if not existing)
 	float GetFloatArgument(int index);
 
+	// Casts the argument to a 3D vector (returns <0,0,0> if argument is not existing)
+	idVec3 GetVectorArgument(int index);
+
 	/**
 	 * greebo: Parses the command parameters from the given idDict.
 	 * The prefix is something along the lines "conv_2_cmd_3_" and is

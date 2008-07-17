@@ -83,6 +83,13 @@ idEntity* ConversationCommand::GetEntityArgument(int index)
 	return gameLocal.FindEntity(GetArgument(index));
 }
 
+idVec3 ConversationCommand::GetVectorArgument(int index)
+{
+	idVec3 returnValue(0,0,0);
+	sscanf( GetArgument(index), "%f %f %f", &returnValue.x, &returnValue.y, &returnValue.z );
+	return returnValue;
+}
+
 float ConversationCommand::GetFloatArgument(int index)
 {
 	return atof(GetArgument(index));
