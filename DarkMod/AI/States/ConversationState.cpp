@@ -26,6 +26,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #define DEFAULT_LOOKAT_DURATION 5.0f
 #define DEFAULT_WALKTOENTITY_DISTANCE 50.0f
 #define FALLBACK_ANIM_LENGTH 5000 // msecs
+#define DEFAULT_BLEND_FRAMES 4
 
 namespace ai
 {
@@ -211,9 +212,12 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	case ConversationCommand::EPlayAnimOnce:
 	{
 		idStr animName = command.GetArgument(0);
+		int blendFrames = (command.GetNumArguments() >= 2) ? atoi(command.GetArgument(1)) : DEFAULT_BLEND_FRAMES;
 
 		// Tell the animation subsystem to play the anim
-		owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new PlayAnimationTask(animName)));
+		owner->GetSubsystem(SubsysAction)->PushTask(
+			TaskPtr(new PlayAnimationTask(animName, blendFrames))
+		);
 
 		int length = (owner->GetAnimator() != NULL) ? 
 			owner->GetAnimator()->AnimLength(owner->GetAnimator()->GetAnim(animName)) : FALLBACK_ANIM_LENGTH;
@@ -232,7 +236,19 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	}
 	break;
 	case ConversationCommand::EPlayAnimCycle:
-		break;
+	{
+		idStr animName = command.GetArgument(0);
+		int blendFrames = (command.GetNumArguments() >= 2) ? atoi(command.GetArgument(1)) : DEFAULT_BLEND_FRAMES;
+
+		// Tell the animation subsystem to play the anim
+		owner->GetSubsystem(SubsysAction)->PushTask(
+			TaskPtr(new PlayAnimationTask(animName, blendFrames, true)) // true == playCycle
+		);
+
+		// For PlayCycle, "wait until finished" doesn't make sense, as it lasts forever
+		_state = ConversationCommand::EFinished;
+	}
+	break;
 
 	case ConversationCommand::EActivateTarget:
 	{
