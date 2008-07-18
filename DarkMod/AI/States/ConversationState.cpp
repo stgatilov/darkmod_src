@@ -173,8 +173,9 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			owner->GetSubsystem(SubsysMovement)->PushTask(
 				TaskPtr(new MoveToPositionTask(goal))
 			);
-			//owner->MoveToPosition(ent->GetPhysics()->GetOrigin());
-			_state = ConversationCommand::EExecuting;
+
+			// Check if we should wait until the command is finished and set the _state accordingly
+			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
 		}
 		else
 		{

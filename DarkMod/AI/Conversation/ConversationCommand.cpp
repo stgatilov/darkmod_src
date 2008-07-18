@@ -53,8 +53,12 @@ ConversationCommand::Type ConversationCommand::GetType()
 
 ConversationCommand::State ConversationCommand::GetState()
 {
-	
 	return _state;
+}
+
+bool ConversationCommand::WaitUntilFinished()
+{
+	return _waitUntilFinished;
 }
 
 void ConversationCommand::SetState(ConversationCommand::State newState)
@@ -119,6 +123,9 @@ bool ConversationCommand::Parse(const idDict& dict, const idStr& prefix)
 	
 	// Decrease the actor index, so that it can be used as index in the actors idList.
 	_actor--;
+
+	// Check if we have a "wait_until_finished" argument (default is "1")
+	_waitUntilFinished = dict.GetBool(prefix + "wait_until_finished", "1");
 
 	// Parse the arguments
 	_arguments.Clear();

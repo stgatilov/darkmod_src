@@ -70,6 +70,9 @@ private:
 	// match the ones in the idList.
 	int _actor;
 
+	// TRUE if the actor should fully wait until the action ends
+	bool _waitUntilFinished;
+
 	// Argument list
 	idStringList _arguments;
 
@@ -83,6 +86,9 @@ public:
 	// The execution state of this command
 	State GetState();
 	void SetState(State newState);
+
+	// Returns TRUE if the actor should wait for the command to finish
+	bool WaitUntilFinished();
 
 	// Returns the actor index of this command
 	int GetActor();
