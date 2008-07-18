@@ -194,8 +194,16 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		int length = Talk(owner, command.GetArgument(0));
 
 		// Set the finish conditions for the current action
-		_state = ConversationCommand::EExecuting;
-		_finishTime = gameLocal.time + length + 200;
+		if (command.WaitUntilFinished())
+		{
+			_state = ConversationCommand::EExecuting;
+			_finishTime = gameLocal.time + length + 200;
+		}
+		else
+		{
+			// We need not to wait until we're done, so just set the flag to "finished"
+			_state = ConversationCommand::EFinished;
+		}
 	}
 	break;
 
