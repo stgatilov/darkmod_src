@@ -91,6 +91,7 @@ void ConversationSystem::StartConversation(int index)
 	if (!conv->CheckConditions())
 	{
 		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Cannot start conversation %s, conditions are not met.\r", conv->GetName().c_str());
+		return;
 	}
 
 	// Start the conversation
