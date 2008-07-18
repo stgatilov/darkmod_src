@@ -154,8 +154,6 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		_finishTime = gameLocal.time + SEC2MS(atof(command.GetArgument(0)));
 		_state = ConversationCommand::EExecuting;
 	break;
-	case ConversationCommand::EWaitForTrigger:
-	case ConversationCommand::EWaitForActor:
 	case ConversationCommand::EWalkToPosition:
 	{
 		idVec3 goal = command.GetVectorArgument(0);

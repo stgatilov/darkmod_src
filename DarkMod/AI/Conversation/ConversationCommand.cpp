@@ -22,8 +22,6 @@ namespace ai {
 const char* const ConversationCommand::TypeNames[ConversationCommand::ENumCommands] =
 {
 	"WaitSeconds",
-	"WaitForTrigger",
-	"WaitForActor",
 	"WalkToPosition",
 	"WalkToEntity",
 	"StopMove",
