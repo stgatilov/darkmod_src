@@ -40,6 +40,7 @@ public:
 		ETurnToEntity,
 		EAttackActor,
 		EAttackEntity,
+		EInteractWithEntity,
 		ENumCommands,
 	};
 
