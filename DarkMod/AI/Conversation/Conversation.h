@@ -73,6 +73,12 @@ public:
 	 */
 	void Start();
 
+	/** 
+	 * greebo: Ends this conversation and notifies the AI about this.
+	 * Normally, the AI are put back into their previous state.
+	 */
+	void End();
+
 	/**
 	 * greebo: This is the "think" routine for conversations.
 	 *

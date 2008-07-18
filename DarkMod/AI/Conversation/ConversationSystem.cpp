@@ -103,6 +103,17 @@ void ConversationSystem::StartConversation(int index)
 
 void ConversationSystem::EndConversation(int index)
 {
+	ConversationPtr conv = GetConversation(index);
+
+	if (conv == NULL)
+	{
+		gameLocal.Warning("StartConversation: Can't find conversation with index %d\n", index);
+		return;
+	}
+
+	// Let the conversation end in a controlled fashion
+	conv->End();
+
 	_dyingConversations.AddUnique(index);
 }
 
