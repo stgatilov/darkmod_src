@@ -25,6 +25,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #define CONVERSATION_SPAWNARG "snd_TEMP_conv"
 #define DEFAULT_LOOKAT_DURATION 5.0f
 #define DEFAULT_WALKTOENTITY_DISTANCE 50.0f
+#define FALLBACK_ANIM_LENGTH 5000 // msecs
 
 namespace ai
 {
@@ -209,15 +210,19 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 	case ConversationCommand::EPlayAnimOnce:
 	{
-		owner->GetSubsystem(SubsysAction)->PushTask(
-			TaskPtr(new PlayAnimationTask(command.GetArgument(0)))
-		);
+		idStr animName = command.GetArgument(0);
+
+		// Tell the animation subsystem to play the anim
+		owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new PlayAnimationTask(animName)));
+
+		int length = (owner->GetAnimator() != NULL) ? 
+			owner->GetAnimator()->AnimLength(owner->GetAnimator()->GetAnim(animName)) : FALLBACK_ANIM_LENGTH;
 
 		// Set the finish conditions for the current action
 		if (command.WaitUntilFinished())
 		{
 			_state = ConversationCommand::EExecuting;
-			_finishTime = gameLocal.time + 5000;
+			_finishTime = gameLocal.time + length;
 		}
 		else
 		{
