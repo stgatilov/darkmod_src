@@ -14,8 +14,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "ConversationState.h"
 #include "../Memory.h"
-#include "../Tasks/IdleAnimationTask.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "../Tasks/PlayAnimationTask.h"
 #include "ObservantState.h"
 #include "../Library.h"
 #include "../Conversation/Conversation.h"
@@ -208,6 +208,24 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	break;
 
 	case ConversationCommand::EPlayAnimOnce:
+	{
+		owner->GetSubsystem(SubsysAction)->PushTask(
+			TaskPtr(new PlayAnimationTask(command.GetArgument(0)))
+		);
+
+		// Set the finish conditions for the current action
+		if (command.WaitUntilFinished())
+		{
+			_state = ConversationCommand::EExecuting;
+			_finishTime = gameLocal.time + 5000;
+		}
+		else
+		{
+			// We need not to wait until we're done, so just set the flag to "finished"
+			_state = ConversationCommand::EFinished;
+		}
+	}
+	break;
 	case ConversationCommand::EPlayAnimCycle:
 		break;
 

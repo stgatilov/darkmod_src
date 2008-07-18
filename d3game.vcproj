@@ -903,6 +903,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\PatrolTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PlayAnimationTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PlayAnimationTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\AnimalPatrolTask.cpp">
 					</File>
 					<File
