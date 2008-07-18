@@ -157,7 +157,18 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	case ConversationCommand::EWaitForTrigger:
 	case ConversationCommand::EWaitForActor:
 	case ConversationCommand::EWalkToPosition:
-		break;
+	{
+		idVec3 goal = command.GetVectorArgument(0);
+
+		// Start moving
+		owner->GetSubsystem(SubsysMovement)->PushTask(
+			TaskPtr(new MoveToPositionTask(goal))
+		);
+
+		// Check if we should wait until the command is finished and set the _state accordingly
+		_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+	}
+	break;
 	case ConversationCommand::EWalkToEntity:
 	{
 		idEntity* ent = command.GetEntityArgument(0);
