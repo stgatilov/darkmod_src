@@ -41,6 +41,7 @@ public:
 		EAttackActor,
 		EAttackEntity,
 		EInteractWithEntity,
+		ERunScript,
 		ENumCommands,
 	};
 

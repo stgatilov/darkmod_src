@@ -67,7 +67,7 @@ bool ScriptTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("ScriptTask performing.\r");
 	assert(_thread != NULL);
 
-	if (_thread->IsDoneProcessing() || _thread->IsDying())
+	if (_thread->IsDying())
 	{
 		// thread is done, return TRUE to terminate this task
 		_thread = NULL;

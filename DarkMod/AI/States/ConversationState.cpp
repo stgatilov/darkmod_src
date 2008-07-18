@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/PlayAnimationTask.h"
 #include "../Tasks/InteractionTask.h"
+#include "../Tasks/ScriptTask.h"
 #include "ObservantState.h"
 #include "../Library.h"
 #include "../Conversation/Conversation.h"
@@ -141,7 +142,7 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 	else if (subSystem == SubsysAction)
 	{
 		// In case of active "Interact" commands, set the state to "finished"
-		if (_commandType == ConversationCommand::EInteractWithEntity)
+		if (_commandType == ConversationCommand::EInteractWithEntity || _commandType == ConversationCommand::ERunScript)
 		{
 			_state = ConversationCommand::EFinished;
 		}
@@ -421,6 +422,27 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		else
 		{
 			gameLocal.Warning("Conversation Command: 'InteractWithEntity' could not find entity: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
+
+	case ConversationCommand::ERunScript:
+	{
+		idStr scriptFunction = command.GetArgument(0);
+
+		if (!scriptFunction.IsEmpty())
+		{
+			// Tell the action subsystem to do its job
+			owner->GetSubsystem(SubsysAction)->PushTask(
+				TaskPtr(new ScriptTask(scriptFunction))
+			);
+
+			// Check if we should wait until the command is finished and set the _state accordingly
+			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'RunScript' has empty scriptfunction argument 0.");
 		}
 	}
 	break;

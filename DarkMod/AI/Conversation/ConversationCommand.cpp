@@ -37,7 +37,8 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 	"TurnToEntity",
 	"AttackActor",
 	"AttackEntity",
-	"InteractWithEntity"
+	"InteractWithEntity",
+	"RunScript"
 };
 
 ConversationCommand::ConversationCommand() :
