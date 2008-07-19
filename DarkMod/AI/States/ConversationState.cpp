@@ -596,6 +596,9 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 		default:break;
 	};
 
+	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,20), 0.25f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
+
+	str = (_commandType < ConversationCommand::ENumCommands) ? ConversationCommand::TypeNames[_commandType] : "";
 	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,10), 0.3f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
 }
 
