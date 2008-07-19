@@ -81,6 +81,18 @@ bool Conversation::CheckConditions()
 			// AI is too alerted to start this conversation
 			return false;
 		}
+
+		// greebo: Let's see if the AI has already an active conversation state
+		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
+		ConversationStatePtr convState = 
+			boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+
+		if (convState != NULL)
+		{
+			// AI is already involved in another conversation
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is already in another conversation!.\r", ai->name.c_str());
+			return false;
+		}
 	}
 
 	// All actors alive and kicking
