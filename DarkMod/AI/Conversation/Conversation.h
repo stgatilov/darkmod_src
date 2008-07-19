@@ -42,6 +42,9 @@ class Conversation
 	// Counter to tell how often this conversation has been played
 	int _playCount;
 
+	// Specifies how often this conversation can be played (-1 == infinitely often)
+	int _maxPlayCount;
+
 public:
 	Conversation();
 
@@ -60,6 +63,9 @@ public:
 
 	// Returns the number of times this conversation has been (partially) played 
 	int GetPlayCount();
+
+	// Returns the maximum number of plays for this conversation
+	int GetMaxPlayCount();
 
 	/**
 	 * greebo: Returns TRUE if this conversation can be played. This basically means
