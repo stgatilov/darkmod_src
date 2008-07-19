@@ -216,6 +216,28 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		_finishTime = gameLocal.time + SEC2MS(atof(command.GetArgument(0)));
 		_state = ConversationCommand::EExecuting;
 	break;
+	case ConversationCommand::EWalkToActor:
+	{
+		// Reduce the actor index by 1 before passing them to the conversation
+		idAI* ai = conversation.GetActor(atoi(command.GetArgument(0)) - 1);
+
+		if (ai != NULL)
+		{
+			float distance = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_WALKTOENTITY_DISTANCE;
+			
+			owner->GetSubsystem(SubsysMovement)->PushTask(
+				TaskPtr(new MoveToPositionTask(ai, distance))
+			);
+
+			// Check if we should wait until the command is finished and set the _state accordingly
+			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+		}
+		else
+		{
+			gameLocal.Warning("Conversation Command: 'WalkToActor' could not find actor: %s", command.GetArgument(0).c_str());
+		}
+	}
+	break;
 	case ConversationCommand::EWalkToPosition:
 	{
 		idVec3 goal = command.GetVectorArgument(0);

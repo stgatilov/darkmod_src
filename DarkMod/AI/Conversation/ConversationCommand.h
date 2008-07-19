@@ -25,6 +25,7 @@ public:
 	enum Type
 	{
 		EWaitSeconds = 0,
+		EWalkToActor,
 		EWalkToPosition,
 		EWalkToEntity,
 		EStopMove,
