@@ -128,8 +128,10 @@ void ConversationState::Init(idAI* owner)
 
 		if (targetActor != NULL)
 		{
+			float talkDistance = conversation->GetTalkDistance();
+
 			owner->GetSubsystem(SubsysMovement)->PushTask(
-				TaskPtr(new MoveToPositionTask(targetActor))
+				TaskPtr(new MoveToPositionTask(targetActor, talkDistance))
 			);
 		}
 	}

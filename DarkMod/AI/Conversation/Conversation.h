@@ -73,6 +73,9 @@ public:
 	// Returns true or false depending on the internal setting
 	bool ActorsMustBeWithinTalkdistance();
 
+	// Returns the maximum distance actors can talk to each other from
+	float GetTalkDistance();
+
 	/**
 	 * greebo: Returns TRUE if this conversation can be played. This basically means
 	 * that all actors participating in this conversation are conscious.

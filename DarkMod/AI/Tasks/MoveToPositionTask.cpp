@@ -19,28 +19,29 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-#define MAX_DISTANCE_FOR_REACHING_ENTITY 50.0f
-
 // This should be unreachable if no target position is specified.
 MoveToPositionTask::MoveToPositionTask() :
 	_targetPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	_prevTargetPosition(0,0,0),
 	_targetYaw(idMath::INFINITY),
-	_targetEntity(NULL)
+	_targetEntity(NULL),
+	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE)
 {}
 
 MoveToPositionTask::MoveToPositionTask(const idVec3& targetPosition, float targetYaw) :
 	_targetPosition(targetPosition),
 	_prevTargetPosition(0,0,0),
 	_targetYaw(targetYaw),
-	_targetEntity(NULL)
+	_targetEntity(NULL),
+	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE)
 {}
 
-MoveToPositionTask::MoveToPositionTask(idEntity* targetEntity) :
+MoveToPositionTask::MoveToPositionTask(idEntity* targetEntity, float entityReachDistance) :
 	_targetPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	_prevTargetPosition(0,0,0),
 	_targetYaw(idMath::INFINITY),
-	_targetEntity(targetEntity)
+	_targetEntity(targetEntity),
+	_entityReachDistance(entityReachDistance)
 {}
 
 // Get the name of this task
@@ -103,6 +104,11 @@ void MoveToPositionTask::SetPosition(idVec3 position)
 	_prevTargetPosition = position + idVec3(1,1,1);
 }
 
+void MoveToPositionTask::SetEntityReachDistance(float distance)
+{
+	_entityReachDistance = distance;
+}
+
 void MoveToPositionTask::UpdateTargetPosition(idAI* owner)
 {
 	// We have a target entity, this might be a moving target
@@ -114,7 +120,7 @@ void MoveToPositionTask::UpdateTargetPosition(idAI* owner)
 		const idVec3& curPos = owner->GetPhysics()->GetOrigin();
 		float distance = (curPos - _targetPosition).LengthFast();
 
-		if (distance < MAX_DISTANCE_FOR_REACHING_ENTITY)
+		if (distance < _entityReachDistance)
 		{
 			// Terminate this task
 			_targetPosition = curPos;
@@ -131,6 +137,7 @@ void MoveToPositionTask::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(_prevTargetPosition);
 	savefile->WriteFloat(_targetYaw);
 	savefile->WriteObject(_targetEntity);
+	savefile->WriteFloat(_entityReachDistance);
 }
 
 void MoveToPositionTask::Restore(idRestoreGame* savefile)
@@ -141,6 +148,7 @@ void MoveToPositionTask::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(_prevTargetPosition);
 	savefile->ReadFloat(_targetYaw);
 	savefile->ReadObject(reinterpret_cast<idClass*&>(_targetEntity));
+	savefile->ReadFloat(_entityReachDistance);
 }
 
 MoveToPositionTaskPtr MoveToPositionTask::CreateInstance()

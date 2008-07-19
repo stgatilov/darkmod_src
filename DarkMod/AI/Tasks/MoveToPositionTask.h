@@ -18,6 +18,8 @@ namespace ai
 // Define the name of this task
 #define TASK_MOVE_TO_POSITION "MoveToPosition"
 
+#define DEFAULT_ENTITY_REACH_DISTANCE 50.0f
+
 class MoveToPositionTask;
 typedef boost::shared_ptr<MoveToPositionTask> MoveToPositionTaskPtr;
 
@@ -36,6 +38,9 @@ private:
 	float _targetYaw;
 
 	idEntity* _targetEntity;
+	
+	// the distance below which entities are considered "reached"
+	float _entityReachDistance;
 
 	// Default constructor
 	MoveToPositionTask();
@@ -45,7 +50,7 @@ public:
 	MoveToPositionTask(const idVec3& targetPosition, float targetYaw = idMath::INFINITY);
 
 	// Constructor taking a target entity
-	MoveToPositionTask(idEntity* targetEntity);
+	MoveToPositionTask(idEntity* targetEntity, float entityReachDistance = DEFAULT_ENTITY_REACH_DISTANCE);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -56,6 +61,9 @@ public:
 	virtual bool Perform(Subsystem& subsystem);
 
 	void SetPosition(idVec3 targetPosition);
+
+	// Sets the distance below which entities are considered "reached"
+	void SetEntityReachDistance(float distance);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

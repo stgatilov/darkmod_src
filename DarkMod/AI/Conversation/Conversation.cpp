@@ -63,6 +63,11 @@ bool Conversation::ActorsMustBeWithinTalkdistance()
 	return _actorsMustBeWithinTalkDistance;
 }
 
+float Conversation::GetTalkDistance()
+{
+	return _talkDistance;
+}
+
 bool Conversation::CheckConditions()
 {
 	// Check if the max play count has been exhausted already
