@@ -361,7 +361,16 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		{
 			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
 			owner->Event_LookAtEntity(ai, duration);
-			_state = ConversationCommand::EFinished;
+
+			if (command.WaitUntilFinished()) 
+			{
+				_state = ConversationCommand::EExecuting;
+				_finishTime = gameLocal.time + SEC2MS(duration);
+			}
+			else 
+			{
+				_state = ConversationCommand::EFinished;
+			}
 		}
 		else
 		{
@@ -376,7 +385,16 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
 
 		owner->Event_LookAtPosition(pos, duration);
-		_state = ConversationCommand::EFinished;
+
+		if (command.WaitUntilFinished()) 
+		{
+			_state = ConversationCommand::EExecuting;
+			_finishTime = gameLocal.time + SEC2MS(duration);
+		}
+		else 
+		{
+			_state = ConversationCommand::EFinished;
+		}
 	}
 	break;
 
@@ -388,7 +406,16 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		{
 			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
 			owner->Event_LookAtEntity(ent, duration);
-			_state = ConversationCommand::EFinished;
+			
+			if (command.WaitUntilFinished()) 
+			{
+				_state = ConversationCommand::EExecuting;
+				_finishTime = gameLocal.time + SEC2MS(duration);
+			}
+			else 
+			{
+				_state = ConversationCommand::EFinished;
+			}
 		}
 		else
 		{
