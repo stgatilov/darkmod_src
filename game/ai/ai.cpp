@@ -5226,7 +5226,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	// Update TDM objective system
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, attacker, this, bPlayerResponsible );
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, attacker, bPlayerResponsible );
 }
 
 
