@@ -234,17 +234,10 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		idEntity* ent = command.GetEntityArgument(0);
 		if (ent != NULL)
 		{
-			// Start moving
-			idVec3 delta = ent->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
-			idVec3 deltaNorm(delta);
-			deltaNorm.NormalizeFast();
-
 			float distance = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_WALKTOENTITY_DISTANCE;
 			
-			idVec3 goal = owner->GetPhysics()->GetOrigin() + delta - deltaNorm*distance;
-
 			owner->GetSubsystem(SubsysMovement)->PushTask(
-				TaskPtr(new MoveToPositionTask(goal))
+				TaskPtr(new MoveToPositionTask(ent, distance))
 			);
 
 			// Check if we should wait until the command is finished and set the _state accordingly
