@@ -331,7 +331,7 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 	}
 
 	// Parse "global" conversation settings 
-	_talkDistance = dict.GetFloat(prefix + "talk_distance");
+	_talkDistance = dict.GetFloat(prefix + "talk_distance", "60");
 
 	// Parse participant actors
 	// Check if this entity can be used by others.
