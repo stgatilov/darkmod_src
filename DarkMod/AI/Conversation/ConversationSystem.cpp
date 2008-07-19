@@ -87,6 +87,13 @@ void ConversationSystem::StartConversation(int index)
 
 	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Trying to start conversation %s.\r", conv->GetName().c_str());
 
+	// Check if the conversation is already playing
+	if (_activeConversations.FindIndex(index) != -1)
+	{
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Cannot start conversation %s, it's already playing!\r", conv->GetName().c_str());
+		return;
+	}
+
 	// Check if the conditions to start the conversations is met
 	if (!conv->CheckConditions())
 	{
