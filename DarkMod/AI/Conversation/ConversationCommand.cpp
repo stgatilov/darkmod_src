@@ -42,7 +42,7 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 };
 
 ConversationCommand::ConversationCommand() :
-	_state(ENotStartedYet),
+	_state(ENotReady),
 	_type(ENumCommands) // invalid type
 {}
 

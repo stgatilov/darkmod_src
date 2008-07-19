@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ObservantState.h"
 #include "../Library.h"
 #include "../Conversation/Conversation.h"
+#include "../Conversation/ConversationSystem.h"
 #include "../Conversation/ConversationCommand.h"
 
 // greebo: This spawnarg holds the currently played conversation sound
@@ -55,7 +56,10 @@ bool ConversationState::CheckAlertLevel(idAI* owner)
 
 void ConversationState::SetConversation(int index)
 {
-	// TODO: Sanity-Check
+	if (gameLocal.m_ConversationSystem->GetConversation(index) == NULL)
+	{
+		gameLocal.Warning("AI ConversationState: Could not find conversation %d\n", index);
+	}
 
 	_conversation = index;
 }
@@ -81,18 +85,54 @@ void ConversationState::Init(idAI* owner)
 	// Check dialogue prerequisites
 	if (!CheckConversationPrerequisites())
 	{
-		owner->mind->EndState();
+		owner->GetMind()->EndState();
 		return;
 	}
 
 	// We haven't started doing our stuff yet
 	_finishTime = -1;
 	_commandType = ConversationCommand::ENumCommands;
-	_state = ConversationCommand::ENotStartedYet;
+	_state = ConversationCommand::EReady;
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->StopMove(MOVE_STATUS_DONE);
+
+	ConversationPtr conversation = gameLocal.m_ConversationSystem->GetConversation(_conversation);
+	if (conversation == NULL)
+	{
+		owner->GetMind()->EndState();
+		return;
+	}
+
+	// Check the conversation property to see if we should move before we are ready
+	if (conversation->ActorsMustBeWithinTalkdistance())
+	{
+		// Not ready yet
+		_state = ConversationCommand::ENotReady;
+
+		idEntity* targetActor = NULL;
+
+		// Get the first actor who is not <self>
+		for (int i = 0; i < conversation->GetNumActors(); i++)
+		{
+			idEntity* candidate = conversation->GetActor(i);
+			if (candidate != owner)
+			{
+				targetActor = candidate;
+				break;
+			}
+		}
+
+		if (targetActor != NULL)
+		{
+			owner->GetSubsystem(SubsysMovement)->PushTask(
+				TaskPtr(new MoveToPositionTask(targetActor))
+			);
+		}
+	}
 }
 
 // Gets called each time the mind is thinking
@@ -129,14 +169,23 @@ bool ConversationState::CheckConversationPrerequisites()
 
 void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 {
-	if (_state != ConversationCommand::EExecuting) return;
+	if (_state != ConversationCommand::EExecuting && _state != ConversationCommand::ENotReady) return;
 
 	if (subSystem == SubsysMovement)
 	{
+		// greebo: Are we still in preparation phase?
+		if (_state == ConversationCommand::ENotReady)
+		{
+			// The movement task has ended, set the state to ready
+			_state = ConversationCommand::EReady;
+			return;
+		}
+
 		// In case of active "walk" commands, set the state to "finished"
 		if (_commandType == ConversationCommand::EWalkToEntity || _commandType == ConversationCommand::EWalkToPosition)
 		{
 			_state = ConversationCommand::EFinished;
+			return;
 		}
 	}
 	else if (subSystem == SubsysAction)
@@ -145,6 +194,7 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 		if (_commandType == ConversationCommand::EInteractWithEntity || _commandType == ConversationCommand::ERunScript)
 		{
 			_state = ConversationCommand::EFinished;
+			return;
 		}
 	}
 }
@@ -459,7 +509,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 void ConversationState::Execute(ConversationCommand& command, Conversation& conversation)
 {
-
+	// Nothing to do so far.
 }
 
 int ConversationState::Talk(idAI* owner, const idStr& soundName)
@@ -494,7 +544,8 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 
 	switch (_state)
 	{
-		case ConversationCommand::ENotStartedYet: str = "Not Started Yet"; break;
+		case ConversationCommand::ENotReady: str = "Not Ready"; break;
+		case ConversationCommand::EReady: str = "Ready"; break;
 		case ConversationCommand::EExecuting: str = "Executing"; break;
 		case ConversationCommand::EFinished: str = "Finished"; break;
 		case ConversationCommand::EAborted: str = "Aborted"; break;

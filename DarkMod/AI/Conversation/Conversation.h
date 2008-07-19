@@ -45,6 +45,9 @@ class Conversation
 	// Specifies how often this conversation can be played (-1 == infinitely often)
 	int _maxPlayCount;
 
+	// TRUE if the actors are supposed to walk towards each other before starting to talk
+	bool _actorsMustBeWithinTalkDistance;
+
 public:
 	Conversation();
 
@@ -66,6 +69,9 @@ public:
 
 	// Returns the maximum number of plays for this conversation
 	int GetMaxPlayCount();
+
+	// Returns true or false depending on the internal setting
+	bool ActorsMustBeWithinTalkdistance();
 
 	/**
 	 * greebo: Returns TRUE if this conversation can be played. This basically means
@@ -98,6 +104,9 @@ public:
 	// Gets the actor with the given index/name
 	idAI* GetActor(int index);
 	idAI* GetActor(const idStr& name);
+
+	// Returns the number of involved actors
+	int GetNumActors();
 
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;

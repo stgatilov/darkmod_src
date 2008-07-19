@@ -29,15 +29,23 @@ private:
 	// The target position
 	idVec3 _targetPosition;
 
+	// The previous target position
+	idVec3 _prevTargetPosition;
+
 	// Target yaw (is not INFINITY if set)
 	float _targetYaw;
+
+	idEntity* _targetEntity;
 
 	// Default constructor
 	MoveToPositionTask();
 
 public:
 	// Constructor taking the target position (and optional target yaw) as input argument
-	MoveToPositionTask(const idVec3 targetPosition, float targetYaw = idMath::INFINITY);
+	MoveToPositionTask(const idVec3& targetPosition, float targetYaw = idMath::INFINITY);
+
+	// Constructor taking a target entity
+	MoveToPositionTask(idEntity* targetEntity);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -55,6 +63,10 @@ public:
 
 	// Creates a new Instance of this task
 	static MoveToPositionTaskPtr CreateInstance();
+
+private:
+	// Refines the goal position, if appropriate
+	void UpdateTargetPosition(idAI* owner);
 };
 
 } // namespace ai
