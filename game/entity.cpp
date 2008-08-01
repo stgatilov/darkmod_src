@@ -9214,7 +9214,8 @@ void idEntity::ParseAttachPositions( void )
 			pos.joint = INVALID_JOINT;
 
 		pos.originOffset = spawnArgs.GetVector( (prefix + "origin").c_str() );
-		pos.angleOffset = spawnArgs.GetAngles( (prefix + "angles").c_str() );
+		// tels: The angleOffset is now optional:
+		pos.angleOffset = spawnArgs.GetAngles( (prefix + "angles").c_str(), "0 0 0" );
 
 		m_AttachPositions.Append( pos );
 		Counter++;

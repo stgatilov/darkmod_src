@@ -4297,7 +4297,9 @@ void idAFBody::SetDensity( float density, const idMat3 &inertiaScale ) {
 
 	// make sure the center of mass is at the body origin
 	if ( !centerOfMass.Compare( vec3_origin, CENTER_OF_MASS_EPSILON ) ) {
-		gameLocal.Warning( "idAFBody::SetDensity: center of mass not at origin for body '%s'", name.c_str() );
+		gameLocal.Warning( "idAFBody::SetDensity: center of mass (%f, %f, %f) not at origin (%f, %f, %f) for body '%s'",
+		 vec3_origin.x, vec3_origin.y, vec_origin.z, 
+		 centerOfMass.x, centerOfMass.y, centerOfMass.z, name.c_str() );
 	}
 	centerOfMass.Zero();
 
