@@ -176,6 +176,22 @@ enum {
 };
 
 /**
+* Attachment system info
+**/
+class CAttachInfo 
+{
+public:
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
+	idEntityPtr<idEntity>	ent;
+	// Anim channel this attachment is on (if on an animated entity)
+	int						channel;
+	// unique name by which the entity refers to this attachment
+	idStr					name; 
+};
+
+/**
 * Info structure for attaching things to named positions
 **/
 typedef struct SAttachPosition_s
@@ -750,10 +766,77 @@ public:
 	virtual void Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	/**
+	* Detach the attachment of that name.
+	* Note that to preserve the name->index mapping, the entry for
+	* the detached object stays in the m_Attachments list, but the entity
+	* field gets set to NULL so that it's skipped over in various operations
+	* NOTE: This could lead to memory hogging if something gets detached/attached
+	*		many times.
+	**/
+	virtual void Detach( const char *AttName );
+
+	/**
+	* Detach by index in the m_Attachments array.  Otherwise same as above
+	**/
+	virtual void DetachInd( int ind );
+
+	/**
+	* Reattach an existing attachment to the given offset and angles relative
+	* to the origin and orientatin of the entity
+	*
+	* A different version taking a joint argument exists on idAnimatedEntity
+	* for things with MD5 structures
+	**/
+	virtual void ReAttachToCoords( const char *AttName, idVec3 offset, idAngles angles );
+
+	/**
+	* Reattach to a predefined attach position, otherwise same as above
+	**/
+	virtual void ReAttachToPos( const char *AttName, const char *PosName  );
+
+	/**
+	* Show or hide an attachment, by name or by attachment array index.
+	**/
+	void ShowAttachment( const char *AttName, bool bShow );
+	void ShowAttachmentInd( int ind, bool bShow );
+
+	/**
+	* Returns an entity pointer for a given attachment name.
+	* Returns NULL if no such named attachment exists on this entity.
+	**/
+	virtual idEntity *GetAttachment( const char *AttName );
+
+	/**
+	* Returns an entity pointer for a given index of the attachment array.
+	* Returns NULL if no such named attachment exists on this entity.
+	**/
+	virtual idEntity *GetAttachment( int ind );
+
+	/**
+	* Helper function that looks up the attachment index from the name->index map
+	* Returns -1 if the index is not present in the map or if it's out of bounds
+	* of the m_Attachments array.
+	**/
+	virtual int	GetAttachmentIndex( const char *AttName );
+
+
+	/**
+	* Returns a pointer to the attachment info structure for a given attachment.
+	* Returns NULL if no such named attachment exists on this entity.
+	**/
+	virtual CAttachInfo *GetAttachInfo( const char *AttName );
+
+	/**
 	* Returns a pointer to the attachment position with this name. 
 	* Returns NULL if no attachment position exists with this name.
 	**/
 	virtual SAttachPosition *GetAttachPosition( const char *AttachName );
+
+	/**
+	* Store the attachment info in the argument references given.
+	* Returns false if the attachment index was invalid.
+	**/
+	bool PrintAttachInfo( int ind, idStr &joint, idVec3 &offset, idAngles &angles );
 	
 	/**
 	* Called when the given entity is about to attach (bind) to this entity.
@@ -908,6 +991,23 @@ protected:
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
 
 	/**
+	* List storing attachment data for each attachment
+	**/
+	idList<CAttachInfo>		m_Attachments;
+
+	/**
+	* Maps string name of an attachment to an index in m_Attachments
+	**/
+	typedef std::map<std::string, int>	AttNameMap;
+	AttNameMap							m_AttNameMap;
+
+	/**
+	* List of predefined attachment positions for this entity
+	* If the entity doesn't have joints, positions are relative to origin
+	**/
+	idList<SAttachPosition>	m_AttachPositions;
+
+	/**
 	* Used to keep track of the GUIs used by this entity.
 	**/
 	COverlaySys					m_overlays;
@@ -1006,12 +1106,6 @@ protected:
 
 	// Frobs this entity.
 	void					Event_Frob();
-
-	/**
-	* List of predefined attachment positions for this entity
-	* If the entity doesn't have joints, positions are relative to origin
-	**/
-	idList<SAttachPosition>	m_AttachPositions;
 
 	// angua: List of actors that currently use this entity
 	UserManager m_userManager;
@@ -1278,17 +1372,6 @@ typedef struct damageEffect_s {
 	struct damageEffect_s *	next;
 } damageEffect_t;
 
-class CAttachInfo 
-{
-public:
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
-
-	idEntityPtr<idEntity>	ent;
-	int						channel;
-	idStr					name;
-};
-
 class idAnimatedEntity : public idEntity 
 {
 public:
@@ -1326,6 +1409,15 @@ public:
 	**/
 	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
+	/**
+	* Reattach an existing attachment
+	* 
+	* The next arguments are the name of the joint to attach to, the translation
+	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
+	* rotation of the attachment relative to the joint's orientation.
+	**/
+	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
+
 	enum {
 		EVENT_ADD_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,
 		EVENT_MAXEVENTS
@@ -1343,17 +1435,6 @@ protected:
 protected:
 	idAnimator				animator;
 	damageEffect_t *		damageEffects;
-
-	/**
-	* List storing attachment data for each attachment
-	**/
-	idList<CAttachInfo>			m_Attachments;
-
-	/**
-	* Maps string name of an attachment to an index in m_Attachments
-	**/
-	typedef std::map<std::string, int>	AttNameMap;
-	AttNameMap							m_AttNameMap;
 
 private:
 	void					Event_GetJointHandle( const char *jointname );

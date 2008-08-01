@@ -417,11 +417,16 @@ const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
 
 // Attachment Related Events:
-const idEventDef AI_Attach( "attach", "e", 'd' );
-const idEventDef AI_ReAttach( "reAttach", "dsvv" );
-const idEventDef AI_DropAttachment( "dropAttachment", "d" );
-const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
-const idEventDef AI_GetAttachment( "getAttachment", "d", 'e' );
+const idEventDef AI_Attach( "attach", "es" );
+const idEventDef AI_AttachToPos( "attachToPos", "ess" );
+const idEventDef AI_ReAttachToPos( "reAttachToPos", "ss" );
+const idEventDef AI_ReAttachToCoords( "reAttachToCoords", "ssvv" );
+const idEventDef AI_DropAttachment( "dropAttachment", "s" );
+const idEventDef AI_ShowAttachment( "showAttachment", "sd" );
+const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", "d" );
+const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", "dd" );
+const idEventDef AI_GetAttachment( "getAttachment", "s", 'e' );
+const idEventDef AI_GetAttachmentInd( "getAttachmentInd", "d", 'e' );
 const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 // Weapon attachment related events
 const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
@@ -479,10 +484,15 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
 	
 	EVENT ( AI_Attach,					idActor::Event_Attach )
-	EVENT ( AI_ReAttach,				idActor::ReAttach )
-	EVENT ( AI_DropAttachment,			idActor::DropAttachment )
+	EVENT ( AI_Attach,					idActor::Event_AttachToPos )
+	EVENT ( AI_ReAttachToPos,			idActor::ReAttachToPos )
+	EVENT ( AI_ReAttachToCoords,		idActor::ReAttachToCoords )
+	EVENT ( AI_DropAttachment,			idActor::Detach )
 	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
+	EVENT ( AI_DropAttachmentInd,		idActor::DetachInd )
+	EVENT ( AI_ShowAttachmentInd,		idActor::ShowAttachmentInd )
 	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
+	EVENT ( AI_GetAttachmentInd,		idActor::Event_GetAttachmentInd )
 	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
 	EVENT ( AI_GetNumRangedWeapons,		idActor::Event_GetNumRangedWeapons )
 	EVENT ( AI_GetNumMeleeWeapons,		idActor::Event_GetNumMeleeWeapons )
@@ -2909,192 +2919,6 @@ void idActor::PlayFootStepSound( void )
 	// empty, override this in the subclasses
 }
 
-/*
-========================
-idActor::ReAttach
-========================
-*/
-void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles  ) 
-{
-	idEntity		*ent( NULL );
-	idVec3			origin;
-	idMat3			axis, rotate, newAxis;
-	jointHandle_t	joint;
-	CAttachInfo	*attachment;
-
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	attachment = &m_Attachments[ind];
-	ent = attachment->ent.GetEntity();
-
-	if( !ent || !attachment->ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		goto Quit;
-	}
-
-	joint = animator.GetJointHandle( jointName );
-	if ( joint == INVALID_JOINT )
-	{
-		// TODO: log error
-		gameLocal.Warning( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
-		goto Quit;
-	}
-
-	attachment->channel = animator.GetChannelForJoint( joint );
-	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-
-	rotate = angles.ToMat3();
-	newAxis = rotate * axis;
-
-	ent->Unbind(); 
-
-	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
-	// Hence, re-assign the attachment entity pointer (the index itself is ok)
-	attachment->ent = ent;
-
-	ent->SetAxis( newAxis );
-	// Use the local joint axis instead of the overall AI axis
-	ent->SetOrigin( origin + offset * axis );
-
-	ent->BindToJoint( this, joint, true );
-	ent->cinematic = cinematic;
-
-	// set the spawnargs for later retrieval as well
-	ent->spawnArgs.Set( "joint", jointName.c_str() );
-	ent->spawnArgs.SetVector( "origin", offset );
-	ent->spawnArgs.SetAngles( "angles", angles );
-
-Quit:
-	return;
-}
-
-void idActor::ShowAttachment( int ind, bool bShow )
-{
-	idEntity *ent( NULL );
-
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	ent = m_Attachments[ind].ent.GetEntity();
-
-	if( !ent || !m_Attachments[ind].ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		goto Quit;
-	}
-
-	if( bShow )
-		ent->Show();
-	else
-		ent->Hide();
-
-Quit:
-	return;
-}
-
-void idActor::DropAttachment( int ind )
-{
-	idEntity *ent = NULL;
-
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Dropattachment called for index %d\r", ind);
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	ent = m_Attachments[ind].ent.GetEntity();
-
-	if( !ent || !m_Attachments[ind].ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		goto Quit;
-	}
-
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Dropattachment: Ent %s unbound\r", ent->name.c_str());
-	ent->Unbind();
-	// We don't want to remove it from the list, otherwise other attachment indices get screwed up
-	//	if a script was keeping track of them.
-	m_Attachments[ind].ent = NULL; 
-
-	// greebo: Check if we should extinguish the attachment, like torches
-	if (ent->spawnArgs.GetBool("extinguish_on_drop", "0"))
-	{
-		// Get the delay in milliseconds
-		int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
-		if (delay < 0) {
-			delay = 0;
-		}
-
-		// Schedule the extinguish event
-		ent->PostEventMS(&EV_ExtinguishLights, delay);
-	}
-
-Quit:
-	return;
-}
-
-bool idActor::GetAttachInfo( int ind, idStr &jointName, idVec3 &offset, 
-							idAngles &angles )
-{
-	bool bReturnVal = false;
-	idEntity *ent = NULL;
-
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	ent = m_Attachments[ind].ent.GetEntity();
-
-	if( !ent || !m_Attachments[ind].ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		goto Quit;
-	}
-
-	jointName = ent->spawnArgs.GetString( "joint", "" );
-	offset = ent->spawnArgs.GetVector( "origin" );
-	angles = ent->spawnArgs.GetAngles( "angles" );
-
-	bReturnVal = true;
-
-Quit:
-	return bReturnVal;
-}
-
-idEntity *idActor::GetAttachedEnt( int ind )
-{
-	idEntity *ent = NULL;
-
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	ent = m_Attachments[ind].ent.GetEntity();
-
-	if( !ent || !m_Attachments[ind].ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		ent = NULL;
-		goto Quit;
-	}
-
-Quit:
-	return ent;
-}
-
 bool idActor::ReEvaluateArea(int areaNum)
 {
 	// Default implementation for actors: return positive
@@ -4029,10 +3853,19 @@ void idActor::Event_GetEyePos( void )
 idActor::Event_Attach
 =====================
 */
-void idActor::Event_Attach( idEntity *ent )
+void idActor::Event_Attach( idEntity *ent, const char *AttName )
 {
-	Attach( ent );
-	idThread::ReturnInt( m_Attachments.Num() );
+	Attach( ent, NULL, AttName );
+}
+
+/*
+=====================
+idActor::Event_AttachToPos
+=====================
+*/
+void idActor::Event_AttachToPos( idEntity *ent, const char *PosName, const char *AttName )
+{
+	Attach( ent, PosName, AttName );
 }
 
 /*
@@ -4040,15 +3873,26 @@ void idActor::Event_Attach( idEntity *ent )
 idActor::Event_GetAttachment
 =====================
 */
-void idActor::Event_GetAttachment( int ind )
+void idActor::Event_GetAttachment( const char *AttName )
 {
-	idEntity *ent = GetAttachedEnt( ind );
+	idEntity *ent = GetAttachment( AttName );
 	idThread::ReturnEntity( ent );
 }
 
 /*
 =====================
-idActor::Event_GetAttachment
+idActor::Event_GetAttachmentInd
+=====================
+*/
+void idActor::Event_GetAttachmentInd( int ind )
+{
+	idEntity *ent = GetAttachment( ind );
+	idThread::ReturnEntity( ent );
+}
+
+/*
+=====================
+idActor::Event_GetNumAttachments
 =====================
 */
 void idActor::Event_GetNumAttachments( void )

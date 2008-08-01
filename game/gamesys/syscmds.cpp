@@ -89,11 +89,12 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
+	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
 	{
-		// GetAttachInfo returned false => bad index or entity
+		// PrintAttachInfo returned false => bad index or entity
 		gameLocal.Printf("tdm_attach_offset: Bad index or bad entity at index %d\n", atoi(args.Argv(1)) );
 		goto Quit;
 	}
@@ -103,7 +104,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	offset.y = atof(args.Argv( 3 ));
 	offset.z = atof(args.Argv( 4 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
 
 Quit:
 	return;
@@ -136,11 +137,12 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
+	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
 	{
-		// GetAttachInfo returned false => bad index or entity
+		// PrintAttachInfo returned false => bad index or entity
 		gameLocal.Printf("tdm_attach_rot: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
 		goto Quit;
 	}
@@ -150,7 +152,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	angles.yaw = atof(args.Argv( 3 ));
 	angles.roll = atof(args.Argv( 4 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
 
 Quit:
 	return;
@@ -183,11 +185,12 @@ void Cmd_AttachmentJoint_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
+	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
 	{
-		// GetAttachInfo returned false => bad index or entity
+		// PrintAttachInfo returned false => bad index or entity
 		gameLocal.Printf("tdm_attach_joint: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
 		goto Quit;
 	}
@@ -195,7 +198,7 @@ void Cmd_AttachmentJoint_f( const idCmdArgs &args )
 	// overwrite the attachment joint with our new one
 	joint = args.Argv(2);
 
-	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
 
 Quit:
 	return;
@@ -230,14 +233,14 @@ void Cmd_AttachmentPrint_f( const idCmdArgs &args )
 	ind = atoi( args.Argv(1) );
 
 	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
 	{
-		// GetAttachInfo returned false => bad index or entity
+		// PrintAttachInfo returned false => bad index or entity
 		gameLocal.Printf("tdm_attach_print: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
 		goto Quit;
 	}
 
-	ent = static_cast<idActor *>(LookedAt)->GetAttachedEnt( ind );
+	ent = static_cast<idActor *>(LookedAt)->GetAttachment( ind );
 	if( ent )
 		entName = ent->name;
 

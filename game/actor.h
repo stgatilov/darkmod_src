@@ -247,42 +247,6 @@ public:
 	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	/**
-	* Reattach an existing attachment
-	* Effects the attachment at index ind (where the first attachment starts at 1)
-	* For example to effect the first item that was attached, ind should be = 1
-	* 
-	* The next arguments are the name of the joint to attach to, the translation
-	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
-	* rotation of the attachment relative to the joint's orientation.
-	**/
-	void ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles );
-
-	/**
-	* Show or hide an attachment.  Index works the same as in ReAttach described above.
-	**/
-	void ShowAttachment( int ind, bool bShow );
-
-	/**
-	* Drop an attached item.  This is different from def_drop dropping
-	* Because the entity is actually the same one that's attached,
-	* it just gets unbound and falls to the ground from its current position.
-	**/
-	void DropAttachment( int ind );
-
-	/**
-	* Store the attachment info in the argument references given.
-	* Returns false if the attachment index was invalid.
-	* (Note: The attachment index starts at 1)
-	**/
-	bool GetAttachInfo( int ind, idStr &joint, idVec3 &offset, idAngles &angles );
-
-	/**
-	* Retrieve the attached entity at index ind.  NOTE: ind starts at 1, not zero
-	* Returns NULL if ind or entity is invalid.
-	**/
-	idEntity *GetAttachedEnt( int ind );
-
-	/**
 	 * greebo: Returns the number of attached melee weapons. These are the entities
 	 *         with the according spawnarg "is_weapon_melee" etc. set to "1".
 	 */
@@ -497,10 +461,15 @@ public:
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
 	/**
-	* Attaches the entity and also returns its index in the attachment list
+	* Attaches the entity and gives it the given attachment name
 	**/
-	void					Event_Attach( idEntity *ent );
-	void					Event_GetAttachment( int ind );
+	void					Event_Attach( idEntity *ent, const char *AttName );
+	/**
+	* Attaches the entity to the named position PosName and gives it the attachment name AttName
+	**/
+	void					Event_AttachToPos( idEntity *ent, const char *PosName, const char *AttName );
+	void					Event_GetAttachment( const char *AttName );
+	void					Event_GetAttachmentInd( int ind );
 	void					Event_GetNumAttachments( void );
 
 	// Returns the number of ranged/melee weapons attached to the calling script

@@ -1138,6 +1138,18 @@ void idEntity::Save( idSaveGame *savefile ) const
 		savefile->WriteInt(m_InventoryCursor->GetId());
 	}
 
+	savefile->WriteInt( m_Attachments.Num() );
+	for( int i=0; i < m_Attachments.Num(); i++ )
+		m_Attachments[i].Save( savefile );
+
+	savefile->WriteInt( m_AttNameMap.size() );
+	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
+         k != m_AttNameMap.end(); k++ )
+    {
+        savefile->WriteString( k->first.c_str() );
+        savefile->WriteInt( k->second );
+    }
+
 	savefile->WriteInt( m_AttachPositions.Num() );
 	for ( i = 0; i < m_AttachPositions.Num(); i++ ) 
 	{
@@ -1308,6 +1320,26 @@ void idEntity::Restore( idRestoreGame *savefile )
 		m_InventoryCursor = Inventory()->GetCursor(cursorId);
 	}
 
+	m_Attachments.Clear();
+	savefile->ReadInt( num );
+	m_Attachments.SetNum( num );
+	for( int i=0; i < num; i++ )
+		m_Attachments[i].Restore( savefile );
+
+	m_AttNameMap.clear();
+	savefile->ReadInt( num );
+    for ( int i = 0; i < num; i++ )
+    {
+        idStr tempStr;
+        savefile->ReadString(tempStr);
+
+        int tempIndex;
+        savefile->ReadInt(tempIndex);
+
+        m_AttNameMap.insert(AttNameMap::value_type(tempStr.c_str(), tempIndex));
+    }
+
+	m_AttachPositions.Clear();
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) 
 	{
@@ -6186,18 +6218,6 @@ void idAnimatedEntity::Save( idSaveGame *savefile ) const
 
 	// Wounds are very temporary, ignored at this time
 	//damageEffect_t			*damageEffects;
-
-	savefile->WriteInt( m_Attachments.Num() );
-	for( int i=0; i < m_Attachments.Num(); i++ )
-		m_Attachments[i].Save( savefile );
-
-	savefile->WriteInt( m_AttNameMap.size() );
-	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
-         k != m_AttNameMap.end(); k++ )
-    {
-        savefile->WriteString( k->first.c_str() );
-        savefile->WriteInt( k->second );
-    }
 }
 
 /*
@@ -6209,8 +6229,6 @@ unarchives object from save game file
 */
 void idAnimatedEntity::Restore( idRestoreGame *savefile ) 
 {
-	int num;
-
 	animator.Restore( savefile );
 
 	// check if the entity has an MD5 model
@@ -6225,24 +6243,6 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile )
 			gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 		}
 	}
-
-	m_Attachments.Clear();
-	savefile->ReadInt( num );
-	m_Attachments.SetNum( num );
-	for( int i=0; i < num; i++ )
-		m_Attachments[i].Restore( savefile );
-
-	savefile->ReadInt( num );
-    for ( int i = 0; i < num; i++ )
-    {
-        idStr tempStr;
-        savefile->ReadString(tempStr);
-
-        int tempIndex;
-        savefile->ReadInt(tempIndex);
-
-        m_AttNameMap.insert(AttNameMap::value_type(tempStr.c_str(), tempIndex));
-    }
 }
 
 /*
@@ -6700,6 +6700,67 @@ idAnimatedEntity::GetAttachingTransform
 void idAnimatedEntity::GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis )
 {
 	GetJointWorldTransform( jointHandle, gameLocal.time, offset, axis );
+}
+
+/*
+========================
+idAnimatedEntity::ReAttachToCoords
+========================
+*/
+void idAnimatedEntity::ReAttachToCoords
+	( const char *AttName, idStr jointName, 
+		idVec3 offset, idAngles angles  ) 
+{
+	idEntity		*ent( NULL );
+	idVec3			origin;
+	idMat3			axis, rotate, newAxis;
+	jointHandle_t	joint;
+	CAttachInfo		*attachment( NULL );
+
+	attachment = GetAttachInfo( AttName );
+	if( attachment )
+		ent = attachment->ent.GetEntity();
+
+	if( !attachment  || !attachment->ent.IsValid() || !ent )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	joint = animator.GetJointHandle( jointName );
+	if ( joint == INVALID_JOINT )
+	{
+		// TODO: log error
+		gameLocal.Warning( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+		goto Quit;
+	}
+
+	attachment->channel = animator.GetChannelForJoint( joint );
+	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+
+	rotate = angles.ToMat3();
+	newAxis = rotate * axis;
+
+	ent->Unbind(); 
+
+	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
+	// Hence, re-assign the attachment entity pointer (the index itself is ok)
+	attachment->ent = ent;
+
+	ent->SetAxis( newAxis );
+	// Use the local joint axis instead of the overall AI axis
+	ent->SetOrigin( origin + offset * axis );
+
+	ent->BindToJoint( this, joint, true );
+	ent->cinematic = cinematic;
+
+	// set the spawnargs for later retrieval as well
+	ent->spawnArgs.Set( "joint", jointName.c_str() );
+	ent->spawnArgs.SetVector( "origin", offset );
+	ent->spawnArgs.SetAngles( "angles", angles );
+
+Quit:
+	return;
 }
 
 /*
@@ -7952,12 +8013,282 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 	origin = GetPhysics()->GetOrigin();
 	axis = GetPhysics()->GetAxis();
 
-	ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	ent->SetOrigin( origin + originOffset * axis );
 	idMat3 rotate = angleOffset.ToMat3();
 	idMat3 newAxis = rotate * axis;
 	ent->SetAxis( newAxis );
 	ent->Bind( this, true );
 	ent->cinematic = cinematic;
+
+	CAttachInfo	&attach = m_Attachments.Alloc();
+	attach.channel = 0; // overloaded in animated classes
+	attach.ent = ent;
+	attach.name = AttName;
+
+	// Update name->m_Attachment index mapping
+	int index = m_Attachments.Num();
+	if( AttName != NULL )
+		m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
+}
+
+void idEntity::Detach( const char *AttName )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind >= 0 )
+		DetachInd( ind );
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Detach called with invalid attachment name %s\r", AttName);
+	}
+}
+
+void idEntity::DetachInd( int ind )
+{
+	idEntity *ent = NULL;
+
+	// DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Detach called for index %d\r", ind);
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	// DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Detach: Ent %s unbound\r", ent->name.c_str());
+	ent->Unbind();
+	// We don't want to remove it from the list, otherwise mapping of name to index gets screwed up
+	m_Attachments[ind].ent = NULL;
+
+	// remove from name->index mapping
+	m_AttNameMap.erase( m_Attachments[ind].name.c_str() );
+
+Quit:
+	return;
+}
+
+void idEntity::ReAttachToCoords
+	( const char *AttName, idVec3 offset, idAngles angles  ) 
+{
+	idEntity		*ent( NULL );
+	idVec3			origin;
+	idMat3			axis, rotate, newAxis;
+	CAttachInfo		*attachment( NULL );
+
+	attachment = GetAttachInfo( AttName );
+	if( attachment )
+		ent = attachment->ent.GetEntity();
+
+	if( !attachment  || !attachment->ent.IsValid() || !ent )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	axis = GetPhysics()->GetAxis();
+	origin = GetPhysics()->GetOrigin();
+	rotate = angles.ToMat3();
+	newAxis = rotate * axis;
+
+	ent->Unbind(); 
+
+	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
+	// Hence, re-assign the attachment entity pointer (the index itself is ok)
+	attachment->ent = ent;
+
+	ent->SetAxis( newAxis );
+	ent->SetOrigin( origin + offset * axis );
+
+	ent->Bind( this, true );
+	ent->cinematic = cinematic;
+
+	// set the spawnargs for later retrieval as well
+	ent->spawnArgs.Set( "joint", "" );
+	ent->spawnArgs.SetVector( "origin", offset );
+	ent->spawnArgs.SetAngles( "angles", angles );
+
+Quit:
+	return;
+}
+
+void idEntity::ReAttachToPos
+	( const char *AttName, const char *PosName  ) 
+{
+	int ind, indEnd;
+	CAttachInfo AttCopy;
+
+	ind = GetAttachmentIndex( AttName );
+	if (ind == -1 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		goto Quit;
+	}
+
+	idEntity *ent = GetAttachment( ind );
+
+	if( !ent )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	// Hack: Detaching leaves a null entry in the array to preserve indices
+	// To leverage existing Attach function, we detach and then re-insert
+	// into this place in the array.
+
+	DetachInd( ind );
+	Attach( ent, AttName, PosName );
+
+	indEnd = m_Attachments.Num();
+	AttCopy.channel = m_Attachments[indEnd].channel;
+	AttCopy.ent = ent;
+	AttCopy.name = AttName;
+
+	// Remove the null entry and insert the copy of the end entry
+	m_Attachments.RemoveIndex( ind );
+	m_Attachments.Insert( AttCopy, ind );
+	// remove the end entry
+	m_Attachments.RemoveIndex( indEnd );
+
+	// Fix the name mapping to map back to the original index
+	m_AttNameMap.erase( AttName );
+	m_AttNameMap.insert(AttNameMap::value_type(AttName, ind));
+
+Quit:
+	return;
+}
+
+void idEntity::ShowAttachment( const char *AttName, bool bShow )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind >= 0 )
+	{
+		ShowAttachmentInd( ind, bShow );
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ShowAttachment called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+	}
+}
+
+void idEntity::ShowAttachmentInd( int ind, bool bShow )
+{
+	idEntity *ent( NULL );
+
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	if( bShow )
+		ent->Show();
+	else
+		ent->Hide();
+
+Quit:
+	return;
+}
+
+int idEntity::GetAttachmentIndex( const char *AttName )
+{
+	AttNameMap::iterator k;
+	k = m_AttNameMap.find(AttName);
+	if (k != m_AttNameMap.end() && k->second < m_Attachments.Num() )
+	{
+		return k->second;
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt to access invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return -1;
+	}
+}
+
+idEntity *idEntity::GetAttachment( const char *AttName )
+{
+	CAttachInfo *AttInfo = GetAttachInfo( AttName );
+
+	if( AttInfo )
+		return AttInfo->ent.GetEntity();
+	else
+		return NULL;
+}
+
+idEntity *idEntity::GetAttachment( int ind )
+{
+	idEntity *ent = NULL;
+
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		ent = NULL;
+		goto Quit;
+	}
+
+Quit:
+	return ent;
+}
+
+CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
+{
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+		return &m_Attachments[ind];
+	else
+		return NULL;
+}
+
+bool idEntity::PrintAttachInfo( int ind, idStr &jointName, idVec3 &offset, 
+							idAngles &angles )
+{
+	bool bReturnVal = false;
+	idEntity *ent = NULL;
+
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	jointName = ent->spawnArgs.GetString( "joint", "" );
+	offset = ent->spawnArgs.GetVector( "origin" );
+	angles = ent->spawnArgs.GetAngles( "angles" );
+
+	bReturnVal = true;
+
+Quit:
+	return bReturnVal;
 }
 
 void idEntity::BindNotify( idEntity *ent )
