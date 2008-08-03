@@ -6618,8 +6618,8 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	idMat3			axis;
 	jointHandle_t	joint;
 	idStr			jointName;
-	idAngles		angleOffset;
-	idVec3			originOffset;
+	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
+	idVec3			originOffset, originSubOffset(vec3_zero);
 	idStr			nm;
 	idStr			ClassName;
 	SAttachPosition *pos;
@@ -6633,8 +6633,9 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 		angleOffset = pos->angleOffset;
 
 		// etity-specific offsets to a given position
-		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
-		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+		// etity-specific offsets to a given position
+		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
 	}
 // Old system, will be phased out
 	else
@@ -6672,10 +6673,11 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	// Use the local joint axis instead of the overall AI axis
 	if (!ent->spawnArgs.GetBool("is_attachment"))
 	{
-		// angua: don't set origin and axis for attachments added in the map, 
-		// this would lead to the entity floating around through half of the map
-		ent->SetOrigin( origin + axis * originOffset );
-		ent->SetAxis( newAxis );
+		// angua: don't set origin and axis for attachments added in the map
+		// rather than spawned dynamically, this would lead to the entity 
+		// floating around through half of the map
+		ent->SetOrigin( origin + originOffset * axis + originSubOffset * newAxis );
+		ent->SetAxis( angleSubOffset.ToMat3() * newAxis );
 	}
 
 	ent->BindToJoint( this, joint, true );
@@ -7989,8 +7991,8 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 {
 	idVec3			origin;
 	idMat3			axis;
-	idAngles		angleOffset;
-	idVec3			originOffset;
+	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
+	idVec3			originOffset, originSubOffset(vec3_zero);
 	SAttachPosition *pos;
 
 // New position system:
@@ -8000,8 +8002,8 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 		angleOffset = pos->angleOffset;
 
 		// etity-specific offsets to a given position
-		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
-		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
 	}
 // The following is the old system and will be phased out
 	else
@@ -8013,10 +8015,10 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 	origin = GetPhysics()->GetOrigin();
 	axis = GetPhysics()->GetAxis();
 
-	ent->SetOrigin( origin + originOffset * axis );
 	idMat3 rotate = angleOffset.ToMat3();
 	idMat3 newAxis = rotate * axis;
-	ent->SetAxis( newAxis );
+	ent->SetOrigin( origin + originOffset * axis + originSubOffset * newAxis );
+	ent->SetAxis( angleSubOffset.ToMat3() * newAxis );
 	ent->Bind( this, true );
 	ent->cinematic = cinematic;
 
