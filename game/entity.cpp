@@ -8145,7 +8145,7 @@ void idEntity::ReAttachToPos
 
 	DetachInd( ind );
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttaching...\r");
-	Attach( ent, AttName, PosName );
+	Attach( ent, PosName, AttName );
 
 	indEnd = m_Attachments.Num();
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("End index is %d\r", indEnd);
