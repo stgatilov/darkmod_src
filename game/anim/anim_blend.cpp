@@ -1004,7 +1004,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				{
 					const char *AttName, *AttPos;
 					int spcind = command.string->Find(" ");
-					AttName = command.string->Left( spcind-1 ).c_str();
+					AttName = command.string->Left( spcind ).c_str();
 					AttPos = command.string->Mid( spcind+1, command.string->Length() );
 
 					ent->ReAttachToPos( AttName, AttPos );
