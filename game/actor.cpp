@@ -992,13 +992,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool(canUseElevators);
 
-	savefile->WriteInt( m_Attachments.Num() );
-	for ( i = 0; i < m_Attachments.Num(); i++ ) 
-	{
-		m_Attachments[i].ent.Save( savefile );
-		savefile->WriteInt( m_Attachments[i].channel );
-	}
-
 	savefile->WriteBool( finalBoss );
 	savefile->WriteFloat( m_damage_thresh_hard );
 	savefile->WriteFloat( m_delta_scale );
@@ -1142,14 +1135,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( painTime );
 	savefile->ReadBool(canUseElevators);
-
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) 
-	{
-		CAttachInfo &attach = m_Attachments.Alloc();
-		attach.ent.Restore( savefile );
-		savefile->ReadInt( attach.channel );
-	}
 
 	savefile->ReadBool( finalBoss );
 	savefile->ReadFloat( m_damage_thresh_hard );

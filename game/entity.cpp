@@ -8034,7 +8034,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 void idEntity::Detach( const char *AttName )
 {
 	int ind = GetAttachmentIndex( AttName );
-	if (ind >= 0 )
+	if (ind >= 0 && ind < m_Attachments.Num() )
 		DetachInd( ind );
 	else
 	{
