@@ -612,23 +612,56 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 	} 
 	else if ( token == "reattach" ) 
 	{
-		if( !src.ReadTokenOnLine( &token ) ) {
+		// first argument (name of attachment to reattach)
+		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
-		}
+
 		fc.type = FC_REATTACH;
 		fc.string = new idStr( token );
 
-		if( !src.ReadTokenOnLine( &token ) ) {
+		// second argument (attach position)
+		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
-		}
 		
-		jointInfo = modelDef->FindJoint( token );
-		if ( !jointInfo ) {
-			return va( "Joint '%s' not found", token.c_str() );
-		}
-		fc.index = jointInfo->num;
+		fc.string->Append(va(" %s", token.c_str() ));
 	}
-	else {
+	// Melee Combat Frame commands
+	else if ( token == "melee_activate_attack" )
+	{
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_ACTIVATE_ATTACK;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "melee_deactivate_attack" )
+	{
+		// not sure if this will have an argument, but say it will for now
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_DEACTIVATE_ATTACK;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "melee_activate_parry" )
+	{
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_ACTIVATE_PARRY;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "melee_deactivate_parry" )
+	{
+		// not sure if this will have an argument, but say it will for now
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_DEACTIVATE_PARRY;
+		fc.string = new idStr( token );
+	}
+	else 
+	{
 		return va( "Unknown command '%s'", token.c_str() );
 	}
 
@@ -969,11 +1002,28 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 				case FC_REATTACH:
 				{
-					idActor* actor = dynamic_cast<idActor*>(ent);
-					if (actor != NULL)
-					{
-						// TODO
-					}
+					const char *AttName, *AttPos;
+					int spcind = command.string->Find(" ");
+					AttName = command.string->Left( spcind-1 ).c_str();
+					AttPos = command.string->Mid( spcind+1, command.string->Length() );
+
+					ent->ReAttachToPos( AttName, AttPos );
+					break;
+				}
+				case FC_MELEE_ACTIVATE_ATTACK:
+				{
+					break;
+				}
+				case FC_MELEE_DEACTIVATE_ATTACK:
+				{
+					break;
+				}
+				case FC_MELEE_ACTIVATE_PARRY:
+				{
+					break;
+				}
+				case FC_MELEE_DEACTIVATE_PARRY:
+				{
 					break;
 				}
 			}

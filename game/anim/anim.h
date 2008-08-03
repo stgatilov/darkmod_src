@@ -141,7 +141,11 @@ typedef enum {
 * and crouchwalking animations to get correct footstep sounds.
 **/
 	FC_SETRATE,
-	FC_REATTACH
+	FC_REATTACH,
+	FC_MELEE_ACTIVATE_ATTACK,
+	FC_MELEE_DEACTIVATE_ATTACK,
+	FC_MELEE_ACTIVATE_PARRY,
+	FC_MELEE_DEACTIVATE_PARRY
 
 } frameCommandType_t;
 
