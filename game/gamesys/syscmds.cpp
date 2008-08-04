@@ -74,6 +74,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	idVec3		offset(vec3_zero);
 	idAngles	angles;
 	idStr		joint;
+    const char* attName;
 
 	if( args.Argc() != 5 )
 	{
@@ -89,7 +90,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
-	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
+	attName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
 	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
@@ -104,7 +105,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	offset.y = atof(args.Argv( 3 ));
 	offset.z = atof(args.Argv( 4 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
+	static_cast<idActor *>(LookedAt)->ReAttachToCoords( attName, joint, offset, angles );
 
 Quit:
 	return;
@@ -122,6 +123,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	idVec3		offset(vec3_zero);
 	idAngles	angles;
 	idStr		joint;
+	const char *AttName;
 
 	if( args.Argc() != 5 )
 	{
@@ -137,7 +139,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
-	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
+	AttName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
 	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
@@ -170,6 +172,7 @@ void Cmd_AttachmentJoint_f( const idCmdArgs &args )
 	idVec3		offset(vec3_zero);
 	idAngles	angles;
 	idStr		joint;
+    const char *AttName;
 
 	if( args.Argc() != 3 )
 	{
@@ -185,7 +188,7 @@ void Cmd_AttachmentJoint_f( const idCmdArgs &args )
 	}
 
 	ind = atoi( args.Argv(1) );
-	const char *AttName = LookedAt->GetAttachment(ind)->name.c_str();
+	AttName = LookedAt->GetAttachment(ind)->name.c_str();
 
 	// write the attachment info to our vars, check if the index and entity are valid
 	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )

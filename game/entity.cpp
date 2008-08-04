@@ -8123,7 +8123,9 @@ void idEntity::ReAttachToPos
 	( const char *AttName, const char *PosName  ) 
 {
 	int ind, indEnd;
+    idEntity* ent;
 	CAttachInfo AttCopy;
+
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttachToPos called with attachment name %s, positiong %s, on entity %s\r", AttName, PosName, name.c_str());
 
 	ind = GetAttachmentIndex( AttName );
@@ -8133,7 +8135,7 @@ void idEntity::ReAttachToPos
 		goto Quit;
 	}
 
-	idEntity *ent = GetAttachment( ind );
+	ent = GetAttachment( ind );
 
 	if( !ent )
 	{
