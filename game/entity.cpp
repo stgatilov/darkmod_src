@@ -8122,25 +8122,21 @@ Quit:
 void idEntity::ReAttachToPos
 	( const char *AttName, const char *PosName  ) 
 {
-	int ind, indEnd;
-    idEntity* ent;
-	CAttachInfo AttCopy;
-
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttachToPos called with attachment name %s, positiong %s, on entity %s\r", AttName, PosName, name.c_str());
 
-	ind = GetAttachmentIndex( AttName );
+	int ind = GetAttachmentIndex( AttName );
 	if (ind == -1 )
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
-		goto Quit;
+		return;
 	}
 
-	ent = GetAttachment( ind );
+	idEntity* ent = GetAttachment( ind );
 
 	if( !ent )
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
-		goto Quit;
+		return;
 	}
 
 	// Hack: Detaching leaves a null entry in the array to preserve indices
@@ -8151,24 +8147,22 @@ void idEntity::ReAttachToPos
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttaching...\r");
 	Attach( ent, PosName, AttName );
 
-	indEnd = m_Attachments.Num();
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("End index is %d\r", indEnd);
-	AttCopy.channel = m_Attachments[indEnd].channel;
-	AttCopy.ent = ent;
-	AttCopy.name = AttName;
+	int indEnd = m_Attachments.Num();
 
-	// Remove the null entry and insert the copy of the end entry
-	m_Attachments.RemoveIndex( ind );
-	m_Attachments.Insert( AttCopy, ind );
-	// remove the end entry
+	// greebo: Decrease the end index by 1 before passing it to operator[]
+	indEnd--;
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("End index is %d\r", indEnd);
+
+	// Copy the attachment info from the end of the list over the previous index
+	m_Attachments[ind] = m_Attachments[indEnd];
+	
+	// remove the newly created end entry (is a duplicate now)
 	m_Attachments.RemoveIndex( indEnd );
 
 	// Fix the name mapping to map back to the original index
 	m_AttNameMap.erase( AttName );
 	m_AttNameMap.insert(AttNameMap::value_type(AttName, ind));
-
-Quit:
-	return;
 }
 
 void idEntity::ShowAttachment( const char *AttName, bool bShow )
