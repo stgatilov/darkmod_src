@@ -67,6 +67,9 @@ void ObservantState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
+	// Stop playing idle animation
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+
 	// barking
 	idStr soundName("");
 
