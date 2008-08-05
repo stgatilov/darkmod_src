@@ -5720,7 +5720,8 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 			continue;
 
 		// Check if the radius is really fitting. EntitiesTouchingBounds is using a rectangular volume
-		if (!stim->m_bCollisionBased)
+		// greebo: Be sure to use this check only if "use bounds" is set to false
+		if (!stim->m_bCollisionBased && !stim->m_bUseEntBounds)
 		{
 			// take the square radius, is faster
 			float radiusSqr = stim->GetRadius();
