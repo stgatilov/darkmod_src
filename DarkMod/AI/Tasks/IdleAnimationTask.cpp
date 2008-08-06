@@ -92,8 +92,8 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time > _nextAnimationTime)
 	{
-		// Check if the AI is moving, this determines which channel we can play on
-		if (!owner->AI_FORWARD)
+		// Check if the AI is moving or sitting, this determines which channel we can play on
+		if (!owner->AI_FORWARD && !owner->spawnArgs.GetBool("sitting", "0"))
 		{
 			// AI is not walking, play animations affecting all channels
 			int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
