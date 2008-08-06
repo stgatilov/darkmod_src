@@ -674,5 +674,17 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+/**
+ * greebo: This target changes the targets of existing entities.
+ */
+class CTarget_ChangeTarget : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_ChangeTarget );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
 
 #endif /* !__GAME_TARGET_H__ */

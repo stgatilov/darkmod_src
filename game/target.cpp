@@ -2180,3 +2180,41 @@ void CTarget_ChangeLockState::Event_Activate(idEntity *activator)
 		}
 	}
 }
+
+/*
+================
+CTarget_ChangeTarget
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_ChangeTarget )
+	EVENT( EV_Activate,	CTarget_ChangeTarget::Event_Activate )
+END_CLASS
+
+void CTarget_ChangeTarget::Event_Activate(idEntity *activator)
+{
+	// Get the targetted entities
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL) continue;
+
+		// Let's check if we should remove a target
+		idEntity* removeEnt = gameLocal.FindEntity(spawnArgs.GetString("remove"));
+
+		if (removeEnt != NULL)
+		{
+			DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeTarget: Removing target %s from %s\r", removeEnt->name.c_str(), ent->name.c_str());
+			ent->RemoveTarget(removeEnt);
+		}
+
+		// Let's check if we should add a target (happens after the removal)
+		idEntity* addEnt = gameLocal.FindEntity(spawnArgs.GetString("add"));
+
+		if (addEnt != NULL)
+		{
+			DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeTarget: Adding target %s to %s\r", addEnt->name.c_str(), ent->name.c_str());
+			ent->AddTarget(addEnt);
+		}
+	}
+}
