@@ -661,5 +661,18 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+/**
+ * greebo: This target locks or unlocks a specific frobmover.
+ */
+class CTarget_ChangeLockState : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_ChangeLockState );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
 
 #endif /* !__GAME_TARGET_H__ */

@@ -27,7 +27,7 @@ void ConversationSystem::Clear()
 
 void ConversationSystem::Init(idMapFile* mapFile)
 {
-	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Searching for difficulty setting on worldspawn.\r");
+	DM_LOG(LC_CONVERSATION, LT_INFO)LOGSTRING("Searching for conversation settings on worldspawn.\r");
 
 	if (mapFile->GetNumEntities() <= 0) {
 		return; // no entities!

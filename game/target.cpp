@@ -2139,3 +2139,44 @@ void CTarget_CallScriptFunction::Event_Activate( idEntity *activator )
 		gameLocal.Warning("Target %s specifies non-existent script function!", funcName.c_str());
 	}
 }
+
+/*
+================
+CTarget_ChangeLockState
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_ChangeLockState )
+	EVENT( EV_Activate,	CTarget_ChangeLockState::Event_Activate )
+END_CLASS
+
+void CTarget_ChangeLockState::Event_Activate(idEntity *activator)
+{
+	// Find all targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL) continue;
+
+		if (ent->IsType(CBinaryFrobMover::Type))
+		{
+			CBinaryFrobMover* frobMover = static_cast<CBinaryFrobMover*>(ent);
+
+			if (spawnArgs.GetBool("toggle", "0"))
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Toggling lock state of entity %s\r", ent->name.c_str());
+				frobMover->ToggleLock();
+			}
+			else if (spawnArgs.GetBool("unlock", "1"))
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Unlocking entity %s\r", ent->name.c_str());
+				frobMover->Unlock();
+			}
+			else
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Locking entity %s\r", ent->name.c_str());
+				frobMover->Lock();
+			}
+		}
+	}
+}
