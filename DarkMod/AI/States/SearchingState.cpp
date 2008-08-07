@@ -60,6 +60,11 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SearchingState initialised.\r");
 	assert(owner);
 
+	if (owner->GetMoveType() == MOVETYPE_SIT)
+	{
+		owner->SetMoveType(MOVETYPE_ANIM);
+	}
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 

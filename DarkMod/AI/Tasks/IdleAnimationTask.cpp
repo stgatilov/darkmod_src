@@ -123,8 +123,16 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
+	if (owner->GetMoveType() == MOVETYPE_SIT)
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 5);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 5);
+	}
+	else
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
+	}
 	owner->SetWaitState("");
 }
 
