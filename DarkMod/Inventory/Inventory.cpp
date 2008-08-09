@@ -23,8 +23,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 const idEventDef EV_PostRestore( "postRestore", NULL );
 
-static idLinkList<idClass>	tdmInventoryObjList;
-
 static idStr sLootTypeName[LT_COUNT] = 
 {
 	"loot_none",

@@ -282,7 +282,9 @@ void CMissionData::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( num );
 	m_Objectives.SetNum( num );
 	for( int i=0; i < num; i++ )
+	{
 		m_Objectives[i].Restore( savefile );
+	}
 
 	// Rebuild list of clocked components now that we've loaded objectives
 	m_ClockedComponents.Clear();
@@ -290,9 +292,11 @@ void CMissionData::Restore( idRestoreGame *savefile )
 	{
 		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
 		{
-			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
-			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) || (pComp->m_Type == COMP_INFO_LOCATION) )
-				m_ClockedComponents.Append( pComp );
+			CObjectiveComponent& comp = m_Objectives[ind].m_Components[ind2];
+			if (comp.m_Type == COMP_CUSTOM_CLOCKED || comp.m_Type == COMP_DISTANCE || comp.m_Type == COMP_INFO_LOCATION)
+			{
+				m_ClockedComponents.Append( &comp );
+			}
 		}
 	}
 
@@ -595,11 +599,16 @@ bool	CMissionData::EvaluateObjective
 	else if( CompType == COMP_ALERT )
 	{
 		if( pComp->m_bPlayerResponsibleOnly && !bBoolArg )
+		{
 			goto Quit;
+		}
 
 		int AlertLevel = atoi(pComp->m_Args[1]);
-			if( EntDat1->value >= AlertLevel )
-				pComp->m_EventCount++;
+
+		if( EntDat1->value >= AlertLevel )
+		{
+			pComp->m_EventCount++;
+		}
 
 		value = pComp->m_EventCount;
 		bReturnVal = value >= atoi(pComp->m_Args[0]);
@@ -648,26 +657,21 @@ void CMissionData::UpdateObjectives( void )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
 
-			idEntity *ent1, *ent2;
-			idVec3 delta;
-			int dist(0);
-
 			if( pComp->m_Args.Num() < 3 )
 				continue;
 
-			ent1 = gameLocal.FindEntity( pComp->m_Args[0].c_str() );
-			ent2 = gameLocal.FindEntity( pComp->m_Args[1].c_str() );
+			idEntity* ent1 = gameLocal.FindEntity( pComp->m_Args[0] );
+			idEntity* ent2 = gameLocal.FindEntity( pComp->m_Args[1] );
 
-			if( !ent1 || !ent2 )
+			if (ent1 == NULL || ent2 == NULL)
 			{
 				DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str(), pComp->m_Args[1].c_str() );
 				continue;
 			}
 
-			delta = ent1->GetPhysics()->GetOrigin();
-			delta = delta - ent2->GetPhysics()->GetOrigin();
+			idVec3 delta = ent1->GetPhysics()->GetOrigin() - ent2->GetPhysics()->GetOrigin();
 
-			dist = static_cast<int>(atof(pComp->m_Args[2]));
+			float dist = atof(pComp->m_Args[2]);
 			dist *= dist;
 
 			SetComponentState( pComp, ( delta.LengthSqr() < dist ) );
@@ -1059,15 +1063,19 @@ void CMissionData::HealthReceivedByPlayer(int amount)
 
 void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 {
-	if(!ent || !parms)
-		goto Quit;
+	if (ent == NULL || parms == NULL) return;
 
 	parms->name = ent->name;
+
 	// group is interpreted differently for location entities
 	if( ent->IsType(idLocationEntity::Type) || ent->IsType(CObjectiveLocation::Type) )
+	{
 		parms->group = ent->spawnArgs.GetString("objective_group");
+	}
 	else
+	{
 		parms->group = ent->spawnArgs.GetString("inv_name");
+	}
 
 	parms->classname = ent->spawnArgs.GetString("classname");
 	parms->spawnclass = ent->spawnArgs.GetString("spawnclass");
@@ -1081,9 +1089,6 @@ void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 		parms->innocence = (int) actor->m_Innocent;
 		parms->bIsAI = true;
 	}
-
-Quit:
-	return;
 }
 
 void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState )
@@ -1114,34 +1119,21 @@ Quit:
 
 void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
 {
-	CObjectiveComponent* pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
+	CObjectiveComponent& comp = m_Objectives[ObjIndex].m_Components[CompIndex];
 
-	if( !pComp )
-	{
-		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: NULL component found \r" );
-		goto Quit;
-	}
-
-	if( pComp->SetState( bState ) )
+	if( comp.SetState(bState) )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("SetComponentState: Objective %d, Component %d state changed, needs updating", (ObjIndex+1), (CompIndex+1) );
 		m_Objectives[ObjIndex].m_bNeedsUpdate = true;
 		m_bObjsNeedUpdate = true;
 	}
-
-Quit:
-	return;
 }
 
 void CMissionData::SetComponentState( CObjectiveComponent *pComp, bool bState )
 {
-	if( !pComp )
-		goto Quit;
+	if (pComp == NULL) return;
 
 	SetComponentState( pComp->m_Index[0]-1, pComp->m_Index[1]-1, bState );
-
-Quit:
-	return;
 }
 
 void CMissionData::SetCompletionState( int ObjIndex, int State )
@@ -1404,17 +1396,21 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			while( src.ReadToken( &token ) )
 			{
-				if( token.IsNumeric() )
-					if (gameLocal.m_DifficultyManager.GetDifficultyLevel() == token.GetIntValue()) {
-						ObjTemp.m_bApplies = true;
-						break;
-					}
+				if (token.IsNumeric() && 
+					gameLocal.m_DifficultyManager.GetDifficultyLevel() == token.GetIntValue())
+				{
+					ObjTemp.m_bApplies = true;
+					break;
+				}
 			}
-			if (!ObjTemp.m_bApplies) {
+
+			if (!ObjTemp.m_bApplies)
+			{
 				// Objectives that don't apply to this difficulty level are considered invalid.
 				// They don't need to be completed.
 				ObjTemp.m_state = STATE_INVALID;
 			}
+
 			src.FreeSource();
 		}
 
@@ -1476,7 +1472,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 			CompTemp.m_Args.Append("");
 			CompTemp.m_Args.Append("");
 
-			CompTemp.m_ClockInterval = 1000 * int(dict.GetFloat( StrTemp2 + "clock_interval", "1.0" ));
+			CompTemp.m_ClockInterval = SEC2MS(dict.GetFloat(StrTemp2 + "clock_interval", "1"));
 
 			CompTemp.m_Index[0] = Counter;
 			CompTemp.m_Index[1] = Counter2;
@@ -1503,9 +1499,12 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	{
 		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
 		{
-			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
-			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) || (pComp->m_Type == COMP_INFO_LOCATION) )
-				m_ClockedComponents.Append( pComp );
+			CObjectiveComponent& comp = m_Objectives[ind].m_Components[ind2];
+
+			if (comp.m_Type == COMP_CUSTOM_CLOCKED || comp.m_Type == COMP_DISTANCE || comp.m_Type == COMP_INFO_LOCATION)
+			{
+				m_ClockedComponents.Append( &comp );
+			}
 		}
 	}
 
@@ -1755,6 +1754,7 @@ bool CObjective::ParseLogicStrs( void )
 		if( !bReturnVal )
 			gameLocal.Error("Objective success logic failed to parse \n");
 	}
+
 	if( m_FailureLogicStr != "" )
 	{
 		bTemp = gameLocal.m_MissionData->ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
@@ -1783,6 +1783,7 @@ bool CMissionData::ParseLogicStrs( void )
 		if( !bReturnVal )
 			gameLocal.Error("Mission success logic failed to parse \n");
 	}
+
 	if( m_FailureLogicStr != "" )
 	{
 		bTemp = ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
