@@ -43,6 +43,7 @@ END_CLASS
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
+static const float BOUNCE_SCRIPT_MIN_VELOCITY	= 5.0f;
 
 /*
 ================
@@ -50,17 +51,20 @@ idMoveable::idMoveable
 ================
 */
 idMoveable::idMoveable( void ) {
-	minDamageVelocity	= 100.0f;
-	maxDamageVelocity	= 200.0f;
-	nextCollideFxTime	= 0;
-	nextDamageTime		= 0;
-	nextSoundTime		= 0;
-	initialSpline		= NULL;
-	initialSplineDir	= vec3_zero;
-	explode				= false;
-	unbindOnDeath		= false;
-	allowStep			= false;
-	canDamage			= false;
+	minDamageVelocity		= 100.0f;
+	maxDamageVelocity		= 200.0f;
+	nextCollideFxTime		= 0;
+	nextDamageTime			= 0;
+	nextSoundTime			= 0;
+	nextCollideScriptTime	= 0;
+	// 0 => never, -1 => always, positive number X => X times
+	collideScriptCounter	= 0;
+	initialSpline			= NULL;
+	initialSplineDir		= vec3_zero;
+	explode					= false;
+	unbindOnDeath			= false;
+	allowStep				= false;
+	canDamage				= false;
 
 	// greebo: A fraction of -1 is considered to be an invalid trace here
 	memset(&lastCollision, 0, sizeof(lastCollision));
@@ -132,8 +136,16 @@ void idMoveable::Spawn( void ) {
 	fxCollide = spawnArgs.GetString( "fx_collide" );
 	nextCollideFxTime = 0;
 
-// tels: set by LoadModels()
-//	fl.takedamage = true;
+	// tels:
+	scriptCollide = spawnArgs.GetString( "script_collide" );
+	nextCollideScriptTime = 0;
+	collideScriptCounter = spawnArgs.GetInt( "collide_script_counter", "1" );
+	// override the default of 1 with 0 if no script is defined
+	if (scriptCollide == "")
+	{
+		collideScriptCounter = 0;
+	}
+
 
 	damage = spawnArgs.GetString( "def_damage", "" );
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
@@ -144,7 +156,7 @@ void idMoveable::Spawn( void ) {
 
 	health = spawnArgs.GetInt( "health", "0" );
 
-	// tels: load a visual model, as well as a brokenModel
+	// tels: load a visual model, as well as an optional brokenModel
 	LoadModels();
 
 	// setup the physics
@@ -215,6 +227,9 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( brokenModel );
 	savefile->WriteString( damage );
+	savefile->WriteString( scriptCollide );
+	savefile->WriteInt( collideScriptCounter );
+	savefile->WriteInt( nextCollideScriptTime );
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
 	savefile->WriteFloat( minDamageVelocity );
@@ -243,6 +258,9 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadString( brokenModel );
 	savefile->ReadString( damage );
+	savefile->ReadString( scriptCollide );
+	savefile->ReadInt( collideScriptCounter );
+	savefile->ReadInt( nextCollideScriptTime );
 	savefile->ReadString( fxCollide );
 	savefile->ReadInt( nextCollideFxTime );
 	savefile->ReadFloat( minDamageVelocity );
@@ -315,26 +333,68 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	lastCollision = collision;
 
 	v = -( velocity * collision.c.normal );
-	if ( !sameCollisionAgain && v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
+	if ( !sameCollisionAgain )
 	{
-		material = collision.c.material;
-		if( material != NULL)
-		{
-			g_Global.GetSurfName( material, SndNameLocal );
-			SndNameLocal = "snd_bounce_" + SndNameLocal;
-			SndName = spawnArgs.GetString( SndNameLocal.c_str() );
+ 		if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime )
+		{ 
+			material = collision.c.material;
+			if( material != NULL)
+			{
+				g_Global.GetSurfName( material, SndNameLocal );
+				SndNameLocal = "snd_bounce_" + SndNameLocal;
+				SndName = spawnArgs.GetString( SndNameLocal.c_str() );
 
-			if( *SndName == '\0' )
+				if( *SndName == '\0' )
+				{
 				SndNameLocal = "snd_bounce";
+				}
+			}
+
+			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+			if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL ) ) {
+				// don't set the volume unless there is a bounce sound as it overrides the entire channel
+				// which causes footsteps on ai's to not honor their shader parms
+				SetSoundVolume( f );
+			}
+			nextSoundTime = gameLocal.time + 500;
+		}
+		// tels:
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because collideScriptCounter=%i and v=%f and time=%f > nextCollideScriptTime=%f.\r",
+				name.c_str(), scriptCollide.c_str(), collideScriptCounter, v, gameLocal.time, nextCollideScriptTime );
+ 		if ( collideScriptCounter != 0 && v > BOUNCE_SCRIPT_MIN_VELOCITY && gameLocal.time > nextCollideScriptTime ) 
+		{ 
+	 		if ( collideScriptCounter > 0)
+			{
+			// if positive, decrement it, so -1 stays as it is (for 0, we never come here)
+	 		collideScriptCounter --;
+			}
+
+			// call the script
+			const function_t* pScriptFun = scriptObject.GetFunction( scriptCollide.c_str() );
+			if (pScriptFun == NULL)
+    		{
+				// Local function not found, check in global namespace
+				pScriptFun = gameLocal.program.FindFunction( scriptCollide.c_str() );
+		    }
+			if (pScriptFun != NULL)
+			{
+				DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s calling script_collide %s.\r",
+					name.c_str(), scriptCollide.c_str());
+				idThread *pThread = new idThread( pScriptFun );
+				pThread->CallFunctionArgs( pScriptFun, true, "e", this );
+				pThread->DelayedStart( 0 );
+			}
+			else
+			{
+				// script function not found!
+				DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("Moveable %s could not find script_collide %s.\r",
+					name.c_str(), scriptCollide.c_str());
+	 			collideScriptCounter = 0;
+			}
+
+		nextCollideScriptTime = gameLocal.time + 300;
 		}
 
-		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-		if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL ) ) {
-			// don't set the volume unless there is a bounce sound as it overrides the entire channel
-			// which causes footsteps on ai's to not honor their shader parms
-			SetSoundVolume( f );
-		}
-		nextSoundTime = gameLocal.time + 500;
 	}
 
 	ent = gameLocal.entities[ collision.c.entityNum ];
