@@ -127,13 +127,19 @@ void CombatState::Init(idAI* owner)
 
 	// Fill the subsystems with their tasks
 
-	// Setup the message to be delivered each time
-	CommMessagePtr message(new CommMessage(
-		CommMessage::DetectedEnemy_CommType, 
-		owner, NULL, // from this AI to anyone 
-		enemy,
-		memory.lastEnemyPos
-	));
+	// This will hold the message to be delivered with the bark, if appropriate
+	CommMessagePtr message;
+	
+	// Only alert the bystanders if we didn't receive the alert by message ourselves
+	if (!memory.alertedDueToCommunication)
+	{
+		message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedEnemy_CommType, 
+			owner, NULL, // from this AI to anyone 
+			enemy,
+			memory.lastEnemyPos
+		));
+	}
 
 	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
