@@ -1514,7 +1514,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	if( dict.FindKey( StrTemp + DiffStr ) )
 		StrTemp = StrTemp + DiffStr;
 	// Only one of these per mission, so empty args on this object should not overwrite existing args
-	StrTemp = dict.GetString(StrTemp.c_str(), "");
+	StrTemp = dict.GetString(StrTemp, "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;
@@ -1524,7 +1524,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	StrTemp = "mission_logic_failure";
 	if( dict.FindKey( StrTemp + DiffStr ) )
 		StrTemp = StrTemp + DiffStr;
-	StrTemp = dict.GetString(StrTemp.c_str(), "");
+	StrTemp = dict.GetString(StrTemp, "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;

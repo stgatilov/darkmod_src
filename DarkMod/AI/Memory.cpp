@@ -42,7 +42,7 @@ Memory::Memory(idAI* owningAI) :
 	alertRadius(-1),
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
-	searchingDueToCommunication(false),
+	alertedDueToCommunication(false),
 	lastAlertPosSearched(0,0,0),
 	alertSearchCenter(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	alertSearchVolume(0,0,0),
@@ -90,7 +90,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteFloat(alertRadius);
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 	savefile->WriteBool(investigateStimulusLocationClosely);
-	savefile->WriteBool(searchingDueToCommunication);
+	savefile->WriteBool(alertedDueToCommunication);
 	savefile->WriteVec3(lastAlertPosSearched);
 	savefile->WriteVec3(alertSearchCenter);
 	savefile->WriteVec3(alertSearchVolume);
@@ -158,7 +158,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(alertRadius);
 	savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 	savefile->ReadBool(investigateStimulusLocationClosely);
-	savefile->ReadBool(searchingDueToCommunication);
+	savefile->ReadBool(alertedDueToCommunication);
 	savefile->ReadVec3(lastAlertPosSearched);
 	savefile->ReadVec3(alertSearchCenter);
 	savefile->ReadVec3(alertSearchVolume);

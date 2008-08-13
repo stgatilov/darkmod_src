@@ -215,8 +215,8 @@ public:
 	// Set this to TRUE if stimulus location itself should be closely investigated (kneel down)
 	bool investigateStimulusLocationClosely;
 
-	// This flag indicates if the search is due to a communication
-	bool searchingDueToCommunication;
+	// This flag indicates if the last alert is due to a communication message
+	bool alertedDueToCommunication;
 
 	// Position of the last alert causing stimulus which was searched.
     // This is used to compare new stimuli to the previous stimuli searched

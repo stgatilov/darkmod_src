@@ -49,7 +49,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 	memory.alertSearchExclusionVolume.Zero();
 
-	memory.searchingDueToCommunication = false;
+	memory.alertedDueToCommunication = false;
 	memory.stimulusLocationItselfShouldBeSearched = true;
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
