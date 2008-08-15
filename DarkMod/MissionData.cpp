@@ -377,7 +377,9 @@ void CMissionData::MissionEvent
 			pStat = &m_Stats.AIAlerts[ EntDat1->value ];
 		}
 		else
+		{
 			pStat = &m_Stats.AIStats[ CompType ];
+		}
 
 		if( CompType > MAX_AICOMP || !pStat)
 		{
@@ -404,46 +406,45 @@ void CMissionData::MissionEvent
 	// Check which objective components need updating
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
-		CObjective *pObj = &m_Objectives[i];
+		CObjective& obj = m_Objectives[i];
 
-		for( int j=0; j < pObj->m_Components.Num(); j++ )
+		for( int j=0; j < obj.m_Components.Num(); j++ )
 		{
-			CObjectiveComponent *pComp;
-			pComp = &pObj->m_Components[j];
+			CObjectiveComponent& comp = obj.m_Components[j];
 
 			// match component type
-			if( pComp->m_Type != CompType )
+			if( comp.m_Type != CompType )
 				continue;
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i+1, j+1 );
 
 			// check if the specifiers match, for first spec and second if it exists
-			if( !MatchSpec(pComp, EntDat1, 0) )
+			if( !MatchSpec(&comp, EntDat1, 0) )
 				continue;
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: First specification check matched: %d, %d\r", i+1, j+1 );
 
-			if( pComp->m_SpecMethod[1] != SPEC_NONE )
+			if( comp.m_SpecMethod[1] != SPEC_NONE )
 			{
-				if( !MatchSpec(pComp, EntDat2, 1) )
+				if( !MatchSpec(&comp, EntDat2, 1) )
 					continue;
 			}
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Second specification check matched or absent: %d, %d\r", i+1, j+1 );
 
-			bCompState = EvaluateObjective( pComp, EntDat1, EntDat2, bBoolArg );
+			bCompState = EvaluateObjective( &comp, EntDat1, EntDat2, bBoolArg );
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective component evaluation result: %d \r", (int) bCompState );
 
 			// notify the component of the current state. If the state changed,
 			// this will return true and we must mark this objective for update.
-			if( pComp->SetState( bCompState ) )
+			if( comp.SetState( bCompState ) )
 			{
 				// greebo: Check for irreversible objectives that have already "snapped" into their final state
-				if (!pObj->m_bReversible && pObj->m_bLatched)
+				if (!obj.m_bReversible && obj.m_bLatched)
 				{
 					// don't re-evaluate latched irreversible objectives
 					continue;
 				}
 
 				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i+1, j+1 );
-				pObj->m_bNeedsUpdate = true;
+				obj.m_bNeedsUpdate = true;
 				m_bObjsNeedUpdate = true;
 			}
 		}
@@ -490,12 +491,12 @@ bool	CMissionData::MatchSpec
 			)
 {
 	bool bReturnVal(false);
-	ESpecificationMethod SpecMethod;
-
+	
 	// objectives only have two specified ents at max
 	if( !pComp || !EntDat || ind > 1 )
 		goto Quit;
-	SpecMethod = pComp->m_SpecMethod[ ind ];
+
+	ESpecificationMethod SpecMethod = pComp->m_SpecMethod[ ind ];
 
 	switch( SpecMethod )
 	{
@@ -2450,11 +2451,11 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	key = "Killed by the Player";
-	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[m_PlayerTeam]);
+	value = idStr(m_Stats.AIStats[COMP_KILL].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	key = "KOed by the Player";
-	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[m_PlayerTeam]);
+	value = idStr(m_Stats.AIStats[COMP_KO].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	key = "Bodies found";

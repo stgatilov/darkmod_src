@@ -8623,7 +8623,7 @@ void idAI::Knockout( idEntity* inflictor )
 
 	// Update TDM objective system
 	bool playerResponsible = (inflictor != NULL && inflictor->IsType(idPlayer::Type));
-	gameLocal.m_MissionData->MissionEvent(COMP_KO, inflictor, this, playerResponsible);
+	gameLocal.m_MissionData->MissionEvent(COMP_KO, this, inflictor, playerResponsible);
 }
 
 void idAI::PostKnockOut()
