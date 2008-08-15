@@ -2169,7 +2169,11 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 
 	for (int i = 0; i < m_Objectives.Num(); i++) 
 	{
-		if (m_Objectives[i].m_bVisible && m_Objectives[i].m_bApplies) {
+		CObjective& obj = m_Objectives[i];
+
+		// Don't consider invisible, inapplicable or invalid objectives
+		if (obj.m_bVisible && obj.m_bApplies && obj.m_state != STATE_INVALID)
+		{
 			objIndices.Append(i);
 		}
 	}
