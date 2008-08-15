@@ -604,14 +604,18 @@ bool	CMissionData::EvaluateObjective
 			goto Quit;
 		}
 
+		// The second arguments holds the minimum alert level
 		int AlertLevel = atoi(pComp->m_Args[1]);
 
+		// EntDat->value holds the alert level the AI has been alerted to
 		if( EntDat1->value >= AlertLevel )
 		{
 			pComp->m_EventCount++;
 		}
 
 		value = pComp->m_EventCount;
+
+		// greebo: The first component argument holds the number of times this event should happen
 		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
@@ -737,24 +741,26 @@ void CMissionData::UpdateObjectives( void )
 
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
-		CObjective *pObj = &m_Objectives[i];
+		CObjective& obj = m_Objectives[i];
 
 		// skip objectives that don't need updating
-		if( !pObj->m_bNeedsUpdate || pObj->m_state == STATE_INVALID )
+		if( !obj.m_bNeedsUpdate || obj.m_state == STATE_INVALID )
 			continue;
-		pObj->m_bNeedsUpdate = false;
+
+		obj.m_bNeedsUpdate = false;
+
 		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i+1);
 
 		// If objective was just completed
-		if( pObj->CheckSuccess() )
+		if( obj.CheckSuccess() )
 		{
 			// greebo: Set the bool back to true before evaluating the components
 			bObjEnabled = true;
 
 			// Check for enabling objectives
-			for( int k=0; k < pObj->m_EnablingObjs.Num(); k++ )
+			for( int k=0; k < obj.m_EnablingObjs.Num(); k++ )
 			{
-				int ObjNum = pObj->m_EnablingObjs[k] - 1;
+				int ObjNum = obj.m_EnablingObjs[k] - 1;
 				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 )
 					continue;
 
@@ -771,14 +777,17 @@ void CMissionData::UpdateObjectives( void )
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
 			SetCompletionState( i, STATE_COMPLETE );
 		}
-		else if( pObj->CheckFailure() )
+		else if( obj.CheckFailure() )
 		{
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
 			SetCompletionState(i, STATE_FAILED );
 		}
 		else
 		{
-			pObj->m_state = STATE_INCOMPLETE;
+			// greebo: Set the objective state to INCOMPLETE, but use SetCompletionState() to
+			// consider irreversible objectives.
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d INCOMPLETE\r", i+1);
+			SetCompletionState(i, STATE_INCOMPLETE );
 		}
 	}
 

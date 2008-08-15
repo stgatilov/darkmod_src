@@ -672,7 +672,7 @@ public:
 
 	/**
 	* Called when AI are alerted
-	* The alert value is the alert state, e.g. state 0 = no significant alert, 4 = combat
+	* The alert value is the alert state, e.g. state 0 = no significant alert, 5 = combat
 	**/
 	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
 
