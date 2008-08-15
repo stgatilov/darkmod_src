@@ -23,12 +23,12 @@ const idEventDef EV_ShooterGetAmmo( "shooterGetAmmo", NULL, 'd' );
 
 // Event definitions
 CLASS_DECLARATION( idStaticEntity, tdmFuncShooter )
-EVENT( EV_Activate,					tdmFuncShooter::Event_Activate )
-EVENT( EV_ShooterSetState,			tdmFuncShooter::Event_ShooterSetState )
-EVENT( EV_ShooterGetState,			tdmFuncShooter::Event_ShooterGetState )
-EVENT( EV_ShooterFireProjectile,	tdmFuncShooter::Event_ShooterFireProjectile )
-EVENT( EV_ShooterSetAmmo,			tdmFuncShooter::Event_ShooterSetAmmo )
-EVENT( EV_ShooterGetAmmo,			tdmFuncShooter::Event_ShooterGetAmmo )
+	EVENT( EV_Activate,					tdmFuncShooter::Event_Activate )
+	EVENT( EV_ShooterSetState,			tdmFuncShooter::Event_ShooterSetState )
+	EVENT( EV_ShooterGetState,			tdmFuncShooter::Event_ShooterGetState )
+	EVENT( EV_ShooterFireProjectile,	tdmFuncShooter::Event_ShooterFireProjectile )
+	EVENT( EV_ShooterSetAmmo,			tdmFuncShooter::Event_ShooterSetAmmo )
+	EVENT( EV_ShooterGetAmmo,			tdmFuncShooter::Event_ShooterGetAmmo )
 END_CLASS
 
 /*
@@ -36,11 +36,12 @@ END_CLASS
 tdmFuncShooter::tdmFuncShooter
 ===============
 */
-tdmFuncShooter::tdmFuncShooter( void ) :
+tdmFuncShooter::tdmFuncShooter() :
 	_active(false),
 	_fireInterval(-1),
 	_fireIntervalFuzzyness(0),
 	_startDelay(0),
+	_endTime(-1),
 	_lastFireTime(0),
 	_nextFireTime(0),
 	_requiredStim(ST_DEFAULT),
@@ -58,7 +59,8 @@ tdmFuncShooter::tdmFuncShooter( void ) :
 tdmFuncShooter::Spawn
 ===============
 */
-void tdmFuncShooter::Spawn( void ) {
+void tdmFuncShooter::Spawn()
+{
 	// Setup any stims/responses
 	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
 
@@ -81,14 +83,24 @@ void tdmFuncShooter::Spawn( void ) {
 	_ammo = spawnArgs.GetInt("ammo", "-1");
 	_useAmmo = (_ammo != -1);
 
-	if (_active && _fireInterval > 0) {
+	if (_active && _fireInterval > 0)
+	{
 		BecomeActive( TH_THINK );
 		setupNextFireTime();
 		_nextFireTime += _startDelay;
+
+		// Set the end time if we have a positive lifetime
+		int maxLifeTime = spawnArgs.GetInt("max_lifetime", "-1");
+		
+		if (maxLifeTime > 0)
+		{
+			_endTime = gameLocal.time + SEC2MS(maxLifeTime);
+		}
 	}
 
 	// Always react to stims if a required stim is setup.
-	if (_requiredStim != ST_DEFAULT) {
+	if (_requiredStim != ST_DEFAULT)
+	{
 		//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("tdmFuncShooter is requiring stim %d\r", _requiredStim);
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 	}
@@ -99,8 +111,10 @@ void tdmFuncShooter::Spawn( void ) {
 tdmFuncShooter::Save
 ===============
 */
-void tdmFuncShooter::Save( idSaveGame *savefile ) const {
+void tdmFuncShooter::Save( idSaveGame *savefile ) const
+{
 	savefile->WriteBool( _active );
+	savefile->WriteInt(_endTime);
 	savefile->WriteInt( _lastFireTime );
 	savefile->WriteInt( _nextFireTime );
 	savefile->WriteInt( _fireInterval );
@@ -121,8 +135,10 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 tdmFuncShooter::Restore
 ===============
 */
-void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
+void tdmFuncShooter::Restore( idRestoreGame *savefile )
+{
 	savefile->ReadBool( _active );
+	savefile->ReadInt(_endTime);
 	savefile->ReadInt( _lastFireTime );
 	savefile->ReadInt( _nextFireTime );
 	savefile->ReadInt( _fireInterval );
@@ -147,33 +163,45 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 tdmFuncShooter::Event_Activate
 ================
 */
-void tdmFuncShooter::Event_Activate( idEntity *activator ) {
-	if (_triggerRequired) {
+void tdmFuncShooter::Event_Activate( idEntity *activator )
+{
+	if (_triggerRequired)
+	{
 		// This shooter requires constant triggering, save the time
 		_lastTriggerVisit = gameLocal.time;
 	}
-	else if ( thinkFlags & TH_THINK ) {
+	else if ( thinkFlags & TH_THINK )
+	{
 		BecomeInactive( TH_THINK );
 		_active = false;
-	} else {
+	} 
+	else
+	{
 		BecomeActive( TH_THINK );
 		_active = true;
 		_ammo = spawnArgs.GetInt("ammo", "-1");
 		_lastFireTime = gameLocal.time;
 		setupNextFireTime();
 		_nextFireTime += _startDelay;
+
+		// Set the end time if we have a positive lifetime
+		int maxLifeTime = spawnArgs.GetInt("max_lifetime", "-1");
+
+		if (maxLifeTime > 0)
+		{
+			_endTime = gameLocal.time + SEC2MS(maxLifeTime);
+		}
 	}
 }
 
-void tdmFuncShooter::Event_ShooterGetState() {
+void tdmFuncShooter::Event_ShooterGetState()
+{
 	idThread::ReturnInt(_active ? 1 : 0);
 }
 
-void tdmFuncShooter::Event_ShooterSetState( bool state ) {
-	if (state == _active) {
-		// Nothing to change
-		return;
-	}
+void tdmFuncShooter::Event_ShooterSetState( bool state )
+{
+	if (state == _active) return; // Nothing to change
 
 	_active = state;
 
@@ -182,54 +210,54 @@ void tdmFuncShooter::Event_ShooterSetState( bool state ) {
 		_ammo = spawnArgs.GetInt("ammo", "-1");
 		setupNextFireTime();
 		_nextFireTime += _startDelay;
+
+		// Set the end time if we have a positive lifetime
+		int maxLifeTime = spawnArgs.GetInt("max_lifetime", "-1");
+
+		if (maxLifeTime > 0)
+		{
+			_endTime = gameLocal.time + SEC2MS(maxLifeTime);
+		}
 	}
 }
 
-void tdmFuncShooter::Event_ShooterFireProjectile() {
+void tdmFuncShooter::Event_ShooterFireProjectile()
+{
 	Fire();
 }
 
-void tdmFuncShooter::Event_ShooterSetAmmo( int newAmmo ) {
+void tdmFuncShooter::Event_ShooterSetAmmo( int newAmmo )
+{
 	_ammo = newAmmo;
 }
 
-void tdmFuncShooter::Event_ShooterGetAmmo() {
+void tdmFuncShooter::Event_ShooterGetAmmo()
+{
 	idThread::ReturnInt(_ammo);
 }
 
-void tdmFuncShooter::setupNextFireTime() {
+void tdmFuncShooter::setupNextFireTime()
+{
 	// Calculate the next fire time
-	int randomness = static_cast<int>(_fireIntervalFuzzyness*(gameLocal.random.RandomFloat() - 0.5f));
+	int randomness = static_cast<int>(
+		_fireIntervalFuzzyness*(gameLocal.random.RandomFloat() - 0.5f)
+	);
+
 	_nextFireTime = gameLocal.time + _fireInterval + randomness;
 }
 
-/*
-================
-tdmFuncShooter::WriteToSnapshot
-================
-*/
-void tdmFuncShooter::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteBits( _active ? 1 : 0, 1 );
-}
-
-/*
-================
-tdmFuncShooter::ReadFromSnapshot
-================
-*/
-void tdmFuncShooter::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	_active = msg.ReadBits( 1 ) != 0;
-}
-
-void tdmFuncShooter::stimulate(StimType stimId) {
-	if (stimId == _requiredStim && _requiredStim != ST_DEFAULT) {
+void tdmFuncShooter::stimulate(StimType stimId)
+{
+	if (stimId == _requiredStim && _requiredStim != ST_DEFAULT)
+	{
 		//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Stim is visiting at %d\r", gameLocal.time);
 		// Save the time the stim is visiting
 		_lastStimVisit = gameLocal.time;
 	}
 }
 
-void tdmFuncShooter::Fire() {
+void tdmFuncShooter::Fire()
+{
 	_lastFireTime = gameLocal.time;
 
 	// Spawn a projectile
@@ -240,19 +268,23 @@ void tdmFuncShooter::Fire() {
 		idEntity* ent = NULL;
 		gameLocal.SpawnEntityDef(*projectileDict, &ent);
 
-		idProjectile* projectile = dynamic_cast<idProjectile*>(ent);
-		if (projectile != NULL) {
+		if (ent->IsType(idProjectile::Type))
+		{
+			idProjectile* projectile = static_cast<idProjectile*>(ent);
+
 			// Get the default angle from the entity
 			float angle = spawnArgs.GetFloat("angle");
 			float pitch = spawnArgs.GetFloat("pitch", "0");
 
 			// Check if the angle should be randomly chosen
-			if (spawnArgs.GetBool("random_angle")) {
+			if (spawnArgs.GetBool("random_angle"))
+			{
 				angle = gameLocal.random.RandomFloat() * 360;
 			}
 
 			// Check for random pitch angle
-			if (spawnArgs.GetBool("random_pitch")) {
+			if (spawnArgs.GetBool("random_pitch"))
+			{
 				pitch = gameLocal.random.RandomFloat() * 180 - 90;
 			}
 
@@ -263,7 +295,8 @@ void tdmFuncShooter::Fire() {
 			// Check for a specified velocity on the shooter
 			float velocity = spawnArgs.GetFloat("velocity", "0");
 
-			if (velocity <= 0) {
+			if (velocity <= 0)
+			{
 				// Try to get a velocity from the projectile itself
 				velocity = projectileDict->GetVector("velocity", "0 0 0").Length();
 			}
@@ -289,7 +322,8 @@ void tdmFuncShooter::Fire() {
 			}
 
 			// Check the ammonition
-			if (_useAmmo && --_ammo <= 0) {
+			if (_useAmmo && --_ammo <= 0)
+			{
 				// Clamp the ammo value to zero
 				_ammo = 0;
 				// Inactivate the shooter as the max ammo was specified and has run out
@@ -301,8 +335,20 @@ void tdmFuncShooter::Fire() {
 	setupNextFireTime();
 }
 
-void tdmFuncShooter::Think() {
-	if (_active && _fireInterval > 0 && gameLocal.time > _nextFireTime) {
+void tdmFuncShooter::Think()
+{
+	if (!_active) return;
+	
+	// We're active, so let's check if we have a lifetime
+	if (_endTime > 0 && gameLocal.time > _endTime)
+	{
+		// Lifetime has passed, deactivate ourselves
+		Event_ShooterSetState(false);
+		return;
+	}
+
+	if (_fireInterval > 0 && gameLocal.time > _nextFireTime)
+	{
 		// greebo: Check before firing whether we have a required stim
 		if (_requiredStim != ST_DEFAULT && _lastStimVisit > 0 && 
 			_lastStimVisit + _requiredStimTimeOut >= gameLocal.time)
@@ -316,7 +362,8 @@ void tdmFuncShooter::Think() {
 			// Required constant triggering, last trigger was not too long ago => fire
 			Fire();
 		}
-		else if (_requiredStim == ST_DEFAULT && !_triggerRequired) {
+		else if (_requiredStim == ST_DEFAULT && !_triggerRequired)
+		{
 			// No required stim and no required trigger, fire away
 			Fire();
 		}
