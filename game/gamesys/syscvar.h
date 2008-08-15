@@ -72,6 +72,7 @@ extern idCVar cv_sr_disable;
 extern idCVar cv_sndprop_disable;
 extern idCVar cv_spr_debug;
 extern idCVar cv_spr_show;
+extern idCVar cv_spr_radius_show;
 extern idCVar cv_ko_show;
 extern idCVar cv_ai_animstate_show;
 

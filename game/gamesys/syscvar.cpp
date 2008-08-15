@@ -79,6 +79,7 @@ idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARC
 idCVar cv_sndprop_disable(			"tdm_sndprop_disable",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation will not be calculated." );
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
 idCVar cv_spr_show(					"tdm_showsprop",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines." );
+idCVar cv_spr_radius_show(			"tdm_showsprop_radius",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound ranges are drawn." );
 idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, knockout zones will be shown for debugging." );
 idCVar cv_ai_search_show (			"tdm_ai_search_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing search activity targets will be shown. If < 1.0 then the graphics will not be drawn. For debugging.");
 idCVar cv_ai_visdist_show (			"tdm_ai_visdist_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing vision distance test results.  Green arrows indicate within range, Red indicate out of range, purple indicate gap between range and target. For debugging.");

@@ -480,6 +480,12 @@ void CsndProp::Propagate
 
 	range = pow(2.0f, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7.0f) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
 
+	// Debug drawing of the range
+	if (cv_spr_radius_show.GetBool()) 
+	{
+		gameRenderWorld->DebugCircle(colorWhite, origin, idVec3(0,0,1), range, 100, 1000);
+	}
+
 	idBounds bounds(origin);
 	bounds.ExpandSelf(range);
 
