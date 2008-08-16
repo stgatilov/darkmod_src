@@ -1148,13 +1148,11 @@ void CMissionData::SetComponentState( CObjectiveComponent *pComp, bool bState )
 
 void CMissionData::SetCompletionState( int ObjIndex, int State )
 {
-	CObjective *pObj = NULL;
-
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("Attempt was made to set completion state of invalid objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to set completion state of invalid objective index: %d \n", ObjIndex);
-		goto Quit;
+		return;
 	}
 
 	// check if the state int is valid by comparing to highest number in enum
@@ -1162,41 +1160,40 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("Attempt was made to set objective index: %d to invalid completion state: %d \r", ObjIndex, State);
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to set objective index: %d to invalid completion state: %d \n", ObjIndex, State);
-		goto Quit;
+		return;
 	}
 
-	pObj = &m_Objectives[ObjIndex];
-	if( !pObj )
-	{
-		DM_LOG(LC_OBJECTIVES,LT_ERROR)LOGSTRING("SetCompletionState: NULL Objective found for obj %d \r", ObjIndex );
-		goto Quit;
-	}
+	CObjective& obj = m_Objectives[ObjIndex];
 
 	// Don't do anything if we are already in that state
-	if( pObj->m_state == State )
-		goto Quit;
+	if( obj.m_state == State ) return;
 
 	// Check for latching:
-	if( !pObj->m_bReversible )
+	if( !obj.m_bReversible )
 	{
 		// do not do anything if latched
-		if( pObj->m_bLatched )
-			goto Quit;
+		if( obj.m_bLatched )
+		{
+			return;
+		}
 
 		// Irreversible objectives latch to either complete or failed
 		if( State == STATE_COMPLETE || State == STATE_FAILED )
-			pObj->m_bLatched = true;
+		{
+			obj.m_bLatched = true;
+		}
 	}
 
-
-	m_Objectives[ObjIndex].m_state = (EObjCompletionState) State;
+	obj.m_state = static_cast<EObjCompletionState>(State);
 
 	if( State == STATE_COMPLETE )
+	{
 		Event_ObjectiveComplete( ObjIndex );
+	}
 	else if( State == STATE_FAILED )
+	{
 		Event_ObjectiveFailed( ObjIndex );
-Quit:
-	return;
+	}
 }
 
 // for scripters:
@@ -1364,11 +1361,10 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	idToken				token;
 	idStr				StrTemp, StrTemp2, TempStr2;
 	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
-	int					ReturnVal(-1);
 	bool				bLogicMod(false); // modified mission logic
 
 	// store the first index of first added objective
-	ReturnVal = m_Objectives.Num();
+	int ReturnVal = m_Objectives.Num();
 
 	// go thru all the objective-related spawnargs
 	while( dict.MatchPrefix( va("obj%d_", Counter) ) != NULL )
@@ -1390,7 +1386,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 
 		// parse in the int list of "enabling objectives"
 		TempStr2 = dict.GetString( StrTemp + "enabling_objs", "" );
-		src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+		src.LoadMemory( TempStr2, TempStr2.Length(), "" );
 		while( src.ReadToken( &token ) )
 		{
 			if( token.IsNumeric() )
@@ -1401,9 +1397,11 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 		// Parse difficulty level. If difficulty not specified, then
 		// this objective applies to all levels.
 		TempStr2 = dict.GetString( StrTemp + "difficulty", "" );
-		if (TempStr2.Length() > 0) {
+		if (!TempStr2.IsEmpty())
+		{
 			ObjTemp.m_bApplies = false;
-			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+			src.LoadMemory( TempStr2, TempStr2.Length(), "" );
+
 			while( src.ReadToken( &token ) )
 			{
 				if (token.IsNumeric() && 
@@ -1419,6 +1417,8 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 				// Objectives that don't apply to this difficulty level are considered invalid.
 				// They don't need to be completed.
 				ObjTemp.m_state = STATE_INVALID;
+				// greebo: Also set them to invisible so that they aren't displayed on the GUI.
+				ObjTemp.m_bVisible = false;
 			}
 
 			src.FreeSource();
@@ -2171,8 +2171,8 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 	{
 		CObjective& obj = m_Objectives[i];
 
-		// Don't consider invisible, inapplicable or invalid objectives
-		if (obj.m_bVisible && obj.m_bApplies && obj.m_state != STATE_INVALID)
+		// Don't consider invisible, inapplicable objectives
+		if (obj.m_bVisible && obj.m_bApplies)
 		{
 			objIndices.Append(i);
 		}
