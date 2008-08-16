@@ -113,7 +113,7 @@ void idLiquid::Spawn() {
 	this->soundName = "snd_";
 	this->soundName.Append(temp);
 
-	splashName = spawnArgs.GetString("smoke_small","water_splash_tiny");
+	splashName = spawnArgs.GetString("smoke_small","water_splash_small");
 	this->splash[0] = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE,splashName));
 
 	splashName = spawnArgs.GetString("smoke_medium","water_splash");
