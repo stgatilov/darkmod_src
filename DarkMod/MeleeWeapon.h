@@ -25,8 +25,10 @@ class idPlayer;
 
 typedef enum
 {
-	MELEETYPE_SLASH		= BIT(0),
-	MELEETYPE_THRUST	= BIT(1)
+	MELEETYPE_SLASH			= BIT(0),
+	MELEETYPE_OVERHEAD		= BIT(1),
+	MELEETYPE_THRUST		= BIT(2),
+	MELEETYPE_UNBLOCKABLE	= BIT(3)
 } EMeleeTypes;
 
 class CMeleeWeapon : public idMoveable 
@@ -56,27 +58,20 @@ public:
 	void ClearOwner( void );
 
 	/**
-	* Set up the clipmodel for an attack
+	* Activate an attack and test it for collisions from this point on
 	* ActOwner is the actor that owns this weapon, AttName the string name of the attack,
-	* DamageDef a reference to the DamageDef dict,
-	* bChangeCM is set to true when you want to use a specific CM for that attack.
-	* If bChangeCM is set to false, the regular CM of the moveable will be used.
-	* bWorldCollide is set to true if this attack can collide with the world and other objects
 	**/
-	void ActivateAttack( idActor *ActOwner, idStr AttName, idDict *DamageDef,
-							bool bChangeCM, bool bWorldCollide );
+	void ActivateAttack( idActor *ActOwner, const char *AttName );
 	/**
-	* Disables the attack clipmodel and clears vars
+	* Disables the attack (stops testing for collisions and clears any custom clipmodel)
 	**/
 	void DeactivateAttack( void );
 
 	/**
 	* Set up the clipmodel, clipmask and stims for a parry
 	* ActOwner is the actor that owns this weapon, ParryName the string name of the parry
-	* bChangeCM is set to true when you want to use a CM for that parry.
-	* If bChangeCM is set to false, the regular CM of the moveable will be used.
 	**/
-	void ActivateParry( idActor *ActOwner, idStr ParryName, bool bChangeCM );
+	void ActivateParry( idActor *ActOwner, const char *ParryName );
 
 	/**
 	* Disables the parry clipmodel and clears vars
@@ -123,12 +118,14 @@ protected:
 
 	/**
 	* Called to handle physics, particle FX, sound, damage
-	* When a melee weapon hits something
+	* When a melee attack hits something
+	* Expects m_ActionName to be already set.
 	**/
 	void MeleeCollision( idEntity *other, idVec3 dir, trace_t *trace );
 
 	/**
-	* Set up the parry or attack clipmodel from the args in m_MeleeDef
+	* Set up the clipmodel for the current parry/attack action
+	* Expects m_ActionName, m_bAttacking and m_bParrying to be already set.
 	**/
 	void SetupClipModel( void ); 
 
@@ -152,6 +149,11 @@ protected:
 	bool					m_bParrying;
 
 	/**
+	* Name of the attack or parry (e.g., "slash_lr")
+	**/
+	idStr					m_ActionName;
+
+	/**
 	* Whether the modified clipmodel is axis-aligned or moves with joint
 	**/
 	bool					m_bClipAxAlign;
@@ -162,12 +164,10 @@ protected:
 	**/
 	bool					m_bWorldCollide;
 
-
 	/**
-	* MeleeDef used by an active attack
+	* Type of melee action for parry tests
+	* Slash, overhand, thrust, or unblockable
 	**/
-	idDeclEntityDef			*m_MeleeDef;
-
 	EMeleeTypes				m_MeleeType;
 
 };
