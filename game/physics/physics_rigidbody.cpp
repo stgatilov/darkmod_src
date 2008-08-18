@@ -1337,7 +1337,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		// TODO: Use advanced AF binding code to add AF body for entity in this case, as if it were bound directly to AF
 		if ( 
 				(clipModel->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) 
-				&& !self->GetBindMaster()->GetPhysics()->IsType(idPhysics_AF::Type)
+				&& !self->GetBindMaster()->IsType(idAnimatedEntity::Type)
 				&& !(
 						self->GetBindMaster()->IsType(idAFAttachment::Type) 
 						&& static_cast<idAFAttachment *>(self->GetBindMaster())->GetBody()
