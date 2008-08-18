@@ -26,13 +26,16 @@ CMeleeWeapon::CMeleeWeapon( void )
 
 CMeleeWeapon::~CMeleeWeapon( void )
 {
-	ClearClipModel();
+	// ClearClipModel();
 }
 
 void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 {
 	const idKeyValue *key;
-	// TODO: Read bChangeCM and bWorldCollide from our spawnArgs instead?
+
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Activate attack called.  Weapon %s, owner %s, attack name %s.\r",
+											name.c_str(), ActOwner->name.c_str(), AttName );
+
 	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) != NULL )
 	{
 		m_MeleeType = (EMeleeTypes) atoi(key->GetValue().c_str());
@@ -48,7 +51,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	}
 	else
 	{
-		// LOG INVALID Melee Attack name error
+		DM_LOG(LC_WEAPON, LT_WARNING)LOGSTRING("Did not find attack %s on melee weapon %s\r", AttName, name.c_str());
 	}
 }
 
@@ -98,7 +101,10 @@ void CMeleeWeapon::ClearClipModel( void )
 {
 	if( m_WeapClip )
 	{
+		// causing a crash??
+		m_WeapClip->Unlink();
 		delete m_WeapClip;
+
 		m_WeapClip = NULL;
 	}
 	else
@@ -359,6 +365,8 @@ void CMeleeWeapon::SetupClipModel( )
 	m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 
 	// TODO: Set default contents of what??
+	// Temporary test:
+	m_WeapClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 }
 
 

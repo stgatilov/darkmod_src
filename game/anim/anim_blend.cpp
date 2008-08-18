@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game_local.h"
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/Misc.h"
+#include "../../DarkMod/MeleeWeapon.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
@@ -626,38 +627,51 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.string->Append(va(" %s", token.c_str() ));
 	}
 	// Melee Combat Frame commands
-	else if ( token == "melee_activate_attack" )
+	else if ( token == "melee_attack_start" )
 	{
+		// first argument: name of the weapon attachment
 		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
 
-		fc.type = FC_MELEE_ACTIVATE_ATTACK;
+		fc.type = FC_MELEE_ATTACK_START;
 		fc.string = new idStr( token );
+
+		// second argument: name of the attack to start
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
 	}
-	else if ( token == "melee_deactivate_attack" )
+	else if ( token == "melee_attack_stop" )
 	{
 		// not sure if this will have an argument, but say it will for now
 		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
 
-		fc.type = FC_MELEE_DEACTIVATE_ATTACK;
+		fc.type = FC_MELEE_ATTACK_STOP;
 		fc.string = new idStr( token );
 	}
-	else if ( token == "melee_activate_parry" )
+	else if ( token == "melee_parry_start" )
 	{
 		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
 
-		fc.type = FC_MELEE_ACTIVATE_PARRY;
+		fc.type = FC_MELEE_PARRY_START;
 		fc.string = new idStr( token );
+
+		// second argument: name of the parry to start
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
 	}
-	else if ( token == "melee_deactivate_parry" )
+	else if ( token == "melee_parry_stop" )
 	{
 		// not sure if this will have an argument, but say it will for now
 		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
 
-		fc.type = FC_MELEE_DEACTIVATE_PARRY;
+		fc.type = FC_MELEE_PARRY_STOP;
 		fc.string = new idStr( token );
 	}
 	else 
@@ -1010,20 +1024,72 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					ent->ReAttachToPos( AttName, AttPos );
 					break;
 				}
-				case FC_MELEE_ACTIVATE_ATTACK:
+				case FC_MELEE_ATTACK_START:
 				{
+					const char *WeapName, *AttName;
+					int spcind = command.string->Find(" ");
+					WeapName = command.string->Left( spcind ).c_str();
+					AttName = command.string->Mid( spcind+1, command.string->Length() );
+					
+					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						idActor *ActOwner;
+						if( ent->IsType(idWeapon::Type) )
+							ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+						else if( ent->IsType(idActor::Type) )
+							ActOwner = static_cast<idActor *>(ent);
+						else
+							ActOwner = NULL;
+						
+						static_cast<CMeleeWeapon *>(AttEnt)->ActivateAttack
+							( ActOwner, AttName );
+					}
+
 					break;
 				}
-				case FC_MELEE_DEACTIVATE_ATTACK:
-				{
+				case FC_MELEE_ATTACK_STOP:
+				{	
+					idEntity *AttEnt = ent->GetAttachment( command.string->c_str() );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						static_cast<CMeleeWeapon *>(AttEnt)->DeactivateAttack();
+					}
+
 					break;
 				}
-				case FC_MELEE_ACTIVATE_PARRY:
+				case FC_MELEE_PARRY_START:
 				{
+					const char *WeapName, *ParName;
+					int spcind = command.string->Find(" ");
+					WeapName = command.string->Left( spcind ).c_str();
+					ParName = command.string->Mid( spcind+1, command.string->Length() );
+					
+					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						idActor *ActOwner;
+						if( ent->IsType(idWeapon::Type) )
+							ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+						else if( ent->IsType(idActor::Type) )
+							ActOwner = static_cast<idActor *>(ent);
+						else
+							ActOwner = NULL;
+						
+						static_cast<CMeleeWeapon *>(AttEnt)->ActivateParry
+							( ActOwner, ParName );
+					}
+
 					break;
 				}
-				case FC_MELEE_DEACTIVATE_PARRY:
+				case FC_MELEE_PARRY_STOP:
 				{
+					idEntity *AttEnt = ent->GetAttachment( command.string->c_str() );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						static_cast<CMeleeWeapon *>(AttEnt)->DeactivateParry();
+					}
+
 					break;
 				}
 			}
