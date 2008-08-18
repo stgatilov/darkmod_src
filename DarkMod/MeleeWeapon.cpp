@@ -22,6 +22,15 @@ END_CLASS
 
 CMeleeWeapon::CMeleeWeapon( void ) 
 {
+	m_Owner = NULL;
+	m_WeapClip = NULL;
+	m_bAttacking = false;
+	m_bParrying = false;
+
+	m_bClipAxAlign = true;
+	m_bWorldCollide = false;
+
+	m_MeleeType = MELEETYPE_OVERHEAD;
 }
 
 CMeleeWeapon::~CMeleeWeapon( void )
@@ -41,6 +50,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		m_MeleeType = (EMeleeTypes) atoi(key->GetValue().c_str());
 		m_ActionName = AttName;
 		m_bAttacking = true;
+		// TODO: We shouldn't set the owner every time, should only have to set once
 		m_Owner = ActOwner;
 		m_bWorldCollide = spawnArgs.GetBool(va("att_world_collide_%s", AttName));
 
@@ -57,8 +67,11 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 
 void CMeleeWeapon::DeactivateAttack( void )
 {
-	m_bAttacking = false;
-	ClearClipModel();
+	if( m_bAttacking )
+	{
+		m_bAttacking = false;
+		ClearClipModel();
+	}
 }
 
 
@@ -93,8 +106,11 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 
 void CMeleeWeapon::DeactivateParry( void )
 {
-	m_bParrying = false;
-	ClearClipModel();
+	if( m_bParrying )
+	{
+		m_bParrying = false;
+		ClearClipModel();
+	}
 }
 
 void CMeleeWeapon::ClearClipModel( void )
@@ -184,7 +200,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	rotation.SetOrigin( OldOrigin );
 
 	if( m_bWorldCollide )
-		ClipMask = MASK_SHOT_RENDERMODEL;
+		ClipMask = MASK_SHOT_RENDERMODEL | CONTENTS_CORPSE | CONTENTS_MELEEWEAP;
 	else
 		ClipMask = CONTENTS_MELEEWEAP | CONTENTS_BODY; // parries and AI
 
@@ -205,8 +221,9 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	if( tr.fraction < 1.0f )
 	{
 		idEntity *other = gameLocal.entities[ tr.c.entityNum ];
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit entity %s\r", other->name.c_str());
 
-		// TODO: Incorporate angular momentum into dir?
+		// TODO: Incorporate angular momentum into knockback/impulse dir?
 		idVec3 dir = NewOrigin - OldOrigin;
 		dir.NormalizeFast();
 
@@ -217,9 +234,11 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		// Hit an actor, or an AF attachment that is part of an actor
 		if( other->IsType(idActor::Type) || AttachOwner != NULL )
 		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit actor or part of actor %s\r", other->name.c_str());
 			// Don't do anything if we hit our own AF attachment
 			if( AttachOwner != m_Owner.GetEntity() )
 			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
 				// TODO: Scale damage with instantaneous velocity of the blade?
 				MeleeCollision( other, dir, &tr );
 
@@ -232,21 +251,31 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				DeactivateAttack();
 				// TODO: Message owner AI that they hit an AI
 			}
+			else
+			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit yourself.  Stop hitting yourself!\r");
+			}
 		}
 
 		// Hit a melee parry or held object
-		else if( tr.c.contents & CONTENTS_MELEEWEAP )
+		else if( (tr.c.contents & CONTENTS_MELEEWEAP) != 0 )
 		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
 			// hit a parry (make sure we don't hit our own other melee weapons)
 			if( other->IsType(CMeleeWeapon::Type)
 				&& static_cast<CMeleeWeapon *>(other)->GetOwner() != m_Owner.GetEntity() )
 			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
+					("MeleeWeapon: Hit a melee parry put up by %s\r", 
+					  static_cast<CMeleeWeapon *>(other)->GetOwner()->name.c_str() );
 				// Test our attack against their parry
 				TestParry( static_cast<CMeleeWeapon *>(other), dir, &tr );
 			}
 			// hit a held object
 			else if( other == g_Global.m_DarkModPlayer->grabber->GetSelected() )
 			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit an object held by the player\r");
+				
 				MeleeCollision( other, dir, &tr );
 
 				// TODO: Message the grabber that the grabbed object has been hit
@@ -256,10 +285,18 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				DeactivateAttack();
 			}
+			else
+			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something else with CONTENTS_MELEEWEAP (this shouldn't happen!!)\r");
+				MeleeCollision( other, dir, &tr );
+
+				DeactivateAttack();
+			}
 		}
 		// Hit something else in the world (only happens to the player)
 		else
 		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit a non-AI object: %s\r", other->name.c_str());
 			MeleeCollision( other, dir, &tr );
 			
 			// TODO: Message the attacking actor to play a bounce off animation if appropriate
@@ -272,25 +309,34 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 {
 	const char *DamageDefName;
-	const idDict *DamageDef;
+	const idDict *DmgDef;
 	float push(0.0f);
 	idVec3 impulse(vec3_zero);
 
-	DamageDefName = spawnArgs.GetString( va("def_damage_%s", m_ActionName.c_str()) );
-	DamageDef = gameLocal.FindEntityDefDict( DamageDefName, false );
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: MeleeCollision Called\r");
 
-	if( !DamageDef )
+	DamageDefName = spawnArgs.GetString( va("def_damage_%s", m_ActionName.c_str()) );
+	DmgDef = gameLocal.FindEntityDefDict( DamageDefName, false );
+
+	if( !DmgDef )
+	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Did not find damage def %s\r", DamageDefName);
 		goto Quit;
+	}
+
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage for damage def %s\r", DamageDefName);
 
 	// Physical impulse
-	push = DamageDef->GetFloat( "push" );
+	push = DmgDef->GetFloat( "push" );
 	impulse = -push * tr->c.normal;
-	
+
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying impulse\r");
 	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
 
 	// Damage
 	if( other->fl.takedamage )
 	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Other takes damage, applying damage...\r");
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
 		(
@@ -364,7 +410,8 @@ void CMeleeWeapon::SetupClipModel( )
 	m_WeapClip = new idClipModel( trm );
 	m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 
-	// TODO: Set default contents of what??
+	// TODO: Set default contents of what??  
+	// We don't need to set meleeweapon since that's done explicitly in the trace
 	// Temporary test:
 	m_WeapClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 }
