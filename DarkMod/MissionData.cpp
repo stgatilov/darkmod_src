@@ -827,6 +827,32 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		return;
 	}
 
+	// Call the objective completion script (even for ongoing objectives)
+	function_t* pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript );
+	if (pScriptFun != NULL)
+	{
+		idThread* pThread = new idThread(pScriptFun);
+		pThread->CallFunction( pScriptFun, true );
+		pThread->DelayedStart(0);
+	}
+
+	// Activate the completion target
+	const idStr& targetName = m_Objectives[ind].m_CompletionTarget;
+	if (!targetName.IsEmpty())
+	{
+		idEntity* target = gameLocal.FindEntity(targetName);
+
+		if (target != NULL)
+		{
+			DM_LOG(LC_OBJECTIVES,LT_INFO)LOGSTRING("Objectives: Triggering completion target %s for objective #%d\r", targetName.c_str(), ind);
+			target->Activate();
+		}
+		else
+		{
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Could not find completion target %s for objective #%d\r", targetName.c_str(), ind);
+		}
+	}
+
 	// Only this objective is complete, not the entire mission
 	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
 	if (!m_Objectives[ind].m_bOngoing)
@@ -839,15 +865,6 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
-		// call completion script
-		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
-		if (pScriptFun != NULL)
-		{
-			idThread *pThread = new idThread( pScriptFun );
-			pThread->CallFunction( pScriptFun, true );
-			pThread->DelayedStart( 0 );
-		}
-
 		// greebo: Notify the player
 		player->SendHUDMessage("Objective complete");
 	}
@@ -857,13 +874,30 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 {
 	// play an objective failed sound for optional objectives?
 
-	// call failure script
-	function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
+	// Call failure script
+	function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript );
 	if (pScriptFun != NULL)
 	{
 		idThread *pThread = new idThread(pScriptFun);
 		pThread->CallFunction( pScriptFun, true );
 		pThread->DelayedStart( 0 );
+	}
+
+	// Activate the failure target
+	const idStr& targetName = m_Objectives[ind].m_FailureTarget;
+	if (!targetName.IsEmpty())
+	{
+		idEntity* target = gameLocal.FindEntity(targetName);
+
+		if (target != NULL)
+		{
+			DM_LOG(LC_OBJECTIVES,LT_INFO)LOGSTRING("Objectives: Triggering failure target %s for objective #%d\r", targetName.c_str(), ind);
+			target->Activate();
+		}
+		else
+		{
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Could not find failure target %s for objective #%d\r", targetName.c_str(), ind);
+		}
 	}
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
@@ -1599,12 +1633,12 @@ idMapFile* CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile)
 * CObjective
 *==========================================================================**/
 
-CObjective::CObjective( void )
+CObjective::CObjective()
 {
 	Clear();
 }
 
-CObjective::~CObjective( void )
+CObjective::~CObjective()
 {
 	Clear();
 }
@@ -1624,6 +1658,8 @@ void CObjective::Clear( void )
 	m_handle = 0;
 	m_Components.Clear();
 	m_EnablingObjs.Clear();
+	m_CompletionTarget.Clear();
+	m_FailureTarget.Clear();
 	m_CompletionScript.Clear();
 	m_FailureScript.Clear();
 	m_SuccessLogicStr.Clear();
@@ -2530,6 +2566,9 @@ void CObjective::Save( idSaveGame *savefile ) const
 	for( int j=0; j < m_EnablingObjs.Num(); j++ )
 		savefile->WriteInt( m_EnablingObjs[j] );
 
+	savefile->WriteString(m_CompletionTarget);
+	savefile->WriteString(m_FailureTarget);
+
 	savefile->WriteString( m_CompletionScript );
 	savefile->WriteString( m_FailureScript );
 	savefile->WriteString( m_SuccessLogicStr );
@@ -2561,6 +2600,9 @@ void CObjective::Restore( idRestoreGame *savefile )
 	m_EnablingObjs.SetNum( num );
 	for( int j=0; j < num; j++ )
 		savefile->ReadInt( m_EnablingObjs[j] );
+
+	savefile->ReadString(m_CompletionTarget);
+	savefile->ReadString(m_FailureTarget);
 
 	savefile->ReadString( m_CompletionScript );
 	savefile->ReadString( m_FailureScript );

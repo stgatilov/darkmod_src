@@ -2277,6 +2277,13 @@ renderView_t *idEntity::GetRenderView( void ) {
 	return renderView;
 }
 
+void idEntity::Activate()
+{
+	Signal( SIG_TRIGGER );
+	ProcessEvent( &EV_Activate );
+	TriggerGuis();
+}
+
 /***********************************************************************
 
   Sound

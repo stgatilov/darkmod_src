@@ -344,6 +344,9 @@ public:
 							// cameras have custom code, and everything else just uses the axis orientation
 	virtual renderView_t *	GetRenderView();
 
+	// greebo: Call this to trigger this entity
+	virtual void			Activate();
+
 	// thinking
 	virtual void			Think( void );
 	bool					CheckDormant( void );	//!< dormant == on the active list, but out of PVS

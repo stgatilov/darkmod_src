@@ -275,19 +275,19 @@ public:
 	friend class CObjectiveComponent;
 	friend class CMissionData;
 
-	CObjective( void );
-	virtual ~CObjective( void );
+	CObjective();
+	virtual ~CObjective();
 
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );
 
-	void Clear( void );
+	void Clear();
 
 	/**
 	* Evaluate the boolean relationships for objective failure and success
 	**/
-	bool CheckFailure( void );
-	bool CheckSuccess( void );
+	bool CheckFailure();
+	bool CheckSuccess();
 
 	/**
 	* Parse m_SuccessLogicStr and m_FailureLogicStr into boolean evaluation
@@ -296,7 +296,7 @@ public:
 	*
 	* This should be run after CMissionData parsing sets those two strings
 	**/
-	bool ParseLogicStrs( void );
+	bool ParseLogicStrs();
 
 public:
 	/** 
@@ -368,6 +368,13 @@ protected:
 	* Other objectives that must be completed prior to the completion of this objective
 	**/
 	idList<int> m_EnablingObjs;
+
+	/**
+	 * greebo: These define the names of entities which should be triggered
+	 * as soon as the objective completes or fails.
+	 */
+	idStr m_CompletionTarget;
+	idStr m_FailureTarget;
 
 	/**
 	* String storing the script to call when this objective is completed
