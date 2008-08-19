@@ -1415,6 +1415,8 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 		ObjTemp.m_bOngoing = dict.GetBool( StrTemp + "ongoing", "0");
 		ObjTemp.m_CompletionScript = dict.GetString( StrTemp + "script_complete" );
 		ObjTemp.m_FailureScript = dict.GetString( StrTemp + "script_failed" );
+		ObjTemp.m_CompletionTarget = dict.GetString( StrTemp + "target_complete" );
+		ObjTemp.m_FailureTarget = dict.GetString( StrTemp + "target_failed" );
 		ObjTemp.m_SuccessLogicStr = dict.GetString( StrTemp + "logic_success", "" );
 		ObjTemp.m_FailureLogicStr = dict.GetString( StrTemp + "logic_failure", "" );
 
