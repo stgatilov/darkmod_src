@@ -171,6 +171,12 @@ protected:
 	**/
 	EMeleeTypes				m_MeleeType;
 
+	/**
+	* Origin and axis from the previous frame
+	**/
+	idVec3					m_OldOrigin;
+	idMat3					m_OldAxis;
+
 };
 
 #endif /* !__MELEEWEAPON_H__ */

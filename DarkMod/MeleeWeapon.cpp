@@ -58,6 +58,9 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		{
 			SetupClipModel();
 		}
+
+		m_OldOrigin = GetPhysics()->GetOrigin();
+		m_OldAxis = GetPhysics()->GetAxis();
 	}
 	else
 	{
@@ -99,7 +102,7 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 	}
 	else
 	{
-		// LOG INVALID MELEEDEF ERROR
+		// TODO: LOG INVALID MELEEDEF ERROR
 	}
 
 }
@@ -117,7 +120,6 @@ void CMeleeWeapon::ClearClipModel( void )
 {
 	if( m_WeapClip )
 	{
-		// causing a crash??
 		m_WeapClip->Unlink();
 		delete m_WeapClip;
 
@@ -134,18 +136,6 @@ void CMeleeWeapon::ClearClipModel( void )
 
 void CMeleeWeapon::Think( void )
 {
-	// TODO: Figure out how to skip this initialization if we're not active
-	idVec3 OldOrigin;
-	idMat3 OldAxis;
-
-	if( m_bAttacking )
-	{
-		OldOrigin = GetPhysics()->GetOrigin();
-		OldAxis = GetPhysics()->GetAxis();
-	}
-
-	// TODO: Are you sure these coordinates will change if we get moved by a bindmaster calling RunPhysics()?
-
 	idMoveable::Think();
 
 	// Move the custom clipmodel around to match the weapon
@@ -158,19 +148,24 @@ void CMeleeWeapon::Think( void )
 		else
 			CMaxis = mat3_identity;
 
-		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
+		// Is id = 0 correct here, or will that cause problems with
+		// the other clipmodel, which is also zero?
+		
+		if( m_bParrying )
+			m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
 	}
 
 	// Run the checks for an attack, handle what happens when something is hit
 	// TODO: Time interleave this test?
 	if( m_bAttacking )
-		CheckAttack( OldOrigin, OldAxis );
-
-	// Debug display
-	if( m_bAttacking || m_bParrying )
 	{
-		// For now just look with g_showcollisionmodels 1
+		CheckAttack( m_OldOrigin, m_OldAxis );
+
+		m_OldOrigin = GetPhysics()->GetOrigin();
+		m_OldAxis = GetPhysics()->GetAxis();
 	}
+
+	// TODO: Debug display of the parry clipmodel
 }
 
 void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
@@ -200,28 +195,89 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	rotation.SetOrigin( OldOrigin );
 
 	if( m_bWorldCollide )
-		ClipMask = MASK_SHOT_RENDERMODEL | CONTENTS_CORPSE | CONTENTS_MELEEWEAP;
+		ClipMask = MASK_SHOT_RENDERMODEL | CONTENTS_MELEEWEAP | CONTENTS_CORPSE;
 	else
-		ClipMask = CONTENTS_MELEEWEAP | CONTENTS_BODY; // parries and AI
+		ClipMask = CONTENTS_MELEEWEAP | CONTENTS_CORPSE | CONTENTS_BODY; // parries and AI
+	// TODO: Is CONTENTS_BODY going to hit the outer collision box and cause problems?
 
-	// NOTE: We really want two ignore entities, but we can't do that,
+	// Hack: We really want to ignore more than one entity, but we can't do that,
 	// so temporarily set our CONTENTS so that we don't hit ourself
-	int contents = pClip->GetContents();
-	pClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	int contentsEnt = GetPhysics()->GetContents();
+	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+
+// Uncomment for debugging
+/*
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
+		(
+			"Check Attack called, old origin %s, new origin %s, old axis %s, new axis %s\r", 
+			OldOrigin.ToString(), NewOrigin.ToString(), OldAxis.ToString(), NewAxis.ToString()
+		);
+*/
+
+	if( cv_melee_debug.GetBool() )
+		collisionModelManager->DrawModel( pClip->Handle(), NewOrigin, NewAxis, gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY );
 
 	gameLocal.clip.Motion
-	( 
+	(
 		tr, OldOrigin, NewOrigin, 
 		rotation, pClip, OldAxis, 
 		ClipMask, m_Owner.GetEntity()
 	);
-	pClip->SetContents( contents );
+
+// APPROXIMATION: Translation by itself can hit rendermodels, but rotations can't...
+// This doesn't work well, and hits AI way too far away for some reason.
+//	gameLocal.clip.Translation( tr, OldOrigin, NewOrigin, pClip, NewAxis, ClipMask, m_Owner.GetEntity() );
+	
+	GetPhysics()->SetContents( contentsEnt );
 	
 	// hit something 
 	if( tr.fraction < 1.0f )
 	{
 		idEntity *other = gameLocal.entities[ tr.c.entityNum ];
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit entity %s\r", other->name.c_str());
+		// Show the initial trace collision point
+		if( cv_melee_debug.GetBool() )
+			gameRenderWorld->DebugArrow( colorBlue, m_OldOrigin, tr.c.point, 3, 1000 );  
+
+		// Secondary trace for when we hit the AF structure of an AI and want
+		// to see where we would hit on the actual model
+		if(	(tr.c.contents & CONTENTS_CORPSE)
+			&& other->IsType(idAnimatedEntity::Type) )
+		{
+			trace_t tr2;
+
+			idVec3 delta = tr.c.normal;
+			idVec3 start = tr.c.point + 8.0f * delta;
+
+			int contentsEnt = GetPhysics()->GetContents();
+			GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+			gameLocal.clip.TracePoint
+				( 
+					tr2, start, tr.c.point - 8.0f * delta, 
+					CONTENTS_RENDERMODEL, m_Owner.GetEntity() 
+				);
+			GetPhysics()->SetContents( contentsEnt );
+
+			if( tr2.fraction < 1.0f )
+			{
+				tr = tr2;
+				other = gameLocal.entities[ tr.c.entityNum ];
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: CONTENTS_CORPSE secondary trace hit entity %s\r", other->name.c_str());
+
+				// Draw the new collision point
+				if( cv_melee_debug.GetBool() )
+					gameRenderWorld->DebugArrow( colorRed, start, tr2.c.point, 3, 1000 );
+			}
+			else
+			{
+				// If we failed to find anything, draw the attempted trace in green
+				// TODO: Also see if we can at least set up damage groups correctly from the AF body hit
+				// What about armour setting?
+				if( cv_melee_debug.GetBool() )
+					gameRenderWorld->DebugArrow( colorGreen, start, tr.c.point - 8.0f * delta, 3, 1000 );
+			}
+		}
+
 
 		// TODO: Incorporate angular momentum into knockback/impulse dir?
 		idVec3 dir = NewOrigin - OldOrigin;
@@ -257,8 +313,10 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			}
 		}
 
-		// Hit a melee parry or held object
-		else if( (tr.c.contents & CONTENTS_MELEEWEAP) != 0 )
+		// Hit a melee parry or held object 
+		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything)
+		else if( other->IsType(CMeleeWeapon::Type) 
+			|| (other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) ) )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
 			// hit a parry (make sure we don't hit our own other melee weapons)
@@ -312,8 +370,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 	const idDict *DmgDef;
 	float push(0.0f);
 	idVec3 impulse(vec3_zero);
-
-	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: MeleeCollision Called\r");
+	idStr hitSound, sndName;
 
 	DamageDefName = spawnArgs.GetString( va("def_damage_%s", m_ActionName.c_str()) );
 	DmgDef = gameLocal.FindEntityDefDict( DamageDefName, false );
@@ -324,19 +381,15 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 		goto Quit;
 	}
 
-	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage for damage def %s\r", DamageDefName);
-
 	// Physical impulse
 	push = DmgDef->GetFloat( "push" );
 	impulse = -push * tr->c.normal;
-
-	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying impulse\r");
 	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
 
 	// Damage
 	if( other->fl.takedamage )
 	{
-		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Other takes damage, applying damage...\r");
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at body id %d, joint handle %d\r", tr->c.id, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
 		(
@@ -346,7 +399,83 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 		);
 	}
 
-	// TODO: Do the particle FX, damage decals and sound
+	// apply a LARGE tactile alert to AI
+	if( other->IsType(idAI::Type) )
+	{
+		static_cast<idAI *>(other)->TactileAlert( m_Owner.GetEntity(), 100 );
+	}
+
+	// copied from idWeapon, not necessarily what we want
+	// Moved impact_damage_effect to DmgDef instead of weapon ent spawnargs
+	if ( DmgDef->GetBool( "impact_damage_effect" ) ) 
+	{
+		if ( other->spawnArgs.GetBool( "bleed" ) ) 
+		{
+			hitSound = DmgDef->GetString( "snd_hit" );
+			sndName = "snd_hit";
+
+			// places wound overlay, also tries to play another sound that's usually not there?
+			// on AI, also does the blood spurt particle
+			other->AddDamageEffect( *tr, impulse, DmgDef->GetString( "classname" ) );
+		} else 
+		{
+			// we hit an entity that doesn't bleed, 
+			// decals, sound and smoke are handled here instead
+			// TODO: Change this so that above is only executed if it bleeds AND we hit flesh?
+
+			idStr materialType;
+			int type = tr->c.material->GetSurfaceType();
+
+			if ( type == SURFTYPE_NONE ) 
+				materialType = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
+			else
+				g_Global.GetSurfName( tr->c.material, materialType );
+
+			// Uncomment for surface type debugging
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Surface hit was %s\r", tr->c.material->GetName() );
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", materialType.c_str() );
+
+			// start impact sound based on material type
+			hitSound = DmgDef->GetString( va( "snd_%s", materialType.c_str() ) );
+			sndName = va( "snd_%s", materialType.c_str() );
+
+			if ( hitSound.IsEmpty() ) 
+			{
+				hitSound = DmgDef->GetString( "snd_metal" );
+				sndName = "snd_metal";
+			}
+
+			// project decal 
+			// ishtvan: got rid of min time between decals, let it be up to anim
+			const char *decal;
+			decal = DmgDef->GetString( "mtr_strike" );
+			if ( decal && *decal ) 
+			{
+				gameLocal.ProjectDecal( tr->c.point, -tr->c.normal, 8.0f, true, 6.0, decal );
+			}
+
+			// TODO: Strike smoke FX (sparks.. blood is handled above for now?)
+
+			// strike smoke FX (how is this different from AddDamageEffect?
+
+			// strikeSmokeStartTime = gameLocal.time;
+			// strikePos = tr.c.point;
+			// strikeAxis = -tr.endAxis;
+		}
+	}
+
+	if ( !hitSound.IsEmpty() ) 
+	{
+		const idSoundShader *snd = declManager->FindSound( hitSound.c_str() );
+		StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
+		
+		// Propagate the sound to AI, must find global sound first because it's on a different dict
+		sndName.StripLeading("snd_");
+		sndName = DmgDef->GetString( va("sprS_%s", sndName.c_str()) );
+		if( !sndName.IsEmpty() )
+			PropSoundDirect( sndName.c_str(), false, false );
+	}
+
 Quit:
 	return;
 }
@@ -408,12 +537,15 @@ void CMeleeWeapon::SetupClipModel( )
 		trm.SetupBox( CMBounds );
 
 	m_WeapClip = new idClipModel( trm );
-	m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+	
+	// Only parries need a linked and auto-upated clipmodel
+	if( m_bParrying )
+		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 
 	// TODO: Set default contents of what??  
 	// We don't need to set meleeweapon since that's done explicitly in the trace
 	// Temporary test:
-	m_WeapClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	// m_WeapClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 }
 
 
