@@ -29,6 +29,7 @@ CMeleeWeapon::CMeleeWeapon( void )
 
 	m_bClipAxAlign = true;
 	m_bWorldCollide = false;
+	m_bModCM = false;
 
 	m_MeleeType = MELEETYPE_OVERHEAD;
 }
@@ -36,6 +37,46 @@ CMeleeWeapon::CMeleeWeapon( void )
 CMeleeWeapon::~CMeleeWeapon( void )
 {
 	// ClearClipModel();
+}
+
+void CMeleeWeapon::Save( idSaveGame *savefile ) const 
+{
+	m_Owner.Save( savefile );
+	
+	// TODO: How to save/restore the clipmodel pointer?  Just regenerate it?
+
+	savefile->WriteBool( m_bAttacking );
+	savefile->WriteBool( m_bParrying );
+	savefile->WriteString( m_ActionName );
+	savefile->WriteBool( m_bClipAxAlign );
+	savefile->WriteBool( m_bWorldCollide );
+	savefile->WriteBool( m_bModCM );
+	savefile->WriteInt( m_MeleeType );
+	savefile->WriteVec3( m_OldOrigin );
+	savefile->WriteMat3( m_OldAxis );
+}
+
+void CMeleeWeapon::Restore( idRestoreGame *savefile ) 
+{
+	m_Owner.Restore( savefile );
+
+	savefile->ReadBool( m_bAttacking );
+	savefile->ReadBool( m_bParrying );
+	savefile->ReadString( m_ActionName );
+	savefile->ReadBool( m_bClipAxAlign );
+	savefile->ReadBool( m_bWorldCollide );
+	savefile->ReadBool( m_bModCM );
+	int mType;
+	savefile->ReadInt( mType );
+	m_MeleeType = (EMeleeType) mType;
+	savefile->ReadVec3( m_OldOrigin );
+	savefile->ReadMat3( m_OldAxis );
+
+	// Regenerate the clipmodel
+	if( m_bModCM )
+		SetupClipModel();
+	else
+		m_WeapClip = NULL;
 }
 
 void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
@@ -47,13 +88,14 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 
 	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) != NULL )
 	{
-		m_MeleeType = (EMeleeTypes) atoi(key->GetValue().c_str());
+		m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
 		m_ActionName = AttName;
 		m_bAttacking = true;
 		// TODO: We shouldn't set the owner every time, should only have to set once
 		m_Owner = ActOwner;
 		m_bWorldCollide = spawnArgs.GetBool(va("att_world_collide_%s", AttName));
 
+		m_WeapClip = NULL;
 		if( spawnArgs.GetBool(va("att_mod_cm_%s", AttName) ) )
 		{
 			SetupClipModel();
@@ -85,11 +127,12 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 	// Test to see if parry exists in our args
 	if( (key = spawnArgs.FindKey(va("par_type_%s", ParryName))) != NULL )
 	{
-		m_MeleeType = (EMeleeTypes) atoi(key->GetValue().c_str());
+		m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
 		m_ActionName = ParryName;
 		m_bParrying = true;
 		idClipModel *pClip;
 
+		m_WeapClip = NULL;
 		if( spawnArgs.GetBool(va("par_mod_cm_%s", ParryName)) )
 		{
 			SetupClipModel();
@@ -237,7 +280,22 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit entity %s\r", other->name.c_str());
 		// Show the initial trace collision point
 		if( cv_melee_debug.GetBool() )
-			gameRenderWorld->DebugArrow( colorBlue, m_OldOrigin, tr.c.point, 3, 1000 );  
+			gameRenderWorld->DebugArrow( colorBlue,OldOrigin, tr.c.point, 3, 1000 );
+
+		// Calculate the instantaneous velocity _direction_ of the point that hit
+		// For now, we just need direction of velocity, not magnitude, don't need delta_t
+		idVec3 vLinearTrans = (NewOrigin - OldOrigin);
+
+		// Calc. translation due to angular velocity
+		// velocity of point = r x w
+		// Keep in mind that rotation was defined as a rotation about origin,
+		// not about the center of mass
+		idVec3 r = tr.c.point - OldOrigin;
+		idVec3 vSpinTrans = r.Cross((rotation.ToAngularVelocity()));
+
+		idVec3 PointVelDir = vLinearTrans + vSpinTrans;
+		// TODO: Divide by delta_t if we want to store velocity mag later
+		PointVelDir.Normalize();
 
 		// Secondary trace for when we hit the AF structure of an AI and want
 		// to see where we would hit on the actual model
@@ -246,14 +304,18 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		{
 			trace_t tr2;
 
-			idVec3 delta = tr.c.normal;
-			idVec3 start = tr.c.point + 8.0f * delta;
+			// NOTE: Just extrapolating along the velocity can fail when the AF
+			// extends outside of the rendermodel
+			// Just using the AF face normal can fail when hit at a corner
+			// So take an equal average of both
+			idVec3 trDir = ( PointVelDir - tr.c.normal ) / 2.0f;
 
+			idVec3 start = tr.c.point - 8.0f * PointVelDir;
 			int contentsEnt = GetPhysics()->GetContents();
 			GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 			gameLocal.clip.TracePoint
 				( 
-					tr2, start, tr.c.point - 8.0f * delta, 
+					tr2, start, tr.c.point + 8.0f * PointVelDir, 
 					CONTENTS_RENDERMODEL, m_Owner.GetEntity() 
 				);
 			GetPhysics()->SetContents( contentsEnt );
@@ -266,22 +328,43 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				// Draw the new collision point
 				if( cv_melee_debug.GetBool() )
+				{
 					gameRenderWorld->DebugArrow( colorRed, start, tr2.c.point, 3, 1000 );
+				}
 			}
 			else
 			{
 				// If we failed to find anything, draw the attempted trace in green
 				// TODO: Also see if we can at least set up damage groups correctly from the AF body hit
-				// What about armour setting?
 				if( cv_melee_debug.GetBool() )
-					gameRenderWorld->DebugArrow( colorGreen, start, tr.c.point - 8.0f * delta, 3, 1000 );
+					gameRenderWorld->DebugArrow( colorGreen, start, tr.c.point + 8.0f * PointVelDir, 3, 1000 );
 			}
+
+			// Uncomment for translational and angular velocity debugging
+			if( cv_melee_debug.GetBool() )
+			{
+				idVec3 vLinDir = vLinearTrans;
+				idVec3 vSpinDir = vSpinTrans;
+				vLinDir.Normalize();
+				vSpinDir.Normalize();
+
+				gameRenderWorld->DebugArrow
+					(
+						colorCyan, (tr.c.point - 8.0f * vLinDir), 
+						(tr.c.point + 8.0f * vLinDir), 3, 1000
+					);
+				// Uncomment for translational and angular velocity debugging
+				gameRenderWorld->DebugArrow
+					(
+						colorPurple, (tr.c.point - 8.0f * vSpinDir), 
+						(tr.c.point + 8.0f * vSpinDir), 3, 1000
+					);
+			}
+
 		}
 
-
-		// TODO: Incorporate angular momentum into knockback/impulse dir?
-		idVec3 dir = NewOrigin - OldOrigin;
-		dir.NormalizeFast();
+		// Direction of the velocity of point that hit (renamed it for brevity)
+		idVec3 dir = PointVelDir;
 
 		idEntity *AttachOwner(NULL);
 		if( other->IsType(idAFAttachment::Type) )
@@ -547,8 +630,3 @@ void CMeleeWeapon::SetupClipModel( )
 	// Temporary test:
 	// m_WeapClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 }
-
-
-
-
-

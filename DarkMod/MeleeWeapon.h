@@ -30,7 +30,7 @@ typedef enum
 	MELEETYPE_SLASH_RL		= BIT(2), // slashing (attacker's) right to left
 	MELEETYPE_THRUST		= BIT(3),
 	MELEETYPE_UNBLOCKABLE	= BIT(4)
-} EMeleeTypes;
+} EMeleeType;
 
 class CMeleeWeapon : public idMoveable 
 {
@@ -41,15 +41,12 @@ public:
 							virtual ~CMeleeWeapon( void );
 
 	/**
-	* We modify Collide to send some notifications back to weapon owner and damage
-	* the AI hit based on the damageDef
-	**/
-	// virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
-
-	/**
 	* Think loop calls idMoveable::Think, then checks collisions for attacks with bound weapons
 	**/
 	virtual void			Think( void );
+
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
 
 	/**
 	* Get, set or clear the actor that owns this weapon
@@ -166,10 +163,15 @@ protected:
 	bool					m_bWorldCollide;
 
 	/**
+	* Whether we're using a modified clipmodel or our own entity clipmodel
+	**/
+	bool					m_bModCM;
+
+	/**
 	* Type of melee action for parry tests
 	* Slash, overhand, thrust, or unblockable
 	**/
-	EMeleeTypes				m_MeleeType;
+	EMeleeType				m_MeleeType;
 
 	/**
 	* Origin and axis from the previous frame
