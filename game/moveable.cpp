@@ -99,21 +99,25 @@ void idMoveable::Spawn( void ) {
 		clipModelName = spawnArgs.GetString( "model" );		// use the visual model
 	}
 
-	if ( !collisionModelManager->TrmFromModel( clipModelName, trm ) ) {
-		gameLocal.Error( "idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str() );
-		return;
-	}
+	// tels: support "model" "" with "noclipmodel" "0" - do not attempt to load
+	// the clipmodel from the non-existing model name in this case:
+	if (clipModelName.Length()) {
+		if ( !collisionModelManager->TrmFromModel( clipModelName, trm ) ) {
+			gameLocal.Error( "idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str() );
+			return;
+		}
 
-	// angua: check if the cm is valid
-	if (idMath::Fabs(trm.bounds[0].x) == idMath::INFINITY)
-	{
-		gameLocal.Error( "idMoveable '%s': invalid collision model %s", name.c_str(), clipModelName.c_str() );
-	}
+		// angua: check if the cm is valid
+		if (idMath::Fabs(trm.bounds[0].x) == idMath::INFINITY)
+		{
+			gameLocal.Error( "idMoveable '%s': invalid collision model %s", name.c_str(), clipModelName.c_str() );
+		}
 
-	// if the model should be shrunk
-	clipShrink = spawnArgs.GetInt( "clipshrink" );
-	if ( clipShrink != 0 ) {
-		trm.Shrink( clipShrink * CM_CLIP_EPSILON );
+		// if the model should be shrunk
+		clipShrink = spawnArgs.GetInt( "clipshrink" );
+		if ( clipShrink != 0 ) {
+			trm.Shrink( clipShrink * CM_CLIP_EPSILON );
+		}
 	}
 
 	// get rigid body properties
