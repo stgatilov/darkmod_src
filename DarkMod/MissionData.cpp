@@ -494,7 +494,9 @@ bool	CMissionData::MatchSpec
 	
 	// objectives only have two specified ents at max
 	if( !pComp || !EntDat || ind > 1 )
-		goto Quit;
+	{
+		return false;
+	}
 
 	ESpecificationMethod SpecMethod = pComp->m_SpecMethod[ ind ];
 
@@ -536,7 +538,6 @@ bool	CMissionData::MatchSpec
 			break;
 	}
 
-Quit:
 	return bReturnVal;
 }
 
