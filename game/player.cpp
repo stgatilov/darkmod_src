@@ -9431,7 +9431,7 @@ void idPlayer::FrobCheck( void )
 		
 		idPhysics_Player* playerPhysics = static_cast<idPhysics_Player*>(GetPhysics());
 
-		// greebo: Check if the frobbed entity is the bind master of the currently climbed rope
+		// greebo: Check if the frobbed entity is the bindmaster of the currently climbed rope
 		bool isRopeMaster = playerPhysics->OnRope() && playerPhysics->GetRopeEntity()->GetBindMaster() == ent;
 
 		// ishtvan: Check if the frobbed entity is a dynamically added AF body linked to another entity

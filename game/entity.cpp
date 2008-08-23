@@ -2809,7 +2809,7 @@ void idEntity::FinishBind( void )
 	// make sure the team master is active so that physics get run
 	teamMaster->BecomeActive( TH_PHYSICS );
 	
-	// Notify bind master of this binding
+	// Notify bindmaster of this binding
 	bindMaster->BindNotify( this );
 }
 
@@ -2985,7 +2985,7 @@ void idEntity::Unbind( void ) {
 		return;
 	}
 
-	// TDM: Notify bind master of unbinding
+	// TDM: Notify bindmaster of unbinding
 	bindMaster->UnbindNotify( this );
 
 	if ( !teamMaster ) {
