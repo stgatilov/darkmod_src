@@ -537,13 +537,22 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 				gameLocal.ProjectDecal( tr->c.point, -tr->c.normal, 8.0f, true, 6.0, decal );
 			}
 
-			// TODO: Strike smoke FX (sparks.. blood is handled above for now?)
+			// Strike particle FX (sparks.. blood is handled in AddDamageEffect)
+			const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", materialType.c_str()) );
 
-			// strike smoke FX (how is this different from AddDamageEffect?
+			if ( *smokeName != '\0' )
+			{
+				const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
+				float chance = DmgDef->GetFloat( va("smoke_chance_%s", materialType.c_str()), "1.0" );
+				if( gameLocal.random.RandomFloat() > chance )
+					smoke = NULL;
 
-			// strikeSmokeStartTime = gameLocal.time;
-			// strikePos = tr.c.point;
-			// strikeAxis = -tr.endAxis;
+				gameLocal.smokeParticles->EmitSmoke
+					( 
+						smoke, gameLocal.time, 
+						gameLocal.random.RandomFloat(), tr->c.point, -tr->endAxis
+					);
+			}
 		}
 	}
 
