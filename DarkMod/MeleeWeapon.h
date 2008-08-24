@@ -25,11 +25,11 @@ class idPlayer;
 
 typedef enum
 {
-	MELEETYPE_OVERHEAD		= BIT(0),
-	MELEETYPE_SLASH_LR		= BIT(1), // slashing (attacker's) left to right
-	MELEETYPE_SLASH_RL		= BIT(2), // slashing (attacker's) right to left
-	MELEETYPE_THRUST		= BIT(3),
-	MELEETYPE_UNBLOCKABLE	= BIT(4)
+	MELEETYPE_OVERHEAD,
+	MELEETYPE_SLASH_LR, // slashing (attacker's) left to right
+	MELEETYPE_SLASH_RL, // slashing (attacker's) right to left
+	MELEETYPE_THRUST,
+	MELEETYPE_UNBLOCKABLE // e.g., animal claws
 } EMeleeType;
 
 class CMeleeWeapon : public idMoveable 
