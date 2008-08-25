@@ -162,7 +162,9 @@ public:
 	idScriptBool			AI_STRAFE_LEFT;
 	idScriptBool			AI_STRAFE_RIGHT;
 	idScriptBool			AI_ATTACK_HELD;
+	idScriptBool			AI_BLOCK_HELD;
 	idScriptBool			AI_WEAPON_FIRED;
+	idScriptBool			AI_WEAPON_BLOCKED;
 	idScriptBool			AI_JUMP;
 	idScriptBool			AI_CROUCH;
 	idScriptBool			AI_ONGROUND;
@@ -856,6 +858,7 @@ private:
 
 	void					StopFiring( void );
 	void					FireWeapon( void );
+	void					BlockWeapon( void );
 	void					Weapon_Combat( void );
 	void					Weapon_NPC( void );
 	void					Weapon_GUI( void );

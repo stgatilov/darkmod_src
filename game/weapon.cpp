@@ -79,6 +79,7 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Weapon_ClipSize,					idWeapon::Event_ClipSize )
 	EVENT( AI_PlayAnim,							idWeapon::Event_PlayAnim )
 	EVENT( AI_PauseAnim,						idWeapon::Event_PauseAnim )
+	EVENT( AI_AnimIsPaused,						idWeapon::Event_AnimIsPaused )
 	EVENT( AI_PlayCycle,						idWeapon::Event_PlayCycle )
 	EVENT( AI_SetBlendFrames,					idWeapon::Event_SetBlendFrames )
 	EVENT( AI_GetBlendFrames,					idWeapon::Event_GetBlendFrames )
@@ -394,6 +395,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	// Re-link script fields
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_BLOCK.LinkTo(		scriptObject, "WEAPON_BLOCK" );
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
@@ -556,6 +558,7 @@ void idWeapon::Clear( void ) {
 	scriptObject.Free();
 
 	WEAPON_ATTACK.Unlink();
+	WEAPON_BLOCK.Unlink();
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
@@ -1065,6 +1068,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	}
 
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_BLOCK.LinkTo(		scriptObject, "WEAPON_BLOCK" );
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
@@ -1482,7 +1486,8 @@ void idWeapon::OwnerDied( void ) {
 idWeapon::BeginAttack
 ================
 */
-void idWeapon::BeginAttack( void ) {	
+void idWeapon::BeginAttack( void ) 
+{	
 	if ( status != WP_OUTOFAMMO ) {
 		lastAttack = gameLocal.time;
 	}
@@ -1504,15 +1509,55 @@ void idWeapon::BeginAttack( void ) {
 idWeapon::EndAttack
 ================
 */
-void idWeapon::EndAttack( void ) {
-	if ( !WEAPON_ATTACK.IsLinked() ) {
+void idWeapon::EndAttack( void ) 
+{
+	if ( !WEAPON_ATTACK.IsLinked() )
 		return;
-	}
 	if ( WEAPON_ATTACK ) {
 		WEAPON_ATTACK = false;
 		if ( sndHum ) {
 			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 		}
+	}
+}
+
+/*
+================
+idWeapon::BeginBlock
+================
+*/
+void idWeapon::BeginBlock( void ) 
+{	
+	lastBlock = gameLocal.time;
+
+	if ( !isLinked )
+		return;
+
+	if ( !WEAPON_BLOCK ) 
+	{
+		if ( sndHum ) 
+		{
+			StopSound( SND_CHANNEL_BODY, false );
+		}
+	}
+	WEAPON_BLOCK = true;
+}
+
+/*
+================
+idWeapon::EndBlock
+================
+*/
+void idWeapon::EndBlock( void ) 
+{
+	if ( !WEAPON_BLOCK.IsLinked() ) 
+		return;
+
+	if ( WEAPON_BLOCK ) 
+	{
+		WEAPON_BLOCK = false;
+		if ( sndHum )
+			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 	}
 }
 
@@ -2108,6 +2153,7 @@ void idWeapon::EnterCinematic( void ) {
 		thread->Execute();
 
 		WEAPON_ATTACK		= false;
+		WEAPON_BLOCK		= false;
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
@@ -2757,6 +2803,16 @@ idWeapon::Event_PauseAnim
 void idWeapon::Event_PauseAnim( int channel, bool bPause )
 {
 	animator.CurrentAnim( channel )->Pause( bPause );
+}
+
+/*
+===============
+idWeapon::Event_AnimIsPaused
+===============
+*/
+void idWeapon::Event_AnimIsPaused( int channel )
+{
+	idThread::ReturnInt( animator.CurrentAnim( channel )->IsPaused() );
 }
 
 /*

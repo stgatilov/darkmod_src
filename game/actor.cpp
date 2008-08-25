@@ -215,6 +215,11 @@ void idAnimState::PauseAnim( int channel, bool bPause)
 	animator->CurrentAnim( channel )->Pause( bPause );
 }
 
+bool idAnimState::AnimIsPaused( int channel )
+{
+	return animator->CurrentAnim( channel )->IsPaused();
+}
+
 /*
 =====================
 idAnimState::BecomeIdle
@@ -390,6 +395,7 @@ const idEventDef AI_StopAnim( "stopAnim", "dd" );
 // by idWeapon (maybe this is due to limited polymorphism in scripting?)
 const idEventDef AI_PlayAnim( "playAnim", "ds", 'd' );
 const idEventDef AI_PauseAnim( "pauseAnim", "dd" );
+const idEventDef AI_AnimIsPaused( "animIsPaused", "d", 'd' );
 const idEventDef AI_PlayCycle( "playCycle", "ds", 'd' );
 const idEventDef AI_IdleAnim( "idleAnim", "ds", 'd' );
 const idEventDef AI_SetSyncedAnimWeight( "setSyncedAnimWeight", "ddf" );
@@ -462,6 +468,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_StopAnim,					idActor::Event_StopAnim )
 	EVENT( AI_PlayAnim,					idActor::Event_PlayAnim )
 	EVENT( AI_PauseAnim,				idActor::Event_PauseAnim )
+	EVENT( AI_AnimIsPaused,				idActor::Event_AnimIsPaused )
 	EVENT( AI_PlayCycle,				idActor::Event_PlayCycle )
 	EVENT( AI_IdleAnim,					idActor::Event_IdleAnim )
 	EVENT( AI_SetSyncedAnimWeight,		idActor::Event_SetSyncedAnimWeight )
@@ -3224,6 +3231,16 @@ idActor::Event_PauseAnim
 void idActor::Event_PauseAnim( int channel, bool bPause )
 {
 	animator.CurrentAnim( channel )->Pause( bPause );
+}
+
+/*
+===============
+idActor::Event_AnimIsPaused
+===============
+*/
+void idActor::Event_AnimIsPaused( int channel )
+{
+	idThread::ReturnInt( animator.CurrentAnim( channel )->IsPaused() );
 }
 
 /*

@@ -88,6 +88,8 @@ public:
 	void					OwnerDied( void );
 	void					BeginAttack( void );
 	void					EndAttack( void );
+	void					BeginBlock( void );
+	void					EndBlock( void );
 	bool					IsReady( void ) const;
 	bool					IsReloading( void ) const;
 	bool					IsHolstered( void ) const;
@@ -294,7 +296,8 @@ private:
 	bool					nozzleFx;			// does this use nozzle effects ( parm5 at rest, parm6 firing )
 										// this also assumes a nozzle light atm
 	int						nozzleFxFade;		// time it takes to fade between the effects
-	int						lastAttack;			// last time an attack occured
+	int						lastAttack;			// last time an attack occurred
+	int						lastBlock;			// last time a block occurred
 	renderLight_t			nozzleGlow;			// nozzle light
 	int						nozzleGlowHandle;	// handle for nozzle light
 
@@ -338,6 +341,7 @@ private:
 	void					Event_ClipSize( void );
 	void					Event_PlayAnim( int channel, const char *animname );
 	void					Event_PauseAnim( int channel, bool bPause );
+	void					Event_AnimIsPaused( int channel );
 	void					Event_PlayCycle( int channel, const char *animname );
 	void					Event_AnimDone( int channel, int blendFrames );
 	void					Event_SetBlendFrames( int channel, int blendFrames );

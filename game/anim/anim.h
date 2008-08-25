@@ -412,10 +412,6 @@ private:
 	**/
 	bool						m_bPaused;
 	/**
-	* Frame at which we are paused:
-	**/
-	short						m_PausedFrame;
-	/**
 	* endtime and cycle before we paused
 	* The following are used for proper re-entry when unpausing
 	**/
@@ -475,6 +471,7 @@ public:
 	* Pause (true) or unpause (false) the animation at the current frame
 	**/
 	void						Pause( bool bPause );
+	bool						IsPaused( void );
 };
 
 /*

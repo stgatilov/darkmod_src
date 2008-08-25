@@ -437,7 +437,9 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_STRAFE_LEFT.LinkTo(		scriptObject, "AI_STRAFE_LEFT" );
 	AI_STRAFE_RIGHT.LinkTo(		scriptObject, "AI_STRAFE_RIGHT" );
 	AI_ATTACK_HELD.LinkTo(		scriptObject, "AI_ATTACK_HELD" );
+	AI_BLOCK_HELD.LinkTo(		scriptObject, "AI_BLOCK_HELD" );
 	AI_WEAPON_FIRED.LinkTo(		scriptObject, "AI_WEAPON_FIRED" );
+	AI_WEAPON_BLOCKED.LinkTo(	scriptObject, "AI_WEAPON_BLOCKED" );
 	AI_JUMP.LinkTo(				scriptObject, "AI_JUMP" );
 	AI_DEAD.LinkTo(				scriptObject, "AI_DEAD" );
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH" );
@@ -655,7 +657,9 @@ void idPlayer::Init( void ) {
 	AI_STRAFE_LEFT	= false;
 	AI_STRAFE_RIGHT	= false;
 	AI_ATTACK_HELD	= false;
+	AI_BLOCK_HELD	= false;
 	AI_WEAPON_FIRED	= false;
+	AI_WEAPON_BLOCKED = false;
 	AI_JUMP			= false;
 	AI_DEAD			= false;
 	AI_CROUCH		= false;
@@ -2357,7 +2361,9 @@ void idPlayer::EnterCinematic( void ) {
 	AI_STRAFE_RIGHT	= false;
 	AI_RUN			= false;
 	AI_ATTACK_HELD	= false;
+	AI_BLOCK_HELD	= false;
 	AI_WEAPON_FIRED	= false;
+	AI_WEAPON_BLOCKED = false;
 	AI_JUMP			= false;
 	AI_CROUCH		= false;
 	AI_ONGROUND		= true;
@@ -2467,8 +2473,11 @@ void idPlayer::WeaponFireFeedback( const idDict *weaponDef ) {
 idPlayer::StopFiring
 ===============
 */
-void idPlayer::StopFiring( void ) {
+void idPlayer::StopFiring( void ) 
+{
 	AI_ATTACK_HELD	= false;
+	AI_BLOCK_HELD	= false;
+	AI_WEAPON_BLOCKED = false;
 	AI_WEAPON_FIRED = false;
 	AI_RELOAD		= false;
 	if ( weapon.GetEntity() ) {
@@ -2481,7 +2490,8 @@ void idPlayer::StopFiring( void ) {
 idPlayer::FireWeapon
 ===============
 */
-void idPlayer::FireWeapon( void ) {
+void idPlayer::FireWeapon( void ) 
+{
 	idMat3 axis;
 	idVec3 muzzle;
 
@@ -2496,17 +2506,22 @@ void idPlayer::FireWeapon( void ) {
 		}
 	}
 
-	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) {
-		if ( weapon.GetEntity()->AmmoInClip() || weapon.GetEntity()->AmmoAvailable() ) {
+	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) 
+	{
+		if ( weapon.GetEntity()->AmmoInClip() || weapon.GetEntity()->AmmoAvailable() ) 
+		{
 			AI_ATTACK_HELD = true;
 			weapon.GetEntity()->BeginAttack();
-			if ( ( weapon_soulcube >= 0 ) && ( currentWeapon == weapon_soulcube ) ) {
-				if ( hud ) {
+			if ( ( weapon_soulcube >= 0 ) && ( currentWeapon == weapon_soulcube ) ) 
+			{
+				if ( hud ) 
+				{
 					hud->HandleNamedEvent( "soulCubeNotReady" );
 				}
 				SelectWeapon( previousWeapon, false );
 			}
-		} else {
+		} else 
+		{
 			NextBestWeapon();
 		}
 	}
@@ -2520,6 +2535,25 @@ void idPlayer::FireWeapon( void ) {
 		if ( objectiveUp ) {
 			HideObjective();
 		}
+	}
+}
+
+/*
+===============
+idPlayer::BlockWeapon
+===============
+*/
+void idPlayer::BlockWeapon( void ) 
+{
+	if ( privateCameraView ) 
+	{
+		return;
+	}
+
+	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) 
+	{
+		AI_BLOCK_HELD = true;
+		weapon.GetEntity()->BeginBlock();
 	}
 }
 
@@ -3246,12 +3280,26 @@ void idPlayer::Weapon_Combat( void ) {
 
 	// check for attack
 	AI_WEAPON_FIRED = false;
-	if ( !influenceActive ) {
+	if ( !influenceActive ) 
+	{
 		if ( ( usercmd.buttons & BUTTON_ATTACK ) && !weaponGone ) {
 			FireWeapon();
 		} else if ( oldButtons & BUTTON_ATTACK ) {
 			AI_ATTACK_HELD = false;
 			weapon.GetEntity()->EndAttack();
+		}
+	}
+
+	// check for block
+	AI_WEAPON_BLOCKED = false;
+	if ( !influenceActive ) 
+	{
+		if ( ( usercmd.buttons & BUTTON_ZOOM ) && !weaponGone )
+			BlockWeapon();
+		else if ( oldButtons & BUTTON_ZOOM ) 
+		{
+			AI_BLOCK_HELD = false;
+			weapon.GetEntity()->EndBlock();
 		}
 	}
 
@@ -7793,12 +7841,13 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	usercmd = gameLocal.usercmds[ entityNumber ];
 
-	if ( entityNumber != gameLocal.localClientNum ) {
-
+	if ( entityNumber != gameLocal.localClientNum ) 
+	{
 		// ignore attack button of other clients. that's no good for predictions
 
 		usercmd.buttons &= ~BUTTON_ATTACK;
-
+		// tdm: Also ignore block button
+		usercmd.buttons &= ~BUTTON_ZOOM;
 	}
 
 
