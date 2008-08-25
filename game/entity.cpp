@@ -6468,7 +6468,7 @@ idAnimatedEntity::AddLocalDamageEffect
 ==============
 */
 void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localOrigin, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial ) {
-	const char *sound, *splat, *decal, *bleed, *chance, *key;
+	const char *sound, *splat, *decal, *bleed, *key;
 	damageEffect_t	*de;
 	idVec3 origin, dir;
 	idMat3 axis;
@@ -6538,9 +6538,9 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		de->localOrigin = localOrigin;
 		de->localNormal = localNormal;
 		de->type = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, bleed ) );
-		float chance;
+		
 		key = va( "smoke_chance_%s", surfName.c_str() );
-		def->dict.GetFloat( va("smoke_chance_%s", surfName.c_str()), "1.0" );
+		float chance = def->dict.GetFloat( va("smoke_chance_%s", surfName.c_str()), "1.0" );
 		if( gameLocal.random.RandomFloat() > chance )
 			de->type = NULL;
 		de->time = gameLocal.time;

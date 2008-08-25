@@ -1257,8 +1257,12 @@ void idAnimBlend::Restore( idRestoreGame *savefile, const idDeclModelDef *modelD
 	}
 	savefile->ReadBool( allowMove );
 	savefile->ReadBool( allowFrameCommands );
+
 	savefile->ReadBool( m_bPaused );
 	savefile->ReadShort( m_PausedFrame );
+	savefile->ReadInt( m_PausedTime );
+	savefile->ReadInt( m_PausedEndtime );
+	savefile->ReadShort( m_PausedCycle );
 }
 
 /*
