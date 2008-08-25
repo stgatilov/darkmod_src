@@ -160,6 +160,7 @@ protected:
 private:
 	// script control
 	idScriptBool			WEAPON_ATTACK;
+	idScriptBool			WEAPON_BLOCK;
 	idScriptBool			WEAPON_RELOAD;
 	idScriptBool			WEAPON_NETRELOAD;
 	idScriptBool			WEAPON_NETENDRELOAD;
@@ -171,6 +172,10 @@ private:
 	idStr					state;
 	idStr					idealState;
 	int						animBlendFrames;
+	/**
+	* TDM: animDoneTime no longer used, but keep it around
+	* for compatibility with future patches/engines
+	**/
 	int						animDoneTime;
 	bool					isLinked;
 
@@ -332,6 +337,7 @@ private:
 	void					Event_TotalAmmoCount( void );
 	void					Event_ClipSize( void );
 	void					Event_PlayAnim( int channel, const char *animname );
+	void					Event_PauseAnim( int channel, bool bPause );
 	void					Event_PlayCycle( int channel, const char *animname );
 	void					Event_AnimDone( int channel, int blendFrames );
 	void					Event_SetBlendFrames( int channel, int blendFrames );

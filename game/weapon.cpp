@@ -78,6 +78,7 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Weapon_TotalAmmoCount,			idWeapon::Event_TotalAmmoCount )
 	EVENT( EV_Weapon_ClipSize,					idWeapon::Event_ClipSize )
 	EVENT( AI_PlayAnim,							idWeapon::Event_PlayAnim )
+	EVENT( AI_PauseAnim,						idWeapon::Event_PauseAnim )
 	EVENT( AI_PlayCycle,						idWeapon::Event_PlayCycle )
 	EVENT( AI_SetBlendFrames,					idWeapon::Event_SetBlendFrames )
 	EVENT( AI_GetBlendFrames,					idWeapon::Event_GetBlendFrames )
@@ -2750,13 +2751,34 @@ void idWeapon::Event_PlayCycle( int channel, const char *animname ) {
 
 /*
 ===============
+idWeapon::Event_PauseAnim
+===============
+*/
+void idWeapon::Event_PauseAnim( int channel, bool bPause )
+{
+	animator.CurrentAnim( channel )->Pause( bPause );
+}
+
+/*
+===============
 idWeapon::Event_AnimDone
 ===============
 */
-void idWeapon::Event_AnimDone( int channel, int blendFrames ) {
-	if ( animDoneTime - FRAME2MS( blendFrames ) <= gameLocal.time ) {
+void idWeapon::Event_AnimDone( int channel, int blendFrames ) 
+{
+// ishtvan: rewrote this to be more like what happens in idActor/idAnimState
+	int DoneTime = animator.CurrentAnim( channel )->GetEndTime();
+
+	if (DoneTime < 0)
+	{
+		// playing a cycle or paused
+		idThread::ReturnInt( false );
+	}
+	else if ( DoneTime - FRAME2MS( blendFrames ) <= gameLocal.time ) 
+	{
 		idThread::ReturnInt( true );
-	} else {
+	} else 
+	{
 		idThread::ReturnInt( false );
 	}
 }

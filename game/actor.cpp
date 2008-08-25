@@ -210,6 +210,11 @@ void idAnimState::CycleAnim( int anim ) {
 	animBlendFrames = 0;
 }
 
+void idAnimState::PauseAnim( int channel, bool bPause)
+{
+	animator->CurrentAnim( channel )->Pause( bPause );
+}
+
 /*
 =====================
 idAnimState::BecomeIdle
@@ -381,7 +386,10 @@ const idEventDef EV_DisableWalkIK( "DisableWalkIK" );
 const idEventDef EV_EnableLegIK( "EnableLegIK", "d" );
 const idEventDef EV_DisableLegIK( "DisableLegIK", "d" );
 const idEventDef AI_StopAnim( "stopAnim", "dd" );
+// NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
+// by idWeapon (maybe this is due to limited polymorphism in scripting?)
 const idEventDef AI_PlayAnim( "playAnim", "ds", 'd' );
+const idEventDef AI_PauseAnim( "pauseAnim", "dd" );
 const idEventDef AI_PlayCycle( "playCycle", "ds", 'd' );
 const idEventDef AI_IdleAnim( "idleAnim", "ds", 'd' );
 const idEventDef AI_SetSyncedAnimWeight( "setSyncedAnimWeight", "ddf" );
@@ -453,6 +461,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetAnimPrefix,			idActor::Event_SetAnimPrefix )
 	EVENT( AI_StopAnim,					idActor::Event_StopAnim )
 	EVENT( AI_PlayAnim,					idActor::Event_PlayAnim )
+	EVENT( AI_PauseAnim,				idActor::Event_PauseAnim )
 	EVENT( AI_PlayCycle,				idActor::Event_PlayCycle )
 	EVENT( AI_IdleAnim,					idActor::Event_IdleAnim )
 	EVENT( AI_SetSyncedAnimWeight,		idActor::Event_SetSyncedAnimWeight )
@@ -3205,6 +3214,16 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 	}
 
 	idThread::ReturnInt( true );
+}
+
+/*
+===============
+idActor::Event_PauseAnim
+===============
+*/
+void idActor::Event_PauseAnim( int channel, bool bPause )
+{
+	animator.CurrentAnim( channel )->Pause( bPause );
 }
 
 /*

@@ -141,7 +141,14 @@ typedef enum {
 * and crouchwalking animations to get correct footstep sounds.
 **/
 	FC_SETRATE,
+/**
+* Move an attachment to a different position
+**/
 	FC_REATTACH,
+/**
+* Pause the animation at its current frame, wait for unpause from somewhere else
+**/
+	FC_PAUSE,
 	FC_MELEE_ATTACK_START,
 	FC_MELEE_ATTACK_STOP,
 	FC_MELEE_PARRY_START,
@@ -400,6 +407,24 @@ private:
 	short						animNum;
 	bool						allowMove;
 	bool						allowFrameCommands;
+	/**
+	* TDM: This animation is paused at the current frame
+	**/
+	bool						m_bPaused;
+	/**
+	* Frame at which we are paused:
+	**/
+	short						m_PausedFrame;
+	/**
+	* endtime and cycle before we paused
+	* The following are used for proper re-entry when unpausing
+	**/
+	int							m_PausedEndtime;
+	short						m_PausedCycle;
+	/**
+	* Time at which we paused
+	**/
+	int							m_PausedTime;
 
 	friend class				idAnimator;
 
@@ -446,6 +471,10 @@ public:
 	void						AllowFrameCommands( bool allow );
 	const idAnim				*Anim( void ) const;
 	int							AnimNum( void ) const;
+	/**
+	* Pause (true) or unpause (false) the animation at the current frame
+	**/
+	void						Pause( bool bPause );
 };
 
 /*

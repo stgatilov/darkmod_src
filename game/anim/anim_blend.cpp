@@ -626,6 +626,10 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		
 		fc.string->Append(va(" %s", token.c_str() ));
 	}
+	else if ( token == "pause" ) 
+	{
+		fc.type = FC_PAUSE;
+	}
 	// Melee Combat Frame commands
 	else if ( token == "melee_attack_start" )
 	{
@@ -1024,6 +1028,11 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					ent->ReAttachToPos( AttName, AttPos );
 					break;
 				}
+				case FC_PAUSE:
+				{
+					caller->Pause( true );
+					break;
+				}
 				case FC_MELEE_ATTACK_START:
 				{
 					const char *WeapName, *AttName;
@@ -1205,6 +1214,11 @@ void idAnimBlend::Save( idSaveGame *savefile ) const {
 	savefile->WriteShort( animNum );
 	savefile->WriteBool( allowMove );
 	savefile->WriteBool( allowFrameCommands );
+	savefile->WriteBool( m_bPaused );
+	savefile->WriteShort( m_PausedFrame );
+	savefile->WriteInt( m_PausedTime );
+	savefile->WriteInt( m_PausedEndtime );
+	savefile->WriteShort( m_PausedCycle );
 }
 
 /*
@@ -1243,6 +1257,8 @@ void idAnimBlend::Restore( idRestoreGame *savefile, const idDeclModelDef *modelD
 	}
 	savefile->ReadBool( allowMove );
 	savefile->ReadBool( allowFrameCommands );
+	savefile->ReadBool( m_bPaused );
+	savefile->ReadShort( m_PausedFrame );
 }
 
 /*
@@ -1250,7 +1266,10 @@ void idAnimBlend::Restore( idRestoreGame *savefile, const idDeclModelDef *modelD
 idAnimBlend::Reset
 =====================
 */
-void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) {
+void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) 
+{
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAnimBlend::Reset called\r");
+
 	modelDef	= _modelDef;
 	cycle		= 1;
 	starttime	= 0;
@@ -1260,6 +1279,12 @@ void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) {
 	frame		= 0;
 	allowMove	= true;
 	allowFrameCommands = true;
+	m_bPaused	= false;
+	m_PausedFrame = 0;
+	m_PausedEndtime = 0;
+	m_PausedCycle = 1;
+	m_PausedTime = 0;
+
 	animNum		= 0;
 
 	memset( animWeights, 0, sizeof( animWeights ) );
@@ -1560,7 +1585,11 @@ void idAnimBlend::Clear( int currentTime, int clearTime ) {
 idAnimBlend::IsDone
 =====================
 */
-bool idAnimBlend::IsDone( int currentTime ) const {
+bool idAnimBlend::IsDone( int currentTime ) const 
+{
+	if( m_bPaused )
+		return false;
+
 	if ( !frame && ( endtime > 0 ) && ( currentTime >= endtime ) ) {
 		return true;
 	}
@@ -1577,26 +1606,25 @@ bool idAnimBlend::IsDone( int currentTime ) const {
 idAnimBlend::FrameHasChanged
 =====================
 */
-bool idAnimBlend::FrameHasChanged( int currentTime ) const {
+bool idAnimBlend::FrameHasChanged( int currentTime ) const 
+{
 	// if we don't have an anim, no change
-	if ( !animNum ) {
+	if ( !animNum )
 		return false;
-	}
 
 	// if anim is done playing, no change
-	if ( ( endtime > 0 ) && ( currentTime > endtime ) ) {
+	if ( ( endtime > 0 ) && ( currentTime > endtime ) )
 		return false;
-	}
 
 	// if our blend weight changes, we need to update
-	if ( ( currentTime < ( blendStartTime + blendDuration ) && ( blendStartValue != blendEndValue ) ) ) {
+	if ( ( currentTime < ( blendStartTime + blendDuration ) 
+			&& ( blendStartValue != blendEndValue ) ) )
 		return true;
-	}
 
 	// if we're a single frame anim and this isn't the frame we started on, we don't need to update
-	if ( ( frame || ( NumFrames() == 1 ) ) && ( currentTime != starttime ) ) {
+	// Or if we are paused at a single frame
+	if ( ( frame || ( NumFrames() == 1 ) || m_bPaused ) && ( currentTime != starttime ) )
 		return false;
-	}
 
 	return true;
 }
@@ -1758,6 +1786,44 @@ void idAnimBlend::AllowFrameCommands( bool allow ) {
 	allowFrameCommands = allow;
 }
 
+/*
+=====================
+idAnimBlend::Pause
+=====================
+*/
+void idAnimBlend::Pause( bool bPause )
+{
+	// going from unpaused to paused
+	if( bPause && !m_bPaused )
+	{
+		m_PausedFrame = frame;
+		m_PausedEndtime = endtime;
+		m_PausedCycle = cycle;
+		m_PausedTime = gameLocal.time;
+
+		endtime				= -1;
+		cycle				= -1;
+
+		gameLocal.Printf("Animation was paused \n");
+	}
+	// going from paused to unpaused
+	else if( !bPause && m_bPaused )
+	{
+		// how long were we paused for
+		int deltaT = gameLocal.time - m_PausedTime;
+
+		starttime += deltaT;
+		if( m_PausedEndtime > 0 )
+			endtime = m_PausedEndtime + deltaT;
+		cycle = m_PausedCycle;
+		frame = m_PausedFrame;
+
+		gameLocal.Printf("Animation was unpaused \n");
+	}
+	
+	m_bPaused = bPause;	
+}
+
 
 /*
 =====================
@@ -1787,15 +1853,16 @@ int idAnimBlend::AnimNum( void ) const {
 idAnimBlend::AnimTime
 =====================
 */
-int idAnimBlend::AnimTime( int currentTime ) const {
+int idAnimBlend::AnimTime( int currentTime ) const 
+{
 	int time;
 	int length;
 	const idAnim *anim = Anim();
 
-	if ( anim ) {
-		if ( frame ) {
+	if ( anim ) 
+	{
+		if ( frame )
 			return FRAME2MS( frame - 1 );
-		}
 
 		// most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
 		if ( rate == 1.0f ) {
@@ -1827,19 +1894,18 @@ int idAnimBlend::AnimTime( int currentTime ) const {
 idAnimBlend::GetFrameNumber
 =====================
 */
-int idAnimBlend::GetFrameNumber( int currentTime ) const {
+int idAnimBlend::GetFrameNumber( int currentTime ) const 
+{
 	const idMD5Anim	*md5anim;
 	frameBlend_t	frameinfo;
 	int				animTime;
 
 	const idAnim *anim = Anim();
-	if ( !anim ) {
+	if ( !anim ) 
 		return 1;
-	}
 
-	if ( frame ) {
+	if ( frame ) 
 		return frame;
-	}
 
 	md5anim = anim->MD5Anim( 0 );
 	animTime = AnimTime( currentTime );
@@ -1860,14 +1926,20 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 	int				fromFrameTime;
 	int				toFrameTime;
 
-	if ( !allowFrameCommands || !ent || frame || ( ( endtime > 0 ) && ( fromtime > endtime ) ) ) {
+	// ishtvan: don't play frame commands if paused
+	// TODO: make sure they're played when we un pause!
+	if 
+		( 
+			!allowFrameCommands || !ent || 
+			frame || ( ( endtime > 0 ) && ( fromtime > endtime )
+			|| m_bPaused ) 
+		)
 		return;
-	}
 
 	const idAnim *anim = Anim();
-	if ( !anim || !anim->HasFrameCommands() ) {
+
+	if ( !anim || !anim->HasFrameCommands() )
 		return;
-	}
 
 	if ( totime <= starttime ) {
 		// don't play until next frame or we'll play commands twice.
@@ -1910,54 +1982,65 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 	idJointQuat		*mixFrame;
 	int				numAnims;
 	int				time;
+	short			useFrame;
 
 	const idAnim *anim = Anim();
-	if ( !anim ) {
+	if ( !anim )
 		return false;
-	}
 
 	float weight = GetWeight( currentTime );
-	if ( blendWeight > 0.0f ) {
-		if ( ( endtime >= 0 ) && ( currentTime >= endtime ) ) {
+	if ( blendWeight > 0.0f ) 
+	{
+		if ( ( endtime >= 0 ) && ( currentTime >= endtime ) && !m_bPaused )
 			return false;
-		}
-		if ( !weight ) {
+		if ( !weight && !m_bPaused ) 
 			return false;
-		}
-		if ( overrideBlend ) {
+		if ( overrideBlend )
 			blendWeight = 1.0f - weight;
-		}
 	}
 
-	if ( ( channel == ANIMCHANNEL_ALL ) && !blendWeight ) {
+	if ( ( channel == ANIMCHANNEL_ALL ) && !blendWeight ) 
+	{
 		// we don't need a temporary buffer, so just store it directly in the blend frame
 		jointFrame = blendFrame;
-	} else {
+	} else 
+	{
 		// allocate a temporary buffer to copy the joints from
 		jointFrame = ( idJointQuat * )_alloca16( numJoints * sizeof( *jointFrame ) );
 	}
 
+	if( m_bPaused )
+		currentTime = m_PausedTime;
+
 	time = AnimTime( currentTime );
 
+	useFrame = frame;
+
+	if( m_bPaused )
+		useFrame = m_PausedFrame;
+
 	numAnims = anim->NumAnims();
-	if ( numAnims == 1 ) {
+	if ( numAnims == 1 ) 
+	{
 		md5anim = anim->MD5Anim( 0 );
-		if ( frame ) {
-			md5anim->GetSingleFrame( frame - 1, jointFrame, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
-		} else {
+		if ( useFrame ) 
+		{
+			md5anim->GetSingleFrame( useFrame - 1, jointFrame, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
+		} else 
+		{
 			md5anim->ConvertTimeToFrame( time, cycle, frametime );
 			md5anim->GetInterpolatedFrame( frametime, jointFrame, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
 		}
-	} else {
+	} else 
+	{
 		//
 		// need to mix the multipoint anim together first
 		//
 		// allocate a temporary buffer to copy the joints to
 		mixFrame = ( idJointQuat * )_alloca16( numJoints * sizeof( *jointFrame ) );
 
-		if ( !frame ) {
+		if ( !useFrame )
 			anim->MD5Anim( 0 )->ConvertTimeToFrame( time, cycle, frametime );
-		}
 
 		ptr = jointFrame;
 		mixWeight = 0.0f;
@@ -1966,9 +2049,11 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 				mixWeight += animWeights[ i ];
 				lerp = animWeights[ i ] / mixWeight;
 				md5anim = anim->MD5Anim( i );
-				if ( frame ) {
-					md5anim->GetSingleFrame( frame - 1, ptr, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
-				} else {
+				if ( useFrame ) 
+				{
+					md5anim->GetSingleFrame( useFrame - 1, ptr, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
+				} else 
+				{
 					md5anim->GetInterpolatedFrame( frametime, ptr, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
 				}
 
@@ -2019,7 +2104,7 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 
 	if ( printInfo ) {
 		if ( frame ) {
-			gameLocal.Printf( "  %s: '%s', %d, %.2f%%\n", channelNames[ channel ], anim->FullName(), frame, weight * 100.0f );
+			gameLocal.Printf( "  %s: '%s', %d, %.2f%%\n", channelNames[ channel ], anim->FullName(), useFrame, weight * 100.0f );
 		} else {
 			gameLocal.Printf( "  %s: '%s', %.3f, %.2f%%\n", channelNames[ channel ], anim->FullName(), ( float )frametime.frame1 + frametime.backlerp, weight * 100.0f );
 		}
