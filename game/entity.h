@@ -1229,6 +1229,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_Wait( float time );
 	void					Event_HasFunction( const char *name );
 	void					Event_CallFunction( const char *name );
+    void					Event_CallGlobalFunction( const char *funcname, idEntity *ent );
 	void					Event_SetNeverDormant( int enable );
 
 	/**
