@@ -641,6 +641,7 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_GroundBodyMinNum );
 	savefile->WriteBool( m_bDragAFDamping );
 	savefile->WriteBool( m_bCollideWithTeam );
+	savefile->WriteBool( m_bAFPushMoveables );
 
 	savefile->WriteInt( m_AddedEnts.Num() );
 	for( int j = 0; j < m_AddedEnts.Num(); j++ )
@@ -679,6 +680,7 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( m_GroundBodyMinNum );
 	savefile->ReadBool( m_bDragAFDamping );
 	savefile->ReadBool( m_bCollideWithTeam );
+	savefile->ReadBool( m_bAFPushMoveables );
 
 	int AddedEntsNum;
 	savefile->ReadInt( AddedEntsNum );
@@ -692,6 +694,11 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile )
 	}
 
 	af.Restore( savefile );
+	if( m_bAFPushMoveables )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
 
 	// Schedule any added entities for re-adding when they have spawned
 	PostEventMS( &EV_RestoreAddedEnts, 0 );
