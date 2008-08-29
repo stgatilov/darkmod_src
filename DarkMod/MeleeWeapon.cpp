@@ -473,6 +473,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 	// Physical impulse
 	push = DmgDef->GetFloat( "push" );
 	impulse = -push * tr->c.normal;
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Applying impulse\r");
 	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
 
 	// Damage
@@ -496,6 +497,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 
 	// copied from idWeapon, not necessarily what we want
 	// Moved impact_damage_effect to DmgDef instead of weapon ent spawnargs
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Applying impact damage FX\r");
 	if ( DmgDef->GetBool( "impact_damage_effect" ) ) 
 	{
 		if ( other->spawnArgs.GetBool( "bleed" ) ) 
@@ -511,9 +513,15 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 			// we hit an entity that doesn't bleed, 
 			// decals, sound and smoke are handled here instead
 			// TODO: Change this so that above is only executed if it bleeds AND we hit flesh?
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Hit entity that doesn't bleed\r");
 
 			idStr materialType;
-			int type = tr->c.material->GetSurfaceType();
+			int type;
+
+			if( tr->c.material != NULL )
+				type = tr->c.material->GetSurfaceType();
+			else
+				type = SURFTYPE_NONE;
 
 			if ( type == SURFTYPE_NONE ) 
 				materialType = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
@@ -525,6 +533,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", materialType.c_str() );
 
 			// start impact sound based on material type
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
 			hitSound = DmgDef->GetString( va( "snd_%s", materialType.c_str() ) );
 			sndName = va( "snd_%s", materialType.c_str() );
 
@@ -536,6 +545,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 
 			// project decal 
 			// ishtvan: got rid of min time between decals, let it be up to anim
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Displaying decal\r");
 			const char *decal;
 			decal = DmgDef->GetString( "mtr_strike" );
 			if ( decal && *decal ) 
@@ -543,10 +553,11 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 				gameLocal.ProjectDecal( tr->c.point, -tr->c.normal, 8.0f, true, 6.0, decal );
 			}
 
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Launching smoke\r");
 			// Strike particle FX (sparks.. blood is handled in AddDamageEffect)
 			const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", materialType.c_str()) );
 
-			if ( *smokeName != '\0' )
+			if ( smokeName && *smokeName != '\0' )
 			{
 				const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
 				float chance = DmgDef->GetFloat( va("smoke_chance_%s", materialType.c_str()), "1.0" );
@@ -562,17 +573,22 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 		}
 	}
 
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Sound playback\r");
 	if ( !hitSound.IsEmpty() ) 
 	{
 		const idSoundShader *snd = declManager->FindSound( hitSound.c_str() );
 		StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
-		
+			
 		// Propagate the sound to AI, must find global sound first because it's on a different dict
 		sndName.StripLeading("snd_");
 		sndName = DmgDef->GetString( va("sprS_%s", sndName.c_str()) );
 		if( !sndName.IsEmpty() )
+		{
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Propagating AI sound %s\r", sndName.c_str());
 			PropSoundDirect( sndName.c_str(), false, false );
+		}
 	}
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Done!\r");
 
 Quit:
 	return;

@@ -649,7 +649,7 @@ void CsndProp::Propagate
 	//TODO: If bExpandFinished == false, either fake propagation or
 	// delay further expansion until later frame
 	if(bExpandFinished == false)
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion was stopped when max node number %d was exceeded\r", s_MAX_FLOODNODES );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion was stopped when max node number %d was exceeded, or propagation was aborted\r", s_MAX_FLOODNODES );
 
 	timer_Prop.Stop();
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
@@ -767,6 +767,12 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing initial area\r" );
 
 	int initArea = gameRenderWorld->PointInArea( origin );
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound origin is in portal area: %d\r", initArea );
+	if( initArea == -1 )
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound origin is outside the map, aborting propagation.\r" );
+		return false;
+	}
 
 	m_EventAreas[ initArea ].bVisited = true;
 
