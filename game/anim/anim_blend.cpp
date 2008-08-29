@@ -1269,7 +1269,6 @@ idAnimBlend::Reset
 */
 void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) 
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAnimBlend::Reset called\r");
 
 	modelDef	= _modelDef;
 	cycle		= 1;
