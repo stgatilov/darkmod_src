@@ -166,6 +166,7 @@ extern idCVar cv_pm_stepvol_creep;
 extern idCVar cv_pm_stepvol_crouch_walk;
 extern idCVar cv_pm_stepvol_crouch_creep;
 extern idCVar cv_pm_stepvol_crouch_run;
+extern idCVar cv_pm_min_stepsound_interval;
 
 // Lightgem
 extern idCVar cv_lg_distance;

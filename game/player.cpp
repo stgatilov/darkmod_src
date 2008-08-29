@@ -296,6 +296,7 @@ idPlayer::idPlayer() :
 	viewBob					= vec3_zero;
 	landChange				= 0;
 	landTime				= 0;
+	lastFootstepPlaytime	= -1;
 
 	currentWeapon			= -1;
 	idealWeapon				= -1;
@@ -1268,6 +1269,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( viewBob );
 	savefile->WriteInt( landChange );
 	savefile->WriteInt( landTime );
+	savefile->WriteInt( lastFootstepPlaytime );
 
 	savefile->WriteInt( currentWeapon );
 	savefile->WriteInt( idealWeapon );
@@ -1554,6 +1556,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( viewBob );
 	savefile->ReadInt( landChange );
 	savefile->ReadInt( landTime );
+	savefile->ReadInt( lastFootstepPlaytime );
 
 	savefile->ReadInt( currentWeapon );
 	savefile->ReadInt( idealWeapon );
@@ -9596,6 +9599,12 @@ void idPlayer::PlayFootStepSound()
 		return;
 	}
 
+	// This implements a certain dead time before the next footstep is allowed to be played
+	if (gameLocal.time <= lastFootstepPlaytime + cv_pm_min_stepsound_interval.GetInteger())
+	{
+		return;
+	}
+
 	idStr localSound, sound;
 	
 	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
@@ -9681,6 +9690,8 @@ void idPlayer::PlayFootStepSound()
 
 		// propagate the suspicious sound to other AI
 		PropSoundDirect( localSound, true, false );
+
+		lastFootstepPlaytime = gameLocal.time;
 	}
 }
 

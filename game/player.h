@@ -723,6 +723,7 @@ private:
 	idVec3					viewBob;
 	int						landChange;
 	int						landTime;
+	int						lastFootstepPlaytime;
 
 	int						currentWeapon;
 	int						idealWeapon;
