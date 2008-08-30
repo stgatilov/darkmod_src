@@ -522,6 +522,8 @@ void idPlayer::Init( void ) {
 	bobFrac					= 0.0f;
 	landChange				= 0;
 	landTime				= 0;
+	lastFootstepPlaytime	= -1;
+	isPushing				= false;
 	zoomFov.Init( 0, 0, 0, 0 );
 
 	centerView.Init( 0, 0, 0, 0 );
@@ -1270,6 +1272,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( landChange );
 	savefile->WriteInt( landTime );
 	savefile->WriteInt( lastFootstepPlaytime );
+	savefile->WriteBool(isPushing);
 
 	savefile->WriteInt( currentWeapon );
 	savefile->WriteInt( idealWeapon );
@@ -1557,6 +1560,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( landChange );
 	savefile->ReadInt( landTime );
 	savefile->ReadInt( lastFootstepPlaytime );
+	savefile->ReadBool(isPushing);
 
 	savefile->ReadInt( currentWeapon );
 	savefile->ReadInt( idealWeapon );
@@ -3484,6 +3488,19 @@ void idPlayer::UpdateWeapon( void ) {
 
 	// update weapon state, particles, dlights, etc
 	weapon.GetEntity()->PresentWeapon( showWeaponViewModel );
+}
+
+void idPlayer::SetIsPushing(bool isPushing)
+{
+	this->isPushing = isPushing;
+
+	// Raise/lower the weapons according to our push state
+	SetImmobilization("pushing", isPushing ? EIM_ATTACK : 0);
+}
+
+bool idPlayer::IsPushing()
+{
+	return isPushing;
 }
 
 /*

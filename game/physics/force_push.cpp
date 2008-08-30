@@ -40,6 +40,12 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 		startPushTime = gameLocal.time;
 	}
 
+	// Update the owning actor's push state
+	if (pushEnt == NULL && owner != NULL && owner->IsType(idActor::Type))
+	{
+		static_cast<idActor*>(owner)->SetIsPushing(false);
+	}
+
 	this->pushEnt = pushEnt;
 	this->id = id;
 }
@@ -110,6 +116,17 @@ void CForcePush::Evaluate( int time )
 
 			// Apply the mass scale and the acceleration scale to the capped velocity
 			pushEnt->GetPhysics()->SetLinearVelocity(impactVelocity * velocity * accelScale * massScale);
+
+			// Update the owning actor's push state
+			if (owner->IsType(idActor::Type))
+			{
+				idActor* owningActor = static_cast<idActor*>(owner);
+
+				if (!owningActor->IsPushing()) 
+				{
+					owningActor->SetIsPushing(true);
+				}
+			}
 		}
 	}
 

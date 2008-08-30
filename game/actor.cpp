@@ -2823,6 +2823,16 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	return true;
 }
 
+void idActor::SetIsPushing(bool isPushing)
+{
+	// do nothing, is handled by the subclasses
+}
+
+bool idActor::IsPushing()
+{
+	return false;
+}
+
 /*
 =====================
 idActor::SpawnGibs

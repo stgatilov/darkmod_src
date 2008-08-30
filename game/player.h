@@ -376,6 +376,11 @@ public:
 	**/
 	void					SetHinderance( const char *source, float mCap, float aCap );
 
+	// greebo: Sets the "player is pushing something heavy" state to the given bool (virtual override)
+	virtual void			SetIsPushing(bool isPushing);
+	// Returns whether the player is currently pushing something heavy (virtual override)
+	virtual bool			IsPushing();
+
 	/**
 	 * greebo: Plays the footstep sound according to the current movement type.
 	 */
@@ -724,6 +729,7 @@ private:
 	int						landChange;
 	int						landTime;
 	int						lastFootstepPlaytime;
+	bool					isPushing;			// is true while the player is pushing something heavy
 
 	int						currentWeapon;
 	int						idealWeapon;

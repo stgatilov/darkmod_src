@@ -207,6 +207,11 @@ public:
 	void					ClearPain( void );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
+	// greebo: Sets the "player is pushing something heavy" state to the given bool.
+	virtual void			SetIsPushing(bool isPushing);
+	// Returns whether the player is currently pushing something heavy
+	virtual bool			IsPushing();
+
 							// model/combat model/ragdoll
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
