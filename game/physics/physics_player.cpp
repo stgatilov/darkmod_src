@@ -672,9 +672,9 @@ void idPhysics_Player::WaterMove( void ) {
 	// TODO : In future, only disable some weapons, keep the sword for underwater bashing?
 	static_cast<idPlayer*>(self)->SetImmobilization( "WaterMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
-	idPhysics_Player::Friction();
+	Friction();
 
-	float scale = idPhysics_Player::CmdScale( command );
+	float scale = CmdScale( command );
 
 	idVec3 wishvel;
 
@@ -825,27 +825,27 @@ void idPhysics_Player::WalkMove( void )
 	idVec3		oldVelocity, vel;
 	float		oldVel, newVel;
 
-	if ( waterLevel > WATERLEVEL_WAIST && ( viewForward * groundTrace.c.normal ) > 0.0f ) {
+	if ( waterLevel > WATERLEVEL_WAIST && ( viewForward * groundTrace.c.normal ) > 0.0f )
+	{
 		// begin swimming
-
-		idPhysics_Player::WaterMove();
+		WaterMove();
 		return;
 	}
 
-	if ( idPhysics_Player::CheckJump() ) {
+	if ( CheckJump() ) {
 		// jumped away
 		if ( waterLevel > WATERLEVEL_FEET ) {
-			idPhysics_Player::WaterMove();
+			WaterMove();
 		}
 		else {
-			idPhysics_Player::AirMove();
+			AirMove();
 		}
 		return;
 	}
 
-	idPhysics_Player::Friction();
+	Friction();
 
-	scale = idPhysics_Player::CmdScale( command );
+	scale = CmdScale( command );
 
 	// project moves down to flat plane
 	viewForward -= (viewForward * gravityNormal) * gravityNormal;
@@ -888,7 +888,7 @@ void idPhysics_Player::WalkMove( void )
 			accelerate *= 3.0f;
 	}
 
-	idPhysics_Player::Accelerate( wishdir, wishspeed, accelerate );
+	Accelerate( wishdir, wishspeed, accelerate );
 
 	if ( ( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || current.movementFlags & PMF_TIME_KNOCKBACK ) {
 		current.velocity += gravityVector * frametime;
@@ -898,7 +898,6 @@ void idPhysics_Player::WalkMove( void )
 
 	// slide along the ground plane
 	current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
-
 
 	// if not clipped into the opposite direction
 	if ( oldVelocity * current.velocity > 0.0f ) {
@@ -915,14 +914,14 @@ void idPhysics_Player::WalkMove( void )
 	// don't do anything if standing still
 	vel = current.velocity - (current.velocity * gravityNormal) * gravityNormal;
 	if ( !vel.LengthSqr() ) {
+		// greebo: We're not moving, so let's clear the push entity
+		m_PushForce.SetPushEntity(NULL);
 		return;
 	}
 
 	gameLocal.push.InitSavingPushedEntityPositions();
 
-	idPhysics_Player::SlideMove( false, true, true, true );
-
-
+	SlideMove( false, true, true, true );
 }
 
 /*
