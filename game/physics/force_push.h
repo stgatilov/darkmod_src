@@ -23,9 +23,6 @@ public:
 
 						CForcePush();
 
-						// initialize the drag force
-	void				Init( float damping );
-
 	void				SetOwner(idEntity* ownerEnt);
 
 	// Set physics object which is about to be pushed
@@ -34,13 +31,6 @@ public:
 	// Set the push parameters for the next evaluation frame
 	void				SetContactInfo(const trace_t& contactInfo, const idVec3& impactVelocity);
 
-						// set position to drag towards
-	/*void				SetDragPosition( const idVec3 &pos );
-						// get the position dragged towards
-	const idVec3 &		GetDragPosition( void ) const;
-						// get the position on the dragged physics object
-	const idVec3		GetDraggedPosition( void ) const;*/
-
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
@@ -48,10 +38,6 @@ public: // common force interface
 	virtual void		Evaluate( int time );
 
 private:
-
-	// properties
-	//float				damping;
-
 	idEntity*			pushEnt;		// entity being pushed
 	idEntity*			lastPushEnt;	// the entity we pushed last frame
 
