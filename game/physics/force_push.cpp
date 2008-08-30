@@ -119,7 +119,7 @@ void CForcePush::Evaluate( int time )
 			float accelScale = idMath::ClampFloat(0, 1, (pushTime - pushStartDelay)/cv_pm_push_accel_time.GetFloat());
 
 			// Let the entity itself modify its pushing behaviour
-			float entityScale = pushEnt->spawnArgs.GetFloat("push_mod");
+			float entityScale = pushEnt->spawnArgs.GetFloat("push_mod", "1");
 
 			// Scale the movement velocity according to the object's mass
 			// At maxPushMass, the velocity is zero, at the minimum push mass threshold below it's about 0.75
