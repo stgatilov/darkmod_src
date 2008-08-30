@@ -22,10 +22,12 @@ CForcePush::CForcePush() :
 	pushEnt(NULL),
 	lastPushEnt(NULL),
 	id(0),
-	startPushTime(-1),
 	impactVelocity(vec3_zero),
+	startPushTime(-1),
 	owner(NULL)
-{}
+{
+	memset(&contactInfo, 0, sizeof(contactInfo));
+}
 
 void CForcePush::SetOwner(idEntity* ownerEnt)
 {
