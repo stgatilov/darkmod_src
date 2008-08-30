@@ -1097,6 +1097,12 @@
 					RelativePath="game\physics\Force_Drag.h">
 				</File>
 				<File
+					RelativePath="game\physics\force_push.cpp">
+				</File>
+				<File
+					RelativePath="game\physics\force_push.h">
+				</File>
+				<File
 					RelativePath="game\physics\Force_Field.cpp">
 				</File>
 				<File

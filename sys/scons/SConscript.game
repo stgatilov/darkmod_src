@@ -87,6 +87,7 @@ game_string = ' \
 	physics/force.cpp \
 	physics/force_constant.cpp \
 	physics/force_drag.cpp \
+	physics/force_push.cpp \
 	physics/force_field.cpp \
 	physics/force_spring.cpp \
 	physics/physics.cpp \

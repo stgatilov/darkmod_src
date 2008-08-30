@@ -36,7 +36,7 @@ public:
 
 public:	// common physics interface
 
-	void					SetSelf( idEntity *e );
+	virtual void			SetSelf( idEntity *e );
 #ifdef MOD_WATERPHYSICS
 	idEntity				*GetSelf() { return self; } // MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS

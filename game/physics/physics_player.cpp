@@ -134,6 +134,11 @@ const int PMF_ALL_TIMES			= (PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK
 
 int c_pmove = 0;
 
+void idPhysics_Player::SetSelf( idEntity *e )
+{
+	idPhysics_Base::SetSelf(e);
+	m_PushForce.SetOwner(e);
+}
 
 /*
 ============
@@ -389,7 +394,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 			// clip movement, only push idMoveables, don't push entities the player is standing on
 			// apply impact to pushed objects
-			pushFlags = PUSHFL_CLIP|PUSHFL_ONLYMOVEABLE|PUSHFL_NOGROUNDENTITIES|PUSHFL_APPLYIMPULSE;
+			pushFlags = PUSHFL_CLIP | PUSHFL_ONLYMOVEABLE | PUSHFL_NOGROUNDENTITIES | PUSHFL_APPLYIMPULSE;
 
 			// clip & push
 			
@@ -412,7 +417,13 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				float scale = -trace.c.normal * current.velocity;
 				idVec3 impulse = direction * scale * GetMass() * cv_pm_pushmod.GetFloat();
 
-				pushedEnt->GetPhysics()->PropagateImpulse(0, trace.c.point, impulse);
+				//pushedEnt->GetPhysics()->PropagateImpulse(0, trace.c.point, impulse);
+
+				// Register the blocking physics object with our push force
+				m_PushForce.SetPushEntity(pushedEnt, 0);
+				m_PushForce.SetContactInfo(trace, current.velocity);
+
+				//pushedEnt->GetPhysics()->AddForce(0, trace.c.point, impulse);
 
 				//gameRenderWorld->DrawText( idStr(impulse.LengthFast()), rigidBodyPhysics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 				//gameRenderWorld->DebugArrow( colorWhite, rigidBodyPhysics->GetAbsBounds().GetCenter(), rigidBodyPhysics->GetAbsBounds().GetCenter() + impulse, 1, gameLocal.msec );
@@ -2723,8 +2734,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3 (m_LeanDoorListenPos);
 	m_LeanDoorEnt.Save( savefile );
 
-
-
+	savefile->WriteStaticObject(m_PushForce);
 }
 
 /*
@@ -2825,7 +2835,6 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3 (m_LeanDoorListenPos);
 	m_LeanDoorEnt.Restore( savefile );
 
-	
 	if (!m_mantledEntityName.IsEmpty())
 	{
 		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
@@ -2841,6 +2850,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
+	savefile->ReadStaticObject( m_PushForce );
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }
@@ -2981,7 +2991,10 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	ActivateContactEntities();
 
-	idPhysics_Player::MovePlayer( timeStepMSec );
+	MovePlayer( timeStepMSec );
+
+	// Apply the push force to all objects encountered during MovePlayer
+	m_PushForce.Evaluate(timeStepMSec);
 
 	clipModel->Link( gameLocal.clip, self, 0, current.origin, clipModel->GetAxis() );
 
