@@ -48,6 +48,12 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	// Update the "pushed" state of this entity
+	virtual void			SetIsPushed(bool isPushed);
+
+	// Returns true if the entity is pushed by something or someone
+	virtual bool			IsPushed();
+
 protected:
 	idPhysics_RigidBody		physicsObj;				// physics object
 	idStr					damage;					// if > 0 apply damage to hit entities
@@ -70,6 +76,8 @@ protected:
 
 	// greebo: Stores the last collision info to avoid constant playing of the collision sound when stuck
 	trace_t					lastCollision;
+
+	bool					isPushed;				// true if the entity is pushed by something/someone
 
 	const idMaterial *		GetRenderModelMaterial( void ) const;
 	void					BecomeNonSolid( void );
