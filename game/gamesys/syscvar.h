@@ -83,6 +83,7 @@ extern idCVar cv_pm_pushmod;
 extern idCVar cv_pm_push_start_delay;
 extern idCVar cv_pm_push_accel_time;
 extern idCVar cv_pm_push_heavy_threshold;
+extern idCVar cv_pm_push_max_mass;
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;

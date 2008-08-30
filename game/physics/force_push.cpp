@@ -54,6 +54,12 @@ void CForcePush::Evaluate( int time )
 {
 	if (pushEnt == NULL || owner == NULL) return; // nothing to do
 
+	if (pushEnt->spawnArgs.GetBool("notPushable", "0"))
+	{
+		// the entity is not pushable
+		return;
+	}
+
 	idPhysics* physics = pushEnt->GetPhysics();
 	//gameRenderWorld->DebugBox(colorRed, idBox(physics->GetBounds(), physics->GetOrigin(), physics->GetAxis()), 16);
 
@@ -62,9 +68,6 @@ void CForcePush::Evaluate( int time )
 
 	// This is the maximum mass an object can have to be kickable
 	float massThresholdHeavy = ownerMass * cv_pm_push_heavy_threshold.GetFloat();
-
-	// This is the maximum mass an object can have to be pushable at all
-	float maxPushMass = 200;
 
 	if (mass < massThresholdHeavy)
 	{
@@ -98,12 +101,12 @@ void CForcePush::Evaluate( int time )
 
 			// Scale the movement velocity according to the object's mass
 			// At maxPushMass, the velocity is zero, at the minimum push mass threshold below it's about 0.75
-			float massScale = idMath::ClampFloat(0.0f, 1.0f, 1.0f - (mass / maxPushMass));
+			float massScale = idMath::ClampFloat(0.0f, 1.0f, 1.0f - (mass / cv_pm_push_max_mass.GetFloat()));
 
 			// Finally, apply a maximum cap, based on the player's normal walkspeed
 			float velocity = idMath::ClampFloat(0, pm_walkspeed.GetFloat()*0.8f, impactVelocity.NormalizeFast());
 
-			gameRenderWorld->DrawText( idStr(velocity * accelScale * massScale), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			//gameRenderWorld->DrawText( idStr(velocity * accelScale * massScale), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
 			// Apply the mass scale and the acceleration scale to the capped velocity
 			pushEnt->GetPhysics()->SetLinearVelocity(impactVelocity * velocity * accelScale * massScale);
