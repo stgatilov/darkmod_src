@@ -84,10 +84,14 @@ void CForcePush::Evaluate( int time )
 			int pushTime = gameLocal.time - startPushTime;
 			//gameRenderWorld->DrawText( idStr(pushTime), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
-			if (pushTime > cv_pm_push_start_delay.GetInteger())
+			int pushStartDelay = cv_pm_push_start_delay.GetInteger();
+
+			// If we've been pushing long enough, start moving the obstacle
+			if (pushTime > pushStartDelay)
 			{
-				// We've been pushing long enough, start moving the obstacle
-				pushEnt->GetPhysics()->SetLinearVelocity(impactVelocity);
+				// Scale the velocity during the acceleration phase
+				float scale = idMath::ClampFloat(0, 1, (pushTime - pushStartDelay)/cv_pm_push_accel_time.GetFloat());
+				pushEnt->GetPhysics()->SetLinearVelocity(impactVelocity * scale);
 			}
 		}
 	
