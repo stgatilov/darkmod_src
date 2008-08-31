@@ -62,6 +62,10 @@ const float MIN_BOB_SPEED = 5.0f;
 const idEventDef EV_Player_GetButtons( "getButtons", NULL, 'd' );
 const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
+const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", NULL, 'd');
+const idEventDef EV_Player_MouseGestureFinished( "mouseGestureFinished", NULL, 'd' );
+const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "dddfd" );
+const idEventDef EV_Player_StopMouseGesture( "stopMouseGesture" );
 const idEventDef EV_Player_StopFxFov( "stopFxFov" );
 const idEventDef EV_Player_EnableWeapon( "enableWeapon" );
 const idEventDef EV_Player_DisableWeapon( "disableWeapon" );
@@ -133,6 +137,10 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
 	EVENT( EV_Player_GetViewAngles,			idPlayer::Event_GetViewAngles )
+	EVENT( EV_Player_GetMouseGesture,		idPlayer::Event_GetMouseGesture )
+	EVENT( EV_Player_MouseGestureFinished,	idPlayer::Event_MouseGestureFinished )
+	EVENT( EV_Player_StartMouseGesture,		idPlayer::StartMouseGesture )
+	EVENT( EV_Player_StopMouseGesture,		idPlayer::StopMouseGesture )
 	EVENT( EV_Player_StopFxFov,				idPlayer::Event_StopFxFov )
 	EVENT( EV_Player_EnableWeapon,			idPlayer::Event_EnableWeapon )
 	EVENT( EV_Player_DisableWeapon,			idPlayer::Event_DisableWeapon )
@@ -5444,6 +5452,9 @@ void idPlayer::EvaluateControls( void )
 		gameLocal.sessionCommand = "died";
 	}
 
+	if( m_MouseGesture.bActive )
+		UpdateMouseGesture();
+
 	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) )
 	{
 		PerformImpulse( usercmd.impulse );
@@ -5491,12 +5502,13 @@ void idPlayer::UpdateMouseGesture( void )
 	idVec2 motion = m_MouseGesture.motion;
 
 	// Get the current dominant direction and magnitude
+	// NOTE: Apparently y is positive if we go down, not up?
 	if( test == MOUSETEST_UPDOWN )
 	{
 		if( motion.y < 0 )
-			CurrentDir = MOUSEDIR_DOWN;
-		else
 			CurrentDir = MOUSEDIR_UP;
+		else
+			CurrentDir = MOUSEDIR_DOWN;
 
 		mag = idMath::Fabs( motion.y );
 	}
@@ -5515,9 +5527,9 @@ void idPlayer::UpdateMouseGesture( void )
 		if( idMath::Fabs(motion.y) > idMath::Fabs(motion.x) )
 		{
 			if( motion.y < 0 )
-				CurrentDir = MOUSEDIR_DOWN;
-			else
 				CurrentDir = MOUSEDIR_UP;
+			else
+				CurrentDir = MOUSEDIR_DOWN;
 
 			mag = idMath::Fabs( motion.y );			
 		}
@@ -5566,9 +5578,9 @@ void idPlayer::UpdateMouseGesture( void )
 		if( MaxAxis == 0 )
 		{
 			if( motion.y < 0 )
-				CurrentDir = MOUSEDIR_DOWN;
-			else
 				CurrentDir = MOUSEDIR_UP;
+			else
+				CurrentDir = MOUSEDIR_DOWN;
 		}
 		// left/right
 		else if( MaxAxis == 1)
@@ -5578,21 +5590,21 @@ void idPlayer::UpdateMouseGesture( void )
 			else
 				CurrentDir = MOUSEDIR_RIGHT;
 		}
-		// upper right/lower left
+		// lower right/upper left
 		else if( MaxAxis == 2)
 		{
 			if( DiagVec.x < 0 )
-				CurrentDir = MOUSEDIR_DOWN_LEFT;
-			else
-				CurrentDir = MOUSEDIR_UP_RIGHT;
-		}
-		// lower right/upper left
-		else
-		{
-			if( DiagVec.y < 0 )
 				CurrentDir = MOUSEDIR_UP_LEFT;
 			else
 				CurrentDir = MOUSEDIR_DOWN_RIGHT;
+		}
+		// upper right/lower left
+		else
+		{
+			if( DiagVec.y < 0 )
+				CurrentDir = MOUSEDIR_DOWN_LEFT;
+			else
+				CurrentDir = MOUSEDIR_UP_RIGHT;
 		}
 	}
 
@@ -5619,7 +5631,15 @@ EMouseDir idPlayer::GetMouseGesture( void )
 	return m_MouseGesture.result;
 }
 
+void idPlayer::Event_GetMouseGesture( void )
+{
+	idThread::ReturnInt( (int) GetMouseGesture() );
+}
 
+void idPlayer::Event_MouseGestureFinished( void )
+{
+	idThread::ReturnInt( !m_MouseGesture.bActive );
+}
 
 /*
 ==============

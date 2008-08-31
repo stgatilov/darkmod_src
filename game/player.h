@@ -31,6 +31,10 @@ class idDeclVideo;
 extern const idEventDef EV_Player_GetButtons;
 extern const idEventDef EV_Player_GetMove;
 extern const idEventDef EV_Player_GetViewAngles;
+extern const idEventDef EV_Player_GetMouseGesture;
+extern const idEventDef EV_Player_MouseGestureFinished;
+extern const idEventDef EV_Player_StartMouseGesture;
+extern const idEventDef EV_Player_StopMouseGesture;
 extern const idEventDef EV_Player_EnableWeapon;
 extern const idEventDef EV_Player_DisableWeapon;
 extern const idEventDef EV_Player_ExitTeleporter;
@@ -618,7 +622,8 @@ public:
 	* "Impulse" arg can also be a "button," see the UB_* enum in usercmdgen.h
 	* 
 	* Waits until the threshold mouse input is reached before deciding
-	* If bDiagonals is true, output can be a diagonal, otherwise just: left right up down.
+	* The test argument determines what to test for (up/down, left/right, etc)
+	*	determined by the enum EMouseTest
 	* TurnHinderane sets the max palyer view turn rate when checking this mouse gesture
 	*	0 => player view locked, 1.0 => no effect on view turning
 	* DecideTime is the time in milliseconds after which the mouse gesture is auto-decided,
@@ -1052,6 +1057,15 @@ private:
 
 	void					Event_HoldEntity( idEntity *ent );
 	void					Event_HeldEntity( void );
+
+	/**
+	* Return the last mouse gesture result to the script
+	**/
+	void					Event_GetMouseGesture( void );
+	/**
+	* Return to script whether we are currently waiting for a mouse gesture to finish
+	**/
+	void					Event_MouseGestureFinished( void );
 
 	/**
 	 * greebo: Sets the named lightgem modifier to a particular value. 
