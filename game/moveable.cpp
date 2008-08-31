@@ -44,6 +44,7 @@ END_CLASS
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
 static const float BOUNCE_SCRIPT_MIN_VELOCITY	= 5.0f;
+static const float SLIDING_VELOCITY_THRESHOLD = 5.0f;
 
 /*
 ================
@@ -71,6 +72,9 @@ idMoveable::idMoveable( void ) {
 	lastCollision.fraction = -1;
 
 	isPushed = false;
+	wasPushedLastFrame = false;
+	pushDirection = vec3_zero;
+	lastPushOrigin = vec3_zero;
 }
 
 /*
@@ -253,6 +257,9 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteTrace(lastCollision);
 	savefile->WriteBool(isPushed);
+	savefile->WriteBool(wasPushedLastFrame);
+	savefile->WriteVec3(pushDirection);
+	savefile->WriteVec3(lastPushOrigin);
 }
 
 /*
@@ -292,6 +299,9 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadTrace(lastCollision);
 	savefile->ReadBool(isPushed);
+	savefile->ReadBool(wasPushedLastFrame);
+	savefile->ReadVec3(pushDirection);
+	savefile->ReadVec3(lastPushOrigin);
 }
 
 /*
@@ -568,11 +578,14 @@ idMoveable::Think
 */
 void idMoveable::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
-		if ( !FollowInitialSplinePath() ) {
+		if ( !FollowInitialSplinePath() && !isPushed) {
 			BecomeInactive( TH_THINK );
 		}
 	}
+
 	idEntity::Think();
+
+	UpdateSlidingSounds();
 }
 
 /*
@@ -611,39 +624,79 @@ void idMoveable::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 }
 
-void idMoveable::SetIsPushed(bool isNowPushed)
+void idMoveable::SetIsPushed(bool isNowPushed, const idVec3& pushDirection)
 {
-	bool wasPushed = isPushed;
+	isPushed = isNowPushed;
+	this->pushDirection = pushDirection;
+	lastPushOrigin = GetPhysics()->GetOrigin();
 
-	if (wasPushed && !isNowPushed)
+	// Update our think flags to allow UpdateMoveables to be called. 
+	if (isPushed)
 	{
-		// We have just changed states from "pushed" to "not pushed anymore"
-		StopSound(SND_CHANNEL_BODY3, false);
-
-		isPushed = false;
-	}
-	// Only update the "is pushed" variable if the velocity is not zero
-	else if (!wasPushed && isNowPushed) 
-	{
-		const idVec3& curVelocity = GetPhysics()->GetLinearVelocity();
-		const idVec3& gravityNorm = GetPhysics()->GetGravityNormal();
-
-		idVec3 xyVelocity = curVelocity - (curVelocity * gravityNorm) * gravityNorm;
-		float xySpeed = xyVelocity.NormalizeFast();
-
-		if (xySpeed > VECTOR_EPSILON)
-		{
-			// We have just changed states from "not pushed yet" to "pushed"
-			StartSound("snd_sliding", SND_CHANNEL_BODY3, 0, false, NULL);
-		}
-
-		isPushed = true;
+		BecomeActive(TH_THINK);
 	}
 }
 
 bool idMoveable::IsPushed()
 {
 	return isPushed;
+}
+
+void idMoveable::UpdateSlidingSounds()
+{
+	if (isPushed)
+	{
+		const idVec3& curVelocity = GetPhysics()->GetLinearVelocity();
+		const idVec3& gravityNorm = GetPhysics()->GetGravityNormal();
+
+		idVec3 xyVelocity = curVelocity - (curVelocity * gravityNorm) * gravityNorm;
+
+		// Only consider the xyspeed if the velocity is in pointing in the same direction as we're being pushed
+		float xySpeed = (idMath::Fabs(xyVelocity * pushDirection) > 0.2f) ? xyVelocity.NormalizeFast() : 0;
+
+		//gameRenderWorld->DrawText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetAbsBounds().GetCenter(), GetPhysics()->GetAbsBounds().GetCenter() + xyVelocity, 1, gameLocal.msec );
+
+		if (wasPushedLastFrame && xySpeed <= SLIDING_VELOCITY_THRESHOLD)
+		{
+			// We are still being pushed, but we are not fast enough
+			StopSound(SND_CHANNEL_BODY3, false);
+			BecomeInactive(TH_THINK);
+
+			isPushed = false;
+			wasPushedLastFrame = false;
+		}
+		else if (!wasPushedLastFrame && xySpeed > SLIDING_VELOCITY_THRESHOLD)
+		{
+			if (lastPushOrigin.Compare(GetPhysics()->GetOrigin(), 0.05f))
+			{
+				// We did not really move, despite what the velocity says
+				StopSound(SND_CHANNEL_BODY3, false);
+				BecomeInactive(TH_THINK);
+
+				isPushed = false;
+			}
+			else
+			{
+				// We just got into pushed state and are fast enough
+				StartSound("snd_sliding", SND_CHANNEL_BODY3, 0, false, NULL);
+
+				// Update the state flag for the next round
+				wasPushedLastFrame = true;
+			}
+		}
+
+		lastPushOrigin = GetPhysics()->GetOrigin();
+	}
+	else if (wasPushedLastFrame)
+	{
+		// We are not pushed anymore
+		StopSound(SND_CHANNEL_BODY3, false);
+		BecomeInactive(TH_THINK);
+
+		// Update the state flag for the next round
+		wasPushedLastFrame = false;
+	}
 }
 
 /*

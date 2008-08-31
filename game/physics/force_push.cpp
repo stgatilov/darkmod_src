@@ -55,7 +55,7 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 		if (lastPushEnt != NULL && lastPushEnt->IsType(idMoveable::Type))
 		{
 			// Let the pushed entity know that it is not being pushed anymore
-			static_cast<idMoveable*>(lastPushEnt)->SetIsPushed(false);
+			static_cast<idMoveable*>(lastPushEnt)->SetIsPushed(false, vec3_zero);
 		}
 	}
 
@@ -126,13 +126,18 @@ void CForcePush::Evaluate( int time )
 			float maxPushableMass = entityScale*cv_pm_push_max_mass.GetFloat();
 			float massScale = idMath::ClampFloat(0.0f, 1.0f, 1.0f - (mass / maxPushableMass));
 
+			// Project the impactVelocity onto the contact normal
+			idVec3 pushVelocity = (impactVelocity * -contactInfo.c.normal) * (-contactInfo.c.normal);
+
+			//gameRenderWorld->DebugArrow( colorRed, physics->GetAbsBounds().GetCenter(), physics->GetAbsBounds().GetCenter() + pushVelocity, 1, gameLocal.msec );
+
 			// Finally, apply a maximum cap, based on the player's normal walkspeed
-			float velocity = idMath::ClampFloat(0, pm_walkspeed.GetFloat()*0.8f, impactVelocity.NormalizeFast());
+			float velocity = idMath::ClampFloat(0, pm_walkspeed.GetFloat()*0.8f, pushVelocity.NormalizeFast());
 
 			//gameRenderWorld->DrawText( idStr(velocity * accelScale * massScale), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
 			// Apply the mass scale and the acceleration scale to the capped velocity
-			pushEnt->GetPhysics()->SetLinearVelocity(impactVelocity * velocity * accelScale * massScale * entityScale);
+			pushEnt->GetPhysics()->SetLinearVelocity(pushVelocity * velocity * accelScale * massScale * entityScale);
 
 			// Update the owning actor's push state
 			if (owner->IsType(idActor::Type))
@@ -148,7 +153,8 @@ void CForcePush::Evaluate( int time )
 			// Update the pushed status if this entity is a moveable
 			if (pushEnt->IsType(idMoveable::Type))
 			{
-				static_cast<idMoveable*>(pushEnt)->SetIsPushed(true);
+				// Pass the pushDirection to the moveable
+				static_cast<idMoveable*>(pushEnt)->SetIsPushed(true, impactVelocity);
 			}
 		}
 	}
