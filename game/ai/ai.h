@@ -905,6 +905,27 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	jointHandle_t			m_HeadJointID;
 
 	/**
+	* Knockout Data
+	* Name of damage location within which a KO is possible
+	**/
+	idStr					m_KoZone;
+	/**
+	* Alert state above which their KO behavior changes (if any)
+	**/
+	idStr					m_KoAlertState;
+	/**
+	* True if AI is completely immune to KO when alerted above the given alert state
+	**/
+	bool					m_bKoAlertImmune;
+	/**
+	* Cosines of the vertical and horizontal angles, and the same when alert
+	**/
+	float					m_KoDotVert;
+	float					m_KoDotHoriz;
+	float					m_KoAlertDotVert;
+	float					m_KoAlertDotHoriz;
+
+	/**
 	* Current number of air ticks left for drowning
 	**/
 	int						m_AirTics;

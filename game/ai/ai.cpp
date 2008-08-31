@@ -527,6 +527,10 @@ idAI::idAI()
 
 	m_bCanBeKnockedOut = true;
 	m_HeadCenterOffset = vec3_zero;
+	m_bKoAlertImmune = false;
+	m_KoDotVert = 0;
+	m_KoDotHoriz = 0;
+	m_KoAlertDotHoriz = 0;
 
 	m_bCanOperateDoors = false;
 
@@ -766,6 +770,13 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(m_MouthOffset);
 	savefile->WriteBool(m_bCanBeKnockedOut);
 	savefile->WriteVec3(m_HeadCenterOffset);
+	savefile->WriteString(m_KoZone);
+	savefile->WriteString(m_KoAlertState);
+	savefile->WriteBool(m_bKoAlertImmune);
+	savefile->WriteFloat(m_KoDotVert);
+	savefile->WriteFloat(m_KoDotHoriz);
+	savefile->WriteFloat(m_KoAlertDotVert);
+	savefile->WriteFloat(m_KoAlertDotHoriz);
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1055,6 +1066,13 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(m_MouthOffset);
 	savefile->ReadBool(m_bCanBeKnockedOut);
 	savefile->ReadVec3(m_HeadCenterOffset);
+	savefile->ReadString(m_KoZone);
+	savefile->ReadString(m_KoAlertState);
+	savefile->ReadBool(m_bKoAlertImmune);
+	savefile->ReadFloat(m_KoDotVert);
+	savefile->ReadFloat(m_KoDotHoriz);
+	savefile->ReadFloat(m_KoAlertDotVert);
+	savefile->ReadFloat(m_KoAlertDotHoriz);
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1517,7 +1535,7 @@ void idAI::Spawn( void )
 	m_HandlingDoor = false;
 	m_HandlingElevator = false;
 
-	// Set up KOing and FOV
+	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
 	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
 
@@ -1528,7 +1546,36 @@ void idAI::Spawn( void )
 	}
 
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
-	// end KO setup
+	m_KoZone = spawnArgs.GetString("ko_zone");
+	m_KoAlertState = spawnArgs.GetString("ko_alert_state");
+	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
+	
+	float tempAng;
+	tempAng = spawnArgs.GetFloat("ko_angle_vert", "360");
+	m_KoDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	tempAng = spawnArgs.GetFloat("ko_angle_horiz", "360");
+	m_KoDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	
+	// Only set the alert angles if the spawnargs exist
+	const char *tempc1, *tempc2;
+	tempc1 = spawnArgs.GetString("ko_angle_alert_vert");
+	tempc2 = spawnArgs.GetString("ko_angle_alert_horiz");
+	if( tempc1[0] != '\0' )
+	{
+		tempAng = atof( tempc1 );
+		m_KoAlertDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	}
+	else
+		m_KoAlertDotVert = m_KoDotVert;
+	if( tempc2[0] != '\0' )
+	{
+		tempAng = atof( tempc2 );
+		m_KoAlertDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	}
+	else
+		m_KoAlertDotHoriz = m_KoDotHoriz;
+
+	// ================== End KO setup ====================
 
 	BecomeActive( TH_THINK );
 
@@ -8431,19 +8478,13 @@ idAI::TestKnockoutBlow
 bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 {
 	bool bReturnVal(false);
-	float KOAng(0), MinDot(1);
-	idVec3 KOSpot(vec3_zero), delta(vec3_zero);
+	float MinDotVert, MinDotHoriz, lenDelta, lenDeltaH;
+	float dotVert, dotHoriz;
+	idVec3 KOSpot(vec3_zero), delta(vec3_zero), deltaH(vec3_zero);
 	idMat3 HeadAxis(mat3_zero);
 	idStr LocationName;
 
-	// state name for logging
-	const char *statename;
-	if( state )
-		statename = state->Name();
-	else
-		statename = "NULL State";
-
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s in state %s\r", name.c_str(), statename);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s\r", name.c_str());
 
 	if( AI_KNOCKEDOUT )
 	{
@@ -8458,32 +8499,27 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
 
 	// check if we're hitting the right zone (usually the head)
-	if( strcmp(LocationName.c_str(), spawnArgs.GetString("ko_zone")) != 0 )
+	if( strcmp(LocationName.c_str(), m_KoZone.c_str()) != 0 )
 		goto Quit;
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
 	{
 		// abort KO if the AI is immune when alerted
-		if( spawnArgs.GetBool("ko_alert_immmune") )
+		if( m_bKoAlertImmune )
 			goto Quit;
 
-		// reduce the angle on alert, if needed
-		const char *temp = spawnArgs.GetString("ko_angle_alert");
-		if( temp[0] != '\0' )
-			KOAng = atof( temp );
-		else
-			KOAng = spawnArgs.GetFloat( "ko_angle" );
+		MinDotVert = m_KoAlertDotVert;
+		MinDotHoriz = m_KoAlertDotHoriz;
 	}
 	else
-		KOAng = spawnArgs.GetFloat( "ko_angle" );
+	{
+		MinDotVert = m_KoDotVert;
+		MinDotHoriz = m_KoDotHoriz;
+	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Calculated KO angle = %f\r", KOAng);
-
-	// check if we hit within the cone
-	MinDot = (float)cos( DEG2RAD( KOAng * 0.5f ) );
-
+	// check if we hit within the angles
 	if( m_HeadJointID == INVALID_JOINT )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint found on AI %s when KO attempted \r", name.c_str());
@@ -8496,18 +8532,26 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 	KOSpot += HeadAxis * m_HeadCenterOffset;
 
 	delta = KOSpot - tr->c.point;
-	delta.NormalizeFast();
+	lenDelta = delta.Length();
 
-	// check if hit was within the cone
-	if( (delta * HeadAxis[0]) < MinDot )
-		goto Quit;
+	// First, project delta into the horizontal plane of the head
+	// Assume HeadAxis[1] is the up direction in head coordinates
+	deltaH = delta - HeadAxis[1] * (HeadAxis[1] * delta);
+	lenDeltaH = deltaH.Normalize();
 
-	bReturnVal = true;
+	dotHoriz = HeadAxis[ 0 ] * deltaH;
+	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
+	dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
-	// if we made it to this point, this AI just got knocked the taff out!
-	Knockout(attacker);
+	// if hit was within the cone
+	if ( (dotHoriz >= m_KoDotHoriz && dotVert >= m_KoDotVert) )
+	{
+		bReturnVal = true;
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
+		// We just got knocked the taff out!
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
+		Knockout(attacker);
+	}
 
 Quit:
 	return bReturnVal;
@@ -8515,11 +8559,11 @@ Quit:
 
 void idAI::KnockoutDebugDraw( void )
 {
-	float KOAng(0), radius(0);
+	float AngVert(0), AngHoriz(0), radius(0);
 	idVec3 KOSpot(vec3_zero), ConeDir(vec3_zero);
 	idMat3 HeadAxis(mat3_zero);
 
-	const char * testZone = spawnArgs.GetString("ko_zone");
+	const char * testZone = m_KoZone.c_str();
 	if( AI_KNOCKEDOUT || AI_DEAD || testZone[0] == '\0' )
 	{
 		goto Quit;
@@ -8527,21 +8571,29 @@ void idAI::KnockoutDebugDraw( void )
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
 	{
 		// Do not display if immune
-		if( spawnArgs.GetBool("ko_alert_immmune") )
+		if( m_bKoAlertImmune )
 			goto Quit;
 
 		// reduce the angle on alert, if needed
-		const char *temp = spawnArgs.GetString("ko_angle_alert");
-		if( temp[0] != '\0' )
-			KOAng = atof( temp );
+		const char *temp1 = spawnArgs.GetString("ko_angle_alert_vert");
+		if( temp1[0] != '\0' )
+			AngVert = atof( temp1 );
 		else
-			KOAng = spawnArgs.GetFloat( "ko_angle" );
+			AngVert = spawnArgs.GetFloat( "ko_angle_vert", "360" );
+		const char *temp2 = spawnArgs.GetString("ko_angle_alert_horiz");
+		if( temp2[0] != '\0' )
+			AngHoriz = atof( temp2 );
+		else
+			AngHoriz = spawnArgs.GetFloat( "ko_angle_horiz", "360" );
 	}
 	else
-		KOAng = spawnArgs.GetFloat( "ko_angle" );
+	{
+		AngVert = spawnArgs.GetFloat( "ko_angle_vert", "360" );
+		AngHoriz = spawnArgs.GetFloat( "ko_angle_horiz", "360" );
+	}
 
 	if( m_HeadJointID == INVALID_JOINT )
 	{
@@ -8555,9 +8607,13 @@ void idAI::KnockoutDebugDraw( void )
 
 	// Assumes the head joint is facing the same way as the look joint
 	ConeDir = -HeadAxis[0];
-	radius = DEG2RAD( KOAng * 0.5f ) * 30.0f;
 
+	// vertical angle in green
+	radius = DEG2RAD( AngVert * 0.5f ) * 30.0f;
 	gameRenderWorld->DebugCone( colorGreen, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
+	// horizontal angle in red
+	radius = DEG2RAD( AngHoriz * 0.5f ) * 30.0f;
+	gameRenderWorld->DebugCone( colorRed, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
 
 Quit:
 	return;
@@ -8725,7 +8781,7 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 
 void idAI::FOVDebugDraw( void )
 {
-	float FOVAng(0), radius(0);
+	float AngVert(0), AngHoriz(0), radius(0);
 	idVec3 HeadCenter(vec3_zero), ConeDir(vec3_zero);
 	idMat3 HeadAxis(mat3_zero);
 
@@ -8736,11 +8792,11 @@ void idAI::FOVDebugDraw( void )
 
 	// probably expensive, but that's okay since this is just for debug mode
 
-	FOVAng = idMath::ACos( m_fovDotHoriz );
+	AngVert = idMath::ACos( m_fovDotVert );
+	AngHoriz = idMath::ACos( m_fovDotHoriz );
 
 	// store head joint base position to HeadCenter, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
-
 	// offset from head joint position to get the true head center
 	HeadCenter += HeadAxis * m_HeadCenterOffset;
 
@@ -8749,24 +8805,38 @@ void idAI::FOVDebugDraw( void )
 	// Diverge to keep reasonable cone size
 	float coneLength;
 
-	if (FOVAng >= (idMath::PI / 4.0f))
+	if (AngVert >= (idMath::PI / 4.0f))
 	{
 		// Fix radius and calculate length
 		radius = 60.0f;
-
-		coneLength = radius / idMath::Tan(FOVAng);
-
+		coneLength = radius / idMath::Tan(AngVert);
 	}
 	else
 	{
 		// Fix length and calculate radius
 		coneLength = 60.0f;
-
 		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
-		radius = idMath::Tan(FOVAng) * coneLength;
+		radius = idMath::Tan(AngVert) * coneLength;
 	}
 
-	gameRenderWorld->DebugCone( colorRed, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
+	gameRenderWorld->DebugCone( colorBlue, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
+	
+	// now do the same for horizontal FOV angle, orange cone
+	if (AngHoriz >= (idMath::PI / 4.0f))
+	{
+		// Fix radius and calculate length
+		radius = 60.0f;
+		coneLength = radius / idMath::Tan(AngHoriz);
+	}
+	else
+	{
+		// Fix length and calculate radius
+		coneLength = 60.0f;
+		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
+		radius = idMath::Tan(AngHoriz) * coneLength;
+	}
+
+	gameRenderWorld->DebugCone( colorOrange, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
 
 Quit:
 	return;
