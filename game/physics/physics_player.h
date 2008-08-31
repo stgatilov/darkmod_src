@@ -13,7 +13,7 @@
 #ifndef __PHYSICS_PLAYER_H__
 #define __PHYSICS_PLAYER_H__
 
-#include "force_push.h"
+#include <boost/shared_ptr.hpp>
 
 /*
 ===================================================================================
@@ -78,6 +78,8 @@ typedef enum
 
 } EDarkMod_MantlePhase;
 
+class CForcePush;
+typedef boost::shared_ptr<CForcePush> CForcePushPtr;
 
 // The class itself
 class idPhysics_Player : 
@@ -345,7 +347,7 @@ private:
 	idVec3					m_LeanDoorListenPos;
 
 	// greebo: The push force as applied to blocking objects
-	CForcePush				m_PushForce;
+	CForcePushPtr			m_PushForce;
 
 	// results of last evaluate
 #ifndef MOD_WATERPHYSICS

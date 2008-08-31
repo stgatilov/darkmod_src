@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/BinaryFrobMover.h"
 #include "../DarkMod/FrobDoor.h"
+#include "force_push.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS
@@ -137,7 +138,7 @@ int c_pmove = 0;
 void idPhysics_Player::SetSelf( idEntity *e )
 {
 	idPhysics_Base::SetSelf(e);
-	m_PushForce.SetOwner(e);
+	m_PushForce->SetOwner(e);
 }
 
 /*
@@ -410,8 +411,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			if (pushedEnt != NULL)
 			{
 				// Register the blocking physics object with our push force
-				m_PushForce.SetPushEntity(pushedEnt, 0);
-				m_PushForce.SetContactInfo(trace, current.velocity);
+				m_PushForce->SetPushEntity(pushedEnt, 0);
+				m_PushForce->SetContactInfo(trace, current.velocity);
 
 				totalMass = pushedEnt->GetPhysics()->GetMass();
 			}
@@ -900,7 +901,7 @@ void idPhysics_Player::WalkMove( void )
 	vel = current.velocity - (current.velocity * gravityNormal) * gravityNormal;
 	if ( !vel.LengthSqr() ) {
 		// greebo: We're not moving, so let's clear the push entity
-		m_PushForce.SetPushEntity(NULL);
+		m_PushForce->SetPushEntity(NULL);
 		return;
 	}
 
@@ -2563,6 +2564,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbSndRepDistVert = 0;
 	m_ClimbSndRepDistHoriz = 0;
 
+	m_PushForce = CForcePushPtr(new CForcePush);
+
 	// swimming
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
@@ -2718,7 +2721,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3 (m_LeanDoorListenPos);
 	m_LeanDoorEnt.Save( savefile );
 
-	savefile->WriteStaticObject(m_PushForce);
+	savefile->WriteStaticObject(*m_PushForce);
 }
 
 /*
@@ -2834,7 +2837,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
-	savefile->ReadStaticObject( m_PushForce );
+	savefile->ReadStaticObject( *m_PushForce );
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }
@@ -2978,7 +2981,7 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	MovePlayer( timeStepMSec );
 
 	// Apply the push force to all objects encountered during MovePlayer
-	m_PushForce.Evaluate(timeStepMSec);
+	m_PushForce->Evaluate(timeStepMSec);
 
 	clipModel->Link( gameLocal.clip, self, 0, current.origin, clipModel->GetAxis() );
 
