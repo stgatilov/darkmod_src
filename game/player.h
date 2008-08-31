@@ -98,6 +98,92 @@ enum {
 	INFLUENCE_LEVEL3,			// slow player movement
 };
 
+/**
+* Possible mouse directions, for mouse gestures
+**/
+typedef enum {
+	MOUSEDIR_NONE,
+	MOUSEDIR_LEFT,
+	MOUSEDIR_UP_LEFT,
+	MOUSEDIR_UP,
+	MOUSEDIR_UP_RIGHT,
+	MOUSEDIR_RIGHT,
+	MOUSEDIR_DOWN_RIGHT,
+	MOUSEDIR_DOWN,
+	MOUSEDIR_DOWN_LEFT
+} EMouseDir;
+
+/**
+* Possible tests, for mouse gestues
+**/
+typedef enum 
+{
+	MOUSETEST_UPDOWN,
+	MOUSETEST_LEFTRIGHT,
+	MOUSETEST_4DIR, // up down left right
+	MOUSETEST_8DIR, // 4 DIR + the diagonals
+} EMouseTest;
+
+/**
+* Mouse gesture data
+**/
+typedef struct SMouseGesture_s
+{
+	bool bActive; // we are currently checking a mouse gesture
+	EMouseTest test; // defines which directions we're testing for movement
+
+	int key; // key being checked
+	int thresh; // mouse input threshold required to decide
+	int DecideTime; // time in ms before we auto-decide (default -1, wait forever)
+
+	int started; // time in ms at which we started
+	idVec2 StartPos; // mouse position at which we started	
+	idVec2 motion; // accumulated mouse motion over the gesture
+	EMouseDir result; // result of the last gesture, using the MOUSEDIR_* enum
+
+	SMouseGesture_s( void )
+	{
+		bActive = false;
+		test = MOUSETEST_LEFTRIGHT;
+		key = 0;
+		thresh = 0;
+		DecideTime = -1;
+		started = 0;
+		StartPos = vec2_zero;
+		motion = vec2_zero;
+		result = MOUSEDIR_RIGHT;
+	};
+
+	void	Save(idSaveGame *savefile) const
+	{
+		savefile->WriteBool(bActive);
+		savefile->WriteInt( (int) test );
+		savefile->WriteInt( key );
+		savefile->WriteInt( thresh );
+		savefile->WriteInt( DecideTime );
+		savefile->WriteInt( started );
+		savefile->WriteVec2( StartPos );
+		savefile->WriteVec2( motion );
+		savefile->WriteInt( (int) result );
+	};
+	void	Restore(idRestoreGame *savefile)
+	{
+		int tempInt;
+
+		savefile->ReadBool(bActive);
+		savefile->ReadInt( tempInt );
+		test = (EMouseTest) tempInt;
+		savefile->ReadInt( key );
+		savefile->ReadInt( thresh );
+		savefile->ReadInt( DecideTime );
+		savefile->ReadInt( started );
+		savefile->ReadVec2( StartPos );
+		savefile->ReadVec2( motion );
+		savefile->ReadInt( tempInt );
+		result = (EMouseDir) tempInt;
+	};
+} SMouseGesture;
+
 // Player control immobilization categories.
 enum {
 	EIM_ALL					= -1,
@@ -201,6 +287,11 @@ public:
 	*		  calls PerformButtonRelease() on this entity on this occasion.
 	*/
 	ButtonStateTracker		m_ButtonStateTracker;
+
+	/**
+	* Player's current/last mouse gesture:
+	**/
+	SMouseGesture			m_MouseGesture;
 
 	/**
 	* Set to true if the player is holding an item with the Grabber
@@ -520,6 +611,27 @@ public:
 	* @holdTime: The time the button has been held down
 	*/
 	void					PerformKeyRepeat(int impulse, int holdTime);
+
+	/**
+	* Ishtvan: Start tracking a mouse gesture that started when the key "impulse" was pressed
+	* Discretizes analog mouse movement into a few different gesture possibilities
+	* "Impulse" arg can also be a "button," see the UB_* enum in usercmdgen.h
+	* 
+	* Waits until the threshold mouse input is reached before deciding
+	* If bDiagonals is true, output can be a diagonal, otherwise just: left right up down.
+	* TurnHinderane sets the max palyer view turn rate when checking this mouse gesture
+	*	0 => player view locked, 1.0 => no effect on view turning
+	* DecideTime is the time in milliseconds after which the mouse gesture is auto-decided,
+	*	in the event that the mouse movement threshold was not reached.
+	* For now, only one mouse gesture check at a time.
+	**/
+	void					StartMouseGesture( int impulse, int thresh, EMouseTest test, float TurnHinderance, int DecideTime = -1 );
+	void					UpdateMouseGesture( void );
+	void					StopMouseGesture( void );
+	/**
+	* Returns the result of the last mouse gesture (MOUSEDIR_* enum)
+	**/
+	EMouseDir				GetMouseGesture( void );
 
 	void					Spectate( bool spectate );
 	void					TogglePDA( void );

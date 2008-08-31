@@ -1156,6 +1156,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteAngles( viewAngles );
 	savefile->WriteAngles( cmdAngles );
 
+	// Mouse gesture
+	m_MouseGesture.Save( savefile );
+
 	savefile->WriteInt( buttonMask );
 	savefile->WriteInt( oldButtons );
 	savefile->WriteInt( oldFlags );
@@ -1427,6 +1430,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	memset( usercmd.angles, 0, sizeof( usercmd.angles ) );
 	SetViewAngles( viewAngles );
 	spawnAnglesSet = true;
+
+	m_MouseGesture.Restore( savefile );
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -5453,6 +5458,168 @@ void idPlayer::EvaluateControls( void )
 	// update the viewangles
 	UpdateViewAngles();
 }
+
+/**
+* TDM Mouse Gestures
+**/
+void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, float TurnHinderance, int DecideTime )
+{
+	m_MouseGesture.bActive = true;
+	m_MouseGesture.test = test;
+	m_MouseGesture.key = impulse;
+	m_MouseGesture.thresh = thresh;
+	m_MouseGesture.DecideTime = DecideTime;
+
+	m_MouseGesture.started = gameLocal.time;
+	m_MouseGesture.StartPos.x = usercmd.mx;
+	m_MouseGesture.StartPos.y = usercmd.my;
+	m_MouseGesture.motion = vec2_zero;
+	
+	// NOTE: Do not clear the last result as we may use it again if we can't decide
+	// TODO: Set angular hinderance
+}
+
+void idPlayer::UpdateMouseGesture( void )
+{
+	bool bStop( false );
+	float mag(0.0f);
+	EMouseDir CurrentDir;
+
+	m_MouseGesture.motion.x += usercmd.mx - m_MouseGesture.StartPos.x;
+	m_MouseGesture.motion.y += usercmd.my - m_MouseGesture.StartPos.y;
+	EMouseTest test = m_MouseGesture.test;
+	idVec2 motion = m_MouseGesture.motion;
+
+	// Get the current dominant direction and magnitude
+	if( test == MOUSETEST_UPDOWN )
+	{
+		if( motion.y < 0 )
+			CurrentDir = MOUSEDIR_DOWN;
+		else
+			CurrentDir = MOUSEDIR_UP;
+
+		mag = idMath::Fabs( motion.y );
+	}
+	else if ( test == MOUSETEST_LEFTRIGHT )
+	{
+		if( motion.x < 0 )
+			CurrentDir = MOUSEDIR_LEFT;
+		else
+			CurrentDir = MOUSEDIR_RIGHT;
+
+		mag = idMath::Fabs( motion.x );
+	}
+	else if( test == MOUSETEST_4DIR )
+	{
+		// up/down motion dominant
+		if( idMath::Fabs(motion.y) > idMath::Fabs(motion.x) )
+		{
+			if( motion.y < 0 )
+				CurrentDir = MOUSEDIR_DOWN;
+			else
+				CurrentDir = MOUSEDIR_UP;
+
+			mag = idMath::Fabs( motion.y );			
+		}
+		// side/side dominant (default right for zero input)
+		else
+		{
+			if( motion.x < 0 )
+				CurrentDir = MOUSEDIR_LEFT;
+			else
+				CurrentDir = MOUSEDIR_RIGHT;
+
+			mag = idMath::Fabs( motion.x );
+		}
+	}
+	else
+	{
+		// Test along 8 directions (NOT TESTED!)
+		// Step 1, figure out what quadrant we're in
+		// Step 1, resolve onto diagonal basis
+		idVec2 DiagVec;
+		// upper right
+		DiagVec.x = motion * idMath::SQRT_1OVER2 * idVec2(1.0f,1.0f);
+		// lower right
+		DiagVec.y = motion * idMath::SQRT_1OVER2 * idVec2(1.0f,-1.0f);
+
+		// figure out which is dominant
+		idList<float> dirs;
+		dirs.Append(idMath::Fabs(motion.y));
+		dirs.Append(idMath::Fabs(motion.x));
+		dirs.Append(idMath::Fabs(DiagVec.x));
+		dirs.Append(idMath::Fabs(DiagVec.y));
+
+		mag = 0.0f;
+		int MaxAxis = 1; // default to right if we have zero motion
+
+		for( int i=0; i < 4; i++ )
+		{
+			if( dirs[i] > mag )
+			{
+				mag = dirs[i];
+				MaxAxis = i;
+			}
+		}
+
+		// up/down
+		if( MaxAxis == 0 )
+		{
+			if( motion.y < 0 )
+				CurrentDir = MOUSEDIR_DOWN;
+			else
+				CurrentDir = MOUSEDIR_UP;
+		}
+		// left/right
+		else if( MaxAxis == 1)
+		{
+			if( motion.x < 0 )
+				CurrentDir = MOUSEDIR_LEFT;
+			else
+				CurrentDir = MOUSEDIR_RIGHT;
+		}
+		// upper right/lower left
+		else if( MaxAxis == 2)
+		{
+			if( DiagVec.x < 0 )
+				CurrentDir = MOUSEDIR_DOWN_LEFT;
+			else
+				CurrentDir = MOUSEDIR_UP_RIGHT;
+		}
+		// lower right/upper left
+		else
+		{
+			if( DiagVec.y < 0 )
+				CurrentDir = MOUSEDIR_UP_LEFT;
+			else
+				CurrentDir = MOUSEDIR_DOWN_RIGHT;
+		}
+	}
+
+
+	// If above threshold, decision timer ran out, or button released, we're done
+	if( mag > m_MouseGesture.thresh 
+		|| (m_MouseGesture.DecideTime >= 0 && (gameLocal.time - m_MouseGesture.started) > m_MouseGesture.DecideTime) 
+		|| !common->ButtonState(m_MouseGesture.key) )
+	{
+		m_MouseGesture.result = CurrentDir;
+		StopMouseGesture();
+	}
+}
+
+void idPlayer::StopMouseGesture( void )
+{
+	m_MouseGesture.bActive = false;
+
+	// TODO: Remove any slowdown of the player view turning
+}
+
+EMouseDir idPlayer::GetMouseGesture( void )
+{
+	return m_MouseGesture.result;
+}
+
+
 
 /*
 ==============
