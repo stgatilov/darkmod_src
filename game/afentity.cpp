@@ -1324,6 +1324,16 @@ void idAFEntity_Base::RemoveAddedEnt( idEntity *ent )
 	}
 }
 
+jointHandle_t idAFEntity_Base::JointForBody( int body )
+{
+	return af.JointForBody( body );
+}
+	
+int	idAFEntity_Base::BodyForJoint( jointHandle_t joint )
+{
+	return af.BodyForJoint( joint );
+}
+
 void idAFEntity_Base::RestoreAddedEnts( void )
 {
 	// This must be called after all entities are loaded

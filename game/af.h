@@ -73,6 +73,11 @@ public:
 	void					ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	void					AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 	int						BodyForClipModelId( int id ) const;
+	/**
+	* Find the joint associated with the given body
+	**/
+	jointHandle_t			JointForBody( int body );
+	int						BodyForJoint( jointHandle_t joint );
 
 	void					SaveState( idDict &args ) const;
 	void					LoadState( const idDict &args );

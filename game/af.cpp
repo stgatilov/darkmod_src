@@ -389,6 +389,38 @@ int idAF::BodyForClipModelId( int id ) const {
 
 /*
 ================
+idAF::JointForBody
+================
+*/
+jointHandle_t idAF::JointForBody( int body )
+{
+	jointHandle_t joint;
+	for( int i=0; i < jointBody.Num(); i++ )
+	{
+		if( jointBody[i] == body )
+		{
+			joint = (jointHandle_t) i;
+			break;
+		}
+	}
+	return joint;
+}
+		
+/*
+================
+idAF::BodyForJoint
+================
+*/
+int	idAF::BodyForJoint( jointHandle_t joint )
+{
+		if ( joint < jointBody.Num() ) 
+			return jointBody[ joint ];
+		else
+			return 0;
+}
+
+/*
+================
 idAF::GetPhysicsToVisualTransform
 ================
 */

@@ -232,6 +232,12 @@ public:
 	**/
 	void					RemoveAddedEnt( idEntity *ent );
 
+	/**
+	* TDM: Get an AF body ID for a given joint, and vice versa
+	**/
+	jointHandle_t			JointForBody( int body );
+	int						BodyForJoint( jointHandle_t joint );
+
 	virtual void			ShowEditingDialog( void );
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );

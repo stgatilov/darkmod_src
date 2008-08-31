@@ -340,8 +340,15 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			}
 			else
 			{
+				// failed to connect with the rendermodel.  
+				// Last ditch effort to find the correct AF body
+				if( other->IsType(idAFEntity_Base::Type) )
+				{
+					idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
+					tr.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( otherAF->JointForBody(tr.c.id) );
+				}
+
 				// If we failed to find anything, draw the attempted trace in green
-				// TODO: Also see if we can at least set up damage groups correctly from the AF body hit
 				if( cv_melee_debug.GetBool() )
 					gameRenderWorld->DebugArrow( colorGreen, start, tr.c.point + 8.0f * PointVelDir, 3, 1000 );
 			}
