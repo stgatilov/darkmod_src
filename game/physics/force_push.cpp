@@ -88,6 +88,8 @@ void CForcePush::Evaluate( int time )
 	// This is the maximum mass an object can have to be kickable
 	float massThresholdHeavy = ownerMass * cv_pm_push_heavy_threshold.GetFloat();
 
+	bool isPushing = false;
+
 	if (mass < massThresholdHeavy)
 	{
 		// The pushed entity is not a heavy one, kick it 
@@ -139,16 +141,7 @@ void CForcePush::Evaluate( int time )
 			// Apply the mass scale and the acceleration scale to the capped velocity
 			pushEnt->GetPhysics()->SetLinearVelocity(pushVelocity * velocity * accelScale * massScale * entityScale);
 
-			// Update the owning actor's push state
-			if (owner->IsType(idActor::Type))
-			{
-				idActor* owningActor = static_cast<idActor*>(owner);
-
-				if (!owningActor->IsPushing()) 
-				{
-					owningActor->SetIsPushing(true);
-				}
-			}
+			isPushing = true;
 
 			// Update the pushed status if this entity is a moveable
 			if (pushEnt->IsType(idMoveable::Type))
@@ -156,6 +149,17 @@ void CForcePush::Evaluate( int time )
 				// Pass the pushDirection to the moveable
 				static_cast<idMoveable*>(pushEnt)->SetIsPushed(true, impactVelocity);
 			}
+		}
+	}
+
+	// Update the owning actor's push state if it has changed
+	if (owner->IsType(idActor::Type))
+	{
+		idActor* owningActor = static_cast<idActor*>(owner);
+
+		if (owningActor->IsPushing() != isPushing) 
+		{
+			owningActor->SetIsPushing(isPushing);
 		}
 	}
 
