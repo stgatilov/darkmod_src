@@ -567,7 +567,7 @@ public:
 	 * greebo: This returns the current weapon being focused at by the weapon inventory cursor.
 	 *         Can return NULL, but should not in 99% of the cases.
 	 */
-	CInventoryWeaponItem*	getCurrentWeaponItem();
+	CInventoryWeaponItem*	GetCurrentWeaponItem();
 
 	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );
@@ -580,6 +580,8 @@ public:
 	void					WeaponRisingCallback( void );
 	void					RemoveWeapon( const char *weap );
 	bool					CanShowWeaponViewmodel( void ) const;
+	// greebo: This method updates the player's movement hinderance when weapons are drawn
+	void					UpdateWeaponEncumbrance();
 
 	void					AddAIKill( void );
 	void					SetSoulCubeProjectile( idProjectile *projectile );

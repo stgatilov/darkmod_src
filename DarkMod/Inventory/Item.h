@@ -51,24 +51,24 @@ public:
 	virtual void			Save( idSaveGame *savefile ) const;
 	virtual void			Restore( idRestoreGame *savefile );
 
-	inline CInventory		*Inventory() const { return m_Inventory; }
-	inline CInventoryCategory	*Category() const { return m_Category; }
+	inline CInventory*		Inventory() const { return m_Inventory; }
+	inline CInventoryCategory*	Category() const { return m_Category; }
 	
-	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
+	inline idEntity	*		GetOwner(void) { return m_Owner.GetEntity(); };
 
-	inline void				SetItemEntity(idEntity *ent) { m_Item = ent; };
-	inline idEntity			*GetItemEntity() { return m_Item.GetEntity(); }
-	inline void				SetType(CInventoryItem::ItemType type) { m_Type = type; };
+	inline void			SetItemEntity(idEntity *ent) { m_Item = ent; };
+	inline idEntity	*		GetItemEntity() { return m_Item.GetEntity(); }
+	inline void			SetType(CInventoryItem::ItemType type) { m_Type = type; };
 	inline					ItemType GetType(void) { return m_Type; };
 
 	inline int				GetCount(void) { return m_Count; };
 	void					SetCount(int Amount);
 
-	inline bool				IsStackable(void) { return m_Stackable; };
+	inline bool			IsStackable(void) { return m_Stackable; };
 	void					SetStackable(bool);
 
-	inline void				SetDroppable(bool bDroppable) { m_Droppable = bDroppable; };
-	inline bool				IsDroppable(void) { return m_Droppable; };
+	inline void			SetDroppable(bool bDroppable) { m_Droppable = bDroppable; };
+	inline bool			IsDroppable(void) { return m_Droppable; };
 
 	void					SetLootType(CInventoryItem::LootType t);
 	inline LootType			GetLootType(void) { return m_LootType; };
@@ -76,11 +76,11 @@ public:
 	void					SetValue(int n);
 	inline int				GetValue(void) { return m_Value; };
 
-	inline void				SetName(const idStr &n) { m_Name = n; };
+	inline void			SetName(const idStr &n) { m_Name = n; };
 	inline idStr			GetName(void) { return m_Name; };
 
-	inline void				SetItem(idEntity *item) { m_Item = item; };
-	inline idEntity			*GetItem(void) { return m_Item.GetEntity(); };
+	inline void			SetItem(idEntity *item) { m_Item = item; };
+	inline idEntity	*		GetItem(void) { return m_Item.GetEntity(); };
 
 	inline int				GetOverlay(void) { return m_Overlay; };
 	void					SetOverlay(const idStr &HudName, int Overlay);
@@ -91,7 +91,7 @@ public:
 	inline idStr&			GetIcon() { return m_Icon; };
 	void					SetIcon(const idStr& newIcon);
 
-	inline void				SetItemId(const idStr &id) { m_ItemId = id; };
+	inline void			SetItemId(const idStr &id) { m_ItemId = id; };
 	inline idStr			GetItemId(void) { return m_ItemId; };
 
 	static LootType			getLootTypeFromSpawnargs(const idDict& spawnargs);
@@ -112,8 +112,23 @@ public:
 	inline int				GetLightgemModifier() { return m_LightgemModifier; }
 	void					SetLightgemModifier(int newValue);
 
+	/**
+	 * greebo: When this item is active, the owner can be encumbered (or even accelerated?)
+	 * by a certain factor. Each item can have its own movement modifier, which is defined
+	 * in the "inv_movement_modifer" spawnarg.
+	 *
+	 * @modifier value range: a floating point variable in [0, INF]. This value is applied to
+	 * the maximum player movement speed by multiplication.
+	 */
+	inline float			GetMovementModifier() { return m_MovementModifier; }
+	void					SetMovementModifier(float newValue);
+
 	// Returns true when this item should be used by the 'frob' impulse
 	inline bool			UseOnFrob() const { return m_UseOnFrob; }
+
+protected:
+	// Reads the values from the given spawnargs into the member variables
+	void					ParseSpawnargs(const idDict& spawnArgs);
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -144,6 +159,10 @@ protected:
 	bool					m_Persistent;	// Can be taken to the next map (default is FALSE)
 
 	int						m_LightgemModifier; // Is added to the lightgem when this item is active
+
+	// A value in [0,1] defining the fraction of the regular movement speed
+	// which the owner is allowed to move with when this item is equipped.
+	float					m_MovementModifier; 
 
 	bool					m_UseOnFrob;	// Whether this item can be used by the 'frob' button
 };

@@ -969,7 +969,7 @@ void idPlayer::Spawn( void )
 	PostEventMS(&EV_CheckAAS, 0);
 }
 
-CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
+CInventoryWeaponItem* idPlayer::GetCurrentWeaponItem() {
 	if (m_WeaponCursor == NULL) {
 		return NULL;
 	}
@@ -2157,7 +2157,7 @@ idPlayer::UpdateHudAmmo
 ===============
 */
 void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
-	CInventoryWeaponItem* item = getCurrentWeaponItem();
+	CInventoryWeaponItem* item = GetCurrentWeaponItem();
 
 	if (_hud != NULL && item != NULL) {
 		int ammoAmount = item->getAmmo();
@@ -2970,7 +2970,7 @@ void idPlayer::NextWeapon( void ) {
 	}
 	
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = getCurrentWeaponItem();
+	CInventoryWeaponItem* curItem = GetCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
@@ -3012,7 +3012,7 @@ void idPlayer::PrevWeapon( void ) {
 	}
 
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = getCurrentWeaponItem();
+	CInventoryWeaponItem* curItem = GetCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
@@ -3066,7 +3066,7 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	}
 
 	// Check if we want to toggle the current weapon item (requested index == current index)
-	CInventoryWeaponItem* item = getCurrentWeaponItem();
+	CInventoryWeaponItem* item = GetCurrentWeaponItem();
 	if (item != NULL && item->getWeaponIndex() == num && item->isToggleable()) {
 		// Requested toggleable weapon is already active, hide it (switch to unarmed)
 		num = 0;
@@ -3396,6 +3396,7 @@ idPlayer::WeaponLoweringCallback
 void idPlayer::WeaponLoweringCallback( void ) {
 	SetState( "LowerWeapon" );
 	UpdateScript();
+	UpdateWeaponEncumbrance();
 }
 
 /*
@@ -3406,6 +3407,7 @@ idPlayer::WeaponRisingCallback
 void idPlayer::WeaponRisingCallback( void ) {
 	SetState( "RaiseWeapon" );
 	UpdateScript();
+	UpdateWeaponEncumbrance();
 }
 
 /*
@@ -8721,6 +8723,17 @@ bool idPlayer::CanShowWeaponViewmodel( void ) const {
 	return showWeaponViewModel;
 }
 
+void idPlayer::UpdateWeaponEncumbrance()
+{
+	// Get the currently selected weapon
+	CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
+
+	if (weapon != NULL)
+	{
+		SetHinderance("weapon", weapon->GetMovementModifier(), 1.0f);
+	}
+}
+
 /*
 ===============
 idPlayer::SetLevelTrigger
@@ -9313,8 +9326,11 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 		}
 	}
 
-	if(cur)
+	if (cur != NULL)
 	{
+		// Update the player's encumbrance
+		SetHinderance("inventory_item", cur->GetMovementModifier(), 1);
+
 		if(e && bUpdate == true) {
 			thread = e->CallScriptFunctionArgs("inventory_item_update", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
 		}
