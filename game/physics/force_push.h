@@ -9,7 +9,7 @@
 #ifndef __FORCE_PUSH_H__
 #define __FORCE_PUSH_H__
 
-#include "Force.h"
+#include "force.h"
 
 /**
  * greebo: This class should represent the push force as applied by the player
