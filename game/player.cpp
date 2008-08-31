@@ -5432,30 +5432,30 @@ idPlayer::GetHinderance
 float idPlayer::GetHinderance( void ) 
 {
 	// Has something changed since the cache was last calculated?
-	if ( m_hinderanceCache < 0.0f ) 
+	if (m_hinderanceCache < 0.0f) 
 	{
-		const idKeyValue *kv;
-
 		// Recalculate the hinderance from scratch.
 		float mCap = 1.0f, aCap = 1.0f;
-		kv = m_hinderance.MatchPrefix( "", NULL );
-		while ( kv ) 
+
+		for (const idKeyValue* kv = m_hinderance.MatchPrefix("", NULL); kv != NULL; kv = m_hinderance.MatchPrefix("", kv))
 		{
 			idVec3 vec = m_hinderance.GetVector(kv->GetKey());
 			mCap *= vec[0];
+
 			if ( aCap > vec[1] ) 
 			{
 				aCap = vec[1];
 			}
-			kv = m_hinderance.MatchPrefix( "", kv );
 		}
 
 		if ( aCap > mCap ) 
 		{
 			aCap = mCap;
 		}
+
 		m_hinderanceCache = aCap;
 	}
+
 	return m_hinderanceCache;
 }
 
@@ -5467,30 +5467,30 @@ idPlayer::GetTurnHinderance
 float idPlayer::GetTurnHinderance( void ) 
 {
 	// Has something changed since the cache was last calculated?
-	if ( m_TurnHinderanceCache < 0.0f ) 
+	if (m_TurnHinderanceCache < 0.0f) 
 	{
-		const idKeyValue *kv;
-
 		// Recalculate the hinderance from scratch.
 		float mCap = 1.0f, aCap = 1.0f;
-		kv = m_TurnHinderance.MatchPrefix( "", NULL );
-		while ( kv ) 
+
+		for (const idKeyValue* kv = m_TurnHinderance.MatchPrefix( "", NULL ); kv != NULL; kv = m_TurnHinderance.MatchPrefix("", kv))
 		{
 			idVec3 vec = m_TurnHinderance.GetVector(kv->GetKey());
 			mCap *= vec[0];
+
 			if ( aCap > vec[1] ) 
 			{
 				aCap = vec[1];
 			}
-			kv = m_TurnHinderance.MatchPrefix( "", kv );
 		}
 
 		if ( aCap > mCap ) 
 		{
 			aCap = mCap;
 		}
+
 		m_TurnHinderanceCache = aCap;
 	}
+
 	return m_TurnHinderanceCache;
 }
 
@@ -9376,26 +9376,7 @@ void idPlayer::Event_GetEyePos( void )
 
 void idPlayer::Event_SetImmobilization( const char *source, int type )
 {
-	if (idStr::Length(source))
-	{
-		// The user cannot set the update bit directly.
-		type &= ~EIM_UPDATE;
-
-		if (type)
-		{
-			m_immobilization.SetInt( source, type );
-		}
-		else
-		{
-			m_immobilization.Delete( source );
-		}
-
-		m_immobilizationCache |= EIM_UPDATE;
-	}
-	else
-	{
-		gameLocal.Warning( "source was empty; no immobilization set\n" );
-	}
+	SetImmobilization( source, type );
 }
 
 /*
@@ -9444,34 +9425,7 @@ idPlayer::Event_SetHinderance
 */
 void idPlayer::Event_SetHinderance( const char *source, float mCap, float aCap )
 {
-	if (idStr::Length(source)) {
-
-		if ( mCap < 0.0f ) {
-			mCap = 0.0f;
-			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
-		} else if ( mCap > 1.0f ) {
-			mCap = 1.0f;
-			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
-		}
-		if ( aCap < 0.0f ) {
-			aCap = 0.0f;
-			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
-		} else if ( aCap > 1.0f ) {
-			aCap = 1.0f;
-			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
-		}
-
-		if ( mCap < 1.0f || aCap < 1.0f ) {
-			idVec3 vec( mCap, aCap, 0.0f );
-			m_hinderance.SetVector( source, vec );
-		} else {
-			m_hinderance.Delete( source );
-		}
-
-		m_hinderanceCache = -1;
-	} else {
-		gameLocal.Warning( "source was empty; no hinderance set\n" );
-	}
+	SetHinderance( source, mCap, aCap );
 }
 
 /*
@@ -9481,34 +9435,7 @@ idPlayer::Event_SetTurnHinderance
 */
 void idPlayer::Event_SetTurnHinderance( const char *source, float mCap, float aCap )
 {
-	if (idStr::Length(source)) {
-
-		if ( mCap < 0.0f ) {
-			mCap = 0.0f;
-			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
-		} else if ( mCap > 1.0f ) {
-			mCap = 1.0f;
-			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
-		}
-		if ( aCap < 0.0f ) {
-			aCap = 0.0f;
-			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
-		} else if ( aCap > 1.0f ) {
-			aCap = 1.0f;
-			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
-		}
-
-		if ( mCap < 1.0f || aCap < 1.0f ) {
-			idVec3 vec( mCap, aCap, 0.0f );
-			m_TurnHinderance.SetVector( source, vec );
-		} else {
-			m_TurnHinderance.Delete( source );
-		}
-
-		m_TurnHinderanceCache = -1;
-	} else {
-		gameLocal.Warning( "source was empty; no turn hinderance set\n" );
-	}
+	SetTurnHinderance(source, mCap, aCap);
 }
 
 /*
@@ -9928,17 +9855,90 @@ int idPlayer::GetImmobilization( const char *source )
 
 void idPlayer::SetImmobilization( const char *source, int type )
 {
-	Event_SetImmobilization( source, type );
+	if (idStr::Length(source))
+	{
+		// The user cannot set the update bit directly.
+		type &= ~EIM_UPDATE;
+
+		if (type)
+		{
+			m_immobilization.SetInt( source, type );
+		}
+		else
+		{
+			m_immobilization.Delete( source );
+		}
+
+		m_immobilizationCache |= EIM_UPDATE;
+	}
+	else
+	{
+		gameLocal.Warning( "source was empty; no immobilization set\n" );
+	}
 }
 
 void idPlayer::SetHinderance( const char *source, float mCap, float aCap )
 {
-	Event_SetHinderance( source, mCap, aCap );
+	if (idStr::Length(source)) {
+
+		if ( mCap < 0.0f ) {
+			mCap = 0.0f;
+			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
+		} else if ( mCap > 1.0f ) {
+			mCap = 1.0f;
+			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
+		}
+		if ( aCap < 0.0f ) {
+			aCap = 0.0f;
+			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
+		} else if ( aCap > 1.0f ) {
+			aCap = 1.0f;
+			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
+		}
+
+		if ( mCap < 1.0f || aCap < 1.0f ) {
+			idVec3 vec( mCap, aCap, 0.0f );
+			m_hinderance.SetVector( source, vec );
+		} else {
+			m_hinderance.Delete( source );
+		}
+
+		m_hinderanceCache = -1;
+	} else {
+		gameLocal.Warning( "source was empty; no hinderance set\n" );
+	}
 }
 
 void idPlayer::SetTurnHinderance( const char *source, float mCap, float aCap )
 {
-	Event_SetTurnHinderance( source, mCap, aCap );
+	if (idStr::Length(source)) {
+
+		if ( mCap < 0.0f ) {
+			mCap = 0.0f;
+			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
+		} else if ( mCap > 1.0f ) {
+			mCap = 1.0f;
+			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
+		}
+		if ( aCap < 0.0f ) {
+			aCap = 0.0f;
+			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
+		} else if ( aCap > 1.0f ) {
+			aCap = 1.0f;
+			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
+		}
+
+		if ( mCap < 1.0f || aCap < 1.0f ) {
+			idVec3 vec( mCap, aCap, 0.0f );
+			m_TurnHinderance.SetVector( source, vec );
+		} else {
+			m_TurnHinderance.Delete( source );
+		}
+
+		m_TurnHinderanceCache = -1;
+	} else {
+		gameLocal.Warning( "source was empty; no turn hinderance set\n" );
+	}
 }
 
 
