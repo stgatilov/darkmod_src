@@ -171,9 +171,9 @@ idCVar cv_drag_encumber_max(			"tdm_drag_encumber_max", "0.4", CVAR_GAME | CVAR_
 idCVar cv_dragged_item_highlight(		"tdm_dragged_item_highlight", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) if the grabbed item should always be highlighted." );
 
 idCVar cv_melee_debug(					"tdm_melee_debug", "0", CVAR_GAME | CVAR_BOOL, "Enable to show debug melee combat graphics." );
-idCVar cv_melee_mouse_thresh(			"tdm_melee_mouse_thresh", "1000", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "In manual control mode, sets the mouse movement threshold needed to decide on which attack/parry to make" );
-idCVar cv_melee_mouse_decision_time(	"tdm_melee_mouse_decision_time", "200", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "In manual control mode, holding the button for this many milliseconds, an attack/parry decision is made based on mouse motion, even if it is below threshold mouse motion." );
-idCVar cv_melee_mouse_slowview(			"tdm_melee_mouse_slowview", "1.0f", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "In manual control mode, when attack/parry button is held down, the view turn rate is decreased to this fraction while the mouse motion is determining which attack/parry to make (NYI)." );
+idCVar cv_melee_mouse_thresh(			"tdm_melee_mouse_thresh", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "In manual control mode, sets the mouse movement threshold needed to decide on which attack/parry to make" );
+idCVar cv_melee_mouse_decision_time(	"tdm_melee_mouse_decision_time", "160", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "In manual control mode, holding the button for this many milliseconds, an attack/parry decision is made based on mouse motion, even if it is below threshold mouse motion." );
+idCVar cv_melee_mouse_slowview(			"tdm_melee_mouse_slowview", "0.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "In manual control mode, when attack/parry button is held down, the view turn rate is decreased to this fraction while the mouse motion is determining which attack/parry to make (NYI)." );
 
 idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) to draw the linear impulse of (some) entities." );
 

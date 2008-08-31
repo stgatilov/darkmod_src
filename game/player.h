@@ -465,11 +465,18 @@ public:
 	void					SetImmobilization( const char *source, int type );
 
 	float					GetHinderance();
+	float					GetTurnHinderance();
 	/**
-	* Sets the movement hinderance.  This should be a fraction relative to max movement speed
-	* @Gildoran: What are mCap and aCap? Modifier and absolute?
+	* Sets the linear movement hinderance.  
+	* This should be a fraction relative to max movement speed
+	* mCap values multiply together with those of other hinderances, aCap is an absolute cap
+	* for this particular hinderance.
 	**/
 	void					SetHinderance( const char *source, float mCap, float aCap );
+	/**
+	* Same as SetHinderance, but applies to angular view turning speed
+	**/
+	void					SetTurnHinderance( const char *source, float mCap, float aCap );
 
 	// greebo: Sets the "player is pushing something heavy" state to the given bool (virtual override)
 	virtual void			SetIsPushing(bool isPushing);
@@ -915,6 +922,14 @@ private:
 	float					m_hinderanceCache;
 
 	/**
+	* m_TurnHinderance keeps track of sources of turn hinderance.
+	* These slow down the rate at which the player can turn their view
+	* m_TurnHinderanceCache works the same as m_hinderanceCache above
+	**/
+	idDict					m_TurnHinderance;
+	float					m_TurnHinderanceCache;
+
+	/**
 	 * greebo: This is the list of named lightgem modifier values. These can be accessed
 	 *         via script events to allow several modifiers to be active at the same time.
 	 *         To save for performance, the sum of these values is stored in m_LightgemModifier
@@ -1047,6 +1062,10 @@ private:
 	void					Event_SetHinderance( const char *source, float mCap, float aCap );
 	void					Event_GetHinderance( const char *source );
 	void					Event_GetNextHinderance( const char *prefix, const char *lastMatch );
+	void					Event_SetTurnHinderance( const char *source, float mCap, float aCap );
+	void					Event_GetTurnHinderance( const char *source );
+	void					Event_GetNextTurnHinderance( const char *prefix, const char *lastMatch );
+
 
 	void					Event_SetGui( int handle, const char *guiFile );
 	void					Event_GetInventoryOverlay(void);

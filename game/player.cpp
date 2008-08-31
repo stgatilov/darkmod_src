@@ -89,6 +89,9 @@ const idEventDef EV_Player_GetNextImmobilization( "getNextImmobilization", "ss",
 const idEventDef EV_Player_SetHinderance( "setHinderance", "sff" );
 const idEventDef EV_Player_GetHinderance( "getHinderance", "s", 'v' );
 const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
+const idEventDef EV_Player_SetTurnHinderance( "setTurnHinderance", "sff" );
+const idEventDef EV_Player_GetTurnHinderance( "getTurnHinderance", "s", 'v' );
+const idEventDef EV_Player_GetNextTurnHinderance( "getNextTurnHinderance", "ss", 's' );
 
 const idEventDef EV_Player_SetGui( "setGui", "ds" );
 const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", NULL, 'd' );
@@ -163,6 +166,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetHinderance,			idPlayer::Event_SetHinderance )
 	EVENT( EV_Player_GetHinderance,			idPlayer::Event_GetHinderance )
 	EVENT( EV_Player_GetNextHinderance,		idPlayer::Event_GetNextHinderance )
+	EVENT( EV_Player_SetTurnHinderance,		idPlayer::Event_SetTurnHinderance )
+	EVENT( EV_Player_GetTurnHinderance,		idPlayer::Event_GetTurnHinderance )
+	EVENT( EV_Player_GetNextTurnHinderance,	idPlayer::Event_GetNextTurnHinderance )
 
 	EVENT( EV_Player_SetGui,				idPlayer::Event_SetGui )
 	EVENT( EV_Player_GetInventoryOverlay,	idPlayer::Event_GetInventoryOverlay )
@@ -354,6 +360,7 @@ idPlayer::idPlayer() :
 
 	// m_hinderance.Clear();
 	m_hinderanceCache	= 1.0f;
+	m_TurnHinderanceCache = 1.0f;
 
 	memset( loggedViewAngles, 0, sizeof( loggedViewAngles ) );
 	memset( loggedAccel, 0, sizeof( loggedAccel ) );
@@ -764,6 +771,9 @@ void idPlayer::Spawn( void )
 
 	m_hinderance.Clear();
 	m_hinderanceCache = 1.0f;
+
+	m_TurnHinderance.Clear();
+	m_TurnHinderanceCache = 1.0f;
 
 	// set our collision model
 	physicsObj.SetSelf( this );
@@ -1338,6 +1348,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteDict( &m_hinderance );
 	savefile->WriteFloat( m_hinderanceCache );
+	savefile->WriteDict( &m_TurnHinderance );
+	savefile->WriteFloat( m_TurnHinderanceCache );
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
@@ -1636,6 +1648,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadDict( &m_hinderance );
 	savefile->ReadFloat( m_hinderanceCache );
+	savefile->ReadDict( &m_TurnHinderance );
+	savefile->ReadFloat( m_TurnHinderanceCache );
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
@@ -4257,7 +4271,12 @@ void idPlayer::UpdateViewAngles( void )
 		if ( influenceActive == INFLUENCE_LEVEL3 ) 
 		{
 			TestAngles[i] += idMath::ClampFloat( -1.0f, 1.0f, idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] ) );
-		} else 
+		} 
+		else if( GetTurnHinderance() != 1.0f )
+		{
+			TestAngles[i] += GetTurnHinderance() * idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] );
+		}
+		else
 		{
 			TestAngles[i] = idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] );
 		}
@@ -5410,29 +5429,69 @@ int idPlayer::GetImmobilization( void ) {
 idPlayer::GetHinderance
 ==============
 */
-float idPlayer::GetHinderance( void ) {
+float idPlayer::GetHinderance( void ) 
+{
 	// Has something changed since the cache was last calculated?
-	if ( m_hinderanceCache < 0.0f ) {
+	if ( m_hinderanceCache < 0.0f ) 
+	{
 		const idKeyValue *kv;
 
 		// Recalculate the hinderance from scratch.
 		float mCap = 1.0f, aCap = 1.0f;
 		kv = m_hinderance.MatchPrefix( "", NULL );
-		while ( kv ) {
+		while ( kv ) 
+		{
 			idVec3 vec = m_hinderance.GetVector(kv->GetKey());
 			mCap *= vec[0];
-			if ( aCap > vec[1] ) {
+			if ( aCap > vec[1] ) 
+			{
 				aCap = vec[1];
 			}
 			kv = m_hinderance.MatchPrefix( "", kv );
 		}
 
-		if ( aCap > mCap ) {
+		if ( aCap > mCap ) 
+		{
 			aCap = mCap;
 		}
 		m_hinderanceCache = aCap;
 	}
 	return m_hinderanceCache;
+}
+
+/*
+==============
+idPlayer::GetTurnHinderance
+==============
+*/
+float idPlayer::GetTurnHinderance( void ) 
+{
+	// Has something changed since the cache was last calculated?
+	if ( m_TurnHinderanceCache < 0.0f ) 
+	{
+		const idKeyValue *kv;
+
+		// Recalculate the hinderance from scratch.
+		float mCap = 1.0f, aCap = 1.0f;
+		kv = m_TurnHinderance.MatchPrefix( "", NULL );
+		while ( kv ) 
+		{
+			idVec3 vec = m_TurnHinderance.GetVector(kv->GetKey());
+			mCap *= vec[0];
+			if ( aCap > vec[1] ) 
+			{
+				aCap = vec[1];
+			}
+			kv = m_TurnHinderance.MatchPrefix( "", kv );
+		}
+
+		if ( aCap > mCap ) 
+		{
+			aCap = mCap;
+		}
+		m_TurnHinderanceCache = aCap;
+	}
+	return m_TurnHinderanceCache;
 }
 
 /*
@@ -5487,7 +5546,8 @@ void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, floa
 	m_MouseGesture.motion = vec2_zero;
 	
 	// NOTE: Do not clear the last result as we may use it again if we can't decide
-	// TODO: Set angular hinderance
+	
+	SetTurnHinderance( "MouseGesture", 1.0f, TurnHinderance );
 }
 
 void idPlayer::UpdateMouseGesture( void )
@@ -5514,10 +5574,10 @@ void idPlayer::UpdateMouseGesture( void )
 	}
 	else if ( test == MOUSETEST_LEFTRIGHT )
 	{
-		if( motion.x < 0 )
-			CurrentDir = MOUSEDIR_LEFT;
-		else
+		if( motion.x > 0 )
 			CurrentDir = MOUSEDIR_RIGHT;
+		else
+			CurrentDir = MOUSEDIR_LEFT;
 
 		mag = idMath::Fabs( motion.x );
 	}
@@ -5533,13 +5593,13 @@ void idPlayer::UpdateMouseGesture( void )
 
 			mag = idMath::Fabs( motion.y );			
 		}
-		// side/side dominant (default right for zero input)
+		// side/side dominant (default left for zero input)
 		else
 		{
-			if( motion.x < 0 )
-				CurrentDir = MOUSEDIR_LEFT;
-			else
+			if( motion.x > 0 )
 				CurrentDir = MOUSEDIR_RIGHT;
+			else
+				CurrentDir = MOUSEDIR_LEFT;
 
 			mag = idMath::Fabs( motion.x );
 		}
@@ -5547,7 +5607,7 @@ void idPlayer::UpdateMouseGesture( void )
 	else
 	{
 		// Test along 8 directions (NOT TESTED!)
-		// Step 1, figure out what quadrant we're in
+
 		// Step 1, resolve onto diagonal basis
 		idVec2 DiagVec;
 		// upper right
@@ -5563,7 +5623,7 @@ void idPlayer::UpdateMouseGesture( void )
 		dirs.Append(idMath::Fabs(DiagVec.y));
 
 		mag = 0.0f;
-		int MaxAxis = 1; // default to right if we have zero motion
+		int MaxAxis = 1; // default to left if we have zero motion
 
 		for( int i=0; i < 4; i++ )
 		{
@@ -5585,10 +5645,10 @@ void idPlayer::UpdateMouseGesture( void )
 		// left/right
 		else if( MaxAxis == 1)
 		{
-			if( motion.x < 0 )
-				CurrentDir = MOUSEDIR_LEFT;
-			else
+			if( motion.x > 0 )
 				CurrentDir = MOUSEDIR_RIGHT;
+			else
+				CurrentDir = MOUSEDIR_LEFT;
 		}
 		// lower right/upper left
 		else if( MaxAxis == 2)
@@ -5623,7 +5683,8 @@ void idPlayer::StopMouseGesture( void )
 {
 	m_MouseGesture.bActive = false;
 
-	// TODO: Remove any slowdown of the player view turning
+	// clear the angular hinderance
+	SetTurnHinderance( "MouseGesture", 1.0f, 1.0f );
 }
 
 EMouseDir idPlayer::GetMouseGesture( void )
@@ -9415,6 +9476,43 @@ void idPlayer::Event_SetHinderance( const char *source, float mCap, float aCap )
 
 /*
 =====================
+idPlayer::Event_SetTurnHinderance
+=====================
+*/
+void idPlayer::Event_SetTurnHinderance( const char *source, float mCap, float aCap )
+{
+	if (idStr::Length(source)) {
+
+		if ( mCap < 0.0f ) {
+			mCap = 0.0f;
+			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
+		} else if ( mCap > 1.0f ) {
+			mCap = 1.0f;
+			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
+		}
+		if ( aCap < 0.0f ) {
+			aCap = 0.0f;
+			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
+		} else if ( aCap > 1.0f ) {
+			aCap = 1.0f;
+			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
+		}
+
+		if ( mCap < 1.0f || aCap < 1.0f ) {
+			idVec3 vec( mCap, aCap, 0.0f );
+			m_TurnHinderance.SetVector( source, vec );
+		} else {
+			m_TurnHinderance.Delete( source );
+		}
+
+		m_TurnHinderanceCache = -1;
+	} else {
+		gameLocal.Warning( "source was empty; no turn hinderance set\n" );
+	}
+}
+
+/*
+=====================
 idPlayer::Event_GetHinderance
 =====================
 */
@@ -9424,6 +9522,22 @@ void idPlayer::Event_GetHinderance( const char *source )
 		idThread::ReturnVector( m_hinderance.GetVector( source, "1 1 0" ) );
 	} else {
 		float h = GetHinderance();
+		idVec3 vec( h, h, 0.0f );
+		idThread::ReturnVector( vec );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetTurnHinderance
+=====================
+*/
+void idPlayer::Event_GetTurnHinderance( const char *source )
+{
+	if (idStr::Length(source)) {
+		idThread::ReturnVector( m_TurnHinderance.GetVector( source, "1 1 0" ) );
+	} else {
+		float h = GetTurnHinderance();
 		idVec3 vec( h, h, 0.0f );
 		idThread::ReturnVector( vec );
 	}
@@ -9447,6 +9561,31 @@ void idPlayer::Event_GetNextHinderance( const char *prefix, const char *lastMatc
 	}
 
 	kv = m_hinderance.MatchPrefix( prefix, previous );
+	if ( !kv ) {
+		idThread::ReturnString( "" );
+	} else {
+		idThread::ReturnString( kv->GetKey() );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetNextTurnHinderance
+=====================
+*/
+void idPlayer::Event_GetNextTurnHinderance( const char *prefix, const char *lastMatch )
+{
+	// Code is plagarized from getNextKey()
+	const idKeyValue *kv;
+	const idKeyValue *previous;
+
+	if ( *lastMatch ) {
+		previous = m_TurnHinderance.FindKey( lastMatch );
+	} else {
+		previous = NULL;
+	}
+
+	kv = m_TurnHinderance.MatchPrefix( prefix, previous );
 	if ( !kv ) {
 		idThread::ReturnString( "" );
 	} else {
@@ -9796,6 +9935,12 @@ void idPlayer::SetHinderance( const char *source, float mCap, float aCap )
 {
 	Event_SetHinderance( source, mCap, aCap );
 }
+
+void idPlayer::SetTurnHinderance( const char *source, float mCap, float aCap )
+{
+	Event_SetTurnHinderance( source, mCap, aCap );
+}
+
 
 void idPlayer::PlayFootStepSound()
 {
