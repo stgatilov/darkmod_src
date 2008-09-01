@@ -64,7 +64,7 @@ const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
 const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", NULL, 'd');
 const idEventDef EV_Player_MouseGestureFinished( "mouseGestureFinished", NULL, 'd' );
-const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "dddfd" );
+const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "ddddfd" );
 const idEventDef EV_Player_StopMouseGesture( "stopMouseGesture" );
 const idEventDef EV_Player_StopFxFov( "stopFxFov" );
 const idEventDef EV_Player_EnableWeapon( "enableWeapon" );
@@ -5534,10 +5534,11 @@ void idPlayer::EvaluateControls( void )
 /**
 * TDM Mouse Gestures
 **/
-void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, float TurnHinderance, int DecideTime )
+void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime )
 {
 	m_MouseGesture.bActive = true;
 	m_MouseGesture.test = test;
+	m_MouseGesture.bInverted = bInverted;
 	m_MouseGesture.key = impulse;
 	m_MouseGesture.thresh = thresh;
 	m_MouseGesture.DecideTime = DecideTime;
@@ -5560,6 +5561,9 @@ void idPlayer::UpdateMouseGesture( void )
 
 	m_MouseGesture.motion.x += usercmd.mx - m_MouseGesture.StartPos.x;
 	m_MouseGesture.motion.y += usercmd.my - m_MouseGesture.StartPos.y;
+	if( m_MouseGesture.bInverted )
+		m_MouseGesture.motion = -m_MouseGesture.motion;
+
 	EMouseTest test = m_MouseGesture.test;
 	idVec2 motion = m_MouseGesture.motion;
 

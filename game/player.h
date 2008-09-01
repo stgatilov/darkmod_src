@@ -135,6 +135,7 @@ typedef struct SMouseGesture_s
 {
 	bool bActive; // we are currently checking a mouse gesture
 	EMouseTest test; // defines which directions we're testing for movement
+	bool bInverted; // mouse motions are inverted
 
 	int key; // key being checked
 	int thresh; // mouse input threshold required to decide
@@ -149,6 +150,7 @@ typedef struct SMouseGesture_s
 	{
 		bActive = false;
 		test = MOUSETEST_LEFTRIGHT;
+		bInverted = false;
 		key = 0;
 		thresh = 0;
 		DecideTime = -1;
@@ -160,8 +162,9 @@ typedef struct SMouseGesture_s
 
 	void	Save(idSaveGame *savefile) const
 	{
-		savefile->WriteBool(bActive);
+		savefile->WriteBool( bActive );
 		savefile->WriteInt( (int) test );
+		savefile->WriteBool( bInverted );
 		savefile->WriteInt( key );
 		savefile->WriteInt( thresh );
 		savefile->WriteInt( DecideTime );
@@ -177,6 +180,7 @@ typedef struct SMouseGesture_s
 		savefile->ReadBool(bActive);
 		savefile->ReadInt( tempInt );
 		test = (EMouseTest) tempInt;
+		savefile->ReadBool( bInverted );
 		savefile->ReadInt( key );
 		savefile->ReadInt( thresh );
 		savefile->ReadInt( DecideTime );
@@ -639,7 +643,7 @@ public:
 	*	in the event that the mouse movement threshold was not reached.
 	* For now, only one mouse gesture check at a time.
 	**/
-	void					StartMouseGesture( int impulse, int thresh, EMouseTest test, float TurnHinderance, int DecideTime = -1 );
+	void					StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime = -1 );
 	void					UpdateMouseGesture( void );
 	void					StopMouseGesture( void );
 	/**

@@ -144,6 +144,8 @@ extern idCVar cv_melee_debug;
 extern idCVar cv_melee_mouse_thresh;
 extern idCVar cv_melee_mouse_decision_time;
 extern idCVar cv_melee_mouse_slowview;
+extern idCVar cv_melee_invert_attack;
+extern idCVar cv_melee_invert_parry;
 extern idCVar cv_phys_show_momentum;
 
 extern idCVar cv_throw_min;
