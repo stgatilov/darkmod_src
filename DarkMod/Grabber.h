@@ -116,6 +116,12 @@ public:
 		bool					m_bPrevFrameCollided;
 
 		/**
+		* List of collision normals (shouldn't need this, should be able to use
+		* GetContacts, but that is not working)
+		**/
+		idList<idVec3>			m_CollNorms;
+
+		/**
 		* Stores the max force the player can apply in [mass] * doomunits/sec^2
 		* Currently only effects linear motion, not angular
 		**/

@@ -99,6 +99,7 @@ void CGrabber::Clear( void )
 	m_ThrowTimer = 0;
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
+	m_CollNorms.Clear();
 	
 	m_bAFOffGround = false;
 	m_DragUpTimer = 0;
@@ -161,6 +162,14 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_bObjStuck);
 	savefile->WriteBool(m_bObjEquipped);
 	savefile->WriteFloat(m_MaxForce);
+
+	savefile->WriteBool(m_bIsColliding);
+	savefile->WriteBool(m_bPrevFrameCollided);
+	savefile->WriteInt( m_CollNorms.Num() );
+	for (int i = 0; i < m_CollNorms.Num(); i++)
+	{
+		savefile->WriteVec3( m_CollNorms[i] );
+	}
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -212,6 +221,15 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_bObjStuck);
 	savefile->ReadBool(m_bObjEquipped);
 	savefile->ReadFloat(m_MaxForce);
+
+	savefile->ReadBool(m_bIsColliding);
+	savefile->ReadBool(m_bPrevFrameCollided);
+	savefile->ReadInt(num);
+	m_CollNorms.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadVec3(m_CollNorms[i]);
+	}
 }
 
 /*
@@ -234,6 +252,7 @@ void CGrabber::StopDrag( void )
 {
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
+	m_CollNorms.Clear();
 	m_bObjStuck = false;
 	
 	m_bAFOffGround = false;

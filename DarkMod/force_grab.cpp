@@ -197,6 +197,8 @@ void CForce_Grab::Evaluate( int time )
 		return;
 	}
 
+	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+
 // ======================== LINEAR =========================
 
 	COM = this->GetCenterOfMass();
@@ -210,20 +212,58 @@ void CForce_Grab::Evaluate( int time )
 	if( !m_bApplyDamping )
 		m_damping = 0.0f;
 
-	// Test: Realistic finite acceleration
+	if( grabber->m_bIsColliding )
+	{
+		// Zero out previous velocity when we start out colliding
+		prevVel = vec3_zero;
+
+		idVec3 newDir = dir1;
+
+		for( int i=0; i < grabber->m_CollNorms.Num(); i++ )
+		{
+			// subtract out component of desired dir going in to surface
+			if( newDir * grabber->m_CollNorms[i] < 0.0f )
+			{
+				newDir -= (newDir * grabber->m_CollNorms[i]) * grabber->m_CollNorms[i];
+			}
+
+			// gameRenderWorld->DebugArrow( colorBlue, COM, (COM + 30 * grabber->m_CollNorms[i]), 4.0f, 1);
+		}
+
+		// Clear m_CollNorms so it can be filled next time there's a collision
+		grabber->m_CollNorms.Clear();
+		
+		newDir.Normalize();
+
+		float newl1 = l1 * (dir1 * newDir);
+
+		// avoid jittering due to floating point error
+		if( newl1 > 0.1f )
+		{
+			l1 = newl1; // project the magnitude in the new direction
+			dir1 = newDir;
+		}
+		else
+			dir1 = vec3_zero;
+
+		// Uncomment for desired direction debugging
+		// gameRenderWorld->DebugArrow( colorRed, COM, (COM + l1 * dir1), 4.0f, 1);
+	}
+	else 
+	{
+		prevVel = m_physics->GetLinearVelocity( m_id );
+		// Uncomment for desired direction debugging
+		// gameRenderWorld->DebugArrow( colorGreen, COM, (COM + l1 * dir1), 4.0f, 1);
+	}
+
+	// "Realistic" finite acceleration
 	Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
 	if( m_bLimitForce )
 	{
-		MaxAccel = g_Global.m_DarkModPlayer->grabber->m_MaxForce / m_physics->GetMass();
+		MaxAccel = grabber->m_MaxForce / m_physics->GetMass();
 		Accel = idMath::ClampFloat(0.0f, MaxAccel, Accel );
 	}
-
-	// Test: Zero initial velocity when we start out colliding
-	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
-		prevVel = vec3_zero;
-	else 
-		prevVel = m_physics->GetLinearVelocity( m_id );
-
+	
 	velocity = prevVel * m_damping + dir1 * Accel * dT;
 
 	if( m_RefEnt.GetEntity() )
@@ -290,7 +330,7 @@ void CForce_Grab::Evaluate( int time )
 		// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Modified alpha is %s\r", Alph.ToString() );
 	}
 
-	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
+	if( grabber->m_bIsColliding )
 		PrevOmega = vec3_zero;
 	else
 		PrevOmega = m_physics->GetAngularVelocity( m_id );
@@ -301,7 +341,6 @@ void CForce_Grab::Evaluate( int time )
 	// gameRenderWorld->DebugLine( colorGreen, COM, (COM + 30 * RotDir), 1);
 
 	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Setting angular velocity to %s\r", Omega.ToString() );
-	
 	m_physics->SetAngularVelocity( Omega, m_id );
 }
 
@@ -347,7 +386,7 @@ void CForce_Grab::Rotate( const idVec3 &vec, float angle )
 	r.Set( vec3_origin, vec, angle );
 	r.RotatePoint( m_p );
 
-	gameRenderWorld->DebugArrow( colorGreen, this->GetCenterOfMass(), this->GetCenterOfMass() + m_p, 1, 200 );
+	// gameRenderWorld->DebugArrow( colorGreen, this->GetCenterOfMass(), this->GetCenterOfMass() + m_p, 1, 200 );
 }
 
 void CForce_Grab::ApplyDamping( bool bVal )
