@@ -796,39 +796,31 @@ void idActor::FinishSetup( void ) {
 idActor::SetupHead
 ================
 */
-void idActor::SetupHead( void ) {
-	idAFAttachment		*headEnt;
-	idStr				jointName;
-	const char			*headModel;
-	jointHandle_t		joint;
-	jointHandle_t		damageJoint;
-	int					i;
-	const idKeyValue	*sndKV;
-	idStr				oHeadOffsetName;
-	idVec3				oHeadOffset;
-
+void idActor::SetupHead()
+{
 	if(gameLocal.isClient)
 		return;
 
-	headModel = spawnArgs.GetString( "def_head", "" );
-	if(headModel[0])
+	idStr headModelDefName = spawnArgs.GetString( "def_head", "" );
+
+	if (!headModelDefName.IsEmpty())
 	{
 		// We look if the head model is defined as a key to have a specific offset.
-		// If that is not the case, then we use the defaul value, if it exists, 
+		// If that is not the case, then we use the default value, if it exists, 
 		// otherwise there is no offset at all.
-		if(spawnArgs.GetVector(headModel, "0 0 0", oHeadOffset) == true)
-			mHeadModelOffset = oHeadOffset;
+		mHeadModelOffset = spawnArgs.GetVector(headModelDefName, "0 0 0");
 
-		jointName = spawnArgs.GetString( "head_joint" );
-		joint = animator.GetJointHandle( jointName );
+		idStr jointName = spawnArgs.GetString( "head_joint" );
+		jointHandle_t joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) {
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
 
 		// set the damage joint to be part of the head damage group (if possible)
-		damageJoint = joint;
+		jointHandle_t damageJoint = joint;
 
-		for( i = 0; i < damageGroups.Num(); i++ ) {
+		for (int i = 0; i < damageGroups.Num(); i++ )
+		{
 			if ( damageGroups[ i ] == "head" ) {
 				damageJoint = static_cast<jointHandle_t>( i );
 				break;
@@ -838,7 +830,7 @@ void idActor::SetupHead( void ) {
 		// Setup the default spawnargs for all heads
 		idDict args;
 
-		const idDeclEntityDef* def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
+		const idDeclEntityDef* def = gameLocal.FindEntityDef(headModelDefName, false);
 		if (def != NULL)
 		{
 			// Make a copy of the default spawnargs
@@ -849,28 +841,41 @@ void idActor::SetupHead( void ) {
 			gameLocal.Warning("Could not find head entityDef %s!", TDM_HEAD_ENTITYDEF);
 		}
 		
-		// copy any sounds in case we have frame commands on the head
-		sndKV = spawnArgs.MatchPrefix( "snd_", NULL );
-		while( sndKV ) {
-			args.Set( sndKV->GetKey(), sndKV->GetValue() );
-			sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
+		// Copy any sounds in case we have frame commands on the head
+		for (const idKeyValue* kv = spawnArgs.MatchPrefix("snd_", NULL); kv != NULL; kv = spawnArgs.MatchPrefix("snd_", kv)) 
+		{
+			args.Set(kv->GetKey(), kv->GetValue());
 		}
 
-		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args ) );
-		headEnt->SetName( va( "%s_head", name.c_str() ) );
+		// Spawn the head entity
+		idEntity* ent = gameLocal.SpawnEntityType(idAFAttachment::Type, &args);
+		idAFAttachment* headEnt = static_cast<idAFAttachment*>(ent);
+		headEnt->SetName( name + "_head" );
+
+		// Retrieve the actual model from the head entityDef
+		idStr headModel = args.GetString("model");
+		if (headModel.IsEmpty())
+		{
+			gameLocal.Warning("No 'model' spawnarg on head entityDef: %s", headModelDefName.c_str());
+		}
 		headEnt->SetBody( this, headModel, damageJoint );
 		headEnt->SetCombatModel();
+
+		// Store the head locally
 		head = headEnt;
 
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("SETBODY: Actor %s : damage joint %d for attached head is part of damage group %s\r", name.c_str(), (int) damageJoint, GetDamageGroup( damageJoint ) );
 
-		idVec3		origin;
-		idMat3		axis;
-		CAttachInfo &attach = m_Attachments.Alloc();
+		// Add the head as attachment
+		idVec3 origin;
+		idMat3 axis;
+		CAttachInfo& attach = m_Attachments.Alloc();
+
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
 		attach.ent = headEnt;
+
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
 		headEnt->BindToJoint( this, joint, true );
