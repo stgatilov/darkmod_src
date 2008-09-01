@@ -86,12 +86,10 @@ idTestModel::Spawn
 void idTestModel::Spawn( void ) {
 	idVec3				size;
 	idBounds			bounds;
-	const char			*headModel;
 	jointHandle_t		joint;
 	idStr				jointName;
 	idVec3				origin, modelOffset;
 	idMat3				axis;
-	const idKeyValue	*kv;
 	copyJoints_t		copyJoint;
 
 	if ( renderEntity.hModel && renderEntity.hModel->IsDefaultModel() && !animator.ModelDef() ) {
@@ -121,24 +119,57 @@ void idTestModel::Spawn( void ) {
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
 	// add the head model if it has one
-	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
+	idStr headModelDefName = spawnArgs.GetString( "def_head" );
+
+	if ( !headModelDefName.IsEmpty() )
+	{
 		jointName = "Head";//spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
-		if ( joint == INVALID_JOINT ) {
+		if ( joint == INVALID_JOINT )
+		{
 			gameLocal.Warning( "Joint '%s' not found for 'head_joint'", jointName.c_str() );
-		} else {
-			// copy any sounds in case we have frame commands on the head
-			idDict				args;
-			const idKeyValue	*sndKV = spawnArgs.MatchPrefix( "snd_", NULL );
-			while( sndKV ) {
-				args.Set( sndKV->GetKey(), sndKV->GetValue() );
-				sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
+		}
+		else
+		{
+			idDict args;
+
+			const idDeclEntityDef* def = gameLocal.FindEntityDef(headModelDefName, false);
+
+			if (def == NULL)
+			{
+				gameLocal.Warning("Could not find head entityDef %s!", headModelDefName);
+
+				// Try to fallback on the default head entityDef
+				def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
+			}
+
+			if (def != NULL)
+			{
+				// Make a copy of the default spawnargs
+				args = def->dict;
+			}
+			else
+			{
+				gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName, TDM_HEAD_ENTITYDEF);
+			}
+			
+			// Copy any sounds in case we have frame commands on the head
+			for (const idKeyValue* kv = spawnArgs.MatchPrefix("snd_", NULL); kv != NULL; kv = spawnArgs.MatchPrefix("snd_", kv)) 
+			{
+				args.Set(kv->GetKey(), kv->GetValue());
 			}
 
 			head = gameLocal.SpawnEntityType( idAnimatedEntity::Type, &args );
 			animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset ) * GetPhysics()->GetAxis();
+
+			// Retrieve the actual model from the head entityDef
+			idStr headModel = args.GetString("model");
+			if (headModel.IsEmpty())
+			{
+				gameLocal.Warning("No 'model' spawnarg on head entityDef: %s", headModelDefName.c_str());
+			}
+
 			head.GetEntity()->SetModel( headModel );
 			head.GetEntity()->SetOrigin( origin );
 			head.GetEntity()->SetAxis( GetPhysics()->GetAxis() );
@@ -147,7 +178,8 @@ void idTestModel::Spawn( void ) {
 			headAnimator = head.GetEntity()->GetAnimator();
 
 			// set up the list of joints to copy to the head
-			for( kv = spawnArgs.MatchPrefix( "copy_joint", NULL ); kv != NULL; kv = spawnArgs.MatchPrefix( "copy_joint", kv ) ) {
+			for(const idKeyValue* kv = spawnArgs.MatchPrefix( "copy_joint", NULL ); kv != NULL; kv = spawnArgs.MatchPrefix( "copy_joint", kv ) )
+			{
 				jointName = kv->GetKey();
 
 				if ( jointName.StripLeadingOnce( "copy_joint_world " ) ) {

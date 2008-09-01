@@ -23,8 +23,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/TimerManager.h"
 
-#define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
-
 // #include "logmgr.h"
 /***********************************************************************
 

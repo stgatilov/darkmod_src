@@ -103,6 +103,8 @@ struct CrashLandResult
 	bool hasLanded;		// true if the actor hit the ground after a fall this frame
 };
 
+#define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
+
 class idActor : public idAFEntity_Gibbable {
 public:
 	CLASS_PROTOTYPE( idActor );
