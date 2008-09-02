@@ -802,8 +802,13 @@ void CGrabber::AddToClipList( idEntity *ent )
 	
 	// Clear the solid flag to avoid player collision, 
 	// but enable monsterclip for AI and CONTENTS_RENDERMODEL for projectiles
-	phys->SetContents( (contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP | CONTENTS_RENDERMODEL );
-
+	// Ishtvan test: Add CONTENTS_CORPSE, to make sure moveables don't clip into it
+	// phys->SetContents( (contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP | CONTENTS_RENDERMODEL );
+	phys->SetContents
+	( 
+		(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
+		| CONTENTS_RENDERMODEL | CONTENTS_CORPSE 
+	); 
 	if( HasClippedEntity() ) 
 	{
 		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );

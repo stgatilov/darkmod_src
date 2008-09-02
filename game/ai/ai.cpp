@@ -8544,7 +8544,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 	dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
 	// if hit was within the cone
-	if ( (dotHoriz >= m_KoDotHoriz && dotVert >= m_KoDotVert) )
+	if ( (dotHoriz >= MinDotHoriz && dotVert >= MinDotVert) )
 	{
 		bReturnVal = true;
 
@@ -8578,22 +8578,19 @@ void idAI::KnockoutDebugDraw( void )
 			goto Quit;
 
 		// reduce the angle on alert, if needed
-		const char *temp1 = spawnArgs.GetString("ko_angle_alert_vert");
-		if( temp1[0] != '\0' )
-			AngVert = atof( temp1 );
-		else
-			AngVert = spawnArgs.GetFloat( "ko_angle_vert", "360" );
-		const char *temp2 = spawnArgs.GetString("ko_angle_alert_horiz");
-		if( temp2[0] != '\0' )
-			AngHoriz = atof( temp2 );
-		else
-			AngHoriz = spawnArgs.GetFloat( "ko_angle_horiz", "360" );
+		AngVert = idMath::ACos( m_KoAlertDotVert );
+		AngHoriz = idMath::ACos( m_KoAlertDotHoriz );
 	}
 	else
 	{
-		AngVert = spawnArgs.GetFloat( "ko_angle_vert", "360" );
-		AngHoriz = spawnArgs.GetFloat( "ko_angle_horiz", "360" );
+		AngVert = idMath::ACos( m_KoDotVert );
+		AngHoriz = idMath::ACos( m_KoDotHoriz );
 	}
+
+	if( AngVert == 0.0f )
+		AngVert = 360.0f;
+	if( AngHoriz == 0.0f )
+		AngHoriz = 360.0f;
 
 	if( m_HeadJointID == INVALID_JOINT )
 	{
@@ -8609,10 +8606,10 @@ void idAI::KnockoutDebugDraw( void )
 	ConeDir = -HeadAxis[0];
 
 	// vertical angle in green
-	radius = DEG2RAD( AngVert * 0.5f ) * 30.0f;
+	radius = AngVert * 0.5f  * 30.0f;
 	gameRenderWorld->DebugCone( colorGreen, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
 	// horizontal angle in red
-	radius = DEG2RAD( AngHoriz * 0.5f ) * 30.0f;
+	radius = AngHoriz * 0.5f * 30.0f;
 	gameRenderWorld->DebugCone( colorRed, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
 
 Quit:
