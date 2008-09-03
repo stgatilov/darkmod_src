@@ -32,6 +32,8 @@ class ConversationState :
 
 	int _finishTime;
 
+	ConversationState();
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;

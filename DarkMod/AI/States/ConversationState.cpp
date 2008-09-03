@@ -34,6 +34,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
+ConversationState::ConversationState() :
+	_conversation(-1),
+	_state(ConversationCommand::EReady),
+	_commandType(ConversationCommand::ENumCommands),
+	_finishTime(-1)
+{}
+
 // Get the name of this state
 const idStr& ConversationState::GetName() const
 {
@@ -88,11 +95,6 @@ void ConversationState::Init(idAI* owner)
 		owner->GetMind()->EndState();
 		return;
 	}
-
-	// We haven't started doing our stuff yet
-	_finishTime = -1;
-	_commandType = ConversationCommand::ENumCommands;
-	_state = ConversationCommand::EReady;
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -184,7 +186,9 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 		}
 
 		// In case of active "walk" commands, set the state to "finished"
-		if (_commandType == ConversationCommand::EWalkToEntity || _commandType == ConversationCommand::EWalkToPosition)
+		if (_commandType == ConversationCommand::EWalkToEntity || 
+			_commandType == ConversationCommand::EWalkToPosition || 
+			_commandType == ConversationCommand::EWalkToActor)
 		{
 			_state = ConversationCommand::EFinished;
 			return;
