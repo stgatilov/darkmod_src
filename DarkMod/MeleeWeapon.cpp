@@ -20,6 +20,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 CLASS_DECLARATION( idMoveable, CMeleeWeapon )
 END_CLASS
 
+const int MAX_PARTICLES_PER_SWING = 10; 
+
 CMeleeWeapon::CMeleeWeapon( void ) 
 {
 	m_Owner = NULL;
@@ -32,6 +34,8 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_bModCM = false;
 
 	m_MeleeType = MELEETYPE_OVERHEAD;
+	m_StopMass = 0.0f;
+	m_ParticlesMade = 0;
 }
 
 CMeleeWeapon::~CMeleeWeapon( void )
@@ -42,8 +46,6 @@ CMeleeWeapon::~CMeleeWeapon( void )
 void CMeleeWeapon::Save( idSaveGame *savefile ) const 
 {
 	m_Owner.Save( savefile );
-	
-	// TODO: How to save/restore the clipmodel pointer?  Just regenerate it?
 
 	savefile->WriteBool( m_bAttacking );
 	savefile->WriteBool( m_bParrying );
@@ -52,6 +54,8 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bWorldCollide );
 	savefile->WriteBool( m_bModCM );
 	savefile->WriteInt( m_MeleeType );
+	savefile->WriteFloat( m_StopMass );
+	savefile->WriteInt( m_ParticlesMade );
 	savefile->WriteVec3( m_OldOrigin );
 	savefile->WriteMat3( m_OldAxis );
 }
@@ -69,6 +73,8 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	int mType;
 	savefile->ReadInt( mType );
 	m_MeleeType = (EMeleeType) mType;
+	savefile->ReadFloat( m_StopMass );
+	savefile->ReadInt( m_ParticlesMade );
 	savefile->ReadVec3( m_OldOrigin );
 	savefile->ReadMat3( m_OldAxis );
 
@@ -86,28 +92,29 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Activate attack called.  Weapon %s, owner %s, attack name %s.\r",
 											name.c_str(), ActOwner->name.c_str(), AttName );
 
-	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) != NULL )
-	{
-		m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
-		m_ActionName = AttName;
-		m_bAttacking = true;
-		// TODO: We shouldn't set the owner every time, should only have to set once
-		m_Owner = ActOwner;
-		m_bWorldCollide = spawnArgs.GetBool(va("att_world_collide_%s", AttName));
-
-		m_WeapClip = NULL;
-		if( spawnArgs.GetBool(va("att_mod_cm_%s", AttName) ) )
-		{
-			SetupClipModel();
-		}
-
-		m_OldOrigin = GetPhysics()->GetOrigin();
-		m_OldAxis = GetPhysics()->GetAxis();
-	}
-	else
+	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) == NULL )
 	{
 		DM_LOG(LC_WEAPON, LT_WARNING)LOGSTRING("Did not find attack %s on melee weapon %s\r", AttName, name.c_str());
+		return;
 	}
+
+	m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
+	m_ActionName = AttName;
+	m_bAttacking = true;
+	// TODO: We shouldn't set the owner every time, should only have to set once
+	m_Owner = ActOwner;
+	m_bWorldCollide = spawnArgs.GetBool( va("att_world_collide_%s", AttName));
+	m_StopMass = spawnArgs.GetFloat("stop_mass");
+	m_ParticlesMade = 0;
+
+	m_WeapClip = NULL;
+	if( spawnArgs.GetBool(va("att_mod_cm_%s", AttName) ) )
+	{
+		SetupClipModel();
+	}
+
+	m_OldOrigin = GetPhysics()->GetOrigin();
+	m_OldAxis = GetPhysics()->GetAxis();
 }
 
 void CMeleeWeapon::DeactivateAttack( void )
@@ -380,8 +387,13 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		idVec3 dir = PointVelDir;
 
 		idEntity *AttachOwner(NULL);
+		idEntity *OthBindMaster(NULL);
 		if( other->IsType(idAFAttachment::Type) )
 			AttachOwner = static_cast<idAFAttachment *>(other)->GetBody();
+		// Also check for any object bound to an actor (helmets, etc)
+		else if( (OthBindMaster = other->GetBindMaster()) != NULL
+					&& OthBindMaster->IsType(idActor::Type) )
+			AttachOwner = OthBindMaster;
 
 		// Hit an actor, or an AF attachment that is part of an actor
 		if( other->IsType(idActor::Type) || AttachOwner != NULL )
@@ -455,6 +467,9 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			
 			// TODO: Message the attacking actor to play a bounce off animation if appropriate
 
+			// keep the attack going if the object hit is a moveable below a certain mass
+			// TODO: Handle moveables bound to other things and use the total mass of the system?
+			if( !( other->IsType(idMoveable::Type) && other->GetPhysics()->GetMass() < m_StopMass ) )
 			DeactivateAttack();
 		}
 	}
@@ -464,9 +479,9 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 {
 	const char *DamageDefName;
 	const idDict *DmgDef;
-	float push(0.0f);
+	float push(0.0f), DmgScale(1.0f);
 	idVec3 impulse(vec3_zero);
-	idStr hitSound, sndName;
+	idStr hitSound, sndName, surfType;
 
 	DamageDefName = spawnArgs.GetString( va("def_damage_%s", m_ActionName.c_str()) );
 	DmgDef = gameLocal.FindEntityDefDict( DamageDefName, false );
@@ -477,11 +492,25 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 		goto Quit;
 	}
 
-	// Physical impulse
+	// Apply physical impulse
 	push = DmgDef->GetFloat( "push" );
 	impulse = -push * tr->c.normal;
 	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Applying impulse\r");
 	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
+
+	// get type of material hit (armor, etc)
+	int type;
+	if( tr->c.material != NULL )
+		type = tr->c.material->GetSurfaceType();
+	else
+		type = SURFTYPE_NONE;
+
+	if ( type == SURFTYPE_NONE ) 
+		surfType = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
+	else
+		g_Global.GetSurfName( tr->c.material, surfType );
+
+	DmgScale *= DmgDef->GetFloat( va("damage_mult_%s",surfType.c_str()), "1.0" ); 
 
 	// Damage
 	if( other->fl.takedamage )
@@ -492,7 +521,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 		(
 			m_Owner.GetEntity(), m_Owner.GetEntity(), 
 			dir, DamageDefName,
-			1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), tr 
+			DmgScale, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), tr 
 		);
 	}
 
@@ -522,27 +551,14 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 			// TODO: Change this so that above is only executed if it bleeds AND we hit flesh?
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Hit entity that doesn't bleed\r");
 
-			idStr materialType;
-			int type;
-
-			if( tr->c.material != NULL )
-				type = tr->c.material->GetSurfaceType();
-			else
-				type = SURFTYPE_NONE;
-
-			if ( type == SURFTYPE_NONE ) 
-				materialType = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
-			else
-				g_Global.GetSurfName( tr->c.material, materialType );
-
 			// Uncomment for surface type debugging
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Surface hit was %s\r", tr->c.material->GetName() );
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", materialType.c_str() );
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", surfType.c_str() );
 
 			// start impact sound based on material type
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
-			hitSound = DmgDef->GetString( va( "snd_%s", materialType.c_str() ) );
-			sndName = va( "snd_%s", materialType.c_str() );
+			hitSound = DmgDef->GetString( va( "snd_%s", surfType.c_str() ) );
+			sndName = va( "snd_%s", surfType.c_str() );
 
 			if ( hitSound.IsEmpty() ) 
 			{
@@ -562,20 +578,26 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Launching smoke\r");
 			// Strike particle FX (sparks.. blood is handled in AddDamageEffect)
-			const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", materialType.c_str()) );
+			const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", surfType.c_str()) );
 
-			if ( smokeName && *smokeName != '\0' )
+			if ( m_ParticlesMade < cv_melee_max_particles.GetInteger() && 
+					smokeName && *smokeName != '\0' )
 			{
 				const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-				float chance = DmgDef->GetFloat( va("smoke_chance_%s", materialType.c_str()), "1.0" );
+				float chance = DmgDef->GetFloat( va("smoke_chance_%s", surfType.c_str()), "1.0" );
 				if( gameLocal.random.RandomFloat() > chance )
 					smoke = NULL;
 
-				gameLocal.smokeParticles->EmitSmoke
-					( 
-						smoke, gameLocal.time, 
-						gameLocal.random.RandomFloat(), tr->c.point, -tr->endAxis
-					);
+				if( smoke )
+				{
+					gameLocal.smokeParticles->EmitSmoke
+						( 
+							smoke, gameLocal.time, 
+							gameLocal.random.RandomFloat(), 
+							tr->c.point, -tr->endAxis
+						);
+					m_ParticlesMade++;
+				}
 			}
 		}
 	}

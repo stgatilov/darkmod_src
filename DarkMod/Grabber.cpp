@@ -34,7 +34,7 @@ const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, 0 );
 
 // TODO: Make most of these cvars
 
-const int CHECK_CLIP_LIST_INTERVAL =	1000;
+const int CHECK_CLIP_LIST_INTERVAL =	200;
 
 const int MOUSE_DEADZONE =				5;
 // const float MOUSE_SCALE =				0.7f;
@@ -354,6 +354,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	// when collision occurs.
 	// Otherwise the player would have to increment all the way back
 
+	// TODO: This isn't really working
+	// and maybe we don't want it to work since it means you couldn't
+	// slide something closer/farther along a surface
+
 	if(m_bIsColliding)
 	{
 		if(!m_bPrevFrameCollided)
@@ -363,7 +367,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	}
 
 	vPlayerPoint.x = 1.0f; // (1, 0, 0)
-	/* float */ distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
+	distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
 	vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
 	vPlayerPoint += m_vOffset;
 

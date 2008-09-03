@@ -185,6 +185,18 @@ protected:
 	idVec3					m_OldOrigin;
 	idMat3					m_OldAxis;
 
+// Cosmetic stuff:
+
+	/**
+	* Keep swinging when we hit moveables at or below this mass
+	**/
+	float					m_StopMass;
+
+	/**
+	* Number of particles we've generated in this attack
+	**/
+	int						m_ParticlesMade;
+
 };
 
 #endif /* !__MELEEWEAPON_H__ */
