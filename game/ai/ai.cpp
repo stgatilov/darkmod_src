@@ -8475,7 +8475,7 @@ idAI::TestKnockoutBlow
 =====================
 */
 
-bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow )
+bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int location, bool bIsPowerBlow )
 {
 	bool bReturnVal(false);
 	float MinDotVert, MinDotHoriz, lenDelta, lenDeltaH;
@@ -8494,9 +8494,9 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 		goto Quit;
 	}
 
-	LocationName = GetDamageGroup( CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
+	LocationName = GetDamageGroup( location );
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, LocationName.c_str());
 
 	// check if we're hitting the right zone (usually the head)
 	if( strcmp(LocationName.c_str(), m_KoZone.c_str()) != 0 )

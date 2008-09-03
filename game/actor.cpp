@@ -2649,9 +2649,12 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		
 		if( StruckBody != NULL )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Struck body %s\r",StruckBody->GetName().c_str());
 			idEntity* reroute = StruckBody->GetRerouteEnt();
 			if (reroute != NULL) 
 			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Rerouting damage from the AF of entity %s to bound entity %s\r",name.c_str(), reroute->name.c_str());
+				// TODO: Technically location is wrong here, it's a joint that's not on the reroute entity (not sure if it will matter)
 				reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, collision );
 				return;
 			}
@@ -2695,7 +2698,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	
 	if( (bKO || bKOPowerBlow) && collision )
 	{
-		if( TestKnockoutBlow( attacker, dir, collision, bKOPowerBlow ) )
+		if( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
 		{
 			// For now, first KO blow does no health damage
 			damage = 0;

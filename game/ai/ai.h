@@ -1154,11 +1154,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* The "dir" vector is from the knockback of the weapon.  It is not used for now.
 	*
-	* tr is the trace from the weapon collision, bIsPowerBlow is set if the BJ was powered up
+	* tr is the trace from the weapon collision, location is the joint handle that was hit
+	* bIsPowerBlow is set if the BJ was powered up
 	*
 	* Returns false if BJ attempt failed, or if already knocked out
 	**/
-	bool					TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow );  
+	bool					TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int location, bool bIsPowerBlow );  
 	
 	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,

@@ -240,7 +240,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	trace_t tr;
 	idMat3 axis;
 	idClipModel *pClip;
-	int ClipMask;
+	int ClipMask, location;
 
 	if( m_WeapClip )
 		pClip = m_WeapClip;
@@ -295,6 +295,8 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		if( cv_melee_debug.GetBool() )
 			gameRenderWorld->DebugArrow( colorBlue,OldOrigin, tr.c.point, 3, 1000 );
 
+		location = JOINT_HANDLE_TO_CLIPMODEL_ID( tr.c.id );
+		
 		// Calculate the instantaneous velocity _direction_ of the point that hit
 		// For now, we just need direction of velocity, not magnitude, don't need delta_t
 		idVec3 vLinearTrans = (NewOrigin - OldOrigin);
@@ -344,6 +346,10 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				{
 					gameRenderWorld->DebugArrow( colorRed, start, tr2.c.point, 3, 1000 );
 				}
+
+				other = gameLocal.entities[tr2.c.entityNum];
+				// update location
+				location = JOINT_HANDLE_TO_CLIPMODEL_ID( tr.c.id );
 			}
 			else
 			{
@@ -352,7 +358,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				if( other->IsType(idAFEntity_Base::Type) )
 				{
 					idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
-					tr.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( otherAF->JointForBody(tr.c.id) );
+					location = otherAF->JointForBody(tr.c.id);
 				}
 
 				// If we failed to find anything, draw the attempted trace in green
@@ -417,7 +423,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit an object held by the player\r");
 				
-				MeleeCollision( other, dir, &tr );
+				MeleeCollision( other, dir, &tr, location );
 
 				// TODO: Message the grabber that the grabbed object has been hit
 				// So that it can fly out of player's hands if desired
@@ -429,7 +435,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			else
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held weapon.\r");
-				MeleeCollision( other, dir, &tr );
+				MeleeCollision( other, dir, &tr, location );
 
 				DeactivateAttack();
 			}
@@ -443,7 +449,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
 				// TODO: Scale damage with instantaneous velocity of the blade?
-				MeleeCollision( other, dir, &tr );
+				MeleeCollision( other, dir, &tr, location );
 
 				// apply a LARGE tactile alert to AI
 				if( other->IsType(idAI::Type) )
@@ -463,7 +469,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		else
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit a non-AI object: %s\r", other->name.c_str());
-			MeleeCollision( other, dir, &tr );
+			MeleeCollision( other, dir, &tr, location );
 			
 			// TODO: Message the attacking actor to play a bounce off animation if appropriate
 
@@ -475,7 +481,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	}
 }
 
-void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
+void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int location )
 {
 	const char *DamageDefName;
 	const idDict *DmgDef;
@@ -513,15 +519,33 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 	DmgScale *= DmgDef->GetFloat( va("damage_mult_%s",surfType.c_str()), "1.0" ); 
 
 	// Damage
+	// Check for reroute entity (can happen with attachments to AI)
+	if( other->IsType(idAFEntity_Base::Type) )
+	{
+		idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
+		int bodID = otherAF->BodyForClipModelId( tr->c.id );
+		idAFBody* StruckBody = otherAF->GetAFPhysics()->GetBody( bodID );
+
+		if( StruckBody != NULL )
+		{
+			idEntity* reroute = StruckBody->GetRerouteEnt();
+			if (reroute != NULL) 
+			{
+				// joint and clipmodel id's become invalid if we reroute, but that's okay
+				other = reroute;
+			}
+		}
+	}
+
 	if( other->fl.takedamage )
 	{
-		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at body id %d, joint handle %d\r", tr->c.id, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at clipmodel id %d, joint handle %d\r", tr->c.id, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
 		(
 			m_Owner.GetEntity(), m_Owner.GetEntity(), 
 			dir, DamageDefName,
-			DmgScale, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), tr 
+			DmgScale, location, tr 
 		);
 	}
 
@@ -549,14 +573,14 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
 			// we hit an entity that doesn't bleed, 
 			// decals, sound and smoke are handled here instead
 			// TODO: Change this so that above is only executed if it bleeds AND we hit flesh?
-			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Hit entity that doesn't bleed\r");
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Hit entity that doesn't bleed\r");
 
 			// Uncomment for surface type debugging
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Surface hit was %s\r", tr->c.material->GetName() );
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", surfType.c_str() );
 
 			// start impact sound based on material type
-			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
 			hitSound = DmgDef->GetString( va( "snd_%s", surfType.c_str() ) );
 			sndName = va( "snd_%s", surfType.c_str() );
 

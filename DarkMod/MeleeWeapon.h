@@ -117,9 +117,10 @@ protected:
 	/**
 	* Called to handle physics, particle FX, sound, damage
 	* When a melee attack hits something
-	* Expects m_ActionName to be already set.
+	* Location is the JOINT HANDLE that was hit
+	* If we directly hit an AF, not necessarily equal to  CLIPMODEL_ID_FOR_JOINT_HANDLE(tr.c.id)
 	**/
-	void MeleeCollision( idEntity *other, idVec3 dir, trace_t *trace );
+	void MeleeCollision( idEntity *other, idVec3 dir, trace_t *trace, int location );
 
 	/**
 	* Set up the clipmodel for the current parry/attack action
