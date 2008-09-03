@@ -1324,6 +1324,8 @@ void idAI::Spawn( void )
 	{
 		float tempFloat;
 		tempFloat = spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100" );
+		// angua: divide by 100 to transform percent into fractions
+		tempFloat *= 0.01;
 		m_Acuities.Append( tempFloat );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
@@ -7871,7 +7873,7 @@ float idAI::GetCalibratedLightgemValue() const
 					- 0.0000114f * idMath::Pow16(lgem, 4)	
 					+ 0.000000193f * idMath::Pow16(lgem, 5);
 
-	clampVal *= GetAcuity("vis") * 0.01f;
+	clampVal *= GetAcuity("vis");
 
 	if (clampVal > 1)
 	{
@@ -8083,7 +8085,7 @@ float idAI::GetMaximumObservationDistance(idVec3 bottomPoint, idVec3 topPoint, i
 {
 	float lightQuotient = LAS.queryLightingAlongLine(bottomPoint, topPoint, p_ignoreEntity, true);
 
-	float visualAcuityZeroToOne = GetAcuity("vis") * 0.01f;
+	float visualAcuityZeroToOne = GetAcuity("vis");
 	float maxDistanceToObserve = lightQuotient * cv_ai_sight_scale.GetFloat() * visualAcuityZeroToOne;
 
 	return maxDistanceToObserve;
