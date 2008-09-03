@@ -395,40 +395,15 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 					&& OthBindMaster->IsType(idActor::Type) )
 			AttachOwner = OthBindMaster;
 
-		// Hit an actor, or an AF attachment that is part of an actor
-		if( other->IsType(idActor::Type) || AttachOwner != NULL )
-		{
-			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit actor or part of actor %s\r", other->name.c_str());
-			// Don't do anything if we hit our own AF attachment
-			if( AttachOwner != m_Owner.GetEntity() )
-			{
-				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
-				// TODO: Scale damage with instantaneous velocity of the blade?
-				MeleeCollision( other, dir, &tr );
-
-				// apply a LARGE tactile alert to AI
-				if( other->IsType(idAI::Type) )
-					static_cast<idAI *>(other)->TactileAlert( GetOwner(), 100 );
-				else if( AttachOwner && AttachOwner->IsType(idAI::Type) )
-					static_cast<idAI *>(AttachOwner)->TactileAlert( GetOwner(), 100 );
-
-				DeactivateAttack();
-				// TODO: Message owner AI that they hit an AI
-			}
-			else
-			{
-				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit yourself.  Stop hitting yourself!\r");
-			}
-		}
-
 		// Hit a melee parry or held object 
 		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything)
-		else if( other->IsType(CMeleeWeapon::Type) 
+		if( other->IsType(CMeleeWeapon::Type) 
 			|| (other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) ) )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
 			// hit a parry (make sure we don't hit our own other melee weapons)
 			if( other->IsType(CMeleeWeapon::Type)
+				&& static_cast<CMeleeWeapon *>(other)->GetOwner()
 				&& static_cast<CMeleeWeapon *>(other)->GetOwner() != m_Owner.GetEntity() )
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
@@ -453,10 +428,35 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			}
 			else
 			{
-				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something else with CONTENTS_MELEEWEAP (this shouldn't happen!!)\r");
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held weapon.\r");
 				MeleeCollision( other, dir, &tr );
 
 				DeactivateAttack();
+			}
+		}
+		// Hit an actor, or an AF attachment that is part of an actor
+		else if( other->IsType(idActor::Type) || AttachOwner != NULL )
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit actor or part of actor %s\r", other->name.c_str());
+			// Don't do anything if we hit our own AF attachment
+			if( AttachOwner != m_Owner.GetEntity() )
+			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
+				// TODO: Scale damage with instantaneous velocity of the blade?
+				MeleeCollision( other, dir, &tr );
+
+				// apply a LARGE tactile alert to AI
+				if( other->IsType(idAI::Type) )
+					static_cast<idAI *>(other)->TactileAlert( GetOwner(), 100 );
+				else if( AttachOwner && AttachOwner->IsType(idAI::Type) )
+					static_cast<idAI *>(AttachOwner)->TactileAlert( GetOwner(), 100 );
+
+				DeactivateAttack();
+				// TODO: Message owner AI that they hit an AI
+			}
+			else
+			{
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit yourself.  Stop hitting yourself!\r");
 			}
 		}
 		// Hit something else in the world (only happens to the player)
