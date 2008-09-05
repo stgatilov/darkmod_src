@@ -1322,10 +1322,9 @@ void idAI::Spawn( void )
 	m_Acuities.Clear();
 	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
 	{
-		float tempFloat;
-		tempFloat = spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100" );
+		float tempFloat = spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100" );
 		// angua: divide by 100 to transform percent into fractions
-		tempFloat *= 0.01;
+		tempFloat *= 0.01f;
 		m_Acuities.Append( tempFloat );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}

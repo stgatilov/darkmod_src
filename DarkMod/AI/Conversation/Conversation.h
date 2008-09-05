@@ -48,6 +48,9 @@ class Conversation
 	// TRUE if the actors are supposed to walk towards each other before starting to talk
 	bool _actorsMustBeWithinTalkDistance;
 
+	// TRUE if the actors always turn to each other while talking
+	bool _actorsAlwaysFaceEachOtherWhileTalking;
+
 public:
 	Conversation();
 
@@ -72,6 +75,9 @@ public:
 
 	// Returns true or false depending on the internal setting
 	bool ActorsMustBeWithinTalkdistance();
+
+	// Returns true or false depending on the internal setting
+	bool ActorsAlwaysFaceEachOtherWhileTalking();
 
 	// Returns the maximum distance actors can talk to each other from
 	float GetTalkDistance();

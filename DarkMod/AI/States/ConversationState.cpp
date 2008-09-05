@@ -220,6 +220,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		_finishTime = gameLocal.time + SEC2MS(atof(command.GetArgument(0)));
 		_state = ConversationCommand::EExecuting;
 	break;
+
 	case ConversationCommand::EWalkToActor:
 	{
 		// Reduce the actor index by 1 before passing them to the conversation
@@ -255,6 +256,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
 	}
 	break;
+
 	case ConversationCommand::EWalkToEntity:
 	{
 		idEntity* ent = command.GetEntityArgument(0);
@@ -284,6 +286,30 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	case ConversationCommand::ETalk:
 	{
 		int length = Talk(owner, command.GetArgument(0));
+
+		// Check if we need to look at the listener
+		if (conversation.ActorsAlwaysFaceEachOtherWhileTalking())
+		{
+			idAI* talker = owner;
+			
+			for (int i = 0; i < conversation.GetNumActors(); i++)
+			{
+				if (i != command.GetActor())
+				{
+					// Listeners turn towards the talker
+					// Reduce the actor index by 1 before passing them to the conversation
+					idAI* listener = conversation.GetActor(i);
+
+					listener->TurnToward(owner->GetEyePosition());
+					listener->Event_LookAtPosition(owner->GetEyePosition(), MS2SEC(length));
+				}
+				else
+				{
+					// The talker should just face any of the other actors.
+					// TODO
+				}
+			}
+		}
 
 		// Set the finish conditions for the current action
 		if (command.WaitUntilFinished())
@@ -325,6 +351,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		}
 	}
 	break;
+
 	case ConversationCommand::EPlayAnimCycle:
 	{
 		idStr animName = command.GetArgument(0);
@@ -427,6 +454,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		}
 	}
 	break;
+
 	case ConversationCommand::ETurnToActor:
 	{
 		// Reduce the actor index by 1 before passing them to the conversation
