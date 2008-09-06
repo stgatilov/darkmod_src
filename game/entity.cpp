@@ -8734,7 +8734,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 	// Get (create) the InventoryCursor of this Entity.
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *rc = NULL;
-	CInventoryItem *prev = NULL;
 	idStr s;
 	int v = 0;
 
