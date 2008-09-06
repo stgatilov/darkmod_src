@@ -43,8 +43,8 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 };
 
 ConversationCommand::ConversationCommand() :
-	_state(ENotReady),
-	_type(ENumCommands) // invalid type
+	_type(ENumCommands), // invalid type
+	_state(ENotReady)
 {}
 
 ConversationCommand::Type ConversationCommand::GetType()

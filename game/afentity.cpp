@@ -1911,7 +1911,7 @@ void idAFEntity_WithAttachedHead::SetupHead()
 
 		if (def == NULL)
 		{
-			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName);
+			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
 
 			// Try to fallback on the default head entityDef
 			def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
@@ -1924,7 +1924,7 @@ void idAFEntity_WithAttachedHead::SetupHead()
 		}
 		else
 		{
-			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName, TDM_HEAD_ENTITYDEF);
+			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
 		}
 
 		// Spawn the head entity

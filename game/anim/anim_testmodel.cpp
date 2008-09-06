@@ -137,7 +137,7 @@ void idTestModel::Spawn( void ) {
 
 			if (def == NULL)
 			{
-				gameLocal.Warning("Could not find head entityDef %s!", headModelDefName);
+				gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
 
 				// Try to fallback on the default head entityDef
 				def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
@@ -150,7 +150,7 @@ void idTestModel::Spawn( void ) {
 			}
 			else
 			{
-				gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName, TDM_HEAD_ENTITYDEF);
+				gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
 			}
 			
 			// Copy any sounds in case we have frame commands on the head
