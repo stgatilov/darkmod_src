@@ -43,7 +43,6 @@ END_CLASS
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
-static const float BOUNCE_SCRIPT_MIN_VELOCITY	= 5.0f;
 static const float SLIDING_VELOCITY_THRESHOLD = 5.0f;
 
 /*
@@ -57,9 +56,10 @@ idMoveable::idMoveable( void ) {
 	nextCollideFxTime		= 0;
 	nextDamageTime			= 0;
 	nextSoundTime			= 0;
-	nextCollideScriptTime	= 0;
+	m_nextCollideScriptTime	= 0;
 	// 0 => never, -1 => always, positive number X => X times
-	collideScriptCounter	= 0;
+	m_collideScriptCounter	= 0;
+	m_minScriptVelocity		= 0.0f;
 	initialSpline			= NULL;
 	initialSplineDir		= vec3_zero;
 	explode					= false;
@@ -147,15 +147,15 @@ void idMoveable::Spawn( void ) {
 	nextCollideFxTime = 0;
 
 	// tels:
-	scriptCollide = spawnArgs.GetString( "script_collide" );
-	nextCollideScriptTime = 0;
-	collideScriptCounter = spawnArgs.GetInt( "collide_script_counter", "1" );
+	m_scriptCollide = spawnArgs.GetString( "script_collide" );
+	m_nextCollideScriptTime = 0;
+	m_collideScriptCounter = spawnArgs.GetInt( "collide_script_counter", "1" );
 	// override the default of 1 with 0 if no script is defined
-	if (scriptCollide == "")
+	if (m_scriptCollide == "")
 	{
-		collideScriptCounter = 0;
+		m_collideScriptCounter = 0;
 	}
-
+	m_minScriptVelocity = spawnArgs.GetFloat( "min_script_velocity", "5.0" ); 
 
 	damage = spawnArgs.GetString( "def_damage", "" );
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
@@ -237,9 +237,10 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( brokenModel );
 	savefile->WriteString( damage );
-	savefile->WriteString( scriptCollide );
-	savefile->WriteInt( collideScriptCounter );
-	savefile->WriteInt( nextCollideScriptTime );
+	savefile->WriteString( m_scriptCollide );
+	savefile->WriteInt( m_collideScriptCounter );
+	savefile->WriteInt( m_nextCollideScriptTime );
+	savefile->WriteFloat( m_minScriptVelocity );
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
 	savefile->WriteFloat( minDamageVelocity );
@@ -272,9 +273,10 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadString( brokenModel );
 	savefile->ReadString( damage );
-	savefile->ReadString( scriptCollide );
-	savefile->ReadInt( collideScriptCounter );
-	savefile->ReadInt( nextCollideScriptTime );
+	savefile->ReadString( m_scriptCollide );
+	savefile->ReadInt( m_collideScriptCounter );
+	savefile->ReadInt( m_nextCollideScriptTime );
+	savefile->ReadFloat( m_minScriptVelocity );
 	savefile->ReadString( fxCollide );
 	savefile->ReadInt( nextCollideFxTime );
 	savefile->ReadFloat( minDamageVelocity );
@@ -377,27 +379,27 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			nextSoundTime = gameLocal.time + 500;
 		}
 		// tels:
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because collideScriptCounter=%i and v=%f and time=%f > nextCollideScriptTime=%f.\r",
-				name.c_str(), scriptCollide.c_str(), collideScriptCounter, v, gameLocal.time, nextCollideScriptTime );
- 		if ( collideScriptCounter != 0 && v > BOUNCE_SCRIPT_MIN_VELOCITY && gameLocal.time > nextCollideScriptTime ) 
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter=%i and v=%f and time=%f > m_nextCollideScriptTime=%f.\r",
+				name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
+ 		if ( m_collideScriptCounter != 0 && v > m_minScriptVelocity && gameLocal.time > m_nextCollideScriptTime ) 
 		{ 
-	 		if ( collideScriptCounter > 0)
+	 		if ( m_collideScriptCounter > 0)
 			{
 			// if positive, decrement it, so -1 stays as it is (for 0, we never come here)
-	 		collideScriptCounter --;
+	 		m_collideScriptCounter --;
 			}
 
 			// call the script
-			const function_t* pScriptFun = scriptObject.GetFunction( scriptCollide.c_str() );
+			const function_t* pScriptFun = scriptObject.GetFunction( m_scriptCollide.c_str() );
 			if (pScriptFun == NULL)
     		{
 				// Local function not found, check in global namespace
-				pScriptFun = gameLocal.program.FindFunction( scriptCollide.c_str() );
+				pScriptFun = gameLocal.program.FindFunction( m_scriptCollide.c_str() );
 		    }
 			if (pScriptFun != NULL)
 			{
 				DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s calling script_collide %s.\r",
-					name.c_str(), scriptCollide.c_str());
+					name.c_str(), m_scriptCollide.c_str());
 				idThread *pThread = new idThread( pScriptFun );
 				pThread->CallFunctionArgs( pScriptFun, true, "e", this );
 				pThread->DelayedStart( 0 );
@@ -406,11 +408,11 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			{
 				// script function not found!
 				DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("Moveable %s could not find script_collide %s.\r",
-					name.c_str(), scriptCollide.c_str());
-	 			collideScriptCounter = 0;
+					name.c_str(), m_scriptCollide.c_str());
+	 			m_collideScriptCounter = 0;
 			}
 
-		nextCollideScriptTime = gameLocal.time + 300;
+		m_nextCollideScriptTime = gameLocal.time + 300;
 		}
 
 	}
