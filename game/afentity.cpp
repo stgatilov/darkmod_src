@@ -1899,7 +1899,7 @@ void idAFEntity_WithAttachedHead::SetupHead()
 		}
 
 		idStr jointName = spawnArgs.GetString( "head_joint" );
-		jointHandle_t joint = animator.GetJointHandle( jointName );
+		jointHandle_t joint = animator.GetJointHandle( jointName.c_str() );
 		if ( joint == INVALID_JOINT ) {
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
