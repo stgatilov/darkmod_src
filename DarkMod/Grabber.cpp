@@ -49,6 +49,8 @@ const float MIN_HELD_DISTANCE  =		35.0f;
 // granularity of the distance control
 const int	DIST_GRANULARITY	=		12;
 
+// shouldered body immobilizations
+const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE;
 
 
 CLASS_DECLARATION( idEntity, CGrabber )
@@ -111,6 +113,7 @@ void CGrabber::Clear( void )
 	m_LockedHeldDist = 0;
 	m_bObjStuck = false;
 	m_bObjEquipped = false;
+	m_ShoulderedBody = NULL;
 	m_MaxForce = 0;
 
 	while( this->HasClippedEntity() )
@@ -158,10 +161,11 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_DistanceCount);
 	savefile->WriteInt(m_MaxDistCount);
 	savefile->WriteInt(m_MinHeldDist);
+	savefile->WriteFloat(m_MaxForce);
 	savefile->WriteInt(m_LockedHeldDist);
 	savefile->WriteBool(m_bObjStuck);
 	savefile->WriteBool(m_bObjEquipped);
-	savefile->WriteFloat(m_MaxForce);
+	m_ShoulderedBody.Save(savefile);
 
 	savefile->WriteBool(m_bIsColliding);
 	savefile->WriteBool(m_bPrevFrameCollided);
@@ -217,10 +221,11 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_DistanceCount);
 	savefile->ReadInt(m_MaxDistCount);
 	savefile->ReadInt(m_MinHeldDist);
+	savefile->ReadFloat(m_MaxForce);
 	savefile->ReadInt(m_LockedHeldDist);
 	savefile->ReadBool(m_bObjStuck);
 	savefile->ReadBool(m_bObjEquipped);
-	savefile->ReadFloat(m_MaxForce);
+	m_ShoulderedBody.Restore(savefile);
 
 	savefile->ReadBool(m_bIsColliding);
 	savefile->ReadBool(m_bPrevFrameCollided);
@@ -1274,3 +1279,75 @@ bool CGrabber::ToggleEquip( void )
 	return false;
 }
 
+bool CGrabber::ShoulderBody( idAFEntity_Base *body )
+{
+	bool rc(false);
+
+	if( body->spawnArgs.GetBool("shoulderable") )
+	{
+		// Temporarily turn the body into an inventory item
+		idStr InvName;
+		if( body->health > 0 )
+			InvName = body->spawnArgs.GetString("shouldered_name", "Body");
+		else
+			InvName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
+
+		body->spawnArgs.Set( "inv_name",InvName.c_str() );
+		// apparently we need this?
+		body->spawnArgs.Set( "inv_category", "Bodies" );
+		body->spawnArgs.Set( "inv_droppable", "1" ); // dropping the body does the same as dequipping
+		body->spawnArgs.Set( "inv_icon", body->spawnArgs.GetString("shouldered_icon") );
+
+		idPlayer *player = m_player.GetEntity();
+		// this should always succeed, no need to check success
+		player->AddToInventory( body, player->hud );
+
+		// set immobilizations
+		int immob = SHOULDER_IMMOBILIZATIONS;
+		if( body->GetPhysics()->GetMass() > cv_drag_jump_masslimit.GetFloat() )
+			immob = immob | EIM_JUMP;
+		// TODO: Also make sure you can't grab anything else (hands are full)
+		// requires a new EIM flag?
+		player->SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
+		
+		// set hinderance
+		float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
+		player->SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
+
+		m_ShoulderedBody = body;
+
+		rc = true;
+	}
+
+	return rc;
+}
+
+bool CGrabber::UnShoulderBody( void )
+{
+	bool rc(false);
+
+	idAFEntity_Base *body = m_ShoulderedBody.GetEntity();
+	if( !body )
+		return false;
+
+	idPlayer *player = m_player.GetEntity();
+	if( FitsInHands( body, player, 0 ) )
+	{
+		// clear inventory data from the body so that it doesn't go straight
+		// to inventory next time we frob it
+		body->spawnArgs.Delete("inv_name");
+		body->spawnArgs.Delete("inv_category");
+		body->spawnArgs.Delete("inv_droppable");
+		body->spawnArgs.Delete("inv_icon");
+
+		// clear immobilizations
+		player->SetImmobilization( "ShoulderedBody", 0 );
+		player->SetHinderance( "ShoulderedBody", 1.0f, 1.0f );
+
+		PutInHands( body, player, 0 );
+
+		rc = true;
+	}
+
+	return rc;
+}

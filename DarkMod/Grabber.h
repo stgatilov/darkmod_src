@@ -104,6 +104,14 @@ public:
 		**/
 		bool					ToggleEquip( void );
 
+		/**
+		* Preliminary body shouldering code (move to idPlayer?)
+		* Shoulderbody: Returns true if body was shouldered
+		* UnShoulderBody: Returns true if there was room to unshoulder the body
+		**/
+		bool					ShoulderBody( idAFEntity_Base *body );
+		bool					UnShoulderBody( void );
+
 public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
@@ -283,6 +291,12 @@ protected:
 		* and dragging the AI.
 		**/
 		bool					m_bObjEquipped;
+
+		/**
+		* Shouldered body.  
+		* TODO: Would this make more sense being on idPlayer instead?
+		**/
+		idEntityPtr<idAFEntity_Base>	m_ShoulderedBody;
 };
 
 
