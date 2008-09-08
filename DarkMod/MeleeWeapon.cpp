@@ -20,7 +20,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 CLASS_DECLARATION( idMoveable, CMeleeWeapon )
 END_CLASS
 
-const int MAX_PARTICLES_PER_SWING = 10; 
+const int CONTENTS_MELEE_WORLDCOLLIDE = MASK_SHOT_RENDERMODEL | CONTENTS_MELEEWEAP | CONTENTS_CORPSE;
+const int CONTENTS_MELEE_ACTCOLLIDE = CONTENTS_MELEEWEAP | CONTENTS_BODY; // parries/held items, AI
 
 CMeleeWeapon::CMeleeWeapon( void ) 
 {
@@ -88,6 +89,7 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 {
 	const idKeyValue *key;
+	idClipModel *pClip;
 
 	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Activate attack called.  Weapon %s, owner %s, attack name %s.\r",
 											name.c_str(), ActOwner->name.c_str(), AttName );
@@ -95,6 +97,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) == NULL )
 	{
 		DM_LOG(LC_WEAPON, LT_WARNING)LOGSTRING("Did not find attack %s on melee weapon %s\r", AttName, name.c_str());
+		gameLocal.Warning("Invalid attack name %s on weapon entity %s\n", AttName, name.c_str() );
 		return;
 	}
 
@@ -108,13 +111,45 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	m_ParticlesMade = 0;
 
 	m_WeapClip = NULL;
+	pClip = GetPhysics()->GetClipModel();
 	if( spawnArgs.GetBool(va("att_mod_cm_%s", AttName) ) )
 	{
 		SetupClipModel();
+		pClip = m_WeapClip;
 	}
 
 	m_OldOrigin = GetPhysics()->GetOrigin();
 	m_OldAxis = GetPhysics()->GetAxis();
+
+	
+	// Initial collision test (if we start out already colliding with something)
+	// Hack to ignore the owner during the trace
+	int contentsOwner = m_Owner.GetEntity()->GetPhysics()->GetContents();
+	m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+
+	int TestContents;
+	if( m_bWorldCollide )
+		TestContents = CONTENTS_MELEE_WORLDCOLLIDE;
+	else
+		TestContents = CONTENTS_MELEE_ACTCOLLIDE;
+
+	trace_t tr;
+	gameLocal.clip.Translation
+		( 
+			tr, m_OldOrigin, m_OldOrigin, 
+			pClip, m_OldAxis, TestContents, this 
+		);
+
+	m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
+
+	// If we started out in something we hit, we're already done
+	if ( tr.fraction < 1.0f )
+	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Attack clipmodel started out inside something it hits.\r");
+
+		MeleeCollision( gameLocal.world, vec3_zero, &tr, -1 );
+		DeactivateAttack();
+	}
 }
 
 void CMeleeWeapon::DeactivateAttack( void )
@@ -152,7 +187,7 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 	}
 	else
 	{
-		// TODO: LOG INVALID MELEEDEF ERROR
+		gameLocal.Warning("Invalid parry name %s on weapon entity %s\n", ParryName, name.c_str() );
 	}
 
 }
@@ -255,15 +290,18 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	rotation.SetOrigin( OldOrigin );
 
 	if( m_bWorldCollide )
-		ClipMask = MASK_SHOT_RENDERMODEL | CONTENTS_MELEEWEAP | CONTENTS_CORPSE;
+		ClipMask = CONTENTS_MELEE_WORLDCOLLIDE;
 	else
-		ClipMask = CONTENTS_MELEEWEAP | CONTENTS_CORPSE | CONTENTS_BODY; // parries and AI
+		ClipMask = CONTENTS_MELEE_ACTCOLLIDE; // parries and AI
 	// TODO: Is CONTENTS_BODY going to hit the outer collision box and cause problems?
 
 	// Hack: We really want to ignore more than one entity, but we can't do that,
 	// so temporarily set our CONTENTS so that we don't hit ourself
 	int contentsEnt = GetPhysics()->GetContents();
 	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	// Also ignore the owner for this trace
+	int contentsOwner = m_Owner.GetEntity()->GetPhysics()->GetContents();
+	m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 
 // Uncomment for debugging
 /*
@@ -285,6 +323,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	);
 	
 	GetPhysics()->SetContents( contentsEnt );
+	m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
 	
 	// hit something 
 	if( tr.fraction < 1.0f )
@@ -309,7 +348,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		idVec3 vSpinTrans = r.Cross((rotation.ToAngularVelocity()));
 
 		idVec3 PointVelDir = vLinearTrans + vSpinTrans;
-		// TODO: Divide by delta_t if we want to store velocity mag later
+		// TODO: Divide by delta_t if we want to store velocity magnitude later
 		PointVelDir.Normalize();
 
 		// Secondary trace for when we hit the AF structure of an AI and want
