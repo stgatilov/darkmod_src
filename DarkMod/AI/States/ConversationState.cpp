@@ -305,8 +305,14 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 				}
 				else
 				{
-					// The talker should just face any of the other actors.
-					// TODO
+					// Are there any other actors at all?
+					if (conversation.GetNumActors() > 1) 
+					{
+						idAI* listener = (i == 0) ? conversation.GetActor(1) : conversation.GetActor(0);
+
+						talker->TurnToward(listener->GetEyePosition());
+						talker->Event_LookAtPosition(listener->GetEyePosition(), MS2SEC(length));
+					}
 				}
 			}
 		}
