@@ -305,6 +305,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 				}
 				else
 				{
+					// The talker should turn to any other listener
+
 					// Are there any other actors at all?
 					if (conversation.GetNumActors() > 1) 
 					{
