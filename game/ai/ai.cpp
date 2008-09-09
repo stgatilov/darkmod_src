@@ -7581,7 +7581,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	AI_currentAlertLevelStartTime = gameLocal.realClientTime;
 
 	// Begin the grace period
-	Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
+	if (alertRising)
+	{
+		Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
+	}
 /*
 	// Only bark if we haven't barked too recently
 	if (( MS2SEC(gameLocal.time) - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
@@ -9542,6 +9545,13 @@ void idAI::ShowDebugInfo()
 	if( cv_ai_alertlevel_show.GetBool() )
 	{
 		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
+		{
+			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
+				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time, 
+				m_AlertGraceCount, m_AlertGraceCountLimit), 
+				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		}
 	}
 
 	if (cv_ai_animstate_show.GetBool())
