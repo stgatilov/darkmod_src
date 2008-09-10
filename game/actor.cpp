@@ -834,7 +834,7 @@ void idActor::SetupHead()
 
 		if (def == NULL)
 		{
-			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName);
+			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
 
 			// Try to fallback on the default head entityDef
 			def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
@@ -847,7 +847,7 @@ void idActor::SetupHead()
 		}
 		else
 		{
-			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName, TDM_HEAD_ENTITYDEF);
+			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
 		}		
 		
 		// Copy any sounds in case we have frame commands on the head
@@ -2956,17 +2956,20 @@ bool idActor::ReEvaluateArea(int areaNum)
 void idActor::LoadVocalSet()
 {
 	// Try to look up the entityDef
-	const char* vocalSet = spawnArgs.GetString("vocal_set");
+	idStr vocalSet = spawnArgs.GetString("vocal_set");
+
+	if (vocalSet.IsEmpty()) return; // nothing to do
+
 	const idDeclEntityDef* def = gameLocal.FindEntityDef(vocalSet, false);
 
 	if (def == NULL)
 	{
-		gameLocal.Warning("Could not find vocal_set %s!", vocalSet);
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find vocal_set %s!", vocalSet);
+		gameLocal.Warning("Could not find vocal_set %s!", vocalSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find vocal_set %s!", vocalSet.c_str());
 		return;
 	}
 
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s", vocalSet, name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s", vocalSet.c_str(), name.c_str());
 
 	int i = 0;
 
