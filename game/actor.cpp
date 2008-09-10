@@ -752,6 +752,8 @@ void idActor::Spawn( void )
 
 	canUseElevators = spawnArgs.GetBool("canOperateElevators", "0");
 
+	LoadVocalSet();
+
 	FinishSetup();
 
 	ParseAttachmentsAF();
@@ -2949,6 +2951,32 @@ bool idActor::ReEvaluateArea(int areaNum)
 {
 	// Default implementation for actors: return positive
 	return true;
+}
+
+void idActor::LoadVocalSet()
+{
+	// Try to look up the entityDef
+	const char* vocalSet = spawnArgs.GetString("vocal_set");
+	const idDeclEntityDef* def = gameLocal.FindEntityDef(vocalSet, false);
+
+	if (def == NULL)
+	{
+		gameLocal.Warning("Could not find vocal_set %s!", vocalSet);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find vocal_set %s!", vocalSet);
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s", vocalSet, name.c_str());
+
+	int i = 0;
+
+	// Copy all snd_* spawnargs over to this entity
+	for (const idKeyValue* kv = def->dict.MatchPrefix("snd_"); kv != NULL; kv = def->dict.MatchPrefix("snd_", kv), i++)
+	{
+		spawnArgs.Set(kv->GetKey(), kv->GetValue());
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s", i, name.c_str());
 }
 
 /***********************************************************************

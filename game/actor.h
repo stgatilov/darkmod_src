@@ -424,6 +424,12 @@ protected:
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
+
+	/**
+	 * greebo: This loads the vocal set (the snd_* spawnargs) into this entity's spawnargs.
+	 */
+	void					LoadVocalSet();
+
 	void					SetupHead( void );
 
 public:
