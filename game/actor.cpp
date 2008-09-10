@@ -2956,7 +2956,7 @@ bool idActor::ReEvaluateArea(int areaNum)
 void idActor::LoadVocalSet()
 {
 	// Try to look up the entityDef
-	idStr vocalSet = spawnArgs.GetString("vocal_set");
+	idStr vocalSet = spawnArgs.GetString("def_vocal_set");
 
 	if (vocalSet.IsEmpty()) return; // nothing to do
 
@@ -2964,8 +2964,8 @@ void idActor::LoadVocalSet()
 
 	if (def == NULL)
 	{
-		gameLocal.Warning("Could not find vocal_set %s!", vocalSet.c_str());
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find vocal_set %s!", vocalSet.c_str());
+		gameLocal.Warning("Could not find def_vocal_set %s!", vocalSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_vocal_set %s!", vocalSet.c_str());
 		return;
 	}
 
