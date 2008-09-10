@@ -326,7 +326,7 @@ void idSaveGame::WriteObject( const idClass *obj ) {
 
 	index = objects.FindIndex( obj );
 	if ( index < 0 ) {
-		gameLocal.DPrintf( "idSaveGame::WriteObject - WriteObject FindIndex failed\n" );
+		gameLocal.Warning( "idSaveGame::WriteObject - WriteObject FindIndex failed\n" );
 
 		// Use the NULL index
 		index = 0;

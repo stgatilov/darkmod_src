@@ -257,6 +257,7 @@ void idGameLocal::Clear( void )
 	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
 	m_MissionData->ClearGUIState();
 
+	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
 
 	m_AreaManager.Clear();
@@ -606,7 +607,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Add relationship matrix object
 	savegame.AddObject( m_RelationsManager );
-	savegame.AddObject( g_Global.m_DarkModPlayer->grabber );
+	savegame.AddObject( m_Grabber );
 
 	// write out complete object list
 	savegame.WriteObjectList();
@@ -615,6 +616,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save the global hiding spot search collection
 	CHidingSpotSearchCollection::Instance().Save(&savegame);
+
+	// Save our grabber pointer
+	savegame.WriteObject(m_Grabber);
 
 	m_DifficultyManager.Save(&savegame);
 
@@ -821,6 +825,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	// Save the DarkMod player object, this contains a lot of other TDM-related classes
 	g_Global.m_DarkModPlayer->Save(&savegame);
 
+	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
 
 	// Send a message to the HUD
@@ -1474,6 +1479,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	LoadMap( mapName, randseed );
 
+	// Instantiate our grabber entity
+	m_Grabber = static_cast<CGrabber*>(CGrabber::Type.CreateInstance());
+
 	// greebo: Initialize the Difficulty Manager, before any entities are spawned
 	m_DifficultyManager.Init(mapFile);
 	m_ConversationSystem->Init(mapFile);
@@ -1548,6 +1556,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore the global hiding spot search collection
 	CHidingSpotSearchCollection::Instance().Restore(&savegame);
+
+	// Restore our grabber pointer
+	savegame.ReadObject( reinterpret_cast<idClass*&>(m_Grabber) );
 
 	m_DifficultyManager.Restore(&savegame);
 
@@ -1836,7 +1847,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	pm_walkspeed.SetFloat( m_walkSpeed );
 
 	// Restore the physics pointer in the grabber.
-	g_Global.m_DarkModPlayer->grabber->SetPhysicsFromDragEntity();
+	gameLocal.m_Grabber->SetPhysicsFromDragEntity();
 
 	// Restore the CStim* pointers in the m_StimTimer list
 	m_StimTimer.SetNum(tempStimTimerIdList.Num());
@@ -1916,8 +1927,11 @@ void idGameLocal::MapShutdown( void ) {
 	}
 
 	// Run the grabber->clear() method before the entities get deleted from the map
-	g_Global.m_DarkModPlayer->grabber->Clear();
-
+	if (m_Grabber != NULL)
+	{
+		m_Grabber->Clear();
+	}
+	
 	MapClear( true );
 
 	// reset the script to the state it was before the map was started
@@ -1933,6 +1947,10 @@ void idGameLocal::MapShutdown( void ) {
 	LAS.shutDown();
 
 	pvs.Shutdown();
+
+	// Remove the grabber entity itself (note that it's safe to pass NULL pointers to delete)
+	delete m_Grabber;
+	m_Grabber = NULL;
 
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();

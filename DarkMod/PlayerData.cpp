@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
 
-CDarkModPlayer::CDarkModPlayer(void)
+CDarkModPlayer::CDarkModPlayer()
 {
 	m_FrobEntity = NULL;
 	m_FrobJoint = INVALID_JOINT;
@@ -25,22 +25,11 @@ CDarkModPlayer::CDarkModPlayer(void)
 
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
-	m_FrobTrace.c.material = NULL;
-
-	// TODO: Spawn grabber from a .def file (maybe?)
-	this->grabber = new CGrabber();
-}
-
-CDarkModPlayer::~CDarkModPlayer(void)
-{
-	// remove grabber object	
-	this->grabber->PostEventSec( &EV_Remove, 0 );
+	memset(&m_FrobTrace, 0, sizeof(trace_t));
 }
 
 void CDarkModPlayer::Save( idSaveGame *savefile ) const
 {
-	grabber->Save(savefile);
-
 	m_FrobEntity.Save(savefile);
 	savefile->WriteJoint(m_FrobJoint);
 	savefile->WriteInt(m_FrobID);
@@ -58,8 +47,6 @@ void CDarkModPlayer::Save( idSaveGame *savefile ) const
 
 void CDarkModPlayer::Restore( idRestoreGame *savefile )
 {
-	grabber->Restore(savefile);
-
 	m_FrobEntity.Restore(savefile);
 	savefile->ReadJoint(m_FrobJoint);
 	savefile->ReadInt(m_FrobID);
@@ -77,7 +64,7 @@ void CDarkModPlayer::Restore( idRestoreGame *savefile )
 	}
 }
 
-unsigned long CDarkModPlayer::AddLight(idLight *light)
+int CDarkModPlayer::AddLight(idLight *light)
 {
 	if(light)
 	{
@@ -90,7 +77,7 @@ unsigned long CDarkModPlayer::AddLight(idLight *light)
 	return m_LightList.Num();
 }
 
-unsigned long CDarkModPlayer::RemoveLight(idLight *light)
+int CDarkModPlayer::RemoveLight(idLight *light)
 {
 	if(light)
 	{

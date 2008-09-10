@@ -197,7 +197,7 @@ void CForce_Grab::Evaluate( int time )
 		return;
 	}
 
-	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+	CGrabber *grabber = gameLocal.m_Grabber;
 
 // ======================== LINEAR =========================
 

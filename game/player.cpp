@@ -3499,8 +3499,8 @@ void idPlayer::UpdateWeapon( void ) {
 		Weapon_GUI();
 	} else 	if ( focusCharacter && ( focusCharacter->health > 0 ) ) {
 		Weapon_NPC();
-	} else if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
-		g_Global.m_DarkModPlayer->grabber->Update( this, true );
+	} else if( gameLocal.m_Grabber->GetSelected() ) {
+		gameLocal.m_Grabber->Update( this, true );
 	} else {
 		Weapon_Combat();
 	}
@@ -3741,7 +3741,7 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 	idEntity *other = gameLocal.entities[ collision.c.entityNum ];
 	// don't let player collide with grabber entity
-	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) 
+	if ( other && other != gameLocal.m_Grabber->GetSelected() ) 
 	{
 		ProcCollisionStims( other, collision.c.id );
 
@@ -5012,7 +5012,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, next weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
+				gameLocal.m_Grabber->IncrementDistance( false );
 
 			// Pass the "next weapon" event to the GUIs
 			m_overlays.broadcastNamedEvent("nextWeapon");
@@ -5030,7 +5030,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, previous weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
+				gameLocal.m_Grabber->IncrementDistance( true );
 
 			// Pass the "previous weapon" event to the GUIs
 			m_overlays.broadcastNamedEvent("prevWeapon");
@@ -5166,7 +5166,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_40:		// TDM: grab item with grabber
 		{
-			CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+			CGrabber *grabber = gameLocal.m_Grabber;
 			idEntity *useEnt = grabber->GetSelected();
 			if(useEnt == NULL)
 			{
@@ -5229,7 +5229,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, prev weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
+				gameLocal.m_Grabber->IncrementDistance( true );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
@@ -5248,7 +5248,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, next weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
+				gameLocal.m_Grabber->IncrementDistance( false );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
@@ -7250,7 +7250,7 @@ float idPlayer::CalcFov( bool honorZoom ) {
 	}
 
 	// prevent FOV from zooming if the player is holding an object
-	if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+	if( gameLocal.m_Grabber->GetSelected() ) {
 		return defaultFov;
 	}
 
@@ -9116,9 +9116,9 @@ void idPlayer::inventoryUseItem()
 		return;
 
 	// If the grabber item can be equipped/dequipped, use item does this
-	if ( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	if ( gameLocal.m_Grabber->GetSelected() )
 	{
-		if( g_Global.m_DarkModPlayer->grabber->ToggleEquip() )
+		if( gameLocal.m_Grabber->ToggleEquip() )
 			return;
 	}
 
@@ -9179,7 +9179,7 @@ void idPlayer::inventoryUseItem(EImpulseState nState, CInventoryItem* item, int 
 void idPlayer::inventoryDropItem()
 {
 	bool bDropped = false;
-	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+	CGrabber *grabber = gameLocal.m_Grabber;
 	idEntity *heldEntity = grabber->GetSelected();
 
 	// Drop the item in the grabber hands first
@@ -9625,12 +9625,12 @@ void idPlayer::Event_HoldEntity( idEntity *ent )
 {
 	if ( ent )
 	{
-		bool successful = g_Global.m_DarkModPlayer->grabber->PutInHands( ent, this, 0 );
+		bool successful = gameLocal.m_Grabber->PutInHands( ent, this, 0 );
 		idThread::ReturnInt( successful );
 	}
 	else
 	{
-		g_Global.m_DarkModPlayer->grabber->Update( this, false );
+		gameLocal.m_Grabber->Update( this, false );
 		idThread::ReturnInt( 1 );
 	}
 }
@@ -9642,7 +9642,7 @@ idPlayer::Event_HeldEntity
 */
 void idPlayer::Event_HeldEntity( void )
 {
-	idThread::ReturnEntity(g_Global.m_DarkModPlayer->grabber->GetSelected());
+	idThread::ReturnEntity(gameLocal.m_Grabber->GetSelected());
 }
 
 void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
@@ -9788,7 +9788,7 @@ void idPlayer::FrobCheck( void )
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
 		if( ent->m_bFrobable && !ent->IsHidden() && (TraceDist < ent->m_FrobDistance)
-			&& ent != g_Global.m_DarkModPlayer->grabber->GetSelected() && !isRopeMaster)
+			&& ent != gameLocal.m_Grabber->GetSelected() && !isRopeMaster)
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 			// TODO: Mark as frobbed for this frame
@@ -9847,7 +9847,7 @@ void idPlayer::FrobCheck( void )
 		}
 	}
 
-	if( BestEnt && BestEnt != g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	if( BestEnt && BestEnt != gameLocal.m_Grabber->GetSelected() )
 	{
 		//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
 		// Mark the entity as frobbed this frame
@@ -10185,11 +10185,11 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 			pDM->m_FrobEntity = NULL;
 
 			// greebo: Release any items from the grabber, this immobilized the player somehow before
-			pDM->grabber->Update( this, false );
+			gameLocal.m_Grabber->Update( this, false );
 
 			// greebo: Prevent the grabber from checking the added entity (it may be 
 			// entirely removed from the game, which would cause crashes).
-			pDM->grabber->RemoveFromClipList(target);
+			gameLocal.m_Grabber->RemoveFromClipList(target);
 		}
 	}
 }
@@ -10202,15 +10202,15 @@ void idPlayer::PerformFrob()
 		return;
 	}
 
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-
 	// if the grabber is currently holding something and frob is pressed,
 	// release it.  Do not frob anything new since you're holding an item.
-	if( pDM->grabber->GetSelected() )
+	if( gameLocal.m_Grabber->GetSelected() )
 	{
-		pDM->grabber->Update( this );
+		gameLocal.m_Grabber->Update( this );
 		return;
 	}
+
+	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
 
 	// Get the currently frobbed entity
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
@@ -10253,7 +10253,7 @@ void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int 
 
 bool idPlayer::AddGrabberEntityToInventory()
 {
-	CGrabber* grabber = g_Global.m_DarkModPlayer->grabber;
+	CGrabber* grabber = gameLocal.m_Grabber;
 	idEntity* heldEntity = grabber->GetSelected();
 
 	if (heldEntity != NULL)

@@ -7070,7 +7070,7 @@ void idEntity::UpdateFrob(void)
 	}
 
 	// greebo: Allow the grabbed entity to stay highlighted
-	if (cv_dragged_item_highlight.GetBool() && pDM->grabber->GetSelected() == this)
+	if (cv_dragged_item_highlight.GetBool() && gameLocal.m_Grabber->GetSelected() == this)
 	{
 		FrobHighlight(true);
 		return;
@@ -7235,7 +7235,7 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 					goto Quit;
 			}
 
-			g_Global.m_DarkModPlayer->grabber->Update( gameLocal.GetLocalPlayer() );
+			gameLocal.m_Grabber->Update( gameLocal.GetLocalPlayer() );
 		}
 
 		goto Quit;

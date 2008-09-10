@@ -122,8 +122,6 @@ void CGrabber::Clear( void )
 
 void CGrabber::Save( idSaveGame *savefile ) const
 {
-	idEntity::Save(savefile);
-	
 	m_dragEnt.Save(savefile);
 	savefile->WriteJoint(m_joint);
 	savefile->WriteInt(m_id);
@@ -178,8 +176,6 @@ void CGrabber::Save( idSaveGame *savefile ) const
 
 void CGrabber::Restore( idRestoreGame *savefile )
 {
-	idEntity::Restore(savefile);
-
 	m_dragEnt.Restore(savefile);
 	savefile->ReadJoint(m_joint);
 	savefile->ReadInt(m_id);

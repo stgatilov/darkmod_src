@@ -458,7 +458,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				TestParry( static_cast<CMeleeWeapon *>(other), dir, &tr );
 			}
 			// hit a held object
-			else if( other == g_Global.m_DarkModPlayer->grabber->GetSelected() )
+			else if( other == gameLocal.m_Grabber->GetSelected() )
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit an object held by the player\r");
 				

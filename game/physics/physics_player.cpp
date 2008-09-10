@@ -1601,7 +1601,7 @@ void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 	// This is complicated but because we want free object movement, we have to temporarily disable player clipping.
 	// But, if a players releases an object when they're inside it they float to the surface.  By doing this check
 	// we can avoid that.
-	if( !g_Global.m_DarkModPlayer->grabber->HasClippedEntity() ) {
+	if( !gameLocal.m_Grabber->HasClippedEntity() ) {
 		current.origin -= (GetGravityNormal() * 0.2f);
 	}
 
@@ -1925,7 +1925,7 @@ void idPhysics_Player::CheckClimbable( void )
 
 /*
 	// Don't attach if we are holding an object in our hands
-	if( g_Global.m_DarkModPlayer->grabber->GetSelected() != NULL )
+	if( gameLocal.m_Grabber->GetSelected() != NULL )
 		goto Quit;
 */
 
@@ -4370,7 +4370,7 @@ void idPhysics_Player::PerformMantle()
 	}
 
 	// Ishtvan: Do not attempt to mantle if holding an object
-	if( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	if( gameLocal.m_Grabber->GetSelected() )
 		return;
 
 	// Run mantle trace

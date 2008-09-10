@@ -383,14 +383,14 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
 
 	// Check if we are grabbed by the grabber, and set collision var if so
-	if ( self == g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	if ( self == gameLocal.m_Grabber->GetSelected() )
 	{
 		// greebo: Don't collide grabbed entities with its own bindslaves
 		if ( (ent->GetBindMaster() == NULL || self != ent->GetBindMaster())
 			&& ent != gameLocal.GetLocalPlayer() )
 		{
-			g_Global.m_DarkModPlayer->grabber->m_bIsColliding = true;
-			g_Global.m_DarkModPlayer->grabber->m_CollNorms.AddUnique( collision.c.normal );
+			gameLocal.m_Grabber->m_bIsColliding = true;
+			gameLocal.m_Grabber->m_CollNorms.AddUnique( collision.c.normal );
 		}
 	}
 

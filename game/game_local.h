@@ -61,6 +61,7 @@ bool FileVersionList(const char *str, bool state);
 
 class CStim;
 class CStimResponseTimer;
+class CGrabber;
 
 // enables water physics
 #define MOD_WATERPHYSICS
@@ -442,6 +443,9 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+
+	// Darkmod's grabber to help with object manipulation
+	CGrabber*				m_Grabber;
 
 	// The object handling the difficulty settings
 	difficulty::DifficultyManager	m_DifficultyManager;
