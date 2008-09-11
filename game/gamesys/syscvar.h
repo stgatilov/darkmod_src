@@ -80,6 +80,7 @@ extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;
+extern idCVar cv_pm_push_maximpulse;
 extern idCVar cv_pm_push_start_delay;
 extern idCVar cv_pm_push_accel_time;
 extern idCVar cv_pm_push_heavy_threshold;
