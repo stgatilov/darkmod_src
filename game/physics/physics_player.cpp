@@ -1664,7 +1664,6 @@ void idPhysics_Player::CheckGround( void ) {
 	// if the trace didn't hit anything, we are in free fall
 	if ( groundTrace.fraction == 1.0f ) 
 	{
-
 		groundPlane = false;
 		walking = false;
 		groundEntityPtr = NULL;
@@ -1672,7 +1671,10 @@ void idPhysics_Player::CheckGround( void ) {
 	}
 
 	groundMaterial = groundTrace.c.material;
-	groundEntityPtr = gameLocal.entities[ groundTrace.c.entityNum ];
+
+	// Store the ground entity
+	idEntity* groundEnt = gameLocal.entities[ groundTrace.c.entityNum ];
+	groundEntityPtr = groundEnt;
 
 	// check if getting thrown off the ground
 	if ( (current.velocity * -gravityNormal) > 0.0f && ( current.velocity * groundTrace.c.normal ) > 10.0f ) {
@@ -1728,19 +1730,22 @@ void idPhysics_Player::CheckGround( void ) {
 	// let the entity know about the collision
 	self->Collide( groundTrace, current.velocity );
 
-	idEntity* groundEnt = groundEntityPtr.GetEntity();
+	groundEnt = groundEntityPtr.GetEntity();
 
-	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEnt != NULL ) {
+	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEnt != NULL )
+	{
 		idPhysics* groundPhysics = groundEnt->GetPhysics();
 
 		impactInfo_t info;
 		groundEnt->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
 
 		// greebo: Don't push entities that already have a velocity towards the ground.
-		if ( groundPhysics && info.invMass != 0.0f && idMath::Fabs(groundPhysics->GetLinearVelocity().z) < VECTOR_EPSILON) {
+		if (groundPhysics != NULL && info.invMass != 0.0f && 
+			idMath::Fabs(groundPhysics->GetLinearVelocity()*gravityNormal) < VECTOR_EPSILON)
+		{
 			// greebo: Apply a force to the entity below the player
 			//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
-			groundPhysics->AddForce(0, current.origin, gravityNormal*mass);
+			groundPhysics->AddForce(0, current.origin, gravityNormal*mass*cv_pm_weightmod.GetFloat());
 		}
 	}
 }
