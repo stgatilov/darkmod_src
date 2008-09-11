@@ -194,7 +194,7 @@ void Subsystem::ClearTasks()
 		_taskQueue.clear();
 
 		// Now call the OnFinish method. This might alter the original _taskQueue
-		for (TaskQueue::iterator i = _recycleBin.begin(); i != _recycleBin.end(); i++)
+		for (TaskQueue::iterator i = _recycleBin.begin(); i != _recycleBin.end(); ++i)
 		{
 			(*i)->OnFinish(_owner.GetEntity());
 		}

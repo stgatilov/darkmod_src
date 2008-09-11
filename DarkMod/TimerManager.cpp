@@ -20,7 +20,7 @@ void TimerManager::Save(idSaveGame* savefile) const
 {
 	int num = _timers.size();
 	savefile->WriteInt(num);
-	for (TimerMap::const_iterator iterator = _timers.begin(); iterator != _timers.end(); iterator++)
+	for (TimerMap::const_iterator iterator = _timers.begin(); iterator != _timers.end(); ++iterator)
 	{
 		savefile->WriteInt(iterator->first);
 
@@ -106,7 +106,7 @@ void TimerManager::PrintTimerResults()
 {
 	gameLocal.Printf("Timer Info at frame: %d\n", gameLocal.framenum);
 
-	for (TimerMap::iterator iterator = _timers.begin(); iterator != _timers.end(); iterator++)
+	for (TimerMap::iterator iterator = _timers.begin(); iterator != _timers.end(); ++iterator)
 	{
 		TimerInfo& info = iterator->second;
 		float meanRunTime = info.runCount > 0 ? (info.runTime / info.runCount) : 0;
@@ -125,7 +125,7 @@ void TimerManager::DumpTimerResults(const char* const separator, const char* con
 	idStr buffer = va("Entity%sTimer%sNumCalls%sTotalRunTime / ms%sMeanRunTime / ms%sMaxRunTime / ms%sAt Call\n", 
 		separator,separator,separator,separator,separator,separator);
 
-	for (TimerMap::iterator iterator = _timers.begin(); iterator != _timers.end(); iterator++)
+	for (TimerMap::iterator iterator = _timers.begin(); iterator != _timers.end(); ++iterator)
 	{
 		TimerInfo& info = iterator->second;
 		float meanRunTime = info.runCount > 0 ? (info.runTime / info.runCount) : 0;

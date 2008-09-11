@@ -43,7 +43,7 @@ void ButtonStateTracker::update()
 			_owner->PerformKeyRepeat(impulse, i->second);
 
 			// Increase the iterator
-			i++;
+			++i;
 		}
 		else
 		{

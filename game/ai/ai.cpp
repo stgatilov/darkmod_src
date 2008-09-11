@@ -594,7 +594,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	// greebo: save the movestack
 	savefile->WriteInt(static_cast<int>(moveStack.size()));
-	for (std::list<idMoveState>::const_iterator m = moveStack.begin(); m != moveStack.end(); m++)
+	for (std::list<idMoveState>::const_iterator m = moveStack.begin(); m != moveStack.end(); ++m)
 	{
 		m->Save(savefile);
 	}
@@ -820,7 +820,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
-	for (FrobMoverList::const_iterator i = unlockableDoors.begin(); i != unlockableDoors.end(); i++)
+	for (FrobMoverList::const_iterator i = unlockableDoors.begin(); i != unlockableDoors.end(); ++i)
 	{
 		savefile->WriteObject(*i);
 	}

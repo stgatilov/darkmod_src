@@ -72,7 +72,7 @@ void CEscapePointManager::Save(idSaveGame *savefile) const
 		
 	for (AASEscapePointMap::const_iterator it = _aasEscapePoints.begin();
 		 it != _aasEscapePoints.end();
-		 it++)
+		 ++it)
 	{
 		idAAS* aasPtr = it->first;
 		const EscapePointList& escapePointList = *it->second;

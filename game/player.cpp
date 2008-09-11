@@ -1414,7 +1414,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_LightgemModifier);
 
 	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
-	for (std::map<std::string, int>::const_iterator i = m_LightgemModifierList.begin(); i != m_LightgemModifierList.end(); i++)
+	for (std::map<std::string, int>::const_iterator i = m_LightgemModifierList.begin(); i != m_LightgemModifierList.end(); ++i)
 	{
 		savefile->WriteString(i->first.c_str());
 		savefile->WriteInt(i->second);
@@ -10357,7 +10357,7 @@ void idPlayer::Event_SetLightgemModifier(const char* modifierName, int amount)
 
 	for (std::map<std::string, int>::const_iterator i = m_LightgemModifierList.begin(); 
 	     i != m_LightgemModifierList.end();
-		 i++)
+		 ++i)
 	{
 		// Add the value to the lightgem modifier
 		m_LightgemModifier += i->second;

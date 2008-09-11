@@ -36,7 +36,7 @@ struct ClusterInfo
 
 		savefile->WriteInt(static_cast<int>(reachableElevatorStations.size()));
 		for (ElevatorStationInfoList::const_iterator i = reachableElevatorStations.begin();
-			 i != reachableElevatorStations.end(); i++)
+			 i != reachableElevatorStations.end(); ++i)
 		{
 			(*i)->Save(savefile);
 		}
@@ -46,7 +46,7 @@ struct ClusterInfo
 		{
 			const RouteInfoList& list = routeToCluster[i];
 			savefile->WriteInt(static_cast<int>(list.size()));
-			for (RouteInfoList::const_iterator j = list.begin(); j != list.end(); j++)
+			for (RouteInfoList::const_iterator j = list.begin(); j != list.end(); ++j)
 			{
 				(*j)->Save(savefile);
 			}

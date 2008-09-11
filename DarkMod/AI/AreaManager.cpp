@@ -21,7 +21,7 @@ void AreaManager::Save(idSaveGame* savefile) const
 {
 	int size = _forbiddenAreas.size();
 	savefile->WriteInt(size);
-	for (ForbiddenAreasMap::const_iterator i = _forbiddenAreas.begin(); i != _forbiddenAreas.end(); i++)
+	for (ForbiddenAreasMap::const_iterator i = _forbiddenAreas.begin(); i != _forbiddenAreas.end(); ++i)
 	{
 		savefile->WriteInt(i->first);
 		savefile->WriteObject(i->second);
@@ -56,7 +56,7 @@ bool AreaManager::AreaIsForbidden(int areanum, const idActor* actor) const
 	typedef ForbiddenAreasMap::const_iterator Iterator;
 	std::pair<Iterator, Iterator> range = _forbiddenAreas.equal_range(areanum);
 
-	for (Iterator found = range.first; found != range.second; found++) 
+	for (Iterator found = range.first; found != range.second; ++found) 
 	{
 		if (found->second == actor)
 		{
@@ -71,7 +71,7 @@ void AreaManager::RemoveForbiddenArea(int areanum, const idActor* actor)
 	typedef ForbiddenAreasMap::iterator Iterator;
 	std::pair<Iterator, Iterator> range = _forbiddenAreas.equal_range(areanum);
 
-	for (Iterator found = range.first; found != range.second; found++) 
+	for (Iterator found = range.first; found != range.second; ++found) 
 	{
 		if (found->second == actor)
 		{

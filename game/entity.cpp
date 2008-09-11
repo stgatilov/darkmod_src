@@ -1146,7 +1146,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_AttNameMap.size() );
 	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
-         k != m_AttNameMap.end(); k++ )
+         k != m_AttNameMap.end(); ++k )
     {
         savefile->WriteString( k->first.c_str() );
         savefile->WriteInt( k->second );

@@ -114,7 +114,7 @@ void Memory::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(doorRelated.doorInfo.size());
 	for (DoorInfoMap::const_iterator i = doorRelated.doorInfo.begin();
-		 i != doorRelated.doorInfo.end(); i++)
+		 i != doorRelated.doorInfo.end(); ++i)
 	{
 		savefile->WriteObject(i->first);
 		i->second->Save(savefile);
@@ -204,7 +204,7 @@ void Memory::Restore(idRestoreGame* savefile)
 
 	// greebo: Reconstruct the AAS areaNum => DoorInfo mapping
 	for (DoorInfoMap::iterator i = doorRelated.doorInfo.begin();
-		 i != doorRelated.doorInfo.end(); i++)
+		 i != doorRelated.doorInfo.end(); ++i)
 	{
 		// Use the areanumber as index and insert the pointer into the map
 		doorRelated.areaDoorInfoMap.insert(

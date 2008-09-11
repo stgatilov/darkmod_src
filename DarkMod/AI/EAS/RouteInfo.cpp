@@ -33,7 +33,7 @@ RouteInfo::RouteInfo(const RouteInfo& other) :
 {
 	// Copy the RouteNodes of the other list, one by one
 	for (RouteNodeList::const_iterator otherNode = other.routeNodes.begin();
-		otherNode != other.routeNodes.end(); otherNode++)
+		otherNode != other.routeNodes.end(); ++otherNode)
 	{
 		RouteNodePtr newNode(new RouteNode(**otherNode));
 		routeNodes.push_back(newNode);
@@ -44,7 +44,7 @@ bool RouteInfo::operator==(const RouteInfo& other) const
 {
 	if (routeType == other.routeType && target == other.target && routeNodes.size() == other.routeNodes.size())
 	{
-		for (RouteNodeList::const_iterator i = routeNodes.begin(), j = other.routeNodes.begin(); i != routeNodes.end(); i++, j++)
+		for (RouteNodeList::const_iterator i = routeNodes.begin(), j = other.routeNodes.begin(); i != routeNodes.end(); ++i, ++j)
 		{
 			if (*i != *j)
 			{
@@ -69,7 +69,7 @@ void RouteInfo::Save(idSaveGame* savefile) const
 	savefile->WriteInt(target);
 
 	savefile->WriteInt(static_cast<int>(routeNodes.size()));
-	for (RouteNodeList::const_iterator i = routeNodes.begin(); i != routeNodes.end(); i++)
+	for (RouteNodeList::const_iterator i = routeNodes.begin(); i != routeNodes.end(); ++i)
 	{
 		(*i)->Save(savefile);
 	}

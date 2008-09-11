@@ -181,7 +181,7 @@ void tdmEAS::SortRoute(int startCluster, int goalCluster)
 	RouteSortMap sorted;
 
 	// Insert the routeInfo structures, using the hop size as index
-	for (RouteInfoList::const_iterator i = routeList.begin(); i != routeList.end(); i++)
+	for (RouteInfoList::const_iterator i = routeList.begin(); i != routeList.end(); ++i)
 	{
 		sorted.insert(RouteSortMap::value_type(
 			(*i)->routeNodes.size(), // number of hops
@@ -193,7 +193,7 @@ void tdmEAS::SortRoute(int startCluster, int goalCluster)
 	routeList.clear();
 
 	// Re-insert the items
-	for (RouteSortMap::const_iterator i = sorted.begin(); i != sorted.end(); i++)
+	for (RouteSortMap::const_iterator i = sorted.begin(); i != sorted.end(); ++i)
 	{
 		routeList.push_back(i->second);
 	}
@@ -322,7 +322,7 @@ bool tdmEAS::InsertUniqueRouteInfo(int startCluster, int goalCluster, RouteInfoP
 {
 	RouteInfoList& routeList = _clusterInfo[startCluster]->routeToCluster[goalCluster];
 
-	for (RouteInfoList::iterator i = routeList.begin(); i != routeList.end(); i++)
+	for (RouteInfoList::iterator i = routeList.begin(); i != routeList.end(); ++i)
 	{
 		RouteInfoPtr& existing = *i;
 		
@@ -348,7 +348,7 @@ void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
 		}
 		else
 		{
-			i++;
+			++i;
 		}
 	}
 }
@@ -421,7 +421,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 			// No walk path possible, check all elevator stations that are reachable from this cluster
 			for (ElevatorStationInfoList::const_iterator station = _clusterInfo[startCluster]->reachableElevatorStations.begin();
-				 station != _clusterInfo[startCluster]->reachableElevatorStations.end(); station++)
+				 station != _clusterInfo[startCluster]->reachableElevatorStations.end(); ++station)
 			{
 				const ElevatorStationInfoPtr& elevatorInfo = *station;
 				int startStationIndex = GetElevatorStationIndex(elevatorInfo);
@@ -474,7 +474,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						// The elevator station does not start in the goal cluster, find a way from there
 						RouteInfoList routes = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
 
-						for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); i++)
+						for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); ++i)
 						{
 							RouteInfoPtr& foundRoute = *i;
 
@@ -529,7 +529,7 @@ bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, int forbiddenEleva
 
 	// Does the route come across our source cluster?
 	for (RouteNodeList::const_iterator node = route->routeNodes.begin(); 
-		 node != route->routeNodes.end(); node++)
+		 node != route->routeNodes.end(); ++node)
 	{
 		if ((*node)->toCluster == startCluster || (*node)->elevator == forbiddenElevator)
 		{
@@ -635,13 +635,13 @@ void tdmEAS::DrawRoute(int startArea, int goalArea)
 	const RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
 
 	// Draw all routes to the target area
-	for (RouteInfoList::const_iterator r = routes.begin(); r != routes.end(); r++)
+	for (RouteInfoList::const_iterator r = routes.begin(); r != routes.end(); ++r)
 	{
 		const RouteInfoPtr& route = *r;
 
 		RouteNodePtr prevNode(new RouteNode(ACTION_WALK, startArea, startCluster));
 		
-		for (RouteNodeList::const_iterator n = route->routeNodes.begin(); n != route->routeNodes.end(); n++)
+		for (RouteNodeList::const_iterator n = route->routeNodes.begin(); n != route->routeNodes.end(); ++n)
 		{
 			RouteNodePtr node = *n;
 

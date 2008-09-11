@@ -41,7 +41,7 @@ void CHidingSpotSearchCollection::clear()
 void CHidingSpotSearchCollection::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(searches.size());
-	for (HidingSpotSearchMap::const_iterator i = searches.begin(); i != searches.end(); i++)
+	for (HidingSpotSearchMap::const_iterator i = searches.begin(); i != searches.end(); ++i)
 	{
 		const HidingSpotSearchNodePtr& node = i->second;
 
@@ -167,7 +167,7 @@ int CHidingSpotSearchCollection::findSearchByBounds
 	idBounds exclusionBounds
 )
 {
-	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); i++)
+	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); ++i)
 	{
 		const HidingSpotSearchNodePtr& node = i->second;
 
