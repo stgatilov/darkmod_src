@@ -91,6 +91,9 @@ private:
 	// Returns true if the conversation can be started
 	bool CheckConversationPrerequisites();
 
+	// Returns the execution state of the given actor of the given conversation
+	ExecutionState GetConversationStateOfActor(idAI* ai);
+
 	// Private helper for debug output
 	void DrawDebugOutput(idAI* owner);
 };

@@ -43,6 +43,7 @@ public:
 		EAttackEntity,
 		EInteractWithEntity,
 		ERunScript,
+		EWaitForActor,
 		ENumCommands,
 	};
 
