@@ -167,6 +167,28 @@ bool Conversation::IsDone()
 	return _currentCommand >= _commands.Num();
 }
 
+bool Conversation::AllActorsReady()
+{
+	for (int i = 0; i < GetNumActors(); i++)
+	{
+		ConversationStatePtr convState = GetConversationState(i);
+
+		if (convState == NULL)
+		{
+			// This is the pathological case, but still return true here, otherwise the conversation is blocked
+			return true;
+		}
+
+		// Only continue the loop if this actor is in ready state
+		if (convState->GetExecutionState() != ConversationState::EReady)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool Conversation::Process()
 {
 	// Check for index out of bounds in debug builds
@@ -178,37 +200,7 @@ bool Conversation::Process()
 	if (command->GetType() == ConversationCommand::EWaitForAllActors)
 	{
 		// Special case: we need to wait until all actors are ready again
-		bool allFinished = true;
-
-		for (int i = 0; i < GetNumActors(); i++)
-		{
-			idAI* ai = GetActor(i);
-			
-			if (ai == NULL)
-			{
-				DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
-				return false;
-			}
-
-			// Let's see if the AI can handle this conversation command
-			ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
-
-			if (convState == NULL)
-			{
-				// AI is not in ConversationState anymore
-				DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
-				return false;
-			}
-
-			// Only continue the loop if this actor is in ready state
-			if (convState->GetExecutionState() != ConversationState::EReady)
-			{
-				allFinished = false;
-				break;
-			}
-		}
-
-		if (allFinished)
+		if (AllActorsReady())
 		{
 			// Done, all actors are in "ready" state
 			command->SetState(ConversationCommand::EFinished);
@@ -223,27 +215,17 @@ bool Conversation::Process()
 	else
 	{
 		// Normal operation: let the current actor perform its task
+		ConversationStatePtr convState = GetConversationState(command->GetActor());
 
-		idAI* ai = GetActor(command->GetActor());
-
-		if (ai == NULL)
+		if (convState != NULL)
 		{
-			DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
+			// greebo: Pass the command to the conversation state for processing
+			convState->ProcessCommand(*command);
+		}
+		else
+		{
 			return false;
 		}
-
-		// Let's see if the AI can handle this conversation command
-		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
-
-		if (convState == NULL)
-		{
-			// AI is not in ConversationState anymore
-			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
-			return false;
-		}
-
-		// greebo: Pass the command to the conversation state for processing
-		convState->ProcessCommand(*command);
 
 		// Get the state of this command to decide on further actions
 		ConversationCommand::State state = command->GetState();
@@ -268,6 +250,29 @@ bool Conversation::Process()
 
 	// Return TRUE if the command iterator is still in the valid range (i.e. we have commands left)
 	return (_currentCommand >= 0 && _currentCommand < _commands.Num());
+}
+
+ConversationStatePtr Conversation::GetConversationState(int actor)
+{
+	idAI* ai = GetActor(actor);
+
+	if (ai == NULL)
+	{
+		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
+		return ConversationStatePtr();
+	}
+
+	// Let's see if the AI can handle this conversation command
+	ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+
+	if (convState == NULL)
+	{
+		// AI is not in ConversationState anymore
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
+		return ConversationStatePtr();
+	}
+
+	return convState;
 }
 
 idAI* Conversation::GetActor(int index)
