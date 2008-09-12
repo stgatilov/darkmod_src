@@ -40,7 +40,8 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 	"AttackEntity",
 	"InteractWithEntity",
 	"RunScript",
-	"WaitForActor"
+	"WaitForActor",
+	"WaitForAllActors",
 };
 
 ConversationCommand::ConversationCommand() :

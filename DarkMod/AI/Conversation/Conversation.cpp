@@ -175,46 +175,96 @@ bool Conversation::Process()
 	// Get the command as specified by the pointer
 	const ConversationCommandPtr& command = _commands[_currentCommand];
 
-	idAI* ai = GetActor(command->GetActor());
-
-	if (ai == NULL)
+	if (command->GetType() == ConversationCommand::EWaitForAllActors)
 	{
-		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
-		return false;
-	}
+		// Special case: we need to wait until all actors are ready again
+		bool allFinished = true;
 
-	// Let's see if the AI can handle this conversation command
-	ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+		for (int i = 0; i < GetNumActors(); i++)
+		{
+			idAI* ai = GetActor(i);
+			
+			if (ai == NULL)
+			{
+				DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
+				return false;
+			}
 
-	if (convState == NULL)
-	{
-		// AI is not in ConversationState anymore
-		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
-		return false;
-	}
+			// Let's see if the AI can handle this conversation command
+			ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
-	// greebo: Pass the command to the conversation state for processing
-	convState->ProcessCommand(*command);
+			if (convState == NULL)
+			{
+				// AI is not in ConversationState anymore
+				DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
+				return false;
+			}
 
-	// Get the state of this command to decide on further actions
-	ConversationCommand::State state = command->GetState();
-	
-	switch (state)
-	{
-		case ConversationCommand::EReadyForExecution:
-			// not been processed yet, state is still preparing for takeoff
-			break;
-		case ConversationCommand::EExecuting:
-			// Is being processed, do nothing
-			break;
-		case ConversationCommand::EFinished:
-		case ConversationCommand::EAborted:
-			// Command is done processing, increase the iterator, we continue next frame
+			// Only continue the loop if this actor is in ready state
+			if (convState->GetExecutionState() != ConversationState::EReady)
+			{
+				allFinished = false;
+				break;
+			}
+		}
+
+		if (allFinished)
+		{
+			// Done, all actors are in "ready" state
+			command->SetState(ConversationCommand::EFinished);
+			// Proceed to the next command
 			_currentCommand++;
-			break;
-		default:
+		}
+		else
+		{
+			command->SetState(ConversationCommand::EExecuting);
+		}
+	}
+	else
+	{
+		// Normal operation: let the current actor perform its task
+
+		idAI* ai = GetActor(command->GetActor());
+
+		if (ai == NULL)
+		{
+			DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Conversation %s could not find actor.\r", _name.c_str());
 			return false;
-	};
+		}
+
+		// Let's see if the AI can handle this conversation command
+		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+
+		if (convState == NULL)
+		{
+			// AI is not in ConversationState anymore
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Conversation %s: ai %s is not in conversation mode anymore.\r", _name.c_str(), ai->name.c_str());
+			return false;
+		}
+
+		// greebo: Pass the command to the conversation state for processing
+		convState->ProcessCommand(*command);
+
+		// Get the state of this command to decide on further actions
+		ConversationCommand::State state = command->GetState();
+		
+		switch (state)
+		{
+			case ConversationCommand::EReadyForExecution:
+				// not been processed yet, state is still preparing for takeoff
+				break;
+			case ConversationCommand::EExecuting:
+				// Is being processed, do nothing
+				break;
+			case ConversationCommand::EFinished:
+			case ConversationCommand::EAborted:
+				// Command is done processing, increase the iterator, we continue next frame
+				_currentCommand++;
+				break;
+			default:
+				return false;
+		};
+	}
 
 	// Return TRUE if the command iterator is still in the valid range (i.e. we have commands left)
 	return (_currentCommand >= 0 && _currentCommand < _commands.Num());

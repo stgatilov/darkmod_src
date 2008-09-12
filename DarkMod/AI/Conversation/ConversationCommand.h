@@ -44,6 +44,7 @@ public:
 		EInteractWithEntity,
 		ERunScript,
 		EWaitForActor,
+		EWaitForAllActors,
 		ENumCommands,
 	};
 

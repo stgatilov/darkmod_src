@@ -21,9 +21,7 @@ namespace ai
 class ConversationState :
 	public State
 {
-	// The conversation index
-	int _conversation;
-
+public:
 	enum ExecutionState
 	{
 		ENotReady = 0,		// not ready yet (try next frame)
@@ -32,6 +30,10 @@ class ConversationState :
 		EBusy,				// execution in progress, can't handle new commands
 		ENumExecutionStates,// invalid index
 	};
+
+private:
+	// The conversation index
+	int _conversation;
 
 	// The execution state
 	ExecutionState _state;
