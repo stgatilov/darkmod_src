@@ -44,7 +44,7 @@ const char* const ConversationCommand::TypeNames[ConversationCommand::ENumComman
 
 ConversationCommand::ConversationCommand() :
 	_type(ENumCommands), // invalid type
-	_state(ENotReady)
+	_state(EReadyForExecution)
 {}
 
 ConversationCommand::Type ConversationCommand::GetType()

@@ -36,7 +36,7 @@ namespace ai
 
 ConversationState::ConversationState() :
 	_conversation(-1),
-	_state(ConversationCommand::EReady),
+	_state(ENotReady),
 	_commandType(ConversationCommand::ENumCommands),
 	_finishTime(-1)
 {}
@@ -109,11 +109,14 @@ void ConversationState::Init(idAI* owner)
 		return;
 	}
 
+	// We're initialised, so let's set this state to ready
+	_state = EReady;
+
 	// Check the conversation property to see if we should move before we are ready
 	if (conversation->ActorsMustBeWithinTalkdistance())
 	{
 		// Not ready yet
-		_state = ConversationCommand::ENotReady;
+		_state = ENotReady;
 
 		idEntity* targetActor = NULL;
 
@@ -154,13 +157,17 @@ void ConversationState::Think(idAI* owner)
 
 	if (_finishTime > 0 && gameLocal.time > _finishTime)
 	{
-		_state = ConversationCommand::EFinished;
+		// Allow new incoming commands
+		_state = EReady;
+
+		// Reset the finish time
+		_finishTime = -1;
 	}
 
 	DrawDebugOutput(owner);
 }
 
-ConversationCommand::State ConversationState::GetExecutionState()
+ConversationState::ExecutionState ConversationState::GetExecutionState()
 {
 	return _state;
 }
@@ -173,24 +180,24 @@ bool ConversationState::CheckConversationPrerequisites()
 
 void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 {
-	if (_state != ConversationCommand::EExecuting && _state != ConversationCommand::ENotReady) return;
+	if (_state != EExecuting && _state != ENotReady && _state != EBusy) return;
 
 	if (subSystem == SubsysMovement)
 	{
 		// greebo: Are we still in preparation phase?
-		if (_state == ConversationCommand::ENotReady)
+		if (_state == ENotReady)
 		{
 			// The movement task has ended, set the state to ready
-			_state = ConversationCommand::EReady;
+			_state = EReady;
 			return;
 		}
 
-		// In case of active "walk" commands, set the state to "finished"
+		// In case of active "walk" commands, set the state to ready
 		if (_commandType == ConversationCommand::EWalkToEntity || 
 			_commandType == ConversationCommand::EWalkToPosition || 
 			_commandType == ConversationCommand::EWalkToActor)
 		{
-			_state = ConversationCommand::EFinished;
+			_state = EReady; // ready for new commands
 			return;
 		}
 	}
@@ -199,7 +206,7 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 		// In case of active "Interact" commands, set the state to "finished"
 		if (_commandType == ConversationCommand::EInteractWithEntity || _commandType == ConversationCommand::ERunScript)
 		{
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 			return;
 		}
 	}
@@ -218,7 +225,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			gameLocal.Warning("Conversation Command argument for 'WaitSeconds' is not numeric: %s", command.GetArgument(0).c_str());
 		}
 		_finishTime = gameLocal.time + SEC2MS(atof(command.GetArgument(0)));
-		_state = ConversationCommand::EExecuting;
+		_state = EBusy; // block new commands until finished
 	break;
 
 	case ConversationCommand::EWalkToActor:
@@ -235,7 +242,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			);
 
 			// Check if we should wait until the command is finished and set the _state accordingly
-			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -253,7 +260,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		);
 
 		// Check if we should wait until the command is finished and set the _state accordingly
-		_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+		_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 	}
 	break;
 
@@ -269,7 +276,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			);
 
 			// Check if we should wait until the command is finished and set the _state accordingly
-			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -280,7 +287,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 	case ConversationCommand::EStopMove:
 		owner->StopMove(MOVE_STATUS_DONE);
-		_state = ConversationCommand::EFinished;
+		_state = EReady;
 		break;
 
 	case ConversationCommand::ETalk:
@@ -318,18 +325,9 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 				}
 			}
 		}
-
-		// Set the finish conditions for the current action
-		if (command.WaitUntilFinished())
-		{
-			_state = ConversationCommand::EExecuting;
-			_finishTime = gameLocal.time + length + 200;
-		}
-		else
-		{
-			// We need not to wait until we're done, so just set the flag to "finished"
-			_state = ConversationCommand::EFinished;
-		}
+		
+		_finishTime = gameLocal.time + length + 200;
+		_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 	}
 	break;
 
@@ -347,16 +345,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			owner->GetAnimator()->AnimLength(owner->GetAnimator()->GetAnim(animName)) : FALLBACK_ANIM_LENGTH;
 
 		// Set the finish conditions for the current action
-		if (command.WaitUntilFinished())
-		{
-			_state = ConversationCommand::EExecuting;
-			_finishTime = gameLocal.time + length;
-		}
-		else
-		{
-			// We need not to wait until we're done, so just set the flag to "finished"
-			_state = ConversationCommand::EFinished;
-		}
+		_finishTime = gameLocal.time + length;
+		_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 	}
 	break;
 
@@ -371,7 +361,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		);
 
 		// For PlayCycle, "wait until finished" doesn't make sense, as it lasts forever
-		_state = ConversationCommand::EFinished;
+		_state = EReady;
 	}
 	break;
 
@@ -383,7 +373,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			// Post a trigger event
 			ent->PostEventMS(&EV_Activate, 0, owner);
 			// We're done
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 		}
 		else
 		{
@@ -401,15 +391,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
 			owner->Event_LookAtEntity(ai, duration);
 
-			if (command.WaitUntilFinished()) 
-			{
-				_state = ConversationCommand::EExecuting;
-				_finishTime = gameLocal.time + SEC2MS(duration);
-			}
-			else 
-			{
-				_state = ConversationCommand::EFinished;
-			}
+			_finishTime = gameLocal.time + SEC2MS(duration);
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -425,15 +408,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 
 		owner->Event_LookAtPosition(pos, duration);
 
-		if (command.WaitUntilFinished()) 
-		{
-			_state = ConversationCommand::EExecuting;
-			_finishTime = gameLocal.time + SEC2MS(duration);
-		}
-		else 
-		{
-			_state = ConversationCommand::EFinished;
-		}
+		_finishTime = gameLocal.time + SEC2MS(duration);
+		_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 	}
 	break;
 
@@ -446,15 +422,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			float duration = (command.GetNumArguments() >= 2) ? command.GetFloatArgument(1) : DEFAULT_LOOKAT_DURATION;
 			owner->Event_LookAtEntity(ent, duration);
 			
-			if (command.WaitUntilFinished()) 
-			{
-				_state = ConversationCommand::EExecuting;
-				_finishTime = gameLocal.time + SEC2MS(duration);
-			}
-			else 
-			{
-				_state = ConversationCommand::EFinished;
-			}
+			_finishTime = gameLocal.time + SEC2MS(duration);
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -471,7 +440,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		if (ai != NULL)
 		{
 			owner->TurnToward(ai->GetEyePosition());
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 		}
 		else
 		{
@@ -484,7 +453,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	{
 		idVec3 pos = command.GetVectorArgument(0);
 		owner->TurnToward(pos);
-		_state = ConversationCommand::EFinished;
+		_state = EReady;
 	}
 	break;
 	
@@ -495,7 +464,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		if (ent != NULL)
 		{
 			owner->TurnToward(ent->GetPhysics()->GetOrigin());
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 		}
 		else
 		{
@@ -513,7 +482,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		{
 			owner->SetEnemy(ai);
 			owner->SetAlertLevel(owner->thresh_5 + 1);
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 		}
 		else
 		{
@@ -530,7 +499,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		{
 			owner->SetEnemy(static_cast<idActor*>(ent));
 			owner->SetAlertLevel(owner->thresh_5 + 1);
-			_state = ConversationCommand::EFinished;
+			_state = EReady;
 		}
 		else
 		{
@@ -551,7 +520,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			);
 
 			// Check if we should wait until the command is finished and set the _state accordingly
-			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -572,7 +541,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 			);
 
 			// Check if we should wait until the command is finished and set the _state accordingly
-			_state = (command.WaitUntilFinished()) ? ConversationCommand::EExecuting : ConversationCommand::EFinished;
+			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
 		}
 		else
 		{
@@ -584,11 +553,70 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	default:
 		gameLocal.Warning("Unknown command type found %d", command.GetType());
 		DM_LOG(LC_CONVERSATION, LT_ERROR)LOGSTRING("Unknown command type found %d", command.GetType());
-		_state = ConversationCommand::EAborted;
+		_state = EReady;
 	};
 
 	// Store the command type
 	_commandType = command.GetType();
+}
+
+void ConversationState::ProcessCommand(ConversationCommand& command)
+{
+	ConversationPtr conversation = gameLocal.m_ConversationSystem->GetConversation(_conversation);
+
+	if (conversation == NULL) return;
+
+	// Check the incoming command
+	ConversationCommand::State cmdState = command.GetState();
+
+	if (cmdState == ConversationCommand::EReadyForExecution)
+	{
+		// This is a new command, are we ready for it?
+		if (_state == EReady || _state == EExecuting)
+		{
+			// Yes, we're able to handle new commands
+			StartCommand(command, *conversation);
+		}
+		else
+		{
+			// Not ready for new commands yet, wait...
+		}
+	}
+	else if (cmdState == ConversationCommand::EExecuting)
+	{
+		// We are already executing this command, continue
+		Execute(command, *conversation);
+	}
+	else
+	{
+		// Ignore the other cases
+	}
+
+	// Now update the command state, based on our execution state
+	switch (_state)
+	{
+		case ENotReady:
+			// not ready yet, state is still preparing for takeoff
+			// don't change the command
+			break;
+		case EReady:
+			command.SetState(ConversationCommand::EFinished);
+			break;
+		case EExecuting:
+			// We're executing the command, but it's basically done.
+			command.SetState(ConversationCommand::EFinished);
+			break;
+		case EBusy:
+			// We're executing the command, and must wait until it's finished, set it to "executing"
+			command.SetState(ConversationCommand::EExecuting);
+			break;
+		default:
+			// Unknown state?
+			gameLocal.Warning("Unknown execution state found: %d", static_cast<int>(_state));
+			// Set the command to finished anyway, to avoid blocking
+			command.SetState(ConversationCommand::EFinished);
+			break;
+	};
 }
 
 void ConversationState::Execute(ConversationCommand& command, Conversation& conversation)
@@ -628,11 +656,10 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 
 	switch (_state)
 	{
-		case ConversationCommand::ENotReady: str = "Not Ready"; break;
-		case ConversationCommand::EReady: str = "Ready"; break;
-		case ConversationCommand::EExecuting: str = "Executing"; break;
-		case ConversationCommand::EFinished: str = "Finished"; break;
-		case ConversationCommand::EAborted: str = "Aborted"; break;
+		case ENotReady: str = "Not Ready"; break;
+		case EReady: str = "Ready"; break;
+		case EExecuting: str = "Executing"; break;
+		case EBusy: str = "Busy"; break;
 		default:break;
 	};
 
@@ -660,8 +687,8 @@ void ConversationState::Restore(idRestoreGame* savefile)
 
 	int temp;
 	savefile->ReadInt(temp);
-	assert(temp >= 0 && temp <= ConversationCommand::ENumStates); // sanity check
-	_state = static_cast<ConversationCommand::State>(temp);
+	assert(temp >= 0 && temp <= ENumExecutionStates); // sanity check
+	_state = static_cast<ExecutionState>(temp);
 
 	savefile->ReadInt(temp);
 	assert(temp >= 0 && temp <= ConversationCommand::ENumCommands); // sanity check

@@ -52,11 +52,10 @@ public:
 	// Each command can have several states
 	enum State
 	{
-		ENotReady = 0,		// not ready yet
-		EReady,				// ready for starting
-		EExecuting,			// execution in progress
-		EFinished,			// done executing
-		EAborted,			// abnormal termination
+		EReadyForExecution,	// not processed yet
+		EExecuting,			// executing
+		EFinished,			// done processing
+		EAborted,			// cancelled
 		ENumStates,			// invalid index
 	};
 
