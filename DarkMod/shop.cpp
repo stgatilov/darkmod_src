@@ -205,7 +205,7 @@ void CShop::LoadFromInventory(idPlayer *player) {
 
 		for (int itemNum = 0; itemNum < cat->GetNumItems(); itemNum++)
 		{
-			CInventoryItem *it = cat->GetItem(itemNum);
+			CInventoryItemPtr it = cat->GetItem(itemNum);
 			if ((count = it->GetPersistentCount()) > 0)
 			{
 				idEntity * itemEntity = it->GetItemEntity();

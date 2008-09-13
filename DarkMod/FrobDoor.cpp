@@ -559,7 +559,7 @@ void CFrobDoor::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 	CBinaryFrobMover::OnTeamBlocked(blockedEntity, blockingEntity);
 }
 
-bool CFrobDoor::CanBeUsedBy(CInventoryItem* item) 
+bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item) 
 {
 	if (item == NULL) return false;
 
@@ -581,7 +581,7 @@ bool CFrobDoor::CanBeUsedBy(CInventoryItem* item)
 	return idEntity::CanBeUsedBy(item);
 }
 
-bool CFrobDoor::UseBy(EImpulseState impulseState, CInventoryItem* item)
+bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL) return false;
 

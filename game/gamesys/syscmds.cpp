@@ -331,7 +331,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		idStr itemName = args.Argv(1);
 
 		// Try to lookup the item in the inventory
-		CInventoryItem* item = inventory->GetItem(itemName);
+		CInventoryItemPtr item = inventory->GetItem(itemName);
 
 		if (item != NULL)
 		{

@@ -678,7 +678,6 @@ idEntity::idEntity()
 	// have anything to do with inventories, I figure I'd better wait until
 	// absolutely necessary to create these.
 	m_Inventory			= NULL;
-	m_InventoryItem		= NULL;
 	m_InventoryCursor	= CInventoryCursorPtr();
 }
 
@@ -7290,7 +7289,7 @@ Quit:
 	return;
 }
 
-bool idEntity::CanBeUsedBy(CInventoryItem* item) 
+bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item) 
 {
 	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity()) : false;
 }
@@ -7306,7 +7305,7 @@ bool idEntity::CanBeUsedBy(idEntity* entity)
 	return (idx != -1);
 }
 
-bool idEntity::UseBy(EImpulseState impulseState, CInventoryItem* item)
+bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	return false;
 }
@@ -8716,7 +8715,7 @@ void idEntity::Event_InitInventory(int callCount)
 		if (targetEnt != NULL)
 		{
 			// Put the item into the target entity's inventory
-			CInventoryItem* item = targetEnt->Inventory()->PutItem(this, targetEnt);
+			targetEnt->Inventory()->PutItem(this, targetEnt);
 		}
 		else 
 		{
@@ -8731,11 +8730,11 @@ void idEntity::Event_InitInventory(int callCount)
 	}
 }
 
-CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
+CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 {
 	// Get (create) the InventoryCursor of this Entity.
 	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItem *rc = NULL;
+	CInventoryItemPtr rc;
 	idStr s;
 	int v = 0;
 
@@ -8811,7 +8810,7 @@ void idEntity::ChangeLootAmount(int lootType, int amount)
 
 void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value)
 {
-	CInventoryItem* item = Inventory()->GetItem(invName, invCategory);
+	CInventoryItemPtr item = Inventory()->GetItem(invName, invCategory);
 	if (item != NULL) 
 	{
 		// Item found, set the value
@@ -8825,7 +8824,7 @@ void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* 
 
 void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory, const char* icon)
 {
-	CInventoryItem* item = Inventory()->GetItem(invName, invCategory); 
+	CInventoryItemPtr item = Inventory()->GetItem(invName, invCategory); 
 
 	if (item != NULL) 
 	{
@@ -8846,7 +8845,7 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 	CInventoryCategory* category = inventory->GetCategory(invCategory);
 	if (category != NULL) 
 	{
-		CInventoryItem* item = category->GetItem(invName);
+		CInventoryItemPtr item = category->GetItem(invName);
 		if (item != NULL) 
 		{
 			// Change the counter by amount

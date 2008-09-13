@@ -82,8 +82,8 @@ public:
 	// Adds a door handle to this door. A door can have multiple handles
 	void					AddDoorhandle(CFrobDoorHandle* handle);
 
-	virtual bool			CanBeUsedBy(CInventoryItem* item);					// Overrides idEntity::CanBeUsedBy
-	virtual bool			UseBy(EImpulseState impulseState, CInventoryItem* item);	// Overrides idEntity::UseBy
+	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item);					// Overrides idEntity::CanBeUsedBy
+	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 
 	/**
 	 * Write the proper sound loss value to the soundprop portal data

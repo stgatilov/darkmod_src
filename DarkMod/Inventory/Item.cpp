@@ -92,16 +92,6 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	ParseSpawnargs(itemEntity->spawnArgs);
 }
 
-CInventoryItem::~CInventoryItem()
-{
-	idEntity* ent = m_Item.GetEntity();
-
-	if (ent != NULL)
-	{
-		ent->SetInventoryItem(NULL);
-	}
-}
-
 void CInventoryItem::Save( idSaveGame *savefile ) const
 {
 	m_Owner.Save(savefile);

@@ -29,8 +29,8 @@ public:
 	/**
 	 * Retrieve the currently selected item.
 	 */
-	CInventoryItem*			GetCurrentItem();
-	bool					SetCurrentItem(CInventoryItem* item);
+	CInventoryItemPtr		GetCurrentItem();
+	bool					SetCurrentItem(CInventoryItemPtr item);
 	bool					SetCurrentItem(const idStr& itemName);
 
 	/**
@@ -43,8 +43,8 @@ public:
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of CategoryLock and WrapAround.
 	 */
-	CInventoryItem*			GetNextItem();
-	CInventoryItem*			GetPrevItem();
+	CInventoryItemPtr		GetNextItem();
+	CInventoryItemPtr		GetPrevItem();
 
 	CInventoryCategory*		GetNextCategory();
 	CInventoryCategory*		GetPrevCategory();

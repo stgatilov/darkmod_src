@@ -969,12 +969,14 @@ void idPlayer::Spawn( void )
 	PostEventMS(&EV_CheckAAS, 0);
 }
 
-CInventoryWeaponItem* idPlayer::GetCurrentWeaponItem() {
-	if (m_WeaponCursor == NULL) {
-		return NULL;
+CInventoryWeaponItemPtr idPlayer::GetCurrentWeaponItem()
+{
+	if (m_WeaponCursor == NULL)
+	{
+		return CInventoryWeaponItemPtr();
 	}
 
-	return dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+	return boost::dynamic_pointer_cast<CInventoryWeaponItem>(m_WeaponCursor->GetCurrentItem());
 }
 
 void idPlayer::addWeaponsToInventory() {
@@ -983,14 +985,17 @@ void idPlayer::addWeaponsToInventory() {
 		// Construct the spawnarg name
 		idStr key(va("def_weapon%d", i));
 
-		idStr weaponDef = spawnArgs.GetString(key.c_str());
-		if (!weaponDef.IsEmpty()) {
-			const idDict* entityDef = gameLocal.FindEntityDefDict(weaponDef.c_str());
+		idStr weaponDef = spawnArgs.GetString(key);
+		if (!weaponDef.IsEmpty())
+		{
+			const idDict* entityDef = gameLocal.FindEntityDefDict(weaponDef);
 
-			if (entityDef != NULL) {
+			if (entityDef != NULL)
+			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding weapon to inventory: %s\r", weaponDef.c_str());
+
 				// Allocate a new weapon item using the found entityDef
-				CInventoryWeaponItem* item = new CInventoryWeaponItem(weaponDef, this);
+				CInventoryWeaponItemPtr item(new CInventoryWeaponItem(weaponDef, this));
 				
 				item->setWeaponIndex(i);
 
@@ -1015,7 +1020,7 @@ void idPlayer::NextInventoryMap()
 		return; // We have no cursor!
 	}
 
-	CInventoryItem* mapItem = m_MapCursor->GetCurrentItem();
+	CInventoryItemPtr mapItem = m_MapCursor->GetCurrentItem();
 
 	if (mapItem != NULL)
 	{
@@ -1062,14 +1067,23 @@ void idPlayer::SetupInventory()
 	// give the player weapon ammo based on shop purchases
 	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
 	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
-	for (int si = 0; si < startingItems->Num(); si++) {
+
+	for (int si = 0; si < startingItems->Num(); si++)
+	{
 		CShopItem *shopItem = (*startingItems)[si];
 		idStr weaponName = shopItem->GetID();
-		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0) {
+
+		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0)
+		{
 			weaponName.Strip("weapon_");
-			for (int i = 0; i < category->GetNumItems(); i++) {
-				CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
-				if (item->getWeaponName() == weaponName) {
+
+			for (int i = 0; i < category->GetNumItems(); i++)
+			{
+				CInventoryWeaponItemPtr item = 
+					boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
+
+				if (item->getWeaponName() == weaponName)
+				{
 					item->SetPersistent(shopItem->GetPersistent());
 					item->setAmmo(shopItem->GetCount());
 				}
@@ -1079,7 +1093,6 @@ void idPlayer::SetupInventory()
 
 	// Now create the standard cursor for all the other inventory items (excl. weapons)
 	CInventoryCursorPtr crsr = InventoryCursor();
-	CInventoryItem *it;
 
 	// We set the filter to ignore the weapon category, since this will be
 	// handled by the weapon cursor. We don't want the weapons to show up
@@ -1088,7 +1101,7 @@ void idPlayer::SetupInventory()
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
-	it = new CInventoryItem(this);
+	CInventoryItemPtr it(new CInventoryItem(this));
 	it->SetName(TDM_DUMMY_ITEM);
 	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
@@ -1105,7 +1118,7 @@ void idPlayer::SetupInventory()
 	ent->scriptObject.SetType(TDM_LOOT_SCRIPTOBJECT);
 	ent->ConstructScriptObject();
 
-	it = new CInventoryItem(this);
+	it = CInventoryItemPtr(new CInventoryItem(this));
 	it->SetName(TDM_LOOT_INFO_ITEM);
 	it->SetItemEntity(ent);
 	it->SetType(CInventoryItem::IT_ITEM);
@@ -1118,12 +1131,15 @@ void idPlayer::SetupInventory()
 	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
 
 	// Give player non-weapon items obtained from the Shop
-	for (int si = 0; si < startingItems->Num(); si++) {
+	for (int si = 0; si < startingItems->Num(); si++)
+	{
 		CShopItem * item = (*startingItems)[si];
 		const char * weaponName = item->GetID();
 		const idDict *itemDict = gameLocal.FindEntityDefDict(weaponName, true);
 		int count = item->GetCount();
-		if (idStr::Cmpn(weaponName, "weapon_", 7) != 0 && count > 0) {
+
+		if (idStr::Cmpn(weaponName, "weapon_", 7) != 0 && count > 0)
+		{
 			// does the item already exist?
 			idEntity *entity = item->GetEntity();
 			if (entity == NULL)
@@ -1131,14 +1147,15 @@ void idPlayer::SetupInventory()
 				// no, spawn it
 				gameLocal.SpawnEntityDef( *itemDict, &entity );
 			}
+
 			// add it to the inventory
-			CInventoryItem* invItem = crsr->Inventory()->PutItem(entity, this);
+			CInventoryItemPtr invItem = crsr->Inventory()->PutItem(entity, this);
 			invItem->SetCount(count);
 			invItem->SetPersistent(item->GetPersistent());
 		}
 	}
-	delete startingItems;
 
+	delete startingItems;
 }
 
 
@@ -2156,10 +2173,12 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 idPlayer::UpdateHudAmmo
 ===============
 */
-void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
-	CInventoryWeaponItem* item = GetCurrentWeaponItem();
+void idPlayer::UpdateHudAmmo( idUserInterface *_hud )
+{
+	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
 
-	if (_hud != NULL && item != NULL) {
+	if (_hud != NULL && item != NULL)
+	{
 		int ammoAmount = item->getAmmo();
 
 		// Hide ammo display for ammo == -1 and weapons without ammo
@@ -2970,7 +2989,7 @@ void idPlayer::NextWeapon( void ) {
 	}
 	
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr curItem = GetCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
@@ -3012,7 +3031,7 @@ void idPlayer::PrevWeapon( void ) {
 	}
 
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr curItem = GetCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
@@ -3066,7 +3085,8 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	}
 
 	// Check if we want to toggle the current weapon item (requested index == current index)
-	CInventoryWeaponItem* item = GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
+
 	if (item != NULL && item->getWeaponIndex() == num && item->isToggleable()) {
 		// Requested toggleable weapon is already active, hide it (switch to unarmed)
 		num = 0;
@@ -3080,11 +3100,15 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	// Cycle through the weapons and find the one with the given weaponIndex
 	for (int i = 0; i < category->GetNumItems(); i++) {
 		// Try to retrieve a weapon item from the given category
-		CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
+		CInventoryWeaponItemPtr item = 
+			boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 		
-		if (item != NULL) {
-			if (item->getWeaponIndex() == num) {
-				if (item->getAmmo() <= 0 && !item->allowedEmpty()) {
+		if (item != NULL)
+		{
+			if (item->getWeaponIndex() == num)
+			{
+				if (item->getAmmo() <= 0 && !item->allowedEmpty())
+				{
 					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
 					break;
 				}
@@ -5335,12 +5359,16 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 			PerformFrobKeyRepeat();
 		}
 		break;
+
 		case IMPULSE_51:
 		{
 			const CInventoryCursorPtr& crsr = InventoryCursor();
-			CInventoryItem *it = crsr->GetCurrentItem();
+			CInventoryItemPtr it = crsr->GetCurrentItem();
+
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+			{
 				inventoryUseItem(ERepeat, it, holdTime);
+			}
 		}
 		break;
 	}
@@ -8730,7 +8758,7 @@ bool idPlayer::CanShowWeaponViewmodel( void ) const {
 void idPlayer::UpdateWeaponEncumbrance()
 {
 	// Get the currently selected weapon
-	CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
+	CInventoryItemPtr weapon = m_WeaponCursor->GetCurrentItem();
 
 	if (weapon != NULL)
 	{
@@ -9062,31 +9090,35 @@ idPlayer::inventoryNextItem
 void idPlayer::inventoryNextItem()
 {
 	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItem *prev;
-
+	
 	// If the entity doesn't have an inventory, we don't need to do anything.
 	if(crsr == NULL)
 		return;
 
-	prev = crsr->GetCurrentItem();
+	CInventoryItemPtr prev = crsr->GetCurrentItem();
 	crsr->GetNextItem();
-	if(hud)
+
+	if (hud)
+	{
 		inventoryChangeSelection(hud, true, prev);
+	}
 }
 
 void idPlayer::inventoryPrevItem()
 {
 	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
 	if(crsr == NULL)
 		return;
 
-	prev = crsr->GetCurrentItem();
+	CInventoryItemPtr prev = crsr->GetCurrentItem();
 	crsr->GetPrevItem();
+
 	if(hud)
+	{
 		inventoryChangeSelection(hud, true, prev);
+	}
 }
 
 void idPlayer::inventoryNextGroup()
@@ -9102,11 +9134,13 @@ void idPlayer::inventoryPrevGroup()
 void idPlayer::inventoryUseKeyRelease(int holdTime)
 {
 	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItem *it = crsr->GetCurrentItem();
+	CInventoryItemPtr it = crsr->GetCurrentItem();
 
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+	{
 		inventoryUseItem(EReleased, it, holdTime);
+	}
 }
 
 void idPlayer::inventoryUseItem()
@@ -9126,12 +9160,15 @@ void idPlayer::inventoryUseItem()
 	// is a usable item (like a key). In this case the use action takes
 	// precedence over the frobaction.
 	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItem *it = crsr->GetCurrentItem();
+	CInventoryItemPtr it = crsr->GetCurrentItem();
+
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+	{
 		inventoryUseItem(EPressed, it, 0);
+	}
 }
 
-void idPlayer::inventoryUseItem(EImpulseState nState, CInventoryItem* item, int holdTime)
+void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime)
 {
 	if (nState == EPressed)
 	{
@@ -9192,7 +9229,7 @@ void idPlayer::inventoryDropItem()
 		// Grabber is empty (no item is held), drop the current inventory item
 		const CInventoryCursorPtr& cursor = InventoryCursor();
 
-		CInventoryItem* item = cursor->GetCurrentItem();
+		CInventoryItemPtr item = cursor->GetCurrentItem();
 		CInventoryCategory* category = cursor->GetCurrentCategory();
 
 		// Do we have a droppable item in the first place?
@@ -9269,7 +9306,7 @@ void idPlayer::inventoryDropItem()
 
 void idPlayer::inventoryChangeSelection(const idStr& name)
 {
-	CInventoryItem* prev = InventoryCursor()->GetCurrentItem();
+	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
 	idStr itemName(name);
 
 	if (itemName.IsEmpty())
@@ -9279,7 +9316,7 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 	}
 	
 	// Try to lookup the item in the inventory
-	CInventoryItem* item = Inventory()->GetItem(itemName);
+	CInventoryItemPtr item = Inventory()->GetItem(itemName);
 
 	if (item != NULL)
 	{
@@ -9298,13 +9335,12 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 	}
 }
 
-void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
+void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, const CInventoryItemPtr& prev)
 {
 	float opacity( cv_tdm_hud_opacity.GetFloat() );
 	int groupvis;
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
-	CInventoryItem *cur = NULL;
-//	CInventory *inv = NULL;
+	CInventoryItemPtr cur;
 	idEntity *e = NULL;
 	idStr s;
 	idThread *thread;
@@ -10081,20 +10117,21 @@ idVec3 idPlayer::GetDoorListenLoc( void )
 	return m_DoorListenLoc;
 }
 
-CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
+CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 	// Pass the call to the base class first
-	CInventoryItem* returnValue = idEntity::AddToInventory(ent, _hud);
+	CInventoryItemPtr returnValue = idEntity::AddToInventory(ent, _hud);
 
 	// Has this item been added to a weapon item?
-	CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(returnValue);
+	CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(returnValue);
 
-	CInventoryItem* prev = NULL;
+	CInventoryItemPtr prev;
 
 	if (weaponItem != NULL)
 	{
 		// greebo: This is a weapon-related inventory item, use the weapon inventory cursor
 		// Do it only if the respective CVAR is set
-		if (cv_frob_ammo_selects_weapon.GetBool()) {
+		if (cv_frob_ammo_selects_weapon.GetBool())
+		{
 			m_WeaponCursor->SetCurrentItem(returnValue);
 			SelectWeapon(weaponItem->getWeaponIndex(), false);
 		}
@@ -10141,7 +10178,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	if (cv_tdm_inv_use_on_frob.GetBool()) 
 	{
 		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
-		CInventoryItem* item = InventoryCursor()->GetCurrentItem();
+		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
 		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
@@ -10177,7 +10214,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
-		CInventoryItem* addedItem = AddToInventory(target, hud);
+		CInventoryItemPtr addedItem = AddToInventory(target, hud);
 
 		// Check if the frobbed entity is the one currently highlighted by the player
 		if (addedItem != NULL && highlightedEntity == target) {
@@ -10258,7 +10295,7 @@ bool idPlayer::AddGrabberEntityToInventory()
 
 	if (heldEntity != NULL)
 	{
-		CInventoryItem* item = AddToInventory(heldEntity, hud);
+		CInventoryItemPtr item = AddToInventory(heldEntity, hud);
 
 		if (item != NULL)
 		{
@@ -10307,14 +10344,14 @@ int idPlayer::GetLightgemModifier(int curLightgemValue)
 	// Check the weapon/inventory items
 	if (m_WeaponCursor != NULL)
 	{
-		CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
+		CInventoryItemPtr weapon = m_WeaponCursor->GetCurrentItem();
 		if (weapon != NULL)
 		{
 			returnValue += weapon->GetLightgemModifier();
 		}
 	}
 
-	CInventoryItem* item = InventoryCursor()->GetCurrentItem();
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 	if (item != NULL)
 	{
 		returnValue += item->GetLightgemModifier();

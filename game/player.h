@@ -14,7 +14,11 @@
 #define __GAME_PLAYER_H__
 
 #include "../DarkMod/ButtonStateTracker.h"
+class CInventoryItem;
+typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
+
 class CInventoryWeaponItem;
+typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 
 /*
 ===============================================================================
@@ -569,9 +573,9 @@ public:
 
 	/**
 	 * greebo: This returns the current weapon being focused at by the weapon inventory cursor.
-	 *         Can return NULL, but should not in 99% of the cases.
+	 * Can return NULL, but should not in 99% of the cases.
 	 */
-	CInventoryWeaponItem*	GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr	GetCurrentWeaponItem();
 
 	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );
@@ -789,18 +793,18 @@ public:
 	void inventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific inventory item
-	void inventoryUseItem(EImpulseState nState, CInventoryItem* item, int holdTime);
+	void inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
 	void inventoryChangeSelection(const idStr& name);
 
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
+	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, const CInventoryItemPtr& Prev = CInventoryItemPtr());
 
 	/**
 	 * Overload the idEntity::AddToInventory method to catch weapon items.
 	 */
-	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
+	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
 	/**
 	 * greebo: Attempts to put the current grabber item back into the inventory.

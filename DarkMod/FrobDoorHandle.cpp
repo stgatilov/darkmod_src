@@ -109,13 +109,13 @@ bool CFrobDoorHandle::IsFrobbed(void)
 	return (m_Door != NULL) ? m_Door->IsFrobbed() : idEntity::IsFrobbed();
 }
 
-bool CFrobDoorHandle::CanBeUsedBy(CInventoryItem* item)
+bool CFrobDoorHandle::CanBeUsedBy(const CInventoryItemPtr& item)
 {
 	// Pass the call to the door, if we have one, otherwise let the base class handle it
 	return (m_Door != NULL) ? m_Door->CanBeUsedBy(item) : idEntity::CanBeUsedBy(item);
 }
 
-bool CFrobDoorHandle::UseBy(EImpulseState impulseState, CInventoryItem* item)
+bool CFrobDoorHandle::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	// Pass the call to the door, if we have one, otherwise let the base class handle it
 	return (m_Door != NULL) ? m_Door->UseBy(impulseState, item) : idEntity::CanBeUsedBy(item);

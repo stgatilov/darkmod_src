@@ -32,15 +32,15 @@ public:
 	inline idEntity	*		GetOwner() { return m_Owner.GetEntity(); };
 
 	// Look up an InventoryItem by its ItemId (NOT equivalent to GetItem(const idStr& Name) btw).
-	CInventoryItem*			GetItemById(const idStr& id);
+	CInventoryItemPtr		GetItemById(const idStr& id);
 
 	// Look up an InventoryItem by <name> or <index>
-	CInventoryItem*			GetItem(const idStr& itemName);
-	CInventoryItem*			GetItem(int index);
+	CInventoryItemPtr		GetItem(const idStr& itemName);
+	CInventoryItemPtr		GetItem(int index);
 
 	// Returns the index of the given item or the item with the given name. Returns -1 if not found.
 	int						GetItemIndex(const idStr& itemName);
-	int						GetItemIndex(CInventoryItem* item);
+	int						GetItemIndex(const CInventoryItemPtr& item);
 
 	// Returns the sum of all gold, loot and jewelry of this category plus the gold, loot, jewelry sums on their own.
 	int						GetLoot(int& gold, int& jewelry, int& goods);
@@ -48,11 +48,11 @@ public:
 	/**
 	 * greebo: Adds the given item to this category
 	 */
-	void					PutItem(CInventoryItem *Item);
+	void					PutItem(CInventoryItemPtr Item);
 	/**
 	 * greebo: Removes the specified <item> from this category.
 	 */
-	void					RemoveItem(CInventoryItem* item);
+	void					RemoveItem(const CInventoryItemPtr& item);
 
 	/** greebo: Returns true if the category contains no items.
 	 */
@@ -77,7 +77,7 @@ protected:
 	idStr					m_Name;
 
 	// A list of contained items (are deleted on destruction of this object).
-	idList<CInventoryItem*>	m_Item;
+	idList<CInventoryItemPtr>	m_Item;
 };
 
 #endif /* __DARKMOD_INVENTORYCATEGORY_H__ */

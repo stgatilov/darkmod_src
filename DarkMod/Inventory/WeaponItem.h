@@ -86,5 +86,6 @@ public:
 	 */
 	idStr getWeaponName();
 };
+typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */

@@ -91,9 +91,9 @@ void CInventory::SetLoot(int Gold, int Jewelry, int Goods)
 	m_Goods = Goods;
 }
 
-CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
+CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 {
-	CInventoryItem *rc = NULL;
+	CInventoryItemPtr rc;
 	int LGroupVal = 0;
 	int dummy1(0), dummy2(0), dummy3(0); // for calling GetLoot
 
@@ -267,7 +267,7 @@ int CInventory::GetCategoryItemIndex(const idStr& itemName, int* itemIndex)
 	return -1; // not found
 }
 
-int CInventory::GetCategoryItemIndex(CInventoryItem* item, int* itemIndex)
+int CInventory::GetCategoryItemIndex(const CInventoryItemPtr& item, int* itemIndex)
 {
 	if (itemIndex != NULL) *itemIndex = -1;
 
@@ -288,13 +288,13 @@ int CInventory::GetCategoryItemIndex(CInventoryItem* item, int* itemIndex)
 	return -1; // not found
 }
 
-CInventoryItem* CInventory::PutItem(idEntity *ent, idEntity *owner)
+CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 {
 	// Sanity checks
-	if (ent == NULL || owner == NULL) return NULL;
+	if (ent == NULL || owner == NULL) return CInventoryItemPtr();
 
 	// Check for loot items
-	CInventoryItem* returnValue = ValidateLoot(ent);
+	CInventoryItemPtr returnValue = ValidateLoot(ent);
 
 	if (returnValue != NULL)
 	{
@@ -330,7 +330,7 @@ CInventoryItem* CInventory::PutItem(idEntity *ent, idEntity *owner)
 	}
 
 	// Check for existing items (create the category if necessary (hence the TRUE))
-	CInventoryItem* existing = GetItem(name, category, true);
+	CInventoryItemPtr existing = GetItem(name, category, true);
 
 	if (existing != NULL)
 	{
@@ -367,7 +367,7 @@ CInventoryItem* CInventory::PutItem(idEntity *ent, idEntity *owner)
 	else
 	{
 		// Item doesn't exist, create a new InventoryItem
-		CInventoryItem* item = new CInventoryItem(ent, owner);
+		CInventoryItemPtr item(new CInventoryItem(ent, owner));
 
 		if (item != NULL)
 		{
@@ -417,7 +417,7 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	}
 }
 
-void CInventory::PutItem(CInventoryItem *item, const idStr& categoryName)
+void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryName)
 {
 	if (item == NULL) return;
 	
@@ -455,7 +455,7 @@ void CInventory::PutItem(CInventoryItem *item, const idStr& categoryName)
 	);
 }
 
-CInventoryItem* CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)
+CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)
 {
 	// Do we have a specific category to search in?
 	if (!categoryName.IsEmpty())
@@ -470,13 +470,13 @@ CInventoryItem* CInventory::GetItem(const idStr& name, const idStr& categoryName
 		}
 
 		// Let the category search for the item, may return NULL
-		return (category != NULL) ? category->GetItem(name) : NULL;
+		return (category != NULL) ? category->GetItem(name) : CInventoryItemPtr();
 	}
 
 	// No specific category specified, look in all categories
 	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		CInventoryItem* foundItem = m_Category[i]->GetItem(name);
+		CInventoryItemPtr foundItem = m_Category[i]->GetItem(name);
 
 		if (foundItem != NULL)
 		{
@@ -485,10 +485,10 @@ CInventoryItem* CInventory::GetItem(const idStr& name, const idStr& categoryName
 		}
 	}
 
-	return NULL; // nothing found
+	return CInventoryItemPtr(); // nothing found
 }
 
-CInventoryItem* CInventory::GetItemById(const idStr& id, const idStr& categoryName, bool createCategory)
+CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& categoryName, bool createCategory)
 {
 	// Do we have a specific category to search in?
 	if (!categoryName.IsEmpty())
@@ -503,13 +503,13 @@ CInventoryItem* CInventory::GetItemById(const idStr& id, const idStr& categoryNa
 		}
 
 		// Let the category search for the item, may return NULL
-		return (category != NULL) ? category->GetItemById(id) : NULL;
+		return (category != NULL) ? category->GetItemById(id) : CInventoryItemPtr();
 	}
 
 	// No specific category specified, look in all categories
 	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		CInventoryItem* foundItem = m_Category[i]->GetItemById(id);
+		CInventoryItemPtr foundItem = m_Category[i]->GetItemById(id);
 
 		if (foundItem != NULL)
 		{
@@ -518,7 +518,7 @@ CInventoryItem* CInventory::GetItemById(const idStr& id, const idStr& categoryNa
 		}
 	}
 
-	return NULL; // nothing found
+	return CInventoryItemPtr(); // nothing found
 }
 
 CInventoryCursorPtr CInventory::CreateCursor()
@@ -621,10 +621,10 @@ void CInventory::RemoveCategory(CInventoryCategory* category)
 	}
 }
 
-CInventoryItem* CInventory::ValidateAmmo(idEntity* ent)
+CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 {
 	// Sanity check
-	if (ent == NULL) return NULL;
+	if (ent == NULL) return CInventoryItemPtr();
 	
 	idStr name = ent->spawnArgs.GetString("inv_name", "");
 	idStr category = ent->spawnArgs.GetString("inv_category", "");
@@ -632,10 +632,10 @@ CInventoryItem* CInventory::ValidateAmmo(idEntity* ent)
 	// Check for ammonition
 	if (category != TDM_CATEGORY_AMMO) 
 	{
-		return NULL; // wrong category
+		return CInventoryItemPtr(); // wrong category
 	}
 
-	CInventoryItem* returnValue = NULL;
+	CInventoryItemPtr returnValue;
 	
 	idStr ammoAmountKey = TDM_INVENTORY_AMMO_PREFIX;
 
@@ -661,7 +661,8 @@ CInventoryItem* CInventory::ValidateAmmo(idEntity* ent)
 		// Look for the weapon with the given name
 		for (int i = 0; i < weaponCategory->GetNumItems(); i++)
 		{
-			CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(weaponCategory->GetItem(i));
+			CInventoryWeaponItemPtr weaponItem = 
+				boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 			// Is this the right weapon?
 			if (weaponItem != NULL && weaponItem->getWeaponName() == weaponName)

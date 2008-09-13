@@ -46,8 +46,6 @@ public:
 	// Create an inventoryitem out of the given entity and the given owner
 	CInventoryItem(idEntity* itemEntity, idEntity* owner);
 
-	virtual ~CInventoryItem();
-
 	virtual void			Save( idSaveGame *savefile ) const;
 	virtual void			Restore( idRestoreGame *savefile );
 
@@ -166,5 +164,6 @@ protected:
 
 	bool					m_UseOnFrob;	// Whether this item can be used by the 'frob' button
 };
+typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

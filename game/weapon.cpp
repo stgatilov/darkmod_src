@@ -996,7 +996,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	if ( ( ammoClip < 0 ) || ( ammoClip > clipSize ) ) {
 		// first time using this weapon so have it fully loaded to start
 		ammoClip = clipSize;
-		CInventoryWeaponItem* weaponItem = owner->GetCurrentWeaponItem();
+		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
 		if (weaponItem != NULL) {
 			ammoAvail = weaponItem->hasAmmo();
 		}
@@ -2666,7 +2666,7 @@ idWeapon::Event_AmmoAvailable
 ===============
 */
 void idWeapon::Event_AmmoAvailable( void ) {
-	CInventoryWeaponItem* currentWeapon = owner->GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr currentWeapon = owner->GetCurrentWeaponItem();
 	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->hasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
@@ -2677,7 +2677,7 @@ idWeapon::Event_TotalAmmoCount
 ===============
 */
 void idWeapon::Event_TotalAmmoCount( void ) {
-	CInventoryWeaponItem* currentWeapon = owner->GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr currentWeapon = owner->GetCurrentWeaponItem();
 	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->hasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
@@ -3011,7 +3011,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// avoid all ammo considerations on an MP client
 	if ( !gameLocal.isClient ) {
 
-		CInventoryWeaponItem* weaponItem = owner->GetCurrentWeaponItem();
+		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
 
 		// check if we're out of ammo or the clip is empty
 		int ammoAvail = weaponItem->hasAmmo();

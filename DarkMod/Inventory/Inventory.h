@@ -119,7 +119,7 @@ public:
 	 * the itemindex within that group can also be obtained. Both are set to -1 
 	 * if the item can not be found. The itemIndex pointer only when it is not NULL of course.
 	 */
-	int						GetCategoryItemIndex(CInventoryItem* item, int* itemIndex = NULL);
+	int						GetCategoryItemIndex(const CInventoryItemPtr& item, int* itemIndex = NULL);
 	int						GetCategoryItemIndex(const idStr& itemName, int* itemIndex = NULL);
 
 	/**
@@ -141,16 +141,16 @@ public:
 	 *         If the according spawnarg is set, the entity is removed from the map.
 	 *         This can either mean "hide" or "delete", depending on the stackable property.
 	 */
-	CInventoryItem*			PutItem(idEntity *Item, idEntity *Owner);
-	void					PutItem(CInventoryItem *Item, const idStr& category);
+	CInventoryItemPtr		PutItem(idEntity *Item, idEntity *Owner);
+	void					PutItem(const CInventoryItemPtr& item, const idStr& category);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem*			GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItemPtr		GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
-	CInventoryItem*			GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItemPtr		GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);
@@ -178,14 +178,14 @@ private:
 	 * 
 	 * @returns: The standard loot info InventoryItem or NULL if the item is not a valid loot item.
 	 */
-	CInventoryItem*		ValidateLoot(idEntity *ent);
+	CInventoryItemPtr		ValidateLoot(idEntity *ent);
 
 	/**
 	 * greebo: Checks the given entity for ammo definitions. Does not remove the entity.
 	 *
 	 * @returns: The weaponItem the ammo has been added to or NULL, if <ent> isn't a valid ammo item.
 	 */
-	CInventoryItem*		ValidateAmmo(idEntity* ent);
+	CInventoryItemPtr		ValidateAmmo(idEntity* ent);
 
 private:
 	idEntityPtr<idEntity>				m_Owner;

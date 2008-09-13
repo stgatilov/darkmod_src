@@ -23,6 +23,7 @@ class CResponse;
 
 class CInventory;
 class CInventoryItem;
+typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
 typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
@@ -622,7 +623,7 @@ public:
 	 * if the entity can be used by the given inventory item, FALSE otherwise.
 	 * Note: This just routes the call to the overloaded CanBeUsedBy(idEntity*);
 	 */
-	virtual bool CanBeUsedBy(CInventoryItem* item);
+	virtual bool CanBeUsedBy(const CInventoryItemPtr& item);
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
@@ -639,7 +640,7 @@ public:
 	 *
 	 * @returns: TRUE if the item could be used, FALSE otherwise.
 	 */
-	virtual bool UseBy(EImpulseState nState, CInventoryItem* item);
+	virtual bool UseBy(EImpulseState nState, const CInventoryItemPtr& item);
 
 	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob
@@ -712,14 +713,6 @@ public:
 	 * Example: idAFAttachments return their "body" entity as response entity.
 	 */
 	virtual idEntity* GetResponseEntity() { return this; };
-
-	/**
-	 * Set the item this entity is currently pointing to. If the item is 
-	 * destroyed, the pointer must be set to NULL.
-	 */
-	void					SetInventoryItem(CInventoryItem *item) { m_InventoryItem = item; }
-	// Returns (and creates if necessary) this entity's inventory item.
-	CInventoryItem*		InventoryItem() { return m_InventoryItem; };
 
 	// Returns (and creates if necessary) this entity's inventory.
 	CInventory*			Inventory();
@@ -888,7 +881,7 @@ public:
 	 *
 	 * If the hud parameter is not null, then it will also call the updatefunction.
 	 */
-	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
+	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
 	/**
 	 * Script event: Changes the inventory count of the given item <name> in <category> by <amount>
@@ -1132,9 +1125,6 @@ private:
 
 	// A pointer to our inventory.
 	CInventory			*m_Inventory;
-
-	// A pointer to our item, so that we can be added/removed to/from inventories.
-	CInventoryItem		*m_InventoryItem;
 
 	// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
 	CInventoryCursorPtr	m_InventoryCursor;
