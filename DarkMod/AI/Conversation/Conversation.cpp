@@ -463,6 +463,13 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 
 	_actorsAlwaysFaceEachOtherWhileTalking = dict.GetBool(prefix + "actors_always_face_each_other_while_talking", "1");
 
+	// greebo: For conversations with one actor some flags don't make sense
+	if (_actors.Num() == 1)
+	{
+		_actorsMustBeWithinTalkDistance = false;
+		_actorsAlwaysFaceEachOtherWhileTalking = false;
+	}
+
 	// Seems like we have everything we need
 	_isValid = true;
 }
