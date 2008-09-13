@@ -52,10 +52,7 @@ CInventory::~CInventory()
 void CInventory::Clear()
 {
 	m_Owner = NULL;
-	// Delete and clear the pointers in the list
-	m_Category.DeleteContents(true);
-
-	// Clear the idList, this destructs all cursors
+	m_Category.Clear();
 	m_Cursor.Clear();
 }
 
@@ -161,19 +158,18 @@ void CInventory::SetOwner(idEntity *owner)
 	}
 }
 
-CInventoryCategory* CInventory::CreateCategory(const idStr& categoryName, int* index)
+CInventoryCategoryPtr CInventory::CreateCategory(const idStr& categoryName, int* index)
 {
-	if (categoryName.IsEmpty()) return NULL; // empty category name
+	if (categoryName.IsEmpty()) return CInventoryCategoryPtr(); // empty category name
 
 	// Try to lookup the category, maybe it exists already
-	CInventoryCategory* rc = GetCategory(categoryName, index);
+	CInventoryCategoryPtr rc = GetCategory(categoryName, index);
 
 	if (rc != NULL) return rc; // Category already exists
 
 	// Try to allocate a new category with a link back to <this> Inventory
-	rc = new CInventoryCategory(this, categoryName);
-	if (rc == NULL) return NULL; // out of memory
-
+	rc = CInventoryCategoryPtr(new CInventoryCategory(this, categoryName));
+	
 	// Add the new Category to our list
 	int i = m_Category.AddUnique(rc);
 
@@ -186,7 +182,7 @@ CInventoryCategory* CInventory::CreateCategory(const idStr& categoryName, int* i
 	return rc;
 }
 
-CInventoryCategory *CInventory::GetCategory(const idStr& categoryName, int* index)
+CInventoryCategoryPtr CInventory::GetCategory(const idStr& categoryName, int* index)
 {
 	// If the groupname is empty we look for the default group
 	if (categoryName.IsEmpty())
@@ -208,13 +204,13 @@ CInventoryCategory *CInventory::GetCategory(const idStr& categoryName, int* inde
 		}
 	}
 
-	return NULL; // not found
+	return CInventoryCategoryPtr(); // not found
 }
 
-CInventoryCategory* CInventory::GetCategory(int index)
+CInventoryCategoryPtr CInventory::GetCategory(int index)
 {
 	// return NULL for invalid indices
-	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : NULL;
+	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : CInventoryCategoryPtr();
 }
 
 int CInventory::GetCategoryIndex(const idStr& categoryName)
@@ -226,20 +222,9 @@ int CInventory::GetCategoryIndex(const idStr& categoryName)
 	return i;
 }
 
-int CInventory::GetCategoryIndex(const CInventoryCategory* category)
+int CInventory::GetCategoryIndex(const CInventoryCategoryPtr& category)
 {
-	if (category == NULL) return -1;
-
-	// Traverse the categories and find the one matching one
-	for (int i = 0; i < m_Category.Num(); i++)
-	{
-		if (m_Category[i] == category)
-		{
-			return i;
-		}
-	}
-
-	return -1; // not found
+	return m_Category.FindIndex(category);
 }
 
 int CInventory::GetCategoryItemIndex(const idStr& itemName, int* itemIndex)
@@ -421,7 +406,7 @@ void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryNam
 {
 	if (item == NULL) return;
 	
-	CInventoryCategory* category = NULL;
+	CInventoryCategoryPtr category;
 
 	// Check if it is the default group or not.
 	if (categoryName.IsEmpty())
@@ -461,7 +446,7 @@ CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryNa
 	if (!categoryName.IsEmpty())
 	{
 		// We have a category name, look it up
-		CInventoryCategory* category = GetCategory(categoryName);
+		CInventoryCategoryPtr category = GetCategory(categoryName);
 
 		if (category == NULL && createCategory)
 		{
@@ -494,7 +479,7 @@ CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& category
 	if (!categoryName.IsEmpty())
 	{
 		// We have a category name, look it up
-		CInventoryCategory* category = GetCategory(categoryName);
+		CInventoryCategoryPtr category = GetCategory(categoryName);
 
 		if (category == NULL && createCategory)
 		{
@@ -591,7 +576,7 @@ void CInventory::Restore(idRestoreGame *savefile)
 	int num;
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
-		CInventoryCategory* category = new CInventoryCategory(this, "");
+		CInventoryCategoryPtr category(new CInventoryCategory(this, ""));
 
 		category->Restore(savefile);
 		m_Category.Append(category);
@@ -612,13 +597,9 @@ void CInventory::Restore(idRestoreGame *savefile)
 	}
 }
 
-void CInventory::RemoveCategory(CInventoryCategory* category)
+void CInventory::RemoveCategory(const CInventoryCategoryPtr& category)
 {
-	if (m_Category.Remove(category))
-	{
-		// List item removal successful, destroy the object
-		delete category;
-	}
+	m_Category.Remove(category);
 }
 
 CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
@@ -650,7 +631,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 		weaponName.Strip(TDM_INVENTORY_AMMO_PREFIX);
 
 		// Find the weapon category
-		CInventoryCategory* weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+		CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
 
 		if (weaponCategory == NULL)
 		{

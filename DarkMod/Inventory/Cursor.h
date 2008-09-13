@@ -46,8 +46,8 @@ public:
 	CInventoryItemPtr		GetNextItem();
 	CInventoryItemPtr		GetPrevItem();
 
-	CInventoryCategory*		GetNextCategory();
-	CInventoryCategory*		GetPrevCategory();
+	CInventoryCategoryPtr	GetNextCategory();
+	CInventoryCategoryPtr	GetPrevCategory();
 	
 	/**
 	 * Set the current group index.
@@ -55,10 +55,9 @@ public:
 	void					SetCurrentCategory(int index);
 
 	/**
-	 * greebo: Returns the category of the focused item
-	 *         or NULL if no inventory is attached.
+	 * greebo: Returns the category of the focused item or NULL if no inventory is attached.
 	 */
-	CInventoryCategory*      GetCurrentCategory();
+	CInventoryCategoryPtr	GetCurrentCategory();
 
 	/**
 	 * Set the current item index.
@@ -75,17 +74,17 @@ public:
 	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
-	void						RemoveCategoryIgnored(const CInventoryCategory* category);
+	void						RemoveCategoryIgnored(const CInventoryCategoryPtr& category);
 	void						RemoveCategoryIgnored(const idStr& categoryName);
 
-	void						AddCategoryIgnored(const CInventoryCategory* category);
+	void						AddCategoryIgnored(const CInventoryCategoryPtr& category);
 	void						AddCategoryIgnored(const idStr& categoryName);
 
 	// Returns the unique ID of this cursor
 	int							GetId();
 
 protected:
-	bool						IsCategoryIgnored(const CInventoryCategory* category) const;
+	bool						IsCategoryIgnored(const CInventoryCategoryPtr& category) const;
 
 protected:
 

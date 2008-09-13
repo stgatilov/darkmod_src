@@ -86,33 +86,33 @@ public:
 	/**
 	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryCategory*		CreateCategory(const idStr& categoryName, int* index = NULL);
+	CInventoryCategoryPtr	CreateCategory(const idStr& categoryName, int* index = NULL);
 
 	/**
 	 * greebo: Removes the category from this inventory. Will NOT check whether the
 	 *         the category is empty or not.
 	 */
-	void					RemoveCategory(CInventoryCategory* category);
+	void					RemoveCategory(const CInventoryCategoryPtr& category);
 
 	/**
 	 * GetCategory returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */
-	CInventoryCategory*		GetCategory(const idStr& categoryName, int* index = NULL);
+	CInventoryCategoryPtr	GetCategory(const idStr& categoryName, int* index = NULL);
 
 	/**
 	 * Retrieves the category with the given index. Useful for scriptevents to 
 	 * reference a certain inventory category.
 	 *
-	 * @returns: NULL, if the category with the given inedx was not found.
+	 * @returns: NULL, if the category with the given index was not found.
 	 */
-	CInventoryCategory*		GetCategory(int index);
+	CInventoryCategoryPtr	GetCategory(int index);
 
 	/**
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
 	int						GetCategoryIndex(const idStr& categoryName);
-	int						GetCategoryIndex(const CInventoryCategory* category);
+	int						GetCategoryIndex(const CInventoryCategoryPtr& category);
 
 	/**
 	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
@@ -196,7 +196,7 @@ private:
 	/**
 	 * List of groups in that inventory
 	 */
-	idList<CInventoryCategory*>			m_Category;
+	idList<CInventoryCategoryPtr>		m_Category;
 
 	/**
 	 * Here we keep the lootcount for the items, that don't need to actually 

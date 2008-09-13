@@ -8842,7 +8842,7 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 	CInventory* inventory = Inventory();
 	bool bDropped( false ), bIsLoot( false );
 
-	CInventoryCategory* category = inventory->GetCategory(invCategory);
+	CInventoryCategoryPtr category = inventory->GetCategory(invCategory);
 	if (category != NULL) 
 	{
 		CInventoryItemPtr item = category->GetItem(invName);

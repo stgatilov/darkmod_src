@@ -118,7 +118,7 @@ bool CInventoryCursor::SetCurrentItem(const idStr& itemName)
 
 CInventoryItemPtr CInventoryCursor::GetNextItem()
 {
-	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+	CInventoryCategoryPtr curCategory = m_Inventory->GetCategory(m_CurrentCategory);
 
 	if (curCategory == NULL)
 	{
@@ -150,7 +150,7 @@ CInventoryItemPtr CInventoryCursor::GetNextItem()
 
 CInventoryItemPtr CInventoryCursor::GetPrevItem()
 {
-	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+	CInventoryCategoryPtr curCategory = m_Inventory->GetCategory(m_CurrentCategory);
 
 	if (curCategory == NULL)
 	{
@@ -180,7 +180,7 @@ CInventoryItemPtr CInventoryCursor::GetPrevItem()
 	return curCategory->GetItem(m_CurrentItem);
 }
 
-CInventoryCategory* CInventoryCursor::GetNextCategory()
+CInventoryCategoryPtr CInventoryCursor::GetNextCategory()
 {
 	if (m_CategoryLock) 
 	{
@@ -190,7 +190,7 @@ CInventoryCategory* CInventoryCursor::GetNextCategory()
 
 	int cnt = 0;
 
-	CInventoryCategory* rc = NULL;
+	CInventoryCategoryPtr rc;
 
 	int n = m_Inventory->GetNumCategories() - 1;
 
@@ -206,7 +206,7 @@ CInventoryCategory* CInventoryCursor::GetNextCategory()
 		cnt++;
 		if(cnt > n)
 		{
-			rc = NULL;
+			rc = CInventoryCategoryPtr();
 			m_CurrentCategory = 0;
 			break;
 		}
@@ -220,6 +220,7 @@ CInventoryCategory* CInventoryCursor::GetNextCategory()
 		}
 
 		rc = m_Inventory->GetCategory(m_CurrentCategory);
+
 		if (!IsCategoryIgnored(rc))
 			break; // We found a suitable category (not ignored)
 	}
@@ -227,14 +228,14 @@ CInventoryCategory* CInventoryCursor::GetNextCategory()
 	return rc;
 }
 
-CInventoryCategory *CInventoryCursor::GetPrevCategory()
+CInventoryCategoryPtr CInventoryCursor::GetPrevCategory()
 {
-	CInventoryCategory *rc = NULL;
+	CInventoryCategoryPtr rc;
 
 	// If category lock is switched on, we don't allow to switch 
 	// to another category.
-	if(m_CategoryLock == true)
-		return NULL;
+	if (m_CategoryLock == true)
+		return CInventoryCategoryPtr();
 
 	int n = m_Inventory->GetNumCategories();
 	int cnt = 0;
@@ -253,7 +254,7 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory()
 		cnt++;
 		if(cnt > n)
 		{
-			rc = NULL;
+			rc = CInventoryCategoryPtr();
 			m_CurrentCategory = 0;
 			break;
 		}
@@ -267,6 +268,7 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory()
 		}
 
 		rc = m_Inventory->GetCategory(m_CurrentCategory);
+
 		if (!IsCategoryIgnored(rc))
 			break; // We found a suitable category (not ignored)
 	}
@@ -282,7 +284,7 @@ void CInventoryCursor::SetCurrentCategory(int index)
 	m_CurrentCategory = index;
 }
 
-void CInventoryCursor::AddCategoryIgnored(const CInventoryCategory* category)
+void CInventoryCursor::AddCategoryIgnored(const CInventoryCategoryPtr& category)
 {
 	if (category != NULL)
 	{
@@ -298,7 +300,7 @@ void CInventoryCursor::AddCategoryIgnored(const idStr& categoryName)
 	AddCategoryIgnored( m_Inventory->GetCategory(categoryName) );
 }
 
-void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategory* category)
+void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategoryPtr& category)
 {
 	int categoryIndex = m_Inventory->GetCategoryIndex(category);
 	m_CategoryIgnore.Remove(categoryIndex);
@@ -312,14 +314,14 @@ void CInventoryCursor::RemoveCategoryIgnored(const idStr& categoryName)
 	RemoveCategoryIgnored( m_Inventory->GetCategory(categoryName) );
 }
 
-bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory* category) const
+bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategoryPtr& category) const
 {
 	int categoryIndex = m_Inventory->GetCategoryIndex(category);
 
 	return (m_CategoryIgnore.FindIndex(categoryIndex) != -1);
 }
 
-CInventoryCategory* CInventoryCursor::GetCurrentCategory()
+CInventoryCategoryPtr CInventoryCursor::GetCurrentCategory()
 {
-	return (m_Inventory != NULL) ? m_Inventory->GetCategory(m_CurrentCategory) : NULL;
+	return (m_Inventory != NULL) ? m_Inventory->GetCategory(m_CurrentCategory) : CInventoryCategoryPtr();
 }

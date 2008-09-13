@@ -1065,7 +1065,7 @@ void idPlayer::SetupInventory()
 	m_MapCursor->ClearItem(); // invalidate the cursor
 
 	// give the player weapon ammo based on shop purchases
-	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
+	CInventoryCategoryPtr category = m_WeaponCursor->GetCurrentCategory();
 	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
 
 	for (int si = 0; si < startingItems->Num(); si++)
@@ -3092,7 +3092,7 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 		num = 0;
 	}
 
-	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
+	CInventoryCategoryPtr category = m_WeaponCursor->GetCurrentCategory();
 	if (category == NULL) {
 		return false;
 	}
@@ -9230,7 +9230,7 @@ void idPlayer::inventoryDropItem()
 		const CInventoryCursorPtr& cursor = InventoryCursor();
 
 		CInventoryItemPtr item = cursor->GetCurrentItem();
-		CInventoryCategory* category = cursor->GetCurrentCategory();
+		CInventoryCategoryPtr category = cursor->GetCurrentCategory();
 
 		// Do we have a droppable item in the first place?
 		if (item != NULL && item->IsDroppable() && item->GetCount() > 0)

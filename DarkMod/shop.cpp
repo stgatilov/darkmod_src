@@ -201,7 +201,7 @@ void CShop::LoadFromInventory(idPlayer *player) {
 	int count = 0;
 	for (int catNum = 0; catNum < player->Inventory()->GetNumCategories(); catNum++)
 	{
-		CInventoryCategory * cat = player->Inventory()->GetCategory(catNum);
+		CInventoryCategoryPtr cat = player->Inventory()->GetCategory(catNum);
 
 		for (int itemNum = 0; itemNum < cat->GetNumItems(); itemNum++)
 		{
