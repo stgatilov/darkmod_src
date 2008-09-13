@@ -317,6 +317,11 @@ int Conversation::GetNumActors()
 	return _actors.Num();
 }
 
+int Conversation::GetNumCommands()
+{
+	return _commands.Num();
+}
+
 void Conversation::Save(idSaveGame* savefile) const
 {
 	savefile->WriteString(_name);

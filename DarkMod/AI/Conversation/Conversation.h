@@ -118,6 +118,9 @@ public:
 	// Returns the number of involved actors
 	int GetNumActors();
 
+	// Returns the number of commands in this conversation
+	int GetNumCommands();
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);

@@ -49,6 +49,11 @@ public:
 	int GetConversationIndex(const idStr& name);
 
 	/**
+	 * greebo: Returns the number of available conversations in this system.
+	 */
+	int GetNumConversations();
+
+	/**
 	 * greebo: This starts the conversation, after checking whether all conditions are met.
 	 *
 	 * @index: The conversation index. Use GetConversationIndex() to convert a conversation name to an index.

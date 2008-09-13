@@ -75,6 +75,11 @@ int ConversationSystem::GetConversationIndex(const idStr& name)
 	return -1;
 }
 
+int ConversationSystem::GetNumConversations()
+{
+	return _conversations.Num();
+}
+
 void ConversationSystem::StartConversation(int index)
 {
 	ConversationPtr conv = GetConversation(index);
