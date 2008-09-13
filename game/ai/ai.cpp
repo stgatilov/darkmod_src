@@ -638,6 +638,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lastHitCheckTime );
 	savefile->WriteInt( lastAttackTime );
 	savefile->WriteFloat( melee_range );
+	savefile->WriteFloat( fire_range );
 	savefile->WriteFloat( projectile_height_to_distance_ratio );
 
 	savefile->WriteInt( missileLaunchOffset.Num() );
@@ -911,6 +912,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lastHitCheckTime );
 	savefile->ReadInt( lastAttackTime );
 	savefile->ReadFloat( melee_range );
+	savefile->ReadFloat( fire_range );
 	savefile->ReadFloat( projectile_height_to_distance_ratio );
 
 	savefile->ReadInt( num );
