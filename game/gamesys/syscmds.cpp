@@ -277,7 +277,7 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 		return;
 	}
 
-	CInventoryCursor* cursor = player->InventoryCursor();
+	CInventoryCursorPtr cursor = player->InventoryCursor();
 	CInventory* inventory = cursor->Inventory();
 	
 	if (inventory == NULL)
@@ -317,7 +317,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		return;
 	}
 
-	CInventoryCursor* cursor = player->InventoryCursor();
+	CInventoryCursorPtr cursor = player->InventoryCursor();
 	CInventory* inventory = cursor->Inventory();
 	
 	if (inventory == NULL)

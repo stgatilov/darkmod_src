@@ -63,11 +63,11 @@ public:
 	 */
 	int						GetNumItems() const;
 
-protected:
-	void					SetOwner(idEntity *Owner);
-
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);
+
+protected:
+	void					SetOwner(idEntity *Owner);
 
 protected:
 	CInventory*				m_Inventory;			// The inventory this group belongs to.

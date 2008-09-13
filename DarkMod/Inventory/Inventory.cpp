@@ -54,6 +54,9 @@ void CInventory::Clear()
 	m_Owner = NULL;
 	// Delete and clear the pointers in the list
 	m_Category.DeleteContents(true);
+
+	// Clear the idList, this destructs all cursors
+	m_Cursor.Clear();
 }
 
 int	CInventory::GetNumCategories() const
@@ -518,12 +521,12 @@ CInventoryItem* CInventory::GetItemById(const idStr& id, const idStr& categoryNa
 	return NULL; // nothing found
 }
 
-CInventoryCursor* CInventory::CreateCursor(void)
+CInventoryCursorPtr CInventory::CreateCursor()
 {
 	// Get a new ID for this cursor
 	int id = GetNewCursorId();
 
-	CInventoryCursor* cursor = new CInventoryCursor(this, id);
+	CInventoryCursorPtr cursor(new CInventoryCursor(this, id));
 
 	if (cursor != NULL)
 	{
@@ -533,7 +536,7 @@ CInventoryCursor* CInventory::CreateCursor(void)
 	return cursor;
 }
 
-CInventoryCursor* CInventory::GetCursor(int id)
+CInventoryCursorPtr CInventory::GetCursor(int id)
 {
 	for (int i = 0; i < m_Cursor.Num(); i++)
 	{
@@ -544,7 +547,7 @@ CInventoryCursor* CInventory::GetCursor(int id)
 	}
 
 	DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Requested Cursor Id %d not found!\r", id);
-	return NULL;
+	return CInventoryCursorPtr();
 }
 
 int CInventory::GetHighestCursorId()
@@ -602,7 +605,7 @@ void CInventory::Restore(idRestoreGame *savefile)
 
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
-		CInventoryCursor* cursor = new CInventoryCursor(this, 0);
+		CInventoryCursorPtr cursor(new CInventoryCursor(this, 0));
 
 		cursor->Restore(savefile);
 		m_Cursor.Append(cursor);

@@ -400,9 +400,9 @@ public:
 	idDragEntity			dragEntity;
 
 	// A pointer to our weaponslot.
-	CInventoryCursor*		m_WeaponCursor;
+	CInventoryCursorPtr		m_WeaponCursor;
 	// A pointer to the current map/floorplan.
-	CInventoryCursor*		m_MapCursor;
+	CInventoryCursorPtr		m_MapCursor;
 
 public:
 	CLASS_PROTOTYPE( idPlayer );

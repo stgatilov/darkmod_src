@@ -24,6 +24,7 @@ class CResponse;
 class CInventory;
 class CInventoryItem;
 class CInventoryCursor;
+typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
 /**
 * SDK_SIGNALS are used to signal either from a script to the SDK code or
@@ -723,7 +724,7 @@ public:
 	// Returns (and creates if necessary) this entity's inventory.
 	CInventory*			Inventory();
 	// Returns (and creates if necessary) this entity's inventory cursor.
-	CInventoryCursor*	InventoryCursor();
+	const CInventoryCursorPtr&	InventoryCursor();
 
 	/**
 	 * greebo: This event gets fired right after spawn time. It checks the spawnargs
@@ -1136,7 +1137,7 @@ private:
 	CInventoryItem		*m_InventoryItem;
 
 	// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
-	CInventoryCursor	*m_InventoryCursor;
+	CInventoryCursorPtr	m_InventoryCursor;
 
 private:
 	void				FixupLocalizedStrings();

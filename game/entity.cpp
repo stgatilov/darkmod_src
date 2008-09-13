@@ -679,7 +679,7 @@ idEntity::idEntity()
 	// absolutely necessary to create these.
 	m_Inventory			= NULL;
 	m_InventoryItem		= NULL;
-	m_InventoryCursor	= NULL;
+	m_InventoryCursor	= CInventoryCursorPtr();
 }
 
 /*
@@ -7567,10 +7567,12 @@ The cursor is intended for arbitrary use, and need not point to this
 entity's inventory.
 ================
 */
-CInventoryCursor* idEntity::InventoryCursor()
+const CInventoryCursorPtr& idEntity::InventoryCursor()
 {
-	if(m_InventoryCursor == NULL)
+	if (m_InventoryCursor == NULL)
+	{
 		m_InventoryCursor = Inventory()->CreateCursor();
+	}
 
 	return m_InventoryCursor;
 }
@@ -8732,7 +8734,7 @@ void idEntity::Event_InitInventory(int callCount)
 CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 {
 	// Get (create) the InventoryCursor of this Entity.
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItem *rc = NULL;
 	idStr s;
 	int v = 0;

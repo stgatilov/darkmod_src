@@ -70,11 +70,12 @@ public:
 
 	void					Clear();
 
-	CInventoryCursor*		CreateCursor();
+	CInventoryCursorPtr		CreateCursor();
+
 	/**
 	 * Retrieves the cursor with the given Id or NULL if the Id doesn't exist
 	 */
-	CInventoryCursor*		GetCursor(int id);
+	CInventoryCursorPtr		GetCursor(int id);
 
 	int						GetLoot(int& gold, int& jewelry, int& goods);
 	void					SetLoot(int gold, int jewelry, int goods);
@@ -189,7 +190,7 @@ private:
 private:
 	idEntityPtr<idEntity>				m_Owner;
 
-	idList<CInventoryCursor*>			m_Cursor;
+	idList<CInventoryCursorPtr>			m_Cursor;
 	int									m_HighestCursorId;
 
 	/**

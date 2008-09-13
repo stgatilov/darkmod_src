@@ -434,8 +434,8 @@ idPlayer::idPlayer() :
 
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
-	m_WeaponCursor			= NULL;
-	m_MapCursor				= NULL;
+	m_WeaponCursor			= CInventoryCursorPtr();
+	m_MapCursor				= CInventoryCursorPtr();
 
 	m_LightgemModifier		= 0;
 }
@@ -1078,7 +1078,7 @@ void idPlayer::SetupInventory()
 	}
 
 	// Now create the standard cursor for all the other inventory items (excl. weapons)
-	CInventoryCursor *crsr = InventoryCursor();
+	CInventoryCursorPtr crsr = InventoryCursor();
 	CInventoryItem *it;
 
 	// We set the filter to ignore the weapon category, since this will be
@@ -5337,7 +5337,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 		break;
 		case IMPULSE_51:
 		{
-			CInventoryCursor *crsr = InventoryCursor();
+			const CInventoryCursorPtr& crsr = InventoryCursor();
 			CInventoryItem *it = crsr->GetCurrentItem();
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 				inventoryUseItem(ERepeat, it, holdTime);
@@ -9061,7 +9061,7 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
@@ -9076,7 +9076,7 @@ void idPlayer::inventoryNextItem()
 
 void idPlayer::inventoryPrevItem()
 {
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
@@ -9101,7 +9101,7 @@ void idPlayer::inventoryPrevGroup()
 
 void idPlayer::inventoryUseKeyRelease(int holdTime)
 {
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 
 	// Check if there is a valid item selected
@@ -9125,7 +9125,7 @@ void idPlayer::inventoryUseItem()
 	// If the player has an item that is selected we need to check if this
 	// is a usable item (like a key). In this case the use action takes
 	// precedence over the frobaction.
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 		inventoryUseItem(EPressed, it, 0);
@@ -9190,7 +9190,7 @@ void idPlayer::inventoryDropItem()
 	else 
 	{
 		// Grabber is empty (no item is held), drop the current inventory item
-		CInventoryCursor* cursor = InventoryCursor();
+		const CInventoryCursorPtr& cursor = InventoryCursor();
 
 		CInventoryItem* item = cursor->GetCurrentItem();
 		CInventoryCategory* category = cursor->GetCurrentCategory();
@@ -9310,7 +9310,7 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 	idThread *thread;
 
 	// Since the player always has at least a loot and a dummy item, this can never be NULL.
-	CInventoryCursor *crsr = InventoryCursor();
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 	cur = crsr->GetCurrentItem();
 	if(cur)
 		e = cur->GetItemEntity();
