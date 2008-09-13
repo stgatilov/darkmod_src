@@ -67,6 +67,11 @@ bool PathShowTask::Perform(Subsystem& subsystem)
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
+		// Store the new path entity into the AI's mind
+		idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+		owner->GetMind()->GetMemory().currentPath = next;
+
+
 		// Move is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("entity is visible.\r");
 

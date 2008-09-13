@@ -145,7 +145,6 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
-	// Advance to the next path entity pointer
 	idPathCorner* next = idPathCorner::RandomPath(path, NULL);
 
 	if (next == NULL)
@@ -156,8 +155,6 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else
 	{
-		// Store the new path entity into the AI's mind
-		_owner.GetEntity()->GetMind()->GetMemory().currentPath = next;
 		subsystem.PushTask(task);
 	}
 

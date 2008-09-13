@@ -90,10 +90,19 @@ bool PathInteractTask::Perform(Subsystem& subsystem)
 	// Debug
 	// gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), _target->GetPhysics()->GetOrigin(), 10, 10000);
 	
+	return false;
+}
+
+void PathInteractTask::OnFinish(idAI* owner)
+{
+	idPathCorner* path = _path.GetEntity();
+
 	// Trigger next path target(s)
 	owner->ActivateTargets(owner);
-	
-	return false; // finish this task
+
+	// Store the new path entity into the AI's mind
+	idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+	owner->GetMind()->GetMemory().currentPath = next;
 }
 
 // Save/Restore methods
