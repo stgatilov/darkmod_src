@@ -21,8 +21,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../MissionData.h"
 
-const idEventDef EV_PostRestore( "postRestore", NULL );
-
 static idStr sLootTypeName[LT_COUNT] = 
 {
 	"loot_none",
@@ -34,25 +32,33 @@ static idStr sLootTypeName[LT_COUNT] =
 CLASS_DECLARATION(idClass, CInventory)
 END_CLASS
 
-CInventory::CInventory()
-: idClass()
+CInventory::CInventory() :
+	m_HighestCursorId(0),
+	m_LootItemCount(0),
+	m_Gold(0),
+	m_Jewelry(0),
+	m_Goods(0)
 {
 	m_Owner = NULL;
-	m_LootItemCount = 0;
-	m_Gold = 0;
-	m_Jewelry = 0;
-	m_Goods = 0;
-	m_HighestCursorId = 0;
+
 	CreateCategory(TDM_INVENTORY_DEFAULT_GROUP);	// We always have a defaultgroup if nothing else
 }
 
 CInventory::~CInventory()
 {
-	int i, n;
+	Clear();
+}
 
-	n = m_Category.Num();
-	for(i = 0; i < n; i++)
+void CInventory::Clear()
+{
+	m_Owner = NULL;
+
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
 		delete m_Category[i];
+	}
+
+	m_Category.Clear();
 }
 
 int	CInventory::GetNumCategories() const
@@ -147,156 +153,151 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 
 void CInventory::SetOwner(idEntity *owner)
 {
-	int i, n;
-
 	m_Owner = owner; 
-	n = m_Category.Num();
-	for(i = 0; i < n; i++)
+
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
 		m_Category[i]->SetOwner(owner);
+	}
 }
 
-CInventoryCategory *CInventory::CreateCategory(const idStr& CategoryName, int *Index)
+CInventoryCategory* CInventory::CreateCategory(const idStr& categoryName, int* index)
 {
-	CInventoryCategory	*rc = NULL;
-	int i;
+	if (categoryName.IsEmpty()) return NULL; // empty category name
 
-	if (CategoryName.IsEmpty())
-		goto Quit; // empty category name
+	// Try to lookup the category, maybe it exists already
+	CInventoryCategory* rc = GetCategory(categoryName, index);
 
-	if((rc = GetCategory(CategoryName, Index)) != NULL)
-		goto Quit; // Category already exists
+	if (rc != NULL) return rc; // Category already exists
 
 	// Try to allocate a new category with a link back to <this> Inventory
-	if((rc = new CInventoryCategory(this)) == NULL)
-		goto Quit; // Creation failed
+	rc = new CInventoryCategory(this, categoryName);
+	if (rc == NULL) return NULL; // out of memory
 
-	rc->m_Name = CategoryName;
-	i = m_Category.AddUnique(rc);
-	if(Index != NULL)
-		*Index = i;
+	// Add the new Category to our list
+	int i = m_Category.AddUnique(rc);
 
-Quit:
+	// Should we return an index?
+	if (index != NULL)
+	{
+		*index = i;
+	}
+
 	return rc;
 }
 
-CInventoryCategory *CInventory::GetCategory(const idStr& CategoryName, int *Index) {
+CInventoryCategory *CInventory::GetCategory(const idStr& categoryName, int* index)
+{
 	// If the groupname is empty we look for the default group
-	if (CategoryName.IsEmpty()) {
+	if (categoryName.IsEmpty())
+	{
 		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
 	}
 
 	// Traverse the categories and find the one matching <CategoryName>
-	for (int i = 0; i < m_Category.Num(); i++) {
-		if (m_Category[i]->m_Name == CategoryName) {
-			if (Index != NULL) {
-				*Index = i;
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
+		if (m_Category[i]->m_Name == categoryName)
+		{
+			if (index != NULL)
+			{
+				*index = i;
 			}
 
 			return m_Category[i];
 		}
 	}
 
-	return NULL;
+	return NULL; // not found
 }
 
-CInventoryCategory* CInventory::GetCategory(int index) {
-	if (index >= 0 && index < m_Category.Num()) {
-		return m_Category[index];
-	}
-	return NULL;
+CInventoryCategory* CInventory::GetCategory(int index)
+{
+	// return NULL for invalid indices
+	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : NULL;
 }
 
-int CInventory::GetCategoryIndex(const idStr& CategoryName)
+int CInventory::GetCategoryIndex(const idStr& categoryName)
 {
 	int i = -1;
 
-	GetCategory(CategoryName, &i);
+	GetCategory(categoryName, &i);
 
 	return i;
 }
 
-int CInventory::GetCategoryIndex(const CInventoryCategory* Category)
+int CInventory::GetCategoryIndex(const CInventoryCategory* category)
 {
-	// If the groupname is empty we look for the default group
-	if (Category == NULL) {
-		return -1;
-	}
+	if (category == NULL) return -1;
 
-	// Traverse the categories and find the one matching <CategoryName>
-	for (int i = 0; i < m_Category.Num(); i++) {
-		if (m_Category[i] == Category) {
+	// Traverse the categories and find the one matching one
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
+		if (m_Category[i] == category)
+		{
 			return i;
 		}
 	}
 
-	return -1;
+	return -1; // not found
 }
 
-int CInventory::GetCategoryItemIndex(const idStr& ItemName, int *ItemIndex)
+int CInventory::GetCategoryItemIndex(const idStr& itemName, int* itemIndex)
 {
-	int rc = -1;
-	int i;
-	int n = -1;
+	// Set the returned index to -1 if applicable
+	if (itemIndex != NULL) *itemIndex = -1;
 
-	if(ItemIndex != NULL)
-		*ItemIndex = -1;
+	if (itemName.IsEmpty()) return -1;
 
-	if (ItemName.IsEmpty())
-		goto Quit;
-
-	for(i = 0; i < m_Category.Num(); i++)
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		if((n = m_Category[i]->GetItemIndex(ItemName)) != -1)
-		{
-			if(ItemIndex != NULL)
-				*ItemIndex = n;
+		// Try to find the item within the category
+		int n = m_Category[i]->GetItemIndex(itemName);
 
-			rc = i;
-			break;
+		if (n != -1)
+		{
+			// Found, set the item index if desired
+			if (itemIndex != NULL) *itemIndex = n;
+
+			// Return the category index
+			return i;
 		}
 	}
 
-Quit:
-	return rc;
+	return -1; // not found
 }
 
-int CInventory::GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex)
+int CInventory::GetCategoryItemIndex(CInventoryItem* item, int* itemIndex)
 {
-	int rc = -1;
-	int i;
-	int n = -1;
+	if (itemIndex != NULL) *itemIndex = -1;
 
-	if(ItemIndex != NULL)
-		*ItemIndex = -1;
-
-	for(i = 0; i < m_Category.Num(); i++)
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		if((n = m_Category[i]->GetItemIndex(Item)) != -1)
-		{
-			if(ItemIndex != NULL)
-				*ItemIndex = n;
+		int n = m_Category[i]->GetItemIndex(item);
 
-			rc = i;
-			break;
+		if (n != -1)
+		{
+			// Found, return the index
+			if (itemIndex != NULL) *itemIndex = n;
+
+			// Return the category index
+			return i;
 		}
 	}
 
-	return rc;
+	return -1; // not found
 }
 
-CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
+CInventoryItem* CInventory::PutItem(idEntity *ent, idEntity *owner)
 {
-	CInventoryItem* returnValue = NULL;
-
 	// Sanity checks
-	if(ent == NULL || owner == NULL) {
-		return returnValue;
-	}
+	if (ent == NULL || owner == NULL) return NULL;
 
 	// Check for loot items
-	returnValue = ValidateLoot(ent);
+	CInventoryItem* returnValue = ValidateLoot(ent);
 
-	if (returnValue != NULL) {
+	if (returnValue != NULL)
+	{
 		// The item is a valid loot item, remove the entity and return
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added loot item to inventory: %s\r", ent->name.c_str());
 
@@ -310,15 +311,18 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	idStr name = ent->spawnArgs.GetString("inv_name", "");
 	idStr category = ent->spawnArgs.GetString("inv_category", "");
 
-	if (name.IsEmpty() || category.IsEmpty()) {
+	if (name.IsEmpty() || category.IsEmpty())
+	{
 		// Invalid inv_name or inv_category
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: inv_name or inv_category not specified.\r", ent->name.c_str());
 		return returnValue;
 	}
 
+	// Let's see if this is an ammonition item
 	returnValue = ValidateAmmo(ent);
 
-	if (returnValue != NULL) {
+	if (returnValue != NULL)
+	{
 		// Remove the entity from the game, the ammonition is added
 		RemoveEntityFromMap(ent, true);
 
@@ -328,15 +332,18 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// Check for existing items (create the category if necessary (hence the TRUE))
 	CInventoryItem* existing = GetItem(name, category, true);
 
-	if (existing != NULL) {
+	if (existing != NULL)
+	{
 		// Item must be stackable, if items of the same name/category already exist
-		if (!ent->spawnArgs.GetBool("inv_stackable", "0")) {
+		if (!ent->spawnArgs.GetBool("inv_stackable", "0"))
+		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: not stackable.\r", ent->name.c_str());
 			return returnValue;
 		}
 
 		// Item is stackable, determine how many items should be added to the stack
 		int count = ent->spawnArgs.GetInt("inv_count", "1");
+		
 		// Increase the stack count
 		existing->SetCount(existing->GetCount() + count);
 
@@ -357,11 +364,13 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Return the existing value instead of a newly created one
 		returnValue = existing;
 	}
-	else {
+	else
+	{
 		// Item doesn't exist, create a new InventoryItem
 		CInventoryItem* item = new CInventoryItem(ent, owner);
 
-		if (item != NULL) {
+		if (item != NULL)
+		{
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
 			// Put the item into its category
 			PutItem(item, category);
@@ -378,7 +387,8 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
 		}
-		else {
+		else
+		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put item into category: %s.\r", ent->name.c_str());
 		}
 
@@ -390,154 +400,145 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 {
-	if(ent == NULL)
-		return;
+	if (ent == NULL) return;
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Hiding entity from game: %s...\r", ent->name.c_str());
+
 	// Make the item invisible
 	ent->Unbind();
 	ent->GetPhysics()->PutToRest();
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
-
-
-	if(bDelete == true) {
+	if (bDelete == true)
+	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Deleting entity from game: %s...\r", ent->name.c_str());
 		ent->PostEventMS(&EV_Remove, 0);
 	}
 }
 
-void CInventory::PutItem(CInventoryItem *item, const idStr& category)
+void CInventory::PutItem(CInventoryItem *item, const idStr& categoryName)
 {
-	int i;
-	CInventoryCategory *gr;
-
-	if(item == NULL)
-		goto Quit;
+	if (item == NULL) return;
+	
+	CInventoryCategory* category = NULL;
 
 	// Check if it is the default group or not.
-	if (category.IsEmpty())
+	if (categoryName.IsEmpty())
 	{
 		// category is empty, assign the item to the default group
-		gr = m_Category[0];
+		category = m_Category[0];
 	}
 	else
 	{
-		gr = GetCategory(category, &i);
-		if(gr == NULL)
-			gr = CreateCategory(category);
+		// Try to find the category with the given name
+		category = GetCategory(categoryName);
+
+		// If not found, create it
+		if (category == NULL)
+		{
+			category = CreateCategory(categoryName);
+		}
 	}
 
 	// Pack the item into the category
-	gr->PutItem(item);
+	category->PutItem(item);
 
 	// Objective callback for non-loot items:
 	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1
-	gameLocal.m_MissionData->InventoryCallback
-								( item->GetItemEntity(), item->GetName(), 
-									item->GetCount(), 1, true );
-
-Quit:
-	return;
+	gameLocal.m_MissionData->InventoryCallback( 
+		item->GetItemEntity(), 
+		item->GetName(), 
+		item->GetCount(), 
+		1, 
+		true
+	);
 }
 
-CInventoryItem *CInventory::GetItem(const idStr& Name, const idStr& Category, bool bCreateCategory)
+CInventoryItem* CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)
 {
-	CInventoryItem *rc = NULL;
-	int i, n, s;
-	CInventoryCategory *gr;
+	// Do we have a specific category to search in?
+	if (!categoryName.IsEmpty())
+	{
+		// We have a category name, look it up
+		CInventoryCategory* category = GetCategory(categoryName);
 
-	if (Category.IsEmpty())
-	{
-		n = m_Category.Num();
-		s = 0;
-	}
-	else
-	{
-		gr = GetCategory(Category, &i);
-		if(gr == NULL)
+		if (category == NULL && createCategory)
 		{
-			if(bCreateCategory == true)
-				gr = CreateCategory(Category, &i);
-			else
-				goto Quit;
+			// Special case, the caller requested to create this category if not found
+			category = CreateCategory(categoryName);
 		}
 
-		n = i+1;
-		s = i;
+		// Let the category search for the item, may return NULL
+		return (category != NULL) ? category->GetItem(name) : NULL;
 	}
 
-	for(i = s; i < n; i++)
+	// No specific category specified, look in all categories
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		gr = m_Category[i];
-		if((rc = gr->GetItem(Name)) != NULL)
-			goto Quit;
+		CInventoryItem* foundItem = m_Category[i]->GetItem(name);
+
+		if (foundItem != NULL)
+		{
+			// Found the item
+			return foundItem;
+		}
 	}
 
-Quit:
-	return rc;
+	return NULL; // nothing found
 }
 
-CInventoryItem *CInventory::GetItemById(const idStr& id, const idStr& Category, bool bCreateCategory)
+CInventoryItem* CInventory::GetItemById(const idStr& id, const idStr& categoryName, bool createCategory)
 {
-	CInventoryItem *rc = NULL;
-	int i, n, s;
-	CInventoryCategory *gr;
-
-	if (id.IsEmpty())
-		goto Quit;
-
-	if (Category.IsEmpty())
+	// Do we have a specific category to search in?
+	if (!categoryName.IsEmpty())
 	{
-		n = m_Category.Num();
-		s = 0;
-	}
-	else
-	{
-		gr = GetCategory(Category, &i);
-		if(gr == NULL)
+		// We have a category name, look it up
+		CInventoryCategory* category = GetCategory(categoryName);
+
+		if (category == NULL && createCategory)
 		{
-			if(bCreateCategory == true)
-				gr = CreateCategory(Category, &i);
-			else
-				goto Quit;
+			// Special case, the caller requested to create this category if not found
+			category = CreateCategory(categoryName);
 		}
 
-		n = i+1;
-		s = i;
+		// Let the category search for the item, may return NULL
+		return (category != NULL) ? category->GetItemById(id) : NULL;
 	}
 
-	for(i = s; i < n; i++)
+	// No specific category specified, look in all categories
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		gr = m_Category[i];
-		if((rc = gr->GetItemById(id)) != NULL)
-			goto Quit;
+		CInventoryItem* foundItem = m_Category[i]->GetItemById(id);
+
+		if (foundItem != NULL)
+		{
+			// Found the item
+			return foundItem;
+		}
 	}
 
-Quit:
-	return rc;
+	return NULL; // nothing found
 }
 
 CInventoryCursor* CInventory::CreateCursor(void)
 {
-	CInventoryCursor *rc = NULL;
-
 	// Get a new ID for this cursor
-	int id = GetHighestCursorId() + 1;
+	int id = GetNewCursorId();
 
-	if((rc = new CInventoryCursor(this, id)) != NULL)
+	CInventoryCursor* cursor = new CInventoryCursor(this, id);
+
+	if (cursor != NULL)
 	{
-		m_Cursor.AddUnique(rc);
-		m_HighestCursorId++;
+		m_Cursor.AddUnique(cursor);
 	}
 
-	return rc;
+	return cursor;
 }
 
 CInventoryCursor* CInventory::GetCursor(int id)
 {
-	for(int i = 0; i < m_Cursor.Num(); i++)
+	for (int i = 0; i < m_Cursor.Num(); i++)
 	{
 		if (m_Cursor[i]->GetId() == id)
 		{
@@ -552,6 +553,11 @@ CInventoryCursor* CInventory::GetCursor(int id)
 int CInventory::GetHighestCursorId()
 {
 	return m_HighestCursorId;
+}
+
+int CInventory::GetNewCursorId()
+{
+	return ++m_HighestCursorId;
 }
 
 void CInventory::Save(idSaveGame *savefile) const
@@ -577,16 +583,12 @@ void CInventory::Save(idSaveGame *savefile) const
 
 void CInventory::Restore(idRestoreGame *savefile)
 {
-	int num;
+	// Clear all member variables beforehand 
+	Clear();
 
 	m_Owner.Restore(savefile);
 
-	// Clear the current categories, there may remain some default items
-	for (int i = 0; i < m_Category.Num(); i++) {
-		delete m_Category[i];
-	}
-	m_Category.Clear();
-
+	int num;
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
 		CInventoryCategory* category = new CInventoryCategory(this, "");
@@ -610,10 +612,12 @@ void CInventory::Restore(idRestoreGame *savefile)
 	}
 }
 
-void CInventory::removeCategory(CInventoryCategory* category) {
+void CInventory::RemoveCategory(CInventoryCategory* category) {
 	// Cycle through the categories and remove the specified category.
-	for (int i = 0; i < m_Category.Num(); i++) {
-		if (m_Category[i] == category) {
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
+		if (m_Category[i] == category)
+		{
 			m_Category.RemoveIndex(i);
 			delete category;
 			break;
@@ -621,57 +625,66 @@ void CInventory::removeCategory(CInventoryCategory* category) {
 	}
 }
 
-CInventoryItem* CInventory::ValidateAmmo(idEntity* ent) {
-	CInventoryItem* returnValue = NULL;
-
+CInventoryItem* CInventory::ValidateAmmo(idEntity* ent)
+{
 	// Sanity check
-	if (ent == NULL) {
-		return returnValue;
-	}
-
+	if (ent == NULL) return NULL;
+	
 	idStr name = ent->spawnArgs.GetString("inv_name", "");
 	idStr category = ent->spawnArgs.GetString("inv_category", "");
 
 	// Check for ammonition
-	if (category == TDM_CATEGORY_AMMO) {
-		idStr ammoAmountKey = TDM_INVENTORY_AMMO_PREFIX;
-		const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
-		if (key != NULL) {
-			int amount = ent->spawnArgs.GetInt(key->GetKey().c_str(), "0");
+	if (category != TDM_CATEGORY_AMMO) 
+	{
+		return NULL; // wrong category
+	}
 
-			// Retrieve the weapon name, e.g. "broadhead", by stripping the prefix
-			idStr weaponName = key->GetKey();
-			weaponName.Strip(TDM_INVENTORY_AMMO_PREFIX);
+	CInventoryItem* returnValue = NULL;
+	
+	idStr ammoAmountKey = TDM_INVENTORY_AMMO_PREFIX;
 
-			// Find the weapon category
-			CInventoryCategory* weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+	const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
 
-			if (weaponCategory == NULL) {
-				DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
-				return returnValue;
-			}
-			
-			// Look for the weapon with the given name
-			for (int i = 0; i < weaponCategory->size(); i++) {
-				CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(weaponCategory->GetItem(i));
+	if (key != NULL)
+	{
+		int amount = ent->spawnArgs.GetInt(key->GetKey(), "0");
 
-				// Is this the right weapon?
-				if (weaponItem != NULL && weaponItem->getWeaponName() == weaponName) {
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
-					// Add the ammo to this weapon
-					weaponItem->setAmmo(weaponItem->getAmmo() + amount);
+		// Retrieve the weapon name, e.g. "broadhead", by stripping the prefix
+		idStr weaponName = key->GetKey();
+		weaponName.Strip(TDM_INVENTORY_AMMO_PREFIX);
 
-					// We're done
-					return weaponItem;
-				}
-			}
+		// Find the weapon category
+		CInventoryCategory* weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
 
-			// Loop ended without result, name not found
-			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not add ammo to weapon: name not found %s.\r", weaponName.c_str());
+		if (weaponCategory == NULL)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
+			return returnValue;
 		}
-		else {
-			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot add ammo entity %s to inventory: no key with inv_ammo_* prefix.\r", ent->name.c_str());
+		
+		// Look for the weapon with the given name
+		for (int i = 0; i < weaponCategory->size(); i++)
+		{
+			CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(weaponCategory->GetItem(i));
+
+			// Is this the right weapon?
+			if (weaponItem != NULL && weaponItem->getWeaponName() == weaponName)
+			{
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
+				// Add the ammo to this weapon
+				weaponItem->setAmmo(weaponItem->getAmmo() + amount);
+
+				// We're done
+				return weaponItem;
+			}
 		}
+
+		// Loop ended without result, name not found
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not add ammo to weapon: name not found %s.\r", weaponName.c_str());
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot add ammo entity %s to inventory: no key with inv_ammo_* prefix.\r", ent->name.c_str());
 	}
 
 	return returnValue;

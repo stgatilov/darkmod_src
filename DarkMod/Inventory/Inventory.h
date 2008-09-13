@@ -59,7 +59,8 @@
  * If an item is put into an inventory, without specifying the group, it will be put
  * in the default group which is always at index 0 and has the name DEFAULT.
  */
-class CInventory : public idClass
+class CInventory : 
+	public idClass
 {
 public:
 	CLASS_PROTOTYPE(CInventory);
@@ -67,34 +68,36 @@ public:
 	CInventory();
 	~CInventory();
 
-	CInventoryCursor*		CreateCursor(void);
+	void					Clear();
+
+	CInventoryCursor*		CreateCursor();
 	/**
 	 * Retrieves the cursor with the given Id or NULL if the Id doesn't exist
 	 */
 	CInventoryCursor*		GetCursor(int id);
 
-	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
-	void					SetLoot(int Gold, int Jewelry, int Goods);
+	int						GetLoot(int& gold, int& jewelry, int& goods);
+	void					SetLoot(int gold, int jewelry, int goods);
 
-	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
-	void					SetOwner(idEntity *Owner);
+	inline idEntity	*		GetOwner() { return m_Owner.GetEntity(); };
+	void					SetOwner(idEntity* owner);
 
 	/**
 	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryCategory		*CreateCategory(const idStr& CategoryName, int *Index = NULL);
+	CInventoryCategory*		CreateCategory(const idStr& categoryName, int* index = NULL);
 
 	/**
 	 * greebo: Removes the category from this inventory. Will NOT check whether the
 	 *         the category is empty or not.
 	 */
-	void					removeCategory(CInventoryCategory* category);
+	void					RemoveCategory(CInventoryCategory* category);
 
 	/**
 	 * GetCategory returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */
-	CInventoryCategory	*GetCategory(const idStr& CategoryName, int *Index = NULL);
+	CInventoryCategory*		GetCategory(const idStr& categoryName, int* index = NULL);
 
 	/**
 	 * Retrieves the category with the given index. Useful for scriptevents to 
@@ -102,21 +105,21 @@ public:
 	 *
 	 * @returns: NULL, if the category with the given inedx was not found.
 	 */
-	CInventoryCategory* GetCategory(int index);
+	CInventoryCategory*		GetCategory(int index);
 
 	/**
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
-	int					GetCategoryIndex(const idStr& CategoryName);
-	int					GetCategoryIndex(const CInventoryCategory* Category);
+	int						GetCategoryIndex(const idStr& categoryName);
+	int						GetCategoryIndex(const CInventoryCategory* category);
 
 	/**
 	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
 	 * the itemindex within that group can also be obtained. Both are set to -1 
-	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
+	 * if the item can not be found. The itemIndex pointer only when it is not NULL of course.
 	 */
-	int						GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
-	int						GetCategoryItemIndex(const idStr& ItemName, int *ItemIndex = NULL);
+	int						GetCategoryItemIndex(CInventoryItem* item, int* itemIndex = NULL);
+	int						GetCategoryItemIndex(const idStr& itemName, int* itemIndex = NULL);
 
 	/**
 	 * Remove entity from map will remove the entity from the map. If 
@@ -137,16 +140,16 @@ public:
 	 *         If the according spawnarg is set, the entity is removed from the map.
 	 *         This can either mean "hide" or "delete", depending on the stackable property.
 	 */
-	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
+	CInventoryItem*			PutItem(idEntity *Item, idEntity *Owner);
 	void					PutItem(CInventoryItem *Item, const idStr& category);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem			*GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItem*			GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
-	CInventoryItem			*GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItem*			GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);
@@ -157,11 +160,16 @@ public:
 	int						GetHighestCursorId();
 
 	/**
+	 * greebo: Returns a new unique cursor ID.
+	 */
+	int						GetNewCursorId();
+
+	/**
 	 * greebo: Returns the number of categories in this inventory.
 	 */
 	int						GetNumCategories() const;
 
-protected:
+private:
 
 	/**
 	 * greebo: This checks the given entity for loot items and adds the loot value 
@@ -178,16 +186,16 @@ protected:
 	 */
 	CInventoryItem*		ValidateAmmo(idEntity* ent);
 
-protected:
+private:
 	idEntityPtr<idEntity>				m_Owner;
 
-	idList<CInventoryCursor *>			m_Cursor;
+	idList<CInventoryCursor*>			m_Cursor;
 	int									m_HighestCursorId;
 
 	/**
 	 * List of groups in that inventory
 	 */
-	idList<CInventoryCategory *>		m_Category;
+	idList<CInventoryCategory*>			m_Category;
 
 	/**
 	 * Here we keep the lootcount for the items, that don't need to actually 
@@ -195,10 +203,10 @@ protected:
 	 * LootItemCount will only count the items, that are stored here. Items
 	 * that are visible, will not be counted here. This is only for stats.
 	 */
-	int						m_LootItemCount;
-	int						m_Gold;
-	int						m_Jewelry;
-	int						m_Goods;
+	int		m_LootItemCount;
+	int		m_Gold;
+	int		m_Jewelry;
+	int		m_Goods;
 };
 
 #endif /* __DARKMOD_INVENTORY_H__ */
