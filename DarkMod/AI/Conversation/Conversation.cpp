@@ -169,14 +169,16 @@ bool Conversation::IsDone()
 
 bool Conversation::AllActorsReady()
 {
+	// Cycle through all actors and return false as soon as a busy one is detected
 	for (int i = 0; i < GetNumActors(); i++)
 	{
 		ConversationStatePtr convState = GetConversationState(i);
 
 		if (convState == NULL)
 		{
-			// This is the pathological case, but still return true here, otherwise the conversation is blocked
-			return true;
+			// This is the pathological case, but still don't return false here, 
+			// otherwise the conversation is blocked
+			continue;
 		}
 
 		// Only continue the loop if this actor is in ready state

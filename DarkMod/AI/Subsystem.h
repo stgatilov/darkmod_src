@@ -100,6 +100,9 @@ public:
 	// Returns TRUE if this subsystem is performing.
 	virtual bool IsEnabled() const;
 
+	// Returns TRUE if there are no tasks left to perform 
+	virtual bool IsEmpty() const;
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

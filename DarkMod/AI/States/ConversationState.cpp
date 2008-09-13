@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/ScriptTask.h"
 #include "ObservantState.h"
 #include "../Library.h"
+#include "../Subsystem.h"
 #include "../Conversation/Conversation.h"
 #include "../Conversation/ConversationSystem.h"
 #include "../Conversation/ConversationCommand.h"
@@ -197,8 +198,12 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 			_commandType == ConversationCommand::EWalkToPosition || 
 			_commandType == ConversationCommand::EWalkToActor)
 		{
-			_state = EReady; // ready for new commands
-			return;
+			// Check if the subsystem is actually empty
+			if (owner->GetSubsystem(subSystem)->IsEmpty())
+			{
+				_state = EReady; // ready for new commands
+				return;
+			}
 		}
 	}
 	else if (subSystem == SubsysAction)
