@@ -1043,7 +1043,7 @@ void idPlayer::NextInventoryMap()
 void idPlayer::SetupInventory()
 {
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
-	CInventory *inv = Inventory();
+	const CInventoryPtr& inv = Inventory();
 	int idx = 0;
 
 	// We create a cursor and a category for the weapons, which is then locked

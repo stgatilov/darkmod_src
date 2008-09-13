@@ -22,6 +22,7 @@ class CStim;
 class CResponse;
 
 class CInventory;
+typedef boost::shared_ptr<CInventory> CInventoryPtr;
 class CInventoryItem;
 typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
@@ -715,7 +716,7 @@ public:
 	virtual idEntity* GetResponseEntity() { return this; };
 
 	// Returns (and creates if necessary) this entity's inventory.
-	CInventory*			Inventory();
+	const CInventoryPtr&		Inventory();
 	// Returns (and creates if necessary) this entity's inventory cursor.
 	const CInventoryCursorPtr&	InventoryCursor();
 
@@ -1124,7 +1125,7 @@ private:
 	int					mpGUIState;				// local cache to avoid systematic SetStateInt
 
 	// A pointer to our inventory.
-	CInventory			*m_Inventory;
+	CInventoryPtr		m_Inventory;
 
 	// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
 	CInventoryCursorPtr	m_InventoryCursor;

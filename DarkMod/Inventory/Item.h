@@ -140,8 +140,8 @@ protected:
 											// to create a fake health potion which shows up in the inventory
 											// as a regular health potion, but actually deals damage. Needs
 											// custom scripting to actually do this though.
-	CInventory				*m_Inventory;
-	CInventoryCategory		*m_Category;
+	CInventory*				m_Inventory;
+	CInventoryCategory*		m_Category;
 	ItemType				m_Type;
 	LootType				m_LootType;
 	int						m_Value;
