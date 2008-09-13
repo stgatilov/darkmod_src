@@ -18,19 +18,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Inventory.h"
 
-CInventoryCursor::CInventoryCursor(CInventory* inventory, int id)
-{
-	m_Inventory = inventory;
-	m_CategoryLock = false;							// Default behaviour ...
-	m_WrapAround = true;							// ... is like standard Thief inventory.
-	m_CurrentCategory = 0;
-	m_CurrentItem = 0;
-	m_CursorId = id;
-}
-
-CInventoryCursor::~CInventoryCursor()
-{
-}
+CInventoryCursor::CInventoryCursor(CInventory* inventory, int id) :
+	m_Inventory(inventory),
+	m_CategoryLock(false),	// Default behaviour ...
+	m_WrapAround(true),		// ... is like standard Thief inventory.
+	m_CurrentCategory(0),
+	m_CurrentItem(0),
+	m_CursorId(id)
+{}
 
 int	CInventoryCursor::GetId()
 {
@@ -70,14 +65,10 @@ void CInventoryCursor::Restore(idRestoreGame *savefile)
 	}
 }
 
-CInventoryItem *CInventoryCursor::GetCurrentItem()
+CInventoryItem* CInventoryCursor::GetCurrentItem()
 {
-	CInventoryItem *rc = NULL;
-
-	if(m_Inventory->GetNumCategories() > 0)
-		rc = m_Inventory->GetCategory(m_CurrentCategory)->GetItem(m_CurrentItem);
-
-	return rc;
+	// Return an item if the inventory has items
+	return (m_Inventory->GetNumCategories() > 0) ? m_Inventory->GetCategory(m_CurrentCategory)->GetItem(m_CurrentItem) : NULL;
 }
 
 void CInventoryCursor::ClearItem()
@@ -86,140 +77,126 @@ void CInventoryCursor::ClearItem()
 	m_CurrentItem = -1;
 }
 
-bool CInventoryCursor::SetCurrentItem(CInventoryItem *Item)
+bool CInventoryCursor::SetCurrentItem(CInventoryItem* item)
 {
-	bool rc = false;
-	int group, item;
-
-	if(Item == NULL)
+	if (item == NULL)
 	{
-		if((Item = m_Inventory->GetItem(TDM_DUMMY_ITEM)) == NULL)
-			goto Quit;
+		// NULL item passed, which means "clear cursor": replace the pointer with a pointer to the dummy item
+		item = m_Inventory->GetItem(TDM_DUMMY_ITEM);
+
+		if (item == NULL) return false;
 	}
 
-	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
-		goto Quit;
+	// retrieve the category and item index for the given inventory item
+	int itemIdx = -1;
+	int category = m_Inventory->GetCategoryItemIndex(item, &itemIdx);
 
-	// Only change the group and item indices, if they are valid.
-	// Otherwise we might have an invalid index (-1).
-	m_CurrentCategory = group;
-	m_CurrentItem = item;
+	if (category == -1) return false; // category not found
 
-	rc = true;
+	// Only change the group and item indices if they are valid.
+	m_CurrentCategory = category;
+	m_CurrentItem = itemIdx;
 
-Quit:
-	return rc;
+	return true;
 }
 
-bool CInventoryCursor::SetCurrentItem(const idStr& Item)
+bool CInventoryCursor::SetCurrentItem(const idStr& itemName)
 {
-	bool rc = false;
-	int group, item;
+	if (itemName.IsEmpty()) return false;
 
-	if (Item.IsEmpty())
-		goto Quit;
+	int itemIdx = -1;
+	int category = m_Inventory->GetCategoryItemIndex(itemName, &itemIdx);
 
-	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
-		goto Quit;
+	if (category == -1) return false; // category not found
 
-	// Only change the group and item indizies, if they are valid.
-	// Otherwise we might have an invalid index (-1).
-	m_CurrentCategory = group;
-	m_CurrentItem = item;
+	// Only change the group and item indices if they are valid.
+	m_CurrentCategory = category;
+	m_CurrentItem = itemIdx;
 
-	rc = true;
-
-Quit:
-	return rc;
+	return true;
 }
 
-CInventoryItem *CInventoryCursor::GetNextItem()
+CInventoryItem* CInventoryCursor::GetNextItem()
 {
-	CInventoryItem *rc = NULL;
-
 	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+
 	if (curCategory == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Current Category doesn't exist anymore!\r", m_CurrentCategory);
 		return NULL;
 	}
 
+	// Advance our cursor
 	m_CurrentItem++;
+
 	// Have we reached the end of the current category?
 	if (m_CurrentItem >= curCategory->size())
 	{
+		// Advance to the next allowed category
 		curCategory = GetNextCategory();
 
-		if (m_WrapAround == true) 
+		if (m_WrapAround) 
 		{
 			m_CurrentItem = 0;
 		}
-		else if (curCategory != NULL)
-		{
-			m_CurrentItem = curCategory->size() - 1;
-			goto Quit;
-		}
 		else
 		{
-			ClearItem();
-			goto Quit;			
+			m_CurrentItem = curCategory->size() - 1;
 		}
 	}
 
-	rc = curCategory->GetItem(m_CurrentItem);
-
-Quit:
-	return rc;
+	return curCategory->GetItem(m_CurrentItem);
 }
 
 CInventoryItem *CInventoryCursor::GetPrevItem()
 {
-	CInventoryItem *rc = NULL;
-
 	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+
 	if (curCategory == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Current Category doesn't exist anymore!\r", m_CurrentCategory);
 		return NULL;
 	}
 
+	// Move our cursor backwards
 	m_CurrentItem--;
+
 	if (m_CurrentItem < 0)
 	{
 		curCategory = GetPrevCategory();
 
-		if (m_WrapAround == true)
+		if (m_WrapAround)
+		{
 			m_CurrentItem = curCategory->size() - 1;
+		}
 		else 
 		{
+			// Not allowed to wrap around.
 			m_CurrentItem = 0;
-			goto Quit;
+			return NULL;
 		}
 	}
 
-	rc = curCategory->GetItem(m_CurrentItem);
-
-Quit:
-	return rc;
+	return curCategory->GetItem(m_CurrentItem);
 }
 
-CInventoryCategory *CInventoryCursor::GetNextCategory()
+CInventoryCategory* CInventoryCursor::GetNextCategory()
 {
-	CInventoryCategory *rc = NULL;
+	if (m_CategoryLock) 
+	{
+		// Category lock is switched on, we don't allow to switch to another category.
+		return m_Inventory->GetCategory(m_CurrentCategory);
+	}
 
-	// If category lock is switched on, we don't allow to switch 
-	// to another category.
-	if(m_CategoryLock == true)
-		return NULL;
-
-	int n = m_Inventory->GetNumCategories();
 	int cnt = 0;
 
-	n--;
-	if(n < 0)
-		n = 0;
+	CInventoryCategory* rc = NULL;
 
-	while(1)
+	int n = m_Inventory->GetNumCategories() - 1;
+
+	if (n < 0) n = 0;
+
+	while (true)
 	{
 		m_CurrentCategory++;
 
@@ -297,79 +274,49 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory()
 	return rc;
 }
 
-void CInventoryCursor::SetCurrentCategory(int Index)
+void CInventoryCursor::SetCurrentCategory(int index)
 {
-	if(Index < 0)
-		Index = 0;
-	
-	if(Index >= m_Inventory->GetNumCategories())
-	{
-		Index = m_Inventory->GetNumCategories();
-		if(Index != 0)
-			Index--;
-	}
-	m_CurrentCategory = Index;
+	// Ensure the index is within bounds
+	index = idMath::ClampInt(0, m_Inventory->GetNumCategories() - 1, index);
+
+	m_CurrentCategory = index;
 }
 
-void CInventoryCursor::SetCategoryIgnored(const CInventoryCategory *c)
+void CInventoryCursor::AddCategoryIgnored(const CInventoryCategory* category)
 {
-	if(c != NULL)
+	if (category != NULL)
 	{
-		m_CategoryIgnore.AddUnique(m_Inventory->GetCategoryIndex(c));
+		m_CategoryIgnore.AddUnique( m_Inventory->GetCategoryIndex(category) );
 	}
 }
 
-void CInventoryCursor::SetCategoryIgnored(const idStr& categoryName)
+void CInventoryCursor::AddCategoryIgnored(const idStr& categoryName)
 {
-	if (categoryName.IsEmpty())
-		return;
+	if (categoryName.IsEmpty()) return;
 
-	CInventoryCategory *c = m_Inventory->GetCategory(categoryName);
-	SetCategoryIgnored(c);
+	// Resolve the name and pass the call to the overload
+	AddCategoryIgnored( m_Inventory->GetCategory(categoryName) );
 }
 
-void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategory *c)
+void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategory* category)
 {
-	int i;
-
-	for(i = 0; i < m_CategoryIgnore.Num(); i++)
-	{
-		if(m_CategoryIgnore[i] == m_Inventory->GetCategoryIndex(c))
-		{
-			m_CategoryIgnore.RemoveIndex(i);
-			goto Quit;
-		}
-	}
-
-Quit:
-	return;
+	int categoryIndex = m_Inventory->GetCategoryIndex(category);
+	m_CategoryIgnore.Remove(categoryIndex);
 }
 
 void CInventoryCursor::RemoveCategoryIgnored(const idStr& categoryName)
 {
-	if (categoryName.IsEmpty())
-		return;
+	if (categoryName.IsEmpty()) return;
 
-	CInventoryCategory *c = m_Inventory->GetCategory(categoryName);
-	RemoveCategoryIgnored(c);
+	// Resolve the name and pass the call to the overload
+	RemoveCategoryIgnored( m_Inventory->GetCategory(categoryName) );
 }
 
-bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory *c) const
+bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory* category) const
 {
-	bool rc = false;
-	int i;
+	int categoryIndex = m_Inventory->GetCategoryIndex(category);
 
-	for(i = 0; i < m_CategoryIgnore.Num(); i++)
-	{
-		if(m_CategoryIgnore[i] == m_Inventory->GetCategoryIndex(c))
-		{
-			rc = true;
-			goto Quit;
-		}
-	}
-
-Quit:
-	return rc;
+	return (m_CategoryIgnore.FindIndex(categoryIndex) != -1);
 }
 
 CInventoryCategory* CInventoryCursor::GetCurrentCategory()

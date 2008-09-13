@@ -20,19 +20,18 @@ protected:
 	 * greebo: Construct this cursor with a pointer to the parent inventory and its ID.
 	 */
 	CInventoryCursor(CInventory* inventory, int id);
-	~CInventoryCursor();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
 public:
-	inline CInventory		*Inventory() { return m_Inventory; };
+	inline CInventory*		Inventory() { return m_Inventory; };
 	/**
 	 * Retrieve the currently selected item.
 	 */
-	CInventoryItem			*GetCurrentItem();
-	bool					SetCurrentItem(CInventoryItem *Item);
-	bool					SetCurrentItem(const idStr& name);
+	CInventoryItem*			GetCurrentItem();
+	bool					SetCurrentItem(CInventoryItem* item);
+	bool					SetCurrentItem(const idStr& itemName);
 
 	/**
 	 * greebo: Clears the cursor. After calling this, the cursor is pointing
@@ -44,16 +43,16 @@ public:
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of CategoryLock and WrapAround.
 	 */
-	CInventoryItem			*GetNextItem();
-	CInventoryItem			*GetPrevItem();
+	CInventoryItem*			GetNextItem();
+	CInventoryItem*			GetPrevItem();
 
-	CInventoryCategory		*GetNextCategory();
-	CInventoryCategory		*GetPrevCategory();
+	CInventoryCategory*		GetNextCategory();
+	CInventoryCategory*		GetPrevCategory();
 	
 	/**
 	 * Set the current group index.
 	 */
-	void				SetCurrentCategory(int Index);
+	void					SetCurrentCategory(int index);
 
 	/**
 	 * greebo: Returns the category of the focused item
@@ -66,7 +65,7 @@ public:
 	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care whether this is a valid index or not.
 	 */
-	inline void				SetCurrentItem(int Index) { m_CurrentItem = Index; }
+	inline void				SetCurrentItem(int index) { m_CurrentItem = index; }
 
 	/**
 	 * Returns the current index within the category of the item pointed at.
@@ -76,19 +75,22 @@ public:
 	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
-	void					RemoveCategoryIgnored(const CInventoryCategory *);
-	void					RemoveCategoryIgnored(const idStr& categoryName);
+	void						RemoveCategoryIgnored(const CInventoryCategory* category);
+	void						RemoveCategoryIgnored(const idStr& categoryName);
 
-	void					SetCategoryIgnored(const CInventoryCategory *);
-	void					SetCategoryIgnored(const idStr& categoryName);
+	void						AddCategoryIgnored(const CInventoryCategory* category);
+	void						AddCategoryIgnored(const idStr& categoryName);
 
-	int						GetId();
-
-protected:
-	bool					IsCategoryIgnored(const CInventoryCategory *) const;
+	// Returns the unique ID of this cursor
+	int							GetId();
 
 protected:
-	CInventory				*m_Inventory;
+	bool						IsCategoryIgnored(const CInventoryCategory* category) const;
+
+protected:
+
+	// The inventory we're associated with
+	CInventory* m_Inventory;
 
 	/**
 	 * List of category indices that should be ignored for this cursor.
@@ -103,7 +105,7 @@ protected:
 	 * the player has to use the next/prev group keys to switch to
 	 * a different group.
 	 */
-	bool					m_CategoryLock;
+	bool m_CategoryLock;
 
 	/**
 	 * If set to true the inventory will start from the first/last item
@@ -117,20 +119,21 @@ protected:
 	 * If WrapAround is false and the last/first item is reached, Next/PrevItem
 	 * will always return the same item on each call;
 	 */
-	bool					m_WrapAround;
+	bool m_WrapAround;
 
 	/**
 	 * CurrentCategory is the index of the current group for using Next/PrevItem
 	 */
-	int						m_CurrentCategory;
+	int m_CurrentCategory;
 
 	/**
 	 * CurrentItem is the index of the current item in the current group for
 	 * using Next/PrevItem.
 	 */
-	int						m_CurrentItem;
+	int m_CurrentItem;
 
-	int						m_CursorId;
+	// The unique ID of this cursor
+	int m_CursorId;
 };
 
 #endif /* __DARKMOD_INVENTORYCURSOR_H__ */
