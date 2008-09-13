@@ -52,13 +52,8 @@ CInventory::~CInventory()
 void CInventory::Clear()
 {
 	m_Owner = NULL;
-
-	for (int i = 0; i < m_Category.Num(); i++)
-	{
-		delete m_Category[i];
-	}
-
-	m_Category.Clear();
+	// Delete and clear the pointers in the list
+	m_Category.DeleteContents(true);
 }
 
 int	CInventory::GetNumCategories() const
@@ -75,7 +70,9 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	Goods = 0;
 
 	for(i = 0; i < m_Category.Num(); i++)
+	{
 		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
+	}
 
 	Gold += m_Gold;
 	Jewelry += m_Jewelry;
@@ -612,16 +609,12 @@ void CInventory::Restore(idRestoreGame *savefile)
 	}
 }
 
-void CInventory::RemoveCategory(CInventoryCategory* category) {
-	// Cycle through the categories and remove the specified category.
-	for (int i = 0; i < m_Category.Num(); i++)
+void CInventory::RemoveCategory(CInventoryCategory* category)
+{
+	if (m_Category.Remove(category))
 	{
-		if (m_Category[i] == category)
-		{
-			m_Category.RemoveIndex(i);
-			delete category;
-			break;
-		}
+		// List item removal successful, destroy the object
+		delete category;
 	}
 }
 
@@ -663,7 +656,7 @@ CInventoryItem* CInventory::ValidateAmmo(idEntity* ent)
 		}
 		
 		// Look for the weapon with the given name
-		for (int i = 0; i < weaponCategory->size(); i++)
+		for (int i = 0; i < weaponCategory->GetNumItems(); i++)
 		{
 			CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(weaponCategory->GetItem(i));
 

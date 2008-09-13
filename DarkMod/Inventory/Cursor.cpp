@@ -130,7 +130,7 @@ CInventoryItem* CInventoryCursor::GetNextItem()
 	m_CurrentItem++;
 
 	// Have we reached the end of the current category?
-	if (m_CurrentItem >= curCategory->size())
+	if (m_CurrentItem >= curCategory->GetNumItems())
 	{
 		// Advance to the next allowed category
 		curCategory = GetNextCategory();
@@ -141,7 +141,7 @@ CInventoryItem* CInventoryCursor::GetNextItem()
 		}
 		else
 		{
-			m_CurrentItem = curCategory->size() - 1;
+			m_CurrentItem = curCategory->GetNumItems() - 1;
 		}
 	}
 
@@ -167,7 +167,7 @@ CInventoryItem *CInventoryCursor::GetPrevItem()
 
 		if (m_WrapAround)
 		{
-			m_CurrentItem = curCategory->size() - 1;
+			m_CurrentItem = curCategory->GetNumItems() - 1;
 		}
 		else 
 		{

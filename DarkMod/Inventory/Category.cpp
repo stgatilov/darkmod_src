@@ -19,23 +19,20 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory.h"
 
 // Constructor
-CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name)
+CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name) :
+	m_Name(name)
 {
 	m_Owner = (inventory != NULL) ? inventory->GetOwner() : NULL;
-	m_Name = name;
 }
 
 // Destructor
 CInventoryCategory::~CInventoryCategory() 
 {
-	int i, n;
-
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
-		delete m_Item[i];
+	m_Item.DeleteContents(true);
 }
 
-bool CInventoryCategory::isEmpty() const {
+bool CInventoryCategory::IsEmpty() const
+{
 	return (m_Item.Num() == 0);
 }
 
@@ -94,167 +91,119 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 
 void CInventoryCategory::SetOwner(idEntity *owner)
 {
-	int i, n;
-
 	m_Owner = owner; 
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
+
+	for (int i = 0; i < m_Item.Num(); i++)
+	{
 		m_Item[i]->m_Owner = owner;
+	}
 }
 
 void CInventoryCategory::PutItem(CInventoryItem *item)
 {
-	if(item == NULL)
-		goto Quit;
+	if (item == NULL) return;
 
 	item->m_Owner = m_Owner;
 	item->m_Category = this;
 	item->m_Inventory = m_Inventory;
 
 	m_Item.AddUnique(item);
-
-Quit:
-	return;
 }
 
-CInventoryItem *CInventoryCategory::GetItem(int i)
+CInventoryItem* CInventoryCategory::GetItem(int index)
 {
-	CInventoryItem *rc = NULL;
-
-	if(i >= 0 && i < m_Item.Num())
-		rc = m_Item[i];
-
-	return rc;
+	return (index >= 0 && index < m_Item.Num()) ? m_Item[index] : NULL;
 }
 
-CInventoryItem *CInventoryCategory::GetItem(const idStr& Name)
+CInventoryItem* CInventoryCategory::GetItem(const idStr& itemName)
 {
-	CInventoryItem *rc = NULL;
-	CInventoryItem *e;
-	int i, n;
+	if (itemName.IsEmpty()) return NULL;
 
-	if (Name.IsEmpty())
-		goto Quit;
-
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		e = m_Item[i];
-		if(Name == e->m_Name)
+		CInventoryItem* item = m_Item[i];
+
+		if (itemName == item->m_Name)
 		{
-			rc = e;
-			goto Quit;
+			return item;
 		}
 	}
 
-Quit:
-	return rc;
+	return NULL;
 }
 
-CInventoryItem *CInventoryCategory::GetItemById(const idStr& id)
+CInventoryItem* CInventoryCategory::GetItemById(const idStr& id)
 {
-	CInventoryItem *rc = NULL;
-	CInventoryItem *e;
-	int i, n;
+	if (id.IsEmpty()) return NULL;
 
-	if(id.IsEmpty())
-		goto Quit;
-
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		e = m_Item[i];
-		if(id == e->m_ItemId)
+		CInventoryItem* item = m_Item[i];
+
+		if (id == item->m_ItemId)
 		{
-			rc = e;
-			goto Quit;
+			return item;
 		}
 	}
 
-Quit:
-	return rc;
+	return NULL;
 }
 
-int CInventoryCategory::GetItemIndex(const idStr &Name)
+int CInventoryCategory::GetItemIndex(const idStr& itemName)
 {
-	int rc = -1;
-	CInventoryItem *e;
-	int i, n;
-
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		e = m_Item[i];
-		if(Name == e->m_Name)
+		if (itemName == m_Item[i]->m_Name)
 		{
-			rc = i;
-			goto Quit;
+			return i;
 		}
 	}
 
-Quit:
-	return rc;
+	return -1;
 }
 
-int CInventoryCategory::GetItemIndex(CInventoryItem *it)
+int CInventoryCategory::GetItemIndex(CInventoryItem* item)
 {
-	int rc = -1;
-	int i, n;
-
-	n = m_Item.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(m_Item[i] == it)
-		{
-			rc = i;
-			goto Quit;
-		}
-	}
-
-Quit:
-	return rc;
+	return m_Item.FindIndex(item);
 }
 
-int CInventoryCategory::GetLoot(int &Gold, int &Jewelry, int &Goods)
+int CInventoryCategory::GetLoot(int& gold, int& jewelry, int& goods)
 {
-	int i;
-	CInventoryItem *it;
-
-	for(i = 0; i < m_Item.Num(); i++)
+	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		it = m_Item[i];
+		CInventoryItem* item = m_Item[i];
 
-		switch(it->GetLootType())
+		switch (item->GetLootType())
 		{
 			case CInventoryItem::LT_JEWELS:
-				Jewelry += it->GetValue();
+				jewelry += item->GetValue();
 			break;
 
 			case CInventoryItem::LT_GOLD:
-				Gold += it->GetValue();
+				gold += item->GetValue();
 			break;
 
 			case CInventoryItem::LT_GOODS:
-				Goods += it->GetValue();
+				goods += item->GetValue();
 			break;
 			
 			default: break;
 		}
 	}
 
-	return Gold + Jewelry + Goods;
+	return gold + jewelry + goods;
 }
 
-void CInventoryCategory::removeItem(CInventoryItem* item) {
-	for (int i = 0; i < m_Item.Num(); i++) {
-		if (m_Item[i] == item) {
-			m_Item.RemoveIndex(i);
-			delete item;
-			break;
-		}
+void CInventoryCategory::RemoveItem(CInventoryItem* item)
+{
+	if (m_Item.Remove(item))
+	{
+		// Deletion successful, destroy the item
+		delete item;
 	}
 }
 
-int CInventoryCategory::size() const {
+int CInventoryCategory::GetNumItems() const
+{
 	return m_Item.Num();
 }

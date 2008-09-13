@@ -1003,7 +1003,7 @@ void idPlayer::addWeaponsToInventory() {
 		}
 	}
 
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->size());
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->GetNumItems());
 }
 
 void idPlayer::NextInventoryMap()
@@ -1067,7 +1067,7 @@ void idPlayer::SetupInventory()
 		idStr weaponName = shopItem->GetID();
 		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0) {
 			weaponName.Strip("weapon_");
-			for (int i = 0; i < category->size(); i++) {
+			for (int i = 0; i < category->GetNumItems(); i++) {
 				CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
 				if (item->getWeaponName() == weaponName) {
 					item->SetPersistent(shopItem->GetPersistent());
@@ -2965,7 +2965,7 @@ void idPlayer::NextWeapon( void ) {
 		return;
 	}
 
-	if (m_WeaponCursor->GetCurrentCategory()->size() == 0) {
+	if (m_WeaponCursor->GetCurrentCategory()->GetNumItems() == 0) {
 		return; // no weapons...
 	}
 	
@@ -3007,7 +3007,7 @@ void idPlayer::PrevWeapon( void ) {
 		return;
 	}
 
-	if (m_WeaponCursor->GetCurrentCategory()->size() == 0) {
+	if (m_WeaponCursor->GetCurrentCategory()->GetNumItems() == 0) {
 		return; // no weapons...
 	}
 
@@ -3078,7 +3078,7 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	}
 
 	// Cycle through the weapons and find the one with the given weaponIndex
-	for (int i = 0; i < category->size(); i++) {
+	for (int i = 0; i < category->GetNumItems(); i++) {
 		// Try to retrieve a weapon item from the given category
 		CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
 		
