@@ -890,9 +890,10 @@ public:
 	void ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount);
 
 	/**
-	 * Script event: Chagnes the amount of the given loot type in the inventory of this entity.
+	 * Changes the amount of the given loot type in the inventory of this entity.
+	 * @returns: the new amount of the affected loot type.
 	 */
-	void ChangeLootAmount(int lootType, int amount);
+	int ChangeLootAmount(int lootType, int amount);
 
 	/**
 	 * Script event: Changes the lightgem modifier value of the given item <name> in <category> to <icon>
@@ -1266,6 +1267,10 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
 	void					Event_GetInventory();
+
+	void					Event_GetLootAmount(int lootType);
+	void					Event_ChangeLootAmount(int lootType, int amount);
+
 	void					Event_ReplaceItem(idEntity *old_item, idEntity *new_item);
 	void					Event_GetNextItem(int WrapAround);
 	void					Event_GetPrevItem(int WrapAround);
@@ -1277,7 +1282,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_AddItem(idEntity *item);
 	void					Event_GetGroupItem(const char *name, const char *group);
 	void					Event_GetItem(const char *name);
-	void					Event_GetLoot(int LootType);
+	
 	virtual void			inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 
 	void					StimAdd(int Type, float Radius);

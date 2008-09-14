@@ -144,6 +144,9 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 //===============================================================
 //                   TDM Inventory
 //===============================================================
+const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
+const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+
 const idEventDef EV_ReplaceItem("replaceItem", "ee", 'd');					// olditem, newitem -> 1 if succeeded
 const idEventDef EV_GetNextItem("getNextItem", "d", 'e');
 const idEventDef EV_GetPrevItem("getPrevItem", "d", 'e');
@@ -155,10 +158,10 @@ const idEventDef EV_GetCursorItem("getCursorItem", NULL, 'e');
 const idEventDef EV_AddItem("addItem", "e");								// entityitem
 const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
 const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
-const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current value for the given group
+
 const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
-const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+
 const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
 const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss"); // Changes the inventory icon of the given item.
 
@@ -319,6 +322,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
 
+	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
+	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
+
 	EVENT( EV_ReplaceItem,			idEntity::Event_ReplaceItem )
 	EVENT( EV_GetNextItem,			idEntity::Event_GetNextItem )
 	EVENT( EV_GetPrevItem,			idEntity::Event_GetPrevItem )
@@ -330,10 +336,10 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_AddItem,				idEntity::Event_AddItem )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
-	EVENT( EV_GetLoot,				idEntity::Event_GetLoot )
+	
 	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
-	EVENT( EV_ChangeLootAmount,		idEntity::ChangeLootAmount )
+	
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
 	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
 	EVENT( EV_InitInventory,		idEntity::Event_InitInventory )
@@ -8658,33 +8664,36 @@ void idEntity::Event_GetItem(const char *name)
 {
 }
 
-void idEntity::Event_GetLoot(int LootType)
+void idEntity::Event_GetLootAmount(int lootType)
 {
-	int Gold, Jewelry, Goods, Total;
-	int rc = 0;
+	int gold, jewelry, goods;
+	int total = Inventory()->GetLoot(gold, jewelry, goods);
 
-	Total = Inventory()->GetLoot(Gold, Jewelry, Goods);
-
-	switch(LootType)
+	switch (lootType)
 	{
 		case CInventoryItem::LT_GOLD:
-			rc = Gold;
+			idThread::ReturnInt(gold);
 		break;
 
 		case CInventoryItem::LT_GOODS:
-			rc = Goods;
+			idThread::ReturnInt(goods);
 		break;
 
 		case CInventoryItem::LT_JEWELS:
-			rc = Jewelry;
+			idThread::ReturnInt(jewelry);
 		break;
 
 		default:
-			rc = Total;
+			idThread::ReturnInt(total);
 		break;
 	}
 
-	idThread::ReturnInt(rc);
+	idThread::ReturnInt(0);
+}
+
+void idEntity::Event_ChangeLootAmount(int lootType, int amount)
+{
+	idThread::ReturnInt( ChangeLootAmount(lootType, amount) );
 }
 
 void idEntity::Event_InitInventory(int callCount)
@@ -8754,36 +8763,37 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 	return rc;
 }
 
-void idEntity::ChangeLootAmount(int lootType, int amount)
+int idEntity::ChangeLootAmount(int lootType, int amount)
 {
-	int Gold, Jewelry, Goods, GroupTotal = 0, Total;
+	int groupTotal = 0;
 	int rc = 0;
-	idStr Groupname;
+	idStr groupname;
 
-	Total = Inventory()->GetLoot(Gold, Jewelry, Goods);
+	int gold, jewelry, goods;
+	int total = Inventory()->GetLoot(gold, jewelry, goods);
 	bool bGained = (amount >= 0);
 
 	switch(lootType)
 	{
 		case CInventoryItem::LT_GOLD:
-			Gold += amount;
-			GroupTotal = Gold;
-			Groupname = "loot_gold";
-			rc = Gold;
+			gold += amount;
+			groupTotal = gold;
+			groupname = "loot_gold";
+			rc = gold;
 		break;
 
 		case CInventoryItem::LT_GOODS:
-			Goods += amount;
-			GroupTotal = Goods;
-			Groupname = "loot_goods";
-			rc = Goods;
+			goods += amount;
+			groupTotal = goods;
+			groupname = "loot_goods";
+			rc = goods;
 		break;
 
 		case CInventoryItem::LT_JEWELS:
-			Jewelry += amount;
-			GroupTotal = Jewelry;
-			Groupname = "loot_jewels";
-			rc = Jewelry;
+			jewelry += amount;
+			groupTotal = jewelry;
+			groupname = "loot_jewels";
+			rc = jewelry;
 		break;
 
 		default:
@@ -8792,15 +8802,15 @@ void idEntity::ChangeLootAmount(int lootType, int amount)
 	}
 
 	// Set the new values
-	Inventory()->SetLoot(Gold, Jewelry, Goods);
+	Inventory()->SetLoot(gold, jewelry, goods);
 
 	if( rc != 0 )
-	{	
-		gameLocal.m_MissionData->InventoryCallback( NULL, Groupname, GroupTotal, Total, bGained );  
+	{
+		gameLocal.m_MissionData->InventoryCallback( NULL, groupname, groupTotal, total, bGained );  
 		gameLocal.m_MissionData->ChangeFoundLoot( amount );
 	}
 
-	idThread::ReturnInt(rc);
+	return rc;
 }
 
 void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value)
