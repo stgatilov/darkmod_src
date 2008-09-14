@@ -7341,7 +7341,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	* of a sound for a short instant.  An AlertLevel of 10 is seeing/hearing twice
 	* as much, 20 is four times as much, etc.
 	**/
-	float psychLoud = 1 + (propParms->loudness - m_AudThreshold);
+
+	float psychLoud = 1 + (propParms->loudness - m_AudThreshold) * cv_ai_sndalertfactor.GetFloat();
+	
+	if (psychLoud > cv_ai_sndalertmax.GetFloat())
+	{
+		psychLoud = cv_ai_sndalertmax.GetFloat();
+	}
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	//	alert to overwrite another alert this frame
@@ -7367,6 +7373,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		psychLoud *= GetAcuity("aud");
 
 		AlertAI( "aud", psychLoud );
+		
+		if( cv_spr_show.GetBool() )
+		{
+			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 
+				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
+				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
+		}
+
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
 
 		// greebo: Notify the currently active state

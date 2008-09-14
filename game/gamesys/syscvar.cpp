@@ -47,6 +47,9 @@ idCVar g_version(					"g_version",				gameVersion.string,	CVAR_GAME | CVAR_ROM, 
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/
 idCVar cv_ai_sndvol(				"tdm_ai_sndvol",			"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifier to the volume of suspcious sounds that AI's hear.  Defaults to 0.0 dB" );
+idCVar cv_ai_sndalertfactor(		"tdm_ai_sndalertfactor",	"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,  "Sound alert increase is multiplied by this factor." );
+idCVar cv_ai_sndalertmax(			"tdm_ai_sndalertmax",		"9",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,  "A single alert increase produced by a sound can not be larger than this." );
+
 idCVar cv_ai_bark_show(				"tdm_ai_showbark",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Displays the current sound when the AI starts barking" );
 idCVar cv_ai_sight_prob(			"tdm_ai_sight_prob",		"0.7",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the AI's chance of seeing you.  Small changes may have a large effect." );
 idCVar cv_ai_sight_mag(				"tdm_ai_sight_mag",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the amount of visual alert that gets added on when the sight probability check succeeds and the AI do see you (default 1.0)." );
@@ -78,8 +81,9 @@ idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARC
 
 idCVar cv_sndprop_disable(			"tdm_sndprop_disable",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation will not be calculated." );
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
-idCVar cv_spr_show(					"tdm_showsprop",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines." );
+idCVar cv_spr_show(					"tdm_showsprop",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines. The volume of the sound heard by the AI and the alert increase will be displayed." );
 idCVar cv_spr_radius_show(			"tdm_showsprop_radius",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound ranges are drawn." );
+
 idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, knockout zones will be shown for debugging." );
 idCVar cv_ai_search_show (			"tdm_ai_search_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing search activity targets will be shown. If < 1.0 then the graphics will not be drawn. For debugging.");
 idCVar cv_ai_visdist_show (			"tdm_ai_visdist_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing vision distance test results.  Green arrows indicate within range, Red indicate out of range, purple indicate gap between range and target. For debugging.");
