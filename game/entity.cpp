@@ -155,11 +155,11 @@ const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes
 const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
 const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss");					// Changes the inventory icon of the given item.
 
-const idEventDef EV_SetInvCursorCategory("setInvCursorCategory", "s", 'd');	// category name -> 1 = success
-const idEventDef EV_SetInvCursorItem("setInvCursorItem", "s", 'e');				// itemname -> entity
-const idEventDef EV_GetInvCursorCategory("getInvCursorCategory", NULL, 's');
-const idEventDef EV_GetInvCursorItem("getInvCursorItem", NULL, 'e');
-const idEventDef EV_GetInvCursorItemName("getInvCursorItemName", NULL, 's');
+const idEventDef EV_SetCurInvCategory("setCurInvCategory", "s", 'd');	// category name -> 1 = success
+const idEventDef EV_SetCurInvItem("setCurInvItem", "s", 'e');				// itemname -> entity
+const idEventDef EV_GetCurInvCategory("getCurInvCategory", NULL, 's');
+const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", NULL, 'e');
+const idEventDef EV_GetCurInvItemName("getCurInvItemName", NULL, 's');
 
 const idEventDef EV_AddItem("addItem", "e");								// entityitem
 const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
@@ -328,11 +328,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
 	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
 	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
-	EVENT( EV_SetInvCursorCategory,	idEntity::Event_SetInvCursorCategory )
-	EVENT( EV_SetInvCursorItem,		idEntity::Event_SetInvCursorItem )
-	EVENT( EV_GetInvCursorCategory,	idEntity::Event_GetInvCursorCategory )
-	EVENT( EV_GetInvCursorItem,		idEntity::Event_GetInvCursorItem )
-	EVENT( EV_GetInvCursorItemName,	idEntity::Event_GetInvCursorItemName )
+
+	EVENT( EV_SetCurInvCategory,	idEntity::Event_SetCurInvCategory )
+	EVENT( EV_SetCurInvItem,		idEntity::Event_SetCurInvItem )
+	EVENT( EV_GetCurInvCategory,	idEntity::Event_GetCurInvCategory )
+	EVENT( EV_GetCurInvItemEntity,	idEntity::Event_GetCurInvItemEntity )
+	EVENT( EV_GetCurInvItemName,	idEntity::Event_GetCurInvItemName )
 
 	EVENT( EV_AddItem,				idEntity::Event_AddItem )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
@@ -8622,31 +8623,31 @@ void idEntity::Event_GetPrevInvItem()
 	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
 }
 
-void idEntity::Event_SetInvCursorCategory(const char* categoryName)
+void idEntity::Event_SetCurInvCategory(const char* categoryName)
 {
 	InventoryCursor()->SetCurrentCategory(categoryName);
 
 	idThread::ReturnInt( InventoryCursor()->GetCurrentCategory()->GetName() == categoryName );
 }
 
-void idEntity::Event_SetInvCursorItem(const char* itemName)
+void idEntity::Event_SetCurInvItem(const char* itemName)
 {
 	InventoryCursor()->SetCurrentItem(itemName);
 
 	idThread::ReturnInt( InventoryCursor()->GetCurrentItem()->GetName() == itemName );
 }
 
-void idEntity::Event_GetInvCursorCategory()
+void idEntity::Event_GetCurInvCategory()
 {
 	idThread::ReturnString( InventoryCursor()->GetCurrentCategory()->GetName() );
 }
 
-void idEntity::Event_GetInvCursorItem()
+void idEntity::Event_GetCurInvItemEntity()
 {
 	idThread::ReturnEntity( InventoryCursor()->GetCurrentItem()->GetItemEntity() );
 }
 
-void idEntity::Event_GetInvCursorItemName()
+void idEntity::Event_GetCurInvItemName()
 {
 	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
 }
