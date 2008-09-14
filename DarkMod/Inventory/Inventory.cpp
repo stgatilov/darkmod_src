@@ -193,7 +193,7 @@ CInventoryCategoryPtr CInventory::GetCategory(const idStr& categoryName, int* in
 	// Traverse the categories and find the one matching <CategoryName>
 	for (int i = 0; i < m_Category.Num(); i++)
 	{
-		if (m_Category[i]->m_Name == categoryName)
+		if (m_Category[i]->GetName() == categoryName)
 		{
 			if (index != NULL)
 			{

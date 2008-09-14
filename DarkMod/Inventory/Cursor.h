@@ -13,9 +13,7 @@
 
 class CInventoryCursor
 {
-	friend class CInventory;
-
-protected:
+public:
 	/**
 	 * greebo: Construct this cursor with a pointer to the parent inventory and its ID.
 	 */
@@ -24,7 +22,6 @@ protected:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-public:
 	inline CInventory*		Inventory() { return m_Inventory; };
 	/**
 	 * Retrieve the currently selected item.
