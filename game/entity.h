@@ -1294,10 +1294,6 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetCurInvItemEntity();
 	void					Event_GetCurInvItemName();
 
-	void					Event_AddItem(idEntity *item);
-	void					Event_GetGroupItem(const char *name, const char *group);
-	void					Event_GetItem(const char *name);
-	
 	virtual void			inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 
 	void					StimAdd(int Type, float Radius);

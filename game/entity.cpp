@@ -161,10 +161,6 @@ const idEventDef EV_GetCurInvCategory("getCurInvCategory", NULL, 's');
 const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", NULL, 'e');
 const idEventDef EV_GetCurInvItemName("getCurInvItemName", NULL, 's');
 
-const idEventDef EV_AddItem("addItem", "e");								// entityitem
-const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
-const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
-
 // greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
 const idEventDef EV_InitInventory("initInventory", "d");
 
@@ -328,19 +324,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
 	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
 	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
-
 	EVENT( EV_SetCurInvCategory,	idEntity::Event_SetCurInvCategory )
 	EVENT( EV_SetCurInvItem,		idEntity::Event_SetCurInvItem )
 	EVENT( EV_GetCurInvCategory,	idEntity::Event_GetCurInvCategory )
 	EVENT( EV_GetCurInvItemEntity,	idEntity::Event_GetCurInvItemEntity )
 	EVENT( EV_GetCurInvItemName,	idEntity::Event_GetCurInvItemName )
-
-	EVENT( EV_AddItem,				idEntity::Event_AddItem )
-	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
-	EVENT( EV_GetItem,				idEntity::Event_GetItem )
-	
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
-	
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
 	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
 	EVENT( EV_InitInventory,		idEntity::Event_InitInventory )
@@ -8650,22 +8639,6 @@ void idEntity::Event_GetCurInvItemEntity()
 void idEntity::Event_GetCurInvItemName()
 {
 	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
-}
-
-void idEntity::Event_AddItem(idEntity *item)
-{
-	if (item == NULL || name == NULL)
-		return;
-
-	Inventory()->PutItem(item, this);
-}
-
-void idEntity::Event_GetGroupItem(const char *name, const char *group)
-{
-}
-
-void idEntity::Event_GetItem(const char *name)
-{
 }
 
 void idEntity::Event_InitInventory(int callCount)
