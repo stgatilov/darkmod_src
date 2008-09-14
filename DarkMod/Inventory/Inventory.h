@@ -80,7 +80,7 @@ public:
 	int						GetLoot(int& gold, int& jewelry, int& goods);
 	void					SetLoot(int gold, int jewelry, int goods);
 
-	inline idEntity	*		GetOwner() { return m_Owner.GetEntity(); };
+	idEntity*				GetOwner() { return m_Owner.GetEntity(); };
 	void					SetOwner(idEntity* owner);
 
 	/**

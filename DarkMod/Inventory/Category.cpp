@@ -84,7 +84,6 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 
 			// Set the pointers of the item class directly
 			item->m_Category = this;
-			item->m_Inventory = m_Inventory;
 		}
 	}
 }
@@ -105,7 +104,6 @@ void CInventoryCategory::PutItem(CInventoryItemPtr item)
 
 	item->m_Owner = m_Owner;
 	item->m_Category = this;
-	item->m_Inventory = m_Inventory;
 
 	m_Item.AddUnique(item);
 }

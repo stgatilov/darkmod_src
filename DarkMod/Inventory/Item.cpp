@@ -21,7 +21,6 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 {
 	m_Owner = owner;
 	m_Item = NULL;
-	m_Inventory = NULL;
 	m_Category = NULL;
 	m_Type = IT_ITEM;
 	m_LootType = LT_NONE;
@@ -42,7 +41,6 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	// Don't allow NULL pointers
 	assert(owner && itemEntity);
 
-	m_Inventory = NULL;
 	m_Category = NULL;
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
@@ -51,7 +49,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Item = itemEntity;
 	
 	// Determine and set the loot type
-	m_LootType = getLootTypeFromSpawnargs(itemEntity->spawnArgs);
+	m_LootType = GetLootTypeFromSpawnargs(itemEntity->spawnArgs);
 
 	// Read the spawnargs into the member variables
 	m_Name = itemEntity->spawnArgs.GetString("inv_name", "");
@@ -239,7 +237,7 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 	}
 }
 
-CInventoryItem::LootType CInventoryItem::getLootTypeFromSpawnargs(const idDict& spawnargs) {
+CInventoryItem::LootType CInventoryItem::GetLootTypeFromSpawnargs(const idDict& spawnargs) {
 	// Determine the loot type
 	int lootTypeInt;
 	LootType returnValue = CInventoryItem::LT_NONE;

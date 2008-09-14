@@ -64,15 +64,15 @@ public:
 	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care whether this is a valid index or not.
 	 */
-	inline void				SetCurrentItem(int index) { m_CurrentItem = index; }
+	void						SetCurrentItem(int index) { m_CurrentItem = index; }
 
 	/**
 	 * Returns the current index within the category of the item pointed at.
 	 */
 	int							GetCurrentItemIndex() { return m_CurrentItem; }
 
-	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
-	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
+	void						SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
+	void						SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
 	void						RemoveCategoryIgnored(const CInventoryCategoryPtr& category);
 	void						RemoveCategoryIgnored(const idStr& categoryName);

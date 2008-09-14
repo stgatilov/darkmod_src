@@ -19,7 +19,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory.h"
 
 CInventoryCursor::CInventoryCursor(CInventory* inventory, int id) :
-	m_Inventory(inventory),
 	m_CategoryLock(false),	// Default behaviour ...
 	m_WrapAround(true),		// ... is like standard Thief inventory.
 	m_CurrentCategory(0),

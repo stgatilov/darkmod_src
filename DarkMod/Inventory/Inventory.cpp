@@ -94,7 +94,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 	int LGroupVal = 0;
 	int dummy1(0), dummy2(0), dummy3(0); // for calling GetLoot
 
-	CInventoryItem::LootType lootType = CInventoryItem::getLootTypeFromSpawnargs(ent->spawnArgs);
+	CInventoryItem::LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
 	int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
 
 	if (lootType != CInventoryItem::LT_NONE && value > 0)
