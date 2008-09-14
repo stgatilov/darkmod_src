@@ -26,7 +26,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_LootType = LT_NONE;
 	m_Value = 0;
 	m_Stackable = false;
-	m_Count = 0;
+	m_Count = 1;
 	m_Droppable = false;
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;

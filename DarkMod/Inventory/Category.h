@@ -47,10 +47,16 @@ public:
 	 * greebo: Adds the given item to this category
 	 */
 	void					PutItem(CInventoryItemPtr Item);
+
 	/**
 	 * greebo: Removes the specified <item> from this category.
 	 */
 	void					RemoveItem(const CInventoryItemPtr& item);
+
+	/**
+	 * greebo: Swaps the position of the given two inventory items. Returns TRUE on success.
+	 */
+	bool					SwapItemPosition(const CInventoryItemPtr& item1, const CInventoryItemPtr& item2);
 
 	/** greebo: Returns true if the category contains no items.
 	 */

@@ -885,7 +885,7 @@ public:
 	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
 	/**
-	 * Script event: Changes the inventory count of the given item <name> in <category> by <amount>
+	 * Changes the inventory count of the given item <name> in <category> by <amount>
 	 */
 	void ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount);
 
@@ -894,6 +894,20 @@ public:
 	 * @returns: the new amount of the affected loot type.
 	 */
 	int ChangeLootAmount(int lootType, int amount);
+
+	/**
+	 * greebo: This replaces the inventory item (represented by oldItem) with the
+	 * given <newItem> entity. <newItem> needs to be a valid inventory item entity or NULL.
+	 *
+	 * <oldItem> is removed from the inventory and <newItem> will take its position, provided
+	 * both items share the same category name. If the categories are different, the position
+	 * can not be guaranteed to be the same after the operation.
+	 *
+	 * If <newItem> is NULL, <oldItem> will just be removed and no replacement takes place.
+	 *
+	 * @returns TRUE on success, FALSE otherwise.
+	 */
+	bool ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem);
 
 	/**
 	 * Script event: Changes the lightgem modifier value of the given item <name> in <category> to <icon>
@@ -1271,8 +1285,8 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetLootAmount(int lootType);
 	void					Event_ChangeLootAmount(int lootType, int amount);
 	void					Event_AddToInventory(idEntity* ent);
-
-	void					Event_ReplaceItem(idEntity *old_item, idEntity *new_item);
+	void					Event_ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem);
+	
 	void					Event_GetNextItem(int WrapAround);
 	void					Event_GetPrevItem(int WrapAround);
 	void					Event_SetCursorGroup(const char *groupname);

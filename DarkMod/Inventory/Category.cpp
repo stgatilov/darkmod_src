@@ -109,6 +109,27 @@ void CInventoryCategory::PutItem(CInventoryItemPtr item)
 	m_Item.AddUnique(item);
 }
 
+bool CInventoryCategory::SwapItemPosition(const CInventoryItemPtr& item1, const CInventoryItemPtr& item2)
+{
+	// Look up the positions of the two items
+	int idx1 = GetItemIndex(item1);
+	int idx2 = GetItemIndex(item2);
+
+	// Check the indices and check for equality
+	if (idx1 != -1 && idx2 != -1 && idx1 != idx2)
+	{
+		// Swap the items, but be sure to copy the shared_ptrs (references might be the same here)
+		CInventoryItemPtr temp = m_Item[idx2];
+		m_Item[idx2] = m_Item[idx1];
+		m_Item[idx1] = temp;
+
+		return true; // success
+	}
+
+	// invalid indices or item positions are the same
+	return false;
+}
+
 CInventoryItemPtr CInventoryCategory::GetItem(int index)
 {
 	return (index >= 0 && index < m_Item.Num()) ? m_Item[index] : CInventoryItemPtr();

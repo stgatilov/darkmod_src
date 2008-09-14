@@ -359,7 +359,6 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
 			// Put the item into its category
 			PutItem(item, category);
-			item->SetCount(1);
 
 			// We added a new inventory item
 			gameLocal.m_MissionData->InventoryCallback(
@@ -438,6 +437,60 @@ void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryNam
 		1, 
 		true
 	);
+}
+
+bool CInventory::ReplaceItem(idEntity* oldItemEnt, idEntity* newItemEnt)
+{
+	if (oldItemEnt == NULL) return false;
+
+	idStr oldInvName = oldItemEnt->spawnArgs.GetString("inv_name");
+
+	CInventoryItemPtr oldItem = GetItem(oldInvName);
+
+	if (oldItem == NULL)
+	{
+		gameLocal.Warning("Could not find old inventory item for %s\n", oldItemEnt->name.c_str());
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not find old inventory item for %s\n", oldItemEnt->name.c_str());
+		return false;
+	}
+
+	// greebo: Let's call PutItem on the new entity first to see what kind of item this is
+	// PutItem will also take care of the mission data callbacks for the objectives
+	CInventoryItemPtr newItem = PutItem(newItemEnt, m_Owner.GetEntity());
+
+	if (newItem != NULL && newItem->Category() == oldItem->Category())
+	{
+		// New item has been added, swap the old and the new one to fulfil the inventory position guarantee
+		oldItem->Category()->SwapItemPosition(oldItem, newItem);
+	}
+	
+	// If SwapItemPosition has been called, newItem now takes the place of oldItem before the operation.
+	// Remove the old item in any case, but only if the items are actually different.
+	// In case anybody wonder, newItem might be the same as oldItem in the case of stackable items or loot.
+	if (oldItem != newItem)
+	{
+		RemoveItem(oldItem);
+	}
+
+	return true;
+}
+
+void CInventory::RemoveItem(const CInventoryItemPtr& item)
+{
+	if (item == NULL) return;
+
+	// Update the cursors first
+	for (int i = 0; i < m_Cursor.Num(); i++)
+	{
+		if (m_Cursor[i]->GetCurrentItem() == item)
+		{
+			// Advance the cursor, this should be enough
+			m_Cursor[i]->GetNextItem();
+		}
+	}
+
+	// Now remove the item, the cursors are updated.
+	item->Category()->RemoveItem(item);
 }
 
 CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)

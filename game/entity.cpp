@@ -147,8 +147,8 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
 const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an entity to the inventory
+const idEventDef EV_ReplaceInventoryItem("replaceInventoryItem", "ee", 'd');	// olditem, newitem -> 1 if succeeded
 
-const idEventDef EV_ReplaceItem("replaceItem", "ee", 'd');					// olditem, newitem -> 1 if succeeded
 const idEventDef EV_GetNextItem("getNextItem", "d", 'e');
 const idEventDef EV_GetPrevItem("getPrevItem", "d", 'e');
 const idEventDef EV_SetCursorGroup("setCursorGroup", "s", 'd');				// groupname -> 1 = success
@@ -326,8 +326,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
 	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
 	EVENT( EV_AddToInventory,		idEntity::Event_AddToInventory )
-
-	EVENT( EV_ReplaceItem,			idEntity::Event_ReplaceItem )
+	EVENT( EV_ReplaceInventoryItem,	idEntity::Event_ReplaceInventoryItem )
+	
 	EVENT( EV_GetNextItem,			idEntity::Event_GetNextItem )
 	EVENT( EV_GetPrevItem,			idEntity::Event_GetPrevItem )
 	EVENT( EV_SetCursorGroup,		idEntity::Event_SetCursorGroup )
@@ -8609,18 +8609,6 @@ void idEntity::Event_GetBindChild( int ind )
 	idThread::ReturnEntity( pReturnVal );
 }
 
-/*
-================
-idEntity::Event_ReplaceItem
-
-Replaces another entity's item with our own, keeping the same
-spot in the inventory and moving its cursors to point to us.
-================
-*/
-void idEntity::Event_ReplaceItem(idEntity *old_item, idEntity *new_item)
-{
-}
-
 void idEntity::Event_GetNextItem(int wrap)
 {
 }
@@ -8781,6 +8769,16 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
 	StartSoundShader(declManager->FindSound(soundName), SCHANNEL_ANY, 0, false, NULL);
 
 	return item;
+}
+
+bool idEntity::ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
+{
+	return Inventory()->ReplaceItem(oldItem, newItem);
+}
+
+void idEntity::Event_ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
+{
+	idThread::ReturnInt(ReplaceInventoryItem(oldItem, newItem) ? 1 : 0);
 }
 
 int idEntity::ChangeLootAmount(int lootType, int amount)
