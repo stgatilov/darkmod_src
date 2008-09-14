@@ -8737,6 +8737,12 @@ void idEntity::Event_ChangeLootAmount(int lootType, int amount)
 
 void idEntity::Event_AddToInventory(idEntity* ent)
 {
+	if (ent == NULL || ent->spawnArgs.FindKey("inv_name") == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", ent->name.c_str(), name.c_str());
+		return;
+	}
+
 	AddToInventory(ent);
 }
 
@@ -8749,7 +8755,6 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
 	idStr invName;
 	if (!ent->spawnArgs.GetString("inv_name", "", invName))
 	{
-		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", ent->name.c_str(), name.c_str());
 		return CInventoryItemPtr(); // not an inventory item
 	}
 
