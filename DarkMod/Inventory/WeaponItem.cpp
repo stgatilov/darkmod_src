@@ -24,27 +24,27 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 CInventoryWeaponItem::CInventoryWeaponItem() :
 	CInventoryItem(NULL),
-	_weaponDefName(""),
-	_maxAmmo(0),
-	_ammo(0),
-	_weaponIndex(-1),
-	_toggleable(false),
-	_allowedEmpty(false)
+	m_WeaponDefName(""),
+	m_MaxAmmo(0),
+	m_Ammo(0),
+	m_WeaponIndex(-1),
+	m_Toggleable(false),
+	m_AllowedEmpty(false)
 {
 	SetType(IT_WEAPON);
 }
 
 CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
-	_weaponDefName(weaponDefName),
-	_weaponIndex(-1),
-	_toggleable(false),
-	_allowedEmpty(false)
+	m_WeaponDefName(weaponDefName),
+	m_WeaponIndex(-1),
+	m_Toggleable(false),
+	m_AllowedEmpty(false)
 {
 	SetType(IT_WEAPON);
 
-	_maxAmmo = getMaxAmmo();
-	_ammo = getStartAmmo();
+	m_MaxAmmo = GetMaxAmmo();
+	m_Ammo = GetStartAmmo();
 
 	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponDefName);
 	m_Name = weaponDict->GetString("inv_name", "Unknown weapon");
@@ -58,12 +58,12 @@ void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
 	// Pass the call to the base class first
 	CInventoryItem::Save(savefile);
 
-	savefile->WriteString(_weaponDefName.c_str());
-	savefile->WriteInt(_maxAmmo);
-	savefile->WriteInt(_ammo);
-	savefile->WriteInt(_weaponIndex);
-	savefile->WriteBool(_toggleable);
-	savefile->WriteBool(_allowedEmpty);
+	savefile->WriteString(m_WeaponDefName);
+	savefile->WriteInt(m_MaxAmmo);
+	savefile->WriteInt(m_Ammo);
+	savefile->WriteInt(m_WeaponIndex);
+	savefile->WriteBool(m_Toggleable);
+	savefile->WriteBool(m_AllowedEmpty);
 }
 
 void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
@@ -71,15 +71,15 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	// Pass the call to the base class first
 	CInventoryItem::Restore(savefile);
 
-	savefile->ReadString(_weaponDefName);
-	savefile->ReadInt(_maxAmmo);
-	savefile->ReadInt(_ammo);
-	savefile->ReadInt(_weaponIndex);
-	savefile->ReadBool(_toggleable);
-	savefile->ReadBool(_allowedEmpty);
+	savefile->ReadString(m_WeaponDefName);
+	savefile->ReadInt(m_MaxAmmo);
+	savefile->ReadInt(m_Ammo);
+	savefile->ReadInt(m_WeaponIndex);
+	savefile->ReadBool(m_Toggleable);
+	savefile->ReadBool(m_AllowedEmpty);
 }
 
-int CInventoryWeaponItem::getMaxAmmo()
+int CInventoryWeaponItem::GetMaxAmmo()
 {
 	// Sanity check
 	if (m_Owner.GetEntity() == NULL) {
@@ -87,19 +87,19 @@ int CInventoryWeaponItem::getMaxAmmo()
 	}
 
 	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
-	idStr weaponName = _weaponDefName;
+	idStr weaponName = m_WeaponDefName;
 	weaponName.Strip(WEAPON_PREFIX);
 
 	idStr key = WEAPON_MAX_AMMO_PREFIX + weaponName;
 	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
 }
 
-bool CInventoryWeaponItem::allowedEmpty()
+bool CInventoryWeaponItem::IsAllowedEmpty()
 {
-	return _allowedEmpty;
+	return m_AllowedEmpty;
 }
 
-int CInventoryWeaponItem::getStartAmmo()
+int CInventoryWeaponItem::GetStartAmmo()
 {
 	// Sanity check
 	if (m_Owner.GetEntity() == NULL) {
@@ -107,75 +107,75 @@ int CInventoryWeaponItem::getStartAmmo()
 	}
 
 	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
-	idStr weaponName = _weaponDefName;
+	idStr weaponName = m_WeaponDefName;
 	weaponName.Strip(WEAPON_PREFIX);
 
 	idStr key = WEAPON_START_AMMO_PREFIX + weaponName;
 	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
 }
 
-int CInventoryWeaponItem::getAmmo() const
+int CInventoryWeaponItem::GetAmmo() const
 {
-	return _ammo;
+	return m_Ammo;
 }
 
-void CInventoryWeaponItem::setAmmo(int newAmount)
+void CInventoryWeaponItem::SetAmmo(int newAmount)
 {
-	if (allowedEmpty()) {
+	if (IsAllowedEmpty()) {
 		// Don't set ammo of weapons that don't need any
 		return;
 	}
 
-	_ammo = (newAmount > _maxAmmo) ? _maxAmmo : newAmount;
+	m_Ammo = (newAmount > m_MaxAmmo) ? m_MaxAmmo : newAmount;
 
-	if (_ammo < 0) {
-		_ammo = 0;
+	if (m_Ammo < 0) {
+		m_Ammo = 0;
 	}
 }
 
-int CInventoryWeaponItem::hasAmmo()
+int CInventoryWeaponItem::HasAmmo()
 {
-	if (allowedEmpty()) {
+	if (IsAllowedEmpty()) {
 		// Always return 1 for non-ammo weapons
 		return 1;
 	}
-	return _ammo;
+	return m_Ammo;
 }
 
-void CInventoryWeaponItem::useAmmo(int amount)
+void CInventoryWeaponItem::UseAmmo(int amount)
 {
-	setAmmo(_ammo - amount);
+	SetAmmo(m_Ammo - amount);
 }
 
-void CInventoryWeaponItem::setWeaponIndex(int index)
+void CInventoryWeaponItem::SetWeaponIndex(int index)
 {
-	_weaponIndex = index;
+	m_WeaponIndex = index;
 
 	// Now that the weapon index is known, cache a few values from the owner spawnargs
 
 	// Sanity check
 	if (m_Owner.GetEntity() != NULL) {
-		idStr toggleKey(va(WEAPON_TOGGLEABLE_FORMAT, _weaponIndex));
-		_toggleable = m_Owner.GetEntity()->spawnArgs.GetBool(toggleKey, "0");
+		idStr toggleKey(va(WEAPON_TOGGLEABLE_FORMAT, m_WeaponIndex));
+		m_Toggleable = m_Owner.GetEntity()->spawnArgs.GetBool(toggleKey, "0");
 
-		idStr allowKey(va(WEAPON_ALLOWEMPTY_FORMAT, _weaponIndex));
-		_allowedEmpty = m_Owner.GetEntity()->spawnArgs.GetBool(allowKey, "0");
+		idStr allowKey(va(WEAPON_ALLOWEMPTY_FORMAT, m_WeaponIndex));
+		m_AllowedEmpty = m_Owner.GetEntity()->spawnArgs.GetBool(allowKey, "0");
 	}
 }
 
-int CInventoryWeaponItem::getWeaponIndex() const
+int CInventoryWeaponItem::GetWeaponIndex() const
 {
-	return _weaponIndex;
+	return m_WeaponIndex;
 }
 
-bool CInventoryWeaponItem::isToggleable() const
+bool CInventoryWeaponItem::IsToggleable() const
 {
-	return _toggleable;
+	return m_Toggleable;
 }
 
-idStr CInventoryWeaponItem::getWeaponName()
+idStr CInventoryWeaponItem::GetWeaponName()
 {
-	idStr weaponName = _weaponDefName;
+	idStr weaponName = m_WeaponDefName;
 	weaponName.Strip(WEAPON_PREFIX);
 	return weaponName;
 }

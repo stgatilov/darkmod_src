@@ -19,22 +19,22 @@ class CInventoryWeaponItem :
 	public CInventoryItem
 {
 protected:
-	idStr _weaponDefName;
+	idStr	m_WeaponDefName;
 
 	// The maximum amount of ammo for this weapon
-	int		_maxAmmo;
+	int		m_MaxAmmo;
 
 	// The current amount of ammonition (set to getStartAmmo() in constructor)
-	int		_ammo;
+	int		m_Ammo;
 
 	// The index of this weapon (between 0 and MAX_WEAPONS)
-	int		_weaponIndex;
+	int		m_WeaponIndex;
 
 	// Is TRUE for weapons that can be toggled (like the lantern)
-	bool	_toggleable;
+	bool	m_Toggleable;
 
 	// TRUE, if this weapon doesn't need ammo (like shortsword, blackjack)
-	bool	_allowedEmpty;
+	bool	m_AllowedEmpty;
 
 public:
 	// Default constructor, should only be used during restoring from savegames
@@ -46,45 +46,45 @@ public:
 	virtual void	Restore(idRestoreGame *savefile);
 
 	// Retrieves the maximum amount of ammo this weapon can hold
-	int getMaxAmmo();
+	int GetMaxAmmo();
 	// Retrives the amount of ammo at player spawn time
-	int getStartAmmo();
+	int GetStartAmmo();
 
 	// Returns TRUE if this weapon doesn't need ammo and therefore can be selected 
-	bool allowedEmpty();
+	bool IsAllowedEmpty();
 
 	// Returns the currently available ammonition
-	int getAmmo() const;
+	int GetAmmo() const;
 	// Sets the new ammonition value (is automatically clamped to [0,maxAmmo])
-	void setAmmo(int newAmount);
+	void SetAmmo(int newAmount);
 
 	/**
  	 * This is used to check whether a weapon can "fire". This is always "1" for 
 	 * weapons without ammo (sword, blackjack). For all other weapons, the ammo amount
 	 * is returned.
 	 */
-	int hasAmmo();
+	int HasAmmo();
 
 	/**
 	 * "Uses" a certain <amount> of ammo. This decreases the current ammo counter
 	 * by the given value. Only affects the ammo count of weapons that actually need ammo.
 	 */
-	void useAmmo(int amount);
+	void UseAmmo(int amount);
 
 	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
-	void setWeaponIndex(int index);
-	int  getWeaponIndex() const;
+	void SetWeaponIndex(int index);
+	int  GetWeaponIndex() const;
 
 	/**
 	 * greebo: Returns TRUE if this weapon is meant to be toggleable (like the player lantern).
 	 */
-	bool isToggleable() const;
+	bool IsToggleable() const;
 
 	/**
 	 * greebo: Returns the name of the weapon, as derived from the weaponDef name.
 	 *         entityDef "weapon_broadhead" => weapon name: "broadhead"
 	 */
-	idStr getWeaponName();
+	idStr GetWeaponName();
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

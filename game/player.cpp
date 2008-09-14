@@ -997,7 +997,7 @@ void idPlayer::addWeaponsToInventory() {
 				// Allocate a new weapon item using the found entityDef
 				CInventoryWeaponItemPtr item(new CInventoryWeaponItem(weaponDef, this));
 				
-				item->setWeaponIndex(i);
+				item->SetWeaponIndex(i);
 
 				// Add it to the weapon category
 				m_WeaponCursor->GetCurrentCategory()->PutItem(item);
@@ -1082,10 +1082,10 @@ void idPlayer::SetupInventory()
 				CInventoryWeaponItemPtr item = 
 					boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 
-				if (item->getWeaponName() == weaponName)
+				if (item->GetWeaponName() == weaponName)
 				{
 					item->SetPersistent(shopItem->GetPersistent());
-					item->setAmmo(shopItem->GetCount());
+					item->SetAmmo(shopItem->GetCount());
 				}
 			}
 		}
@@ -2179,10 +2179,10 @@ void idPlayer::UpdateHudAmmo( idUserInterface *_hud )
 
 	if (_hud != NULL && item != NULL)
 	{
-		int ammoAmount = item->getAmmo();
+		int ammoAmount = item->GetAmmo();
 
 		// Hide ammo display for ammo == -1 and weapons without ammo
-		_hud->SetStateBool("ammo_visible", !(item->allowedEmpty() || ammoAmount < 0));
+		_hud->SetStateBool("ammo_visible", !(item->IsAllowedEmpty() || ammoAmount < 0));
 		_hud->SetStateString("ammo_amount", va("%d", ammoAmount));
 	}
 }
@@ -2995,7 +2995,7 @@ void idPlayer::NextWeapon( void ) {
 		return;
 	}
 
-	int curWeaponIndex = curItem->getWeaponIndex();
+	int curWeaponIndex = curItem->GetWeaponIndex();
 	int nextWeaponIndex = curWeaponIndex;
 
 	do {
@@ -3037,7 +3037,7 @@ void idPlayer::PrevWeapon( void ) {
 		return;
 	}
 
-	int curWeaponIndex = curItem->getWeaponIndex();
+	int curWeaponIndex = curItem->GetWeaponIndex();
 	int prevWeaponIndex = curWeaponIndex;
 
 	do {
@@ -3087,7 +3087,7 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	// Check if we want to toggle the current weapon item (requested index == current index)
 	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
 
-	if (item != NULL && item->getWeaponIndex() == num && item->isToggleable()) {
+	if (item != NULL && item->GetWeaponIndex() == num && item->IsToggleable()) {
 		// Requested toggleable weapon is already active, hide it (switch to unarmed)
 		num = 0;
 	}
@@ -3105,9 +3105,9 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 		
 		if (item != NULL)
 		{
-			if (item->getWeaponIndex() == num)
+			if (item->GetWeaponIndex() == num)
 			{
-				if (item->getAmmo() <= 0 && !item->allowedEmpty())
+				if (item->GetAmmo() <= 0 && !item->IsAllowedEmpty())
 				{
 					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
 					break;
@@ -10133,7 +10133,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud)
 		if (cv_frob_ammo_selects_weapon.GetBool())
 		{
 			m_WeaponCursor->SetCurrentItem(returnValue);
-			SelectWeapon(weaponItem->getWeaponIndex(), false);
+			SelectWeapon(weaponItem->GetWeaponIndex(), false);
 		}
 	}
 	else if (returnValue != NULL)

@@ -646,11 +646,11 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 				boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 			// Is this the right weapon?
-			if (weaponItem != NULL && weaponItem->getWeaponName() == weaponName)
+			if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
 				// Add the ammo to this weapon
-				weaponItem->setAmmo(weaponItem->getAmmo() + amount);
+				weaponItem->SetAmmo(weaponItem->GetAmmo() + amount);
 
 				// We're done
 				return weaponItem;

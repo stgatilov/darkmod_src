@@ -83,7 +83,7 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 			m_Item.Append(item);
 
 			// Set the pointers of the item class directly
-			item->m_Category = this;
+			item->SetCategory(this);
 		}
 	}
 }
@@ -92,9 +92,10 @@ void CInventoryCategory::SetOwner(idEntity *owner)
 {
 	m_Owner = owner; 
 
+	// Update the owner of all items too
 	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		m_Item[i]->m_Owner = owner;
+		m_Item[i]->SetOwner(owner);
 	}
 }
 
@@ -102,8 +103,8 @@ void CInventoryCategory::PutItem(CInventoryItemPtr item)
 {
 	if (item == NULL) return;
 
-	item->m_Owner = m_Owner;
-	item->m_Category = this;
+	item->SetOwner(m_Owner.GetEntity());
+	item->SetCategory(this);
 
 	m_Item.AddUnique(item);
 }
@@ -121,7 +122,7 @@ CInventoryItemPtr CInventoryCategory::GetItem(const idStr& itemName)
 	{
 		const CInventoryItemPtr& item = m_Item[i];
 
-		if (itemName == item->m_Name)
+		if (itemName == item->GetName())
 		{
 			return item;
 		}
@@ -138,7 +139,7 @@ CInventoryItemPtr CInventoryCategory::GetItemById(const idStr& id)
 	{
 		const CInventoryItemPtr& item = m_Item[i];
 
-		if (id == item->m_ItemId)
+		if (id == item->GetItemId())
 		{
 			return item;
 		}
@@ -151,7 +152,7 @@ int CInventoryCategory::GetItemIndex(const idStr& itemName)
 {
 	for (int i = 0; i < m_Item.Num(); i++)
 	{
-		if (itemName == m_Item[i]->m_Name)
+		if (itemName == m_Item[i]->GetName())
 		{
 			return i;
 		}
