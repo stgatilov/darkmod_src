@@ -50,6 +50,7 @@ public:
 	 * Set the current group index.
 	 */
 	void					SetCurrentCategory(int index);
+	void					SetCurrentCategory(const idStr& categoryName);
 
 	/**
 	 * greebo: Returns the category of the focused item or NULL if no inventory is attached.

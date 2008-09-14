@@ -282,6 +282,18 @@ void CInventoryCursor::SetCurrentCategory(int index)
 	index = idMath::ClampInt(0, m_Inventory->GetNumCategories() - 1, index);
 
 	m_CurrentCategory = index;
+	m_CurrentItem = 0;
+}
+
+void CInventoryCursor::SetCurrentCategory(const idStr& categoryName)
+{
+	int index = m_Inventory->GetCategoryIndex(categoryName);
+
+	if (index != -1)
+	{
+		m_CurrentCategory = index;
+		m_CurrentItem = 0;
+	}
 }
 
 void CInventoryCursor::AddCategoryIgnored(const CInventoryCategoryPtr& category)

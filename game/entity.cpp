@@ -147,25 +147,22 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 //===============================================================
 const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
-const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an entity to the inventory
-const idEventDef EV_ReplaceInventoryItem("replaceInventoryItem", "ee", 'd');	// olditem, newitem -> 1 if succeeded
-const idEventDef EV_GetNextInventoryItem("getNextInventoryItem", "", 'e');		// switches to the next inventory item
-const idEventDef EV_GetPrevInventoryItem("getPrevInventoryItem", "", 'e');		// switches to the previous inventory item
+const idEventDef EV_AddInvItem("addInvItem", "e");					// Adds an entity to the inventory
+const idEventDef EV_ReplaceInvItem("replaceInvItem", "ee", 'd');	// olditem, newitem -> 1 if succeeded
+const idEventDef EV_GetNextInvItem("getNextInvItem", "", 'e');		// switches to the next inventory item
+const idEventDef EV_GetPrevInvItem("getPrevInvItem", "", 'e');		// switches to the previous inventory item
+const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
+const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
+const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss");					// Changes the inventory icon of the given item.
 
-const idEventDef EV_SetCursorGroup("setCursorGroup", "s", 'd');				// groupname -> 1 = success
-const idEventDef EV_SetCursorGroupItem("setCursorGroupItem", "ss", 'd');	// itemname, groupname -> 1 = success
-const idEventDef EV_SetCursorItem("setCursorItem", "s", 'd');				// itemname -> 1 = success
-const idEventDef EV_GetCursorGroup("getCursorGroup", NULL, 's');
-const idEventDef EV_GetCursorItem("getCursorItem", NULL, 'e');
+const idEventDef EV_SetInvCursorCategory("setInvCursorCategory", "s", 'd');	// category name -> 1 = success
+const idEventDef EV_SetInvCursorItem("setInvCursorItem", "s", 'e');				// itemname -> entity
+const idEventDef EV_GetInvCursorCategory("getInvCursorCategory", NULL, 's');
+const idEventDef EV_GetInvCursorItem("getInvCursorItem", NULL, 'e');
+
 const idEventDef EV_AddItem("addItem", "e");								// entityitem
 const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
 const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
-
-
-const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
-
-const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
-const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss"); // Changes the inventory icon of the given item.
 
 // greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
 const idEventDef EV_InitInventory("initInventory", "d");
@@ -326,16 +323,15 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
 	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
-	EVENT( EV_AddToInventory,		idEntity::Event_AddToInventory )
-	EVENT( EV_ReplaceInventoryItem,	idEntity::Event_ReplaceInventoryItem )
-	EVENT( EV_GetNextInventoryItem,	idEntity::Event_GetNextInventoryItem )
-	EVENT( EV_GetPrevInventoryItem,	idEntity::Event_GetPrevInventoryItem )
+	EVENT( EV_AddInvItem,			idEntity::Event_AddInvItem )
+	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
+	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
+	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
+	EVENT( EV_SetInvCursorCategory,	idEntity::Event_SetInvCursorCategory )
+	EVENT( EV_SetInvCursorItem,		idEntity::Event_SetInvCursorItem )
+	EVENT( EV_GetInvCursorCategory,	idEntity::Event_GetInvCursorCategory )
+	EVENT( EV_GetInvCursorItem,		idEntity::Event_GetInvCursorItem )
 
-	EVENT( EV_SetCursorGroup,		idEntity::Event_SetCursorGroup )
-	EVENT( EV_SetCursorGroupItem,	idEntity::Event_SetCursorGroupItem )
-	EVENT( EV_SetCursorItem,		idEntity::Event_SetCursorItem )
-	EVENT( EV_GetCursorGroup,		idEntity::Event_GetCursorGroup )
-	EVENT( EV_GetCursorItem,		idEntity::Event_GetCursorItem )
 	EVENT( EV_AddItem,				idEntity::Event_AddItem )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
@@ -8610,38 +8606,42 @@ void idEntity::Event_GetBindChild( int ind )
 	idThread::ReturnEntity( pReturnVal );
 }
 
-void idEntity::Event_GetNextInventoryItem()
+void idEntity::Event_GetNextInvItem()
 {
 	CInventoryItemPtr item = InventoryCursor()->GetNextItem();
 
 	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
 }
 
-void idEntity::Event_GetPrevInventoryItem()
+void idEntity::Event_GetPrevInvItem()
 {
 	CInventoryItemPtr item = InventoryCursor()->GetPrevItem();
 
 	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
 }
 
-void idEntity::Event_SetCursorGroup(const char *groupname)
+void idEntity::Event_SetInvCursorCategory(const char* categoryName)
 {
+	InventoryCursor()->SetCurrentCategory(categoryName);
+
+	idThread::ReturnInt( InventoryCursor()->GetCurrentCategory()->GetName() == categoryName );
 }
 
-void idEntity::Event_SetCursorGroupItem(const char *itemname, const char *groupname)
+void idEntity::Event_SetInvCursorItem(const char* itemName)
 {
+	InventoryCursor()->SetCurrentItem(itemName);
+
+	idThread::ReturnInt( InventoryCursor()->GetCurrentItem()->GetName() == itemName );
 }
 
-void idEntity::Event_SetCursorItem(const char *itemname)
+void idEntity::Event_GetInvCursorCategory()
 {
+	idThread::ReturnString( InventoryCursor()->GetCurrentCategory()->GetName() );
 }
 
-void idEntity::Event_GetCursorGroup(void)
+void idEntity::Event_GetInvCursorItem()
 {
-}
-
-void idEntity::Event_GetCursorItem(void)
-{
+	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
 }
 
 void idEntity::Event_AddItem(idEntity *item)
@@ -8730,7 +8730,7 @@ void idEntity::Event_ChangeLootAmount(int lootType, int amount)
 	idThread::ReturnInt( ChangeLootAmount(lootType, amount) );
 }
 
-void idEntity::Event_AddToInventory(idEntity* ent)
+void idEntity::Event_AddInvItem(idEntity* ent)
 {
 	if (ent == NULL || ent->spawnArgs.FindKey("inv_name") == NULL)
 	{
@@ -8783,7 +8783,7 @@ bool idEntity::ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
 	return Inventory()->ReplaceItem(oldItem, newItem);
 }
 
-void idEntity::Event_ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
+void idEntity::Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem)
 {
 	idThread::ReturnInt(ReplaceInventoryItem(oldItem, newItem) ? 1 : 0);
 }
