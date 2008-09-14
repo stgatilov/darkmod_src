@@ -1286,9 +1286,9 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_ChangeLootAmount(int lootType, int amount);
 	void					Event_AddToInventory(idEntity* ent);
 	void					Event_ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem);
-	
-	void					Event_GetNextItem(int WrapAround);
-	void					Event_GetPrevItem(int WrapAround);
+	void					Event_GetNextInventoryItem();
+	void					Event_GetPrevInventoryItem();
+
 	void					Event_SetCursorGroup(const char *groupname);
 	void					Event_SetCursorGroupItem(const char *itemname, const char *groupname);
 	void					Event_SetCursorItem(const char *itemname);
