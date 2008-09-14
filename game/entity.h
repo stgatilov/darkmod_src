@@ -1270,6 +1270,7 @@ public:			// Events should be public, so they can be used from other places as w
 
 	void					Event_GetLootAmount(int lootType);
 	void					Event_ChangeLootAmount(int lootType, int amount);
+	void					Event_AddToInventory(idEntity* ent);
 
 	void					Event_ReplaceItem(idEntity *old_item, idEntity *new_item);
 	void					Event_GetNextItem(int WrapAround);

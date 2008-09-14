@@ -146,6 +146,7 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 //===============================================================
 const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an entity to the inventory
 
 const idEventDef EV_ReplaceItem("replaceItem", "ee", 'd');					// olditem, newitem -> 1 if succeeded
 const idEventDef EV_GetNextItem("getNextItem", "d", 'e');
@@ -159,7 +160,7 @@ const idEventDef EV_AddItem("addItem", "e");								// entityitem
 const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
 const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
 
-const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
+
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
 
 const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
@@ -324,6 +325,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
 	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
+	EVENT( EV_AddToInventory,		idEntity::Event_AddToInventory )
 
 	EVENT( EV_ReplaceItem,			idEntity::Event_ReplaceItem )
 	EVENT( EV_GetNextItem,			idEntity::Event_GetNextItem )
@@ -337,7 +339,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
 	
-	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
 	
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
@@ -8664,38 +8665,6 @@ void idEntity::Event_GetItem(const char *name)
 {
 }
 
-void idEntity::Event_GetLootAmount(int lootType)
-{
-	int gold, jewelry, goods;
-	int total = Inventory()->GetLoot(gold, jewelry, goods);
-
-	switch (lootType)
-	{
-		case CInventoryItem::LT_GOLD:
-			idThread::ReturnInt(gold);
-		break;
-
-		case CInventoryItem::LT_GOODS:
-			idThread::ReturnInt(goods);
-		break;
-
-		case CInventoryItem::LT_JEWELS:
-			idThread::ReturnInt(jewelry);
-		break;
-
-		default:
-			idThread::ReturnInt(total);
-		break;
-	}
-
-	idThread::ReturnInt(0);
-}
-
-void idEntity::Event_ChangeLootAmount(int lootType, int amount)
-{
-	idThread::ReturnInt( ChangeLootAmount(lootType, amount) );
-}
-
 void idEntity::Event_InitInventory(int callCount)
 {
 	// greebo: Check if this entity represents loot - if yes, update the total mission loot count
@@ -8734,33 +8703,79 @@ void idEntity::Event_InitInventory(int callCount)
 	}
 }
 
-CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
+void idEntity::Event_GetLootAmount(int lootType)
 {
-	// Get (create) the InventoryCursor of this Entity.
-	const CInventoryCursorPtr& crsr = InventoryCursor();
-	CInventoryItemPtr rc;
-	idStr s;
-	int v = 0;
+	int gold, jewelry, goods;
+	int total = Inventory()->GetLoot(gold, jewelry, goods);
 
+	switch (lootType)
+	{
+		case CInventoryItem::LT_GOLD:
+			idThread::ReturnInt(gold);
+		break;
+
+		case CInventoryItem::LT_GOODS:
+			idThread::ReturnInt(goods);
+		break;
+
+		case CInventoryItem::LT_JEWELS:
+			idThread::ReturnInt(jewelry);
+		break;
+
+		default:
+			idThread::ReturnInt(total);
+		break;
+	}
+
+	idThread::ReturnInt(0);
+}
+
+void idEntity::Event_ChangeLootAmount(int lootType, int amount)
+{
+	idThread::ReturnInt( ChangeLootAmount(lootType, amount) );
+}
+
+void idEntity::Event_AddToInventory(idEntity* ent)
+{
+	AddToInventory(ent);
+}
+
+CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
+{
 	// Sanity check
-	if(ent == NULL)
-		return rc;
+	if (ent == NULL) return CInventoryItemPtr();
 
 	// Check if we have an inventory item.
-	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
-		return rc; // not an inventory item
+	idStr invName;
+	if (!ent->spawnArgs.GetString("inv_name", "", invName))
+	{
+		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", ent->name.c_str(), name.c_str());
+		return CInventoryItemPtr(); // not an inventory item
+	}
+
+	// Get (create) the InventoryCursor of this Entity.
+	const CInventoryCursorPtr& crsr = InventoryCursor();
 
 	// Add the new item to the Inventory (with <this> as owner)
-	rc = crsr->Inventory()->PutItem(ent, this);
+	CInventoryItemPtr item = InventoryCursor()->Inventory()->PutItem(ent, this);
+	
+	if (item == NULL)
+	{
+		// not an inventory item
+		gameLocal.Warning("Couldn't add entity %s to inventory of %s", ent->name.c_str(), name.c_str());
+		return item;
+	}
 
 	// Play the (optional) acquire sound
-	ent->spawnArgs.GetString("snd_acquire", "", s);
-	if(s.Length() == 0)
-		s = cv_tdm_inv_loot_sound.GetString();
+	idStr soundName = ent->spawnArgs.GetString("snd_acquire", "");
+	if (soundName.IsEmpty())
+	{
+		soundName = cv_tdm_inv_loot_sound.GetString();
+	}
 
-	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
+	StartSoundShader(declManager->FindSound(soundName), SCHANNEL_ANY, 0, false, NULL);
 
-	return rc;
+	return item;
 }
 
 int idEntity::ChangeLootAmount(int lootType, int amount)

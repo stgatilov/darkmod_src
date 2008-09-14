@@ -10117,7 +10117,8 @@ idVec3 idPlayer::GetDoorListenLoc( void )
 	return m_DoorListenLoc;
 }
 
-CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
+CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent, idUserInterface* _hud)
+{
 	// Pass the call to the base class first
 	CInventoryItemPtr returnValue = idEntity::AddToInventory(ent, _hud);
 
