@@ -49,6 +49,8 @@ public:
 
 		idEntity *				GetSelected( void ) const { return m_dragEnt.GetEntity(); }
 
+		idEntity *				GetEquipped( void ) const { return m_EquippedEnt.GetEntity(); }
+
 		bool					IsInClipList( idEntity *ent ) const;
 		bool					HasClippedEntity( void ) const;
 
@@ -99,15 +101,22 @@ public:
 		bool					ObjStuck( void );
 
 		/**
-		* Try to eqiup/dequip a junk item
+		* Try to equip/dequip a junk item
 		* Returns true if the current item was equipped or dequipped
 		**/
 		bool					ToggleEquip( void );
+		/**
+		* Actual functions for equipping and dequipping
+		**/
+		bool					Equip( void );
+		bool					Dequip( void );
 
 		/**
-		* Preliminary body shouldering code (move to idPlayer?)
+		* Preliminary body shouldering code
 		* Shoulderbody: Returns true if body was shouldered
 		* UnShoulderBody: Returns true if there was room to unshoulder the body
+		* NOTE: In the current implementation, UnShoulderBody
+		* is called by idPlayer::inventoryDropItem (if they are holding a body)
 		**/
 		bool					ShoulderBody( idAFEntity_Base *body );
 		bool					UnShoulderBody( void );
@@ -285,18 +294,12 @@ protected:
 		bool					m_bObjStuck;
 
 		/**
-		* Set to true when the junk object is "equipped"
+		* "Equipped" object.
 		* This can mean different things for different objects
 		* For AI bodies, it means toggling between shouldering the AI
 		* and dragging the AI.
 		**/
-		bool					m_bObjEquipped;
-
-		/**
-		* Shouldered body.  
-		* TODO: Would this make more sense being on idPlayer instead?
-		**/
-		idEntityPtr<idAFEntity_Base>	m_ShoulderedBody;
+		idEntityPtr<idEntity>	m_EquippedEnt;
 };
 
 

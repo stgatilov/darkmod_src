@@ -186,6 +186,12 @@ protected:
 	idVec3					m_OldOrigin;
 	idMat3					m_OldAxis;
 
+	/**
+	* Whether the parry stops being effective after a successful parry
+	* (Applies to player weapon parries)
+	**/
+	bool					m_bParryStopOnSuccess;
+
 // Cosmetic stuff:
 
 	/**

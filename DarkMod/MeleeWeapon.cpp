@@ -37,11 +37,14 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_MeleeType = MELEETYPE_OVERHEAD;
 	m_StopMass = 0.0f;
 	m_ParticlesMade = 0;
+
+	m_OldOrigin = vec3_zero;
+	m_OldAxis = mat3_identity;
+	m_bParryStopOnSuccess = false;
 }
 
 CMeleeWeapon::~CMeleeWeapon( void )
 {
-	// ClearClipModel();
 }
 
 void CMeleeWeapon::Save( idSaveGame *savefile ) const 
@@ -59,6 +62,7 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_ParticlesMade );
 	savefile->WriteVec3( m_OldOrigin );
 	savefile->WriteMat3( m_OldAxis );
+	savefile->WriteBool( m_bParryStopOnSuccess );
 }
 
 void CMeleeWeapon::Restore( idRestoreGame *savefile ) 
@@ -78,6 +82,7 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( m_ParticlesMade );
 	savefile->ReadVec3( m_OldOrigin );
 	savefile->ReadMat3( m_OldAxis );
+	savefile->ReadBool( m_bParryStopOnSuccess );
 
 	// Regenerate the clipmodel
 	if( m_bModCM )
@@ -265,9 +270,25 @@ void CMeleeWeapon::Think( void )
 
 void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 {
-	// TODO: Check parry type (slash, thrust) against attack type
+	if( m_MeleeType & other->GetMeleeType() )
+	{
+		// parry was succesful
+		// TODO: Play sound, FX
+		// could call melee collision on the weapon,
+		// but that's not going to hit the actual weapon material
+		// if the clipbox is much larger
+		// TODO: Play bounce animation or reverse attack animation?
+		DeactivateAttack();
 
-	// Notify ourself of hitting a parry, and the other AI of making a parry
+		if (other->m_bParryStopOnSuccess)
+			other->DeactivateParry();
+	}
+
+	// Don't do anything if the parry does not block this type
+	// PROBLEM: Will we have to disable collision with parries from this
+	// point on, to make sure that we hit the AI if the parry clipmodel
+	// extends into the AI?
+	// Or will the trace just ignore the parry once it's gone inside it?
 }
 
 void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
