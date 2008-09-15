@@ -205,13 +205,14 @@ enum {
 	EIM_CROUCH				= BIT( 3),	// Crouching.
 	EIM_CROUCH_HOLD			= BIT( 4),	// Prevent changes to crouching state. (NYI)
 	EIM_JUMP				= BIT( 5),	// Jumping.
-	EIM_CLIMB				= BIT( 6),	// Climbing ladders, ropes and mantling. (NYI)
-	EIM_FROB				= BIT( 7),	// Frobbing.
-	EIM_ATTACK				= BIT( 8),	// Using weapons (NYI)
-	EIM_WEAPON_SELECT		= BIT( 9),	// Selecting weapons.
-	EIM_ITEM_USE			= BIT(10),	// Using items
-	EIM_ITEM_SELECT			= BIT(11),	// Selecting items.
-	EIM_ITEM_DROP			= BIT(12),	// Dropping inventory items.
+	EIM_MANTLE				= BIT( 6),	// Mantling (excluding jumping)
+	EIM_CLIMB				= BIT( 7),	// Climbing ladders, ropes and mantling. (NYI)
+	EIM_FROB				= BIT( 8),	// Frobbing.
+	EIM_ATTACK				= BIT( 9),	// Using weapons (NYI)
+	EIM_WEAPON_SELECT		= BIT(10),	// Selecting weapons.
+	EIM_ITEM_USE			= BIT(11),	// Using items
+	EIM_ITEM_SELECT			= BIT(12),	// Selecting items.
+	EIM_ITEM_DROP			= BIT(13),	// Dropping inventory items.
 };
 
 typedef struct {

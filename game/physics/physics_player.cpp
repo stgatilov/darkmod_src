@@ -4332,6 +4332,11 @@ void idPhysics_Player::PerformMantle()
 		return;
 	}
 
+	if (static_cast<idPlayer*>(self)->GetImmobilization() & EIM_MANTLE)
+	{
+		return; // greebo: Mantling disabled by immobilization system
+	}
+
 	// Clear mantled entity members to indicate nothing is
 	// being mantled
 	m_p_mantledEntity = NULL;
