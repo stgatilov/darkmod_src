@@ -6798,11 +6798,13 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 
 	physicsObj.SetMovementType( PM_DEAD );
 
-	if( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD )
-		StartSound( "snd_death_liquid", SND_CHANNEL_VOICE, 0, false, NULL );
-	else
-		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+	// greebo: Prevent all movement, weapon and item usage when dead
+	SetImmobilization("death", EIM_ALL);
 
+	// Play the death sound on the voice channel
+	idStr deathSound = (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD) ? "snd_death_liquid" : "snd_death";
+	StartSound( deathSound, SND_CHANNEL_VOICE, 0, false, NULL );
+	
 	StopSound( SND_CHANNEL_BODY2, false );
 
 	fl.takedamage = true;		// can still be gibbed
@@ -6829,11 +6831,14 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 			}
 		}
 		gameLocal.mpGame.PlayerDeath( this, killer, isTelefragged );
-	} else {
+	} else
+	{
 		physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
 		// SR CONTENTS_RESPONSE FIX
 		if( m_StimResponseColl->HasResponse() )
+		{
 			physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+		}
 	}
 
 	UpdateVisuals();
