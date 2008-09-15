@@ -5275,6 +5275,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, attacker, bPlayerResponsible );
+	// Mark the body as last moved by the player
+	if( bPlayerResponsible )
+		m_MovedByActor = gameLocal.GetLocalPlayer();
 }
 
 
@@ -8693,8 +8696,11 @@ void idAI::Knockout( idEntity* inflictor )
 	mind->PushState(STATE_KNOCKED_OUT);
 
 	// Update TDM objective system
-	bool playerResponsible = (inflictor != NULL && inflictor->IsType(idPlayer::Type));
-	gameLocal.m_MissionData->MissionEvent(COMP_KO, this, inflictor, playerResponsible);
+	bool bPlayerResponsible = (inflictor != NULL && inflictor == gameLocal.GetLocalPlayer() );
+	gameLocal.m_MissionData->MissionEvent(COMP_KO, this, inflictor, bPlayerResponsible);
+	// Mark the body as last moved by the player
+	if( bPlayerResponsible )
+		m_MovedByActor = gameLocal.GetLocalPlayer();
 }
 
 void idAI::PostKnockOut()
@@ -8746,8 +8752,11 @@ idAI::FoundBody
 */
 void idAI::FoundBody( idEntity *body )
 {
-	// TODO: Check if the player is responsible for the body
-	gameLocal.m_MissionData->MissionEvent( COMP_AI_FIND_BODY, body, true );
+	bool bPlayerResp = false;
+	if( m_MovedByActor.GetEntity() && m_MovedByActor.GetEntity() == gameLocal.GetLocalPlayer() )
+		bPlayerResp = true;
+
+	gameLocal.m_MissionData->MissionEvent( COMP_AI_FIND_BODY, body, bPlayerResp );
 }
 
 void idAI::AddMessage(const ai::CommMessagePtr& message)
