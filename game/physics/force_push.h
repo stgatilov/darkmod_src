@@ -39,6 +39,9 @@ public: // common force interface
 	virtual void		Evaluate( int time );
 
 private:
+	void				SetOwnerIsPushing(bool isPushing);
+
+private:
 	idEntity*			pushEnt;		// entity being pushed
 	idEntity*			lastPushEnt;	// the entity we pushed last frame
 

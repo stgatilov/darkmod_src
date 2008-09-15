@@ -46,9 +46,9 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 	if (pushEnt == NULL)
 	{
 		// No, update the owning actor's push state
-		if (owner != NULL && owner->IsType(idActor::Type))
+		if (owner != NULL)
 		{
-			static_cast<idActor*>(owner)->SetIsPushing(false);
+			SetOwnerIsPushing(false);
 		}
 
 		// Did we push anything the frame before?
@@ -57,6 +57,10 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 			// Let the pushed entity know that it is not being pushed anymore
 			static_cast<idMoveable*>(lastPushEnt)->SetIsPushed(false, vec3_zero);
 		}
+	}
+	else
+	{
+
 	}
 
 	this->pushEnt = pushEnt;
@@ -71,7 +75,14 @@ void CForcePush::SetContactInfo(const trace_t& contactInfo, const idVec3& impact
 
 void CForcePush::Evaluate( int time )
 {
-	if (pushEnt == NULL || owner == NULL) return; // nothing to do
+	if (owner == NULL) return;
+
+	if (pushEnt == NULL) 
+	{
+		// nothing to do, but update the owning actor's push state
+		SetOwnerIsPushing(false);
+		return;
+	}
 
 	// Do not push static entity or non-pushable ones
 	if (pushEnt->IsType(idStaticEntity::Type) || pushEnt->spawnArgs.GetBool("notPushable", "0"))
@@ -165,6 +176,18 @@ void CForcePush::Evaluate( int time )
 	}
 
 	// Update the owning actor's push state if it has changed
+	SetOwnerIsPushing(isPushing);
+
+	// Remember the last push entity
+	lastPushEnt = pushEnt;
+
+	// Clear the push entity again
+	pushEnt = NULL;
+}
+
+void CForcePush::SetOwnerIsPushing(bool isPushing)
+{
+	// Update the owning actor's push state if it has changed
 	if (owner->IsType(idActor::Type))
 	{
 		idActor* owningActor = static_cast<idActor*>(owner);
@@ -174,12 +197,6 @@ void CForcePush::Evaluate( int time )
 			owningActor->SetIsPushing(isPushing);
 		}
 	}
-
-	// Remember the last push entity
-	lastPushEnt = pushEnt;
-
-	// Clear the push entity again
-	pushEnt = NULL;
 }
 
 void CForcePush::Save( idSaveGame *savefile ) const

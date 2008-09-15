@@ -293,7 +293,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		current.origin = trace.endpos;
 
 		// if moved the entire distance
-		if ( trace.fraction >= 1.0f ) {
+		if ( trace.fraction >= 1.0f )
+		{
 			break;
 		}
 
@@ -406,7 +407,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			trace.fraction = 0.0f;
 			trace.endpos = current.origin;
 
-			// greebo: Tell the object to take the impulse and propagate it to any touching objects (if there are any)
+			// greebo: Check the entity in front of us
 			idEntity* pushedEnt = gameLocal.entities[trace.c.entityNum];
 			if (pushedEnt != NULL)
 			{
