@@ -473,8 +473,11 @@ public:
 	int						GetImmobilization( const char *source );
 	void					SetImmobilization( const char *source, int type );
 
+	// greebo: Consolidate these three hinderances into one, selectable via an enum?
 	float					GetHinderance();
 	float					GetTurnHinderance();
+	float					GetJumpHinderance();
+
 	/**
 	* Sets the linear movement hinderance.  
 	* This should be a fraction relative to max movement speed
@@ -486,6 +489,8 @@ public:
 	* Same as SetHinderance, but applies to angular view turning speed
 	**/
 	void					SetTurnHinderance( const char *source, float mCap, float aCap );
+
+	void					SetJumpHinderance( const char *source, float mCap, float aCap );
 
 	// greebo: Sets the "player is pushing something heavy" state to the given bool (virtual override)
 	virtual void			SetIsPushing(bool isPushing);
@@ -939,6 +944,14 @@ private:
 	**/
 	idDict					m_TurnHinderance;
 	float					m_TurnHinderanceCache;
+
+	/**
+	* m_JumpHinderance keeps track of sources of jump height hinderance.
+	* These limit the height which the player can jump.
+	* m_JumpHinderanceCache works the same as m_hinderanceCache above
+	**/
+	idDict					m_JumpHinderance;
+	float					m_JumpHinderanceCache;
 
 	/**
 	 * greebo: This is the list of named lightgem modifier values. These can be accessed
