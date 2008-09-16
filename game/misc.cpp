@@ -1640,12 +1640,7 @@ idStaticEntity::Show
 */
 void idStaticEntity::Show( void ) {
 	idEntity::Show();
-	if ( spawnArgs.GetBool( "solid" ) ) {
-		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
-	}
-	// SR CONTENTS_RESONSE FIX
-	if( m_StimResponseColl->HasResponse() )
-		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+	GetPhysics()->SetContents( m_preHideContents );
 }
 
 /*

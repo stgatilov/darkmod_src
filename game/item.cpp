@@ -10,6 +10,11 @@
 // Copyright (C) 2004 Id Software, Inc.
 //
 
+/**
+* TDM: There is absolutely no reason to use this class any more!!!
+* All inventory and frob functionality has been moved to idEntity
+**/
+
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
@@ -1415,18 +1420,7 @@ void idMoveableItem::Hide( void )
 void idMoveableItem::Show( void )
 {
 	idEntity::Show();
-	physicsObj.SetContents( CONTENTS_RENDERMODEL );
-
-	// greebo: Allow the entityDef to override the clipmodel contents
-	if( spawnArgs.FindKey( "clipmodel_contents" ) )
-	{
-		DM_LOG(LC_ENTITY,LT_INFO)LOGSTRING("Setting clipmask of %s to %d in show\r", name.c_str(), spawnArgs.GetInt("clipmodel_contents"));
-		GetPhysics()->SetContents( spawnArgs.GetInt("clipmodel_contents") );
-	}
-
-// SR CONTENTS_RESPONSE FIX:
-	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+	physicsObj.SetContents( m_preHideContents );
 
 	trigger->SetContents( CONTENTS_FROBABLE );
 }

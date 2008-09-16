@@ -254,6 +254,14 @@ public:
 	} fl;
 
 	/**
+	* When an entity is hidden, these store the following information just before the hide:
+	* These store the clipmodel contents, clipmask and whether the clipmodel was enabled
+	* These variables are reset to this data when the entity is un-hidden
+	**/
+	int					m_preHideContents;
+	int					m_preHideClipMask;
+
+	/**
 	 * UsedBy ist the list of entity names that this entity can be used by.
 	 * i.e. A door can have a list of keys that can unlock it. A fountain can
 	 * be used by a water arrow to make it holy, etc.
@@ -1126,6 +1134,10 @@ protected:
 private:
 	idPhysics_Static	defaultPhysicsObj;		// default physics object
 	idPhysics *			physics;				// physics used for this entity
+	/**
+	* TDM: Clipmodel for frobbing only (used to make frobbing easier without effecting physics)
+	**/
+	idClipModel *		m_FrobBox;
 	idEntity *			bindMaster;				// entity bound to if unequal NULL
 	jointHandle_t		bindJoint;				// joint bound to if unequal INVALID_JOINT
 	int					bindBody;				// body bound to if unequal -1

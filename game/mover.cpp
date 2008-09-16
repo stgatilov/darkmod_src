@@ -393,13 +393,7 @@ idMover::Show
 */
 void idMover::Show( void ) {
 	idEntity::Show();
-	if ( spawnArgs.GetBool( "solid", "1" ) ) 
-	{
-		physicsObj.SetContents( CONTENTS_SOLID );
-	}
-	// SR CONTENTS_RESPONSE FIX
-	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+	physicsObj.SetContents( m_preHideContents );
 	SetPhysics( &physicsObj );
 }
 

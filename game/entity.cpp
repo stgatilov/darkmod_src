@@ -624,6 +624,9 @@ idEntity::idEntity()
 	health			= 0;
 	maxHealth		= 0;
 
+	m_preHideContents		= 0;
+	m_preHideClipMask		= 0;
+
 	physics			= NULL;
 	bindMaster		= NULL;
 	bindJoint		= INVALID_JOINT;
@@ -654,6 +657,7 @@ idEntity::idEntity()
 	m_bFrobable = false;
 	m_FrobDistance = 0;
 	m_FrobBias = 1.0f;
+	m_FrobBox = NULL;
 	m_FrobActionScript = "";
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
@@ -989,6 +993,9 @@ idEntity::~idEntity( void )
 	gameLocal.RemoveResponse(this);
 	delete m_StimResponseColl;
 
+	if( m_FrobBox )
+		delete m_FrobBox;
+
 	m_FrobPeers.Clear();
 }
 
@@ -1022,6 +1029,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( health );
 	savefile->WriteInt( maxHealth );
 
+	savefile->WriteInt( m_preHideContents );
+	savefile->WriteInt( m_preHideClipMask );
+
 	savefile->WriteInt( targets.Num() );
 	for( i = 0; i < targets.Num(); i++ ) {
 		targets[ i ].Save( savefile );
@@ -1043,6 +1053,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_bFrobable);
 	savefile->WriteInt(m_FrobDistance);
 	savefile->WriteFloat(m_FrobBias);
+	savefile->WriteClipModel(m_FrobBox);
 
 	savefile->WriteBool(m_bIsClimbableRope);
 
@@ -1186,6 +1197,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( health );
 	savefile->ReadInt( maxHealth );
 
+	savefile->ReadInt( m_preHideContents );
+	savefile->ReadInt( m_preHideClipMask );
+
 	targets.Clear();
 	savefile->ReadInt( num );
 	targets.SetNum( num );
@@ -1207,6 +1221,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_bFrobable);
 	savefile->ReadInt(m_FrobDistance);
 	savefile->ReadFloat(m_FrobBias);
+	savefile->ReadClipModel(m_FrobBox);
 
 	savefile->ReadBool(m_bIsClimbableRope);
 
@@ -1413,6 +1428,11 @@ idEntity::Think
 void idEntity::Think( void )
 {
 	RunPhysics();
+	if ( (thinkFlags & TH_PHYSICS) && m_FrobBox ) 
+	{
+		// update trigger position
+		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+	}
 	Present();
 }
 
@@ -1881,6 +1901,13 @@ void idEntity::Hide( void )
 	if ( !IsHidden() ) 
 	{
 		fl.hidden = true;
+
+		m_preHideContents = GetPhysics()->GetContents();
+		m_preHideClipMask = GetPhysics()->GetClipMask();
+
+		if( m_FrobBox )
+			m_FrobBox->SetContents(0);
+
 		FreeModelDef();
 		UpdateVisuals();
 
@@ -1900,9 +1927,13 @@ void idEntity::Hide( void )
 idEntity::Show
 ================
 */
-void idEntity::Show( void ) {
-	if ( IsHidden() ) {
+void idEntity::Show( void ) 
+{
+	if ( IsHidden() ) 
+	{
 		fl.hidden = false;
+		if( m_FrobBox && m_bFrobable )
+			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		UpdateVisuals();
 	}
 }
@@ -3585,6 +3616,52 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 	defaultPhysicsObj.SetAxis( axis );
 
 	physics = &defaultPhysicsObj;
+
+	// create a frob box separate from the collision box for easier frobbing
+	bool bUseFrobBox(false);
+	idBounds bounds, FrobBounds;
+	idTraceModel FrobTrm;
+	int numSides(0);
+	
+
+	// First check if frobbox_mins and frobbox_maxs are set
+	if ( spawnArgs.GetVector( "frobbox_mins", NULL, FrobBounds[0] ) &&
+				spawnArgs.GetVector( "frobbox_maxs", NULL, FrobBounds[1] ) )
+	{
+		if ( FrobBounds[0][0] > FrobBounds[1][0] || FrobBounds[0][1] >FrobBounds[1][1] || FrobBounds[0][2] > FrobBounds[1][2] )
+		{
+			gameLocal.Error( "Invalid frob box bounds '%s'-'%s' on entity '%s'", FrobBounds[0].ToString(), FrobBounds[1].ToString(), name.c_str() );
+		}
+		bUseFrobBox = true;
+	} 
+	else 
+	{
+		float tsize;
+		spawnArgs.GetFloat( "frobbox_size", "0.0", tsize );
+		if( tsize != 0.0f )
+		{
+			FrobBounds.Zero();
+			FrobBounds.ExpandSelf( tsize );
+			bUseFrobBox = true;
+		}
+	}
+
+	if( bUseFrobBox )
+	{
+		if ( spawnArgs.GetInt( "frobbox_cylinder", "0", numSides ) && numSides > 0 ) 
+			FrobTrm.SetupCylinder( FrobBounds, numSides < 3 ? 3 : numSides );
+		else if ( spawnArgs.GetInt( "frobbox_cone", "0", numSides ) && numSides > 0 )
+			FrobTrm.SetupCone( FrobBounds, numSides < 3 ? 3 : numSides );
+		else
+			FrobTrm.SetupBox( FrobBounds );
+
+		// Initialize frob bounds based on previous spawnarg setup
+		m_FrobBox = new idClipModel( FrobTrm );
+		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+		// don't set contents of frob box here, wait for frobbing initialization
+	}
+	else
+		m_FrobBox = NULL;
 }
 
 /*
@@ -7006,6 +7083,9 @@ void idEntity::LoadTDMSettings(void)
 
 		if( m_FrobDistance <= 0  )
 			m_FrobDistance = static_cast<int>(g_Global.m_DefaultFrobDistance);
+
+		if( m_bFrobable && m_FrobBox )
+			m_FrobBox->SetContents(CONTENTS_FROBABLE);
 	}
 
 	// update the max frobdistance if necessary
@@ -7324,6 +7404,13 @@ void idEntity::SetFrobable( bool bVal )
 	{
 		SetFrobbed(false);
 		FrobHighlight(false);
+		if( m_FrobBox )
+			m_FrobBox->SetContents(0);
+	}
+	else
+	{
+		if( m_FrobBox )
+			m_FrobBox->SetContents(CONTENTS_FROBABLE);
 	}
 
 	UpdateFrob();

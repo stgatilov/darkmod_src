@@ -321,15 +321,10 @@ void idMoveable::Hide( void ) {
 idMoveable::Show
 ================
 */
-void idMoveable::Show( void ) {
+void idMoveable::Show( void ) 
+{
 	idEntity::Show();
-	if ( !spawnArgs.GetBool( "nonsolid" ) ) 
-	{
-		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
-	}
-	// SR CONTENTS_RESPONSE FIX:
-	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE | CONTENTS_RESPONSE );
+	physicsObj.SetContents( m_preHideContents );
 }
 
 /*

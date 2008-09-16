@@ -377,8 +377,23 @@ void idAFAttachment::Restore( idRestoreGame *savefile ) {
 idAFAttachment::Hide
 ================
 */
-void idAFAttachment::Hide( void ) {
+void idAFAttachment::Hide( void ) 
+{
 	idEntity::Hide();
+
+	// ishtvan: Should hide any bind children of the head (copied from idActor)
+	idEntity *ent;
+	idEntity *next;
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			ent->Hide();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->Off();
+			}
+		}
+	}
+
 	UnlinkCombat();
 }
 
@@ -387,8 +402,23 @@ void idAFAttachment::Hide( void ) {
 idAFAttachment::Show
 ================
 */
-void idAFAttachment::Show( void ) {
+void idAFAttachment::Show( void ) 
+{
 	idEntity::Show();
+
+	// ishtvan: Should show any bind children of the head (copied from idActor)
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			ent->Show();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->On();
+			}
+		}
+	}
 	LinkCombat();
 }
 

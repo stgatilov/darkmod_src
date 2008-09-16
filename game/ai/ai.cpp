@@ -6791,19 +6791,10 @@ void idAI::Hide( void ) {
 idAI::Show
 ================
 */
-void idAI::Show( void ) {
+void idAI::Show( void ) 
+{
 	idActor::Show();
-	if ( spawnArgs.GetBool( "big_monster" ) ) {
-		physicsObj.SetContents( 0 );
-	} else if ( use_combat_bbox ) {
-		physicsObj.SetContents( CONTENTS_BODY|CONTENTS_SOLID );
-	} else {
-		physicsObj.SetContents( CONTENTS_BODY );
-	}
-	// SR CONTENTS_RESONSE FIX
-	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
-
+	physicsObj.SetContents( m_preHideContents );
 
 	physicsObj.GetClipModel()->Link( gameLocal.clip );
 	fl.takedamage = !spawnArgs.GetBool( "noDamage" );
