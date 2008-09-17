@@ -5725,26 +5725,25 @@ bool idAI::EntityInAttackCone(idEntity* ent)
 
 bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 {
-	if (entity != NULL)
+	if (entity == NULL) return false;
+
+	if (combatType == COMBAT_MELEE)
 	{
-		if (combatType == COMBAT_MELEE)
-		{
-			return TestMelee();
-		}
-		else if (combatType == COMBAT_RANGED)
+		return TestMelee();
+	}
+	else if (combatType == COMBAT_RANGED)
+	{
+		return TestRanged();
+	}
+	else
+	{
+		if (GetNumRangedWeapons() > 0)
 		{
 			return TestRanged();
 		}
-		else
+		else if (GetNumMeleeWeapons() > 0)
 		{
-			if (GetNumRangedWeapons() > 0)
-			{
-				return TestRanged();
-			}
-			else if (GetNumMeleeWeapons() > 0)
-			{
-				return TestMelee();
-			}
+			return TestMelee();
 		}
 	}
 
@@ -6438,6 +6437,12 @@ bool idAI::TestMelee( void ) const {
 		return false;
 	}
 
+	if (!GetAttackFlag(COMBAT_MELEE))
+	{
+		// greebo: Cannot attack with melee weapons yet
+		return false;
+	}
+
 	//FIXME: make work with gravity vector
 	idVec3 org = physicsObj.GetOrigin();
 	const idBounds &myBounds = physicsObj.GetBounds();
@@ -6487,6 +6492,12 @@ bool idAI::TestRanged() const
 
 	if ( !enemyEnt) 
 	{
+		return false;
+	}
+
+	if (!GetAttackFlag(COMBAT_RANGED))
+	{
+		// greebo: Cannot attack with melee weapons yet
 		return false;
 	}
 

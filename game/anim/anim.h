@@ -152,7 +152,9 @@ typedef enum {
 	FC_MELEE_ATTACK_START,
 	FC_MELEE_ATTACK_STOP,
 	FC_MELEE_PARRY_START,
-	FC_MELEE_PARRY_STOP
+	FC_MELEE_PARRY_STOP,
+	FC_SET_ATTACK_FLAG,   // greebo: enables a certain attack type
+	FC_CLEAR_ATTACK_FLAG, // greebo: disables a certain attack type
 
 } frameCommandType_t;
 

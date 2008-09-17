@@ -1064,6 +1064,12 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteDict(&m_replacementAnims);
 
+	savefile->WriteInt(static_cast<int>(m_AttackFlags.size()));
+	for (std::set<int>::const_iterator i = 	m_AttackFlags.begin(); i != m_AttackFlags.end(); ++i)
+	{
+		savefile->WriteInt(static_cast<int>(*i));
+	}
+
 	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
@@ -1192,6 +1198,16 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_stepvol_crouch_run);
 
 	savefile->ReadDict(&m_replacementAnims);
+
+	m_AttackFlags.clear();
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; i++)
+	{
+		int temp;
+		savefile->ReadInt(temp);
+		assert(static_cast<ECombatType>(temp) >= COMBAT_NONE && static_cast<ECombatType>(temp) <= COMBAT_RANGED);
+		m_AttackFlags.insert(temp);
+	}
 
 	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
@@ -4048,6 +4064,23 @@ int idActor::GetNumRangedWeapons()
 	}
 
 	return numRangedWeapons;
+}
+
+bool idActor::GetAttackFlag(ECombatType type) const
+{
+	return m_AttackFlags.find(static_cast<int>(type)) != m_AttackFlags.end();
+}
+
+void idActor::SetAttackFlag(ECombatType type, bool enabled)
+{
+	if (enabled)
+	{
+		m_AttackFlags.insert(type);
+	}
+	else
+	{
+		m_AttackFlags.erase(type);
+	}
 }
 
 /****************************************************************************************

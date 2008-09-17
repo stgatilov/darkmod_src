@@ -49,15 +49,6 @@ static const int s_MAXACUITIES = 15;
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
 
-
-enum ECombatType
-{
-	COMBAT_NONE,
-	COMBAT_MELEE, 
-	COMBAT_RANGED,
-	NUM_COMBAT_TYPES
-};
-
 typedef enum {
 	TALK_NEVER,
 	TALK_DEAD,

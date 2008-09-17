@@ -16,6 +16,15 @@
 
 #include "../DarkMod/MultiStateMoverPosition.h"
 #include "../DarkMod/AI/EAS/RouteInfo.h"
+#include <set>
+
+enum ECombatType
+{
+	COMBAT_NONE,
+	COMBAT_MELEE, 
+	COMBAT_RANGED,
+	NUM_COMBAT_TYPES
+};
 
 /*
 ===============================================================================
@@ -264,6 +273,14 @@ public:
 	int GetNumMeleeWeapons();
 	int GetNumRangedWeapons();
 
+	/**
+	 * greebo: Returns TRUE whether combat is allowed for the given type.
+	 * Even though an actor has a weapon attached, it might still be sheathed and 
+	 * combat is "disabled" therefore, which is represented by the AttackFlag.
+	 */
+	bool GetAttackFlag(ECombatType type) const;
+	void SetAttackFlag(ECombatType type, bool enabled);
+
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 
 	virtual	renderView_t *	GetRenderView();	
@@ -379,6 +396,12 @@ protected:
 	
 	// Maps animation names to the names of their replacements
 	idDict					m_replacementAnims;
+
+	/**
+	 * This is the set of attack flags. If the corresponding enum value ECombatType
+	 * is present in this set, the actor is ready for attacking with that attack type.
+	 */
+	std::set<int>			m_AttackFlags;
 
 	/**
 	* Movement volume modifiers.  Ones for the player are taken from 
