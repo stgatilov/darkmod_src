@@ -796,10 +796,15 @@ bool idAFEntity_Base::LoadAF( void )
 idAFEntity_Base::Think
 ================
 */
-void idAFEntity_Base::Think( void ) {
-	RunPhysics();
-	UpdateAnimation();
-	if ( thinkFlags & TH_UPDATEVISUALS ) {
+void idAFEntity_Base::Think( void ) 
+{
+	if( !IsHidden() )
+	{
+		RunPhysics();
+		UpdateAnimation();
+	}
+	if ( thinkFlags & TH_UPDATEVISUALS ) 
+	{
 		Present();
 		LinkCombat();
 	}
@@ -807,9 +812,9 @@ void idAFEntity_Base::Think( void ) {
 // TDM: Anim/AF physics mods, generalized behavior that originally was just on AI
 
 	// Update the AF bodies for the anim if we are set to do that
-	if ( m_bAFPushMoveables && af.IsLoaded() 
-		&& animator.FrameHasChanged( gameLocal.time )
-		&& !IsType(idAI::Type) ) 
+	if ( m_bAFPushMoveables && af.IsLoaded()
+		&& !IsType(idAI::Type) && !IsHidden()
+		&& animator.FrameHasChanged( gameLocal.time ) ) 
 	{
 		af.ChangePose( this, gameLocal.time );
 
@@ -1756,7 +1761,8 @@ idAFEntity_Generic::Think
 void idAFEntity_Generic::Think( void ) {
 	idAFEntity_Base::Think();
 
-	if ( keepRunningPhysics ) {
+	if ( keepRunningPhysics && !IsHidden() ) 
+	{
 		BecomeActive( TH_PHYSICS );
 	}
 }
