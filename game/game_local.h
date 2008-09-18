@@ -324,6 +324,8 @@ struct SSprParms
 	float		bandwidth; // sound bandwidth
 
 	float		loudness; // this is set by AI hearing response
+	float		alertFactor;	// angua: alert increase is scaled by this factor
+	float		alertMax;	// angua: alert increase can not become higher than this
 
 	bool		bSameArea; // true if the sound came from same portal area
 	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path

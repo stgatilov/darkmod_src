@@ -458,6 +458,8 @@ void CsndProp::Propagate
 
 	SSprParms propParms;
 	propParms.name = sndName;
+	propParms.alertFactor = parms->GetFloat("alert_factor","1");
+	propParms.alertMax = parms->GetFloat("alert_max","30");
 
 	// set team alert and propagation flags from the parms
 	SetupParms( parms, &propParms, addFlags, &tmask );

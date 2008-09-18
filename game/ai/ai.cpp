@@ -7347,11 +7347,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	* as much, 20 is four times as much, etc.
 	**/
 
-	float psychLoud = 1 + (propParms->loudness - m_AudThreshold) * cv_ai_sndalertfactor.GetFloat();
+	// angua: alert increase is scaled by alertFactor (defined on prpagated sound). 
+	// This way, different sounds can result in different alert increase at the same volume
+	float psychLoud = 1 + (propParms->loudness - m_AudThreshold) * propParms->alertFactor;
 	
-	if (psychLoud > cv_ai_sndalertmax.GetFloat())
+	// angua: alert increase can not exceed alertMax (defined on propagated sound)
+	if (psychLoud > propParms->alertMax)
 	{
-		psychLoud = cv_ai_sndalertmax.GetFloat();
+		psychLoud = propParms->alertMax;
 	}
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
