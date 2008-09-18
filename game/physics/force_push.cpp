@@ -103,16 +103,34 @@ void CForcePush::Evaluate( int time )
 
 	if (mass < massThresholdHeavy)
 	{
-		// The pushed entity is not a heavy one, kick it 
-		float scale = (-contactInfo.c.normal * impactVelocity) * ownerMass * cv_pm_pushmod.GetFloat();
+		// Get the owner's velocity and project it on the impact normal
+		float normalVelocity = -contactInfo.c.normal * impactVelocity;
 
-		// Clamp the value to the maximum impulse we're allowed to give
-		if (scale > cv_pm_push_maximpulse.GetFloat()) 
+		// Clamp to positive values
+		if (normalVelocity < 0)
 		{
-			//gameLocal.Printf("Unclamped push scale: %f, clamped to 300.\n", scale);
-			scale = cv_pm_push_maximpulse.GetFloat();
+			normalVelocity = 0;
 		}
 
+		float maxPlayerSpeed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
+		float speedFraction = idMath::ClampFloat(0, 1, normalVelocity / maxPlayerSpeed);
+
+		// Maximum resulting velocity in m/s
+		const float vmax = 1.0f;
+
+		// Calculate the resulting velocity of the kicked object, linearly scaled and clamped to [0..vmax] m/s
+		float resultingVelocity = vmax * (1.02f - physics->GetMass()/49);
+		resultingVelocity = METERS_TO_DOOM * idMath::ClampFloat(0, vmax, resultingVelocity);
+		
+		// This is the scale of our impulse, based on the maximum allowed kick velocity
+		float scale = physics->GetMass() * resultingVelocity * speedFraction;
+
+		// The pushed entity is not a heavy one, kick it
+		//float scale = (-contactInfo.c.normal * impactVelocity) * ownerMass * cv_pm_pushmod.GetFloat();
+
+		// Clamp the value to the maximum impulse we're allowed to give
+		scale = idMath::ClampFloat(0, cv_pm_push_maximpulse.GetFloat(), scale);
+		
 		// greebo: Nullify the z-component of the impact impulse, we're always kicking horizontally
 		idVec3 pushDirection(impactVelocity.x, impactVelocity.y, 0);
 		pushDirection.NormalizeFast();
@@ -120,22 +138,26 @@ void CForcePush::Evaluate( int time )
 		// Check if the moveable has already a large impulse in that direction
 		float currentDirectionalImpulse = (physics->GetLinearVelocity()*pushDirection) * physics->GetMass();
 
-		if (currentDirectionalImpulse < cv_pm_push_maximpulse.GetFloat() * 2)
+		if (currentDirectionalImpulse < cv_pm_push_maximpulse.GetFloat())
 		{
 			idVec3 pushImpulse = pushDirection * scale;
 
 			//gameRenderWorld->DrawText( idStr(pushImpulse.LengthFast()), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec*10 );
 			//gameRenderWorld->DebugArrow( colorWhite, physics->GetAbsBounds().GetCenter(), physics->GetAbsBounds().GetCenter() - contactInfo.c.normal*100, 1, gameLocal.msec*10 );
 
-			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking impulse = %f,%f,%f\r", pushImpulse.x, pushImpulse.y, pushImpulse.z);
+			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking impulse = %f,%f,%f, scale was %f\r", pushImpulse.x, pushImpulse.y, pushImpulse.z, scale);
 
 			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking obstacle %s, velocity BEFORE is %f,%f,%f\r", pushEnt->name.c_str(), 
 				physics->GetLinearVelocity().x, physics->GetLinearVelocity().y, physics->GetLinearVelocity().z);
+			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking obstacle %s, angular velocity BEFORE is %f,%f,%f\r", pushEnt->name.c_str(), 
+				physics->GetAngularVelocity().x, physics->GetAngularVelocity().y, physics->GetAngularVelocity().z);
 
 			physics->PropagateImpulse(id, contactInfo.c.point, pushImpulse);	
 
 			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking obstacle %s, velocity AFTER is %f,%f,%f\r", pushEnt->name.c_str(), 
 				physics->GetLinearVelocity().x, physics->GetLinearVelocity().y, physics->GetLinearVelocity().z);
+			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking obstacle %s, angular velocity AFTER is %f,%f,%f\r", pushEnt->name.c_str(), 
+				physics->GetAngularVelocity().x, physics->GetAngularVelocity().y, physics->GetAngularVelocity().z);
 		}
 	}
 	// The pushed entity is considered heavy
