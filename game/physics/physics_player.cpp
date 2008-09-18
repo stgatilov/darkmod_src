@@ -385,7 +385,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				}
 
 
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step up, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step up, velocity now %.4f %.4f %.4f\r",  current.velocity.x, current.velocity.y, current.velocity.z);
 			}
 		}
 
@@ -544,7 +544,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			current.movementFlags |= PMF_STEPPED_DOWN;
 			current.velocity *= PM_STEPSCALE;
 
-			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step down, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step down, velocity now %.4f %.4f %.4f\r",  current.velocity.x, current.velocity.y, current.velocity.z);
 		}
 	}
 

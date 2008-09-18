@@ -285,13 +285,19 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
 
 	// Calculate the friction using this state
-	ContactFriction(current.lastTimeStep);
+	//ContactFriction(current.lastTimeStep);
+
+	// greebo: Disabled contact friction for now
+	//current.i.linearMomentum *= 1.0f;
+	//current.i.angularMomentum *= 1.0f;
 
 	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
 	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
 
 	// The list of all the touching entities
 	idList<contactInfo_t> touching;
+
+	// greebo: FIXME: A possible optimisation would be to store the contact indices instead of copying the entire struct
 	
 	//gameRenderWorld->DebugArrow(colorGreen, point, point + impulseN*10, 1, 5000);
 
