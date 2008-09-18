@@ -81,14 +81,22 @@ public:
 		* NOTE: Rotation of the entity to the desired orientation should be done externally
 		* before calling this.
 		**/
-		bool					PutInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
+		bool					PutInHands( idEntity *ent, idMat3 axis = mat3_identity, int bodyID = 0 );
 
 		/**
 		* Returns true if there is space to put an item in the player's hands at the minimum hold distance
 		* Otherwise returns false.
 		* Body ID may be optionally set to specify which body to hold for AF or multi-clipmodel entities
 		**/
-		bool					FitsInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
+		bool					FitsInHands( idEntity *ent, idMat3 axis = mat3_identity, int bodyID = 0 );
+
+		/**
+		* Returns true if there is space to put an item at a particular point in space
+		* Also checks the space between the player's eyes and this point for obstructions,
+		* so the player can't teleport things to the other side of solid walls
+		* Body ID may be optionally set to specify which body to hold for AF or multi-clipmodel entities
+		**/
+		bool					FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat3 axis = mat3_identity, int bodyID = 0 );
 
 		/**
 		 * Restores the physics object from the drag entity after loading.
@@ -120,6 +128,11 @@ public:
 		**/
 		bool					ShoulderBody( idAFEntity_Base *body );
 		bool					UnShoulderBody( void );
+
+		/**
+		* Set the player associated with this grabber
+		**/
+		void					SetPlayer( idPlayer *player ) { m_player = player; };
 
 public:
 		/**

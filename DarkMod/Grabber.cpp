@@ -1058,26 +1058,18 @@ Quit:
 	return;
 }
 
-bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
+bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 {
-	idClipModel *ClipModel = NULL;
-	bool bReturnVal = false, bStartedHidden(false);
-	int ContentsMask = 0;
-	float HeldDist = 0.0f;
-	trace_t trace;
-	idVec3 orig(vec3_zero), targetCOM(vec3_zero), COMLocal(vec3_zero);
-	idVec3 forward(1.0f, 0.0f, 0.0f), viewPoint, initOrigin;
-	idMat3 viewAxis;
-	idVec3 FarAway(0.0f, 0.0f, -4096.0f);
+	bool	bReturnVal = false;
+	float	HeldDist = 0.0f;
+	idVec3	targetCOM(vec3_zero);
+	idVec3	forward(1.0f, 0.0f, 0.0f), viewPoint;
+	idMat3	viewAxis;
 
-	if( !ent || !player )
-		goto Quit;
+	if( !ent || !m_player.GetEntity() )
+		return false;
 
-	player->GetViewPos( viewPoint, viewAxis );
-
-	bStartedHidden = ent->IsHidden();
-	// Momentarily show the entity if it was hidden, to enable the clipmodel
-	ent->Show();
+	m_player.GetEntity()->GetViewPos( viewPoint, viewAxis );
 
 	// calculate where the origin should end up based on center of mass location and orientation
 	// also based on the minimum held distance
@@ -1085,74 +1077,55 @@ bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
 	if( HeldDist < 0 )
 		HeldDist = MIN_HELD_DISTANCE;
 
-	// get the center of mass
-	ClipModel = ent->GetPhysics()->GetClipModel( bodyID );
+	targetCOM = (HeldDist * forward ) * viewAxis;
+	targetCOM += viewPoint;
+
+	bReturnVal = FitsInWorld( ent, viewPoint, targetCOM, axis, bodyID );
+	
+	if( !bReturnVal )
+		return false;
+	
+	ent->Show();
+	// ishtvan: Rotation disabled until AF stretching on rotation issue is resolved
+	// ent->SetAxis( axis );
+
+	// teleport in the object
+	idVec3 COMLocal(vec3_zero);
+	idClipModel *ClipModel = NULL;
+	idPhysics *phys = ent->GetPhysics();
+
+	ClipModel = phys->GetClipModel( bodyID );
 	if( ClipModel && ClipModel->IsTraceModel() ) 
 	{
 		float mass;
 		idMat3 inertiaTensor;
 		ClipModel->GetMassProperties( 1.0f, mass, COMLocal, inertiaTensor );
-	} else 
-	{
-		COMLocal.Zero();
 	}
 
-	targetCOM = (HeldDist * forward ) * viewAxis;
-	targetCOM += viewPoint;
-
-	orig = targetCOM - ( ent->GetPhysics()->GetAxis( bodyID ) * COMLocal );
-
-	ContentsMask = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL;
+	idVec3 orig = targetCOM - ( phys->GetAxis( bodyID ) * COMLocal );
 	
-	// This is a hack:  We want the trace to ignore both the entity itself and the player
-	// But can only pass one entity in to ignore.  Therefore, we teleport it far away before doing the trace
-	// And put it back afterwards
-	initOrigin = ent->GetPhysics()->GetOrigin();
-	ent->SetOrigin( FarAway );
+	// if this is not body 0 on an AF, need an additional offset to put desired body in hand
+	if( bodyID > 0 )
+		orig -= phys->GetOrigin( bodyID ) - phys->GetOrigin( 0 );
 
-	gameLocal.clip.TraceBounds( trace, viewPoint, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
-
-	if( trace.fraction < 1.0f )
-	{
-		// object collided, return false, hide it
-		if(bStartedHidden)
-			ent->Hide();
-
-		ent->SetOrigin( initOrigin );
-
-		goto Quit;
-	}
-
-	bReturnVal = true;
-	
-	// otherwise teleport in the object
 	ent->SetOrigin( orig );
-	StartDrag( player, ent, bodyID );
 
-Quit:
-	return bReturnVal;
+	StartDrag( m_player.GetEntity(), ent, bodyID );
+
+	return true;
 }
 
-bool CGrabber::FitsInHands(idEntity *ent, idPlayer *player, int bodyID)
+bool CGrabber::FitsInHands(idEntity *ent, idMat3 axis, int bodyID)
 {
-	idClipModel *ClipModel = NULL;
-	bool bReturnVal = false, bStartedHidden(false);
-	int ContentsMask = 0;
-	float HeldDist = 0.0f;
-	trace_t trace;
-	idVec3 orig(vec3_zero), targetCOM(vec3_zero), COMLocal(vec3_zero);
-	idVec3 forward(1.0f, 0.0f, 0.0f), viewPoint, initOrigin;
-	idMat3 viewAxis;
-	idVec3 FarAway(0.0f, 0.0f, -4096.0f);
+	float	HeldDist = 0.0f;
+	idVec3	targetCOM(vec3_zero);
+	idVec3	forward(1.0f, 0.0f, 0.0f), viewPoint;
+	idMat3	viewAxis;
 
-	if( !ent || !player )
-		goto Quit;
+	if( !ent || !m_player.GetEntity() )
+		return false;
 
-	player->GetViewPos( viewPoint, viewAxis );
-
-	bStartedHidden = ent->IsHidden();
-	// Momentarily show the entity if it was hidden, to enable the clipmodel
-	ent->Show();
+	m_player.GetEntity()->GetViewPos( viewPoint, viewAxis );
 
 	// calculate where the origin should end up based on center of mass location and orientation
 	// also based on the minimum held distance
@@ -1160,45 +1133,123 @@ bool CGrabber::FitsInHands(idEntity *ent, idPlayer *player, int bodyID)
 	if( HeldDist < 0 )
 		HeldDist = MIN_HELD_DISTANCE;
 
-	// get the center of mass
-	ClipModel = ent->GetPhysics()->GetClipModel( bodyID );
+	targetCOM = (HeldDist * forward ) * viewAxis;
+	targetCOM += viewPoint;
+
+	return FitsInWorld( ent, viewPoint, targetCOM, axis, bodyID );
+}
+
+bool CGrabber::FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat3 axis, int bodyID )
+{
+	int ContentsMask = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL;
+	trace_t tr;
+
+	// Optimization: If a solid is between viewpoint and target point, we're done
+	gameLocal.clip.TracePoint( tr, viewPoint, point, ContentsMask, m_player.GetEntity() );
+	if( tr.fraction < 1.0f )
+		return false;
+
+	// Proceed with the full test..
+	// Momentarily show the entity if it was hidden, to update the clipmodel positions
+	bool bStartedHidden = ent->IsHidden();
+	ent->Show();
+
+	idPhysics *phys = ent->GetPhysics();
+
+	// rotate to new axis (will rotate all clipmodels around master body if it's an AF)
+	// ishtvan: axis-setting disabled until AF stretching on rotation issue is resolved
+	// phys->SetAxis( axis );
+	// translate by: the difference between the clipmodel's center of mass and the desired point
+	idVec3 COMLocal(vec3_zero);
+	idClipModel *ClipModel = NULL;
+
+	ClipModel = phys->GetClipModel( bodyID );
 	if( ClipModel && ClipModel->IsTraceModel() ) 
 	{
 		float mass;
 		idMat3 inertiaTensor;
 		ClipModel->GetMassProperties( 1.0f, mass, COMLocal, inertiaTensor );
-	} else 
+	}
+	idVec3 COM = ClipModel->GetOrigin() + phys->GetAxis( bodyID ) * COMLocal;
+	// if we know the translation vector between current COM and target COM,
+	// we may add the same translation to the origin to put the COM at target
+
+	// we're going to try to translate the clipmodel COM from the viewpoint to the target point
+	// (this is to prevent the player dropping things on the other side of walls)
+	idVec3 trans1 = viewPoint - COM; // current COM to viewpoint
+	idVec3 trans2 = point - COM; // current COM to target point
+
+	// When we translate an AF, this always operates on body 0 / master body
+	// therefore we must get the offset to put that particular body in the player's hands
+	if( bodyID > 0 )
 	{
-		COMLocal.Zero();
+		idVec3 offset = phys->GetOrigin(bodyID) - phys->GetOrigin(0);
+		trans1 -= offset;
+		trans2 -= offset;
 	}
 
-	targetCOM = (HeldDist * forward ) * viewAxis;
-	targetCOM += viewPoint;
+	// test each clipmodel on a translation from viewpoint-frame to target-frame
+	// probably expensive, but doesn't get called often
+	bool bCollided = false;
 
-	orig = targetCOM - ( ent->GetPhysics()->GetAxis( bodyID ) * COMLocal );
+	// since we can't have two ignore entities and we want to ignore the player,
+	// temporarily make the entity we're testing nonsolid (otherwise we can hit it).
+	int EntContents = phys->GetContents();
+	phys->SetContents(0);
 
-	ContentsMask = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL;
-	
-	// This is a hack:  We want the trace to ignore both the entity itself and the player
-	// But can only pass one entity in to ignore.  Therefore, we teleport it far away before doing the trace
-	// And put it back afterwards
-	initOrigin = ent->GetPhysics()->GetOrigin();
-	ent->SetOrigin( FarAway );
+	for( int i=0; i < phys->GetNumClipModels(); i++ )
+	{
+		ClipModel = phys->GetClipModel(i);
+		if( !ClipModel || !ClipModel->IsTraceModel() )
+			continue;
 
-	gameLocal.clip.TraceBounds( trace, viewPoint, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
+		idVec3 clipOrig = ClipModel->GetOrigin();
 
-	if( trace.fraction < 1.0f )
-		bReturnVal = false;
-	else
-		bReturnVal = true;
+		// Uncomment for debug display of this collision test
+		/*
+		collisionModelManager->DrawModel
+		(
+			ClipModel->Handle(), clipOrig + trans2, ClipModel->GetAxis(),
+			gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY 
+		);
+		*/
 
-	ent->SetOrigin( initOrigin );
+		// first try a zero-motion translation to see if we start out in solid
+		gameLocal.clip.Translation
+		( 
+			tr, clipOrig + trans1, clipOrig + trans1,
+			ClipModel, ClipModel->GetAxis(), ContentsMask,
+			m_player.GetEntity()
+		);
+		if( tr.fraction < 1.0f )
+		{
+			// gameLocal.Printf("Drop trace hit entity %s\n", gameLocal.entities[tr.c.entityNum]->name.c_str() );
+			bCollided = true;
+		}
 
-Quit:
+		// start out okay, do the real translation
+		gameLocal.clip.Translation
+		( 
+			tr, clipOrig + trans1, clipOrig + trans2,
+			ClipModel, ClipModel->GetAxis(), ContentsMask,
+			m_player.GetEntity()
+		);
+		if( tr.fraction < 1.0f )
+		{
+			// gameLocal.Printf("Drop trace hit entity %s\n", gameLocal.entities[tr.c.entityNum]->name.c_str() );
+			bCollided = true;
+		}
+
+		if( bCollided )
+			break;
+	}
+	// set the entity back the way it was after the tests are done
+	phys->SetContents(EntContents);
+
 	if(bStartedHidden)
 		ent->Hide();
 
-	return bReturnVal;
+	return !bCollided;
 }
 
 void CGrabber::CheckStuck( void )

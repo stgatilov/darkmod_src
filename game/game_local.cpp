@@ -1490,6 +1490,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	MapPopulate();
 
+	// ishtvan: Set the player variable on the grabber
+	m_Grabber->SetPlayer( GetLocalPlayer() );
+
 	// greebo: Add the elevator reachabilities to the AAS
 	SetupEAS();
 
