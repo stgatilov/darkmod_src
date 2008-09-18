@@ -7929,19 +7929,24 @@ void idPhysics_AF::SetOrigin( const idVec3 &newOrigin, int id ) {
 idPhysics_AF::SetAxis
 ================
 */
-void idPhysics_AF::SetAxis( const idMat3 &newAxis, int id ) {
+void idPhysics_AF::SetAxis( const idMat3 &newAxis, int id ) 
+{
 	idMat3 axis;
-	idRotation rotation;
 
-	if ( masterBody ) {
-		axis = bodies[0]->current->worldAxis.Transpose() * ( newAxis * masterBody->current->worldAxis );
-	} else {
-		axis = bodies[0]->current->worldAxis.Transpose() * newAxis;
+	if ( masterBody ) 
+		axis = newAxis * masterBody->current->worldAxis;
+	else
+		axis = newAxis;
+
+	// ishtvan: Floating point error when newAxis was same as current axis
+	// was causing matrices to become un-normalized and stretch the AF
+	if( !axis.Compare( bodies[0]->current->worldAxis, 0.00001f) )
+	{
+		axis = bodies[0]->current->worldAxis.Transpose() * axis;
+		idRotation rotation = axis.ToRotation();
+		rotation.SetOrigin( bodies[0]->current->worldOrigin );
+		Rotate( rotation );
 	}
-	rotation = axis.ToRotation();
-	rotation.SetOrigin( bodies[0]->current->worldOrigin );
-
-	Rotate( rotation );
 }
 
 /*
