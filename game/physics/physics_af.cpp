@@ -7929,24 +7929,19 @@ void idPhysics_AF::SetOrigin( const idVec3 &newOrigin, int id ) {
 idPhysics_AF::SetAxis
 ================
 */
-void idPhysics_AF::SetAxis( const idMat3 &newAxis, int id ) 
-{
+void idPhysics_AF::SetAxis( const idMat3 &newAxis, int id ) {
 	idMat3 axis;
+	idRotation rotation;
 
-	if ( masterBody ) 
-		axis = newAxis * masterBody->current->worldAxis;
-	else
-		axis = newAxis;
-
-	// ishtvan: Floating point error when newAxis was same as current axis
-	// was causing matrices to become un-normalized and stretch the AF
-	if( !axis.Compare( bodies[0]->current->worldAxis, 0.00001f) )
-	{
-		axis = bodies[0]->current->worldAxis.Transpose() * axis;
-		idRotation rotation = axis.ToRotation();
-		rotation.SetOrigin( bodies[0]->current->worldOrigin );
-		Rotate( rotation );
+	if ( masterBody ) {
+		axis = bodies[0]->current->worldAxis.Transpose() * ( newAxis * masterBody->current->worldAxis );
+	} else {
+		axis = bodies[0]->current->worldAxis.Transpose() * newAxis;
 	}
+	rotation = axis.ToRotation();
+	rotation.SetOrigin( bodies[0]->current->worldOrigin );
+
+	Rotate( rotation );
 }
 
 /*
@@ -7986,19 +7981,23 @@ void idPhysics_AF::Rotate( const idRotation &rotation, int id ) {
 	int i;
 	idAFBody *body;
 
+	// ishtvan: Stop the stretching error due to too many
+	// mat3 to rotation to mat3 conversions
+	idRotation rotationC = rotation;
+	rotationC.ReCalculateMatrix();
+
 	if ( !worldConstraintsLocked ) {
 		// rotate constraints attached to the world
 		for ( i = 0; i < constraints.Num(); i++ ) {
-			constraints[i]->Rotate( rotation );
+			constraints[i]->Rotate( rotationC );
 		}
 	}
 
 	// rotate all the bodies
 	for ( i = 0; i < bodies.Num(); i++ ) {
 		body = bodies[i];
-
-		body->current->worldOrigin *= rotation;
-		body->current->worldAxis *= rotation.ToMat3();
+		body->current->worldOrigin *= rotationC;
+		body->current->worldAxis *= rotationC.ToMat3();
 	}
 
 	Activate();
