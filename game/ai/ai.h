@@ -1258,6 +1258,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	bool CanHitEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
 
+	/**
+	 * greebo: This updates the weapon attachment's "solid" status.
+	 * By design, AI have solid weapons only when in searching states.
+	 */
+	void UpdateAttachmentContents(bool makeSolid);
+
 
 	// movement control
 	void					StopMove( moveStatus_t status );

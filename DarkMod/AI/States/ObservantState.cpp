@@ -103,11 +103,13 @@ void ObservantState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 			TaskPtr(new SingleBarkTask(soundName))
-		);
+	);
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new WaitTask(2000))
-		);
+	);
 
+	// Let the AI update their weapons (make them nonsolid)
+	owner->UpdateAttachmentContents(false);
 }
 
 // Gets called each time the mind is thinking

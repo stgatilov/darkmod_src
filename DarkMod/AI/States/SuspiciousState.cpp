@@ -106,6 +106,9 @@ void SuspiciousState::Init(idAI* owner)
 			TaskPtr(new SingleBarkTask(bark))
 		);
 	}
+
+	// Let the AI update their weapons (make them nonsolid)
+	owner->UpdateAttachmentContents(false);
 }
 
 // Gets called each time the mind is thinking

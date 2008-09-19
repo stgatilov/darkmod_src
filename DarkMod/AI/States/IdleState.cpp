@@ -108,6 +108,9 @@ void IdleState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
 	);
+
+	// Let the AI update their weapons (make them nonsolid)
+	owner->UpdateAttachmentContents(false);
 }
 
 // Gets called each time the mind is thinking

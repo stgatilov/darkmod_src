@@ -55,7 +55,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 
 void AgitatedSearchingState::Init(idAI* owner)
 {
-	// Init base class first
+	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
 	State::Init(owner);
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
@@ -106,6 +106,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 	}
 	
 	owner->DrawWeapon();
+
+	// Let the AI update their weapons (make them solid)
+	owner->UpdateAttachmentContents(true);
 }
 
 // Gets called each time the mind is thinking

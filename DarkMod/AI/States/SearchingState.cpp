@@ -129,12 +129,14 @@ void SearchingState::Init(idAI* owner)
 		// clear the alert type, so we can react to other alert types (such as a dead person)
 		memory.alertType = EAlertTypeSuspicious;
 	}
-
 	
 	if (!owner->HasSeenEvidence())
 	{
 		owner->SheathWeapon();
 	}
+
+	// Let the AI update their weapons (make them solid)
+	owner->UpdateAttachmentContents(true);
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)

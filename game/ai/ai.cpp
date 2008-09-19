@@ -30,6 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/MultiStateMover.h"
+#include "../../DarkMod/MeleeWeapon.h"
 #include "../../DarkMod/PlayerData.h"
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/EscapePointManager.h"
@@ -5748,6 +5749,35 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 	}
 
 	return false;
+}
+
+void idAI::UpdateAttachmentContents(bool makeSolid)
+{
+	for (int i = 0; i < m_Attachments.Num(); i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_Attachments[i].ent.IsValid()) continue;
+
+		if (!ent->IsType(CMeleeWeapon::Type)) continue;
+		
+		// Found a melee weapon attachment
+		if (makeSolid)
+		{
+			//ent->GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
+			ent->GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
+		}
+		else
+		{
+			ent->GetPhysics()->SetClipMask( 0 );
+		}
+
+		// SR CONTENTS_RESPONSE FIX:
+		if( ent->GetStimResponseCollection()->HasResponse() )
+		{
+			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+		}
+	}
 }
 
 /*
