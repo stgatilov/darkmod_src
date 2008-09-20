@@ -50,8 +50,8 @@ const float MIN_HELD_DISTANCE  =		35.0f;
 const int	DIST_GRANULARITY	=		12;
 
 // shouldered body immobilizations
-const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE;
-
+const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE;
+const float SHOULDER_JUMP_HINDERANCE = 0.25;
 
 CLASS_DECLARATION( idEntity, CGrabber )
 
@@ -1087,7 +1087,7 @@ bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 	
 	ent->Show();
 	// ishtvan: Rotation disabled until AF stretching on rotation issue is resolved
-	// ent->SetAxis( axis );
+	ent->SetAxis( axis );
 
 	// teleport in the object
 	idVec3 COMLocal(vec3_zero);
@@ -1158,7 +1158,7 @@ bool CGrabber::FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat
 
 	// rotate to new axis (will rotate all clipmodels around master body if it's an AF)
 	// ishtvan: axis-setting disabled until AF stretching on rotation issue is resolved
-	// phys->SetAxis( axis );
+	phys->SetAxis( axis );
 	// translate by: the difference between the clipmodel's center of mass and the desired point
 	idVec3 COMLocal(vec3_zero);
 	idClipModel *ClipModel = NULL;
@@ -1247,7 +1247,11 @@ bool CGrabber::FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat
 	phys->SetContents(EntContents);
 
 	if(bStartedHidden)
+	{
 		ent->Hide();
+		// SetAxis leaves the clipmodel linked, which creates collisions where there should be nothing
+		phys->UnlinkClip();
+	}
 
 	return !bCollided;
 }
@@ -1399,15 +1403,14 @@ bool CGrabber::ShoulderBody( idAFEntity_Base *body )
 
 		// set immobilizations
 		int immob = SHOULDER_IMMOBILIZATIONS;
-		if( body->GetPhysics()->GetMass() > cv_drag_jump_masslimit.GetFloat() )
-			immob = immob | EIM_JUMP;
 		// TODO: Also make sure you can't grab anything else (hands are full)
 		// requires a new EIM flag?
-		player->SetImmobilization( "ShoulderedBody", immob );
+		player->SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
 		
 		// set hinderance
 		float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
 		player->SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
+		player->SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
 
 		m_EquippedEnt = body;
 
@@ -1442,6 +1445,7 @@ bool CGrabber::UnShoulderBody( void )
 	// clear immobilizations
 	player->SetImmobilization( "ShoulderedBody", 0 );
 	player->SetHinderance( "ShoulderedBody", 1.0f, 1.0f );
+	player->SetJumpHinderance( "ShoulderedBody", 1.0f, 1.0f );
 
 	m_EquippedEnt = NULL;
 
