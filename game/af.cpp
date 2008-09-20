@@ -394,7 +394,9 @@ idAF::JointForBody
 */
 jointHandle_t idAF::JointForBody( int body )
 {
-	jointHandle_t joint;
+	/* tels: if no jointBody[i] == body, this
+		 will return -1 */
+	jointHandle_t joint = (jointHandle_t)-1;
 	for( int i=0; i < jointBody.Num(); i++ )
 	{
 		if( jointBody[i] == body )
