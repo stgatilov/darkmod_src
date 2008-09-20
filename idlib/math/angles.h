@@ -18,6 +18,11 @@
 
 	Euler angles
 
+TDM NOTE:
+idAngles uses the "yaw, pitch, roll" convention, in which the yaw rotation occurs
+first, then pitch occurs relative to the yawed axes, and finally roll
+occurs relative to the yawed and pitched axes.  Also known as the "zyx" convention.
+
 ===============================================================================
 */
 
