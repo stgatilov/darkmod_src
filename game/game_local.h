@@ -536,7 +536,7 @@ public:
 	/**
 	* DarkMod: text names for new surface types
 	**/
-	static const char *		m_NewSurfaceTypes[ MAX_SURFACE_TYPES*2 ];
+	static const char *		m_NewSurfaceTypes[ MAX_SURFACE_TYPES*2 + 1];
 
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
