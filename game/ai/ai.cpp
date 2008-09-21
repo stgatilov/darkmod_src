@@ -7787,7 +7787,7 @@ void idAI::PerformVisualScan(float timecheck)
 		return;
 	}
 
-	if (!CheckFOV(player->GetPhysics()->GetOrigin()))
+	if (!CheckFOV(player->GetEyePosition()))
 	{
 		return;
 	}
@@ -7811,10 +7811,6 @@ void idAI::PerformVisualScan(float timecheck)
 
 	// greebo: At this point, the actor is identified as enemy and is visible
 	// set AI_VISALERT and the vector for last sighted position
-	if (cv_ai_visdist_show.GetFloat() > 0) 
-	{
-		gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,60), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-	}
 	// Store the position the enemy was visible
 	m_LastSight = player->GetPhysics()->GetOrigin();
 	AI_VISALERT = true;
@@ -7823,7 +7819,13 @@ void idAI::PerformVisualScan(float timecheck)
 	// float incAlert = GetPlayerVisualStimulusAmount();
 
 	// angua: alert increase depends on brightness, distance and acuity
-	float incAlert = 4 + 6 * visFrac;
+	float incAlert = 4 + 9 * visFrac;
+
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
+		gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,70), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * gameLocal.msec);
+		gameRenderWorld->DrawText(va("Alert increase: %.2f", incAlert), GetEyePosition() + idVec3(0,0,60), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * gameLocal.msec);
+	}
 
 	float newAlertLevel = AI_AlertLevel + incAlert;
 	if (newAlertLevel > thresh_5)
@@ -7898,21 +7900,21 @@ float idAI::GetVisibility( idEntity *ent ) const
 	{
 		idStr alertText(clampVal);
 		alertText = "clampVal: "+ alertText;
-		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		idStr alertText2(clampdist);
 		alertText2 = "clampdist: "+ alertText2;
-		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(colorDkGrey, GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText3(safedist);
 		alertText3 = "savedist: "+ alertText3;
-		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(colorDkGrey, GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
-		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		idStr alertText5(dist);
 		alertText5 = "distance: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 	
 	return returnval;
@@ -7922,12 +7924,15 @@ float idAI::GetCalibratedLightgemValue() const
 {
 	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
 
-	float clampVal = -0.01f
-					+ 0.015f * lgem 
-					+ 0.0018f * idMath::Pow16(lgem, 2)
-					+ 0.000128f * idMath::Pow16(lgem, 3)
-					- 0.0000114f * idMath::Pow16(lgem, 4)	
-					+ 0.000000193f * idMath::Pow16(lgem, 5);
+
+	float term0 = -0.003f;
+	float term1 = 0.03f * lgem;
+	float term2 = 0.001f * idMath::Pow16(lgem, 2);
+	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
+	float term4 = - 0.000011f * idMath::Pow16(lgem, 4);
+	float term5 = 0.00000001892f * idMath::Pow16(lgem, 5);
+
+	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
 
 	clampVal *= GetAcuity("vis");
 
@@ -7941,7 +7946,7 @@ float idAI::GetCalibratedLightgemValue() const
 	{
 		idStr alertText5(lgem);
 		alertText5 = "lgem: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
 	return clampVal;
