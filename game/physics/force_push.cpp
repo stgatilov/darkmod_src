@@ -60,10 +60,6 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 			static_cast<idMoveable*>(lastPushEntity)->SetIsPushed(false, vec3_zero);
 		}
 	}
-	else
-	{
-
-	}
 
 	this->pushEnt = pushEnt;
 	this->id = id;
