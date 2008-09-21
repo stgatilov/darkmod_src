@@ -42,8 +42,8 @@ private:
 	void				SetOwnerIsPushing(bool isPushing);
 
 private:
-	idEntity*			pushEnt;		// entity being pushed
-	idEntity*			lastPushEnt;	// the entity we pushed last frame
+	idEntity*				pushEnt;		// entity being pushed
+	idEntityPtr<idEntity>	lastPushEnt;	// the entity we pushed last frame
 
 	int					id;				// clip model id of physics object
 	trace_t				contactInfo;	// the contact info of the object we're pushing
