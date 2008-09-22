@@ -792,6 +792,13 @@ public:
 	void inventoryPrevGroup( void );
 	// Drops the currently held/selected item.
 	void inventoryDropItem( void );
+	/**
+	* Physically test whether an item would fit in the world when
+	* dropped with its center of mass (not origin!) at the specified point
+	* Initially tries the supplied orientation, and tries all possible 90 degree
+	* rotations, overwriting the supplied orientation with the one that fits
+	**/
+	bool TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis );
 
 	// Uses the currently held/selected item.
 	void inventoryUseItem();

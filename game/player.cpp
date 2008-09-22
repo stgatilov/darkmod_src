@@ -9290,7 +9290,8 @@ void idPlayer::inventoryDropItem()
 			// greebo: Only place the entity in the world, if there is no custom dropscript
 			// The flashbomb for example is spawning projectiles on its own.
 			// Stackables: Test that the item fits in grabber with dummy item first, before spawning the drop item
-			else if (grabber->FitsInWorld(ent, playViewPos, DropPoint, DropAxis)) 
+			// NOTE: TestDropItemRotations will overwrite DropAxis if the supplied doesn't work and it finds a working one
+			else if (TestDropItemRotations(ent, playViewPos, DropPoint, DropAxis)) 
 			{
 				// Drop the item into the grabber hands 
 				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
@@ -9467,6 +9468,42 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, con
 
 	//SetGuiFloat(mInventoryOverlay, "HUD_Opacity", opacity);
 	_hud->StateChanged(gameLocal.time);
+}
+
+bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis )
+{
+	bool bReturnVal(false);
+
+	idList<idMat3> Rotations;
+	// first try the supplied orientation
+	Rotations.Append( mat3_identity );
+	// yaw rotations
+	Rotations.Append( idAngles(0.0f, 90.0f, 0.0f).ToMat3() );
+	Rotations.Append( idAngles(0.0f, 180.0f, 0.0f).ToMat3() );
+	Rotations.Append( idAngles(0.0f, 270.0f, 0.0f).ToMat3() );
+	// roll rotations
+	Rotations.Append( idAngles(0.0f, 0.0f, 90.0f).ToMat3() );
+	Rotations.Append( idAngles(0.0f, 0.0f, 180.0f).ToMat3() );
+	Rotations.Append( idAngles(0.0f, 0.0f, 270.0f).ToMat3() );
+	// pitch up and down
+	Rotations.Append( idAngles(90.0f, 0.0f, 0.0f).ToMat3() );
+	Rotations.Append( idAngles(-90.0f, 0.0f, 0.0f).ToMat3() );
+
+	// test each orientation to see if it fits in the world
+	idMat3 InitAxis = DropAxis;
+	idMat3 TestAxis( mat3_identity );
+	for( int i=0; i < Rotations.Num(); i++ )
+	{
+		TestAxis = Rotations[i] * InitAxis;
+		if( gameLocal.m_Grabber->FitsInWorld( ent, viewPoint, DropPoint, TestAxis ) )
+		{
+			bReturnVal = true;
+			DropAxis = TestAxis;
+			break;
+		}
+	}
+
+	return bReturnVal;
 }
 
 void idPlayer::Event_GetEyePos( void )
