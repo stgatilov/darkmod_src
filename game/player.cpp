@@ -9250,6 +9250,11 @@ void idPlayer::inventoryDropItem()
 			
 			// ishtvan: Set up the initial orientation and point at which we want to drop
 			idMat3 DropAxis = item->GetDropOrientation();
+			if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
+			{
+				if( gameLocal.m_Grabber->m_bDropBodyFaceUp )
+					DropAxis = DropAxis * idAngles(0.0f,0.0f,180.0f).ToMat3();
+			}
 			// Apply the player's view yaw and roll to the item's orientation
 			idVec3 playViewPos;
 			idMat3 playViewAxis;
@@ -9285,7 +9290,7 @@ void idPlayer::inventoryDropItem()
 			// greebo: Only place the entity in the world, if there is no custom dropscript
 			// The flashbomb for example is spawning projectiles on its own.
 			// Stackables: Test that the item fits in grabber with dummy item first, before spawning the drop item
-			else if (grabber->FitsInHands(ent, DropAxis)) 
+			else if (grabber->FitsInWorld(ent, playViewPos, DropPoint, DropAxis)) 
 			{
 				// Drop the item into the grabber hands 
 				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
@@ -9305,7 +9310,7 @@ void idPlayer::inventoryDropItem()
 					ent = spawnedEntity;
 				}
 
-				if( grabber->PutInHands(ent, DropAxis) )
+				if( grabber->PutInHands(ent, DropPoint, DropAxis) )
 				{
 					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
 					bDropped = true;
@@ -9316,9 +9321,8 @@ void idPlayer::inventoryDropItem()
 						gameLocal.m_Grabber->UnShoulderBody();
 						// don't keep dragging the body, let it go
 						gameLocal.m_Grabber->Update( this, false );
-
-						// Shouldered bodies: each drop switches the next drop between face up/face down
-						item->SetDropOrientation( idAngles(0.0f, 0.0f, 180.0f).ToMat3() * item->GetDropOrientation() );
+						// toggle face up/down
+						gameLocal.m_Grabber->m_bDropBodyFaceUp = !gameLocal.m_Grabber->m_bDropBodyFaceUp;
 					}
 				}
 			}
