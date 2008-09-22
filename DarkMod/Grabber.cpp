@@ -303,7 +303,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		goto Quit;
 	}
 
-	/* idPhysics_Player* */ playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
+	playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
 	// if the player is climbing a rope or ladder, don't let them grab things
 	// greebo: Disabled this, it let things currently held by the grabber drop to the ground
 	// and then reattach them after the player has finished climbing
@@ -317,7 +317,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		StartDrag( player );
 
 	// if there's still not a valid ent, don't do anything
-	/* idEntity* */ drag = m_dragEnt.GetEntity();
+	drag = m_dragEnt.GetEntity();
 	if ( !drag || !m_dragEnt.IsValid() )
 		goto Quit;
 
@@ -1060,25 +1060,15 @@ Quit:
 
 bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 {
-	bool	bReturnVal = false;
-	float	HeldDist = 0.0f;
-	idVec3	targetCOM(vec3_zero);
-	idVec3	forward(1.0f, 0.0f, 0.0f), viewPoint;
-	idMat3	viewAxis;
-
 	if( !ent || !m_player.GetEntity() )
 		return false;
 
+	bool	bReturnVal = false;
+	idVec3	targetCOM(vec3_zero), viewPoint;
+	idMat3	viewAxis;
+
 	m_player.GetEntity()->GetViewPos( viewPoint, viewAxis );
-
-	// calculate where the origin should end up based on center of mass location and orientation
-	// also based on the minimum held distance
-	HeldDist = ent->spawnArgs.GetFloat("hold_distance_min", "-1" );
-	if( HeldDist < 0 )
-		HeldDist = MIN_HELD_DISTANCE;
-
-	targetCOM = (HeldDist * forward ) * viewAxis;
-	targetCOM += viewPoint;
+	targetCOM = GetHoldPoint(ent, axis, bodyID);
 
 	bReturnVal = FitsInWorld( ent, viewPoint, targetCOM, axis, bodyID );
 	
@@ -1086,10 +1076,9 @@ bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 		return false;
 	
 	ent->Show();
-	// ishtvan: Rotation disabled until AF stretching on rotation issue is resolved
 	ent->SetAxis( axis );
 
-	// teleport in the object
+	// teleport in the object, put its center of mass at the target point
 	idVec3 COMLocal(vec3_zero);
 	idClipModel *ClipModel = NULL;
 	idPhysics *phys = ent->GetPhysics();
@@ -1105,6 +1094,7 @@ bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 	idVec3 orig = targetCOM - ( phys->GetAxis( bodyID ) * COMLocal );
 	
 	// if this is not body 0 on an AF, need an additional offset to put desired body in hand
+	// (already taken into account in the FitsInWorld clipping test)
 	if( bodyID > 0 )
 		orig -= phys->GetOrigin( bodyID ) - phys->GetOrigin( 0 );
 
@@ -1117,26 +1107,15 @@ bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)
 
 bool CGrabber::FitsInHands(idEntity *ent, idMat3 axis, int bodyID)
 {
-	float	HeldDist = 0.0f;
-	idVec3	targetCOM(vec3_zero);
-	idVec3	forward(1.0f, 0.0f, 0.0f), viewPoint;
-	idMat3	viewAxis;
-
 	if( !ent || !m_player.GetEntity() )
 		return false;
 
+	idVec3	viewPoint, holdPoint;
+	idMat3	viewAxis;
+
 	m_player.GetEntity()->GetViewPos( viewPoint, viewAxis );
-
-	// calculate where the origin should end up based on center of mass location and orientation
-	// also based on the minimum held distance
-	HeldDist = ent->spawnArgs.GetFloat("hold_distance_min", "-1" );
-	if( HeldDist < 0 )
-		HeldDist = MIN_HELD_DISTANCE;
-
-	targetCOM = (HeldDist * forward ) * viewAxis;
-	targetCOM += viewPoint;
-
-	return FitsInWorld( ent, viewPoint, targetCOM, axis, bodyID );
+	holdPoint = GetHoldPoint(ent, axis, bodyID );
+	return FitsInWorld( ent, viewPoint, holdPoint, axis, bodyID );
 }
 
 bool CGrabber::FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat3 axis, int bodyID )
@@ -1254,6 +1233,27 @@ bool CGrabber::FitsInWorld( idEntity *ent, idVec3 viewPoint, idVec3 point, idMat
 	}
 
 	return !bCollided;
+}
+
+idVec3 CGrabber::GetHoldPoint( idEntity *ent, idMat3 axis, int bodyID )
+{
+	float	HeldDist = 0.0f;
+	idVec3	targetCOM(vec3_zero);
+	idVec3	forward(1.0f, 0.0f, 0.0f), viewPoint;
+	idMat3	viewAxis;
+
+	m_player.GetEntity()->GetViewPos( viewPoint, viewAxis );
+
+	// calculate where the origin should end up based on center of mass location and orientation
+	// also based on the minimum held distance
+	HeldDist = ent->spawnArgs.GetFloat("hold_distance_min", "-1" );
+	if( HeldDist < 0 )
+		HeldDist = MIN_HELD_DISTANCE;
+
+	targetCOM = (HeldDist * forward ) * viewAxis;
+	targetCOM += viewPoint;
+
+	return targetCOM;
 }
 
 void CGrabber::CheckStuck( void )

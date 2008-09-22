@@ -35,6 +35,9 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_LightgemModifier = 0;
 	m_MovementModifier = 1.0f;
 	m_UseOnFrob = false;
+	m_DropOrientation = mat3_identity;
+	m_bDropPointOverride = false;
+	m_vDropPoint = vec3_zero;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -86,6 +89,35 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 		SetHUD(hudName, hudLayer);
 	}
 
+	// Check for a preferred drop orientation, if not, use current orientation
+	if( itemEntity->spawnArgs.FindKey("inv_drop_angles") )
+	{
+		idAngles DropAngles;
+		DropAngles = itemEntity->spawnArgs.GetAngles("inv_drop_angles");
+		m_DropOrientation = DropAngles.ToMat3();
+	}
+	else
+	{
+		idVec3 dummy;
+		idMat3 playerView;
+		gameLocal.GetLocalPlayer()->GetViewPos(dummy, playerView);
+		// drop orientation is relative to the player view yaw only
+		idAngles viewYaw = playerView.ToAngles();
+		// ignore pitch and roll
+		viewYaw[0] = 0;
+		viewYaw[2] = 0;
+		idMat3 playerViewYaw = viewYaw.ToMat3();
+
+		m_DropOrientation = itemEntity->GetPhysics()->GetAxis() * playerViewYaw.Transpose();
+	}
+
+	// Check for preferred drop point (in player view coordinates)
+	if( itemEntity->spawnArgs.FindKey("inv_drop_point") )
+	{
+		m_bDropPointOverride = true;
+		m_vDropPoint = itemEntity->spawnArgs.GetVector("inv_drop_point");
+	}
+
 	// Parse a few common spawnargs
 	ParseSpawnargs(itemEntity->spawnArgs);
 }
@@ -119,6 +151,9 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_LightgemModifier);
 	savefile->WriteFloat(m_MovementModifier);
 	savefile->WriteBool(m_UseOnFrob);
+	savefile->WriteMat3(m_DropOrientation);
+	savefile->WriteBool(m_bDropPointOverride);
+	savefile->WriteVec3(m_vDropPoint);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
@@ -155,6 +190,9 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LightgemModifier);
 	savefile->ReadFloat(m_MovementModifier);
 	savefile->ReadBool(m_UseOnFrob);
+	savefile->ReadMat3(m_DropOrientation);
+	savefile->ReadBool(m_bDropPointOverride);
+	savefile->ReadVec3(m_vDropPoint);
 }
 
 void CInventoryItem::ParseSpawnargs(const idDict& spawnArgs)
@@ -281,6 +319,21 @@ void CInventoryItem::SetMovementModifier(float newValue)
 	{
 		m_MovementModifier = newValue;
 	}
+}
+
+void CInventoryItem::SetDropOrientation(idMat3 newAxis)
+{
+	m_DropOrientation = newAxis;
+}
+
+void CInventoryItem::SetDropPointOverriden(bool bval)
+{
+	m_bDropPointOverride = bval;
+}
+
+void CInventoryItem::SetDropPoint(idVec3 newPoint)
+{
+	m_vDropPoint = newPoint;
 }
 
 void CInventoryItem::SetIcon(const idStr& newIcon)

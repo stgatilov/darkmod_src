@@ -116,6 +116,18 @@ public:
 	 */
 	float					GetMovementModifier() { return m_MovementModifier; }
 	void					SetMovementModifier(float newValue);
+	/**
+	* Get/set the drop orientation
+	**/
+	idMat3					GetDropOrientation() { return m_DropOrientation; }
+	void					SetDropOrientation(idMat3 newAxis);
+	/**
+	* Check/set if this overrides the default drop point
+	**/
+	bool					IsDropPointOverriden() { return m_bDropPointOverride; }
+	void					SetDropPointOverriden(bool bval);
+	idVec3					GetDropPoint() { return m_vDropPoint; }
+	void					SetDropPoint(idVec3 newPoint);
 
 	// Returns true when this item should be used by the 'frob' impulse
 	bool					UseOnFrob() const { return m_UseOnFrob; }
@@ -158,6 +170,25 @@ protected:
 	float					m_MovementModifier; 
 
 	bool					m_UseOnFrob;	// Whether this item can be used by the 'frob' button
+
+	/**
+	* Which way the object should orient itself when dropping
+	* Relative to the player's view axis (x,y,z = forward,left,up)
+	* Typically it maintains the same relative orientation to the player
+	* that it had when the player picked it up.
+	* Except for pitch, which is the same as its original pitch
+	**/
+	idMat3					m_DropOrientation;
+
+	/**
+	* Drop to a point in space other than the default grabber-specified point.
+	**/
+	bool					m_bDropPointOverride;
+	/**
+	* Point is relative to the player camera point and player view axes (forward, left, up)
+	* Only player yaw is applied to specified point, not pitch & roll
+	**/
+	idVec3					m_vDropPoint;
 };
 typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 
