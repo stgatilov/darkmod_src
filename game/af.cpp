@@ -341,6 +341,10 @@ int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
 	for ( i = 0; i < jointMods.Num(); i++ ) {
 		body = physicsObj.GetBody( jointMods[i].bodyId );
 
+		// ishtvan: don't test bodies with their clipmodels disabled
+		if( !body->GetClipMask() )
+			continue;
+
 		for ( j = 0; j < numClipModels; j++ ) {
 			cm = clipModels[j];
 
@@ -356,7 +360,8 @@ int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
 				continue;
 			}
 
-			if ( gameLocal.clip.ContentsModel( body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), -1, cm->Handle(), cm->GetOrigin(), cm->GetAxis() ) ) {
+			// ishtvan: Apply the body clipmask
+			if ( gameLocal.clip.ContentsModel( body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), body->GetClipMask(), cm->Handle(), cm->GetOrigin(), cm->GetAxis() ) ) {
 				touchList[ numTouching ].touchedByBody = body;
 				touchList[ numTouching ].touchedClipModel = cm;
 				touchList[ numTouching ].touchedEnt  = cm->GetEntity();

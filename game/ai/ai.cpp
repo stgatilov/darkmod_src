@@ -5753,6 +5753,7 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 
 void idAI::UpdateAttachmentContents(bool makeSolid)
 {
+	// ishtvan: Modified to work only with AF body representing the entity
 	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
 		idEntity* ent = m_Attachments[i].ent.GetEntity();
@@ -5762,20 +5763,25 @@ void idAI::UpdateAttachmentContents(bool makeSolid)
 		if (!ent->IsType(CMeleeWeapon::Type)) continue;
 		
 		// Found a melee weapon attachment
+		idAFBody *body;
 		if (makeSolid)
 		{
-			//ent->GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
-			ent->GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
+			if( (body = AFBodyForEnt(ent)) != NULL )
+			{
+				// TODO: Read the contents from a stored variable
+				// in case they are something other than these standards?
+				// CONTENTS_RENDERMODEL allows projectiles to hit it
+				body->GetClipModel()->SetContents( CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
+				body->SetClipMask( CONTENTS_SOLID | CONTENTS_CORPSE );
+			}
 		}
 		else
 		{
-			ent->GetPhysics()->SetClipMask( 0 );
-		}
-
-		// SR CONTENTS_RESPONSE FIX:
-		if( ent->GetStimResponseCollection()->HasResponse() )
-		{
-			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+			if( (body = AFBodyForEnt(ent)) != NULL )
+			{
+				body->GetClipModel()->SetContents( 0 );
+				body->SetClipMask( 0 );
+			}
 		}
 	}
 }
@@ -6716,6 +6722,7 @@ void idAI::PushWithAF( void ) {
 				else
 				{
 					// TODO: Touched a dead or unconscious body, should issue a body alert
+					// Touched dead body code goes here: found body alert
 				}
 			}
 			// Ent was not an actor:

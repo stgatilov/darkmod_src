@@ -1253,7 +1253,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 
 	// Propagate CONTENTS_CORPSE from AF to new clipmodel
 	if( GetAFPhysics()->GetContents() & CONTENTS_CORPSE )
-		NewClip->SetContents( (NewClip->GetContents() & (~CONTENTS_SOLID)) | CONTENTS_CORPSE ); 
+		NewClip->SetContents( (NewClip->GetContents() & (~CONTENTS_SOLID)) | CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
 	
 	// EntMass = ent->GetPhysics()->GetMass();
 	// FIX: Large masses aren't working, the AFs are not quite that flexible that you can put on a huge mass
@@ -1292,6 +1292,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 
 	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodID);
 	idAFBody *body = new idAFBody( AddName, NewClip, density );
+	body->SetClipMask( bodyExist->GetClipMask() );
 	body->SetSelfCollision( false );
 	body->SetRerouteEnt( ent );
 	newBodID = GetAFPhysics()->AddBody( body );
@@ -1367,6 +1368,22 @@ jointHandle_t idAFEntity_Base::JointForBody( int body )
 int	idAFEntity_Base::BodyForJoint( jointHandle_t joint )
 {
 	return af.BodyForJoint( joint );
+}
+
+idAFBody *idAFEntity_Base::AFBodyForEnt( idEntity *ent )
+{
+	idAFBody *returnBody = NULL;
+	for( int i=0; i < m_AddedEnts.Num(); i++ )
+	{
+		if( m_AddedEnts[i].ent.GetEntity() == ent )
+		{
+			idStr bodyName = m_AddedEnts[i].bodyName;
+			returnBody = GetAFPhysics()->GetBody( bodyName.c_str() );
+			break;
+		}
+	}
+
+	return returnBody;
 }
 
 void idAFEntity_Base::RestoreAddedEnts( void )

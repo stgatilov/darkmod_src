@@ -238,6 +238,12 @@ public:
 	jointHandle_t			JointForBody( int body );
 	int						BodyForJoint( jointHandle_t joint );
 
+	/**
+	* TDM: Get AF body for the given added entity
+	* returns NULL if added ent could not be found
+	**/
+	idAFBody *				AFBodyForEnt( idEntity *ent );
+
 	virtual void			ShowEditingDialog( void );
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );
