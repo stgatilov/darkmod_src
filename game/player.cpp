@@ -9486,8 +9486,17 @@ bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 Dr
 	Rotations.Append( idAngles(0.0f, 0.0f, 180.0f).ToMat3() );
 	Rotations.Append( idAngles(0.0f, 0.0f, 270.0f).ToMat3() );
 	// pitch up and down
-	Rotations.Append( idAngles(90.0f, 0.0f, 0.0f).ToMat3() );
-	Rotations.Append( idAngles(-90.0f, 0.0f, 0.0f).ToMat3() );
+	// Dropping upside-down should always be a last resort
+	if( !gameLocal.m_Grabber->m_bDropBodyFaceUp )
+	{
+		Rotations.Append( idAngles(-90.0f, 0.0f, 0.0f).ToMat3() );
+		Rotations.Append( idAngles(90.0f, 0.0f, 0.0f).ToMat3() );
+	}
+	else
+	{
+		Rotations.Append( idAngles(90.0f, 0.0f, 0.0f).ToMat3() );
+		Rotations.Append( idAngles(-90.0f, 0.0f, 0.0f).ToMat3() );
+	}
 
 	// test each orientation to see if it fits in the world
 	idMat3 InitAxis = DropAxis;
