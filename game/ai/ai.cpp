@@ -7930,7 +7930,7 @@ float idAI::GetCalibratedLightgemValue() const
 	float term2 = 0.001f * idMath::Pow16(lgem, 2);
 	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
 	float term4 = - 0.000011f * idMath::Pow16(lgem, 4);
-	float term5 = 0.00000001892f * idMath::Pow16(lgem, 5);
+	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
 
 	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
 
