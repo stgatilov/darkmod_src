@@ -53,6 +53,8 @@ const int	DIST_GRANULARITY	=		12;
 const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE;
 const float SHOULDER_JUMP_HINDERANCE = 0.25;
 
+const char *SHOULDER_ANIM = "drop_body";
+
 CLASS_DECLARATION( idEntity, CGrabber )
 
 	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
@@ -1427,6 +1429,20 @@ bool CGrabber::ShoulderBody( idAFEntity_Base *body )
 		player->SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
 
 		m_EquippedEnt = body;
+
+		// Load the animation frame that will put the body in the shouldered pose
+		idAnimator *animator = body->GetAnimator();
+		int animNum;
+		if( (animNum = animator->GetAnim( SHOULDER_ANIM )) != 0 )
+		{
+			gameLocal.Printf("Found drop_body animation\n");
+			animator->ClearAFPose();
+			animator->ClearAllAnims(gameLocal.time,0);
+			animator->SetFrame(ANIMCHANNEL_ALL, animNum, 0, 0, 0);
+
+			// TODO: Call af.SetPose to move the bodies to match the anim?
+		}
+
 		rc = true;
 	}
 
