@@ -219,6 +219,12 @@ public:
 	virtual void			UnbindNotify( idEntity *ent );
 
 	/**
+	* Overloaded idAnimatedEntity::ReAttach methods to take into account AF body clipmask and contents
+	**/
+	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
+	virtual void			ReAttachToPos( const char *AttName, const char *PosName  );
+
+	/**
 	* TDM: Adds the clipmodel of the given entity to the AF structure
 	* Called during the binding process
 	* AddEntByBody is called by BindToBody, AddEntByJoint called by BindToJoint

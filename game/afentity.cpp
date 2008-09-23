@@ -1460,6 +1460,88 @@ void idAFEntity_Base::ParseAttachmentsAF( void )
 	idEntity::ParseAttachments();
 }
 
+void idAFEntity_Base::ReAttachToPos
+	( const char *AttName, const char *PosName  )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind == -1 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return;
+	}
+
+	idEntity* ent = GetAttachment( ind );
+
+	if( !ent )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
+		return;
+	}
+ 
+	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
+	idAFBody *body = NULL;
+	int bodyContents, bodyClipMask;
+	bool bStoredAFBodyInfo = false;
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
+	idEntity::ReAttachToPos( AttName, PosName );
+
+	// copy over the old AF body contents
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
+}
+
+void idAFEntity_Base::ReAttachToCoords
+	( const char *AttName, idStr jointName, 
+		idVec3 offset, idAngles angles  )
+{
+	idEntity *ent(NULL);
+	CAttachInfo *attachment = GetAttachInfo( AttName );
+
+	if( !attachment )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return;
+	}
+	
+	ent = attachment->ent.GetEntity();
+	if( !attachment->ent.IsValid() || !ent )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", name.c_str());
+		return;
+	}
+
+	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
+	idAFBody *body = NULL;
+	int bodyContents, bodyClipMask;
+	bool bStoredAFBodyInfo = false;
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
+	idAnimatedEntity::ReAttachToCoords( AttName, jointName, offset, angles );
+
+	// copy over the old AF body contents
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
+}
+
 /*
 ===============================================================================
 
