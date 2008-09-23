@@ -6838,6 +6838,10 @@ void idAnimatedEntity::ReAttachToCoords
 	idMat3			axis, rotate, newAxis;
 	jointHandle_t	joint;
 	CAttachInfo		*attachment( NULL );
+	// AF stuff
+	int bodyContents(0), bodyClipMask(0);
+	idAFBody *body = NULL;
+	bool bStoredAFBodyInfo = false;
 
 	attachment = GetAttachInfo( AttName );
 	if( attachment )
@@ -6863,6 +6867,16 @@ void idAnimatedEntity::ReAttachToCoords
 	rotate = angles.ToMat3();
 	newAxis = rotate * axis;
 
+	// If the bindmaster is an AF entity and this ent has an added body, 
+	// retain the same AF body contents (don't want to accidentally re-enable them if clip disabled)
+	if( IsType(idAFEntity_Base::Type) 
+		&& (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
 	ent->Unbind(); 
 
 	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
@@ -6880,6 +6894,16 @@ void idAnimatedEntity::ReAttachToCoords
 	ent->spawnArgs.Set( "joint", jointName.c_str() );
 	ent->spawnArgs.SetVector( "origin", offset );
 	ent->spawnArgs.SetAngles( "angles", angles );
+
+	// If bindmaster is an AF entity and we've been added again when reattached
+	// Set the contents and clipmaks of the AF body to what we stored earlier
+	if( IsType(idAFEntity_Base::Type) 
+		&& (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
 
 Quit:
 	return;
@@ -8271,6 +8295,19 @@ void idEntity::ReAttachToPos
 		return;
 	}
 
+	// If the bindmaster is an AF entity and this ent has an added body, 
+	// retain the same AF body contents (don't want to accidentally re-enable them if clip disabled)
+	idAFBody *body = NULL;
+	int bodyContents, bodyClipMask;
+	bool bStoredAFBodyInfo = false;
+	if( IsType(idAFEntity_Base::Type) 
+		&& (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
 	// Hack: Detaching leaves a null entry in the array to preserve indices
 	// To leverage existing Attach function, we detach and then re-insert
 	// into this place in the array.
@@ -8295,6 +8332,16 @@ void idEntity::ReAttachToPos
 	// Fix the name mapping to map back to the original index
 	m_AttNameMap.erase( AttName );
 	m_AttNameMap.insert(AttNameMap::value_type(AttName, ind));
+
+	// If bindmaster is an AF entity and we've been added again when reattached
+	// Set the contents and clipmaks of the AF body to what we stored earlier
+	if( IsType(idAFEntity_Base::Type) 
+		&& (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
 }
 
 void idEntity::ShowAttachment( const char *AttName, bool bShow )
