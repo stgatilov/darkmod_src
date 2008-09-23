@@ -152,7 +152,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	{
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Attack clipmodel started out inside something it hits.\r");
 
-		MeleeCollision( gameLocal.world, vec3_zero, &tr, -1 );
+		MeleeCollision( gameLocal.entities[tr.c.entityNum], vec3_zero, &tr, -1 );
 		DeactivateAttack();
 	}
 }
