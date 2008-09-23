@@ -1510,10 +1510,16 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	// check if we already have a door to handle
 	// don't start a DoorHandleTask if it is the same door or the other part of a double door
 	CFrobDoor* currentDoor = memory.doorRelated.currentDoor.GetEntity();
-	if (currentDoor == NULL || (currentDoor != frobDoor && frobDoor != currentDoor->GetDoubleDoor()))
+	if (currentDoor == NULL)
 	{
 		memory.doorRelated.currentDoor = frobDoor;
 		owner->GetSubsystem(SubsysMovement)->PushTask(HandleDoorTask::CreateInstance());
+	}
+	else if (frobDoor != currentDoor && frobDoor != currentDoor->GetDoubleDoor())
+	{
+		// if there is already a door handling task active, 
+		// terminate that one so we can start a new one next time
+		owner->GetSubsystem(SubsysMovement)->FinishTask();
 	}
 }
 

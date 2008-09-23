@@ -59,6 +59,8 @@ public:
 	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
 	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
 
+	void DoorInTheWay(idAI* owner, CFrobDoor* frobDoor);
+
 	// this checks if the gap is large enough to fit through 
 	// partially openend doors (blocked, interrupted)
 	bool FitsThrough();
