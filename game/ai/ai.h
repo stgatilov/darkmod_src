@@ -581,6 +581,10 @@ protected:
 	// This expands the AABB a bit when the AI is checking for reached positions.
 	float					reachedpos_bbox_expansion;
 
+	// greebo: Defines the maximum vertical tolerance within wich a point above an AAS area is still considered reachable.
+	// This is used by PathToGoal to judge whether an area is reachable or not.
+	float					aas_reachability_z_tolerance;
+
 	// physics
 	idPhysics_Monster		physicsObj;
 
