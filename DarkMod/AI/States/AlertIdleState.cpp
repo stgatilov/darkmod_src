@@ -51,7 +51,6 @@ void AlertIdleState::Init(idAI* owner)
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 
 	InitialiseMovement(owner);
-
 	InitialiseCommunication(owner);
 
 	// Initialise the animation state
@@ -61,6 +60,9 @@ void AlertIdleState::Init(idAI* owner)
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+
+	// Let the AI update their weapons (make them nonsolid)
+	owner->UpdateAttachmentContents(false);
 }
 
 idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
