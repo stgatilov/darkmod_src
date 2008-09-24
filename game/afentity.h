@@ -163,7 +163,10 @@ typedef struct SAddedEnt_s
 
 	idStr AddedToBody; // original body we added on to
 
-	int contents; // original clipmodel contents
+	int entContents; // original entity clipmodel contents
+	int entClipMask; // original entity clipmask
+	int bodyContents; // AF body contents (for saving/restoring)
+	int bodyClipMask; // AF body clipmask (for saving/restoring)
 } SAddedEnt;
 
 

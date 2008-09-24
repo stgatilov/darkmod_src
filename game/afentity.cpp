@@ -679,7 +679,15 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const
 		m_AddedEnts[j].ent.Save( savefile );
 		savefile->WriteString( m_AddedEnts[j].bodyName );
 		savefile->WriteString( m_AddedEnts[j].AddedToBody );
-		savefile->WriteInt( m_AddedEnts[j].contents );
+		savefile->WriteInt( m_AddedEnts[j].entContents );
+		savefile->WriteInt( m_AddedEnts[j].entClipMask );
+		// Check the body contents and clipmask just before saving, instead of putting in
+		// the variables bodyContents and bodyClipMask. These are only used on restoring. 
+		// go to hell, const correctness!
+		idAFEntity_Base *thisNoConst = const_cast<idAFEntity_Base *>(this);
+		idAFBody *body = thisNoConst->GetAFPhysics()->GetBody( m_AddedEnts[j].bodyName.c_str() );
+		savefile->WriteInt( body->GetClipModel()->GetContents() );
+		savefile->WriteInt( body->GetClipMask() );
 	}
 
 	af.Save( savefile );
@@ -720,7 +728,10 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile )
 		m_AddedEnts[j].ent.Restore( savefile );
 		savefile->ReadString( m_AddedEnts[j].bodyName );
 		savefile->ReadString( m_AddedEnts[j].AddedToBody );
-		savefile->ReadInt( m_AddedEnts[j].contents );
+		savefile->ReadInt( m_AddedEnts[j].entContents );
+		savefile->ReadInt( m_AddedEnts[j].entClipMask );
+		savefile->ReadInt( m_AddedEnts[j].bodyContents );
+		savefile->ReadInt( m_AddedEnts[j].bodyClipMask );
 	}
 
 	af.Restore( savefile );
@@ -1310,7 +1321,10 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	Entry.ent = ent;
 	Entry.AddedToBody = bodyExist->GetName();
 	Entry.bodyName = AddName;
-	Entry.contents = EntClip->GetContents();
+	Entry.bodyContents = body->GetClipModel()->GetContents();
+	Entry.bodyClipMask = body->GetClipMask();
+	Entry.entContents = EntClip->GetContents();
+	Entry.entClipMask = ent->GetPhysics()->GetClipMask();
 
 	m_AddedEnts.Append( Entry );
 
@@ -1326,6 +1340,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 		SetContents = SetContents | CONTENTS_FROBABLE;
 
 	EntClip->SetContents( SetContents );
+	ent->GetPhysics()->SetClipMask( 0 );
 
 	// Make sure the AF activates as soon as this is done
 	if( af.IsActive() )
@@ -1351,7 +1366,8 @@ void idAFEntity_Base::RemoveAddedEnt( idEntity *ent )
 			GetAFPhysics()->DeleteBody( bodyName.c_str() );
 			af.DeleteBodyExtern( this, bodyName.c_str() );
 			
-			ent->GetPhysics()->SetContents( m_AddedEnts[i].contents );
+			ent->GetPhysics()->SetContents( m_AddedEnts[i].entContents );
+			ent->GetPhysics()->SetClipMask( m_AddedEnts[i].entClipMask );
 			m_AddedEnts.RemoveIndex(i);
 			// Added ent AF bodies have a mass of 1 for now
 			// GetAFPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
@@ -1389,7 +1405,7 @@ idAFBody *idAFEntity_Base::AFBodyForEnt( idEntity *ent )
 void idAFEntity_Base::RestoreAddedEnts( void )
 {
 	// This must be called after all entities are loaded
-	int TempContents, bodyID;
+	int TempContents, TempClipMask, bodyID;
 	idEntity *ent;
 	idList<SAddedEnt>	OldAdded;
 	idStr temp;
@@ -1400,14 +1416,26 @@ void idAFEntity_Base::RestoreAddedEnts( void )
 	for(int i=0; i<OldAdded.Num(); i++)
 	{
 		// First, we reset all the original clipmodel contents because AddEntByBody will read it and store it
-		TempContents = OldAdded[i].contents;
+		TempContents = OldAdded[i].entContents;
+		TempClipMask = OldAdded[i].entClipMask;
 		ent = OldAdded[i].ent.GetEntity();
 		ent->GetPhysics()->SetContents( TempContents );
+		ent->GetPhysics()->SetClipMask( TempClipMask );
 
 		bodyID = GetAFPhysics()->GetBodyId( OldAdded[i].AddedToBody );
 
 		// Add the body again
 		AddEntByBody( ent, bodyID );
+
+		// restore the saved contents and clipmask of the AF body just added
+		idAFBody *body = AFBodyForEnt( ent );
+		if( body )
+		{
+			TempContents = OldAdded[i].bodyContents;
+			TempClipMask = OldAdded[i].bodyClipMask;
+			body->GetClipModel()->SetContents( TempContents );
+			body->SetClipMask( TempClipMask );
+		}
 	}
 }
 

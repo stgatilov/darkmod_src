@@ -133,10 +133,13 @@ void SearchingState::Init(idAI* owner)
 	if (!owner->HasSeenEvidence())
 	{
 		owner->SheathWeapon();
+		owner->UpdateAttachmentContents(false);
 	}
-
-	// Let the AI update their weapons (make them solid)
-	owner->UpdateAttachmentContents(true);
+	else
+	{
+		// Let the AI update their weapons (make them solid)
+		owner->UpdateAttachmentContents(true);
+	}
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
