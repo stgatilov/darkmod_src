@@ -233,11 +233,6 @@ public:
 	* Global game settings, default values
 	*/
 
-	/*!
-	* Default distance of reach for frobbing
-	*/
-	float m_DefaultFrobDistance;
-
 	/**
 	* Maximum distance of reach for frobbing (updated based on map objects)
 	**/

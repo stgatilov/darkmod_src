@@ -201,7 +201,6 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_CONVERSATION] = false;
 
 	m_Frame = 0;
-	m_DefaultFrobDistance = 100.0f;
 	m_MaxFrobDistance = 0;
 	m_LogClass = LC_SYSTEM;
 	m_LogType = LT_DEBUG;
@@ -707,10 +706,6 @@ void CGlobal::LoadINISettings(void *p)
 	{
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
 
-
-		if(FindMap(ps, "DefaultFrobDistance", TRUE, &pm) != static_cast<ULONG>(-1))
-			m_DefaultFrobDistance = fabs(atof(pm->Value));
-
 		if(FindMap(ps, "Mantle_JumpHoldMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_jumpHoldMantleTrigger_Milliseconds = atof(pm->Value);
@@ -791,9 +786,6 @@ void CGlobal::LoadINISettings(void *p)
 			m_hidingSpotMaxLightQuotient = atof(pm->Value);
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_hidingSpotMaxLightQuotient set to %f", m_hidingSpotMaxLightQuotient);
 		}
-
-
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);

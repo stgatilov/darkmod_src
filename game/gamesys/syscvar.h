@@ -123,6 +123,7 @@ extern idCVar cv_pm_lean_door_max;
 extern idCVar cv_pm_lean_door_bounds_exp;
 extern idCVar cv_pm_lean_toggle;
 
+extern idCVar cv_frob_distance_default;
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
