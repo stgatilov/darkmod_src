@@ -2311,26 +2311,13 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 			// angua: use the actual bounds size instead of a box with size 48.
 			idBounds bnds(physicsObj.GetAbsBounds().Expand(reachedpos_bbox_expansion));
 
-			// angua: expand the bounds a bit downwards, so that they can reach target positions 
-			// that are a little bit below the gound (e.g. below a patch)
-			bnds[0].z -= 10;
+			// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
+			// that are a reported as reachable by PathToGoal.
+			bnds[0].z -= aas_reachability_z_tolerance;
+			bnds[1].z += aas_reachability_z_tolerance;
 
-			/*
-			// SZ: Padding height so that we reached it if we are underneath it and can't fly
-			// SZ: Not good, could be ledge above us. Better to detect this case and set move target to
-			// ground underneath object
-			*/
-			/*
-			if (move.moveType != MOVETYPE_FLY)
+			if (bnds.ContainsPoint(pos))
 			{
-				idVec3 abovePoint;
-				abovePoint = physicsObj.GetOrigin();
-				abovePoint -= physicsObj.GetGravityNormal() * 300.0;
-				bnds.AddPoint (abovePoint);
-			}
-			*/
-
-			if ( bnds.ContainsPoint( pos ) ) {
 				return true;
 			}
 		}
