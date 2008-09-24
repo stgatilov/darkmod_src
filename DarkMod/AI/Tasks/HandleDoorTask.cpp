@@ -217,13 +217,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				if (owner->AI_MOVE_DONE)
 				{
-					// reached position
-					owner->StopMove(MOVE_STATUS_DONE);
 					if (masterUser == owner)
 					{
-						owner->TurnToward(closedPos);
-						_waitEndTime = gameLocal.time + 750;
-						_doorHandlingState = EStateWaitBeforeOpen;
+						float dist = (owner->GetPhysics()->GetOrigin() - closedPos).LengthFast();
+						if (dist < 2 * owner->GetArmReachLength())
+						{
+							// reached front position
+							owner->StopMove(MOVE_STATUS_DONE);
+							owner->TurnToward(closedPos);
+							_waitEndTime = gameLocal.time + 750;
+							_doorHandlingState = EStateWaitBeforeOpen;
+						}
+						else
+						{
+							owner->MoveToPosition(_frontPos);
+						}
 					}
 				}
 				break;
@@ -455,11 +463,19 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// need to open the door further when we reach the position for opening
 						if (owner->AI_MOVE_DONE && masterUser == owner)
 						{
-							// reached front position
-							owner->StopMove(MOVE_STATUS_DONE);
-							owner->TurnToward(closedPos);
-							_waitEndTime = gameLocal.time + 650;
-							_doorHandlingState = EStateWaitBeforeOpen;
+							float dist = (owner->GetPhysics()->GetOrigin() - closedPos).LengthFast();
+							if (dist < 2 * owner->GetArmReachLength())
+							{
+								// reached front position
+								owner->StopMove(MOVE_STATUS_DONE);
+								owner->TurnToward(closedPos);
+								_waitEndTime = gameLocal.time + 650;
+								_doorHandlingState = EStateWaitBeforeOpen;
+							}
+							else
+							{
+								owner->MoveToPosition(_frontPos);
+							}
 						}
 					}
 				}

@@ -83,12 +83,12 @@ void State::UpdateAlertLevel()
 {
 	idAI* owner = _owner.GetEntity();
 	int currentTime = gameLocal.time;
-	int frameDuration = currentTime - gameLocal.previousTime;
+	int thinkDuration = currentTime - owner->m_lastThinkTime;
 	
 	// angua: alert level stays for a short time before starting to decrease
 	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertLevel > 0)
 	{
-		float decrease = _alertLevelDecreaseRate * MS2SEC(frameDuration);
+		float decrease = _alertLevelDecreaseRate * MS2SEC(thinkDuration);
 		float newAlertLevel = owner->AI_AlertLevel - decrease;
 		owner->SetAlertLevel(newAlertLevel);
 	}
