@@ -277,6 +277,9 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 		return;
 	}
 
+	if( player->GetImmobilization() & EIM_ITEM_SELECT )
+		return;
+
 	CInventoryCursorPtr cursor = player->InventoryCursor();
 	CInventory* inventory = cursor->Inventory();
 	
@@ -316,6 +319,9 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
 		return;
 	}
+
+	if( player->GetImmobilization() & EIM_ITEM_USE )
+		return;
 
 	CInventoryCursorPtr cursor = player->InventoryCursor();
 	CInventory* inventory = cursor->Inventory();
@@ -357,6 +363,9 @@ void Cmd_InventoryCycleMaps_f( const idCmdArgs &args )
 		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
 		return;
 	}
+
+	if( (player->GetImmobilization() & EIM_ITEM_SELECT) || (player->GetImmobilization() & EIM_ITEM_USE) )
+		return;
 
 	// Pass the call to the specialised method
 	player->NextInventoryMap();
