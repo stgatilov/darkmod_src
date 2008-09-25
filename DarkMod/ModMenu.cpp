@@ -45,7 +45,7 @@ char * readFile(fs::path fileName)
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
-	if (idStr::Icmp(menuCommand, "showMods") == 0)
+	/*if (idStr::Icmp(menuCommand, "showMods") == 0)
 	{
 		// list all FMs
 		fs::path doomPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -110,7 +110,8 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		gui->SetStateInt("modSelected", -1); 
 
 		UpdateGUI(gui);
-	}
+	}*/
+
 	if (idStr::Icmp(menuCommand, "modMore") == 0)
 	{
 		// Scroll down a page

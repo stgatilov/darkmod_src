@@ -3205,13 +3205,16 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 		}
 	}
-	// greebo: This was used for Thief's Den only
-	/*else if (cmd == "showMods") // Called by "New Mission"
+	// greebo: This is used for Saint Lucia only (comment this out after release)
+	else if (cmd == "showMods" || cmd == "briefing_start_request") // Called by "Start Mission"
 	{
 		// User requested a map start
 		gui->HandleNamedEvent("ShowBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 1);
-	}*/
+
+		// greebo: During briefing, we play the in-game background music
+		gui->HandleNamedEvent("StartObjectivesMusic");
+	}
 	else if (cmd == "close") 
 	{
 		gui->HandleNamedEvent("HideBriefingScreen");
