@@ -223,6 +223,9 @@ void idMoveable::Spawn( void ) {
 		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	}
 
+	m_preHideContents = physicsObj.GetContents();
+	m_preHideClipMask = physicsObj.GetClipMask();
+
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
 	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );

@@ -624,8 +624,8 @@ idEntity::idEntity()
 	health			= 0;
 	maxHealth		= 0;
 
-	m_preHideContents		= 0;
-	m_preHideClipMask		= 0;
+	m_preHideContents		= -1; // greebo: initialise this to invalid values
+	m_preHideClipMask		= -1; 
 
 	physics			= NULL;
 	bindMaster		= NULL;
@@ -1929,6 +1929,18 @@ idEntity::Show
 */
 void idEntity::Show( void ) 
 {
+	// greebo: If the pre-hide clipmask is still uninitialised on Show(), the entity 
+	// has not been hidden before. Set this to something valid (i.e. the current clipmask)
+	if ( m_preHideClipMask == -1)
+	{
+		m_preHideClipMask = GetPhysics()->GetClipMask();
+	}
+
+	if ( m_preHideContents == -1)
+	{
+		m_preHideContents = GetPhysics()->GetContents();
+	}
+
 	if ( IsHidden() ) 
 	{
 		fl.hidden = false;
