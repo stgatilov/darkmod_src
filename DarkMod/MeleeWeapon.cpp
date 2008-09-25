@@ -576,7 +576,9 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	else
 		g_Global.GetSurfName( tr->c.material, surfType );
 
-	DmgScale *= DmgDef->GetFloat( va("damage_mult_%s",surfType.c_str()), "1.0" ); 
+	// scale the damage by owner's ability and surface type hit
+	DmgScale *= m_Owner.GetEntity()->spawnArgs.GetFloat("melee_damage_mod", "1.0");
+	DmgScale *= DmgDef->GetFloat( va("damage_mult_%s",surfType.c_str()), "1.0" );
 
 	// Damage
 	// Check for reroute entity (can happen with attachments to AI)
