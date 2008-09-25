@@ -1408,14 +1408,15 @@ bool CGrabber::ShoulderBody( idAFEntity_Base *body )
 
 		body->spawnArgs.Set( "inv_name",InvName.c_str() );
 		// apparently we need to set the category too?
-		body->spawnArgs.Set( "inv_category", "Bodies" );
+		body->spawnArgs.Set( "inv_category", "Carrying" );
 		body->spawnArgs.Set( "inv_droppable", "1" ); // dropping the body does the same as dequipping
 		body->spawnArgs.Set( "inv_icon", body->spawnArgs.GetString("shouldered_icon") );
-		body->spawnArgs.Set( "snd_acquire", body->spawnArgs.GetString("snd_shoulder_body") );
 
 		idPlayer *player = m_player.GetEntity();
 		// this should always succeed, no need to check success
 		player->AddToInventory( body, player->hud );
+		// play the sound on the player, not the body (that was creating inconsistent volume)
+		player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
 
 		// set immobilizations
 		int immob = SHOULDER_IMMOBILIZATIONS;
@@ -1469,12 +1470,14 @@ bool CGrabber::UnShoulderBody( void )
 	body->spawnArgs.Delete("inv_category");
 	body->spawnArgs.Delete("inv_droppable");
 	body->spawnArgs.Delete("inv_icon");
-	body->spawnArgs.Delete("snd_acquire");
 
 	// clear immobilizations
 	player->SetImmobilization( "ShoulderedBody", 0 );
 	player->SetHinderance( "ShoulderedBody", 1.0f, 1.0f );
 	player->SetJumpHinderance( "ShoulderedBody", 1.0f, 1.0f );
+
+	// same sound for unshouldering as shouldering
+	player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
 
 	m_EquippedEnt = NULL;
 
