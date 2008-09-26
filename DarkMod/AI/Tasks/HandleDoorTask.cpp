@@ -219,7 +219,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (masterUser == owner)
 					{
-						float dist = (owner->GetPhysics()->GetOrigin() - closedPos).LengthFast();
+						// check if we are close enough already
+						idVec3 dir = (owner->GetPhysics()->GetOrigin() - _frontPos);
+						dir.z = 0;
+						float dist = dir.LengthFast();
 						if (dist < 2 * owner->GetArmReachLength())
 						{
 							// reached front position
