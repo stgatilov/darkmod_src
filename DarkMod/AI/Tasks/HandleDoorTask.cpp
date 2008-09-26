@@ -832,7 +832,9 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 	// check if we can stand at this position
 	int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
 
-	if (contents)
+	int areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
+
+	if (contents || areaNum == 0)
 	{
 		if (cv_ai_door_show.GetBool())
 		{
@@ -850,9 +852,11 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 		towardPos += frobDoorOrg;
 		towardPos.z = frobDoorBounds[0].z + 5;
 
-		int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
+		contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
 
-		if (contents)
+		areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
+
+		if (contents || areaNum == 0)
 		{
 			if (cv_ai_door_show.GetBool())
 			{
@@ -868,9 +872,11 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 			towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
 			towardPos.z = frobDoorBounds[0].z + 5;
 
-			int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
+			contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
 
-			if (contents)
+			areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
+
+			if (contents || areaNum == 0)
 			{
 				// TODO: no suitable position found
 				if (cv_ai_door_show.GetBool())
