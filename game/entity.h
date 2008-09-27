@@ -260,6 +260,12 @@ public:
 	**/
 	int					m_preHideContents;
 	int					m_preHideClipMask;
+	/**
+	* Entity contents may be overwritten by a custom contents spawnarg
+	* Store it here to keep track of it, because derived classes can
+	* set the contents in their spawn method, and need to know to overwrite it
+	**/
+	int					m_CustomContents;
 
 	/**
 	 * UsedBy ist the list of entity names that this entity can be used by.

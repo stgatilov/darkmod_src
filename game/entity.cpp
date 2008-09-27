@@ -625,7 +625,8 @@ idEntity::idEntity()
 	maxHealth		= 0;
 
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
-	m_preHideClipMask		= -1; 
+	m_preHideClipMask		= -1;
+	m_CustomContents		= -1;
 
 	physics			= NULL;
 	bindMaster		= NULL;
@@ -799,6 +800,11 @@ void idEntity::Spawn( void )
 
 	InitDefaultPhysics( origin, axis );
 
+	// TDM: Set custom contents, and store it so it doesn't get overwritten
+	m_CustomContents = spawnArgs.GetInt("clipmodel_contents","-1");
+	if( m_CustomContents != -1 )
+		GetPhysics()->SetContents( m_CustomContents );
+
 	SetOrigin( origin );
 	SetAxis( axis );
 
@@ -829,10 +835,6 @@ void idEntity::Spawn( void )
 
 		ConstructScriptObject();
 	}
-	
-	// TDM: Set contents based on new spawnArg
-	if( spawnArgs.FindKey( "clipmodel_contents" ) )
-		GetPhysics()->SetContents( spawnArgs.GetInt("clipmodel_contents") );
 
 	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
 
@@ -1031,6 +1033,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_preHideContents );
 	savefile->WriteInt( m_preHideClipMask );
+	savefile->WriteInt( m_CustomContents );
 
 	savefile->WriteInt( targets.Num() );
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -1199,6 +1202,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_preHideContents );
 	savefile->ReadInt( m_preHideClipMask );
+	savefile->ReadInt( m_CustomContents );
 
 	targets.Clear();
 	savefile->ReadInt( num );

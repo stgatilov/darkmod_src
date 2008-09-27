@@ -977,7 +977,13 @@ idBrittleFracture::Break
 */
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
-	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_TRIGGER );
+	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+	
+	// ishtvan: overwrite with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
+
+	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
 	
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )

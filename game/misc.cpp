@@ -504,6 +504,9 @@ void idDamagable::Spawn( void )
 
 	fl.takedamage = true;
 	GetPhysics()->SetContents( CONTENTS_SOLID );
+	if( m_CustomContents != -1 )
+		GetPhysics()->SetContents( m_CustomContents );
+
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
@@ -1474,9 +1477,16 @@ void idStaticEntity::Spawn( void ) {
 	solid = spawnArgs.GetBool( "solid" );
 	hidden = spawnArgs.GetBool( "hide" );
 
-	if ( solid && !hidden ) {
+	// ishtvan fix : Let clearing contents happen naturally on Hide instead of
+	// checking hidden here and clearing contents prematurely
+	if ( solid ) 
+	{
 		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
-	} else {
+		if( m_CustomContents != -1 )
+			GetPhysics()->SetContents( m_CustomContents );
+	} 
+	else
+	{
 		GetPhysics()->SetContents( 0 );
 	}
 	// SR CONTENTS_RESONSE FIX

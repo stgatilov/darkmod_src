@@ -180,6 +180,10 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetGravity( gameLocal.GetGravity() );
 
 	int contents = CONTENTS_SOLID | CONTENTS_OPAQUE;
+	// ishtvan: overwrite with custom contents, if present
+	if( m_CustomContents != -1 )
+		contents = m_CustomContents;
+
 	// greebo: Set the frobable contents flag if the spawnarg says so
 	if (spawnArgs.GetBool("frobable", "0"))
 	{
@@ -1373,6 +1377,9 @@ void idExplodingBarrel::Event_Respawn() {
 	physicsObj.SetOrigin( spawnOrigin );
 	physicsObj.SetAxis( spawnAxis );
 	physicsObj.SetContents( CONTENTS_SOLID );
+	// override with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
 	// SR CONTENTS_RESPONSE FIX
 	if( m_StimResponseColl->HasResponse() )
 		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );

@@ -808,9 +808,7 @@ void CGrabber::AddToClipList( idEntity *ent )
 	phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
 	
 	// Clear the solid flag to avoid player collision, 
-	// but enable monsterclip for AI and CONTENTS_RENDERMODEL for projectiles
-	// Ishtvan test: Add CONTENTS_CORPSE, to make sure moveables don't clip into it
-	// phys->SetContents( (contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP | CONTENTS_RENDERMODEL );
+	// but enable monsterclip for AI, rendermodel for projectiles and corpse for moveables
 	phys->SetContents
 	( 
 		(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
