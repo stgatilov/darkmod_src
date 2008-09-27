@@ -921,14 +921,18 @@ void idEntity::LoadModels( void ) {
         idClipModel::CheckModel( brokenModel );
 
 		// since we can be damaged, setup some physics
-
+/*
+* Ishtvan: Commented out, this is handled separately and this call can interfere with other places contents are set
+*
 		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
 	    // SR CONTENTS_RESONSE FIX
 		if( m_StimResponseColl->HasResponse() ) {
 			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 		}
+**/
 
 	} // end of loading of broken model(s) and their CM
+
 
 }
 
@@ -1626,10 +1630,13 @@ void idEntity::BecomeBroken( idEntity *activator )
 				// tels: should not be nec.
 				//GetPhysics()->SetContents( CONTENTS_SOLID );
 				// SR CONTENTS_RESONSE FIX
+			/**
+			* Ishtvan: shouldn't have to do this again here
 				if( m_StimResponseColl->HasResponse() )
 				{
 					GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 				}
+			**/
 			}
 		}
 	} 
