@@ -96,7 +96,7 @@ void idLiquid::Spawn() {
 	idStr temp;
 	const char *splashName;
 
-	common->Printf("idLiquid:%s) Spawned\n",this->GetName() );
+	//common->Printf("idLiquid:%s) Spawned\n",this->GetName() );
 
 	// getters
 	spawnArgs.GetFloat("density","0.01043f",liquidDensity);

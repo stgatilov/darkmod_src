@@ -310,11 +310,21 @@ void CShop::DisplayShop(idUserInterface *gui) {
 
 	gui->SetStateInt("isDiffMenuVisible", 0);
 
-	if (mapDict.GetBool("shop_skip","0")) {
+	// greebo: Assemble the difficulty prefix (e.g. "diff_0_")
+	idStr diffPrefix = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_";
+
+	if (mapDict.GetBool("shop_skip","0") || mapDict.GetBool(diffPrefix + "shop_skip","0")) {
 		// if skip flag is set, skip the shop
 		return;
 	}
+
+	// retrieve the starting gold for the given difficulty level
 	int gold = mapDict.GetInt("shop_gold_start", "0");
+
+	if (mapDict.FindKey(diffPrefix + "shop_gold_start") != NULL)
+	{
+		gold = mapDict.GetInt(diffPrefix + "shop_gold_start");
+	}
 
 	gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapName));
 
