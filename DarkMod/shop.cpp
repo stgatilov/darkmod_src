@@ -242,42 +242,69 @@ void CShop::LoadShopItemDefinitions() {
 	}
 }
 
-int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list) {
+int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list)
+{
 	int itemNum = 1;
-	while (true) {
-		const char* itemName = mapDict->GetString(va("%s_%d_item",itemKey,itemNum));
-		if (strlen(itemName) == 0) {
-			return itemNum-1;
+	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
+
+	while (true)
+	{
+		// greebo: Assemble the item prefix (e.g. "shopItem_1_");
+		idStr itemPrefix = va("%s_%d_", itemKey, itemNum);
+
+		// This is the prefix for the various difficulty levels
+		idStr itemDiffPrefix = va("%s_%d_%d_", itemKey, itemNum, diffLevel);
+
+		const char* itemName = mapDict->GetString(itemPrefix + "item");
+
+		if (strlen(itemName) == 0)
+		{
+			return itemNum - 1; // we're done, return the number of added items
 		}
+
 		// look for skill-specific quantity first
-		int quantity = mapDict->GetInt(va("%s_%d_%d_qty",itemKey,itemNum,g_skill.GetInteger()));
+		int quantity = mapDict->GetInt(itemDiffPrefix + "qty");
+
 		if (quantity == 0) {
-			quantity = mapDict->GetInt(va("%s_%d_qty",itemKey,itemNum));
+			quantity = mapDict->GetInt(itemPrefix + "qty");
 		}
+
 		// look for skill-specific price first
-		int price = mapDict->GetInt(va("%s_%d_%d_price",itemKey,itemNum,g_skill.GetInteger()));
+		int price = mapDict->GetInt(itemDiffPrefix + "price");
+
 		if (price == 0) {
-			price = mapDict->GetInt(va("%s_%d_price",itemKey,itemNum));
+			price = mapDict->GetInt(itemPrefix + "price");
 		}
-		// look for skill-specific persistentcy first
+
+		// look for skill-specific persistency first
 		bool persistent = false;
-		const idKeyValue *keyValue = mapDict->FindKey(va("%s_%d_%d_persistent",itemKey,itemNum,g_skill.GetInteger()));
+
+		const idKeyValue* keyValue = mapDict->FindKey(itemDiffPrefix + "persistent");
+
 		if (keyValue != NULL) {
-			persistent = mapDict->GetBool(va("%s_%d_%d_persistent",itemKey,itemNum,g_skill.GetInteger()));
-		} else {
-			persistent = mapDict->GetBool(va("%s_%d_persistent",itemKey,itemNum));
+			persistent = mapDict->GetBool(itemDiffPrefix + "persistent");
 		}
+		else {
+			persistent = mapDict->GetBool(itemPrefix + "persistent");
+		}
+
 		// look for skill-specific canDrop flag first
 		bool canDrop = true;
-		keyValue = mapDict->FindKey(va("%s_%d_%d_canDrop",itemKey,itemNum,g_skill.GetInteger()));
+
+		keyValue = mapDict->FindKey(itemDiffPrefix + "canDrop");
+
 		if (keyValue != NULL) {
-			canDrop = mapDict->GetBool(va("%s_%d_%d_canDrop",itemKey,itemNum,g_skill.GetInteger()));
-		} else {
-			canDrop = mapDict->GetBool(va("%s_%d_canDrop",itemKey,itemNum), "1");
+			canDrop = mapDict->GetBool(itemDiffPrefix + "canDrop");
 		}
+		else {
+			canDrop = mapDict->GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
+		}
+
 		// put the item in the shop
-		if (quantity > 0) {
+		if (quantity > 0)
+		{
 			CShopItem* found = FindByID(&itemDefs, itemName);
+
 			if (found != NULL) 
 			{
 				CShopItem* anItem = new CShopItem(found, quantity, price, persistent);
@@ -289,6 +316,7 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 				gameLocal.Printf("Could not add item to shop: %s\n", itemName);
 			}
 		}
+
 		itemNum++;
 	}
 }
