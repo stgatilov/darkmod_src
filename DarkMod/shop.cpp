@@ -255,9 +255,15 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 		// This is the prefix for the various difficulty levels
 		idStr itemDiffPrefix = va("%s_%d_%d_", itemKey, itemNum, diffLevel);
 
-		const char* itemName = mapDict->GetString(itemPrefix + "item");
+		idStr itemName = mapDict->GetString(itemDiffPrefix + "item");
 
-		if (strlen(itemName) == 0)
+		if (itemName.IsEmpty())
+		{
+			// Difficulty-specific item is empty, check for ordinary one
+			itemName = mapDict->GetString(itemPrefix + "item");
+		}
+
+		if (itemName.IsEmpty())
 		{
 			return itemNum - 1; // we're done, return the number of added items
 		}
@@ -313,7 +319,7 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 			}
 			else
 			{
-				gameLocal.Printf("Could not add item to shop: %s\n", itemName);
+				gameLocal.Printf("Could not add item to shop: %s\n", itemName.c_str());
 			}
 		}
 
