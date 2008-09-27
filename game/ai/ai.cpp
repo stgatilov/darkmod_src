@@ -6681,6 +6681,10 @@ void idAI::PushWithAF( void ) {
 				continue;
 			}
 
+			// ishtvan: don't push our own bind children (fix AI floating away when stuff is bound to them)
+			if( ent->GetBindMaster() == this )
+				continue;
+
 			if( ent->IsType(idActor::Type) )
 			{
 
