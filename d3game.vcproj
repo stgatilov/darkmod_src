@@ -346,204 +346,204 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="game\AF.h">
+				RelativePath="game\af.h">
 			</File>
 			<File
-				RelativePath="game\AFEntity.cpp">
+				RelativePath="game\afentity.cpp">
 			</File>
 			<File
-				RelativePath="game\AFEntity.h">
+				RelativePath="game\afentity.h">
 			</File>
 			<File
-				RelativePath="game\BrittleFracture.cpp">
+				RelativePath="game\brittlefracture.cpp">
 			</File>
 			<File
-				RelativePath="game\BrittleFracture.h">
+				RelativePath="game\brittlefracture.h">
 			</File>
 			<File
-				RelativePath="game\Camera.cpp">
+				RelativePath="game\camera.cpp">
 			</File>
 			<File
-				RelativePath="game\Camera.h">
+				RelativePath="game\camera.h">
 			</File>
 			<File
-				RelativePath="game\Entity.cpp">
+				RelativePath="game\entity.cpp">
 			</File>
 			<File
-				RelativePath="game\Entity.h">
+				RelativePath="game\entity.h">
 			</File>
 			<File
-				RelativePath="game\Fx.cpp">
+				RelativePath="game\fx.cpp">
 			</File>
 			<File
-				RelativePath="game\Fx.h">
+				RelativePath="game\fx.h">
 			</File>
 			<File
-				RelativePath="game\Game.h">
+				RelativePath="game\game.h">
 			</File>
 			<File
-				RelativePath="game\Game_local.cpp">
+				RelativePath="game\game_local.cpp">
 			</File>
 			<File
-				RelativePath="game\Game_local.h">
+				RelativePath="game\game_local.h">
 			</File>
 			<File
-				RelativePath="game\Game_network.cpp">
+				RelativePath="game\game_network.cpp">
 			</File>
 			<File
-				RelativePath="game\GameEdit.cpp">
+				RelativePath="game\gameedit.cpp">
 			</File>
 			<File
-				RelativePath="game\GameEdit.h">
+				RelativePath="game\gameedit.h">
 			</File>
 			<File
-				RelativePath="game\IK.cpp">
+				RelativePath="game\ik.cpp">
 			</File>
 			<File
-				RelativePath="game\IK.h">
+				RelativePath="game\ik.h">
 			</File>
 			<File
-				RelativePath="game\Item.cpp">
+				RelativePath="game\item.cpp">
 			</File>
 			<File
-				RelativePath="game\Item.h">
+				RelativePath="game\item.h">
 			</File>
 			<File
-				RelativePath="game\Light.cpp">
+				RelativePath="game\light.cpp">
 			</File>
 			<File
-				RelativePath="game\Light.h">
+				RelativePath="game\light.h">
 			</File>
 			<File
-				RelativePath="game\Misc.cpp">
+				RelativePath="game\misc.cpp">
 			</File>
 			<File
-				RelativePath="game\Misc.h">
+				RelativePath="game\misc.h">
 			</File>
 			<File
-				RelativePath="game\Moveable.cpp">
+				RelativePath="game\moveable.cpp">
 			</File>
 			<File
-				RelativePath="game\Moveable.h">
+				RelativePath="game\moveable.h">
 			</File>
 			<File
-				RelativePath="game\Mover.cpp">
+				RelativePath="game\mover.cpp">
 			</File>
 			<File
-				RelativePath="game\Mover.h">
+				RelativePath="game\mover.h">
 			</File>
 			<File
-				RelativePath="game\MultiplayerGame.cpp">
+				RelativePath="game\multiplayergame.cpp">
 			</File>
 			<File
-				RelativePath="game\MultiplayerGame.h">
+				RelativePath="game\multiplayergame.h">
 			</File>
 			<File
-				RelativePath="game\Player.cpp">
+				RelativePath="game\player.cpp">
 			</File>
 			<File
-				RelativePath="game\Player.h">
+				RelativePath="game\player.h">
 			</File>
 			<File
-				RelativePath="game\PlayerIcon.cpp">
+				RelativePath="game\playericon.cpp">
 			</File>
 			<File
-				RelativePath="game\PlayerIcon.h">
+				RelativePath="game\playericon.h">
 			</File>
 			<File
-				RelativePath="game\PlayerView.cpp">
+				RelativePath="game\playerview.cpp">
 			</File>
 			<File
-				RelativePath="game\PlayerView.h">
+				RelativePath="game\playerview.h">
 			</File>
 			<File
-				RelativePath="game\Projectile.cpp">
+				RelativePath="game\projectile.cpp">
 			</File>
 			<File
-				RelativePath="game\Projectile.h">
+				RelativePath="game\projectile.h">
 			</File>
 			<File
-				RelativePath="game\Pvs.cpp">
+				RelativePath="game\pvs.cpp">
 			</File>
 			<File
-				RelativePath="game\Pvs.h">
+				RelativePath="game\pvs.h">
 			</File>
 			<File
-				RelativePath="game\SecurityCamera.cpp">
+				RelativePath="game\securitycamera.cpp">
 			</File>
 			<File
-				RelativePath="game\SecurityCamera.h">
+				RelativePath="game\securitycamera.h">
 			</File>
 			<File
-				RelativePath="game\SmokeParticles.cpp">
+				RelativePath="game\smokeparticles.cpp">
 			</File>
 			<File
-				RelativePath="game\SmokeParticles.h">
+				RelativePath="game\smokeparticles.h">
 			</File>
 			<File
-				RelativePath="game\Sound.cpp">
+				RelativePath="game\sound.cpp">
 			</File>
 			<File
-				RelativePath="game\Sound.h">
+				RelativePath="game\sound.h">
 			</File>
 			<File
-				RelativePath="game\Target.cpp">
+				RelativePath="game\target.cpp">
 			</File>
 			<File
-				RelativePath="game\Target.h">
+				RelativePath="game\target.h">
 			</File>
 			<File
-				RelativePath="game\Trigger.cpp">
+				RelativePath="game\trigger.cpp">
 			</File>
 			<File
-				RelativePath="game\Trigger.h">
+				RelativePath="game\trigger.h">
 			</File>
 			<File
-				RelativePath="game\Weapon.cpp">
+				RelativePath="game\weapon.cpp">
 			</File>
 			<File
-				RelativePath="game\Weapon.h">
+				RelativePath="game\weapon.h">
 			</File>
 			<File
-				RelativePath="game\WorldSpawn.cpp">
+				RelativePath="game\worldspawn.cpp">
 			</File>
 			<File
-				RelativePath="game\WorldSpawn.h">
+				RelativePath="game\worldspawn.h">
 			</File>
 			<Filter
 				Name="AI">
 				<File
-					RelativePath="game\ai\AAS.cpp">
+					RelativePath="game\ai\aas.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS.h">
+					RelativePath="game\ai\aas.h">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_debug.cpp">
+					RelativePath="game\ai\aas_debug.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_local.h">
+					RelativePath="game\ai\aas_local.h">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_pathing.cpp">
+					RelativePath="game\ai\aas_pathing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_routing.cpp">
+					RelativePath="game\ai\aas_routing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI.cpp">
+					RelativePath="game\ai\ai.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI.h">
+					RelativePath="game\ai\ai.h">
 				</File>
 				<File
-					RelativePath="game\ai\AI_events.cpp">
+					RelativePath="game\ai\ai_events.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI_pathing.cpp">
+					RelativePath="game\ai\ai_pathing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI_Vagary.cpp">
+					RelativePath="game\ai\ai_Vagary.cpp">
 				</File>
 				<File
 					RelativePath="DarkMod\AI\DoorInfo.h">
@@ -1073,28 +1073,28 @@
 			<Filter
 				Name="Physics">
 				<File
-					RelativePath="game\physics\Clip.cpp">
+					RelativePath="game\physics\clip.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Clip.h">
+					RelativePath="game\physics\clip.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force.cpp">
+					RelativePath="game\physics\force.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force.h">
+					RelativePath="game\physics\force.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Constant.cpp">
+					RelativePath="game\physics\force_constant.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Constant.h">
+					RelativePath="game\physics\force_constant.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Drag.cpp">
+					RelativePath="game\physics\force_drag.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Drag.h">
+					RelativePath="game\physics\force_drag.h">
 				</File>
 				<File
 					RelativePath="game\physics\force_push.cpp">
@@ -1103,40 +1103,40 @@
 					RelativePath="game\physics\force_push.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Field.cpp">
+					RelativePath="game\physics\force_field.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Field.h">
+					RelativePath="game\physics\force_field.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Spring.cpp">
+					RelativePath="game\physics\force_spring.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Spring.h">
+					RelativePath="game\physics\force_spring.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics.cpp">
+					RelativePath="game\physics\physics.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics.h">
+					RelativePath="game\physics\physics.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Actor.cpp">
+					RelativePath="game\physics\physics_actor.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Actor.h">
+					RelativePath="game\physics\physics_actor.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_AF.cpp">
+					RelativePath="game\physics\physics_af.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_AF.h">
+					RelativePath="game\physics\physics_af.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Base.cpp">
+					RelativePath="game\physics\physics_base.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Base.h">
+					RelativePath="game\physics\physics_base.h">
 				</File>
 				<File
 					RelativePath=".\game\physics\physics_liquid.cpp">
@@ -1145,73 +1145,73 @@
 					RelativePath=".\game\physics\physics_liquid.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Monster.cpp">
+					RelativePath="game\physics\physics_monster.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Monster.h">
+					RelativePath="game\physics\physics_monster.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Parametric.cpp">
+					RelativePath="game\physics\physics_parametric.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Parametric.h">
+					RelativePath="game\physics\physics_parametric.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Player.cpp">
+					RelativePath="game\physics\physics_player.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Player.h">
+					RelativePath="game\physics\physics_player.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_RigidBody.cpp">
+					RelativePath="game\physics\physics_rigidbody.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_RigidBody.h">
+					RelativePath="game\physics\physics_rigidbody.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Static.cpp">
+					RelativePath="game\physics\physics_static.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Static.h">
+					RelativePath="game\physics\physics_static.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_StaticMulti.cpp">
+					RelativePath="game\physics\physics_staticmulti.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_StaticMulti.h">
+					RelativePath="game\physics\physics_staticmulti.h">
 				</File>
 				<File
-					RelativePath="game\physics\Push.cpp">
+					RelativePath="game\physics\push.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Push.h">
+					RelativePath="game\physics\push.h">
 				</File>
 			</Filter>
 			<Filter
 				Name="Script">
 				<File
-					RelativePath="game\script\Script_Compiler.cpp">
+					RelativePath="game\script\script_compiler.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Compiler.h">
+					RelativePath="game\script\script_compiler.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Interpreter.cpp">
+					RelativePath="game\script\script_interpreter.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Interpreter.h">
+					RelativePath="game\script\script_interpreter.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Program.cpp">
+					RelativePath="game\script\script_program.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Program.h">
+					RelativePath="game\script\script_program.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Thread.cpp">
+					RelativePath="game\script\script_thread.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Thread.h">
+					RelativePath="game\script\script_thread.h">
 				</File>
 			</Filter>
 			<Filter
