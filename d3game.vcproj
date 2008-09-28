@@ -313,13 +313,13 @@
 		<Filter
 			Name="Game">
 			<File
-				RelativePath="game\Actor.cpp">
+				RelativePath="game\actor.cpp">
 			</File>
 			<File
-				RelativePath="game\Actor.h">
+				RelativePath="game\actor.h">
 			</File>
 			<File
-				RelativePath="game\AF.cpp">
+				RelativePath="game\af.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
