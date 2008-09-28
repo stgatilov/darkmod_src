@@ -8798,18 +8798,22 @@ void idEntity::Event_GetLootAmount(int lootType)
 	{
 		case CInventoryItem::LT_GOLD:
 			idThread::ReturnInt(gold);
+			return;
 		break;
 
 		case CInventoryItem::LT_GOODS:
 			idThread::ReturnInt(goods);
+			return;
 		break;
 
 		case CInventoryItem::LT_JEWELS:
 			idThread::ReturnInt(jewelry);
+			return;
 		break;
 
 		default:
 			idThread::ReturnInt(total);
+			return;
 		break;
 	}
 

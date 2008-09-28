@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 // Constructor
 CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name) :
+	m_Inventory(inventory),
 	m_Name(name)
 {
 	m_Owner = (inventory != NULL) ? inventory->GetOwner() : NULL;
