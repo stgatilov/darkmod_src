@@ -24,10 +24,10 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 		// New game, determine the map
 		char * mapName = NULL;
 		char * startingMap = NULL;
-		idLib::fileSystem->ReadFile("startingMap.txt", (void**) &startingMap);
+		idLib::fileSystem->ReadFile("startingmap.txt", (void**) &startingMap);
 		
 		if (mapName == NULL) {
-			gameLocal.Warning( "Couldn't open startingMap.txt file" );
+			gameLocal.Warning( "Couldn't open startingmap.txt file" );
 			mapName = va("%s", tdm_mapName.GetString());
 		} else {
 			mapName = startingMap;

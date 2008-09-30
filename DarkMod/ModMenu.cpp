@@ -82,7 +82,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		gui->SetStateBool("hasCurrentMod", false); 
 		if (current != NULL) {
 			gui->SetStateBool("hasCurrentMod", true); 
-			fs::path startingMapPath(doom3path / current / "StartingMap.txt");
+			fs::path startingMapPath(doom3path / current / "startingmap.txt");
 			char * mapName = readFile(startingMapPath);
 			tdm_mapName.SetString(mapName);
 			fs::path modDescFile(doom3path / current / "darkmod.txt");

@@ -2312,9 +2312,9 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 			// Read the startingMap.txt to determine which map we are loading
 			char * mapName = NULL;
-			idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);		
+			idLib::fileSystem->ReadFile("startingmap.txt", (void**) &mapName);		
 			if (mapName == NULL) {
-				gameLocal.Warning( "Couldn't open startingMap.txt file. No map installed" );
+				gameLocal.Warning( "Couldn't open startingmap.txt file. No map installed" );
 				return;
 			}
 			const char * filename = va("maps/%s", mapName);
