@@ -761,13 +761,20 @@ void CMissionData::UpdateObjectives( void )
 			// Check for enabling objectives
 			for( int k=0; k < obj.m_EnablingObjs.Num(); k++ )
 			{
+				// Decrease the index to the internal range [0..N)
 				int ObjNum = obj.m_EnablingObjs[k] - 1;
-				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 )
-					continue;
 
-				EObjCompletionState CompState = m_Objectives[ObjNum].m_state;
+				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 ) continue;
 
-				bObjEnabled = bObjEnabled && (CompState == STATE_COMPLETE || CompState == STATE_INVALID);
+				CObjective& obj = m_Objectives[ObjNum];
+
+				EObjCompletionState CompState = obj.m_state;
+
+				// greebo: The enabling objective must be either complete or an ongoing one 
+				// the latter of which are considered complete unless they are failed.
+				bool temp = CompState == STATE_COMPLETE || CompState == STATE_INVALID || obj.m_bOngoing;
+
+				bObjEnabled = bObjEnabled && temp;
 			}
 
 			if( !bObjEnabled )
@@ -813,9 +820,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			CObjective& obj = m_Objectives[i];
 
 			// greebo: only check visible and applicable objectives
+			// Ongoing and optional ones are considered as complete
 			if (obj.m_bVisible && obj.m_bApplies)
 			{
-				bool temp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory );
+				bool temp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory || obj.m_bOngoing);
 				missionComplete = missionComplete && temp;
 			}
 		}
