@@ -60,6 +60,26 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->PushMove();
 	owner->m_HandlingDoor = true;
 
+	_wasLocked = false;
+
+	if (frobDoor->IsLocked())
+	{
+		// check if we have already tried the door
+        idAAS*  aas = owner->GetAAS();
+        if (aas != NULL)
+        {
+			int areaNum = frobDoor->GetAASArea(aas);
+            if (gameLocal.m_AreaManager.AreaIsForbidden(areaNum, owner))
+			{
+				subsystem.FinishTask();
+				return;
+			}              
+		}
+
+		_wasLocked = true;
+	}
+
+
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
 	frobDoor->GetUserManager().AddUser(owner);
@@ -69,12 +89,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	_doorInTheWay = false;
-	_wasLocked = false;
-
-	if (frobDoor->IsLocked())
-	{
-		_wasLocked = true;
-	}
 
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = frobDoor->GetOpenDir();
@@ -1033,16 +1047,16 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 void HandleDoorTask::OnFinish(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
+	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
 	if (owner->m_HandlingDoor)
 	{
 		owner->PopMove();
 		owner->m_HandlingDoor = false;
+
 	}
 
 	_doorInTheWay = false;
-
-	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
 	if (frobDoor != NULL) 
 	{
@@ -1060,6 +1074,20 @@ void HandleDoorTask::OnFinish(idAI* owner)
 			doubleDoor->GetUserManager().RemoveUser(owner);
 		}
 
+		if (frobDoor->IsLocked())
+		{
+			// check if we have already tried the door
+			idAAS*  aas = owner->GetAAS();
+			if (aas != NULL)
+			{
+				int areaNum = frobDoor->GetAASArea(aas);
+				if (gameLocal.m_AreaManager.AreaIsForbidden(areaNum, owner))	
+				{
+					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+					owner->AI_DEST_UNREACHABLE = true;
+				}
+			}
+		}
 	}
 
 	memory.doorRelated.currentDoor = NULL;
