@@ -1295,6 +1295,7 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeBlood] = 30;
 	alertTypeWeight[ai::EAlertTypeLightSource] = 10;
 	alertTypeWeight[ai::EAlertTypeMissingItem] = 25;
+	alertTypeWeight[ai::EAlertTypeBrokenItem] = 26;
 	alertTypeWeight[ai::EAlertTypeDoor] = 20;
 	alertTypeWeight[ai::EAlertTypeDamage] = 45;
 
@@ -8526,6 +8527,7 @@ bool idAI::HasSeenEvidence()
 
 	return memory.enemiesHaveBeenSeen
 		|| memory.itemsHaveBeenStolen
+		|| memory.itemsHaveBeenBroken
 		|| memory.unconsciousPeopleHaveBeenFound
 		|| memory.deadPeopleHaveBeenFound;
 

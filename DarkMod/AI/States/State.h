@@ -93,6 +93,7 @@ public:
 	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
 
 	// greebo: Gets called by OnVisualStimPerson on finding a dead body
