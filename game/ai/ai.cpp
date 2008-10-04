@@ -4255,19 +4255,17 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 			mind->GetState()->OnFrobDoorEncounter(p_door);
 			
 		}
-		else
-		{
-			// Try backing away
-			newPos = obstacle->GetPhysics()->GetOrigin();
-			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
-				GetPhysics()->GetOrigin();
+		
+		// Try backing away
+		newPos = obstacle->GetPhysics()->GetOrigin();
+		idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
+			GetPhysics()->GetOrigin();
 
-			obstacleDelta.NormalizeFast();
-			obstacleDelta *= 128.0;
+		obstacleDelta.NormalizeFast();
+		obstacleDelta *= 128.0;
 
-			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-		}
+		newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+		move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 	}
 
 	move.obstacle = obstacle;
