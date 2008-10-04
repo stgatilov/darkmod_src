@@ -1089,7 +1089,6 @@ bool CGrabber::PutInHandsAtPoint(idEntity *ent, idVec3 point, idMat3 axis, int b
 	if( !bReturnVal )
 		return false;
 	
-	ent->Show();
 	ent->SetAxis( axis );
 
 	// teleport in the object, put its center of mass at the target point
@@ -1113,6 +1112,7 @@ bool CGrabber::PutInHandsAtPoint(idEntity *ent, idVec3 point, idMat3 axis, int b
 		orig -= phys->GetOrigin( bodyID ) - phys->GetOrigin( 0 );
 
 	ent->SetOrigin( orig );
+	ent->Show();
 
 	StartDrag( m_player.GetEntity(), ent, bodyID );
 
