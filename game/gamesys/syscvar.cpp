@@ -109,6 +109,8 @@ idCVar cv_las_showtraces(			"tdm_las_showtraces",		"0",			CVAR_GAME | CVAR_BOOL,
 
 idCVar cv_show_gameplay_time(		"tdm_show_gameplaytime",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), the gameplay time is shown in the player HUD." );
 
+idCVar cv_tdm_difficulty(			"tdm_difficulty",	"-1",					CVAR_GAME | CVAR_INTEGER, "Set this to 0, 1 or 2 to override the difficulty setting of any map (for testing purposes). Set this back to -1 to disable the setting (which is the default). This setting isn't saved between session." );
+
 idCVar cv_sr_disable (				"tdm_sr_disable",           "0",           CVAR_GAME | CVAR_BOOL, "Set to 1 to disable all stim/response processing." );
 
 /**
