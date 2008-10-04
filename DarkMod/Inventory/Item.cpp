@@ -117,6 +117,11 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 		m_bDropPointOverride = true;
 		m_vDropPoint = itemEntity->spawnArgs.GetVector("inv_drop_point");
 	}
+	else
+	{
+		m_bDropPointOverride = false;
+		m_vDropPoint = vec3_zero; // don't leave uninitialized
+	}
 
 	// Parse a few common spawnargs
 	ParseSpawnargs(itemEntity->spawnArgs);
