@@ -586,8 +586,11 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
 
 	// prevent collision with player
-	// set the clipMask so that the objet only collides with the world
 	AddToClipList( m_dragEnt.GetEntity() );
+	if( HasClippedEntity() ) 
+	{
+		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	}
 
 	// signal object manipulator to update drag position so it's relative to the objects
 	// center of mass instead of its origin
@@ -813,10 +816,15 @@ void CGrabber::AddToClipList( idEntity *ent )
 	( 
 		(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
 		| CONTENTS_RENDERMODEL | CONTENTS_CORPSE 
-	); 
-	if( HasClippedEntity() ) 
+	);
+
+	// add the bind children of the entity to the clip list as well
+	// NOTE: We always grab the bindmaster
+	idList<idEntity *> BindChildren;
+	ent->GetTeamChildren( &BindChildren );
+	for( int i = 0; i < BindChildren.Num(); i++ )
 	{
-		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+		AddToClipList( BindChildren[i] );
 	}
 }
 
@@ -882,7 +890,7 @@ void CGrabber::Event_CheckClipList( void )
 		ListEnt = m_clipList[i].m_ent.GetEntity();
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == ListEnt ) 
+		if( GetSelected() == ListEnt || (ListEnt->GetBindMaster() && GetSelected() == ListEnt->GetBindMaster()) ) 
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist as it is currently selected\r", ListEnt->name.c_str() );
 			keep = true;
