@@ -36,6 +36,12 @@ public:
 
 	static StatePtr CreateInstance();
 
+	/**
+	* ishtvan: Called when targets are changed
+	* Re-initializes to catch new path corners
+	**/
+	virtual void OnChangeTarget(idAI *owner);
+
 protected:
 
 	bool _startSitting;

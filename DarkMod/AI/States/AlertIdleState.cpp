@@ -95,6 +95,12 @@ StatePtr AlertIdleState::CreateInstance()
 	return StatePtr(new AlertIdleState);
 }
 
+void AlertIdleState::OnChangeTarget(idAI* owner)
+{
+	// re-initialize to catch new path_corners
+	Init( owner );
+}
+
 // Register this state with the StateLibrary
 StateLibrary::Registrar alertIdleStateRegistrar(
 	STATE_ALERT_IDLE, // Task Name

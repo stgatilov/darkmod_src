@@ -234,6 +234,12 @@ StatePtr IdleState::CreateInstance()
 	return StatePtr(new IdleState);
 }
 
+void IdleState::OnChangeTarget(idAI* owner)
+{
+	// re-initialize to catch new path_corners
+	Init( owner );
+}
+
 // Register this state with the StateLibrary
 StateLibrary::Registrar idleStateRegistrar(
 	STATE_IDLE, // Task Name
