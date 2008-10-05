@@ -665,6 +665,7 @@ void idActor::Spawn( void )
 
 	SetupDamageGroups();
 	SetupHead();
+	ParseAttachmentsAF();
 
 	// clear the bind anim
 	animator.ClearAllAnims( gameLocal.time, 0 );
@@ -755,8 +756,6 @@ void idActor::Spawn( void )
 	LoadVocalSet();
 
 	FinishSetup();
-
-	ParseAttachmentsAF();
 
 	CREATE_TIMER(actorGetObstaclesTimer, name, "GetObstacles");
 	CREATE_TIMER(actorGetPointOutsideObstaclesTimer, name, "GetPointOutsideObstacles");
