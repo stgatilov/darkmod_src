@@ -664,8 +664,8 @@ void idActor::Spawn( void )
 	animator.SetFrame( ANIMCHANNEL_ALL, animator.GetAnim( IK_ANIM ), 0, 0, 0 );
 
 	SetupDamageGroups();
-	SetupHead();
 	ParseAttachmentsAF();
+	SetupHead();
 
 	// clear the bind anim
 	animator.ClearAllAnims( gameLocal.time, 0 );
