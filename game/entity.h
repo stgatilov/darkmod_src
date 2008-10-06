@@ -549,8 +549,8 @@ public:
 	void					RemoveNullTargets( void );
 	void					ActivateTargets( idEntity *activator ) const;
 	// greebo: Removes the given target ent from this entity's targets.
-	void					RemoveTarget(idEntity* target);
-	void					AddTarget(idEntity* target);
+	virtual void			RemoveTarget(idEntity* target);
+	virtual void			AddTarget(idEntity* target);
 
 
 	// misc

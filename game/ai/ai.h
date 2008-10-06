@@ -450,6 +450,12 @@ public:
 	**/
 	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
 
+	/**
+	* Ishtvan: Overload AI target changing to re-initialize movement tasks
+	**/
+	virtual void			RemoveTarget(idEntity* target);
+	virtual void			AddTarget(idEntity* target);
+
 public:
 	/**
 	* DarkMod AI Member Vars
