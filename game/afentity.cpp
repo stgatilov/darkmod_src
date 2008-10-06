@@ -1230,18 +1230,18 @@ bool idAFEntity_Base::CollidesWithTeam( void )
 	return m_bCollideWithTeam;
 }
 
-void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t jointNum )
+void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t joint )
 {
 	int bodID(0);
 	
 	if( af.IsLoaded() )
 	{
-		bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
-		AddEntByBody( ent, bodID );
+		bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( joint ) );
+		AddEntByBody( ent, bodID, joint );
 	}
 }
 
-void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
+void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t joint )
 {
 	float EntMass(0.0), AFMass(0.0), MassOut(0.0), density(0.0);
 	idVec3 COM(vec3_zero), orig(vec3_zero);
@@ -1320,7 +1320,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 
 	// Now add body to AF object, for updating with idAF::ChangePos and the like
 	// We use AF_JOINTMOD_NONE since this new AF shouldn't actually stretch joints on the model when it moves
-	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_NONE );
+	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_NONE, joint );
 
 	// Add to list
 	Entry.ent = ent;

@@ -8673,12 +8673,15 @@ float idEntity::RangedThreatTo(idEntity* target)
 
 void idEntity::GetTeamChildren( idList<idEntity *> *list )
 {
+// ishtvan: TODO: I think this is WRONG and can go up and across the team hierarchy when called on bind children
+// It only works as advertised when called on bindmasters
 	idEntity *NextEnt = NULL;
 	
 	list->Clear();
 	for( NextEnt = GetNextTeamEntity(); NextEnt != NULL; NextEnt = NextEnt->GetNextTeamEntity() )
 	{
-		list->Append( NextEnt );
+		if( NextEnt != this )
+			list->Append( NextEnt );
 	}
 }
 
