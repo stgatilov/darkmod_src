@@ -1016,6 +1016,8 @@ void idPlayer::NextInventoryMap()
 {
 	gameLocal.Printf("Cycling maps.\n");
 
+	if (GetImmobilization() & EIM_ITEM_SELECT) return;
+
 	if (m_MapCursor == NULL)
 	{
 		return; // We have no cursor!
@@ -1030,15 +1032,13 @@ void idPlayer::NextInventoryMap()
 	}
 
 	// Advance the cursor to the next item
-	mapItem = m_MapCursor->GetNextItem();
+	CInventoryItemPtr nextMapItem = m_MapCursor->GetNextItem();
 
-	if (mapItem == NULL)
+	if (mapItem != NULL && nextMapItem != mapItem)
 	{
-		return; // No item available
+		// Use this new item
+		inventoryUseItem(EPressed, mapItem, 0);
 	}
-	
-	// Use this item
-	inventoryUseItem(EPressed, mapItem, 0); 
 }
 
 void idPlayer::SetupInventory()
