@@ -5734,7 +5734,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	}
 }
 
-int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator)
+int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
 {
 	int numResponses = 0;
 
@@ -5753,7 +5753,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			if ((srEntities[i]->GetPhysics()->GetOrigin() - originator->GetPhysics()->GetOrigin()).LengthSqr() > radiusSqr)
+			if ((srEntities[i]->GetPhysics()->GetOrigin() - stimOrigin).LengthSqr() > radiusSqr)
 			{
 				// Too far away
 				continue;
@@ -5990,7 +5990,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				if (n > 0)
 				{
 					// Do responses for entities within the radius of the stim
-					numResponses = DoResponseAction(stim, n, entity);
+					numResponses = DoResponseAction(stim, n, entity, origin);
 				}
 
 				// The stim has fired, let it do any post-firing activity it may have

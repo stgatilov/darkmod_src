@@ -787,7 +787,7 @@ public:
 	* @return The number of responses triggered
 	*
 	*/
-	int						DoResponseAction(CStim* stim, int numEntities, idEntity* originator);
+	int						DoResponseAction(CStim* stim, int numEntities, idEntity* originator, const idVec3& stimOrigin);
 
 	/**
 	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.

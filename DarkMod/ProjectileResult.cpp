@@ -156,7 +156,7 @@ void CProjectileResult::Init
 			if(StimType != ST_DEFAULT)
 			{
 				spawnArgs.GetFloat(va("sr_radius_%u", stimIdx), "10", StimRadius);
-				spawnArgs.GetFloat(va("sr_radius_final_%u", stimIdx), "10", StimRadiusFinal);
+				spawnArgs.GetFloat(va("sr_radius_final_%u", stimIdx), "-1", StimRadiusFinal);
 				spawnArgs.GetVector(va("sr_bounds_mins_%u", stimIdx), "0 0 0", stimBounds[0]);
 				spawnArgs.GetVector(va("sr_bounds_maxs_%u", stimIdx), "0 0 0", stimBounds[1]);
 				spawnArgs.GetInt(va("sr_falloffexponent_%u", stimIdx), "1", StimFalloffExponent);
