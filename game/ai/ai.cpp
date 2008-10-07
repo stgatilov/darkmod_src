@@ -5261,7 +5261,8 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
 	{
-		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+		bPlayerResponsible = (attacker != gameLocal.world &&
+			attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer());
 	}
 
 	// Update TDM objective system
