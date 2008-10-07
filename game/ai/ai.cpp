@@ -9692,11 +9692,19 @@ bool idAI::SwitchToConversationState(const idStr& conversationName)
 void idAI::RemoveTarget(idEntity* target)
 {
 	idEntity::RemoveTarget( target );
-	GetMind()->GetState()->OnChangeTarget( this );
+
+	if (!GetMind()->IsEmpty())
+	{
+		GetMind()->GetState()->OnChangeTarget(this);
+	}
 }
 
 void idAI::AddTarget(idEntity* target)
 {
 	idEntity::AddTarget( target );
-	GetMind()->GetState()->OnChangeTarget( this );
+
+	if (!GetMind()->IsEmpty())
+	{
+		GetMind()->GetState()->OnChangeTarget(this);
+	}
 }
