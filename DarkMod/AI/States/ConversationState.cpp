@@ -51,15 +51,8 @@ const idStr& ConversationState::GetName() const
 
 bool ConversationState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex > 0)
-	{
-		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_OBSERVANT);
-		return false;
-	}
-
-	// Alert Index is matching, return OK
-	return true;
+	// Alert index is too high for index > 0
+	return (owner->AI_AlertIndex <= 0);
 }
 
 void ConversationState::SetConversation(int index)
@@ -151,7 +144,11 @@ void ConversationState::Think(idAI* owner)
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner)) 
+	{
+		owner->GetMind()->SwitchState(STATE_OBSERVANT);
+		return;
+	}
 
 	// Let the AI check its senses
 	owner->PerformVisualScan();
