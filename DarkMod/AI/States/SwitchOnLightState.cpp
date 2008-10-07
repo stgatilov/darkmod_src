@@ -114,13 +114,15 @@ void SwitchOnLightState::Init(idAI* owner)
 				{
 					// Probably can't reach light, no path to goal found
 					light->ResponseIgnore(ST_VISUAL, owner);
+					
+					/* greebo: Disabled bark when light is unreachable					
 					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 					{
 						memory.lastTimeVisualStimBark = gameLocal.time;
 						owner->GetSubsystem(SubsysCommunication)->PushTask(
 							TaskPtr(new SingleBarkTask("snd_foundTorchOut"))
 						);
-					}
+					}*/
 					owner->GetMind()->EndState();
 					return;
 				}
