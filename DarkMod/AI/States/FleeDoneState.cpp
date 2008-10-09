@@ -50,6 +50,7 @@ void FleeDoneState::Init(idAI* owner)
 	_searchForFriendDone = false;
 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	// Slow turning for 5 seconds to look for friends
@@ -102,9 +103,7 @@ void FleeDoneState::Think(idAI* owner)
 			owner->SetAlertLevel(owner->thresh_3 + (owner->thresh_3 - owner->thresh_2) * 0.5);
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
 			owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
-			return;
 		}
-	
 		else if (gameLocal.time >= _turnEndTime)
 		{
 			// We didn't find a friend, stop looking for them after some time
@@ -121,18 +120,19 @@ void FleeDoneState::Think(idAI* owner)
 			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Cower", 4);
 
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
-			
-			return;
 		}
 	}
-	else
+	
+	// Let the AI check its senses
+	owner->PerformVisualScan();
+	if (owner->AI_ALERTED)
 	{
-		// Let the AI check its senses
-		owner->PerformVisualScan();
-		if (owner->AI_ALERTED)
-		{
-			owner->GetMind()->EndState();
-		}
+		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+		owner->SetTurnRate(_oldTurnRate);
+
+		owner->GetMind()->EndState();
 	}
 }
 
