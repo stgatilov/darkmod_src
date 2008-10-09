@@ -1056,11 +1056,17 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 
 	gameLocal.Printf("Something is broken over there!\n");
 
+	owner->StopMove(MOVE_STATUS_DONE);
+	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
+	owner->Event_LookAtEntity(stimSource, 1);
+
 	// Speak a reaction
 	memory.lastTimeVisualStimBark = gameLocal.time;
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_foundBrokenItem"))
 	);
+
+	owner->AI_RUN = true;
 
 	// One more piece of evidence of something out of place
 	memory.itemsHaveBeenBroken = true;
