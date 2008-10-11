@@ -1235,6 +1235,11 @@ void CFrobDoor::AddLockPeer(const idStr& peerName)
 	}
 }
 
+void CFrobDoor::RemoveLockPeer(const idStr& peerName)
+{
+	m_LockPeers.Remove(peerName);
+}
+
 CFrobDoorHandle* CFrobDoor::GetDoorhandle()
 {
 	return (m_Doorhandles.Num() > 0) ? m_Doorhandles[0].GetEntity() : NULL;
@@ -1327,9 +1332,40 @@ void CFrobDoor::AutoSetupDoubleDoor()
 	}
 }
 
-void CFrobDoor::RemoveLockPeer(const idStr& peerName)
+bool CFrobDoor::PreLock(bool bMaster)
 {
-	m_LockPeers.Remove(peerName);
+	if (!CBinaryFrobMover::PreLock(bMaster))
+	{
+		return false;
+	}
+
+	// Go through the list and check whether the lock peers are closed
+	for (int i = 0; i < m_LockPeers.Num(); i++)
+	{
+		const idStr& lockPeer = m_LockPeers[i];
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", lockPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(lockPeer);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", lockPeer.c_str());
+
+			CFrobDoor* door = static_cast<CFrobDoor*>(ent);
+			
+			if (!door->IsAtClosedPosition())
+			{
+				return false;
+			}
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found or of wrong type\r", lockPeer.c_str());
+		}
+	}
+
+	return true;
 }
 
 int CFrobDoor::FrobMoverStartSound(const char* soundName)
