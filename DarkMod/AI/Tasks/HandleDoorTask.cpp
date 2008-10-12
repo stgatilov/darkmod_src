@@ -339,11 +339,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// we have moved through the door and closed it
 				if (numUsers < 2)
 				{
-					if (_wasLocked && owner->CanUnlock(frobDoor))
+					// If the door should ALWAYS be locked or it was locked before => lock it
+					// but only if the owner is able to unlock it in the first place
+					if (owner->CanUnlock(frobDoor) && 
+						(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
 					{
 						// if the door was locked before, lock it again
 						frobDoor->Lock(false);
 					}
+
 					if (doubleDoor != NULL && doubleDoor->IsOpen())
 					{
 						// the other part of the double door is still open
