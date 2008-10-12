@@ -595,7 +595,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 					soundName = "snd_warnSawEvidence";
 				}
 			}
-			else if (gameLocal.random.RandomFloat() < 0.025)
+			else if (owner->AI_AlertIndex < EObservant && gameLocal.random.RandomFloat() < 0.025f)
 			{
 				// Chance check passed, greetings!
 				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
