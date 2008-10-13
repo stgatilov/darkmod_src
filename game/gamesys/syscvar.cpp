@@ -113,6 +113,8 @@ idCVar cv_tdm_difficulty(			"tdm_difficulty",	"-1",					CVAR_GAME | CVAR_INTEGER
 
 idCVar cv_sr_disable (				"tdm_sr_disable",           "0",           CVAR_GAME | CVAR_BOOL, "Set to 1 to disable all stim/response processing." );
 
+idCVar cv_debug_mainmenu(			"tdm_debug_mainmenu",      "0",            CVAR_BOOL, "Set to 1 to enable main menu GUI debugging." );
+
 /**
 * Dark Mod player movement
 * Use multipliers instead of setting a speed for each

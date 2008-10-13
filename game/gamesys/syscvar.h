@@ -78,6 +78,8 @@ extern idCVar cv_spr_radius_show;
 extern idCVar cv_ko_show;
 extern idCVar cv_ai_animstate_show;
 
+extern idCVar cv_debug_mainmenu;
+
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
