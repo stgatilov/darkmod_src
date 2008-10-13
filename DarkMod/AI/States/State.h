@@ -100,6 +100,11 @@ public:
 	virtual bool OnVisualStimDeadPerson(idActor* person, idAI* owner);
 	virtual bool OnVisualStimUnconsciousPerson(idActor* person, idAI* owner);
 
+	/**
+	* ishtvan: Called when targets are changed, does nothing on base class
+	**/
+	virtual void OnChangeTarget(idAI *owner) {};
+
 protected:
 	/**
 	 * greebo: Gets called by OnTactileAlert when the offending entity is 
