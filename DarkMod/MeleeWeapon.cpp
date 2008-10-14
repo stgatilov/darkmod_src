@@ -160,6 +160,11 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 
 		// the point is also inaccruate sometimes, set to origin of the weapon object
 		tr.c.point = m_OldOrigin;
+		// set the normal to the owner's view forward
+		idMat3 viewAxis;
+		idVec3 dummy;
+		m_Owner.GetEntity()->GetViewPos( dummy, viewAxis );
+		tr.c.normal = -viewAxis[0];
 
 		MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
 		DeactivateAttack();

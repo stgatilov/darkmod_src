@@ -2576,7 +2576,8 @@ void idPlayer::FireWeapon( void )
 			}
 		} else 
 		{
-			NextBestWeapon();
+			// ishtvan: Removed auto-switching weapons when ammo runs out
+			// NextBestWeapon();
 		}
 	}
 
@@ -3326,7 +3327,8 @@ void idPlayer::Weapon_Combat( void ) {
 		if ( weapon.GetEntity()->IsHolstered() ) {
 			if ( !weapon.GetEntity()->AmmoAvailable() ) {
 				// weapons can switch automatically if they have no more ammo
-				NextBestWeapon();
+				// Ishtvan: not in TDM they can't!
+				// NextBestWeapon();
 			} else {
 				weapon.GetEntity()->Raise();
 				state = GetScriptFunction( "RaiseWeapon" );
