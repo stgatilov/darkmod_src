@@ -724,6 +724,25 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,10), 0.3f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
 }
 
+// angua: override visual stim to avoid greetings during conversation
+void ConversationState::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
+{
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+
+	Memory& memory = owner->GetMemory();
+
+	if (!stimSource->IsType(idActor::Type)) return; // No Actor, quit
+
+	// Hard-cast the stimsource onto an actor 
+	idActor* other = static_cast<idActor*>(stimSource);	
+
+	// Are they dead or unconscious?
+	if (other->health <= 0 || other->IsKnockedOut() || owner->IsEnemy(other))
+	{
+		State::OnVisualStimPerson(stimSource, owner);
+	}
+}
+
 void ConversationState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
