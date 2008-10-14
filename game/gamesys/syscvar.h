@@ -133,6 +133,8 @@ extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
 extern idCVar cv_frob_ammo_selects_weapon;
 
+extern idCVar cv_weapon_next_on_empty;
+
 // physics
 extern idCVar cv_collision_damage_scale_vert;
 extern idCVar cv_collision_damage_scale_horiz;

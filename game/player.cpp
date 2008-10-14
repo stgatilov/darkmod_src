@@ -2574,10 +2574,9 @@ void idPlayer::FireWeapon( void )
 				}
 				SelectWeapon( previousWeapon, false );
 			}
-		} else 
+		} else if( cv_weapon_next_on_empty.GetBool() )
 		{
-			// ishtvan: Removed auto-switching weapons when ammo runs out
-			// NextBestWeapon();
+			NextBestWeapon();
 		}
 	}
 
@@ -3327,8 +3326,9 @@ void idPlayer::Weapon_Combat( void ) {
 		if ( weapon.GetEntity()->IsHolstered() ) {
 			if ( !weapon.GetEntity()->AmmoAvailable() ) {
 				// weapons can switch automatically if they have no more ammo
-				// Ishtvan: not in TDM they can't!
-				// NextBestWeapon();
+				// ishtvan: Only if the cvar is set
+				if( cv_weapon_next_on_empty.GetBool() )
+					NextBestWeapon();
 			} else {
 				weapon.GetEntity()->Raise();
 				state = GetScriptFunction( "RaiseWeapon" );
