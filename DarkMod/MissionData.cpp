@@ -983,25 +983,7 @@ void CMissionData::Event_MissionFailed( void )
 
 void CMissionData::Event_MissionEnd()
 {
-	// Clear the breakdown first
-	for (int i = 0; i < ai::EAlertStateNum; i++)
-	{
-		m_Stats.MaxAlertIndices[i] = 0;
-	}
-
-	// greebo: Traverse all AI and collect the highest alert levels
-	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
-		if (ent->IsType(idAI::Type))
-		{
-			idAI* ai = static_cast<idAI*>(ent);
-
-			// Sanity-check the alert index
-			assert(ai->m_maxAlertIndex >= 0 && ai->m_maxAlertIndex < ai::EAlertStateNum);
-
-			// Add one alert index for this AI
-			m_Stats.MaxAlertIndices[ai->m_maxAlertIndex]++;
-		}
-	}
+	// Nothing yet
 }
 
 // ============================== Stats =================================
@@ -2541,7 +2523,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
 		// Increase the stealth factor based on the number of alerted AI weighted with the seriousness
-		stealthScore += -i * m_Stats.MaxAlertIndices[i];
+		stealthScore += -i * m_Stats.AIAlerts[i].Overall;
 	}
 	stealthScore = idMath::ClampInt(0, 10, static_cast<int>(stealthScore));
 	

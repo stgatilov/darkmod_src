@@ -444,9 +444,6 @@ struct SMissionStats
 	
 	SStat AIAlerts[ MAX_ALERTLEVELS ];
 
-	// greebo: The breakdown of the maximum alert indices the AI were in (e.g. 4 AI had a max alert level of "Suspicious")
-	int MaxAlertIndices[ai::EAlertStateNum];
-
 	int DamageDealt;
 	int DamageReceived;
 	int HealthReceived;
@@ -474,11 +471,6 @@ struct SMissionStats
 		for (int i = 0; i < MAX_ALERTLEVELS; i++)
 		{
 			AIAlerts[i].Clear();
-		}
-
-		for (int i = 0; i < ai::EAlertStateNum; i++)
-		{
-			MaxAlertIndices[i] = 0;
 		}
 
 		DamageDealt = 0;
