@@ -2312,6 +2312,9 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	{
 		gui->HandleNamedEvent("GetObjectivesInfo");
 
+		// Holds the X start position for the objectives
+		int objStartXPos = -1;
+
 		if (gui->GetStateInt("BriefingIsVisible") == 1)
 		{
 			// We're coming from the briefing screen
@@ -2380,7 +2383,8 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 				gui->SetStateInt("ObjectiveBoxIsVisible", 0);
 
 				// Set the positioning according to the Difficulty screen
-				gui->SetStateInt("ObjXPos", gui->GetStateInt("DifficultyStartXPos"));
+				objStartXPos = gui->GetStateInt("DifficultyStartXPos");
+
 				gui->SetStateInt("ParchmentXPos", gui->GetStateInt("DifficultyParchmentXPos"));
 				gui->SetStateString("ObjTitle", gui->GetStateString("DifficultyTitle"));
 				gui->SetStateInt("TitleXPos", gui->GetStateInt("DifficultyTitleXPos"));
@@ -2400,11 +2404,15 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			gui->SetStateInt("ObjectiveBoxIsVisible", 1);
 
 			// Set the positioning according to the Objectives screen
-			gui->SetStateInt("ObjXPos", gui->GetStateInt("ObjectiveStartXPos"));
+			objStartXPos = gui->GetStateInt("ObjectiveStartXPos");
+
 			gui->SetStateInt("ParchmentXPos", gui->GetStateInt("ObjectiveParchmentXPos"));
 			gui->SetStateString("ObjTitle", gui->GetStateString("ObjectiveTitle"));
 			gui->SetStateInt("TitleXPos", gui->GetStateInt("ObjectiveTitleXPos"));
 		}
+
+		// greebo: Sanity-check the objectives start position
+		gui->SetStateInt("ObjXPos", (objStartXPos == 0) ? 110 : objStartXPos);
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
 		
