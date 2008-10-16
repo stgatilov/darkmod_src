@@ -957,6 +957,9 @@ void idPlayer::Spawn( void )
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 	SetupInventory();
 
+	// greebo: Set the player variable on the grabber
+	gameLocal.m_Grabber->SetPlayer(this);
+
 	// greebo: Initialise the default fov.
 	zoomFov.Init(gameLocal.time, 0, g_fov.GetFloat(), g_fov.GetFloat());
 
