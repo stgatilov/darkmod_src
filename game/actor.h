@@ -169,7 +169,7 @@ public:
 	void					SetEyeHeight( float height );
 	float					EyeHeight( void ) const;
 	idVec3					EyeOffset( void ) const;
-	idVec3					GetEyePosition( void ) const;
+	virtual idVec3			GetEyePosition( void ) const;
 	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	/**
 	* Sets the actor's field of view (doesn't apply to players)
