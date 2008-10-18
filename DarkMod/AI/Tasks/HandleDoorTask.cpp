@@ -392,6 +392,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough() && masterUser == owner)
 					{
+						if (owner->AI_AlertLevel >= owner->thresh_4)
+						{
+							return true;
+						}
+
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
@@ -476,6 +481,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (FitsThrough() && masterUser == owner)
 					{
 						// gap is large enough, move to back position
+						if (owner->AI_AlertLevel >= owner->thresh_4)
+						{
+							return true;
+						}
+
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
@@ -503,6 +513,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// door is already open, move to back position
 				else if (masterUser == owner)
 				{
+					if (owner->AI_AlertLevel >= owner->thresh_4)
+					{
+						return true;
+					}
+
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
 				}
@@ -529,6 +544,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				else if (masterUser == owner)
 				{
 					// no need for waiting, door is already open, let's move
+					if (owner->AI_AlertLevel >= owner->thresh_4)
+					{
+						return true;
+					}
+
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
 				}
@@ -552,6 +572,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				if (masterUser == owner)
 				{
+					if (owner->AI_AlertLevel >= owner->thresh_4)
+					{
+						return true;
+					}
+
 					// no need for waiting, door is already open, let's move
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
@@ -620,6 +645,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough() && masterUser == owner)
 					{
+						if (owner->AI_AlertLevel >= owner->thresh_4)
+						{
+							return true;
+						}
+
 						// gap is large enough, move to back position
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
@@ -636,6 +666,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// door is fully open, let's get moving
 				else if	(!frobDoor->IsChangingState() && masterUser == owner)
 				{
+					if (owner->AI_AlertLevel >= owner->thresh_4)
+					{
+						return true;
+					}
+
 					owner->MoveToPosition(_backPos);
 					_doorHandlingState = EStateMovingToBackPos;
 				}
@@ -689,6 +724,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				
 			case EStateWaitBeforeClose:
+				if (owner->AI_AlertLevel >= owner->thresh_4)
+				{
+					return true;
+				}
+
 				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
 					if (masterUser == owner)
@@ -706,6 +746,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateStartClose:
+				if (owner->AI_AlertLevel >= owner->thresh_4)
+				{
+					return true;
+				}
+
 				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
 					frobDoor->Close(false);
@@ -719,6 +764,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 
 			case EStateClosingDoor:
+				if (owner->AI_AlertLevel >= owner->thresh_4)
+				{
+					return true;
+				}
+
 				// check blocked or interrupted
 				if (frobDoor->IsBlocked() || 
 					frobDoor->WasInterrupted() || 
