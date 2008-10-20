@@ -236,8 +236,8 @@ StatePtr IdleState::CreateInstance()
 
 void IdleState::OnChangeTarget(idAI* owner)
 {
-	// re-initialize to catch new path_corners
-	Init( owner );
+	// re-initialize movement subsystem to catch new path_corners
+	InitialiseMovement(owner);
 }
 
 // Register this state with the StateLibrary

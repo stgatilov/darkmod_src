@@ -142,6 +142,9 @@ protected:
 	 */
 	void					AutoSetupDoubleDoor();
 
+	// angua: Specialise the CBinaryFrobMover::PreLock method to check whether lock peers are closed
+	virtual bool			PreLock(bool bMaster);
+
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock(bool bMaster);
 	virtual void			OnUnlock(bool bMaster);

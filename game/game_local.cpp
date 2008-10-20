@@ -1493,7 +1493,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	MapPopulate();
 
 	// ishtvan: Set the player variable on the grabber
-	m_Grabber->SetPlayer( GetLocalPlayer() );
+	//m_Grabber->SetPlayer( GetLocalPlayer() ); // greebo: GetLocalPlayer() returns NULL, moved to idPlayer::Spawn()
 
 	// greebo: Add the elevator reachabilities to the AAS
 	SetupEAS();
@@ -3236,6 +3236,28 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
 	g_Mods.HandleCommands(menuCommand, gui);
+
+	if (cv_debug_mainmenu.GetBool())
+	{
+		const idDict& state = gui->State();
+		
+		for (int i = 0; i < state.GetNumKeyVals(); ++i)
+		{
+			const idKeyValue* kv = state.GetKeyVal(i);
+
+			const idStr key = kv->GetKey();
+			const idStr value = kv->GetValue();
+
+			// Force the log file to write its stuff
+			g_Global.m_ClassArray[LC_MISC] = true;
+			g_Global.m_LogArray[LT_INFO] = true;
+
+			DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Mainmenu GUI State %s = %s\r", key.c_str(), value.c_str());
+		}
+
+		// Clear the cvar again
+		cv_debug_mainmenu.SetBool(false);
+	}
 }
 
 /*
@@ -5734,7 +5756,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	}
 }
 
-int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator)
+int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
 {
 	int numResponses = 0;
 
@@ -5753,7 +5775,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			if ((srEntities[i]->GetPhysics()->GetOrigin() - originator->GetPhysics()->GetOrigin()).LengthSqr() > radiusSqr)
+			if ((srEntities[i]->GetPhysics()->GetOrigin() - stimOrigin).LengthSqr() > radiusSqr)
 			{
 				// Too far away
 				continue;
@@ -5990,7 +6012,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				if (n > 0)
 				{
 					// Do responses for entities within the radius of the stim
-					numResponses = DoResponseAction(stim, n, entity);
+					numResponses = DoResponseAction(stim, n, entity, origin);
 				}
 
 				// The stim has fired, let it do any post-firing activity it may have

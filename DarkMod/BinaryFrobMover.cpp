@@ -878,7 +878,10 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 {
 	FrobMoverStartSound("snd_unlock");
 
-	if (cv_door_auto_open_on_unlock.GetBool())
+	// angua: only open the master
+	// only if the other part is an openpeer it will be opened by ToggleOpen
+	// otherwise it will stay closed
+	if (cv_door_auto_open_on_unlock.GetBool() && bMaster)
 	{
 		// The configuration says: open the mover when it's unlocked, but let's check the mapper's settings
 		bool openOnUnlock = true;

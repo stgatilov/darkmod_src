@@ -497,6 +497,8 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = idMath::Fabs(bounds[0][1]);
 
+	// in front of the button 
+	// assuming that the button translates in when pressed
 	idVec3 trans = button->spawnArgs.GetVector("translation", "0 2 0");
 	trans.z = 0;
 	if (trans.NormalizeFast() == 0)
@@ -506,22 +508,25 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 
 	const idVec3& buttonOrigin = button->GetPhysics()->GetOrigin();
 
+	// angua: target position is in front of the button with a distance 
+	// a little bit larger than the AI's bounding box
 	idVec3 target = buttonOrigin - size * 1.2f * trans;
 
-	const idVec3& gravity = gameLocal.GetGravity();
+	const idVec3& gravity = owner->GetPhysics()->GetGravityNormal();
 
 	if (!owner->MoveToPosition(target))
 	{
+		// not reachable, try alternate target positions at the sides and behind the button
 		trans = trans.Cross(gravity);
-		idVec3 target = buttonOrigin - size * 1.2f * trans;
+		target = buttonOrigin - size * 1.2f * trans;
 		if (!owner->MoveToPosition(target))
 		{
 			trans *= -1;
-			idVec3 target = buttonOrigin - size * 1.2f * trans;
+			target = buttonOrigin - size * 1.2f * trans;
 			if (!owner->MoveToPosition(target))
 			{
 				trans = trans.Cross(gravity);
-				idVec3 target = buttonOrigin - size * 1.2f * trans;
+				target = buttonOrigin - size * 1.2f * trans;
 				if (!owner->MoveToPosition(target))
 				{
 					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);

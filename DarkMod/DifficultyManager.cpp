@@ -48,6 +48,13 @@ void DifficultyManager::Init(idMapFile* mapFile)
 		_difficulty = mapDifficulty;
 	}
 
+	// Check for the CVAR, which might override any setting
+	if (cv_tdm_difficulty.GetInteger() >= 0)
+	{
+		_difficulty = cv_tdm_difficulty.GetInteger();
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found overriding CVAR 'tdm_difficulty': %d.\r", _difficulty);
+	}
+
 	// Load the default difficulty settings from the entityDefs
 	LoadDefaultDifficultySettings();
 

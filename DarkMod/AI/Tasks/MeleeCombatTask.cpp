@@ -32,6 +32,7 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	_enemy = owner->GetEnemy();
+	_attackAnimStartTime = -1;
 }
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
@@ -52,8 +53,12 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	if (owner->GetMemory().canHitEnemy)
 	{
 		idStr waitState(owner->WaitState());
-		if (waitState != "melee_attack")
+
+		// greebo: Let the animation wait time be 3 seconds at maximum
+		if (waitState != "melee_attack" || gameLocal.time > _attackAnimStartTime + 3000)
 		{
+			_attackAnimStartTime = gameLocal.time;
+
 			// Waitstate is not matching, this means that the animation 
 			// can be started.
 			StartAttack(owner);
@@ -81,19 +86,18 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 	}
 }
 
-
 void MeleeCombatTask::OnFinish(idAI* owner)
 {
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetWaitState("");
 }
 
-
 void MeleeCombatTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
 	_enemy.Save(savefile);
+	savefile->WriteInt(_attackAnimStartTime);
 }
 
 void MeleeCombatTask::Restore(idRestoreGame* savefile)
@@ -101,6 +105,7 @@ void MeleeCombatTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_enemy.Restore(savefile);
+	savefile->ReadInt(_attackAnimStartTime);
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()

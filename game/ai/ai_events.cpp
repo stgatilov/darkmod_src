@@ -544,15 +544,9 @@ END_CLASS
 void idAI::Event_PostSpawn() 
 {
 	// Parse the list of doors that can be unlocked by this AI
-	std::string doorStringList(spawnArgs.GetString("can_unlock", ""));
-
-	std::vector<std::string> doors; // will hold the separated strings
-	boost::algorithm::split(doors, doorStringList, boost::algorithm::is_any_of(" ;"));
-
-	// Copy the strings into the set
-	for (std::size_t i = 0; i < doors.size(); i++)
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("can_unlock"); kv != NULL; kv = spawnArgs.MatchPrefix("can_unlock", kv))
 	{
-		idEntity* door = gameLocal.FindEntity(doors[i].c_str());
+		idEntity* door = gameLocal.FindEntity(kv->GetValue());
 		if (door != NULL)
 		{
 			if (door->IsType(CBinaryFrobMover::Type))
@@ -561,7 +555,7 @@ void idAI::Event_PostSpawn()
 			}
 			else
 			{
-				gameLocal.Warning("Invalid door name %s on AI %s", doors[i].c_str(), name.c_str());
+				gameLocal.Warning("Invalid door name %s on AI %s", kv->GetValue().c_str(), name.c_str());
 			}
 		}
 	}

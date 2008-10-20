@@ -30,20 +30,24 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
 	Task::Init(owner, subsystem);
-	_fleeStartFrame = gameLocal.framenum;
+	_fleeStartTime = gameLocal.time;
 
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
 	Memory& memory = owner->GetMemory();
+	
+	// angua: only set flags when we are not already fleeing
+	if (memory.fleeingDone == true)
+	{
+		_escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
+		_distOpt = DIST_NEAREST;
+		_failureCount = 0; // This is used for _escapeLevel 1 only
+	}
+
 	memory.fleeingDone = false;
 	owner->AI_MOVE_DONE = false;
 	owner->AI_RUN = true;
-	_oldPosition = owner->GetPhysics()->GetOrigin();
-	
-	_escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
-	 _distOpt = DIST_NEAREST;
-	_failureCount = 0; // This is used for _escapeLevel 1 only
 }
 
 bool FleeTask::Perform(Subsystem& subsystem)
@@ -60,7 +64,13 @@ bool FleeTask::Perform(Subsystem& subsystem)
 //	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
 //		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
-	if (_failureCount > 5 || (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor))
+	// angua: in any case stop fleeing after max time (5 min).
+	// Might stay in flee task forever if pathing to destination not possible otherwise
+	// TODO: should be spawn arg, make member 
+	int maxFleeTime = 300000;
+	if (_failureCount > 5 || 
+			(owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor) ||
+			gameLocal.time > _fleeStartTime + maxFleeTime)
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
 		//Fleeing is done, check if we can see the enemy
@@ -99,7 +109,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			{
 				_escapeSearchLevel = 2;
 			}
-			_fleeStartFrame = gameLocal.framenum;
+			_fleeStartTime = gameLocal.time;
 		}
 		else if (_escapeSearchLevel == 2)
 		{
@@ -146,8 +156,7 @@ void FleeTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(_escapeSearchLevel);
 	savefile->WriteInt(_failureCount);
-	savefile->WriteVec3(_oldPosition);
-	savefile->WriteInt(_fleeStartFrame);
+	savefile->WriteInt(_fleeStartTime);
 
 	savefile->WriteInt(static_cast<int>(_distOpt));
 
@@ -160,8 +169,7 @@ void FleeTask::Restore(idRestoreGame* savefile)
 
 	savefile->ReadInt(_escapeSearchLevel);
 	savefile->ReadInt(_failureCount);
-	savefile->ReadVec3(_oldPosition);
-	savefile->ReadInt(_fleeStartFrame);
+	savefile->ReadInt(_fleeStartTime);
 
 	int distOptInt;
 	savefile->ReadInt(distOptInt);

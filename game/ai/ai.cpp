@@ -1295,6 +1295,7 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeBlood] = 30;
 	alertTypeWeight[ai::EAlertTypeLightSource] = 10;
 	alertTypeWeight[ai::EAlertTypeMissingItem] = 25;
+	alertTypeWeight[ai::EAlertTypeBrokenItem] = 26;
 	alertTypeWeight[ai::EAlertTypeDoor] = 20;
 	alertTypeWeight[ai::EAlertTypeDamage] = 45;
 
@@ -4254,19 +4255,17 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 			mind->GetState()->OnFrobDoorEncounter(p_door);
 			
 		}
-		else
-		{
-			// Try backing away
-			newPos = obstacle->GetPhysics()->GetOrigin();
-			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
-				GetPhysics()->GetOrigin();
+		
+		// Try backing away
+		newPos = obstacle->GetPhysics()->GetOrigin();
+		idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
+			GetPhysics()->GetOrigin();
 
-			obstacleDelta.NormalizeFast();
-			obstacleDelta *= 128.0;
+		obstacleDelta.NormalizeFast();
+		obstacleDelta *= 128.0;
 
-			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-		}
+		newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+		move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 	}
 
 	move.obstacle = obstacle;
@@ -5262,7 +5261,8 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
 	{
-		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+		bPlayerResponsible = (attacker != gameLocal.world &&
+			attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer());
 	}
 
 	// Update TDM objective system
@@ -8526,6 +8526,7 @@ bool idAI::HasSeenEvidence()
 
 	return memory.enemiesHaveBeenSeen
 		|| memory.itemsHaveBeenStolen
+		|| memory.itemsHaveBeenBroken
 		|| memory.unconsciousPeopleHaveBeenFound
 		|| memory.deadPeopleHaveBeenFound;
 
@@ -9692,11 +9693,19 @@ bool idAI::SwitchToConversationState(const idStr& conversationName)
 void idAI::RemoveTarget(idEntity* target)
 {
 	idEntity::RemoveTarget( target );
-	GetMind()->GetState()->OnChangeTarget( this );
+
+	if (!GetMind()->IsEmpty())
+	{
+		GetMind()->GetState()->OnChangeTarget(this);
+	}
 }
 
 void idAI::AddTarget(idEntity* target)
 {
 	idEntity::AddTarget( target );
-	GetMind()->GetState()->OnChangeTarget( this );
+
+	if (!GetMind()->IsEmpty())
+	{
+		GetMind()->GetState()->OnChangeTarget(this);
+	}
 }

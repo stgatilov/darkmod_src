@@ -34,6 +34,7 @@ Memory::Memory(idAI* owningAI) :
 	idleYaw(0),
 	enemiesHaveBeenSeen(false),
 	itemsHaveBeenStolen(false),
+	itemsHaveBeenBroken(false),
 	unconsciousPeopleHaveBeenFound(false),
 	deadPeopleHaveBeenFound(false),
 	alertPos(0,0,0),
@@ -82,6 +83,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteFloat(idleYaw);
 	savefile->WriteBool(enemiesHaveBeenSeen);
 	savefile->WriteBool(itemsHaveBeenStolen);
+	savefile->WriteBool(itemsHaveBeenBroken);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
 	savefile->WriteVec3(alertPos);
@@ -145,6 +147,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(idleYaw);
 	savefile->ReadBool(enemiesHaveBeenSeen);
 	savefile->ReadBool(itemsHaveBeenStolen);
+	savefile->ReadBool(itemsHaveBeenBroken);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
 	savefile->ReadVec3(alertPos);

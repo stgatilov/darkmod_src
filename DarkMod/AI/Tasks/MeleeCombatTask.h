@@ -26,6 +26,9 @@ class MeleeCombatTask :
 {
 	idEntityPtr<idActor> _enemy;
 
+	// The time the attack animation was started
+	int _attackAnimStartTime;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

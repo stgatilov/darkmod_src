@@ -18,8 +18,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 // We do these splashes if the mass of the colliding object is less than these values.
 // Anything large than MEDIUM_SPLASH does a large splash. (get it?)
-const int SMALL_SPLASH		= 25;
-const int MEDIUM_SPLASH		= 1000;
+const int SMALL_SPLASH		= 5;
+const int MEDIUM_SPLASH		= 20;
 
 /*
 ===============================================================================

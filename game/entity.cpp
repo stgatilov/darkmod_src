@@ -2368,6 +2368,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 	if ( !spawnArgs.GetString( soundName, "", &sound ) ) 
 		return false;
 
+	// ignore empty spawnargs
 	if ( sound[0] == '\0' ) 
 		return false;
 
@@ -7377,6 +7378,7 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 			}
 		}
 
+		// Play the (optional) acquire sound
 		StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
@@ -8866,12 +8868,10 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
 
 	// Play the (optional) acquire sound
 	idStr soundName = ent->spawnArgs.GetString("snd_acquire", "");
-	if (soundName.IsEmpty())
+	if (! soundName.IsEmpty())
 	{
-		soundName = cv_tdm_inv_loot_sound.GetString();
+		StartSoundShader(declManager->FindSound(soundName), SCHANNEL_ANY, 0, false, NULL);
 	}
-
-	StartSoundShader(declManager->FindSound(soundName), SCHANNEL_ANY, 0, false, NULL);
 
 	return item;
 }

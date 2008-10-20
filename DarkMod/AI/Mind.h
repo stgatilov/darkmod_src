@@ -77,6 +77,13 @@ public:
 	virtual void ClearStates();
 
 	/**
+	 * greebo: Returns TRUE if no states are in the StateQueue
+	 */
+	virtual bool IsEmpty() {
+		return _stateQueue.empty();
+	}
+
+	/**
 	 * Returns the reference to the current state (can be NULL).
 	 */
 	ID_INLINE const StatePtr& GetState() const {

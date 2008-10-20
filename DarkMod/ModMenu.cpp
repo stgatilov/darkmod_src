@@ -70,19 +70,22 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Get the path to the darkmod directory
 		fs::path doom3path(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		doom3path /= "..";
-		fs::path darkmodPath(doom3path / "darkmod");
+		//fs::path darkmodPath(doom3path / "darkmod");
 
 		// Path to file that holds the current FM name
-		fs::path currentFMPath(darkmodPath / "currentfm.txt");
+		//fs::path currentFMPath(darkmodPath / "currentfm.txt");
 
 		// Get the current mod
-		char * current = readFile(currentFMPath);
+		//char * current = readFile(currentFMPath);
+
+		const char* current = "saintlucia";
+
 		idStr name = idStr("<No Mission Installed>");
 		idStr desc = idStr("");
 		gui->SetStateBool("hasCurrentMod", false); 
 		if (current != NULL) {
 			gui->SetStateBool("hasCurrentMod", true); 
-			fs::path startingMapPath(doom3path / current / "StartingMap.txt");
+			fs::path startingMapPath(doom3path / current / "startingmap.txt");
 			char * mapName = readFile(startingMapPath);
 			tdm_mapName.SetString(mapName);
 			fs::path modDescFile(doom3path / current / "darkmod.txt");

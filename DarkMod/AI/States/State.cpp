@@ -327,7 +327,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
 
 	// Only respond if we can actually see it
-	if (aiUse == AIUSE_LIGHTSOURCE)
+	if (aiUse == AIUSE_LIGHTSOURCE || aiUse == AIUSE_BROKEN_ITEM)
 	{
 		// Special case for lights, we know it is off if there is no light. Also we can notice it
 		// if we are not looking right at it.
@@ -386,6 +386,15 @@ void State::OnVisualStim(idEntity* stimSource)
 			OnVisualStimMissingItem(stimSource, owner);
 		}
 	}
+	else if (aiUse == AIUSE_BROKEN_ITEM)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBrokenItem");
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeBrokenItem))
+		{
+			OnVisualStimBrokenItem(stimSource, owner);
+		}
+	}
+
 	else if (aiUse == AIUSE_DOOR)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
@@ -586,7 +595,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 					soundName = "snd_warnSawEvidence";
 				}
 			}
-			else if (gameLocal.random.RandomFloat() < 0.025)
+			else if (owner->AI_AlertIndex < EObservant && gameLocal.random.RandomFloat() < 0.025f)
 			{
 				// Chance check passed, greetings!
 				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
@@ -1034,6 +1043,54 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		owner->SetAlertLevel(owner->thresh_5 - 0.1);
 	}
 }
+
+
+void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
+{
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+
+	Memory& memory = owner->GetMemory();
+
+	// We've seen this object, don't respond to it again
+	stimSource->ResponseIgnore(ST_VISUAL, owner);
+
+	gameLocal.Printf("Something is broken over there!\n");
+
+	owner->StopMove(MOVE_STATUS_DONE);
+	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
+	owner->Event_LookAtEntity(stimSource, 1);
+
+	// Speak a reaction
+	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_foundBrokenItem"))
+	);
+
+	owner->AI_RUN = true;
+
+	// One more piece of evidence of something out of place
+	memory.itemsHaveBeenBroken = true;
+	memory.countEvidenceOfIntruders++;
+
+	// Raise alert level
+	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+	{
+		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+		memory.alertClass = EAlertVisual;
+		memory.alertType = EAlertTypeBrokenItem;
+
+		
+		// Prepare search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		
+		owner->SetAlertLevel(owner->thresh_5 - 0.1);
+	}
+}
+
 
 void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 {

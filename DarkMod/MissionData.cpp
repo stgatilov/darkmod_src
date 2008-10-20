@@ -761,13 +761,20 @@ void CMissionData::UpdateObjectives( void )
 			// Check for enabling objectives
 			for( int k=0; k < obj.m_EnablingObjs.Num(); k++ )
 			{
+				// Decrease the index to the internal range [0..N)
 				int ObjNum = obj.m_EnablingObjs[k] - 1;
-				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 )
-					continue;
 
-				EObjCompletionState CompState = m_Objectives[ObjNum].m_state;
+				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 ) continue;
 
-				bObjEnabled = bObjEnabled && (CompState == STATE_COMPLETE || CompState == STATE_INVALID);
+				CObjective& obj = m_Objectives[ObjNum];
+
+				EObjCompletionState CompState = obj.m_state;
+
+				// greebo: The enabling objective must be either complete or an ongoing one 
+				// the latter of which are considered complete unless they are failed.
+				bool temp = CompState == STATE_COMPLETE || CompState == STATE_INVALID || obj.m_bOngoing;
+
+				bObjEnabled = bObjEnabled && temp;
 			}
 
 			if( !bObjEnabled )
@@ -813,9 +820,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			CObjective& obj = m_Objectives[i];
 
 			// greebo: only check visible and applicable objectives
+			// Ongoing and optional ones are considered as complete
 			if (obj.m_bVisible && obj.m_bApplies)
 			{
-				bool temp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory );
+				bool temp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory || obj.m_bOngoing);
 				missionComplete = missionComplete && temp;
 			}
 		}
@@ -975,25 +983,7 @@ void CMissionData::Event_MissionFailed( void )
 
 void CMissionData::Event_MissionEnd()
 {
-	// Clear the breakdown first
-	for (int i = 0; i < ai::EAlertStateNum; i++)
-	{
-		m_Stats.MaxAlertIndices[i] = 0;
-	}
-
-	// greebo: Traverse all AI and collect the highest alert levels
-	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
-		if (ent->IsType(idAI::Type))
-		{
-			idAI* ai = static_cast<idAI*>(ent);
-
-			// Sanity-check the alert index
-			assert(ai->m_maxAlertIndex >= 0 && ai->m_maxAlertIndex < ai::EAlertStateNum);
-
-			// Add one alert index for this AI
-			m_Stats.MaxAlertIndices[ai->m_maxAlertIndex]++;
-		}
-	}
+	// Nothing yet
 }
 
 // ============================== Stats =================================
@@ -2304,6 +2294,9 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	{
 		gui->HandleNamedEvent("GetObjectivesInfo");
 
+		// Holds the X start position for the objectives
+		int objStartXPos = -1;
+
 		if (gui->GetStateInt("BriefingIsVisible") == 1)
 		{
 			// We're coming from the briefing screen
@@ -2312,9 +2305,9 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 			// Read the startingMap.txt to determine which map we are loading
 			char * mapName = NULL;
-			idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);		
+			idLib::fileSystem->ReadFile("startingmap.txt", (void**) &mapName);		
 			if (mapName == NULL) {
-				gameLocal.Warning( "Couldn't open startingMap.txt file. No map installed" );
+				gameLocal.Warning( "Couldn't open startingmap.txt file. No map installed" );
 				return;
 			}
 			const char * filename = va("maps/%s", mapName);
@@ -2372,7 +2365,8 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 				gui->SetStateInt("ObjectiveBoxIsVisible", 0);
 
 				// Set the positioning according to the Difficulty screen
-				gui->SetStateInt("ObjXPos", gui->GetStateInt("DifficultyStartXPos"));
+				objStartXPos = gui->GetStateInt("DifficultyStartXPos");
+
 				gui->SetStateInt("ParchmentXPos", gui->GetStateInt("DifficultyParchmentXPos"));
 				gui->SetStateString("ObjTitle", gui->GetStateString("DifficultyTitle"));
 				gui->SetStateInt("TitleXPos", gui->GetStateInt("DifficultyTitleXPos"));
@@ -2392,11 +2386,15 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			gui->SetStateInt("ObjectiveBoxIsVisible", 1);
 
 			// Set the positioning according to the Objectives screen
-			gui->SetStateInt("ObjXPos", gui->GetStateInt("ObjectiveStartXPos"));
+			objStartXPos = gui->GetStateInt("ObjectiveStartXPos");
+
 			gui->SetStateInt("ParchmentXPos", gui->GetStateInt("ObjectiveParchmentXPos"));
 			gui->SetStateString("ObjTitle", gui->GetStateString("ObjectiveTitle"));
 			gui->SetStateInt("TitleXPos", gui->GetStateInt("ObjectiveTitleXPos"));
 		}
+
+		// greebo: Sanity-check the objectives start position
+		gui->SetStateInt("ObjXPos", (objStartXPos == 0) ? 110 : objStartXPos);
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
 		
@@ -2525,7 +2523,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
 		// Increase the stealth factor based on the number of alerted AI weighted with the seriousness
-		stealthScore += -i * m_Stats.MaxAlertIndices[i];
+		stealthScore += -i * m_Stats.AIAlerts[i].Overall;
 	}
 	stealthScore = idMath::ClampInt(0, 10, static_cast<int>(stealthScore));
 	

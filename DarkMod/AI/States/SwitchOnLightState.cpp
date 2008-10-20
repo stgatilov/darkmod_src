@@ -99,7 +99,7 @@ void SwitchOnLightState::Init(idAI* owner)
 					owner->GetSubsystem(SubsysAction)->ClearTasks();
 					owner->GetSubsystem(SubsysMovement)->ClearTasks();
 					owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
-
+					/*
 					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 					{
 						memory.lastTimeVisualStimBark = gameLocal.time;
@@ -107,20 +107,22 @@ void SwitchOnLightState::Init(idAI* owner)
 							TaskPtr(new SingleBarkTask("snd_yesRelightTorch"))
 						);
 					}
-
+					*/
 					light->ResponseIgnore(ST_VISUAL, owner);
 				}
 				else
 				{
 					// Probably can't reach light, no path to goal found
 					light->ResponseIgnore(ST_VISUAL, owner);
+					
+					/* greebo: Disabled bark when light is unreachable					
 					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 					{
 						memory.lastTimeVisualStimBark = gameLocal.time;
 						owner->GetSubsystem(SubsysCommunication)->PushTask(
 							TaskPtr(new SingleBarkTask("snd_foundTorchOut"))
 						);
-					}
+					}*/
 					owner->GetMind()->EndState();
 					return;
 				}
@@ -129,6 +131,7 @@ void SwitchOnLightState::Init(idAI* owner)
 			{
 				// Probably can't reach the light, too far above ground
 				light->ResponseIgnore(ST_VISUAL, owner);
+				/*
 				if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 				{
 					memory.lastTimeVisualStimBark = gameLocal.time;
@@ -136,6 +139,7 @@ void SwitchOnLightState::Init(idAI* owner)
 						TaskPtr(new SingleBarkTask("snd_foundTorchOut"))
 					);
 				}
+				*/
 				owner->GetMind()->EndState();
 				return;
 			}

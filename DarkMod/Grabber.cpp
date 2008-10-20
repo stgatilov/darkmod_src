@@ -586,8 +586,11 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
 
 	// prevent collision with player
-	// set the clipMask so that the objet only collides with the world
 	AddToClipList( m_dragEnt.GetEntity() );
+	if( HasClippedEntity() ) 
+	{
+		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	}
 
 	// signal object manipulator to update drag position so it's relative to the objects
 	// center of mass instead of its origin
@@ -800,23 +803,48 @@ void CGrabber::AddToClipList( idEntity *ent )
 	obj.m_clipMask = clipMask;
 	obj.m_contents = contents;
 
-	m_clipList.AddUnique( obj );
-
 	// set the clipMask so that the player won't colide with the object but it still
 	// collides with the world
-	phys->SetClipMask( clipMask & (~MASK_PLAYERSOLID) );
-	phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
+	// Add can now be called on bind children that aren't solid
+	// so make sure it starts out with some form of solid before adding solid contents
+	bool bAddToList(false);
+	if( clipMask & (CONTENTS_SOLID|CONTENTS_CORPSE) )
+	{
+		phys->SetClipMask( clipMask & (~MASK_PLAYERSOLID) );
+		phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
+		bAddToList = true;
+	}
 	
 	// Clear the solid flag to avoid player collision, 
 	// but enable monsterclip for AI, rendermodel for projectiles and corpse for moveables
-	phys->SetContents
-	( 
-		(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
-		| CONTENTS_RENDERMODEL | CONTENTS_CORPSE 
-	); 
-	if( HasClippedEntity() ) 
+	if( contents & (CONTENTS_SOLID|CONTENTS_CORPSE) )
 	{
-		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+		phys->SetContents
+		( 
+			(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
+			| CONTENTS_RENDERMODEL | CONTENTS_CORPSE 
+		);
+		bAddToList = true;
+	}
+
+	if( bAddToList )
+	{
+		// gameLocal.Printf("AddToClipList: Added Entity %s\n", ent->name.c_str() );
+		m_clipList.AddUnique( obj );
+	}
+
+	// add the bind children of the entity to the clip list as well
+	// NOTE: We always grab the bindmaster first, avoid recursive loops
+	// TODO: What about case of a ragdoll bound to something?  Grabbing won't work at all?
+	if( ent->GetBindMaster() == NULL )
+	{
+		idList<idEntity *> BindChildren;
+		ent->GetTeamChildren( &BindChildren );
+		for( int i = 0; i < BindChildren.Num(); i++ )
+		{
+			AddToClipList( BindChildren[i] );
+		}
+		// gameLocal.Printf("AddToClipList: Entity %s has %d team children\n", ent->name.c_str(), BindChildren.Num() );
 	}
 }
 
@@ -882,7 +910,7 @@ void CGrabber::Event_CheckClipList( void )
 		ListEnt = m_clipList[i].m_ent.GetEntity();
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == ListEnt ) 
+		if( GetSelected() == ListEnt || (ListEnt->GetBindMaster() && GetSelected() == ListEnt->GetBindMaster()) ) 
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist as it is currently selected\r", ListEnt->name.c_str() );
 			keep = true;

@@ -109,7 +109,11 @@ idCVar cv_las_showtraces(			"tdm_las_showtraces",		"0",			CVAR_GAME | CVAR_BOOL,
 
 idCVar cv_show_gameplay_time(		"tdm_show_gameplaytime",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), the gameplay time is shown in the player HUD." );
 
+idCVar cv_tdm_difficulty(			"tdm_difficulty",	"-1",					CVAR_GAME | CVAR_INTEGER, "Set this to 0, 1 or 2 to override the difficulty setting of any map (for testing purposes). Set this back to -1 to disable the setting (which is the default). This setting isn't saved between session." );
+
 idCVar cv_sr_disable (				"tdm_sr_disable",           "0",           CVAR_GAME | CVAR_BOOL, "Set to 1 to disable all stim/response processing." );
+
+idCVar cv_debug_mainmenu(			"tdm_debug_mainmenu",      "0",            CVAR_BOOL, "Set to 1 to enable main menu GUI debugging." );
 
 /**
 * Dark Mod player movement
@@ -157,7 +161,13 @@ idCVar cv_frob_distance_default(	"tdm_frob_distance_default",	"63",	CVAR_GAME | 
 idCVar cv_frob_width(				"tdm_frob_width",		"10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "When frobbing, a cube of this dimension is created at the point the frob hit, and things within are frob candidates.  Makes frobbing easier but can go thru solid objects if set too high.  Default is 10.");
 idCVar cv_frob_fadetime(			"tdm_frob_fadetime",	"100",		CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time it takes for frob highlight effect to fade in and out." );
 idCVar cv_frob_debug_bounds(		"tdm_frob_debug_bounds", "0",		CVAR_GAME | CVAR_BOOL,					"Set to 1 to see a visualization of the bounds that are used to check for frobable items within them." );
-idCVar cv_frob_ammo_selects_weapon(	"tdm_frob_ammo_selects_weapon", "1",		CVAR_GAME | CVAR_BOOL,	"Set to 1 to have weapons automatically selected when the respective ammo is picked up." );
+idCVar cv_frob_ammo_selects_weapon(	"tdm_frob_ammo_selects_weapon", "0",		CVAR_GAME | CVAR_BOOL,	"Set to 1 to have weapons automatically selected when the respective ammo is picked up." );
+
+/**
+* Dark Mod Misc. Control Options
+**/
+idCVar cv_weapon_next_on_empty(		"tdm_weapon_next_on_empty",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1, when you run out of a particular type of arrows, you will auto-switch to the next available weapon.  (This can get you in trouble if it switches to a fire arrow)." );
+
 /**
 * Physics
 **/
@@ -212,8 +222,8 @@ idCVar cv_tdm_inv_groupvis(	"tdm_inv_visibility", "1", CVAR_GAME | CVAR_ARCHIVE 
 idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the HUD GUIs. [0..1]", 0, 1 );
 idCVar cv_tdm_inv_fadein(	"tdm_inv_fade_in", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade in the inventory. 0 = immediately");
 idCVar cv_tdm_inv_fadeout(	"tdm_inv_fade_out", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade out the inventory. 0 = immediately");
-idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been aquired.");
-idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' currently selected inventory items will be used on frob.");
+idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
+idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "0",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' currently selected inventory items will be used on frob.");
 idCVar cv_tdm_inv_use_on_frob_visual_feedback("tdm_inv_use_on_frob_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' the HUD is giving visual feedback when the currently highlighted item is used.");
 
 

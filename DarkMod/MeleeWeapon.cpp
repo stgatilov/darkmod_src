@@ -152,7 +152,21 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	{
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Attack clipmodel started out inside something it hits.\r");
 
-		MeleeCollision( gameLocal.entities[tr.c.entityNum], vec3_zero, &tr, -1 );
+		idEntity *ent = gameLocal.entities[tr.c.entityNum];
+		// hack to fix crashes in closed Id code, set material hit to NULL
+		// AI don't SEEM to crash and we want to know armour type was hit, so exception for AI:
+		if( !ent->IsType(idActor::Type) )
+			tr.c.material = NULL;
+
+		// the point is also inaccruate sometimes, set to origin of the weapon object
+		tr.c.point = m_OldOrigin;
+		// set the normal to the owner's view forward
+		idMat3 viewAxis;
+		idVec3 dummy;
+		m_Owner.GetEntity()->GetViewPos( dummy, viewAxis );
+		tr.c.normal = -viewAxis[0];
+
+		MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
 		DeactivateAttack();
 	}
 }
@@ -563,6 +577,8 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	impulse = -push * tr->c.normal;
 	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Applying impulse\r");
 	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
+	// uncomment for physics debugging
+	// gameRenderWorld->DebugArrow( colorBlue, tr->c.point, tr->c.point + impulse, 3, 1000 );
 
 	// get type of material hit (armor, etc)
 	int type;
