@@ -270,6 +270,10 @@ private:
 	* toggled on in the frame that the player first attaches to the rope
 	**/
 	bool					m_bJustHitRope;
+	/**
+	* Timer used to enforce time between kicks while on rope
+	**/
+	int						m_RopeKickTime;
 
 	// ladder movement
 	/**

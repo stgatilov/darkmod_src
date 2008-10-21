@@ -1037,6 +1037,7 @@ void idPhysics_Player::RopeMove( void )
 	idVec3 ropeShaft( 0.0f, 0.0f, 1.0f );
 	int bodID(0);
 	idPhysics_AF *ropePhys;
+	idPlayer *player = static_cast<idPlayer *>(self);
 
 	if( !m_RopeEntity.GetEntity() )
 	{
@@ -1108,7 +1109,56 @@ void idPhysics_Player::RopeMove( void )
 		idVec3 vImpulse = playerVel - (playerVel * climbDir) * climbDir;
 		vImpulse *= mass;
 
-		ropePhys->AddForce( bodID, ropePoint, vImpulse/0.1f );
+		// ishtvan fix: Always translational force, do not torque the rope body
+		// ropePhys->AddForce( bodID, ropePoint, vImpulse/0.1f );
+		ropePhys->AddForce( bodID, ropePhys->GetOrigin(bodID), vImpulse/0.1f );
+	}
+
+// ======================== Rope Swinging =====================
+	if( ( player->usercmd.buttons & BUTTON_ATTACK ) && !( player->oldButtons & BUTTON_ATTACK )
+		&& (gameLocal.time - m_RopeKickTime) > cv_pm_rope_swing_reptime.GetInteger() )
+	{
+		// default kick direction is forward
+		idVec3 kickDir = player->firstPersonViewAxis[0];
+		idVec3 bodyOrig = ropePhys->GetOrigin(bodID);
+		idMat3 rotDir = mat3_identity;
+		// apply modifiers if holding left/right
+		if( common->ButtonState(UB_MOVELEFT) )
+		{
+			rotDir = idAngles(0.0f, 90.0f, 0.0f).ToMat3();
+		}
+		else if( common->ButtonState(UB_MOVERIGHT) )
+		{
+			rotDir = idAngles(0.0f, 270.0f, 0.0f).ToMat3();
+		}
+		kickDir = rotDir * kickDir;
+
+		// do a trace to see if a solid is in the way, if so, kick off of it
+		trace_t trKick;
+		
+		gameLocal.clip.TracePoint
+			( 
+				trKick, bodyOrig, 
+				bodyOrig + cv_pm_rope_swing_kickdist.GetFloat()*kickDir,
+				MASK_SOLID, self 
+			);
+		if( trKick.fraction < 1.0f )
+		{
+			// reverse direction to kick off
+			kickDir *= -1.0f;
+			// apply reaction force to entity kicked (TODO: watch out for exploits)
+			idEntity *kickedEnt = gameLocal.entities[trKick.c.entityNum];
+			float kickMag = cv_pm_rope_swing_impulse.GetFloat() / 25.0f; // divide by 25, it takes a lot to move AFs for some reason
+			kickedEnt->ApplyImpulse( self, trKick.c.id, trKick.c.point, -kickMag * kickDir );
+		}
+
+		// project to XY plane
+		kickDir -= GetGravityNormal() * (kickDir*GetGravityNormal());
+		kickDir.Normalize();
+		
+		ropePhys->AddForce( bodID, bodyOrig, kickDir * cv_pm_rope_swing_impulse.GetFloat() );
+		// test: apply velocity to all bodies lower as well?
+		m_RopeKickTime = gameLocal.time;
 	}
 
 // ==== Translate the player to the rope attachment point =====
@@ -2554,6 +2604,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_RopeEntity = NULL;
 	m_RopeEntTouched = NULL;
 	m_RopeDetachTimer = 0;
+	m_RopeKickTime = 0;
 
 	// wall/ladder climbing
 	m_bClimbableAhead = false;
@@ -2681,6 +2732,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bJustHitRope );
 	savefile->WriteBool( m_bOnRope );
 	savefile->WriteInt( m_RopeDetachTimer );
+	savefile->WriteInt( m_RopeKickTime );
 	m_RopeEntity.Save( savefile );
 	m_RopeEntTouched.Save( savefile );
 
@@ -2765,6 +2817,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bJustHitRope );
 	savefile->ReadBool( m_bOnRope );
 	savefile->ReadInt( m_RopeDetachTimer );
+	savefile->ReadInt( m_RopeKickTime );
 	m_RopeEntity.Restore( savefile );
 	m_RopeEntTouched.Restore( savefile );
 	// Angle storage vars need to be reset on a restore, since D3 resets the command angle to 0
