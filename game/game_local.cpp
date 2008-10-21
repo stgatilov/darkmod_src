@@ -39,7 +39,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 
-#include "IL/config.h"
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
 

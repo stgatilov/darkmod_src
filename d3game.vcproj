@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=""
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include; DarkMod;include;win32/include"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS, _CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -79,7 +79,7 @@
 				OutputFile="./DebugDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="DebugDLL;lib;win32/lib"
+				AdditionalLibraryDirectories="DebugDLL;lib;win32/lib;win32/devil/lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -148,7 +148,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="mssdk/include; DarkMod;include;win32/include"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS,IL_STATIC_LIB, _CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -181,11 +181,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib devil.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib"
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="releasedll;lib;win32/lib"
+				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -223,7 +223,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description=""
 				CommandLine=""
 			/>
 		</Configuration>
