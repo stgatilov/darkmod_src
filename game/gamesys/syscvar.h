@@ -237,6 +237,9 @@ extern idCVar cv_dm_distance;
 // Ambient light method CVar
 extern idCVar cv_ambient_method;
 
+// Volume of music speakers
+extern idCVar cv_music_volume;
+
 /**
 * CVars added for Darkmod knockout and field of vision changes
 */

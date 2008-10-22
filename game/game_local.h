@@ -547,6 +547,9 @@ public:
 	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();
 
+	// tels: a list of all speaker entities with s_music set, these are affected by s_vol_music:
+	idList<int>				musicSpeakers;
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();

@@ -114,6 +114,10 @@ void idSound::Spawn( void ) {
 	} else {
 		timerOn = false;
 	}
+	// add this speaker to the list of ambient music speakers affected by tdm_music_volume
+    if ( spawnArgs.GetBool( "s_music" ) ) {
+       gameLocal.musicSpeakers.Append( entityNumber );
+    }
 }
 
 /*
