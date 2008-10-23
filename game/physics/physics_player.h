@@ -100,6 +100,11 @@ public:
 	float					GetMaxStepHeight( void ) const;
 	void					SetMaxJumpHeight( const float newMaxJumpHeight );
 	void					SetMovementType( const pmtype_t type );
+	/**
+	* Get/set the movement flags, used to force a crouch externally
+	**/
+	int						GetMovementFlags( void );
+	void					SetMovementFlags( int );
 	void					SetPlayerInput( const usercmd_t &cmd, const idAngles &newViewAngles );
 	void					SetKnockBack( const int knockBackTime );
 	void					SetDebugLevel( bool set );

@@ -99,6 +99,17 @@ protected:
 	* Max reverse speed as a fraction of max forward speed
 	**/
 	float					m_MaxReverseSpeed;
+	/**
+	* Animation rate modifiers, ranging from min at the slowest speed to max
+	**/
+	float					m_MinWalkAnimRate;
+	float					m_MaxWalkAnimRate;
+	float					m_MinRunAnimRate;
+	float					m_MaxRunAnimRate;
+	/**
+	* Speed control fraction point at which we transition from walk to run animation
+	**/
+	float					m_WalkToRunSpeedFrac;
 };
 
 

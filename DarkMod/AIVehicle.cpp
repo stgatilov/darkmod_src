@@ -44,6 +44,13 @@ CAIVehicle::CAIVehicle( void )
 	m_SpeedFrac			= 0.0f;
 	m_SpeedTimeToMax	= 0.0f;
 	m_MaxReverseSpeed	= 0.0f;
+
+	m_MinWalkAnimRate	= 0.0f;
+	m_MaxWalkAnimRate	= 0.0f;
+	m_MinRunAnimRate	= 0.0f;
+	m_MaxRunAnimRate	= 0.0f;
+
+	m_WalkToRunSpeedFrac	= 0.0f;
 }
 
 CAIVehicle::~CAIVehicle( void )
@@ -53,13 +60,19 @@ CAIVehicle::~CAIVehicle( void )
 void CAIVehicle::Spawn( void ) 
 {
 	// set ride joint, steering speed
-	idStr JointName = spawnArgs.GetString( "ride_joint", "origin" );
+	idStr JointName = spawnArgs.GetString("ride_joint", "origin");
 
-	spawnArgs.GetFloat( "steerSpeed", "5", m_SteerSpeed );
-	spawnArgs.GetVector( "ride_offset", "0 0 0", m_RideOffset );
-	spawnArgs.GetAngles( "ride_angles", "0 0 0", m_RideAngles );
-	spawnArgs.GetFloat("time_to_max_speed", "2.0", m_SpeedTimeToMax );
-	spawnArgs.GetFloat("max_reverse_speed", "1.0", m_MaxReverseSpeed );
+	spawnArgs.GetFloat("steerSpeed", "5", m_SteerSpeed);
+	spawnArgs.GetVector("ride_offset", "0 0 0", m_RideOffset);
+	spawnArgs.GetAngles("ride_angles", "0 0 0", m_RideAngles);
+	spawnArgs.GetFloat("time_to_max_speed", "2.0", m_SpeedTimeToMax);
+	spawnArgs.GetFloat("max_reverse_speed", "1.0", m_MaxReverseSpeed);
+
+	spawnArgs.GetFloat("min_walk_anim_rate", "1.0", m_MinWalkAnimRate);
+	spawnArgs.GetFloat("max_walk_anim_rate", "1.0", m_MaxWalkAnimRate);
+	spawnArgs.GetFloat("min_run_anim_rate", "1.0", m_MinRunAnimRate);
+	spawnArgs.GetFloat("max_run_anim_rate", "1.0", m_MaxRunAnimRate);
+	spawnArgs.GetFloat("walk_to_run_speed", "0.5", m_WalkToRunSpeedFrac);
 
 	m_RideJoint = animator.GetJointHandle( JointName.c_str() );
 
@@ -79,6 +92,12 @@ void CAIVehicle::Save(idSaveGame *savefile) const
 	savefile->WriteFloat( m_SteerSpeed );
 	savefile->WriteFloat( m_SpeedTimeToMax );
 	savefile->WriteFloat( m_MaxReverseSpeed );
+
+	savefile->WriteFloat( m_MinWalkAnimRate );
+	savefile->WriteFloat( m_MaxWalkAnimRate );
+	savefile->WriteFloat( m_MinRunAnimRate );
+	savefile->WriteFloat( m_MaxRunAnimRate );
+	savefile->WriteFloat( m_WalkToRunSpeedFrac );
 }
 
 void CAIVehicle::Restore( idRestoreGame *savefile )
@@ -94,6 +113,12 @@ void CAIVehicle::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat( m_SteerSpeed );
 	savefile->ReadFloat( m_SpeedTimeToMax );
 	savefile->ReadFloat( m_MaxReverseSpeed );
+
+	savefile->ReadFloat( m_MinWalkAnimRate );
+	savefile->ReadFloat( m_MaxWalkAnimRate );
+	savefile->ReadFloat( m_MinRunAnimRate );
+	savefile->ReadFloat( m_MaxRunAnimRate );
+	savefile->ReadFloat( m_WalkToRunSpeedFrac );
 }
 
 void CAIVehicle::PlayerFrob( idPlayer *player ) 
@@ -115,6 +140,15 @@ void CAIVehicle::PlayerFrob( idPlayer *player )
 	{
 		// attach player to the joint
 		GetJointWorldTransform( m_RideJoint, gameLocal.time, origin, axis );
+
+		// put the player in a crouch, so their view is low to the animal
+		// without actually clipping into it
+		idPhysics_Player *playerPhys = (idPhysics_Player *) player->GetPhysics();
+		// TODO: look up PMF_DUCKED somehow (make those flags statics in the idPhysics_Player class?)
+		// for now, using 1 since we know that is PMF_DUCKED
+		// Or, we could move mount and dismount to idPhysics_Player...
+		playerPhys->SetMovementFlags( playerPhys->GetMovementFlags() | 1 );
+
 		player->SetOrigin( origin + m_RideOffset * axis );
 		player->BindToJoint( this, m_RideJoint, true );
 
@@ -253,10 +287,43 @@ bool CAIVehicle::UpdateSpeed( void )
 
 		// TODO: Continuously adjust speed using Crispy's code
 		// For now, just toggle run when we get to 50%
-		if( m_SpeedFrac > 0.5f )
+		if( m_SpeedFrac > m_WalkToRunSpeedFrac )
+		{
+			float animFrac = (m_SpeedFrac - m_WalkToRunSpeedFrac)/(1.0f - m_WalkToRunSpeedFrac);
+			float animRate = m_MinRunAnimRate + animFrac * (m_MaxRunAnimRate - m_MinRunAnimRate);
+			// TODO: Read anim name from spawnarg
+			const char *animName = "run";
+			// argh, there is no way to get anim num from the name other than search??
+			for( int i =0; i < animator.NumAnims(); i++ )
+			{
+				if( animator.AnimName(i) == animName )
+				{
+					m_animRates[i] = animRate;
+					break;
+				}
+			}
+
 			AI_RUN = true;
+		}
 		else
+		{
+			float animFrac = m_SpeedFrac /m_WalkToRunSpeedFrac;
+			float animRate = m_MinWalkAnimRate + animFrac * (m_MaxWalkAnimRate - m_MinWalkAnimRate);
+			// TODO: Read anim name from spawnarg
+			const char *animName = "walk";
+
+			// argh, there is no way to get anim num from the name other than search??
+			for( int i =0; i < animator.NumAnims(); i++ )
+			{
+				if( animator.AnimName(i) == animName )
+				{
+					m_animRates[i] = animRate;
+					break;
+				}
+			}
+
 			AI_RUN = false;
+		}
 	}
 
 	return bReturnVal;

@@ -5250,3 +5250,13 @@ idVec3 idPhysics_Player::GetRefEntVel( void ) const
 {
 	return m_RefEntVelocity;
 }
+
+int idPhysics_Player::GetMovementFlags( void )
+{
+	return current.movementFlags;
+}
+
+void idPhysics_Player::SetMovementFlags( int flags )
+{
+	current.movementFlags = flags;
+}
