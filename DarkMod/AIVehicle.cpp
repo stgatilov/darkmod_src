@@ -21,12 +21,20 @@
 //CAIVehicle
 //===============================================================================
 
+const idEventDef EV_SetController( "setController", "e" );
+const idEventDef EV_ClearController( "clearController" );
+const idEventDef EV_FrobRidable( "frobRidable", "e" );
+
 CLASS_DECLARATION( idAI, CAIVehicle )
+	EVENT( EV_SetController,	CAIVehicle::Event_SetController )
+	EVENT( EV_ClearController,	CAIVehicle::Event_ClearController )
+	EVENT( EV_FrobRidable,		CAIVehicle::Event_FrobRidable )
+
 END_CLASS
 
 CAIVehicle::CAIVehicle( void )
 {
-	m_Rider			= NULL;
+	m_Controller			= NULL;
 	m_RideJoint		= INVALID_JOINT;
 	m_RideOffset.Zero();
 	m_RideAngles.Zero();
@@ -60,7 +68,7 @@ void CAIVehicle::Spawn( void )
 
 void CAIVehicle::Save(idSaveGame *savefile) const
 {
-	m_Rider.Save( savefile );
+	m_Controller.Save( savefile );
 
 	savefile->WriteJoint( m_RideJoint );
 	savefile->WriteVec3( m_RideOffset );
@@ -75,7 +83,7 @@ void CAIVehicle::Save(idSaveGame *savefile) const
 
 void CAIVehicle::Restore( idRestoreGame *savefile )
 {
-	m_Rider.Restore( savefile );
+	m_Controller.Restore( savefile );
 
 	savefile->ReadJoint( m_RideJoint );
 	savefile->ReadVec3( m_RideOffset );
@@ -94,32 +102,37 @@ void CAIVehicle::PlayerFrob( idPlayer *player )
 	idMat3 axis;
 
 	// =============== DISMOUNT ===============
-	if ( m_Rider.GetEntity() ) 
+	if ( m_Controller.GetEntity() ) 
 	{
-		if ( m_Rider.GetEntity() == player ) 
+		if ( m_Controller.GetEntity() == player ) 
 		{
 			player->Unbind();
-			m_Rider = NULL;
-			m_SpeedFrac = 0.0f;
-
-			// Return control to scripts
-			m_bIgnoreAlerts = false;
-			AI_RUN = false;
-
-			StopMove( MOVE_STATUS_DONE );
+			SetController(NULL);
 		}
 	}
 	// =============== MOUNT ===============
 	else 
 	{
-		m_Rider = player;
-
 		// attach player to the joint
 		GetJointWorldTransform( m_RideJoint, gameLocal.time, origin, axis );
-
 		player->SetOrigin( origin + m_RideOffset * axis );
 		player->BindToJoint( this, m_RideJoint, true );
 
+		SetController( player );
+	}
+}
+
+void CAIVehicle::SetController( idPlayer *player )
+{
+	// no change
+	if( player == m_Controller.GetEntity() )
+		return;
+
+	if( player != NULL )
+	{
+		// new controller added
+		m_Controller = player;
+		
 		// Initialize angle to current yaw angle
 		idAngles FaceAngles = viewAxis.ToAngles();
 
@@ -128,6 +141,17 @@ void CAIVehicle::PlayerFrob( idPlayer *player )
 		ClearEnemy();
 		m_bIgnoreAlerts = true;
 	}
+	else
+	{
+		// controller removed, stop and return control to AI mind
+		m_Controller = NULL;
+		m_SpeedFrac = 0.0f;
+
+		m_bIgnoreAlerts = false;
+		AI_RUN = false;
+
+		StopMove( MOVE_STATUS_DONE );
+	}
 }
 
 void CAIVehicle::Think( void )
@@ -135,7 +159,7 @@ void CAIVehicle::Think( void )
 	if ( !(thinkFlags & TH_THINK ) )
 		goto Quit;
 
-	if( m_Rider.GetEntity() )
+	if( m_Controller.GetEntity() )
 	{
 		// Exit the combat state if we somehow got in it.
 		// Later we can fight as directed by player, but right now it's too independent
@@ -166,22 +190,22 @@ Quit:
 	return;
 }
 
-void CAIVehicle::FrobAction(bool bMaster, bool bPeer)
+void CAIVehicle::Event_FrobRidable(idPlayer *player )
 {
-	// If someone does multiplayer, they'll have to pass the player along with frobaction
-	idPlayer *localPlayer = gameLocal.GetLocalPlayer();
-
 	// Don't mount if dead, but still let the player dismount
-	if( (AI_KNOCKEDOUT || AI_DEAD) && !m_Rider.GetEntity() )
-		idAI::FrobAction(bMaster,bPeer);
+	if( (AI_KNOCKEDOUT || AI_DEAD) && !m_Controller.GetEntity() )
+	{
+		// proceed with normal AI body frobbing code
+		idAI::FrobAction(true);
+	}
 	else
-		PlayerFrob(localPlayer);
+		PlayerFrob(player);
 }
 
 void CAIVehicle::UpdateSteering( void )
 {
 	float idealSteerAngle(0.0f), angleDelta(0.0f), turnScale(0.0f);
-	idPlayer *player = m_Rider.GetEntity();
+	idPlayer *player = m_Controller.GetEntity();
 
 	// TODO: steer speed dependent on velocity to simulate finite turn radius
 
@@ -207,7 +231,7 @@ void CAIVehicle::UpdateSteering( void )
 bool CAIVehicle::UpdateSpeed( void )
 {
 	bool bReturnVal( false );
-	idPlayer *player = m_Rider.GetEntity();
+	idPlayer *player = m_Controller.GetEntity();
 	
 	float DeltaVMag = 1.0f/(m_SpeedTimeToMax * USERCMD_HZ);
 
@@ -236,5 +260,17 @@ bool CAIVehicle::UpdateSpeed( void )
 	}
 
 	return bReturnVal;
+}
+
+// script events
+void CAIVehicle::Event_SetController( idPlayer *player )
+{
+	SetController( player );
+}
+
+// script events
+void CAIVehicle::Event_ClearController( void )
+{
+	SetController( NULL );
 }
 

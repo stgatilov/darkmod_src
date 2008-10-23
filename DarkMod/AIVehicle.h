@@ -17,6 +17,8 @@
  * AIVehicle is a derived class of idAI meant for AI that can be ridden around
  * by players as a vehicle, but can also act independently.
  * Players must be on the same team and frob them to start riding
+ * Update: Players can now control them without being bound to them,
+ * e.g., controlling them from a horse-drawn coach
  */
 class CAIVehicle : public idAI {
 public:
@@ -49,15 +51,27 @@ public:
 	void					PlayerFrob(idPlayer *player);
 
 	/**
-	* Overloads default frob action
+	* Returns the player that is controlling this AI's movement
 	**/
-	virtual void			FrobAction(bool bMaster, bool bPeer = false);
+	idPlayer *				GetController( void ) { return m_Controller.GetEntity(); };
+	/**
+	* Starts reading control input from the player and stops thinking independently
+	* If player argument is NULL, returns control back to AI mind
+	* This does not handle immobilizing the player, that is done elsewhere.
+	**/
+	void					SetController( idPlayer *player );
 
-	idPlayer *				GetRider( void ) { return m_Rider.GetEntity(); };
-	void					SetRider( idPlayer *player ) { m_Rider = player; };
+	// Script events
+	void					Event_SetController( idPlayer *player );
+	/**
+	* This needs to be a separate script event since scripting didn't like
+	* passing in $null_entity for some reason.
+	**/
+	void					Event_ClearController( void );
+	void					Event_FrobRidable(idPlayer *player);
 
 protected:
-	idEntityPtr<idPlayer>	m_Rider;
+	idEntityPtr<idPlayer>	m_Controller;
 	/**
 	* Joint to which the player is attached
 	**/

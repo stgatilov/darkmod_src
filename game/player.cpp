@@ -6130,7 +6130,13 @@ void idPlayer::Move( void )
 
 		// check if we're standing on top of a monster and give a push if we are
 		idEntity *groundEnt = physicsObj.GetGroundEntity();
-		if ( groundEnt && groundEnt->IsType( idAI::Type ) ) {
+		if 
+		(	
+			groundEnt && groundEnt->IsType( idAI::Type )
+			&& groundEnt->health > 0
+			&& static_cast<idAI *>(groundEnt)->m_bPushOffPlayer
+		)
+		{
 			idVec3 vel = physicsObj.GetLinearVelocity();
 			if ( vel.ToVec2().LengthSqr() < 0.1f ) {
 				vel.ToVec2() = physicsObj.GetOrigin().ToVec2() - groundEnt->GetPhysics()->GetAbsBounds().GetCenter().ToVec2();

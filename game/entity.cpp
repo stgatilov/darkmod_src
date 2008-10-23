@@ -52,6 +52,7 @@ const idEventDef EV_RandomTarget( "randomTarget", "s", 'e' );
 const idEventDef EV_Bind( "bind", "e" );
 const idEventDef EV_BindPosition( "bindPosition", "e" );
 const idEventDef EV_BindToJoint( "bindToJoint", "esf" );
+const idEventDef EV_BindToBody( "bindToBody", "edd" );
 const idEventDef EV_GetBindMaster( "getBindMaster", NULL, 'e' );
 const idEventDef EV_NumBindChildren( "numBindChildren", NULL, 'd' );
 const idEventDef EV_GetBindChild( "getBindChild", "d", 'e' );
@@ -232,6 +233,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetTarget,			idEntity::Event_GetTarget )
 	EVENT( EV_RandomTarget,			idEntity::Event_RandomTarget )
 	EVENT( EV_BindToJoint,			idEntity::Event_BindToJoint )
+	EVENT( EV_BindToBody,			idEntity::Event_BindToBody )
 	EVENT( EV_RemoveBinds,			idEntity::Event_RemoveBinds )
 	EVENT( EV_Bind,					idEntity::Event_Bind )
 	EVENT( EV_BindPosition,			idEntity::Event_BindPosition )
@@ -5126,6 +5128,16 @@ idEntity::Event_BindToJoint
 void idEntity::Event_BindToJoint( idEntity *master, const char *jointname, float orientated ) {
 	BindToJoint( master, jointname, ( orientated != 0.0f ) );
 }
+
+/*
+================
+idEntity::Event_BindToBody
+================
+*/
+void idEntity::Event_BindToBody(idEntity *master, int bodyId, bool orientated) {
+	BindToBody( master, bodyId, orientated );
+}
+
 
 /*
 ================

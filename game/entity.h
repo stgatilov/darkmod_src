@@ -1197,6 +1197,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_Bind( idEntity *master );
 	void					Event_BindPosition( idEntity *master );
 	void					Event_BindToJoint( idEntity *master, const char *jointname, float orientated );
+	void					Event_BindToBody( idEntity *master, int bodyId, bool orientated );
 	void					Event_Unbind( void );
 	void					Event_RemoveBinds( void );
 	void					Event_SpawnBind( void );

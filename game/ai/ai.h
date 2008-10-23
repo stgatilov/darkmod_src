@@ -971,7 +971,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* When this offset is added to the head joint, we should be at the head center
 	**/
 	idVec3					m_HeadCenterOffset;
-	
+
+	/**
+	* Set to true if we want this AI to push off the player when the
+	* player ends up standing on top of them
+	* Applies only when the AI is alive
+	**/
+	bool					m_bPushOffPlayer;
+
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
 	float thresh_1, thresh_2, thresh_3, thresh_4, thresh_5;
