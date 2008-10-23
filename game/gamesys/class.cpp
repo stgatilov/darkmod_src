@@ -1042,6 +1042,18 @@ void idClass::Event_Remove( void )
 	if( pDM && pDM->m_FrobEntityPrevious.GetEntity() == this )
 		pDM->m_FrobEntityPrevious = NULL;
 
+	CGrabber *grabber = gameLocal.m_Grabber;
+	if (grabber)
+	{
+		// tels: If we remove a currently grabbed entity,
+		// force the grabber to drop it
+		idEntity *ent = grabber->GetSelected();
+		if (ent == this)
+		{
+			grabber->StopDrag();
+		}
+	}
+
 	delete this;
 }
 
