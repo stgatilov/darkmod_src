@@ -74,7 +74,8 @@ typedef enum
 	hang_DarkModMantlePhase			= 0x01,
 	pull_DarkModMantlePhase			= 0x02,
 	shiftHands_DarkModMantlePhase	= 0x03,
-	push_DarkModMantlePhase			= 0x04
+	push_DarkModMantlePhase			= 0x04,
+	fixClipping_DarkModMantlePhase	= 0x05
 
 } EDarkMod_MantlePhase;
 

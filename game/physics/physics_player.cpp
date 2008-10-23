@@ -1652,7 +1652,10 @@ void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 	// This is complicated but because we want free object movement, we have to temporarily disable player clipping.
 	// But, if a players releases an object when they're inside it they float to the surface.  By doing this check
 	// we can avoid that.
-	if( !gameLocal.m_Grabber->HasClippedEntity() ) {
+	// ishtvan: Only use the "rising code" if we're still clipping something after a mantle has finished
+	if( m_mantlePhase == fixClipping_DarkModMantlePhase 
+		&& !gameLocal.m_Grabber->HasClippedEntity() ) 
+	{
 		current.origin -= (GetGravityNormal() * 0.2f);
 	}
 
@@ -1707,9 +1710,15 @@ void idPhysics_Player::CheckGround( void ) {
 	}
 
 	contents = gameLocal.clip.Contents( current.origin, clipModel, clipModel->GetAxis(), -1, self );
-	if ( contents & MASK_SOLID ) {
+	if ( contents & MASK_SOLID ) 
+	{
 		// do something corrective if stuck in solid
 		idPhysics_Player::CorrectAllSolid( groundTrace, contents );
+	}
+	else if ( m_mantlePhase == fixClipping_DarkModMantlePhase )
+	{
+		// the mantle stage can advance to done if we're not currently clipping
+		m_mantlePhase = notMantling_DarkModMantlePhase;
 	}
 
 	// if the trace didn't hit anything, we are in free fall
@@ -2430,7 +2439,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 	// Mantle MOD
 	// SophisticatedZombie (DH)
-	else if (m_mantlePhase != notMantling_DarkModMantlePhase) 
+	else if ( m_mantlePhase != notMantling_DarkModMantlePhase
+				&& m_mantlePhase != fixClipping_DarkModMantlePhase ) 
 	{
 		idPhysics_Player::MantleMove();
 	}
@@ -3527,8 +3537,9 @@ void idPhysics_Player::UpdateMantleTimers()
 		m_jumpHeldDownTime += framemsec;
 	}
 
-	// Skip all this if not mantling
-	if (m_mantlePhase != notMantling_DarkModMantlePhase)
+	// Skip all this if done mantling
+	if (m_mantlePhase != notMantling_DarkModMantlePhase
+		&& m_mantlePhase != fixClipping_DarkModMantlePhase )
 	{
 
 		// Handle expiring mantle phases
@@ -3564,7 +3575,9 @@ void idPhysics_Player::UpdateMantleTimers()
 
 			case push_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r\n");
-				m_mantlePhase = notMantling_DarkModMantlePhase;
+				// check for clipping problems after mantling
+				// will advance to notMantling when the player isn't clipping
+				m_mantlePhase = fixClipping_DarkModMantlePhase;
 
 				break;
 
@@ -3578,7 +3591,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			m_mantleTime = getMantleTimeForPhase (m_mantlePhase);
 			
 			// Handle end of mantle
-			if (m_mantlePhase == notMantling_DarkModMantlePhase)
+			if (m_mantlePhase == fixClipping_DarkModMantlePhase)
 			{
 				// Handle end of mantle
 				// Ishtvan 11/20/05 - Raise weapons after mantle is done
@@ -3588,7 +3601,7 @@ void idPhysics_Player::UpdateMantleTimers()
 		}
 
 		// Reduce mantle timer
-		if (m_mantlePhase == notMantling_DarkModMantlePhase)
+		if (m_mantlePhase == fixClipping_DarkModMantlePhase)
 		{
 			m_mantleTime = 0;
 		}
@@ -3597,7 +3610,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			m_mantleTime -= framemSecLeft;
 		}
 
-	} // This code block is executed only if phase != notMantling
+	} // This code block is executed only if phase != notMantling && phase != fixClipping
 	
 	// Done
 }
