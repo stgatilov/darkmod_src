@@ -1378,12 +1378,23 @@ bool CGrabber::ToggleEquip( void )
 bool CGrabber::Equip( void )
 {
 	bool rc(false);
+	idStr str;
 	idEntity *ent = m_dragEnt.GetEntity();
 
 	if( !ent )
 	goto Quit;
 
-	// TODO: General equipping code will go here...
+	// tels: Execute a potential equip script
+    if(ent->spawnArgs.GetString("equip_action_script", "", str))
+	{
+		// Call the script
+        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
 
 	// Specific case of shouldering a body
 	if( ent->IsType(idAFEntity_Base::Type) )
@@ -1396,12 +1407,23 @@ Quit:
 bool CGrabber::Dequip( void )
 {
 	bool rc(false);
+	idStr str;
 	idEntity *ent = m_EquippedEnt.GetEntity();
 
 	if( !ent )
 	goto Quit;
 
-	// TODO: General dequipping code will go here...
+	// tels: Execute a potential dequip script
+    if(ent->spawnArgs.GetString("dequip_action_script", "", str))
+	{ 
+		// Call the script
+        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
 
 	// Specific case of unshouldering a body
 	// In this case, body is an inventory item, so drop it
@@ -1478,8 +1500,6 @@ bool CGrabber::ShoulderBody( idAFEntity_Base *body )
 
 bool CGrabber::UnShoulderBody( void )
 {
-	bool rc(false);
-
 	idEntity *body = m_EquippedEnt.GetEntity();
 	if
 	( 
