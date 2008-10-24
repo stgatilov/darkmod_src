@@ -264,7 +264,6 @@ void CGrabber::StopDrag( void )
 
 	m_DistanceCount = 0;
 	m_dragEnt = NULL;
-	m_EquippedEnt = NULL;
 
 	m_drag.SetRefEnt( NULL );
 
