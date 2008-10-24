@@ -1492,7 +1492,8 @@ idAnimBlend::UpdatePlaybackRate
 */
 void idAnimBlend::UpdatePlaybackRate(int _animNum, const idEntity* ent) {
 	if (ent != NULL && _animNum >= 0 && animNum < ent->m_animRates.Num()) {
-		this->rate = ent->m_animRates[_animNum];
+		// this->rate = ent->m_animRates[_animNum];
+		SetPlaybackRate( gameLocal.time, ent->m_animRates[_animNum] );
 	}
 }
 
