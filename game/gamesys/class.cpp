@@ -1054,7 +1054,8 @@ void idClass::Event_Remove( void )
 		}
 
 		// try to remove from grabber clip list
-		grabber->RemoveFromClipList( static_cast<idEntity *>(this) );
+		if( IsType(idEntity::Type) )
+			grabber->RemoveFromClipList( static_cast<idEntity *>(this) );
 	}
 
 	delete this;
