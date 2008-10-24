@@ -1052,6 +1052,12 @@ void idClass::Event_Remove( void )
 		{
 			grabber->StopDrag();
 		}
+
+		// try to remove from grabber clip list
+		if( grabber->HasClippedEntity() )
+		{
+			grabber->RemoveFromClipList( static_cast<idEntity *>(this) );
+		}
 	}
 
 	delete this;
