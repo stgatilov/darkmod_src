@@ -1046,16 +1046,12 @@ void idClass::Event_Remove( void )
 	if (grabber)
 	{
 		// tels: If we remove a currently grabbed entity,
-		// force the grabber to drop it
+		// force the grabber to forget it
 		idEntity *ent = grabber->GetSelected();
 		if (ent == this)
 		{
-			grabber->StopDrag();
+			grabber->Forget( ent );
 		}
-
-		// try to remove from grabber clip list
-		if( IsType(idEntity::Type) )
-			grabber->RemoveFromClipList( static_cast<idEntity *>(this) );
 	}
 
 	delete this;

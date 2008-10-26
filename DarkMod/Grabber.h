@@ -152,6 +152,12 @@ public:
 		void					StopDrag( void );
 
 		/**
+		* Forget the currently dragged/equipped entity (in case it is to be removed
+		* from the world.
+		**/
+		void					Forget( idEntity* ent );
+
+		/**
 		* Used to switch between dropping a body face up and face down on each drop
 		* (Toggled by idPlayer)
 		**/

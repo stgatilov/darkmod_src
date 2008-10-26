@@ -446,7 +446,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	// Test: Drop the object if it is stuck
 	CheckStuck();
 	if( m_bObjStuck )
+	{
 		StopDrag();
+		m_EquippedEnt = NULL;
+	}
 
 	// evaluate physics
 	// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
@@ -480,6 +483,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// Just in case we were called while holding another item:
 	StopDrag();
+	m_EquippedEnt = NULL;
 
 	player->GetViewPos( viewPoint, viewAxis );
 
@@ -1048,6 +1052,8 @@ void CGrabber::Throw( int HeldTime )
 	}
 
 	StopDrag();
+	// tels: also clear the equipped entity, in case Equip() was called
+	m_EquippedEnt = NULL;
 }
 
 void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
@@ -1393,6 +1399,9 @@ bool CGrabber::Equip( void )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
+			// equip the entity, so the next time we call Dequip()
+			// TODO: Make sure all codepaths forget this, like when the item gets stuck
+			m_EquippedEnt = ent;
 		}
 	}
 
@@ -1422,6 +1431,8 @@ bool CGrabber::Dequip( void )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
+			// dequip the entity, so the next time we call Equip()
+			m_EquippedEnt = NULL;
 		}
 	}
 
@@ -1528,4 +1539,19 @@ bool CGrabber::UnShoulderBody( void )
 	m_EquippedEnt = NULL;
 
 	return true;
+}
+
+void CGrabber::Forget( idEntity* ent )
+{
+	// The entity in the grabber got removed, so clear everything
+
+    if (m_dragEnt.GetEntity() == ent)
+		{
+		StopDrag();
+		m_EquippedEnt = NULL;
+
+		// try to remove from grabber clip list
+		if( ent->IsType(idEntity::Type) )
+			RemoveFromClipList( ent );
+		}
 }
