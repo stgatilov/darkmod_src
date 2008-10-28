@@ -345,7 +345,7 @@ g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/')
 
 # Uncomment this to use local devIL
-#g_base_env.Append(CPPPATH = '#/linux/devil/include')
+g_base_env.Append(CPPPATH = '#/linux/devil/include')
 
 g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
