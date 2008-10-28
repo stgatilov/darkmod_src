@@ -304,7 +304,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		// ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
 		StopDrag();
-		
+
+		// tels: TODO also remove entity from cliplist?		
 		goto Quit;
 	}
 
@@ -1399,9 +1400,8 @@ bool CGrabber::Equip( void )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
-			// equip the entity, so the next time we call Dequip()
-			// TODO: Make sure all codepaths forget this, like when the item gets stuck
-			m_EquippedEnt = ent;
+			// the entity will not be equipped, so the next time the equip_action_script
+			// will run again, unless the script removed the entity.
 		}
 	}
 
@@ -1421,20 +1421,6 @@ bool CGrabber::Dequip( void )
 
 	if( !ent )
 	goto Quit;
-
-	// tels: Execute a potential dequip script
-    if(ent->spawnArgs.GetString("dequip_action_script", "", str))
-	{ 
-		// Call the script
-        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
-		if (thread != NULL)
-		{
-			// Run the thread at once, the script result might be needed below.
-			thread->Execute();
-			// dequip the entity, so the next time we call Equip()
-			m_EquippedEnt = NULL;
-		}
-	}
 
 	// Specific case of unshouldering a body
 	// In this case, body is an inventory item, so drop it
