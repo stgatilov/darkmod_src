@@ -703,7 +703,7 @@ public:
 	/**
 	* Propagate a sound directly, outside of StartSound
 	* Direct calling should be done in cases where the gamecode calls
-	* StartSoundShader directly, without going thru PlaySound.
+	* StartSoundShader directly, without going thru StartSound.
 	* 
 	* PropSoundDirect first looks for a local definition of the sound
 	* on the entity, to find volume/duration modifier, extra flags
