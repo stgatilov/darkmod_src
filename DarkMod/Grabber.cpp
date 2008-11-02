@@ -93,6 +93,13 @@ void CGrabber::Clear( void )
 {
 	m_dragEnt			= NULL;
 	m_player			= NULL;
+
+	m_rotation			= idRotation(vec3_zero,vec3_zero,0.0f);
+	m_rotationAxis		= 0;
+	m_mousePosition		= idVec2(0.0f,0.0f);
+	m_bAllowPlayerRotation = true;
+	m_bAllowPlayerTranslation = true;
+
 	m_joint			= INVALID_JOINT;
 	m_id				= 0;
 	m_LocalEntPoint.Zero();
@@ -114,9 +121,14 @@ void CGrabber::Clear( void )
 	m_MaxDistCount	= DIST_GRANULARITY;
 	m_LockedHeldDist = 0;
 	m_bObjStuck = false;
-	m_EquippedEnt = NULL;
 	m_MaxForce = 0;
 	m_bDropBodyFaceUp = false;
+
+	m_EquippedEnt = NULL;
+	m_bEquippedEntInWorld = false;
+	m_vEquippedPosition = vec3_zero;
+	m_EquippedEntContents = 0;
+	m_EquippedEntClipMask = 0;
 
 	while( this->HasClippedEntity() )
 		this->RemoveFromClipList( 0 );
@@ -133,8 +145,9 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_bMaintainPitch);
 
 	m_player.Save(savefile);
-
 	m_drag.Save(savefile);
+	savefile->WriteBool(m_bAllowPlayerRotation);
+	savefile->WriteBool(m_bAllowPlayerTranslation);
 
 	// Save the three relevant values of the idRotation object
 	savefile->WriteVec3(m_rotation.GetOrigin());
@@ -164,7 +177,6 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(m_MaxForce);
 	savefile->WriteInt(m_LockedHeldDist);
 	savefile->WriteBool(m_bObjStuck);
-	m_EquippedEnt.Save(savefile);
 
 	savefile->WriteBool(m_bIsColliding);
 	savefile->WriteBool(m_bPrevFrameCollided);
@@ -173,7 +185,14 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	{
 		savefile->WriteVec3( m_CollNorms[i] );
 	}
-	savefile->WriteBool( m_bDropBodyFaceUp );
+
+	m_EquippedEnt.Save(savefile);
+	savefile->WriteBool(m_bEquippedEntInWorld);
+	savefile->WriteVec3(m_vEquippedPosition);
+	savefile->WriteInt(m_EquippedEntContents);
+	savefile->WriteInt(m_EquippedEntClipMask);
+
+	savefile->WriteBool(m_bDropBodyFaceUp);
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -185,9 +204,11 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3(m_vLocalEntOffset);
 	savefile->ReadVec3(m_vOffset);
 	savefile->ReadBool(m_bMaintainPitch);
-	m_player.Restore(savefile);
 
+	m_player.Restore(savefile);
 	m_drag.Restore(savefile);
+	savefile->ReadBool(m_bAllowPlayerRotation);
+	savefile->ReadBool(m_bAllowPlayerTranslation);
 
 	// Read the three relevant values of the idRotation object
 	idVec3 origin;
@@ -222,7 +243,6 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_MaxForce);
 	savefile->ReadInt(m_LockedHeldDist);
 	savefile->ReadBool(m_bObjStuck);
-	m_EquippedEnt.Restore(savefile);
 
 	savefile->ReadBool(m_bIsColliding);
 	savefile->ReadBool(m_bPrevFrameCollided);
@@ -232,7 +252,14 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	{
 		savefile->ReadVec3(m_CollNorms[i]);
 	}
-	savefile->ReadBool( m_bDropBodyFaceUp );
+
+	m_EquippedEnt.Restore(savefile);
+	savefile->ReadBool(m_bEquippedEntInWorld);
+	savefile->ReadVec3(m_vEquippedPosition);
+	savefile->ReadInt(m_EquippedEntContents);
+	savefile->ReadInt(m_EquippedEntClipMask);
+
+	savefile->ReadBool(m_bDropBodyFaceUp);
 }
 
 /*
@@ -275,6 +302,10 @@ void CGrabber::StopDrag( void )
 		player->SetImmobilization( "Grabber", 0 );
 		player->SetHinderance( "Grabber", 1.0f, 1.0f );
 	}
+
+	// TODO: This assumes we can never equip an object and drag a second object
+	if( m_EquippedEnt.GetEntity() && m_player.GetEntity() )
+		Dequip();
 }
 
 /*
@@ -304,8 +335,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		// ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
 		StopDrag();
-
-		// tels: TODO also remove entity from cliplist?		
+		
 		goto Quit;
 	}
 
@@ -336,12 +366,15 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	if( m_bAttackPressed && !bAttackHeld )
 	{
-		int HeldTime = gameLocal.time - m_ThrowTimer;
-
-		Throw( HeldTime );
 		m_bAttackPressed = false;
 
-		goto Quit;
+		// attack button doesn't throw if the item is equipped
+		if( !m_bEquippedEntInWorld )
+		{
+			int HeldTime = gameLocal.time - m_ThrowTimer;
+			Throw( HeldTime );
+			goto Quit;
+		}
 	}
 
 	if( !m_bAttackPressed && bAttackHeld )
@@ -350,6 +383,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 		// start the throw timer
 		m_ThrowTimer = gameLocal.time;
+
+		// attack button uses if the item is equipped
+		if( m_bEquippedEntInWorld )
+			UseEquipped();
 	}
 
 	// Update the held distance
@@ -372,8 +409,17 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	vPlayerPoint.x = 1.0f; // (1, 0, 0)
 	distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
-	vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
-	vPlayerPoint += m_vOffset;
+
+	// equipped entities lock in position
+	if( !m_bEquippedEntInWorld )
+	{
+		vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+		vPlayerPoint += m_vOffset;
+	}
+	else
+	{
+		vPlayerPoint = m_vEquippedPosition;
+	}
 
 	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
 
@@ -670,7 +716,12 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	// To sum it all up...
 	//
 	// If the player holds ZOOM, make the object rotated based on mouse movement.
-	if( !ent->IsType( idAFEntity_Base::Type ) && player->usercmd.buttons & BUTTON_ZOOM ) 
+	if
+	( 
+		m_bAllowPlayerRotation 
+		&& !ent->IsType( idAFEntity_Base::Type ) 
+		&& player->usercmd.buttons & BUTTON_ZOOM 
+	) 
 	{
 
 		float angle = 0.0f;
@@ -1083,7 +1134,7 @@ void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
 void CGrabber::IncrementDistance( bool bIncrease )
 {
 	int increment = 1;
-	if( !m_dragEnt.GetEntity() )
+	if( !m_dragEnt.GetEntity() || !m_bAllowPlayerTranslation )
 		goto Quit;
 	
 	if( !bIncrease )
@@ -1388,8 +1439,11 @@ bool CGrabber::Equip( void )
 	idStr str;
 	idEntity *ent = m_dragEnt.GetEntity();
 
-	if( !ent )
+	if( !ent || !ent->spawnArgs.GetBool("equippable") )
+	// if( !ent )
 	goto Quit;
+
+	gameLocal.Printf("Equip called\n");
 
 	// tels: Execute a potential equip script
     if(ent->spawnArgs.GetString("equip_action_script", "", str))
@@ -1400,10 +1454,48 @@ bool CGrabber::Equip( void )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
-			// the entity will not be equipped, so the next time the equip_action_script
-			// will run again, unless the script removed the entity.
 		}
 	}
+
+	// ishtvan: Test general "equip in world system"
+	if( ent->spawnArgs.GetBool("equip_in_world") )
+	{
+		gameLocal.Printf("Equipping item in world\n");
+
+		m_vEquippedPosition = ent->spawnArgs.GetVector("equip_position");
+		
+		// rotate initially to the desired equipped axis (relative to player)
+		idAngles EqAngles = ent->spawnArgs.GetAngles("equip_angles");
+		idMat3 EqAxis = EqAngles.ToMat3();
+		idVec3 dummy;
+		idMat3 viewAxis;
+		m_player.GetEntity()->GetViewPos( dummy, viewAxis );
+		ent->SetAxis(EqAxis * viewAxis);
+
+		if( ent->spawnArgs.GetBool("equip_draw_on_top") )
+			ent->GetRenderEntity()->weaponDepthHack = true;
+		if( ent->spawnArgs.GetBool("equip_nonsolid") )
+		{
+			m_EquippedEntContents = ent->GetPhysics()->GetContents();
+			ent->GetPhysics()->SetContents( m_EquippedEntContents & ~(CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL) );
+			m_EquippedEntClipMask = ent->GetPhysics()->GetClipMask();
+			ent->GetPhysics()->SetClipMask( m_EquippedEntClipMask & ~(CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL) );
+
+			// don't limit the force, item always sticks with player when turning
+			m_drag.LimitForce( false );
+			m_drag.ApplyDamping( false );
+		}
+		// item is still dragged, but don't allow player controls to rotate or translate
+		m_bAllowPlayerRotation = false;
+		m_bAllowPlayerTranslation = false;
+		m_bMaintainPitch = false;
+
+		m_bEquippedEntInWorld = true;
+
+		rc = true;
+	}
+
+	m_EquippedEnt = ent;
 
 	// Specific case of shouldering a body
 	if( ent->IsType(idAFEntity_Base::Type) )
@@ -1415,6 +1507,9 @@ Quit:
 
 bool CGrabber::Dequip( void )
 {
+	// TODO: Check for intersection with solids when dequipping!
+	// Like we currently do when dropping inventory items
+
 	bool rc(false);
 	idStr str;
 	idEntity *ent = m_EquippedEnt.GetEntity();
@@ -1422,20 +1517,100 @@ bool CGrabber::Dequip( void )
 	if( !ent )
 	goto Quit;
 
+	gameLocal.Printf("Dequip called\n");
+
+	// tels: Execute a potential dequip script
+    if(ent->spawnArgs.GetString("dequip_action_script", "", str))
+	{ 
+		// Call the script
+        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
+
+	// ishtvan: Test general "equip in world system"
+	if( ent->spawnArgs.GetBool("equip_in_world") )
+	{
+		if( ent->spawnArgs.GetBool("equip_draw_on_top") )
+			ent->GetRenderEntity()->weaponDepthHack = false;
+		if( ent->spawnArgs.GetBool("equip_nonsolid") )
+		{
+			ent->GetPhysics()->SetContents( m_EquippedEntContents );
+			ent->GetPhysics()->SetClipMask( m_EquippedEntClipMask );
+
+			// limit force again if set to do so
+			m_drag.LimitForce( cv_drag_limit_force.GetBool() );
+			m_drag.ApplyDamping( true );
+		}
+		// allow player controls to rotate or translate
+		m_bAllowPlayerRotation = true;
+		m_bAllowPlayerTranslation = true;
+		m_bMaintainPitch = true;
+
+		m_bEquippedEntInWorld = false;
+
+		rc = true;
+	}
+
+	// failsafe, doesn't seem to be setting sometimes
+	m_bEquippedEntInWorld = false;
+	m_bMaintainPitch = true;
+
+	idPlayer *player = m_player.GetEntity();
+
 	// Specific case of unshouldering a body
 	// In this case, body is an inventory item, so drop it
 	if( ent->IsType(idAFEntity_Base::Type) )
 	{
-		m_player.GetEntity()->inventoryDropItem();
+		player->inventoryDropItem();
 		// hack: invenoryDropItem doesn't return back whether it succeeded,
 		// but we want to return back whether we successfully dequipped
 		// so check if we successfully dequipped by seeing
 		// if the equipped ent was cleared by UnShoulderBody()
 		rc = !m_EquippedEnt.GetEntity();
+		m_EquippedEnt = NULL;
+	}
+	// TODO: This won't allow carrying of non-AI AFs?
+	else if( player->AddToInventory( ent, player->hud ) )
+	{
+		// items that can go in the inventory are put back on dequipping
+		StopDrag();
+		m_EquippedEnt = NULL;
+	}
+	else
+	{
+		// dequip the entity
+		m_EquippedEnt = NULL;
 	}
 
 Quit:
 	return rc;
+}
+
+void CGrabber::UseEquipped( void )
+{
+	idStr str;
+	idEntity *ent = GetEquipped();
+	
+	if( !ent )
+		return;
+
+	gameLocal.Printf("Use equipped called\n");
+
+    if(ent->spawnArgs.GetString("equipped_use_script", "", str))
+	{ 
+		gameLocal.Printf("Use equipped found script\n");
+		// Call the script
+        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
 }
 
 bool CGrabber::ShoulderBody( idAFEntity_Base *body )
@@ -1531,13 +1706,15 @@ void CGrabber::Forget( idEntity* ent )
 {
 	// The entity in the grabber got removed, so clear everything
 
-    if (m_dragEnt.GetEntity() == ent)
-		{
+	// TODO: This assumes we can never have something equipped and also
+	// grab something else, will have to revisit if we change that
+
+    if ( m_dragEnt.GetEntity() == ent || m_EquippedEnt.GetEntity() == ent )
+	{
 		StopDrag();
-		m_EquippedEnt = NULL;
 
 		// try to remove from grabber clip list
 		if( ent->IsType(idEntity::Type) )
 			RemoveFromClipList( ent );
-		}
+	}
 }

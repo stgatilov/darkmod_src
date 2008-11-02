@@ -9235,9 +9235,17 @@ void idPlayer::inventoryDropItem()
 	bool bDropped = false;
 	CGrabber *grabber = gameLocal.m_Grabber;
 	idEntity *heldEntity = grabber->GetSelected();
+	idEntity *equippedEntity = grabber->GetEquipped();
 
-	// Drop the item in the grabber hands first
-	if(heldEntity != NULL)
+	// Dequip or drop the item in the grabber hands first
+	// hack: body shouldering, temporary reverse compatibility
+	// eventually all body unshouldering should be handled in "dequip"
+	if( equippedEntity != NULL
+		&& ! (equippedEntity->IsType(idAFEntity_Base::Type) && equippedEntity->spawnArgs.GetBool("shoulderable")) )
+	{
+		grabber->Dequip();
+	}
+	else if(heldEntity != NULL)
 	{
 		grabber->Update( this, false );
 	}
