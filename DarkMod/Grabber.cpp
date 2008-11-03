@@ -1514,8 +1514,9 @@ bool CGrabber::Dequip( void )
 	idStr str;
 	idEntity *ent = m_EquippedEnt.GetEntity();
 
+	// don't use goto Quit, it crosses an initialization, which gcc linux doesn't like:
 	if( !ent )
-	goto Quit;
+		return false;
 
 	gameLocal.Printf("Dequip called\n");
 
