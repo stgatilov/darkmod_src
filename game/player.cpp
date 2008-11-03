@@ -9770,7 +9770,7 @@ void idPlayer::Event_HoldEntity( idEntity *ent )
 {
 	if ( ent )
 	{
-		bool successful = gameLocal.m_Grabber->PutInHands( ent, mat3_identity, 0 );
+		bool successful = gameLocal.m_Grabber->PutInHands( ent, ent->GetPhysics()->GetAxis() );
 		idThread::ReturnInt( successful );
 	}
 	else
