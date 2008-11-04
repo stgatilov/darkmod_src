@@ -41,6 +41,7 @@ public:
 
 public:	// common physics interface
 	void					SetSelf( idEntity *e );
+	idEntity *				GetSelf( void ) { return self; } // Get the original entity - Dram
 
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;

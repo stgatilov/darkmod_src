@@ -6394,8 +6394,21 @@ void idPlayer::UpdateUnderWaterEffects() {
 	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD ) {
 		if (!underWaterEffectsActive) {
 			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
-			idStr overlay = spawnArgs.GetString("gui_airless");
-			if (!overlay.IsEmpty()) {
+
+			// Underwater GUI section, allows custom water guis for each water entity etc - Dram
+			idStr overlay;
+			idPhysics_Liquid* CurWaterEnt = GetPlayerPhysics()->GetWater();
+			if (CurWaterEnt != NULL) { // Get the GUI from the current water entity
+				idEntity* CurEnt = CurWaterEnt->GetSelf();
+				if (CurEnt != NULL) {
+					overlay = CurEnt->spawnArgs.GetString("underwater_gui");
+				}
+				gameLocal.Printf( "UNDERWATER: After water check overlay is %s\n", overlay.c_str() );
+			}
+			if (overlay.IsEmpty()) { // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
+				gameLocal.Warning( "UNDERWATER: water check overlay failed, check key/val pairs\n" );
+			}
+			else if (!overlay.IsEmpty()) {
 				underWaterGUIHandle = CreateOverlay(overlay.c_str(), LAYER_UNDERWATER);
 			}
 			underWaterEffectsActive = true;
