@@ -2720,6 +2720,8 @@ idPlayer::GiveItem
 Returns false if the item shouldn't be picked up
 
 greebo: This routine can probably be removed completely
+tels: This routine is the only mention of inv_weapon spawnarg, so if
+      it gets deleted, the spawnarg can be removed as well.
 ===============
 */
 bool idPlayer::GiveItem( idItem *item ) {
