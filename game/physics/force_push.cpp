@@ -91,6 +91,8 @@ void CForcePush::Evaluate( int time )
 	idPhysics* physics = pushEnt->GetPhysics();
 	//gameRenderWorld->DebugBox(colorRed, idBox(physics->GetBounds(), physics->GetOrigin(), physics->GetAxis()), 16);
 
+	if (physics == NULL) return; // fix crash for entites not having physics
+
 	float mass = physics->GetMass();
 	float ownerMass = owner->GetPhysics()->GetMass();
 
