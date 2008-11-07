@@ -1101,7 +1101,7 @@ unsigned char *CImage::GetImage(void)
 	if(m_Loaded == true && m_Image != NULL)
 	{
 		ilBindImage(m_ImageId);
-		ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength);
+		ilLoadL(IL_TGA, m_Image, m_BufferLength);
 		rc = (unsigned char *)ilGetData();
 	}
 
