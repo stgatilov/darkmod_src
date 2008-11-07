@@ -990,10 +990,12 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
 			unsigned int BufLen = DARKMOD_LG_RENDERPIPE_BUFSIZE;
 			
+#ifdef _DEBUG
 			// For debugging
 			for (int i=0; i<DARKMOD_LG_RENDERPIPE_BUFSIZE; i++) {
 				pipe_buf[i] = 42;
 			}
+#endif
 			
 			pipe->Read(pipe_buf, &BufLen);
 
@@ -1105,23 +1107,6 @@ unsigned char *CImage::GetImage(void)
 
 	return rc;
 }
-
-/*
-const char *DM_OSPathToRelativePath(const char *OSPath)
-{
-	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("DM_OSPathToRelativePath: [%s]\r", (OSPath) ? OSPath: "NULL");
-	RETURN_META_VALUE(MRES_HANDLED, NULL);
-}
-
-const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath)
-{
-	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("DM_RelativePathToOSPath: RelativePath [%s]   basePath: [%s]\r", 
-		(relativePath) ? relativePath : "NULL",
-		(basePath) ? basePath : "NULL"
-		);
-	RETURN_META_VALUE(MRES_HANDLED, NULL);
-}
-*/
 
 void DM_Printf(const char* fmt, ...)
 {
