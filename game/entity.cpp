@@ -3672,6 +3672,12 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 		}
 	}
 
+	// greebo: Allow the no_frob_box spawnarg to override the settings
+	if (spawnArgs.GetBool("no_frob_box", "0"))
+	{
+		bUseFrobBox = false;
+	}
+
 	if( bUseFrobBox )
 	{
 		if ( spawnArgs.GetInt( "frobbox_cylinder", "0", numSides ) && numSides > 0 ) 
