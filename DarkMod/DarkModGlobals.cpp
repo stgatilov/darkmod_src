@@ -1075,7 +1075,7 @@ void CImage::InitImageInfo(void)
 	ilGenImages(1, &m_ImageId);
 	ilBindImage(m_ImageId);
 
-	if(ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength) == IL_FALSE)
+	if(ilLoadL(IL_TGA, m_Image, m_BufferLength) == IL_FALSE)
 	{
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error while loading image [%s]\r", m_Name.c_str());
 		goto Quit;
