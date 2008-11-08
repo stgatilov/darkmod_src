@@ -1566,7 +1566,7 @@ bool CGrabber::Dequip( void )
 	// In this case, body is an inventory item, so drop it
 	if( ent->IsType(idAFEntity_Base::Type) )
 	{
-		player->inventoryDropItem();
+		player->InventoryDropItem();
 		// hack: invenoryDropItem doesn't return back whether it succeeded,
 		// but we want to return back whether we successfully dequipped
 		// so check if we successfully dequipped by seeing

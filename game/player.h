@@ -423,25 +423,6 @@ public:
 	void					Spawn( void );
 	void					Think( void );
 
-	/**
-	* greebo: This creates all the default inventory items and adds the weapons.
-	*/
-	void					SetupInventory();
-
-	/**
-	* greebo: Parses the spawnargs for any weapon definitions and adds them
-	*         to the inventory. Expects the weapon category to exist.
-	*/
-	void					addWeaponsToInventory();
-
-	/**
-	 * greebo: Cycles through the inventory and opens the next map.
-	 * If no map is displayed currently, the first map is toggled.
-	 * If there is a map currently on the HUD, the next one is chosen.
-	 * If there is no next map, the map is closed again.
-	 */
-	void					NextInventoryMap();
-
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
@@ -791,8 +772,13 @@ public:
 	**/
 	float GetMovementVolMod( void );
 
-	// Drops the currently held/selected item.
-	void inventoryDropItem( void );
+	/**
+	 * greebo: Cycles through the inventory and opens the next map.
+	 * If no map is displayed currently, the first map is toggled.
+	 * If there is a map currently on the HUD, the next one is chosen.
+	 * If there is no next map, the map is closed again.
+	 */
+	void					NextInventoryMap();
 
 	/**
 	* Physically test whether an item would fit in the world when
@@ -803,15 +789,19 @@ public:
 	bool TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis );
 
 	// Uses the currently held/selected item.
-	void inventoryUseItem();
+	void InventoryUseItem();
+
+	// Drops the currently held/selected item.
+	void InventoryDropItem();
+
 	// Performs the inventory action for onButtonRelease
-	void inventoryUseKeyRelease(int holdTime);
+	void InventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific inventory item
-	void inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
+	void InventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
-	void inventoryChangeSelection(const idStr& name);
+	void InventoryChangeSelection(const idStr& name);
 
 	// Override idEntity method to get notified upon item changes
 	virtual void OnInventoryItemChanged();
@@ -858,6 +848,18 @@ public:
 	* @stepAmount: The amount of health to be taken from the healthpool at each step
 	*/
 	void			setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount);
+
+protected:
+	/**
+	* greebo: This creates all the default inventory items and adds the weapons.
+	*/
+	void SetupInventory();
+
+	/**
+	* greebo: Parses the spawnargs for any weapon definitions and adds them
+	*         to the inventory. Expects the weapon category to exist.
+	*/
+	void AddWeaponsToInventory();
 
 private:
 	jointHandle_t			hipJoint;

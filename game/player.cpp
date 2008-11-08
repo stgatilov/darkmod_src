@@ -985,7 +985,7 @@ CInventoryWeaponItemPtr idPlayer::GetCurrentWeaponItem()
 	return boost::dynamic_pointer_cast<CInventoryWeaponItem>(m_WeaponCursor->GetCurrentItem());
 }
 
-void idPlayer::addWeaponsToInventory() {
+void idPlayer::AddWeaponsToInventory() {
 
 	for (int i = 0; i < MAX_WEAPONS; i++) {
 		// Construct the spawnarg name
@@ -1033,7 +1033,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL)
 	{
 		// We already have a map selected, toggle it off
-		inventoryUseItem(EPressed, mapItem, 0); 
+		InventoryUseItem(EPressed, mapItem, 0); 
 	}
 
 	// Advance the cursor to the next item
@@ -1042,7 +1042,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL && nextMapItem != mapItem)
 	{
 		// Use this new item
-		inventoryUseItem(EPressed, mapItem, 0);
+		InventoryUseItem(EPressed, mapItem, 0);
 	}
 }
 
@@ -1072,7 +1072,7 @@ void idPlayer::SetupInventory()
 	m_WeaponCursor->SetCategoryLock(true);
 
 	// greebo: Parse the spawnargs and add the weapon items to the inventory.
-	addWeaponsToInventory();
+	AddWeaponsToInventory();
 
 	// greebo: Create the cursor for map/floorplan inventory items.
 	m_MapCursor = inv->CreateCursor();
@@ -5299,7 +5299,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			inventoryPrevItem();
+			InventoryPrevItem();
 		}
 		break;
 
@@ -5315,7 +5315,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			inventoryNextItem();
+			InventoryNextItem();
 		}
 		break;
 
@@ -5331,7 +5331,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			inventoryPrevGroup();
+			InventoryPrevGroup();
 		}
 		break;
 
@@ -5347,7 +5347,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			inventoryNextGroup();
+			InventoryNextGroup();
 		}
 		break;
 
@@ -5356,7 +5356,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Use key has "hold down" functions
 			m_ButtonStateTracker.startTracking(impulse);
 			// Pass the call
-			inventoryUseItem();
+			InventoryUseItem();
 		}
 		break;
 
@@ -5369,7 +5369,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 			}
 
-			inventoryDropItem();
+			InventoryDropItem();
 		}
 		break;
 
@@ -5393,7 +5393,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 			{
-				inventoryUseItem(ERepeat, it, holdTime);
+				InventoryUseItem(ERepeat, it, holdTime);
 			}
 		}
 		break;
@@ -5428,7 +5428,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 		break;
 
 		case IMPULSE_51:
-			inventoryUseKeyRelease(holdTime);
+			InventoryUseKeyRelease(holdTime);
 		break;
 	}
 }
@@ -9189,7 +9189,7 @@ float idPlayer::GetMovementVolMod( void )
 	return returnval;
 }
 
-void idPlayer::inventoryUseKeyRelease(int holdTime)
+void idPlayer::InventoryUseKeyRelease(int holdTime)
 {
 	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItemPtr it = crsr->GetCurrentItem();
@@ -9197,11 +9197,11 @@ void idPlayer::inventoryUseKeyRelease(int holdTime)
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 	{
-		inventoryUseItem(EReleased, it, holdTime);
+		InventoryUseItem(EReleased, it, holdTime);
 	}
 }
 
-void idPlayer::inventoryUseItem()
+void idPlayer::InventoryUseItem()
 {
 	// Check for a held grabber entity, which should be put back into the inventory
 	if (AddGrabberEntityToInventory())
@@ -9226,11 +9226,11 @@ void idPlayer::inventoryUseItem()
 
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 	{
-		inventoryUseItem(EPressed, it, 0);
+		InventoryUseItem(EPressed, it, 0);
 	}
 }
 
-void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime)
+void idPlayer::InventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime)
 {
 	if (nState == EPressed)
 	{
@@ -9276,7 +9276,7 @@ void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& i
 	}
 }
 
-void idPlayer::inventoryDropItem()
+void idPlayer::InventoryDropItem()
 {
 	bool bDropped = false;
 	CGrabber *grabber = gameLocal.m_Grabber;
@@ -9415,7 +9415,7 @@ void idPlayer::inventoryDropItem()
 	}
 }
 
-void idPlayer::inventoryChangeSelection(const idStr& name)
+void idPlayer::InventoryChangeSelection(const idStr& name)
 {
 	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
 	idStr itemName(name);

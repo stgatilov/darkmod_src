@@ -8988,7 +8988,7 @@ void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory,
 	}
 }
 
-void idEntity::inventoryNextItem()
+void idEntity::InventoryNextItem()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -9001,7 +9001,7 @@ void idEntity::inventoryNextItem()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::inventoryPrevItem()
+void idEntity::InventoryPrevItem()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
@@ -9013,7 +9013,7 @@ void idEntity::inventoryPrevItem()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::inventoryNextGroup()
+void idEntity::InventoryNextGroup()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -9025,7 +9025,7 @@ void idEntity::inventoryNextGroup()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::inventoryPrevGroup()
+void idEntity::InventoryPrevGroup()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
