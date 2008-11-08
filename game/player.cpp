@@ -5274,9 +5274,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 
 			inventoryPrevItem();
-
-			// Notify the GUIs about the change event
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 		}
 		break;
 
@@ -5293,9 +5290,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 
 			inventoryNextItem();
-
-			// Notify the GUIs about the change event
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 		}
 		break;
 
@@ -5312,9 +5306,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 
 			inventoryPrevGroup();
-
-			// Notify the GUIs about the change event
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 		}
 		break;
 
@@ -5331,9 +5322,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 
 			inventoryNextGroup();
-
-			// Notify the GUIs about the change event
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 		}
 		break;
 
@@ -9390,9 +9378,6 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 
 	if (item != NULL)
 	{
-		// Notify the GUIs about the change event
-		m_overlays.broadcastNamedEvent("inventorySelectionChange");
-
 		// Item found, set the cursor to it
 		InventoryCursor()->SetCurrentItem(item);
 
@@ -9420,6 +9405,9 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 
 	// Set the "dirty" flag, the HUD needs a redraw
 	inventoryHUDNeedsUpdate = true;
+
+	// Notify the GUIs about the change event
+	m_overlays.broadcastNamedEvent("inventorySelectionChange");
 
 	// Get the current item
 	const CInventoryCursorPtr& cursor = InventoryCursor();
