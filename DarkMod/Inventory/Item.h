@@ -137,6 +137,9 @@ protected:
 	// Reads the values from the given spawnargs into the member variables
 	void					ParseSpawnargs(const idDict& spawnArgs);
 
+	// Calls the owner's OnInventoryItemChanged() method
+	void					NotifyItemChanged();
+
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;

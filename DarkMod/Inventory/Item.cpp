@@ -218,22 +218,27 @@ void CInventoryItem::SetLootType(CInventoryItem::LootType t)
 	{
 		m_LootType = CInventoryItem::LT_NONE;
 	}
+
+	NotifyItemChanged();
 }
 
 void CInventoryItem::SetValue(int n)
 {
 	// Only positive values are allowed
-	if(n >= 0)
+	if (n >= 0)
+	{
 		m_Value = n;
+
+		NotifyItemChanged();
+	}
 }
 
 void CInventoryItem::SetCount(int n)
 {
 	// Only positive values are allowed
-	if(n >= 0)
-		m_Count = n;
-	else
-		m_Count = 0;
+	m_Count = (n >= 0) ? n : 0;
+
+	NotifyItemChanged();
 }
 
 void CInventoryItem::SetStackable(bool stack)
@@ -244,7 +249,7 @@ void CInventoryItem::SetStackable(bool stack)
 void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 {
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Setting hud %s on layer %d\r", HudName.c_str(), layer); 
-	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
+	if (m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
 	{
 		idEntity *owner = GetOwner();
 
@@ -257,17 +262,19 @@ void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, owner, (float)m_Overlay, HudName.c_str());
 		}
 	}
+
+	NotifyItemChanged();
 }
 
-void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
+void CInventoryItem::SetOverlay(const idStr &HudName, int overlay)
 {
-	if(Overlay != OVERLAYS_INVALID_HANDLE)
+	if (overlay != OVERLAYS_INVALID_HANDLE)
 	{
 		idEntity *owner = GetOwner();
 
 		m_Hud = true;
 		m_HudName = HudName;
-		m_Overlay = Overlay;
+		m_Overlay = overlay;
 		idEntity* it = m_Item.GetEntity();
 		if (it != NULL)
 		{
@@ -344,4 +351,13 @@ void CInventoryItem::SetDropPoint(const idVec3& newPoint)
 void CInventoryItem::SetIcon(const idStr& newIcon)
 {
 	m_Icon = newIcon;
+
+	NotifyItemChanged();
+}
+
+void CInventoryItem::NotifyItemChanged()
+{
+	if (m_Owner.GetEntity() == NULL) return;
+
+	m_Owner.GetEntity()->OnInventoryItemChanged();
 }

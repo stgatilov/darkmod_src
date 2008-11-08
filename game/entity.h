@@ -898,6 +898,20 @@ public:
 	 */
 	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
+	virtual void inventoryNextItem();	// Cycles to the next item in the inventory.
+	virtual void inventoryPrevItem();	// Cycles to the previous item in the inventory.
+	virtual void inventoryNextGroup();	// Cycles to the next group in the inventory.
+	virtual void inventoryPrevGroup();	// Cycles to the previous group in the inventory.
+
+	// Gets called when the inventory cursor has changed its selection focus
+	virtual void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem = CInventoryItemPtr());
+
+	/**
+	 * greebo: Gets called when anything within the inventory has been altered (item count, item icon)
+	 * This does NOT get called when the selection changes, only the inventory's contents.
+	 */
+	virtual void OnInventoryItemChanged();
+
 	/**
 	 * Changes the inventory count of the given item <name> in <category> by <amount>
 	 */

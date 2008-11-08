@@ -789,16 +789,9 @@ public:
 	**/
 	float GetMovementVolMod( void );
 
-	// Cycles to the next item in the inventory.
-	void inventoryNextItem( void );
-	// Cycles to the previous item in the inventory.
-	void inventoryPrevItem( void );
-	// Cycles to the next group in the inventory.
-	void inventoryNextGroup( void );
-	// Cycles to the previous group in the inventory.
-	void inventoryPrevGroup( void );
 	// Drops the currently held/selected item.
 	void inventoryDropItem( void );
+
 	/**
 	* Physically test whether an item would fit in the world when
 	* dropped with its center of mass (not origin!) at the specified point
@@ -821,8 +814,11 @@ public:
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, const CInventoryItemPtr& Prev = CInventoryItemPtr());
 
-	// The "selection changed" event is called after the inventory cursor has changed its position
-	void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem = CInventoryItemPtr());
+	// Override idEntity method to get notified upon item changes
+	virtual void OnInventoryItemChanged();
+
+	// Override idEntity method: the "selection changed" event is called after the inventory cursor has changed its position
+	virtual void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem);
 
 	/**
 	 * Overload the idEntity::AddToInventory method to catch weapon items.

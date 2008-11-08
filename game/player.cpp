@@ -9148,60 +9148,6 @@ float idPlayer::GetMovementVolMod( void )
 	return returnval;
 }
 
-/*
-=====================
-idPlayer::inventoryNextItem
-=====================
-*/
-void idPlayer::inventoryNextItem()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetNextItem();
-
-	// Call the selection changed event
-	OnInventorySelectionChanged(prev);
-}
-
-void idPlayer::inventoryPrevItem()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetPrevItem();
-
-	// Call the selection changed event
-	OnInventorySelectionChanged(prev);
-}
-
-void idPlayer::inventoryNextGroup()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetNextCategory();
-	
-	OnInventorySelectionChanged(prev);
-}
-
-void idPlayer::inventoryPrevGroup()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetPrevCategory();
-	
-	OnInventorySelectionChanged(prev);
-}
-
 void idPlayer::inventoryUseKeyRelease(int holdTime)
 {
 	const CInventoryCursorPtr& crsr = InventoryCursor();
@@ -9218,13 +9164,17 @@ void idPlayer::inventoryUseItem()
 {
 	// Check for a held grabber entity, which should be put back into the inventory
 	if (AddGrabberEntityToInventory())
+	{
 		return;
+	}
 
 	// If the grabber item can be equipped/dequipped, use item does this
 	if ( gameLocal.m_Grabber->GetSelected() || gameLocal.m_Grabber->GetEquipped() )
 	{
 		if( gameLocal.m_Grabber->ToggleEquip() )
+		{
 			return;
+		}
 	}
 
 	// If the player has an item that is selected we need to check if this
@@ -9256,8 +9206,7 @@ void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& i
 	idEntity* ent = item->GetItemEntity();
 	if (ent == NULL) return;
 
-	idThread *thread = NULL;
-	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+	idEntity* frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %s  KeyState: %u\r", ent->name.c_str(), nState);
 
@@ -9269,6 +9218,8 @@ void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& i
 		frob->UseBy(nState, item);
 	}
 
+	idThread* thread = NULL;
+
 	if (nState == EPressed)
 	{
 		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, frob, nState);
@@ -9278,7 +9229,7 @@ void idPlayer::inventoryUseItem(EImpulseState nState, const CInventoryItemPtr& i
 		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, frob, static_cast<float>(holdTime));
 	}
 
-	if (thread)
+	if (thread != NULL)
 	{
 		thread->Start(); // Start the thread immediately.
 	}
@@ -9322,11 +9273,11 @@ void idPlayer::inventoryDropItem()
 			const function_t* dropScript = ent->scriptObject.GetFunction(TDM_INVENTORY_DROPSCRIPT);
 			
 			// ishtvan: Set up the initial orientation and point at which we want to drop
-			idMat3 DropAxis = item->GetDropOrientation();
+			idMat3 dropAxis = item->GetDropOrientation();
 			if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
 			{
 				if( gameLocal.m_Grabber->m_bDropBodyFaceUp )
-					DropAxis = DropAxis * idAngles(0.0f,0.0f,180.0f).ToMat3();
+					dropAxis *= idAngles(0.0f,0.0f,180.0f).ToMat3();
 			}
 			// Apply the player's view yaw and roll to the item's orientation
 			idVec3 playViewPos;
@@ -9337,17 +9288,18 @@ void idPlayer::inventoryDropItem()
 			viewYaw[0] = 0;
 			viewYaw[2] = 0;
 			idMat3 playViewYaw = viewYaw.ToMat3();
-			DropAxis *= playViewYaw;
+			dropAxis *= playViewYaw;
 
-			idVec3 DropPoint;
+			idVec3 dropPoint;
 			if( item->IsDropPointOverriden() )
 			{
-				DropPoint = playViewYaw * item->GetDropPoint();
-				DropPoint += playViewPos;
+				dropPoint = playViewYaw * item->GetDropPoint();
+				dropPoint += playViewPos;
 			}
 			else
-				DropPoint = gameLocal.m_Grabber->GetHoldPoint( ent );
-
+			{
+				dropPoint = gameLocal.m_Grabber->GetHoldPoint( ent );
+			}
 
 			if( dropScript != NULL )
 			{
@@ -9364,7 +9316,7 @@ void idPlayer::inventoryDropItem()
 			// The flashbomb for example is spawning projectiles on its own.
 			// Stackables: Test that the item fits in grabber with dummy item first, before spawning the drop item
 			// NOTE: TestDropItemRotations will overwrite DropAxis if the supplied doesn't work and it finds a working one
-			else if (TestDropItemRotations(ent, playViewPos, DropPoint, DropAxis)) 
+			else if (TestDropItemRotations(ent, playViewPos, dropPoint, dropAxis)) 
 			{
 				// Drop the item into the grabber hands 
 				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
@@ -9384,7 +9336,7 @@ void idPlayer::inventoryDropItem()
 					ent = spawnedEntity;
 				}
 
-				if( grabber->PutInHands(ent, DropPoint, DropAxis) )
+				if( grabber->PutInHands(ent, dropPoint, dropAxis) )
 				{
 					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
 					bDropped = true;
@@ -9413,11 +9365,11 @@ void idPlayer::inventoryDropItem()
 			{
 				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item dropped, changing inventory count.\r");
 
-				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1); 
+				ChangeInventoryItemCount(item->GetName(), category->GetName(), -1); 
 			}
 
 			// Always update the HUD, the drop script might have changed the inventory count itself.
-			inventoryChangeSelection(hud, true, item);
+			inventoryHUDNeedsUpdate = true;
 		}
 	}
 }
@@ -9453,8 +9405,19 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 	}
 }
 
+void idPlayer::OnInventoryItemChanged()
+{
+	// Call the base class
+	idEntity::OnInventoryItemChanged();
+
+	inventoryHUDNeedsUpdate = true;
+}
+
 void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 {
+	// Call the base class first
+	idEntity::OnInventorySelectionChanged(prevItem);
+
 	// Set the "dirty" flag, the HUD needs a redraw
 	inventoryHUDNeedsUpdate = true;
 
