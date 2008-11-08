@@ -88,6 +88,21 @@ void CInventory::SetLoot(int Gold, int Jewelry, int Goods)
 	m_Goods = Goods;
 }
 
+void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInventoryItemPtr&)
+{
+	if (!cv_tdm_inv_hud_pickupmessages.GetBool()) return; // setting is turned off
+
+	if (!m_Owner.GetEntity()->IsType(idPlayer::Type)) return; // owner is not a player
+	
+	idPlayer* player = static_cast<idPlayer*>(m_Owner.GetEntity());
+
+	// Prepend the "acquired" text
+	idStr pickedUpMsg = idStr(TDM_INVENTORY_PICKEDUP_MSG_PREFIX) + pickedUpStr;
+
+	// Now actually send the message
+	player->SendInventoryPickedUpMessage(pickedUpMsg);
+}
+
 CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 {
 	CInventoryItemPtr rc;
@@ -99,6 +114,8 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 
 	if (lootType != CInventoryItem::LT_NONE && value > 0)
 	{
+		idStr pickedUpMsg = idStr(value);
+
 		// If we have an anonymous loot item, we don't need to 
 		// store it in the inventory.
 		switch(lootType)
@@ -106,16 +123,19 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 			case CInventoryItem::LT_GOLD:
 				m_Gold += value;
 				LGroupVal = m_Gold;
+				pickedUpMsg += " in Gold";
 			break;
 
 			case CInventoryItem::LT_GOODS:
 				m_Goods += value;
 				LGroupVal = m_Goods;
+				pickedUpMsg += " in Goods";
 			break;
 
 			case CInventoryItem::LT_JEWELS:
 				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
+				pickedUpMsg += " in Jewels";
 			break;
 			
 			default: break;
@@ -124,6 +144,8 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 		m_LootItemCount++;
 
 		rc = GetItem(TDM_LOOT_INFO_ITEM);
+
+		assert(rc != NULL); // the loot item must exist
 
 		// greebo: Update the total loot value in the objectives system BEFORE
 		// the InventoryCallback. Some comparisons rely on a valid total loot value.
@@ -139,6 +161,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 			true 
 		);
 		
+		NotifyOwnerAboutPickup(pickedUpMsg, rc);
 	}
 	else
 	{
@@ -340,6 +363,16 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 			true
 		);
 
+		// Notify the player, if appropriate
+		idStr msg = name;
+
+		if (count > 0) 
+		{
+			name += " x" + idStr(count);
+		}
+
+		NotifyOwnerAboutPickup(msg, existing);
+
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added stackable item to inventory: %s\r", ent->name.c_str());
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("New inventory item stack count is: %d\r", existing->GetCount());
 
@@ -367,6 +400,8 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 				1, 
 				true
 			);
+
+			NotifyOwnerAboutPickup(name, item);
 
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
@@ -705,6 +740,15 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 				// Add the ammo to this weapon
 				weaponItem->SetAmmo(weaponItem->GetAmmo() + amount);
 
+				idStr msg = ent->spawnArgs.GetString("inv_name");
+
+				if (amount > 1)
+				{
+					msg += " x" + idStr(amount);
+				}
+
+				NotifyOwnerAboutPickup(msg, weaponItem);
+				
 				// We're done
 				return weaponItem;
 			}

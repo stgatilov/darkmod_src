@@ -222,6 +222,7 @@ idCVar cv_tdm_inv_groupvis(	"tdm_inv_visibility", "1", CVAR_GAME | CVAR_ARCHIVE 
 idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the HUD GUIs. [0..1]", 0, 1 );
 idCVar cv_tdm_inv_fadein(	"tdm_inv_fade_in", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade in the inventory. 0 = immediately");
 idCVar cv_tdm_inv_fadeout(	"tdm_inv_fade_out", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade out the inventory. 0 = immediately");
+idCVar cv_tdm_inv_hud_pickupmessages(	"tdm_inv_hud_pickupmessages", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"If set to 1, the HUD is displaying the item the player has just picked up.");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
 idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "0",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' currently selected inventory items will be used on frob.");
 idCVar cv_tdm_inv_use_on_frob_visual_feedback("tdm_inv_use_on_frob_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' the HUD is giving visual feedback when the currently highlighted item is used.");

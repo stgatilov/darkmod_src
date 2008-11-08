@@ -436,7 +436,7 @@ idPlayer::idPlayer() :
 	m_bShoulderingBody		= false;
 
 	m_LeanButtonTimeStamp	= 0;
-	mInventoryOverlay		= -1;
+	m_InventoryOverlay		= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursor				= CInventoryCursorPtr();
 
@@ -1048,7 +1048,19 @@ void idPlayer::NextInventoryMap()
 
 void idPlayer::SetupInventory()
 {
-	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
+	m_InventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
+	
+	idUserInterface* invGUI = m_overlays.getGui(m_InventoryOverlay);
+	
+	if (invGUI == NULL)
+	{
+		gameLocal.Error("Could not set up inventory GUI: %s", cv_tdm_inv_hud_file.GetString());
+		return;
+	}
+
+	// Initialise the pickup message system
+	invGUI->HandleNamedEvent("SetupInventoryPickUpMessageSystem");
+
 	const CInventoryPtr& inv = Inventory();
 	int idx = 0;
 
@@ -1227,6 +1239,12 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	for (int i = 0; i < hudMessages.Num(); i++) 
 	{
 		savefile->WriteString(hudMessages[i]);
+	}
+
+	savefile->WriteInt(inventoryPickedUpMessages.Num());
+	for (int i = 0; i < inventoryPickedUpMessages.Num(); i++) 
+	{
+		savefile->WriteString(inventoryPickedUpMessages[i]);
 	}
 
 	savefile->WriteInt( weapon_soulcube );
@@ -1423,7 +1441,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
-	savefile->WriteInt(mInventoryOverlay);
+	savefile->WriteInt(m_InventoryOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
 	if (m_WeaponCursor != NULL) {
@@ -1512,6 +1530,14 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	for (i = 0; i < num; i++) 
 	{
 		savefile->ReadString(hudMessages[i]);
+	}
+
+	savefile->ReadInt(num);
+	inventoryPickedUpMessages.Clear();
+	inventoryPickedUpMessages.SetNum(num);
+	for (i = 0; i < num; i++) 
+	{
+		savefile->ReadString(inventoryPickedUpMessages[i]);
 	}
 
 	savefile->ReadInt( weapon_soulcube );
@@ -1734,7 +1760,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
 
-	savefile->ReadInt(mInventoryOverlay);
+	savefile->ReadInt(m_InventoryOverlay);
 
 	bool hasWeaponCursor;
 	savefile->ReadBool(hasWeaponCursor);
@@ -6251,6 +6277,7 @@ void idPlayer::UpdateHUD()
 
 	// Check if any HUD messages are pending
 	UpdateHUDMessages();
+	UpdateInventoryPickedUpMessages();
 
 	if (cv_show_gameplay_time.GetBool())
 	{
@@ -6296,14 +6323,14 @@ void idPlayer::UpdateInventoryHUD()
 			// appropriately with their respective events.
 			if (curItem->HasHUD() == false)
 			{
-				SetGuiInt(mInventoryOverlay, "Inventory_GroupVisible", 1);
-				SetGuiInt(mInventoryOverlay, "Inventory_ItemVisible", 1);
+				SetGuiInt(m_InventoryOverlay, "Inventory_GroupVisible", 1);
+				SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 1);
 
-				SetGuiFloat(mInventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
-				SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", curItem->Category()->GetName().c_str());
-				SetGuiString(mInventoryOverlay, "Inventory_ItemName", curItem->GetName());
-				SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
-				SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
+				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", curItem->Category()->GetName().c_str());
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", curItem->GetName());
+				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
 			}
 		}
 		break;
@@ -6311,9 +6338,9 @@ void idPlayer::UpdateInventoryHUD()
 		case CInventoryItem::IT_DUMMY:
 		{
 			// All objects are set to empty, so we have an empty entry in the inventory.
-			SetGuiInt(mInventoryOverlay, "Inventory_ItemVisible", 0);
-			SetGuiInt(mInventoryOverlay, "Inventory_LootVisible", 0);
-			SetGuiInt(mInventoryOverlay, "Inventory_GroupVisible", 0);
+			SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 0);
+			SetGuiInt(m_InventoryOverlay, "Inventory_LootVisible", 0);
+			SetGuiInt(m_InventoryOverlay, "Inventory_GroupVisible", 0);
 		}
 		break;
 		
@@ -6344,12 +6371,42 @@ void idPlayer::UpdateHUDMessages()
 		return; 
 	}
 
-	// grebo: We have a message and the HUD is ready, shove it into the GUI.
+	// greebo: We have a message and the HUD is ready, shove it into the GUI.
 	hud->SetStateString("MessageText", hudMessages[0]);
 	hud->HandleNamedEvent("DisplayMessage");
 
 	// Remove the first string, now that it's been moved into the GUI
 	hudMessages.RemoveIndex(0);
+}
+
+void idPlayer::UpdateInventoryPickedUpMessages()
+{
+	if (inventoryPickedUpMessages.Num() == 0) return; // nothing to do
+
+	// We have a message to display, check if the HUD is ready for it
+
+	idUserInterface* invGUI = m_overlays.getGui(m_InventoryOverlay);
+
+	if (invGUI == NULL) 
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find inventory HUD, cannot update pickup messages.\r");
+		return; // no overlay?
+	}
+
+	int hasMessage = invGUI->GetStateInt("HasInventoryPickUpMessage");
+
+	if (hasMessage == 1)
+	{
+		// The HUD is still busy, leave it for the moment being
+		return; 
+	}
+
+	// greebo: We have a message and the HUD is ready, shove it into the GUI.
+	invGUI->SetStateString("InventoryPickUpMessageText", inventoryPickedUpMessages[0]);
+	invGUI->HandleNamedEvent("DisplayInventoryPickUpMessage");
+
+	// Remove the first string, now that it's been moved into the GUI
+	inventoryPickedUpMessages.RemoveIndex(0);
 }
 
 /*
@@ -9702,7 +9759,7 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 
 void idPlayer::Event_GetInventoryOverlay(void)
 {
-	idThread::ReturnInt(mInventoryOverlay);
+	idThread::ReturnInt(m_InventoryOverlay);
 }
 
 void idPlayer::Event_PlayStartSound( void )
@@ -10546,6 +10603,13 @@ void idPlayer::SendHUDMessage(const idStr& text)
 	}
 
 	hudMessages.Append(text);
+}
+
+void idPlayer::SendInventoryPickedUpMessage(const idStr& text)
+{
+	if (text.IsEmpty()) return;
+
+	inventoryPickedUpMessages.Append(text);
 }
 
 void idPlayer::Event_Pausegame()

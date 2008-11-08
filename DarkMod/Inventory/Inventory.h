@@ -18,6 +18,7 @@
 #define TDM_INVENTORY_DROPSCRIPT		"inventoryDrop"
 #define TDM_CATEGORY_AMMO				"ammo"
 #define TDM_INVENTORY_AMMO_PREFIX		"inv_ammo_"
+#define TDM_INVENTORY_PICKEDUP_MSG_PREFIX "Acquired: "
 
  /* DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent
@@ -190,6 +191,11 @@ public:
 	int						GetNumCategories() const;
 
 private:
+
+	/**
+	 * greebo: If this inventory is owned by a player, a HUD message is sent back to the player.
+	 */
+	void					NotifyOwnerAboutPickup(const idStr& message, const CInventoryItemPtr& pickedUpItem);
 
 	/**
 	 * greebo: This checks the given entity for loot items and adds the loot value 

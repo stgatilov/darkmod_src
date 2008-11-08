@@ -180,6 +180,7 @@ extern idCVar cv_tdm_inv_hud_file;
 extern idCVar cv_tdm_inv_loot_hud;
 extern idCVar cv_tdm_inv_fadein;
 extern idCVar cv_tdm_inv_fadeout;
+extern idCVar cv_tdm_inv_hud_pickupmessages;
 extern idCVar cv_tdm_inv_loot_sound;
 extern idCVar cv_tdm_inv_use_on_frob;
 extern idCVar cv_tdm_inv_use_on_frob_visual_feedback;
