@@ -119,15 +119,16 @@ public:
 	/**
 	* Get/set the drop orientation
 	**/
-	idMat3					GetDropOrientation() { return m_DropOrientation; }
-	void					SetDropOrientation(idMat3 newAxis);
+	const idMat3&			GetDropOrientation() { return m_DropOrientation; }
+	void					SetDropOrientation(const idMat3& newAxis);
+
 	/**
 	* Check/set if this overrides the default drop point
 	**/
 	bool					IsDropPointOverriden() { return m_bDropPointOverride; }
 	void					SetDropPointOverriden(bool bval);
-	idVec3					GetDropPoint() { return m_vDropPoint; }
-	void					SetDropPoint(idVec3 newPoint);
+	const idVec3&			GetDropPoint() { return m_vDropPoint; }
+	void					SetDropPoint(const idVec3& newPoint);
 
 	// Returns true when this item should be used by the 'frob' impulse
 	bool					UseOnFrob() const { return m_UseOnFrob; }

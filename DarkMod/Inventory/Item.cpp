@@ -326,7 +326,7 @@ void CInventoryItem::SetMovementModifier(float newValue)
 	}
 }
 
-void CInventoryItem::SetDropOrientation(idMat3 newAxis)
+void CInventoryItem::SetDropOrientation(const idMat3& newAxis)
 {
 	m_DropOrientation = newAxis;
 }
@@ -336,7 +336,7 @@ void CInventoryItem::SetDropPointOverriden(bool bval)
 	m_bDropPointOverride = bval;
 }
 
-void CInventoryItem::SetDropPoint(idVec3 newPoint)
+void CInventoryItem::SetDropPoint(const idVec3& newPoint)
 {
 	m_vDropPoint = newPoint;
 }

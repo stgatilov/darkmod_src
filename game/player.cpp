@@ -253,6 +253,8 @@ idPlayer::idPlayer() :
 	weapon					= NULL;
 
 	hud						= NULL;
+	inventoryHUDNeedsUpdate = true;
+
 	objectiveSystem			= NULL;
 	objectiveSystemOpen		= false;
 
@@ -1217,6 +1219,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	weapon.Save( savefile );
 
 	savefile->WriteUserInterface( hud, false );
+	savefile->WriteBool(inventoryHUDNeedsUpdate);
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
 
@@ -1499,6 +1502,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	weapon.Restore( savefile );
 
 	savefile->ReadUserInterface( hud );
+	savefile->ReadBool(inventoryHUDNeedsUpdate);
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
 
@@ -6240,59 +6244,22 @@ void idPlayer::Move( void )
 
 /*
 ==============
-idPlayer::UpdateHud
+idPlayer::UpdateHUD
 ==============
 */
-void idPlayer::UpdateHud( void ) {
-	idPlayer *aimed;
-
-	if ( !hud ) {
-		return;
-	}
-
+void idPlayer::UpdateHUD()
+{
+	if (hud == NULL) return;
+	
 	if ( entityNumber != gameLocal.localClientNum ) {
 		return;
 	}
 
-	if ( gameLocal.realClientTime == lastMPAimTime ) {
-		if ( MPAim != -1 && gameLocal.gameType == GAME_TDM
-			&& gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType( idPlayer::Type )
-			&& static_cast< idPlayer * >( gameLocal.entities[ MPAim ] )->team == team ) {
-				aimed = static_cast< idPlayer * >( gameLocal.entities[ MPAim ] );
-				hud->SetStateString( "aim_text", gameLocal.userInfo[ MPAim ].GetString( "ui_name" ) );
-				hud->SetStateFloat( "aim_color", aimed->colorBarIndex );
-				hud->HandleNamedEvent( "aim_flash" );
-				MPAimHighlight = true;
-				MPAimFadeTime = 0;	// no fade till loosing focus
-		} else if ( MPAimHighlight ) {
-			hud->HandleNamedEvent( "aim_fade" );
-			MPAimFadeTime = gameLocal.realClientTime;
-			MPAimHighlight = false;
-		}
-	}
-	if ( MPAimFadeTime ) {
-		assert( !MPAimHighlight );
-		if ( gameLocal.realClientTime - MPAimFadeTime > 2000 ) {
-			MPAimFadeTime = 0;
-		}
-	}
-
-	// FIXME: this is here for level ammo balancing to see pct of hits 
-	hud->SetStateInt( "g_showProjectilePct", g_showProjectilePct.GetInteger() );
-	if ( numProjectilesFired ) {
-		hud->SetStateString( "projectilepct", va( "Hit %% %.1f", ( (float) numProjectileHits / numProjectilesFired ) * 100 ) );
-	} else {
-		hud->SetStateString( "projectilepct", "Hit % 0.0" );
-	}
-
-	if ( isLagged && gameLocal.isMultiplayer && gameLocal.localClientNum == entityNumber ) {
-		hud->SetStateString( "hudLag", "1" );
-	} else {
-		hud->SetStateString( "hudLag", "0" );
-	}
-
 	// Broadcast the HUD opacity value
 	m_overlays.setGlobalStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
+
+	// Update the inventory HUD
+	UpdateInventoryHUD();
 
 	// Trigger an update of the HUD
 	// TODO: This shouldn't be called so often, so cache this
@@ -6305,6 +6272,73 @@ void idPlayer::UpdateHud( void ) {
 	{
 		// Update the playing time in the HUD, if desired
 		hud->SetStateString("PlayingTime", gameLocal.m_GamePlayTimer.GetTime().c_str());
+	}
+}
+
+void idPlayer::UpdateInventoryHUD()
+{
+	if (!inventoryHUDNeedsUpdate) return; // nothing to do
+
+	// Clear the flag right before taking any action
+	inventoryHUDNeedsUpdate = false;
+
+	CInventoryItemPtr curItem = InventoryCursor()->GetCurrentItem();
+
+	if (curItem == NULL) return; // no current item, nothing to do
+
+	idEntity* curItemEnt = curItem->GetItemEntity();
+
+	if (curItemEnt != NULL) 
+	{
+		// Call the item's update routine for the update
+		idThread* thread = curItemEnt->CallScriptFunctionArgs(
+			"inventory_item_update", true, 0, 
+			"eef", curItemEnt, curItem->GetOwner(), static_cast<float>(curItem->GetOverlay())
+		);
+
+		if (thread != NULL)
+		{
+			thread->Execute();
+		}
+	}
+
+	// Now take the correct action based on the selected type
+	switch (curItem->GetType())
+	{
+		case CInventoryItem::IT_ITEM:
+		{
+			// We display the default hud if the item doesn't have its own. Each item
+			// with its own gui is responsible for switching it on and off
+			// appropriately with their respective events.
+			if (curItem->HasHUD() == false)
+			{
+				SetGuiInt(mInventoryOverlay, "Inventory_GroupVisible", 1);
+				SetGuiInt(mInventoryOverlay, "Inventory_ItemVisible", 1);
+
+				SetGuiFloat(mInventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
+				SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", curItem->Category()->GetName().c_str());
+				SetGuiString(mInventoryOverlay, "Inventory_ItemName", curItem->GetName());
+				SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
+				SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
+			}
+		}
+		break;
+
+		case CInventoryItem::IT_DUMMY:
+		{
+			// All objects are set to empty, so we have an empty entry in the inventory.
+			SetGuiInt(mInventoryOverlay, "Inventory_ItemVisible", 0);
+			SetGuiInt(mInventoryOverlay, "Inventory_LootVisible", 0);
+			SetGuiInt(mInventoryOverlay, "Inventory_GroupVisible", 0);
+		}
+		break;
+		
+		default: break;
+	}
+
+	if (hud != NULL)
+	{
+		hud->StateChanged(gameLocal.time);
 	}
 }
 
@@ -6548,7 +6582,7 @@ void idPlayer::Think( void )
 		}
 
 		// not done on clients for various reasons. don't do it on server and save the sound channel for other things
-		if ( !gameLocal.isMultiplayer ) {
+		/*if ( !gameLocal.isMultiplayer ) {
 			SetCurrentHeartRate();
 			float scale = g_damageScale.GetFloat();
 			if ( g_useDynamicProtection.GetBool() && scale < 1.0f && gameLocal.time - lastDmgTime > 500 ) {
@@ -6560,7 +6594,7 @@ void idPlayer::Think( void )
 				}
 				g_damageScale.SetFloat( scale );
 			}
-		}
+		}*/
 
 		// update GUIs, Items, and character interactions
 		UpdateFocus();
@@ -6618,7 +6652,7 @@ void idPlayer::Think( void )
 	// greebo: update underwater overlay and sounds
 	UpdateUnderWaterEffects();
 	
-	UpdateHud();
+	UpdateHUD();
 
 	UpdatePowerUps();
 
@@ -8257,7 +8291,7 @@ void idPlayer::ClientPredictionThink( void ) {
 		UpdateWeapon();
 	}
 
-	UpdateHud();
+	UpdateHUD();
 
 	if ( gameLocal.isNewFrame ) {
 		UpdatePowerUps();
@@ -9121,46 +9155,51 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-	const CInventoryCursorPtr& crsr = InventoryCursor();
+	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
-	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(crsr == NULL)
-		return;
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
-	CInventoryItemPtr prev = crsr->GetCurrentItem();
-	crsr->GetNextItem();
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+	cursor->GetNextItem();
 
-	if (hud)
-	{
-		inventoryChangeSelection(hud, true, prev);
-	}
+	// Call the selection changed event
+	OnInventorySelectionChanged(prev);
 }
 
 void idPlayer::inventoryPrevItem()
 {
-	const CInventoryCursorPtr& crsr = InventoryCursor();
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
-	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(crsr == NULL)
-		return;
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+	cursor->GetPrevItem();
 
-	CInventoryItemPtr prev = crsr->GetCurrentItem();
-	crsr->GetPrevItem();
-
-	if(hud)
-	{
-		inventoryChangeSelection(hud, true, prev);
-	}
+	// Call the selection changed event
+	OnInventorySelectionChanged(prev);
 }
 
 void idPlayer::inventoryNextGroup()
 {
-	InventoryCursor()->GetNextCategory();
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+	cursor->GetNextCategory();
+	
+	OnInventorySelectionChanged(prev);
 }
 
 void idPlayer::inventoryPrevGroup()
 {
-	InventoryCursor()->GetPrevCategory();
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+	cursor->GetPrevCategory();
+	
+	OnInventorySelectionChanged(prev);
 }
 
 void idPlayer::inventoryUseKeyRelease(int holdTime)
@@ -9406,7 +9445,7 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 		InventoryCursor()->SetCurrentItem(item);
 
 		// Trigger an update, passing the previous item along
-		inventoryChangeSelection(hud, true, prev);
+		OnInventorySelectionChanged(prev);
 	}
 	else
 	{
@@ -9414,9 +9453,57 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 	}
 }
 
+void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
+{
+	// Set the "dirty" flag, the HUD needs a redraw
+	inventoryHUDNeedsUpdate = true;
+
+	// Get the current item
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	const CInventoryItemPtr& curItem = cursor->GetCurrentItem();
+
+	if (prevItem != NULL && prevItem != curItem)
+	{
+		// We had a valid previous item, un-select the old one
+		idEntity* prevItemEnt = prevItem->GetItemEntity();
+
+		// greebo: Call the "UN-SELECT" script method on the "old" item
+		if (prevItemEnt != NULL)
+		{
+			idThread* thread = prevItemEnt->CallScriptFunctionArgs(
+				"inventory_item_unselect", 
+				true, 0, 
+				"eef", prevItemEnt, prevItem->GetOwner(), static_cast<float>(prevItem->GetOverlay())
+			);
+		}
+
+		// Remove the hinderance of the previous item
+		SetHinderance("inventory_item", 1.0f, 1.0f);
+	}
+
+	if (curItem != NULL && prevItem != curItem)
+	{
+		// We have a valid curItem and it is different to the previously selected one
+		idEntity* curItemEnt = curItem->GetItemEntity();
+
+		// greebo: Call the "SELECT" script method on the newly selected item to give it a chance to initialise.
+		if (curItemEnt != NULL)
+		{
+			idThread* thread = curItemEnt->CallScriptFunctionArgs(
+				"inventory_item_select", 
+				true, 0, 
+				"eef", curItemEnt, curItem->GetOwner(), static_cast<float>(curItem->GetOverlay())
+			);
+		}
+
+		// Update the player's encumbrance based on the new item
+		SetHinderance("inventory_item", curItem->GetMovementModifier(), 1.0f);
+	}
+}
+
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, const CInventoryItemPtr& prev)
 {
-	float opacity( cv_tdm_hud_opacity.GetFloat() );
+	/*float opacity( cv_tdm_hud_opacity.GetFloat() );
 	int groupvis;
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItemPtr cur;
@@ -9501,7 +9588,7 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, con
 		opacity = cv_tdm_hud_opacity.GetFloat()*groupvis;
 
 	//SetGuiFloat(mInventoryOverlay, "HUD_Opacity", opacity);
-	_hud->StateChanged(gameLocal.time);
+	_hud->StateChanged(gameLocal.time);*/
 }
 
 bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis )
@@ -10324,10 +10411,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent, idUserInterface* _hud)
 		InventoryCursor()->SetCurrentItem(returnValue);
 
 		// Fire the script events and update the HUD
-		if (_hud != NULL)
-		{
-			inventoryChangeSelection(_hud, true, prev);
-		}
+		OnInventorySelectionChanged(prev);
 	}
 
 	return returnValue;

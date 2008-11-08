@@ -221,8 +221,10 @@ CInventoryCategoryPtr CInventoryCursor::GetNextCategory()
 
 		rc = m_Inventory->GetCategory(m_CurrentCategory);
 
-		if (!IsCategoryIgnored(rc))
-			break; // We found a suitable category (not ignored)
+		if (rc != NULL && !IsCategoryIgnored(rc) && !rc->IsEmpty())
+		{
+			break; // We found a suitable category (not ignored and not empty)
+		}
 	}
 
 	return rc;
@@ -269,8 +271,10 @@ CInventoryCategoryPtr CInventoryCursor::GetPrevCategory()
 
 		rc = m_Inventory->GetCategory(m_CurrentCategory);
 
-		if (!IsCategoryIgnored(rc))
-			break; // We found a suitable category (not ignored)
+		if (rc != NULL && !IsCategoryIgnored(rc) && !rc->IsEmpty())
+		{
+			break; // We found a suitable category (not ignored and not empty)
+		}
 	}
 
 	return rc;
