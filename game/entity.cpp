@@ -8896,7 +8896,12 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
 
 bool idEntity::ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
 {
-	return Inventory()->ReplaceItem(oldItem, newItem);
+	bool result = Inventory()->ReplaceItem(oldItem, newItem);
+
+	// Fire the general "item changed" event
+	OnInventoryItemChanged();
+
+	return result;
 }
 
 void idEntity::Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem)
