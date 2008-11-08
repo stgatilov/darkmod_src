@@ -811,9 +811,6 @@ public:
 	// Changes the inventory selection to the item with the given name
 	void inventoryChangeSelection(const idStr& name);
 
-	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, const CInventoryItemPtr& Prev = CInventoryItemPtr());
-
 	// Override idEntity method to get notified upon item changes
 	virtual void OnInventoryItemChanged();
 

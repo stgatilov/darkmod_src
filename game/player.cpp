@@ -6249,10 +6249,6 @@ void idPlayer::UpdateHUD()
 	// Update the inventory HUD
 	UpdateInventoryHUD();
 
-	// Trigger an update of the HUD
-	// TODO: This shouldn't be called so often, so cache this
-	inventoryChangeSelection(hud, true);
-
 	// Check if any HUD messages are pending
 	UpdateHUDMessages();
 
@@ -9450,96 +9446,6 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 		// Update the player's encumbrance based on the new item
 		SetHinderance("inventory_item", curItem->GetMovementModifier(), 1.0f);
 	}
-}
-
-void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, const CInventoryItemPtr& prev)
-{
-	/*float opacity( cv_tdm_hud_opacity.GetFloat() );
-	int groupvis;
-	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
-	CInventoryItemPtr cur;
-	idEntity *e = NULL;
-	idStr s;
-	idThread *thread;
-
-	// Since the player always has at least a loot and a dummy item, this can never be NULL.
-	const CInventoryCursorPtr& crsr = InventoryCursor();
-	cur = crsr->GetCurrentItem();
-	if(cur)
-		e = cur->GetItemEntity();
-
-	// Notify the previous entity and the new one that they are un-/selected.
-	if(prev && cur != prev)
-	{
-		// greebo: Call the "UN-SELECT" script method on the "old" item
-		idEntity *ce = prev->GetItemEntity();
-		if(ce) {
-			thread = ce->CallScriptFunctionArgs("inventory_item_unselect", true, 0, "eef", ce, prev->GetOwner(), (float)prev->GetOverlay());
-		}
-
-		// greebo: Call the "SELECT" script method on the newly selected item
-		if(e) {
-			thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
-		}
-	}
-
-	if (cur != NULL)
-	{
-		// Update the player's encumbrance
-		SetHinderance("inventory_item", cur->GetMovementModifier(), 1);
-
-		if(e && bUpdate == true) {
-			thread = e->CallScriptFunctionArgs("inventory_item_update", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
-		}
-
-		type = cur->GetType();
-		switch(type)
-		{
-			case CInventoryItem::IT_ITEM:
-			{
-				// We display the default hud if the item doesn't have it's own. Each
-				// item, that has it's own gui, is responsible for switching it on and off
-				// appropriately with their respective events.
-				if(cur->HasHUD() == false)
-				{
-					// We default the name to something obvious, because the mapper should 
-					// see, when playtesting, that he forgot to name the item and groups.
-					SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
-					SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
-					SetGuiFloat(mInventoryOverlay, "Inventory_ItemStackable", (float)cur->IsStackable());
-					SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", cur->Category()->GetName().c_str());
-					SetGuiString(mInventoryOverlay, "Inventory_ItemName", cur->GetName());
-					SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", cur->GetCount());
-					SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", cur->GetIcon().c_str());
-				}
-			}
-			break;
-
-			case CInventoryItem::IT_DUMMY:
-			{
-				// All objects are set to empty, so we have an empty entry in the
-				// inventory.
-				s = "";
-				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 0.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 0.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
-			}
-			break;
-			
-			default: break;
-		}
-	}
-
-	groupvis = cv_tdm_inv_groupvis.GetInteger();
-	if(groupvis == 2)
-	{
-		// TODO: implement a fade in/out if the opacity should be temporarily
-	}
-	else
-		opacity = cv_tdm_hud_opacity.GetFloat()*groupvis;
-
-	//SetGuiFloat(mInventoryOverlay, "HUD_Opacity", opacity);
-	_hud->StateChanged(gameLocal.time);*/
 }
 
 bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis )
