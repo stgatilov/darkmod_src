@@ -404,7 +404,7 @@ bool idItem::GiveToPlayer( idPlayer *player )
 		return player->GiveInventoryItem( &spawnArgs );
 	}*/ 
 	
-	return player->GiveItem( this );
+	return false;//player->GiveItem( this );
 }
 
 

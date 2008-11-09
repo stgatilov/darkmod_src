@@ -2742,42 +2742,6 @@ void idPlayer::GiveHealthPool( float amt ) {
 
 /*
 ===============
-idPlayer::GiveItem
-
-Returns false if the item shouldn't be picked up
-
-greebo: This routine can probably be removed completely
-tels: This routine is the only mention of inv_weapon spawnarg, so if
-      it gets deleted, the spawnarg can be removed as well.
-===============
-*/
-bool idPlayer::GiveItem( idItem *item ) {
-	const idKeyValue	*arg;
-	idDict				attr;
-	bool				gave;
-
-	if ( gameLocal.isMultiplayer && spectating ) {
-		return false;
-	}
-
-	item->GetAttributes( attr );
-	
-	gave = false;
-
-	arg = item->spawnArgs.MatchPrefix( "inv_weapon", NULL );
-	if ( arg && hud ) {
-		// We need to update the weapon hud manually, but not
-		// the armor/ammo/health because they are updated every
-		// frame no matter what
-		UpdateHudWeapon( false );
-		hud->HandleNamedEvent( "weaponPulse" );
-	}
-
-	return gave;
-}
-
-/*
-===============
 idPlayer::PowerUpModifier
 ===============
 */
@@ -3218,7 +3182,6 @@ void idPlayer::DropWeapon( bool died ) {
 	}
 	if ( !died ) {
 		// remove from our local inventory completely
-		//inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
 		weapon.GetEntity()->ResetAmmoClip();
 		NextWeapon();
 		weapon.GetEntity()->WeaponStolen();
