@@ -893,15 +893,13 @@ public:
 	 * AddToInventory will add an entity to the inventory. The item is only
 	 * added if the appropriate spawnargs are set, otherwise it will be rejected
 	 * and NULL is returned.
-	 *
-	 * If the hud parameter is not null, then it will also call the updatefunction.
 	 */
-	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
+	virtual CInventoryItemPtr AddToInventory(idEntity *ent);
 
-	virtual void InventoryNextItem();	// Cycles to the next item in the inventory.
-	virtual void InventoryPrevItem();	// Cycles to the previous item in the inventory.
-	virtual void InventoryNextGroup();	// Cycles to the next group in the inventory.
-	virtual void InventoryPrevGroup();	// Cycles to the previous group in the inventory.
+	virtual void NextInventoryItem();	// Cycles to the next item in the inventory.
+	virtual void PrevInventoryItem();	// Cycles to the previous item in the inventory.
+	virtual void NextInventoryGroup();	// Cycles to the next group in the inventory.
+	virtual void PrevInventoryGroup();	// Cycles to the previous group in the inventory.
 
 	// Gets called when the inventory cursor has changed its selection focus
 	virtual void OnInventorySelectionChanged(const CInventoryItemPtr& prevItem = CInventoryItemPtr());
@@ -1326,8 +1324,6 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetCurInvCategory();
 	void					Event_GetCurInvItemEntity();
 	void					Event_GetCurInvItemName();
-
-	virtual void			inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);

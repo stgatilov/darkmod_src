@@ -789,19 +789,19 @@ public:
 	bool TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis );
 
 	// Uses the currently held/selected item.
-	void InventoryUseItem();
+	void UseInventoryItem();
 
 	// Drops the currently held/selected item.
-	void InventoryDropItem();
+	void DropInventoryItem();
 
 	// Performs the inventory action for onButtonRelease
 	void InventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific inventory item
-	void InventoryUseItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
+	void UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
-	void InventoryChangeSelection(const idStr& name);
+	void SelectInventoryItem(const idStr& name);
 
 	// Override idEntity method to get notified upon item changes
 	virtual void OnInventoryItemChanged();
@@ -812,7 +812,7 @@ public:
 	/**
 	 * Overload the idEntity::AddToInventory method to catch weapon items.
 	 */
-	virtual CInventoryItemPtr AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
+	virtual CInventoryItemPtr AddToInventory(idEntity *ent);
 
 	/**
 	 * greebo: Attempts to put the current grabber item back into the inventory.

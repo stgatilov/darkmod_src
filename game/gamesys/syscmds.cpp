@@ -294,12 +294,12 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 	{
 		idStr itemName = args.Argv(1);
 
-		player->InventoryChangeSelection(itemName);
+		player->SelectInventoryItem(itemName);
 	}
 	else if (args.Argc() == 1)
 	{
 		// greebo: Clear the item if no argument is set
-		player->InventoryChangeSelection("");
+		player->SelectInventoryItem("");
 	}
 }
 
@@ -343,7 +343,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		if (item != NULL)
 		{
 			// Item found, set the cursor to it
-			player->InventoryUseItem(EPressed, item, 0);
+			player->UseInventoryItem(EPressed, item, 0);
 		}
 		else
 		{

@@ -1566,7 +1566,7 @@ bool CGrabber::Dequip( void )
 	// In this case, body is an inventory item, so drop it
 	if( ent->IsType(idAFEntity_Base::Type) )
 	{
-		player->InventoryDropItem();
+		player->DropInventoryItem();
 		// hack: invenoryDropItem doesn't return back whether it succeeded,
 		// but we want to return back whether we successfully dequipped
 		// so check if we successfully dequipped by seeing
@@ -1575,7 +1575,7 @@ bool CGrabber::Dequip( void )
 		m_EquippedEnt = NULL;
 	}
 	// TODO: This won't allow carrying of non-AI AFs?
-	else if( player->AddToInventory( ent, player->hud ) )
+	else if( player->AddToInventory(ent) )
 	{
 		// items that can go in the inventory are put back on dequipping
 		StopDrag();
@@ -1587,7 +1587,6 @@ bool CGrabber::Dequip( void )
 		m_EquippedEnt = NULL;
 	}
 
-Quit:
 	return rc;
 }
 
@@ -1635,7 +1634,7 @@ bool CGrabber::ShoulderBody( idAFEntity_Base *body )
 
 		idPlayer *player = m_player.GetEntity();
 		// this should always succeed, no need to check success
-		player->AddToInventory( body, player->hud );
+		player->AddToInventory( body );
 		// play the sound on the player, not the body (that was creating inconsistent volume)
 		player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
 

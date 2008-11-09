@@ -8859,7 +8859,7 @@ void idEntity::Event_AddInvItem(idEntity* ent)
 	AddToInventory(ent);
 }
 
-CInventoryItemPtr idEntity::AddToInventory(idEntity *ent, idUserInterface* _hud)
+CInventoryItemPtr idEntity::AddToInventory(idEntity *ent)
 {
 	// Sanity check
 	if (ent == NULL) return CInventoryItemPtr();
@@ -8988,7 +8988,7 @@ void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory,
 	}
 }
 
-void idEntity::InventoryNextItem()
+void idEntity::NextInventoryItem()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -9001,7 +9001,7 @@ void idEntity::InventoryNextItem()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::InventoryPrevItem()
+void idEntity::PrevInventoryItem()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
@@ -9013,7 +9013,7 @@ void idEntity::InventoryPrevItem()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::InventoryNextGroup()
+void idEntity::NextInventoryGroup()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -9025,7 +9025,7 @@ void idEntity::InventoryNextGroup()
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::InventoryPrevGroup()
+void idEntity::PrevInventoryGroup()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -9203,10 +9203,6 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 idUserInterface* idEntity::GetOverlay(int handle)
 {
 	return m_overlays.getGui(handle);
-}
-
-void idEntity::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *Prev)
-{
 }
 
 /**

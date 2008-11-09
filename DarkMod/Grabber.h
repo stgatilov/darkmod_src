@@ -146,7 +146,7 @@ public:
 		* Shoulderbody: Returns true if body was shouldered
 		* UnShoulderBody: Returns true if there was room to unshoulder the body
 		* NOTE: In the current implementation, UnShoulderBody
-		* is called by idPlayer::inventoryDropItem (if they are holding a body)
+		* is called by idPlayer::DropInventoryItem (if they are holding a body)
 		**/
 		bool					ShoulderBody( idAFEntity_Base *body );
 		bool					UnShoulderBody( void );
