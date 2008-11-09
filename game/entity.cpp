@@ -8733,28 +8733,40 @@ void idEntity::Event_GetBindChild( int ind )
 
 void idEntity::Event_GetNextInvItem()
 {
-	CInventoryItemPtr item = InventoryCursor()->GetNextItem();
+	NextInventoryItem();
+	
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
 }
 
 void idEntity::Event_GetPrevInvItem()
 {
-	CInventoryItemPtr item = InventoryCursor()->GetPrevItem();
+	PrevInventoryItem();
+	
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
 }
 
 void idEntity::Event_SetCurInvCategory(const char* categoryName)
 {
+	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+
 	InventoryCursor()->SetCurrentCategory(categoryName);
+
+	OnInventorySelectionChanged(prev);
 
 	idThread::ReturnInt( InventoryCursor()->GetCurrentCategory()->GetName() == categoryName );
 }
 
 void idEntity::Event_SetCurInvItem(const char* itemName)
 {
+	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+
 	InventoryCursor()->SetCurrentItem(itemName);
+
+	OnInventorySelectionChanged(prev);
 
 	idThread::ReturnInt( InventoryCursor()->GetCurrentItem()->GetName() == itemName );
 }
