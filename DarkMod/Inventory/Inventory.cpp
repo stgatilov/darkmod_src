@@ -97,7 +97,7 @@ void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInvento
 	idPlayer* player = static_cast<idPlayer*>(m_Owner.GetEntity());
 
 	// Prepend the "acquired" text
-	idStr pickedUpMsg = idStr(TDM_INVENTORY_PICKEDUP_MSG_PREFIX) + pickedUpStr;
+	idStr pickedUpMsg = idStr(common->GetLanguageDict()->GetString("#str_07215")) + pickedUpStr;
 
 	// Now actually send the message
 	player->SendInventoryPickedUpMessage(pickedUpMsg);

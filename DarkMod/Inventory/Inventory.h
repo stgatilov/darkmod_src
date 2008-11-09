@@ -18,7 +18,6 @@
 #define TDM_INVENTORY_DROPSCRIPT		"inventoryDrop"
 #define TDM_CATEGORY_AMMO				"ammo"
 #define TDM_INVENTORY_AMMO_PREFIX		"inv_ammo_"
-#define TDM_INVENTORY_PICKEDUP_MSG_PREFIX "Acquired: "
 
  /* DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent
