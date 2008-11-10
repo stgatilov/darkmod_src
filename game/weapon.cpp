@@ -3011,29 +3011,11 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			return;
 		}
 
-		// if this is a power ammo weapon ( currently only the bfg ) then make sure 
-		// we only fire as much power as available in each clip
-		if ( powerAmmo ) {
-			// power comes in as a float from zero to max
-			// if we use this on more than the bfg will need to define the max
-			// in the .def as opposed to just in the script so proper calcs
-			// can be done here. 
-			dmgPower = ( int )dmgPower + 1;
-			if ( dmgPower > ammoClip ) {
-				dmgPower = ammoClip;
-			}
-		}
+		weaponItem->UseAmmo(ammoRequired);
 
-		weaponItem->UseAmmo(( powerAmmo ) ? (int) dmgPower : ammoRequired);
 		if ( clipSize && ammoRequired ) {
 			ammoClip -= powerAmmo ? (int) dmgPower : 1;
 		}
-
-	}
-
-	if ( !silent_fire ) {
-		// wake up nearby monsters
-		gameLocal.AlertAI( owner );
 	}
 
 	// set the shader parm to the time of last projectile firing,

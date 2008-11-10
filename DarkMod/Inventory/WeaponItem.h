@@ -31,7 +31,7 @@ protected:
 	// The current amount of ammonition (set to getStartAmmo() in constructor)
 	int		m_Ammo;
 
-	// The index of this weapon (between 0 and MAX_WEAPONS)
+	// The index of this weapon [0..INF)
 	int		m_WeaponIndex;
 
 	// TRUE, if this weapon doesn't need ammo (like shortsword, blackjack)

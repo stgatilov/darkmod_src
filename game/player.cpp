@@ -483,25 +483,24 @@ void idPlayer::LinkScriptVariables( void ) {
 idPlayer::SetupWeaponEntity
 ==============
 */
-void idPlayer::SetupWeaponEntity( void ) {
-	int w;
-	const char *weap;
-
+void idPlayer::SetupWeaponEntity()
+{
 	if ( weapon.GetEntity() ) {
 		// get rid of old weapon
 		weapon.GetEntity()->Clear();
 		currentWeapon = -1;
-	} else if ( !gameLocal.isClient ) {
+	}
+	else if ( !gameLocal.isClient ) {
 		weapon = static_cast<idWeapon *>( gameLocal.SpawnEntityType( idWeapon::Type, NULL ) );
 		weapon.GetEntity()->SetOwner( this );
 		currentWeapon = -1;
 	}
 
-	for( w = 0; w < MAX_WEAPONS; w++ ) {
-		weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-		if ( weap && *weap ) {
-			idWeapon::CacheWeapon( weap );
-		}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_weapon"); kv != NULL; kv = spawnArgs.MatchPrefix("def_weapon", kv))
+	{
+		if (kv->GetValue().IsEmpty()) continue; // skip empty spawnargs
+
+		idWeapon::CacheWeapon(kv->GetValue());
 	}
 }
 
@@ -525,9 +524,9 @@ void idPlayer::Init( void ) {
 	previousWeapon			= -1;
 	weaponSwitchTime		= 0;
 	weaponEnabled			= true;
-	weapon_soulcube			= SlotForWeapon( "weapon_soulcube" );
-	weapon_pda				= SlotForWeapon( "weapon_pda" );
-	weapon_fists			= SlotForWeapon( "weapon_fists" );
+	weapon_soulcube			= -1;//SlotForWeapon( "weapon_soulcube" );
+	weapon_pda				= -1;//SlotForWeapon( "weapon_pda" );
+	weapon_fists			= 0;//SlotForWeapon( "weapon_fists" );
 	showWeaponViewModel		= GetUserInfo()->GetBool( "ui_showGun" );
 
 	lastDmgTime				= 0;
@@ -2213,18 +2212,18 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 idPlayer::UpdateHudAmmo
 ===============
 */
-void idPlayer::UpdateHudAmmo( idUserInterface *_hud )
+void idPlayer::UpdateHudAmmo()
 {
-	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
+	CInventoryWeaponItemPtr curWeapon = GetCurrentWeaponItem();
 
-	if (_hud != NULL && item != NULL)
-	{
-		int ammoAmount = item->GetAmmo();
+	// If no weapon item there, or the first one is selected, switch off the HUD
+	bool weaponSelected = (curWeapon != NULL && curWeapon->GetWeaponIndex() > 0);
 
-		// Hide ammo display for ammo == -1 and weapons without ammo
-		_hud->SetStateBool("ammo_visible", !(item->IsAllowedEmpty() || ammoAmount < 0));
-		_hud->SetStateString("ammo_amount", va("%d", ammoAmount));
-	}
+	hud->SetStateBool("WeaponAmmoVisible", weaponSelected && !curWeapon->IsAllowedEmpty());
+	
+	if (!weaponSelected) return; // done here
+
+	hud->SetStateString("WeaponAmmoAmount", va("%d", curWeapon->GetAmmo()));
 }
 
 /*
@@ -2272,7 +2271,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 		healthTake = false;
 	}
 
-	UpdateHudAmmo( _hud );
+	UpdateHudAmmo();
 }
 
 /*
@@ -2280,9 +2279,8 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 idPlayer::UpdateHudWeapon
 ===============
 */
-void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
-	idUserInterface *hud = idPlayer::hud;
-
+void idPlayer::UpdateHudWeapon( bool flashWeapon )
+{
 	// if updating the hud of a followed client
 	if ( gameLocal.localClientNum >= 0 && gameLocal.entities[ gameLocal.localClientNum ] && gameLocal.entities[ gameLocal.localClientNum ]->IsType( idPlayer::Type ) ) {
 		idPlayer *p = static_cast< idPlayer * >( gameLocal.entities[ gameLocal.localClientNum ] );
@@ -2296,19 +2294,24 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 		return;
 	}
 
-	int curWeaponIndex = m_WeaponCursor->GetCurrentItemIndex();
+	CInventoryWeaponItemPtr curWeapon = GetCurrentWeaponItem();
 
-	for (int i = 0; i < MAX_WEAPONS; i++) {
-		// Determine the weapon state (2 for selected, 0 for not selected)
-		int weapstate = (i == curWeaponIndex) ? 2 : 0;
+	// If no weapon item there, or the first one is selected, switch off the HUD
+	bool weaponSelected = (curWeapon != NULL && curWeapon->GetWeaponIndex() > 0);
+
+	// Update the visibility of the various GUI elements
+	hud->SetStateBool("WeaponIconVisible", weaponSelected);
+	hud->SetStateBool("WeaponNameVisible", weaponSelected);
 		
-		// Construct the HUD weapon string
-		hud->SetStateInt(va("weapon%d", i), weapstate);
-	}
+	if (!weaponSelected) return; // done here
 
-	if ( flashWeapon ) {
-		hud->HandleNamedEvent( "weaponChange" );
-	}
+	// Set the icon and name strings
+	hud->SetStateString("WeaponName", curWeapon->GetName().c_str());
+	hud->SetStateString("WeaponIcon", curWeapon->GetIcon().c_str());
+	
+	hud->HandleNamedEvent("OnWeaponChange");
+
+	UpdateHudAmmo();
 }
 
 void idPlayer::PrintDebugHUD(void)
@@ -2389,7 +2392,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 	UpdateHudStats( _hud );
 
-	_hud->SetStateString( "weapicon", weapon.GetEntity()->Icon() );
+	//_hud->SetStateString( "weapicon", weapon.GetEntity()->Icon() );
 
 	// FIXME: this is temp to allow the sound meter to show up in the hud
 	// it should be commented out before shipping but the code can remain
@@ -2404,15 +2407,10 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	// weapon targeting crosshair
 
 	if ( !GuiActive() ) {
-
 		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
-
 			cursor->Redraw( gameLocal.realClientTime );
-
 		}
-
 	}
-
 
 	// Only use this if the old lightgem is selected. This may be usefull for
 	// slower machines.
@@ -2652,13 +2650,14 @@ void idPlayer::BlockWeapon( void )
 idPlayer::CacheWeapons
 ===============
 */
-void idPlayer::CacheWeapons( void ) {
+void idPlayer::CacheWeapons()
+{
 	// greebo: Cache all weapons, regardless if we have them or not
-	for( int w = 0; w < MAX_WEAPONS; w++ ) {
-		idStr weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-		if ( weap != "" ) {
-			idWeapon::CacheWeapon( weap );
-		}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_weapon"); kv != NULL; kv = spawnArgs.MatchPrefix("def_weapon", kv))
+	{
+		if (kv->GetValue().IsEmpty()) continue; // skip empty spawnargs
+
+		idWeapon::CacheWeapon(kv->GetValue());
 	}
 }
 
@@ -2926,12 +2925,27 @@ void idPlayer::GiveItem( const char *itemname ) {
 idPlayer::SlotForWeapon
 ==================
 */
-int idPlayer::SlotForWeapon( const char *weaponName ) {
-	int i;
+int idPlayer::SlotForWeapon( const char *weaponName )
+{	
+	// Find the weapon category
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
 
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		const char *weap = spawnArgs.GetString( va( "def_weapon%d", i ) );
-		if ( !idStr::Cmp( weap, weaponName ) ) {
+	if (weaponCategory == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
+		return -1;
+	}
+	
+	// Look for the weapon with the given name
+	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
+	{
+		CInventoryWeaponItemPtr weaponItem = 
+			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		// Is this the right weapon?
+		if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
+		{
+			// We're done
 			return i;
 		}
 	}
@@ -2974,7 +2988,7 @@ void idPlayer::NextBestWeapon( void ) {
 idPlayer::NextWeapon
 ===============
 */
-void idPlayer::NextWeapon( void ) {
+void idPlayer::NextWeapon() {
 	if ( !weaponEnabled || spectating || hiddenWeapon || gameLocal.inCinematic || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || health < 0 ) {
 		return;
 	}
@@ -2987,7 +3001,11 @@ void idPlayer::NextWeapon( void ) {
 		return;
 	}
 
-	if (m_WeaponCursor->GetCurrentCategory()->GetNumItems() == 0) {
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+	int numWeapons = weaponCategory->GetNumItems();
+
+	if (numWeapons == 0) {
 		return; // no weapons...
 	}
 	
@@ -2999,13 +3017,21 @@ void idPlayer::NextWeapon( void ) {
 	}
 
 	int curWeaponIndex = curItem->GetWeaponIndex();
+
+	CInventoryWeaponItemPtr lastWeapon =
+		boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(weaponCategory->GetNumItems() - 1));
+
+	if (lastWeapon == NULL) return;
+
+	int highestIndex = lastWeapon->GetWeaponIndex();
+
 	int nextWeaponIndex = curWeaponIndex;
 
 	do {
 		// Try to select the next weapon item
 		nextWeaponIndex++;
 
-		if (nextWeaponIndex >= MAX_WEAPONS) {
+		if (nextWeaponIndex > highestIndex) {
 			nextWeaponIndex = 0;
 		}
 	} while (!SelectWeapon(nextWeaponIndex, false) && nextWeaponIndex != curWeaponIndex);
@@ -3029,7 +3055,11 @@ void idPlayer::PrevWeapon( void ) {
 		return;
 	}
 
-	if (m_WeaponCursor->GetCurrentCategory()->GetNumItems() == 0) {
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+	int numWeapons = weaponCategory->GetNumItems();
+
+	if (numWeapons == 0) {
 		return; // no weapons...
 	}
 
@@ -3041,6 +3071,14 @@ void idPlayer::PrevWeapon( void ) {
 	}
 
 	int curWeaponIndex = curItem->GetWeaponIndex();
+
+	CInventoryWeaponItemPtr lastWeapon =
+		boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(weaponCategory->GetNumItems() - 1));
+
+	if (lastWeapon == NULL) return;
+
+	int highestIndex = lastWeapon->GetWeaponIndex();
+	
 	int prevWeaponIndex = curWeaponIndex;
 
 	do {
@@ -3048,7 +3086,7 @@ void idPlayer::PrevWeapon( void ) {
 		prevWeaponIndex--;
 
 		if (prevWeaponIndex < 0) {
-			prevWeaponIndex = MAX_WEAPONS;
+			prevWeaponIndex = highestIndex;
 		}
 	} while (!SelectWeapon(prevWeaponIndex, false) && prevWeaponIndex != curWeaponIndex);
 }
@@ -3062,10 +3100,6 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	//const char *weap;
 
 	if ( !weaponEnabled || spectating || gameLocal.inCinematic || health < 0 ) {
-		return false;
-	}
-
-	if ( ( num < 0 ) || ( num >= MAX_WEAPONS ) ) {
 		return false;
 	}
 
@@ -3106,25 +3140,24 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 		CInventoryWeaponItemPtr item = 
 			boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 		
-		if (item != NULL)
+		if (item != NULL && item->GetWeaponIndex() == num)
 		{
-			if (item->GetWeaponIndex() == num)
+			if (item->GetAmmo() <= 0 && !item->IsAllowedEmpty())
 			{
-				if (item->GetAmmo() <= 0 && !item->IsAllowedEmpty())
-				{
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
-					break;
-				}
-
-				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Selecting weapon #%d\r", num);
-				// Set the cursor onto this item
-				m_WeaponCursor->SetCurrentItem(item);
-
-				weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-				idealWeapon = num;
-				UpdateHudWeapon();
-				return true;
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
+				break;
 			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Selecting weapon #%d\r", num);
+
+			// Set the cursor onto this item
+			m_WeaponCursor->SetCurrentItem(item);
+
+			weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+			idealWeapon = num;
+
+			UpdateHudWeapon();
+			return true;
 		}
 	}
 
@@ -3308,8 +3341,7 @@ void idPlayer::Weapon_Combat( void ) {
 
 			if ( weapon.GetEntity()->IsHolstered() ) {
 				assert( idealWeapon >= 0 );
-				assert( idealWeapon < MAX_WEAPONS );
-
+				
 				if ( currentWeapon != weapon_pda && !spawnArgs.GetBool( va( "weapon%d_toggle", currentWeapon ) ) ) {
 					previousWeapon = currentWeapon;
 				}
@@ -3366,11 +3398,8 @@ void idPlayer::Weapon_Combat( void ) {
 	}
 
 	// update our ammo clip in our inventory
-	if ( ( currentWeapon >= 0 ) && ( currentWeapon < MAX_WEAPONS ) ) {
-		//inventory.clip[ currentWeapon ] = weapon.GetEntity()->AmmoInClip();
-		if ( hud && ( currentWeapon == idealWeapon ) ) {
-			UpdateHudAmmo( hud );
-		}
+	if ( currentWeapon == idealWeapon ) {
+		UpdateHudAmmo();
 	}
 }
 
@@ -8089,10 +8118,8 @@ void idPlayer::Event_GetPreviousWeapon( void ) {
 idPlayer::Event_SelectWeapon
 ==================
 */
-void idPlayer::Event_SelectWeapon( const char *weaponName ) {
-	int i;
-	int weaponNum;
-
+void idPlayer::Event_SelectWeapon( const char *weaponName )
+{
 	if ( gameLocal.isClient ) {
 		gameLocal.Warning( "Cannot switch weapons from script in multiplayer" );
 		return;
@@ -8104,16 +8131,13 @@ void idPlayer::Event_SelectWeapon( const char *weaponName ) {
 		return;
 	}
 
-	weaponNum = -1;
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		const char *weap = spawnArgs.GetString( va( "def_weapon%d", i ) );
-		if ( !idStr::Cmp( weap, weaponName ) ) {
-			weaponNum = i;
-			break;
-		}
+	int weaponNum = SlotForWeapon(weaponName);
+
+	if (weaponNum != -1)
+	{
+		// Found, select it
+		SelectWeapon(weaponNum, false);
 	}
-	// Try to select the weapon, might as well return false
-	SelectWeapon(weaponNum, false);
 }
 
 /*
@@ -8458,7 +8482,7 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( gameLocal.ServerRemapDecl( -1, DECL_ENTITYDEF, lastDamageDef ), gameLocal.entityDefBits );
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
-	msg.WriteBits( idealWeapon, idMath::BitsForInteger( MAX_WEAPONS ) );
+	msg.WriteBits( idealWeapon, idMath::BitsForInteger( 256 ) );
 	msg.WriteBits( weapon.GetSpawnId(), 32 );
 	msg.WriteBits( spectator, idMath::BitsForInteger( MAX_CLIENTS ) );
 	msg.WriteBits( lastHitToggle, 1 );
@@ -8494,7 +8518,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastDamageDef = gameLocal.ClientRemapDecl( DECL_ENTITYDEF, msg.ReadBits( gameLocal.entityDefBits ) );
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
-	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( MAX_WEAPONS ) );
+	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( 256 ) );
 	weaponSpawnId = msg.ReadBits( 32 );
 	spectator = msg.ReadBits( idMath::BitsForInteger( MAX_CLIENTS ) );
 	newHitToggle = msg.ReadBits( 1 ) != 0;

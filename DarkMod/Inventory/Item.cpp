@@ -44,6 +44,9 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	// Don't allow NULL pointers
 	assert(owner && itemEntity);
 
+	// Parse a few common spawnargs
+	ParseSpawnargs(itemEntity->spawnArgs);
+
 	m_Category = NULL;
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
@@ -65,12 +68,13 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Droppable = itemEntity->spawnArgs.GetBool("inv_droppable", "0");
 	m_ItemId = itemEntity->spawnArgs.GetString("inv_item_id", "");
 
-	m_Icon = itemEntity->spawnArgs.GetString("inv_icon", "");
-	if (m_Icon.IsEmpty() && m_LootType == LT_NONE) {
+	if (m_Icon.IsEmpty() && m_LootType == LT_NONE)
+	{
 		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Information: non-loot item %s has no icon.\r", itemEntity->name.c_str());
 	}
 
-	if (m_LootType != LT_NONE && m_Value <= 0) {
+	if (m_LootType != LT_NONE && m_Value <= 0)
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Warning: Value for loot item missing on entity %s\r", itemEntity->name.c_str());
 	}
 
@@ -122,9 +126,6 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 		m_bDropPointOverride = false;
 		m_vDropPoint = vec3_zero; // don't leave uninitialized
 	}
-
-	// Parse a few common spawnargs
-	ParseSpawnargs(itemEntity->spawnArgs);
 }
 
 void CInventoryItem::Save( idSaveGame *savefile ) const
@@ -133,9 +134,9 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	m_Item.Save(savefile);
 	m_BindMaster.Save(savefile);
 
-	savefile->WriteString(m_Name.c_str());
-	savefile->WriteString(m_HudName.c_str());
-	savefile->WriteString(m_ItemId.c_str());
+	savefile->WriteString(m_Name);
+	savefile->WriteString(m_HudName);
+	savefile->WriteString(m_ItemId);
 
 	savefile->WriteInt(static_cast<int>(m_Type));
 	savefile->WriteInt(static_cast<int>(m_LootType));
@@ -148,7 +149,7 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_Droppable);
 	savefile->WriteBool(m_Hud);
 
-	savefile->WriteString(m_Icon.c_str());
+	savefile->WriteString(m_Icon);
 
 	savefile->WriteBool(m_Orientated);
 	savefile->WriteBool(m_Persistent);
@@ -205,6 +206,7 @@ void CInventoryItem::ParseSpawnargs(const idDict& spawnArgs)
 	m_Persistent = spawnArgs.GetBool("inv_persistent", "0");
 	m_LightgemModifier = spawnArgs.GetInt("inv_lgmodifier", "0");
 	m_MovementModifier = spawnArgs.GetFloat("inv_movement_modifier", "1");
+	m_Icon = spawnArgs.GetString("inv_icon", "");
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
