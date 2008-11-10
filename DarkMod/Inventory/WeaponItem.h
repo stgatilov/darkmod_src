@@ -19,7 +19,11 @@ class CInventoryWeaponItem :
 	public CInventoryItem
 {
 protected:
+	// The name of the weapon entityDef
 	idStr	m_WeaponDefName;
+
+	// The unique name for this weapon, e.g. "broadhead" or "blackjack"
+	idStr	m_WeaponName;
 
 	// The maximum amount of ammo for this weapon
 	int		m_MaxAmmo;
@@ -30,11 +34,11 @@ protected:
 	// The index of this weapon (between 0 and MAX_WEAPONS)
 	int		m_WeaponIndex;
 
-	// Is TRUE for weapons that can be toggled (like the lantern)
-	bool	m_Toggleable;
-
 	// TRUE, if this weapon doesn't need ammo (like shortsword, blackjack)
 	bool	m_AllowedEmpty;
+
+	// TRUE if toggling this weapon is allowed (i.e. selecting it when it is already selected)
+	bool	m_IsToggleable;
 
 public:
 	// Default constructor, should only be used during restoring from savegames
@@ -51,7 +55,10 @@ public:
 	int GetStartAmmo();
 
 	// Returns TRUE if this weapon doesn't need ammo and therefore can be selected 
-	bool IsAllowedEmpty();
+	bool IsAllowedEmpty() const;
+
+	// Returns TRUE if this weapon is toggleable
+	bool IsToggleable() const;
 
 	// Returns the currently available ammonition
 	int GetAmmo() const;
@@ -76,15 +83,10 @@ public:
 	int  GetWeaponIndex() const;
 
 	/**
-	 * greebo: Returns TRUE if this weapon is meant to be toggleable (like the player lantern).
-	 */
-	bool IsToggleable() const;
-
-	/**
 	 * greebo: Returns the name of the weapon, as derived from the weaponDef name.
 	 *         entityDef "weapon_broadhead" => weapon name: "broadhead"
 	 */
-	idStr GetWeaponName();
+	const idStr& GetWeaponName() const;
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

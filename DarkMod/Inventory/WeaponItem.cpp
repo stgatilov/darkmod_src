@@ -16,11 +16,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "WeaponItem.h"
 
-#define WEAPON_MAX_AMMO_PREFIX "max_ammo_"
-#define WEAPON_START_AMMO_PREFIX "ammo_"
-#define WEAPON_PREFIX "weapon_"
-#define WEAPON_ALLOWEMPTY_FORMAT "weapon%d_allowempty"
-#define WEAPON_TOGGLEABLE_FORMAT "weapon%d_toggle"
+#define WEAPON_START_AMMO_PREFIX "start_ammo_"
+#define WEAPON_AMMO_REQUIRED "ammo_required"
+#define WEAPON_MAX_AMMO "max_ammo"
+#define WEAPON_IS_TOGGLEABLE "is_toggleable"
 
 CInventoryWeaponItem::CInventoryWeaponItem() :
 	CInventoryItem(NULL),
@@ -28,7 +27,6 @@ CInventoryWeaponItem::CInventoryWeaponItem() :
 	m_MaxAmmo(0),
 	m_Ammo(0),
 	m_WeaponIndex(-1),
-	m_Toggleable(false),
 	m_AllowedEmpty(false)
 {
 	SetType(IT_WEAPON);
@@ -38,16 +36,22 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	CInventoryItem(owner),
 	m_WeaponDefName(weaponDefName),
 	m_WeaponIndex(-1),
-	m_Toggleable(false),
-	m_AllowedEmpty(false)
+	m_AllowedEmpty(false),
+	m_IsToggleable(false)
 {
 	SetType(IT_WEAPON);
 
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
+	m_Name = weaponDict->GetString("inv_name", "Unknown weapon");
+
+	m_WeaponName = weaponDict->GetString("inv_weapon_name");
+	if (m_WeaponName.IsEmpty())
+	{
+		gameLocal.Warning("Weapon defined in %s has no 'inv_weapon_name' spawnarg!", m_WeaponDefName.c_str());
+	}
+
 	m_MaxAmmo = GetMaxAmmo();
 	m_Ammo = GetStartAmmo();
-
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponDefName);
-	m_Name = weaponDict->GetString("inv_name", "Unknown weapon");
 
 	// Parse the common spawnargs which apply to both this and the base class
 	ParseSpawnargs(*weaponDict);
@@ -59,11 +63,12 @@ void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
 	CInventoryItem::Save(savefile);
 
 	savefile->WriteString(m_WeaponDefName);
+	savefile->WriteString(m_WeaponName);
 	savefile->WriteInt(m_MaxAmmo);
 	savefile->WriteInt(m_Ammo);
 	savefile->WriteInt(m_WeaponIndex);
-	savefile->WriteBool(m_Toggleable);
 	savefile->WriteBool(m_AllowedEmpty);
+	savefile->WriteBool(m_IsToggleable);
 }
 
 void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
@@ -72,31 +77,31 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	CInventoryItem::Restore(savefile);
 
 	savefile->ReadString(m_WeaponDefName);
+	savefile->ReadString(m_WeaponName);
 	savefile->ReadInt(m_MaxAmmo);
 	savefile->ReadInt(m_Ammo);
 	savefile->ReadInt(m_WeaponIndex);
-	savefile->ReadBool(m_Toggleable);
 	savefile->ReadBool(m_AllowedEmpty);
+	savefile->ReadBool(m_IsToggleable);
 }
 
 int CInventoryWeaponItem::GetMaxAmmo()
 {
-	// Sanity check
-	if (m_Owner.GetEntity() == NULL) {
-		return -1;
-	}
+	// Get the "max_ammo" spawnarg from the weapon dictionary
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
+	if (weaponDict == NULL) return -1;
 
-	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
-	idStr weaponName = m_WeaponDefName;
-	weaponName.Strip(WEAPON_PREFIX);
-
-	idStr key = WEAPON_MAX_AMMO_PREFIX + weaponName;
-	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
+	return weaponDict->GetInt(WEAPON_MAX_AMMO, "0");
 }
 
-bool CInventoryWeaponItem::IsAllowedEmpty()
+bool CInventoryWeaponItem::IsAllowedEmpty() const
 {
 	return m_AllowedEmpty;
+}
+
+bool CInventoryWeaponItem::IsToggleable() const
+{
+	return m_IsToggleable;
 }
 
 int CInventoryWeaponItem::GetStartAmmo()
@@ -106,11 +111,8 @@ int CInventoryWeaponItem::GetStartAmmo()
 		return -1;
 	}
 
-	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
-	idStr weaponName = m_WeaponDefName;
-	weaponName.Strip(WEAPON_PREFIX);
-
-	idStr key = WEAPON_START_AMMO_PREFIX + weaponName;
+	// Construct the weapon name to retrieve the "start_ammo_mossarrow" string, for instance
+	idStr key = WEAPON_START_AMMO_PREFIX + m_WeaponName;
 	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
 }
 
@@ -153,14 +155,12 @@ void CInventoryWeaponItem::SetWeaponIndex(int index)
 
 	// Now that the weapon index is known, cache a few values from the owner spawnargs
 
-	// Sanity check
-	if (m_Owner.GetEntity() != NULL) {
-		idStr toggleKey(va(WEAPON_TOGGLEABLE_FORMAT, m_WeaponIndex));
-		m_Toggleable = m_Owner.GetEntity()->spawnArgs.GetBool(toggleKey, "0");
+	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
+	if (weaponDict == NULL) return;
 
-		idStr allowKey(va(WEAPON_ALLOWEMPTY_FORMAT, m_WeaponIndex));
-		m_AllowedEmpty = m_Owner.GetEntity()->spawnArgs.GetBool(allowKey, "0");
-	}
+	m_AllowedEmpty = !weaponDict->GetBool(WEAPON_AMMO_REQUIRED, "1");
+	m_IsToggleable = weaponDict->GetBool(WEAPON_IS_TOGGLEABLE, "0");
 }
 
 int CInventoryWeaponItem::GetWeaponIndex() const
@@ -168,14 +168,7 @@ int CInventoryWeaponItem::GetWeaponIndex() const
 	return m_WeaponIndex;
 }
 
-bool CInventoryWeaponItem::IsToggleable() const
+const idStr& CInventoryWeaponItem::GetWeaponName() const
 {
-	return m_Toggleable;
-}
-
-idStr CInventoryWeaponItem::GetWeaponName()
-{
-	idStr weaponName = m_WeaponDefName;
-	weaponName.Strip(WEAPON_PREFIX);
-	return weaponName;
+	return m_WeaponName;
 }
