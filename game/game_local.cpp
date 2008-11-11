@@ -38,6 +38,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/renderpipe.h"
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
+#include "../DarkMod/RevisionTracker.h"
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -403,6 +404,7 @@ void idGameLocal::Init( void ) {
 	Printf( "--------- Initializing Game ----------\n" );
 	Printf( "gamename: %s\n", GAME_VERSION );
 	Printf( "gamedate: %s\n", __DATE__ );
+	Printf( "Code Revision: %d\n", RevisionTracker::Instance().GetHighestRevision() );
 
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );

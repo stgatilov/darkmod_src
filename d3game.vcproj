@@ -1953,6 +1953,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\RevisionTracker.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RevisionTracker.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\rdline.cpp"
 					>
 				</File>

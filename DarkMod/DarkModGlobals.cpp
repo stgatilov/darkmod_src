@@ -42,6 +42,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
 #include "renderpipe.h"
+#include "RevisionTracker.h"
 
 // Default length of time for holding down jump key to start
 // mantling.
@@ -151,11 +152,18 @@ static idList<const char *> *s_FileVersion = NULL;
 
 bool FileVersionList(const char *str, bool state)
 {
-	if(s_FileVersion == NULL)
+	if (s_FileVersion == NULL)
+	{
 		s_FileVersion = new idList<const char *>;
+	}
 
-	if(state == false)
+	if (state == false)
+	{
 		s_FileVersion->AddUnique(str);
+
+		// greebo: Add the revision to the RevisionTracker class
+		RevisionTracker::ParseSVNIdString(str);
+	}
 
 	return true;
 }
