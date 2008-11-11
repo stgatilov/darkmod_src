@@ -9493,6 +9493,16 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 		// Update the player's encumbrance based on the new item
 		SetHinderance("inventory_item", curItem->GetMovementModifier(), 1.0f);
 	}
+
+	// Lastly, let's see if the category has changed
+	if (curItem != NULL && prevItem != NULL && curItem->Category() != prevItem->Category())
+	{
+		idUserInterface* invGUI = m_overlays.getGui(m_InventoryOverlay);
+		if (invGUI != NULL)
+		{
+			invGUI->HandleNamedEvent("onInventoryCategoryChanged");
+		}
+	}
 }
 
 bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis )
