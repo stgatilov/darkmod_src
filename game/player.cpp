@@ -10659,10 +10659,8 @@ void idPlayer::Event_CheckAAS()
 	{
 		idList<idStr> aasNames;
 
-		for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-			if (!ent->IsType(idAI::Type)) continue;
-
-			idAI* ai = static_cast<idAI*>(ent);
+		for (idAI* ai = gameLocal.spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next())
+		{
 			if (ai->GetAAS() == NULL)
 			{
 				idStr aasName = ai->spawnArgs.GetString("use_aas");
