@@ -115,6 +115,8 @@ idCVar cv_sr_disable (				"tdm_sr_disable",           "0",           CVAR_GAME |
 
 idCVar cv_debug_mainmenu(			"tdm_debug_mainmenu",      "0",            CVAR_BOOL, "Set to 1 to enable main menu GUI debugging." );
 
+idCVar cv_force_savegame_load(		"tdm_force_savegame_load", "0",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 1 to skip code revision check on savegame load." );
+
 /**
 * Dark Mod player movement
 * Use multipliers instead of setting a speed for each

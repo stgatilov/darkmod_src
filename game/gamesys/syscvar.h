@@ -113,6 +113,8 @@ extern idCVar cv_pm_climb_distance;
 */
 extern idCVar cv_ai_search_show;
 
+extern idCVar cv_force_savegame_load;
+
 /**
 * TDM Leaning vars:
 **/

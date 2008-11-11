@@ -1556,9 +1556,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBuildNumber();
 	savegame.ReadCodeRevision();
 
-	if (savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
+	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
 	{
-		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d.", savegame.GetCodeRevision());
+		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n.", savegame.GetCodeRevision());
 		return false;
 	}
 
