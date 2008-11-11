@@ -586,6 +586,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	savegame.WriteBuildNumber( BUILD_NUMBER );
+	savegame.WriteCodeRevision();
 
 	// go through all entities and threads and add them to the object list
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
@@ -1553,6 +1554,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	idRestoreGame savegame( saveGameFile );
 
 	savegame.ReadBuildNumber();
+	savegame.ReadCodeRevision();
+
+	if (savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
+	{
+		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d.", savegame.GetCodeRevision());
+		return false;
+	}
 
 	// Create the list of all objects in the game
 	savegame.CreateObjects();

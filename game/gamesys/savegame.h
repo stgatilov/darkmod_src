@@ -92,6 +92,9 @@ public:
 
 	void					WriteBuildNumber( const int value );
 
+	// Write the code revision to the file
+	void					WriteCodeRevision();
+
 private:
 	idFile *				file;
 
@@ -153,11 +156,19 @@ public:
 
 	void					ReadBuildNumber( void );
 
+	void					ReadCodeRevision();
+
 	//						Used to retrieve the saved game buildNumber from within class Restore methods
 	int						GetBuildNumber( void );
 
+	// Retrieve the code revision number this savefile was written with
+	int						GetCodeRevision();
+
 private:
 	int						buildNumber;
+
+	// TDM SVN code revision
+	int						codeRevision;
 
 	idFile *				file;
 
