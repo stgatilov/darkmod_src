@@ -160,6 +160,14 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 			GetLoot( dummy1, dummy2, dummy3 ), 
 			true 
 		);
+
+		// Take the loot icon of the picked up item and use it for the loot stats item
+
+		idStr lootIcon = ent->spawnArgs.GetString("inv_icon");
+		if (rc != NULL && !lootIcon.IsEmpty())
+		{
+			rc->SetIcon(lootIcon);
+		}
 		
 		NotifyOwnerAboutPickup(pickedUpMsg, rc);
 	}
