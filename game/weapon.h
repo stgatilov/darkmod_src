@@ -236,7 +236,6 @@ private:
 	int						muzzleFlashEnd;
 	int						flashTime;
 	bool					lightOn;
-	bool					silent_fire;
 	bool					allowDrop;
 
 	// effects

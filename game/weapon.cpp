@@ -307,7 +307,6 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( flashTime );
 
 	savefile->WriteBool( lightOn );
-	savefile->WriteBool( silent_fire );
 
 	savefile->WriteInt( kick_endtime );
 	savefile->WriteInt( muzzle_kick_time );
@@ -465,7 +464,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( flashTime );
 
 	savefile->ReadBool( lightOn );
-	savefile->ReadBool( silent_fire );
 
 	savefile->ReadInt( kick_endtime );
 	savefile->ReadInt( muzzle_kick_time );
@@ -672,7 +670,6 @@ void idWeapon::Clear( void ) {
 
 	flashTime		= 250;
 	lightOn			= false;
-	silent_fire		= false;
 
 	ammoRequired	= 0;
 	ammoClip		= 0;
@@ -821,7 +818,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	lowAmmo				= weaponDef->dict.GetInt( "lowAmmo" );
 
 	icon				= weaponDef->dict.GetString( "icon" );
-	silent_fire			= weaponDef->dict.GetBool( "silent_fire" );
 	powerAmmo			= weaponDef->dict.GetBool( "powerAmmo" );
 
 	muzzle_kick_time	= SEC2MS( weaponDef->dict.GetFloat( "muzzle_kick_time" ) );
