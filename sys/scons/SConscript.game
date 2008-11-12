@@ -153,6 +153,7 @@ PVSToAASMapping.cpp \
 rdline.cpp \
 Relations.cpp \
 renderpipeposix.cpp \
+RevisionTracker.cpp \
 sndProp.cpp \
 sndPropLoader.cpp \
 TimerManager.cpp \
