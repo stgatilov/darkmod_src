@@ -2050,7 +2050,7 @@ void idPlayer::RestorePersistantInfo( void ) {
 
 	health = spawnArgs.GetInt( "health", "100" );
 	if ( !gameLocal.isClient ) {
-		idealWeapon = spawnArgs.GetInt( "current_weapon", "1" );
+		idealWeapon = spawnArgs.GetInt( "current_weapon", "0" );
 	}
 }
 
