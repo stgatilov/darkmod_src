@@ -809,7 +809,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	ammoRequired		= weaponDef->dict.GetInt( "ammo_required" );
 	
-	idStr ammoDefName = weaponDef->dict.GetString("ammo");
+	idStr ammoDefName = weaponDef->dict.GetString("def_ammo");
 
 	if (ammoDefName.IsEmpty() && weaponDef->dict.GetBool("ammo_required"))
 	{

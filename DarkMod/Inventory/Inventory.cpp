@@ -759,59 +759,5 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 		}
 	}
 
-/*	const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
-
-	if (key != NULL)
-	{
-		int amount = ent->spawnArgs.GetInt(key->GetKey(), "0");
-
-		// Retrieve the weapon name, e.g. "broadhead", by stripping the prefix
-		idStr weaponName = key->GetKey();
-		weaponName.Strip(TDM_INVENTORY_AMMO_PREFIX);
-
-		// Find the weapon category
-		CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
-
-		if (weaponCategory == NULL)
-		{
-			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
-			return returnValue;
-		}
-		
-		// Look for the weapon with the given name
-		for (int i = 0; i < weaponCategory->GetNumItems(); i++)
-		{
-			CInventoryWeaponItemPtr weaponItem = 
-				boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
-
-			// Is this the right weapon?
-			if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
-			{
-				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
-				// Add the ammo to this weapon
-				weaponItem->SetAmmo(weaponItem->GetAmmo() + amount);
-
-				idStr msg = ent->spawnArgs.GetString("inv_name");
-
-				if (amount > 1)
-				{
-					msg += " x" + idStr(amount);
-				}
-
-				NotifyOwnerAboutPickup(msg, weaponItem);
-				
-				// We're done
-				return weaponItem;
-			}
-		}
-
-		// Loop ended without result, name not found
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not add ammo to weapon: name not found %s.\r", weaponName.c_str());
-	}
-	else
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot add ammo entity %s to inventory: no key with inv_ammo_* prefix.\r", ent->name.c_str());
-	}*/
-
 	return returnValue;
 }
