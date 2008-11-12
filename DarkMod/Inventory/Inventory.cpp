@@ -323,17 +323,6 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		return returnValue;
 	}
 
-	// Not a loot item, determine name and category to check for existing item of same name/category
-	idStr name = ent->spawnArgs.GetString("inv_name", "");
-	idStr category = ent->spawnArgs.GetString("inv_category", "");
-
-	if (name.IsEmpty() || category.IsEmpty())
-	{
-		// Invalid inv_name or inv_category
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: inv_name or inv_category not specified.\r", ent->name.c_str());
-		return returnValue;
-	}
-
 	// Let's see if this is an ammonition item
 	returnValue = ValidateAmmo(ent);
 
@@ -342,6 +331,17 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Remove the entity from the game, the ammonition is added
 		RemoveEntityFromMap(ent, true);
 
+		return returnValue;
+	}
+
+	// Not a loot or ammo item, determine name and category to check for existing item of same name/category
+	idStr name = ent->spawnArgs.GetString("inv_name", "");
+	idStr category = ent->spawnArgs.GetString("inv_category", "");
+
+	if (name.IsEmpty() || category.IsEmpty())
+	{
+		// Invalid inv_name or inv_category
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: inv_name or inv_category not specified.\r", ent->name.c_str());
 		return returnValue;
 	}
 
@@ -703,20 +703,63 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 	// Sanity check
 	if (ent == NULL) return CInventoryItemPtr();
 	
-	idStr name = ent->spawnArgs.GetString("inv_name", "");
-	idStr category = ent->spawnArgs.GetString("inv_category", "");
-
 	// Check for ammonition
-	if (category != TDM_CATEGORY_AMMO) 
+	int amount = ent->spawnArgs.GetInt("inv_ammo_amount", "0");
+
+	if (amount <= 0) 
 	{
-		return CInventoryItemPtr(); // wrong category
+		return CInventoryItemPtr(); // not ammo
 	}
 
 	CInventoryItemPtr returnValue;
-	
-	idStr ammoAmountKey = TDM_INVENTORY_AMMO_PREFIX;
 
-	const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
+	idStr weaponName = ent->spawnArgs.GetString("inv_weapon_name", "");
+
+	if (weaponName.IsEmpty())
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
+		gameLocal.Warning("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
+		return returnValue;
+	}
+
+	// Find the weapon category
+	CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+
+	if (weaponCategory == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
+		return returnValue;
+	}
+	
+	// Look for the weapon with the given name
+	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
+	{
+		CInventoryWeaponItemPtr weaponItem = 
+			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		// Is this the right weapon?
+		if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
+
+			// Add the ammo to this weapon
+			weaponItem->SetAmmo(weaponItem->GetAmmo() + amount);
+
+			idStr msg = ent->spawnArgs.GetString("inv_name");
+
+			if (amount > 1)
+			{
+				msg += " x" + idStr(amount);
+			}
+
+			NotifyOwnerAboutPickup(msg, weaponItem);
+			
+			// We're done
+			return weaponItem;
+		}
+	}
+
+/*	const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
 
 	if (key != NULL)
 	{
@@ -768,7 +811,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 	else
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot add ammo entity %s to inventory: no key with inv_ammo_* prefix.\r", ent->name.c_str());
-	}
+	}*/
 
 	return returnValue;
 }
