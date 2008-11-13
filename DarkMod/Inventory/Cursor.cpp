@@ -227,6 +227,9 @@ CInventoryCategoryPtr CInventoryCursor::GetNextCategory()
 		}
 	}
 
+	// Finally, ensure that the item index is reset to 0
+	m_CurrentItem = 0;
+
 	return rc;
 }
 
@@ -276,6 +279,9 @@ CInventoryCategoryPtr CInventoryCursor::GetPrevCategory()
 			break; // We found a suitable category (not ignored and not empty)
 		}
 	}
+
+	// Finally, ensure that the item index is reset to 0
+	m_CurrentItem = 0;
 
 	return rc;
 }
