@@ -6342,9 +6342,10 @@ void idPlayer::UpdateInventoryHUD()
 		default: break;
 	}
 
-	if (hud != NULL)
+	idUserInterface* invGUI = m_overlays.getGui(m_InventoryOverlay);
+	if (invGUI != NULL)
 	{
-		hud->StateChanged(gameLocal.time);
+		invGUI->StateChanged(gameLocal.time);
 	}
 }
 
@@ -9469,6 +9470,11 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 				true, 0, 
 				"eef", prevItemEnt, prevItem->GetOwner(), static_cast<float>(prevItem->GetOverlay())
 			);
+
+			if (thread != NULL) 
+			{
+				thread->Execute();
+			}
 		}
 
 		// Remove the hinderance of the previous item
@@ -9488,6 +9494,11 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 				true, 0, 
 				"eef", curItemEnt, curItem->GetOwner(), static_cast<float>(curItem->GetOverlay())
 			);
+
+			if (thread != NULL) 
+			{
+				thread->Execute();
+			}
 		}
 
 		// Update the player's encumbrance based on the new item
