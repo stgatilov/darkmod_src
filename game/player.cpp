@@ -9194,12 +9194,6 @@ void idPlayer::InventoryUseKeyRelease(int holdTime)
 
 void idPlayer::UseInventoryItem()
 {
-	// Check for a held grabber entity, which should be put back into the inventory
-	if (AddGrabberEntityToInventory())
-	{
-		return;
-	}
-
 	// If the grabber item can be equipped/dequipped, use item does this
 	if ( gameLocal.m_Grabber->GetSelected() || gameLocal.m_Grabber->GetEquipped() )
 	{
@@ -9227,6 +9221,15 @@ void idPlayer::UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& i
 	{
 		// Pass the "inventoryUseItem" event to the GUIs
 		m_overlays.broadcastNamedEvent("inventoryUseItem");
+	}
+	else if (nState == EReleased)
+	{
+		// Check for a held grabber entity, which should be put back into the inventory
+		if (AddGrabberEntityToInventory())
+		{
+			// Item added to inventory, we're done here.
+			return;
+		}
 	}
 
 	// Check if we're allowed to use items at all
