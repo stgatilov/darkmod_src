@@ -859,7 +859,8 @@ idEntity::LoadModels
 ================
 */
 // tels: this routine loads all the visual and collision models
-void idEntity::LoadModels( void ) {
+void idEntity::LoadModels()
+{
 	idStr model;
 	// we only use a brokenModel if we can find one automatically
 	bool needBroken = false;
@@ -868,7 +869,8 @@ void idEntity::LoadModels( void ) {
 
 	// load the normal visual model
 	spawnArgs.GetString( "model", "", model );
-	if ( model.Length() ) {
+
+	if ( !model.IsEmpty() ) {
 		SetModel( model );
 	}
 
@@ -876,49 +878,71 @@ void idEntity::LoadModels( void ) {
 	spawnArgs.GetString( "broken", "", brokenModel );
 
 	// see if we need to create a broken model name
-	if ( brokenModel.Length() ) {
+	if ( !brokenModel.IsEmpty() )
+	{
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Need broken model '%s' for entity %d (%s)\r", brokenModel.c_str(), entityNumber, name.c_str() );
 		// spawnarg "broken" was set, so we need the broken model
 		needBroken = true;
-	} else if 
-		// only check for an auto-broken model if the entity could be damaged 
-		( health || spawnArgs.FindKey( "max_force" ) ) {
-		int pos;
-
+	}
+	// only check for an auto-broken model if the entity could be damaged 
+	else if ( health || spawnArgs.FindKey( "max_force" ) )
+	{
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Looking for broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
 
-		pos = model.Find( "." );
-		if ( pos < 0 ) {
+		int pos = model.Find(".");
+
+		if ( pos < 0 )
+		{
 			pos = model.Length();
 		}
-		if ( pos > 0 ) {
+
+		if ( pos > 0 )
+		{
 			model.Left( pos, brokenModel );
 		}
+
 		brokenModel += "_broken";
-		if ( pos > 0 ) {
+
+		if ( pos > 0 )
+		{
 			brokenModel += &model[ pos ];
 		}
 	}
 
-	// check brokenModel to exist, and make sure the brokenModel gets cached
-	if ( !renderModelManager->CheckModel( brokenModel ) ) {
-		if ( needBroken ) {
-			gameLocal.Error( "Broken model '%s' not found for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
-		} else {
-			// couldn't find automatically generated "model_broken.lwo", so don't use brokenModel at all
-			brokenModel = "";
+	// greebo: Only try to cache the model if it actually exists -> otherwise tons of false warnings get emitted
+	bool brokenModelFileExists = (fileSystem->FindFile(brokenModel) != FIND_NO);
+
+	if (brokenModelFileExists)
+	{
+		// check brokenModel to exist, and make sure the brokenModel gets cached
+		if ( !renderModelManager->CheckModel( brokenModel ) )
+		{
+			if ( needBroken ) {
+				gameLocal.Error( "Broken model '%s' not loadable for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+			} 
+			else {
+				// couldn't find automatically generated "model_broken.lwo", so don't use brokenModel at all
+				brokenModel = "";
+			}
 		}
+	}
+	else
+	{
+		// Broken model file does not exist
+		if ( needBroken ) {
+			gameLocal.Error( "Broken model '%s' required for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+		} 
 	}
 
 	// can we be damaged?
-	if ( health || spawnArgs.FindKey( "max_force" ) || brokenModel.Length() )
+	if ( health || spawnArgs.FindKey( "max_force" ) || !brokenModel.IsEmpty() )
 	{
 		fl.takedamage = true;
 	}
 
-	if ( brokenModel.Length() )
+	if ( brokenModelFileExists && !brokenModel.IsEmpty() )
 	{
-		if ( !model.Length() )
+		if ( model.IsEmpty() )
 		{
 			gameLocal.Error( "Breakable entity (broken model %s) without a model set on entity #%d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
 		}
