@@ -1677,6 +1677,19 @@ void idEntity::BecomeBroken( idEntity *activator )
 		GetPhysics()->SetContents( 0 );
 	}
 
+	// tels: if a break_up_script is defined, run it:
+	idStr str;
+	if (this->spawnArgs.GetString("break_up_script", "", str))
+	{
+		// Call the script
+        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", this);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
+
 	// tels: if we have flinders to spawn on break, do so now
 	Flinderize();
 }
