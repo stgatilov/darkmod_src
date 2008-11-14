@@ -1324,6 +1324,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetCurInvCategory();
 	void					Event_GetCurInvItemEntity();
 	void					Event_GetCurInvItemName();
+	void					Event_GetCurInvItemId();
 	void					Event_GetCurInvIcon();
 
 	void					StimAdd(int Type, float Radius);

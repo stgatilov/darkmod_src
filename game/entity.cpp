@@ -161,6 +161,7 @@ const idEventDef EV_SetCurInvItem("setCurInvItem", "s", 'e');				// itemname -> 
 const idEventDef EV_GetCurInvCategory("getCurInvCategory", NULL, 's');
 const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", NULL, 'e');
 const idEventDef EV_GetCurInvItemName("getCurInvItemName", NULL, 's');
+const idEventDef EV_GetCurInvItemId("getCurInvItemId", NULL, 's');
 const idEventDef EV_GetCurInvIcon("getCurInvIcon", NULL, 's');
 
 // greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
@@ -332,6 +333,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetCurInvCategory,	idEntity::Event_GetCurInvCategory )
 	EVENT( EV_GetCurInvItemEntity,	idEntity::Event_GetCurInvItemEntity )
 	EVENT( EV_GetCurInvItemName,	idEntity::Event_GetCurInvItemName )
+	EVENT( EV_GetCurInvItemId,		idEntity::Event_GetCurInvItemId )
 	EVENT( EV_GetCurInvIcon,		idEntity::Event_GetCurInvIcon )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
@@ -8786,6 +8788,11 @@ void idEntity::Event_GetCurInvItemEntity()
 void idEntity::Event_GetCurInvItemName()
 {
 	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
+}
+
+void idEntity::Event_GetCurInvItemId()
+{
+	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetItemId() );
 }
 
 void idEntity::Event_GetCurInvIcon()
