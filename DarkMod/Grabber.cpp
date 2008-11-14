@@ -1097,7 +1097,7 @@ void CGrabber::Throw( int HeldTime )
 		TumbleVec[1] += (gameLocal.random.RandomFloat() / 20) - 0.025; 
 		TumbleVec[2] += (gameLocal.random.RandomFloat() / 20) - 0.025;
 		// scale the offset by the mass, so lightweight objects don't spin too much
-		TumbleVec *= mass;
+		TumbleVec *= (mass / 2.0);
 		ent->ApplyImpulse( m_player.GetEntity(), m_id, ThrowPoint + TumbleVec, ImpulseVec );
 		ent->m_SetInMotionByActor = m_player.GetEntity();
 		ent->m_MovedByActor =  m_player.GetEntity();

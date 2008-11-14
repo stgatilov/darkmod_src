@@ -932,6 +932,8 @@ void idEntity::LoadModels()
 		if ( needBroken ) {
 			gameLocal.Error( "Broken model '%s' required for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
 		} 
+		// set brokenModel to empty, so we later don't try to use it
+		brokenModel = "";
 	}
 
 	// can we be damaged?
@@ -1578,12 +1580,13 @@ bool idEntity::IsBroken( void ) const {
 /*
 ================
 idEntity::SpawnFlinder spawns zero, one or more flinder objects as
-described by one FlinderSpawn struct.
+described by one FlinderSpawn struct. The activator is the entity
+that caused this entity to break up.
 
 @return: -1 for error, or the number of entities spawned
 
 */
-int idEntity::SpawnFlinder( const FlinderSpawn& fs )
+int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 {
 	int spawned = 0;
 	
@@ -1601,6 +1604,8 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs )
 		{
 			idEntity *flinder;
 			gameLocal.SpawnEntityDef( *p_entityDef, &flinder, false );
+			idPhysics *physics;
+			idVec3 TumbleVec(vec3_zero);
 
 			if ( !flinder )
 			{
@@ -1609,13 +1614,54 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs )
 	        }
 			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Spawned entity %s\r", flinder->GetName() ); 
 
+			physics = flinder->GetPhysics();
+
 			// move the entity to the origin (plus offset) and orientation of the original
-			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
-			flinder->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
+			physics->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
+			physics->SetAxis( GetPhysics()->GetAxis() );
 			// give the flinders the same speed as the original entity (in case it breaks
 			// up while on the move
-			flinder->GetPhysics()->SetLinearVelocity( GetPhysics()->GetLinearVelocity() );
-			flinder->GetPhysics()->SetAngularVelocity( GetPhysics()->GetAngularVelocity() );
+			// tels FIXME: We would need to count how many flinders were spawned then distribute
+			//			   the impulse from the activator in equal parts to each of them.
+			// tels FIXME: Currently these are zero when an arrow hits a bottle.
+
+			// for now add a small random speed so the object moves
+			// tels FIXME: Doesn't work. Because the flinder is inside the still solid
+			//				entity?
+			TumbleVec[0] += (gameLocal.random.RandomFloat() * 20) - 10;
+			TumbleVec[1] += (gameLocal.random.RandomFloat() * 20) - 10;
+			TumbleVec[2] += (gameLocal.random.RandomFloat() * 20) - 10;
+
+			physics->SetLinearVelocity( 
+				GetPhysics()->GetLinearVelocity() 
+				+ activator->GetPhysics()->GetLinearVelocity()
+				+ TumbleVec
+				);
+			physics->SetAngularVelocity(
+				GetPhysics()->GetAngularVelocity() 
+				+ activator->GetPhysics()->GetAngularVelocity()
+				+ TumbleVec
+				);
+
+			/*
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Activator is: %s\r", activator->GetName() );
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Set linear velocity to %f %f %f:\r", 
+				physics->GetLinearVelocity().x,  
+				physics->GetLinearVelocity().y,  
+				physics->GetLinearVelocity().z ); 
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Set angular velocity to %f %f %f:\r", 
+				physics->GetAngularVelocity().x,  
+				physics->GetAngularVelocity().y,  
+				physics->GetAngularVelocity().z ); 
+			*/
+
+			if( activator->IsType(idActor::Type) )
+			{
+				idActor *actor = static_cast<idActor *>(activator);
+				flinder->m_SetInMotionByActor = actor;
+				flinder->m_MovedByActor = actor;
+			}
+
 			// activate the flinder, so it falls realistically down
 			flinder->BecomeActive(TH_PHYSICS|TH_THINK);
 			// FIXME if this entity has a skin, set the same skin on the flinder
@@ -1691,7 +1737,7 @@ void idEntity::BecomeBroken( idEntity *activator )
 	}
 
 	// tels: if we have flinders to spawn on break, do so now
-	Flinderize();
+	Flinderize( activator );
 }
 
 /*
@@ -7098,7 +7144,7 @@ bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 	}
 }
 
-void idEntity::Flinderize( void )
+void idEntity::Flinderize( idEntity *activator )
 {
 	// Create a new struct
 	FlinderSpawn fs;
@@ -7110,7 +7156,7 @@ void idEntity::Flinderize( void )
 	while( kv )
 	{
 		idStr temp = kv->GetValue();
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_flinder %s:\r", kv->GetKey().c_str() );
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_flinder %s:\r", temp.c_str() );
 		if( !temp.IsEmpty() )
 		{
 			// fill in the name and some defaults
@@ -7121,18 +7167,22 @@ void idEntity::Flinderize( void )
 
 			// check if we have spawnargs like count, offset or probability:
 			idStr index;
-			idStr spawnarg = kv->GetValue();
-			// strlen("def_broken") == 10 
-			if (spawnarg.Length() > 10)
+			idStr spawnarg = kv->GetKey();
+			// strlen("def_flinder") == 11 
+			if (spawnarg.Length() > 11)
 			{
-				index = spawnarg.Right( spawnarg.Length() - 10 );
+				index = spawnarg.Right( spawnarg.Length() - 11 );
 			}
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Index is %s:\r", index.c_str() );
 			spawnArgs.GetVector("flinder_offset"      + index,    "", fs.m_Offset);
 			spawnArgs.GetInt   ("flinder_count"       + index,   "1", fs.m_Count);
 			spawnArgs.GetFloat ("flinder_probability" + index, "1.0", fs.m_Probability);
 
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Offset is %f,%f,%f:\r", fs.m_Offset.x, fs.m_Offset.y, fs.m_Offset.z );
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Count is %i:\r", fs.m_Count );
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Probability is %f:\r", fs.m_Probability );
 			// evaluate what we found and spawn the individual pieces
-			spawned += SpawnFlinder( fs );
+			spawned += SpawnFlinder( fs, activator );
 
 		}
 		kv = spawnArgs.MatchPrefix( "def_flinder", kv );

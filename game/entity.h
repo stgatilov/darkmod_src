@@ -599,12 +599,12 @@ public:
 	 * @return: Count of entities that where spawned or -1 for error.
 	 *
 	*/
-	virtual int				SpawnFlinder(const FlinderSpawn& bs);
+	virtual int				SpawnFlinder(const FlinderSpawn& bs, idEntity *activator);
 
 	/**
 	 * Evaluate def_flinder spawnargs and call SpawnFlinder() for each found.
 	*/
-	virtual void			Flinderize (void);
+	virtual void			Flinderize (idEntity *activator);
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
