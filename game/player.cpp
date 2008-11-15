@@ -6389,13 +6389,17 @@ void idPlayer::UpdateInventoryPickedUpMessages()
 		return; // no overlay?
 	}
 
+	/* 
+	greebo: Commented this out to let new pickup messages overwrite the old ones.
+	Put this back in to let the GUI display one message after the other.
+
 	int hasMessage = invGUI->GetStateInt("HasInventoryPickUpMessage");
 
 	if (hasMessage == 1)
 	{
 		// The HUD is still busy, leave it for the moment being
 		return; 
-	}
+	}*/
 
 	// greebo: We have a message and the HUD is ready, shove it into the GUI.
 	invGUI->SetStateString("InventoryPickUpMessageText", inventoryPickedUpMessages[0]);
