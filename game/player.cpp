@@ -1053,13 +1053,13 @@ void idPlayer::NextInventoryMap()
 
 void idPlayer::SetupInventory()
 {
-	m_InventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
+	m_InventoryOverlay = CreateOverlay(cv_tdm_inv_gui_file.GetString(), LAYER_INVENTORY);
 	
 	idUserInterface* invGUI = m_overlays.getGui(m_InventoryOverlay);
 	
 	if (invGUI == NULL)
 	{
-		gameLocal.Error("Could not set up inventory GUI: %s", cv_tdm_inv_hud_file.GetString());
+		gameLocal.Error("Could not set up inventory GUI: %s", cv_tdm_inv_gui_file.GetString());
 		return;
 	}
 
@@ -1145,7 +1145,7 @@ void idPlayer::SetupInventory()
 	it->SetName(TDM_LOOT_INFO_ITEM);
 	it->SetItemEntity(ent);
 	it->SetType(CInventoryItem::IT_ITEM);
-	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), LAYER_INVENTORY));
+	it->SetOverlay(cv_tdm_inv_loot_gui_file.GetString(), CreateOverlay(cv_tdm_inv_loot_gui_file.GetString(), LAYER_INVENTORY));
 	it->SetCount(0);
 	it->SetStackable(false);
 	crsr->Inventory()->PutItem(it, cv_tdm_inv_loot_group.GetString());
