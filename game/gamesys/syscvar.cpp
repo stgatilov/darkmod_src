@@ -210,20 +210,11 @@ idCVar cv_throw_max_vel(			"tdm_throw_max_vel",	"900",			CVAR_GAME | CVAR_ARCHIV
 /**
 * DarkMod Inventory
 **/
-idCVar cv_tdm_inv_hud_file(	"tdm_inv_hud_file", "guis/inv.gui",	CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that represents the hud for the inventory.");
-idCVar cv_tdm_inv_loot_hud(	"tdm_inv_loot_hud", "guis/loot.gui",	CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that represents the hud for the loot display.");
+idCVar cv_tdm_inv_gui_file(	"tdm_inv_hud_file", "guis/tdm_inv.gui",	CVAR_GAME, "The name of the gui file that represents the hud for the inventory.");
+idCVar cv_tdm_inv_loot_gui_file(	"tdm_inv_loot_hud", "guis/tdm_loot.gui",	CVAR_GAME, "The name of the gui file that represents the hud for the loot display.");
 idCVar cv_tdm_inv_loot_group("tdm_inv_loot_group", "Loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the group that contains the loot item.");
 
-idCVar cv_tdm_inv_grouping(	"tdm_inv_group_mode",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"The group mode of the inventory GUI.\n"
-																									   "0 = ungrouped inventory (T1/T2 style)\n"
-																										"1 = grouped inventory\n", 0, 2 );
-idCVar cv_tdm_inv_groupvis(	"tdm_inv_visibility", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Controls inventory visibility.\n"
-																							        "0 = never visible\n"
-																									"1 = always visible\n"
-																									"2 = temporary (not yet implemented.", 0, 2 );
 idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the HUD GUIs. [0..1]", 0, 1 );
-idCVar cv_tdm_inv_fadein(	"tdm_inv_fade_in", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade in the inventory. 0 = immediately");
-idCVar cv_tdm_inv_fadeout(	"tdm_inv_fade_out", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade out the inventory. 0 = immediately");
 idCVar cv_tdm_inv_hud_pickupmessages(	"tdm_inv_hud_pickupmessages", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"If set to 1, the HUD is displaying the item the player has just picked up.");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
 idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "0",	CVAR_GAME | CVAR_ARCHIVE, "When set to '1' currently selected inventory items will be used on frob.");
