@@ -181,3 +181,16 @@ const idStr& CInventoryWeaponItem::GetProjectileDefName() const
 {
 	return m_ProjectileDefName;
 }
+
+void CInventoryWeaponItem::SetProjectileDefName(const idStr& weaponDefName)
+{
+	m_ProjectileDefName = weaponDefName;
+}
+
+void CInventoryWeaponItem::ResetProjectileDefName()
+{
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
+	if (weaponDict == NULL) return;
+
+	m_ProjectileDefName = weaponDict->GetString("def_projectile");
+}
