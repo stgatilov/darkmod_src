@@ -567,6 +567,12 @@ public:
 	 */
 	CInventoryWeaponItemPtr	GetCurrentWeaponItem();
 
+	/** 
+	 * greebo: Returns the inventory weapon item with the given name (e.g. "shortsword" or "broadhead").
+	 * This can actually return NULL if no weapon item with the given name exists.
+	 */
+	CInventoryWeaponItemPtr GetWeaponItem(const idStr& weaponName);
+
 	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );
 	void					AddProjectilesFired( int count );

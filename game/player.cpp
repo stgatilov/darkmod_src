@@ -984,6 +984,34 @@ CInventoryWeaponItemPtr idPlayer::GetCurrentWeaponItem()
 	return boost::dynamic_pointer_cast<CInventoryWeaponItem>(m_WeaponCursor->GetCurrentItem());
 }
 
+CInventoryWeaponItemPtr idPlayer::GetWeaponItem(const idStr& weaponName)
+{
+	if (m_WeaponCursor == NULL)
+	{
+		return CInventoryWeaponItemPtr();
+	}
+
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+	if (weaponCategory == NULL)
+	{
+		return CInventoryWeaponItemPtr();
+	}
+
+	// Cycle through all available weapons and find the one with the given name
+	for (int i = 0; i < weaponCategory->GetNumItems(); ++i)
+	{
+		CInventoryWeaponItemPtr weapon = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		if (weapon != NULL && weaponName == weapon->GetWeaponName())
+		{
+			return weapon; // Found!
+		}
+	}
+
+	return CInventoryWeaponItemPtr();
+}
+
 void idPlayer::AddWeaponsToInventory()
 {
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_weapon"); kv != NULL; kv = spawnArgs.MatchPrefix("def_weapon", kv))
