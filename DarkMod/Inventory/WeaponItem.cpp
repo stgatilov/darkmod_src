@@ -64,6 +64,7 @@ void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
 
 	savefile->WriteString(m_WeaponDefName);
 	savefile->WriteString(m_WeaponName);
+	savefile->WriteString(m_ProjectileDefName);
 	savefile->WriteInt(m_MaxAmmo);
 	savefile->WriteInt(m_Ammo);
 	savefile->WriteInt(m_WeaponIndex);
@@ -78,6 +79,7 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 
 	savefile->ReadString(m_WeaponDefName);
 	savefile->ReadString(m_WeaponName);
+	savefile->ReadString(m_ProjectileDefName);
 	savefile->ReadInt(m_MaxAmmo);
 	savefile->ReadInt(m_Ammo);
 	savefile->ReadInt(m_WeaponIndex);
@@ -155,12 +157,14 @@ void CInventoryWeaponItem::SetWeaponIndex(int index)
 
 	// Now that the weapon index is known, cache a few values from the owner spawnargs
 
-	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
 	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
 	if (weaponDict == NULL) return;
 
 	m_AllowedEmpty = !weaponDict->GetBool(WEAPON_AMMO_REQUIRED, "1");
 	m_IsToggleable = weaponDict->GetBool(WEAPON_IS_TOGGLEABLE, "0");
+
+	// Initialise the projectile def name from the weapon spawnargs
+	m_ProjectileDefName = weaponDict->GetString("def_projectile");
 }
 
 int CInventoryWeaponItem::GetWeaponIndex() const
@@ -171,4 +175,9 @@ int CInventoryWeaponItem::GetWeaponIndex() const
 const idStr& CInventoryWeaponItem::GetWeaponName() const
 {
 	return m_WeaponName;
+}
+
+const idStr& CInventoryWeaponItem::GetProjectileDefName() const
+{
+	return m_ProjectileDefName;
 }

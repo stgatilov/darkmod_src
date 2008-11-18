@@ -214,7 +214,9 @@ private:
 	// do not have to be copied across the DLL boundary when entities are spawned
 	const idDeclEntityDef *	weaponDef;
 	const idDeclEntityDef *	meleeDef;
-	idDict					projectileDict;
+
+	// greebo: This is not needed anymore - the projectile dictionary is requested when it's actually needed
+	//idDict					projectileDict;
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;

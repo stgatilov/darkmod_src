@@ -431,12 +431,12 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	weaponDef = gameLocal.FindEntityDef( objectname );
 	meleeDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_melee" ), false );
 
-	const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
+	/*const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
 	if ( projectileDef ) {
 		projectileDict = projectileDef->dict;
 	} else {
 		projectileDict.Clear();
-	}
+	}*/
 
 	const idDeclEntityDef *brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
 	if ( brassDef ) {
@@ -662,7 +662,6 @@ void idWeapon::Clear( void ) {
 	animBlendFrames	= 0;
 	animDoneTime	= 0;
 
-	projectileDict.Clear();
 	meleeDef		= NULL;
 	meleeDefName	= "";
 	meleeDistance	= 0.0f;
@@ -789,7 +788,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	const char *objectType;
 	const char *vmodel;
 	const char *guiName;
-	const char *projectileName;
 	const char *brassDefName;
 	const char *smokeName;
 	int			ammoAvail = 0;
@@ -888,9 +886,8 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	ventLightJointView = animator.GetJointHandle( "ventLight" );
 
 	// get the projectile
-	projectileDict.Clear();
-
-	projectileName = weaponDef->dict.GetString( "def_projectile" );
+	// greebo: Disabled, the projectile def is loaded on demand
+	/*projectileName = weaponDef->dict.GetString( "def_projectile" );
 	if ( projectileName[0] != '\0' ) {
 		const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( projectileName, false );
 		if ( !projectileDef ) {
@@ -904,7 +901,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 				projectileDict = projectileDef->dict;
 			}
 		}
-	}
+	}*/
 
 	// set up muzzleflash render light
 	const idMaterial*flashShader;
@@ -2466,9 +2463,8 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 idWeapon::IsRanged
 */
 bool idWeapon::IsRanged() {
-	// If our projectile dictionary has entries, then we're probably a ranged weapon;
-	// otherwise we're definitely not.
-	return (projectileDict.GetNumKeyVals() > 0 );
+	// greebo: Check the weapon dictionary, whether a projectile def is declared
+	return (weaponDef != NULL && weaponDef->dict.FindKey("def_projectile") != NULL);
 }
 
 /***********************************************************************
@@ -2953,17 +2949,42 @@ void idWeapon::Event_SetLightParms( float parm0, float parm1, float parm2, float
 idWeapon::Event_CreateProjectile
 ================
 */
-void idWeapon::Event_CreateProjectile( void ) {
-	if ( !gameLocal.isClient ) {
+void idWeapon::Event_CreateProjectile()
+{
+	if ( !gameLocal.isClient )
+	{
 		projectileEnt = NULL;
-		gameLocal.SpawnEntityDef( projectileDict, &projectileEnt, false );
-		if ( projectileEnt ) {
-			projectileEnt->SetOrigin( GetPhysics()->GetOrigin() );
-			projectileEnt->Bind( owner, false );
-			projectileEnt->Hide();
+
+		// Try to get the weapon inventory item
+		CInventoryWeaponItemPtr weaponItem = owner->GetWeaponItem(weaponDef->dict.GetString("inv_weapon_name"));
+
+		if (weaponItem == NULL)
+		{
+			idThread::ReturnEntity( NULL );
+			return;
 		}
+
+		// Retrieve the currently active projectile def name from the inventory item
+		const idStr& projectileDefName = weaponItem->GetProjectileDefName();		
+
+		const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef(projectileDefName);
+
+		if (projectileDef != NULL)
+		{
+			gameLocal.SpawnEntityDef( projectileDef->dict, &projectileEnt, false );
+
+			if ( projectileEnt )
+			{
+				projectileEnt->SetOrigin( GetPhysics()->GetOrigin() );
+				projectileEnt->Bind( owner, false );
+				projectileEnt->Hide();
+			}
+		}
+
 		idThread::ReturnEntity( projectileEnt );
-	} else {
+	}
+	else
+	{
 		idThread::ReturnEntity( NULL );
 	}
 }
@@ -2990,9 +3011,28 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		return;
 	}
 
-	if ( !projectileDict.GetNumKeyVals() ) {
+	/*if ( !projectileDict.GetNumKeyVals() ) {
 		const char *classname = weaponDef->dict.GetString( "classname" );
 		gameLocal.Warning( "No projectile defined on '%s'", classname );
+		return;
+	}*/
+	CInventoryWeaponItemPtr weaponItem = owner->GetWeaponItem(weaponDef->dict.GetString("inv_weapon_name"));
+	if (weaponItem == NULL) return;
+
+	// Retrieve the currently active projectile def name from the inventory item
+	const idStr& projectileDefName = weaponItem->GetProjectileDefName();
+
+	if (projectileDefName.IsEmpty())
+	{
+		gameLocal.Warning("No projectile entityDef defined on '%s'", name.c_str());
+		return;
+	}
+
+	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef(projectileDefName);
+	
+	if (projectileDef == NULL)
+	{
+		gameLocal.Warning("Projectile entityDef %s not found.", projectileDefName.c_str());
 		return;
 	}
 
@@ -3025,7 +3065,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// calculate the muzzle position
-	if ( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) ) {
+	if ( barrelJointView != INVALID_JOINT && projectileDef->dict.GetBool( "launchFromBarrel" ) ) {
 		// there is an explicit joint for the muzzle
 		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
 	} else {
@@ -3046,7 +3086,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( projectileDict.GetBool( "net_instanthit" ) ) {
+		if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
@@ -3057,7 +3097,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				dir.Normalize();
 				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
 				if ( tr.fraction < 1.0f ) {
-					idProjectile::ClientPredictionCollide( this, projectileDict, tr, vec3_origin, true );
+					idProjectile::ClientPredictionCollide( this, projectileDef->dict, tr, vec3_origin, true );
 				}
 			}
 		}
@@ -3082,7 +3122,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				ent->Unbind();
 				projectileEnt = NULL;
 			} else {
-				gameLocal.SpawnEntityDef( projectileDict, &ent, false );
+				gameLocal.SpawnEntityDef( projectileDef->dict, &ent, false );
 			}
 
 			if ( !ent || !ent->IsType( idProjectile::Type ) ) {
@@ -3090,7 +3130,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 			}
 
-			if ( projectileDict.GetBool( "net_instanthit" ) ) {
+			if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}

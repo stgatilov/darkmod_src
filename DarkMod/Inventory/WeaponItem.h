@@ -25,6 +25,10 @@ protected:
 	// The unique name for this weapon, e.g. "broadhead" or "blackjack"
 	idStr	m_WeaponName;
 
+	// The name of the projectile def name for this weapon (can change during runtime). 
+	// Can be empty for melee weapons.
+	idStr	m_ProjectileDefName;
+
 	// The maximum amount of ammo for this weapon
 	int		m_MaxAmmo;
 
@@ -87,6 +91,12 @@ public:
 	 *         entityDef "weapon_broadhead" => weapon name: "broadhead"
 	 */
 	const idStr& GetWeaponName() const;
+
+	/**
+	 * greebo: Returns the name of the projectile entityDef, if this weapon fires projectiles in the first place.
+	 * Melee weapons will return an empty string.
+	 */
+	const idStr& GetProjectileDefName() const;
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 
