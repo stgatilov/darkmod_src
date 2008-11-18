@@ -97,6 +97,10 @@ public:
 	 * Melee weapons will return an empty string.
 	 */
 	const idStr& GetProjectileDefName() const;
+	void SetProjectileDefName(const idStr& weaponDefName);
+
+	// Restores the projectile def name as originally defined in the weapon def
+	void ResetProjectileDefName();
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

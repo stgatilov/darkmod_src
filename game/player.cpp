@@ -136,6 +136,10 @@ const idEventDef EV_CheckAAS("checkAAS", NULL);
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
 const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", NULL);
 
+// greebo: Changes the projectile entityDef name of the given weapon (e.g. "broadhead").
+const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", "ss", NULL);
+const idEventDef EV_ResetWeaponProjectile("resetWeaponProjectile", "s", NULL);
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -207,6 +211,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 	EVENT( EV_TriggerMissionEnd,			idPlayer::Event_TriggerMissionEnd )
+
+	EVENT( EV_ChangeWeaponProjectile,		idPlayer::Event_ChangeWeaponProjectile )
+	EVENT( EV_ResetWeaponProjectile,		idPlayer::Event_ResetWeaponProjectile )
 
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
@@ -3602,6 +3609,22 @@ void idPlayer::UpdateWeapon( void ) {
 
 	// update weapon state, particles, dlights, etc
 	weapon.GetEntity()->PresentWeapon( showWeaponViewModel );
+}
+
+void idPlayer::ChangeWeaponProjectile(const idStr& weaponName, const idStr& projectileDefName)
+{
+	CInventoryWeaponItemPtr weaponItem = GetWeaponItem(weaponName);
+	if (weaponItem == NULL) return;
+
+	weaponItem->SetProjectileDefName(projectileDefName);
+}
+
+void idPlayer::ResetWeaponProjectile(const idStr& weaponName)
+{
+	CInventoryWeaponItemPtr weaponItem = GetWeaponItem(weaponName);
+	if (weaponItem == NULL) return;
+
+	weaponItem->ResetProjectileDefName();
 }
 
 void idPlayer::SetIsPushing(bool isPushing)
@@ -10719,4 +10742,15 @@ void idPlayer::Event_CheckAAS()
 			SendHUDMessage("Warning: " + aasNames[i] + " is out of date!");
 		}
 	}
+}
+
+void idPlayer::Event_ChangeWeaponProjectile(const char* weaponName, const char* projectileDefName)
+{
+	// Just wrap to the actual method
+	ChangeWeaponProjectile(weaponName, projectileDefName);
+}
+
+void idPlayer::Event_ResetWeaponProjectile(const char* weaponName)
+{
+	ResetWeaponProjectile(weaponName);
 }
