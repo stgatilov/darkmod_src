@@ -9556,7 +9556,7 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 
 	// Set up the initial orientation and point at which we want to drop
 	idMat3 dropAxis;
-	if( item )
+	if( item != NULL )
 		dropAxis = item->GetDropOrientation();
 	else if( ent->spawnArgs.FindKey("drop_angles") )
 	{

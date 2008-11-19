@@ -304,8 +304,10 @@ void CGrabber::StopDrag( void )
 	}
 
 	// TODO: This assumes we can never equip an object and drag a second object
+	/*
 	if( m_EquippedEnt.GetEntity() && m_player.GetEntity() )
 		Dequip();
+	*/
 }
 
 /*
@@ -495,7 +497,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	if( m_bObjStuck )
 	{
 		StopDrag();
-		m_EquippedEnt = NULL;
+		// m_EquippedEnt = NULL;
 	}
 
 	// evaluate physics
@@ -1426,7 +1428,10 @@ bool CGrabber::ToggleEquip( void )
 	bool rc(false);
 
 	if( m_EquippedEnt.GetEntity() )
+	{
 		rc = true; // always register action when trying to dequip
+		Dequip();
+	}
 	else
 		rc = Equip();
 
