@@ -261,6 +261,8 @@ idPlayer::idPlayer() :
 	lastSndHitTime			= 0;
 	lastSavingThrowTime		= 0;
 
+	hasLanded				= false;
+
 	weapon					= NULL;
 
 	hud						= NULL;
@@ -4148,6 +4150,19 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	AI_HARDLANDING = false;
 
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
+
+	if (result.hasLanded && 
+		( (!AI_CROUCH && savedVelocity.z < -300) || savedVelocity.z < -600) )
+	{
+		hasLanded = true;
+
+		PlayFootStepSound();
+	}
+	else
+	{
+		hasLanded = false;
+	}
+	
 	
 	if (health < 0)
 	{
@@ -6322,11 +6337,13 @@ void idPlayer::Move( void )
 		}
 	}
 
-	BobCycle( pushVelocity );
 	if ( health > 0 )
 	{
 		CrashLand( savedOrigin, savedVelocity );
 	}
+
+	BobCycle( pushVelocity );
+
 }
 
 /*
@@ -10296,22 +10313,26 @@ void idPlayer::PlayFootStepSound()
 
 	UpdateMoveVolumes();
 
-	if (AI_CROUCH)
+	// angua: check whether the player has just landed from jumping or a fall
+	if (!hasLanded)
 	{
-		moveType = "_crouch";
-	}
+		if (AI_CROUCH)
+		{
+			moveType = "_crouch";
+		}
 
-	if (AI_RUN)
-	{
-		moveType += "_run";
-	}
-	else if (AI_CREEP)
-	{
-		moveType += "_creep";
-	}
-	else
-	{
-		moveType += "_walk";
+		if (AI_RUN)
+		{
+			moveType += "_run";
+		}
+		else if (AI_CREEP)
+		{
+			moveType += "_creep";
+		}
+		else
+		{
+			moveType += "_walk";
+		}
 	}
 
 	// start footstep sound based on material type
@@ -10320,7 +10341,14 @@ void idPlayer::PlayFootStepSound()
 	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Player %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
 		g_Global.GetSurfName(material, localSound);
-		localSound = "snd_footstep_" + localSound;
+		if (hasLanded)
+		{
+			localSound = "snd_jump_" + localSound;
+		}
+		else
+		{
+			localSound = "snd_footstep_" + localSound;
+		}
 
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() ); 
 		sound = spawnArgs.GetString( localSound.c_str() );
@@ -10330,7 +10358,14 @@ void idPlayer::PlayFootStepSound()
 	// If player is walking in liquid, replace the bottom surface sound with water sounds
 	if (waterLevel == WATERLEVEL_FEET )
 	{
-		localSound = "snd_footstep_puddle";
+		if (hasLanded)
+		{
+			localSound = "snd_jump_puddle";
+		}
+		else
+		{
+			localSound = "snd_footstep_puddle";
+		}
 		sound = spawnArgs.GetString( localSound );
 	}
 	else if (waterLevel == WATERLEVEL_WAIST)
@@ -10361,7 +10396,10 @@ void idPlayer::PlayFootStepSound()
 	}
 
 	// The player always considers the movement type when propagating
-	localSound += moveType;
+	if (!hasLanded)
+	{
+		localSound += moveType;
+	}
 
 	if ( !sound.IsEmpty() ) 
 	{

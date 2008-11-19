@@ -255,6 +255,10 @@ public:
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
 	int						lastSavingThrowTime;	// for the "free miss" effect
 
+	// angua: this is true when the player lands after jumping or a fall
+	// to play the jumping footstep sounds
+	bool					hasLanded;
+
 	idScriptBool			AI_FORWARD;
 	idScriptBool			AI_BACKWARD;
 	idScriptBool			AI_STRAFE_LEFT;
