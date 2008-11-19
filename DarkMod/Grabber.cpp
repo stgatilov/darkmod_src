@@ -1426,7 +1426,7 @@ bool CGrabber::ToggleEquip( void )
 	bool rc(false);
 
 	if( m_EquippedEnt.GetEntity() )
-		rc = Dequip();
+		rc = true; // always register action when trying to dequip
 	else
 		rc = Equip();
 
@@ -1440,8 +1440,7 @@ bool CGrabber::Equip( void )
 	idEntity *ent = m_dragEnt.GetEntity();
 
 	if( !ent || !ent->spawnArgs.GetBool("equippable") )
-	// if( !ent )
-	goto Quit;
+		return false;
 
 	gameLocal.Printf("Equip called\n");
 
@@ -1491,37 +1490,51 @@ bool CGrabber::Equip( void )
 		m_bMaintainPitch = false;
 
 		m_bEquippedEntInWorld = true;
-
-		rc = true;
 	}
 
 	m_EquippedEnt = ent;
 
 	// Specific case of shouldering a body
-	if( ent->IsType(idAFEntity_Base::Type) )
-		rc = ShoulderBody( static_cast<idAFEntity_Base *>(ent) );
+	if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
+		ShoulderBody( static_cast<idAFEntity_Base *>(ent) );
 
-Quit:
-	return rc;
+	return true;
 }
 
 bool CGrabber::Dequip( void )
 {
-	// TODO: Check for intersection with solids when dequipping!
-	// Like we currently do when dropping inventory items
-
-	bool rc(false);
+	bool bDequipped(false);
 	idStr str;
 	idEntity *ent = m_EquippedEnt.GetEntity();
 
-	// don't use goto Quit, it crosses an initialization, which gcc linux doesn't like:
 	if( !ent )
 		return false;
 
 	gameLocal.Printf("Dequip called\n");
 
+	idPlayer *player = m_player.GetEntity();
+
+	// inventory items go back in inventory on dequipping
+	if( player->AddToInventory(ent) )
+	{
+		StopDrag();
+		bDequipped = true;
+	}
+	// junk items dequip back to the hands
+	// test if item is successfully dequipped
+	else if( player->DropToHands(ent) )
+	{
+		// put in hands (should already be dragged?)
+		bDequipped = true;
+	}
+	else
+	{
+		// There wasn't space to dequip the item to hands
+		player->StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
+	}
+
 	// tels: Execute a potential dequip script
-    if(ent->spawnArgs.GetString("dequip_action_script", "", str))
+    if( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
 	{ 
 		// Call the script
         idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
@@ -1533,7 +1546,7 @@ bool CGrabber::Dequip( void )
 	}
 
 	// ishtvan: Test general "equip in world system"
-	if( ent->spawnArgs.GetBool("equip_in_world") )
+	if( bDequipped && ent->spawnArgs.GetBool("equip_in_world") )
 	{
 		if( ent->spawnArgs.GetBool("equip_draw_on_top") )
 			ent->GetRenderEntity()->weaponDepthHack = false;
@@ -1552,42 +1565,22 @@ bool CGrabber::Dequip( void )
 		m_bMaintainPitch = true;
 
 		m_bEquippedEntInWorld = false;
-
-		rc = true;
 	}
 
-	// failsafe, doesn't seem to be setting sometimes
-	m_bEquippedEntInWorld = false;
-	m_bMaintainPitch = true;
-
-	idPlayer *player = m_player.GetEntity();
-
-	// Specific case of unshouldering a body
-	// In this case, body is an inventory item, so drop it
-	if( ent->IsType(idAFEntity_Base::Type) )
+	if( bDequipped )
 	{
-		player->DropInventoryItem();
-		// hack: invenoryDropItem doesn't return back whether it succeeded,
-		// but we want to return back whether we successfully dequipped
-		// so check if we successfully dequipped by seeing
-		// if the equipped ent was cleared by UnShoulderBody()
-		rc = !m_EquippedEnt.GetEntity();
+		// call unshoulderbody if dequipping a body
+		if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
+			UnShoulderBody();
+
 		m_EquippedEnt = NULL;
-	}
-	// TODO: This won't allow carrying of non-AI AFs?
-	else if( player->AddToInventory(ent) )
-	{
-		// items that can go in the inventory are put back on dequipping
-		StopDrag();
-		m_EquippedEnt = NULL;
-	}
-	else
-	{
-		// dequip the entity
-		m_EquippedEnt = NULL;
+		
+		// failsafe, doesn't seem to be reset properly
+		m_bEquippedEntInWorld = false;
+		m_bMaintainPitch = true;
 	}
 
-	return rc;
+	return bDequipped;
 }
 
 void CGrabber::UseEquipped( void )
@@ -1613,81 +1606,61 @@ void CGrabber::UseEquipped( void )
 	}
 }
 
-bool CGrabber::ShoulderBody( idAFEntity_Base *body )
+void CGrabber::ShoulderBody( idAFEntity_Base *body )
 {
-	bool rc(false);
-
-	if( body->spawnArgs.GetBool("shoulderable") )
-	{
-		// Temporarily turn the body into an inventory item
-		idStr InvName;
-		if( body->health > 0 )
-			InvName = body->spawnArgs.GetString("shouldered_name", "Body");
-		else
-			InvName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
-
-		body->spawnArgs.Set( "inv_name",InvName.c_str() );
-		// apparently we need to set the category too?
-		body->spawnArgs.Set( "inv_category", "Carrying" );
-		body->spawnArgs.Set( "inv_droppable", "1" ); // dropping the body does the same as dequipping
-		body->spawnArgs.Set( "inv_icon", body->spawnArgs.GetString("shouldered_icon") );
-
-		idPlayer *player = m_player.GetEntity();
-		// this should always succeed, no need to check success
-		player->AddToInventory( body );
-		// play the sound on the player, not the body (that was creating inconsistent volume)
-		player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
-
-		// set immobilizations
-		int immob = SHOULDER_IMMOBILIZATIONS;
-		// TODO: Also make sure you can't grab anything else (hands are full)
-		// requires a new EIM flag?
-		player->SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
-		
-		// set hinderance
-		float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
-		player->SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
-		player->SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
-
-		m_EquippedEnt = body;
-
-		// Load the animation frame that will put the body in the shouldered pose
-		idAnimator *animator = body->GetAnimator();
-		int animNum;
-		if( (animNum = animator->GetAnim( SHOULDER_ANIM )) != 0 )
-		{
-			gameLocal.Printf("Found drop_body animation\n");
-			animator->ClearAFPose();
-			animator->ClearAllAnims(gameLocal.time,0);
-			animator->SetFrame(ANIMCHANNEL_ALL, animNum, 0, 0, 0);
-
-			// TODO: Call af.SetPose to move the bodies to match the anim?
-		}
-
-		rc = true;
-	}
-
-	return rc;
-}
-
-bool CGrabber::UnShoulderBody( void )
-{
-	idEntity *body = m_EquippedEnt.GetEntity();
-	if
-	( 
-		!body || !body->IsType(idAFEntity_Base::Type)
-		|| !body->spawnArgs.GetBool("shoulderable") 
-	)
-		return false;
+	// Temporarily turn the body into an inventory item
+	idStr IconName;
+	if( body->health > 0 )
+		IconName = body->spawnArgs.GetString("shouldered_name", "Body");
+	else
+		IconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
 
 	idPlayer *player = m_player.GetEntity();
 
-	// clear inventory data from the body so that it doesn't go straight
-	// to inventory next time we frob it
-	body->spawnArgs.Delete("inv_name");
-	body->spawnArgs.Delete("inv_category");
-	body->spawnArgs.Delete("inv_droppable");
-	body->spawnArgs.Delete("inv_icon");
+// TODO: Display HUD icon representing equipped/shouldered body!
+
+	// play the sound on the player, not the body (that was creating inconsistent volume)
+	player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+
+	// set immobilizations
+	int immob = SHOULDER_IMMOBILIZATIONS;
+	// TODO: Also make sure you can't grab anything else (hands are full)
+	// requires a new EIM flag?
+	player->SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
+	
+	// set hinderance
+	float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
+	player->SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
+	player->SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
+
+	// hide the body for now
+	idEntity *ent = m_EquippedEnt.GetEntity();
+
+	body->Unbind();
+	body->GetPhysics()->PutToRest();
+	body->GetPhysics()->UnlinkClip();
+	body->Hide();
+
+	// Load the animation frame that will put the body in the shouldered pose
+	// TODO: Doesn't seem to work currently
+	idAnimator *animator = body->GetAnimator();
+	int animNum;
+	if( (animNum = animator->GetAnim( SHOULDER_ANIM )) != 0 )
+	{
+		gameLocal.Printf("Found drop_body animation\n");
+		animator->ClearAFPose();
+		animator->ClearAllAnims(gameLocal.time,0);
+		animator->SetFrame(ANIMCHANNEL_ALL, animNum, 0, 0, 0);
+
+		// TODO: Call af.SetPose to move the bodies to match the anim?
+	}
+}
+
+void CGrabber::UnShoulderBody( void )
+{
+	// idEntity *body = m_EquippedEnt.GetEntity();
+
+	idPlayer *player = m_player.GetEntity();
 
 	// clear immobilizations
 	player->SetImmobilization( "ShoulderedBody", 0 );
@@ -1697,9 +1670,8 @@ bool CGrabber::UnShoulderBody( void )
 	// same sound for unshouldering as shouldering
 	player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
 
-	m_EquippedEnt = NULL;
-
-	return true;
+	// toggle face up/down
+	m_bDropBodyFaceUp = !m_bDropBodyFaceUp;
 }
 
 void CGrabber::Forget( idEntity* ent )
