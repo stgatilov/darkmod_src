@@ -101,6 +101,9 @@ public:
 
 	// Restores the projectile def name as originally defined in the weapon def
 	void ResetProjectileDefName();
+
+	// Returns the name of the weapon entityDef
+	const idStr& GetWeaponDefName() const;
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

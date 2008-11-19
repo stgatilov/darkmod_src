@@ -139,6 +139,8 @@ const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFrom
 // greebo: Changes the projectile entityDef name of the given weapon (e.g. "broadhead").
 const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", "ss", NULL);
 const idEventDef EV_ResetWeaponProjectile("resetWeaponProjectile", "s", NULL);
+const idEventDef EV_ChangeWeaponName("changeWeaponName", "ss", NULL);
+const idEventDef EV_GetCurWeaponName("getCurWeaponName", NULL, 's');
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -214,6 +216,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_ChangeWeaponProjectile,		idPlayer::Event_ChangeWeaponProjectile )
 	EVENT( EV_ResetWeaponProjectile,		idPlayer::Event_ResetWeaponProjectile )
+	EVENT( EV_ChangeWeaponName,				idPlayer::Event_ChangeWeaponName )
+	EVENT( EV_GetCurWeaponName,				idPlayer::Event_GetCurWeaponName )
 
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
@@ -3625,6 +3629,29 @@ void idPlayer::ResetWeaponProjectile(const idStr& weaponName)
 	if (weaponItem == NULL) return;
 
 	weaponItem->ResetProjectileDefName();
+}
+
+void idPlayer::ChangeWeaponName(const idStr& weaponName, const idStr& displayName)
+{
+	CInventoryWeaponItemPtr weaponItem = GetWeaponItem(weaponName);
+	if (weaponItem == NULL) return;
+
+	if (!displayName.IsEmpty())
+	{
+		weaponItem->SetName(displayName);
+	}
+	else
+	{
+		const idDeclEntityDef* def = gameLocal.FindEntityDef(weaponItem->GetWeaponDefName());
+
+		if (def != NULL)
+		{
+			// Empty name passed, reset to definition
+			weaponItem->SetName(def->dict.GetString("inv_name"));
+		}
+	}
+
+	UpdateHudWeapon();
 }
 
 void idPlayer::SetIsPushing(bool isPushing)
@@ -10753,4 +10780,17 @@ void idPlayer::Event_ChangeWeaponProjectile(const char* weaponName, const char* 
 void idPlayer::Event_ResetWeaponProjectile(const char* weaponName)
 {
 	ResetWeaponProjectile(weaponName);
+}
+
+void idPlayer::Event_ChangeWeaponName(const char* weaponName, const char* newName)
+{
+	ChangeWeaponName(weaponName, newName);
+}
+
+void idPlayer::Event_GetCurWeaponName()
+{
+	CInventoryWeaponItemPtr weaponItem = GetCurrentWeaponItem();
+	if (weaponItem == NULL) return;
+
+	idThread::ReturnString( weaponItem->GetWeaponName().c_str() );
 }

@@ -194,3 +194,8 @@ void CInventoryWeaponItem::ResetProjectileDefName()
 
 	m_ProjectileDefName = weaponDict->GetString("def_projectile");
 }
+
+const idStr& CInventoryWeaponItem::GetWeaponDefName() const
+{
+	return m_WeaponDefName;
+}
