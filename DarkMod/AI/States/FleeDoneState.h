@@ -35,11 +35,11 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
+	virtual bool CheckAlertLevel(idAI* owner);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
-
-	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	static StatePtr CreateInstance();
 };

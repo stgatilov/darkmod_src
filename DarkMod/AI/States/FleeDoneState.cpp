@@ -49,6 +49,10 @@ void FleeDoneState::Init(idAI* owner)
 	// start looking for allies
 	_searchForFriendDone = false;
 
+	// alert level ramps down
+	float alertTime = owner->atime_fleedone + owner->atime_fleedone_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_3) / alertTime;
+
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -67,6 +71,24 @@ void FleeDoneState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void FleeDoneState::Think(idAI* owner)
 {
+	UpdateAlertLevel();
+		
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
+
+	// Let the AI check its senses
+	owner->PerformVisualScan();
+	if (owner->AI_ALERTED)
+	{
+		// terminate FleeDoneState when the AI is alerted
+		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+		owner->SetTurnRate(_oldTurnRate);
+
+		owner->GetMind()->EndState();
+	}
+
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -94,15 +116,9 @@ void FleeDoneState::Think(idAI* owner)
 				owner, friendlyAI, owner->GetEnemy(), owner->lastVisibleEnemyPos)
 			); 
 
-			// Placeholder, replace with "snd_help" when available
-			TaskPtr barkTask(new SingleBarkTask("snd_somethingSuspicious", message));
+			TaskPtr barkTask(new SingleBarkTask("snd_flee", message));
 			owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
-			// Go back to suspicious, 
-			// wait some time before going back to idle
-			owner->SetAlertLevel(owner->thresh_3 + (owner->thresh_3 - owner->thresh_2) * 0.5);
-			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
-			owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 		}
 		else if (gameLocal.time >= _turnEndTime)
 		{
@@ -111,37 +127,32 @@ void FleeDoneState::Think(idAI* owner)
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
 
-			// Go back to suspicious (higher level since we didn't find someone to help)
-			// wait some time before going back to idle
-			owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 			// Play the cowering animation
 			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Cower", 4);
 			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Cower", 4);
-
-			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
 		}
 	}
-	
-	// Let the AI check its senses
-	owner->PerformVisualScan();
-	if (owner->AI_ALERTED)
+}
+
+bool FleeDoneState::CheckAlertLevel(idAI* owner)
+{
+	// FleeDoneState terminates itself when the AI reaches Suspicious
+	if (owner->AI_AlertIndex < 3)
 	{
+		// Alert index is too low for this state, fall back
 		owner->GetSubsystem(SubsysMovement)->ClearTasks();
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);
 
 		owner->GetMind()->EndState();
+		return false;
 	}
-}
-
-void FleeDoneState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
-{
-	if (subSystem == SubsysAction)
-	{
-		owner->GetMind()->EndState();
-	}
+	
+	// Alert Index is matching, return OK
+	return true;
 }
 
 // Save/Restore methods
