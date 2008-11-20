@@ -125,30 +125,31 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	idVec3		offset(vec3_zero);
 	idAngles	angles;
 	idStr		joint;
-	const char *AttName;
-
+	
 	if( args.Argc() != 5 )
 	{
-		gameLocal.Printf( "usage: tdm_attach_rot <attachment index> <pitch> <yaw> <roll>\n" );
-		goto Quit;
+		gameLocal.Printf( "usage: tdm_attach_rot <attachment name> <pitch> <yaw> <roll>\n" );
+		return;
 	}
 
 	LookedAt = gameLocal.PlayerTraceEntity();
 	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
 	{
 		gameLocal.Printf( "tdm_attach_rot must be called when looking at an AI\n" );
-		goto Quit;
+		return;
 	}
 
-	ind = atoi( args.Argv(1) );
-	AttName = LookedAt->GetAttachment(ind)->name.c_str();
+	//ind = atoi( args.Argv(1) );
+	idStr attName = args.Argv(1);
+
+	int attIndex = LookedAt->GetAttachmentIndex(attName);
 
 	// write the attachment info to our vars, check if the index and entity are valid
 	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
 	{
 		// PrintAttachInfo returned false => bad index or entity
 		gameLocal.Printf("tdm_attach_rot: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
-		goto Quit;
+		return;
 	}
 
 	// overwrite the attachment rotation with our new one
@@ -156,10 +157,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	angles.yaw = atof(args.Argv( 3 ));
 	angles.roll = atof(args.Argv( 4 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
-
-Quit:
-	return;
+	static_cast<idActor *>(LookedAt)->ReAttachToCoords( attName, joint, offset, angles );
 }
 
 /*
