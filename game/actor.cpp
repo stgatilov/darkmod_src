@@ -753,6 +753,17 @@ void idActor::Spawn( void )
 
 	canUseElevators = spawnArgs.GetBool("canOperateElevators", "0");
 
+	// greebo: Set up the melee flags for AI without weapons
+	if (spawnArgs.GetBool("unarmed_melee"))
+	{
+		SetAttackFlag(COMBAT_MELEE, true);
+	}
+
+	if (spawnArgs.GetBool("unarmed_ranged"))
+	{
+		SetAttackFlag(COMBAT_RANGED, true);
+	}	
+
 	LoadVocalSet();
 
 	FinishSetup();
