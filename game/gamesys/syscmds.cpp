@@ -120,44 +120,44 @@ Cmd_AttachmentRot_f
 */
 void Cmd_AttachmentRot_f( const idCmdArgs &args )
 {
-	idEntity	*LookedAt;
-	int			ind = 0;
 	idVec3		offset(vec3_zero);
-	idAngles	angles;
-	idStr		joint;
 	
-	if( args.Argc() != 5 )
+	if( args.Argc() != 6 )
 	{
-		gameLocal.Printf( "usage: tdm_attach_rot <attachment name> <pitch> <yaw> <roll>\n" );
+		gameLocal.Printf( "usage: tdm_attach_rot <attachment name> <attachment position> <pitch> <yaw> <roll>\n" );
 		return;
 	}
 
-	LookedAt = gameLocal.PlayerTraceEntity();
-	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	idEntity* lookedAt = gameLocal.PlayerTraceEntity();
+	if (lookedAt == NULL || !(lookedAt->IsType(idActor::Type)) )
 	{
 		gameLocal.Printf( "tdm_attach_rot must be called when looking at an AI\n" );
 		return;
 	}
 
-	//ind = atoi( args.Argv(1) );
+	idActor* actor = static_cast<idActor*>(lookedAt);
+
 	idStr attName = args.Argv(1);
+	idStr attPosName = args.Argv(2);
 
-	int attIndex = LookedAt->GetAttachmentIndex(attName);
+	int attIndex = actor->GetAttachmentIndex(attName);
 
-	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
+	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
+	if (pos == NULL)
 	{
-		// PrintAttachInfo returned false => bad index or entity
-		gameLocal.Printf("tdm_attach_rot: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
+		gameLocal.Printf( "tdm_attach_rot could not find position attPosName\n" );
 		return;
 	}
 
+	idStr joint = actor->GetAnimator()->GetJointName(pos->joint);
+	
 	// overwrite the attachment rotation with our new one
-	angles.pitch = atof(args.Argv( 2 ));
-	angles.yaw = atof(args.Argv( 3 ));
-	angles.roll = atof(args.Argv( 4 ));
+	idAngles	angles;
+	angles.pitch = atof(args.Argv( 3 ));
+	angles.yaw = atof(args.Argv( 4 ));
+	angles.roll = atof(args.Argv( 5 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttachToCoords( attName, joint, offset, angles );
+	actor->ReAttachToCoords( attName, joint, pos->originOffset, angles );
 }
 
 /*
