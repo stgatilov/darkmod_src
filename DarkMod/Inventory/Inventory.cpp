@@ -372,15 +372,18 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		);
 
 		// Notify the player, if appropriate
-		idStr msg = name;
-
-		if (count > 0) 
+		if (!ent->spawnArgs.GetBool("inv_map_start", "0"))
 		{
-			name += " x" + idStr(count);
+			idStr msg = name;
+
+			if (count > 0) 
+			{
+				name += " x" + idStr(count);
+			}
+
+			NotifyOwnerAboutPickup(msg, existing);
 		}
-
-		NotifyOwnerAboutPickup(msg, existing);
-
+		
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added stackable item to inventory: %s\r", ent->name.c_str());
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("New inventory item stack count is: %d\r", existing->GetCount());
 
@@ -409,7 +412,10 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 				true
 			);
 
-			NotifyOwnerAboutPickup(name, item);
+			if (!ent->spawnArgs.GetBool("inv_map_start", "0"))
+			{
+				NotifyOwnerAboutPickup(name, item);
+			}
 
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
