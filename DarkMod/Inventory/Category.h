@@ -32,6 +32,8 @@ public:
 	// Look up an InventoryItem by its ItemId (NOT equivalent to GetItem(const idStr& Name) btw).
 	CInventoryItemPtr		GetItemById(const idStr& id);
 
+	CInventoryItemPtr		GetItemByType(CInventoryItem::ItemType type);
+
 	// Look up an InventoryItem by <name> or <index>
 	CInventoryItemPtr		GetItem(const idStr& itemName);
 	CInventoryItemPtr		GetItem(int index);

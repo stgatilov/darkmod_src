@@ -170,6 +170,21 @@ CInventoryItemPtr CInventoryCategory::GetItemById(const idStr& id)
 	return CInventoryItemPtr();
 }
 
+CInventoryItemPtr CInventoryCategory::GetItemByType(CInventoryItem::ItemType type)
+{
+	for (int i = 0; i < m_Item.Num(); i++)
+	{
+		const CInventoryItemPtr& item = m_Item[i];
+
+		if (item->GetType() == type)
+		{
+			return item;
+		}
+	}
+
+	return CInventoryItemPtr();
+}
+
 int CInventoryCategory::GetItemIndex(const idStr& itemName)
 {
 	for (int i = 0; i < m_Item.Num(); i++)

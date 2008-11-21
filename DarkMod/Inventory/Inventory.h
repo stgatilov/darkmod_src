@@ -12,8 +12,6 @@
 #include "Cursor.h"
 
 #define TDM_INVENTORY_DEFAULT_GROUP		"DEFAULT"
-#define TDM_LOOT_INFO_ITEM				"loot_info"
-#define TDM_LOOT_SCRIPTOBJECT			"loot_gui"
 #define TDM_DUMMY_ITEM					"dummy"
 #define TDM_INVENTORY_DROPSCRIPT		"inventoryDrop"
 
@@ -168,6 +166,9 @@ public:
 	CInventoryItemPtr		GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
 	CInventoryItemPtr		GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+
+	// Get the first item in the inventory, by type
+	CInventoryItemPtr		GetItemByType(CInventoryItem::ItemType type);
 
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);

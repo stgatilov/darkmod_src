@@ -21,6 +21,7 @@ public:
 	typedef enum {
 		IT_ITEM,			// Normal item, which is associated to an entity
 		IT_LOOT,			// this is a loot item
+		IT_LOOT_INFO,		// loot info item
 		IT_WEAPON,			// a weapon item
 		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
 							// we can have an empty space in the inventory.

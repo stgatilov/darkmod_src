@@ -1172,28 +1172,30 @@ void idPlayer::SetupInventory()
 	it->SetStackable(false);
 	crsr->Inventory()->PutItem(it, TDM_INVENTORY_DEFAULT_GROUP);
 
-	// And the player also always gets a loot entry, as he is supposed to find loot in
-	// 99.99% of the maps. That's the point of the game, remember? :)
-	idTypeInfo *cls = idClass::GetClass("idItem");
-	idEntity *ent = static_cast<idEntity *>(cls->CreateInstance());
-	ent->CallSpawn();
-	ent->SetName(TDM_LOOT_INFO_ITEM);
-	ent->spawnArgs.Set("scriptobject", TDM_LOOT_SCRIPTOBJECT);
-	ent->scriptObject.SetType(TDM_LOOT_SCRIPTOBJECT);
-	ent->ConstructScriptObject();
-
-	it = CInventoryItemPtr(new CInventoryItem(this));
-	it->SetName(TDM_LOOT_INFO_ITEM);
-	it->SetItemEntity(ent);
-	it->SetType(CInventoryItem::IT_ITEM);
-	it->SetOverlay(cv_tdm_inv_loot_gui_file.GetString(), CreateOverlay(cv_tdm_inv_loot_gui_file.GetString(), LAYER_INVENTORY));
-	it->SetCount(0);
-	it->SetStackable(false);
-	crsr->Inventory()->PutItem(it, cv_tdm_inv_loot_group.GetString());
-
 	// Focus on the empty dummy inventory item
 	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
 
+	// greebo: Set up the loot inventory item
+	const idDeclEntityDef* lootItemDef = static_cast<const idDeclEntityDef*>(
+		declManager->FindType(DECL_ENTITYDEF, cv_tdm_inv_loot_item_def.GetString())
+	);
+
+	if (lootItemDef == NULL)
+	{
+		gameLocal.Error("Could not find loot inventory entityDef.\n");
+	}
+	
+	idEntity* lootItemEnt;
+	gameLocal.SpawnEntityDef(lootItemDef->dict, &lootItemEnt);
+
+	assert(lootItemEnt != NULL); // must succeed
+
+	CInventoryItemPtr lootItem = Inventory()->PutItem(lootItemEnt, this);
+	assert(lootItem != NULL); // must succeed as well
+
+	// Flag this item as loot info item
+	lootItem->SetType(CInventoryItem::IT_LOOT_INFO);
+	
 	// Give player non-weapon items obtained from the Shop
 	for (int si = 0; si < startingItems->Num(); si++)
 	{

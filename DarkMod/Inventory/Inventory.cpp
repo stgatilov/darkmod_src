@@ -21,7 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../MissionData.h"
 
-static idStr sLootTypeName[LT_COUNT] = 
+static idStr sLootTypeName[CInventoryItem::LT_COUNT] = 
 {
 	"loot_none",
 	"loot_jewels",
@@ -143,7 +143,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 
 		m_LootItemCount++;
 
-		rc = GetItem(TDM_LOOT_INFO_ITEM);
+		rc = GetItemByType(CInventoryItem::IT_LOOT_INFO);
 
 		assert(rc != NULL); // the loot item must exist
 
@@ -372,7 +372,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		);
 
 		// Notify the player, if appropriate
-		if (!ent->spawnArgs.GetBool("inv_map_start", "0"))
+		if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 		{
 			idStr msg = name;
 
@@ -412,7 +412,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 				true
 			);
 
-			if (!ent->spawnArgs.GetBool("inv_map_start", "0"))
+			if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 			{
 				NotifyOwnerAboutPickup(name, item);
 			}
@@ -597,6 +597,22 @@ CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& category
 	for (int i = 0; i < m_Category.Num(); i++)
 	{
 		CInventoryItemPtr foundItem = m_Category[i]->GetItemById(id);
+
+		if (foundItem != NULL)
+		{
+			// Found the item
+			return foundItem;
+		}
+	}
+
+	return CInventoryItemPtr(); // nothing found
+}
+
+CInventoryItemPtr CInventory::GetItemByType(CInventoryItem::ItemType type)
+{
+	for (int i = 0; i < m_Category.Num(); i++)
+	{
+		CInventoryItemPtr foundItem = m_Category[i]->GetItemByType(type);
 
 		if (foundItem != NULL)
 		{
