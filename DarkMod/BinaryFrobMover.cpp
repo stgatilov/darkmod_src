@@ -733,7 +733,7 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	// greebo: Note that we don't need to compare against zero angles here, because
 	// this code won't be called in this case (see idMover::BeginRotation).
 
-	idAngles fullRotation = m_OpenAngles - m_ClosedAngles;
+	idAngles fullRotation = (m_OpenAngles - m_ClosedAngles).Normalize180();
 	fullRotation[0] = idMath::Fabs(fullRotation[0]);
 	fullRotation[1] = idMath::Fabs(fullRotation[1]);
 	fullRotation[2] = idMath::Fabs(fullRotation[2]);
