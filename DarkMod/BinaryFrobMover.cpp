@@ -759,7 +759,7 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 
 	const idBounds& bounds = clipModel->GetAbsBounds();
 
-	idVec3 center = (m_ClosedPos + GetPhysics()->GetOrigin()) * 0.5;
+	idVec3 center = GetPhysics()->GetOrigin() + m_ClosedPos * 0.5;
 	center.z = bounds[0].z + 1;
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
