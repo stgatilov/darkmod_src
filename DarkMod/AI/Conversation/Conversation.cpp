@@ -191,6 +191,21 @@ bool Conversation::AllActorsReady()
 	return true;
 }
 
+bool Conversation::CheckActorAvailability()
+{
+	// Cycle through all actors and return false as soon as a busy one is detected
+	for (int i = 0; i < GetNumActors(); i++)
+	{
+		idAI* actor = GetActor(i);
+
+		if (actor == NULL) return false; // actor removed from game!
+
+		if (actor->IsKnockedOut() || actor->AI_DEAD) return false;
+	}
+
+	return true; // all checks passed
+}
+
 bool Conversation::Process()
 {
 	// Check for index out of bounds in debug builds
@@ -198,6 +213,12 @@ bool Conversation::Process()
 
 	// Get the command as specified by the pointer
 	const ConversationCommandPtr& command = _commands[_currentCommand];
+
+	// greebo: Check if any of the actors has been knocked out or killed
+	if (!CheckActorAvailability())
+	{
+		return false;
+	}
 
 	if (command->GetType() == ConversationCommand::EWaitForAllActors)
 	{

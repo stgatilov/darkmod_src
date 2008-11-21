@@ -126,6 +126,9 @@ public:
 	void Restore(idRestoreGame* savefile);
 
 private:
+	// Returns FALSE if any of the actors have gone dead or knocked out
+	bool CheckActorAvailability();
+
 	// Returns true if all actors are have execution state == "ready"
 	bool AllActorsReady();
 
