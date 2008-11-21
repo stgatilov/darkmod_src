@@ -89,7 +89,7 @@ void AreaManager::RemoveForbiddenArea(int areanum, const idAI* ai)
 		if (found->second == ai)
 		{
 			_forbiddenAreas.erase(found);
-			return;
+			break;
 		}
 	}
 

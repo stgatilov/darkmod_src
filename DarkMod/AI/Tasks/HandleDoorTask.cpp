@@ -1025,6 +1025,8 @@ bool HandleDoorTask::OpenDoor()
 			{
 				int areaNum = frobDoor->GetAASArea(aas);
 				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+
 			}
 
 			return false;

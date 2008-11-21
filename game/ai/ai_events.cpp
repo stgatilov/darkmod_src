@@ -170,6 +170,7 @@ const idEventDef AI_CanReachPosition( "canReachPosition", "v", 'd' );
 const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
+const idEventDef AI_ReEvaluateArea("reEvaluateArea", "d");
 
 // TDM
 const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
@@ -496,6 +497,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
+	EVENT( AI_ReEvaluateArea,					idAI::Event_ReEvaluateArea )
+
 	
 	// greebo: State manipulation interface
 	EVENT(  AI_PushState,						idAI::Event_PushState )
@@ -3056,6 +3059,12 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 	}
 
 	idThread::ReturnVector( pos );
+}
+
+
+void idAI::Event_ReEvaluateArea(int areanum)
+{
+	ReEvaluateArea(areanum);
 }
 
 /**

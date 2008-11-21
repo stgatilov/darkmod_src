@@ -2221,12 +2221,6 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 
 bool idAI::ReEvaluateArea(int areaNum)
 {
-	// Only re-evaluate every now and then, not each frame
-	if (gameLocal.time < lastAreaReevaluationTime + maxAreaReevaluationInterval) 
-	{
-		return false;
-	}
-
 	// Remember the time
 	lastAreaReevaluationTime = gameLocal.time;
 
@@ -2235,9 +2229,9 @@ bool idAI::ReEvaluateArea(int areaNum)
 
 	if (doorInfo != NULL)
 	{
-		if (doorInfo->lastTimeTriedToOpen + doorRetryTime < gameLocal.time)
+		//if (doorInfo->lastTimeTriedToOpen + doorRetryTime < gameLocal.time)
 		{
-			// Re-try the door after 60 seconds
+			// Re-try the door after some time
 			gameLocal.m_AreaManager.RemoveForbiddenArea(areaNum, this);
 			return true;
 		}
