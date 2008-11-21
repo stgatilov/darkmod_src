@@ -71,46 +71,43 @@ Cmd_AttachmentOffset_f
 */
 void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 {
-	idEntity	*LookedAt;
-	int			ind = 0;
-	idVec3		offset(vec3_zero);
-	idAngles	angles;
-	idStr		joint;
-    const char* attName;
-
-	if( args.Argc() != 5 )
+	idVec3 offset(vec3_zero);
+	
+	if( args.Argc() != 6 )
 	{
-		gameLocal.Printf( "usage: tdm_attach_offset <attachment index> <x> <y> <z>\n" );
-		goto Quit;
+		gameLocal.Printf( "usage: tdm_attach_offset <attachment name> <attachment position> <x> <y> <z>\n" );
+		return;
 	}
 
-	LookedAt = gameLocal.PlayerTraceEntity();
-	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	idEntity* lookedAt = gameLocal.PlayerTraceEntity();
+	if (lookedAt == NULL || !(lookedAt->IsType(idActor::Type)) )
 	{
 		gameLocal.Printf( "tdm_attach_offset must be called when looking at an AI\n" );
-		goto Quit;
+		return;
 	}
 
-	ind = atoi( args.Argv(1) );
-	attName = LookedAt->GetAttachment(ind)->name.c_str();
+	idActor* actor = static_cast<idActor*>(lookedAt);
 
-	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
+	idStr attName = args.Argv(1);
+	idStr attPosName = args.Argv(2);
+
+	int attIndex = actor->GetAttachmentIndex(attName);
+
+	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
+	if (pos == NULL)
 	{
-		// PrintAttachInfo returned false => bad index or entity
-		gameLocal.Printf("tdm_attach_offset: Bad index or bad entity at index %d\n", atoi(args.Argv(1)) );
-		goto Quit;
+		gameLocal.Printf( "tdm_attach_offset could not find position attPosName %s\n", attPosName.c_str() );
+		return;
 	}
+
+	idStr joint = actor->GetAnimator()->GetJointName(pos->joint);
 
 	// overwrite the attachment with our new attachment
-	offset.x = atof(args.Argv( 2 ));
-	offset.y = atof(args.Argv( 3 ));
-	offset.z = atof(args.Argv( 4 ));
+	offset.x = atof(args.Argv( 3 ));
+	offset.y = atof(args.Argv( 4 ));
+	offset.z = atof(args.Argv( 5 ));
 
-	static_cast<idActor *>(LookedAt)->ReAttachToCoords( attName, joint, offset, angles );
-
-Quit:
-	return;
+	actor->ReAttachToCoords( attName, joint, offset, pos->angleOffset );
 }
 
 /*
@@ -120,7 +117,7 @@ Cmd_AttachmentRot_f
 */
 void Cmd_AttachmentRot_f( const idCmdArgs &args )
 {
-	idVec3		offset(vec3_zero);
+	idVec3 offset(vec3_zero);
 	
 	if( args.Argc() != 6 )
 	{
@@ -145,7 +142,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
 	if (pos == NULL)
 	{
-		gameLocal.Printf( "tdm_attach_rot could not find position attPosName\n" );
+		gameLocal.Printf( "tdm_attach_rot could not find position attPosName %s\n", attPosName.c_str() );
 		return;
 	}
 
@@ -158,104 +155,6 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	angles.roll = atof(args.Argv( 5 ));
 
 	actor->ReAttachToCoords( attName, joint, pos->originOffset, angles );
-}
-
-/*
-==================
-Cmd_AttachmentJoint_f
-==================
-*/
-void Cmd_AttachmentJoint_f( const idCmdArgs &args )
-{
-	idEntity	*LookedAt;
-	int			ind = 0;
-	idVec3		offset(vec3_zero);
-	idAngles	angles;
-	idStr		joint;
-    const char *AttName;
-
-	if( args.Argc() != 3 )
-	{
-		gameLocal.Printf( "usage: tdm_attach_joint <attachment index> <joint name>\n" );
-		goto Quit;
-	}
-
-	LookedAt = gameLocal.PlayerTraceEntity();
-	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
-	{
-		gameLocal.Printf( "tdm_attach_joint must be called when looking at an AI\n" );
-		goto Quit;
-	}
-
-	ind = atoi( args.Argv(1) );
-	AttName = LookedAt->GetAttachment(ind)->name.c_str();
-
-	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
-	{
-		// PrintAttachInfo returned false => bad index or entity
-		gameLocal.Printf("tdm_attach_joint: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
-		goto Quit;
-	}
-
-	// overwrite the attachment joint with our new one
-	joint = args.Argv(2);
-
-	static_cast<idActor *>(LookedAt)->ReAttachToCoords( AttName, joint, offset, angles );
-
-Quit:
-	return;
-}
-
-/*
-==================
-Cmd_AttachmentPrint_f
-==================
-*/
-void Cmd_AttachmentPrint_f( const idCmdArgs &args )
-{
-	idEntity	*LookedAt(NULL), *ent(NULL);
-	int			ind = 0;
-	idVec3		offset(vec3_zero);
-	idAngles	angles;
-	idStr		joint, entName("NULL");
-
-	if( args.Argc() != 2 )
-	{
-		gameLocal.Printf( "usage: tdm_attach_print <attachment index>\n" );
-		goto Quit;
-	}
-
-	LookedAt = gameLocal.PlayerTraceEntity();
-	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
-	{
-		gameLocal.Printf( "tdm_attach_print must be called while looking at an AI\n" );
-		goto Quit;
-	}
-
-	ind = atoi( args.Argv(1) );
-
-	// write the attachment info to our vars, check if the index and entity are valid
-	if( !(static_cast<idActor *>(LookedAt)->PrintAttachInfo( ind, joint, offset, angles )) )
-	{
-		// PrintAttachInfo returned false => bad index or entity
-		gameLocal.Printf("tdm_attach_print: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
-		goto Quit;
-	}
-
-	ent = static_cast<idActor *>(LookedAt)->GetAttachment( ind );
-	if( ent )
-		entName = ent->name;
-
-	gameLocal.Printf("Attachment info for attachment %d on AI %s: \n", ind, LookedAt->name.c_str() );
-	gameLocal.Printf("Entity attached: %s\n", entName.c_str() );
-	gameLocal.Printf("Joint: %s\n", joint.c_str() );
-	gameLocal.Printf("Offset: %s\n", offset.ToString() );
-	gameLocal.Printf("Angles relative to joint (pitch yaw roll) : %s\n", angles.ToString() );
-	gameLocal.Printf("======= End Attachment Info =======\n \n" );
-
-Quit:
-	return;
 }
 
 /*
@@ -2934,8 +2833,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 
 	cmdSystem->AddCommand( "tdm_attach_offset",		Cmd_AttachmentOffset_f,		CMD_FL_GAME,				"Set the vector offset (x y z) for an attachment on an AI you are looking at.  Usage: tdm_attach_offset <attachment index> <x> <y> <z>" );
 	cmdSystem->AddCommand( "tdm_attach_rot",		Cmd_AttachmentRot_f,		CMD_FL_GAME,				"Set the rotation (pitch yaw roll) for an attachment on an AI you are looking at.  Usage: tdm_attach_rot <atachment index> <pitch> <yaw> <roll>  (NOTE: Rotation is applied before translation, angles are relative to the joint orientation)" );
-	cmdSystem->AddCommand( "tdm_attach_joint",		Cmd_AttachmentJoint_f,		CMD_FL_GAME,				"Set the attachment joint name for an attachment on an AI you are looking at.  Usage: tdm_attach_joint <attachment index> <string name of joint>" );
-	cmdSystem->AddCommand( "tdm_attach_print",		Cmd_AttachmentPrint_f,		CMD_FL_GAME,				"Print the attachment info for the given attachment on the AI you are looking at.  Usage: tdm_attach_print <attachment index>" );
 
 	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
 	cmdSystem->AddCommand( "inventory_use",			Cmd_InventoryUse_f,			CMD_FL_GAME,				"Usage: inventory_use [item]\nUses an item in the currently available inventory without selectign it. If 'item' is omitted, it will use the currently selected item." );

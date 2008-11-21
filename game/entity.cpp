@@ -8274,6 +8274,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 // The following is the old system and will be phased out
 	else
 	{
+		gameLocal.Warning("%s is attaching %s using the deprecated attachment system.\n", name.c_str(), ent->name.c_str());
 		angleOffset = ent->spawnArgs.GetAngles( "angles" );
 		originOffset = ent->spawnArgs.GetVector( "origin" );
 	}
@@ -8526,36 +8527,6 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 		return &m_Attachments[ind];
 	else
 		return NULL;
-}
-
-bool idEntity::PrintAttachInfo( int ind, idStr &jointName, idVec3 &offset, 
-							idAngles &angles )
-{
-	bool bReturnVal = false;
-	idEntity *ent = NULL;
-
-	if( ind < 0 || ind >= m_Attachments.Num() )
-	{
-		// TODO: log invalid index error
-		goto Quit;
-	}
-
-	ent = m_Attachments[ind].ent.GetEntity();
-
-	if( !ent || !m_Attachments[ind].ent.IsValid() )
-	{
-		// TODO: log bad attachment entity error
-		goto Quit;
-	}
-
-	jointName = ent->spawnArgs.GetString( "joint", "" );
-	offset = ent->spawnArgs.GetVector( "origin" );
-	angles = ent->spawnArgs.GetAngles( "angles" );
-
-	bReturnVal = true;
-
-Quit:
-	return bReturnVal;
 }
 
 void idEntity::BindNotify( idEntity *ent )
