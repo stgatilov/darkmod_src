@@ -42,6 +42,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/FrobDoor.h"
 #include "../../DarkMod/FrobDoorHandle.h"
 #include "tdmAASFindEscape.h"
+#include "../../DarkMod/AI/AreaManager.h"
 
 //TODO: Move these to AI def:
 
@@ -807,11 +808,13 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime2);
 	savefile->WriteFloat(atime3);
 	savefile->WriteFloat(atime4);
+	savefile->WriteFloat(atime_fleedone);
 
 	savefile->WriteFloat(atime1_fuzzyness);
 	savefile->WriteFloat(atime2_fuzzyness);
 	savefile->WriteFloat(atime3_fuzzyness);
 	savefile->WriteFloat(atime4_fuzzyness);
+	savefile->WriteFloat(atime_fleedone_fuzzyness);
 
 	savefile->WriteInt(m_maxInterleaveThinkFrames);
 	savefile->WriteFloat(m_minInterleaveThinkDist);
@@ -1107,11 +1110,13 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime2);
 	savefile->ReadFloat(atime3);
 	savefile->ReadFloat(atime4);
+	savefile->ReadFloat(atime_fleedone);
 
 	savefile->ReadFloat(atime1_fuzzyness);
 	savefile->ReadFloat(atime2_fuzzyness);
 	savefile->ReadFloat(atime3_fuzzyness);
 	savefile->ReadFloat(atime4_fuzzyness);
+	savefile->ReadFloat(atime_fleedone_fuzzyness);
 
 	savefile->ReadInt(m_maxInterleaveThinkFrames);
 	savefile->ReadFloat(m_minInterleaveThinkDist);
@@ -1264,6 +1269,9 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"6",		atime2_fuzzyness );
 	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"30",		atime3_fuzzyness );
 	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"120",		atime4_fuzzyness );
+
+	spawnArgs.GetFloat( "alert_time_fleedone",				"60",		atime_fleedone );
+	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"10",		atime_fleedone_fuzzyness );
 
 	spawnArgs.GetInt( "max_interleave_think_frames",		"12",		m_maxInterleaveThinkFrames );
 	spawnArgs.GetFloat( "min_interleave_think_dist",		"1000",		m_minInterleaveThinkDist);
@@ -2408,12 +2416,16 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 		return false;
 	}
 	
-
+	bool returnval;
+	gameLocal.m_AreaManager.DisableForbiddenAreas(this);
 	if ( move.moveType == MOVETYPE_FLY ) {
-		return aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
+		returnval = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	} else {
-		return aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
+		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
 	}
+	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
+
+	return returnval;
 }
 
 /*

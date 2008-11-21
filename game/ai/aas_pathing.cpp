@@ -216,13 +216,13 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 			if ( dir.LengthSqr() > Square( 0.2f ) ) {
 				continue;
 			}
-
+/*
 			// angua: area is forbidden (e.g. locked door)
 			if (actor != NULL && gameLocal.m_AreaManager.AreaIsForbidden(reach->toAreaNum, actor))
 			{
 				continue;
 			}
-
+*/
 			break;
 		}
 

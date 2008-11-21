@@ -987,9 +987,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	float m_gracefrac_1, m_gracefrac_2, m_gracefrac_3, m_gracefrac_4;
 	int m_gracecount_1, m_gracecount_2, m_gracecount_3, m_gracecount_4;
 	// De-alert times for each alert level
-	float atime1, atime2, atime3, atime4;
+	float atime1, atime2, atime3, atime4, atime_fleedone;
 
-	float atime1_fuzzyness, atime2_fuzzyness, atime3_fuzzyness, atime4_fuzzyness;
+	float atime1_fuzzyness, atime2_fuzzyness, atime3_fuzzyness, atime4_fuzzyness, atime_fleedone_fuzzyness;
 
 	// angua: Random head turning
 	int m_timeBetweenHeadTurnChecks;
