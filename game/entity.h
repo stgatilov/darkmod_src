@@ -297,6 +297,12 @@ public:
 	bool					m_bFrobable;
 
 	/**
+	* Set to true if the entity is a "simple" frobable like a door, lever, button
+	* These items can still be frobbed while doing things like shouldering bodies
+	**/
+	bool					m_bFrobSimple;
+
+	/**
 	* Frobdistance determines the distance in renderunits. If set to 0
 	* the entity is not frobable.
 	**/

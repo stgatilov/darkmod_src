@@ -662,6 +662,7 @@ idEntity::idEntity()
 	m_SetInMotionByActor = NULL;
 	m_MovedByActor = NULL;
 	m_bFrobable = false;
+	m_bFrobSimple = false;
 	m_FrobDistance = 0;
 	m_FrobBias = 1.0f;
 	m_FrobBox = NULL;
@@ -1090,6 +1091,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bIsObjective);
 	savefile->WriteBool(m_bFrobable);
+	savefile->WriteBool(m_bFrobSimple);
 	savefile->WriteInt(m_FrobDistance);
 	savefile->WriteFloat(m_FrobBias);
 	savefile->WriteClipModel(m_FrobBox);
@@ -1259,6 +1261,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_bIsObjective);
 	savefile->ReadBool(m_bFrobable);
+	savefile->ReadBool(m_bFrobSimple);
 	savefile->ReadInt(m_FrobDistance);
 	savefile->ReadFloat(m_FrobBias);
 	savefile->ReadClipModel(m_FrobBox);
@@ -7211,6 +7214,7 @@ void idEntity::LoadTDMSettings(void)
 	if(m_FrobDistance == 0)
 	{
 		spawnArgs.GetBool("frobable", "0", m_bFrobable);
+		spawnArgs.GetBool("frob_simple", "0", m_bFrobSimple);
 		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
 		spawnArgs.GetFloat("frob_bias", "1.0", m_FrobBias);
 

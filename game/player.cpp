@@ -10518,6 +10518,15 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		return;
 	}
 
+	// if we only allow "simple" frob actions and this isn't one, play forbidden sound
+	if( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
+	{
+		// TODO: Rename this "uh-uh" sound to something more general?
+		StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );	
+		return;
+	}
+
+
 	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
 	assert(pDM != NULL); // must not be NULL
 

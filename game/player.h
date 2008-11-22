@@ -207,11 +207,12 @@ enum {
 	EIM_MANTLE				= BIT( 6),	// Mantling (excluding jumping)
 	EIM_CLIMB				= BIT( 7),	// Climbing ladders, ropes and mantling. (NYI)
 	EIM_FROB				= BIT( 8),	// Frobbing.
-	EIM_ATTACK				= BIT( 9),	// Using weapons (NYI)
-	EIM_WEAPON_SELECT		= BIT(10),	// Selecting weapons.
-	EIM_ITEM_USE			= BIT(11),	// Using items
-	EIM_ITEM_SELECT			= BIT(12),	// Selecting items.
-	EIM_ITEM_DROP			= BIT(13),	// Dropping inventory items.
+	EIM_FROB_COMPLEX		= BIT( 9),	// Frobbing of "complex" items (not a door, lever, button, etc)
+	EIM_ATTACK				= BIT(10),	// Using weapons (NYI)
+	EIM_WEAPON_SELECT		= BIT(11),	// Selecting weapons.
+	EIM_ITEM_USE			= BIT(12),	// Using items
+	EIM_ITEM_SELECT			= BIT(13),	// Selecting items.
+	EIM_ITEM_DROP			= BIT(14),	// Dropping inventory items.
 };
 
 typedef struct {
