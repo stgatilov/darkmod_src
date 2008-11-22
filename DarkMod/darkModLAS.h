@@ -196,6 +196,10 @@ public:
    */
    idStr getAASName();
 
+	#ifdef TIMING_BUILD
+private:
+	int queryLightingAlongLineTimer;
+#endif
 
 
 

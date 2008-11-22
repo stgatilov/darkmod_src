@@ -1157,10 +1157,7 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		// angua: area is forbidden (e.g. locked door)
 		if (actor != NULL && gameLocal.m_AreaManager.AreaIsForbidden(portalAreaNum, static_cast<idAI*>(actor)))
 		{
-			// Give the actor a chance to reconsider the forbidden status
-			if (!const_cast<idActor*>(actor)->ReEvaluateArea(portalAreaNum)) {
-				continue;
-			}
+			continue;
 		}
 
 		// get the cache of the portal area

@@ -22,6 +22,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../renderer/renderworld.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/Intersection.h"
+#include "../DarkMod/TimerManager.h"
+
 
 //----------------------------------------------------------------------------
 
@@ -38,6 +40,8 @@ darkModLAS::darkModLAS(void)
 	// No areas
 	m_numAreas = 0;
 	m_pp_areaLightLists = NULL;
+
+	INIT_TIMER_HANDLE(queryLightingAlongLineTimer);
 }
 
 /*!
@@ -52,11 +56,13 @@ darkModLAS::~darkModLAS(void)
 
 __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLight, int oldAreaNum, int newAreaNum )
 {
-	assert ((oldAreaNum >= 0) && (oldAreaNum < m_numAreas));
-	assert (((newAreaNum >= 0) && (newAreaNum < m_numAreas)) || newAreaNum == -1);
+	assert(oldAreaNum >= 0 && oldAreaNum < m_numAreas + 1);
+	assert(newAreaNum >= 0 && newAreaNum < m_numAreas + 1);
+	
 
 	// Remove from old area
 	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[oldAreaNum];
+	
 	while (p_cursor != NULL)
 	{
 		darkModLightRecord_t* p_thisLASLight = (darkModLightRecord_t*) (p_cursor->Owner());
@@ -85,12 +91,6 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Failed to remove LAS light record from list for area %d", oldAreaNum);
 
 		// Failed
-		return false;
-	}
-
-	if (newAreaNum == -1)
-	{
-		// Light is now in the void, return without doing anything
 		return false;
 	}
 
@@ -345,6 +345,8 @@ void darkModLAS::accumulateEffectOfLightsInArea
 */
 void darkModLAS::initialize()
 {	
+	CREATE_TIMER(queryLightingAlongLineTimer, "LAS", "Lighting");
+
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Initializing Light Awareness System (LAS)");
 
 	// Dispose of any previous information
@@ -360,7 +362,8 @@ void darkModLAS::initialize()
 	// Allocate a light record list for each area
 	if (m_numAreas > 0)
 	{
-		m_pp_areaLightLists = new idLinkList<darkModLightRecord_t>*[m_numAreas];
+		// angua: add one entry for lights in the void
+		m_pp_areaLightLists = new idLinkList<darkModLightRecord_t>*[m_numAreas + 1];
 		if (m_pp_areaLightLists == NULL)
 		{
 			// Log error and exit
@@ -371,7 +374,7 @@ void darkModLAS::initialize()
 	}
 
 	// Lists all begin empty
-	for (int i = 0; i < m_numAreas; i ++)
+	for (int i = 0; i < m_numAreas + 1; i ++)
 	{
 		m_pp_areaLightLists[i] = NULL;
 	}
@@ -550,49 +553,50 @@ void darkModLAS::shutDown()
 	// Log activity
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown initiated...\n");
 
-	// Delete all records in each list
-	for (int areaIndex = 0; areaIndex < m_numAreas; areaIndex ++)
-	{
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown clearing light records for areaIndex %d...\n", areaIndex);
-	
-		// Destroy each light record
-		idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
-		idLinkList<darkModLightRecord_t>* p_temp;
-		while (p_cursor != NULL)
-		{
-			darkModLightRecord_t* p_LASLight = p_cursor->Owner();
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list iterating node %d ", p_cursor);
-
-			if (p_LASLight != NULL)
-			{
-				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list clear is deleting light '%s' ", p_LASLight->p_idLight->GetName());
-				delete p_LASLight;
-			}
-
-			// Next node
-			p_temp = p_cursor->NextNode();
-			p_cursor = p_temp;
-		}
-
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
-
-		// Clear the list of nodes
-		if (m_pp_areaLightLists[areaIndex] != NULL)
-		{
-			delete m_pp_areaLightLists[areaIndex];
-			m_pp_areaLightLists[areaIndex] = NULL;
-		}
-
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroyed list for for areaIndex %d\n", areaIndex);
-
-	} // Next area
-
-	// Log activity
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown deleting array of per-area list pointers...\n");
-
 	// Delete array of list pointers
 	if (m_pp_areaLightLists != NULL)
 	{
+		// Delete all records in each list
+		// angua: also remove lights in the void
+		for (int areaIndex = 0; areaIndex < m_numAreas + 1; areaIndex ++)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown clearing light records for areaIndex %d...\n", areaIndex);
+		
+			// Destroy each light record
+			idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
+			idLinkList<darkModLightRecord_t>* p_temp;
+			while (p_cursor != NULL)
+			{
+				darkModLightRecord_t* p_LASLight = p_cursor->Owner();
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list iterating node %d ", p_cursor);
+
+				if (p_LASLight != NULL)
+				{
+					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list clear is deleting light '%s' ", p_LASLight->p_idLight->GetName());
+					delete p_LASLight;
+				}
+
+				// Next node
+				p_temp = p_cursor->NextNode();
+				p_cursor = p_temp;
+			}
+
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
+
+			// Clear the list of nodes
+			if (m_pp_areaLightLists[areaIndex] != NULL)
+			{
+				delete m_pp_areaLightLists[areaIndex];
+				m_pp_areaLightLists[areaIndex] = NULL;
+			}
+
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroyed list for for areaIndex %d\n", areaIndex);
+
+		} // Next area
+
+		// Log activity
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown deleting array of per-area list pointers...\n");
+
 		delete[] m_pp_areaLightLists;
 		m_pp_areaLightLists = NULL;
 	}
@@ -624,8 +628,9 @@ void darkModLAS::updateLASState()
 
 	// Go through each of the areas and for any light that has moved, see
 	// if it has changed areas.
+	// angua: also check for lights in the void
 
-	for (int areaIndex = 0; areaIndex < m_numAreas; areaIndex ++)
+	for (int areaIndex = 0; areaIndex < m_numAreas + 1; areaIndex ++)
 	{
 		idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
 		while (p_cursor != NULL)
@@ -650,10 +655,17 @@ void darkModLAS::updateLASState()
 
 					// This light may have moved between areas
 					int newAreaIndex = gameRenderWorld->PointInArea (p_LASLight->lastWorldPos);
+					if (newAreaIndex == -1)
+					{
+						// Light is now in the void
+						// add to the end of the list
+						newAreaIndex = m_numAreas;
+					}
+
 					if (newAreaIndex != p_LASLight->areaIndex)
 					{
 						// Move between areas
-						moveLightBetweenAreas (p_LASLight, p_LASLight->areaIndex, newAreaIndex);
+						moveLightBetweenAreas(p_LASLight, p_LASLight->areaIndex, newAreaIndex);
 					
 					}  // Light changed areas
 				
@@ -687,9 +699,8 @@ float darkModLAS::queryLightingAlongLine
 		bool b_useShadows
 )
 {
-	idTimer lightingTimer;
-	lightingTimer.Clear();
-	lightingTimer.Start();
+	START_SCOPED_TIMING(queryLightingAlongLineTimer, scopedQueryLightingAlongLineTimer);
+
 	if (p_ignoreEntity != NULL)
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
@@ -807,9 +818,6 @@ float darkModLAS::queryLightingAlongLine
 		testPoint2.x, testPoint2.y, testPoint2.z,
 		totalIllumination
 	);
-
-	lightingTimer.Stop();
-	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Lighing along line took %lf\r", lightingTimer.Milliseconds());
 
 	// Return total illumination value to the caller
 	return totalIllumination;

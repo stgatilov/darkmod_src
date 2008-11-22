@@ -19,6 +19,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
+FleeTask::FleeTask() :
+	_escapeSearchLevel(3), // 3 means FIND_FRIENDLY_GUARDED
+	_failureCount(0), // This is used for _escapeLevel 1 only
+	_fleeStartTime(gameLocal.time),
+	_distOpt(DIST_NEAREST)
+{}
+
 // Get the name of this task
 const idStr& FleeTask::GetName() const
 {
@@ -30,22 +37,9 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
 	Task::Init(owner, subsystem);
-	_fleeStartTime = gameLocal.time;
 
 	_enemy = owner->GetEnemy();
-	idActor* enemy = _enemy.GetEntity();
 
-	Memory& memory = owner->GetMemory();
-	
-	// angua: only set flags when we are not already fleeing
-	if (memory.fleeingDone == true)
-	{
-		_escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
-		_distOpt = DIST_NEAREST;
-		_failureCount = 0; // This is used for _escapeLevel 1 only
-	}
-
-	memory.fleeingDone = false;
 	owner->AI_MOVE_DONE = false;
 	owner->AI_RUN = true;
 }

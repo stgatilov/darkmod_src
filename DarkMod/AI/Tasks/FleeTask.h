@@ -31,6 +31,7 @@ class FleeTask :
 	int _fleeStartTime;
 	EscapeDistanceOption _distOpt;
 
+	FleeTask();
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

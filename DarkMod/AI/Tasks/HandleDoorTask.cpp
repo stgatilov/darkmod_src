@@ -50,10 +50,11 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			{
 				int areaNum = frobDoor->GetAASArea(aas);
 				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
 			}
-			subsystem.FinishTask();
-			return;
 		}
+		subsystem.FinishTask();
+		return;
 	}
 
 	// Let the owner save its move
