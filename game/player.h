@@ -818,7 +818,7 @@ public:
 	void InventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific inventory item
-	void UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
+	bool UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
 	void SelectInventoryItem(const idStr& name);

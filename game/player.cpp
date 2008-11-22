@@ -9327,54 +9327,69 @@ void idPlayer::UseInventoryItem()
 
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 	{
-		UseInventoryItem(EPressed, it, 0);
+		bool couldBeUsed = UseInventoryItem(EPressed, it, 0);
+
+		// Give optional visual feedback on the KeyDown event
+		if (cv_tdm_inv_use_visual_feedback.GetBool())
+		{
+			m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+		}
 	}
 }
 
-void idPlayer::UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime)
+bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItemPtr& item, int holdTime)
 {
-	if (nState == EPressed)
+	if (impulseState == EPressed)
 	{
 		// Pass the "inventoryUseItem" event to the GUIs
 		m_overlays.broadcastNamedEvent("inventoryUseItem");
 	}
 
 	// Check if we're allowed to use items at all
-	if (GetImmobilization() & EIM_ITEM_USE) return;
+	if (GetImmobilization() & EIM_ITEM_USE) return false;
 
 	// Sanity check
-	if (item == NULL) return;
+	if (item == NULL) return false;
 
 	idEntity* ent = item->GetItemEntity();
-	if (ent == NULL) return;
+	if (ent == NULL) return false;
 
-	idEntity* frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
-
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %s  KeyState: %u\r", ent->name.c_str(), nState);
+	idEntity* highlightedEntity = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
-
-	if (frob != NULL && itemIsUsable && frob->CanBeUsedBy(item))
+	
+	if (highlightedEntity != NULL && itemIsUsable && highlightedEntity->CanBeUsedBy(item))
 	{
 		// Pass the use call
-		frob->UseBy(nState, item);
+		if (highlightedEntity->UseBy(impulseState, item))
+		{
+			// Item could be used, return TRUE, we're done
+			return true;
+		}
 	}
+
+	// Item could not be used on the highlighted entity, launch the use script
 
 	idThread* thread = NULL;
 
-	if (nState == EPressed)
+	if (impulseState == EPressed)
 	{
-		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, frob, nState);
+		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, highlightedEntity, impulseState);
 	}
-	else if(nState == EReleased)
+	else if (impulseState == EReleased)
 	{
-		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, frob, static_cast<float>(holdTime));
+		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, highlightedEntity, static_cast<float>(holdTime));
 	}
 
 	if (thread != NULL)
 	{
-		thread->Start(); // Start the thread immediately.
+		thread->Execute(); // Start the thread immediately.
+
+		// A working scriptfunction means the item could be used
+		return true;
 	}
+
+	return false;
 }
 
 void idPlayer::DropInventoryItem()
@@ -10497,8 +10512,9 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 
 void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 {
-	if (target == NULL || target->IsHidden()) {
-		// greebo: Don't perform frobs on hidden or NULL entities
+	// greebo: Don't perform frobs on hidden or NULL entities
+	if (target == NULL || target->IsHidden())
+	{
 		return;
 	}
 
@@ -10525,21 +10541,16 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
 		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
 		{
-			// Check the item entity for the right spawnargs
-			bool couldBeUsed = highlightedEntity->UseBy(impulseState, item);
+			// Try to use the item
+			bool couldBeUsed = UseInventoryItem(impulseState, item, gameLocal.msec);
 
-			if (impulseState == EPressed && cv_tdm_inv_use_on_frob_visual_feedback.GetBool())
+			// Give optional visual feedback on the KeyDown event
+			if (impulseState == EPressed && cv_tdm_inv_use_visual_feedback.GetBool())
 			{
-				// Give optional visual feedback on the KeyDown event
 				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
-				return;
 			}
-			
-			if (couldBeUsed)
-			{
-				// Exit if the item could be used, the rest of this routine can be skipped
-				return;
-			}
+
+			return;
 		}
 	}
 
