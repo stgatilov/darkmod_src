@@ -207,6 +207,8 @@ idCVar cv_throw_max(				"tdm_throw_max",			"3500",		CVAR_GAME | CVAR_ARCHIVE | C
 idCVar cv_throw_time(				"tdm_throw_time",		"1200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "When throwing an object, time it takes to charge up to the max throw force in milliseconds." );
 idCVar cv_throw_max_vel(			"tdm_throw_max_vel",	"900",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity of thrown objects is clamped to this value (in doomunits / second).  Needed to balance throwing of very light objects." );
 
+idCVar cv_reverse_grab_control(		"tdm_grabber_reverse_control",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Set to 1 to reverse the direction when using next/prev weapon to increase/decrease the distance of the grabbed item." );
+
 /**
 * DarkMod Inventory
 **/
