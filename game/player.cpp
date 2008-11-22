@@ -5563,20 +5563,20 @@ bool idPlayer::SkipCinematic( void ) {
 idPlayer::GetImmobilization
 ==============
 */
-int idPlayer::GetImmobilization( void ) {
+int idPlayer::GetImmobilization()
+{
 	// Has something changed since the cache was last calculated?
-	if ( m_immobilizationCache & EIM_UPDATE ) {
-		const idKeyValue *kv;
-
+	if ( m_immobilizationCache & EIM_UPDATE )
+	{
 		// Recalculate the immobilization from scratch.
 		m_immobilizationCache = 0;
-		kv = m_immobilization.MatchPrefix( "", NULL );
-		while ( kv ) {
-			//m_immobilizationCache |= m_immobilization.GetInt(kv->GetKey());
+
+		for (const idKeyValue* kv = m_immobilization.MatchPrefix(""); kv != NULL; kv = m_immobilization.MatchPrefix("", kv))
+		{
 			m_immobilizationCache |= atoi(kv->GetValue());
-			kv = m_immobilization.MatchPrefix( "", kv );
 		}
 	}
+
 	return m_immobilizationCache;
 }
 
