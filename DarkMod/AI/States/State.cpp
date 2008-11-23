@@ -501,6 +501,10 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		{
 			// React to finding body
 			ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
+			if (ignoreStimulusFromNowOn)
+			{
+				owner->TactileIgnore(stimSource);
+			}
 		}
 		else
 		{
@@ -513,6 +517,10 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		{
 			// React to finding unconscious person
 			ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
+			if (ignoreStimulusFromNowOn)
+			{
+				owner->TactileIgnore(stimSource);
+			}
 		}
 		else
 		{

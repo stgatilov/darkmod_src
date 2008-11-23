@@ -836,6 +836,11 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject(*i);
 	}
 
+	for (TactileIgnoreList::const_iterator i = tactileIgnoreEntities.begin(); i != tactileIgnoreEntities.end(); ++i)
+	{
+		savefile->WriteObject(*i);
+	}
+
 	mind->Save(savefile);
 
 	for (int i = 0; i < ai::SubsystemCount; i++) 
@@ -1139,6 +1144,15 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		CBinaryFrobMover* mover;
 		savefile->ReadObject( reinterpret_cast<idClass *&>( mover ) );
 		unlockableDoors.insert(mover);
+	}
+
+	savefile->ReadInt(size);
+	tactileIgnoreEntities.clear();
+	for (int i = 0; i < size; i++)
+	{
+		idEntity* tactEnt;
+		savefile->ReadObject(reinterpret_cast<idClass *&>(tactEnt));
+		tactileIgnoreEntities.insert(tactEnt);
 	}
 
 	mind = ai::MindPtr(new ai::Mind(this));
@@ -7975,17 +7989,32 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		return;
 	}
 
-	// The actor is either the touched entity or the originator of the tactile alert
-	idActor* responsibleActor = 
-		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
-
-	// Don't get alerted by dead actors or non-enemies
-	if (responsibleActor == NULL || responsibleActor->health <= 0)
+	if (CheckTactileIgnore(tactEnt))
 	{
 		return;
 	}
 
-	if (!gameLocal.m_RelationsManager->IsEnemy(team, responsibleActor->team)) 
+	// The actor is either the touched entity or the originator of the tactile alert
+	idActor* responsibleActor = 
+		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
+
+	if (responsibleActor == NULL)
+	{
+		return;
+	}
+
+	if (IsFriend(responsibleActor))
+	{
+		if (responsibleActor->health <= 0 || responsibleActor->IsKnockedOut())
+		{
+			// angua: We've found a friend that is dead or unconscious
+			// Ignore tactile alerts from this entity from now on
+			TactileIgnore(tactEnt);
+			mind->GetState()->OnVisualStimPerson(tactEnt, this);
+
+		}
+	}
+	if (!IsEnemy(responsibleActor)) 
 	{
 		return; // not an enemy, no alert
 	}
@@ -8026,6 +8055,24 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), tactEnt->name.c_str() );
 	}
 }
+
+void idAI::TactileIgnore(idEntity* tactEnt)
+{
+	tactileIgnoreEntities.insert(tactEnt);
+}
+
+bool idAI::CheckTactileIgnore(idEntity* tactEnt)
+{
+	TactileIgnoreList::iterator i = tactileIgnoreEntities.find(tactEnt);
+	if (i != tactileIgnoreEntities.end())
+	{
+		return true;
+	}
+	return false;
+}
+
+
+
 
 idActor *idAI::FindEnemy(bool useFOV)
 {

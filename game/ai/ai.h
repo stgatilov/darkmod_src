@@ -389,6 +389,11 @@ public:
 	**/
 	void HadTactile( idActor *actor );
 
+	// angua: ignore tactile alerts from this entity from now on
+	void TactileIgnore(idEntity* tactEnt);
+
+	bool CheckTactileIgnore(idEntity* tactEnt);
+
 	/**
 	* Generalized alerts and acuities
 	**/
@@ -682,6 +687,9 @@ protected:
 
 	typedef std::set<CBinaryFrobMover*> FrobMoverList;
 	FrobMoverList			unlockableDoors;
+
+	typedef std::set<idEntity*> TactileIgnoreList;
+	TactileIgnoreList		tactileIgnoreEntities;
 
 public: // greebo: Made these public
 	// enemy variables
