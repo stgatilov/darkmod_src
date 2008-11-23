@@ -1799,15 +1799,14 @@ void idAI::Think( void )
 		viewAxis = idAngles(0, current_yaw, 0).ToMat3();
 
 		// TDM: Fake lipsync
-		if (m_lipSyncActive && !cv_ai_opt_nolipsync.GetBool() && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT)
+		if (m_lipSyncActive && !cv_ai_opt_nolipsync.GetBool() && GetSoundEmitter())
 		{
-			if (gameLocal.time < m_lipSyncEndTimer )
+			if (gameLocal.time < m_lipSyncEndTimer && head.GetEntity() != NULL)
 			{
-				//int totalFrames = animator.NumFrames(m_lipSyncAnim);
-				// FIXME: animator.NumFrames is returning strange values.
-				// So for now the frame count of the animation is hardcoded
-				// at 20.
-				int frame = static_cast<int>(20*GetSoundEmitter()->CurrentAmplitude());
+				// greebo: Get the number of frames from the head animator
+				int numFrames = head.GetEntity()->GetAnimator()->NumFrames(m_lipSyncAnim);
+
+				int frame = static_cast<int>(numFrames * GetSoundEmitter()->CurrentAmplitude());
 				headAnim.SetFrame(m_lipSyncAnim, frame);
 			}
 			else
@@ -5298,6 +5297,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// Mark the body as last moved by the player
 	if( bPlayerResponsible )
 		m_MovedByActor = gameLocal.GetLocalPlayer();
+
+	// greebo: Set the lipsync flag to FALSE, we're dead
+	m_lipSyncActive = false;
 }
 
 
@@ -8805,6 +8807,9 @@ void idAI::Knockout( idEntity* inflictor )
 	// Mark the body as last moved by the player
 	if( bPlayerResponsible )
 		m_MovedByActor = gameLocal.GetLocalPlayer();
+
+	// greebo: Stop lipsyncing now
+	m_lipSyncActive = false;
 }
 
 void idAI::PostKnockOut()
@@ -9104,33 +9109,34 @@ void idAI::setAirTicks(int airTicks) {
 */
 int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 {
-	const idSoundShader *shader;
-	const char *sound;
-
 	// Play sound
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration );
+
 	if (cv_ai_bark_show.GetBool())
 	{
 		gameRenderWorld->DrawText( va("%s", soundName), GetEyePosition(), 0.25f, colorBlue, 
-			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3000 );
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, duration );
 	}
 
 	// Do we want to lipsync this sound?
 	StopLipSync(); // Assume not
+
+	const char *sound;
 	if (spawnArgs.GetString( soundName, "", &sound ))
 	{
-		shader = declManager->FindSound( sound );
-		if (shader && !strstr(shader->GetDescription(), "nolipsync"))
+		const idSoundShader* shader = declManager->FindSound( sound );
+
+		if (shader != NULL && idStr::Cmp(shader->GetDescription(), "nolipsync") != 0)
 		{
 			// The sound exists and isn't marked "nolipsync", so start the lipsync
 			
 			// Get the default animation name if necessary
-			if (animName==NULL || animName[0]=='\0')
+			if (animName == NULL || animName[0]=='\0')
 			{
 				// Not specified; get the default from a spawnarg.
 				// If even the spawnarg doesn't exist, revert to talk.
-				animName = spawnArgs.GetString("lipsync_anim_name","talk");
+				animName = spawnArgs.GetString("lipsync_anim_name", "talk");
 			}
 			
 			m_lipSyncActive = true;
