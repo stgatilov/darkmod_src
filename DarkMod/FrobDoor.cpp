@@ -37,12 +37,14 @@ extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
 //===============================================================================
 
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
+const idEventDef EV_TDM_Door_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
 const idEventDef EV_TDM_Door_IsPickable( "IsPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
+	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
 	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
@@ -59,6 +61,8 @@ static const char *sSampleTypeText[] =
 	"LPSOUND_WRONG_LOCKPICK",		// Callback for the wrong lockpick sample
 	"LPSOUND_LOCK_PICKED"			// Callback for the pin picked
 };
+
+#define LOCK_REQUEST_DELAY 250 // msecs before a door locks itself after closing (if the preference is set appropriately)
 
 CFrobDoor::CFrobDoor()
 {
@@ -496,6 +500,7 @@ void CFrobDoor::OnStartOpen(bool wasClosed, bool bMaster)
 
 	// Clear the lock request flag in any case
 	m_CloseOnLock = false;
+	CancelEvents(&EV_TDM_Door_HandleLockRequest);
 
 	if (bMaster)
 	{
@@ -537,9 +542,9 @@ void CFrobDoor::OnClosedPositionReached()
 	{
 		// Clear the flag, regardless what happens
 		m_CloseOnLock = false;
-
-		// Post a lock event in 250 msecs
-		PostEventMS(&EV_TDM_FrobMover_Lock, 250);
+		
+		// Post a lock request in LOCK_REQUEST_DELAY msecs
+		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
 	}
 }
 
@@ -547,6 +552,7 @@ void CFrobDoor::OnInterrupt()
 {
 	// Clear the close request flag
 	m_CloseOnLock = false;
+	CancelEvents(&EV_TDM_Door_HandleLockRequest);
 
 	CBinaryFrobMover::OnInterrupt();
 }
@@ -555,6 +561,7 @@ void CFrobDoor::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 {
 	// Clear the close request flag
 	m_CloseOnLock = false;
+	CancelEvents(&EV_TDM_Door_HandleLockRequest);
 
 	CBinaryFrobMover::OnTeamBlocked(blockedEntity, blockingEntity);
 }
@@ -1334,6 +1341,12 @@ bool CFrobDoor::PreLock(bool bMaster)
 		return false;
 	}
 
+	// Allow closing if all lock peers are at their closed position
+	return AllLockPeersAtClosedPosition();
+}
+
+bool CFrobDoor::AllLockPeersAtClosedPosition()
+{
 	// Go through the list and check whether the lock peers are closed
 	for (int i = 0; i < m_LockPeers.Num(); i++)
 	{
@@ -1399,4 +1412,19 @@ void CFrobDoor::Event_IsPickable()
 void CFrobDoor::Event_OpenDoor(float master)
 {
 	OpenDoor(master != 0.0f ? true : false);
+}
+
+void CFrobDoor::Event_HandleLockRequest()
+{
+	// Check if all the peers are at their "closed" position, if yes: lock the door(s), if no: postpone the event
+	if (AllLockPeersAtClosedPosition())
+	{
+		// Yes, all lock peers are at their "closed" position, lock ourselves and all peers
+		Lock(true);
+	}
+	else
+	{
+		// One or more peers are not at their closed position (yet), postpone the event
+		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
+	}
 }

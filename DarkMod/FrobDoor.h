@@ -178,6 +178,9 @@ protected:
 	void					AddLockPeer(const idStr& peerName);
 	void					RemoveLockPeer(const idStr& peerName);
 
+	// Returns TRUE if all lock peer doors are at their respective "closed" position
+	bool					AllLockPeersAtClosedPosition();
+
 	/**
 	 * greebo: Override the BinaryFrobMover function to re-route all sounds
 	 * to the doorhandle. This avoids sounds being played from door origins,
@@ -196,6 +199,9 @@ protected:
 	void					Event_GetDoorhandle();
 	void					Event_IsPickable();
 	void					Event_OpenDoor(float master);
+
+	// This is called periodically, to handle a pending close request (used for locking doors after closing)
+	void					Event_HandleLockRequest();
 
 protected:
 	/**
