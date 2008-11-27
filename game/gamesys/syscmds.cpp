@@ -240,7 +240,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		if (item != NULL)
 		{
 			// Item found, set the cursor to it
-			player->UseInventoryItem(EPressed, item, 0);
+			player->UseInventoryItem(EPressed, item, 0, false); // false => no frob action
 		}
 		else
 		{

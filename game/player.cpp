@@ -1079,7 +1079,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL)
 	{
 		// We already have a map selected, toggle it off
-		UseInventoryItem(EPressed, mapItem, 0); 
+		UseInventoryItem(EPressed, mapItem, 0, false); 
 	}
 
 	// Advance the cursor to the next item
@@ -1088,7 +1088,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL && nextMapItem != mapItem)
 	{
 		// Use this new item
-		UseInventoryItem(EPressed, mapItem, 0);
+		UseInventoryItem(EPressed, mapItem, 0, false);
 	}
 }
 
@@ -5491,7 +5491,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 			{
-				UseInventoryItem(ERepeat, it, holdTime);
+				UseInventoryItem(ERepeat, it, holdTime, false);
 			}
 		}
 		break;
@@ -9299,7 +9299,7 @@ void idPlayer::InventoryUseKeyRelease(int holdTime)
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 	{
-		UseInventoryItem(EReleased, it, holdTime);
+		UseInventoryItem(EReleased, it, holdTime, false);
 	}
 	else 
 	{
@@ -9327,7 +9327,7 @@ void idPlayer::UseInventoryItem()
 
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
 	{
-		bool couldBeUsed = UseInventoryItem(EPressed, it, 0);
+		bool couldBeUsed = UseInventoryItem(EPressed, it, 0, false); // false => not a frob action
 
 		// Give optional visual feedback on the KeyDown event
 		if (cv_tdm_inv_use_visual_feedback.GetBool())
@@ -9337,7 +9337,7 @@ void idPlayer::UseInventoryItem()
 	}
 }
 
-bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItemPtr& item, int holdTime)
+bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItemPtr& item, int holdTime, bool isFrobUse)
 {
 	if (impulseState == EPressed)
 	{
@@ -9358,7 +9358,7 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
 	
-	if (highlightedEntity != NULL && itemIsUsable && highlightedEntity->CanBeUsedBy(item))
+	if (highlightedEntity != NULL && itemIsUsable && highlightedEntity->CanBeUsedBy(item, isFrobUse))
 	{
 		// Pass the use call
 		if (highlightedEntity->UseBy(impulseState, item))
@@ -10548,10 +10548,10 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item))
+		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item, true))
 		{
 			// Try to use the item
-			bool couldBeUsed = UseInventoryItem(impulseState, item, gameLocal.msec);
+			bool couldBeUsed = UseInventoryItem(impulseState, item, gameLocal.msec, true); // true => is frob action
 
 			// Give optional visual feedback on the KeyDown event
 			if (impulseState == EPressed && cv_tdm_inv_use_visual_feedback.GetBool())

@@ -97,7 +97,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteVec3(m_OpenPos);
 	savefile->WriteVec3(m_OpenDir);
 
-	savefile->WriteString(m_CompletionScript.c_str());
+	savefile->WriteString(m_CompletionScript);
 
 	savefile->WriteBool(m_Rotating);
 	savefile->WriteBool(m_Translating);

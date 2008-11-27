@@ -46,7 +46,7 @@ public:
 	bool					IsFrobbed();
 
 	// 
-	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item);					// Overrides idEntity::CanBeUsedBy
+	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse);					// Overrides idEntity::CanBeUsedBy
 	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 
 	void					FrobAction(bool bMaster);

@@ -7499,12 +7499,12 @@ Quit:
 	return;
 }
 
-bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item) 
+bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse) 
 {
-	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity()) : false;
+	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity(), isFrobUse) : false;
 }
 
-bool idEntity::CanBeUsedBy(idEntity* entity) 
+bool idEntity::CanBeUsedBy(idEntity* entity, bool isFrobUse) 
 {
 	if (entity == NULL) return false;
 

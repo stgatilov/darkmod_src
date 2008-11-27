@@ -643,17 +643,21 @@ public:
 	 * greebo: Returns TRUE if the given inventory item matches this entity, i.e.
 	 * if the entity can be used by the given inventory item, FALSE otherwise.
 	 * Note: This just routes the call to the overloaded CanBeUsedBy(idEntity*);
+	 *
+	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
 	 */
-	virtual bool CanBeUsedBy(const CInventoryItemPtr& item);
+	virtual bool CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse);
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
 	 * if the entity can be used by the given enitty, FALSE otherwise.
 	 *
+	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
+	 *
 	 * The standard entity returns FALSE, this method needs to be overridden 
 	 * by the subclasses.
 	 */
-	virtual bool CanBeUsedBy(idEntity* entity);
+	virtual bool CanBeUsedBy(idEntity* entity, bool isFrobUse);
 
 	/**
 	 * greebo: Uses this entity by the given inventory item. The button state
