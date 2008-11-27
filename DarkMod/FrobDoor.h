@@ -13,7 +13,6 @@
 #ifndef FROBDOOR_H
 #define FROBDOOR_H
 
-class CStimResponseTimer;
 class CFrobDoorHandle;
 
 // Number of clicksounds available
@@ -112,7 +111,7 @@ public:
 
 	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
 
-	void					PropPickSound(idStr &picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
+	void					PropPickSound(const idStr& picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
 
 protected:
 	/**
