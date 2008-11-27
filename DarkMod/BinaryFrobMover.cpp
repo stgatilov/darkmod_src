@@ -876,7 +876,7 @@ void CBinaryFrobMover::OnLock(bool bMaster)
 
 void CBinaryFrobMover::OnUnlock(bool bMaster)
 {
-	FrobMoverStartSound("snd_unlock");
+	int soundLength = FrobMoverStartSound("snd_unlock");
 
 	// angua: only open the master
 	// only if the other part is an openpeer it will be opened by ToggleOpen
@@ -889,8 +889,8 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 
 		if (!spawnArgSet || openOnUnlock)
 		{
-			// No spawnarg set or opening is allowed, just open the mover
-			ToggleOpen();
+			// No spawnarg set or opening is allowed, just open the mover after a short delay
+			PostEventMS(&EV_TDM_FrobMover_ToggleOpen, soundLength);
 		}
 	}
 }
