@@ -569,21 +569,14 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse)
 	const idStr& name = item->Category()->GetName();
 	if (name == "Keys")
 	{
-		// Keys can be used on doors
-		if (isFrobUse)
-		{
-			// For frob actions: only if the door is open and the keys are matching.
-			return IsLocked() && idEntity::CanBeUsedBy(item, isFrobUse);
-		}
-		else
-		{
-			return idEntity::CanBeUsedBy(item, isFrobUse);
-		}
+		// Keys can always be used on doors
+		// Exception: for "frob use" this only applies when the door is locked
+		return (isFrobUse) ? IsLocked() : true;
 	}
 	else if (name == "Lockpicks")
 	{
-		// Lockpicks can be used on doors that are locked in the first place
-		return IsLocked();
+		// Lockpicks behave similar to keys
+		return (isFrobUse) ? IsLocked() : true;
 	}
 
 	return idEntity::CanBeUsedBy(item, isFrobUse);
