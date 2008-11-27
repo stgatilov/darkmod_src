@@ -566,7 +566,7 @@ void CFrobDoor::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 	CBinaryFrobMover::OnTeamBlocked(blockedEntity, blockingEntity);
 }
 
-bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse) 
+bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	if (item == NULL) return false;
 

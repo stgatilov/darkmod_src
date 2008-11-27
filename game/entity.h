@@ -646,7 +646,7 @@ public:
 	 *
 	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
 	 */
-	virtual bool CanBeUsedBy(const CInventoryItemPtr& item, bool isFrobUse);
+	virtual bool CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
@@ -657,7 +657,7 @@ public:
 	 * The standard entity returns FALSE, this method needs to be overridden 
 	 * by the subclasses.
 	 */
-	virtual bool CanBeUsedBy(idEntity* entity, bool isFrobUse);
+	virtual bool CanBeUsedBy(idEntity* entity, const bool isFrobUse);
 
 	/**
 	 * greebo: Uses this entity by the given inventory item. The button state
