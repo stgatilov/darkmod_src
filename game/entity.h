@@ -20,6 +20,7 @@
 class CStimResponseCollection;
 class CStim;
 class CResponse;
+class CAbsenceMarker;
 
 class CInventory;
 typedef boost::shared_ptr<CInventory> CInventoryPtr;
@@ -1120,7 +1121,12 @@ protected:
 	SDK_SIGNAL				m_Signal;
 	idList<SDKSignalInfo *>	m_SignalList;
 
-	bool					m_bIsMantleable;
+	float						m_AbsenceNoticeability;
+	idBounds					m_StartBounds;
+	bool						m_AbsenceStatus;
+	idEntityPtr<CAbsenceMarker>	m_AbsenceMarker;
+
+	bool						m_bIsMantleable;
 
 	/**
 	* Set to true when entity becomes broken (via damage)
@@ -1155,6 +1161,12 @@ protected:
 
 	// Frobs this entity.
 	void					Event_Frob();
+
+	// angua: this checks whether an entity has been removed or returned to the original position
+	// and spawns an absence marker
+	void					Event_CheckAbsence();
+	bool					SpawnAbsenceMarker();
+	bool					DestroyAbsenceMarker();
 
 	// angua: List of actors that currently use this entity
 	UserManager m_userManager;

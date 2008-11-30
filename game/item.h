@@ -58,14 +58,6 @@ public:
 	// we have to spawn an absence entity
 	virtual void			UpdateVisuals( void );
 
-	// TDM: SZ: Spawns an absence marker entity that advertises, at the objects orgOrigin, 
-	// that the object is missing.
-	virtual bool spawnAbsenceMarkerEntity();
-
-	// TDM: SZ: Destroys the absence marker entity tied to this object. If there is none,
-	// nothing is done
-	virtual void destroyAbsenceMarkerEntity();
-
 	// This indicates which team owns the item (or thinks it does :P )
 	int ownerTeam;
 

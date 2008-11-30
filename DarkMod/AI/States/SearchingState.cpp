@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Library.h"
 #include "IdleState.h"
 #include "AgitatedSearchingState.h"
-#include "../../idAbsenceMarkerEntity.h"
+#include "../../AbsenceMarker.h"
 #include "../../AIComm_Message.h"
 
 namespace ai

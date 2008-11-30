@@ -135,7 +135,7 @@ FrobDoorHandle.cpp \
 FrobLever.cpp \
 Grabber.cpp \
 HidingSpotSearchCollection.cpp \
-idAbsenceMarkerEntity.cpp \
+AbsenceMarker.cpp \
 Intersection.cpp \
 liquid.cpp \
 MeleeWeapon.cpp \

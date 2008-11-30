@@ -26,6 +26,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/Cursor.h"
+#include "../DarkMod/AbsenceMarker.h"
 
 /*
 ===============================================================================
@@ -221,6 +222,8 @@ const idEventDef EV_Frob("frob", NULL, 'd');
 // greebo: Script event to check whether this entity can see a target entity
 const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
 
+const idEventDef EV_CheckAbsence("checkAbsence");
+
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
 
@@ -381,6 +384,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_IsHilighted,			idEntity::Event_IsHilighted )
 	EVENT( EV_Frob,					idEntity::Event_Frob )
 	EVENT( EV_CanSeeEntity,			idEntity::Event_CanSeeEntity )
+
+	EVENT( EV_CheckAbsence,			idEntity::Event_CheckAbsence )
+	
 
 END_CLASS
 
@@ -852,6 +858,15 @@ void idEntity::Spawn( void )
 	PostEventMS(&EV_InitInventory, 0, 0);
 
 	LoadTDMSettings();
+
+	if (m_AbsenceNoticeability > 0)
+	{
+		PostEventMS(&EV_CheckAbsence, gameLocal.random.RandomFloat() * 5000);
+	}
+	m_StartBounds = GetPhysics()->GetAbsBounds();
+	m_AbsenceStatus = false;
+
+
 }
 
 /*
@@ -1124,6 +1139,12 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt(m_Signal);
 
+	savefile->WriteFloat(m_AbsenceNoticeability);
+	savefile->WriteBounds(m_StartBounds);
+	savefile->WriteBool(m_AbsenceStatus);
+	
+	m_AbsenceMarker.Save(savefile);
+
 	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
 	//idList<SDKSignalInfo *>	m_SignalList;
 
@@ -1295,6 +1316,12 @@ void idEntity::Restore( idRestoreGame *savefile )
 	}
 
 	savefile->ReadInt(m_Signal);
+
+	savefile->ReadFloat(m_AbsenceNoticeability);
+	savefile->ReadBounds(m_StartBounds);
+	savefile->ReadBool(m_AbsenceStatus);
+	
+	m_AbsenceMarker.Restore(savefile);
 
 	savefile->ReadBool(m_bIsMantleable);
 
@@ -7258,6 +7285,8 @@ void idEntity::LoadTDMSettings(void)
 		m_UsedBy.AddUnique(kv->GetValue());
 	}
 
+	m_AbsenceNoticeability = spawnArgs.GetFloat("absence_noticeability", "0");
+
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
 	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
@@ -8644,6 +8673,79 @@ void idEntity::Event_IsHilighted( void )
 	idThread::ReturnInt( retVal );
 }
 
+
+void idEntity::Event_CheckAbsence()
+{
+	if (m_AbsenceNoticeability > 0)
+	{
+		idBounds currentBounds = GetPhysics()->GetAbsBounds();
+
+		bool isAbsent = !currentBounds.IntersectsBounds(m_StartBounds);
+
+		if (isAbsent && !m_AbsenceStatus)
+		{
+			// was there before, is absent now
+			SpawnAbsenceMarker();
+		}
+		else if (!isAbsent && m_AbsenceStatus)
+		{
+			// was absent, is back
+			DestroyAbsenceMarker();
+		}
+
+		// set absence status
+		m_AbsenceStatus = isAbsent;
+
+		PostEventMS(&EV_CheckAbsence, 5000);
+	}
+}
+
+
+bool idEntity::SpawnAbsenceMarker()
+{
+	const idDict* markerDef = gameLocal.FindEntityDefDict("atdm:absence_marker", false);
+
+	if (markerDef == NULL)
+	{
+		gameLocal.Error( "Failed to find definition of absence marker entity " );
+		return false;
+	}
+
+	idEntity* ent;
+	gameLocal.SpawnEntityDef(*markerDef, &ent, false);
+
+	if (!ent || !ent->IsType(CAbsenceMarker::Type)) 
+	{
+		gameLocal.Error( "Failed to spawn absence marker entity" );
+		return false;
+	}
+
+	CAbsenceMarker* absenceMarker = static_cast<CAbsenceMarker*>(ent);
+	m_AbsenceMarker = absenceMarker;
+
+	// absenceMarker->Init();
+	if (!absenceMarker->initAbsenceReference (this, m_StartBounds))
+	{
+		gameLocal.Error( "Failed to initialize absence reference in absence marker entity" );
+		return false;
+	}
+
+	// Success
+	return true;
+}
+
+bool idEntity::DestroyAbsenceMarker()
+{
+	idEntity* absenceMarker = m_AbsenceMarker.GetEntity();
+	if (absenceMarker != NULL)
+	{
+		absenceMarker->PostEventMS(&EV_Remove, 0);
+		m_AbsenceMarker = NULL;
+	}
+	return true;
+}
+
+
 /**
 * This is separate from m_bFrobbed due to peer frob highlighting,
 * to let an entity display the highlight when not frobbed.
@@ -8963,7 +9065,7 @@ CInventoryItemPtr idEntity::AddToInventory(idEntity *ent)
 	const CInventoryCursorPtr& crsr = InventoryCursor();
 
 	// Add the new item to the Inventory (with <this> as owner)
-	CInventoryItemPtr item = InventoryCursor()->Inventory()->PutItem(ent, this);
+	CInventoryItemPtr item = crsr->Inventory()->PutItem(ent, this);
 	
 	if (item == NULL)
 	{

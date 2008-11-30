@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Tasks/SingleBarkTask.h"
 #include "States/CombatState.h"
 #include "Library.h"
-#include "../idAbsenceMarkerEntity.h"
+#include "../AbsenceMarker.h"
 #include "../AIComm_Message.h"
 
 namespace ai

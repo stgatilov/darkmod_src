@@ -27,7 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../../DarkMod/idAbsenceMarkerEntity.h"
+#include "../../DarkMod/AbsenceMarker.h"
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/MultiStateMover.h"
 #include "../../DarkMod/MeleeWeapon.h"
@@ -8432,9 +8432,9 @@ bool idAI::IsFriend(idEntity *other)
 	{
 		return false;
 	}
-	else if (other->IsType (idAbsenceMarkerEntity::Type))
+	else if (other->IsType (CAbsenceMarker::Type))
 	{
-		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
 		return gameLocal.m_RelationsManager->IsFriend(team, marker->ownerTeam);
 	}
 	else if (other->IsType(idActor::Type)) 
@@ -8452,9 +8452,9 @@ bool idAI::IsNeutral(idEntity *other)
 	{
 		return false;
 	}
-	else if (other->IsType(idAbsenceMarkerEntity::Type))
+	else if (other->IsType(CAbsenceMarker::Type))
 	{
-		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
 		return gameLocal.m_RelationsManager->IsNeutral(team, marker->ownerTeam);
 	}
 	else if (!other->IsType(idActor::Type)) 
@@ -8475,9 +8475,9 @@ bool idAI::IsEnemy( idEntity *other )
 		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
 		return false;
 	}
-	else if (other->IsType(idAbsenceMarkerEntity::Type))
+	else if (other->IsType(CAbsenceMarker::Type))
 	{
-		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
 		return gameLocal.m_RelationsManager->IsEnemy(team, marker->ownerTeam);
 	}
 	else if (other->IsType(idActor::Type) && !other->fl.notarget)

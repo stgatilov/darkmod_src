@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/WaitTask.h"
 #include "CombatState.h"
 #include "../Library.h"
-#include "../../idAbsenceMarkerEntity.h"
+#include "../../AbsenceMarker.h"
 #include "../../AIComm_Message.h"
 
 namespace ai
