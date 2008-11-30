@@ -64,7 +64,7 @@ public:
 	* @param absetEntity idEntityPtr indicating the entity who's
 	*	absence we are marking.
 	*/
-	bool CAbsenceMarker::initAbsenceReference(idEntity* owner, idBounds& startBounds);
+	bool initAbsenceReference(idEntity* owner, idBounds& startBounds);
 };
 
 
