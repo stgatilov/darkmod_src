@@ -1012,7 +1012,13 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	{
 		return;
 	}
-	
+
+	float chance(gameLocal.random.RandomFloat());
+	if (chance >= stimSource->GetAbsenceNoticeability())
+	{
+		return;
+	}
+
 	// Does it belong to a friendly team
 	if (stimSource->team != -1 && !owner->IsFriend(stimSource))
 	{

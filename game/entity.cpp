@@ -8693,6 +8693,9 @@ void idEntity::Event_CheckAbsence()
 	if (m_AbsenceNoticeability > 0)
 	{
 		idBounds currentBounds = GetPhysics()->GetAbsBounds();
+		float tolerance = spawnArgs.GetFloat("absence_bounds_tolerance", "0");
+
+		currentBounds.ExpandSelf(tolerance);
 
 		bool isAbsent = !currentBounds.IntersectsBounds(m_StartBounds);
 
@@ -8757,6 +8760,11 @@ bool idEntity::DestroyAbsenceMarker()
 		m_AbsenceMarker = NULL;
 	}
 	return true;
+}
+
+float idEntity::GetAbsenceNoticeability()
+{
+	return m_AbsenceNoticeability;
 }
 
 
