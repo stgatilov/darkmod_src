@@ -8432,18 +8432,15 @@ bool idAI::IsFriend(idEntity *other)
 	{
 		return false;
 	}
-	else if (other->IsType (CAbsenceMarker::Type))
+	else if (other->team == -1)
 	{
-		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
-		return gameLocal.m_RelationsManager->IsFriend(team, marker->ownerTeam);
+		// entities with team -1 (not set) are neutral
+		return false;
 	}
-	else if (other->IsType(idActor::Type)) 
+	else
 	{
-		idActor* actor = static_cast<idActor*>(other);
-		return gameLocal.m_RelationsManager->IsFriend(team, actor->team);
+		return gameLocal.m_RelationsManager->IsFriend(team, other->team);
 	}
-	
-	return false;
 }
 
 bool idAI::IsNeutral(idEntity *other)
@@ -8452,20 +8449,15 @@ bool idAI::IsNeutral(idEntity *other)
 	{
 		return false;
 	}
-	else if (other->IsType(CAbsenceMarker::Type))
+	else if (other->team == -1)
 	{
-		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
-		return gameLocal.m_RelationsManager->IsNeutral(team, marker->ownerTeam);
-	}
-	else if (!other->IsType(idActor::Type)) 
-	{
-		// inanimate objects are neutral to everyone
+		// entities with team -1 (not set) are neutral
 		return true;
 	}
-
-	// Must be an actor
-	idActor* actor = static_cast<idActor*>(other);
-	return gameLocal.m_RelationsManager->IsNeutral(team, actor->team);
+	else
+	{
+		return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
+	}
 }
 
 bool idAI::IsEnemy( idEntity *other )
@@ -8475,18 +8467,19 @@ bool idAI::IsEnemy( idEntity *other )
 		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
 		return false;
 	}
-	else if (other->IsType(CAbsenceMarker::Type))
+	else if (other->team == -1)
 	{
-		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(other);
-		return gameLocal.m_RelationsManager->IsEnemy(team, marker->ownerTeam);
+		// entities with team -1 (not set) are neutral
+		return false;
 	}
-	else if (other->IsType(idActor::Type) && !other->fl.notarget)
+	else if (other->fl.notarget)
 	{
-		idActor* actor = static_cast<idActor*>(other);
-		return gameLocal.m_RelationsManager->IsEnemy(team, actor->team);
+		return false;
 	}
-
-	return false;
+	else
+	{
+		return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
+	}
 }
 
 void idAI::HadTactile( idActor *actor )

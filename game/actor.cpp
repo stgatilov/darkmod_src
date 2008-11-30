@@ -444,9 +444,6 @@ const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
 const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
 
-// greebo: TDM: Team accessor script events
-const idEventDef AI_GetTeam("getTeam", NULL, 'd');
-const idEventDef AI_SetTeam("setTeam", "d");
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -511,8 +508,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_GetNumRangedWeapons,		idActor::Event_GetNumRangedWeapons )
 	EVENT ( AI_GetNumMeleeWeapons,		idActor::Event_GetNumMeleeWeapons )
 	
-	EVENT ( AI_GetTeam,					idActor::Event_GetTeam )
-	EVENT ( AI_SetTeam,					idActor::Event_SetTeam )
 END_CLASS
 
 /*
@@ -528,7 +523,6 @@ idActor::idActor( void ) {
 	use_combat_bbox		= false;
 	head				= NULL;
 
-	team				= 0;
 	m_AItype			= 0;
 	m_Innocent			= false;
 	rank				= 0;
@@ -634,7 +628,6 @@ void idActor::Spawn( void )
 
 	spawnArgs.GetFloat( "collision_delta_scale",  "1.0", m_delta_scale );
 	spawnArgs.GetInt( "rank", "0", rank );
-	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetInt( "type", "0", m_AItype );
 	spawnArgs.GetBool( "innocent", "0", m_Innocent );
 	spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset);
@@ -961,7 +954,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 	idActor *ent;
 	int i;
 
-	savefile->WriteInt( team );
 	savefile->WriteInt( rank );
 	savefile->WriteInt( m_AItype );
 	savefile->WriteBool( m_Innocent );
@@ -1103,7 +1095,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	int i, num;
 	idActor *ent;
 
-	savefile->ReadInt( team );
 	savefile->ReadInt( rank );
 	savefile->ReadInt( m_AItype );
 	savefile->ReadBool( m_Innocent );
@@ -4214,15 +4205,4 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	return result;
-}
-
-void idActor::Event_GetTeam()
-{
-	idThread::ReturnInt(team);
-}
-
-void idActor::Event_SetTeam(int newTeam)
-{
-	// greebo: No validity checking so far - todo?
-	team = newTeam;
 }

@@ -1014,7 +1014,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	}
 	
 	// Does it belong to a friendly team
-	if (!owner->IsFriend(stimSource))
+	if (stimSource->team != -1 && !owner->IsFriend(stimSource))
 	{
 		// Its not something we know about
 		gameLocal.Printf("The missing item wasn't on my team\n");

@@ -47,13 +47,8 @@ bool CAbsenceMarker::initAbsenceReference(idEntity* owner, idBounds& startBounds
 	idVec3 markerOrg = startBounds.GetCenter();
 	SetOrigin (markerOrg);
 
-	if (owner->IsType(idItem::Type))
-	{
-		idItem* item;
-		item = static_cast<idItem *>(owner);
-		ownerTeam = item->ownerTeam;
-	}
-
+	team = owner->team;
+	
 	// Done
 	return true;
 }

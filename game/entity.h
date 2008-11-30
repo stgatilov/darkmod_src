@@ -972,6 +972,13 @@ public:
 		return m_userManager;
 	}
 
+	/**
+	 * greebo: Script events to get/set the team of this entity.
+	 */
+	void					Event_GetTeam();
+	void					Event_SetTeam(int newTeam);
+	int						team;
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.
@@ -1107,7 +1114,7 @@ protected:
 	 * both directions. The user can frob any object in the chain but all of them
 	 * have to be notified.
 	 */
-	idStr					m_MasterFrob;
+	idStr						m_MasterFrob;
 
 	/**
 	 * Froblist is the list of entities that should be notified when this entity
@@ -1118,8 +1125,8 @@ protected:
 
 	CStimResponseCollection		*m_StimResponseColl;
 
-	SDK_SIGNAL				m_Signal;
-	idList<SDKSignalInfo *>	m_SignalList;
+	SDK_SIGNAL					m_Signal;
+	idList<SDKSignalInfo *>		m_SignalList;
 
 	float						m_AbsenceNoticeability;
 	idBounds					m_StartBounds;

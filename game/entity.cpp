@@ -224,6 +224,11 @@ const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
 
 const idEventDef EV_CheckAbsence("checkAbsence");
 
+// greebo: TDM: Team accessor script events
+const idEventDef EV_GetTeam("getTeam", NULL, 'd');
+const idEventDef EV_SetTeam("setTeam", "d");
+
+
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
 
@@ -387,6 +392,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_CheckAbsence,			idEntity::Event_CheckAbsence )
 	
+	EVENT (EV_GetTeam,				idEntity::Event_GetTeam )
+	EVENT (EV_SetTeam,				idEntity::Event_SetTeam )
+
 
 END_CLASS
 
@@ -1145,6 +1153,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	
 	m_AbsenceMarker.Save(savefile);
 
+	savefile->WriteInt(team);
+
 	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
 	//idList<SDKSignalInfo *>	m_SignalList;
 
@@ -1322,6 +1332,8 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_AbsenceStatus);
 	
 	m_AbsenceMarker.Restore(savefile);
+
+	savefile->ReadInt(team);
 
 	savefile->ReadBool(m_bIsMantleable);
 
@@ -7287,6 +7299,8 @@ void idEntity::LoadTDMSettings(void)
 
 	m_AbsenceNoticeability = spawnArgs.GetFloat("absence_noticeability", "0");
 
+	team = spawnArgs.GetInt("team", "-1");
+
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
 	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
@@ -9790,4 +9804,15 @@ void idEntity::Event_ExtinguishLights()
 void idEntity::Event_GetResponseEntity()
 {
 	idThread::ReturnEntity(GetResponseEntity());
+}
+
+void idEntity::Event_GetTeam()
+{
+	idThread::ReturnInt(team);
+}
+
+void idEntity::Event_SetTeam(int newTeam)
+{
+	// greebo: No validity checking so far - todo?
+	team = newTeam;
 }

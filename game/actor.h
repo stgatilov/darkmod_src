@@ -118,7 +118,6 @@ class idActor : public idAFEntity_Gibbable {
 public:
 	CLASS_PROTOTYPE( idActor );
 
-	int						team;
 	int						rank; // monsters don't fight back if the attacker's rank is higher
 	/**
 	* TDM: Defines the type of the AI (human, beast, undead, bot, etc)
@@ -518,11 +517,7 @@ public:
 	void					Event_GetNumMeleeWeapons();
 	void					Event_GetNumRangedWeapons();
 
-	/**
-	 * greebo: Script events to get/set the team of this actor.
-	 */
-	void					Event_GetTeam();
-	void					Event_SetTeam(int newTeam);
+
 
 #ifdef TIMING_BUILD
 public:
