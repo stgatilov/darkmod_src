@@ -1821,11 +1821,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\idAbsenceMarkerEntity.cpp"
+					RelativePath=".\DarkMod\AbsenceMarker.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\idAbsenceMarkerEntity.h"
+					RelativePath=".\DarkMod\AbsenceMarker.h"
 					>
 				</File>
 				<File
