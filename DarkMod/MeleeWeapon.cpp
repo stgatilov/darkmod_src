@@ -107,6 +107,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	}
 
 	m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Attack type is %d\r", m_MeleeType);
 	m_ActionName = AttName;
 	m_bAttacking = true;
 	// TODO: We shouldn't set the owner every time, should only have to set once
@@ -153,6 +154,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Attack clipmodel started out inside something it hits.\r");
 
 		idEntity *ent = gameLocal.entities[tr.c.entityNum];
+
 		// hack to fix crashes in closed Id code, set material hit to NULL
 		// AI don't SEEM to crash and we want to know armour type was hit, so exception for AI:
 		if( !ent->IsType(idActor::Type) )
@@ -165,6 +167,20 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		idVec3 dummy;
 		m_Owner.GetEntity()->GetViewPos( dummy, viewAxis );
 		tr.c.normal = -viewAxis[0];
+
+		// hit a parry (make sure we don't hit our own other melee weapons)
+		if( ent->IsType(CMeleeWeapon::Type)
+			&& static_cast<CMeleeWeapon *>(ent)->GetOwner()
+			&& static_cast<CMeleeWeapon *>(ent)->GetOwner() != m_Owner.GetEntity() )
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
+				("MeleeWeapon: Started out hitting a melee parry put up by %s\r", 
+				  static_cast<CMeleeWeapon *>(ent)->GetOwner()->name.c_str() );
+			// Test our attack against their parry
+			TestParry( static_cast<CMeleeWeapon *>(ent), idVec3(1,0,0), &tr );
+			// skip the rest, it will be handled in TestParry
+			return;
+		}
 
 		MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
 		DeactivateAttack();
@@ -185,15 +201,30 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 {
 	const idKeyValue *key;
 	
+	if( ActOwner )
+	{
+		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Activate parry called.  Weapon %s, owner %s, parry name %s.\r",
+												name.c_str(), ActOwner->name.c_str(), ParryName );
+	}
+	else
+	{	
+		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Activate parry called.  Weapon %s, owner is NULL, parry name %s.\r",
+												name.c_str(), ParryName );
+	}
+
 	// Test to see if parry exists in our args
 	if( (key = spawnArgs.FindKey(va("par_type_%s", ParryName))) != NULL )
 	{
 		m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
+		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Parry type is %d\r", m_MeleeType);
 		m_ActionName = ParryName;
 		m_bParrying = true;
-		idClipModel *pClip;
+		// TODO: We shouldn't set the owner every time, should only have to set once
+		m_Owner = ActOwner;
 
+		// set up the clipmodel
 		m_WeapClip = NULL;
+		idClipModel *pClip;
 		if( spawnArgs.GetBool(va("par_mod_cm_%s", ParryName)) )
 		{
 			SetupClipModel();
@@ -294,15 +325,29 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 		// TODO: Play bounce animation or reverse attack animation?
 		DeactivateAttack();
 
+		// Hack: Play metal sound for now
+		const idSoundShader *snd = declManager->FindSound( "sword_hit_metal" );
+		StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
+		// TODO: Propagate sound to AI
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Parry was successful\r");
+
 		if (other->m_bParryStopOnSuccess)
 			other->DeactivateParry();
 	}
+	else
+	{
+		// Parry failed
 
-	// Don't do anything if the parry does not block this type
-	// PROBLEM: Will we have to disable collision with parries from this
-	// point on, to make sure that we hit the AI if the parry clipmodel
-	// extends into the AI?
-	// Or will the trace just ignore the parry once it's gone inside it?
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Parry failed, attack type was %d, parry type was %d\r", m_MeleeType, other->GetMeleeType() );
+
+		// Try disabling this parry now that it has failed
+		other->DeactivateParry();
+		// May run into problems later when multiple opponents are attacking,
+		// if one grazes the parry (but no the player), it would deactivate the parry
+		// rendering it unable to block a matching attack from another AI
+		// this is probably not that important, 
+		// and could be seen as the other AI beating the blade away
+	}
 }
 
 void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
@@ -508,7 +553,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			}
 			else
 			{
-				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held weapon.\r");
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held object (this shouldn't normally happen).\r");
 				MeleeCollision( other, dir, &tr, location );
 
 				DeactivateAttack();
