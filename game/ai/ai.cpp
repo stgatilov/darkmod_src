@@ -836,6 +836,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject(*i);
 	}
 
+	savefile->WriteInt(tactileIgnoreEntities.size());
+
 	for (TactileIgnoreList::const_iterator i = tactileIgnoreEntities.begin(); i != tactileIgnoreEntities.end(); ++i)
 	{
 		savefile->WriteObject(*i);
