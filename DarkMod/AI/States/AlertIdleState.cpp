@@ -73,7 +73,7 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 	idStr soundName("");
 	if (owner->m_lastAlertLevel < owner->thresh_3)
 	{
-		if (memory.alertClass == EAlertVisual)
+		if (memory.alertClass == EAlertVisual && memory.alertType != EAlertTypeMissingItem)
 		{
 			soundName = "snd_alertdown0s";
 		}

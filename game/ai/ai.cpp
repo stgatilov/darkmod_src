@@ -7988,12 +7988,13 @@ float idAI::GetCalibratedLightgemValue() const
 
 void idAI::TactileAlert(idEntity* tactEnt, float amount)
 {
-	if (tactEnt == NULL || m_bIgnoreAlerts)
+
+	if (AI_DEAD || AI_KNOCKEDOUT || m_bIgnoreAlerts)
 	{
 		return;
 	}
 
-	if (CheckTactileIgnore(tactEnt))
+	if (tactEnt == NULL || CheckTactileIgnore(tactEnt))
 	{
 		return;
 	}
@@ -8012,10 +8013,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		if (responsibleActor->health <= 0 || responsibleActor->IsKnockedOut())
 		{
 			// angua: We've found a friend that is dead or unconscious
-			// Ignore tactile alerts from this entity from now on
-			TactileIgnore(tactEnt);
-			mind->GetState()->OnVisualStimPerson(tactEnt, this);
-
+			mind->GetState()->OnPersonEncounter(tactEnt, this);
 		}
 	}
 	if (!IsEnemy(responsibleActor)) 

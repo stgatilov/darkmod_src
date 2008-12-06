@@ -73,7 +73,7 @@ void ObservantState::Init(idAI* owner)
 	// barking
 	idStr soundName("");
 
-	if (owner->AlertIndexIncreased())
+	if (owner->AlertIndexIncreased() && memory.alertType != EAlertTypeMissingItem)
 	{
 		if (memory.alertClass == EAlertVisual)
 		{
@@ -101,12 +101,15 @@ void ObservantState::Init(idAI* owner)
 		soundName = "snd_alertdown0SeenNoEvidence";
 	}
 
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new SingleBarkTask(soundName))
-	);
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-		TaskPtr(new WaitTask(2000))
-	);
+	if (memory.alertType != EAlertTypeMissingItem)
+	{
+		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+				TaskPtr(new SingleBarkTask(soundName))
+		);
+		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+			TaskPtr(new WaitTask(2000))
+		);
+	}
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);

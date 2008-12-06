@@ -312,6 +312,12 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// Check for loot items
 	CInventoryItemPtr returnValue = ValidateLoot(ent);
 
+	if (ent->GetAbsenceNoticeability() > 0)
+	{
+		ent->SpawnAbsenceMarker();
+	}
+
+
 	if (returnValue != NULL)
 	{
 		// The item is a valid loot item, remove the entity and return

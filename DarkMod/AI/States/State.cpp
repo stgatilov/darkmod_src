@@ -26,6 +26,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../../BinaryFrobMover.h"
 #include "../../FrobDoor.h"
+#include "../../AbsenceMarker.h"
 
 namespace ai
 {
@@ -117,6 +118,11 @@ void State::OnVisualAlert(idActor* enemy)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return;
+	}
+
 	Memory& memory = owner->GetMemory();
 
 	memory.alertClass = EAlertVisual;
@@ -167,6 +173,11 @@ void State::OnTactileAlert(idEntity* tactEnt)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	if (owner->AI_KNOCKEDOUT || owner->AI_DEAD)
+	{
+		return;
+	}
+
 	// If this is a projectile, fire the corresponding event
 	if (tactEnt->IsType(idProjectile::Type))
 	{
@@ -209,6 +220,11 @@ void State::OnProjectileHit(idProjectile* projectile)
 {
 	idAI* owner = _owner.GetEntity();
 
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return;
+	}
+
 	if (owner->AI_AlertLevel <= (owner->thresh_5 - 0.1f))
 	{
 		// Set the alert level right below combat threshold
@@ -236,6 +252,11 @@ void State::OnAudioAlert()
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return;
+	}
 
 	Memory& memory = owner->GetMemory();
 
@@ -276,7 +297,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 	idAI* owner = _owner.GetEntity();
 
 	// Don't react if we are already blind
-	if (owner->GetAcuity("vis") == 0)
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT || owner->GetAcuity("vis") == 0)
 	{
 		return;
 	}
@@ -359,7 +380,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimPerson(stimSource, owner);
+			OnPersonEncounter(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
@@ -481,7 +502,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.alertedDueToCommunication = false;
 }
 
-void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
+void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
@@ -500,7 +521,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		if (ShouldProcessAlert(EAlertTypeDeadPerson))
 		{
 			// React to finding body
-			ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
+			ignoreStimulusFromNowOn = OnDeadPersonEncounter(other, owner);
 			if (ignoreStimulusFromNowOn)
 			{
 				owner->TactileIgnore(stimSource);
@@ -516,7 +537,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 		if (ShouldProcessAlert(EAlertTypeUnconsciousPerson))
 		{
 			// React to finding unconscious person
-			ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
+			ignoreStimulusFromNowOn = OnUnconsciousPersonEncounter(other, owner);
 			if (ignoreStimulusFromNowOn)
 			{
 				owner->TactileIgnore(stimSource);
@@ -681,7 +702,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 	}
 }
 
-bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
+bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 {
 	assert(person != NULL && owner != NULL); // must be fulfilled
 	
@@ -762,7 +783,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 	return true;
 }
 
-bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
+bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 {
 	assert(person != NULL && owner != NULL); // must be fulfilled
 
@@ -1013,13 +1034,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		return;
 	}
 
-	float chance(gameLocal.random.RandomFloat());
-	if (chance >= stimSource->GetAbsenceNoticeability())
-	{
-		return;
-	}
-
-	// Does it belong to a friendly team
+		// Does it belong to a friendly team
 	if (stimSource->team != -1 && !owner->IsFriend(stimSource))
 	{
 		// Its not something we know about
@@ -1027,10 +1042,29 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		return;
 	}
 
+	float alert = owner->thresh_4 - 0.1f;
+
+	if (stimSource->IsType(CAbsenceMarker::Type))
+	{
+		CAbsenceMarker* absenceMarker = static_cast<CAbsenceMarker*>(stimSource);
+		const idDict& refSpawnargs = absenceMarker->GetRefSpawnargs();
+
+		float chance(gameLocal.random.RandomFloat());
+		if (chance >= refSpawnargs.GetFloat("absence_noticeability", "1"))
+		{
+			return;
+		}
+		if (refSpawnargs.GetFloat("absence_alert", "0") > 0)
+		{
+			alert = owner->AI_AlertLevel + refSpawnargs.GetFloat("absence_alert", "0");
+		}
+	}
+
 	gameLocal.Printf("Something is missing from over there!\n");
 
 	// Speak a reaction
 	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_foundMissingItem"))
 	);
@@ -1040,7 +1074,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders++;
 
 	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+	if (owner->AI_AlertLevel < alert)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
@@ -1054,7 +1088,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		
 		owner->AI_VISALERT = false;
 		
-		owner->SetAlertLevel(owner->thresh_5 - 0.1);
+		owner->SetAlertLevel(alert);
 	}
 }
 
@@ -1183,7 +1217,12 @@ void State::OnAICommMessage(CommMessage& message)
 {
 	idAI* owner = _owner.GetEntity();
 	// greebo: changed the IF back to an assertion, the owner should never be NULL
-	assert(owner != NULL); 
+	assert(owner != NULL);
+
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return;
+	}
 
 	// Get the message parameters
 	CommMessage::TCommType commType = message.m_commType;
@@ -1496,6 +1535,11 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return;
+	}
 
 	Memory& memory = owner->GetMemory();
 

@@ -53,6 +53,8 @@ public:
 
 	CAbsenceMarker(void);
 
+	const idDict&			GetRefSpawnargs() const;
+
 	// Save and restore
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );

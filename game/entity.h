@@ -981,6 +981,12 @@ public:
 
 	float					GetAbsenceNoticeability();
 
+	// angua: this checks whether an entity has been removed or returned to the original position
+	// and spawns or destroys an absence marker
+	void					Event_CheckAbsence();
+	bool					SpawnAbsenceMarker();
+	bool					DestroyAbsenceMarker();
+
 
 protected:
 	/**
@@ -1171,14 +1177,6 @@ protected:
 
 	// Frobs this entity.
 	void					Event_Frob();
-
-	// angua: this checks whether an entity has been removed or returned to the original position
-	// and spawns or destroys an absence marker
-	void					Event_CheckAbsence();
-	bool					SpawnAbsenceMarker();
-	bool					DestroyAbsenceMarker();
-
-
 
 	// angua: List of actors that currently use this entity
 	UserManager m_userManager;

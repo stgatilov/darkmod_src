@@ -53,6 +53,13 @@ bool CAbsenceMarker::initAbsenceReference(idEntity* owner, idBounds& startBounds
 	return true;
 }
 
+
+const idDict& CAbsenceMarker::GetRefSpawnargs() const
+{
+	return referenced_spawnArgs;
+}
+
+
 //-----------------------------------------------------------------------------------
 
 void CAbsenceMarker::Save( idSaveGame *savefile ) const
