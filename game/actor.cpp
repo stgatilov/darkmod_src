@@ -727,21 +727,6 @@ void idActor::Spawn( void )
 		}
 	}
 	
-	// Cache animation rates
-	int anims = animator.NumAnims();
-	m_animRates.Clear();
-	m_animRates.AssureSize(anims);
-	for (int i=0; i<anims; i++) {
-		const idAnim *anim = animator.GetAnim(i);
-		if (anim != NULL) {
-			idStr spawnargname = "anim_rate_";
-			spawnargname += anim->Name();
-			m_animRates[i] = spawnArgs.GetFloat(spawnargname, "1");
-		} else {
-			m_animRates[i] = 1.0f;
-		}
-	}
-	
 	finalBoss = spawnArgs.GetBool( "finalBoss" );
 
 	canUseElevators = spawnArgs.GetBool("canOperateElevators", "0");

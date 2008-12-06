@@ -1460,6 +1460,8 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	void					Spawn( void ); //TDM: added so that we can cache anim rates
+
 	virtual void			ClientPredictionThink( void );
 	virtual void			Think( void );
 
