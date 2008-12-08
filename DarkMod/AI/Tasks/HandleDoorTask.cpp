@@ -295,7 +295,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateOpeningDoor:
-				// we have already started opening the door, but it is closed,
+				// we have already started opening the door, but it is closed
 				if (doubleDoor != NULL && doubleDoor->IsOpen())
 				{
 					// the other part of the double door is already open
@@ -316,7 +316,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateMovingToBackPos:
-				// door has closed while we were attempting to walk through it.
+				// door has closed while we were walking through it.
 				// end this task (it will be initiated again if we are still in front of the door).
 				return true;
 				break;
@@ -1009,11 +1009,19 @@ bool HandleDoorTask::OpenDoor()
 	{
 		if (!owner->CanUnlock(frobDoor))
 		{
+
 			// Door is locked and we cannot unlock it
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+			// Check if we can open the other part of a double door
+			CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+			if (doubleDoor != NULL && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
+			{
+				ResetDoor(owner, doubleDoor);
+				_doorHandlingState = EStateMovingToFrontPos;
+				return true;
+			}
+			owner->StopMove(MOVE_STATUS_DONE);
 			// Rattle the door once
 			frobDoor->Open(true);
-			owner->AI_DEST_UNREACHABLE = true;
 				
 			// add AAS area number of the door to forbidden areas
 			idAAS*	aas = owner->GetAAS();
@@ -1124,21 +1132,6 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		if (doubleDoor != NULL)
 		{
 			doubleDoor->GetUserManager().RemoveUser(owner);
-		}
-
-		if (frobDoor->IsLocked())
-		{
-			// check if we have already tried the door
-			idAAS*  aas = owner->GetAAS();
-			if (aas != NULL)
-			{
-				int areaNum = frobDoor->GetAASArea(aas);
-				if (gameLocal.m_AreaManager.AreaIsForbidden(areaNum, owner))	
-				{
-					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-					owner->AI_DEST_UNREACHABLE = true;
-				}
-			}
 		}
 	}
 
