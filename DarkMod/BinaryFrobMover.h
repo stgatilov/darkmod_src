@@ -150,6 +150,8 @@ public:
 		return m_ClosedAngles;
 	}
 
+	const idVec3& GetCurrentPos();
+
 	/**
 	* This is used to get the remaining translation left on the clip model
 	* if it is moving

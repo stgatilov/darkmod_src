@@ -375,21 +375,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateNone:
 				// check if we are blocking the door
 				if (frobDoor->IsBlocked() || 
-					(frobDoor->WasInterrupted() && 
+					(frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock()))
-				{
-					if (frobDoor->GetLastBlockingEnt() == owner)
-					{
-						// we are blocking the door, open it
-						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(closedPos);
-						if (!OpenDoor())
-						{
-							return true;
-						}
-					}
-				}
-				else if (frobDoor->WasInterrupted())
 				{
 					if (FitsThrough() && masterUser == owner)
 					{
@@ -495,8 +482,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// need to open the door further when we reach the position for opening
 						if (owner->AI_MOVE_DONE && masterUser == owner)
 						{
-							float dist = (owner->GetPhysics()->GetOrigin() - closedPos).LengthFast();
-							if (dist < 2 * owner->GetArmReachLength())
+							idVec3 currentPos = frobDoor->GetCurrentPos();
+								
+							// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
+
+							idVec3 dir = owner->GetPhysics()->GetOrigin() - currentPos;
+							dir.z = 0;
+
+							float dist = dir.LengthFast();
+							if (dist < 2 * owner->GetArmReachLength() || owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
 							{
 								// reached front position
 								owner->StopMove(MOVE_STATUS_DONE);
@@ -634,7 +628,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							// something else is blocking the door
 							// possibly the player, another AI or an object
 							// try closing the door and opening it again
-							frobDoor->Close(false);
+							frobDoor->Close(true);
 							_waitEndTime = gameLocal.time + 300;
 							_doorHandlingState = EStateWaitBeforeOpen;
 							// TODO: need to stop after a few tries
@@ -754,7 +748,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
-					frobDoor->Close(false);
+					frobDoor->Close(true);
 					_doorHandlingState = EStateClosingDoor;
 				}
 				else if (numUsers > 1 && !_doorInTheWay)
@@ -903,14 +897,15 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 
 	int areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
 
-	if (contents || areaNum == 0)
+	if (contents || areaNum == 0 || frobDoor->GetOpenPeersNum() > 0)
 	{
 		if (cv_ai_door_show.GetBool())
 		{
 			gameRenderWorld->DebugBounds(colorRed, bounds, towardPos, 10000);
 		}
 
-		// at 45° swinging angle
+		// this position is either blocked, in the void or can't be used since the door has open peers
+		// try at 45° swinging angle
 		parallelTowardOffset = dirNorm;
 
 		normalTowardOffset = openDirNorm;
@@ -925,14 +920,14 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 
 		areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
 
-		if (contents || areaNum == 0)
+		if (contents || areaNum == 0 || frobDoor->GetOpenPeersNum() > 0)
 		{
 			if (cv_ai_door_show.GetBool())
 			{
 				gameRenderWorld->DebugBounds(colorRed, bounds, towardPos, 10000);
 			}
 
-			// far away from the door
+			// not useable, try in front of the door far enough away
 			parallelTowardOffset = dirNorm * size * 1.2f;
 
 			normalTowardOffset = openDirNorm;
@@ -1017,7 +1012,7 @@ bool HandleDoorTask::OpenDoor()
 			// Door is locked and we cannot unlock it
 			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			// Rattle the door once
-			frobDoor->Open(false);
+			frobDoor->Open(true);
 			owner->AI_DEST_UNREACHABLE = true;
 				
 			// add AAS area number of the door to forbidden areas
@@ -1040,7 +1035,7 @@ bool HandleDoorTask::OpenDoor()
 	}
 
 	owner->StopMove(MOVE_STATUS_DONE);
-	frobDoor->Open(false);
+	frobDoor->Open(true);
 	_doorHandlingState = EStateOpeningDoor;
 
 	return true;

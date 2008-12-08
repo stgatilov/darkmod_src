@@ -113,6 +113,12 @@ public:
 
 	void					PropPickSound(const idStr& picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
 
+	// angua: returns the number of open peers
+	ID_INLINE int			GetOpenPeersNum()
+	{
+		return m_OpenPeers.Num();
+	}
+
 protected:
 	/**
 	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 

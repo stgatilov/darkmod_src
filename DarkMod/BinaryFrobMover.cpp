@@ -943,3 +943,22 @@ void CBinaryFrobMover::Event_IsLocked()
 {
 	idThread::ReturnInt(IsLocked());
 }
+
+const idVec3& CBinaryFrobMover::GetCurrentPos()
+{
+	idVec3 closedDir = m_ClosedPos;
+	closedDir.z = 0;
+	float length = closedDir.LengthFast();
+
+	idAngles angles = physicsObj.GetLocalAngles();
+	idAngles deltaAngles = angles - GetClosedAngles();
+	idRotation rot = deltaAngles.ToRotation();
+
+	float alpha = idMath::Fabs(rot.GetAngle());
+	
+	idVec3 currentPos = GetPhysics()->GetOrigin() 
+		+ closedDir * idMath::Cos(alpha * idMath::PI / 180)
+		+ m_OpenDir * length * idMath::Sin(alpha* idMath::PI / 180);
+
+	return currentPos;
+}

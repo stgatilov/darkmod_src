@@ -151,7 +151,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 					// Get the button which will fetch the elevator
 					CMultiStateMoverButton* button = mover->GetButton(reachablePos, reachablePos, BUTTON_TYPE_FETCH);
 
-					gameRenderWorld->DebugArrow(colorBlue, owner->GetPhysics()->GetOrigin(), button->GetPhysics()->GetOrigin(), 1, 5000);
+					// gameRenderWorld->DebugArrow(colorBlue, owner->GetPhysics()->GetOrigin(), button->GetPhysics()->GetOrigin(), 1, 5000);
 
 					// Push to an InteractionTask
 					subsystem.PushTask(TaskPtr(new InteractionTask(button)));
