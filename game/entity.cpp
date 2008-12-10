@@ -8723,11 +8723,11 @@ void idEntity::Event_CheckAbsence()
 
 		currentBounds.ExpandSelf(tolerance);
 
-		const char* locationstring = spawnArgs.GetString("absence_location_1");
-		idEntity* location;
-		bool isAbsent;
+		idStr locationstring = spawnArgs.GetString("absence_location_1");
+		idEntity* location(NULL);
+		bool isAbsent(false);
 
-		if (locationstring != "")
+		if (!locationstring.IsEmpty())
 		{
 			location = gameLocal.FindEntity(locationstring);
 		}
