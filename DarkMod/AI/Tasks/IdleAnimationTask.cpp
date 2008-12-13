@@ -92,24 +92,27 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time > _nextAnimationTime)
 	{
-		// Check if the AI is moving or sitting, this determines which channel we can play on
-		if (!owner->AI_FORWARD && !owner->spawnArgs.GetBool("sitting", "0"))
+		if (memory.playIdleAnimations)
 		{
-			// AI is not walking, play animations affecting all channels
-			int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+			// Check if the AI is moving or sitting, this determines which channel we can play on
+			if (!owner->AI_FORWARD && !owner->spawnArgs.GetBool("sitting", "0"))
+			{
+				// AI is not walking, play animations affecting all channels
+				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
 
-			idStr animName(_idleAnimations[animIdx]);
+				idStr animName(_idleAnimations[animIdx]);
 
-			owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
-			owner->SetAnimState(ANIMCHANNEL_LEGS, ("Legs_" + animName).c_str(), 4);
-		}
-		else 
-		{
-			// AI is walking, only use animations for the Torso channel
-			int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
+				owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+				owner->SetAnimState(ANIMCHANNEL_LEGS, ("Legs_" + animName).c_str(), 4);
+			}
+			else 
+			{
+				// AI is walking, only use animations for the Torso channel
+				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
 
-			idStr animName(_idleAnimationsTorso[animIdx]);
-			owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+				idStr animName(_idleAnimationsTorso[animIdx]);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+			}
 		}
 		
 		// Reset the timer

@@ -944,7 +944,7 @@ void CBinaryFrobMover::Event_IsLocked()
 	idThread::ReturnInt(IsLocked());
 }
 
-const idVec3& CBinaryFrobMover::GetCurrentPos()
+idVec3 CBinaryFrobMover::GetCurrentPos()
 {
 	idVec3 closedDir = m_ClosedPos;
 	closedDir.z = 0;

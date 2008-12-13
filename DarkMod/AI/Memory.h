@@ -189,6 +189,9 @@ public:
 	idVec3 idlePosition;
 	float idleYaw;
 
+	// angua: whether the AI should play idle animations
+	bool playIdleAnimations;
+
 	// TRUE if enemies have been seen
 	bool enemiesHaveBeenSeen;
 

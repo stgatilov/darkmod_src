@@ -32,6 +32,7 @@ Memory::Memory(idAI* owningAI) :
 	headTurnEndTime(0),
 	idlePosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	idleYaw(0),
+	playIdleAnimations(true),
 	enemiesHaveBeenSeen(false),
 	itemsHaveBeenStolen(false),
 	itemsHaveBeenBroken(false),
@@ -81,6 +82,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(headTurnEndTime);
 	savefile->WriteVec3(idlePosition);
 	savefile->WriteFloat(idleYaw);
+	savefile->WriteBool(playIdleAnimations);
 	savefile->WriteBool(enemiesHaveBeenSeen);
 	savefile->WriteBool(itemsHaveBeenStolen);
 	savefile->WriteBool(itemsHaveBeenBroken);
@@ -145,6 +147,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(headTurnEndTime);
 	savefile->ReadVec3(idlePosition);
 	savefile->ReadFloat(idleYaw);
+	savefile->ReadBool(playIdleAnimations);
 	savefile->ReadBool(enemiesHaveBeenSeen);
 	savefile->ReadBool(itemsHaveBeenStolen);
 	savefile->ReadBool(itemsHaveBeenBroken);

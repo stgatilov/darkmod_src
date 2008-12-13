@@ -68,6 +68,8 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
 	owner->SetWaitState("customAnim");
+
+	owner->GetMind()->GetMemory().playIdleAnimations = false;
 }
 
 void PathAnimTask::OnFinish(idAI* owner)
@@ -80,6 +82,8 @@ void PathAnimTask::OnFinish(idAI* owner)
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetWaitState("");
+
+	owner->GetMind()->GetMemory().playIdleAnimations = true;
 }
 
 bool PathAnimTask::Perform(Subsystem& subsystem)
