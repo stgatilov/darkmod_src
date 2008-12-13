@@ -8723,20 +8723,25 @@ void idEntity::Event_CheckAbsence()
 
 		currentBounds.ExpandSelf(tolerance);
 
-		idStr locationstring = spawnArgs.GetString("absence_location_1");
 		idEntity* location(NULL);
-		bool isAbsent(false);
+		bool isAbsent(true);
+		int locationsCount(0);
 
-		if (!locationstring.IsEmpty())
+		for (const idKeyValue* kv = spawnArgs.MatchPrefix("absence_location"); kv != NULL; kv = spawnArgs.MatchPrefix("absence_location", kv))
 		{
-			location = gameLocal.FindEntity(locationstring);
+			locationsCount++;
+			location = gameLocal.FindEntity(kv->GetValue());
+			if (location != NULL)
+			{
+				isAbsent = !currentBounds.IntersectsBounds(location->GetPhysics()->GetAbsBounds());
+			}
+			if (!isAbsent)
+			{
+				break;
+			}
 		}
-
-		if (location != NULL)
-		{
-			isAbsent = !currentBounds.IntersectsBounds(location->GetPhysics()->GetAbsBounds());
-		}
-		else
+		
+		if (locationsCount == 0)
 		{
 			isAbsent = !currentBounds.IntersectsBounds(m_StartBounds);
 		}
