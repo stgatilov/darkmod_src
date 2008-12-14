@@ -2828,6 +2828,8 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 				flags.ai_no_turn = true;
 			} else if ( token == "anim_turn" ) {
 				flags.anim_turn = true;
+			} else if ( token == "no_random_headturning" ) {
+				flags.no_random_headturning = true;
 			} else if ( token == "frame" ) {
 				// create a frame command
 				int			framenum;

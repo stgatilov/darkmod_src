@@ -180,6 +180,7 @@ typedef struct {
 	bool					random_cycle_start			: 1;
 	bool					ai_no_turn					: 1;
 	bool					anim_turn					: 1;
+	bool					no_random_headturning		: 1;
 } animFlags_t;
 
 
