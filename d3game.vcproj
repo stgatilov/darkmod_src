@@ -1148,6 +1148,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathCycleAnimTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathCycleAnimTask.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PathHideTask.cpp"
 						>
 					</File>

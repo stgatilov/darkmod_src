@@ -221,6 +221,7 @@ AI/Tasks/MoveToCoverTask.cpp \
 AI/Tasks/MoveToPositionTask.cpp \
 AI/Tasks/PathAnimTask.cpp \
 AI/Tasks/PathCornerTask.cpp \
+AI/Tasks/PathCycleAnimTask.cpp \
 AI/Tasks/PathHideTask.cpp \
 AI/Tasks/PathInteractTask.cpp \
 AI/Tasks/PathLookatTask.cpp \
