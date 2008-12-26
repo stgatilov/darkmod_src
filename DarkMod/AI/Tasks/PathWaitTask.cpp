@@ -47,7 +47,7 @@ void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	float waittime = path->spawnArgs.GetFloat("wait","0");
-	float waitmax = path->spawnArgs.GetFloat("waitmax", "0");
+	float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
 
 	if (waitmax > 0)
 	{

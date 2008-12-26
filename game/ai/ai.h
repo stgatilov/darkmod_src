@@ -463,6 +463,10 @@ public:
 	virtual void			RemoveTarget(idEntity* target);
 	virtual void			AddTarget(idEntity* target);
 
+	// angua: calls the script functions for sitting down and getting up
+	void SitDown();
+	void GetUp();
+
 public:
 	/**
 	* DarkMod AI Member Vars

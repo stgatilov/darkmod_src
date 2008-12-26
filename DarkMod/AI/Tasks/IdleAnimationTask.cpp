@@ -92,10 +92,12 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time > _nextAnimationTime)
 	{
-		if (memory.playIdleAnimations)
+		// angua: don't play idle animations while sitting down or getting up
+		idStr waitState(owner->WaitState());
+		if (memory.playIdleAnimations && waitState != "sit_down" && waitState != "get_up")
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
-			if (!owner->AI_FORWARD && !owner->spawnArgs.GetBool("sitting", "0"))
+			if (!owner->AI_FORWARD && owner->GetMoveType() != MOVETYPE_SIT)
 			{
 				// AI is not walking, play animations affecting all channels
 				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());

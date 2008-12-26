@@ -84,6 +84,11 @@ void IdleState::Init(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
 		owner->Event_SetMoveType(MOVETYPE_SIT);
 	}
+	else if (owner->GetMoveType() == MOVETYPE_SIT)
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+	}
 	else
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
@@ -123,11 +128,10 @@ void IdleState::Think(idAI* owner)
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
-			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
-			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
-			owner->Event_SetMoveType(MOVETYPE_SIT);
+			owner->SitDown();
 		}
 	}
+
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level

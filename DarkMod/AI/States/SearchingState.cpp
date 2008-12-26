@@ -62,7 +62,7 @@ void SearchingState::Init(idAI* owner)
 
 	if (owner->GetMoveType() == MOVETYPE_SIT)
 	{
-		owner->SetMoveType(MOVETYPE_ANIM);
+		owner->GetUp();
 	}
 
 	// Ensure we are in the correct alert level
@@ -172,9 +172,10 @@ void SearchingState::Think(idAI* owner)
 
 		// Let the AI check its senses
 		owner->PerformVisualScan();
-
+/*
+		// angua: commented this out, problems with getting up from sitting
 		idStr waitState(owner->WaitState());
-		if (waitState != "look_around")
+		if (waitState.IsEmpty())
 		{
 			// Waitstate is not matching, this means that the animation 
 			// can be started.
@@ -185,6 +186,8 @@ void SearchingState::Think(idAI* owner)
 			// the script function when the animation is done.
 			owner->SetWaitState("look_around");
 		}
+*/
+
 	}
 	// Is a hiding spot search in progress?
 	else if (!memory.hidingSpotInvestigationInProgress)

@@ -3271,6 +3271,11 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
 
+	if (GetMoveType() == MOVETYPE_SIT)
+	{
+		GetUp();
+	}
+
 	return true;
 }
 
@@ -4469,11 +4474,6 @@ void idAI::SittingMove()
 	idMat3 oldaxis = viewAxis;
 
 	AI_BLOCKED = false;
-
-	if ( move.moveCommand != MOVE_NONE )
-	{
-		move.moveType = MOVETYPE_ANIM;
-	}
 
 	RunPhysics();
 
@@ -9768,4 +9768,28 @@ void idAI::AddTarget(idEntity* target)
 	{
 		GetMind()->GetState()->OnChangeTarget(this);
 	}
+}
+
+void idAI::SitDown()
+{
+	idStr waitState(WaitState());
+	if (waitState == "sit_down")
+	{
+		return;
+	}
+	CallScriptFunctionArgs("Sit_Down", true, 0, "e", this);
+	SetWaitState("sit_down");
+
+}
+
+void idAI::GetUp()
+{
+	idStr waitState(WaitState());
+	if (waitState == "get_up")
+	{
+		return;
+	}
+
+	CallScriptFunctionArgs("Get_Up", true, 0, "e", this);
+	SetWaitState("get_up");
 }
