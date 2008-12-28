@@ -149,7 +149,18 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_wait")
 	{
-		task = PathWaitTaskPtr(new PathWaitTask(path));
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			subsystem.PushTask(TaskPtr(new PathWaitTask(path)));
+			// The "task" variable will be pushed later on in this code
+			task = PathTurnTaskPtr(new PathTurnTask(path));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the animation task
+			task = PathWaitTaskPtr(new PathWaitTask(path));
+		}
 	}
 	else if (classname == "path_waitfortrigger")
 	{
