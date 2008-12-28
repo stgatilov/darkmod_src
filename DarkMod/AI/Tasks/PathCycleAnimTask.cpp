@@ -69,7 +69,14 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 
 	owner->GetMind()->GetMemory().playIdleAnimations = false;
 
-	int waittime = path->spawnArgs.GetInt("wait");
+	float waittime = path->spawnArgs.GetFloat("wait","0");
+	float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
+
+	if (waitmax > 0)
+	{
+		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+	}
+
 	if (waittime > 0)
 	{
 		_waitEndTime = gameLocal.time + SEC2MS(waittime);
@@ -78,6 +85,8 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		_waitEndTime = -1;
 	}
+
+	owner->AI_ACTIVATED = false;
 }
 
 void PathCycleAnimTask::OnFinish(idAI* owner)
@@ -111,6 +120,15 @@ bool PathCycleAnimTask::Perform(Subsystem& subsystem)
 	{
 		return true;
 	}
+	else if (owner->AI_ACTIVATED)
+	{
+		// no wait time is set
+		// AI has been triggered, end this task
+		owner->AI_ACTIVATED = false;
+
+		return true;
+	}
+
 
 	return false;
 

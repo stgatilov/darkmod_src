@@ -1261,6 +1261,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual bool			CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting );
 
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
+
+	// angua: if the focusTime > gameLocal.time, the AI is currently looking at a specified entity or location
+	ID_INLINE int			GetFocusTime()
+	{
+		return focusTime;
+	}
+
 	void					BlockedFailSafe( void );
 	/**
 	* Overloaded idActor::CheckFOV with FOV check that depends on head joint orientation

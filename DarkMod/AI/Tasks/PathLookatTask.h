@@ -28,6 +28,9 @@ class PathLookatTask :
 
 	PathLookatTask();
 
+	idEntity* _focusEnt;
+	float _duration;
+
 public:
 	PathLookatTask(idPathCorner* path);
 

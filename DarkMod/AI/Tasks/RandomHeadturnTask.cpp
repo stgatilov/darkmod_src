@@ -91,7 +91,9 @@ void RandomHeadturnTask::PerformHeadTurnCheck()
 	animFlags_t animflags = animator->GetAnimFlags(animnum);
 
 	// angua: check if the current animation allows random headturning
-	if (!animflags.no_random_headturning)
+	// if the focusTime > current time, the AI is currently looking at a specified direction or entity
+	// we don't want to interrupt that
+	if (!animflags.no_random_headturning && owner->GetFocusTime() < gameLocal.time)
 	{
 		// Yep, set the angles and start head turning
 		memory.currentlyHeadTurning = true;

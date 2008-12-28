@@ -45,6 +45,30 @@ void PathLookatTask::Init(idAI* owner, Subsystem& subsystem)
 	if (path == NULL) {
 		gameLocal.Error("PathLookatTask: Path Entity not set before Init()");
 	}
+
+	// The entity to look at is named by the "focus" spawnarg, if that spawnarg is set.
+	idStr focusEntName(path->spawnArgs.GetString("focus"));
+	_focusEnt = NULL;
+	if (focusEntName.Length()) {
+		_focusEnt = gameLocal.FindEntity(focusEntName);
+		if (!_focusEnt) {
+			// If it's specified, it should really exist
+			gameLocal.Warning("Entity '%s' names a non-existent focus entity '%s'", path->name.c_str(), focusEntName.c_str());
+		}
+	}
+	// If spawnarg not set or no such entity, fall back to using the path entity itself
+	if (!_focusEnt) _focusEnt = path;
+
+	// Duration is indicated by "wait" key
+	_duration = path->spawnArgs.GetFloat("wait","1");
+	float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
+
+	if (waitmax > 0)
+	{
+		_duration += (waitmax - _duration) * gameLocal.random.RandomFloat();
+	}
+
+	owner->AI_ACTIVATED = false;
 }
 
 bool PathLookatTask::Perform(Subsystem& subsystem)
@@ -57,28 +81,38 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	// The entity to look at is named by the "focus" spawnarg, if that spawnarg is set.
-	idStr focusEntName(path->spawnArgs.GetString("focus"));
-	idEntity* focusEnt = NULL;
-	if (focusEntName.Length()) {
-		focusEnt = gameLocal.FindEntity(focusEntName);
-		if (!focusEnt) {
-			// If it's specified, it should really exist
-			gameLocal.Warning("Entity '%s' names a non-existent focus entity '%s'", path->name.c_str(), focusEntName.c_str());
+	if (_duration == 0)
+	{
+		// angua: waiting for trigger, no duration set
+		owner->Event_LookAtEntity(_focusEnt, 1);
+
+		if (owner->AI_ACTIVATED == true)
+		{
+			owner->AI_ACTIVATED = false;
+
+			// Trigger next path target(s)
+			owner->ActivateTargets(owner);
+
+			// Store the new path entity into the AI's mind
+			idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+			owner->GetMind()->GetMemory().currentPath = next;
+			
+			return true; // finish this task
+		}
+		else
+		{
+			return false;
 		}
 	}
-	// If spawnarg not set or no such entity, fall back to using the path entity itself
-	if (!focusEnt) focusEnt = path;
-	
-	// Duration is indicated by "wait" key
-	float duration = path->spawnArgs.GetFloat("wait", "1");
-	
-	// Look
-	owner->Event_LookAtEntity(focusEnt, duration);
+	else
+	{
+		// Look
+		owner->Event_LookAtEntity(_focusEnt, _duration);
+	}
 	
 	// Debug
-	gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), focusEnt->GetPhysics()->GetOrigin(), 10, 10000);
-	
+	// gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), focusEnt->GetPhysics()->GetOrigin(), 10, 10000);
+
 	// Trigger next path target(s)
 	owner->ActivateTargets(owner);
 
@@ -101,6 +135,10 @@ void PathLookatTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	_path.Save(savefile);
+
+	savefile->WriteObject(_focusEnt);
+
+	savefile->WriteFloat(_duration);
 }
 
 void PathLookatTask::Restore(idRestoreGame* savefile)
@@ -108,6 +146,10 @@ void PathLookatTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_path.Restore(savefile);
+
+	savefile->ReadObject(reinterpret_cast<idClass*&>(_focusEnt));
+
+	savefile->ReadFloat(_duration);
 }
 
 PathLookatTaskPtr PathLookatTask::CreateInstance()
