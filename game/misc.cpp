@@ -370,28 +370,65 @@ idPathCorner::RandomPath
 ============
 */
 idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *ignore ) {
-	int	i;
-	int	num;
-	int which;
-	idEntity *ent;
 	idPathCorner *path[ MAX_GENTITIES ];
 
-	num = 0;
-	for( i = 0; i < source->targets.Num(); i++ ) {
-		ent = source->targets[ i ].GetEntity();
+	int num(0);
+	float rand(gameLocal.random.RandomFloat());
+	float accumulatedChance(0);
+	float maxChance(0);
+
+	idEntity* candidate(NULL);
+
+	for(int i = 0; i < source->targets.Num(); i++ ) {
+		idEntity* ent = source->targets[ i ].GetEntity();
 		if ( ent && ( ent != ignore ) && ent->IsType( idPathCorner::Type ) ) {
-			path[ num++ ] = static_cast<idPathCorner *>( ent );
-			if ( num >= MAX_GENTITIES ) {
-				break;
+
+			float chance = ent->spawnArgs.GetFloat("chance", "0");
+			if (chance)
+			{
+				// angua: path has chance spawn arg set
+				// sum of the probability of this path and of the previous ones
+				accumulatedChance += chance;
+
+				// if the random number is between the current and the previous sum, this is our next path
+				if (rand < accumulatedChance)
+				{
+					return static_cast<idPathCorner *>( ent );
+				}
+
+				// store the path with the highest chance
+				if (chance > maxChance)
+				{
+					maxChance = chance;
+					candidate = ent;
+				}
+			}
+			else
+			{
+				// path doesn't have chance spawn arg set
+				// add to list
+				path[ num++ ] = static_cast<idPathCorner *>( ent );
+				if ( num >= MAX_GENTITIES ) {
+					break;
+				}
 			}
 		}
 	}
 
+	// probability comparison didn't return a path
+
+	// no path without chance spawn arg (chance sum is < 1)
 	if ( !num ) {
+		if (candidate)
+		{
+			// return the path with the highest chance
+			return static_cast<idPathCorner *>(candidate);
+		}
 		return NULL;
 	}
 
-	which = gameLocal.random.RandomInt( num );
+	// choose one from the list
+	int which = gameLocal.random.RandomInt( num );
 	return path[ which ];
 }
 
