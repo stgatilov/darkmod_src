@@ -1547,7 +1547,8 @@ void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _f
 idAnimBlend::CycleAnim
 =====================
 */
-void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity* ent ) {
+void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity* ent ) 
+{
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1557,8 +1558,6 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 	if ( !_anim ) {
 		return;
 	}
-
-	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1577,6 +1576,9 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 		starttime = currentTime;
 	}
 
+	// ishtvan: Moved this TDM call here to fix bugs
+	UpdatePlaybackRate(_animNum, ent);
+
 	// set up blend
 	blendEndValue		= 1.0f;
 	blendStartTime		= currentTime - 1;
@@ -1589,7 +1591,8 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 idAnimBlend::PlayAnim
 =====================
 */
-void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity *ent ) {
+void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity *ent ) 
+{
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1599,8 +1602,6 @@ void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int cu
 	if ( !_anim ) {
 		return;
 	}
-
-	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1613,6 +1614,9 @@ void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int cu
 	endtime				= starttime + _anim->Length();
 	cycle				= 1;
 	animWeights[ 0 ]	= 1.0f;
+
+	// ishtvan: Moved this TDM call here to fix bugs
+	UpdatePlaybackRate(_animNum, ent);
 
 	// set up blend
 	blendEndValue		= 1.0f;
@@ -1746,10 +1750,13 @@ void idAnimBlend::SetPlaybackRate( int currentTime, float newRate ) {
 	}
 
 	animTime = AnimTime( currentTime );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("SetPlayBackRate (Anim %s): animTime = %d, newRate = %f \r", AnimFullName(), animTime, newRate );
 	if ( newRate == 1.0f ) {
 		timeOffset = animTime - ( currentTime - starttime );
-	} else {
+	} else 
+	{
 		timeOffset = (int)(animTime - ( currentTime - starttime ) * newRate);
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("SetPlayBackRate (Anim %s): currentTime = %d, starttime = %d, calc timeOffset = %d \r", AnimFullName(), currentTime, starttime, timeOffset );
 	}
 
 	rate = newRate;
@@ -1934,18 +1941,25 @@ int idAnimBlend::AnimTime( int currentTime ) const
 	if ( anim ) 
 	{
 		if ( frame )
+		{
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime (anim %s): Frame was already set to %d\r", AnimFullName(), frame );
 			return FRAME2MS( frame - 1 );
+		}
 
 		// most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
 		if ( rate == 1.0f ) {
 			time = currentTime - starttime + timeOffset;
-		} else {
+		} else 
+		{
 			time = static_cast<int>( ( currentTime - starttime ) * rate ) + timeOffset;
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s has adjusted rate %f\r", AnimFullName(), rate );
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: currentTime: %d , starttime: %d, timeOffset: %d, calc. time: %d\r",currentTime, starttime, timeOffset );
 		}
 
 		// given enough time, we can easily wrap time around in our frame calculations, so
 		// keep cycling animations' time within the length of the anim.
 		length = anim->Length();
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s has length %d \r", AnimFullName(), length );
 		if ( ( cycle < 0 ) && ( length > 0 ) ) {
 			time %= length;
 
@@ -1955,6 +1969,7 @@ int idAnimBlend::AnimTime( int currentTime ) const
 				time += length;
 			}
 		}
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s, final time =%d \r", AnimFullName(), time );
 		return time;
 	} else {
 		return 0;
@@ -1972,16 +1987,28 @@ int idAnimBlend::GetFrameNumber( int currentTime ) const
 	frameBlend_t	frameinfo;
 	int				animTime;
 
+	// ishtvan: uncomment for debugging
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Anim %s called GetFrameNumber \r",AnimFullName() );
+
 	const idAnim *anim = Anim();
-	if ( !anim ) 
+	if ( !anim )
+	{
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: No anim found, returning 1\r" );
 		return 1;
+	}
 
-	if ( frame ) 
+	if ( frame )
+	{
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: Frame was set to %d, returning it\r", frame );
 		return frame;
+	}
 
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: Frame was not set, calculating it...\r" );
 	md5anim = anim->MD5Anim( 0 );
 	animTime = AnimTime( currentTime );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: AnimTime returned %d ms\r", animTime );
 	md5anim->ConvertTimeToFrame( animTime, cycle, frameinfo );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: ConvertTimeToFrame returned frame %d\r", frameinfo.frame1 + 1 );
 
 	return frameinfo.frame1 + 1;
 }
@@ -1999,7 +2026,6 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 	int				toFrameTime;
 
 	// ishtvan: don't play frame commands if paused
-	// TODO: make sure they're played when we un pause!
 	if 
 		( 
 			!allowFrameCommands || !ent || 
