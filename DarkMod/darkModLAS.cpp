@@ -478,13 +478,13 @@ void darkModLAS::removeLight (idLight* p_idLight)
 		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Attempted to remove the light '%s' with no assigned LAS area index", p_idLight->name.c_str());
 		return;
 	}
-	else if (p_idLight->LASAreaIndex >= m_numAreas)
+	// angua: lights in the void are at number m_numAreas
+	else if (p_idLight->LASAreaIndex > m_numAreas)
 	{
 		// Log error
 		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Attempted to remove the light '%s' with out of bounds area index %d", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
 		return;
 	}
-
 
 	if (m_pp_areaLightLists == NULL)
 	{
