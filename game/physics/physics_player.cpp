@@ -1847,6 +1847,9 @@ void idPhysics_Player::CheckDuck( void ) {
 				// We're outside of water, just duck as requested
 				current.movementFlags |= PMF_DUCKED;
 			}
+
+			// greebo: Update the lean physics when crouching
+			UpdateLeanPhysics();
 		}
 		else if (!IsMantling() && command.upmove >= 0) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
@@ -1901,7 +1904,8 @@ void idPhysics_Player::CheckDuck( void ) {
 		{
 			playerSpeed = crouchSpeed;
 			maxZ = pm_crouchheight.GetFloat();
-		} else 
+		}
+		else 
 		{
 			maxZ = pm_normalheight.GetFloat();
 		}
@@ -1947,6 +1951,9 @@ void idPhysics_Player::CheckDuck( void ) {
 				player->SetEyeHeight(pm_normalviewheight.GetFloat());
 			}
 		}
+
+		// greebo: Update the lean physics when not crouching
+		UpdateLeanPhysics();
 	}
 
 	// if the clipModel height should change
@@ -4537,10 +4544,7 @@ void idPhysics_Player::PerformMantle()
 
 
 
-void idPhysics_Player::ToggleLean
-(
-	float leanYawAngleDegrees
-)
+void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 {
 	//if (m_CurrentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
 	if (m_CurrentLeanTiltDegrees < 0.00001) // prevent floating point compare errors
@@ -4597,11 +4601,7 @@ void idPhysics_Player::ToggleLean
 
 //----------------------------------------------------------------------
 
-#ifdef linux
 bool idPhysics_Player::IsLeaning()
-#else
-__inline bool idPhysics_Player::IsLeaning()
-#endif
 {
 	if (m_CurrentLeanTiltDegrees < 0.001)
 	{
