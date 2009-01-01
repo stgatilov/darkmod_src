@@ -57,6 +57,23 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		return;
 	}
 
+	if (frobDoor->spawnArgs.GetBool("ai_should_not_handle"))
+	{
+		// AI will ignore this door (not try to handle it)
+		if (!frobDoor->IsOpen() || !FitsThrough())
+		{
+			// if it is closed, add to forbidden areas so AI will not try to path find through
+			idAAS*	aas = owner->GetAAS();
+			if (aas != NULL)
+			{
+				int areaNum = frobDoor->GetAASArea(aas);
+				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+			}
+				}
+		subsystem.FinishTask();
+		return;	}
+
 	// Let the owner save its move
 	owner->PushMove();
 	owner->m_HandlingDoor = true;

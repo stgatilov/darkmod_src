@@ -9535,15 +9535,28 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 
 bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
 {
-	if (AI_AlertLevel >= thresh_4)
+	if (frobMover->spawnArgs.GetBool("ai_should_not_close", "0"))
 	{
+		// this door should not be closed
 		return false;
 	}
-	else if (frobMover->spawnArgs.GetBool("shouldBeClosed", "0"))
+	if (AI_AlertLevel >= thresh_5)
 	{
+		// don't close doors during combat
+		return false;
+	}
+	if (frobMover->spawnArgs.GetBool("shouldBeClosed", "0"))
+	{
+		// this door should really be closed
 		return true;
 	}
+	if (AI_AlertLevel >= thresh_4)
+	{
+		// don't close other doors while agitated searching
+		return false;
+	}
 
+	// in all other cases, close the door
 	return true;
 }
 
