@@ -26,6 +26,64 @@ enum ECombatType
 	NUM_COMBAT_TYPES
 };
 
+/** Melee Attack/Parry types **/
+typedef enum
+{
+	MELEETYPE_OVERHEAD = BIT(0),
+	MELEETYPE_SLASH_LR = BIT(1), // slashing (attacker's) left to right
+	MELEETYPE_SLASH_RL = BIT(2), // slashing (attacker's) right to left
+	MELEETYPE_THRUST = BIT(3),
+	MELEETYPE_UNBLOCKABLE = BIT(4), // e.g., animal claws
+	NUM_MELEE_TYPES
+} EMeleeType;
+
+/** Possible outcomes of a melee attack **/
+enum EMeleeResultAT
+{
+	MELEERESULTAT_IN_PROGRESS, // no result yet, still in progress
+	MELEERESULTAT_HIT,
+	MELEERESULTAT_MISSED,
+	MELEERESULTAT_PARRIED,
+	MELEERESULTAT_COUNTERED, // they got hit while attacking
+	MELEERESULTAT_HIT_FRIENDLY, // friendly fire! 
+	NUM_RESULTSAT
+};
+
+/** Possible outcomes of a melee parry **/
+enum EMeleeResultPAR
+{
+	MELEERESULTPAR_IN_PROGRESS, // no result yet, still in progress
+	MELEERESULTPAR_BLOCKED, // blocked the attack
+	MELEERESULTPAR_FAILED, // got hit by same attack type they were trying to parry
+	MELEERESULTPAR_WRONG, // got hit by an attack type different than what they were parrying
+	NUM_RESULTSPAR
+};
+
+/** Current Melee Combat Status **/
+typedef struct SMeleeStatus_s
+{
+	// TODO: Decide when to clear these so we can tell when an AI is still recovering from an attack, etc
+	bool bAttacking;
+	bool bParrying;
+	EMeleeType AttackType;
+	EMeleeType ParryType;
+
+	// Results of most recent attack/parry 
+	// (includes case where they are still in progress)
+	EMeleeResultAT AttackResult;
+	EMeleeResultPAR ParryResult;
+
+} SMeleeStatus;
+
+/** Tabulate results of past melee actions **/
+typedef struct SMeleeResultsTable_s
+{
+	EMeleeResultAT		AttackResults[NUM_MELEE_TYPES][NUM_RESULTSAT];
+	EMeleeResultPAR	ParryResults[NUM_MELEE_TYPES][NUM_RESULTSPAR];
+} SMeleeResultsTable;
+
+
+
 /*
 ===============================================================================
 
@@ -401,6 +459,16 @@ protected:
 	 * is present in this set, the actor is ready for attacking with that attack type.
 	 */
 	std::set<int>			m_AttackFlags;
+
+	/**
+	* Stores what this actor is currently doing in melee combat
+	**/
+	SMeleeStatus			m_MeleeStatus;
+
+	/**
+	* Table of what's happened thus far in melee combat
+	**/
+	SMeleeResultsTable		m_PastMeleeResults;
 
 	/**
 	* Movement volume modifiers.  Ones for the player are taken from 

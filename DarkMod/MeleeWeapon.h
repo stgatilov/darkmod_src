@@ -11,6 +11,7 @@
 #define __MELEEWEAPON_H__
 
 #include "../game/entity.h"
+#include "../game/actor.h"
 
 class idPlayer;
 
@@ -22,15 +23,6 @@ class idPlayer;
 * between weapons and world, and between weapons and the item that
 * the player is currently holding in the Grabber.
 **/
-
-typedef enum
-{
-	MELEETYPE_OVERHEAD = BIT(0),
-	MELEETYPE_SLASH_LR = BIT(1), // slashing (attacker's) left to right
-	MELEETYPE_SLASH_RL = BIT(2), // slashing (attacker's) right to left
-	MELEETYPE_THRUST = BIT(3),
-	MELEETYPE_UNBLOCKABLE = BIT(4) // e.g., animal claws
-} EMeleeType;
 
 class CMeleeWeapon : public idMoveable 
 {

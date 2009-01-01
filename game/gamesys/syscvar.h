@@ -81,6 +81,7 @@ extern idCVar cv_ai_animstate_show;
 extern idCVar cv_debug_mainmenu;
 
 extern idCVar cv_pm_runmod;
+extern idCVar cv_pm_run_backmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;

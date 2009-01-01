@@ -5896,32 +5896,18 @@ void idPlayer::AdjustSpeed( void )
 		bobFrac = 0.0f;
 	} 
 	// running case
-	// DarkMod: removed check for not crouching..
+	// TDM: removed check for not crouching..
 	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
 	{
-		// Commented out by Dram. TDM does not use stamina
-		/*if ( !gameLocal.isMultiplayer ) {
-			stamina -= MS2SEC( gameLocal.msec );
-		}
-		if ( stamina < 0 ) {
-			stamina = 0;
-		}
-		if ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) ) {
-			bobFrac = 1.0f;
-		} else if ( pm_staminathreshold.GetFloat() <= 0.0001f ) {
-			bobFrac = 0.0f;
-		} else {
-			bobFrac = stamina / pm_staminathreshold.GetFloat();
-		}*/
+		// TDM: Removed stamina. TDM does not use stamina
 		bobFrac = 1.0f;
-
-		/**
-		*  DarkMod : Removed the effect of stamina on speed
-		* uncomment for stamina effecting speed
-		**/
-		//speed = pm_walkspeed.GetFloat() * ( 1.0f - bobFrac ) + pm_walkspeed*cv_pm_runmod.GetFloat() * bobFrac;
 		speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
+		
+		// ishtvan: we'll see if this works to prevent backwards running, depends on order things are set
+		// Don't apply backwards run penalty to crouch run.  It's already slow enough.
 		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
+		if( usercmd.forwardmove < 0 )
+			speed *= cv_pm_run_backmod.GetFloat();
 
 		// Clamp to encumbrance limits:
 		if( speed > MaxSpeed )
@@ -5930,20 +5916,7 @@ void idPlayer::AdjustSpeed( void )
 	// standing still, walking, or creeping case
 	else 
 	{
-		// Commented out by Dram. TDM does not use stamina
-		/*rate = pm_staminarate.GetFloat();
-		
-		// increase 25% faster when not moving
-		if ( ( usercmd.forwardmove == 0 ) && ( usercmd.rightmove == 0 ) && ( !physicsObj.OnLadder() || ( usercmd.upmove == 0 ) ) ) 
-		{
-			 rate *= 1.25f;
-		}
-
-		stamina += rate * MS2SEC( gameLocal.msec );
-		if ( stamina > pm_stamina.GetFloat() ) 
-		{
-			stamina = pm_stamina.GetFloat();
-		}*/
+		// TDM: Removed stamina
 
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
@@ -5960,7 +5933,7 @@ void idPlayer::AdjustSpeed( void )
 			speed = MaxSpeed;
 	}
 
-	// leave this in for speed potions or something
+	// TDM: leave this in for speed potions or something
 	speed *= PowerUpModifier(SPEED);
 
 	if ( influenceActive == INFLUENCE_LEVEL3 ) 
