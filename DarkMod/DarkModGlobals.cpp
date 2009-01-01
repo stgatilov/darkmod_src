@@ -118,6 +118,7 @@ static const char *LCString[LC_COUNT+1] = {
 	"STIMRESP",
 	"OBJECTIVES",
 	"DIFFICULTY",
+	"MAINMENU",
 	"(empty)"
 };
 
@@ -207,6 +208,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_DIFFICULTY] = false;
 	m_ClassArray[LC_STIM_RESPONSE] = false;
 	m_ClassArray[LC_CONVERSATION] = false;
+	m_ClassArray[LC_MAINMENU] = false;
 
 	m_Frame = 0;
 	m_MaxFrobDistance = 0;
@@ -694,6 +696,16 @@ void CGlobal::LoadINISettings(void *p)
 			}
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_CONVERSATION: %c\r", pm->Value[0]);
+		}
+		if(FindMap(ps, "LogClass_MAINMENU", TRUE, &pm) != static_cast<ULONG>(-1))
+		{
+			if(pm->Value[0] == '1')
+			{
+				m_ClassArray[LC_MAINMENU] = true;
+				Frame = true;
+			}
+
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MAINMENU: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != static_cast<ULONG>(-1))
 		{

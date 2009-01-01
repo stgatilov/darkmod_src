@@ -3198,12 +3198,23 @@ idGameLocal::HandleMainMenuCommands
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
+	// When this is set to TRUE, the next command will be dumped to the console
+	static bool logNextCommand = false;
+
 	idStr cmd(menuCommand);
 
 	// Watch out for objectives GUI-related commands
 	m_MissionData->HandleMainMenuCommands(cmd, gui);
 
-	if (cmd == "mainmenu_heartbeat")
+	if (logNextCommand)
+	{
+		// We should log that command
+		Printf("MainMenu: %s\n", cmd.c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("%s\r", cmd.c_str());
+
+		logNextCommand = false;
+	}
+	else if (cmd == "mainmenu_heartbeat")
 	{
 		// greebo: Stop the timer, this is already done in HandleESC, but just to make sure...
 		m_GamePlayTimer.Stop();
@@ -3244,6 +3255,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("ObjectivesMusicPlaying", false);
 			}
 		}
+	}
+	// greebo: the "log" command is used to write stuff to the console
+	else if (cmd == "log")
+	{
+		// The next string will be logged
+		logNextCommand = true;
 	}
 	// greebo: This is used for Saint Lucia only (comment this out after release)
 	else if (cmd == "showMods" || cmd == "briefing_start_request") // Called by "Start Mission"
