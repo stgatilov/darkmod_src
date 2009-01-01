@@ -5912,6 +5912,8 @@ void idPlayer::AdjustSpeed( void )
 		// Clamp to encumbrance limits:
 		if( speed > MaxSpeed )
 			speed = MaxSpeed;
+		if( crouchspeed > MaxSpeed )
+			crouchspeed = MaxSpeed;
 	}
 	// standing still, walking, or creeping case
 	else 
@@ -5931,6 +5933,8 @@ void idPlayer::AdjustSpeed( void )
 		// Clamp to encumbrance limits:
 		if( speed > MaxSpeed )
 			speed = MaxSpeed;
+		if( crouchspeed > MaxSpeed )
+			crouchspeed = MaxSpeed;
 	}
 
 	// TDM: leave this in for speed potions or something
