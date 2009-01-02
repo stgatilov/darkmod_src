@@ -29,11 +29,12 @@ enum ECombatType
 /** Melee Attack/Parry types **/
 typedef enum
 {
-	MELEETYPE_OVERHEAD = BIT(0),
-	MELEETYPE_SLASH_LR = BIT(1), // slashing (attacker's) left to right
-	MELEETYPE_SLASH_RL = BIT(2), // slashing (attacker's) right to left
-	MELEETYPE_THRUST = BIT(3),
-	MELEETYPE_UNBLOCKABLE = BIT(4), // e.g., animal claws
+	MELEETYPE_OVERHEAD,
+	MELEETYPE_SLASH_LR, // slashing (attacker's) left to right
+	MELEETYPE_SLASH_RL, // slashing (attacker's) right to left
+	MELEETYPE_THRUST,
+	MELEETYPE_UNBLOCKABLE, // unblockable attacks (e.g. animal claws)
+	MELEETYPE_BLOCKALL, // blocks all attacks except unblockable (e.g., shield)
 	NUM_MELEE_TYPES
 } EMeleeType;
 
@@ -78,8 +79,8 @@ typedef struct SMeleeStatus_s
 /** Tabulate results of past melee actions **/
 typedef struct SMeleeResultsTable_s
 {
-	EMeleeResultAT		AttackResults[NUM_MELEE_TYPES][NUM_RESULTSAT];
-	EMeleeResultPAR	ParryResults[NUM_MELEE_TYPES][NUM_RESULTSPAR];
+	int		AttackResults[NUM_MELEE_TYPES][NUM_RESULTSAT];
+	int		ParryResults[NUM_MELEE_TYPES][NUM_RESULTSPAR];
 } SMeleeResultsTable;
 
 
@@ -259,6 +260,15 @@ public:
 								const char *damageDefName, const float damageScale, const int location,
 								trace_t *collision = NULL
 							);
+
+	/**
+	* Melee callbacks so the melee system can let the actor know what happened
+	* And to keep the melee status up to date
+	**/
+	void MeleeAttackMissed( void );
+	void MeleeAttackHit( idEntity *ent );
+	void MeleeAttackParried( idEntity *owner, idEntity *weapon = NULL );
+	void MeleeParrySuccess( idEntity *other );
 
 	/****************************************************************************************
 	=====================

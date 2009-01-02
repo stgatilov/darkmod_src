@@ -315,13 +315,11 @@ void CMeleeWeapon::Think( void )
 
 void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 {
-	if( m_MeleeType & other->GetMeleeType() )
+	EMeleeType otherType = other->GetMeleeType();
+	if( !(m_MeleeType == MELEETYPE_UNBLOCKABLE)
+			&& (otherType == MELEETYPE_BLOCKALL || otherType == m_MeleeType ) )
 	{
 		// parry was succesful
-		// TODO: Play sound, FX
-		// could call melee collision on the weapon,
-		// but that's not going to hit the actual weapon material
-		// if the clipbox is much larger
 		// TODO: Play bounce animation or reverse attack animation?
 		DeactivateAttack();
 
