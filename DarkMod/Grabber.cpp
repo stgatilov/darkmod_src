@@ -983,12 +983,15 @@ void CGrabber::Event_CheckClipList( void )
 			{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Testing entity %s for player clipping\r", ListEnt->name.c_str() );
 				PlayerClip = m_player.GetEntity()->GetPhysics()->GetClipModel();
+				idVec3 PlayerOrigin = PlayerClip->GetOrigin();
+				
+				// test if player model clips into ent model
 				gameLocal.clip.TranslationModel
 				( 
-					tr, EntClip->GetOrigin(), EntClip->GetOrigin(),
-					EntClip, EntClip->GetAxis(), CONTENTS_BODY,
-					PlayerClip->Handle(), PlayerClip->GetOrigin(), 
-					PlayerClip->GetAxis() 
+					tr, PlayerOrigin, PlayerOrigin,
+					PlayerClip, PlayerClip->GetAxis(), CONTENTS_RENDERMODEL,
+					EntClip->Handle(), EntClip->GetOrigin(), 
+					EntClip->GetAxis() 
 				);
 
 				if( tr.fraction < 1.0 )
