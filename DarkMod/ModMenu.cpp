@@ -12,6 +12,10 @@
 #include <unistd.h>
 #endif
 
+CModMenu::CModMenu() :
+	modTop(0)
+{}
+
 void CModMenu::Init()
 {
 	LoadModList();
@@ -36,22 +40,44 @@ extern int errorno;
 idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
 namespace fs = boost::filesystem;
 
-char * readFile(fs::path fileName)
-{
-	FILE* file = fopen(fileName.file_string().c_str(), "r");
-	char * buf = NULL;
-	if (file != NULL)
+namespace {
+
+	/**
+	 * Private helper function reading the contents of the given file
+	 * into a string.
+	 */
+	idStr readFile(const fs::path& fileName)
 	{
-		fseek(file, 0, SEEK_END);
-		long len = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		buf = (char *)malloc(len+1);
-		fread(buf, len, 1, file);
-		buf[len] = 0;
-		fclose(file);
+		idStr returnValue;
+
+		FILE* file = fopen(fileName.file_string().c_str(), "r");
+
+		if (file != NULL)
+		{
+			// Get the filesize
+			fseek(file, 0, SEEK_END);
+			long len = ftell(file);
+			fseek(file, 0, SEEK_SET);
+
+			// Allocate a new buffer and read the contents
+			char* buf = new char[len+1];
+			fread(buf, len, 1, file);
+
+			// NULL-terminate the string
+			buf[len] = 0;
+
+			// Copy the result into the idStr
+			returnValue = buf;
+
+			delete[] buf;
+			
+			fclose(file);
+		}
+
+		return returnValue;
 	}
-	return buf;
-}
+
+} // namespace
 
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
@@ -60,6 +86,9 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	{
 		// Reload the mod list and update the GUI
 		LoadModList();
+
+		// Update the GUI state
+		UpdateGUI(gui);
 	}
 
 	if (idStr::Icmp(menuCommand, "showMods") == 0)
@@ -91,10 +120,10 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		if (current != NULL) {
 			gui->SetStateBool("hasCurrentMod", true); 
 			fs::path startingMapPath(doom3path / current / "startingmap.txt");
-			char * mapName = readFile(startingMapPath);
+			idStr mapName = readFile(startingMapPath);
 			tdm_mapName.SetString(mapName);
 			fs::path modDescFile(doom3path / current / "darkmod.txt");
-			char * modFileContent = readFile(modDescFile);
+			idStr modFileContent = readFile(modDescFile);
 			name = current;
 			desc = "";
 			if (modFileContent != NULL) {
@@ -124,7 +153,8 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	{
 		// Scroll down a page
 		modTop += MODS_PER_PAGE;
-		if (modTop > (unsigned) modsAvailable.Num()) {
+		if (modTop > modsAvailable.Num())
+		{
 			modTop = 0;
 		}
 		UpdateGUI(gui);
@@ -250,51 +280,85 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 	gui->SetStateBool("ScrollUpVisible", scrollUp);
 }
 
-void CModMenu::UpdateGUI(idUserInterface* gui) {
-	// Display the name of each FM
-	int modPos = 0;
+void CModMenu::UpdateGUI(idUserInterface* gui)
+{
 	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
-	while (modPos < MODS_PER_PAGE) {
-		idStr guiName = idStr("mod") + modPos + "_name";
-		idStr guiDesc = idStr("mod") + modPos + "_desc";
-		idStr guiImage = idStr("mod") + modPos + "_image";
-		idStr guiAvailable = idStr("modAvail") + modPos;
+
+	// Display the name of each FM
+	for (int modIndex = 0; modIndex < MODS_PER_PAGE; ++modIndex)
+	{
+		idStr guiName = idStr("mod") + modIndex + "_name";
+		idStr guiDesc = idStr("mod") + modIndex + "_desc";
+		idStr guiAuthor = idStr("mod") + modIndex + "_author";
+		idStr guiImage = idStr("mod") + modIndex + "_image";
+		idStr guiAvailable = idStr("modAvail") + modIndex;
+
 		idStr name = idStr("");
 		idStr desc = idStr("");
+		idStr author = idStr("");
 		idStr image = idStr("");
+	
 		int available = 0;
-		char * modFileContent = NULL;
-		if (modTop + modPos < (unsigned) modsAvailable.Num()) {
-			const char * modDirName = modsAvailable[modTop + modPos];
+		
+		if (modTop + modIndex < modsAvailable.Num())
+		{
+			// Get the mod name (i.e. the folder name)
+			const idStr& modDirName = modsAvailable[modTop + modIndex];
+
 			// Read the text file that contains the name and description
 			fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
-			modFileContent = readFile(modNameFile);
+
+			idStr modFileContent = readFile(modNameFile);
+
 			name = modDirName;
 			desc = "";
-			if (modFileContent != NULL) {
+
+			if (!modFileContent.IsEmpty())
+			{
 				idStr modInfo(modFileContent);
-				int spos = modInfo.Find("Title:");
-				int epos = modInfo.Find("Description:");
-				int len = modInfo.Length();
-				if (spos >= 0 && epos >= 0) {
-					modInfo.Mid(spos+6, epos-(spos+6), name);
-					modInfo.Right(len-(epos+12), desc);
+				int namePos = modFileContent.Find("Title:");
+				int descPos = modFileContent.Find("Description:");
+				int authorPos = modFileContent.Find("Author:");
+
+				int len = modFileContent.Length();
+
+				if (namePos >= 0)
+				{
+					name = idStr(modFileContent, namePos, (descPos != -1) ? descPos : len);
+					name.StripLeadingOnce("Title:");
+					name.StripLeading(" ");
+					name.StripLeading("\t");
 					name.StripTrailingWhitespace();
-					name.Strip(' ');
-					desc.StripTrailingWhitespace();
-					desc.Strip(' ');
 				}
-				delete modFileContent;
+
+				if (descPos >= 0)
+				{
+					desc = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
+					desc.StripLeadingOnce("Description:");
+					desc.StripLeading(" ");
+					desc.StripLeading("\t");
+					desc.StripTrailingWhitespace();
+				}
+
+				if (authorPos >= 0)
+				{
+					author = idStr(modFileContent, authorPos, len);
+					author.StripLeadingOnce("Author:");
+					author.StripLeading(" ");
+					author.StripLeading("\t");
+					author.StripTrailingWhitespace();
+				}
 			}
 			
 			available = 1;
 		}
+
 		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
 		gui->SetStateString(guiDesc, desc);
+		gui->SetStateString(guiAuthor, author);
 		gui->SetStateString(guiImage, image);
-		modPos++;
 	}
 }
 

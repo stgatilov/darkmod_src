@@ -10,6 +10,8 @@
 class CModMenu
 {
 public:
+	CModMenu();
+
 	// Initialises the mod menu and builds the list of available mods
 	void Init();
 
@@ -34,7 +36,10 @@ private:
 	void LoadModList();
 
 	idList<idStr> modsAvailable; 
-	unsigned int modTop;
+
+	// The index of the first displayed mod
+	int modTop;
+
 	int briefingPage;
 };
 
