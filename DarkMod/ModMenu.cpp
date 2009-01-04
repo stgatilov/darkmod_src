@@ -13,7 +13,7 @@
 #endif
 
 CModMenu::CModMenu() :
-	modTop(0)
+	_modTop(0)
 {}
 
 void CModMenu::Init()
@@ -93,11 +93,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 	if (idStr::Icmp(menuCommand, "showMods") == 0)
 	{
-		// LoadModList();
-
-		gui->SetStateBool("isModsMoreVisible", modsAvailable.Num() > MODS_PER_PAGE); 
-		gui->SetStateBool("isNewGameRootMenuVisible", true); 
-
+		
 		// Get the path to the darkmod directory
 		fs::path doom3path(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		doom3path /= "..";
@@ -149,22 +145,24 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		UpdateGUI(gui);
 	}
 
-	if (idStr::Icmp(menuCommand, "modMore") == 0)
+	if (idStr::Icmp(menuCommand, "modsNextPage") == 0)
 	{
 		// Scroll down a page
-		modTop += MODS_PER_PAGE;
-		if (modTop > modsAvailable.Num())
+		_modTop += gui->GetStateInt("modsPerPage", "10");
+
+		if (_modTop > _modsAvailable.Num())
 		{
-			modTop = 0;
+			_modTop = 0;
 		}
+
 		UpdateGUI(gui);
 	}
 	if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
 		// Get selected mod
 		int modNum = gui->GetStateInt("modSelected", "0");
-		modNum += modTop;
-		const char * modDirName = modsAvailable[modNum];
+		modNum += _modTop;
+		const char * modDirName = _modsAvailable[modNum];
 
 		// Path to the parent directory
 		fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -221,19 +219,19 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
 	{
 		// Display the briefing text
-		briefingPage = 1;
+		_briefingPage = 1;
 		DisplayBriefingPage(gui);
 	}
 	if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
 	{
 		// Display the next page of briefing text
-		briefingPage++;
+		_briefingPage++;
 		DisplayBriefingPage(gui);
 	}
 	if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
 	{
 		// Display the previous page of briefing text
-		briefingPage--;
+		_briefingPage--;
 		DisplayBriefingPage(gui);
 	}
 }
@@ -257,18 +255,18 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 		gameLocal.Warning("DisplayBriefingPage: pages is " + idStr(pages));
 
 		// ensure current page is between 1 and page count, inclusive
-		if (briefingPage < 1) briefingPage = 1;
-		if (briefingPage > pages) briefingPage = pages;
+		if (_briefingPage < 1) _briefingPage = 1;
+		if (_briefingPage > pages) _briefingPage = pages;
 
 		// load up page text
-		idStr page = idStr("page") + idStr(briefingPage) + "_body";
+		idStr page = idStr("page") + idStr(_briefingPage) + "_body";
 		gameLocal.Warning("DisplayBriefingPage: page is " + page);
 		briefing = xd->m_data.GetString(page);
 		gameLocal.Warning("DisplayBriefingPage: briefing is " + idStr(briefing));
 
 		// set scroll button visibility
-		scrollDown = pages > briefingPage;
-		scrollUp = briefingPage > 1;
+		scrollDown = pages > _briefingPage;
+		scrollUp = _briefingPage > 1;
 	}
 	else
 	{
@@ -285,8 +283,10 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 
+	int modsPerPage = gui->GetStateInt("modsPerPage", "10");
+
 	// Display the name of each FM
-	for (int modIndex = 0; modIndex < MODS_PER_PAGE; ++modIndex)
+	for (int modIndex = 0; modIndex < modsPerPage; ++modIndex)
 	{
 		idStr guiName = idStr("mod") + modIndex + "_name";
 		idStr guiDesc = idStr("mod") + modIndex + "_desc";
@@ -301,10 +301,10 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	
 		int available = 0;
 		
-		if (modTop + modIndex < modsAvailable.Num())
+		if (_modTop + modIndex < _modsAvailable.Num())
 		{
 			// Get the mod name (i.e. the folder name)
-			const idStr& modDirName = modsAvailable[modTop + modIndex];
+			const idStr& modDirName = _modsAvailable[_modTop + modIndex];
 
 			// Read the text file that contains the name and description
 			fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
@@ -360,12 +360,14 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiAuthor, author);
 		gui->SetStateString(guiImage, image);
 	}
+
+	gui->SetStateBool("isModsMoreVisible", _modsAvailable.Num() > modsPerPage); 
 }
 
 void CModMenu::LoadModList()
 {
 	// Clear the list first
-	modsAvailable.Clear();
+	_modsAvailable.Clear();
 
 	// list all FMs
 	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -385,7 +387,7 @@ void CModMenu::LoadModList()
 				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found an available mod: %s\r", dir_itr->path().leaf().c_str());
 
 				// Append to the list
-				modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
+				_modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
 			}
 		}
 	}

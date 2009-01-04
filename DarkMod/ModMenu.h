@@ -3,8 +3,6 @@
 
 #pragma once
 
-#define MODS_PER_PAGE 10
-
 // Handles mainmenu that displays list of mods (FMs) and lets user
 // chose which one to load. Also handles display of briefing page
 class CModMenu
@@ -35,12 +33,15 @@ private:
 	// Searches for new mods
 	void LoadModList();
 
-	idList<idStr> modsAvailable; 
+	// Find out which mod is currently installed (updates curMod member)
+	void GetCurrentMod();
+
+	idList<idStr> _modsAvailable; 
 
 	// The index of the first displayed mod
-	int modTop;
+	int _modTop;
 
-	int briefingPage;
+	int _briefingPage;
 };
 
 #endif	/* !__MODS_H__ */
