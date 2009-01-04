@@ -19,6 +19,8 @@ CModMenu::CModMenu() :
 void CModMenu::Init()
 {
 	LoadModList();
+	InitCurrentMod();
+	InitStartingMap();
 }
 
 void CModMenu::Clear() 
@@ -93,7 +95,6 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 	if (idStr::Icmp(menuCommand, "showMods") == 0)
 	{
-		
 		// Get the path to the darkmod directory
 		fs::path doom3path(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		doom3path /= "..";
@@ -294,74 +295,101 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		idStr guiImage = idStr("mod") + modIndex + "_image";
 		idStr guiAvailable = idStr("modAvail") + modIndex;
 
-		idStr name = idStr("");
-		idStr desc = idStr("");
-		idStr author = idStr("");
-		idStr image = idStr("");
-	
 		int available = 0;
+
+		// Empty mod info structure for default values
+		ModInfo info;
 		
 		if (_modTop + modIndex < _modsAvailable.Num())
 		{
 			// Get the mod name (i.e. the folder name)
 			const idStr& modDirName = _modsAvailable[_modTop + modIndex];
 
-			// Read the text file that contains the name and description
-			fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
+			// Load the mod info structure
+			info = GetModInfo(modDirName);
 
-			idStr modFileContent = readFile(modNameFile);
-
-			name = modDirName;
-			desc = "";
-
-			if (!modFileContent.IsEmpty())
-			{
-				idStr modInfo(modFileContent);
-				int namePos = modFileContent.Find("Title:");
-				int descPos = modFileContent.Find("Description:");
-				int authorPos = modFileContent.Find("Author:");
-
-				int len = modFileContent.Length();
-
-				if (namePos >= 0)
-				{
-					name = idStr(modFileContent, namePos, (descPos != -1) ? descPos : len);
-					name.StripLeadingOnce("Title:");
-					name.StripLeading(" ");
-					name.StripLeading("\t");
-					name.StripTrailingWhitespace();
-				}
-
-				if (descPos >= 0)
-				{
-					desc = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
-					desc.StripLeadingOnce("Description:");
-					desc.StripLeading(" ");
-					desc.StripLeading("\t");
-					desc.StripTrailingWhitespace();
-				}
-
-				if (authorPos >= 0)
-				{
-					author = idStr(modFileContent, authorPos, len);
-					author.StripLeadingOnce("Author:");
-					author.StripLeading(" ");
-					author.StripLeading("\t");
-					author.StripTrailingWhitespace();
-				}
-			}
-			
 			available = 1;
 		}
 
 		gui->SetStateInt(guiAvailable, available);
-		gui->SetStateString(guiName, name);
-		gui->SetStateString(guiDesc, desc);
-		gui->SetStateString(guiAuthor, author);
-		gui->SetStateString(guiImage, image);
+		gui->SetStateString(guiName, info.title);
+		gui->SetStateString(guiDesc, info.desc);
+		gui->SetStateString(guiAuthor, info.author);
+		gui->SetStateString(guiImage, info.image);
 	}
 
 	gui->SetStateBool("isModsMoreVisible", _modsAvailable.Num() > modsPerPage); 
+
+	// Update the currently installed mod
+	ModInfo curModInfo;
+	
+	if (!_curModName.IsEmpty())
+	{
+		curModInfo = GetModInfo(_curModName);
+		gui->SetStateBool("hasCurrentMod", true); 
+	}
+	else
+	{
+		curModInfo.title = "<No Mission Installed>";
+		gui->SetStateBool("hasCurrentMod", false); 
+	}
+
+	gui->SetStateString("currentModName", curModInfo.title);
+	gui->SetStateString("currentModDesc", curModInfo.desc);
+}
+
+CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
+{
+	// Read the text file that contains the name and description
+	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	doomPath /= "..";
+
+	fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
+
+	idStr modFileContent = readFile(modNameFile);
+
+	ModInfo info;
+
+	info.folderName = modDirName;
+	
+	if (!modFileContent.IsEmpty())
+	{
+		idStr modInfo(modFileContent);
+		int titlePos = modFileContent.Find("Title:");
+		int descPos = modFileContent.Find("Description:");
+		int authorPos = modFileContent.Find("Author:");
+
+		int len = modFileContent.Length();
+
+		if (titlePos >= 0)
+		{
+			info.title = idStr(modFileContent, titlePos, (descPos != -1) ? descPos : len);
+			info.title.StripLeadingOnce("Title:");
+			info.title.StripLeading(" ");
+			info.title.StripLeading("\t");
+			info.title.StripTrailingWhitespace();
+		}
+
+		if (descPos >= 0)
+		{
+			info.desc = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
+			info.desc.StripLeadingOnce("Description:");
+			info.desc.StripLeading(" ");
+			info.desc.StripLeading("\t");
+			info.desc.StripTrailingWhitespace();
+		}
+
+		if (authorPos >= 0)
+		{
+			info.author = idStr(modFileContent, authorPos, len);
+			info.author.StripLeadingOnce("Author:");
+			info.author.StripLeading(" ");
+			info.author.StripLeading("\t");
+			info.author.StripTrailingWhitespace();
+		}
+	}
+
+	return info;
 }
 
 void CModMenu::LoadModList()
@@ -390,5 +418,45 @@ void CModMenu::LoadModList()
 				_modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
 			}
 		}
+	}
+}
+
+void CModMenu::InitCurrentMod()
+{
+	idStr gameBase = cvarSystem->GetCVarString("fs_game_base");
+
+	// We only have a mod if game_base is set correctly, otherwise we're in "darkmod".
+	_curModName = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_game") : "";
+}
+
+void CModMenu::InitStartingMap()
+{
+	_startingMap.Empty();
+
+	if (_curModName.IsEmpty()) 
+	{
+		return;
+	}
+
+	// Find out which is the starting map
+	// list all FMs
+	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	doomPath /= "..";
+
+	fs::path startingMapPath(doomPath / _curModName / "startingmap.txt");
+
+	char* buffer = NULL;
+
+	if (fileSystem->ReadFile("startingmap.txt", reinterpret_cast<void**>(&buffer)) != -1)
+	{
+		// We have a startingmap
+		_startingMap = buffer;
+		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
+
+		tdm_mapName.SetString(_startingMap);
+	}
+	else
+	{
+		gameLocal.Warning("No 'startingmap.txt' file for the current mod: %s", _curModName.c_str());
 	}
 }

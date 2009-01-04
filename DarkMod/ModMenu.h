@@ -7,6 +7,15 @@
 // chose which one to load. Also handles display of briefing page
 class CModMenu
 {
+	struct ModInfo
+	{
+		idStr folderName;
+		idStr title;
+		idStr desc;
+		idStr author;
+		idStr image; // nyi
+	};
+
 public:
 	CModMenu();
 
@@ -34,14 +43,28 @@ private:
 	void LoadModList();
 
 	// Find out which mod is currently installed (updates curMod member)
-	void GetCurrentMod();
+	void InitCurrentMod();
 
+	// Finds out which map is the starting map (must be called after InitCurrentMod)
+	// After this call the CVAR tdm_mapName is initialised and holds the map name.
+	void InitStartingMap();
+
+	// Retries a mod info structure for the given mod (folder) name
+	ModInfo GetModInfo(const idStr& modName);
+
+	// The list of available mods
 	idList<idStr> _modsAvailable; 
 
 	// The index of the first displayed mod
 	int _modTop;
 
 	int _briefingPage;
+
+	// The name of the current mod
+	idStr _curModName;
+
+	// The map which should be the starting point
+	idStr _startingMap;
 };
 
 #endif	/* !__MODS_H__ */
