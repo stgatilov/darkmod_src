@@ -45,13 +45,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		{
 			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			// add AAS area number of the door to forbidden areas
-			idAAS*	aas = owner->GetAAS();
-			if (aas != NULL)
-			{
-				int areaNum = frobDoor->GetAASArea(aas);
-				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
-				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
-			}
+			AddToForbiddenAreas(owner, frobDoor);
 		}
 		subsystem.FinishTask();
 		return;
@@ -59,7 +53,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (frobDoor->spawnArgs.GetBool("ai_should_not_handle"))
 	{
-		// AI will ignore this door (not try to handle it)
+		// AI will ignore this door (not try to handle it) 
 		if (!frobDoor->IsOpen() || !FitsThrough())
 		{
 			// if it is closed, add to forbidden areas so AI will not try to path find through
@@ -70,9 +64,10 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
 			}
-				}
+		}
 		subsystem.FinishTask();
-		return;	}
+		return;	
+	}
 
 	// Let the owner save its move
 	owner->PushMove();
@@ -97,7 +92,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		_wasLocked = true;
 	}
 
-
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
 	frobDoor->GetUserManager().AddUser(owner);
@@ -108,28 +102,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_doorInTheWay = false;
 
-	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = frobDoor->GetOpenDir();
-
-	//calculate where to stand when the door swings away from us
-	idVec3 awayPos = GetAwayPos(owner, frobDoor);
-	// calculate where to stand when the door swings towards us
-	idVec3 towardPos =  GetTowardPos(owner, frobDoor);
-	
-
-	// check if the door swings towards or away from us
-	if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-	{
-		// Door opens towards us
-		_frontPos = towardPos;
-		_backPos = awayPos;
-	}
-	else
-	{
-		// Door opens away from us
-		_frontPos = awayPos;
-		_backPos = towardPos;
-	}
+	GetDoorHandlingPositions(owner, frobDoor);
 
 	_doorHandlingState = EStateNone;
 }
@@ -201,6 +174,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
 	}
 
+	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+	idEntity* backPosEntity = _backPosEnt.GetEntity();
+
 	// Door is closed
 	if (!frobDoor->IsOpen())
 	{
@@ -214,7 +190,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					ResetDoor(owner, doubleDoor);
 					if (masterUser == owner)
 					{
-
 						if (!owner->MoveToPosition(_frontPos))
 						{
 							// TODO: position not reachable, need a better one
@@ -224,8 +199,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					break;
 				}
 
-				else if (masterUser == owner)
+				else
 				{
+					if (!AllowedToOpen(owner))
+					{
+						AddToForbiddenAreas(owner, frobDoor);
+						return true;
+					}
+
 					if (!owner->MoveToPosition(_frontPos))
 					{
 						// TODO: position not reachable, need a better one
@@ -233,10 +214,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					_doorHandlingState = EStateMovingToFrontPos;
 				}
 				
-				else
-				{
-					owner->StopMove(MOVE_STATUS_WAITING);
-				}
 				break;
 
 			case EStateMovingToFrontPos:
@@ -247,26 +224,39 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					ResetDoor(owner, doubleDoor);
 					break;
 				}
-				if (owner->AI_MOVE_DONE)
+		
+				if (!AllowedToOpen(owner))
+				{
+					AddToForbiddenAreas(owner, frobDoor);
+					return true;
+				}
+
+				if (masterUser != owner)
+				{
+					// if we are not the master user, stop and wait when we are close enough
+					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+					dir.z = 0;
+					float dist = dir.LengthFast();
+					if (dist <= 150)
+					{
+						owner->StopMove(MOVE_STATUS_WAITING);
+					}
+				}
+				else if (owner->GetMoveStatus() == MOVE_STATUS_WAITING)
+				{
+					// master user has finished, move to front position now
+					owner->MoveToPosition(_frontPos);
+				}
+
+				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
 				{
 					if (masterUser == owner)
 					{
-						// check if we are close enough already
-						idVec3 dir = (owner->GetPhysics()->GetOrigin() - _frontPos);
-						dir.z = 0;
-						float dist = dir.LengthFast();
-						if (dist < 2 * owner->GetArmReachLength())
-						{
-							// reached front position
-							owner->StopMove(MOVE_STATUS_DONE);
-							owner->TurnToward(closedPos);
-							_waitEndTime = gameLocal.time + 750;
-							_doorHandlingState = EStateWaitBeforeOpen;
-						}
-						else
-						{
-							owner->MoveToPosition(_frontPos);
-						}
+						// reached front position
+						owner->StopMove(MOVE_STATUS_DONE);
+						owner->TurnToward(closedPos);
+						_waitEndTime = gameLocal.time + 750;
+						_doorHandlingState = EStateWaitBeforeOpen;
 					}
 				}
 				break;
@@ -279,6 +269,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					ResetDoor(owner, doubleDoor);
 					break;
 				}
+
+				if (!AllowedToOpen(owner))
+				{
+					AddToForbiddenAreas(owner, frobDoor);
+					return true;
+				}
+
 				if (gameLocal.time >= _waitEndTime)
 				{
 					if (masterUser == owner)
@@ -299,6 +296,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					ResetDoor(owner, doubleDoor);
 					break;
 				}
+				if (!AllowedToOpen(owner))
+				{
+					AddToForbiddenAreas(owner, frobDoor);
+					return true;
+				}
+
 				if (gameLocal.time >= _waitEndTime)
 				{
 					if (masterUser == owner)
@@ -320,6 +323,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					ResetDoor(owner, doubleDoor);
 					break;
 				}
+
+				if (!AllowedToOpen(owner))
+				{
+					AddToForbiddenAreas(owner, frobDoor);
+					return true;
+				}
+
 				// try again
 				owner->StopMove(MOVE_STATUS_DONE);
 				owner->TurnToward(closedPos);
@@ -359,7 +369,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					// If the door should ALWAYS be locked or it was locked before => lock it
 					// but only if the owner is able to unlock it in the first place
-					if (owner->CanUnlock(frobDoor) && 
+					if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
 						(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
 					{
 						// if the door was locked before, lock it again
@@ -390,6 +400,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		switch (_doorHandlingState)
 		{
 			case EStateNone:
+				if (masterUser != owner)
+				{
+					owner->MoveToPosition(_frontPos);
+					_doorHandlingState = EStateMovingToFrontPos;
+				}
+
 				// check if we are blocking the door
 				if (frobDoor->IsBlocked() || 
 					(frobDoor->WasInterrupted() || 
@@ -405,15 +421,16 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
-					else if (masterUser == owner)
+					else if (!AllowedToOpen(owner))
+					{
+						AddToForbiddenAreas(owner, frobDoor);
+						return true;
+					}
+					else
 					{
 						owner->MoveToPosition(_frontPos);
 						_doorHandlingState = EStateMovingToFrontPos;
 					}
-				}
-				else if (masterUser != owner && owner->GetMoveStatus() == MOVE_STATUS_WAITING)
-				{
-
 				}
 				else
 				{
@@ -478,6 +495,24 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			
 
 			case EStateMovingToFrontPos:
+
+				if (masterUser != owner)
+				{
+					// if we are not the master user, stop and wait when we are close enough
+					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+					dir.z = 0;
+					float dist = dir.LengthFast();
+					if (dist <= 150)
+					{
+						owner->StopMove(MOVE_STATUS_WAITING);
+					}
+				}
+				else if (owner->GetMoveStatus() == MOVE_STATUS_WAITING)
+				{
+					// master user has finished, move to front position now
+					owner->MoveToPosition(_frontPos);
+				}
+
 				// check if the door was blocked or interrupted
 				if (frobDoor->IsBlocked() || 
 					frobDoor->WasInterrupted() || 
@@ -494,6 +529,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
+					else if (!AllowedToOpen(owner))
+					{
+						AddToForbiddenAreas(owner, frobDoor);
+						return true;
+					}
+
 					else
 					{
 						// need to open the door further when we reach the position for opening
@@ -539,7 +580,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (!FitsThrough() && masterUser == owner)
 					{
-						if (gameLocal.time >= _waitEndTime)
+						if (!AllowedToOpen(owner))
+						{
+							AddToForbiddenAreas(owner, frobDoor);
+							return true;
+						}
+
+						else if (gameLocal.time >= _waitEndTime)
 						{
 							if (!OpenDoor())
 							{
@@ -568,6 +615,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (!FitsThrough())
 					{
+						if (!AllowedToOpen(owner))
+						{
+							AddToForbiddenAreas(owner, frobDoor);
+							return true;
+						}
+
 						if (gameLocal.time >= _waitEndTime && masterUser == owner)
 						{
 							if (!OpenDoor())
@@ -661,6 +714,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
+
+					else if (!AllowedToOpen(owner))
+					{
+						AddToForbiddenAreas(owner, frobDoor);
+						return true;
+					}
+
 					else if (masterUser == owner)
 					{
 						// can't move through already, need to open further
@@ -714,6 +774,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// reached back position
 				if (owner->AI_MOVE_DONE)
 				{
+					if (!AllowedToClose(owner))
+					{
+						return true;
+					}
 					if (_doorInTheWay || (owner->ShouldCloseDoor(frobDoor) && numUsers < 2))
 					{
 						// close the door
@@ -731,6 +795,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				
 			case EStateWaitBeforeClose:
+				if (!AllowedToClose(owner))
+				{
+					return true;
+				}
+
 				if (!_doorInTheWay && owner->AI_AlertLevel >= owner->thresh_4)
 				{
 					return true;
@@ -753,6 +822,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateStartClose:
+				if (!AllowedToClose(owner))
+				{
+					return true;
+				}
+
 				if (!_doorInTheWay && owner->AI_AlertLevel >= owner->thresh_4)
 				{
 					return true;
@@ -771,6 +845,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 
 			case EStateClosingDoor:
+				if (!AllowedToClose(owner))
+				{
+					return true;
+				}
 				if (owner->AI_AlertLevel >= owner->thresh_4)
 				{
 					return true;
@@ -833,6 +911,32 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 		{
 			_frontPos = awayPos;
 			_backPos = towardPos;
+		}
+	}
+
+	// check for custom door handling positions
+	for (const idKeyValue* kv = newDoor->spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = newDoor->spawnArgs.MatchPrefix("door_handle_position", kv))
+	{
+		idStr posStr = kv->GetValue();
+		idEntity* doorHandlingPosition = gameLocal.FindEntity(posStr);
+
+		if (doorHandlingPosition)
+		{
+			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
+			idVec3 posDir = posOrg - frobDoorOrg;
+
+			if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+			{
+				// found door handling position in front of the door
+				_frontPos = posOrg;
+				_frontPosEnt = doorHandlingPosition;
+			}
+			else
+			{
+				// found door handling position behind the door
+				_backPos = posOrg;
+				_backPosEnt = doorHandlingPosition;
+			}
 		}
 	}
 }
@@ -1019,37 +1123,35 @@ bool HandleDoorTask::OpenDoor()
 
 	if (frobDoor->IsLocked())
 	{
-		if (!owner->CanUnlock(frobDoor))
+		if (!owner->CanUnlock(frobDoor) || !AllowedToUnlock(owner))
 		{
-
 			// Door is locked and we cannot unlock it
 			// Check if we can open the other part of a double door
 			CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 			if (doubleDoor != NULL && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
 			{
 				ResetDoor(owner, doubleDoor);
-				_doorHandlingState = EStateMovingToFrontPos;
-				return true;
+				if (AllowedToUnlock(owner))
+				{
+					_doorHandlingState = EStateMovingToFrontPos;
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 			owner->StopMove(MOVE_STATUS_DONE);
 			// Rattle the door once
 			frobDoor->Open(true);
 				
 			// add AAS area number of the door to forbidden areas
-			idAAS*	aas = owner->GetAAS();
-			if (aas != NULL)
-			{
-				int areaNum = frobDoor->GetAASArea(aas);
-				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
-				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
-
-			}
-
+			AddToForbiddenAreas(owner, frobDoor);
 			return false;
 		}
 		else
 		{
-			frobDoor->Unlock(false);
+			frobDoor->Unlock(true);
 			doorInfo.wasLocked = frobDoor->IsLocked();
 		}
 	}
@@ -1060,6 +1162,63 @@ bool HandleDoorTask::OpenDoor()
 
 	return true;
 }
+
+
+void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
+{
+	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
+	const idVec3& openDir = frobDoor->GetOpenDir();
+
+	//calculate where to stand when the door swings away from us
+	idVec3 awayPos = GetAwayPos(owner, frobDoor);
+	// calculate where to stand when the door swings towards us
+	idVec3 towardPos =  GetTowardPos(owner, frobDoor);
+
+	// check if the door swings towards or away from us
+	if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+	{
+		// Door opens towards us
+		_frontPos = towardPos;
+		_backPos = awayPos;
+	}
+	else
+	{
+		// Door opens away from us
+		_frontPos = awayPos;
+		_backPos = towardPos;
+	}
+
+	_frontPosEnt = NULL;
+	_backPosEnt = NULL;
+
+	// check for custom door handling positions
+	for (const idKeyValue* kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position", kv))
+	{
+		idStr posStr = kv->GetValue();
+		idEntity* doorHandlingPosition = gameLocal.FindEntity(posStr);
+
+		if (doorHandlingPosition)
+		{
+			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
+			idVec3 posDir = posOrg - frobDoorOrg;
+
+			if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+			{
+				// found door handling position in front of the door
+				_frontPos = posOrg;
+				_frontPosEnt = doorHandlingPosition;
+			}
+			else
+			{
+				// found door handling position behind the door
+				_backPos = posOrg;
+				_backPosEnt = doorHandlingPosition;
+			}
+		}
+	}
+}
+
+
 
 void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 {
@@ -1115,6 +1274,65 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 	}
 }
 
+bool HandleDoorTask::AllowedToOpen(idAI* owner)
+{
+	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+
+	if (frontPosEntity && frontPosEntity->spawnArgs.GetBool("ai_no_open"))
+	{
+		// AI is not allowed to open the door from this side
+		return false;
+	}
+	return true;
+}
+
+bool HandleDoorTask::AllowedToClose(idAI* owner)
+{
+	idEntity* backPosEntity = _backPosEnt.GetEntity();
+
+	if (backPosEntity && backPosEntity->spawnArgs.GetBool("ai_no_close"))
+	{
+		// AI is not allowed to close the door from this side
+		return false;
+	}
+	return true;
+}
+
+bool HandleDoorTask::AllowedToUnlock(idAI* owner)
+{
+	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+
+	if (frontPosEntity && frontPosEntity->spawnArgs.GetBool("ai_no_unlock"))
+	{
+		// AI is not allowed to unlock the door from this side
+		return false;
+	}
+	return true;
+}
+
+bool HandleDoorTask::AllowedToLock(idAI* owner)
+{
+	idEntity* backPosEntity = _backPosEnt.GetEntity();
+
+	if (backPosEntity && backPosEntity->spawnArgs.GetBool("ai_no_lock"))
+	{
+		// AI is not allowed to lock the door from this side
+		return false;
+	}
+	return true;
+}
+
+void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
+{
+	// add AAS area number of the door to forbidden areas
+	idAAS*	aas = owner->GetAAS();
+	if (aas != NULL)
+	{
+		int areaNum = frobDoor->GetAASArea(aas);
+		gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+		owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+	}
+}
 
 void HandleDoorTask::OnFinish(idAI* owner)
 {
@@ -1161,6 +1379,9 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_waitEndTime);
 	savefile->WriteBool(_wasLocked);
 	savefile->WriteBool(_doorInTheWay);
+
+	_frontPosEnt.Save(savefile);
+	_backPosEnt.Save(savefile);
 }
 
 void HandleDoorTask::Restore(idRestoreGame* savefile)
@@ -1175,6 +1396,9 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_waitEndTime);
 	savefile->ReadBool(_wasLocked);
 	savefile->ReadBool(_doorInTheWay);
+
+	_frontPosEnt.Restore(savefile);
+	_backPosEnt.Restore(savefile);
 }
 
 HandleDoorTaskPtr HandleDoorTask::CreateInstance()

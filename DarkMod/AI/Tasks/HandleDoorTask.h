@@ -30,6 +30,9 @@ private:
 	idVec3 _frontPos;
 	idVec3 _backPos;
 
+	idEntityPtr<idEntity> _frontPosEnt;
+	idEntityPtr<idEntity> _backPosEnt;
+
 	enum EDoorHandlingState {
 		EStateNone,
 		EStateMovingToFrontPos,
@@ -59,11 +62,21 @@ public:
 	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
 	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
 
+	void GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor);
+
 	void DoorInTheWay(idAI* owner, CFrobDoor* frobDoor);
 
-	// this checks if the gap is large enough to fit through 
-	// partially openend doors (blocked, interrupted)
+	// this checks if the gap is large enough to fit through partially openend doors (blocked, interrupted)
 	bool FitsThrough();
+
+	// these checks whether the AI is allowed to open/close/unlock/lock the door from this side
+	bool AllowedToOpen(idAI* owner);
+	bool AllowedToClose(idAI* owner);
+	bool AllowedToUnlock(idAI* owner);
+	bool AllowedToLock(idAI* owner);
+
+	// adds the door area to forbidden areas (will be re-evaluated after some time)
+	void AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor);
 
 	// open door routine (checks if the door is locked and starts to open it when possible)
 	bool OpenDoor();
