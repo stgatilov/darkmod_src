@@ -12,13 +12,24 @@
 #include <unistd.h>
 #endif
 
-CModMenu::CModMenu()
+void CModMenu::Init()
 {
-
+	LoadModList();
 }
 
-CModMenu::~CModMenu()
+void CModMenu::Clear() 
 {
+	// Nothing to clear yet
+}
+
+void CModMenu::Save(idSaveGame* savefile) const
+{
+	// Nothing to save yet
+}
+
+void CModMenu::Restore(idRestoreGame* savefile)
+{
+	// Nothing to restore yet
 }
 
 extern int errorno;
@@ -45,30 +56,21 @@ char * readFile(fs::path fileName)
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
+	if (idStr::Icmp(menuCommand, "updateModList") == 0)
+	{
+		// Reload the mod list and update the GUI
+		LoadModList();
+	}
+
 	if (idStr::Icmp(menuCommand, "showMods") == 0)
 	{
-		// list all FMs
-		fs::path doomPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
-		doomPath /= "..";
-		fs::directory_iterator end_iter;
-		modsAvailable.Clear();
-		for (fs::directory_iterator dir_itr(doomPath); dir_itr != end_iter; ++dir_itr)
-		{
-			if (fs::is_directory(dir_itr->status()))
-			{
-				// look for darkmod.txt file
-				fs::path descFile(dir_itr->path() / "darkmod.txt");
-				if (fs::exists(descFile)) {
-					idStr * modName = new idStr(dir_itr->path().leaf().c_str());
-					modsAvailable.Append(modName->c_str());
-				}
-			}
-		}
+		// LoadModList();
+
 		gui->SetStateBool("isModsMoreVisible", modsAvailable.Num() > MODS_PER_PAGE); 
 		gui->SetStateBool("isNewGameRootMenuVisible", true); 
 
 		// Get the path to the darkmod directory
-		fs::path doom3path(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+		fs::path doom3path(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		doom3path /= "..";
 		fs::path darkmodPath(doom3path / "darkmod");
 
@@ -79,7 +81,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		//char * current = readFile(currentFMPath);
 
 		char * current = NULL;
-		idLib::fileSystem->ReadFile("currentfm.txt", (void**) &current);
+		fileSystem->ReadFile("currentfm.txt", (void**) &current);
 		
 		//const char* current = "saintlucia";
 
@@ -135,7 +137,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		const char * modDirName = modsAvailable[modNum];
 
 		// Path to the parent directory
-		fs::path parentPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+		fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		parentPath = parentPath.remove_leaf().remove_leaf();
 
 		// Path to the darkmod directory
@@ -251,7 +253,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 void CModMenu::UpdateGUI(idUserInterface* gui) {
 	// Display the name of each FM
 	int modPos = 0;
-	fs::path doomPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 	while (modPos < MODS_PER_PAGE) {
 		idStr guiName = idStr("mod") + modPos + "_name";
@@ -293,5 +295,34 @@ void CModMenu::UpdateGUI(idUserInterface* gui) {
 		gui->SetStateString(guiDesc, desc);
 		gui->SetStateString(guiImage, image);
 		modPos++;
+	}
+}
+
+void CModMenu::LoadModList()
+{
+	// Clear the list first
+	modsAvailable.Clear();
+
+	// list all FMs
+	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	doomPath /= "..";
+	fs::directory_iterator end_iter;
+
+	for (fs::directory_iterator dir_itr(doomPath); dir_itr != end_iter; ++dir_itr)
+	{
+		if (fs::is_directory(dir_itr->status()))
+		{
+			// look for darkmod.txt file
+			fs::path descFile(dir_itr->path() / "darkmod.txt");
+
+			if (fs::exists(descFile))
+			{
+				// Found a mod
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found an available mod: %s\r", dir_itr->path().leaf().c_str());
+
+				// Append to the list
+				modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
+			}
+		}
 	}
 }

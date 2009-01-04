@@ -10,8 +10,14 @@
 class CModMenu
 {
 public:
-	CModMenu();
-	~CModMenu();
+	// Initialises the mod menu and builds the list of available mods
+	void Init();
+
+	void Clear();
+
+	// Save/Restore routines
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 
 	// handles main menu commands
 	void HandleCommands(const char *menuCommand, idUserInterface *gui);
@@ -23,7 +29,11 @@ public:
 	void DisplayBriefingPage(idUserInterface *gui);
 
 private:
-	idList<const char *> modsAvailable; 
+
+	// Searches for new mods
+	void LoadModList();
+
+	idList<idStr> modsAvailable; 
 	unsigned int modTop;
 	int briefingPage;
 };

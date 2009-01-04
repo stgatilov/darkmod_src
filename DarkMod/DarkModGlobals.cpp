@@ -147,7 +147,6 @@ CRelations		g_globalRelations;
 CMissionData	g_MissionData;
 CShop			g_Shop;
 CDifficultyMenu	g_Diff;
-CModMenu		g_Mods;
 
 static idList<const char *> *s_FileVersion = NULL;
 

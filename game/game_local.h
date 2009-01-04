@@ -203,6 +203,9 @@ namespace ai {
 	typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
 } // namespace
 
+class CModMenu;
+typedef boost::shared_ptr<CModMenu> CModMenuPtr;
+
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
 const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
@@ -457,6 +460,11 @@ public:
 
 	// The manager class for all map conversations
 	ai::ConversationSystemPtr	m_ConversationSystem;
+
+	/**
+	 * greebo: The fan-mission-handling class. Also contains GUI handling code.
+	 */
+	CModMenuPtr				m_ModMenu;
 
 	/**
 	* Pointer to global AI Relations object
