@@ -147,6 +147,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateMovingToFrontPos:
 				str = "EStateMovingToFrontPos";
 				break;
+			case EStateApproachingDoor:
+				str = "EStateMovingToFrontPos";
+				break;
 			case EStateWaitBeforeOpen:
 				str = "EStateWaitBeforeOpen";
 				break;
@@ -188,14 +191,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// the other part of the double door is already open
 					// no need to open this one
 					ResetDoor(owner, doubleDoor);
-					if (masterUser == owner)
+
+					if (!owner->MoveToPosition(_frontPos))
 					{
-						if (!owner->MoveToPosition(_frontPos))
-						{
-							// TODO: position not reachable, need a better one
-						}
-						_doorHandlingState = EStateMovingToFrontPos;
+						// TODO: position not reachable, need a better one
 					}
+					_doorHandlingState = EStateApproachingDoor;
+					
 					break;
 				}
 
@@ -211,12 +213,46 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// TODO: position not reachable, need a better one
 					}
-					_doorHandlingState = EStateMovingToFrontPos;
+					_doorHandlingState = EStateApproachingDoor;
 				}
-				
 				break;
 
+			case EStateApproachingDoor:
+			{
+				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+				dir.z = 0;
+				float dist = dir.LengthFast();
+				if (dist <= 150)
+				{
+					if (masterUser == owner)
+					{
+						GetDoorHandlingPositions(owner, frobDoor);
+						if (_doorInTheWay)
+						{	
+							DoorInTheWay(owner, frobDoor);
+							_doorHandlingState = EStateMovingToBackPos;
+
+						}
+						else
+						{
+							if (!owner->MoveToPosition(_frontPos))
+							{
+								// TODO: position not reachable, need a better one
+							}
+							_doorHandlingState = EStateMovingToFrontPos;
+						}
+					}
+					else
+					{
+						owner->StopMove(MOVE_STATUS_WAITING);
+					}
+				}
+		
+				break;
+			}
+
 			case EStateMovingToFrontPos:
+			{
 				if (doubleDoor != NULL && doubleDoor->IsOpen())
 				{
 					// the other part of the double door is already open
@@ -231,35 +267,33 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (masterUser != owner)
-				{
-					// if we are not the master user, stop and wait when we are close enough
-					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
-					dir.z = 0;
-					float dist = dir.LengthFast();
-					if (dist <= 150)
-					{
-						owner->StopMove(MOVE_STATUS_WAITING);
-					}
-				}
-				else if (owner->GetMoveStatus() == MOVE_STATUS_WAITING)
-				{
-					// master user has finished, move to front position now
-					owner->MoveToPosition(_frontPos);
-				}
-
 				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
 				{
-					if (masterUser == owner)
-					{
-						// reached front position
-						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(closedPos);
-						_waitEndTime = gameLocal.time + 750;
-						_doorHandlingState = EStateWaitBeforeOpen;
-					}
+					// reached front position
+					owner->StopMove(MOVE_STATUS_DONE);
+					owner->TurnToward(closedPos);
+					_waitEndTime = gameLocal.time + 750;
+					_doorHandlingState = EStateWaitBeforeOpen;
+					break;
+				}
+
+				// check if we are already close enough
+				idVec3 dir = closedPos - owner->GetPhysics()->GetOrigin();
+				dir.z = 0;
+				float dist = dir.LengthFast();
+				if (dist <= owner->GetArmReachLength())
+				{
+					owner->StopMove(MOVE_STATUS_DONE);
+					owner->TurnToward(closedPos);
+					_waitEndTime = gameLocal.time + 750;
+					_doorHandlingState = EStateWaitBeforeOpen;
+				}
+				else if (owner->AI_MOVE_DONE)
+				{
+					owner->MoveToPosition(_frontPos);
 				}
 				break;
+			}
 
 			case EStateWaitBeforeOpen:
 				if (doubleDoor != NULL && doubleDoor->IsOpen())
@@ -400,26 +434,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		switch (_doorHandlingState)
 		{
 			case EStateNone:
-				if (masterUser != owner)
-				{
-					owner->MoveToPosition(_frontPos);
-					_doorHandlingState = EStateMovingToFrontPos;
-				}
 
 				// check if we are blocking the door
 				if (frobDoor->IsBlocked() || 
 					(frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock()))
 				{
-					if (FitsThrough() && masterUser == owner)
+					if (FitsThrough())
 					{
 						if (owner->AI_AlertLevel >= owner->thresh_4)
 						{
 							return true;
 						}
+						owner->MoveToPosition(_frontPos);
+						_doorHandlingState = EStateApproachingDoor;
 
-						owner->MoveToPosition(_backPos);
-						_doorHandlingState = EStateMovingToBackPos;
 					}
 					else if (!AllowedToOpen(owner))
 					{
@@ -429,7 +458,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else
 					{
 						owner->MoveToPosition(_frontPos);
-						_doorHandlingState = EStateMovingToFrontPos;
+						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
 				else
@@ -455,6 +484,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// door is in the way, there is not enough space next to the door to fit through
 						// find a suitable position and close the door
 						DoorInTheWay(owner, frobDoor);
+						_doorHandlingState = EStateApproachingDoor;
+
 					}
 					else
 					{
@@ -470,7 +501,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							// door is in the way, there is not enough space to fit through
 							// find a suitable position and close the door
 							DoorInTheWay(owner, frobDoor);
-							
+							_doorHandlingState = EStateApproachingDoor;
 						}
 						else
 						{
@@ -482,6 +513,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								// door is in the way, there is not enough space to fit through
 								// find a suitable position and close the door
 								DoorInTheWay(owner, frobDoor);
+								_doorHandlingState = EStateApproachingDoor;
 							}
 							else
 							{
@@ -491,41 +523,59 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
+
 				break;
-			
 
-			case EStateMovingToFrontPos:
-
-				if (masterUser != owner)
+			case EStateApproachingDoor:
+			{
+				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+				dir.z = 0;
+				float dist = dir.LengthFast();
+				if (dist <= 150)
 				{
-					// if we are not the master user, stop and wait when we are close enough
-					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
-					dir.z = 0;
-					float dist = dir.LengthFast();
-					if (dist <= 150)
+					if (masterUser == owner)
+					{
+						GetDoorHandlingPositions(owner, frobDoor);
+						if (_doorInTheWay)
+						{	
+							DoorInTheWay(owner, frobDoor);
+							_doorHandlingState = EStateMovingToBackPos;
+
+						}
+						else
+						{
+							if (!owner->MoveToPosition(_frontPos))
+							{
+								// TODO: position not reachable, need a better one
+							}
+							_doorHandlingState = EStateMovingToFrontPos;
+
+						}
+					}
+					else
 					{
 						owner->StopMove(MOVE_STATUS_WAITING);
 					}
 				}
-				else if (owner->GetMoveStatus() == MOVE_STATUS_WAITING)
-				{
-					// master user has finished, move to front position now
-					owner->MoveToPosition(_frontPos);
-				}
+			
+				break;
+			}
 
+			
+
+			case EStateMovingToFrontPos:
 				// check if the door was blocked or interrupted
 				if (frobDoor->IsBlocked() || 
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
-					if (FitsThrough() && masterUser == owner)
+					if (FitsThrough())
 					{
 						// gap is large enough, move to back position
 						if (owner->AI_AlertLevel >= owner->thresh_4)
 						{
 							return true;
 						}
-
 						owner->MoveToPosition(_backPos);
 						_doorHandlingState = EStateMovingToBackPos;
 					}
@@ -535,32 +585,23 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
-					else
+					idVec3 currentPos = frobDoor->GetCurrentPos();
+					idVec3 dir = owner->GetPhysics()->GetOrigin() - currentPos;
+					dir.z = 0;
+					float dist = dir.LengthFast();
+					// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
+
+					if (dist < 2 * owner->GetArmReachLength() || owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
 					{
-						// need to open the door further when we reach the position for opening
-						if (owner->AI_MOVE_DONE && masterUser == owner)
-						{
-							idVec3 currentPos = frobDoor->GetCurrentPos();
-								
-							// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
-
-							idVec3 dir = owner->GetPhysics()->GetOrigin() - currentPos;
-							dir.z = 0;
-
-							float dist = dir.LengthFast();
-							if (dist < 2 * owner->GetArmReachLength() || owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
-							{
-								// reached front position
-								owner->StopMove(MOVE_STATUS_DONE);
-								owner->TurnToward(closedPos);
-								_waitEndTime = gameLocal.time + 650;
-								_doorHandlingState = EStateWaitBeforeOpen;
-							}
-							else
-							{
-								owner->MoveToPosition(_frontPos);
-							}
-						}
+						// reached front position
+						owner->StopMove(MOVE_STATUS_DONE);
+						owner->TurnToward(closedPos);
+						_waitEndTime = gameLocal.time + 650;
+						_doorHandlingState = EStateWaitBeforeOpen;
+					}
+					else if (owner->AI_MOVE_DONE)
+					{
+						owner->MoveToPosition(_frontPos);
 					}
 				}
 				// door is already open, move to back position
@@ -578,7 +619,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
-					if (!FitsThrough() && masterUser == owner)
+					if (!FitsThrough())
 					{
 						if (!AllowedToOpen(owner))
 						{
@@ -595,7 +636,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				else if (masterUser == owner)
+				else
 				{
 					// no need for waiting, door is already open, let's move
 					if (owner->AI_AlertLevel >= owner->thresh_4)
@@ -621,7 +662,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							return true;
 						}
 
-						if (gameLocal.time >= _waitEndTime && masterUser == owner)
+						if (gameLocal.time >= _waitEndTime)
 						{
 							if (!OpenDoor())
 							{
@@ -630,7 +671,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				if (masterUser == owner)
+				else
 				{
 					if (owner->AI_AlertLevel >= owner->thresh_4)
 					{
@@ -925,17 +966,39 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
 			idVec3 posDir = posOrg - frobDoorOrg;
 
-			if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+			if (_doorHandlingState == EStateWaitBeforeClose
+				|| _doorHandlingState == EStateStartClose
+				|| _doorHandlingState == EStateClosingDoor)
 			{
-				// found door handling position in front of the door
-				_frontPos = posOrg;
-				_frontPosEnt = doorHandlingPosition;
+				// we have already walked through, so we are standing on the side of the backpos
+				if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+				{
+					// found door handling position behind the door
+					_backPos = posOrg;
+					_backPosEnt = doorHandlingPosition;
+				}
+				else
+				{
+					// found door handling position in front of the door
+					_frontPos = posOrg;
+					_frontPosEnt = doorHandlingPosition;
+
+				}
 			}
 			else
 			{
-				// found door handling position behind the door
-				_backPos = posOrg;
-				_backPosEnt = doorHandlingPosition;
+				if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+				{
+					// found door handling position in front of the door
+					_frontPos = posOrg;
+					_frontPosEnt = doorHandlingPosition;
+				}
+				else
+				{
+					// found door handling position behind the door
+					_backPos = posOrg;
+					_backPosEnt = doorHandlingPosition;
+				}
 			}
 		}
 	}
@@ -1201,8 +1264,12 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 		{
 			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
 			idVec3 posDir = posOrg - frobDoorOrg;
+			posDir.z = 0;
 
-			if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+			idVec3 ownerDir = owner->GetPhysics()->GetOrigin() - frobDoorOrg;
+			ownerDir.z = 0;
+
+			if (posDir * ownerDir > 0)
 			{
 				// found door handling position in front of the door
 				_frontPos = posOrg;
@@ -1264,13 +1331,11 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 		}
 		
 		owner->MoveToPosition(_frontPos);
-		_doorHandlingState = EStateMovingToBackPos;
 	}
 	else
 	{
 		//Door opens away from us
 		owner->MoveToPosition(_backPos);
-		_doorHandlingState = EStateMovingToBackPos;
 	}
 }
 

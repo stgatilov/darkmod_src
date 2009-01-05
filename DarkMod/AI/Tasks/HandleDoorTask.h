@@ -35,6 +35,7 @@ private:
 
 	enum EDoorHandlingState {
 		EStateNone,
+		EStateApproachingDoor,
 		EStateMovingToFrontPos,
 		EStateWaitBeforeOpen,
 		EStateStartOpen,
