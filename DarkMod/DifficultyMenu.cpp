@@ -18,9 +18,6 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 {
 	if (idStr::Icmp(menuCommand, "diffLoad") == 0)
 	{
-		// type-in field for map name (temporary)
-		idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
-
 		// New game, determine the map
 		char * mapName = NULL;
 		char * startingMap = NULL;
@@ -28,7 +25,7 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 		
 		if (mapName == NULL) {
 			gameLocal.Warning( "Couldn't open startingmap.txt file" );
-			mapName = va("%s", tdm_mapName.GetString());
+			mapName = va("%s", cv_tdm_mapName.GetString());
 		} else {
 			mapName = startingMap;
 		}

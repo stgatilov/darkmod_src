@@ -328,8 +328,7 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 }
 
 void CShop::DisplayShop(idUserInterface *gui) {
-	idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
-	const char * mapName = tdm_mapName.GetString();
+	const char * mapName = cv_tdm_mapName.GetString();
 	const char * filename = va("maps/%s", mapName);
 
 	idMapFile* mapFile = new idMapFile;

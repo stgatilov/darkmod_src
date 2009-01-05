@@ -39,7 +39,6 @@ void CModMenu::Restore(idRestoreGame* savefile)
 }
 
 extern int errorno;
-idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
 namespace fs = boost::filesystem;
 
 namespace {
@@ -201,41 +200,50 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 }
 
 // Displays the current page of briefing text
-void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
-	gameLocal.Warning("DisplayBriefingPage: start");
+void CModMenu::DisplayBriefingPage(idUserInterface *gui)
+{
 	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
-	idStr briefingData = idStr("maps/") + tdm_mapName.GetString() + "/mission_briefing";
-	gameLocal.Warning("DisplayBriefingPage: briefingData is " + briefingData);
-	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, briefingData, false ) );
+	idStr briefingData = idStr("maps/") + cv_tdm_mapName.GetString() + "/mission_briefing";
 
-	const char * briefing = "";
+	gameLocal.Printf("DisplayBriefingPage: briefingData is " + briefingData + "\n");
+
+	// Load the XData declaration
+	const tdmDeclXData* xd = static_cast<const tdmDeclXData*>(
+		declManager->FindType(DECL_XDATA, briefingData, false)
+	);
+
+	const char* briefing = "";
 	bool scrollDown = false;
 	bool scrollUp = false;
+
 	if (xd != NULL)
 	{
-		gameLocal.Warning("DisplayBriefingPage: xd is not null");
+		gameLocal.Printf("DisplayBriefingPage: xdata found.\n");
+
 		// get page count from xdata
-		int pages = xd->m_data.GetInt("num_pages");
-		gameLocal.Warning("DisplayBriefingPage: pages is " + idStr(pages));
+		int numPages = xd->m_data.GetInt("num_pages");
+
+		gameLocal.Printf("DisplayBriefingPage: numPages is %d\n", numPages);
 
 		// ensure current page is between 1 and page count, inclusive
-		if (_briefingPage < 1) _briefingPage = 1;
-		if (_briefingPage > pages) _briefingPage = pages;
-
+		_briefingPage = idMath::ClampInt(1, numPages, _briefingPage);
+		
 		// load up page text
-		idStr page = idStr("page") + idStr(_briefingPage) + "_body";
-		gameLocal.Warning("DisplayBriefingPage: page is " + page);
-		briefing = xd->m_data.GetString(page);
-		gameLocal.Warning("DisplayBriefingPage: briefing is " + idStr(briefing));
+		idStr page = va("page%d_body", _briefingPage);
 
+		gameLocal.Warning("DisplayBriefingPage: current page is " + page);
+
+		briefing = xd->m_data.GetString(page);
+		
 		// set scroll button visibility
-		scrollDown = pages > _briefingPage;
+		scrollDown = numPages > _briefingPage;
 		scrollUp = _briefingPage > 1;
 	}
 	else
 	{
-		gameLocal.Warning("DisplayBriefingPage: xd is null");
+		gameLocal.Warning("DisplayBriefingPage: Could not find briefing xdata: %s", briefingData.c_str());
 	}
+
 	// update GUI
 	gui->SetStateString("BriefingText", briefing);
 	gui->SetStateBool("ScrollDownVisible", scrollDown);
@@ -416,7 +424,7 @@ void CModMenu::InitStartingMap()
 		_startingMap = buffer;
 		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
 
-		tdm_mapName.SetString(_startingMap);
+		cv_tdm_mapName.SetString(_startingMap);
 	}
 	else
 	{
