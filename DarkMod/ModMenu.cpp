@@ -92,61 +92,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Update the GUI state
 		UpdateGUI(gui);
 	}
-
-	if (idStr::Icmp(menuCommand, "showMods") == 0)
-	{
-		// Get the path to the darkmod directory
-		fs::path doom3path(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-		doom3path /= "..";
-		fs::path darkmodPath(doom3path / "darkmod");
-
-		// Path to file that holds the current FM name
-		fs::path currentFMPath(darkmodPath / "currentfm.txt");
-
-		// Get the current mod
-		//char * current = readFile(currentFMPath);
-
-		char * current = NULL;
-		fileSystem->ReadFile("currentfm.txt", (void**) &current);
-		
-		//const char* current = "saintlucia";
-
-		idStr name = idStr("<No Mission Installed>");
-		idStr desc = idStr("");
-		gui->SetStateBool("hasCurrentMod", false); 
-		if (current != NULL) {
-			gui->SetStateBool("hasCurrentMod", true); 
-			fs::path startingMapPath(doom3path / current / "startingmap.txt");
-			idStr mapName = readFile(startingMapPath);
-			tdm_mapName.SetString(mapName);
-			fs::path modDescFile(doom3path / current / "darkmod.txt");
-			idStr modFileContent = readFile(modDescFile);
-			name = current;
-			desc = "";
-			if (modFileContent != NULL) {
-				idStr modInfo(modFileContent);
-				int spos = modInfo.Find("Title:");
-				int epos = modInfo.Find("Description:");
-				int len = modInfo.Length();
-				if (spos >= 0 && epos >= 0) {
-					modInfo.Mid(spos+6, epos-(spos+6), name);
-					modInfo.Right(len-(epos+12), desc);
-					name.StripTrailingWhitespace();
-					name.Strip(' ');
-					desc.StripTrailingWhitespace();
-					desc.Strip(' ');
-				}
-				delete modFileContent;
-			}
-		}
-		gui->SetStateString("currentModName", name); 
-		gui->SetStateString("currentModDesc", desc); 
-		gui->SetStateInt("modSelected", -1); 
-
-		UpdateGUI(gui);
-	}
-
-	if (idStr::Icmp(menuCommand, "modsNextPage") == 0)
+	else if (idStr::Icmp(menuCommand, "modsNextPage") == 0)
 	{
 		// Scroll down a page
 		_modTop += gui->GetStateInt("modsPerPage", "10");
@@ -158,21 +104,35 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
+
 	if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
 		// Get selected mod
-		int modNum = gui->GetStateInt("modSelected", "0");
-		modNum += _modTop;
-		const char * modDirName = _modsAvailable[modNum];
+		int modNum = gui->GetStateInt("modSelected", "0") + _modTop;
+		
+		const idStr& modDirName = _modsAvailable[modNum];
 
 		// Path to the parent directory
 		fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 		parentPath = parentPath.remove_leaf().remove_leaf();
 
-		// Path to the darkmod directory
-		fs::path darkmodPath(parentPath / "darkmod");
+		idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
 
-		// Path to mod directory in fms folder
+		if (modBaseName.IsEmpty())
+		{
+			// Fall back to fs_game if no game_base is set
+			modBaseName = cvarSystem->GetCVarString("fs_game");
+
+			if (modBaseName.IsEmpty())
+			{
+				modBaseName = "darkmod"; // last resort: hardcoded
+			}
+		}
+
+		// Path to the darkmod directory
+		fs::path darkmodPath(parentPath / modBaseName);
+
+		// Path to mod directory folder
 		fs::path modDirPath(parentPath / modDirName);
 
 		// Path to file that holds the current FM name
@@ -217,18 +177,21 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		_exit(EXIT_FAILURE);
 #endif
 	}
+
 	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
 	{
 		// Display the briefing text
 		_briefingPage = 1;
 		DisplayBriefingPage(gui);
 	}
+
 	if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
 	{
 		// Display the next page of briefing text
 		_briefingPage++;
 		DisplayBriefingPage(gui);
 	}
+
 	if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
 	{
 		// Display the previous page of briefing text
