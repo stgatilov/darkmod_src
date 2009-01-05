@@ -486,6 +486,20 @@ void idGameLocal::Init( void ) {
 	// Initialise the mod menu class to load the FMs
 	assert(m_ModMenu != NULL);
 	m_ModMenu->Init();
+
+	// Check the interaction.vfp settings
+	if (cv_interaction_vfp_type.GetInteger() == 0)
+	{
+		// Use D3 interaction
+		Printf("Using D3 interaction.vfp\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+	}
+	else
+	{
+		// Use rebb's enhanced interaction
+		Printf("Using TDM's enhanced interaction.vfp\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+	}
 }
 
 /*
@@ -2791,6 +2805,23 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			if ( view ) {
 				gameRenderWorld->SetRenderView( view );
 			}
+
+			// Check the interaction.vfp settings
+			if (cv_interaction_vfp_type.GetInteger() != cvarSystem->GetCVarInteger("r_testARBProgram"))
+			{
+				if (cv_interaction_vfp_type.GetInteger() == 0)
+				{
+					// Use D3 interaction
+					Printf("Switching to D3 interaction.vfp\n");
+					cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+				}
+				else
+				{
+					// Use rebb's enhanced interaction
+					Printf("Switching to TDM's enhanced interaction.vfp\n");
+					cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+				}
+			}
 		}
 
 		// clear any debug lines from a previous frame
@@ -2926,7 +2957,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				if (ent)
 					ent->Event_FadeSound( 0, music_vol, 0.5 );
 			}
-		cv_music_volume.ClearModified();
+			cv_music_volume.ClearModified();
 		}
 
 		// display how long it took to calculate the current game frame
