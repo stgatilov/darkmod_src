@@ -107,74 +107,15 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
 		// Get selected mod
-		int modNum = gui->GetStateInt("modSelected", "0") + _modTop;
-		
-		const idStr& modDirName = _modsAvailable[modNum];
+		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
-		// Path to the parent directory
-		fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-		parentPath = parentPath.remove_leaf().remove_leaf();
+		InstallMod(modIndex, gui);
+	}
 
-		idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
-
-		if (modBaseName.IsEmpty())
-		{
-			// Fall back to fs_game if no game_base is set
-			modBaseName = cvarSystem->GetCVarString("fs_game");
-
-			if (modBaseName.IsEmpty())
-			{
-				modBaseName = "darkmod"; // last resort: hardcoded
-			}
-		}
-
-		// Path to the darkmod directory
-		fs::path darkmodPath(parentPath / modBaseName);
-
-		// Path to mod directory folder
-		fs::path modDirPath(parentPath / modDirName);
-
-		// Path to file that holds the current FM name
-		fs::path currentFMPath(darkmodPath / "currentfm.txt");
-
-		// Path to file that contains the command line arguments to DM
-		fs::path dmArgs(darkmodPath / "dmargs.txt");
-
-		// Save the name of the new mod
-		FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
-		fputs(modDirName, currentFM);
-		fclose(currentFM);
-
-		// path to tdmlauncher
-#ifdef _WINDOWS
-		fs::path launcherExe(darkmodPath / "tdmlauncher.exe");
-#else
-		// ???
-		fs::path launcherExe(darkmodPath / "tdmlauncher");
-#endif
-
-		// command line to spawn tdmlauncher
-		idStr commandLine(launcherExe.file_string().c_str());
-
-#ifdef _WINDOWS
-		// Create a tdmlauncher process, setting the working directory to the doom directory
-		STARTUPINFO siStartupInfo;
-		PROCESS_INFORMATION piProcessInfo;
-		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
-		memset(&piProcessInfo, 0, sizeof(piProcessInfo));
-		siStartupInfo.cb = sizeof(siStartupInfo);
-		commandLine += " pause";
-		CreateProcess(NULL, (LPSTR) commandLine.c_str(), NULL, NULL,  false, 0, NULL,
-			parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
-#else
-		// start tdmlauncher
-		if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
-			int errnum = errno;
-			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
-		}
-		_exit(EXIT_FAILURE);
-#endif
+	if (idStr::Icmp(menuCommand, "darkmodRestart") == 0)
+	{
+		// Get selected mod
+		// TODO: Restart the game
 	}
 
 	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
@@ -252,9 +193,6 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 
 void CModMenu::UpdateGUI(idUserInterface* gui)
 {
-	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	doomPath /= "..";
-
 	int modsPerPage = gui->GetStateInt("modsPerPage", "10");
 
 	// Display the name of each FM
@@ -273,11 +211,8 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		
 		if (_modTop + modIndex < _modsAvailable.Num())
 		{
-			// Get the mod name (i.e. the folder name)
-			const idStr& modDirName = _modsAvailable[_modTop + modIndex];
-
 			// Load the mod info structure
-			info = GetModInfo(modDirName);
+			info = GetModInfo(_modTop + modIndex);
 
 			available = 1;
 		}
@@ -309,23 +244,44 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateString("currentModDesc", curModInfo.desc);
 }
 
-CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
+CModMenu::ModInfo CModMenu::GetModInfo(int modIndex) 
 {
-	// Read the text file that contains the name and description
-	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	// Sanity check
+	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
+	{
+		return ModInfo();
+	}
+
+	const idStr& modDirName = _modsAvailable[modIndex];
+
+	idStr fmPath = cv_tdm_fm_path.GetString() + modDirName + "/";
+
+	// Check for the darkmod.txt file
+	idStr descFileName = fmPath + cv_tdm_fm_desc_file.GetString();
+
+	char* buffer = NULL;
+	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
+	{
+		// File not readable?
+		return ModInfo();
+	}
+
+	// Buffer is now holding the contents, copy to idStr
+	idStr modFileContent(buffer);
+	fileSystem->FreeFile(buffer);
+
+	/*fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 
 	fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
 
-	idStr modFileContent = readFile(modNameFile);
+	idStr modFileContent = readFile(modNameFile);*/
 
 	ModInfo info;
-
-	info.folderName = modDirName;
+	info.pathToFMPackage = fmPath;
 	
 	if (!modFileContent.IsEmpty())
 	{
-		idStr modInfo(modFileContent);
 		int titlePos = modFileContent.Find("Title:");
 		int descPos = modFileContent.Find("Description:");
 		int authorPos = modFileContent.Find("Author:");
@@ -358,9 +314,35 @@ CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
 			info.author.StripLeading("\t");
 			info.author.StripTrailingWhitespace();
 		}
+
+		// Check for mod image
+		if (fileSystem->ReadFile(info.pathToFMPackage + "install_splash.tga", NULL) != -1)
+		{
+			info.image = info.pathToFMPackage + "install_splash";
+		}
 	}
 
 	return info;
+}
+
+CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
+{
+	// Read the text file that contains the name and description
+	/*idStr fmPath = cv_tdm_fm_path.GetString();
+
+	// Check for the darkmod.txt file
+	idStr descFileName = fmPath + modDirName + "/" + cv_tdm_fm_desc_file.GetString();
+
+	char* buffer = NULL;
+	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
+	{
+		// File not readable?
+		return ModInfo();
+	}*/
+
+	int index = _modsAvailable.FindIndex(modDirName);
+
+	return (index != -1) ? GetModInfo(index) : ModInfo();
 }
 
 void CModMenu::LoadModList()
@@ -368,8 +350,28 @@ void CModMenu::LoadModList()
 	// Clear the list first
 	_modsAvailable.Clear();
 
+	// List all folders in the fms/ directory
+	idStr fmPath = cv_tdm_fm_path.GetString();
+	idFileList*	files = fileSystem->ListFiles(fmPath, "/", false);
+
+	for (int i = 0; i < files->GetNumFiles(); ++i)
+	{
+		// Check for the darkmod.txt file
+		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
+	
+		if (fileSystem->ReadFile(descFileName, NULL) != -1)
+		{
+			// File exists, add this as available mod
+			_modsAvailable.Alloc() = files->GetFile(i);
+		}
+	}
+
+	fileSystem->FreeFileList(files);
+
+	gameLocal.Printf("Found %d mods in the FM folder.\n", _modsAvailable.Num());
+
 	// list all FMs
-	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	/*fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 	fs::directory_iterator end_iter;
 
@@ -389,7 +391,7 @@ void CModMenu::LoadModList()
 				_modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
 			}
 		}
-	}
+	}*/
 }
 
 void CModMenu::InitCurrentMod()
@@ -430,4 +432,87 @@ void CModMenu::InitStartingMap()
 	{
 		gameLocal.Warning("No 'startingmap.txt' file for the current mod: %s", _curModName.c_str());
 	}
+}
+
+void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
+{
+	// Sanity-check
+	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
+	{
+		return;
+	}
+
+	const idStr& modDirName = _modsAvailable[modIndex];
+
+	ModInfo info = GetModInfo(modIndex);
+
+	// Issue the named command to the GUI
+	gui->SetStateString("modInstallProgressText", "Installing FM Package\n\n" + info.title);
+	gui->HandleNamedEvent("OnModInstallationStart");
+
+	gui->HandleNamedEvent("OnModInstallationFinished");
+	/*// Path to the parent directory
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
+
+	if (modBaseName.IsEmpty())
+	{
+		// Fall back to fs_game if no game_base is set
+		modBaseName = cvarSystem->GetCVarString("fs_game");
+
+		if (modBaseName.IsEmpty())
+		{
+			modBaseName = "darkmod"; // last resort: hardcoded
+		}
+	}
+
+	// Path to the darkmod directory
+	fs::path darkmodPath(parentPath / modBaseName);
+
+	// Path to mod directory folder
+	fs::path modDirPath(parentPath / modDirName);
+
+	// Path to file that holds the current FM name
+	fs::path currentFMPath(darkmodPath / "currentfm.txt");
+
+	// Path to file that contains the command line arguments to DM
+	fs::path dmArgs(darkmodPath / "dmargs.txt");
+
+	// Save the name of the new mod
+	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
+	fputs(modDirName, currentFM);
+	fclose(currentFM);
+
+	// path to tdmlauncher
+#ifdef _WINDOWS
+	fs::path launcherExe(darkmodPath / "tdmlauncher.exe");
+#else
+	// ???
+	fs::path launcherExe(darkmodPath / "tdmlauncher");
+#endif
+
+	// command line to spawn tdmlauncher
+	idStr commandLine(launcherExe.file_string().c_str());
+
+#ifdef _WINDOWS
+	// Create a tdmlauncher process, setting the working directory to the doom directory
+	STARTUPINFO siStartupInfo;
+	PROCESS_INFORMATION piProcessInfo;
+	memset(&siStartupInfo, 0, sizeof(siStartupInfo));
+	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+	siStartupInfo.cb = sizeof(siStartupInfo);
+	commandLine += " pause";
+	CreateProcess(NULL, (LPSTR) commandLine.c_str(), NULL, NULL,  false, 0, NULL,
+		parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
+#else
+	// start tdmlauncher
+	if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
+		int errnum = errno;
+		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
+	}
+	_exit(EXIT_FAILURE);
+#endif*/
 }

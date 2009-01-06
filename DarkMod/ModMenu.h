@@ -9,11 +9,11 @@ class CModMenu
 {
 	struct ModInfo
 	{
-		idStr folderName;
+		idStr pathToFMPackage;
 		idStr title;
 		idStr desc;
 		idStr author;
-		idStr image; // nyi
+		idStr image;
 	};
 
 public:
@@ -42,6 +42,9 @@ private:
 	// Searches for new mods
 	void LoadModList();
 
+	// Installs the given mod
+	void InstallMod(int modIndex, idUserInterface* gui);
+
 	// Find out which mod is currently installed (updates curMod member)
 	void InitCurrentMod();
 
@@ -51,6 +54,7 @@ private:
 
 	// Retries a mod info structure for the given mod (folder) name
 	ModInfo GetModInfo(const idStr& modName);
+	ModInfo GetModInfo(int modIndex);
 
 	// The list of available mods
 	idList<idStr> _modsAvailable; 
