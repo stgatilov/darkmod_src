@@ -2376,10 +2376,6 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 				// Clear the flag so that the objectives get updated
 				ClearGUIState();
 
-				// Hide the briefing screen
-				gui->HandleNamedEvent("HideBriefingScreen");
-				gui->SetStateInt("BriefingIsVisible", 0);
-
 				// Display the Difficulty choices
 				gui->SetStateInt("DifficultyIsVisible", 1);
 
@@ -2418,8 +2414,6 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// greebo: Sanity-check the objectives start position
 		gui->SetStateInt("ObjXPos", (objStartXPos == 0) ? 110 : objStartXPos);
 
-		gui->HandleNamedEvent("ShowObjectiveScreen");
-		
 		if (!m_MissionDataLoadedIntoGUI)
 		{
 			// Load the objectives into the GUI

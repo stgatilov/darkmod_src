@@ -4,7 +4,7 @@
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"
 
-CDifficultyMenu::CDifficultyMenu()
+/*CDifficultyMenu::CDifficultyMenu()
 {
 }
 
@@ -218,4 +218,4 @@ void CDifficultyMenu::GenerateObjectivesDisplay()
 		}
 		objectivesDisplay.Append(diffObjectives[difficulty][i]);
 	}
-}
+}*/

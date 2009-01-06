@@ -86,7 +86,7 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 		// angua: waiting for trigger, no duration set
 		owner->Event_LookAtEntity(_focusEnt, 1);
 
-		if (owner->AI_ACTIVATED == true)
+		if (owner->AI_ACTIVATED)
 		{
 			owner->AI_ACTIVATED = false;
 

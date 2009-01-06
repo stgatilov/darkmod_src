@@ -32,7 +32,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MultiStateMover.h"
 #include "../DarkMod/func_shooter.h"
 #include "../DarkMod/shop.h"
-#include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
 #include "../DarkMod/renderpipe.h"
@@ -53,7 +52,6 @@ extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
 extern CShop			g_Shop;
-extern CDifficultyMenu	g_Diff;
 
 #define BUFFER_LEN 4096
 

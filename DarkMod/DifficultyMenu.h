@@ -6,7 +6,7 @@
 // number of difficulty levels
 #define DIFFICULTY_COUNT 3
 
-class CDifficultyMenu
+/*class CDifficultyMenu
 {
 public:
 	CDifficultyMenu();
@@ -28,6 +28,6 @@ private:
 	idList<const char *> diffObjectives[DIFFICULTY_COUNT]; 
 	idStr	objectivesDisplay;
 	int		scrollPos;
-};
+};*/
 
 #endif	/* !__DIFF_H__ */
