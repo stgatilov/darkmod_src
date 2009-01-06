@@ -115,7 +115,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	if (idStr::Icmp(menuCommand, "darkmodRestart") == 0)
 	{
 		// Get selected mod
-		// TODO: Restart the game
+		RestartGame();
 	}
 
 	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
@@ -369,29 +369,6 @@ void CModMenu::LoadModList()
 	fileSystem->FreeFileList(files);
 
 	gameLocal.Printf("Found %d mods in the FM folder.\n", _modsAvailable.Num());
-
-	// list all FMs
-	/*fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	doomPath /= "..";
-	fs::directory_iterator end_iter;
-
-	for (fs::directory_iterator dir_itr(doomPath); dir_itr != end_iter; ++dir_itr)
-	{
-		if (fs::is_directory(dir_itr->status()))
-		{
-			// look for darkmod.txt file
-			fs::path descFile(dir_itr->path() / "darkmod.txt");
-
-			if (fs::exists(descFile))
-			{
-				// Found a mod
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found an available mod: %s\r", dir_itr->path().leaf().c_str());
-
-				// Append to the list
-				_modsAvailable.Alloc() = dir_itr->path().leaf().c_str();
-			}
-		}
-	}*/
 }
 
 void CModMenu::InitCurrentMod()
@@ -434,24 +411,9 @@ void CModMenu::InitStartingMap()
 	}
 }
 
-void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
+std::string CModMenu::GetDarkmodPath()
 {
-	// Sanity-check
-	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
-	{
-		return;
-	}
-
-	const idStr& modDirName = _modsAvailable[modIndex];
-
-	ModInfo info = GetModInfo(modIndex);
-
-	// Issue the named command to the GUI
-	gui->SetStateString("modInstallProgressText", "Installing FM Package\n\n" + info.title);
-	gui->HandleNamedEvent("OnModInstallationStart");
-
-	gui->HandleNamedEvent("OnModInstallationFinished");
-	/*// Path to the parent directory
+	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
@@ -471,19 +433,101 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	// Path to the darkmod directory
 	fs::path darkmodPath(parentPath / modBaseName);
 
-	// Path to mod directory folder
-	fs::path modDirPath(parentPath / modDirName);
+	return darkmodPath.string();
+}
+
+void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
+{
+	// Path to the parent directory
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	// Sanity-check
+	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
+	{
+		return;
+	}
+
+	const idStr& modDirName = _modsAvailable[modIndex];
+
+	ModInfo info = GetModInfo(modIndex);
+
+	// Issue the named command to the GUI
+	gui->SetStateString("modInstallProgressText", "Installing FM Package\n\n" + info.title);
+	gui->HandleNamedEvent("OnModInstallationStart");
+	
+	// Ensure that the target folder exists (idFileSystem::CopyFile requires this)
+	fs::path targetFolder = parentPath / modDirName;
+
+	if (!fs::create_directory(targetFolder))
+	{
+		// Directory exists, not a problem, but log this
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("FM targetFolder already exists: %s\r", targetFolder.string().c_str());
+	}
+
+	// Copy all PK4s from the FM folder
+	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, "PK4", false);
+	
+	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
+	{
+		// Check for the darkmod.txt file
+		idStr pk4file = info.pathToFMPackage + pk4Files->GetFile(i);
+	
+		// Source file (full OS path)
+		fs::path pk4fileOsPath = fileSystem->RelativePathToOSPath(pk4file);
+
+		// Target location
+		fs::path targetFile = targetFolder / pk4Files->GetFile(i);
+		
+		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
+		//fileSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
+
+		// Make sure any target file with the same name is removed beforehand
+		try
+		{
+			fs::remove(targetFile);
+		}
+		catch (fs::basic_filesystem_error<fs::path> e)
+		{
+			// Don't care about removal error
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing target file %s: %s\r", targetFile.string().c_str(), e.what());
+		}
+
+		// Copy the PK4 to the target folder
+		try
+		{
+			fs::copy_file(pk4fileOsPath, targetFile);
+		}
+		catch (fs::basic_filesystem_error<fs::path> e)
+		{
+			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", targetFile.string().c_str(), e.what());
+		}
+	}
+
+	fileSystem->FreeFileList(pk4Files);
+
+	// Path to the darkmod directory
+	fs::path darkmodPath(GetDarkmodPath());
 
 	// Path to file that holds the current FM name
 	fs::path currentFMPath(darkmodPath / "currentfm.txt");
-
-	// Path to file that contains the command line arguments to DM
-	fs::path dmArgs(darkmodPath / "dmargs.txt");
 
 	// Save the name of the new mod
 	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
 	fputs(modDirName, currentFM);
 	fclose(currentFM);
+
+	gui->HandleNamedEvent("OnModInstallationFinished");
+}
+
+void CModMenu::RestartGame()
+{
+	// Path to the parent directory
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	// Path to the darkmod directory
+	fs::path darkmodPath(GetDarkmodPath());
 
 	// path to tdmlauncher
 #ifdef _WINDOWS
@@ -493,6 +537,8 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	fs::path launcherExe(darkmodPath / "tdmlauncher");
 #endif
 
+	// FIXME: Check if tdmlauncher exists
+
 	// command line to spawn tdmlauncher
 	idStr commandLine(launcherExe.file_string().c_str());
 
@@ -500,13 +546,15 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	// Create a tdmlauncher process, setting the working directory to the doom directory
 	STARTUPINFO siStartupInfo;
 	PROCESS_INFORMATION piProcessInfo;
+
 	memset(&siStartupInfo, 0, sizeof(siStartupInfo));
 	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+
 	siStartupInfo.cb = sizeof(siStartupInfo);
 	commandLine += " pause";
+
 	CreateProcess(NULL, (LPSTR) commandLine.c_str(), NULL, NULL,  false, 0, NULL,
 		parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
 #else
 	// start tdmlauncher
 	if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
@@ -514,5 +562,8 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 	}
 	_exit(EXIT_FAILURE);
-#endif*/
+#endif
+
+	// Issue the quit command to the game
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
 }
