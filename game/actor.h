@@ -60,21 +60,36 @@ enum EMeleeResultPAR
 	NUM_RESULTSPAR
 };
 
-/** Current Melee Combat Status **/
-typedef struct SMeleeStatus_s
+/** class for storing current melee combat status **/
+class CMeleeStatus
 {
+public:	
+	CMeleeStatus( void );
+	virtual ~CMeleeStatus( void );
+	
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
+	// clears the current action
+	void ClearAction( void );
+
 	// TODO: Decide when to clear these so we can tell when an AI is still recovering from an attack, etc
-	bool bAttacking;
-	bool bParrying;
-	EMeleeType AttackType;
-	EMeleeType ParryType;
+	bool		m_bAttacking;
+	bool		m_bParrying;
+	EMeleeType	m_AttackType;
+	EMeleeType	m_ParryType;
+
+	// melee capabilities of weapon
+	bool				m_bCanParry;
+	bool				m_bCanParryAll;
+	idList<EMeleeType>	m_attacks; // possible attacks with current weapon
 
 	// Results of most recent attack/parry 
 	// (includes case where they are still in progress)
-	EMeleeResultAT AttackResult;
-	EMeleeResultPAR ParryResult;
+	EMeleeResultAT	m_AttackResult;
+	EMeleeResultPAR	m_ParryResult;
 
-} SMeleeStatus;
+}; // CMeleeStatus
 
 /** Tabulate results of past melee actions **/
 typedef struct SMeleeResultsTable_s
@@ -190,6 +205,17 @@ public:
 
 	idLinkList<idActor>		enemyNode;			// node linked into an entity's enemy list for quick lookups of who is attacking him
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
+
+	/**
+	* Stores what this actor is currently doing in melee combat
+	* ishtvan: Made public to avoid lots of gets/sets
+	**/
+	CMeleeStatus			m_MeleeStatus;
+
+	/**
+	* Correspondence between melee type and string name suffix of the action
+	**/
+	static const char *		MeleeTypeNames[ NUM_MELEE_TYPES ];
 
 public:
 							idActor( void );
@@ -469,11 +495,6 @@ protected:
 	 * is present in this set, the actor is ready for attacking with that attack type.
 	 */
 	std::set<int>			m_AttackFlags;
-
-	/**
-	* Stores what this actor is currently doing in melee combat
-	**/
-	SMeleeStatus			m_MeleeStatus;
 
 	/**
 	* Table of what's happened thus far in melee combat

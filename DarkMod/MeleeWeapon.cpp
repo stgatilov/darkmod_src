@@ -832,3 +832,34 @@ void CMeleeWeapon::SetupClipModel( )
 	if( m_bParrying )
 		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 }
+
+void CMeleeWeapon::AttachedToActor(idActor *actor)
+{
+	SetOwner( actor );
+
+	// parse spawnargs to actor's melee capabilities
+	CMeleeStatus *pMeleeStatus = &actor->m_MeleeStatus;
+	// NOTE: Don't know what order sword/shield will be attached in,
+	// so don't clear true values on parry and can parry all
+	if( !pMeleeStatus->m_bCanParry )
+		pMeleeStatus->m_bCanParry = spawnArgs.GetBool("can_parry");
+	if( !pMeleeStatus->m_bCanParryAll )
+		pMeleeStatus->m_bCanParryAll = spawnArgs.GetBool("can_parry_all");
+
+	// parse the list of possible attacks:
+	idLexer src;
+	idToken	token;
+	idList<EMeleeType> attacks;
+
+	idStr StrIn = spawnArgs.GetString("attacks_allowed");
+
+	src.LoadMemory( StrIn.c_str(), StrIn.Length(), "" );
+	while( src.ReadToken( &token ) )
+	{
+		if( token.IsNumeric() )
+			attacks.Append( (EMeleeType) token.GetIntValue() );
+	}
+	src.FreeSource();
+
+	pMeleeStatus->m_attacks = attacks;
+}

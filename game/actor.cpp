@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/TimerManager.h"
+#include "../DarkMod/MeleeWeapon.h"
 
 // #include "logmgr.h"
 /***********************************************************************
@@ -378,6 +379,10 @@ const char *idAnimState::WaitState( void ) const
 	idActor
 
 ***********************************************************************/
+
+const char *idActor::MeleeTypeNames[ NUM_MELEE_TYPES ] = {
+	"Over", "LR", "RL", "Thrust", "General", "General"
+};
 
 const idEventDef AI_EnableEyeFocus( "enableEyeFocus" );
 const idEventDef AI_DisableEyeFocus( "disableEyeFocus" );
@@ -2028,6 +2033,11 @@ void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
 		// TODO: Is this line correct?  Won't know until we test.
 		idStr modelName = ent->spawnArgs.GetString("model","");
 		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), ent->GetBindJoint() );
+	}
+
+	if( ent->IsType(CMeleeWeapon::Type) )
+	{
+		static_cast<CMeleeWeapon *>(ent)->AttachedToActor( this );
 	}
 }
 
@@ -4190,4 +4200,33 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	return result;
+}
+
+// ========== CMeleeStatus implementation =========
+CMeleeStatus::CMeleeStatus( void )
+{
+	m_bAttacking = false;
+	m_bParrying = false;
+	m_AttackType = MELEETYPE_OVERHEAD;
+	m_ParryType = MELEETYPE_OVERHEAD;
+
+	m_bCanParry		= false;
+	m_bCanParryAll	= false;
+	m_attacks.Clear();
+
+	m_AttackResult	= MELEERESULTAT_IN_PROGRESS;
+	m_ParryResult	= MELEERESULTPAR_IN_PROGRESS;
+}
+
+CMeleeStatus::~CMeleeStatus( void )
+{
+	m_attacks.Clear();
+}
+
+void CMeleeStatus::Save( idSaveGame *savefile ) const
+{
+}
+
+void CMeleeStatus::Restore( idRestoreGame *savefile )
+{
 }

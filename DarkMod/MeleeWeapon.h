@@ -44,8 +44,14 @@ public:
 	* Get, set or clear the actor that owns this weapon
 	**/
 	idActor *GetOwner( void ) { return m_Owner.GetEntity(); };
-	void SetOwner( idActor *actor );
-	void ClearOwner( void );
+	void SetOwner( idActor *actor ) { m_Owner = actor; };
+	void ClearOwner( void ) { m_Owner = NULL; };
+
+	/**
+	* Called when we are attached to the given actor
+	* Sets owner and parses our spawnargs to actor variables
+	**/
+	void AttachedToActor( idActor *actor );
 
 	/**
 	* Activate an attack and test it for collisions from this point on
