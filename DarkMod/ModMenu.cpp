@@ -25,7 +25,9 @@ void CModMenu::Init()
 
 void CModMenu::Clear() 
 {
-	// Nothing to clear yet
+	_modsAvailable.Clear();
+	_curModName.Empty();
+	_startingMap.Empty();
 }
 
 void CModMenu::Save(idSaveGame* savefile) const
@@ -38,9 +40,9 @@ void CModMenu::Restore(idRestoreGame* savefile)
 	// Nothing to restore yet
 }
 
-extern int errorno;
 namespace fs = boost::filesystem;
 
+#if 0
 namespace {
 
 	/**
@@ -79,6 +81,7 @@ namespace {
 	}
 
 } // namespace
+#endif
 
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
@@ -103,36 +106,31 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
-
-	if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
+	else if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
 		InstallMod(modIndex, gui);
 	}
-
-	if (idStr::Icmp(menuCommand, "darkmodRestart") == 0)
+	else if (idStr::Icmp(menuCommand, "darkmodRestart") == 0)
 	{
 		// Get selected mod
 		RestartGame();
 	}
-
-	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
+	else if (idStr::Icmp(menuCommand, "briefing_show") == 0)
 	{
 		// Display the briefing text
 		_briefingPage = 1;
 		DisplayBriefingPage(gui);
 	}
-
-	if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
+	else if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
 	{
 		// Display the next page of briefing text
 		_briefingPage++;
 		DisplayBriefingPage(gui);
 	}
-
-	if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
+	else if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
 	{
 		// Display the previous page of briefing text
 		_briefingPage--;
@@ -270,13 +268,6 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 	idStr modFileContent(buffer);
 	fileSystem->FreeFile(buffer);
 
-	/*fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	doomPath /= "..";
-
-	fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
-
-	idStr modFileContent = readFile(modNameFile);*/
-
 	ModInfo info;
 	info.pathToFMPackage = fmPath;
 	
@@ -327,19 +318,6 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 
 CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
 {
-	// Read the text file that contains the name and description
-	/*idStr fmPath = cv_tdm_fm_path.GetString();
-
-	// Check for the darkmod.txt file
-	idStr descFileName = fmPath + modDirName + "/" + cv_tdm_fm_desc_file.GetString();
-
-	char* buffer = NULL;
-	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
-	{
-		// File not readable?
-		return ModInfo();
-	}*/
-
 	int index = _modsAvailable.FindIndex(modDirName);
 
 	return (index != -1) ? GetModInfo(index) : ModInfo();
@@ -388,16 +366,15 @@ void CModMenu::InitStartingMap()
 		return;
 	}
 
-	// Find out which is the starting map
-	// list all FMs
+	// Find out which is the starting map of the current mod
 	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 
-	fs::path startingMapPath(doomPath / _curModName / "startingmap.txt");
+	fs::path startingMapPath(doomPath / _curModName / cv_tdm_fm_startingmap_file.GetString());
 
 	char* buffer = NULL;
 
-	if (fileSystem->ReadFile("startingmap.txt", reinterpret_cast<void**>(&buffer)) != -1)
+	if (fileSystem->ReadFile(cv_tdm_fm_startingmap_file.GetString(), reinterpret_cast<void**>(&buffer)) != -1)
 	{
 		// We have a startingmap
 		_startingMap = buffer;
@@ -407,7 +384,7 @@ void CModMenu::InitStartingMap()
 	}
 	else
 	{
-		gameLocal.Warning("No 'startingmap.txt' file for the current mod: %s", _curModName.c_str());
+		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), _curModName.c_str());
 	}
 }
 
@@ -510,7 +487,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	fs::path darkmodPath(GetDarkmodPath());
 
 	// Path to file that holds the current FM name
-	fs::path currentFMPath(darkmodPath / "currentfm.txt");
+	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
 
 	// Save the name of the new mod
 	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
