@@ -3278,24 +3278,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 			return;
 		}
-
-		// greebo: Check for the right ambient music
-		if (GameState() == GAMESTATE_ACTIVE)
-		{
-			if (!gui->GetStateBool("ObjectivesMusicPlaying")) 
-			{
-				gui->HandleNamedEvent("StartObjectivesMusic");
-				gui->SetStateBool("ObjectivesMusicPlaying", true);
-			}
-		}
-		else // GameState != ACTIVE
-		{
-			if (gui->GetStateBool("ObjectivesMusicPlaying"))
-			{
-				gui->HandleNamedEvent("StopObjectivesMusic");
-				gui->SetStateBool("ObjectivesMusicPlaying", false);
-			}
-		}
 	}
 	// greebo: the "log" command is used to write stuff to the console
 	else if (cmd == "log")
@@ -3303,20 +3285,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// The next string will be logged
 		logNextCommand = true;
 	}	
-	// greebo: This is used for Saint Lucia only (comment this out after release)
-	else if (cmd == "briefing_start_request") // Called by "Start Mission"
-	{	
-		// User requested a map start
-		gui->HandleNamedEvent("ShowBriefingScreen");
-		gui->SetStateInt("BriefingIsVisible", 1);
-
-		// greebo: During briefing, we play the in-game background music
-		gui->HandleNamedEvent("StartObjectivesMusic");
-	}
 	else if (cmd == "close") 
 	{
-		gui->HandleNamedEvent("HideBriefingScreen");
-		gui->SetStateInt("BriefingIsVisible", 0);
 		gui->HandleNamedEvent("HideSuccessScreen");
 
 		// Start the timer again, we're closing the menu
