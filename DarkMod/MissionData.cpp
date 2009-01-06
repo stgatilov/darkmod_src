@@ -173,31 +173,34 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bReversible );
 }
 
-CMissionData::CMissionData( void ) :
+CMissionData::CMissionData() :
+	m_mapFile(NULL),
 	m_PlayerTeam(0),
 	m_TotalGamePlayTime(0)
 {
-	int i;
-
 	Clear();
 
-// Initialize Hash indexes used for parsing string names to enum index
+	// Initialize Hash indexes used for parsing string names to enum index
 	idStrList CompTypeNames, SpecTypeNames;
 
-	for(i = 0; i < COMP_COUNT; i++)
+	for (int i = 0; i < COMP_COUNT; i++)
+	{
 		CompTypeNames.Append(gCompTypeName[i]);
+	}
 
-	for(i = 0; i < SPEC_COUNT; i++)
+	for (int i = 0; i < SPEC_COUNT; i++)
+	{
 		SpecTypeNames.Append(gSpecTypeName[i]);
+	}
 
 	CompTypeNames.Condense();
 	SpecTypeNames.Condense();
 
-	for( int i=0; i < CompTypeNames.Num(); i++ )
+	for (int i=0; i < CompTypeNames.Num(); i++)
 	{
 		m_CompTypeHash.Add( m_CompTypeHash.GenerateKey( CompTypeNames[i].c_str(), false ), i );
 	}
-	for( int i=0; i < SpecTypeNames.Num(); i++ )
+	for (int i=0; i < SpecTypeNames.Num(); i++)
 	{
 		m_SpecTypeHash.Add( m_SpecTypeHash.GenerateKey( SpecTypeNames[i].c_str(), false ), i );
 	}
@@ -224,6 +227,12 @@ void CMissionData::Clear( void )
 	m_FailureLogic.Clear();
 
 	m_PlayerTeam = 0;
+
+	if (m_mapFile != NULL)
+	{
+		delete m_mapFile;
+		m_mapFile = NULL;
+	}
 }
 
 void CMissionData::Save( idSaveGame *savefile ) const
@@ -274,6 +283,8 @@ void CMissionData::Save( idSaveGame *savefile ) const
 void CMissionData::Restore( idRestoreGame *savefile )
 {
 	int num(0);
+
+	m_mapFile = NULL;
 
 	savefile->ReadInt(m_PlayerTeam);
 	savefile->ReadUnsignedInt(m_TotalGamePlayTime);
@@ -1578,7 +1589,37 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	return ReturnVal;
 }
 
-idMapFile* CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile) 
+idMapFile* CMissionData::LoadMap(const idStr& mapFileName)
+{
+	// First, check if we already have a map loaded
+	if (m_mapFile != NULL)
+	{
+		if (mapFileName == m_mapFile->GetName())
+		{
+			// Nothing to do, we already have a map loaded
+			return m_mapFile;
+		}
+
+		// Map was different, discard this one and load afresh
+		delete m_mapFile;
+		m_mapFile = NULL;
+	}
+
+	// Map file is NULL at this point, load from disk
+	m_mapFile = new idMapFile;
+
+	if (!m_mapFile->Parse(mapFileName))
+	{
+		delete m_mapFile;
+
+		gameLocal.Warning( "Couldn't load %s", mapFileName.c_str());
+		return NULL;
+	}
+
+	return m_mapFile;
+}
+
+void CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile) 
 {
 	// greebo: get the worldspawn entity
 	idMapEntity* worldspawn = mapFile->GetEntity(0);
@@ -1619,7 +1660,6 @@ idMapFile* CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile)
 			}
 		}
 	}
-	return mapFile;
 }
 
 /**==========================================================================
@@ -2290,36 +2330,25 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// Holds the X start position for the objectives
 		int objStartXPos = -1;
 
-		if (gui->GetStateInt("BriefingIsVisible") == 1)
+		if (gui->GetStateInt("ingame") == 0)
 		{
-			// We're coming from the briefing screen
+			// We're coming from the start screen
 			// Clear the objectives data and load them from the map
 			Clear();
 
-			// Read the startingMap.txt to determine which map we are loading
-			char * mapName = NULL;
-			idLib::fileSystem->ReadFile("startingmap.txt", (void**) &mapName);		
-			if (mapName == NULL) {
-				gameLocal.Warning( "Couldn't open startingmap.txt file. No map installed" );
-				return;
-			}
-			const char * filename = va("maps/%s", mapName);
+			// Get the starting map file name
+			idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
 
-			// Load the mission data directly from the given map
-			m_mapFile = new idMapFile;
-			if (!m_mapFile->Parse(filename))
-			{
-				delete m_mapFile;
-				m_mapFile = NULL;
-				gameLocal.Warning( "Couldn't load %s", filename);
-				return;
-			}
+			// Ensure that the map is loaded
+			LoadMap(startingMapfilename);
+
+			// Load the objectives from the map
 			LoadDirectlyFromMapFile(m_mapFile);
 
 			// Determine the difficulty level strings. The defaults are the "difficultyMenu" entityDef.
 			// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
 			// the worldspawn.
-			const idDecl * diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
+			const idDecl* diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
 	
 			if (diffDecl != NULL)
 			{
@@ -2335,7 +2364,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 				if (worldspawnDict.GetInt("shop_skip", "0") == 1) {
 					// skip the shop, so define the map start command now
-					gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", mapName));
+					gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", startingMapfilename.c_str()));
 				} else {
 					// there will be a shop, so don't run the map right away
 					gui->SetStateString("mapStartCmdNow", "");
@@ -2427,7 +2456,14 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 		// reload and redisplay objectives
 		m_Objectives.Clear();
+
+		idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
+
+		// Ensure that the starting map is loaded
+		LoadMap(startingMapfilename);
+
 		LoadDirectlyFromMapFile(m_mapFile);
+
 		ClearGUIState();
 	}
 }

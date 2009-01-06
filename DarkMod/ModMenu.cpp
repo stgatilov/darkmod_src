@@ -370,11 +370,12 @@ void CModMenu::InitStartingMap()
 	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	doomPath /= "..";
 
-	fs::path startingMapPath(doomPath / _curModName / cv_tdm_fm_startingmap_file.GetString());
+	fs::path startingMapPath(cv_tdm_fm_path.GetString());
+	startingMapPath = startingMapPath / _curModName / cv_tdm_fm_startingmap_file.GetString();
 
 	char* buffer = NULL;
 
-	if (fileSystem->ReadFile(cv_tdm_fm_startingmap_file.GetString(), reinterpret_cast<void**>(&buffer)) != -1)
+	if (fileSystem->ReadFile(startingMapPath.string().c_str(), reinterpret_cast<void**>(&buffer)) != -1)
 	{
 		// We have a startingmap
 		_startingMap = buffer;
@@ -384,7 +385,7 @@ void CModMenu::InitStartingMap()
 	}
 	else
 	{
-		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), _curModName.c_str());
+		gameLocal.Warning("No '%s' file for the current mod: %s", startingMapPath.string().c_str(), _curModName.c_str());
 	}
 }
 
