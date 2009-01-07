@@ -5,8 +5,11 @@
 #define LIST_SIZE_PURCHASED 9
 #define LIST_SIZE_STARTING 7
 
+#include <boost/shared_ptr.hpp>
+
 // Represents an item for sale
-class CShopItem {
+class CShopItem
+{
 private:
 	const char	*id;
 	const char	*name;
@@ -19,24 +22,35 @@ private:
 	bool		canDrop;
 	
 public:
-	CShopItem(const char *id, const char *name, const char *description, int cost,
-		const char *image, int count, bool persistent = false, idEntity *entity = NULL, bool canDrop = true);
-	CShopItem(CShopItem* item, int count, int cost = 0, bool persistent = NULL);
+	CShopItem(const char *id, 
+			  const char *name, 
+			  const char *description, 
+			  int cost,
+			  const char *image, 
+			  int count, 
+			  bool persistent = false, 
+			  idEntity *entity = NULL, 
+			  bool canDrop = true);
+
+	CShopItem(const CShopItem& item, 
+			  int count, 
+			  int cost = 0, 
+			  bool persistent = false);
 
 	// unique identifier for this item
-	const char *GetID( void ) const;
+	const char *GetID() const;
 
 	// name of the item (for display)
-	const char *GetName( void ) const;
+	const char *GetName() const;
 
 	// description of the item (for display)
-	const char *GetDescription( void ) const;
+	const char *GetDescription() const;
 
 	// cost of the item
 	int GetCost( void );	
 
 	// modal name (for displaying) (TODO)
-	const char *GetImage( void ) const;
+	const char *GetImage() const;
 
 	// number of the items in this collection (number for sale,
 	// or number user has bought, or number user started with)
@@ -55,17 +69,17 @@ public:
 	// modifies number of items
 	void ChangeCount( int amount );				
 };
+typedef boost::shared_ptr<CShopItem> CShopItemPtr;
 
-class idGameLocal;
-
-// Represents the CShop
+// Represents the Shop
 class CShop
 {
 private:
-	idList<CShopItem *>	itemDefs;
-	idList<CShopItem *>	itemsForSale;
-	idList<CShopItem *>	itemsPurchased;
-	idList<CShopItem *>	startingItems;
+	idList<CShopItemPtr>	itemDefs;
+	idList<CShopItemPtr>	itemsForSale;
+	idList<CShopItemPtr>	itemsPurchased;
+	idList<CShopItemPtr>	startingItems;
+
 	int				gold;
 	int				forSaleTop;
 	int				purchasedTop;
@@ -94,21 +108,21 @@ public:
 	void ChangeGold(int change);
 
 	// put item in the For Sale list
-	void AddItemForSale(CShopItem *item);
+	void AddItemForSale(const CShopItemPtr& shopItem);
 
 	// put item in the Starting Items list
-	void AddStartingItem(CShopItem *item);
+	void AddStartingItem(const CShopItemPtr& shopItem);
 
 	// initializes the 'list' based on the map
-	int AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItem *>* list);
+	int AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItemPtr>& list);
 
 	// returns the various lists
-	idList<CShopItem *>* GetItemsForSale();
-	idList<CShopItem *>* GetStartingItems();
-	idList<CShopItem *>* GetPurchasedItems();
+	idList<CShopItemPtr>& GetItemsForSale();
+	idList<CShopItemPtr>& GetStartingItems();
+	idList<CShopItemPtr>& GetPurchasedItems();
 
 	// returns the combination of For Sale and Starting items
-	idList<CShopItem *>* GetPlayerItems();
+	idList<CShopItemPtr> GetPlayerItems();
 
 	// adjust the lists
 	void SellItem(int index);
@@ -119,15 +133,16 @@ public:
 	void UpdateGUI(idUserInterface* gui);
 
 	// find items based on the id
-	CShopItem* FindPurchasedByID(const char *id);
-	CShopItem* FindForSaleByID(const char *id);
-	CShopItem* FindByID(idList<CShopItem *>* items, const char *id);
+	CShopItemPtr FindPurchasedByID(const char *id);
+	CShopItemPtr FindForSaleByID(const char *id);
+
+	CShopItemPtr FindByID(idList<CShopItemPtr>& items, const char *id);
 
 	// initialize the shop
 	void DisplayShop(idUserInterface *gui);
 
 	// scroll a list to the next "page" of values
-	void ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list);
+	void ScrollList(int* topItem, int maxItems, idList<CShopItemPtr>& list);
 
 	// true if there are no items for sale
 	bool GetNothingForSale();

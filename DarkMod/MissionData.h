@@ -705,6 +705,8 @@ public:
 	 * that the m_mapFile member holds the named map. No action is taken
 	 * when the member already held the map with that name to avoid
 	 * loading the same data twice.
+	 *
+	 * Note: the caller must not free the map using "delete".
 	 */
 	idMapFile* LoadMap(const idStr& mapFileName);
 
