@@ -217,7 +217,7 @@ void idMoveable::Spawn( void ) {
 		physicsObj.DisableImpact();
 	}
 
-	if ( spawnArgs.GetBool( "nonsolid" ) ) {
+	if (!spawnArgs.GetBool( "solid" ) ) {
 		BecomeNonSolid();
 	}
 

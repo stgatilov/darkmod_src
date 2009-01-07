@@ -980,7 +980,7 @@ void idEntity::LoadModels()
 /*
 * Ishtvan: Commented out, this is handled separately and this call can interfere with other places contents are set
 *
-		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
+		GetPhysics()->SetContents( !spawnArgs.GetBool( "solid" ) ? 0 : CONTENTS_SOLID );
 	    // SR CONTENTS_RESONSE FIX
 		if( m_StimResponseColl->HasResponse() ) {
 			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
@@ -1735,8 +1735,8 @@ void idEntity::BecomeBroken( idEntity *activator )
 	{
 		SetModel( brokenModel );
 
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Breaking entity %s (nonsolid: %i)\r", name.c_str(), spawnArgs.GetBool( "nonsolid" ) ); 
-		if ( !spawnArgs.GetBool( "nonsolid" ) )
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Breaking entity %s (solid: %i)\r", name.c_str(), spawnArgs.GetBool( "solid" ) ); 
+		if ( spawnArgs.GetBool( "solid" ) )
 		{
 			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
 
