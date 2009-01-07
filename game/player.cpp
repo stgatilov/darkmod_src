@@ -38,8 +38,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 ===============================================================================
 */
 
-extern CShop		g_Shop;
-
 bool NextFrame = true;
 
 // amount of health per dose from the health station
@@ -1130,7 +1128,7 @@ void idPlayer::SetupInventory()
 
 	// give the player weapon ammo based on shop purchases
 	CInventoryCategoryPtr category = m_WeaponCursor->GetCurrentCategory();
-	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
+	idList<CShopItem*>* startingItems = gameLocal.m_Shop->GetPlayerItems();
 
 	for (int si = 0; si < startingItems->Num(); si++)
 	{

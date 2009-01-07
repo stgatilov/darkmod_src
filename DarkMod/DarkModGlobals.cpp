@@ -145,8 +145,6 @@ CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
 CMissionData	g_MissionData;
-CShop			g_Shop;
-//CDifficultyMenu	g_Diff;
 
 static idList<const char *> *s_FileVersion = NULL;
 

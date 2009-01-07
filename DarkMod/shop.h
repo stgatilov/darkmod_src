@@ -59,7 +59,8 @@ public:
 class idGameLocal;
 
 // Represents the CShop
-class CShop {
+class CShop
+{
 private:
 	idList<CShopItem *>	itemDefs;
 	idList<CShopItem *>	itemsForSale;
@@ -72,10 +73,11 @@ private:
 	bool			nothingForSale;
 
 public:
-	CShop();
-
 	// clears out all lists
 	void Init();
+
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 
 	// read from defs and map to initialze the shop
 	void LoadShopItemDefinitions();
@@ -98,7 +100,7 @@ public:
 	void AddStartingItem(CShopItem *item);
 
 	// initializes the 'list' based on the map
-	int AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list);
+	int AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItem *>* list);
 
 	// returns the various lists
 	idList<CShopItem *>* GetItemsForSale();

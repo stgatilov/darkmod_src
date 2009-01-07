@@ -51,7 +51,6 @@ extern CRelations		g_globalRelations;
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
-extern CShop			g_Shop;
 
 #define BUFFER_LEN 4096
 
@@ -260,6 +259,7 @@ void idGameLocal::Clear( void )
 	m_DifficultyManager.Clear();
 
 	m_ModMenu = CModMenuPtr(new CModMenu);
+	m_Shop = CShopPtr(new CShop);
 
 	m_AreaManager.Clear();
 	// Allocate a new ConversationSystem
@@ -485,6 +485,9 @@ void idGameLocal::Init( void ) {
 	assert(m_ModMenu != NULL);
 	m_ModMenu->Init();
 
+	assert(m_Shop != NULL);
+	m_Shop->Init();
+
 	// Check the interaction.vfp settings
 	if (cv_interaction_vfp_type.GetInteger() == 0)
 	{
@@ -528,6 +531,7 @@ void idGameLocal::Shutdown( void ) {
 
 	// Clear the mod menu
 	m_ModMenu = CModMenuPtr();
+	m_Shop = CShopPtr();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
@@ -661,6 +665,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_AreaManager.Save(&savegame);
 	m_ConversationSystem->Save(&savegame);
 	m_ModMenu->Save(&savegame);
+	m_Shop->Save(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Save(&savegame);
@@ -1622,6 +1627,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_AreaManager.Restore(&savegame);
 	m_ConversationSystem->Restore(&savegame);
 	m_ModMenu->Restore(&savegame);
+	m_Shop->Restore(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Restore(&savegame);
@@ -3300,7 +3306,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		successScreenActive = false;
 	}
 
-	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
+	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
 	m_ModMenu->HandleCommands(menuCommand, gui);
 
 	if (cv_debug_mainmenu.GetBool())

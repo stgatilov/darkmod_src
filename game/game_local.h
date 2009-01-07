@@ -206,6 +206,9 @@ namespace ai {
 class CModMenu;
 typedef boost::shared_ptr<CModMenu> CModMenuPtr;
 
+class CShop;
+typedef boost::shared_ptr<CShop> CShopPtr;
+
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
 const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
@@ -465,6 +468,11 @@ public:
 	 * greebo: The fan-mission-handling class. Also contains GUI handling code.
 	 */
 	CModMenuPtr				m_ModMenu;
+
+	/**
+	 * greebo: The class handling the main menu's shop GUI.
+	 */
+	CShopPtr				m_Shop;
 
 	/**
 	* Pointer to global AI Relations object

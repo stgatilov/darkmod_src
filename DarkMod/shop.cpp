@@ -74,10 +74,8 @@ void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
 };
 
-CShop::CShop() {
-};
-
-void CShop::Init() {
+void CShop::Init()
+{
 	itemsForSale.Clear();
 	itemsPurchased.Clear();
 	startingItems.Clear();
@@ -85,6 +83,16 @@ void CShop::Init() {
 	forSaleTop = 0;
 	purchasedTop = 0;
 	startingTop = 0;
+}
+
+void CShop::Save(idSaveGame *savefile) const
+{
+	// Nothing to save yet
+}
+
+void CShop::Restore(idRestoreGame *savefile)
+{
+	// Nothing to save yet
 }
 
 void CShop::AddItemForSale(CShopItem* CShopItem) {
@@ -114,7 +122,8 @@ bool CShop::GetNothingForSale() {
 /**
  * Combine the purchased list and the starting list
  */
-idList<CShopItem *>* CShop::GetPlayerItems() {
+idList<CShopItem *>* CShop::GetPlayerItems()
+{
 	idList<CShopItem *>* playerItems = new idList<CShopItem *>(itemsPurchased);
 	for (int i = 0; i < startingItems.Num(); i++)
 	{
@@ -131,7 +140,8 @@ idList<CShopItem *>* CShop::GetPlayerItems() {
 /**
  * Handle Main Menu commands
  */
-void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player) {
+void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player)
+{
 	if (idStr::Icmp(menuCommand, "shopLoad") == 0)
 	{
 		// Clear out the shop
@@ -242,7 +252,7 @@ void CShop::LoadShopItemDefinitions() {
 	}
 }
 
-int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list)
+int CShop::AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItem *>* list)
 {
 	int itemNum = 1;
 	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
@@ -255,12 +265,12 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 		// This is the prefix for the various difficulty levels
 		idStr itemDiffPrefix = va("%s_%d_%d_", itemKey, itemNum, diffLevel);
 
-		idStr itemName = mapDict->GetString(itemDiffPrefix + "item");
+		idStr itemName = mapDict.GetString(itemDiffPrefix + "item");
 
 		if (itemName.IsEmpty())
 		{
 			// Difficulty-specific item is empty, check for ordinary one
-			itemName = mapDict->GetString(itemPrefix + "item");
+			itemName = mapDict.GetString(itemPrefix + "item");
 		}
 
 		if (itemName.IsEmpty())
@@ -269,41 +279,41 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 		}
 
 		// look for skill-specific quantity first
-		int quantity = mapDict->GetInt(itemDiffPrefix + "qty");
+		int quantity = mapDict.GetInt(itemDiffPrefix + "qty");
 
 		if (quantity == 0) {
-			quantity = mapDict->GetInt(itemPrefix + "qty");
+			quantity = mapDict.GetInt(itemPrefix + "qty");
 		}
 
 		// look for skill-specific price first
-		int price = mapDict->GetInt(itemDiffPrefix + "price");
+		int price = mapDict.GetInt(itemDiffPrefix + "price");
 
 		if (price == 0) {
-			price = mapDict->GetInt(itemPrefix + "price");
+			price = mapDict.GetInt(itemPrefix + "price");
 		}
 
 		// look for skill-specific persistency first
 		bool persistent = false;
 
-		const idKeyValue* keyValue = mapDict->FindKey(itemDiffPrefix + "persistent");
+		const idKeyValue* keyValue = mapDict.FindKey(itemDiffPrefix + "persistent");
 
 		if (keyValue != NULL) {
-			persistent = mapDict->GetBool(itemDiffPrefix + "persistent");
+			persistent = mapDict.GetBool(itemDiffPrefix + "persistent");
 		}
 		else {
-			persistent = mapDict->GetBool(itemPrefix + "persistent");
+			persistent = mapDict.GetBool(itemPrefix + "persistent");
 		}
 
 		// look for skill-specific canDrop flag first
 		bool canDrop = true;
 
-		keyValue = mapDict->FindKey(itemDiffPrefix + "canDrop");
+		keyValue = mapDict.FindKey(itemDiffPrefix + "canDrop");
 
 		if (keyValue != NULL) {
-			canDrop = mapDict->GetBool(itemDiffPrefix + "canDrop");
+			canDrop = mapDict.GetBool(itemDiffPrefix + "canDrop");
 		}
 		else {
-			canDrop = mapDict->GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
+			canDrop = mapDict.GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
 		}
 
 		// put the item in the shop
@@ -327,27 +337,33 @@ int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* l
 	}
 }
 
-void CShop::DisplayShop(idUserInterface *gui) {
-	const char * mapName = cv_tdm_mapName.GetString();
-	const char * filename = va("maps/%s", mapName);
+void CShop::DisplayShop(idUserInterface *gui)
+{
+	const char* mapName = cv_tdm_mapName.GetString();
+	idStr filename = va("maps/%s", mapName);
 
 	idMapFile* mapFile = new idMapFile;
-	if ( !mapFile->Parse( idStr( filename ) + ".map") ) {
+
+	if (!mapFile->Parse(filename + ".map"))
+	{
 		delete mapFile;
 		mapFile = NULL;
-		gameLocal.Warning( "Couldn't load %s", filename );
+
+		gameLocal.Warning( "Couldn't load %s", filename.c_str() );
 		return;
 	}
-	idMapEntity* mapEnt = mapFile->GetEntity( 0 );
-	idDict mapDict = mapEnt->epairs;
 
-	gui->SetStateInt("isDiffMenuVisible", 0);
+	// Get the worldspawn entity, where the shop items are defined
+	idMapEntity* mapEnt = mapFile->GetEntity(0);
+	const idDict& mapDict = mapEnt->epairs;
 
 	// greebo: Assemble the difficulty prefix (e.g. "diff_0_")
 	idStr diffPrefix = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_";
 
-	if (mapDict.GetBool("shop_skip","0") || mapDict.GetBool(diffPrefix + "shop_skip","0")) {
+	if (mapDict.GetBool("shop_skip","0") || mapDict.GetBool(diffPrefix + "shop_skip","0"))
+	{
 		// if skip flag is set, skip the shop
+		gui->HandleNamedEvent("SkipShop");
 		return;
 	}
 
@@ -367,15 +383,17 @@ void CShop::DisplayShop(idUserInterface *gui) {
 	SetGold(gold);
 
 	// items for sale
-	if (AddItems(&mapDict, "shopItem", GetItemsForSale()) == 0)
+	if (AddItems(mapDict, "shopItem", GetItemsForSale()) == 0)
 	{
 		nothingForSale = true;
 	}
 
 	// starting items (items that player already has
-	AddItems(&mapDict, "startingItem", GetStartingItems());
+	AddItems(mapDict, "startingItem", GetStartingItems());
 
 	UpdateGUI(gui);
+
+	delete mapFile;
 }
 
 void CShop::SellItem(int index) {
