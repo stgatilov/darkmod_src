@@ -27,7 +27,8 @@ CInventoryWeaponItem::CInventoryWeaponItem() :
 	m_MaxAmmo(0),
 	m_Ammo(0),
 	m_WeaponIndex(-1),
-	m_AllowedEmpty(false)
+	m_AllowedEmpty(false),
+	m_Enabled(true)
 {
 	SetType(IT_WEAPON);
 }
@@ -37,7 +38,8 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	m_WeaponDefName(weaponDefName),
 	m_WeaponIndex(-1),
 	m_AllowedEmpty(false),
-	m_IsToggleable(false)
+	m_IsToggleable(false),
+	m_Enabled(true)
 {
 	SetType(IT_WEAPON);
 
@@ -70,6 +72,7 @@ void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_WeaponIndex);
 	savefile->WriteBool(m_AllowedEmpty);
 	savefile->WriteBool(m_IsToggleable);
+	savefile->WriteBool(m_Enabled);
 }
 
 void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
@@ -85,6 +88,17 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_WeaponIndex);
 	savefile->ReadBool(m_AllowedEmpty);
 	savefile->ReadBool(m_IsToggleable);
+	savefile->ReadBool(m_Enabled);
+}
+
+bool CInventoryWeaponItem::IsEnabled() const
+{
+	return m_Enabled;
+}
+
+void CInventoryWeaponItem::SetEnabled(bool enabled)
+{
+	m_Enabled = enabled;
 }
 
 int CInventoryWeaponItem::GetMaxAmmo()

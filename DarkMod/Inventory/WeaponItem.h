@@ -44,6 +44,9 @@ protected:
 	// TRUE if toggling this weapon is allowed (i.e. selecting it when it is already selected)
 	bool	m_IsToggleable;
 
+	// TRUE if this weapon can be selected.
+	bool	m_Enabled;
+
 public:
 	// Default constructor, should only be used during restoring from savegames
 	CInventoryWeaponItem();
@@ -52,6 +55,10 @@ public:
 
 	virtual void	Save( idSaveGame *savefile ) const;
 	virtual void	Restore(idRestoreGame *savefile);
+
+	// TRUE if this weapon is enabled
+	bool IsEnabled() const;
+	void SetEnabled(bool enabled);
 
 	// Retrieves the maximum amount of ammo this weapon can hold
 	int GetMaxAmmo();
