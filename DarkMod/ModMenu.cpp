@@ -106,6 +106,18 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
+	else if (idStr::Icmp(menuCommand, "modsPrevPage") == 0)
+	{
+		// Scroll up a page
+		_modTop -= gui->GetStateInt("modsPerPage", "10");
+
+		if (_modTop < 0)
+		{
+			_modTop = 0;
+		}
+
+		UpdateGUI(gui);
+	}
 	else if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
 		// Get selected mod
@@ -222,7 +234,8 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiImage, info.image);
 	}
 
-	gui->SetStateBool("isModsMoreVisible", _modsAvailable.Num() > modsPerPage); 
+	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0); 
+	gui->SetStateBool("isModsScrollDownVisible", _modTop + modsPerPage < _modsAvailable.Num()); 
 
 	// Update the currently installed mod
 	ModInfo curModInfo;
