@@ -143,7 +143,7 @@ void CombatState::Init(idAI* owner)
 
 	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_combat", message))
+		TaskPtr(new SingleBarkTask("snd_charge", message))
 	);
 
 	// Ranged combat
