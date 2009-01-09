@@ -384,7 +384,7 @@ void CModMenu::InitStartingMap()
 	doomPath /= "..";
 
 	fs::path startingMapPath(cv_tdm_fm_path.GetString());
-	startingMapPath = startingMapPath / _curModName / cv_tdm_fm_startingmap_file.GetString();
+	startingMapPath = startingMapPath / _curModName.c_str() / cv_tdm_fm_startingmap_file.GetString();
 
 	char* buffer = NULL;
 
@@ -422,7 +422,7 @@ std::string CModMenu::GetDarkmodPath()
 	}
 
 	// Path to the darkmod directory
-	fs::path darkmodPath(parentPath / modBaseName);
+	fs::path darkmodPath(parentPath / modBaseName.c_str());
 
 	return darkmodPath.string();
 }
@@ -448,7 +448,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	gui->HandleNamedEvent("OnModInstallationStart");
 	
 	// Ensure that the target folder exists (idFileSystem::CopyFile requires this)
-	fs::path targetFolder = parentPath / modDirName;
+	fs::path targetFolder = parentPath / modDirName.c_str();
 
 	if (!fs::create_directory(targetFolder))
 	{
