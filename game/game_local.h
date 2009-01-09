@@ -475,6 +475,13 @@ public:
 	CShopPtr				m_Shop;
 
 	/**
+	 * This list is some sort of queue of error messages collected by 
+	 * gameLocal.Error(). The messages here will be sent 
+	 * to the main menu GUI once it is displayed again after the error.
+	 */
+	mutable idStr			m_guiError;
+
+	/**
 	* Pointer to global AI Relations object
 	**/
 	CRelations *			m_RelationsManager;
