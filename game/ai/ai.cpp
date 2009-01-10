@@ -6503,37 +6503,35 @@ bool idAI::TestMelee( void ) const {
 	}
 
 	//FIXME: make work with gravity vector
-	idVec3 org = physicsObj.GetOrigin();
-	const idBounds &myBounds = physicsObj.GetBounds();
-	idBounds bounds;
+	const idVec3& org = physicsObj.GetOrigin();
+	const idBounds& bounds = physicsObj.GetBounds();
 
-	// expand the bounds out by our melee range
-	bounds[0][0] = -melee_range;
-	bounds[0][1] = -melee_range;
-	bounds[0][2] = myBounds[0][2] - melee_range;
-	bounds[1][0] = melee_range;
-	bounds[1][1] = melee_range;
-	bounds[1][2] = myBounds[1][2] + melee_range;
-	bounds.TranslateSelf( org );
+	const idVec3& enemyOrg = enemyEnt->GetPhysics()->GetOrigin();
+	const idBounds& enemyBounds = enemyEnt->GetPhysics()->GetBounds();
 
-	idVec3 enemyOrg = enemyEnt->GetPhysics()->GetOrigin();
-	idBounds enemyBounds = enemyEnt->GetPhysics()->GetBounds();
-	enemyBounds.TranslateSelf( enemyOrg );
+	idVec3 dir = enemyOrg - org;
+	dir.z = 0;
+	float dist = dir.LengthFast();
 
-	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, gameLocal.msec );
-	}
+	float maxdist = melee_range + enemyBounds[1][0];
 
-	if ( !bounds.IntersectsBounds( enemyBounds ) ) {
-		return false;
-	}
+	if (dist < maxdist)
+	{
+		// angua: within horizontal distance
+		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z ||
+				(enemyOrg.z + enemyBounds[1][2]) > org.z)
+		{
+			// within height
+			// check if there is something in between
+			idVec3 start = GetEyePosition();
+			idVec3 end = enemyEnt->GetEyePosition();
 
-	idVec3 start = GetEyePosition();
-	idVec3 end = enemyEnt->GetEyePosition();
-
-	gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
-	if ( ( trace.fraction == 1.0f ) || ( gameLocal.GetTraceEntity( trace ) == enemyEnt ) ) {
-		return true;
+			gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
+			if ( ( trace.fraction == 1.0f ) || ( gameLocal.GetTraceEntity( trace ) == enemyEnt ) ) 
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;
