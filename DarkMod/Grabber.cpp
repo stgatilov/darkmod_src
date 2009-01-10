@@ -875,12 +875,13 @@ void CGrabber::AddToClipList( idEntity *ent )
 	
 	// Clear the solid flag to avoid player collision, 
 	// but enable monsterclip for AI, rendermodel for projectiles and corpse for moveables
+	// clear the opaque flag so that AI can see through carried items
 	if( contents & (CONTENTS_SOLID|CONTENTS_CORPSE) )
 	{
 		phys->SetContents
 		( 
 			(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
-			| CONTENTS_RENDERMODEL | CONTENTS_CORPSE 
+			| CONTENTS_RENDERMODEL | CONTENTS_CORPSE & (~CONTENTS_OPAQUE)
 		);
 		bAddToList = true;
 	}
