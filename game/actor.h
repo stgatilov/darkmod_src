@@ -125,6 +125,7 @@ extern const idEventDef AI_PlayCycle;
 extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
+extern const idEventDef AI_BestParryName;
 
 class idDeclParticle;
 
@@ -332,6 +333,16 @@ public:
 	bool					HasEnemies( void ) const;
 	idActor *				ClosestEnemyToPoint( const idVec3 &pos );
 	idActor *				EnemyWithMostHealth();
+	/**
+	* Get closest enemy who is in the process of launching a melee attack
+	**/
+	idActor *				ClosestAttackingEnemy( bool bUseFOV );
+	/**
+	* Returns the string name of the best parry given the attacks at the time
+	* If no attacking enemy is found, returns default of "RL"
+	* See dActor::MeleeTypeNames for the list of melee attack/parry names
+	**/
+	const char *			BestParryName( void );
 
 	virtual bool			OnLadder( void ) const;
 	// Returns the elevator entity if the actor is standing on an elevator
@@ -615,7 +626,11 @@ public:
 	// Returns the number of ranged/melee weapons attached to the calling script
 	void					Event_GetNumMeleeWeapons();
 	void					Event_GetNumRangedWeapons();
-
+	/**
+	* Returns the string name (suffix) of the optimal melee parry given current attackers
+	* If no attackers are found within the FOV, returns a default of "RL" (sabre parry #4)
+	**/
+	void					Event_BestParryName();
 
 
 #ifdef TIMING_BUILD

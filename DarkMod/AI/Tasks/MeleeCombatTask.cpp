@@ -91,6 +91,7 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 void MeleeCombatTask::OnFinish(idAI* owner)
 {
 	// ishtvan TODO: Will need different code for when attack is finish vs. parry?
+	// TODO: Also need to figure out if we hit or miss, etc.
 	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
 	pStatus->m_bAttacking = false;
 

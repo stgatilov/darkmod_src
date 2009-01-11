@@ -395,7 +395,7 @@ const idEventDef EV_EnableLegIK( "EnableLegIK", "d" );
 const idEventDef EV_DisableLegIK( "DisableLegIK", "d" );
 const idEventDef AI_StopAnim( "stopAnim", "dd" );
 // NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
-// by idWeapon (maybe this is due to limited polymorphism in scripting?)
+// by idWeapon (maybe due to limited polymorphism in scripting?)
 const idEventDef AI_PlayAnim( "playAnim", "ds", 'd' );
 const idEventDef AI_PauseAnim( "pauseAnim", "dd" );
 const idEventDef AI_AnimIsPaused( "animIsPaused", "d", 'd' );
@@ -427,6 +427,7 @@ const idEventDef AI_AnimDistance( "animDistance", "ds", 'f' );
 const idEventDef AI_HasEnemies( "hasEnemies", NULL, 'd' );
 const idEventDef AI_NextEnemy( "nextEnemy", "E", 'e' );
 const idEventDef AI_ClosestEnemyToPoint( "closestEnemyToPoint", "v", 'e' );
+const idEventDef AI_BestParryName( "bestParryName", NULL, 's' );
 const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
@@ -492,6 +493,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_HasEnemies,				idActor::Event_HasEnemies )
 	EVENT( AI_NextEnemy,				idActor::Event_NextEnemy )
 	EVENT( AI_ClosestEnemyToPoint,		idActor::Event_ClosestEnemyToPoint )
+	EVENT( AI_BestParryName,			idActor::Event_BestParryName )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
 	EVENT( AI_SetNextState,				idActor::Event_SetNextState )
 	EVENT( AI_SetState,					idActor::Event_SetState )
@@ -2203,6 +2205,69 @@ idActor *idActor::EnemyWithMostHealth() {
 
 /*
 ================
+idActor::ClosestAttackingEnemy
+================
+*/
+idActor *idActor::ClosestAttackingEnemy( bool bUseFOV )
+{
+	idActor		*ent(NULL);
+	idActor		*bestEnt(NULL);
+	float		bestDistSquared(idMath::INFINITY);
+	float		distSquared(0.0f);
+	idVec3		delta;
+
+	for( ent = enemyList.Next(); ent != NULL; ent = ent->enemyNode.Next() ) 
+	{
+		if ( ent->fl.hidden )
+			continue;
+
+		if ( !ent->m_MeleeStatus.m_bAttacking )
+			continue;
+
+		idVec3 entOrigin = ent->GetPhysics()->GetOrigin();
+		delta = entOrigin - GetPhysics()->GetOrigin();
+		distSquared = delta.LengthSqr();
+
+		// check FOV, using idActor version which only checks horizontal angle
+		if( bUseFOV && !idActor::CheckFOV( entOrigin) )
+		{
+			continue;
+		}
+
+		if ( distSquared < bestDistSquared ) 
+		{
+			bestEnt = ent;
+			bestDistSquared = distSquared;
+		}
+	}
+
+	return bestEnt;
+}
+
+/*
+================
+idActor::BestParryName
+================
+*/
+const char *idActor::BestParryName( void )
+{
+	idActor *AttEnemy;
+	EMeleeType ParryType;
+
+	if( m_MeleeStatus.m_bCanParryAll )
+		ParryType = MELEETYPE_BLOCKALL;
+	else if( (AttEnemy = ClosestAttackingEnemy( true )) != NULL )
+	{
+		ParryType = AttEnemy->m_MeleeStatus.m_AttackType;
+	}
+	else
+		ParryType = MELEETYPE_SLASH_RL;
+
+	return MeleeTypeNames[ParryType];
+}
+
+/*
+================
 idActor::OnLadder
 ================
 */
@@ -3863,6 +3928,16 @@ idActor::Event_ClosestEnemyToPoint
 void idActor::Event_ClosestEnemyToPoint( const idVec3 &pos ) {
 	idActor *bestEnt = ClosestEnemyToPoint( pos );
 	idThread::ReturnEntity( bestEnt );
+}
+
+/*
+================
+idActor::Event_BestParryName
+================
+*/
+void idActor::Event_BestParryName()
+{
+	idThread::ReturnString( BestParryName() );
 }
 
 /*

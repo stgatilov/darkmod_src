@@ -171,6 +171,7 @@ extern idCVar cv_melee_mouse_decision_time;
 extern idCVar cv_melee_mouse_slowview;
 extern idCVar cv_melee_invert_attack;
 extern idCVar cv_melee_invert_parry;
+extern idCVar cv_melee_auto_parry;
 extern idCVar cv_melee_max_particles;
 extern idCVar cv_phys_show_momentum;
 
