@@ -334,6 +334,21 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 	if (returnValue != NULL)
 	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added ammo item to inventory, removing from map: %s\r", ent->name.c_str());
+
+		// Remove the entity from the game, the ammonition is added
+		RemoveEntityFromMap(ent, true);
+
+		return returnValue;
+	}
+
+	// Check for a weapon item
+	returnValue = ValidateWeapon(ent);
+
+	if (returnValue != NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added weapon item to inventory, removing from map: %s\r", ent->name.c_str());
+
 		// Remove the entity from the game, the ammonition is added
 		RemoveEntityFromMap(ent, true);
 
@@ -788,4 +803,54 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 	}
 
 	return returnValue;
+}
+
+CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent)
+{
+	// Sanity check
+	if (ent == NULL) return CInventoryItemPtr();
+
+	idStr weaponName = ent->spawnArgs.GetString("inv_weapon_name");
+
+	if (weaponName.IsEmpty())
+	{
+		// Not a weapon item
+		return CInventoryItemPtr();
+	}
+
+	// Entity has a weapon name set, check for match in our inventory
+
+	// Find the weapon category
+	CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+
+	if (weaponCategory == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
+		return CInventoryItemPtr();
+	}
+	
+	// Look for the weapon with the given name
+	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
+	{
+		CInventoryWeaponItemPtr weaponItem = 
+			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		// Is this the right weapon? (must be a melee weapon, allowed empty)
+		if (weaponItem != NULL && weaponItem->IsAllowedEmpty() && weaponItem->GetWeaponName() == weaponName)
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Entity %s is matching the melee weapon %s.\r", ent->name.c_str(), weaponName.c_str());
+
+			// Enable this weapon
+			weaponItem->SetEnabled(true);
+
+			NotifyOwnerAboutPickup(ent->spawnArgs.GetString("inv_name"), weaponItem);
+			
+			// We're done
+			return weaponItem;
+		}
+	}
+
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Couldn't find a match for weapon name: %s.\r", weaponName.c_str());
+
+	return CInventoryItemPtr();
 }

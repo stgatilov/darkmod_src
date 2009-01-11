@@ -210,6 +210,14 @@ private:
 	 */
 	CInventoryItemPtr		ValidateAmmo(idEntity* ent);
 
+	/**
+	 * greebo: Checks the given entity for weapon definitions. Does not remove the entity.
+	 *
+	 * @returns: The weaponItem which has been added or enabled in the inventory or NULL, 
+	 * if <ent> isn't a valid ammo item.
+	 */
+	CInventoryItemPtr		ValidateWeapon(idEntity* ent);
+
 private:
 	idEntityPtr<idEntity>				m_Owner;
 

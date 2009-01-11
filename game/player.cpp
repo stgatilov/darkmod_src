@@ -10492,7 +10492,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	{
 		// greebo: This is a weapon-related inventory item, use the weapon inventory cursor
 		// Do it only if the respective CVAR is set
-		if (cv_frob_ammo_selects_weapon.GetBool())
+		if (cv_frob_weapon_selects_weapon.GetBool())
 		{
 			m_WeaponCursor->SetCurrentItem(returnValue);
 			SelectWeapon(weaponItem->GetWeaponIndex(), false);

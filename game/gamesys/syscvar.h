@@ -145,7 +145,7 @@ extern idCVar cv_frob_distance_default;
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
-extern idCVar cv_frob_ammo_selects_weapon;
+extern idCVar cv_frob_weapon_selects_weapon;
 
 extern idCVar cv_weapon_next_on_empty;
 
