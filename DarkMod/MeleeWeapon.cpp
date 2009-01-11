@@ -217,10 +217,18 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 	{
 		m_MeleeType = (EMeleeType) atoi(key->GetValue().c_str());
 		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Parry type is %d\r", m_MeleeType);
-		m_ActionName = ParryName;
-		m_bParrying = true;
+
 		// TODO: We shouldn't set the owner every time, should only have to set once
 		m_Owner = ActOwner;
+		m_ActionName = ParryName;
+		m_bParrying = true;
+
+		// TODO: Set owner's melee status earlier, at the beginning of the animation instead of when the parry becomes active?
+		// For now, set it here for testing purposes
+		CMeleeStatus *pOwnerStatus = &m_Owner.GetEntity()->m_MeleeStatus;
+		pOwnerStatus->m_bParrying = true;
+		pOwnerStatus->m_ParryType = m_MeleeType;
+
 
 		// set up the clipmodel
 		m_WeapClip = NULL;
@@ -248,6 +256,10 @@ void CMeleeWeapon::DeactivateParry( void )
 	{
 		m_bParrying = false;
 		ClearClipModel();
+
+		// clear the parry status from the owner
+		CMeleeStatus *pOwnerStatus = &m_Owner.GetEntity()->m_MeleeStatus;
+		pOwnerStatus->m_bParrying = false;
 	}
 }
 
