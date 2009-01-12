@@ -6376,6 +6376,9 @@ void idPlayer::UpdateHUD()
 	// Broadcast the HUD opacity value
 	m_overlays.setGlobalStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
 
+	// Propagate the CVAR to the HUD
+	hud->SetStateBool("HUD_LightgemVisible", !cv_tdm_hud_hide_lightgem.GetBool());
+
 	// Update the inventory HUD
 	UpdateInventoryHUD();
 
