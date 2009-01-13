@@ -1661,6 +1661,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\BloodMarker.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\BloodMarker.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\ButtonStateTracker.cpp"
 					>
 				</File>
