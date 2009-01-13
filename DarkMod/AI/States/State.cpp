@@ -896,6 +896,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	}
 				
 	// Do new reaction to stimulus
+	memory.investigateStimulusLocationClosely = true; // deep investigation
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.alertedDueToCommunication = false;
 }
