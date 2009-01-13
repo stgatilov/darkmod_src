@@ -114,6 +114,7 @@ darkModSrc = '\
 AIComm_Message.cpp \
 AIVehicle.cpp \
 BinaryFrobMover.cpp \
+BloodMarker.cpp \
 ButtonStateTracker.cpp \
 DarkmodAASHidingSpotFinder.cpp \
 DarkModGlobals.cpp \
