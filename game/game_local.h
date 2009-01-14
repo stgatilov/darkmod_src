@@ -955,6 +955,9 @@ private:
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 
 	void					GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
+
+	// Sets the video CVARs according to the settings in the given GUI
+	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
 };
 
 //============================================================================

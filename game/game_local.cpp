@@ -3241,6 +3241,56 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	return mpGame.HandleGuiCommands( menuCommand );
 }
 
+void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
+{
+	if (cvarSystem->GetCVarInteger("r_aspectRatio") > 0)
+	{
+		// Wide-screen resolution selected in the GUI, set the mode to "custom"
+		cvarSystem->SetCVarInteger("r_mode", -1);
+
+		// Set the custom height and width
+		int mode = cv_tdm_widescreenmode.GetInteger();
+
+		int width = 1024;
+		int height = 600;
+
+		// "1024x600;1280x800;1440x900;1680x1050;1920x1200"
+		switch (mode)
+		{
+		case 0:
+			width = 1024;
+			height = 600;
+			break;
+		case 1:
+			width = 1280;
+			height = 800;
+			break;
+		case 2:
+			width = 1440;
+			height = 900;
+			break;
+		case 3:
+			width = 1680;
+			height = 1050;
+			break;
+		case 4:
+			width = 1920;
+			height = 1200;
+			break;
+		default:
+			break;
+		};
+
+		cvarSystem->SetCVarInteger("r_customWidth", width);
+		cvarSystem->SetCVarInteger("r_customHeight", height);
+	}
+	else
+	{
+		// Not widescreen, set r_mode to something reasonable (1024x768)
+		cvarSystem->SetCVarInteger("r_mode", 5);
+	}
+}
+
 /*
 ================
 idGameLocal::HandleMainMenuCommands
@@ -3297,6 +3347,37 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			// Clear the string again
 			m_guiError.Empty();
+		}
+
+		// Propagate the video CVARs to the GUI
+		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
+	}
+	else if (cmd == "setVideoResWideScreen")
+	{
+		// Called when widescreen size selection changes
+		UpdateScreenResolutionFromGUI(gui);
+	}
+	else if (cmd == "aspectRatioChanged")
+	{
+		UpdateScreenResolutionFromGUI(gui);
+	}
+	else if (cmd == "loadCustomVideoResolution")
+	{
+		if (cvarSystem->GetCVarInteger("r_mode") == -1)
+		{
+			// Just set the state variable based on width
+			int width = cvarSystem->GetCVarInteger("r_customWidth");
+			//int height = cvarSystem->GetCVarInteger("r_customHeight");
+
+			switch (width)
+			{
+			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
+			case 1280: cv_tdm_widescreenmode.SetInteger(1); break;
+			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
+			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
+			case 1920: cv_tdm_widescreenmode.SetInteger(4); break;
+			default: cv_tdm_widescreenmode.SetInteger(0); break;
+			}
 		}
 	}
 	// greebo: the "log" command is used to write stuff to the console
