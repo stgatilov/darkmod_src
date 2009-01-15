@@ -3309,7 +3309,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	if (logNextCommand)
 	{
 		// We should log that command
-		Printf("MainMenu: %s\n", cmd.c_str());
+		if (cv_debug_mainmenu.GetBool())
+		{
+			Printf("MainMenu: %s\n", cmd.c_str());
+		}
+
 		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("%s\r", cmd.c_str());
 
 		logNextCommand = false;
@@ -3406,7 +3410,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
 	m_ModMenu->HandleCommands(menuCommand, gui);
 
-	if (cv_debug_mainmenu.GetBool())
+	/*if (cv_debug_mainmenu.GetBool())
 	{
 		const idDict& state = gui->State();
 		
@@ -3423,10 +3427,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Mainmenu GUI State %s = %s\r", key.c_str(), value.c_str());
 		}
-
-		// Clear the cvar again
-		cv_debug_mainmenu.SetBool(false);
-	}
+	}*/
 }
 
 /*
