@@ -516,7 +516,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	}
 
 	// Copy all PK4s from the FM folder
-	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, "PK4", false);
+	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, ".pk4", false);
 	
 	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
 	{
