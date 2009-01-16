@@ -22,10 +22,18 @@ class CZipFile
 public:
 	CZipFile(unzFile handle);
 
+	CZipFile::~CZipFile();
+
 	/**
 	 * greebo: returns TRUE when this archive contains the given file.
 	 */
 	bool ContainsFile(const idStr& fileName);
+
+	/**
+	 * Attempts to load the given text file. The string will be empty
+	 * if the file failed to load.
+	 */
+	idStr LoadTextFile(const idStr& fileName);
 };
 typedef boost::shared_ptr<CZipFile> CZipFilePtr;
 

@@ -273,15 +273,43 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 	idStr descFileName = fmPath + cv_tdm_fm_desc_file.GetString();
 
 	char* buffer = NULL;
+	idStr modFileContent;
+
 	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
 	{
-		// File not readable?
-		return ModInfo();
+		// File not found, check for PK4s in that folder
+		idFileList*	pk4files = fileSystem->ListFiles(fmPath, "pk4", false);
+
+		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
+		{
+			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath)) + pk4files->GetFile(j);
+
+			CZipFilePtr pk4file = CZipLoader::Instance().LoadFile(pk4fileName);
+
+			if (pk4file == NULL) continue; // failed to open zip file
+
+			if (pk4file->ContainsFile("darkmod.txt"))
+			{
+				modFileContent = pk4file->LoadTextFile("darkmod.txt");
+			}
+
+			if (!modFileContent.IsEmpty()) break; // Found what we've been looking for
+		}
+
+		fileSystem->FreeFileList(pk4files);
+	}
+	else
+	{
+		// File was readable, buffer is now holding the contents, copy to idStr
+		modFileContent = buffer;
+		fileSystem->FreeFile(buffer);
 	}
 
-	// Buffer is now holding the contents, copy to idStr
-	idStr modFileContent(buffer);
-	fileSystem->FreeFile(buffer);
+	if (modFileContent.IsEmpty())
+	{
+		// Failed to find info
+		return ModInfo();
+	}
 
 	ModInfo info;
 	info.pathToFMPackage = fmPath;
@@ -363,7 +391,8 @@ void CModMenu::LoadModList()
 			if (pk4file->ContainsFile("darkmod.txt"))
 			{
 				// Hurrah, we've found the darkmod.txt file
-				int i = 0;
+				_modsAvailable.Alloc() = files->GetFile(i);
+				break;
 			}
 		}
 
