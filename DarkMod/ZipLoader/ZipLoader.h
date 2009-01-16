@@ -15,10 +15,15 @@
 #include <boost/shared_ptr.hpp>
 #include "minizip/unzip.h"
 
+/**
+ * A class wrapping around a minizip file handle, providing
+ * some convenience method to easily extract data from PK4s.
+ */
 class CZipFile
 {
 	// The handle for the zip archive
 	unzFile _handle;
+
 public:
 	CZipFile(unzFile handle);
 
@@ -34,6 +39,12 @@ public:
 	 * if the file failed to load.
 	 */
 	idStr LoadTextFile(const idStr& fileName);
+
+	/**
+	 * greebo: Extracts the given file to the given destination path.
+	 * @returns: TRUE on success, FALSE otherwise.
+	 */
+	bool ExtractFileTo(const idStr& fileName, const idStr& destPath);
 };
 typedef boost::shared_ptr<CZipFile> CZipFilePtr;
 
@@ -46,15 +57,15 @@ class CZipLoader
 {
 	// Private constructor
 	CZipLoader();
-public:
 
+public:
 	/**
 	 * Tries to load the given file (path is absolute, use D3 VFS functions
 	 * to resolve a relative D3 path to a full OS path).
 	 * 
 	 * @returns: NULL on failure, the file object on success.
 	 */
-	CZipFilePtr LoadFile(const idStr& fullOSPath);
+	CZipFilePtr OpenFile(const idStr& fullOSPath);
 
 	// Singleton instance
 	static CZipLoader& Instance();

@@ -111,6 +111,7 @@ idCVar cv_tdm_fm_path( "tdm_fm_path", "fms/", CVAR_GUI, "(internal) The path whe
 idCVar cv_tdm_fm_desc_file( "tdm_fm_desc_file", "darkmod.txt", CVAR_GUI, "(internal) The description file name of FM packages.");
 idCVar cv_tdm_fm_current_file( "tdm_fm_current_file", "currentfm.txt", CVAR_GUI, "(internal) The file where the name of the currently installed FM is stored.");
 idCVar cv_tdm_fm_startingmap_file( "tdm_fm_startingmap_file", "startingmap.txt", CVAR_GUI, "(internal) The file where the name of the starting map of an FM is stored.");
+idCVar cv_tdm_fm_splashimage_file( "tdm_fm_splashimage_file", "install_splash.tga", CVAR_GUI, "(internal) The file to be used as splash screen for the installation GUI.");
 
 idCVar cv_debug_aastype(			"tdm_debug_aastype",		"aas32",		CVAR_GAME | CVAR_ARCHIVE, "Sets the AAS type used for visualisation with impulse 27");
 

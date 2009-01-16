@@ -273,37 +273,15 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 	idStr descFileName = fmPath + cv_tdm_fm_desc_file.GetString();
 
 	char* buffer = NULL;
-	idStr modFileContent;
 
 	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
 	{
-		// File not found, check for PK4s in that folder
-		idFileList*	pk4files = fileSystem->ListFiles(fmPath, "pk4", false);
-
-		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
-		{
-			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath)) + pk4files->GetFile(j);
-
-			CZipFilePtr pk4file = CZipLoader::Instance().LoadFile(pk4fileName);
-
-			if (pk4file == NULL) continue; // failed to open zip file
-
-			if (pk4file->ContainsFile("darkmod.txt"))
-			{
-				modFileContent = pk4file->LoadTextFile("darkmod.txt");
-			}
-
-			if (!modFileContent.IsEmpty()) break; // Found what we've been looking for
-		}
-
-		fileSystem->FreeFileList(pk4files);
+		// File not found
+		return ModInfo();
 	}
-	else
-	{
-		// File was readable, buffer is now holding the contents, copy to idStr
-		modFileContent = buffer;
-		fileSystem->FreeFile(buffer);
-	}
+
+	idStr modFileContent(buffer);
+	fileSystem->FreeFile(buffer);
 
 	if (modFileContent.IsEmpty())
 	{
@@ -350,9 +328,12 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 		}
 
 		// Check for mod image
-		if (fileSystem->ReadFile(info.pathToFMPackage + "install_splash.tga", NULL) != -1)
+		if (fileSystem->ReadFile(info.pathToFMPackage + cv_tdm_fm_splashimage_file.GetString(), NULL) != -1)
 		{
-			info.image = info.pathToFMPackage + "install_splash";
+			idStr splashImageName = cv_tdm_fm_splashimage_file.GetString();
+			splashImageName.StripFileExtension();
+
+			info.image = info.pathToFMPackage + splashImageName;
 		}
 	}
 
@@ -377,6 +358,18 @@ void CModMenu::LoadModList()
 
 	for (int i = 0; i < files->GetNumFiles(); ++i)
 	{
+		// Check for an uncompressed darkmod.txt file
+		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
+	
+		if (fileSystem->ReadFile(descFileName, NULL) != -1)
+		{
+			// File exists, add this as available mod
+			_modsAvailable.Alloc() = files->GetFile(i);
+			continue;
+		}
+
+		// no "darkmod.txt" file found, check in the PK4 files
+
 		// Check for PK4s in that folder
 		idFileList*	pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i) + "/", "pk4", false);
 
@@ -384,28 +377,38 @@ void CModMenu::LoadModList()
 		{
 			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath + files->GetFile(i) + "/")) + pk4files->GetFile(j);
 
-			CZipFilePtr pk4file = CZipLoader::Instance().LoadFile(pk4fileName);
+			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
 
 			if (pk4file == NULL) continue; // failed to open zip file
 
-			if (pk4file->ContainsFile("darkmod.txt"))
+			if (pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
-				// Hurrah, we've found the darkmod.txt file
+				// Hurrah, we've found the darkmod.txt file, extract the contents 
+				// and attempt to save to folder
 				_modsAvailable.Alloc() = files->GetFile(i);
-				break;
+
+				fs::path darkmodPath(GetDarkmodPath().c_str());
+				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / files->GetFile(i);
+				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
+
+				pk4file->ExtractFileTo(cv_tdm_fm_desc_file.GetString(), destPath.string().c_str());
+
+				// Check for the other meta-files as well
+				if (pk4file->ContainsFile(cv_tdm_fm_startingmap_file.GetString()))
+				{
+					destPath = fmPath / cv_tdm_fm_startingmap_file.GetString();
+					pk4file->ExtractFileTo(cv_tdm_fm_startingmap_file.GetString(), destPath.string().c_str());
+				}
+
+				if (pk4file->ContainsFile(cv_tdm_fm_splashimage_file.GetString()))
+				{
+					destPath = fmPath / cv_tdm_fm_splashimage_file.GetString();
+					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
+				}
 			}
 		}
 
 		fileSystem->FreeFileList(pk4files);
-
-		// Check for a uncompressed darkmod.txt file
-		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
-	
-		if (fileSystem->ReadFile(descFileName, NULL) != -1)
-		{
-			// File exists, add this as available mod
-			_modsAvailable.Alloc() = files->GetFile(i);
-		}
 	}
 
 	fileSystem->FreeFileList(files);
@@ -453,7 +456,7 @@ void CModMenu::InitStartingMap()
 	}
 }
 
-std::string CModMenu::GetDarkmodPath()
+idStr CModMenu::GetDarkmodPath()
 {
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -475,7 +478,7 @@ std::string CModMenu::GetDarkmodPath()
 	// Path to the darkmod directory
 	fs::path darkmodPath(parentPath / modBaseName.c_str());
 
-	return darkmodPath.string();
+	return darkmodPath.string().c_str();
 }
 
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
@@ -577,7 +580,7 @@ void CModMenu::RestartGame()
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
 	// Path to the darkmod directory
-	fs::path darkmodPath(GetDarkmodPath());
+	fs::path darkmodPath(GetDarkmodPath().c_str());
 
 	// path to tdmlauncher
 #ifdef _WINDOWS

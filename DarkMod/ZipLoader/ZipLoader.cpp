@@ -10,6 +10,7 @@
 #pragma hdrstop
 #include "ZipLoader.h"
 
+#include <fstream>
 #include "minizip/unzip.h"
 
 CZipFile::CZipFile(unzFile handle) :
@@ -53,9 +54,56 @@ idStr CZipFile::LoadTextFile(const idStr& fileName)
 
 		returnValue = buffer;
 		
-		delete buffer;
+		delete[] buffer;
 	}
 
+	unzCloseCurrentFile(_handle);
+
+	return returnValue;
+}
+
+bool CZipFile::ExtractFileTo(const idStr& fileName, const idStr& destPath)
+{
+	bool returnValue = true;
+
+	int result = unzLocateFile(_handle, fileName.c_str(), 0);
+
+	if (result != UNZ_OK) return false;
+
+	// Try to open the destination path before uncompressing the file
+	FILE* outFile = fopen(destPath.c_str(), "wb");
+
+	if (outFile == NULL) 
+	{
+		// couldn't open file for writing
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Couldn't extract %s file to %s.\r", fileName.c_str(), destPath.c_str());
+		return false; 
+	}
+
+	unz_file_info info;
+	unzGetCurrentFileInfo(_handle, &info, NULL, 0, NULL, 0, NULL, 0);
+
+	unsigned long fileSize = info.uncompressed_size;
+
+	int openResult = unzOpenCurrentFile(_handle);
+
+	if (openResult == UNZ_OK)
+	{
+		unsigned char* buffer = new unsigned char[fileSize];
+
+		// Read and null-terminate the string
+		unzReadCurrentFile(_handle, buffer, fileSize);
+
+		fwrite(buffer, 1, fileSize, outFile);
+				
+		delete[] buffer;
+	}
+	else
+	{
+		returnValue = false; // fopen failed
+	}
+
+	fclose(outFile);
 	unzCloseCurrentFile(_handle);
 
 	return returnValue;
@@ -66,7 +114,7 @@ idStr CZipFile::LoadTextFile(const idStr& fileName)
 CZipLoader::CZipLoader()
 {}
 
-CZipFilePtr CZipLoader::LoadFile(const idStr& fullOSPath)
+CZipFilePtr CZipLoader::OpenFile(const idStr& fullOSPath)
 {
 	unzFile handle = unzOpen(fullOSPath.c_str());
 
