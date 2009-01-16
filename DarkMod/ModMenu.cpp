@@ -158,7 +158,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
 	idStr briefingData = idStr("maps/") + cv_tdm_mapName.GetString() + "/mission_briefing";
 
-	gameLocal.Printf("DisplayBriefingPage: briefingData is " + briefingData + "\n");
+	gameLocal.Printf("DisplayBriefingPage: briefingData is %s\n", briefingData.c_str());
 
 	// Load the XData declaration
 	const tdmDeclXData* xd = static_cast<const tdmDeclXData*>(
@@ -184,7 +184,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 		// load up page text
 		idStr page = va("page%d_body", _briefingPage);
 
-		gameLocal.Warning("DisplayBriefingPage: current page is " + page);
+		gameLocal.Warning("DisplayBriefingPage: current page is %d", _briefingPage);
 
 		briefing = xd->m_data.GetString(page);
 		
@@ -354,10 +354,12 @@ void CModMenu::LoadModList()
 
 	// List all folders in the fms/ directory
 	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList*	files = fileSystem->ListFiles(fmPath, "/", false);
+	idFileList* files = fileSystem->ListFiles(fmPath, "/", false);
 
 	for (int i = 0; i < files->GetNumFiles(); ++i)
 	{
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for %s file in %s.\r", cv_tdm_fm_desc_file.GetString(), (fmPath + files->GetFile(i)).c_str());
+
 		// Check for an uncompressed darkmod.txt file
 		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
 	
@@ -369,9 +371,12 @@ void CModMenu::LoadModList()
 		}
 
 		// no "darkmod.txt" file found, check in the PK4 files
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.c_str());
 
 		// Check for PK4s in that folder
-		idFileList*	pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i) + "/", "pk4", false);
+		idFileList* pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i), ".pk4", false);
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%d PK4 files found in %s.\r", pk4files->GetNumFiles(), (fmPath + files->GetFile(i)).c_str());
 
 		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
 		{

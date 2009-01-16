@@ -116,6 +116,7 @@ CZipLoader::CZipLoader()
 
 CZipFilePtr CZipLoader::OpenFile(const idStr& fullOSPath)
 {
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Attempting to open file as ZIP: %s.\r", fullOSPath.c_str());
 	unzFile handle = unzOpen(fullOSPath.c_str());
 
 	return (handle != NULL) ? CZipFilePtr(new CZipFile(handle)) : CZipFilePtr();
