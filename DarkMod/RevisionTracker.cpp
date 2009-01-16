@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "RevisionTracker.h"
 
+#include <climits>
 #include <vector>
 #include <string>
 #include <boost/algorithm/string/split.hpp>

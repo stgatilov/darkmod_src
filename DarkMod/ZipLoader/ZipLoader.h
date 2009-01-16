@@ -12,6 +12,7 @@
 
 #pragma hdrstop
 
+#include "../../idlib/precompiled.h"
 #include <boost/shared_ptr.hpp>
 #include "minizip/unzip.h"
 
@@ -27,7 +28,7 @@ class CZipFile
 public:
 	CZipFile(unzFile handle);
 
-	CZipFile::~CZipFile();
+	~CZipFile();
 
 	/**
 	 * greebo: returns TRUE when this archive contains the given file.

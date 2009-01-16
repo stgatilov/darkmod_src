@@ -1,0 +1,69 @@
+# -*- mode: python -*-
+# DOOM build script
+# TTimo <ttimo@idsoftware.com>
+# http://scons.sourceforge.net
+
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision: 915 $
+#* $Date: 2009-01-16 22:10:27 +0200 (Fri, 16 Jan 2009) $
+#* $Author: greebo $
+#*
+#* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
+#* Revision 1.2  2004/11/28 19:23:11  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+ziploader_string = ' \
+	zlib/adler32.c \
+	zlib/compress.c \
+	zlib/crc32.c \
+	zlib/deflate.c \
+	zlib/gzio.c \
+	zlib/infback.c \
+	zlib/inffast.c \
+	zlib/inflate.c \
+	zlib/inftrees.c \
+	zlib/trees.c \
+	zlib/uncompr.c \
+	zlib/zutil.c \
+	minizip/ioapi.c \
+	minizip/mztools.c \
+	minizip/unzip.c \
+	minizip/zip.c'
+
+ziploader_list = scons_utils.BuildList( '', ziploader_string )
+
+for i in range( len( ziploader_list ) ):
+	ziploader_list[ i ] = '../../lib/' + ziploader_list[ i ]
+
+local_env = g_env.Copy()
+local_env_noopt = g_env.Copy()
+
+# max allowed -O1
+flags = OPTCPPFLAGS
+try:
+	flags.remove( '-O3' )
+	flags.insert( 0, '-O1' )
+except:
+	pass
+local_env_noopt.Append( CPPFLAGS = flags )
+
+ret_list = []
+
+for f in ziploader_list:
+	ret_list += local_env.SharedObject( source = f )
+
+Return( 'ret_list' )
