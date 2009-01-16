@@ -5,6 +5,8 @@
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/declxdata.h"
 #include "boost/filesystem.hpp"
+#include "../DarkMod/ZipLoader/ZipLoader.h"
+
 #include <string>
 #ifdef _WINDOWS
 #include <process.h>
@@ -347,7 +349,27 @@ void CModMenu::LoadModList()
 
 	for (int i = 0; i < files->GetNumFiles(); ++i)
 	{
-		// Check for the darkmod.txt file
+		// Check for PK4s in that folder
+		idFileList*	pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i) + "/", "pk4", false);
+
+		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
+		{
+			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath + files->GetFile(i) + "/")) + pk4files->GetFile(j);
+
+			CZipFilePtr pk4file = CZipLoader::Instance().LoadFile(pk4fileName);
+
+			if (pk4file == NULL) continue; // failed to open zip file
+
+			if (pk4file->ContainsFile("darkmod.txt"))
+			{
+				// Hurrah, we've found the darkmod.txt file
+				int i = 0;
+			}
+		}
+
+		fileSystem->FreeFileList(pk4files);
+
+		// Check for a uncompressed darkmod.txt file
 		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
 	
 		if (fileSystem->ReadFile(descFileName, NULL) != -1)
