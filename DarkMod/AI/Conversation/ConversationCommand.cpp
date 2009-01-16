@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
+#include <climits>
 #include "Conversation.h"
 #include "ConversationCommand.h"
 #include "../States/ConversationState.h"

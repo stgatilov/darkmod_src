@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
+#include <climits>
 #include "ConversationSystem.h"
 
 #define CONVERSATION_ENTITYCLASS "atdm:conversation_info"
