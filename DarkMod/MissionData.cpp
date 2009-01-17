@@ -2440,7 +2440,6 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	{
 		// Set the objectives state flag back to dirty
 		ClearGUIState();
-		gui->HandleNamedEvent("HideObjectiveScreen");
 	}
 	else if (cmd == "diffSelect")
 	{

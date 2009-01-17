@@ -3392,8 +3392,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}	
 	else if (cmd == "close") 
 	{
-		gui->HandleNamedEvent("HideSuccessScreen");
-
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
