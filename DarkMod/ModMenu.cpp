@@ -595,7 +595,11 @@ void CModMenu::RestartGame()
 	fs::path launcherExe(darkmodPath / "tdmlauncher");
 #endif
 
-	// FIXME: Check if tdmlauncher exists
+	if (!fs::exists(launcherExe))
+	{
+		gameLocal.Error("Could not find tdmlauncher!");
+		return;
+	}
 
 	// command line to spawn tdmlauncher
 	idStr commandLine(launcherExe.file_string().c_str());
