@@ -25,10 +25,11 @@ class Launcher
 	std::string _arguments;
 
 public:
-	Launcher(const fs::path& darkmodDir);
+	// Pass the command line to this class
+	Launcher(int argc, char* argv[]);
 
 	// Launches the game, reading the settings and arguments from the DarkmodDir
-	void Launch();
+	bool Launch();
 
 private:
 	// Reads the saved command line arguments

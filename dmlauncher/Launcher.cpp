@@ -16,9 +16,31 @@ const std::string GAME_BASE_NAME = "darkmod";
 	#define ENGINE_EXECUTABLE "doom3"
 #endif
 
-Launcher::Launcher(const fs::path& darkmodDir) :
-	_darkmodDir(darkmodDir)
-{}
+Launcher::Launcher(int argc, char* argv[])
+{
+	// path to this exe
+	boost::filesystem::path dmlauncher(argv[0]);
+
+	// path to the darkmod directory
+	_darkmodDir = dmlauncher.remove_leaf();
+
+	fs::path argFileName(_darkmodDir / ARGS_FILE);
+
+	for (int i = 1; i < argc; ++i)
+	{
+		fs::path optionalArgsFileName(_darkmodDir / argv[i]);
+
+		if (fs::exists(optionalArgsFileName))
+		{
+			if (fs::exists(argFileName))
+			{
+				fs::remove(argFileName);
+			}
+
+			fs::copy_file(optionalArgsFileName, argFileName);
+		}
+	}
+}
 
 void Launcher::InitArguments()
 {
@@ -98,7 +120,7 @@ std::string Launcher::ReadFile(const fs::path& fileName)
 #ifdef WIN32
 
 // Windows implementation
-void Launcher::Launch()
+bool Launcher::Launch()
 {
 	// Get the name of the current FM
 	InitCurrentFM();
@@ -114,12 +136,14 @@ void Launcher::Launch()
 
 	::SetCurrentDirectory(doom3dir.file_string().c_str());
 	_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), _arguments.c_str(), NULL);
+
+	return true;
 }
 
 #else
 
 // Linux implementation
-void Launcher::Launch()
+bool Launcher::Launch()
 {
 	// Get the name of the current FM
 	InitCurrentFM();
@@ -134,7 +158,7 @@ void Launcher::Launch()
 	fs::path doom3dir(_darkmodDir / "..");
 	fs::path doom3exe(_darkmodDir / ".." / ENGINE_EXECUTABLE);
 
-
+	return true;
 }
 
 #endif

@@ -7,19 +7,10 @@ pause 2 seconds before spawing doom3.
 
 #include "Launcher.h"
 
-#include "boost/filesystem.hpp"
-
 int main(int argc, char* argv[])
 {
-	// path to this exe
-	boost::filesystem::path dmlauncher(argv[0]);
-
-	// path to the darkmod directory
-	boost::filesystem::path darkmodDir = dmlauncher.remove_leaf();
-
 	// Instantiate a new Launcher class
-	Launcher launcher(darkmodDir);
-	launcher.Launch();
+	Launcher launcher(argc, argv);
 
-	return 0;
+	return launcher.Launch() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
