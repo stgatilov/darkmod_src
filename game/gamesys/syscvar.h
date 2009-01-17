@@ -70,6 +70,7 @@ extern idCVar cv_tdm_fm_path;
 extern idCVar cv_tdm_fm_desc_file;
 extern idCVar cv_tdm_fm_current_file;
 extern idCVar cv_tdm_fm_startingmap_file;
+extern idCVar cv_tdm_fm_splashimage_file;
 
 extern idCVar cv_debug_aastype;
 

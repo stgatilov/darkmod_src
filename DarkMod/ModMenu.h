@@ -52,7 +52,7 @@ private:
 	void RestartGame();
 
 	// Returns the darkmod path
-	std::string GetDarkmodPath();
+	idStr GetDarkmodPath();
 
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
 	// After this call the CVAR tdm_mapName is initialised and holds the map name.

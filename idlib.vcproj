@@ -58,6 +58,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4627"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,6 +141,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4627"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -5,6 +5,8 @@
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/declxdata.h"
 #include "boost/filesystem.hpp"
+#include "../DarkMod/ZipLoader/ZipLoader.h"
+
 #include <string>
 #ifdef _WINDOWS
 #include <process.h>
@@ -156,7 +158,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
 	idStr briefingData = idStr("maps/") + cv_tdm_mapName.GetString() + "/mission_briefing";
 
-	gameLocal.Printf("DisplayBriefingPage: briefingData is " + briefingData + "\n");
+	gameLocal.Printf("DisplayBriefingPage: briefingData is %s\n", briefingData.c_str());
 
 	// Load the XData declaration
 	const tdmDeclXData* xd = static_cast<const tdmDeclXData*>(
@@ -182,7 +184,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 		// load up page text
 		idStr page = va("page%d_body", _briefingPage);
 
-		gameLocal.Warning("DisplayBriefingPage: current page is " + page);
+		gameLocal.Warning("DisplayBriefingPage: current page is %d", _briefingPage);
 
 		briefing = xd->m_data.GetString(page);
 		
@@ -271,15 +273,21 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 	idStr descFileName = fmPath + cv_tdm_fm_desc_file.GetString();
 
 	char* buffer = NULL;
+
 	if (fileSystem->ReadFile(descFileName, reinterpret_cast<void**>(&buffer)) == -1)
 	{
-		// File not readable?
+		// File not found
 		return ModInfo();
 	}
 
-	// Buffer is now holding the contents, copy to idStr
 	idStr modFileContent(buffer);
 	fileSystem->FreeFile(buffer);
+
+	if (modFileContent.IsEmpty())
+	{
+		// Failed to find info
+		return ModInfo();
+	}
 
 	ModInfo info;
 	info.pathToFMPackage = fmPath;
@@ -320,9 +328,12 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 		}
 
 		// Check for mod image
-		if (fileSystem->ReadFile(info.pathToFMPackage + "install_splash.tga", NULL) != -1)
+		if (fileSystem->ReadFile(info.pathToFMPackage + cv_tdm_fm_splashimage_file.GetString(), NULL) != -1)
 		{
-			info.image = info.pathToFMPackage + "install_splash";
+			idStr splashImageName = cv_tdm_fm_splashimage_file.GetString();
+			splashImageName.StripFileExtension();
+
+			info.image = info.pathToFMPackage + splashImageName;
 		}
 	}
 
@@ -343,18 +354,66 @@ void CModMenu::LoadModList()
 
 	// List all folders in the fms/ directory
 	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList*	files = fileSystem->ListFiles(fmPath, "/", false);
+	idFileList* files = fileSystem->ListFiles(fmPath, "/", false);
 
 	for (int i = 0; i < files->GetNumFiles(); ++i)
 	{
-		// Check for the darkmod.txt file
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for %s file in %s.\r", cv_tdm_fm_desc_file.GetString(), (fmPath + files->GetFile(i)).c_str());
+
+		// Check for an uncompressed darkmod.txt file
 		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
 	
 		if (fileSystem->ReadFile(descFileName, NULL) != -1)
 		{
 			// File exists, add this as available mod
 			_modsAvailable.Alloc() = files->GetFile(i);
+			continue;
 		}
+
+		// no "darkmod.txt" file found, check in the PK4 files
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.c_str());
+
+		// Check for PK4s in that folder
+		idFileList* pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i), ".pk4", false);
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%d PK4 files found in %s.\r", pk4files->GetNumFiles(), (fmPath + files->GetFile(i)).c_str());
+
+		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
+		{
+			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath + files->GetFile(i) + "/")) + pk4files->GetFile(j);
+
+			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
+
+			if (pk4file == NULL) continue; // failed to open zip file
+
+			if (pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
+			{
+				// Hurrah, we've found the darkmod.txt file, extract the contents 
+				// and attempt to save to folder
+				_modsAvailable.Alloc() = files->GetFile(i);
+
+				fs::path darkmodPath(GetDarkmodPath().c_str());
+				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / files->GetFile(i);
+				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
+
+				pk4file->ExtractFileTo(cv_tdm_fm_desc_file.GetString(), destPath.string().c_str());
+
+				// Check for the other meta-files as well
+				if (pk4file->ContainsFile(cv_tdm_fm_startingmap_file.GetString()))
+				{
+					destPath = fmPath / cv_tdm_fm_startingmap_file.GetString();
+					pk4file->ExtractFileTo(cv_tdm_fm_startingmap_file.GetString(), destPath.string().c_str());
+				}
+
+				if (pk4file->ContainsFile(cv_tdm_fm_splashimage_file.GetString()))
+				{
+					destPath = fmPath / cv_tdm_fm_splashimage_file.GetString();
+					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
+				}
+			}
+		}
+
+		fileSystem->FreeFileList(pk4files);
 	}
 
 	fileSystem->FreeFileList(files);
@@ -402,7 +461,7 @@ void CModMenu::InitStartingMap()
 	}
 }
 
-std::string CModMenu::GetDarkmodPath()
+idStr CModMenu::GetDarkmodPath()
 {
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -424,7 +483,7 @@ std::string CModMenu::GetDarkmodPath()
 	// Path to the darkmod directory
 	fs::path darkmodPath(parentPath / modBaseName.c_str());
 
-	return darkmodPath.string();
+	return darkmodPath.string().c_str();
 }
 
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
@@ -457,7 +516,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	}
 
 	// Copy all PK4s from the FM folder
-	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, "PK4", false);
+	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, ".pk4", false);
 	
 	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
 	{
@@ -526,7 +585,7 @@ void CModMenu::RestartGame()
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
 	// Path to the darkmod directory
-	fs::path darkmodPath(GetDarkmodPath());
+	fs::path darkmodPath(GetDarkmodPath().c_str());
 
 	// path to tdmlauncher
 #ifdef _WINDOWS

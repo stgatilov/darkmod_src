@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=""
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;include/zlib"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS, _CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -62,6 +62,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4627"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -75,7 +76,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib"
+				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -149,7 +150,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;include/zlib"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS,IL_STATIC_LIB, _CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -169,6 +170,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4627"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -182,7 +184,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib"
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -1637,6 +1639,14 @@
 				Name="DarkMod"
 				>
 				<File
+					RelativePath=".\DarkMod\AbsenceMarker.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\AbsenceMarker.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\AIComm_Message.cpp"
 					>
 				</File>
@@ -1845,14 +1855,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\AbsenceMarker.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\AbsenceMarker.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\Intersection.cpp"
 					>
 				</File>
@@ -1977,14 +1979,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\RevisionTracker.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\RevisionTracker.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\rdline.cpp"
 					>
 				</File>
@@ -2006,6 +2000,14 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\renderpipewindows.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RevisionTracker.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RevisionTracker.h"
 					>
 				</File>
 				<File
@@ -2237,6 +2239,18 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Inventory\WeaponItem.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="ZipLoader"
+					>
+					<File
+						RelativePath=".\DarkMod\ZipLoader\ZipLoader.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\ZipLoader\ZipLoader.h"
 						>
 					</File>
 				</Filter>
