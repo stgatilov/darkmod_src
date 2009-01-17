@@ -968,6 +968,12 @@ void CGrabber::Event_CheckClipList( void )
 		// Check clipEntites against entities touching player
 		ListEnt = m_clipList[i].m_ent.GetEntity();
 
+		if( !ListEnt )
+		{
+			// not sure how this is happening, but fix it
+			continue;
+		}
+
 		// We keep an entity if it is the one we're dragging 
 		if( GetSelected() == ListEnt || (ListEnt->GetBindMaster() && GetSelected() == ListEnt->GetBindMaster()) ) 
 		{
