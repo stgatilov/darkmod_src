@@ -37,7 +37,7 @@ To get this to work, you will need to install the 32 bit compatibility libraries
 Under some distributions like SuSE these are installed by default, but on
 Ubuntu/Kubuntu, you need to install the following:
 
-  * ia32
+  * ia32 or ia32-libs
 
 In addition to this, you will also need libdevil-dev, libmng1 and libdevil1c2.
 However, these libraries do not come in a compatibility version, only in different
@@ -61,7 +61,8 @@ and unzip them manually:
 	libdevil-dev_1.6.7-5_i386.deb
 	libmng1_1.0.9-1_i386.deb
 	libboost-filesystem1.34.1_1.34.1-2ubuntu1_i386.deb
-	libboost-thread1.34.1_1.34.1-2ubuntu1_i386.deb 
+	libboost-thread1.34.1_1.34.1-2ubuntu1_i386.deb
+	libstdc++6_4.3.2-2_i386.deb
 
 You might get slightly newer versions, but it should work. Note that this
 list doesn't include the -dev variants, you should be able to just install the
@@ -77,6 +78,7 @@ just the basename like so:
 	/lib32/libboost_filesystem-mt.so
 	/lib32/libboost_thread.so
 	/lib32/libboost_thread-mt.so
+	/lib32/libstdc++.so
 
 Then run:
 
@@ -84,6 +86,11 @@ Then run:
 
 It will pick up the correct libraries. Likewise, when running, Doom3 will
 also use the right 32bit libraries.
+
+greebo: I had to install a few more packages to get TDM to compile in Ubuntu 8.10:
+
+	libglew1.5-dev
+	libc6-dev-i386 (to fix errors about gnu/stubs-32.h missing)
 
 Troubleshooting
 ===============
