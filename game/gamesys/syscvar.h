@@ -89,6 +89,7 @@ extern idCVar cv_ko_show;
 extern idCVar cv_ai_animstate_show;
 
 extern idCVar cv_debug_mainmenu;
+extern idCVar cv_mainmenu_confirmquit;
 
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_run_backmod;

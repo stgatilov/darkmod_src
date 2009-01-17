@@ -3355,6 +3355,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// Propagate the video CVARs to the GUI
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
+		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
 	}
 	else if (cmd == "setVideoResWideScreen")
 	{
