@@ -94,16 +94,25 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 		// Either attack the shield to destroy it or wait until it's dropped or flank the parry with footwork
 	}
 
-	// choose a random attack from our possible attacks
-	int i = gameLocal.random.RandomInt( attacks.Num() );
-	i = attacks[i];
-	const char *suffix = idActor::MeleeTypeNames[i];
+	if (attacks.Num() > 0)
+	{
+		// choose a random attack from our possible attacks
+		int i = gameLocal.random.RandomInt( attacks.Num() );
+		i = attacks[i];
+		const char *suffix = idActor::MeleeTypeNames[i];
 
-	pStatus->m_bAttacking = true;
-	pStatus->m_AttackType = (EMeleeType) i;
+		pStatus->m_bAttacking = true;
+		pStatus->m_AttackType = (EMeleeType) i;
 
-	// TODO: Why did we have 5 blend frames here?
-	owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Melee_%s",suffix), 5);
+		// TODO: Why did we have 5 blend frames here?
+		owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Melee_%s",suffix), 5);
+	}
+	else
+	{
+		// angua: unarmed melee, attacks list is empty
+		// TODO: Why did we have 5 blend frames here?
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Melee_General", 5);
+	}
 }
 
 void MeleeCombatTask::OnFinish(idAI* owner)
