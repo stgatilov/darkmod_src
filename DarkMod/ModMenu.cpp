@@ -591,8 +591,7 @@ void CModMenu::RestartGame()
 #ifdef _WINDOWS
 	fs::path launcherExe(darkmodPath / "tdmlauncher.exe");
 #else
-	// ???
-	fs::path launcherExe(darkmodPath / "tdmlauncher");
+	fs::path launcherExe(darkmodPath / "tdmlauncher.linux");
 #endif
 
 	if (!fs::exists(launcherExe))
