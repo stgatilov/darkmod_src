@@ -277,17 +277,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					break;
 				}
 
-				// check if we are already close enough
-				idVec3 dir = closedPos - owner->GetPhysics()->GetOrigin();
-				dir.z = 0;
-				float dist = dir.LengthFast();
-				if (dist <= owner->GetArmReachLength())
-				{
-					owner->StopMove(MOVE_STATUS_DONE);
-					owner->TurnToward(closedPos);
-					_waitEndTime = gameLocal.time + 750;
-					_doorHandlingState = EStateWaitBeforeOpen;
-				}
 				else if (owner->AI_MOVE_DONE)
 				{
 					owner->MoveToPosition(_frontPos);
@@ -586,16 +575,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 
 					idVec3 currentPos = frobDoor->GetCurrentPos();
-					idVec3 dir = owner->GetPhysics()->GetOrigin() - currentPos;
-					dir.z = 0;
-					float dist = dir.LengthFast();
 					// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
 
-					if (dist < 2 * owner->GetArmReachLength() || owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
+					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
 					{
 						// reached front position
 						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(closedPos);
+						owner->TurnToward(currentPos);
 						_waitEndTime = gameLocal.time + 650;
 						_doorHandlingState = EStateWaitBeforeOpen;
 					}

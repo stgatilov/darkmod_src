@@ -5311,16 +5311,16 @@ void idAI::DropBlood(idEntity *inflictor)
 {
 	if (inflictor)
 	{
-		idStr damageDefName = inflictor->spawnArgs.GetString( "def_damage" );
+		idStr damageDefName = inflictor->spawnArgs.RandomPrefix("def_damage", gameLocal.random);
 
-		const idDeclEntityDef *def = gameLocal.FindEntityDef( damageDefName, false );
+		const idDeclEntityDef *def = gameLocal.FindEntityDef(damageDefName, false);
 		if ( def == NULL ) 
 		{
 			return;
 		}
 
 		// blood splats are thrown onto nearby surfaces
-		idStr splat = def->dict.RandomPrefix( "mtr_killed_splat", gameLocal.random );
+		idStr splat = def->dict.RandomPrefix("mtr_killed_splat", gameLocal.random);
 		if (!splat.IsEmpty()) 
 		{
 			SpawnBloodMarker(splat, 40);

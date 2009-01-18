@@ -676,7 +676,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
 		(
-			m_Owner.GetEntity(), m_Owner.GetEntity(), 
+			this, m_Owner.GetEntity(), 
 			dir, DamageDefName,
 			DmgScale, location, tr 
 		);
