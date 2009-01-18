@@ -114,7 +114,7 @@ std::string Launcher::ReadFile(const fs::path& fileName)
 
 		char* buf = reinterpret_cast<char*>(malloc(len+1));
 
-		std::size_t bytesRead = fread(buf, len, 1, file);
+		std::size_t bytesRead = fread(buf, 1, len, file);
 
 		if (bytesRead != len)
 		{
