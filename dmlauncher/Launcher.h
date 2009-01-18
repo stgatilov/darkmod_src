@@ -25,11 +25,11 @@ class Launcher
 	// The path to the darkmod game base
 	fs::path _darkmodDir;
 
+	// The path to the engine executable (DOOM3.exe / doom.x86)
+	fs::path _engineExecutable;
+
 	// The name of the current FM
 	std::string _currentFM;
-
-	// The name of the engine (Win32: DOOM3.exe)
-	std::string _executable;
 
 	// The arguments to pass to the engine
 	std::string _arguments;

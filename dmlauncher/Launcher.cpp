@@ -32,10 +32,32 @@ Launcher::Launcher(int argc, char* argv[]) :
 	// path to the darkmod directory
 	_darkmodDir = dmlauncher.remove_leaf();
 
+	// Default value
+	_engineExecutable = _darkmodDir.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
+
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
+	// Number of arguments to ignore (one is this executable itself, ignore it)
+	int numIgnoreArgs = 1;
+
+	// Inspect the arguments
 	for (int i = 1; i < argc; ++i)
 	{
+		fs::path possibleExecutable = argv[i];
+
+		if (possibleExecutable.string().find(ENGINE_EXECUTABLE) != std::string::npos)
+		{
+			// We've found an argument which might fit for an executable, check if it exists
+			if (fs::exists(possibleExecutable))
+			{
+				// Got it, use this as engine executable
+				_engineExecutable = possibleExecutable;
+				numIgnoreArgs++;
+				continue; // don't use this as argument file
+			}
+		}
+
+		// Check if this is an optional dmargs file
 		fs::path optionalArgsFileName(_darkmodDir / argv[i]);
 
 		if (fs::exists(optionalArgsFileName))
@@ -46,10 +68,12 @@ Launcher::Launcher(int argc, char* argv[]) :
 			}
 
 			fs::copy_file(optionalArgsFileName, argFileName);
+
+			numIgnoreArgs++;
 		}
 	}
 
-	if (argc == 1)
+	if (argc - numIgnoreArgs == 0)
 	{
 		_pauseBeforeStart = false; // don't wait if no arguments supplied
 	}
@@ -152,11 +176,15 @@ bool Launcher::Launch()
 	Sleep(2000);
 
 	// path to doom3.exe
-	fs::path doom3dir(_darkmodDir / "..");
-	fs::path doom3exe(_darkmodDir / ".." / ENGINE_EXECUTABLE);
-
+	fs::path doom3exe = _engineExecutable;
+	fs::path doom3dir = doom3exe;
+	doom3dir = doom3dir.remove_leaf().remove_leaf();
+	
 	::SetCurrentDirectory(doom3dir.file_string().c_str());
-	_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), _arguments.c_str(), NULL);
+	if (_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), _arguments.c_str(), NULL) == -1)
+	{
+		std::cerr << "Error when spawning D3 process: " << strerror(errno) << std::endl;
+	}
 
 	return true;
 }
