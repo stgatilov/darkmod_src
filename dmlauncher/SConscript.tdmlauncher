@@ -1,0 +1,47 @@
+# The Dark Mod Launcher build script
+# Adapted from id's game sconscript
+# Author: greebo
+
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision: 3152 $
+#* $Date: 2009-01-17 06:39:29 +0100 (Sat, 17 Jan 2009) $
+#* $Author: greebo $
+#*
+#* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
+#* Revision 1.2  2004/11/28 19:23:11  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
+import sys, os
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+# Master list of source files to compile
+game_string = 'Launcher.cpp dmlauncher.cpp'
+
+game_list = scons_utils.BuildList( './', game_string )
+
+local_env = g_game_env.Copy()
+local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
+
+# Use local Boost and DevIL
+local_env.Append(LIBS = ['boost_filesystem'])
+
+#local_env.Append(LIBS = [
+#    File('#/linux/devil/lib/libIL.a'),
+#    File('#/linux/boost/lib/libboost_filesystem-gcc42-mt-1_36.a')
+#])
+
+ret = local_env.Program('tdmlauncher', game_list )
+Return( 'ret' )
+
