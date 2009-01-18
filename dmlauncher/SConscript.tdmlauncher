@@ -26,7 +26,7 @@ def BuildList( s_prefix, s_string ):
 # Master list of source files to compile
 tdmlauncher_list = BuildList('./', 'Launcher.cpp dmlauncher.cpp')
 
-local_env = g_game_env.Copy()
+local_env = g_env.Copy()
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
 # Use local Boost

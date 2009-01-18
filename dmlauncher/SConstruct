@@ -12,12 +12,8 @@
 #*
 #***************************************************************************
 
-import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, string
+import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, string
 import SCons
-
-sys.path.append( 'sys/scons' )
-
-conf_filename='site.conf'
 
 # choose configuration variables which should be saved between runs
 # ( we handle all those as strings )
@@ -28,13 +24,9 @@ serialized=['CC', 'CXX', 'JOBS', 'BUILD']
 # help -------------------------------------------
 
 help_string = """
-Usage: scons [OPTIONS] [TARGET] [CONFIG]
+Usage: scons [OPTIONS] [TARGET]
 
 [OPTIONS] and [TARGET] are covered in command line options, use scons -H
-
-[CONFIG]: KEY="VALUE" [...]
-a number of configuration options saved between runs in the """ + conf_filename + """ file
-erase """ + conf_filename + """ to start with default settings again
 
 CC (default gcc)
 CXX (default g++)
@@ -103,7 +95,7 @@ for k in ARGUMENTS.keys():
 
 # general configuration, target selection --------
 
-g_build = 'build/' + BUILD
+g_build = './build/' + BUILD
 
 SConsignFile( 'scons.signatures' )
 SourceSignatures('timestamp')
@@ -121,9 +113,7 @@ BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
 CORELIBPATH = [ ]
 CORECPPFLAGS = [ ]
-GAMECPPFLAGS = [ ]
 BASELINKFLAGS = [ ]
-CORELINKFLAGS = [ ]
 
 # for release build, further optimisations that may not work on all files
 OPTCPPFLAGS = [ ]
@@ -147,11 +137,11 @@ if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
 	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
-	BASECPPFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-m32' )
+	#BASECPPFLAGS.append( '-m32' )
+	#BASELINKFLAGS.append( '-m32' )
 	# help 64 bit machines to find the compatibility 32bit libraries
-	BASELINKFLAGS.append( '-L/lib32' )
-	BASELINKFLAGS.append( '-L/usr/lib32' )
+	#BASELINKFLAGS.append( '-L/lib32' )
+	#BASELINKFLAGS.append( '-L/usr/lib32' )
 
 	# Add the __linux__ define
 	BASECPPFLAGS.append('-D__linux__')
@@ -164,7 +154,7 @@ elif ( BUILD == 'release' ):
 	# -finline-functions: implicit at -O3
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -177,25 +167,12 @@ g_base_env.Append(CPPPATH = '#/')
 g_env = g_base_env.Copy()
 
 g_env['CPPFLAGS'] += OPTCPPFLAGS
-g_env['CPPFLAGS'] += CORECPPFLAGS
-g_env['LINKFLAGS'] += CORELINKFLAGS
-
-g_env_noopt = g_base_env.Copy()
-g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
-
-g_game_env = g_base_env.Copy()
-
-g_game_env['CPPFLAGS'] += OPTCPPFLAGS
-g_game_env['CPPFLAGS'] += GAMECPPFLAGS
-
-# maintain this dangerous optimization off at all times
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
-g_env_noopt.Append( CPPFLAGS = '-fno-strict-aliasing' )
-g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
+g_env['CPPFLAGS'] += CORECPPFLAGS
 
 # mark the globals
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os OPTCPPFLAGS'
+GLOBALS = 'g_env g_os OPTCPPFLAGS'
 
 # end general configuration ----------------------
 
@@ -203,14 +180,10 @@ GLOBALS = 'g_env g_env_noopt g_game_env g_os OPTCPPFLAGS'
 
 Export( 'GLOBALS ' + GLOBALS )
 
-game = None
-
-Export( 'GLOBALS ' + GLOBALS )
-dupe = 0
-
-BuildDir( g_build + '/tdmlauncher', '.', duplicate = dupe )
+BuildDir( g_build, '.', duplicate = 0 )
 
 Export( 'GLOBALS ' + GLOBALS )
 game = SConscript( 'SConscript.tdmlauncher' )
-	
+
 # end targets ------------------------------------
+
