@@ -23,7 +23,8 @@ const std::string GAME_BASE_NAME = "darkmod";
 	#define ENGINE_EXECUTABLE "doom.x86"
 #endif
 
-Launcher::Launcher(int argc, char* argv[])
+Launcher::Launcher(int argc, char* argv[]) :
+	_pauseBeforeStart(true)
 {
 	// path to this exe
 	boost::filesystem::path dmlauncher(argv[0]);
@@ -46,6 +47,11 @@ Launcher::Launcher(int argc, char* argv[])
 
 			fs::copy_file(optionalArgsFileName, argFileName);
 		}
+	}
+
+	if (argc == 1)
+	{
+		_pauseBeforeStart = false; // don't wait if no arguments supplied
 	}
 }
 
