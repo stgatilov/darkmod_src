@@ -1,5 +1,7 @@
 #include "Launcher.h"
 
+#include <iostream>
+
 const std::string CURRENT_FM_FILE = "currentfm.txt";
 const std::string ARGS_FILE = "dmargs.txt";
 const std::string GAME_BASE_NAME = "darkmod";
@@ -100,12 +102,18 @@ std::string Launcher::ReadFile(const fs::path& fileName)
 	if (file != NULL)
 	{
 		fseek(file, 0, SEEK_END);
-		long len = ftell(file);
+		std::size_t len = ftell(file);
 		fseek(file, 0, SEEK_SET);
 
 		char* buf = reinterpret_cast<char*>(malloc(len+1));
 
-		fread(buf, len, 1, file);
+		std::size_t bytesRead = fread(buf, len, 1, file);
+
+		if (bytesRead != len)
+		{
+			std::cerr << "Warning: bytes read mismatches file length?" << std::endl;
+		}		
+
 		buf[len] = 0;
 
 		returnValue = buf;
