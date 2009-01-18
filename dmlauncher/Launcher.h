@@ -1,6 +1,16 @@
 #ifndef _LAUNCHER_H_
 #define _LAUNCHER_H_
 
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ *************************************************************************/
+
 #include <string>
 #include "boost/filesystem.hpp"
 
@@ -43,3 +53,4 @@ private:
 };
 
 #endif /* _LAUNCHER_H_ */
+

@@ -1,6 +1,11 @@
 #include "Launcher.h"
 
 #include <iostream>
+#include <vector>
+#include <cstring>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 const std::string CURRENT_FM_FILE = "currentfm.txt";
 const std::string ARGS_FILE = "dmargs.txt";
@@ -15,7 +20,7 @@ const std::string GAME_BASE_NAME = "darkmod";
 	// Linux
 	#include <unistd.h>
 
-	#define ENGINE_EXECUTABLE "doom3"
+	#define ENGINE_EXECUTABLE "doom.x86"
 #endif
 
 Launcher::Launcher(int argc, char* argv[])
@@ -82,6 +87,8 @@ void Launcher::InitArguments()
 
 		fclose(argFile);
 	}
+
+	boost::algorithm::trim(_arguments);
 }
 
 void Launcher::InitCurrentFM()
@@ -163,10 +170,46 @@ bool Launcher::Launch()
 	usleep(2000000);
 
 	// path to doom3.exe
-	fs::path doom3dir(_darkmodDir / "..");
-	fs::path doom3exe(_darkmodDir / ".." / ENGINE_EXECUTABLE);
+	fs::path doom3dir("/usr/local/games/doom3/");
+	fs::path doom3app(doom3dir / ENGINE_EXECUTABLE);
+
+	// Start a new process
+	pid_t child_pid = fork();
+	
+	if (child_pid == 0)
+	{
+		// Add the doom3 app path as first argument
+		_arguments = doom3app.string() + " " + _arguments;
+
+		// Split the argument string into parts
+		std::vector<std::string> parts;
+		boost::algorithm::split(parts, _arguments, boost::algorithm::is_any_of(" "));
+
+		// Instantiate the char* array needed for execvp (need one more for the trailing NULL)
+		char* argv[parts.size() + 1];
+
+		for (std::size_t i = 0; i < parts.size(); ++i)
+		{
+			argv[i] = new char[parts[i].length() + 1];
+			strcpy(argv[i], parts[i].c_str());
+		}
+
+		// The last argument points to NULL
+		argv[parts.size()] = NULL;
+
+		int result = execvp(doom3app.string().c_str(), argv);
+
+		// Free the char* array again
+		for (std::size_t i = 0; i < parts.size(); ++i)
+		{
+			delete[] argv[i];
+		}
+
+		exit(0);
+	}
 
 	return true;
 }
 
 #endif
+
