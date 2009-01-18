@@ -11,6 +11,7 @@
 #ifdef _WINDOWS
 #include <process.h>
 #else
+#include <limits.h>
 #include <unistd.h>
 #endif
 
@@ -562,10 +563,22 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	// Path to file that holds the current FM name
 	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
 
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.file_string().c_str());
+
 	// Save the name of the new mod
 	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
-	fputs(modDirName, currentFM);
-	fclose(currentFM);
+
+	if (currentFM != NULL)
+	{
+		fputs(modDirName, currentFM);
+		fclose(currentFM);
+	}
+	else
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.file_string().c_str());
+	}
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
 
 	// Check if the DoomConfig.cfg already exists in the mod folder
 	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
@@ -615,10 +628,10 @@ void CModMenu::RestartGame()
 	enginePath = cmdLine.c_str();
 #else
 	// TDM launcher needs to know where the engine is located, pass this as first argument
-	enginePath = fileSystem->RelativePathToOSPath("", "fs_basepath");
-	enginePath = enginePath.remove_leaf().remove_leaf();
+	char exepath[PATH_MAX] = {0};
+	readlink("/proc/self/exe", exepath, sizeof(exepath));
 
-	enginePath = enginePath / "doom.x86";
+	enginePath = fs::path(exepath);
 #endif
 
 	// command line to spawn tdmlauncher
@@ -640,7 +653,8 @@ void CModMenu::RestartGame()
 		parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
 #else
 	// start tdmlauncher
-	if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), NULL) == -1)
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Starting tdmlauncher %s with argument %s\r", commandLine.c_str(), engineArgument.c_str());
+	if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), "pause", NULL) == -1)
 	{
 		int errnum = errno;
 		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
