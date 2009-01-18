@@ -600,8 +600,31 @@ void CModMenu::RestartGame()
 		return;
 	}
 
+	fs::path enginePath;
+
+#ifdef _WINDOWS
+	// Get the command line of the current process
+	idStr cmdLine = GetCommandLine();
+
+	int d3Pos = cmdLine.Find("DOOM3.exe", false);
+	cmdLine = cmdLine.Mid(0, d3Pos + 9);
+	cmdLine.StripLeadingOnce("\"");
+	cmdLine.StripLeading(" ");
+	cmdLine.StripLeading("\t");
+
+	enginePath = cmdLine.c_str();
+#else
+	// TDM launcher needs to know where the engine is located, pass this as first argument
+	enginePath = fileSystem->RelativePathToOSPath("", "fs_basepath");
+	enginePath = enginePath.remove_leaf().remove_leaf();
+
+	enginePath = enginePath / "doom.x86";
+#endif
+
 	// command line to spawn tdmlauncher
 	idStr commandLine(launcherExe.file_string().c_str());
+
+	idStr engineArgument(enginePath.string().c_str());
 
 #ifdef _WINDOWS
 	// Create a tdmlauncher process, setting the working directory to the doom directory
@@ -612,16 +635,17 @@ void CModMenu::RestartGame()
 	memset(&piProcessInfo, 0, sizeof(piProcessInfo));
 
 	siStartupInfo.cb = sizeof(siStartupInfo);
-	commandLine += " pause";
 
-	CreateProcess(NULL, (LPSTR) commandLine.c_str(), NULL, NULL,  false, 0, NULL,
+	CreateProcess(NULL, (LPSTR) (commandLine + " " + engineArgument).c_str(), NULL, NULL,  false, 0, NULL,
 		parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
 #else
 	// start tdmlauncher
-	if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
+	if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), NULL) == -1)
+	{
 		int errnum = errno;
 		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 	}
+
 	_exit(EXIT_FAILURE);
 #endif
 
