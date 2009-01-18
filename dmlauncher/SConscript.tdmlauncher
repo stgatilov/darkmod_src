@@ -36,6 +36,6 @@ local_env.Append(LIBS = ['boost_filesystem'])
 #    File('#/linux/boost/lib/libboost_filesystem-gcc42-mt-1_36.a')
 #])
 
-ret = local_env.Program('tdmlauncher', tdmlauncher_list )
+ret = local_env.Program('tdmlauncher.linux', tdmlauncher_list )
 Return( 'ret' )
 

@@ -19,6 +19,7 @@ const std::string GAME_BASE_NAME = "darkmod";
 #else 
 	// Linux
 	#include <unistd.h>
+	#include <errno.h>
 
 	#define ENGINE_EXECUTABLE "doom.x86"
 #endif
@@ -32,8 +33,13 @@ Launcher::Launcher(int argc, char* argv[]) :
 	// path to the darkmod directory
 	_darkmodDir = dmlauncher.remove_leaf();
 
+	std::cout << "Darkmod directory is " << _darkmodDir.file_string() << std::endl;
+
 	// Default value
-	_engineExecutable = _darkmodDir.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
+	_engineExecutable = _darkmodDir;
+	_engineExecutable = _engineExecutable.remove_leaf() / ENGINE_EXECUTABLE;
+
+	std::cout << "Default value for engine executable is " << _engineExecutable.file_string() << std::endl;
 
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
@@ -173,7 +179,10 @@ bool Launcher::Launch()
 	// Initialise the arguments
 	InitArguments();
 
-	Sleep(2000);
+	if (_pauseBeforeStart)
+	{
+		Sleep(2000);
+	}
 
 	// path to doom3.exe
 	fs::path doom3exe = _engineExecutable;
@@ -200,12 +209,18 @@ bool Launcher::Launch()
 	// Initialise the arguments
 	InitArguments();
 
-	// Wait 2 seconds
-	usleep(2000000);
+	if (_pauseBeforeStart)
+	{
+		// Wait 2 seconds
+		usleep(2000000);
+	}
+
+	std::cout << "Trying to launch " << _engineExecutable.file_string() << " " << _arguments.c_str() << std::endl;
 
 	// path to doom3.exe
-	fs::path doom3dir("/usr/local/games/doom3/");
-	fs::path doom3app(doom3dir / ENGINE_EXECUTABLE);
+	fs::path doom3app(_engineExecutable);
+	fs::path doom3dir = doom3app;
+	doom3dir = doom3dir.remove_leaf().remove_leaf();
 
 	// Start a new process
 	pid_t child_pid = fork();
@@ -213,7 +228,7 @@ bool Launcher::Launch()
 	if (child_pid == 0)
 	{
 		// Add the doom3 app path as first argument
-		_arguments = doom3app.string() + " " + _arguments;
+		_arguments = doom3app.file_string() + " " + _arguments;
 
 		// Split the argument string into parts
 		std::vector<std::string> parts;
@@ -231,7 +246,13 @@ bool Launcher::Launch()
 		// The last argument points to NULL
 		argv[parts.size()] = NULL;
 
-		int result = execvp(doom3app.string().c_str(), argv);
+		int result = execvp(doom3app.file_string().c_str(), argv);
+
+
+		if (result == -1)
+		{
+			std::cerr << "Error while launching D3 executable: " << strerror(errno) << std::endl;
+		}
 
 		// Free the char* array again
 		for (std::size_t i = 0; i < parts.size(); ++i)
