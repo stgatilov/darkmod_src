@@ -2,8 +2,18 @@
 # Adapted from id's game sconscript
 # Author: greebo
 
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision$
+#* $Date$
+#* $Author$
+#*
+#***************************************************************************
+
 import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, string
-import SCons, scons_utils
+import SCons
 
 sys.path.append( 'sys/scons' )
 
@@ -161,10 +171,8 @@ else:
 
 # create the build environements
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
-scons_utils.SetupUtils( g_base_env )
 
 g_base_env.Append(CPPPATH = '#/')
-g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
 g_env = g_base_env.Copy()
 
@@ -185,27 +193,9 @@ g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env_noopt.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 
-if ( int(JOBS) > 1 ):
-	print 'Using buffered process output'
-	scons_utils.SetupBufferedOutput( g_env )
-	scons_utils.SetupBufferedOutput( g_game_env )
-
 # mark the globals
 
-local_dedicated = 0
-# 0 for monolithic build
-local_gamedll = 1
-# carry around rather than using .a, avoids binutils bugs
-idlib_objects = []
-game_objects = []
-local_demo = 0
-# curl usage. there is a global toggle flag
-local_curl = 0
-curl_lib = []
-# if idlib should produce PIC objects ( depending on core or game inclusion )
-local_idlibpic = 0
-
-GLOBALS = 'g_env g_env_noopt g_game_env g_os idlib_objects game_objects OPTCPPFLAGS'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os OPTCPPFLAGS'
 
 # end general configuration ----------------------
 
@@ -213,17 +203,8 @@ GLOBALS = 'g_env g_env_noopt g_game_env g_os idlib_objects game_objects OPTCPPFL
 
 Export( 'GLOBALS ' + GLOBALS )
 
-doom = None
-doomded = None
 game = None
-doom_mono = None
-doom_demo = None
-game_demo = None
 
-local_gamedll = 1
-local_demo = 0
-local_dedicated = 0
-local_idlibpic = 1
 Export( 'GLOBALS ' + GLOBALS )
 dupe = 0
 
@@ -231,6 +212,5 @@ BuildDir( g_build + '/tdmlauncher', '.', duplicate = dupe )
 
 Export( 'GLOBALS ' + GLOBALS )
 game = SConscript( 'SConscript.tdmlauncher' )
-#game_base = InstallAs( 'tdmlauncher', game )
 	
 # end targets ------------------------------------
