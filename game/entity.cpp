@@ -9650,9 +9650,14 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 	return;
 }
 
+/* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 
+ * that are mentioned there. Before each entity is spawned, spawnargs of the
+ * format "set XYZ on ABC" are parsed and either applied to the newly spawned
+ * entity, so it can pass them along to its own def_attachements, or converted
+ * to a real spawnarg and applied to the entity before spawn. */
 void idEntity::ParseAttachments( void )
 {
-	idEntity *ent = NULL;
+	idEntity *ent		= NULL;			// each spawned entity
 
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
 	while ( kv )
@@ -9660,10 +9665,9 @@ void idEntity::ParseAttachments( void )
 		idDict args;
 
 		// Read the classname of the attachment
-		idStr className(kv->GetValue());
 		
 		// Don't process keyvalues equal to "-" (empty attachment).
-		if (className != "-")
+		if (kv->GetValue() != "-")
 		{
 			args.Set( "classname", kv->GetValue().c_str() );
 
@@ -9673,22 +9677,91 @@ void idEntity::ParseAttachments( void )
 			// don't let them drop to the floor
 			args.Set( "dropToFloor", "0" );
 
+			// check for attachment position spawnarg
+			idStr Suffix = kv->GetKey();
+			Suffix.StripLeading( "def_attach" );
+			idStr PosKey = "pos_attach" + Suffix;
+			// String name of the attachment for later accessing
+			idStr AttName = "name_attach" + Suffix;
+			idStr AttNameValue = spawnArgs.GetString(AttName);
+			if (! AttNameValue)
+			{
+				// fall back to the position if now name was defined
+				AttNameValue = spawnArgs.GetString(PosKey);
+			}
+
+			// tels: parse all "set .." spawnargs
+			const idKeyValue *kv_set = spawnArgs.MatchPrefix( "set ", NULL );
+			while ( kv_set )
+			{
+				// "set FOO on BAR" "0.5 0.5 0"
+				// means set "_color" "0.5 0.5 0" on the entity attached to the attachement point
+				// named "BAR" (defined with "name_attach" "BAR" on the original entity)
+
+				// Get the value
+				// example: "0.5 0.5 0"
+				idStr SpawnargValue(kv_set->GetValue());
+
+				// "set FOO on BAR"
+				idStr SetAttName(kv_set->GetKey());
+				// "set FOO on BAR" => "FOO on BAR"
+				SetAttName = SetAttName.Right( kv_set->GetKey().Length() - 4 );
+
+				// "FOO on BAR"
+				idStr SpawnargName(SetAttName);
+
+				// find position of first ' '	
+				int PosSpace = SetAttName.Find( ' ', 0, -1);
+
+				if (PosSpace == -1)
+				{
+					gameLocal.Warning( "Invalid spawnarg '%s' on entity '%s'",
+					  kv_set->GetValue().c_str(), name.c_str() );
+					kv_set = spawnArgs.MatchPrefix( "set ", kv_set );
+					continue;		
+				}
+
+				// "FOO on BAR" => "FOO"
+				SpawnargName = SpawnargName.Left( PosSpace );
+				// "FOO on BAR" => "BAR"
+				SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
+
+				//gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
+				//gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
+				//gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
+
+				// does this spawnarg apply to the newly spawned entity?
+				if (SetAttName == AttNameValue)
+				{
+					// it matches, so this spawnarg must be applied directly to this entity
+					//gameLocal.Printf("Match: Setting '%s' to '%s'\n", SpawnargName.c_str(), SpawnargValue.c_str() );
+					args.Set( SpawnargName, SpawnargValue );
+				}
+				else
+				{
+					// pass along the original "set ..." spawnarg, it might apply to an
+					// def_attached entity of the newly spawned one
+					//gameLocal.Printf("No match: Passing along '%s' ('%s')\n", kv_set->GetKey().c_str(), SpawnargValue.c_str() );
+					args.Set( kv_set->GetKey(), SpawnargValue );
+				}
+
+				kv_set = spawnArgs.MatchPrefix( "set ", kv_set );
+				// end while ( kv_set )
+			}
+
 			gameLocal.SpawnEntityDef( args, &ent );
 
 			if ( ent != NULL)
 			{
-				// check for attachment position spawnarg
-				idStr Suffix = kv->GetKey();
-				Suffix.StripLeading( "def_attach" );
-				idStr PosKey = "pos_attach" + Suffix;
-				// String name of the attachment for later accessing
-				idStr AttName = "name_attach" + Suffix;
-
 				if( spawnArgs.FindKey(PosKey.c_str()) )
+				{
 					Attach( ent, spawnArgs.GetString(PosKey.c_str()), 
 							spawnArgs.GetString(AttName.c_str()) );
+				}
 				else
+				{
 					Attach( ent, NULL, spawnArgs.GetString(AttName.c_str()) );
+				}
 			}
 			else
 			{
