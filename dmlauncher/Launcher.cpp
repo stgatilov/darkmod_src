@@ -5,6 +5,7 @@
 #include <cstring>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 const std::string CURRENT_FM_FILE = "currentfm.txt";
@@ -230,6 +231,10 @@ bool Launcher::Launch()
 		// Add the doom3 app path as first argument
 		_arguments = doom3app.file_string() + " " + _arguments;
 
+		// Remove any double or triple whitespace
+		boost::algorithm::replace_all(_arguments, "   ", " ");
+		boost::algorithm::replace_all(_arguments, "  ", " ");
+
 		// Split the argument string into parts
 		std::vector<std::string> parts;
 		boost::algorithm::split(parts, _arguments, boost::algorithm::is_any_of(" "));
@@ -239,6 +244,9 @@ bool Launcher::Launch()
 
 		for (std::size_t i = 0; i < parts.size(); ++i)
 		{
+			// greebo: Sanitise the strings by trimming any whitespace from them
+			boost::algorithm::trim(parts[i]);
+
 			argv[i] = new char[parts[i].length() + 1];
 			strcpy(argv[i], parts[i].c_str());
 		}
@@ -247,7 +255,6 @@ bool Launcher::Launch()
 		argv[parts.size()] = NULL;
 
 		int result = execvp(doom3app.file_string().c_str(), argv);
-
 
 		if (result == -1)
 		{
