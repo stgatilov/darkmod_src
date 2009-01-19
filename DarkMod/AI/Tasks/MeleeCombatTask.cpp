@@ -109,9 +109,9 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 	}
 	else
 	{
-		// angua: unarmed melee, attacks list is empty
-		// TODO: Why did we have 5 blend frames here?
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Melee_General", 5);
+		// all of our possible attacks are currently being parried
+		// TODO: Decide what to do in this case
+		// Wait forever?  Attack anyway?  Attack another opponent in our FOV?
 	}
 }
 

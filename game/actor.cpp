@@ -742,6 +742,10 @@ void idActor::Spawn( void )
 	if (spawnArgs.GetBool("unarmed_melee"))
 	{
 		SetAttackFlag(COMBAT_MELEE, true);
+		// add the general unarmed attack to possible melee attacks list
+		// this will be overridden if they get a weapon attached
+		// TODO: Add this back in if the weapon is later detached?
+		m_MeleeStatus.m_attacks.Append(MELEETYPE_UNBLOCKABLE);
 	}
 
 	if (spawnArgs.GetBool("unarmed_ranged"))
