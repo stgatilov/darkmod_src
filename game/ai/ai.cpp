@@ -8640,7 +8640,8 @@ bool idAI::HasSeenEvidence()
 		|| memory.itemsHaveBeenStolen
 		|| memory.itemsHaveBeenBroken
 		|| memory.unconsciousPeopleHaveBeenFound
-		|| memory.deadPeopleHaveBeenFound;
+		|| memory.deadPeopleHaveBeenFound
+		|| spawnArgs.GetBool("alert_idle", "0");
 
 }
 /**

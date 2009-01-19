@@ -61,6 +61,11 @@ void AlertIdleState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
+	if (!owner->AI_bMeleeWeapDrawn)
+	{
+		owner->DrawWeapon();
+	}
+
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
 }
@@ -71,7 +76,7 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
-	if (owner->m_lastAlertLevel < owner->thresh_3)
+	if (owner->m_lastAlertLevel >= owner->thresh_1 && owner->m_lastAlertLevel < owner->thresh_3)
 	{
 		if (memory.alertClass == EAlertVisual && memory.alertType != EAlertTypeMissingItem)
 		{
