@@ -53,7 +53,7 @@ void AnimalPatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		{
 			// Path not yet initialised, get it afresh
 			// Find the next path associated with the owning AI
-			path = idPathCorner::RandomPath(owner, NULL);
+			path = idPathCorner::RandomPath(owner, NULL, owner);
 		}
 
 		// Store the path entity back into the mind, it might have changed
@@ -188,7 +188,7 @@ void AnimalPatrolTask::movingToNextPathCorner(idAI* owner)
 		idPathCorner* curCorner = owner->GetMemory().currentPath.GetEntity();
 		if (curCorner != NULL)
 		{
-			owner->GetMemory().currentPath = idPathCorner::RandomPath(curCorner, NULL);
+			owner->GetMemory().currentPath = idPathCorner::RandomPath(curCorner, NULL, owner);
 		}
 
 		if (owner->AI_DEST_UNREACHABLE) 

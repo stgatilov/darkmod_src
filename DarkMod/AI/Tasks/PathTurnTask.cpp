@@ -68,7 +68,7 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 		owner->ActivateTargets(owner);
 
 		// Store the new path entity into the AI's mind
-		idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+		idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
 		owner->GetMind()->GetMemory().currentPath = next;
 
 

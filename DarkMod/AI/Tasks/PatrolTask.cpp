@@ -54,7 +54,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		{
 			// Path not yet initialised, get it afresh
 			// Find the next path associated with the owning AI
-			path = idPathCorner::RandomPath(owner, NULL);
+			path = idPathCorner::RandomPath(owner, NULL, owner);
 		}
 
 		// If the path is still NULL, there is nothing setup, quit this task
@@ -189,7 +189,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+	idPathCorner* next = idPathCorner::RandomPath(path, NULL, _owner.GetEntity());
 
 	if (next == NULL)
 	{

@@ -118,7 +118,7 @@ public:
 
 	static void			DrawDebugInfo( void );
 
-	static idPathCorner *RandomPath( const idEntity *source, const idEntity *ignore );
+	static idPathCorner *RandomPath( const idEntity *source, const idEntity *ignore, idAI* owner );
 
 private:
 	void				Event_RandomPath( void );

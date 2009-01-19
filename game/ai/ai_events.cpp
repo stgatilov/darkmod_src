@@ -1038,7 +1038,7 @@ idAI::Event_RandomPath
 void idAI::Event_RandomPath( void ) {
 	idPathCorner *path;
 
-	path = idPathCorner::RandomPath( this, NULL );
+	path = idPathCorner::RandomPath( this, NULL, NULL );
 	idThread::ReturnEntity( path );
 }
 

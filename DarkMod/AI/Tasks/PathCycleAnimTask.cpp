@@ -94,7 +94,7 @@ void PathCycleAnimTask::OnFinish(idAI* owner)
 	idPathCorner* path = _path.GetEntity();
 
 	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
 	owner->GetMind()->GetMemory().currentPath = next;
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);

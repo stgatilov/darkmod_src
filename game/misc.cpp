@@ -369,7 +369,7 @@ void idPathCorner::DrawDebugInfo( void ) {
 idPathCorner::RandomPath
 ============
 */
-idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *ignore ) {
+idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *ignore, idAI* owner ) {
 	idPathCorner *path[ MAX_GENTITIES ];
 
 	int num(0);
@@ -379,9 +379,22 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 
 	idEntity* candidate(NULL);
 
-	for(int i = 0; i < source->targets.Num(); i++ ) {
+	for (int i = 0; i < source->targets.Num(); i++ ) {
 		idEntity* ent = source->targets[ i ].GetEntity();
-		if ( ent && ( ent != ignore ) && ent->IsType( idPathCorner::Type ) ) {
+		if ( ent && ( ent != ignore ) && ent->IsType( idPathCorner::Type ) ) 
+		{
+
+			if (owner)
+			{
+				if (owner->HasSeenEvidence() && ent->spawnArgs.GetBool("idle_only", "0"))
+				{
+					continue;
+				}
+				else if (!owner->HasSeenEvidence() && ent->spawnArgs.GetBool("alert_idle_only", "0"))
+				{
+					continue;
+				}
+			}
 
 			float chance = ent->spawnArgs.GetFloat("chance", "0");
 			if (chance)
@@ -440,7 +453,7 @@ idPathCorner::Event_RandomPath
 void idPathCorner::Event_RandomPath( void ) {
 	idPathCorner *path;
 
-	path = RandomPath( this, NULL );
+	path = RandomPath( this, NULL, NULL );
 	idThread::ReturnEntity( path );
 }
 

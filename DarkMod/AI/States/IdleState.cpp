@@ -157,7 +157,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
 
 	// Check if the owner has patrol routes set
-	idPathCorner* path = idPathCorner::RandomPath(owner, NULL);
+	idPathCorner* path = idPathCorner::RandomPath(owner, NULL, owner);
 
 	if (path == NULL)
 	{
