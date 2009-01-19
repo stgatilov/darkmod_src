@@ -133,6 +133,11 @@ void Launcher::InitCurrentFM()
 	// file that contains name of the current FM directory
 	fs::path currentFMFileName(_darkmodDir / CURRENT_FM_FILE);
 
+	if (!fs::exists(currentFMFileName))
+	{
+		std::cerr << "Could not find 'currentfm.txt' file in " << currentFMFileName << std::endl;
+	}
+
 	// get the current FM
 	_currentFM = ReadFile(currentFMFileName);
 }
