@@ -10584,16 +10584,29 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		CInventoryItemPtr addedItem = AddToInventory(target);
 
 		// Check if the frobbed entity is the one currently highlighted by the player
-		if (addedItem != NULL && highlightedEntity == target) {
+		if (addedItem != NULL && highlightedEntity == target) 
+		{
 			// Item has been added to the inventory, clear the entity pointer
 			pDM->m_FrobEntity = NULL;
+		}
 
-			// greebo: Release any items from the grabber, this immobilized the player somehow before
-			gameLocal.m_Grabber->Update( this, false );
+		// Grab it if it's a grabable class
+		if( target->IsType( idMoveable::Type ) || target->IsType( idAFEntity_Base::Type )
+			|| target->IsType( idMoveableItem::Type ) )
+		{
+			// allow override of default grabbing behavior
+			if( !target->spawnArgs.GetBool("grabable","1") )
+				return;
 
-			// greebo: Prevent the grabber from checking the added entity (it may be 
-			// entirely removed from the game, which would cause crashes).
-			gameLocal.m_Grabber->RemoveFromClipList(target);
+			// Do not pick up live, conscious AI
+			if( target->IsType( idAI::Type ) )
+			{
+				idAI *AItarget = static_cast<idAI *>(target);
+				if( AItarget->health > 0 && !AItarget->IsKnockedOut() )
+					return;
+			}
+
+			gameLocal.m_Grabber->Update( gameLocal.GetLocalPlayer() );
 		}
 	}
 }

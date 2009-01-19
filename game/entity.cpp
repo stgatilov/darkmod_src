@@ -7471,8 +7471,6 @@ Quit:
 	return;
 }
 
-// Default for entities that are frobable and movable is to pick it up and
-// carry it around (probably throwing or dropping it).
 void idEntity::FrobAction(bool bMaster, bool bPeer)
 {
 	if( IsHidden() )
@@ -7499,23 +7497,6 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 	if(m_FrobActionScript.Length() == 0)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
-
-		// Default: grab it if it is one of the grabbable classes
-		if( IsType( idMoveable::Type ) || IsType( idAFEntity_Base::Type )
-			|| IsType( idMoveableItem::Type ) )
-		{
-			// Fix : Do not pick up live, conscious AI
-			if( IsType( idAI::Type ) )
-			{
-				idAI *AISelf = static_cast<idAI *>(this);
-				if( AISelf->health > 0 && !AISelf->IsKnockedOut() )
-					goto Quit;
-			}
-
-			gameLocal.m_Grabber->Update( gameLocal.GetLocalPlayer() );
-		}
-
-		goto Quit;
 	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
