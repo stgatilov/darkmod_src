@@ -1,5 +1,6 @@
 #include "Launcher.h"
 
+#include <limits.h>
 #include <iostream>
 #include <vector>
 #include <cstring>
@@ -28,10 +29,17 @@ const std::string GAME_BASE_NAME = "darkmod";
 Launcher::Launcher(int argc, char* argv[]) :
 	_pauseBeforeStart(true)
 {
+#ifdef WIN32
 	// path to this exe
 	boost::filesystem::path dmlauncher(argv[0]);
+#else
+	char exepath[PATH_MAX] = {0};
+	std::size_t bytesRead = readlink("/proc/self/exe", exepath, sizeof(exepath));
 
-	std::cout << "Path to tdmlauncher is" << argv[0] << std::endl;
+	boost::filesystem::path dmlauncher(exepath);
+#endif
+	
+	std::cout << "Path to tdmlauncher is" << dmlauncher << std::endl;
 
 	// path to the darkmod directory
 	_darkmodDir = dmlauncher.remove_leaf();
