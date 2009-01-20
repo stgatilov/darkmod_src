@@ -48,7 +48,7 @@ Launcher::Launcher(int argc, char* argv[]) :
 
 	// Default value
 	_engineExecutable = _darkmodDir;
-	_engineExecutable = _engineExecutable.remove_leaf() / ENGINE_EXECUTABLE;
+	_engineExecutable = _engineExecutable.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
 
 	std::cout << "Default value for engine executable is " << _engineExecutable.file_string() << std::endl;
 
