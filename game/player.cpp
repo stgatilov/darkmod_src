@@ -9337,15 +9337,14 @@ void idPlayer::InventoryUseKeyRelease(int holdTime)
 	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItemPtr it = crsr->GetCurrentItem();
 
-	// Check if there is a valid item selected
-	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+	// Check for a held grabber entity, which should be put back into the inventory
+	if (!AddGrabberEntityToInventory())
 	{
-		UseInventoryItem(EReleased, it, holdTime, false);
-	}
-	else 
-	{
-		// Check for a held grabber entity, which should be put back into the inventory
-		AddGrabberEntityToInventory();
+		// Check if there is a valid item selected
+		if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+		{
+			UseInventoryItem(EReleased, it, holdTime, false);
+		}
 	}
 }
 
