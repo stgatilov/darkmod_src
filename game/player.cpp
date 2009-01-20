@@ -380,12 +380,14 @@ idPlayer::idPlayer() :
 	memset( loggedAccel, 0, sizeof( loggedAccel ) );
 	currentLoggedAccel	= 0;
 
+#if 0
 	focusTime				= 0;
 	focusGUIent				= NULL;
 	focusUI					= NULL;
 	focusCharacter			= NULL;
 	talkCursor				= 0;
 	focusVehicle			= NULL;
+#endif
 	cursor					= NULL;
 	
 	oldMouseX				= 0;
@@ -566,12 +568,14 @@ void idPlayer::Init( void ) {
 
 	currentLoggedAccel		= 0;
 
+#if 0
 	focusTime				= 0;
 	focusGUIent				= NULL;
 	focusUI					= NULL;
 	focusCharacter			= NULL;
 	talkCursor				= 0;
 	focusVehicle			= NULL;
+#endif
 
 	// remove any damage effects
 	playerView.ClearEffects();
@@ -1469,12 +1473,14 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	}
 	savefile->WriteInt( currentLoggedAccel );
 
+#if 0
 	savefile->WriteObject( focusGUIent );
 	// can't save focusUI
 	savefile->WriteObject( focusCharacter );
 	savefile->WriteInt( talkCursor );
 	savefile->WriteInt( focusTime );
 	savefile->WriteObject( focusVehicle );
+#endif
 	savefile->WriteUserInterface( cursor, false );
 
 	savefile->WriteInt( oldMouseX );
@@ -1778,6 +1784,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	}
 	savefile->ReadInt( currentLoggedAccel );
 
+#if 0
 	savefile->ReadObject( reinterpret_cast<idClass *&>( focusGUIent ) );
 	// can't save focusUI
 	focusUI = NULL;
@@ -1785,6 +1792,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( talkCursor );
 	savefile->ReadInt( focusTime );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( focusVehicle ) );
+#endif
 	savefile->ReadUserInterface( cursor );
 
 	savefile->ReadInt( oldMouseX );
@@ -2468,11 +2476,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 	// weapon targeting crosshair
 
+#if 0 // greebo: disabled cursor calls entirely
 	if ( !GuiActive() ) {
 		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
 			cursor->Redraw( gameLocal.realClientTime );
 		}
 	}
+#endif
 
 	// Only use this if the old lightgem is selected. This may be usefull for
 	// slower machines.
@@ -3357,7 +3367,8 @@ idUserInterface *idPlayer::ActiveGui( void ) {
 	if ( m_overlays.findInteractive() )
 		return m_overlays.findInteractive();
 
-	return focusUI;
+	return NULL; // greebo: No focusUI anymore
+	//return focusUI;
 }
 
 /*
@@ -3476,6 +3487,7 @@ void idPlayer::Weapon_Combat( void ) {
 idPlayer::Weapon_NPC
 ===============
 */
+#if 0
 void idPlayer::Weapon_NPC( void ) {
 	if ( idealWeapon != currentWeapon ) {
 		Weapon_Combat();
@@ -3488,6 +3500,7 @@ void idPlayer::Weapon_NPC( void ) {
 		focusCharacter->TalkTo( this );
 	}
 }
+#endif
 
 /*
 ===============
@@ -3564,19 +3577,26 @@ void idPlayer::Weapon_GUI( void ) {
 		if ( ui ) {
 			ev = sys->GenerateMouseButtonEvent( 1, ( usercmd.buttons & BUTTON_ATTACK ) != 0 );
 			command = ui->HandleEvent( &ev, gameLocal.time, &updateVisuals );
+#if 0
 			if ( updateVisuals && focusGUIent && ui == focusUI ) {
 				focusGUIent->UpdateVisuals();
 			}
+#endif
 		}
 		if ( gameLocal.isClient ) {
 			// we predict enough, but don't want to execute commands
 			return;
 		}
+
+#if 0
 		if ( focusGUIent ) {
 			HandleGuiCommands( focusGUIent, command );
 		} else {
 			HandleGuiCommands( this, command );
 		}
+#else // greebo: Replaced the above with this, no focusGUIEnt anymore
+		HandleGuiCommands( this, command );
+#endif
 	}
 }
 
@@ -3622,8 +3642,10 @@ void idPlayer::UpdateWeapon( void ) {
 	} else if ( ActiveGui() ) {
 		// gui handling overrides weapon use
 		Weapon_GUI();
+#if 0
 	} else 	if ( focusCharacter && ( focusCharacter->health > 0 ) ) {
 		Weapon_NPC();
+#endif
 	} else if( gameLocal.m_Grabber->GetSelected() ) {
 		gameLocal.m_Grabber->Update( this, true );
 	} else {
@@ -3948,6 +3970,7 @@ idPlayer::ClearFocus
 Clears the focus cursor
 ================
 */
+#if 0
 void idPlayer::ClearFocus( void ) {
 	focusCharacter	= NULL;
 	focusGUIent		= NULL;
@@ -3955,6 +3978,7 @@ void idPlayer::ClearFocus( void ) {
 	focusVehicle	= NULL;
 	talkCursor		= 0;
 }
+#endif
 
 /*
 ================
@@ -3964,6 +3988,7 @@ Searches nearby entities for interactive guis, possibly making one of them
 the focus and sending it a mouse move event
 ================
 */
+#if 0
 void idPlayer::UpdateFocus( void ) {
 	idClipModel *clipModelList[ MAX_GENTITIES ];
 	idClipModel *clip;
@@ -4162,6 +4187,7 @@ void idPlayer::UpdateFocus( void ) {
 		}
 	}
 }
+#endif
 
 /*
 =================
@@ -6710,7 +6736,7 @@ void idPlayer::Think( void )
 	// if we have an active gui, we will unrotate the view angles as
 	// we turn the mouse movements into gui events
 	idUserInterface *gui = ActiveGui();
-	if ( gui && gui != focusUI ) {
+	if ( gui /*&& gui != focusUI*/ ) {
 		RouteGuiMouse( gui );
 	}
 
@@ -6749,8 +6775,10 @@ void idPlayer::Think( void )
 			}
 		}*/
 
+#if 0
 		// update GUIs, Items, and character interactions
 		UpdateFocus();
+#endif
 		
 		UpdateLocation();
 
@@ -8414,8 +8442,10 @@ void idPlayer::ClientPredictionThink( void ) {
 		Move();
 	} 
 
+#if 0
 	// update GUIs, Items, and character interactions
 	UpdateFocus();
+#endif
 
 	// service animations
 	if ( !spectating && !af.IsActive() ) {

@@ -612,7 +612,9 @@ public:
 	void					setAirTicks(int airTicks);
 
 	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
+#if 0
 	bool					GuiActive( void ) { return focusGUIent != NULL; }
+#endif
 
 	void					PerformImpulse( int impulse );
 
@@ -1008,12 +1010,14 @@ private:
 	int						currentLoggedAccel;
 
 	// if there is a focusGUIent, the attack button will be changed into mouse clicks
+#if 0
 	idEntity *				focusGUIent;
 	idUserInterface *		focusUI;				// focusGUIent->renderEntity.gui, gui2, or gui3
 	idAI *					focusCharacter;
 	int						talkCursor;				// show the state of the focusCharacter (0 == can't talk/dead, 1 == ready to talk, 2 == busy talking)
 	int						focusTime;
 	idAFEntity_Vehicle *	focusVehicle;
+#endif
 	idUserInterface *		cursor;
 	
 	// full screen guis track mouse movements directly
@@ -1061,7 +1065,9 @@ private:
 	void					FireWeapon( void );
 	void					BlockWeapon( void );
 	void					Weapon_Combat( void );
+#if 0
 	void					Weapon_NPC( void );
+#endif
 	void					Weapon_GUI( void );
 	void					UpdateWeapon( void );
 
@@ -1099,8 +1105,11 @@ private:
 	void					UpdateDeathSkin( bool state_hitch );
 	void					SetSpectateOrigin( void );
 
+#if 0
 	void					ClearFocus( void );
 	void					UpdateFocus( void );
+#endif
+
 	void					UpdateLocation( void );
 	idUserInterface *		ActiveGui( void );
 	void					UpdatePDAInfo( bool updatePDASel );
