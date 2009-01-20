@@ -342,7 +342,13 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	contact_friction	= spawnArgs.GetFloat( "contact_friction" );
 	bounce				= spawnArgs.GetFloat( "bounce" );
 	mass				= spawnArgs.GetFloat( "mass" );
-	gravity				= spawnArgs.GetFloat( "gravity" );
+					
+	// greebo: Fall back to default gravity if the spawnarg is missing completely (still allows "0" gravity being set)
+	if (!spawnArgs.GetFloat("gravity", "0", gravity))
+	{
+		gravity = gameLocal.GetGravity().Length();
+	}
+
 	fuse				= spawnArgs.GetFloat( "fuse" );
 	delay				= spawnArgs.GetFloat( "delay" );
 
