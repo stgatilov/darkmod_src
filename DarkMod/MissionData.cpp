@@ -856,6 +856,12 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		pThread->DelayedStart(0);
 	}
 
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL)
+	{
+		gameLocal.Error("No player at objective complete!\n");
+	}
+
 	// Activate the completion target
 	const idStr& targetName = m_Objectives[ind].m_CompletionTarget;
 	if (!targetName.IsEmpty())
@@ -865,7 +871,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		if (target != NULL)
 		{
 			DM_LOG(LC_OBJECTIVES,LT_INFO)LOGSTRING("Objectives: Triggering completion target %s for objective #%d\r", targetName.c_str(), ind);
-			target->Activate();
+			target->Activate(player);
 		}
 		else
 		{
@@ -877,12 +883,6 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
 	if (!m_Objectives[ind].m_bOngoing)
 	{
-		idPlayer* player = gameLocal.GetLocalPlayer();
-
-		if (player == NULL) {
-			gameLocal.Error("No player at mission success!\n");
-		}
-
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
 		// greebo: Notify the player
@@ -903,6 +903,9 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 		pThread->DelayedStart( 0 );
 	}
 
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	assert(player != NULL);
+
 	// Activate the failure target
 	const idStr& targetName = m_Objectives[ind].m_FailureTarget;
 	if (!targetName.IsEmpty())
@@ -912,16 +915,13 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 		if (target != NULL)
 		{
 			DM_LOG(LC_OBJECTIVES,LT_INFO)LOGSTRING("Objectives: Triggering failure target %s for objective #%d\r", targetName.c_str(), ind);
-			target->Activate();
+			target->Activate(player);
 		}
 		else
 		{
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Could not find failure target %s for objective #%d\r", targetName.c_str(), ind);
 		}
 	}
-
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	assert(player != NULL);
 
 	player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
 

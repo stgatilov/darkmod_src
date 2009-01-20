@@ -2455,10 +2455,10 @@ renderView_t *idEntity::GetRenderView( void ) {
 	return renderView;
 }
 
-void idEntity::Activate()
+void idEntity::Activate(idEntity* activator)
 {
 	Signal( SIG_TRIGGER );
-	ProcessEvent( &EV_Activate );
+	ProcessEvent( &EV_Activate, activator );
 	TriggerGuis();
 }
 

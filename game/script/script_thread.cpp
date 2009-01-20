@@ -1081,7 +1081,7 @@ idThread::Event_Trigger
 */
 void idThread::Event_Trigger( idEntity *ent ) {
 	if ( ent ) {
-		ent->Activate();
+		ent->Activate(NULL);
 	}
 }
 

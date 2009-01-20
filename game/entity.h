@@ -369,7 +369,7 @@ public:
 	virtual renderView_t *	GetRenderView();
 
 	// greebo: Call this to trigger this entity
-	virtual void			Activate();
+	virtual void			Activate(idEntity* activator);
 
 	// thinking
 	virtual void			Think( void );
