@@ -347,3 +347,12 @@ CInventoryCategoryPtr CInventoryCursor::GetCurrentCategory()
 {
 	return (m_Inventory != NULL) ? m_Inventory->GetCategory(m_CurrentCategory) : CInventoryCategoryPtr();
 }
+
+bool CInventoryCursor::IsLastItemInCategory()
+{
+	if (m_Inventory == NULL) return true; // no inventory => last item
+
+	CInventoryCategoryPtr curCat = m_Inventory->GetCategory(m_CurrentCategory);
+
+	return (curCat != NULL) ? m_CurrentItem + 1 >= curCat->GetNumItems() : true;
+}

@@ -69,6 +69,12 @@ public:
 	 */
 	int							GetCurrentItemIndex() { return m_CurrentItem; }
 
+	/**
+	 * greebo: Returns TRUE if the item pointed at is the the last item in this category.
+	 * Note that the "wraparund" setting doesn't affect this method.
+	 */
+	bool						IsLastItemInCategory();
+
 	void						SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	void						SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 

@@ -1067,8 +1067,6 @@ void idPlayer::AddWeaponsToInventory()
 
 void idPlayer::NextInventoryMap()
 {
-	gameLocal.Printf("Cycling maps.\n");
-
 	if (GetImmobilization() & EIM_ITEM_SELECT) return;
 
 	if (m_MapCursor == NULL)
@@ -1076,21 +1074,29 @@ void idPlayer::NextInventoryMap()
 		return; // We have no cursor!
 	}
 
-	CInventoryItemPtr mapItem = m_MapCursor->GetCurrentItem();
+	CInventoryItemPtr prevMapItem = m_MapCursor->GetCurrentItem();
 
-	if (mapItem != NULL)
+	if (prevMapItem != NULL)
 	{
 		// We already have a map selected, toggle it off
-		UseInventoryItem(EPressed, mapItem, 0, false); 
+		UseInventoryItem(EPressed, prevMapItem, 0, false); 
+	}
+
+	if (m_MapCursor->IsLastItemInCategory())
+	{
+		// Reached last map, return without cycling to the next map
+		// Clear the item, so that we start afresh next time
+		m_MapCursor->ClearItem();
+		return;
 	}
 
 	// Advance the cursor to the next item
 	CInventoryItemPtr nextMapItem = m_MapCursor->GetNextItem();
 
-	if (mapItem != NULL && nextMapItem != mapItem)
+	if (nextMapItem != NULL && nextMapItem != prevMapItem)
 	{
 		// Use this new item
-		UseInventoryItem(EPressed, mapItem, 0, false);
+		UseInventoryItem(EPressed, nextMapItem, 0, false);
 	}
 }
 
@@ -1141,7 +1147,7 @@ void idPlayer::SetupInventory()
 	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, &idx);
 	m_MapCursor->SetCurrentCategory(idx);
 	m_MapCursor->SetCategoryLock(true);
-	m_MapCursor->SetWrapAround(false); // no wrap around, makes coding easier
+	m_MapCursor->SetWrapAround(true);
 	m_MapCursor->ClearItem(); // invalidate the cursor
 
 	// give the player weapon ammo based on shop purchases
