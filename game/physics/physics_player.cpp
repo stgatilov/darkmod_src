@@ -28,7 +28,7 @@ END_CLASS
 
 // movement parameters
 const float PM_STOPSPEED		= 100.0f;
-const float PM_SWIMSCALE		= 0.5f;
+const float PM_SWIMSCALE		= 1.0f;
 const float PM_ROPESPEED		= 100.0f;
 const float PM_LADDERSPEED		= 100.0f;
 const float PM_STEPSCALE		= 1.0f;
@@ -1914,6 +1914,9 @@ void idPhysics_Player::CheckDuck( void ) {
 		{
 			// greebo: We're underwater, set the clipmodel to the crouched size
 			maxZ = pm_crouchheight.GetFloat();
+
+			// greebo: But still let the player swim as fast as if he was uncrouched
+			playerSpeed = walkSpeed;
 		}
 
 		// greebo: Check if we've submersed in a liquid. If yes: set the clipmodel to crouchheight

@@ -2438,6 +2438,9 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 //	if(cv_lg_debug.GetInteger() != 0)
 //		PrintDebugHUD();
 
+	/*renderSystem->DrawSmallStringExt(1, 30, 
+		va("Player velocity: %f", physicsObj.GetLinearVelocity().Length()), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));*/
+
 	const char *name;
 	if((name = cv_dm_distance.GetString()) != NULL)
 	{
@@ -5992,6 +5995,12 @@ void idPlayer::AdjustSpeed( void )
 			speed = MaxSpeed;
 		if( crouchspeed > MaxSpeed )
 			crouchspeed = MaxSpeed;
+	}
+
+	// greebo: Clamp speed if swimming to 1.3 x walkspeed
+	if (physicsObj.GetWaterLevel() >= WATERLEVEL_WAIST)
+	{
+		speed = idMath::ClampFloat(0, pm_walkspeed.GetFloat() * cv_pm_max_swimspeed_mod.GetFloat(), speed);
 	}
 
 	// TDM: leave this in for speed potions or something
