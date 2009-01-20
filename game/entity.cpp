@@ -9277,6 +9277,37 @@ void idEntity::PrevInventoryGroup()
 	OnInventorySelectionChanged(prev);
 }
 
+void idEntity::CycleInventoryGroup(const idStr& groupName)
+{
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	assert(cursor->GetCurrentCategory() != NULL);
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+
+	if (cursor->GetCurrentCategory()->GetName() == groupName)
+	{
+		// We are already in the specified group
+		CInventoryItemPtr next = cursor->GetNextItem();
+
+		if (next->Category()->GetName() != groupName)
+		{
+			// We've changed groups, this means that the cursor has wrapAround set to false
+			// Set the cursor back to the first item
+			cursor->SetCurrentCategory(groupName);
+		}
+	}
+	else
+	{
+		// Not in the desired group yet, set the cursor to the first item in that group
+		cursor->SetCurrentCategory(groupName);
+	}
+
+	OnInventorySelectionChanged(prev);
+}
+
 void idEntity::OnInventoryItemChanged()
 {
 	// Nothing here, can be overriden by subclasses
