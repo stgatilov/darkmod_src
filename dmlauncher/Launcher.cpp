@@ -39,7 +39,7 @@ Launcher::Launcher(int argc, char* argv[]) :
 	boost::filesystem::path dmlauncher(exepath);
 #endif
 	
-	std::cout << "Path to tdmlauncher is" << dmlauncher << std::endl;
+	std::cout << "Path to tdmlauncher is " << dmlauncher << std::endl;
 
 	// path to the darkmod directory
 	_darkmodDir = dmlauncher.remove_leaf();
