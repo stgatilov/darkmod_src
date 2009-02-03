@@ -213,7 +213,7 @@ void idMoveable::Spawn( void ) {
 		physicsObj.DropToFloor();
 	}
 
-	if ( spawnArgs.GetBool( "noimpact" ) || spawnArgs.GetBool( "notPushable" ) ) {
+	if ( spawnArgs.GetBool( "noimpact" ) || spawnArgs.GetBool( "notpushable" ) ) {
 		physicsObj.DisableImpact();
 	}
 
@@ -723,7 +723,7 @@ void idMoveable::Event_Activate( idEntity *activator ) {
 
 	Show();
 
-	if ( !spawnArgs.GetInt( "notPushable" ) ) {
+	if ( !spawnArgs.GetInt( "notpushable" ) ) {
         physicsObj.EnableImpact();
 	}
 

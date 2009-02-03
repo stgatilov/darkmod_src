@@ -83,7 +83,7 @@ void CForcePush::Evaluate( int time )
 	}
 
 	// Do not push static entity or non-pushable ones
-	if (pushEnt->IsType(idStaticEntity::Type) || pushEnt->spawnArgs.GetBool("notPushable", "0"))
+	if (pushEnt->IsType(idStaticEntity::Type) || pushEnt->spawnArgs.GetBool("notpushable", "0"))
 	{
 		return;
 	}
