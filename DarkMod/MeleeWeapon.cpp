@@ -241,7 +241,7 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 		else
 			pClip = GetPhysics()->GetClipModel();
 
-		pClip->SetContents( m_WeapClip->GetContents() | CONTENTS_MELEEWEAP );
+		pClip->SetContents( pClip->GetContents() | CONTENTS_MELEEWEAP );
 	}
 	else
 	{
@@ -275,7 +275,7 @@ void CMeleeWeapon::ClearClipModel( void )
 	else
 	{
 		idClipModel *pClip = GetPhysics()->GetClipModel();
-		pClip->SetContents( m_WeapClip->GetContents() & (~CONTENTS_MELEEWEAP) );
+		pClip->SetContents( pClip->GetContents() & (~CONTENTS_MELEEWEAP) );
 	}
 
 	m_bClipAxAlign = true;
@@ -300,14 +300,21 @@ void CMeleeWeapon::Think( void )
 		
 		if( m_bParrying )
 		{
-			m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
+			idClipModel *pClip;
+			if( m_WeapClip )
+			{
+				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
+				pClip = m_WeapClip;
+			}
+			else
+				pClip = GetPhysics()->GetClipModel();
 			
 			// Debug display of the parry clipmodel
 			if( m_bParrying && cv_melee_debug.GetBool())
 			{
 				collisionModelManager->DrawModel
 					(
-						m_WeapClip->Handle(), m_WeapClip->GetOrigin(), m_WeapClip->GetAxis(),
+						pClip->Handle(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(),
 						gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY 
 					);
 			}
@@ -532,8 +539,12 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 		// Hit a melee parry or held object 
 		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything)
+// test:
+/*
 		if( other->IsType(CMeleeWeapon::Type) 
 			|| (other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) ) )
+*/
+		if( other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
 			// hit a parry (make sure we don't hit our own other melee weapons)

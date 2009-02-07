@@ -9266,6 +9266,14 @@ void idAI::DropOnRagdoll( void )
 		if( !ent || !m_Attachments[i].ent.IsValid() )
 			continue;
 
+		// deactivate any melee weapon actions at this point
+		if( ent->IsType(CMeleeWeapon::Type) )
+		{
+			CMeleeWeapon *pWeap = static_cast<CMeleeWeapon *>(ent);
+			pWeap->DeactivateAttack();
+			pWeap->DeactivateParry();
+		}
+
 		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
 		
 		if( !bDrop ) {
