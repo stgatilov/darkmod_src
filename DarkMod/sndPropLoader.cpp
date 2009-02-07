@@ -45,8 +45,6 @@ const float s_DBM_TO_M = 1.0/(10*log10( idMath::E )); // convert between dB/m an
 void SsndPGlobals::Save(idSaveGame *savefile) const
 {
 	savefile->WriteString(AreaPropName);
-	savefile->WriteString(doorName);
-	savefile->WriteString(d3DoorName);
 	savefile->WriteString(fileExt);
 	savefile->WriteInt(MaxPaths);
 	savefile->WriteFloat(DoorExpand);
@@ -65,8 +63,6 @@ void SsndPGlobals::Save(idSaveGame *savefile) const
 void SsndPGlobals::Restore(idRestoreGame *savefile)
 {
 	savefile->ReadString(AreaPropName);
-	savefile->ReadString(doorName);
-	savefile->ReadString(d3DoorName);
 	savefile->ReadString(fileExt);
 	savefile->ReadInt(MaxPaths);
 	savefile->ReadFloat(DoorExpand);
@@ -231,8 +227,6 @@ void CsndPropBase::GlobalsFromDef( void )
 
 	m_SndGlobals.bDebug = def->GetBool("debug", "0");
 	m_SndGlobals.AreaPropName = def->GetString("aprop_name", "");
-	m_SndGlobals.doorName = def->GetString("door_name", "");
-	m_SndGlobals.d3DoorName = def->GetString("d3door_name", "func_door");
 	m_SndGlobals.fileExt = def->GetString("file_ext", "spr");
 
 	m_SndGlobals.MaxPaths = def->GetInt("maxpaths", "3");
@@ -257,8 +251,6 @@ void CsndPropBase::DefaultGlobals( void )
 {
 	m_SndGlobals.bDebug = false;
 	m_SndGlobals.AreaPropName = "";
-	m_SndGlobals.doorName = "";
-	m_SndGlobals.d3DoorName = "func_door";
 	m_SndGlobals.fileExt = "spr";
 
 	m_SndGlobals.MaxPaths = 3;

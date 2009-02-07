@@ -42,8 +42,6 @@ class SsndPGlobals
 public:
 	// names
 	idStr AreaPropName; // classname of area properties entity
-	idStr doorName; // classname of darkmod door entites
-	idStr d3DoorName; // classname of D3 doors ("func_door")
 	idStr fileExt; // soundprop file extension
 	
 	// Map compiling:
