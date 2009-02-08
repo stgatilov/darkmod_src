@@ -294,6 +294,7 @@ if ( g_os == 'Linux' ):
 	# help 64 bit machines to find the compatibility 32bit libraries
 	BASELINKFLAGS.append( '-L/lib32' )
 	BASELINKFLAGS.append( '-L/usr/lib32' )
+	BASELINKFLAGS.append( '-L/usr/lib32/gcc/i486-linux-gnu/4.2/' )
 
 	# Add the __linux__ define
 	BASECPPFLAGS.append('-D__linux__')
