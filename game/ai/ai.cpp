@@ -9272,6 +9272,7 @@ void idAI::DropOnRagdoll( void )
 			CMeleeWeapon *pWeap = static_cast<CMeleeWeapon *>(ent);
 			pWeap->DeactivateAttack();
 			pWeap->DeactivateParry();
+			pWeap->ClearOwner();
 		}
 
 		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );

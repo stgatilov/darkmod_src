@@ -537,14 +537,17 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 					&& OthBindMaster->IsType(idActor::Type) )
 			AttachOwner = OthBindMaster;
 
-		// Hit a melee parry or held object 
-		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything)
-// test:
-/*
-		if( other->IsType(CMeleeWeapon::Type) 
-			|| (other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) ) )
-*/
-		if( other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) )
+		// Check if we hit a melee parry or held object 
+		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything except the world)
+		// if( (tr.c.contents & CONTENTS_MELEEWEAP) != 0 )
+		// this doesn't always work either, it misses linked clipmodels on melee weapons
+		// if( other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) )
+		// have to do this to catch all cases:
+		if
+			( 
+				(other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP))
+				|| ( other->IsType(CMeleeWeapon::Type) && static_cast<CMeleeWeapon *>(other)->GetOwner() )
+			)
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
 			// hit a parry (make sure we don't hit our own other melee weapons)
