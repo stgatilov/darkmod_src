@@ -31,7 +31,9 @@ const float CONTACT_LCP_EPSILON				= 1e-6f;
 const float CENTER_OF_MASS_EPSILON			= 1e-4f;
 #ifdef MOD_WATERPHYSICS
 const float NO_MOVE_TIME					= 2.0f;
-const float IMPULSE_THRESHOLD				= 1500.0f;
+// ishtvan test: move impulse threshold back to D3 default or below
+// const float IMPULSE_THRESHOLD				= 1500.0f;
+const float IMPULSE_THRESHOLD				= 250.0f;
 const float WATER_FRICTION                  = 0.0f;     // we need AF friction to be a little bigger than RB water friction, we add this value
 const float DEFAULT_LIQUID_SCALAR           = -0.28f;
 const float DEFAULT_LIQUID_DENSITY          = 0.005f;
@@ -7828,6 +7830,7 @@ void idPhysics_AF::ApplyImpulse( const int id, const idVec3 &point, const idVec3
 	if( this->water != NULL )
 		bodies[id]->current->spatialVelocity.SubVec3(0) += bodies[id]->invLiquidMass * impulse;
 	else
+		bodies[id]->current->spatialVelocity.SubVec3(0) += bodies[id]->invMass * impulse;
 #else
 	bodies[id]->current->spatialVelocity.SubVec3(0) += bodies[id]->invMass * impulse;
 #endif
