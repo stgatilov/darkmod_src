@@ -9665,7 +9665,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 /* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 
  * that are mentioned there. Before each entity is spawned, spawnargs of the
  * format "set XYZ on ABC" are parsed and either applied to the newly spawned
- * entity, so it can pass them along to its own def_attachements, or converted
+ * entity, so it can pass them along to its own def_attachments, or converted
  * to a real spawnarg and applied to the entity before spawn. */
 void idEntity::ParseAttachments( void )
 {
@@ -9698,7 +9698,7 @@ void idEntity::ParseAttachments( void )
 			idStr AttNameValue = spawnArgs.GetString(AttName);
 			if (! AttNameValue)
 			{
-				// fall back to the position if now name was defined
+				// fall back to the position if no name was defined
 				AttNameValue = spawnArgs.GetString(PosKey);
 			}
 
@@ -9707,7 +9707,7 @@ void idEntity::ParseAttachments( void )
 			while ( kv_set )
 			{
 				// "set FOO on BAR" "0.5 0.5 0"
-				// means set "_color" "0.5 0.5 0" on the entity attached to the attachement point
+				// means set "_color" "0.5 0.5 0" on the entity attached to the attachment point
 				// named "BAR" (defined with "name_attach" "BAR" on the original entity)
 
 				// Get the value
@@ -9765,14 +9765,14 @@ void idEntity::ParseAttachments( void )
 
 			if ( ent != NULL)
 			{
+				gameLocal.Printf(" Attaching at pos %s\n", AttNameValue.c_str() );
 				if( spawnArgs.FindKey(PosKey.c_str()) )
 				{
-					Attach( ent, spawnArgs.GetString(PosKey.c_str()), 
-							spawnArgs.GetString(AttName.c_str()) );
+					Attach( ent, spawnArgs.GetString(PosKey.c_str()), AttNameValue.c_str() );
 				}
 				else
 				{
-					Attach( ent, NULL, spawnArgs.GetString(AttName.c_str()) );
+					Attach( ent, NULL, AttNameValue.c_str() );
 				}
 			}
 			else
@@ -9782,6 +9782,132 @@ void idEntity::ParseAttachments( void )
 		}
 
 		kv = spawnArgs.MatchPrefix( "def_attach", kv );
+	}
+
+	// after we have spawned all our attachments, we can parse the "add_link" spawnargs:
+	kv = spawnArgs.MatchPrefix( "add_link", NULL );
+	while ( kv )
+	{
+		// get the "source to target" value
+		idStr Link = kv->GetValue();
+
+		// "SOURCE to TARGET"
+		// find position of first " to "	
+		int PosSpace = Link.Find( ' ', 0, -1);
+		if (PosSpace == -1)
+			{
+			gameLocal.Warning( "Invalid spawnarg add_link '%s' on entity '%s'",
+					  kv->GetValue().c_str(), name.c_str() );
+			kv = spawnArgs.MatchPrefix( "add_link", kv );
+			continue;		
+			}
+
+		// "SOURCE to TARGET" => "SOURCE"
+		idStr Source = Link.Left( PosSpace );
+		// "SOURCE to TARGET" => "TARGET"
+		idStr Target = Link.Right( Link.Length() - (PosSpace + 4) );
+
+		gameLocal.Printf("Match: add_link '%s' to '%s'\n", Source.c_str(), Target.c_str() );
+
+		// If the source contains ":attached:name", split it into the base entity
+		// and the attachment name:
+		idEntity *source_ent = this;
+		PosSpace = Source.Find( ":attached:", 0, -1);
+		if (PosSpace != -1)
+		{
+			// "test:attached:flame" => "test"
+			// ":attached:flame" => ""
+			idStr Source_Entity = Source.Left( PosSpace );
+			// "test:attached:flame" => "flame"
+			idStr Source_Att = Source.Right( Source.Length() - (PosSpace + 10) );
+
+			if (Source_Entity.Length() > 0)
+			{
+				// "Name:attached:flame" => entity name, so use "Name"
+				gameLocal.Printf(" Link source: '%s'\n", Source_Entity.c_str() );
+				
+				Source = Source_Entity;
+				source_ent = gameLocal.FindEntity( Source );
+				if (!source_ent)
+					{
+					gameLocal.Warning( "Cannot find entity '%s'.", Source.c_str() );
+					}
+			}
+			// else: ":attached:flame" => no entity name, so use ourself
+
+			// now find the attached entity
+			source_ent = source_ent->GetAttachment( Source_Att.c_str() );
+			if (!source_ent)
+			{
+				gameLocal.Error( "Cannot find source attachment '%s' on entity '%s'.",
+					Source_Att.c_str(), Source.c_str() );
+			}
+			else
+			{
+				gameLocal.Printf(" Link source entity (GetAttachment): '%s'\n", source_ent->name.c_str() );
+			}
+		}
+		else
+		{
+			// source is just an entity name
+			source_ent = gameLocal.FindEntity( Source );
+			gameLocal.Printf(" Link source entity (Entity): '%s'\n", source_ent->name.c_str() );
+		}
+
+		// If the target contains ":attached:name", split it into the base entity
+		// and the attachment name:
+		idEntity *target_ent = this;
+		PosSpace = Target.Find( ":attached:", 0, -1);
+		if (PosSpace != -1)
+		{
+			// "test:attached:flame" => "test"
+			idStr Target_Entity = Target.Left( PosSpace );
+			// "test:attached:flame" => "flame"
+			idStr Target_Att = Target.Right( Target.Length() - (PosSpace + 10) );
+
+			if (Target_Entity.Length() > 0)
+			{
+				// "Name:attached:flame" => entity name, so use "Name"
+				gameLocal.Printf(" Link target: '%s'\n", Target_Entity.c_str() );
+				
+				Target = Target_Entity;
+				target_ent = gameLocal.FindEntity( Target );
+				if (!target_ent)
+					{
+					gameLocal.Warning( "Cannot find entity '%s'.", Target.c_str() );
+					}
+			}
+			// else: ":attached:flame" => no entity name, so use ourself
+
+			// now find the attached entity by the attachment pos name:
+			idEntity *target_ent_att = target_ent->GetAttachment( Target_Att.c_str() );
+			if (!target_ent_att)
+				{
+				gameLocal.Warning( "Cannot find target attachment '%s' on entity '%s'.",
+					Target_Att.c_str(), target_ent->name.c_str() );
+				}
+			else
+				{
+				gameLocal.Printf(" Link target entity (GetAttachment): '%s'\n", target_ent->name.c_str() );
+				}
+			target_ent = target_ent_att;
+		}
+		else
+		{
+			// target is just an entity name
+			target_ent = gameLocal.FindEntity( Target );
+			gameLocal.Printf(" Link target entity (Entity): '%s'\n", target_ent->name.c_str() );
+		}
+
+		// now that we have entities for source and target, add the link
+		if ( source_ent && target_ent )
+		{
+			gameLocal.Printf(" Adding link from '%s' to '%s'\n", source_ent->name.c_str(), target_ent->name.c_str() );
+			source_ent->AddTarget( target_ent );
+		}
+
+		// do we have another one?
+		kv = spawnArgs.MatchPrefix( "add_link", kv );
 	}
 }
 
