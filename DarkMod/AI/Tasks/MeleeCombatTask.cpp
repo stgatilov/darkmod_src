@@ -49,27 +49,115 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 		return true; // terminate me
 	}
 */
-	// Can we damage the enemy already? (this flag is set by the sensory task)
-	if (owner->GetMemory().canHitEnemy)
-	{
-		idStr waitState(owner->WaitState());
+	// Perform the task according to the current action
+	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+	EMeleeActState ActState = pStatus->m_ActionState;
 
-		// greebo: Let the animation wait time be 3 seconds at maximum
-		if (waitState != "melee_attack" || gameLocal.time > _attackAnimStartTime + 3000)
-		{
-			_attackAnimStartTime = gameLocal.time;
-
-			// Waitstate is not matching, this means that the animation 
-			// can be started.
-			StartAttack(owner);
-
-			// greebo: Set the waitstate, this gets cleared by 
-			// the script function when the animation is done.
-			owner->SetWaitState("melee_attack");
-		}
-	}
+	if( ActState == MELEEACTION_ATTACK )
+		PerformAttack(owner);
+	else if( ActState == MELEEACTION_PARRY )
+		PerformParry(owner);
+	else
+		PerformReady(owner);
 
 	return false; // not finished yet
+}
+
+void MeleeCombatTask::PerformReady(idAI* owner)
+{
+	// the "ready" state is where we decide whether to attack or parry
+	// For now, always attack
+	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+
+	idStr debugText = "MeleeAction: Ready";
+	gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+
+	// TODO: Different recovery time based on what just happened (was parried, got hit, etc)
+	int NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentAttackRecovery;
+	// Can we damage the enemy already? (this flag is set by the sensory task)
+	if (owner->GetMemory().canHitEnemy && gameLocal.time > NextAttTime)
+	{
+		StartAttack(owner);
+	}
+}
+
+void MeleeCombatTask::PerformAttack(idAI* owner)
+{
+	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+	EMeleeActPhase phase = pStatus->m_ActionPhase;
+	
+	if( phase == MELEEPHASE_PREPARING )
+	{
+		idStr debugText = "MeleeAction: Attack, Phase: Preparing";
+		gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		// don't do anything, animation will update status when it reaches hold point
+		return;
+	}
+	else if( phase == MELEEPHASE_HOLDING )
+	{
+		// TODO: Decide whether to keep holding the attack or release
+		// if player is out of range but close, maybe hold the swing and charge at them for a little while?
+
+		idStr debugText = "MeleeAction: Attack, Phase: Holding";
+		gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		
+		// wait some finite time before releasing (for difficulty tweaking)
+		if( (gameLocal.time - pStatus->m_PhaseChangeTime) > owner->m_MeleeCurrentHoldTime )
+		{
+			owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
+			owner->Event_MeleeActionReleased();
+		}
+	}
+	// MELEEPHASE_FINISHING
+	else
+	{
+		// check if animation is finished (script will set this when it is)
+		idStr debugText = "MeleeAction: Attack, Phase: Finishing";
+		gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+
+		idStr waitState( owner->WaitState() );
+		if( waitState != "melee_action" )
+		{
+			// TODO: This needs to get set differently if the attack was parried
+			// will be set in melee weapon, for now set it to 'missed' here for testing purposes
+			pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+			owner->Event_MeleeActionFinished();
+		}
+	}
+}
+
+void MeleeCombatTask::PerformParry(idAI* owner)
+{
+	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+	EMeleeActPhase phase = pStatus->m_ActionPhase;
+	
+	if( phase == MELEEPHASE_PREPARING )
+	{
+		// don't do anything, animation will update status when it reaches hold point
+		// TODO: Need some way of differentiating attacks that have a "hold point" from those that don't
+		// as a quick hack for now, can just put melee_hold at early frame in the animation
+		return;
+	}
+	else if( phase == MELEEPHASE_HOLDING )
+	{
+		// TODO: Decide whether to keep holding the parry or to release
+		// For now, immediately release
+		owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
+		owner->Event_MeleeActionReleased();
+	}
+	// MELEEPHASE_FINISHING
+	else
+	{
+		// check if animation is finished (script will set this when it is)
+		idStr waitState( owner->WaitState() );
+		if( waitState != "melee_action" )
+		{
+			// TODO: This should be set elsewhere (in CMeleeWeapon probably)
+			// for now, set it here
+			pStatus->m_ActionResult = MELEERESULT_PAR_ABORTED;
+			owner->Event_MeleeActionFinished();
+		}
+	}
 }
 
 void MeleeCombatTask::StartAttack(idAI* owner)
@@ -80,14 +168,11 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 	// create subset of possible attacks:
 	idList<EMeleeType> attacks = pStatus->m_attacks;
 	// if our enemy is parrying a direction, attack along a different direction
-	if( pEnStatus->m_bParrying )
+	if( pEnStatus->m_ActionState == MELEEACTION_PARRY )
 	{
-		gameLocal.Printf("Melee: Enemy is parrying\r");
-		if( pEnStatus->m_ParryType != MELEETYPE_BLOCKALL )
+		if( pEnStatus->m_ActionType != MELEETYPE_BLOCKALL )
 		{
-			gameLocal.Printf("Melee: Attempting to remove parry from possible attack list\r");
-			if( attacks.Remove( pEnStatus->m_ParryType ) )
-				gameLocal.Printf("Melee: Parry found and removed\r");
+			attacks.Remove( pEnStatus->m_ActionType );
 
 		}
 		// TODO: Shield parries need special handling
@@ -101,9 +186,14 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 		i = attacks[i];
 		const char *suffix = idActor::MeleeTypeNames[i];
 
-		pStatus->m_bAttacking = true;
-		pStatus->m_AttackType = (EMeleeType) i;
+		// update the melee status
+		owner->Event_MeleeAttackStarted( i );
 
+		// Set the waitstate, this gets cleared by 
+		// the script function when the animation is done.
+		owner->SetWaitState("melee_action");
+
+		// script state plays the animation, setting wait state "melee_action" for the duration
 		// TODO: Why did we have 5 blend frames here?
 		owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Melee_%s",suffix), 5);
 	}
@@ -120,7 +210,8 @@ void MeleeCombatTask::OnFinish(idAI* owner)
 	// ishtvan TODO: Will need different code for when attack is finish vs. parry?
 	// TODO: Also need to figure out if we hit or miss, etc.
 	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	pStatus->m_bAttacking = false;
+	pStatus->m_ActionState = MELEEACTION_READY;
+	pStatus->m_ActionPhase = MELEEPHASE_PREPARING;
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetWaitState("");

@@ -48,6 +48,10 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 private:
+	void PerformReady(idAI* owner);
+	void PerformAttack(idAI* owner);
+	void PerformParry(idAI* owner);
+
 	// Starts the attack animation (either long or quick melee)
 	void StartAttack(idAI* owner);
 };

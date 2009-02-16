@@ -149,6 +149,12 @@ typedef enum {
 * Pause the animation at its current frame, wait for unpause from somewhere else
 **/
 	FC_PAUSE,
+/**
+* Holds a melee attack at a given point in the animation
+* (e.g., at the back swing in attacks, at the parry position in parries)
+* Similar to pause but also updates actor's melee status
+**/
+	FC_MELEE_HOLD,
 	FC_MELEE_ATTACK_START,
 	FC_MELEE_ATTACK_STOP,
 	FC_MELEE_PARRY_START,

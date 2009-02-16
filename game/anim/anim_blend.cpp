@@ -631,6 +631,11 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_PAUSE;
 	}
 	// Melee Combat Frame commands
+	else if ( token == "melee_hold" )
+	{
+		// like FC_PAUSE but also sets melee vars on actor
+		fc.type = FC_MELEE_HOLD;
+	}
 	else if ( token == "melee_attack_start" )
 	{
 		// first argument: name of the weapon attachment
@@ -1073,6 +1078,16 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				case FC_PAUSE:
 				{
 					caller->Pause( true );
+					break;
+				}
+				case FC_MELEE_HOLD:
+				{
+					caller->Pause( true );
+
+					// Update entity's melee status
+					if( ent->IsType(idActor::Type) )
+						static_cast<idActor*>(ent)->Event_MeleeActionHeld();
+
 					break;
 				}
 				case FC_MELEE_ATTACK_START:

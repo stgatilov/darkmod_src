@@ -427,7 +427,6 @@ const idEventDef AI_AnimDistance( "animDistance", "ds", 'f' );
 const idEventDef AI_HasEnemies( "hasEnemies", NULL, 'd' );
 const idEventDef AI_NextEnemy( "nextEnemy", "E", 'e' );
 const idEventDef AI_ClosestEnemyToPoint( "closestEnemyToPoint", "v", 'e' );
-const idEventDef AI_BestParryName( "bestParryName", NULL, 's' );
 const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
@@ -449,6 +448,14 @@ const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 // Weapon attachment related events
 const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
 const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
+
+// melee combat events
+const idEventDef AI_MeleeAttackStarted( "meleeAttackStarted", "d" );
+const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
+const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
+const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
+const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
+const idEventDef AI_BestParryName( "bestParryName", NULL, 's' );
 
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
@@ -493,6 +500,11 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_HasEnemies,				idActor::Event_HasEnemies )
 	EVENT( AI_NextEnemy,				idActor::Event_NextEnemy )
 	EVENT( AI_ClosestEnemyToPoint,		idActor::Event_ClosestEnemyToPoint )
+	EVENT( AI_MeleeAttackStarted,		idActor::Event_MeleeAttackStarted )
+	EVENT( AI_MeleeParryStarted,		idActor::Event_MeleeParryStarted )
+	EVENT( AI_MeleeActionHeld,			idActor::Event_MeleeActionHeld )
+	EVENT( AI_MeleeActionReleased,		idActor::Event_MeleeActionReleased )
+	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
 	EVENT( AI_BestParryName,			idActor::Event_BestParryName )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
 	EVENT( AI_SetNextState,				idActor::Event_SetNextState )
@@ -541,6 +553,17 @@ idActor::idActor( void ) {
 	pain_debounce_time	= 0;
 	pain_delay			= 0;
 	pain_threshold		= 0;
+
+	m_MeleeDamageMult					= 1.0f;
+	m_MeleeHoldTimeMin					= 0;
+	m_MeleeHoldTimeMax					= 0;
+	m_MeleeCurrentHoldTime				= 0;
+	m_MeleeAttackRecoveryMin			= 0;
+	m_MeleeAttackRecoveryMax			= 0;
+	m_MeleeCurrentAttackRecovery		= 0;
+	m_MeleeAttackLongRecoveryMin		= 0;
+	m_MeleeAttackLongRecoveryMax		= 0;
+	m_MeleeCurrentAttackLongRecovery	= 0;
 
 	state				= NULL;
 	idealState			= NULL;
@@ -655,6 +678,16 @@ void idActor::Spawn( void )
 
 	pain_delay		= SEC2MS( spawnArgs.GetFloat( "pain_delay" ) );
 	pain_threshold	= spawnArgs.GetInt( "pain_threshold" );
+
+	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
+	m_MeleeHoldTimeMin					= spawnArgs.GetInt("melee_hold_time_min");
+	m_MeleeHoldTimeMax					= spawnArgs.GetInt("melee_hold_time_max");
+	m_MeleeAttackRecoveryMin			= spawnArgs.GetInt("melee_attack_recovery_min");
+	m_MeleeAttackRecoveryMax			= spawnArgs.GetInt("melee_attack_recovery_max");
+	m_MeleeAttackLongRecoveryMin		= spawnArgs.GetInt("melee_attack_long_recovery_min");
+	m_MeleeAttackLongRecoveryMax		= spawnArgs.GetInt("melee_attack_long_recovery_max");
+	m_MeleeParryRecoveryMin				= spawnArgs.GetInt("melee_parry_recovery_min");
+	m_MeleeParryRecoveryMax				= spawnArgs.GetInt("melee_parry_recovery_max");
 
 	LoadAF();
 
@@ -2233,7 +2266,9 @@ idActor *idActor::ClosestAttackingEnemy( bool bUseFOV )
 		if ( ent->fl.hidden )
 			continue;
 
-		if ( !ent->m_MeleeStatus.m_bAttacking )
+		CMeleeStatus *pStatus = &ent->m_MeleeStatus;
+		// TODO: Differentiate between phases of the action state, holding attack, etc?
+		if ( !(pStatus->m_ActionState == MELEEACTION_ATTACK) )
 			continue;
 
 		idVec3 entOrigin = ent->GetPhysics()->GetOrigin();
@@ -2270,7 +2305,7 @@ const char *idActor::BestParryName( void )
 		ParryType = MELEETYPE_BLOCKALL;
 	else if( (AttEnemy = ClosestAttackingEnemy( true )) != NULL )
 	{
-		ParryType = AttEnemy->m_MeleeStatus.m_AttackType;
+		ParryType = AttEnemy->m_MeleeStatus.m_ActionType;
 	}
 	else
 		ParryType = MELEETYPE_SLASH_RL;
@@ -4292,20 +4327,66 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	return result;
 }
 
+void idActor::Event_MeleeAttackStarted( int num )
+{
+	m_MeleeStatus.m_ActionState = MELEEACTION_ATTACK;
+	m_MeleeStatus.m_ActionType = (EMeleeType) num;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+
+	// randomize minimum times to events after this one
+	float fRand = gameLocal.random.RandomFloat();
+	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
+	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
+	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
+	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
+}
+
+void idActor::Event_MeleeParryStarted( int num )
+{
+	m_MeleeStatus.m_ActionState = MELEEACTION_PARRY;
+	m_MeleeStatus.m_ActionType = (EMeleeType) num;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+
+	// randomize minimum times to events after this one
+	float fRand = gameLocal.random.RandomFloat();
+	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
+	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
+	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
+	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
+}
+
+void idActor::Event_MeleeActionHeld()
+{
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_HOLDING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+}
+
+void idActor::Event_MeleeActionReleased()
+{
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_FINISHING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+}
+
+void idActor::Event_MeleeActionFinished()
+{
+	m_MeleeStatus.m_ActionState = MELEEACTION_READY;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_LastActTime = gameLocal.time;
+}
+
 // ========== CMeleeStatus implementation =========
 CMeleeStatus::CMeleeStatus( void )
 {
-	m_bAttacking = false;
-	m_bParrying = false;
-	m_AttackType = MELEETYPE_OVERHEAD;
-	m_ParryType = MELEETYPE_OVERHEAD;
+	m_ActionState = MELEEACTION_READY;
+	m_ActionType = MELEETYPE_OVERHEAD;
 
 	m_bCanParry		= false;
 	m_bCanParryAll	= false;
 	m_attacks.Clear();
 
-	m_AttackResult	= MELEERESULTAT_IN_PROGRESS;
-	m_ParryResult	= MELEERESULTPAR_IN_PROGRESS;
+	m_ActionResult	= MELEERESULT_IN_PROGRESS;
 }
 
 CMeleeStatus::~CMeleeStatus( void )

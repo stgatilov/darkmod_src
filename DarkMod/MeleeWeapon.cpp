@@ -223,13 +223,6 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 		m_ActionName = ParryName;
 		m_bParrying = true;
 
-		// TODO: Set owner's melee status earlier, at the beginning of the animation instead of when the parry becomes active?
-		// For now, set it here for testing purposes
-		CMeleeStatus *pOwnerStatus = &m_Owner.GetEntity()->m_MeleeStatus;
-		pOwnerStatus->m_bParrying = true;
-		pOwnerStatus->m_ParryType = m_MeleeType;
-
-
 		// set up the clipmodel
 		m_WeapClip = NULL;
 		idClipModel *pClip;
@@ -256,10 +249,6 @@ void CMeleeWeapon::DeactivateParry( void )
 	{
 		m_bParrying = false;
 		ClearClipModel();
-
-		// clear the parry status from the owner
-		CMeleeStatus *pOwnerStatus = &m_Owner.GetEntity()->m_MeleeStatus;
-		pOwnerStatus->m_bParrying = false;
 	}
 }
 
@@ -662,7 +651,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		g_Global.GetSurfName( tr->c.material, surfType );
 
 	// scale the damage by owner's ability and surface type hit
-	DmgScale *= m_Owner.GetEntity()->spawnArgs.GetFloat("melee_damage_mod", "1.0");
+	DmgScale *= m_Owner.GetEntity()->m_MeleeDamageMult;
 	DmgScale *= DmgDef->GetFloat( va("damage_mult_%s",surfType.c_str()), "1.0" );
 
 	// Damage

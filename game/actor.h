@@ -38,26 +38,34 @@ typedef enum
 	NUM_MELEE_TYPES
 } EMeleeType;
 
-/** Possible outcomes of a melee attack **/
-enum EMeleeResultAT
+/** Melee Overall Action States **/
+typedef enum
 {
-	MELEERESULTAT_IN_PROGRESS, // no result yet, still in progress
-	MELEERESULTAT_HIT,
-	MELEERESULTAT_MISSED,
-	MELEERESULTAT_PARRIED,
-	MELEERESULTAT_COUNTERED, // they got hit while attacking
-	MELEERESULTAT_HIT_FRIENDLY, // friendly fire! 
-	NUM_RESULTSAT
-};
+	MELEEACTION_READY, // ready to attack or parry
+	MELEEACTION_ATTACK,
+	MELEEACTION_PARRY
+} EMeleeActState;
 
-/** Possible outcomes of a melee parry **/
-enum EMeleeResultPAR
+/** Melee phases of each action (applies to both attack and parry) **/
+typedef enum
 {
-	MELEERESULTPAR_IN_PROGRESS, // no result yet, still in progress
-	MELEERESULTPAR_BLOCKED, // blocked the attack
-	MELEERESULTPAR_FAILED, // got hit by same attack type they were trying to parry
-	MELEERESULTPAR_WRONG, // got hit by an attack type different than what they were parrying
-	NUM_RESULTSPAR
+	MELEEPHASE_PREPARING, // Moving to backswing or parry position
+	MELEEPHASE_HOLDING, // holding a backswing or parry
+	MELEEPHASE_FINISHING // finishing an attack/parry and recovering
+} EMeleeActPhase;
+
+/** Possible outcomes of a melee action (includes attacks and parries) **/
+enum EMeleeResult
+{
+	MELEERESULT_IN_PROGRESS, // no result yet, still in progress
+	MELEERESULT_AT_HIT,
+	MELEERESULT_AT_MISSED,
+	MELEERESULT_AT_PARRIED,
+	MELEERESULT_PAR_BLOCKED, // successfully parried the attack
+	MELEERESULT_PAR_ABORTED, // gave up parrying
+	MELEERESULT_WAS_HIT, // not sure this works in here
+
+	NUM_MELEE_RESULTS
 };
 
 /** class for storing current melee combat status **/
@@ -73,31 +81,28 @@ public:
 	// clears the current action
 	void ClearAction( void );
 
-	// TODO: Decide when to clear these so we can tell when an AI is still recovering from an attack, etc
-	bool		m_bAttacking;
-	bool		m_bParrying;
-	EMeleeType	m_AttackType;
-	EMeleeType	m_ParryType;
+	EMeleeActState	m_ActionState; // current action
+	EMeleeActPhase	m_ActionPhase; // phase within that action
+	EMeleeType		m_ActionType; // type of attack/parry
+
+	// time the phase of our action last changed
+	int				m_PhaseChangeTime;
+	// time that our most recent action ended
+	int				m_LastActTime;
+
+	int				NextAttTime; // time at which next attack may be made
+	int				NextParTime; // time at which next parry may be made
+
+	// Result of most recent action
+	// Will be considered "in progress" until back in the "Ready" state
+	EMeleeResult	m_ActionResult;
 
 	// melee capabilities of weapon
 	bool				m_bCanParry;
 	bool				m_bCanParryAll;
 	idList<EMeleeType>	m_attacks; // possible attacks with current weapon
 
-	// Results of most recent attack/parry 
-	// (includes case where they are still in progress)
-	EMeleeResultAT	m_AttackResult;
-	EMeleeResultPAR	m_ParryResult;
-
 }; // CMeleeStatus
-
-/** Tabulate results of past melee actions **/
-typedef struct SMeleeResultsTable_s
-{
-	int		AttackResults[NUM_MELEE_TYPES][NUM_RESULTSAT];
-	int		ParryResults[NUM_MELEE_TYPES][NUM_RESULTSPAR];
-} SMeleeResultsTable;
-
 
 
 /*
@@ -212,6 +217,38 @@ public:
 	* ishtvan: Made public to avoid lots of gets/sets
 	**/
 	CMeleeStatus			m_MeleeStatus;
+	/** 
+	* Number representing the ability of this actor to inflict melee damage
+	* multiplies the baseline melee damage set on the weapon by this amount 
+	**/
+	float					m_MeleeDamageMult;
+	/**
+	* Melee timing: Time between the backswing and forward swing
+	* Actual number is random, between this min and max
+	* Number is in milliseconds
+	**/
+	int						m_MeleeHoldTimeMin;
+	int						m_MeleeHoldTimeMax;
+	int						m_MeleeCurrentHoldTime;
+	/**
+	* Melee timing: Time between subsequent attacks (in milliseconds)
+	**/
+	int						m_MeleeAttackRecoveryMin;
+	int						m_MeleeAttackRecoveryMax;
+	int						m_MeleeCurrentAttackRecovery;
+	/**
+	* Melee timing: Time after being parried or getting hit that we can attack (longer than the normal time)
+	**/
+	int						m_MeleeAttackLongRecoveryMin;
+	int						m_MeleeAttackLongRecoveryMax;
+	int						m_MeleeCurrentAttackLongRecovery;
+	/**
+	* Melee timing: Time after last action that we can parry (fairly short)
+	* TODO: the name of this could be confusing, we're not recovering FROM a parry
+	**/
+	int						m_MeleeParryRecoveryMin;
+	int						m_MeleeParryRecoveryMax;
+	int						m_MeleeCurrentParryRecovery;
 
 	/**
 	* Correspondence between melee type and string name suffix of the action
@@ -523,11 +560,6 @@ protected:
 	std::set<int>			m_AttackFlags;
 
 	/**
-	* Table of what's happened thus far in melee combat
-	**/
-	SMeleeResultsTable		m_PastMeleeResults;
-
-	/**
 	* Movement volume modifiers.  Ones for the player are taken from 
 	* cvars (for now), ones for AI are taken from spawnargs.
 	* Walking and not crouching is the default volume.
@@ -641,6 +673,19 @@ public:
 	// Returns the number of ranged/melee weapons attached to the calling script
 	void					Event_GetNumMeleeWeapons();
 	void					Event_GetNumRangedWeapons();
+	/**
+	* Registers the start of a given melee attack/parry
+	* Intended to be called from a script that also starts the animation
+	**/
+	void					Event_MeleeAttackStarted( int AttType );
+	void					Event_MeleeParryStarted( int ParType );
+	/** Called when the melee action reaches the "hold" point **/
+	void					Event_MeleeActionHeld( void );
+	/** Called when the melee action is released from the hold point **/
+	void					Event_MeleeActionReleased( void );
+	/** Called when the animation for the melee action has finished **/
+	void					Event_MeleeActionFinished( void );
+
 	/**
 	* Returns the string name (suffix) of the optimal melee parry given current attackers
 	* If no attackers are found within the FOV, returns a default of "RL" (sabre parry #4)
