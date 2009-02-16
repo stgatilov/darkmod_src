@@ -8349,7 +8349,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 	attach.name = AttName;
 
 	// Update name->m_Attachment index mapping
-	int index = m_Attachments.Num();
+	int index = m_Attachments.Num() - 1;
 	if( AttName != NULL )
 		m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
 }
@@ -9765,14 +9765,15 @@ void idEntity::ParseAttachments( void )
 
 			if ( ent != NULL)
 			{
-				gameLocal.Printf(" Attaching at pos %s\n", AttNameValue.c_str() );
 				if( spawnArgs.FindKey(PosKey.c_str()) )
 				{
 					Attach( ent, spawnArgs.GetString(PosKey.c_str()), AttNameValue.c_str() );
+					//gameLocal.Printf(" Attaching '%s' at pos '%s'\n", AttNameValue.c_str(), spawnArgs.GetString(PosKey.c_str()) );
 				}
 				else
 				{
 					Attach( ent, NULL, AttNameValue.c_str() );
+					//gameLocal.Printf(" Attaching '%s' at pos 'Unknown'\n", AttNameValue.c_str() );
 				}
 			}
 			else
