@@ -26,9 +26,6 @@ class MeleeCombatTask :
 {
 	idEntityPtr<idActor> _enemy;
 
-	// The time the attack animation was started
-	int _attackAnimStartTime;
-
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -52,8 +49,11 @@ private:
 	void PerformAttack(idAI* owner);
 	void PerformParry(idAI* owner);
 
-	// Starts the attack animation (either long or quick melee)
+	/**
+	* Start up an attack or parry animation
+	**/
 	void StartAttack(idAI* owner);
+	void StartParry(idAI* owner);
 };
 
 } // namespace ai

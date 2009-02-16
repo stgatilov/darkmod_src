@@ -455,7 +455,8 @@ const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
 const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
 const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
 const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
-const idEventDef AI_BestParryName( "bestParryName", NULL, 's' );
+const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
+const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
 
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
@@ -505,7 +506,8 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_MeleeActionHeld,			idActor::Event_MeleeActionHeld )
 	EVENT( AI_MeleeActionReleased,		idActor::Event_MeleeActionReleased )
 	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
-	EVENT( AI_BestParryName,			idActor::Event_BestParryName )
+	EVENT( AI_MeleeBestParry,			idActor::Event_MeleeBestParry )
+	EVENT( AI_MeleeNameForNum,			idActor::Event_MeleeNameForNum )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
 	EVENT( AI_SetNextState,				idActor::Event_SetNextState )
 	EVENT( AI_SetState,					idActor::Event_SetState )
@@ -564,6 +566,9 @@ idActor::idActor( void ) {
 	m_MeleeAttackLongRecoveryMin		= 0;
 	m_MeleeAttackLongRecoveryMax		= 0;
 	m_MeleeCurrentAttackLongRecovery	= 0;
+	m_MeleeParryRecoveryMin				= 0;
+	m_MeleeParryRecoveryMax				= 0;
+	m_MeleeCurrentParryRecovery			= 0;
 
 	state				= NULL;
 	idealState			= NULL;
@@ -995,6 +1000,22 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject( ent );
 	}
 
+	// melee stuff
+	m_MeleeStatus.Save( savefile );
+	savefile->WriteFloat( m_MeleeDamageMult );
+	savefile->WriteInt( m_MeleeHoldTimeMin );
+	savefile->WriteInt( m_MeleeHoldTimeMax );
+	savefile->WriteInt( m_MeleeCurrentHoldTime );
+	savefile->WriteInt( m_MeleeAttackRecoveryMin );
+	savefile->WriteInt( m_MeleeAttackRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentAttackRecovery );
+	savefile->WriteInt( m_MeleeAttackLongRecoveryMin );
+	savefile->WriteInt( m_MeleeAttackLongRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentAttackLongRecovery );
+	savefile->WriteInt( m_MeleeParryRecoveryMin );
+	savefile->WriteInt( m_MeleeParryRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentParryRecovery );
+
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
@@ -1142,6 +1163,22 @@ void idActor::Restore( idRestoreGame *savefile ) {
 			ent->enemyNode.AddToEnd( enemyList );
 		}
 	}
+
+	// melee stuff
+	m_MeleeStatus.Restore( savefile );
+	savefile->ReadFloat( m_MeleeDamageMult );
+	savefile->ReadInt( m_MeleeHoldTimeMin );
+	savefile->ReadInt( m_MeleeHoldTimeMax );
+	savefile->ReadInt( m_MeleeCurrentHoldTime );
+	savefile->ReadInt( m_MeleeAttackRecoveryMin );
+	savefile->ReadInt( m_MeleeAttackRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentAttackRecovery );
+	savefile->ReadInt( m_MeleeAttackLongRecoveryMin );
+	savefile->ReadInt( m_MeleeAttackLongRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentAttackLongRecovery );
+	savefile->ReadInt( m_MeleeParryRecoveryMin );
+	savefile->ReadInt( m_MeleeParryRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentParryRecovery );
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -2293,10 +2330,10 @@ idActor *idActor::ClosestAttackingEnemy( bool bUseFOV )
 
 /*
 ================
-idActor::BestParryName
+idActor::GetBestParry
 ================
 */
-const char *idActor::BestParryName( void )
+EMeleeType idActor::GetBestParry( void )
 {
 	idActor *AttEnemy;
 	EMeleeType ParryType;
@@ -2308,9 +2345,9 @@ const char *idActor::BestParryName( void )
 		ParryType = AttEnemy->m_MeleeStatus.m_ActionType;
 	}
 	else
-		ParryType = MELEETYPE_SLASH_RL;
+		ParryType = MELEETYPE_RL;
 
-	return MeleeTypeNames[ParryType];
+	return ParryType;
 }
 
 /*
@@ -3982,12 +4019,28 @@ void idActor::Event_ClosestEnemyToPoint( const idVec3 &pos ) {
 
 /*
 ================
-idActor::Event_BestParryName
+idActor::Event_MeleeBestParry
 ================
 */
-void idActor::Event_BestParryName()
+void idActor::Event_MeleeBestParry()
 {
-	idThread::ReturnString( BestParryName() );
+	idThread::ReturnInt( GetBestParry() );
+}
+
+/*
+================
+idActor::Event_MeleeNameForNum
+================
+*/
+void idActor::Event_MeleeNameForNum( int num )
+{
+	if( num >= 0 && num < NUM_MELEE_TYPES )
+		idThread::ReturnString( MeleeTypeNames[num] );
+	else
+	{
+		gameLocal.Warning("Actor %s attempted to look up bad melee type number %d", name.c_str(), num );
+		idThread::ReturnString( "" );
+	}
 }
 
 /*
@@ -4379,14 +4432,20 @@ void idActor::Event_MeleeActionFinished()
 // ========== CMeleeStatus implementation =========
 CMeleeStatus::CMeleeStatus( void )
 {
-	m_ActionState = MELEEACTION_READY;
-	m_ActionType = MELEETYPE_OVERHEAD;
+	m_ActionState	= MELEEACTION_READY;
+	m_ActionPhase	= MELEEPHASE_PREPARING;
+	m_ActionType	= MELEETYPE_OVER;
+
+	m_PhaseChangeTime	= 0;
+	m_LastActTime		= 0;
+	m_NextAttTime		= 0; // these aren't actually used??
+	m_NextParTime		= 0; // these aren't actually used??
+
+	m_ActionResult	= MELEERESULT_IN_PROGRESS;
 
 	m_bCanParry		= false;
 	m_bCanParryAll	= false;
 	m_attacks.Clear();
-
-	m_ActionResult	= MELEERESULT_IN_PROGRESS;
 }
 
 CMeleeStatus::~CMeleeStatus( void )
@@ -4396,8 +4455,50 @@ CMeleeStatus::~CMeleeStatus( void )
 
 void CMeleeStatus::Save( idSaveGame *savefile ) const
 {
+	savefile->WriteInt( m_ActionState );
+	savefile->WriteInt( m_ActionPhase );
+	savefile->WriteInt( m_ActionType );
+	savefile->WriteInt( m_PhaseChangeTime );
+	savefile->WriteInt( m_LastActTime );
+	savefile->WriteInt( m_NextAttTime );
+	savefile->WriteInt( m_NextParTime );
+	savefile->WriteInt( m_ActionResult );
+
+	savefile->WriteBool( m_bCanParry );
+	savefile->WriteBool( m_bCanParryAll );
+
+	int num = m_attacks.Num();
+	savefile->WriteInt( num );
+	for( int i =0; i < num; i++ )
+	{
+		savefile->WriteInt( m_attacks[i] );
+	}
 }
 
 void CMeleeStatus::Restore( idRestoreGame *savefile )
 {
+	int i = 0;
+	savefile->ReadInt( i );
+	m_ActionState = (EMeleeActState) i; 
+	savefile->ReadInt( i );
+	m_ActionPhase = (EMeleeActPhase) i;
+	savefile->ReadInt( i );
+	m_ActionType = (EMeleeType) i;
+	savefile->ReadInt( m_PhaseChangeTime );
+	savefile->ReadInt( m_LastActTime );
+	savefile->ReadInt( m_NextAttTime );
+	savefile->ReadInt( m_NextParTime );
+	savefile->ReadInt( i );
+	m_ActionResult = (EMeleeResult) i;
+
+	savefile->ReadBool( m_bCanParry );
+	savefile->ReadBool( m_bCanParryAll );
+
+	int num = m_attacks.Num();
+	savefile->ReadInt( num );
+	for( int j =0; j < num; j++ )
+	{
+		savefile->ReadInt( i );
+		m_attacks[j] = (EMeleeType) i;
+	}
 }

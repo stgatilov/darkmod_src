@@ -34,7 +34,7 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_bWorldCollide = false;
 	m_bModCM = false;
 
-	m_MeleeType = MELEETYPE_OVERHEAD;
+	m_MeleeType = MELEETYPE_OVER;
 	m_StopMass = 0.0f;
 	m_ParticlesMade = 0;
 

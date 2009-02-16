@@ -29,9 +29,9 @@ enum ECombatType
 /** Melee Attack/Parry types **/
 typedef enum
 {
-	MELEETYPE_OVERHEAD,
-	MELEETYPE_SLASH_LR, // slashing (attacker's) left to right
-	MELEETYPE_SLASH_RL, // slashing (attacker's) right to left
+	MELEETYPE_OVER,
+	MELEETYPE_LR, // slashing (attacker's) left to right
+	MELEETYPE_RL, // slashing (attacker's) right to left
 	MELEETYPE_THRUST,
 	MELEETYPE_UNBLOCKABLE, // unblockable attacks (e.g. animal claws)
 	MELEETYPE_BLOCKALL, // blocks all attacks except unblockable (e.g., shield)
@@ -90,8 +90,8 @@ public:
 	// time that our most recent action ended
 	int				m_LastActTime;
 
-	int				NextAttTime; // time at which next attack may be made
-	int				NextParTime; // time at which next parry may be made
+	int				m_NextAttTime; // time at which next attack may be made
+	int				m_NextParTime; // time at which next parry may be made
 
 	// Result of most recent action
 	// Will be considered "in progress" until back in the "Ready" state
@@ -130,7 +130,14 @@ extern const idEventDef AI_PlayCycle;
 extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
-extern const idEventDef AI_BestParryName;
+
+extern const idEventDef AI_MeleeAttackStarted;
+extern const idEventDef AI_MeleeParryStarted;
+extern const idEventDef AI_MeleeActionHeld;
+extern const idEventDef AI_MeleeActionReleased;
+extern const idEventDef AI_MeleeActionFinished;
+extern const idEventDef AI_MeleeBestParry;
+extern const idEventDef AI_MeleeNameForNum;
 
 class idDeclParticle;
 
@@ -381,11 +388,11 @@ public:
 	**/
 	idActor *				ClosestAttackingEnemy( bool bUseFOV );
 	/**
-	* Returns the string name of the best parry given the attacks at the time
+	* Returns the enum of the best parry given the attacks at the time
 	* If no attacking enemy is found, returns default of "RL"
 	* See dActor::MeleeTypeNames for the list of melee attack/parry names
 	**/
-	const char *			BestParryName( void );
+	EMeleeType				GetBestParry( void );
 
 	virtual bool			OnLadder( void ) const;
 	// Returns the elevator entity if the actor is standing on an elevator
@@ -687,10 +694,15 @@ public:
 	void					Event_MeleeActionFinished( void );
 
 	/**
-	* Returns the string name (suffix) of the optimal melee parry given current attackers
-	* If no attackers are found within the FOV, returns a default of "RL" (sabre parry #4)
+	* Returns the melee type integer of the optimal melee parry given current attackers
+	* If no attackers are found within the FOV, 
+	* returns a default of MELEETYPE_RL (sabre parry #4)
 	**/
-	void					Event_BestParryName();
+	void					Event_MeleeBestParry();
+	/**
+	* Convert a melee type integer to the corresponding string name
+	**/
+	void					Event_MeleeNameForNum( int num );
 
 
 #ifdef TIMING_BUILD
