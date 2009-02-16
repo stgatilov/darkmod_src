@@ -1084,9 +1084,17 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				{
 					caller->Pause( true );
 
-					// Update entity's melee status
-					if( ent->IsType(idActor::Type) )
-						static_cast<idActor*>(ent)->Event_MeleeActionHeld();
+					idActor *ActOwner;
+					if( ent->IsType(idWeapon::Type) )
+						ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+					else if( ent->IsType(idActor::Type) )
+						ActOwner = static_cast<idActor *>(ent);
+					else
+						ActOwner = NULL;
+
+					// Update the associated actor's melee status
+					if( ActOwner )
+						ActOwner->Event_MeleeActionHeld();
 
 					break;
 				}

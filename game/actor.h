@@ -256,6 +256,12 @@ public:
 	int						m_MeleeParryRecoveryMin;
 	int						m_MeleeParryRecoveryMax;
 	int						m_MeleeCurrentParryRecovery;
+	/**
+	* Melee timing: Time after a successful (or aborted) parry that we can attack
+	**/
+	int						m_MeleeRiposteRecoveryMin;
+	int						m_MeleeRiposteRecoveryMax;
+	int						m_MeleeCurrentRiposteRecovery;
 
 	/**
 	* Correspondence between melee type and string name suffix of the action

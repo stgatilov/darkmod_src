@@ -170,6 +170,7 @@ extern idCVar cv_drag_encumber_maxmass;
 extern idCVar cv_drag_encumber_max;
 extern idCVar cv_dragged_item_highlight;
 extern idCVar cv_melee_debug;
+extern idCVar cv_melee_state_debug;
 extern idCVar cv_melee_mouse_thresh;
 extern idCVar cv_melee_mouse_decision_time;
 extern idCVar cv_melee_mouse_slowview;

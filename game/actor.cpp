@@ -569,6 +569,9 @@ idActor::idActor( void ) {
 	m_MeleeParryRecoveryMin				= 0;
 	m_MeleeParryRecoveryMax				= 0;
 	m_MeleeCurrentParryRecovery			= 0;
+	m_MeleeRiposteRecoveryMin			= 0;
+	m_MeleeRiposteRecoveryMax			= 0;
+	m_MeleeCurrentRiposteRecovery		= 0;
 
 	state				= NULL;
 	idealState			= NULL;
@@ -693,6 +696,8 @@ void idActor::Spawn( void )
 	m_MeleeAttackLongRecoveryMax		= spawnArgs.GetInt("melee_attack_long_recovery_max");
 	m_MeleeParryRecoveryMin				= spawnArgs.GetInt("melee_parry_recovery_min");
 	m_MeleeParryRecoveryMax				= spawnArgs.GetInt("melee_parry_recovery_max");
+	m_MeleeRiposteRecoveryMin			= spawnArgs.GetInt("melee_riposte_recovery_min");
+	m_MeleeRiposteRecoveryMax			= spawnArgs.GetInt("melee_riposte_recovery_max");
 
 	LoadAF();
 
@@ -1015,6 +1020,9 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_MeleeParryRecoveryMin );
 	savefile->WriteInt( m_MeleeParryRecoveryMax );
 	savefile->WriteInt( m_MeleeCurrentParryRecovery );
+	savefile->WriteInt( m_MeleeRiposteRecoveryMin );
+	savefile->WriteInt( m_MeleeRiposteRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentRiposteRecovery );
 
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
@@ -1179,6 +1187,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeParryRecoveryMin );
 	savefile->ReadInt( m_MeleeParryRecoveryMax );
 	savefile->ReadInt( m_MeleeCurrentParryRecovery );
+	savefile->ReadInt( m_MeleeRiposteRecoveryMin );
+	savefile->ReadInt( m_MeleeRiposteRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentRiposteRecovery );
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -4388,6 +4399,7 @@ void idActor::Event_MeleeAttackStarted( int num )
 	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
 
 	// randomize minimum times to events after this one
+	// TODO: Rewrite this so we only set the times we need according to the result?
 	float fRand = gameLocal.random.RandomFloat();
 	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
 	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
@@ -4403,11 +4415,13 @@ void idActor::Event_MeleeParryStarted( int num )
 	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
 
 	// randomize minimum times to events after this one
+	// TODO: Rewrite this so we only set what we need based on result?
 	float fRand = gameLocal.random.RandomFloat();
 	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
 	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
 	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
 	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
+	m_MeleeCurrentRiposteRecovery = m_MeleeRiposteRecoveryMin + fRand*(m_MeleeRiposteRecoveryMax - m_MeleeRiposteRecoveryMin);
 }
 
 void idActor::Event_MeleeActionHeld()
