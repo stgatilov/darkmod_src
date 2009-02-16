@@ -516,6 +516,9 @@ idAI::idAI()
 	m_AlertGraceCountLimit = 0;
 	m_AudThreshold = 0.0f;
 
+	m_PlayerRelationship = 0;
+	m_bPlayerRelationshipActive = false;
+
 	/**
 	* Darkmod: No hiding spot search by default
 	*/
@@ -1618,6 +1621,11 @@ void idAI::Spawn( void )
 		m_KoAlertDotHoriz = m_KoDotHoriz;
 
 	// ================== End KO setup ====================
+
+	// Sneak attack setup
+	tempc1 = spawnArgs.GetString("sneak_attack_alert_state");
+	m_SneakAttackThresh = spawnArgs.GetFloat( va("alert_thresh%s", tempc1), va("%f",idMath::INFINITY) );
+	m_SneakAttackMult = spawnArgs.GetFloat( "sneak_attack_mult", "1.0" );
 
 	BecomeActive( TH_THINK );
 
@@ -8683,7 +8691,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int lo
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
+	if( AI_AlertLevel >= spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
 	{
 		// abort KO if the AI is immune when alerted
 		if( m_bKoAlertImmune )
@@ -9871,4 +9879,14 @@ void idAI::GetUp()
 
 	CallScriptFunctionArgs("Get_Up", true, 0, "e", this);
 	SetWaitState("get_up");
+}
+
+float idAI::StealthDamageMult()
+{
+	// multiply up if unalert
+	// Damage to unconscious AI also considered sneak attack
+	if( AI_AlertLevel < m_SneakAttackThresh || IsKnockedOut() )
+		return m_SneakAttackMult;
+	else
+		return 1.0;
 }

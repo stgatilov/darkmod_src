@@ -535,6 +535,8 @@ idActor::idActor( void ) {
 	rank				= 0;
 	m_fovDotHoriz		= 0.0f;
 	m_fovDotVert		= 0.0f;
+	m_SneakAttackMult	= 1.0f;
+	m_SneakAttackThresh	= idMath::INFINITY;
 	eyeOffset.Zero();
 	pain_debounce_time	= 0;
 	pain_delay			= 0;
@@ -980,6 +982,9 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( damageScale[ i ] );
 	}
 
+	savefile->WriteFloat( m_SneakAttackThresh );
+	savefile->WriteFloat( m_SneakAttackMult );
+
 	savefile->WriteBool( use_combat_bbox );
 	head.Save( savefile );
 
@@ -1127,6 +1132,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	for( i = 0; i < num; i++ ) {
 		savefile->ReadFloat( damageScale[ i ] );
 	}
+
+	savefile->ReadFloat( m_SneakAttackThresh );
+	savefile->ReadFloat( m_SneakAttackMult );
 
 	savefile->ReadBool( use_combat_bbox );
 	head.Restore( savefile );
@@ -2769,6 +2777,9 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	int damage = static_cast<int>(damageDef->GetInt( "damage" ) * damageScale);
 
 	damage = GetDamageForLocation( damage, location );
+
+	// apply stealth damage multiplier - only active for derived AI class
+	damage *= StealthDamageMult();
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 

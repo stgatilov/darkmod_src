@@ -458,6 +458,11 @@ public:
 	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
 
 	/**
+	* Return a damage multiplier if a sneak attack has occurred
+	**/
+	virtual float			StealthDamageMult( void );
+
+	/**
 	* Ishtvan: Overload AI target changing to re-initialize movement tasks
 	**/
 	virtual void			RemoveTarget(idEntity* target);
@@ -493,13 +498,6 @@ public:
 	idScriptBool			AI_CROUCH;
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_CREEP;
-
-	/****************************************************************************************
-	*
-	*	Added By Rich
-	*
-	****************************************************************************************/
-	//virtual bool Collide( const trace_t &collision, const idVec3 &velocity );
 
 	/****************************************************************************************
 	*
@@ -880,6 +878,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* because visual alerts do not increase in magnitude but just come in more rapidly
 	**/
 	int						m_AlertGraceCountLimit;
+
+	/**
+	* Ishtvan: Individual relationship with the player
+	* and boolean for determning when this should be used instead of team relationship
+	* NOT YET IMPLEMENTED
+	**/
+	int						m_PlayerRelationship;
+	bool					m_bPlayerRelationshipActive;
 
 	/**
 	 * greebo: This is the message "outbox" of an AI. During sound propagation
