@@ -4508,8 +4508,9 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bCanParry );
 	savefile->ReadBool( m_bCanParryAll );
 
-	int num = m_attacks.Num();
+	int num;
 	savefile->ReadInt( num );
+	m_attacks.SetNum( num );
 	for( int j =0; j < num; j++ )
 	{
 		savefile->ReadInt( i );
