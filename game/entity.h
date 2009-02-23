@@ -831,7 +831,7 @@ public:
 
 	/**
 	* Returns an entity pointer for a given index of the attachment array.
-	* Returns NULL if no such named attachment exists on this entity.
+	* Returns NULL if no such named attachment exists directly on this entity.
 	**/
 	virtual idEntity *GetAttachment( int ind );
 
@@ -841,6 +841,13 @@ public:
 	* of the m_Attachments array.
 	**/
 	virtual int	GetAttachmentIndex( const char *AttName );
+
+	/**
+	* Returns an entity pointer for a given attachment name.
+	* Returns NULL if no such named attachment exists on this entity,
+	* or on any entity attached to this entity.
+	**/
+	virtual idEntity *GetAttachmentRecursive( const char *AttName );
 
 
 	/**

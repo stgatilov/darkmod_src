@@ -8543,12 +8543,19 @@ int idEntity::GetAttachmentIndex( const char *AttName )
 
 idEntity *idEntity::GetAttachment( const char *AttName )
 {
-	CAttachInfo *AttInfo = GetAttachInfo( AttName );
+	/* tels: use GetAttachmentIndex() to bypass GetAttachInfo() */
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+		return m_Attachments[ind].ent.GetEntity();
+	else
+		return NULL;
+
+	/*CAttachInfo *AttInfo = GetAttachInfo( AttName );
 
 	if( AttInfo )
 		return AttInfo->ent.GetEntity();
 	else
-		return NULL;
+		return NULL;*/
 }
 
 idEntity *idEntity::GetAttachment( int ind )
@@ -8581,6 +8588,21 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 		return &m_Attachments[ind];
 	else
 		return NULL;
+}
+
+idEntity *idEntity::GetAttachmentRecursive( const char *AttName )
+{
+	/* tels: Look directly at this entity for the attachment */
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+	{
+		/* we found it */
+		return m_Attachments[ind].ent.GetEntity();
+	}
+
+	/* tels: TODO: not found, look at entities bound to this entity */
+
+	return NULL;
 }
 
 void idEntity::BindNotify( idEntity *ent )
@@ -9808,7 +9830,7 @@ void idEntity::ParseAttachments( void )
 		// "SOURCE to TARGET" => "TARGET"
 		idStr Target = Link.Right( Link.Length() - (PosSpace + 4) );
 
-		gameLocal.Printf("Match: add_link '%s' to '%s'\n", Source.c_str(), Target.c_str() );
+		// gameLocal.Printf("Match: add_link '%s' to '%s'\n", Source.c_str(), Target.c_str() );
 
 		// If the source contains ":attached:name", split it into the base entity
 		// and the attachment name:
@@ -9837,7 +9859,7 @@ void idEntity::ParseAttachments( void )
 			// else: ":attached:flame" => no entity name, so use ourself
 
 			// now find the attached entity
-			source_ent = source_ent->GetAttachment( Source_Att.c_str() );
+			source_ent = source_ent->GetAttachmentRecursive( Source_Att.c_str() );
 			if (!source_ent)
 			{
 				gameLocal.Error( "Cannot find source attachment '%s' on entity '%s'.",
@@ -9845,7 +9867,7 @@ void idEntity::ParseAttachments( void )
 			}
 			else
 			{
-				gameLocal.Printf(" Link source entity (GetAttachment): '%s'\n", source_ent->name.c_str() );
+				gameLocal.Printf(" Link source entity (GetAttachmentRecursive): '%s'\n", source_ent->name.c_str() );
 			}
 		}
 		else
@@ -9881,7 +9903,7 @@ void idEntity::ParseAttachments( void )
 			// else: ":attached:flame" => no entity name, so use ourself
 
 			// now find the attached entity by the attachment pos name:
-			idEntity *target_ent_att = target_ent->GetAttachment( Target_Att.c_str() );
+			idEntity *target_ent_att = target_ent->GetAttachmentRecursive( Target_Att.c_str() );
 			if (!target_ent_att)
 				{
 				gameLocal.Warning( "Cannot find target attachment '%s' on entity '%s'.",
@@ -9889,7 +9911,7 @@ void idEntity::ParseAttachments( void )
 				}
 			else
 				{
-				gameLocal.Printf(" Link target entity (GetAttachment): '%s'\n", target_ent->name.c_str() );
+				gameLocal.Printf(" Link target entity (GetAttachmentRecursive): '%s'\n", target_ent->name.c_str() );
 				}
 			target_ent = target_ent_att;
 		}
