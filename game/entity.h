@@ -847,7 +847,7 @@ public:
 	* Returns NULL if no such named attachment exists on this entity,
 	* or on any entity attached to this entity.
 	**/
-	virtual idEntity *GetAttachmentRecursive( const char *AttName );
+	virtual idEntity *GetAttachmentFromTeam( const char *AttName );
 
 
 	/**

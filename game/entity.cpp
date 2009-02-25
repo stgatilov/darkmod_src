@@ -8590,18 +8590,41 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 		return NULL;
 }
 
-idEntity *idEntity::GetAttachmentRecursive( const char *AttName )
+idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 {
 	/* tels: Look directly at this entity for the attachment */
 	int ind = GetAttachmentIndex(AttName);
 	if( ind >= 0 )
 	{
 		/* we found it */
+		//gameLocal.Printf(" Found entity %s at index %i\n", m_Attachments[ind].ent.GetEntity()->name.c_str(), ind);
 		return m_Attachments[ind].ent.GetEntity();
 	}
 
-	/* tels: TODO: not found, look at entities bound to this entity */
+	/* tels: not found, look at entities bound to this entity */
+	idEntity* NextEnt = this;
 
+	if ( bindMaster )
+		{
+		NextEnt = bindMaster;	
+		}
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity* AttEnt = NextEnt->GetAttachment( AttName );
+		if (AttEnt)
+		{
+			/* we found it */
+			//gameLocal.Printf(" Found entity %s at entity %s.\n", 
+			//	AttEnt->name.c_str(), NextEnt->name.c_str());
+			return AttEnt;
+		}
+	/* not found yet, get next Team member */
+	NextEnt = NextEnt->GetNextTeamEntity();
+	}
+
+	/* not found at all */
 	return NULL;
 }
 
@@ -9859,22 +9882,23 @@ void idEntity::ParseAttachments( void )
 			// else: ":attached:flame" => no entity name, so use ourself
 
 			// now find the attached entity
-			source_ent = source_ent->GetAttachmentRecursive( Source_Att.c_str() );
+			source_ent = source_ent->GetAttachmentFromTeam( Source_Att.c_str() );
 			if (!source_ent)
 			{
-				gameLocal.Error( "Cannot find source attachment '%s' on entity '%s'.",
+				gameLocal.Warning( "Cannot find source attachment '%s' on entity '%s'.",
 					Source_Att.c_str(), Source.c_str() );
 			}
 			else
 			{
-				gameLocal.Printf(" Link source entity (GetAttachmentRecursive): '%s'\n", source_ent->name.c_str() );
+				//gameLocal.Printf(" Link source entity (GetAttachmentFromTeam): '%s'\n", source_ent->name.c_str() );
 			}
 		}
 		else
 		{
 			// source is just an entity name
 			source_ent = gameLocal.FindEntity( Source );
-			gameLocal.Printf(" Link source entity (Entity): '%s'\n", source_ent->name.c_str() );
+			//if (source_ent)
+			//		gameLocal.Printf(" Link source entity (Entity): '%s'\n", source_ent->name.c_str() );
 		}
 
 		// If the target contains ":attached:name", split it into the base entity
@@ -9903,30 +9927,39 @@ void idEntity::ParseAttachments( void )
 			// else: ":attached:flame" => no entity name, so use ourself
 
 			// now find the attached entity by the attachment pos name:
-			idEntity *target_ent_att = target_ent->GetAttachmentRecursive( Target_Att.c_str() );
+			idEntity *target_ent_att = target_ent->GetAttachmentFromTeam( Target_Att.c_str() );
 			if (!target_ent_att)
-				{
+			{
 				gameLocal.Warning( "Cannot find target attachment '%s' on entity '%s'.",
 					Target_Att.c_str(), target_ent->name.c_str() );
-				}
+			}
 			else
-				{
-				gameLocal.Printf(" Link target entity (GetAttachmentRecursive): '%s'\n", target_ent->name.c_str() );
-				}
+			{
+				//gameLocal.Printf(" Link target entity (GetAttachmentFromTeam): '%s'\n", target_ent->name.c_str() );
+			}
 			target_ent = target_ent_att;
 		}
 		else
 		{
 			// target is just an entity name
 			target_ent = gameLocal.FindEntity( Target );
-			gameLocal.Printf(" Link target entity (Entity): '%s'\n", target_ent->name.c_str() );
+			//if (target_ent)
+			//	gameLocal.Printf(" Link target entity (Entity): '%s'\n", target_ent->name.c_str() );
 		}
 
 		// now that we have entities for source and target, add the link
 		if ( source_ent && target_ent )
 		{
-			gameLocal.Printf(" Adding link from '%s' to '%s'\n", source_ent->name.c_str(), target_ent->name.c_str() );
+			//gameLocal.Printf(" add_link from '%s' to '%s'\n", source_ent->name.c_str(), target_ent->name.c_str() );
 			source_ent->AddTarget( target_ent );
+		}
+		else
+		{
+			// tels: TODO: post an event for later adding
+			if ( !target_ent )
+				gameLocal.Warning( "Cannot find target entity '%s' for add_link.", Target.c_str() );
+			if ( !source_ent )
+				gameLocal.Warning( "Cannot find source entity '%s' for add_link.", Source.c_str() );
 		}
 
 		// do we have another one?
