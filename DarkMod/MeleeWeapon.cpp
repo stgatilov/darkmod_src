@@ -323,12 +323,18 @@ void CMeleeWeapon::Think( void )
 
 void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 {
+	CMeleeStatus *pStatus = &m_Owner.GetEntity()->m_MeleeStatus;
+	CMeleeStatus *pOthStatus = &other->GetOwner()->m_MeleeStatus;
+
 	EMeleeType otherType = other->GetMeleeType();
 	if( !(m_MeleeType == MELEETYPE_UNBLOCKABLE)
 			&& (otherType == MELEETYPE_BLOCKALL || otherType == m_MeleeType ) )
 	{
 		// parry was succesful
 		// TODO: Play bounce animation or reverse attack animation?
+
+		// message the attacking AI
+		pStatus->m_ActionResult = MELEERESULT_AT_PARRIED;
 		DeactivateAttack();
 
 		// Hack: Play metal sound for now
@@ -336,6 +342,11 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 		StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
 		// TODO: Propagate sound to AI
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Parry was successful\r");
+
+		// update the AI that parried
+		// TODO: What happens if they decide to keep parrying, should result
+		// change back to IN_PROGRESS?
+		pOthStatus->m_ActionResult = MELEERESULT_PAR_BLOCKED;
 
 		if (other->m_bParryStopOnSuccess)
 			other->DeactivateParry();
@@ -346,6 +357,7 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Parry failed, attack type was %d, parry type was %d\r", m_MeleeType, other->GetMeleeType() );
 
+		pOthStatus->m_ActionResult = MELEERESULT_PAR_FAILED;
 		// Try disabling this parry now that it has failed
 		other->DeactivateParry();
 		// May run into problems later when multiple opponents are attacking,
@@ -517,14 +529,20 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		// Direction of the velocity of point that hit (renamed it for brevity)
 		idVec3 dir = PointVelDir;
 
-		idEntity *AttachOwner(NULL);
+		idActor *AttachOwner(NULL);
 		idEntity *OthBindMaster(NULL);
 		if( other->IsType(idAFAttachment::Type) )
-			AttachOwner = static_cast<idAFAttachment *>(other)->GetBody();
+		{
+			idEntity *othBody = static_cast<idAFAttachment *>(other)->GetBody();
+			if( othBody->IsType(idActor::Type) )
+				AttachOwner = static_cast<idActor *>(othBody);
+		}
 		// Also check for any object bound to an actor (helmets, etc)
 		else if( (OthBindMaster = other->GetBindMaster()) != NULL
 					&& OthBindMaster->IsType(idActor::Type) )
-			AttachOwner = OthBindMaster;
+			AttachOwner = static_cast<idActor *>(OthBindMaster);
+
+		CMeleeStatus *pStatus = &m_Owner.GetEntity()->m_MeleeStatus;
 
 		// Check if we hit a melee parry or held object 
 		// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything except the world)
@@ -559,6 +577,9 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				// TODO: Message the grabber that the grabbed object has been hit
 				// So that it can fly out of player's hands if desired
+				
+				// update AI status (consider this a miss)
+				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
 
 				// TODO: Message the attacking AI to play a bounce off animation if appropriate
 
@@ -569,6 +590,9 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held object (this shouldn't normally happen).\r");
 				MeleeCollision( other, dir, &tr, location );
 
+				// update AI status (consider this a miss)
+				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+
 				DeactivateAttack();
 			}
 		}
@@ -576,21 +600,33 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		else if( other->IsType(idActor::Type) || AttachOwner != NULL )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit actor or part of actor %s\r", other->name.c_str());
+			
+			idActor *owner = m_Owner.GetEntity();
+			idActor *otherAct;
+
+			if( AttachOwner )
+				otherAct = AttachOwner;
+			else
+				otherAct = static_cast<idActor *>(other);
+
 			// Don't do anything if we hit our own AF attachment
-			if( AttachOwner != m_Owner.GetEntity() )
+			// AI also don't do damage to friendlies/neutral
+			if( AttachOwner != owner 
+				&& !(owner->IsType(idAI::Type) && !(static_cast<idAI *>(owner)->IsEnemy(otherAct))) )
 			{
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
 				// TODO: Scale damage with instantaneous velocity of the blade?
 				MeleeCollision( other, dir, &tr, location );
 
 				// apply a LARGE tactile alert to AI
-				if( other->IsType(idAI::Type) )
-					static_cast<idAI *>(other)->TactileAlert( GetOwner(), 100 );
-				else if( AttachOwner && AttachOwner->IsType(idAI::Type) )
-					static_cast<idAI *>(AttachOwner)->TactileAlert( GetOwner(), 100 );
+				if( otherAct->IsType(idAI::Type) )
+					static_cast<idAI *>(otherAct)->TactileAlert( GetOwner(), 100 );
+
+				// update AI status
+				// TODO: Check if we hit a friendly, maybe cheat and don't hit friendlies
+				pStatus->m_ActionResult = MELEERESULT_AT_HIT;
 
 				DeactivateAttack();
-				// TODO: Message owner AI that they hit an AI
 			}
 			else
 			{
@@ -608,7 +644,11 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			// keep the attack going if the object hit is a moveable below a certain mass
 			// TODO: Handle moveables bound to other things and use the total mass of the system?
 			if( !( other->IsType(idMoveable::Type) && other->GetPhysics()->GetMass() < m_StopMass ) )
-			DeactivateAttack();
+			{
+				// message the AI, consider this a miss
+				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+				DeactivateAttack();
+			}
 		}
 	}
 }

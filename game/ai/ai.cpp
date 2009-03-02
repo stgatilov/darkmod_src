@@ -5263,13 +5263,15 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	Unbind();
 
+	idStr DeathSound = "snd_death";
+
 	if ( StartRagdoll() )
 	{
 		if( MouthIsUnderwater() )
-			StartSound( "snd_death_liquid", SND_CHANNEL_VOICE, 0, false, NULL );
-		else
-			StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+			DeathSound = "snd_death_liquid";
 	}
+
+	StartSound( DeathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
 
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here

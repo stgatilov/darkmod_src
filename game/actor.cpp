@@ -455,6 +455,8 @@ const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
 const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
 const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
 const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
+const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
+const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", NULL, 'd' );
 const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
 const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
 
@@ -506,6 +508,8 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_MeleeActionHeld,			idActor::Event_MeleeActionHeld )
 	EVENT( AI_MeleeActionReleased,		idActor::Event_MeleeActionReleased )
 	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
+	EVENT( AI_GetMeleeResult,			idActor::Event_GetMeleeResult )
+	EVENT( AI_GetMeleeLastActTime,		idActor::Event_GetMeleeLastActTime )
 	EVENT( AI_MeleeBestParry,			idActor::Event_MeleeBestParry )
 	EVENT( AI_MeleeNameForNum,			idActor::Event_MeleeNameForNum )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
@@ -4393,6 +4397,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 
 void idActor::Event_MeleeAttackStarted( int num )
 {
+	m_MeleeStatus.m_ActionResult = MELEERESULT_IN_PROGRESS;
 	m_MeleeStatus.m_ActionState = MELEEACTION_ATTACK;
 	m_MeleeStatus.m_ActionType = (EMeleeType) num;
 	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
@@ -4409,6 +4414,7 @@ void idActor::Event_MeleeAttackStarted( int num )
 
 void idActor::Event_MeleeParryStarted( int num )
 {
+	m_MeleeStatus.m_ActionResult = MELEERESULT_IN_PROGRESS;
 	m_MeleeStatus.m_ActionState = MELEEACTION_PARRY;
 	m_MeleeStatus.m_ActionType = (EMeleeType) num;
 	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
@@ -4441,6 +4447,16 @@ void idActor::Event_MeleeActionFinished()
 	m_MeleeStatus.m_ActionState = MELEEACTION_READY;
 	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
 	m_MeleeStatus.m_LastActTime = gameLocal.time;
+}
+
+void idActor::Event_GetMeleeResult()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionResult );
+}
+
+void idActor::Event_GetMeleeLastActTime()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_LastActTime );
 }
 
 // ========== CMeleeStatus implementation =========
@@ -4477,6 +4493,7 @@ void CMeleeStatus::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_NextAttTime );
 	savefile->WriteInt( m_NextParTime );
 	savefile->WriteInt( m_ActionResult );
+	savefile->WriteBool( m_bWasHit );
 
 	savefile->WriteBool( m_bCanParry );
 	savefile->WriteBool( m_bCanParryAll );
@@ -4487,6 +4504,7 @@ void CMeleeStatus::Save( idSaveGame *savefile ) const
 	{
 		savefile->WriteInt( m_attacks[i] );
 	}
+	savefile->WriteFloat( m_range );
 }
 
 void CMeleeStatus::Restore( idRestoreGame *savefile )
@@ -4504,6 +4522,7 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( m_NextParTime );
 	savefile->ReadInt( i );
 	m_ActionResult = (EMeleeResult) i;
+	savefile->ReadBool( m_bWasHit );
 
 	savefile->ReadBool( m_bCanParry );
 	savefile->ReadBool( m_bCanParryAll );
@@ -4516,4 +4535,5 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( i );
 		m_attacks[j] = (EMeleeType) i;
 	}
+	savefile->ReadFloat( m_range );
 }
