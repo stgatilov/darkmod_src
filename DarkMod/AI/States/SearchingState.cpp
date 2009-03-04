@@ -64,6 +64,10 @@ void SearchingState::Init(idAI* owner)
 	{
 		owner->GetUp();
 	}
+	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->GetUpFromLyingDown();
+	}
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;

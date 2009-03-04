@@ -162,7 +162,7 @@ void IdleState::Think(idAI* owner)
 
 		}
 	}
-	else if (_startSitting && owner->GetMoveType() != MOVETYPE_SIT)
+	else if (_startSitting && owner->GetMoveType() != MOVETYPE_SIT && waitState != "sit_down")
 	{
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
