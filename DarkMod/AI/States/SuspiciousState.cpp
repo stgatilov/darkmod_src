@@ -68,6 +68,11 @@ void SuspiciousState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+	if (owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->GetUpFromLyingDown();
+	}
 	
 	if (gameLocal.random.RandomFloat() > 0.5f)
 	{

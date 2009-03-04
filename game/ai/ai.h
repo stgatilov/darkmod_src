@@ -472,6 +472,9 @@ public:
 	void SitDown();
 	void GetUp();
 
+	void LayDown();
+	void GetUpFromLyingDown();
+
 public:
 	/**
 	* DarkMod AI Member Vars

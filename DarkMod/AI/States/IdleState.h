@@ -45,6 +45,7 @@ public:
 protected:
 
 	bool _startSitting;
+	bool _startSleeping;
 
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);

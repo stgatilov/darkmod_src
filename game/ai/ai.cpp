@@ -1891,8 +1891,17 @@ void idAI::Think( void )
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
+				// moving and turning not allowed
 				SittingMove();
 				CheckBlink();
+				break;
+
+			case MOVETYPE_SLEEP :
+				// static monsters
+				UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				SittingMove();
 				break;
 
 			case MOVETYPE_SLIDE :
@@ -3283,6 +3292,10 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	if (GetMoveType() == MOVETYPE_SIT)
 	{
 		GetUp();
+	}
+	else if (GetMoveType() == MOVETYPE_SLEEP)
+	{
+		GetUpFromLyingDown();
 	}
 
 	return true;
@@ -9882,6 +9895,32 @@ void idAI::GetUp()
 	CallScriptFunctionArgs("Get_Up", true, 0, "e", this);
 	SetWaitState("get_up");
 }
+
+
+void idAI::LayDown()
+{
+	idStr waitState(WaitState());
+	if (waitState == "sit_down" || waitState == "lay_down")
+	{
+		return;
+	}
+	CallScriptFunctionArgs("Lay_Down", true, 0, "e", this);
+	SetWaitState("lay_down");
+
+}
+
+void idAI::GetUpFromLyingDown()
+{
+	idStr waitState(WaitState());
+	if (waitState == "get_up" || waitState == "get_up_from_lying_down")
+	{
+		return;
+	}
+
+	CallScriptFunctionArgs("Get_Up_From_Lying", true, 0, "e", this);
+	SetWaitState("get_up_from_lying_down");
+}
+
 
 float idAI::StealthDamageMult()
 {

@@ -122,8 +122,11 @@ void ObservantState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 	
-	// Let the AI check its senses
-	owner->PerformVisualScan();
+	if (owner->GetMoveType() != MOVETYPE_SLEEP)
+	{
+		// Let the AI check its senses
+		owner->PerformVisualScan();
+	}
 }
 
 StatePtr ObservantState::CreateInstance()
