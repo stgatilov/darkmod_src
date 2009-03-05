@@ -16,7 +16,7 @@ static bool init_version = FileVersionList("$Id: PathSleepTask.cpp 3086 2008-12-
 #include "PathSleepTask.h"
 #include "PathTurnTask.h"
 #include "WaitTask.h"
-#include "RepeatedbarkTask.h"
+#include "RepeatedBarkTask.h"
 #include "../States/IdleSleepState.h"
 #include "../Library.h"
 
