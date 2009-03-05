@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "IdleState.h"
 #include "AlertIdleState.h"
+#include "IdleSleepState.h"
 #include "../Memory.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/PatrolTask.h"
@@ -63,6 +64,9 @@ void IdleState::Init(idAI* owner)
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
 
+	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
+	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
+
 	if (owner->HasSeenEvidence())
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
@@ -76,10 +80,6 @@ void IdleState::Init(idAI* owner)
 
 	owner->SheathWeapon();
 
-	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
-	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
-
-
 	// Initialise the animation state
 	if (_startSitting && memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
@@ -89,8 +89,7 @@ void IdleState::Init(idAI* owner)
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sleep", 0);
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sleep", 0);
+		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SIT)
 	{
@@ -105,17 +104,11 @@ void IdleState::Init(idAI* owner)
 
 	// The action subsystem plays the idle anims (scratching, yawning...)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	if (owner->GetMoveType() != MOVETYPE_SLEEP)
-	{
-		owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
-	}
+	owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	if (owner->GetMoveType() != MOVETYPE_SLEEP)
-	{
-		owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
-	}
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
 	InitialiseMovement(owner);
 
@@ -143,22 +136,7 @@ void IdleState::Think(idAI* owner)
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
-			owner->LayDown();
-
-			// no more head turning, no more idle anims
-			owner->GetSubsystem(SubsysSenses)->ClearTasks();
-			owner->GetSubsystem(SubsysAction)->ClearTasks();
-
-			// stop idle barks and start sleeping sounds after delay
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(5000)));
-		
-			int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
-			int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
-
-			owner->GetSubsystem(SubsysCommunication)->QueueTask(
-				TaskPtr(new RepeatedBarkTask("snd_sleeping", idleBarkIntervalMin, idleBarkIntervalMax))
-			);
+			owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 
 		}
 	}
@@ -177,10 +155,7 @@ void IdleState::Think(idAI* owner)
 	if (!CheckAlertLevel(owner)) return;
 
 	// Let the AI check its senses
-	if (owner->GetMoveType() != MOVETYPE_SLEEP)
-	{
-		owner->PerformVisualScan();
-	}
+	owner->PerformVisualScan();
 }
 
 void IdleState::InitialiseMovement(idAI* owner)

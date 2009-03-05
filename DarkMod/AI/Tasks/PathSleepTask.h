@@ -26,8 +26,6 @@ class PathSleepTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
-	int _waitEndTime;
-
 	// Private constructor
 	PathSleepTask();
 

@@ -48,8 +48,6 @@ void AlertIdleState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
-
 	InitialiseMovement(owner);
 	InitialiseCommunication(owner);
 

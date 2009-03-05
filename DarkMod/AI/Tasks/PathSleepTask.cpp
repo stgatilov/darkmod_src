@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: PathSleepTask.cpp 3086 2008-12-
 #include "PathTurnTask.h"
 #include "WaitTask.h"
 #include "RepeatedbarkTask.h"
+#include "../States/IdleSleepState.h"
 #include "../Library.h"
 
 namespace ai
@@ -48,21 +49,13 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 		gameLocal.Error("PathSleepTask: Path Entity not set before Init()");
 	}
 
-	float waittime = path->spawnArgs.GetFloat("wait","0");
-	float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
+	idStr waitState = owner->WaitState();
 
-	if (waitmax > 0)
+	if (owner->GetMoveType() != MOVETYPE_SLEEP && waitState != "lay_down")
 	{
-		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
-	}
+		owner->LayDown();
 
-	if (waittime > 0)
-	{
-		_waitEndTime = gameLocal.time + SEC2MS(waittime);
-	}
-	else
-	{
-		_waitEndTime = -1;
+		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 	}
 }
 
@@ -84,55 +77,10 @@ bool PathSleepTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with an empty owner pointer
 	assert(owner != NULL);
 
-	idStr waitState = owner->WaitState();
-
-	if (owner->GetMoveType() != MOVETYPE_SLEEP && waitState != "lay_down")
+	if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
-		owner->LayDown();
-
-		// no more head turning, no more idle anims
-		owner->GetSubsystem(SubsysSenses)->ClearTasks();
-		owner->GetSubsystem(SubsysAction)->ClearTasks();
-
-		// stop idle barks and start sleeping sounds after delay
-		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(5000)));
-	
-		int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
-		int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
-
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new RepeatedBarkTask("snd_sleeping", idleBarkIntervalMin, idleBarkIntervalMax))
-		);
-
-	}
-
-
-	// we have waiting time set, end this task when waiting is finished
-	if (_waitEndTime >= 0)
-	{
-		if(gameLocal.time >= _waitEndTime)
-		{
-			// Exit when the waitstate is not "get up" anymore
-			if (waitState != "get_up_from_lying_down")
-			{
-				if (owner->GetMoveType() == MOVETYPE_SLEEP)
-				{
-					owner->GetUpFromLyingDown();
-				}
-				else
-				{
-					return true;
-				}
-			}
-		}
-	}
-	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
-	{
-		// no waiting time set, end this task and keep sleeping
 		return true;
 	}
-
 	return false;
 }
 
@@ -148,8 +96,6 @@ void PathSleepTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	_path.Save(savefile);
-
-	savefile->WriteInt(_waitEndTime);
 }
 
 void PathSleepTask::Restore(idRestoreGame* savefile)
@@ -157,8 +103,6 @@ void PathSleepTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_path.Restore(savefile);
-
-	savefile->ReadInt(_waitEndTime);
 }
 
 PathSleepTaskPtr PathSleepTask::CreateInstance()
