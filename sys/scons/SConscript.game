@@ -199,6 +199,7 @@ AI/States/DeadState.cpp \
 AI/States/EmergeFromCoverState.cpp \
 AI/States/FleeState.cpp \
 AI/States/FleeDoneState.cpp \
+AI/States/IdleSleepState.cpp \
 AI/States/IdleState.cpp \
 AI/States/KnockedOutState.cpp \
 AI/States/LostTrackOfEnemyState.cpp \
@@ -229,6 +230,7 @@ AI/Tasks/PathInteractTask.cpp \
 AI/Tasks/PathLookatTask.cpp \
 AI/Tasks/PathShowTask.cpp \
 AI/Tasks/PathSitTask.cpp \
+AI/Tasks/PathSleepTask.cpp \
 AI/Tasks/PathTurnTask.cpp \
 AI/Tasks/PathWaitForTriggerTask.cpp \
 AI/Tasks/PathWaitTask.cpp \
