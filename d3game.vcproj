@@ -946,6 +946,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\States\IdleSleepState.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\States\IdleSleepState.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\IdleState.cpp"
 						>
 					</File>
@@ -1195,6 +1203,14 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\AI\Tasks\PathSitTask.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\PathSleepTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\PathSleepTask.h"
 						>
 					</File>
 					<File
