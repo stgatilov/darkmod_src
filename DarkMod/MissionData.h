@@ -744,6 +744,9 @@ public:
 	void Event_ObjectiveComplete( int ObjIndex );
 	void Event_ObjectiveFailed( int ObjIndex );
 
+	// A new objective has been added or a previously hidden one has been shown
+	void Event_NewObjective();
+
 	void Event_MissionComplete( void );
 	void Event_MissionFailed( void );
 

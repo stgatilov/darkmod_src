@@ -947,6 +947,20 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	}
 }
 
+void CMissionData::Event_NewObjective() 
+{
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: NEW OBJECTIVE. \r");
+	gameLocal.Printf("NEW OBJECTIVE\n");
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL) return;
+
+	player->StartSound("snd_new_objective", SND_CHANNEL_ANY, 0, false, NULL);
+
+	// greebo: notify the player
+	player->SendHUDMessage("New Objective");
+}
+
 void CMissionData::Event_MissionComplete( void )
 {
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
@@ -1280,13 +1294,10 @@ void CMissionData::UnlatchObjective( int ObjIndex )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch an invalid objective index: %d \n", ObjIndex);
-		goto Quit;
+		return;
 	}
 
 	m_Objectives[ObjIndex].m_bLatched = false;
-
-Quit:
-	return;
 }
 
 void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
@@ -1295,86 +1306,87 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch a component of invalid objective index: %d \n", ObjIndex);
-		goto Quit;
+		return;
 	}
 
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch invalid component: %d of objective: %d \n", (CompIndex+1), (ObjIndex+1) );
-		goto Quit;
+		return;
 	}
 
 	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
-
-Quit:
-	return;
 }
 
 void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
 {
 	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
 	{
-		// log error
-		goto Quit;
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjVisible: Invalid objective index: %d\r", ObjIndex);
+		return;
 	}
+
+	bool wasVisible = m_Objectives[ObjIndex].m_bVisible;
+
+	// Set the new state
 	m_Objectives[ObjIndex].m_bVisible = bVal;
 
-Quit:
-	return;
+	// greebo: If we show a previously hidden objective, notify the player
+	if (bVal && !wasVisible)
+	{
+		Event_NewObjective(); 
+	}
 }
 
 void CMissionData::Event_SetObjMandatory( int ObjIndex, bool bVal )
 {
 	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
 	{
-		// log error
-		goto Quit;
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjMandatory: Invalid objective index: %d\r", ObjIndex);
+		return;
 	}
-	m_Objectives[ObjIndex].m_bMandatory = bVal;
 
-Quit:
-	return;
+	m_Objectives[ObjIndex].m_bMandatory = bVal;
 }
 
 void CMissionData::Event_SetObjOngoing( int ObjIndex, bool bVal )
 {
 	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
 	{
-		// log error
-		goto Quit;
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjOngoing: Invalid objective index: %d\r", ObjIndex);
+		return;
 	}
-	m_Objectives[ObjIndex].m_bOngoing = bVal;
 
-Quit:
-	return;
+	m_Objectives[ObjIndex].m_bOngoing = bVal;
 }
 
 void CMissionData::Event_SetObjEnabling(int ObjIndex, idStr StrIn)
 {
-	idLexer				src;
-	idToken				token;
-	idList<int>			ObjList;
-
 	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
 	{
-		// log error
-		goto Quit;
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjEnabling: Invalid objective index: %d\r", ObjIndex);
+		return;
 	}
 
 	// parse in the int list of "enabling objectives"
+	idLexer src;
 	src.LoadMemory( StrIn.c_str(), StrIn.Length(), "" );
+
+	idToken token;
+	idList<int> ObjList;
+
 	while( src.ReadToken( &token ) )
 	{
 		if( token.IsNumeric() )
+		{
 			ObjList.Append( token.GetIntValue() );
+		}
 	}
+
 	src.FreeSource();
 
 	m_Objectives[ObjIndex].m_EnablingObjs = ObjList;
-
-Quit:
-	return;
 }
 
 // Objective parsing:
@@ -1382,7 +1394,9 @@ Quit:
 int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
 	if( !ent )
+	{
 		return m_Objectives.Num();
+	}
 
 	// greebo: pass the call further on
 	return AddObjsFromDict(ent->spawnArgs);
