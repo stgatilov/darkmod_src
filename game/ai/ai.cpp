@@ -2105,11 +2105,13 @@ idAI::LinkScriptVariables
 */
 void idAI::LinkScriptVariables( void )
 {
+	// Call the base class first
+	idActor::LinkScriptVariables();
+
 	AI_TALK.LinkTo(				scriptObject, "AI_TALK" );
 	AI_DAMAGE.LinkTo(			scriptObject, "AI_DAMAGE" );
 	AI_PAIN.LinkTo(				scriptObject, "AI_PAIN" );
 	AI_SPECIAL_DAMAGE.LinkTo(	scriptObject, "AI_SPECIAL_DAMAGE" );
-	AI_DEAD.LinkTo(				scriptObject, "AI_DEAD" );
 	AI_KNOCKEDOUT.LinkTo(		scriptObject, "AI_KNOCKEDOUT" );
 	AI_ENEMY_VISIBLE.LinkTo(	scriptObject, "AI_ENEMY_VISIBLE" );
 	AI_ENEMY_IN_FOV.LinkTo(		scriptObject, "AI_ENEMY_IN_FOV" );

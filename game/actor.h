@@ -491,6 +491,10 @@ public:
 	 */
 	virtual bool			ReEvaluateArea(int areaNum);
 
+public:
+	// Moved from player/AI to here
+	idScriptBool			AI_DEAD;
+
 protected:
 
 	/*	CrashLand variables	Added by Richard Day	*/
@@ -620,6 +624,9 @@ protected:
 	 */
 	virtual void PlayFootStepSound(); // empty default implementation
 
+	// Links script variables (is overridden by idAI and idPlayer)
+	virtual void LinkScriptVariables();
+
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
@@ -678,6 +685,11 @@ public:
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
+
+	// greebo: Moved these from idAI to here
+	void					Event_SetHealth( float newHealth );
+	void					Event_GetHealth( void );
+
 	/**
 	* Attaches the entity and gives it the given attachment name
 	**/

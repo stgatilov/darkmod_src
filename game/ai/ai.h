@@ -712,7 +712,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptBool			AI_DAMAGE;
 	idScriptBool			AI_PAIN;
 	idScriptFloat			AI_SPECIAL_DAMAGE;
-	idScriptBool			AI_DEAD;
+	//idScriptBool			AI_DEAD; // is defined on idActor now
 	idScriptBool			AI_KNOCKEDOUT;
 	idScriptBool			AI_ENEMY_VISIBLE;
 	idScriptBool			AI_ENEMY_IN_FOV;
@@ -1628,8 +1628,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_BecomeNonSolid( void );
 	void					Event_BecomeRagdoll( void );
 	void					Event_StopRagdoll( void );
-	void					Event_SetHealth( float newHealth );
-	void					Event_GetHealth( void );
 	void					Event_AllowDamage( void );
 	void					Event_IgnoreDamage( void );
 	void					Event_GetCurrentYaw( void );

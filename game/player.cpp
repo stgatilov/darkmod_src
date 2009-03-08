@@ -465,7 +465,11 @@ idPlayer::LinkScriptVariables
 set up conditions for animation
 ==============
 */
-void idPlayer::LinkScriptVariables( void ) {
+void idPlayer::LinkScriptVariables()
+{
+	// Call the base class first
+	idActor::LinkScriptVariables();
+
 	AI_FORWARD.LinkTo(			scriptObject, "AI_FORWARD" );
 	AI_BACKWARD.LinkTo(			scriptObject, "AI_BACKWARD" );
 	AI_STRAFE_LEFT.LinkTo(		scriptObject, "AI_STRAFE_LEFT" );
@@ -475,7 +479,6 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_WEAPON_FIRED.LinkTo(		scriptObject, "AI_WEAPON_FIRED" );
 	AI_WEAPON_BLOCKED.LinkTo(	scriptObject, "AI_WEAPON_BLOCKED" );
 	AI_JUMP.LinkTo(				scriptObject, "AI_JUMP" );
-	AI_DEAD.LinkTo(				scriptObject, "AI_DEAD" );
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH" );
 	AI_ONGROUND.LinkTo(			scriptObject, "AI_ONGROUND" );
 	AI_ONLADDER.LinkTo(			scriptObject, "AI_ONLADDER" );
