@@ -1158,6 +1158,10 @@ private:
 	void					Event_GetInventoryOverlay(void);
 
 	void					Event_PlayStartSound( void );
+
+	// greebo: Gets posted when the player is dead and the "custom_death_delay" spawnarg is set to a positive value on worldspawn
+	void					Event_CustomDeath();
+
 	void					Event_MissionFailed( void );
 	void					Event_LoadDeathMenu( void );
 
