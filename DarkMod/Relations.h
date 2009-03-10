@@ -165,5 +165,22 @@ protected:
 
 };
 
+/**
+ * greebo: A spawnable relation entity. At spawn time, this entity copies its 
+ * values to the global relations manager. 
+ *
+ * After spawning, this entity removes itself from the game.
+ */
+class CRelationsEntity : 
+	public idEntity
+{
+public:
+	CLASS_PROTOTYPE( CRelationsEntity );
+
+	CRelationsEntity();
+
+	void Spawn();
+};
+
 
 #endif

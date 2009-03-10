@@ -333,7 +333,9 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 			m_sndAreas[i].portals[k] = in->m_sndAreas[i].portals[k];
 
 		m_sndAreas[i].portalDists = new CMatRUT<float>;
-		m_sndAreas[i].portalDists->Copy( in->m_sndAreas[i].portalDists );
+
+		// Copy the values
+		*m_sndAreas[i].portalDists = *(in->m_sndAreas[i].portalDists);
 	}
 
 
@@ -901,7 +903,7 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 		
 				// Obtain loss at this portal and store in temp var
 				tempDist = NextAreas[j].curDist;
-				AddedDist = *pSndAreas->portalDists->GetRev( LocalPort, i );
+				AddedDist = pSndAreas->portalDists->GetRev( LocalPort, i );
 				tempDist += AddedDist;
 
 				tempAtt = NextAreas[j].curAtt;
@@ -1573,7 +1575,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, float MaxDist, int 
 		
 				// Obtain loss at this portal and store in temp var
 				tempDist = NextAreas[j].curDist;
-				AddedDist = *pSndAreas->portalDists->GetRev( LocalPort, i );
+				AddedDist = pSndAreas->portalDists->GetRev( LocalPort, i );
 				tempDist += AddedDist;
 
 				tempAtt = NextAreas[j].curAtt;

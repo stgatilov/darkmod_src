@@ -10,143 +10,81 @@
 * 
 * CLASS DESCRIPTION: 
 * CMatrixSq is a container for square matrices (n x n)
-* The 2d matrices are unwrapped into a 1d private array
+* 
+* Implemented by means of boost::matrix.
 *
 **********************************************************/
 
 #ifndef MATRIXSQ_H
 #define MATRIXSQ_H
 
-template <class type>
-class CMatrixSq		{
+#include <boost/numeric/ublas/matrix.hpp>
 
+template <class Type>
+class CMatrixSq :
+	protected boost::numeric::ublas::matrix<Type> 
+{
 public:
+	// Default constructor
+	CMatrixSq();
 
-		CMatrixSq(void);
-		CMatrixSq( const CMatrixSq<type> &in );
-		explicit CMatrixSq(int dim);
-		virtual ~CMatrixSq<type>(void);
-		CMatrixSq<type> &operator=( const CMatrixSq<type> &in );
+	// Constructor taking the dimension as argument
+	explicit CMatrixSq(std::size_t dim);
 
-		/**
-		* Copy is designed for use when the external class is
-		* using only a pointer to the matrix (eg, when forward-declaring)
-		* and wants to copy one matrix to another.
-		**/
+	virtual ~CMatrixSq<Type>();
 
-		void Copy( const CMatrixSq<type> *input );
-		
-		/**
-		* Initialize the square matrix to hold dim elements.
-		* NOTE: A 1x1 matrix has dimension 1, NOT zero!
-		**/
-		bool Init(int dim);
+	/**
+	* Initialize the square matrix to hold dim elements.
+	* NOTE: A 1x1 matrix has dimension 1, NOT zero!
+	**/
+	bool Init(std::size_t dim);
 
-		void Clear( void );
+	void Clear();
 
-		/** 
-		 * greebo: Fills the whole matrix with the given value.
-		 * Does not change matrix dimensions.
-		 */
-		void Fill(const type& src);
+	/** 
+	 * greebo: Fills the whole matrix with the given value.
+	 * Does not change matrix dimensions.
+	 */
+	void Fill(const Type& src);
 
-		/**
-		* Set the appropriate entry to the provided type
-		*
-		* The following applies to derived class CMatRUT only:
-		* NOTE: The indices provided here are those of a normal matrix
-		* HOWEVER, columns must be greater than rows due to matrix being
-		* right upper triangular (entries with row > col are empty)
-		* 
-		* CsndPropLoader handles this with another function that reverses the
-		* indices if row is greater than column.
-		**/
-		bool Set(int row, int col, const type &src);
+	/**
+	* Set the appropriate entry to the provided type
+	*
+	* The following applies to derived class CMatRUT only:
+	* NOTE: The indices provided here are those of a normal matrix
+	* HOWEVER, columns must be greater than rows due to matrix being
+	* right upper triangular (entries with row > col are empty)
+	* 
+	* CsndPropLoader handles this with another function that reverses the
+	* indices if row is greater than column.
+	**/
+	bool Set(std::size_t row, std::size_t col, const Type& src);
 
-		/**
-		* Set an element explicitly in the 1d unwrapped RUT matrix
-		**/
-		bool Set1d( int ind, const type &src );
-		
-		/**
-		* Returns a pointer to the entry for the given 2d indices
-		* Again gives an error if row > col, because this entry is empty.
-		**/
-		type *Get(int row, int col);
+	/**
+	* Returns a pointer to the entry for the given 2d indices
+	* Again gives an error if row > col, because this entry is empty.
+	**/
+	const Type& Get(std::size_t row, std::size_t col) const;
 
-		/**
-		* Returns a pointer to the entry for the given 1d index
-		**/
-		type *Get1d( int ind );
-		
-		/**
-		* Returns the dimension (eg, returns 3 for 3x3 matrix)
-		**/
-		int Dim( void );
-		
-		/**
-		* Returns number of filled elements in the RUT matrix.
-		**/
-		int NumFilled( void );
+	/**
+	* Returns the dimension (eg, returns 3 for 3x3 matrix)
+	**/
+	int Dim();
 
-		/**
-		* Returns a pointer to the first var in the list
-		* Used for internal D3 TypeInfo code
-		**/
-		type * Ptr( void );
-		
-		/**
-		* Returns true if the private member matrix has been deleted
-		**/
-		bool IsCleared( void );
+	// STL-like size operator to retrieve the matrix dimension
+	std::size_t size() const;
+	
+	/**
+	* Returns true if the private member matrix has been deleted
+	**/
+	bool IsCleared();
 
-		/**
-		* The following two functions save/restore the matrix to/from a
-		* save file.
-		**/
-
-		void SaveMatrixSq (idSaveGame *savefile);
-
-		bool RestoreMatrixSq (idRestoreGame *savefile);
-
-protected:
-
-		/**
-		* Calculate number of elements filled for a given dimension RUT matrix
-		**/
-		virtual int  NumFromDim( int dim );
-		
-		/**
-		* Returns the index in the unwrapped 1d matrix for the given 2d indices
-		**/
-		virtual int  Ind2dTo1d ( int row, int col );
-		
-		/**
-		* Save an element in the matrix to a savefile
-		* Called by SaveMatrix.
-		**/
-		void SaveElement (idSaveGame *savefile, type &Entry);
-		
-		/**
-		* Restore an element in the matrix from a savefile
-		* Called by RestoreMatrix.
-		**/
-		void ReadElement (idRestoreGame *savefile, int ind);
-
-protected:
-
-		/**
-		* Matrix dimension (eg, 3 for a 3x3 matrix)
-		**/
-		int m_dim;
-		/**
-		* number of filled elements in the RUT matrix
-		**/
-		int m_filled;
-		/**
-		* RUT matrix unwrapped into one dimension
-		**/
-		type *m_mat;
+	/**
+	* The following two functions save/restore the matrix to/from a
+	* save file.
+	**/
+	void Save(idSaveGame *savefile);
+	void Restore(idRestoreGame *savefile);
 };
 
 /********************************************************
@@ -159,39 +97,30 @@ protected:
 * Derived class of CMatrixSq.
 **********************************************************/
 
-template <class type>
-class CMatRUT : public CMatrixSq<type>  {
+template <class Type>
+class CMatRUT : 
+	public CMatrixSq<Type>
+{
 public:
+	CMatRUT() : 
+		CMatrixSq<Type>()
+	{}
 
-	CMatRUT(void) : CMatrixSq<type>() {};
-
-	explicit CMatRUT(int dim) : CMatrixSq<type>(dim) {};
-
-	virtual ~CMatRUT<type>(void);
+	explicit CMatRUT(std::size_t dim) : 
+		CMatrixSq<Type>(dim)
+	{}
 
 	/**
 	* Works like CMatrixSq::Set, except it automatically reverses the indices
 	* if row > column
 	**/
-	bool SetRev(int row, int col, type &src);
+	bool SetRev(std::size_t row, std::size_t col, Type &src);
 
 	/**
 	* Works like CMatrixSq::Get, except it automatically reverses the indices
 	* if row > column
 	**/
-	type *GetRev(int row, int col);
-
-
-protected:
-		/**
-		* Calculate number of elements filled for a given dimension RUT matrix
-		**/
-		int  NumFromDim( int dim );
-		/**
-		* Returns the index in the unwrapped 1d matrix for the given 2d indices
-		**/
-		int  Ind2dTo1d ( int row, int col );
-
+	const Type& GetRev(std::size_t row, std::size_t col) const;
 };
 
 
@@ -199,465 +128,232 @@ protected:
 * Begin CMatrixSq Implementation:
 *****************************************************************/
 
-template <class type>
-inline CMatrixSq<type>::CMatrixSq( void )
+// Default constructor
+template <class Type>
+inline CMatrixSq<Type>::CMatrixSq()
 {
-	m_dim = 0;
-	m_filled = 0;
-	m_mat = NULL;
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("CMatrixSq constructor called, set vars.\r" );
 }
 
-template <class type>
-inline CMatrixSq<type>::CMatrixSq( int dim )
+template <class Type>
+inline CMatrixSq<Type>::CMatrixSq( std::size_t dim )
 {
 	Init(dim);
 }
 
-template <class type>
-inline CMatrixSq<type>::CMatrixSq( const CMatrixSq<type> &in )
-{
-	*this = in;
-}
-
-template <class type>
-inline CMatrixSq<type>::~CMatrixSq( void )
+template <class Type>
+inline CMatrixSq<Type>::~CMatrixSq()
 {
 	Clear();
 }
 
-template <class type>
-inline CMatrixSq<type> &CMatrixSq<type>::operator=(const CMatrixSq<type> &in)
+template <class Type>
+inline void CMatrixSq<Type>::Fill(const Type& src)
 {
-	int i;
-	if( in.m_filled != m_filled )
+	// Call the assignment operator
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		Clear();
-		if (!Init( in.m_dim ) )
+		for (std::size_t j = 0; j < size1(); ++j)
 		{
-			DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Out of memory when creating RUT Loss Matrix.\r");
-			Clear();
-			goto Quit;
+			(*this)(i, j) = src;
 		}
 	}
-	m_dim = in.m_dim;
-	m_filled = in.m_filled;
-	for(i=0; i<m_filled; i++)
-		m_mat[i] = in.m_mat[i];
-Quit:
-	return *this;
 }
 
-template <class type>
-inline void CMatrixSq<type>::Fill(const type& src)
+template <class Type>
+inline bool CMatrixSq<Type>::Set(std::size_t row, std::size_t col, const Type &src )
 {
-	int num = NumFromDim( m_dim );
-	for (int i = 0; i < num; i++)
-	{
-		m_mat[i] = src;
-	}
-	m_filled = num;
-}
+	// Check bounds and resize if necessary
+	if (row >= size1() || col >= size2()) {
+		// Resize and preserve values
+		std::size_t largerDim = (row > col) ? row : col;
 
-template <class type>
-inline bool CMatrixSq<type>::Set(int row, int col, const type &src )
-{
-	bool returnval;
-	int ind;
-
-	ind = Ind2dTo1d( row, col );
-	if (ind<0)
-	{
-		returnval = false;
-	}
-	else
-	{
-		m_mat[ind] = src;
-		returnval = true;
-	}
-	return returnval;
-}
-
-template <class type>
-inline bool CMatrixSq<type>::Set1d(int ind, const type &src )
-{
-	bool returnval;
-	if (ind >= m_filled || ind < 0)
-	{
-		returnval = false;
-	}
-	else
-	{
-		m_mat[ind] = src;
-		returnval = true;
-	}
-	return returnval;
-}
-
-template <class type>
-inline type *CMatrixSq<type>::Get(int row, int col)
-{
-	type *p;
-	int ind = Ind2dTo1d( row, col );
-	
-	if ( ind < 0 )
-	{
-		// error reporting is handled by Ind2dTo1d, omitted here
-		p = NULL;
-		goto Quit;
+		resize(largerDim + 1, largerDim + 1, true);
 	}
 
-	p = &m_mat[ind];
-Quit:
-	return p;
+	// Assignment
+	(*this)(row, col) = src;
+
+	return true; // always succeeds
 }
 
-template <class type>
-inline type *CMatrixSq<type>::Get1d( int ind )
+template <class Type>
+inline const Type& CMatrixSq<Type>::Get(std::size_t row, std::size_t col) const
 {
-	type *p;
-	
-	if ( ind < 0 || ind > m_filled )
-	{
-		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access matrix with 1d index out of bounds: index %d\r", ind );
-		p = NULL;
-		goto Quit;
-	}
+	assert(row < size1() && col < size2());
 
-	p = &m_mat[ind];
-Quit:
-	return p;
+	return (*this)(row, col);
 }
 
-template <class type>
-inline int CMatrixSq<type>::Dim( void )
+template <class Type>
+inline int CMatrixSq<Type>::Dim()
 {
-	return m_dim;
+	return static_cast<int>(size1()); // size1() == size2() for CMatrixSQ
 }
 
-template <class type>
-inline int CMatrixSq<type>::NumFilled( void )
+template <class Type>
+inline std::size_t CMatrixSq<Type>::size() const
 {
-	return m_filled;
+	return size1(); // size1() == size2() for CMatrixSQ
 }
 
-template <class type>
-inline bool CMatrixSq<type>::IsCleared( void )
+template <class Type>
+inline bool CMatrixSq<Type>::IsCleared( void )
 {
-	bool returnval(false);
-	if( m_mat == NULL )
-		returnval = true;
-	return returnval;
+	return (size1() == 0);
 }
 	
-template <class type>
-inline bool CMatrixSq<type>::Init( int dim )
+template <class Type>
+inline bool CMatrixSq<Type>::Init( std::size_t dim )
 {
-	bool returnval(true);
-	int filled;
-	
-	Clear();
-	filled = NumFromDim( dim );
-	
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Initializing matrix of dimension %d with %d elements.\r", dim, filled);
-	
-	if ((m_mat = new type[filled]) == NULL)
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Initializing matrix of dimension %d with %d elements.\r", static_cast<int>(dim));
+
+	// Resize the matrix
+	resize(dim, dim);
+
+	// Zero all values
+	Fill(0);
+
+	return true;
+}
+
+template <class Type>
+inline void CMatrixSq<Type>::Clear( void )
+{
+	// Call the base method (false == don't preserve values)
+	clear();
+}
+
+template<class Type>
+inline void CMatrixSq<Type>::Save( idSaveGame *savefile )
+{
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
+
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Out of memory allocating for matrix with %d elements\r", filled);
-		returnval = false;
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			// Saveable elements must support this Save() call
+			(*this)(i,j).Save(savefile);
+		}
 	}
-	else
+}
+
+template<class Type>
+inline void CMatrixSq<Type>::Restore( idRestoreGame *savefile )
+{
+	unsigned int size = 0;
+	savefile->ReadUnsignedInt(size);
+
+	// Resize the matrix accordingly
+	resize(size, size, false);
+
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		m_dim = dim;
-		m_filled = filled;
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			// Saveable elements must support this Save() call
+			(*this)(i,j).Restore(savefile);
+		}
 	}
-
-	return returnval;
 }
 
-template <class type>
-inline void CMatrixSq<type>::Clear( void )
+// Specialisation for an integer matrix
+template<>
+inline void CMatrixSq<int>::Save( idSaveGame *savefile )
 {
-	if( m_mat != NULL )
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
+
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		delete[] m_mat;
-		m_mat = NULL;
-
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			savefile->WriteInt((*this)(i,j));
+		}
 	}
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Cleared CMatrixSq with %d elements\r", m_filled);
-	m_dim = 0;
-	m_filled = 0;
 }
 
-template< class type >
-inline type *CMatrixSq<type>::Ptr( void ) 
+// Specialisation for an integer matrix
+template<>
+inline void CMatrixSq<int>::Restore( idRestoreGame *savefile )
 {
-	return m_mat;
-}
+	unsigned int size = 0;
+	savefile->ReadUnsignedInt(size);
 
-template <class type>
-inline void CMatrixSq<type>::SaveElement ( idSaveGame *savefile, type &Entry )
-{
-	Entry->Save( savefile ); 
-}
+	// Resize the matrix accordingly
+	resize(size, size, false);
 
-template <>
-inline void CMatrixSq<int>::SaveElement ( idSaveGame *savefile, int &Entry )
-{
-	savefile->WriteInt( Entry );
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Wrote int: %d to savefile\r", Entry);
-}
-
-template <>
-inline void CMatrixSq<float>::SaveElement ( idSaveGame *savefile, float &Entry )
-{
-	savefile->WriteFloat( Entry );
-}
-
-template <class type>
-inline void CMatrixSq<type>::ReadElement ( idRestoreGame *savefile, int ind )
-{
-	// general case: This should only be used with
-	// specialized classes with the Restore method defined.
-
-	m_mat[ind].Restore( savefile );
-}
-
-
-template <>
-inline void CMatrixSq<int>::ReadElement ( idRestoreGame *savefile, int ind )
-{
-	savefile->ReadInt( m_mat[ind] );
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Read int: %d from savefile\r", m_mat[ind]);
-}
-
-template <>
-inline void CMatrixSq<float>::ReadElement ( idRestoreGame *savefile, int ind )
-{
-	savefile->ReadFloat( m_mat[ind] );
-}
-
-template <class type>
-inline void CMatrixSq<type>::SaveMatrixSq ( idSaveGame *savefile )
-{
-
-	int i, num;
-	
-	if ( IsCleared() )
+	// Now read the values back in
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Tried to save an empty CMatrixSq/r" );
-		
-		// write false to the first bool in the savefile which determines validity
-		savefile->WriteBool( false );
-		goto Quit;
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			savefile->ReadInt((*this)(i,j));
+		}
 	}
+}
 
-	// matrix is filled
-	savefile->WriteBool( true );
+// Specialisation for a float matrix
+template<>
+inline void CMatrixSq<float>::Save( idSaveGame *savefile )
+{
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
 
-	// write the dimension of the matrix
-	savefile->WriteInt( m_dim );
-	
-	num = NumFromDim( m_dim );
-	for(i = 0; i < num; i++)
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		SaveElement( savefile, m_mat[i] );
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			savefile->WriteFloat((*this)(i,j));
+		}
 	}
-
-Quit:
-	return;
 }
 
-template <class type>
-inline bool CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
+// Specialisation for a float matrix
+template<>
+inline void CMatrixSq<float>::Restore( idRestoreGame *savefile )
 {
-	int i, dim, num;
-	bool IsFilled, bReturnVal(false);
+	unsigned int size = 0;
+	savefile->ReadUnsignedInt(size);
 
-	Clear();
-	
-	// check whether matrix is empty
-	savefile->ReadBool( IsFilled );
-	if( !IsFilled )
-		goto Quit;
+	// Resize the matrix accordingly
+	resize(size, size, false);
 
-	savefile->ReadInt( dim );
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("[Relations matrix] Loaded dimension %d from savefile\r", dim);
-	
-	if (!Init( dim ))
-		goto Quit;
-
-	num = NumFromDim( dim );
-
-	for(i=0; i<num; i++)
+	// Now read the values back in
+	for (std::size_t i = 0; i < size1(); ++i) 
 	{
-		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Reading element %d from savefile\r", i);
-		ReadElement( savefile, i );
+		for (std::size_t j = 0; j < size1(); ++j) 
+		{
+			savefile->ReadFloat((*this)(i,j));
+		}
 	}
-	
-	bReturnVal = true;
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("num_filled = %d, dim = %d\r", m_filled, m_dim);
-
-Quit:
-	return bReturnVal;
 }
 
-template <class type>
-inline void CMatrixSq<type>::Copy( const CMatrixSq<type> *input )
+template <class Type>
+inline const Type& CMatRUT<Type>::GetRev(std::size_t row, std::size_t col) const
 {
-	*this = *input;
-}
-
-/**
-* BEGIN PRIVATE METHODS:
-**/
-
-template <class type>
-inline int CMatrixSq<type>::NumFromDim( int dim )
-{
-	int numf;
-	if( dim <= 0)
-		numf = 0;
-	else
-	{
-		numf = dim*dim;
-	}
-	
-	return numf;
-}
-
-/************************************
-* Psuedocode for CMatrixSq<type>::Ind2dTo1d
-* Given row, col
-* rowindex0 = sum(dim - row) (for rows greater than zero)
-* coloffset = (col - row - 1 )
-* col must be greater than row.
-*************************************/
-
-template <class type>
-inline int CMatrixSq<type>::Ind2dTo1d ( int row, int col )
-{
-	int returnval;
-
-	returnval = row*m_dim + col;
-
-	//check if the index is out of bounds
-	if ( returnval < 0 || returnval >= m_filled || m_filled == 0 )
-	{
-		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access matrix with index out of bounds: row %d, col %d.\r", row, col);
-		returnval = -1;
-	}
-	return returnval;
-}
-
-
-
-/****************************************************************
-* Begin CMatRUT Implementation:
-*****************************************************************/
-
-template <class type>
-inline CMatRUT<type>::~CMatRUT( void )
-{
-	CMatrixSq<type>::Clear();
-}
-
-template <class type>
-inline type *CMatRUT<type>::GetRev(int row, int col)
-{
-	int temp;
-	type *p;
-
 	if (row > col)
 	{
-		temp = row;
+		std::size_t temp = row;
 		row = col;
 		col = temp;
 	}
-	int ind = Ind2dTo1d( row, col );
-	
-	if ( ind < 0 )
-	{
-		// error reporting is handled by Ind2dTo1d, omitted here
-		p = NULL;
-		goto Quit;
-	}
 
-	p = &(CMatrixSq<type>::m_mat[ind]);
-Quit:
-	return p;
+	return Get(row, col);
 }
 
-template <class type>
-inline bool CMatRUT<type>::SetRev(int row, int col, type &src )
+template <class Type>
+inline bool CMatRUT<Type>::SetRev(std::size_t row, std::size_t col, Type& src )
 {
-	bool returnval;
-	int ind, temp;
-
 	if( row > col )
 	{
-		temp = row;
+		std::size_t temp = row;
 		row = col;
 		col = temp;
 	}
 
-	ind = Ind2dTo1d( row, col );
-	if (ind<0)
-	{
-		returnval = false;
-	}
-	else
-	{
-		CMatrixSq<type>::m_mat[ind] = src;
-		returnval = true;
-	}
-	return returnval;
-}
+	Set(row, col, src);
 
-
-/**
-* BEGIN PRIVATE METHODS:
-**/
-
-template <class type>
-inline int CMatRUT<type>::NumFromDim( int dim )
-{
-	int numf;
-	if( dim <= 0)
-		numf = 0;
-	else
-	{
-		numf = dim*dim - ( (dim >> 1)*(dim+1) );
-	}
-	return numf;
-}
-
-/************************************
-* Psuedocode for CMatRUT<type>::Ind2dTo1d
-* Given row, col
-* rowindex0 = sum(dim - row) (for rows greater than zero)
-* coloffset = (col - row - 1 )
-* col must be greater than row.
-*************************************/
-
-template <class type>
-inline int CMatRUT<type>::Ind2dTo1d ( int row, int col )
-{
-	int rowIndex, colOffset, returnval;
-
-	rowIndex = row * CMatrixSq<type>::m_dim - ( (row*(row+1)) >> 1);
-
-	colOffset = (col - row - 1);
-	returnval = rowIndex + colOffset;
-
-	//check if the index is out of bounds
-	if ( row > col || returnval < 0 || returnval >= CMatrixSq<type>::m_filled )
-	{
-		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access RUT matrix with bad index (out of bounds or empty): row: %d, col: %d.\r", row, col);
-		returnval = -1;
-	}
-
-	return returnval;
+	return true;
 }
 
 #endif

@@ -60,7 +60,7 @@ CRelations &CRelations::operator=(const CRelations &in)
 	if(!m_RelMat->IsCleared())
 		Clear();
 
-	m_RelMat->Copy( in.m_RelMat );
+	*m_RelMat = *(in.m_RelMat);
 	m_bMatFailed = in.m_bMatFailed;
 
 	return *this;
@@ -86,41 +86,25 @@ int CRelations::Size( void )
 
 int CRelations::GetRelNum(int i, int j)
 {
-	int returnval = 0;
-	int *pval;
-
 	// uncomment for debugging of relationship checks
 	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Checking relationship matrix for team %d towards team %d.\r", i, j);
+	assert(i >= 0 && j >= 0);
 	
-	// return the default and don't attempt to check the matrix if it failed to load
-	if( m_bMatFailed )
+	// return the default and don't attempt to check the matrix 
+	// if it failed to load or indices are out of bounds
+	if (m_bMatFailed || i >= m_RelMat->Dim() || j >= m_RelMat->Dim())
 	{
 		if( i == j )
-			returnval = s_DefaultSameTeamRel;
+		{
+			return s_DefaultSameTeamRel;
+		}
 		else
-			returnval = s_DefaultRelation;
-
-		goto Quit;
+		{
+			return s_DefaultRelation;
+		}
 	}
 	
-	pval = m_RelMat->Get( i , j );
-
-	if ( pval == NULL )
-	{
-		// uncomment for reporting errors when doing relationship checks
-		// DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
-		if( i == j )
-			returnval = s_DefaultSameTeamRel;
-		else
-			returnval = s_DefaultRelation;
-
-		goto Quit;
-	}
-
-	returnval = *pval;
-
-Quit:
-	return returnval;
+	return m_RelMat->Get(static_cast<std::size_t>(i), static_cast<std::size_t>(j));
 }
 
 int CRelations::GetRelType(int i, int j)
@@ -371,19 +355,16 @@ Quit:
 void CRelations::Save( idSaveGame *save ) const
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Saving Relationship Matrix data\r");
-	m_RelMat->SaveMatrixSq( save );
+	m_RelMat->Save( save );
 }
 
 void CRelations::Restore( idRestoreGame *save )
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Loading Relationship Matrix data from save\r");
 
-	if( !m_RelMat->RestoreMatrixSq( save ) )
-	{
-		// attempted to load empty matrix
-		m_bMatFailed = true;
-	}
+	m_RelMat->Restore( save );
 	
+	// TODO?
 	CopyThisToGlobal();
 }
 
@@ -394,24 +375,36 @@ void CRelations::CopyThisToGlobal( void )
 
 void CRelations::DebugPrintMat( void )
 {
-	int i, row, col, val;
-	
-	idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat->NumFilled() );
+	//idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat->NumFilled() );
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat->IsCleared() );
 	if( m_RelMat->IsCleared() )
 	{
 		idLib::common->Printf("Relations Matrix is Empty.\n");
-		goto Quit;
+		return;
 	}
 
-	for(i=0; i < m_RelMat->NumFilled(); i++)
+	for (std::size_t i = 0; i < m_RelMat->size(); ++i)
 	{
-		row = i / m_RelMat->Dim();
-		col = i % m_RelMat->Dim();
-		val = *m_RelMat->Get1d(i);
-		idLib::common->Printf("[Relations Matrix] Element %d,%d: %d\n", row, col, val );
+		for (std::size_t j = 0; j < m_RelMat->size(); ++j)
+		{
+			int value = m_RelMat->Get(i, j);
+			idLib::common->Printf("[Relations Matrix] Element %d,%d: %d\n", static_cast<int>(i), static_cast<int>(j), value);
+		}
 	}
+}
 
-Quit:
-	return;
+// ----------------------------- Relations entity ----------------------- 
+
+CLASS_DECLARATION( idEntity, CRelationsEntity )
+	// Events go here
+END_CLASS
+
+// Constructor, does nothing
+CRelationsEntity::CRelationsEntity()
+{}
+
+void CRelationsEntity::Spawn()
+{
+	// Copy the values from our dictionary to the global relations matrix manager
+	
 }

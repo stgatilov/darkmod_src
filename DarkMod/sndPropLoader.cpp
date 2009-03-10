@@ -112,12 +112,7 @@ void CsndPropBase::Save(idSaveGame *savefile) const
 			// greebo: Don't save winding pointer, gets restored from idRenderWorld.
 		}
 
-		savefile->WriteInt(m_sndAreas[area].portalDists->NumFilled());
-		// greebo: Write the RUT loss matrix by using a 1D index
-		for (int i = 0; i < m_sndAreas[area].portalDists->NumFilled(); i++)
-		{
-			savefile->WriteFloat(*m_sndAreas[area].portalDists->Get1d(i));
-		}
+		m_sndAreas[area].portalDists->Save(savefile);
 	}
 
 	savefile->WriteInt(m_AreaPropsG.Num());
@@ -175,17 +170,9 @@ void CsndPropBase::Restore(idRestoreGame *savefile)
 			soundportal.winding = p.w;
 		}
 
-		int num;
-		savefile->ReadInt(num);
-
 		// Allocate and resize the triangle matrix
 		m_sndAreas[area].portalDists = new CMatRUT<float>;
-		m_sndAreas[area].portalDists->Init(m_sndAreas[area].numPortals);
-
-		for (int i = 0; i < num; i++)
-		{
-			savefile->ReadFloat(*m_sndAreas[area].portalDists->Get1d(i));
-		}
+		m_sndAreas[area].portalDists->Restore(savefile);
 	}
 
 	int num;
