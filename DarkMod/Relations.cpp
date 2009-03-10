@@ -43,24 +43,22 @@ static const int s_DefaultSameTeamRel = 5;
 CLASS_DECLARATION( idClass, CRelations )
 END_CLASS
 
-CRelations::CRelations( void )
+CRelations::CRelations()
 {
-	m_RelMat = new CMatrixSq<int>;
 	m_bMatFailed = false;
 }
 
-CRelations::~CRelations( void )
+CRelations::~CRelations()
 {
 	Clear();
-	delete m_RelMat;
 }
 
 CRelations &CRelations::operator=(const CRelations &in)
 {
-	if(!m_RelMat->IsCleared())
+	if(!m_RelMat.IsCleared())
 		Clear();
 
-	*m_RelMat = *(in.m_RelMat);
+	m_RelMat = in.m_RelMat;
 	m_bMatFailed = in.m_bMatFailed;
 
 	return *this;
@@ -68,20 +66,20 @@ CRelations &CRelations::operator=(const CRelations &in)
 
 void CRelations::Clear( void )
 {
-	if( !m_RelMat->IsCleared() )
+	if( !m_RelMat.IsCleared() )
 	{
-		m_RelMat->Clear();
+		m_RelMat.Clear();
 	}
 }
 
 bool CRelations::IsCleared( void )
 {
-	return m_RelMat->IsCleared();
+	return m_RelMat.IsCleared();
 }
 
 int CRelations::Size( void )
 {
-	return m_RelMat->Dim();
+	return m_RelMat.Dim();
 }
 
 int CRelations::GetRelNum(int i, int j)
@@ -92,7 +90,7 @@ int CRelations::GetRelNum(int i, int j)
 	
 	// return the default and don't attempt to check the matrix 
 	// if it failed to load or indices are out of bounds
-	if (m_bMatFailed || i >= m_RelMat->Dim() || j >= m_RelMat->Dim())
+	if (m_bMatFailed || i >= m_RelMat.Dim() || j >= m_RelMat.Dim())
 	{
 		if( i == j )
 		{
@@ -104,7 +102,7 @@ int CRelations::GetRelNum(int i, int j)
 		}
 	}
 	
-	return m_RelMat->Get(static_cast<std::size_t>(i), static_cast<std::size_t>(j));
+	return m_RelMat.Get(static_cast<std::size_t>(i), static_cast<std::size_t>(j));
 }
 
 int CRelations::GetRelType(int i, int j)
@@ -127,7 +125,7 @@ int CRelations::GetRelType(int i, int j)
 
 void CRelations::SetRel(int i, int j, int rel)
 {
-	m_RelMat->Set( i, j, rel );
+	m_RelMat.Set( i, j, rel );
 }
 
 void CRelations::ChangeRel( int i, int j, int offset)
@@ -168,38 +166,35 @@ bool CRelations::SetFromArgs( idDict *args )
 {
 	idList<SEntryData> EntryList;
 	idList<int> DiagsAdded;
-	SEntryData EntryDat;
-	int start, end, num(1), tempint, tempint2, maxrow(0), keylen;
-	idStr tempKey, tempVal, row, col, val;
+	int num(1), maxrow(0);
 
 	bool hadSynError(false), hadLogicError(false);
 
 	m_bMatFailed = false;
 	
-	const idKeyValue *Entry = args->MatchPrefix( "rel ", NULL );
-	while ( Entry ) 
+	for (const idKeyValue* kv = args->MatchPrefix("rel ", NULL ); kv != NULL; kv = args->MatchPrefix("rel ", kv)) 
 	{
-		tempKey = Entry->GetKey();
-		tempVal = Entry->GetValue();
+		idStr tempKey = kv->GetKey();
+		idStr val = kv->GetValue();
 
-		keylen = tempKey.Length();
+		int keylen = tempKey.Length();
 		
 		// parse it
-		start = 4;
-		end = tempKey.Find(',');
+		int start = 4;
+		int end = tempKey.Find(',');
 		end--;
 
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, start = %d, end(comma-1) = %d\r", num, start, end);
 
-		if(end < 0 )
+		if (end < 0 )
 		{
 			hadSynError = true;
 			goto Quit;
 		}
 		
-		row = tempKey.Mid( start, (end - start + 1) );
+		idStr row = tempKey.Mid( start, (end - start + 1) );
 
-		start = end+2;
+		start = end + 2;
 
 		if( start > keylen )
 		{
@@ -207,9 +202,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			goto Quit;
 		}
 
-		col = tempKey.Mid( start, keylen - start + 1 );
-
-		val = args->GetString( tempKey.c_str(), "" );
+		idStr col = tempKey.Mid( start, keylen - start + 1 );
 
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, row = %s, col = %s, val = %d\r", num, row.c_str(), col.c_str(), atoi(val.c_str()) );
 
@@ -220,74 +213,60 @@ bool CRelations::SetFromArgs( idDict *args )
 		}
 
 		//set up the Entry data
-		EntryDat.row = atoi( row.c_str() );
-		EntryDat.col = atoi( col.c_str() );
-		EntryDat.val = atoi( val.c_str() );
+		SEntryData entry;
+		entry.row = atoi( row.c_str() );
+		entry.col = atoi( col.c_str() );
+		entry.val = atoi( val.c_str() );
 
-		if (EntryDat.row > maxrow )
-			maxrow = EntryDat.row;
+		// Keep track of the maximum row count (TODO: remove maxrow)
+		if (entry.row > maxrow )
+		{
+			maxrow = entry.row;
+		}
 
-		EntryList.Append(EntryDat);
+		EntryList.Append(entry);
 
 		// Check for diagonal element of the ROW team, fill it in with
 		// the default diagonal relation if it does not exist.
-
-		if (args->FindKeyIndex( va("rel %d,%d", EntryDat.row, EntryDat.row) ) == -1
-								&& DiagsAdded.FindIndex(EntryDat.row) == -1 )
+		if (args->FindKeyIndex( va("rel %d,%d", entry.row, entry.row) ) == -1
+								&& DiagsAdded.FindIndex(entry.row) == -1 )
 		{
-			tempint = EntryDat.col;
-			tempint2 = EntryDat.val;
+			SEntryData defaultDiagonal(entry.row, entry.row, s_DefaultSameTeamRel);
+			EntryList.Append(defaultDiagonal);
+			DiagsAdded.Append(entry.row);
 
-			EntryDat.col = EntryDat.row;
-			EntryDat.val = s_DefaultSameTeamRel;
-
-			EntryList.Append(EntryDat);
-			DiagsAdded.Append(EntryDat.row);
-
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.row, EntryDat.row );
-
-			//set EntryDat back the way it was for further checks
-			EntryDat.col = tempint;
-			EntryDat.val = tempint2;
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.row, entry.row );
 		}
 
 		// Check for diagonal element of the COLUMN team, fill it in with
 		// the default diagonal relation if it does not exist.
-
-		if (args->FindKeyIndex( va("rel %d,%d", EntryDat.col, EntryDat.col) ) == -1
-								&& DiagsAdded.FindIndex(EntryDat.col) == -1 )
+		if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.col) ) == -1
+								&& DiagsAdded.FindIndex(entry.col) == -1 )
 		{
-			tempint = EntryDat.row;
-			tempint2 = EntryDat.val;
-			
-			if( EntryDat.col > maxrow )
-				maxrow = EntryDat.col;
+			SEntryData defaultDiagonal(entry.col, entry.col, s_DefaultSameTeamRel);
 
-			EntryDat.row = EntryDat.col;
-			EntryDat.val = s_DefaultSameTeamRel;
-			EntryList.Append(EntryDat);
-			DiagsAdded.Append(EntryDat.col);
+			EntryList.Append(defaultDiagonal);
+			DiagsAdded.Append(entry.col);
 
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.col, EntryDat.col );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.col, entry.col );
 
-			//set EntryDat back the way it was for further checks
-			EntryDat.row = tempint;
-			EntryDat.val = tempint2;
+			if( entry.col > maxrow )
+			{
+				maxrow = entry.col;
+			}
 		}
 
 		// Check for asymmetric element and append one with same value if
 		// it does not exist.
-		if ( args->FindKeyIndex( va("rel %d,%d", EntryDat.col, EntryDat.row) ) == -1 )
+		if ( args->FindKeyIndex( va("rel %d,%d", entry.col, entry.row) ) == -1 )
 		{
-			tempint = EntryDat.row;
-			EntryDat.row = EntryDat.col;
-			EntryDat.col = tempint;
+			// Pass col as first arg, row as second to define the asymmetric value
+			SEntryData asymmRel(entry.col, entry.row, entry.val);
 
-			EntryList.Append(EntryDat);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing asymmetric element %d, %d\r", EntryDat.row, EntryDat.col );
+			EntryList.Append(asymmRel);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing asymmetric element %d, %d\r", entry.row, entry.col );
 		}
 
-		Entry = args->MatchPrefix( "rel ", Entry );
 		num++;
 	}
 
@@ -305,25 +284,25 @@ bool CRelations::SetFromArgs( idDict *args )
 		goto Quit;
 	}
 
-	if ( !m_RelMat->Init(maxrow) )
+	if ( !m_RelMat.Init(maxrow) )
 	{
 		hadLogicError = true;
 		goto Quit;
 	}
 
 	// angua: Fill matrix with defaults
-	m_RelMat->Fill(s_DefaultRelation);
+	m_RelMat.Fill(s_DefaultRelation);
 
 	// Set the default relationship between teams
 	for (int i = 0; i < maxrow; i++)
 	{
-		m_RelMat->Set(i, i, s_DefaultSameTeamRel);
+		m_RelMat.Set(i, i, s_DefaultSameTeamRel);
 	}
 
 	// angua: Set values from list
 	for( int i = 0; i < EntryList.Num(); i++ )
 	{
-		if ( !m_RelMat->Set(EntryList[i].row, EntryList[i].col, EntryList[i].val ) )
+		if ( !m_RelMat.Set(EntryList[i].row, EntryList[i].col, EntryList[i].val ) )
 		{
 			hadLogicError = true;
 			goto Quit;
@@ -355,14 +334,14 @@ Quit:
 void CRelations::Save( idSaveGame *save ) const
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Saving Relationship Matrix data\r");
-	m_RelMat->Save( save );
+	m_RelMat.Save( save );
 }
 
 void CRelations::Restore( idRestoreGame *save )
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Loading Relationship Matrix data from save\r");
 
-	m_RelMat->Restore( save );
+	m_RelMat.Restore( save );
 	
 	// TODO?
 	CopyThisToGlobal();
@@ -375,19 +354,19 @@ void CRelations::CopyThisToGlobal( void )
 
 void CRelations::DebugPrintMat( void )
 {
-	//idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat->NumFilled() );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat->IsCleared() );
-	if( m_RelMat->IsCleared() )
+	//idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat.NumFilled() );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat.IsCleared() );
+	if( m_RelMat.IsCleared() )
 	{
 		idLib::common->Printf("Relations Matrix is Empty.\n");
 		return;
 	}
 
-	for (std::size_t i = 0; i < m_RelMat->size(); ++i)
+	for (std::size_t i = 0; i < m_RelMat.size(); ++i)
 	{
-		for (std::size_t j = 0; j < m_RelMat->size(); ++j)
+		for (std::size_t j = 0; j < m_RelMat.size(); ++j)
 		{
-			int value = m_RelMat->Get(i, j);
+			int value = m_RelMat.Get(i, j);
 			idLib::common->Printf("[Relations Matrix] Element %d,%d: %d\n", static_cast<int>(i), static_cast<int>(j), value);
 		}
 	}

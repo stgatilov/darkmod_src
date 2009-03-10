@@ -156,6 +156,16 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 //-----------------------------------------------------
 
+#ifdef _WIN32
+
+// greebo: The idMath::FLT_EPSILON variable conflicts with the one defined in VC++'s float.h header
+// undefine it to avoid this conflict
+#ifdef FLT_EPSILON
+#undef FLT_EPSILON
+#endif
+
+#endif
+
 #endif	/* __cplusplus */
 
 #endif /* !__PRECOMPILED_H__ */

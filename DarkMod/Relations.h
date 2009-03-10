@@ -40,9 +40,7 @@
 
 #include "../idlib/precompiled.h"
 #include "DarkModGlobals.h"
-
-template <class type> 
-class CMatrixSq;
+#include "MatrixSq.h"
 
 extern CRelations g_globalRelations;
 
@@ -59,12 +57,20 @@ public:
 		E_FRIEND = 1
 	} ERel_Type;
 
-	typedef struct SEntryData_s
+	struct SEntryData
 	{
 		int row;
 		int col;
 		int val;
-	} SEntryData;
+
+		SEntryData() :
+			row(-1), col(-1), val(-1)
+		{}
+
+		SEntryData(int _row, int _col, int _val) :
+			row(_row), col(_col), val(_val)
+		{}
+	};
 
 public:
 
@@ -155,7 +161,7 @@ protected:
 /**
 * The relationship matrix uses class CMatrixSq to store a square matrix
 **/
-	CMatrixSq<int> *	m_RelMat;
+	CMatrixSq<int>		m_RelMat;
 
 /**
 * Boolean to store whether the relations matrix failed to load
