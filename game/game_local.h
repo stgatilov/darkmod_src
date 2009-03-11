@@ -193,6 +193,7 @@ class CLightMaterial;
 class CsndPropLoader;
 class CsndProp;
 class CRelations;
+typedef boost::shared_ptr<CRelations> CRelationsPtr;
 class CMissionData;
 class CStimResponse;
 class CEscapePointManager;
@@ -484,7 +485,7 @@ public:
 	/**
 	* Pointer to global AI Relations object
 	**/
-	CRelations *			m_RelationsManager;
+	CRelationsPtr			m_RelationsManager;
 
 	/**
 	* Pointer to global Mission Data object (objectives & stats)

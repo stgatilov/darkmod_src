@@ -53,26 +53,12 @@ CRelations::~CRelations()
 	Clear();
 }
 
-CRelations &CRelations::operator=(const CRelations &in)
+void CRelations::Clear()
 {
-	if(!m_RelMat.IsCleared())
-		Clear();
-
-	m_RelMat = in.m_RelMat;
-	m_bMatFailed = in.m_bMatFailed;
-
-	return *this;
+	m_RelMat.Clear();
 }
 
-void CRelations::Clear( void )
-{
-	if( !m_RelMat.IsCleared() )
-	{
-		m_RelMat.Clear();
-	}
-}
-
-bool CRelations::IsCleared( void )
+bool CRelations::IsCleared()
 {
 	return m_RelMat.IsCleared();
 }
@@ -233,7 +219,7 @@ CRelations::SEntryData CRelations::ParseEntryData(const idKeyValue* kv)
 	return SEntryData( atoi(row.c_str()), atoi(col.c_str()), atoi(val.c_str()) );
 }
 
-bool CRelations::SetFromArgs( idDict *args )
+bool CRelations::SetFromArgs(const idDict& args)
 {
 	idList<SEntryData> entries;
 	idList<int> addedDiags;
@@ -241,7 +227,7 @@ bool CRelations::SetFromArgs( idDict *args )
 	// TODO: Remove this, matrix parsing never "fails" in this sense
 	m_bMatFailed = false;
 	
-	for (const idKeyValue* kv = args->MatchPrefix("rel ", NULL ); kv != NULL; kv = args->MatchPrefix("rel ", kv)) 
+	for (const idKeyValue* kv = args.MatchPrefix("rel ", NULL ); kv != NULL; kv = args.MatchPrefix("rel ", kv)) 
 	{
 		try
 		{
@@ -262,7 +248,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			// The matrix will be extended by this entry, let's check for diagonals
 
 			// Check for diagonal element of the ROW team
-			if (args->FindKeyIndex( va("rel %d,%d", entry.row, entry.row) ) == -1 && 
+			if (args.FindKeyIndex( va("rel %d,%d", entry.row, entry.row) ) == -1 && 
 				addedDiags.FindIndex(entry.row) == -1)
 			{
 				// ROW team diagonal not set, fill with default team relation entry
@@ -276,7 +262,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			}
 
 			// Check for diagonal element of the COLUMN team
-			if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.col) ) == -1 && 
+			if (args.FindKeyIndex( va("rel %d,%d", entry.col, entry.col) ) == -1 && 
 				addedDiags.FindIndex(entry.col) == -1)
 			{
 				// COLUMN team diagonal not set, fill with default team relation entry
@@ -291,7 +277,7 @@ bool CRelations::SetFromArgs( idDict *args )
 
 			// Check for asymmetric element and append one with same value if
 			// it is not set on this dictionary
-			if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.row) ) == -1)
+			if (args.FindKeyIndex( va("rel %d,%d", entry.col, entry.row) ) == -1)
 			{
 				// Pass col as first arg, row as second to define the asymmetric value
 				SEntryData asymmRel(entry.col, entry.row, entry.val);
@@ -331,14 +317,6 @@ void CRelations::Restore( idRestoreGame *save )
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Loading Relationship Matrix data from save\r");
 
 	m_RelMat.Restore( save );
-	
-	// TODO?
-	CopyThisToGlobal();
-}
-
-void CRelations::CopyThisToGlobal( void )
-{
-	g_globalRelations = *this;
 }
 
 void CRelations::DebugPrintMat( void )

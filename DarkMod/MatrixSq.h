@@ -150,14 +150,7 @@ inline CMatrixSq<Type>::~CMatrixSq()
 template <class Type>
 inline void CMatrixSq<Type>::Fill(const Type& src)
 {
-	// Call the assignment operator
-	for (std::size_t i = 0; i < size1(); ++i) 
-	{
-		for (std::size_t j = 0; j < size1(); ++j)
-		{
-			(*this)(i, j) = src;
-		}
-	}
+	std::fill(data().begin(), data().end(), src);
 }
 
 template <class Type>
@@ -220,8 +213,7 @@ inline bool CMatrixSq<Type>::Init( std::size_t dim )
 template <class Type>
 inline void CMatrixSq<Type>::Clear( void )
 {
-	// Call the base method (false == don't preserve values)
-	clear();
+	resize(0, 0);
 }
 
 template<class Type>

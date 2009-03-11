@@ -41,13 +41,12 @@
 #include "../idlib/precompiled.h"
 #include "DarkModGlobals.h"
 #include "MatrixSq.h"
+#include <boost/shared_ptr.hpp>
 
-extern CRelations g_globalRelations;
-
-class CRelations : public idClass {
-
-CLASS_PROTOTYPE( CRelations );
-
+class CRelations : 
+	public idClass
+{
+	CLASS_PROTOTYPE( CRelations );
 public:
 
 	typedef enum ERel_Type
@@ -74,14 +73,12 @@ public:
 
 public:
 
-	CRelations(void);
-	~CRelations(void);
+	CRelations();
+	~CRelations();
 
-	CRelations &operator=( const CRelations &in );
+	void Clear();
 
-	void Clear(void);
-
-	bool IsCleared(void);
+	bool IsCleared();
 
 	/**
 	* Returns the dimension of the square relationship matrix.
@@ -130,7 +127,7 @@ public:
 	* Fill the relationship matrix from the def file for the map
 	* returns FALSE if there was a problem loading
 	**/
-	bool SetFromArgs( idDict *args );
+	bool SetFromArgs( const idDict& args );
 
 	/**
 	* Save the current relationship matrix to a savefile
@@ -144,12 +141,6 @@ public:
 	* Load the current relationship matrix from a savefile
 	**/
 	void Restore( idRestoreGame *save );
-
-	/**
-	* Copies itself to the static var for storing the global
-	* relations manager.
-	**/
-	void CopyThisToGlobal( void );
 
 	/**
 	* Output the matrix to the console and logfile for debug purposes
@@ -186,6 +177,7 @@ protected:
 	**/
 	bool				m_bMatFailed;
 };
+typedef boost::shared_ptr<CRelations> CRelationsPtr;
 
 /**
  * greebo: A spawnable relation entity. At spawn time, this entity copies its 

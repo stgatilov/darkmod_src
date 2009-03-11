@@ -143,7 +143,6 @@ SH_DECL_HOOK0_void(idCommon, Frame, SH_NOATTRIB, 0);
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
-CRelations		g_globalRelations;
 CMissionData	g_MissionData;
 
 static idList<const char *> *s_FileVersion = NULL;

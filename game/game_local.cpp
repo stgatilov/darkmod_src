@@ -47,7 +47,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 CGlobal g_Global;
 TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
-extern CRelations		g_globalRelations;
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
@@ -250,7 +249,7 @@ void idGameLocal::Clear( void )
 
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
-	m_RelationsManager = &g_globalRelations;
+	m_RelationsManager = CRelationsPtr();
 	m_MissionData = &g_MissionData;
 	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
 	m_MissionData->ClearGUIState();
@@ -463,6 +462,8 @@ void idGameLocal::Init( void ) {
 
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 
+	m_RelationsManager = CRelationsPtr(new CRelations);
+
 	// load the soundprop globals from the def file
 	m_sndPropLoader->GlobalsFromDef();
 
@@ -524,6 +525,7 @@ void idGameLocal::Shutdown( void ) {
 	mpGame.Shutdown();
 
 	MapShutdown();
+
 	// greebo: Separately clear the missiondata, which is not 
 	// cleared in MapShutdown() (needed for mission statistics)
 	m_MissionData->Clear();
@@ -637,8 +639,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// DarkMod: Add darkmod specific objects here:
 
-	// Add relationship matrix object
-	savegame.AddObject( m_RelationsManager );
 	savegame.AddObject( m_Grabber );
 
 	// write out complete object list
@@ -666,6 +666,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_GamePlayTimer.Save(&savegame);
 	m_AreaManager.Save(&savegame);
 	m_ConversationSystem->Save(&savegame);
+	m_RelationsManager->Save(&savegame);
 	m_ModMenu->Save(&savegame);
 	m_Shop->Save(&savegame);
 
@@ -1543,7 +1544,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	SetupEAS();
 
 	// initialize the AI relationships based on worldspawn
-	m_RelationsManager->SetFromArgs( &world->spawnArgs );
+	m_RelationsManager->SetFromArgs( world->spawnArgs );
 	mpGame.Reset();
 
 	mpGame.Precache();
@@ -1631,6 +1632,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_GamePlayTimer.SetEnabled(false);
 	m_AreaManager.Restore(&savegame);
 	m_ConversationSystem->Restore(&savegame);
+	m_RelationsManager->Restore(&savegame);
 	m_ModMenu->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 
