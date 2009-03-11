@@ -125,7 +125,38 @@ int CRelations::GetRelType(int i, int j)
 
 void CRelations::SetRel(int i, int j, int rel)
 {
-	m_RelMat.Set( i, j, rel );
+	// Check if the indices exceed the current bounds?
+	if (i >= m_RelMat.Dim() || j >= m_RelMat.Dim())
+	{
+		// At least one of the indices exceeds the current bounds.
+		// Extend the matrix and initialise the new ground.
+		ExtendRelationsMatrixToDim( (i > j) ? i+1 : j+1 );
+	}
+
+	m_RelMat.Set(i, j, rel);
+}
+
+void CRelations::ExtendRelationsMatrixToDim(int newDim)
+{
+	// Go through the new columns
+	for (int n = m_RelMat.Dim(); n < newDim; ++n)
+	{
+		// Fill in the new column and the new row
+		for (int i = 0; i <= n; ++i)
+		{
+			if (i == n)
+			{
+				m_RelMat.Set(i, i, s_DefaultSameTeamRel);
+			}
+			else 
+			{
+				// Fill the new column
+				m_RelMat.Set(i, n, s_DefaultRelation);
+				// Fill the new row
+				m_RelMat.Set(n, i, s_DefaultRelation);
+			}
+		}
+	}
 }
 
 void CRelations::ChangeRel( int i, int j, int offset)
@@ -162,172 +193,130 @@ bool CRelations::IsNeutral( int i, int j)
 		return false;
 }
 
+CRelations::SEntryData CRelations::ParseEntryData(const idKeyValue* kv)
+{
+	const idStr& tempKey = kv->GetKey();
+	const idStr& val = kv->GetValue();
+
+	int keylen = tempKey.Length();
+	
+	// parse it
+	int start = 4;
+	int end = tempKey.Find(',');
+	end--;
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: start = %d, end(comma-1) = %d\r", start, end);
+
+	if (end < 0 )
+	{
+		throw std::runtime_error(std::string("Could not find comma in spawnarg: ") + tempKey.c_str());
+	}
+	
+	idStr row = tempKey.Mid( start, (end - start + 1) );
+
+	start = end + 2;
+
+	if( start > keylen )
+	{
+		throw std::runtime_error(std::string("Could not find second team in spawnarg: ") + tempKey.c_str());
+	}
+
+	idStr col = tempKey.Mid( start, keylen - start + 1 );
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: row = %s, col = %s, val = %d\r", row.c_str(), col.c_str(), atoi(val.c_str()) );
+
+	if( !row.IsNumeric() || !col.IsNumeric() || !val.IsNumeric() )
+	{
+		throw std::runtime_error(std::string("One of these values is not numeric: ") + tempKey.c_str());
+	}
+
+	return SEntryData( atoi(row.c_str()), atoi(col.c_str()), atoi(val.c_str()) );
+}
+
 bool CRelations::SetFromArgs( idDict *args )
 {
-	idList<SEntryData> EntryList;
-	idList<int> DiagsAdded;
-	int num(1), maxrow(0);
-
-	bool hadSynError(false), hadLogicError(false);
-
+	idList<SEntryData> entries;
+	idList<int> addedDiags;
+	
+	// TODO: Remove this, matrix parsing never "fails" in this sense
 	m_bMatFailed = false;
 	
 	for (const idKeyValue* kv = args->MatchPrefix("rel ", NULL ); kv != NULL; kv = args->MatchPrefix("rel ", kv)) 
 	{
-		idStr tempKey = kv->GetKey();
-		idStr val = kv->GetValue();
-
-		int keylen = tempKey.Length();
-		
-		// parse it
-		int start = 4;
-		int end = tempKey.Find(',');
-		end--;
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, start = %d, end(comma-1) = %d\r", num, start, end);
-
-		if (end < 0 )
+		try
 		{
-			hadSynError = true;
-			goto Quit;
-		}
-		
-		idStr row = tempKey.Mid( start, (end - start + 1) );
+			// Try to parse the entry, this will throw on errors
+			SEntryData entry = ParseEntryData(kv);
 
-		start = end + 2;
+			// Successfully parsed, add to list
+			entries.Append(entry);
 
-		if( start > keylen )
-		{
-			hadSynError = true;
-			goto Quit;
-		}
-
-		idStr col = tempKey.Mid( start, keylen - start + 1 );
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, row = %s, col = %s, val = %d\r", num, row.c_str(), col.c_str(), atoi(val.c_str()) );
-
-		if( !row.IsNumeric() || !col.IsNumeric() || !val.IsNumeric() )
-		{
-			hadSynError = true;
-			goto Quit;
-		}
-
-		//set up the Entry data
-		SEntryData entry;
-		entry.row = atoi( row.c_str() );
-		entry.col = atoi( col.c_str() );
-		entry.val = atoi( val.c_str() );
-
-		// Keep track of the maximum row count (TODO: remove maxrow)
-		if (entry.row > maxrow )
-		{
-			maxrow = entry.row;
-		}
-
-		EntryList.Append(entry);
-
-		// Check for diagonal element of the ROW team, fill it in with
-		// the default diagonal relation if it does not exist.
-		if (args->FindKeyIndex( va("rel %d,%d", entry.row, entry.row) ) == -1
-								&& DiagsAdded.FindIndex(entry.row) == -1 )
-		{
-			SEntryData defaultDiagonal(entry.row, entry.row, s_DefaultSameTeamRel);
-			EntryList.Append(defaultDiagonal);
-			DiagsAdded.Append(entry.row);
-
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.row, entry.row );
-		}
-
-		// Check for diagonal element of the COLUMN team, fill it in with
-		// the default diagonal relation if it does not exist.
-		if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.col) ) == -1
-								&& DiagsAdded.FindIndex(entry.col) == -1 )
-		{
-			SEntryData defaultDiagonal(entry.col, entry.col, s_DefaultSameTeamRel);
-
-			EntryList.Append(defaultDiagonal);
-			DiagsAdded.Append(entry.col);
-
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.col, entry.col );
-
-			if( entry.col > maxrow )
+			// Will the current matrix dimension be increased by this entry?
+			if (entry.row < m_RelMat.Dim() && entry.col < m_RelMat.Dim())
 			{
-				maxrow = entry.col;
+				// No, matrix will not be extended, no need to check for 
+				// diagonals and asymmetric values
+				continue;
+			}
+
+			// The matrix will be extended by this entry, let's check for diagonals
+
+			// Check for diagonal element of the ROW team
+			if (args->FindKeyIndex( va("rel %d,%d", entry.row, entry.row) ) == -1 && 
+				addedDiags.FindIndex(entry.row) == -1)
+			{
+				// ROW team diagonal not set, fill with default team relation entry
+				SEntryData defaultDiagonal(entry.row, entry.row, s_DefaultSameTeamRel);
+				entries.Append(defaultDiagonal);
+
+				// Remember the diagonal number, so that we don't add it a second time
+				addedDiags.Append(entry.row);
+
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.row, entry.row);
+			}
+
+			// Check for diagonal element of the COLUMN team
+			if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.col) ) == -1 && 
+				addedDiags.FindIndex(entry.col) == -1)
+			{
+				// COLUMN team diagonal not set, fill with default team relation entry
+				SEntryData defaultDiagonal(entry.col, entry.col, s_DefaultSameTeamRel);
+				entries.Append(defaultDiagonal);
+
+				// Remember the diagonal number, so that we don't add it a second time
+				addedDiags.Append(entry.col);
+
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", entry.col, entry.col);
+			}
+
+			// Check for asymmetric element and append one with same value if
+			// it is not set on this dictionary
+			if (args->FindKeyIndex( va("rel %d,%d", entry.col, entry.row) ) == -1)
+			{
+				// Pass col as first arg, row as second to define the asymmetric value
+				SEntryData asymmRel(entry.col, entry.row, entry.val);
+				entries.Append(asymmRel);
+
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing asymmetric element %d, %d\r", entry.row, entry.col );
 			}
 		}
-
-		// Check for asymmetric element and append one with same value if
-		// it does not exist.
-		if ( args->FindKeyIndex( va("rel %d,%d", entry.col, entry.row) ) == -1 )
+		catch (std::runtime_error e)
 		{
-			// Pass col as first arg, row as second to define the asymmetric value
-			SEntryData asymmRel(entry.col, entry.row, entry.val);
-
-			EntryList.Append(asymmRel);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing asymmetric element %d, %d\r", entry.row, entry.col );
-		}
-
-		num++;
-	}
-
-	EntryList.Condense();
-
-	maxrow++;
-	if (EntryList.Num() > (maxrow*maxrow))
-	{
-		hadLogicError = true;
-		goto Quit;
-	}
-
-	if (EntryList.Num() == 0)
-	{
-		goto Quit;
-	}
-
-	if ( !m_RelMat.Init(maxrow) )
-	{
-		hadLogicError = true;
-		goto Quit;
-	}
-
-	// angua: Fill matrix with defaults
-	m_RelMat.Fill(s_DefaultRelation);
-
-	// Set the default relationship between teams
-	for (int i = 0; i < maxrow; i++)
-	{
-		m_RelMat.Set(i, i, s_DefaultSameTeamRel);
-	}
-
-	// angua: Set values from list
-	for( int i = 0; i < EntryList.Num(); i++ )
-	{
-		if ( !m_RelMat.Set(EntryList[i].row, EntryList[i].col, EntryList[i].val ) )
-		{
-			hadLogicError = true;
-			goto Quit;
+			gameLocal.Warning("Parse error: %s", e.what());
 		}
 	}
 
-Quit:
-	if(hadSynError)
+	// Commit the found values to the relations matrix
+	for (int i = 0; i < entries.Num(); ++i)
 	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
-		idLib::common->Warning("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
+		const SEntryData& entry = entries[i];
+
+		// Use the SetRel() method, which automatically takes care of
+		// initialising new teams
+		SetRel(entry.row, entry.col, entry.val);
 	}
 
-// Don't output the error if there are no matrix entries
-	if(hadLogicError && EntryList.Num() )
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
-		idLib::common->Warning("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
-	}
-
-	if ( hadSynError || hadLogicError )
-		m_bMatFailed = true;
-
-	return !(hadSynError || hadLogicError);
+	return true;
 }
 
 

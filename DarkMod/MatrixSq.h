@@ -166,9 +166,9 @@ inline bool CMatrixSq<Type>::Set(std::size_t row, std::size_t col, const Type &s
 	// Check bounds and resize if necessary
 	if (row >= size1() || col >= size2()) {
 		// Resize and preserve values
-		std::size_t largerDim = (row > col) ? row : col;
+		std::size_t largerDim = (row > col) ? row + 1 : col + 1;
 
-		resize(largerDim + 1, largerDim + 1, true);
+		resize(largerDim, largerDim, true);
 	}
 
 	// Assignment

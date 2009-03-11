@@ -83,92 +83,108 @@ public:
 
 	bool IsCleared(void);
 
-/**
-* Returns the dimension of the square relationship matrix.
-* For example, if the matrix is 3x3, it returns 3.
-**/
+	/**
+	* Returns the dimension of the square relationship matrix.
+	* For example, if the matrix is 3x3, it returns 3.
+	**/
 	int Size(void);
 
-/**
-* Return the integer number for the relationship between team i and team j
-**/
+	/**
+	* Return the integer number for the relationship between team i and team j
+	**/
 	int GetRelNum(int i, int j);
 
-/**
-* Return the type of relationship (E_ENEMY, E_NEUTRAL or E_FRIEND)
-* for the relationship between team i and team j
-**/
+	/**
+	* Return the type of relationship (E_ENEMY, E_NEUTRAL or E_FRIEND)
+	* for the relationship between team i and team j
+	**/
 	int GetRelType(int i, int j);
 
-/**
-* Set the integer value of the relationship between team i and team j to rel
-**/
+	/**
+	* Set the integer value of the relationship between team i and team j to rel
+	**/
 	void SetRel(int i, int j, int rel);
 
-/**
-* Add the integer 'offset' to the relationship between team i and team j
-* (You can add a negative offset to subtract)
-**/
+	/**
+	* Add the integer 'offset' to the relationship between team i and team j
+	* (You can add a negative offset to subtract)
+	**/
 	void ChangeRel( int i, int j, int offset);
 
-/**
-* Returns true if team i and team j are friends
-**/
+	/**
+	* Returns true if team i and team j are friends
+	**/
 	bool IsFriend( int i, int j);
 
-/**
-* Returns true if team i and team j are enemies
-**/
+	/**
+	* Returns true if team i and team j are enemies
+	**/
 	bool IsEnemy( int i, int j);
 
-/**
-* Returns true if team i and team j are neutral
-**/
+	/**
+	* Returns true if team i and team j are neutral
+	**/
 	bool IsNeutral( int i, int j);
 
-/**
-* Fill the relationship matrix from the def file for the map
-* returns FALSE if there was a problem loading
-**/
+	/**
+	* Fill the relationship matrix from the def file for the map
+	* returns FALSE if there was a problem loading
+	**/
 	bool SetFromArgs( idDict *args );
 
-/**
-* Save the current relationship matrix to a savefile
-* To be consistent w/ D3, this should be called in
-* in idGameLocal::SaveGame , where everything else is saved.
-* This is most likely necessary to save in the correct place.
-**/
+	/**
+	* Save the current relationship matrix to a savefile
+	* To be consistent w/ D3, this should be called in
+	* in idGameLocal::SaveGame , where everything else is saved.
+	* This is most likely necessary to save in the correct place.
+	**/
 	void Save( idSaveGame *save ) const;
 
-/**
-* Load the current relationship matrix from a savefile
-**/
+	/**
+	* Load the current relationship matrix from a savefile
+	**/
 	void Restore( idRestoreGame *save );
 
-/**
-* Copies itself to the static var for storing the global
-* relations manager.
-**/
+	/**
+	* Copies itself to the static var for storing the global
+	* relations manager.
+	**/
 	void CopyThisToGlobal( void );
 
-/**
-* Output the matrix to the console and logfile for debug purposes
-**/
+	/**
+	* Output the matrix to the console and logfile for debug purposes
+	**/
 	void DebugPrintMat( void );
+
+private:
+	/**
+	 * greebo: Extends the relations and fills in the default relations
+	 * values for all the new elements.
+	 */
+	void ExtendRelationsMatrixToDim(int newDim);
 
 protected:
 
-/**
-* The relationship matrix uses class CMatrixSq to store a square matrix
-**/
+	/**
+	 * greebo: Parse the given key value for an relations entry.
+	 * Will emit warnings to the console if parsing fails.
+	 * 
+	 * @returns: the filled in SEntryData.
+	 * @throws: a std::runtime_error if the given keyvalue is not 
+	 * suitable.
+	 */
+	SEntryData ParseEntryData(const idKeyValue* kv);
+
+	/**
+	* The relationship matrix uses class CMatrixSq to store a square matrix
+	**/
 	CMatrixSq<int>		m_RelMat;
 
-/**
-* Boolean to store whether the relations matrix failed to load
-* Accessors will check this and return the default relation if true
-**/
+	/**
+	* Boolean to store whether the relations matrix failed to load
+	* Accessors will check this and return the default relation if true
+	**/
 	bool				m_bMatFailed;
-
 };
 
 /**
