@@ -6625,7 +6625,7 @@ bool idAI::TestMelee( void ) const {
 	if (dist < maxdist)
 	{
 		// angua: within horizontal distance
-		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z ||
+		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z &&
 				(enemyOrg.z + enemyBounds[1][2]) > org.z)
 		{
 			// within height
