@@ -24,6 +24,7 @@ template <class Type>
 class CMatrixSq :
 	protected boost::numeric::ublas::matrix<Type> 
 {
+	typedef boost::numeric::ublas::matrix<Type> BaseType;
 public:
 	// Default constructor
 	CMatrixSq();
@@ -150,18 +151,18 @@ inline CMatrixSq<Type>::~CMatrixSq()
 template <class Type>
 inline void CMatrixSq<Type>::Fill(const Type& src)
 {
-	std::fill(data().begin(), data().end(), src);
+	std::fill(BaseType::data().begin(), BaseType::data().end(), src);
 }
 
 template <class Type>
 inline bool CMatrixSq<Type>::Set(std::size_t row, std::size_t col, const Type &src )
 {
 	// Check bounds and resize if necessary
-	if (row >= size1() || col >= size2()) {
+	if (row >= BaseType::size1() || col >= BaseType::size2()) {
 		// Resize and preserve values
 		std::size_t largerDim = (row > col) ? row + 1 : col + 1;
 
-		resize(largerDim, largerDim, true);
+		BaseType::resize(largerDim, largerDim, true);
 	}
 
 	// Assignment
@@ -173,7 +174,7 @@ inline bool CMatrixSq<Type>::Set(std::size_t row, std::size_t col, const Type &s
 template <class Type>
 inline const Type& CMatrixSq<Type>::Get(std::size_t row, std::size_t col) const
 {
-	assert(row < size1() && col < size2());
+	assert(row < BaseType::size1() && col < BaseType::size2());
 
 	return (*this)(row, col);
 }
@@ -181,19 +182,19 @@ inline const Type& CMatrixSq<Type>::Get(std::size_t row, std::size_t col) const
 template <class Type>
 inline int CMatrixSq<Type>::Dim()
 {
-	return static_cast<int>(size1()); // size1() == size2() for CMatrixSQ
+	return static_cast<int>(BaseType::size1()); // size1() == size2() for CMatrixSQ
 }
 
 template <class Type>
 inline std::size_t CMatrixSq<Type>::size() const
 {
-	return size1(); // size1() == size2() for CMatrixSQ
+	return BaseType::size1(); // size1() == size2() for CMatrixSQ
 }
 
 template <class Type>
 inline bool CMatrixSq<Type>::IsCleared( void )
 {
-	return (size1() == 0);
+	return (BaseType::size1() == 0);
 }
 	
 template <class Type>
@@ -202,7 +203,7 @@ inline bool CMatrixSq<Type>::Init( std::size_t dim )
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Initializing matrix of dimension %d with %d elements.\r", static_cast<int>(dim));
 
 	// Resize the matrix
-	resize(dim, dim);
+	BaseType::resize(dim, dim);
 
 	// Zero all values
 	Fill(0);
@@ -213,17 +214,17 @@ inline bool CMatrixSq<Type>::Init( std::size_t dim )
 template <class Type>
 inline void CMatrixSq<Type>::Clear( void )
 {
-	resize(0, 0);
+	BaseType::resize(0, 0);
 }
 
 template<class Type>
 inline void CMatrixSq<Type>::Save( idSaveGame *savefile ) const
 {
-	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(BaseType::size1()));
 
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			// Saveable elements must support this Save() call
 			(*this)(i,j).Save(savefile);
@@ -238,11 +239,11 @@ inline void CMatrixSq<Type>::Restore( idRestoreGame *savefile )
 	savefile->ReadUnsignedInt(size);
 
 	// Resize the matrix accordingly
-	resize(size, size, false);
+	BaseType::resize(size, size, false);
 
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			// Saveable elements must support this Save() call
 			(*this)(i,j).Restore(savefile);
@@ -254,11 +255,11 @@ inline void CMatrixSq<Type>::Restore( idRestoreGame *savefile )
 template<>
 inline void CMatrixSq<int>::Save( idSaveGame *savefile ) const
 {
-	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(BaseType::size1()));
 
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			savefile->WriteInt((*this)(i,j));
 		}
@@ -273,12 +274,12 @@ inline void CMatrixSq<int>::Restore( idRestoreGame *savefile )
 	savefile->ReadUnsignedInt(size);
 
 	// Resize the matrix accordingly
-	resize(size, size, false);
+	BaseType::resize(size, size, false);
 
 	// Now read the values back in
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			savefile->ReadInt((*this)(i,j));
 		}
@@ -289,11 +290,11 @@ inline void CMatrixSq<int>::Restore( idRestoreGame *savefile )
 template<>
 inline void CMatrixSq<float>::Save( idSaveGame *savefile ) const
 {
-	savefile->WriteUnsignedInt(static_cast<unsigned int>(size1()));
+	savefile->WriteUnsignedInt(static_cast<unsigned int>(BaseType::size1()));
 
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			savefile->WriteFloat((*this)(i,j));
 		}
@@ -308,12 +309,12 @@ inline void CMatrixSq<float>::Restore( idRestoreGame *savefile )
 	savefile->ReadUnsignedInt(size);
 
 	// Resize the matrix accordingly
-	resize(size, size, false);
+	BaseType::resize(size, size, false);
 
 	// Now read the values back in
-	for (std::size_t i = 0; i < size1(); ++i) 
+	for (std::size_t i = 0; i < BaseType::size1(); ++i) 
 	{
-		for (std::size_t j = 0; j < size1(); ++j) 
+		for (std::size_t j = 0; j < BaseType::size1(); ++j) 
 		{
 			savefile->ReadFloat((*this)(i,j));
 		}
@@ -330,7 +331,7 @@ inline const Type& CMatRUT<Type>::GetRev(std::size_t row, std::size_t col) const
 		col = temp;
 	}
 
-	return Get(row, col);
+	return CMatrixSq<Type>::Get(row, col);
 }
 
 template <class Type>
@@ -343,7 +344,7 @@ inline bool CMatRUT<Type>::SetRev(std::size_t row, std::size_t col, Type& src )
 		col = temp;
 	}
 
-	Set(row, col, src);
+	CMatrixSq<Type>::Set(row, col, src);
 
 	return true;
 }
