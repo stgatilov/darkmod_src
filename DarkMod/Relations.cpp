@@ -317,12 +317,21 @@ CLASS_DECLARATION( idEntity, CRelationsEntity )
 	// Events go here
 END_CLASS
 
-// Constructor, does nothing
-CRelationsEntity::CRelationsEntity()
-{}
-
 void CRelationsEntity::Spawn()
 {
 	// Copy the values from our dictionary to the global relations matrix manager
-	
+	gameLocal.m_RelationsManager->SetFromArgs(spawnArgs);
+
+	// Remove ourselves from the game
+	PostEventMS(&EV_SafeRemove, 0);
+}
+
+CLASS_DECLARATION( idEntity, CTarget_SetRelations )
+	EVENT( EV_Activate,	CTarget_SetRelations::Event_Activate )
+END_CLASS
+
+void CTarget_SetRelations::Event_Activate(idEntity* activator)
+{
+	// Copy the values from our dictionary to the global relations matrix manager
+	gameLocal.m_RelationsManager->SetFromArgs(spawnArgs);
 }
