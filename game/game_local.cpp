@@ -1535,6 +1535,16 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	
 	InitScriptForMap();
 
+	// Initialize the AI relationships
+	// greebo: Do this before spawning the rest of the map entities to give them a chance
+	// to override the default settings found on the entityDef
+	const idDict* defaultRelationsDict = FindEntityDefDict(cv_tdm_default_relations_def.GetString());
+
+	if (defaultRelationsDict != NULL)
+	{
+		m_RelationsManager->SetFromArgs(*defaultRelationsDict);
+	}
+
 	MapPopulate();
 
 	// ishtvan: Set the player variable on the grabber
@@ -1543,8 +1553,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// greebo: Add the elevator reachabilities to the AAS
 	SetupEAS();
 
-	// initialize the AI relationships based on worldspawn
+	// Then, apply the worldspawn settings
 	m_RelationsManager->SetFromArgs( world->spawnArgs );
+
 	mpGame.Reset();
 
 	mpGame.Precache();
