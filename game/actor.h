@@ -105,7 +105,7 @@ public:
 	bool				m_bCanParry;
 	bool				m_bCanParryAll;
 	idList<EMeleeType>	m_attacks; // possible attacks with current weapon
-	float				m_range; // by default same as melee_range on AI
+	float				m_range; // unarmed range (idAI::melee_range) + weapon range
 
 }; // CMeleeStatus
 

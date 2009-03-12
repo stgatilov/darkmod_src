@@ -530,6 +530,8 @@ idAI::idAI()
 	m_AirTicksMax = 0;
 	m_HeadBodyID = 0;
 	m_HeadJointID = INVALID_JOINT;
+	m_OrigHeadCM = NULL;
+	m_bHeadCMSwapped = false;
 	m_MouthOffset = vec3_zero;
 
 	m_bCanBeKnockedOut = true;
@@ -584,6 +586,9 @@ idAI::~idAI() {
 	destroyCurrentHidingSpotSearch();
 
 	aiNode.Remove();
+
+	if( m_OrigHeadCM )
+		delete m_OrigHeadCM;
 }
 
 /*
@@ -774,6 +779,11 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanDrown);
 	savefile->WriteInt(m_HeadBodyID);
 	savefile->WriteJoint(m_HeadJointID);
+
+	savefile->WriteBool( m_bHeadCMSwapped );
+//	if( m_bHeadCMSwapped && m_OrigHeadCM )
+//		m_OrigHeadCM->Save( savefile );
+
 	savefile->WriteInt(m_AirTics);
 	savefile->WriteInt(m_AirTicksMax);
 	savefile->WriteInt(m_AirCheckInterval);
@@ -1083,6 +1093,17 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanDrown);
 	savefile->ReadInt(m_HeadBodyID);
 	savefile->ReadJoint(m_HeadJointID);
+
+	savefile->ReadBool( m_bHeadCMSwapped );
+	// Ishtvan: if the head CM was swapped at save, swap it again
+	// (I tried to do this more correctly, but the AF itself isn't saving its new clipmodel)
+	if( m_bHeadCMSwapped )
+	{
+		m_OrigHeadCM = NULL;
+		m_bHeadCMSwapped = false;
+		SwapHeadAFCM( true );
+	}
+
 	savefile->ReadInt(m_AirTics);
 	savefile->ReadInt(m_AirTicksMax);
 	savefile->ReadInt(m_AirCheckInterval);
@@ -1559,13 +1580,6 @@ void idAI::Spawn( void )
 
 	// Dark Mod: set up drowning
 	m_MouthOffset = spawnArgs.GetVector("mouth_offset");
-	if( !head.GetEntity() && af.IsLoaded() )
-	{
-		const char *headName = spawnArgs.GetString("head_bodyname", "head");
-		// this will call gameLocal.Error if the joint name is wrong
-		m_HeadBodyID = af.GetPhysics()->GetBodyId( headName );
-	}
-
 	// set up drowning timer (add a random bit to make it asynchronous w/ respect to other AI)
 	m_bCanDrown = spawnArgs.GetBool( "can_drown", "1" );
 	m_AirCheckTimer = gameLocal.time + gameLocal.random.RandomInt( 8000 );
@@ -1585,9 +1599,16 @@ void idAI::Spawn( void )
 	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
 
 	m_HeadJointID = animator.GetJointHandle(HeadJointName);
+	m_HeadBodyID = BodyForJoint( m_HeadJointID );
 	if( m_HeadJointID == INVALID_JOINT )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint %s on AI %s \r", HeadJointName, name.c_str());
+	}
+
+	// modify the head clipmodel while conscious to facilitate KO'ing, if applicable
+	if( spawnArgs.FindKey("living_headbox_mins") != NULL && af.IsLoaded() )
+	{
+		SwapHeadAFCM( true );
 	}
 
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
@@ -5280,6 +5301,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	idStr DeathSound = "snd_death";
 
+	// swaps the head CM back if a different one was swapped in while conscious
+	SwapHeadAFCM( false );
+
 	if ( StartRagdoll() )
 	{
 		if( MouthIsUnderwater() )
@@ -8898,6 +8922,9 @@ void idAI::PostKnockOut()
 
 	Unbind();
 
+	// swaps the head CM back if a different one was swapped in while conscious
+	SwapHeadAFCM( false );
+
 	if ( StartRagdoll() )
 	{
 		StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
@@ -9941,4 +9968,59 @@ float idAI::StealthDamageMult()
 		return m_SneakAttackMult;
 	else
 		return 1.0;
+}
+
+void idAI::SwapHeadAFCM( bool bConscious )
+{
+	idAFBody *headBody;
+	headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
+
+	if( bConscious )
+	{
+		idClipModel *oldClip = headBody->GetClipModel();
+		idVec3	CMorig	= oldClip->GetOrigin();
+		idMat3	CMaxis	= oldClip->GetAxis();
+		int		CMid	= oldClip->GetId();
+
+		oldClip->Unlink();
+		// store a copy of the original cm since it will be deleted
+		m_OrigHeadCM = new idClipModel(oldClip);
+
+		idBounds HeadBounds;
+		spawnArgs.GetVector( "living_headbox_mins", NULL, HeadBounds[0] );
+		spawnArgs.GetVector( "living_headbox_maxs", NULL, HeadBounds[1] );
+
+		idTraceModel trm;
+		trm.SetupBox( HeadBounds );
+
+		idClipModel *NewClip = new idClipModel( trm );
+
+		// AF bodies want to have their origin at the center of mass
+		float MassOut;
+		idVec3 COM;
+		idMat3 inertiaTensor;
+		NewClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
+		NewClip->TranslateOrigin( -COM );
+		CMorig += COM * CMaxis;
+		
+		NewClip->SetContents( oldClip->GetContents() );
+		NewClip->Link( gameLocal.clip, this, CMid, CMorig, CMaxis );
+		headBody->SetClipModel( NewClip );
+
+		m_bHeadCMSwapped = true;
+	}
+	// swap back to original CM when going unconscious, if we swapped earlier
+	else if( !bConscious && m_bHeadCMSwapped )
+	{
+		idClipModel *oldClip = headBody->GetClipModel();
+		idVec3	CMorig	= oldClip->GetOrigin();
+		idMat3	CMaxis	= oldClip->GetAxis();
+		int		CMid	= oldClip->GetId();
+
+		m_OrigHeadCM->Link( gameLocal.clip, this, CMid, CMorig, CMaxis );
+		headBody->SetClipModel( m_OrigHeadCM );
+
+		m_bHeadCMSwapped = false;
+		m_OrigHeadCM = NULL;
+	}
 }

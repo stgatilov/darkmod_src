@@ -452,8 +452,9 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		// Secondary trace for when we hit the AF structure of an AI and want
 		// to see where we would hit on the actual model
 		if(	(tr.c.contents & CONTENTS_CORPSE)
-			&& other->IsType(idAnimatedEntity::Type) )
+			&& other->IsType(idAFEntity_Base::Type) )
 		{
+			idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
 			trace_t tr2;
 
 			// NOTE: Just extrapolating along the velocity can fail when the AF
@@ -461,19 +462,31 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			// Just using the AF face normal can fail when hit at a corner
 			// So take an equal average of both
 			idVec3 trDir = ( PointVelDir - tr.c.normal ) / 2.0f;
+			trDir.Normalize();
 
-			idVec3 start = tr.c.point - 8.0f * PointVelDir;
+			idVec3 start = tr.c.point - 8.0f * trDir;
 			contentsEnt = GetPhysics()->GetContents();
 			GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 			gameLocal.clip.TracePoint
 				( 
-					tr2, start, tr.c.point + 8.0f * PointVelDir, 
+					tr2, start, tr.c.point + 8.0f * trDir, 
 					CONTENTS_RENDERMODEL, m_Owner.GetEntity() 
 				);
 			GetPhysics()->SetContents( contentsEnt );
 
-			if( tr2.fraction < 1.0f )
+			// Ishtvan: Ignore secondary trace if we hit a swapped-in head model on the first pass
+			// we want to register a hit on that swapped in head body for gameplay reasons
+			bool bHitSwappedHead = false;
+			if( otherAF->IsType(idAI::Type) )
 			{
+				idAI *otherAI = static_cast<idAI *>(otherAF);
+				if( otherAI->m_bHeadCMSwapped && (tr.c.id == otherAI->m_HeadBodyID) )
+					bHitSwappedHead = true;
+			}
+
+			if( tr2.fraction < 1.0f && !bHitSwappedHead )
+			{
+				
 				tr = tr2;
 				other = gameLocal.entities[ tr.c.entityNum ];
 				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: CONTENTS_CORPSE secondary trace hit entity %s\r", other->name.c_str());
@@ -492,11 +505,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			{
 				// failed to connect with the rendermodel.  
 				// Last ditch effort to find the correct AF body
-				if( other->IsType(idAFEntity_Base::Type) )
-				{
-					idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
-					location = otherAF->JointForBody(tr.c.id);
-				}
+				location = otherAF->JointForBody(tr.c.id);
 
 				// If we failed to find anything, draw the attempted trace in green
 				if( cv_melee_debug.GetBool() )
