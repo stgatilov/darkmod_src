@@ -29,24 +29,18 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4996)
 
 #include "Relations.h"
-#include "MatrixSq.h"
-
 
 /**
 * TODO: Move these constants to def file or .ini file
 **/
 static const int s_DefaultRelation = -1;
-
 static const int s_DefaultSameTeamRel = 5;
-
 
 CLASS_DECLARATION( idClass, CRelations )
 END_CLASS
 
 CRelations::CRelations()
-{
-	m_bMatFailed = false;
-}
+{}
 
 CRelations::~CRelations()
 {
@@ -63,7 +57,7 @@ bool CRelations::IsCleared()
 	return m_RelMat.IsCleared();
 }
 
-int CRelations::Size( void )
+int CRelations::Size()
 {
 	return m_RelMat.Dim();
 }
@@ -75,17 +69,10 @@ int CRelations::GetRelNum(int i, int j)
 	assert(i >= 0 && j >= 0);
 	
 	// return the default and don't attempt to check the matrix 
-	// if it failed to load or indices are out of bounds
-	if (m_bMatFailed || i >= m_RelMat.Dim() || j >= m_RelMat.Dim())
+	// if indices are out of bounds
+	if (i >= m_RelMat.Dim() || j >= m_RelMat.Dim())
 	{
-		if( i == j )
-		{
-			return s_DefaultSameTeamRel;
-		}
-		else
-		{
-			return s_DefaultRelation;
-		}
+		return (i == j) ? s_DefaultSameTeamRel : s_DefaultRelation;
 	}
 	
 	return m_RelMat.Get(static_cast<std::size_t>(i), static_cast<std::size_t>(j));
@@ -93,18 +80,22 @@ int CRelations::GetRelNum(int i, int j)
 
 int CRelations::GetRelType(int i, int j)
 {
-	int returnval(0), relNum;
+	int returnval(0);
 
-	relNum = GetRelNum(i, j);
+	int relNum = GetRelNum(i, j);
 
-	if ( relNum<0 )
+	if (relNum < 0)
+	{
 		returnval = E_ENEMY;
-
-	else if ( relNum>0 )
+	}
+	else if (relNum > 0)
+	{
 		returnval = E_FRIEND;
-	
-	else if ( relNum == 0 )
+	}
+	else if (relNum == 0)
+	{
 		returnval = E_NEUTRAL;
+	}
 
 	return returnval;
 }
@@ -147,36 +138,22 @@ void CRelations::ExtendRelationsMatrixToDim(int newDim)
 
 void CRelations::ChangeRel( int i, int j, int offset)
 {
-	int entry, val;
-
-	entry = GetRelNum( i, j );
-	val = entry + offset;
-
-	SetRel( i, j, val );
+	SetRel(i, j, GetRelNum(i, j) + offset);
 }
 
 bool CRelations::IsFriend( int i, int j)
 {
-	if ( GetRelNum(i, j) > 0 )
-		return true;
-	else
-		return false;
+	return (GetRelNum(i, j) > 0);
 }
 
 bool CRelations::IsEnemy( int i, int j)
 {
-	if ( GetRelNum(i, j) < 0 )
-		return true;
-	else
-		return false;
+	return (GetRelNum(i, j) < 0);
 }
 
 bool CRelations::IsNeutral( int i, int j)
 {
-	if ( GetRelNum(i, j) == 0 )
-		return true;
-	else
-		return false;
+	return (GetRelNum(i, j) == 0);
 }
 
 CRelations::SEntryData CRelations::ParseEntryData(const idKeyValue* kv)
@@ -188,8 +165,7 @@ CRelations::SEntryData CRelations::ParseEntryData(const idKeyValue* kv)
 	
 	// parse it
 	int start = 4;
-	int end = tempKey.Find(',');
-	end--;
+	int end = tempKey.Find(',') - 1;
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: start = %d, end(comma-1) = %d\r", start, end);
 
@@ -223,9 +199,6 @@ bool CRelations::SetFromArgs(const idDict& args)
 {
 	idList<SEntryData> entries;
 	idList<int> addedDiags;
-	
-	// TODO: Remove this, matrix parsing never "fails" in this sense
-	m_bMatFailed = false;
 	
 	for (const idKeyValue* kv = args.MatchPrefix("rel ", NULL ); kv != NULL; kv = args.MatchPrefix("rel ", kv)) 
 	{
@@ -297,8 +270,7 @@ bool CRelations::SetFromArgs(const idDict& args)
 	{
 		const SEntryData& entry = entries[i];
 
-		// Use the SetRel() method, which automatically takes care of
-		// initialising new teams
+		// Use the SetRel() method, which automatically takes care of initialising new teams
 		SetRel(entry.row, entry.col, entry.val);
 	}
 
@@ -306,24 +278,24 @@ bool CRelations::SetFromArgs(const idDict& args)
 }
 
 
-void CRelations::Save( idSaveGame *save ) const
+void CRelations::Save(idSaveGame* save) const
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Saving Relationship Matrix data\r");
-	m_RelMat.Save( save );
+	m_RelMat.Save(save);
 }
 
-void CRelations::Restore( idRestoreGame *save )
+void CRelations::Restore(idRestoreGame* save)
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Loading Relationship Matrix data from save\r");
 
-	m_RelMat.Restore( save );
+	m_RelMat.Restore(save);
 }
 
-void CRelations::DebugPrintMat( void )
+void CRelations::DebugPrintMat()
 {
-	//idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat.NumFilled() );
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat.IsCleared() );
-	if( m_RelMat.IsCleared() )
+
+	if (m_RelMat.size() == 0)
 	{
 		idLib::common->Printf("Relations Matrix is Empty.\n");
 		return;

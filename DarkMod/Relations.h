@@ -170,12 +170,6 @@ protected:
 	* The relationship matrix uses class CMatrixSq to store a square matrix
 	**/
 	CMatrixSq<int>		m_RelMat;
-
-	/**
-	* Boolean to store whether the relations matrix failed to load
-	* Accessors will check this and return the default relation if true
-	**/
-	bool				m_bMatFailed;
 };
 typedef boost::shared_ptr<CRelations> CRelationsPtr;
 
