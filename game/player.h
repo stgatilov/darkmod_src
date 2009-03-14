@@ -418,6 +418,9 @@ public:
 	// A pointer to the current map/floorplan.
 	CInventoryCursorPtr		m_MapCursor;
 
+	// The currently active inventory map entity
+	idEntityPtr<idEntity>	m_ActiveInventoryMapEnt;
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -1118,6 +1121,8 @@ private:
 
 	void					UseVehicle( void );
 
+	void					ClearActiveInventoryMap();
+
 	void					Event_GetButtons( void );
 	void					Event_GetMove( void );
 	void					Event_GetViewAngles( void );
@@ -1242,6 +1247,12 @@ private:
 	void					Event_ResetWeaponProjectile(const char* weaponName);
 	void					Event_ChangeWeaponName(const char* weaponName, const char* newName);
 	void					Event_GetCurWeaponName();
+
+	// Clears any active inventory maps
+	void					Event_ClearActiveInventoryMap();
+
+	// Sets the currently active map (feedback method for inventory map scripts)
+	void					Event_SetActiveInventoryMapEnt(idEntity* mapEnt);
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

@@ -140,6 +140,8 @@ const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", "ss", NULL)
 const idEventDef EV_ResetWeaponProjectile("resetWeaponProjectile", "s", NULL);
 const idEventDef EV_ChangeWeaponName("changeWeaponName", "ss", NULL);
 const idEventDef EV_GetCurWeaponName("getCurWeaponName", NULL, 's');
+const idEventDef EV_SetActiveInventoryMapEnt("setActiveInventoryMapEnt", "e");
+const idEventDef EV_ClearActiveInventoryMap("clearActiveInventoryMap", NULL);
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -218,6 +220,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_ResetWeaponProjectile,		idPlayer::Event_ResetWeaponProjectile )
 	EVENT( EV_ChangeWeaponName,				idPlayer::Event_ChangeWeaponName )
 	EVENT( EV_GetCurWeaponName,				idPlayer::Event_GetCurWeaponName )
+	EVENT( EV_SetActiveInventoryMapEnt,		idPlayer::Event_SetActiveInventoryMapEnt )
+	EVENT( EV_ClearActiveInventoryMap,		idPlayer::Event_ClearActiveInventoryMap )
 
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
@@ -1087,6 +1091,9 @@ void idPlayer::NextInventoryMap()
 		UseInventoryItem(EPressed, prevMapItem, 0, false); 
 	}
 
+	// Clear any previously active maps
+	ClearActiveInventoryMap();
+
 	if (m_MapCursor->IsLastItemInCategory())
 	{
 		// Reached last map, return without cycling to the next map
@@ -1537,6 +1544,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_MapCursor->GetId());
 	}
 
+	m_ActiveInventoryMapEnt.Save(savefile);
+
 	savefile->WriteInt(m_LightgemModifier);
 
 	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
@@ -1863,6 +1872,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(cursorId);
 		m_MapCursor = Inventory()->GetCursor(cursorId);
 	}
+
+	m_ActiveInventoryMapEnt.Restore(savefile);
 
 	savefile->ReadInt(m_LightgemModifier);
 
@@ -10967,4 +10978,38 @@ void idPlayer::Event_GetCurWeaponName()
 	if (weaponItem == NULL) return;
 
 	idThread::ReturnString( weaponItem->GetWeaponName().c_str() );
+}
+
+void idPlayer::ClearActiveInventoryMap()
+{
+	idEntity* mapEnt = m_ActiveInventoryMapEnt.GetEntity();
+
+	if (mapEnt == NULL) return;
+
+	// Call the method inventory_map::clear(entity userEnt)
+	idThread* thread = mapEnt->CallScriptFunctionArgs("clear", true, 0, "ee", mapEnt, this);
+
+	if (thread != NULL) 
+	{
+		// Run the thread at once
+		thread->Execute();
+	}
+
+	m_ActiveInventoryMapEnt = NULL;
+}
+
+void idPlayer::Event_ClearActiveInventoryMap()
+{
+	ClearActiveInventoryMap();
+}
+
+void idPlayer::Event_SetActiveInventoryMapEnt(idEntity* mapEnt)
+{
+	// Check for a previously active map and clear it if necessary
+	if (m_ActiveInventoryMapEnt.GetEntity() != NULL)
+	{
+		ClearActiveInventoryMap();
+	}
+
+	m_ActiveInventoryMapEnt = mapEnt;
 }
