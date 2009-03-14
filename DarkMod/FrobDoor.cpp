@@ -275,21 +275,6 @@ void CFrobDoor::Spawn( void )
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
 
-	// Flag the AAS areas the door is located in with door travel flag
-	for (int i = 0; i < gameLocal.NumAAS(); i++)
-	{
-		idAAS*	aas = gameLocal.GetAAS(i);
-		if (aas == NULL)
-		{
-			continue;
-		}
-		
-		int areaNum = GetAASArea(aas);
-		idStr areatext(areaNum);
-		//gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,i), 0.2f, colorGreen, 
-		//	mat3_identity, 1, 10000000);
-		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
-	}
 }
 
 void CFrobDoor::PostSpawn()
@@ -404,6 +389,20 @@ void CFrobDoor::PostSpawn()
 	{
 		AutoSetupDoubleDoor();
 	}
+
+	// Flag the AAS areas the door is located in with door travel flag
+	for (int i = 0; i < gameLocal.NumAAS(); i++)
+	{
+		idAAS*	aas = gameLocal.GetAAS(i);
+		if (aas == NULL)
+		{
+			continue;
+		}
+		
+		int areaNum = GetAASArea(aas);
+		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
+	}
+
 }
 
 bool CFrobDoor::IsPickable()

@@ -764,6 +764,11 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 
+	// idStr areatext(areaNum);
+	// gameRenderWorld->DebugLine(colorGreen,center,center + idVec3(0,0,20),10000000);
+	// gameRenderWorld->DebugLine(colorOrange,GetPhysics()->GetOrigin(),GetPhysics()->GetOrigin() + m_ClosedPos,10000000);
+	// gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,1), 0.2f, colorGreen, mat3_identity, 1, 10000000);
+
 	return areaNum;
 }
 
