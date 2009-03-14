@@ -77,6 +77,11 @@ void CShopItem::ChangeCount(int amount) {
 
 void CShop::Init()
 {
+	Clear();
+}
+
+void CShop::Clear()
+{
 	itemsForSale.Clear();
 	itemsPurchased.Clear();
 	startingItems.Clear();

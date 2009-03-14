@@ -87,8 +87,10 @@ private:
 	bool			nothingForSale;
 
 public:
-	// clears out all lists
 	void Init();
+
+	// Clears out all lists
+	void Clear();
 
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
