@@ -422,6 +422,11 @@ void idAASLocal::SetAreaTravelFlag( int index, int flag )
 	}
 }
 
+int idAASLocal::GetClusterNum(int areaNum)
+{
+	return file->GetArea( areaNum ).cluster;
+}
+
 void idAASLocal::Save(idSaveGame* savefile) const
 {
 	elevatorSystem->Save(savefile);

@@ -16,6 +16,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
+#include "../game/ai/aas_local.h"
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
 #include "sndProp.h"
@@ -763,6 +764,30 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 	center.z = bounds[0].z + 1;
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
+
+	idAASLocal* aasLocal = dynamic_cast<idAASLocal*> (aas);
+
+	if (aasLocal)
+	{
+		int clusterNum = aasLocal->GetClusterNum(areaNum);
+		if (clusterNum > 0)
+		{
+			// angua: This is not a portal area, check the surroundings for portals
+			idReachability *reach;
+			for ( reach = aasLocal->GetAreaFirstReachability(areaNum); reach; reach = reach->next ) {
+				int testAreaNum = reach->toAreaNum;
+				int testClusterNum = aasLocal->GetClusterNum(testAreaNum);
+				if (testClusterNum < 0)
+				{
+					// we have found a portal area, take this one instead
+					areaNum = testAreaNum;
+					break;
+				}
+			}
+		}
+
+		// aasLocal->DrawArea(areaNum);
+	}
 
 	// idStr areatext(areaNum);
 	// gameRenderWorld->DebugLine(colorGreen,center,center + idVec3(0,0,20),10000000);

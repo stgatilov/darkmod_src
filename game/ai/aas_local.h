@@ -119,6 +119,8 @@ public:
 
 	virtual void				SetAreaTravelFlag( int index, int flag );
 
+	// angua: this returns the cluster number of this area
+	virtual int					GetClusterNum(int areaNum);
 
 	/*!
 	* See base class for interface definition

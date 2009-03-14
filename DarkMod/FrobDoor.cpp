@@ -209,6 +209,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	}
 
 	m_Bar.Restore(savefile);
+
+	SetDoorTravelFlag();
 }
 
 void CFrobDoor::Spawn( void )
@@ -390,6 +392,11 @@ void CFrobDoor::PostSpawn()
 		AutoSetupDoubleDoor();
 	}
 
+	SetDoorTravelFlag();
+}
+
+void CFrobDoor::SetDoorTravelFlag()
+{
 	// Flag the AAS areas the door is located in with door travel flag
 	for (int i = 0; i < gameLocal.NumAAS(); i++)
 	{
@@ -402,8 +409,8 @@ void CFrobDoor::PostSpawn()
 		int areaNum = GetAASArea(aas);
 		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
 	}
-
 }
+
 
 bool CFrobDoor::IsPickable()
 {

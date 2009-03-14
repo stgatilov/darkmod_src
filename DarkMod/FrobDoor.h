@@ -128,6 +128,9 @@ protected:
 	 */
 	virtual void			PostSpawn();
 
+	// angua: flag the AAS area the door is located in with the travel flag TFL_DOOR
+	virtual void			SetDoorTravelFlag();
+
 	/**
 	 * Find out if this door is touching another door, and if they share the same portal
 	 * If so, store a pointer to the other door m_DoubleDoor on this door.
