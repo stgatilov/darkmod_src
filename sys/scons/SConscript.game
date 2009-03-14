@@ -257,11 +257,10 @@ local_env = g_game_env.Copy()
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
-# Use local Boost and DevIL
-local_env.Append(LIBS = ['boost_filesystem'])
+# Use static Boost and DevIL
 local_env.Append(LIBS = [
     File('#/linux/devil/lib/libIL.a'),
-#    File('#/linux/boost/lib/libboost_filesystem-gcc42-mt-1_36.a')
+    File('/usr/lib/libboost_filesystem.a')
 ])
 
 ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects + ziploader_list )
