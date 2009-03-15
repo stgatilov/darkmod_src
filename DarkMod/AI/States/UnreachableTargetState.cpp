@@ -216,7 +216,7 @@ void UnreachableTargetState::Think(idAI* owner)
 	targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
 
 	idVec3 targetPoint = enemy->GetPhysics()->GetOrigin() 
-				+ (targetDirection * (owner->spawnArgs.GetFloat("melee_range","64")));
+				+ (targetDirection * owner->melee_range);
 	idVec3 bottomPoint = targetPoint;
 	bottomPoint.z -= 70;
 	

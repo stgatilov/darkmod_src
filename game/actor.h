@@ -227,6 +227,16 @@ public:
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
 
 	/**
+	* TDM: Moved up from idAI
+	* These ranges are the best guess for the max range at which the AI can hit
+	* an enemy.  melee_range_unarmed is the range with no weapon, read from
+	* the melee_range spawnarg on the AI.
+	* If the AI has no weapon, melee_range = melee_range_unarmed.
+	* melee_range includes the reach of the current weapon, updated when weapons are attached
+	**/
+	float					melee_range_unarmed; // potential
+	float					melee_range; // includes reach of current weapon
+	/**
 	* Stores what this actor is currently doing in melee combat
 	* ishtvan: Made public to avoid lots of gets/sets
 	**/
@@ -439,6 +449,11 @@ public:
 	 */
 	int GetNumMeleeWeapons();
 	int GetNumRangedWeapons();
+
+	ID_INLINE float GetMeleeRange() const
+	{
+		return melee_range;
+	}
 
 	/**
 	 * greebo: Returns TRUE whether combat is allowed for the given type.

@@ -432,7 +432,6 @@ idAI::idAI()
 	lastHitCheckResult	= false;
 	lastHitCheckTime	= 0;
 	lastAttackTime		= 0;
-	melee_range			= 0.0f;
 	fire_range			= 0.0f;
 	projectile_height_to_distance_ratio = 1.0f;
 	projectileDef		= NULL;
@@ -652,7 +651,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( lastHitCheckResult );
 	savefile->WriteInt( lastHitCheckTime );
 	savefile->WriteInt( lastAttackTime );
-	savefile->WriteFloat( melee_range );
 	savefile->WriteFloat( fire_range );
 	savefile->WriteFloat( projectile_height_to_distance_ratio );
 
@@ -943,7 +941,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( lastHitCheckResult );
 	savefile->ReadInt( lastHitCheckTime );
 	savefile->ReadInt( lastAttackTime );
-	savefile->ReadFloat( melee_range );
 	savefile->ReadFloat( fire_range );
 	savefile->ReadFloat( projectile_height_to_distance_ratio );
 
@@ -1269,7 +1266,6 @@ void idAI::Spawn( void )
 	maxAreaReevaluationInterval = spawnArgs.GetInt( "max_area_reevaluation_interval", "2000");
 	doorRetryTime = SEC2MS(spawnArgs.GetInt( "door_retry_time", "120"));
 
-	spawnArgs.GetFloat( "melee_range",			"64",		melee_range );
 	spawnArgs.GetFloat( "fire_range",			"0",		fire_range );
 	spawnArgs.GetFloat( "projectile_height_to_distance_ratio",	"1", projectile_height_to_distance_ratio );
 
@@ -5879,6 +5875,80 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 	}
 
 	return false;
+}
+
+bool idAI::CanBeHitByEntity(idActor* entity, ECombatType combatType)
+{
+	if (entity == NULL) 
+		return false;
+
+	if (combatType == COMBAT_MELEE)
+	{
+		if ( !entity->GetAttackFlag(COMBAT_MELEE) 
+				|| !entity->melee_range )
+			return false;
+
+		const idVec3& org = physicsObj.GetOrigin();
+		const idBounds& bounds = physicsObj.GetBounds();
+
+		const idVec3& enemyOrg = entity->GetPhysics()->GetOrigin();
+		const idBounds& enemyBounds = entity->GetPhysics()->GetBounds();
+
+		idVec3 ourVel = physicsObj.GetLinearVelocity();
+		idVec3 enemyVel = entity->GetPhysics()->GetLinearVelocity();
+		idVec3 relVel = enemyVel - ourVel;
+		float velDot = ourVel * enemyVel;
+
+		idVec3 dir = enemyOrg - org;
+		dir.z = 0;
+		float dist = dir.LengthFast();
+
+		float enemyReach = entity->melee_range;
+
+		// generic factor to increase the enemy's threat range (accounts for sudden, quick advances)
+		// (TODO: Make spawnwarg?)
+		float threatFactor = 1.5f; 
+		// velocity-based factor to increase the enemy's threat range
+		float velFactor;
+		if( velDot > 0 )
+		{
+			// enemy moving away
+			velFactor = 1.0f;
+		}
+		else
+		{
+			// TODO: Make spawnargs?
+			// max speed of 20 MPH
+			float maxVel = 352;
+			float maxThreatInc = 3.0;
+
+			velFactor = idMath::ClampFloat(1.0f, maxThreatInc, 1.0f + (maxThreatInc-1.0f)*relVel.LengthFast()/maxVel);
+		}
+
+		enemyReach *= threatFactor * velFactor;
+
+		float maxdist = enemyReach + bounds[1][0];
+
+		if (dist < maxdist)
+		{
+			// within horizontal distance
+			if ((org.z + enemyBounds[1][2] + entity->melee_range) > org.z &&
+					(org.z + bounds[1][2]) > enemyOrg.z)
+			{
+				// within height
+				// don't bother with trace for this test
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	else if (combatType == COMBAT_RANGED)
+	{
+		return false; // NYI
+	}
+	else
+		return false;
 }
 
 void idAI::UpdateAttachmentContents(bool makeSolid)

@@ -251,6 +251,11 @@ public:
 	// don't need to query idAI::CanHitEnemy() independently.
 	bool canHitEnemy;
 
+	/**
+	* When true, an enemy can potentially hit us with a melee attack in the near future
+	**/
+	bool canBeHitByEnemy;
+
 	/*!
 	* These hold the current spot search target, regardless of whether
 	* or not it is a hiding spot search or some other sort of spot search

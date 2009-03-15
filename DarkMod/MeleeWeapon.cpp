@@ -926,4 +926,7 @@ void CMeleeWeapon::AttachedToActor(idActor *actor)
 	src.FreeSource();
 
 	pMeleeStatus->m_attacks = attacks;
+
+	// add weapon reach to AI's unarmed reach
+	actor->melee_range = actor->melee_range_unarmed + spawnArgs.GetFloat("reach");
 }

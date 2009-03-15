@@ -544,11 +544,6 @@ public:
 		return mind->GetMemory();
 	}
 
-	ID_INLINE float GetMeleeRange() const
-	{
-		return melee_range;
-	}
-
 	ID_INLINE idAAS* GetAAS() const
 	{
 		return aas;
@@ -632,7 +627,6 @@ protected:
 	bool					lastHitCheckResult;
 	int						lastHitCheckTime;
 	int						lastAttackTime;
-	float					melee_range;
 	float					fire_range;
 	float					projectile_height_to_distance_ratio;	// calculates the maximum height a projectile can be thrown
 	idList<idVec3>			missileLaunchOffset;
@@ -1319,6 +1313,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * ranged AI implement a visual test incl. lighting.
 	 */
 	bool CanHitEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
+
+	/**
+	 * Returns TRUE or FALSE, depending on the distance to the 
+	 * given entity and the weapons attached to it.
+	 * May include other factors such as relative velocity
+	 * Ranged combat NYI (may overlap with existing "take cover" algorithms)
+	 */
+	bool CanBeHitByEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
 
 	/**
 	 * greebo: This updates the weapon attachment's "solid" status.

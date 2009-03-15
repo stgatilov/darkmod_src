@@ -82,7 +82,6 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 		gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
-	// TODO: Different recovery time based on what just happened (was parried, got hit, etc)
 	// TODO: Cache these rather than calc. every frame?
 	int NextAttTime;
 	if( pStatus->m_ActionResult == MELEERESULT_PAR_BLOCKED 
@@ -108,13 +107,12 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 
 	// if we can't attack and our enemy is attacking us at a threatening range, parry
 	// TODO: Figure out how to switch enemies to face & parry a new one
-	// TODO: May need different range other than canHitEnemy, if enemy reach exceeds our own
 	else if
 		( 
 			pStatus->m_bCanParry
 			&& gameLocal.time > NextParTime
-			&& owner->GetMemory().canHitEnemy // we can hit them so they can hit us?
 			&& (pEnStatus->m_ActionState == MELEEACTION_ATTACK)
+			&& owner->GetMemory().canBeHitByEnemy
 			&& !_bForceAttack
 		)
 	{

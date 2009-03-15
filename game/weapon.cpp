@@ -732,6 +732,13 @@ void idWeapon::Clear( void ) {
 	m_Attachments.Clear();
 
 	m_animRates.Clear();
+
+	// clear attack flags on the player
+	if( owner )
+	{
+		owner->SetAttackFlag(COMBAT_MELEE, false);
+		owner->SetAttackFlag(COMBAT_RANGED, false);
+	}
 }
 
 /*
@@ -1105,6 +1112,16 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// make sure we have the correct skin
 	UpdateSkin();
+
+	// update attack flags on the player
+	if(weaponDef->dict.GetBool("is_weapon_melee"))
+	{
+		owner->SetAttackFlag(COMBAT_MELEE, true);
+	}
+	else if(weaponDef->dict.GetBool("is_weapon_ranged"))
+	{
+		owner->SetAttackFlag(COMBAT_RANGED, true);
+	}
 }
 
 /***********************************************************************

@@ -51,6 +51,7 @@ Memory::Memory(idAI* owningAI) :
 	alertSearchExclusionVolume(0,0,0),
 	lastEnemyPos(0,0,0),
 	canHitEnemy(false),
+	canBeHitByEnemy(false),
 	currentSearchSpot(0,0,0),
 	hidingSpotTestStarted(false),
 	hidingSpotSearchDone(true),
@@ -101,6 +102,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(alertSearchExclusionVolume);
 	savefile->WriteVec3(lastEnemyPos);
 	savefile->WriteBool(canHitEnemy);
+	savefile->WriteBool(canBeHitByEnemy);
 	savefile->WriteVec3(currentSearchSpot);
 	savefile->WriteBool(hidingSpotTestStarted);
 	savefile->WriteBool(hidingSpotSearchDone);
@@ -171,6 +173,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(alertSearchExclusionVolume);
 	savefile->ReadVec3(lastEnemyPos);
 	savefile->ReadBool(canHitEnemy);
+	savefile->ReadBool(canBeHitByEnemy);
 	savefile->ReadVec3(currentSearchSpot);
 	savefile->ReadBool(hidingSpotTestStarted);
 	savefile->ReadBool(hidingSpotSearchDone);
