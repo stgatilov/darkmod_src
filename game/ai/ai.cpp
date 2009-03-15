@@ -10046,7 +10046,7 @@ void idAI::SwapHeadAFCM( bool bConscious )
 	idAFBody *headBody;
 	headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
 
-	if( bConscious )
+	if( bConscious && spawnArgs.FindKey("living_headbox_mins") )
 	{
 		idClipModel *oldClip = headBody->GetClipModel();
 		idVec3	CMorig	= oldClip->GetOrigin();

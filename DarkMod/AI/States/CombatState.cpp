@@ -42,6 +42,8 @@ bool CombatState::CheckAlertLevel(idAI* owner)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
 		return false;
 	}
 
@@ -180,6 +182,8 @@ void CombatState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
+	// ishtvan: swap out the expanded head bounding box for easy KOs
+	owner->SwapHeadAFCM( false );
 }
 
 // Gets called each time the mind is thinking
@@ -190,12 +194,16 @@ void CombatState::Think(idAI* owner)
 		owner->StopMove(MOVE_STATUS_DONE);
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 		owner->GetMind()->EndState();
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
 		return;
 	}
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
 		owner->GetMind()->EndState();
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
 		return;
 	}
 	Memory& memory = owner->GetMemory();
@@ -205,6 +213,8 @@ void CombatState::Think(idAI* owner)
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		owner->GetMind()->EndState();
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
 		return;
 	}
 
@@ -215,6 +225,8 @@ void CombatState::Think(idAI* owner)
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
 		return;
 	}
 
@@ -263,6 +275,8 @@ void CombatState::Think(idAI* owner)
 		{
 			// BLIND_CHASE_TIME has expired, we have lost the enemy!
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+			// ishtvan: swap the expanded head model back in when exiting state
+			owner->SwapHeadAFCM( true );
 			return;
 		}
 	}
