@@ -302,9 +302,6 @@ protected:
 
 	idVec3						m_OriginalPosition;
 	idAngles					m_OriginalAngle;
-
-	// Lockpick visualisation
-	static int					m_LockPickHUD;
 };
 
 #endif /* FROBDOOR_H */

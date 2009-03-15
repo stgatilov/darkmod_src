@@ -265,6 +265,8 @@ idPlayer::idPlayer() :
 	lastSndHitTime			= 0;
 	lastSavingThrowTime		= 0;
 
+	lockpickHUD				= 0;
+
 	hasLanded				= false;
 
 	weapon					= NULL;
@@ -975,6 +977,8 @@ void idPlayer::Spawn( void )
 		}
 	}
 
+	lockpickHUD = CreateOverlay("guis/tdm_lockpick.gui", 20);
+
 	// Clear the lightgem modifiers
 	m_LightgemModifierList.clear();
 
@@ -1309,6 +1313,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lastSndHitTime );
 	savefile->WriteInt( lastSavingThrowTime );
 
+	savefile->WriteInt( lockpickHUD );
+	savefile->WriteBool( hasLanded );
+
 	// idBoolFields don't need to be saved, just re-linked in Restore
 
 	savefile->WriteInt( levelTriggers.Num() );
@@ -1598,6 +1605,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lastHitTime );
 	savefile->ReadInt( lastSndHitTime );
 	savefile->ReadInt( lastSavingThrowTime );
+
+	savefile->ReadInt( lockpickHUD );
+	savefile->ReadBool( hasLanded );
 
 	// Re-link idBoolFields to the scriptObject, values will be restored in scriptObject's restore
 	LinkScriptVariables();

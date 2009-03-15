@@ -256,6 +256,9 @@ public:
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
 	int						lastSavingThrowTime;	// for the "free miss" effect
 
+	// The GUI of the lockpick visualisation HUD
+	int						lockpickHUD;
+
 	// angua: this is true when the player lands after jumping or a fall
 	// to play the jumping footstep sounds
 	bool					hasLanded;
