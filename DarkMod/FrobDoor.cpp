@@ -88,6 +88,7 @@ CFrobDoor::~CFrobDoor()
 	}
 
 	m_Pins.DeleteContents(true);
+	m_RandomPins.DeleteContents(true);
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
