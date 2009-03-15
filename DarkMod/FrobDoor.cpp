@@ -963,6 +963,27 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		return false;
 	}
 
+	idStr patternText = "Current Pattern: ";
+	patternText += idStr(m_FirstLockedPinIndex);
+	
+	const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+	for (int i = 0; i < pattern.Num(); ++i)
+	{
+		idStr p = pattern[i];
+		p.StripLeadingOnce("snd_lockpick_pin_");
+
+		gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "Sample" + idStr(i+1), p);
+
+		float opacity = (i < m_SoundPinSampleIndex) ? 0.2f : 0.6f;
+
+		if (i == m_SoundPinSampleIndex) opacity = 1;
+
+		gameLocal.GetLocalPlayer()->SetGuiFloat(m_LockPickHUD, "SampleOpacity" + idStr(i+1), opacity);
+		gameLocal.GetLocalPlayer()->SetGuiInt(m_LockPickHUD, "SampleBorder" + idStr(i+1), (i == m_SoundPinSampleIndex) ? 1 : 0);
+	}
+
+	gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "PatternText", patternText);
+
 	// Now check if the pick is of the correct type. If no picktype is given, or
 	// the mapper doesn't care, we ignore it.
 	idStr pick = spawnArgs.GetString("lock_picktype");
