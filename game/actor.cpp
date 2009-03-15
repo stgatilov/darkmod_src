@@ -704,6 +704,8 @@ void idActor::Spawn( void )
 	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
 	m_MeleeHoldTimeMin					= spawnArgs.GetInt("melee_hold_time_min");
 	m_MeleeHoldTimeMax					= spawnArgs.GetInt("melee_hold_time_max");
+	m_MeleeParryHoldMax					= spawnArgs.GetInt("melee_parry_hold_max");
+	m_MeleeParryHoldMin					= spawnArgs.GetInt("melee_parry_hold_min");
 	m_MeleeAttackRecoveryMin			= spawnArgs.GetInt("melee_attack_recovery_min");
 	m_MeleeAttackRecoveryMax			= spawnArgs.GetInt("melee_attack_recovery_max");
 	m_MeleeAttackLongRecoveryMin		= spawnArgs.GetInt("melee_attack_long_recovery_min");
@@ -4467,8 +4469,7 @@ void idActor::Event_MeleeParryStarted( int num )
 	// randomize minimum times to events after this one
 	// TODO: Rewrite this so we only set what we need based on result?
 	float fRand = gameLocal.random.RandomFloat();
-	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
-	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
+	m_MeleeCurrentParryHold = m_MeleeParryHoldMin + fRand*(m_MeleeParryHoldMax - m_MeleeParryHoldMin);
 	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
 	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
 	m_MeleeCurrentRiposteRecovery = m_MeleeRiposteRecoveryMin + fRand*(m_MeleeRiposteRecoveryMax - m_MeleeRiposteRecoveryMin);

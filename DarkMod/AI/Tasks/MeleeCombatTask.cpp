@@ -19,11 +19,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-/** Max time hold a parry waiting for a player to make an attack **/
-// TODO: Make this a spawnarg?
-// TODO: Randomize
-const int MAX_PARRY_WAIT = 3000;
-
 // Get the name of this task
 const idStr& MeleeCombatTask::GetName() const
 {
@@ -211,7 +206,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			bRelease = true;
 		// or if enemy is holding for over some time (for now hardcoded)
 		else if( pEnStatus->m_ActionPhase == MELEEPHASE_HOLDING
-				 && ((gameLocal.time - pEnStatus->m_PhaseChangeTime) > MAX_PARRY_WAIT) )
+				 && ((gameLocal.time - pEnStatus->m_PhaseChangeTime) > owner->m_MeleeCurrentParryHold) )
 		{
 			// also force an attack next, so we don't just go back into parry - this creates an opening
 			_bForceAttack = true;

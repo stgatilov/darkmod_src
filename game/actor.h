@@ -255,6 +255,12 @@ public:
 	int						m_MeleeHoldTimeMax;
 	int						m_MeleeCurrentHoldTime;
 	/**
+	* Melee timing: Max time that we will hold a parry, waiting for the attack
+	**/
+	int						m_MeleeParryHoldMin;
+	int						m_MeleeParryHoldMax;
+	int						m_MeleeCurrentParryHold;
+	/**
 	* Melee timing: Time between subsequent attacks (in milliseconds)
 	**/
 	int						m_MeleeAttackRecoveryMin;
