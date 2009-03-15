@@ -81,6 +81,13 @@ CFrobDoor::CFrobDoor()
 CFrobDoor::~CFrobDoor()
 {
 	ClearDoorTravelFlag();
+
+	if (m_LockPickHUD != 0 && gameLocal.GetLocalPlayer() != NULL)
+	{
+		gameLocal.GetLocalPlayer()->DestroyOverlay(m_LockPickHUD);
+	}
+
+	m_Pins.DeleteContents(true);
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -142,6 +149,8 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 		m_Doorhandles[i].Save(savefile);
 	}
 	m_Bar.Save(savefile);
+
+	savefile->WriteInt(m_LockPickHUD);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -214,6 +223,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	}
 
 	m_Bar.Restore(savefile);
+
+	savefile->ReadInt(m_LockPickHUD);
 
 	SetDoorTravelFlag();
 }
@@ -398,6 +409,12 @@ void CFrobDoor::PostSpawn()
 	}
 
 	SetDoorTravelFlag();
+
+	// Set up the lockpick HUD
+	if (m_LockPickHUD == 0)
+	{
+		m_LockPickHUD = gameLocal.GetLocalPlayer()->CreateOverlay("guis/tdm_lockpick.gui", 20);
+	}
 }
 
 void CFrobDoor::SetDoorTravelFlag()
@@ -917,9 +934,13 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 
 bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
+	gameLocal.GetLocalPlayer()->CallGui(m_LockPickHUD, "OnLockPickProcess");
+
 	// Has the lock already been picked?
 	if (m_FirstLockedPinIndex >= m_Pins.Num())
 	{
+		gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText1", "already picked");
+
 		if (nSampleType == LPSOUND_INIT)
 		{
 			if (m_SoundTimerStarted <= 0)
@@ -949,8 +970,12 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 	if (m_FirstLockedPinIndex < pick.Length())
 	{
+		gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText2", "checking lockpick type");
+
 		if (!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
 		{
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText1", "wrong lockpick");
+
 			if(m_SoundTimerStarted == 0)
 			{
 				PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
@@ -966,6 +991,8 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 			return false;
 		}
+
+		gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText1", "Lockpick matches");
 	}
 
 	bool success = true;
@@ -975,6 +1002,8 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	{
 		case LPSOUND_INIT:
 		{
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText3", "LPSOUND_INIT");
+
 			// If we receive an INIT call, and the soundtimer has already been started, it means that
 			// the user released the lockpick key and pressed it again, before the sample has been finished.
 			// We can safely ignore this case, because this should be treated the same as if the user
@@ -995,11 +1024,14 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		case LPSOUND_PIN_SUCCESS:
 		case LPSOUND_WRONG_LOCKPICK:
 		case LPSOUND_LOCK_PICKED:			// Should never happen but it doesn't hurt either. :)
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText3", "LPSOUND_LOCK_PICKED");
 			m_SoundTimerStarted--;
 		break;
 
 		case LPSOUND_PIN_SAMPLE:
 		{
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText3", "LPSOUND_PIN_SAMPLE");
+
 			m_SoundTimerStarted--;
 
 			if(m_SoundTimerStarted <= 0)
@@ -1015,6 +1047,8 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		// be unlocked.
 		case LPSOUND_RELEASED:
 		{
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText3", "LPSOUND_RELEASED");
+
 			CancelEvents(&EV_TDM_LockpickTimer);
 			m_SoundTimerStarted--;
 
@@ -1059,6 +1093,8 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 		case LPSOUND_REPEAT:				// Here is the interesting part.
 		{
+			gameLocal.GetLocalPlayer()->SetGuiString(m_LockPickHUD, "StatusText3", "LPSOUND_REPEAT");
+
 			// If we are still playing a sample, we can ignore that keypress.
 			if (m_SoundTimerStarted > 0)
 			{
@@ -1478,3 +1514,5 @@ void CFrobDoor::Event_HandleLockRequest()
 		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
 	}
 }
+
+int CFrobDoor::m_LockPickHUD = 0;
