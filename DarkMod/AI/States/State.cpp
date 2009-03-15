@@ -1635,7 +1635,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	{
 		// if there is already a door handling task active, 
 		// terminate that one so we can start a new one next time
-		owner->GetSubsystem(SubsysMovement)->FinishTask();
+		const SubsystemPtr& subsys = owner->GetSubsystem(SubsysMovement);
+		TaskPtr task = subsys->GetCurrentTask();
+
+		if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
+		{
+			subsys->FinishTask();
+		}
 	}
 }
 
