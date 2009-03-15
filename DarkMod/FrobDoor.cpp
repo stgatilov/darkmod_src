@@ -917,16 +917,6 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 
 bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
-	int sample_delay, pick_timeout;
-	idStr oPickSound;
-	char type = cType;
-	int length = 0;
-	idStr pick;
-	idVec3 pos;
-	idAngles angle;
-
-	bool success = true;
-
 	// Has the lock already been picked?
 	if (m_FirstLockedPinIndex >= m_Pins.Num())
 	{
@@ -934,48 +924,54 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		{
 			if (m_SoundTimerStarted <= 0)
 			{
-				oPickSound = "snd_lockpick_pick_wrong";
-				PropPickSound(oPickSound, cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
+				PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
 			}
 		}
 		else if (nSampleType == LPSOUND_PIN_SAMPLE || nSampleType == LPSOUND_WRONG_LOCKPICK)
 		{
 			m_SoundTimerStarted--;
+
 			if(m_SoundTimerStarted <= 0)
+			{
 				m_SoundTimerStarted = 0;
+			}
 		}
 
-		success = false;
-		goto Quit;
+		return false;
 	}
 
 	// Now check if the pick is of the correct type. If no picktype is given, or
 	// the mapper doesn't care, we ignore it.
-	spawnArgs.GetString("lock_picktype", "", pick);
-	if(m_FirstLockedPinIndex < pick.Length())
+	idStr pick = spawnArgs.GetString("lock_picktype");
+
+	char type = cType;
+
+	if (m_FirstLockedPinIndex < pick.Length())
 	{
-		if(!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
+		if (!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
 		{
 			if(m_SoundTimerStarted == 0)
 			{
-				oPickSound = "snd_lockpick_pick_wrong";
-				PropPickSound(oPickSound, cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
+				PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, pick.Length());
 			}
 			else
 			{
 				if (!(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT))
+				{
 					m_SoundTimerStarted--;
+				}
 			}
 
-			success = false;
-			goto Quit;
+			return false;
 		}
 	}
 
+	bool success = true;
+
 	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("%s : Timer: %u  PinIndex: %u  SampleIndex: %u\r", sSampleTypeText[nSampleType], m_SoundTimerStarted, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-	switch(nSampleType)
+	switch (nSampleType)
 	{
 		case LPSOUND_INIT:
 		{
@@ -983,10 +979,9 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			// the user released the lockpick key and pressed it again, before the sample has been finished.
 			// We can safely ignore this case, because this should be treated the same as if the user
 			// didn't release the key at all while playing the lockpick samples.
-			if(m_SoundTimerStarted > 0)
+			if (m_SoundTimerStarted > 0)
 			{
-				success = false;
-				goto Quit;
+				return false;
 			}
 
 			// Otherwise we reset the lock to the initial soundsample for the current pin. Pins are not
@@ -1004,12 +999,15 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		break;
 
 		case LPSOUND_PIN_SAMPLE:
+		{
 			m_SoundTimerStarted--;
+
 			if(m_SoundTimerStarted <= 0)
 			{
 				m_SoundTimerStarted = 0;
 				break;
 			}
+		}
 
 		// If the pin sample has been finished and we get the callback we check if
 		// the key is still pressed. If the user released the key in this intervall
@@ -1020,42 +1018,41 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			CancelEvents(&EV_TDM_LockpickTimer);
 			m_SoundTimerStarted--;
 
-			if(m_SoundTimerStarted <= 0)
+			if (m_SoundTimerStarted <= 0)
+			{
 				m_SoundTimerStarted = 0;
+			}
 
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
 
-			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+			idList<idStr>& l = *m_Pins[m_FirstLockedPinIndex];
 
-			if(m_SoundPinSampleIndex == l.Num()-1)
+			if (m_SoundPinSampleIndex == l.Num()-1)
 			{
 				// It was correct so we advance to the next pin.
 				m_FirstLockedPinIndex++;
 
 				// If it was the last pin, the user successfully picked the lock.
-				if(m_FirstLockedPinIndex >= m_Pins.Num())
+				if (m_FirstLockedPinIndex >= m_Pins.Num())
 				{
 					m_FirstLockedPinIndex = m_Pins.Num();
-					oPickSound = "snd_lockpick_lock_picked";
-					PropPickSound(oPickSound, cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
+					PropPickSound("snd_lockpick_lock_picked", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
 					Unlock(true);
 					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
-					goto Quit;
+					return success;
 				}
 				else
 				{
-					oPickSound = "snd_lockpick_pin_success";
 					m_SoundPinSampleIndex = 0;
-					PropPickSound(oPickSound, cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
+					PropPickSound("snd_lockpick_pin_success", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
 				}
 			}
 			else
 			{
 				m_SoundPinSampleIndex = 0;
-				oPickSound = "snd_lockpick_pin_fail";
-				PropPickSound(oPickSound, cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
+				PropPickSound("snd_lockpick_pin_fail", cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, pick.Length());
 			}
 		}
 		break;
@@ -1063,37 +1060,54 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		case LPSOUND_REPEAT:				// Here is the interesting part.
 		{
 			// If we are still playing a sample, we can ignore that keypress.
-			if(m_SoundTimerStarted > 0)
-				goto Quit;
+			if (m_SoundTimerStarted > 0)
+			{
+				return success;
+			}
 
-			sample_delay = cv_lp_sample_delay.GetInteger();
+			int sample_delay = cv_lp_sample_delay.GetInteger();
 			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
 
-
 			m_SoundPinSampleIndex++;
-			pick_timeout = 0;
-			if(cv_lp_pawlow.GetBool() == false && m_SoundPinSampleIndex == 0)
-				pick_timeout = cv_lp_pick_timeout.GetInteger();
+			int pick_timeout = 0;
 
-			if(m_SoundPinSampleIndex >= l.Num()-1)
+			if (cv_lp_pawlow.GetBool() == false && m_SoundPinSampleIndex == 0)
 			{
-				if(m_SoundPinSampleIndex >= l.Num())
+				pick_timeout = cv_lp_pick_timeout.GetInteger();
+			}
+
+			if (m_SoundPinSampleIndex >= l.Num() - 1)
+			{
+				if (m_SoundPinSampleIndex >= l.Num())
+				{
 					m_SoundPinSampleIndex = 0;
+				}
 				else
 				{
-					if(cv_lp_pawlow.GetBool() == true)
+					if (cv_lp_pawlow.GetBool() == true)
+					{
 						pick_timeout = cv_lp_pick_timeout.GetInteger();
+					}
 				}
 			}
 
-			oPickSound = l[m_SoundPinSampleIndex];
-			PropPickSound(oPickSound, cType, LPSOUND_PIN_SAMPLE, sample_delay+pick_timeout, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
+			const idStr& oPickSound = l[m_SoundPinSampleIndex];
+
+			PropPickSound(
+				oPickSound, 
+				cType, 
+				LPSOUND_PIN_SAMPLE, 
+				sample_delay + pick_timeout, 
+				HANDLE_POS_SAMPLE, 
+				m_FirstLockedPinIndex, 
+				m_SoundPinSampleIndex
+			);
+
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %c\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
 		}
 		break;
 	}
 
-Quit:
 	return success;
 }
 
