@@ -78,6 +78,11 @@ CFrobDoor::CFrobDoor()
 	m_PinRotationFractionFlag = false;
 }
 
+CFrobDoor::~CFrobDoor()
+{
+	ClearDoorTravelFlag();
+}
+
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(m_OpenPeers.Num());
@@ -408,6 +413,31 @@ void CFrobDoor::SetDoorTravelFlag()
 		
 		int areaNum = GetAASArea(aas);
 		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
+		aas->ReferenceDoor(this, areaNum);
+	}
+}
+
+void CFrobDoor::ClearDoorTravelFlag()
+{
+	// Flag the AAS areas the door is located in with door travel flag
+	for (int i = 0; i < gameLocal.NumAAS(); i++)
+	{
+		idAAS*	aas = gameLocal.GetAAS(i);
+		if (aas == NULL)
+		{
+			continue;
+		}
+		
+		int areaNum = GetAASArea(aas);
+		if (areaNum > 0)
+		{
+			aas->RemoveAreaTravelFlag(areaNum, TFL_DOOR);
+			aas->DeReferenceDoor(this, areaNum);
+		}
+		else
+		{
+			gameLocal.Warning("Door %s is not within a valid AAS area", name.c_str());
+		}
 	}
 }
 

@@ -1142,6 +1142,7 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		return false;
 	}
 
+	int bestPortalAreaNum = 0;
 	// find the portal of the source area cluster leading towards the goal area
 	for (int i = 0; i < cluster->numPortals; i++ ) {
 		int portalNum = file->GetPortalIndex( cluster->firstPortal + i );
@@ -1189,10 +1190,33 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 
 		// if the time is better than the one already found
 		if ( !bestTime || t < bestTime ) {
+			bestPortalAreaNum = portalAreaNum;
 			bestReach = r;
 			bestTime = t;
 		}
 	}
+
+	if (bestPortalAreaNum > 0)
+	{
+		aasArea_t portalArea = file->GetArea(bestPortalAreaNum);
+		if (portalArea.travelFlags & TFL_DOOR)
+		{
+			CFrobDoor* door = GetDoor(bestPortalAreaNum);
+			if (door != NULL)
+			{
+				const idVec3& doorOrg = door->GetPhysics()->GetOrigin();
+				const idVec3& org = actor->GetPhysics()->GetOrigin();
+				idVec3 dir = doorOrg - org;
+				dir.z = 0;
+				float dist = dir.LengthFast();
+				if (dist < 500)
+				{
+					static_cast<idAI*>(actor)->GetMind()->GetState()->OnFrobDoorEncounter(door);
+				}	
+			}
+		}
+	}
+
 
 	if ( !bestReach ) {
 		return false;

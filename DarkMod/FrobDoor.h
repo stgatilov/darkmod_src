@@ -56,6 +56,8 @@ public:
 
 							CFrobDoor();
 
+	virtual					~CFrobDoor();
+
 	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
@@ -130,6 +132,7 @@ protected:
 
 	// angua: flag the AAS area the door is located in with the travel flag TFL_DOOR
 	virtual void			SetDoorTravelFlag();
+	virtual void			ClearDoorTravelFlag();
 
 	/**
 	 * Find out if this door is touching another door, and if they share the same portal

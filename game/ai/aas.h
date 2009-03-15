@@ -17,6 +17,8 @@
 #include "../../idlib/containers/list.h"
 #include "../../DarkMod/AI/EAS/RouteInfo.h"
 
+class CFrobDoor;
+
 #ifdef __linux__
 #include "tools/compilers/aas/aasfile.h"
 #endif
@@ -200,7 +202,12 @@ public:
 	virtual idReachability*		GetAreaFirstReachability(int areaNum) const = 0;
 
 	virtual void				SetAreaTravelFlag( int index, int flag ) = 0;
+	virtual void				RemoveAreaTravelFlag( int index, int flag ) = 0;
 
+	virtual void				ReferenceDoor(CFrobDoor* door, int areaNum) = 0;
+	virtual void				DeReferenceDoor(CFrobDoor* door, int areaNum) = 0;
+
+	virtual CFrobDoor*			GetDoor(int areaNum) const = 0;
 
 	/**
 	* This function fills a reachability list

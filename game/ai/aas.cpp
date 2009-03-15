@@ -422,9 +422,39 @@ void idAASLocal::SetAreaTravelFlag( int index, int flag )
 	}
 }
 
+void idAASLocal::RemoveAreaTravelFlag( int index, int flag )
+{
+	if (file != NULL)
+	{
+		file->RemoveAreaTravelFlag(index, flag);
+	}
+}
+
 int idAASLocal::GetClusterNum(int areaNum)
 {
 	return file->GetArea( areaNum ).cluster;
+}
+
+void idAASLocal::ReferenceDoor(CFrobDoor* door, int areaNum)
+{
+	_doors[areaNum] = door;
+	_doors.insert(DoorMap::value_type(areaNum, door));
+}
+
+void idAASLocal::DeReferenceDoor(CFrobDoor* door, int areaNum)
+{
+	DoorMap::iterator found = _doors.find(areaNum);
+	_doors.erase(found);
+}
+
+CFrobDoor* idAASLocal::GetDoor(int areaNum) const
+{
+	DoorMap::const_iterator found = _doors.find(areaNum);
+	if (found != _doors.end())
+	{
+		return found->second;
+	}
+	return NULL;
 }
 
 void idAASLocal::Save(idSaveGame* savefile) const
