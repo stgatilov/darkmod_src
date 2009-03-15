@@ -5852,7 +5852,8 @@ bool idAI::EntityInAttackCone(idEntity* ent)
 
 bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 {
-	if (entity == NULL) return false;
+	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0) 
+		return false;
 
 	if (combatType == COMBAT_MELEE)
 	{
@@ -5879,7 +5880,7 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 
 bool idAI::CanBeHitByEntity(idActor* entity, ECombatType combatType)
 {
-	if (entity == NULL) 
+	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0 ) 
 		return false;
 
 	if (combatType == COMBAT_MELEE)

@@ -42,14 +42,14 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
-/*
+
 	idActor* enemy = _enemy.GetEntity();
-	if (enemy == NULL)
+	if (enemy == NULL || enemy->IsKnockedOut() || enemy->health <= 0)
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return true; // terminate me
 	}
-*/
+
 	// Perform the task according to the current action
 	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
 	EMeleeActState ActState = pStatus->m_ActionState;
