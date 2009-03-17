@@ -58,14 +58,15 @@ static const char* StateNames[] =
 	"LOCKED",
 	"LOCKPICKING_STARTED",
 	"ADVANCE_TO_NEXT_SAMPLE",
-	"PIN_SAMPLE",			
-	"PIN_SAMPLE_SWEETSPOT",	
-	"PIN_DELAY",			
-	"WRONG_LOCKPICK_SOUND",	
-	"PIN_SUCCESS",			
-	"PIN_FAILED",			
-	"LOCK_SUCCESS",			
-	"PICKED",				
+	"PIN_SAMPLE",
+	"PIN_SAMPLE_SWEETSPOT",
+	"PIN_DELAY",
+	"AFTER_PIN_DELAY",
+	"WRONG_LOCKPICK_SOUND",
+	"PIN_SUCCESS",
+	"PIN_FAILED",
+	"LOCK_SUCCESS",
+	"PICKED",
 	"NUM_LPSTATES"
 };
 
@@ -75,6 +76,7 @@ CFrobDoor::CFrobDoor()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_LockpickState = NUM_LPSTATES;
+	m_FailedLockpickRounds = 0;
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
 	m_CloseOnLock = false;
@@ -97,6 +99,7 @@ CFrobDoor::~CFrobDoor()
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(static_cast<int>(m_LockpickState));
+	savefile->WriteInt(m_FailedLockpickRounds);
 
 	savefile->WriteInt(m_OpenPeers.Num());
 	for (int i = 0; i < m_OpenPeers.Num(); i++)
@@ -163,6 +166,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(temp);
 	assert(temp >= 0 && temp < NUM_LPSTATES);
 	m_LockpickState = static_cast<ELockpickState>(temp);
+
+	savefile->ReadInt(m_FailedLockpickRounds);
 
 	int num;
 	savefile->ReadInt(num);
@@ -482,6 +487,7 @@ void CFrobDoor::OnLock(bool bMaster)
 	m_FirstLockedPinIndex = 0;
 	m_SoundTimerStarted = 0;
 	m_SoundPinSampleIndex = -1;
+	m_FailedLockpickRounds = 0;
 
 	m_LockpickState = LOCKED;
 
@@ -710,17 +716,6 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 		if (str.Length() == 1)
 		{
-			/*ELockpickSoundsample sample;
-
-			switch (impulseState)
-			{
-			case EPressed:	sample = LPSOUND_INIT; 
-				break;
-			case EReleased:	sample = LPSOUND_RELEASED;
-				break;
-			default:		sample = LPSOUND_REPEAT;
-			};*/
-			
 			// Pass the call to the lockpick routine
 			return ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
 		}
@@ -734,7 +729,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	return idEntity::UseBy(impulseState, item);
 }
 
-void CFrobDoor::UpdateSoundLoss(void)
+void CFrobDoor::UpdateSoundLoss()
 {
 	if (!areaPortal) return; // not a portal door
 
@@ -765,7 +760,7 @@ void CFrobDoor::UpdateSoundLoss(void)
 	gameLocal.m_sndProp->SetPortalLoss(areaPortal, lossDB);
 }
 
-void CFrobDoor::FindDoubleDoor(void)
+void CFrobDoor::FindDoubleDoor()
 {
 	idClipModel* clipModelList[MAX_GENTITIES];
 
@@ -828,6 +823,14 @@ void CFrobDoor::SetFrobbed(bool val)
 		if (handle == NULL) continue;
 
 		handle->SetFrobbed(val);
+	}
+
+	if (val == false)
+	{
+		// Reset the lockpick fail counter when entity is losing frob focus
+		m_FailedLockpickRounds = 0;
+		// And cancel any pending events
+		CancelEvents(&EV_TDM_LockpickSoundFinished);
 	}
 }
 
@@ -960,6 +963,7 @@ void CFrobDoor::OnLockpickPinSuccess()
 		}
 
 		m_FirstLockedPinIndex = m_Pins.Num();
+		m_FailedLockpickRounds = 0;
 
 		// Switch to PICKED state after this sound
 		m_LockpickState = LOCK_SUCCESS;
@@ -981,6 +985,7 @@ void CFrobDoor::OnLockpickPinSuccess()
 
 		m_LockpickState = PIN_SUCCESS;
 		m_SoundPinSampleIndex = 0;
+		m_FailedLockpickRounds = 0;
 
 		// Fall back to LOCKED state after the sound
 		PropPickSound("snd_lockpick_pin_success", LOCKED);
@@ -1093,6 +1098,11 @@ bool CFrobDoor::ProcessLockpickPress(int type)
 			PropPickSound("snd_lockpick_pick_wrong", m_LockpickState, 1000);
 			return false;
 		}
+		case PIN_SAMPLE:
+		case ADVANCE_TO_NEXT_SAMPLE:
+			// If we encounter a lockpick press during these, reset to start
+			m_LockpickState = LOCKPICKING_STARTED;
+			return true;
 		// Ignore button press events on all other events (while playing sounds, for instance)
 		default:
 		{
@@ -1128,6 +1138,7 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 			{
 				// Start the first sample
 				m_LockpickState = LOCKPICKING_STARTED;
+				m_FailedLockpickRounds = 0;
 				success = true;
 			}
 			else
@@ -1160,7 +1171,7 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 				m_LockpickState = PIN_DELAY;
 
 				// Use a "nosound" to simulate the silence - then switch back to the first sample
-				PropPickSound("nosound", LOCKPICKING_STARTED, cv_lp_pick_timeout.GetInteger());
+				PropPickSound("nosound", AFTER_PIN_DELAY, cv_lp_pick_timeout.GetInteger());
 
 				success = true;
 				break;
@@ -1214,6 +1225,23 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 			success = true;
 			break;
 		}
+		case AFTER_PIN_DELAY:
+			// The player didn't succeed to get that pin, increase the failed count
+			m_FailedLockpickRounds++;
+
+			// greebo: Check if auto-pick should kick in
+			if (cv_lp_auto_pick.GetBool() && cv_lp_max_pick_attempts.GetInteger() > 0 && 
+				m_FailedLockpickRounds > cv_lp_max_pick_attempts.GetInteger())
+			{
+				OnLockpickPinSuccess();
+				success = true;
+				break;
+			}
+
+			// Goto start
+			m_LockpickState = LOCKPICKING_STARTED;
+
+			break;
 		case PICKED:	// Already picked
 		{
 			success = false;
@@ -1258,6 +1286,9 @@ bool CFrobDoor::ProcessLockpickRelease(int type)
 	{
 		// Failure
 		OnLockpickPinFailure();
+		// greebo: Reset the lockpick rounds on failure, the player needs to hold
+		// down the key to get the auto-pick feature to kick in
+		m_FailedLockpickRounds = 0;
 	}
 
 	return true;
@@ -1267,6 +1298,7 @@ void CFrobDoor::UpdateLockpickHUD()
 {
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
+	player->SetGuiString(player->lockpickHUD, "StatusText2", idStr("Failed lockpick rounds: ") + idStr(m_FailedLockpickRounds));
 	player->SetGuiString(player->lockpickHUD, "StatusText4", (idStr("Sounds started: ") + idStr(m_SoundTimerStarted)).c_str());
 	player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
 	player->CallGui(player->lockpickHUD, "OnLockPickProcess");

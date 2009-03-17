@@ -23,18 +23,6 @@ class CFrobDoorHandle;
 #define MIN_CLICK_NUM			5
 #define MAX_CLICK_NUM			10
 
-typedef enum
-{
-	LPSOUND_INIT,				// Initial call (impulse has been triggered)
-	LPSOUND_REPEAT,				// Call from the keyboardhandler for repeated presses
-	LPSOUND_RELEASED,			// Call from the keyboardhandler for released presses
-	LPSOUND_PIN_SAMPLE,			// Callback for pin sample
-	LPSOUND_PIN_FAILED,			// Callback when the pin failed sound is finished
-	LPSOUND_PIN_SUCCESS,		// Callback for the success sound sample
-	LPSOUND_WRONG_LOCKPICK,		// Callback for the wrong lockpick sample
-	LPSOUND_LOCK_PICKED			// Callback for the pin picked
-} ELockpickSoundsample;
-
 /**
  * CFrobDoor is a replacement for idDoor. The reason for this replacement is
  * because idDoor is derived from idMover_binary and can only slide from one
@@ -55,6 +43,7 @@ protected:
 		PIN_SAMPLE,				// Playing pick sample sound (including sample delay)
 		PIN_SAMPLE_SWEETSPOT,	// Playing sweetspot sound (for pavlov mode, this is the hotspot)
 		PIN_DELAY,				// Delay after pattern (for non-pavlov mode, this is the hotspot)
+		AFTER_PIN_DELAY,		// Right after the post-pattern delay
 		WRONG_LOCKPICK_SOUND,	// Playing wrong lockpick sound
 		PIN_SUCCESS,			// Playing pin success sound
 		PIN_FAILED,				// Playing pin failed sound
@@ -271,6 +260,13 @@ protected:
 	
 	// Lockpick state
 	ELockpickState				m_LockpickState;
+
+	/**
+	 * greebo: This variable keeps track of how many times the player missed
+	 * a single pin of the lock. When auto-pick is enabled, the door will be
+	 * be unlocked automatically after a certain amount of rounds.
+	 */
+	int							m_FailedLockpickRounds;
 
 	/**
 	 * This is a list of slave doors, which should be opened and closed

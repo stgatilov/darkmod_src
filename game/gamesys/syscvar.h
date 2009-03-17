@@ -242,7 +242,7 @@ extern idCVar cv_empty_model;
 extern idCVar cv_lp_pin_base_count;
 extern idCVar cv_lp_sample_delay;
 extern idCVar cv_lp_pick_timeout;
-extern idCVar cv_lp_pick_attempts;
+extern idCVar cv_lp_max_pick_attempts;
 extern idCVar cv_lp_auto_pick;
 extern idCVar cv_lp_randomize;
 extern idCVar cv_lp_pawlow;
