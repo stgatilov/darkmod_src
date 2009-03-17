@@ -632,6 +632,14 @@ public:
 	virtual void FrobAction(bool bMaster, bool bPeer = false);
 
 	/**
+	 * greebo: A frobbed entity might receive this signal if the player is hitting
+	 * the attack button in this exact frame. (Used for lockpicking.)
+	 *
+	 * The player responsible for this action is passed as argument.
+	 */
+	virtual void AttackAction(idPlayer* player);
+
+	/**
 	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
 	 * is not the current entities name and b) if the name already exists in the list.
 	 * 

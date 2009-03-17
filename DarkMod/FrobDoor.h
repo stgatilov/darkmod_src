@@ -140,6 +140,9 @@ public:
 		return m_OpenPeers.Num();
 	}
 
+	// Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
+	virtual void			AttackAction(idPlayer* player);
+
 protected:
 
 	// Fork point to determine what should happen with a certain lockpicking impulse
@@ -149,6 +152,10 @@ protected:
 	bool					ProcessLockpickPress(int type);
 	bool					ProcessLockpickRepeat(int type);
 	bool					ProcessLockpickRelease(int type);
+
+	// During the lockpick "hotspot" phase the player is able to unlock the door
+	// when pushing / releasing the right buttons.
+	bool					LockpickHotspotActive();
 
 	// For debugging purposes
 	void					UpdateLockpickHUD();

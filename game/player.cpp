@@ -6850,6 +6850,14 @@ void idPlayer::Think( void )
 
 	FrobCheck();
 
+	// Check if we just hit the attack button
+	idEntity* frobbedEnt = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+
+	if (frobbedEnt != NULL && usercmd.buttons & BUTTON_ATTACK && !(oldButtons & BUTTON_ATTACK))
+	{
+		frobbedEnt->AttackAction(this);
+	}
+
 	idStr strText;
 /*
 	// TODO: remove this because it is just to determine how to fill out the renderstructure.

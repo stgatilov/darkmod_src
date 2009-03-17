@@ -1278,31 +1278,15 @@ bool CFrobDoor::ProcessLockpickRelease(int type)
 	m_SoundTimerStarted = 0;
 
 	// Check if we're in the "hot spot" of the lock pick sequence
-	if (cv_lp_pawlow.GetBool())
+	if (LockpickHotspotActive())
 	{
-		if (m_LockpickState == PIN_SAMPLE_SWEETSPOT)
-		{
-			// Success
-			OnLockpickPinSuccess();
-		}
-		else 
-		{
-			// Failure
-			OnLockpickPinFailure();
-		}
+		// Success
+		OnLockpickPinSuccess();
 	}
-	else // pattern mode
+	else 
 	{
-		if (m_LockpickState == PIN_DELAY)
-		{
-			// Success
-			OnLockpickPinSuccess();
-		}
-		else 
-		{
-			// Failure
-			OnLockpickPinFailure();
-		}
+		// Failure
+		OnLockpickPinFailure();
 	}
 
 	return true;
@@ -1364,6 +1348,43 @@ bool CFrobDoor::ProcessLockpickImpulse(EImpulseState impulseState, int type)
 			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Unhandled impulse state in ProcessLockpick.\r");
 			return false;
 	};
+}
+
+bool CFrobDoor::LockpickHotspotActive()
+{
+	if (cv_lp_pawlow.GetBool()) // pavlov mode
+	{
+		return (m_LockpickState == PIN_SAMPLE_SWEETSPOT);
+	}
+	else // pattern mode
+	{
+		return (m_LockpickState == PIN_DELAY);
+	}
+}
+
+void CFrobDoor::AttackAction(idPlayer* player)
+{
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->CallGui(player->lockpickHUD, "OnAttackButtonPress");
+	}
+
+	// Cancel all previous events on attack button hit
+	CancelEvents(&EV_TDM_LockpickSoundFinished);
+	m_SoundTimerStarted = 0;
+
+	// Check if we're in the "hot spot" of the lock pick sequence
+	if (LockpickHotspotActive())
+	{
+		// Success
+		OnLockpickPinSuccess();
+	}
+	else 
+	{
+		// Failure
+		OnLockpickPinFailure();
+	}
 }
 
 bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)

@@ -7549,6 +7549,11 @@ Quit:
 	return;
 }
 
+void idEntity::AttackAction(idPlayer* player)
+{
+	// Empty implementation, to be overridden by subclasses
+}
+
 bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
 	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity(), isFrobUse) : false;
