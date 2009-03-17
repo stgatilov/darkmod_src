@@ -45,11 +45,30 @@ typedef enum
 class CFrobDoor : 
 	public CBinaryFrobMover
 {
+protected:
+	enum ELockpickState
+	{
+		UNLOCKED = 0,			// Not locked in the first place
+		LOCKED,					// Lockpicking not started yet
+		LOCKPICKING_STARTED,	// Right before playing the first pin sample sound
+		ADVANCE_TO_NEXT_SAMPLE,	// Right after playing the first ping sample sound
+		PIN_SAMPLE,				// Playing pick sample sound (including sample delay)
+		PIN_SAMPLE_SWEETSPOT,	// Playing sweetspot sound (for pavlov mode, this is the hotspot)
+		PIN_DELAY,				// Delay after pattern (for non-pavlov mode, this is the hotspot)
+		WRONG_LOCKPICK_SOUND,	// Playing wrong lockpick sound
+		PIN_SUCCESS,			// Playing pin success sound
+		PIN_FAILED,				// Playing pin failed sound
+		LOCK_SUCCESS,			// Playing entire lock success
+		PICKED,					// Lock is picked
+		NUM_LPSTATES,
+	};
+
 public:
-	typedef enum {
+	enum EHandleReset
+	{
 		HANDLE_POS_ORIGINAL,	// Reset it to the original starting value
 		HANDLE_POS_SAMPLE		// Position it to a sample index.
-	} EHandleReset;
+	};
 
 public:
 	CLASS_PROTOTYPE( CFrobDoor );
@@ -122,6 +141,27 @@ public:
 	}
 
 protected:
+
+	// Fork point to determine what should happen with a certain lockpicking impulse
+	bool					ProcessLockpickImpulse(EImpulseState impulseState, int type);
+
+	// Specialised methods to handle certain impulse events
+	bool					ProcessLockpickPress(int type);
+	bool					ProcessLockpickRepeat(int type);
+
+	/**
+	 * greebo: Play the given sound, this will post a "sound finished" event 
+	 * after the sound has been played (+ the given delay in ms).
+	 * When the sound is done, the lockpick state will be set to <nextState>.
+	 */
+	void					PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay = 0);
+
+	/**
+	 * greebo: Checks whether the given lockpick type is matching the current pin.
+	 * @returns: TRUE on match, FALSE if not matching or lock is not pickable/already picked
+	 */
+	bool					CheckLockpickType(int type);
+
 	/**
 	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 
 	 * lockpick_translate, to setup the parameters how the bar or handle should behave
@@ -207,6 +247,14 @@ protected:
 	 */
 	idStringList*			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
 
+	// Called when a pin is successfully unlocked
+	virtual void			OnLockpickPinSuccess();
+	// Called when the player failed to unlock this pin
+	virtual void			OnLockpickPinFailure();
+
+	// Gets called when a lockpick sound is finished playing
+	void					Event_LockpickSoundFinished(ELockpickState nextState);
+
 	// Script event interface
 	void					Event_GetDoorhandle();
 	void					Event_IsPickable();
@@ -216,6 +264,10 @@ protected:
 	void					Event_HandleLockRequest();
 
 protected:
+	
+	// Lockpick state
+	ELockpickState				m_LockpickState;
+
 	/**
 	 * This is a list of slave doors, which should be opened and closed
 	 * along with this door.

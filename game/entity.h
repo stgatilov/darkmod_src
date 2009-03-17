@@ -133,8 +133,8 @@ enum {
 // The impulse states a button can have
 enum EImpulseState {
 	EPressed,			// just pressed
-	EReleased,			// held down
-	ERepeat,			// just released
+	ERepeat,			// held down
+	EReleased,			// just released
 	ENumImpulseStates,
 };
 
