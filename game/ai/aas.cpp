@@ -438,13 +438,16 @@ int idAASLocal::GetClusterNum(int areaNum)
 void idAASLocal::ReferenceDoor(CFrobDoor* door, int areaNum)
 {
 	_doors[areaNum] = door;
-	_doors.insert(DoorMap::value_type(areaNum, door));
 }
 
 void idAASLocal::DeReferenceDoor(CFrobDoor* door, int areaNum)
 {
 	DoorMap::iterator found = _doors.find(areaNum);
-	_doors.erase(found);
+
+	if (found != _doors.end())
+	{
+		_doors.erase(found);
+	}
 }
 
 CFrobDoor* idAASLocal::GetDoor(int areaNum) const
