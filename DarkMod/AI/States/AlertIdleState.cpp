@@ -45,6 +45,9 @@ void AlertIdleState::Init(idAI* owner)
 
 	_alertLevelDecreaseRate = 0.005f;
 
+	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
+	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 

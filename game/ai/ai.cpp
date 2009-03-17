@@ -1904,7 +1904,24 @@ void idAI::Think( void )
 				CheckBlink();
 				break;
 
+			case MOVETYPE_SLIDE :
+				// velocity based movement
+				UpdateEnemyPosition();
+				UpdateScript();
+				SlideMove();
+				CheckBlink();
+				break;
+
 			case MOVETYPE_SIT :
+				// static monsters
+				UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				SittingMove();
+				CheckBlink();
+				break;
+
+			case MOVETYPE_SIT_DOWN :
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
@@ -1921,13 +1938,32 @@ void idAI::Think( void )
 				SittingMove();
 				break;
 
-			case MOVETYPE_SLIDE :
-				// velocity based movement
+			case MOVETYPE_LAY_DOWN :
+				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
-				SlideMove();
+				// moving and turning not allowed
+				SittingMove();
+				break;
+
+			case MOVETYPE_GET_UP :
+				// static monsters
+				UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				SittingMove();
 				CheckBlink();
 				break;
+
+			case MOVETYPE_GET_UP_FROM_LYING :
+				// static monsters
+				UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				SittingMove();
+				break;
+
+
 			default:
 				break;
 			}
@@ -3308,13 +3344,9 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
 
-	if (GetMoveType() == MOVETYPE_SIT)
+	if (GetMoveType() == MOVETYPE_SIT || GetMoveType() == MOVETYPE_SLEEP)
 	{
 		GetUp();
-	}
-	else if (GetMoveType() == MOVETYPE_SLEEP)
-	{
-		GetUpFromLyingDown();
 	}
 
 	return true;
@@ -9975,59 +10007,56 @@ void idAI::AddTarget(idEntity* target)
 void idAI::SitDown()
 {
 	idStr waitState(WaitState());
-	if (waitState == "sit_down")
+	if (GetMoveType() != MOVETYPE_ANIM)
 	{
 		return;
 	}
-	CallScriptFunctionArgs("Sit_Down", true, 0, "e", this);
+	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
-
 }
 
 void idAI::GetUp()
 {
-	idStr waitState(WaitState());
-	if (waitState == "get_up")
+	if (GetMoveType() != MOVETYPE_SIT && GetMoveType() != MOVETYPE_SLEEP)
 	{
 		return;
 	}
 
-	CallScriptFunctionArgs("Get_Up", true, 0, "e", this);
-	SetWaitState("get_up");
+	if (GetMoveType() == MOVETYPE_SIT)
+	{
+		SetMoveType(MOVETYPE_GET_UP);
+		SetWaitState("get_up");
+
+	}
+	else if (GetMoveType() == MOVETYPE_SLEEP)
+	{
+		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
+		SetWaitState("get_up_from_lying_down");
+
+			
+		// Reset hearing and tactile acuity
+		SetAcuity("aud", GetAcuity("aud") * 2);
+		SetAcuity("tact", GetAcuity("tact") * 2);
+	}
+
 }
 
 
 void idAI::LayDown()
 {
 	idStr waitState(WaitState());
-	if (waitState == "lay_down")
+	if (GetMoveType() != MOVETYPE_ANIM)
 	{
 		return;
 	}
-	CallScriptFunctionArgs("Lay_Down", true, 0, "e", this);
+
+	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
 
 	// Reduce hearing and tactile acuity by 50%
 	// TODO: use spawn args
 	SetAcuity("aud", GetAcuity("aud") * 0.5);
 	SetAcuity("tact", GetAcuity("tact") * 0.5);
-}
-
-void idAI::GetUpFromLyingDown()
-{
-	idStr waitState(WaitState());
-	if (waitState == "get_up_from_lying_down")
-	{
-		return;
-	}
-
-	CallScriptFunctionArgs("Get_Up_From_Lying", true, 0, "e", this);
-	SetWaitState("get_up_from_lying_down");
-
-	// Reset hearing and tactile acuity
-	SetAcuity("aud", GetAcuity("aud") * 2);
-	SetAcuity("tact", GetAcuity("tact") * 2);
-
 }
 
 

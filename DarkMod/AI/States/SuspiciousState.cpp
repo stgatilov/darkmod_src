@@ -71,7 +71,7 @@ void SuspiciousState::Init(idAI* owner)
 
 	if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
-		owner->GetUpFromLyingDown();
+		owner->GetUp();
 	}
 	
 	if (gameLocal.random.RandomFloat() > 0.5f)

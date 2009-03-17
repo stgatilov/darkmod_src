@@ -44,7 +44,6 @@ protected:
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
 
-	virtual void InitialiseMovement(idAI* owner);
 };
 
 } // namespace ai

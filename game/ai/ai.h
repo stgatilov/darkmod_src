@@ -473,10 +473,11 @@ public:
 
 	// angua: calls the script functions for sitting down and getting up
 	void SitDown();
+	void LayDown();
+
+	// GetUp is used both for getting up from sitting or sleeping
 	void GetUp();
 
-	void LayDown();
-	void GetUpFromLyingDown();
 
 public:
 	/**

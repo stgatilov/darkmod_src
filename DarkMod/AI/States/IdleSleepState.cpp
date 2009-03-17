@@ -70,15 +70,27 @@ void IdleSleepState::Init(idAI* owner)
 		return;
 	}
 
-	_alertLevelDecreaseRate = 0.01f;
+	if (!owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
+			|| owner->GetCurrentYaw() != memory.idleYaw)
+	{
+		// we need to get to the bed first before starting to sleep, back to idle state
+		owner->GetMind()->SwitchState(STATE_IDLE);
+		return;
+	}
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	owner->SheathWeapon();
+	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
+	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
+
+	_alertLevelDecreaseRate = 0.01f;
+
+	// owner->SheathWeapon();
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	InitialiseMovement(owner);
 
@@ -94,6 +106,7 @@ void IdleSleepState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
+	
 }
 
 // Gets called each time the mind is thinking
@@ -102,7 +115,7 @@ void IdleSleepState::Think(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	idStr waitState = owner->WaitState();
 
-	if (_startSleeping && owner->GetMoveType() != MOVETYPE_SLEEP && waitState != "lay_down")
+	if (_startSleeping && owner->GetMoveType() == MOVETYPE_ANIM)
 	{
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
@@ -116,26 +129,6 @@ void IdleSleepState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-}
-
-void IdleSleepState::InitialiseMovement(idAI* owner)
-{
-	Memory& memory = owner->GetMemory();
-
-	owner->AI_RUN = false;
-
-	// The movement subsystem should start patrolling
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-
-	// greebo: Choose the patrol task depending on the spawnargs.
-	TaskPtr patrolTask = TaskLibrary::Instance().CreateInstance(
-		owner->spawnArgs.GetBool("animal_patrol", "0") ? TASK_ANIMAL_PATROL : TASK_PATROL
-	);
-	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
-
-	// Check if the owner has patrol routes set
-	idPathCorner* path = idPathCorner::RandomPath(owner, NULL, owner);
-	
 }
 
 

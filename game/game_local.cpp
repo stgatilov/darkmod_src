@@ -2033,7 +2033,10 @@ void idGameLocal::MapShutdown( void ) {
 	m_Grabber = NULL;
 
 	m_sndProp->Clear();
-	m_RelationsManager->Clear();
+	if (m_RelationsManager != NULL)
+	{
+		m_RelationsManager->Clear();
+	}
 	m_ConversationSystem->Clear();
 	m_Shop->Clear();
 
