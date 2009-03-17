@@ -976,15 +976,17 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 
 void CFrobDoor::OnLockpickPinSuccess()
 {
-	idPlayer* player = gameLocal.GetLocalPlayer();
-
 	// Pin was picked, so we try to advance to the next pin.
 	m_FirstLockedPinIndex++;
 
 	// If it was the last pin, the user successfully picked the whole lock.
 	if (m_FirstLockedPinIndex >= m_Pins.Num())
 	{
-		player->SetGuiString(player->lockpickHUD, "StatusText1", "Lock Successfully picked");
+		if (cv_lp_debug_hud.GetBool())
+		{
+			idPlayer* player = gameLocal.GetLocalPlayer();
+			player->SetGuiString(player->lockpickHUD, "StatusText1", "Lock Successfully picked");
+		}
 
 		m_FirstLockedPinIndex = m_Pins.Num();
 
@@ -1000,7 +1002,11 @@ void CFrobDoor::OnLockpickPinSuccess()
 	}
 	else
 	{
-		player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Successfully picked");
+		if (cv_lp_debug_hud.GetBool())
+		{
+			idPlayer* player = gameLocal.GetLocalPlayer();
+			player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Successfully picked");
+		}
 
 		m_LockpickState = PIN_SUCCESS;
 		m_SoundPinSampleIndex = 0;
@@ -1015,8 +1021,11 @@ void CFrobDoor::OnLockpickPinSuccess()
 
 void CFrobDoor::OnLockpickPinFailure()
 {
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Failed");
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Failed");
+	}
 
 	m_LockpickState = PIN_FAILED;
 
@@ -1071,8 +1080,11 @@ bool CFrobDoor::CheckLockpickType(int type)
 
 bool CFrobDoor::ProcessLockpickPress(int type)
 {
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Pressed");
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Pressed");
+	}
 
 	// Check if we're still playing a sound
 	if (m_SoundTimerStarted > 0) return false; // busy
@@ -1089,7 +1101,12 @@ bool CFrobDoor::ProcessLockpickPress(int type)
 			}
 			else
 			{
-				player->SetGuiString(player->lockpickHUD, "StatusText1", "Wrong Lockpick Type");
+				if (cv_lp_debug_hud.GetBool())
+				{
+					idPlayer* player = gameLocal.GetLocalPlayer();
+					player->SetGuiString(player->lockpickHUD, "StatusText1", "Wrong Lockpick Type");
+				}
+
 				// Fall back to locked after playing the sound
 				m_LockpickState = WRONG_LOCKPICK_SOUND;
 				PropPickSound("snd_lockpick_pick_wrong", LOCKED, 1000);
@@ -1115,39 +1132,42 @@ bool CFrobDoor::ProcessLockpickPress(int type)
 
 bool CFrobDoor::ProcessLockpickRepeat(int type)
 {
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Held Down");
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Held Down");
+	}
 
 	// Check if we're still playing a sound
 	if (m_SoundTimerStarted > 0) return false; // busy
+
+	bool success = false;
 
 	switch (m_LockpickState)
 	{
 		case UNLOCKED: // ignore key-repeat events for unlocked doors
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-
-			return false;
+			success = false;
+			break;
 		}
 		case LOCKED:	
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-
 			// Lockpicking not yet started, start it now
 			if (CheckLockpickType(type))
 			{
 				// Start the first sample
 				m_LockpickState = LOCKPICKING_STARTED;
-				return true;
+				success = true;
 			}
 			else
 			{
-				player->SetGuiString(player->lockpickHUD, "StatusText1", "Wrong Lockpick Type");
 				// Fall back to locked after playing the sound
 				m_LockpickState = WRONG_LOCKPICK_SOUND;
 				PropPickSound("snd_lockpick_pick_wrong", LOCKED, 500);
-				return false;
+				success = false;
 			}
+
+			break;
 		}
 		case LOCKPICKING_STARTED:
 		{
@@ -1171,7 +1191,8 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 				// Use a "nosound" to simulate the silence - then switch back to the first sample
 				PropPickSound("nosound", LOCKPICKING_STARTED, cv_lp_pick_timeout.GetInteger());
 
-				return true;
+				success = true;
+				break;
 			}
 
 			// There are more samples to play, are we in pavlov mode and hitting the last sample?
@@ -1194,8 +1215,6 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 		case PIN_SAMPLE:
 		case PIN_SAMPLE_SWEETSPOT:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-
 			// Play the current sample and fall back to ADVANCE_TO_NEXT_SAMPLE
 			const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
 
@@ -1203,7 +1222,8 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 			if (m_SoundPinSampleIndex >= pattern.Num())
 			{
 				m_LockpickState = ADVANCE_TO_NEXT_SAMPLE; // wrap around
-				return true;
+				success = true;
+				break;
 			}
 
 			// Get the pick sound and start playing
@@ -1212,32 +1232,83 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 			// Pad the sound with a sample delay
 			PropPickSound(pickSound, ADVANCE_TO_NEXT_SAMPLE, cv_lp_sample_delay.GetInteger());
 
-			return true;
+			success = true;
+			break;
 		}
 		case PIN_DELAY:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-
 			// We're in delay mode, so ignore this one
 			// Either the user hits the hotspot when not in pavlov mode
 			// or the "finished sound" event fires and we're back to LOCKPICKING_STARTED
-			return true;
+			success = true;
+			break;
 		}
 		case PICKED:	// Already picked
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-			return false;
+			success = false;
+			break;
 		}
 		// Ignore button press events on all other events (while playing sounds, for instance)
 		default:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
-			return true;
+			success = true;
+			break;
 		}
 	};
+
+	if (cv_lp_debug_hud.GetBool()) 
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
+	}
+
+	return success;
 }
 
-bool CFrobDoor::ProcessLockpickImpulse(EImpulseState impulseState, int type)
+bool CFrobDoor::ProcessLockpickRelease(int type)
+{
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Released");
+	}
+	
+	// Cancel all previous events on release
+	CancelEvents(&EV_TDM_LockpickSoundFinished);
+	m_SoundTimerStarted = 0;
+
+	// Check if we're in the "hot spot" of the lock pick sequence
+	if (cv_lp_pawlow.GetBool())
+	{
+		if (m_LockpickState == PIN_SAMPLE_SWEETSPOT)
+		{
+			// Success
+			OnLockpickPinSuccess();
+		}
+		else 
+		{
+			// Failure
+			OnLockpickPinFailure();
+		}
+	}
+	else // pattern mode
+	{
+		if (m_LockpickState == PIN_DELAY)
+		{
+			// Success
+			OnLockpickPinSuccess();
+		}
+		else 
+		{
+			// Failure
+			OnLockpickPinFailure();
+		}
+	}
+
+	return true;
+}
+
+void CFrobDoor::UpdateLockpickHUD()
 {
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
@@ -1265,6 +1336,14 @@ bool CFrobDoor::ProcessLockpickImpulse(EImpulseState impulseState, int type)
 	}
 
 	player->SetGuiString(player->lockpickHUD, "PatternText", patternText);
+}
+
+bool CFrobDoor::ProcessLockpickImpulse(EImpulseState impulseState, int type)
+{
+	if (cv_lp_debug_hud.GetBool())
+	{
+		UpdateLockpickHUD();
+	}
 	
 	switch (impulseState)
 	{
@@ -1278,41 +1357,7 @@ bool CFrobDoor::ProcessLockpickImpulse(EImpulseState impulseState, int type)
 		}
 		case EReleased:			// just released
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Released");
-
-			// Cancel all previous events on release
-			CancelEvents(&EV_TDM_LockpickSoundFinished);
-			m_SoundTimerStarted = 0;
-
-			// Check if we're in the "hot spot" of the lock pick sequence
-			if (cv_lp_pawlow.GetBool())
-			{
-				if (m_LockpickState == PIN_SAMPLE_SWEETSPOT)
-				{
-					// Success
-					OnLockpickPinSuccess();
-				}
-				else 
-				{
-					// Failure
-					OnLockpickPinFailure();
-				}
-			}
-			else // pattern mode
-			{
-				if (m_LockpickState == PIN_DELAY)
-				{
-					// Success
-					OnLockpickPinSuccess();
-				}
-				else 
-				{
-					// Failure
-					OnLockpickPinFailure();
-				}
-			}
-
-			return true;
+			return ProcessLockpickRelease(type);
 		}
 		default:
 			// Error
@@ -1325,136 +1370,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
 	return false;
 
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	player->SetGuiString(player->lockpickHUD, "StatusText4", (idStr("Sounds started: ") + idStr(m_SoundTimerStarted)).c_str());
-
-	switch (m_LockpickState)
-	{
-	case UNLOCKED:				// Not locked in the first place
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "UNLOCKED");
-
-		if (m_SoundTimerStarted <= 0)
-		{
-			m_LockpickState = WRONG_LOCKPICK_SOUND;
-			PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] not locked in the first place\r", name.c_str());
-		}
-
-		break;
-	}
-	case LOCKED:				// Lockpicking not started yet
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "LOCKED");
-
-		// Now check if the pick is of the correct type. If no picktype is given, or
-		// the mapper doesn't care, we ignore it.
-		idStr pick = spawnArgs.GetString("lock_picktype");
-
-		char type = cType;
-
-		if (m_FirstLockedPinIndex < pick.Length())
-		{
-			player->SetGuiString(player->lockpickHUD, "StatusText2", "checking lockpick type");
-
-			if (!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
-			{
-				player->SetGuiString(player->lockpickHUD, "StatusText1", "wrong lockpick");
-
-				if (m_SoundTimerStarted == 0)
-				{
-					m_LockpickState = WRONG_LOCKPICK_SOUND;
-					PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
-					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, pick.Length());
-				}
-				else
-				{
-					if (!(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT))
-					{
-						m_SoundTimerStarted--;
-					}
-				}
-
-				return false;
-			}
-
-			player->SetGuiString(player->lockpickHUD, "StatusText1", "Lockpick matches");
-		}
-		else
-		{
-			// Error, unknown pin index, this must be an error
-			player->SetGuiString(player->lockpickHUD, "StatusText1", "Error: lock pin index is out of bounds");
-			return false;
-		}
-
-		break;
-	}
-	case PIN_SAMPLE:			// Playing pick sample sound (including sample delay)
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "PIN_SAMPLE");
-		break;
-	}
-	case PIN_DELAY:				// Delay after pattern 
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "PIN_DELAY");
-		break;
-	}
-	case WRONG_LOCKPICK_SOUND:	// Playing wrong lockpick sound
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "WRONG_LOCKPICK_SOUND");
-
-		// Wait until all sounds are finished
-		if (m_SoundTimerStarted == 0)
-		{
-			// Fall back to start
-			m_LockpickState = LOCKED;
-		}
-
-		break;
-	}
-	case PIN_SUCCESS:			// Playing pin success
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "PIN_SUCCESS");
-		break;
-	}
-	case LOCK_SUCCESS:			// Playing entire lock success
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "LOCK_SUCCESS");
-		break;
-	}
-	case PICKED:				// Lock is picked
-	{
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "PICKED");
-
-		if (nSampleType == LPSOUND_INIT)
-		{
-			if (m_SoundTimerStarted <= 0)
-			{
-				PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
-			}
-		}
-		else if (nSampleType == LPSOUND_PIN_SAMPLE || nSampleType == LPSOUND_WRONG_LOCKPICK)
-		{
-			m_SoundTimerStarted--;
-
-			if(m_SoundTimerStarted <= 0)
-			{
-				m_SoundTimerStarted = 0;
-			}
-		}
-
-		break;
-	}
-	case NUM_LPSTATES:			// Error
-	default:
-		player->SetGuiString(player->lockpickHUD, "StatusText5", "ERROR");
-		DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Unknown case in switch %d.\r", static_cast<int>(m_LockpickState));
-		break;
-	};
-
-	// TODO: IsFrobbed() watchdog
-	
 	// Has the lock already been picked?
 	//if (m_FirstLockedPinIndex >= m_Pins.Num())
 	//{
@@ -1481,29 +1396,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	//	return false;
 	//}
 
-	idStr patternText = "Current Pattern: ";
-	patternText += idStr(m_FirstLockedPinIndex) + idStr(" of ") + idStr(m_Pins.Num());
-	
-	const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
-	for (int i = 0; i < pattern.Num(); ++i)
-	{
-		idStr p = pattern[i];
-		p.StripLeadingOnce("snd_lockpick_pin_");
-
-		player->SetGuiString(player->lockpickHUD, "Sample" + idStr(i+1), p);
-
-		float opacity = (i < m_SoundPinSampleIndex) ? 0.2f : 0.6f;
-
-		if (i == m_SoundPinSampleIndex) opacity = 1;
-
-		player->SetGuiFloat(player->lockpickHUD, "SampleOpacity" + idStr(i+1), opacity);
-		player->SetGuiInt(player->lockpickHUD, "SampleBorder" + idStr(i+1), (i == m_SoundPinSampleIndex) ? 1 : 0);
-	}
-
-	player->SetGuiString(player->lockpickHUD, "PatternText", patternText);
-
-	
-
 	bool success = true;
 
 	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("%s : Timer: %u  PinIndex: %u  SampleIndex: %u\r", sSampleTypeText[nSampleType], m_SoundTimerStarted, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
@@ -1511,8 +1403,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	{
 		case LPSOUND_INIT:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText3", "LPSOUND_INIT");
-
 			// If we receive an INIT call, and the soundtimer has already been started, it means that
 			// the user released the lockpick key and pressed it again, before the sample has been finished.
 			// We can safely ignore this case, because this should be treated the same as if the user
@@ -1533,14 +1423,11 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		case LPSOUND_PIN_SUCCESS:
 		case LPSOUND_WRONG_LOCKPICK:
 		case LPSOUND_LOCK_PICKED:			// Should never happen but it doesn't hurt either. :)
-			player->SetGuiString(player->lockpickHUD, "StatusText3", "LPSOUND_LOCK_PICKED");
 			m_SoundTimerStarted--;
 		break;
 
 		case LPSOUND_PIN_SAMPLE:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText3", "LPSOUND_PIN_SAMPLE");
-
 			m_SoundTimerStarted--;
 
 			if(m_SoundTimerStarted <= 0)
@@ -1556,8 +1443,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		// be unlocked.
 		case LPSOUND_RELEASED:
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText3", "LPSOUND_RELEASED");
-
 			CancelEvents(&EV_TDM_LockpickTimer);
 			m_SoundTimerStarted--;
 
@@ -1578,8 +1463,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				// If it was the last pin, the user successfully picked the lock.
 				if (m_FirstLockedPinIndex >= m_Pins.Num())
 				{
-					player->SetGuiString(player->lockpickHUD, "StatusText1", "Lock Successfully picked");
-
 					m_FirstLockedPinIndex = m_Pins.Num();
 					PropPickSound("snd_lockpick_lock_picked", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
 					Unlock(true);
@@ -1588,8 +1471,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				}
 				else
 				{
-					player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Successfully picked");
-
 					m_SoundPinSampleIndex = 0;
 					PropPickSound("snd_lockpick_pin_success", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
@@ -1597,8 +1478,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			}
 			else
 			{
-				player->SetGuiString(player->lockpickHUD, "StatusText1", "Pin Failed");
-
 				m_SoundPinSampleIndex = 0;
 				PropPickSound("snd_lockpick_pin_fail", cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed.\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex);
@@ -1608,8 +1487,6 @@ bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 		case LPSOUND_REPEAT:				// Here is the interesting part.
 		{
-			player->SetGuiString(player->lockpickHUD, "StatusText3", "LPSOUND_REPEAT");
-
 			// If we are still playing a sample, we can ignore that keypress.
 			if (m_SoundTimerStarted > 0)
 			{

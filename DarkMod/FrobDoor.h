@@ -148,6 +148,10 @@ protected:
 	// Specialised methods to handle certain impulse events
 	bool					ProcessLockpickPress(int type);
 	bool					ProcessLockpickRepeat(int type);
+	bool					ProcessLockpickRelease(int type);
+
+	// For debugging purposes
+	void					UpdateLockpickHUD();
 
 	/**
 	 * greebo: Play the given sound, this will post a "sound finished" event 
