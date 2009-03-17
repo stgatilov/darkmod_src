@@ -42,7 +42,6 @@ const idEventDef EV_TDM_Door_IsPickable( "IsPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
 // Internal events, no need to expose these to scripts
-const idEventDef EV_TDM_LockpickTimer("LockpickTimer", "dd");
 const idEventDef EV_TDM_LockpickSoundFinished("TDM_LockpickSoundFinished", "d"); // pass the next state as argument
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
@@ -50,21 +49,8 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
 	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
-	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 	EVENT( EV_TDM_LockpickSoundFinished,	CFrobDoor::Event_LockpickSoundFinished)
 END_CLASS
-
-static const char *sSampleTypeText[] = 
-{
-	"LPSOUND_INIT",					// Initial call (impulse has been triggered)
-	"LPSOUND_REPEAT",				// Call from the keyboardhandler for repeated presses
-	"LPSOUND_RELEASED",				// Call from the keyboardhandler for released presses
-	"LPSOUND_PIN_SAMPLE",			// Callback for pin sample
-	"LPSOUND_PIN_FAILED",			// Callback when the pin failed sound is finished
-	"LPSOUND_PIN_SUCCESS",			// Callback for the success sound sample
-	"LPSOUND_WRONG_LOCKPICK",		// Callback for the wrong lockpick sample
-	"LPSOUND_LOCK_PICKED"			// Callback for the pin picked
-};
 
 static const char* StateNames[] =
 {
@@ -895,21 +881,6 @@ idStringList* CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCoun
 	return returnValue;
 }
 
-void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
-{
-	// TODO: Remove this method
-	return;
-
-	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
-	ProcessLockpick(cType, nSampleType);
-
-	// For these sounds, decrease the timer started variable
-	if (m_LockpickState == WRONG_LOCKPICK_SOUND || m_LockpickState == PIN_SAMPLE)
-	{
-		m_SoundTimerStarted--;
-	}
-}
-
 void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
 {
 	// If we have a bar entity, this is taken as moving entity
@@ -1385,194 +1356,6 @@ void CFrobDoor::AttackAction(idPlayer* player)
 		// Failure
 		OnLockpickPinFailure();
 	}
-}
-
-bool CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
-{
-	return false;
-
-	// Has the lock already been picked?
-	//if (m_FirstLockedPinIndex >= m_Pins.Num())
-	//{
-	//	player->SetGuiString(player->lockpickHUD, "StatusText1", "already picked");
-
-	//	if (nSampleType == LPSOUND_INIT)
-	//	{
-	//		if (m_SoundTimerStarted <= 0)
-	//		{
-	//			PropPickSound("snd_lockpick_pick_wrong", cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
-	//			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
-	//		}
-	//	}
-	//	else if (nSampleType == LPSOUND_PIN_SAMPLE || nSampleType == LPSOUND_WRONG_LOCKPICK)
-	//	{
-	//		m_SoundTimerStarted--;
-
-	//		if(m_SoundTimerStarted <= 0)
-	//		{
-	//			m_SoundTimerStarted = 0;
-	//		}
-	//	}
-
-	//	return false;
-	//}
-
-	bool success = true;
-
-	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("%s : Timer: %u  PinIndex: %u  SampleIndex: %u\r", sSampleTypeText[nSampleType], m_SoundTimerStarted, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-	switch (nSampleType)
-	{
-		case LPSOUND_INIT:
-		{
-			// If we receive an INIT call, and the soundtimer has already been started, it means that
-			// the user released the lockpick key and pressed it again, before the sample has been finished.
-			// We can safely ignore this case, because this should be treated the same as if the user
-			// didn't release the key at all while playing the lockpick samples.
-			if (m_SoundTimerStarted > 0)
-			{
-				return false;
-			}
-
-			// Otherwise we reset the lock to the initial soundsample for the current pin. Pins are not
-			// reset, so the player doesn't have to start all over if he gets interrupted while picking.
-			m_SoundPinSampleIndex = -1;
-			SetHandlePosition(HANDLE_POS_SAMPLE, 0, m_FirstLockedPinIndex);
-		}
-		break;
-
-		case LPSOUND_PIN_FAILED:
-		case LPSOUND_PIN_SUCCESS:
-		case LPSOUND_WRONG_LOCKPICK:
-		case LPSOUND_LOCK_PICKED:			// Should never happen but it doesn't hurt either. :)
-			m_SoundTimerStarted--;
-		break;
-
-		case LPSOUND_PIN_SAMPLE:
-		{
-			m_SoundTimerStarted--;
-
-			if(m_SoundTimerStarted <= 0)
-			{
-				m_SoundTimerStarted = 0;
-				break;
-			}
-		}
-
-		// If the pin sample has been finished and we get the callback we check if
-		// the key is still pressed. If the user released the key in this interval
-		// and we have to check whether it was the correct pin, and if yes, it will
-		// be unlocked.
-		case LPSOUND_RELEASED:
-		{
-			CancelEvents(&EV_TDM_LockpickTimer);
-			m_SoundTimerStarted--;
-
-			if (m_SoundTimerStarted <= 0)
-			{
-				m_SoundTimerStarted = 0;
-			}
-
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %d\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, cType);
-
-			idList<idStr>& l = *m_Pins[m_FirstLockedPinIndex];
-
-			if (m_SoundPinSampleIndex == l.Num()-1)
-			{
-				// It was correct so we advance to the next pin.
-				m_FirstLockedPinIndex++;
-
-				// If it was the last pin, the user successfully picked the lock.
-				if (m_FirstLockedPinIndex >= m_Pins.Num())
-				{
-					m_FirstLockedPinIndex = m_Pins.Num();
-					PropPickSound("snd_lockpick_lock_picked", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
-					Unlock(true);
-					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
-					return success;
-				}
-				else
-				{
-					m_SoundPinSampleIndex = 0;
-					PropPickSound("snd_lockpick_pin_success", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
-				}
-			}
-			else
-			{
-				m_SoundPinSampleIndex = 0;
-				PropPickSound("snd_lockpick_pin_fail", cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed.\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex);
-			}
-		}
-		break;
-
-		case LPSOUND_REPEAT:				// Here is the interesting part.
-		{
-			// If we are still playing a sample, we can ignore that keypress.
-			if (m_SoundTimerStarted > 0)
-			{
-				return success;
-			}
-
-			int sample_delay = cv_lp_sample_delay.GetInteger();
-			const idList<idStr>& pattern = *m_Pins[m_FirstLockedPinIndex];
-
-			m_SoundPinSampleIndex++;
-			int pick_timeout = 0;
-
-			if (cv_lp_pawlow.GetBool() == false && m_SoundPinSampleIndex == 0)
-			{
-				pick_timeout = cv_lp_pick_timeout.GetInteger();
-			}
-
-			if (m_SoundPinSampleIndex >= pattern.Num() - 1)
-			{
-				if (m_SoundPinSampleIndex >= pattern.Num())
-				{
-					m_SoundPinSampleIndex = 0;
-				}
-				else if (cv_lp_pawlow.GetBool() == true)
-				{
-					pick_timeout = cv_lp_pick_timeout.GetInteger();
-				}
-			}
-
-			const idStr& oPickSound = pattern[m_SoundPinSampleIndex];
-
-			PropPickSound(
-				oPickSound, 
-				cType, 
-				LPSOUND_PIN_SAMPLE, 
-				sample_delay + pick_timeout, 
-				HANDLE_POS_SAMPLE, 
-				m_FirstLockedPinIndex, 
-				m_SoundPinSampleIndex
-			);
-
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %d\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, cType);
-		}
-		break;
-	}
-
-	return success;
-}
-
-void CFrobDoor::PropPickSound(const idStr& pickSound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int pinIndex, int sampleIndex)
-{
-	m_SoundTimerStarted++;
-	PropSoundDirect(pickSound, true, false);
-
-	int length = FrobMoverStartSound(pickSound);
-
-	/*if (pinIndex != -1)
-	{
-		SetHandlePosition(nHandlePos, length, pinIndex, sampleIndex);
-	}*/
-
-	PostEventMS(&EV_TDM_LockpickTimer, length + time, cType, nSampleType);
-
-	// Post the sound finished event
-	PostEventMS(&EV_TDM_LockpickSoundFinished, length + time);
 }
 
 void CFrobDoor::OpenPeers()
