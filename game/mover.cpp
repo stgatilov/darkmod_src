@@ -935,7 +935,7 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 
 	physicsObj.GetLocalAngles( ang );
 	angle_delta = dest_angles - ang;
-	if ( angle_delta == ang_zero ) {
+	if ( angle_delta.Compare(ang_zero, VECTOR_EPSILON) ) {
 		// set our final angles so that we get rid of any numerical inaccuracy
 		dest_angles.Normalize360();
 		physicsObj.SetAngularExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_angles, ang_zero, ang_zero );

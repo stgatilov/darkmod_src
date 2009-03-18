@@ -147,7 +147,14 @@ void CFrobDoorHandle::UpdatePosition(float fraction)
 	idQuat newRotation;
 	newRotation.Slerp(m_ClosedAngles.ToQuat(), m_OpenAngles.ToQuat(), fraction);
 
-	Event_RotateTo(newRotation.ToAngles().Normalize360());
+	const idAngles& curAngles = physicsObj.GetLocalAngles();
+	idAngles newAngles = newRotation.ToAngles().Normalize360();
+
+	if (!(curAngles - newAngles).Normalize180().Compare(idAngles(0,0,0), 0.01f))
+	{
+		Event_RotateTo(newAngles);
+	}
+
 	MoveToLocalPos(m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin)*fraction);
 }
 

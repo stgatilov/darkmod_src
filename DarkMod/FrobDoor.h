@@ -238,6 +238,7 @@ protected:
 
 	// Updates the position of the attached handles according to the current lockpick state
 	void					UpdateHandlePosition();
+	float					CalculateHandleMoveFraction();
 
 	// Gets called when a lockpick sound is finished playing
 	void					Event_LockpickSoundFinished(ELockpickState nextState);

@@ -868,7 +868,11 @@ void CFrobDoor::UpdateHandlePosition()
 
 	if (handle == NULL) return; // neither handle nor bar => quit
 
-	float fraction = 0.5f;
+	// Calculate the fraction based on the current pin/sample state
+	float fraction = CalculateHandleMoveFraction();
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	player->SetGuiString(player->lockpickHUD, "StatusText3", idStr(fraction));
 
 	// Tell the doorhandles to update their position
 	for (int i = 0; i < m_Doorhandles.Num(); ++i)
@@ -924,6 +928,42 @@ void CFrobDoor::UpdateHandlePosition()
 
 		handle->UpdateVisuals();
 	}*/
+}
+
+float CFrobDoor::CalculateHandleMoveFraction()
+{
+	if (m_LockpickState == UNLOCKED || m_LockpickState == PICKED || m_Pins.Num() == 0)
+	{
+		// unlocked handles or ones without lock pins are at the starting position
+		return 0.0f; 
+	}
+
+	// Each pin moves the handle by an equal amount
+	float pinStep = 1.0f / m_Pins.Num();
+
+	// Calculate the coarse move fraction, depending on the number of unlocked pins
+	float fraction = m_FirstLockedPinIndex * pinStep;
+
+	// Sanity-check the pin index before using it as array index
+	if (m_FirstLockedPinIndex >= m_Pins.Num()) 
+	{
+		return fraction;
+	}
+
+	// Calculate the fine fraction, based on the current sample number
+	const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+
+	// Sanity-check the pattern size
+	if (pattern.Num() == 0) return fraction;
+
+	float sampleStep = pinStep / pattern.Num();
+
+	// Prevent divisions by zero
+	fraction += m_SoundPinSampleIndex * sampleStep;
+
+	fraction = idMath::ClampFloat(0.0f, 1.0f, fraction);
+
+	return fraction;
 }
 
 void CFrobDoor::Event_UpdateHandlePosition()

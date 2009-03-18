@@ -722,8 +722,7 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 float CBinaryFrobMover::GetMoveTimeFraction()
 {
 	// Get the current angles
-	idAngles curAngles;
-	physicsObj.GetLocalAngles(curAngles);
+	idAngles curAngles = physicsObj.GetLocalAngles();
 
 	// Calculate the delta
 	idAngles delta = dest_angles - curAngles;
