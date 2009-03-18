@@ -156,6 +156,8 @@ void CFrobDoorHandle::UpdatePosition(float fraction)
 	}
 
 	MoveToLocalPos(m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin)*fraction);
+
+	UpdateVisuals();
 }
 
 void CFrobDoorHandle::OnOpenPositionReached()

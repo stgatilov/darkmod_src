@@ -372,16 +372,6 @@ void CFrobDoor::PostSpawn()
 		}
 	}
 
-	/*m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0") / m_Pins.Num();
-	// Check if the rotation is empty and set the flag.
-	// Set the pin rotation flag to FALSE if the rotation fraction is zero
-	m_PinRotationFractionFlag = (m_PinRotationFraction.Compare(idAngles(0,0,0), VECTOR_EPSILON) == false);
-	
-	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0") / m_Pins.Num();
-	// Check if the translation is empty and set the flag.
-	// Set the pin translation flag to FALSE if the translation fraction is zero
-	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);*/
-
 	// greebo: Should we auto-setup the doorhandles?
 	if (spawnArgs.GetBool("auto_setup_door_handles", "1"))
 	{
@@ -879,55 +869,6 @@ void CFrobDoor::UpdateHandlePosition()
 	{
 		m_Doorhandles[i].GetEntity()->UpdatePosition(fraction);
 	}
-
-	/*if (nPos == HANDLE_POS_ORIGINAL)
-	{
-		// Set the handle back to its original position
-		handle->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
-		idVec3 position = handle->GetLocalCoordinates(m_OriginalPosition);
-		handle->SetOrigin(position);
-
-		handle->UpdateVisuals();
-	}
-	else
-	{
-		int n = m_Pins[pin]->Num();
-		if (sample < 0)
-		{
-			sample = 0;
-		}
-
-		if (m_RandomPins.Num() > 0)
-		{
-			idList<idStr>& sl = *m_RandomPins[pin];
-			idStr s = sl[sample];
-			sample = s[0] - '0';
-		}
-
-		// Set the rotation
-		if (m_PinRotationFractionFlag)
-		{
-			m_SampleRotationFraction = m_PinRotationFraction / n;
-
-			idAngles angles = m_OriginalAngle + (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
-
-			handle->GetPhysics()->SetAxis(angles.ToMat3());
-		}
-
-		// Set the translation
-		if (m_PinTranslationFractionFlag)
-		{
-			m_SampleTranslationFraction = m_PinTranslationFraction / n;
-
-			idVec3 position = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
-			position += m_OriginalPosition;
-			position = handle->GetLocalCoordinates(position);
-
-			handle->SetOrigin(position);
-		}
-
-		handle->UpdateVisuals();
-	}*/
 }
 
 float CFrobDoor::CalculateHandleMoveFraction()
