@@ -43,6 +43,7 @@ const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
 // Internal events, no need to expose these to scripts
 const idEventDef EV_TDM_LockpickSoundFinished("TDM_LockpickSoundFinished", "d"); // pass the next state as argument
+const idEventDef EV_TDM_LockpickUpdateHandlePos("TDM_UpdateHandlePosition", NULL);
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
@@ -50,6 +51,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 	EVENT( EV_TDM_LockpickSoundFinished,	CFrobDoor::Event_LockpickSoundFinished)
+	EVENT( EV_TDM_LockpickUpdateHandlePos,	CFrobDoor::Event_UpdateHandlePosition)
 END_CLASS
 
 static const char* StateNames[] =
@@ -884,21 +886,26 @@ idStringList* CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCoun
 	return returnValue;
 }
 
-void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
+void CFrobDoor::UpdateHandlePosition()
 {
 	// If we have a bar entity, this is taken as moving entity
 	idEntity* handle = m_Bar.GetEntity();
-	if (handle == NULL)
+	if (handle == NULL && m_Doorhandles.Num() > 0)
 	{
-		if (m_Doorhandles.Num() > 0)
-		{
-			handle = m_Doorhandles[0].GetEntity();
-		}
+		handle = m_Doorhandles[0].GetEntity();
 	}
 
 	if (handle == NULL) return; // neither handle nor bar => quit
 
-	if (nPos == HANDLE_POS_ORIGINAL)
+	float fraction = 0.5f;
+
+	// Tell the doorhandles to update their position
+	for (int i = 0; i < m_Doorhandles.Num(); ++i)
+	{
+		m_Doorhandles[i].GetEntity()->UpdatePosition(fraction);
+	}
+
+	/*if (nPos == HANDLE_POS_ORIGINAL)
 	{
 		// Set the handle back to its original position
 		handle->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
@@ -945,7 +952,12 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 		}
 
 		handle->UpdateVisuals();
-	}
+	}*/
+}
+
+void CFrobDoor::Event_UpdateHandlePosition()
+{
+	UpdateHandlePosition();
 }
 
 void CFrobDoor::OnLockpickPinSuccess()
@@ -1118,6 +1130,9 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 		idPlayer* player = gameLocal.GetLocalPlayer();
 		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Held Down");
 	}
+
+	// Do this in any case
+	UpdateHandlePosition();
 
 	// Check if we're still playing a sound
 	if (m_SoundTimerStarted > 0) return false; // busy

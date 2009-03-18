@@ -53,13 +53,6 @@ protected:
 	};
 
 public:
-	enum EHandleReset
-	{
-		HANDLE_POS_ORIGINAL,	// Reset it to the original starting value
-		HANDLE_POS_SAMPLE		// Position it to a sample index.
-	};
-
-public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
 							CFrobDoor();
@@ -113,8 +106,6 @@ public:
 	// Override the idEntity frob methods
 	virtual void			SetFrobbed(bool val);
 	virtual bool			IsFrobbed();
-
-	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
 
 	// angua: returns the number of open peers
 	ID_INLINE int			GetOpenPeersNum()
@@ -245,8 +236,12 @@ protected:
 	// Called when the player failed to unlock this pin
 	virtual void			OnLockpickPinFailure();
 
+	// Updates the position of the attached handles according to the current lockpick state
+	void					UpdateHandlePosition();
+
 	// Gets called when a lockpick sound is finished playing
 	void					Event_LockpickSoundFinished(ELockpickState nextState);
+	void					Event_UpdateHandlePosition();
 
 	// Script event interface
 	void					Event_GetDoorhandle();
