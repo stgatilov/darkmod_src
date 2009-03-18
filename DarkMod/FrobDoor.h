@@ -277,7 +277,22 @@ protected:
 	idList<idStr>				m_LockPeers;
 
 	idList<idStringList *>		m_Pins;
-	idList<idStringList *>		m_RandomPins;
+
+	/** 
+	 * greebo: This is used for the random handle jiggling while lockpicking.
+	 * It holds (for each pin) the posisiton indices the handles should be at.
+	 *
+	 * Example: 
+	 * A single pattern has 5 samples: 0 1 2 3 4. When traversing the samples
+	 * like this, the handle would move in linear steps to the next pin position.
+	 *
+	 * Using the info in this variable, the pin positions are mapped to different 
+	 * values such that the handle moves randomly, something like this:
+	 * 0 3 1 2 4. Here, the sample with the index 1 would be mapped 
+	 * to the linear position 3. The first and last position are fixed.
+	 */
+	idList< idList<int> >		m_PinPositions;
+
 	bool						m_Pickable;
 
 	/**

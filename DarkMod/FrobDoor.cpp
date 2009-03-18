@@ -93,7 +93,6 @@ CFrobDoor::~CFrobDoor()
 	ClearDoorTravelFlag();
 
 	m_Pins.DeleteContents(true);
-	m_RandomPins.DeleteContents(true);
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -123,7 +122,8 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 			savefile->WriteString(stringList[j]);
 	}
 
-	savefile->WriteInt(m_RandomPins.Num());
+	// TODO
+	/*savefile->WriteInt(m_RandomPins.Num());
 	for (int i = 0; i < m_RandomPins.Num(); i++)
 	{
 		idStringList& stringList = *m_RandomPins[i];
@@ -131,7 +131,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
 			savefile->WriteString(stringList[j]);
-	}
+	}*/
 
 	savefile->WriteBool(m_Pickable);
 	savefile->WriteBool(m_CloseOnLock);
@@ -186,7 +186,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 			savefile->ReadString( (*m_Pins[i])[j] );
 	}
 
-	savefile->ReadInt(numPins);
+	// TODO
+	/*savefile->ReadInt(numPins);
 	m_RandomPins.SetNum(numPins);
 	for (int i = 0; i < numPins; i++)
 	{
@@ -196,7 +197,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 		m_RandomPins[i]->SetNum(num);
 		for (int j = 0; j < num; j++)
 			savefile->ReadString( (*m_RandomPins[i])[j] );
-	}
+	}*/
 
 	savefile->ReadBool(m_Pickable);
 	savefile->ReadBool(m_CloseOnLock);
@@ -243,6 +244,7 @@ void CFrobDoor::Spawn()
 			if (pattern != NULL)
 			{
 				m_Pins.Append(pattern);
+
 				if (cv_lp_pawlow.GetBool() == false)
 				{
 					pattern->Insert("snd_lockpick_pin_sweetspot");
@@ -255,22 +257,34 @@ void CFrobDoor::Spawn()
 			else
 			{
 				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+				continue;
 			}
 
-			if (cv_lp_randomize.GetBool() == true)
+			// Add a new jiggle position list for this pattern
+			idList<int> positions = m_PinPositions.Alloc();
+			
+			if (pattern->Num() == 0) continue; // don't generate positions for empty patterns
+
+			// Add one extra position for the delay after the pattern
+			positions.SetNum(pattern->Num() + 1);
+
+			// The first and last positions are fixed
+			positions[0] = 0;
+			positions[pattern->Num()] = pattern->Num() - 1;
+
+			// Calculate the handle positions
+			for (int i = 1; i < pattern->Num(); ++i)
 			{
-				// TODO: Hardcoded 9 is wrong here. Actually the number must be determined by
-				// seeing how many positions the lock can have while in transit.
-				idStr empty = "";
-				pattern = CreatePinPattern(lockPins[i] - 0x030, b, 9, 1, empty);
-				if (pattern != NULL)
+				if (cv_lp_randomize.GetBool())
 				{
-					pattern->Insert("0");
-					m_RandomPins.Append(pattern);
+					int candidate = gameLocal.random.RandomInt(pattern->Num() - 1) + 1;
+
+					positions[i] = candidate;
 				}
-				else
+				else 
 				{
-					DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin jiggle pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+					// No randomizing, just add the linear series
+					positions[i] = i;
 				}
 			}
 		}
