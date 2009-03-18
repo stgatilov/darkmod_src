@@ -86,8 +86,6 @@ CFrobDoor::CFrobDoor()
 	m_FirstLockedPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
 	m_SoundTimerStarted = 0;
-	m_PinTranslationFractionFlag = false;
-	m_PinRotationFractionFlag = false;
 }
 
 CFrobDoor::~CFrobDoor()
@@ -134,17 +132,6 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 		for (int j = 0; j < stringList.Num(); j++)
 			savefile->WriteString(stringList[j]);
 	}
-
-	savefile->WriteBool(m_PinTranslationFractionFlag);
-	savefile->WriteVec3(m_PinTranslationFraction);
-	savefile->WriteVec3(m_SampleTranslationFraction);
-
-	savefile->WriteBool(m_PinRotationFractionFlag);
-	savefile->WriteAngles(m_PinRotationFraction);
-	savefile->WriteAngles(m_SampleRotationFraction);
-
-	savefile->WriteVec3(m_OriginalPosition);
-	savefile->WriteAngles(m_OriginalAngle);
 
 	savefile->WriteBool(m_Pickable);
 	savefile->WriteBool(m_CloseOnLock);
@@ -211,17 +198,6 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 			savefile->ReadString( (*m_RandomPins[i])[j] );
 	}
 
-	savefile->ReadBool(m_PinTranslationFractionFlag);
-	savefile->ReadVec3(m_PinTranslationFraction);
-	savefile->ReadVec3(m_SampleTranslationFraction);
-
-	savefile->ReadBool(m_PinRotationFractionFlag);
-	savefile->ReadAngles(m_PinRotationFraction);
-	savefile->ReadAngles(m_SampleRotationFraction);
-
-	savefile->ReadVec3(m_OriginalPosition);
-	savefile->ReadAngles(m_OriginalAngle);
-
 	savefile->ReadBool(m_Pickable);
 	savefile->ReadBool(m_CloseOnLock);
 	savefile->ReadInt(m_FirstLockedPinIndex);
@@ -242,7 +218,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	SetDoorTravelFlag();
 }
 
-void CFrobDoor::Spawn( void )
+void CFrobDoor::Spawn()
 {
 	idStr lockPins = spawnArgs.GetString("lock_pins", "");
 
@@ -380,11 +356,6 @@ void CFrobDoor::PostSpawn()
 		{
 			m_Bar = bar;
 
-			// The bar overrides the handle info if it exists, because
-			// this is the one that has to move if the lock is picked.
-			m_OriginalPosition = bar->GetPhysics()->GetOrigin();
-			m_OriginalAngle = bar->GetPhysics()->GetAxis().ToAngles();
-
 			// Check if we should bind the bar to ourselves
 			if (spawnArgs.GetBool("lockpick_bar_bind_flag", "1"))
 			{
@@ -401,7 +372,7 @@ void CFrobDoor::PostSpawn()
 		}
 	}
 
-	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0") / m_Pins.Num();
+	/*m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0") / m_Pins.Num();
 	// Check if the rotation is empty and set the flag.
 	// Set the pin rotation flag to FALSE if the rotation fraction is zero
 	m_PinRotationFractionFlag = (m_PinRotationFraction.Compare(idAngles(0,0,0), VECTOR_EPSILON) == false);
@@ -409,7 +380,7 @@ void CFrobDoor::PostSpawn()
 	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0") / m_Pins.Num();
 	// Check if the translation is empty and set the flag.
 	// Set the pin translation flag to FALSE if the translation fraction is zero
-	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);
+	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);*/
 
 	// greebo: Should we auto-setup the doorhandles?
 	if (spawnArgs.GetBool("auto_setup_door_handles", "1"))
@@ -1588,9 +1559,6 @@ void CFrobDoor::AddDoorhandle(CFrobDoorHandle* handle)
 	}
 
 	m_Doorhandles.Append(handlePtr);
-
-	m_OriginalPosition = handle->GetPhysics()->GetOrigin();
-	m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
 
 	// Let the handle know about us
 	handle->SetDoor(this);

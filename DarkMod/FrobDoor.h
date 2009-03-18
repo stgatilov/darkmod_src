@@ -324,31 +324,6 @@ protected:
 	 * but if lockpick_bar is set on the door, then this is used instead.
 	 */
 	idEntityPtr<idEntity>		m_Bar;
-
-	/**
-	 * These fractions define the stepping that a handle is moved for each pin,
-	 * while it is picked. This will define the boundary of the jiggling effect
-	 * to indicate the progress of the picking for each pin. The value is 
-	 * determined by the boundary that a handle is moving when it is tapped.
-	 * For example: If a handle rotates 45 degree (default for a regular door
-	 * handle) and the lock has 6 pins, then the fraction is 45/6 = 7.5 degrees
-	 * per successfully picked pin.
-	 */
-	bool						m_PinTranslationFractionFlag;
-	bool						m_PinRotationFractionFlag;
-	idVec3						m_PinTranslationFraction;
-	idAngles					m_PinRotationFraction;
-
-	/**
-	 * These fractions define the stepping for a pin. These are recalculated
-	 * whenever a new pin is used, because they only make sense within a given
-	 * pin and each pin can have its individual number of samples.
-	 */
-	idVec3						m_SampleTranslationFraction;
-	idAngles					m_SampleRotationFraction;
-
-	idVec3						m_OriginalPosition;
-	idAngles					m_OriginalAngle;
 };
 
 #endif /* FROBDOOR_H */
