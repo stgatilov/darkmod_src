@@ -104,6 +104,16 @@ extern idCVar cv_pm_push_accel_time;
 extern idCVar cv_pm_push_heavy_threshold;
 extern idCVar cv_pm_push_max_mass;
 
+
+/**
+* TDM CVARs for controlling jumping
+*/
+extern idCVar cv_tdm_walk_jump_vel;
+extern idCVar cv_tdm_run_jump_vel;
+extern idCVar cv_tdm_min_vel_jump;
+extern idCVar cv_tdm_fwd_jump_vel;
+
+
 extern idCVar cv_pm_weightmod;
 
 extern idCVar cv_pm_mantle_height;

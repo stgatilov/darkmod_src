@@ -2155,6 +2155,7 @@ idPhysics_Player::CheckJump
 */
 bool idPhysics_Player::CheckJump( void ) {
 	idVec3 addVelocity;
+	idVec3 extraSpeedForward;
 
 	if ( command.upmove < 10 ) {
 		// not holding jump
@@ -2175,9 +2176,34 @@ bool idPhysics_Player::CheckJump( void ) {
 	walking = false;
 	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
 
-	addVelocity = 2.0f * maxJumpHeight * -gravityVector;
+	// are we walking?
+	if ( current.velocity.Length() >= cv_tdm_min_vel_jump.GetFloat() 
+		&& current.velocity.Length() >= pm_walkspeed.GetFloat() && 
+		current.velocity.Length() < ( pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() ) ) 
+	{	
+		addVelocity = cv_tdm_walk_jump_vel.GetFloat() * maxJumpHeight * -gravityVector;
+		extraSpeedForward = viewForward * cv_tdm_fwd_jump_vel.GetFloat();
+		gameLocal.Printf("walking jump\n");
+	}
+
+	// running ?
+	else if ( current.velocity.Length() >= cv_tdm_min_vel_jump.GetFloat()  
+		&& current.velocity.Length() >= cv_pm_runmod.GetFloat())
+	{
+		addVelocity = cv_tdm_run_jump_vel.GetFloat() * maxJumpHeight * -gravityVector;
+		extraSpeedForward = viewForward * cv_tdm_fwd_jump_vel.GetFloat();	
+		gameLocal.Printf("running jump\n");
+	}
+
+	// stationary
+	else
+	{
+		addVelocity = 2.0f * maxJumpHeight * -gravityVector;
+		extraSpeedForward = viewForward;
+		gameLocal.Printf("standing jump\n");
+	}
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
-	current.velocity += addVelocity;
+	current.velocity += addVelocity + extraSpeedForward;
 
 	return true;
 }
