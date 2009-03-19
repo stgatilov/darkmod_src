@@ -91,8 +91,6 @@ CFrobDoor::CFrobDoor()
 CFrobDoor::~CFrobDoor()
 {
 	ClearDoorTravelFlag();
-
-	m_Pins.DeleteContents(true);
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -115,23 +113,24 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Pins.Num());
 	for (int i = 0; i < m_Pins.Num(); i++)
 	{
-		idStringList& stringList = *m_Pins[i];
+		// Write the pattern strings
+		const idStringList& stringList = m_Pins[i].pattern;
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
+		{
 			savefile->WriteString(stringList[j]);
+		}
+
+		// Write the positions
+		const idList<int>& positions = m_Pins[i].positions;
+
+		savefile->WriteInt(positions.Num());
+		for (int j = 0; j < positions.Num(); j++)
+		{
+			savefile->WriteInt(positions[j]);
+		}
 	}
-
-	// TODO
-	/*savefile->WriteInt(m_RandomPins.Num());
-	for (int i = 0; i < m_RandomPins.Num(); i++)
-	{
-		idStringList& stringList = *m_RandomPins[i];
-
-		savefile->WriteInt(stringList.Num());
-		for (int j = 0; j < stringList.Num(); j++)
-			savefile->WriteString(stringList[j]);
-	}*/
 
 	savefile->WriteBool(m_Pickable);
 	savefile->WriteBool(m_CloseOnLock);
@@ -176,28 +175,27 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	int numPins;
 	savefile->ReadInt(numPins);
 	m_Pins.SetNum(numPins);
-	for (int i = 0; i < numPins; i++)
-	{
-		m_Pins[i] = new idStringList;
-		
-		savefile->ReadInt(num);
-		m_Pins[i]->SetNum(num);
-		for (int j = 0; j < num; j++)
-			savefile->ReadString( (*m_Pins[i])[j] );
-	}
 
-	// TODO
-	/*savefile->ReadInt(numPins);
-	m_RandomPins.SetNum(numPins);
 	for (int i = 0; i < numPins; i++)
 	{
-		m_RandomPins[i] = new idStringList;
-		
+		// Read the pattern
 		savefile->ReadInt(num);
-		m_RandomPins[i]->SetNum(num);
+		m_Pins[i].pattern.SetNum(num);
+
 		for (int j = 0; j < num; j++)
-			savefile->ReadString( (*m_RandomPins[i])[j] );
-	}*/
+		{
+			savefile->ReadString( m_Pins[i].pattern[j] );
+		}
+
+		// Read the positions
+		savefile->ReadInt(num);
+		m_Pins[i].positions.SetNum(num);
+
+		for (int j = 0; j < num; j++)
+		{
+			savefile->ReadInt( m_Pins[i].positions[j] );
+		}
+	}
 
 	savefile->ReadBool(m_Pickable);
 	savefile->ReadBool(m_CloseOnLock);
@@ -239,44 +237,34 @@ void CFrobDoor::Spawn()
 		{
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, lockPins[i]);
 
-			idStringList* pattern = CreatePinPattern(lockPins[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
+			PinInfo& pin = m_Pins.Alloc();
 
-			if (pattern != NULL)
+			pin.pattern = CreatePinPattern(lockPins[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
+
+			if (cv_lp_pawlow.GetBool() == false)
 			{
-				m_Pins.Append(pattern);
-
-				if (cv_lp_pawlow.GetBool() == false)
-				{
-					pattern->Insert("snd_lockpick_pin_sweetspot");
-				}
-				else
-				{
-					pattern->Append("snd_lockpick_pin_sweetspot");
-				}
+				pin.pattern.Insert("snd_lockpick_pin_sweetspot");
 			}
 			else
 			{
-				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
-				continue;
+				pin.pattern.Append("snd_lockpick_pin_sweetspot");
 			}
-
-			// Add a new jiggle position list for this pattern
-			idList<int>& positions = m_PinPositions.Alloc();
 			
+			// Calculate the jiggle position list for this pattern
 			// Add one extra position for the delay after the pattern
-			positions.SetNum(pattern->Num() + 1);
+			pin.positions.SetNum(pin.pattern.Num() + 1);
 
 			// Fill in a linear pattern 
-			for (int i = 0; i <= pattern->Num(); ++i)
+			for (int j = 0; j <= pin.pattern.Num(); ++j)
 			{
-				positions[i] = i;
+				pin.positions[j] = j;
 			}
 
 			// Random jiggling requires a part of the list to be re-"sorted"
-			if (cv_lp_randomize.GetBool() && positions.Num() > 2)
+			if (cv_lp_randomize.GetBool() && pin.positions.Num() > 2)
 			{
 				// Copy the existing pattern
-				idList<int> candidates(positions);
+				idList<int> candidates(pin.positions);
 				
 				// Remove the first and last indices from the candidates, these stay fixed
 				candidates.RemoveIndex(0);
@@ -284,12 +272,12 @@ void CFrobDoor::Spawn()
 
 				// Candidates are now in the range [1 .. size(pattern) - 1]
 
-				for (int i = 1; candidates.Num() > 0; ++i)
+				for (int j = 1; candidates.Num() > 0; ++j)
 				{
 					// Choose a random candidate and move it to the position list
 					int randPos = gameLocal.random.RandomInt(candidates.Num());
 
-					positions[i] = candidates[randPos];
+					pin.positions[j] = candidates[randPos];
 
 					candidates.RemoveIndex(randPos);
 				}
@@ -837,7 +825,7 @@ bool CFrobDoor::IsFrobbed()
 	return idEntity::IsFrobbed();
 }
 
-idStringList* CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, idStr &str)
+idStringList CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, idStr &str)
 {
 	if (clicks < 0 || clicks > 9)
 	{
@@ -850,7 +838,7 @@ idStringList* CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCoun
 	}
 
 	clicks += baseCount;
-	idStringList* returnValue = new idStringList();
+	idStringList returnValue;
 
 	idStr head = va(str+"%%0%uu", strNumLen);
 
@@ -860,7 +848,7 @@ idStringList* CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCoun
 		int r = (i % 2) ? gameLocal.random.RandomInt(maxCount) : rnd.IRandom(0, maxCount);
 
 		idStr click = va(head, r);
-		returnValue->Append(click);
+		returnValue.Append(click);
 
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("PinPattern %u : %s\r", i, click.c_str());
 	}
@@ -882,8 +870,11 @@ void CFrobDoor::UpdateHandlePosition()
 	// Calculate the fraction based on the current pin/sample state
 	float fraction = CalculateHandleMoveFraction();
 
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	player->SetGuiString(player->lockpickHUD, "StatusText3", idStr(fraction));
+	if (cv_lp_debug_hud.GetBool())
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		player->SetGuiString(player->lockpickHUD, "StatusText3", idStr(fraction));
+	}
 
 	// Tell the doorhandles to update their position
 	for (int i = 0; i < m_Doorhandles.Num(); ++i)
@@ -913,19 +904,19 @@ float CFrobDoor::CalculateHandleMoveFraction()
 	}
 
 	// Calculate the fine fraction, based on the current sample number
-	const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+	const idStringList& pattern = m_Pins[m_FirstLockedPinIndex].pattern;
 
 	// Sanity-check the pattern size
 	if (pattern.Num() == 0) return fraction;
 
 	float sampleStep = pinStep / pattern.Num();
 
-	int curSampleIndex = m_PinPositions[m_FirstLockedPinIndex][m_SoundPinSampleIndex];
+	int curSampleIndex = m_Pins[m_FirstLockedPinIndex].positions[m_SoundPinSampleIndex];
 
 	// During the delay, the handle is using the last position index
 	if (m_LockpickState == PIN_DELAY) 
 	{
-		curSampleIndex = m_PinPositions[m_FirstLockedPinIndex].Num() - 1;
+		curSampleIndex = m_Pins[m_FirstLockedPinIndex].positions.Num() - 1;
 	}
 
 	// Add the fine movement fraction
@@ -1160,7 +1151,7 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 		{
 			m_SoundPinSampleIndex++;
 
-			const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+			const idStringList& pattern = m_Pins[m_FirstLockedPinIndex].pattern;
 
 			if (m_SoundPinSampleIndex >= pattern.Num())
 			{
@@ -1195,7 +1186,7 @@ bool CFrobDoor::ProcessLockpickRepeat(int type)
 		case PIN_SAMPLE_SWEETSPOT:
 		{
 			// Play the current sample and fall back to ADVANCE_TO_NEXT_SAMPLE
-			const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+			const idStringList& pattern = m_Pins[m_FirstLockedPinIndex].pattern;
 
 			// Sanity-check the sample index
 			if (m_SoundPinSampleIndex >= pattern.Num())
@@ -1303,7 +1294,7 @@ void CFrobDoor::UpdateLockpickHUD()
 	idStr patternText = "Current Pattern: ";
 	patternText += idStr(m_FirstLockedPinIndex + 1) + idStr(" of ") + idStr(m_Pins.Num());
 	
-	const idStringList& pattern = *m_Pins[m_FirstLockedPinIndex];
+	const idStringList& pattern = m_Pins[m_FirstLockedPinIndex].pattern;
 	for (int i = 0; i < pattern.Num(); ++i)
 	{
 		idStr p = pattern[i];

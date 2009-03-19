@@ -229,7 +229,7 @@ protected:
 	 * number of clicks for this pin, and BaseCount, defines the minimum number
 	 * of clicks, which is always added.
 	 */
-	idStringList*			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
+	idStringList			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
 
 	// Called when a pin is successfully unlocked
 	virtual void			OnLockpickPinSuccess();
@@ -276,23 +276,30 @@ protected:
 	 */
 	idList<idStr>				m_LockPeers;
 
-	idList<idStringList *>		m_Pins;
+	struct PinInfo
+	{
+		// The pin pattern (a list of sound shader names for each sample)
+		idStringList pattern;
 
-	/** 
-	 * greebo: This is used for the random handle jiggling while lockpicking.
-	 * It holds (for each pin) the posisiton indices the handles should be at.
-	 *
-	 * Example: 
-	 * A single pattern has 5 samples: 0 1 2 3 4. When traversing the samples
-	 * like this, the handle would move in linear steps to the next pin position.
-	 *
-	 * Using the info in this variable, the pin positions are mapped to different 
-	 * values such that the handle moves randomly, something like this:
-	 * 0 3 1 2 4. Here, the sample with the index 1 would be mapped 
-	 * to the linear position 3. The first and last position are fixed.
-	 */
-	idList< idList<int> >		m_PinPositions;
+		/** 
+		 * greebo: This is used for the random handle jiggling while lockpicking.
+		 * It holds (for each pin) the posisiton indices the handles should be at,
+		 * plus one extra position for the delay after the pattern.
+		 *
+		 * Example: 
+		 * A single pattern has 5 samples: 0 1 2 3 4. When traversing the samples
+		 * like this, the handle would move in linear steps to the next pin position.
+		 *
+		 * Using the info in this variable, the pin positions are mapped to different 
+		 * values such that the handle moves randomly, something like this:
+		 * 0 3 1 2 4. Here, the sample with the index 1 would be mapped 
+		 * to the linear position 3. The first and last position are fixed.
+		 */
+		idList<int> positions;
+	};
 
+	idList<PinInfo>				m_Pins;
+	
 	bool						m_Pickable;
 
 	/**
