@@ -340,13 +340,6 @@ protected:
 	 * Handles that are associated with this door.
 	 */
 	idList< idEntityPtr<CFrobDoorHandle> >	m_Doorhandles;
-
-	/**
-	 * Bar is the movable part of a lock that should jiggle, while
-	 * the lock is being picked. The default is to use the doorhandle
-	 * but if lockpick_bar is set on the door, then this is used instead.
-	 */
-	idEntityPtr<idEntity>		m_Bar;
 };
 
 #endif /* FROBDOOR_H */

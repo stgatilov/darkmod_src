@@ -142,24 +142,6 @@ void CFrobDoorHandle::SetMaster(bool isMaster)
 	m_Master = isMaster;
 }
 
-void CFrobDoorHandle::UpdatePosition(float fraction)
-{
-	idQuat newRotation;
-	newRotation.Slerp(m_ClosedAngles.ToQuat(), m_OpenAngles.ToQuat(), fraction);
-
-	const idAngles& curAngles = physicsObj.GetLocalAngles();
-	idAngles newAngles = newRotation.ToAngles().Normalize360();
-
-	if (!(curAngles - newAngles).Normalize180().Compare(idAngles(0,0,0), 0.01f))
-	{
-		Event_RotateTo(newAngles);
-	}
-
-	MoveToLocalPos(m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin)*fraction);
-
-	UpdateVisuals();
-}
-
 void CFrobDoorHandle::OnOpenPositionReached()
 {
 	// The handle is "opened", trigger the door, but only if this is the master handle

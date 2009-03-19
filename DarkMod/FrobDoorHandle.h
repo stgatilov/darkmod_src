@@ -83,15 +83,6 @@ public:
 	bool					IsMaster();
 	void					SetMaster(bool isMaster);
 
-	/** 
-	 * greebo: Updates the position of this door handle based on 
-	 * the given float, which should be in the range [0..1].
-	 *
-	 * @fraction: [0..1] where 0 refers to the original position and 
-	 *            a value of 1 refers to the fully rotated handle.
-	 */
-	void					UpdatePosition(float fraction);
-
 protected:
 	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
 	virtual void			OnOpenPositionReached();

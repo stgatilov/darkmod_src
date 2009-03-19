@@ -152,6 +152,15 @@ public:
 
 	idVec3 GetCurrentPos();
 
+	/** 
+	 * greebo: Sets the position of this frobmover based on 
+	 * the given float, which should be in the range [0..1].
+	 *
+	 * @fraction: [0..1] where 0 refers to the original position and 
+	 *            a value of 1 refers to the fully rotated handle.
+	 */
+	void SetFractionalPosition(float fraction);
+
 	/**
 	* This is used to get the remaining translation left on the clip model
 	* if it is moving

@@ -145,7 +145,6 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	{
 		m_Doorhandles[i].Save(savefile);
 	}
-	m_Bar.Save(savefile);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -211,8 +210,6 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	{
 		m_Doorhandles[i].Restore(savefile);
 	}
-
-	m_Bar.Restore(savefile);
 
 	SetDoorTravelFlag();
 }
@@ -353,31 +350,6 @@ void CFrobDoor::PostSpawn()
 		else
 		{
 			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not spawned or of wrong type: %s\r", doorHandleName.c_str());
-		}
-	}
-
-	idStr lockPickBarName = spawnArgs.GetString("lockpick_bar", "");
-	if (!lockPickBarName.IsEmpty())
-	{
-		idEntity* bar = gameLocal.FindEntity(lockPickBarName);
-
-		if (bar != NULL)
-		{
-			m_Bar = bar;
-
-			// Check if we should bind the bar to ourselves
-			if (spawnArgs.GetBool("lockpick_bar_bind_flag", "1"))
-			{
-				// Set up the frob peer relationship between the door and the bar
-				m_FrobPeers.AddUnique(bar->name);
-				bar->AddFrobPeer(name);
-				bar->SetFrobable(m_bFrobable);
-				bar->Bind(this, true);
-			}
-		}
-		else
-		{
-			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", lockPickBarName.c_str());
 		}
 	}
 
@@ -858,15 +830,6 @@ idStringList CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCount
 
 void CFrobDoor::UpdateHandlePosition()
 {
-	// If we have a bar entity, this is taken as moving entity
-	idEntity* handle = m_Bar.GetEntity();
-	if (handle == NULL && m_Doorhandles.Num() > 0)
-	{
-		handle = m_Doorhandles[0].GetEntity();
-	}
-
-	if (handle == NULL) return; // neither handle nor bar => quit
-
 	// Calculate the fraction based on the current pin/sample state
 	float fraction = CalculateHandleMoveFraction();
 
@@ -879,7 +842,7 @@ void CFrobDoor::UpdateHandlePosition()
 	// Tell the doorhandles to update their position
 	for (int i = 0; i < m_Doorhandles.Num(); ++i)
 	{
-		m_Doorhandles[i].GetEntity()->UpdatePosition(fraction);
+		m_Doorhandles[i].GetEntity()->SetFractionalPosition(fraction);
 	}
 }
 
