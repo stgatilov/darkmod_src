@@ -261,30 +261,37 @@ void CFrobDoor::Spawn()
 			}
 
 			// Add a new jiggle position list for this pattern
-			idList<int> positions = m_PinPositions.Alloc();
+			idList<int>& positions = m_PinPositions.Alloc();
 			
-			if (pattern->Num() == 0) continue; // don't generate positions for empty patterns
-
 			// Add one extra position for the delay after the pattern
 			positions.SetNum(pattern->Num() + 1);
 
-			// The first and last positions are fixed
-			positions[0] = 0;
-			positions[pattern->Num()] = pattern->Num() - 1;
-
-			// Calculate the handle positions
-			for (int i = 1; i < pattern->Num(); ++i)
+			// Fill in a linear pattern 
+			for (int i = 0; i <= pattern->Num(); ++i)
 			{
-				if (cv_lp_randomize.GetBool())
-				{
-					int candidate = gameLocal.random.RandomInt(pattern->Num() - 1) + 1;
+				positions[i] = i;
+			}
 
-					positions[i] = candidate;
-				}
-				else 
+			// Random jiggling requires a part of the list to be re-"sorted"
+			if (cv_lp_randomize.GetBool() && positions.Num() > 2)
+			{
+				// Copy the existing pattern
+				idList<int> candidates(positions);
+				
+				// Remove the first and last indices from the candidates, these stay fixed
+				candidates.RemoveIndex(0);
+				candidates.RemoveIndex(candidates.Num() - 1);
+
+				// Candidates are now in the range [1 .. size(pattern) - 1]
+
+				for (int i = 1; candidates.Num() > 0; ++i)
 				{
-					// No randomizing, just add the linear series
-					positions[i] = i;
+					// Choose a random candidate and move it to the position list
+					int randPos = gameLocal.random.RandomInt(candidates.Num());
+
+					positions[i] = candidates[randPos];
+
+					candidates.RemoveIndex(randPos);
 				}
 			}
 		}
@@ -913,9 +920,18 @@ float CFrobDoor::CalculateHandleMoveFraction()
 
 	float sampleStep = pinStep / pattern.Num();
 
-	// Prevent divisions by zero
-	fraction += m_SoundPinSampleIndex * sampleStep;
+	int curSampleIndex = m_PinPositions[m_FirstLockedPinIndex][m_SoundPinSampleIndex];
 
+	// During the delay, the handle is using the last position index
+	if (m_LockpickState == PIN_DELAY) 
+	{
+		curSampleIndex = m_PinPositions[m_FirstLockedPinIndex].Num() - 1;
+	}
+
+	// Add the fine movement fraction
+	fraction += curSampleIndex * sampleStep;
+
+	// Clamp the fraction to reasonable values
 	fraction = idMath::ClampFloat(0.0f, 1.0f, fraction);
 
 	return fraction;
