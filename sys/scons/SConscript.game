@@ -231,6 +231,7 @@ AI/Tasks/PathLookatTask.cpp \
 AI/Tasks/PathShowTask.cpp \
 AI/Tasks/PathSitTask.cpp \
 AI/Tasks/PathSleepTask.cpp \
+AI/Tasks/PathTask.cpp \
 AI/Tasks/PathTurnTask.cpp \
 AI/Tasks/PathWaitForTriggerTask.cpp \
 AI/Tasks/PathWaitTask.cpp \

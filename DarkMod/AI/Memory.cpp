@@ -72,6 +72,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteObject(owner);
 	savefile->WriteInt(static_cast<int>(alertState));
 	currentPath.Save(savefile);
+	lastPath.Save(savefile);
 	savefile->WriteInt(lastAlertRiseTime);
 	savefile->WriteInt(lastPatrolChatTime);
 	savefile->WriteInt(lastTimeFriendlyAISeen);
@@ -138,6 +139,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	alertState = static_cast<EAlertState>(temp);
 
 	currentPath.Restore(savefile);
+	lastPath.Restore(savefile);
 	savefile->ReadInt(lastAlertRiseTime);
 	savefile->ReadInt(lastPatrolChatTime);
 	savefile->ReadInt(lastTimeFriendlyAISeen);

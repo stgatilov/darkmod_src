@@ -10,7 +10,7 @@
 #ifndef __AI_PATH_LOOKAT_TASK_H__
 #define __AI_PATH_LOOKAT_TASK_H__
 
-#include "Task.h"
+#include "PathTask.h"
 
 namespace ai
 {
@@ -22,10 +22,9 @@ class PathLookatTask;
 typedef boost::shared_ptr<PathLookatTask> PathLookatTaskPtr;
 
 class PathLookatTask :
-	public Task
+	public PathTask
 {
-	idEntityPtr<idPathCorner> _path;
-
+private:
 	PathLookatTask();
 
 	idEntity* _focusEnt;
@@ -48,9 +47,6 @@ public:
 
 	// Creates a new Instance of this task
 	static PathLookatTaskPtr CreateInstance();
-
-	// Class-specific methods
-	virtual void SetTargetEntity(idPathCorner* path);
 };
 
 } // namespace ai

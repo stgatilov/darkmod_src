@@ -7,50 +7,50 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_PATH_SIT_TASK_H__
-#define __AI_PATH_SIT_TASK_H__
+#ifndef __AI_PATH_TASK_H__
+#define __AI_PATH_TASK_H__
 
-#include "PathTask.h"
+#include "Task.h"
 
 namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_SIT "PathSit"
+#define TASK_PATH "Path"
 
-class PathSitTask;
-typedef boost::shared_ptr<PathSitTask> PathSitTaskPtr;
+class PathTask;
+typedef boost::shared_ptr<PathTask> PathTaskPtr;
 
-class PathSitTask :
-	public PathTask
+class PathTask :
+	public Task
 {
-private:
-	int _waitEndTime;
+protected:
+	idEntityPtr<idPathCorner> _path;
 
-	// Private constructor
-	PathSitTask();
+	PathTask();
 
 public:
-	PathSitTask(idPathCorner* path);
+	PathTask(idPathCorner* path);
 
 	// Get the name of this task
-	virtual const idStr& GetName() const;
+	virtual const idStr& GetName() const = 0;
 
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
-	virtual bool Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem) = 0;
 
-	virtual void OnFinish(idAI* owner);
+	virtual void NextPath();
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
-	// Creates a new Instance of this task
-	static PathSitTaskPtr CreateInstance();
+
+	// Class-specific methods
+	virtual void SetTargetEntity(idPathCorner* path);
 };
 
 } // namespace ai
 
-#endif /* __AI_PATH_SIT_TASK_H__ */
+#endif /* __AI_PATH_TASK_H__ */

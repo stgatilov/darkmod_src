@@ -10,7 +10,7 @@
 #ifndef __AI_PATH_INTERACT_TASK_H__
 #define __AI_PATH_INTERACT_TASK_H__
 
-#include "Task.h"
+#include "PathTask.h"
 
 namespace ai
 {
@@ -22,10 +22,8 @@ class PathInteractTask;
 typedef boost::shared_ptr<PathInteractTask> PathInteractTaskPtr;
 
 class PathInteractTask :
-	public Task
+	public PathTask
 {
-	idEntityPtr<idPathCorner> _path;
-
 	idEntity* _target;
 
 	int _waitEndTime;

@@ -10,7 +10,7 @@
 #ifndef __AI_PATH_WAIT_TASK_H__
 #define __AI_PATH_WAIT_TASK_H__
 
-#include "Task.h"
+#include "PathTask.h"
 
 namespace ai
 {
@@ -22,10 +22,9 @@ class PathWaitTask;
 typedef boost::shared_ptr<PathWaitTask> PathWaitTaskPtr;
 
 class PathWaitTask :
-	public Task
+	public PathTask
 {
-	idEntityPtr<idPathCorner> _path;
-	
+private:
 	// The game time at which waiting ends in ms.
 	float _endtime;
 
@@ -47,9 +46,6 @@ public:
 
 	// Creates a new Instance of this task
 	static PathWaitTaskPtr CreateInstance();
-
-	// Class-specific methods
-	virtual void SetTargetEntity(idPathCorner* path);
 };
 
 } // namespace ai

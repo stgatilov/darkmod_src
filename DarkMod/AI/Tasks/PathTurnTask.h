@@ -10,7 +10,7 @@
 #ifndef __AI_PATH_TURN_TASK_H__
 #define __AI_PATH_TURN_TASK_H__
 
-#include "Task.h"
+#include "PathTask.h"
 
 namespace ai
 {
@@ -22,10 +22,9 @@ class PathTurnTask;
 typedef boost::shared_ptr<PathTurnTask> PathTurnTaskPtr;
 
 class PathTurnTask :
-	public Task
+	public PathTask
 {
-	idEntityPtr<idPathCorner> _path;
-
+private:
 	PathTurnTask();
 
 public:
@@ -39,15 +38,8 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
-
 	// Creates a new Instance of this task
 	static PathTurnTaskPtr CreateInstance();
-
-	// Class-specific methods
-	virtual void SetTargetEntity(idPathCorner* path);
 };
 
 } // namespace ai

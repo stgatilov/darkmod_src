@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id: PathSitTask.cpp 3086 2008-12-14
 namespace ai
 {
 
-PathSitTask::PathSitTask() 
+PathSitTask::PathSitTask() :
+	PathTask()
 {}
 
-PathSitTask::PathSitTask(idPathCorner* path)
+PathSitTask::PathSitTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -37,14 +39,9 @@ const idStr& PathSitTask::GetName() const
 
 void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathSitTask: Path Entity not set before Init()");
-	}
 
 	// Parse animation spawnargs here
 	
@@ -73,11 +70,7 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 
 void PathSitTask::OnFinish(idAI* owner)
 {
-	idPathCorner* path = _path.GetEntity();
-
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	NextPath();
 }
 
 bool PathSitTask::Perform(Subsystem& subsystem)
@@ -117,27 +110,17 @@ bool PathSitTask::Perform(Subsystem& subsystem)
 	return false;
 }
 
-void PathSitTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
 // Save/Restore methods
 void PathSitTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
-
-	_path.Save(savefile);
+	PathTask::Save(savefile);
 
 	savefile->WriteInt(_waitEndTime);
 }
 
 void PathSitTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
+	PathTask::Restore(savefile);
 
 	savefile->ReadInt(_waitEndTime);
 }

@@ -160,6 +160,9 @@ public:
 	// The path entity we're supposed to be heading to
 	idEntityPtr<idPathCorner> currentPath;
 
+	// Our last path entity
+	idEntityPtr<idPathCorner> lastPath;
+
 	// The game time, the AlertLevel was last increased.
 	int lastAlertRiseTime;
 

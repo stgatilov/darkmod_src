@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id: PathCycleAnimTask.cpp 3086 2008
 namespace ai
 {
 
-PathCycleAnimTask::PathCycleAnimTask() 
+PathCycleAnimTask::PathCycleAnimTask() :
+	PathTask()
 {}
 
-PathCycleAnimTask::PathCycleAnimTask(idPathCorner* path)
+PathCycleAnimTask::PathCycleAnimTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -37,14 +39,9 @@ const idStr& PathCycleAnimTask::GetName() const
 
 void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathCycleAnimTask: Path Entity not set before Init()");
-	}
 
 	// Parse animation spawnargs here
 	idStr animName = path->spawnArgs.GetString("anim");
@@ -91,11 +88,7 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 
 void PathCycleAnimTask::OnFinish(idAI* owner)
 {
-	idPathCorner* path = _path.GetEntity();
-
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	NextPath();
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
@@ -134,27 +127,17 @@ bool PathCycleAnimTask::Perform(Subsystem& subsystem)
 
 }
 
-void PathCycleAnimTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
 // Save/Restore methods
 void PathCycleAnimTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
-
-	_path.Save(savefile);
+	PathTask::Save(savefile);
 
 	savefile->WriteInt(_waitEndTime);
 }
 
 void PathCycleAnimTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
+	PathTask::Restore(savefile);
 
 	savefile->ReadInt(_waitEndTime);
 }

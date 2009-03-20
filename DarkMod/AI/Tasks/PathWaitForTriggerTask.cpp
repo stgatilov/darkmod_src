@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathWaitForTriggerTask::PathWaitForTriggerTask()
+PathWaitForTriggerTask::PathWaitForTriggerTask() :
+	PathTask()
 {}
 
-PathWaitForTriggerTask::PathWaitForTriggerTask(idPathCorner* path)
+PathWaitForTriggerTask::PathWaitForTriggerTask(idPathCorner* path) : 
+	PathTask(path)
 {
 	_path = path;
 }
@@ -37,15 +39,8 @@ const idStr& PathWaitForTriggerTask::GetName() const
 
 void PathWaitForTriggerTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
-	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathWaitForTriggerTask: Path Entity not set before Init()");
-	}
-	
 	owner->AI_ACTIVATED = false;
 }
 
@@ -66,10 +61,7 @@ bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
-		// Store the new path entity into the AI's mind
-		idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-		owner->GetMind()->GetMemory().currentPath = next;
-
+		NextPath();
 
 		// Move is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Waiting for trigger is done.\r");
@@ -77,27 +69,6 @@ bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 		return true; // finish this task
 	}
 	return false;
-}
-
-void PathWaitForTriggerTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathWaitForTriggerTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathWaitForTriggerTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
 }
 
 PathWaitForTriggerTaskPtr PathWaitForTriggerTask::CreateInstance()

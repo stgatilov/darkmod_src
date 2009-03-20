@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathTurnTask::PathTurnTask()
+PathTurnTask::PathTurnTask() :
+	PathTask()
 {}
 
-PathTurnTask::PathTurnTask(idPathCorner* path)
+PathTurnTask::PathTurnTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -37,14 +39,9 @@ const idStr& PathTurnTask::GetName() const
 
 void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathTurnTask: Path Entity not set before Init()");
-	}
 
 	//Start turning
 	float angle = path->spawnArgs.GetFloat("angle","0");
@@ -66,11 +63,8 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	{
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
-
-		// Store the new path entity into the AI's mind
-		idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-		owner->GetMind()->GetMemory().currentPath = next;
-
+		
+		NextPath();
 
 		// Move is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Turn is done.\r");
@@ -78,27 +72,6 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 		return true; // finish this task
 	}
 	return false;
-}
-
-void PathTurnTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathTurnTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathTurnTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
 }
 
 PathTurnTaskPtr PathTurnTask::CreateInstance()

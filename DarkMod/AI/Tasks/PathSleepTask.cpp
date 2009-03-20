@@ -23,10 +23,12 @@ static bool init_version = FileVersionList("$Id: PathSleepTask.cpp 3086 2008-12-
 namespace ai
 {
 
-PathSleepTask::PathSleepTask() 
+PathSleepTask::PathSleepTask() :
+	PathTask()
 {}
 
-PathSleepTask::PathSleepTask(idPathCorner* path)
+PathSleepTask::PathSleepTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -40,15 +42,7 @@ const idStr& PathSleepTask::GetName() const
 
 void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
-
-	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) 
-	{
-		gameLocal.Error("PathSleepTask: Path Entity not set before Init()");
-	}
+	PathTask::Init(owner, subsystem);
 
 	if (owner->GetMoveType() == MOVETYPE_ANIM)
 	{
@@ -58,11 +52,7 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 
 void PathSleepTask::OnFinish(idAI* owner)
 {
-	idPathCorner* path = _path.GetEntity();
-
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	NextPath();
 }
 
 bool PathSleepTask::Perform(Subsystem& subsystem)
@@ -79,27 +69,6 @@ bool PathSleepTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	return false;
-}
-
-void PathSleepTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathSleepTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathSleepTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
 }
 
 PathSleepTaskPtr PathSleepTask::CreateInstance()

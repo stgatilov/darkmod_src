@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathAnimTask::PathAnimTask() 
+PathAnimTask::PathAnimTask() :
+	PathTask()
 {}
 
-PathAnimTask::PathAnimTask(idPathCorner* path)
+PathAnimTask::PathAnimTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -38,13 +40,9 @@ const idStr& PathAnimTask::GetName() const
 void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathAnimTask: Path Entity not set before Init()");
-	}
 
 	// Parse animation spawnargs here
 	idStr animName = path->spawnArgs.GetString("anim");
@@ -73,11 +71,7 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 
 void PathAnimTask::OnFinish(idAI* owner)
 {
-	idPathCorner* path = _path.GetEntity();
-
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	NextPath();
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
@@ -99,27 +93,6 @@ bool PathAnimTask::Perform(Subsystem& subsystem)
 	// Exit when the waitstate is not "customAnim" anymore
 	idStr waitState(owner->WaitState());
 	return (waitState != "customAnim");
-}
-
-void PathAnimTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathAnimTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathAnimTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
 }
 
 PathAnimTaskPtr PathAnimTask::CreateInstance()

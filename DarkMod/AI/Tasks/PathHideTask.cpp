@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathHideTask::PathHideTask()
+PathHideTask::PathHideTask() :
+	PathTask()
 {}
 
-PathHideTask::PathHideTask(idPathCorner* path)
+PathHideTask::PathHideTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -38,13 +40,7 @@ const idStr& PathHideTask::GetName() const
 void PathHideTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
-	Task::Init(owner, subsystem);
-
-	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathHideTask: Path Entity not set before Init()");
-	}
+	PathTask::Init(owner, subsystem);
 
 	// Make invisible and nonsolid
 	owner->Hide();
@@ -66,9 +62,7 @@ bool PathHideTask::Perform(Subsystem& subsystem)
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
-		// Store the new path entity into the AI's mind
-		idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-		owner->GetMind()->GetMemory().currentPath = next;
+		NextPath();
 
 		// Move is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("entity is hidden.\r");
@@ -76,27 +70,6 @@ bool PathHideTask::Perform(Subsystem& subsystem)
 		return true; // finish this task
 	}
 	return false;
-}
-
-void PathHideTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathHideTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathHideTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
 }
 
 PathHideTaskPtr PathHideTask::CreateInstance()

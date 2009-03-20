@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathShowTask::PathShowTask() 
+PathShowTask::PathShowTask() :
+	PathTask()
 {}
 
-PathShowTask::PathShowTask(idPathCorner* path) 
+PathShowTask::PathShowTask(idPathCorner* path) :
+	PathTask(path)
 {
 	_path = path;
 }
@@ -38,13 +40,7 @@ const idStr& PathShowTask::GetName() const
 void PathShowTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
-	Task::Init(owner, subsystem);
-
-	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathShowTask: Path Entity not set before Init()");
-	}
+	PathTask::Init(owner, subsystem);
 }
 
 bool PathShowTask::Perform(Subsystem& subsystem)
@@ -67,10 +63,7 @@ bool PathShowTask::Perform(Subsystem& subsystem)
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
-		// Store the new path entity into the AI's mind
-		idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-		owner->GetMind()->GetMemory().currentPath = next;
-
+		NextPath();
 
 		// Move is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("entity is visible.\r");
@@ -80,26 +73,6 @@ bool PathShowTask::Perform(Subsystem& subsystem)
 	return false;
 }
 
-void PathShowTask::SetTargetEntity(idPathCorner* path) 
-{
-	assert(path);
-	_path = path;
-}
-
-// Save/Restore methods
-void PathShowTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-
-	_path.Save(savefile);
-}
-
-void PathShowTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-
-	_path.Restore(savefile);
-}
 
 PathShowTaskPtr PathShowTask::CreateInstance()
 {

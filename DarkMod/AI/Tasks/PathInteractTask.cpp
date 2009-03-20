@@ -20,10 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-PathInteractTask::PathInteractTask()
+PathInteractTask::PathInteractTask() :
+	PathTask()
 {}
 
-PathInteractTask::PathInteractTask(idPathCorner* path)
+PathInteractTask::PathInteractTask(idPathCorner* path) :	
+	PathTask(path)
 {
 	_path = path;
 }
@@ -38,13 +40,9 @@ const idStr& PathInteractTask::GetName() const
 void PathInteractTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
-	Task::Init(owner, subsystem);
+	PathTask::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
-
-	if (path == NULL) {
-		gameLocal.Error("PathInteractTask: Path Entity not set before Init()");
-	}
 
 	idStr targetStr = path->spawnArgs.GetString("ent", "");
 	_target = gameLocal.FindEntity(targetStr);
@@ -95,32 +93,27 @@ bool PathInteractTask::Perform(Subsystem& subsystem)
 
 void PathInteractTask::OnFinish(idAI* owner)
 {
-	idPathCorner* path = _path.GetEntity();
-
 	// Trigger next path target(s)
 	owner->ActivateTargets(owner);
 
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	NextPath();
 }
 
 // Save/Restore methods
 void PathInteractTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
+	PathTask::Save(savefile);
 
-	_path.Save(savefile);
-	//_target.Save(savefile);
+	savefile->WriteObject(_target);
+
 	savefile->WriteInt(_waitEndTime);
 }
 
 void PathInteractTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
+	PathTask::Restore(savefile);
 
-	_path.Restore(savefile);
-	//_target.Restore(savefile);
+	savefile->ReadObject(reinterpret_cast<idClass*&>( _target ));
 
 	savefile->ReadInt(_waitEndTime);
 }
