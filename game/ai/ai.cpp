@@ -5351,8 +5351,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	// AI becomes frobable on death
-	SetFrobable( true );
-
+	// greebo: Add a delay before the AI becomes actually frobable
+	PostEventMS(&EV_SetFrobable, 750, 1);
+	
 	restartParticles = false;
 
 	mind->ClearStates();
@@ -9047,7 +9048,8 @@ void idAI::PostKnockOut()
 	}
 
 	// AI becomes frobable on KO
-	SetFrobable( true );
+	// greebo: Add a delay before the AI becomes actually frobable
+	PostEventMS(&EV_SetFrobable, 750, 1);
 
 	restartParticles = false;
 
