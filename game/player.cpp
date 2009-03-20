@@ -3555,10 +3555,12 @@ idPlayer::RaiseWeapon
 */
 void idPlayer::RaiseWeapon( void ) 
 {
-	if ( weapon.GetEntity() 
-		&& weapon.GetEntity()->IsHidden()
-		&& ! (GetImmobilization() & EIM_ATTACK) ) 
+	if (weapon.GetEntity() && 
+		weapon.GetEntity()->IsHidden() && 
+		!(GetImmobilization() & EIM_ATTACK)) 
+	{
 		weapon.GetEntity()->RaiseWeapon();
+	}
 }
 
 /*

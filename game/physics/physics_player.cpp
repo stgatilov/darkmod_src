@@ -644,20 +644,20 @@ REMOVED from DarkMod
 idPhysics_Player::WaterMove
 ===================
 */
-void idPhysics_Player::WaterMove( void ) {
+void idPhysics_Player::WaterMove()
+{
 	// Keep track of whether jump is held down for mantling out of water
 	if ( command.upmove > 10 ) 
 	{
 		current.movementFlags |= PMF_JUMP_HELD;
 	}
-	else	
+	else
 	{
 		current.movementFlags &= ~PMF_JUMP_HELD;
 	}
 
-	// Lower weapons while swimming
-	// TODO : In future, only disable some weapons, keep the sword for underwater bashing?
-	static_cast<idPlayer*>(self)->SetImmobilization( "WaterMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+	// Lower ranged weapons while swimming
+	static_cast<idPlayer*>(self)->SetImmobilization( "WaterMove", EIM_ATTACK_RANGED );
 
 	Friction();
 
@@ -1342,14 +1342,14 @@ Quit:
 idPhysics_Player::RopeDetach
 ============
 */
-void idPhysics_Player::RopeDetach( void ) 
+void idPhysics_Player::RopeDetach() 
 {
 	m_bOnRope = false;
 
 	// start the reattach timer
 	m_RopeDetachTimer = gameLocal.time;
 
-	static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", 0 );
+	static_cast<idPlayer*>(self)->SetImmobilization( "RopeMove", 0 );
 
 	// move the player velocity back into the world frame
 	current.velocity += m_RefEntVelocity;
@@ -1357,11 +1357,11 @@ void idPhysics_Player::RopeDetach( void )
 	// switch movement modes to the appropriate one
 	if ( waterLevel > WATERLEVEL_FEET ) 
 	{
-		idPhysics_Player::WaterMove();
+		WaterMove();
 	}
 	else 
 	{
-		idPhysics_Player::AirMove();
+		AirMove();
 	}
 }
 
@@ -1391,11 +1391,11 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 	}
 	else if ( waterLevel > WATERLEVEL_FEET ) 
 	{
-		idPhysics_Player::WaterMove();
+		WaterMove();
 	}
 	else 
 	{
-		idPhysics_Player::AirMove();
+		AirMove();
 	}
 }
 
@@ -2430,13 +2430,13 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// Check if holding down jump
 	if (CheckJumpHeldDown())
 	{
-		idPhysics_Player::PerformMantle();
+		PerformMantle();
 	}
 
 	// move
 	if ( current.movementType == PM_DEAD ) {
 		// dead
-		idPhysics_Player::DeadMove();
+		DeadMove();
 	}
 	// continue moving on the rope if still attached
 	else if ( m_bOnRope )
@@ -2457,7 +2457,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 			}
 		}
 
-		idPhysics_Player::RopeMove();
+		RopeMove();
 	}
 	else if ( m_bRopeContact ) 
 	{
@@ -2465,45 +2465,45 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		m_bOnRope = true;
 
 		// lower weapon
-		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_DROP );
+		static_cast<idPlayer*>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_DROP );
 
-		idPhysics_Player::RopeMove();
+		RopeMove();
 	}
 	else if ( m_bOnClimb ) 
 	{
 		// going up or down a ladder
-		idPhysics_Player::LadderMove();
+		LadderMove();
 	}
 	// Mantle MOD
 	// SophisticatedZombie (DH)
 	else if ( !(m_mantlePhase == notMantling_DarkModMantlePhase
 				 || m_mantlePhase == fixClipping_DarkModMantlePhase) ) 
 	{
-		idPhysics_Player::MantleMove();
+		MantleMove();
 	}
-	else if ( waterLevel > 1 ) {
+	else if ( waterLevel > WATERLEVEL_FEET )
+	{
 		// swimming
-		idPhysics_Player::WaterMove();
+		WaterMove();
 	}
 	else if ( walking ) {
 		// walking on ground
-		idPhysics_Player::WalkMove();
+		WalkMove();
 	}
 	else {
 		// airborne
-		idPhysics_Player::AirMove();
+		AirMove();
 	}
 
-	// raise weapon if not swimming
-	if( waterLevel <= 1 
-		&& static_cast<idPlayer *>(self)->GetImmobilization("WaterMove") )
+	// enable weapon if not swimming
+	if( waterLevel <= WATERLEVEL_FEET && static_cast<idPlayer*>(self)->GetImmobilization("WaterMove") )
 	{
-		static_cast<idPlayer *>(self)->SetImmobilization("WaterMove", 0);
+		static_cast<idPlayer*>(self)->SetImmobilization("WaterMove", 0);
 	}
 
 	// set watertype, waterlevel and groundentity
-	idPhysics_Player::SetWaterLevel(false); // greebo: Don't update the previousWaterLevel this time
-	idPhysics_Player::CheckGround();
+	SetWaterLevel(false); // greebo: Don't update the previousWaterLevel this time
+	CheckGround();
 
 	// move the player velocity back into the world frame
 	current.velocity += current.pushVelocity;
