@@ -45,17 +45,14 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 
 	idPathCorner* path = _path.GetEntity();
 
-	if (path == NULL) {
+	if (path == NULL) 
+	{
 		gameLocal.Error("PathSleepTask: Path Entity not set before Init()");
 	}
 
-	idStr waitState = owner->WaitState();
-
-	if (owner->GetMoveType() != MOVETYPE_SLEEP && waitState != "lay_down")
+	if (owner->GetMoveType() == MOVETYPE_ANIM)
 	{
 		owner->LayDown();
-
-		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 	}
 }
 

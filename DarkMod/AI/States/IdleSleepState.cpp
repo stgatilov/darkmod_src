@@ -70,8 +70,9 @@ void IdleSleepState::Init(idAI* owner)
 		return;
 	}
 
-	if (!owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
-			|| owner->GetCurrentYaw() != memory.idleYaw)
+	if (owner->GetMoveType() != MOVETYPE_SLEEP && 
+		(!owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
+			|| owner->GetCurrentYaw() != memory.idleYaw))
 	{
 		// we need to get to the bed first before starting to sleep, back to idle state
 		owner->GetMind()->SwitchState(STATE_IDLE);
@@ -93,8 +94,6 @@ void IdleSleepState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	InitialiseMovement(owner);
-
-	InitialiseCommunication(owner);
 
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
@@ -123,6 +122,13 @@ void IdleSleepState::Think(idAI* owner)
 			owner->LayDown();
 		}
 	}
+	else if (owner->GetMoveType() == MOVETYPE_GET_UP_FROM_LYING)
+	{
+		owner->GetMind()->SwitchState(STATE_IDLE);
+		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+		return;
+	}
+
 
 	UpdateAlertLevel();
 

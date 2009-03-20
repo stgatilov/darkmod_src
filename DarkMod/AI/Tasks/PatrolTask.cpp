@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "PathAnimTask.h"
 #include "PathCycleAnimTask.h"
 #include "PathSitTask.h"
+#include "PathSleepTask.h"
 #include "PathWaitForTriggerTask.h"
 #include "PathHideTask.h"
 #include "PathShowTask.h"
@@ -140,6 +141,22 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		{
 			// No "angle" key set, just schedule the animation task
 			task = PathSitTaskPtr(new PathSitTask(path));
+		}
+	}
+
+	else if (classname == "path_sleep")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			subsystem.PushTask(TaskPtr(new PathSleepTask(path)));
+			// The "task" variable will be pushed later on in this code
+			task = PathTurnTaskPtr(new PathTurnTask(path));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the sleep task
+			task = PathSleepTaskPtr(new PathSleepTask(path));
 		}
 	}
 

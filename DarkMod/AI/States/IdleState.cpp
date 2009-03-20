@@ -90,6 +90,7 @@ void IdleState::Init(idAI* owner)
 	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
 		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
+		return;
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SIT)
 	{
@@ -146,6 +147,11 @@ void IdleState::Think(idAI* owner)
 			owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 			return;
 		}
+	}
+	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
+		return;
 	}
 	else if (_startSitting && owner->GetMoveType() != MOVETYPE_SIT && waitState != "sit_down")
 	{
