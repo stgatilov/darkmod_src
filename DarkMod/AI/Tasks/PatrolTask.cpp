@@ -50,15 +50,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		idPathCorner* path = owner->GetMemory().currentPath.GetEntity();
 
-		// Check if we already have a path entity
-		if (path == NULL)
-		{
-			// Path not yet initialised, get it afresh
-			// Find the next path associated with the owning AI
-			path = idPathCorner::RandomPath(owner, NULL, owner);
-		}
-
-		// If the path is still NULL, there is nothing setup, quit this task
+		// Check if we have a path entity
 		if (path == NULL)
 		{
 			// No path corner entities found!
@@ -67,9 +59,6 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 			subsystem.FinishTask();
 			return;
 		}
-
-		// Store the path entity back into the mind, it might have changed
-		owner->GetMemory().currentPath = path;
 	}
 	else
 	{

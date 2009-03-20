@@ -92,9 +92,13 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time > _nextAnimationTime)
 	{
-		// angua: don't play idle animations while sitting down or getting up
-		idStr waitState(owner->WaitState());
-		if (memory.playIdleAnimations && waitState != "sit_down" && waitState != "get_up")
+		// angua: don't play idle animations while sitting / lying down or getting up
+		if (memory.playIdleAnimations && 
+			owner->GetMoveType() != MOVETYPE_SIT_DOWN &&
+			owner->GetMoveType() != MOVETYPE_LAY_DOWN &&
+			owner->GetMoveType() != MOVETYPE_SLEEP &&
+			owner->GetMoveType() != MOVETYPE_GET_UP &&
+			owner->GetMoveType() != MOVETYPE_GET_UP_FROM_LYING)
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && owner->GetMoveType() != MOVETYPE_SIT)
@@ -109,7 +113,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			}
 			else 
 			{
-				// AI is walking, only use animations for the Torso channel
+				// AI is walking or sitting, only use animations for the Torso channel
 				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
 
 				idStr animName(_idleAnimationsTorso[animIdx]);

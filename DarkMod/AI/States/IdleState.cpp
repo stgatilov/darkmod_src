@@ -184,16 +184,21 @@ void IdleState::InitialiseMovement(idAI* owner)
 	TaskPtr patrolTask = TaskLibrary::Instance().CreateInstance(
 		owner->spawnArgs.GetBool("animal_patrol", "0") ? TASK_ANIMAL_PATROL : TASK_PATROL
 	);
-	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
 
 	// Check if the owner has patrol routes set
 	idPathCorner* path = memory.currentPath.GetEntity();
-	if (path == NULL)
+	idPathCorner* lastPath = memory.lastPath.GetEntity();
+
+	if (path == NULL && lastPath == NULL)
 	{
+
 		path = idPathCorner::RandomPath(owner, NULL, owner);
 	}
 
-	if (path == NULL)
+	memory.currentPath = path;
+	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
+
+	if (path == NULL && lastPath == NULL)
 	{
 		// We don't have any patrol routes, so we're supposed to stand around
 		// where the mapper has put us.
