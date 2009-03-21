@@ -4345,8 +4345,8 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 			bobmove = pm_walkbob.GetFloat() * ( 1.0f - bobFrac ) + pm_runbob.GetFloat() * bobFrac;
 		}
 
-		// greebo: is the player creeping?
-		if (usercmd.buttons & BUTTON_5) 
+		// greebo: is the player creeping? (Only kicks in when not running, run key cancels out creep key)
+		if (usercmd.buttons & BUTTON_5 && !(usercmd.buttons & BUTTON_RUN)) 
 		{
 			bobmove *= 0.5f * (1 - bobFrac);
 		}
