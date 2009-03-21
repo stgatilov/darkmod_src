@@ -242,7 +242,6 @@ protected:
 
 	// Gets called when a lockpick sound is finished playing
 	void					Event_LockpickSoundFinished(ELockpickState nextState);
-	void					Event_UpdateHandlePosition();
 
 	// Script event interface
 	void					Event_GetDoorhandle();
