@@ -722,7 +722,7 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 float CBinaryFrobMover::GetMoveTimeFraction()
 {
 	// Get the current angles
-	idAngles curAngles = physicsObj.GetLocalAngles();
+	const idAngles& curAngles = physicsObj.GetLocalAngles();
 
 	// Calculate the delta
 	idAngles delta = dest_angles - curAngles;
@@ -741,6 +741,8 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	// Get the maximum angle component
 	int index = (delta[0] > delta[1]) ? 0 : 1;
 	index = (delta[2] > delta[index]) ? 2 : index;
+
+	if (fullRotation[index] < idMath::FLT_EPSILON) return 1;
 
 	float fraction = delta[index]/fullRotation[index];
 
@@ -979,7 +981,7 @@ idVec3 CBinaryFrobMover::GetCurrentPos()
 	closedDir.z = 0;
 	float length = closedDir.LengthFast();
 
-	idAngles angles = physicsObj.GetLocalAngles();
+	const idAngles& angles = physicsObj.GetLocalAngles();
 	idAngles deltaAngles = angles - GetClosedAngles();
 	idRotation rot = deltaAngles.ToRotation();
 
@@ -994,15 +996,12 @@ idVec3 CBinaryFrobMover::GetCurrentPos()
 
 void CBinaryFrobMover::SetFractionalPosition(float fraction)
 {
-	idQuat newRotation;
-	newRotation.Slerp(m_ClosedAngles.ToQuat(), m_OpenAngles.ToQuat(), fraction);
+	idAngles targetAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles) * fraction;
+	idAngles angleDelta = (targetAngles - physicsObj.GetLocalAngles()).Normalize180();
 
-	const idAngles& curAngles = physicsObj.GetLocalAngles();
-	idAngles newAngles = newRotation.ToAngles().Normalize360();
-
-	if (!(curAngles - newAngles).Normalize180().Compare(idAngles(0,0,0), 0.01f))
+	if (!angleDelta.Compare(ang_zero, 0.01f))
 	{
-		Event_RotateTo(newAngles);
+		Event_RotateOnce(angleDelta);
 	}
 
 	MoveToLocalPos(m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin)*fraction);
