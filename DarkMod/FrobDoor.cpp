@@ -910,9 +910,12 @@ void CFrobDoor::OnLockpickPinSuccess()
 		m_LockpickState = LOCK_SUCCESS;
 
 		PropPickSound("snd_lockpick_lock_picked", PICKED);
-		//PropPickSound("snd_lockpick_lock_picked", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
+		
+		// Move the handle back to its original position
+		UpdateHandlePosition();
 
-		Unlock(true); // unlock this in master mode
+		// And unlock the door after a small delay
+		PostEventMS(&EV_TDM_FrobMover_Unlock, 150); // will unlock in master mode
 
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
 	}
@@ -1249,6 +1252,11 @@ void CFrobDoor::UpdateLockpickHUD()
 
 	idStr patternText = "Current Pattern: ";
 	patternText += idStr(m_FirstLockedPinIndex + 1) + idStr(" of ") + idStr(m_Pins.Num());
+
+	if (m_FirstLockedPinIndex >= m_Pins.Num())
+	{
+		return; // out of bounds, this can happen right after unlock
+	}
 	
 	const idStringList& pattern = m_Pins[m_FirstLockedPinIndex].pattern;
 	for (int i = 0; i < pattern.Num(); ++i)
