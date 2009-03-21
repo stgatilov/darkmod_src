@@ -587,22 +587,22 @@ bool CBinaryFrobMover::IsAtOpenPosition()
 {
 	const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
-	idAngles localAngles = physicsObj.GetLocalAngles();
-	localAngles.Normalize180();
-
+	const idAngles& localAngles = physicsObj.GetLocalAngles();
+	
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
+	return (localAngles - m_OpenAngles).Normalize360().Compare(ang_zero, VECTOR_EPSILON) && 
+		   localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
 }
 
 bool CBinaryFrobMover::IsAtClosedPosition()
 {
 	const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
-	idAngles localAngles = physicsObj.GetLocalAngles();
-	localAngles.Normalize180();
-
+	const idAngles& localAngles = physicsObj.GetLocalAngles();
+	
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
+	return (localAngles - m_ClosedAngles).Normalize360().Compare(ang_zero, VECTOR_EPSILON) && 
+		   localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 }
 
 void CBinaryFrobMover::CallStateScript()
