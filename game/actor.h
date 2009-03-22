@@ -285,6 +285,12 @@ public:
 	int						m_MeleeRiposteRecoveryMin;
 	int						m_MeleeRiposteRecoveryMax;
 	int						m_MeleeCurrentRiposteRecovery;
+	/**
+	* Melee timing: Time delay between when we decide to parry and when the anim starts
+	**/
+	int						m_MeleeParryDelayMin;
+	int						m_MeleeParryDelayMax;
+	int						m_MeleeCurrentParryDelay;
 
 	/**
 	* Correspondence between melee type and string name suffix of the action

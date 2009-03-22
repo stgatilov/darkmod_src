@@ -33,6 +33,13 @@ class MeleeCombatTask :
 	bool				_bForceAttack;
 	bool				_bForceParry;
 
+	/**
+	* Set to true when we have decided to parry but there is a delay before the anim starts
+	**/
+	bool				_bInParryDelayState;
+	/** Timer to keep track of when parry delay state started **/
+	int					_ParryDelayTimer;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

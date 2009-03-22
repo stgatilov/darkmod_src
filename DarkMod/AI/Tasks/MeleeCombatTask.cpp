@@ -34,6 +34,8 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	_enemy = owner->GetEnemy();
 	_bForceAttack = false;
 	_bForceParry = false;
+	_bInParryDelayState = false;
+	_ParryDelayTimer = 0;
 }
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
@@ -185,9 +187,23 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
 
+		// if we are done with the initial delay, start the animation
+		if( _bInParryDelayState && ((gameLocal.time - _ParryDelayTimer) > owner->m_MeleeCurrentParryDelay) )
+		{
+
+			// Set the waitstate, this gets cleared by 
+			// the script function when the animation is done.
+			owner->SetWaitState("melee_action");
+
+			const char *suffix = idActor::MeleeTypeNames[pStatus->m_ActionType];
+			// script state plays the animation, clearing wait state when done
+			// TODO: Why did we have 5 blend frames here?
+			owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Parry_%s",suffix), 5);
+
+			_bInParryDelayState = false;
+		}
+
 		// don't do anything, animation will update status when it reaches hold point
-		// TODO: Need some way of differentiating attacks that have a "hold point" from those that don't
-		// as a quick hack for now, can just put melee_hold at early frame in the animation?
 		return;
 	}
 	else if( phase == MELEEPHASE_HOLDING )
@@ -320,13 +336,9 @@ void MeleeCombatTask::StartParry(idAI* owner)
 	// update the melee status
 	owner->Event_MeleeParryStarted( ParType );
 
-	// Set the waitstate, this gets cleared by 
-	// the script function when the animation is done.
-	owner->SetWaitState("melee_action");
-
-	// script state plays the animation, clearing wait state when done
-	// TODO: Why did we have 5 blend frames here?
-	owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Parry_%s",suffix), 5);
+	// animation starting is postponed until after parry delay
+	_bInParryDelayState = true;
+	_ParryDelayTimer = gameLocal.time;
 }
 
 void MeleeCombatTask::OnFinish(idAI* owner)
@@ -348,6 +360,8 @@ void MeleeCombatTask::Save(idSaveGame* savefile) const
 	_enemy.Save(savefile);
 	savefile->WriteBool( _bForceAttack );
 	savefile->WriteBool( _bForceParry );
+	savefile->WriteBool( _bInParryDelayState );
+	savefile->WriteInt( _ParryDelayTimer );
 }
 
 void MeleeCombatTask::Restore(idRestoreGame* savefile)
@@ -357,6 +371,8 @@ void MeleeCombatTask::Restore(idRestoreGame* savefile)
 	_enemy.Restore(savefile);
 	savefile->ReadBool( _bForceAttack );
 	savefile->ReadBool( _bForceParry );
+	savefile->ReadBool( _bInParryDelayState );
+	savefile->ReadInt( _ParryDelayTimer );
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()
