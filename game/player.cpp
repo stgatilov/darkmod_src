@@ -115,6 +115,7 @@ const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
 const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
+const idEventDef EV_Player_WasDamaged("wasDamaged", NULL, 'd');
 
 const idEventDef EV_Mission_Success("missionSuccess", NULL);
 const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", NULL);
@@ -199,6 +200,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
 
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
+	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
 
 	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
 	EVENT( EV_ReadLightgemModifierFromWorldspawn, idPlayer::Event_ReadLightgemModifierFromWorldspawn )
@@ -408,6 +410,7 @@ idPlayer::idPlayer() :
 	lastDamageDef			= 0;
 	lastDamageDir			= vec3_zero;
 	lastDamageLocation		= 0;
+	m_bDamagedThisFrame		= false;
 	smoothedFrame			= 0;
 	smoothedOriginUpdated	= false;
 	smoothedOrigin			= vec3_zero;
@@ -1521,6 +1524,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lastDamageDef );
 	savefile->WriteVec3( lastDamageDir );
 	savefile->WriteInt( lastDamageLocation );
+	savefile->WriteBool( m_bDamagedThisFrame );
 	savefile->WriteInt( smoothedFrame );
 	savefile->WriteBool( smoothedOriginUpdated );
 	savefile->WriteVec3( smoothedOrigin );
@@ -1838,6 +1842,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lastDamageDef );
 	savefile->ReadVec3( lastDamageDir );
 	savefile->ReadInt( lastDamageLocation );
+	savefile->ReadBool( m_bDamagedThisFrame );
 	savefile->ReadInt( smoothedFrame );
 	savefile->ReadBool( smoothedOriginUpdated );
 	savefile->ReadVec3( smoothedOrigin );
@@ -6705,6 +6710,11 @@ void idPlayer::Think( void )
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
 
+	if( AI_PAIN )
+		m_bDamagedThisFrame = true;
+	else
+		m_bDamagedThisFrame = false;
+
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return;
 	}
@@ -7446,6 +7456,8 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			if (!damageDef->dict.GetBool( "no_pain" )) {
 				// let the anim script know we took damage
 				AI_PAIN = Pain( inflictor, attacker, damage, dir, location );
+				if(AI_PAIN)
+					gameLocal.Printf("Player:AI_PAIN set to true\n");
 			}
 			
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
@@ -10132,6 +10144,11 @@ void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 void idPlayer::Event_GiveHealthPool( float amount ) {
 	// Pass the call to the proper member method
 	GiveHealthPool(amount);
+}
+
+void idPlayer::Event_WasDamaged( void )
+{
+	idThread::ReturnInt(m_bDamagedThisFrame);
 }
 
 void idPlayer::Event_StartZoom(float duration, float startFOV, float endFOV)

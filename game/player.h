@@ -48,6 +48,7 @@ extern const idEventDef EV_Player_PlayStartSound;
 extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
 extern const idEventDef EV_Player_GiveHealthPool;
+extern const idEventDef EV_Player_WasDamaged;
 extern const idEventDef EV_Mission_Success;
 extern const idEventDef EV_TriggerMissionEnd;
 
@@ -291,6 +292,12 @@ public:
 	idScriptBool			AI_LEAN_LEFT;
 	idScriptBool			AI_LEAN_RIGHT;
 	idScriptBool			AI_LEAN_FORWARD;
+
+	/**
+	* Ishtvan: Set to true for the duration of the frame if the AI takes damage
+	* (more reliable than AI_PAIN)
+	**/
+	bool					m_bDamagedThisFrame;
 
 	/**
 	* Set to true if the player is creeping
@@ -1219,6 +1226,9 @@ private:
 	* greebo: This scriptevent routes the call to the member method "GiveHealthPool".
 	*/
 	void					Event_GiveHealthPool( float amount );
+
+	/** Returns true if we were damaged this frame **/
+	void					Event_WasDamaged( void );
 
 	/**
 	 * greebo: These scriptevents handle the player zoom in/out behaviour.
