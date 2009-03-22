@@ -683,7 +683,6 @@ void idActor::Spawn( void )
 	spawnArgs.GetInt( "type", "0", m_AItype );
 	spawnArgs.GetBool( "innocent", "0", m_Innocent );
 	spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset);
-	spawnArgs.GetVector("offsetHeadModel", "0 0 0", mHeadModelOffset);
 
 	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
 
@@ -870,6 +869,9 @@ void idActor::SetupHead()
 		// otherwise there is no offset at all.
 		mHeadModelOffset = spawnArgs.GetVector(headModelDefName, "0 0 0");
 
+		// greebo: Regardless what happens, the offsetHeadModel vector always gets added to the offset
+		mHeadModelOffset += spawnArgs.GetVector("offsetHeadModel", "0 0 0");
+
 		idStr jointName = spawnArgs.GetString( "head_joint" );
 		jointHandle_t joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) {
@@ -1046,6 +1048,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
 	savefile->WriteVec3( modelOffset );
+	savefile->WriteVec3(mHeadModelOffset);
 	savefile->WriteAngles( deltaViewAngles );
 
 	savefile->WriteInt( pain_debounce_time );
@@ -1215,6 +1218,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_fovDotVert );
 	savefile->ReadVec3( eyeOffset );
 	savefile->ReadVec3( modelOffset );
+	savefile->ReadVec3(mHeadModelOffset);
 	savefile->ReadAngles( deltaViewAngles );
 
 	savefile->ReadInt( pain_debounce_time );
