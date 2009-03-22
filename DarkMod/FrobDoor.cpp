@@ -846,7 +846,8 @@ void CFrobDoor::UpdateHandlePosition()
 
 float CFrobDoor::CalculateHandleMoveFraction()
 {
-	if (m_LockpickState == UNLOCKED || m_LockpickState == PICKED || m_Pins.Num() == 0)
+	if (m_LockpickState == LOCK_SUCCESS || m_LockpickState == UNLOCKED || 
+		m_LockpickState == PICKED || m_Pins.Num() == 0)
 	{
 		// unlocked handles or ones without lock pins are at the starting position
 		return 0.0f; 
