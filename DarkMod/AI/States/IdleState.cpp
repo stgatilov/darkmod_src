@@ -85,24 +85,26 @@ void IdleState::Init(idAI* owner)
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle", 0);
 		owner->Event_SetMoveType(MOVETYPE_SIT);
-	}
-	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
-	{
-		owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
-		return;
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SIT)
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle", 0);
+	}
+	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sleep", 0);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sleep", 0);
+		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle_Sleep", 0);
 	}
 	else
 	{
-	
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
-		
+		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle", 0);
 	}
 	// The action subsystem plays the idle anims (scratching, yawning...)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
