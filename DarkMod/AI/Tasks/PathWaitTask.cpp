@@ -58,7 +58,7 @@ void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathWaitTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathWaitTask performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -73,8 +73,8 @@ bool PathWaitTask::Perform(Subsystem& subsystem)
 
 		NextPath();
 
-		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Turn is done.\r");
+		// Wait is done, fall back to PatrolTask
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Wait is done.\r");
 
 		return true; // finish this task
 	}
@@ -94,7 +94,7 @@ void PathWaitTask::Restore(idRestoreGame* savefile)
 {
 	PathTask::Restore(savefile);
 
-	_path.Restore(savefile);
+	savefile->ReadFloat(_endtime);
 }
 
 PathWaitTaskPtr PathWaitTask::CreateInstance()
