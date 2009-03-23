@@ -1122,7 +1122,7 @@ void idPhysics_Player::RopeMove( void )
 		idVec3 kickDir = player->firstPersonViewAxis[0];
 		idVec3 bodyOrig = ropePhys->GetOrigin(bodID);
 		idMat3 rotDir = mat3_identity;
-		// apply modifiers if holding left/right
+		// apply modifiers if holding left/right/back
 		if( common->ButtonState(UB_MOVELEFT) )
 		{
 			rotDir = idAngles(0.0f, 90.0f, 0.0f).ToMat3();
@@ -1130,6 +1130,10 @@ void idPhysics_Player::RopeMove( void )
 		else if( common->ButtonState(UB_MOVERIGHT) )
 		{
 			rotDir = idAngles(0.0f, 270.0f, 0.0f).ToMat3();
+		}
+		else if( common->ButtonState(UB_BACK) )
+		{
+			rotDir = idAngles(0.0f, 180.0f, 0.0f).ToMat3();
 		}
 		kickDir = rotDir * kickDir;
 
