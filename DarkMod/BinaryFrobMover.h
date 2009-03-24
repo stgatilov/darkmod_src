@@ -13,6 +13,8 @@
 #ifndef BINARYFROBMOVER_H
 #define BINARYFROBMOVER_H
 
+#include "PickableLock.h"
+
 // Forward declare the events
 extern const idEventDef EV_TDM_FrobMover_Open;
 extern const idEventDef EV_TDM_FrobMover_Close;
@@ -95,7 +97,12 @@ public:
 	*/
 	virtual bool			IsLocked()
 	{
-		return m_Locked;
+		return m_Lock.IsLocked();
+	}
+
+	virtual bool			IsPickable()
+	{
+		return m_Lock.IsPickable();
 	}
 
 	/**
@@ -175,6 +182,16 @@ public:
 
 	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
 	int GetAASArea(idAAS* aas);
+
+	/**
+	 * greebo: Within the FrobMover class hierarchy, this function should be used to play sounds 
+	 * instead of the standard StartSound() method. Some frobmovers like doors might want to 
+	 * relay the sound playing to another entity (like doorhandles) to avoid sounds being
+	 * played from the door's origin, barely audible to the player.
+	 *
+	 * @returns: The length of the sound in msec.
+	 */
+	virtual int			FrobMoverStartSound(const char* soundName);
 
 protected:
 
@@ -326,22 +343,15 @@ protected:
 	 */
 	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 
-	/**
-	 * greebo: Within the FrobMover class hierarchy, this function should be used to play sounds 
-	 * instead of the standard StartSound() method. Some frobmovers like doors might want to 
-	 * relay the sound playing to another entity (like doorhandles) to avoid sounds being
-	 * played from the door's origin, barely audible to the player.
-	 *
-	 * @returns: The length of the sound in msec.
-	 */
-	virtual int			FrobMoverStartSound(const char* soundName);
-
 protected:
+
+	// The actual lock implementation for this mover
+	PickableLock				m_Lock;
+
 	/**
 	* m_Open is only set to false when the door is completely closed
 	**/
 	bool						m_Open;
-	bool						m_Locked;
 
 	/**
 	* Stores whether the player intends to open or close the door

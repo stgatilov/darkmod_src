@@ -58,7 +58,7 @@ void CFrobDoorHandle::Spawn()
 	m_bInterruptable = false;
 
 	// greebo: The handle itself must never locked, otherwise it can't move in Tap()
-	m_Locked = false;
+	m_Lock.SetLocked(false);
 }
 
 CFrobDoor* CFrobDoorHandle::GetDoor()
@@ -169,5 +169,5 @@ void CFrobDoorHandle::Tap()
 
 bool CFrobDoorHandle::DoorIsLocked()
 {
-	return m_Door ? m_Door->IsLocked() : m_Locked;
+	return m_Door ? m_Door->IsLocked() : m_Lock.IsLocked();
 }

@@ -134,6 +134,7 @@ FrobDoor.cpp \
 FrobButton.cpp \
 FrobDoorHandle.cpp \
 FrobLever.cpp \
+FrobLock.cpp \
 Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
@@ -152,6 +153,7 @@ Profile.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 rdline.cpp \
+PickableLock.cpp \
 Relations.cpp \
 renderpipeposix.cpp \
 RevisionTracker.cpp \

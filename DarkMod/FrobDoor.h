@@ -33,25 +33,6 @@ class CFrobDoorHandle;
 class CFrobDoor : 
 	public CBinaryFrobMover
 {
-protected:
-	enum ELockpickState
-	{
-		UNLOCKED = 0,			// Not locked in the first place
-		LOCKED,					// Lockpicking not started yet
-		LOCKPICKING_STARTED,	// Right before playing the first pin sample sound
-		ADVANCE_TO_NEXT_SAMPLE,	// Right after playing the first ping sample sound
-		PIN_SAMPLE,				// Playing pick sample sound (including sample delay)
-		PIN_SAMPLE_SWEETSPOT,	// Playing sweetspot sound (for pavlov mode, this is the hotspot)
-		PIN_DELAY,				// Delay after pattern (for non-pavlov mode, this is the hotspot)
-		AFTER_PIN_DELAY,		// Right after the post-pattern delay
-		WRONG_LOCKPICK_SOUND,	// Playing wrong lockpick sound
-		PIN_SUCCESS,			// Playing pin success sound
-		PIN_FAILED,				// Playing pin failed sound
-		LOCK_SUCCESS,			// Playing entire lock success
-		PICKED,					// Lock is picked
-		NUM_LPSTATES,
-	};
-
 public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
@@ -77,8 +58,6 @@ public:
 
 	virtual void			Lock(bool Master);
 	virtual void			Unlock(bool Master);
-
-	bool					IsPickable();
 
 	CFrobDoorHandle*		GetDoorhandle();
 	// Adds a door handle to this door. A door can have multiple handles
@@ -116,35 +95,14 @@ public:
 	// Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
 	virtual void			AttackAction(idPlayer* player);
 
+	/**
+	 * greebo: Override the BinaryFrobMover function to re-route all sounds
+	 * to the doorhandle. This avoids sounds being played from door origins,
+	 * which is barely audible to the player.
+	 */
+	virtual int				FrobMoverStartSound(const char* soundName);
+
 protected:
-
-	// Fork point to determine what should happen with a certain lockpicking impulse
-	bool					ProcessLockpickImpulse(EImpulseState impulseState, int type);
-
-	// Specialised methods to handle certain impulse events
-	bool					ProcessLockpickPress(int type);
-	bool					ProcessLockpickRepeat(int type);
-	bool					ProcessLockpickRelease(int type);
-
-	// During the lockpick "hotspot" phase the player is able to unlock the door
-	// when pushing / releasing the right buttons.
-	bool					LockpickHotspotActive();
-
-	// For debugging purposes
-	void					UpdateLockpickHUD();
-
-	/**
-	 * greebo: Play the given sound, this will post a "sound finished" event 
-	 * after the sound has been played (+ the given delay in ms).
-	 * When the sound is done, the lockpick state will be set to <nextState>.
-	 */
-	void					PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay = 0);
-
-	/**
-	 * greebo: Checks whether the given lockpick type is matching the current pin.
-	 * @returns: TRUE on match, FALSE if not matching or lock is not pickable/already picked
-	 */
-	bool					CheckLockpickType(int type);
 
 	/**
 	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 
@@ -217,31 +175,9 @@ protected:
 	// Returns TRUE if all lock peer doors are at their respective "closed" position
 	bool					AllLockPeersAtClosedPosition();
 
-	/**
-	 * greebo: Override the BinaryFrobMover function to re-route all sounds
-	 * to the doorhandle. This avoids sounds being played from door origins,
-	 * which is barely audible to the player.
-	 */
-	virtual int			FrobMoverStartSound(const char* soundName);
-
-	/**
-	 * Create a random pin pattern for a given pin. Clicks defines the required 
-	 * number of clicks for this pin, and BaseCount, defines the minimum number
-	 * of clicks, which is always added.
-	 */
-	idStringList			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
-
-	// Called when a pin is successfully unlocked
-	virtual void			OnLockpickPinSuccess();
-	// Called when the player failed to unlock this pin
-	virtual void			OnLockpickPinFailure();
-
 	// Updates the position of the attached handles according to the current lockpick state
 	void					UpdateHandlePosition();
-	float					CalculateHandleMoveFraction();
-
-	// Gets called when a lockpick sound is finished playing
-	void					Event_LockpickSoundFinished(ELockpickState nextState);
+	void					Event_UpdateHandlePosition();
 
 	// Script event interface
 	void					Event_GetDoorhandle();
@@ -252,16 +188,6 @@ protected:
 	void					Event_HandleLockRequest();
 
 protected:
-	
-	// Lockpick state
-	ELockpickState				m_LockpickState;
-
-	/**
-	 * greebo: This variable keeps track of how many times the player missed
-	 * a single pin of the lock. When auto-pick is enabled, the door will be
-	 * be unlocked automatically after a certain amount of rounds.
-	 */
-	int							m_FailedLockpickRounds;
 
 	/**
 	 * This is a list of slave doors, which should be opened and closed
@@ -275,55 +201,11 @@ protected:
 	 */
 	idList<idStr>				m_LockPeers;
 
-	struct PinInfo
-	{
-		// The pin pattern (a list of sound shader names for each sample)
-		idStringList pattern;
-
-		/** 
-		 * greebo: This is used for the random handle jiggling while lockpicking.
-		 * It holds (for each pin) the posisiton indices the handles should be at,
-		 * plus one extra position for the delay after the pattern.
-		 *
-		 * Example: 
-		 * A single pattern has 5 samples: 0 1 2 3 4. When traversing the samples
-		 * like this, the handle would move in linear steps to the next pin position.
-		 *
-		 * Using the info in this variable, the pin positions are mapped to different 
-		 * values such that the handle moves randomly, something like this:
-		 * 0 3 1 2 4. Here, the sample with the index 1 would be mapped 
-		 * to the linear position 3. The first and last position are fixed.
-		 */
-		idList<int> positions;
-	};
-
-	idList<PinInfo>				m_Pins;
-	
-	bool						m_Pickable;
-
 	/**
 	 * greebo: This is set to TRUE when the door should be locked as soon as it has
 	 * reached its closed position.
 	 */
 	bool						m_CloseOnLock;
-
-	/**
-	 * FirstLockedPinIndex stores the index that is currently to be picked.
-	 * If the value gets == m_Pins.Num() it means all pins are picked
-	 * and the lock is sucessfully picked.
-	 */
-	int							m_FirstLockedPinIndex;
-
-	/**
-	 * This stores the index of the current pins soundsample to be played.
-	 * The second index of the twodimensional array from m_SoundPinIndex.
-	 */
-	int							m_SoundPinSampleIndex;
-
-	/**
-	 * SoundTimerStarted increased for each soundsample that is started
-	 */
-	int							m_SoundTimerStarted;
 
 	/**
 	* Pointer to the door's partner in a double door.

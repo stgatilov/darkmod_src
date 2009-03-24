@@ -2019,6 +2019,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\PickableLock.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\PickableLock.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Relations.cpp"
 					>
 				</File>
