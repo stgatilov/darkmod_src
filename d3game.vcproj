@@ -1835,6 +1835,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\FrobLock.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobLock.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\FrobDoorHandle.cpp"
 					>
 				</File>
