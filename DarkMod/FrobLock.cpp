@@ -32,6 +32,12 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
 END_CLASS
 
+CFrobLock::CFrobLock()
+{
+	m_Lock.SetOwner(this);
+	m_Lock.SetLocked(false);
+}
+
 void CFrobLock::Save(idSaveGame *savefile) const
 {
 	m_Lock.Save(savefile);
@@ -51,7 +57,35 @@ void CFrobLock::Spawn()
 
 void CFrobLock::PostSpawn()
 {
-	// TODO: Find lever entities
+	idStr lockHandleName = spawnArgs.GetString("lock_handle", "");
+	if (!lockHandleName.IsEmpty())
+	{
+		idEntity* handleEnt = gameLocal.FindEntity(lockHandleName);
+
+		if (handleEnt != NULL && handleEnt->IsType(CFrobLockHandle::Type))
+		{
+			// Convert to froblockHandle pointer and call the helper function
+			CFrobLockHandle* handle = static_cast<CFrobLockHandle*>(handleEnt);
+
+			AddLockHandle(handle);
+
+			// Check if we should bind the named handle to ourselves
+			if (spawnArgs.GetBool("lock_handle_bind_flag", "1"))
+			{
+				handle->Bind(this, true);
+			}
+		}
+		else
+		{
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("lockHandle entity not spawned or of wrong type: %s\r", lockHandleName.c_str());
+		}
+	}
+
+	// greebo: Should we auto-setup the lockHandles?
+	if (spawnArgs.GetBool("auto_setup_lock_handles", "1"))
+	{
+		AutoSetupLockHandles();
+	}
 }
 
 void CFrobLock::Lock()
@@ -183,6 +217,54 @@ bool CFrobLock::IsLocked()
 bool CFrobLock::IsPickable()
 {
 	return m_Lock.IsPickable();
+}
+
+void CFrobLock::AddLockHandle(CFrobLockHandle* handle)
+{
+	// Store the pointer and the original position
+	idEntityPtr<CFrobLockHandle> handlePtr;
+	handlePtr = handle;
+
+	if (m_Lockhandles.FindIndex(handlePtr) != -1)
+	{
+		return; // handle is already known
+	}
+
+	m_Lockhandles.Append(handlePtr);
+
+	// Let the handle know about us
+	handle->SetFrobLock(this);
+
+	// Set up the frob peer relationship between the door and the handle
+	m_FrobPeers.AddUnique(handle->name);
+	handle->AddFrobPeer(name);
+	handle->SetFrobable(m_bFrobable);
+}
+
+void CFrobLock::AutoSetupLockHandles()
+{
+	// Find a suitable teamchain member
+	idEntity* part = FindMatchingTeamEntity(CFrobLockHandle::Type);
+
+	while (part != NULL)
+	{
+		// Found the handle, set it up
+		AddLockHandle(static_cast<CFrobLockHandle*>(part));
+
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: Auto-added lock handle %s to local list.\r", name.c_str(), part->name.c_str());
+
+		// Get the next handle
+		part = FindMatchingTeamEntity(CFrobLockHandle::Type, part);
+	}
+
+	for (int i = 0; i < m_Lockhandles.Num(); i++)
+	{
+		CFrobLockHandle* handle = m_Lockhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		// The first handle is the master, all others get their master flag set to FALSE
+		handle->SetMasterHandle(i == 0);
+	}
 }
 
 void CFrobLock::Event_Lock_StatusUpdate()

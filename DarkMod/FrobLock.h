@@ -11,6 +11,7 @@
 #define _FROB_LOCK_H_
 
 #include "PickableLock.h"
+#include "FrobLockHandle.h"
 
 /** 
  * greebo: This class represents a pickable lock. It supports
@@ -22,8 +23,15 @@ class CFrobLock :
 	// The actual lock implementation
 	PickableLock	m_Lock;
 
+	/**
+	 * Handles that are associated with this lock.
+	 */
+	idList< idEntityPtr<CFrobLockHandle> >	m_Lockhandles;
+
 public:
 	CLASS_PROTOTYPE( CFrobLock );
+
+	CFrobLock();
 
 	void			Spawn();
 
@@ -44,6 +52,15 @@ public:
 
 protected:
 	void			PostSpawn();
+
+	// Adds a lockhandle to this lock. A lock can have multiple handles
+	void			AddLockHandle(CFrobLockHandle* handle);
+
+	/** 
+	 * greebo: This automatically searches for handles bound to this lock and
+	 * sets up the frob_peer, lock_handle relationship for mapper's convenience.
+	 */
+	void			AutoSetupLockHandles();
 
 	virtual int		FrobLockStartSound(const char* soundName);
 
