@@ -179,8 +179,8 @@ protected:
 	void					UpdateHandlePosition();
 
 	// Required events which are called by the PickableLock class
-	void					Event_Lockpick_StatusUpdate();
-	void					Event_Lockpick_OnLockPicked();
+	void					Event_Lock_StatusUpdate();
+	void					Event_Lock_OnLockPicked();
 
 	// Script event interface
 	void					Event_GetDoorhandle();

@@ -30,12 +30,19 @@ public:
 	bool	IsLocked();
 	bool	IsPickable();
 
+	void	Lock();
+	void	Unlock();
+
 	void	Save(idSaveGame *savefile) const;
 	void	Restore(idRestoreGame *savefile);
 
 protected:
 	void	PostSpawn();
 
+	// Required events which are called by the PickableLock class
+	void	Event_Lock_StatusUpdate();
+	void	Event_Lock_OnLockPicked();
+	void	Event_Lock_OnLockStatusChange();
 };
 
 #endif /* _FROB_LOCK_H_ */
