@@ -326,6 +326,7 @@ protected:
 
 	// Script event to return the locked status
 	void					Event_IsLocked();
+	void					Event_IsPickable();
 
 	// Script events for opening and closing
 	void					Event_Open();

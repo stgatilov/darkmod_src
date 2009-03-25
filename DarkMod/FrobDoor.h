@@ -184,7 +184,6 @@ protected:
 
 	// Script event interface
 	void					Event_GetDoorhandle();
-	void					Event_IsPickable();
 	void					Event_OpenDoor(float master);
 
 	// This is called periodically, to handle a pending close request (used for locking doors after closing)

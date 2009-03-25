@@ -22,20 +22,33 @@ END_CLASS
 
 void CFrobLock::Save(idSaveGame *savefile) const
 {
-	// TODO
+	m_Lock.Save(savefile);
 }
 
 void CFrobLock::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	m_Lock.Restore(savefile);
 }
 
 void CFrobLock::Spawn()
 {
+	// Load the lock spawnargs
+	m_Lock.InitFromSpawnargs(spawnArgs);
+
 	PostEventMS(&EV_PostSpawn, 0);
 }
 
 void CFrobLock::PostSpawn()
 {
 	// TODO: Find lever entities
+}
+
+bool CFrobLock::IsLocked()
+{
+	return m_Lock.IsLocked();
+}
+
+bool CFrobLock::IsPickable()
+{
+	return m_Lock.IsPickable();
 }

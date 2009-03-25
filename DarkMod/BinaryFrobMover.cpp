@@ -34,6 +34,7 @@ const idEventDef EV_TDM_FrobMover_Unlock( "Unlock", NULL );
 const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", NULL );
 const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", NULL, 'f' );
 const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", NULL, 'f' );
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
@@ -45,6 +46,7 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_FrobMover_ToggleLock,		CBinaryFrobMover::Event_ToggleLock)
 	EVENT( EV_TDM_FrobMover_IsOpen,			CBinaryFrobMover::Event_IsOpen)
 	EVENT( EV_TDM_FrobMover_IsLocked,		CBinaryFrobMover::Event_IsLocked)
+	EVENT( EV_TDM_FrobMover_IsPickable,		CBinaryFrobMover::Event_IsPickable)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
 END_CLASS
 
@@ -981,6 +983,11 @@ void CBinaryFrobMover::Event_ToggleLock()
 void CBinaryFrobMover::Event_IsLocked()
 {
 	idThread::ReturnInt(IsLocked());
+}
+
+void CBinaryFrobMover::Event_IsPickable()
+{
+	idThread::ReturnInt(IsPickable());
 }
 
 idVec3 CBinaryFrobMover::GetCurrentPos()

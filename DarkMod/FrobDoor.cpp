@@ -35,13 +35,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
 const idEventDef EV_TDM_Door_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
-const idEventDef EV_TDM_Door_IsPickable( "IsPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
 	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
-	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 
 	// Needed for PickableLock: Update Handle position on lockpick status update
@@ -972,11 +970,6 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 void CFrobDoor::Event_GetDoorhandle()
 {
 	idThread::ReturnEntity(m_Doorhandles.Num() > 0 ? m_Doorhandles[0].GetEntity() : NULL);
-}
-
-void CFrobDoor::Event_IsPickable()
-{
-	idThread::ReturnInt(IsPickable());
 }
 
 void CFrobDoor::Event_OpenDoor(float master)
