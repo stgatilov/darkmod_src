@@ -22,6 +22,8 @@ const idEventDef EV_TDM_FrobLock_TriggerTargets("EV_TDM_FrobLock_TriggerTargets"
 const idEventDef EV_TDM_FrobLock_TriggerLockTargets("EV_TDM_FrobLock_TriggerLockTargets", NULL); // triggers lock targets
 const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("EV_TDM_FrobLock_TriggerUnlockTargets", NULL); // triggers unlock targets
 
+const idEventDef EV_TDM_FrobLock_Open("Open", NULL); // attempts to open the lock
+
 CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_PostSpawn,							CFrobLock::PostSpawn )
 	EVENT( EV_TDM_Lock_StatusUpdate,				CFrobLock::Event_Lock_StatusUpdate )
@@ -30,6 +32,7 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_FrobLock_TriggerTargets,			CFrobLock::Event_TriggerTargets )
 	EVENT( EV_TDM_FrobLock_TriggerLockTargets,		CFrobLock::Event_TriggerLockTargets )
 	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
+	EVENT( EV_TDM_FrobLock_Open,					CFrobLock::Event_Open)
 END_CLASS
 
 CFrobLock::CFrobLock()
@@ -236,6 +239,87 @@ bool CFrobLock::IsPickable()
 	return m_Lock.IsPickable();
 }
 
+void CFrobLock::Open()
+{
+	// If we have handles we want to tap them before the lock starts to open its targets
+	if (m_Lockhandles.Num() > 0)
+	{
+		// Relay the call to the handles, the OpenTargets() call will come back to us
+		for (int i = 0; i < m_Lockhandles.Num(); i++)
+		{
+			CFrobLockHandle* handle = m_Lockhandles[i].GetEntity();
+			if (handle == NULL) continue;
+
+			handle->Tap();
+		}
+	}
+}
+
+void CFrobLock::OpenTargets()
+{
+	if (IsLocked())
+	{
+		// We're still locked, play the locked sound and exit
+		FrobLockStartSound("snd_locked");
+	}
+	else
+	{
+		// Actually open any targetted frobmovers
+		for (int i = 0; i < targets.Num(); i++)
+		{
+			idEntity* target = targets[i].GetEntity();
+
+			if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+			static_cast<CBinaryFrobMover*>(target)->Open();
+		}
+	}
+}
+
+void CFrobLock::CloseTargets()
+{
+	// Actually open any targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* target = targets[i].GetEntity();
+
+		if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+		static_cast<CBinaryFrobMover*>(target)->Close();
+	}
+}
+
+void CFrobLock::LockTargets()
+{
+	// Lock any targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* target = targets[i].GetEntity();
+
+		if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+		CBinaryFrobMover* mover = static_cast<CBinaryFrobMover*>(target);
+		
+		if (mover->IsAtClosedPosition())
+		{
+			mover->Lock();
+		}
+	}
+}
+
+void CFrobLock::UnlockTargets()
+{
+	// Unlock any targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* target = targets[i].GetEntity();
+
+		if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+		static_cast<CBinaryFrobMover*>(target)->Unlock();
+	}
+}
+
 void CFrobLock::AddLockHandle(CFrobLockHandle* handle)
 {
 	// Store the pointer and the original position
@@ -306,6 +390,11 @@ void CFrobLock::UpdateHandlePosition()
 	}
 }
 
+void CFrobLock::Event_Open()
+{
+	Open();
+}
+
 void CFrobLock::Event_Lock_StatusUpdate()
 {
 	UpdateHandlePosition();
@@ -326,25 +415,27 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 	if (locked == 0)
 	{
 		// Unlocked
-		if (spawnArgs.GetBool("trigger_targets_on_unlock", "1"))
+		UnlockTargets();
+		FrobLockStartSound("snd_unlock");
+
+		if (spawnArgs.GetBool("trigger_targets_on_unlock", "0"))
 		{
 			// Get the delay for triggering the event
 			int delay = spawnArgs.GetInt("unlock_trigger_delay", "0");
 			PostEventMS(&EV_TDM_FrobLock_TriggerUnlockTargets, delay);
 		}
-
-		FrobLockStartSound("snd_unlock");
 	}
 	else
 	{
 		// Locked
-		if (spawnArgs.GetBool("trigger_targets_on_lock", "1"))
+		LockTargets();
+		FrobLockStartSound("snd_lock");
+
+		if (spawnArgs.GetBool("trigger_targets_on_lock", "0"))
 		{
 			int delay = spawnArgs.GetInt("lock_trigger_delay", "0");
 			PostEventMS(&EV_TDM_FrobLock_TriggerLockTargets, delay);
 		}
-
-		FrobLockStartSound("snd_lock");
 	}
 
 	// Fire ordinary targets in any case

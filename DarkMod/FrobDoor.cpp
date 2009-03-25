@@ -238,8 +238,6 @@ void CFrobDoor::ClearDoorTravelFlag()
 	}
 }
 
-
-
 void CFrobDoor::Lock(bool bMaster)
 {
 	// Pass the call to the base class, the OnLock() event will be fired 

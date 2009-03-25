@@ -193,6 +193,18 @@ public:
 	 */
 	virtual int			FrobMoverStartSound(const char* soundName);
 
+	/** 
+	 * greebo: Returns TRUE if the mover is at the open position. Doesn't change
+	 * the state of the mover, just compares the local angles and origin.
+	 */
+	virtual bool IsAtOpenPosition();
+
+	/** 
+	 * greebo: Returns TRUE if the mover is at the closed position. Doesn't change
+	 * the state of the mover, just compares the local angles and origin.
+	 */
+	virtual bool IsAtClosedPosition();
+
 protected:
 
 	// ===================== Overridable events ================
@@ -299,18 +311,6 @@ protected:
 	 * has already been reached.
 	 */
 	virtual bool StartMoving(bool open);
-
-	/** 
-	 * greebo: Returns TRUE if the mover is at the open position. Doesn't change
-	 * the state of the mover, just compares the local angles and origin.
-	 */
-	virtual bool IsAtOpenPosition();
-
-	/** 
-	 * greebo: Returns TRUE if the mover is at the closed position. Doesn't change
-	 * the state of the mover, just compares the local angles and origin.
-	 */
-	virtual bool IsAtClosedPosition();
 
 	/**
 	 * greebo: Overrides the base class method to calculate the move_time fraction

@@ -42,6 +42,15 @@ public:
 	void			Unlock();
 	void			ToggleLock();
 
+	// Attempt to open the lock, this usually triggers the handle movement
+	void			Open();
+
+	// This tries to open/lock/unlock any targetted frobmovers
+	void			OpenTargets();
+	void			CloseTargets();
+	void			LockTargets();
+	void			UnlockTargets();
+
 	virtual bool	CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);	// Overrides idEntity::CanBeUsedBy
 	virtual bool	UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 
@@ -75,6 +84,9 @@ protected:
 	void			Event_TriggerTargets();
 	void			Event_TriggerLockTargets();
 	void			Event_TriggerUnlockTargets();
+
+	// Called by the frob action script
+	void			Event_Open();
 };
 
 #endif /* _FROB_LOCK_H_ */

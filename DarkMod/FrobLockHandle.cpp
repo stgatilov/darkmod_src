@@ -69,8 +69,7 @@ void CFrobLockHandle::OnOpenPositionReached()
 	// The handle is "opened", trigger the lock, but only if this is the master handle
 	if (IsMasterHandle() && m_FrobLock != NULL)
 	{
-		// TODO: What to do here? => Fire event?
-		// m_Door->OpenDoor(false);
+		m_FrobLock->OpenTargets();
 	}
 
 	// Let the handle return to its initial position
