@@ -397,14 +397,14 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	assert(item->Category() != NULL);
 
 	// TODO: Move this to idEntity to some sort of "usable_by_inv_category" list?
-	const idStr& name = item->Category()->GetName();
-	if (name == "Keys")
+	const idStr& itemName = item->Category()->GetName();
+	if (itemName == "Keys")
 	{
 		// Keys can always be used on doors
 		// Exception: for "frob use" this only applies when the door is locked
 		return (isFrobUse) ? IsLocked() : true;
 	}
-	else if (name == "Lockpicks") // FIXME: Move to binaryfrobmover?
+	else if (itemName == "Lockpicks")
 	{
 		if (!m_Lock.IsPickable())
 		{
@@ -431,9 +431,9 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	if (itemEntity == NULL) return false;
 
 	// Get the name of this inventory category
-	const idStr& name = item->Category()->GetName();
+	const idStr& itemName = item->Category()->GetName();
 	
-	if (name == "Keys" && impulseState == EPressed) 
+	if (itemName == "Keys" && impulseState == EPressed) 
 	{
 		// Keys can be used on button PRESS event, let's see if the key matches
 		if (m_UsedBy.FindIndex(itemEntity->name) != -1)
@@ -459,7 +459,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			return false;
 		}
 	}
-	else if (name == "Lockpicks")
+	else if (itemName == "Lockpicks")
 	{
 		if (!m_Lock.IsPickable())
 		{
@@ -471,7 +471,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		// Lockpicks are different, we need to look at the button state
 		// First we check if this item is a lockpick. It has to be of the toolclass lockpick
 		// and the type must be set.
-		idStr str = itemEntity->spawnArgs.GetString("type", "");
+		idStr str = itemEntity->spawnArgs.GetString("lockpick_type", "");
 
 		if (str.Length() == 1)
 		{

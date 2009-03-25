@@ -66,6 +66,9 @@ public:
 	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);					// Overrides idEntity::CanBeUsedBy
 	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 
+	// Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
+	virtual void			AttackAction(idPlayer* player);
+
 	/**
 	 * Write the proper sound loss value to the soundprop portal data
 	 * Called when door spawns, is and when it is opened or closed
@@ -91,9 +94,6 @@ public:
 	{
 		return m_OpenPeers.Num();
 	}
-
-	// Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
-	virtual void			AttackAction(idPlayer* player);
 
 	/**
 	 * greebo: Override the BinaryFrobMover function to re-route all sounds
