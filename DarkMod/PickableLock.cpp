@@ -38,7 +38,8 @@ static const char* StateNames[] =
 };
 
 // Events to be implemented by owner classes
-const idEventDef EV_TDM_UpdateHandlePosition("TDM_Lockpick_UpdateHandlePosition", NULL);
+const idEventDef EV_TDM_Lockpick_StatusUpdate("TDM_Lockpick_StatusUpdate", NULL);
+const idEventDef EV_TDM_Lockpick_OnLockPicked("TDM_Lockpick_OnLockPicked", NULL);
 
 // Internal events, no need to expose these to scripts
 const idEventDef EV_TDM_LockpickSoundFinished("TDM_LockpickSoundFinished", "d"); // pass the next state as argument
@@ -206,10 +207,10 @@ void PickableLock::OnLockpickPinSuccess()
 		PropPickSound("snd_lockpick_lock_picked", PICKED);
 		
 		// Move the handle back to its original position
-		m_Owner->ProcessEvent(&EV_TDM_UpdateHandlePosition);
+		m_Owner->ProcessEvent(&EV_TDM_Lockpick_StatusUpdate);
 
 		// And unlock the door after a small delay
-		m_Owner->PostEventMS(&EV_TDM_FrobMover_Unlock, 150); // will unlock in master mode
+		m_Owner->PostEventMS(&EV_TDM_Lockpick_OnLockPicked, 150);
 
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", m_Owner->name.c_str());
 	}
@@ -228,7 +229,6 @@ void PickableLock::OnLockpickPinSuccess()
 		// Fall back to LOCKED state after the sound
 		PropPickSound("snd_lockpick_pin_success", LOCKED);
 
-		//PropPickSound("snd_lockpick_pin_success", cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", m_Owner->name.c_str());
 	}
 }
@@ -248,7 +248,6 @@ void PickableLock::OnLockpickPinFailure()
 	// Fall back to LOCKED state after playing the sound
 	PropPickSound("snd_lockpick_pin_fail", LOCKED);
 
-	//PropPickSound("snd_lockpick_pin_fail", cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed.\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 }
 
@@ -357,8 +356,8 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Held Down");
 	}
 
-	// Do this in any case
-	m_Owner->ProcessEvent(&EV_TDM_UpdateHandlePosition);
+	// Trigger an update event in any case
+	m_Owner->ProcessEvent(&EV_TDM_Lockpick_StatusUpdate);
 
 	// Check if we're still playing a sound
 	if (m_SoundTimerStarted > 0) return false; // busy

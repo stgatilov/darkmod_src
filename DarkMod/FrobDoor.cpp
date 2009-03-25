@@ -43,7 +43,10 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
 	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
-	EVENT( EV_TDM_UpdateHandlePosition,		CFrobDoor::Event_UpdateHandlePosition)
+
+	// Needed for PickableLock: Update Handle position on lockpick status update
+	EVENT( EV_TDM_Lockpick_StatusUpdate,	CFrobDoor::Event_Lockpick_StatusUpdate)
+	EVENT( EV_TDM_Lockpick_OnLockPicked,	CFrobDoor::Event_Lockpick_OnLockPicked)
 END_CLASS
 
 #define LOCK_REQUEST_DELAY 250 // msecs before a door locks itself after closing (if the preference is set appropriately)
@@ -623,9 +626,15 @@ void CFrobDoor::UpdateHandlePosition()
 	}
 }
 
-void CFrobDoor::Event_UpdateHandlePosition()
+void CFrobDoor::Event_Lockpick_StatusUpdate()
 {
 	UpdateHandlePosition();
+}
+
+void CFrobDoor::Event_Lockpick_OnLockPicked()
+{
+	// "Lock is picked" signal, unlock in master mode
+	Unlock(true);
 }
 
 void CFrobDoor::AttackAction(idPlayer* player)

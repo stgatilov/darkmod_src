@@ -177,7 +177,10 @@ protected:
 
 	// Updates the position of the attached handles according to the current lockpick state
 	void					UpdateHandlePosition();
-	void					Event_UpdateHandlePosition();
+
+	// Required events which are called by the PickableLock class
+	void					Event_Lockpick_StatusUpdate();
+	void					Event_Lockpick_OnLockPicked();
 
 	// Script event interface
 	void					Event_GetDoorhandle();
