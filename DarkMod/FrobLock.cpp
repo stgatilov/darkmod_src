@@ -18,8 +18,16 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory/Item.h"
 #include "Inventory/Category.h"
 
+const idEventDef EV_TDM_FrobLock_TriggerLockTargets("EV_TDM_FrobLock_TriggerLockTargets", NULL); // triggers lock targets
+const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("EV_TDM_FrobLock_TriggerUnlockTargets", NULL); // triggers unlock targets
+
 CLASS_DECLARATION( idStaticEntity, CFrobLock )
-	EVENT( EV_PostSpawn,	CFrobLock::PostSpawn )
+	EVENT( EV_PostSpawn,							CFrobLock::PostSpawn )
+	EVENT( EV_TDM_Lock_StatusUpdate,				CFrobLock::Event_Lock_StatusUpdate )
+	EVENT( EV_TDM_Lock_OnLockPicked,				CFrobLock::Event_Lock_OnLockPicked )
+	EVENT( EV_TDM_Lock_OnLockStatusChange,			CFrobLock::Event_Lock_OnLockStatusChange )
+	EVENT( EV_TDM_FrobLock_TriggerLockTargets,		CFrobLock::Event_TriggerLockTargets )
+	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
 END_CLASS
 
 void CFrobLock::Save(idSaveGame *savefile) const
@@ -75,7 +83,14 @@ void CFrobLock::Unlock()
 
 void CFrobLock::ToggleLock()
 {
-	m_Lock.SetLocked(!m_Lock.IsLocked());
+	if (IsLocked())
+	{
+		Unlock();
+	}
+	else
+	{
+		Lock();
+	}
 }
 
 bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
@@ -197,8 +212,68 @@ void CFrobLock::Event_Lock_OnLockPicked()
 	Unlock();
 }
 
-void CFrobLock::Event_Lock_OnLockStatusChange()
+void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 {
 	// TODO: Update frobability
 	// TODO: Trigger targets
+
+	// Cancel any pending events to avoid inconsistencies
+	CancelEvents(&EV_TDM_FrobLock_TriggerLockTargets);
+	CancelEvents(&EV_TDM_FrobLock_TriggerUnlockTargets);
+
+	if (locked == 0)
+	{
+		// Unlocked
+		// Get the delay for triggering the event
+		int delay = spawnArgs.GetInt("unlock_trigger_delay", "0");
+		PostEventMS(&EV_TDM_FrobLock_TriggerUnlockTargets, delay);
+	}
+	else
+	{
+		// Locked
+		int delay = spawnArgs.GetInt("lock_trigger_delay", "0");
+		PostEventMS(&EV_TDM_FrobLock_TriggerLockTargets, delay);
+	}
+
+	int delay = spawnArgs.GetInt("trigger_delay", "0");
+	PostEventMS(&EV_ActivateTargets, delay);
+}
+
+void CFrobLock::Event_TriggerLockTargets()
+{
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("lock_target"); kv != NULL; kv = spawnArgs.MatchPrefix("lock_target", kv))
+	{
+		// Find the entity
+		idEntity* lockTarget = gameLocal.FindEntity(kv->GetValue());
+
+		if (lockTarget == NULL) 
+		{
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Could not find lock target %s (this: %s)\r", kv->GetValue().c_str(), name.c_str());
+			continue;
+		}
+
+		DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Activating lock target %s\r", kv->GetValue().c_str());
+		lockTarget->Activate(this);
+	}
+
+	// Activate ordinary targets in any case
+	
+}
+
+void CFrobLock::Event_TriggerUnlockTargets()
+{
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("unlock_target"); kv != NULL; kv = spawnArgs.MatchPrefix("unlock_target", kv))
+	{
+		// Find the entity
+		idEntity* unlockTarget = gameLocal.FindEntity(kv->GetValue());
+
+		if (unlockTarget == NULL) 
+		{
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Could not find unlock target %s (this: %s)\r", kv->GetValue().c_str(), name.c_str());
+			continue;
+		}
+
+		DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Activating unlock target %s\r", kv->GetValue().c_str());
+		unlockTarget->Activate(this);
+	}
 }

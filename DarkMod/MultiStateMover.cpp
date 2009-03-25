@@ -231,6 +231,9 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 
 void CMultiStateMover::Activate(idEntity* activator)
 {
+	// Call the base class
+	idEntity::Activate(activator);
+
 	if (activator == NULL) return;
 
 	// Get the "position" spawnarg from the activator

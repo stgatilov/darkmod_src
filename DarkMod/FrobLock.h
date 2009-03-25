@@ -50,7 +50,10 @@ protected:
 	// Required events which are called by the PickableLock class
 	void			Event_Lock_StatusUpdate();
 	void			Event_Lock_OnLockPicked();
-	void			Event_Lock_OnLockStatusChange();
+	void			Event_Lock_OnLockStatusChange(int locked);
+
+	void			Event_TriggerLockTargets();
+	void			Event_TriggerUnlockTargets();
 };
 
 #endif /* _FROB_LOCK_H_ */

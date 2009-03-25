@@ -2457,9 +2457,15 @@ renderView_t *idEntity::GetRenderView( void ) {
 
 void idEntity::Activate(idEntity* activator)
 {
-	Signal( SIG_TRIGGER );
-	ProcessEvent( &EV_Activate, activator );
-	TriggerGuis();
+	// Fire the TRIGGER response
+	ResponseTrigger(activator, ST_TRIGGER);
+
+	if (RespondsTo(EV_Activate) || HasSignal(SIG_TRIGGER))
+	{
+		Signal(SIG_TRIGGER);
+		ProcessEvent(&EV_Activate, activator);
+		TriggerGuis();
+	}
 }
 
 /***********************************************************************
@@ -4928,28 +4934,21 @@ idEntity::ActivateTargets
 "activator" should be set to the entity that initiated the firing.
 ==============================
 */
-void idEntity::ActivateTargets( idEntity *activator ) const {
-	idEntity	*ent;
-	int			i, j;
-	
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( !ent ) {
-			continue;
-		}
+void idEntity::ActivateTargets( idEntity *activator ) const
+{
+	for (int i = 0; i < targets.Num(); i++ )
+	{
+		idEntity* ent = targets[i].GetEntity();
 
-		if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {
-			// greebo: Send the TRIGGER stim to the target
-			if (activator != NULL) {
-				ent->ResponseTrigger(activator, ST_TRIGGER);
-			}
+		if (ent == NULL) continue;
 
-			ent->Signal( SIG_TRIGGER );
-			ent->ProcessEvent( &EV_Activate, activator );
-		} 		
-		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
-			if ( ent->renderEntity.gui[ j ] ) {
-				ent->renderEntity.gui[ j ]->Trigger( gameLocal.time );
+		// Call the virtual function
+		ent->Activate(activator);
+		 		
+		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++)
+		{
+			if ( ent->renderEntity.gui[j] ) {
+				ent->renderEntity.gui[j]->Trigger(gameLocal.time);
 			}
 		}
 	}
@@ -4966,7 +4965,6 @@ void idEntity::RemoveTarget(idEntity* target)
 		}
 	}
 }
-
 
 void idEntity::AddTarget(idEntity* target)
 {

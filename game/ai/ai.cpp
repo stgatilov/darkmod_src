@@ -5545,8 +5545,10 @@ DarkMod: Commented out calls to SetEnemy.  We don't want the AI calling setEnemy
 only the alert state scripts.
 =====================
 */
-void idAI::Activate( idEntity *activator ) {
-	idPlayer *player;
+void idAI::Activate( idEntity *activator )
+{
+	// call the base class first
+	idEntity::Activate(activator);
 
 	if ( AI_DEAD || AI_KNOCKEDOUT ) {
 		// ignore it when they're dead or KO'd
@@ -5560,6 +5562,8 @@ void idAI::Activate( idEntity *activator ) {
 		PlayCinematic();
 	} else {
 		AI_ACTIVATED = true;
+
+		/*idPlayer *player;
 		if ( !activator || !activator->IsType( idPlayer::Type ) ) {
 			player = gameLocal.GetLocalPlayer();
 		} else {
@@ -5569,7 +5573,7 @@ void idAI::Activate( idEntity *activator ) {
 		if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE )
 		{
 			//SetEnemy( player );
-		}
+		}*/
 
 		// update the script in cinematics so that entities don't start anims or show themselves a frame late.
 		if ( cinematic ) {
