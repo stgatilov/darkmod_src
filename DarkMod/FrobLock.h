@@ -52,6 +52,8 @@ protected:
 	void			Event_Lock_OnLockPicked();
 	void			Event_Lock_OnLockStatusChange(int locked);
 
+	// Private events, used for deferred triggering of lock/unlock/general targets
+	void			Event_TriggerTargets();
 	void			Event_TriggerLockTargets();
 	void			Event_TriggerUnlockTargets();
 };

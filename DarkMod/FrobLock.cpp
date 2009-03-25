@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory/Item.h"
 #include "Inventory/Category.h"
 
+const idEventDef EV_TDM_FrobLock_TriggerTargets("EV_TDM_FrobLock_TriggerTargets", NULL); // triggers general targets
 const idEventDef EV_TDM_FrobLock_TriggerLockTargets("EV_TDM_FrobLock_TriggerLockTargets", NULL); // triggers lock targets
 const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("EV_TDM_FrobLock_TriggerUnlockTargets", NULL); // triggers unlock targets
 
@@ -26,6 +27,7 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_Lock_StatusUpdate,				CFrobLock::Event_Lock_StatusUpdate )
 	EVENT( EV_TDM_Lock_OnLockPicked,				CFrobLock::Event_Lock_OnLockPicked )
 	EVENT( EV_TDM_Lock_OnLockStatusChange,			CFrobLock::Event_Lock_OnLockStatusChange )
+	EVENT( EV_TDM_FrobLock_TriggerTargets,			CFrobLock::Event_TriggerTargets )
 	EVENT( EV_TDM_FrobLock_TriggerLockTargets,		CFrobLock::Event_TriggerLockTargets )
 	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
 END_CLASS
@@ -44,25 +46,6 @@ void CFrobLock::Spawn()
 {
 	// Load the lock spawnargs
 	m_Lock.InitFromSpawnargs(spawnArgs);
-
-	/*
-	unlock_trigger_delay
-	lock_trigger_delay
-
-	unlock_target_N
-	lock_target_N
-
-	trigger_targets_on_lock
-	trigger_targets_on_unlock
-	
-	update_target_frobability
-
-	snd_lock
-	snd_locked
-	snd_unlock
-	snd_wrong_key
-	*/
-
 	PostEventMS(&EV_PostSpawn, 0);
 }
 
@@ -214,33 +197,63 @@ void CFrobLock::Event_Lock_OnLockPicked()
 
 void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 {
-	// TODO: Update frobability
-	// TODO: Trigger targets
-
-	// Cancel any pending events to avoid inconsistencies
+	// Cancel any pending events
 	CancelEvents(&EV_TDM_FrobLock_TriggerLockTargets);
 	CancelEvents(&EV_TDM_FrobLock_TriggerUnlockTargets);
+	CancelEvents(&EV_TDM_FrobLock_TriggerTargets);
 
 	if (locked == 0)
 	{
 		// Unlocked
-		// Get the delay for triggering the event
-		int delay = spawnArgs.GetInt("unlock_trigger_delay", "0");
-		PostEventMS(&EV_TDM_FrobLock_TriggerUnlockTargets, delay);
+		if (spawnArgs.GetBool("trigger_targets_on_unlock", "1"))
+		{
+			// Get the delay for triggering the event
+			int delay = spawnArgs.GetInt("unlock_trigger_delay", "0");
+			PostEventMS(&EV_TDM_FrobLock_TriggerUnlockTargets, delay);
+		}
+
+		FrobLockStartSound("snd_unlock");
 	}
 	else
 	{
 		// Locked
-		int delay = spawnArgs.GetInt("lock_trigger_delay", "0");
-		PostEventMS(&EV_TDM_FrobLock_TriggerLockTargets, delay);
+		if (spawnArgs.GetBool("trigger_targets_on_lock", "1"))
+		{
+			int delay = spawnArgs.GetInt("lock_trigger_delay", "0");
+			PostEventMS(&EV_TDM_FrobLock_TriggerLockTargets, delay);
+		}
+
+		FrobLockStartSound("snd_lock");
 	}
 
+	// Fire ordinary targets in any case
 	int delay = spawnArgs.GetInt("trigger_delay", "0");
-	PostEventMS(&EV_ActivateTargets, delay);
+	PostEventMS(&EV_TDM_FrobLock_TriggerTargets, delay);
+}
+
+void CFrobLock::Event_TriggerTargets()
+{
+	ActivateTargets(this);
+
+	// Additionally to triggering the targets, update the frobability according to our locked status
+	if (spawnArgs.GetBool("update_target_frobability", "0"))
+	{
+		for (int i = 0; i < targets.Num(); ++i)
+		{
+			idEntity* ent = targets[i].GetEntity();
+
+			if (ent == NULL) continue;
+
+			// Set frobability based on unlocked/locked status
+			ent->SetFrobable(!IsLocked());
+		}
+	}
 }
 
 void CFrobLock::Event_TriggerLockTargets()
 {
+	bool updateFrobability = spawnArgs.GetBool("update_target_frobability", "0");
+
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("lock_target"); kv != NULL; kv = spawnArgs.MatchPrefix("lock_target", kv))
 	{
 		// Find the entity
@@ -252,16 +265,21 @@ void CFrobLock::Event_TriggerLockTargets()
 			continue;
 		}
 
-		DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Activating lock target %s\r", kv->GetValue().c_str());
+		DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Activating lock target %s\r", lockTarget->name.c_str());
 		lockTarget->Activate(this);
-	}
 
-	// Activate ordinary targets in any case
-	
+		if (updateFrobability)
+		{
+			DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Disabling lock target frobability: %s\r", lockTarget->name.c_str());
+			lockTarget->SetFrobable(false);
+		}
+	}
 }
 
 void CFrobLock::Event_TriggerUnlockTargets()
 {
+	bool updateFrobability = spawnArgs.GetBool("update_target_frobability", "0");
+
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("unlock_target"); kv != NULL; kv = spawnArgs.MatchPrefix("unlock_target", kv))
 	{
 		// Find the entity
@@ -275,5 +293,11 @@ void CFrobLock::Event_TriggerUnlockTargets()
 
 		DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Activating unlock target %s\r", kv->GetValue().c_str());
 		unlockTarget->Activate(this);
+
+		if (updateFrobability)
+		{
+			DM_LOG(LC_LOCKPICK, LT_INFO)LOGSTRING("Enabling unlock target frobability: %s\r", unlockTarget->name.c_str());
+			unlockTarget->SetFrobable(true);
+		}
 	}
 }
