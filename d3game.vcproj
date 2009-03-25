@@ -1835,14 +1835,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\FrobLock.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\FrobLock.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\FrobDoorHandle.cpp"
 					>
 				</File>
@@ -1851,11 +1843,35 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\FrobHandle.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobHandle.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\FrobLever.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\DarkMod\FrobLever.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobLock.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobLock.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobLockHandle.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobLockHandle.h"
 					>
 				</File>
 				<File
@@ -1967,6 +1983,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\PickableLock.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\PickableLock.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\PlayerData.cpp"
 					>
 				</File>
@@ -2016,14 +2040,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\README.txt"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\PickableLock.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\PickableLock.h"
 					>
 				</File>
 				<File

@@ -855,7 +855,7 @@ void CFrobDoor::AutoSetupDoorHandles()
 		if (handle == NULL) continue;
 
 		// The first handle is the master, all others get their master flag set to FALSE
-		handle->SetMaster(i == 0);
+		handle->SetMasterHandle(i == 0);
 	}
 }
 
@@ -945,6 +945,8 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 
 		if (handle != NULL)
 		{
+			// TODO: Use the handle nearest to the player
+
 			// Let the sound play from the first handle, but use the soundshader
 			// as defined on this entity.
 			idStr sound = spawnArgs.GetString(soundName, "");
