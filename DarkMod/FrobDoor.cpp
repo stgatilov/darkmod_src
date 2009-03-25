@@ -620,7 +620,11 @@ void CFrobDoor::UpdateHandlePosition()
 	// Tell the doorhandles to update their position
 	for (int i = 0; i < m_Doorhandles.Num(); ++i)
 	{
-		m_Doorhandles[i].GetEntity()->SetFractionalPosition(fraction);
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+
+		if (handle == NULL) continue;
+
+		handle->SetFractionalPosition(fraction);
 	}
 }
 

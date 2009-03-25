@@ -422,7 +422,7 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 				m_LockpickState = PIN_DELAY;
 
 				// Use a "nosound" to simulate the silence - then switch back to the first sample
-				PropPickSound("nosound", AFTER_PIN_DELAY, cv_lp_pick_timeout.GetInteger());
+				PropPickSound("snd_silence", AFTER_PIN_DELAY, cv_lp_pick_timeout.GetInteger());
 
 				success = true;
 				break;

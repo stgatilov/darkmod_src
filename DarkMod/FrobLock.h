@@ -53,6 +53,8 @@ public:
 protected:
 	void			PostSpawn();
 
+	void			UpdateHandlePosition();
+
 	// Adds a lockhandle to this lock. A lock can have multiple handles
 	void			AddLockHandle(CFrobLockHandle* handle);
 
