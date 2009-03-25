@@ -2484,7 +2484,7 @@ bool idEntity::CanPlayChatterSounds( void ) const {
 idEntity::StartSound
 ================
 */
-bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) 
+bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod) 
 {
 	const idSoundShader *shader;
 	const char *sound;
@@ -2510,7 +2510,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 	}
 	
 	// DarkMod sound propagation:
-	PropSoundDirect( soundName, true, false );
+	PropSoundDirect(soundName, true, false, propVolMod);
 
 	// play the audible sound
 	shader = declManager->FindSound( sound );
@@ -2522,7 +2522,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 idEntity::StartSoundShader
 ================
 */
-bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) {
+bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length) {
 	float diversity;
 	int len;
 

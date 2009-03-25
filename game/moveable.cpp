@@ -372,11 +372,18 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 				}
 			}
 
-			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-			if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL ) ) {
+			const idSoundShader* sndShader = declManager->FindSound( SndNameLocal.c_str() );
+
+			//f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+
+			// angua: modify the volume set in the def instead of setting a fixed value. 
+			// At minimum velocity, the volume should be 10 db lower than the one specified in the def
+			// todo: define volume at min velocity in sndshd?
+			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 0.0f : 10 * ( idMath::Sqrt(v - BOUNCE_SOUND_MIN_VELOCITY) * (1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY)) - 1 );
+			if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL, f ) ) {
 				// don't set the volume unless there is a bounce sound as it overrides the entire channel
 				// which causes footsteps on ai's to not honor their shader parms
-				SetSoundVolume( f );
+				SetSoundVolume(sndShader->GetParms()->volume + f);
 			}
 			nextSoundTime = gameLocal.time + 500;
 		}
