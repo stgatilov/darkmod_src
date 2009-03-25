@@ -228,6 +228,13 @@ const idEventDef EV_CheckAbsence("checkAbsence");
 const idEventDef EV_GetTeam("getTeam", NULL, 'd');
 const idEventDef EV_SetTeam("setTeam", "d");
 
+const idEventDef EV_IsEnemy( "isEnemy", "E", 'd' );
+const idEventDef EV_IsFriend( "isFriend", "E", 'd' );
+const idEventDef EV_IsNeutral( "isNeutral", "E", 'd' );
+
+const idEventDef EV_SetEntityRelation( "setEntityRelation", "Ed");
+const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", "Ed");
+
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
@@ -394,6 +401,14 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	
 	EVENT (EV_GetTeam,				idEntity::Event_GetTeam )
 	EVENT (EV_SetTeam,				idEntity::Event_SetTeam )
+
+	EVENT(EV_IsEnemy,				idEntity::Event_IsEnemy )
+	EVENT(EV_IsFriend,				idEntity::Event_IsFriend )
+	EVENT(EV_IsNeutral,				idEntity::Event_IsNeutral )
+
+	EVENT(EV_SetEntityRelation,		idEntity::Event_SetEntityRelation )
+	EVENT(EV_ChangeEntityRelation,	idEntity::Event_ChangeEntityRelation )
+
 
 
 END_CLASS
@@ -1155,6 +1170,13 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt(team);
 
+	savefile->WriteInt(m_EntityRelations.size());
+	for (EntityRelationsMap::const_iterator i = m_EntityRelations.begin(); i != m_EntityRelations.end(); ++i)
+	{
+		savefile->WriteObject(i->first);
+		savefile->WriteInt(i->second);
+	}
+
 	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
 	//idList<SDKSignalInfo *>	m_SignalList;
 
@@ -1334,6 +1356,19 @@ void idEntity::Restore( idRestoreGame *savefile )
 	m_AbsenceMarker.Restore(savefile);
 
 	savefile->ReadInt(team);
+
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; ++i)
+	{
+		idEntity* entity;
+		savefile->ReadObject(reinterpret_cast<idClass*&>(entity));
+
+		int relation;
+		savefile->ReadInt(relation);
+
+		m_EntityRelations[entity] = relation;
+	}
+
 
 	savefile->ReadBool(m_bIsMantleable);
 
@@ -10140,4 +10175,142 @@ void idEntity::Event_SetTeam(int newTeam)
 {
 	// greebo: No validity checking so far - todo?
 	team = newTeam;
+}
+
+void idEntity::SetEntityRelation(idEntity* entity, int relation)
+{
+	m_EntityRelations[entity] = relation;
+}
+
+	// angua: this changes the current relation to an actor by adding the new amount
+void idEntity::ChangeEntityRelation(idEntity* entity, int relationChange)
+{
+	assert(entity);
+	if (entity == NULL)
+	{
+		return;
+	}
+
+	EntityRelationsMap::iterator found = m_EntityRelations.find(entity);
+
+	if (found == m_EntityRelations.end())
+	{
+		// not yet set, load default from relations manager
+		int defaultrel = gameLocal.m_RelationsManager->GetRelNum(team, entity->team);
+
+		std::pair<EntityRelationsMap::iterator, bool> result = m_EntityRelations.insert(
+			EntityRelationsMap::value_type(entity, defaultrel)
+		);
+
+		// set iterator to newly inserted element
+		found = result.first;
+	}
+
+	found->second += relationChange;
+}
+
+bool idEntity::IsFriend(const idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return false;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second > 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsFriend(team, other->team);
+	}
+}
+
+bool idEntity::IsNeutral(const idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return true;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second == 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
+	}
+}
+
+bool idEntity::IsEnemy(const idEntity *other )
+{
+	if (other == NULL)
+	{
+		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return false;
+	}
+	else if (other->fl.notarget)
+	{
+		return false;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second < 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
+	}
+}
+
+void idEntity::Event_IsEnemy( idEntity *ent )
+{
+	idThread::ReturnInt(static_cast<int>(IsEnemy(ent)));
+}
+
+void idEntity::Event_IsFriend( idEntity *ent )
+{
+	idThread::ReturnInt(IsFriend(ent));
+}
+
+void idEntity::Event_IsNeutral( idEntity *ent )
+{
+	idThread::ReturnInt(IsNeutral(ent));
+}
+
+
+void idEntity::Event_SetEntityRelation(idEntity* entity, int relation)
+{
+	SetEntityRelation(entity,relation);
+}
+
+void idEntity::Event_ChangeEntityRelation(idEntity* entity, int relationChange)
+{
+	ChangeEntityRelation(entity, relationChange);
 }

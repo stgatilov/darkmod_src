@@ -503,9 +503,6 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
 	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
-	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
-	EVENT( AI_IsFriend,							idAI::Event_IsFriend )
-	EVENT( AI_IsNeutral,						idAI::Event_IsNeutral )
 	EVENT( AI_SetAlertLevel,					idAI::Event_SetAlertLevel )
 	EVENT( AI_Alert,							idAI::Event_Alert )
 	EVENT( AI_GetSndDir,						idAI::Event_GetSndDir )
@@ -3056,21 +3053,6 @@ void idAI::Event_GetRelationEnt( idEntity *ent )
 
 	actor = static_cast<idActor *>( ent );
 	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team, actor->team ) );
-}
-
-void idAI::Event_IsEnemy( idEntity *ent )
-{
-	idThread::ReturnInt(static_cast<int>(IsEnemy(ent)));
-}
-
-void idAI::Event_IsFriend( idEntity *ent )
-{
-	idThread::ReturnInt(IsFriend(ent));
-}
-
-void idAI::Event_IsNeutral( idEntity *ent )
-{
-	idThread::ReturnInt(IsNeutral(ent));
 }
 
 void idAI::Event_GetAcuity( const char *type )

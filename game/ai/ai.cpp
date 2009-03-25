@@ -515,9 +515,6 @@ idAI::idAI()
 	m_AlertGraceCountLimit = 0;
 	m_AudThreshold = 0.0f;
 
-	m_PlayerRelationship = 0;
-	m_bPlayerRelationshipActive = false;
-
 	/**
 	* Darkmod: No hiding spot search by default
 	*/
@@ -3528,8 +3525,7 @@ bool idAI::StepDirection( float dir ) {
 		)
 		{
 			// Bump into enemies all you want while wandering
-			int otherTeam = ((idActor*) (path.blockingEntity))->team;
-			if (gameLocal.m_RelationsManager->IsEnemy( team, otherTeam ))
+			if (IsEnemy(path.blockingEntity))
 			{
 				return true;
 			}
@@ -5143,7 +5139,7 @@ int idAI::ReactionTo( const idEntity *ent )
 	}
 
 	// actors will always fight if their teams are enemies
-	if ( gameLocal.m_RelationsManager->IsEnemy( team, actor->team ) )
+	if ( IsEnemy(actor) )
 	{
 		if ( actor->fl.notarget )
 		{
@@ -5438,9 +5434,6 @@ void idAI::SpawnBloodMarker(idStr splat, float size)
 }
 
 
-
-
-
 /*
 =====================
 idAI::PostDeath
@@ -5448,6 +5441,10 @@ idAI::PostDeath
 */
 void idAI::PostDeath()
 {
+	headAnim.StopAnim(1);
+	legsAnim.StopAnim(1);
+	torsoAnim.StopAnim(1);
+
 	headAnim.Disable();
 	legsAnim.Disable();
 	torsoAnim.Disable();
@@ -8029,7 +8026,7 @@ void idAI::PerformVisualScan(float timecheck)
 	}
 
 	// Ignore dead actors or non-enemies
-	if (player->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, player->team))
+	if (player->health <= 0 || !IsEnemy(player))
 	{
 		return;
 	}
@@ -8311,7 +8308,7 @@ idActor *idAI::FindEnemy(bool useFOV)
 		idActor* actor = static_cast<idActor*>(ent);
 
 		// Ignore dead actors or non-enemies
-		if (actor->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, actor->team))
+		if (actor->health <= 0 || !IsEnemy(actor))
 		{
 			continue;
 		}
@@ -8390,9 +8387,9 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 			continue;
 		}
 
-		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
+		if (!IsFriend(actor))
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s is not on friendly team: %d or has specific relation that is not friendly\r", actor->name.c_str(), actor->team);
 			// Not friendly
 			continue;
 		}
@@ -8639,68 +8636,14 @@ Quit:
 	return bestEnemy;
 }
 
-bool idAI::IsFriend(idEntity *other)
-{
-	if (other == NULL)
-	{
-		return false;
-	}
-	else if (other->team == -1)
-	{
-		// entities with team -1 (not set) are neutral
-		return false;
-	}
-	else
-	{
-		return gameLocal.m_RelationsManager->IsFriend(team, other->team);
-	}
-}
 
-bool idAI::IsNeutral(idEntity *other)
-{
-	if (other == NULL)
-	{
-		return false;
-	}
-	else if (other->team == -1)
-	{
-		// entities with team -1 (not set) are neutral
-		return true;
-	}
-	else
-	{
-		return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
-	}
-}
-
-bool idAI::IsEnemy( idEntity *other )
-{
-	if (other == NULL)
-	{
-		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
-		return false;
-	}
-	else if (other->team == -1)
-	{
-		// entities with team -1 (not set) are neutral
-		return false;
-	}
-	else if (other->fl.notarget)
-	{
-		return false;
-	}
-	else
-	{
-		return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
-	}
-}
 
 void idAI::HadTactile( idActor *actor )
 {
 	if( !actor )
 		goto Quit;
 
-	if( gameLocal.m_RelationsManager->IsEnemy( team, actor->team ) )
+	if( IsEnemy( actor) )
 		TactileAlert( actor );
 	else
 	{
@@ -8708,7 +8651,7 @@ void idAI::HadTactile( idActor *actor )
 	}
 
 	// alert both AI if they bump into eachother
-	if( gameLocal.m_RelationsManager->IsEnemy( actor->team, team )
+	if( actor->IsEnemy(this)
 		&& actor->IsType(idAI::Type) )
 	{
 		static_cast<idAI *>(actor)->TactileAlert( this );
@@ -9021,6 +8964,10 @@ void idAI::Knockout( idEntity* inflictor )
 
 void idAI::PostKnockOut()
 {
+	headAnim.StopAnim(1);
+	legsAnim.StopAnim(1);
+	torsoAnim.StopAnim(1);
+
 	headAnim.Disable();
 	legsAnim.Disable();
 	torsoAnim.Disable();
@@ -9372,7 +9319,7 @@ void idAI::StopLipSync()
 		// Make sure mouth is closed
 		headAnim.SetFrame( m_lipSyncAnim, 0 );
 		// Halt animation
-		headAnim.StopAnim(1);
+		headAnim.SetState("Head_Idle", 4);
 	}
 	m_lipSyncActive = false;
 }

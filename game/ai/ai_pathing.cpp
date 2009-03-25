@@ -386,13 +386,12 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 			// ignore myself, my enemy, and dead bodies
 			// TDM: Also ignore ALL enemies
-			if	(obPhys == physics || obEnt == ignore || obEnt->health <= 0 || 
-				 gameLocal.m_RelationsManager->IsEnemy(team, static_cast<idActor*>(obEnt)->team ))
+			if	(obPhys == physics || obEnt == ignore || obEnt->health <= 0 || self->IsEnemy(obEnt))
 			{
 				continue;
 			}
 			// if the actor is moving
-			idVec3 v1 = obPhys->GetLinearVelocity();
+			const idVec3& v1 = obPhys->GetLinearVelocity();
 			if ( v1.LengthSqr() > Square( 10.0f ) ) {
 				idVec3 v2 = physics->GetLinearVelocity();
 				if ( v2.LengthSqr() > Square( 10.0f ) ) {

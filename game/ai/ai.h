@@ -109,9 +109,6 @@ extern const idEventDef AI_RandomPath;
 
 // DarkMod Events
 extern const idEventDef AI_GetRelationEnt;
-extern const idEventDef AI_IsEnemy;
-extern const idEventDef AI_IsFriend;
-extern const idEventDef AI_IsNeutral;
 extern const idEventDef AI_GetSndDir;
 extern const idEventDef AI_GetVisDir;
 extern const idEventDef AI_GetTactEnt;
@@ -270,15 +267,6 @@ public:
 
 	// Begin Dark Mod Functions:
 	
-	/**
-	* Checks with the global Relationship Manager to see if the
-	* other entity is an enemy of this AI.
-	**/
-	bool IsEnemy( idEntity *other );
-	// As above, but checks for Friend
-	bool IsFriend( idEntity *other );
-	// As above, but checks for Neutral
-	bool IsNeutral( idEntity *other );
 	
 	/**
 	* Interface with Dark Mod Sound Propagation
@@ -881,14 +869,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_AlertGraceCountLimit;
 
 	/**
-	* Ishtvan: Individual relationship with the player
-	* and boolean for determning when this should be used instead of team relationship
-	* NOT YET IMPLEMENTED
-	**/
-	int						m_PlayerRelationship;
-	bool					m_bPlayerRelationshipActive;
-
-	/**
 	 * greebo: This is the message "outbox" of an AI. During sound propagation
 	 * the messages are traversed and delivered to the "recipient" AI.
 	 * Once delivered, messages are automatically removed from this list.
@@ -1481,7 +1461,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/	
 	idActor * FindNearestEnemy( bool useFOV = true );
 
-
 	/**
 	 * angua: this returns if the AI has seen evidence of an intruder already 
 	 * (the enemy, a body, missing loot...)
@@ -1763,9 +1742,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* See CRelations class definition for descriptions
 	**/
 	void					Event_GetRelationEnt( idEntity *ent );
-	void					Event_IsEnemy( idEntity *ent );
-	void					Event_IsFriend( idEntity *ent );
-	void					Event_IsNeutral( idEntity *ent );
 	
 	void					Event_SetAlertLevel( float newAlertLevel );
 

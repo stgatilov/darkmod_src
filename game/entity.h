@@ -1003,7 +1003,38 @@ public:
 	 */
 	void					Event_GetTeam();
 	void					Event_SetTeam(int newTeam);
+
+	void					Event_IsEnemy( idEntity *ent );
+	void					Event_IsFriend( idEntity *ent );
+	void					Event_IsNeutral( idEntity *ent );
+
+	void					Event_SetEntityRelation (idEntity* entity, int relation);
+	void					Event_ChangeEntityRelation(idEntity* entity, int relationChange);
+
+
 	int						team;
+
+	// angua: entities can have personal relationships to other entities that are used instead of the team relations.
+	typedef std::map<const idEntity*, int> EntityRelationsMap;
+	EntityRelationsMap m_EntityRelations;
+
+	// angua: set a relation to another entity
+	// this can be friendly (>0), neutral(0) or hostile (<0)
+	void SetEntityRelation(idEntity* entity, int relation);
+
+	// angua: this changes the current relation to an entity by adding the new amount
+	void ChangeEntityRelation(idEntity* entity, int relationChange);
+
+	/**
+	* Checks with the global Relationship Manager and the personal relations to see if the
+	* other entity is an enemy of this entity.
+	**/
+	bool IsEnemy(const idEntity *other);
+	// As above, but checks for Friend
+	bool IsFriend(const idEntity *other);
+	// As above, but checks for Neutral
+	bool IsNeutral(const idEntity *other);
+
 
 	float					GetAbsenceNoticeability();
 
