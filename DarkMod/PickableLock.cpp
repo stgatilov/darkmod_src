@@ -344,9 +344,13 @@ bool PickableLock::ProcessLockpickPress(int type)
 			// Play wrong lockpick sound
 			m_LockpickState = WRONG_LOCKPICK_SOUND;
 			// Fall back to the same state as we're now
-			PropPickSound("snd_lockpick_pick_wrong", m_LockpickState, 1000);
+			PropPickSound("snd_lockpick_pick_wrong", IsLocked() ? LOCKED : UNLOCKED, 1000);
 			return false;
 		}
+		case WRONG_LOCKPICK_SOUND:
+			// Fall back to the same state as we're now
+			PropPickSound("snd_lockpick_pick_wrong", IsLocked() ? LOCKED : UNLOCKED, 1000);
+			return false;
 		case PIN_SAMPLE:
 		case ADVANCE_TO_NEXT_SAMPLE:
 			// If we encounter a lockpick press during these, reset to start
@@ -529,6 +533,12 @@ bool PickableLock::ProcessLockpickRelease(int type)
 	// Cancel all previous events on release
 	CancelEvents(&EV_TDM_LockpickSoundFinished);
 	m_SoundTimerStarted = 0;
+
+	// If we're not locked in the first place, don't respond to the release event
+	if (!IsLocked())
+	{
+		return false;
+	}
 
 	// Check if we're in the "hot spot" of the lock pick sequence
 	if (LockpickHotspotActive())
@@ -779,7 +789,7 @@ idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCo
 
 float PickableLock::CalculateHandleMoveFraction()
 {
-	if (m_LockpickState == LOCK_SUCCESS || m_LockpickState == UNLOCKED || 
+	if (!IsLocked() || m_LockpickState == LOCK_SUCCESS || m_LockpickState == UNLOCKED || 
 		m_LockpickState == PICKED || m_Pins.Num() == 0)
 	{
 		// unlocked handles or ones without lock pins are at the starting position
