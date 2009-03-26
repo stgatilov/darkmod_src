@@ -574,6 +574,7 @@ void PickableLock::UpdateLockpickHUD()
 	player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
 	player->CallGui(player->lockpickHUD, "OnLockPickProcess");
 	player->SetGuiInt(player->lockpickHUD, "HotSpotActive", m_HotSpotActive ? 1 : 0);
+	player->SetGuiInt(player->lockpickHUD, "HotSpotInActive", m_HotSpotActive ? 0 : 1);
 
 	idStr patternText = "Current Pattern: ";
 	patternText += idStr(m_FirstLockedPinIndex + 1) + idStr(" of ") + idStr(m_Pins.Num());
