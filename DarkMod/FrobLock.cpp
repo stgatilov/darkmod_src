@@ -418,7 +418,7 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 		UnlockTargets();
 		FrobLockStartSound("snd_unlock");
 
-		if (spawnArgs.GetBool("trigger_targets_on_unlock", "0"))
+		if (spawnArgs.GetBool("trigger_targets_on_unlock", "1"))
 		{
 			// Get the delay for triggering the event
 			int delay = spawnArgs.GetInt("unlock_trigger_delay", "0");
@@ -431,7 +431,7 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 		LockTargets();
 		FrobLockStartSound("snd_lock");
 
-		if (spawnArgs.GetBool("trigger_targets_on_lock", "0"))
+		if (spawnArgs.GetBool("trigger_targets_on_lock", "1"))
 		{
 			int delay = spawnArgs.GetInt("lock_trigger_delay", "0");
 			PostEventMS(&EV_TDM_FrobLock_TriggerLockTargets, delay);
@@ -439,8 +439,11 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 	}
 
 	// Fire ordinary targets in any case
-	int delay = spawnArgs.GetInt("trigger_delay", "0");
-	PostEventMS(&EV_TDM_FrobLock_TriggerTargets, delay);
+	if (spawnArgs.GetBool("trigger_targets", "0"))
+	{
+		int delay = spawnArgs.GetInt("trigger_delay", "0");
+		PostEventMS(&EV_TDM_FrobLock_TriggerTargets, delay);
+	}
 }
 
 void CFrobLock::Event_TriggerTargets()

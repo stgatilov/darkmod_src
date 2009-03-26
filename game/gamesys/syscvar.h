@@ -250,6 +250,7 @@ extern idCVar cv_empty_model;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
+extern idCVar cv_lp_tolerance_premature;
 extern idCVar cv_lp_sample_delay;
 extern idCVar cv_lp_pick_timeout;
 extern idCVar cv_lp_max_pick_attempts;

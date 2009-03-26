@@ -44,15 +44,18 @@ const idEventDef EV_TDM_Lock_OnLockStatusChange("TDM_Lock_OnLockStatusChange", "
 
 // Internal events, no need to expose these to scripts
 const idEventDef EV_TDM_LockpickSoundFinished("TDM_LockpickSoundFinished", "d"); // pass the next state as argument
+const idEventDef EV_TDM_LockpickSetHotSpotActive("TDM_LockpickSetHotSpotActive", "d"); // 1 = active, 0 = inactive
 
 CLASS_DECLARATION( idClass, PickableLock )
-	EVENT( EV_TDM_LockpickSoundFinished,	PickableLock::Event_LockpickSoundFinished)
+	EVENT( EV_TDM_LockpickSoundFinished,	PickableLock::Event_LockpickSoundFinished )
+	EVENT( EV_TDM_LockpickSetHotSpotActive,	PickableLock::Event_SetHotSpotStatusActive )
 END_CLASS
 
 PickableLock::PickableLock() :
 	m_Owner(NULL),
 	m_Locked(false),
 	m_LockpickState(NUM_LPSTATES),
+	m_HotSpotActive(false),
 	m_FailedLockpickRounds(0),
 	m_Pickable(true),
 	m_FirstLockedPinIndex(0),
@@ -141,6 +144,7 @@ void PickableLock::InitFromSpawnargs(const idDict& spawnArgs)
 
 	// Initialise the lockpick state
 	m_LockpickState = (m_Locked) ? LOCKED : UNLOCKED;
+	m_HotSpotActive = false;
 }
 
 bool PickableLock::IsLocked()
@@ -177,11 +181,13 @@ void PickableLock::OnLock()
 	m_FailedLockpickRounds = 0;
 
 	m_LockpickState = LOCKED;
+	m_HotSpotActive = false;
 }
 
 void PickableLock::OnUnlock()
 {
 	m_LockpickState = UNLOCKED;
+	m_HotSpotActive = false;
 }
 
 void PickableLock::OnFrobbedStatusChange(bool val)
@@ -190,8 +196,11 @@ void PickableLock::OnFrobbedStatusChange(bool val)
 	{
 		// Reset the lockpick fail counter when entity is losing frob focus
 		m_FailedLockpickRounds = 0;
+		m_HotSpotActive = false;
+
 		// And cancel any pending events
 		CancelEvents(&EV_TDM_LockpickSoundFinished);
+		CancelEvents(&EV_TDM_LockpickSetHotSpotActive);
 	}
 }
 
@@ -214,6 +223,7 @@ void PickableLock::OnLockpickPinSuccess()
 
 		// Switch to PICKED state after this sound
 		m_LockpickState = LOCK_SUCCESS;
+		m_HotSpotActive = false;
 
 		PropPickSound("snd_lockpick_lock_picked", PICKED);
 		
@@ -390,6 +400,7 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 				// Start the first sample
 				m_LockpickState = LOCKPICKING_STARTED;
 				m_FailedLockpickRounds = 0;
+				m_HotSpotActive = false;
 				success = true;
 			}
 			else
@@ -463,7 +474,13 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 			const idStr& pickSound = pattern[m_SoundPinSampleIndex];
 
 			// Pad the sound with a sample delay
-			PropPickSound(pickSound, ADVANCE_TO_NEXT_SAMPLE, cv_lp_sample_delay.GetInteger());
+			int sampleLength = PropPickSound(pickSound, ADVANCE_TO_NEXT_SAMPLE, cv_lp_sample_delay.GetInteger());
+
+			if (m_SoundPinSampleIndex == pattern.Num() - 1)
+			{
+				// Last sound in the pattern, schedule the hotspot activation
+				PostEventMS(&EV_TDM_LockpickSetHotSpotActive, idMath::ClampInt(0, 99999, sampleLength - cv_lp_tolerance_premature.GetInteger()), 1);
+			}
 
 			success = true;
 			break;
@@ -474,11 +491,13 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 			// Either the user hits the hotspot when not in pavlov mode
 			// or the "finished sound" event fires and we're back to LOCKPICKING_STARTED
 			success = true;
+			m_HotSpotActive = true;
 			break;
 		}
 		case AFTER_PIN_DELAY:
 			// The player didn't succeed to get that pin, increase the failed count
 			m_FailedLockpickRounds++;
+			m_HotSpotActive = false;
 
 			// greebo: Check if auto-pick should kick in
 			if (cv_lp_auto_pick.GetBool() && cv_lp_max_pick_attempts.GetInteger() > 0 && 
@@ -525,6 +544,7 @@ bool PickableLock::ProcessLockpickRelease(int type)
 	
 	// Cancel all previous events on release
 	CancelEvents(&EV_TDM_LockpickSoundFinished);
+	CancelEvents(&EV_TDM_LockpickSetHotSpotActive);
 	m_SoundTimerStarted = 0;
 
 	// Check if we're in the "hot spot" of the lock pick sequence
@@ -553,6 +573,7 @@ void PickableLock::UpdateLockpickHUD()
 	player->SetGuiString(player->lockpickHUD, "StatusText4", (idStr("Sounds started: ") + idStr(m_SoundTimerStarted)).c_str());
 	player->SetGuiString(player->lockpickHUD, "StatusText5", StateNames[m_LockpickState]);
 	player->CallGui(player->lockpickHUD, "OnLockPickProcess");
+	player->SetGuiInt(player->lockpickHUD, "HotSpotActive", m_HotSpotActive ? 1 : 0);
 
 	idStr patternText = "Current Pattern: ";
 	patternText += idStr(m_FirstLockedPinIndex + 1) + idStr(" of ") + idStr(m_Pins.Num());
@@ -611,14 +632,15 @@ bool PickableLock::ProcessLockpickImpulse(EImpulseState impulseState, int type)
 
 bool PickableLock::LockpickHotspotActive()
 {
-	if (cv_lp_pawlow.GetBool()) // pavlov mode
+	return m_HotSpotActive;
+	/*if (cv_lp_pawlow.GetBool()) // pavlov mode
 	{
 		return (m_LockpickState == PIN_SAMPLE_SWEETSPOT);
 	}
 	else // pattern mode
 	{
 		return (m_LockpickState == PIN_DELAY);
-	}
+	}*/
 }
 
 void PickableLock::Save(idSaveGame *savefile) const
@@ -698,7 +720,7 @@ void PickableLock::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_SoundTimerStarted);
 }
 
-void PickableLock::PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay)
+int PickableLock::PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay)
 {
 	m_SoundTimerStarted++;
 
@@ -718,8 +740,12 @@ void PickableLock::PropPickSound(const idStr& picksound, ELockpickState nextStat
 		m_Owner->StartSound(picksound, SND_CHANNEL_ANY, 0, false, &length);
 	}
 
+	int totalDelay = length + additionalDelay;
+
 	// Post the sound finished event
-	PostEventMS(&EV_TDM_LockpickSoundFinished, length + additionalDelay, static_cast<int>(nextState));
+	PostEventMS(&EV_TDM_LockpickSoundFinished, totalDelay, static_cast<int>(nextState));
+
+	return totalDelay;
 }
 
 void PickableLock::Event_LockpickSoundFinished(ELockpickState nextState) 
@@ -733,6 +759,11 @@ void PickableLock::Event_LockpickSoundFinished(ELockpickState nextState)
 
 	// Set the state to the one that was requested
 	m_LockpickState = nextState;
+}
+
+void PickableLock::Event_SetHotSpotStatusActive(int active)
+{
+	m_HotSpotActive = (active != 0);
 }
 
 idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, const idStr& header)

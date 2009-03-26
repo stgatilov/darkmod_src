@@ -57,6 +57,9 @@ private:
 	// Lockpick state
 	ELockpickState	m_LockpickState;
 
+	// TRUE during the phase the player can land a success hit
+	bool			m_HotSpotActive;
+
 	/**
 	 * greebo: This variable keeps track of how many times the player missed
 	 * a single pin of the lock. When auto-pick is enabled, the owner will be
@@ -173,11 +176,13 @@ private:
 	 * greebo: Play the given sound, this will post a "sound finished" event 
 	 * after the sound has been played (+ the given delay in ms).
 	 * When the sound is done, the lockpick state will be set to <nextState>.
+	 * @returns: the time until this occurs in msec.
 	 */
-	void			PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay = 0);
+	int				PropPickSound(const idStr& picksound, ELockpickState nextState, int additionalDelay = 0);
 
 	// Gets called when a lockpick sound is finished playing
 	void			Event_LockpickSoundFinished(ELockpickState nextState);
+	void			Event_SetHotSpotStatusActive(int active);
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
