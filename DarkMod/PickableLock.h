@@ -57,9 +57,6 @@ private:
 	// Lockpick state
 	ELockpickState	m_LockpickState;
 
-	// TRUE during the phase the player can land a success hit
-	bool			m_HotSpotActive;
-
 	/**
 	 * greebo: This variable keeps track of how many times the player missed
 	 * a single pin of the lock. When auto-pick is enabled, the owner will be
@@ -182,7 +179,6 @@ private:
 
 	// Gets called when a lockpick sound is finished playing
 	void			Event_LockpickSoundFinished(ELockpickState nextState);
-	void			Event_SetHotSpotStatusActive(int active);
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
