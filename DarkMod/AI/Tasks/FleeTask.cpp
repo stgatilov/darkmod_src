@@ -54,6 +54,12 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	assert(enemy != NULL);
 
+	// angua: bad luck, my friend, yuo've been too slow...
+	// no more fleeing necessary when dead or ko'ed
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return true;
+	}
 
 //	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
 //		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
