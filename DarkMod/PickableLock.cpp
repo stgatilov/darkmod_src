@@ -629,6 +629,7 @@ bool PickableLock::LockpickHotspotActive()
 void PickableLock::Save(idSaveGame *savefile) const
 {
 	savefile->WriteObject(m_Owner);
+	savefile->WriteBool(m_Locked);
 	savefile->WriteInt(static_cast<int>(m_LockpickState));
 	savefile->WriteInt(m_FailedLockpickRounds);
 	
@@ -663,6 +664,7 @@ void PickableLock::Save(idSaveGame *savefile) const
 void PickableLock::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Owner));
+	savefile->ReadBool(m_Locked);
 
 	int temp;
 	savefile->ReadInt(temp);
