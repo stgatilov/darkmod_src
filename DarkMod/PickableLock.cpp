@@ -275,6 +275,13 @@ void PickableLock::AttackAction(idPlayer* player)
 	CancelEvents(&EV_TDM_LockpickSoundFinished);
 	m_SoundTimerStarted = 0;
 
+	if (m_LockpickState == LOCKED || m_LockpickState == PICKED ||
+		m_LockpickState == UNLOCKED)
+	{
+		// Don't respond to attack actions if not in lockpicking mode in the first place
+		return;
+	}
+
 	// Check if we're in the "hot spot" of the lock pick sequence
 	if (LockpickHotspotActive())
 	{
