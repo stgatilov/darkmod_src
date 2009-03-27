@@ -231,8 +231,8 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 
 void CMultiStateMover::Activate(idEntity* activator)
 {
-	// Call the base class
-	idEntity::Activate(activator);
+	// Fire the TRIGGER response
+	ResponseTrigger(activator, ST_TRIGGER);
 
 	if (activator == NULL) return;
 

@@ -5544,8 +5544,8 @@ only the alert state scripts.
 */
 void idAI::Activate( idEntity *activator )
 {
-	// call the base class first
-	idEntity::Activate(activator);
+	// Fire the TRIGGER response
+	ResponseTrigger(activator, ST_TRIGGER);
 
 	if ( AI_DEAD || AI_KNOCKEDOUT ) {
 		// ignore it when they're dead or KO'd
