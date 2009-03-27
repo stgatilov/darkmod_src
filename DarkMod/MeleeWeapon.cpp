@@ -182,8 +182,13 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 			return;
 		}
 
-		MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
-		DeactivateAttack();
+		idEntity *other = gameLocal.entities[tr.c.entityNum];
+		// don't hit friendly actors
+		if( !( GetOwner()->IsType(idAI::Type) && (other->IsType(idActor::Type) && static_cast<idAI *>(GetOwner())->IsEnemy(other)) ) )
+		{
+			MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
+			DeactivateAttack();
+		}
 	}
 }
 
@@ -350,6 +355,19 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 
 		if (other->m_bParryStopOnSuccess)
 			other->DeactivateParry();
+
+		// Parrying an attack can cause flat-footedness in AI
+		if( other->GetOwner()->IsType(idAI::Type) )
+		{
+			idAI *otherAI = static_cast<idAI *>(other->GetOwner());
+
+			// being hit causes flat-footedness
+			if( otherAI->m_bCanBeFlatFooted )
+			{
+				otherAI->m_bFlatFooted = true;
+				otherAI->m_FlatFootedTimer = gameLocal.time;
+			}
+		}
 	}
 	else
 	{
@@ -627,12 +645,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				// TODO: Scale damage with instantaneous velocity of the blade?
 				MeleeCollision( other, dir, &tr, location );
 
-				// apply a LARGE tactile alert to AI
-				if( otherAct->IsType(idAI::Type) )
-					static_cast<idAI *>(otherAct)->TactileAlert( GetOwner(), 100 );
-
-				// update AI status
-				// TODO: Check if we hit a friendly, maybe cheat and don't hit friendlies
+				// update actor's melee status
 				pStatus->m_ActionResult = MELEERESULT_AT_HIT;
 
 				DeactivateAttack();
@@ -737,7 +750,15 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	// apply a LARGE tactile alert to AI
 	if( other->IsType(idAI::Type) )
 	{
-		static_cast<idAI *>(other)->TactileAlert( m_Owner.GetEntity(), 100 );
+		idAI *otherAI = static_cast<idAI *>(other);
+		otherAI->TactileAlert( GetOwner(), 100 );
+
+		// being hit causes flat-footedness
+		if( otherAI->m_bCanBeFlatFooted )
+		{
+			otherAI->m_bFlatFooted = true;
+			otherAI->m_FlatFootedTimer = gameLocal.time;
+		}
 	}
 
 	// copied from idWeapon, not necessarily what we want

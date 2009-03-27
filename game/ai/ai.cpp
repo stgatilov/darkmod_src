@@ -543,6 +543,11 @@ idAI::idAI()
 
 	m_bPushOffPlayer	= false;
 
+	m_bCanBeFlatFooted	= false;
+	m_bFlatFooted		= false;
+	m_FlatFootedTimer	= 0;
+	m_FlatFootedTime	= 0;
+
 	m_maxInterleaveThinkFrames = 0;
 	m_minInterleaveThinkDist = 1000;
 	m_maxInterleaveThinkDist = 3000;
@@ -833,6 +838,11 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_nextThinkFrame);
 
 	savefile->WriteBool(m_bPushOffPlayer);
+
+	savefile->WriteBool(m_bCanBeFlatFooted);
+	savefile->WriteBool(m_bFlatFooted);
+	savefile->WriteInt(m_FlatFootedTimer);
+	savefile->WriteInt(m_FlatFootedTime);
 
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
@@ -1152,6 +1162,11 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_nextThinkFrame);
 
 	savefile->ReadBool(m_bPushOffPlayer);
+
+	savefile->ReadBool(m_bCanBeFlatFooted);
+	savefile->ReadBool(m_bFlatFooted);
+	savefile->ReadInt(m_FlatFootedTimer);
+	savefile->ReadInt(m_FlatFootedTime);
 
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
@@ -1582,6 +1597,9 @@ void idAI::Spawn( void )
 	// end drowning setup
 
 	m_bPushOffPlayer = spawnArgs.GetBool("push_off_player", "1");
+
+	m_bCanBeFlatFooted	= spawnArgs.GetBool("can_be_flatfooted", "1");
+	m_FlatFootedTime	= spawnArgs.GetInt("flatfooted_time");
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;

@@ -989,6 +989,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	bool					m_bPushOffPlayer;
 
+	/**
+	* Ishtvan: Flat-footedness, disallows movement while maitaining ability to turn
+	* Currently only implemented in melee
+	**/
+	bool					m_bCanBeFlatFooted;
+	bool					m_bFlatFooted;
+	int						m_FlatFootedTimer;
+	int						m_FlatFootedTime;					
+
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
 	float thresh_1, thresh_2, thresh_3, thresh_4, thresh_5;

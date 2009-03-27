@@ -70,8 +70,23 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	// are we currently flat-footed?
+	if( owner->m_bFlatFooted )
+	{
+		_reachEnemyCheck = 0;
+
+		owner->StopMove(MOVE_STATUS_DONE);
+		//gameLocal.Printf("Flat footed!\n");
+		// Turn to the player
+		owner->TurnToward(enemy->GetEyePosition());
+
+		if( (gameLocal.time - owner->m_FlatFootedTimer) > owner->m_FlatFootedTime )
+		{
+			owner->m_bFlatFooted = false;
+		}
+	}
 	// Can we damage the enemy already? (this flag is set by the combat state)
-	if (memory.canHitEnemy)
+	else if (memory.canHitEnemy)
 	{
 		_reachEnemyCheck = 0;
 

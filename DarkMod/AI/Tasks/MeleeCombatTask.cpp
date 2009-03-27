@@ -231,7 +231,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		// TODO: Check if enemy is dead or beyond some max range, then stop parrying?
 		else
 		{
-			// debug display the countdown to release (SOMETHING WRONG HERE)
+			// debug display the countdown to release
 			if( cv_melee_state_debug.GetBool() )
 			{
 				idStr debugText = va("Parry Waiting for: %d [ms]", (gameLocal.time - pEnStatus->m_PhaseChangeTime) );
