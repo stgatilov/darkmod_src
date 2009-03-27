@@ -536,6 +536,11 @@ bool PickableLock::ProcessLockpickRelease(int type)
 		idPlayer* player = gameLocal.GetLocalPlayer();
 		player->SetGuiString(player->lockpickHUD, "StatusText6", "Button Released");
 	}
+
+	if (m_SoundTimerStarted > 0 && m_LockpickState == WRONG_LOCKPICK_SOUND) 
+	{
+		return false; // busy playing the wrong lockpick sound
+	}
 	
 	// Cancel all previous events on release
 	CancelEvents(&EV_TDM_LockpickSoundFinished);
@@ -553,7 +558,7 @@ bool PickableLock::ProcessLockpickRelease(int type)
 		// Success
 		OnLockpickPinSuccess();
 	}
-	else 
+	else
 	{
 		// Failure
 		OnLockpickPinFailure();
