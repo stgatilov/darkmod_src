@@ -28,6 +28,9 @@ class CFrobLock :
 	 */
 	idList< idEntityPtr<CFrobLockHandle> >	m_Lockhandles;
 
+	// The last time we issues an "Update handle" call
+	int				m_LastHandleUpdateTime;
+
 public:
 	CLASS_PROTOTYPE( CFrobLock );
 

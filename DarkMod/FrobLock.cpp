@@ -35,7 +35,8 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_FrobLock_Open,					CFrobLock::Event_Open)
 END_CLASS
 
-CFrobLock::CFrobLock()
+CFrobLock::CFrobLock() :
+	m_LastHandleUpdateTime(-1)
 {
 	m_Lock.SetOwner(this);
 	m_Lock.SetLocked(false);
@@ -50,6 +51,8 @@ void CFrobLock::Save(idSaveGame *savefile) const
 	{
 		m_Lockhandles[i].Save(savefile);
 	}
+
+	savefile->WriteInt(m_LastHandleUpdateTime);
 }
 
 void CFrobLock::Restore( idRestoreGame *savefile )
@@ -63,6 +66,8 @@ void CFrobLock::Restore( idRestoreGame *savefile )
 	{
 		m_Lockhandles[i].Restore(savefile);
 	}
+
+	savefile->ReadInt(m_LastHandleUpdateTime);
 }
 
 void CFrobLock::Spawn()
@@ -370,6 +375,11 @@ void CFrobLock::AutoSetupLockHandles()
 
 void CFrobLock::UpdateHandlePosition()
 {
+	// greebo: Don't issue an handle update position call each frame,
+	// this might cause movers to freeze in place, as the extrapolation class
+	// let's them rest for the first frame
+	if (gameLocal.time <= m_LastHandleUpdateTime) return;
+
 	// Calculate the fraction based on the current pin/sample state
 	float fraction = m_Lock.CalculateHandleMoveFraction();
 

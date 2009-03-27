@@ -55,6 +55,7 @@ CFrobDoor::CFrobDoor()
 	m_FrobActionScript = "frob_door";
 	m_CloseOnLock = false;
 	m_DoubleDoor = NULL;
+	m_LastHandleUpdateTime = -1;
 }
 
 CFrobDoor::~CFrobDoor()
@@ -85,6 +86,8 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	{
 		m_Doorhandles[i].Save(savefile);
 	}
+
+	savefile->WriteInt(m_LastHandleUpdateTime);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -114,6 +117,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	{
 		m_Doorhandles[i].Restore(savefile);
 	}
+
+	savefile->ReadInt(m_LastHandleUpdateTime);
 
 	SetDoorTravelFlag();
 }
@@ -606,6 +611,11 @@ bool CFrobDoor::IsFrobbed()
 
 void CFrobDoor::UpdateHandlePosition()
 {
+	// greebo: Don't issue an handle update position call each frame,
+	// this might cause movers to freeze in place, as the extrapolation class
+	// let's them rest for the first frame
+	if (gameLocal.time <= m_LastHandleUpdateTime) return;
+
 	// Calculate the fraction based on the current pin/sample state
 	float fraction = m_Lock.CalculateHandleMoveFraction();
 

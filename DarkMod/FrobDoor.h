@@ -223,6 +223,9 @@ protected:
 	 * Handles that are associated with this door.
 	 */
 	idList< idEntityPtr<CFrobDoorHandle> >	m_Doorhandles;
+
+	// The last time we issues an "Update handle" call
+	int							m_LastHandleUpdateTime;
 };
 
 #endif /* FROBDOOR_H */
