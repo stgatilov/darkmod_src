@@ -378,7 +378,9 @@ void CFrobLock::UpdateHandlePosition()
 	// greebo: Don't issue an handle update position call each frame,
 	// this might cause movers to freeze in place, as the extrapolation class
 	// let's them rest for the first frame
-	if (gameLocal.time <= m_LastHandleUpdateTime) return;
+	if (gameLocal.time <= m_LastHandleUpdateTime + gameLocal.msec) return;
+
+	m_LastHandleUpdateTime = gameLocal.time;
 
 	// Calculate the fraction based on the current pin/sample state
 	float fraction = m_Lock.CalculateHandleMoveFraction();
