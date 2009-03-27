@@ -59,7 +59,7 @@ const float MANTLE_TEST_INCREMENT = 1.0;
 * This was determined for PM_FRICTION = 6.0 and should change if
 *	PM_FRICTION changes from 6.0.
 **/
-const float PM_NOFRICTION_SPEED = 69.0f;
+const float PM_NOFRICTION_SPEED = 71.0f;
 
 const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
 const float OVERCLIP			= 1.001f;
@@ -869,10 +869,12 @@ void idPhysics_Player::WalkMove( void )
 	{
 		accelerate = PM_ACCELERATE;
 		
-	//FIX: If the player is moving very slowly, bump up their acceleration
-	// so they don't get stuck to the floor by friction.
+		//FIX: If the player is moving very slowly, bump up their acceleration
+		// so they don't get stuck to the floor by friction.
 		if( playerSpeed < PM_NOFRICTION_SPEED )
+		{
 			accelerate *= 3.0f;
+		}
 	}
 
 	Accelerate( wishdir, wishspeed, accelerate );
