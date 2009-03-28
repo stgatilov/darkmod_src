@@ -34,6 +34,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Persistent = false;
 	m_LightgemModifier = 0;
 	m_MovementModifier = 1.0f;
+	m_FrobDistanceCap = -1;
 	m_UseOnFrob = false;
 	m_DropOrientation = mat3_identity;
 }
@@ -143,6 +144,7 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_LightgemModifier);
 	savefile->WriteFloat(m_MovementModifier);
 	savefile->WriteBool(m_UseOnFrob);
+	savefile->WriteFloat(m_FrobDistanceCap);
 	savefile->WriteMat3(m_DropOrientation);
 }
 
@@ -180,6 +182,7 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LightgemModifier);
 	savefile->ReadFloat(m_MovementModifier);
 	savefile->ReadBool(m_UseOnFrob);
+	savefile->ReadFloat(m_FrobDistanceCap);
 	savefile->ReadMat3(m_DropOrientation);
 }
 
@@ -188,6 +191,7 @@ void CInventoryItem::ParseSpawnargs(const idDict& spawnArgs)
 	m_Persistent = spawnArgs.GetBool("inv_persistent", "0");
 	m_LightgemModifier = spawnArgs.GetInt("inv_lgmodifier", "0");
 	m_MovementModifier = spawnArgs.GetFloat("inv_movement_modifier", "1");
+	m_FrobDistanceCap = spawnArgs.GetFloat("inv_frob_distance_cap", "-1");
 	m_Icon = spawnArgs.GetString("inv_icon", "");
 }
 

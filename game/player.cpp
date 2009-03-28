@@ -10190,8 +10190,22 @@ void idPlayer::FrobCheck()
 	}
 
 	idVec3 eyePos = GetEyePosition();
+	float maxFrobDistance = g_Global.m_MaxFrobDistance;
+
+	// greebo: Let the currently selected inventory item affect the frob distance (lockpicks, for instance)
+	CInventoryItemPtr curItem = InventoryCursor()->GetCurrentItem();
+	if (curItem != NULL)
+	{
+		float itemCap = curItem->GetFrobDistanceCap();
+
+		if (maxFrobDistance > itemCap)
+		{
+			maxFrobDistance = itemCap;
+		}
+	}
+
 	idVec3 start = eyePos;
-	idVec3 end = start + viewAngles.ToForward() * g_Global.m_MaxFrobDistance;
+	idVec3 end = start + viewAngles.ToForward() * maxFrobDistance;
 
 	// Do frob trace first, along view axis, record distance traveled
 	// Frob collision mask:
