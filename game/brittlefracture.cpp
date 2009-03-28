@@ -1156,6 +1156,14 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	}
 
 	physicsObj.SetContents( material->GetContentFlags() );
+	// ishtvan: overwrite with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 	SetPhysics( &physicsObj );
 }
 
