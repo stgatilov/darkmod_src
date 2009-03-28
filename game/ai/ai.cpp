@@ -7376,10 +7376,26 @@ bool idAI::UpdateAnimationControllers( void ) {
 	lookAng.Normalize180();
 
 	jointAng.roll = 0.0f;
-	for( i = 0; i < lookJoints.Num(); i++ ) {
-		jointAng.pitch	= lookAng.pitch * lookJointAngles[ i ].pitch;
-		jointAng.yaw	= lookAng.yaw * lookJointAngles[ i ].yaw;
-		animator.SetJointAxis( lookJoints[ i ], JOINTMOD_WORLD, jointAng.ToMat3() );
+
+	if (AI_AlertLevel >= thresh_5)
+	{
+		// use combat look joints in combat
+
+		for( i = 0; i < lookJointsCombat.Num(); i++ ) 
+		{
+			jointAng.pitch	= lookAng.pitch * lookJointAnglesCombat[ i ].pitch;
+			jointAng.yaw	= lookAng.yaw * lookJointAnglesCombat[ i ].yaw;
+			animator.SetJointAxis( lookJointsCombat[ i ], JOINTMOD_WORLD, jointAng.ToMat3() );
+		}
+	}
+	else
+	{
+		for( i = 0; i < lookJoints.Num(); i++ ) 
+		{
+			jointAng.pitch	= lookAng.pitch * lookJointAngles[ i ].pitch;
+			jointAng.yaw	= lookAng.yaw * lookJointAngles[ i ].yaw;
+			animator.SetJointAxis( lookJoints[ i ], JOINTMOD_WORLD, jointAng.ToMat3() );
+		}
 	}
 
 	if ( move.moveType == MOVETYPE_FLY ) {
