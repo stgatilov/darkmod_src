@@ -955,6 +955,8 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 {
 	if (m_Doorhandles.Num() > 0)
 	{
+		// greebo: Find the handle nearest to the player, as one of the doorhandles could be 
+		// behind a closed visportal.
 		float bestDistanceSqr = idMath::INFINITY;
 		idVec3 playerEyePos = gameLocal.GetLocalPlayer()->GetEyePosition();
 
@@ -978,7 +980,7 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 
 		if (handle != NULL)
 		{
-			// Let the sound play from the first handle, but use the soundshader
+			// Let the sound play from the handle, but use the soundshader
 			// as defined on this entity.
 			idStr sound = spawnArgs.GetString(soundName, "");
 

@@ -10177,11 +10177,6 @@ void idPlayer::Event_GetFov()
 
 void idPlayer::FrobCheck( void )
 {
-	trace_t trace;
-	float	TraceDist;
-	idVec3 delta, VecForward;
-	idBounds FrobBounds;
-
 	// greebo: Don't run this when dead
 	if (AI_DEAD) 
 	{
@@ -10194,17 +10189,20 @@ void idPlayer::FrobCheck( void )
 		return;
 	}
 
-	idVec3	EyePos = GetEyePosition();
-	idVec3 start = EyePos;
+	idVec3 eyePos = GetEyePosition();
+	idVec3 start = eyePos;
 	idVec3 end = start + viewAngles.ToForward() * g_Global.m_MaxFrobDistance;
+
 	// Do frob trace first, along view axis, record distance traveled
 	// Frob collision mask:
 	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
 		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
 		|CONTENTS_FROBABLE;
 
+	trace_t trace;
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
-	TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
+
+	float TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
 
 	if( trace.fraction < 1.0f )
 	{
@@ -10243,6 +10241,7 @@ void idPlayer::FrobCheck( void )
 	//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
 	// IF the trace didn't hit anything frobable, do the radius test:
 
+	idBounds FrobBounds;
 	FrobBounds.Zero();
 	FrobBounds += trace.endpos;
 	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
@@ -10255,7 +10254,7 @@ void idPlayer::FrobCheck( void )
 
 	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds( FrobBounds, -1, FrobRangeEnts, MAX_GENTITIES );
 
-	VecForward = viewAngles.ToForward();
+	idVec3 VecForward = viewAngles.ToForward();
 	float BestDot = 0;
 	float CurrentDot = 0;
 	float FrobDistSqr = 0;
@@ -10271,7 +10270,7 @@ void idPlayer::FrobCheck( void )
 
 		FrobDistSqr = ent->m_FrobDistance;
 		FrobDistSqr *= FrobDistSqr;
-		delta = ent->GetPhysics()->GetOrigin() - EyePos;
+		idVec3 delta = ent->GetPhysics()->GetOrigin() - eyePos;
 		
 		if( delta.LengthSqr() > FrobDistSqr )
 			continue;
