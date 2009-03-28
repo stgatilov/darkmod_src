@@ -10175,7 +10175,7 @@ void idPlayer::Event_GetFov()
 	idThread::ReturnFloat(CalcFov(true));
 }
 
-void idPlayer::FrobCheck( void )
+void idPlayer::FrobCheck()
 {
 	// greebo: Don't run this when dead
 	if (AI_DEAD) 
@@ -10207,29 +10207,32 @@ void idPlayer::FrobCheck( void )
 	if( trace.fraction < 1.0f )
 	{
 		idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
-		//DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
-		
-		idPhysics_Player* playerPhysics = static_cast<idPhysics_Player*>(GetPhysics());
 
+		DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
+		
 		// greebo: Check if the frobbed entity is the bindmaster of the currently climbed rope
-		bool isRopeMaster = playerPhysics->OnRope() && playerPhysics->GetRopeEntity()->GetBindMaster() == ent;
+		bool isRopeMaster = physicsObj.OnRope() && physicsObj.GetRopeEntity()->GetBindMaster() == ent;
 
 		// ishtvan: Check if the frobbed entity is a dynamically added AF body linked to another entity
 		if( ent->IsType(idAFEntity_Base::Type) )
 		{
 			idAFEntity_Base *afEnt = static_cast<idAFEntity_Base *>(ent);
 			idAFBody *AFbod = afEnt->GetAFPhysics()->GetBody( afEnt->BodyForClipModelId(trace.c.id) );
+
 			if( AFbod->GetRerouteEnt() && AFbod->GetRerouteEnt()->m_bFrobable )
+			{
 				ent = AFbod->GetRerouteEnt();
+			}
 		}
 	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
-		if( ent->m_bFrobable && !ent->IsHidden() && (TraceDist < ent->m_FrobDistance)
-			&& ent != gameLocal.m_Grabber->GetSelected() && !isRopeMaster)
+		if( ent->m_bFrobable && !isRopeMaster && !ent->IsHidden() && 
+			TraceDist < ent->m_FrobDistance && ent != gameLocal.m_Grabber->GetSelected())
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
-			// TODO: Mark as frobbed for this frame
+
+			// Mark as frobbed for this frame
 			ent->SetFrobbed(true);
 			g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 
@@ -10238,63 +10241,57 @@ void idPlayer::FrobCheck( void )
 		}
 	}
 
-	//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
-	// IF the trace didn't hit anything frobable, do the radius test:
-
-	idBounds FrobBounds;
-	FrobBounds.Zero();
-	FrobBounds += trace.endpos;
-	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
+	// If the trace didn't hit anything frobable, do the radius test
+	DM_LOG(LC_FROBBING,LT_INFO)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
+	
+	idBounds frobBounds(trace.endpos);
+	frobBounds.ExpandSelf( cv_frob_width.GetFloat() );
 
 	// Optional debug drawing of frob bounds
 	if( cv_frob_debug_bounds.GetBool() )
-		gameRenderWorld->DebugBounds( colorBlue, FrobBounds );
+		gameRenderWorld->DebugBounds( colorBlue, frobBounds );
 
-	idEntity *FrobRangeEnts[ MAX_GENTITIES ];
+	static idEntity* frobRangeEnts[MAX_GENTITIES];
 
-	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds( FrobBounds, -1, FrobRangeEnts, MAX_GENTITIES );
+	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(frobBounds, -1, frobRangeEnts, MAX_GENTITIES);
 
-	idVec3 VecForward = viewAngles.ToForward();
-	float BestDot = 0;
-	float CurrentDot = 0;
-	float FrobDistSqr = 0;
-	idEntity *BestEnt = NULL;
+	idVec3 vecForward = viewAngles.ToForward();
+	float bestDot = 0;
+	idEntity* bestEnt = NULL;
 
 	for( int i=0; i < numFrobEnt; i++ )
 	{
-		idEntity *ent = FrobRangeEnts[i];
-		if( !ent )
-			continue;
-		if( !ent->m_FrobDistance || ent->IsHidden() || !ent->m_bFrobable )
-			continue;
+		idEntity *ent = frobRangeEnts[i];
 
-		FrobDistSqr = ent->m_FrobDistance;
-		FrobDistSqr *= FrobDistSqr;
+		if (ent == NULL) continue;
+
+		if (!ent->m_FrobDistance || ent->IsHidden() || !ent->m_bFrobable) continue;
+
+		// Get the frob distance from the entity candidate
+		float frobDistSqr = ent->m_FrobDistance * ent->m_FrobDistance;
 		idVec3 delta = ent->GetPhysics()->GetOrigin() - eyePos;
 		
-		if( delta.LengthSqr() > FrobDistSqr )
-			continue;
+		if (delta.LengthSqr() > frobDistSqr) continue; // too far
 
 		delta.NormalizeFast();
-		CurrentDot = delta * VecForward;
-		CurrentDot *= ent->m_FrobBias;
+		float currentDot = delta * vecForward;
+		currentDot *= ent->m_FrobBias;
 
-		if( CurrentDot > BestDot )
+		if( currentDot > bestDot )
 		{
-			BestDot = CurrentDot;
-			BestEnt = ent;
+			bestDot = currentDot;
+			bestEnt = ent;
 		}
 	}
 
-	if( BestEnt && BestEnt != gameLocal.m_Grabber->GetSelected() )
+	if( bestEnt != NULL && bestEnt != gameLocal.m_Grabber->GetSelected() )
 	{
-		//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
+		DM_LOG(LC_FROBBING,LT_INFO)LOGSTRING("Frob radius expansion found best entity %s\r", bestEnt->name.c_str() );
+
 		// Mark the entity as frobbed this frame
-		BestEnt->SetFrobbed(true);
+		bestEnt->SetFrobbed(true);
 		g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 	}
-
-	return;
 }
 
 int idPlayer::GetImmobilization( const char *source )
