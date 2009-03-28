@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "boost/filesystem.hpp"
+namespace fs = boost::filesystem;
+
 // Handles mainmenu that displays list of mods (FMs) and lets user
 // chose which one to load. Also handles display of briefing page
 class CModMenu
@@ -52,7 +55,7 @@ private:
 	void RestartGame();
 
 	// Returns the darkmod path
-	idStr GetDarkmodPath();
+	fs::path GetDarkmodPath();
 
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
 	// After this call the CVAR tdm_mapName is initialised and holds the map name.

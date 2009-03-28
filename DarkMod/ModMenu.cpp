@@ -393,7 +393,7 @@ void CModMenu::LoadModList()
 				// and attempt to save to folder
 				_modsAvailable.Alloc() = files->GetFile(i);
 
-				fs::path darkmodPath(GetDarkmodPath().c_str());
+				fs::path darkmodPath = GetDarkmodPath();
 				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / files->GetFile(i);
 				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
 
@@ -462,29 +462,39 @@ void CModMenu::InitStartingMap()
 	}
 }
 
-idStr CModMenu::GetDarkmodPath()
+fs::path CModMenu::GetDarkmodPath()
 {
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Parent path is %s\r", parentPath.string().c_str());
+
 	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
 
 	if (modBaseName.IsEmpty())
 	{
 		// Fall back to fs_game if no game_base is set
 		modBaseName = cvarSystem->GetCVarString("fs_game");
 
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
+
 		if (modBaseName.IsEmpty())
 		{
 			modBaseName = "darkmod"; // last resort: hardcoded
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
 		}
 	}
 
 	// Path to the darkmod directory
 	fs::path darkmodPath(parentPath / modBaseName.c_str());
 
-	return idStr(darkmodPath.string().c_str());
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
+
+	return darkmodPath;
 }
 
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
@@ -516,6 +526,9 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("FM targetFolder already exists: %s\r", targetFolder.string().c_str());
 	}
 
+	// Path to the darkmod directory
+	fs::path darkmodPath = GetDarkmodPath();
+
 	// Copy all PK4s from the FM folder
 	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, ".pk4", false);
 	
@@ -524,13 +537,13 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		// Check for the darkmod.txt file
 		idStr pk4file = info.pathToFMPackage + pk4Files->GetFile(i);
 
-		idStr darkmodPath = GetDarkmodPath();
-
 		// Source file (full OS path)
-		fs::path pk4fileOsPath = (darkmodPath + "/" + pk4file).c_str();
+		fs::path pk4fileOsPath = darkmodPath / pk4file.c_str();
 
 		// Target location
 		fs::path targetFile = targetFolder / pk4Files->GetFile(i);
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
 		
 		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
 		//fileSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
@@ -539,6 +552,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		try
 		{
 			fs::remove(targetFile);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target file %s was existing, successfully removed.\r", targetFile.string().c_str());
 		}
 		catch (fs::basic_filesystem_error<fs::path> e)
 		{
@@ -550,6 +564,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		try
 		{
 			fs::copy_file(pk4fileOsPath, targetFile);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", targetFile.string().c_str());
 		}
 		catch (fs::basic_filesystem_error<fs::path> e)
 		{
@@ -558,9 +573,6 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	}
 
 	fileSystem->FreeFileList(pk4Files);
-
-	// Path to the darkmod directory
-	fs::path darkmodPath(GetDarkmodPath());
 
 	// Path to file that holds the current FM name
 	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
@@ -600,7 +612,7 @@ void CModMenu::RestartGame()
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
 	// Path to the darkmod directory
-	fs::path darkmodPath(GetDarkmodPath().c_str());
+	fs::path darkmodPath = GetDarkmodPath();
 
 	// path to tdmlauncher
 #ifdef _WINDOWS
