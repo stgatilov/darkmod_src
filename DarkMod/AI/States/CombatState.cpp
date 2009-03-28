@@ -221,7 +221,8 @@ void CombatState::Think(idAI* owner)
 	// angua: look at ememy
 	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
 
-	if (owner->health < _criticalHealth)
+	// Flee if we are damaged and the current melee action is finished
+	if (owner->health < _criticalHealth && owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY)
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
