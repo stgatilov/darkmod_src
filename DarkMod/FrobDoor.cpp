@@ -951,32 +951,43 @@ bool CFrobDoor::AllLockPeersAtClosedPosition()
 	return true;
 }
 
+CFrobDoorHandle* CFrobDoor::GetNearestHandle(const idVec3& pos)
+{
+	// Skip calculation if only one doorhandle present in the first place
+	if (m_Doorhandles.Num() == 1) 
+	{
+		return m_Doorhandles[0].GetEntity();
+	}
+
+	float bestDistanceSqr = idMath::INFINITY;
+	CFrobDoorHandle* returnValue = NULL;
+
+	for (int i = 0; i < m_Doorhandles.Num(); ++i)
+	{
+		CFrobDoorHandle* candidate = m_Doorhandles[i].GetEntity();
+
+		if (candidate == NULL) continue;
+
+		float candidateDistanceSqr = (candidate->GetPhysics()->GetOrigin() - pos).LengthSqr();
+
+		if (candidateDistanceSqr < bestDistanceSqr)
+		{
+			// Found a new nearest handle
+			returnValue = candidate;
+			bestDistanceSqr = candidateDistanceSqr;
+		}
+	}
+
+	return returnValue;
+}
+
 int CFrobDoor::FrobMoverStartSound(const char* soundName)
 {
 	if (m_Doorhandles.Num() > 0)
 	{
 		// greebo: Find the handle nearest to the player, as one of the doorhandles could be 
 		// behind a closed visportal.
-		float bestDistanceSqr = idMath::INFINITY;
-		idVec3 playerEyePos = gameLocal.GetLocalPlayer()->GetEyePosition();
-
-		CFrobDoorHandle* handle = NULL;
-
-		for (int i = 0; i < m_Doorhandles.Num(); ++i)
-		{
-			CFrobDoorHandle* candidate = m_Doorhandles[i].GetEntity();
-
-			if (candidate == NULL) continue;
-
-			float candidateDistanceSqr = (candidate->GetPhysics()->GetOrigin() - playerEyePos).LengthSqr();
-
-			if (candidateDistanceSqr < bestDistanceSqr)
-			{
-				// Found a new nearest handle
-				handle = candidate;
-				bestDistanceSqr = candidateDistanceSqr;
-			}
-		}
+		CFrobDoorHandle* handle = GetNearestHandle(gameLocal.GetLocalPlayer()->GetEyePosition());
 
 		if (handle != NULL)
 		{

@@ -104,6 +104,9 @@ public:
 
 protected:
 
+	// Returns the handle nearest to the given position
+	CFrobDoorHandle*		GetNearestHandle(const idVec3& pos);
+
 	/**
 	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 
 	 * lockpick_translate, to setup the parameters how the bar or handle should behave
