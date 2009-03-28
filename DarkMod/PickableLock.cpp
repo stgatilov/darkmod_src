@@ -787,8 +787,7 @@ idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCo
 
 	for (int i = 0; i < clicks; i++)
 	{
-		// Choose a different random number generator every other frame
-		int r = (i % 2) ? gameLocal.random.RandomInt(maxCount) : rnd.IRandom(0, maxCount);
+		int r = rnd.IRandom(0, maxCount);
 
 		idStr click = va(head, r);
 		returnValue.Append(click);
