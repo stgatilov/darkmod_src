@@ -20,13 +20,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 
-const idEventDef EV_TDM_UpdateSoundLoss( "updateSoundLoss", NULL );
-
+const idEventDef EV_UpdateSoundLoss( "updateSoundLoss", NULL );
+const idEventDef EV_DampenSound( "dampenSound", "d" );
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )
 	EVENT( EV_Touch, idBrittleFracture::Event_Touch )
-	EVENT( EV_TDM_UpdateSoundLoss, idBrittleFracture::UpdateSoundLoss )
+	EVENT( EV_UpdateSoundLoss, idBrittleFracture::UpdateSoundLoss )
+	EVENT( EV_DampenSound, idBrittleFracture::Event_DampenSound )
 END_CLASS
 
 const int SHARD_ALIVE_TIME	= 5000;
@@ -63,6 +64,7 @@ idBrittleFracture::idBrittleFracture( void ) {
 	fl.networkSync = true;
 
 	m_AreaPortal = 0;
+	m_bSoundDamped = false;
 }
 
 /*
@@ -149,6 +151,9 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( shards[i]->atEdge );
 		savefile->WriteStaticObject( shards[i]->physicsObj );
 	}
+
+	savefile->WriteInt( m_AreaPortal );
+	savefile->WriteBool( m_bSoundDamped );
 }
 
 /*
@@ -236,6 +241,9 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
+	savefile->ReadInt( m_AreaPortal );
+	savefile->ReadBool( m_bSoundDamped );
+
 	UpdateSoundLoss();
 }
 
@@ -289,7 +297,7 @@ void idBrittleFracture::Spawn( void ) {
 	m_AreaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
 
 	//schedule updating the sound loss for after soundprop gameplay has initialized
-	PostEventMS( &EV_TDM_UpdateSoundLoss, 0 );
+	PostEventMS( &EV_UpdateSoundLoss, 0 );
 }
 
 /*
@@ -864,8 +872,12 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 		ServerSendEvent( EVENT_SHATTER, &msg, true, -1 );
 	}
 
-	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) {
-		StartSound( "snd_shatter", SND_CHANNEL_ANY, 0, false, NULL );
+	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) 
+	{
+		if( m_bSoundDamped )
+			StartSound( "snd_shatter_damped", SND_CHANNEL_ANY, 0, false, NULL );
+		else
+			StartSound( "snd_shatter", SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
 	if ( !IsBroken() ) {
@@ -1266,6 +1278,16 @@ void idBrittleFracture::Event_Touch( idEntity *other, trace_t *trace ) {
 	impulse = other->GetPhysics()->GetLinearVelocity() * other->GetPhysics()->GetMass();
 
 	Shatter( point, impulse, gameLocal.time );
+}
+
+/*
+================
+idBrittleFracture::Event_DampenSound
+================
+*/
+void idBrittleFracture::Event_DampenSound( bool bDampen ) 
+{
+	m_bSoundDamped = bDampen;
 }
 
 /*

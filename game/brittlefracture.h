@@ -23,6 +23,9 @@ of the render model which can fracture.
 ===============================================================================
 */
 
+extern const idEventDef EV_UpdateSoundLoss;
+extern const idEventDef EV_DampenSound;
+
 typedef struct shard_s {
 	idClipModel *				clipModel;
 	idFixedWinding				winding;
@@ -90,6 +93,9 @@ private:
 	idBounds					bounds;
 	bool						disableFracture;
 
+	/** TDM: Moss arrow dampens sound of shattering **/
+	bool						m_bSoundDamped;
+
 	// for rendering
 	mutable int					lastRenderEntityUpdate;
 	mutable bool				changed;
@@ -115,6 +121,7 @@ private:
 
 	void						Event_Activate( idEntity *activator );
 	void						Event_Touch( idEntity *other, trace_t *trace );
+	void						Event_DampenSound( bool bDampen );
 
 	/**
 	* Update soundprop to set losses in associated portal, if portal is present
