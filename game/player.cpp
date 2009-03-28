@@ -10194,16 +10194,7 @@ void idPlayer::FrobCheck()
 
 	// greebo: Let the currently selected inventory item affect the frob distance (lockpicks, for instance)
 	CInventoryItemPtr curItem = InventoryCursor()->GetCurrentItem();
-	if (curItem != NULL)
-	{
-		float itemCap = curItem->GetFrobDistanceCap();
-
-		if (maxFrobDistance > itemCap)
-		{
-			maxFrobDistance = itemCap;
-		}
-	}
-
+	
 	idVec3 start = eyePos;
 	idVec3 end = start + viewAngles.ToForward() * maxFrobDistance;
 
@@ -10216,7 +10207,7 @@ void idPlayer::FrobCheck()
 	trace_t trace;
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
 
-	float TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
+	float traceDist = g_Global.m_MaxFrobDistance * trace.fraction;
 
 	if( trace.fraction < 1.0f )
 	{
@@ -10224,6 +10215,16 @@ void idPlayer::FrobCheck()
 
 		DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
 		
+		// This is taking locked items into account
+		bool lockedItemCheck = true;
+
+		// Inventory items might impose a reduction of the frob distance to some entities
+		if (curItem != NULL && ent->CanBeUsedBy(curItem, true) && traceDist > curItem->GetFrobDistanceCap())
+		{
+			// Failed the distance check for locked items, disable this entity
+			lockedItemCheck = false;
+		}
+
 		// greebo: Check if the frobbed entity is the bindmaster of the currently climbed rope
 		bool isRopeMaster = physicsObj.OnRope() && physicsObj.GetRopeEntity()->GetBindMaster() == ent;
 
@@ -10241,8 +10242,8 @@ void idPlayer::FrobCheck()
 	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
-		if( ent->m_bFrobable && !isRopeMaster && !ent->IsHidden() && 
-			TraceDist < ent->m_FrobDistance && ent != gameLocal.m_Grabber->GetSelected())
+		if( ent->m_bFrobable && lockedItemCheck && !isRopeMaster && !ent->IsHidden() && 
+			traceDist < ent->m_FrobDistance && ent != gameLocal.m_Grabber->GetSelected())
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 
@@ -10282,10 +10283,20 @@ void idPlayer::FrobCheck()
 		if (!ent->m_FrobDistance || ent->IsHidden() || !ent->m_bFrobable) continue;
 
 		// Get the frob distance from the entity candidate
-		float frobDistSqr = ent->m_FrobDistance * ent->m_FrobDistance;
+		float frobDist = ent->m_FrobDistance;
 		idVec3 delta = ent->GetPhysics()->GetOrigin() - eyePos;
 		
-		if (delta.LengthSqr() > frobDistSqr) continue; // too far
+		float entDistance = delta.LengthFast();
+
+		if (entDistance > frobDist) continue; // too far
+
+		// Inventory items might impose a reduction of the frob distance to some entities
+		if (curItem != NULL && ent->CanBeUsedBy(curItem, true) && 
+			entDistance > curItem->GetFrobDistanceCap())
+		{
+			// Failed inventory item distance check, disable this entity
+			continue;
+		}
 
 		delta.NormalizeFast();
 		float currentDot = delta * vecForward;
