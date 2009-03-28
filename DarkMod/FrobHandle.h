@@ -71,6 +71,12 @@ public:
 	bool					IsMasterHandle();
 	void					SetMasterHandle(bool isMaster);
 
+	/** 
+	 * greebo: Override the standard idEntity method to emit sounds from the nearest position 
+	 * to the player instead of the bounding box center.
+	 */
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
+
 protected:
 	// Script event interface
 	void					Event_Tap();
