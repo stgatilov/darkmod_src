@@ -694,6 +694,11 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteJoint( lookJoints[ i ] );
 		savefile->WriteAngles( lookJointAngles[ i ] );
 	}
+	savefile->WriteInt( lookJointsCombat.Num() );
+	for( i = 0; i < lookJointsCombat.Num(); i++ ) {
+		savefile->WriteJoint( lookJointsCombat[ i ] );
+		savefile->WriteAngles( lookJointAnglesCombat[ i ] );
+	}
 
 	savefile->WriteFloat( shrivel_rate );
 	savefile->WriteInt( shrivel_start );
@@ -999,6 +1004,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	for( i = 0; i < num; i++ ) {
 		savefile->ReadJoint( lookJoints[ i ] );
 		savefile->ReadAngles( lookJointAngles[ i ] );
+	}
+
+	savefile->ReadInt( num );
+	lookJointsCombat.SetGranularity( 1 );
+	lookJointsCombat.SetNum( num );
+	lookJointAnglesCombat.SetGranularity( 1 );
+	lookJointAnglesCombat.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadJoint( lookJointsCombat[ i ] );
+		savefile->ReadAngles( lookJointAnglesCombat[ i ] );
 	}
 
 	savefile->ReadFloat( shrivel_rate );
@@ -1453,6 +1468,29 @@ void idAI::Spawn( void )
 			}
 		}
 		kv = spawnArgs.MatchPrefix( "look_joint", kv );
+	}
+
+	lookJointsCombat.SetGranularity( 1 );
+	lookJointAnglesCombat.SetGranularity( 1 );
+	kv = spawnArgs.MatchPrefix( "combat_look_joint", NULL );
+	while( kv ) {
+		jointName = kv->GetKey();
+		jointName.StripLeadingOnce( "combat_look_joint " );
+		joint = animator.GetJointHandle( jointName );
+		if ( joint == INVALID_JOINT ) {
+			gameLocal.Warning( "Unknown combat_look_joint '%s' on entity %s", jointName.c_str(), name.c_str() );
+		} else {
+			jointScale = spawnArgs.GetAngles( kv->GetKey(), "0 0 0" );
+			jointScale.roll = 0.0f;
+
+			// if no scale on any component, then don't bother adding it.  this may be done to
+			// zero out rotation from an inherited entitydef.
+			if ( jointScale != ang_zero ) {
+				lookJointsCombat.Append( joint );
+				lookJointAnglesCombat.Append( jointScale );
+			}
+		}
+		kv = spawnArgs.MatchPrefix( "combat_look_joint", kv );
 	}
 
 	// calculate joint positions on attack frames so we can do proper "can hit" tests

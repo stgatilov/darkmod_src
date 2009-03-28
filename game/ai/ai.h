@@ -650,6 +650,8 @@ protected:
 	idAngles				lookMax;
 	idList<jointHandle_t>	lookJoints;
 	idList<idAngles>		lookJointAngles;
+	idList<jointHandle_t>	lookJointsCombat;
+	idList<idAngles>		lookJointAnglesCombat;
 	float					eyeVerticalOffset;
 	float					eyeHorizontalOffset;
 	float					eyeFocusRate;
