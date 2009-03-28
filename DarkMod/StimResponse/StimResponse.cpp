@@ -45,6 +45,7 @@ const char *cStimType[] = {
 	"STIM_PLAYER",
 	"STIM_FLASH",
 	"STIM_BLIND",
+	"STIM_MOSS",
 	NULL
 };
 
