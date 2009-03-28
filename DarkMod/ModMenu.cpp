@@ -484,7 +484,7 @@ idStr CModMenu::GetDarkmodPath()
 	// Path to the darkmod directory
 	fs::path darkmodPath(parentPath / modBaseName.c_str());
 
-	return darkmodPath.string().c_str();
+	return idStr(darkmodPath.string().c_str());
 }
 
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
@@ -523,9 +523,11 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	{
 		// Check for the darkmod.txt file
 		idStr pk4file = info.pathToFMPackage + pk4Files->GetFile(i);
-	
+
+		idStr darkmodPath = GetDarkmodPath();
+
 		// Source file (full OS path)
-		fs::path pk4fileOsPath = fileSystem->RelativePathToOSPath(pk4file);
+		fs::path pk4fileOsPath = (darkmodPath + "/" + pk4file).c_str();
 
 		// Target location
 		fs::path targetFile = targetFolder / pk4Files->GetFile(i);
