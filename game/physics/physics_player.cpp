@@ -804,14 +804,6 @@ idPhysics_Player::WalkMove
 */
 void idPhysics_Player::WalkMove( void ) 
 {
-	idVec3		wishvel;
-	idVec3		wishdir;
-	float		wishspeed;
-	float		scale;
-	float		accelerate;
-	idVec3		oldVelocity, vel;
-	float		oldVel, newVel;
-
 	if ( waterLevel > WATERLEVEL_WAIST && ( viewForward * groundTrace.c.normal ) > 0.0f )
 	{
 		// begin swimming
@@ -832,7 +824,7 @@ void idPhysics_Player::WalkMove( void )
 
 	Friction();
 
-	scale = CmdScale( command );
+	float scale = CmdScale( command );
 
 	// project moves down to flat plane
 	viewForward -= (viewForward * gravityNormal) * gravityNormal;
@@ -845,21 +837,22 @@ void idPhysics_Player::WalkMove( void )
 	viewForward.Normalize();
 	viewRight.Normalize();
 
-	wishvel = viewForward * command.forwardmove + viewRight * command.rightmove;
-	wishdir = wishvel;
-	wishspeed = wishdir.Normalize();
+	idVec3 wishvel = viewForward * command.forwardmove + viewRight * command.rightmove;
+	idVec3 wishdir = wishvel;
+	float wishspeed = wishdir.Normalize();
 	wishspeed *= scale;
 
 	// clamp the speed lower if wading or walking on the bottom
-	if ( waterLevel ) {
-		float	waterScale;
-
-		waterScale = waterLevel / 3.0f;
+	if ( waterLevel )
+	{
+		float waterScale = waterLevel / 3.0f;
 		waterScale = 1.0f - ( 1.0f - PM_SWIMSCALE ) * waterScale;
 		if ( wishspeed > playerSpeed * waterScale ) {
 			wishspeed = playerSpeed * waterScale;
 		}
 	}
+
+	float accelerate = 0;
 
 	// when a player gets hit, they temporarily lose full control, which allows them to be moved a bit
 	if ( ( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || current.movementFlags & PMF_TIME_KNOCKBACK ) {
@@ -883,17 +876,22 @@ void idPhysics_Player::WalkMove( void )
 		current.velocity += gravityVector * frametime;
 	}
 
-	oldVelocity = current.velocity;
+	idVec3 oldVelocity = current.velocity;
 
 	// slide along the ground plane
 	current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
 
 	// if not clipped into the opposite direction
-	if ( oldVelocity * current.velocity > 0.0f ) {
-		newVel = current.velocity.LengthSqr();
-		if ( newVel > 1.0f ) {
-			oldVel = oldVelocity.LengthSqr();
-			if ( oldVel > 1.0f ) {
+	if ( oldVelocity * current.velocity > 0.0f )
+	{
+		float newVel = current.velocity.LengthSqr();
+
+		if ( newVel > 1.0f )
+		{
+			float oldVel = oldVelocity.LengthSqr();
+
+			if ( oldVel > 1.0f )
+			{
 				// don't decrease velocity when going up or down a slope
 				current.velocity *= idMath::Sqrt( oldVel / newVel );
 			}
@@ -901,8 +899,10 @@ void idPhysics_Player::WalkMove( void )
 	}
 
 	// don't do anything if standing still
-	vel = current.velocity - (current.velocity * gravityNormal) * gravityNormal;
-	if ( !vel.LengthSqr() ) {
+	idVec3 vel = current.velocity - (current.velocity * gravityNormal) * gravityNormal;
+
+	if ( !vel.LengthSqr() )
+	{
 		// greebo: We're not moving, so let's clear the push entity
 		m_PushForce->SetPushEntity(NULL);
 		return;
@@ -2159,21 +2159,23 @@ Quit:
 idPhysics_Player::CheckJump
 =============
 */
-bool idPhysics_Player::CheckJump( void ) {
-	idVec3 addVelocity;
-
-	if ( command.upmove < 10 ) {
+bool idPhysics_Player::CheckJump()
+{
+	if ( command.upmove < 10 )
+	{
 		// not holding jump
 		return false;
 	}
 
 	// must wait for jump to be released or dead time to have passed
-	if ( current.movementFlags & PMF_JUMP_HELD || current.movementTime > 0) {
+	if ( current.movementFlags & PMF_JUMP_HELD || current.movementTime > 0)
+	{
 		return false;
 	}
 
 	// don't jump if we can't stand up
-	if ( current.movementFlags & PMF_DUCKED ) {
+	if ( current.movementFlags & PMF_DUCKED )
+	{
 		return false;
 	}
 
@@ -2189,41 +2191,45 @@ bool idPhysics_Player::CheckJump( void ) {
 	{
 		extraSpeedForward = -extraSpeedForward;
 	}
+
 	// strafing right?
-	if ( command.rightmove )
+	if ( command.rightmove > 0)
 	{
 		extraSpeedForward = viewRight - (gravityNormal * viewRight) * gravityNormal;
 		extraSpeedForward.Normalize();
 	}
 	// strafing left?
-	if ( command.rightmove < 0 )
+	else if ( command.rightmove < 0 )
 	{
 		extraSpeedForward = viewRight - (gravityNormal * viewRight) * gravityNormal;
 		extraSpeedForward = -extraSpeedForward;
 		extraSpeedForward.Normalize();
 	}
+
+	idVec3 addVelocity;
+	float curVelocity = current.velocity.LengthFast();
+
 	// are we walking?
-	if ( current.velocity.Length() >= cv_tdm_min_vel_jump.GetFloat() 
-		&& current.velocity.Length() >= pm_walkspeed.GetFloat() && 
-		current.velocity.Length() < ( pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() ) ) 
+	if ( curVelocity >= cv_tdm_min_vel_jump.GetFloat() && 
+		curVelocity >= pm_walkspeed.GetFloat() && 
+		curVelocity < ( pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() ) ) 
 	{	
 		addVelocity = cv_tdm_walk_jump_vel.GetFloat() * maxJumpHeight * -gravityVector;
 		extraSpeedForward *= cv_tdm_fwd_jump_vel.GetFloat();
 	}
-
 	// running ?
-	else if ( current.velocity.Length() >= cv_tdm_min_vel_jump.GetFloat()  
-		&& current.velocity.Length() >= cv_pm_runmod.GetFloat())
+	else if ( curVelocity >= cv_tdm_min_vel_jump.GetFloat()  
+		&& curVelocity >= cv_pm_runmod.GetFloat())
 	{
 		addVelocity = cv_tdm_run_jump_vel.GetFloat() * maxJumpHeight * -gravityVector;
 		extraSpeedForward *= cv_tdm_fwd_jump_vel.GetFloat();
 	}
-
 	// stationary
 	else
 	{
 		addVelocity = 2.0f * maxJumpHeight * -gravityVector;
 	}
+
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
 	current.velocity += addVelocity + extraSpeedForward;
 
@@ -2237,9 +2243,6 @@ idPhysics_Player::CheckRopeJump
 */
 bool idPhysics_Player::CheckRopeJump( void ) 
 {
-	idVec3 addVelocity;
-	idVec3 jumpDir;
-
 	if ( command.upmove < 10 ) {
 		// not holding jump
 		return false;
@@ -2260,11 +2263,11 @@ bool idPhysics_Player::CheckRopeJump( void )
 	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
 
 	// the jump direction is an equal sum of up and the direction we're looking
-	jumpDir = viewForward - gravityNormal;
+	idVec3 jumpDir = viewForward - gravityNormal;
 	jumpDir *= 1.0f/idMath::Sqrt(2.0f);
 
 // TODO: Make this an adjustable cvar, currently too high?
-	addVelocity = 2.0f * maxJumpHeight * gravityVector.Length() * jumpDir;
+	idVec3 addVelocity = 2.0f * maxJumpHeight * gravityVector.Length() * jumpDir;
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
 
 	current.velocity += addVelocity;
