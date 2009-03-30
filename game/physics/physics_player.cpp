@@ -2184,6 +2184,24 @@ bool idPhysics_Player::CheckJump( void ) {
 	idVec3 extraSpeedForward = viewForward - (gravityNormal * viewForward) * gravityNormal;
 	extraSpeedForward.Normalize();
 
+	// back paddling ?
+	if ( command.forwardmove < 0 )
+	{
+		extraSpeedForward = -extraSpeedForward;
+	}
+	// strafing right?
+	if ( command.rightmove )
+	{
+		extraSpeedForward = viewRight - (gravityNormal * viewRight) * gravityNormal;
+		extraSpeedForward.Normalize();
+	}
+	// strafing left?
+	if ( command.rightmove < 0 )
+	{
+		extraSpeedForward = viewRight - (gravityNormal * viewRight) * gravityNormal;
+		extraSpeedForward = -extraSpeedForward;
+		extraSpeedForward.Normalize();
+	}
 	// are we walking?
 	if ( current.velocity.Length() >= cv_tdm_min_vel_jump.GetFloat() 
 		&& current.velocity.Length() >= pm_walkspeed.GetFloat() && 
