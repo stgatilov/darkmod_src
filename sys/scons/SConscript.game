@@ -133,8 +133,10 @@ func_shooter.cpp \
 FrobDoor.cpp \
 FrobButton.cpp \
 FrobDoorHandle.cpp \
+FrobHandle.cpp \
 FrobLever.cpp \
 FrobLock.cpp \
+FrobLockHandle.cpp \
 Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
@@ -263,6 +265,7 @@ local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 # Use static Boost and DevIL
 local_env.Append(LIBS = [
     File('#/linux/devil/lib/libIL.a'),
+    File('/lib32/libboost_filesystem.a'),
     File('/usr/lib/libboost_filesystem.a')
 ])
 
