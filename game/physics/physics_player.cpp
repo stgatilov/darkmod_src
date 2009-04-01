@@ -3576,6 +3576,15 @@ void idPhysics_Player::UpdateMantleTimers()
 				// check for clipping problems after mantling
 				// will advance to notMantling when the player isn't clipping
 				m_mantlePhase = fixClipping_DarkModMantlePhase;
+
+				// greebo: Reset the viewangle roll to 0 after mantling, sometimes this stays at 0.6 or something
+				viewAngles.roll = 0;
+
+				if (self != NULL)
+				{
+					static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
+				}
+
 				break;
 
 			default:
