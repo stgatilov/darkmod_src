@@ -68,16 +68,16 @@ typedef struct playerPState_s {
 
 
 // This enumreation defines the phases of the mantling movement
-typedef enum
+enum EMantlePhase
 {
-	notMantling_DarkModMantlePhase	= 0x00,
-	hang_DarkModMantlePhase			= 0x01,
-	pull_DarkModMantlePhase			= 0x02,
-	shiftHands_DarkModMantlePhase	= 0x03,
-	push_DarkModMantlePhase			= 0x04,
-	fixClipping_DarkModMantlePhase	= 0x05
-
-} EDarkMod_MantlePhase;
+	notMantling_DarkModMantlePhase	= 0,
+	hang_DarkModMantlePhase,	
+	pull_DarkModMantlePhase,
+	shiftHands_DarkModMantlePhase,
+	push_DarkModMantlePhase,
+	fixClipping_DarkModMantlePhase,	
+	NumMantlePhases,
+};
 
 class CForcePush;
 typedef boost::shared_ptr<CForcePush> CForcePushPtr;
@@ -419,26 +419,25 @@ public:
 
 	// This method returns
 	// true if the player is mantling, false otherwise
-	__inline bool IsMantling (void) const;
+	bool IsMantling() const;
 	
 	// This returns the current mantling phase
-	__inline EDarkMod_MantlePhase GetMantlePhase(void) const;
+	EMantlePhase GetMantlePhase() const;
 
 	// Cancels any current mantle
-	inline void CancelMantle();
+	void CancelMantle();
 
 	// Checks to see if there is a mantleable target within reach
 	// of the player's view. If so, starts the mantle... 
 	// If the player is already mantling, this does nothing.
 	void PerformMantle();
 
-
 protected:
 
 	/*!
 	* The current mantling phase
 	*/
-	EDarkMod_MantlePhase m_mantlePhase;
+	EMantlePhase m_mantlePhase;
 
 	/**
 	 * greebo: Set to TRUE if the next mantling can start. Set to FALSE at the 
@@ -467,11 +466,6 @@ protected:
 	int m_mantledEntityID;
 
 	/*!
-	* The mantled entity name
-	*/
-	idStr m_mantledEntityName;
-
-	/*!
 	* How long will the current phase of the mantle operation take?
 	* Uses milliseconds and counts down to 0.
 	*/
@@ -489,7 +483,7 @@ protected:
 	* tiredness, length of lift....
 	* @param[in] mantlePhase The mantle phase for which the duration is to be retrieved
 	*/
-	float getMantleTimeForPhase(EDarkMod_MantlePhase mantlePhase);
+	float getMantleTimeForPhase(EMantlePhase mantlePhase);
 
 	/*!
 	*
@@ -517,7 +511,7 @@ protected:
 	*/
 	void StartMantle
 	(
-		EDarkMod_MantlePhase initialMantlePhase,
+		EMantlePhase initialMantlePhase,
 		idVec3 eyePos,
 		idVec3 startPos,
 		idVec3 endPos
@@ -637,10 +631,8 @@ protected:
 		idVec3 eyePos,
 		trace_t& in_targetTraceResult,
 		idVec3& out_mantleEndPoint
-
 	);
 		
-
 	/*!
 	* This handles the reduction of the mantle timer by the
 	* number of milliseconds between animation frames. It
@@ -660,7 +652,7 @@ protected:
 
 	// Tests if player is holding down jump while already jumping
 	// (can be used to trigger mantle)
-	bool CheckJumpHeldDown( void );
+	bool CheckJumpHeldDown();
 
 	//#################################################
 	// End mantling handler
@@ -768,7 +760,7 @@ protected:
 	/**
 	* Test clipping for the current eye position, plus delta in the lean direction
 	**/
-	bool TestLeanClip( void );
+	bool TestLeanClip();
 
 	/**
 	* Convert a lean angle and stretch into a point in space, in world coordinates
@@ -782,20 +774,20 @@ protected:
 	* This is an internal method called by LeanMove.
 	* UpdateLeanPhysics must be called after this.
 	**/
-	void UpdateLeanAngle (float deltaLeanAngle, float deltaLeanStretch);
+	void UpdateLeanAngle(float deltaLeanAngle, float deltaLeanStretch);
 
 	/**
 	* Takes the currently set m_CurrentLeanTiltDegrees and m_CurrentLeanStretch
 	* And updates m_LeanTranslation and m_ViewLeanAngles
 	* Should be called after changing these member vars.
 	**/
-	void UpdateLeanPhysics( void );
+	void UpdateLeanPhysics();
 
 	/**
 	* This method gets called when the leaned player view is found to be clipping something
 	* It un-leans them in increments until they are outside the solid object
 	**/
-	void UnleanToValidPosition( void );
+	void UnleanToValidPosition();
 
 	/**
 	* Calculates the listener position when leaning against a given door
@@ -808,13 +800,13 @@ protected:
 	* If a point is found, it sets m_DoorListenPos and returns true
 	* If door is too thick to listen through, returns false
 	**/
-	bool FindLeanDoorListenPos( idVec3 IncidencePoint, CFrobDoor *door );
+	bool FindLeanDoorListenPos(const idVec3& incidencePoint, CFrobDoor* door);
 
 	/**
 	* Tests whether the player is still leaning against the door.
 	* If not, clears m_LeanDoorEnt
 	**/
-	void UpdateLeanDoor( void );
+	void UpdateLeanDoor();
 
 public:
 
@@ -828,10 +820,7 @@ public:
 	* 0.0 leans right, 180.0 leans left, 90.0 leans forward, 270.0 leans backward
 	*
 	*/
-	void ToggleLean
-	(
-		float leanYawAngleDegrees
-	);
+	void ToggleLean(float leanYawAngleDegrees);
 
 	/*!
 	* This method tests if the player is in the middle of a leaning
@@ -841,11 +830,7 @@ public:
 	* @retval true if the player is changing lean
 	* @retval false if the player is not changing lean
 	*/
-	#ifdef linux
 	bool IsLeaning();
-	#else
-	__inline bool IsLeaning();
-	#endif
 
 	/**
 	* Returns true if the player is leaning against a door
@@ -873,9 +858,6 @@ public:
 	* Does nothing if the player is not leaned
 	**/
 	void UpdateLeanedInputYaw( idAngles &InputAngles );
-
-
-
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */

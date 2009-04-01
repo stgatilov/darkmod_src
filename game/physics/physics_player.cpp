@@ -2825,15 +2825,16 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( waterType );
 
 	// Mantle mod
-	savefile->WriteInt (m_mantlePhase);
-	savefile->WriteVec3 (m_mantlePullStartPos);
-	savefile->WriteVec3 (m_mantlePullEndPos);
-	savefile->WriteVec3 (m_mantlePushEndPos);
-	savefile->WriteString (m_mantledEntityName);
-	savefile->WriteFloat (m_mantleTime);
-	savefile->WriteFloat (m_jumpHeldDownTime);
+	savefile->WriteInt(m_mantlePhase);
 	savefile->WriteBool(m_mantleStartPossible);
-
+	savefile->WriteVec3(m_mantlePullStartPos);
+	savefile->WriteVec3(m_mantlePullEndPos);
+	savefile->WriteVec3(m_mantlePushEndPos);
+	savefile->WriteObject(m_p_mantledEntity);
+	savefile->WriteInt(m_mantledEntityID);
+	savefile->WriteFloat(m_mantleTime);
+	savefile->WriteFloat(m_jumpHeldDownTime);
+	
 	// Lean mod
 	savefile->WriteFloat (m_leanYawAngleDegrees);
 	savefile->WriteFloat (m_CurrentLeanTiltDegrees);
@@ -2915,26 +2916,19 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( waterType );
 
 	// Mantle mod
-	savefile->ReadInt ((int&) m_mantlePhase);
-	savefile->ReadVec3 (m_mantlePullStartPos);
-	savefile->ReadVec3 (m_mantlePullEndPos);
-	savefile->ReadVec3 (m_mantlePushEndPos);
-	savefile->ReadString (m_mantledEntityName);
-	savefile->ReadFloat (m_mantleTime);
-	savefile->ReadFloat (m_jumpHeldDownTime);
+	int temp;
+	savefile->ReadInt(temp);
+	assert(temp >= 0 && temp < NumMantlePhases); // sanity check
+	m_mantlePhase = static_cast<EMantlePhase>(temp);
+
 	savefile->ReadBool(m_mantleStartPossible);
-
-	// Mantle mod... it would be nice to restore the mantled
-	// entity pointers here, but we can't, because during a load
-	// this method is called before the entites are created.
-	// (Yes, I tried this and checked).
-	// Therefore, we have a section in "MantleMove" that
-	// finds the entity if we have not found it yet, and cancels
-	// the mantle if it can not be found.
-
-	// greebo: TODO: This should be an idEntityPtr, shouldn't it?
-	m_mantledEntityID = 0;
-	m_p_mantledEntity = NULL;
+	savefile->ReadVec3(m_mantlePullStartPos);
+	savefile->ReadVec3(m_mantlePullEndPos);
+	savefile->ReadVec3(m_mantlePushEndPos);
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_p_mantledEntity));
+	savefile->ReadInt(m_mantledEntityID);
+	savefile->ReadFloat(m_mantleTime);
+	savefile->ReadFloat(m_jumpHeldDownTime);
 
 	// Lean mod
 	savefile->ReadFloat (m_leanYawAngleDegrees);
@@ -2951,21 +2945,6 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3 (m_viewLeanTranslation);
 	savefile->ReadVec3 (m_LeanDoorListenPos);
 	m_LeanDoorEnt.Restore( savefile );
-
-	if (!m_mantledEntityName.IsEmpty())
-	{
-		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
-		if (m_p_mantledEntity == NULL)
-		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
-			m_mantledEntityID = 0;
-		}
-		else
-		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Found entity %s\n", m_mantledEntityName.c_str());
-			m_mantledEntityID = 0;
-		}
-	}
 
 	savefile->ReadStaticObject( *m_PushForce );
 
@@ -3425,10 +3404,7 @@ void idPhysics_Player::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 
 
-float idPhysics_Player::getMantleTimeForPhase 
-(
-	EDarkMod_MantlePhase mantlePhase
-)
+float idPhysics_Player::getMantleTimeForPhase(EMantlePhase mantlePhase)
 {
 	float retValue;
 
@@ -3466,13 +3442,9 @@ void idPhysics_Player::MantleMove()
 {
 
 	idVec3 newPosition = current.origin;
-	idVec3 totalMove;
+	idVec3 totalMove(0,0,0);
 	idVec3 moveSoFar;
 
-	
-	totalMove.x = 0.0;
-	totalMove.y = 0.0;
-	totalMove.z = 0.0;
 	float timeForMantlePhase = getMantleTimeForPhase(m_mantlePhase);
 
 	// Compute proportion into the current movement phase which we are
@@ -3490,12 +3462,12 @@ void idPhysics_Player::MantleMove()
 
 		newPosition = m_mantlePullStartPos;
 		float timeRadians = (idMath::PI) * timeRatio;
-		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
-		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
+		viewAngles.roll = (idMath::Sin(timeRadians) * rockDistance);
+		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight);
 		
-		if (self)
+		if (self != NULL)
 		{
-			((idPlayer*)self)->SetViewAngles (viewAngles);
+			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
 
 	}
@@ -3515,11 +3487,10 @@ void idPhysics_Player::MantleMove()
 		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
 		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
 
-		if (self)
+		if (self != NULL)
 		{
-			((idPlayer*)self)->SetViewAngles (viewAngles);
+			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
-
 	}
 	else if (m_mantlePhase == push_DarkModMantlePhase)
 	{
@@ -3537,30 +3508,9 @@ void idPhysics_Player::MantleMove()
 		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
 		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
 
-		if (self)
+		if (self != NULL)
 		{
-			((idPlayer*)self)->SetViewAngles (viewAngles);
-		}
-
-	}
-
-	// Try to re-establish mantled entity if we have its name
-	// When the player save state is loaded, the entities were not
-	// re-created yet, so we need to look now that the whole engine
-	// is running
-	if ( (!m_mantledEntityName.IsEmpty()) && (m_p_mantledEntity == NULL))
-	{
-		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
-		if (m_p_mantledEntity == NULL)
-		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMove: Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
-			m_mantledEntityID = 0;
-			CancelMantle();
-		}
-		else
-		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMove: Found entity %s\n", m_mantledEntityName.c_str());
-			m_mantledEntityID = 0;
+			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
 	}
 
@@ -3572,14 +3522,11 @@ void idPhysics_Player::MantleMove()
 		idPhysics* p_physics = m_p_mantledEntity->GetPhysics();
 		if (p_physics != NULL)
 		{
-			idVec3 mantledEntityOrigin = p_physics->GetOrigin();
-			newPosition += mantledEntityOrigin;
-
+			newPosition += p_physics->GetOrigin();
 		}
 	}
 
-	SetOrigin (newPosition);
-	
+	SetOrigin(newPosition);
 }
 
 //----------------------------------------------------------------------
@@ -3688,7 +3635,7 @@ bool idPhysics_Player::IsMantling (void) const
 
 //----------------------------------------------------------------------
 
-EDarkMod_MantlePhase idPhysics_Player::GetMantlePhase (void) const
+EMantlePhase idPhysics_Player::GetMantlePhase() const
 {
 	// Use state boolean
 	return m_mantlePhase;
@@ -3725,7 +3672,7 @@ int idPhysics_Player::CalculateMantleCollisionDamage
 
 void idPhysics_Player::StartMantle
 (
-	EDarkMod_MantlePhase initialMantlePhase,
+	EMantlePhase initialMantlePhase,
 	idVec3 eyePos,
 	idVec3 startPos,
 	idVec3 endPos
@@ -4005,21 +3952,15 @@ void idPhysics_Player::MantleTargetTrace
 	// Get the entity to be mantled
 	if (out_trace.c.entityNum != ENTITYNUM_NONE)
 	{
-
 		// Track entity which is was the chosen target
 		m_p_mantledEntity = gameLocal.entities[out_trace.c.entityNum];
 		
 		if (m_p_mantledEntity->IsMantleable())
 		{
-			m_mantledEntityName = m_p_mantledEntity->name;
 			m_mantledEntityID = out_trace.c.id;
 
 			idStr targetMessage;
-			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-			(
-				"Mantle target entity is called '%s'\n", 
-				m_p_mantledEntity->name.c_str()
-			);
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle target entity is called '%s'\r", m_p_mantledEntity->name.c_str());
 		}
 		else
 		{
@@ -4028,7 +3969,6 @@ void idPhysics_Player::MantleTargetTrace
 			out_trace.fraction = 1.0f; // Pretend we didn't hit anything
 		}
 	}
-
 }
 
 //----------------------------------------------------------------------
@@ -5104,11 +5044,11 @@ void idPhysics_Player::UnleanToValidPosition( void )
 	UpdateLeanPhysics();
 }
 
-bool idPhysics_Player::FindLeanDoorListenPos( idVec3 IncidencePoint, CFrobDoor *door )
+bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrobDoor* door)
 {
 	bool bFoundEmptySpace( false );
 	int contents = -1;
-	idVec3 vTest( IncidencePoint ), vDirTest( vec3_zero ), vLeanDir( 1.0f, 0.0f, 0.0f );
+	idVec3 vTest(incidencePoint), vDirTest(0,0,0), vLeanDir( 1.0f, 0.0f, 0.0f );
 	idAngles LeanYaw;
 	idAngles viewYawOnly = viewAngles;
 	
@@ -5133,7 +5073,7 @@ bool idPhysics_Player::FindLeanDoorListenPos( idVec3 IncidencePoint, CFrobDoor *
 		// found empty space on other side of door
 		if( !( (contents & MASK_SOLID) > 0 ) )
 		{
-			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Lean Into Door: Found empty space on other side of door.  Incidence point: %s Empty space point: %s \r", IncidencePoint.ToString(), vTest.ToString() );
+			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Lean Into Door: Found empty space on other side of door.  Incidence point: %s Empty space point: %s \r", incidencePoint.ToString(), vTest.ToString() );
 			
 			bFoundEmptySpace = true;
 			m_LeanDoorListenPos = vTest;
