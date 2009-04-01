@@ -3402,8 +3402,6 @@ void idPhysics_Player::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 // Start Mantling Mod
 //################################################################
 
-
-
 float idPhysics_Player::getMantleTimeForPhase(EMantlePhase mantlePhase)
 {
 	float retValue;
@@ -3440,16 +3438,14 @@ float idPhysics_Player::getMantleTimeForPhase(EMantlePhase mantlePhase)
 
 void idPhysics_Player::MantleMove()
 {
-
 	idVec3 newPosition = current.origin;
 	idVec3 totalMove(0,0,0);
-	idVec3 moveSoFar;
-
 	float timeForMantlePhase = getMantleTimeForPhase(m_mantlePhase);
 
 	// Compute proportion into the current movement phase which we are
-	float timeRatio = 0.0;
-	if (timeForMantlePhase != 0.0)
+	float timeRatio = 0.0f;
+
+	if (timeForMantlePhase != 0.0f)
 	{
 		timeRatio = (timeForMantlePhase - m_mantleTime) /  timeForMantlePhase;
 	}
@@ -3458,18 +3454,17 @@ void idPhysics_Player::MantleMove()
 	if (m_mantlePhase == hang_DarkModMantlePhase)
 	{
 		// Starting at current position, hanging, rocking a bit.
-		float rockDistance = 2.0;
+		float rockDistance = 2.0f;
 
 		newPosition = m_mantlePullStartPos;
-		float timeRadians = (idMath::PI) * timeRatio;
-		viewAngles.roll = (idMath::Sin(timeRadians) * rockDistance);
-		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight);
+		float timeRadians = idMath::PI * timeRatio;
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance;
+		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
 		
 		if (self != NULL)
 		{
 			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
-
 	}
 	else if (m_mantlePhase == pull_DarkModMantlePhase)
 	{
@@ -3480,12 +3475,12 @@ void idPhysics_Player::MantleMove()
 	else if (m_mantlePhase == shiftHands_DarkModMantlePhase)
 	{
 		// Rock back and forth a bit?
-		float rockDistance = 1.0;
+		float rockDistance = 1.0f;
 
 		newPosition = m_mantlePullEndPos;
-		float timeRadians = (idMath::PI) * timeRatio;
-		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
-		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
+		float timeRadians = idMath::PI * timeRatio;
+		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance;
 
 		if (self != NULL)
 		{
@@ -3495,7 +3490,7 @@ void idPhysics_Player::MantleMove()
 	else if (m_mantlePhase == push_DarkModMantlePhase)
 	{
 		// Rocking back and forth to get legs up over edge
-		float rockDistance = 10.0;
+		float rockDistance = 10.0f;
 
 		// Player pushes themselves upward to get their legs onto the surface
 		totalMove = m_mantlePushEndPos - m_mantlePullEndPos;
@@ -3504,9 +3499,9 @@ void idPhysics_Player::MantleMove()
 		// We go into duck during this phase and stay there until end
 		current.movementFlags |= PMF_DUCKED;
 
-		float timeRadians = (idMath::PI) * timeRatio;
-		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
-		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
+		float timeRadians = idMath::PI * timeRatio;
+		newPosition += (idMath::Sin (timeRadians) * rockDistance) * viewRight;
+		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance;
 
 		if (self != NULL)
 		{
@@ -3539,7 +3534,7 @@ void idPhysics_Player::UpdateMantleTimers()
 	// Update jump held down timer: This actually grows, not drops
 	if (!( current.movementFlags & PMF_JUMP_HELD ) ) 
 	{
-		m_jumpHeldDownTime = 0.0;
+		m_jumpHeldDownTime = 0;
 	}
 	else
 	{
@@ -3547,35 +3542,29 @@ void idPhysics_Player::UpdateMantleTimers()
 	}
 
 	// Skip all this if done mantling
-	if ( !(m_mantlePhase == notMantling_DarkModMantlePhase
-			|| m_mantlePhase == fixClipping_DarkModMantlePhase) )
+	if (m_mantlePhase != notMantling_DarkModMantlePhase && m_mantlePhase != fixClipping_DarkModMantlePhase)
 	{
-
 		// Handle expiring mantle phases
-		while 
-		(
-			(framemSecLeft >= m_mantleTime) && 
-			(m_mantlePhase != notMantling_DarkModMantlePhase)
-		)
+		while (framemSecLeft >= m_mantleTime && m_mantlePhase != notMantling_DarkModMantlePhase)
 		{
 			framemSecLeft -= m_mantleTime;
-			m_mantleTime = 0.0;
+			m_mantleTime = 0;
 
 			// Advance mantle phase
 			switch (m_mantlePhase)
 			{
 			case hang_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r");
 				m_mantlePhase = pull_DarkModMantlePhase;
 				break;
 
 			case pull_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Shifting hand position...\r\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Shifting hand position...\r");
 				m_mantlePhase = shiftHands_DarkModMantlePhase;
 				break;
 
 			case shiftHands_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pushing self up...\r\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pushing self up...\r");
 				m_mantlePhase = push_DarkModMantlePhase;
 
 				// Go into crouch
@@ -3583,30 +3572,27 @@ void idPhysics_Player::UpdateMantleTimers()
 				break;
 
 			case push_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r");
 				// check for clipping problems after mantling
 				// will advance to notMantling when the player isn't clipping
 				m_mantlePhase = fixClipping_DarkModMantlePhase;
-
 				break;
 
 			default:
 				m_mantlePhase = notMantling_DarkModMantlePhase;
 				break;
-
 			}
 
 			// Get time it takes to perform a mantling phase
-			m_mantleTime = getMantleTimeForPhase (m_mantlePhase);
+			m_mantleTime = getMantleTimeForPhase(m_mantlePhase);
 			
 			// Handle end of mantle
 			if (m_mantlePhase == fixClipping_DarkModMantlePhase)
 			{
 				// Handle end of mantle
 				// Ishtvan 11/20/05 - Raise weapons after mantle is done
-				static_cast<idPlayer *>(self)->SetImmobilization("MantleMove", 0);		
+				static_cast<idPlayer*>(self)->SetImmobilization("MantleMove", 0);		
 			}
-					
 		}
 
 		// Reduce mantle timer
@@ -3618,26 +3604,20 @@ void idPhysics_Player::UpdateMantleTimers()
 		{
 			m_mantleTime -= framemSecLeft;
 		}
-
 	} // This code block is executed only if phase != notMantling && phase != fixClipping
-	
-	// Done
 }
 
 //----------------------------------------------------------------------
 
-bool idPhysics_Player::IsMantling (void) const
+bool idPhysics_Player::IsMantling() const
 {
-	// Use state boolean
-	return !( m_mantlePhase == notMantling_DarkModMantlePhase
-			|| m_mantlePhase == fixClipping_DarkModMantlePhase );
+	return m_mantlePhase != notMantling_DarkModMantlePhase && m_mantlePhase != fixClipping_DarkModMantlePhase;
 }
 
 //----------------------------------------------------------------------
 
 EMantlePhase idPhysics_Player::GetMantlePhase() const
 {
-	// Use state boolean
 	return m_mantlePhase;
 }
 
@@ -3645,28 +3625,13 @@ EMantlePhase idPhysics_Player::GetMantlePhase() const
 
 void idPhysics_Player::CancelMantle()
 {
-	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Mantle cancelled\r\n");
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Mantle cancelled\r");
 
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0f;
 }
 
 //----------------------------------------------------------------------
-
-int idPhysics_Player::CalculateMantleCollisionDamage
-(
-	idEntity* p_mantledEntityRef,
-	idVec3 mantlePos
-)
-{
-/**
-* Ishtvan: Commented this out because we now have global decelaration damage
-* Please see previous revision for the code that was here
-**/
-	// Return amount
-	return 0;
-
-}
 
 //----------------------------------------------------------------------
 
@@ -3678,37 +3643,6 @@ void idPhysics_Player::StartMantle
 	idVec3 endPos
 )
 {
-	// 9/17/05:
-	// SophisticatedZombie
-	// Check the player's velocity.  If they are moving
-	// at a very high velocity relative to the mantle target, then
-	// apply damage to the player.
-	int damageAmount = CalculateMantleCollisionDamage
-	(
-		m_p_mantledEntity,
-		startPos
-	);
-
-	if ((self != NULL) && (damageAmount != 0))
-	{
-		idPlayer* p_Player = (idPlayer*) self;
-		p_Player->Damage
-		(
-			NULL, // no inflictor
-			NULL, // no attacker,
-			startPos - current.origin, // direction damage came from
-			"damage_hardfall",
-			1.0f,
-			0
-		);
-
-		if (p_Player->health <= 0)
-		{
-			// Can't start mantle if dead
-			return;
-		}
-	}
-
 	// Ishtvan 10/16/05
 	// If mantling starts while on a rope, detach from that rope
 	if ( m_bOnRope )
@@ -3723,7 +3657,7 @@ void idPhysics_Player::StartMantle
 	}
 
 	// Ishtvan 11/20/05 - Lower weapons when mantling
-	static_cast<idPlayer *>(self)->SetImmobilization( "MantleMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+	static_cast<idPlayer*>(self)->SetImmobilization( "MantleMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
 	// greebo: Disable the next mantle start here, this is set to TRUE again 
 	// when the jump key is released outside a mantle phase
@@ -3740,37 +3674,28 @@ void idPhysics_Player::StartMantle
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-		(
-			"Mantle starting with hang\n"
-		);
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with hang\r");
 
 		// Impart a force on mantled object?
-		if ((m_p_mantledEntity != NULL) && (self != NULL))
+		if (m_p_mantledEntity != NULL && self != NULL)
 		{
 			impactInfo_t info;
-			m_p_mantledEntity->GetImpactInfo( self, m_mantledEntityID, endPos, &info );
-			if ( info.invMass != 0.0f ) 
+			m_p_mantledEntity->GetImpactInfo(self, m_mantledEntityID, endPos, &info);
+
+			if (info.invMass != 0.0f) 
 			{
 				m_p_mantledEntity->ActivatePhysics(self);
 				m_p_mantledEntity->ApplyImpulse( self, m_mantledEntityID, endPos, current.velocity / ( info.invMass * 2.0f ) );
 			}
 		}
-
 	}
 	else if (initialMantlePhase == pull_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-		(
-			"Mantle starting with pull upward\n"
-		);
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with pull upward\r");
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-		(
-			"Mantle starting with shift hands\n"
-		);
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with shift hands\r");
 	}
 	else if (initialMantlePhase == push_DarkModMantlePhase)
 	{
@@ -3778,14 +3703,11 @@ void idPhysics_Player::StartMantle
 		current.movementFlags |= PMF_DUCKED;
 
 		// Start with push upward
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-		(
-			"Mantle starting with push upward\n"
-		);
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push upward\r");
 	}
 
 	m_mantlePhase = initialMantlePhase;
-	m_mantleTime = getMantleTimeForPhase (m_mantlePhase);
+	m_mantleTime = getMantleTimeForPhase(m_mantlePhase);
 
 	// Make positions relative to entity
 	if (m_p_mantledEntity != NULL)
@@ -3793,7 +3715,7 @@ void idPhysics_Player::StartMantle
 		idPhysics* p_physics = m_p_mantledEntity->GetPhysics();
 		if (p_physics != NULL)
 		{
-			idVec3 mantledEntityOrigin = p_physics->GetOrigin();
+			const idVec3& mantledEntityOrigin = p_physics->GetOrigin();
 
 			startPos -= mantledEntityOrigin;
 			eyePos -= mantledEntityOrigin;
@@ -3803,43 +3725,27 @@ void idPhysics_Player::StartMantle
 
 	// Set end position
 	m_mantlePushEndPos = endPos;
-	if 
-	(
-		(initialMantlePhase == pull_DarkModMantlePhase) ||
-		(initialMantlePhase == hang_DarkModMantlePhase)
-	)
+
+	if (initialMantlePhase == pull_DarkModMantlePhase || initialMantlePhase == hang_DarkModMantlePhase)
 	{
 		// Pull from start position up to about 2/3 of eye height
 		m_mantlePullStartPos = startPos;
 		m_mantlePullEndPos = eyePos;
-		m_mantlePullEndPos += 
-		(
-			GetGravityNormal() * 
-			(pm_normalheight.GetFloat() / 3.0)
-		);
 
+		m_mantlePullEndPos += GetGravityNormal() * pm_normalheight.GetFloat() / 3.0f;
 	}
 	else
 	{
 		// Starting with push from current position
 		m_mantlePullEndPos = startPos;
 	}
-
 }
 
 //----------------------------------------------------------------------
 
-bool idPhysics_Player::CheckJumpHeldDown( void )
+bool idPhysics_Player::CheckJumpHeldDown()
 {
-	if (m_jumpHeldDownTime > g_Global.m_jumpHoldMantleTrigger_Milliseconds)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-
+	return (m_jumpHeldDownTime > g_Global.m_jumpHoldMantleTrigger_Milliseconds);
 }
 
 //----------------------------------------------------------------------
@@ -3871,7 +3777,6 @@ void idPhysics_Player::GetCurrentMantlingReachDistances
 		out_maxVerticalReachDistance = pm_normalheight.GetFloat() + armVerticalReach;
 		out_maxHorizontalReachDistance = armReach;
 	}
-
 }
 
 //----------------------------------------------------------------------
@@ -3879,8 +3784,8 @@ void idPhysics_Player::GetCurrentMantlingReachDistances
 void idPhysics_Player::MantleTargetTrace
 (
 	float maxMantleTraceDistance,
-	idVec3 eyePos,
-	idVec3 forwardVec,
+	const idVec3& eyePos,
+	const idVec3& forwardVec,
 	trace_t& out_trace
 )
 {
@@ -3898,13 +3803,11 @@ void idPhysics_Player::MantleTargetTrace
 
 		// Project forward vector onto the a plane perpendicular to gravity
 		idVec3 forwardPerpGrav = forwardVec;
-		forwardPerpGrav.ProjectOntoPlane (upVector);
+		forwardPerpGrav.ProjectOntoPlane(upVector);
 
 		// Create bounds for translation trace model
-		idBounds bounds;
-		idBounds savedBounds;
-		bounds = clipModel->GetBounds();
-		savedBounds = bounds;
+		idBounds bounds = clipModel->GetBounds();
+		idBounds savedBounds = bounds;
 
 		bounds[0][1] = (savedBounds[0][1] + savedBounds[1][1]) / 2;
 		bounds[0][1] -= 0.01f;
@@ -3912,20 +3815,10 @@ void idPhysics_Player::MantleTargetTrace
 		bounds[0][0] = bounds[0][1];
 		bounds[1][0] = bounds[1][1];
 		
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
 		
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle gaze trace didn't hit anything, so doing forward movement trace for mantle target\r");
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-		(
-			"Mantle gaze trace didn't hit anything, so doing forward movement trace for mantle target\n"
-		);
 		gameLocal.clip.Translation 
 		(
 			out_trace, 
@@ -3938,15 +3831,7 @@ void idPhysics_Player::MantleTargetTrace
 		);
 
 		// Restore player clip model to normal
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( savedBounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( savedBounds ) );
-		}
-
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(savedBounds, 8) : idTraceModel(savedBounds) );
 	}
 	
 	// Get the entity to be mantled
@@ -3959,7 +3844,6 @@ void idPhysics_Player::MantleTargetTrace
 		{
 			m_mantledEntityID = out_trace.c.id;
 
-			idStr targetMessage;
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle target entity is called '%s'\r", m_p_mantledEntity->name.c_str());
 		}
 		else
@@ -3982,10 +3866,11 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 )
 {
 	// Never mantle onto non-mantleable entities (early exit)
-	if (in_targetTraceResult.fraction<1.0f)
+	if (in_targetTraceResult.fraction < 1.0f)
 	{
 		idEntity* ent = gameLocal.entities[in_targetTraceResult.c.entityNum];
-		if (ent!=NULL && !ent->IsMantleable())
+
+		if (ent == NULL || !ent->IsMantleable())
 		{
 			// The mantle target is an unmantleable entity
 			return false;
@@ -4008,7 +3893,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	// This sets coordinates to their components which are orthogonal
 	// to gravity.
 	idVec3 componentOrthogonalToGravity = in_targetTraceResult.c.point;
-	componentOrthogonalToGravity.ProjectOntoPlane (-gravityNormal);
+	componentOrthogonalToGravity.ProjectOntoPlane(-gravityNormal);
 
 	// This sets coordintes to their components parallel to gravity
 	idVec3 componentParallelToGravity;
@@ -4026,7 +3911,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
-		"Initial vertical reach distance used = %f out of maximum of %f\n", 
+		"Initial vertical reach distance used = %f out of maximum of %f\r", 
 		verticalReachDistanceUsed, 
 		maxVerticalReachDistance
 	);
@@ -4038,17 +3923,10 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	// as mantling ends in a crouch
 	if (!(current.movementFlags & PMF_DUCKED))
 	{
-		idBounds bounds;
-		bounds = clipModel->GetBounds();
+		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = pm_crouchheight.GetFloat();
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
+
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
 	}
 
 	// We try moving it up by the step distance up to the maximum height until
@@ -4056,20 +3934,21 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	bool b_keepTesting = verticalReachDistanceUsed < maxVerticalReachDistance;
 	bool b_mantlePossible = false;
 	bool b_lastCollisionWasMantleable = true;
+
+	trace_t worldMantleTrace;
+
 	while (b_keepTesting)
 	{
-
 		// Try collision in_targetTraceResult
-		trace_t worldMantleTrace;
 		idVec3 mantleTraceStart = testPosition;
 		gameLocal.clip.Translation( worldMantleTrace, mantleTraceStart, testPosition, clipModel, clipModel->GetAxis(), clipMask, self );
 
-
-		if (worldMantleTrace.fraction >= 1.0)
+		if (worldMantleTrace.fraction >= 1.0f)
 		{
 			// We can mantle to there, unless the last test collided with something non-mantleable.
 			// Either way we're done here.
 			b_keepTesting = false;
+
 			if (b_lastCollisionWasMantleable)
 			{
 				b_mantlePossible = true;
@@ -4078,6 +3957,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 		else
 		{
 			idEntity* ent = gameLocal.entities[ worldMantleTrace.c.entityNum ];
+
 			if (ent && !ent->IsMantleable())
 			{
 				// If we collided with a non-mantleable entity, then flag that.
@@ -4119,21 +3999,20 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 				(
-					"Ledge Search: Vertical reach distance used = %f out of maximum of %f\n", 
+					"Ledge Search: Vertical reach distance used = %f out of maximum of %f\r", 
 					verticalReachDistanceUsed, 
 					maxVerticalReachDistance
 				);
 
 				// Modify test position
 				testPosition = componentOrthogonalToGravity + componentParallelToGravity;
-
 			}
 			else
 			{
 				// No surface we could fit on against gravity from raytrace hit point
 				// up as far as we can reach
 				b_keepTesting = false;
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("No mantleable surface within reach distance\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("No mantleable surface within reach distance\r");
 			}
 		}
 		
@@ -4143,13 +4022,14 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	// Any surface with an angle whose cosine is
 	// smaller than MIN_FLATNESS is too steep.
 	float minFlatness = cv_pm_mantle_minflatness.GetFloat();
+
 	if (b_mantlePossible)
 	{
 		// Attempt to get the normal of the surface we'd be standing on
 		// In rare cases this may not collide
 		trace_t floorTrace;
 		gameLocal.clip.Translation( floorTrace, testPosition,
-			testPosition+(gravityNormal*MANTLE_TEST_INCREMENT),
+			testPosition + (gravityNormal * MANTLE_TEST_INCREMENT),
 			clipModel, clipModel->GetAxis(), clipMask, self );
 		
 		if (floorTrace.fraction < 1.0f)
@@ -4161,7 +4041,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 			float flatness = floorTrace.c.normal * (-gravityNormal);
 			
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING(
-				"Floor %.2f,%.2f,%.2f; grav %.2f,%.2f,%.2f; dot %f; %s\n",
+				"Floor %.2f,%.2f,%.2f; grav %.2f,%.2f,%.2f; dot %f; %s\r",
 				floorTrace.c.normal.x, floorTrace.c.normal.y, floorTrace.c.normal.z,
 				gravityNormal.x, gravityNormal.y, gravityNormal.z,
 				flatness, flatness < minFlatness ? "too steep" : "OK");
@@ -4177,17 +4057,10 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	if (!(current.movementFlags & PMF_DUCKED))
 	{
 		// Load back standing model
-		idBounds bounds;
-		bounds = clipModel->GetBounds();
+		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = pm_normalheight.GetFloat();
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
+
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
 	}
 
 	// Return result
@@ -4196,7 +4069,6 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 		out_mantleEndPoint = testPosition;
 	}
 	return b_mantlePossible;
-
 }
 
 //----------------------------------------------------------------------
@@ -4205,9 +4077,9 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 (
 	float maxVerticalReachDistance,
 	float maxHorizontalReachDistance,
-	idVec3 in_eyePos,
-	idVec3 in_mantleStartPoint,
-	idVec3 in_mantleEndPoint
+	const idVec3& in_eyePos,
+	const idVec3& in_mantleStartPoint,
+	const idVec3& in_mantleEndPoint
 )
 {
 	// Make sure path from current location
@@ -4230,17 +4102,10 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 	if (!(current.movementFlags & PMF_DUCKED))
 	{
 		// Load crouching model
-		idBounds bounds;
-		bounds = clipModel->GetBounds();
+		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = pm_crouchheight.GetFloat();
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
+
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
 	}
 
 	gameLocal.clip.Translation
@@ -4258,17 +4123,10 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 	if (!(current.movementFlags & PMF_DUCKED))
 	{
 		// Load back standing model
-		idBounds bounds;
-		bounds = clipModel->GetBounds();
+		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = pm_normalheight.GetFloat();
-		if ( pm_usecylinder.GetBool() ) 
-		{
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		}
-		else 
-		{
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
+
+		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
 	}
 
 	// Log
@@ -4276,7 +4134,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
-			"Collision test from (%f %f %f) to (%f %f %f) yieled trace fraction %f\n",
+			"Collision test from (%f %f %f) to (%f %f %f) yieled trace fraction %f\r",
 			MoveUpStart.x,
 			MoveUpStart.y,
 			MoveUpStart.z,
@@ -4285,7 +4143,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 			MoveUpEnd.z,
 			roomForMoveUpTrace.fraction
 		);
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Not enough vertical clearance along mantle path\r\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Not enough vertical clearance along mantle path\r");
 		return false;
 	}
 	else
@@ -4301,18 +4159,16 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 (	
 	float maxVerticalReachDistance,
 	float maxHorizontalReachDistance,
-	idVec3 eyePos,
+	const idVec3& eyePos,
 	trace_t& in_targetTraceResult,
 	idVec3& out_mantleEndPoint
 )
 {
 	// Up vector
-	idVec3 upVector;
-	upVector = -GetGravityNormal();
+	idVec3 upVector = -GetGravityNormal();
 
 	// Mantle start point is origin
-	idVec3 mantleStartPoint;
-	mantleStartPoint = GetOrigin();
+	const idVec3& mantleStartPoint = GetOrigin();
 
 	// Check if trace target has a mantleable surface
 	bool b_canBeMantled = DetermineIfMantleTargetHasMantleableSurface
@@ -4347,25 +4203,15 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 			upDistance.z *= upVector.z;
 			float upDist = upDistance.Length();
 
-			float nonUpDist = idMath::Sqrt 
-			(
-				(endDistance * endDistance) -(upDist * upDist)
-			);
+			float nonUpDist = idMath::Sqrt(endDistance*endDistance - upDist*upDist);
 
 			// Check the calculated distances
 			if (upDist < 0.0)
 			{
-				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
-				(
-					"Mantleable surface was below player's feet. No belly slide allowed.\n"
-				);
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantleable surface was below player's feet. No belly slide allowed.\r");
 				b_canBeMantled = false;
 			}
-			else if
-			(
-				(upDist  > maxVerticalReachDistance) || 
-				(nonUpDist > maxHorizontalReachDistance)
-			)
+			else if	(upDist > maxVerticalReachDistance || nonUpDist > maxHorizontalReachDistance)
 			{
 				// Its too far away either horizontally or vertically
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
@@ -4388,13 +4234,10 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 	return b_canBeMantled;
 }
 
-
 //----------------------------------------------------------------------
 
 void idPhysics_Player::PerformMantle()
 {
-	trace_t		trace;
-
 	// Can't start mantle if already mantling or not yet possible (jump button not yet released)
 	if ( !(m_mantlePhase == notMantling_DarkModMantlePhase || m_mantlePhase == fixClipping_DarkModMantlePhase)
 			|| !m_mantleStartPossible )
@@ -4433,27 +4276,24 @@ void idPhysics_Player::PerformMantle()
 	);
 
 	// Get start position of gaze trace, which is player's eye position
-	idVec3 eyePos;
-	idPlayer* p_player = (idPlayer*) self;
+	idPlayer* p_player = static_cast<idPlayer*>(self);
+
 	if (p_player == NULL)
 	{
-		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING
-		(
-			"p_player is NULL\n"
-		);
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("p_player is NULL\r");
 		return;
 	}
-	else
-	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Getting eye position\r\n");
-		eyePos = p_player->GetEyePosition();
-	}
+
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Getting eye position\r");
+	idVec3 eyePos = p_player->GetEyePosition();
 
 	// Ishtvan: Do not attempt to mantle if holding an object
 	if( gameLocal.m_Grabber->GetSelected() )
 		return;
 
 	// Run mantle trace
+	trace_t trace;
+
 	MantleTargetTrace
 	(
 		maxMantleTraceDistance,
@@ -4468,7 +4308,7 @@ void idPhysics_Player::PerformMantle()
 		// Log trace hit point
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
-			"Mantle target trace collision point (%f %f %f)\n", 
+			"Mantle target trace collision point (%f %f %f)\r", 
 			trace.c.point.x,
 			trace.c.point.y,
 			trace.c.point.z
@@ -4489,7 +4329,7 @@ void idPhysics_Player::PerformMantle()
 			// Log the end point
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING 
 			(
-				"Mantle end position = (%f %f %f)\n", 
+				"Mantle end position = (%f %f %f)\r", 
 				mantleEndPoint.x,
 				mantleEndPoint.y,
 				mantleEndPoint.z
@@ -4497,30 +4337,24 @@ void idPhysics_Player::PerformMantle()
 
 			// Start with log phase dependent on position relative
 			// to the mantle end point
-			if 
-			(
-				(mantleEndPoint * gravityNormal) < 
-				(eyePos * gravityNormal)
-			)
+			if (mantleEndPoint * gravityNormal < eyePos * gravityNormal)
 			{
 				// Start with pull if on the ground, hang if not
 				if (groundPlane)
 				{
-					StartMantle (pull_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+					StartMantle(pull_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 				else
 				{
-					StartMantle (hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+					StartMantle(hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 			}
 			else
 			{
 				// We are above it, start with push
-				StartMantle (push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
-
 		} // Mantle target passed mantleability tests
-	
 	} // End mantle target found
 }
 
@@ -4535,8 +4369,6 @@ void idPhysics_Player::PerformMantle()
 //	SophsiticatedZombie (DH) 
 //
 //####################################################################
-
-
 
 void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 {
@@ -4590,7 +4422,6 @@ void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("ToggleLean ending lean\r\n");
 	}
-
 }
 
 //----------------------------------------------------------------------

@@ -487,21 +487,6 @@ protected:
 
 	/*!
 	*
-	* This method is used to determine the amount of damage conferred
-	* to the player in starting the mantle.  It is based on the
-	* velcity of the player relative to the mantle target.
-	*
-	* @param[in] p_mantledEntityRef  The entity the player is mantling.
-	*  If this is null, then the player's velocity relative to the world frame
-	*  is used.
-	*
-	* @param[in] mantlePos The position relative tot he world where
-	* the mantle will start. (Not relative to the mantle target)
-	*/
-	int CalculateMantleCollisionDamage(idEntity* p_mantledEntityRef, idVec3 mantlePos);
-
-	/*!
-	*
 	* Internal method to start the mantle operation
 	*
 	* @param[in] initialMantlePhase The mantle phase in which the mantle starts.
@@ -548,8 +533,8 @@ protected:
 	void MantleTargetTrace
 	(
 		float maxMantleTraceDistance,
-		idVec3 eyePos,
-		idVec3 forwardVec,
+		const idVec3& eyePos,
+		const idVec3& forwardVec,
 		trace_t& out_trace
 	);
 
@@ -595,9 +580,9 @@ protected:
 	(
 		float maxVerticalReachDistance,
 		float maxHorizontalReachDistance,
-		idVec3 eyePos,
-		idVec3 mantleStartPoint,
-		idVec3 mantleEndPoint
+		const idVec3& eyePos,
+		const idVec3& mantleStartPoint,
+		const idVec3& mantleEndPoint
 	);
 
 	/*!
@@ -628,7 +613,7 @@ protected:
 	(	
 		float maxVerticalReachDistance,
 		float maxHorizontalReachDistance,
-		idVec3 eyePos,
+		const idVec3& eyePos,
 		trace_t& in_targetTraceResult,
 		idVec3& out_mantleEndPoint
 	);
