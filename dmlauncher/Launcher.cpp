@@ -9,6 +9,9 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "D3ProcessChecker.h"
+#include "TraceLog.h"
+
 const std::string CURRENT_FM_FILE = "currentfm.txt";
 const std::string ARGS_FILE = "dmargs.txt";
 const std::string GAME_BASE_NAME = "darkmod";
@@ -18,6 +21,7 @@ const std::string GAME_BASE_NAME = "darkmod";
 	#include <process.h>
 
 	#define ENGINE_EXECUTABLE "DOOM3.exe"
+	#define MODULE_NAME "gamex86.dll"
 #else 
 	// Linux
 	#include <unistd.h>
@@ -39,18 +43,18 @@ Launcher::Launcher(int argc, char* argv[]) :
 	boost::filesystem::path dmlauncher(exepath);
 #endif
 	
-	std::cout << "Path to tdmlauncher is " << dmlauncher << std::endl;
+	TraceLog::WriteLine("Path to tdmlauncher is " + dmlauncher.file_string());
 
 	// path to the darkmod directory
 	_darkmodDir = dmlauncher.remove_leaf();
 
-	std::cout << "Darkmod directory is " << _darkmodDir.file_string() << std::endl;
+	TraceLog::WriteLine("Darkmod directory is " + _darkmodDir.file_string());
 
 	// Default value
 	_engineExecutable = _darkmodDir;
 	_engineExecutable = _engineExecutable.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
 
-	std::cout << "Default value for engine executable is " << _engineExecutable.file_string() << std::endl;
+	TraceLog::WriteLine("Default value for engine executable is " + _engineExecutable.file_string());
 
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
@@ -68,6 +72,8 @@ Launcher::Launcher(int argc, char* argv[]) :
 			if (fs::exists(possibleExecutable))
 			{
 				// Got it, use this as engine executable
+				TraceLog::WriteLine("Reading engine executable from command line arguments: " + possibleExecutable.file_string());
+
 				_engineExecutable = possibleExecutable;
 				numIgnoreArgs++;
 				continue; // don't use this as argument file
@@ -81,8 +87,11 @@ Launcher::Launcher(int argc, char* argv[]) :
 		{
 			if (fs::exists(argFileName))
 			{
+				TraceLog::WriteLine("Removing default args file: " + argFileName.file_string());
 				fs::remove(argFileName);
 			}
+
+			TraceLog::WriteLine("Using custom args file: " + optionalArgsFileName.file_string());
 
 			fs::copy_file(optionalArgsFileName, argFileName);
 
@@ -136,6 +145,8 @@ void Launcher::InitArguments()
 	}
 
 	boost::algorithm::trim(_arguments);
+
+	TraceLog::WriteLine("Full argument string is: " + _arguments);
 }
 
 void Launcher::InitCurrentFM()
@@ -145,11 +156,13 @@ void Launcher::InitCurrentFM()
 
 	if (!fs::exists(currentFMFileName))
 	{
-		std::cerr << "Could not find 'currentfm.txt' file in " << currentFMFileName << std::endl;
+		TraceLog::WriteLine("Could not find 'currentfm.txt' file in " + currentFMFileName.string());
 	}
 
 	// get the current FM
 	_currentFM = ReadFile(currentFMFileName);
+
+	TraceLog::WriteLine("Current FM is: " + _currentFM);
 }
 
 std::string Launcher::ReadFile(const fs::path& fileName)
@@ -195,20 +208,26 @@ bool Launcher::Launch()
 	// Initialise the arguments
 	InitArguments();
 
-	if (_pauseBeforeStart)
+	// Check for a D3 process (max. 10 seconds)
+	int timeout = 10000;
+	while (D3ProcessChecker::D3IsRunning(ENGINE_EXECUTABLE, MODULE_NAME) && timeout >= 0)
 	{
-		Sleep(2000);
+		TraceLog::WriteLine("Doom 3 is still running, waiting one second...");
+		Sleep(1000);
+		timeout -= 1000;
 	}
 
 	// path to doom3.exe
 	fs::path doom3exe = _engineExecutable;
 	fs::path doom3dir = doom3exe;
 	doom3dir = doom3dir.remove_leaf().remove_leaf();
+
+	TraceLog::WriteLine("Starting process " + doom3exe.file_string() + " " + _arguments);
 	
 	::SetCurrentDirectory(doom3dir.file_string().c_str());
 	if (_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), _arguments.c_str(), NULL) == -1)
 	{
-		std::cerr << "Error when spawning D3 process: " << strerror(errno) << std::endl;
+		TraceLog::WriteLine(std::string("Error when spawning D3 process: ") + strerror(errno));
 	}
 
 	return true;
