@@ -2861,31 +2861,25 @@ idEntity::PropSoundDirect
 
 void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn )
 {
-	idStr sprName, sprNameSG, sprNameEG;
-	bool bIsSusp(false), bIsEnv(false);
-
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
 	
-	sprName = sndName;
+	// Cut off the "snd_" prefix from the incoming sound name
+	idStr sprName = sndName;
 
 	sprName.StripLeading("snd_");
 
-	bIsSusp = spawnArgs.GetString( ("sprS_" + sprName) , "", sprNameSG );
-	bIsEnv =  spawnArgs.GetString( ("sprE_" + sprName) , "", sprNameEG );
+	// Check if we have spr* definitions on the local spawnargs
+	idStr sprNameSG;
+	idStr sprNameEG;
+	bool bIsSusp = spawnArgs.GetString( ("sprS_" + sprName) , "", sprNameSG );
+	bool bIsEnv =  spawnArgs.GetString( ("sprE_" + sprName) , "", sprNameEG );
 
-	if ( bForceLocal && ( !(idStr::Icmpn( sndName, "snd_", 4 ) == 0)
-		 || ( !bIsSusp && !bIsEnv ) ) )  
+	if (bForceLocal && 
+		( !(idStr::Icmpn( sndName, "snd_", 4 ) == 0) || ( !bIsSusp && !bIsEnv ) ) )  
 	{
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
 		// gameLocal.Warning("[PropSound] Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)", sndName );
-		goto Quit;
-	}
-
-	if ( !bIsSusp && !bIsEnv ) 
-	{
-		// play the unmodified, global sound directly
-		sprNameSG = sndName;
-		sprNameEG = sndName;
+		return;
 	}
 
 	if (bIsSusp)
@@ -2894,33 +2888,33 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
 		// exit here, because we don't want to allow playing both
 		// env. sound AND susp. sound for the same sound and entity
-		goto Quit;
+		return;
 	}
-	if (bIsEnv)
+	else if (bIsEnv)
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
 		PropSoundE( sprName.c_str(), sprNameEG.c_str(), VolModIn );
-		goto Quit;
+		return;
 	}
-
+	
+	// no environmental or suspicious sound 
+	// play the unmodified, global sound directly
+	sprNameSG = sndName;
+	sprNameEG = sndName;
+	
 	// play the global sound directly.
 	if ( bAssumeEnv )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
 		PropSoundE( NULL, sprNameEG.c_str(), VolModIn );
-		goto Quit;
+		return;
 	}
 	else
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
 		PropSoundS( NULL, sprNameSG.c_str(), VolModIn );
 	}
-
-Quit:
-	return;
 }
-
-
 
 /***********************************************************************
 
