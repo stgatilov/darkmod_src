@@ -146,6 +146,13 @@ void Launcher::InitArguments()
 
 	boost::algorithm::trim(_arguments);
 
+	// Check for a leading "+" sign
+	if (!_arguments.empty() && _arguments[0] != '+')
+	{
+		TraceLog::WriteLine("Adding a '+' sign to the front of raw argument string: " + _arguments);
+		_arguments = "+" + _arguments;
+	}
+
 	TraceLog::WriteLine("Full argument string is: " + _arguments);
 }
 
