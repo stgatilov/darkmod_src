@@ -2319,9 +2319,6 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		// Call UpdateObjectiveStateN to perform some GUI-specific updates
 		ui->HandleNamedEvent(va("UpdateObjective%d", guiObjNum));
 	}
-
-	// Force a redraw
-	ui->StateChanged(gameLocal.time, true);
 }
 
 void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui)
@@ -2571,9 +2568,6 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = "GameLocal.realClientTime";
 	value = idStr(gameLocal.realClientTime);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value + postfix);*/
-
-	// Force a redraw
-	gui->StateChanged(gameLocal.time, true);
 }
 
 void CObjective::Save( idSaveGame *savefile ) const
