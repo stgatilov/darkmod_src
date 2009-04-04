@@ -399,22 +399,74 @@ void CModMenu::SearchForNewMods()
 	idStr fmPath = cv_tdm_fm_path.GetString();
 	idFileList* pk4files = fileSystem->ListFiles(fmPath, ".pk4", false, true);
 
+	std::list< std::pair<fs::path, fs::path> > moveList;
+
 	// Iterate over all found PK4s and check if they're valid
 	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
 	{
-		idStr pk4fileName = fileSystem->RelativePathToOSPath(pk4files->GetFile(i));
+		fs::path pk4path = fileSystem->RelativePathToOSPath(pk4files->GetFile(i));
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found PK4 in FM root folder: %s\r", pk4path.file_string().c_str());
 
 		// Does the PK4 file contain a proper description file?
-		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
+		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
 		if (pk4file == NULL) continue; // failed to open zip file
 
-		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString())) continue; // no darkmod.txt
+		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString())) 
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Ignoring PK4 file, no 'darkmod.txt' found inside archive: %s\r", pk4path.file_string().c_str());
+			continue; // no darkmod.txt
+		}
 
-		// TODO
+		// Deduce the mod folder name based on the PK4 name
+		idStr modName = pk4path.leaf().c_str();
+		modName.StripPath();
+		modName.StripFileExtension();
+
+		if (modName.IsEmpty()) continue; // error?
+
+		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
+		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName;
+		
+		if (fs::exists(modFolder))
+		{
+			// Folder exists already, do not copy PK4 into existing ones
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder already exists for PK4: %s\r", modFolder.file_string().c_str());
+			continue;
+		}
+
+		// Create the fm folder
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder doesn't exist for PK4, creating: %s\r", modFolder.file_string().c_str());
+		try
+		{
+			fs::create_directory(modFolder);
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while creating folder for PK4: %s\r", e.what());
+		}
+		
+		// Move the PK4 to that folder
+		fs::path targetPath = modFolder / (modName + ".pk4").c_str();
+
+		moveList.push_back(std::pair<fs::path, fs::path>(pk4path, targetPath));
 	}
 
 	fileSystem->FreeFileList(pk4files);
+
+	for (std::list< std::pair<fs::path, fs::path> >::iterator i = moveList.begin(); i != moveList.end(); ++i)
+	{
+		try
+		{
+			fs::rename(i->first, i->second);
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Moved %s to %s\r", i->first.file_string().c_str(), i->second.file_string().c_str());
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while moving file: %s\r", e.what());
+		}	
+	}
 }
 
 void CModMenu::BuildModList()
@@ -487,7 +539,7 @@ void CModMenu::BuildModList()
 				if (pk4file->ContainsFile(cv_tdm_fm_notes_file.GetString()))
 				{
 					destPath = fmPath / cv_tdm_fm_notes_file.GetString();
-					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
+					pk4file->ExtractFileTo(cv_tdm_fm_notes_file.GetString(), destPath.string().c_str());
 				}
 			}
 		}
@@ -629,7 +681,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 			fs::remove(targetFile);
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target file %s was existing, successfully removed.\r", targetFile.string().c_str());
 		}
-		catch (fs::basic_filesystem_error<fs::path> e)
+		catch (fs::basic_filesystem_error<fs::path>& e)
 		{
 			// Don't care about removal error
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing target file %s: %s\r", targetFile.string().c_str(), e.what());
@@ -641,7 +693,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 			fs::copy_file(pk4fileOsPath, targetFile);
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", targetFile.string().c_str());
 		}
-		catch (fs::basic_filesystem_error<fs::path> e)
+		catch (fs::basic_filesystem_error<fs::path>& e)
 		{
 			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", targetFile.string().c_str(), e.what());
 		}
