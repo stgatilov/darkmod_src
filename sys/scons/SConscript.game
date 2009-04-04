@@ -184,6 +184,7 @@ StimResponse/StimResponse.cpp \
 StimResponse/StimResponseCollection.cpp \
 StimResponse/StimResponseTimer.cpp \
 AI/AreaManager.cpp \
+AI/CommunicationSubsystem.cpp \
 AI/DoorInfo.cpp \
 AI/Mind.cpp \
 AI/Memory.cpp \
@@ -217,6 +218,7 @@ AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
 AI/Tasks/ChaseEnemyRangedTask.cpp \
 AI/Tasks/ChaseEnemyTask.cpp \
+AI/Tasks/CommunicationTask.cpp \
 AI/Tasks/FleeTask.cpp \
 AI/Tasks/HandleDoorTask.cpp \
 AI/Tasks/HandleElevatorTask.cpp \
