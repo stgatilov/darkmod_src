@@ -355,33 +355,36 @@ void CModMenu::LoadModList()
 
 	// List all folders in the fms/ directory
 	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList* files = fileSystem->ListFiles(fmPath, "/", false);
+	idFileList* fmDirectories = fileSystem->ListFiles(fmPath, "/", false);
 
-	for (int i = 0; i < files->GetNumFiles(); ++i)
+	for (int i = 0; i < fmDirectories->GetNumFiles(); ++i)
 	{
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for %s file in %s.\r", cv_tdm_fm_desc_file.GetString(), (fmPath + files->GetFile(i)).c_str());
+		// The name of the FM directory below fms/
+		idStr fmDir = fmDirectories->GetFile(i);
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for %s file in %s.\r", cv_tdm_fm_desc_file.GetString(), (fmPath + fmDir).c_str());
 
 		// Check for an uncompressed darkmod.txt file
-		idStr descFileName = fmPath + files->GetFile(i) + "/" + cv_tdm_fm_desc_file.GetString();
+		idStr descFileName = fmPath + fmDir + "/" + cv_tdm_fm_desc_file.GetString();
 	
 		if (fileSystem->ReadFile(descFileName, NULL) != -1)
 		{
 			// File exists, add this as available mod
-			_modsAvailable.Alloc() = files->GetFile(i);
+			_modsAvailable.Alloc() = fmDir;
 			continue;
 		}
 
 		// no "darkmod.txt" file found, check in the PK4 files
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.c_str());
 
-		// Check for PK4s in that folder
-		idFileList* pk4files = fileSystem->ListFiles(fmPath + files->GetFile(i), ".pk4", false);
+		// Check for PK4s in that folder (and all subdirectories)
+		idFileList* pk4files = fileSystem->ListFilesTree(fmPath + fmDir, ".pk4", false);
 
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%d PK4 files found in %s.\r", pk4files->GetNumFiles(), (fmPath + files->GetFile(i)).c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%d PK4 files found in %s.\r", pk4files->GetNumFiles(), (fmPath + fmDir).c_str());
 
 		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
 		{
-			idStr pk4fileName = idStr(fileSystem->RelativePathToOSPath(fmPath + files->GetFile(i) + "/")) + pk4files->GetFile(j);
+			idStr pk4fileName = fileSystem->RelativePathToOSPath(pk4files->GetFile(j));
 
 			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
 
@@ -391,10 +394,10 @@ void CModMenu::LoadModList()
 			{
 				// Hurrah, we've found the darkmod.txt file, extract the contents 
 				// and attempt to save to folder
-				_modsAvailable.Alloc() = files->GetFile(i);
+				_modsAvailable.Alloc() = fmDir;
 
 				fs::path darkmodPath = GetDarkmodPath();
-				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / files->GetFile(i);
+				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / fmDir;
 				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
 
 				pk4file->ExtractFileTo(cv_tdm_fm_desc_file.GetString(), destPath.string().c_str());
@@ -417,7 +420,7 @@ void CModMenu::LoadModList()
 		fileSystem->FreeFileList(pk4files);
 	}
 
-	fileSystem->FreeFileList(files);
+	fileSystem->FreeFileList(fmDirectories);
 
 	gameLocal.Printf("Found %d mods in the FM folder.\n", _modsAvailable.Num());
 }
@@ -529,19 +532,16 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	// Path to the darkmod directory
 	fs::path darkmodPath = GetDarkmodPath();
 
-	// Copy all PK4s from the FM folder
-	idFileList*	pk4Files = fileSystem->ListFiles(info.pathToFMPackage, ".pk4", false);
+	// Copy all PK4s from the FM folder (and all subdirectories)
+	idFileList* pk4Files = fileSystem->ListFilesTree(info.pathToFMPackage, ".pk4", false);
 	
 	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
 	{
-		// Check for the darkmod.txt file
-		idStr pk4file = info.pathToFMPackage + pk4Files->GetFile(i);
-
 		// Source file (full OS path)
-		fs::path pk4fileOsPath = darkmodPath / pk4file.c_str();
-
+		fs::path pk4fileOsPath = fileSystem->RelativePathToOSPath(pk4Files->GetFile(i));
+		
 		// Target location
-		fs::path targetFile = targetFolder / pk4Files->GetFile(i);
+		fs::path targetFile = targetFolder / pk4fileOsPath.leaf();
 
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
 		
