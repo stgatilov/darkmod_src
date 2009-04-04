@@ -759,6 +759,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\AI\CommunicationSubsystem.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\AI\CommunicationSubsystem.h"
+					>
+				</File>
+				<File
 					RelativePath="DarkMod\AI\DoorInfo.cpp"
 					>
 				</File>
@@ -1067,6 +1075,14 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\ChaseEnemyTask.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\CommunicationTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\CommunicationTask.h"
 						>
 					</File>
 					<File
