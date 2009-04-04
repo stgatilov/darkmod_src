@@ -77,6 +77,7 @@ public:
 	virtual float				GetStateFloat( const char *varName, const char* defaultString = "0" ) const = 0;
 
 								// The state has changed and the gui needs to update from the state idDict.
+								// greebo: NEVER call this on the main menu
 	virtual void				StateChanged( int time, bool redraw = false ) = 0;
 
 								// Activated the gui.
