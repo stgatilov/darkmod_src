@@ -15,6 +15,9 @@
 #include <unistd.h>
 #endif
 
+// A list of path => path associations for moving files around
+typedef std::list< std::pair<fs::path, fs::path> > MoveList;
+
 CModMenu::CModMenu() :
 	_modTop(0)
 {}
@@ -399,7 +402,7 @@ void CModMenu::SearchForNewMods()
 	idStr fmPath = cv_tdm_fm_path.GetString();
 	idFileList* pk4files = fileSystem->ListFiles(fmPath, ".pk4", false, true);
 
-	std::list< std::pair<fs::path, fs::path> > moveList;
+	MoveList moveList;
 
 	// Iterate over all found PK4s and check if they're valid
 	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
@@ -450,12 +453,15 @@ void CModMenu::SearchForNewMods()
 		// Move the PK4 to that folder
 		fs::path targetPath = modFolder / (modName + ".pk4").c_str();
 
-		moveList.push_back(std::pair<fs::path, fs::path>(pk4path, targetPath));
+		// Remember to move this file as soon as we're done here
+		moveList.push_back(MoveList::value_type(pk4path, targetPath));
 	}
 
 	fileSystem->FreeFileList(pk4files);
 
-	for (std::list< std::pair<fs::path, fs::path> >::iterator i = moveList.begin(); i != moveList.end(); ++i)
+	// greebo: Now that the file list has been freed, the D3 engine no longer holds locks on those files
+	// and we can start moving them into their respective locations
+	for (MoveList::const_iterator i = moveList.begin(); i != moveList.end(); ++i)
 	{
 		try
 		{
