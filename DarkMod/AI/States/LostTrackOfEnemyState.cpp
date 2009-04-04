@@ -56,13 +56,13 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->ClearEnemy();
 
 	// Enqueue a lost track of enemy bark
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
+/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_lostTrackOfEnemy"))
-	);
+	);*/// TODO_AI
 
 	// For now, clear the action tasks and movement tasks
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
 
 	owner->GetMind()->EndState();
 }

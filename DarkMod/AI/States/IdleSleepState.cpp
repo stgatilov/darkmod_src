@@ -89,19 +89,19 @@ void IdleSleepState::Init(idAI* owner)
 
 	// owner->SheathWeapon();
 
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 	InitialiseMovement(owner);
 
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
 
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(TaskPtr(new WaitTask(5000)));
+/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(TaskPtr(new WaitTask(5000)));
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new RepeatedBarkTask("snd_sleeping", idleBarkIntervalMin, idleBarkIntervalMax))
-	);
+	);*/// TODO_AI
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
@@ -125,7 +125,7 @@ void IdleSleepState::Think(idAI* owner)
 	else if (owner->GetMoveType() == MOVETYPE_GET_UP_FROM_LYING)
 	{
 		owner->GetMind()->SwitchState(STATE_IDLE);
-		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+//		owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 		return;
 	}
 

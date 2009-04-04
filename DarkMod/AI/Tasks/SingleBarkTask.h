@@ -10,7 +10,7 @@
 #ifndef __AI_SINGLE_BARK_TASK_H__
 #define __AI_SINGLE_BARK_TASK_H__
 
-#include "Task.h"
+#include "CommunicationTask.h"
 #include "../../AIComm_Message.h"
 
 namespace ai
@@ -23,10 +23,8 @@ class SingleBarkTask;
 typedef boost::shared_ptr<SingleBarkTask> SingleBarkTaskPtr;
 
 class SingleBarkTask :
-	public Task
+	public CommunicationTask
 {
-	// The name of the sound to be played
-	idStr _soundName;
 	int _endTime;
 
 	// The message which should be delivered when barking

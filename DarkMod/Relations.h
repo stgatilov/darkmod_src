@@ -201,5 +201,22 @@ public:
 	void Event_Activate(idEntity* activator);
 };
 
+class CTarget_SetEntityRelation : 
+	public idEntity
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetEntityRelation );
+
+	void Event_Activate(idEntity* activator);
+};
+
+class CTarget_ChangeEntityRelation : 
+	public idEntity
+{
+public:
+	CLASS_PROTOTYPE( CTarget_ChangeEntityRelation );
+
+	void Event_Activate(idEntity* activator);
+};
 
 #endif

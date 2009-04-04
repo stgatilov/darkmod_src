@@ -15,7 +15,7 @@
 
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/AI/Mind.h"
-#include "../../DarkMod/AI/Subsystem.h"
+#include "../../DarkMod/AI/CommunicationSubsystem.h"
 #include "../../DarkMod/HidingSpotSearchCollection.h"
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 #include "MoveState.h"
@@ -509,19 +509,7 @@ public:
 	void	setAirTicks(int airTicks);
 
 	// greebo: Accessor methods for the array of subsystems
-	ID_INLINE const ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id)
-	{
-		return subsystems[id];
-	}
-
-	/**
-	 * greebo: Replaces an AI subsystem with the given one. This removes the old
-	 *         subsystem from the array (which usually triggers a shared_ptr destruction).
-	 */ 
-	ID_INLINE void InstallSubsystem(ai::SubsystemId id, const ai::SubsystemPtr& subsystem)
-	{
-		subsystems[id] = subsystem;
-	}
+	const ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id);
 
 	ID_INLINE ai::MindPtr& GetMind()
 	{
@@ -1025,7 +1013,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	ai::MindPtr mind;
 
 	// The array of subsystems of this AI
-	ai::SubsystemPtr subsystems[ai::SubsystemCount];
+	ai::SubsystemPtr senseSubsystem;
+	ai::SubsystemPtr movementSubsystem;
+	ai::SubsystemPtr actionSubsystem;
+	ai::CommunicationSubsystemPtr commSubsystem;
 
 	/**
 	* This internal method destroys the current hiding spot search

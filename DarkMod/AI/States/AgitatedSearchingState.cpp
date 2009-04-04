@@ -79,30 +79,30 @@ void AgitatedSearchingState::Init(idAI* owner)
 		{
 			idStr bark = "snd_alert4";
 
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+/*			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			owner->GetSubsystem(SubsysCommunication)->PushTask(
 				TaskPtr(new SingleBarkTask(bark))
-			);
+			);*/// TODO_AI
 		}
 	}
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new WaitTask(5000))
-		);
+		);*/// TODO_AI
 
 	int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 	int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
 
 	if (owner->HasSeenEvidence())
 	{
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+/*		owner->GetSubsystem(SubsysCommunication)->QueueTask(
 			TaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
-		);
+		);*/// TODO_AI
 	}
 	else
 	{
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+/*		owner->GetSubsystem(SubsysCommunication)->QueueTask(
 			TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
-		);
+		);*/// TODO_AI
 	}
 	
 	owner->DrawWeapon();

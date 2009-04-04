@@ -73,7 +73,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	// Fill the subsystems with their tasks
 
 	// The communication system is barking 
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	//owner->commSubsystem->ClearTasks(); // TODO_AI
 
 	// Create the message
 	CommMessagePtr message(new CommMessage(
@@ -83,17 +83,17 @@ void UnreachableTargetState::Init(idAI* owner)
 		memory.lastEnemyPos
 	));
 
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
+	/*owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_cantReachTarget", message))
-	);
+	);*/   // TODO_AI
 
 	// The sensory system does nothing so far
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
 
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
 
 	_moveRequired = false;
 
@@ -114,13 +114,13 @@ void UnreachableTargetState::Init(idAI* owner)
 			// TODO: Trace to get floor position
 			throwPos.z = owner->GetPhysics()->GetOrigin().z;
 
-			owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
+			owner->movementSubsystem->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
 			owner->AI_MOVE_DONE = false;
 		}
 		else 
 		{
 			owner->FaceEnemy();
-			owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
+			owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
 
 			// Wait at least 3 sec after starting to throw before taking cover
 			// TODO: make not hardcoded, some randomness?
@@ -130,7 +130,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	}
 	else
 	{
-		owner->GetSubsystem(SubsysMovement)->PushTask(
+		owner->movementSubsystem->PushTask(
 			TaskPtr(new MoveToPositionTask(owner->lastVisibleReachableEnemyPos))
 		);
 		_takeCoverTime = gameLocal.time + 3000;
@@ -190,7 +190,7 @@ void UnreachableTargetState::Think(idAI* owner)
 		_moveRequired = false;
 
 		owner->FaceEnemy();
-		owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
+		owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
 		_takeCoverTime = gameLocal.time + 3000;
 	}
 

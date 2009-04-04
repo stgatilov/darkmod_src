@@ -21,7 +21,7 @@ namespace ai
 
 // Default constructor
 RepeatedBarkTask::RepeatedBarkTask() :
-	_soundName(""), 
+	CommunicationTask(""),
 	_barkRepeatIntervalMin(0), 
 	_barkRepeatIntervalMax(0)
 {}
@@ -29,7 +29,7 @@ RepeatedBarkTask::RepeatedBarkTask() :
 RepeatedBarkTask::RepeatedBarkTask(const idStr& soundName, 
 		int barkRepeatIntervalMin, int barkRepeatIntervalMax, 
 		const CommMessagePtr& message) : 
-	_soundName(soundName), 
+	CommunicationTask(soundName),
 	_barkRepeatIntervalMin(barkRepeatIntervalMin), 
 	_barkRepeatIntervalMax(barkRepeatIntervalMax),
 	_message(message)
@@ -93,8 +93,8 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 // Save/Restore methods
 void RepeatedBarkTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
-	savefile->WriteString(_soundName);
+	CommunicationTask::Save(savefile);
+
 	savefile->WriteInt(_barkRepeatIntervalMin);
 	savefile->WriteInt(_barkRepeatIntervalMax);
 	savefile->WriteInt(_nextBarkTime);
@@ -108,8 +108,8 @@ void RepeatedBarkTask::Save(idSaveGame* savefile) const
 
 void RepeatedBarkTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
-	savefile->ReadString(_soundName);
+	CommunicationTask::Restore(savefile);
+
 	savefile->ReadInt(_barkRepeatIntervalMin);
 	savefile->ReadInt(_barkRepeatIntervalMax);
 	savefile->ReadInt(_nextBarkTime);

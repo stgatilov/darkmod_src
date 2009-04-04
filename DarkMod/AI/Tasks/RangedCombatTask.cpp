@@ -69,7 +69,7 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_LEGS);
 			int animint = animator->CurrentAnim(ANIMCHANNEL_LEGS)->AnimNum();
 			int length = animator->AnimLength(animint);
-			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(length + 1000)));
+			owner->actionSubsystem->PushTask(TaskPtr(new WaitTask(length + 1000)));
 		}
 	}
 

@@ -120,10 +120,10 @@ void CombatState::Init(idAI* owner)
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->actionSubsystem->ClearTasks();
 
 	owner->DrawWeapon();
 
@@ -144,9 +144,9 @@ void CombatState::Init(idAI* owner)
 	}
 
 	// The communication system 
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
+/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_charge", message))
-	);
+	);*/// TODO_AI
 
 	// Ranged combat
 	if (_rangedPossible)
@@ -156,15 +156,15 @@ void CombatState::Init(idAI* owner)
 		{
 			ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
 			chaseEnemy->SetEnemy(enemy);
-			owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+			owner->movementSubsystem->PushTask(chaseEnemy);
 
-			owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
 			_combatType = COMBAT_MELEE;
 		}
 		else
 		{
-			owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
-			owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+			owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
+			owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
 			_combatType = COMBAT_RANGED;
 		}
 	}
@@ -174,9 +174,9 @@ void CombatState::Init(idAI* owner)
 		// The movement subsystem should start running to the last enemy position
 		ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
 		chaseEnemy->SetEnemy(enemy);
-		owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+		owner->movementSubsystem->PushTask(chaseEnemy);
 
-		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+		owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
 		_combatType = COMBAT_MELEE;
 	}
 
@@ -236,23 +236,23 @@ void CombatState::Think(idAI* owner)
 
 	if (_combatType == COMBAT_MELEE && _rangedPossible && enemyDist > 3 * owner->GetMeleeRange())
 	{
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
-		owner->GetSubsystem(SubsysAction)->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
+		owner->actionSubsystem->ClearTasks();
 
-		owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
-		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+		owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
+		owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
 		_combatType = COMBAT_RANGED;
 	}
 
 	if (_combatType == COMBAT_RANGED && _meleePossible && enemyDist <= 3 * owner->GetMeleeRange())
 	{
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
-		owner->GetSubsystem(SubsysAction)->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
+		owner->actionSubsystem->ClearTasks();
 
 		// Allocate a ChaseEnemyTask
-		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
+		owner->movementSubsystem->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
 
-		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+		owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
 		_combatType = COMBAT_MELEE;
 	}
 

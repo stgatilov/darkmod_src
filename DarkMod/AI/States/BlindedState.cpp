@@ -33,10 +33,10 @@ void BlindedState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->actionSubsystem->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
@@ -47,9 +47,9 @@ void BlindedState::Init(idAI* owner)
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "blinded");
 
 	// The communication system should bark
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
+/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_blinded"))
-	);
+	);*/
 
 	_endTime = gameLocal.time + 4000 + static_cast<int>(gameLocal.random.RandomFloat() * 2000);
 

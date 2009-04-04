@@ -57,10 +57,10 @@ void DeadState::Init(idAI* owner)
 	// and the AI is done afterwards.
 
 	// Clear all the subsystems
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 	_waitingForDeath = true;
 }

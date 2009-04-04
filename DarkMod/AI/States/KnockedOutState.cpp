@@ -35,10 +35,10 @@ void KnockedOutState::Init(idAI* owner)
 	assert(owner);
 	
 	// Clear all the subsystems
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 	_waitingForKnockout = true;
 

@@ -1006,7 +1006,7 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 			int length = 0;
 			handle->StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
 
-			//gameRenderWorld->DebugArrow(colorWhite, handle->GetPhysics()->GetOrigin(), playerEyePos, 1, 5000);
+			// gameRenderWorld->DebugArrow(colorWhite, handle->GetPhysics()->GetOrigin(), gameLocal.GetLocalPlayer()->GetEyePosition(), 1, 5000);
 
 			return length;
 		}

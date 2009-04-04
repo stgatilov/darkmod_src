@@ -43,11 +43,11 @@ void EmergeFromCoverState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	
 	// Fill the subsystems with their tasks
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->actionSubsystem->ClearTasks();
 
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(
+	owner->movementSubsystem->ClearTasks();
+	owner->movementSubsystem->QueueTask(
 		TaskPtr(new MoveToPositionTask(memory.positionBeforeTakingCover))
 	);
 }

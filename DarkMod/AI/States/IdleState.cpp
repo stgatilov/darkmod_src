@@ -107,12 +107,12 @@ void IdleState::Init(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle", 0);
 	}
 	// The action subsystem plays the idle anims (scratching, yawning...)
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+	owner->senseSubsystem->ClearTasks();
+	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 
 	InitialiseMovement(owner);
 
@@ -121,9 +121,9 @@ void IdleState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
 	// Push the regular patrol barking to the list too
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
-	);
+	);*/// TODO_AI
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
@@ -142,9 +142,9 @@ void IdleState::Think(idAI* owner)
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
-			owner->GetSubsystem(SubsysAction)->ClearTasks();
-			owner->GetSubsystem(SubsysSenses)->ClearTasks();
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+			owner->actionSubsystem->ClearTasks();
+			owner->senseSubsystem->ClearTasks();
+//			owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 			owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 			return;
@@ -180,7 +180,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	owner->AI_RUN = false;
 
 	// The movement subsystem should start patrolling
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
 
 	// greebo: Choose the patrol task depending on the spawnargs.
 	TaskPtr patrolTask = TaskLibrary::Instance().CreateInstance(
@@ -198,7 +198,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	}
 
 	memory.currentPath = path;
-	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
+	owner->movementSubsystem->PushTask(patrolTask);
 
 	if (path == NULL && lastPath == NULL)
 	{
@@ -214,7 +214,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 		{
 			// We already HAVE an idle position set, this means that we are
 			// supposed to be there, let's move
-			owner->GetSubsystem(SubsysMovement)->PushTask(
+			owner->movementSubsystem->PushTask(
 				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw))
 			);
 		}
@@ -224,9 +224,9 @@ void IdleState::InitialiseMovement(idAI* owner)
 void IdleState::InitialiseCommunication(idAI* owner)
 {
 	// Push a single bark to the communication subsystem first, it fires only once
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
-	);
+	);*/// TODO_AI
 }
 
 

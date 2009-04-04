@@ -869,10 +869,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	mind->Save(savefile);
 
-	for (int i = 0; i < ai::SubsystemCount; i++) 
-	{
-		subsystems[i]->Save(savefile);
-	}
+	senseSubsystem->Save(savefile);
+	movementSubsystem->Save(savefile);
+	commSubsystem->Save(savefile);
+	actionSubsystem->Save(savefile);
 
 	SAVE_TIMER_HANDLE(aiThinkTimer, savefile);
 	SAVE_TIMER_HANDLE(aiMindTimer, savefile);
@@ -1210,16 +1210,15 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	mind->Restore(savefile);
 
 	// Allocate and install the subsystems
-	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this)));
-	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this)));
-	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(ai::SubsysCommunication, this)));
-	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this)));
+	movementSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this));
+	senseSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this));
+	commSubsystem = ai::CommunicationSubsystemPtr(new ai::CommunicationSubsystem(ai::SubsysCommunication, this));
+	actionSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this));
 
-	// Subsystems are already allocated in the constructor
-	for (int i = 0; i < ai::SubsystemCount; i++) 
-	{
-		subsystems[i]->Restore(savefile);
-	}
+	senseSubsystem->Restore(savefile);
+	movementSubsystem->Restore(savefile);
+	commSubsystem->Restore(savefile);
+	actionSubsystem->Restore(savefile);
 
 	SetCombatModel();
 	LinkCombat();
@@ -1246,6 +1245,25 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiPathToGoalTimer, savefile);
 }
 
+const ai::SubsystemPtr& idAI::GetSubsystem(ai::SubsystemId id)
+{
+	static ai::SubsystemPtr _nullSubsys;
+
+	switch (id)
+	{
+	case ai::SubsysSenses:
+		return senseSubsystem;
+	case ai::SubsysMovement:
+		return movementSubsystem;
+	case ai::SubsysCommunication:
+		return static_cast<const ai::SubsystemPtr&>(commSubsystem);
+	case ai::SubsysAction:
+		return actionSubsystem;
+	default:
+		return _nullSubsys;
+	};
+}
+
 /*
 =====================
 idAI::Spawn
@@ -1267,10 +1285,10 @@ void idAI::Spawn( void )
 	mind = ai::MindPtr(new ai::Mind(this));
 
 	// Allocate and install the subsystems
-	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this)));
-	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this)));
-	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(ai::SubsysCommunication, this)));
-	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this)));
+	movementSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this));
+	senseSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this));
+	commSubsystem = ai::CommunicationSubsystemPtr(new ai::CommunicationSubsystem(ai::SubsysCommunication, this));
+	actionSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this));
 
 	if ( !g_monsters.GetBool() ) {
 		PostEventMS( &EV_Remove, 0 );

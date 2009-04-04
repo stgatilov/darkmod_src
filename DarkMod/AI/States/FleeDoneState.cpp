@@ -53,19 +53,19 @@ void FleeDoneState::Init(idAI* owner)
 	float alertTime = owner->atime_fleedone + owner->atime_fleedone_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
 	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_3) / alertTime;
 
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+// 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->actionSubsystem->ClearTasks();
 
 	// Slow turning for 5 seconds to look for friends
 	owner->StopMove(MOVE_STATUS_DONE);
 	_oldTurnRate = owner->GetTurnRate();
 	owner->SetTurnRate(90);
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->PushTask(RandomTurningTask::CreateInstance());
+	owner->movementSubsystem->ClearTasks();
+	owner->movementSubsystem->PushTask(RandomTurningTask::CreateInstance());
 	_turnEndTime = gameLocal.time + 5000;
 
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking
@@ -81,7 +81,7 @@ void FleeDoneState::Think(idAI* owner)
 	if (owner->AI_ALERTED)
 	{
 		// terminate FleeDoneState when the AI is alerted
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);
@@ -101,14 +101,14 @@ void FleeDoneState::Think(idAI* owner)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found friendly AI %s \r", friendlyAI->name.c_str());
 
 			_searchForFriendDone = true;
-			owner->GetSubsystem(SubsysMovement)->ClearTasks();
+			owner->movementSubsystem->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
 
 			owner->TurnToward(friendlyAI->GetPhysics()->GetOrigin());
 			float distanceToFriend = (friendlyAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 
 			// Cry for help
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	//		owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 			
 			// Create a new help message
 			CommMessagePtr message(new CommMessage(
@@ -117,17 +117,17 @@ void FleeDoneState::Think(idAI* owner)
 			); 
 
 			TaskPtr barkTask(new SingleBarkTask("snd_flee", message));
-			owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
+// 			owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);// TODO_AI
 
 		}
 		else if (gameLocal.time >= _turnEndTime)
 		{
 			// We didn't find a friend, stop looking for them after some time
 			_searchForFriendDone = true;
-			owner->GetSubsystem(SubsysMovement)->ClearTasks();
+			owner->movementSubsystem->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
 
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+//			owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 			// Play the cowering animation
 			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Cower", 4);
@@ -142,7 +142,7 @@ bool FleeDoneState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex < 3)
 	{
 		// Alert index is too low for this state, fall back
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);

@@ -59,8 +59,8 @@ void AlertIdleState::Init(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 
 	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+	owner->senseSubsystem->ClearTasks();
+	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 
 	if (!owner->AI_bMeleeWeapDrawn)
 	{

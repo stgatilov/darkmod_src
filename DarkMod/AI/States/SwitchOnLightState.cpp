@@ -96,9 +96,9 @@ void SwitchOnLightState::Init(idAI* owner)
 				{
 					targetPoint.z = result.endpos.z + 1;
 
-					owner->GetSubsystem(SubsysAction)->ClearTasks();
-					owner->GetSubsystem(SubsysMovement)->ClearTasks();
-					owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
+					owner->actionSubsystem->ClearTasks();
+					owner->movementSubsystem->ClearTasks();
+					owner->movementSubsystem->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
 					/*
 					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 					{
@@ -226,7 +226,7 @@ void SwitchOnLightState::Think(idAI* owner)
 
 void SwitchOnLightState::StartSwitchOn(idAI* owner, idLight* light)
 {
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
 	owner->StopMove(MOVE_STATUS_DONE);
 	_waitEndTime = gameLocal.time + 500;
 	_switchingOn = true;

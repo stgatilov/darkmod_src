@@ -20,11 +20,11 @@ namespace ai
 {
 
 SingleBarkTask::SingleBarkTask() :
-	_soundName("")
+	CommunicationTask("")
 {}
 
 SingleBarkTask::SingleBarkTask(const idStr& soundName, const CommMessagePtr& message) :
-	_soundName(soundName),
+	CommunicationTask(soundName),
 	_message(message)
 {}
 
@@ -79,8 +79,8 @@ void SingleBarkTask::SetSound(const idStr& soundName)
 // Save/Restore methods
 void SingleBarkTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
-	savefile->WriteString(_soundName);
+	CommunicationTask::Save(savefile);
+
 	savefile->WriteInt(_endTime);
 
 	savefile->WriteBool(_message != NULL);
@@ -92,8 +92,8 @@ void SingleBarkTask::Save(idSaveGame* savefile) const
 
 void SingleBarkTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
-	savefile->ReadString(_soundName);
+	CommunicationTask::Restore(savefile);
+
 	savefile->ReadInt(_endTime);
 
 	bool hasMessage;

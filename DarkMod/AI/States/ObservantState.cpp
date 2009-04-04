@@ -68,7 +68,7 @@ void ObservantState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Stop playing idle animation
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
 
 	// barking
 	idStr soundName("");
@@ -87,7 +87,7 @@ void ObservantState::Init(idAI* owner)
 		{
 			soundName = "snd_alert1";
 		}
-		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+		// owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 	}
 	else if (owner->HasSeenEvidence())
 	{
@@ -103,12 +103,12 @@ void ObservantState::Init(idAI* owner)
 
 	if (memory.alertType != EAlertTypeMissingItem)
 	{
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		/*owner->GetSubsystem(SubsysCommunication)->QueueTask(
 				TaskPtr(new SingleBarkTask(soundName))
 		);
 		owner->GetSubsystem(SubsysCommunication)->QueueTask(
 			TaskPtr(new WaitTask(2000))
-		);
+		);*/ // TODO_AI
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

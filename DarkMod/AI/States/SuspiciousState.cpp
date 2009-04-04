@@ -66,8 +66,8 @@ void SuspiciousState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
 
 	if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
@@ -76,7 +76,7 @@ void SuspiciousState::Init(idAI* owner)
 	
 	if (gameLocal.random.RandomFloat() > 0.5f)
 	{
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
 		owner->StopMove(MOVE_STATUS_DONE);
 		if (!owner->CheckFOV(memory.alertPos))
 		{
@@ -90,7 +90,7 @@ void SuspiciousState::Init(idAI* owner)
 
 	// barking
 	idStr bark;
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	//owner->GetSubsystem(SubsysCommunication)->ClearTasks(); // TODO_AI
 
 	if (owner->AlertIndexIncreased())
 	{
@@ -107,9 +107,9 @@ void SuspiciousState::Init(idAI* owner)
 			bark = "snd_alert1";
 		}
 
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
+		/*owner->GetSubsystem(SubsysCommunication)->PushTask(
 			TaskPtr(new SingleBarkTask(bark))
-		);
+		);*/ // TODO_AI
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

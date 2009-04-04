@@ -48,7 +48,7 @@ void StayInCoverState::Init(idAI* owner)
 
 	// The movement subsystem should do nothing.
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->movementSubsystem->ClearTasks();
 	
 	// Calculate the time we should stay in cover
 	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));
@@ -59,14 +59,14 @@ void StayInCoverState::Init(idAI* owner)
 	_emergeDelay = gameLocal.time + waitTime;
 
 	// The communication system 
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	// owner->GetSubsystem(SubsysCommunication)->ClearTasks(); // TODO_AI
 
 	// The sensory system does random head turning
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+	owner->senseSubsystem->ClearTasks();
+	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 
 	// Waiting in cover
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
 }
 
 // Gets called each time the mind is thinking

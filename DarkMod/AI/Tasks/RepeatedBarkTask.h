@@ -10,7 +10,7 @@
 #ifndef __AI_REPEATED_BARK_TASK_H__
 #define __AI_REPEATED_BARK_TASK_H__
 
-#include "Task.h"
+#include "CommunicationTask.h"
 #include "../../AIComm_Message.h"
 
 namespace ai
@@ -23,11 +23,9 @@ class RepeatedBarkTask;
 typedef boost::shared_ptr<RepeatedBarkTask> RepeatedBarkTaskPtr;
 
 class RepeatedBarkTask :
-	public Task
+	public CommunicationTask
 {
 private:
-	// Corresponds to AI spawnarg "bark_repeat_patrol"
-	idStr _soundName;
 	// times in milliseconds:
 	int _barkRepeatIntervalMin;
 	int _barkRepeatIntervalMax;

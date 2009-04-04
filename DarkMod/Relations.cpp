@@ -335,3 +335,38 @@ void CTarget_SetRelations::Event_Activate(idEntity* activator)
 	// Copy the values from our dictionary to the global relations matrix manager
 	gameLocal.m_RelationsManager->SetFromArgs(spawnArgs);
 }
+
+
+
+CLASS_DECLARATION( idEntity, CTarget_SetEntityRelation )
+	EVENT( EV_Activate,	CTarget_SetEntityRelation::Event_Activate )
+END_CLASS
+
+void CTarget_SetEntityRelation::Event_Activate(idEntity* activator)
+{
+	idEntity* ent1 = gameLocal.FindEntity(spawnArgs.GetString("entity1"));
+	idEntity* ent2 = gameLocal.FindEntity(spawnArgs.GetString("entity2"));
+
+	if (ent1 != NULL && ent2 != NULL)
+	{
+		int relation = spawnArgs.GetInt("relation", "0");
+		ent1->SetEntityRelation(ent1, relation);
+	}
+}
+
+
+CLASS_DECLARATION( idEntity, CTarget_ChangeEntityRelation )
+	EVENT( EV_Activate,	CTarget_ChangeEntityRelation::Event_Activate )
+END_CLASS
+
+void CTarget_ChangeEntityRelation::Event_Activate(idEntity* activator)
+{
+	idEntity* ent1 = gameLocal.FindEntity(spawnArgs.GetString("entity1"));
+	idEntity* ent2 = gameLocal.FindEntity(spawnArgs.GetString("entity2"));
+
+	if (ent1 != NULL && ent2 != NULL)
+	{
+		int relationChange = spawnArgs.GetInt("relationchange", "0");
+		ent1->ChangeEntityRelation(ent1, relationChange);
+	}
+}

@@ -108,7 +108,7 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Returns some debug text for console or renderworld display
-	idStr GetDebugInfo();
+	virtual idStr GetDebugInfo();
 };
 typedef boost::shared_ptr<Subsystem> SubsystemPtr;
 

@@ -51,19 +51,19 @@ void TakeCoverState::Init(idAI* owner)
 	// The movement subsystem should wait half a second and then run to Cover position, 
 	// wait there for some time and then emerge to have a look.
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(500)));
-	owner->GetSubsystem(SubsysMovement)->QueueTask(MoveToCoverTask::CreateInstance());
+	owner->movementSubsystem->ClearTasks();
+	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(500)));
+	owner->movementSubsystem->QueueTask(MoveToCoverTask::CreateInstance());
 	owner->AI_MOVE_DONE = false;
 
 	// The communication system 
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	// owner->GetSubsystem(SubsysCommunication)->ClearTasks(); // TODO_AI
 
 	// The sensory system 
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->senseSubsystem->ClearTasks();
 
 	// No action
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->actionSubsystem->ClearTasks();
 }
 
 // Gets called each time the mind is thinking
