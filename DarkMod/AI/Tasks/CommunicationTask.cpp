@@ -27,13 +27,25 @@ CommunicationTask::CommunicationTask(const idStr& soundName) :
 	_soundName(soundName)
 {
 	// Look up priority
-	
+	const idDict* dict = gameLocal.FindEntityDefDict("atdm:ai_bark_priority");
+	if (dict == NULL)
+	{
+		gameLocal.Warning("Cannot find entitydef atdm:ai_bark_priority");
+		_priority = -1;
+	}
+	else
+	{
+		_priority = dict->GetInt(soundName, "-1");
+	}
 }
 
 void CommunicationTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
+
+	_barkStartTime = -1;
+	_barkLength = -1;
 }
 
 
@@ -41,6 +53,12 @@ int CommunicationTask::GetPriority()
 {
 	return _priority;
 }
+	
+bool CommunicationTask::IsBarking()
+{
+	return (gameLocal.time < _barkStartTime + _barkLength);
+}
+
 
 // Save/Restore methods
 void CommunicationTask::Save(idSaveGame* savefile) const
@@ -49,6 +67,8 @@ void CommunicationTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteString(_soundName);
 	savefile->WriteInt(_priority);
+	savefile->WriteInt(_barkStartTime);
+	savefile->WriteInt(_barkLength);
 }
 
 void CommunicationTask::Restore(idRestoreGame* savefile)
@@ -57,6 +77,8 @@ void CommunicationTask::Restore(idRestoreGame* savefile)
 
 	savefile->ReadString(_soundName);
 	savefile->ReadInt(_priority);
+	savefile->ReadInt(_barkStartTime);
+	savefile->ReadInt(_barkLength);
 }
 
 

@@ -121,14 +121,12 @@ void IdleState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
 	// Push the regular patrol barking to the list too
-/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-		TaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
-	);*/// TODO_AI
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
+	);
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
-	
-	
 }
 
 // Gets called each time the mind is thinking

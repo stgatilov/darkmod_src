@@ -48,8 +48,11 @@ void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 			owner->AddMessage(_message);
 		}
 
-		int duration = owner->PlayAndLipSync(_soundName, "talk1");
-		_endTime = gameLocal.time + duration;
+		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+
+		_barkStartTime = gameLocal.time;
+
+		_endTime = _barkStartTime + _barkLength;
 	}
 	else
 	{

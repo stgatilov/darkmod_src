@@ -73,17 +73,19 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 			owner->AddMessage(_message);
 		}
 
-		int duration = owner->PlayAndLipSync(_soundName, "talk1");
+		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+
+		_barkStartTime = gameLocal.time;
 
 		// Reset the timer
 		if (_barkRepeatIntervalMax > 0)
 		{
-			_nextBarkTime = static_cast<int>(gameLocal.time + duration + _barkRepeatIntervalMin + 
+			_nextBarkTime = static_cast<int>(_barkStartTime + _barkLength + _barkRepeatIntervalMin + 
 				gameLocal.random.RandomFloat() * (_barkRepeatIntervalMax - _barkRepeatIntervalMin));
 		}
 		else
 		{
-			_nextBarkTime = gameLocal.time + duration + _barkRepeatIntervalMin;
+			_nextBarkTime = _barkStartTime + _barkLength + _barkRepeatIntervalMin;
 		}
 	}
 

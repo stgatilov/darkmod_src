@@ -33,19 +33,61 @@ bool CommunicationSubsystem::AddCommTask(const CommunicationTaskPtr& communicati
 		return true;
 	}
 	
+
 	int priority = communicationTask->GetPriority();
+	int currentPriority = GetCurrentPriority();
 
+	CommunicationTaskPtr curCommTask = GetCurrentCommTask();
 
+	if (priority > currentPriority)
+	{
+		// The new bark has higher priority, clear all current bark tasks and start the new one
+		ClearTasks();
+		PushTask(communicationTask);
+		return true;
+	}
 
-	return true;
+	else if (priority == currentPriority)
+	{
+		// the new bark has the same priority as the old one
+		if (curCommTask != NULL && !curCommTask->IsBarking())
+		{
+			// If the current bark is not playing at the moment, switch to the new one
+			SwitchTask(communicationTask);
+		}
+		// If the current bark is playing at the moment, discard the new one
+
+		// TODO: clear all tasks with lower priority than this from the stack
+	}
+	else
+	{
+		// The new bark has lower priority than the current one, queue it after the current bark(s)
+		QueueTask(communicationTask);
+
+		//TODO: some barks might not want to be queued but discarded
+	}
+
+	return false;
 }
 
+CommunicationTaskPtr CommunicationSubsystem::GetCurrentCommTask()
+{
+	TaskPtr curTask = GetCurrentTask();
+
+	return curTask ? boost::dynamic_pointer_cast<CommunicationTask>(curTask) : CommunicationTaskPtr();
+}
+
+int CommunicationSubsystem::GetCurrentPriority()
+{
+	CommunicationTaskPtr commTask = GetCurrentCommTask();
+
+	return (commTask != NULL) ? commTask->GetPriority() : -1;
+}
 
 idStr CommunicationSubsystem::GetDebugInfo()
 {
 	return (_enabled) ? GetCurrentTaskName() + " (" + idStr(_taskQueue.size()) + ")" : "";
 }
-
 
 // Save/Restore methods
 void CommunicationSubsystem::Save(idSaveGame* savefile) const

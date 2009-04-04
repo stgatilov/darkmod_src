@@ -27,6 +27,9 @@ protected:
 
 	int _priority;
 
+	int _barkStartTime;
+	int _barkLength;
+
 	CommunicationTask();
 
 	CommunicationTask(const idStr& soundName);
@@ -34,6 +37,8 @@ protected:
 public:
 
 	int GetPriority();
+
+	bool IsBarking();
 
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);

@@ -30,12 +30,20 @@ public:
 
 	bool AddCommTask(const CommunicationTaskPtr& communicationTask);
 
+	// returns the priority of the currently active communication task
+	int GetCurrentPriority();
+
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Returns some debug text for console or renderworld display
 	virtual idStr GetDebugInfo();
+
+protected:
+	// Returns the currently active commtask or NULL if no commtask is active
+	CommunicationTaskPtr GetCurrentCommTask();
 };
 typedef boost::shared_ptr<CommunicationSubsystem> CommunicationSubsystemPtr;
 
