@@ -21,7 +21,8 @@ CModMenu::CModMenu() :
 
 void CModMenu::Init()
 {
-	LoadModList();
+	SearchForNewMods();
+	BuildModList();
 	InitCurrentMod();
 	InitStartingMap();
 }
@@ -94,7 +95,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	if (cmd == "updateModList")
 	{
 		// Reload the mod list and update the GUI
-		LoadModList();
+		BuildModList();
 
 		// Update the GUI state
 		UpdateGUI(gui);
@@ -286,7 +287,7 @@ idStr CModMenu::GetModNotes(int modIndex)
 	idStr fmPath = cv_tdm_fm_path.GetString() + _modsAvailable[modIndex] + "/";
 
 	// Check for the readme.txt file
-	idStr notesFileName = fmPath + "readme.txt";
+	idStr notesFileName = fmPath + cv_tdm_fm_notes_file.GetString();
 
 	char* buffer = NULL;
 
@@ -392,7 +393,31 @@ CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
 	return (index != -1) ? GetModInfo(index) : ModInfo();
 }
 
-void CModMenu::LoadModList()
+void CModMenu::SearchForNewMods()
+{
+	// List all PK4s in the fms/ directory
+	idStr fmPath = cv_tdm_fm_path.GetString();
+	idFileList* pk4files = fileSystem->ListFiles(fmPath, ".pk4", false, true);
+
+	// Iterate over all found PK4s and check if they're valid
+	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
+	{
+		idStr pk4fileName = fileSystem->RelativePathToOSPath(pk4files->GetFile(i));
+
+		// Does the PK4 file contain a proper description file?
+		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
+
+		if (pk4file == NULL) continue; // failed to open zip file
+
+		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString())) continue; // no darkmod.txt
+
+		// TODO
+	}
+
+	fileSystem->FreeFileList(pk4files);
+}
+
+void CModMenu::BuildModList()
 {
 	// Clear the list first
 	_modsAvailable.Clear();
@@ -459,9 +484,9 @@ void CModMenu::LoadModList()
 					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
 				}
 
-				if (pk4file->ContainsFile("readme.txt"))
+				if (pk4file->ContainsFile(cv_tdm_fm_notes_file.GetString()))
 				{
-					destPath = fmPath / "readme.txt";
+					destPath = fmPath / cv_tdm_fm_notes_file.GetString();
 					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
 				}
 			}

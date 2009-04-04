@@ -42,8 +42,11 @@ public:
 
 private:
 
+	// Searches for new PK4 files in the fms/ root folder
+	void SearchForNewMods();
+
 	// Searches for new mods
-	void LoadModList();
+	void BuildModList();
 
 	// Installs the given mod
 	void InstallMod(int modIndex, idUserInterface* gui);
