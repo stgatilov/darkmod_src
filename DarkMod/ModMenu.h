@@ -61,6 +61,9 @@ private:
 	// After this call the CVAR tdm_mapName is initialised and holds the map name.
 	void InitStartingMap();
 
+	// Loads the contents of the readme.txt file to the GUI
+	idStr GetModNotes(int modIndex);
+
 	// Retries a mod info structure for the given mod (folder) name
 	ModInfo GetModInfo(const idStr& modName);
 	ModInfo GetModInfo(int modIndex);

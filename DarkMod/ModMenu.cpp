@@ -89,7 +89,9 @@ namespace {
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
-	if (idStr::Icmp(menuCommand, "updateModList") == 0)
+	idStr cmd = menuCommand;
+
+	if (cmd == "updateModList")
 	{
 		// Reload the mod list and update the GUI
 		LoadModList();
@@ -97,7 +99,22 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Update the GUI state
 		UpdateGUI(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "modsNextPage") == 0)
+	else if (cmd == "loadModNotes")
+	{
+		// Get selected mod
+		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+		// Load the readme.txt contents, if available
+		gui->SetStateString("ModNotesText", GetModNotes(modIndex));
+	}
+	else if (cmd == "updateModNotesButtonVisibility")
+	{
+		// Get selected mod
+		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+	}
+	else if (cmd == "modsNextPage")
 	{
 		// Scroll down a page
 		_modTop += gui->GetStateInt("modsPerPage", "10");
@@ -109,7 +126,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "modsPrevPage") == 0)
+	else if (cmd == "modsPrevPage")
 	{
 		// Scroll up a page
 		_modTop -= gui->GetStateInt("modsPerPage", "10");
@@ -121,31 +138,31 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
+	else if (cmd == "darkmodLoad")
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
 		InstallMod(modIndex, gui);
 	}
-	else if (idStr::Icmp(menuCommand, "darkmodRestart") == 0)
+	else if (cmd == "darkmodRestart")
 	{
 		// Get selected mod
 		RestartGame();
 	}
-	else if (idStr::Icmp(menuCommand, "briefing_show") == 0)
+	else if (cmd == "briefing_show")
 	{
 		// Display the briefing text
 		_briefingPage = 1;
 		DisplayBriefingPage(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
+	else if (cmd == "briefing_scroll_down_request")
 	{
 		// Display the next page of briefing text
 		_briefingPage++;
 		DisplayBriefingPage(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
+	else if (cmd == "briefing_scroll_up_request")
 	{
 		// Display the previous page of briefing text
 		_briefingPage--;
@@ -256,6 +273,33 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 
 	gui->SetStateString("currentModName", curModInfo.title);
 	gui->SetStateString("currentModDesc", curModInfo.desc);
+}
+
+idStr CModMenu::GetModNotes(int modIndex)
+{
+	// Sanity check
+	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
+	{
+		return "";
+	}
+
+	idStr fmPath = cv_tdm_fm_path.GetString() + _modsAvailable[modIndex] + "/";
+
+	// Check for the readme.txt file
+	idStr notesFileName = fmPath + "readme.txt";
+
+	char* buffer = NULL;
+
+	if (fileSystem->ReadFile(notesFileName, reinterpret_cast<void**>(&buffer)) == -1)
+	{
+		// File not found
+		return "";
+	}
+
+	idStr modNotes(buffer);
+	fileSystem->FreeFile(buffer);
+
+	return modNotes;
 }
 
 CModMenu::ModInfo CModMenu::GetModInfo(int modIndex) 
@@ -412,6 +456,12 @@ void CModMenu::LoadModList()
 				if (pk4file->ContainsFile(cv_tdm_fm_splashimage_file.GetString()))
 				{
 					destPath = fmPath / cv_tdm_fm_splashimage_file.GetString();
+					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
+				}
+
+				if (pk4file->ContainsFile("readme.txt"))
+				{
+					destPath = fmPath / "readme.txt";
 					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
 				}
 			}
