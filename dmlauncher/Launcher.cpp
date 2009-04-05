@@ -170,6 +170,17 @@ void Launcher::InitCurrentFM()
 	_currentFM = ReadFile(currentFMFileName);
 
 	TraceLog::WriteLine("Current FM is: " + _currentFM);
+
+	// Check if the FM folder actually exists
+	fs::path modFolder = _darkmodDir;
+	modFolder = modFolder.remove_leaf().remove_leaf() / _currentFM;
+
+	if (!fs::exists(modFolder))
+	{
+		TraceLog::WriteLine("Cannot find Mod folder for FM: " + _currentFM);
+		TraceLog::WriteLine("Current FM reset to empty again.");
+		_currentFM.clear();
+	}
 }
 
 std::string Launcher::ReadFile(const fs::path& fileName)
