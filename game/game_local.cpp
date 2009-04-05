@@ -3734,16 +3734,7 @@ idGameLocal::GetAASId (TDM)
 int	idGameLocal::GetAASId( idAAS* aas ) const
 {
 	// Do a reverse lookup in the aasList array
-	for (int i = 0; i < aasList.Num(); i++)
-	{
-		if (aasList[i] == aas)
-		{
-			// Found the pointer, return it
-			return i;
-		}
-	}
-	// Not found
-	return -1;
+	return aasList.FindIndex(aas);
 }
 
 /*
