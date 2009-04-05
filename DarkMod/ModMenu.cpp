@@ -511,9 +511,9 @@ void CModMenu::BuildModList()
 
 		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
 		{
-			idStr pk4fileName = fileSystem->RelativePathToOSPath(pk4files->GetFile(j));
+			fs::path pk4path = GetDarkmodPath() / pk4files->GetFile(j);
 
-			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4fileName);
+			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
 			if (pk4file == NULL) continue; // failed to open zip file
 
