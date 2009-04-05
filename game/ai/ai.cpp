@@ -548,6 +548,11 @@ idAI::idAI()
 	m_FlatFootedTimer	= 0;
 	m_FlatFootedTime	= 0;
 
+	m_FlatFootParryNum	= 0;
+	m_FlatFootParryMax	= 0;
+	m_FlatFootParryTimer = 0;
+	m_FlatFootParryTime	= 0;
+
 	m_maxInterleaveThinkFrames = 0;
 	m_minInterleaveThinkDist = 1000;
 	m_maxInterleaveThinkDist = 3000;
@@ -848,6 +853,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bFlatFooted);
 	savefile->WriteInt(m_FlatFootedTimer);
 	savefile->WriteInt(m_FlatFootedTime);
+	savefile->WriteInt(m_FlatFootParryNum);
+	savefile->WriteInt(m_FlatFootParryMax);
+	savefile->WriteInt(m_FlatFootParryTimer);
+	savefile->WriteInt(m_FlatFootParryTime);
 
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
@@ -1182,6 +1191,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bFlatFooted);
 	savefile->ReadInt(m_FlatFootedTimer);
 	savefile->ReadInt(m_FlatFootedTime);
+	savefile->ReadInt(m_FlatFootParryNum);
+	savefile->ReadInt(m_FlatFootParryMax);
+	savefile->ReadInt(m_FlatFootParryTimer);
+	savefile->ReadInt(m_FlatFootParryTime);
 
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
@@ -1656,6 +1669,8 @@ void idAI::Spawn( void )
 
 	m_bCanBeFlatFooted	= spawnArgs.GetBool("can_be_flatfooted", "1");
 	m_FlatFootedTime	= spawnArgs.GetInt("flatfooted_time");
+	m_FlatFootParryMax = spawnArgs.GetInt("flatfoot_parry_num");
+	m_FlatFootParryTime = spawnArgs.GetInt("flatfoot_parry_time");
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;

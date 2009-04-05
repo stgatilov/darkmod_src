@@ -360,12 +360,39 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 		if( other->GetOwner()->IsType(idAI::Type) )
 		{
 			idAI *otherAI = static_cast<idAI *>(other->GetOwner());
-
-			// being hit causes flat-footedness
+			
 			if( otherAI->m_bCanBeFlatFooted )
 			{
-				otherAI->m_bFlatFooted = true;
-				otherAI->m_FlatFootedTimer = gameLocal.time;
+				int num = otherAI->m_FlatFootParryNum;
+				int max = otherAI->m_FlatFootParryMax;
+
+				// Only the first few parries induce flatness, then a timer kicks in
+				bool bCanAdd = num < max;
+				bool bTimerDone = (gameLocal.time - otherAI->m_FlatFootParryTimer) > otherAI->m_FlatFootParryTime;
+
+				if( bCanAdd )
+				{
+					otherAI->m_bFlatFooted = true;
+					otherAI->m_FlatFootedTimer = gameLocal.time;
+
+					otherAI->m_FlatFootParryNum++;
+				}
+				else if( bTimerDone )
+				{
+					otherAI->m_bFlatFooted = true;
+					otherAI->m_FlatFootedTimer = gameLocal.time;
+
+					// reset to flat-footed parry #1 again
+					otherAI->m_FlatFootParryNum = 1;
+				}
+
+				// Each successful parry after the max number resets the timer
+				// This is a gameplay tweak so the player can't just spam attack
+				// They must wait until the AI hasn't parried in a while and 'surprise' them again
+				if( otherAI->m_FlatFootParryNum == max )
+				{
+					otherAI->m_FlatFootParryTimer = gameLocal.time;
+				}
 			}
 		}
 	}
@@ -753,7 +780,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		idAI *otherAI = static_cast<idAI *>(other);
 		otherAI->TactileAlert( GetOwner(), 100 );
 
-		// being hit causes flat-footedness
+		// being hit always causes flat-footedness
 		if( otherAI->m_bCanBeFlatFooted )
 		{
 			otherAI->m_bFlatFooted = true;
