@@ -115,13 +115,11 @@ void SearchingState::Init(idAI* owner)
 				bark = "snd_alert3";
 			}
 
-			// Clear the communication system
-			// owner->GetSubsystem(SubsysCommunication)->ClearTasks(); // TODO_AI
 			// Allocate a singlebarktask, set the sound and enqueue it
 
-			/*owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(bark))
-			);*/ // TODO_AI
+			owner->commSubsystem->AddCommTask(
+				CommunicationTaskPtr(new SingleBarkTask(bark))
+			);
 		}
 	}
 	else if (memory.alertType == EAlertTypeEnemy)

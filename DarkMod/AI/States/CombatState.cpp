@@ -122,7 +122,6 @@ void CombatState::Init(idAI* owner)
 
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
-//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 	owner->actionSubsystem->ClearTasks();
 
 	owner->DrawWeapon();
@@ -144,9 +143,9 @@ void CombatState::Init(idAI* owner)
 	}
 
 	// The communication system 
-/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_charge", message))
-	);*/// TODO_AI
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask("snd_charge", message))
+	);
 
 	// Ranged combat
 	if (_rangedPossible)

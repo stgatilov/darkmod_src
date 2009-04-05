@@ -79,10 +79,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 		{
 			idStr bark = "snd_alert4";
 
-/*			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-			owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(bark))
-			);*/// TODO_AI
+			owner->commSubsystem->AddCommTask(
+				CommunicationTaskPtr(new SingleBarkTask(bark))
+			);
 		}
 	}
 /*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
@@ -94,15 +93,15 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	if (owner->HasSeenEvidence())
 	{
-/*		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
-		);*/// TODO_AI
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
+		);
 	}
 	else
 	{
-/*		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
-		);*/// TODO_AI
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
+		);
 	}
 	
 	owner->DrawWeapon();

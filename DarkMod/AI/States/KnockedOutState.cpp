@@ -38,7 +38,7 @@ void KnockedOutState::Init(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
-//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->commSubsystem->ClearTasks();
 
 	_waitingForKnockout = true;
 

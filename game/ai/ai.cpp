@@ -5061,12 +5061,10 @@ void idAI::StaticMove( void ) {
 
 void idAI::Bark(const idStr& soundName)
 {
-	// Clear out any previous tasks in the commsystem
-	GetSubsystem(ai::SubsysCommunication)->ClearTasks();
 
 	// Allocate a singlebarktask with the given sound and enqueue it
-	GetSubsystem(ai::SubsysCommunication)->PushTask(
-		ai::TaskPtr(new ai::SingleBarkTask(soundName))
+	commSubsystem->AddCommTask(
+		ai::CommunicationTaskPtr(new ai::SingleBarkTask(soundName))
 	);
 }
 

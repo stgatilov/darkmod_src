@@ -87,7 +87,6 @@ void ObservantState::Init(idAI* owner)
 		{
 			soundName = "snd_alert1";
 		}
-		// owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 	}
 	else if (owner->HasSeenEvidence())
 	{
@@ -103,12 +102,9 @@ void ObservantState::Init(idAI* owner)
 
 	if (memory.alertType != EAlertTypeMissingItem)
 	{
-		/*owner->GetSubsystem(SubsysCommunication)->QueueTask(
-				TaskPtr(new SingleBarkTask(soundName))
+		owner->commSubsystem->AddCommTask(
+				CommunicationTaskPtr(new SingleBarkTask(soundName))
 		);
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new WaitTask(2000))
-		);*/ // TODO_AI
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

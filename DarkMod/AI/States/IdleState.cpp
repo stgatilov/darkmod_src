@@ -142,7 +142,6 @@ void IdleState::Think(idAI* owner)
 		{
 			owner->actionSubsystem->ClearTasks();
 			owner->senseSubsystem->ClearTasks();
-//			owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 
 			owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 			return;
@@ -222,9 +221,9 @@ void IdleState::InitialiseMovement(idAI* owner)
 void IdleState::InitialiseCommunication(idAI* owner)
 {
 	// Push a single bark to the communication subsystem first, it fires only once
-/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
-	);*/// TODO_AI
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
+	);
 }
 
 

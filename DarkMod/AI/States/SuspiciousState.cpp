@@ -90,7 +90,6 @@ void SuspiciousState::Init(idAI* owner)
 
 	// barking
 	idStr bark;
-	//owner->GetSubsystem(SubsysCommunication)->ClearTasks(); // TODO_AI
 
 	if (owner->AlertIndexIncreased())
 	{
@@ -107,9 +106,13 @@ void SuspiciousState::Init(idAI* owner)
 			bark = "snd_alert1";
 		}
 
-		/*owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask(bark))
-		);*/ // TODO_AI
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask(bark))
+		);
+	}
+	else
+	{
+		owner->commSubsystem->ClearTasks();
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

@@ -116,8 +116,8 @@ void FleeDoneState::Think(idAI* owner)
 				owner, friendlyAI, owner->GetEnemy(), owner->lastVisibleEnemyPos)
 			); 
 
-			TaskPtr barkTask(new SingleBarkTask("snd_flee", message));
-// 			owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);// TODO_AI
+			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
+			owner->commSubsystem->AddCommTask(barkTask);
 
 		}
 		else if (gameLocal.time >= _turnEndTime)

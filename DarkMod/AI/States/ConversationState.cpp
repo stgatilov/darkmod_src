@@ -196,11 +196,11 @@ void ConversationState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSyst
 			_commandType == ConversationCommand::EWalkToActor)
 		{
 			// Check if the subsystem is actually empty
-/*			if (owner->GetSubsystem(subSystem)->IsEmpty())
+			if (owner->GetSubsystem(subSystem)->IsEmpty())
 			{
 				_state = EReady; // ready for new commands
 				return;
-			}*/// TODO_AI
+			}
 		}
 	}
 	else if (subSystem == SubsysAction)

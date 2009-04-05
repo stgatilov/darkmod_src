@@ -83,9 +83,9 @@ void UnreachableTargetState::Init(idAI* owner)
 		memory.lastEnemyPos
 	));
 
-	/*owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_cantReachTarget", message))
-	);*/   // TODO_AI
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask("snd_cantReachTarget", message))
+	);
 
 	// The sensory system does nothing so far
 	owner->senseSubsystem->ClearTasks();

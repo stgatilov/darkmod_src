@@ -35,7 +35,6 @@ void BlindedState::Init(idAI* owner)
 
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
-//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
 	owner->actionSubsystem->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
