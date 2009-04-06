@@ -217,6 +217,17 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
+	if (!owner->IsEnemy(enemy))
+	{
+		// angua: the relation to the enemy has changed, this is not an enemy any more
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+		owner->GetMind()->EndState();
+		// ishtvan: swap the expanded head model back in when exiting state
+		owner->SwapHeadAFCM( true );
+		return;
+	}
+
 	// angua: look at ememy
 	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
 
