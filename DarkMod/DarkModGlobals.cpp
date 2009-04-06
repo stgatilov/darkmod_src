@@ -175,15 +175,12 @@ void FileVersionDump(void)
 }
 
 
-CGlobal::CGlobal(void)
+CGlobal::CGlobal()
 {
 	m_DarkModPlayer = new CDarkModPlayer;
 
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
-
-	memset(m_ModPath, 0, sizeof(m_ModPath));
-	memset(m_ModName, 0, sizeof(m_ModName));
 
 	m_LogArray[LT_INIT] = true;			// This is always on
 	m_LogArray[LT_FORCE] = true;			// This is always on
@@ -268,80 +265,10 @@ CGlobal::CGlobal(void)
 	g_SHPtr = static_cast<SourceHook::ISourceHook*>(&g_SourceHook); 
 }
 
-CGlobal::~CGlobal(void)
+CGlobal::~CGlobal()
 {
 	if(m_LogFile != NULL)
 		fclose(m_LogFile);
-}
-
-void CGlobal::GetModName()
-{
-	int i, n;
-	char PathSep, *p;
-
-	// Get the mod path from the filesystem
-	assert(fileSystem != NULL);
-	const char *modpath = fileSystem->RelativePathToOSPath(".");
-	char name[256];
-
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modpath: %08lx - [%s]\r", modpath, modpath);
-
-#ifdef _WINDOWS_
-		PathSep = '\\';
-#else
-		PathSep = '/';
-#endif
-
-	strcpy(m_ModPath, modpath);
-	n = strlen(m_ModPath)-1;
-	if(n <= 0)
-		goto Quit;
-
-	// First we cut of the path
-	for(i = n; i >= 0; i--)
-	{
-		if(m_ModPath[i] == '.')
-		{
-			m_ModPath[i] = 0;
-			continue;
-		}
-
-		if(m_ModPath[i] == PathSep)
-		{
-			m_ModPath[i] = 0;
-			break;
-		}
-	}
-
-	n = strlen(m_ModPath)-1;
-	if(n <= 0)
-		goto Quit;
-
-	memset(name, 0, sizeof(name));
-	p = name;
-	for(i = n; i >= 0; i--)
-	{
-		if(m_ModPath[i] == PathSep)
-			break;
-
-		*p = m_ModPath[i];
-		p++;
-	}
-
-	n = strlen(name)-1;
-	memset(m_ModName, 0, sizeof(m_ModName));
-	p = m_ModName;
-	for(i = n; i >= 0; i--)
-	{
-		*p = name[i];
-		p++;
-	}
-
-Quit:
-
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modpath: [%s]\r", m_ModPath);
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modname: [%s]\r", m_ModName);
-	return;
 }
 
 void CGlobal::Init()
@@ -358,12 +285,10 @@ void CGlobal::Init()
 
 #endif
 
-	GetModName();
-
 #ifdef _WINDOWS_
 
-	std::string iniPath = 
-		std::string(m_ModPath) + "\\" + std::string(m_ModName) + ".ini";
+	std::string iniPath = GetDarkmodPath().c_str();
+	iniPath += "\\darkmod.ini";
 
 #else   // LINUX
 	
@@ -376,13 +301,13 @@ void CGlobal::Init()
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Trying to open %s\r", profilePath);
 	if((pfh = OpenProfile(profilePath, TRUE, FALSE)) == NULL)
 	{
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s.ini not found at %s\r", m_ModName, profilePath);
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("darkmod.ini not found at %s\r", profilePath);
 	}
 
 	if(pfh != NULL)
 		LoadINISettings(pfh);
 	else
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open %s.ini\r", m_ModName);
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open darkmod.ini\r");
 
 	CloseProfile(pfh);
 	FileVersionDump();
@@ -1190,4 +1115,39 @@ Quit:
 	//DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("GetSurfName: Found surface type name %s\r", strIn.c_str());
 
 	return;
+}
+
+std::string CGlobal::GetDarkmodPath()
+{
+	// Path to the parent directory
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Parent path is %s\r", parentPath.string().c_str());
+
+	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
+
+	if (modBaseName.IsEmpty())
+	{
+		// Fall back to fs_game if no game_base is set
+		modBaseName = cvarSystem->GetCVarString("fs_game");
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
+
+		if (modBaseName.IsEmpty())
+		{
+			modBaseName = "darkmod"; // last resort: hardcoded
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
+		}
+	}
+
+	// Path to the darkmod directory
+	fs::path darkmodPath(parentPath / modBaseName.c_str());
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
+
+	return darkmodPath.file_string();
 }

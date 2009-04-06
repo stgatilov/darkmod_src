@@ -163,11 +163,10 @@ protected:
 
 class CGlobal {
 public:
-	CGlobal(void);
-	~CGlobal(void);
+	CGlobal();
+	~CGlobal();
 
 	void Init(void);
-	void GetModName(void);
 	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogMat3(idStr const &Name, idMat3 const &Matrix);
@@ -200,6 +199,9 @@ public:
 	**/
 	void GetSurfName(const idMaterial *material, idStr &strIn);
 
+	// Returns the darkmod path
+	static std::string GetDarkmodPath();
+
 private:
 	void LoadINISettings(void *);
 
@@ -216,8 +218,6 @@ public:
 	LC_LogClass		m_LogClass;
 	LT_LogType		m_LogType;
 	long			m_Frame;
-	char			m_ModPath[1024];
-	char			m_ModName[256];
 	const char		*m_Filename;
 	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;

@@ -600,37 +600,7 @@ void CModMenu::InitStartingMap()
 
 fs::path CModMenu::GetDarkmodPath()
 {
-	// Path to the parent directory
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Parent path is %s\r", parentPath.string().c_str());
-
-	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
-
-	if (modBaseName.IsEmpty())
-	{
-		// Fall back to fs_game if no game_base is set
-		modBaseName = cvarSystem->GetCVarString("fs_game");
-
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
-
-		if (modBaseName.IsEmpty())
-		{
-			modBaseName = "darkmod"; // last resort: hardcoded
-
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
-		}
-	}
-
-	// Path to the darkmod directory
-	fs::path darkmodPath(parentPath / modBaseName.c_str());
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
-
-	return darkmodPath;
+	return fs::path(g_Global.GetDarkmodPath());
 }
 
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
