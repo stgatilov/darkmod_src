@@ -407,14 +407,18 @@ void CModMenu::SearchForNewMods()
 	// Iterate over all found PK4s and check if they're valid
 	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
 	{
-		fs::path pk4path = fileSystem->RelativePathToOSPath(pk4files->GetFile(i));
+		fs::path pk4path = GetDarkmodPath() / pk4files->GetFile(i);
 
 		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found PK4 in FM root folder: %s\r", pk4path.file_string().c_str());
 
 		// Does the PK4 file contain a proper description file?
 		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
-		if (pk4file == NULL) continue; // failed to open zip file
+		if (pk4file == NULL) 
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4 in root folder: %s\r", pk4path.file_string().c_str());
+			continue; // failed to open zip file
+		}
 
 		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString())) 
 		{
@@ -515,7 +519,11 @@ void CModMenu::BuildModList()
 
 			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
-			if (pk4file == NULL) continue; // failed to open zip file
+			if (pk4file == NULL) 
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4: %s\r", pk4path.file_string().c_str());
+				continue; // failed to open zip file
+			}
 
 			if (pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
