@@ -4728,24 +4728,20 @@ void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
 		m_RopeEntTouched = NULL;
 }
 
-void idPhysics_Player::UpdateLeanPhysics( void )
+void idPhysics_Player::UpdateLeanPhysics()
 {
-	idMat4 rotWorldToPlayer, rotPlayerToWorld;
-	rotWorldToPlayer.Zero(); 
-	rotPlayerToWorld.Zero();
-	idAngles viewAngNoPitch(0.0f, 0.0f, 0.0f);
-	idVec3 viewOrig; // unleaned player view origin
-	idVec3 newPoint;
-	idPlayer *p_player = (idPlayer *) self;
+	idPlayer *p_player = static_cast<idPlayer*>(self);
 
-	viewAngNoPitch = viewAngles;
+	idAngles viewAngNoPitch = viewAngles;
 	viewAngNoPitch.pitch = 0;
-	rotPlayerToWorld = viewAngNoPitch.ToMat4();
-	rotWorldToPlayer = rotPlayerToWorld.Transpose();
 
-	viewOrig = p_player->GetEyePosition();
+	idMat4 rotPlayerToWorld = viewAngNoPitch.ToMat4();
+	idMat4 rotWorldToPlayer = rotPlayerToWorld.Transpose();
+
+	// unleaned player view origin
+	idVec3 viewOrig = p_player->GetEyePosition();
 	// convert angle and stretch to a viewpoint in space:
-	newPoint = LeanParmsToPoint( m_CurrentLeanTiltDegrees, m_CurrentLeanStretch );
+	idVec3 newPoint = LeanParmsToPoint( m_CurrentLeanTiltDegrees, m_CurrentLeanStretch );
 	
 	// This is cumbersome, but it lets us extract the smoothed view origin from idPlayer
 	m_viewLeanTranslation = newPoint - (viewOrig - rotPlayerToWorld * m_viewLeanTranslation);
@@ -4753,8 +4749,8 @@ void idPhysics_Player::UpdateLeanPhysics( void )
 
 	float angle = m_CurrentLeanTiltDegrees;
 
-	m_viewLeanAngles.pitch = angle * idMath::Sin(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
-	m_viewLeanAngles.roll = angle * idMath::Cos(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanAngles.pitch = angle * idMath::Sin(DEG2RAD(m_leanYawAngleDegrees));
+	m_viewLeanAngles.roll = angle * idMath::Cos(DEG2RAD(m_leanYawAngleDegrees));
 }
 
 float idPhysics_Player::GetDeltaViewYaw( void )
