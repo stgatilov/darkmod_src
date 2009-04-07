@@ -4594,8 +4594,7 @@ void idPhysics_Player::LeanMove()
 		}
 
 		// Try sinusoidal movement
-		float timeRatio = 0.0;
-		timeRatio = ( cv_pm_lean_time.GetFloat() - m_leanTime) /  cv_pm_lean_time.GetFloat();
+		float timeRatio = ( cv_pm_lean_time.GetFloat() - m_leanTime) /  cv_pm_lean_time.GetFloat();
 
 		float timeRadians = (idMath::PI/2.0f) * timeRatio;
 		
@@ -4626,8 +4625,7 @@ void idPhysics_Player::LeanMove()
 
 	// If player is leaned at all, do an additional clip test and unlean them
 	// In case they lean and walk into something, or a moveable moves into them, etc.
-	if( m_CurrentLeanTiltDegrees != 0.0
-		&& TestLeanClip() )
+	if( m_CurrentLeanTiltDegrees != 0.0	&& TestLeanClip() )
 	{
 		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned player clipped solid, unleaning to valid position \r");
 
@@ -4636,24 +4634,25 @@ void idPhysics_Player::LeanMove()
 
 	// Lean door test
 	if( IsLeaning() )
+	{
 		UpdateLeanDoor();
+	}
 
 	// TODO: Update lean radius if player is crouching/uncrouching
 }
 
-bool idPhysics_Player::TestLeanClip( void )
+bool idPhysics_Player::TestLeanClip()
 {
-	idVec3 vTest;
-	idEntity *TrEnt(NULL);
-
-	idPlayer *p_player = (idPlayer *) self;
+	idPlayer *p_player = static_cast<idPlayer*>(self);
 	// convert proposed angle and stretch to a viewpoint in space:
 
-	vTest = p_player->GetEyePosition();
+	idVec3 vTest = p_player->GetEyePosition();
 	idVec3 vEyeOffset = -GetGravityNormal()*p_player->EyeHeight();
 	
 	trace_t trTest;
 	gameLocal.clip.TraceBounds( trTest, current.origin + vEyeOffset, vTest, m_LeanViewBounds, MASK_SOLID | CONTENTS_BODY, self );
+
+	idEntity *TrEnt(NULL);
 
 	// Detect AI collision, if entity hit or its bindmaster is an AI:
 	if( trTest.fraction != 1.0f 
@@ -4663,7 +4662,6 @@ bool idPhysics_Player::TestLeanClip( void )
 		static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
 	}
 
-
 	// Uncomment for debug bounds display
 	//gameRenderWorld->DebugBounds( colorGreen, m_LeanViewBounds, vTest ); 
 	
@@ -4672,29 +4670,28 @@ bool idPhysics_Player::TestLeanClip( void )
 
 idVec3 idPhysics_Player::LeanParmsToPoint( float AngTilt, float Stretch )
 {
-	float fLeanFulcrumHeight, fEyeHeight, radius, stretchedDist;
-	idVec3 vPoint;
-
-	idPlayer* p_player = (idPlayer*) self;
+	idPlayer* p_player = static_cast<idPlayer*>(self);
 	
 	// Find the lean fulcrum to rotate about, and radius of lean
-	fEyeHeight = p_player->EyeHeight();
-	fLeanFulcrumHeight = cv_pm_lean_height.GetFloat() * fEyeHeight;
-	radius = fEyeHeight - fLeanFulcrumHeight;
+	float fEyeHeight = p_player->EyeHeight();
+	float fLeanFulcrumHeight = cv_pm_lean_height.GetFloat() * fEyeHeight;
+	float radius = fEyeHeight - fLeanFulcrumHeight;
 
 	// Set lean view angles
 	float pitchAngle = AngTilt;
 	float rollAngle = pitchAngle;
 
-	pitchAngle *= idMath::Sin(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
-	rollAngle *= idMath::Cos(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	pitchAngle *= idMath::Sin(DEG2RAD(m_leanYawAngleDegrees));
+	rollAngle *= idMath::Cos(DEG2RAD(m_leanYawAngleDegrees));
 
 	// Set lean translate vector
-	stretchedDist = radius * (1.0f + m_leanMoveMaxStretch * Stretch );
-	
-	vPoint.x = stretchedDist * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
-	vPoint.y = stretchedDist * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
-	vPoint.z = 0.0;
+	float stretchedDist = radius * (1.0f + m_leanMoveMaxStretch * Stretch );
+
+	idVec3 vPoint(
+		stretchedDist * idMath::Sin (DEG2RAD(-pitchAngle)),
+		stretchedDist * idMath::Sin(DEG2RAD(rollAngle)),
+		0.0
+	);
 
 	vPoint.ProjectSelfOntoSphere( stretchedDist );
 
