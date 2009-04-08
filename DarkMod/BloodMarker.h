@@ -15,8 +15,6 @@
 // Includes
 #include "../game/entity.h"
 
-
-
 class CBloodMarker : public idEntity
 {
 public:
@@ -27,17 +25,14 @@ protected:
 	float					_angle;
 	float					_size;
 
-
 public:
-
 	void					Init(const idStr& splat, float size);
 	void					Event_GenerateBloodSplat();
+
 	// Save and restore
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-
 };
-
 
 // End of header wrapper
 #endif

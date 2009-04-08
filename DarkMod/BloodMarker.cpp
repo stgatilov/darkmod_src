@@ -12,7 +12,7 @@
 #pragma hdrstop
 #include "BloodMarker.h"
 
-const idEventDef EV_GenerateBloodSplat("e");
+const idEventDef EV_GenerateBloodSplat("TDM_GenerateBloodSplat", NULL);
 
 CLASS_DECLARATION( idEntity, CBloodMarker )
 	EVENT( EV_GenerateBloodSplat, CBloodMarker::Event_GenerateBloodSplat )
@@ -20,7 +20,7 @@ END_CLASS
 
 void CBloodMarker::Event_GenerateBloodSplat()
 {
-	idVec3 dir = idVec3(0, 0, -1);
+	idVec3 dir(0, 0, -1);
 	gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), dir, 3, false, _size, _bloodSplat, _angle);
 
 	PostEventMS(&EV_GenerateBloodSplat, 5000);
@@ -32,7 +32,6 @@ void CBloodMarker::Init(const idStr& splat, float size)
 	// randomly rotate the decal winding
 	_angle = gameLocal.random.RandomFloat() * idMath::TWO_PI;
 	_size = size;
-
 }
 
 //-----------------------------------------------------------------------------------
@@ -48,7 +47,7 @@ void CBloodMarker::Save( idSaveGame *savefile ) const
 
 void CBloodMarker::Restore( idRestoreGame *savefile )
 {
-		savefile->ReadString(_bloodSplat);
-		savefile->ReadFloat(_angle);
-		savefile->ReadFloat(_size);
+	savefile->ReadString(_bloodSplat);
+	savefile->ReadFloat(_angle);
+	savefile->ReadFloat(_size);
 }
