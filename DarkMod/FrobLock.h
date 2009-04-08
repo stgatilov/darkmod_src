@@ -90,6 +90,8 @@ protected:
 
 	// Called by the frob action script
 	void			Event_Open();
+
+	void			Event_ClearPlayerImmobilization(idEntity* player);
 };
 
 #endif /* _FROB_LOCK_H_ */

@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 const idEventDef EV_TDM_FrobLock_TriggerTargets("EV_TDM_FrobLock_TriggerTargets", NULL); // triggers general targets
 const idEventDef EV_TDM_FrobLock_TriggerLockTargets("EV_TDM_FrobLock_TriggerLockTargets", NULL); // triggers lock targets
 const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("EV_TDM_FrobLock_TriggerUnlockTargets", NULL); // triggers unlock targets
+const idEventDef EV_TDM_FrobLock_ClearPlayerImmobilization("EV_TDM_FrobLock_ClearPlayerImmobilization", "e"); // allows player to handle weapons again
 
 const idEventDef EV_TDM_FrobLock_Open("Open", NULL); // attempts to open the lock
 
@@ -33,6 +34,7 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_TDM_FrobLock_TriggerLockTargets,		CFrobLock::Event_TriggerLockTargets )
 	EVENT( EV_TDM_FrobLock_TriggerUnlockTargets,	CFrobLock::Event_TriggerUnlockTargets )
 	EVENT( EV_TDM_FrobLock_Open,					CFrobLock::Event_Open)
+	EVENT( EV_TDM_FrobLock_ClearPlayerImmobilization,	CFrobLock::Event_ClearPlayerImmobilization )
 END_CLASS
 
 CFrobLock::CFrobLock() :
@@ -207,6 +209,20 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 		if (str.Length() == 1)
 		{
+			// greebo: Check if the item owner is a player, and if yes, 
+			// update the immobilization flags.
+			idEntity* itemOwner = item->GetOwner();
+
+			if (itemOwner->IsType(idPlayer::Type))
+			{
+				idPlayer* playerOwner = static_cast<idPlayer*>(itemOwner);
+				playerOwner->SetImmobilization("Lockpicking", EIM_ATTACK);
+
+				// Schedule an event 1/3 sec. from now, to enable weapons again after this time
+				CancelEvents(&EV_TDM_FrobLock_ClearPlayerImmobilization);
+				PostEventMS(&EV_TDM_FrobLock_ClearPlayerImmobilization, 300, playerOwner);
+			}
+
 			// Pass the call to the lockpick routine
 			return m_Lock.ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
 		}
@@ -527,4 +543,12 @@ void CFrobLock::Event_TriggerUnlockTargets()
 			unlockTarget->SetFrobable(true);
 		}
 	}
+}
+
+void CFrobLock::Event_ClearPlayerImmobilization(idEntity* player)
+{
+	if (!player->IsType(idPlayer::Type)) return;
+
+	// Release the immobilization imposed on the player by Lockpicking
+	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
 }

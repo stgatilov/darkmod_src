@@ -37,6 +37,8 @@ const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
 const idEventDef EV_TDM_Door_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
+const idEventDef EV_TDM_Door_ClearPlayerImmobilization("EV_TDM_Door_ClearPlayerImmobilization", "e"); // allows player to handle weapons again
+
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
 	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
@@ -45,6 +47,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	// Needed for PickableLock: Update Handle position on lockpick status update
 	EVENT( EV_TDM_Lock_StatusUpdate,	CFrobDoor::Event_Lock_StatusUpdate)
 	EVENT( EV_TDM_Lock_OnLockPicked,	CFrobDoor::Event_Lock_OnLockPicked)
+	EVENT( EV_TDM_Door_ClearPlayerImmobilization,	CFrobDoor::Event_ClearPlayerImmobilization )
 END_CLASS
 
 #define LOCK_REQUEST_DELAY 250 // msecs before a door locks itself after closing (if the preference is set appropriately)
@@ -478,6 +481,20 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 		if (str.Length() == 1)
 		{
+			// greebo: Check if the item owner is a player, and if yes, 
+			// update the immobilization flags.
+			idEntity* itemOwner = item->GetOwner();
+
+			if (itemOwner->IsType(idPlayer::Type))
+			{
+				idPlayer* playerOwner = static_cast<idPlayer*>(itemOwner);
+				playerOwner->SetImmobilization("Lockpicking", EIM_ATTACK);
+
+				// Schedule an event 1/3 sec. from now, to enable weapons again after this time
+				CancelEvents(&EV_TDM_Door_ClearPlayerImmobilization);
+				PostEventMS(&EV_TDM_Door_ClearPlayerImmobilization, 300, playerOwner);
+			}
+
 			// Pass the call to the lockpick routine
 			return m_Lock.ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
 		}
@@ -1039,4 +1056,12 @@ void CFrobDoor::Event_HandleLockRequest()
 		// One or more peers are not at their closed position (yet), postpone the event
 		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
 	}
+}
+
+void CFrobDoor::Event_ClearPlayerImmobilization(idEntity* player)
+{
+	if (!player->IsType(idPlayer::Type)) return;
+
+	// Release the immobilization imposed on the player by Lockpicking
+	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
 }

@@ -192,6 +192,8 @@ protected:
 	// This is called periodically, to handle a pending close request (used for locking doors after closing)
 	void					Event_HandleLockRequest();
 
+	void					Event_ClearPlayerImmobilization(idEntity* player);
+
 protected:
 
 	/**

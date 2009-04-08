@@ -6870,7 +6870,6 @@ void idPlayer::Think( void )
 		frobbedEnt->AttackAction(this);
 	}
 
-	idStr strText;
 /*
 	// TODO: remove this because it is just to determine how to fill out the renderstructure.
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderViewId: %u\r", renderView->viewID);
