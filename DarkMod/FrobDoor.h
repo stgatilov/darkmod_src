@@ -102,6 +102,13 @@ public:
 	 */
 	virtual int				FrobMoverStartSound(const char* soundName);
 
+	/** 
+	 * greebo: Override the standard idEntity method to emit sounds from the nearest position 
+	 * to the player instead of the bounding box center, which might be on the far side
+	 * of a closed portal. This method gets applied to doors without handles, usually.
+	 */
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
+
 protected:
 
 	// Returns the handle nearest to the given position
