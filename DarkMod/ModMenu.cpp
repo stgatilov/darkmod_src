@@ -434,7 +434,7 @@ void CModMenu::SearchForNewMods()
 		if (modName.IsEmpty()) continue; // error?
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
-		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName;
+		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName.c_str();
 		
 		if (fs::exists(modFolder))
 		{
@@ -532,7 +532,7 @@ void CModMenu::BuildModList()
 				_modsAvailable.Alloc() = fmDir;
 
 				fs::path darkmodPath = GetDarkmodPath();
-				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / fmDir;
+				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / fmDir.c_str();
 				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
 
 				pk4file->ExtractFileTo(cv_tdm_fm_desc_file.GetString(), destPath.string().c_str());
