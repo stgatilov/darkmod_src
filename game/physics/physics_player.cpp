@@ -4468,17 +4468,11 @@ idVec3 idPhysics_Player::GetViewLeanTranslation()
 
 void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaLeanStretch)
 {
-	trace_t trTest;
-	float newLeanTiltDegrees(0.0), newLeanStretch(0.0);
-	idVec3 origPoint, newPoint; // test point
-	bool bWouldClip(false);
-	idPlayer *p_player = (idPlayer *) self;
-	idEntity *TrEnt( NULL ); // entity hit by trace
-
 	// What would the new lean angle be?
-	newLeanTiltDegrees = m_CurrentLeanTiltDegrees + deltaLeanTiltDegrees;
+	float newLeanTiltDegrees = m_CurrentLeanTiltDegrees + deltaLeanTiltDegrees;
 
 	DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("newLeanTiltDegrees = %f", newLeanTiltDegrees );
+
 	if (newLeanTiltDegrees < 0.0)
 	{
 		// Adjust delta
@@ -4505,51 +4499,57 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	);
 
 	newLeanTiltDegrees = m_CurrentLeanTiltDegrees + deltaLeanTiltDegrees;
-	newLeanStretch = m_CurrentLeanStretch + deltaLeanStretch;
+	float newLeanStretch = m_CurrentLeanStretch + deltaLeanStretch;
 
     // Collision test: do not change lean angles any more if collision has occurred
 	// convert proposed angle and stretch to a viewpoint in space:
-	newPoint = LeanParmsToPoint( newLeanTiltDegrees, newLeanStretch );
+	idVec3 newPoint = LeanParmsToPoint( newLeanTiltDegrees, newLeanStretch );
 
-	origPoint = p_player->GetEyePosition();
+	idPlayer* player = static_cast<idPlayer*>(self);
+	idVec3 origPoint = player->GetEyePosition();
 
 	// Add some delta so we can lean back afterwards without already being clipped
 	idVec3 vDelta = newPoint - origPoint;
 	vDelta.Normalize();
+
 	float fLeanTestDelta = 6.0f;
 	vDelta *= fLeanTestDelta;
 
 	// Perform the trace (greebo: use PLAYERSOLID to include player_clip collisions)
-	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_PLAYERSOLID, self );
-	bWouldClip = trTest.fraction < 1.0f;
+	trace_t trTest;
+	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_PLAYERSOLID, player );
+
+	bool bWouldClip = trTest.fraction < 1.0f;
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Collision trace between old view point ( %d, %d, %d ) and newPoint: ( %d, %d, %d )\r", origPoint.x, origPoint.y, origPoint.z, newPoint.x, newPoint.y, newPoint.z );
 
 	// Do not lean farther if the player would hit the wall
-	// TODO: This may lead to early stoppage at low FPS, so might want to interpolate
 	if( bWouldClip )
 	{
-		TrEnt = gameLocal.GetTraceEntity( trTest );
+		idEntity* traceEnt = gameLocal.GetTraceEntity( trTest );
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Lean test point within solid, lean motion stopped.\r" );
 		
-		// Door leaning test
-		if( TrEnt 
-			&& TrEnt->IsType(CFrobDoor::Type)
-			&& !( static_cast<CFrobDoor *>(TrEnt)->IsOpen() )
-			&& m_LeanDoorEnt.GetEntity() == NULL )
+		if( traceEnt != NULL)
 		{
-			// If it is a door, can it be listened through?
-			if( FindLeanDoorListenPos( trTest.c.point, (CFrobDoor *) TrEnt ) )
-				m_LeanDoorEnt = (CFrobDoor *) TrEnt;
+			// Door leaning test
+			if (traceEnt->IsType(CFrobDoor::Type) && 
+				!static_cast<CFrobDoor*>(traceEnt)->IsOpen() && 
+				m_LeanDoorEnt.GetEntity() == NULL )
+			{
+				// If it is a door, can it be listened through?
+				if( FindLeanDoorListenPos( trTest.c.point, static_cast<CFrobDoor*>(traceEnt) ) )
+				{
+					m_LeanDoorEnt = static_cast<CFrobDoor*>(traceEnt);
+				}
+			}
+			// Detect AI collision
+			else if (traceEnt->IsType(idAI::Type) )
+			{
+				static_cast<idAI*>(traceEnt)->HadTactile(player);
+			}
 		}
 
-		// Detect AI collision, if entity hit or its bindmaster is an AI:
-		if( TrEnt && TrEnt->IsType(idAI::Type) )
-		{
-			static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
-		}
-
-		goto Quit;
+		return;
 	}
 
 	// Adjust lean angle by delta which was allowed
@@ -4566,9 +4566,6 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 		m_CurrentLeanTiltDegrees,
 		m_CurrentLeanStretch
 	);
-
-Quit:
-	return;
 }
 
 //----------------------------------------------------------------------
