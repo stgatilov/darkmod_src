@@ -4668,34 +4668,35 @@ bool idPhysics_Player::TestLeanClip()
 	return (trTest.fraction != 1.0f);
 }
 
-idVec3 idPhysics_Player::LeanParmsToPoint( float AngTilt, float Stretch )
+idVec3 idPhysics_Player::LeanParmsToPoint(float tilt, float stretch)
 {
 	idPlayer* p_player = static_cast<idPlayer*>(self);
 	
 	// Find the lean fulcrum to rotate about, and radius of lean
-	float fEyeHeight = p_player->EyeHeight();
-	float fLeanFulcrumHeight = cv_pm_lean_height.GetFloat() * fEyeHeight;
-	float radius = fEyeHeight - fLeanFulcrumHeight;
+	float eyeHeight = p_player->EyeHeight();
+	float leanFulcrumHeight = eyeHeight * cv_pm_lean_height.GetFloat();
+	float radius = eyeHeight - leanFulcrumHeight;
 
 	// Set lean view angles
-	float pitchAngle = AngTilt;
-	float rollAngle = pitchAngle;
-
-	pitchAngle *= idMath::Sin(DEG2RAD(m_leanYawAngleDegrees));
-	rollAngle *= idMath::Cos(DEG2RAD(m_leanYawAngleDegrees));
+	float pitchAngle = tilt * idMath::Sin(DEG2RAD(m_leanYawAngleDegrees));
+	float rollAngle = tilt * idMath::Cos(DEG2RAD(m_leanYawAngleDegrees));
 
 	// Set lean translate vector
-	float stretchedDist = radius * (1.0f + m_leanMoveMaxStretch * Stretch );
+	float stretchedDist = radius * (1.0f + m_leanMoveMaxStretch * stretch);
 
+	// This will be the point in space relative to the player's eye position
 	idVec3 vPoint(
-		stretchedDist * idMath::Sin (DEG2RAD(-pitchAngle)),
+		stretchedDist * idMath::Sin(DEG2RAD(-pitchAngle)),
 		stretchedDist * idMath::Sin(DEG2RAD(rollAngle)),
 		0.0
 	);
 
+	// Calculate the z-coordinate of the point, by projecting it 
+	// onto a sphere of radius <stretchedDist>
 	vPoint.ProjectSelfOntoSphere( stretchedDist );
 
-	vPoint.z = vPoint.z - stretchedDist;
+	// Subtract the radius, we only need the difference relative to the eyepos
+	vPoint.z -= stretchedDist;
 
 	// Rotate to player's facing
 	// this worked for yaw, but had issues with pitch, try something instead
@@ -4762,78 +4763,71 @@ float idPhysics_Player::GetDeltaViewPitch( void )
 
 void idPhysics_Player::UpdateLeanedInputYaw( idAngles &InputAngles )
 {
-	idPlayer *pPlayer = (idPlayer *) self;
-	float TestDeltaYaw(0.0f);
+	if (!IsLeaning()) return; // nothing to do
 
 	/**
 	* Leaned view yaw check for clipping
 	**/
-	if( IsLeaning() )
+
+	// Have a delta so that we don't get stuck on the wall due to floating point errors
+	float AddedYawDelt = 4.0f; // amount to check ahead of the yaw change, in degrees
+	float TestDeltaYaw = idMath::AngleNormalize180( InputAngles.yaw - viewAngles.yaw );
+
+	// Add delta
+	if( TestDeltaYaw < 0.0f )
+		TestDeltaYaw -= AddedYawDelt;
+	else
+		TestDeltaYaw += AddedYawDelt;
+
+	idPlayer* player = static_cast<idPlayer*>(self);
+
+	idVec3 vEyeOffset = -GetGravityNormal() * player->EyeHeight();
+
+	// make the test bounds go back to the unleaned eye point
+	idBounds ViewBoundsExp = m_LeanViewBounds;
+	ViewBoundsExp.AddPoint( -m_viewLeanTranslation );
+
+	idClipModel ViewClip( ViewBoundsExp );
+	idAngles viewAngYaw;
+	viewAngYaw.Zero();
+	viewAngYaw.yaw = viewAngles.yaw;
+
+	ViewClip.SetPosition( player->GetEyePosition(), viewAngYaw.ToMat3() );
+
+	//idRotation ViewYawRot( current.origin, -GetGravityNormal(), TestDeltaYaw );
+	idRotation ViewYawRot( current.origin, GetGravityNormal(), TestDeltaYaw );
+
+	idVec3 startPoint = player->GetEyePosition();
+	idVec3 endPoint = startPoint;
+	ViewYawRot.RotatePoint( endPoint );
+
+	trace_t TrResults;
+	gameLocal.clip.Rotation( TrResults, startPoint, ViewYawRot, &ViewClip, ViewClip.GetAxis(), MASK_SOLID | CONTENTS_BODY, self );
+
+	DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Original viewpoint (%f, %f, %f) Tested viewpoint: (%f, %f, %f) \r", startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z );
+
+	// Cancel rotation if check-ahead rotation trace fails
+	if( TrResults.fraction != 1.0f )
 	{
-		trace_t TrResults;
-		idEntity *TrEnt = NULL;
-		idVec3 startPoint, endPoint, vDelta;
-		// Have a delta so that we don't get stuck on the wall due to floating point errors
-		float AddedYawDelt = 4.0f; // amount to check ahead of the yaw change, in degrees
-		TestDeltaYaw = idMath::AngleNormalize180( InputAngles.yaw - viewAngles.yaw );
+		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Clipped with rotation trace fraction %f.  Delta yaw not allowed \r", TrResults.fraction );
+		InputAngles.yaw = viewAngles.yaw;
 
-		// Add delta
-		if( TestDeltaYaw < 0.0f )
-			TestDeltaYaw -= AddedYawDelt;
-		else
-			TestDeltaYaw += AddedYawDelt;
+		idEntity* TrEnt = gameLocal.GetTraceEntity( TrResults );
 
-
-		startPoint = pPlayer->GetEyePosition();
-		idVec3 vEyeOffset = -GetGravityNormal()*pPlayer->EyeHeight();
-
-		// make the test bounds go back to the unleaned eye point
-		idBounds ViewBoundsExp = m_LeanViewBounds;
-		ViewBoundsExp.AddPoint( -m_viewLeanTranslation );
-
-		idClipModel ViewClip( ViewBoundsExp );
-		idAngles viewAngYaw;
-		viewAngYaw.Zero();
-		viewAngYaw.yaw = viewAngles.yaw;
-
-		ViewClip.SetPosition( pPlayer->GetEyePosition(), viewAngYaw.ToMat3() );
-
-		//idRotation ViewYawRot( current.origin, -GetGravityNormal(), TestDeltaYaw );
-		idRotation ViewYawRot( current.origin, GetGravityNormal(), TestDeltaYaw );
-
-		startPoint = pPlayer->GetEyePosition();
-		endPoint = startPoint;
-		ViewYawRot.RotatePoint( endPoint );
-
-		gameLocal.clip.Rotation( TrResults, startPoint, ViewYawRot, &ViewClip, ViewClip.GetAxis(), MASK_SOLID | CONTENTS_BODY, self );
-
-		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Original viewpoint (%f, %f, %f) Tested viewpoint: (%f, %f, %f) \r", startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z );
-
-		// Cancel rotation if check-ahead rotation trace fails
-		if( TrResults.fraction != 1.0f )
+		// Detect AI collision, if entity hit or its bindmaster is an AI:
+		if( TrEnt != NULL && TrEnt->IsType(idAI::Type) )
 		{
-			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Clipped with rotation trace fraction %f.  Delta yaw not allowed \r", TrResults.fraction );
-			InputAngles.yaw = viewAngles.yaw;
-
-			// Detect AI collision, if entity hit or its bindmaster is an AI:
-			if( ( TrEnt = gameLocal.GetTraceEntity( TrResults ) ) != NULL
-				&& TrEnt->IsType(idAI::Type) )
-			{
-				static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
-			}
-			
-			goto Quit;
+			static_cast<idAI *>( TrEnt )->HadTactile( static_cast<idActor*>(self) );
 		}
-
-		// debug draw the test clip model
-		/*
-		collisionModelManager->DrawModel( ViewClip.Handle(), ViewClip.GetOrigin(),
-										ViewClip.GetAxis(), vec3_origin, 0.0f );
-		*/
+		
+		return;
 	}
 
-Quit:
-	return;
+	// debug draw the test clip model
+	/*
+	collisionModelManager->DrawModel( ViewClip.Handle(), ViewClip.GetOrigin(),
+									ViewClip.GetAxis(), vec3_origin, 0.0f );
+	*/
 }
 
 void idPhysics_Player::UnleanToValidPosition( void )
@@ -4922,24 +4916,21 @@ bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrob
 
 void idPhysics_Player::UpdateLeanDoor( void )
 {
-	CFrobDoor *door(NULL);
-	idPlayer *pPlayer = (idPlayer *) self;
+	idPlayer* player = static_cast<idPlayer*>(self);
 
-	door = m_LeanDoorEnt.GetEntity();
+	CFrobDoor* door = m_LeanDoorEnt.GetEntity();
 
-	if( door && pPlayer )
+	if( door && player )
 	{
-		if( !m_LeanDoorEnt.IsValid() 
-			|| door->IsOpen()
-			|| !IsLeaning() )
+		if (!m_LeanDoorEnt.IsValid() || door->IsOpen() || !IsLeaning())
 		{
 			m_LeanDoorEnt = NULL;
-			goto Quit;
+			return;
 		}
 
 		idBounds TestBounds = m_LeanViewBounds;
 		TestBounds.ExpandSelf( cv_pm_lean_door_bounds_exp.GetFloat() );
-		TestBounds.TranslateSelf( pPlayer->GetEyePosition() );
+		TestBounds.TranslateSelf( player->GetEyePosition() );
 
 /** More precise test (Not currently used)
 	
@@ -4968,16 +4959,13 @@ void idPhysics_Player::UpdateLeanDoor( void )
 		if( !TestBounds.IntersectsBounds( door->GetPhysics()->GetAbsBounds() ) )
 		{
 			m_LeanDoorEnt = NULL;
-			goto Quit;
+			return;
 		}
 		
 		// We are leaning into a door
 		// overwrite the current player listener loc with that calculated for the door
-		pPlayer->SetDoorListenLoc( m_LeanDoorListenPos );
+		player->SetDoorListenLoc( m_LeanDoorListenPos );
 	}
-
-Quit:
-	return;
 }
 
 bool idPhysics_Player::IsDoorLeaning( void )
