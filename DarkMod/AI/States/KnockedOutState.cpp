@@ -45,7 +45,7 @@ void KnockedOutState::Init(idAI* owner)
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
 
-	owner->StopAnim(ANIMCHANNEL_TORSO, 0);
+	//owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 	owner->StopAnim(ANIMCHANNEL_LEGS, 0);
 	owner->StopAnim(ANIMCHANNEL_HEAD, 0);
 
