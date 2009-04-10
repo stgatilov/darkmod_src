@@ -49,18 +49,11 @@ const float MIN_HELD_DISTANCE  =		35.0f;
 // granularity of the distance control
 const int	DIST_GRANULARITY	=		12;
 
-// shouldered body immobilizations
-const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
-const float SHOULDER_JUMP_HINDERANCE = 0.25;
-
 const char *SHOULDER_ANIM = "drop_body";
 
 CLASS_DECLARATION( idEntity, CGrabber )
-
 	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
-
 END_CLASS
-
 
 /*
 ==============
@@ -1627,30 +1620,10 @@ void CGrabber::UseEquipped( void )
 
 void CGrabber::ShoulderBody( idAFEntity_Base *body )
 {
-	// Temporarily turn the body into an inventory item
-	idStr IconName;
-	if( body->health > 0 )
-		IconName = body->spawnArgs.GetString("shouldered_name", "Body");
-	else
-		IconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
-
 	idPlayer *player = m_player.GetEntity();
 
-// TODO: Display HUD icon representing equipped/shouldered body!
-
-	// play the sound on the player, not the body (that was creating inconsistent volume)
-	player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
-
-	// set immobilizations
-	int immob = SHOULDER_IMMOBILIZATIONS;
-	// TODO: Also make sure you can't grab anything else (hands are full)
-	// requires a new EIM flag?
-	player->SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
-	
-	// set hinderance
-	float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
-	player->SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
-	player->SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
+	// greebo: Emit the callback to the owner
+	player->OnStartShoulderingBody(body);
 
 	// hide the body for now
 	idEntity *ent = m_EquippedEnt.GetEntity();
@@ -1677,17 +1650,11 @@ void CGrabber::ShoulderBody( idAFEntity_Base *body )
 
 void CGrabber::UnShoulderBody( void )
 {
-	// idEntity *body = m_EquippedEnt.GetEntity();
-
+	idEntity *body = m_EquippedEnt.GetEntity();
 	idPlayer *player = m_player.GetEntity();
 
-	// clear immobilizations
-	player->SetImmobilization( "ShoulderedBody", 0 );
-	player->SetHinderance( "ShoulderedBody", 1.0f, 1.0f );
-	player->SetJumpHinderance( "ShoulderedBody", 1.0f, 1.0f );
-
-	// same sound for unshouldering as shouldering
-	player->StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+	// greebo: Emit the callback to the owner
+	player->OnStopShoulderingBody(body);
 
 	// toggle face up/down
 	m_bDropBodyFaceUp = !m_bDropBodyFaceUp;

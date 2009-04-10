@@ -57,6 +57,10 @@ const int HEALTHPULSE_TIME = 333;
 // minimum speed to bob and play run/walk animations at
 const float MIN_BOB_SPEED = 5.0f;
 
+// shouldered body immobilizations
+const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
+const float SHOULDER_JUMP_HINDERANCE = 0.25f;
+
 const idEventDef EV_Player_GetButtons( "getButtons", NULL, 'd' );
 const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
@@ -3758,6 +3762,47 @@ void idPlayer::SetIsPushing(bool isPushing)
 bool idPlayer::IsPushing()
 {
 	return isPushing;
+}
+
+void idPlayer::OnStartShoulderingBody(idEntity* body)
+{
+	// play the sound on the player, not the body (that was creating inconsistent volume)
+	StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+
+	// set immobilizations
+	int immob = SHOULDER_IMMOBILIZATIONS;
+
+	// TODO: Also make sure you can't grab anything else (hands are full)
+	// requires a new EIM flag?
+	SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
+	
+	// set hinderance
+	float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
+	SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
+	SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
+
+	// TODO: Adjust HUD
+	/*idStr IconName;
+	if( body->health > 0 )
+		IconName = body->spawnArgs.GetString("shouldered_name", "Body");
+	else
+		IconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
+	*/
+
+	m_bShoulderingBody = true;
+}
+
+void idPlayer::OnStopShoulderingBody(idEntity* body)
+{
+	// clear immobilizations
+	SetImmobilization( "ShoulderedBody", 0 );
+	SetHinderance( "ShoulderedBody", 1.0f, 1.0f );
+	SetJumpHinderance( "ShoulderedBody", 1.0f, 1.0f );
+
+	// same sound for unshouldering as shouldering
+	StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+
+	m_bShoulderingBody = false;
 }
 
 /*

@@ -334,7 +334,6 @@ public:
 
 	/**
 	* Set to true if the player is shouldering a body
-	* NOT YET IMPLEMENTED
 	**/
 	bool					m_bShoulderingBody;
 
@@ -500,6 +499,10 @@ public:
 	virtual void			SetIsPushing(bool isPushing);
 	// Returns whether the player is currently pushing something heavy (virtual override)
 	virtual bool			IsPushing();
+
+	// Called by the grabber to signal that we start/stop shouldering a body
+	void					OnStartShoulderingBody(idEntity* body);
+	void					OnStopShoulderingBody(idEntity* body);
 
 	/**
 	 * greebo: Plays the footstep sound according to the current movement type.
