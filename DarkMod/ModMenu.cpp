@@ -649,7 +649,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
 	{
 		// Source file (full OS path)
-		fs::path pk4fileOsPath = fileSystem->RelativePathToOSPath(pk4Files->GetFile(i));
+		fs::path pk4fileOsPath = GetDarkmodPath() / pk4Files->GetFile(i);
 		
 		// Target location
 		fs::path targetFile = targetFolder / pk4fileOsPath.leaf();
