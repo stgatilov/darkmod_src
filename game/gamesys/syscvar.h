@@ -269,6 +269,9 @@ extern idCVar cv_ambient_method;
 // Volume of music speakers
 extern idCVar cv_music_volume;
 
+// angua: Velocity and sound volume of collisions
+extern idCVar cv_moveable_collision;
+
 /**
 * CVars added for Darkmod knockout and field of vision changes
 */
