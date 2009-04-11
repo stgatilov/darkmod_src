@@ -4422,8 +4422,14 @@ void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("ToggleLean starting lean\r");
 	}
-	else
+	else 
 	{
+		if (m_leanTime > 0 && m_leanMoveEndTilt == 0)
+		{
+			// We are already un-leaning
+			return;
+		}
+
 		// End the lean
 		m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
 		m_leanTime = cv_pm_lean_forward_time.GetFloat();
