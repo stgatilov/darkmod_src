@@ -3798,6 +3798,11 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 		IconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
 	*/
 
+	CallGui(m_InventoryOverlay, "OnStartShoulderingBody");
+
+	// Clear the inventory cursor
+	SelectInventoryItem("");
+
 	m_bShoulderingBody = true;
 }
 
