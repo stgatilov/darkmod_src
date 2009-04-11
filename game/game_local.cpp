@@ -1263,6 +1263,11 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// This is meant to catch cases where the player is reloading a map from the console without clicking
 	// the "Continue" button on the success GUI. I can't stop him, so I need to track this here.
 	successScreenActive = false;
+
+	if (m_MissionData != NULL)
+	{
+		m_MissionData->ClearGUIState();
+	}
 }
 
 /*

@@ -176,7 +176,8 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 CMissionData::CMissionData() :
 	m_mapFile(NULL),
 	m_PlayerTeam(0),
-	m_TotalGamePlayTime(0)
+	m_TotalGamePlayTime(0),
+	m_MissionDataLoadedIntoGUI(false)
 {
 	Clear();
 
@@ -2264,6 +2265,9 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 
 	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 	ui->SetStateInt("ObjectiveBoxIsVisible", 1);
+
+	// Tell the GUI to set its values
+	ui->HandleNamedEvent("GetObjectivesInfo");
 
 	int numObjectivesPerPage = 5;
 	numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
