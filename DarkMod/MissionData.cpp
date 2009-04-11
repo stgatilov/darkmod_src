@@ -1608,9 +1608,9 @@ idMapFile* CMissionData::LoadMap(const idStr& mapFileName)
 	// First, check if we already have a map loaded
 	if (m_mapFile != NULL)
 	{
-		if (mapFileName == m_mapFile->GetName())
+		if (mapFileName == m_mapFile->GetName() && !m_mapFile->NeedsReload())
 		{
-			// Nothing to do, we already have a map loaded
+			// Nothing to do, we already have an up-to-date map loaded
 			return m_mapFile;
 		}
 

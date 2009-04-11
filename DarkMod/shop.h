@@ -87,8 +87,8 @@ private:
 	int				forSaleTop;
 	int				purchasedTop;
 	int				startingTop;
-	bool			nothingForSale;
 
+	// True if the purchase menu should be skipped
 	bool			skipShop;
 
 public:
@@ -124,9 +124,9 @@ public:
 	int AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& list);
 
 	// returns the various lists
-	ShopItemList& GetItemsForSale();
-	ShopItemList& GetStartingItems();
-	ShopItemList& GetPurchasedItems();
+	const ShopItemList& GetItemsForSale();
+	const ShopItemList& GetStartingItems();
+	const ShopItemList& GetPurchasedItems();
 
 	// returns the combination of For Sale and Starting items
 	ShopItemList GetPlayerItems();

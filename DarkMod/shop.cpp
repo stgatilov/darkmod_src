@@ -112,24 +112,24 @@ void CShop::AddStartingItem(const CShopItemPtr& shopItem) {
 	startingItems.Append(shopItem);
 };
 
-ShopItemList& CShop::GetItemsForSale()
+const ShopItemList& CShop::GetItemsForSale()
 {
 	return itemsForSale;
 }
 
-ShopItemList& CShop::GetStartingItems()
+const ShopItemList& CShop::GetStartingItems()
 {
 	return startingItems;
 }
 
-ShopItemList& CShop::GetPurchasedItems()
+const ShopItemList& CShop::GetPurchasedItems()
 {
 	return itemsPurchased;
 }
 
 bool CShop::GetNothingForSale()
 {
-	return nothingForSale;
+	return itemsForSale.Num() == 0;
 }
 
 /**
@@ -279,41 +279,44 @@ void CShop::LoadFromDict(const idDict& dict)
 		return;
 	}
 
-	// retrieve the starting gold for the given difficulty level
-	int gold = dict.GetInt("shop_gold_start", "0");
+	// Check for an "all-difficulty" gold value
+	if (dict.FindKey("shop_gold_start") != NULL)
+	{
+		SetGold(dict.GetInt("shop_gold_start"));
+	}
 
+	// Try to retrieve the starting gold for the given difficulty level
 	if (dict.FindKey(diffPrefix + "shop_gold_start") != NULL)
 	{
-		gold = dict.GetInt(diffPrefix + "shop_gold_start");
+		SetGold(dict.GetInt(diffPrefix + "shop_gold_start"));
 	}
-
-	// the starting gold
-	SetGold(gold);
 
 	// items for sale
-	if (AddItems(dict, "shopItem", GetItemsForSale()) == 0)
-	{
-		nothingForSale = true;
-	}
-	else
-	{
-		nothingForSale = false;
-	}
+	AddItems(dict, "shopItem", itemsForSale);
 
 	// starting items (items that player already has
-	AddItems(dict, "startingItem", GetStartingItems());
+	AddItems(dict, "startingItem", startingItems);
 }
 
 void CShop::LoadFromMap(idMapFile* mapFile)
 {
 	// Get the worldspawn entity
-	idMapEntity* mapEnt = mapFile->GetEntity(0);
+	idMapEntity* worldspawn = mapFile->GetEntity(0);
 
 	// Load shop data from worldspawn first
-	LoadFromDict(mapEnt->epairs);
+	LoadFromDict(worldspawn->epairs);
 
 	// Check the rest of the map entities for shop entityDefs
-	// TODO
+	for (int i = 1; i < mapFile->GetNumEntities(); ++i)
+	{
+		idMapEntity* mapEnt = mapFile->GetEntity(i);
+
+		if (idStr::Icmp(mapEnt->epairs.GetString("classname"), "atdm:shop") == 0)
+		{
+			// Found a shop entity, process its spawnargs
+			LoadFromDict(mapEnt->epairs);
+		}
+	}
 }
 
 void CShop::LoadShopItemDefinitions()
