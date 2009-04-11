@@ -1826,14 +1826,16 @@ Sets clip model size
 void idPhysics_Player::CheckDuck( void ) {
 	float maxZ;
 
-	idActor* player = static_cast<idActor*>(self);
+	idPlayer* player = static_cast<idPlayer*>(self);
 	int oldMovementFlags = current.movementFlags;
+
+	bool idealCrouchState = player->GetIdealCrouchState();
 
 	if ( current.movementType == PM_DEAD ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when climbing a ladder or rope
-		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope)
+		if (idealCrouchState == true && !m_bOnClimb && !m_bOnRope)
 		{
 			if (waterLevel <= WATERLEVEL_WAIST)
 			{
@@ -1857,9 +1859,9 @@ void idPhysics_Player::CheckDuck( void ) {
 			// greebo: Update the lean physics when crouching
 			UpdateLeanPhysics();
 		}
-		else if (!IsMantling() && command.upmove >= 0) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
+		else if (!IsMantling() && idealCrouchState == false) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
-			// command.upmove is not negative anymore, check if we are still in crouch mode
+			// ideal crouch state is not negative anymore, check if we are still in crouch mode
 			// stand up if appropriate
 			if ( current.movementFlags & PMF_DUCKED ) 
 			{
@@ -1906,6 +1908,7 @@ void idPhysics_Player::CheckDuck( void ) {
 			}
 		}
 
+		// TODO_CROUCH: don't use crouch speed while climbing
 		if ( current.movementFlags & PMF_DUCKED ) 
 		{
 			playerSpeed = crouchSpeed;

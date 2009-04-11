@@ -337,6 +337,15 @@ public:
 	**/
 	bool					m_bShoulderingBody;
 
+
+	// angua: whether the player should be crouching
+	bool					m_IdealCrouchState;
+
+	// angua: this is true when the player is holding the crocuh button
+	// or toggle crouch is active
+	bool					m_CrouchIntent;
+
+
 	/**
 	* Hack to fix the leaning test of key-releases
 	* Timestamp to wait a few frames before testing for button release
@@ -776,6 +785,16 @@ public:
 	void					PerformFrobKeyRepeat();
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease();
+
+
+	// angua: Set ideal crouch state
+	void					EvaluateCrouch();
+
+	ID_INLINE bool			GetIdealCrouchState()
+	{
+		return m_IdealCrouchState;
+	}
+
 
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.

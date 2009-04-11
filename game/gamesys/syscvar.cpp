@@ -162,6 +162,10 @@ idCVar cv_tdm_min_vel_jump(				"tdm_min_vel_jump",				"0.0",			CVAR_FLOAT, "The 
 idCVar cv_tdm_fwd_jump_vel(				"tdm_fwd_jump_vel",				"50.0",			CVAR_FLOAT, "Forward vector multiple for jumping" );
 
 
+// Dark Mod crouching
+idCVar cv_tdm_crouch_toggle(			"tdm_crouch_toggle",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make crouching toggleable." );
+
+
 /**
 * Dark Mod Leaning
 **/

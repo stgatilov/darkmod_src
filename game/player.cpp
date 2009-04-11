@@ -463,6 +463,9 @@ idPlayer::idPlayer() :
 	m_bDraggingBody			= false;
 	m_bShoulderingBody		= false;
 
+	m_IdealCrouchState		= false;
+	m_CrouchIntent			= false;
+
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
@@ -1547,6 +1550,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
+	savefile->WriteBool( m_IdealCrouchState );
+	savefile->WriteBool( m_CrouchIntent );
+
 	savefile->WriteInt(m_InventoryOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
@@ -1873,6 +1879,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
+
+	savefile->ReadBool( m_IdealCrouchState );
+	savefile->ReadBool( m_CrouchIntent );
 
 	savefile->ReadInt(m_InventoryOverlay);
 
@@ -5374,6 +5383,16 @@ void idPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 
+		case IMPULSE_23:		// Crouch
+		{
+			m_ButtonStateTracker.startTracking(impulse);
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+				m_CrouchIntent = !m_CrouchIntent;
+			}
+		}
+		break;
+
 		case IMPULSE_24:
 		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
@@ -5648,6 +5667,12 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 			PerformFrobKeyRelease();
 		}
 		break;
+		case IMPULSE_23:
+			if ( !cv_tdm_crouch_toggle.GetBool() && m_CrouchIntent)
+			{
+				m_CrouchIntent = false;
+			}
+		break;
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 				physicsObj.ToggleLean(90.0);
@@ -5822,6 +5847,19 @@ void idPlayer::EvaluateControls( void )
 	// update the viewangles
 	UpdateViewAngles();
 }
+
+
+void idPlayer::EvaluateCrouch()
+{
+	if ( GetImmobilization() & EIM_CROUCH) 
+	{
+		m_IdealCrouchState = false;
+		return;
+	} 
+	m_IdealCrouchState = m_CrouchIntent;
+}
+
+
 
 /**
 * TDM Mouse Gestures
@@ -6755,6 +6793,12 @@ void idPlayer::Think( void )
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
 
+	// angua: disable doom3 crouching
+	if (usercmd.upmove < 0)
+	{
+		usercmd.upmove = 0;
+	}
+
 	if( AI_PAIN )
 		m_bDamagedThisFrame = true;
 	else
@@ -6794,9 +6838,9 @@ void idPlayer::Think( void )
 	}
 	// Note to self: I should probably be thinking about having some sort of
 	// flag where the player is kept crouching if that's how they started out.
-	if ( GetImmobilization() & EIM_CROUCH && usercmd.upmove < 0 ) {
-		usercmd.upmove = 0;
-	} else if ( GetImmobilization() & EIM_JUMP && usercmd.upmove > 0 ) {
+
+	// angua: crouch immobilization is handled in EvaluateCrouch now
+	if ( GetImmobilization() & EIM_JUMP && usercmd.upmove > 0 ) {
 		usercmd.upmove = 0;
 	}
 
@@ -6844,6 +6888,9 @@ void idPlayer::Think( void )
 	}
 
 	EvaluateControls();
+
+	EvaluateCrouch();
+
 
 	if ( !af.IsActive() ) {
 		AdjustBodyAngles();
