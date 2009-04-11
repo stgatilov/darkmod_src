@@ -462,7 +462,7 @@ void CShop::DisplayShop(idUserInterface *gui)
 
 void CShop::SellItem(int index)
 {
-	const CShopItemPtr& boughtItem = itemsPurchased[purchasedTop + index];
+	CShopItemPtr boughtItem = itemsPurchased[purchasedTop + index];
 	CShopItemPtr forSaleItem = FindForSaleByID(boughtItem->GetID());
 	boughtItem->ChangeCount(-1);
 
@@ -476,6 +476,7 @@ void CShop::SellItem(int index)
 			if (purchasedTop < 0) purchasedTop = 0;
 		}
 	}
+
 	ChangeGold(boughtItem->GetCost());
 
 	// If the weapon class wasn't in the for sale list (it should be), add it
