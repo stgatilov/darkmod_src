@@ -3790,15 +3790,23 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 	SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );
 	SetJumpHinderance( "ShoulderedBody", 1.0f, SHOULDER_JUMP_HINDERANCE );
 
-	// TODO: Adjust HUD
-	/*idStr IconName;
-	if( body->health > 0 )
-		IconName = body->spawnArgs.GetString("shouldered_name", "Body");
-	else
-		IconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
-	*/
+	// greebo: Determine which icon to display on the HUD
+	idStr iconName;
 
-	CallGui(m_InventoryOverlay, "OnStartShoulderingBody");
+	if( body->health > 0 )
+	{
+		iconName = body->spawnArgs.GetString("shouldered_name", "Body");
+	}
+	else
+	{
+		iconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
+	}
+
+	// Send the name to the inventory HUD
+	SetGuiString(m_InventoryOverlay, "GrabbedItemName", iconName);
+
+	// Notify all GUIs about the event
+	m_overlays.broadcastNamedEvent("OnStartShoulderingBody");
 
 	// Clear the inventory cursor
 	SelectInventoryItem("");
@@ -3815,6 +3823,11 @@ void idPlayer::OnStopShoulderingBody(idEntity* body)
 
 	// same sound for unshouldering as shouldering
 	StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+
+	m_overlays.broadcastNamedEvent("OnStopShoulderingBody");
+
+	// Send the name to the inventory HUD
+	SetGuiString(m_InventoryOverlay, "GrabbedItemName", "");
 
 	m_bShoulderingBody = false;
 }
