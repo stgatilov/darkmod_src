@@ -5385,10 +5385,19 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_23:		// Crouch
 		{
-			m_ButtonStateTracker.startTracking(impulse);
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			// angua: hitting crouch while climbing on a ladder or rope will detach
+			if (physicsObj.OnRope() || physicsObj.OnLadder())
 			{
-				m_CrouchIntent = !m_CrouchIntent;
+				physicsObj.ClimbDetach();
+			}
+			else
+			{
+				// in all other cases, change the crouch intent which will toggle crouch
+				m_ButtonStateTracker.startTracking(impulse);
+				if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+				{
+					m_CrouchIntent = !m_CrouchIntent;
+				}
 			}
 		}
 		break;

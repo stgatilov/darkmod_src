@@ -400,13 +400,16 @@ private:
 * The following are used in wall/ladder climbing
 **/
 	void					CheckClimbable( void );
-	void					ClimbDetach( bool bStepUp = false );
 
 #ifndef MOD_WATERPHYSICS
 	void					SetWaterLevel( void );
 #endif
 	void					DropTimers( void );
 	void					MovePlayer( int msec );
+
+public:
+	void					ClimbDetach( bool bStepUp = false );
+
 
 	//#####################################################
 	// Mantling handler

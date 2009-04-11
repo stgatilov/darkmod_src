@@ -1433,7 +1433,8 @@ void idPhysics_Player::LadderMove( void )
 	ClimbNormXY.Normalize();
 
 	// jump off the climbable surface if they jump, or fall off if they hit crouch
-	if ( idPhysics_Player::CheckRopeJump() || common->ButtonState(UB_DOWN) ) 
+	// angua: detaching when hitting crouch is handled in idPlayer::PerformImpulse
+	if (idPhysics_Player::CheckRopeJump()) 
 	{
 		ClimbDetach();
 		return;
@@ -2180,12 +2181,6 @@ bool idPhysics_Player::CheckJump()
 		return false;
 	}
 
-	// don't jump if we can't stand up
-	if ( current.movementFlags & PMF_DUCKED )
-	{
-		return false;
-	}
-
 	groundPlane = false;		// jumping away
 	walking = false;
 	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
@@ -2237,7 +2232,18 @@ bool idPhysics_Player::CheckJump()
 		addVelocity = 2.0f * maxJumpHeight * -gravityVector;
 	}
 
-	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
+	// angua: reduce jump velocity when crouching, unless we are on a ladder or rope
+	// cv_tdm_crouch_jump_vel can also be set to 0 to disable jumping while crouching
+	if ( current.movementFlags & PMF_DUCKED && !OnRope() && !OnLadder())
+	{
+		addVelocity *= cv_tdm_crouch_jump_vel.GetFloat();
+		extraSpeedForward *= cv_tdm_crouch_jump_vel.GetFloat();
+	}
+
+	if (addVelocity.LengthFast() > 0)
+	{
+		addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
+	}
 	current.velocity += addVelocity + extraSpeedForward;
 
 	return true;
@@ -2260,10 +2266,11 @@ bool idPhysics_Player::CheckRopeJump( void )
 		return false;
 	}
 
+	// angua: should be able to jump on a rope or ladder, even when crouched
 	// don't jump if we can't stand up
-	if ( current.movementFlags & PMF_DUCKED ) {
-		return false;
-	}
+	// if ( current.movementFlags & PMF_DUCKED ) {
+	// 	return false;
+	// }
 
 	groundPlane = false;		// jumping away
 	walking = false;

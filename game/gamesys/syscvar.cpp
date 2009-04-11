@@ -158,6 +158,7 @@ idCVar cv_pm_mantle_minflatness(		"pm_mantle_minflatness",		"0.707",			CVAR_GAME
 **/
 idCVar cv_tdm_walk_jump_vel(			"tdm_walk_jump_vel",			"2.2",			CVAR_FLOAT, "Jump velocity multiplier when walking" );
 idCVar cv_tdm_run_jump_vel(				"tdm_run_jump_vel",				"2.5",			CVAR_FLOAT, "Jump velocity multiplier when running" );
+idCVar cv_tdm_crouch_jump_vel(			"tdm_crouch_jump_vel",			"0.5",			CVAR_FLOAT, "Jump velocity multiplier when crouching" );
 idCVar cv_tdm_min_vel_jump(				"tdm_min_vel_jump",				"0.0",			CVAR_FLOAT, "The minimum speed before cv_tdm_run_jump_vel is used" );
 idCVar cv_tdm_fwd_jump_vel(				"tdm_fwd_jump_vel",				"50.0",			CVAR_FLOAT, "Forward vector multiple for jumping" );
 
