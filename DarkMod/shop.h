@@ -71,20 +71,25 @@ public:
 };
 typedef boost::shared_ptr<CShopItem> CShopItemPtr;
 
+// A list of shop items
+typedef idList<CShopItemPtr> ShopItemList;
+
 // Represents the Shop
 class CShop
 {
 private:
-	idList<CShopItemPtr>	itemDefs;
-	idList<CShopItemPtr>	itemsForSale;
-	idList<CShopItemPtr>	itemsPurchased;
-	idList<CShopItemPtr>	startingItems;
+	ShopItemList	itemDefs;
+	ShopItemList	itemsForSale;
+	ShopItemList	itemsPurchased;
+	ShopItemList	startingItems;
 
 	int				gold;
 	int				forSaleTop;
 	int				purchasedTop;
 	int				startingTop;
 	bool			nothingForSale;
+
+	bool			skipShop;
 
 public:
 	void Init();
@@ -116,15 +121,15 @@ public:
 	void AddStartingItem(const CShopItemPtr& shopItem);
 
 	// initializes the 'list' based on the map
-	int AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItemPtr>& list);
+	int AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& list);
 
 	// returns the various lists
-	idList<CShopItemPtr>& GetItemsForSale();
-	idList<CShopItemPtr>& GetStartingItems();
-	idList<CShopItemPtr>& GetPurchasedItems();
+	ShopItemList& GetItemsForSale();
+	ShopItemList& GetStartingItems();
+	ShopItemList& GetPurchasedItems();
 
 	// returns the combination of For Sale and Starting items
-	idList<CShopItemPtr> GetPlayerItems();
+	ShopItemList GetPlayerItems();
 
 	// adjust the lists
 	void SellItem(int index);
@@ -138,16 +143,23 @@ public:
 	CShopItemPtr FindPurchasedByID(const char *id);
 	CShopItemPtr FindForSaleByID(const char *id);
 
-	CShopItemPtr FindByID(idList<CShopItemPtr>& items, const char *id);
+	CShopItemPtr FindByID(ShopItemList& items, const char *id);
 
 	// initialize the shop
 	void DisplayShop(idUserInterface *gui);
 
 	// scroll a list to the next "page" of values
-	void ScrollList(int* topItem, int maxItems, idList<CShopItemPtr>& list);
+	void ScrollList(int* topItem, int maxItems, ShopItemList& list);
 
 	// true if there are no items for sale
 	bool GetNothingForSale();
+
+private:
+	// Load all data from shop entities and worldspawn of the given map
+	void LoadFromMap(idMapFile* mapFile);
+
+	// Load all shop and starting items from the given spawnargs
+	void LoadFromDict(const idDict& dict);
 };
 
 

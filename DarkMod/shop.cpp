@@ -75,6 +75,8 @@ void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
 };
 
+// ================= Shop ============================
+
 void CShop::Init()
 {
 	Clear();
@@ -89,6 +91,7 @@ void CShop::Clear()
 	forSaleTop = 0;
 	purchasedTop = 0;
 	startingTop = 0;
+	skipShop = false;
 }
 
 void CShop::Save(idSaveGame *savefile) const
@@ -109,17 +112,17 @@ void CShop::AddStartingItem(const CShopItemPtr& shopItem) {
 	startingItems.Append(shopItem);
 };
 
-idList<CShopItemPtr>& CShop::GetItemsForSale()
+ShopItemList& CShop::GetItemsForSale()
 {
 	return itemsForSale;
 }
 
-idList<CShopItemPtr>& CShop::GetStartingItems()
+ShopItemList& CShop::GetStartingItems()
 {
 	return startingItems;
 }
 
-idList<CShopItemPtr>& CShop::GetPurchasedItems()
+ShopItemList& CShop::GetPurchasedItems()
 {
 	return itemsPurchased;
 }
@@ -132,10 +135,10 @@ bool CShop::GetNothingForSale()
 /**
  * Combine the purchased list and the starting list
  */
-idList<CShopItemPtr> CShop::GetPlayerItems()
+ShopItemList CShop::GetPlayerItems()
 {
 	// Copy-construct the list using the list of purchased items
-	idList<CShopItemPtr> playerItems(itemsPurchased);
+	ShopItemList playerItems(itemsPurchased);
 
 	for (int i = 0; i < startingItems.Num(); i++)
 	{
@@ -219,7 +222,7 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 	}
 }
 
-void CShop::ScrollList(int* topItem, int maxItems, idList<CShopItemPtr>& list)
+void CShop::ScrollList(int* topItem, int maxItems, ShopItemList& list)
 {
 	if (*topItem + maxItems < list.Num())
 	{
@@ -262,7 +265,59 @@ void CShop::LoadFromInventory(idPlayer *player) {
 	}
 }
 
-void CShop::LoadShopItemDefinitions() {
+void CShop::LoadFromDict(const idDict& dict)
+{
+	// greebo: Assemble the difficulty prefix (e.g. "diff_0_")
+	idStr diffPrefix = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_";
+
+	if (dict.GetBool("shop_skip","0") || dict.GetBool(diffPrefix + "shop_skip","0"))
+	{
+		// if skip flag is set, skip the shop
+		skipShop = true;
+
+		// No need to parse any further, the shop will be skipped anyway
+		return;
+	}
+
+	// retrieve the starting gold for the given difficulty level
+	int gold = dict.GetInt("shop_gold_start", "0");
+
+	if (dict.FindKey(diffPrefix + "shop_gold_start") != NULL)
+	{
+		gold = dict.GetInt(diffPrefix + "shop_gold_start");
+	}
+
+	// the starting gold
+	SetGold(gold);
+
+	// items for sale
+	if (AddItems(dict, "shopItem", GetItemsForSale()) == 0)
+	{
+		nothingForSale = true;
+	}
+	else
+	{
+		nothingForSale = false;
+	}
+
+	// starting items (items that player already has
+	AddItems(dict, "startingItem", GetStartingItems());
+}
+
+void CShop::LoadFromMap(idMapFile* mapFile)
+{
+	// Get the worldspawn entity
+	idMapEntity* mapEnt = mapFile->GetEntity(0);
+
+	// Load shop data from worldspawn first
+	LoadFromDict(mapEnt->epairs);
+
+	// Check the rest of the map entities for shop entityDefs
+	// TODO
+}
+
+void CShop::LoadShopItemDefinitions()
+{
 	// Load the definitions for the shop items. Include classname (for spawing),
 	// display name and description, modal name (for image display), and cost
 	int numDecls = declManager->GetNumDecls( DECL_ENTITYDEF );
@@ -284,7 +339,7 @@ void CShop::LoadShopItemDefinitions() {
 	}
 }
 
-int CShop::AddItems(const idDict& mapDict, const char* itemKey, idList<CShopItemPtr>& list)
+int CShop::AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& list)
 {
 	int itemNum = 1;
 	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
@@ -388,43 +443,15 @@ void CShop::DisplayShop(idUserInterface *gui)
 		return;
 	}
 
-	// Get the worldspawn entity, where the shop items are defined
-	idMapEntity* mapEnt = mapFile->GetEntity(0);
-	const idDict& mapDict = mapEnt->epairs;
+	// Load the shop items from the map entity/entities
+	LoadFromMap(mapFile);
 
-	// greebo: Assemble the difficulty prefix (e.g. "diff_0_")
-	idStr diffPrefix = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_";
-
-	if (mapDict.GetBool("shop_skip","0") || mapDict.GetBool(diffPrefix + "shop_skip","0"))
+	if (skipShop)
 	{
-		// if skip flag is set, skip the shop
+		// Shop data says: skip da shoppe
 		gui->HandleNamedEvent("SkipShop");
 		return;
 	}
-
-	// retrieve the starting gold for the given difficulty level
-	int gold = mapDict.GetInt("shop_gold_start", "0");
-
-	if (mapDict.FindKey(diffPrefix + "shop_gold_start") != NULL)
-	{
-		gold = mapDict.GetInt(diffPrefix + "shop_gold_start");
-	}
-
-	// the starting gold
-	SetGold(gold);
-
-	// items for sale
-	if (AddItems(mapDict, "shopItem", GetItemsForSale()) == 0)
-	{
-		nothingForSale = true;
-	}
-	else
-	{
-		nothingForSale = false;
-	}
-
-	// starting items (items that player already has
-	AddItems(mapDict, "startingItem", GetStartingItems());
 
 	UpdateGUI(gui);
 }
@@ -474,7 +501,7 @@ CShopItemPtr CShop::FindForSaleByID(const char *id) {
 	return FindByID(itemsForSale, id);
 }
 
-CShopItemPtr CShop::FindByID(idList<CShopItemPtr>& items, const char *id)
+CShopItemPtr CShop::FindByID(ShopItemList& items, const char *id)
 {
 	for (int i = 0; i < items.Num(); i++)
 	{
