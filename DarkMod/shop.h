@@ -121,7 +121,7 @@ public:
 	void AddStartingItem(const CShopItemPtr& shopItem);
 
 	// initializes the 'list' based on the map
-	int AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& list);
+	int AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list);
 
 	// returns the various lists
 	const ShopItemList& GetItemsForSale();

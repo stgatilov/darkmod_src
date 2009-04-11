@@ -342,69 +342,68 @@ void CShop::LoadShopItemDefinitions()
 	}
 }
 
-int CShop::AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& list)
+int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list)
 {
-	int itemNum = 1;
 	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 
-	while (true)
+	int itemsAdded = 0;
+
+	for (const idKeyValue* kv = mapDict.MatchPrefix(itemKey); kv != NULL; kv = mapDict.MatchPrefix(itemKey, kv))
 	{
-		// greebo: Assemble the item prefix (e.g. "shopItem_1_");
-		idStr itemPrefix = va("%s_%d_", itemKey, itemNum);
+		// Inspect the matching prefix, check whether the difficulty level applies
+		idStr postfix = kv->GetKey();
 
-		// This is the prefix for the various difficulty levels
-		idStr itemDiffPrefix = va("%s_%d_%d_", itemKey, itemNum, diffLevel);
+		// Cut off the prefix including the following underscore _
+		postfix.StripLeadingOnce(itemKey + "_");
+		
+		int pos = postfix.Find("_item");
+		
+		if (pos == -1 || pos != postfix.Length() - 5)
+		{
+			continue; // no suitable "_item" found
+		}
 
-		idStr itemName = mapDict.GetString(itemDiffPrefix + "item");
+		// This is the number portion, like "1_2" or merely "2"
+		idStr indexStr = postfix.Mid(0, pos);
+
+		// Check if we have still an underscore in the index string, this implies
+		// that there is a difficulty number included
+		int underScorePos = indexStr.Find('_');
+
+		if (underScorePos != -1)
+		{
+			// Check out the second number, this is the difficulty level
+			idStr diffStr = indexStr.Mid(underScorePos + 1, indexStr.Length() - underScorePos);
+
+			// Check if the difficulty level matches
+			if (atoi(diffStr) != diffLevel)
+			{
+				// Ignore this spawnarg
+				continue;
+			}
+		}
+
+		// greebo: Assemble the item prefix (e.g. "shopItem_1_") to look up the rest of the spawnargs
+		idStr itemPrefix = itemKey + "_" + postfix.Mid(0, pos) + "_";
+
+		idStr itemName = mapDict.GetString(itemPrefix + "item");
 
 		if (itemName.IsEmpty())
 		{
-			// Difficulty-specific item is empty, check for ordinary one
-			itemName = mapDict.GetString(itemPrefix + "item");
+			continue; // Empty names are not considered
 		}
 
-		if (itemName.IsEmpty())
-		{
-			return itemNum - 1; // we're done, return the number of added items
-		}
+		// look for quantity
+		int quantity = mapDict.GetInt(itemPrefix + "qty");
 
-		// look for skill-specific quantity first
-		int quantity = mapDict.GetInt(itemDiffPrefix + "qty");
+		// look for price
+		int price = mapDict.GetInt(itemPrefix + "price");
 
-		if (quantity == 0) {
-			quantity = mapDict.GetInt(itemPrefix + "qty");
-		}
+		// look for persistency
+		bool persistent = mapDict.GetBool(itemPrefix + "persistent");
 
-		// look for skill-specific price first
-		int price = mapDict.GetInt(itemDiffPrefix + "price");
-
-		if (price == 0) {
-			price = mapDict.GetInt(itemPrefix + "price");
-		}
-
-		// look for skill-specific persistency first
-		bool persistent = false;
-
-		const idKeyValue* keyValue = mapDict.FindKey(itemDiffPrefix + "persistent");
-
-		if (keyValue != NULL) {
-			persistent = mapDict.GetBool(itemDiffPrefix + "persistent");
-		}
-		else {
-			persistent = mapDict.GetBool(itemPrefix + "persistent");
-		}
-
-		// look for skill-specific canDrop flag first
-		bool canDrop = true;
-
-		keyValue = mapDict.FindKey(itemDiffPrefix + "canDrop");
-
-		if (keyValue != NULL) {
-			canDrop = mapDict.GetBool(itemDiffPrefix + "canDrop");
-		}
-		else {
-			canDrop = mapDict.GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
-		}
+		// look for canDrop flag 
+		bool canDrop = mapDict.GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
 
 		// put the item in the shop
 		if (quantity > 0)
@@ -416,15 +415,17 @@ int CShop::AddItems(const idDict& mapDict, const char* itemKey, ShopItemList& li
 				CShopItemPtr anItem(new CShopItem(*found, quantity, price, persistent));
 				anItem->SetCanDrop(canDrop);
 				list.Append(anItem);
+
+				itemsAdded++;
 			}
 			else
 			{
 				gameLocal.Printf("Could not add item to shop: %s\n", itemName.c_str());
 			}
 		}
-
-		itemNum++;
 	}
+
+	return itemsAdded;
 }
 
 void CShop::DisplayShop(idUserInterface *gui)
