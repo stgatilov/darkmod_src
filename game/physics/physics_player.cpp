@@ -1945,22 +1945,26 @@ void idPhysics_Player::CheckDuck( void ) {
 			}
  			else if ((oldMovementFlags & PMF_DUCKED) && waterLevel == WATERLEVEL_WAIST && previousWaterLevel == WATERLEVEL_HEAD)
 			{
-				// We're just floating up to the water surface, switch back to non-crouch mode
-				// Clear the flag again, just to be sure
-				current.movementFlags &= ~PMF_DUCKED;
+				// angua: only stand up when we should not be crouching
+				if (idealCrouchState == false)
+				{
+					// We're just floating up to the water surface, switch back to non-crouch mode
+					// Clear the flag again, just to be sure
+					current.movementFlags &= ~PMF_DUCKED;
 
-				// greebo: Perform a trace to see how far we can move downwards
-				trace_t	trace;
-				idVec3 end = player->GetEyePosition() + gravityNormal * pm_normalviewheight.GetFloat();
-				gameLocal.clip.Translation(trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self);
+					// greebo: Perform a trace to see how far we can move downwards
+					trace_t	trace;
+					idVec3 end = player->GetEyePosition() + gravityNormal * pm_normalviewheight.GetFloat();
+					gameLocal.clip.Translation(trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self);
 
-				// Set the origin to the end position of the trace
-				SetOrigin(trace.endpos);
+					// Set the origin to the end position of the trace
+					SetOrigin(trace.endpos);
 
-				maxZ = pm_normalheight.GetFloat();
+					maxZ = pm_normalheight.GetFloat();
 
-				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
-				player->SetEyeHeight(pm_normalviewheight.GetFloat());
+					// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
+					player->SetEyeHeight(pm_normalviewheight.GetFloat());
+				}
 			}
 		}
 
