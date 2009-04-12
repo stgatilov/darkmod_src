@@ -165,7 +165,7 @@ idCVar cv_tdm_fwd_jump_vel(				"tdm_fwd_jump_vel",				"50.0",			CVAR_FLOAT, "For
 
 // Dark Mod crouching
 idCVar cv_tdm_crouch_toggle(			"tdm_toggle_crouch",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make crouching toggleable." );
-
+idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Delay (in ms) for reattaching to ropes/ladders after detaching using crouch." );
 
 /**
 * Dark Mod Leaning

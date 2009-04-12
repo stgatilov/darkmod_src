@@ -5404,7 +5404,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_23:		// Crouch
 		{
 			// angua: hitting crouch while climbing on a ladder or rope will detach
-			if (physicsObj.OnRope() || physicsObj.OnLadder())
+			if (physicsObj.OnRope())
+			{
+				physicsObj.RopeDetach();
+			}
+			else if (physicsObj.OnLadder())
 			{
 				physicsObj.ClimbDetach();
 			}

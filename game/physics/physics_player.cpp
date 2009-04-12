@@ -79,7 +79,7 @@ const float ROPE_DISTANCE		= 20.0f;
 /**
 * Time the system waits before reattaching to the same rope after detaching [ms]
 **/
-const int	ROPE_REATTACHTIME	= 600;
+const int	ROPE_REATTACHTIME	= 0;
 
 /**
 * Angular tolarance for looking at a rope and grabbing it [deg]
@@ -1353,7 +1353,7 @@ void idPhysics_Player::RopeDetach()
 	m_bOnRope = false;
 
 	// start the reattach timer
-	m_RopeDetachTimer = gameLocal.time;
+	SetNextAttachTime(gameLocal.time + cv_tdm_reattach_delay.GetFloat());
 
 	static_cast<idPlayer*>(self)->SetImmobilization( "RopeMove", 0 );
 
@@ -1403,6 +1403,9 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 	{
 		AirMove();
 	}
+
+	SetNextAttachTime(gameLocal.time + cv_tdm_reattach_delay.GetFloat());
+
 }
 
 /*
@@ -1994,22 +1997,16 @@ DarkMod: Checks ropes, ladders and other climbables
 */
 void idPhysics_Player::CheckClimbable( void ) 
 {
-	idVec3		forward, start, end, delta;
-	trace_t		trace;
-	float		tracedist, angleOff, dist, lookUpAng;
-	bool		bLookingUp;
-	idEntity    *testEnt;
-	
 	if( current.movementTime ) 
-		goto Quit;
+		return;
 
 	// if on the ground moving backwards
 	if( walking && command.forwardmove <= 0 ) 
-		goto Quit;
+		return;
 
 	// Don't attach to ropes or ladders in the middle of a mantle
 	if ( IsMantling() )
-		goto Quit;
+		return;
 
 /*
 	// Don't attach if we are holding an object in our hands
@@ -2018,9 +2015,10 @@ void idPhysics_Player::CheckClimbable( void )
 */
 
 	// forward vector orthogonal to gravity
-	forward = viewForward - (gravityNormal * viewForward) * gravityNormal;
+	idVec3 forward = viewForward - (gravityNormal * viewForward) * gravityNormal;
 	forward.Normalize();
 
+	float tracedist;
 	if ( walking ) 
 	{
 		// don't want to get sucked towards the ladder when still walking or when climbing
@@ -2031,14 +2029,18 @@ void idPhysics_Player::CheckClimbable( void )
 		tracedist = 48.0f;
 	}
 
-	end = current.origin + tracedist * forward;
+	idVec3 end = current.origin + tracedist * forward;
 	// modified to check contents_corpse to check for ropes
+	trace_t		trace;
 	gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask | CONTENTS_CORPSE, self );
 
+	idVec3 delta;
+	float angleOff;
+	float dist;
 	// if near a surface
 	if ( trace.fraction < 1.0f ) 
 	{
-		testEnt = gameLocal.entities[trace.c.entityNum];
+		idEntity* testEnt = gameLocal.entities[trace.c.entityNum];
 		
 // DarkMod: Check if we're looking at a rope and airborne
 // TODO: Check the class type instead of the stringname, make new rope class
@@ -2060,8 +2062,8 @@ void idPhysics_Player::CheckClimbable( void )
 				&& ( (trace.endpos - current.origin).Length() <= 2.0f )
 				&& !groundPlane
 				&& angleOff >= idMath::Cos( ROPE_ATTACHANGLE )
-				&& (testEnt != m_RopeEntity.GetEntity() || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
-				)
+				&& (testEnt != m_RopeEntity.GetEntity() || gameLocal.time > m_NextAttachTime)
+			)
 			{
 				// make sure rope segment is not touching the ground
 				int bodyID = m_RopeEntTouched.GetEntity()->BodyForClipModelId( trace.c.id );
@@ -2071,7 +2073,7 @@ void idPhysics_Player::CheckClimbable( void )
 					m_bJustHitRope = true;
 					m_RopeEntity = static_cast<idAFEntity_Base *>(testEnt);
 
-					goto Quit;
+					return;
 				}
 			}
 		}
@@ -2079,14 +2081,15 @@ void idPhysics_Player::CheckClimbable( void )
 		// if a climbable surface
 		if ( 
 			trace.c.material 
-			&& ( trace.c.material->GetSurfaceFlags() & SURF_LADDER )
+			&& (trace.c.material->GetSurfaceFlags() & SURF_LADDER)
+			&& 	gameLocal.time > m_NextAttachTime
 			) 
 		{
 			idVec3 vStickPoint = trace.endpos;
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
 			gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
-			start = trace.endpos;
+			idVec3 start = trace.endpos;
 			end = start + tracedist * forward;
 			gameLocal.clip.Translation( trace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
 
@@ -2111,7 +2114,7 @@ void idPhysics_Player::CheckClimbable( void )
 					m_bClimbableAhead = true;
 					m_bOnClimb = true;					
 
-					goto Quit;
+					return;
 				}
 			}
 		}
@@ -2124,6 +2127,7 @@ void idPhysics_Player::CheckClimbable( void )
 			&& m_RopeEntTouched.GetEntity() != NULL
 			&& m_RopeEntTouched.GetEntity()->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
 			&& !groundPlane
+			&& gameLocal.time > m_NextAttachTime
 		)
 	{
 		// test distance against the nearest rope body
@@ -2139,9 +2143,9 @@ void idPhysics_Player::CheckClimbable( void )
 		angleOff = delta * forward;
 
 		// if the player is looking high up, override the angle check
-		lookUpAng = viewForward * -gravityNormal;
+		float lookUpAng = viewForward * -gravityNormal;
 		// set lookup to true if the player is looking 60 deg up or more
-		bLookingUp = lookUpAng >= idMath::Cos(idMath::PI/6);
+		bool bLookingUp = lookUpAng >= idMath::Cos(idMath::PI/6);
 
 		if
 			(	
@@ -2154,12 +2158,9 @@ void idPhysics_Player::CheckClimbable( void )
 				m_bRopeContact = true;
 				m_bJustHitRope = true;
 				m_RopeEntity = m_RopeEntTouched.GetEntity();
-				goto Quit;
+				return;
 		}
 	}
-
-Quit:
-	return;
 }
 
 /*
@@ -2706,6 +2707,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbSndRepDistVert = 0;
 	m_ClimbSndRepDistHoriz = 0;
 
+	m_NextAttachTime = -1;
+
 	m_PushForce = CForcePushPtr(new CForcePush);
 
 	// swimming
@@ -2835,6 +2838,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_ClimbSndRepDistHoriz );
 	m_ClimbingOnEnt.Save( savefile );
 
+	savefile->WriteInt( m_NextAttachTime );
+
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
 
@@ -2925,6 +2930,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_ClimbSndRepDistVert );
 	savefile->ReadInt( m_ClimbSndRepDistHoriz );
 	m_ClimbingOnEnt.Restore( savefile );
+
+	savefile->ReadInt( m_NextAttachTime );
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );

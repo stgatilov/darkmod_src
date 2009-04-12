@@ -142,6 +142,8 @@ extern idCVar cv_force_savegame_load;
 
 // angua: TDM toggle crouch
 extern idCVar cv_tdm_crouch_toggle;
+extern idCVar cv_tdm_reattach_delay;
+
 
 /**
 * TDM Leaning vars:

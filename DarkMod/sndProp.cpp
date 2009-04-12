@@ -458,7 +458,7 @@ void CsndProp::Propagate
 	// later we will put a permananet value in the def for globals->Vol
 	vol0 += cv_ai_sndvol.GetFloat();
 
-	if (cv_moveable_collision.GetBool() > 0 && maker->IsType(idMoveable::Type))
+	if (cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type))
 	{
 		gameRenderWorld->DrawText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
 	}
