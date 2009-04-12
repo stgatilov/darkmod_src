@@ -77,11 +77,6 @@ const float ROPE_GRABHEIGHT		= 50.0f;
 const float ROPE_DISTANCE		= 20.0f;
 
 /**
-* Time the system waits before reattaching to the same rope after detaching [ms]
-**/
-const int	ROPE_REATTACHTIME	= 0;
-
-/**
 * Angular tolarance for looking at a rope and grabbing it [deg]
 **/
 const float ROPE_ATTACHANGLE = 45.0f*idMath::PI/180.0f;
@@ -676,10 +671,9 @@ void idPhysics_Player::WaterMove()
 				factor = 1;
 			}
 
-			if (command.upmove < 0)
+			if (static_cast<idPlayer*>(self)->m_CrouchIntent)
 			{
-				// greebo: upmove is negative, we probably have crouch mode activated
-				command.upmove = 0;
+				// greebo: we probably have crouch mode activated
 				// Set the factor to 0, toggle crouch can here be used to keep the player at the current height
 				factor = 0;
 			}
@@ -692,13 +686,6 @@ void idPhysics_Player::WaterMove()
 			wishvel.Zero();
 		}
 	} else {
-
-		if (waterLevel >= WATERLEVEL_WAIST && command.upmove < 0)
-		{
-			// greebo: This is to compensate the toggle crouch downwards velocity
-			// otherwise the player is rapidly sinking when crouch is on.
-			command.upmove = 0;
-		}
 
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;
@@ -1263,8 +1250,8 @@ void idPhysics_Player::RopeMove( void )
 		wishvel += 0.5f * climbDir * scale * (float) command.upmove;
 	}
 
-	// detach the player from the rope if they jump, or if they hit crouch
-	if ( idPhysics_Player::CheckRopeJump() || common->ButtonState(UB_DOWN) ) 
+	// detach the player from the rope if they jump
+	if ( idPhysics_Player::CheckRopeJump()) 
 	{
 		RopeDetach();
 		goto Quit;
@@ -2127,7 +2114,6 @@ void idPhysics_Player::CheckClimbable( void )
 			&& m_RopeEntTouched.GetEntity() != NULL
 			&& m_RopeEntTouched.GetEntity()->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
 			&& !groundPlane
-			&& gameLocal.time > m_NextAttachTime
 		)
 	{
 		// test distance against the nearest rope body
@@ -2151,7 +2137,7 @@ void idPhysics_Player::CheckClimbable( void )
 			(	
 				dist <= ROPE_DISTANCE
 				&& ( angleOff >= idMath::Cos( ROPE_ATTACHANGLE ) || bLookingUp )
-				&& (m_RopeEntTouched.GetEntity() != m_RopeEntity.GetEntity() || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
+				&& (m_RopeEntTouched.GetEntity() != m_RopeEntity.GetEntity() || gameLocal.time > m_NextAttachTime)
 				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContacts( touchedBody )
 			)
 		{
@@ -2690,7 +2676,6 @@ idPhysics_Player::idPhysics_Player( void )
 	m_bJustHitRope = false;
 	m_RopeEntity = NULL;
 	m_RopeEntTouched = NULL;
-	m_RopeDetachTimer = 0;
 	m_RopeKickTime = 0;
 
 	// wall/ladder climbing
@@ -2820,7 +2805,6 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bRopeContact );
 	savefile->WriteBool( m_bJustHitRope );
 	savefile->WriteBool( m_bOnRope );
-	savefile->WriteInt( m_RopeDetachTimer );
 	savefile->WriteInt( m_RopeKickTime );
 	m_RopeEntity.Save( savefile );
 	m_RopeEntTouched.Save( savefile );
@@ -2908,7 +2892,6 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bRopeContact );
 	savefile->ReadBool( m_bJustHitRope );
 	savefile->ReadBool( m_bOnRope );
-	savefile->ReadInt( m_RopeDetachTimer );
 	savefile->ReadInt( m_RopeKickTime );
 	m_RopeEntity.Restore( savefile );
 	m_RopeEntTouched.Restore( savefile );

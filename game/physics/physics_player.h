@@ -262,10 +262,6 @@ private:
 	**/
 	idEntityPtr<idAFEntity_Base>	m_RopeEntTouched;
 
-	/**
-	* The gametime since the last detachment (used for detach-reattach timer)
-	**/
-	int						m_RopeDetachTimer;
 	
 	/**
 	* toggled based on whether the player should stay attached to rope
