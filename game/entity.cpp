@@ -7780,6 +7780,11 @@ void idEntity::ResponseSetAction(int StimType, const char *s)
 		resp->SetResponseAction(s);
 }
 
+void idEntity::OnStim(CStim* stim, idEntity* stimSource)
+{
+	// Nothing
+}
+
 /**	Called when m_renderTrigger is rendered.
  *	It will resume the m_renderWaitingThread.
  */

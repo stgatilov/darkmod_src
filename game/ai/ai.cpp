@@ -5482,15 +5482,16 @@ void idAI::DropBlood(idEntity *inflictor)
 
 		// blood splats are thrown onto nearby surfaces
 		idStr splat = def->dict.RandomPrefix("mtr_killed_splat", gameLocal.random);
+
 		if (!splat.IsEmpty()) 
 		{
-			SpawnBloodMarker(splat, 40);
+			SpawnBloodMarker(splat, splat + "_fading", 40);
 		}
 	}
 }
 
 
-void idAI::SpawnBloodMarker(idStr splat, float size)
+void idAI::SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float size)
 {
 	trace_t result;
 	gameLocal.clip.TracePoint(result, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 60 * idVec3(0, 0, -1), MASK_OPAQUE, this);
@@ -5516,7 +5517,7 @@ void idAI::SpawnBloodMarker(idStr splat, float size)
 
 	CBloodMarker* bloodMarker = static_cast<CBloodMarker*>(ent);
 	bloodMarker->SetOrigin(markerOrigin);
-	bloodMarker->Init(splat, size);
+	bloodMarker->Init(splat, splatFading, size);
 	bloodMarker->Event_GenerateBloodSplat();
 }
 

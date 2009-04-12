@@ -1175,7 +1175,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
 	void					DropBlood(idEntity *inflictor);
-	void					SpawnBloodMarker(idStr splat, float size);
+	void					SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float size);
 
 	void					PostDeath();
 

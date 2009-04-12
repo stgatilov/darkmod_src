@@ -1437,6 +1437,10 @@ public:			// Events should be public, so they can be used from other places as w
 	void					ResponseAllow(int StimType, idEntity *);
 	void					ResponseSetAction(int StimType, const char *Action);
 
+	// greebo: Callback invoked by the response on incoming stims to trigger custom code
+	// To be overridden by subclasses, default implementation is empty
+	virtual void			OnStim(CStim* stim, idEntity* stimSource);
+
 	// Script event pendant to GetResponseEntity();
 	void					Event_GetResponseEntity();
 
