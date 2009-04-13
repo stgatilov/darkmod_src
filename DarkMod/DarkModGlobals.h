@@ -199,6 +199,12 @@ public:
 	**/
 	void GetSurfName(const idMaterial *material, idStr &strIn);
 
+	/**
+	 * greebo: Returns the surface name for the given material
+	 * or an empty string if not found.
+	 **/
+	idStr GetSurfName(const idMaterial* material);
+
 	// Returns the darkmod path
 	static std::string GetDarkmodPath();
 

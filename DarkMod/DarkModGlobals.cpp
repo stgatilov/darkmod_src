@@ -1117,6 +1117,27 @@ Quit:
 	return;
 }
 
+idStr CGlobal::GetSurfName(const idMaterial* material)
+{
+	if (material == NULL)
+	{
+		return idStr();
+	}
+
+	const surfTypes_t surftype = material->GetSurfaceType();
+
+	if (surftype != SURFTYPE_15)
+	{
+		return gameLocal.sufaceTypeNames[ surftype ];
+	}
+
+	// return the first word of the description if it has surftype_15
+	idStr desc = material->GetDescription();
+	int end = desc.Find(' ');
+
+	return ( end == -1 ) ? desc : desc.Left(end);
+}
+
 std::string CGlobal::GetDarkmodPath()
 {
 	// Path to the parent directory

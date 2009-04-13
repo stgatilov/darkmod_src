@@ -340,46 +340,46 @@ idMoveable::Collide
 =================
 */
 
-bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	float v, f;
-	idVec3 dir;
-	idEntity *ent;
-	const idMaterial *material(NULL);
-	idStr SndNameLocal;
-	const char *SndName(NULL);
-
+bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) 
+{
 	// greebo: Check whether we are colliding with the nearly exact same point again
 	bool sameCollisionAgain = (lastCollision.fraction != -1 && lastCollision.c.point.Compare(collision.c.point, 0.05f));
 
 	// greebo: Save the collision info for the next call
 	lastCollision = collision;
 
-	v = -( velocity * collision.c.normal );
+	float v = -( velocity * collision.c.normal );
+
 	if ( !sameCollisionAgain )
 	{
- 		if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime )
-		{ 
-			material = collision.c.material;
-			if( material != NULL)
-			{
-				g_Global.GetSurfName( material, SndNameLocal );
-				SndNameLocal = "snd_bounce_" + SndNameLocal;
-				SndName = spawnArgs.GetString( SndNameLocal.c_str() );
+		float bounceSoundMinVelocity = cv_bounce_sound_min_vel.GetFloat();
+		float bounceSoundMaxVelocity = cv_bounce_sound_max_vel.GetFloat();
 
-				if( *SndName == '\0' )
+ 		if ( v > bounceSoundMinVelocity && gameLocal.time > nextSoundTime )
+		{ 
+			const idMaterial *material = collision.c.material;
+
+			idStr sndNameLocal = "snd_bounce";
+
+			if (material != NULL)
+			{
+				// Prepend the snd_bounce_ prefix to check for a surface-specific sound
+				idStr sndNameWithSurface = "snd_bounce_" + g_Global.GetSurfName(material);
+
+				if (spawnArgs.FindKey(sndNameWithSurface) != NULL)
 				{
-					SndNameLocal = "snd_bounce";
+					sndNameLocal = sndNameWithSurface;
 				}
 			}
 
-			const char* sound = spawnArgs.GetString(SndNameLocal);
+			const char* sound = spawnArgs.GetString(sndNameLocal);
 			const idSoundShader* sndShader = declManager->FindSound(sound);
 
 			//f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
 
 			// angua: modify the volume set in the def instead of setting a fixed value. 
 			// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
-			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - BOUNCE_SOUND_MIN_VELOCITY) * (1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY)) - 1 );
+			float f = v > bounceSoundMaxVelocity ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
 
 			float volume = sndShader->GetParms()->volume + f;
 
@@ -391,12 +391,13 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 			SetSoundVolume(volume);
 
-			StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL, f );
+			StartSound( sndNameLocal, SND_CHANNEL_ANY, 0, false, NULL, f );
 
 			SetSoundVolume(0.0f);
 
 			nextSoundTime = gameLocal.time + 500;
 		}
+
 		// tels:
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter=%i and v=%f and time=%f > m_nextCollideScriptTime=%f.\r",
 				name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
@@ -436,14 +437,14 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	}
 
-	ent = gameLocal.entities[ collision.c.entityNum ];
+	idEntity* ent = gameLocal.entities[ collision.c.entityNum ];
 
 	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) 
 	{
 		if ( ent && v > minDamageVelocity ) 
 		{
-			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
-			dir = velocity;
+			float f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			idVec3 dir = velocity;
 			dir.NormalizeFast();
 			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
 			nextDamageTime = gameLocal.time + 1000;

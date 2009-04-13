@@ -234,9 +234,13 @@ idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_
 * Throw_min and throw_max are the min and max impulses applied to items thrown
 **/
 idCVar cv_throw_min(				"tdm_throw_min",			"600",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum impulse applied to a thrown object." );
-idCVar cv_throw_max(				"tdm_throw_max",			"3500",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum impulse applied to a thrown object." );
-idCVar cv_throw_time(				"tdm_throw_time",		"1200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "When throwing an object, time it takes to charge up to the max throw force in milliseconds." );
-idCVar cv_throw_max_vel(			"tdm_throw_max_vel",	"900",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity of thrown objects is clamped to this value (in doomunits / second).  Needed to balance throwing of very light objects." );
+idCVar cv_throw_max(				"tdm_throw_max",			"3500",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum impulse applied to a thrown object." );
+idCVar cv_throw_time(				"tdm_throw_time",			"1200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "When throwing an object, time it takes to charge up to the max throw force in milliseconds." );
+idCVar cv_throw_max_vel(			"tdm_throw_max_vel",		"900",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity of thrown objects is clamped to this value (in doomunits / second).  Needed to balance throwing of very light objects." );
+
+idCVar cv_bounce_sound_max_vel(		"tdm_bounce_sound_max_vel",	"400",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "At this velocity moveable collision sounds reach their maximum volume." );
+idCVar cv_bounce_sound_min_vel(		"tdm_bounce_sound_min_vel",	"80",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the minimum velocity at which moveable collision sounds can be heard at all." );
+
 
 idCVar cv_reverse_grab_control(		"tdm_grabber_reverse_control",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Set to 1 to reverse the direction when using next/prev weapon to increase/decrease the distance of the grabbed item." );
 
