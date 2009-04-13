@@ -3489,12 +3489,22 @@ void idPlayer::Weapon_Combat( void ) {
 	} else {
 		weaponGone = false;	// if you drop and re-get weap, you may miss the = false above 
 		if ( weapon.GetEntity()->IsHolstered() ) {
-			if ( !weapon.GetEntity()->AmmoAvailable() ) {
+			if ( !weapon.GetEntity()->AmmoAvailable() )
+			{
 				// weapons can switch automatically if they have no more ammo
 				// ishtvan: Only if the cvar is set
-				if( cv_weapon_next_on_empty.GetBool() )
+				if (cv_weapon_next_on_empty.GetBool())
+				{
 					NextBestWeapon();
-			} else {
+				}
+				else
+				{
+					// Switch to unarmed if no more ammo available
+					SelectWeapon(weapon_fists, false);
+				}
+			}
+			else
+			{
 				weapon.GetEntity()->Raise();
 				state = GetScriptFunction( "RaiseWeapon" );
 				if ( state ) {
