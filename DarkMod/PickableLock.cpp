@@ -319,7 +319,11 @@ bool PickableLock::ProcessLockpickPress(int type)
 	}
 
 	// Check if we're still playing a sound
-	if (m_SoundTimerStarted > 0) return false; // busy
+	if (m_SoundTimerStarted > 0) 
+	{
+		// Busy, but at least return positive if the lockpick type matches
+		return CheckLockpickType(type);
+	}
 
 	switch (m_LockpickState)
 	{
