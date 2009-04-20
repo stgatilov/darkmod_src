@@ -258,6 +258,8 @@ extern idCVar cv_lg_velocity_mod_amount;
 extern idCVar cv_empty_model;
 
 extern idCVar cv_tdm_s_doorDistanceAdd;
+extern idCVar cv_tdm_gui_smallFontLimit;
+extern idCVar cv_tdm_gui_mediumFontLimit;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
