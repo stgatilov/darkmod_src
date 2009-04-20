@@ -433,6 +433,9 @@ void idGameLocal::Init( void ) {
 
 	InitConsoleCommands();
 
+	// greebo: Let the proxy CVARs overwrite the closed source counter-part
+	cvarSystem->SetCVarInteger("s_doorDistanceAdd", cv_tdm_s_doorDistanceAdd.GetInteger());
+
 	// load default scripts
 	program.Startup( SCRIPT_DEFAULT );
 	

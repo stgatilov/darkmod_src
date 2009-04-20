@@ -315,6 +315,9 @@ idCVar cv_lg_velocity_mod_amount("tdm_lg_velocity_mod_amount", "1", CVAR_GAME | 
 
 idCVar cv_empty_model("tdm_empty_model", "models/darkmod/misc/system/empty.lwo", CVAR_GAME | CVAR_ARCHIVE, "The empty model referenced by the 'waitForRender' script event.");
 
+// Proxy CVARs
+idCVar cv_tdm_s_doorDistanceAdd("tdm_s_doorDistanceAdd", "450", CVAR_GAME | CVAR_ARCHIVE, "This value will overwrite s_doorDistanceAdd at game startup.");
+
 /**
  * Variables needed for lockpicking.
  */
