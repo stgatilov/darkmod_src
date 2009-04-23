@@ -1885,8 +1885,9 @@ void idAI::Think( void )
 	SetNextThinkFrame();
 
 	// if we are completely closed off from the player, don't do anything at all
+	// angua: only go dormant while in idle
 	bool outsidePVS = CheckDormant();
-	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
+	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
 		return;
 	}
 			
