@@ -5413,24 +5413,12 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_23:		// Crouch
 		{
-			// angua: hitting crouch while climbing on a ladder or rope will detach
-			if (physicsObj.OnRope())
+			if (!cv_tdm_crouch_toggle.GetBool())
 			{
-				physicsObj.RopeDetach();
+				m_CrouchIntent = true;
 			}
-			else if (physicsObj.OnLadder())
-			{
-				physicsObj.ClimbDetach();
-			}
-			else
-			{
-				// in all other cases, change the crouch intent which will toggle crouch
-				m_ButtonStateTracker.StartTracking(impulse);
-				if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
-				{
-					m_CrouchIntent = !m_CrouchIntent;
-				}
-			}
+			
+			m_ButtonStateTracker.StartTracking(impulse);
 		}
 		break;
 
@@ -5674,8 +5662,27 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 {
+
+
 	switch (impulse)
 	{
+		case IMPULSE_23:		// TDM Crouch
+		{
+			if (holdTime > cv_tdm_crouch_toggle_hold_time.GetFloat())
+			{
+				if (physicsObj.OnRope())
+				{
+					physicsObj.RopeDetach();
+				}
+				else if (physicsObj.OnLadder())
+				{
+					physicsObj.ClimbDetach();
+				}
+			}
+
+		}
+		break;
+
 		case IMPULSE_41:		// TDM Use/Frob
 		{
 			PerformFrobKeyRepeat();
@@ -5703,17 +5710,29 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 	switch (impulse)
 	{
+		case IMPULSE_23:		// TDM crouch
+			if (cv_tdm_crouch_toggle.GetBool())
+			{
+				if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+				{
+					m_CrouchIntent = !m_CrouchIntent;
+				}
+			}		
+			else
+			{
+				m_CrouchIntent = false;
+			}
+
+		break;
+
 		case IMPULSE_41:		// TDM Use/Frob
 		{
 			PerformFrobKeyRelease();
 		}
 		break;
-		case IMPULSE_23:
-			if ( !cv_tdm_crouch_toggle.GetBool() && m_CrouchIntent)
-			{
-				m_CrouchIntent = false;
-			}
-		break;
+
+
+
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 				physicsObj.ToggleLean(90.0);
