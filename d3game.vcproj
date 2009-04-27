@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="8,00"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
 	RootNamespace="Game"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -91,8 +90,6 @@
 				SubSystem="0"
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				SupportUnloadOfDelayLoadedDLL="true"
 				TargetMachine="1"
 			/>
@@ -113,6 +110,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -200,8 +200,6 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				EntryPointSymbol=""
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				SupportUnloadOfDelayLoadedDLL="false"
 				TargetMachine="1"
 			/>
@@ -222,6 +220,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -301,8 +302,6 @@
 				SubSystem="0"
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				SupportUnloadOfDelayLoadedDLL="false"
 				TargetMachine="1"
 			/>
@@ -323,6 +322,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -402,8 +404,6 @@
 				SubSystem="0"
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				SupportUnloadOfDelayLoadedDLL="true"
 				TargetMachine="1"
 			/>
@@ -424,6 +424,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
