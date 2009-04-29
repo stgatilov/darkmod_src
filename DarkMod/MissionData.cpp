@@ -2500,7 +2500,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
 	idStr divider(": ");
-	idStr postfix("\t");
+	idStr postfix("");
 
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	key = "Difficulty Level";

@@ -3358,7 +3358,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{
 				// Load the statistics into the GUI
 				m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
-
+			
 				// Show the success GUI
 				gui->HandleNamedEvent("ShowSuccessScreen");
 
@@ -3383,6 +3383,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Propagate the video CVARs to the GUI
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
 		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
+	}
+	else if (cmd == "loadStatistics")
+	{
+		// Load the statistics into the GUI
+		m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
 	}
 	else if (cmd == "setVideoResWideScreen")
 	{
