@@ -345,7 +345,7 @@ void CShop::LoadShopItemDefinitions()
 int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list)
 {
 	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
-
+	
 	int itemsAdded = 0;
 
 	for (const idKeyValue* kv = mapDict.MatchPrefix(itemKey); kv != NULL; kv = mapDict.MatchPrefix(itemKey, kv))
@@ -370,6 +370,9 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 		// that there is a difficulty number included
 		int underScorePos = indexStr.Find('_');
 
+		// Extract the item index
+		int itemIndex = (underScorePos != -1) ? atoi(indexStr.Mid(0, underScorePos)) : atoi(indexStr);
+
 		if (underScorePos != -1)
 		{
 			// Check out the second number, this is the difficulty level
@@ -383,27 +386,48 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 			}
 		}
 
-		// greebo: Assemble the item prefix (e.g. "shopItem_1_") to look up the rest of the spawnargs
-		idStr itemPrefix = itemKey + "_" + postfix.Mid(0, pos) + "_";
-
-		idStr itemName = mapDict.GetString(itemPrefix + "item");
+		idStr itemName = kv->GetValue();
 
 		if (itemName.IsEmpty())
 		{
 			continue; // Empty names are not considered
 		}
 
-		// look for quantity
-		int quantity = mapDict.GetInt(itemPrefix + "qty");
+		// greebo: Assemble the item prefix (e.g. "shopItem_1_") to look up the rest of the spawnargs
+		idStr itemPrefix = itemKey + "_" + idStr(itemIndex);
+		idStr diffLevelStr = "_" + idStr(diffLevel);
+
+		// look for quantity, but let a difficulty-specific setting override the general one
+		int quantity = mapDict.GetInt(itemPrefix + "_qty");
+
+		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_qty") != NULL)
+		{
+			quantity = mapDict.GetInt(itemPrefix + diffLevelStr + "_qty");
+		}
 
 		// look for price
-		int price = mapDict.GetInt(itemPrefix + "price");
+		int price = mapDict.GetInt(itemPrefix + "_price");
+
+		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_price") != NULL)
+		{
+			price = mapDict.GetInt(itemPrefix + diffLevelStr + "_price");
+		}
 
 		// look for persistency
-		bool persistent = mapDict.GetBool(itemPrefix + "persistent");
+		bool persistent = mapDict.GetBool(itemPrefix + "_persistent");
+
+		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_persistent") != NULL)
+		{
+			persistent = mapDict.GetBool(itemPrefix + diffLevelStr + "_persistent");
+		}
 
 		// look for canDrop flag 
-		bool canDrop = mapDict.GetBool(itemPrefix + "canDrop", "1"); // items can be dropped by default
+		bool canDrop = mapDict.GetBool(itemPrefix + "_canDrop", "1"); // items can be dropped by default
+
+		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_canDrop") != NULL)
+		{
+			canDrop = mapDict.GetBool(itemPrefix + diffLevelStr + "_canDrop", "1");
+		}
 
 		// put the item in the shop
 		if (quantity > 0)
