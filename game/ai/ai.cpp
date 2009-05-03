@@ -552,6 +552,7 @@ idAI::idAI()
 	m_FlatFootParryMax	= 0;
 	m_FlatFootParryTimer = 0;
 	m_FlatFootParryTime	= 0;
+	m_MeleeCounterAttChance = 0.0f;
 
 	m_maxInterleaveThinkFrames = 0;
 	m_minInterleaveThinkDist = 1000;
@@ -857,6 +858,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_FlatFootParryMax);
 	savefile->WriteInt(m_FlatFootParryTimer);
 	savefile->WriteInt(m_FlatFootParryTime);
+	savefile->WriteFloat(m_MeleeCounterAttChance);
 
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
@@ -1195,6 +1197,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_FlatFootParryMax);
 	savefile->ReadInt(m_FlatFootParryTimer);
 	savefile->ReadInt(m_FlatFootParryTime);
+	savefile->ReadFloat(m_MeleeCounterAttChance);
 
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
@@ -1671,6 +1674,8 @@ void idAI::Spawn( void )
 	m_FlatFootedTime	= spawnArgs.GetInt("flatfooted_time");
 	m_FlatFootParryMax = spawnArgs.GetInt("flatfoot_parry_num");
 	m_FlatFootParryTime = spawnArgs.GetInt("flatfoot_parry_time");
+	// Convert percent chance to fractional
+	m_MeleeCounterAttChance = spawnArgs.GetInt("melee_chance_to_counter") / 100.0f;
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;

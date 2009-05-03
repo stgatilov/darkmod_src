@@ -1136,6 +1136,12 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bIsClimbableRope);
 
+	savefile->WriteInt(m_animRates.Num());
+	for (i = 0; i < m_animRates.Num(); i++)
+	{
+		savefile->WriteFloat(m_animRates[i]);
+	}
+
 	m_SetInMotionByActor.Save(savefile);
 	m_MovedByActor.Save(savefile);
 
@@ -1320,6 +1326,13 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadClipModel(m_FrobBox);
 
 	savefile->ReadBool(m_bIsClimbableRope);
+
+	savefile->ReadInt(num);
+	m_animRates.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadFloat(m_animRates[i]);
+	}
 
 	m_SetInMotionByActor.Restore(savefile);
 	m_MovedByActor.Restore(savefile);

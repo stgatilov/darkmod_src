@@ -88,7 +88,7 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentRiposteRecovery;
 	}
 	// longer recovery if we were parried
-	// TODO: Also do longer recovery if we get hit? not for now.
+	// TODO: Also do longer recovery if we get hit? Might be bad for gameplay
 	else if( pStatus->m_ActionResult == MELEERESULT_AT_PARRIED )
 		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentAttackLongRecovery;
 	else
@@ -113,7 +113,17 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 			&& !_bForceAttack
 		)
 	{
-		StartParry(owner);
+		// Counter attack if enemy is in range and chance check succeeds
+		if( owner->GetMemory().canHitEnemy 
+			&& gameLocal.random.RandomFloat() < owner->m_MeleeCounterAttChance )
+		{
+			StartAttack(owner);
+		}
+		else
+		{
+			// normal procedure, parry rather than counter attack
+			StartParry(owner);
+		}
 	}
 
 	// If we can't attack or parry, wait until we can

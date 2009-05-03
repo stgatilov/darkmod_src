@@ -995,6 +995,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_FlatFootParryMax; // spawnarg cap
 	int						m_FlatFootParryTimer; // runtime tracking
 	int						m_FlatFootParryTime; // spawnarg cap [ms]
+	/**
+	* Melee: Chance to counter attack into an enemy attack instead of parrying:
+	**/
+	float					m_MeleeCounterAttChance;
 
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
