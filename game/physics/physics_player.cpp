@@ -1988,11 +1988,15 @@ void idPhysics_Player::CheckClimbable( void )
 		return;
 
 	// if on the ground moving backwards
+	// TODO: This causes problems when rope-climbing down a steep incline
 	if( walking && command.forwardmove <= 0 ) 
 		return;
 
 	// Don't attach to ropes or ladders in the middle of a mantle
 	if ( IsMantling() )
+		return;
+
+	if ( m_bClimbDetachCrouchHeld )
 		return;
 
 /*
@@ -2691,6 +2695,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbMaxVelVert = 0.0f;
 	m_ClimbSndRepDistVert = 0;
 	m_ClimbSndRepDistHoriz = 0;
+	m_bClimbDetachCrouchHeld = false;
 
 	m_NextAttachTime = -1;
 
@@ -2951,6 +2956,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	m_LeanDoorEnt.Restore( savefile );
 
 	savefile->ReadStaticObject( *m_PushForce );
+
+	// ishtvan: To avoid accidental latching, clear held crouch key var
+	m_bClimbDetachCrouchHeld = false;
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }

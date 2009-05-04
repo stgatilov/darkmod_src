@@ -166,6 +166,15 @@ public:
 	float					GetDeltaViewYaw( void );
 	float					GetDeltaViewPitch( void );
 
+public:
+
+	/**
+	* Ishtvan: This variable is set when the player used crouch to detach
+	* from a climbable and is still holding down the button
+	* This is not saved/restored but cleared on restore, just to be safe
+	**/
+	bool					m_bClimbDetachCrouchHeld;
+
 public:	// common physics interface
 
 	// virtual override of base class method SetSelf() to set the push force owner

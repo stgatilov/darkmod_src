@@ -5673,10 +5673,12 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 				if (physicsObj.OnRope())
 				{
 					physicsObj.RopeDetach();
+					physicsObj.m_bClimbDetachCrouchHeld = true;
 				}
 				else if (physicsObj.OnLadder())
 				{
 					physicsObj.ClimbDetach();
+					physicsObj.m_bClimbDetachCrouchHeld = true;
 				}
 			}
 
@@ -5722,6 +5724,9 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 			{
 				m_CrouchIntent = false;
 			}
+
+			// clear climb detach intent when crouch is released
+			physicsObj.m_bClimbDetachCrouchHeld = false;
 
 		break;
 
