@@ -52,11 +52,16 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 	Memory& memory = owner->GetMemory();
 	idActor* enemy = _enemy.GetEntity();
-	assert(enemy != NULL);
 
 	// angua: bad luck, my friend, yuo've been too slow...
 	// no more fleeing necessary when dead or ko'ed
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return true;
+	}
+
+	// if the enemy we're fleeing from dies, enemy gets set to NULL
+	if (enemy == NULL )
 	{
 		return true;
 	}
