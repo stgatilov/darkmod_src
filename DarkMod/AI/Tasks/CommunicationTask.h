@@ -15,6 +15,8 @@
 namespace ai
 {
 
+#define BARK_PRIORITY_DEF "atdm:ai_bark_priority"
+
 class CommunicationTask;
 typedef boost::shared_ptr<CommunicationTask> CommunicationTaskPtr;
 
@@ -51,6 +53,8 @@ public:
 	// Returns TRUE if the task is still playing a bark 
 	// (this is excluding any possible delay after the actual sound)
 	bool IsBarking();
+
+	const idStr& GetSoundName();
 
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);

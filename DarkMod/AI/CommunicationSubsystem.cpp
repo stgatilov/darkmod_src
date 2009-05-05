@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id: Subsystem.cpp 2822 2008-09-13 0
 #include "CommunicationSubsystem.h"
 #include "Library.h"
 #include "States/State.h"
-
+#include "Tasks/CommunicationTask.h"
 
 namespace ai
 {
@@ -24,7 +24,6 @@ CommunicationSubsystem::CommunicationSubsystem(SubsystemId subsystemId, idAI* ow
 	Subsystem(subsystemId, owner)
 {}
 
-
 bool CommunicationSubsystem::AddCommTask(const CommunicationTaskPtr& communicationTask)
 {
 	if (IsEmpty())
@@ -32,42 +31,100 @@ bool CommunicationSubsystem::AddCommTask(const CommunicationTaskPtr& communicati
 		PushTask(communicationTask);
 		return true;
 	}
-	
 
-	int priority = communicationTask->GetPriority();
-	int currentPriority = GetCurrentPriority();
+	assert(communicationTask != NULL);
 
 	CommunicationTaskPtr curCommTask = GetCurrentCommTask();
 
-	if (priority > currentPriority)
-	{
-		// The new bark has higher priority, clear all current bark tasks and start the new one
-		ClearTasks();
-		PushTask(communicationTask);
-		return true;
-	}
+	// Check if we have a specific action to take when the new sound is conflicting
+	EActionTypeOnConflict actionType = GetActionTypeForSound(communicationTask);
 
-	else if (priority == currentPriority)
+	switch (actionType)
 	{
-		// the new bark has the same priority as the old one
-		if (curCommTask != NULL && !curCommTask->IsBarking())
+		case EDefault:
 		{
-			// If the current bark is not playing at the moment, switch to the new one
-			SwitchTask(communicationTask);
+			// Consider the priorities
+			int priority = communicationTask->GetPriority();
+			int currentPriority = GetCurrentPriority();
+
+			if (priority > currentPriority)
+			{
+				// The new bark has higher priority, clear all current bark tasks and start the new one
+				ClearTasks();
+				PushTask(communicationTask);
+				return true;
+			}
+			else if (priority == currentPriority)
+			{
+				// the new bark has the same priority as the old one
+				if (curCommTask != NULL && !curCommTask->IsBarking())
+				{
+					// If the current bark is not playing at the moment, switch to the new one
+					SwitchTask(communicationTask);
+					return true;
+				}
+
+				// If the current bark is playing at the moment, discard the new one
+				return false;
+			}
+			else // priority is lower than the current one
+			{
+				QueueTask(communicationTask);
+				return true;
+			}
 		}
-		// If the current bark is playing at the moment, discard the new one
-
-		// TODO: clear all tasks with lower priority than this from the stack
-	}
-	else
-	{
-		// The new bark has lower priority than the current one, queue it after the current bark(s)
-		QueueTask(communicationTask);
-
-		//TODO: some barks might not want to be queued but discarded
-	}
+		case EOverride:	
+			ClearTasks();
+			PushTask(communicationTask);
+			return true;
+		case EQueue:
+			QueueTask(communicationTask);
+			return true;
+		case EDiscard:	
+			// Do nothing
+			return false;
+		case EPush:	
+			PushTask(communicationTask);
+			return true;
+	};
 
 	return false;
+}
+
+CommunicationSubsystem::EActionTypeOnConflict 
+	CommunicationSubsystem::GetActionTypeForSound(const CommunicationTaskPtr& communicationTask)
+{
+	// Check if we have a specific action to take when the new sound has lower prio
+	const idDict* dict = gameLocal.FindEntityDefDict(BARK_PRIORITY_DEF);
+
+	if (dict == NULL) 
+	{
+		gameLocal.Warning("Cannot find bark priority entitydef %s", BARK_PRIORITY_DEF);
+		return EDefault;
+	}
+
+	int priorityDifference = communicationTask->GetPriority() - GetCurrentPriority();
+
+	const idKeyValue* kv = dict->FindKey(
+		communicationTask->GetSoundName() + "_" + 
+		(priorityDifference < 0 ? "onlower" : (priorityDifference == 0 ? "onequal" : "onhigher"))
+	);
+
+	if (kv == NULL) return EDefault;
+
+	const idStr& actionStr = kv->GetValue();
+
+	if (actionStr.IsEmpty()) return EDefault;
+	
+	switch (actionStr[0])
+	{
+		case 'd': return EDiscard; 
+		case 'o': return EOverride;
+		case 'p': return EPush;
+		case 'q': return EQueue;
+	}
+
+	return EDefault;
 }
 
 CommunicationTaskPtr CommunicationSubsystem::GetCurrentCommTask()

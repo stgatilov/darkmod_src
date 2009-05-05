@@ -25,9 +25,27 @@ class CommunicationSubsystem :
 {
 protected:
 
+	enum EActionTypeOnConflict
+	{
+		EDefault,	// default behaviour
+		EOverride,	// override the existing sound
+		EQueue,		// queue after the current sound
+		EDiscard,	// discard the new sound
+		EPush,		// push on top of existing sound
+	};
+
 public:
 	CommunicationSubsystem(SubsystemId subsystemId, idAI* owner);
 
+	/**
+	 * greebo: Handle a new incoming communication task and decide whether
+	 * to push or queue it or do whatever action is defined according to the
+	 * settings in the entityDef. 
+	 *
+	 * Note: Does not accept NULL pointers.
+	 *
+	 * @returns: TRUE if the new bark has been accepted, FALSE if it has been ignored.
+	 */
 	bool AddCommTask(const CommunicationTaskPtr& communicationTask);
 
 	// returns the priority of the currently active communication task
@@ -42,6 +60,9 @@ public:
 	virtual idStr GetDebugInfo();
 
 protected:
+	// Priority difference is "new snd prio - current snd prio"
+	EActionTypeOnConflict GetActionTypeForSound(const CommunicationTaskPtr& communicationTask);
+
 	// Returns the currently active commtask or NULL if no commtask is active
 	CommunicationTaskPtr GetCurrentCommTask();
 };

@@ -17,8 +17,6 @@ static bool init_version = FileVersionList("$Id: CommunicationTask.cpp 3184 2009
 #include "CommunicationTask.h"
 #include "../Library.h"
 
-#define BARK_PRIORITY_DEF "atdm:ai_bark_priority"
-
 namespace ai
 {
 
@@ -59,6 +57,11 @@ int CommunicationTask::GetPriority()
 bool CommunicationTask::IsBarking()
 {
 	return (gameLocal.time < _barkStartTime + _barkLength);
+}
+
+const idStr& CommunicationTask::GetSoundName()
+{
+	return _soundName;
 }
 
 // Save/Restore methods
