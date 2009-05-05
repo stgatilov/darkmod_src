@@ -3437,6 +3437,68 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateBool("SuccessScreenActive", false);
 		successScreenActive = false;
 	}
+	else if (cmd == "setLPDifficulty")
+	{
+		// Lockpicking difficulty setting changed, update CVARs
+		int setting = gui->GetStateInt("lp_difficulty", "-1");
+		
+		switch (setting)
+		{
+		case 0: // Trainer
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(750);
+			break;
+		case 1: // Average
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(500);
+			break;
+		case 2: // Hard
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(400);
+			break;
+		case 3: // Expert
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(300);
+			break;
+		case 4: // Automatic
+			cv_lp_auto_pick.SetBool(true);
+			cv_lp_pick_timeout.SetInteger(500); // auto-LP is using average timeout
+			break;
+		default:
+			gameLocal.Warning("Unknown value for lockpicking difficulty encountered!");
+		};
+	}
+	else if (cmd == "loadLPDifficulty")
+	{
+		// The GUI requests to update the lp_difficulty state string
+		int setting = 0;
+
+		if (cv_lp_auto_pick.GetBool())
+		{
+			setting = 4; // automatic
+		}
+		else // auto-pick is false
+		{
+			if (cv_lp_pick_timeout.GetInteger() >= 750)
+			{
+				setting = 0; // Trainer
+			}
+			else if (cv_lp_pick_timeout.GetInteger() >= 500)
+			{
+				setting = 1; // Average
+			}
+			else if (cv_lp_pick_timeout.GetInteger() >= 400)
+			{
+				setting = 2; // Hard
+			}
+			else // if (cv_lp_pick_timeout.GetInteger() >= 300)
+			{
+				setting = 3; // Expert
+			}
+		}
+
+		gui->SetStateInt("lp_difficulty", setting);
+	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
 	m_ModMenu->HandleCommands(menuCommand, gui);
