@@ -300,7 +300,8 @@ void idAFAttachment::Spawn( void ) {
 idAFAttachment::SetBody
 =====================
 */
-void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_t attachJoint ) {
+void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_t attachJoint ) 
+{
 	bool bleed;
 
 	body = bodyEnt;
@@ -313,6 +314,23 @@ void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_
 
 	// greebo: Add the body as frob peer
 	m_FrobPeers.AddUnique(bodyEnt->name);
+
+	// ishtvan: Go through our bind children and copy the actor body info over to them
+	// might end up doing a few extra calls if GetBindTeam is broken like we think,
+	// but that's okay, add extra check of direct bindmaster to prevent infinite recursion
+	idList<idEntity *> children;
+	GetTeamChildren( &children );
+	for( int i=0; i < children.Num(); i++ )
+	{
+		if( !children[i]->IsType(idAFAttachment::Type) )
+			continue;
+		if( !children[i]->IsBoundTo( this ) )
+			continue;
+		else
+		{
+			CopyBodyTo( static_cast<idAFAttachment *>(children[i]) );
+		}
+	}
 }
 
 /*
@@ -341,6 +359,34 @@ idEntity *idAFAttachment::GetBody( void ) const {
 bool idAFAttachment::IsMantleable()
 {
 	return (!body || body->IsMantleable()) && idEntity::IsMantleable();
+}
+
+/**
+* idAFAttachment::BindNotify
+**/
+void idAFAttachment::BindNotify( idEntity *ent )
+{
+	// copy information over to a bound idAfAttachment
+	if( ent->IsType(idAFAttachment::Type) )
+	{
+		CopyBodyTo( static_cast<idAFAttachment *>(ent) );
+	}
+}
+
+void idAFAttachment::PostUnbind( void )
+{
+	// no longer bound to an actor
+	body = NULL;
+	attachJoint = INVALID_JOINT;
+}
+
+void idAFAttachment::CopyBodyTo( idAFAttachment *other )
+{
+	if( body )
+	{
+		idStr modelName = other->spawnArgs.GetString("model","");
+		other->SetBody( body, modelName.c_str(), attachJoint );
+	}
 }
 
 /*

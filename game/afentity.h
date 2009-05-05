@@ -134,11 +134,26 @@ public:
 	 */
 	virtual idEntity* GetResponseEntity();
 
+	/**
+	* Overload bind notify so that when another idAFAttachment is
+	* bound to us, we copy over our data on the actor we're bound to
+	**/
+	virtual void BindNotify( idEntity *ent );
+
+	/** Also overload PostUnBind to clear the body information **/
+	virtual void PostUnbind( void );
+
 protected:
 	idEntity *				body;
 	idClipModel *			combatModel;	// render model for hit detection of head
 	int						idleAnim;
 	jointHandle_t			attachJoint;
+
+protected:
+	/**
+	* Copy idActor bindmaster information to another idAFAttachment
+	**/
+	void	CopyBodyTo( idAFAttachment *other );
 };
 
 
