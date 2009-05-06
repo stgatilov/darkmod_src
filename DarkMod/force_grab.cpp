@@ -188,7 +188,7 @@ CForce_Grab::Evaluate
 */
 void CForce_Grab::Evaluate( int time ) 
 {
-	float l1, Accel, MaxAccel, dT;
+	float l1, Accel, dT;
 	idVec3 dragOrigin, dir1, dir2, velocity, COM, prevVel;
 	idRotation rotation;
 
@@ -202,7 +202,6 @@ void CForce_Grab::Evaluate( int time )
 // ======================== LINEAR =========================
 
 	COM = this->GetCenterOfMass();
-//	dragOrigin = m_physics->GetOrigin( m_id ) + m_p * m_physics->GetAxis( m_id );
 	dragOrigin = COM;
 
 	dir1 = m_dragPosition - dragOrigin;
@@ -227,7 +226,8 @@ void CForce_Grab::Evaluate( int time )
 				newDir -= (newDir * grabber->m_CollNorms[i]) * grabber->m_CollNorms[i];
 			}
 
-			// gameRenderWorld->DebugArrow( colorBlue, COM, (COM + 30 * grabber->m_CollNorms[i]), 4.0f, 1);
+			if( cv_drag_debug.GetBool() )
+				gameRenderWorld->DebugArrow( colorBlue, COM, (COM + 30 * grabber->m_CollNorms[i]), 4.0f, 1);
 		}
 
 		// Clear m_CollNorms so it can be filled next time there's a collision
@@ -244,27 +244,60 @@ void CForce_Grab::Evaluate( int time )
 			dir1 = newDir;
 		}
 		else
+		{
 			dir1 = vec3_zero;
+			l1 = 0.0f;
+		}
 
-		// Uncomment for desired direction debugging
-		// gameRenderWorld->DebugArrow( colorRed, COM, (COM + l1 * dir1), 4.0f, 1);
+		if( cv_drag_debug.GetBool() )
+			gameRenderWorld->DebugArrow( colorRed, COM, (COM + l1 * dir1), 4.0f, 1);
 	}
 	else 
 	{
 		prevVel = m_physics->GetLinearVelocity( m_id );
-		// Uncomment for desired direction debugging
-		// gameRenderWorld->DebugArrow( colorGreen, COM, (COM + l1 * dir1), 4.0f, 1);
+		if( cv_drag_debug.GetBool() )
+			gameRenderWorld->DebugArrow( colorGreen, COM, (COM + l1 * dir1), 4.0f, 1);
 	}
 
 	// "Realistic" finite acceleration
 	Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
+
 	if( m_bLimitForce )
 	{
-		MaxAccel = grabber->m_MaxForce / m_physics->GetMass();
-		Accel = idMath::ClampFloat(0.0f, MaxAccel, Accel );
+		// max force our arms can exert
+		float MaxArmAccel = grabber->m_MaxForce / m_physics->GetMass();
+		// if player moves object down, gravity will help
+		if( dir1 * m_physics->GetGravityNormal() > 0 )
+		{
+			idVec3 gravNormal = m_physics->GetGravity();
+			float gravMag = gravNormal.Normalize();
+			float MaxAccelDown = MaxArmAccel + gravMag;
+
+			// break up desired motion into with gravity and the rest
+			float DownAccel = Accel * (dir1 * gravNormal);
+			idVec3 vDownAccel = DownAccel * gravNormal;
+			idVec3 vOthAccel = Accel * dir1 - vDownAccel;
+			float OthAccel = vOthAccel.NormalizeFast();
+
+			OthAccel = idMath::ClampFloat(0.0f, MaxArmAccel, OthAccel );
+			DownAccel = idMath::ClampFloat(0.0f, MaxAccelDown, DownAccel );
+			// recalculate the vectors now that magnitude is clamped
+			vDownAccel = DownAccel * gravNormal;
+			vOthAccel = OthAccel * vOthAccel;
+			velocity = prevVel * m_damping + (vDownAccel + vOthAccel) * dT;
+		}
+		else
+		{
+			// we're nice and don't make the player's arms fight gravity
+			Accel = idMath::ClampFloat(0.0f, MaxArmAccel, Accel );
+			velocity = prevVel * m_damping + dir1 * Accel * dT;
+		}
 	}
-	
-	velocity = prevVel * m_damping + dir1 * Accel * dT;
+	else
+	{
+		// unlimited force
+		velocity = prevVel * m_damping + dir1 * Accel * dT;
+	}
 
 	if( m_RefEnt.GetEntity() )
 	{
@@ -374,19 +407,9 @@ CForce_Grab::Rotate
 void CForce_Grab::Rotate( const idVec3 &vec, float angle ) 
 {
 	idRotation r;
-/*
-	idVec3 temp;
 
-	temp = this->GetDraggedPosition();
-	r.Set( this->GetCenterOfMass(), vec, angle );
-	r.RotatePoint( temp );
-
-	m_p = temp * m_physics->GetAxis( m_id ).Transpose() - m_physics->GetOrigin( m_id );
-*/
 	r.Set( vec3_origin, vec, angle );
 	r.RotatePoint( m_p );
-
-	// gameRenderWorld->DebugArrow( colorGreen, this->GetCenterOfMass(), this->GetCenterOfMass() + m_p, 1, 200 );
 }
 
 void CForce_Grab::ApplyDamping( bool bVal )

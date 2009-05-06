@@ -387,6 +387,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 			{
 				gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
 				gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+				gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
 			}
 
 			SetSoundVolume(volume);
