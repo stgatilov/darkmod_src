@@ -18,10 +18,12 @@ namespace difficulty {
 #define PATTERN_DIFF "diff_%d_"
 #define PREFIX_CLASS "class_"
 #define PREFIX_CHANGE "change_"
+#define PREFIX_CVAR "cvar_"
 
 #define PATTERN_CLASS "diff_%d_class_%d"
 #define PATTERN_CHANGE "diff_%d_change_%d"
 #define PATTERN_ARG "diff_%d_arg_%d"
+#define PATTERN_CVAR "diff_%d_cvar_%d"
 
 #define APPTYPE_IGNORE "_IGNORE"
 
@@ -392,6 +394,167 @@ idStr DifficultySettings::GetInheritValue(const idStr& className)
 	}
 	
 	return inherit;
+}
+
+// =======================================================================
+
+CVARSetting::CVARSetting()
+{}
+
+void CVARSetting::Save(idSaveGame* savefile)
+{
+	Setting::Save(savefile);
+
+	savefile->WriteString(cvar);
+}
+
+void CVARSetting::Restore(idRestoreGame* savefile)
+{
+	Setting::Restore(savefile);
+
+	savefile->ReadString(cvar);
+}
+
+void CVARSetting::Apply()
+{
+	idCVar* cv = cvarSystem->Find(cvar);
+
+	if (cv == NULL) 
+	{
+		gameLocal.Warning("Difficulty setting references unknown CVAR %s", cvar.c_str());
+		return;
+	}
+
+	switch (appType) 
+	{
+		case EAssign:
+			if (argument.IsNumeric())
+			{
+				cv->SetFloat(atof(argument));
+			}
+			else
+			{
+				cv->SetString(argument);
+			}
+			break;
+		case EAdd:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			cv->SetFloat(cv->GetFloat() + atof(argument));
+			break;
+		case EMultiply:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			cv->SetFloat(cv->GetFloat() * atof(argument));
+			break;
+		case EIgnore:
+			// Ignore => do nothing
+			break;
+		default:
+			break;
+	};
+}
+
+void CVARSetting::ParseFromDict(const idDict& dict, int level, int index)
+{
+	// Call the base class first to parse the arguments and stuff
+	Setting::ParseFromDict(dict, level, index);
+
+	// Parse the CVAR name
+	cvar = dict.GetString(va(PATTERN_CVAR, level, index));
+
+	// CVAR must not be empty, everything else is not that important
+	isValid = !cvar.IsEmpty();
+}
+
+// =======================================================================
+
+void CVARDifficultySettings::Clear()
+{
+	_settings.Clear();
+	_level = -1;
+}
+
+// Sets the level of these settings
+void CVARDifficultySettings::SetLevel(int level)
+{
+	_level = level;
+}
+
+int CVARDifficultySettings::GetLevel() const
+{
+	return _level;
+}
+
+void CVARDifficultySettings::LoadFromEntityDef(const idDict& dict)
+{
+	// Cycle through all difficulty settings (looking for "diff_0_cvar_*")
+	idStr prefix = idStr(va(PATTERN_DIFF, _level)) + PREFIX_CVAR;
+
+	for (const idKeyValue* keyVal = dict.MatchPrefix(prefix);
+		  keyVal != NULL;
+		  keyVal = dict.MatchPrefix(prefix, keyVal))
+	{
+		DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Parsing cvar keyvalue: %s = %s.\r", keyVal->GetKey().c_str(), keyVal->GetValue().c_str());
+
+		// Get the index from this keyvalue (remove the prefix and convert to int)
+		idStr key = keyVal->GetKey();
+		key.StripLeadingOnce(prefix);
+
+		if (key.IsNumeric())
+		{
+			// Extract the index
+			int index = atoi(key);
+
+			// Parse the setting with the given index
+			CVARSetting s;
+			s.ParseFromDict(dict, _level, index);
+
+			// Check for validity and insert into map
+			if (s.isValid)
+			{
+				_settings.Append(s);
+			}
+		}
+		else
+		{
+			gameLocal.Warning("Found invalid cvar difficulty settings index: %s.\r", keyVal->GetKey().c_str());
+			DM_LOG(LC_DIFFICULTY, LT_ERROR)LOGSTRING("Found invalid cvar difficulty settings index: %s.\r", keyVal->GetKey().c_str());
+		}
+	}
+}
+
+void CVARDifficultySettings::LoadFromMapEntity(idMapEntity* ent)
+{
+	LoadFromEntityDef(ent->epairs);
+}
+
+void CVARDifficultySettings::ApplySettings()
+{
+	for (int i = 0; i < _settings.Num(); ++i)
+	{
+		_settings[i].Apply();
+	}
+}
+
+void CVARDifficultySettings::Save(idSaveGame* savefile)
+{
+	savefile->WriteInt(_settings.Num());
+
+	for (int i = 0; i < _settings.Num(); ++i)
+	{
+		_settings[i].Save(savefile);
+	}
+}
+
+void CVARDifficultySettings::Restore(idRestoreGame* savefile)
+{
+	int num;
+	savefile->ReadInt(num);
+
+	_settings.SetNum(num);
+	for (int i = 0; i < _settings.Num(); ++i)
+	{
+		_settings[i].Restore(savefile);
+	}
 }
 
 } // namespace difficulty

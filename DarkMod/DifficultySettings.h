@@ -7,8 +7,8 @@
 namespace difficulty {
 
 /**
- * greebo: A DifficultyRecord represents a spawnarg change.
- *         This can be an assignment, addition or multiplication.
+ * greebo: A Setting represents a spawnarg change.
+ * This can be an assignment, addition or multiplication.
  */
 class Setting
 {
@@ -39,14 +39,14 @@ public:
 	Setting();
 
 	// Save/Restore methods
-	void Save(idSaveGame* savefile);
-	void Restore(idRestoreGame* savefile);
+	virtual void Save(idSaveGame* savefile);
+	virtual void Restore(idRestoreGame* savefile);
 
 	// Applies this setting to the given spawnargs
 	void Apply(idDict& target);
 
 	// Load the settings with the given <index> matching the given <level> from the given dict.
-	void ParseFromDict(const idDict& dict, int level, int index);
+	virtual void ParseFromDict(const idDict& dict, int level, int index);
 
 	// Factory function: get all Settings from the given dict (matching the given <level>)
 	// The returned list is guaranteed to contain only valid settings.
@@ -55,7 +55,7 @@ public:
 
 /**
  * greebo: This class encapsulates the difficulty settings
- *         for a given difficulty level (easy/medium/hard/etc).
+ * for a given difficulty level (easy/medium/hard/etc).
  *
  * Use the ApplySettings() method to apply the settings on a set of spawnargs.
  */
@@ -82,7 +82,7 @@ public:
 
 	/**
 	 * greebo: Loads the difficulty settings from the given entityDef.
-	 *         This considers only settings matching the level of this class.
+	 * This considers only settings matching the level of this class.
 	 */
 	void LoadFromEntityDef(const idDict& defDict);
 
@@ -110,6 +110,77 @@ private:
 
 	// Returns the inheritance chain for the given dict
 	InheritanceChain GetInheritanceChain(const idDict& dict);
+};
+
+/**
+ * greebo: A CVARSetting represents a CVAR change.
+ * This can be an assignment, addition or multiplication.
+ */
+class CVARSetting :
+	public Setting
+{
+public:
+	// The cvar name this setting applies to
+	idStr cvar;
+	
+	// Default constructor
+	CVARSetting();
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile);
+	virtual void Restore(idRestoreGame* savefile);
+
+	// Applies this setting
+	void Apply();
+
+	// Load the settings with the given <index> matching the given <level> from the given dict.
+	virtual void ParseFromDict(const idDict& dict, int level, int index);
+};
+
+/**
+ * greebo: This class encapsulates the difficulty settings affecting CVARs
+ * for a given difficulty level (easy/medium/hard/etc).
+ *
+ * Use the ApplySettings() method before map start to activate the settings.
+ */
+class CVARDifficultySettings
+{
+	// The settings list
+	typedef idList<CVARSetting> SettingsMap;
+	SettingsMap _settings;
+
+	// the difficulty level these settings are referring to
+	int _level;
+
+public:
+	// Wipes the contents of this class
+	void Clear();
+
+	// Sets the level of these settings
+	void SetLevel(int level);
+	int GetLevel() const;
+
+	/**
+	 * greebo: Loads the difficulty settings from the given entityDef.
+	 * This considers only settings matching the level of this class.
+	 */
+	void LoadFromEntityDef(const idDict& defDict);
+
+	/**
+	 * greebo: This loads the difficulty settings from the given map entity.
+	 * Settings loaded from the entity will replace settings with the same 
+	 * classname/spawnarg combination found in the default entityDefs.
+	 */
+	void LoadFromMapEntity(idMapEntity* ent);
+
+	/**
+	 * greebo: Applies the contained difficulty settings.
+	 */
+	void ApplySettings();
+
+	// Save/Restore methods
+	void Save(idSaveGame* savefile);
+	void Restore(idRestoreGame* savefile);
 };
 
 } // namespace difficulty

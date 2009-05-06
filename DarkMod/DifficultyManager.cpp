@@ -25,6 +25,7 @@ void DifficultyManager::Clear()
 	{
 		_globalSettings[i].Clear();
 		_difficultyNames[i] = "";
+		_cvarSettings[i].Clear();
 	}
 }
 
@@ -55,6 +56,12 @@ void DifficultyManager::Init(idMapFile* mapFile)
 		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found overriding CVAR 'tdm_difficulty': %d.\r", _difficulty);
 	}
 
+	// Clear the CVAR settings before parsing
+	for (int i = 0; i < DIFFICULTY_COUNT; i++)
+	{
+		_cvarSettings[i].Clear();
+	}
+
 	// Load the default difficulty settings from the entityDefs
 	LoadDefaultDifficultySettings();
 
@@ -83,6 +90,8 @@ void DifficultyManager::Save(idSaveGame* savefile)
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{
 		_globalSettings[i].Save(savefile);
+		_cvarSettings[i].Save(savefile);
+		savefile->WriteString(_difficultyNames[i]);
 	}
 }
 
@@ -92,6 +101,8 @@ void DifficultyManager::Restore(idRestoreGame* savefile)
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{
 		_globalSettings[i].Restore(savefile);
+		_cvarSettings[i].Restore(savefile);
+		savefile->ReadString(_difficultyNames[i]);
 	}
 }
 
@@ -99,8 +110,14 @@ void DifficultyManager::ApplyDifficultySettings(idDict& target)
 {
 	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Applying difficulty settings to entity: %s.\r", target.GetString("name"));
 
-	// greebo: Preliminary case: just apply the global settings
 	_globalSettings[_difficulty].ApplySettings(target);
+}
+
+void DifficultyManager::ApplyCVARDifficultySettings()
+{
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Applying CVAR difficulty settings\r");
+
+	_cvarSettings[_difficulty].ApplySettings();
 }
 
 bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
@@ -122,7 +139,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 {
 	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Trying to load default difficulty settings from entityDefs.\r");
 
-	// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
+	// Construct the entityDef name (e.g. atdm:difficulty_settings_default)
 	idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
 
 	const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName);
@@ -138,6 +155,10 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 			_globalSettings[i].SetLevel(i);
 			// And load the settings
 			_globalSettings[i].LoadFromEntityDef(*difficultyDict);
+
+			// Load the CVAR settings too
+			_cvarSettings[i].SetLevel(i);
+			_cvarSettings[i].LoadFromEntityDef(*difficultyDict);
 		}
 	}
 	else
@@ -145,6 +166,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 		for (int i = 0; i < DIFFICULTY_COUNT; i++)
 		{
 			_globalSettings[i].Clear();
+			_cvarSettings[i].Clear();
 		}
 		gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef!");
 	}
@@ -193,6 +215,7 @@ void DifficultyManager::LoadMapDifficultySettings(idMapEntity* ent)
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{
 		_globalSettings[i].LoadFromMapEntity(ent);
+		_cvarSettings[i].LoadFromMapEntity(ent);
 	}
 }
 

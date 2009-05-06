@@ -20,8 +20,8 @@ namespace difficulty {
 
 /**
  * greebo: The Difficulty Manager provides methods to load
- *         the various spawnargs into the entities based on the
- *         selected mission difficulty.
+ * the various spawnargs into the entities based on the
+ * selected mission difficulty.
  *
  * During initialisation, the manager reads the default difficulty settings 
  * from the def/ folder. The procedure is as follows:
@@ -39,6 +39,9 @@ class DifficultyManager
 	// The global difficulty settings (parsed from the entityDefs)
 	DifficultySettings _globalSettings[DIFFICULTY_COUNT];
 
+	// The difficulty settings affecting CVARs
+	CVARDifficultySettings _cvarSettings[DIFFICULTY_COUNT];
+
 	// The name of each difficultylevel
 	idStr _difficultyNames[DIFFICULTY_COUNT];
 
@@ -51,8 +54,8 @@ public:
 
 	/**
 	 * greebo: Initialises this class. This means loading the global default
-	 *         difficulty settings from the entityDef files and the ones
-	 *         from the map file (worldspawn setting, map-specific difficulty).
+	 * difficulty settings from the entityDef files and the ones
+	 * from the map file (worldspawn setting, map-specific difficulty).
 	 */
 	void Init(idMapFile* mapFile);
 	
@@ -65,9 +68,14 @@ public:
 
 	/**
 	 * greebo: Applies the spawnarg modifiers of the currently chosen
-	 *         difficulty level to the given set of spawnargs.
+	 * difficulty level to the given set of spawnargs.
 	 */
 	void ApplyDifficultySettings(idDict& target);
+
+	/** 
+	 * greebo: Applies the CVAR difficulty settings, call this once before map start.
+	 */
+	void ApplyCVARDifficultySettings();
 
 	/**
 	 * greebo: Checks whether the given entity (represented by "target") is allowed to spawn.

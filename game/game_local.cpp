@@ -1542,6 +1542,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// greebo: Initialize the Difficulty Manager, before any entities are spawned
 	m_DifficultyManager.Init(mapFile);
 	m_ConversationSystem->Init(mapFile);
+
+	// Immediately apply the CVAR difficulty settings
+	m_DifficultyManager.ApplyCVARDifficultySettings();
 	
 	InitScriptForMap();
 
