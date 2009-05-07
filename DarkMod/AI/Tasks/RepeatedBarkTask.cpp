@@ -44,8 +44,8 @@ const idStr& RepeatedBarkTask::GetName() const
 
 void RepeatedBarkTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
-	Task::Init(owner, subsystem);
+	// Init the base class
+	CommunicationTask::Init(owner, subsystem);
 
 	// Initialise it to play the sound now
 	_nextBarkTime = gameLocal.time;

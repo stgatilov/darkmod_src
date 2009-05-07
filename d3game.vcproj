@@ -1086,6 +1086,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\Tasks\CommWaitTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\CommWaitTask.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\FleeTask.cpp"
 						>
 					</File>

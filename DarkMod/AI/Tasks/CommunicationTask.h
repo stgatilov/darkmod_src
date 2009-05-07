@@ -16,6 +16,7 @@ namespace ai
 {
 
 #define BARK_PRIORITY_DEF "atdm:ai_bark_priority"
+#define VERY_HIGH_BARK_PRIORITY 9000000
 
 class CommunicationTask;
 typedef boost::shared_ptr<CommunicationTask> CommunicationTaskPtr;

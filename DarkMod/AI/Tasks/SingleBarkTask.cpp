@@ -37,6 +37,9 @@ const idStr& SingleBarkTask::GetName() const
 
 void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 {
+	// Init the base class
+	CommunicationTask::Init(owner, subsystem);
+
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
@@ -58,20 +61,13 @@ void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		_endTime = gameLocal.time;
 	}
-
 }
 
 bool SingleBarkTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SingleBarkTask performing.\r");
 
-	idAI* owner = _owner.GetEntity();
-
-	if (gameLocal.time >= _endTime)
-	{
-		return true; // finished!
-	}
-	return false;
+	return (gameLocal.time >= _endTime);
 }
 
 void SingleBarkTask::SetSound(const idStr& soundName)
