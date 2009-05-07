@@ -50,6 +50,7 @@ protected:
 public:
 	// Returns the priority of this bark
 	int GetPriority();
+	void SetPriority(int priority);
 
 	// Returns TRUE if the task is still playing a bark 
 	// (this is excluding any possible delay after the actual sound)

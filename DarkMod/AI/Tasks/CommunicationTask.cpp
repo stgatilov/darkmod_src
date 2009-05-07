@@ -54,6 +54,11 @@ int CommunicationTask::GetPriority()
 	return _priority;
 }
 
+void CommunicationTask::SetPriority(int priority)
+{
+	_priority = priority;
+}
+
 bool CommunicationTask::IsBarking()
 {
 	return (gameLocal.time < _barkStartTime + _barkLength);

@@ -51,6 +51,11 @@ public:
 	// returns the priority of the currently active communication task
 	int GetCurrentPriority();
 
+	/**
+	 * greebo: Queues a silence task at the end of the queue. The task
+	 * gets the same priority assigned as the last one of the queue.
+	 */
+	void AddSilence(int duration);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

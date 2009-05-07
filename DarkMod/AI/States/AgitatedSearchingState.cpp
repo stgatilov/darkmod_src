@@ -77,16 +77,13 @@ void AgitatedSearchingState::Init(idAI* owner)
 	{
 		if (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy)
 		{
-			idStr bark = "snd_alert4";
-
 			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask(bark))
+				CommunicationTaskPtr(new SingleBarkTask("snd_alert4"))
 			);
 		}
 	}
-/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-		TaskPtr(new WaitTask(5000))
-		);*/// TODO_AI
+
+	owner->commSubsystem->AddSilence(5000);
 
 	int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 	int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));

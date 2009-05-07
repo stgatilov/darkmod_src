@@ -21,16 +21,16 @@ namespace ai
 
 CommWaitTask::CommWaitTask() :
 	CommunicationTask(""),
+	_duration(0),
+	_endTime(-1)
+{}
+
+CommWaitTask::CommWaitTask(int duration, int priority) :
+	CommunicationTask(""),
+	_duration(duration),
 	_endTime(-1)
 {
-	_priority = VERY_HIGH_BARK_PRIORITY;
-}
-
-CommWaitTask::CommWaitTask(int duration) :
-	CommunicationTask(""),
-	_endTime(gameLocal.time + duration)
-{
-	_priority = VERY_HIGH_BARK_PRIORITY;
+	_priority = priority;
 }
 
 // Get the name of this task
@@ -38,6 +38,13 @@ const idStr& CommWaitTask::GetName() const
 {
 	static idStr _name(TASK_COMM_WAIT);
 	return _name;
+}
+
+void CommWaitTask::Init(idAI* owner, Subsystem& subsystem)
+{
+	CommunicationTask::Init(owner, subsystem);
+
+	_endTime = gameLocal.time + _duration;
 }
 
 bool CommWaitTask::Perform(Subsystem& subsystem)
@@ -52,6 +59,7 @@ void CommWaitTask::Save(idSaveGame* savefile) const
 {
 	CommunicationTask::Save(savefile);
 
+	savefile->WriteInt(_duration);
 	savefile->WriteInt(_endTime);
 }
 
@@ -59,6 +67,7 @@ void CommWaitTask::Restore(idRestoreGame* savefile)
 {
 	CommunicationTask::Restore(savefile);
 
+	savefile->ReadInt(_duration);
 	savefile->ReadInt(_endTime);
 }
 

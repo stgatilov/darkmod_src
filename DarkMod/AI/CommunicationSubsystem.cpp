@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: Subsystem.cpp 2822 2008-09-13 0
 #include "Library.h"
 #include "States/State.h"
 #include "Tasks/CommunicationTask.h"
+#include "Tasks/CommWaitTask.h"
 
 namespace ai
 {
@@ -89,6 +90,28 @@ bool CommunicationSubsystem::AddCommTask(const CommunicationTaskPtr& communicati
 	};
 
 	return false;
+}
+
+void CommunicationSubsystem::AddSilence(int duration)
+{
+	int priorityOfLastTask = 0;
+	
+	if (!_taskQueue.empty())
+	{
+		CommunicationTaskPtr lastCommTask = 
+			boost::dynamic_pointer_cast<CommunicationTask>(_taskQueue.back());
+
+		if (lastCommTask != NULL)
+		{
+			priorityOfLastTask = lastCommTask->GetPriority();
+		}
+	}
+
+	// Instantiate a new commwaitTask
+	CommWaitTaskPtr commTask(new CommWaitTask(duration, priorityOfLastTask));
+
+	// And queue it, it will carry the same priority as the last one
+	QueueTask(commTask);
 }
 
 CommunicationSubsystem::EActionTypeOnConflict 

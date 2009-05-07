@@ -25,6 +25,7 @@ typedef boost::shared_ptr<CommWaitTask> CommWaitTaskPtr;
 class CommWaitTask :
 	public CommunicationTask
 {
+	int _duration;
 	int _endTime;
 
 	// Default constructor
@@ -32,11 +33,12 @@ class CommWaitTask :
 
 public:
 	// Constructor: pass the duration of the silence
-	CommWaitTask(int duration);
+	CommWaitTask(int duration, int priority = 0);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
+	virtual void Init(idAI* owner, Subsystem& subsystem);
 	virtual bool Perform(Subsystem& subsystem);
 
 	// Save/Restore methods
