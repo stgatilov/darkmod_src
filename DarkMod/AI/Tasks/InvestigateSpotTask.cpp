@@ -90,8 +90,21 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (!_moveInitiated)
 	{
+		idVec3 destPos = _searchSpot;
+
+		// greebo: For close investigation, don't step up to the very spot, to prevent the AI
+		// from kneeling into bloodspots or corpses
+		if (_investigateClosely)
+		{
+			idVec3 direction = owner->GetPhysics()->GetOrigin() - _searchSpot;
+			direction.NormalizeFast();
+
+			// 20 units before the actual spot
+			destPos += direction * 20;
+		}
+
 		// Let's move
-		owner->MoveToPosition(_searchSpot);
+		owner->MoveToPosition(destPos);
 		_moveInitiated = true;
 
 		if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
