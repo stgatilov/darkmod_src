@@ -62,18 +62,24 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 
 	if (_moveInitiated)
 	{
-		if (owner->AI_MOVE_DONE && owner->ReachedPos(path->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
+		if (owner->AI_MOVE_DONE)
 		{
-			// Trigger path targets, now that we've reached the corner
-			owner->ActivateTargets(owner);
-			NextPath();
+			if(owner->ReachedPos(path->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
+			{
+				// Trigger path targets, now that we've reached the corner
+				owner->ActivateTargets(owner);
+				NextPath();
 
-			// Move is done, fall back to PatrolTask
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
+				// Move is done, fall back to PatrolTask
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
 
-			return true; // finish this task
-		}
-		
+				return true; // finish this task
+			}
+			else
+			{
+				owner->MoveToPosition(path->GetPhysics()->GetOrigin());
+			}
+		}	
 		if (owner->AI_DEST_UNREACHABLE)
 		{
 			// Unreachable, fall back to PatrolTask

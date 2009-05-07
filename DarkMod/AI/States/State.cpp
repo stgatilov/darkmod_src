@@ -864,6 +864,12 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	// Ignore from now on
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
 
+	// angua: ignore blood after dead bodies have been found
+	if (memory.deadPeopleHaveBeenFound)
+	{
+		return;
+	}
+
 	// Vocalize that see something out of place
 	memory.lastTimeVisualStimBark = gameLocal.time;
 	owner->commSubsystem->AddCommTask(
