@@ -5193,7 +5193,7 @@ void idAI::PlayFootStepSound()
 		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
-		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
+		PropSoundDirect( localSound, true, false );
 	}
 }
 

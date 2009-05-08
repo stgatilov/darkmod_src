@@ -311,6 +311,9 @@ void CGlobal::Init()
 
 	CloseProfile(pfh);
 	FileVersionDump();
+
+	// Map the surface types to strings
+	InitSurfaceHardness();
 }
 
 void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)
@@ -1136,6 +1139,67 @@ idStr CGlobal::GetSurfName(const idMaterial* material)
 	int end = desc.Find(' ');
 
 	return ( end == -1 ) ? desc : desc.Left(end);
+}
+
+const idStr& CGlobal::GetSurfaceHardness(const char* surfName)
+{
+	// Generate the hash from the string and look up the index into the list
+	int index = m_SurfaceHardnessHash.First( m_SurfaceHardnessHash.GenerateKey(surfName) );	
+
+	return (index != -1) ? m_SurfaceHardness[index] : m_SurfaceHardness[0]; // fall back to "soft"
+}
+
+void CGlobal::InitSurfaceHardness()
+{
+	m_SurfaceHardness.Clear();
+
+	int soft = m_SurfaceHardness.Append("soft");
+	int hard = m_SurfaceHardness.Append("hard");
+
+	// The hard ones
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("none"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("metal"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("stone"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("wood"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("glass"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("plastic"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("ricochet"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype10"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype11"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype12"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype13"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype14"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("surftype15"), hard ); // shouldn't occur in normal operation
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("tile"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("gravel"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("rock"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("twigs"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("brokeglass"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("ice"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("squeakboard"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("puddle"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("ceramic"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("slate"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("armor_chain"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("armor_plate"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("climbable"), hard );
+
+	// The soft ones
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("flesh"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("cardboard"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("liquid"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("carpet"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("dirt"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("grass"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("foliage"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("sand"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("mud"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("snow"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("moss"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("cloth"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("straw"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("armor_leath"), soft );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("paper"), soft );
 }
 
 std::string CGlobal::GetDarkmodPath()

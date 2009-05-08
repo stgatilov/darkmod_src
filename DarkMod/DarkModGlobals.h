@@ -205,11 +205,26 @@ public:
 	 **/
 	idStr GetSurfName(const idMaterial* material);
 
+	/** 
+	 * greebo: Returns the surface hardness string ("soft", "hard")
+	 * for the given material type.
+	 */
+	const idStr& GetSurfaceHardness(const char* surfName);
+
 	// Returns the darkmod path
 	static std::string GetDarkmodPath();
 
 private:
 	void LoadINISettings(void *);
+
+	// Sets up the surface hardness mapping
+	void InitSurfaceHardness();
+
+	// A table for retrieving indices out of input strings
+	idHashIndex m_SurfaceHardnessHash;
+	
+	// A list of hardness strings ("hard", "soft")
+	idStringList m_SurfaceHardness;
 
 public:
 	/**
