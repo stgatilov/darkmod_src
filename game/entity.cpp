@@ -2734,7 +2734,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 	int start, end = -1, len;
 	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
 	float volMod(0.0), durMod(1.0);
-	idStr gName(globalName), locName, tempstr;
+	idStr gName(globalName);
 
 	// if there is no local name, skip all the loading of local flags
 	// and parms.
@@ -2747,8 +2747,6 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Found local sound %s, parsing local sound modifiers\r", localName);
-
-	locName = localName;
 
 	// parse the volMod and durMod if they are tacked on to the globalName
 	len = gName.Length();
@@ -2763,7 +2761,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 		if( end == -1 )
 			end = gName.Length();
 
-		tempstr = gName.Mid(start, (end - start));
+		idStr tempstr = gName.Mid(start, (end - start));
 		
 		if( !tempstr.IsNumeric() || start >= end )
 		{
@@ -2784,7 +2782,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 		start++;
 		end = gName.Length();
 
-		tempstr = gName.Mid(start, (end - start));
+		idStr tempstr = gName.Mid(start, (end - start));
 		if( !tempstr.IsNumeric() || start >= end )
 		{
 			gameLocal.Warning( "[Soundprop] Bad duration multiplier for sound %s on entity %s.", localName, name.c_str() );
