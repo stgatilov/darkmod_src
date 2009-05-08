@@ -30,12 +30,15 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
 	Task::Init(owner, subsystem);
-
 	_enemy = owner->GetEnemy();
 	_bForceAttack = false;
 	_bForceParry = false;
 	_bInParryDelayState = false;
 	_ParryDelayTimer = 0;
+	_PrevEnemy = NULL;
+	_PrevAttParried = MELEETYPE_UNBLOCKABLE;
+	_PrevAttTime = 0;
+	_NumAttReps = 0;
 }
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
@@ -71,7 +74,8 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 	// the "ready" state is where we decide whether to attack or parry
 	// For now, always attack
 	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	CMeleeStatus *pEnStatus = &_enemy.GetEntity()->m_MeleeStatus;
+	idActor	*enemy = _enemy.GetEntity();
+	CMeleeStatus *pEnStatus = &enemy->m_MeleeStatus;
 
 	if( cv_melee_state_debug.GetBool() )
 	{
@@ -96,13 +100,14 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 
 	int NextParTime = pStatus->m_LastActTime + owner->m_MeleeCurrentParryRecovery;
 
-	// We attack if the timer allows us and if the enemy is in range
+	// ATTACK: If the timer allows us and if the enemy is in range
 	if (gameLocal.time > NextAttTime && owner->GetMemory().canHitEnemy && !_bForceParry )
 	{
 		StartAttack(owner);
 	}
 
-	// if we can't attack and our enemy is attacking us at a threatening range, parry
+	// PARRY:
+	// If we can't attack and our enemy is attacking in range
 	// TODO: Figure out how to switch enemies to face & parry a new one
 	else if
 		( 
@@ -113,6 +118,24 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 			&& !_bForceAttack
 		)
 	{
+		// check if our enemy made the same attack before
+		EMeleeType AttType = pEnStatus->m_ActionType;
+		if( _PrevEnemy.GetEntity() == enemy && _PrevAttParried == AttType
+			&& (gameLocal.time - _PrevAttTime) < owner->m_MeleeRepAttackTime )
+		{
+			_NumAttReps++;
+			// reset timer for next attack
+			_PrevAttTime = gameLocal.time; 
+		}
+		else
+		{
+			// attack was new
+			_PrevEnemy = enemy;
+			_PrevAttParried = AttType;
+			_PrevAttTime = gameLocal.time;
+			_NumAttReps = 1;
+		}
+
 		// Counter attack if enemy is in range and chance check succeeds
 		if( owner->GetMemory().canHitEnemy 
 			&& gameLocal.random.RandomFloat() < owner->m_MeleeCounterAttChance )
@@ -197,8 +220,16 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
 
+		// repeated attacks can have a faster parry response
+		int ParryDelay;
+		if( _NumAttReps < owner->m_MeleeNumRepAttacks )
+			ParryDelay = owner->m_MeleeCurrentParryDelay;
+		else
+			ParryDelay = owner->m_MeleeCurrentRepeatedParryDelay;
+
+
 		// if we are done with the initial delay, start the animation
-		if( _bInParryDelayState && ((gameLocal.time - _ParryDelayTimer) > owner->m_MeleeCurrentParryDelay) )
+		if( _bInParryDelayState && ((gameLocal.time - _ParryDelayTimer) > ParryDelay) )
 		{
 
 			// Set the waitstate, this gets cleared by 
@@ -372,6 +403,10 @@ void MeleeCombatTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool( _bForceParry );
 	savefile->WriteBool( _bInParryDelayState );
 	savefile->WriteInt( _ParryDelayTimer );
+	_PrevEnemy.Save(savefile);
+	savefile->WriteInt(_PrevAttParried);
+	savefile->WriteInt(_PrevAttTime);
+	savefile->WriteInt(_NumAttReps);
 }
 
 void MeleeCombatTask::Restore(idRestoreGame* savefile)
@@ -383,6 +418,12 @@ void MeleeCombatTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool( _bForceParry );
 	savefile->ReadBool( _bInParryDelayState );
 	savefile->ReadInt( _ParryDelayTimer );
+	_PrevEnemy.Restore(savefile);
+	int i;
+	savefile->ReadInt( i );
+	_PrevAttParried = (EMeleeType) i;
+	savefile->ReadInt(_PrevAttTime);
+	savefile->ReadInt(_NumAttReps);
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()

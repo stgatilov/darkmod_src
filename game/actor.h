@@ -291,6 +291,23 @@ public:
 	int						m_MeleeParryDelayMin;
 	int						m_MeleeParryDelayMax;
 	int						m_MeleeCurrentParryDelay;
+	/**
+	* Same as above, but use a shorter delay when responding to repeated attacks
+	* along the same direction
+	**/
+	int						m_MeleeRepeatedParryDelayMin;
+	int						m_MeleeRepeatedParryDelayMax;
+	int						m_MeleeCurrentRepeatedParryDelay;
+	/**
+	* Controls how many times the attack has to be repeated in a row
+	* in order to use the faster response time
+	**/
+	int						m_MeleeNumRepAttacks;
+	/**
+	* Time duration over which the same attacks in a row have to occur
+	* in order to be anticipated and use faster response
+	**/
+	int						m_MeleeRepAttackTime;
 
 	/**
 	* Correspondence between melee type and string name suffix of the action

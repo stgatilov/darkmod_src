@@ -40,6 +40,18 @@ class MeleeCombatTask :
 	/** Timer to keep track of when parry delay state started **/
 	int					_ParryDelayTimer;
 
+	/** Last enemy that attacked us **/
+	idEntityPtr<idActor>	_PrevEnemy;
+	/** Previous attack type we tried to parry (if any) **/
+	EMeleeType				_PrevAttParried;
+	/** Time of that previous attack **/
+	int						_PrevAttTime;
+	/** 
+	* Number of times this attack type has been repeated in a row 
+	* Gets cleared if a timer expires before the next repeated attack. 
+	**/
+	int						_NumAttReps;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
