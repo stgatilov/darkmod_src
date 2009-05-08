@@ -92,7 +92,7 @@ void ConversationState::Init(idAI* owner)
 
 	owner->actionSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
-//		owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 	owner->StopMove(MOVE_STATUS_DONE);
 

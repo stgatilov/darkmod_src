@@ -43,7 +43,7 @@ void EmergeFromCoverState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	
 	// Fill the subsystems with their tasks
-//	owner->GetSubsystem(SubsysCommunication)->ClearTasks();// TODO_AI
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 
 	owner->movementSubsystem->ClearTasks();
