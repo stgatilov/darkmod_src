@@ -114,6 +114,21 @@ bool idModelExport::CheckMayaInstall( void ) {
 #endif
 }
 
+#ifdef WIN32
+
+#define FORMAT_BUFSIZE 2048
+
+// Helper method to retrieve the error when DLL load failed.
+const char* FormatGetLastError() {
+	static char buf[FORMAT_BUFSIZE];
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+			buf, 
+			FORMAT_BUFSIZE, NULL);
+	return buf;
+}
+#endif
+
 /*
 =====================
 idModelExport::LoadMayaDll
@@ -130,7 +145,19 @@ void idModelExport::LoadMayaDll( void ) {
 		return;
 	}
 	importDLL = sys->DLL_Load( dllPath );
+
 	if ( !importDLL ) {
+#ifdef WIN32
+		// greebo: Do another attempt in Win32 to get a better error message
+		idStr win32DllPath(dllPath);
+		win32DllPath.Replace("/", "\\");
+
+		HMODULE dll = LoadLibrary(win32DllPath);
+
+		if (dll == 0) {
+			gameLocal.Warning("Could not load MayaImport DLL: %s ", FormatGetLastError());
+		}
+#endif
 		return;
 	}
 
@@ -188,6 +215,7 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 	// get the source file's time
 	if ( fileSystem->ReadFile( src, NULL, &sourceTime ) < 0 ) {
 		// source file doesn't exist
+		gameLocal.Warning("Source file doesn't exist: %s", src.c_str());
 		return true;
 	}
 
