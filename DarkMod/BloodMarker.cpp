@@ -15,8 +15,6 @@
 
 const idEventDef EV_GenerateBloodSplat("TDM_GenerateBloodSplat", NULL);
 
-#define BLOODSPLAT_RESPAWN_INTERVAL 1000 // in msec, must coincide with the fadetime in the material definition
-
 CLASS_DECLARATION( idEntity, CBloodMarker )
 	EVENT( EV_GenerateBloodSplat, CBloodMarker::Event_GenerateBloodSplat )
 END_CLASS
@@ -28,8 +26,19 @@ void CBloodMarker::Event_GenerateBloodSplat()
 
 	if (!_isFading)
 	{
-		gameLocal.ProjectDecal(GetPhysics()->GetOrigin(), dir, 3, false, _size, _bloodSplat, _angle);
-		PostEventMS(&EV_GenerateBloodSplat, BLOODSPLAT_RESPAWN_INTERVAL);
+		// Read the stay duration from the material info
+		const idMaterial* material = declManager->FindMaterial(_bloodSplat);
+
+		if (material != NULL)
+		{
+			gameLocal.ProjectDecal(GetPhysics()->GetOrigin(), dir, 3, false, _size, _bloodSplat, _angle);
+
+			PostEventMS(&EV_GenerateBloodSplat, material->GetDecalInfo().stayTime);
+		}
+		else 
+		{
+			gameLocal.Warning("Cannot find blood splat decal %s", _bloodSplat.c_str());
+		}
 	}
 	else
 	{
