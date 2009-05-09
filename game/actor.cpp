@@ -1238,6 +1238,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeParryDelayMin );
 	savefile->ReadInt( m_MeleeParryDelayMax );
 	savefile->ReadInt( m_MeleeCurrentParryDelay );
+	savefile->ReadInt( m_MeleeRepeatedParryDelayMin );
+	savefile->ReadInt( m_MeleeRepeatedParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentRepeatedParryDelay );
 	savefile->ReadInt( m_MeleeNumRepAttacks );
 	savefile->ReadInt( m_MeleeRepAttackTime );
 
