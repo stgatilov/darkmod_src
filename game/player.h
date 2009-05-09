@@ -51,6 +51,7 @@ extern const idEventDef EV_Player_GiveHealthPool;
 extern const idEventDef EV_Player_WasDamaged;
 extern const idEventDef EV_Mission_Success;
 extern const idEventDef EV_TriggerMissionEnd;
+extern const idEventDef EV_Player_GetLocation;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -908,6 +909,12 @@ public:
 	*/
 	void			setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount);
 
+
+	/** 
+	* Get the current idLocation entity for the location the player is in 
+	**/
+	idLocationEntity *GetLocation( void );
+
 protected:
 	/**
 	* greebo: This creates all the default inventory items and adds the weapons.
@@ -1271,6 +1278,9 @@ private:
 	// Basically waits for any HUD messages and fades out the screen, afterwards
 	// the Mission Success event is called.
 	void					Event_TriggerMissionEnd();
+
+	/** Returns to script the current idLocation of the player **/
+	void					Event_GetLocation();
 
 	// Gets called in the first few frames
 	void					Event_StartGamePlayTimer();

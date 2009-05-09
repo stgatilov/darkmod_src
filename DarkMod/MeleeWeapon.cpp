@@ -45,6 +45,9 @@ CMeleeWeapon::CMeleeWeapon( void )
 
 CMeleeWeapon::~CMeleeWeapon( void )
 {
+	// avoid leaving behind a clipmodel with stale entity pointers
+	DeactivateAttack();
+	DeactivateParry();
 }
 
 void CMeleeWeapon::Save( idSaveGame *savefile ) const 
