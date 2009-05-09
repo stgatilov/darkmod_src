@@ -3210,6 +3210,12 @@ void idActor::LoadVocalSet()
 	{
 		spawnArgs.Set(kv->GetKey(), kv->GetValue());
 	}
+	
+	// Copy all sound prop "spr*" spawnargs over to this entity
+	for (const idKeyValue* kv = def->dict.MatchPrefix("spr"); kv != NULL; kv = def->dict.MatchPrefix("spr", kv), i++)
+	{
+		spawnArgs.Set(kv->GetKey(), kv->GetValue());
+	}
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s", i, name.c_str());
 }
