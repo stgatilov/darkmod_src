@@ -801,6 +801,18 @@ public:
 	bool					AddResponse(idEntity *);
 	void					RemoveResponse(idEntity *);
 
+	/** 
+	 * greebo: Links the given entity into the list of Stim entities, such that
+	 * it gets considered each frame as potential stim emitter.
+	 */
+	void					LinkStimEntity(idEntity* ent);
+
+	/**
+	 * greebo: Removes the given entity from the global list of stimming entities.
+	 * Although it might have active stims, it is no longer considered each frame.
+	 */
+	void					UnlinkStimEntity(idEntity* ent);
+
 	/**
 	 * Checks whether the entity <e> is in the given list named <list>. 
 	 * @returns: the list index or -1 if the entity is not in the list.

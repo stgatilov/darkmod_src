@@ -147,7 +147,7 @@ public:
 		* UnShoulderBody is only called after we check if there's room
 		**/
 		void					ShoulderBody( idAFEntity_Base *body );
-		void					UnShoulderBody( void );
+		void					UnShoulderBody( idEntity *body );
 
 		/**
 		* Stop dragging and drop the current item if there is one

@@ -5946,29 +5946,31 @@ void idGameLocal::SpawnLightgemEntity(void)
 
 int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)
 {
+	// Construct an idEntityPtr with the given entity
+	idEntityPtr<idEntity> entPtr;
+	entPtr = e;
 
-	int rc = -1;
-	int i, n;
-
-	n = list.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(list[i].GetEntity() == e)
-		{
-			rc = i;
-			break;
-		}
-	}
-
-	return(rc);
+	return list.FindIndex(entPtr);
 }
 
+void idGameLocal::LinkStimEntity(idEntity* ent)
+{
+	if (ent != NULL && ent->GetStimResponseCollection()->HasStim())
+	{
+		AddStim(ent);
+	}
+}
+
+void idGameLocal::UnlinkStimEntity(idEntity* ent)
+{
+	RemoveStim(ent);
+}
 
 bool idGameLocal::AddStim(idEntity *e)
 {
 	bool rc = true;
 
-	if(CheckStimResponse(m_StimEntity, e) == -1)
+	if (CheckStimResponse(m_StimEntity, e) == -1)
 	{
 		idEntityPtr<idEntity> entPtr;
 		entPtr = e;
@@ -5980,9 +5982,9 @@ bool idGameLocal::AddStim(idEntity *e)
 
 void idGameLocal::RemoveStim(idEntity *e)
 {
-	int i;
+	int i = CheckStimResponse(m_StimEntity, e);
 
-	if((i = CheckStimResponse(m_StimEntity, e)) != -1)
+	if (i != -1)
 	{
 		m_StimEntity.RemoveIndex(i);
 	}
@@ -6005,9 +6007,9 @@ bool idGameLocal::AddResponse(idEntity *e)
 
 void idGameLocal::RemoveResponse(idEntity *e)
 {
-	int i;
+	int i = CheckStimResponse(m_RespEntity, e);
 
-	if((i = CheckStimResponse(m_RespEntity, e)) != -1)
+	if (i != -1)
 	{
 		m_RespEntity.RemoveIndex(i);
 	}
@@ -6156,6 +6158,8 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 	for (int i = 0; i < m_StimEntity.Num(); i++)
 	{
 		idEntity* entity = m_StimEntity[i].GetEntity();
+
+		if (entity == NULL) continue;
 
 		// greebo: Get the S/R collection, this is always non-NULL
 		CStimResponseCollection* srColl = entity->GetStimResponseCollection();
