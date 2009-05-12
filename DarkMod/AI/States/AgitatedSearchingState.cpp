@@ -73,12 +73,21 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 
+	CommMessagePtr message = CommMessagePtr(new CommMessage(
+		CommMessage::DetectedSomethingSuspicious_CommType, 
+		owner, NULL, // from this AI to anyone
+		NULL,
+		memory.alertPos
+	));
+
+
 	if (owner->AlertIndexIncreased())
 	{
-		if (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy)
+
+		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
 		{
 			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask("snd_alert4"))
+				CommunicationTaskPtr(new SingleBarkTask("snd_alert4",message))
 			);
 		}
 	}
@@ -91,13 +100,13 @@ void AgitatedSearchingState::Init(idAI* owner)
 	if (owner->HasSeenEvidence())
 	{
 		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime, message))
 		);
 	}
 	else
 	{
 		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime, message))
 		);
 	}
 	

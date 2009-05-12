@@ -570,122 +570,160 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 			if (!other->IsType(idAI::Type)) return; // safeguard
 			idAI* otherAI = static_cast<idAI*>(other);
+
+			Memory& otherMemory = otherAI->GetMemory();
+
+			if (otherAI->AI_AlertLevel >= otherAI->thresh_3 && owner->AI_AlertLevel < owner->thresh_3)
+			{
+				// angua: the other AI is searching due to an alert, join in
+
+				float otherAlertLevel = otherAI->AI_AlertLevel * 0.7f;
+				
+				if (otherAlertLevel > owner->AI_AlertLevel)
+				{
+					owner->SetAlertLevel(otherAlertLevel);
+
+					owner->StopMove(MOVE_STATUS_DONE);
+					
+					memory.alertPos = otherMemory.alertPos;
+					memory.alertClass = EAlertNone;
+					memory.alertType = EAlertTypeSuspicious;
+					
+					memory.alertRadius = otherMemory.alertRadius;
+					memory.alertSearchVolume = otherMemory.alertSearchVolume; 
+					memory.alertSearchExclusionVolume.Zero();
+
+					memory.alertedDueToCommunication = true;
+				}
+				
+
+
+				
+
+			}
 			
-			// Get the type of person
-			idStr personType(other->spawnArgs.GetString(PERSONTYPE_KEY));
+			else
+			{
+				// do some greeting
 
-			// Variables for the sound and the conveyed message
-			idStr soundName;
-			CommMessagePtr message; 
-
-			// Issue a communication stim to the friend we spotted.
-			// We can issue warnings, greetings, etc...
 			
-			if (memory.enemiesHaveBeenSeen)
-			{
-				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().enemiesHaveBeenSeen)
-				{
-					gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
-					message = CommMessagePtr(new CommMessage(
-						CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
-						owner, other, // from this AI to the other
-						NULL,
-						owner->GetPhysics()->GetOrigin()
-					));
-					soundName = "snd_warnSawEnemy";
-				}
-			}
-			else if (memory.itemsHaveBeenStolen)
-			{
-				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().itemsHaveBeenStolen)
-				{
-					gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
-					message = CommMessagePtr(new CommMessage(
-						CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType, 
-						owner, other, // from this AI to the other
-						NULL,
-						owner->GetPhysics()->GetOrigin()
-					));
-					soundName = "snd_warnMissingItem";
-				}
-			}
-			else if (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
-			{
-				if (otherAI != NULL && otherAI->GetMind()->GetMemory().countEvidenceOfIntruders < memory.countEvidenceOfIntruders)
-				{
-					gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
-					message = CommMessagePtr(new CommMessage(
-						CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
-						owner, other, // from this AI to the other
-						NULL,
-						owner->GetPhysics()->GetOrigin()
-					));
-					soundName = "snd_warnSawEvidence";
-				}
-			}
-			else if (owner->AI_AlertIndex < EObservant && gameLocal.random.RandomFloat() < 0.025f)
-			{
-				// Chance check passed, greetings!
-				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
-				message = CommMessagePtr(new CommMessage(
-					CommMessage::Greeting_CommType, 
-					owner, other, // from this AI to the other
-					NULL,
-					owner->GetPhysics()->GetOrigin()
-				));
+				// Get the type of person
+				idStr personType(other->spawnArgs.GetString(PERSONTYPE_KEY));
 
-				if (personType == PERSONTYPE_NOBLE)
+				// Variables for the sound and the conveyed message
+				idStr soundName;
+				CommMessagePtr message; 
+
+				// Issue a communication stim to the friend we spotted.
+				// We can issue warnings, greetings, etc...
+				
+				if (memory.enemiesHaveBeenSeen)
 				{
-					idStr personGender = other->spawnArgs.GetString(PERSONGENDER_KEY);
-					if (personGender == PERSONGENDER_FEMALE)
+					if (otherAI != NULL && !otherAI->GetMind()->GetMemory().enemiesHaveBeenSeen)
 					{
-						gameLocal.Printf("proper greeting is 'Hello your ladyship.'\n");
-						soundName = "snd_greeting_nobleFemale";
+						gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
+						message = CommMessagePtr(new CommMessage(
+							CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
+							owner, other, // from this AI to the other
+							NULL,
+							owner->GetPhysics()->GetOrigin()
+						));
+						soundName = "snd_warnSawEnemy";
+					}
+				}
+				else if (memory.itemsHaveBeenStolen)
+				{
+					if (otherAI != NULL && !otherAI->GetMind()->GetMemory().itemsHaveBeenStolen)
+					{
+						gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
+						message = CommMessagePtr(new CommMessage(
+							CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType, 
+							owner, other, // from this AI to the other
+							NULL,
+							owner->GetPhysics()->GetOrigin()
+						));
+						soundName = "snd_warnMissingItem";
+					}
+				}
+				else if (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
+				{
+					if (otherAI != NULL && otherAI->GetMind()->GetMemory().countEvidenceOfIntruders < memory.countEvidenceOfIntruders)
+					{
+						gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
+						message = CommMessagePtr(new CommMessage(
+							CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
+							owner, other, // from this AI to the other
+							NULL,
+							owner->GetPhysics()->GetOrigin()
+						));
+						soundName = "snd_warnSawEvidence";
+					}
+				}
+				else if (owner->AI_AlertIndex < EObservant && gameLocal.random.RandomFloat() < 0.025f)
+				{
+					// Chance check passed, greetings!
+					// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
+					message = CommMessagePtr(new CommMessage(
+						CommMessage::Greeting_CommType, 
+						owner, other, // from this AI to the other
+						NULL,
+						owner->GetPhysics()->GetOrigin()
+					));
+
+					if (personType == PERSONTYPE_NOBLE)
+					{
+						idStr personGender = other->spawnArgs.GetString(PERSONGENDER_KEY);
+						if (personGender == PERSONGENDER_FEMALE)
+						{
+							gameLocal.Printf("proper greeting is 'Hello your ladyship.'\n");
+							soundName = "snd_greeting_nobleFemale";
+						}
+						else
+						{
+							gameLocal.Printf("proper greeting is 'Hello your lordship.'\n");
+							soundName = "snd_greeting_nobleMale";
+						}
+					}
+					else if (personType == PERSONTYPE_PAGAN)
+					{
+						gameLocal.Printf("proper greeting is 'Hello your hippieness.'\n");
+						soundName = "snd_greeting_pagan";
+					}
+					else if (personType == PERSONTYPE_MERC_PROGUARD) 
+					{
+						gameLocal.Printf("proper greeting is 'Hello mercenary guard.'\n");
+						soundName = "snd_greeting_guard";
+					}
+					else if (personType == PERSONTYPE_CITYWATCH)
+					{
+						gameLocal.Printf("proper greeting is 'Hello city watch.'\n");
+						soundName = "snd_greeting_guard";
+					}
+					else if (personType == PERSONTYPE_BUILDER)
+					{
+						gameLocal.Printf("proper greeting is 'Hello builder.'\n");
+						soundName = "snd_greeting_builder";
 					}
 					else
 					{
-						gameLocal.Printf("proper greeting is 'Hello your lordship.'\n");
-						soundName = "snd_greeting_nobleMale";
+						// gameLocal.Printf("proper greeting is 'Hello generic person.'\n");
+						soundName = "snd_greeting_generic";
 					}
 				}
-				else if (personType == PERSONTYPE_PAGAN)
+				
+				// Speak the chosen sound
+				if (!soundName.IsEmpty() && gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 				{
-					gameLocal.Printf("proper greeting is 'Hello your hippieness.'\n");
-					soundName = "snd_greeting_pagan";
+					memory.lastTimeVisualStimBark = gameLocal.time;
+					owner->commSubsystem->AddCommTask(
+						CommunicationTaskPtr(new SingleBarkTask(soundName, message))
+					);
 				}
-				else if (personType == PERSONTYPE_MERC_PROGUARD) 
-				{
-					gameLocal.Printf("proper greeting is 'Hello mercenary guard.'\n");
-					soundName = "snd_greeting_guard";
-				}
-				else if (personType == PERSONTYPE_CITYWATCH)
-				{
-					gameLocal.Printf("proper greeting is 'Hello city watch.'\n");
-					soundName = "snd_greeting_guard";
-				}
-				else if (personType == PERSONTYPE_BUILDER)
-				{
-					gameLocal.Printf("proper greeting is 'Hello builder.'\n");
-					soundName = "snd_greeting_builder";
-				}
-				else
-				{
-					// gameLocal.Printf("proper greeting is 'Hello generic person.'\n");
-					soundName = "snd_greeting_generic";
-				}
+				
 			}
-			
-			// Speak the chosen sound
-			if (!soundName.IsEmpty() && gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-			{
-				memory.lastTimeVisualStimBark = gameLocal.time;
-				owner->commSubsystem->AddCommTask(
-					CommunicationTaskPtr(new SingleBarkTask(soundName, message))
-				);
-			}
-			
 			// Don't ignore in future
 			ignoreStimulusFromNowOn = false;
+
 		}
 		else
 		{
@@ -1557,7 +1595,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	if (owner->IsFriend(issuingEntity))
 	{
 		// If not already searching something else
-		if (GetName() == STATE_SEARCHING)
+		if (owner->AI_AlertLevel >= owner->thresh_3)
 		{
 			//gameLocal.Printf ("I'm too busy searching something else\n");
 			return;
@@ -1596,6 +1634,19 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 			if (otherAlertLevel > owner->AI_AlertLevel)
 			{
 				owner->SetAlertLevel(otherAlertLevel);
+				owner->StopMove(MOVE_STATUS_DONE);
+
+				Memory& otherMemory = static_cast<idAI*>(issuingEntity)->GetMemory();
+
+				memory.alertPos = otherMemory.alertPos;
+				memory.alertClass = EAlertNone;
+				memory.alertType = EAlertTypeSuspicious;
+				
+				memory.alertRadius = otherMemory.alertRadius;
+				memory.alertSearchVolume = otherMemory.alertSearchVolume; 
+				memory.alertSearchExclusionVolume.Zero();
+
+
 				memory.alertedDueToCommunication = true;
 			}
 			

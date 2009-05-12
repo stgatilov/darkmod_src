@@ -82,7 +82,7 @@ void SearchingState::Init(idAI* owner)
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
 
-		if (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy)
+		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
 		{
 			if (memory.alertClass == EAlertVisual)
 			{

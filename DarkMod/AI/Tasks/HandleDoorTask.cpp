@@ -535,6 +535,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateApproachingDoor:
 			{
+				if (owner->AI_AlertLevel >= owner->thresh_4)
+				{
+					return true;
+				}
+
 				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
 				dir.z = 0;
 				float dist = dir.LengthFast();
@@ -569,7 +574,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			}
 
 			
-
 			case EStateMovingToFrontPos:
 				// check if the door was blocked or interrupted
 				if (frobDoor->IsBlocked() || 

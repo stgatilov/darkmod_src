@@ -61,7 +61,7 @@ void FleeState::Init(idAI* owner)
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL, // from this AI to anyone 
 		owner->GetEnemy(),
-		memory.lastEnemyPos
+		memory.alertPos
 	));
 
 /*	owner->GetSubsystem(SubsysCommunication)->PushTask(

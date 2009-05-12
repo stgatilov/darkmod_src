@@ -7764,19 +7764,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		psychLoud *= GetAcuity("aud");
 
-		AlertAI( "aud", psychLoud );
-		
-		if( cv_spr_show.GetBool() )
+		if (IsEnemy(m_AlertedByActor.GetEntity()))
 		{
-			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 
-				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
-				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
+			AlertAI( "aud", psychLoud );
+
+			// greebo: Notify the currently active state
+			mind->GetState()->OnAudioAlert();
 		}
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
-
-		// greebo: Notify the currently active state
-		mind->GetState()->OnAudioAlert();
 
 		// Retrieve the messages from the other AI, if there are any
 		if (propParms->makerAI != NULL)
@@ -7786,6 +7780,15 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i]);
 			}
 		}
+
+		if( cv_spr_show.GetBool() )
+		{
+			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 
+				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
+				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
+		}
+
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
 
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
