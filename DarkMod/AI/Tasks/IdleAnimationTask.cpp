@@ -93,6 +93,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	if (gameLocal.time > _nextAnimationTime)
 	{
 		// angua: don't play idle animations while sitting / lying down or getting up
+		// TODO: Disable the playIdleAnimation flag rather than catch all those cases
 		if (memory.playIdleAnimations && 
 			owner->GetMoveType() != MOVETYPE_SIT_DOWN &&
 			owner->GetMoveType() != MOVETYPE_LAY_DOWN &&
@@ -108,8 +109,21 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 				idStr animName(_idleAnimations[animIdx]);
 
-				owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
-				owner->SetAnimState(ANIMCHANNEL_LEGS, ("Legs_" + animName).c_str(), 4);
+				// Check if the animation exists
+				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0 || 
+					owner->GetAnim(ANIMCHANNEL_LEGS, animName) == 0)
+				{
+					gameLocal.Warning("Could not find anim %s on entity %s", animName.c_str(), owner->name.c_str());
+					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s\r", animName.c_str(), owner->name.c_str());
+					return true; // done with errors
+				}
+
+				// Issue the playanim call
+				owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
+				owner->Event_PlayAnim(ANIMCHANNEL_LEGS, animName);
+
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", 4);
+				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomAnim", 4);
 			}
 			else 
 			{
@@ -117,7 +131,17 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
 
 				idStr animName(_idleAnimationsTorso[animIdx]);
-				owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+
+				// Check if the animation exists
+				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
+				{
+					gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
+					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
+					return true; // done with errors
+				}
+
+				owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", 4);
 			}
 		}
 		
