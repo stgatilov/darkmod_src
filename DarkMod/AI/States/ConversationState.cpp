@@ -295,12 +295,11 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 	case ConversationCommand::ETalk:
 	{
 		int length = Talk(owner, command.GetArgument(0));
+		idAI* talker = owner;
 
 		// Check if we need to look at the listener
 		if (conversation.ActorsAlwaysFaceEachOtherWhileTalking())
 		{
-			idAI* talker = owner;
-			
 			for (int i = 0; i < conversation.GetNumActors(); i++)
 			{
 				if (i != command.GetActor())
@@ -309,8 +308,8 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 					// Reduce the actor index by 1 before passing them to the conversation
 					idAI* listener = conversation.GetActor(i);
 
-					listener->TurnToward(owner->GetEyePosition());
-					listener->Event_LookAtPosition(owner->GetEyePosition(), MS2SEC(length));
+					listener->TurnToward(talker->GetEyePosition());
+					listener->Event_LookAtPosition(talker->GetEyePosition(), MS2SEC(length));
 				}
 				else
 				{
@@ -327,6 +326,9 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 				}
 			}
 		}
+
+		// Let the talker do his animation
+		talker->SetAnimState(ANIMCHANNEL_TORSO, "Torso_IdleTalk", 8);
 		
 		_finishTime = gameLocal.time + length + 200;
 		_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
