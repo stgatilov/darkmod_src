@@ -1127,7 +1127,18 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					idEntity *AttEnt = ent->GetAttachment( command.string->c_str() );
 					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
 					{
-						static_cast<CMeleeWeapon *>(AttEnt)->DeactivateAttack();
+						CMeleeWeapon *WeapEnt = static_cast<CMeleeWeapon *>(AttEnt);
+						if( WeapEnt->GetOwner() )
+						{
+							CMeleeStatus *pStatus = &WeapEnt->GetOwner()->m_MeleeStatus;
+							// if attack hasn't hit yet, this was a miss
+							if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
+							{
+								pStatus->m_ActionResult = MELEERESULT_AT_HIT;
+								pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+							}
+						}
+						WeapEnt->DeactivateAttack();
 					}
 
 					break;

@@ -169,28 +169,33 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		// set the normal to the owner's view forward
 		idMat3 viewAxis;
 		idVec3 dummy;
-		m_Owner.GetEntity()->GetViewPos( dummy, viewAxis );
+		idActor *owner = m_Owner.GetEntity();
+		owner->GetViewPos( dummy, viewAxis );
 		tr.c.normal = -viewAxis[0];
 
 		// hit a parry (make sure we don't hit our own other melee weapons)
 		if( ent->IsType(CMeleeWeapon::Type)
 			&& static_cast<CMeleeWeapon *>(ent)->GetOwner()
-			&& static_cast<CMeleeWeapon *>(ent)->GetOwner() != m_Owner.GetEntity() )
+			&& static_cast<CMeleeWeapon *>(ent)->GetOwner() != owner )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
 				("MeleeWeapon: Started out hitting a melee parry put up by %s\r", 
 				  static_cast<CMeleeWeapon *>(ent)->GetOwner()->name.c_str() );
 			// Test our attack against their parry
 			TestParry( static_cast<CMeleeWeapon *>(ent), idVec3(1,0,0), &tr );
-			// skip the rest, it will be handled in TestParry
 			return;
 		}
 
 		idEntity *other = gameLocal.entities[tr.c.entityNum];
 		// don't hit friendly actors
-		if( !( GetOwner()->IsType(idAI::Type) && (other->IsType(idActor::Type) && static_cast<idAI *>(GetOwner())->IsEnemy(other)) ) )
+		if( !( owner->IsType(idAI::Type) && (other->IsType(idActor::Type) && static_cast<idAI *>(owner)->IsEnemy(other)) ) )
 		{
 			MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
+
+			CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+			pStatus->m_ActionResult = MELEERESULT_AT_HIT;
+			pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
 			DeactivateAttack();
 		}
 	}
@@ -344,6 +349,7 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 
 		// message the attacking AI
 		pStatus->m_ActionResult = MELEERESULT_AT_PARRIED;
+		pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
 		DeactivateAttack();
 
 		// Hack: Play metal sound for now
@@ -414,6 +420,8 @@ void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
 		// rendering it unable to block a matching attack from another AI
 		// this is probably not that important, 
 		// and could be seen as the other AI beating the blade away
+
+		// TODO: Make the player weapon auto-stop the parry in this case
 	}
 }
 
@@ -638,6 +646,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 				
 				// update AI status (consider this a miss)
 				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+				pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
 
 				// TODO: Message the attacking AI to play a bounce off animation if appropriate
 
@@ -650,6 +659,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				// update AI status (consider this a miss)
 				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+				pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
 
 				DeactivateAttack();
 			}
@@ -678,6 +688,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				// update actor's melee status
 				pStatus->m_ActionResult = MELEERESULT_AT_HIT;
+				pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
 
 				DeactivateAttack();
 			}
@@ -700,6 +711,8 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			{
 				// message the AI, consider this a miss
 				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+				pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
 				DeactivateAttack();
 			}
 		}

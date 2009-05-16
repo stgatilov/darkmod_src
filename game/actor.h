@@ -51,7 +51,8 @@ typedef enum
 {
 	MELEEPHASE_PREPARING, // Moving to backswing or parry position
 	MELEEPHASE_HOLDING, // holding a backswing or parry
-	MELEEPHASE_FINISHING // finishing an attack/parry and recovering
+	MELEEPHASE_EXECUTING, // executing a threatening attack (doesn't apply to parries)
+	MELEEPHASE_RECOVERING // recovering the current attack/parry back to guard position
 } EMeleeActPhase;
 
 /** Possible outcomes of a melee action (includes attacks and parries) **/

@@ -45,8 +45,8 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Melee Combat Task performing.\r");
 
-	idAI* owner = _owner.GetEntity();
-	assert(owner != NULL);
+	idAI* ownerEnt = _owner.GetEntity();
+	assert(ownerEnt != NULL);
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL || enemy->IsKnockedOut() || enemy->health <= 0)
@@ -56,15 +56,15 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	}
 
 	// Perform the task according to the current action
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
+	CMeleeStatus *pStatus = &ownerEnt->m_MeleeStatus;
 	EMeleeActState ActState = pStatus->m_ActionState;
 
 	if( ActState == MELEEACTION_ATTACK )
-		PerformAttack(owner);
+		PerformAttack(ownerEnt);
 	else if( ActState == MELEEACTION_PARRY )
-		PerformParry(owner);
+		PerformParry(ownerEnt);
 	else
-		PerformReady(owner);
+		PerformReady(ownerEnt);
 
 	return false; // not finished yet
 }
@@ -92,7 +92,6 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentRiposteRecovery;
 	}
 	// longer recovery if we were parried
-	// TODO: Also do longer recovery if we get hit? Might be bad for gameplay
 	else if( pStatus->m_ActionResult == MELEERESULT_AT_PARRIED )
 		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentAttackLongRecovery;
 	else
@@ -108,12 +107,14 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 
 	// PARRY:
 	// If we can't attack and our enemy is attacking in range
+	// and if the attack is still dangerous (not recovering)
 	// TODO: Figure out how to switch enemies to face & parry a new one
 	else if
 		( 
 			pStatus->m_bCanParry
 			&& gameLocal.time > NextParTime
 			&& (pEnStatus->m_ActionState == MELEEACTION_ATTACK)
+			&& (pEnStatus->m_ActionPhase != MELEEPHASE_RECOVERING)
 			&& owner->GetMemory().canBeHitByEnemy
 			&& !_bForceAttack
 		)
@@ -185,12 +186,12 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 			owner->Event_MeleeActionReleased();
 		}
 	}
-	// MELEEPHASE_FINISHING
+	// MELEEPHASE_EXECUTING OR MELEEPHASE_RECOVERING
 	else
 	{
 		if( cv_melee_state_debug.GetBool() )
 		{
-			idStr debugText = "MeleeAction: Attack, Phase: Finishing";
+			idStr debugText = "MeleeAction: Attack, Phase: Executing/Recovering";
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
 
@@ -259,7 +260,11 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		bool bRelease = false;
 
 		// If our enemy is no longer attacking, release
-		if( pEnStatus->m_ActionState != MELEEACTION_ATTACK )
+		if( pEnStatus->m_ActionState != MELEEACTION_ATTACK
+			|| pEnStatus->m_ActionPhase == MELEEPHASE_RECOVERING )
+			bRelease = true;
+		// If our enemy switches attacks, stop this parry to prepare the next
+		else if( pStatus->m_ActionType != MELEETYPE_BLOCKALL && pStatus->m_ActionType != pEnStatus->m_ActionType )
 			bRelease = true;
 		// or if enemy is holding for over some time (for now hardcoded)
 		else if( pEnStatus->m_ActionPhase == MELEEPHASE_HOLDING
@@ -288,12 +293,12 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			owner->Event_MeleeActionReleased();
 		}
 	}
-	// MELEEPHASE_FINISHING
+	// MELEEPHASE_RECOVERING
 	else
 	{
 		if( cv_melee_state_debug.GetBool() )
 		{
-			idStr debugText = "MeleeAction: Parry, Phase: Finishing";
+			idStr debugText = "MeleeAction: Parry, Phase: Recovering";
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
 

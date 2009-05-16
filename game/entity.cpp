@@ -6822,9 +6822,8 @@ void idAnimatedEntity::AddLocalDamageEffect
 	origin = origin + localOrigin * axis;
 	dir = localDir * axis;
 
-	int type = collisionMaterial->GetSurfaceType();
-
-	if ( type == SURFTYPE_NONE ) {
+	if ( !collisionMaterial || collisionMaterial->GetSurfaceType() == SURFTYPE_NONE )
+	{
 		surfName = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
 	}
 	else
