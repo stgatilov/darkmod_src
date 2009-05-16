@@ -10027,6 +10027,16 @@ void idAI::ShowDebugInfo()
 	}
 }
 
+const idStr& idAI::GetNextIdleAnim()
+{
+	return m_NextIdleAnim;
+}
+
+void idAI::SetNextIdleAnim(const idStr& nextIdleAnim)
+{
+	m_NextIdleAnim = nextIdleAnim;
+}
+
 bool idAI::SwitchToConversationState(const idStr& conversationName)
 {
 	ai::ConversationStatePtr state = 

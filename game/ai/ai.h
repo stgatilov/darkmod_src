@@ -494,6 +494,9 @@ public:
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_CREEP;
 
+	// greebo: This is to tell the scripts which idle animation should be played next in the CustomIdleAnim state
+	idStr					m_NextIdleAnim;
+
 	/****************************************************************************************
 	*
 	*	Added By Rich to implement AI Falling damage
@@ -1581,6 +1584,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// greebo: Contains all the checks for CVAR-dependent debug info
 	void					ShowDebugInfo();
+
+	const idStr&			GetNextIdleAnim();
+	void					SetNextIdleAnim(const idStr& nextIdleAnim);
 	
 	//
 	// ai/ai_events.cpp
@@ -1851,6 +1857,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* For some reason this was left out of D3.
 	**/
 	void Event_ClosestReachableEnemy( void );
+
+	// Scripts query this to retrieve the name of the next idle anim
+	void Event_GetNextIdleAnim();
 
 #ifdef TIMING_BUILD
 private:

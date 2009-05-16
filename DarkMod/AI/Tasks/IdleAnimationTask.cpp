@@ -107,7 +107,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 				// AI is not walking, play animations affecting all channels
 				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
 
-				idStr animName(_idleAnimations[animIdx]);
+				const idStr& animName = _idleAnimations[animIdx];
 
 				// Check if the animation exists
 				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0 || 
@@ -119,18 +119,17 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 				}
 
 				// Issue the playanim call
-				owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
-				owner->Event_PlayAnim(ANIMCHANNEL_LEGS, animName);
+				owner->SetNextIdleAnim(animName);
 
-				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", 4);
-				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomAnim", 4);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
+				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
 			}
 			else 
 			{
 				// AI is walking or sitting, only use animations for the Torso channel
 				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
 
-				idStr animName(_idleAnimationsTorso[animIdx]);
+				const idStr& animName = _idleAnimationsTorso[animIdx];
 
 				// Check if the animation exists
 				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
@@ -140,8 +139,8 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 					return true; // done with errors
 				}
 
-				owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
-				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", 4);
+				owner->SetNextIdleAnim(animName);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 			}
 		}
 		

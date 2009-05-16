@@ -354,6 +354,8 @@ const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v')
 **/
 const idEventDef AI_Knockout( "knockout", "e" );
 
+const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -534,6 +536,8 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
+
+	EVENT(AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
 
 END_CLASS
 
@@ -3391,4 +3395,9 @@ void idAI::Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck)
 void idAI::Event_ProcessVisualStim(idEntity* stimSource)
 {
 	mind->GetState()->OnVisualStim(stimSource);
+}
+
+void idAI::Event_GetNextIdleAnim()
+{
+	idThread::ReturnString(GetNextIdleAnim());
 }
