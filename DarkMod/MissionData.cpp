@@ -1328,13 +1328,16 @@ void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
 		return;
 	}
 
-	bool wasVisible = m_Objectives[ObjIndex].m_bVisible;
+	CObjective& obj = m_Objectives[ObjIndex];
+
+	bool wasVisible = obj.m_bVisible;
 
 	// Set the new state
-	m_Objectives[ObjIndex].m_bVisible = bVal;
+	obj.m_bVisible = bVal;
 
 	// greebo: If we show a previously hidden objective, notify the player
-	if (bVal && !wasVisible)
+	// Only do this for applicable objectives
+	if (bVal && !wasVisible && obj.m_bApplies)
 	{
 		Event_NewObjective(); 
 	}
