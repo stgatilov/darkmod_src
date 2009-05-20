@@ -30,7 +30,7 @@ void CModMenu::Init()
 	InitStartingMap();
 }
 
-void CModMenu::Clear() 
+void CModMenu::Clear()
 {
 	_modsAvailable.Clear();
 	_curModName.Empty();
@@ -80,7 +80,7 @@ namespace {
 			returnValue = buf;
 
 			delete[] buf;
-			
+
 			fclose(file);
 		}
 
@@ -202,14 +202,14 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 
 		// ensure current page is between 1 and page count, inclusive
 		_briefingPage = idMath::ClampInt(1, numPages, _briefingPage);
-		
+
 		// load up page text
 		idStr page = va("page%d_body", _briefingPage);
 
 		gameLocal.Warning("DisplayBriefingPage: current page is %d", _briefingPage);
 
 		briefing = xd->m_data.GetString(page);
-		
+
 		// set scroll button visibility
 		scrollDown = numPages > _briefingPage;
 		scrollUp = _briefingPage > 1;
@@ -242,7 +242,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 
 		// Empty mod info structure for default values
 		ModInfo info;
-		
+
 		if (_modTop + modIndex < _modsAvailable.Num())
 		{
 			// Load the mod info structure
@@ -258,21 +258,21 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiImage, info.image);
 	}
 
-	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0); 
-	gui->SetStateBool("isModsScrollDownVisible", _modTop + modsPerPage < _modsAvailable.Num()); 
+	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);
+	gui->SetStateBool("isModsScrollDownVisible", _modTop + modsPerPage < _modsAvailable.Num());
 
 	// Update the currently installed mod
 	ModInfo curModInfo;
-	
+
 	if (!_curModName.IsEmpty())
 	{
 		curModInfo = GetModInfo(_curModName);
-		gui->SetStateBool("hasCurrentMod", true); 
+		gui->SetStateBool("hasCurrentMod", true);
 	}
 	else
 	{
 		curModInfo.title = "<No Mission Installed>";
-		gui->SetStateBool("hasCurrentMod", false); 
+		gui->SetStateBool("hasCurrentMod", false);
 	}
 
 	gui->SetStateString("currentModName", curModInfo.title);
@@ -306,7 +306,7 @@ idStr CModMenu::GetModNotes(int modIndex)
 	return modNotes;
 }
 
-CModMenu::ModInfo CModMenu::GetModInfo(int modIndex) 
+CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 {
 	// Sanity check
 	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
@@ -340,7 +340,7 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 
 	ModInfo info;
 	info.pathToFMPackage = fmPath;
-	
+
 	if (!modFileContent.IsEmpty())
 	{
 		int titlePos = modFileContent.Find("Title:");
@@ -414,13 +414,13 @@ void CModMenu::SearchForNewMods()
 		// Does the PK4 file contain a proper description file?
 		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
-		if (pk4file == NULL) 
+		if (pk4file == NULL)
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4 in root folder: %s\r", pk4path.file_string().c_str());
 			continue; // failed to open zip file
 		}
 
-		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString())) 
+		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Ignoring PK4 file, no 'darkmod.txt' found inside archive: %s\r", pk4path.file_string().c_str());
 			continue; // no darkmod.txt
@@ -430,12 +430,13 @@ void CModMenu::SearchForNewMods()
 		idStr modName = pk4path.leaf().c_str();
 		modName.StripPath();
 		modName.StripFileExtension();
+		modName.ToLower();
 
 		if (modName.IsEmpty()) continue; // error?
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName.c_str();
-		
+
 		if (fs::exists(modFolder))
 		{
 			// Folder exists already, do not copy PK4 into existing ones
@@ -453,7 +454,7 @@ void CModMenu::SearchForNewMods()
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while creating folder for PK4: %s\r", e.what());
 		}
-		
+
 		// Move the PK4 to that folder
 		fs::path targetPath = modFolder / (modName + ".pk4").c_str();
 
@@ -475,7 +476,7 @@ void CModMenu::SearchForNewMods()
 		catch (fs::basic_filesystem_error<fs::path>& e)
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while moving file: %s\r", e.what());
-		}	
+		}
 	}
 }
 
@@ -497,7 +498,7 @@ void CModMenu::BuildModList()
 
 		// Check for an uncompressed darkmod.txt file
 		idStr descFileName = fmPath + fmDir + "/" + cv_tdm_fm_desc_file.GetString();
-	
+
 		if (fileSystem->ReadFile(descFileName, NULL) != -1)
 		{
 			// File exists, add this as available mod
@@ -519,7 +520,7 @@ void CModMenu::BuildModList()
 
 			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
-			if (pk4file == NULL) 
+			if (pk4file == NULL)
 			{
 				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4: %s\r", pk4path.file_string().c_str());
 				continue; // failed to open zip file
@@ -527,7 +528,7 @@ void CModMenu::BuildModList()
 
 			if (pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
-				// Hurrah, we've found the darkmod.txt file, extract the contents 
+				// Hurrah, we've found the darkmod.txt file, extract the contents
 				// and attempt to save to folder
 				_modsAvailable.Alloc() = fmDir;
 
@@ -578,7 +579,7 @@ void CModMenu::InitStartingMap()
 {
 	_startingMap.Empty();
 
-	if (_curModName.IsEmpty()) 
+	if (_curModName.IsEmpty())
 	{
 		return;
 	}
@@ -630,7 +631,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	// Issue the named command to the GUI
 	gui->SetStateString("modInstallProgressText", "Installing FM Package\n\n" + info.title);
 	gui->HandleNamedEvent("OnModInstallationStart");
-	
+
 	// Ensure that the target folder exists (idFileSystem::CopyFile requires this)
 	fs::path targetFolder = parentPath / modDirName.c_str();
 
@@ -645,17 +646,17 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 
 	// Copy all PK4s from the FM folder (and all subdirectories)
 	idFileList* pk4Files = fileSystem->ListFilesTree(info.pathToFMPackage, ".pk4", false);
-	
+
 	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
 	{
 		// Source file (full OS path)
 		fs::path pk4fileOsPath = GetDarkmodPath() / pk4Files->GetFile(i);
-		
+
 		// Target location
 		fs::path targetFile = targetFolder / pk4fileOsPath.leaf();
 
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
-		
+
 		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
 		//fileSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
 
