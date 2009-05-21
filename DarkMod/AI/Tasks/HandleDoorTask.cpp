@@ -306,7 +306,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 
 						_doorHandlingState = EStateStartOpen;
-						_waitEndTime = gameLocal.time + 500;
+						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 					}
 				}
 				break;
@@ -720,7 +720,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								// close it
 								owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 								_doorHandlingState = EStateStartClose;
-								_waitEndTime = gameLocal.time + 500;
+								_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 							}
 							else
 							{
@@ -860,7 +860,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 						_doorHandlingState = EStateStartClose;
-						_waitEndTime = gameLocal.time + 500;
+						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 					}
 				}
 				else if (numUsers > 1 && !_doorInTheWay)
