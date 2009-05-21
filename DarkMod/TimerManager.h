@@ -59,6 +59,8 @@ public:
 	void	DumpTimerResults(const char* const separator = ";", const char* const comma = ".");
 	void	Clear();
 
+	// Resets all timers to 0, doesn't destroy any timers
+	void	ResetTimers();
 
 	// Contains the static singleton
 	static TimerManager& Instance();

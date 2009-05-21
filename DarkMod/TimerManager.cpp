@@ -101,6 +101,18 @@ void TimerManager::StopTimer(int timerId)
 	info.timer.Clear();
 }
 
+void TimerManager::ResetTimers()
+{
+	for (TimerMap::iterator i = _timers.begin(); i != _timers.end(); ++i)
+	{
+		TimerInfo& info = i->second;
+
+		info.runCount = 0;
+		info.runTime = 0;
+		info.maxTime = 0;
+		info.maxTimeCall = 0;
+	}
+}
 
 void TimerManager::PrintTimerResults()
 {

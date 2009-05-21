@@ -2775,6 +2775,11 @@ void Cmd_WriteTimerCSV_f(const idCmdArgs& args)
 	// No arguments, call default
 	debugtools::TimerManager::Instance().DumpTimerResults();
 }
+
+void Cmd_ResetTimers_f(const idCmdArgs& args)
+{
+	debugtools::TimerManager::Instance().ResetTimers();
+}
 #endif // TIMING_BUILD 
 
 /*
@@ -2917,6 +2922,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 #ifdef TIMING_BUILD
 	cmdSystem->AddCommand( "listTimers",			Cmd_ListTimers_f,			CMD_FL_GAME,				"Shows total run time and max time of timers (TIMING_BUILD only)." );
 	cmdSystem->AddCommand( "writeTimerCSV",			Cmd_WriteTimerCSV_f,		CMD_FL_GAME,				"Writes the timer data to a csv file (usage: writeTimerCSV <separator> <commaChar>). The default separator is ';', the default comma is '.'");
+	cmdSystem->AddCommand( "resetTimers",			Cmd_ResetTimers_f,			CMD_FL_GAME,				"Resets the timer data so far.");
 #endif
 }
 
