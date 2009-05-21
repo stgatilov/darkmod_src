@@ -544,7 +544,10 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 		if (area <= 0) continue;
 
 		idVec3 origin = file->GetArea(area).center;
-		gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 10000);
+		if ((origin - playerOrigin).LengthFast() < 1000)
+		{
+			gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 1000);
+		}
 	}
 }
 
