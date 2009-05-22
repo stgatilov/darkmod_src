@@ -54,6 +54,7 @@ extern idCVar cv_ai_opt_interleavethinkmindist;
 extern idCVar cv_ai_opt_interleavethinkmaxdist;
 extern idCVar cv_ai_opt_interleavethinkskippvscheck;
 extern idCVar cv_ai_opt_interleavethinkframes;
+extern idCVar cv_ai_opt_update_enemypos_interleave;
 extern idCVar cv_ai_opt_nomind;
 extern idCVar cv_ai_opt_novisualstim;
 extern idCVar cv_ai_opt_nolipsync;

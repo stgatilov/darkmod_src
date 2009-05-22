@@ -684,6 +684,7 @@ public: // greebo: Made these public
 	idVec3					lastReachableEnemyPos;
 	bool					enemyReachable;
 	bool					wakeOnFlashlight;
+	int						lastUpdateEnemyPositionTime;
 
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
