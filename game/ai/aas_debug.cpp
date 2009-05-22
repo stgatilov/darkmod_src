@@ -191,7 +191,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 		int travelTime;
 		idReachability *reach;
 		
-		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach, NULL );
+		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach, NULL, NULL );
 		gameLocal.Printf( "\rtt = %4d", travelTime );
 		if ( reach ) {
 			gameLocal.Printf( " to area %4d", reach->toAreaNum );
@@ -256,7 +256,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL, NULL ) ) {
 			break;
 		}
 
@@ -302,7 +302,7 @@ void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach, NULL ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach, NULL, NULL ) ) {
 			break;
 		}
 

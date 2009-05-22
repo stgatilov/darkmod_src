@@ -964,6 +964,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	bool					m_HandlingDoor;
 
+
+	
+
+
+
 	/**
 	 * angua: is set true while the AI is handling an elevator.
 	 */
@@ -1874,6 +1879,11 @@ private:
 	int aiPhysicsTimer;
 	int aiGetMovePosTimer;
 	int aiPathToGoalTimer;
+	int aiGetFloorPosTimer;
+	int aiPointReachableAreaNumTimer;
+	int aiCanSeeTimer;
+
+
 #endif
 };
 

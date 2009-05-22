@@ -47,6 +47,7 @@ typedef struct aasPath_s {
 	idVec3						secondaryGoal;	// secondary move goal for complex navigation
 	const idReachability *		reachability;	// reachability used for navigation
 	eas::RouteInfoPtr			elevatorRoute;	// EAS reachability information (NULL if unused)
+	CFrobDoor*					firstDoor;		// angua: when a door is in the path, this is stored here (NULL otherwise)
 } aasPath_t;
 
 
@@ -151,6 +152,7 @@ public:
 	 * 
 	 * @travelTime: Will hold the total traveltime of the best reachability or 0 if no route is found.
 	 * @reach: A reference to a idReachability* pointer. The pointer is set to NULL if no route is found, otherwise it contains the best reachability.
+	 * @door: if there is a door in the path, this stores a pointer to in (NULL otherwise)
 	 * @actor: the calling actor (optional). Is used to determine whether walk paths are valid (through locked doors, for instance).
 	 *
 	 * @returns TRUE if a route is available, FALSE otherwise. 
@@ -160,7 +162,7 @@ public:
 	 *       b) the clusters are connected via a portal.
 	 */
 	// Get the travel time and first reachability to be used towards the goal, returns true if there is a path.
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const = 0;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, CFrobDoor** firstDoor, idActor* actor ) const = 0;
 
 	/**
 	 * greebo: Tries to set up a walk path from areaNum/origin to goalAreaNum/goalOrigin for the given travel flags.

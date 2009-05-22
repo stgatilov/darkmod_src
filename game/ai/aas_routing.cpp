@@ -1037,8 +1037,10 @@ idRoutingCache *idAASLocal::GetPortalRoutingCache( int clusterNum, int areaNum, 
 idAASLocal::RouteToGoalArea
 ============
 */
-bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const {
-
+bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, 
+								  int travelFlags, int &travelTime, idReachability **reach, 
+								  CFrobDoor** firstDoor, idActor* actor ) const
+{
 #ifdef TIMING_BUILD
 	if (actor != NULL)
 	{
@@ -1050,6 +1052,11 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 	// Set the default return values
 	travelTime = 0;
 	*reach = NULL;
+
+	if (firstDoor != NULL)
+	{
+		*firstDoor = NULL;
+	}
 
 	if ( !file ) {
 		return false;
@@ -1198,21 +1205,14 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 
 	if (bestPortalAreaNum > 0)
 	{
+		// angua: check if there is a door in the path
 		aasArea_t portalArea = file->GetArea(bestPortalAreaNum);
 		if (portalArea.travelFlags & TFL_DOOR)
 		{
 			CFrobDoor* door = GetDoor(bestPortalAreaNum);
-			if (door != NULL)
+			if (door != NULL && firstDoor != NULL)
 			{
-				const idVec3& doorOrg = door->GetPhysics()->GetOrigin();
-				const idVec3& org = actor->GetPhysics()->GetOrigin();
-				idVec3 dir = doorOrg - org;
-				dir.z = 0;
-				float dist = dir.LengthFast();
-				if (dist < 500)
-				{
-					static_cast<idAI*>(actor)->GetMind()->GetState()->OnFrobDoorEncounter(door);
-				}	
+				*firstDoor = door;
 			}
 		}
 	}
@@ -1241,7 +1241,7 @@ int idAASLocal::TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goa
 		return 0;
 	}
 
-	if ( !RouteToGoalArea( areaNum, origin, goalAreaNum, travelFlags, travelTime, &reach, actor ) ) {
+	if ( !RouteToGoalArea( areaNum, origin, goalAreaNum, travelFlags, travelTime, &reach, NULL, actor ) ) {
 		return 0;
 	}
 	return travelTime;

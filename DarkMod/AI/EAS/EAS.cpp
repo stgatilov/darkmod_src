@@ -248,7 +248,7 @@ void tdmEAS::SetupReachableElevatorStations()
 			idReachability* reach;
 			int travelTime = 0;
 			bool routeFound = _aas->RouteToGoalArea(areaNum, _aas->AreaCenter(areaNum), 
-				_elevatorStations[e]->areaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
+				_elevatorStations[e]->areaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL, NULL);
 
 			//gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
 			
@@ -400,7 +400,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 		int travelTime = 0;
 		// Workaround: Include the TFL_INVALID flag to include deactivated AAS areas
 		bool routeFound = _aas->RouteToGoalArea(startArea, _aas->AreaCenter(startArea), 
-			goalArea, TFL_WALK|TFL_AIR|TFL_INVALID, travelTime, &reach, NULL);
+			goalArea, TFL_WALK|TFL_AIR|TFL_INVALID, travelTime, &reach, NULL, NULL);
 
 		if (routeFound) 
 		{

@@ -286,11 +286,14 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
 	path.elevatorRoute = eas::RouteInfoPtr();
+	path.firstDoor = NULL;
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;
 		return true;
 	}
+
+	CFrobDoor* door = NULL;
 
 	int lastAreas[4] = { areaNum, areaNum, areaNum, areaNum };
 	int lastAreaIndex = 0;
@@ -300,14 +303,20 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	idVec3 endPos;
 	int travelTime, endAreaNum;
 
-	for ( int i = 0; i < maxWalkPathIterations; i++ ) {
+	for ( int i = 0; i < maxWalkPathIterations; i++ )
+	{
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, actor ) ) {
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &door, actor ) ) {
 			break;
 		}
 
 		if ( !reach ) {
 			return false;
+		}
+
+		if (door != NULL && path.firstDoor == NULL)
+		{
+			path.firstDoor = door;
 		}
 
 		// no need to check through the first area
@@ -472,6 +481,7 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
 	path.elevatorRoute = eas::RouteInfoPtr();
+	path.firstDoor = NULL;
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;
@@ -485,7 +495,7 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 
 	for ( i = 0; i < maxFlyPathIterations; i++ ) {
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, NULL ) ) {
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &path.firstDoor, NULL ) ) {
 			break;
 		}
 

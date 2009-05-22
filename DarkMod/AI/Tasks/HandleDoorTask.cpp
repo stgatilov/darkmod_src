@@ -131,7 +131,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	// if our current door is part of a double door, this is the other part.
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
-	const idBounds& bounds = owner->GetPhysics()->GetBounds();
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+
+	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
+	bounds[0][2] += 16;
+
 	float size = bounds[1][0];
 
 	if (cv_ai_door_show.GetBool()) 
@@ -1020,6 +1024,7 @@ idVec3 HandleDoorTask::GetAwayPos(idAI* owner, CFrobDoor* frobDoor)
 	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
+
 	float size = bounds[1][0];
 
 	idVec3 dir = closedPos - frobDoorOrg;

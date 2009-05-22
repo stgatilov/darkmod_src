@@ -571,6 +571,10 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiPhysicsTimer);
 	INIT_TIMER_HANDLE(aiGetMovePosTimer);
 	INIT_TIMER_HANDLE(aiPathToGoalTimer);
+	INIT_TIMER_HANDLE(aiGetFloorPosTimer);
+	INIT_TIMER_HANDLE(aiPointReachableAreaNumTimer);
+	INIT_TIMER_HANDLE(aiCanSeeTimer);
+
 }
 
 /*
@@ -896,6 +900,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiPhysicsTimer, savefile);
 	SAVE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
 	SAVE_TIMER_HANDLE(aiPathToGoalTimer, savefile);
+	SAVE_TIMER_HANDLE(aiGetFloorPosTimer, savefile);
+	SAVE_TIMER_HANDLE(aiPointReachableAreaNumTimer, savefile);
+	SAVE_TIMER_HANDLE(aiCanSeeTimer, savefile);
+
 }
 
 /*
@@ -1259,6 +1267,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiPhysicsTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPathToGoalTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiGetFloorPosTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiPointReachableAreaNumTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiCanSeeTimer, savefile);
 }
 
 const ai::SubsystemPtr& idAI::GetSubsystem(ai::SubsystemId id)
@@ -1679,6 +1690,7 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
+
 	m_HandlingElevator = false;
 
 	// =============== Set up KOing and FOV ==============
@@ -1756,6 +1768,9 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiPhysicsTimer, name, "RunPhysics");
 	CREATE_TIMER(aiGetMovePosTimer, name, "GetMovePos");
 	CREATE_TIMER(aiPathToGoalTimer, name, "PathToGoal");
+	CREATE_TIMER(aiGetFloorPosTimer, name, "GetFloorPos");
+	CREATE_TIMER(aiPointReachableAreaNumTimer, name, "PointReachableAreaNum");
+	CREATE_TIMER(aiCanSeeTimer, name, "CanSee");
 }
 
 /*
@@ -2523,6 +2538,8 @@ idAI::PointReachableAreaNum
 */
 int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, const idVec3& offset) const
 {
+	START_SCOPED_TIMING(aiPointReachableAreaNumTimer, scopedPointReachableAreaNumTimer);
+
 	if (aas == NULL) {
 		return 0; // no AAS, no area number
 	}
@@ -2655,7 +2672,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
 
 	idReachability *reach;
 	int travelTime;
-	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach, this ) ) {
+	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach, NULL, this ) ) {
 		return -1;
 	}
 
@@ -3864,6 +3881,20 @@ bool idAI::GetMovePos(idVec3 &seekPos)
 				seekPos = path.moveGoal;
 				result = true; // We have a valid Path to the goal
 				move.nextWanderTime = 0;
+
+				// angua: check whether there is a door in the path
+				if (path.firstDoor != NULL)
+				{
+					const idVec3& doorOrg = path.firstDoor->GetPhysics()->GetOrigin();
+					const idVec3& org = GetPhysics()->GetOrigin();
+					idVec3 dir = doorOrg - org;
+					dir.z = 0;
+					float dist = dir.LengthFast();
+					if (dist < 500)
+					{
+						GetMind()->GetState()->OnFrobDoorEncounter(path.firstDoor);
+					}	
+				}
 			}
 			else
 			{
@@ -3920,6 +3951,9 @@ idAI::CanSee virtual override
 */
 bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 {
+
+	START_SCOPED_TIMING(aiCanSeeTimer, scopedCanSeeTimer);
+
 	// Test if it is occluded, and use field of vision in the check (true as second parameter)
 	bool cansee = idActor::CanSee( ent, useFOV );
 
@@ -6148,7 +6182,9 @@ void idAI::UpdateEnemyPosition()
 	else
 	{
 		// non-flying AI, get the floor position of the enemy
+		START_TIMING(aiGetFloorPosTimer);
 		onGround = enemyEnt->GetFloorPos(64.0f, enemyPos);
+		STOP_TIMING(aiGetFloorPosTimer);
 
 		if (enemyEnt->OnLadder())
 		{
@@ -6409,7 +6445,7 @@ idVec3 idAI::FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target,
 
 	for( i = 0; i < 10; i++ ) {
 
-		if ( !aas->RouteToGoalArea( curAreaNum, curOrigin, targetAreaNum, travelFlags, travelTime, &reach, this ) ) {
+		if ( !aas->RouteToGoalArea( curAreaNum, curOrigin, targetAreaNum, travelFlags, travelTime, &reach, NULL, this ) ) {
 			break;
 		}
 
