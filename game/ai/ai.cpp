@@ -3946,7 +3946,6 @@ idAI::CanSee virtual override
 */
 bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 {
-
 	START_SCOPED_TIMING(aiCanSeeTimer, scopedCanSeeTimer);
 
 	// Test if it is occluded, and use field of vision in the check (true as second parameter)
@@ -3960,7 +3959,6 @@ bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 
 	// Return result
 	return cansee;
-
 }
 
 /*
@@ -3976,14 +3974,13 @@ bool idAI::CanSeeExt( idEntity *ent, bool useFOV, bool useLighting ) const
 	// Test if it is occluded
 	bool cansee = idActor::CanSee( ent, useFOV );
 
-	if ((cansee) && (useLighting))
+	if (cansee && useLighting)
 	{
 		cansee = !IsEntityHiddenByDarkness(ent);
 	}
 
 	// Return result
 	return cansee;
-
 }
 
 /*
@@ -3996,10 +3993,6 @@ This metohd can ignore lighting conditions and/or field of vision.
 */
 bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 {
-	trace_t		tr;
-	idVec3		eye;
-	bool canSee;
-
 	if ( useFOV && !CheckFOV( position ) )
 	{
 		return false;
@@ -4007,7 +4000,7 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 
 	idVec3 ownOrigin = physicsObj.GetOrigin();
 
-	canSee = EntityCanSeePos (this, ownOrigin, position);
+	bool canSee = EntityCanSeePos (this, ownOrigin, position);
 
 	if (canSee && useLighting)
 	{
@@ -4045,7 +4038,6 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 					cv_ai_visdist_show.GetInteger()
 				);
 
-
 				// Gap to where we want to see
 				gameRenderWorld->DebugArrow
 				(
@@ -4070,30 +4062,20 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 					cv_ai_visdist_show.GetInteger()
 				);
 			}
-
 		}
-
-
 	}
 
 	return canSee;
-
 }
-
-
-
 
 /*
 =====================
 idAI::EntityCanSeePos
 =====================
 */
-bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos ) {
-	idVec3 eye, point;
-	trace_t results;
-	pvsHandle_t handle;
-
-	handle = gameLocal.pvs.SetupCurrentPVS( actor->GetPVSAreas(), actor->GetNumPVSAreas() );
+bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos )
+{
+	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS( actor->GetPVSAreas(), actor->GetNumPVSAreas() );
 
 	if ( !gameLocal.pvs.InCurrentPVS( handle, GetPVSAreas(), GetNumPVSAreas() ) ) {
 		gameLocal.pvs.FreeCurrentPVS( handle );
@@ -4102,13 +4084,14 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 
 	gameLocal.pvs.FreeCurrentPVS( handle );
 
-	eye = actorOrigin + actor->EyeOffset();
+	idVec3 eye = actorOrigin + actor->EyeOffset();
 
-	point = pos;
+	idVec3 point = pos;
 	point[2] += 1.0f;
 
 	physicsObj.DisableClip();
 
+	trace_t results;
 	gameLocal.clip.TracePoint( results, eye, point, MASK_SOLID, actor );
 	if ( results.fraction >= 1.0f || ( gameLocal.GetTraceEntity( results ) == this ) ) {
 		physicsObj.EnableClip();
@@ -4123,6 +4106,7 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 	if ( results.fraction >= 1.0f || ( gameLocal.GetTraceEntity( results ) == this ) ) {
 		return true;
 	}
+
 	return false;
 }
 
