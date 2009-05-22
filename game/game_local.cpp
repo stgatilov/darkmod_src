@@ -6060,6 +6060,12 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 					continue;
 				}
 
+				if (cv_sr_show.GetInteger() > 0)
+				{
+					// Show successful S/R
+					gameRenderWorld->DebugArrow(colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, gameLocal.msec);
+				}
+
 				// Fire the response and pass the originating entity plus the stim object itself
 				// The stim object can be queried for values like magnitude, falloff and such.
 				response->TriggerResponse(originator, stim);
@@ -6272,6 +6278,15 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				
 				if (n > 0)
 				{
+					if (cv_sr_show.GetInteger() > 1)
+					{
+						for (int n2 = 0; n2 < n; ++n2)
+						{
+							// Show failed S/R
+							gameRenderWorld->DebugArrow(colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, gameLocal.msec);
+						}
+					}
+
 					// Do responses for entities within the radius of the stim
 					numResponses = DoResponseAction(stim, n, entity, origin);
 				}

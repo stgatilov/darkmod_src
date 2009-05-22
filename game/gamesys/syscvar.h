@@ -82,6 +82,7 @@ extern idCVar cv_show_gameplay_time;
 extern idCVar cv_tdm_difficulty;
 
 extern idCVar cv_sr_disable;
+extern idCVar cv_sr_show;
 
 extern idCVar cv_sndprop_disable;
 extern idCVar cv_spr_debug;
