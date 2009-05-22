@@ -1502,11 +1502,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void FOVDebugDraw( void );
 
 	/**
-	* This method calculates the maximum distance froma given
+	* This method calculates the maximum distance from a given
 	* line segment that the segment is visible due to current light conditions
-	* at the segment
+	* at the segment. Does not accept NULL pointers!
 	*/
-	float GetMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const;
+	float GetMaximumObservationDistanceForPoints(const idVec3& p1, const idVec3& p2) const;
+
+	// Returns the maximum distance where this AI can still see the given entity from
+	float GetMaximumObservationDistance(idEntity* entity) const;
 
 	/**
 	* The point of this function is to determine the visual stimulus level caused

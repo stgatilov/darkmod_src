@@ -716,6 +716,9 @@ idEntity::idEntity()
 	// absolutely necessary to create these.
 	m_Inventory			= CInventoryPtr();
 	m_InventoryCursor	= CInventoryCursorPtr();
+
+	m_LightQuotient = 0;
+	m_LightQuotientLastEvalTime = -1;
 }
 
 /*
@@ -1261,6 +1264,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	}
 
 	m_userManager.Save(savefile);
+
+	savefile->WriteFloat(m_LightQuotient);
+	savefile->WriteInt(m_LightQuotientLastEvalTime);
 }
 
 /*
@@ -1497,6 +1503,8 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_userManager.Restore(savefile);
 
+	savefile->ReadFloat(m_LightQuotient);
+	savefile->ReadInt(m_LightQuotientLastEvalTime);
 }
 
 /*
@@ -2138,6 +2146,27 @@ void idEntity::Show( void )
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		UpdateVisuals();
 	}
+}
+
+float idEntity::GetLightQuotient()
+{
+	if (m_LightQuotientLastEvalTime < gameLocal.time)
+	{
+		idPhysics* physics = GetPhysics();
+
+		// Get the bounds and move it upwards a tiny bit
+		idBounds bounds = physics->GetAbsBounds() + physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
+
+		// A single point doesn't work with ellipse intersection
+		bounds.ExpandSelf(0.1f); 
+
+		// Update the cache
+		m_LightQuotientLastEvalTime = gameLocal.time;
+		m_LightQuotient = LAS.queryLightingAlongLine(bounds[0], bounds[1], this, true);
+	}
+
+	// Return the cached result
+	return m_LightQuotient;
 }
 
 /*

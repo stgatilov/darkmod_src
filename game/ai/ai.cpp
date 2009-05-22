@@ -2594,7 +2594,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 		return false;
 	}
 
-	// Sanity check the returned area. If the position isn't within the AI's height + vertical melee
+	// Sanity check the returned area. If the position isn't within the AI's height + aas_reachability_z_tolerance
 	// reach, then report it as unreachable.
 	const idVec3& grav = physicsObj.GetGravityNormal();
 
@@ -3161,12 +3161,7 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 
 	// What is the lighting along the line where the thing to be observed
 	// might be.
-	float maxDistanceToObserve = GetMaximumObservationDistance
-	(
-		pointToObserve,
-		pointToObserve2,
-		NULL
-	);
+	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(pointToObserve, pointToObserve2);
 		
 	idAASFindObservationPosition findGoal
 	(
@@ -4018,16 +4013,11 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 	{
 		idVec3 bottomPoint = position;
 		idVec3 topPoint = position - (physicsObj.GetGravityNormal() * 32.0);
-		float maxDistanceToObserve = GetMaximumObservationDistance
-		(
-			bottomPoint,
-			topPoint,
-			NULL
-		);
+
+		float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(bottomPoint, topPoint);
 
 		if ((position - ownOrigin).Length() > maxDistanceToObserve)
 		{
-
 			canSee = false;
 		}
 
@@ -8566,14 +8556,18 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 
 /*---------------------------------------------------------------------------------*/
 
-float idAI::GetMaximumObservationDistance(idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const
+float idAI::GetMaximumObservationDistanceForPoints(const idVec3& p1, const idVec3& p2) const
 {
-	float lightQuotient = LAS.queryLightingAlongLine(bottomPoint, topPoint, p_ignoreEntity, true);
+	return LAS.queryLightingAlongLine(p1, p2, NULL, true) * cv_ai_sight_scale.GetFloat() * GetAcuity("vis");
+}
 
-	float visualAcuityZeroToOne = GetAcuity("vis");
-	float maxDistanceToObserve = lightQuotient * cv_ai_sight_scale.GetFloat() * visualAcuityZeroToOne;
+float idAI::GetMaximumObservationDistance(idEntity* entity) const
+{
+	assert(entity != NULL); // don't accept NULL input
 
-	return maxDistanceToObserve;
+	float lightQuotient = entity->GetLightQuotient();
+	
+	return lightQuotient * cv_ai_sight_scale.GetFloat() * GetAcuity("vis");
 }
 
 /*---------------------------------------------------------------------------------*/
@@ -8683,17 +8677,11 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 	}
 	else // Not the player
 	{
-		idBounds entityBounds = p_physics->GetAbsBounds();
-		entityBounds.ExpandSelf(0.1f); // A single point doesn't work with ellipse intersection
-
-		idVec3 bottomPoint = entityBounds[0] + p_physics->GetGravityNormal() * 0.1f;	// Tweak to stay out of floors
-		idVec3 topPoint = entityBounds[1] + p_physics->GetGravityNormal() * 0.1f;		// Tweak to stay out of floors
-
-		float maxDistanceToObserve = GetMaximumObservationDistance(	bottomPoint, topPoint, p_entity);
+		float maxDistanceToObserve = GetMaximumObservationDistance(p_entity);
 
 		// Are we close enough to see it in the current light level?
 		idVec3 observeFrom = GetEyePosition();
-		idVec3 midPoint = (topPoint + bottomPoint) * 0.5f;
+		idVec3 midPoint = p_entity->GetPhysics()->GetAbsBounds().GetCenter();
 
 		if ((observeFrom - midPoint).LengthSqr() > maxDistanceToObserve*maxDistanceToObserve)
 		{

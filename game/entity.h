@@ -341,6 +341,11 @@ public:
 	**/
 	idEntityPtr<idActor>	m_MovedByActor;
 
+	// The light quotient for this entity, calculated by the LAS
+	float					m_LightQuotient;
+	// The last time the above value has been calculated
+	int						m_LightQuotientLastEvalTime;
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -400,6 +405,15 @@ public:
 	virtual void			Hide( void );
 	virtual void			Show( void );
 	bool					IsHidden( void ) const;
+
+	/**
+	 * greebo: Returns the light quotient for this entity, a value determined by the 
+	 * number of lights hitting this entity's bounding box, determined by the LAS.
+	 *
+	 * AI are using this method to determine an object's visibility. The result 
+	 * is cached, to save it from being recalculated for multiple AI each frame.
+	 */
+	float					GetLightQuotient();
 
 	// TDM: SZ: January 9, 2006 Made virtual to handle unique behavior in descendents
 	virtual void			UpdateVisuals( void );
