@@ -714,6 +714,14 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		fs::copy_file(darkmodPath / "DoomConfig.cfg", doomConfigPath);
 	}
 
+	// Check if the config.spec file already exists in the mod folder
+	fs::path configSpecPath = targetFolder / "config.spec";
+	if (!fs::exists(configSpecPath))
+	{
+		// Copy the config.spec file from darkmod/ to the new mod/
+		fs::copy_file(darkmodPath / "config.spec", configSpecPath);
+	}
+
 	gui->HandleNamedEvent("OnModInstallationFinished");
 }
 
