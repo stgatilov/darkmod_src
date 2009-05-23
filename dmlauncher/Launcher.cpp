@@ -50,12 +50,12 @@ Launcher::Launcher(int argc, char* argv[]) :
 
 	TraceLog::WriteLine("Darkmod directory is " + _darkmodDir.file_string());
 
-	// Default value
-	_engineExecutable = _darkmodDir;
-	_engineExecutable = _engineExecutable.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
-
-	TraceLog::WriteLine("Default value for engine executable is " + _engineExecutable.file_string());
-
+	// Find the engine executable
+	if (!FindExecutable())
+	{
+		TraceLog::WriteLine("Could not find engine executable at default locations, will be searching command line arguments for a path to doom3 executable.");
+	}
+	
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
 	// Number of arguments to ignore (one is this executable itself, ignore it)
@@ -213,6 +213,40 @@ std::string Launcher::ReadFile(const fs::path& fileName)
 	}
 
 	return returnValue;
+}
+
+bool Launcher::FindExecutable()
+{
+	// Try to look in the parent directory of the darkmod folder (this definitely applies to Win32)
+	_engineExecutable = _darkmodDir;
+	_engineExecutable = _engineExecutable.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
+
+	TraceLog::WriteLine("Trying default value for engine executable is " + _engineExecutable.file_string());
+	
+	if (fs::exists(_engineExecutable))
+	{
+		// Found engine executable
+		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
+		return true;
+	}
+	
+#ifndef WIN32
+	// Default value not found, in Linux, the engine is usually in /usr/local/games/doom3
+	_engineExecutable = "/usr/local/games/doom3/";
+	_engineExecutable /= ENGINE_EXECUTABLE;
+	
+	TraceLog::WriteLine("Trying default Linux location for engine executable " + _engineExecutable.file_string());
+	
+	if (fs::exists(_engineExecutable))
+	{
+		// Found engine executable
+		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
+		return true;
+	}
+#endif
+	
+	// not found!
+	return false;
 }
 
 #ifdef WIN32

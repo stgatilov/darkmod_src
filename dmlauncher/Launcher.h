@@ -53,6 +53,10 @@ private:
 
 	// Reads the given text file and returns its contents
 	std::string ReadFile(const fs::path& fileName);
+
+	// Finds the engine executable (in Linux, this can be in several places), returns TRUE on success
+	// The member _darkmodDir must be set already when calling this method
+	bool FindExecutable();
 };
 
 #endif /* _LAUNCHER_H_ */
