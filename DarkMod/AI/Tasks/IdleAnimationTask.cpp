@@ -26,7 +26,8 @@ namespace ai
 
 IdleAnimationTask::IdleAnimationTask() :
 	_nextAnimationTime(-1),
-	_idleAnimationInterval(-1)
+	_idleAnimationInterval(-1),
+	_lastIdleAnim(-1)
 {}
 
 // Get the name of this task
@@ -95,6 +96,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		// angua: don't play idle animations while sitting / lying down or getting up
 		// TODO: Disable the playIdleAnimation flag rather than catch all those cases
 		if (memory.playIdleAnimations && 
+			!owner->AI_RUN &&
 			owner->GetMoveType() != MOVETYPE_SIT_DOWN &&
 			owner->GetMoveType() != MOVETYPE_LAY_DOWN &&
 			owner->GetMoveType() != MOVETYPE_SLEEP &&
@@ -106,6 +108,14 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			{
 				// AI is not walking, play animations affecting all channels
 				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+
+				// If we have more than one anim, don't play the same anim twice
+				while (animIdx == _lastIdleAnim && _idleAnimations.Num() > 1)
+				{
+					animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+				}
+
+				_lastIdleAnim = animIdx;
 
 				const idStr& animName = _idleAnimations[animIdx];
 
@@ -128,6 +138,14 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			{
 				// AI is walking or sitting, only use animations for the Torso channel
 				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
+
+				// If we have more than one anim, don't play the same anim twice
+				while (animIdx == _lastIdleAnim && _idleAnimationsTorso.Num() > 1)
+				{
+					animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
+				}
+
+				_lastIdleAnim = animIdx;
 
 				const idStr& animName = _idleAnimationsTorso[animIdx];
 
@@ -178,6 +196,8 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteString(_idleAnimationsTorso[i].c_str());
 	}
+
+	savefile->WriteInt(_lastIdleAnim);
 }
 
 void IdleAnimationTask::Restore(idRestoreGame* savefile)
@@ -200,6 +220,8 @@ void IdleAnimationTask::Restore(idRestoreGame* savefile)
 	{
 		savefile->ReadString(_idleAnimationsTorso[i]);
 	}
+
+	savefile->ReadInt(_lastIdleAnim);
 }
 
 IdleAnimationTaskPtr IdleAnimationTask::CreateInstance()

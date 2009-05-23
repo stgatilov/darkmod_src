@@ -30,6 +30,9 @@ class IdleAnimationTask :
 	idList<idStr> _idleAnimationsTorso;
 	int _idleAnimationInterval;
 
+	// The index of the last anim played (to avoid duplicates)
+	int _lastIdleAnim;
+
 	// Default constructor is private
 	IdleAnimationTask();
 public:
