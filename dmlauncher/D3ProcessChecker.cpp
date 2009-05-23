@@ -1,6 +1,12 @@
 #include "D3ProcessChecker.h"
 
+#include "TraceLog.h"
+#include <boost/filesystem.hpp>
+
+// Initialise the static member
 bool D3ProcessChecker::processFound = false;
+
+namespace fs = boost::filesystem;
 
 #ifdef WIN32
 
@@ -8,7 +14,8 @@ bool D3ProcessChecker::processFound = false;
 #include <windows.h>
 #include "Psapi.h"
 
-bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::string& moduleName) {
+bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::string& moduleName)
+{
 	// Clear the flag
 	processFound = false;
 	
@@ -74,21 +81,23 @@ bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::st
 
 #include <iostream>
 #include <fstream>
-#include "os/dir.h"
 #include <boost/lexical_cast.hpp>
-#include "stream/textstream.h" 
 
 namespace {
 	const std::string PROC_FOLDER("/proc/");
-	const std::string DOOM_PROCESS_NAME("doom.x86"); 
 }
 
-void ForeachFileFunctor(const std::string& name) {
+void CheckProcFile(const std::string& path, const std::string& processName)
+{
+	// Get the filename from the path 
+	fs::path fullPath(path);
+	std::string name = fullPath.leaf();
+	
 	// Try to cast the filename to an integer number (=PID)
 	try {
 		unsigned long pid = boost::lexical_cast<unsigned long>(name);
 	
-		//globalOutputStream() << "PID file found: " << name << " - ";
+		//TraceLog::WriteLine("PID file found: " + name);
 		
 		// Was the PID read correctly?
 		if (pid == 0) {
@@ -97,7 +106,7 @@ void ForeachFileFunctor(const std::string& name) {
 		
 		const std::string cmdLineFileName = PROC_FOLDER + name + "/cmdline";
 		
-		//globalOutputStream() << "reading commandline file " << cmdLineFileName.c_str() << " - ";
+		//TraceLog::WriteLine("Reading commandline file " + cmdLineFileName);
 		
 		std::ifstream cmdLineFile(cmdLineFileName.c_str());
 		if (cmdLineFile.is_open()) {
@@ -105,15 +114,15 @@ void ForeachFileFunctor(const std::string& name) {
 			std::string cmdLine("");
 			getline(cmdLineFile, cmdLine);
 			
-			//globalOutputStream() << "'" << cmdLine.c_str() << "' - ";
+			//TraceLog::WriteLine("Command line is " + cmdLine);
 			
-			if (cmdLine.find(DOOM_PROCESS_NAME) != std::string::npos) {
+			if (cmdLine.find(processName) != std::string::npos) {
 				// Process found, return success
 				D3ProcessChecker::processFound = true;
-				//globalOutputStream() << "GOTCHA!";
+				TraceLog::WriteLine("FOUND!");
 			}
 			else {
-				//globalOutputStream() << "negative";
+				//TraceLog::WriteLine("negative");
 			}
 		}
 		else {
@@ -122,20 +131,40 @@ void ForeachFileFunctor(const std::string& name) {
 		
 		// Close the file
 		cmdLineFile.close();
-		
-		//globalOutputStream() << "\n";
 	}
 	catch (const boost::bad_lexical_cast&) {
 		// Cast to int failed, no PID
 	}
 }
 
-bool D3ProcessChecker::D3IsRunning() {
+bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::string& moduleName)
+{
 	// Clear the flag before searching
 	processFound = false;
 	
-	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
-	Directory_forEach(PROC_FOLDER, ForeachFileFunctor);
+	// Search the /proc/ folder for PID files
+	TraceLog::WriteLine("Searching the /proc/ folder for PID files");
+	
+	fs::path start(PROC_FOLDER);
+	
+	for (fs::recursive_directory_iterator it(start); it != fs::recursive_directory_iterator(); ++it)
+	{
+		// Get the candidate
+		const fs::path& candidate = *it;
+		
+		//TraceLog::WriteLine("Candidate in /proc/: " + candidate.string());
+		
+		// Only search directories
+		if (!fs::is_directory(candidate)) continue;
+		
+		// It's a file, pass this to our checker method
+		CheckProcFile(candidate.string(), processName);
+		
+		if (processFound) break; // no need to continue if already found
+		
+		// Don't go any deeper than one level
+		it.no_push();
+	}
 	
 	return processFound;
 }

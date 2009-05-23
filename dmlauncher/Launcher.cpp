@@ -287,6 +287,10 @@ bool Launcher::Launch()
 
 #else
 
+// Linux doesn't know Sleep(), add a substitute def
+#include <unistd.h>
+#define Sleep(x) usleep(static_cast<int>(1000 * (x)))
+
 // Linux implementation
 bool Launcher::Launch()
 {
@@ -296,10 +300,15 @@ bool Launcher::Launch()
 	// Initialise the arguments
 	InitArguments();
 
-	if (_pauseBeforeStart)
+	// Check for a D3 process (max. 10 seconds)
+	int timeout = 10000;
+	
+	// Don't pass a module name in Linux, this is not necessary
+	while (D3ProcessChecker::D3IsRunning(ENGINE_EXECUTABLE, "") && timeout >= 0)
 	{
-		// Wait 2 seconds
-		usleep(2000000);
+		TraceLog::WriteLine("Doom 3 is still running, waiting one second...");
+		Sleep(1000);
+		timeout -= 1000;
 	}
 
 	std::cout << "Trying to launch " << _engineExecutable.file_string() << " " << _arguments.c_str() << std::endl;
