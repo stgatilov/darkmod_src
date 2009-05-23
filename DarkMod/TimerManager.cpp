@@ -80,8 +80,11 @@ void TimerManager::StartTimer(int timerId)
 	assert(found != _timers.end());
 
 	TimerInfo& info = found->second;
-	info.timer.Clear();
-	info.timer.Start();
+	if (!info.timer.Running())
+	{
+		info.timer.Clear();
+		info.timer.Start();
+	}
 }
 
 void TimerManager::StopTimer(int timerId)
@@ -90,15 +93,18 @@ void TimerManager::StopTimer(int timerId)
 	assert(found != _timers.end());
 
 	TimerInfo& info = found->second;
-	info.timer.Stop();
-	info.runCount++;
-	info.runTime += info.timer.Milliseconds();
-	if (info.timer.Milliseconds() > info.maxTime)
+	if (info.timer.Running())
 	{
-		info.maxTime = info.timer.Milliseconds();
-		info.maxTimeCall = info.runCount;
+		info.timer.Stop();
+		info.runCount++;
+		info.runTime += info.timer.Milliseconds();
+		if (info.timer.Milliseconds() > info.maxTime)
+		{
+			info.maxTime = info.timer.Milliseconds();
+			info.maxTimeCall = info.runCount;
+		}
+		info.timer.Clear();
 	}
-	info.timer.Clear();
 }
 
 void TimerManager::ResetTimers()

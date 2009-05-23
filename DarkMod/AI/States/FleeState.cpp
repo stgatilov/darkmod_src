@@ -46,27 +46,30 @@ void FleeState::Init(idAI* owner)
 
 	// The movement subsystem should wait half a second before starting to run
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->FaceEnemy();
+	if (owner->GetEnemy())
+	{
+		owner->FaceEnemy();
+	}
+
 	owner->movementSubsystem->ClearTasks();
 	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(1000)));
 	owner->movementSubsystem->QueueTask(FleeTask::CreateInstance());
 
 	// The communication system cries for help
 	owner->StopSound(SND_CHANNEL_VOICE, false);
-/*	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));*/// TODO_AI
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+/*	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));*/// TODO_AI
 	
 	// Setup the message to be delivered each time
 	CommMessagePtr message(new CommMessage(
-		CommMessage::DetectedEnemy_CommType, 
+		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
-		owner->GetEnemy(),
+		NULL,
 		memory.alertPos
 	));
 
-/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new RepeatedBarkTask("snd_flee", 4000,8000, message))
-	);*/
+	CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));
+	owner->commSubsystem->AddCommTask(barkTask);
 
 	// The sensory system 
 	owner->senseSubsystem->ClearTasks();
@@ -88,6 +91,7 @@ void FleeState::Think(idAI* owner)
 
 	if (memory.fleeingDone)
 	{
+		owner->ClearEnemy();
 		owner->GetMind()->SwitchState(STATE_FLEE_DONE);
 	}
 }

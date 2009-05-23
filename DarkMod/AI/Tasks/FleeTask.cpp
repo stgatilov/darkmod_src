@@ -66,13 +66,14 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-//	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
-//		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
+		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
-	// angua: in any case stop fleeing after max time (5 min).
+	// angua: in any case stop fleeing after max time (1 min).
 	// Might stay in flee task forever if pathing to destination not possible otherwise
 	// TODO: should be spawn arg, make member 
-	int maxFleeTime = 300000;
+	int maxFleeTime = 60000;
+
 	if (_failureCount > 5 || 
 			(owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor) ||
 			gameLocal.time > _fleeStartTime + maxFleeTime)

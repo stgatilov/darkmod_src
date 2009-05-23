@@ -86,8 +86,6 @@ void FleeDoneState::Think(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);
 
-		owner->ClearEnemy();
-
 		owner->GetMind()->EndState();
 	}
 
@@ -112,8 +110,8 @@ void FleeDoneState::Think(idAI* owner)
 			// Cry for help
 			// Create a new help message
 			CommMessagePtr message(new CommMessage(
-				CommMessage::DetectedEnemy_CommType, 
-				owner, friendlyAI, owner->GetEnemy(), memory.alertPos)
+				CommMessage::RequestForHelp_CommType, 
+				owner, friendlyAI, NULL, memory.alertPos)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
@@ -146,7 +144,6 @@ void FleeDoneState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 	// Hard-cast the stimsource onto an actor 
 	idActor* other = static_cast<idActor*>(stimSource);	
-
 	if (owner->IsFriend(other))
 	{
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
@@ -154,17 +151,17 @@ void FleeDoneState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 			memory.lastTimeVisualStimBark = gameLocal.time;
 			CommMessagePtr message(new CommMessage(
-				CommMessage::DetectedEnemy_CommType, 
-				owner, other, owner->GetEnemy(), memory.alertPos)
+				CommMessage::RequestForHelp_CommType, 
+				owner, other, NULL, memory.alertPos)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
 			owner->commSubsystem->AddCommTask(barkTask);
 			memory.lastTimeVisualStimBark = gameLocal.time;
-
 		}
-
 	}
+
+	State::OnPersonEncounter(stimSource, owner);
 }
 
 
@@ -178,8 +175,6 @@ bool FleeDoneState::CheckAlertLevel(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);
-
-		owner->ClearEnemy();
 
 		return false;
 	}

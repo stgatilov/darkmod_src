@@ -1333,8 +1333,9 @@ void State::OnAICommMessage(CommMessage& message)
 					break;
 				}
 
-				if (directObjectEntity->IsType(idActor::Type))
+				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
+					
 					// Bark
 					//owner->GetSubsystem(SubsysCommunication)->PushTask(
 					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
@@ -1345,6 +1346,22 @@ void State::OnAICommMessage(CommMessage& message)
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
 				}
+
+				if (owner->GetEnemy() == NULL)
+				{
+					// no enemy set or enemy not found yet
+					// set up search
+					owner->SetAlertLevel(owner->thresh_5 - 0.01);
+
+					memory.alertPos = directObjectLocation;
+					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+					memory.alertSearchExclusionVolume.Zero();
+
+					memory.alertedDueToCommunication = true;
+					memory.stimulusLocationItselfShouldBeSearched = true;
+				}
+				
 			}
 			else if (owner->AI_AlertLevel < owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f)
 			{
