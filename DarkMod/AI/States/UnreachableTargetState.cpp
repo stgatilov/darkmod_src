@@ -72,9 +72,6 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	// Fill the subsystems with their tasks
 
-	// The communication system is barking 
-	//owner->commSubsystem->ClearTasks(); // TODO_AI
-
 	// Create the message
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForMissileHelp_CommType, 

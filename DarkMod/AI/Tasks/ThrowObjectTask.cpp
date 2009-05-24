@@ -35,8 +35,8 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 	_projectileDelayMin = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_min", "7.0"));
 	_projectileDelayMax = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_max", "10.0"));
 
-	// First throw immediately
-	_nextThrowObjectTime = gameLocal.time;
+	// First throw after 3 seconds
+	_nextThrowObjectTime = gameLocal.time + 3000;
 }
 
 bool ThrowObjectTask::Perform(Subsystem& subsystem)
