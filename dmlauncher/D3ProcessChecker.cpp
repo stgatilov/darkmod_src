@@ -119,7 +119,7 @@ void CheckProcFile(const std::string& path, const std::string& processName)
 			if (cmdLine.find(processName) != std::string::npos) {
 				// Process found, return success
 				D3ProcessChecker::processFound = true;
-				TraceLog::WriteLine("FOUND!");
+				TraceLog::WriteLine("FOUND! PID is " + name);
 			}
 			else {
 				//TraceLog::WriteLine("negative");
