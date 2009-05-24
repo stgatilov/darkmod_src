@@ -114,6 +114,10 @@ void CheckProcFile(const std::string& path, const std::string& processName)
 			std::string cmdLine("");
 			getline(cmdLineFile, cmdLine);
 			
+			// The cmdLine file contains a NULL-separated argument vector
+			// Only use the executable part of the command line
+			cmdLine = cmdLine.substr(0, cmdLine.find('\0'));
+			
 			//TraceLog::WriteLine("Command line is " + cmdLine);
 			
 			if (cmdLine.find(processName) != std::string::npos) {
