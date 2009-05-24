@@ -36,9 +36,19 @@ class MeleeCombatTask :
 	/**
 	* Set to true when we have decided to parry but there is a delay before the anim starts
 	**/
-	bool				_bInParryDelayState;
-	/** Timer to keep track of when parry delay state started **/
+	bool				_bInPreParryDelayState;
+	/**
+	* Set to true when we have decided to stop parrying but there is a delay before the anim starts
+	**/
+	bool				_bInPostParryDelayState;
+	/** 
+	* Timer to keep track of when parry delay state started 
+	* Re-used for both pre and post parry delays 
+	**/
 	int					_ParryDelayTimer;
+	/** Cache the actual delays in ms over repeated frames **/
+	int					_PreParryDelay;
+	int					_PostParryDelay;
 
 	/** Last enemy that attacked us **/
 	idEntityPtr<idActor>	_PrevEnemy;

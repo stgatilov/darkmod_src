@@ -33,8 +33,11 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	_enemy = owner->GetEnemy();
 	_bForceAttack = false;
 	_bForceParry = false;
-	_bInParryDelayState = false;
+	_bInPreParryDelayState = false;
+	_bInPostParryDelayState = false;
 	_ParryDelayTimer = 0;
+	_PreParryDelay = 0;
+	_PostParryDelay = 0;
 	_PrevEnemy = NULL;
 	_PrevAttParried = MELEETYPE_UNBLOCKABLE;
 	_PrevAttTime = 0;
@@ -140,7 +143,7 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 		}
 
 		// Counter attack if enemy is in range and chance check succeeds
-		if( (owner->GetMemory().canHitEnemy || owner->GetMemory().willBeAbleToHitEnemy )
+		if( (owner->GetMemory().canHitEnemy || owner->GetMemory().willBeAbleToHitEnemy)
 			&& gameLocal.random.RandomFloat() < owner->m_MeleeCounterAttChance )
 		{
 			StartAttack(owner);
@@ -223,28 +226,19 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
 
-		// repeated attacks can have a faster parry response
-		int ParryDelay;
-		if( _NumAttReps < owner->m_MeleeNumRepAttacks )
-			ParryDelay = owner->m_MeleeCurrentParryDelay;
-		else
-			ParryDelay = owner->m_MeleeCurrentRepeatedParryDelay;
-
-
-		// if we are done with the initial delay, start the animation
-		if( _bInParryDelayState && ((gameLocal.time - _ParryDelayTimer) > ParryDelay) )
+		// wait until done with initial delay, then start the animation
+		if( _bInPreParryDelayState && ((gameLocal.time - _ParryDelayTimer) > _PreParryDelay) )
 		{
 
-			// Set the waitstate, this gets cleared by 
-			// the script function when the animation is done.
+			// Set the waitstate, this gets cleared by script when the anim is done
 			owner->SetWaitState("melee_action");
 
 			const char *suffix = idActor::MeleeTypeNames[pStatus->m_ActionType];
-			// script state plays the animation, clearing wait state when done
+			// script state plays the animation and clears wait state when done
 			// TODO: Why did we have 5 blend frames here?
 			owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Parry_%s",suffix), 5);
 
-			_bInParryDelayState = false;
+			_bInPreParryDelayState = false;
 		}
 
 		// don't do anything, animation will update status when it reaches hold point
@@ -268,7 +262,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		// If our enemy switches attacks, stop this parry to prepare the next
 		else if( pStatus->m_ActionType != MELEETYPE_BLOCKALL && pStatus->m_ActionType != pEnStatus->m_ActionType )
 			bRelease = true;
-		// or if enemy is holding for over some time (for now hardcoded)
+		// or if enemy is holding for over some time
 		else if( pEnStatus->m_ActionPhase == MELEEPHASE_HOLDING
 				 && ((gameLocal.time - pEnStatus->m_PhaseChangeTime) > owner->m_MeleeCurrentParryHold) )
 		{
@@ -291,28 +285,45 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 
 		if( bRelease )
 		{
-			owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
+			// owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
+			_bInPostParryDelayState = true;
+			_ParryDelayTimer = gameLocal.time;
 			owner->Event_MeleeActionReleased();
 		}
 	}
 	// MELEEPHASE_RECOVERING
 	else
 	{
+		// recovery has two phases: 1. Wait for post-parry delay reaction time
+		// and 2. wait for recovery animation to finish
+
+
+		// If just finishing up the initial delay, start the animation
+		if( _bInPostParryDelayState && ((gameLocal.time - _ParryDelayTimer) > _PostParryDelay) )
+		{
+			owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
+			_bInPostParryDelayState = false;
+		}
+		// post parry delay has already finished, wait for animation
+		else if( !_bInPostParryDelayState )
+		{
+			// check if animation is finished (script will set this when it is)
+			idStr waitState( owner->WaitState() );
+			if( waitState != "melee_action" )
+			{
+				// if nothing happened with our parry, it was aborted
+				if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
+					pStatus->m_ActionResult = MELEERESULT_PAR_ABORTED;
+
+				owner->Event_MeleeActionFinished();
+			}
+		}
+		// otherwise we wait for the post parry delay
+
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Parry, Phase: Recovering";
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-		}
-
-		// check if animation is finished (script will set this when it is)
-		idStr waitState( owner->WaitState() );
-		if( waitState != "melee_action" )
-		{
-			// if nothing happened with our parry, it was aborted
-			if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
-				pStatus->m_ActionResult = MELEERESULT_PAR_ABORTED;
-
-			owner->Event_MeleeActionFinished();
 		}
 	}
 }
@@ -385,8 +396,20 @@ void MeleeCombatTask::StartParry(idAI* owner)
 	owner->Event_MeleeParryStarted( ParType );
 
 	// animation starting is postponed until after parry delay
-	_bInParryDelayState = true;
+	_bInPreParryDelayState = true;
 	_ParryDelayTimer = gameLocal.time;
+
+	// repeated attacks can have a faster parry response
+	if( _NumAttReps < owner->m_MeleeNumRepAttacks )
+	{
+		_PreParryDelay = owner->m_MeleeCurrentPreParryDelay;
+		_PostParryDelay = owner->m_MeleeCurrentPostParryDelay;
+	}
+	else
+	{
+		_PreParryDelay = owner->m_MeleeCurrentRepeatedPreParryDelay;
+		_PostParryDelay = owner->m_MeleeCurrentRepeatedPostParryDelay;
+	}
 }
 
 void MeleeCombatTask::OnFinish(idAI* owner)
@@ -408,8 +431,11 @@ void MeleeCombatTask::Save(idSaveGame* savefile) const
 	_enemy.Save(savefile);
 	savefile->WriteBool( _bForceAttack );
 	savefile->WriteBool( _bForceParry );
-	savefile->WriteBool( _bInParryDelayState );
+	savefile->WriteBool( _bInPreParryDelayState );
+	savefile->WriteBool( _bInPostParryDelayState );
 	savefile->WriteInt( _ParryDelayTimer );
+	savefile->WriteInt( _PreParryDelay );
+	savefile->WriteInt( _PostParryDelay );
 	_PrevEnemy.Save(savefile);
 	savefile->WriteInt(_PrevAttParried);
 	savefile->WriteInt(_PrevAttTime);
@@ -423,8 +449,11 @@ void MeleeCombatTask::Restore(idRestoreGame* savefile)
 	_enemy.Restore(savefile);
 	savefile->ReadBool( _bForceAttack );
 	savefile->ReadBool( _bForceParry );
-	savefile->ReadBool( _bInParryDelayState );
+	savefile->ReadBool( _bInPreParryDelayState );
+	savefile->ReadBool( _bInPostParryDelayState );
 	savefile->ReadInt( _ParryDelayTimer );
+	savefile->ReadInt( _PreParryDelay );
+	savefile->ReadInt( _PostParryDelay );
 	_PrevEnemy.Restore(savefile);
 	int i;
 	savefile->ReadInt( i );

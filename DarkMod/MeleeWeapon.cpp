@@ -1000,7 +1000,7 @@ void CMeleeWeapon::AttachedToActor(idActor *actor)
 		// overwrite AI's initial attack prediction time if we have this spawnarg
 		const idKeyValue *kv = spawnArgs.FindKey("predicted_attack_time");
 		if( kv )
-			actor->m_MeleePredictedAttTime = 0.001f * (float) atoi(kv->GetValue().c_str());
+			actor->m_MeleePredictedAttTime = 0.001f * atof(kv->GetValue().c_str());
 	}
 
 }

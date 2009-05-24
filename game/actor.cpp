@@ -568,6 +568,8 @@ idActor::idActor( void ) {
 
 	melee_range_unarmed = 0.0f;
 	melee_range			= 0.0f;
+	m_MeleePredictedAttTime				= 0.0f;
+	m_MeleePredictedAttTimeUnarmed		= 0.0f;
 	m_MeleeDamageMult					= 1.0f;
 	m_MeleeHoldTimeMin					= 0;
 	m_MeleeHoldTimeMax					= 0;
@@ -584,14 +586,21 @@ idActor::idActor( void ) {
 	m_MeleeRiposteRecoveryMin			= 0;
 	m_MeleeRiposteRecoveryMax			= 0;
 	m_MeleeCurrentRiposteRecovery		= 0;
-	m_MeleeParryDelayMin				= 0;
-	m_MeleeParryDelayMax				= 0;
-	m_MeleeCurrentParryDelay			= 0;
-	m_MeleeRepeatedParryDelayMin		= 0;
-	m_MeleeRepeatedParryDelayMax		= 0;
-	m_MeleeCurrentRepeatedParryDelay	= 0;
+	m_MeleePreParryDelayMin				= 0;
+	m_MeleePreParryDelayMax				= 0;
+	m_MeleeCurrentPreParryDelay			= 0;
+	m_MeleeRepeatedPreParryDelayMin		= 0;
+	m_MeleeRepeatedPreParryDelayMax		= 0;
+	m_MeleeCurrentRepeatedPreParryDelay	= 0;
 	m_MeleeNumRepAttacks				= 0;
 	m_MeleeRepAttackTime				= 0;
+	m_MeleePostParryDelayMin			= 0;
+	m_MeleePostParryDelayMax			= 0;
+	m_MeleeCurrentPostParryDelay		= 0;
+	m_MeleeRepeatedPostParryDelayMin	= 0;
+	m_MeleeRepeatedPostParryDelayMax	= 0;
+	m_MeleeCurrentRepeatedPostParryDelay	= 0;
+
 
 	state				= NULL;
 	idealState			= NULL;
@@ -708,7 +717,7 @@ void idActor::Spawn( void )
 	
 	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
 	melee_range							= melee_range_unarmed;
-	m_MeleePredictedAttTimeUnarmed		= 0.001f * (float) spawnArgs.GetInt("melee_predicted_attack_time");
+	m_MeleePredictedAttTimeUnarmed		= 0.001f * spawnArgs.GetFloat("melee_predicted_attack_time");
 	m_MeleePredictedAttTime				= m_MeleePredictedAttTimeUnarmed;
 	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
 	m_MeleeHoldTimeMin					= spawnArgs.GetInt("melee_hold_time_min");
@@ -723,10 +732,14 @@ void idActor::Spawn( void )
 	m_MeleeParryRecoveryMax				= spawnArgs.GetInt("melee_parry_recovery_max");
 	m_MeleeRiposteRecoveryMin			= spawnArgs.GetInt("melee_riposte_recovery_min");
 	m_MeleeRiposteRecoveryMax			= spawnArgs.GetInt("melee_riposte_recovery_max");
-	m_MeleeParryDelayMin				= spawnArgs.GetInt("melee_parry_delay_min");
-	m_MeleeParryDelayMax				= spawnArgs.GetInt("melee_parry_delay_max");
-	m_MeleeRepeatedParryDelayMin		= spawnArgs.GetInt("melee_repeated_parry_delay_min");
-	m_MeleeRepeatedParryDelayMax		= spawnArgs.GetInt("melee_repeated_parry_delay_max");
+	m_MeleePreParryDelayMin				= spawnArgs.GetInt("melee_pre_parry_delay_min");
+	m_MeleePreParryDelayMax				= spawnArgs.GetInt("melee_pre_parry_delay_max");
+	m_MeleeRepeatedPreParryDelayMin		= spawnArgs.GetInt("melee_repeated_pre_parry_delay_min");
+	m_MeleeRepeatedPreParryDelayMax		= spawnArgs.GetInt("melee_repeated_pre_parry_delay_max");	
+	m_MeleePostParryDelayMin			= spawnArgs.GetInt("melee_post_parry_delay_min");
+	m_MeleePostParryDelayMax			= spawnArgs.GetInt("melee_post_parry_delay_max");
+	m_MeleeRepeatedPostParryDelayMin	= spawnArgs.GetInt("melee_repeated_post_parry_delay_min");
+	m_MeleeRepeatedPostParryDelayMax	= spawnArgs.GetInt("melee_repeated_post_parry_delay_max");
 	m_MeleeNumRepAttacks				= spawnArgs.GetInt("melee_num_rep_attacks");
 	m_MeleeRepAttackTime				= spawnArgs.GetInt("melee_rep_attack_time");
 
@@ -1043,6 +1056,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 	m_MeleeStatus.Save( savefile );
 	savefile->WriteFloat( melee_range_unarmed );
 	savefile->WriteFloat( melee_range );
+	savefile->WriteFloat( m_MeleePredictedAttTimeUnarmed );
+	savefile->WriteFloat( m_MeleePredictedAttTime );
 	savefile->WriteFloat( m_MeleeDamageMult );
 	savefile->WriteInt( m_MeleeHoldTimeMin );
 	savefile->WriteInt( m_MeleeHoldTimeMax );
@@ -1059,14 +1074,20 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_MeleeRiposteRecoveryMin );
 	savefile->WriteInt( m_MeleeRiposteRecoveryMax );
 	savefile->WriteInt( m_MeleeCurrentRiposteRecovery );
-	savefile->WriteInt( m_MeleeParryDelayMin );
-	savefile->WriteInt( m_MeleeParryDelayMax );
-	savefile->WriteInt( m_MeleeCurrentParryDelay );
-	savefile->WriteInt( m_MeleeRepeatedParryDelayMin );
-	savefile->WriteInt( m_MeleeRepeatedParryDelayMax );
-	savefile->WriteInt( m_MeleeCurrentRepeatedParryDelay );
+	savefile->WriteInt( m_MeleePreParryDelayMin );
+	savefile->WriteInt( m_MeleePreParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentPreParryDelay );
+	savefile->WriteInt( m_MeleeRepeatedPreParryDelayMin );
+	savefile->WriteInt( m_MeleeRepeatedPreParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentRepeatedPreParryDelay );
 	savefile->WriteInt( m_MeleeNumRepAttacks );
 	savefile->WriteInt( m_MeleeRepAttackTime );
+	savefile->WriteInt( m_MeleePostParryDelayMin );
+	savefile->WriteInt( m_MeleePostParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentPostParryDelay );
+	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMin );
+	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentRepeatedPostParryDelay );
 
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
@@ -1221,6 +1242,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	m_MeleeStatus.Restore( savefile );
 	savefile->ReadFloat( melee_range_unarmed );
 	savefile->ReadFloat( melee_range );
+	savefile->ReadFloat( m_MeleePredictedAttTimeUnarmed );
+	savefile->ReadFloat( m_MeleePredictedAttTime );
 	savefile->ReadFloat( m_MeleeDamageMult );
 	savefile->ReadInt( m_MeleeHoldTimeMin );
 	savefile->ReadInt( m_MeleeHoldTimeMax );
@@ -1237,14 +1260,20 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeRiposteRecoveryMin );
 	savefile->ReadInt( m_MeleeRiposteRecoveryMax );
 	savefile->ReadInt( m_MeleeCurrentRiposteRecovery );
-	savefile->ReadInt( m_MeleeParryDelayMin );
-	savefile->ReadInt( m_MeleeParryDelayMax );
-	savefile->ReadInt( m_MeleeCurrentParryDelay );
-	savefile->ReadInt( m_MeleeRepeatedParryDelayMin );
-	savefile->ReadInt( m_MeleeRepeatedParryDelayMax );
-	savefile->ReadInt( m_MeleeCurrentRepeatedParryDelay );
+	savefile->ReadInt( m_MeleePreParryDelayMin );
+	savefile->ReadInt( m_MeleePreParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentPreParryDelay );
+	savefile->ReadInt( m_MeleeRepeatedPreParryDelayMin );
+	savefile->ReadInt( m_MeleeRepeatedPreParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentRepeatedPreParryDelay );
 	savefile->ReadInt( m_MeleeNumRepAttacks );
 	savefile->ReadInt( m_MeleeRepAttackTime );
+	savefile->ReadInt( m_MeleePostParryDelayMin );
+	savefile->ReadInt( m_MeleePostParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentPostParryDelay );
+	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMin );
+	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentRepeatedPostParryDelay );
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -4515,8 +4544,10 @@ void idActor::Event_MeleeParryStarted( int num )
 	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
 	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
 	m_MeleeCurrentRiposteRecovery = m_MeleeRiposteRecoveryMin + fRand*(m_MeleeRiposteRecoveryMax - m_MeleeRiposteRecoveryMin);
-	m_MeleeCurrentParryDelay = m_MeleeParryDelayMin + fRand*(m_MeleeParryDelayMax - m_MeleeParryDelayMin);
-	m_MeleeCurrentRepeatedParryDelay = m_MeleeRepeatedParryDelayMin + fRand*(m_MeleeRepeatedParryDelayMax - m_MeleeParryDelayMin);
+	m_MeleeCurrentPreParryDelay = m_MeleePreParryDelayMin + fRand*(m_MeleePreParryDelayMax - m_MeleePreParryDelayMin);
+	m_MeleeCurrentRepeatedPreParryDelay = m_MeleeRepeatedPreParryDelayMin + fRand*(m_MeleeRepeatedPreParryDelayMax - m_MeleeRepeatedPreParryDelayMin);
+	m_MeleeCurrentPostParryDelay = m_MeleePostParryDelayMin + fRand*(m_MeleePostParryDelayMax - m_MeleePostParryDelayMin);
+	m_MeleeCurrentRepeatedPostParryDelay = m_MeleeRepeatedPostParryDelayMin + fRand*(m_MeleeRepeatedPostParryDelayMax - m_MeleeRepeatedPostParryDelayMin);
 }
 
 void idActor::Event_MeleeActionHeld()
