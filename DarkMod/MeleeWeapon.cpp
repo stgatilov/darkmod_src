@@ -994,4 +994,13 @@ void CMeleeWeapon::AttachedToActor(idActor *actor)
 
 	// add weapon reach to AI's unarmed reach
 	actor->melee_range = actor->melee_range_unarmed + spawnArgs.GetFloat("reach");
+
+	if( actor->IsType(idAI::Type) )
+	{
+		// overwrite AI's initial attack prediction time if we have this spawnarg
+		const idKeyValue *kv = spawnArgs.FindKey("predicted_attack_time");
+		if( kv )
+			actor->m_MeleePredictedAttTime = 0.001f * (float) atoi(kv->GetValue().c_str());
+	}
+
 }

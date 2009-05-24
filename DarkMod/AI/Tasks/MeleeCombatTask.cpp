@@ -100,7 +100,9 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 	int NextParTime = pStatus->m_LastActTime + owner->m_MeleeCurrentParryRecovery;
 
 	// ATTACK: If the timer allows us and if the enemy is in range
-	if (gameLocal.time > NextAttTime && owner->GetMemory().canHitEnemy && !_bForceParry )
+	if (gameLocal.time > NextAttTime 
+		&& (owner->GetMemory().canHitEnemy || owner->GetMemory().willBeAbleToHitEnemy)
+		&& !_bForceParry )
 	{
 		StartAttack(owner);
 	}
@@ -138,7 +140,7 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 		}
 
 		// Counter attack if enemy is in range and chance check succeeds
-		if( owner->GetMemory().canHitEnemy 
+		if( (owner->GetMemory().canHitEnemy || owner->GetMemory().willBeAbleToHitEnemy )
 			&& gameLocal.random.RandomFloat() < owner->m_MeleeCounterAttChance )
 		{
 			StartAttack(owner);

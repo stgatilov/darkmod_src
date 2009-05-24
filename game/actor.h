@@ -91,9 +91,6 @@ public:
 	// time that our most recent action ended
 	int				m_LastActTime;
 
-	int				m_NextAttTime; // time at which next attack may be made
-	int				m_NextParTime; // time at which next parry may be made
-
 	// Result of most recent action
 	// Will be considered "in progress" until back in the "Ready" state
 	EMeleeResult	m_ActionResult;
@@ -106,7 +103,6 @@ public:
 	bool				m_bCanParry;
 	bool				m_bCanParryAll;
 	idList<EMeleeType>	m_attacks; // possible attacks with current weapon
-	float				m_range; // unarmed range (idAI::melee_range) + weapon range
 
 }; // CMeleeStatus
 
@@ -237,6 +233,18 @@ public:
 	**/
 	float					melee_range_unarmed; // potential
 	float					melee_range; // includes reach of current weapon
+	/**
+	* This should roughly correspond to the time it takes them to swing the weapon
+	* In seconds (read from spawnarg in milliseconds and converted)
+	* Currently it is used for AI predicting whether they will be able to hit
+	* their enemy in the future if they start our attack now
+	* It may be used for other things later
+	**/	
+	float					m_MeleePredictedAttTime;
+	// and without a weapon (need to store in case they get disarmed somehow)
+	float					m_MeleePredictedAttTimeUnarmed;
+
+
 	/**
 	* Stores what this actor is currently doing in melee combat
 	* ishtvan: Made public to avoid lots of gets/sets

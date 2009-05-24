@@ -708,6 +708,8 @@ void idActor::Spawn( void )
 	
 	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
 	melee_range							= melee_range_unarmed;
+	m_MeleePredictedAttTimeUnarmed		= 0.001f * (float) spawnArgs.GetInt("melee_predicted_attack_time");
+	m_MeleePredictedAttTime				= m_MeleePredictedAttTimeUnarmed;
 	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
 	m_MeleeHoldTimeMin					= spawnArgs.GetInt("melee_hold_time_min");
 	m_MeleeHoldTimeMax					= spawnArgs.GetInt("melee_hold_time_max");
@@ -4562,8 +4564,6 @@ CMeleeStatus::CMeleeStatus( void )
 
 	m_PhaseChangeTime	= 0;
 	m_LastActTime		= 0;
-	m_NextAttTime		= 0; // these aren't actually used??
-	m_NextParTime		= 0; // these aren't actually used??
 
 	m_ActionResult	= MELEERESULT_IN_PROGRESS;
 
@@ -4584,8 +4584,6 @@ void CMeleeStatus::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_ActionType );
 	savefile->WriteInt( m_PhaseChangeTime );
 	savefile->WriteInt( m_LastActTime );
-	savefile->WriteInt( m_NextAttTime );
-	savefile->WriteInt( m_NextParTime );
 	savefile->WriteInt( m_ActionResult );
 	savefile->WriteBool( m_bWasHit );
 
@@ -4598,7 +4596,6 @@ void CMeleeStatus::Save( idSaveGame *savefile ) const
 	{
 		savefile->WriteInt( m_attacks[i] );
 	}
-	savefile->WriteFloat( m_range );
 }
 
 void CMeleeStatus::Restore( idRestoreGame *savefile )
@@ -4612,8 +4609,6 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 	m_ActionType = (EMeleeType) i;
 	savefile->ReadInt( m_PhaseChangeTime );
 	savefile->ReadInt( m_LastActTime );
-	savefile->ReadInt( m_NextAttTime );
-	savefile->ReadInt( m_NextParTime );
 	savefile->ReadInt( i );
 	m_ActionResult = (EMeleeResult) i;
 	savefile->ReadBool( m_bWasHit );
@@ -4629,5 +4624,4 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( i );
 		m_attacks[j] = (EMeleeType) i;
 	}
-	savefile->ReadFloat( m_range );
 }

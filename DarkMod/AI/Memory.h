@@ -253,6 +253,10 @@ public:
 	// This flag is mostly for caching purposes so that the subsystem tasks
 	// don't need to query idAI::CanHitEnemy() independently.
 	bool canHitEnemy;
+	// ishtvan: Whether we will be able to hit the enemy in the future if we
+	// start a melee attack right now.
+	// If the AI checks this, the CanHitEnemy query sets it as well as canHitEnemy
+	bool willBeAbleToHitEnemy;
 
 	/**
 	* When true, an enemy can potentially hit us with a melee attack in the near future

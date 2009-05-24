@@ -268,6 +268,8 @@ void CombatState::Think(idAI* owner)
 
 	// Check the distance to the enemy, the subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
+	if( owner->m_bMeleePredictProximity )
+		memory.willBeAbleToHitEnemy = owner->WillBeAbleToHitEntity(enemy, _combatType);
 
 	// Check whether the enemy can hit us in the near future
 	memory.canBeHitByEnemy = owner->CanBeHitByEntity(enemy, _combatType);

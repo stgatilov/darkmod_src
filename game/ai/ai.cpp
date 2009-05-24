@@ -554,6 +554,7 @@ idAI::idAI()
 	m_FlatFootParryTimer = 0;
 	m_FlatFootParryTime	= 0;
 	m_MeleeCounterAttChance = 0.0f;
+	m_bMeleePredictProximity = false;
 
 	m_maxInterleaveThinkFrames = 0;
 	m_minInterleaveThinkDist = 1000;
@@ -865,6 +866,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_FlatFootParryTimer);
 	savefile->WriteInt(m_FlatFootParryTime);
 	savefile->WriteFloat(m_MeleeCounterAttChance);
+	savefile->WriteBool(m_bMeleePredictProximity);
 
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
@@ -1207,6 +1209,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_FlatFootParryTimer);
 	savefile->ReadInt(m_FlatFootParryTime);
 	savefile->ReadFloat(m_MeleeCounterAttChance);
+	savefile->ReadBool(m_bMeleePredictProximity);
 
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
@@ -1688,6 +1691,7 @@ void idAI::Spawn( void )
 	m_FlatFootParryTime = spawnArgs.GetInt("flatfoot_parry_time");
 	// Convert percent chance to fractional
 	m_MeleeCounterAttChance = spawnArgs.GetInt("melee_chance_to_counter") / 100.0f;
+	m_bMeleePredictProximity = spawnArgs.GetBool("melee_predicts_proximity");
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
@@ -6015,6 +6019,35 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 	return false;
 }
 
+bool idAI::WillBeAbleToHitEntity(idActor* entity, ECombatType combatType)
+{
+	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0) 
+		return false;
+
+	if (combatType == COMBAT_MELEE)
+	{
+		return TestMeleeFuture();
+	}
+	else if (combatType == COMBAT_RANGED)
+	{
+		// not supported for ranged combat
+		return false;
+	}
+	else
+	{
+		if (GetNumRangedWeapons() > 0)
+		{
+			return false;
+		}
+		else if (GetNumMeleeWeapons() > 0)
+		{
+			return TestMeleeFuture();
+		}
+	}
+
+	return false;
+}
+
 bool idAI::CanBeHitByEntity(idActor* entity, ECombatType combatType)
 {
 	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0 ) 
@@ -6862,6 +6895,75 @@ bool idAI::TestMelee( void ) const {
 
 	return false;
 }
+
+/*
+=====================
+idAI::TestMeleeFuture
+=====================
+*/
+bool idAI::TestMeleeFuture( void ) const {
+	trace_t trace;
+	idActor *enemyEnt = enemy.GetEntity();
+
+	if ( !enemyEnt || !melee_range ) {
+		return false;
+	}
+
+	if (!GetAttackFlag(COMBAT_MELEE))
+	{
+		// greebo: Cannot attack with melee weapons yet
+		return false;
+	}
+
+	//FIXME: make work with gravity vector
+	idVec3 org = physicsObj.GetOrigin();
+	idBounds bounds = physicsObj.GetBounds();
+	idVec3 vel = physicsObj.GetLinearVelocity();
+
+
+	idVec3 enemyOrg = enemyEnt->GetPhysics()->GetOrigin();
+	idBounds enemyBounds = enemyEnt->GetPhysics()->GetBounds();
+	idVec3 enemyVel = enemyEnt->GetPhysics()->GetLinearVelocity();
+
+	// update prediction
+	float dt = m_MeleePredictedAttTime;
+	idVec3 ds = dt * vel;
+	org += ds;
+	bounds = bounds.TranslateSelf( ds );
+
+	idVec3 dsEnemy = dt * enemyVel;
+	enemyOrg += dsEnemy;
+	enemyBounds = enemyBounds.TranslateSelf( dsEnemy );
+
+	// rest is the same as TestMelee
+	idVec3 dir = enemyOrg - org;
+	dir.z = 0;
+	float dist = dir.LengthFast();
+
+	float maxdist = melee_range + enemyBounds[1][0];
+
+	if (dist < maxdist)
+	{
+		// angua: within horizontal distance
+		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z &&
+				(enemyOrg.z + enemyBounds[1][2]) > org.z)
+		{
+			// within height
+			// check if there is something in between
+			idVec3 start = GetEyePosition() + ds;
+			idVec3 end = enemyEnt->GetEyePosition() + dsEnemy;
+
+			gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
+			if ( ( trace.fraction == 1.0f ) || ( gameLocal.GetTraceEntity( trace ) == enemyEnt ) ) 
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 
 /*
 =====================

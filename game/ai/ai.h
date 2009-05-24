@@ -1008,6 +1008,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Melee: Chance to counter attack into an enemy attack instead of parrying:
 	**/
 	float					m_MeleeCounterAttChance;
+	/**
+	* Does this AI try to predict when the enemy will be close enough
+	* in the future and start their melee swing in advance?
+	**/
+	bool					m_bMeleePredictProximity;
 
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
@@ -1317,6 +1322,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * ranged AI implement a visual test incl. lighting.
 	 */
 	bool CanHitEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
+	/**
+	* Will we be able to hit an enemy that is not currently in reach but coming into reach
+	* Similar to CanHitEntity, but uses predicted future positions based on velocity
+	* and a given prediction time.  Only applies to melee combat
+	**/
+	bool WillBeAbleToHitEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
 
 	/**
 	 * Returns TRUE or FALSE, depending on the distance to the 
@@ -1527,6 +1538,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 	void					DirectDamage( const char *meleeDefName, idEntity *ent );
 	bool					TestMelee( void ) const;
+	/** ishtvan: test melee anticipating future positions **/
+	bool					TestMeleeFuture( void ) const;
 	bool					TestRanged( void ) const;
 	bool					AttackMelee( const char *meleeDefName );
 	void					BeginAttack( const char *name );
