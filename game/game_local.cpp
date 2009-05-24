@@ -523,6 +523,17 @@ void idGameLocal::Shutdown( void ) {
 		return;
 	}
 
+	{
+		// greebo: Check if we have a game base. If yes, write the current configuration back to the
+		// "darkmod" game base folder, to preserver any settings made while an FM is installed.
+		idStr fs_game_base(cvarSystem->GetCVarString("fs_game_base"));
+
+		if (!fs_game_base.IsEmpty())
+		{
+			common->WriteConfigToFile("../" + fs_game_base + "/DoomConfig.cfg");
+		}
+	}		
+
 	Printf( "------------ Game Shutdown -----------\n" );
 	
 	delete m_RenderPipe;
