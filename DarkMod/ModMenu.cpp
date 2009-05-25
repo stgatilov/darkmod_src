@@ -710,14 +710,36 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
 	
 	// Always copy the DoomConfig.cfg from darkmod/ to the new mod/
-	fs::copy_file(darkmodPath / "DoomConfig.cfg", doomConfigPath);
+	// Remove any DoomConfig.cfg that might exist there beforehand
+	if (fs::exists(doomConfigPath))
+	{
+		fs::remove(doomConfigPath);
+	}
+
+	try
+	{
+		fs::copy_file(darkmodPath / "DoomConfig.cfg", doomConfigPath);
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", doomConfigPath.string().c_str());
+	}
+	catch (fs::basic_filesystem_error<fs::path>& e)
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", doomConfigPath.string().c_str(), e.what());
+	}
 
 	// Check if the config.spec file already exists in the mod folder
 	fs::path configSpecPath = targetFolder / "config.spec";
 	if (!fs::exists(configSpecPath))
 	{
 		// Copy the config.spec file from darkmod/ to the new mod/
-		fs::copy_file(darkmodPath / "config.spec", configSpecPath);
+		try
+		{
+			fs::copy_file(darkmodPath / "config.spec", configSpecPath);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", configSpecPath.string().c_str());
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", configSpecPath.string().c_str(), e.what());
+		}
 	}
 
 	gui->HandleNamedEvent("OnModInstallationFinished");
