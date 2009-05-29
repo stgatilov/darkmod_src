@@ -795,6 +795,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\AI\MovementSubsystem.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\AI\MovementSubsystem.h"
+					>
+				</File>
+				<File
 					RelativePath="game\ai\MoveState.cpp"
 					>
 				</File>
