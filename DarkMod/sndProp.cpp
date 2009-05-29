@@ -681,10 +681,10 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Parsing team alert and propagation flags from propagated_sounds.def\r");
 	
 	// note: by default, if the key is not found, GetBool returns false
-	tempflags.m_bits.same = parms->GetBool("alert_same");
-	tempflags.m_bits.friendly = parms->GetBool("alert_friend");
-	tempflags.m_bits.neutral = parms->GetBool("alert_neutral");
-	tempflags.m_bits.enemy = parms->GetBool("alert_enemy", "1");
+	tempflags.m_bits.same = parms->GetBool("prop_to_same");
+	tempflags.m_bits.friendly = parms->GetBool("prop_to_friend");
+	tempflags.m_bits.neutral = parms->GetBool("prop_to_neutral");
+	tempflags.m_bits.enemy = parms->GetBool("prop_to_enemy", "1");
 
 	tempflags.m_bits.omni_dir = parms->GetBool("omnidir");
 	tempflags.m_bits.unique_loc = parms->GetBool("unique_loc");

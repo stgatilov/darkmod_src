@@ -7923,7 +7923,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		{
 			for (int i = 0; i < propParms->makerAI->m_Messages.Num(); i++)
 			{
-				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i]);
+				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
 			}
 		}
 

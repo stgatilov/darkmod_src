@@ -1254,7 +1254,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	memory.alertedDueToCommunication = false;
 }
 
-void State::OnAICommMessage(CommMessage& message)
+void State::OnAICommMessage(CommMessage& message, float psychLoud)
 {
 	idAI* owner = _owner.GetEntity();
 	// greebo: changed the IF back to an assertion, the owner should never be NULL
@@ -1351,7 +1351,7 @@ void State::OnAICommMessage(CommMessage& message)
 				{
 					// no enemy set or enemy not found yet
 					// set up search
-					owner->SetAlertLevel(owner->thresh_5 - 0.01);
+					owner->AlertAI("aud", psychLoud);
 
 					memory.alertPos = directObjectLocation;
 					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;

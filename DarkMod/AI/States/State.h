@@ -72,7 +72,7 @@ public:
 	virtual void OnAudioAlert();
 
 	// Handles incoming messages from other AI
-	virtual void OnAICommMessage(CommMessage& message);
+	virtual void OnAICommMessage(CommMessage& message, float psychLoud);
 
 	// greebo: An event called by the obstacle avoidance code to indicate that we have a frobmover ahead
 	virtual void OnFrobDoorEncounter(CFrobDoor* frobDoor);
