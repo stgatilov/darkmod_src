@@ -2507,7 +2507,7 @@ void idAI::DrawRoute( void ) const {
 idAI::ReachedPos
 =====================
 */
-bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const {
+bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand) const {
 	if ( move.moveType == MOVETYPE_SLIDE ) {
 		idBounds bnds( idVec3( -4, -4.0f, -8.0f ), idVec3( 4.0f, 4.0f, 64.0f ) );
 		bnds.TranslateSelf( physicsObj.GetOrigin() );
@@ -2520,8 +2520,20 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 				return true;
 			}
 		} else {
-			// angua: use the actual bounds size instead of a box with size 48.
-			idBounds bnds(physicsObj.GetAbsBounds().Expand(reachedpos_bbox_expansion));
+			// angua: use AI bounds for checking
+			idBounds bnds(physicsObj.GetBounds());
+			if (move.accuracy >= 0)
+			{
+				// if accuracy is set, replace x and y size of the bounds
+				bnds[0][0] = -move.accuracy;
+				bnds[0][1] = -move.accuracy;
+				bnds[1][0] = move.accuracy;
+				bnds[1][1] = move.accuracy;
+			}
+
+			bnds.TranslateSelf(physicsObj.GetOrigin());
+
+			bnds.ExpandSelf(reachedpos_bbox_expansion);
 
 			// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
 			// that are a reported as reachable by PathToGoal.
@@ -2717,6 +2729,7 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.moveDir.Zero();
 	move.lastMoveOrigin.Zero();
 	move.lastMoveTime	= gameLocal.time;
+	move.accuracy		= -1;
 }
 
 const idVec3& idAI::GetMoveDest() const
@@ -2745,6 +2758,7 @@ bool idAI::FaceEnemy( void ) {
 	move.moveStatus		= MOVE_STATUS_WAITING;
 	move.startTime		= gameLocal.time;
 	move.speed			= 0.0f;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
 	AI_DEST_UNREACHABLE = false;
@@ -2797,6 +2811,7 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -2830,6 +2845,7 @@ bool idAI::MoveToEnemyHeight( void ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= 0.0f;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= false;
@@ -2902,6 +2918,7 @@ bool idAI::MoveToEnemy( void ) {
 	move.goalEntity		= enemyEnt;
 	move.speed			= fly_speed;
 	move.moveStatus		= MOVE_STATUS_MOVING;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -2973,6 +2990,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	move.goalEntityOrigin	= ent->GetPhysics()->GetOrigin();
 	move.moveStatus			= MOVE_STATUS_MOVING;
 	move.speed				= fly_speed;
+	move.accuracy			= -1;
 	AI_MOVE_DONE			= false;
 	AI_DEST_UNREACHABLE		= false;
 	AI_FORWARD				= true;
@@ -3102,6 +3120,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	move.range			= MAX_FLEE_DISTANCE;
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -3345,6 +3364,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	move.range			= range;
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -3397,6 +3417,7 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
 	move.anim			= attack_anim;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -3409,9 +3430,9 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 idAI::MoveToPosition
 =====================
 */
-bool idAI::MoveToPosition( const idVec3 &pos ) {
+bool idAI::MoveToPosition( const idVec3 &pos, float accuracy ) {
 	// Check if we already reached the position
-	if ( ReachedPos( pos, move.moveCommand ) ) {
+	if ( ReachedPos( pos, move.moveCommand) ) {
 		StopMove( MOVE_STATUS_DONE );
 		return true;
 	}
@@ -3450,6 +3471,7 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
+	move.accuracy		= accuracy;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -3521,6 +3543,7 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
@@ -3543,6 +3566,7 @@ bool idAI::SlideToPosition( const idVec3 &pos, float time ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.duration		= idPhysics::SnapTimeToPhysicsFrame( SEC2MS( time ) );
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= false;
@@ -3577,6 +3601,7 @@ bool idAI::WanderAround( void ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
+	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;
 

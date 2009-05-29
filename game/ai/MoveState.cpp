@@ -39,6 +39,7 @@ idMoveState::idMoveState() {
 	lastMoveOrigin		= vec3_origin;
 	lastMoveTime		= 0;
 	anim				= 0;
+	accuracy			= -1;
 }
 
 /*
@@ -66,6 +67,8 @@ void idMoveState::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( lastMoveOrigin );
 	savefile->WriteInt( lastMoveTime );
 	savefile->WriteInt( anim );
+	savefile->WriteFloat( accuracy );
+
 }
 
 /*
@@ -93,4 +96,6 @@ void idMoveState::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( lastMoveOrigin );
 	savefile->ReadInt( lastMoveTime );
 	savefile->ReadInt( anim );
+	savefile->ReadFloat( accuracy );
+
 }

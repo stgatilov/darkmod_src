@@ -77,7 +77,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			}
 			else
 			{
-				owner->MoveToPosition(path->GetPhysics()->GetOrigin());
+				owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
 			}
 		}	
 		if (owner->AI_DEST_UNREACHABLE)
@@ -94,7 +94,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 	{
 		// moveToEntity() not yet called, do it now
 		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-		owner->MoveToPosition(path->GetPhysics()->GetOrigin());
+		owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
 
 		_moveInitiated = true;
 	}

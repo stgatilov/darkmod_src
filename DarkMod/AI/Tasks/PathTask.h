@@ -26,6 +26,7 @@ class PathTask :
 {
 protected:
 	idEntityPtr<idPathCorner> _path;
+	float _accuracy;
 
 	PathTask();
 

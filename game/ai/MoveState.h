@@ -95,6 +95,9 @@ public:
 	idVec3					lastMoveOrigin;
 	int						lastMoveTime;
 	int						anim;
+	// angua: the distance at which the AI will see a position as reached
+	// if < 0, the AI will use their bounding box for this check as before
+	float					accuracy;
 };
 
 #endif /* __AI_MOVESTATE_H__ */

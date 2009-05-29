@@ -37,6 +37,10 @@ void PathTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		gameLocal.Error("Path Entity not set before Init()");
 	}
+
+	idPathCorner* path = _path.GetEntity();
+
+	_accuracy = path->spawnArgs.GetFloat("accuracy", "-1");
 }
 
 
@@ -64,6 +68,7 @@ void PathTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	_path.Save(savefile);
+	savefile->WriteFloat(_accuracy);
 }
 
 void PathTask::Restore(idRestoreGame* savefile)
@@ -71,6 +76,7 @@ void PathTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_path.Restore(savefile);
+	savefile->ReadFloat(_accuracy);
 }
 
 
