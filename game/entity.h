@@ -656,15 +656,6 @@ public:
 	virtual void AttackAction(idPlayer* player);
 
 	/**
-	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
-	 * is not the current entities name and b) if the name already exists in the list.
-	 * 
-	 * If both conditions are met, the name is added to the list and true is returned,
-	 * otherwise false is returned and the name is not added to the list.
-	 */
-	bool AddToMasterList(idList<idStr> &, idStr &name);
-
-	/**
 	 * greebo: Returns TRUE if the given inventory item matches this entity, i.e.
 	 * if the entity can be used by the given inventory item, FALSE otherwise.
 	 * Note: This just routes the call to the overloaded CanBeUsedBy(idEntity*);
@@ -675,7 +666,8 @@ public:
 
 	/**
 	 * greebo: Returns TRUE if the given entity matches this entity, i.e.
-	 * if the entity can be used by the given enitty, FALSE otherwise.
+	 * if the entity can be used by the given entity, FALSE otherwise.
+	 * If a frob_master was set, the call is redirected to that one.
 	 *
 	 * @isFrobUse: This is true if the Use action originated from a frob button hit.
 	 *
@@ -687,6 +679,7 @@ public:
 	/**
 	 * greebo: Uses this entity by the given inventory item. The button state
 	 * is needed to handle the exact user interaction, e.g. while lockpicking.
+	 * If a frob_master was set, the call is redirected to that one.
 	 *
 	 * @returns: TRUE if the item could be used, FALSE otherwise.
 	 */
@@ -1007,6 +1000,9 @@ public:
 	virtual void			RemoveFrobPeer(const idStr& frobPeerName);
 	virtual void			RemoveFrobPeer(idEntity* peer);
 
+	// Returns the frob master for this entity or NULL if not set (or not existing anymore).
+	idEntity*				GetFrobMaster();
+
 	inline UserManager&		GetUserManager()
 	{
 		return m_userManager;
@@ -1189,10 +1185,9 @@ protected:
 	idStrList					m_FrobPeers;
 
 	/**
-	 * If AssociatedFrob is set then MasterFrob contains
-	 * the parent of the entity  chain in order to be able to walk the chain in
-	 * both directions. The user can frob any object in the chain but all of them
-	 * have to be notified.
+	 * This contains the name of the "master" entity. If this entity receives
+	 * an incoming FrobAction or inventory item usage, the action is redirected
+	 * to the frob master.
 	 */
 	idStr						m_MasterFrob;
 

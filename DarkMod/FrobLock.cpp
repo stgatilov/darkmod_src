@@ -262,8 +262,13 @@ bool CFrobLock::IsPickable()
 
 void CFrobLock::Open()
 {
+	if (!IsLocked())
+	{
+		// If we're unlocked, just ToggleOpen the targets
+		ToggleOpenTargets();
+	}
 	// If we have handles we want to tap them before the lock starts to open its targets
-	if (m_Lockhandles.Num() > 0)
+	else if (m_Lockhandles.Num() > 0)
 	{
 		// Relay the call to the handles, the OpenTargets() call will come back to us
 		for (int i = 0; i < m_Lockhandles.Num(); i++)
@@ -272,6 +277,27 @@ void CFrobLock::Open()
 			if (handle == NULL) continue;
 
 			handle->Tap();
+		}
+	}
+}
+
+void CFrobLock::ToggleOpenTargets()
+{
+	if (IsLocked())
+	{
+		// We're still locked, play the locked sound and exit
+		FrobLockStartSound("snd_locked");
+	}
+	else
+	{
+		// Actually open any targetted frobmovers
+		for (int i = 0; i < targets.Num(); i++)
+		{
+			idEntity* target = targets[i].GetEntity();
+
+			if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+			static_cast<CBinaryFrobMover*>(target)->ToggleOpen();
 		}
 	}
 }

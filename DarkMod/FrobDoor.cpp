@@ -398,11 +398,17 @@ void CFrobDoor::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 
 bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
+	// First, ask our base class (this also checks for frob masters)
+	// If this doesn't succeed, perform additional checks
+	bool baseIsUsable = idEntity::CanBeUsedBy(item, isFrobUse);
+
+	if (baseIsUsable) return true;
+
 	if (item == NULL) return false;
 
 	assert(item->Category() != NULL);
 
-	// TODO: Move this to idEntity to some sort of "usable_by_inv_category" list?
+	// FIXME: Move this to idEntity to some sort of "usable_by_inv_category" list?
 	const idStr& itemName = item->Category()->GetName();
 	if (itemName == "Keys")
 	{
@@ -423,12 +429,18 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 		return (isFrobUse) ? IsLocked() : true;
 	}
 
-	return idEntity::CanBeUsedBy(item, isFrobUse);
+	return false;
 }
 
 bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL) return false;
+
+	// First, ask our base class (this also checks for frob masters)
+	// If this doesn't succeed, perform additional checks
+	bool baseCouldBeUsed = idEntity::UseBy(impulseState, item);
+
+	if (baseCouldBeUsed) return true;
 
 	assert(item->Category() != NULL);
 
@@ -505,7 +517,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		}
 	}
 
-	return idEntity::UseBy(impulseState, item);
+	return false;
 }
 
 void CFrobDoor::UpdateSoundLoss()

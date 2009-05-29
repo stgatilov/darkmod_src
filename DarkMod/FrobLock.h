@@ -51,6 +51,7 @@ public:
 	// This tries to open/lock/unlock any targetted frobmovers
 	void			OpenTargets();
 	void			CloseTargets();
+	void			ToggleOpenTargets();
 	void			LockTargets();
 	void			UnlockTargets();
 

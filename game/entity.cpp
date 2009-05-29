@@ -7247,37 +7247,6 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idThread::ReturnVector( vec );
 }
 
-bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
-{
-	idEntity* ent = gameLocal.FindEntity(str);
-	
-	// The master may not be the same as this entity.
-	if (ent == this)
-	{
-		return false;
-	}
-
-	bool bRc = false;
-
-	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
-	if (ent != NULL)
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
-
-		// Only add the name if it doesn't exist yet
-		int prevNum = MasterList.Num();
-		int inserted = MasterList.AddUnique(name);
-
-		// greebo: The item was inserted, if the returned index is equal to the number it had before the insertion
-		return (inserted == prevNum);
-	}
-	else
-	{
-		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", str.c_str());
-		return false;
-	}
-}
-
 void idEntity::Flinderize( idEntity *activator )
 {
 	// Create a new struct
@@ -7366,10 +7335,13 @@ void idEntity::LoadTDMSettings(void)
 		m_FrobActionScript = str;
 
 	// Check if this entity is associated to a master frob entity.
-	if(spawnArgs.GetString("frob_master", "", str))
+	str = spawnArgs.GetString("frob_master");
+
+	// Disallow "self" to be added as same name
+	if (!str.IsEmpty() && str != name)
 	{
-		if(AddToMasterList(m_FrobList, str) == true)
-			m_MasterFrob = str;
+		int index = m_FrobList.AddUnique(str);
+		m_MasterFrob = str;
 	}
 
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "frob_peer", NULL );
@@ -7617,17 +7589,34 @@ Quit:
 
 void idEntity::AttackAction(idPlayer* player)
 {
-	// Empty implementation, to be overridden by subclasses
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) 
+	{
+		master->AttackAction(player);
+	}
 }
 
 bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
-	return (item != NULL) ? CanBeUsedBy(item->GetItemEntity(), isFrobUse) : false;
+	if (item == NULL) return false;
+
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+
+	return (master != NULL) ? master->CanBeUsedBy(item, isFrobUse) : false;
 }
 
 bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse) 
 {
 	if (entity == NULL) return false;
+
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) return master->CanBeUsedBy(entity, isFrobUse);
+
+	// No frob master set
 
 	// Check if the entity's name is in the used_by list 
 	int idx = m_UsedBy.FindIndex(entity->name);
@@ -7638,7 +7627,10 @@ bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse)
 
 bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
-	return false;
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+
+	return (master != NULL) ? master->UseBy(impulseState, item) : false;
 }
 
 void idEntity::SetFrobbed( bool val )
@@ -9528,6 +9520,22 @@ void idEntity::RemoveFrobPeer(idEntity* peer)
 	{
 		RemoveFrobPeer(peer->name);
 	}
+}
+
+idEntity* idEntity::GetFrobMaster()
+{
+	if (m_MasterFrob.IsEmpty()) return NULL;
+
+	idEntity* master = gameLocal.FindEntity(m_MasterFrob);
+	
+	if (master == NULL)
+	{
+		// master doesn't exist anymore
+		m_MasterFrob.Clear();
+		return NULL;
+	}
+
+	return master;
 }
 
 void idEntity::Event_DestroyOverlay(int handle)
