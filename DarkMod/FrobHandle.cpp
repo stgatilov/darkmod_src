@@ -145,11 +145,17 @@ bool CFrobHandle::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 {
 	const idBounds& bounds = GetPhysics()->GetAbsBounds();
 	idVec3 eyePos = gameLocal.GetLocalPlayer()->GetEyePosition();
+	const idBounds& localBounds = GetPhysics()->GetBounds();
 
 	// greebo: Choose the corner which is nearest to the player's eyeposition
-	origin.x = (idMath::Fabs(bounds[0].x - eyePos.x) < idMath::Fabs(bounds[1].x - eyePos.x)) ? bounds[0].x : bounds[1].x;
-	origin.y = (idMath::Fabs(bounds[0].y - eyePos.y) < idMath::Fabs(bounds[1].y - eyePos.y)) ? bounds[0].y : bounds[1].y;
-	origin.z = (idMath::Fabs(bounds[0].z - eyePos.z) < idMath::Fabs(bounds[1].z - eyePos.z)) ? bounds[0].z : bounds[1].z;
+	// This origin is measured relatively to the local entity origin, so take the relative bounds as reference
+	origin.x = (idMath::Fabs(bounds[0].x - eyePos.x) < idMath::Fabs(bounds[1].x - eyePos.x)) ? localBounds[0].x : localBounds[1].x;
+	origin.y = (idMath::Fabs(bounds[0].y - eyePos.y) < idMath::Fabs(bounds[1].y - eyePos.y)) ? localBounds[0].y : localBounds[1].y;
+	origin.z = (idMath::Fabs(bounds[0].z - eyePos.z) < idMath::Fabs(bounds[1].z - eyePos.z)) ? localBounds[0].z : localBounds[1].z;
+
+	axis.Identity();
+
+	//gameRenderWorld->DebugArrow(colorWhite, origin, eyePos, 0, 5000);
 
 	return true;
 }
