@@ -66,6 +66,8 @@ extern idCVar cv_ai_show_aasfuncobstacle_state;
 extern idCVar cv_interaction_vfp_type;
 extern idCVar cv_tdm_widescreenmode;
 
+extern idCVar cv_tdm_show_trainer_messages;
+
 extern idCVar cv_tdm_default_relations_def;
 extern idCVar cv_tdm_mapName;
 extern idCVar cv_tdm_fm_path;
