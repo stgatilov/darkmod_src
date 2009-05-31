@@ -6131,17 +6131,14 @@ void idEntity::Event_IsInLiquid( void ) {
 
 
 /*
-
 ================
-
 idEntity::Event_CopyBind
-
 ================
-
 */
 
-void idEntity::Event_CopyBind( idEntity *other ) 
+void idEntity::Event_CopyBind( idEntity* other ) 
 {
+	if (other == NULL) return;
 
 	idEntity *master = other->GetBindMaster();
 
@@ -6149,34 +6146,28 @@ void idEntity::Event_CopyBind( idEntity *other )
 
 	int body = other->GetBindBody();
 
-
-
-	if( joint != INVALID_JOINT ) {
-
+	if( joint != INVALID_JOINT )
+	{
 		// joint is specified so bind to that joint
-
 		BindToJoint( master, joint, true );
-
 	}
-
-	else if( body >= 0 ) { 
-
+	else if( body >= 0 )
+	{ 
 		// body is specified so bind to it
-
 		BindToBody( master, body, true );
-
 	}
-
-	else {
-
+	else
+	{
 		// no joint and no body specified to bind to master
-
 		Bind( master, true );
 
+		// greebo: If the bind master is static, set the solid for team flag
+		if (master->GetPhysics()->IsType(idPhysics_Static::Type))
+		{
+			fl.solidForTeam = true;
+		}
 	}
-
 }
-
 
 /***********************************************************************
 

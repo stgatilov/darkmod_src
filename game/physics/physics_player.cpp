@@ -1077,12 +1077,11 @@ void idPhysics_Player::RopeMove( void )
 		idEntity* ropeBindMaster = m_RopeEntity.GetEntity()->GetBindMaster();
 		if (ropeBindMaster != NULL)
 		{
-			idVec3 direction = GetGravity();
-			direction.NormalizeFast();
+			idVec3 direction = GetGravityNormal();
 
 			idPhysics* bindMasterPhysics = ropeBindMaster->GetPhysics();
 			
-			idVec3 ropeOrigin = ropePhys->GetOrigin();
+			const idVec3& ropeOrigin = ropePhys->GetOrigin();
 
 			idAFBody* topMostBody = ropePhys->GetBody(0);
 			if (topMostBody != NULL)
