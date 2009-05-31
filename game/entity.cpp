@@ -700,6 +700,7 @@ idEntity::idEntity()
 	m_bFrobHighlightState = false;
 	m_FrobChangeTime = 0;
 	m_FrobPeerFloodFrame = 0;
+	m_FrobActionLock = false;
 	m_bIsObjective = false;
 	m_bIsClimbableRope = false;
 	m_bIsMantleable = false;
@@ -1153,21 +1154,16 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_FrobPeerFloodFrame);
 	savefile->WriteInt(m_FrobChangeTime);
 
-	savefile->WriteString(m_FrobActionScript.c_str());
+	savefile->WriteString(m_FrobActionScript);
 
 	savefile->WriteInt(m_FrobPeers.Num());
 	for (i = 0; i < m_FrobPeers.Num(); i++)
 	{
-		savefile->WriteString(m_FrobPeers[i].c_str());
+		savefile->WriteString(m_FrobPeers[i]);
 	}
 
-	savefile->WriteString(m_MasterFrob.c_str());
-
-	savefile->WriteInt(m_FrobList.Num());
-	for (i = 0; i < m_FrobList.Num(); i++)
-	{
-		savefile->WriteString(m_FrobList[i].c_str());
-	}
+	savefile->WriteString(m_MasterFrob);
+	savefile->WriteBool(m_FrobActionLock);
 
 	savefile->WriteInt(m_Signal);
 
@@ -1358,13 +1354,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	}
 
 	savefile->ReadString(m_MasterFrob);
-
-	savefile->ReadInt(num);
-	m_FrobList.SetNum(num);
-	for (i = 0; i < num; i++)
-	{
-		savefile->ReadString(m_FrobList[i]);
-	}
+	savefile->ReadBool(m_FrobActionLock);
 
 	savefile->ReadInt(m_Signal);
 
@@ -7340,7 +7330,6 @@ void idEntity::LoadTDMSettings(void)
 	// Disallow "self" to be added as same name
 	if (!str.IsEmpty() && str != name)
 	{
-		int index = m_FrobList.AddUnique(str);
 		m_MasterFrob = str;
 	}
 
@@ -7509,82 +7498,62 @@ Quit:
 	return;
 }
 
-void idEntity::FrobAction(bool bMaster, bool bPeer)
+void idEntity::FrobAction(bool frobMaster, bool isFrobPeerAction)
 {
-	if( IsHidden() )
-		goto Quit;
+	if (m_FrobActionLock) return; // prevent double-entering this function
+
+	if (IsHidden()) return; // don't do frobactions on hidden entities
+
+	m_FrobActionLock = true;
+
+	// greebo: If we have a frob master, just redirect the call and skip everything else
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL)
+	{
+		master->FrobAction(frobMaster, isFrobPeerAction);
+
+		m_FrobActionLock = false;
+		return;
+	}
 
 	// Propagate frobactions to all peers to get them triggered as well.
-	if (bPeer == false)
+	if (!isFrobPeerAction)
 	{
-		int n = m_FrobPeers.Num();
-		for(int i = 0; i < n; i++)
+		for (int i = 0; i < m_FrobPeers.Num(); i++)
 		{
-			const idStr& str = m_FrobPeers[i];
-			if (str == name)
-				continue;
+			idEntity* ent = gameLocal.FindEntity(m_FrobPeers[i]);
 
-			idEntity* ent = gameLocal.FindEntity(str);
-			if(ent != NULL)
+			if (ent != NULL && ent != this)
 			{
+				// Propagate the frob action, but inhibit calls to frob_masters
 				ent->FrobAction(false, true);
 			}
 		}
 	}
 
-	if(m_FrobActionScript.Length() == 0)
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), frobMaster);
+
+	// Call the frob action script, if available
+	if (m_FrobActionScript.Length() > 0)
+	{
+		idThread* thread = CallScriptFunctionArgs(m_FrobActionScript, true, 0, "e", this);
+
+		if (thread != NULL)
+		{
+			// greebo: Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
+	else
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
 	}
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
+	// Play the (optional) acquire sound (greebo: What's this? Isn't this the wrong place here?)
+	StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 
-	// The player can frob any entity in a chain so we must make sure that all 
-	// others, in the chain, are also called. The master has no special meaning
-	// except that it has to be the first in a chain. The master also doesn't have
-	// to be the same entity type.
-	if(bMaster == true && m_MasterFrob.Length() != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity [%s] is called.\r", m_MasterFrob.c_str());
-		idEntity* ent = gameLocal.FindEntity(m_MasterFrob);
-		if (ent != NULL)
-			ent->FrobAction(false);
-		else
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", m_MasterFrob.c_str());
-	}
-	else
-	{
-		int n = m_FrobList.Num();
-		for(int i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_FrobList[i].c_str());
-			idEntity* ent = gameLocal.FindEntity(m_FrobList[i]);
-			if (ent != NULL)
-			{
-				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s]\r", m_FrobList[i].c_str());
-				ent->FrobAction(false);
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_FrobList[i].c_str());
-		}
-
-		// Call the frob action script
-		if(m_FrobActionScript.Length() > 0)
-		{
-			idThread* thread = CallScriptFunctionArgs(m_FrobActionScript.c_str(), true, 0, "e", this);
-			if (thread != NULL)
-			{
-				// greebo: Run the thread at once, the script result might be needed below.
-				thread->Execute();
-			}
-		}
-
-		// Play the (optional) acquire sound
-		StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
-	}
-
-Quit:
-	return;
+	m_FrobActionLock = false;
 }
 
 void idEntity::AttackAction(idPlayer* player)
