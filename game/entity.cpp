@@ -7385,7 +7385,7 @@ void idEntity::UpdateFrob(void)
 			pDM->m_FrobEntityPrevious = NULL;
 
 			// stop highlight, tell peers
-			FrobHighlight( false );
+			FrobHighlight(false);
 		}
 		// Otherwise, we are updating AFTER the newly frobbed entity
 		// and should not set m_FrobEntity to NULL.
@@ -7396,7 +7396,7 @@ void idEntity::UpdateFrob(void)
 			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity.GetEntity();
 
 			// stop highlight, tell peers
-			FrobHighlight(false );
+			FrobHighlight(false);
 		}
 
 		return;
@@ -7410,7 +7410,7 @@ void idEntity::UpdateFrob(void)
 	if( pDM->m_FrobEntity.GetEntity() != this )
 	{
 		pDM->m_FrobEntity = this;
-		FrobHighlight( true );
+		FrobHighlight(true);
 
 		// again there's a trick here for syncronicity
 		// we don't want to overwrite it if the old frob entity has not updated yet,
@@ -7422,33 +7422,41 @@ void idEntity::UpdateFrob(void)
 
 void idEntity::FrobHighlight( bool bVal )
 {
-	// Don't do anything if we are already in the desired state
-	if (bVal == m_bFrobHighlightState)
-		return;
-
 	// Stop flooding the frob peers if we've already been updated this frame
-	// NOTE: A bVal of true overrides a bVal of false in the same frame
-	// focus can shifts to one frob peer to another in one frame (one will flood a false and one will flood a true)
-	if( m_FrobPeerFloodFrame == gameLocal.framenum && !bVal )
-		return;
+	if( m_FrobPeerFloodFrame == gameLocal.framenum)
+	{
+		// Only ignore FALSE flood calls in the same frame, let TRUE go through
+		if (!bVal) return;
 
-	m_bFrobHighlightState = bVal;
+		// But even if we have a TRUE call, only proceed if the state actually changed
+		if (bVal == m_bFrobHighlightState) return;
+	}
 
-	// update our timestamp
-	m_FrobChangeTime = gameLocal.time;
+	// greebo: Update the frob peer flood frame
+	// Also, ignore if bVal == m_bFrobHighlightState, we need to flood our peers 
+	// and update their timestamps in any case
 	m_FrobPeerFloodFrame = gameLocal.framenum;
 
-	// resolve the peer names into entities
-	// TODO: Bad for performance?  Only happens on the frame it's hilighted/unhilighted though
-	for( int i=0; i < m_FrobPeers.Num(); i++ )
+	// update our timestamp
+	if (bVal != m_bFrobHighlightState)
 	{
-		if( m_FrobPeers[i].IsEmpty() )
-			continue;
+		m_FrobChangeTime = gameLocal.time;
+	}
 
-		idEntity* ent = gameLocal.FindEntity( m_FrobPeers[i].c_str() );
+	m_bFrobHighlightState = bVal;
+	
+	// resolve the peer names into entities
+	for (int i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		if (m_FrobPeers[i].Length() == 0) continue;
+
+		idEntity* ent = gameLocal.FindEntity( m_FrobPeers[i] );
+
 		// don't call it on self, would get stuck in a loop
 		if (ent != NULL && ent != this)
+		{
 			ent->FrobHighlight( bVal );
+		}
 	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s] is highlighted\r", name.c_str());
