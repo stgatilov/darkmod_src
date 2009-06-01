@@ -34,14 +34,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //===============================================================================
 
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
-const idEventDef EV_TDM_Door_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
 const idEventDef EV_TDM_Door_ClearPlayerImmobilization("EV_TDM_Door_ClearPlayerImmobilization", "e"); // allows player to handle weapons again
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
-	EVENT( EV_TDM_Door_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest)
+	EVENT( EV_TDM_FrobMover_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest ) // overrides binaryfrobmover's request
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 
 	// Needed for PickableLock: Update Handle position on lockpick status update
@@ -50,13 +49,10 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_ClearPlayerImmobilization,	CFrobDoor::Event_ClearPlayerImmobilization )
 END_CLASS
 
-#define LOCK_REQUEST_DELAY 250 // msecs before a door locks itself after closing (if the preference is set appropriately)
-
 CFrobDoor::CFrobDoor()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
-	m_CloseOnLock = false;
 	m_DoubleDoor = NULL;
 	m_LastHandleUpdateTime = -1;
 }
@@ -80,8 +76,6 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 		savefile->WriteString(m_LockPeers[i]);
 	}
 
-	savefile->WriteBool(m_CloseOnLock);
-	
 	m_DoubleDoor.Save(savefile);
 
 	savefile->WriteInt(m_Doorhandles.Num());
@@ -110,8 +104,6 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 		savefile->ReadString(m_LockPeers[i]);
 	}
 
-	savefile->ReadBool(m_CloseOnLock);
-	
 	m_DoubleDoor.Restore(savefile);
 	
 	savefile->ReadInt(num);
@@ -328,10 +320,6 @@ void CFrobDoor::OnStartOpen(bool wasClosed, bool bMaster)
 	// Update soundprop
 	UpdateSoundLoss();
 
-	// Clear the lock request flag in any case
-	m_CloseOnLock = false;
-	CancelEvents(&EV_TDM_Door_HandleLockRequest);
-
 	if (bMaster)
 	{
 		OpenPeers();
@@ -366,34 +354,6 @@ void CFrobDoor::OnClosedPositionReached()
 
 	// Update the sound propagation values
 	UpdateSoundLoss();
-
-	// Do we have a close request?
-	if (m_CloseOnLock)
-	{
-		// Clear the flag, regardless what happens
-		m_CloseOnLock = false;
-		
-		// Post a lock request in LOCK_REQUEST_DELAY msecs
-		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
-	}
-}
-
-void CFrobDoor::OnInterrupt()
-{
-	// Clear the close request flag
-	m_CloseOnLock = false;
-	CancelEvents(&EV_TDM_Door_HandleLockRequest);
-
-	CBinaryFrobMover::OnInterrupt();
-}
-
-void CFrobDoor::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
-{
-	// Clear the close request flag
-	m_CloseOnLock = false;
-	CancelEvents(&EV_TDM_Door_HandleLockRequest);
-
-	CBinaryFrobMover::OnTeamBlocked(blockedEntity, blockingEntity);
 }
 
 bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
@@ -465,8 +425,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			else
 			{
 				// Close the door and set the lock request to true
-				m_CloseOnLock = true;
-				ToggleOpen();
+				CloseAndLock();
 			}
 
 			return true;
@@ -1086,7 +1045,7 @@ void CFrobDoor::Event_HandleLockRequest()
 	else
 	{
 		// One or more peers are not at their closed position (yet), postpone the event
-		PostEventMS(&EV_TDM_Door_HandleLockRequest, LOCK_REQUEST_DELAY);
+		PostEventMS(&EV_TDM_FrobMover_HandleLockRequest, LOCK_REQUEST_DELAY);
 	}
 }
 

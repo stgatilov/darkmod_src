@@ -24,6 +24,9 @@ extern const idEventDef EV_TDM_FrobMover_Unlock;
 extern const idEventDef EV_TDM_FrobMover_ToggleLock;
 extern const idEventDef EV_TDM_FrobMover_IsOpen;
 extern const idEventDef EV_TDM_FrobMover_IsLocked;
+extern const idEventDef EV_TDM_FrobMover_HandleLockRequest;
+
+#define LOCK_REQUEST_DELAY 250 // msecs before a mover locks itself after closing (if the preference is set appropriately)
 
 /**
  * CBinaryFrobMover is a replacement for idDoor. The reason for this replacement is
@@ -65,6 +68,9 @@ public:
 
 	virtual void			ToggleOpen();
 	virtual void			ToggleLock();
+
+	// Performs a "delayed" lock, closes the mover and tries to lock it afterwards
+	virtual void			CloseAndLock();
 		
 	/**
 	* This is the non-script version of GetOpen 
@@ -339,6 +345,9 @@ protected:
 	void					Event_Unlock();
 	void					Event_ToggleLock();
 
+	// This is called periodically, to handle a pending close request (used for locking movers after closing)
+	void					Event_HandleLockRequest();
+
 	/**
 	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.
 	 */
@@ -465,6 +474,12 @@ protected:
 	 *         Corresponds to spawnarg "stop_when_blocked"
 	 */
 	bool						m_stopWhenBlocked;
+
+	/**
+	 * greebo: This is set to TRUE when the mover should be locked as soon as it has
+	 * reached its closed position.
+	 */
+	bool						m_LockOnClose;
 };
 
 #endif /* !BINARYFROBMOVER */

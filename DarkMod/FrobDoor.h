@@ -159,10 +159,6 @@ protected:
 	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
 	virtual void			OnClosedPositionReached();
 
-	// Gets called when the mover is interrupted or blocked (virtual overrides)
-	virtual void			OnInterrupt();
-	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
-
 	// Helper functions to cycle through the m_OpenList members
 	void					OpenPeers();
 	void					ClosePeers();
@@ -214,12 +210,6 @@ protected:
 	 * all names of the doors which should be locked/unlocked along with this one.
 	 */
 	idList<idStr>				m_LockPeers;
-
-	/**
-	 * greebo: This is set to TRUE when the door should be locked as soon as it has
-	 * reached its closed position.
-	 */
-	bool						m_CloseOnLock;
 
 	/**
 	* Pointer to the door's partner in a double door.

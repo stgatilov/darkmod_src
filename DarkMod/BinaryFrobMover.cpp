@@ -35,6 +35,7 @@ const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", NULL );
 const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", NULL, 'f' );
 const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", NULL, 'f' );
 const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
@@ -48,6 +49,7 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_FrobMover_IsLocked,		CBinaryFrobMover::Event_IsLocked)
 	EVENT( EV_TDM_FrobMover_IsPickable,		CBinaryFrobMover::Event_IsPickable)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
+	EVENT( EV_TDM_FrobMover_HandleLockRequest,	CBinaryFrobMover::Event_HandleLockRequest)
 END_CLASS
 
 CBinaryFrobMover::CBinaryFrobMover()
@@ -72,6 +74,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_vImpulseDirOpen.Zero();
 	m_vImpulseDirClose.Zero();
 	m_stopWhenBlocked = false;
+	m_LockOnClose = false;
 }
 
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
@@ -113,6 +116,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteVec3(m_vImpulseDirClose);
 
 	savefile->WriteBool(m_stopWhenBlocked);
+	savefile->WriteBool(m_LockOnClose);
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -154,6 +158,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3(m_vImpulseDirClose);
 
 	savefile->ReadBool(m_stopWhenBlocked);
+	savefile->ReadBool(m_LockOnClose);
 }
 
 void CBinaryFrobMover::Spawn()
@@ -392,6 +397,20 @@ void CBinaryFrobMover::ToggleLock()
 	}
 	else
 	{
+		Lock();
+	}
+}
+
+void CBinaryFrobMover::CloseAndLock()
+{
+	if (!IsLocked() && !IsAtClosedPosition())
+	{
+		m_LockOnClose = true;
+		Close();
+	}
+	else
+	{
+		// We're at close position, just lock it
 		Lock();
 	}
 }
@@ -640,6 +659,10 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 		Event_StopRotating();
 		Event_StopMoving();
 	}
+
+	// Clear the close request flag
+	m_LockOnClose = false;
+	CancelEvents(&EV_TDM_FrobMover_HandleLockRequest);
 }
 
 void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse)
@@ -857,6 +880,10 @@ void CBinaryFrobMover::OnStartOpen(bool wasClosed, bool bMaster)
 			ActivateTargets(this);
 		}
 	}
+
+	// Clear the lock request flag in any case
+	m_LockOnClose = false;
+	CancelEvents(&EV_TDM_FrobMover_HandleLockRequest);
 }
 
 void CBinaryFrobMover::OnStartClose(bool wasOpen, bool bMaster)
@@ -899,11 +926,23 @@ void CBinaryFrobMover::OnClosedPositionReached()
 		// Convert the time to msec and post the event
 		PostEventMS(&EV_TDM_FrobMover_Open, static_cast<int>(SEC2MS(autoOpenTime)));
 	}
+
+	// Do we have a close request?
+	if (m_LockOnClose)
+	{
+		// Clear the flag, regardless what happens
+		m_LockOnClose = false;
+		
+		// Post a lock request in LOCK_REQUEST_DELAY msecs
+		PostEventMS(&EV_TDM_FrobMover_HandleLockRequest, LOCK_REQUEST_DELAY);
+	}
 }
 
 void CBinaryFrobMover::OnInterrupt()
 {
-	// To be implemented by the subclasses
+	// Clear the close request flag
+	m_LockOnClose = false;
+	CancelEvents(&EV_TDM_FrobMover_HandleLockRequest);
 }
 
 void CBinaryFrobMover::OnLock(bool bMaster)
@@ -1022,4 +1061,19 @@ void CBinaryFrobMover::SetFractionalPosition(float fraction)
 	MoveToLocalPos(m_ClosedOrigin + (m_OpenOrigin - m_ClosedOrigin)*fraction);
 
 	UpdateVisuals();
+}
+
+void CBinaryFrobMover::Event_HandleLockRequest()
+{
+	// Check if we are at our "closed" position, if yes: lock, if no: postpone the event
+	if (IsAtClosedPosition())
+	{
+		// Yes, we are at our "closed" position, lock ourselves
+		Lock(true);
+	}
+	else
+	{
+		// Not at closed position (yet), postpone the event
+		PostEventMS(&EV_TDM_FrobMover_HandleLockRequest, LOCK_REQUEST_DELAY);
+	}
 }

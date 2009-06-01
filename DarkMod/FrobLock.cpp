@@ -367,6 +367,19 @@ void CFrobLock::UnlockTargets()
 	}
 }
 
+void CFrobLock::CloseAndLockTargets()
+{
+	// Unlock any targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* target = targets[i].GetEntity();
+
+		if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+
+		static_cast<CBinaryFrobMover*>(target)->CloseAndLock();
+	}
+}
+
 void CFrobLock::AddLockHandle(CFrobLockHandle* handle)
 {
 	// Store the pointer and the original position
@@ -481,8 +494,8 @@ void CFrobLock::Event_Lock_OnLockStatusChange(int locked)
 	}
 	else
 	{
-		// Locked
-		LockTargets();
+		// We're locked now
+		CloseAndLockTargets();
 		FrobLockStartSound("snd_lock");
 
 		if (spawnArgs.GetBool("trigger_targets_on_lock", "1"))

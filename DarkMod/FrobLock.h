@@ -54,6 +54,7 @@ public:
 	void			ToggleOpenTargets();
 	void			LockTargets();
 	void			UnlockTargets();
+	void			CloseAndLockTargets();
 
 	virtual bool	CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);	// Overrides idEntity::CanBeUsedBy
 	virtual bool	UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
