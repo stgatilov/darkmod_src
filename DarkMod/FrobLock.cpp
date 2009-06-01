@@ -369,7 +369,7 @@ void CFrobLock::UnlockTargets()
 
 void CFrobLock::CloseAndLockTargets()
 {
-	// Unlock any targetted frobmovers
+	// Close and lock any targetted frobmovers
 	for (int i = 0; i < targets.Num(); i++)
 	{
 		idEntity* target = targets[i].GetEntity();
