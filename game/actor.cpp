@@ -2215,6 +2215,17 @@ void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
 		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), ent->GetBindJoint() );
 	}
 
+	// check various spawnargs for special behaviors on attaching (not frobable, contents corpse, etc)
+	if( ent->spawnArgs.GetBool("on_attach_contents_corpse") )
+	{
+		// clear solid contents, set corpse contents
+		int oldContents = ent->GetPhysics()->GetContents();
+		ent->GetPhysics()->SetContents( (oldContents & ~CONTENTS_SOLID) | CONTENTS_CORPSE );
+	}
+	if( ent->spawnArgs.GetBool("on_attach_not_frobable") )
+		ent->SetFrobable(false);
+
+
 	if( ent->IsType(CMeleeWeapon::Type) )
 	{
 		static_cast<CMeleeWeapon *>(ent)->AttachedToActor( this );
