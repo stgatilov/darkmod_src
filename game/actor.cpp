@@ -2222,6 +2222,12 @@ void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
 		int oldContents = ent->GetPhysics()->GetContents();
 		ent->GetPhysics()->SetContents( (oldContents & ~CONTENTS_SOLID) | CONTENTS_CORPSE );
 	}
+	if( ent->spawnArgs.GetBool("on_attach_nonsolid") )
+	{
+		// clear solid contents
+		int oldContents = ent->GetPhysics()->GetContents();
+		ent->GetPhysics()->SetContents( (oldContents & ~CONTENTS_SOLID) );
+	}
 	if( ent->spawnArgs.GetBool("on_attach_not_frobable") )
 		ent->SetFrobable(false);
 
