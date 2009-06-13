@@ -27,6 +27,10 @@ CMeleeWeapon::CMeleeWeapon( void )
 {
 	m_Owner = NULL;
 	m_WeapClip = NULL;
+	m_ClipOffset = vec3_zero;
+	m_ClipRotation = mat3_identity;
+	m_bClipMaintainPitch = false;
+	m_ClipPitchAngle = 0.0f;
 	m_bAttacking = false;
 	m_bParrying = false;
 
@@ -60,6 +64,10 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bClipAxAlign );
 	savefile->WriteBool( m_bWorldCollide );
 	savefile->WriteBool( m_bModCM );
+	savefile->WriteVec3( m_ClipOffset );
+	savefile->WriteMat3( m_ClipRotation );
+	savefile->WriteBool( m_bClipMaintainPitch );
+	savefile->WriteFloat( m_ClipPitchAngle );
 	savefile->WriteInt( m_MeleeType );
 	savefile->WriteFloat( m_StopMass );
 	savefile->WriteInt( m_ParticlesMade );
@@ -78,6 +86,10 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bClipAxAlign );
 	savefile->ReadBool( m_bWorldCollide );
 	savefile->ReadBool( m_bModCM );
+	savefile->ReadVec3( m_ClipOffset );
+	savefile->ReadMat3( m_ClipRotation );
+	savefile->ReadBool( m_bClipMaintainPitch );
+	savefile->ReadFloat( m_ClipPitchAngle );
 	int mType;
 	savefile->ReadInt( mType );
 	m_MeleeType = (EMeleeType) mType;
@@ -127,8 +139,8 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		pClip = m_WeapClip;
 	}
 
-	m_OldOrigin = GetPhysics()->GetOrigin();
-	m_OldAxis = GetPhysics()->GetAxis();
+	m_OldOrigin = GetPhysics()->GetOrigin() + m_ClipOffset;
+	m_OldAxis = GetPhysics()->GetAxis() * m_ClipRotation;
 
 	
 	// Initial collision test (if we start out already colliding with something)
@@ -281,7 +293,11 @@ void CMeleeWeapon::ClearClipModel( void )
 		pClip->SetContents( pClip->GetContents() & (~CONTENTS_MELEEWEAP) );
 	}
 
+	m_ClipOffset = vec3_zero;
+	m_ClipRotation = mat3_identity;
 	m_bClipAxAlign = true;
+	m_bClipMaintainPitch = false;
+	m_ClipPitchAngle = 0.0f;
 }
 
 void CMeleeWeapon::Think( void )
@@ -298,6 +314,15 @@ void CMeleeWeapon::Think( void )
 		else
 			CMaxis = mat3_identity;
 
+		// option to maintain pitch relative to world
+		// (only implemented for parries for now)
+		if( m_bClipMaintainPitch )
+		{
+			idAngles tempAng = CMaxis.ToAngles();
+			tempAng.pitch = m_ClipPitchAngle;
+			CMaxis = tempAng.ToMat3();
+		}
+
 		// Is id = 0 correct here, or will that cause problems with
 		// the other clipmodel, which is also zero?
 		
@@ -306,7 +331,7 @@ void CMeleeWeapon::Think( void )
 			idClipModel *pClip;
 			if( m_WeapClip )
 			{
-				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
+				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation );
 				pClip = m_WeapClip;
 			}
 			else
@@ -317,7 +342,7 @@ void CMeleeWeapon::Think( void )
 			{
 				collisionModelManager->DrawModel
 					(
-						pClip->Handle(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(),
+						pClip->Handle(), GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation,
 						gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY 
 					);
 			}
@@ -330,8 +355,8 @@ void CMeleeWeapon::Think( void )
 	{
 		CheckAttack( m_OldOrigin, m_OldAxis );
 
-		m_OldOrigin = GetPhysics()->GetOrigin();
-		m_OldAxis = GetPhysics()->GetAxis();
+		m_OldOrigin = GetPhysics()->GetOrigin() + m_ClipOffset;
+		m_OldAxis = GetPhysics()->GetAxis() * m_ClipRotation;
 	}
 }
 
@@ -437,8 +462,8 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	else
 		pClip = GetPhysics()->GetClipModel();
 
-	idVec3 NewOrigin = GetPhysics()->GetOrigin();
-	idMat3 NewAxis = GetPhysics()->GetAxis();
+	idVec3 NewOrigin = GetPhysics()->GetOrigin() + m_ClipOffset;
+	idMat3 NewAxis = GetPhysics()->GetAxis() * m_ClipRotation;
 	TransposeMultiply( OldAxis, NewAxis, axis );
 
 	idRotation rotation = axis.ToRotation();
@@ -954,12 +979,18 @@ void CMeleeWeapon::SetupClipModel( )
 
 	m_WeapClip = new idClipModel( trm );
 
+	m_ClipOffset = spawnArgs.GetVector( va("%s_cm_offset_%s", APrefix, AName) );
+	idAngles tempAng = spawnArgs.GetAngles( va("%s_cm_angles_%s", APrefix, AName) );
+	m_ClipRotation = tempAng.ToMat3();
+	m_bClipMaintainPitch = spawnArgs.GetBool( va("%s_cm_maintain_pitch_%s", APrefix, AName) );
+	m_ClipPitchAngle = spawnArgs.GetFloat( va("%s_cm_pitch_angle_%s", APrefix, AName) );
+
 	// Override the default CONTENTS_SOLID on moveables (we don't want the player to run into their own parries!)
 	m_WeapClip->SetContents( CONTENTS_MELEEWEAP );
 	
 	// Only parries need a linked and auto-upated clipmodel
 	if( m_bParrying )
-		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, GetPhysics()->GetAxis() * m_ClipRotation );
 }
 
 void CMeleeWeapon::AttachedToActor(idActor *actor)

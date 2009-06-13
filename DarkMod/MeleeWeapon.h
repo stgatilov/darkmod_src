@@ -74,16 +74,6 @@ public:
 	**/
 	void DeactivateParry( void );
 
-	/**
-	* Called when weapon has just been deflected by a parry or the world
-	**/
-	void Deflected( idEntity *other );
-
-	/**
-	* Called when we hit a damagable and have to damage it
-	**/
-	void DealDamage( /* going to need a lot of args here */ );
-
 protected:
 	/**
 	* Clears the extra melee clipmodel if it exists,
@@ -144,6 +134,19 @@ protected:
 	* If we use the actual weapon clipmodel, this is set to NULL
 	**/
 	idClipModel				*m_WeapClip;
+	/**
+	* Translational offset and rotation of the melee clipmodel
+	* relative to this moveable entity's origin and orientation
+	**/
+	idVec3					m_ClipOffset;
+	idMat3					m_ClipRotation;
+	/**
+	* In some special cases we want the pitch angle of the CM relative to world
+	* not this entity (e.g., player thrust parry)
+	* The boolean sets this and the angle supplis what pitch angle relative to world
+	**/
+	bool					m_bClipMaintainPitch;
+	float					m_ClipPitchAngle;
 
 	/**
 	* Whether we are actively parrying or attacking
