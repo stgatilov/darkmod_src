@@ -1398,23 +1398,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 idActor::Hide
 ================
 */
-void idActor::Hide( void ) {
-	idEntity *ent;
-	idEntity *next;
-
+void idActor::Hide( void ) 
+{
 	idAFEntity_Base::Hide();
-	if ( head.GetEntity() ) {
+	if ( head.GetEntity() ) 
+	{
 		head.GetEntity()->Hide();
-	}
-
-	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
-		next = ent->GetNextTeamEntity();
-		if ( ent->GetBindMaster() == this ) {
-			ent->Hide();
-			if ( ent->IsType( idLight::Type ) ) {
-				static_cast<idLight *>( ent )->Off();
-			}
-		}
 	}
 	UnlinkCombat();
 }
@@ -1424,23 +1413,13 @@ void idActor::Hide( void ) {
 idActor::Show
 ================
 */
-void idActor::Show( void ) {
-	idEntity *ent;
-	idEntity *next;
-
+void idActor::Show( void ) 
+{
 	idAFEntity_Base::Show();
 	if ( head.GetEntity() ) {
 		head.GetEntity()->Show();
 	}
-	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
-		next = ent->GetNextTeamEntity();
-		if ( ent->GetBindMaster() == this ) {
-			ent->Show();
-			if ( ent->IsType( idLight::Type ) ) {
-				static_cast<idLight *>( ent )->On();
-			}
-		}
-	}
+
 	LinkCombat();
 }
 

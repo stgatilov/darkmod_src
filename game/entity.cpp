@@ -2107,6 +2107,21 @@ void idEntity::Hide( void )
 			pDM->m_FrobEntity = NULL;
 		if( pDM && pDM->m_FrobEntityPrevious.GetEntity() == this )
 			pDM->m_FrobEntityPrevious = NULL;
+
+		// hide our bind-children:
+		idEntity *ent;
+		idEntity *next;
+
+		for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+		{
+			next = ent->GetNextTeamEntity();
+			if ( ent->GetBindMaster() == this ) 
+			{
+				ent->Hide();
+				if ( ent->IsType( idLight::Type ) ) 
+					static_cast<idLight *>( ent )->Off();
+			}
+		}
 	}
 }
 
@@ -2135,6 +2150,21 @@ void idEntity::Show( void )
 		if( m_FrobBox && m_bFrobable )
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		UpdateVisuals();
+
+		// show our bind-children
+		idEntity *ent;
+		idEntity *next;
+
+		for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+		{
+			next = ent->GetNextTeamEntity();
+			if ( ent->GetBindMaster() == this ) 
+			{
+				ent->Show();
+				if ( ent->IsType( idLight::Type ) )
+					static_cast<idLight *>( ent )->On();
+			}
+		}
 	}
 }
 
