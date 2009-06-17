@@ -141,12 +141,12 @@ protected:
 	idVec3					m_ClipOffset;
 	idMat3					m_ClipRotation;
 	/**
-	* In some special cases we want the pitch angle of the CM relative to world
-	* not this entity (e.g., player thrust parry)
-	* The boolean sets this and the angle supplis what pitch angle relative to world
+	* In some special cases we only want yaw rotation applied to the weapon CM,
+	* not pitch and roll (e.g., player thrust parry)
+	* The boolean sets this and the angle supplis what pitch angle relative to world (NYI)
 	**/
-	bool					m_bClipMaintainPitch;
-	float					m_ClipPitchAngle;
+	bool					m_bClipYawOnly;
+	float					m_ClipPitchAngle; // NYI!
 
 	/**
 	* Whether we are actively parrying or attacking

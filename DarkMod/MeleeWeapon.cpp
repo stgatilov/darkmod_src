@@ -29,7 +29,7 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_WeapClip = NULL;
 	m_ClipOffset = vec3_zero;
 	m_ClipRotation = mat3_identity;
-	m_bClipMaintainPitch = false;
+	m_bClipYawOnly = false;
 	m_ClipPitchAngle = 0.0f;
 	m_bAttacking = false;
 	m_bParrying = false;
@@ -66,7 +66,7 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bModCM );
 	savefile->WriteVec3( m_ClipOffset );
 	savefile->WriteMat3( m_ClipRotation );
-	savefile->WriteBool( m_bClipMaintainPitch );
+	savefile->WriteBool( m_bClipYawOnly );
 	savefile->WriteFloat( m_ClipPitchAngle );
 	savefile->WriteInt( m_MeleeType );
 	savefile->WriteFloat( m_StopMass );
@@ -88,7 +88,7 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bModCM );
 	savefile->ReadVec3( m_ClipOffset );
 	savefile->ReadMat3( m_ClipRotation );
-	savefile->ReadBool( m_bClipMaintainPitch );
+	savefile->ReadBool( m_bClipYawOnly );
 	savefile->ReadFloat( m_ClipPitchAngle );
 	int mType;
 	savefile->ReadInt( mType );
@@ -296,7 +296,7 @@ void CMeleeWeapon::ClearClipModel( void )
 	m_ClipOffset = vec3_zero;
 	m_ClipRotation = mat3_identity;
 	m_bClipAxAlign = true;
-	m_bClipMaintainPitch = false;
+	m_bClipYawOnly = false;
 	m_ClipPitchAngle = 0.0f;
 }
 
@@ -316,11 +316,17 @@ void CMeleeWeapon::Think( void )
 
 		// option to maintain pitch relative to world
 		// (only implemented for parries for now)
-		if( m_bClipMaintainPitch )
+		if( m_bClipYawOnly )
 		{
 			idAngles tempAng = CMaxis.ToAngles();
-			tempAng.pitch = m_ClipPitchAngle;
+			// idAngles pitchAng;
+			// pitchAng.Zero();
+			// pitchAng.pitch = m_ClipPitchAngle;
+			tempAng.pitch = 0;
+			tempAng.roll = 0;
 			CMaxis = tempAng.ToMat3();
+			// CMaxis = pitchAng.ToMat3() * CMaxis;
+			// CMaxis = mat3_identity;
 		}
 
 		// Is id = 0 correct here, or will that cause problems with
@@ -331,7 +337,8 @@ void CMeleeWeapon::Think( void )
 			idClipModel *pClip;
 			if( m_WeapClip )
 			{
-				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation );
+				// m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation );
+				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis );
 				pClip = m_WeapClip;
 			}
 			else
@@ -342,7 +349,7 @@ void CMeleeWeapon::Think( void )
 			{
 				collisionModelManager->DrawModel
 					(
-						pClip->Handle(), GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation,
+						pClip->Handle(), GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis,
 						gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY 
 					);
 			}
@@ -982,7 +989,7 @@ void CMeleeWeapon::SetupClipModel( )
 	m_ClipOffset = spawnArgs.GetVector( va("%s_cm_offset_%s", APrefix, AName) );
 	idAngles tempAng = spawnArgs.GetAngles( va("%s_cm_angles_%s", APrefix, AName) );
 	m_ClipRotation = tempAng.ToMat3();
-	m_bClipMaintainPitch = spawnArgs.GetBool( va("%s_cm_maintain_pitch_%s", APrefix, AName) );
+	m_bClipYawOnly = spawnArgs.GetBool( va("%s_cm_yaw_only_%s", APrefix, AName) );
 	m_ClipPitchAngle = spawnArgs.GetFloat( va("%s_cm_pitch_angle_%s", APrefix, AName) );
 
 	// Override the default CONTENTS_SOLID on moveables (we don't want the player to run into their own parries!)
