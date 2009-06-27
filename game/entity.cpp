@@ -6192,7 +6192,7 @@ void idEntity::Event_CopyBind( idEntity* other )
 		Bind( master, true );
 
 		// greebo: If the bind master is static, set the solid for team flag
-		if (master->GetPhysics()->IsType(idPhysics_Static::Type))
+		if (master && master->GetPhysics()->IsType(idPhysics_Static::Type))
 		{
 			fl.solidForTeam = true;
 		}
