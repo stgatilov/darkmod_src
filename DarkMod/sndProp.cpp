@@ -547,9 +547,9 @@ void CsndProp::Propagate
 		else
 		{
 			compMask.m_bits.same = ( testAI->team == mteam );
-			compMask.m_bits.friendly = gameLocal.m_RelationsManager->IsFriend( testAI->team, mteam );
-			compMask.m_bits.neutral = gameLocal.m_RelationsManager->IsNeutral( testAI->team, mteam );
-			compMask.m_bits.enemy = gameLocal.m_RelationsManager->IsEnemy( testAI->team, mteam );
+			compMask.m_bits.friendly = testAI->IsFriend(maker);
+			compMask.m_bits.neutral = testAI->IsNeutral(maker);
+			compMask.m_bits.enemy = testAI->IsEnemy(maker);
 
 			// do the comparison
 			if ( tmask.m_field & compMask.m_field )
