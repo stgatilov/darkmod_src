@@ -45,6 +45,8 @@ public:
 	virtual void OnVisualAlert(idActor* enemy);
 	virtual void OnAudioAlert();
 
+	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

@@ -80,6 +80,12 @@ void CombatState::OnAudioAlert()
 	}
 }
 
+
+void CombatState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
+{
+	// angua: ignore other people during combat
+}
+
 void CombatState::Init(idAI* owner)
 {
 	// Init base class first
