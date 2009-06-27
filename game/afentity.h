@@ -361,6 +361,11 @@ protected:
 	virtual void			RestoreAddedEnts( void );
 
 	/**
+	* Generates constraints for added entities, intended to be called on ragdoll start if ents were added before ragdoll start
+	**/
+	virtual void			GenerateAddedEntConstraints( void );
+
+	/**
 	* Set the linear and angular velocities of a particular body given by ID argument
 	* If the ID is invalid, no velocity is set.
 	**/

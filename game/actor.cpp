@@ -2094,6 +2094,9 @@ bool idActor::StartRagdoll( void ) {
 	// start using the AF
 	af.StartFromCurrentPose( spawnArgs.GetInt( "velocityTime", "0" ) );
 
+	// ishtvan: Establish AF constraints for any AF bodies of bound entities
+	GenerateAddedEntConstraints();
+
 	slomoStart = MS2SEC( gameLocal.time ) + spawnArgs.GetFloat( "ragdoll_slomoStart", "-1.6" );
 	slomoEnd = MS2SEC( gameLocal.time ) + spawnArgs.GetFloat( "ragdoll_slomoEnd", "0.8" );
 
