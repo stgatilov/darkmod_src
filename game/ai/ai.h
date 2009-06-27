@@ -1556,7 +1556,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					TriggerParticles( const char *jointName );
 
 	// AI script state management
-	void					LinkScriptVariables( void );
+	virtual void			LinkScriptVariables( void );
 	virtual void			UpdateScript(); // overrides idActor::UpdateScript
 
 	// Returns true if the current enemy can be reached

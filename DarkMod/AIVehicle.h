@@ -20,6 +20,19 @@
  * Update: Players can now control them without being bound to them,
  * e.g., controlling them from a horse-drawn coach
  */
+
+/**
+* Contains information for a given vehicle speed/animation
+**/
+struct SAIVehicleSpeed
+{
+	idStr	Anim; // animation to play at this speed
+	float	MinAnimRate; // anim rate modifier when we just barely switch into this speed
+	float	MaxAnimRate; // anim rate modifier when we are about to switch to higher speed
+	float	NextSpeedFrac; // fraction of max control speed at which we switch to the NEXT speed
+};
+
+
 class CAIVehicle : public idAI {
 public:
 	CLASS_PROTOTYPE( CAIVehicle );
@@ -69,6 +82,17 @@ public:
 	**/
 	void					Event_ClearController( void );
 	void					Event_FrobRidable(idPlayer *player);
+	/**
+	* Get the current movement animation name if controlled
+	**/
+	void					Event_GetMoveAnim( void );
+
+	/** Overload idAI::LinkScriptVariables to link new variables **/
+	virtual void			LinkScriptVariables( void );
+
+public:
+	/** Tell scripts we are under player control **/
+	idScriptBool			AI_CONTROLLED;
 
 protected:
 	idEntityPtr<idPlayer>	m_Controller;
@@ -84,6 +108,10 @@ protected:
 	**/
 	float					m_CurAngle;
 	/**
+	* Current leg animation (set by requested move speed)
+	**/
+	idStr					m_CurMoveAnim;
+	/**
 	* Requested speed, as a fraction of max speed
 	**/
 	float					m_SpeedFrac;
@@ -95,21 +123,12 @@ protected:
 	* Assuming a constant acceleration, how many seconds does it take to get to max speed?
 	**/
 	float					m_SpeedTimeToMax;
-	/**
-	* Max reverse speed as a fraction of max forward speed
-	**/
-	float					m_MaxReverseSpeed;
-	/**
-	* Animation rate modifiers, ranging from min at the slowest speed to max
-	**/
-	float					m_MinWalkAnimRate;
-	float					m_MaxWalkAnimRate;
-	float					m_MinRunAnimRate;
-	float					m_MaxRunAnimRate;
-	/**
-	* Speed control fraction point at which we transition from walk to run animation
-	**/
-	float					m_WalkToRunSpeedFrac;
+
+	// Arbitrary number of speeds
+	idList<SAIVehicleSpeed> m_Speeds;
+
+	// animation to play when jumping (no jumping if this is empty) NYI!
+	idStr					m_JumpAnim;
 };
 
 

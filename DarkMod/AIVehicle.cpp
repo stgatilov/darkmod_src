@@ -24,17 +24,20 @@
 const idEventDef EV_SetController( "setController", "e" );
 const idEventDef EV_ClearController( "clearController" );
 const idEventDef EV_FrobRidable( "frobRidable", "e" );
+const idEventDef EV_GetMoveAnim( "getMoveAnim", NULL, 's' );
 
 CLASS_DECLARATION( idAI, CAIVehicle )
 	EVENT( EV_SetController,	CAIVehicle::Event_SetController )
 	EVENT( EV_ClearController,	CAIVehicle::Event_ClearController )
 	EVENT( EV_FrobRidable,		CAIVehicle::Event_FrobRidable )
+	EVENT( EV_GetMoveAnim,		CAIVehicle::Event_GetMoveAnim )
 
 END_CLASS
 
 CAIVehicle::CAIVehicle( void )
 {
 	m_Controller			= NULL;
+	AI_CONTROLLED			= false;
 	m_RideJoint		= INVALID_JOINT;
 	m_RideOffset.Zero();
 	m_RideAngles.Zero();
@@ -43,14 +46,11 @@ CAIVehicle::CAIVehicle( void )
 	m_SteerSpeed		= 0.0f;
 	m_SpeedFrac			= 0.0f;
 	m_SpeedTimeToMax	= 0.0f;
-	m_MaxReverseSpeed	= 0.0f;
 
-	m_MinWalkAnimRate	= 0.0f;
-	m_MaxWalkAnimRate	= 0.0f;
-	m_MinRunAnimRate	= 0.0f;
-	m_MaxRunAnimRate	= 0.0f;
+	m_CurMoveAnim.Clear();
+	m_JumpAnim.Clear();
 
-	m_WalkToRunSpeedFrac	= 0.0f;
+	m_Speeds.Clear();
 }
 
 CAIVehicle::~CAIVehicle( void )
@@ -66,13 +66,18 @@ void CAIVehicle::Spawn( void )
 	spawnArgs.GetVector("ride_offset", "0 0 0", m_RideOffset);
 	spawnArgs.GetAngles("ride_angles", "0 0 0", m_RideAngles);
 	spawnArgs.GetFloat("time_to_max_speed", "2.0", m_SpeedTimeToMax);
-	spawnArgs.GetFloat("max_reverse_speed", "1.0", m_MaxReverseSpeed);
-
-	spawnArgs.GetFloat("min_walk_anim_rate", "1.0", m_MinWalkAnimRate);
-	spawnArgs.GetFloat("max_walk_anim_rate", "1.0", m_MaxWalkAnimRate);
-	spawnArgs.GetFloat("min_run_anim_rate", "1.0", m_MinRunAnimRate);
-	spawnArgs.GetFloat("max_run_anim_rate", "1.0", m_MaxRunAnimRate);
-	spawnArgs.GetFloat("walk_to_run_speed", "0.5", m_WalkToRunSpeedFrac);
+	
+	m_Speeds.Clear();
+	for( int i=0; spawnArgs.FindKey(va("speed_%d_anim",i)) != NULL; i++ )
+	{
+		SAIVehicleSpeed speed;
+		speed.Anim = spawnArgs.GetString(va("speed_%d_anim",i));
+		speed.MinAnimRate = spawnArgs.GetFloat(va("speed_%d_min_rate",i),"1.0");
+		speed.MaxAnimRate = spawnArgs.GetFloat(va("speed_%d_max_rate",i),"1.0");
+		speed.NextSpeedFrac = spawnArgs.GetFloat(va("speed_%d_next_speed_control_frac","1.0"));
+		
+		m_Speeds.Append(speed);
+	}
 
 	m_RideJoint = animator.GetJointHandle( JointName.c_str() );
 
@@ -91,13 +96,15 @@ void CAIVehicle::Save(idSaveGame *savefile) const
 	savefile->WriteFloat( m_SpeedFrac );
 	savefile->WriteFloat( m_SteerSpeed );
 	savefile->WriteFloat( m_SpeedTimeToMax );
-	savefile->WriteFloat( m_MaxReverseSpeed );
 
-	savefile->WriteFloat( m_MinWalkAnimRate );
-	savefile->WriteFloat( m_MaxWalkAnimRate );
-	savefile->WriteFloat( m_MinRunAnimRate );
-	savefile->WriteFloat( m_MaxRunAnimRate );
-	savefile->WriteFloat( m_WalkToRunSpeedFrac );
+	savefile->WriteInt( m_Speeds.Num() );
+	for( int i=0; i < m_Speeds.Num(); i++ )
+	{
+		savefile->WriteString( m_Speeds[i].Anim );
+		savefile->WriteFloat( m_Speeds[i].MinAnimRate );
+		savefile->WriteFloat( m_Speeds[i].MaxAnimRate );
+		savefile->WriteFloat( m_Speeds[i].NextSpeedFrac );
+	}
 }
 
 void CAIVehicle::Restore( idRestoreGame *savefile )
@@ -112,13 +119,19 @@ void CAIVehicle::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat( m_SpeedFrac );
 	savefile->ReadFloat( m_SteerSpeed );
 	savefile->ReadFloat( m_SpeedTimeToMax );
-	savefile->ReadFloat( m_MaxReverseSpeed );
 
-	savefile->ReadFloat( m_MinWalkAnimRate );
-	savefile->ReadFloat( m_MaxWalkAnimRate );
-	savefile->ReadFloat( m_MinRunAnimRate );
-	savefile->ReadFloat( m_MaxRunAnimRate );
-	savefile->ReadFloat( m_WalkToRunSpeedFrac );
+	m_Speeds.Clear();
+	int num;
+	savefile->ReadInt( num );
+	for( int i=0; i < num; i++ )
+	{
+		SAIVehicleSpeed speed;
+		savefile->ReadString( speed.Anim );
+		savefile->ReadFloat( speed.MinAnimRate );
+		savefile->ReadFloat( speed.MaxAnimRate );
+		savefile->ReadFloat( speed.NextSpeedFrac );
+		m_Speeds.Append( speed );
+	}
 }
 
 void CAIVehicle::PlayerFrob( idPlayer *player ) 
@@ -174,6 +187,8 @@ void CAIVehicle::SetController( idPlayer *player )
 
 		ClearEnemy();
 		m_bIgnoreAlerts = true;
+		AI_CONTROLLED = true;
+		AI_RUN = false; // want to let custom vehicle "walk" script pick the legs animation
 	}
 	else
 	{
@@ -182,7 +197,7 @@ void CAIVehicle::SetController( idPlayer *player )
 		m_SpeedFrac = 0.0f;
 
 		m_bIgnoreAlerts = false;
-		AI_RUN = false;
+		AI_CONTROLLED = false;
 
 		StopMove( MOVE_STATUS_DONE );
 	}
@@ -275,44 +290,37 @@ bool CAIVehicle::UpdateSpeed( void )
 		m_SpeedFrac -= DeltaVMag;
 
 	// TODO: Support walking backwards, needs AI base class changes?
-
+	// For now, only move forward
 	// m_SpeedFrac = idMath::ClampFloat( -m_MaxReverseSpeed, 1.0f, m_SpeedFrac );
 	m_SpeedFrac = idMath::ClampFloat( 0.0f, 1.0f, m_SpeedFrac );
 
-	// For now, only move forward
-	// bReturnVal = ( idMath::Fabs(m_SpeedFrac) > 0.0001f; )
 	if( m_SpeedFrac > 0.0001f )
 	{
 		bReturnVal = true;
 
-		// TODO: Continuously adjust speed using Crispy's code
-		// For now, just toggle run when we get to 50%
-		if( m_SpeedFrac > m_WalkToRunSpeedFrac )
+		for( int i=0; i < m_Speeds.Num(); i++ )
 		{
-			float animFrac = (m_SpeedFrac - m_WalkToRunSpeedFrac)/(1.0f - m_WalkToRunSpeedFrac);
-			float animRate = m_MinRunAnimRate + animFrac * (m_MaxRunAnimRate - m_MinRunAnimRate);
+			// nextfrac should default to idMath::Infinity when read from spawnargs
+			float NextFrac = m_Speeds[i].NextSpeedFrac;
+			if( m_SpeedFrac > NextFrac )
+				continue;
 
-			// TODO: Read anim name from spawnarg
-			const char *animName = "run";
+			float PrevFrac;
+			if( i > 0 )
+				PrevFrac = m_Speeds[i-1].NextSpeedFrac;
+			else
+				PrevFrac = 0;
 
-			int animNum = animator.GetAnim( animName );
+			float animFrac = (m_SpeedFrac - PrevFrac)/(NextFrac - PrevFrac);
+			float animRate = m_Speeds[i].MinAnimRate + animFrac * (m_Speeds[i].MaxAnimRate - m_Speeds[i].MinAnimRate);
+			m_CurMoveAnim = m_Speeds[i].Anim;
+
+			// update anim rate
+			int animNum = animator.GetAnim( m_CurMoveAnim.c_str() );
 			m_animRates[animNum] = animRate;
 			animator.CurrentAnim( ANIMCHANNEL_LEGS )->UpdatePlaybackRate( animNum, this );
 
-			AI_RUN = true;
-		}
-		else
-		{
-			float animFrac = m_SpeedFrac /m_WalkToRunSpeedFrac;
-			float animRate = m_MinWalkAnimRate + animFrac * (m_MaxWalkAnimRate - m_MinWalkAnimRate);
-			// TODO: Read anim name from spawnarg
-			const char *animName = "walk";
-
-			int animNum = animator.GetAnim( animName );
-			m_animRates[animNum] = animRate;
-			animator.CurrentAnim( ANIMCHANNEL_LEGS )->UpdatePlaybackRate( animNum, this );
-
-			AI_RUN = false;
+			break; // done, don't go on to higher speeds
 		}
 	}
 
@@ -329,5 +337,21 @@ void CAIVehicle::Event_SetController( idPlayer *player )
 void CAIVehicle::Event_ClearController( void )
 {
 	SetController( NULL );
+}
+
+void CAIVehicle::Event_GetMoveAnim( void )
+{
+	if( m_Controller.GetEntity() )
+		idThread::ReturnString(m_CurMoveAnim.c_str());
+	else
+		idThread::ReturnString("");
+}
+
+void CAIVehicle::LinkScriptVariables( void )
+{
+	// Call the base class first
+	idAI::LinkScriptVariables();
+
+	AI_CONTROLLED.LinkTo( scriptObject, "AI_CONTROLLED");
 }
 
