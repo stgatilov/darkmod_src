@@ -1360,18 +1360,12 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 	newBodID = GetAFPhysics()->AddBody( body );
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added to physics_AF with id %d.\r", newBodID);
 	
-	// only add AF constraints if ragdoll is already active, otherwise, wait until death/KO to add constraints
-	// via GenerateAddedEntConstraints()
-	// this fixes an error where constraints are initially correct but no longer correct on death/KO
-	// ARGH, not working as planned
-/*	if( af.IsActive() )
+	// ishtvan: Don't add the constraint while animating, wait until full ragdoll mode
+	if( af.IsActive() )
 	{
 		idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
 		GetAFPhysics()->AddConstraint( cf );
 	}
-*/
-	idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
-	GetAFPhysics()->AddConstraint( cf );
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
 
@@ -1501,7 +1495,7 @@ void idAFEntity_Base::RestoreAddedEnts( void )
 	}
 }
 
-void idAFEntity_Base::GenerateAddedEntConstraints( void )
+void idAFEntity_Base::UpdateAddedEntConstraints( void )
 {
 	for( int i=0; i < m_AddedEnts.Num(); i++ )
 	{
@@ -1509,6 +1503,9 @@ void idAFEntity_Base::GenerateAddedEntConstraints( void )
 		idAFBody *body = GetAFPhysics()->GetBody( AddName.c_str() );
 		idAFBody *bodyExist = GetAFPhysics()->GetBody( m_AddedEnts[i].AddedToBody );
 
+		// get the AF bodies in their most recent position (just before ragdoll start)
+		af.ChangePose( this, gameLocal.time );
+		// add a constraint for the current position
 		idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
 		GetAFPhysics()->AddConstraint( cf );
 	}

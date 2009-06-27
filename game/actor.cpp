@@ -2091,12 +2091,11 @@ bool idActor::StartRagdoll( void ) {
 	// disable the monster bounding box
 	GetPhysics()->DisableClip();
 
+	// ishtvan: Establish AF constraints for any AF bodies of bound entities
+	UpdateAddedEntConstraints();
+
 	// start using the AF
 	af.StartFromCurrentPose( spawnArgs.GetInt( "velocityTime", "0" ) );
-
-	// ishtvan: Establish AF constraints for any AF bodies of bound entities
-	// commented out, not working as planned
-	// GenerateAddedEntConstraints();
 
 	slomoStart = MS2SEC( gameLocal.time ) + spawnArgs.GetFloat( "ragdoll_slomoStart", "-1.6" );
 	slomoEnd = MS2SEC( gameLocal.time ) + spawnArgs.GetFloat( "ragdoll_slomoEnd", "0.8" );
