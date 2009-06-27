@@ -112,13 +112,21 @@ void IdleSleepState::Init(idAI* owner)
 void IdleSleepState::Think(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
-	idStr waitState = owner->WaitState();
 
 	if (_startSleeping && owner->GetMoveType() == MOVETYPE_ANIM)
 	{
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
+			if (owner->spawnArgs.GetBool("lay_down_left", "1"))
+			{
+				owner->AI_LAY_DOWN_LEFT = true;
+			}
+			else
+			{
+				owner->AI_LAY_DOWN_LEFT = false;
+			}
+
 			owner->LayDown();
 		}
 	}

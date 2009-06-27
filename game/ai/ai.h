@@ -494,6 +494,10 @@ public:
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_CREEP;
 
+	// angua: this determines whether the AI should lay down to the left or to the right after sitting down
+	// gets read as spawn arg from the path_sleep entity
+	idScriptBool			AI_LAY_DOWN_LEFT;
+
 	// greebo: This is to tell the scripts which idle animation should be played next in the CustomIdleAnim state
 	idStr					m_NextIdleAnim;
 
@@ -1173,6 +1177,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					AnimMove( void );
 	void					SlideMove( void );
 	void					SittingMove();
+	void					LayDownMove();
 	void					AdjustFlyingAngles( void );
 	void					AddFlyBob( idVec3 &vel );
 	void					AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos );

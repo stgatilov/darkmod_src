@@ -44,6 +44,15 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	PathTask::Init(owner, subsystem);
 
+	if(_path.GetEntity()->spawnArgs.GetBool("lay_down_left", "1"))
+	{
+		owner->AI_LAY_DOWN_LEFT = true;
+	}
+	else
+	{
+		owner->AI_LAY_DOWN_LEFT = false;
+	}
+
 	if (owner->GetMoveType() == MOVETYPE_ANIM)
 	{
 		owner->LayDown();

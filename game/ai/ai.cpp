@@ -1480,6 +1480,8 @@ void idAI::Spawn( void )
 	AI_RUN = false;
 	AI_CREEP = false;
 
+	AI_LAY_DOWN_LEFT = true;
+
 	AI_HEARDSOUND = false;
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
@@ -2056,7 +2058,7 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				SittingMove();
+				LayDownMove();
 				break;
 
 			case MOVETYPE_GET_UP :
@@ -2073,7 +2075,7 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				SittingMove();
+				LayDownMove();
 				break;
 
 
@@ -2315,6 +2317,8 @@ void idAI::LinkScriptVariables( void )
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH");
 	AI_RUN.LinkTo(				scriptObject, "AI_RUN");
 	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP");
+
+	AI_LAY_DOWN_LEFT.LinkTo(	scriptObject, "AI_LAY_DOWN_LEFT");
 }
 
 /*
@@ -3437,6 +3441,18 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy ) {
 		return true;
 	}
 
+	if (GetMoveType() == MOVETYPE_SIT 
+		|| GetMoveType() == MOVETYPE_SLEEP 
+		|| GetMoveType() == MOVETYPE_SIT_DOWN 
+		|| GetMoveType() == MOVETYPE_GET_UP 
+		|| GetMoveType()== MOVETYPE_LAY_DOWN
+		|| GetMoveType()== MOVETYPE_GET_UP_FROM_LYING)
+	{
+		GetUp();
+		return true;
+	}
+
+
 	idVec3 org = pos;
 	move.toAreaNum = 0;
 	aasPath_t path;
@@ -3476,10 +3492,6 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy ) {
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
 
-	if (GetMoveType() == MOVETYPE_SIT || GetMoveType() == MOVETYPE_SLEEP)
-	{
-		GetUp();
-	}
 
 	return true;
 }
@@ -4697,6 +4709,51 @@ void idAI::SittingMove()
 		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 		DrawRoute();
 	}
+}
+
+
+void idAI::LayDownMove()
+{
+	idVec3				goalDelta;
+	idVec3				newDest;
+	idVec3 delta;
+
+	idVec3 oldorigin(physicsObj.GetOrigin());
+	idMat3 oldaxis(viewAxis);
+
+	AI_BLOCKED = false;
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
+	}
+
+	monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
+
+	AI_ONGROUND = physicsObj.OnGround();
+
+	GetMoveDelta( oldaxis, viewAxis, delta );
+
+	physicsObj.SetDelta( delta );
+	physicsObj.ForceDeltaMove( disableGravity );
+
+	RunPhysics();
+
+	const idVec3& org = physicsObj.GetOrigin();
+	if (oldorigin != org) {
+		TouchTriggers();
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		DrawRoute();
+	}
+
+
+
+
+
 }
 
 
