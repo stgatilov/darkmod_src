@@ -71,6 +71,12 @@ private:
 	ModInfo GetModInfo(const idStr& modName);
 	ModInfo GetModInfo(int modIndex);
 
+	// Convenience method which copies a file from <source> to <dest>
+	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
+	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
+	bool DoCopyFile(const fs::path& source, const fs::path& dest, bool overwrite = false);
+
+private:
 	// The list of available mods
 	idList<idStr> _modsAvailable; 
 

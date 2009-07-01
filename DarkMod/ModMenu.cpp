@@ -612,6 +612,40 @@ fs::path CModMenu::GetDarkmodPath()
 	return fs::path(g_Global.GetDarkmodPath());
 }
 
+bool CModMenu::DoCopyFile(const fs::path& source, const fs::path& dest, bool overwrite)
+{
+	if (overwrite)
+	{
+		try
+		{
+			// According to docs, remove() doesn't throw if file doesn't exist
+			fs::remove(dest);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Destination file %s already exists, has been removed before copying.\r", dest.string().c_str());
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			// Don't care about removal error
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing destination file %s: %s\r", dest.string().c_str(), e.what());
+		}
+	}
+
+	// Copy the source file to the destination
+	try
+	{
+		fs::copy_file(source, dest);
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", dest.string().c_str());
+
+		return true;
+	}
+	catch (fs::basic_filesystem_error<fs::path>& e)
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception while coyping file from %s to %s: %s\r", 
+			source.string().c_str(), dest.string().c_str(), e.what());
+
+		return false;
+	}
+}
+
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 {
 	// Path to the parent directory
@@ -632,7 +666,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	gui->SetStateString("modInstallProgressText", "Installing FM Package\n\n" + info.title);
 	gui->HandleNamedEvent("OnModInstallationStart");
 
-	// Ensure that the target folder exists (idFileSystem::CopyFile requires this)
+	// Ensure that the target folder exists
 	fs::path targetFolder = parentPath / modDirName.c_str();
 
 	if (!fs::create_directory(targetFolder))
@@ -658,30 +692,10 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
 
 		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
-		//fileSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
+		//fileeSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
 
-		// Make sure any target file with the same name is removed beforehand
-		try
-		{
-			fs::remove(targetFile);
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target file %s was existing, successfully removed.\r", targetFile.string().c_str());
-		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
-		{
-			// Don't care about removal error
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing target file %s: %s\r", targetFile.string().c_str(), e.what());
-		}
-
-		// Copy the PK4 to the target folder
-		try
-		{
-			fs::copy_file(pk4fileOsPath, targetFile);
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", targetFile.string().c_str());
-		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
-		{
-			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", targetFile.string().c_str(), e.what());
-		}
+		// Copy the PK4 file and make sure any target file with the same name is removed beforehand
+		DoCopyFile(pk4fileOsPath, targetFile, true);
 	}
 
 	fileSystem->FreeFileList(pk4Files);
@@ -706,24 +720,27 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
 
-	// Check if the DoomConfig.cfg already exists in the mod folder
+	// Assemble the path to the FM's DoomConfig.cfg
 	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
 	
-	// Always copy the DoomConfig.cfg from darkmod/ to the new mod/
-	// Remove any DoomConfig.cfg that might exist there beforehand
-	if (fs::exists(doomConfigPath))
+	// Check if we should synchronise DoomConfig.cfg files
+	if (cv_tdm_fm_sync_config_files.GetBool())
 	{
-		fs::remove(doomConfigPath);
-	}
+		// Yes, sync DoomConfig.cfg
 
-	try
-	{
-		fs::copy_file(darkmodPath / "DoomConfig.cfg", doomConfigPath);
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", doomConfigPath.string().c_str());
+		// Always copy the DoomConfig.cfg from darkmod/ to the new mod/
+		// Remove any DoomConfig.cfg that might exist there beforehand
+		DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath, true);
 	}
-	catch (fs::basic_filesystem_error<fs::path>& e)
+	else
 	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", doomConfigPath.string().c_str(), e.what());
+		// No, don't sync DoomConfig.cfg, but at least copy a basic one over there if it doesn't exist
+		if (!fs::exists(doomConfigPath))
+		{
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("DoomConfig.cfg not found in FM folder, copy over from darkmod.\r");
+
+			DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath);
+		}
 	}
 
 	// Check if the config.spec file already exists in the mod folder
@@ -731,15 +748,7 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	if (!fs::exists(configSpecPath))
 	{
 		// Copy the config.spec file from darkmod/ to the new mod/
-		try
-		{
-			fs::copy_file(darkmodPath / "config.spec", configSpecPath);
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("File successfully copied to %s.\r", configSpecPath.string().c_str());
-		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
-		{
-			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception when coyping target file %s: %s\r", configSpecPath.string().c_str(), e.what());
-		}
+		DoCopyFile(darkmodPath / "config.spec", configSpecPath);
 	}
 
 	gui->HandleNamedEvent("OnModInstallationFinished");
