@@ -4731,6 +4731,7 @@ void idAI::LayDownMove()
 
 	AI_ONGROUND = physicsObj.OnGround();
 
+	// angua: Let the animation move the origin onto the bed
 	GetMoveDelta( oldaxis, viewAxis, delta );
 
 	physicsObj.SetDelta( delta );
@@ -7967,7 +7968,9 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		psychLoud *= GetAcuity("aud");
 
-		if (IsEnemy(m_AlertedByActor.GetEntity()))
+		// angua: the actor who produced this noise is either unknown or an enemy
+		// alert now
+		if (!m_AlertedByActor.GetEntity() || IsEnemy(m_AlertedByActor.GetEntity()))
 		{
 			AlertAI( "aud", psychLoud );
 
