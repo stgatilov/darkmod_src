@@ -230,6 +230,11 @@ void CombatState::Think(idAI* owner)
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 		owner->ClearEnemy();
 		owner->GetMind()->EndState();
+		
+		owner->movementSubsystem->ClearTasks();
+		owner->senseSubsystem->ClearTasks();
+		owner->actionSubsystem->ClearTasks();
+
 		// ishtvan: swap the expanded head model back in when exiting state
 		owner->SwapHeadAFCM( true );
 		return;
