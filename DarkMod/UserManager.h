@@ -17,6 +17,7 @@ public:
 
 	int GetNumUsers();
 
+	// Adds user to the list, sorted by alert level
 	void AddUser(idActor*);
 
 	void RemoveUser(idActor*);
