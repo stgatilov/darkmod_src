@@ -51,6 +51,9 @@ private:
 	// Installs the given mod
 	void InstallMod(int modIndex, idUserInterface* gui);
 
+	// Uninstalls the current FM
+	void UninstallMod(idUserInterface* gui);
+
 	// Find out which mod is currently installed (updates curMod member)
 	void InitCurrentMod();
 

@@ -172,6 +172,10 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		_briefingPage--;
 		DisplayBriefingPage(gui);
 	}
+	else if (cmd == "uninstallMod")
+	{
+		UninstallMod(gui);
+	}
 }
 
 // Displays the current page of briefing text
@@ -752,6 +756,33 @@ void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 	}
 
 	gui->HandleNamedEvent("OnModInstallationFinished");
+}
+
+void CModMenu::UninstallMod(idUserInterface* gui)
+{
+	// To uninstall the current FM, just clear the FM name in currentfm.txt	
+
+	// Path to the darkmod directory
+	fs::path darkmodPath = GetDarkmodPath();
+
+	// Path to file that holds the current FM name
+	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to clear current FM name in %s\r", currentFMPath.file_string().c_str());
+
+	try
+	{
+		// According to docs, remove() doesn't throw if file doesn't exist
+		fs::remove(currentFMPath);
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Current FM file removed: %s.\r", currentFMPath.string().c_str());
+	}
+	catch (fs::basic_filesystem_error<fs::path>& e)
+	{
+		// Don't care about removal error
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s: %s\r", currentFMPath.string().c_str(), e.what());
+	}
+
+	gui->HandleNamedEvent("OnModUninstallFinished");
 }
 
 void CModMenu::RestartGame()
