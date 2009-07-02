@@ -10041,9 +10041,9 @@ bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
 		// this door should really be closed
 		return true;
 	}
-	if (AI_AlertLevel >= thresh_4)
+	if (AI_AlertLevel >= thresh_3)
 	{
-		// don't close other doors while agitated searching
+		// don't close other doors while searching
 		return false;
 	}
 
