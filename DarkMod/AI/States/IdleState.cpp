@@ -195,7 +195,10 @@ void IdleState::InitialiseMovement(idAI* owner)
 	}
 
 	memory.currentPath = path;
-	owner->movementSubsystem->PushTask(patrolTask);
+	if (path)
+	{
+		owner->movementSubsystem->PushTask(patrolTask);
+	}
 
 	if (path == NULL && lastPath == NULL)
 	{
@@ -207,8 +210,9 @@ void IdleState::InitialiseMovement(idAI* owner)
 			memory.idlePosition = owner->GetPhysics()->GetOrigin();
 			memory.idleYaw = owner->GetCurrentYaw();
 		}
-		else
+		else if (owner->GetMoveType() == MOVETYPE_ANIM)
 		{
+			// angua: don't do this when we are sitting or sleeping
 			// We already HAVE an idle position set, this means that we are
 			// supposed to be there, let's move
 			owner->movementSubsystem->PushTask(
