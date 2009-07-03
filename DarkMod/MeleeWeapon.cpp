@@ -166,9 +166,8 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	// If we started out in something we hit, we're already done
 	if ( tr.fraction < 1.0f )
 	{
-		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Attack clipmodel started out inside something it hits.\r");
-
-		idEntity *ent = gameLocal.entities[tr.c.entityNum];
+		idEntity *other = gameLocal.entities[tr.c.entityNum];
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Attack clipmodel started out inside entity %s.\r", other->name.c_str());
 
 		// hack to fix crashes in closed Id code, set material hit to NULL
 		// AI don't SEEM to crash and we want to know armour type was hit, so exception for AI:
@@ -186,21 +185,41 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		tr.c.normal = -viewAxis[0];
 
 		// hit a parry (make sure we don't hit our own other melee weapons)
-		if( ent->IsType(CMeleeWeapon::Type)
-			&& static_cast<CMeleeWeapon *>(ent)->GetOwner()
-			&& static_cast<CMeleeWeapon *>(ent)->GetOwner() != owner )
+		if( other->IsType(CMeleeWeapon::Type)
+			&& static_cast<CMeleeWeapon *>(other)->GetOwner()
+			&& static_cast<CMeleeWeapon *>(other)->GetOwner() != owner )
 		{
 			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
 				("MeleeWeapon: Started out hitting a melee parry put up by %s\r", 
-				  static_cast<CMeleeWeapon *>(ent)->GetOwner()->name.c_str() );
+				  static_cast<CMeleeWeapon *>(other)->GetOwner()->name.c_str() );
 			// Test our attack against their parry
-			TestParry( static_cast<CMeleeWeapon *>(ent), idVec3(1,0,0), &tr );
+			TestParry( static_cast<CMeleeWeapon *>(other), idVec3(1,0,0), &tr );
 			return;
 		}
 
-		idEntity *other = gameLocal.entities[tr.c.entityNum];
-		// don't hit friendly actors
-		if( !( owner->IsType(idAI::Type) && (other->IsType(idActor::Type) && static_cast<idAI *>(owner)->IsEnemy(other)) ) )
+		// need to get attachments' owners to check enemy status (duplicated code from checkattack :( )
+		idActor *AttachOwner(NULL);
+		idEntity *OthBindMaster(NULL);
+		if( other->IsType(idAFAttachment::Type) )
+		{
+			idEntity *othBody = static_cast<idAFAttachment *>(other)->GetBody();
+			if( othBody->IsType(idActor::Type) )
+				AttachOwner = static_cast<idActor *>(othBody);
+		}
+		// Also check for any object bound to an actor (helmets, etc)
+		else if( (OthBindMaster = other->GetBindMaster()) != NULL
+					&& OthBindMaster->IsType(idActor::Type) )
+			AttachOwner = static_cast<idActor *>(OthBindMaster);
+
+		idActor *otherActor = NULL;
+		if( other->IsType(idActor::Type) )
+			otherActor = static_cast<idActor *>(other);
+		else if( AttachOwner )
+			otherActor = AttachOwner;
+
+		// don't hit friendly actors or ourselves, hit everything else
+		if( !( owner->IsType(idAI::Type) && otherActor
+				&& (!(static_cast<idAI *>(owner)->IsEnemy(otherActor)) || otherActor == owner) ) )
 		{
 			MeleeCollision( gameLocal.entities[tr.c.entityNum], idVec3(1,0,0), &tr, -1 );
 
@@ -338,7 +357,7 @@ void CMeleeWeapon::Think( void )
 			if( m_WeapClip )
 			{
 				// m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis * m_ClipRotation );
-				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis );
+				m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin() + m_ClipOffset, m_ClipRotation * CMaxis  );
 				pClip = m_WeapClip;
 			}
 			else
@@ -349,7 +368,7 @@ void CMeleeWeapon::Think( void )
 			{
 				collisionModelManager->DrawModel
 					(
-						pClip->Handle(), GetPhysics()->GetOrigin() + m_ClipOffset, CMaxis,
+						pClip->Handle(), GetPhysics()->GetOrigin() + m_ClipOffset, m_ClipRotation * CMaxis,
 						gameLocal.GetLocalPlayer()->GetEyePosition(), idMath::INFINITY 
 					);
 			}
