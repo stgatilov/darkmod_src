@@ -92,7 +92,7 @@ bool Conversation::CheckConditions()
 		// Get the actor
 		idAI* ai = GetActor(i);
 
-		if (ai != NULL && (ai->IsKnockedOut() || ai->health <= 0))
+		if (ai == NULL || ai->IsKnockedOut() || ai->health <= 0)
 		{
 			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is KO or dead!.\r", _actors[i].c_str(), _name.c_str());
 			return false;
