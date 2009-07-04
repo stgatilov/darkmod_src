@@ -4186,7 +4186,7 @@ void idAI::BlockedFailSafe( void ) {
 idAI::Turn
 =====================
 */
-void idAI::Turn( void ) {
+void idAI::Turn(const idVec3& pivotOffset) {
 	float diff;
 	float diff2;
 	float turnAmount;
@@ -4205,6 +4205,8 @@ void idAI::Turn( void ) {
 	if ( animflags.ai_no_turn ) {
 		return;
 	}
+
+	idVec3 startPos = viewAxis * pivotOffset;
 
 	if ( anim_turn_angles && animflags.anim_turn ) {
 		idMat3 rotateAxis;
@@ -4244,6 +4246,10 @@ void idAI::Turn( void ) {
 	}
 
 	viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+
+	idVec3 endPos = viewAxis * pivotOffset;
+
+	GetPhysics()->SetOrigin(GetPhysics()->GetOrigin() - idVec3(endPos - startPos));
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
@@ -4689,6 +4695,8 @@ void idAI::SittingMove()
 	AI_BLOCKED = false;
 
 	RunPhysics();
+
+	Turn(idVec3(-20,0,0));
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );

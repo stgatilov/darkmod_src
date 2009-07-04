@@ -1413,7 +1413,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// turning
 	bool					FacingIdeal( void );
-	void					Turn( void );
+	void					Turn(const idVec3& pivotOffset = idVec3(0,0,0));
 	bool					TurnToward( float yaw );
 	bool					TurnToward( const idVec3 &pos );
 	ID_INLINE float			GetCurrentYaw() { return current_yaw; }
