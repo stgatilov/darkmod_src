@@ -640,6 +640,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( anim_turn_yaw );
 	savefile->WriteFloat( anim_turn_amount );
 	savefile->WriteFloat( anim_turn_angles );
+	savefile->WriteVec3(sitting_turn_pivot);
 
 	savefile->WriteFloat(reachedpos_bbox_expansion);
 	savefile->WriteFloat(aas_reachability_z_tolerance);
@@ -951,6 +952,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( anim_turn_yaw );
 	savefile->ReadFloat( anim_turn_amount );
 	savefile->ReadFloat( anim_turn_angles );
+	savefile->ReadVec3(sitting_turn_pivot);
 
 	savefile->ReadFloat(reachedpos_bbox_expansion);
 	savefile->ReadFloat(aas_reachability_z_tolerance);
@@ -1347,6 +1349,8 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "projectile_height_to_distance_ratio",	"1", projectile_height_to_distance_ratio );
 
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
+
+	spawnArgs.GetVector("sitting_turn_pivot",	"-20 0 0",	sitting_turn_pivot);
 
 	reachedpos_bbox_expansion = spawnArgs.GetFloat("reachedpos_bbox_expansion", "0");
 	aas_reachability_z_tolerance = spawnArgs.GetFloat("aas_reachability_z_tolerance", "75");
@@ -4696,7 +4700,7 @@ void idAI::SittingMove()
 
 	RunPhysics();
 
-	Turn(idVec3(-20,0,0));
+	Turn(sitting_turn_pivot);
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
