@@ -267,16 +267,24 @@ void CFrobLock::Open()
 		// If we're unlocked, just ToggleOpen the targets
 		ToggleOpenTargets();
 	}
-	// If we have handles we want to tap them before the lock starts to open its targets
-	else if (m_Lockhandles.Num() > 0)
+	else // we're locked
 	{
-		// Relay the call to the handles, the OpenTargets() call will come back to us
-		for (int i = 0; i < m_Lockhandles.Num(); i++)
+		// If we have handles we want to tap them before the lock starts to open its targets
+		if (m_Lockhandles.Num() > 0)
 		{
-			CFrobLockHandle* handle = m_Lockhandles[i].GetEntity();
-			if (handle == NULL) continue;
+			// Relay the call to the handles, the OpenTargets() call will come back to us
+			for (int i = 0; i < m_Lockhandles.Num(); i++)
+			{
+				CFrobLockHandle* handle = m_Lockhandles[i].GetEntity();
+				if (handle == NULL) continue;
 
-			handle->Tap();
+				handle->Tap();
+			}
+		}
+		else
+		{
+			// No handles there to tap, emit the sound
+			FrobLockStartSound("snd_locked");
 		}
 	}
 }
