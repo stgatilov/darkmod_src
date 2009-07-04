@@ -69,7 +69,18 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 		_idleAnimationsTorso.Append(idStr(anims[i].c_str()));
 	}
 
-	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num()))
+	// Now read the anims for sitting AI
+	animStringList = owner->spawnArgs.GetString("idle_animations_sitting", "");
+	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+
+	// Copy the strings into the idList<idStr>
+	for (std::size_t i = 0; i < anims.size(); i++)
+	{
+		_idleAnimationsSitting.Append(idStr(anims[i].c_str()));
+	}
+
+
+	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() || _idleAnimationsSitting.Num()))
 	{
 		_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
 	}
@@ -106,7 +117,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && owner->GetMoveType() != MOVETYPE_SIT)
 			{
-				// AI is not walking, play animations affecting all channels
+				// AI is not walking or sitting, play animations affecting all channels
 				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
 
 				// If we have more than one anim, don't play the same anim twice
@@ -134,9 +145,36 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
 			}
-			else 
+			else if (owner->GetMoveType() == MOVETYPE_SIT)
 			{
-				// AI is walking or sitting, only use animations for the Torso channel
+				// AI is sitting, only use sitting animations on torso channel
+				int animIdx = gameLocal.random.RandomInt(_idleAnimationsSitting.Num());
+
+				// If we have more than one anim, don't play the same anim twice
+				while (animIdx == _lastIdleAnim && _idleAnimationsSitting.Num() > 1)
+				{
+					animIdx = gameLocal.random.RandomInt(_idleAnimationsSitting.Num());
+				}
+
+				_lastIdleAnim = animIdx;
+
+				const idStr& animName = _idleAnimationsSitting[animIdx];
+
+				// Check if the animation exists
+				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
+				{
+					gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
+					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
+					return true; // done with errors
+				}
+
+				owner->SetNextIdleAnim(animName);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
+
+			}
+			else
+			{
+				// AI is walking, only use animations for the Torso channel
 				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
 
 				// If we have more than one anim, don't play the same anim twice
@@ -197,6 +235,13 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 		savefile->WriteString(_idleAnimationsTorso[i].c_str());
 	}
 
+	savefile->WriteInt(_idleAnimationsSitting.Num());
+	for (int i = 0; i < _idleAnimationsSitting.Num(); i++)
+	{
+		savefile->WriteString(_idleAnimationsSitting[i].c_str());
+	}
+
+
 	savefile->WriteInt(_lastIdleAnim);
 }
 
@@ -220,6 +265,14 @@ void IdleAnimationTask::Restore(idRestoreGame* savefile)
 	{
 		savefile->ReadString(_idleAnimationsTorso[i]);
 	}
+
+	savefile->ReadInt(num);
+	_idleAnimationsSitting.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(_idleAnimationsSitting[i]);
+	}
+
 
 	savefile->ReadInt(_lastIdleAnim);
 }

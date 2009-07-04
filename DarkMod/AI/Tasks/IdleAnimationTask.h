@@ -28,6 +28,8 @@ class IdleAnimationTask :
 
 	idList<idStr> _idleAnimations;
 	idList<idStr> _idleAnimationsTorso;
+	idList<idStr> _idleAnimationsSitting;
+
 	int _idleAnimationInterval;
 
 	// The index of the last anim played (to avoid duplicates)
