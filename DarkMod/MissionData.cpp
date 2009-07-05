@@ -174,10 +174,10 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 }
 
 CMissionData::CMissionData() :
+	m_MissionDataLoadedIntoGUI(false),
 	m_mapFile(NULL),
 	m_PlayerTeam(0),
-	m_TotalGamePlayTime(0),
-	m_MissionDataLoadedIntoGUI(false)
+	m_TotalGamePlayTime(0)
 {
 	Clear();
 
