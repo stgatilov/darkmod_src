@@ -848,8 +848,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		return;
 	}
 
+	const CObjective& obj = m_Objectives[ind];
+
 	// Call the objective completion script (even for ongoing objectives)
-	function_t* pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript );
+	function_t* pScriptFun = gameLocal.program.FindFunction( obj.m_CompletionScript );
 	if (pScriptFun != NULL)
 	{
 		idThread* pThread = new idThread(pScriptFun);
@@ -864,7 +866,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	}
 
 	// Activate the completion target
-	const idStr& targetName = m_Objectives[ind].m_CompletionTarget;
+	const idStr& targetName = obj.m_CompletionTarget;
 	if (!targetName.IsEmpty())
 	{
 		idEntity* target = gameLocal.FindEntity(targetName);
@@ -882,7 +884,8 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 
 	// Only this objective is complete, not the entire mission
 	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
-	if (!m_Objectives[ind].m_bOngoing)
+	// greebo: Don't play sound or display message for invisible objectives
+	if (!obj.m_bOngoing && obj.m_bVisible)
 	{
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
@@ -894,9 +897,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 void CMissionData::Event_ObjectiveFailed(int ind)
 {
 	// play an objective failed sound for optional objectives?
+	const CObjective& obj = m_Objectives[ind];
 
 	// Call failure script
-	function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript );
+	function_t *pScriptFun = gameLocal.program.FindFunction( obj.m_FailureScript );
 	if (pScriptFun != NULL)
 	{
 		idThread *pThread = new idThread(pScriptFun);
@@ -908,7 +912,7 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	assert(player != NULL);
 
 	// Activate the failure target
-	const idStr& targetName = m_Objectives[ind].m_FailureTarget;
+	const idStr& targetName = obj.m_FailureTarget;
 	if (!targetName.IsEmpty())
 	{
 		idEntity* target = gameLocal.FindEntity(targetName);
@@ -924,10 +928,12 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 		}
 	}
 
-	player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
-
-	// greebo: notify the player
-	player->SendHUDMessage("Objective failed");
+	// greebo: Notify the player for visible objectives only
+	if (obj.m_bVisible)
+	{
+		player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
+		player->SendHUDMessage("Objective failed");
+	}
 
 	// Check for mission failure
 	bool missionFailed = false;
@@ -939,7 +945,7 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	else
 	{
 		// default logic: if the objective was mandatory, fail the mission
-		missionFailed = m_Objectives[ind].m_bMandatory;
+		missionFailed = obj.m_bMandatory;
 	}
 
 	if (missionFailed)
