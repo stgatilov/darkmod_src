@@ -2035,7 +2035,7 @@ void idAI::Think( void )
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
-				// moving not allowed, tunrning around sitting pivot
+				// moving not allowed, turning around sitting pivot
 				SittingMove();
 				CheckBlink();
 				break;
