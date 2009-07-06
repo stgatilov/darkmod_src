@@ -67,7 +67,7 @@ void IdleState::Init(idAI* owner)
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 	
-	if (owner->HasSeenEvidence())
+	if (owner->HasSeenEvidence() && !owner->spawnArgs.GetBool("disable_alert_idle", 0))
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
 		return;

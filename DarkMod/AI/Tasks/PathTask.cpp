@@ -55,6 +55,11 @@ void PathTask::NextPath()
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
 
+	if (owner == NULL)
+	{
+		return;
+	}
+
 	// Store the new path entity into the AI's mind
 	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
 	owner->GetMind()->GetMemory().lastPath = path;

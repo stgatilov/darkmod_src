@@ -1175,6 +1175,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					AnimMove( void );
 	void					SlideMove( void );
 	void					SittingMove();
+	void					NoTurnMove();
 	void					LayDownMove();
 	void					AdjustFlyingAngles( void );
 	void					AddFlyBob( idVec3 &vel );

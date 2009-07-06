@@ -2035,7 +2035,7 @@ void idAI::Think( void )
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
-				// moving and turning not allowed
+				// moving not allowed, tunrning around sitting pivot
 				SittingMove();
 				CheckBlink();
 				break;
@@ -2045,7 +2045,7 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				SittingMove();
+				NoTurnMove();
 				CheckBlink();
 				break;
 
@@ -2054,7 +2054,7 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				SittingMove();
+				NoTurnMove();
 				break;
 
 			case MOVETYPE_LAY_DOWN :
@@ -2070,7 +2070,7 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				SittingMove();
+				NoTurnMove();
 				CheckBlink();
 				break;
 
@@ -4722,6 +4722,37 @@ void idAI::SittingMove()
 		DrawRoute();
 	}
 }
+
+void idAI::NoTurnMove()
+{
+	idVec3 oldorigin = physicsObj.GetOrigin();
+	idMat3 oldaxis = viewAxis;
+
+	AI_BLOCKED = false;
+
+	RunPhysics();
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
+	}
+
+
+	AI_ONGROUND = physicsObj.OnGround();
+
+	const idVec3& org = physicsObj.GetOrigin();
+	if (oldorigin != org) {
+		TouchTriggers();
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		DrawRoute();
+	}
+
+}
+
 
 
 void idAI::LayDownMove()
