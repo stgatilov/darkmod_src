@@ -22,7 +22,9 @@ class Subsystem;
  * greebo: This is the basic declaration of a Task.
  * 
  * Tasks are attached to a subsystem, which act as "slots". 
- * Only one (arbitrary) task can be attached to each subsystem at once.
+ * Multiple tasks can be attached to each subsystem, which manages
+ * them in some sort of queue. Only one Task can be executed at once
+ * for each subsystem.
  *
  * A task needs to have a unique name and a Perform() method.
  */
@@ -32,7 +34,16 @@ protected:
 	// Each task has an owning entity
 	idEntityPtr<idAI> _owner;
 
+	// true if this task has been initialised
+	bool _initialised;
+
+	// Protected constructor, only subclasses may call this
+	Task() :
+		_initialised(false)
+	{}
+
 public:
+	
 	// Get the name of this task
 	virtual const idStr& GetName() const = 0;
 
@@ -45,6 +56,7 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem)
 	{
 		_owner = owner;
+		_initialised = true;
 	}
 
 	/**
@@ -62,11 +74,18 @@ public:
 	virtual void Save(idSaveGame* savefile) const
 	{
 		_owner.Save(savefile);
+		savefile->WriteBool(_initialised);
 	}
 
 	virtual void Restore(idRestoreGame* savefile)
 	{
 		_owner.Restore(savefile);
+		savefile->ReadBool(_initialised);
+	}
+
+	virtual bool IsInitialised()
+	{
+		return _initialised;
 	}
 };
 typedef boost::shared_ptr<Task> TaskPtr;

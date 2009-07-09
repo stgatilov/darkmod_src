@@ -129,8 +129,13 @@ bool Subsystem::FinishTask()
 		// Now remove the State from the queue
 		_taskQueue.pop_front();
 		
-		// Call the OnFinish event of the task
-		_recycleBin.back()->OnFinish(owner);
+		// Call the OnFinish event of the task, if appropriate
+		const TaskPtr& task = _recycleBin.back();
+
+		if (task->IsInitialised())
+		{
+			task->OnFinish(owner);
+		}
 
 		// Issue the "TaskFinished" signal to the MindState
 		owner->GetMind()->GetState()->OnSubsystemTaskFinished(owner, _id);
@@ -161,7 +166,12 @@ void Subsystem::SwitchTask(const TaskPtr& newTask)
 		_taskQueue.pop_front();
 
 		// Call the OnFinish event of the task
-		_recycleBin.back()->OnFinish(_owner.GetEntity());
+		const TaskPtr& task = _recycleBin.back();
+
+		if (task->IsInitialised())
+		{
+			task->OnFinish(_owner.GetEntity());
+		}
 	}
 
 	// Add the new task to the front
@@ -199,9 +209,14 @@ void Subsystem::ClearTasks()
 		_taskQueue.clear();
 
 		// Now call the OnFinish method. This might alter the original _taskQueue
-		for (TaskQueue::iterator i = _recycleBin.begin(); i != _recycleBin.end(); ++i)
+		for (TaskQueue::const_iterator i = _recycleBin.begin(); i != _recycleBin.end(); ++i)
 		{
-			(*i)->OnFinish(_owner.GetEntity());
+			Task& task = *(*i);
+
+			if (task.IsInitialised())
+			{
+				task.OnFinish(_owner.GetEntity());
+			}
 		}
 	}
 
