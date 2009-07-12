@@ -24,11 +24,11 @@ private:
 public:
 	CShopItem();
 
-	CShopItem(const char *id, 
-			  const char *name, 
-			  const char *description, 
+	CShopItem(const idStr& id, 
+			  const idStr& name, 
+			  const idStr& description, 
 			  int cost,
-			  const char *image, 
+			  const idStr& image, 
 			  int count, 
 			  bool persistent = false, 
 			  idEntity *entity = NULL, 
@@ -40,33 +40,33 @@ public:
 			  bool persistent = false);
 
 	// unique identifier for this item
-	const char *GetID() const;
+	const idStr& GetID() const;
 
 	// name of the item (for display)
-	const char *GetName() const;
+	const idStr& GetName() const;
 
 	// description of the item (for display)
-	const char *GetDescription() const;
+	const idStr& GetDescription() const;
 
 	// cost of the item
-	int GetCost( void );	
+	int GetCost();	
 
-	// modal name (for displaying) (TODO)
-	const char *GetImage() const;
+	// modal name (for displaying)
+	const idStr& GetImage() const;
 
 	// number of the items in this collection (number for sale,
 	// or number user has bought, or number user started with)
-	int GetCount( void );				
+	int GetCount();				
 
 	// whether the item can be carried to the next mission
-	bool GetPersistent(void);
+	bool GetPersistent();
 
 	// whether the item can dropped by the player from the starting items list
-	bool GetCanDrop(void);
+	bool GetCanDrop();
 	void SetCanDrop(bool canDrop);
 
 	// existing entity for this item
-	idEntity *GetEntity( void );				
+	idEntity *GetEntity();				
 
 	// modifies number of items
 	void ChangeCount( int amount );

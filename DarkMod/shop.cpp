@@ -18,74 +18,74 @@ CShopItem::CShopItem() :
 	canDrop(false)
 {}
 
-CShopItem::CShopItem(const char *id, const char *name, const char *description,
-					 int cost, const char *image, int count, bool persistent, idEntity *entity, bool canDrop) {
-	this->id = id;
-	this->name = name;
-	this->description = description;
-	this->cost = cost;
-	this->image = image;
-	this->count = count;
-	this->persistent = persistent;
-	this->entity = entity;
-	this->canDrop = canDrop;
-};
+CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _description,
+					 int _cost, const idStr& _image, int _count, bool _persistent, idEntity* _entity, bool _canDrop) :
+	id(_id),
+	name(_name),
+	description(_description),
+	cost(_cost),
+	image(_image),
+	count(_count),
+	entity(_entity),
+	persistent(_persistent),
+	canDrop(_canDrop)
+{}
 
-CShopItem::CShopItem(const CShopItem& item, int count, int cost, bool persistent) {
-	this->id = item.id;
-	this->name = item.name;
-	this->description = item.description;
-	this->cost = cost == 0 ? item.cost : cost;
-	this->image = item.image;
-	this->count = count;
-	this->persistent = persistent == 0 ? item.persistent : persistent;
-	this->entity = item.entity;
-	this->canDrop = item.canDrop;
-};
+CShopItem::CShopItem(const CShopItem& item, int _count, int _cost, bool _persistent) :
+	id(item.id),
+	name(item.name),
+	description(item.description),
+	cost(_cost == 0 ? item.cost : _cost),
+	image(item.image),
+	count(_count),
+	entity(item.entity),
+	persistent(_persistent == false ? item.persistent : _persistent),
+	canDrop(item.canDrop)
+{}
 
-const char *CShopItem::GetID(void) const {
+const idStr& CShopItem::GetID() const {
 	return this->id;
-};
+}
 
-const char *CShopItem::GetName(void) const {
+const idStr& CShopItem::GetName() const {
 	return this->name;
-};
+}
 
-const char *CShopItem::GetDescription(void) const {
+const idStr& CShopItem::GetDescription() const {
 	return this->description;
-};
+}
 
-const char *CShopItem::GetImage(void) const {
+const idStr& CShopItem::GetImage() const {
 	return this->image;
-};
+}
 
-int CShopItem::GetCost(void) {
+int CShopItem::GetCost() {
 	return this->cost;
-};
+}
 
-int CShopItem::GetCount(void) {
+int CShopItem::GetCount() {
 	return this->count;
-};
+}
 
-bool CShopItem::GetPersistent(void) {
+bool CShopItem::GetPersistent() {
 	return this->persistent;
-};
+}
 
-bool CShopItem::GetCanDrop(void) {
+bool CShopItem::GetCanDrop() {
 	return this->canDrop;
-};
+}
 
 void CShopItem::SetCanDrop(bool canDrop) {
 	this->canDrop = canDrop;
-};
+}
 
-idEntity *CShopItem::GetEntity(void) {
+idEntity *CShopItem::GetEntity() {
 	return this->entity;
-};
+}
 
 void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
-};
+}
 
 void CShopItem::Save(idSaveGame *savefile) const
 {
@@ -702,7 +702,7 @@ void CShop::SetGold(int gold)
 	this->gold = gold;
 }
 
-int CShop::GetGold(void)
+int CShop::GetGold()
 {
 	return this->gold;
 };
@@ -746,9 +746,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 			{
 				const CShopItemPtr& item = itemsForSale[forSaleTop + i];
 
-				name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-				desc = idStr(item->GetName()) + ": " + item->GetDescription();
-				image = idStr(item->GetImage());
+				name = item->GetName() + " (" + item->GetCount() + ")";
+				desc = item->GetName() + ": " + item->GetDescription();
+				image = item->GetImage();
 				available = item->GetCost() <= gold ? item->GetCount() : 0;
 				cost = idStr(item->GetCost()) + " GP ";
 			}
@@ -778,9 +778,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		if (purchasedTop + i < itemsPurchased.Num())
 		{
 			const CShopItemPtr& item = itemsPurchased[purchasedTop + i];
-			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-			desc = idStr(item->GetName()) + ": " + item->GetDescription();
-			image = idStr(item->GetImage());
+			name = item->GetName() + " (" + item->GetCount() + ")";
+			desc = item->GetName() + ": " + item->GetDescription();
+			image = item->GetImage();
 			available = 1; // sell item is always available
 			cost = idStr(item->GetCost()) + " GP ";
 		}
@@ -809,9 +809,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		if (startingTop + i < startingItems.Num())
 		{
 			const CShopItemPtr& item = startingItems[startingTop + i];
-			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-			desc = idStr(item->GetName()) + ": " + item->GetDescription();
-			image = idStr(item->GetImage());
+			name = item->GetName() + " (" + item->GetCount() + ")";
+			desc = item->GetName() + ": " + item->GetDescription();
+			image = item->GetImage();
 			available = item->GetCost() <= gold ? item->GetCount() : 0;
 			dropVisible = item->GetCanDrop();
 		}
