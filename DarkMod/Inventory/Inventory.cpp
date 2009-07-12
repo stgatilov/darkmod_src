@@ -320,13 +320,12 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		ent->SpawnAbsenceMarker();
 	}
 
-
 	if (returnValue != NULL)
 	{
 		// The item is a valid loot item, remove the entity and return
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added loot item to inventory: %s\r", ent->name.c_str());
 
-		// Remove the entity, it is a loot item (which vanish when added to the inventory)
+		// Remove the entity, it is a loot item (which vanishes when added to the inventory)
 		RemoveEntityFromMap(ent, true);
 
 		return returnValue;
@@ -458,6 +457,9 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 {
 	if (ent == NULL) return;
+
+	// greebo: Don't hide inexhaustible items
+	if (ent->spawnArgs.GetBool("inv_inexhaustible", "0")) return;
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Hiding entity from game: %s...\r", ent->name.c_str());
 
