@@ -6,6 +6,18 @@
 #include "MissionData.h"
 #include "./Inventory/Inventory.h"
 
+CShopItem::CShopItem() :
+	id(""),
+	name(""),
+	description(""),
+	cost(0),
+	image(""),
+	count(0),
+	entity(NULL),
+	persistent(false),
+	canDrop(false)
+{}
+
 CShopItem::CShopItem(const char *id, const char *name, const char *description,
 					 int cost, const char *image, int count, bool persistent, idEntity *entity, bool canDrop) {
 	this->id = id;
@@ -75,6 +87,34 @@ void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
 };
 
+void CShopItem::Save(idSaveGame *savefile) const
+{
+	savefile->WriteString(id);
+	savefile->WriteString(name);
+	savefile->WriteString(description);
+
+	savefile->WriteInt(cost);
+	savefile->WriteString(image);
+	savefile->WriteInt(count);
+	savefile->WriteObject(entity);
+	savefile->WriteBool(persistent);
+	savefile->WriteBool(canDrop);
+}
+
+void CShopItem::Restore(idRestoreGame *savefile)
+{
+	savefile->ReadString(id);
+	savefile->ReadString(name);
+	savefile->ReadString(description);
+
+	savefile->ReadInt(cost);
+	savefile->ReadString(image);
+	savefile->ReadInt(count);
+	savefile->ReadObject(reinterpret_cast<idClass*&>(entity));
+	savefile->ReadBool(persistent);
+	savefile->ReadBool(canDrop);
+}
+
 // ================= Shop ============================
 
 void CShop::Init()
@@ -96,12 +136,80 @@ void CShop::Clear()
 
 void CShop::Save(idSaveGame *savefile) const
 {
-	// Nothing to save yet
+	savefile->WriteInt(itemDefs.Num());
+	for (int i = 0; i < itemDefs.Num(); ++i)
+	{
+		itemDefs[i]->Save(savefile);
+	}
+
+	savefile->WriteInt(itemsForSale.Num());
+	for (int i = 0; i < itemsForSale.Num(); ++i)
+	{
+		itemsForSale[i]->Save(savefile);
+	}
+
+	savefile->WriteInt(itemsPurchased.Num());
+	for (int i = 0; i < itemsPurchased.Num(); ++i)
+	{
+		itemsPurchased[i]->Save(savefile);
+	}
+
+	savefile->WriteInt(startingItems.Num());
+	for (int i = 0; i < startingItems.Num(); ++i)
+	{
+		startingItems[i]->Save(savefile);
+	}
+	
+	savefile->WriteInt(gold);
+	savefile->WriteInt(forSaleTop);
+	savefile->WriteInt(purchasedTop);
+	savefile->WriteInt(startingTop);
+
+	savefile->WriteBool(skipShop);
 }
 
 void CShop::Restore(idRestoreGame *savefile)
 {
-	// Nothing to save yet
+	int num;
+
+	savefile->ReadInt(num);
+	itemDefs.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		itemDefs[i] = CShopItemPtr(new CShopItem);
+		itemDefs[i]->Restore(savefile);
+	}
+
+	savefile->ReadInt(num);
+	itemsForSale.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		itemsForSale[i] = CShopItemPtr(new CShopItem);
+		itemsForSale[i]->Restore(savefile);
+	}
+
+	savefile->ReadInt(num);
+	itemsPurchased.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		itemsPurchased[i] = CShopItemPtr(new CShopItem);
+		itemsPurchased[i]->Restore(savefile);
+	}
+
+	savefile->ReadInt(num);
+	startingItems.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		startingItems[i] = CShopItemPtr(new CShopItem);
+		startingItems[i]->Restore(savefile);
+	}
+
+	savefile->ReadInt(gold);
+	savefile->ReadInt(forSaleTop);
+	savefile->ReadInt(purchasedTop);
+	savefile->ReadInt(startingTop);
+
+	savefile->ReadBool(skipShop);
 }
 
 void CShop::AddItemForSale(const CShopItemPtr& shopItem) {

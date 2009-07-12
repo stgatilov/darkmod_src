@@ -11,17 +11,19 @@
 class CShopItem
 {
 private:
-	const char	*id;
-	const char	*name;
-	const char	*description;
+	idStr		id;
+	idStr		name;
+	idStr		description;
 	int			cost;
-	const char	*image;
+	idStr		image;
 	int			count;
 	idEntity	*entity;
 	bool		persistent;
 	bool		canDrop;
 	
 public:
+	CShopItem();
+
 	CShopItem(const char *id, 
 			  const char *name, 
 			  const char *description, 
@@ -67,7 +69,10 @@ public:
 	idEntity *GetEntity( void );				
 
 	// modifies number of items
-	void ChangeCount( int amount );				
+	void ChangeCount( int amount );
+
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 };
 typedef boost::shared_ptr<CShopItem> CShopItemPtr;
 

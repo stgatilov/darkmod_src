@@ -1182,7 +1182,7 @@ void idPlayer::SetupInventory()
 
 	// give the player weapon ammo based on shop purchases
 	category = m_WeaponCursor->GetCurrentCategory();
-	idList<CShopItemPtr> startingItems = gameLocal.m_Shop->GetPlayerItems();
+	ShopItemList startingItems = gameLocal.m_Shop->GetPlayerItems();
 
 	for (int si = 0; si < startingItems.Num(); si++)
 	{
