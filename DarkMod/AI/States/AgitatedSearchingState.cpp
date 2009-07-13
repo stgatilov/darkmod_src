@@ -70,6 +70,11 @@ void AgitatedSearchingState::Init(idAI* owner)
 	float alertTime = owner->atime4 + owner->atime4_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
 	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / alertTime;
 
+	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->GetUp();
+	}
+
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 

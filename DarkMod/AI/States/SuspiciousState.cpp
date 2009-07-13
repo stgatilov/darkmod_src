@@ -57,11 +57,11 @@ void SuspiciousState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SuspiciousState initialised.\r");
 	assert(owner);
 
-	float alertTime = owner->atime2 + owner->atime2_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
-	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / alertTime;
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
+
+	float alertTime = owner->atime2 + owner->atime2_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / alertTime;
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();

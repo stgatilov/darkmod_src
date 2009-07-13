@@ -58,11 +58,11 @@ void ObservantState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("ObservantState initialised.\r");
 	assert(owner);
 
-	float alertTime = owner->atime1 + owner->atime1_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
-	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / alertTime;
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
+
+	float alertTime = owner->atime1 + owner->atime1_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / alertTime;
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();

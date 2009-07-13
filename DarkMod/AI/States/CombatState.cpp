@@ -102,6 +102,11 @@ void CombatState::Init(idAI* owner)
 
 	if (!owner->GetMind()->PerformCombatCheck()) return;
 
+	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
+	{
+		owner->GetUp();
+	}
+
 	// greebo: Check for weapons and flee if we are unarmed.
 	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 	_meleePossible = owner->GetNumMeleeWeapons() > 0;

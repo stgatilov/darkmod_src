@@ -60,13 +60,13 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SearchingState initialised.\r");
 	assert(owner);
 
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
+
 	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
 		owner->GetUp();
 	}
-
-	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
