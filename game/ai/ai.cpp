@@ -2323,6 +2323,8 @@ void idAI::LinkScriptVariables( void )
 	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP");
 
 	AI_LAY_DOWN_LEFT.LinkTo(	scriptObject, "AI_LAY_DOWN_LEFT");
+	AI_LAY_DOWN_FACE_DIR.LinkTo(scriptObject, "AI_LAY_DOWN_FACE_DIR");
+
 }
 
 /*
@@ -4757,10 +4759,6 @@ void idAI::NoTurnMove()
 
 void idAI::LayDownMove()
 {
-	idVec3				goalDelta;
-	idVec3				newDest;
-	idVec3 delta;
-
 	idVec3 oldorigin(physicsObj.GetOrigin());
 	idMat3 oldaxis(viewAxis);
 
@@ -4770,11 +4768,10 @@ void idAI::LayDownMove()
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
-
 	AI_ONGROUND = physicsObj.OnGround();
 
 	// angua: Let the animation move the origin onto the bed
+	idVec3 delta;
 	GetMoveDelta( oldaxis, viewAxis, delta );
 
 	physicsObj.SetDelta( delta );
@@ -4793,11 +4790,6 @@ void idAI::LayDownMove()
 		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 		DrawRoute();
 	}
-
-
-
-
-
 }
 
 
@@ -10372,11 +10364,12 @@ void idAI::GetUp()
 
 void idAI::LayDown()
 {
-	idStr waitState(WaitState());
 	if (GetMoveType() != MOVETYPE_ANIM)
 	{
 		return;
 	}
+
+	AI_LAY_DOWN_FACE_DIR = idAngles( 0, current_yaw, 0 ).ToForward();
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");

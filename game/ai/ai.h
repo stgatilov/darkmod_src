@@ -498,6 +498,9 @@ public:
 	// gets read as spawn arg from the path_sleep entity
 	idScriptBool			AI_LAY_DOWN_LEFT;
 
+	// angua: the direction the AI faces before sitting and laying down
+	idScriptVector			AI_LAY_DOWN_FACE_DIR;
+
 	// greebo: This is to tell the scripts which idle animation should be played next in the CustomIdleAnim state
 	idStr					m_NextIdleAnim;
 
