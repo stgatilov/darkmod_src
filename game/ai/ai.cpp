@@ -7308,6 +7308,11 @@ void idAI::PushWithAF( void ) {
 			{
 				vel.Normalize();
 				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
+				if (ent->m_SetInMotionByActor.GetEntity() == NULL)
+				{
+					ent->m_SetInMotionByActor = this;
+					ent->m_MovedByActor = this;
+				}
 			}
 		}
 	}
@@ -8002,7 +8007,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		else
 		{
 			// greebo: Take the responsible actor for motion sound
-			idActor* responsibleActor = propParms->maker->m_SetInMotionByActor.GetEntity();
+			idActor* responsibleActor = propParms->maker->m_MovedByActor.GetEntity();
 			if (responsibleActor != NULL)
 			{
 				m_AlertedByActor = responsibleActor;
