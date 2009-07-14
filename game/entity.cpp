@@ -2857,14 +2857,14 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 
 	gName = gName.Mid(0, end);
 
-	// add the input volume modifier
-	volMod += VolModIn;
-
 	bFoundSnd = gameLocal.m_sndProp->CheckSound( gName.c_str(), false );
 
 Quit:
 	if( bFoundSnd )
 	{
+		// add the input volume modifier
+		volMod += VolModIn;
+
 		gameLocal.m_sndProp->Propagate( volMod, durMod, gName, 
 										GetPhysics()->GetOrigin(), 
 										this ); 
