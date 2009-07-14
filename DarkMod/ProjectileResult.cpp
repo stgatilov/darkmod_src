@@ -88,7 +88,6 @@ void CProjectileResult::Init
 {
 	idVec3 dotprod, LinVelocity;
 	float fTemp;
-	int StimType = ST_DEFAULT;
 	int StimFalloffExponent = 1;
 	float StimRadius = 10.0; // we use a (hopefully) reasonable default radius if none is set.
 	float StimRadiusFinal = -1;
@@ -137,23 +136,26 @@ void CProjectileResult::Init
 	int stimIdx = 1;
 	while (stimIdx > 0)
 	{
-		idStr key;
-		idStr value;
 		// Try to find a string like "sr_type_1"
+		idStr key;		
 		sprintf(key, "sr_type_%u", stimIdx);
-		spawnArgs.GetString(key, "", value);
 
-		if (value == "")
+		idStr value = spawnArgs.GetString(key, "");
+
+		if (value.IsEmpty())
 		{
 			// Set the index to negative values to end the loop
 			stimIdx = -1;
 		}
-		else {
+		else
+		{
+			StimType stimType = CStimResponse::getStimType(spawnArgs.GetString(key));
+
 			// The stim type of the projectile result is defined on the projectile itself
 			// even though it is not used there. Logically, the stim type is a part of the
 			// projectile definition though, since this class is only a helper class.
-			spawnArgs.GetInt(key, "-1", StimType);
-			if(StimType != ST_DEFAULT)
+			
+			if (stimType != ST_DEFAULT)
 			{
 				spawnArgs.GetFloat(va("sr_radius_%u", stimIdx), "10", StimRadius);
 				spawnArgs.GetFloat(va("sr_radius_final_%u", stimIdx), "-1", StimRadiusFinal);
@@ -167,7 +169,7 @@ void CProjectileResult::Init
 				spawnArgs.GetBool(va("sr_collision_%u", stimIdx), "0", bCollisionBased );
 				spawnArgs.GetFloat(va("sr_magnitude_%u", stimIdx), "1.0", StimMagnitude );
 
-				CStim* stim = AddStim(StimType, StimRadius);
+				CStim* stim = AddStim(static_cast<int>(stimType), StimRadius);
 				
 				// TODO: Move these sets to the AddStim arguments once Addstim is rewritten
 				stim->m_Duration = StimDuration;
@@ -180,7 +182,8 @@ void CProjectileResult::Init
 				stim->m_RadiusFinal = StimRadiusFinal;
 
 				// Check for valid bounds vectors
-				if (stimBounds[0] != idVec3(0,0,0)) {
+				if (stimBounds[0] != idVec3(0,0,0))
+				{
 					stim->m_Bounds = idBounds(stimBounds[0], stimBounds[1]);
 					stim->m_Radius = 0;
 					DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim with bounds setup\r");
@@ -195,14 +198,7 @@ void CProjectileResult::Init
 					stim->EnableSR(false);
 				}
 
-				idStr Name(va("%p", this));
-				if (StimType < ST_USER)
-				{
-					Name += cStimType[StimType];
-				}
-
-				SetName(name.c_str());
-				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim index %u type %u with radius %f added to entity %08lX\r", stimIdx, StimType, StimRadius, this);
+				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim index %u type %u with radius %f added to entity %08lX\r", stimIdx, stimType, StimRadius, this);
 			}
 
 			// Set the index to the next number, to keep the loop alive
