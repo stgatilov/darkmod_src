@@ -542,6 +542,12 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 		{
 			CShopItemPtr found = FindByID(itemDefs, itemName);
 
+			if (found == NULL)
+			{
+				// Try to prepend "atdm:" as prefix, maybe this works
+				found = FindByID(itemDefs, "atdm:" + itemName);
+			}
+
 			if (found != NULL) 
 			{
 				CShopItemPtr anItem(new CShopItem(*found, quantity, price, persistent));

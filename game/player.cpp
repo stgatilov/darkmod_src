@@ -1189,9 +1189,15 @@ void idPlayer::SetupInventory()
 		const CShopItemPtr& shopItem = startingItems[si];
 		idStr weaponName = shopItem->GetID();
 
-		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0)
+		// greebo: Append "atdm:" if it's missing, all weapon entityDefs are atdm:* now
+		if (idStr::Cmpn(weaponName, "atdm:", 5) != 0)
 		{
-			weaponName.Strip("weapon_");
+			weaponName = "atdm:" + weaponName;
+		}
+
+		if (idStr::Cmpn(weaponName, "atdm:weapon_", 12) == 0)
+		{
+			weaponName.Strip("atdm:weapon_");
 
 			for (int i = 0; i < category->GetNumItems(); i++)
 			{
@@ -1261,17 +1267,24 @@ void idPlayer::SetupInventory()
 	{
 		const CShopItemPtr& item = startingItems[si];
 
-		const char * weaponName = item->GetID();
-		const idDict *itemDict = gameLocal.FindEntityDefDict(weaponName, true);
+		idStr itemName = item->GetID();
 		int count = item->GetCount();
 
-		if (idStr::Cmpn(weaponName, "weapon_", 7) != 0 && count > 0)
+		// greebo: Append "atdm:" if it's missing, all weapon entityDefs are atdm:* now
+		if (idStr::Cmpn(itemName, "atdm:", 5) != 0)
+		{
+			itemName = "atdm:" + itemName;
+		}
+
+		if (idStr::Cmpn(itemName, "atdm:weapon_", 12) != 0 && count > 0)
 		{
 			// does the item already exist?
 			idEntity *entity = item->GetEntity();
+
 			if (entity == NULL)
 			{
 				// no, spawn it
+				const idDict* itemDict = gameLocal.FindEntityDefDict(itemName, true);
 				gameLocal.SpawnEntityDef( *itemDict, &entity );
 			}
 
