@@ -149,7 +149,16 @@ void CProjectileResult::Init
 		}
 		else
 		{
-			StimType stimType = CStimResponse::getStimType(spawnArgs.GetString(key));
+			StimType stimType = ST_DEFAULT;
+
+			if (value.IsNumeric())
+			{
+				stimType = static_cast<StimType>(spawnArgs.GetInt(key));
+			}
+			else
+			{
+				stimType = CStimResponse::getStimType(spawnArgs.GetString(key));
+			}
 
 			// The stim type of the projectile result is defined on the projectile itself
 			// even though it is not used there. Logically, the stim type is a part of the
