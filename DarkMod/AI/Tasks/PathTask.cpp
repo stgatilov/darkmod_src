@@ -40,7 +40,7 @@ void PathTask::Init(idAI* owner, Subsystem& subsystem)
 
 	idPathCorner* path = _path.GetEntity();
 
-	_accuracy = path->spawnArgs.GetFloat("accuracy", "-1");
+	_accuracy = path->spawnArgs.GetFloat("move_to_position_tolerance", "-1");
 }
 
 

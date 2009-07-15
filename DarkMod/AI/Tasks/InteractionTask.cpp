@@ -48,12 +48,17 @@ void InteractionTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 	}
 	
+	float moveToPositionTolerance = _interactEnt->spawnArgs.GetFloat("move_to_position_tolerance", "-1");
+
 	// Start moving towards that entity
-	if (!owner->MoveToPosition(_interactEnt->GetPhysics()->GetOrigin()))
+	if (!owner->MoveToPosition(_interactEnt->GetPhysics()->GetOrigin(), moveToPositionTolerance))
 	{
 		// No path to that entity!
 		subsystem.FinishTask();
 	}
+
+	_interactEnt->GetUserManager().AddUser(owner);
+
 }
 
 bool InteractionTask::Perform(Subsystem& subsystem)
@@ -98,6 +103,8 @@ bool InteractionTask::Perform(Subsystem& subsystem)
 
 void InteractionTask::OnFinish(idAI* owner)
 {
+	_interactEnt->GetUserManager().RemoveUser(owner);
+
 	owner->PopMove();
 }
 
