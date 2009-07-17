@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
 #include "HandleDoorTask.h"
+#include "InteractionTask.h"
 #include "../AreaManager.h"
 
 namespace ai
@@ -204,13 +205,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					
 					break;
 				}
-
 				else
 				{
 					if (!AllowedToOpen(owner))
 					{
 						AddToForbiddenAreas(owner, frobDoor);
 						return true;
+					}
+
+					idEntity* controller = GetRemoteControlEntityForDoor();
+
+					if (controller != NULL && masterUser == owner && controller->GetUserManager().GetNumUsers() == 0)
+					{
+						// We have an entity to control this door, interact with it
+						subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+						return false;
 					}
 
 					if (!owner->MoveToPosition(_frontPos))
@@ -450,6 +459,19 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else
 					{
+						idEntity* controller = GetRemoteControlEntityForDoor();
+
+						if (controller != NULL)
+						{	 
+							if (masterUser == owner && controller->GetUserManager().GetNumUsers() == 0)
+							{
+								// We have an entity to control this door, interact with it
+								subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+								return false;
+							}
+						
+						}
+
 						owner->MoveToPosition(_frontPos);
 						_doorHandlingState = EStateApproachingDoor;
 					}
@@ -833,6 +855,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					if (_doorInTheWay || (owner->ShouldCloseDoor(frobDoor) && numUsers < 2))
 					{
+						idEntity* controller = GetRemoteControlEntityForDoor();
+
+						if (controller != NULL && controller->GetUserManager().GetNumUsers() == 0)
+						{
+							// We have an entity to control this door, interact with it
+							subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+							return false;
+						}
+
 						// close the door
 						owner->StopMove(MOVE_STATUS_DONE);
 						owner->TurnToward(openPos);
@@ -1410,6 +1441,41 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 		owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
 	}
+}
+
+idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
+{
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+
+	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
+
+	idEntity* bestController = NULL;
+
+	for (const idKeyValue* kv = frobDoor->spawnArgs.MatchPrefix("door_controller");
+		 kv != NULL; kv = frobDoor->spawnArgs.MatchPrefix("door_controller", kv))
+	{
+		// Find the entity with the given name
+		idEntity* controller = gameLocal.FindEntity(kv->GetValue());
+
+		if (controller == NULL) continue;
+
+		if (bestController != NULL)
+		{
+			// We have a previously checked controller, check if this one is better
+			float dist = (controller->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthSqr();
+			float bestDist = (bestController->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthSqr();
+
+			if (bestDist < dist)
+			{
+				continue; // no change, this one is a poorer choice
+			}
+		}
+		
+		bestController = controller;
+	}
+
+	return bestController;
 }
 
 void HandleDoorTask::OnFinish(idAI* owner)

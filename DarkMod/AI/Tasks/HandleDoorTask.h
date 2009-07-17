@@ -87,9 +87,13 @@ public:
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 
-
 	// Creates a new Instance of this task
 	static HandleDoorTaskPtr CreateInstance();
+
+private:
+	// Finds an entity which can operate the door in question (a lever, forex)
+	// If multiple controllers are available, the nearest one is chosen
+	idEntity* GetRemoteControlEntityForDoor();
 };
 
 } // namespace ai
