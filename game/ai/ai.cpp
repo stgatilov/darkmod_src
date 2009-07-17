@@ -2069,8 +2069,8 @@ void idAI::Think( void )
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
-				// moving and turning not allowed
-				NoTurnMove();
+				// moving not allowed
+				SittingMove();
 				CheckBlink();
 				break;
 
@@ -2324,6 +2324,10 @@ void idAI::LinkScriptVariables( void )
 
 	AI_LAY_DOWN_LEFT.LinkTo(	scriptObject, "AI_LAY_DOWN_LEFT");
 	AI_LAY_DOWN_FACE_DIR.LinkTo(scriptObject, "AI_LAY_DOWN_FACE_DIR");
+
+	AI_SIT_DOWN_ANGLE.LinkTo(scriptObject, "AI_SIT_DOWN_ANGLE");
+	AI_SIT_UP_ANGLE.LinkTo(scriptObject, "AI_SIT_UP_ANGLE");
+
 
 }
 

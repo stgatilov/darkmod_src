@@ -83,10 +83,11 @@ void IdleState::Init(idAI* owner)
 	// Initialise the animation state
 	if (_startSitting && memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Idle", 0);
-		owner->Event_SetMoveType(MOVETYPE_SIT);
+
+		owner->SitDown();
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SIT)
 	{
@@ -115,6 +116,20 @@ void IdleState::Init(idAI* owner)
 	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 
 	InitialiseMovement(owner);
+
+	if (_startSitting)
+	{
+		if (owner->spawnArgs.FindKey("sit_down_angle") != NULL)
+		{
+			owner->AI_SIT_DOWN_ANGLE = owner->spawnArgs.GetFloat("sit_down_angle", "0");
+		}
+		else
+		{
+			owner->AI_SIT_DOWN_ANGLE = memory.idleYaw;
+		}
+		owner->AI_SIT_UP_ANGLE = memory.idleYaw;
+	}	
+
 
 	InitialiseCommunication(owner);
 

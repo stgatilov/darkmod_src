@@ -61,6 +61,18 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		_waitEndTime = -1;
 	}
+
+	// angua: check whether the AI should turn to a specific angle after sitting down
+	if (path->spawnArgs.FindKey("sit_down_angle") != NULL)
+	{
+		owner->AI_SIT_DOWN_ANGLE = path->spawnArgs.GetFloat("sit_down_angle", "0");
+	}
+	else
+	{
+		owner->AI_SIT_DOWN_ANGLE = owner->GetCurrentYaw();
+	}
+	owner->AI_SIT_UP_ANGLE = owner->GetCurrentYaw();
+
 	
 	if (owner->GetMoveType() != MOVETYPE_SIT)
 	{

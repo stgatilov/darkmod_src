@@ -501,6 +501,12 @@ public:
 	// angua: the direction the AI faces before sitting and laying down
 	idScriptVector			AI_LAY_DOWN_FACE_DIR;
 
+	// angua: the AI will turn to this direction after sitting down (this is practical for chairs next to a table)
+	idScriptFloat			AI_SIT_DOWN_ANGLE;
+
+	// angua: the AI will turn to this direction before getting up from sitting
+	idScriptFloat			AI_SIT_UP_ANGLE;
+
 	// greebo: This is to tell the scripts which idle animation should be played next in the CustomIdleAnim state
 	idStr					m_NextIdleAnim;
 
