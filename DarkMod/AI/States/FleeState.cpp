@@ -96,6 +96,10 @@ void FleeState::Think(idAI* owner)
 	}
 }
 
+void FleeState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
+{
+	// Ignore failed knockout attempts in flee mode
+}
 
 StatePtr FleeState::CreateInstance()
 {

@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "FailedKnockoutState.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -44,21 +45,43 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("FailedKnockoutState initialised.\r");
 	assert(owner);
-	
-	// Stop move!
-	owner->StopMove(MOVE_STATUS_DONE);
+
+	Memory& memory = owner->GetMemory();
 
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
 
-	// Max. wait time 3 seconds
+	// 800 msec stun time
+	_allowEndTime = gameLocal.time + 800;
+
+	// Set end time
 	_stateEndTime = gameLocal.time + 3000;
+	
+	// Set the alert position 50 units in the attacking direction
+	memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+
+	// Do a single bark and assemble an AI message
+	CommMessagePtr message = CommMessagePtr(new CommMessage(
+		CommMessage::DetectedEnemy_CommType, 
+		owner, NULL, // from this AI to anyone
+		_attacker,
+		memory.alertPos
+	));
+
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message))
+	);
 }
 
 // Gets called each time the mind is thinking
 void FailedKnockoutState::Think(idAI* owner)
 {
+	if (gameLocal.time < _allowEndTime)
+	{
+		return; // wait...
+	}
+
 	if (gameLocal.time >= _stateEndTime || 
 		idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "failed_ko") 
 	{
@@ -67,7 +90,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		// Alert this AI
 		memory.alertClass = EAlertTactile;
 		memory.alertType = EAlertTypeEnemy;
-
+	
 		// Set the alert position 50 units in the attacking direction
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
@@ -88,6 +111,7 @@ void FailedKnockoutState::Save(idSaveGame* savefile) const
 	State::Save(savefile);
 
 	savefile->WriteInt(_stateEndTime);
+	savefile->WriteInt(_allowEndTime);
 	savefile->WriteObject(_attacker);
 	savefile->WriteVec3(_attackDirection);
 }
@@ -96,6 +120,7 @@ void FailedKnockoutState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
 	savefile->ReadInt(_stateEndTime);
+	savefile->ReadInt(_allowEndTime);
 	savefile->ReadObject(reinterpret_cast<idClass*&>(_attacker));
 	savefile->ReadVec3(_attackDirection);
 }

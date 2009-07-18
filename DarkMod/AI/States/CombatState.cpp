@@ -80,6 +80,10 @@ void CombatState::OnAudioAlert()
 	}
 }
 
+void CombatState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
+{
+	// Ignore failed knockout attempts in combat mode
+}
 
 void CombatState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 {

@@ -21,6 +21,7 @@ class FailedKnockoutState :
 	public State
 {
 	int _stateEndTime;
+	int _allowEndTime;
 	idEntity* _attacker;
 	idVec3 _attackDirection;
 	bool _hitHead;

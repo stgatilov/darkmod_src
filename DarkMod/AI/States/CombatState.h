@@ -46,6 +46,7 @@ public:
 	virtual void OnAudioAlert();
 
 	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
