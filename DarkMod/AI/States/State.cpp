@@ -877,7 +877,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 			
 			owner->AI_VISALERT = false;
 			
-			owner->SetAlertLevel(owner->thresh_5 + 0.1);
+			owner->SetAlertLevel(owner->thresh_5 + 0.1f);
 		}
 					
 		// Do new reaction to stimulus
@@ -895,7 +895,21 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 
 void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
 {
-	// TODO
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+
+	// Alert this AI
+	memory.alertClass = EAlertTactile;
+	memory.alertType = EAlertTypeEnemy;
+
+	// Set the alert position 50 units in the attacking direction
+	memory.alertPos = owner->GetPhysics()->GetOrigin() - direction * 50;
+
+	memory.countEvidenceOfIntruders++;
+	memory.alertedDueToCommunication = false;
+
+	// Alert the AI
+	owner->AlertAI("tact", owner->thresh_5*2);
 }
 
 void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
