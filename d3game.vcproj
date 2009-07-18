@@ -946,6 +946,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\FleeDoneState.cpp"
 						>
 					</File>
@@ -1099,14 +1107,6 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\AI\Tasks\CommWaitTask.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.h"
 						>
 					</File>
 					<File
