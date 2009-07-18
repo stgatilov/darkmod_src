@@ -9115,15 +9115,8 @@ idAI::TestKnockoutBlow
 =====================
 */
 
-bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int location, bool bIsPowerBlow )
+bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow )
 {
-	bool bReturnVal(false);
-	float MinDotVert, MinDotHoriz, lenDelta, lenDeltaH;
-	float dotVert, dotHoriz;
-	idVec3 KOSpot(vec3_zero), delta(vec3_zero), deltaH(vec3_zero);
-	idMat3 HeadAxis(mat3_zero);
-	idStr LocationName;
-
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s\r", name.c_str());
 
 	if( AI_KNOCKEDOUT )
@@ -9131,70 +9124,80 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int lo
 		AI_PAIN = true;
 		AI_DAMAGE = true;
 
-		goto Quit;
+		return false; // already knocked out
 	}
 
-	LocationName = GetDamageGroup( location );
+	const char* locationName = GetDamageGroup( location );
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, LocationName.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName);
 
 	// check if we're hitting the right zone (usually the head)
-	if( strcmp(LocationName.c_str(), m_KoZone.c_str()) != 0 )
-		goto Quit;
+	if (idStr::Cmp(locationName, m_KoZone) != 0 )
+	{
+		// Signal the failed KO to the current state
+		GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, false);
+		
+		return false; // damage zone not matching
+	}
+
+	// Get the KO angles
+	float minDotVert = m_KoDotVert;
+	float minDotHoriz = m_KoDotHoriz;
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertLevel >= spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
+	if (AI_AlertLevel >= spawnArgs.GetFloat("alert_thresh%s" + m_KoAlertState))
 	{
 		// abort KO if the AI is immune when alerted
 		if( m_bKoAlertImmune )
-			goto Quit;
+		{
+			return false; // AI is alerted, thus immune
+		}
 
-		MinDotVert = m_KoAlertDotVert;
-		MinDotHoriz = m_KoAlertDotHoriz;
-	}
-	else
-	{
-		MinDotVert = m_KoDotVert;
-		MinDotHoriz = m_KoDotHoriz;
+		minDotVert = m_KoAlertDotVert;
+		minDotHoriz = m_KoAlertDotHoriz;
 	}
 
 	// check if we hit within the angles
 	if( m_HeadJointID == INVALID_JOINT )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint found on AI %s when KO attempted \r", name.c_str());
-		goto Quit;
+		return false;
 	}
 
+	idVec3 KOSpot;
+	idMat3 headAxis;
 	// store head joint base position to KOSpot, axis to HeadAxis
-	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
+	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, headAxis );
 
-	KOSpot += HeadAxis * m_HeadCenterOffset;
+	KOSpot += headAxis * m_HeadCenterOffset;
 
-	delta = KOSpot - tr->c.point;
-	lenDelta = delta.Length();
+	idVec3 delta = KOSpot - tr->c.point;
+	float lenDelta = delta.Length();
 
 	// First, project delta into the horizontal plane of the head
 	// Assume HeadAxis[1] is the up direction in head coordinates
-	deltaH = delta - HeadAxis[1] * (HeadAxis[1] * delta);
-	lenDeltaH = deltaH.Normalize();
+	idVec3 deltaH = delta - headAxis[1] * (headAxis[1] * delta);
+	float lenDeltaH = deltaH.Normalize();
 
-	dotHoriz = HeadAxis[ 0 ] * deltaH;
+	float dotHoriz = headAxis[ 0 ] * deltaH;
 	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
-	dotVert = idMath::Fabs( lenDeltaH / lenDelta );
+	float dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
 	// if hit was within the cone
-	if ( (dotHoriz >= MinDotHoriz && dotVert >= MinDotVert) )
+	if (dotHoriz >= minDotHoriz && dotVert >= minDotVert)
 	{
-		bReturnVal = true;
-
 		// We just got knocked the taff out!
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
 		Knockout(attacker);
+
+		return true;
 	}
 
-Quit:
-	return bReturnVal;
+	// Signal the failed KO to the current state
+	GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
+	
+	return false; // knockout angles missed
 }
 
 void idAI::KnockoutDebugDraw( void )

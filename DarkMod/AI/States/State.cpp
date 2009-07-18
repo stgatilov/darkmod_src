@@ -893,6 +893,11 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	return true;
 }
 
+void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
+{
+	// TODO
+}
+
 void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled

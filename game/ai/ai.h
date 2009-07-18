@@ -1221,7 +1221,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* Returns false if BJ attempt failed, or if already knocked out
 	**/
-	bool					TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, int location, bool bIsPowerBlow );  
+	bool					TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow );  
 	
 	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,

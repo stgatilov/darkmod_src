@@ -102,6 +102,15 @@ public:
 	virtual bool OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	/**
+	 * greebo: Called if an attacker performed a failed knockout attack
+	 *
+	 * @attacker: The attacking entity (most probably the player)
+	 * @direction: the direction of the attack
+	 * @hitHead: is TRUE if the head has been hit, FALSE if the attacker hit other body parts
+	 */
+	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
+
+	/**
 	* ishtvan: Called when targets are changed, does nothing on base class
 	**/
 	virtual void OnChangeTarget(idAI *owner) {};
