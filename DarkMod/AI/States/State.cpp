@@ -472,7 +472,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	{
 		memory.lastTimeVisualStimBark = gameLocal.time;
 		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+			CommunicationTaskPtr(new SingleBarkTask("snd_foundWeapon"))
 		);
 	}
 
@@ -1712,16 +1712,44 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		memory.doorRelated.currentDoor = frobDoor;
 		owner->movementSubsystem->PushTask(HandleDoorTask::CreateInstance());
 	}
-	else if (frobDoor != currentDoor && frobDoor != currentDoor->GetDoubleDoor())
+	else 
 	{
-		// if there is already a door handling task active, 
-		// terminate that one so we can start a new one next time
-		const SubsystemPtr& subsys = owner->movementSubsystem;
-		TaskPtr task = subsys->GetCurrentTask();
-
-		if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
+		if (frobDoor != currentDoor && frobDoor != currentDoor->GetDoubleDoor())
 		{
-			subsys->FinishTask();
+			// this is a new door
+
+			// if there is already a door handling task active, 
+			// terminate that one so we can start a new one next time
+			const SubsystemPtr& subsys = owner->movementSubsystem;
+			TaskPtr task = subsys->GetCurrentTask();
+
+			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
+			{
+				subsys->FinishTask();
+			}
+			else
+			{
+				// angua: current door is set but no door handling task active
+				// door handling task was probably terminated before inititalisation
+				// clear current door
+				memory.doorRelated.currentDoor = NULL;
+			}
+		}
+		// this is our current door
+		else
+		{
+			// this is already our current door
+
+			const SubsystemPtr& subsys = owner->movementSubsystem;
+			TaskPtr task = subsys->GetCurrentTask();
+
+			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) == NULL)
+			{
+				// angua: current door is set but no door handling task active
+				// door handling task was probably terminated before inititalisation
+				// clear current door
+				memory.doorRelated.currentDoor = NULL;
+			}
 		}
 	}
 }

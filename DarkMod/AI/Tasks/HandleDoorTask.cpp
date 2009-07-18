@@ -561,9 +561,18 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateApproachingDoor:
 			{
-				if (owner->AI_AlertLevel >= owner->thresh_3)
+				// check if we are blocking the door
+				if (frobDoor->IsBlocked() || 
+					(frobDoor->WasInterrupted() || 
+					frobDoor->WasStoppedDueToBlock()))
 				{
-					return true;
+					if (FitsThrough())
+					{
+						if (owner->AI_AlertLevel >= owner->thresh_3)
+						{
+							return true;
+						}
+					}
 				}
 
 				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
