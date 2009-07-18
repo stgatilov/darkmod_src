@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Library.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/FleeTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
 #include "FleeDoneState.h"
 
@@ -67,6 +68,12 @@ void FleeState::Init(idAI* owner)
 		NULL,
 		memory.alertPos
 	));
+
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask("snd_to_flee",message))
+	);
+
+	owner->commSubsystem->AddSilence(3000);
 
 	CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));
 	owner->commSubsystem->AddCommTask(barkTask);
