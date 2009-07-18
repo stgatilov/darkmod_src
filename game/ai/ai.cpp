@@ -5409,6 +5409,9 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		{
 			AI_SPECIAL_DAMAGE = 0;
 		}
+
+		// AI don't like being attacked
+		ChangeEntityRelation(attacker, -10);
 	}
 
 	return ( AI_PAIN != 0 );

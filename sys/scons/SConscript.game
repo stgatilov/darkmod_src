@@ -203,6 +203,7 @@ AI/States/CombatState.cpp \
 AI/States/ConversationState.cpp \
 AI/States/DeadState.cpp \
 AI/States/EmergeFromCoverState.cpp \
+AI/States/FailedKnockoutState.cpp \
 AI/States/FleeState.cpp \
 AI/States/FleeDoneState.cpp \
 AI/States/IdleSleepState.cpp \

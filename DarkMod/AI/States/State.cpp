@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "CombatState.h"
 #include "BlindedState.h"
 #include "SwitchOnLightState.h"
+#include "FailedKnockoutState.h"
 
 #include "../../BinaryFrobMover.h"
 #include "../../FrobDoor.h"
@@ -896,20 +897,11 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
 {
 	idAI* owner = _owner.GetEntity();
-	Memory& memory = owner->GetMemory();
 
-	// Alert this AI
-	memory.alertClass = EAlertTactile;
-	memory.alertType = EAlertTypeEnemy;
+	if (owner == NULL) return;
 
-	// Set the alert position 50 units in the attacking direction
-	memory.alertPos = owner->GetPhysics()->GetOrigin() - direction * 50;
-
-	memory.countEvidenceOfIntruders++;
-	memory.alertedDueToCommunication = false;
-
-	// Alert the AI
-	owner->AlertAI("tact", owner->thresh_5*2);
+	// Switch to failed knockout state
+	owner->GetMind()->PushState(StatePtr(new FailedKnockoutState(attacker, direction, hitHead)));
 }
 
 void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)

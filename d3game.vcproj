@@ -1102,6 +1102,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\States\FailedKnockoutState.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\FleeTask.cpp"
 						>
 					</File>
