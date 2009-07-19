@@ -63,6 +63,8 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			// greebo: Set the waitstate, this gets cleared by 
 			// the script function when the animation is done.
 			owner->SetWaitState("ranged_attack");
+
+			EmitCombatBark(owner, "snd_combat_ranged");
 		}
 		else
 		{
