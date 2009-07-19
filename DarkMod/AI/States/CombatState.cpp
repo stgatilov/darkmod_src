@@ -142,6 +142,8 @@ void CombatState::Init(idAI* owner)
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
+	owner->StopMove(MOVE_STATUS_DONE);
+
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
