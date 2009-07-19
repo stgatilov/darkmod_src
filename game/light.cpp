@@ -622,6 +622,11 @@ idLight::Fade
 */
 void idLight::Fade( const idVec4 &to, float fadeTime ) {
 	GetColor( fadeFrom );
+	// Tels: we already have the same color we should become, so we can skip this
+	if (fadeFrom == to)
+		{
+		return;
+		}
 	fadeTo = to;
 	fadeStart = gameLocal.time;
 	fadeEnd = gameLocal.time + SEC2MS( fadeTime );
@@ -661,6 +666,8 @@ void idLight::FadeTo( idVec3 color, float time ) {
 
 	idVec4 color4;
 
+	// tels: TODO: this step sets the intensity of the light to the maximum,
+	//		 do we really want this?
 	currentLevel = levels;
 	color4.Set( color.x, color.y, color.z, 1.0f );
 	Fade( color4, time );
