@@ -30,7 +30,7 @@ const idStr& RangedCombatTask::GetName() const
 void RangedCombatTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
-	Task::Init(owner, subsystem);
+	CombatTask::Init(owner, subsystem);
 
 	_enemy = owner->GetEnemy();
 }
@@ -83,19 +83,14 @@ void RangedCombatTask::OnFinish(idAI* owner)
 	owner->SetWaitState("");
 }
 
-
 void RangedCombatTask::Save(idSaveGame* savefile) const
 {
-	Task::Save(savefile);
-
-	_enemy.Save(savefile);
+	CombatTask::Save(savefile);
 }
 
 void RangedCombatTask::Restore(idRestoreGame* savefile)
 {
-	Task::Restore(savefile);
-
-	_enemy.Restore(savefile);
+	CombatTask::Restore(savefile);
 }
 
 RangedCombatTaskPtr RangedCombatTask::CreateInstance()

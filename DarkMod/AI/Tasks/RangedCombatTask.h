@@ -10,7 +10,7 @@
 #ifndef __AI_RANGED_COMBAT_TASK_H__
 #define __AI_RANGED_COMBAT_TASK_H__
 
-#include "Task.h"
+#include "CombatTask.h"
 
 namespace ai
 {
@@ -22,10 +22,8 @@ class RangedCombatTask;
 typedef boost::shared_ptr<RangedCombatTask> RangedCombatTaskPtr;
 
 class RangedCombatTask :
-	public Task
+	public CombatTask
 {
-	idEntityPtr<idActor> _enemy;
-
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

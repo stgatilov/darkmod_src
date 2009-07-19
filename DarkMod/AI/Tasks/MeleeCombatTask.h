@@ -10,7 +10,7 @@
 #ifndef __AI_MELEE_COMBAT_TASK_H__
 #define __AI_MELEE_COMBAT_TASK_H__
 
-#include "Task.h"
+#include "CombatTask.h"
 
 namespace ai
 {
@@ -22,9 +22,8 @@ class MeleeCombatTask;
 typedef boost::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
 
 class MeleeCombatTask :
-	public Task
+	public CombatTask
 {
-	idEntityPtr<idActor> _enemy;
 	/** 
 	* Set to true if we want to force an attack or parry at the next opportunity
 	* I.e., we wait until we can do this action even if we could do the other first
@@ -90,8 +89,6 @@ private:
 	**/
 	void StartAttack(idAI* owner);
 	void StartParry(idAI* owner);
-
-	void EmitCombatBark(idAI* owner, const idStr& sndName);
 };
 
 } // namespace ai

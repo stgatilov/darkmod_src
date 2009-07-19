@@ -1094,6 +1094,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\Tasks\CombatTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\CombatTask.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\AI\Tasks\CommunicationTask.cpp"
 						>
 					</File>
