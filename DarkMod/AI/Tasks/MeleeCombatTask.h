@@ -90,6 +90,8 @@ private:
 	**/
 	void StartAttack(idAI* owner);
 	void StartParry(idAI* owner);
+
+	void EmitCombatBark(idAI* owner, const idStr& sndName);
 };
 
 } // namespace ai

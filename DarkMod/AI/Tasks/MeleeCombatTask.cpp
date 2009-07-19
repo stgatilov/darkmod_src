@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MeleeCombatTask.h"
+#include "SingleBarkTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -54,21 +55,28 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL || enemy->IsKnockedOut() || enemy->health <= 0)
 	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No enemy, terminating task!\r");
 		return true; // terminate me
 	}
 
 	// Perform the task according to the current action
-	CMeleeStatus *pStatus = &ownerEnt->m_MeleeStatus;
-	EMeleeActState ActState = pStatus->m_ActionState;
+	EMeleeActState actState = ownerEnt->m_MeleeStatus.m_ActionState;
 
-	if( ActState == MELEEACTION_ATTACK )
-		PerformAttack(ownerEnt);
-	else if( ActState == MELEEACTION_PARRY )
-		PerformParry(ownerEnt);
-	else
+	switch (actState)
+	{
+	case MELEEACTION_READY:
 		PerformReady(ownerEnt);
-
+		break;
+	case MELEEACTION_ATTACK:
+		PerformAttack(ownerEnt);
+		break;
+	case MELEEACTION_PARRY:
+		PerformParry(ownerEnt);
+		break;
+	default:
+		PerformReady(ownerEnt);
+	};
+	
 	return false; // not finished yet
 }
 
@@ -76,9 +84,10 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 {
 	// the "ready" state is where we decide whether to attack or parry
 	// For now, always attack
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	idActor	*enemy = _enemy.GetEntity();
-	CMeleeStatus *pEnStatus = &enemy->m_MeleeStatus;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+
+	idActor* enemy = _enemy.GetEntity();
+	CMeleeStatus& enemyStatus = enemy->m_MeleeStatus;
 
 	if( cv_melee_state_debug.GetBool() )
 	{
@@ -88,19 +97,19 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 
 	// TODO: Cache these rather than calc. every frame?
 	int NextAttTime;
-	if( pStatus->m_ActionResult == MELEERESULT_PAR_BLOCKED 
-		|| pStatus->m_ActionResult == MELEERESULT_PAR_ABORTED )
+	if( ownerStatus.m_ActionResult == MELEERESULT_PAR_BLOCKED 
+		|| ownerStatus.m_ActionResult == MELEERESULT_PAR_ABORTED )
 	{
 		// just parried, so use the riposte recovery time for the attack
-		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentRiposteRecovery;
+		NextAttTime = ownerStatus.m_LastActTime + owner->m_MeleeCurrentRiposteRecovery;
 	}
 	// longer recovery if we were parried
-	else if( pStatus->m_ActionResult == MELEERESULT_AT_PARRIED )
-		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentAttackLongRecovery;
+	else if( ownerStatus.m_ActionResult == MELEERESULT_AT_PARRIED )
+		NextAttTime = ownerStatus.m_LastActTime + owner->m_MeleeCurrentAttackLongRecovery;
 	else
-		NextAttTime = pStatus->m_LastActTime + owner->m_MeleeCurrentAttackRecovery;
+		NextAttTime = ownerStatus.m_LastActTime + owner->m_MeleeCurrentAttackRecovery;
 
-	int NextParTime = pStatus->m_LastActTime + owner->m_MeleeCurrentParryRecovery;
+	int NextParTime = ownerStatus.m_LastActTime + owner->m_MeleeCurrentParryRecovery;
 
 	// ATTACK: If the timer allows us and if the enemy is in range
 	if (gameLocal.time > NextAttTime 
@@ -116,16 +125,16 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 	// TODO: Figure out how to switch enemies to face & parry a new one
 	else if
 		( 
-			pStatus->m_bCanParry
+			ownerStatus.m_bCanParry
 			&& gameLocal.time > NextParTime
-			&& (pEnStatus->m_ActionState == MELEEACTION_ATTACK)
-			&& (pEnStatus->m_ActionPhase != MELEEPHASE_RECOVERING)
+			&& (enemyStatus.m_ActionState == MELEEACTION_ATTACK)
+			&& (enemyStatus.m_ActionPhase != MELEEPHASE_RECOVERING)
 			&& owner->GetMemory().canBeHitByEnemy
 			&& !_bForceAttack
 		)
 	{
 		// check if our enemy made the same attack before
-		EMeleeType AttType = pEnStatus->m_ActionType;
+		EMeleeType AttType = enemyStatus.m_ActionType;
 		if( _PrevEnemy.GetEntity() == enemy && _PrevAttParried == AttType
 			&& (gameLocal.time - _PrevAttTime) < owner->m_MeleeRepAttackTime )
 		{
@@ -160,8 +169,8 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 
 void MeleeCombatTask::PerformAttack(idAI* owner)
 {
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	EMeleeActPhase phase = pStatus->m_ActionPhase;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+	EMeleeActPhase phase = ownerStatus.m_ActionPhase;
 	
 	if( phase == MELEEPHASE_PREPARING )
 	{
@@ -185,7 +194,7 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		}
 		
 		// wait some finite time before releasing (for difficulty tweaking)
-		if( (gameLocal.time - pStatus->m_PhaseChangeTime) > owner->m_MeleeCurrentHoldTime )
+		if( (gameLocal.time - ownerStatus.m_PhaseChangeTime) > owner->m_MeleeCurrentHoldTime )
 		{
 			owner->Event_PauseAnim( ANIMCHANNEL_TORSO, false );
 			owner->Event_MeleeActionReleased();
@@ -205,8 +214,8 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		if( waitState != "melee_action" )
 		{
 			// if attack hasn't hit anything, switch to missed at this point
-			if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
-				pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+			if( ownerStatus.m_ActionResult == MELEERESULT_IN_PROGRESS )
+				ownerStatus.m_ActionResult = MELEERESULT_AT_MISSED;
 			owner->Event_MeleeActionFinished();
 		}
 	}
@@ -214,9 +223,9 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 
 void MeleeCombatTask::PerformParry(idAI* owner)
 {
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	CMeleeStatus *pEnStatus = &_enemy.GetEntity()->m_MeleeStatus;
-	EMeleeActPhase phase = pStatus->m_ActionPhase;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+	CMeleeStatus& enemyStatus = _enemy.GetEntity()->m_MeleeStatus;
+	EMeleeActPhase phase = ownerStatus.m_ActionPhase;
 	
 	if( phase == MELEEPHASE_PREPARING )
 	{
@@ -233,7 +242,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			// Set the waitstate, this gets cleared by script when the anim is done
 			owner->SetWaitState("melee_action");
 
-			const char *suffix = idActor::MeleeTypeNames[pStatus->m_ActionType];
+			const char *suffix = idActor::MeleeTypeNames[ownerStatus.m_ActionType];
 			// script state plays the animation and clears wait state when done
 			// TODO: Why did we have 5 blend frames here?
 			owner->SetAnimState(ANIMCHANNEL_TORSO, va("Torso_Parry_%s",suffix), 5);
@@ -256,15 +265,15 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		bool bRelease = false;
 
 		// If our enemy is no longer attacking, release
-		if( pEnStatus->m_ActionState != MELEEACTION_ATTACK
-			|| pEnStatus->m_ActionPhase == MELEEPHASE_RECOVERING )
+		if( enemyStatus.m_ActionState != MELEEACTION_ATTACK
+			|| enemyStatus.m_ActionPhase == MELEEPHASE_RECOVERING )
 			bRelease = true;
 		// If our enemy switches attacks, stop this parry to prepare the next
-		else if( pStatus->m_ActionType != MELEETYPE_BLOCKALL && pStatus->m_ActionType != pEnStatus->m_ActionType )
+		else if( ownerStatus.m_ActionType != MELEETYPE_BLOCKALL && ownerStatus.m_ActionType != enemyStatus.m_ActionType )
 			bRelease = true;
 		// or if enemy is holding for over some time
-		else if( pEnStatus->m_ActionPhase == MELEEPHASE_HOLDING
-				 && ((gameLocal.time - pEnStatus->m_PhaseChangeTime) > owner->m_MeleeCurrentParryHold) )
+		else if( enemyStatus.m_ActionPhase == MELEEPHASE_HOLDING
+				 && ((gameLocal.time - enemyStatus.m_PhaseChangeTime) > owner->m_MeleeCurrentParryHold) )
 		{
 			// also force an attack next, so we don't just go back into parry - this creates an opening
 			_bForceAttack = true;
@@ -276,7 +285,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			// debug display the countdown to release
 			if( cv_melee_state_debug.GetBool() )
 			{
-				idStr debugText = va("Parry Waiting for: %d [ms]", (gameLocal.time - pEnStatus->m_PhaseChangeTime) );
+				idStr debugText = va("Parry Waiting for: %d [ms]", (gameLocal.time - enemyStatus.m_PhaseChangeTime) );
 				gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-40), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 			}
 			// otherwise, keep holding the parry
@@ -312,8 +321,8 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			if( waitState != "melee_action" )
 			{
 				// if nothing happened with our parry, it was aborted
-				if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
-					pStatus->m_ActionResult = MELEERESULT_PAR_ABORTED;
+				if( ownerStatus.m_ActionResult == MELEERESULT_IN_PROGRESS )
+					ownerStatus.m_ActionResult = MELEERESULT_PAR_ABORTED;
 
 				owner->Event_MeleeActionFinished();
 			}
@@ -330,33 +339,39 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 
 void MeleeCombatTask::StartAttack(idAI* owner)
 {
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	CMeleeStatus *pEnStatus = &_enemy.GetEntity()->m_MeleeStatus;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+	CMeleeStatus& enemyStatus = _enemy.GetEntity()->m_MeleeStatus;
 
 	_bForceAttack = false;
 
 	// create subset of possible attacks:
-	idList<EMeleeType> attacks = pStatus->m_attacks;
+	idList<EMeleeType> attacks = ownerStatus.m_attacks;
+
 	// if our enemy is parrying a direction, attack along a different direction
-	if( pEnStatus->m_ActionState == MELEEACTION_PARRY )
+	if( enemyStatus.m_ActionState == MELEEACTION_PARRY )
 	{
-		if( pEnStatus->m_ActionType != MELEETYPE_BLOCKALL )
+		if( enemyStatus.m_ActionType != MELEETYPE_BLOCKALL )
 		{
-			attacks.Remove( pEnStatus->m_ActionType );
+			attacks.Remove( enemyStatus.m_ActionType );
 		}
 		// TODO: Shield parries need special handling
 		// Either attack the shield to destroy it or wait until it's dropped or flank the parry with footwork
 	}
 
-	if (attacks.Num() > 0)
+	int numAttacks = attacks.Num();
+
+	if (numAttacks > 0)
 	{
 		// choose a random attack from our possible attacks
-		int i = gameLocal.random.RandomInt( attacks.Num() );
-		i = attacks[i];
+		int i = attacks[ gameLocal.random.RandomInt(numAttacks) ];
+
 		const char *suffix = idActor::MeleeTypeNames[i];
 
 		// update the melee status
 		owner->Event_MeleeAttackStarted( i );
+
+		// Emit a combat bark
+		EmitCombatBark(owner, "snd_combat_melee");
 
 		// Set the waitstate, this gets cleared by 
 		// the script function when the animation is done.
@@ -376,16 +391,16 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 
 void MeleeCombatTask::StartParry(idAI* owner)
 {
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	CMeleeStatus *pEnStatus = &_enemy.GetEntity()->m_MeleeStatus;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+	CMeleeStatus& enemyStatus = _enemy.GetEntity()->m_MeleeStatus;
 
 	_bForceParry = false;
 	
-	EMeleeType AttType = pEnStatus->m_ActionType;
+	EMeleeType AttType = enemyStatus.m_ActionType;
 	EMeleeType ParType;
 
 	// Universal (shield) parry is the best option if we can
-	if( pStatus->m_bCanParryAll )
+	if( ownerStatus.m_bCanParryAll )
 		ParType = MELEETYPE_BLOCKALL;
 	else
 		ParType = AttType; // match the attack
@@ -412,13 +427,33 @@ void MeleeCombatTask::StartParry(idAI* owner)
 	}
 }
 
+void MeleeCombatTask::EmitCombatBark(idAI* owner, const idStr& sndName)
+{
+	// This will hold the message to be delivered with the bark, if appropriate
+	CommMessagePtr message;
+	
+	// Only alert the bystanders if we didn't receive the alert by message ourselves
+	message = CommMessagePtr(new CommMessage(
+		CommMessage::DetectedEnemy_CommType, 
+		owner, NULL, // from this AI to anyone 
+		owner->GetEnemy(),
+		owner->GetPhysics()->GetOrigin()
+	));
+
+	// The communication system 
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask(sndName, message))
+	);
+}
+
 void MeleeCombatTask::OnFinish(idAI* owner)
 {
 	// ishtvan TODO: Will need different code for when attack is finish vs. parry?
 	// TODO: Also need to figure out if we hit or miss, etc.
-	CMeleeStatus *pStatus = &owner->m_MeleeStatus;
-	pStatus->m_ActionState = MELEEACTION_READY;
-	pStatus->m_ActionPhase = MELEEPHASE_PREPARING;
+	CMeleeStatus& ownerStatus = owner->m_MeleeStatus;
+
+	ownerStatus.m_ActionState = MELEEACTION_READY; // ??
+	ownerStatus.m_ActionPhase = MELEEPHASE_PREPARING;
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetWaitState("");
