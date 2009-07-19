@@ -181,7 +181,7 @@ void CombatState::Init(idAI* owner)
 		);
 	}
 
-	else if ((MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
+	else if ((MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
 	{
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask("snd_to_combat_company", message))

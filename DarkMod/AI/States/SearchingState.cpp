@@ -86,7 +86,7 @@ void SearchingState::Init(idAI* owner)
 		{
 			if (memory.alertClass == EAlertVisual)
 			{
-				if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
 					bark = "snd_alert3cs";
 				}
@@ -97,7 +97,7 @@ void SearchingState::Init(idAI* owner)
 			}
 			else if (memory.alertClass == EAlertAudio)
 			{
-				if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
 					bark = "snd_alert3ch";
 				}
@@ -106,7 +106,7 @@ void SearchingState::Init(idAI* owner)
 					bark = "snd_alert3h";
 				}
 			}
-			else if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+			else if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 			{
 				bark = "snd_alert3c";
 			}

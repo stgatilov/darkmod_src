@@ -339,8 +339,7 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	// Don't respond to NULL entities or when dead/knocked out/blind and no enemy in sight
 	if (stimSource == NULL || 
-		owner->AI_KNOCKEDOUT || owner->AI_DEAD || owner->GetAcuity("vis") == 0 ||
-		owner->GetEnemy() != NULL)
+		owner->AI_KNOCKEDOUT || owner->AI_DEAD || owner->GetAcuity("vis") == 0)
 	{
 		return;
 	}
@@ -368,20 +367,28 @@ void State::OnVisualStim(idEntity* stimSource)
 	float chance(gameLocal.random.RandomFloat());
 	float chanceToNotice(0);
 		
+	if (aiUse == AIUSE_PERSON)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
+		if (chance < chanceToNotice)
+		{
+			OnPersonEncounter(stimSource, owner);
+		}
+		return;
+	}
+
+	// Not a person stim, ignore all other stims if enenemy != NULL
+	if (owner->GetEnemy() != NULL)
+	{
+		return;
+	}
+
 	if (aiUse == AIUSE_WEAPON)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
 		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeWeapon))
 		{
 			OnVisualStimWeapon(stimSource, owner);
-		}
-	}
-	else if (aiUse == AIUSE_PERSON)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
-		if (chance < chanceToNotice)
-		{
-			OnPersonEncounter(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
@@ -416,7 +423,6 @@ void State::OnVisualStim(idEntity* stimSource)
 			OnVisualStimBrokenItem(stimSource, owner);
 		}
 	}
-
 	else if (aiUse == AIUSE_DOOR)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
@@ -1282,7 +1288,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
 	idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
 	idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
-	idVec3 directObjectLocation = message.m_directObjectLocation;
+	const idVec3& directObjectLocation = message.m_directObjectLocation;
 
 	if (issuingEntity != NULL)
 	{
@@ -1290,6 +1296,13 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 	}
 
 	Memory& memory = owner->GetMemory();
+
+	// greebo: Update the last AI seen timer on incoming messages from friendly AI
+	if ((owner->GetPhysics()->GetOrigin() - directObjectLocation).LengthSqr() < Square(300) && 
+		owner->IsFriend(issuingEntity))
+	{
+		memory.lastTimeFriendlyAISeen = gameLocal.time;
+	}
 
 	switch (commType)
 	{
