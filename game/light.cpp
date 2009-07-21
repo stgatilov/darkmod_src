@@ -627,6 +627,16 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 		{
 		return;
 		}
+	// Tels: If the fade time is shorter than 1/60 (e.g. one frame), just set the color directly
+	if (fadeTime < 0.0167f)
+		{
+		// in case the light was currently fading, stop this
+		fadeEnd = 0;
+		BecomeInactive( TH_THINK );
+		// set the color directly
+		SetColor(to);
+		return;
+		}
 	fadeTo = to;
 	fadeStart = gameLocal.time;
 	fadeEnd = gameLocal.time + SEC2MS( fadeTime );
