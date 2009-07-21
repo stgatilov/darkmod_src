@@ -501,6 +501,9 @@ idLight::SetColor
 ================
 */
 void idLight::SetColor( float red, float green, float blue ) {
+	// Tels: If the light is currently fading, stop this:
+	fadeEnd = 0;
+	BecomeInactive( TH_THINK );
 	baseColor.Set( red, green, blue );
 	SetLightLevel();
 }
@@ -511,6 +514,9 @@ idLight::SetColor
 ================
 */
 void idLight::SetColor( const idVec4 &color ) {
+	// Tels: If the light is currently fading, stop this:
+	fadeEnd = 0;
+	BecomeInactive( TH_THINK );
 	baseColor = color.ToVec3();
 	renderLight.shaderParms[ SHADERPARM_ALPHA ]		= color[ 3 ];
 	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
@@ -630,10 +636,6 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 	// Tels: If the fade time is shorter than 1/60 (e.g. one frame), just set the color directly
 	if (fadeTime < 0.0167f)
 		{
-		// in case the light was currently fading, stop this
-		fadeEnd = 0;
-		BecomeInactive( TH_THINK );
-		// set the color directly
 		SetColor(to);
 		return;
 		}
@@ -843,7 +845,11 @@ void idLight::Think( void ) {
 				fadeEnd = 0;
 				BecomeInactive( TH_THINK );
 			}
-			SetColor( color );
+			// don't call SetColor(), as it stops the fade, instead inline the second part of it:
+			baseColor = color.ToVec3();
+			renderLight.shaderParms[ SHADERPARM_ALPHA ]		= color[ 3 ];
+			renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
+			SetLightLevel();
 		}
 	}
 
