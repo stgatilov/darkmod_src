@@ -99,6 +99,7 @@ extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
 extern const idEventDef EV_ExtinguishLights;
+extern const idEventDef EV_TeleportTo;
 
 extern const idEventDef EV_IsType;
 
@@ -1406,6 +1407,10 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg );
 	void					Event_CallGui( int handle, const char *namedEvent );
 
+	/**
+	* Tels: Teleport the entity to the given entity's origin and orientation.
+	*/
+	void					Event_TeleportTo(idEntity *target);
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
 	void					Event_GetInventory();

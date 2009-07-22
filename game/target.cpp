@@ -1425,8 +1425,16 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	const function_t	*func;
 	const char			*funcName;
 	idThread			*thread;
+	bool				pass_self;
+	float				wait, delay;
 
-	funcName = spawnArgs.GetString( "call" );
+	pass_self = spawnArgs.GetBool( "pass_self", false);
+	wait	  = spawnArgs.GetFloat ( "wait", "0");
+	funcName  = spawnArgs.GetString( "call" );
+
+	// we delay each thread by wait * numberOfTarget
+	delay = 0;
+
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( ent && ent->scriptObject.HasObject() ) {
@@ -1442,8 +1450,16 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			}
 			// create a thread and call the function
 			thread = new idThread();
-			thread->CallFunction( ent, func, true );
-			thread->Start();
+			if (pass_self)
+				{
+				thread->CallFunctionArgs( func, true, "ee", ent, this );
+				}
+			else
+				{
+				thread->CallFunction( ent, func, true );
+				}
+			thread->DelayedStart( delay );
+			delay += wait;
 		}
 	}
 }

@@ -126,6 +126,9 @@ const idEventDef EV_Damage("damage", "EEvsf");
 // Takes the name of the healing entity and the healing scale, returns an integer
 const idEventDef EV_Heal("heal", "sf", 'd');
 
+// tels: Teleport the entity to the position/orientation of the given entity
+const idEventDef EV_TeleportTo("teleportTo", "e");
+
 //===============================================================
 //                   TDM GUI interface
 //===============================================================
@@ -321,6 +324,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_InPVS,				idEntity::Event_InPVS )
 	EVENT( EV_Damage,				idEntity::Event_Damage )
 	EVENT( EV_Heal,					idEntity::Event_Heal )
+	EVENT( EV_TeleportTo,			idEntity::Event_TeleportTo )
 
 	EVENT( EV_SetGui,				idEntity::Event_SetGui )
 	EVENT( EV_GetGui,				idEntity::Event_GetGui )
@@ -9720,6 +9724,11 @@ void idEntity::Event_Heal( const char *healDefName, const float healScale )
 {
 	// Pass the call to the idEntity::heal method
 	idThread::ReturnInt(heal(healDefName, healScale));
+}
+
+void idEntity::Event_TeleportTo(idEntity* target)
+{
+	Teleport( vec3_origin, idAngles( 0.0f, 0.0f, 0.0f ), target );
 }
 
 bool idEntity::canSeeEntity(idEntity* target, int useLighting) {
