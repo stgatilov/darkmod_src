@@ -168,7 +168,7 @@ void CombatState::Init(idAI* owner)
 
 
 	// The communication system plays starting bark
-	idPlayer* player;
+	idPlayer* player(NULL);
 	if (enemy->IsType(idPlayer::Type))
 	{
 		player = static_cast<idPlayer*>(enemy);
