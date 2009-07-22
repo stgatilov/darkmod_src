@@ -211,6 +211,7 @@ AI/States/IdleState.cpp \
 AI/States/KnockedOutState.cpp \
 AI/States/LostTrackOfEnemyState.cpp \
 AI/States/ObservantState.cpp \
+AI/States/PainState.cpp \
 AI/States/SearchingState.cpp \
 AI/States/State.cpp \
 AI/States/StayInCoverState.cpp \
