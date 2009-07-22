@@ -2283,10 +2283,18 @@ idActor::Teleport
 ================
 */
 void idActor::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
-	GetPhysics()->SetOrigin( origin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-	GetPhysics()->SetLinearVelocity( vec3_origin );
 
-	viewAxis = angles.ToMat3();
+	GetPhysics()->SetLinearVelocity( vec3_origin );
+	if (destination == NULL)
+	{
+		GetPhysics()->SetOrigin( origin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		viewAxis = angles.ToMat3();
+	}
+	else
+	{
+		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		viewAxis = destination->GetPhysics()->GetAxis();
+	}
 
 	UpdateVisuals();
 

@@ -5074,8 +5074,18 @@ idEntity::Teleport
 ================
 */
 void idEntity::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
-	GetPhysics()->SetOrigin( origin );
-	GetPhysics()->SetAxis( angles.ToMat3() );
+
+	if (destination == NULL)
+	{
+		GetPhysics()->SetOrigin( origin );
+		GetPhysics()->SetAxis( angles.ToMat3() );
+	}
+	else
+	{
+		// copy origin and angles from the destination
+		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() );
+		GetPhysics()->SetAxis( destination->GetPhysics()->GetAxis() );
+	}
 
 	UpdateVisuals();
 }
