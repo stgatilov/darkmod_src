@@ -1010,6 +1010,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\States\PainState.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\States\PainState.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\SearchingState.cpp"
 						>
 					</File>

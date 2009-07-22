@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/States/KnockedOutState.h"
 #include "../../DarkMod/AI/States/DeadState.h"
 #include "../../DarkMod/AI/States/ConversationState.h"
+#include "../../DarkMod/AI/States/PainState.h"
 #include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 #include "../../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../../DarkMod/Relations.h"
@@ -5412,6 +5413,12 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 
 		// AI don't like being attacked
 		ChangeEntityRelation(attacker, -10);
+
+		// Switch to pain state if idle
+		if (AI_AlertIndex == 0)
+		{
+			GetMind()->PushState(ai::StatePtr(new ai::PainState));
+		}
 	}
 
 	return ( AI_PAIN != 0 );
