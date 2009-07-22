@@ -123,7 +123,19 @@ void idTestModel::Spawn( void ) {
 
 	if ( !headModelDefName.IsEmpty() )
 	{
-		jointName = "Head";//spawnArgs.GetString( "head_joint" );
+		jointName = spawnArgs.GetString( "head_joint" );
+
+		if (jointName.IsEmpty())
+		{
+			// greebo: Second chance, use the CVAR, if no head_joint defined
+			g_testModelHeadJoint.GetString();
+		}
+
+		if (jointName.IsEmpty())
+		{
+			jointName = "Spine2"; // fall back to hardcoded
+		}
+
 		joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT )
 		{

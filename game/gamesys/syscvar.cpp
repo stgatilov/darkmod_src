@@ -612,6 +612,7 @@ idCVar g_mpWeaponAngleScale(		"g_mpWeaponAngleScale",		"0",			CVAR_GAME | CVAR_F
 idCVar g_testParticle(				"g_testParticle",			"0",			CVAR_GAME | CVAR_INTEGER, "test particle visualation, set by the particle editor" );
 idCVar g_testParticleName(			"g_testParticleName",		"",				CVAR_GAME, "name of the particle being tested by the particle editor" );
 idCVar g_testModelHead(				"g_testModelHead",			"atdm:ai_head_citywatch",	CVAR_GAME | CVAR_ARCHIVE, "test model head entityDef" );
+idCVar g_testModelHeadJoint(				"g_testModelHeadJoint",			"Spine2",	CVAR_GAME | CVAR_ARCHIVE, "test model head joint" );
 idCVar g_testModelRotate(			"g_testModelRotate",		"0",			CVAR_GAME, "test model rotation speed" );
 idCVar g_testPostProcess(			"g_testPostProcess",		"",				CVAR_GAME, "name of material to draw over screen" );
 idCVar g_testModelAnimate(			"g_testModelAnimate",		"0",			CVAR_GAME | CVAR_INTEGER, "test model animation,\n"

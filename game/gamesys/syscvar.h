@@ -498,6 +498,7 @@ extern idCVar	g_testPostProcess;
 extern idCVar	g_rotoscope;
 
 extern idCVar	g_testModelHead;
+extern idCVar	g_testModelHeadJoint;
 extern idCVar	g_testModelRotate;
 extern idCVar	g_testModelAnimate;
 extern idCVar	g_testModelBlend;
