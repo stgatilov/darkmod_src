@@ -1428,7 +1428,7 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	bool				pass_self;
 	float				wait, delay;
 
-	pass_self = spawnArgs.GetBool( "pass_self", false);
+	pass_self = spawnArgs.GetBool( "pass_self", "0");
 	wait	  = spawnArgs.GetFloat ( "wait", "0");
 	funcName  = spawnArgs.GetString( "call" );
 
