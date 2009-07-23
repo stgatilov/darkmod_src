@@ -1468,6 +1468,9 @@ the wait spawnarg.
 If "pass_self" is true, the first argument of the posted event is the
 triggered entity. This is useful for teleportTo(target), for instance.
 
+If "propagate_to_team" is true, then the event will be posted to all members
+of the team that the target is a member of. Useful for posting events
+to entites that have other entities bound to them like holders with lights.
 ===============================================================================
 */
 
@@ -1483,14 +1486,16 @@ idTarget_PostScriptEvent::Event_Activate
 void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
 	int					i;
 	idEntity			*ent;
+	idList<idEntity *>	ChildList;
 
 	// we delay each post by: delay +  wait * numberOfTarget
 	float wait			= spawnArgs.GetFloat ( "wait", "0");
 	float delay			= spawnArgs.GetFloat ( "delay", "0");
 	const char* evName	= spawnArgs.GetString( "event" );
 	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+	bool do_team		= spawnArgs.GetBool  ( "propagate_to_team", "0");
 
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Posting event %s on %i targets.\r", name.c_str(), evName, targets.Num() );
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Posting event %s on %i targets (team: %i, pass_self: %i).\r", name.c_str(), evName, targets.Num(), do_team, pass_self );
 	const idEventDef *ev = idEventDef::FindEvent( evName );
 
 	if ( !ev ) {
@@ -1501,12 +1506,45 @@ void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
 		ent = targets[ i ].GetEntity();
 
 		if (ent) {
-			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Posting event on target #%i.\r", i);
-			if (pass_self) {
-				ent->PostEventSec( ev, delay, this );
+			// DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Posting event on target #%i.\r", i);
+			if (do_team) {
+				idEntity* bind_master = ent->GetBindMaster();
+				if (!bind_master) {
+					// The entity itself is the bind_master
+					bind_master = ent;
+				}
+				ChildList.Clear();
+				bind_master->GetTeamChildren( &ChildList );
+
+				// post the event on the bind_master first
+				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Posting event on bind_master (or self) of target %s (#%i).\r", ent->GetName(), i);
+				if (pass_self) {
+					bind_master->PostEventSec( ev, delay, this );
+				} else {
+					bind_master->PostEventSec( ev, delay );
+				}
+
+				// for each child (that should exclude the already done bind_master):
+				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING(" Have %i children\r", ChildList.Num() );
+				for (int childNum = 0; childNum < ChildList.Num(); childNum++) {
+					idEntity* child = ChildList[i];
+					if (!child) { continue; }
+					DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("  Posting event on child %s (%i) of target #%i.\r", child->GetName(), childNum, i);
+					if (pass_self) {
+						child->PostEventSec( ev, delay, this );
+					} else {
+						child->PostEventSec( ev, delay );
+					}
+				}
 			} else {
-				ent->PostEventSec( ev, delay );
+				// we should post only to the target directly
+				if (pass_self) {
+					ent->PostEventSec( ev, delay, this );
+				} else {
+					ent->PostEventSec( ev, delay );
+				}
 			}
+
 			delay += wait;
 		} else {
 			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity on target #%i.\r", i );

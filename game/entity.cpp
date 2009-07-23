@@ -5297,8 +5297,6 @@ void idEntity::Event_RemoveTarget(idEntity* target)
 }
 
 
-
-
 /*
 ================
 idEntity::Event_NumTargets
