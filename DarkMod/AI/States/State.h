@@ -133,6 +133,8 @@ protected:
 
 	virtual void UpdateAlertLevel();
 
+	virtual idStr GetGreetingSound(idAI* owner, idAI* otherAI);
+
 private:
 	void OnMessageDetectedSomethingSuspicious(CommMessage& message);
 };
