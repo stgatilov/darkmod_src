@@ -316,7 +316,7 @@ void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_
 	m_FrobPeers.AddUnique(bodyEnt->name);
 
 	// ishtvan: Go through our bind children and copy the actor body info over to them
-	// might end up doing a few extra calls if GetBindTeam is broken like we think,
+	// might end up doing a few extra calls if GetTeamChildren is broken like we think,
 	// but that's okay, add extra check of direct bindmaster to prevent infinite recursion
 	idList<idEntity *> children;
 	GetTeamChildren( &children );
