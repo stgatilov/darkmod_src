@@ -5086,8 +5086,17 @@ void idEntity::Teleport( const idVec3 &origin, const idAngles &angles, idEntity 
 	}
 	else
 	{
-		// copy origin and angles from the destination
-		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() );
+		// tels: copy origin and angles from the destination, but
+		//		 use potential "teleport_offset" and "teleport_random_offset" spawnargs
+		idVec3 offset = spawnArgs.GetVector( "teleport_offset", "0 0 0" );
+		idVec3 rand_offset = spawnArgs.GetVector( "teleport_random_offset", "0 0 0" );
+
+		// replace "3 0 0" with a value of "-1.5 .. 1.5, 0, 0"
+		rand_offset.x = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.x) - idMath::Fabs(rand_offset.x) / 2;
+		rand_offset.y = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.y) - idMath::Fabs(rand_offset.y) / 2;
+		rand_offset.z = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.z) - idMath::Fabs(rand_offset.z) / 2;
+
+		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() + offset + rand_offset );
 		GetPhysics()->SetAxis( destination->GetPhysics()->GetAxis() );
 	}
 

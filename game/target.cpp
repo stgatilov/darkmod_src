@@ -1425,15 +1425,10 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	const function_t	*func;
 	const char			*funcName;
 	idThread			*thread;
-	bool				pass_self;
-	float				wait, delay;
 
-	pass_self = spawnArgs.GetBool( "pass_self", "0");
-	wait	  = spawnArgs.GetFloat ( "wait", "0");
 	funcName  = spawnArgs.GetString( "call" );
 
-	// we delay each thread by wait * numberOfTarget
-	delay = 0;
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Calling object function %s on %i targets.\r", name.c_str(), funcName, targets.Num() );
 
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
@@ -1448,18 +1443,73 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
 				gameLocal.Error( "Function '%s' on entity '%s' is the wrong type for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Starting call for target #%i\r", i);
 			// create a thread and call the function
 			thread = new idThread();
-			if (pass_self)
-				{
-				thread->CallFunctionArgs( func, true, "ee", ent, this );
-				}
-			else
-				{
-				thread->CallFunction( ent, func, true );
-				}
-			thread->DelayedStart( delay );
+			thread->CallFunction( ent, func, true );
+			thread->DelayedStart( 0 );
+		}
+		else
+		{
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity or no script object on target #%i.\r", i );
+		}
+	}
+}
+
+/*
+===============================================================================
+
+Tels idTarget_PostScriptEvent
+
+This locks up the named event and then posts it with the specified delay
+for each target. The delay is increased for each target as specified with
+the wait spawnarg.
+
+If "pass_self" is true, the first argument of the posted event is the
+triggered entity. This is useful for teleportTo(target), for instance.
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTarget, idTarget_PostScriptEvent )
+	EVENT( EV_Activate,	idTarget_PostScriptEvent::Event_Activate )
+END_CLASS
+
+/*
+================
+idTarget_PostScriptEvent::Event_Activate
+================
+*/
+void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
+	int					i;
+	idEntity			*ent;
+
+	// we delay each post by: delay +  wait * numberOfTarget
+	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float delay			= spawnArgs.GetFloat ( "delay", "0");
+	const char* evName	= spawnArgs.GetString( "event" );
+	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Posting event %s on %i targets.\r", name.c_str(), evName, targets.Num() );
+	const idEventDef *ev = idEventDef::FindEvent( evName );
+
+	if ( !ev ) {
+		gameLocal.Error( "Unknown event '%s' on entity '%s'", evName, name.c_str() );
+	}
+
+	for( i = 0; i < targets.Num(); i++ ) {
+		ent = targets[ i ].GetEntity();
+
+		if (ent) {
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Posting event on target #%i.\r", i);
+			if (pass_self) {
+				ent->PostEventSec( ev, delay, this );
+			} else {
+				ent->PostEventSec( ev, delay );
+			}
 			delay += wait;
+		} else {
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity on target #%i.\r", i );
 		}
 	}
 }

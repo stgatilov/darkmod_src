@@ -429,6 +429,21 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+/*
+===============================================================================
+
+Tels: idTarget_PostScriptEvent
+
+===============================================================================
+*/
+
+class idTarget_PostScriptEvent : public idTarget {
+public:
+	CLASS_PROTOTYPE( idTarget_PostScriptEvent );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
 
 /*
 ===============================================================================
