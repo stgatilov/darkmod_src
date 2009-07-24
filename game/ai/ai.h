@@ -561,9 +561,6 @@ public:
 	// The time that needs to pass before locked doors are enabled for another try (msec)
 	int						doorRetryTime;
 
-	// The greeting state this AI is currently in (to coordinate greeting barks in between AI)
-	ai::GreetingState			greetingState;
-
 protected:
 	// navigation
 	idAAS *					aas;

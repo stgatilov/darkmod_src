@@ -203,6 +203,17 @@ struct CrashLandResult
 	bool hasLanded;		// true if the actor hit the ground after a fall this frame
 };
 
+enum GreetingState
+{
+	ECannotGreet = 0,		// actor is not able to greet (e.g. spiders)
+	ENotGreetingAnybody,	// actor is currently not greeting anybody (free)
+	EWaitingForGreeting,	// actor is receiving a greeting from somebody else
+	EGoingToGreet,			// actor is about to greet somebody 
+	EIsGreeting,			// actor is currently playing its greeting sound
+	EAfterGreeting,			// actor is in the small pause after greeting
+	ENumAIGreetingStates,	// invalid state
+};
+
 #define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
 
 class idActor : public idAFEntity_Gibbable {
@@ -222,6 +233,9 @@ public:
 
 	idLinkList<idActor>		enemyNode;			// node linked into an entity's enemy list for quick lookups of who is attacking him
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
+
+	// The greeting state this actor is currently in (to coordinate greeting barks in between actors)
+	GreetingState			greetingState;
 
 	/**
 	* TDM: Moved up from idAI
