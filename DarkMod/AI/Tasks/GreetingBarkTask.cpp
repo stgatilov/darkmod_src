@@ -37,30 +37,31 @@ const idStr& GreetingBarkTask::GetName() const
 
 void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Set up the message for the other AI before propagating the Init() call
+	// Init the base class
+	SingleBarkTask::Init(owner, subsystem);
+	
+	// This task may not be performed with empty entity pointers
+	assert(owner != NULL);
 
-	// TODO
-
-	_message = CommMessagePtr(new CommMessage(
+	// Set up the message for the other AI
+	SetMessage(CommMessagePtr(new CommMessage(
 		CommMessage::Greeting_CommType, 
 		owner, _greetingTarget, // from this AI to the other
 		NULL,
 		owner->GetPhysics()->GetOrigin()
-	));
-
-	// Init the base class
-	SingleBarkTask::Init(owner, subsystem);
-
-	// This task may not be performed with empty entity pointers
-	assert(owner != NULL);
-
+	)));
 }
 
 bool GreetingBarkTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("GreetingBarkTask performing.\r");
 
-	return false;
+	// Let the SingleBarkTask do the timing and act upon the result
+	bool done = SingleBarkTask::Perform(subsystem);
+
+	// TODO: Set AI greeting state
+
+	return done;
 }
 
 // Save/Restore methods

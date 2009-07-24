@@ -26,6 +26,8 @@ class SingleBarkTask :
 	public CommunicationTask
 {
 protected:
+	int _startDelay;
+
 	int _endTime;
 
 	// The message which should be delivered when barking
@@ -36,7 +38,11 @@ protected:
 
 public:
 	// Constructor taking a sound name as argument
-	SingleBarkTask(const idStr& soundName, const CommMessagePtr& message = CommMessagePtr());
+	// Optional arguments are the message to deliver
+	// and the time to pass in ms before the bark should be played
+	SingleBarkTask(const idStr& soundName, 
+				   const CommMessagePtr& message = CommMessagePtr(),
+				   int startDelayMS = 0);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

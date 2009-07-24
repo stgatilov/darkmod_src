@@ -45,8 +45,8 @@ void CommunicationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	_barkStartTime = -1;
-	_barkLength = -1;
+	_barkStartTime = gameLocal.time;
+	_barkLength = 0;
 }
 
 int CommunicationTask::GetPriority()
