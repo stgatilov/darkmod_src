@@ -1427,6 +1427,9 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	idThread			*thread;
 
 	funcName  = spawnArgs.GetString( "call" );
+	// we delay each call by: delay +  wait * numberOfTarget
+	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float delay			= spawnArgs.GetFloat ( "delay", "0");
 
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Calling object function %s on %i targets.\r", name.c_str(), funcName, targets.Num() );
 
@@ -1447,7 +1450,8 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			// create a thread and call the function
 			thread = new idThread();
 			thread->CallFunction( ent, func, true );
-			thread->DelayedStart( 0 );
+			thread->DelayedStart( delay );
+			delay += wait;
 		}
 		else
 		{
