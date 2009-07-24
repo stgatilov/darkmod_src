@@ -225,6 +225,7 @@ AI/Tasks/CombatTask.cpp \
 AI/Tasks/CommunicationTask.cpp \
 AI/Tasks/CommWaitTask.cpp \
 AI/Tasks/FleeTask.cpp \
+AI/Tasks/GreetingBarkTask.cpp \
 AI/Tasks/HandleDoorTask.cpp \
 AI/Tasks/HandleElevatorTask.cpp \
 AI/Tasks/IdleAnimationTask.cpp \
