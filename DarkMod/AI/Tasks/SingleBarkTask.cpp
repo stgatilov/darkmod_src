@@ -75,6 +75,11 @@ void SingleBarkTask::SetSound(const idStr& soundName)
 	_soundName = soundName;
 }
 
+void SingleBarkTask::SetMessage(const CommMessagePtr& message)
+{
+	_message = message;
+}
+
 // Save/Restore methods
 void SingleBarkTask::Save(idSaveGame* savefile) const
 {

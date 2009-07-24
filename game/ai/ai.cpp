@@ -405,6 +405,8 @@ idAI::idAI()
 	maxAreaReevaluationInterval = 2000; // msec
 	doorRetryTime		= 120000; // msec
 
+	greetingState		= ai::ECannotGreet;
+
 	kickForce			= 2048.0f;
 	ignore_obstacles	= false;
 	blockedRadius		= 0.0f;
@@ -618,6 +620,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(lastAreaReevaluationTime);
 	savefile->WriteInt(maxAreaReevaluationInterval);
 	savefile->WriteInt(doorRetryTime);
+
+	savefile->WriteInt(static_cast<int>(greetingState));
+
 	move.Save( savefile );
 	savedMove.Save( savefile );
 
@@ -928,6 +933,11 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lastAreaReevaluationTime);
 	savefile->ReadInt(maxAreaReevaluationInterval);
 	savefile->ReadInt(doorRetryTime);
+
+	savefile->ReadInt(i);
+	assert(i >= ai::ECannotGreet && i < ENumAIGreetingStates);
+	greetingState = static_cast<ai::GreetingState>(i);
+
 	move.Restore( savefile );
 	savedMove.Restore( savefile );
 
@@ -1705,6 +1715,8 @@ void idAI::Spawn( void )
 	m_HandlingDoor = false;
 
 	m_HandlingElevator = false;
+
+	greetingState = spawnArgs.GetBool("canGreet", "0") ? ai::ENotGreetingAnybody : ai::ECannotGreet;
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");

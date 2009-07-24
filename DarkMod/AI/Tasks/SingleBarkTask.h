@@ -25,6 +25,7 @@ typedef boost::shared_ptr<SingleBarkTask> SingleBarkTaskPtr;
 class SingleBarkTask :
 	public CommunicationTask
 {
+protected:
 	int _endTime;
 
 	// The message which should be delivered when barking
@@ -52,6 +53,7 @@ public:
 
 	// Class-specific methods
 	virtual void SetSound(const idStr& soundName);
+	virtual void SetMessage(const CommMessagePtr& message);
 };
 
 } // namespace ai
