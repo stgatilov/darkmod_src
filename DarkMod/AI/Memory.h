@@ -327,6 +327,19 @@ public:
 		AreaToDoorInfoMap areaDoorInfoMap;
 	} doorRelated;
 
+	struct GreetingInfo
+	{
+		// The last time the associated AI was greeted by the owner
+		int lastGreetingTime;
+
+		GreetingInfo() :
+			lastGreetingTime(-1)
+		{}
+	};
+
+	typedef std::map<idActor*, GreetingInfo> ActorGreetingInfoMap;
+	ActorGreetingInfoMap greetingInfo;
+
 	// Pass the owning AI to the constructor
 	Memory(idAI* owningAI);
 
@@ -341,7 +354,11 @@ public:
 	DoorInfo& GetDoorInfo(CFrobDoor* door);
 
 	// Similar to above, but use the area number as input argument, can return NULL
-	DoorInfoPtr GetDoorInfo(int areaNum);	
+	DoorInfoPtr GetDoorInfo(int areaNum);
+
+	// Returns the last time the given actor was greeted (-1 if never greeted)
+	int GetLastGreetingTime(idActor* actor);
+	void SetLastGreetingTime(idActor* actor, int time);
 };
 
 } // namespace ai

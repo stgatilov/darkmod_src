@@ -260,4 +260,24 @@ DoorInfoPtr Memory::GetDoorInfo(int areaNum)
 	return (i != doorRelated.areaDoorInfoMap.end()) ? i->second : DoorInfoPtr();
 }
 
+int Memory::GetLastGreetingTime(idActor* actor)
+{
+	ActorGreetingInfoMap::iterator i = greetingInfo.find(actor);
+
+	return (i != greetingInfo.end()) ? i->second.lastGreetingTime : -1;
+}
+
+void Memory::SetLastGreetingTime(idActor* actor, int time)
+{
+	// Insert structure if not existing
+	ActorGreetingInfoMap::iterator i = greetingInfo.find(actor);
+
+	if (i == greetingInfo.end())
+	{
+		i = greetingInfo.insert(ActorGreetingInfoMap::value_type(actor, GreetingInfo())).first;
+	}
+
+	i->second.lastGreetingTime = time;
+}
+
 } // namespace ai
