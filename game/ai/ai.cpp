@@ -1290,22 +1290,21 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiCanSeeTimer, savefile);
 }
 
-const ai::SubsystemPtr& idAI::GetSubsystem(ai::SubsystemId id)
+ai::Subsystem* idAI::GetSubsystem(ai::SubsystemId id)
 {
-	static ai::SubsystemPtr _nullSubsys;
-
 	switch (id)
 	{
 	case ai::SubsysSenses:
-		return senseSubsystem;
+		return senseSubsystem.get();
 	case ai::SubsysMovement:
-		return movementSubsystem;
+		return movementSubsystem.get();
 	case ai::SubsysCommunication:
-		return static_cast<const ai::SubsystemPtr&>(commSubsystem);
+		return commSubsystem.get();
 	case ai::SubsysAction:
-		return actionSubsystem;
+		return actionSubsystem.get();
 	default:
-		return _nullSubsys;
+		gameLocal.Error("Request for unknown subsystem %d", static_cast<int>(id));
+		return NULL;
 	};
 }
 
