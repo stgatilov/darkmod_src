@@ -442,7 +442,8 @@ public:
 	CLASS_PROTOTYPE( idTarget_PostScriptEvent );
 
 private:
-	void				Event_Activate( idEntity *activator );
+	void	Event_Activate( idEntity *activator );
+	void	TryPostOrCall( idEntity *ent, const idEventDef *ev, const char* funcName, const bool pass_self, const float delay);
 };
 
 /*

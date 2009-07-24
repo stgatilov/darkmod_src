@@ -1427,10 +1427,17 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	idThread			*thread;
 
 	funcName  = spawnArgs.GetString( "call" );
-	// we delay each call by: delay +  wait * numberOfTarget
+	// we delay each post by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
 	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+	float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
 	float delay			= spawnArgs.GetFloat ( "delay", "0");
 
+	// avoid a negative delay
+	if (wait < 0) { wait = 0; }
+	if (delay < 0) { delay = 0; }
+	// wait_add can be negative, we will later make sure that wait is never negative
+	//
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Calling object function %s on %i targets.\r", name.c_str(), funcName, targets.Num() );
 
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -1451,7 +1458,12 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			thread = new idThread();
 			thread->CallFunction( ent, func, true );
 			thread->DelayedStart( delay );
+
 			delay += wait;
+			wait += wait_add;
+			wait *= wait_mul;
+			// avoid a negative delay
+			if (wait < 0) { wait = 0; }
 		}
 		else
 		{
@@ -1475,6 +1487,11 @@ triggered entity. This is useful for teleportTo(target), for instance.
 If "propagate_to_team" is true, then the event will be posted to all members
 of the team that the target is a member of. Useful for posting events
 to entites that have other entities bound to them like holders with lights.
+
+In case the named event cannot be found, this tries to call the script
+object function on each target entity, provided the entity in question
+has a script object (if not, a warning is issued) and the method
+there exists (if not, an error is thrown).
 ===============================================================================
 */
 
@@ -1487,17 +1504,69 @@ END_CLASS
 idTarget_PostScriptEvent::Event_Activate
 ================
 */
+
+void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *ev, const char* funcName, const bool pass_self, const float delay)
+{
+	const function_t	*func;
+
+	if (ev) {
+		if (pass_self) {
+			ent->PostEventSec( ev, delay, this );
+		} else {
+			ent->PostEventSec( ev, delay );
+		}
+	} else {
+		// try the script object function
+		if ( ent->scriptObject.HasObject() ) {
+			func = ent->scriptObject.GetFunction( funcName );
+			if ( !func ) {
+				gameLocal.Error( "Function '%s' not found on entity '%s' for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+			int numParams = 1;
+			if (pass_self) { numParams = 2; }
+
+			if ( func->type->NumParameters() != 2 ) {
+				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+
+			if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
+				gameLocal.Error( "Function '%s' on entity '%s' is the wrong type for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+
+			// create a thread and call the function
+			idThread *thread = new idThread();
+			if (pass_self) {
+				thread->CallFunction( ent, func, true );
+			} else {
+				thread->CallFunctionArgs( func, true, "ee", ent, this );
+			}
+			thread->DelayedStart( delay );
+		}
+		else
+		{
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No script object on target %s.\r", ent->name.c_str() );
+		}
+	}
+}
+
 void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
 	int					i;
 	idEntity			*ent;
 	idEntity			*NextEnt;
 
-	// we delay each post by: delay +  wait * numberOfTarget
+	// we delay each post by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
 	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+	float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
 	float delay			= spawnArgs.GetFloat ( "delay", "0");
 	const char* evName	= spawnArgs.GetString( "event" );
 	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
 	bool do_team		= spawnArgs.GetBool  ( "propagate_to_team", "0");
+
+	// avoid a negative delay
+	if (wait < 0) { wait = 0; }
+	if (delay < 0) { delay = 0; }
+	// wait_add can be negative, we will later make sure that wait is never negative
 
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Posting event %s on %i targets (team: %i, pass_self: %i).\r", name.c_str(), evName, targets.Num(), do_team, pass_self );
 	const idEventDef *ev = idEventDef::FindEvent( evName );
@@ -1521,26 +1590,21 @@ void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
     
 			while ( NextEnt != NULL ) {	
 				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING(" Posting event on team member %s of target #%i.\r", NextEnt->GetName(), i);
-				if (pass_self) {
-					NextEnt->PostEventSec( ev, delay, this );
-				} else {
-					NextEnt->PostEventSec( ev, delay );
-				}
-
-			/* get next Team member */
-			NextEnt = NextEnt->GetNextTeamEntity();
+				TryPostOrCall( NextEnt, ev, evName, pass_self, delay);
+				/* get next Team member */
+				NextEnt = NextEnt->GetNextTeamEntity();
 			}
 
 		} else {
 			// we should post only to the target directly
-			if (pass_self) {
-				ent->PostEventSec( ev, delay, this );
-			} else {
-				ent->PostEventSec( ev, delay );
-			}
+			TryPostOrCall( ent, ev, evName, pass_self, delay);
 		}
 
 		delay += wait;
+		wait += wait_add;
+		wait *= wait_mul;
+		// avoid a negative delay
+		if (wait < 0) { wait = 0; }
 	}	// end for all targets
 }
 
