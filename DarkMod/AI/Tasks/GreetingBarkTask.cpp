@@ -52,8 +52,10 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 		return;
 	}
 
-	if (owner->greetingState != ENotGreetingAnybody || 
-		_greetingTarget->greetingState != ENotGreetingAnybody)
+	// Allow state "waiting for greeting" for owner
+	// Allow state "after Greeting" for the other AI
+	if ((owner->greetingState != ENotGreetingAnybody && owner->greetingState != EWaitingForGreeting) || 
+		(_greetingTarget->greetingState != ENotGreetingAnybody && _greetingTarget->greetingState != EAfterGreeting))
 	{
 		// Target is busy
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: one of the actors is busy: %s to %s\r", owner->name.c_str(), _greetingTarget->name.c_str());
@@ -62,7 +64,7 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	// Check the last time we greeted this AI
-	int lastGreetingTime = owner->GetMemory().GetLastGreetingTime(_greetingTarget);
+	int lastGreetingTime = owner->GetMemory().GetGreetingInfo(_greetingTarget).lastGreetingTime;
 
 	if (lastGreetingTime > 0 && lastGreetingTime < gameLocal.time + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)
 	{
@@ -121,7 +123,8 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 		owner->greetingState = EIsGreeting;
 
 		// Remember the time we greeted this actor
-		owner->GetMemory().SetLastGreetingTime(_greetingTarget, gameLocal.time);
+		Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(_greetingTarget);
+		info.lastGreetingTime = gameLocal.time;
 
 		int timeLeft = _endTime - gameLocal.time;
 

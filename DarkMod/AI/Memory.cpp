@@ -138,6 +138,7 @@ void Memory::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteObject(i->first);
 		savefile->WriteInt(i->second.lastGreetingTime);
+		savefile->WriteInt(i->second.lastConsiderTime);
 	}
 }
 
@@ -247,6 +248,7 @@ void Memory::Restore(idRestoreGame* savefile)
 			ActorGreetingInfoMap::value_type(ai, GreetingInfo()));
 		
 		savefile->ReadInt(result.first->second.lastGreetingTime);
+		savefile->ReadInt(result.first->second.lastConsiderTime);
 	}
 }
 
@@ -283,14 +285,7 @@ DoorInfoPtr Memory::GetDoorInfo(int areaNum)
 	return (i != doorRelated.areaDoorInfoMap.end()) ? i->second : DoorInfoPtr();
 }
 
-int Memory::GetLastGreetingTime(idActor* actor)
-{
-	ActorGreetingInfoMap::iterator i = greetingInfo.find(actor);
-
-	return (i != greetingInfo.end()) ? i->second.lastGreetingTime : -1;
-}
-
-void Memory::SetLastGreetingTime(idActor* actor, int time)
+Memory::GreetingInfo& Memory::GetGreetingInfo(idActor* actor)
 {
 	// Insert structure if not existing
 	ActorGreetingInfoMap::iterator i = greetingInfo.find(actor);
@@ -300,7 +295,7 @@ void Memory::SetLastGreetingTime(idActor* actor, int time)
 		i = greetingInfo.insert(ActorGreetingInfoMap::value_type(actor, GreetingInfo())).first;
 	}
 
-	i->second.lastGreetingTime = time;
+	return i->second;
 }
 
 } // namespace ai

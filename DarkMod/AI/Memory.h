@@ -332,8 +332,14 @@ public:
 		// The last time the associated AI was greeted by the owner
 		int lastGreetingTime;
 
+		// The last time the actor was met and considered for greeting
+		// the actual greeting doesn't have to be performed
+		// This is used to "ignore" visual stims for greeting for a while
+		int lastConsiderTime;
+
 		GreetingInfo() :
-			lastGreetingTime(-1)
+			lastGreetingTime(-1),
+			lastConsiderTime(-1)
 		{}
 	};
 
@@ -356,9 +362,8 @@ public:
 	// Similar to above, but use the area number as input argument, can return NULL
 	DoorInfoPtr GetDoorInfo(int areaNum);
 
-	// Returns the last time the given actor was greeted (-1 if never greeted)
-	int GetLastGreetingTime(idActor* actor);
-	void SetLastGreetingTime(idActor* actor, int time);
+	// Returns the greeting info structure for the given actor
+	GreetingInfo& GetGreetingInfo(idActor* actor);
 };
 
 } // namespace ai
