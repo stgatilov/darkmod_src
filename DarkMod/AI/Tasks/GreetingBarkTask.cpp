@@ -19,6 +19,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
+const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 3*60*1000; // 3 minutes
+
 GreetingBarkTask::GreetingBarkTask() :
 	SingleBarkTask()
 {}
@@ -58,19 +60,23 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 		return;
 	}
+
+	// Check the last time we greeted this AI
+	int lastGreetingTime = owner->GetMemory().GetLastGreetingTime(_greetingTarget);
+
+	if (lastGreetingTime > 0 && lastGreetingTime < gameLocal.time + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)
+	{
+		// Too early
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: time since last greet too short: %s to %s, %d msecs\r", 
+			owner->name.c_str(), _greetingTarget->name.c_str(), gameLocal.time - lastGreetingTime);
+		
+		subsystem.FinishTask();
+		return;
+	}
 	
 	// Both AI are not greeting each other so far, continue
 	owner->greetingState = EGoingToGreet;
 	_greetingTarget->greetingState = EWaitingForGreeting;
-
-	/*
-	ECannotGreet = 0,		// actor is not able to greet (e.g. spiders)
-	EWaitingForGreeting
-	ENotGreetingAnybody,	// actor is currently not greeting anybody (free)
-	EGoingToGreet,			// actor is about to greet somebody 
-	EIsGreeting,			// actor is currently playing its greeting sound
-	EAfterGreeting,			// actor is in the small pause after greeting
-	*/
 }
 
 bool GreetingBarkTask::Perform(Subsystem& subsystem)
@@ -113,6 +119,16 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 	{
 		// End time is set, we're currently barking
 		owner->greetingState = EIsGreeting;
+
+		// Remember the time we greeted this actor
+		owner->GetMemory().SetLastGreetingTime(_greetingTarget, gameLocal.time);
+
+		int timeLeft = _endTime - gameLocal.time;
+
+		if (timeLeft > 32)
+		{
+			owner->Event_LookAtPosition(_greetingTarget->GetEyePosition(), MS2SEC(timeLeft));
+		}
 	}
 
 	if (_barkStartTime > 0 && gameLocal.time > _barkStartTime + 50000)
