@@ -661,9 +661,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					const idVec3& otherOrigin = otherAI->GetPhysics()->GetOrigin();
 					idVec3 dir = origin - otherOrigin;
 					dir.z = 0;
-					float dist = dir.LengthFast();
+					float distSqr = dir.LengthSqr();
 
-					if (dist <= 400)
+					if (distSqr <= Square(230))
 					{
 						if (owner->CheckFOV(otherAI->GetEyePosition()) && otherAI->CheckFOV(owner->GetEyePosition()))
 						{
