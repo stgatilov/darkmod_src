@@ -130,6 +130,15 @@ void Memory::Save(idSaveGame* savefile) const
 	}
 
 	// greebo: Don't save the AAS areaNum => DoorInfo mapping (can be re-calculated at restore time)
+
+	savefile->WriteInt(static_cast<int>(greetingInfo.size()));
+
+	for (ActorGreetingInfoMap::const_iterator i = greetingInfo.begin();
+		 i != greetingInfo.end(); ++i)
+	{
+		savefile->WriteObject(i->first);
+		savefile->WriteInt(i->second.lastGreetingTime);
+	}
 }
 
 void Memory::Restore(idRestoreGame* savefile)
@@ -224,6 +233,20 @@ void Memory::Restore(idRestoreGame* savefile)
 		doorRelated.areaDoorInfoMap.insert(
 			AreaToDoorInfoMap::value_type(i->second->areaNum, i->second)
 		);
+	}
+
+	greetingInfo.clear();
+
+	savefile->ReadInt(temp);
+	for (int i = 0; i < temp; ++i)
+	{
+		idAI* ai;
+		savefile->ReadObject(reinterpret_cast<idClass*&>(ai));
+		
+		std::pair<ActorGreetingInfoMap::iterator, bool> result = greetingInfo.insert(
+			ActorGreetingInfoMap::value_type(ai, GreetingInfo()));
+		
+		savefile->ReadInt(result.first->second.lastGreetingTime);
 	}
 }
 

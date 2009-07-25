@@ -1510,9 +1510,17 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			// If not too upset, look at them
-			if (owner->AI_AlertLevel < owner->thresh_3)
+			if (owner->AI_AlertIndex < EObservant && owner->greetingState != ECannotGreet &&
+				issuingEntity->IsType(idAI::Type))
 			{
-				owner->Event_LookAtEntity(issuingEntity, 3.0); // 3 seconds
+				idAI* otherAI = static_cast<idAI*>(issuingEntity);
+
+				// Get the sound and queue the task
+				idStr greetSound = GetGreetingSound(owner, otherAI);
+
+				owner->commSubsystem->AddCommTask(
+					CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
+				);
 			}
 			break;
 		case CommMessage::FriendlyJoke_CommType:
