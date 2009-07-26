@@ -466,7 +466,11 @@ void CShop::LoadShopItemDefinitions()
 			const char* image = dict.GetString("image", "");
 			int cost = dict.GetInt("price", "0");
 
-			CShopItemPtr theItem(new CShopItem(itemClassname, displayName, displayDesc, cost, image, 0));
+			idStr id = name;
+			id.StripLeadingOnce("shopitem_");
+			id = "atdm:" + id;
+
+			CShopItemPtr theItem(new CShopItem(id, displayName, displayDesc, cost, image, 0));
 
 			// Add all "itemClassname*" spawnargs to the list
 			for (const idKeyValue* kv = dict.MatchPrefix("itemClassname"); kv != NULL; 
