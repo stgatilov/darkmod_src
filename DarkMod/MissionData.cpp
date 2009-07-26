@@ -1658,7 +1658,8 @@ void CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile)
 
 		idStr classname = mapDict.GetString("classname");
 
-		if (classname != "target_tdm_addobjectives") {
+		if (classname != "target_tdm_addobjectives" && classname != "atdm:target_addobjectives")
+		{
 			continue; // not the right entity
 		}
 
