@@ -289,7 +289,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					_doorHandlingState = EStateWaitBeforeOpen;
 					break;
 				}
-
 				else if (owner->AI_MOVE_DONE)
 				{
 					owner->MoveToPosition(_frontPos);
@@ -444,7 +443,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough())
 					{
-						if (owner->AI_AlertLevel >= owner->thresh_3)
+						if (owner->AI_AlertIndex >= EInvestigating)
 						{
 							return true;
 						}
@@ -568,7 +567,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough())
 					{
-						if (owner->AI_AlertLevel >= owner->thresh_3)
+						if (owner->AI_AlertIndex >= EInvestigating)
 						{
 							return true;
 						}
@@ -618,7 +617,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (FitsThrough())
 					{
 						// gap is large enough, move to back position
-						if (owner->AI_AlertLevel >= owner->thresh_3)
+						if (owner->AI_AlertIndex >= EInvestigating)
 						{
 							return true;
 						}
@@ -682,7 +681,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				else
 				{
 					// no need for waiting, door is already open, let's move
-					if (owner->AI_AlertLevel >= owner->thresh_3)
+					if (owner->AI_AlertIndex >= EInvestigating)
 					{
 						return true;
 					}
@@ -716,7 +715,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-					if (owner->AI_AlertLevel >= owner->thresh_3)
+					if (owner->AI_AlertIndex >= EInvestigating)
 					{
 						return true;
 					}
@@ -789,7 +788,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough() && masterUser == owner)
 					{
-						if (owner->AI_AlertLevel >= owner->thresh_3)
+						if (owner->AI_AlertIndex >= EInvestigating)
 						{
 							return true;
 						}
@@ -817,7 +816,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// door is fully open, let's get moving
 				else if	(!frobDoor->IsChangingState() && masterUser == owner)
 				{
-					if (owner->AI_AlertLevel >= owner->thresh_3)
+					if (owner->AI_AlertIndex >= EInvestigating)
 					{
 						return true;
 					}
@@ -856,7 +855,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				
 				// reached back position
-				if (owner->AI_MOVE_DONE)
+				if (owner->AI_MOVE_DONE && owner->ReachedPos(_backPos, MOVE_TO_POSITION))
 				{
 					if (!AllowedToClose(owner))
 					{
@@ -893,7 +892,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (!_doorInTheWay && owner->AI_AlertLevel >= owner->thresh_3)
+				if (!_doorInTheWay && owner->AI_AlertIndex >= EInvestigating)
 				{
 					return true;
 				}
@@ -920,7 +919,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (!_doorInTheWay && owner->AI_AlertLevel >= owner->thresh_3)
+				if (!_doorInTheWay && owner->AI_AlertIndex >= EInvestigating)
 				{
 					return true;
 				}
@@ -942,7 +941,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					return true;
 				}
-				if (owner->AI_AlertLevel >= owner->thresh_3)
+				if (owner->AI_AlertIndex >= EInvestigating)
 				{
 					return true;
 				}
