@@ -3002,7 +3002,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		} 
 		else
 		{
-			Pain( inflictor, attacker, damage, dir, location );
+			Pain( inflictor, attacker, damage, dir, location, damageDef );
 
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
 			if ( damageDef->GetBool( "no_air" ) ) 
