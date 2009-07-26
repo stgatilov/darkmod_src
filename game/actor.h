@@ -450,7 +450,7 @@ public:
 	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
 	void					ClearPain( void );
-	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef );
 
 	// greebo: Sets the "player is pushing something heavy" state to the given bool.
 	virtual void			SetIsPushing(bool isPushing);

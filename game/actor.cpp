@@ -3040,7 +3040,7 @@ void idActor::ClearPain( void ) {
 idActor::Pain
 =====================
 */
-bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef ) {
 	if ( af.IsLoaded() && !IsKnockedOut() ) {
 		// clear impacts
 		af.Rest();

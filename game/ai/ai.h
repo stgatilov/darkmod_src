@@ -1202,7 +1202,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual void			Bark(const idStr& soundName);
 
 	// damage
-	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
 	void					DropBlood(idEntity *inflictor);

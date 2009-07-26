@@ -5393,7 +5393,7 @@ int idAI::ReactionTo( const idEntity *ent )
 idAI::Pain
 =====================
 */
-bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location )
+bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef )
 {
 	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location );
 	AI_DAMAGE = true;
@@ -5416,7 +5416,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		ChangeEntityRelation(attacker, -10);
 
 		// Switch to pain state if idle
-		if (AI_AlertIndex == 0)
+		if (AI_AlertIndex == 0 && damage > 0 && 
+			(damageDef == NULL || !damageDef->GetBool("no_pain_anim", "0")))
 		{
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 		}
