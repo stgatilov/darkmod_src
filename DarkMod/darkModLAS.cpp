@@ -65,17 +65,21 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 	
 	while (p_cursor != NULL)
 	{
-		darkModLightRecord_t* p_thisLASLight = (darkModLightRecord_t*) (p_cursor->Owner());
+		darkModLightRecord_t* p_thisLASLight = static_cast<darkModLightRecord_t*>(p_cursor->Owner());
+
 		if (p_thisLASLight == p_LASLight)
 		{
-			// angua: Check if this is the only light in this area. 
-			if (p_cursor->ListHead() == p_cursor && p_cursor->NextNode() == NULL) 
+			// greebo: Check if this is the list head, 
+			// we need to update the lightlist head pointer in that case
+			if (p_cursor->ListHead() == p_cursor)
 			{
-				// set this list to empty.
-				m_pp_areaLightLists[oldAreaNum] = NULL;
+				// NextNode() will return NULL if this is the only light in this list
+				m_pp_areaLightLists[oldAreaNum] = p_cursor->NextNode();
 			}
+
 			// Remove this node from its list
 			p_cursor->RemoveHeadsafe();
+
 			break;
 		}
 		else
