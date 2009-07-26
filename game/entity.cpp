@@ -10265,6 +10265,9 @@ void idEntity::ChangeEntityRelation(idEntity* entity, int relationChange)
 
 	if (found == m_EntityRelations.end())
 	{
+		// Sanity-check, some entities like worldspawn have team == -1
+		if (entity->team == -1) return;
+
 		// not yet set, load default from relations manager
 		int defaultrel = gameLocal.m_RelationsManager->GetRelNum(team, entity->team);
 
