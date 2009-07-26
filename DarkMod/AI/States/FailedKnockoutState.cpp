@@ -48,6 +48,9 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
+	// Failed KO counts as attack
+	memory.hasBeenAttackedByEnemy = true;
+
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");

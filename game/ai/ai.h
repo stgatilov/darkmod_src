@@ -1204,6 +1204,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// damage
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
+								const char *damageDefName, const float damageScale, const int location,
+								trace_t *collision = NULL);
 
 	void					DropBlood(idEntity *inflictor);
 	void					SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float size);

@@ -198,6 +198,9 @@ public:
 	// TRUE if enemies have been seen
 	bool enemiesHaveBeenSeen;
 
+	// TRUE if the enemy has shot/hurt/attempted blackjacking
+	bool hasBeenAttackedByEnemy;
+
 	// TRUE if the AI knows that items have been stolen
 	bool itemsHaveBeenStolen;
 

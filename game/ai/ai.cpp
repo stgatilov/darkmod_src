@@ -5620,6 +5620,18 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	DropBlood(inflictor);
 }
 
+void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
+	const char *damageDefName, const float damageScale, const int location,
+	trace_t *collision)
+{
+	idActor::Damage(inflictor, attacker, dir, damageDefName, damageScale, location, collision);
+
+	if (attacker != NULL && IsEnemy(attacker))
+	{
+		GetMemory().hasBeenAttackedByEnemy = true;
+	}
+}
+
 void idAI::DropBlood(idEntity *inflictor)
 {
 	if (inflictor)
@@ -9110,13 +9122,14 @@ bool idAI::HasSeenEvidence()
 	ai::Memory& memory = GetMemory();
 
 	return memory.enemiesHaveBeenSeen
+		|| memory.hasBeenAttackedByEnemy
 		|| memory.itemsHaveBeenStolen
 		|| memory.itemsHaveBeenBroken
 		|| memory.unconsciousPeopleHaveBeenFound
 		|| memory.deadPeopleHaveBeenFound
 		|| spawnArgs.GetBool("alert_idle", "0");
-
 }
+
 /**
 * ========================== BEGIN  TDM KNOCKOUT CODE =============================
 **/
