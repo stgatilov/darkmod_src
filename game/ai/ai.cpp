@@ -5395,7 +5395,7 @@ idAI::Pain
 */
 bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef )
 {
-	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location );
+	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location, damageDef );
 	AI_DAMAGE = true;
 
 	// force a blink

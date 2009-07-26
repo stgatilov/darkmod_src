@@ -36,9 +36,6 @@ void RandomTurningTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->TurnToward(_nextYaw);
 	_turning = true;
 	_nextTurningTime = gameLocal.time;
-
-	
-
 }
 
 bool RandomTurningTask::Perform(Subsystem& subsystem)
@@ -52,9 +49,6 @@ bool RandomTurningTask::Perform(Subsystem& subsystem)
 
 	if (_turning && owner->FacingIdeal())
 	{		
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
-
 		// TODO: un-hardcode
 		int turnDelay = static_cast<int>(1000 + gameLocal.random.RandomFloat() * 400);
 		
@@ -68,32 +62,12 @@ bool RandomTurningTask::Perform(Subsystem& subsystem)
 
 	if (!_turning && gameLocal.time >= _nextTurningTime)
 	{
-		
 		owner->TurnToward(_nextYaw);
-		if (_nextYaw < 0)
-		{
-			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Turn_Left", 0);
-			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Turn_Left", 0);
-
-		}
-		else
-		{
-			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Turn_Right", 0);
-			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Turn_Right", 0);
-
-		}
 		_turning = true;
 	}
 
 	return false;
 }
-
-void RandomTurningTask::OnFinish(idAI* owner)
-{
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
-}
-
 
 // Save/Restore methods
 void RandomTurningTask::Save(idSaveGame* savefile) const
