@@ -13,20 +13,18 @@ CShopItem::CShopItem() :
 	cost(0),
 	image(""),
 	count(0),
-	entity(NULL),
 	persistent(false),
 	canDrop(false)
 {}
 
 CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _description,
-					 int _cost, const idStr& _image, int _count, bool _persistent, idEntity* _entity, bool _canDrop) :
+					 int _cost, const idStr& _image, int _count, bool _persistent, bool _canDrop) :
 	id(_id),
 	name(_name),
 	description(_description),
 	cost(_cost),
 	image(_image),
 	count(_count),
-	entity(_entity),
 	persistent(_persistent),
 	canDrop(_canDrop)
 {}
@@ -38,9 +36,9 @@ CShopItem::CShopItem(const CShopItem& item, int _count, int _cost, bool _persist
 	cost(_cost == 0 ? item.cost : _cost),
 	image(item.image),
 	count(_count),
-	entity(item.entity),
 	persistent(_persistent == false ? item.persistent : _persistent),
-	canDrop(item.canDrop)
+	canDrop(item.canDrop),
+	classNames(item.classNames)
 {}
 
 const idStr& CShopItem::GetID() const {
@@ -53,6 +51,16 @@ const idStr& CShopItem::GetName() const {
 
 const idStr& CShopItem::GetDescription() const {
 	return this->description;
+}
+
+const idStringList& CShopItem::GetClassnames() const
+{
+	return classNames;
+}
+
+void CShopItem::AddClassname(const idStr& className)
+{
+	classNames.AddUnique(className);
 }
 
 const idStr& CShopItem::GetImage() const {
@@ -79,10 +87,6 @@ void CShopItem::SetCanDrop(bool canDrop) {
 	this->canDrop = canDrop;
 }
 
-idEntity *CShopItem::GetEntity() {
-	return this->entity;
-}
-
 void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
 }
@@ -96,9 +100,14 @@ void CShopItem::Save(idSaveGame *savefile) const
 	savefile->WriteInt(cost);
 	savefile->WriteString(image);
 	savefile->WriteInt(count);
-	savefile->WriteObject(entity);
 	savefile->WriteBool(persistent);
 	savefile->WriteBool(canDrop);
+
+	savefile->WriteInt(classNames.Num());
+	for (int i = 0; i < classNames.Num(); ++i)
+	{
+		savefile->WriteString(classNames[i]);
+	}
 }
 
 void CShopItem::Restore(idRestoreGame *savefile)
@@ -110,9 +119,16 @@ void CShopItem::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(cost);
 	savefile->ReadString(image);
 	savefile->ReadInt(count);
-	savefile->ReadObject(reinterpret_cast<idClass*&>(entity));
 	savefile->ReadBool(persistent);
 	savefile->ReadBool(canDrop);
+
+	int temp;
+	savefile->ReadInt(temp);
+	classNames.SetNum(temp);
+	for (int i = 0; i < temp; ++i)
+	{
+		savefile->ReadString(classNames[i]);
+	}
 }
 
 // ================= Shop ============================
@@ -432,19 +448,34 @@ void CShop::LoadShopItemDefinitions()
 	// Load the definitions for the shop items. Include classname (for spawing),
 	// display name and description, modal name (for image display), and cost
 	int numDecls = declManager->GetNumDecls( DECL_ENTITYDEF );
-	for (int i = 0; i < numDecls; i++) {
+
+	for (int i = 0; i < numDecls; i++)
+	{
 		const idDecl * decl = declManager->DeclByIndex( DECL_ENTITYDEF, i, false );
 		idStr name = idStr(decl->GetName());
-		if (name.Icmpn("ShopItem", 8) == 0) {
-			const idDecl * shopDecl = declManager->DeclByIndex( DECL_ENTITYDEF, i, true );
-			const idDeclEntityDef *entityDef = static_cast<const idDeclEntityDef *>( shopDecl );
-			const char* displayName = entityDef->dict.GetString("displayName", "");
-			const char* displayDesc = entityDef->dict.GetString("displayDesc", "");
-			const char* itemClassname = entityDef->dict.GetString("itemClassname", "");
-			const char* image = entityDef->dict.GetString("image", "");
-			int cost = entityDef->dict.GetInt("price", "0");
+
+		if (name.Icmpn("ShopItem", 8) == 0)
+		{
+			const idDecl* shopDecl = declManager->DeclByIndex( DECL_ENTITYDEF, i, true );
+			const idDeclEntityDef* entityDef = static_cast<const idDeclEntityDef *>( shopDecl );
+			const idDict& dict = entityDef->dict;
+
+			const char* displayName = dict.GetString("displayName", "");
+			const char* displayDesc = dict.GetString("displayDesc", "");
+			const char* itemClassname = dict.GetString("itemClassname", "");
+			const char* image = dict.GetString("image", "");
+			int cost = dict.GetInt("price", "0");
 
 			CShopItemPtr theItem(new CShopItem(itemClassname, displayName, displayDesc, cost, image, 0));
+
+			// Add all "itemClassname*" spawnargs to the list
+			for (const idKeyValue* kv = dict.MatchPrefix("itemClassname"); kv != NULL; 
+				 kv = dict.MatchPrefix("itemClassname", kv))
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Adding class %s to shopitem %s\r", kv->GetValue().c_str(), displayName);
+				theItem->AddClassname(kv->GetValue());
+			}
+			
 			itemDefs.Append(theItem);
 		}
 	}
@@ -558,7 +589,7 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 			}
 			else
 			{
-				gameLocal.Printf("Could not add item to shop: %s\n", itemName.c_str());
+				gameLocal.Warning("Could not add item to shop: %s", itemName.c_str());
 			}
 		}
 	}
@@ -620,14 +651,7 @@ void CShop::SellItem(int index)
 	// If the weapon class wasn't in the for sale list (it should be), add it
 	if (forSaleItem == NULL)
 	{
-		forSaleItem = CShopItemPtr(new CShopItem(
-			boughtItem->GetID(), 
-			boughtItem->GetName(),
-			boughtItem->GetDescription(), 
-			boughtItem->GetCost(), 
-			boughtItem->GetImage(), 
-			0
-		));
+		forSaleItem = CShopItemPtr(new CShopItem(*boughtItem, 0, boughtItem->GetCost(), boughtItem->GetPersistent()));
 
 		itemsForSale.Append(forSaleItem);
 	}
@@ -671,14 +695,8 @@ void CShop::BuyItem(int index)
 	if (boughtItem == NULL)
 	{
 		boughtItem = CShopItemPtr(new CShopItem(
-			forSaleItem->GetID(), 
-			forSaleItem->GetName(), 
-			forSaleItem->GetDescription(),
-			forSaleItem->GetCost(), 
-			forSaleItem->GetImage(), 
-			0, 
-			forSaleItem->GetPersistent()
-		));
+			*forSaleItem, 0, forSaleItem->GetCost(), forSaleItem->GetPersistent())
+		);
 
 		itemsPurchased.Append(boughtItem);
 

@@ -1278,20 +1278,21 @@ void idPlayer::SetupInventory()
 
 		if (idStr::Cmpn(itemName, "atdm:weapon_", 12) != 0 && count > 0)
 		{
-			// does the item already exist?
-			idEntity *entity = item->GetEntity();
+			const idStringList& classNames = item->GetClassnames();
 
-			if (entity == NULL)
+			for (int j = 0; j < classNames.Num(); ++j)
 			{
-				// no, spawn it
-				const idDict* itemDict = gameLocal.FindEntityDefDict(itemName, true);
-				gameLocal.SpawnEntityDef( *itemDict, &entity );
-			}
+				// Spawn this entitydef
+				const idDict* itemDict = gameLocal.FindEntityDefDict(classNames[j], true);
 
-			// add it to the inventory
-			CInventoryItemPtr invItem = crsr->Inventory()->PutItem(entity, this);
-			invItem->SetCount(count);
-			invItem->SetPersistent(item->GetPersistent());
+				idEntity* entity = NULL;
+				gameLocal.SpawnEntityDef( *itemDict, &entity );
+
+				// add it to the inventory
+				CInventoryItemPtr invItem = crsr->Inventory()->PutItem(entity, this);
+				invItem->SetCount(count);
+				invItem->SetPersistent(item->GetPersistent());
+			}
 		}
 	}
 }
