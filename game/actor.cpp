@@ -151,6 +151,7 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 	if (cv_ai_show_animstate_switches.GetBool())
 	{
 		gameLocal.Printf("Switching anim state to %s (%s)\n", state.c_str(), self->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching anim state to %s (%s)\r", state.c_str(), self->name.c_str());
 	}
 
 	state = statename;
@@ -3421,6 +3422,12 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 	animFlags_t	flags;
 	idEntity *headEnt;
 	int	anim;
+
+	if (cv_ai_show_animstate_switches.GetBool())
+	{
+		gameLocal.Printf("Frame: %d - playing anim %s (%s)\n", gameLocal.framenum, animname, name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - playing anim %s (%s)\r", gameLocal.framenum, animname, name.c_str());
+	}
 	
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
