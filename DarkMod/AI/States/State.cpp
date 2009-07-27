@@ -48,6 +48,8 @@ namespace ai
 #define PERSONTYPE_BUILDER			"PERSONTYPE_BUILDER"
 #define PERSONTYPE_PAGAN			"PERSONTYPE_PAGAN"
 #define PERSONTYPE_THIEF			"PERSONTYPE_THIEF"
+#define PERSONTYPE_PRIEST			"PERSONTYPE_PRIEST"
+#define PERSONTYPE_ELITE			"PERSONTYPE_ELITE"
 
 //----------------------------------------------------------------------------------------
 // The following strings define genders of person, these are used if AIUse is AIUSE_PERSON 

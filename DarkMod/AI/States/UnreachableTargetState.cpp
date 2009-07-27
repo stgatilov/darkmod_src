@@ -116,6 +116,9 @@ void UnreachableTargetState::Init(idAI* owner)
 		}
 		else 
 		{
+			// greebo: Sheathe weapon before starting to throw // FIXME: put weapon to left hand?
+			owner->SheathWeapon();
+
 			owner->FaceEnemy();
 			owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
 
@@ -185,6 +188,9 @@ void UnreachableTargetState::Think(idAI* owner)
 		// We are finished moving closer
 		// Start throwing now
 		_moveRequired = false;
+
+		// greebo: Sheathe weapon before starting to throw // FIXME: put weapon to left hand?
+		owner->SheathWeapon();
 
 		owner->FaceEnemy();
 		owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
