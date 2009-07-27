@@ -9719,22 +9719,26 @@ void idAI::StopLipSync()
 
 void idAI::DrawWeapon() 
 {
-	const function_t* func = scriptObject.GetFunction("DrawWeapon");
+	/*const function_t* func = scriptObject.GetFunction("DrawWeapon");
 	if (func) {
 		idThread* thread = new idThread(func);
 		thread->CallFunction(this, func, true);
 		thread->DelayedStart(0);
-	}
+	}*/
+	// greebo: Replaced the above thread spawn with an animstate switch
+	SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawWeapon", 4);
 }
 
 void idAI::SheathWeapon() 
 {
-	const function_t* func = scriptObject.GetFunction("SheathWeapon");
+	/*const function_t* func = scriptObject.GetFunction("SheathWeapon");
 	if (func) {
 		idThread* thread = new idThread(func);
 		thread->CallFunction(this, func, true);
 		thread->DelayedStart(0);
-	}
+	}*/
+	// greebo: Replaced the above thread spawn with an animstate switch
+	SetAnimState(ANIMCHANNEL_TORSO, "Torso_SheathWeapon", 4);
 }
 
 void idAI::DropOnRagdoll( void )
