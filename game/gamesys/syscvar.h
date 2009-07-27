@@ -60,6 +60,7 @@ extern idCVar cv_ai_opt_novisualstim;
 extern idCVar cv_ai_opt_nolipsync;
 extern idCVar cv_ai_opt_nopresent;
 extern idCVar cv_ai_opt_noobstacleavoidance;
+extern idCVar cv_ai_show_animstate_switches;
 
 extern idCVar cv_ai_show_aasfuncobstacle_state;
 

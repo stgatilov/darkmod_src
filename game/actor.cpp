@@ -148,6 +148,11 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 		gameLocal.Error( "Can't find function '%s' in object '%s'", statename, self->scriptObject.GetTypeName() );
 	}
 
+	if (cv_ai_show_animstate_switches.GetBool())
+	{
+		gameLocal.Printf("Switching anim state to %s (%s)\n", state.c_str(), self->name.c_str());
+	}
+
 	state = statename;
 	disabled = false;
 	animBlendFrames = blendFrames;
