@@ -792,6 +792,13 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 		end = index + frameLookup[ frame ].num;
 		while( index < end ) {
 			const frameCommand_t &command = frameCommands[ index++ ];
+
+			if (cv_ai_debug_anims.GetBool() && ent != gameLocal.GetLocalPlayer())
+			{
+				gameLocal.Printf("Frame: %d - executing frame command %d (%s)\n", gameLocal.framenum, command.type, ent->name.c_str());
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - executing frame command %d (%s)\r", gameLocal.framenum, command.type, ent->name.c_str());
+			}
+
 			switch( command.type ) {
 				case FC_SCRIPTFUNCTION: {
 					gameLocal.CallFrameCommand( ent, command.function );

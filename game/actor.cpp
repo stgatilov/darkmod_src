@@ -148,10 +148,10 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 		gameLocal.Error( "Can't find function '%s' in object '%s'", statename, self->scriptObject.GetTypeName() );
 	}
 
-	if (cv_ai_show_animstate_switches.GetBool())
+	if (cv_ai_debug_anims.GetBool() && self != gameLocal.GetLocalPlayer())
 	{
-		gameLocal.Printf("Switching anim state to %s (%s)\n", state.c_str(), self->name.c_str());
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching anim state to %s (%s)\r", state.c_str(), self->name.c_str());
+		gameLocal.Printf("Frame %d: New animstate %s (%s)\n", gameLocal.framenum, state.c_str(), self->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame %d: New animstate %s (%s)\r", gameLocal.framenum, state.c_str(), self->name.c_str());
 	}
 
 	state = statename;
@@ -2718,16 +2718,34 @@ int idActor::GetAnim( int channel, const char *animname ) {
 		animatorPtr = &animator;
 	}
 
-	if ( animPrefix.Length() ) {
+	if ( animPrefix.Length() )
+	{
 		temp = va( "%s_%s", animPrefix.c_str(), animname );
-		anim = animatorPtr->GetAnim( LookupReplacementAnim( temp ) );
+
+		const char* replacement = LookupReplacementAnim( temp );
+
+		if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
+		{
+			gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
+		}
+
+		anim = animatorPtr->GetAnim( replacement );
 		if (!anim) anim = animatorPtr->GetAnim( temp );
 		if (anim) {
 			return anim;
 		}
 	}
 
-	anim = animatorPtr->GetAnim( LookupReplacementAnim( animname ) );
+	const char* replacement = LookupReplacementAnim( animname );
+
+	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
+	{
+		gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
+	}
+
+	anim = animatorPtr->GetAnim( replacement );
 	if (!anim) anim = animatorPtr->GetAnim( animname );
 
 	return anim;
@@ -3423,7 +3441,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 	idEntity *headEnt;
 	int	anim;
 
-	if (cv_ai_show_animstate_switches.GetBool())
+	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
 	{
 		gameLocal.Printf("Frame: %d - playing anim %s (%s)\n", gameLocal.framenum, animname, name.c_str());
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - playing anim %s (%s)\r", gameLocal.framenum, animname, name.c_str());
