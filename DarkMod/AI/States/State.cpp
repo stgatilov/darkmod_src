@@ -969,6 +969,245 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 	return soundName;
 }
 
+idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
+{
+	return "snd_response_positive";
+
+	/*idStr soundName;
+
+	// Get the type of persons
+	idStr ownPersonType(owner->spawnArgs.GetString(PERSONTYPE_KEY));
+	idStr otherPersonType(otherAI->spawnArgs.GetString(PERSONTYPE_KEY));
+
+
+	if (owner->spawnArgs.GetBool("is_civilian") == false &&
+		(owner->GetNumMeleeWeapons() > 0 || owner->GetNumRangedWeapons() > 0))
+	{
+		// this AI is a guard
+		if (otherAI->spawnArgs.GetBool("is_civilian") == 0 &&
+			(otherAI->GetNumMeleeWeapons() > 0 || otherAI->GetNumRangedWeapons() > 0))
+		{	
+			// the other AI is a guard
+			if (owner->spawnArgs.FindKey( "snd_greeting_guard_to_guard") != NULL)
+			{
+				soundName = "snd_greeting_guard_to_guard";
+			}
+			else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
+			{
+				soundName = "snd_greeting_guard";
+			}
+		}
+		else
+		{
+			// the other AI is a civilian
+			if (otherPersonType == PERSONTYPE_NOBLE)
+			{
+				// the other AI is a noble
+				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+				if (otherPersonGender == PERSONGENDER_FEMALE)
+				{
+					if (owner->spawnArgs.FindKey( "snd_greeting_guard_to_noble_female") != NULL)
+					{
+						soundName = "snd_greeting_guard_to_noble_female";
+					}
+					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
+					{
+						soundName = "snd_greeting_noble_female";
+					}
+				}
+				else if (otherPersonGender == PERSONGENDER_MALE)
+				{
+					if (owner->spawnArgs.FindKey( "snd_greeting_guard_to_noble_male") != NULL)
+					{
+						soundName = "snd_greeting_guard_to_noble_male";
+					}
+					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
+					{
+						soundName = "snd_greeting_noble_male";
+					}
+				}
+			}
+			else if (otherPersonType == PERSONTYPE_BUILDER)
+			{
+				// the other AI is a priest
+				if (owner->spawnArgs.FindKey( "snd_greeting_cleric") != NULL)
+				{
+					soundName = "snd_greeting_cleric";
+				}
+			}
+			else
+			{
+				// this is a generic civilian
+				// check for gender specific barks
+				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+				if (otherPersonGender == PERSONGENDER_FEMALE)
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_female") != NULL)
+					{
+						soundName = "snd_greeting_guard_to_female";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
+					{
+						soundName = "snd_greeting_female";
+					}
+				}
+				else if (otherPersonGender == PERSONGENDER_MALE)
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_male") != NULL)
+					{
+						soundName = "snd_greeting_guard_to_male";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
+					{
+						soundName = "snd_greeting_male";
+					}
+				}
+
+				// no gender specific barks, use generic greeting to civilian
+				if (soundName.IsEmpty())
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_civilian") != NULL)
+					{
+						soundName = "snd_greeting_guard_to_civilian";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
+					{
+						soundName = "snd_greeting_civilian";
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		// this AI is a civilian
+		if (otherAI->spawnArgs.GetBool("is_civilian") == false &&
+			(otherAI->GetNumMeleeWeapons() > 0 || otherAI->GetNumRangedWeapons() > 0))
+		{	
+			// the other AI is a guard
+			if (ownPersonType == PERSONTYPE_NOBLE)
+			{
+				// this AI is a noble
+				if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_guard") != NULL)
+				{
+					soundName = "snd_greeting_noble_to_guard";
+				}
+			}
+
+			if (soundName.IsEmpty())
+			{
+				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_guard") != NULL)
+				{
+					soundName = "snd_greeting_civilian_to_guard";
+				}
+				else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
+				{
+					soundName = "snd_greeting_guard";
+				}
+			}
+		}
+		else
+		{
+			// the other AI is a civilian
+			if (otherPersonType == PERSONTYPE_NOBLE)
+			{
+				// the other AI is a noble
+				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+				if (otherPersonGender == PERSONGENDER_FEMALE)
+				{
+					if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_female") != NULL)
+					{
+						soundName = "snd_greeting_civilian_to_noble_female";
+					}
+					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
+					{
+						soundName = "snd_greeting_noble_female";
+					}
+				}
+				else if (otherPersonGender == PERSONGENDER_MALE)
+				{
+					if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_male") != NULL)
+					{
+						soundName = "snd_greeting_civilian_to_noble_male";
+					}
+					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
+					{
+						soundName = "snd_greeting_noble_male";
+					}
+				}
+			}
+			else if (otherPersonType == PERSONTYPE_BUILDER)
+			{
+				// the other AI is a priest
+				if (owner->spawnArgs.FindKey( "snd_greeting_cleric") != NULL)
+				{
+					soundName = "snd_greeting_cleric";
+				}
+			}
+			else if (ownPersonType == PERSONTYPE_NOBLE)
+			{
+				// this is a noble
+				if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_civilian") != NULL)
+				{
+					soundName = "snd_greeting_noble_to_civilian";
+				}
+			}
+
+			if (soundName.IsEmpty())
+			{
+				// this is a generic civilian
+				// check for gender specific barks
+				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+				if (otherPersonGender == PERSONGENDER_FEMALE)
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_female") != NULL)
+					{
+						soundName = "snd_greeting_civilian_to_female";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
+					{
+						soundName = "snd_greeting_female";
+					}
+				}
+				else if (otherPersonGender == PERSONGENDER_MALE)
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_male") != NULL)
+					{
+						soundName = "snd_greeting_civilian_to_male";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
+					{
+						soundName = "snd_greeting_male";
+					}
+				}
+
+				// no gender specific barks, use generic greeting to civilian
+				if (soundName.IsEmpty())
+				{
+					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_civilian") != NULL)
+					{
+						soundName = "snd_greeting_civilian_to_civilian";
+					}
+					else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
+					{
+						soundName = "snd_greeting_civilian";
+					}
+				}
+			}
+		}
+	}
+
+	// no sound found yet, use generic one
+	if (soundName.IsEmpty())
+	{
+		if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
+		{
+			soundName = "snd_greeting_generic";
+		}
+	}
+	return soundName;*/
+}
+
 bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 {
 	assert(person != NULL && owner != NULL); // must be fulfilled
@@ -1541,7 +1780,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				idAI* otherAI = static_cast<idAI*>(issuingEntity);
 
 				// Get the sound and queue the task
-				idStr greetSound = GetGreetingSound(owner, otherAI);
+				idStr greetSound = GetGreetingResponseSound(owner, otherAI);
 
 				owner->commSubsystem->AddCommTask(
 					CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
