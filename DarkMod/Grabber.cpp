@@ -331,6 +331,9 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	{
 		// ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
+		// greebo: Clear the equipped entity reference as well, we're letting go
+		m_EquippedEnt = NULL;
+
 		StopDrag();
 		
 		goto Quit;
