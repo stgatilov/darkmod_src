@@ -3803,8 +3803,11 @@ bool idPlayer::IsPushing()
 
 void idPlayer::OnStartShoulderingBody(idEntity* body)
 {
+	// Check if the other body is at least 30 kg heavier than us
+	bool isHeavy = body->GetPhysics()->GetMass() > GetPhysics()->GetMass() + 30;
+
 	// play the sound on the player, not the body (that was creating inconsistent volume)
-	StartSound( "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
+	StartSound( isHeavy ? "snd_shoulder_body_heavy" : "snd_shoulder_body", SND_CHANNEL_ITEM, 0, false, NULL );
 
 	// set immobilizations
 	int immob = SHOULDER_IMMOBILIZATIONS;
