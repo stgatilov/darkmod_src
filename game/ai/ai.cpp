@@ -9744,8 +9744,6 @@ void idAI::SheathWeapon()
 void idAI::DropOnRagdoll( void )
 {
 	idEntity *ent = NULL;
-	bool bDrop(false), bDropWhenDrawn(false), bSetSolid(false);
-	bool bSetCorpse(false), bSetFrob(false), bExtinguish(false);
 	int mask(0);
 	// Id style def_drops
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
@@ -9775,18 +9773,28 @@ void idAI::DropOnRagdoll( void )
 			pWeap->DeactivateParry();
 			pWeap->ClearOwner();
 		}
+		
+		// greebo: Check if we should set some attachments to nonsolid
+		// this applies for instance to the builder guard's pauldrons which
+		// cause twitching and self-collisions when going down
+		if (ent->spawnArgs.GetBool( "drop_set_nonsolid" ))
+		{
+			int curContents = ent->GetPhysics()->GetContents();
 
-		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
+			ent->GetPhysics()->SetContents(curContents & ~(CONTENTS_SOLID|CONTENTS_SOLID));
+		}
+
+		bool bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
 		
 		if( !bDrop ) {
 			continue;
 		}
 
-		bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
-		bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
-		bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
-		bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
-		bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
+		bool bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
+		bool bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
+		bool bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
+		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
+		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
 		if( bDropWhenDrawn )
 		{
@@ -9832,7 +9840,7 @@ void idAI::DropOnRagdoll( void )
 			ent->PostEventMS(&EV_ExtinguishLights, delay);
 		}
 
-			ent->GetPhysics()->Activate();
+		ent->GetPhysics()->Activate();
 	}
 }
 
