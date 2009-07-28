@@ -55,6 +55,9 @@ public:
 #ifdef MOD_WATERPHYSICS
 	virtual waterLevel_t	GetWaterLevel( void ) const; 	// MOD_WATERPHYSICS
 	virtual int				GetWaterType( void ) const; 	// MOD_WATERPHYSICS
+
+	// greebo: returns the time we (last) submersed into water (above HEAD)
+	int						GetSubmerseTime() const;
 #endif
 
 public:	// common physics interface
@@ -98,6 +101,7 @@ protected:
 	waterLevel_t		previousWaterLevel;			// greebo: The water level of the previous frame
 	int					waterType;					// MOD_WATERPHYSICS
 	int					submerseFrame;				// greebo: The frame in which we submersed (above WATERLEVEL_HEAD)
+	int					submerseTime;				// greebo: The time we submersed (above WATERLEVEL_HEAD)
 
 	// greebo: This is TRUE if the water level has changed since the last physics evaluation (frame)
 	bool				waterLevelChanged;

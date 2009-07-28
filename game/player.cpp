@@ -6857,12 +6857,20 @@ void idPlayer::UpdateUnderWaterEffects() {
 		}
 	}
 	else {
-		if (underWaterEffectsActive) {
+		if (underWaterEffectsActive)
+		{
 			StopSound( SND_CHANNEL_DEMONIC, false );
 			if (underWaterGUIHandle != -1) {
 				DestroyOverlay(underWaterGUIHandle);
 				underWaterGUIHandle = -1;
 			}
+
+			// If we were underwater for more than 4 seconds, play the "take breath" sound
+			if (physicsObj.GetSubmerseTime() > gameLocal.time + 4000)
+			{
+				StartSound( "snd_resurface", SND_CHANNEL_VOICE, 0, false, NULL );
+			}
+
 			underWaterEffectsActive = false;
 		}
 	}
