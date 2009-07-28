@@ -973,14 +973,23 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 
 idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
 {
-	return "snd_response_positive";
+	// Check for rank spawnargs
+	int ownerRank = owner->spawnArgs.GetInt("rank", "0");
+	int otherRank = otherAI->spawnArgs.GetInt("rank", "0");
 
-	/*idStr soundName;
+	if (ownerRank != 0 && otherRank != 0)
+	{
+		// Rank spawnargs valid, compare
+		return (ownerRank < otherRank) ? "snd_response_positive_superior" : "snd_response_positive";
+	}
 
 	// Get the type of persons
 	idStr ownPersonType(owner->spawnArgs.GetString(PERSONTYPE_KEY));
 	idStr otherPersonType(otherAI->spawnArgs.GetString(PERSONTYPE_KEY));
 
+	return "snd_response_positive";
+
+	/*idStr soundName;
 
 	if (owner->spawnArgs.GetBool("is_civilian") == false &&
 		(owner->GetNumMeleeWeapons() > 0 || owner->GetNumRangedWeapons() > 0))
