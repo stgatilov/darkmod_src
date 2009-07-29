@@ -111,7 +111,24 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Load the readme.txt contents, if available
 		gui->SetStateString("ModNotesText", GetModNotes(modIndex));
 	}
-	else if (cmd == "updateModNotesButtonVisibility")
+	else if (cmd == "updateButtonVisibility")
+	{
+		// Get selected mod
+		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+
+		if (modIndex >= 0 && modIndex < _modsAvailable.Num())
+		{
+			ModInfo selModInfo = GetModInfo(modIndex);
+			gui->SetStateBool("installModButtonVisible", idStr::Icmp(_curModName, _modsAvailable[modIndex]) != 0);
+		}
+		else
+		{
+			gui->SetStateBool("installModButtonVisible", false);
+		}
+	}
+	else if (cmd == "update")
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
