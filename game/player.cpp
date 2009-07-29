@@ -4824,13 +4824,6 @@ void idPlayer::UpdateAir( void ) {
 		return;
 	}
 
-#ifdef MOD_WATERPHYSICS
-
-	idPhysics_Player *phys = dynamic_cast<idPhysics_Player *>(this->GetPhysics());   // MOD_WATERPHYSICS
-
-#endif		// MOD_WATERPHYSICS
-
-
 	// see if the player is connected to the info_vacuum
 	bool	newAirless = false;
 
@@ -4853,9 +4846,13 @@ void idPlayer::UpdateAir( void ) {
 
 #ifdef MOD_WATERPHYSICS // check if the player is in water
 
-	if( phys != NULL && phys->GetWaterLevel() >= WATERLEVEL_HEAD )      // MOD_WATERPHYSICS
-
+	idPhysics* phys = GetPhysics();
+	
+	if (phys != NULL && phys->IsType(idPhysics_Actor::Type) && 
+		static_cast<idPhysics_Actor*>(phys)->GetWaterLevel() >= WATERLEVEL_HEAD )
+	{
 		newAirless = true;	// MOD_WATERPHYSICS
+	}
 
 #endif		// MOD_WATERPHYSICS
 
@@ -6589,7 +6586,7 @@ void idPlayer::Move( void )
 
 		if( bSoundPlayed )
 		{
-			idStr SurfName = ((idPhysics_Player *) GetPhysics())->GetClimbSurfaceType();
+			idStr SurfName = physicsObj.GetClimbSurfaceType();
 			TempStr = LocalSound + SurfName;
 			sound = spawnArgs.GetString( TempStr.c_str() );
 			if( sound.IsEmpty() )
@@ -8078,7 +8075,7 @@ idVec3 idPlayer::GetEyePosition( void ) const {
 	idPhysics* physics = GetPhysics();
 	if (physics->IsType(idPhysics_Player::Type))
 	{
-		org += ((idPhysics_Player*)GetPhysics())->GetViewLeanTranslation();
+		org += static_cast<idPhysics_Player*>(physics)->GetViewLeanTranslation();
 	}
 
 	// This was in SDK untouched
@@ -8102,7 +8099,7 @@ void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 		origin = GetEyePosition();
 	} else {
 		origin = GetEyePosition() + viewBob;
-		angles = viewAngles + viewBobAngles + ((idPhysics_Player*)GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
+		angles = viewAngles + viewBobAngles + physicsObj.GetViewLeanAngles() + playerView.AngleOffset();
 
 		axis = angles.ToMat3() * physicsObj.GetGravityAxis();
 
@@ -8117,23 +8114,26 @@ void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 idPlayer::CalculateFirstPersonView
 ===============
 */
-void idPlayer::CalculateFirstPersonView( void ) {
+void idPlayer::CalculateFirstPersonView( void )
+{
+	idPhysics* physics = GetPhysics();
+
 	if ( ( pm_modelView.GetInteger() == 1 ) || ( ( pm_modelView.GetInteger() == 2 ) && ( health <= 0 ) ) ) 
 	{
 		//	Displays the view from the point of view of the "camera" joint in the player model
 
 		idMat3 axis;
 		idVec3 origin;
-		idAngles ang;
+		idAngles ang = viewBobAngles + playerView.AngleOffset();
 
 		/*!
 		* Lean mod: 
 		* @author: sophisticatedZombie
-		* Original line commented out
-		* ang = viewBobAngles + playerView.AngleOffset();
 		*/
-		ang = viewBobAngles + ((idPhysics_Player*) GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
-
+		if (physics->IsType(idPhysics_Player::Type))
+		{
+			ang += static_cast<idPhysics_Player*>(physics)->GetViewLeanAngles();
+		}
 		
 		ang.yaw += viewAxis[ 0 ].ToYaw();
 		
@@ -8152,11 +8152,16 @@ void idPlayer::CalculateFirstPersonView( void ) {
 	}
 
 	// Set the listener location (on the other side of a door if door leaning)
-	if( static_cast<idPhysics_Player *>(GetPhysics())->IsDoorLeaning() 
-			&& !gameLocal.inCinematic )
+	if (physics->IsType(idPhysics_Player::Type) && 
+		static_cast<idPhysics_Player*>(physics)->IsDoorLeaning() && 
+		!gameLocal.inCinematic)
+	{
 		SetListenerLoc( m_DoorListenLoc );
+	}
 	else
+	{
 		SetListenerLoc( firstPersonViewOrigin );
+	}
 }
 
 /*
@@ -10282,7 +10287,10 @@ void idPlayer::Event_HeldEntity( void )
 
 void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
 {
-	static_cast<idPhysics_Player *>( GetPhysics() )->RopeRemovalCleanup( RopeEnt );
+	if (GetPhysics()->IsType(idPhysics_Player::Type))
+	{
+		static_cast<idPhysics_Player*>(GetPhysics())->RopeRemovalCleanup( RopeEnt );
+	}
 }
 
 void idPlayer::Event_SetObjectiveState( int ObjIndex, int State )

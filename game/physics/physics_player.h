@@ -844,7 +844,7 @@ public:
 	* rendering
 	* Returns current view lean translation in world axes
 	*/
-	idAngles GetViewLeanAngles();
+	const idAngles& GetViewLeanAngles() const;
 
 	/*
 	* This is called from idPlayer to adjust the camera before

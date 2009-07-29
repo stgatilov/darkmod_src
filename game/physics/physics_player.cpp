@@ -4467,7 +4467,7 @@ bool idPhysics_Player::IsLeaning()
 
 //----------------------------------------------------------------------
 
-idAngles idPhysics_Player::GetViewLeanAngles()
+const idAngles& idPhysics_Player::GetViewLeanAngles() const
 {
 	return m_viewLeanAngles;
 }
