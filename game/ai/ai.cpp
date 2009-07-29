@@ -2307,11 +2307,6 @@ void idAI::LinkScriptVariables( void )
 	AI_AlertLevel.LinkTo(			scriptObject, "AI_AlertLevel" );
 	AI_AlertIndex.LinkTo(			scriptObject, "AI_AlertIndex" );
 
-	AI_lastAlertPosSearched.LinkTo(			scriptObject, "AI_lastAlertPosSearched");
-	AI_timeOfLastStimulusBark.LinkTo(		scriptObject, "AI_timeOfLastStimulusBark");
-	AI_currentAlertLevelDuration.LinkTo(	scriptObject, "AI_currentAlertLevelDuration");
-	AI_currentAlertLevelStartTime.LinkTo(	scriptObject, "AI_currentAlertLevelStartTime");
-
 	AI_bMeleeWeapDrawn.LinkTo( scriptObject, "AI_bMeleeWeapDrawn" );
 	AI_bRangedWeapDrawn.LinkTo( scriptObject, "AI_bRangedWeapDrawn" );
 
@@ -8193,13 +8188,13 @@ void idAI::SetAlertLevel(float newAlertLevel)
 			{
 				// We have an enemy, raise the index
 				m_prevAlertIndex = AI_AlertIndex;
-				AI_AlertIndex = 5;
+				AI_AlertIndex = ai::ECombat;
 			}
 			else
 			{
 				// No enemy, can't switch to Combat mode
 				m_prevAlertIndex = AI_AlertIndex;
-				AI_AlertIndex = 4;
+				AI_AlertIndex = ai::EAgitatedSearching;
 				// Set the alert level back to just below combat threshold
 				AI_AlertLevel = thresh_5 - 0.01;
 			}
@@ -8207,9 +8202,8 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		else
 		{
 			m_prevAlertIndex = AI_AlertIndex;
-			AI_AlertIndex = 4;
+			AI_AlertIndex = ai::EAgitatedSearching;
 		}
-		AI_currentAlertLevelDuration = atime4;
 		grace_time = m_gracetime_4;
 		grace_frac = m_gracefrac_4;
 		grace_count = m_gracecount_4;
@@ -8217,8 +8211,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else if (newAlertLevel >= thresh_3)
 	{
 		m_prevAlertIndex = AI_AlertIndex;
-		AI_AlertIndex = 3;
-		AI_currentAlertLevelDuration = atime3;
+		AI_AlertIndex = ai::EInvestigating;
 		grace_time = m_gracetime_3;
 		grace_frac = m_gracefrac_3;
 		grace_count = m_gracecount_3;
@@ -8226,8 +8219,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else if (newAlertLevel >= thresh_2)
 	{
 		m_prevAlertIndex = AI_AlertIndex;
-		AI_AlertIndex = 2;
-		AI_currentAlertLevelDuration = atime2;
+		AI_AlertIndex = ai::ESuspicious;
 		grace_time = m_gracetime_2;
 		grace_frac = m_gracefrac_2;
 		grace_count = m_gracecount_2;
@@ -8235,8 +8227,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else if (newAlertLevel >= thresh_1)
 	{
 		m_prevAlertIndex = AI_AlertIndex;
-		AI_AlertIndex = 1;
-		AI_currentAlertLevelDuration = atime2;
+		AI_AlertIndex = ai::EObservant;
 		grace_time = m_gracetime_1;
 		grace_frac = m_gracefrac_1;
 		grace_count = m_gracecount_1;
@@ -8244,8 +8235,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else
 	{
 		m_prevAlertIndex = AI_AlertIndex;
-		AI_AlertIndex = 0;
-		AI_currentAlertLevelDuration = 0.0;
+		AI_AlertIndex = ai::ERelaxed;
 		grace_time = 0.0;
 		grace_frac = 0.0;
 		grace_count = 0;
@@ -8257,53 +8247,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		m_maxAlertIndex = AI_AlertIndex;
 	}
 	
-	// Add random variance to alert level duration
-	AI_currentAlertLevelDuration = AI_currentAlertLevelDuration*(1.0 + gameLocal.random.RandomFloat()*0.50);
-	
-	//DEBUG_PRINT ("Alert level duration set to " + AI_currentAlertLevelDuration + " due to alert factor " + AI_AlertLevel);
-	
-	// Set time of start of new alert level
-	AI_currentAlertLevelStartTime = gameLocal.realClientTime;
-
 	// Begin the grace period
 	if (alertRising)
 	{
 		Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
-	}
-/*
-	// Only bark if we haven't barked too recently
-	if (( MS2SEC(gameLocal.time) - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		// Note: Alert rising sounds are played based on the type of stimulus before we ever reach this function
-		// We only have to do alert-down sounds here
-		if (!alertRising)
-		{
-			if (newAlertLevel > thresh_4)
-			{
-				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
-				// TODO: Shouldn't hard-code the animation name, talk1, here (and below)
-				Event_PlayAndLipSync( "snd_alert3s", "" );
-			}
-			else if (newAlertLevel > thresh_3)
-			{
-			
-				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
-				Event_PlayAndLipSync( "snd_alertdown2", "" );
-			}	
-			else if (newAlertLevel > thresh_2) 
-			{
-				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
-				Event_PlayAndLipSync( "snd_alertdown1", "" );
-			}
-		}
-	}
-	*/
-	
-	// If less than alert 1, all new stimuli should be considered new
-	if (newAlertLevel < thresh_2)
-	{
-		//DEBUG_PRINT ("Clearing last searched alert position");
-		AI_lastAlertPosSearched = idVec3(0,0,0);
 	}
 }
 

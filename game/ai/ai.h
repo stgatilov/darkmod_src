@@ -765,20 +765,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	
 	/**
 	* Current alert index of the AI. Is set based on AI_AlertLevel and the alert threshold values:
-	* 	0 if AI_AlertLevel < thresh_2
-	* 	1 if thresh_2 <= AI_AlertLevel < thresh_3
-	* 	2 if thresh_3 <= AI_AlertLevel < thresh_4
-	* 	3 if thresh_4 <= AI_AlertLevel < thresh_5
-	* 	4 if thresh_5 <= AI_AlertLevel
+	* 	ai::ERelaxed           == 0 if AI_AlertLevel < thresh_1
+	* 	ai::EObservant         == 1 if thresh_1 <= AI_AlertLevel < thresh_2
+	* 	ai::ESuspicious        == 2 if thresh_2 <= AI_AlertLevel < thresh_3
+	* 	ai::EInvestigating     == 3 if thresh_3 <= AI_AlertLevel < thresh_4
+	* 	ai::EAgitatedSearching == 4 if thresh_4 <= AI_AlertLevel < thresh_5
+	*   ai::ECombat            == 5 if thresh_5 <= AI_AlertLevel (and an enemy is known)
 	**/
 	idScriptFloat			AI_AlertIndex;
 	
-	/* Additional scriptvars, imported from scripting. TODO: Document properly (for now, see script for docs) */
-	idScriptVector			AI_lastAlertPosSearched; // greebo: TODO: Remove this, idVec3 doesn't work?
-	idScriptFloat			AI_timeOfLastStimulusBark;
-	idScriptFloat			AI_currentAlertLevelDuration;
-	idScriptFloat			AI_currentAlertLevelStartTime;
-
 	/**
 	* Boolean scriptvars set to true if either ranged or melee weapons are drawn
 	**/
