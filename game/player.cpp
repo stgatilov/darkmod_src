@@ -8073,8 +8073,13 @@ idVec3 idPlayer::GetEyePosition( void ) const {
 	* Lean Mod
 	* @author sophisticatedZombie (DH)
 	* Move eye position due to leaning
+	* angua: need to check whether physics type is correct, dead player uses AF physics
 	*/
-	org += ((idPhysics_Player*)GetPhysics())->GetViewLeanTranslation();
+	idPhysics* physics = GetPhysics();
+	if (physics->IsType(idPhysics_Player::Type))
+	{
+		org += ((idPhysics_Player*)GetPhysics())->GetViewLeanTranslation();
+	}
 
 	// This was in SDK untouched
 	return org + ( GetPhysics()->GetGravityNormal() * -eyeOffset.z );
