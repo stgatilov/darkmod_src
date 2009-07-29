@@ -6866,7 +6866,7 @@ void idPlayer::UpdateUnderWaterEffects() {
 			}
 
 			// If we were underwater for more than 4 seconds, play the "take breath" sound
-			if (physicsObj.GetSubmerseTime() > gameLocal.time + 4000)
+			if (gameLocal.time > physicsObj.GetSubmerseTime() + 4000)
 			{
 				StartSound( "snd_resurface", SND_CHANNEL_VOICE, 0, false, NULL );
 			}

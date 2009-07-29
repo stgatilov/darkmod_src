@@ -40,7 +40,6 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	waterType = 0;					// MOD_WATERPHYSICS
 	waterLevelChanged = true;
 	submerseFrame = 0;
-	submerseTime = -1;
 #endif		// MOD_WATERPHYSICS
 }
 
@@ -79,7 +78,6 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
 	savefile->WriteBool(waterLevelChanged);
 	savefile->WriteInt(submerseFrame);
-	savefile->WriteInt(submerseTime);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Save( savefile );
@@ -108,7 +106,6 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
 	savefile->ReadBool(waterLevelChanged);
 	savefile->ReadInt(submerseFrame);
-	savefile->ReadInt(submerseTime);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Restore( savefile );
@@ -453,7 +450,6 @@ void idPhysics_Actor::SetWaterLevel( bool updateWaterLevelChanged ) {
 		if (waterLevel == WATERLEVEL_HEAD && waterLevelChanged)
 		{
 			submerseFrame = gameLocal.framenum;
-			submerseTime = gameLocal.time;
 		}
 	}
 }
@@ -478,7 +474,7 @@ int idPhysics_Actor::GetWaterType( void ) const {
 
 int idPhysics_Actor::GetSubmerseTime() const
 {
-	return submerseTime;
+	return submerseFrame*gameLocal.msec;
 }
 
 #endif	// MOD_WATERPHYSICS
