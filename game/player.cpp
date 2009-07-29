@@ -10923,8 +10923,8 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		}
 
 		// Grab it if it's a grabable class
-		if( target->IsType( idMoveable::Type ) || target->IsType( idAFEntity_Base::Type )
-			|| target->IsType( idMoveableItem::Type ) )
+		if (target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) || 
+			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
 		{
 			// allow override of default grabbing behavior
 			if( !target->spawnArgs.GetBool("grabable","1") )
@@ -10938,7 +10938,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 					return;
 			}
 
-			gameLocal.m_Grabber->Update( gameLocal.GetLocalPlayer() );
+			gameLocal.m_Grabber->Update( this );
 		}
 	}
 }
