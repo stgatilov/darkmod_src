@@ -70,41 +70,44 @@ void ObservantState::Init(idAI* owner)
 	// Stop playing idle animation
 	owner->actionSubsystem->ClearTasks();
 
-	// barking
-	idStr soundName("");
+	if (owner->GetMoveType() != MOVETYPE_SLEEP)
+	{
+		// barking
+		idStr soundName("");
 
-	if (owner->AlertIndexIncreased() && memory.alertType != EAlertTypeMissingItem)
-	{
-		if (memory.alertClass == EAlertVisual)
+		if (owner->AlertIndexIncreased() && memory.alertType != EAlertTypeMissingItem)
 		{
-			soundName = "snd_alert1s";
+			if (memory.alertClass == EAlertVisual)
+			{
+				soundName = "snd_alert1s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				soundName = "snd_alert1h";
+			}
+			else
+			{
+				soundName = "snd_alert1";
+			}
 		}
-		else if (memory.alertClass == EAlertAudio)
+		else if (owner->HasSeenEvidence())
 		{
-			soundName = "snd_alert1h";
+			if (owner->m_lastAlertLevel >= owner->thresh_3)
+			{
+				soundName = "snd_alertdown0SeenEvidence";
+			}
 		}
-		else
+		else if (owner->m_lastAlertLevel >= owner->thresh_4)
 		{
-			soundName = "snd_alert1";
+			soundName = "snd_alertdown0SeenNoEvidence";
 		}
-	}
-	else if (owner->HasSeenEvidence())
-	{
-		if (owner->m_lastAlertLevel >= owner->thresh_3)
-		{
-			soundName = "snd_alertdown0SeenEvidence";
-		}
-	}
-	else if (owner->m_lastAlertLevel >= owner->thresh_4)
-	{
-		soundName = "snd_alertdown0SeenNoEvidence";
-	}
 
-	if (memory.alertType != EAlertTypeMissingItem)
-	{
-		owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask(soundName))
-		);
+		if (memory.alertType != EAlertTypeMissingItem)
+		{
+			owner->commSubsystem->AddCommTask(
+					CommunicationTaskPtr(new SingleBarkTask(soundName))
+			);
+		}
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

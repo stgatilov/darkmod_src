@@ -98,7 +98,6 @@ void IdleSleepState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
 
-/*	owner->GetSubsystem(SubsysCommunication)->QueueTask(TaskPtr(new WaitTask(5000)));**/// TODO_AI
 	owner->commSubsystem->AddCommTask(
 		CommunicationTaskPtr(new RepeatedBarkTask("snd_sleeping", idleBarkIntervalMin, idleBarkIntervalMax))
 	);
@@ -118,15 +117,7 @@ void IdleSleepState::Think(idAI* owner)
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
-			if (owner->spawnArgs.GetBool("lay_down_left", "1"))
-			{
-				owner->AI_LAY_DOWN_LEFT = true;
-			}
-			else
-			{
-				owner->AI_LAY_DOWN_LEFT = false;
-			}
-
+			owner->AI_LAY_DOWN_LEFT = owner->spawnArgs.GetBool("lay_down_left", "1");
 			owner->LayDown();
 		}
 	}
@@ -137,12 +128,10 @@ void IdleSleepState::Think(idAI* owner)
 		return;
 	}
 
-
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
-
 }
 
 
