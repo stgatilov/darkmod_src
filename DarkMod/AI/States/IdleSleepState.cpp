@@ -64,7 +64,7 @@ void IdleSleepState::Init(idAI* owner)
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
 
-	if (owner->HasSeenEvidence() && !owner->spawnArgs.GetBool("disable_alert_idle", 0))
+	if (owner->HasSeenEvidence() && !owner->spawnArgs.GetBool("disable_alert_idle", "0"))
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
 		return;
