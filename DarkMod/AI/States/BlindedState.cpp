@@ -45,15 +45,21 @@ void BlindedState::Init(idAI* owner)
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "blinded");
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "blinded");
 
-	// The communication system should bark
-/*	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_blinded"))
-	);*/
+	CommMessagePtr message(new CommMessage(
+		CommMessage::RequestForHelp_CommType, 
+		owner, NULL, // from this AI to anyone 
+		NULL,
+		owner->GetPhysics()->GetOrigin()
+	));
+
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message))
+	);
 
 	_endTime = gameLocal.time + 4000 + static_cast<int>(gameLocal.random.RandomFloat() * 2000);
 
 	// Set alert level a little bit below combat
-	if(owner->AI_AlertLevel < owner->thresh_5 - 1)
+	if (owner->AI_AlertLevel < owner->thresh_5 - 1)
 	{
 		owner->SetAlertLevel(owner->thresh_5 - 1);
 	}
