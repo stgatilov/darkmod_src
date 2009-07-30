@@ -3153,7 +3153,16 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
 			//dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
 			dir = muzzleAxis[ 0 ]; // Dram: Make the weapon shoot directly from the barrel bone. Found by Ishtvan
+
+			if (projectileDef->dict.GetBool("fire_along_playerview", "0"))
+			{
+				// greebo: Fire the projectile along the playerview direction
+				dir = playerViewAxis.ToAngles().ToForward();
+			}
+
 			dir.Normalize();
+
+			//gameRenderWorld->DebugArrow(colorWhite, muzzleOrigin, muzzleOrigin + dir*100, 1, 15000);
 
 			if ( projectileEnt ) {
 				ent = projectileEnt;
