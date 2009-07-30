@@ -2181,7 +2181,8 @@ bool idPhysics_Player::CheckJump()
 	// back paddling ?
 	if ( command.forwardmove < 0 )
 	{
-		extraSpeedForward = -extraSpeedForward;
+		// greebo: Apply a modifier when doing backwards jumps
+		extraSpeedForward = -extraSpeedForward * cv_tdm_backwards_jump_modifier.GetFloat();
 	}
 
 	// strafing right?
@@ -2234,7 +2235,28 @@ bool idPhysics_Player::CheckJump()
 	{
 		addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
 	}
-	current.velocity += addVelocity + extraSpeedForward;
+
+	// greebo: Consider jump stamina
+	float jumpStaminaFactor = 1.0f;
+
+	if (lastJumpTime > -1)
+	{
+		int timeSinceLastJump = gameLocal.time - lastJumpTime;
+
+		float jumpRelaxationTime = SEC2MS(cv_tdm_jump_relaxation_time.GetFloat());
+
+		float factor = timeSinceLastJump * timeSinceLastJump / (jumpRelaxationTime * jumpRelaxationTime);
+
+		jumpStaminaFactor = idMath::ClampFloat(0.2f, 1, factor);
+	}
+
+	current.velocity += addVelocity + extraSpeedForward * jumpStaminaFactor;
+
+	// Remember the last jump time
+	if (jumpStaminaFactor > 0.1f)
+	{
+		lastJumpTime = gameLocal.time;
+	}
 
 	return true;
 }
@@ -2660,6 +2682,9 @@ idPhysics_Player::idPhysics_Player( void )
 	maxStepHeight = 0;
 	maxJumpHeight = 0;
 	memset( &command, 0, sizeof( command ) );
+
+	lastJumpTime = -1;
+
 	viewAngles.Zero();
 	framemsec = 0;
 	frametime = 0;
@@ -2789,6 +2814,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( maxStepHeight );
 	savefile->WriteFloat( maxJumpHeight );
 	savefile->WriteInt( debugLevel );
+	savefile->WriteInt(lastJumpTime);
 
 	savefile->WriteUsercmd( command );
 	savefile->WriteAngles( viewAngles );
@@ -2876,6 +2902,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( maxStepHeight );
 	savefile->ReadFloat( maxJumpHeight );
 	savefile->ReadInt( debugLevel );
+	savefile->ReadInt(lastJumpTime);
 
 	savefile->ReadUsercmd( command );
 	savefile->ReadAngles( viewAngles );

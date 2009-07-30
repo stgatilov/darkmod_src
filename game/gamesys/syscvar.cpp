@@ -168,6 +168,8 @@ idCVar cv_tdm_run_jump_vel(				"tdm_run_jump_vel",				"2.5",			CVAR_FLOAT, "Jump
 idCVar cv_tdm_crouch_jump_vel(			"tdm_crouch_jump_vel",			"0.5",			CVAR_FLOAT, "Jump velocity multiplier when crouching" );
 idCVar cv_tdm_min_vel_jump(				"tdm_min_vel_jump",				"0.0",			CVAR_FLOAT, "The minimum speed before cv_tdm_run_jump_vel is used" );
 idCVar cv_tdm_fwd_jump_vel(				"tdm_fwd_jump_vel",				"50.0",			CVAR_FLOAT, "Forward vector multiple for jumping" );
+idCVar cv_tdm_backwards_jump_modifier(	"tdm_back_jump_factor",			"0.5",			CVAR_FLOAT, "Backwards multiplier for jumping, relative to forward jumping. A factor of 1 means that the player gains as much speed through backwards jumping as through forward jumping." );
+idCVar cv_tdm_jump_relaxation_time(		"tdm_jump_relaxation_time",		"4",			CVAR_FLOAT, "Time in seconds needed to regain full jump strength again." );
 
 idCVar cv_tdm_footfalls_movetype_specific( "tdm_footfalls_movetype_specific", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to use move-type dependent foot fall sounds." );
 

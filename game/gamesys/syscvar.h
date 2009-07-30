@@ -120,6 +120,8 @@ extern idCVar cv_tdm_run_jump_vel;
 extern idCVar cv_tdm_crouch_jump_vel;
 extern idCVar cv_tdm_min_vel_jump;
 extern idCVar cv_tdm_fwd_jump_vel;
+extern idCVar cv_tdm_backwards_jump_modifier;
+extern idCVar cv_tdm_jump_relaxation_time;
 
 extern idCVar cv_tdm_footfalls_movetype_specific;
 

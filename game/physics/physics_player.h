@@ -229,6 +229,9 @@ private:
 	float					maxJumpHeight;
 	int						debugLevel;				// if set, diagnostic output will be printed
 
+	// greebo: Used for "jump stamina"
+	int						lastJumpTime;
+
 	// player input
 	usercmd_t				command;
 	idAngles				viewAngles;
