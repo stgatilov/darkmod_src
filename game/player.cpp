@@ -10678,7 +10678,7 @@ void idPlayer::PlayFootStepSound()
 		return;
 	}
 
-	idStr localSound, sound;
+	idStr localSound;
 	
 	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
 	// Currently only players have movement flags set up this way, not AI.  We could change that later.
@@ -10724,7 +10724,6 @@ void idPlayer::PlayFootStepSound()
 		}
 
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() ); 
-		sound = spawnArgs.GetString( localSound.c_str() );
 	}
 
 	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
@@ -10739,18 +10738,34 @@ void idPlayer::PlayFootStepSound()
 		{
 			localSound = "snd_footstep_puddle";
 		}
-		sound = spawnArgs.GetString( localSound );
 	}
 	else if (waterLevel == WATERLEVEL_WAIST)
 	{
 		localSound = "snd_footstep_wading";
-		sound = spawnArgs.GetString( localSound );
 	}
 	// greebo: Added this to disable the walking sound when completely underwater
 	// this should be replaced by snd_
 	else if (waterLevel == WATERLEVEL_HEAD)
 	{
 		localSound = "snd_footstep_swim";
+	}
+
+	idStr sound;
+
+	if (cv_tdm_footfalls_movetype_specific.GetBool())
+	{
+		sound = spawnArgs.GetString( localSound + moveType );
+
+		if (sound.IsEmpty())
+		{
+			gameLocal.Warning("Did not find footstep sound %s", (localSound + moveType).c_str());
+		}
+
+		// Fall back to normal sound
+		sound = spawnArgs.GetString( localSound );
+	}
+	else
+	{
 		sound = spawnArgs.GetString( localSound );
 	}
 
@@ -10758,8 +10773,6 @@ void idPlayer::PlayFootStepSound()
 	{
 		localSound = "snd_footstep";
 	}
-	
-	sound = spawnArgs.GetString( localSound );
 
 	// if a sound was not found for that specific material, use default
 	if( sound.IsEmpty() && waterLevel != WATERLEVEL_HEAD )

@@ -121,6 +121,8 @@ extern idCVar cv_tdm_crouch_jump_vel;
 extern idCVar cv_tdm_min_vel_jump;
 extern idCVar cv_tdm_fwd_jump_vel;
 
+extern idCVar cv_tdm_footfalls_movetype_specific;
+
 extern idCVar cv_pm_weightmod;
 
 extern idCVar cv_pm_mantle_height;
