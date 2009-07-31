@@ -712,7 +712,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptBool			AI_KNOCKEDOUT;
 	idScriptBool			AI_ENEMY_VISIBLE;
 	idScriptBool			AI_ENEMY_IN_FOV;
-	idScriptBool			AI_ENEMY_DEAD;
 	idScriptBool			AI_MOVE_DONE;
 	idScriptBool			AI_ONGROUND;
 	idScriptBool			AI_ACTIVATED;

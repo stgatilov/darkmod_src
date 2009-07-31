@@ -2289,7 +2289,6 @@ void idAI::LinkScriptVariables( void )
 	AI_KNOCKEDOUT.LinkTo(		scriptObject, "AI_KNOCKEDOUT" );
 	AI_ENEMY_VISIBLE.LinkTo(	scriptObject, "AI_ENEMY_VISIBLE" );
 	AI_ENEMY_IN_FOV.LinkTo(		scriptObject, "AI_ENEMY_IN_FOV" );
-	AI_ENEMY_DEAD.LinkTo(		scriptObject, "AI_ENEMY_DEAD" );
 	AI_MOVE_DONE.LinkTo(		scriptObject, "AI_MOVE_DONE" );
 	AI_ONGROUND.LinkTo(			scriptObject, "AI_ONGROUND" );
 	AI_ACTIVATED.LinkTo(		scriptObject, "AI_ACTIVATED" );
@@ -5854,7 +5853,6 @@ idAI::EnemyDead
 */
 void idAI::EnemyDead( void ) {
 	ClearEnemy();
-	AI_ENEMY_DEAD = true;
 }
 
 /*
@@ -6566,8 +6564,6 @@ bool idAI::SetEnemy(idActor* newEnemy)
 	}
 	else
 	{
-		// greebo: update the ENEMY_DEAD status
-		AI_ENEMY_DEAD = (newEnemy->health <= 0); 
 		return true; // still a valid enemy
 	}
 }
