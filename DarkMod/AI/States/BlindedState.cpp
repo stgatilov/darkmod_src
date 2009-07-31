@@ -56,7 +56,10 @@ void BlindedState::Init(idAI* owner)
 		CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message))
 	);
 
-	_endTime = gameLocal.time + 4000 + static_cast<int>(gameLocal.random.RandomFloat() * 2000);
+	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "4")) + 
+		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "2"));
+
+	_endTime = gameLocal.time + static_cast<int>(duration);
 
 	// Set alert level a little bit below combat
 	if (owner->AI_AlertLevel < owner->thresh_5 - 1)
