@@ -563,16 +563,20 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 		// Not knocked out, not dead, deal with it
 		if (owner->IsEnemy(other))
 		{
-			// Living enemy
-			gameLocal.Printf("I see a living enemy!\n");
-			owner->SetEnemy(other);
-			owner->AI_VISALERT = true;
-			
-			owner->SetAlertLevel(owner->thresh_5*2);
-			memory.alertClass = EAlertVisual;
-			memory.alertType = EAlertTypeEnemy;
-			// An enemy should not be ignored in the future
-			ignoreStimulusFromNowOn = false;
+			// Only do this if we don't have an enemy already
+			if (owner->GetEnemy() == NULL)
+			{
+				// Living enemy
+				gameLocal.Printf("I see a living enemy!\n");
+				owner->SetEnemy(other);
+				owner->AI_VISALERT = true;
+				
+				owner->SetAlertLevel(owner->thresh_5*2);
+				memory.alertClass = EAlertVisual;
+				memory.alertType = EAlertTypeEnemy;
+				// An enemy should not be ignored in the future
+				ignoreStimulusFromNowOn = false;
+			}
 		}
 		else if (owner->IsFriend(other))
 		{

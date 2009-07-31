@@ -153,8 +153,10 @@ void UnreachableTargetState::Think(idAI* owner)
 		return;
 	}
 
-	if (owner->AI_ENEMY_DEAD)
+	if (enemy->AI_DEAD)
 	{
+		owner->ClearEnemy();
+
 		owner->StopMove(MOVE_STATUS_DONE);
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.5);
 		owner->GetMind()->EndState();
