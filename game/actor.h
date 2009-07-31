@@ -538,6 +538,12 @@ public:
 	int						GetAnim( int channel, const char *name );
 	idAnimator*				GetAnimatorForChannel(int channel);
 	const char*				LookupReplacementAnim( const char *name );
+
+	// greebo: Replaces the given animToReplace by the animation replacementAnim
+	void					SetReplacementAnim(const idStr& animToReplace, const idStr& replacementAnim);
+
+	// greebo: Removes any replacement for the given anim.
+	void					RemoveReplacementAnim(const idStr& replacedAnim);
 	void					StopAnim(int channel, int frames);
 	void					UpdateAnimState( void );
 	void					SetAnimState( int channel, const char *name, int blendFrames );
@@ -817,6 +823,11 @@ public:
 	* Convert a melee type integer to the corresponding string name
 	**/
 	void					Event_MeleeNameForNum( int num );
+
+	// Script interface for replacing anims with different ones
+	void					Event_SetReplacementAnim(const char* animToReplace, const char* replacementAnim);
+	void					Event_RemoveReplacementAnim(const char* animName);
+	void					Event_LookupReplacementAnim(const char* animName);
 
 
 #ifdef TIMING_BUILD
