@@ -194,9 +194,11 @@ void IdleState::InitialiseMovement(idAI* owner)
 	// The movement subsystem should start patrolling
 	owner->movementSubsystem->ClearTasks();
 
+	bool animalPatrol = owner->spawnArgs.GetBool("animal_patrol", "0");
+
 	// greebo: Choose the patrol task depending on the spawnargs.
 	TaskPtr patrolTask = TaskLibrary::Instance().CreateInstance(
-		owner->spawnArgs.GetBool("animal_patrol", "0") ? TASK_ANIMAL_PATROL : TASK_PATROL
+		animalPatrol ? TASK_ANIMAL_PATROL : TASK_PATROL
 	);
 
 	// Check if the owner has patrol routes set
@@ -205,13 +207,14 @@ void IdleState::InitialiseMovement(idAI* owner)
 
 	if (path == NULL && lastPath == NULL)
 	{
-
 		path = idPathCorner::RandomPath(owner, NULL, owner);
 	}
 
 	memory.currentPath = path;
-	if (path)
+
+	if (path != NULL || animalPatrol)
 	{
+		// For animals, push the AnimalPatrol task anyway, they don't need paths
 		owner->movementSubsystem->PushTask(patrolTask);
 	}
 
