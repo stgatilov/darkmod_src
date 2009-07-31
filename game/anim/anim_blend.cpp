@@ -1074,10 +1074,9 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 				case FC_REATTACH:
 				{
-					const char *AttName, *AttPos;
 					int spcind = command.string->Find(" ");
-					AttName = command.string->Left( spcind ).c_str();
-					AttPos = command.string->Mid( spcind+1, command.string->Length() );
+					idStr AttName = command.string->Left( spcind ).c_str();
+					idStr AttPos = command.string->Mid( spcind+1, command.string->Length() );
 
 					ent->ReAttachToPos( AttName, AttPos );
 					break;
