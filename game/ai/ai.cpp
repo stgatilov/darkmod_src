@@ -8300,6 +8300,12 @@ float idAI::GetAcuity(const char *type) const
 		}
 	}
 
+	// angua: drunken AI have reduced acuity, unless they have seen evidence of intruders
+	if (spawnArgs.GetBool("drunk", "0") && HasSeenEvidence() == false)
+	{
+		returnval *= spawnArgs.GetFloat("drunk_acuity_factor", "1");
+	}
+
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
 
 	return returnval;
@@ -9073,7 +9079,7 @@ void idAI::CheckTactile()
 	}
 }
 
-bool idAI::HasSeenEvidence()
+bool idAI::HasSeenEvidence() const
 {
 	ai::Memory& memory = GetMemory();
 

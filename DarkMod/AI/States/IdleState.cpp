@@ -109,7 +109,12 @@ void IdleState::Init(idAI* owner)
 	}
 	// The action subsystem plays the idle anims (scratching, yawning...)
 	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+
+	if (owner->spawnArgs.GetBool("drunk", "0") == false)
+	{
+		// angua: drunken AIs won't do any idle anims for now
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+	}
 
 	// The sensory system does its Idle tasks
 	owner->senseSubsystem->ClearTasks();
@@ -136,10 +141,18 @@ void IdleState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
 	// Push the regular patrol barking to the list too
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
-	);
-
+	if (owner->spawnArgs.GetBool("drunk", "0"))
+	{
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_drunk", idleBarkIntervalMin, idleBarkIntervalMax))
+		);
+	}
+	else
+	{
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
+		);
+	}
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
 }
