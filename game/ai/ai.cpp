@@ -8565,6 +8565,15 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		return; // not an enemy, no alert
 	}
 
+	// greebo: We touched an enemy, check if it's an unconscious body or corpse
+	if (tactEnt->IsType(idAI::Type) && 
+		(static_cast<idAI*>(tactEnt)->AI_DEAD || static_cast<idAI*>(tactEnt)->AI_KNOCKEDOUT))
+	{
+		// When AI_DEAD or AI_KNOCKEDOUT ignore this alert from now on to avoid
+		// re-alerting us every time we touch it again and again
+		TactileIgnore(tactEnt);
+	}
+
 	// Set the alert amount to the according tactile alert value
 	if (amount == -1)
 	{
