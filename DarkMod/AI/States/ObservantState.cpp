@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/CommWaitTask.h"
 #include "../Tasks/WaitTask.h"
 #include "SuspiciousState.h"
 #include "../Library.h"
@@ -104,8 +105,13 @@ void ObservantState::Init(idAI* owner)
 
 		if (memory.alertType != EAlertTypeMissingItem)
 		{
+			CommunicationTaskPtr barkTask(new SingleBarkTask(soundName));
+
+			owner->commSubsystem->AddCommTask(barkTask);
+
+			// Push a wait task (1 sec) with the bark priority -1, to have it queued
 			owner->commSubsystem->AddCommTask(
-					CommunicationTaskPtr(new SingleBarkTask(soundName))
+				CommunicationTaskPtr(new CommWaitTask(1000, barkTask->GetPriority() - 1))
 			);
 		}
 	}
