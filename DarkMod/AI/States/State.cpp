@@ -307,21 +307,33 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 		return;
 	}
 
+	// greebo: We don't check for alert type weights here, flashbombs are "top priority"
+
+	Memory& memory = owner->GetMemory();
+
+	memory.alertClass = EAlertVisual;
+	memory.alertedDueToCommunication = false;
+	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+	memory.alertRadius = 200;
+	memory.alertType = EAlertTypeWeapon;
+
 	if (!skipVisibilityCheck) 
 	{
 		// Perform visibility check
 		if (owner->CanSeeExt(stimSource, 1, 0))
 		{
-			// DEBUG_PRINT("AI blinded.");
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI can see the flash, switching to BlindedState.\r");
 			owner->GetMind()->PushState(STATE_BLINDED);
 		}
-		else 
+		else
 		{
-			// DEBUG_PRINT("AI can't see the flash.");
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI cannot see the flash.\r");
 		}
 	}
 	else 
 	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visibility check for flash skipped, switching to BlindedState.\r");
+
 		// Skip visibility check
 		owner->GetMind()->PushState(STATE_BLINDED);
 	}

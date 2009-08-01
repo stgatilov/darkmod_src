@@ -45,11 +45,13 @@ void BlindedState::Init(idAI* owner)
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "blinded");
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "blinded");
 
+	Memory& memory = owner->GetMemory();
+
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		NULL,
-		owner->GetPhysics()->GetOrigin()
+		memory.alertPos
 	));
 
 	owner->commSubsystem->AddCommTask(
