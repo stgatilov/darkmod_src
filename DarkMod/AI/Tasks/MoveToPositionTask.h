@@ -42,15 +42,18 @@ private:
 	// the distance below which entities are considered "reached"
 	float _entityReachDistance;
 
+	// angua: if > 0, this changes the size of the bounding box used for checking whether the AI has reached their destination
+	float _accuracy;
+
 	// Default constructor
 	MoveToPositionTask();
 
 public:
 	// Constructor taking the target position (and optional target yaw) as input argument
-	MoveToPositionTask(const idVec3& targetPosition, float targetYaw = idMath::INFINITY);
+	MoveToPositionTask(const idVec3& targetPosition, float targetYaw = idMath::INFINITY, float accuracy = -1);
 
 	// Constructor taking a target entity
-	MoveToPositionTask(idEntity* targetEntity, float entityReachDistance = DEFAULT_ENTITY_REACH_DISTANCE);
+	MoveToPositionTask(idEntity* targetEntity, float entityReachDistance = DEFAULT_ENTITY_REACH_DISTANCE, float accuracy = -1);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

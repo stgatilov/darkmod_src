@@ -25,23 +25,26 @@ MoveToPositionTask::MoveToPositionTask() :
 	_prevTargetPosition(0,0,0),
 	_targetYaw(idMath::INFINITY),
 	_targetEntity(NULL),
-	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE)
+	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE),
+	_accuracy(-1)
 {}
 
-MoveToPositionTask::MoveToPositionTask(const idVec3& targetPosition, float targetYaw) :
+MoveToPositionTask::MoveToPositionTask(const idVec3& targetPosition, float targetYaw, float accuracy) :
 	_targetPosition(targetPosition),
 	_prevTargetPosition(0,0,0),
 	_targetYaw(targetYaw),
 	_targetEntity(NULL),
-	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE)
+	_entityReachDistance(DEFAULT_ENTITY_REACH_DISTANCE),
+	_accuracy(accuracy)
 {}
 
-MoveToPositionTask::MoveToPositionTask(idEntity* targetEntity, float entityReachDistance) :
+MoveToPositionTask::MoveToPositionTask(idEntity* targetEntity, float entityReachDistance, float accuracy) :
 	_targetPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	_prevTargetPosition(0,0,0),
 	_targetYaw(idMath::INFINITY),
 	_targetEntity(targetEntity),
-	_entityReachDistance(entityReachDistance)
+	_entityReachDistance(entityReachDistance),
+	_accuracy(accuracy)
 {}
 
 // Get the name of this task
@@ -73,7 +76,7 @@ bool MoveToPositionTask::Perform(Subsystem& subsystem)
 	if (_prevTargetPosition != _targetPosition)
 	{
 		// Yes, move towards this new position
-		if (!owner->MoveToPosition(_targetPosition))
+		if (!owner->MoveToPosition(_targetPosition, _accuracy))
 		{
 			// Destination unreachable, end task
 			return true;
@@ -150,6 +153,7 @@ void MoveToPositionTask::Save(idSaveGame* savefile) const
 	savefile->WriteFloat(_targetYaw);
 	savefile->WriteObject(_targetEntity);
 	savefile->WriteFloat(_entityReachDistance);
+	savefile->WriteFloat(_accuracy);
 }
 
 void MoveToPositionTask::Restore(idRestoreGame* savefile)
@@ -161,6 +165,7 @@ void MoveToPositionTask::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(_targetYaw);
 	savefile->ReadObject(reinterpret_cast<idClass*&>(_targetEntity));
 	savefile->ReadFloat(_entityReachDistance);
+	savefile->ReadFloat(_accuracy);
 }
 
 MoveToPositionTaskPtr MoveToPositionTask::CreateInstance()

@@ -246,8 +246,9 @@ void IdleState::InitialiseMovement(idAI* owner)
 			// angua: don't do this when we are sitting or sleeping
 			// We already HAVE an idle position set, this means that we are
 			// supposed to be there, let's move
+			float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
 			owner->movementSubsystem->PushTask(
-				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw))
+				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance))
 			);
 		}
 	}
