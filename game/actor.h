@@ -609,6 +609,10 @@ protected:
 	idStrList				damageGroups;		// body damage groups
 	idList<float>			damageScale;		// damage scale per damage group
 
+	// greebo: If not -1, the actor will fire a script when its health falls below this value
+	int						lowHealthThreshold;
+	idStr					lowHealthScript;
+
 	/**
 	* Alertnum threshold above which sneak attacks won't work,
 	**/
