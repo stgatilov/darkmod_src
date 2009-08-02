@@ -1411,6 +1411,11 @@ public:			// Events should be public, so they can be used from other places as w
 	* Tels: Teleport the entity to the given entity's origin and orientation.
 	*/
 	void					Event_TeleportTo(idEntity *target);
+	/**
+	* Tels: Return the average amount of all lights in the entities PVS.
+	*/
+	void 					Event_AverageLightInPVS();
+
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
 	void					Event_GetInventory();

@@ -49,6 +49,13 @@ public:
 	virtual void	SetColor( const idVec4 &color );
 	virtual void	GetColor( idVec3 &out ) const;
 	virtual void	GetColor( idVec4 &out ) const;
+
+	/**
+	* Tels: idLight::GetLightOrigin returns the origin of the light in the world. This
+	* is different from the physics origin, since the light can be offset.
+	*/
+	const idVec3 &	GetLightOrigin( void ) const { return renderLight.origin; }
+
 	const idVec3 &	GetBaseColor( void ) const { return baseColor; }
 	void			SetShader( const char *shadername );
 	void			SetLightParm( int parmnum, float value );

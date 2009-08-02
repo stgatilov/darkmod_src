@@ -497,6 +497,18 @@ void idLight::SetLightLevel( void ) {
 
 /*
 ================
+tels: idLight::GetLightOrigin returns the origin of the light in the world. This
+is different from the physics origin, since the light can be offset.
+================
+void idLight::GetLightOrigin( idVec3 &out ) const {
+	out[0] = renderLight.origin[0];
+	out[1] = renderLight.origin[1];
+	out[2] = renderLight.origin[2];
+}
+*/
+
+/*
+================
 idLight::GetColor
 ================
 */
