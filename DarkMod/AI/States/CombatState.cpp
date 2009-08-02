@@ -299,6 +299,12 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
+	if (owner->GetMoveType() != MOVETYPE_ANIM)
+	{
+		owner->GetUp();
+		return;
+	}
+
 	// Switch between melee and ranged combat based on enemy distance
 	float enemyDist = (owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast();
 

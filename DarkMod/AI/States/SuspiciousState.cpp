@@ -78,9 +78,10 @@ void SuspiciousState::Init(idAI* owner)
 	{
 		owner->movementSubsystem->ClearTasks();
 		owner->StopMove(MOVE_STATUS_DONE);
-		if (!owner->CheckFOV(memory.alertPos))
+		if (!owner->CheckFOV(memory.alertPos) && owner->GetMoveType() == MOVETYPE_ANIM)
 		{
 			// Search spot is not within FOV, turn towards the position
+			// don't turn while sitting
 			owner->TurnToward(memory.alertPos);
 		}
 	}

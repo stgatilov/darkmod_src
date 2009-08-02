@@ -160,6 +160,13 @@ void SearchingState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
+	if (owner->GetMoveType() != MOVETYPE_ANIM)
+	{
+		owner->GetUp();
+		return;
+	}
+
+
 	Memory& memory = owner->GetMemory();
 
 	// Do we have an ongoing hiding spot search?
