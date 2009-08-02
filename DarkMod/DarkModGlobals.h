@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include "../game/game_local.h"
 
+// greebo: Defines the darkmod release version
+#define TDM_VERSION_MAJOR 1
+#define TDM_VERSION_MINOR 0
+
 /*!
 Darkmod LAS
 */

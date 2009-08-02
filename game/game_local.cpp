@@ -402,10 +402,13 @@ void idGameLocal::Init( void ) {
 #endif
 
 	Printf( "--------- Initializing Game ----------\n" );
-	Printf( "gamename: %s\n", GAME_VERSION );
-	Printf( "gamedate: %s\n", __DATE__ );
-	Printf( "Code Revision: %d\n", RevisionTracker::Instance().GetHighestRevision() );
-
+	Printf( "%s %d.%d, code revision %d\n", 
+		GAME_VERSION, 
+		TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
+		RevisionTracker::Instance().GetHighestRevision() 
+	);
+	Printf( "Build date: %s\n", __DATE__ );
+	
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
