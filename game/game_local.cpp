@@ -686,6 +686,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_RelationsManager->Save(&savegame);
 	m_ModMenu->Save(&savegame);
 	m_Shop->Save(&savegame);
+	LAS.Save(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Save(&savegame);
@@ -1671,6 +1672,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_RelationsManager->Restore(&savegame);
 	m_ModMenu->Restore(&savegame);
 	m_Shop->Restore(&savegame);
+	LAS.Restore(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Restore(&savegame);
@@ -6077,7 +6079,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 				if (cv_sr_show.GetInteger() > 0)
 				{
 					// Show successful S/R
-					gameRenderWorld->DebugArrow(colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, gameLocal.msec);
+					gameRenderWorld->DebugArrow(colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
 				}
 
 				// Fire the response and pass the originating entity plus the stim object itself
@@ -6297,7 +6299,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 						for (int n2 = 0; n2 < n; ++n2)
 						{
 							// Show failed S/R
-							gameRenderWorld->DebugArrow(colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, gameLocal.msec);
+							gameRenderWorld->DebugArrow(colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
 						}
 					}
 

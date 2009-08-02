@@ -831,8 +831,25 @@ CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureNa
 	m_MapIndex = g_Global.AddImage(MapName, added);
 }
 
-CLightMaterial::~CLightMaterial()
+
+void CLightMaterial::Save( idSaveGame *savefile ) const
 {
+	savefile->WriteString(m_MaterialName);
+	savefile->WriteBool(m_AmbientLight);
+	savefile->WriteString(m_FallOffTexture);
+	savefile->WriteInt(m_FallOffIndex);
+	savefile->WriteString(m_Map);
+	savefile->WriteInt(m_MapIndex);
+}
+
+void CLightMaterial::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadString(m_MaterialName);
+	savefile->ReadBool(m_AmbientLight);
+	savefile->ReadString(m_FallOffTexture);
+	savefile->ReadInt(m_FallOffIndex);
+	savefile->ReadString(m_Map);
+	savefile->ReadInt(m_MapIndex);
 }
 
 unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &Bpp)
