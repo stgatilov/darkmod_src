@@ -1895,6 +1895,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// Scripts query this to retrieve the name of the next idle anim
 	void Event_GetNextIdleAnim();
 
+	void Event_HasSeenEvidence();
+
+
 #ifdef TIMING_BUILD
 private:
 	int aiThinkTimer;

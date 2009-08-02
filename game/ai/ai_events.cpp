@@ -356,6 +356,8 @@ const idEventDef AI_Knockout( "knockout", "e" );
 
 const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
 
+const idEventDef AI_HasSeenEvidence( "hasSeenEvidence", NULL, 'd' );
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -538,6 +540,9 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
 
 	EVENT(AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
+
+	EVENT(AI_HasSeenEvidence,					idAI::Event_HasSeenEvidence)
+
 
 END_CLASS
 
@@ -3400,4 +3405,10 @@ void idAI::Event_ProcessVisualStim(idEntity* stimSource)
 void idAI::Event_GetNextIdleAnim()
 {
 	idThread::ReturnString(GetNextIdleAnim());
+}
+
+
+void idAI::Event_HasSeenEvidence()
+{
+	idThread::ReturnInt(HasSeenEvidence());
 }
