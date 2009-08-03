@@ -63,6 +63,7 @@ idCVar cv_ai_alertlevel_show (		"tdm_ai_showalert",			"0",			CVAR_GAME | CVAR_AR
 idCVar cv_ai_dest_show (			"tdm_ai_showdest",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, an arrow is drawn from every AI to its intended pathing destination.");
 idCVar cv_ai_goalpos_show (			"tdm_ai_showgoalpos",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the current goalpos (seekpos) is drawn in the world (!= move destination).");
 idCVar cv_ai_aasarea_show (			"tdm_ai_showAASarea",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the current AAS area of the AI is drawn in the world.");
+idCVar cv_ai_debug_blocked (		"tdm_ai_debug_blocked",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug drawings of the movement subsystem are shown.");
 idCVar cv_ai_door_show(				"tdm_ai_showdoor",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the desired positions for opening and closing the door are shown.");
 idCVar cv_ai_elevator_show(			"tdm_ai_showelevator",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the debug drawings for AI handling elevators are shown.");
 

@@ -33,6 +33,7 @@ extern idCVar cv_ai_alertlevel_show;
 extern idCVar cv_ai_dest_show;
 extern idCVar cv_ai_goalpos_show;
 extern idCVar cv_ai_aasarea_show;
+extern idCVar cv_ai_debug_blocked;
 extern idCVar cv_ai_door_show;
 extern idCVar cv_ai_elevator_show;
 extern idCVar cv_ai_debug;
