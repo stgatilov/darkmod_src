@@ -1186,9 +1186,7 @@ void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bo
 
 void State::OnMovementBlocked(idAI* owner)
 {
-	owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
-
-	// Determine which object is blocking us
+	// Determine which type of object is blocking us
 
 	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
 
@@ -1196,33 +1194,61 @@ void State::OnMovementBlocked(idAI* owner)
 	gameLocal.clip.TraceBounds(result, ownerOrigin, ownerOrigin + owner->viewAxis.ToAngles().ToForward()*20, owner->GetPhysics()->GetBounds(),
 								CONTENTS_SOLID|CONTENTS_CORPSE, owner);
 
-	if (result.fraction < 1.0f)
-	{
-		idEntity* ent = gameLocal.entities[result.c.entityNum];
-
-		if (ent != NULL) 
-		{
-			if (ent != gameLocal.world)
-			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
-
-				if (cv_ai_debug_blocked.GetBool())
-				{
-					gameRenderWorld->DebugBounds(colorRed, ent->GetPhysics()->GetBounds(), ent->GetPhysics()->GetOrigin(), 2000);
-				}
-
-				// TODO
-			}
-			else
-			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by world!\r", owner->name.c_str());
-			}
-		}
-	}
-	else
+	if (result.fraction >= 1.0f)
 	{
 		// Trace didn't hit anything?
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked but no entity in view\r", owner->name.c_str());
+		return;
+	}
+
+	idEntity* ent = gameLocal.entities[result.c.entityNum];
+
+	if (ent == NULL) 
+	{
+		// Trace didn't hit anything?
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by NULL entity!\r", owner->name.c_str());
+		return;
+	}
+
+	if (ent == gameLocal.world)
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by world!\r", owner->name.c_str());
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
+
+	if (cv_ai_debug_blocked.GetBool())
+	{
+		gameRenderWorld->DebugBounds(colorRed, ent->GetPhysics()->GetBounds(), ent->GetPhysics()->GetOrigin(), 2000);
+	}
+
+	// Do something against this blocking entity, depending on its type
+
+	if (ent->IsType(idAI::Type))
+	{
+		// Blocked by other AI
+		idAI* master = owner;
+		idAI* slave = static_cast<idAI*>(ent);
+
+		if (!master->AI_FORWARD && slave->AI_FORWARD)
+		{
+			// Master is not moving, swap
+			std::swap(master, slave);
+		}
+
+		if (slave->AI_FORWARD && slave->AI_RUN && master->AI_FORWARD && !master->AI_RUN)
+		{
+			// One AI is running, this should be the master
+			std::swap(master, slave);
+		}
+
+		
+	}
+	else if (ent->IsType(idStaticEntity::Type))
+	{
+		// Blocked by func_static, these are not considered by Obstacle Avoidance code.
+
 	}
 }
 

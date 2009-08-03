@@ -1358,6 +1358,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\Tasks\ResolveMovementBlockTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\ResolveMovementBlockTask.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\ScriptTask.cpp"
 						>
 					</File>

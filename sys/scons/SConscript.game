@@ -254,6 +254,7 @@ AI/Tasks/RandomHeadturnTask.cpp \
 AI/Tasks/RandomTurningTask.cpp \
 AI/Tasks/RangedCombatTask.cpp \
 AI/Tasks/RepeatedBarkTask.cpp \
+AI/Tasks/ResolveMovementBlockTask.cpp \
 AI/Tasks/SingleBarkTask.cpp \
 AI/Tasks/ScriptTask.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
