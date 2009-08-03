@@ -88,7 +88,8 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					// Blocked for too long, raise status
 					_state = EBlocked;
 
-					// TODO: Send a signal to the current State
+					// Send a signal to the current State
+					owner->GetMind()->GetState()->OnMovementBlocked(owner);
 				}
 			}
 			else
@@ -113,6 +114,17 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 	}
 
 	DebugDraw(owner);
+}
+
+void MovementSubsystem::SetBlockedState(const BlockedState newState)
+{
+	_state = newState;
+
+	if (_state == ENotBlocked)
+	{
+		_lastTimeNotBlocked = gameLocal.time;
+		_historyBounds.Clear();
+	}
 }
 
 // Save/Restore methods

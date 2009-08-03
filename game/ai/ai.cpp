@@ -3440,7 +3440,11 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 idAI::MoveToPosition
 =====================
 */
-bool idAI::MoveToPosition( const idVec3 &pos, float accuracy ) {
+bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
+{
+	// Clear the "blocked" flag in the movement subsystem
+	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
+
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
 		StopMove( MOVE_STATUS_DONE );

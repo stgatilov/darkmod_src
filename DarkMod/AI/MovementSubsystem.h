@@ -23,6 +23,14 @@ namespace ai
 class MovementSubsystem :
 	public Subsystem 
 {
+public:
+	enum BlockedState
+	{
+		ENotBlocked,		// moving along
+		EPossiblyBlocked,	// might be blocked, watching...
+		EBlocked,			// not been making progress for too long
+	};
+
 protected:
 	// The origin history, contains the origin position of the last few frames
 	idList<idVec3> _originHistory;
@@ -35,13 +43,6 @@ protected:
 
 	// Mininum radius the bounds need to have, otherwise state is raised to EPossiblyBlocked
 	float _historyBoundsThreshold;
-
-	enum BlockedState
-	{
-		ENotBlocked,		// moving along
-		EPossiblyBlocked,	// might be blocked, watching...
-		EBlocked,			// not been making progress for too long
-	};
 
 	BlockedState _state;
 
@@ -61,6 +62,14 @@ public:
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
+
+	// Returns the current "blocked" state
+	BlockedState GetBlockedState() const
+	{
+		return _state;
+	}
+
+	void SetBlockedState(const BlockedState newState);
 
 protected:
 	virtual void CheckBlocked(idAI* owner);

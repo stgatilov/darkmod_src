@@ -16,6 +16,7 @@
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/AI/Mind.h"
 #include "../../DarkMod/AI/CommunicationSubsystem.h"
+#include "../../DarkMod/AI/MovementSubsystem.h"
 #include "../../DarkMod/HidingSpotSearchCollection.h"
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 #include "MoveState.h"
@@ -1045,7 +1046,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// The array of subsystems of this AI
 	ai::SubsystemPtr senseSubsystem;
-	ai::SubsystemPtr movementSubsystem;
+	ai::MovementSubsystemPtr movementSubsystem;
 	ai::SubsystemPtr actionSubsystem;
 	ai::CommunicationSubsystemPtr commSubsystem;
 

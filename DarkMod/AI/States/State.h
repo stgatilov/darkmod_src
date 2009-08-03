@@ -115,6 +115,9 @@ public:
 	**/
 	virtual void OnChangeTarget(idAI *owner) {};
 
+	// Invoked when the movement subsystem considers this AI as blocked
+	virtual void OnMovementBlocked(idAI* owner);
+
 protected:
 	/**
 	 * greebo: Gets called by OnTactileAlert when the offending entity is 

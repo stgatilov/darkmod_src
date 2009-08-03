@@ -1184,6 +1184,48 @@ void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bo
 	owner->GetMind()->PushState(StatePtr(new FailedKnockoutState(attacker, direction, hitHead)));
 }
 
+void State::OnMovementBlocked(idAI* owner)
+{
+	owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
+
+	// Determine which object is blocking us
+
+	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
+
+	trace_t result;
+	gameLocal.clip.TraceBounds(result, ownerOrigin, ownerOrigin + owner->viewAxis.ToAngles().ToForward()*20, owner->GetPhysics()->GetBounds(),
+								CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+
+	if (result.fraction < 1.0f)
+	{
+		idEntity* ent = gameLocal.entities[result.c.entityNum];
+
+		if (ent != NULL) 
+		{
+			if (ent != gameLocal.world)
+			{
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
+
+				if (cv_ai_debug_blocked.GetBool())
+				{
+					gameRenderWorld->DebugBounds(colorRed, ent->GetPhysics()->GetBounds(), ent->GetPhysics()->GetOrigin(), 2000);
+				}
+
+				// TODO
+			}
+			else
+			{
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by world!\r", owner->name.c_str());
+			}
+		}
+	}
+	else
+	{
+		// Trace didn't hit anything?
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked but no entity in view\r", owner->name.c_str());
+	}
+}
+
 void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
