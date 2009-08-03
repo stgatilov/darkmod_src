@@ -65,7 +65,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		// Calculate the new bounds
 		_historyBounds.FromPoints(_originHistory.Ptr(), _originHistory.Num());
 
-		bool belowThreshold = _historyBounds.GetRadius() < _historyBoundsThreshold;
+		bool belowThreshold = _historyBounds.GetRadius(_historyBounds.GetCenter()) < _historyBoundsThreshold;
 
 		switch (_state)
 		{
