@@ -6550,6 +6550,7 @@ void CAttachInfo::Save( idSaveGame *savefile ) const
 	ent.Save( savefile );
 	savefile->WriteInt( channel );
 	savefile->WriteString( name );
+	savefile->WriteInt(savedContents);
 }
 
 /*
@@ -6562,6 +6563,7 @@ void CAttachInfo::Restore( idRestoreGame *savefile )
 	ent.Restore( savefile );
 	savefile->ReadInt( channel );
 	savefile->ReadString( name );
+	savefile->ReadInt(savedContents);
 }
 
 /*
@@ -10202,6 +10204,45 @@ SAttachPosition *idEntity::GetAttachPosition( const char *AttachName )
 	}
 
 	return returnVal;
+}
+
+void idEntity::SaveAttachmentContents()
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		m_Attachments[i].savedContents = (ent != NULL) ? ent->GetPhysics()->GetContents() : -1;
+	}
+}
+
+// Sets all attachment contents to the given value
+void idEntity::SetAttachmentContents(int newContents)
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		ent->GetPhysics()->SetContents(newContents);
+	}
+}
+
+// Restores all CONTENTS values, previously saved with SaveAttachmentContents()
+void idEntity::RestoreAttachmentContents()
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL) continue;
+
+		int savedContents = m_Attachments[i].savedContents;
+
+		if (savedContents != -1)
+		{
+			ent->GetPhysics()->SetContents(savedContents);
+		}
+	}
 }
 
 /*

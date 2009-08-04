@@ -186,6 +186,11 @@ enum {
 class CAttachInfo 
 {
 public:
+	CAttachInfo() :
+		channel(0),
+		savedContents(-1)
+	{}
+
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );
 
@@ -194,6 +199,9 @@ public:
 	int						channel;
 	// unique name by which the entity refers to this attachment
 	idStr					name; 
+
+	// An additional int to save contents (used to set attachments nonsolid temporarily)
+	int						savedContents;
 };
 
 /**
@@ -1058,6 +1066,14 @@ public:
 	bool					SpawnAbsenceMarker();
 	bool					DestroyAbsenceMarker();
 
+	// Saves the CONTENTS values of all attachments
+	void SaveAttachmentContents();
+
+	// Sets all attachment contents to the given value
+	void SetAttachmentContents(int newContents);
+
+	// Restores all CONTENTS values, previously saved with SaveAttachmentContents()
+	void RestoreAttachmentContents();
 
 protected:
 	/**

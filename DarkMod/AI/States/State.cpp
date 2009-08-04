@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/GreetingBarkTask.h"
 #include "../Tasks/HandleDoorTask.h"
 #include "../Tasks/HandleElevatorTask.h"
+#include "../Tasks/ResolveMovementBlockTask.h"
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
@@ -1224,6 +1225,11 @@ void State::OnMovementBlocked(idAI* owner)
 	}
 
 	// Do something against this blocking entity, depending on its type
+	if (ent->IsType(idAFAttachment::Type))
+	{
+		// This ought to be an AI's head, get its body
+		ent = static_cast<idAFAttachment*>(ent)->GetBody();
+	}
 
 	if (ent->IsType(idAI::Type))
 	{
@@ -1243,7 +1249,8 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
-		
+		// Tell the slave to get out of the way
+		slave->movementSubsystem->PushTask(TaskPtr(new ResolveMovementBlockTask(master)));
 	}
 	else if (ent->IsType(idStaticEntity::Type))
 	{
