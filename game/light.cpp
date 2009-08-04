@@ -284,12 +284,7 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_MaxLightRadius);
 	savefile->WriteInt(LASAreaIndex);
 
-	bool hasMaterial = (m_LightMaterial != NULL);
-	savefile->WriteBool(hasMaterial);
-	if (hasMaterial)
-	{
-		m_LightMaterial->Save(savefile);
-	}
+	// Don't save m_LightMaterial
 }
 
 /*
@@ -338,19 +333,15 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_MaxLightRadius);
 	savefile->ReadInt(LASAreaIndex);
 
-	bool hasMaterial;
-	savefile->ReadBool(hasMaterial);
-	if (hasMaterial)
-	{
-		m_LightMaterial->Restore(savefile);
-	}
-
 	lightDefHandle = -1;
 
 	SetLightLevel();
 
 	m_MaterialName = NULL;
 	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
+
+	// Re-acquire light material, now that the material name is known
+	m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
 }
 
 /*
