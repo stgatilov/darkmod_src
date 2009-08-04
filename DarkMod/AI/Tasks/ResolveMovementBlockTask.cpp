@@ -20,12 +20,12 @@ namespace ai
 {
 
 ResolveMovementBlockTask::ResolveMovementBlockTask() :
-	_masterAI(NULL),
+	_blockingEnt(NULL),
 	_preTaskContents(-1)
 {}
 
-ResolveMovementBlockTask::ResolveMovementBlockTask(idAI* masterAI) :
-	_masterAI(masterAI),
+ResolveMovementBlockTask::ResolveMovementBlockTask(idEntity* blockingEnt) :
+	_blockingEnt(blockingEnt),
 	_preTaskContents(-1)
 {}
 
@@ -48,17 +48,6 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	_initialAngles.ToVectors(&ownerForward, &ownerRight);
 
 	idVec3 masterForward;
-
-	if (_masterAI != NULL) 
-	{
-		masterForward = _masterAI->viewAxis.ToAngles().ToForward();
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Initialising ResolveMovementBlockTask without master AI.\r");
-		// Assume the other AI is facing the opposite direction
-		masterForward = -ownerForward;
-	}
 
 	// Set the TTL for this task
 	_endTime = gameLocal.time + 20000; // 20 seconds
@@ -101,7 +90,7 @@ bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
 	if (_preTaskContents != -1)
 	{
 		// We are waiting on the other AI to pass by
-		idVec3 dist = _masterAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+		idVec3 dist = _blockingEnt->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
 
 		if (dist.LengthSqr() > Square(60))
 		{
@@ -137,7 +126,7 @@ void ResolveMovementBlockTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
-	savefile->WriteObject(_masterAI);
+	savefile->WriteObject(_blockingEnt);
 	savefile->WriteAngles(_initialAngles);
 	savefile->WriteInt(_preTaskContents);
 	savefile->WriteInt(_endTime);
@@ -147,7 +136,7 @@ void ResolveMovementBlockTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 
-	savefile->ReadObject(reinterpret_cast<idClass*&>(_masterAI));
+	savefile->ReadObject(reinterpret_cast<idClass*&>(_blockingEnt));
 	savefile->ReadAngles(_initialAngles);
 	savefile->ReadInt(_preTaskContents);
 	savefile->ReadInt(_endTime);

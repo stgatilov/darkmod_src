@@ -18,7 +18,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/GreetingBarkTask.h"
 #include "../Tasks/HandleDoorTask.h"
 #include "../Tasks/HandleElevatorTask.h"
-#include "../Tasks/ResolveMovementBlockTask.h"
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
@@ -1249,13 +1248,16 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
-		// Tell the slave to get out of the way
-		slave->movementSubsystem->PushTask(TaskPtr(new ResolveMovementBlockTask(master)));
+		// Tell the slave to get out of the way, but only if none of the AI is currently resolving a block
+		if (!slave->movementSubsystem->IsResolvingBlock() && !master->movementSubsystem->IsResolvingBlock())
+		{
+			slave->movementSubsystem->ResolveBlock(master);
+		}
 	}
 	else if (ent->IsType(idStaticEntity::Type))
 	{
 		// Blocked by func_static, these are not considered by Obstacle Avoidance code.
-
+		// TODO
 	}
 }
 

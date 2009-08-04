@@ -25,8 +25,8 @@ class ResolveMovementBlockTask :
 	public Task
 {
 private:
-	// The "masterAI" is the one who wants to pass
-	idAI* _masterAI;
+	// The entity in the way
+	idEntity* _blockingEnt;
 
 	// The angles we had when starting this task
 	idAngles _initialAngles;
@@ -39,8 +39,7 @@ private:
 	ResolveMovementBlockTask();
 
 public:
-	// The "masterAI" is the one who wants to pass
-	ResolveMovementBlockTask(idAI* masterAI);
+	ResolveMovementBlockTask(idEntity* blockingEnt);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
