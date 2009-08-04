@@ -57,6 +57,13 @@ public:
 
 	// Creates a new Instance of this task
 	static ResolveMovementBlockTaskPtr CreateInstance();
+
+private:
+	void InitBlockingAI(idAI* owner);
+	void InitBlockingStatic(idAI* owner);
+
+	bool PerformBlockingAI(idAI* owner);
+	bool PerformBlockingStatic(idAI* owner);
 };
 
 } // namespace ai
