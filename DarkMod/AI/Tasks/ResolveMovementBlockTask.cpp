@@ -41,6 +41,12 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
+	if (_blockingEnt == NULL)
+	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.", owner->name.c_str());
+		subsystem.FinishTask();
+	}
+
 	// Get the direction we're pushing against
 	_initialAngles = owner->viewAxis.ToAngles();
 
@@ -52,11 +58,19 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_blockingEnt->IsType(idAI::Type))
 	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingAI(owner, subsystem);
 	}
 	else if (_blockingEnt->IsType(idStaticEntity::Type))
 	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingStatic(owner, subsystem);
+	}
+	else
+	{
+		// Unknown entity type, exit task
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve blocking entity: %s", owner->name.c_str(), _blockingEnt->name.c_str());
+		subsystem.FinishTask(); 
 	}
 }
 
