@@ -52,15 +52,15 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_blockingEnt->IsType(idAI::Type))
 	{
-		InitBlockingAI(owner);
+		InitBlockingAI(owner, subsystem);
 	}
 	else if (_blockingEnt->IsType(idStaticEntity::Type))
 	{
-		InitBlockingStatic(owner);
+		InitBlockingStatic(owner, subsystem);
 	}
 }
 
-void ResolveMovementBlockTask::InitBlockingAI(idAI* owner)
+void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 {
 	idVec3 ownerRight, ownerForward;
 	_initialAngles.ToVectors(&ownerForward, &ownerRight);
@@ -69,9 +69,87 @@ void ResolveMovementBlockTask::InitBlockingAI(idAI* owner)
 	owner->MoveToPosition(owner->GetPhysics()->GetOrigin() + ownerRight*10, 5);
 }
 
-void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner)
+void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsystem)
 {
-	// TODO
+	// Get the bounds of the blocking entity and see if there is a way around it
+	idPhysics* blockingPhys = _blockingEnt->GetPhysics();
+	idBounds blockBounds = blockingPhys->GetAbsBounds();
+	blockBounds[0].z = blockBounds[1].z = 0;
+
+	// Check if there is space right to the obstacle
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+
+	if (owner->GetAAS() == NULL) return;
+
+	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
+	bounds[0][2] += owner->GetAAS()->GetSettings()->maxStepHeight;
+
+	// check if there is a way around
+	idTraceModel trm(bounds);
+	idClipModel clip(trm);
+
+	idVec3 ownerRight, ownerForward;
+	_initialAngles.ToVectors(&ownerForward, &ownerRight);
+
+	// Take a point to the right
+	idVec3 testPoint = blockingPhys->GetOrigin();
+	testPoint.z = owner->GetPhysics()->GetOrigin().z;
+
+	// Move one AAS bounding box size outwards from the model
+	float blockBoundsWidth = blockBounds.GetRadius(blockBounds.GetCenter());
+
+	idBounds aasBounds = owner->GetAAS()->GetSettings()->boundingBoxes[0];
+	aasBounds[0].z = aasBounds[1].z = 0;
+
+	float aasBoundsWidth = aasBounds.GetRadius();
+
+	testPoint += ownerRight * (blockBoundsWidth + aasBoundsWidth);
+
+	int contents = gameLocal.clip.Contents(testPoint, &clip, mat3_identity, CONTENTS_SOLID, owner);
+
+	if (cv_ai_debug_blocked.GetBool())
+	{
+		idVec3 temp = blockingPhys->GetOrigin();
+		temp.z = owner->GetPhysics()->GetOrigin().z;
+
+		gameRenderWorld->DebugArrow(colorWhite, temp, temp + idVec3(0,0,10), 1, 1000);
+
+		temp += ownerRight * (blockBoundsWidth + aasBoundsWidth + 5);
+		gameRenderWorld->DebugArrow(colorLtGrey, temp, temp + idVec3(0,0,10), 1, 1000);
+
+		gameRenderWorld->DebugBounds(contents ? colorRed : colorGreen, bounds, testPoint, 1000);
+	}
+
+	if (contents == 0)
+	{
+		owner->MoveToPosition(testPoint);
+		return;
+	}
+
+	// Right side is blocked, look at the left
+	testPoint = blockingPhys->GetOrigin();
+	testPoint.z = owner->GetPhysics()->GetOrigin().z;
+	testPoint -= ownerRight * (blockBoundsWidth + aasBoundsWidth + 5);
+
+	contents = gameLocal.clip.Contents(testPoint, &clip, mat3_identity, CONTENTS_SOLID, owner);
+
+	if (cv_ai_debug_blocked.GetBool())
+	{
+		gameRenderWorld->DebugBounds(contents ? colorRed : colorGreen, bounds, testPoint, 1000);
+	}
+
+	if (contents == 0)
+	{
+		owner->MoveToPosition(testPoint);
+		return;
+	}
+
+	// Neither left nor right have free space
+	owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
+	owner->AI_BLOCKED = true;
+	owner->AI_DEST_UNREACHABLE = true;
+
+	subsystem.FinishTask();
 }
 
 bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
@@ -139,7 +217,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner)
 {
-	return false;
+	return owner->AI_MOVE_DONE ? true : false;
 }
 
 void ResolveMovementBlockTask::OnFinish(idAI* owner)

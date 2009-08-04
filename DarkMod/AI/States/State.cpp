@@ -1257,7 +1257,10 @@ void State::OnMovementBlocked(idAI* owner)
 	else if (ent->IsType(idStaticEntity::Type))
 	{
 		// Blocked by func_static, these are not considered by Obstacle Avoidance code.
-		// TODO
+		if (!owner->movementSubsystem->IsResolvingBlock())
+		{
+			owner->movementSubsystem->ResolveBlock(ent);
+		}
 	}
 }
 

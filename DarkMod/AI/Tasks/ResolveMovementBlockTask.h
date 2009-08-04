@@ -59,8 +59,8 @@ public:
 	static ResolveMovementBlockTaskPtr CreateInstance();
 
 private:
-	void InitBlockingAI(idAI* owner);
-	void InitBlockingStatic(idAI* owner);
+	void InitBlockingAI(idAI* owner, Subsystem& subsystem);
+	void InitBlockingStatic(idAI* owner, Subsystem& subsystem);
 
 	bool PerformBlockingAI(idAI* owner);
 	bool PerformBlockingStatic(idAI* owner);

@@ -493,7 +493,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					float product = idMath::Fabs(ownerDir * testVector);
 
-					if (product > 0.3)
+					if (product > 0.3f)
 					{
 						// door is not in the way and open, just continue walking
 						_doorHandlingState = EStateApproachingDoor;
