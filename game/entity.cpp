@@ -9757,7 +9757,6 @@ void idEntity::Event_AverageLightInPVS( void )
 	// Find all light entities, then call PointInArea on them to check
 	// if they are in the same area:
 
-	int lights = 0;
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
 		if ( !ent->IsType( idLight::Type ) ) {
@@ -9770,10 +9769,9 @@ void idEntity::Event_AverageLightInPVS( void )
 		if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
 			light->GetColor( local_light );
 			sum += local_light;
-			lights++;
 		}
     }
-	idThread::ReturnVector( sum / static_cast<float>(lights) );
+	idThread::ReturnVector( sum );
 }
 
 bool idEntity::canSeeEntity(idEntity* target, int useLighting) {
