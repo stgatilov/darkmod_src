@@ -1125,11 +1125,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		idStr soundName;
 		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
 
-		if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
-		{
-			soundName = "snd_foundComradeBody";
-		}
-		else if (personGender == PERSONGENDER_FEMALE)
+		if (personGender == PERSONGENDER_FEMALE)
 		{
 			soundName = "snd_foundUnconsciousFemale";
 		}
