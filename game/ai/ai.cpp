@@ -7112,7 +7112,6 @@ idAI::TestRanged
 */
 bool idAI::TestRanged() const 
 {
-	trace_t trace;
 	idActor *enemyEnt = enemy.GetEntity();
 
 	if ( !enemyEnt) 
@@ -7122,7 +7121,7 @@ bool idAI::TestRanged() const
 
 	if (!GetAttackFlag(COMBAT_RANGED))
 	{
-		// greebo: Cannot attack with melee weapons yet
+		// greebo: Cannot attack with ranged weapons yet
 		return false;
 	}
 

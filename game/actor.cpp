@@ -459,6 +459,10 @@ const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
 const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
 
+// Getting/setting attack flags
+const idEventDef AI_GetAttackFlag( "getAttackFlag", "d", 'd' );
+const idEventDef AI_SetAttackFlag( "setAttackFlag", "dd" );
+
 // melee combat events
 const idEventDef AI_MeleeAttackStarted( "meleeAttackStarted", "d" );
 const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
@@ -553,6 +557,9 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_SetReplacementAnim,		idActor::Event_SetReplacementAnim )
 	EVENT ( AI_LookupReplacementAnim,	idActor::Event_LookupReplacementAnim )
 	EVENT ( AI_RemoveReplacementAnim,	idActor::Event_RemoveReplacementAnim )
+
+	EVENT ( AI_GetAttackFlag,			idActor::Event_GetAttackFlag )
+	EVENT ( AI_SetAttackFlag,			idActor::Event_SetAttackFlag )
 	
 END_CLASS
 
@@ -4701,6 +4708,28 @@ void idActor::Event_RemoveReplacementAnim(const char* animName)
 void idActor::Event_LookupReplacementAnim(const char* animName)
 {
 	idThread::ReturnString(LookupReplacementAnim(animName));
+}
+
+void idActor::Event_GetAttackFlag(int combatType)
+{
+	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
+	{
+		idThread::ReturnInt(0);
+	}
+
+	idThread::ReturnInt(GetAttackFlag(static_cast<ECombatType>(combatType)) ? 1 : 0);
+}
+
+void idActor::Event_SetAttackFlag(int combatType, int enabled)
+{
+	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
+	{
+		// do nothing
+		gameLocal.Warning("Script is trying to set invalid combatType %s", combatType);
+		return;
+	}
+
+	SetAttackFlag(static_cast<ECombatType>(combatType), enabled == 1);
 }
 
 // ========== CMeleeStatus implementation =========
