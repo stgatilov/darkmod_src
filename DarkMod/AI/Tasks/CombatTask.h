@@ -21,6 +21,10 @@ class CombatTask :
 protected:
 	idEntityPtr<idActor> _enemy;
 
+	int _lastCombatBarkTime;
+
+	CombatTask();
+
 public:
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);

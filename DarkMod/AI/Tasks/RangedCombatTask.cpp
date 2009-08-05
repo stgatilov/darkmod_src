@@ -64,14 +64,20 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			// the script function when the animation is done.
 			owner->SetWaitState("ranged_attack");
 
-			EmitCombatBark(owner, "snd_combat_ranged");
+			if (_lastCombatBarkTime == -1)
+			{
+				EmitCombatBark(owner, "snd_combat_ranged");
+			}
 		}
 		else
 		{
 			idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_LEGS);
 			int animint = animator->CurrentAnim(ANIMCHANNEL_LEGS)->AnimNum();
 			int length = animator->AnimLength(animint);
-			owner->actionSubsystem->PushTask(TaskPtr(new WaitTask(length + 1000)));
+
+			int padding = gameLocal.random.RandomInt(4000) + 1000;
+
+			owner->actionSubsystem->PushTask(TaskPtr(new WaitTask(length + padding)));
 		}
 	}
 

@@ -24,6 +24,7 @@ typedef boost::shared_ptr<RangedCombatTask> RangedCombatTaskPtr;
 class RangedCombatTask :
 	public CombatTask
 {
+	int _lastCombatBarkTime;
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

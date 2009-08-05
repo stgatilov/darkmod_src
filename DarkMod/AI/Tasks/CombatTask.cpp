@@ -20,6 +20,10 @@ static bool init_version = FileVersionList("$Id: CombatTask.cpp 3549 2009-07-19 
 namespace ai
 {
 
+CombatTask::CombatTask() :
+	_lastCombatBarkTime(-1)
+{}
+
 void CombatTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
@@ -41,6 +45,8 @@ void CombatTask::EmitCombatBark(idAI* owner, const idStr& sndName)
 		owner->GetPhysics()->GetOrigin()
 	));
 
+	_lastCombatBarkTime = gameLocal.time;
+
 	// The communication system 
 	owner->commSubsystem->AddCommTask(
 		CommunicationTaskPtr(new SingleBarkTask(sndName, message))
@@ -52,6 +58,7 @@ void CombatTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	_enemy.Save(savefile);
+	savefile->WriteInt(_lastCombatBarkTime);
 }
 
 void CombatTask::Restore(idRestoreGame* savefile)
@@ -59,6 +66,7 @@ void CombatTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_enemy.Restore(savefile);
+	savefile->ReadInt(_lastCombatBarkTime);
 }
 
 } // namespace ai
