@@ -496,8 +496,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (product > 0.3f)
 					{
 						// door is not in the way and open, just continue walking
-						_doorHandlingState = EStateApproachingDoor;
-						break;
+						return true;
 					}
 
 					// check if there is a way around
@@ -855,32 +854,39 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				
 				// reached back position
-				if (owner->AI_MOVE_DONE && owner->ReachedPos(_backPos, MOVE_TO_POSITION))
+				if (owner->AI_MOVE_DONE)
 				{
-					if (!AllowedToClose(owner))
+					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION))
 					{
-						return true;
-					}
-					if (_doorInTheWay || (owner->ShouldCloseDoor(frobDoor) && numUsers < 2))
-					{
-						idEntity* controller = GetRemoteControlEntityForDoor();
-
-						if (controller != NULL && controller->GetUserManager().GetNumUsers() == 0)
+						if (!AllowedToClose(owner))
 						{
-							// We have an entity to control this door, interact with it
-							subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
-							return false;
+							return true;
 						}
+						if (_doorInTheWay || (owner->ShouldCloseDoor(frobDoor) && numUsers < 2))
+						{
+							idEntity* controller = GetRemoteControlEntityForDoor();
 
-						// close the door
-						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(openPos);
-						_waitEndTime = gameLocal.time + 650;
-						_doorHandlingState = EStateWaitBeforeClose;
+							if (controller != NULL && controller->GetUserManager().GetNumUsers() == 0)
+							{
+								// We have an entity to control this door, interact with it
+								subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+								return false;
+							}
+
+							// close the door
+							owner->StopMove(MOVE_STATUS_DONE);
+							owner->TurnToward(openPos);
+							_waitEndTime = gameLocal.time + 650;
+							_doorHandlingState = EStateWaitBeforeClose;
+						}
+						else
+						{
+							return true;
+						}
 					}
 					else
 					{
-						return true;
+						owner->MoveToPosition(_backPos);
 					}
 				}
 				break;
@@ -1314,14 +1320,25 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 
 		if (doorHandlingPosition)
 		{
+			const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
+
+			idVec3 dir = closedPos - frobDoorOrg;
+			dir.z = 0;
+
+			idVec3 doorNormal = dir.Cross(gameLocal.GetGravity());
+
 			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
 			idVec3 posDir = posOrg - frobDoorOrg;
 			posDir.z = 0;
 
+			float posTest = doorNormal * posDir;
+
 			idVec3 ownerDir = owner->GetPhysics()->GetOrigin() - frobDoorOrg;
 			ownerDir.z = 0;
 
-			if (posDir * ownerDir > 0)
+			float ownerTest = doorNormal * ownerDir;
+
+			if (posTest * ownerTest > 0)
 			{
 				// found door handling position in front of the door
 				_frontPos = posOrg;
