@@ -62,7 +62,7 @@ void AlertIdleState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 
-	if (!owner->AI_bMeleeWeapDrawn)
+	if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
 	{
 		owner->DrawWeapon();
 	}

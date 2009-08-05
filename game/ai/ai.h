@@ -775,12 +775,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptFloat			AI_AlertIndex;
 	
 	/**
-	* Boolean scriptvars set to true if either ranged or melee weapons are drawn
-	**/
-	idScriptBool			AI_bMeleeWeapDrawn;
-	idScriptBool			AI_bRangedWeapDrawn;
-
-	/**
 	* Stores the amount alerted in this frame
 	* Used to compare simultaneous alerts, the smaller one is ignored
 	* Should be cleared at the start of each frame.
