@@ -1188,13 +1188,18 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		return;
 	}
 
+	idAI* owner = _owner.GetEntity();
+	if (owner == NULL) return;
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AI %s has been hit by non-damaging projectile.\r", owner->name.c_str());
+
 	if (!ShouldProcessAlert(EAlertTypeWeapon))
 	{
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Ignoring non-damaging projectile hit.\r");
 		return;
 	}
 
-	idAI* owner = _owner.GetEntity();
-	if (owner == NULL) return;
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to non-damaging projectile.\r", owner->name.c_str());
 	
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 	{
