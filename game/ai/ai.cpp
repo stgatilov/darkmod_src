@@ -814,7 +814,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanBeKnockedOut);
 	savefile->WriteVec3(m_HeadCenterOffset);
 	savefile->WriteString(m_KoZone);
-	savefile->WriteString(m_KoAlertState);
+	savefile->WriteInt(m_KoAlertState);
 	savefile->WriteBool(m_bKoAlertImmune);
 	savefile->WriteFloat(m_KoDotVert);
 	savefile->WriteFloat(m_KoDotHoriz);
@@ -1159,7 +1159,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanBeKnockedOut);
 	savefile->ReadVec3(m_HeadCenterOffset);
 	savefile->ReadString(m_KoZone);
-	savefile->ReadString(m_KoAlertState);
+	savefile->ReadInt(m_KoAlertState);
 	savefile->ReadBool(m_bKoAlertImmune);
 	savefile->ReadFloat(m_KoDotVert);
 	savefile->ReadFloat(m_KoDotHoriz);
@@ -1726,7 +1726,7 @@ void idAI::Spawn( void )
 
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
 	m_KoZone = spawnArgs.GetString("ko_zone");
-	m_KoAlertState = spawnArgs.GetString("ko_alert_state");
+	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
 	
 	float tempAng;
@@ -9140,7 +9140,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if (AI_AlertLevel >= spawnArgs.GetFloat("alert_thresh%s" + m_KoAlertState))
+	if (AI_AlertIndex >= m_KoAlertState)
 	{
 		// abort KO if the AI is immune when alerted
 		if( m_bKoAlertImmune )
@@ -9208,7 +9208,7 @@ void idAI::KnockoutDebugDraw( void )
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", m_KoAlertState.c_str()) ) )
+	if( AI_AlertIndex >= m_KoAlertState)
 	{
 		// Do not display if immune
 		if( m_bKoAlertImmune )
