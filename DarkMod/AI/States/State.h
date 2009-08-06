@@ -111,6 +111,11 @@ public:
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
 
 	/**
+	 * greebo: Called whenever the AI gets hit by a projectile.
+	 */
+	virtual void OnProjectileHit(idProjectile* projectile, idEntity* attacker, int damageTaken);
+
+	/**
 	* ishtvan: Called when targets are changed, does nothing on base class
 	**/
 	virtual void OnChangeTarget(idAI *owner) {};

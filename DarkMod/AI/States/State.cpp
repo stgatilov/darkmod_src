@@ -1180,6 +1180,57 @@ void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bo
 	owner->GetMind()->PushState(StatePtr(new FailedKnockoutState(attacker, direction, hitHead)));
 }
 
+void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int damageTaken)
+{
+	if (damageTaken > 0)
+	{
+		// Only consider the "no damage" case, as Pain() is already taking care of alerting us
+		return;
+	}
+
+	if (!ShouldProcessAlert(EAlertTypeWeapon))
+	{
+		return;
+	}
+
+	idAI* owner = _owner.GetEntity();
+	if (owner == NULL) return;
+	
+	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
+	{
+		Memory& memory = owner->GetMemory();
+
+		// greebo: Set the alert position not directly to the attacker's origin, but let the AI 
+		// search in the right direction
+		const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
+
+		idVec3 attackerDir(0,0,0);
+		float distance = 0;
+		
+		if (attacker != NULL)
+		{
+			attackerDir = attacker->GetPhysics()->GetOrigin() - ownerOrigin;
+			distance = attackerDir.NormalizeFast();
+		}
+
+		// Start searching halfways between us the attacker
+		memory.alertPos = owner->GetPhysics()->GetOrigin() + attackerDir * distance * 0.5f;
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeWeapon;
+		
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = TACTILE_ALERT_RADIUS;
+		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
+		memory.alertSearchExclusionVolume.Zero();
+
+		memory.investigateStimulusLocationClosely = false;
+		
+		owner->AI_VISALERT = false;
+		
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+	}
+}
+
 void State::OnMovementBlocked(idAI* owner)
 {
 	// Determine which type of object is blocking us

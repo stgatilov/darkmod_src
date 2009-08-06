@@ -5619,7 +5619,18 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 	const char *damageDefName, const float damageScale, const int location,
 	trace_t *collision)
 {
+	// Save the current health, to see afterwards how much damage we've been taking
+	int preHitHealth = health;
+
 	idActor::Damage(inflictor, attacker, dir, damageDefName, damageScale, location, collision);
+
+	if (inflictor != NULL && inflictor->IsType(idProjectile::Type))
+	{
+		int damageTaken = preHitHealth - health;
+
+		// Send a signal to the current state that we've been hit by something
+		GetMind()->GetState()->OnProjectileHit(static_cast<idProjectile*>(inflictor), attacker, damageTaken);
+	}
 
 	if (attacker != NULL && IsEnemy(attacker))
 	{
