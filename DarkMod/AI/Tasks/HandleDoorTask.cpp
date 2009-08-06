@@ -218,6 +218,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (controller != NULL && masterUser == owner && controller->GetUserManager().GetNumUsers() == 0)
 					{
 						// We have an entity to control this door, interact with it
+						owner->StopMove(MOVE_STATUS_DONE);
 						subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
 						return false;
 					}
@@ -601,6 +602,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						owner->StopMove(MOVE_STATUS_WAITING);
 					}
+				}
+				else if (owner->MoveDone())
+				{
+					owner->MoveToPosition(_frontPos);
 				}
 			
 				break;
