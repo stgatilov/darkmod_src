@@ -1430,7 +1430,7 @@ public:			// Events should be public, so they can be used from other places as w
 	/**
 	* Tels: Return the sum of all lights in the entities PVS.
 	*/
-	void 					Event_AverageLightInPVS();
+	void 					Event_GetLightInPVS();
 
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 

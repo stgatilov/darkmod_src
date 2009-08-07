@@ -129,9 +129,8 @@ const idEventDef EV_Heal("heal", "sf", 'd');
 // tels: Teleport the entity to the position/orientation of the given entity
 const idEventDef EV_TeleportTo("teleportTo", "e");
 
-// tels: Find all lights in the same PVS, then sum them up and return their
-// average light color.
-const idEventDef EV_AverageLightInPVS("averageLightInPVS", "", 'v');
+// tels: Find all lights in the same PVS, then returns their sum.
+const idEventDef EV_GetLightInPVS("getLightInPVS", "", 'v');
 
 //===============================================================
 //                   TDM GUI interface
@@ -329,7 +328,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Damage,				idEntity::Event_Damage )
 	EVENT( EV_Heal,					idEntity::Event_Heal )
 	EVENT( EV_TeleportTo,			idEntity::Event_TeleportTo )
-	EVENT( EV_AverageLightInPVS,	idEntity::Event_AverageLightInPVS )
+	EVENT( EV_GetLightInPVS,		idEntity::Event_GetLightInPVS )
 
 	EVENT( EV_SetGui,				idEntity::Event_SetGui )
 	EVENT( EV_GetGui,				idEntity::Event_GetGui )
@@ -9747,7 +9746,7 @@ void idEntity::Event_TeleportTo(idEntity* target)
 }
 
 // tels:
-void idEntity::Event_AverageLightInPVS( void )
+void idEntity::Event_GetLightInPVS( void )
 {
 	idVec3 sum(0,0,0);
 	idVec3 local_light;
