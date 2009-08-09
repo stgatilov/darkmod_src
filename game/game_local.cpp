@@ -2431,9 +2431,17 @@ void idGameLocal::SpawnPlayer( int clientNum )
 	// they can connect
 	Printf( "SpawnPlayer: %i\n", clientNum );
 
+	idStr playerClass = isMultiplayer ? "player_tdm_thief_mp" : "player_tdm_thief";
+
+	// greebo: Allow worldspawn to specify a different player classname
+	if (world != NULL && world->spawnArgs.FindKey("player_classname") != NULL)
+	{
+		playerClass = world->spawnArgs.GetString("player_classname", "player_tdm_thief");
+	}
+
 	args.SetInt( "spawn_entnum", clientNum );
 	args.Set( "name", va( "player%d", clientNum + 1 ) );
-	args.Set( "classname", isMultiplayer ? "player_tdm_thief_mp" : "player_tdm_thief" );
+	args.Set( "classname", playerClass );
 	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] ) {
 		Error( "Failed to spawn player as '%s'", args.GetString( "classname" ) );
 	}
