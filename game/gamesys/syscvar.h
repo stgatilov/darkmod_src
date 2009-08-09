@@ -20,6 +20,8 @@
 /**
 * DarkMod cvars - See text description in syscvar.cpp for descriptions
 **/
+extern idCVar cv_player_spawnclass;
+
 extern idCVar cv_ai_sndvol;
 extern idCVar cv_ai_bark_show;
 extern idCVar cv_ai_bumpobject_impulse;

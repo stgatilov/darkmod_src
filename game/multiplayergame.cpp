@@ -3056,7 +3056,7 @@ void idMultiplayerGame::Precache( void ) {
 	if ( !gameLocal.isMultiplayer ) {
 		return;
 	}
-	gameLocal.FindEntityDefDict( "player_tdm_thief", false );;
+	gameLocal.FindEntityDefDict( cv_player_spawnclass.GetString(), false );;
 	
 	// skins
 	idStr str = cvarSystem->GetCVarString( "mod_validSkins" );
