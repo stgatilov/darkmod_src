@@ -1955,7 +1955,8 @@ void idAI::Think( void )
 				// greebo: Get the number of frames from the head animator
 				int numFrames = head.GetEntity()->GetAnimator()->NumFrames(m_lipSyncAnim);
 
-				int frame = static_cast<int>(numFrames * GetSoundEmitter()->CurrentAmplitude());
+				int frame = static_cast<int>(numFrames * idMath::Sqrt16(GetSoundEmitter()->CurrentAmplitude()));
+				frame = idMath::ClampInt(0, numFrames, frame);
 				headAnim.SetFrame(m_lipSyncAnim, frame);
 			}
 			else
