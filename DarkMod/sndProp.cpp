@@ -1296,7 +1296,7 @@ Quit:
 void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv, int AIArea, float volInit )
 {
 	idList<idVec3>		pathPoints; // pathpoints[0] = closest path point to the TARGET
-	idList<SsndPortal*> PortPtrs; // pointers to the portals along the path
+	idList<SPortEvent*> PortPtrs; // pointers to the portals along the path
 	idVec3				point, p1, p2, AIpos;
 	int					floods, curArea;
 	float				tempAtt, tempDist, totAtt, totDist, totLoss;
@@ -1323,7 +1323,7 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 							  pPortTest->ThisPort->center );
 
 		pathPoints.Append(point);
-		PortPtrs.Append( pPortTest->ThisPort );
+		PortPtrs.Append(pPortTest);
 
 		p1 = point;
 		pPortTest = pPortTest->PrevPort;
@@ -1345,7 +1345,7 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 	for( int k = 0; k < floods; k++ )
 	{
 		// recalculate the N-1th point using the Nth point and N-2th point on either side
-		pPort2nd = PortPtrs[floods - k - 1];
+		pPort2nd = PortPtrs[floods - k - 1]->ThisPort;
 		if( pPort2nd == NULL)
 			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("ERROR: pPort2nd is NULL\r" );
 
@@ -1368,23 +1368,27 @@ Quit:
 
 	// get loss to 1st point on the path
 	totDist = (AIpos - pathPoints[0]).LengthFast() * s_DOOM_TO_METERS;
-	curArea = PortPtrs[0]->to;
+	curArea = PortPtrs[0]->ThisPort->to;
 	totAtt = totDist * m_AreaPropsG[ curArea ].LossMult;
+
+	totAtt += PortPtrs[0]->Att;
 
 	// add the rest of the loss from the path points
 	for( int j = 0; j < (floods - 1); j++ )
 	{
 		tempDist = (pathPoints[j+1] - pathPoints[j]).LengthFast() * s_DOOM_TO_METERS;
-		curArea = PortPtrs[j]->to;
+		curArea = PortPtrs[j]->ThisPort->to;
 		tempAtt = tempDist * m_AreaPropsG[ curArea ].LossMult;
 		
 		totDist += tempDist;
 		totAtt += tempAtt;
+
+		totAtt += PortPtrs[j + 1]->Att;
 	}
 
 	// add the loss from the final path point to the source
 	tempDist = ( pathPoints[floods - 1] - propParms->origin ).LengthFast() * s_DOOM_TO_METERS;
-	curArea = PortPtrs[ floods - 1 ]->to;
+	curArea = PortPtrs[ floods - 1 ]->ThisPort->to;
 	tempAtt = tempDist * m_AreaPropsG[ curArea ].LossMult;
 
 	totDist += tempDist;
