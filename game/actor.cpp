@@ -4725,7 +4725,7 @@ void idActor::Event_SetAttackFlag(int combatType, int enabled)
 	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
 	{
 		// do nothing
-		gameLocal.Warning("Script is trying to set invalid combatType %s", combatType);
+		gameLocal.Warning("Script is trying to set invalid combatType %d", combatType);
 		return;
 	}
 
