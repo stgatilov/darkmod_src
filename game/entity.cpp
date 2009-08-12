@@ -8421,7 +8421,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 // The following is the old system and will be phased out
 	else
 	{
-		gameLocal.Warning("%s is attaching %s using the deprecated attachment system.\n", name.c_str(), ent->name.c_str());
+		//gameLocal.Warning("%s is attaching %s using the deprecated attachment system.\n", name.c_str(), ent->name.c_str());
 		angleOffset = ent->spawnArgs.GetAngles( "angles" );
 		originOffset = ent->spawnArgs.GetVector( "origin" );
 	}
