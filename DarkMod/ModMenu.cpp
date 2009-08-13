@@ -458,22 +458,18 @@ void CModMenu::SearchForNewMods()
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName.c_str();
 
-		if (fs::exists(modFolder))
+		// Create the fm folder, if necessary
+		if (!fs::exists(modFolder))
 		{
-			// Folder exists already, do not copy PK4 into existing ones
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder already exists for PK4: %s\r", modFolder.file_string().c_str());
-			continue;
-		}
-
-		// Create the fm folder
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder doesn't exist for PK4, creating: %s\r", modFolder.file_string().c_str());
-		try
-		{
-			fs::create_directory(modFolder);
-		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
-		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while creating folder for PK4: %s\r", e.what());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder doesn't exist for PK4, creating: %s\r", modFolder.file_string().c_str());
+			try
+			{
+				fs::create_directory(modFolder);
+			}
+			catch (fs::basic_filesystem_error<fs::path>& e)
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while creating folder for PK4: %s\r", e.what());
+			}
 		}
 
 		// Move the PK4 to that folder
@@ -489,6 +485,16 @@ void CModMenu::SearchForNewMods()
 	// and we can start moving them into their respective locations
 	for (MoveList::const_iterator i = moveList.begin(); i != moveList.end(); ++i)
 	{
+		try
+		{
+			// remove any target file first
+			fs::remove(i->second);
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while deleting target file: %s\r", e.what());
+		}
+
 		try
 		{
 			fs::rename(i->first, i->second);
