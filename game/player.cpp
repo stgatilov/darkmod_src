@@ -1288,8 +1288,12 @@ void idPlayer::SetupInventory()
 				idEntity* entity = NULL;
 				gameLocal.SpawnEntityDef( *itemDict, &entity );
 
+				// Inhibit pickup messages for these items
+				entity->spawnArgs.Set("inv_no_pickup_message", "1");
+
 				// add it to the inventory
 				CInventoryItemPtr invItem = crsr->Inventory()->PutItem(entity, this);
+
 				invItem->SetCount(count);
 				invItem->SetPersistent(item->GetPersistent());
 			}
