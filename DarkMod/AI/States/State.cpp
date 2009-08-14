@@ -1281,9 +1281,15 @@ void State::OnMovementBlocked(idAI* owner)
 
 	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
 
+	// Set all attachments to nonsolid, temporarily
+	owner->SaveAttachmentContents();
+	owner->SetAttachmentContents(0);
+
 	trace_t result;
 	gameLocal.clip.TraceBounds(result, ownerOrigin, ownerOrigin + owner->viewAxis.ToAngles().ToForward()*20, owner->GetPhysics()->GetBounds(),
 								CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+
+	owner->RestoreAttachmentContents();
 
 	if (result.fraction >= 1.0f)
 	{
