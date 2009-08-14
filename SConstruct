@@ -465,7 +465,7 @@ if ( TARGET_GAME == '1'):
 		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
 		game_base = InstallAs( '#game%s-base.so' % cpu, game )
 		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#game01-base.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
+			Command( '#tdm_game02.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
 	local_gamedll = 0
