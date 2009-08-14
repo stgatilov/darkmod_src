@@ -253,6 +253,11 @@ void CombatState::Think(idAI* owner)
 		// TODO: Check if more enemies are in range
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 
+		// Emit the killed player bark
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
+		);
+
 		owner->GetMind()->EndState();
 		// ishtvan: swap the expanded head model back in when exiting state
 		owner->SwapHeadAFCM( true );
