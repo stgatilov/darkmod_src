@@ -133,6 +133,13 @@ void MovementSubsystem::SetBlockedState(const BlockedState newState)
 
 void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 {
+	idAI* owner = _owner.GetEntity();
+	
+	if (owner->GetMemory().resolvingMovementBlock)
+	{
+		return; // Already resolving
+	}
+
 	// Push a resolution task
 	PushTask(TaskPtr(new ResolveMovementBlockTask(blockingEnt)));
 

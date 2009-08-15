@@ -41,6 +41,8 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
+	owner->GetMemory().resolvingMovementBlock = true;
+
 	if (_blockingEnt == NULL)
 	{
 		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.", owner->name.c_str());
@@ -246,6 +248,8 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner)
 
 void ResolveMovementBlockTask::OnFinish(idAI* owner)
 {
+	owner->GetMemory().resolvingMovementBlock = false;
+
 	if (_preTaskContents != -1)
 	{
 		owner->GetPhysics()->SetContents(_preTaskContents);

@@ -65,7 +65,8 @@ Memory::Memory(idAI* owningAI) :
 	chosenHidingSpot(0,0,0),
 	hidingSpotInvestigationInProgress(false),
 	fleeingDone(true),
-	positionBeforeTakingCover(0,0,0)
+	positionBeforeTakingCover(0,0,0),
+	resolvingMovementBlock(false)
 {}
 
 // Save/Restore routines
@@ -120,6 +121,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(hidingSpotInvestigationInProgress);
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
+	//savefile->WriteBool(resolvingMovementBlock);
 
 	doorRelated.currentDoor.Save(savefile);
 
@@ -204,6 +206,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(hidingSpotInvestigationInProgress);
 	savefile->ReadBool(fleeingDone);
 	savefile->ReadVec3(positionBeforeTakingCover);
+	savefile->ReadBool(resolvingMovementBlock);
 
 	doorRelated.currentDoor.Restore(savefile);
 	// Clear the containers before restoring them

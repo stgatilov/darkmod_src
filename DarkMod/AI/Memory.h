@@ -312,6 +312,9 @@ public:
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	idVec3 positionBeforeTakingCover;
 
+	// TRUE when the AI is currently trying to resolve a block
+	bool resolvingMovementBlock;
+
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;
 	// This maps AAS area numbers to door info structures
