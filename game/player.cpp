@@ -6904,9 +6904,7 @@ void idPlayer::Think( void )
 		usercmd.upmove = 0;
 	}
 
-	if( AI_PAIN )
-		m_bDamagedThisFrame = true;
-	else
+	if( !AI_PAIN )
 		m_bDamagedThisFrame = false;
 
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
@@ -7608,9 +7606,11 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	}
 
 	// do the damage
-	if ( damage > 0 ) {
+	if ( damage > 0 ) 
+	{
 
-		if ( !gameLocal.isMultiplayer ) {
+		if ( !gameLocal.isMultiplayer ) 
+		{
 			float scale = g_damageScale.GetFloat();
 			/*if ( g_useDynamicProtection.GetBool() && g_skill.GetInteger() < 2 ) {
 				if ( gameLocal.time > lastDmgTime + 500 && scale > 0.25f ) {
@@ -7619,12 +7619,14 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 				}
 			}*/
 
-			if ( scale > 0.0f ) {
+			if ( scale > 0.0f ) 
+			{
 				damage *= scale;
 			}
 		}
 
-		if ( damage < 1 ) {
+		if ( damage < 1 ) 
+		{
 			damage = 1;
 		}
 
@@ -7634,9 +7636,16 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		// greebo: Update mission statistics, we've taken damage
 		gameLocal.m_MissionData->PlayerDamaged(damage);
 
-		if ( health <= 0 ) {
+		// ishtvan bugfix: set m_bDamagedThisFrame here, rather than in ::Think
+		// compare against pain threshold so that things like low-grade poison gas don't prevent player actions
+		if ( damage > pain_threshold )
+			m_bDamagedThisFrame = true;
 
-			if ( health < -999 ) {
+		if ( health <= 0 ) 
+		{
+
+			if ( health < -999 ) 
+			{
 				health = -999;
 			}
 
@@ -7645,11 +7654,13 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			lastDmgTime = gameLocal.time;
 			Killed( inflictor, attacker, damage, dir, location );
 
-		} else {
+		} else 
+		{
 			// force a blink
 			blink_time = 0;
 
-			if (!damageDef->dict.GetBool( "no_pain" )) {
+			if (!damageDef->dict.GetBool( "no_pain" )) 
+			{
 				// let the anim script know we took damage
 				AI_PAIN = Pain( inflictor, attacker, damage, dir, location, &damageDef->dict );
 				if(AI_PAIN)
@@ -7666,13 +7677,16 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 				}
 			}
 
-			if ( !g_testDeath.GetBool() ) {
+			if ( !g_testDeath.GetBool() ) 
+			{
 				lastDmgTime = gameLocal.time;
 			}
 		}
-	} else {
+	} else 
+	{
 		// don't accumulate impulses
-		if ( af.IsLoaded() ) {
+		if ( af.IsLoaded() ) 
+		{
 			// clear impacts
 			af.Rest();
 
