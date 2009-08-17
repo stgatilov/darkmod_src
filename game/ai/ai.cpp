@@ -1567,21 +1567,27 @@ void idAI::Spawn( void )
 
 	flashJointWorld = animator.GetJointHandle( "flash" );
 
-	if ( head.GetEntity() ) {
+	if ( head.GetEntity() ) 
+	{
 		idAnimator *headAnimator = head.GetEntity()->GetAnimator();
 
 		jointname = spawnArgs.GetString( "bone_focus" );
-		if ( *jointname ) {
+		if ( *jointname ) 
+		{
 			focusJoint = headAnimator->GetJointHandle( jointname );
-			if ( focusJoint == INVALID_JOINT ) {
+			if ( focusJoint == INVALID_JOINT ) 
+			{
 				gameLocal.Warning( "Joint '%s' not found on head on '%s'", jointname, name.c_str() );
 			}
 		}
-	} else {
+	} else 
+	{
 		jointname = spawnArgs.GetString( "bone_focus" );
-		if ( *jointname ) {
+		if ( *jointname ) 
+		{
 			focusJoint = animator.GetJointHandle( jointname );
-			if ( focusJoint == INVALID_JOINT ) {
+			if ( focusJoint == INVALID_JOINT ) 
+			{
 				gameLocal.Warning( "Joint '%s' not found on '%s'", jointname, name.c_str() );
 			}
 		}
@@ -1709,7 +1715,6 @@ void idAI::Spawn( void )
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
-	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
 
 	m_HeadJointID = animator.GetJointHandle(HeadJointName);
 	m_HeadBodyID = BodyForJoint( m_HeadJointID );
@@ -1724,39 +1729,17 @@ void idAI::Spawn( void )
 		SwapHeadAFCM( true );
 	}
 
-	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
-	m_KoZone = spawnArgs.GetString("ko_zone");
-	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
-	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
-	
-	float tempAng;
-	tempAng = spawnArgs.GetFloat("ko_angle_vert", "360");
-	m_KoDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
-	tempAng = spawnArgs.GetFloat("ko_angle_horiz", "360");
-	m_KoDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
-	
-	// Only set the alert angles if the spawnargs exist
-	const char *tempc1, *tempc2;
-	tempc1 = spawnArgs.GetString("ko_angle_alert_vert");
-	tempc2 = spawnArgs.GetString("ko_angle_alert_horiz");
-	if( tempc1[0] != '\0' )
+	if( head.GetEntity() )
 	{
-		tempAng = atof( tempc1 );
-		m_KoAlertDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+		CopyHeadKOInfo();
 	}
-	else
-		m_KoAlertDotVert = m_KoDotVert;
-	if( tempc2[0] != '\0' )
-	{
-		tempAng = atof( tempc2 );
-		m_KoAlertDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
-	}
-	else
-		m_KoAlertDotHoriz = m_KoDotHoriz;
+
+	ParseKnockoutInfo();
 
 	// ================== End KO setup ====================
 
 	// Sneak attack setup
+	const char *tempc1;
 	tempc1 = spawnArgs.GetString("sneak_attack_alert_state");
 	m_SneakAttackThresh = spawnArgs.GetFloat( va("alert_thresh%s", tempc1), va("%f",idMath::INFINITY) );
 	m_SneakAttackMult = spawnArgs.GetFloat( "sneak_attack_mult", "1.0" );
@@ -10461,4 +10444,63 @@ void idAI::SwapHeadAFCM( bool bConscious )
 		m_bHeadCMSwapped = false;
 		m_OrigHeadCM = NULL;
 	}
+}
+
+void idAI::CopyHeadKOInfo( void )
+{
+	idEntity *ent = head.GetEntity();
+	if( !ent )
+		return;
+
+	// Change this if the list below changes:
+	const int numArgs = 9;
+	const char *copyArgs[ numArgs ] = { "ko_immune", "ko_spot_offset", "ko_zone", 
+		"ko_alert_state", "ko_alert_immune",  "ko_angle_vert", "ko_angle_horiz",
+		"ko_angle_alert_vert", "ko_angle_alert_horiz"};
+
+	const idKeyValue *tempkv;
+	const char *argName;
+
+	// for each spawnarg, overwrite it if it exists on the head
+	for( int i=0; i < numArgs; i++ )
+	{
+		argName = copyArgs[i];
+		tempkv = ent->spawnArgs.FindKey( argName );
+		if( tempkv != NULL )
+			spawnArgs.Set( argName, tempkv->GetValue().c_str() );
+	}
+}
+
+void idAI::ParseKnockoutInfo()
+{
+	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
+	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
+	m_KoZone = spawnArgs.GetString("ko_zone");
+	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
+	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
+	
+	float tempAng;
+	tempAng = spawnArgs.GetFloat("ko_angle_vert", "360");
+	m_KoDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	tempAng = spawnArgs.GetFloat("ko_angle_horiz", "360");
+	m_KoDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	
+	// Only set the alert angles if the spawnargs exist
+	const char *tempc1, *tempc2;
+	tempc1 = spawnArgs.GetString("ko_angle_alert_vert");
+	tempc2 = spawnArgs.GetString("ko_angle_alert_horiz");
+	if( tempc1[0] != '\0' )
+	{
+		tempAng = atof( tempc1 );
+		m_KoAlertDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	}
+	else
+		m_KoAlertDotVert = m_KoDotVert;
+	if( tempc2[0] != '\0' )
+	{
+		tempAng = atof( tempc2 );
+		m_KoAlertDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
+	}
+	else
+		m_KoAlertDotHoriz = m_KoDotHoriz;
 }

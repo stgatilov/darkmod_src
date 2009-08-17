@@ -1203,6 +1203,16 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					PostDeath();
 
 	/**
+	* Copy knockout spawnargs from the head entity (assumes head exists)
+	**/
+	void					CopyHeadKOInfo(void);
+
+	/**
+	* Parse knockout spawnargs
+	**/
+	void					ParseKnockoutInfo( void );
+
+	/**
 	* TestKnockOutBlow is called when the AI is hit with a weapon with knockout capability.
 	* This function tests the location hit, angle of the blow, and alert state of the AI.
 	*
