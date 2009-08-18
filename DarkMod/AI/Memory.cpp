@@ -121,7 +121,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(hidingSpotInvestigationInProgress);
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
-	//savefile->WriteBool(resolvingMovementBlock);
+	savefile->WriteBool(resolvingMovementBlock);
 
 	doorRelated.currentDoor.Save(savefile);
 
