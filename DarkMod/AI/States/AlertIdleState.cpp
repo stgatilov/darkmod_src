@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/IdleAnimationTask.h"
+#include "../Tasks/RepeatedBarkTask.h"
 #include "ObservantState.h"
 #include "../Library.h"
 
@@ -53,6 +54,13 @@ void AlertIdleState::Init(idAI* owner)
 
 	InitialiseMovement(owner);
 	InitialiseCommunication(owner);
+
+	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
+	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));
+
+	owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_alert_idle", idleBarkIntervalMin, idleBarkIntervalMax))
+		);
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);

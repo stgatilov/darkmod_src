@@ -95,8 +95,8 @@ void IdleSleepState::Init(idAI* owner)
 
 	InitialiseMovement(owner);
 
-	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "45"));
-	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "180"));
+	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("sleep_bark_interval_min", "10"));
+	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("sleep_bark_interval_max", "30"));
 
 	owner->commSubsystem->AddCommTask(
 		CommunicationTaskPtr(new RepeatedBarkTask("snd_sleeping", idleBarkIntervalMin, idleBarkIntervalMax))
