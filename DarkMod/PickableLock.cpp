@@ -173,7 +173,7 @@ void PickableLock::OnLock()
 	// greebo: Reset the lockpicking values
 	m_FirstLockedPinIndex = 0;
 	m_SoundTimerStarted = 0;
-	m_SoundPinSampleIndex = -1;
+	m_SoundPinSampleIndex = 0;
 	m_FailedLockpickRounds = 0;
 
 	m_LockpickState = LOCKED;

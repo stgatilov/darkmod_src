@@ -115,14 +115,30 @@ void CFrobLock::PostSpawn()
 	}
 }
 
+void CFrobLock::OnLock()
+{
+	m_Lock.OnLock();
+}
+
+void CFrobLock::OnUnlock()
+{
+	m_Lock.OnUnlock();
+}
+
 void CFrobLock::Lock()
 {
 	m_Lock.SetLocked(true);
+
+	// Fire the event
+	OnLock();
 }
 
 void CFrobLock::Unlock()
 {
 	m_Lock.SetLocked(false);
+
+	// Fire the event
+	OnUnlock();
 }
 
 void CFrobLock::ToggleLock()

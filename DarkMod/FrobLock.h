@@ -80,6 +80,9 @@ protected:
 
 	virtual int		FrobLockStartSound(const char* soundName);
 
+	virtual void	OnLock();
+	virtual void	OnUnlock();
+
 	// Required events which are called by the PickableLock class
 	void			Event_Lock_StatusUpdate();
 	void			Event_Lock_OnLockPicked();
