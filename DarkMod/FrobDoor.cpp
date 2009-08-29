@@ -647,6 +647,15 @@ void CFrobDoor::Event_Lock_OnLockPicked()
 
 void CFrobDoor::AttackAction(idPlayer* player)
 {
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) 
+	{
+		master->AttackAction(player);
+		return;
+	}
+
+	// No master
 	m_Lock.AttackAction(player);
 }
 

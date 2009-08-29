@@ -258,6 +258,15 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 void CFrobLock::AttackAction(idPlayer* player)
 {
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) 
+	{
+		master->AttackAction(player);
+		return;
+	}
+
+	// No master
 	m_Lock.AttackAction(player);
 }
 
