@@ -597,7 +597,7 @@ void idLight::SetLightParms( float parm0, float parm1, float parm2, float parm3 
 idLight::SetRadiusXYZ
 ================
 */
-void idLight::SetRadiusXYZ( float x, float y, float z ) {
+void idLight::SetRadiusXYZ( const float x, const float y, const float z ) {
 	renderLight.lightRadius[0] = x;
 	renderLight.lightRadius[1] = y;
 	renderLight.lightRadius[2] = z;
@@ -609,9 +609,20 @@ void idLight::SetRadiusXYZ( float x, float y, float z ) {
 idLight::SetRadius
 ================
 */
-void idLight::SetRadius( float radius ) {
+void idLight::SetRadius( const float radius ) {
 	renderLight.lightRadius[0] = renderLight.lightRadius[1] = renderLight.lightRadius[2] = radius;
 	PresentLightDefChange();
+}
+
+/*
+ * ================
+ * Tels: idLight:GetRadius
+ * ================
+ * */
+void idLight::GetRadius( idVec3 &out ) const {
+    out.x = renderLight.lightRadius[0];
+    out.y = renderLight.lightRadius[1];
+    out.z = renderLight.lightRadius[2];
 }
 
 /*

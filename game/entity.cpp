@@ -9750,6 +9750,7 @@ void idEntity::Event_GetLightInPVS( void )
 {
 	idVec3 sum(0,0,0);
 	idVec3 local_light;
+	idVec3 local_light_radius;
 
 	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
 
@@ -9767,6 +9768,15 @@ void idEntity::Event_GetLightInPVS( void )
 		// light is in the same area?
 		if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
 			light->GetColor( local_light );
+			// multiple the light color by the radius to get a fake "light energy":
+			light->GetRadius( local_light_radius );
+			// fireplace: 180+180+120/3 => 160 / 800 => 0.2
+			// candle:    130+130+120/3 => 123 / 800 => 0.15
+			// firearrow:  10+ 10+ 10/3 =>  10 / 800 => 0.0125
+			local_light *= (float)
+				(local_light_radius.x + 
+				 local_light_radius.y + 
+				 local_light_radius.z) / 2400; 
 			sum += local_light;
 		}
     }
