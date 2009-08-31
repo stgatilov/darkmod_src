@@ -28,7 +28,7 @@ const float LIMIT_ERROR_REDUCTION			= 0.3f;
 const float LCP_EPSILON						= 1e-7f;
 const float LIMIT_LCP_EPSILON				= 1e-4f;
 const float CONTACT_LCP_EPSILON				= 1e-6f;
-const float CENTER_OF_MASS_EPSILON			= 1e-4f;
+const float CENTER_OF_MASS_EPSILON			= 1e-2f;
 #ifdef MOD_WATERPHYSICS
 const float NO_MOVE_TIME					= 2.0f;
 // ishtvan test: move impulse threshold back to D3 default or below
