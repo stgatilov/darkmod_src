@@ -592,6 +592,41 @@ void CModMenu::BuildModList()
 	fileSystem->FreeFileList(fmDirectories);
 
 	gameLocal.Printf("Found %d mods in the FM folder.\n", _modsAvailable.Num());
+
+	// Sort the mod list alphabetically
+	SortModList();
+}
+
+// Compare functor to sort mods by title
+int CModMenu::ModSortCompare(const int* a, const int* b)
+{
+	// Get the first mod title
+	ModInfo aInfo = gameLocal.m_ModMenu->GetModInfo(*a);
+	ModInfo bInfo = gameLocal.m_ModMenu->GetModInfo(*b);
+
+	return aInfo.title.Icmp(bInfo.title);
+}
+
+void CModMenu::SortModList()
+{
+	// greebo: idStrList has a specialised algorithm, preventing me
+	// from using a custom sort algorithm, hence this ugly thing here
+	idList<int> indexList;
+
+	indexList.SetNum(_modsAvailable.Num());
+	for (int i = 0; i < _modsAvailable.Num(); ++i)
+	{
+		indexList[i] = i;
+	}
+
+	indexList.Sort( CModMenu::ModSortCompare );
+
+	idStrList temp = _modsAvailable;
+
+	for (int i = 0; i < indexList.Num(); ++i)
+	{
+		_modsAvailable[i] = temp[indexList[i]];
+	}
 }
 
 void CModMenu::InitCurrentMod()

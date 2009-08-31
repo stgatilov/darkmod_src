@@ -48,6 +48,12 @@ private:
 	// Searches for new mods
 	void BuildModList();
 
+	// Sort found mods by title
+	void SortModList();
+
+	// Compare functor to sort mods by name
+	static int ModSortCompare(const int* a, const int* b);
+
 	// Installs the given mod
 	void InstallMod(int modIndex, idUserInterface* gui);
 
@@ -81,7 +87,7 @@ private:
 
 private:
 	// The list of available mods
-	idList<idStr> _modsAvailable; 
+	idStrList _modsAvailable; 
 
 	// The index of the first displayed mod
 	int _modTop;
