@@ -687,3 +687,4 @@ idCVar r_bloom_blurIterations( "r_bloom_blurIterations", "1", CVAR_GAME | CVAR_I
 idCVar r_bloom_hud( "r_bloom_hud", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable blooming of the HUD" );
 idCVar r_bloom_lightRayScale( "r_bloom_lightRayScale", "1.3", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Brightness scale of light ray effects when bloom is active");
 
+idCVar s_driver("s_driver", "0", CVAR_GUI, "Dummy CVAR introduced by TDM to fix a console warning. Seems to be missing, but D3's mpmain.gui references this.");
