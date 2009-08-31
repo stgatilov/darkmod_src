@@ -128,8 +128,13 @@ CommunicationSubsystem::EActionTypeOnConflict
 
 	int priorityDifference = communicationTask->GetPriority() - GetCurrentPriority();
 
+	// Change "snd_blah" to "prio_blah"
+	idStr prioName = communicationTask->GetSoundName();
+	prioName.StripLeadingOnce("snd_");
+	prioName = "prio_" + prioName;
+
 	const idKeyValue* kv = dict->FindKey(
-		communicationTask->GetSoundName() + "_" + 
+		prioName + "_" + 
 		(priorityDifference < 0 ? "onlower" : (priorityDifference == 0 ? "onequal" : "onhigher"))
 	);
 

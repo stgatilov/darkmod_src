@@ -31,7 +31,15 @@ CommunicationTask::CommunicationTask(const idStr& soundName) :
 
 	if (dict != NULL)
 	{
-		_priority = dict->GetInt(soundName, "-1");
+		// Change "snd_blah" to "prio_blah"
+		idStr prioName(soundName);
+		prioName.StripLeadingOnce("snd_");
+		prioName = "prio_" + prioName;
+
+		if (!dict->GetInt(prioName, "-1", _priority))
+		{
+			gameLocal.Warning("Could not find bark priority for %s", soundName.c_str());
+		}
 	}
 	else
 	{
