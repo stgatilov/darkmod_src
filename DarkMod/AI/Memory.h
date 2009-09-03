@@ -160,6 +160,9 @@ public:
 	// The path entity we're supposed to be heading to
 	idEntityPtr<idPathCorner> currentPath;
 
+	// Our next path entity
+	idEntityPtr<idPathCorner> nextPath;
+
 	// Our last path entity
 	idEntityPtr<idPathCorner> lastPath;
 

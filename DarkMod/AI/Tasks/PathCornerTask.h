@@ -33,6 +33,9 @@ private:
 	// Frame this task was last executed
 	int _lastFrameNum;
 
+	// Whether to anticipate the AI reaching path corners
+	bool _usePathPrediction;
+
 	PathCornerTask();
 
 public:

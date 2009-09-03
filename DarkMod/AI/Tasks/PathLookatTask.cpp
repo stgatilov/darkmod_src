@@ -111,9 +111,8 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 	// Trigger next path target(s)
 	owner->ActivateTargets(owner);
 
-	// Store the new path entity into the AI's mind
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, owner);
-	owner->GetMind()->GetMemory().currentPath = next;
+	// Store a new path entity into the AI's mind
+	NextPath();
 	
 	return true; // finish this task
 }

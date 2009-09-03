@@ -196,7 +196,9 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
-	idPathCorner* next = idPathCorner::RandomPath(path, NULL, _owner.GetEntity());
+	// Take a peek at the next path entity in our queue
+	idAI* owner = _owner.GetEntity();
+	idPathCorner* next = owner->GetMemory().nextPath.GetEntity();
 
 	if (next == NULL && !tasks.empty())
 	{

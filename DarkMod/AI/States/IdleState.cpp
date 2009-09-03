@@ -218,13 +218,19 @@ void IdleState::InitialiseMovement(idAI* owner)
 	// Check if the owner has patrol routes set
 	idPathCorner* path = memory.currentPath.GetEntity();
 	idPathCorner* lastPath = memory.lastPath.GetEntity();
-
+	
 	if (path == NULL && lastPath == NULL)
 	{
+		// Get a new random path off the owner's targets, this is the current one
 		path = idPathCorner::RandomPath(owner, NULL, owner);
-	}
+		memory.currentPath = path;
 
-	memory.currentPath = path;
+		// Also, pre-select a next path to allow path predictions
+		if (path != NULL)
+		{
+			memory.nextPath = idPathCorner::RandomPath(path, NULL, owner);
+		}
+	}
 
 	if (path != NULL || animalPatrol)
 	{

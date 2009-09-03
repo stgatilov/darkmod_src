@@ -24,14 +24,16 @@ PathCornerTask::PathCornerTask() :
 	PathTask(),
 	_moveInitiated(false),
 	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	_lastFrameNum(-1)
+	_lastFrameNum(-1),
+	_usePathPrediction(false)
 {}
 
 PathCornerTask::PathCornerTask(idPathCorner* path) :
 	PathTask(path),
 	_moveInitiated(false),
 	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	_lastFrameNum(-1)
+	_lastFrameNum(-1),
+	_usePathPrediction(false)
 {
 	_path = path;
 }
@@ -53,6 +55,14 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// Check the "run" spawnarg of this path entity
 	owner->AI_RUN = (_path.GetEntity()->spawnArgs.GetBool("run", "0"));
+
+	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();
+
+	// Allow path prediction only if the next path is an actual path corner and no accuracy is set on this one
+	if (_accuracy == -1 && nextPath != NULL && nextPath->spawnArgs.GetString("classname") == "path_corner")
+	{
+		_usePathPrediction = true;
+	}
 }
 
 bool PathCornerTask::Perform(Subsystem& subsystem)
@@ -87,11 +97,11 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 				owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
 			}
 		}
-		else
+		else if (_usePathPrediction) 
 		{
 			// Move not done yet. Try to perform a prediction whether we will hit the path corner
-			// next round.
-
+			// next round. This is valid, as no accuracy is set on the current path.
+			
 			idVec3 moveDeltaVec = ownerOrigin - _lastPosition;
 			float moveDelta = moveDeltaVec.NormalizeFast();
 
@@ -166,6 +176,7 @@ void PathCornerTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_moveInitiated);
 	savefile->WriteVec3(_lastPosition);
 	savefile->WriteInt(_lastFrameNum);
+	savefile->WriteInt(_usePathPrediction);
 }
 
 void PathCornerTask::Restore(idRestoreGame* savefile)
@@ -175,6 +186,7 @@ void PathCornerTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_moveInitiated);
 	savefile->ReadVec3(_lastPosition);
 	savefile->ReadInt(_lastFrameNum);
+	savefile->ReadBool(_usePathPrediction);
 }
 
 PathCornerTaskPtr PathCornerTask::CreateInstance()
