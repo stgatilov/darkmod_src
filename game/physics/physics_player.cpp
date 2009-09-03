@@ -1244,10 +1244,15 @@ void idPhysics_Player::RopeMove( void )
 	
 	wishvel = 0.9f * climbDir * upscale * scale * (float)command.forwardmove;
 
+	/* greebo: Removed command.upmove portion from wishvel. I guess this was to support
+	   the old crouching code which set command.upmove to negative values. This code
+	   is no longer there so command.upmove is only non-zero during jumping, 
+	   which we can ignore here.
+
 	if ( command.upmove ) 
 	{
 		wishvel += 0.5f * climbDir * scale * (float) command.upmove;
-	}
+	}*/
 
 	// detach the player from the rope if they jump
 	if ( idPhysics_Player::CheckRopeJump()) 
