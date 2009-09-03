@@ -1263,6 +1263,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	bool					ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand) const;
 
+	// greebo: Bounding box check to see if the AI has reached the given position. Returns TRUE if position reached.
+	bool					ReachedPosAABBCheck(const idVec3& pos) const;
+
 	float					TravelDistance( const idVec3 &start, const idVec3 &end );
 
 	/**

@@ -27,6 +27,12 @@ class PathCornerTask :
 private:
 	bool _moveInitiated;
 
+	// Position last time this task was executed, used for path prediction
+	idVec3 _lastPosition;
+
+	// Frame this task was last executed
+	int _lastFrameNum;
+
 	PathCornerTask();
 
 public:

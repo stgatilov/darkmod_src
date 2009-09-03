@@ -2506,38 +2506,44 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand) const
 			return true;
 		}
 	} else {
-		if ( ( moveCommand == MOVE_TO_ENEMY ) || ( moveCommand == MOVE_TO_ENTITY ) ) {
+		if ( ( moveCommand == MOVE_TO_ENEMY ) || ( moveCommand == MOVE_TO_ENTITY ) )
+		{
 			if ( physicsObj.GetAbsBounds().IntersectsBounds( idBounds( pos ).Expand( 8.0f ) ) ) {
 				return true;
 			}
-		} else {
-			// angua: use AI bounds for checking
-			idBounds bnds(physicsObj.GetBounds());
-			if (move.accuracy >= 0)
-			{
-				// if accuracy is set, replace x and y size of the bounds
-				bnds[0][0] = -move.accuracy;
-				bnds[0][1] = -move.accuracy;
-				bnds[1][0] = move.accuracy;
-				bnds[1][1] = move.accuracy;
-			}
-
-			bnds.TranslateSelf(physicsObj.GetOrigin());
-
-			bnds.ExpandSelf(reachedpos_bbox_expansion);
-
-			// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
-			// that are a reported as reachable by PathToGoal.
-			bnds[0].z -= aas_reachability_z_tolerance;
-			bnds[1].z += aas_reachability_z_tolerance;
-
-			if (bnds.ContainsPoint(pos))
-			{
-				return true;
-			}
+		}
+		else
+		{
+			// Use the AI bounding box check to see if we've reached the position
+			return ReachedPosAABBCheck(pos);
 		}
 	}
 	return false;
+}
+
+bool idAI::ReachedPosAABBCheck(const idVec3& pos) const
+{
+	// angua: use AI bounds for checking
+	idBounds bnds(physicsObj.GetBounds());
+	if (move.accuracy >= 0)
+	{
+		// if accuracy is set, replace x and y size of the bounds
+		bnds[0][0] = -move.accuracy;
+		bnds[0][1] = -move.accuracy;
+		bnds[1][0] = move.accuracy;
+		bnds[1][1] = move.accuracy;
+	}
+
+	bnds.TranslateSelf(physicsObj.GetOrigin());
+
+	bnds.ExpandSelf(reachedpos_bbox_expansion);
+
+	// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
+	// that are a reported as reachable by PathToGoal.
+	bnds[0].z -= aas_reachability_z_tolerance;
+	bnds[1].z += aas_reachability_z_tolerance;
+
+	return (bnds.ContainsPoint(pos));
 }
 
 /*
