@@ -56,7 +56,10 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Copy the strings into the idList<idStr>
 	for (std::size_t i = 0; i < anims.size(); i++)
 	{
-		_idleAnimations.Append(idStr(anims[i].c_str()));
+		if (!anims[i].empty())
+		{
+			_idleAnimations.Append(idStr(anims[i].c_str()));
+		}
 	}
 
 	// Now read the anims for the torso only
@@ -66,7 +69,10 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Copy the strings into the idList<idStr>
 	for (std::size_t i = 0; i < anims.size(); i++)
 	{
-		_idleAnimationsTorso.Append(idStr(anims[i].c_str()));
+		if (!anims[i].empty())
+		{
+			_idleAnimationsTorso.Append(idStr(anims[i].c_str()));
+		}
 	}
 
 	// Now read the anims for sitting AI
@@ -76,9 +82,11 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Copy the strings into the idList<idStr>
 	for (std::size_t i = 0; i < anims.size(); i++)
 	{
-		_idleAnimationsSitting.Append(idStr(anims[i].c_str()));
+		if (!anims[i].empty())
+		{
+			_idleAnimationsSitting.Append(idStr(anims[i].c_str()));
+		}
 	}
-
 
 	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() || _idleAnimationsSitting.Num()))
 	{
