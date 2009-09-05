@@ -1024,7 +1024,7 @@ int CFrobDoor::FrobMoverStartSound(const char* soundName)
 
 			if (sound.IsEmpty())
 			{
-				gameLocal.Warning("Cannot find sound %s on door %s\r", sound.c_str(), name.c_str());
+				gameLocal.Warning("Cannot find sound %s on door %s\r", soundName, name.c_str());
 				return 0;
 			}
 
