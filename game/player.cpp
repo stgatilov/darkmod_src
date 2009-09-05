@@ -10776,7 +10776,7 @@ void idPlayer::PlayFootStepSound()
 
 		if (sound.IsEmpty())
 		{
-			gameLocal.Warning("Did not find footstep sound %s", (localSound + moveType).c_str());
+			//gameLocal.Warning("Did not find footstep sound %s", (localSound + moveType).c_str());
 
 			// Fall back to normal sound
 			sound = spawnArgs.GetString( localSound );
