@@ -87,7 +87,20 @@ void PickableLock::InitFromSpawnargs(const idDict& spawnArgs)
 
 			PinInfo& pin = m_Pins.Alloc();
 
-			pin.pattern = CreatePinPattern(lockPins[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
+			char c = lockPins[i];
+
+			int numClicks = 2;
+
+			if (c < '0' || c > '9')
+			{
+				gameLocal.Warning("Invalid character in pin pattern %s on entity %s, using default: 2", lockPins.c_str(), spawnArgs.GetString("name"));
+			}
+			else
+			{
+				numClicks = c - '0';
+			}
+
+			pin.pattern = CreatePinPattern(numClicks, b, MAX_PIN_CLICKS, 2, head);
 
 			if (cv_lp_pawlow.GetBool() == false)
 			{
@@ -774,9 +787,11 @@ void PickableLock::Event_LockpickSoundFinished(ELockpickState nextState)
 
 idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, const idStr& header)
 {
+	idStringList returnValue;
+
 	if (clicks < 0 || clicks > 9)
 	{
-		return NULL;
+		return returnValue;
 	}
 
 	if (clicks == 0)
@@ -785,8 +800,7 @@ idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCo
 	}
 
 	clicks += baseCount;
-	idStringList returnValue;
-
+	
 	idStr head = va(header + "%%0%uu", strNumLen);
 
 	for (int i = 0; i < clicks; i++)
