@@ -176,7 +176,7 @@ void PathCornerTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_moveInitiated);
 	savefile->WriteVec3(_lastPosition);
 	savefile->WriteInt(_lastFrameNum);
-	savefile->WriteInt(_usePathPrediction);
+	savefile->WriteBool(_usePathPrediction);
 }
 
 void PathCornerTask::Restore(idRestoreGame* savefile)
