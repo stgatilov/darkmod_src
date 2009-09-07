@@ -2515,6 +2515,13 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 		RopeMove();
 	}
+	// Mantle MOD
+	// SophisticatedZombie (DH)
+	// greebo: Do the MantleMove before checking the rope contacts
+	else if ( !(m_mantlePhase == notMantling_DarkModMantlePhase || m_mantlePhase == fixClipping_DarkModMantlePhase) ) 
+	{
+		MantleMove();
+	}
 	else if ( m_bRopeContact ) 
 	{
 		// toggle m_bOnRope
@@ -2529,13 +2536,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	{
 		// going up or down a ladder
 		LadderMove();
-	}
-	// Mantle MOD
-	// SophisticatedZombie (DH)
-	else if ( !(m_mantlePhase == notMantling_DarkModMantlePhase
-				 || m_mantlePhase == fixClipping_DarkModMantlePhase) ) 
-	{
-		MantleMove();
 	}
 	else if ( waterLevel > WATERLEVEL_FEET )
 	{
@@ -3818,18 +3818,18 @@ void idPhysics_Player::GetCurrentMantlingReachDistances
 
 	// Determine maximum vertical and horizontal distance components for
 	// a mantleable surface
-	if (current.movementFlags & PMF_DUCKED && !OnRope() && !OnLadder())
+	if (current.movementFlags & PMF_DUCKED /*&& !OnRope() && !OnLadder()*/)
 	{
 		out_maxVerticalReachDistance = pm_crouchheight.GetFloat() + armVerticalReach;
 		out_maxHorizontalReachDistance = armReach;
 	}
-	else if (OnRope() || OnLadder())
+	/*else if (OnRope() || OnLadder())
 	{
 		// angua: need larger reach when on rope
 		out_maxVerticalReachDistance = pm_normalheight.GetFloat() + armVerticalReach;
 		out_maxHorizontalReachDistance = 2* armReach;
 		out_maxMantleTraceDistance *= 2;
-	}
+	}*/
 	else
 	{
 		// This vertical distance is up from the players feet
@@ -3889,8 +3889,8 @@ void idPhysics_Player::MantleTargetTrace
 			self
 		);
 
-		// gameRenderWorld->DebugBounds(colorCyan, bounds, current.origin, 2000);
-		// gameRenderWorld->DebugBounds(colorBlue, bounds, current.origin + (maxMantleTraceDistance * forwardPerpGrav), 2000);
+		//gameRenderWorld->DebugBounds(colorCyan, bounds, current.origin, 2000);
+		//gameRenderWorld->DebugBounds(colorBlue, bounds, current.origin + (maxMantleTraceDistance * forwardPerpGrav), 2000);
 
 		// Restore player clip model to normal
 		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(savedBounds, 8) : idTraceModel(savedBounds) );
