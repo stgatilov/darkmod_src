@@ -3531,7 +3531,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "mainmenu_init")
 	{
-		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
