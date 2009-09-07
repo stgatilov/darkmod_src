@@ -9312,7 +9312,9 @@ void idAI::Knockout( idEntity* inflictor )
 
 void idAI::PostKnockOut()
 {
-	headAnim.StopAnim(1);
+	// greebo: Removed StopAnim() for head channel, this caused the AI to open its eyes again
+	//headAnim.StopAnim(1);
+
 	legsAnim.StopAnim(1);
 	torsoAnim.StopAnim(1);
 
