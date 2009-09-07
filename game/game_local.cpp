@@ -402,7 +402,7 @@ void idGameLocal::Init( void ) {
 #endif
 
 	Printf( "--------- Initializing Game ----------\n" );
-	Printf( "%s %d.%d, code revision %d\n", 
+	Printf( "%s %d.%02d, code revision %d\n", 
 		GAME_VERSION, 
 		TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
 		RevisionTracker::Instance().GetHighestRevision() 
@@ -3528,6 +3528,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 
 		gui->SetStateInt("lp_difficulty", setting);
+	}
+	else if (cmd == "mainmenu_init")
+	{
+		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
