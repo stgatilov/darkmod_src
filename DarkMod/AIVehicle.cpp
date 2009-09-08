@@ -37,7 +37,6 @@ END_CLASS
 CAIVehicle::CAIVehicle( void )
 {
 	m_Controller			= NULL;
-	AI_CONTROLLED			= false;
 	m_RideJoint		= INVALID_JOINT;
 	m_RideOffset.Zero();
 	m_RideAngles.Zero();
@@ -59,6 +58,8 @@ CAIVehicle::~CAIVehicle( void )
 
 void CAIVehicle::Spawn( void ) 
 {
+	AI_CONTROLLED = false; 
+
 	// set ride joint, steering speed
 	idStr JointName = spawnArgs.GetString("ride_joint", "origin");
 
