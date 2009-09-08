@@ -485,15 +485,7 @@ void CModMenu::SearchForNewMods()
 	// and we can start moving them into their respective locations
 	for (MoveList::const_iterator i = moveList.begin(); i != moveList.end(); ++i)
 	{
-		try
-		{
-			// remove any target file first
-			fs::remove(i->second);
-		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
-		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while deleting target file: %s\r", e.what());
-		}
+		DoRemoveFile(i->second);
 
 		try
 		{
@@ -504,6 +496,15 @@ void CModMenu::SearchForNewMods()
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while moving file: %s\r", e.what());
 		}
+
+		fs::path targetPath = i->second;
+		targetPath.remove_leaf();
+
+		// Remove any darkmod.txt, splashimage etc. when copying a new PK4. It may contain updated versions of those.
+		DoRemoveFile(targetPath / cv_tdm_fm_desc_file.GetString());
+		DoRemoveFile(targetPath / cv_tdm_fm_startingmap_file.GetString());
+		DoRemoveFile(targetPath / cv_tdm_fm_splashimage_file.GetString());
+		DoRemoveFile(targetPath / cv_tdm_fm_notes_file.GetString());
 	}
 }
 
@@ -708,6 +709,22 @@ bool CModMenu::DoCopyFile(const fs::path& source, const fs::path& dest, bool ove
 	}
 }
 
+bool CModMenu::DoRemoveFile(const fs::path& fileToRemove)
+{
+	try
+	{
+		fs::remove(fileToRemove);
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removed file in %s\r", fileToRemove.file_string().c_str());
+
+		return true;
+	}
+	catch (fs::basic_filesystem_error<fs::path>& e)
+	{
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while removing file: %s\r", e.what());
+		return false;
+	}
+}
+
 void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
 {
 	// Path to the parent directory
@@ -828,16 +845,14 @@ void CModMenu::UninstallMod(idUserInterface* gui)
 
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to clear current FM name in %s\r", currentFMPath.file_string().c_str());
 
-	try
+	if (DoRemoveFile(currentFMPath))
 	{
-		// According to docs, remove() doesn't throw if file doesn't exist
-		fs::remove(currentFMPath);
 		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Current FM file removed: %s.\r", currentFMPath.string().c_str());
 	}
-	catch (fs::basic_filesystem_error<fs::path>& e)
+	else
 	{
-		// Don't care about removal error
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s: %s\r", currentFMPath.string().c_str(), e.what());
+		// Log removal error
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s.\r", currentFMPath.string().c_str());
 	}
 
 	gui->HandleNamedEvent("OnModUninstallFinished");

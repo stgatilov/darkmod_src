@@ -85,6 +85,9 @@ private:
 	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
 	bool DoCopyFile(const fs::path& source, const fs::path& dest, bool overwrite = false);
 
+	// Removes the given file, returns TRUE if this succeeded or if file wasn't there in the first place, FALSE on error
+	bool DoRemoveFile(const fs::path& fileToRemove);
+
 private:
 	// The list of available mods
 	idStrList _modsAvailable; 
