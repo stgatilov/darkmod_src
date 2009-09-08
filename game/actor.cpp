@@ -1920,8 +1920,8 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 		return false;
 	}*/
 
-	// The enemy's origin
-	idVec3 entityOrigin = ent->GetPhysics()->GetOrigin();
+	// The entity's origin
+	const idVec3& entityOrigin = ent->GetPhysics()->GetOrigin();
 
 	// Check the field of view if specified
 	if (useFov && !CheckFOV(entityOrigin))
