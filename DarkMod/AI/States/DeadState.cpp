@@ -51,7 +51,7 @@ void DeadState::Init(idAI* owner)
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
-	owner->SetWaitState("dead");
+	owner->SetWaitState(ANIMCHANNEL_HEAD, "death");
 
 	// Don't do anything else, the death animation will finish in a few frames
 	// and the AI is done afterwards.

@@ -2396,6 +2396,11 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 			delta.ToVec2() += perpendicular * gameLocal.random.CRandomFloat() * 0.5f;
 			forceVec = delta * force * obEnt->GetPhysics()->GetMass();
 			obEnt->ApplyImpulse( this, 0, obEnt->GetPhysics()->GetOrigin(), forceVec );
+			if (obEnt->m_SetInMotionByActor.GetEntity() == NULL)
+			{
+				obEnt->m_SetInMotionByActor = this;
+				obEnt->m_MovedByActor = this;
+			}
 		}
 	}
 
@@ -2408,6 +2413,11 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 		delta.ToVec2() += perpendicular * gameLocal.random.CRandomFloat() * 0.5f;
 		forceVec = delta * force * alwaysKick->GetPhysics()->GetMass();
 		alwaysKick->ApplyImpulse( this, 0, alwaysKick->GetPhysics()->GetOrigin(), forceVec );
+		if (alwaysKick->m_SetInMotionByActor.GetEntity() == NULL)
+		{
+			alwaysKick->m_SetInMotionByActor = this;
+			alwaysKick->m_MovedByActor = this;
+		}
 	}
 }
 

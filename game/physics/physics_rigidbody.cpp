@@ -1462,6 +1462,12 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		if ( ent && ( !cameToRest || !ent->IsAtRest() ) ) {
 			// apply impact to other entity
 			ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
+
+			if (ent->m_SetInMotionByActor.GetEntity() == NULL)
+			{
+				ent->m_SetInMotionByActor = self->m_SetInMotionByActor;
+				ent->m_MovedByActor = self->m_MovedByActor;
+			}
 		}
 
 		// greebo: Are we stuck? We still have to consider gravity and external forces
