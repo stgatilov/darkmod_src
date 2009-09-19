@@ -2245,7 +2245,8 @@ int idAI::GetThinkInterleave()
 	}
 	else
 	{
-		int thinkFrames = 1 + maxFrames * static_cast<int>((playerDist - minDist) / (maxDist - minDist));
+		float fraction = (playerDist - minDist) / (maxDist - minDist);
+		int thinkFrames = 1 + static_cast<int>(fraction * maxFrames);
 		return thinkFrames;
 	}
 }
