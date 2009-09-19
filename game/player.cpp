@@ -7275,6 +7275,9 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	// greebo: Before posting mission failed and going to ragdoll, check for custom death script
 	if (gameLocal.world != NULL && gameLocal.world->spawnArgs.GetInt("custom_death_delay") > 0)
 	{
+		// greebo: Still call the ownerdied method to cleanup the weapon script state
+		weapon.GetEntity()->OwnerDied();
+
 		// Run the death event in a few seconds
 		PostEventMS(&EV_Player_CustomDeath, SEC2MS(gameLocal.world->spawnArgs.GetInt("custom_death_delay")));
 		return; // stop death processing here
