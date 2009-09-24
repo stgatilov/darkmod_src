@@ -10215,6 +10215,8 @@ void idEntity::SaveAttachmentContents()
 	{
 		idEntity* ent = m_Attachments[i].ent.GetEntity();
 
+		if (ent == NULL) continue;
+
 		m_Attachments[i].savedContents = (ent != NULL) ? ent->GetPhysics()->GetContents() : -1;
 	}
 }
@@ -10225,6 +10227,8 @@ void idEntity::SetAttachmentContents(int newContents)
 	for (int i = 0; i < m_Attachments.Num(); ++i)
 	{
 		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL) continue;
 
 		ent->GetPhysics()->SetContents(newContents);
 	}

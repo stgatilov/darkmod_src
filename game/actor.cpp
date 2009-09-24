@@ -3049,7 +3049,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		// Apply the damage
 		health -= damage;
 
-		if (lowHealthThreshold != -1 && health < lowHealthThreshold)
+		if (lowHealthThreshold != -1 && health <= lowHealthThreshold)
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s's fell below health threshold %d, firing script %s\r", name.c_str(), lowHealthThreshold, lowHealthScript.c_str());
 
