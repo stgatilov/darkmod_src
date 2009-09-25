@@ -36,8 +36,7 @@ const std::string GAME_BASE_NAME = "darkmod";
 	#define ENGINE_EXECUTABLE "doom.x86"
 #endif
 
-Launcher::Launcher(int argc, char* argv[]) :
-	_pauseBeforeStart(true)
+Launcher::Launcher(int argc, char* argv[])
 {
 #ifdef WIN32
 	// path to this exe
@@ -110,11 +109,6 @@ Launcher::Launcher(int argc, char* argv[]) :
 
 			numIgnoreArgs++;
 		}
-	}
-
-	if (argc - numIgnoreArgs == 0)
-	{
-		_pauseBeforeStart = false; // don't wait if no arguments supplied
 	}
 }
 

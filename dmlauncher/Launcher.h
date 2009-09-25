@@ -34,9 +34,6 @@ class Launcher
 	// The arguments to pass to the engine
 	std::string _arguments;
 
-	// True if launcher should wait a few secs before starting D3
-	bool _pauseBeforeStart; // TODO:  Remove this
-
 public:
 	// Pass the command line to this class
 	Launcher(int argc, char* argv[]);
