@@ -22,6 +22,12 @@ const std::string GAME_BASE_NAME = "darkmod";
 
 	#define ENGINE_EXECUTABLE "DOOM3.exe"
 	#define MODULE_NAME "gamex86.dll"
+
+// The ShellAPI.h header is polluting our namespace
+#ifdef FindExecutable  
+#undef FindExecutable
+#endif
+
 #else 
 	// Linux
 	#include <unistd.h>
@@ -36,6 +42,13 @@ Launcher::Launcher(int argc, char* argv[]) :
 #ifdef WIN32
 	// path to this exe
 	boost::filesystem::path dmlauncher(argv[0]);
+
+	if (!dmlauncher.has_branch_path())
+	{
+		TraceLog::WriteLine("No path defined in argv[0], will prepend current directory.");
+		dmlauncher = boost::filesystem::initial_path() / dmlauncher;
+	}
+
 #else
 	char exepath[PATH_MAX] = {0};
 	std::size_t bytesRead = readlink("/proc/self/exe", exepath, sizeof(exepath));
