@@ -7066,23 +7066,23 @@ bool idAI::TestMeleeFuture( void ) const {
 
 	//FIXME: make work with gravity vector
 	idVec3 org = physicsObj.GetOrigin();
-	idBounds bounds = physicsObj.GetBounds();
+	const idBounds& bounds = physicsObj.GetBounds();
 	idVec3 vel = physicsObj.GetLinearVelocity();
 
 
 	idVec3 enemyOrg = enemyEnt->GetPhysics()->GetOrigin();
-	idBounds enemyBounds = enemyEnt->GetPhysics()->GetBounds();
+	const idBounds& enemyBounds = enemyEnt->GetPhysics()->GetBounds();
 	idVec3 enemyVel = enemyEnt->GetPhysics()->GetLinearVelocity();
 
 	// update prediction
 	float dt = m_MeleePredictedAttTime;
 	idVec3 ds = dt * vel;
 	org += ds;
-	bounds = bounds.TranslateSelf( ds );
+	//bounds = bounds.TranslateSelf( ds );
 
 	idVec3 dsEnemy = dt * enemyVel;
 	enemyOrg += dsEnemy;
-	enemyBounds = enemyBounds.TranslateSelf( dsEnemy );
+	//enemyBounds = enemyBounds.TranslateSelf( dsEnemy );
 
 	// rest is the same as TestMelee
 	idVec3 dir = enemyOrg - org;
@@ -7095,7 +7095,7 @@ bool idAI::TestMeleeFuture( void ) const {
 	{
 		// angua: within horizontal distance
 		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z &&
-				(enemyOrg.z + enemyBounds[1][2]) > org.z)
+			(enemyOrg.z + enemyBounds[1][2]) > org.z)
 		{
 			// within height
 			// check if there is something in between
