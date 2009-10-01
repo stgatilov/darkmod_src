@@ -6904,6 +6904,13 @@ void idPlayer::Think( void )
 		usercmd.upmove = 0;
 	}
 
+	// greebo: Check always run
+	if (cvarSystem->GetCVarBool("in_alwaysRun"))
+	{
+		// Always run active, invert the behaviour, user has to hold down button to walk
+		usercmd.buttons ^= BUTTON_RUN;
+	}
+
 	if( !AI_PAIN )
 		m_bDamagedThisFrame = false;
 
