@@ -335,6 +335,7 @@ idCVar cv_empty_model("tdm_empty_model", "models/darkmod/misc/system/empty.lwo",
 idCVar cv_tdm_s_doorDistanceAdd("tdm_s_doorDistanceAdd", "450", CVAR_GAME | CVAR_ARCHIVE, "This value will overwrite s_doorDistanceAdd at game startup.");
 idCVar cv_tdm_gui_smallFontLimit("tdm_gui_smallFontLimit", "0.15", CVAR_GAME | CVAR_ARCHIVE, "This value will overwrite gui_smallFontLimit at game startup.");
 idCVar cv_tdm_gui_mediumFontLimit("tdm_gui_mediumFontLimit", "0.30", CVAR_GAME | CVAR_ARCHIVE, "This value will overwrite gui_mediumFontLimit at game startup.");
+idCVar cv_tdm_s_maxSoundsPerShader("tdm_s_maxSoundsPerShader", "0", CVAR_GAME | CVAR_ARCHIVE, "This value will overwrite s_maxSoundsPerShader at game startup (unless this set to -1).");
 
 /**
  * Variables needed for lockpicking.
