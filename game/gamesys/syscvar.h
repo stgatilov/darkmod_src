@@ -275,6 +275,7 @@ extern idCVar cv_empty_model;
 extern idCVar cv_tdm_s_doorDistanceAdd;
 extern idCVar cv_tdm_gui_smallFontLimit;
 extern idCVar cv_tdm_gui_mediumFontLimit;
+extern idCVar cv_tdm_s_maxSoundsPerShader;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
