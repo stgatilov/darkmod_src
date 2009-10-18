@@ -201,6 +201,8 @@ private:
 	trace_t					collisionTrace;
 	bool					isBlocked;
 
+	bool					propagateImpulseLock;
+
 #ifdef MOD_WATERPHYSICS
 	// buoyancy
 	int					noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
