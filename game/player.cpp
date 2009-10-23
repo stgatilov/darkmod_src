@@ -463,6 +463,7 @@ idPlayer::idPlayer() :
 	isChatting				= false;
 	selfSmooth				= false;
 
+	m_FrobPressedTarget		= NULL;
 	m_bGrabberActive		= false;
 	m_bDraggingBody			= false;
 	m_bShoulderingBody		= false;
@@ -1336,6 +1337,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	// Mouse gesture
 	m_MouseGesture.Save( savefile );
+	m_FrobPressedTarget.Save( savefile );
 
 	savefile->WriteInt( buttonMask );
 	savefile->WriteInt( oldButtons );
@@ -1630,6 +1632,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	spawnAnglesSet = true;
 
 	m_MouseGesture.Restore( savefile );
+	
+	m_FrobPressedTarget.Restore( savefile );
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -5719,7 +5723,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
-			PerformFrobKeyRepeat();
+			PerformFrobKeyRepeat(holdTime);
 		}
 		break;
 
@@ -5764,7 +5768,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
-			PerformFrobKeyRelease();
+			PerformFrobKeyRelease(holdTime);
 		}
 		break;
 
@@ -10964,6 +10968,9 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
+		// note which target we started pressing frob on
+		m_FrobPressedTarget = target;
+
 		// First we have to check whether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
@@ -11022,7 +11029,7 @@ void idPlayer::PerformFrob()
 	PerformFrob(EPressed, frob);
 }
 
-void idPlayer::PerformFrobKeyRepeat()
+void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB ) return;
@@ -11030,12 +11037,16 @@ void idPlayer::PerformFrobKeyRepeat()
 	// Get the currently frobbed entity
 	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+
+	// use the original target until frob is released and pressed again
+	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )
+		m_FrobPressedTarget.GetEntity()->FrobHeld( true, false, holdTime );
 
 	// Relay the function to the specialised method
 	PerformFrob(ERepeat, frob);
 }
 
-void idPlayer::PerformFrobKeyRelease()
+void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB ) return;
@@ -11043,6 +11054,10 @@ void idPlayer::PerformFrobKeyRelease()
 	// Get the currently frobbed entity
 	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
 	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+
+	// use the original target until frob is released and pressed again
+	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )
+		m_FrobPressedTarget.GetEntity()->FrobReleased( true, false, holdTime );
 
 	// Relay the function to the specialised method
 	PerformFrob(EReleased, frob);

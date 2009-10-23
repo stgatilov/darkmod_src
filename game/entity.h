@@ -660,6 +660,18 @@ public:
 	virtual void FrobAction(bool frobMaster, bool isFrobPeerAction = false);
 
 	/**
+	* Function that is called if the player holds down the frob button on this object
+	* By default, does nothing
+	**/
+	virtual void FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) {};
+
+	/**
+	* Function that is called if the player holds down the frob button on this object
+	* By default, does nothing
+	**/
+	virtual void FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0) {};
+
+	/**
 	 * greebo: A frobbed entity might receive this signal if the player is hitting
 	 * the attack button in this exact frame. (Used for lockpicking.)
 	 *
