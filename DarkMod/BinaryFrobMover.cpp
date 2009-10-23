@@ -75,6 +75,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_vImpulseDirClose.Zero();
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
+	m_bFineControlStarting = false;
 }
 
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
@@ -117,6 +118,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
+	savefile->WriteBool(m_bFineControlStarting);
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -159,6 +161,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
+	savefile->ReadBool(m_bFineControlStarting);
 }
 
 void CBinaryFrobMover::Spawn()
@@ -1048,6 +1051,31 @@ idVec3 CBinaryFrobMover::GetCurrentPos()
 	return currentPos;
 }
 
+float CBinaryFrobMover::GetFractionalPosition()
+{
+	// Don't know if a door translates or rotates or both,
+	// so look at fractional movement of both and take the max?
+	float returnval(0.0f);
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+	const idAngles& localAngles = physicsObj.GetLocalAngles();
+	
+	// check for non-zero rotation first
+	idRotation maxRot = (m_OpenAngles - m_ClosedAngles).Normalize360().ToRotation();
+	if( maxRot.GetAngle() != 0 )
+	{
+		idRotation curRot = (localAngles - m_ClosedAngles).Normalize360().ToRotation();
+		returnval = curRot.GetAngle() / maxRot.GetAngle();
+	}
+	else
+	{
+		// if door doesn't have rotation, check translation
+		float maxTrans = (m_OpenOrigin - m_ClosedOrigin).Length();
+		returnval = (localOrg - m_ClosedOrigin).Length() / maxTrans;
+	}
+
+	return returnval;
+}
+
 void CBinaryFrobMover::SetFractionalPosition(float fraction)
 {
 	idAngles targetAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles) * fraction;
@@ -1076,4 +1104,63 @@ void CBinaryFrobMover::Event_HandleLockRequest()
 		// Not at closed position (yet), postpone the event
 		PostEventMS(&EV_TDM_FrobMover_HandleLockRequest, LOCK_REQUEST_DELAY);
 	}
+}
+
+void CBinaryFrobMover::FrobAction(bool frobMaster, bool isFrobPeerAction)
+{
+	idEntity::FrobAction( frobMaster, isFrobPeerAction );
+	if( m_bInterruptable && cv_tdm_door_control.GetBool() )
+		m_bFineControlStarting = true;
+}
+
+void CBinaryFrobMover::FrobHeld(bool frobMaster, bool isFrobPeerAction, int holdTime)
+{
+	if ( !m_bInterruptable || !cv_tdm_door_control.GetBool() || holdTime < 200 )
+		return;
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	
+	if( m_bFineControlStarting )
+	{
+		// initialize fine control
+		player->SetImmobilization( "door handling",  EIM_VIEW_ANGLE );
+		m_mousePosition.x = player->usercmd.mx;
+		m_mousePosition.y = player->usercmd.my;
+
+		// Stop the door from opening or closing as normal:
+		m_bInterrupted = true;
+		Event_StopRotating();
+		Event_StopMoving();
+		OnInterrupt();
+
+		m_bFineControlStarting = false;
+	}
+
+	float dx = player->usercmd.mx - m_mousePosition.x;
+	float dy = player->usercmd.my - m_mousePosition.y;
+	m_mousePosition.x = player->usercmd.mx;
+	m_mousePosition.y = player->usercmd.my;
+
+	// figure out the view direction (rotation only for now)
+	float sign = 1.0f;
+	idRotation openRot = (0.1f*(m_OpenAngles - m_ClosedAngles).Normalize360()).ToRotation();
+	openRot.SetOrigin(GetPhysics()->GetOrigin());
+	idVec3 playerOrg = player->GetPhysics()->GetOrigin();
+	idVec3 testOrg = playerOrg;
+	openRot.RotatePoint(testOrg);
+	float viewDot = (testOrg - playerOrg) * player->viewAxis[0];
+	if (viewDot < 0)
+		sign = 1.0f;
+	else
+		sign = -1.0f;
+
+	float desiredPos = GetFractionalPosition() + sign * cv_tdm_door_control_sensitivity.GetFloat() * dy;
+	desiredPos = idMath::ClampFloat( 0.0f, 1.0f, desiredPos );
+	SetFractionalPosition( desiredPos );
+}
+
+void CBinaryFrobMover::FrobReleased(bool frobMaster, bool isFrobPeerAction, int holdTime)
+{
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	player->SetImmobilization( "door handling",  0 );
 }

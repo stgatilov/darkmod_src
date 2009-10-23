@@ -235,6 +235,9 @@ extern idCVar cv_tdm_inv_loot_sound;
 extern idCVar cv_tdm_inv_use_on_frob;
 extern idCVar cv_tdm_inv_use_visual_feedback;
 
+extern idCVar cv_tdm_door_control;
+extern idCVar cv_tdm_door_control_sensitivity;
+
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;
 extern idCVar cv_pm_stepvol_creep;

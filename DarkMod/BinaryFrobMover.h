@@ -71,6 +71,11 @@ public:
 
 	// Performs a "delayed" lock, closes the mover and tries to lock it afterwards
 	virtual void			CloseAndLock();
+
+	// Ishtvan: Allow for fine control when frob is held
+	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false);
+	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
+	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
 		
 	/**
 	* This is the non-script version of GetOpen 
@@ -173,6 +178,8 @@ public:
 	 *            a value of 1 refers to the fully rotated handle.
 	 */
 	void SetFractionalPosition(float fraction);
+
+	float GetFractionalPosition();
 
 	/**
 	* This is used to get the remaining translation left on the clip model
@@ -480,6 +487,16 @@ protected:
 	 * reached its closed position.
 	 */
 	bool						m_LockOnClose;
+
+	/**
+	* Ishtvan: Used for fine control of opening/closing with the mouse
+	**/
+	idVec2						m_mousePosition;
+
+	/**
+	* True when frob is held down but not long enough to initialize fine control
+	**/
+	bool						m_bFineControlStarting;
 };
 
 #endif /* !BINARYFROBMOVER */
