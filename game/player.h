@@ -39,6 +39,7 @@ extern const idEventDef EV_Player_GetMouseGesture;
 extern const idEventDef EV_Player_MouseGestureFinished;
 extern const idEventDef EV_Player_StartMouseGesture;
 extern const idEventDef EV_Player_StopMouseGesture;
+extern const idEventDef EV_Player_ClearMouseDeadTime;
 extern const idEventDef EV_Player_EnableWeapon;
 extern const idEventDef EV_Player_DisableWeapon;
 extern const idEventDef EV_Player_ExitTeleporter;
@@ -145,6 +146,7 @@ typedef struct SMouseGesture_s
 	int key; // key being checked
 	int thresh; // mouse input threshold required to decide
 	int DecideTime; // time in ms before we auto-decide (default -1, wait forever)
+	int DeadTime; // time over which the response is dampened, can be greater than decide time
 
 	int started; // time in ms at which we started
 	idVec2 StartPos; // mouse position at which we started	
@@ -159,6 +161,7 @@ typedef struct SMouseGesture_s
 		key = 0;
 		thresh = 0;
 		DecideTime = -1;
+		DeadTime = 0;
 		started = 0;
 		StartPos = vec2_zero;
 		motion = vec2_zero;
@@ -684,7 +687,7 @@ public:
 	*	in the event that the mouse movement threshold was not reached.
 	* For now, only one mouse gesture check at a time.
 	**/
-	void					StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime = -1 );
+	void					StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime = -1, int DeadTime = 0 );
 	void					UpdateMouseGesture( void );
 	void					StopMouseGesture( void );
 	/**
@@ -1230,6 +1233,10 @@ private:
 	* Return to script whether we are currently waiting for a mouse gesture to finish
 	**/
 	void					Event_MouseGestureFinished( void );
+	/**
+	* Clear the mouse dead time if it extends beyond the time used to determine the gesture
+	**/
+	void					Event_ClearMouseDeadTime( void );
 
 	/**
 	 * greebo: Sets the named lightgem modifier to a particular value. 

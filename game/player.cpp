@@ -66,7 +66,8 @@ const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
 const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", NULL, 'd');
 const idEventDef EV_Player_MouseGestureFinished( "mouseGestureFinished", NULL, 'd' );
-const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "ddddfd" );
+const idEventDef EV_Player_ClearMouseDeadTime("clearMouseDeadTime");
+const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "ddddfdd" );
 const idEventDef EV_Player_StopMouseGesture( "stopMouseGesture" );
 const idEventDef EV_Player_StopFxFov( "stopFxFov" );
 const idEventDef EV_Player_EnableWeapon( "enableWeapon" );
@@ -158,6 +159,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_MouseGestureFinished,	idPlayer::Event_MouseGestureFinished )
 	EVENT( EV_Player_StartMouseGesture,		idPlayer::StartMouseGesture )
 	EVENT( EV_Player_StopMouseGesture,		idPlayer::StopMouseGesture )
+	EVENT( EV_Player_ClearMouseDeadTime,	idPlayer::Event_ClearMouseDeadTime )
 	EVENT( EV_Player_StopFxFov,				idPlayer::Event_StopFxFov )
 	EVENT( EV_Player_EnableWeapon,			idPlayer::Event_EnableWeapon )
 	EVENT( EV_Player_DisableWeapon,			idPlayer::Event_DisableWeapon )
@@ -5965,7 +5967,7 @@ void idPlayer::EvaluateCrouch()
 /**
 * TDM Mouse Gestures
 **/
-void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime )
+void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, bool bInverted, float TurnHinderance, int DecideTime, int DeadTime )
 {
 	m_MouseGesture.bActive = true;
 	m_MouseGesture.test = test;
@@ -5973,6 +5975,7 @@ void idPlayer::StartMouseGesture( int impulse, int thresh, EMouseTest test, bool
 	m_MouseGesture.key = impulse;
 	m_MouseGesture.thresh = thresh;
 	m_MouseGesture.DecideTime = DecideTime;
+	m_MouseGesture.DeadTime = DeadTime;
 
 	m_MouseGesture.started = gameLocal.time;
 	m_MouseGesture.StartPos.x = usercmd.mx;
@@ -6120,8 +6123,11 @@ void idPlayer::StopMouseGesture( void )
 {
 	m_MouseGesture.bActive = false;
 
-	// clear the angular hinderance
-	SetTurnHinderance( "MouseGesture", 1.0f, 1.0f );
+	// clear the angular hinderance, or if dead time is still going, schedule an event to clear it
+	if( (gameLocal.time - m_MouseGesture.started) > m_MouseGesture.DeadTime )
+		SetTurnHinderance( "MouseGesture", 1.0f, 1.0f );
+	else
+		PostEventMS( &EV_Player_ClearMouseDeadTime, (m_MouseGesture.DeadTime - (gameLocal.time - m_MouseGesture.started)) );
 }
 
 EMouseDir idPlayer::GetMouseGesture( void )
@@ -6137,6 +6143,11 @@ void idPlayer::Event_GetMouseGesture( void )
 void idPlayer::Event_MouseGestureFinished( void )
 {
 	idThread::ReturnInt( !m_MouseGesture.bActive );
+}
+
+void idPlayer::Event_ClearMouseDeadTime( void )
+{
+	SetTurnHinderance( "MouseGesture", 1.0f, 1.0f );
 }
 
 /*
