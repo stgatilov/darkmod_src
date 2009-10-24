@@ -179,10 +179,13 @@ bool OSPathToRelativePath( const char *osPath, idStr &qpath, const char *game ) 
 
 		base = s = (char*)strstr( osPath, game );
 
-		while( s = strstr( s, game ) ) {
-			s += strlen( game );
-			if ( s[0] == '/' || s[0] == '\\' ) {
-				base = s;
+		if (s != NULL)
+		{
+			while( s = strstr( s, game ) ) {
+				s += strlen( game );
+				if ( s[0] == '/' || s[0] == '\\' ) {
+					base = s;
+				}
 			}
 		}
 	} 
