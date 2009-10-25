@@ -185,7 +185,14 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 			idStr debugText = "MeleeAction: Attack, Phase: Preparing";
 			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
-		// don't do anything, animation will update status when it reaches hold point
+		// don't do anything, animation will update melee status to holding when it reaches the hold point
+		// FIX: Some animations don't have a hold point and just go straight through
+		idStr waitState( owner->WaitState() );
+		if( waitState != "melee_action" )
+		{
+			// Hack: animation is done, advance the state where it will be handled properly in the next frame
+			owner->Event_MeleeActionReleased();
+		}
 		return;
 	}
 	else if( phase == MELEEPHASE_HOLDING )
