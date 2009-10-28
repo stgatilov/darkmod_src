@@ -15,9 +15,6 @@
 #include <unistd.h>
 #endif
 
-// A list of path => path associations for moving files around
-typedef std::list< std::pair<fs::path, fs::path> > MoveList;
-
 CModMenu::CModMenu() :
 	_modTop(0)
 {}
@@ -417,20 +414,21 @@ CModMenu::ModInfo CModMenu::GetModInfo(const idStr& modDirName)
 	return (index != -1) ? GetModInfo(index) : ModInfo();
 }
 
-void CModMenu::SearchForNewMods()
+CModMenu::MoveList CModMenu::SearchForNewMods(const idStr& extension)
 {
-	// List all PK4s in the fms/ directory
 	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList* pk4files = fileSystem->ListFiles(fmPath, ".pk4", false, true);
+	idFileList* pk4files = fileSystem->ListFiles(fmPath, extension, false, true);
 
 	MoveList moveList;
+
+	fs::path darkmodPath = GetDarkmodPath();
 
 	// Iterate over all found PK4s and check if they're valid
 	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
 	{
-		fs::path pk4path = GetDarkmodPath() / pk4files->GetFile(i);
+		fs::path pk4path = darkmodPath / pk4files->GetFile(i);
 
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found PK4 in FM root folder: %s\r", pk4path.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %s in FM root folder: %s\r", extension.c_str(), pk4path.file_string().c_str());
 
 		// Does the PK4 file contain a proper description file?
 		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
@@ -455,8 +453,10 @@ void CModMenu::SearchForNewMods()
 
 		if (modName.IsEmpty()) continue; // error?
 
+		// TODO: Clean modName string from any weird characters
+
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
-		fs::path modFolder = GetDarkmodPath() / cv_tdm_fm_path.GetString() / modName.c_str();
+		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
 
 		// Create the fm folder, if necessary
 		if (!fs::exists(modFolder))
@@ -480,6 +480,18 @@ void CModMenu::SearchForNewMods()
 	}
 
 	fileSystem->FreeFileList(pk4files);
+
+	return moveList;
+}
+
+void CModMenu::SearchForNewMods()
+{
+	// List all PK4s in the fms/ directory
+	MoveList moveList = SearchForNewMods(".pk4");
+	MoveList zipMoveList = SearchForNewMods(".zip");
+
+	// Merge the zips into the pk4 list
+	moveList.merge(zipMoveList);
 
 	// greebo: Now that the file list has been freed, the D3 engine no longer holds locks on those files
 	// and we can start moving them into their respective locations

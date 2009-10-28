@@ -19,6 +19,9 @@ class CModMenu
 		idStr image;
 	};
 
+	// A list of path => path associations for moving files around
+	typedef std::list< std::pair<fs::path, fs::path> > MoveList;
+
 public:
 	CModMenu();
 
@@ -44,6 +47,8 @@ private:
 
 	// Searches for new PK4 files in the fms/ root folder
 	void SearchForNewMods();
+	// Sub-routine of SearchForNewMods() investigating the FM folder using the given extension (including dot ".pk4", ".zip")
+	MoveList SearchForNewMods(const idStr& extension);
 
 	// Searches for new mods
 	void BuildModList();
