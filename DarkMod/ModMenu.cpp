@@ -453,7 +453,13 @@ CModMenu::MoveList CModMenu::SearchForNewMods(const idStr& extension)
 
 		if (modName.IsEmpty()) continue; // error?
 
-		// TODO: Clean modName string from any weird characters
+		// Clean modName string from any weird characters
+		for (int i = 0; i < modName.Length(); ++i)
+		{
+			if (idStr::CharIsAlpha(modName[i]) || idStr::CharIsNumeric(modName[i])) continue;
+
+			modName[i] = '_'; // replace non-ASCII keys with underscores
+		}
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
