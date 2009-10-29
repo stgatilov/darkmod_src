@@ -1,5 +1,19 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+// Copyright (C) 2004 Id Software, Inc.
+//
+
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Id$", init_version);
+
 #include "ModMenu.h"
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"

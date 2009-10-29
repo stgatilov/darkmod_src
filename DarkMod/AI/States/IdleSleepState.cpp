@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 3222 $
- * $Date: 2009-03-04 14:37:27 +0100 (Mi, 04 Mär 2009) $
- * $Author: angua $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: IdleSleepState.cpp 3222 2009-03-04 13:37:27Z angua $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "IdleSleepState.h"
 #include "IdleState.h"

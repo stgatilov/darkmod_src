@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 3086 $
- * $Date: 2008-12-14 08:30:30 +0100 (So, 14 Dez 2008) $
- * $Author: angua $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PathCycleAnimTask.cpp 3086 2008-12-14 07:30:30Z angua $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
 #include "PathCycleAnimTask.h"
