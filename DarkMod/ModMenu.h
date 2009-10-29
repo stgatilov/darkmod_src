@@ -17,6 +17,16 @@ class CModMenu
 		idStr desc;
 		idStr author;
 		idStr image;
+
+		// Required TDM version
+		idStr requiredVersionStr;
+		int requiredMajor;
+		int requiredMinor;
+
+		ModInfo() :
+			requiredMajor(TDM_VERSION_MAJOR),
+			requiredMinor(TDM_VERSION_MINOR)
+		{}
 	};
 
 	// A list of path => path associations for moving files around

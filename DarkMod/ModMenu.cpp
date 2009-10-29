@@ -224,7 +224,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 		// load up page text
 		idStr page = va("page%d_body", _briefingPage);
 
-		gameLocal.Warning("DisplayBriefingPage: current page is %d", _briefingPage);
+		gameLocal.Printf("DisplayBriefingPage: current page is %d", _briefingPage);
 
 		briefing = xd->m_data.GetString(page);
 
@@ -361,9 +361,10 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 
 	if (!modFileContent.IsEmpty())
 	{
-		int titlePos = modFileContent.Find("Title:");
-		int descPos = modFileContent.Find("Description:");
-		int authorPos = modFileContent.Find("Author:");
+		int titlePos = modFileContent.Find("Title:", false);
+		int descPos = modFileContent.Find("Description:", false);
+		int authorPos = modFileContent.Find("Author:", false);
+		int versionPos = modFileContent.Find("Required TDM Version:", false);
 
 		int len = modFileContent.Length();
 
@@ -387,11 +388,29 @@ CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 
 		if (authorPos >= 0)
 		{
-			info.author = idStr(modFileContent, authorPos, len);
+			info.author = idStr(modFileContent, authorPos, (versionPos != -1) ? versionPos : len);
 			info.author.StripLeadingOnce("Author:");
 			info.author.StripLeading(" ");
 			info.author.StripLeading("\t");
 			info.author.StripTrailingWhitespace();
+		}
+
+		if (versionPos >= 0)
+		{
+			info.requiredVersionStr = idStr(modFileContent, versionPos, len);
+			info.requiredVersionStr.StripLeadingOnce("Required TDM Version:");
+			info.requiredVersionStr.StripLeading(" ");
+			info.requiredVersionStr.StripLeading("\t");
+			info.requiredVersionStr.StripTrailingWhitespace();
+
+			// Parse version
+			int dotPos = info.requiredVersionStr.Find('.');
+
+			if (dotPos != -1)
+			{
+				info.requiredMajor = atoi(info.requiredVersionStr.Mid(0, dotPos));
+				info.requiredMinor = atoi(info.requiredVersionStr.Mid(dotPos + 1, info.requiredVersionStr.Length() - dotPos));
+			}
 		}
 
 		// Check for mod image
