@@ -259,26 +259,9 @@ bool CShop::GetNothingForSale()
 /**
  * Combine the purchased list and the starting list
  */
-ShopItemList CShop::GetPlayerItems()
+ShopItemList CShop::GetPlayerStartingEquipment()
 {
-	// Copy-construct the list using the list of purchased items
-	ShopItemList playerItems(itemsPurchased);
-
-	for (int i = 0; i < startingItems.Num(); i++)
-	{
-		CShopItemPtr item = FindPurchasedByID(startingItems[i]->GetID());
-
-		if (item == NULL)
-		{
-			playerItems.Append(startingItems[i]);
-		} 
-		else
-		{
-			item->ChangeCount(startingItems[i]->GetCount());
-		}
-	}
-
-	return playerItems;
+	return startingItems;
 }
 
 /**
@@ -342,7 +325,26 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 	}
 	else if (idStr::Icmp(menuCommand, "shopDone") == 0)
 	{
-		// nothing to do here
+		// The player is done shopping, now set up the starting equipment
+		CopyPurchasedIntoStartingEquipment();
+	}
+}
+
+void CShop::CopyPurchasedIntoStartingEquipment()
+{
+	for (int i = 0; i < itemsPurchased.Num(); i++)
+	{
+		CShopItemPtr item = FindStartingItemByID(itemsPurchased[i]->GetID());
+
+		if (item == NULL)
+		{
+			startingItems.Append(itemsPurchased[i]);
+		} 
+		else
+		{
+			// Starting item exists, just change the count
+			item->ChangeCount(itemsPurchased[i]->GetCount());
+		}
 	}
 }
 
@@ -666,6 +668,11 @@ void CShop::SellItem(int index)
 CShopItemPtr CShop::FindPurchasedByID(const char *id)
 {
 	return FindByID(itemsPurchased, id);
+}
+
+CShopItemPtr CShop::FindStartingItemByID(const char *id)
+{
+	return FindByID(startingItems, id);
 }
 
 CShopItemPtr CShop::FindForSaleByID(const char *id) {

@@ -139,7 +139,7 @@ public:
 	const ShopItemList& GetPurchasedItems();
 
 	// returns the combination of For Sale and Starting items
-	ShopItemList GetPlayerItems();
+	ShopItemList GetPlayerStartingEquipment();
 
 	// adjust the lists
 	void SellItem(int index);
@@ -152,6 +152,7 @@ public:
 	// find items based on the id
 	CShopItemPtr FindPurchasedByID(const char *id);
 	CShopItemPtr FindForSaleByID(const char *id);
+	CShopItemPtr FindStartingItemByID(const char *id);
 
 	CShopItemPtr FindByID(ShopItemList& items, const char *id);
 
@@ -170,6 +171,9 @@ private:
 
 	// Load all shop and starting items from the given spawnargs
 	void LoadFromDict(const idDict& dict);
+
+	// Copies purchasedItems into startingItems
+	void CopyPurchasedIntoStartingEquipment();
 };
 
 
