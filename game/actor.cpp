@@ -2485,7 +2485,8 @@ EMeleeType idActor::GetBestParry( void )
 
 	if( m_MeleeStatus.m_bCanParryAll )
 		ParryType = MELEETYPE_BLOCKALL;
-	else if( (AttEnemy = ClosestAttackingEnemy( true )) != NULL )
+	else if( (AttEnemy = ClosestAttackingEnemy( true )) != NULL
+			&& AttEnemy->m_MeleeStatus.m_ActionType != MELEETYPE_UNBLOCKABLE )
 	{
 		ParryType = AttEnemy->m_MeleeStatus.m_ActionType;
 	}
