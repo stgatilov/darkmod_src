@@ -13,23 +13,14 @@
 #include "Grabber.h"
 
 /**
- * CInventoryItem is a metaclass for storing entities in the inventory.
- * There are several properties for various items which are not directly
- * stored in the item itself, because they are independent from the
- * entity and only related to the inventory.
- *
- * Playercoordinates are:
- * x = forward/backward
- * y = left/right
- * z = up/down
- */
-
-/**
  * CDarkModPlayer is a class that maintains player data. The purpose of this
  * this class is mainly to be indenependent from idPlayer and seperate the code
  * from id's code.
  * Player data will store all additional data that is required like inventory,
  * special player states, currently highlighted entity and others.
+ *
+ * greebo: TODO: Move frob stuff to idPlayer, this class is a global and it should not hold
+ * this kind of stuff, this basically rules out any future multiplayer efforts.
  */
 class CDarkModPlayer {
 public:
@@ -83,6 +74,8 @@ public:
 	/**
 	 * Each light entity must register here itself. This is used
 	 * to calculate the value for the lightgem.
+	 *
+	 * greebo: TODO: Move this to the Darkmod LAS.
 	 */
 	idList< idEntityPtr<idLight> >	m_LightList;
 };
