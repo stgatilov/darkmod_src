@@ -2109,25 +2109,32 @@ void idEntity::Hide( void )
 
 		// If we are hiding a currently frobbed entity,
 		// set the frob pointers to NULL to avoid stale pointers
-		CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+		idPlayer* player = gameLocal.GetLocalPlayer();
 	
-		if( pDM && pDM->m_FrobEntity.GetEntity() == this )
-			pDM->m_FrobEntity = NULL;
-		if( pDM && pDM->m_FrobEntityPrevious.GetEntity() == this )
-			pDM->m_FrobEntityPrevious = NULL;
-
-		// hide our bind-children:
-		idEntity *ent;
-		idEntity *next;
-
-		for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+		if (player != NULL)
 		{
-			next = ent->GetNextTeamEntity();
-			if ( ent->GetBindMaster() == this ) 
+			if (player->m_FrobEntity.GetEntity() == this)
+			{
+				player->m_FrobEntity = NULL;
+			}
+
+			if (player->m_FrobEntityPrevious.GetEntity() == this)
+			{
+				player->m_FrobEntityPrevious = NULL;
+			}
+		}
+
+		// hide our bind-children
+		for (idEntity* ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity()) 
+		{
+			if (ent->GetBindMaster() == this) 
 			{
 				ent->Hide();
-				if ( ent->IsType( idLight::Type ) ) 
-					static_cast<idLight *>( ent )->Off();
+
+				if (ent->IsType(idLight::Type))
+				{
+					static_cast<idLight*>(ent)->Off();
+				}
 			}
 		}
 	}
@@ -7413,10 +7420,8 @@ void idEntity::LoadTDMSettings(void)
 
 void idEntity::UpdateFrob(void)
 {
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-
 	// hidden objects are skipped
-	if (pDM == NULL || IsHidden() ) 
+	if (IsHidden()) 
 	{
 		return;
 	}
@@ -7428,6 +7433,9 @@ void idEntity::UpdateFrob(void)
 		return;
 	}
 
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL) return;
+
 	if( !m_bFrobbed )	
 	{
 		// Check if we just stopped being highlighted
@@ -7436,21 +7444,21 @@ void idEntity::UpdateFrob(void)
 		// a new entity that is now frobbed.
 
 		// If this is true, this entity is updating before the newly frobbed entity
-		if(pDM->m_FrobEntity.GetEntity() == this)
+		if(player->m_FrobEntity.GetEntity() == this)
 		{
-			pDM->m_FrobEntity = NULL;
-			pDM->m_FrobEntityPrevious = NULL;
+			player->m_FrobEntity = NULL;
+			player->m_FrobEntityPrevious = NULL;
 
 			// stop highlight, tell peers
 			FrobHighlight(false);
 		}
 		// Otherwise, we are updating AFTER the newly frobbed entity
 		// and should not set m_FrobEntity to NULL.
-		else if( pDM->m_FrobEntityPrevious.GetEntity() == this )
+		else if( player->m_FrobEntityPrevious.GetEntity() == this )
 		{
 			// if this one updates last, set the previous frob entity to 
 			// the newly frobbed ent for the next frame.
-			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity.GetEntity();
+			player->m_FrobEntityPrevious = player->m_FrobEntity.GetEntity();
 
 			// stop highlight, tell peers
 			FrobHighlight(false);
@@ -7464,16 +7472,16 @@ void idEntity::UpdateFrob(void)
 	m_bFrobbed = false;
 
 	// Check if we are newly frobbed this frame
-	if( pDM->m_FrobEntity.GetEntity() != this )
+	if( player->m_FrobEntity.GetEntity() != this )
 	{
-		pDM->m_FrobEntity = this;
+		player->m_FrobEntity = this;
 		FrobHighlight(true);
 
 		// again there's a trick here for syncronicity
 		// we don't want to overwrite it if the old frob entity has not updated yet,
 		// so if it's NULL, we know that old frob ent already updated.
-		if( pDM->m_FrobEntityPrevious.GetEntity() == NULL )
-			pDM->m_FrobEntityPrevious = this;
+		if( player->m_FrobEntityPrevious.GetEntity() == NULL )
+			player->m_FrobEntityPrevious = this;
 	}
 }
 

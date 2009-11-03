@@ -466,6 +466,15 @@ idPlayer::idPlayer() :
 	selfSmooth				= false;
 
 	m_FrobPressedTarget		= NULL;
+
+	m_FrobEntity = NULL;
+	m_FrobJoint = INVALID_JOINT;
+	m_FrobID = 0;
+	m_FrobEntityPrevious = NULL;
+	// greebo: Initialise the frob trace contact material to avoid 
+	// crashing during map save when nothing has been frobbed yet
+	memset(&m_FrobTrace, 0, sizeof(trace_t));
+
 	m_bGrabberActive		= false;
 	m_bDraggingBody			= false;
 	m_bShoulderingBody		= false;
@@ -1341,6 +1350,12 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	m_MouseGesture.Save( savefile );
 	m_FrobPressedTarget.Save( savefile );
 
+	m_FrobEntity.Save(savefile);
+	savefile->WriteJoint(m_FrobJoint);
+	savefile->WriteInt(m_FrobID);
+	savefile->WriteTrace(m_FrobTrace);
+	m_FrobEntityPrevious.Save(savefile);
+
 	savefile->WriteInt( buttonMask );
 	savefile->WriteInt( oldButtons );
 	savefile->WriteInt( oldFlags );
@@ -1634,8 +1649,13 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	spawnAnglesSet = true;
 
 	m_MouseGesture.Restore( savefile );
-	
 	m_FrobPressedTarget.Restore( savefile );
+
+	m_FrobEntity.Restore(savefile);
+	savefile->ReadJoint(m_FrobJoint);
+	savefile->ReadInt(m_FrobID);
+	savefile->ReadTrace(m_FrobTrace);
+	m_FrobEntityPrevious.Restore(savefile);
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -5550,7 +5570,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			idEntity *useEnt = grabber->GetSelected();
 			if(useEnt == NULL)
 			{
-				idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+				idEntity *frob = m_FrobEntity.GetEntity();
 				if(frob != NULL)
 					grabber->PutInHands(frob, frob->GetPhysics()->GetAxis() );
 			}
@@ -7080,7 +7100,7 @@ void idPlayer::Think( void )
 	FrobCheck();
 
 	// Check if we just hit the attack button
-	idEntity* frobbedEnt = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+	idEntity* frobbedEnt = m_FrobEntity.GetEntity();
 
 	if (frobbedEnt != NULL && usercmd.buttons & BUTTON_ATTACK && !(oldButtons & BUTTON_ATTACK))
 	{
@@ -9707,7 +9727,7 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 	idEntity* ent = item->GetItemEntity();
 	if (ent == NULL) return false;
 
-	idEntity* highlightedEntity = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
 	
@@ -10500,7 +10520,7 @@ void idPlayer::FrobCheck()
 
 			// Mark as frobbed for this frame
 			ent->SetFrobbed(true);
-			g_Global.m_DarkModPlayer->m_FrobTrace = trace;
+			m_FrobTrace = trace;
 
 			// we have found our frobbed entity, so exit
 			return;
@@ -10566,7 +10586,7 @@ void idPlayer::FrobCheck()
 
 		// Mark the entity as frobbed this frame
 		bestEnt->SetFrobbed(true);
-		g_Global.m_DarkModPlayer->m_FrobTrace = trace;
+		m_FrobTrace = trace;
 	}
 }
 
@@ -10932,14 +10952,10 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		return;
 	}
 
-
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-	assert(pDM != NULL); // must not be NULL
-
 	// greebo: Check the frob entity, this might be the same as the argument
 	// Retrieve the entity before trying to add it to the inventory, the pointer
 	// might be cleared after calling AddToInventory().
-	idEntity* highlightedEntity = pDM->m_FrobEntity.GetEntity();
+	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
 
 	if (impulseState == EPressed)
 	{
@@ -10991,7 +11007,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		if (addedItem != NULL && highlightedEntity == target) 
 		{
 			// Item has been added to the inventory, clear the entity pointer
-			pDM->m_FrobEntity = NULL;
+			m_FrobEntity = NULL;
 		}
 
 		// Grab it if it's a grabable class
@@ -11031,10 +11047,8 @@ void idPlayer::PerformFrob()
 		return;
 	}
 
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-
 	// Get the currently frobbed entity
-	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
 	PerformFrob(EPressed, frob);
@@ -11046,8 +11060,7 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	if ( GetImmobilization() & EIM_FROB ) return;
 
 	// Get the currently frobbed entity
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
 	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )
@@ -11063,8 +11076,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	if ( GetImmobilization() & EIM_FROB ) return;
 
 	// Get the currently frobbed entity
-	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
-	idEntity* frob = pDM->m_FrobEntity.GetEntity();
+	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
 	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )

@@ -537,13 +537,13 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// If an entity was not explictly passed in, use the frob entity
     if ( !newEnt ) 
 	{
-		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
+		FrobEnt = player->m_FrobEntity.GetEntity();
 		if( !FrobEnt )
 			return;
 
 		newEnt = FrobEnt;
 
-		trace = g_Global.m_DarkModPlayer->m_FrobTrace;
+		trace = player->m_FrobTrace;
 		
 		// If the ent was not hit directly and is an AF, we must fill in the joint and body ID
 		if( trace.c.entityNum != FrobEnt->entityNumber && FrobEnt->IsType(idAFEntity_Base::Type) )

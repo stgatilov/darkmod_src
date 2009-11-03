@@ -1035,14 +1035,22 @@ void idClass::Event_Remove( void )
 {
 	// If we are removing a currently frobbed entity,
 	// set the frob pointers to NULL to avoid stale pointers
-	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	
+	if (player != NULL)
+	{
+		if (player->m_FrobEntity.GetEntity() == this)
+		{
+			player->m_FrobEntity = NULL;
+		}
 
-	if( pDM && pDM->m_FrobEntity.GetEntity() == this )
-		pDM->m_FrobEntity = NULL;
-	if( pDM && pDM->m_FrobEntityPrevious.GetEntity() == this )
-		pDM->m_FrobEntityPrevious = NULL;
-
-	CGrabber *grabber = gameLocal.m_Grabber;
+		if (player->m_FrobEntityPrevious.GetEntity() == this)
+		{
+			player->m_FrobEntityPrevious = NULL;
+		}
+	}
+	
+	CGrabber* grabber = gameLocal.m_Grabber;
 	if (grabber)
 	{
 		// tels: If we remove a currently grabbed entity,

@@ -17,24 +17,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 CDarkModPlayer::CDarkModPlayer()
 {
-	m_FrobEntity = NULL;
-	m_FrobJoint = INVALID_JOINT;
-	m_FrobID = 0;
-	m_FrobEntityPrevious = NULL;
 	m_LightgemValue = 0;
-
-	// greebo: Initialise the frob trace contact material to avoid 
-	// crashing during map save when nothing has been frobbed yet
-	memset(&m_FrobTrace, 0, sizeof(trace_t));
 }
 
 void CDarkModPlayer::Save( idSaveGame *savefile ) const
 {
-	m_FrobEntity.Save(savefile);
-	savefile->WriteJoint(m_FrobJoint);
-	savefile->WriteInt(m_FrobID);
-	savefile->WriteTrace(m_FrobTrace);
-	m_FrobEntityPrevious.Save(savefile);
 	savefile->WriteInt(m_LightgemValue);
 	savefile->WriteFloat(m_fColVal);
 
@@ -47,11 +34,6 @@ void CDarkModPlayer::Save( idSaveGame *savefile ) const
 
 void CDarkModPlayer::Restore( idRestoreGame *savefile )
 {
-	m_FrobEntity.Restore(savefile);
-	savefile->ReadJoint(m_FrobJoint);
-	savefile->ReadInt(m_FrobID);
-	savefile->ReadTrace(m_FrobTrace);
-	m_FrobEntityPrevious.Restore(savefile);
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
 	

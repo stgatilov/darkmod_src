@@ -325,12 +325,41 @@ public:
 	**/
 	SMouseGesture			m_MouseGesture;
 
+	// ---- Frob-related members (moved from CDarkmodPlayer to here) ----
+
 	/** 
 	* Ishtvan: The target that we initially started pressing frob on
 	* keep track of this for things that react to frob held, so we don't
 	* move from one target to another without first letting go of frob
 	**/
 	idEntityPtr<idEntity>	m_FrobPressedTarget;
+
+	/**
+	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
+	 * to the entity which is currently highlighted.
+	 */
+	idEntityPtr<idEntity>	m_FrobEntity;
+
+	/**
+	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed
+	* Set to INVALID and -1 if the frobbed entity is not an AF
+	**/
+	jointHandle_t	m_FrobJoint;
+	int				m_FrobID;
+
+	/**
+	* The trace that was done for frobbing
+	* Read off by idEntity::UpdateFrob when something has been newly frobbed
+	**/
+	trace_t			m_FrobTrace;
+
+	/**
+	* Frob entity in the previous frame
+	* We need this to detect when something was frobbed but now is not
+	* Cannot rely on m_FrobEntity for this, because it could change to a new
+	* entity before the old entity is updated.
+	**/
+	idEntityPtr<idEntity>	m_FrobEntityPrevious;
 
 	/**
 	* Set to true if the player is holding an item with the Grabber
