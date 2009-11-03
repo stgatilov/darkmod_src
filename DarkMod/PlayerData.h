@@ -30,16 +30,6 @@ public:
 	void Restore( idRestoreGame *savefile );
 
 public:
-	/**
-	 * LightgemValue determines the level of visibillity of the player.
-	 * This value is used to light up the lightgem and is defined as
-	 * 1 <= N <= 32
-	 */
-	int							m_LightgemValue;
-	/**
-	 * Contains the last lightgem value. This is stored for interleaving.
-	 */
-	float						m_fColVal;
 };
 
 #endif

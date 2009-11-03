@@ -34,7 +34,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/MultiStateMover.h"
 #include "../../DarkMod/MeleeWeapon.h"
-#include "../../DarkMod/PlayerData.h"
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/EscapePointManager.h"
 #include "../../DarkMod/PositionWithinRangeFinder.h"
@@ -8123,7 +8122,11 @@ void idAI::AlertAI(const char *type, float amount)
 			{
 				// greebo: Let the alert grace count increase by 12.5% of the current lightgem value
 				// The maximum increase is therefore 32/8 = 4 based on DARKMOD_LG_MAX at the time of writing.
-				m_AlertGraceCount += static_cast<int>(idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f));
+				if (actor->IsType(idPlayer::Type))
+				{
+					idPlayer* player = static_cast<idPlayer*>(actor);
+					m_AlertGraceCount += static_cast<int>(idMath::Rint(player->GetCurrentLightgemValue() * 0.125f));
+				}
 			}
 			return;
 		}
@@ -8514,8 +8517,10 @@ float idAI::GetVisibility( idEntity *ent ) const
 
 float idAI::GetCalibratedLightgemValue() const
 {
-	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL) return 0.0f;
 
+	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 
 	float term0 = -0.003f;
 	float term1 = 0.03f * lgem;

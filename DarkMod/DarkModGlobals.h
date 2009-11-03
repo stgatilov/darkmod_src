@@ -249,7 +249,6 @@ public:
 	const char		*m_Filename;
 	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;
-	CDarkModPlayer	*m_DarkModPlayer;
 
 	idList<CLightMaterial *>		m_LightMaterial;
 	idList<CImage *>				m_Image;

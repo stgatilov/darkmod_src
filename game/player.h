@@ -924,11 +924,17 @@ public:
 	 * @returns: TRUE if an item was put back, FALSE if the grabber hands are empty.
 	 */
 	bool AddGrabberEntityToInventory();
+
+	// Returns the current lightgem value
+	int GetCurrentLightgemValue() { return m_LightgemValue; }
+
+	// Runs the (strong) lightgem calculation, returns the resulting value
+	int		ProcessLightgem(bool processing);
 	
 	/**
 	 * greebo: Returns the lightgem modifier value according to the currently selected inventory items
-	 *         and other factors (like crouching). Returns a value between 0 and DARKMOD_LG_MAX. 
-	 *         This value is added to the calculated lightgem value.
+	 * and other factors (like crouching). Returns a value between 0 and DARKMOD_LG_MAX. 
+	 * This value is added to the calculated lightgem value.
 	 */
 	int GetLightgemModifier(int curLightgemValue);
 
@@ -1095,6 +1101,20 @@ private:
 	 * to calculate the value for the weak lightgem.
 	 */
 	idList<idLight*>		m_LightList;
+
+	/**
+	 * LightgemValue determines the level of visibility of the player.
+	 * This value is used to light up the lightgem and is defined as
+	 * DARKMOD_LG_MIN (1) <= N <= DARKMOG_LG_MAX (32)
+	 */
+	int							m_LightgemValue;
+	/**
+	 * Contains the last lightgem value. This is stored for interleaving.
+	 */
+	float						m_fColVal;
+
+	// An integer keeping track of the lightgem interleaving
+	int							m_LightgemInterleave;
 
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]

@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 #include "ai/aas_local.h"
 #include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/PlayerData.h"
+#include "../DarkMod/Grabber.h"
 #include "../DarkMod/Intersection.h"
 #include "../DarkMod/Relations.h"
 #include "../DarkMod/DarkmodAASHidingSpotFinder.h"
@@ -486,6 +486,9 @@ idPlayer::idPlayer() :
 	m_MapCursor				= CInventoryCursorPtr();
 
 	m_LightgemModifier		= 0;
+	m_LightgemValue			= 0;
+	m_fColVal				= 0;
+	m_LightgemInterleave	= 0;
 }
 
 /*
@@ -1621,6 +1624,10 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject(m_LightList[i]);
 	}
 
+	savefile->WriteInt(m_LightgemValue);
+	savefile->WriteFloat(m_fColVal);
+	savefile->WriteInt(m_LightgemInterleave);
+
 	if(hud)
 	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -1976,6 +1983,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadObject(reinterpret_cast<idClass*&>(light));
 		m_LightList[i] = light;
 	}
+
+	savefile->ReadInt(m_LightgemValue);
+	savefile->ReadFloat(m_fColVal);
+	savefile->ReadInt(m_LightgemInterleave);
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -2605,8 +2616,8 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		CalculateWeakLightgem();
 	}
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
-	hud->SetStateInt("lightgem_val", g_Global.m_DarkModPlayer->m_LightgemValue);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", m_LightgemValue, hud);
+	hud->SetStateInt("lightgem_val", m_LightgemValue);
 }
 
 /*
@@ -9470,12 +9481,48 @@ bool idPlayer::NeedsIcon( void ) {
 	return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
 }
 
+int idPlayer::ProcessLightgem(bool processing)
+{
+	float value = m_fColVal;
+
+	int n = cv_lg_interleave.GetInteger();
+
+	// Skip every nth frame according to the value set in 
+	if (processing && !cv_lg_weak.GetBool() && n > 0)
+	{
+		m_LightgemInterleave++;
+
+		if (m_LightgemInterleave >= n)
+		{
+			m_LightgemInterleave = 0;
+
+			value = gameLocal.CalcLightgem(this);
+		}
+	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", value);
+
+	value += cv_lg_adjust.GetFloat();
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
+
+	m_fColVal = value;
+	m_LightgemValue = int(DARKMOD_LG_MAX * value);
+
+	// Give the inventory items a chance to adjust the lightgem (fire arrow, crouching)
+	m_LightgemValue = GetLightgemModifier(m_LightgemValue);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("After player adjustment %d\r", m_LightgemValue);
+
+	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
+
+	return m_LightgemValue;
+}
+
 void idPlayer::CalculateWeakLightgem()
 {
 	double fx, fy;
 	idLight *helper;
 	trace_t trace;
-	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 	int h = -1;
 	bool bMinOneLight = false, bStump;
 
@@ -9603,16 +9650,16 @@ void idPlayer::CalculateWeakLightgem()
 		}
 	}
 
-	pDM->m_LightgemValue = static_cast<int>(DARKMOD_LG_MAX * fLightgemVal);
+	m_LightgemValue = static_cast<int>(DARKMOD_LG_MAX * fLightgemVal);
 
 	// Clamp the result to [DARKMOD_LG_MIN .. DARKMOD_LG_MAX]
-	pDM->m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, pDM->m_LightgemValue);
+	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
 
 	// if the player is in a lit area and the lightgem would be totally dark we set it to at least
 	// one step higher.
-	if (bMinOneLight && pDM->m_LightgemValue <= DARKMOD_LG_MIN)
+	if (bMinOneLight && m_LightgemValue <= DARKMOD_LG_MIN)
 	{
-		pDM->m_LightgemValue++;
+		m_LightgemValue++;
 	}
 }
 

@@ -23,7 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/decltdm_matinfo.h"
 #include "../DarkMod/declxdata.h"
 #include "../DarkMod/Misc.h"
-#include "../DarkMod/PlayerData.h"
+#include "../DarkMod/Grabber.h"
 #include "../DarkMod/Relations.h"
 #include "../DarkMod/sndProp.h"
 #include "ai/aas_local.h"
@@ -888,9 +888,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// write out pending events
 	idEvent::Save( &savegame );
-
-	// Save the DarkMod player object, this contains a lot of other TDM-related classes
-	g_Global.m_DarkModPlayer->Save(&savegame);
 
 	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
@@ -1943,9 +1940,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Read out pending events
 	idEvent::Restore( &savegame );
-
-	// Restore the DarkMod player object, this contains a lot of other TDM-related classes
-	g_Global.m_DarkModPlayer->Restore(&savegame);
 
 	savegame.RestoreObjects();
 
@@ -3069,11 +3063,13 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			skipCinematic = false;
 			break;
 		}
-		if(m_DoLightgem == true)
+
+		if (m_DoLightgem)
 		{
-			ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
+			player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
 			m_DoLightgem = false;
 		}
+
 	} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
 
 	ret.syncNextGameFrame = skipCinematic;
@@ -3195,55 +3191,13 @@ bool idGameLocal::Draw( int clientNum )
 	player->playerView.RenderPlayerView(player->hud);
 
 	// Make the rendershot appear on the hud
-	if(cv_lg_hud.GetInteger() != 0)
-		ProcessLightgem(player, true);
+	if (cv_lg_hud.GetInteger() != 0)
+	{
+		player->ProcessLightgem(true);
+	}
 
 	m_DoLightgem = true;
 	return true;
-}
-
-void idGameLocal::ProcessLightgem(idPlayer *player, bool bProcessing)
-{
-	int n;
-	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-	float fColVal = pDM->m_fColVal;
-
-	n = cv_lg_interleave.GetInteger();
-	if(cv_lg_weak.GetBool() == false)
-	{
-		if(bProcessing == true)
-		{
-			if(n > 0)
-			{
-				// Skip every nth frame according to the value set in 
-				m_Interleave++;
-				if(m_Interleave >= n)
-				{
-					m_Interleave = 0;
-					fColVal = CalcLightgem(player);
-				}
-			}
-		}
-	}
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fColVal);
-
-	fColVal += cv_lg_adjust.GetFloat();
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
-
-	pDM->m_fColVal = fColVal;
-	pDM->m_LightgemValue = int(DARKMOD_LG_MAX * fColVal);
-
-	// Give the player and inventory items a chance to adjust the lightgem (fire arrow, crouching)
-	pDM->m_LightgemValue = player->GetLightgemModifier(pDM->m_LightgemValue);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("After player adjustment %d\r", pDM->m_LightgemValue);
-
-	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
-		pDM->m_LightgemValue = DARKMOD_LG_MIN;
-	else
-	if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
-		pDM->m_LightgemValue = DARKMOD_LG_MAX;
 }
 
 /*

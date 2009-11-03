@@ -13,8 +13,8 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
+#include "Grabber.h"
 #include "DarkModGlobals.h"
-#include "../DarkMod/PlayerData.h"
 #include "MeleeWeapon.h"
 
 CLASS_DECLARATION( idMoveable, CMeleeWeapon )

@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
 #include "force_grab.h"
-#include "../DarkMod/PlayerData.h"
 #include "../DarkMod/Grabber.h"
 
 class CDarkModPlayer;

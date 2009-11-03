@@ -780,11 +780,6 @@ public:
 	void					SpawnLightgemEntity(void);
 
 	/**
-	 * ProcessLightgem will trigger the actual lightgem processing.
-	 */
-	void					ProcessLightgem(idPlayer *pPlayer, bool bProcessing);
-
-	/**
 	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
 	 * to determine the lightvalue for the lightgem.
 	 */

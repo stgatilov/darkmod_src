@@ -26,7 +26,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #endif
 
 #include "DarkModGlobals.h"
-#include "PlayerData.h"
 #include "MissionData.h"
 #include "Misc.h"
 #include "Profile.h"
@@ -177,8 +176,6 @@ void FileVersionDump(void)
 
 CGlobal::CGlobal()
 {
-	m_DarkModPlayer = new CDarkModPlayer;
-
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
 
