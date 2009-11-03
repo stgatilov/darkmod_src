@@ -149,7 +149,6 @@ MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
 MultiStateMoverPosition.cpp \
 overlaysys.cpp \
-PlayerData.cpp \
 PositionWithinRangeFinder.cpp \
 Profile.cpp \
 ProjectileResult.cpp \
