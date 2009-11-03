@@ -2587,8 +2587,10 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 	// Only use this if the old lightgem is selected. This may be usefull for
 	// slower machines.
-	if(cv_lg_weak.GetBool() == true)
-		AdjustLightgem();
+	if (cv_lg_weak.GetBool())
+	{
+		CalculateWeakLightgem();
+	}
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", g_Global.m_DarkModPlayer->m_LightgemValue);
@@ -9453,28 +9455,22 @@ bool idPlayer::NeedsIcon( void ) {
 	// local clients don't render their own icons... they're only info for other clients
 
 	return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
-
 }
 
-void idPlayer::AdjustLightgem(void)
+void idPlayer::CalculateWeakLightgem()
 {
-	idVec3 vDifference;
 	double fx, fy;
-	double fDistance;
-	double fLightgemVal;
-	idVec3 vLightColor;
-	idVec3 vPlayer;
-	idLight *light, *helper;
+	idLight *helper;
 	trace_t trace;
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-	int i, n, h = -1, l;
+	int h = -1;
 	bool bMinOneLight = false, bStump;
 
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("[%s]\r", __FUNCTION__);
 
 	NextFrame = true;
-	fLightgemVal = 0;
-	n = pDM->m_LightList.Num();
+	double fLightgemVal = 0;
+	int n = pDM->m_LightList.Num();
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%u entities found within lightradius\r", n);
 	idVec3 vStart(GetEyePosition());
@@ -9487,32 +9483,30 @@ void idPlayer::AdjustLightgem(void)
 	vPlayerSeg[LSG_ORIGIN] = vPlayerPos;
 	vPlayerSeg[LSG_DIRECTION] = vStart - vPlayerPos;
 
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < n; i++)
 	{
-		light = pDM->m_LightList[i].GetEntity();
-		// greebo: The lightlist doesn't contain other entity types than idLight, right?
-		/*if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
-			continue;*/
+		idLight* light = pDM->m_LightList[i].GetEntity();
+		idVec3 vLight = light->GetPhysics()->GetOrigin();
 
-		vPlayer = vPlayerPos;
-		idVec3 vLight(light->GetPhysics()->GetOrigin());
+		idVec3 vPlayer = vPlayerPos;
 		vPlayer.z = vLight.z;
-		vDifference = vPlayer - vLight;
-		fDistance = vDifference.Length();
+		
+		idVec3 vDifference = vPlayer - vLight;
+		double distance = vDifference.Length();
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
-			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, distance);
 
 		// Fast and cheap test to see if the player could be in the area of the light.
 		// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
-		if(fDistance > light->m_MaxLightRadius)
+		if (distance > light->m_MaxLightRadius)
 		{
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, distance);
 			if(h == -1)
 				h = i;
 			continue;
 		}
 
-		if(light->IsPointlight())
+		if (light->IsPointlight())
 		{
 			light->GetLightCone(vLightCone[ELL_ORIGIN], vLightCone[ELA_AXIS], vLightCone[ELA_CENTER]);
 			inter = IntersectLineEllipsoid(vPlayerSeg, vLightCone, vResult);
@@ -9542,10 +9536,10 @@ void idPlayer::AdjustLightgem(void)
 		// is touching the cone in exactly one point. The last case is not really helpfull in
 		// our case and doesn't make a difference for the gameplay so we simply ignore it and
 		// consider only cases where the player is at least partially inside the cone.
-		if(inter != INTERSECT_FULL)
+		if (inter != INTERSECT_FULL)
 			continue;
 
-		if(light->CastsShadow() == true)
+		if (light->CastsShadow())
 		{
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
@@ -9558,12 +9552,9 @@ void idPlayer::AdjustLightgem(void)
 			}
 		}
 
-		if(vResult[0].z < vResult[1].z)
-			l = 0;
-		else
-			l = 1;
+		int l = (vResult[0].z < vResult[1].z) ? 0 : 1;
 
-		if(vResult[l].z < vPlayerPos.z)
+		if (vResult[l].z < vPlayerPos.z)
 		{
 			fx = vPlayerPos.x;
 			fy = vPlayerPos.y;
@@ -9574,18 +9565,17 @@ void idPlayer::AdjustLightgem(void)
 			fy = vResult[l].y;
 		}
 
-		if(bMinOneLight == false)
-			bMinOneLight = true;
+		bMinOneLight = true;
 
-		fLightgemVal += light->GetDistanceColor(fDistance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+		fLightgemVal += light->GetDistanceColor(distance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
-			light->name.c_str(), fx, fy, fLightgemVal, fDistance, light->m_MaxLightRadius);
+			light->name.c_str(), fx, fy, fLightgemVal, distance, light->m_MaxLightRadius);
 
 		// Exchange the position of these lights, so that nearer lights are more
 		// at the beginning of the list. You may not use the arrayentry from this point on now.
 		// This sorting is not exactly good, but it is very cheap and we don't want to waste
 		// time to sort an everchanging array.
-		if(h != -1)
+		if (h != -1)
 		{
 			helper = pDM->m_LightList[h].GetEntity();
 			pDM->m_LightList[h] = light;
@@ -9594,11 +9584,7 @@ void idPlayer::AdjustLightgem(void)
 		}
 
 		// No need to do further calculations when we are fully lit. 0 < n < 1
-		if(fLightgemVal >= 1.0f)
-				continue;
-
-		// No need to do further calculations when we are fully lit. 0 < n < 1
-		if(fLightgemVal >= 1.0f)
+		if (fLightgemVal >= 1.0)
 		{
 			fLightgemVal = 1.0;
 			break;
@@ -9606,16 +9592,16 @@ void idPlayer::AdjustLightgem(void)
 	}
 
 	pDM->m_LightgemValue = static_cast<int>(DARKMOD_LG_MAX * fLightgemVal);
-	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
-		pDM->m_LightgemValue = DARKMOD_LG_MIN;
-	else
-	if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
-		pDM->m_LightgemValue = DARKMOD_LG_MAX;
 
-	// if the player is in a lit area and the lightgem would be totaly dark we set it to at least
+	// Clamp the result to [DARKMOD_LG_MIN .. DARKMOD_LG_MAX]
+	pDM->m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, pDM->m_LightgemValue);
+
+	// if the player is in a lit area and the lightgem would be totally dark we set it to at least
 	// one step higher.
-	if(bMinOneLight == true && pDM->m_LightgemValue <= DARKMOD_LG_MIN)
+	if (bMinOneLight && pDM->m_LightgemValue <= DARKMOD_LG_MIN)
+	{
 		pDM->m_LightgemValue++;
+	}
 }
 
 void idPlayer::UpdateMoveVolumes( void )
