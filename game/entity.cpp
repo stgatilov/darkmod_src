@@ -8886,7 +8886,8 @@ void idEntity::Event_CheckAbsence()
 
 bool idEntity::SpawnAbsenceMarker()
 {
-	const idDict* markerDef = gameLocal.FindEntityDefDict("atdm:absence_marker", false);
+	idStr absenceMarkerDefName = spawnArgs.GetString("def_absence_marker", "atdm:absence_marker");
+	const idDict* markerDef = gameLocal.FindEntityDefDict(absenceMarkerDefName, false);
 
 	if (markerDef == NULL)
 	{
