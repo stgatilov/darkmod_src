@@ -842,7 +842,11 @@ public:
 	 * CalculateWeakLightgem (formerly AdjustLightgem) will do the "weak" 
 	 * lightgem calculation, based on a list of lights, not using the rendershot.
 	 */
-	void CalculateWeakLightgem();
+	void	CalculateWeakLightgem();
+
+	// Register/unregister a light for the weak lightgem calculation
+	int		AddLight(idLight* lightToAdd);
+	int		RemoveLight(idLight* lightToRemove);
 
 	/**
 	 * GetHeadEntity will return the entity for the head of the playermodel
@@ -1085,6 +1089,12 @@ private:
 
 	// greebo: The sum of the values in the above list
 	int						m_LightgemModifier;
+
+	/**
+	 * Each light entity must register here itself. This is used
+	 * to calculate the value for the weak lightgem.
+	 */
+	idList<idLight*>		m_LightList;
 
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]

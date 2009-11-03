@@ -38,8 +38,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 ===============================================================================
 */
 
-bool NextFrame = true;
-
 // amount of health per dose from the health station
 const int HEALTH_PER_DOSE = 10;
 
@@ -1617,6 +1615,12 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(i->second);
 	}
 
+	savefile->WriteInt(m_LightList.Num());
+	for (int i = 0; i < m_LightList.Num(); i++)
+	{
+		savefile->WriteObject(m_LightList[i]);
+	}
+
 	if(hud)
 	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -1962,6 +1966,15 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(value);
 		// Store the pair into the map
 		m_LightgemModifierList[std::string(name.c_str())] = value;
+	}
+
+	savefile->ReadInt(num);
+	m_LightList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		idLight* light = NULL;
+		savefile->ReadObject(reinterpret_cast<idClass*&>(light));
+		m_LightList[i] = light;
 	}
 
 	// create combat collision hull for exact collision detection
@@ -9468,9 +9481,8 @@ void idPlayer::CalculateWeakLightgem()
 
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("[%s]\r", __FUNCTION__);
 
-	NextFrame = true;
 	double fLightgemVal = 0;
-	int n = pDM->m_LightList.Num();
+	int n = m_LightList.Num();
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%u entities found within lightradius\r", n);
 	idVec3 vStart(GetEyePosition());
@@ -9485,14 +9497,14 @@ void idPlayer::CalculateWeakLightgem()
 
 	for (int i = 0; i < n; i++)
 	{
-		idLight* light = pDM->m_LightList[i].GetEntity();
+		idLight* light = m_LightList[i];
 		idVec3 vLight = light->GetPhysics()->GetOrigin();
 
 		idVec3 vPlayer = vPlayerPos;
 		vPlayer.z = vLight.z;
 		
 		idVec3 vDifference = vPlayer - vLight;
-		double distance = vDifference.Length();
+		double distance = vDifference.LengthFast();
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
 			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, distance);
 
@@ -9577,9 +9589,9 @@ void idPlayer::CalculateWeakLightgem()
 		// time to sort an everchanging array.
 		if (h != -1)
 		{
-			helper = pDM->m_LightList[h].GetEntity();
-			pDM->m_LightList[h] = light;
-			pDM->m_LightList[i] = helper;
+			helper = m_LightList[h];
+			m_LightList[h] = light;
+			m_LightList[i] = helper;
 			h = -1;
 		}
 
@@ -9602,6 +9614,31 @@ void idPlayer::CalculateWeakLightgem()
 	{
 		pDM->m_LightgemValue++;
 	}
+}
+
+int idPlayer::AddLight(idLight *light)
+{
+	if (light != NULL)
+	{
+		m_LightList.Append(light);
+		DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu added to LightList\r", light, light->name.c_str(), m_LightList.Num());
+	}
+
+	return m_LightList.Num();
+}
+
+int idPlayer::RemoveLight(idLight *light)
+{
+	int found = m_LightList.FindIndex(light);
+
+	if (found != -1)
+	{
+		// Light found, remove it
+		m_LightList.RemoveIndex(found);
+		DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
+	}
+
+	return m_LightList.Num();
 }
 
 void idPlayer::UpdateMoveVolumes( void )

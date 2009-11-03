@@ -246,9 +246,11 @@ idLight::~idLight()
 	/*!
 	Darkmod player lighting
 	*/
-	g_Global.m_DarkModPlayer->RemoveLight(this);
-
-
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player != NULL)
+	{
+		player->RemoveLight(this);
+	}
 }
 
 /*
@@ -438,8 +440,6 @@ void idLight::Spawn( void )
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %08lX\r", pImage);
 	}
-
-	g_Global.m_DarkModPlayer->AddLight(this);
 
 	// Sophisiticated Zombie (DMH)
 	// Darkmod Light Awareness System: Also need to add light to LAS
@@ -1514,6 +1514,13 @@ void idLight::Event_GetLightLevel ( void )
 void idLight::Event_AddToLAS()
 {
 	LAS.addLight(this);
+
+	// Also register this light with the local player
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player != NULL)
+	{
+		player->AddLight(this);
+	}
 }
 
 /**	Returns 1 if the light is in PVS.
