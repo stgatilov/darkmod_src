@@ -710,7 +710,7 @@ public:
 	virtual bool UseBy(EImpulseState nState, const CInventoryItemPtr& item);
 
 	/**
-	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob
+	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::PerformFrobCheck
 	**/
 	virtual void SetFrobbed( bool val );
 

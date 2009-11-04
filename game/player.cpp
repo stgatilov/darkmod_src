@@ -10590,6 +10590,8 @@ void idPlayer::PerformFrobCheck()
 
 			// Mark as frobbed for this frame
 			ent->SetFrobbed(true);
+
+			// Store the trace for later reference
 			m_FrobTrace = trace;
 
 			// we have found our frobbed entity, so exit

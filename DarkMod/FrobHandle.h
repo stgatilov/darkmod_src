@@ -37,7 +37,7 @@ public:
 	/**
 	 * Functions that must be forwarded to the master.
 	 */
-	void					SetFrobbed(bool val);
+	virtual void			SetFrobbed(bool val);
 	bool					IsFrobbed();
 
 	// Action function, these are re-routed to the frobmaster entity

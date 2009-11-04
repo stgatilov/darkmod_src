@@ -62,21 +62,20 @@ void CFrobHandle::Event_Tap()
 
 void CFrobHandle::SetFrobbed(bool val)
 {
-	if (m_FrobLock == false)		// Prevent an infinte loop here.
-	{
-		m_FrobLock = true;
+	if (m_FrobLock) return; // Prevent an infinite loop here.
 
-		idEntity::SetFrobbed(val);
-
-		if (m_FrobMaster != NULL)
-		{
-			m_FrobMaster->SetFrobbed(val);
-		}
-
-		m_FrobLock = false;
-	}
+	m_FrobLock = true;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("CFrobHandle [%s] %08lX is frobbed\r", name.c_str(), this);
+
+	idEntity::SetFrobbed(val);
+
+	if (m_FrobMaster != NULL)
+	{
+		m_FrobMaster->SetFrobbed(val);
+	}
+
+	m_FrobLock = false;
 }
 
 bool CFrobHandle::IsFrobbed()
