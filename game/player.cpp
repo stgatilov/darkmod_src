@@ -7123,7 +7123,7 @@ void idPlayer::Think( void )
 	// this may use firstPersonView, or a thirdPeroson / camera view
 	CalculateRenderView();
 
-	FrobCheck();
+	PerformFrobCheck();
 
 	// Check if we just hit the attack button
 	idEntity* frobbedEnt = m_FrobEntity.GetEntity();
@@ -10516,7 +10516,7 @@ void idPlayer::Event_GetFov()
 	idThread::ReturnFloat(CalcFov(true));
 }
 
-void idPlayer::FrobCheck()
+void idPlayer::PerformFrobCheck()
 {
 	// greebo: Don't run this when dead
 	if (AI_DEAD) 
