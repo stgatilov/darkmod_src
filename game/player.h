@@ -354,14 +354,6 @@ public:
 	trace_t			m_FrobTrace;
 
 	/**
-	* Frob entity in the previous frame
-	* We need this to detect when something was frobbed but now is not
-	* Cannot rely on m_FrobEntity for this, because it could change to a new
-	* entity before the old entity is updated.
-	**/
-	idEntityPtr<idEntity>	m_FrobEntityPrevious;
-
-	/**
 	* Set to true if the player is holding an item with the Grabber
 	**/
 	bool					m_bGrabberActive;

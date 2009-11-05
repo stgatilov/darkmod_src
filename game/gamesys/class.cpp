@@ -1043,11 +1043,6 @@ void idClass::Event_Remove( void )
 		{
 			player->m_FrobEntity = NULL;
 		}
-
-		if (player->m_FrobEntityPrevious.GetEntity() == this)
-		{
-			player->m_FrobEntityPrevious = NULL;
-		}
 	}
 	
 	CGrabber* grabber = gameLocal.m_Grabber;

@@ -181,6 +181,7 @@ extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
 extern idCVar cv_frob_weapon_selects_weapon;
+extern idCVar cv_frob_debug_hud;
 
 extern idCVar cv_weapon_next_on_empty;
 
