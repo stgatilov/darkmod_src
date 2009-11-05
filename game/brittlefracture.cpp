@@ -545,7 +545,7 @@ void idBrittleFracture::Present()
 {
 	if( m_bFrobable )
 	{
-		UpdateFrob();
+		UpdateFrobState();
 		UpdateFrobDisplay();
 	}
 

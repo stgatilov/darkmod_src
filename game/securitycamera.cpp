@@ -556,7 +556,7 @@ void idSecurityCamera::Present( void )
 {
 	if( m_FrobDistance )
 	{
-		UpdateFrob();
+		UpdateFrobState();
 		UpdateFrobDisplay();
 	}
 

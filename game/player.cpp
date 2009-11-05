@@ -10674,11 +10674,12 @@ void idPlayer::PerformFrobCheck()
 		m_FrobEntity = bestEnt;
 		// and the trace for reference
 		m_FrobTrace = trace;
+
+		return; // done
 	}
-	else
-	{
-		m_FrobEntity = NULL;
-	}
+
+	// No frob entity
+	m_FrobEntity = NULL;
 }
 
 int idPlayer::GetImmobilization( const char *source )

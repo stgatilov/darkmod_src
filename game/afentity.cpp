@@ -77,7 +77,7 @@ void idMultiModelAF::Present( void )
 
 	if( m_bFrobable )
 	{
-		UpdateFrob();
+		UpdateFrobState();
 		UpdateFrobDisplay();
 	}
 

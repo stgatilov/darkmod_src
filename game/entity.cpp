@@ -36,6 +36,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 ===============================================================================
 */
 
+// TDM uses entity shaderparm 11 to control frob highlight state
+#define FROB_SHADERPARM 11
+
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", NULL );
 const idEventDef EV_FindTargets( "<findTargets>", NULL );
@@ -2435,7 +2438,7 @@ void idEntity::Present(void)
 
 	if( m_bFrobable )
 	{
-		UpdateFrob();
+		UpdateFrobState();
 		UpdateFrobDisplay();
 	}
 
@@ -7413,7 +7416,7 @@ void idEntity::LoadTDMSettings(void)
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
 
-void idEntity::UpdateFrob(void)
+void idEntity::UpdateFrobState()
 {
 	// hidden objects are skipped
 	if (IsHidden()) 
@@ -7424,7 +7427,7 @@ void idEntity::UpdateFrob(void)
 	// greebo: Allow the grabbed entity to stay highlighted
 	if (cv_dragged_item_highlight.GetBool() && gameLocal.m_Grabber->GetSelected() == this)
 	{
-		FrobHighlight(true);
+		SetFrobHighlightState(true);
 		return;
 	}
 
@@ -7435,7 +7438,7 @@ void idEntity::UpdateFrob(void)
 		if (m_bFrobHighlightState)
 		{
 			// stop highlight, tell peers
-			FrobHighlight(false);
+			SetFrobHighlightState(false);
 		}
 
 		// Done, we're not frobbed, frobhighlight state is cleared
@@ -7449,11 +7452,11 @@ void idEntity::UpdateFrob(void)
 	if (!m_bFrobHighlightState)
 	{
 		// Change the highlight state to TRUE
-		FrobHighlight(true);
+		SetFrobHighlightState(true);
 	}
 }
 
-void idEntity::FrobHighlight( bool bVal )
+void idEntity::SetFrobHighlightState( bool bVal )
 {
 	// Stop flooding the frob peers if we've already been updated this frame
 	if( m_FrobPeerFloodFrame == gameLocal.framenum)
@@ -7488,46 +7491,48 @@ void idEntity::FrobHighlight( bool bVal )
 		// don't call it on self, would get stuck in a loop
 		if (ent != NULL && ent != this)
 		{
-			ent->FrobHighlight( bVal );
+			ent->SetFrobHighlightState( bVal );
 		}
 	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s] is highlighted\r", name.c_str());
 }
 
-void idEntity::UpdateFrobDisplay( void )
+void idEntity::UpdateFrobDisplay()
 {
-	float param = renderEntity.shaderParms[ 11 ];
-	int TimePassed = 0;
-
 	// FIX: If we have just been set not frobable, go instantly to un-frobbed hilight state
-	if( !m_bFrobable )
+	if (!m_bFrobable)
 	{
-		param = 0.0f;
 		m_FrobChangeTime = gameLocal.time;
-		SetShaderParm(11, param);
-		goto Quit;
+		SetShaderParm(FROB_SHADERPARM, 0.0f);
+		return;
 	}
-	
-	if( (!param && !m_bFrobHighlightState) || ((param == 1.0) && m_bFrobHighlightState)  )
-		goto Quit;
 
-	TimePassed = ( gameLocal.time - m_FrobChangeTime );
+	float param = renderEntity.shaderParms[ FROB_SHADERPARM ];
+	
+	if ( (param == 0 && !m_bFrobHighlightState) || (param >= 1.0f && m_bFrobHighlightState) )
+	{
+		// Nothing to do
+		return;
+	}
+
+	float timePassed = static_cast<float>(gameLocal.time - m_FrobChangeTime);
 	
 	if( m_bFrobHighlightState )
-		param += (float) TimePassed / (float) cv_frob_fadetime.GetInteger();
+	{
+		param += timePassed / cv_frob_fadetime.GetFloat();
+	}
 	else
-		param -= (float) TimePassed / (float) cv_frob_fadetime.GetInteger();
+	{
+		param -= timePassed / cv_frob_fadetime.GetFloat();
+	}
 
 	m_FrobChangeTime = gameLocal.time;
 
 	// clamp between 0 and 1
-	param = idMath::ClampFloat(0.0, 1.0, param);
-	//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f\r", name.c_str(), param );
-	SetShaderParm(11, param);
+	param = idMath::ClampFloat(0.0, 1.0f, param);
 
-Quit:
-	return;
+	SetShaderParm(FROB_SHADERPARM, param);
 }
 
 void idEntity::FrobAction(bool frobMaster, bool isFrobPeerAction)
@@ -7655,7 +7660,7 @@ void idEntity::SetFrobable( bool bVal )
 	if( !bVal )
 	{
 		SetFrobbed(false);
-		FrobHighlight(false);
+		SetFrobHighlightState(false);
 		if( m_FrobBox )
 			m_FrobBox->SetContents(0);
 	}
@@ -7665,7 +7670,7 @@ void idEntity::SetFrobable( bool bVal )
 			m_FrobBox->SetContents(CONTENTS_FROBABLE);
 	}
 
-	UpdateFrob();
+	UpdateFrobState();
 	UpdateFrobDisplay();
 
 	// Make sure Present gets called when we make something frobable
