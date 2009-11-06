@@ -97,6 +97,8 @@ void DifficultyManager::Save(idSaveGame* savefile)
 
 void DifficultyManager::Restore(idRestoreGame* savefile)
 {
+	Clear(); // clear stuff before loading
+
 	savefile->ReadInt(_difficulty);
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{

@@ -176,6 +176,7 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 void DifficultySettings::Clear()
 {
 	_settings.clear();
+	_level = 0;
 }
 
 void DifficultySettings::SetLevel(int level)
@@ -308,10 +309,13 @@ void DifficultySettings::Save(idSaveGame* savefile)
 		savefile->WriteString(className); // key
 		i->second.Save(savefile); // value
 	}
+	savefile->WriteInt(_level);
 }
 
 void DifficultySettings::Restore(idRestoreGame* savefile)
 {
+	Clear(); // always clear before loading
+
 	int num;
 	savefile->ReadInt(num);
 	for (int i = 0; i < num; i++)
@@ -327,6 +331,7 @@ void DifficultySettings::Restore(idRestoreGame* savefile)
 		// Now restore the struct itself
 		inserted->second.Restore(savefile);
 	}
+	savefile->ReadInt(_level);
 }
 
 DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(const idDict& dict)
