@@ -1586,6 +1586,11 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		float chance(gameLocal.random.RandomFloat());
 		if (chance >= refSpawnargs.GetFloat("absence_noticeability", "1"))
 		{
+			float recheckInterval = SEC2MS(refSpawnargs.GetFloat("absence_noticeability_recheck_interval", "60"));
+			if (recheckInterval > 0.0f)
+			{
+				stimSource->PostEventMS( &EV_ResponseAllow, recheckInterval, ST_VISUAL, owner);
+			}
 			return;
 		}
 		if (refSpawnargs.GetFloat("absence_alert", "0") > 0)

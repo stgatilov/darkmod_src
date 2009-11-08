@@ -121,6 +121,9 @@ extern const idEventDef EV_CanSeeEntity;
 extern const idEventDef EV_Damage;
 extern const idEventDef EV_Heal;
 
+extern const idEventDef EV_ResponseAllow;
+
+
 // Think flags
 enum {
 	TH_ALL					= -1,
