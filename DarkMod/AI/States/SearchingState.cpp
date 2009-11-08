@@ -261,13 +261,13 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	memory.restartSearchForHidingSpots = false;
 	memory.noMoreHidingSpots = false;
 
-	// Stop moving
-	owner->StopMove(MOVE_STATUS_DONE);
-
 	// Clear all the ongoing tasks
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
+
+	// Stop moving
+	owner->StopMove(MOVE_STATUS_DONE);
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes
