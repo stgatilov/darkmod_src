@@ -967,6 +967,14 @@ void CModMenu::RestartGame()
 
 	idStr engineArgument(enginePath.string().c_str());
 
+	// greebo: Optional delay between restarts to fix sound system release issues in some Linux systems
+	idStr additionalDelay = "";
+	if (cv_tdm_fm_restart_delay.GetInteger() > 0)
+	{
+		additionalDelay = " --delay=";
+		additionalDelay += cv_tdm_fm_restart_delay.GetString();
+	}
+
 #ifdef _WINDOWS
 	// Create a tdmlauncher process, setting the working directory to the doom directory
 	STARTUPINFO siStartupInfo;
@@ -977,7 +985,7 @@ void CModMenu::RestartGame()
 
 	siStartupInfo.cb = sizeof(siStartupInfo);
 
-	CreateProcess(NULL, (LPSTR) (commandLine + " " + engineArgument).c_str(), NULL, NULL,  false, 0, NULL,
+	CreateProcess(NULL, (LPSTR) (commandLine + " " + engineArgument + additionalDelay).c_str(), NULL, NULL,  false, 0, NULL,
 		parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
 #else
 	// start tdmlauncher
