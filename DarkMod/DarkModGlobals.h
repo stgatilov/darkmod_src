@@ -86,6 +86,7 @@ typedef enum {
 	LC_COUNT
 } LC_LogClass;
 
+class idCmdArgs;
 class CDarkModPlayer;
 
 class CImage {
@@ -220,6 +221,11 @@ public:
 
 	// Returns the darkmod path
 	static std::string GetDarkmodPath();
+
+	// Converts a string to a logclass (LC_COUNT) if nothing found.
+	static LC_LogClass GetLogClassForString(const char* str);
+
+	static void ArgCompletion_LogClasses( const idCmdArgs &args, void(*callback)( const char *s ) );
 
 private:
 	void LoadINISettings(void *);

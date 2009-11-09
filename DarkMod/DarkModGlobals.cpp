@@ -117,9 +117,12 @@ static const char *LCString[LC_COUNT+1] = {
 	"STIMRESP",
 	"OBJECTIVES",
 	"DIFFICULTY",
+	"CONVERSATION",
 	"MAINMENU",
 	"(empty)"
 };
+
+
 
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
@@ -1249,4 +1252,26 @@ std::string CGlobal::GetDarkmodPath()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
 
 	return darkmodPath.file_string();
+}
+
+LC_LogClass CGlobal::GetLogClassForString(const char* str)
+{
+	for (int i = 0; i < LC_COUNT; ++i)
+	{
+		if (idStr::Icmp(str, LCString[i]) == 0)
+		{
+			return static_cast<LC_LogClass>(i);
+		}
+	}
+
+	return LC_COUNT;
+}
+
+// Auto-completion function for log-classes
+void CGlobal::ArgCompletion_LogClasses( const idCmdArgs &args, void(*callback)( const char *s ) )
+{
+	for (int i = 0; i < LC_COUNT; ++i)
+	{
+		callback( va( "%s %s", args.Argv( 0 ), LCString[i] ) );
+	}
 }

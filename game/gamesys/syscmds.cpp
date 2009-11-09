@@ -2752,6 +2752,56 @@ void Cmd_ShowLoot_f(const idCmdArgs& args)
 	gameLocal.Printf("Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods);
 }
 
+void Cmd_ActivateLog_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		gameLocal.Printf("Usage: tdm_activatelogclass <logclass>. Use the TAB to get auto-complete logclasses.\n" );
+		return;
+	}
+
+	LC_LogClass logclassIndex = CGlobal::GetLogClassForString(args.Argv(1));
+	
+	if (logclassIndex != LC_COUNT)
+	{
+		// Log class found
+		g_Global.m_ClassArray[logclassIndex] = true;
+
+		// activate all types too
+		g_Global.m_LogArray[LT_WARNING] = true;
+		g_Global.m_LogArray[LT_ERROR] = true;
+		g_Global.m_LogArray[LT_INFO] = true;
+		g_Global.m_LogArray[LT_DEBUG] = true;
+
+		gameLocal.Printf("Logclass %d activated.", static_cast<int>(logclassIndex));
+	}
+}
+
+void Cmd_DeactivateLog_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		gameLocal.Printf("Usage: tdm_deactivatelogclass <logclass>. Use the TAB to get auto-complete logclasses.\n" );
+		return;
+	}
+
+	LC_LogClass logclassIndex = CGlobal::GetLogClassForString(args.Argv(1));
+	
+	if (logclassIndex != LC_COUNT)
+	{
+		// Log class found
+		g_Global.m_ClassArray[logclassIndex] = false;
+
+		// activate all types too
+		g_Global.m_LogArray[LT_WARNING] = true;
+		g_Global.m_LogArray[LT_ERROR] = true;
+		g_Global.m_LogArray[LT_INFO] = true;
+		g_Global.m_LogArray[LT_DEBUG] = true;
+
+		gameLocal.Printf("Logclass %d deactivated.", static_cast<int>(logclassIndex));
+	}
+}
+
 #ifdef TIMING_BUILD
 void Cmd_ListTimers_f(const idCmdArgs& args) 
 {
@@ -2889,6 +2939,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_list_conversations",	Cmd_ListConversations_f,	CMD_FL_GAME,			"List all available conversations by name." );
 
 	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f,	CMD_FL_GAME|CMD_FL_CHEAT,			"Highlight all loot items in the map." );
+
+	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
+	cmdSystem->AddCommand( "tdm_deactivatelogclass",	Cmd_DeactivateLog_f,		CMD_FL_GAME,	"De-activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
