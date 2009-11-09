@@ -8,6 +8,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "D3ProcessChecker.h"
 #include "TraceLog.h"
@@ -36,7 +37,8 @@ const std::string GAME_BASE_NAME = "darkmod";
 	#define ENGINE_EXECUTABLE "doom.x86"
 #endif
 
-Launcher::Launcher(int argc, char* argv[])
+Launcher::Launcher(int argc, char* argv[]) :
+	_additionalDelay(0)
 {
 #ifdef WIN32
 	// path to this exe
@@ -109,16 +111,43 @@ Launcher::Launcher(int argc, char* argv[])
 
 			numIgnoreArgs++;
 		}
+
+		std::string delayStr = argv[i];
+		if (delayStr.find("--delay=") != std::string::npos)
+		{
+			TraceLog::WriteLine("Additional delay before starting D3: " + delayStr.substr(8) + " milliseconds.");
+
+			try
+			{
+				_additionalDelay = boost::lexical_cast<std::size_t>(delayStr.substr(8));
+			}
+			catch (boost::bad_lexical_cast&)
+			{
+				TraceLog::WriteLine("Invalid delay string, reset delay to 0: " + delayStr.substr(8));
+				_additionalDelay = 0;
+			}
+
+			// Avoid ridicolous delays longer than one minute
+			if (_additionalDelay > 60000)
+			{
+				TraceLog::WriteLine("Capping delay to 60 seconds.");
+				_additionalDelay = 60000;
+			}
+		}
 	}
 }
 
 void Launcher::InitArguments()
 {
-	_arguments = " +set fs_game_base " + GAME_BASE_NAME + " ";
-
 	if (!_currentFM.empty())
 	{
+		_arguments = " +set fs_game_base " + GAME_BASE_NAME + " ";
 		_arguments.append(" +set fs_game " + _currentFM + " ");
+	}
+	else
+	{
+		// No current FM, pass darkmod as fs_game instead of fs_game_base
+		_arguments = " +set fs_game " + GAME_BASE_NAME + " ";
 	}
 
 	// optional file that contains custom doom3 command line args
@@ -276,6 +305,12 @@ bool Launcher::Launch()
 		timeout -= 1000;
 	}
 
+	if (_additionalDelay > 0)
+	{
+		TraceLog::WriteLine("Sleeping for another " + boost::lexical_cast<std::string>(_additionalDelay) + " milliseconds.");
+		Sleep(static_cast<DWORD>(_additionalDelay));
+	}
+
 	// path to doom3.exe
 	fs::path doom3exe = _engineExecutable;
 	fs::path doom3dir = doom3exe;
@@ -316,6 +351,12 @@ bool Launcher::Launch()
 		TraceLog::WriteLine("Doom 3 is still running, waiting one second...");
 		Sleep(1000);
 		timeout -= 1000;
+	}
+
+	if (_additionalDelay > 0)
+	{
+		TraceLog::WriteLine("Sleeping for another " + boost::lexical_cast<std::string>(_additionalDelay) + " milliseconds.");
+		Sleep(static_cast<int>(_additionalDelay));
 	}
 
 	std::cout << "Trying to launch " << _engineExecutable.file_string() << " " << _arguments.c_str() << std::endl;

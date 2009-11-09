@@ -34,6 +34,8 @@ class Launcher
 	// The arguments to pass to the engine
 	std::string _arguments;
 
+	std::size_t _additionalDelay;
+
 public:
 	// Pass the command line to this class
 	Launcher(int argc, char* argv[]);
