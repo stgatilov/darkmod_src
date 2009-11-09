@@ -6711,11 +6711,10 @@ void idPlayer::UpdateHUD()
 	UpdateHUDMessages();
 	UpdateInventoryPickedUpMessages();
 
-	if (cv_show_gameplay_time.GetBool())
-	{
-		// Update the playing time in the HUD, if desired
-		hud->SetStateString("PlayingTime", gameLocal.m_GamePlayTimer.GetTime().c_str());
-	}
+	// Update the playing time in the HUD, if desired
+	hud->SetStateString("PlayingTime", cv_show_gameplay_time.GetBool() ? gameLocal.m_GamePlayTimer.GetTime().c_str() : "");
+
+	hud->SetStateBool("PlayerIsCrouched", AI_CROUCH ? true : false);
 }
 
 void idPlayer::UpdateInventoryHUD()
