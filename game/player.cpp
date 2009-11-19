@@ -10589,10 +10589,13 @@ void idPlayer::PerformFrobCheck()
 				ent = AFbod->GetRerouteEnt();
 			}
 		}
+
+		// If shouldering a body, we only allow "simple" frobs
+		bool frobAllowed = !m_bShoulderingBody || ent->m_bFrobSimple;
 	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
-		if( ent->m_bFrobable && lockedItemCheck && !isRopeMaster && !ent->IsHidden() && 
+		if( ent->m_bFrobable && frobAllowed && lockedItemCheck && !isRopeMaster && !ent->IsHidden() && 
 			traceDist < ent->m_FrobDistance && ent != gameLocal.m_Grabber->GetSelected())
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
@@ -10635,6 +10638,9 @@ void idPlayer::PerformFrobCheck()
 		if (ent == NULL) continue;
 
 		if (!ent->m_FrobDistance || ent->IsHidden() || !ent->m_bFrobable) continue;
+
+		// If shouldering a body, we only allow "simple" frobs
+		if (m_bShoulderingBody && !ent->m_bFrobSimple) continue;
 
 		// Get the frob distance from the entity candidate
 		float frobDist = ent->m_FrobDistance;

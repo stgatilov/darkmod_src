@@ -1511,6 +1511,8 @@ bool CGrabber::Equip( void )
 	// Specific case of shouldering a body
 	if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
 	{
+		StopDrag();
+
 		ShoulderBody( static_cast<idAFEntity_Base *>(ent) );
 
 		// greebo: Clear the drag entity, otherwise frobbing interferes
