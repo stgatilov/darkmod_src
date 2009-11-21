@@ -663,7 +663,8 @@ void CMissionData::UpdateObjectives( void )
 			continue;
 
 		// if parent objective is invalid or the timer hasn't fired or it's latched, don't do anything
-		if( m_Objectives[ pComp->m_Index[0] ].m_state == STATE_INVALID
+		// greebo: Beware the the m_Index is 1-based, not 0-based
+		if( m_Objectives[ pComp->m_Index[0] - 1 ].m_state == STATE_INVALID
 			|| (gameLocal.time - pComp->m_TimeStamp < pComp->m_ClockInterval)
 			|| pComp->m_bLatched )
 		{
