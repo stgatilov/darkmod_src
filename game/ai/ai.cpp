@@ -8252,6 +8252,13 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		grace_count = 0;
 	}
 
+	// Tels: When the AI_AlertIndex increased, drop all bound entities
+	// that have set "unbindonalertIndex" higher or equal:
+    if (m_prevAlertIndex < AI_AlertIndex)
+	{
+		RemoveBindsOnAlertIndex( AI_AlertIndex );
+	}
+
 	// greebo: Remember the highest alert index
 	if (AI_AlertIndex > m_maxAlertIndex)
 	{

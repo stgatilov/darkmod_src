@@ -1472,6 +1472,9 @@ public:			// Events should be public, so they can be used from other places as w
 	void					ResponseRemove(int Type);
 	void					ResponseEnable(int Type, int State);
 
+	// tels: remove all bound entities that have "unbindonalertlevel" higher or equal than alertlevel
+	void					RemoveBindsOnAlertIndex( const int alertIndex );
+
 	/**
 	* This triggers a stand-alone response (without an actual Stim) on this entity.
 	*

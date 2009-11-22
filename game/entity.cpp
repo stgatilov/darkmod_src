@@ -3356,12 +3356,41 @@ void idEntity::RemoveBinds( void ) {
 
 	for( ent = teamChain; ent != NULL; ent = next ) {
 		next = ent->teamChain;
+		// bound to us?
 		if ( ent->bindMaster == this ) {
 			ent->Unbind();
 
 			if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
 				ent->PostEventMS( &EV_Remove, 0 );
 			}
+			next = teamChain;
+		}
+	}
+}
+
+/*
+================
+idEntity::RemoveBindsOnAlert
+
+tels: Remove bound children when their "unbindonalertindex" is greater or equal to the given
+alert.
+================
+*/
+void idEntity::RemoveBindsOnAlertIndex( const int alertIndex ) {
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = teamChain; ent != NULL; ent = next )
+	{
+		next = ent->teamChain;
+		// bound to us?
+		if ( ent->bindMaster == this )
+		{
+			if( ent->spawnArgs.GetInt( "unbindonalertindex", "6" ) >= alertIndex)
+			{
+				ent->Unbind();
+			}
+
 			next = teamChain;
 		}
 	}
