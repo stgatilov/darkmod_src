@@ -470,6 +470,13 @@ idPhysics_Monster::Evaluate
 ================
 */
 bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
+
+	if (timeStepMSec == 0)
+	{
+		// angua: time step can be zero when the AI comes back from being dormant
+		return false;
+	}
+
 	idVec3 masterOrigin, oldOrigin;
 	idMat3 masterAxis;
 	float timeStep;

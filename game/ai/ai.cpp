@@ -2152,6 +2152,16 @@ bool idAI::ThinkingIsAllowed()
 			return true;
 		}
 
+		// angua: AI think every frame while sitting/laying down and getting up
+		// otherwise, the AI might end up in a different sleeping position
+		if (move.moveType == MOVETYPE_SIT_DOWN
+			|| move.moveType == MOVETYPE_LAY_DOWN
+			|| move.moveType == MOVETYPE_GET_UP
+			|| move.moveType == MOVETYPE_GET_UP_FROM_LYING)
+		{
+			return true;
+		}
+
 		// skips PVS check, AI will also do interleaved thinking when in player view.
 		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool();
 		if (skipPVScheck)
