@@ -3376,7 +3376,7 @@ tels: Remove bound children when their "unbindonalertindex" is greater or equal 
 alert.
 ================
 */
-void idEntity::RemoveBindsOnAlertIndex( const int alertIndex ) {
+void idEntity::RemoveBindsOnAlert( const int alertIndex ) {
 	idEntity *ent;
 	idEntity *next;
 
@@ -3392,6 +3392,28 @@ void idEntity::RemoveBindsOnAlertIndex( const int alertIndex ) {
 			}
 
 			next = teamChain;
+		}
+	}
+}
+
+/*
+================
+idEntity::DetachOnAlert
+
+tels: Remove attached entities when their "unbindonalertindex" is greater or equal to the given
+alert index. The attached entities will be removed from the attached list and are also unbound.
+================
+*/
+void idEntity::DetachOnAlert( const int alertIndex )
+{
+	idEntity *ent = NULL;
+
+	for ( int ind = 0; ind < m_Attachments.Num(); ind ++)
+	{
+		ent = m_Attachments[ind].ent.GetEntity();
+		if( ent && m_Attachments[ind].ent.IsValid() )
+		{
+		DetachInd(ind);	
 		}
 	}
 }
