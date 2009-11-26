@@ -34,6 +34,8 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
+	_retryCount = 0;
+
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
 	{
@@ -122,7 +124,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	}
 
 	int numUsers = frobDoor->GetUserManager().GetNumUsers();
-	
 	idActor* masterUser = frobDoor->GetUserManager().GetMasterUser();
 
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
@@ -133,57 +134,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
-
 	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
 	bounds[0][2] += 16;
-
 	float size = bounds[1][0];
-
-	if (cv_ai_door_show.GetBool()) 
-	{
-		gameRenderWorld->DebugArrow(colorYellow, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
-		gameRenderWorld->DebugArrow(colorGreen, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
-		idStr str;
-		switch (_doorHandlingState)
-		{
-			case EStateNone:
-				str = "EStateNone";
-				break;
-			case EStateMovingToFrontPos:
-				str = "EStateMovingToFrontPos";
-				break;
-			case EStateApproachingDoor:
-				str = "EStateMovingToFrontPos";
-				break;
-			case EStateWaitBeforeOpen:
-				str = "EStateWaitBeforeOpen";
-				break;
-			case EStateStartOpen:
-				str = "EStateStartOpen";
-				break;
-			case EStateOpeningDoor:
-				str = "EStateOpeningDoor";
-				break;
-			case EStateMovingToBackPos:
-				str = "EStateMovingToBackPos";
-				break;
-			case EStateWaitBeforeClose:
-				str = "EStateWaitBeforeClose";
-				break;
-			case EStateStartClose:
-				str = "EStateStartClose";
-				break;
-			case EStateClosingDoor:
-				str = "EStateClosingDoor";
-				break;
-		}
-		gameRenderWorld->DrawText(str.c_str(), 
-			(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
-			0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
-	}
 
 	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
 	idEntity* backPosEntity = _backPosEnt.GetEntity();
+
+	if (cv_ai_door_show.GetBool()) 
+	{
+		DrawDebugOutput(owner);
+	}
 
 	// Door is closed
 	if (!frobDoor->IsOpen())
@@ -399,7 +360,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 
 			case EStateClosingDoor:
-
 				// we have moved through the door and closed it
 				if (numUsers < 2)
 				{
@@ -469,7 +429,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
 								return false;
 							}
-						
 						}
 
 						owner->MoveToPosition(_frontPos);
@@ -661,26 +620,26 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateWaitBeforeOpen:
 				// check blocked or interrupted
-				if (frobDoor->IsBlocked() || 
-					frobDoor->WasInterrupted() || 
-					frobDoor->WasStoppedDueToBlock())
+				if (!FitsThrough())
 				{
-					if (!FitsThrough())
+					if (!AllowedToOpen(owner))
 					{
-						if (!AllowedToOpen(owner))
+						if (frobDoor->IsBlocked() || 
+							frobDoor->WasInterrupted() || 
+							frobDoor->WasStoppedDueToBlock())
 						{
 							AddToForbiddenAreas(owner, frobDoor);
 							return true;
 						}
-
-						else if (gameLocal.time >= _waitEndTime)
+					}
+					else if (gameLocal.time >= _waitEndTime)
+					{
+						if (!OpenDoor())
 						{
-							if (!OpenDoor())
-							{
-								return true;
-							}
+							return true;
 						}
 					}
+						
 				}
 				else
 				{
@@ -775,6 +734,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								}
 							}
 						}
+						else if (_retryCount > 3)
+						{
+							// if the door is blocked, stop after a few tries
+							AddToForbiddenAreas(owner, frobDoor);
+							return true;
+						}
 						else if (masterUser == owner)
 						{
 							// something else is blocking the door
@@ -783,7 +748,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							frobDoor->Close(true);
 							_waitEndTime = gameLocal.time + 300;
 							_doorHandlingState = EStateWaitBeforeOpen;
-							// TODO: need to stop after a few tries
+							_retryCount ++;
+							
 						}
 					}
 				}
@@ -1543,6 +1509,49 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	_doorHandlingState = EStateNone;
 }
 
+void HandleDoorTask::DrawDebugOutput(idAI* owner)
+{
+	gameRenderWorld->DebugArrow(colorYellow, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
+	gameRenderWorld->DebugArrow(colorGreen, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
+	idStr str;
+	switch (_doorHandlingState)
+	{
+		case EStateNone:
+			str = "EStateNone";
+			break;
+		case EStateMovingToFrontPos:
+			str = "EStateMovingToFrontPos";
+			break;
+		case EStateApproachingDoor:
+			str = "EStateMovingToFrontPos";
+			break;
+		case EStateWaitBeforeOpen:
+			str = "EStateWaitBeforeOpen";
+			break;
+		case EStateStartOpen:
+			str = "EStateStartOpen";
+			break;
+		case EStateOpeningDoor:
+			str = "EStateOpeningDoor";
+			break;
+		case EStateMovingToBackPos:
+			str = "EStateMovingToBackPos";
+			break;
+		case EStateWaitBeforeClose:
+			str = "EStateWaitBeforeClose";
+			break;
+		case EStateStartClose:
+			str = "EStateStartClose";
+			break;
+		case EStateClosingDoor:
+			str = "EStateClosingDoor";
+			break;
+	}
+	gameRenderWorld->DrawText(str.c_str(), 
+		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
+		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+}
+
 void HandleDoorTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
@@ -1553,6 +1562,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_waitEndTime);
 	savefile->WriteBool(_wasLocked);
 	savefile->WriteBool(_doorInTheWay);
+	savefile->WriteInt(_retryCount);
 
 	_frontPosEnt.Save(savefile);
 	_backPosEnt.Save(savefile);
@@ -1570,6 +1580,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_waitEndTime);
 	savefile->ReadBool(_wasLocked);
 	savefile->ReadBool(_doorInTheWay);
+	savefile->ReadInt(_retryCount);
 
 	_frontPosEnt.Restore(savefile);
 	_backPosEnt.Restore(savefile);

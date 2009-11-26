@@ -49,6 +49,7 @@ private:
 	int _waitEndTime;
 	bool _wasLocked;
 	bool _doorInTheWay;
+	int _retryCount;
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -83,6 +84,8 @@ public:
 	bool OpenDoor();
 
 	void ResetDoor(idAI* owner, CFrobDoor* newDoor);
+
+	void DrawDebugOutput(idAI* owner);
 
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
