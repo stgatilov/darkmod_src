@@ -41,8 +41,6 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem) = 0;
 
-	virtual void NextPath();
-
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

@@ -85,7 +85,8 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			{
 				// Trigger path targets, now that we've reached the corner
 				owner->ActivateTargets(owner);
-				NextPath();
+
+				// NextPath();
 
 				// Move is done, fall back to PatrolTask
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
@@ -124,7 +125,8 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 					{
 						// Trigger path targets, now that we've almost reached the corner
 						owner->ActivateTargets(owner);
-						NextPath();
+
+						// NextPath();
 
 						// Move is done, fall back to PatrolTask
 						DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathCornerTask ending prematurely.\r");
@@ -149,7 +151,8 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 		{
 			// Unreachable, fall back to PatrolTask
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination is unreachable, skipping.\r");
-			NextPath();
+
+			// NextPath();
 			return true; // finish this task
 		}
 

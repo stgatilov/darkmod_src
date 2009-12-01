@@ -80,11 +80,6 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-void PathSitTask::OnFinish(idAI* owner)
-{
-	NextPath();
-}
-
 bool PathSitTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathSitTask performing.\r");

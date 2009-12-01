@@ -39,8 +39,6 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
-	virtual void OnFinish(idAI* owner);
-
 	// Creates a new Instance of this task
 	static PathSleepTaskPtr CreateInstance();
 

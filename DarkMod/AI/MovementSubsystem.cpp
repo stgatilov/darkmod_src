@@ -16,6 +16,19 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Library.h"
 #include "States/State.h"
 #include "Tasks/ResolveMovementBlockTask.h"
+#include "Tasks/AnimalPatrolTask.h"
+#include "Tasks/PathCornerTask.h"
+#include "Tasks/PathAnimTask.h"
+#include "Tasks/PathTurnTask.h"
+#include "Tasks/PathCycleAnimTask.h"
+#include "Tasks/PathSitTask.h"
+#include "Tasks/PathSleepTask.h"
+#include "Tasks/PathWaitTask.h"
+#include "Tasks/PathWaitForTriggerTask.h"
+#include "Tasks/PathHideTask.h"
+#include "Tasks/PathShowTask.h"
+#include "Tasks/PathLookAtTask.h"
+#include "Tasks/PathInteractTask.h"
 
 namespace ai
 {
@@ -32,6 +45,8 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	_lastTimeNotBlocked(-1),
 	_blockTimeOut(BLOCK_TIME_OUT)
 {
+	_patrolling = false;
+
 	_historyBounds.Clear();
 
 	_originHistory.SetNum(HISTORY_SIZE);
@@ -44,9 +59,248 @@ bool MovementSubsystem::PerformTask()
 
 	// Watchdog to keep AI from running into things forever
 	CheckBlocked(owner);
+
+	Patrol();
 	
 	return Subsystem::PerformTask();
 }
+
+
+void MovementSubsystem::StartPatrol()
+{
+	if (!_patrolling)
+	{
+		idAI* owner = _owner.GetEntity();
+		Memory& memory = owner->GetMemory();
+
+		bool animalPatrol = owner->spawnArgs.GetBool("animal_patrol", "0");
+
+		// Check if the owner has patrol routes set
+		idPathCorner* path = memory.currentPath.GetEntity();
+		idPathCorner* lastPath = memory.lastPath.GetEntity();
+		
+		if (path == NULL && lastPath == NULL)
+		{
+			// Get a new random path off the owner's targets, this is the current one
+			path = idPathCorner::RandomPath(owner, NULL, owner);
+			memory.currentPath = path;
+
+			// Also, pre-select a next path to allow path predictions
+			if (path != NULL)
+			{
+				memory.nextPath = idPathCorner::RandomPath(path, NULL, owner);
+			}
+		}
+
+		if (path != NULL || animalPatrol)
+		{
+			if (animalPatrol)
+			{
+				// For animals, push the AnimalPatrol task anyway, they don't need paths
+				PushTask(AnimalPatrolTask::CreateInstance());
+			}
+			else
+			{
+				StartPathTask();
+			}
+		
+			_patrolling = true;
+		}
+	}
+}
+
+void MovementSubsystem::Patrol()
+{
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+
+	if (_patrolling == false)
+	{
+		return;
+	}
+
+	if (_taskQueue.empty())
+	{
+		NextPath();
+		if (memory.currentPath.GetEntity() == NULL)
+		{
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more targets.\r");
+			_patrolling = false;
+			return;
+		}
+
+		StartPathTask();
+	}
+}
+
+void MovementSubsystem::NextPath()
+{
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+
+	idPathCorner* path = memory.currentPath.GetEntity();
+
+	// The current path gets stored in lastPath
+    memory.lastPath = path;
+
+    // The pre-selected "next path" is now our current one
+    idPathCorner* currentPath = memory.nextPath.GetEntity();
+
+    memory.currentPath = currentPath;
+
+    // Now pre-select a new (random) path entity for the next round
+    // this information is important for the PathCornerTask to decide which action to take on exit
+	idPathCorner* next(NULL);
+	if (currentPath != NULL)
+	{
+		next = idPathCorner::RandomPath(currentPath, NULL, owner);
+	}
+	
+    memory.nextPath = next;
+}
+
+void MovementSubsystem::StartPathTask()
+{
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Starting next path task.\r");
+
+	idPathCorner* path = _owner.GetEntity()->GetMind()->GetMemory().currentPath.GetEntity();
+
+	// This may not be performed with an empty path corner entity,
+	// that case should have been caught by the Patrol() routine
+	assert(path);
+
+	std::list<TaskPtr> tasks;
+	TaskPtr task;
+
+	// Get the classname, this determines the child routine we're spawning.
+	idStr classname = path->spawnArgs.GetString("classname");
+
+	// Depending on the classname we spawn one of the various Path*Tasks
+	if (classname == "path_corner")
+	{
+		tasks.push_back(TaskPtr(new PathCornerTask(path)));
+	}
+	else if (classname == "path_anim")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			tasks.push_back(TaskPtr(new PathAnimTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(TaskPtr(new PathTurnTask(path)));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the animation task
+			task = PathAnimTaskPtr(new PathAnimTask(path));
+		}
+	}
+	else if (classname == "path_cycleanim")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			tasks.push_back(TaskPtr(new PathCycleAnimTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the animation task
+			tasks.push_back(PathCycleAnimTaskPtr(new PathCycleAnimTask(path)));
+		}
+	}
+	else if (classname == "path_sit")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			tasks.push_back(TaskPtr(new PathSitTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the animation task
+			tasks.push_back(PathSitTaskPtr(new PathSitTask(path)));
+		}
+	}
+
+	else if (classname == "path_sleep")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the sleep task
+			tasks.push_back(TaskPtr(new PathSleepTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the sleep task
+			tasks.push_back(PathSleepTaskPtr(new PathSleepTask(path)));
+		}
+	}
+
+	else if (classname == "path_turn")
+	{
+		tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+	}
+	else if (classname == "path_wait")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			tasks.push_back(TaskPtr(new PathWaitTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the wait task
+			tasks.push_back(PathWaitTaskPtr(new PathWaitTask(path)));
+		}
+	}
+	else if (classname == "path_waitfortrigger")
+	{
+		tasks.push_back(PathWaitForTriggerTaskPtr(new PathWaitForTriggerTask(path)));
+	}
+	else if (classname == "path_hide")
+	{
+		tasks.push_back(PathHideTaskPtr(new PathHideTask(path)));
+	}
+	else if (classname == "path_show")
+	{
+		tasks.push_back(PathShowTaskPtr(new PathShowTask(path)));
+	}
+	else if (classname == "path_lookat")
+	{
+		tasks.push_back(PathLookatTaskPtr(new PathLookatTask(path)));
+	}
+	else if (classname == "path_interact")
+	{
+		tasks.push_back(PathInteractTaskPtr(new PathInteractTask(path)));
+	}
+	else
+	{
+		// Finish this task
+		gameLocal.Warning("Unknown path corner classname '%s'\n", classname.c_str());
+		return;
+	}
+	
+	// Push the (rest of the) tasks to the subsystem
+	for (std::list<TaskPtr>::iterator i = tasks.begin(); i != tasks.end(); ++i)
+	{
+		PushTask(*i);
+	}
+}
+
+void MovementSubsystem::ClearTasks()
+{
+	Subsystem::ClearTasks();
+	_patrolling = false;
+}
+
 
 void MovementSubsystem::CheckBlocked(idAI* owner)
 {
@@ -157,6 +411,8 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 {
 	Subsystem::Save(savefile);
 
+	savefile->WriteBool(_patrolling);
+
 	savefile->WriteInt(_originHistory.Num());
 
 	for (int i = 0; i < _originHistory.Num(); ++i)
@@ -175,6 +431,8 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 void MovementSubsystem::Restore(idRestoreGame* savefile)
 {
 	Subsystem::Restore(savefile);
+
+	savefile->ReadBool(_patrolling);
 
 	int num;
 	savefile->ReadInt(num);

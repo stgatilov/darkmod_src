@@ -71,7 +71,7 @@ bool PathWaitTask::Perform(Subsystem& subsystem)
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
-		NextPath();
+		// NextPath();
 
 		// Wait is done, fall back to PatrolTask
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Wait is done.\r");

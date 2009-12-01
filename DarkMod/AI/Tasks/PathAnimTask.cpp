@@ -71,7 +71,7 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 
 void PathAnimTask::OnFinish(idAI* owner)
 {
-	NextPath();
+	// NextPath();
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);

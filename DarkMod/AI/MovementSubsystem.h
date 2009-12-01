@@ -33,6 +33,8 @@ public:
 	};
 
 protected:
+	bool _patrolling;
+
 	// The origin history, contains the origin position of the last few frames
 	idList<idVec3> _originHistory;
 
@@ -59,6 +61,15 @@ public:
 	// @returns: TRUE if the subsystem is enabled and the task was performed, 
 	// @returns: FALSE if the subsystem is disabled and nothing happened.
 	virtual bool PerformTask();
+
+	void StartPatrol();
+	void Patrol();
+
+	virtual void StartPathTask();
+	virtual void NextPath();
+
+	virtual void ClearTasks();
+
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

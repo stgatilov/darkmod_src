@@ -59,11 +59,6 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-void PathSleepTask::OnFinish(idAI* owner)
-{
-	NextPath();
-}
-
 bool PathSleepTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathSleepTask performing.\r");

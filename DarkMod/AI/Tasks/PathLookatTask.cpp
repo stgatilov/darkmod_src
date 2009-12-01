@@ -90,7 +90,7 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 			// Trigger next path target(s)
 			owner->ActivateTargets(owner);
 
-			NextPath();
+			// NextPath();
 			
 			return true; // finish this task
 		}
@@ -112,7 +112,7 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 	owner->ActivateTargets(owner);
 
 	// Store a new path entity into the AI's mind
-	NextPath();
+	// NextPath();
 	
 	return true; // finish this task
 }

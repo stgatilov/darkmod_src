@@ -96,7 +96,7 @@ void PathInteractTask::OnFinish(idAI* owner)
 	// Trigger next path target(s)
 	owner->ActivateTargets(owner);
 
-	NextPath();
+	// NextPath();
 }
 
 // Save/Restore methods
