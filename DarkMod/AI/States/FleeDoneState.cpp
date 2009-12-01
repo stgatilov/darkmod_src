@@ -74,7 +74,17 @@ void FleeDoneState::Think(idAI* owner)
 	UpdateAlertLevel();
 		
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner)) 
+	{
+		// terminate FleeDoneState when time is over
+		owner->movementSubsystem->ClearTasks();
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+		owner->SetTurnRate(_oldTurnRate);
+
+		owner->GetMind()->EndState();
+		return;
+	}
 
 	// Let the AI check its senses
 	owner->PerformVisualScan();
