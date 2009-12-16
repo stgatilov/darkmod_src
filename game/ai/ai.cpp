@@ -1716,7 +1716,7 @@ void idAI::Spawn( void )
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
 
 	m_HeadJointID = animator.GetJointHandle(HeadJointName);
-	m_HeadBodyID = BodyForJoint( m_HeadJointID );
+	m_HeadBodyID = (m_HeadJointID == -1 ? INVALID_JOINT :  BodyForJoint( m_HeadJointID ));
 	if( m_HeadJointID == INVALID_JOINT )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint %s on AI %s \r", HeadJointName, name.c_str());
