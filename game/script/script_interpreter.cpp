@@ -1095,6 +1095,14 @@ bool idInterpreter::Execute( void ) {
 				}
 #endif
 			} else {
+				int entNum = *var_a.entityNumberPtr;
+				idEntity *ent = GetEntity(entNum);
+				if (ent) {
+					Warning("Tried to call function on entity %s, but entity has no script object", ent->name.c_str());
+				} else {
+					Warning("Tried to call function on non-existent entity (#%d)", entNum);
+				}
+
 				// return a 'safe' value
 				gameLocal.program.ReturnVector( vec3_zero );
 				gameLocal.program.ReturnString( "" );
