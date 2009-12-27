@@ -107,6 +107,8 @@ idCVar cv_ai_opt_noobstacleavoidance (			"tdm_ai_opt_noobstacleavoidance",	"0",	
 
 idCVar cv_ai_debug_anims (			"tdm_ai_debug_anims",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), show debug info about AI anims in the console and log file." );
 
+idCVar cv_show_health (          "tdm_show_health",   "0",            CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), show health of entities for debugging." );
+
 idCVar cv_ai_show_aasfuncobstacle_state("tdm_ai_show_aasfuncobstacle_state",	"0", CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
 idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the enhanced interaction shaders are used. Set to 0 to use the default D3 one." );

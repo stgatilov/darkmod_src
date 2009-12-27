@@ -3742,6 +3742,25 @@ void idGameLocal::RunDebugInfo( void ) {
 		idTrigger::DrawDebugInfo();
 	}
 
+	if ( cv_show_health.GetBool() ) {
+		idMat3		axis = player->viewAngles.ToMat3();
+		idBounds	viewBounds( origin );
+		viewBounds.ExpandSelf( 512.0f );
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			// don't draw the worldspawn or "dead" entities
+			if ( ent == world || !ent->health) {
+				continue;
+			}
+
+			// skip if the entity is very far away
+			if ( !viewBounds.IntersectsBounds( ent->GetPhysics()->GetAbsBounds() ) ) {
+				continue;
+			}
+			
+			gameRenderWorld->DrawText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
+		}
+	}
+
 	if ( ai_showCombatNodes.GetBool() ) {
 		idCombatNode::DrawDebugInfo();
 	}
