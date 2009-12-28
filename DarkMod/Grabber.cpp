@@ -880,8 +880,8 @@ void CGrabber::AddToClipList( idEntity *ent )
 	{
 		phys->SetContents
 		( 
-			(contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP 
-			| CONTENTS_RENDERMODEL | (CONTENTS_CORPSE & (~CONTENTS_OPAQUE))
+			(contents & ~(CONTENTS_SOLID | CONTENTS_OPAQUE))
+			| CONTENTS_MONSTERCLIP | CONTENTS_RENDERMODEL | CONTENTS_CORPSE
 		);
 		bAddToList = true;
 	}
