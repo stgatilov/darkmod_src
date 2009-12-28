@@ -27,7 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Tasks/PathWaitForTriggerTask.h"
 #include "Tasks/PathHideTask.h"
 #include "Tasks/PathShowTask.h"
-#include "Tasks/PathLookAtTask.h"
+#include "Tasks/PathLookatTask.h"
 #include "Tasks/PathInteractTask.h"
 
 namespace ai
