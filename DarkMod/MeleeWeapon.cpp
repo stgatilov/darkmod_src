@@ -863,13 +863,19 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	{
 		if ( other->spawnArgs.GetBool( "bleed" ) ) 
 		{
-			hitSound = DmgDef->GetString( "snd_hit" );
 			sndName = "snd_hit";
+			hitSound = DmgDef->GetString( sndName );
 
 			// places wound overlay, also tries to play another sound that's usually not there?
 			// on AI, also does the blood spurt particle
 			other->AddDamageEffect( *tr, impulse, DmgDef->GetString( "classname" ) );
-		} else 
+
+		} else if ( other->spawnArgs.GetBool( "fleshy" ) ) {
+			// For non-bleeders that should still always play the flesh impact sound
+			sndName = "snd_flesh";
+			hitSound = DmgDef->GetString( sndName );
+
+		} else
 		{
 			// we hit an entity that doesn't bleed, 
 			// decals, sound and smoke are handled here instead
@@ -882,13 +888,13 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 
 			// start impact sound based on material type
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
-			hitSound = DmgDef->GetString( va( "snd_%s", surfType.c_str() ) );
 			sndName = va( "snd_%s", surfType.c_str() );
+			hitSound = DmgDef->GetString( sndName );
 
 			if ( hitSound.IsEmpty() ) 
 			{
-				hitSound = DmgDef->GetString( "snd_metal" );
 				sndName = "snd_metal";
+				hitSound = DmgDef->GetString( sndName );
 			}
 
 			// project decal 
