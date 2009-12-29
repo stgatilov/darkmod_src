@@ -132,6 +132,9 @@ const idEventDef EV_Heal("heal", "sf", 'd');
 // tels: Teleport the entity to the position/orientation of the given entity
 const idEventDef EV_TeleportTo("teleportTo", "e");
 
+// tels: set noShadow on this entity to the given argument (true/false)
+const idEventDef EV_NoShadows( "noShadows", "d" );
+
 // tels: Find all lights in the same PVS, then returns their sum.
 const idEventDef EV_GetLightInPVS("getLightInPVS", "", 'v');
 
@@ -420,7 +423,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT(EV_SetEntityRelation,		idEntity::Event_SetEntityRelation )
 	EVENT(EV_ChangeEntityRelation,	idEntity::Event_ChangeEntityRelation )
 
-
+	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
 
 END_CLASS
 
@@ -2200,6 +2203,19 @@ float idEntity::GetLightQuotient()
 
 	// Return the cached result
 	return m_LightQuotient;
+}
+
+/*
+================
+idEntity::Event_noShadows
+
+tels: Turn shadows from this entity on or off.
+================
+*/
+void idEntity::Event_noShadows( bool noShadow ) 
+{
+	renderEntity.noShadow = ( noShadow ? 1 : 0 );
+	UpdateVisuals();
 }
 
 /*

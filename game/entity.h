@@ -1446,6 +1446,12 @@ public:			// Events should be public, so they can be used from other places as w
 	*/
 	void 					Event_GetLightInPVS();
 
+	/**
+	* Tels: Toggle the noShadow flag on this entity.
+	*/
+	void 					Event_noShadows( bool noShadow );
+
+
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
 	void					Event_GetInventory();
