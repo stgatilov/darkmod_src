@@ -3400,23 +3400,21 @@ void idEntity::RemoveBindsOnAlert( const int alertIndex ) {
 ================
 idEntity::DetachOnAlert
 
-tels: Remove attached entities when their "unbindonalertindex" is greater or equal to the given
-alert index. The attached entities will be removed from the attached list and are also unbound.
+tels: Remove attached entities when the alert index reaches their "unbindonalertindex".
+The attached entities will be removed from the attached list and are also unbound.
 ================
 */
 void idEntity::DetachOnAlert( const int alertIndex )
 {
 	idEntity *ent = NULL;
 
-	// Tels: TODO: What happens if m_Attachments.Num() is f.i. X and we detach one
-	//				of them during this loop, and .Num() is then X-1, would we then
-	//				miss one of them?
 	for ( int ind = 0; ind < m_Attachments.Num(); ind ++)
 	{
 		ent = m_Attachments[ind].ent.GetEntity();
 		if( ent && m_Attachments[ind].ent.IsValid() )
 		{
-			if( ent->spawnArgs.GetInt( "unbindonalertindex", "6" ) >= alertIndex)
+			// Crispy: 9999 = "infinity"
+			if( alertIndex >= ent->spawnArgs.GetInt( "unbindonalertindex", "9999" ))
 			{
 				DetachInd(ind);	
 			}
