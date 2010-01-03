@@ -56,6 +56,10 @@ private:
 	// Finds the engine executable (in Linux, this can be in several places), returns TRUE on success
 	// The member _darkmodDir must be set already when calling this method
 	bool FindExecutable();
+
+	// Returns the path to Steam.exe if the engine executable we're using is running on Steam
+	// The member _engineExecutable must be set already when calling this method
+	fs::path FindSteamExecutable();
 };
 
 #endif /* _LAUNCHER_H_ */

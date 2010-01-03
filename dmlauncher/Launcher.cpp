@@ -8,6 +8,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/compare.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "D3ProcessChecker.h"
@@ -17,12 +18,16 @@ const std::string CURRENT_FM_FILE = "currentfm.txt";
 const std::string ARGS_FILE = "dmargs.txt";
 const std::string GAME_BASE_NAME = "darkmod";
 
+const std::string STEAM_ARGS = "-applaunch 9050 ";
+
 #ifdef WIN32
 	#include <windows.h>
 	#include <process.h>
 
 	#define ENGINE_EXECUTABLE "DOOM3.exe"
 	#define MODULE_NAME "gamex86.dll"
+	#define STEAM_PATH_NAME "steamapps"
+	#define STEAM_EXE_PATH "../steam.exe"
 
 // The ShellAPI.h header is polluting our namespace
 #ifdef FindExecutable  
@@ -135,6 +140,23 @@ Launcher::Launcher(int argc, char* argv[]) :
 			}
 		}
 	}
+}
+
+// Detect Steam version of Doom 3 and find the associated exe file
+fs::path Launcher::FindSteamExecutable()
+{
+#ifdef WIN32
+	fs::path partialPath;
+	for (fs::path::iterator itr = _engineExecutable.begin(); itr != _engineExecutable.end(); ++itr)
+	{
+		partialPath /= *itr;
+		if (boost::algorithm::iequals(*itr, STEAM_PATH_NAME))
+		{
+			return partialPath / STEAM_EXE_PATH;
+		}
+	}
+#endif
+	return false;
 }
 
 void Launcher::InitArguments()
@@ -315,6 +337,13 @@ bool Launcher::Launch()
 	fs::path doom3exe = _engineExecutable;
 	fs::path doom3dir = doom3exe;
 	doom3dir = doom3dir.remove_leaf().remove_leaf();
+
+	fs::path steamExe(FindSteamExecutable());
+	if (!steamExe.empty()) {
+		TraceLog::WriteLine("Detected Steam version of D3; Steam executable found at " + steamExe.file_string());
+		doom3exe = steamExe;
+		_arguments = STEAM_ARGS + _arguments;
+	}
 
 	TraceLog::WriteLine("Starting process " + doom3exe.file_string() + " " + _arguments);
 	
