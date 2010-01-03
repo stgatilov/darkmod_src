@@ -156,7 +156,7 @@ fs::path Launcher::FindSteamExecutable()
 		}
 	}
 #endif
-	return false;
+	return fs::path();
 }
 
 void Launcher::InitArguments()
