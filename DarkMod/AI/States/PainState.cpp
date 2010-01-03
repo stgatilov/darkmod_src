@@ -69,21 +69,6 @@ void PainState::Think(idAI* owner)
 	if (gameLocal.time >= _stateEndTime || 
 		idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "pain") 
 	{
-		Memory& memory = owner->GetMemory();
-
-		// Alert this AI
-		memory.alertClass = EAlertTactile;
-		memory.alertType = EAlertTypeEnemy;
-	
-		// Set the alert position 50 units in the attacking direction
-		memory.alertPos = owner->GetPhysics()->GetOrigin();
-
-		memory.countEvidenceOfIntruders++;
-		memory.alertedDueToCommunication = false;
-
-		// Alert the AI
-		owner->AlertAI("tact", owner->thresh_5*2);
-
 		// End this state
 		owner->GetMind()->EndState();
 	}
