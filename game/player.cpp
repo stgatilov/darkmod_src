@@ -6714,7 +6714,7 @@ void idPlayer::UpdateHUD()
 	// Update the playing time in the HUD, if desired
 	hud->SetStateString("PlayingTime", cv_show_gameplay_time.GetBool() ? gameLocal.m_GamePlayTimer.GetTime().c_str() : "");
 
-	hud->SetStateBool("PlayerIsCrouched", AI_CROUCH ? true : false);
+	hud->SetStateBool("PlayerIsCrouched", m_CrouchIntent ? true : false);
 }
 
 void idPlayer::UpdateInventoryHUD()
