@@ -470,6 +470,7 @@ const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
 const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
 const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
 const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", NULL, 'd' );
+const idEventDef AI_GetMeleeLastHitByType( "getMeleeLastHitByType", NULL, 'd' );
 const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
 const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
 
@@ -528,6 +529,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
 	EVENT( AI_GetMeleeResult,			idActor::Event_GetMeleeResult )
 	EVENT( AI_GetMeleeLastActTime,		idActor::Event_GetMeleeLastActTime )
+	EVENT( AI_GetMeleeLastHitByType,	idActor::Event_GetMeleeLastHitByType )
 	EVENT( AI_MeleeBestParry,			idActor::Event_MeleeBestParry )
 	EVENT( AI_MeleeNameForNum,			idActor::Event_MeleeNameForNum )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
@@ -4697,6 +4699,11 @@ void idActor::Event_GetMeleeLastActTime()
 	idThread::ReturnInt( m_MeleeStatus.m_LastActTime );
 }
 
+void idActor::Event_GetMeleeLastHitByType()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_LastHitByType );
+}
+
 void idActor::Event_SetReplacementAnim(const char* animToReplace, const char* replacementAnim)
 {
 	SetReplacementAnim(animToReplace, replacementAnim);
@@ -4746,6 +4753,9 @@ CMeleeStatus::CMeleeStatus( void )
 
 	m_ActionResult	= MELEERESULT_IN_PROGRESS;
 
+	m_bWasHit		= false; // NYI
+	m_LastHitByType = MELEETYPE_UNBLOCKABLE;
+
 	m_bCanParry		= false;
 	m_bCanParryAll	= false;
 	m_attacks.Clear();
@@ -4764,7 +4774,9 @@ void CMeleeStatus::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_PhaseChangeTime );
 	savefile->WriteInt( m_LastActTime );
 	savefile->WriteInt( m_ActionResult );
+
 	savefile->WriteBool( m_bWasHit );
+	savefile->WriteInt( m_LastHitByType );
 
 	savefile->WriteBool( m_bCanParry );
 	savefile->WriteBool( m_bCanParryAll );
@@ -4790,7 +4802,10 @@ void CMeleeStatus::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( m_LastActTime );
 	savefile->ReadInt( i );
 	m_ActionResult = (EMeleeResult) i;
+
 	savefile->ReadBool( m_bWasHit );
+	savefile->ReadInt( i );
+	m_LastHitByType = (EMeleeType) i;
 
 	savefile->ReadBool( m_bCanParry );
 	savefile->ReadBool( m_bCanParryAll );

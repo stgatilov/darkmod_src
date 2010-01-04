@@ -100,6 +100,9 @@ public:
 	// NYI
 	bool			m_bWasHit;
 
+	/** What attack type were we last hit by? (used by trainers to give feedback) **/
+	EMeleeType		m_LastHitByType;
+
 	// melee capabilities of weapon
 	bool				m_bCanParry;
 	bool				m_bCanParryAll;
@@ -141,6 +144,7 @@ extern const idEventDef AI_MeleeActionReleased;
 extern const idEventDef AI_MeleeActionFinished;
 extern const idEventDef AI_GetMeleeResult;
 extern const idEventDef AI_GetMeleeLastActTime;
+extern const idEventDef AI_GetMeleeLastHitByType;
 extern const idEventDef AI_MeleeBestParry;
 extern const idEventDef AI_MeleeNameForNum;
 
@@ -817,6 +821,8 @@ public:
 	void					Event_GetMeleeResult( void );
 	/** Get the time at which the previous melee action finished **/
 	void					Event_GetMeleeLastActTime( void );
+	/** Get the type of the last melee attack we were hit with (defaults to MELEETYPE_UNBLOCKABLE if we were not hit) **/
+	void					Event_GetMeleeLastHitByType( void );
 
 	/**
 	* Returns the melee type integer of the optimal melee parry given current attackers
