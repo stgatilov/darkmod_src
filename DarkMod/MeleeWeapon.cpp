@@ -830,27 +830,13 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		}
 	}
 
-	// actor-specific stuff (moved prior to damage call, ishtvan 01/03/2010)
+	// actor-specific stuff
 	if( other->IsType(idActor::Type) )
 	{
 		idActor *otherAct = static_cast<idActor *>(other);
 		// update the melee status
 		CMeleeStatus *pOthMeleeStatus = &otherAct->m_MeleeStatus;
 		pOthMeleeStatus->m_LastHitByType = m_MeleeType;
-
-		// apply a LARGE tactile alert to AI
-		if( other->IsType(idAI::Type) )
-		{
-			idAI *otherAI = static_cast<idAI *>(other);
-			otherAI->TactileAlert( GetOwner(), 100 );
-
-			// being hit always causes flat-footedness
-			if( otherAI->m_bCanBeFlatFooted )
-			{
-				otherAI->m_bFlatFooted = true;
-				otherAI->m_FlatFootedTimer = gameLocal.time;
-			}
-		}
 	}
 
 	if( other->fl.takedamage )
@@ -863,6 +849,20 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 			dir, DamageDefName,
 			DmgScale, location, tr 
 		);
+	}
+
+	// apply a LARGE tactile alert to AI (this must be done AFTER damage, otherwise sneak attacks are broken)
+	if( other->IsType(idAI::Type) )
+	{
+		idAI *otherAI = static_cast<idAI *>(other);
+		otherAI->TactileAlert( GetOwner(), 100 );
+
+		// being hit always causes flat-footedness
+		if( otherAI->m_bCanBeFlatFooted )
+		{
+			otherAI->m_bFlatFooted = true;
+			otherAI->m_FlatFootedTimer = gameLocal.time;
+		}
 	}
 
 	// copied from idWeapon, not necessarily what we want
