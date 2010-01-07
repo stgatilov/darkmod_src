@@ -142,8 +142,11 @@ extern const idEventDef AI_MeleeParryStarted;
 extern const idEventDef AI_MeleeActionHeld;
 extern const idEventDef AI_MeleeActionReleased;
 extern const idEventDef AI_MeleeActionFinished;
-extern const idEventDef AI_GetMeleeResult;
+extern const idEventDef AI_GetMeleeActionState;
+extern const idEventDef AI_GetMeleeActionPhase;
+extern const idEventDef AI_GetMeleeActionType;
 extern const idEventDef AI_GetMeleeLastActTime;
+extern const idEventDef AI_GetMeleeResult;
 extern const idEventDef AI_GetMeleeLastHitByType;
 extern const idEventDef AI_MeleeBestParry;
 extern const idEventDef AI_MeleeNameForNum;
@@ -817,10 +820,16 @@ public:
 	void					Event_MeleeActionReleased( void );
 	/** Called when the animation for the melee action has finished **/
 	void					Event_MeleeActionFinished( void );
-	/** Called by script to get result of last melee action **/
-	void					Event_GetMeleeResult( void );
+	/** Get the current melee action state **/
+	void					Event_GetMeleeActionState( void );
+	/** Get the current melee action phase **/
+	void					Event_GetMeleeActionPhase( void );
+	/** Get the current melee action type **/
+	void					Event_GetMeleeActionType( void );
 	/** Get the time at which the previous melee action finished **/
 	void					Event_GetMeleeLastActTime( void );
+	/** Called by script to get result of last melee action **/
+	void					Event_GetMeleeResult( void );
 	/** Get the type of the last melee attack we were hit with (defaults to MELEETYPE_UNBLOCKABLE if we were not hit) **/
 	void					Event_GetMeleeLastHitByType( void );
 

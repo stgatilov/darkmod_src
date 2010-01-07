@@ -468,8 +468,11 @@ const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
 const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
 const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
 const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
-const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
+const idEventDef AI_GetMeleeActionState( "getMeleeActState", NULL, 'd' );
+const idEventDef AI_GetMeleeActionPhase( "getMeleeActPhase", NULL, 'd' );
+const idEventDef AI_GetMeleeActionType( "getMeleeActType", NULL, 'd' );
 const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", NULL, 'd' );
+const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
 const idEventDef AI_GetMeleeLastHitByType( "getMeleeLastHitByType", NULL, 'd' );
 const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
 const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
@@ -527,8 +530,11 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_MeleeActionHeld,			idActor::Event_MeleeActionHeld )
 	EVENT( AI_MeleeActionReleased,		idActor::Event_MeleeActionReleased )
 	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
-	EVENT( AI_GetMeleeResult,			idActor::Event_GetMeleeResult )
+	EVENT( AI_GetMeleeActionState,		idActor::Event_GetMeleeActionState )
+	EVENT( AI_GetMeleeActionPhase,		idActor::Event_GetMeleeActionPhase )
+	EVENT( AI_GetMeleeActionType,		idActor::Event_GetMeleeActionType )
 	EVENT( AI_GetMeleeLastActTime,		idActor::Event_GetMeleeLastActTime )
+	EVENT( AI_GetMeleeResult,			idActor::Event_GetMeleeResult )
 	EVENT( AI_GetMeleeLastHitByType,	idActor::Event_GetMeleeLastHitByType )
 	EVENT( AI_MeleeBestParry,			idActor::Event_MeleeBestParry )
 	EVENT( AI_MeleeNameForNum,			idActor::Event_MeleeNameForNum )
@@ -4689,14 +4695,29 @@ void idActor::Event_MeleeActionFinished()
 	m_MeleeStatus.m_LastActTime = gameLocal.time;
 }
 
-void idActor::Event_GetMeleeResult()
+void idActor::Event_GetMeleeActionState()
 {
-	idThread::ReturnInt( m_MeleeStatus.m_ActionResult );
+	idThread::ReturnInt( m_MeleeStatus.m_ActionState );
+}
+
+void idActor::Event_GetMeleeActionPhase()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionPhase );
+}
+
+void idActor::Event_GetMeleeActionType()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionType );
 }
 
 void idActor::Event_GetMeleeLastActTime()
 {
 	idThread::ReturnInt( m_MeleeStatus.m_LastActTime );
+}
+
+void idActor::Event_GetMeleeResult()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionResult );
 }
 
 void idActor::Event_GetMeleeLastHitByType()
