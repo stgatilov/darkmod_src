@@ -100,6 +100,8 @@ extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
 extern const idEventDef EV_ExtinguishLights;
 extern const idEventDef EV_TeleportTo;
+extern const idEventDef EV_IsDroppable;
+extern const idEventDef EV_SetDroppable;
 
 extern const idEventDef EV_IsType;
 
@@ -1441,6 +1443,11 @@ public:			// Events should be public, so they can be used from other places as w
 	* Tels: Teleport the entity to the given entity's origin and orientation.
 	*/
 	void					Event_TeleportTo(idEntity *target);
+	/**
+	* Get/set droppable on this entity and its inventory item if it's already in the inventory
+	**/
+	void					Event_IsDroppable();
+	void					Event_SetDroppable( bool Droppable );
 	/**
 	* Tels: Return the sum of all lights in the entities PVS.
 	*/

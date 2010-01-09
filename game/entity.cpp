@@ -132,6 +132,10 @@ const idEventDef EV_Heal("heal", "sf", 'd');
 // tels: Teleport the entity to the position/orientation of the given entity
 const idEventDef EV_TeleportTo("teleportTo", "e");
 
+// ishtvan: Get/setd droppable on entity and associated inventory item
+const idEventDef EV_IsDroppable( "isDroppable", NULL, 'd' );
+const idEventDef EV_SetDroppable( "setDroppable", "d" );
+
 // tels: set noShadow on this entity to the given argument (true/false)
 const idEventDef EV_NoShadows( "noShadows", "d" );
 
@@ -334,6 +338,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Damage,				idEntity::Event_Damage )
 	EVENT( EV_Heal,					idEntity::Event_Heal )
 	EVENT( EV_TeleportTo,			idEntity::Event_TeleportTo )
+	EVENT( EV_IsDroppable,			idEntity::Event_IsDroppable )
+	EVENT( EV_SetDroppable,			idEntity::Event_SetDroppable )
 	EVENT( EV_GetLightInPVS,		idEntity::Event_GetLightInPVS )
 
 	EVENT( EV_SetGui,				idEntity::Event_SetGui )
@@ -9796,6 +9802,24 @@ void idEntity::Event_Heal( const char *healDefName, const float healScale )
 void idEntity::Event_TeleportTo(idEntity* target)
 {
 	Teleport( vec3_origin, idAngles( 0.0f, 0.0f, 0.0f ), target );
+}
+
+void idEntity::Event_IsDroppable( void )
+{
+	idThread::ReturnInt( spawnArgs.GetBool("inv_droppable") );
+}
+
+void idEntity::Event_SetDroppable( bool Droppable )
+{
+	spawnArgs.SetBool( "inv_droppable", Droppable );
+	// update the item in the player's inventory, if there is one
+	if( spawnArgs.FindKey("inv_name") != NULL )
+	{
+		idStr itemName = spawnArgs.GetString("inv_name");
+		CInventoryItemPtr item = gameLocal.GetLocalPlayer()->Inventory()->GetItem( itemName );
+		if( item != NULL )
+			item->SetDroppable( Droppable );
+	}
 }
 
 // tels:
