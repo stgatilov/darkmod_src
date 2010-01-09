@@ -1707,6 +1707,16 @@ void idAI::Spawn( void )
 	m_MeleeCounterAttChance = spawnArgs.GetInt("melee_chance_to_counter") / 100.0f;
 	m_bMeleePredictProximity = spawnArgs.GetBool("melee_predicts_proximity");
 
+	if (spawnArgs.GetBool("melee_attacks_enabled_at_spawn_time", "0"))
+	{
+		SetAttackFlag(COMBAT_MELEE, true);
+	}
+
+	if (spawnArgs.GetBool("ranged_attacks_enabled_at_spawn_time", "0"))
+	{
+		SetAttackFlag(COMBAT_RANGED, true);
+	}
+
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
 
