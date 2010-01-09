@@ -96,6 +96,7 @@ const idEventDef AI_EntityInAttackCone( "entityInAttackCone", "E", 'd' );
 const idEventDef AI_CanSeeEntity( "canSee", "E", 'd' );
 const idEventDef AI_CanSeeEntityExt( "canSeeExt", "Edd", 'd' );
 const idEventDef AI_CanSeePositionExt( "canSeePositionExt", "vdd", 'd' );
+const idEventDef AI_IsEntityHidden( "isEntityHidden", "Ed", 'd' );
 const idEventDef AI_SetTalkTarget( "setTalkTarget", "E" );
 const idEventDef AI_GetTalkTarget( "getTalkTarget", NULL, 'e' );
 const idEventDef AI_SetTalkState( "setTalkState", "d" );
@@ -424,6 +425,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanSeeEntity,						idAI::Event_CanSeeEntity )
 	EVENT( AI_CanSeeEntityExt,					idAI::Event_CanSeeEntityExt )
 	EVENT( AI_CanSeePositionExt,				idAI::Event_CanSeePositionExt )
+	EVENT( AI_IsEntityHidden,					idAI::Event_IsEntityHidden )
 	EVENT( AI_SetTalkTarget,					idAI::Event_SetTalkTarget )
 	EVENT( AI_GetTalkTarget,					idAI::Event_GetTalkTarget )
 	EVENT( AI_SetTalkState,						idAI::Event_SetTalkState )
@@ -1612,7 +1614,7 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 idAI::Event_CanSeeEntityExt
 =====================
 */
-void idAI::Event_CanSeeEntityExt( idEntity *ent, int bool_useFOV, int bool_useLighting ) 
+void idAI::Event_CanSeeEntityExt( idEntity *ent, const int bool_useFOV, const int bool_useLighting )
 {
 
 	if ( !ent ) 
@@ -1621,9 +1623,39 @@ void idAI::Event_CanSeeEntityExt( idEntity *ent, int bool_useFOV, int bool_useLi
 		return;
 	}
 
-	// Test if it is visible
-	bool cansee = CanSeeExt( ent, (bool_useFOV != 0), (bool_useLighting != 0) );
-	
+	// Test if it is visible                                                                                              
+	bool cansee = CanSeeExt( ent, (bool_useFOV != 0), (bool_useLighting != 0) );                                          
+
+	// Return result
+	idThread::ReturnInt( cansee );
+}
+
+/*
+=====================
+idAI::Event_IsEntityHidden
+
+Tels: Returns true if the entity is in the FOV, not occluded and lit up according to the threshold.
+=====================
+*/
+void idAI::Event_IsEntityHidden( idEntity *ent, const float sightThreshold )
+{
+
+	if ( !ent ) 
+	{
+		idThread::ReturnInt( false );
+		return;
+	}
+
+	// Test if it is occluded, and use field of vision in the check (true as second parameter)
+	bool cansee = idActor::CanSee( ent, true );
+
+	// Also consider lighting and visual acuity of AI
+	if (cansee)
+	{
+		cansee = !IsEntityHiddenByDarkness(ent, sightThreshold);
+	}
+
+	// Return result
 	idThread::ReturnInt( cansee );
 }
 

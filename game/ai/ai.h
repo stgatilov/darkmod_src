@@ -1300,7 +1300,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/**
 	* This version can optionally use or not use lighting and fov
 	*/
-	virtual bool			CanSeeExt (idEntity* ent, bool useFOV, bool useLighting ) const;
+	virtual bool			CanSeeExt ( idEntity* ent, const bool useFOV, const bool useLighting ) const;
 
 	/**
 	* This tests if a position is visible.  it can optionally use lighting and fov.
@@ -1323,12 +1323,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	/**
 	* Darkmod enemy tracking: Is an entity shrouded in darkness?
-	* @author: SophisticatedZombie
+	* @author: SophisticatedZombie, tels
+	*
+	* The sightThreshold goes from 0.0f to 1.0f. Uses FOV, distance and lighting of the
+	* entity to determine visibility.
 	*
 	* @return true if the entity is in darkness
 	* @return false if not
 	*/
-	bool IsEntityHiddenByDarkness (idEntity* p_entity) const;
+	bool IsEntityHiddenByDarkness (idEntity* p_entity, const float sightThreshold) const;
 
 	/**
 	 * greebo: Returns TRUE if the entity is within the "attack_cone".
@@ -1713,7 +1716,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_GetJumpVelocity( const idVec3 &pos, float speed, float max_height );
 	void					Event_EntityInAttackCone( idEntity *ent );
 	void					Event_CanSeeEntity( idEntity *ent );
-	void					Event_CanSeeEntityExt( idEntity *ent, int useFOV, int useLighting);
+	void					Event_CanSeeEntityExt( idEntity *ent, const int useFOV, const int useLighting);
+	void					Event_IsEntityHidden( idEntity *ent, const float sightThreshold);
 	void					Event_CanSeePositionExt( const idVec3& position, int useFOV, int useLighting);
 	void					Event_SetTalkTarget( idEntity *target );
 	void					Event_GetTalkTarget( void );

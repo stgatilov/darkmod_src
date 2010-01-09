@@ -4028,7 +4028,7 @@ bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 	// Also consider lighting and visual acuity of AI
 	if (cansee)
 	{
-		cansee = !IsEntityHiddenByDarkness(ent);
+		cansee = !IsEntityHiddenByDarkness(ent, 0.1f);	// tels: hard-coded threshold of 0.1f
 	}
 
 	// Return result
@@ -4040,17 +4040,17 @@ bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 The Dark Mod
 idAI::CanSeeExt
 
-This metohd can ignore lighting conditions and/or field of vision.
+This method can ignore lighting conditions and/or field of vision.
 =====================
 */
-bool idAI::CanSeeExt( idEntity *ent, bool useFOV, bool useLighting ) const
+bool idAI::CanSeeExt( idEntity *ent, const bool useFOV, const bool useLighting ) const
 {
 	// Test if it is occluded
 	bool cansee = idActor::CanSee( ent, useFOV );
 
 	if (cansee && useLighting)
 	{
-		cansee = !IsEntityHiddenByDarkness(ent);
+		cansee = !IsEntityHiddenByDarkness(ent, 0.1f);	// tels: hard-coded threshold of 0.1f
 	}
 
 	// Return result
@@ -8871,7 +8871,7 @@ float idAI::GetPlayerVisualStimulusAmount() const
 
 /*---------------------------------------------------------------------------------*/
 
-bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
+bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThreshold) const
 {
 	// Quick test using LAS at entity origin
 	idPhysics* p_physics = p_entity->GetPhysics();
@@ -8894,9 +8894,6 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 		// greebo: Debug output, comment me out
 		gameRenderWorld->DrawText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 */
-		// Get base sight threshold
-		float sightThreshold = 0.1f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
-
 		// Draw debug graphic
 		/*if (cv_ai_visdist_show.GetFloat() > 1.0)
 		{
