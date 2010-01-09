@@ -630,6 +630,9 @@ idLight::On
 ================
 */
 void idLight::On( void ) {
+	const char *skinName;
+	const idDeclSkin *skin;
+
 	currentLevel = levels;
 	// offset the start time of the shader to sync it to the game time
 	renderLight.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
@@ -637,6 +640,15 @@ void idLight::On( void ) {
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 		soundWasPlaying = false;
 	}
+	// Tels: set "skin_lit" if it is defined
+	spawnArgs.GetString( "skin_lit", "", &skinName );
+	skin = declManager->FindSkin( skinName );
+	if (skin) {
+		SetSkin( skin );
+		// set the spawnarg to the current active skin
+		spawnArgs.Set( "skin", skinName );
+	}
+	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -647,12 +659,24 @@ idLight::Off
 ================
 */
 void idLight::Off( void ) {
+	const char *skinName;
+	const idDeclSkin *skin;
+
 	currentLevel = 0;
 	// kill any sound it was making
 	if ( refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
 		StopSound( SND_CHANNEL_ANY, false );
 		soundWasPlaying = true;
 	}
+	// Tels: set "skin_unlit" if it is defined
+	spawnArgs.GetString( "skin_unlit", "", &skinName );
+	skin = declManager->FindSkin( skinName );
+	if (skin) {
+		SetSkin( skin );
+		// set the spawnarg to the current active skin
+		spawnArgs.Set( "skin", skinName );
+	}
+	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -688,6 +712,7 @@ idLight::FadeOut
 */
 void idLight::FadeOut( float time ) {
 	Fade( colorBlack, time );
+	// tels: at the end of the fade, set the skin to skin_unlit?
 }
 
 /*
