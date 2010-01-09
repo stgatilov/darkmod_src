@@ -1140,7 +1140,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 							// if attack hasn't hit yet, this was a miss
 							if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
 							{
-								pStatus->m_ActionResult = MELEERESULT_AT_HIT;
+								pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
 								pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
 							}
 						}
