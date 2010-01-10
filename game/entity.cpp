@@ -4597,6 +4597,9 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 
 	// start impact sound based on material type
 	key = va( "snd_%s", surfName.c_str() );
+	
+	// ishtvan: No need to play the sound here anymore, right?
+/* 
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -4604,6 +4607,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 	if ( *sound != '\0' ) {
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
+*/
 
 	if ( g_decals.GetBool() ) {
 		// place a wound overlay on the model
@@ -6982,6 +6986,8 @@ void idAnimatedEntity::AddLocalDamageEffect
 
 	// start impact sound based on material type
 	key = va( "snd_%s", surfName.c_str() );
+	// ishtvan: Shouldn't need to play the sound here anymore, right?
+/*
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -6989,6 +6995,7 @@ void idAnimatedEntity::AddLocalDamageEffect
 	if ( *sound != '\0' ) {
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
+*/
 
 	// blood splats are thrown onto nearby surfaces
 	key = va( "mtr_splat_%s", surfName.c_str() );

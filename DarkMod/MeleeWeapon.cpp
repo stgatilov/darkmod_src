@@ -802,8 +802,11 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	else
 		type = SURFTYPE_NONE;
 
-	if ( type == SURFTYPE_NONE ) 
-		surfType = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
+	if ( type == SURFTYPE_NONE )
+	{
+		// use a default surface type if we are unable to detect one
+		surfType = DmgDef->GetString("default_surface_inanimate");
+	}
 	else
 		g_Global.GetSurfName( tr->c.material, surfType );
 
@@ -830,13 +833,28 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		}
 	}
 
-	// actor-specific stuff
+	idActor *otherAct = NULL;
 	if( other->IsType(idActor::Type) )
 	{
-		idActor *otherAct = static_cast<idActor *>(other);
-		// update the melee status
+		otherAct = static_cast<idActor *>(other);
+	}
+	else if( other->IsType(idAFAttachment::Type) )
+	{
+		otherAct = (idActor *) static_cast<idAFAttachment *>(other)->GetBody();
+	}
+	// actor-specific stuff
+	if( otherAct != NULL )
+	{
+		// update melee status
 		CMeleeStatus *pOthMeleeStatus = &otherAct->m_MeleeStatus;
 		pOthMeleeStatus->m_LastHitByType = m_MeleeType;
+
+		// switch the default surface type to that for actors
+		if ( type == SURFTYPE_NONE )
+		{
+			// use a default surface type if we are unable to detect one
+			surfType = DmgDef->GetString("default_surface_actor");
+		}
 	}
 
 	if( other->fl.takedamage )
@@ -865,79 +883,70 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		}
 	}
 
-	// copied from idWeapon, not necessarily what we want
 	// Moved impact_damage_effect to DmgDef instead of weapon ent spawnargs
 	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Applying impact damage FX\r");
 	if ( DmgDef->GetBool( "impact_damage_effect" ) ) 
 	{
+		// ishtvan: Rewrote this to get rid of old D3 code
+		// that played the sounds in AddDamageEffect for bleeders, that doesn't make sense
 		if ( other->spawnArgs.GetBool( "bleed" ) ) 
 		{
+			// stuff that bleeds handle smoke and decal in AddDamageEffect
+			other->AddDamageEffect( *tr, impulse, DmgDef->GetString( "classname" ) );
+		}
+
+		// Handle smoke (particles), and decals
+		// NOTE: AddDamageEffect above will handle all wound particles and decals (smoke_wound_*, mtr_wound_*)
+		// So we only have to worry armour and other non-wounding strikes here (smoke_strike_* and mtr_strike_*)
+
+		// Uncomment for surface type debugging
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Surface hit was %s\r", tr->c.material->GetName() );
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", surfType.c_str() );
+
+		// start impact sound based on material type
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
+		sndName = va( "snd_%s", surfType.c_str() );
+		hitSound = DmgDef->GetString( sndName );
+
+		if ( hitSound.IsEmpty() ) 
+		{
+			// snd_hit is the default sound
 			sndName = "snd_hit";
 			hitSound = DmgDef->GetString( sndName );
+		}
 
-			// places wound overlay, also tries to play another sound that's usually not there?
-			// on AI, also does the blood spurt particle
-			other->AddDamageEffect( *tr, impulse, DmgDef->GetString( "classname" ) );
-
-		} else if ( other->spawnArgs.GetBool( "fleshy" ) ) {
-			// For non-bleeders that should still always play the flesh impact sound
-			sndName = "snd_flesh";
-			hitSound = DmgDef->GetString( sndName );
-
-		} else
+		// project decal 
+		// ishtvan: got rid of min time between decals, let it be up to anim
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Displaying decal\r");
+		// TODO: Make this read the surface type like smoke_strike_* ?
+		const char *decal;
+		decal = DmgDef->GetString( "mtr_strike" );
+		if ( decal && *decal ) 
 		{
-			// we hit an entity that doesn't bleed, 
-			// decals, sound and smoke are handled here instead
-			// TODO: Change this so that above is only executed if it bleeds AND we hit flesh?
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Hit entity that doesn't bleed\r");
+			gameLocal.ProjectDecal( tr->c.point, -tr->c.normal, 8.0f, true, 6.0, decal );
+		}
 
-			// Uncomment for surface type debugging
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Surface hit was %s\r", tr->c.material->GetName() );
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Material type name was %s\r", surfType.c_str() );
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Launching smoke\r");
+		// Strike particle FX (sparks.. blood is handled in AddDamageEffect)
+		const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", surfType.c_str()) );
 
-			// start impact sound based on material type
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Playing hit sound\r");
-			sndName = va( "snd_%s", surfType.c_str() );
-			hitSound = DmgDef->GetString( sndName );
+		if ( m_ParticlesMade < cv_melee_max_particles.GetInteger() && 
+				smokeName && *smokeName != '\0' )
+		{
+			const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
+			float chance = DmgDef->GetFloat( va("smoke_chance_%s", surfType.c_str()), "1.0" );
+			if( gameLocal.random.RandomFloat() > chance )
+				smoke = NULL;
 
-			if ( hitSound.IsEmpty() ) 
+			if( smoke )
 			{
-				sndName = "snd_metal";
-				hitSound = DmgDef->GetString( sndName );
-			}
-
-			// project decal 
-			// ishtvan: got rid of min time between decals, let it be up to anim
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Displaying decal\r");
-			const char *decal;
-			decal = DmgDef->GetString( "mtr_strike" );
-			if ( decal && *decal ) 
-			{
-				gameLocal.ProjectDecal( tr->c.point, -tr->c.normal, 8.0f, true, 6.0, decal );
-			}
-
-			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Launching smoke\r");
-			// Strike particle FX (sparks.. blood is handled in AddDamageEffect)
-			const char *smokeName = DmgDef->GetString( va("smoke_strike_%s", surfType.c_str()) );
-
-			if ( m_ParticlesMade < cv_melee_max_particles.GetInteger() && 
-					smokeName && *smokeName != '\0' )
-			{
-				const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-				float chance = DmgDef->GetFloat( va("smoke_chance_%s", surfType.c_str()), "1.0" );
-				if( gameLocal.random.RandomFloat() > chance )
-					smoke = NULL;
-
-				if( smoke )
-				{
-					gameLocal.smokeParticles->EmitSmoke
-						( 
-							smoke, gameLocal.time, 
-							gameLocal.random.RandomFloat(), 
-							tr->c.point, -tr->endAxis
-						);
-					m_ParticlesMade++;
-				}
+				gameLocal.smokeParticles->EmitSmoke
+					( 
+						smoke, gameLocal.time, 
+						gameLocal.random.RandomFloat(), 
+						tr->c.point, -tr->endAxis
+					);
+				m_ParticlesMade++;
 			}
 		}
 	}
