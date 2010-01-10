@@ -99,7 +99,7 @@ void idLiquid::Spawn() {
 	//common->Printf("idLiquid:%s) Spawned\n",this->GetName() );
 
 	// getters
-	spawnArgs.GetFloat("density","0.01043f",liquidDensity);
+	spawnArgs.GetFloat("density","0.001043f",liquidDensity);
 	spawnArgs.GetFloat("viscosity","3.0f",liquidViscosity);
 	spawnArgs.GetFloat("friction","3.0f",liquidFriction);
 	spawnArgs.GetString("liquid_name","water",temp);
