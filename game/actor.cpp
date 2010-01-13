@@ -746,6 +746,9 @@ void idActor::Spawn( void )
 
 	pain_delay		= SEC2MS( spawnArgs.GetFloat( "pain_delay" ) );
 	pain_threshold	= spawnArgs.GetInt( "pain_threshold" );
+
+	// load melee settings based on AI skill level + player difficulty
+	LoadMeleeSet();
 	
 	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
 	melee_range							= melee_range_unarmed;
@@ -3363,6 +3366,33 @@ void idActor::LoadVocalSet()
 	}
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s", i, name.c_str());
+}
+
+void idActor::LoadMeleeSet()
+{
+	idStr MeleeSet = spawnArgs.GetString("def_melee_set");
+	if (MeleeSet.IsEmpty()) return; // nothing to do
+
+	// tack on difficulty string
+	// if we do it this way, def will not be precached, but that's okay for just some numbers?
+	MeleeSet += va("_%s", cv_melee_difficulty.GetString());
+
+	const idDeclEntityDef* def = gameLocal.FindEntityDef(MeleeSet, false);
+
+	if (def == NULL)
+	{
+		gameLocal.Warning("Could not find def_melee_set %s!", MeleeSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_melee_set %s!", MeleeSet.c_str());
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying melee set %s to actor %s", MeleeSet.c_str(), name.c_str());
+
+	// Copy ALL spawnargs from melee set over to this entity
+	spawnArgs.Copy( def->dict );
+
+	// re-cache the anim rates in case they changed
+	CacheAnimRates();
 }
 
 /***********************************************************************

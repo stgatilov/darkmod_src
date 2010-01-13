@@ -294,6 +294,9 @@ extern idCVar cv_lp_randomize;
 extern idCVar cv_lp_pawlow;
 extern idCVar cv_lp_debug_hud;
 
+// melee difficulty
+extern idCVar cv_melee_difficulty;
+
 extern idCVar cv_door_auto_open_on_unlock;
 
 extern idCVar cv_dm_distance;

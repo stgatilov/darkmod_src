@@ -1621,6 +1621,12 @@ public:
 	**/
 	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
 
+	/**
+	* Cache the animation rates from spawnargs
+	* Always called at spawn, sometimes called later if spawnargs changed and rates need recaching
+	**/
+	virtual void			CacheAnimRates( void );
+
 	enum {
 		EVENT_ADD_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,
 		EVENT_MAXEVENTS

@@ -738,6 +738,11 @@ private:
 	 * greebo: This loads the vocal set (the snd_* spawnargs) into this entity's spawnargs.
 	 */
 	void					LoadVocalSet();
+	
+	/**
+	* ishtvan: Load a set of melee difficulty options
+	**/
+	void					LoadMeleeSet();
 
 	void					SetupHead( void );
 
