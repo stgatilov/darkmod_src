@@ -3502,6 +3502,52 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		gui->SetStateInt("lp_difficulty", setting);
 	}
+	else if (cmd == "setMeleeDifficulty")
+	{
+		// Lockpicking difficulty setting changed, update CVARs
+		int setting = gui->GetStateInt("melee_difficulty", "-1");
+		
+		switch (setting)
+		{
+		case 0: // Normal
+			cv_melee_difficulty.SetString("normal");
+			break;
+		case 1: // Hard
+			cv_melee_difficulty.SetString("hard");
+			break;
+		case 2: // Expert
+			cv_melee_difficulty.SetString("expert");
+			break;
+		default:
+			gameLocal.Warning("Unknown value for melee difficulty encountered!");
+		};
+	}
+	else if (cmd == "loadMeleeDifficulty")
+	{
+		// The GUI requests to update the melee_difficulty state string
+		int setting = 0;
+
+		idStr diffString = cv_melee_difficulty.GetString();
+
+		if ( diffString == "normal" )
+		{
+			setting = 0; // Normal
+		}
+		else if( diffString == "hard" )
+		{
+			setting = 1; // Hard
+		}
+		else if( diffString == "expert" )
+		{
+			setting = 2; // Expert
+		}
+		else
+		{
+			setting = 0; // Normal by default
+		}
+
+		gui->SetStateInt("melee_difficulty", setting);
+	}
 	else if (cmd == "mainmenu_init")
 	{
 		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
