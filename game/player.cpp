@@ -7743,8 +7743,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			{
 				// let the anim script know we took damage
 				AI_PAIN = Pain( inflictor, attacker, damage, dir, location, &damageDef->dict );
-				if(AI_PAIN)
-					gameLocal.Printf("Player:AI_PAIN set to true\n");
 			}
 			
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
