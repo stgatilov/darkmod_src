@@ -1095,7 +1095,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	if( !DmgDef )
 	{
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Did not find damage def %s\r", DamageDefName);
-		goto Quit;
+		return;
 	}
 
 	// Apply physical impulse
@@ -1279,7 +1279,6 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	}
 	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Done!\r");
 
-Quit:
 	return;
 }
 
