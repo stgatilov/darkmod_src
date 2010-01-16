@@ -246,8 +246,9 @@ idCVar cv_melee_mouse_slowview(			"tdm_melee_mouse_slowview", "0.0", CVAR_GAME |
 idCVar cv_melee_invert_attack(			"tdm_melee_invert_attack", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, mouse motions are inverted when controlling which attack to make." ); 
 idCVar cv_melee_invert_parry(			"tdm_melee_invert_parry", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, mouse motions are inverted when controlling which parry to make." ); 
 idCVar cv_melee_auto_parry(				"tdm_melee_auto_parry", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, melee parries are chosen automatically to match the enemy's attack (manual parry mode is much harder)." );
+idCVar cv_melee_forbid_auto_parry(		"tdm_melee_forbid_auto_parry", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, auto parry is forced to be off.  Only manual allowed.  Works in conjunction with the main menu, do not adjust by hand." );
 idCVar cv_melee_max_particles(			"tdm_melee_max_particles", "10", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Max number of particles a single melee swing can generate (eye candy setting)." );
-idCVar cv_melee_difficulty(				"tdm_melee_difficulty", "normal", CVAR_GAME, "Melee difficulty as set by the menu (Do not adjust ingame, cheater!!)" );
+idCVar cv_melee_difficulty(				"tdm_melee_difficulty", "normal", CVAR_GAME | CVAR_ARCHIVE, "Melee difficulty as set by the menu (Do not adjust ingame, cheater!!)" );
 
 idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) to draw the linear impulse of (some) entities." );
 
