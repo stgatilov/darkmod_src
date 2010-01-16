@@ -45,6 +45,10 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_OldOrigin = vec3_zero;
 	m_OldAxis = mat3_identity;
 	m_bParryStopOnSuccess = false;
+
+	m_bFailsafeTrace		 = false;
+	m_vFailsafeTraceStart	= vec3_zero;
+	m_vFailsafeTraceEnd		= vec3_zero;
 }
 
 CMeleeWeapon::~CMeleeWeapon( void )
@@ -74,6 +78,9 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteVec3( m_OldOrigin );
 	savefile->WriteMat3( m_OldAxis );
 	savefile->WriteBool( m_bParryStopOnSuccess );
+	savefile->WriteBool( m_bFailsafeTrace );
+	savefile->WriteVec3( m_vFailsafeTraceStart );
+	savefile->WriteVec3( m_vFailsafeTraceEnd );
 }
 
 void CMeleeWeapon::Restore( idRestoreGame *savefile ) 
@@ -98,6 +105,9 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3( m_OldOrigin );
 	savefile->ReadMat3( m_OldAxis );
 	savefile->ReadBool( m_bParryStopOnSuccess );
+	savefile->ReadBool( m_bFailsafeTrace );
+	savefile->ReadVec3( m_vFailsafeTraceStart );
+	savefile->ReadVec3( m_vFailsafeTraceEnd );
 
 	// Regenerate the clipmodel
 	if( m_bModCM )
@@ -127,7 +137,10 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	m_bAttacking = true;
 	// TODO: We shouldn't set the owner every time, should only have to set once
 	m_Owner = ActOwner;
-	m_bWorldCollide = spawnArgs.GetBool( va("att_world_collide_%s", AttName));
+	m_bWorldCollide = spawnArgs.GetBool( va("att_world_collide_%s", AttName) );
+	m_bFailsafeTrace = spawnArgs.GetBool( va("att_failsafe_trace_%s", AttName) );
+	m_vFailsafeTraceStart = spawnArgs.GetVector( va("att_failsafe_trace_start_%s", AttName) );
+	m_vFailsafeTraceEnd = spawnArgs.GetVector( va("att_failsafe_trace_end_%s", AttName) );
 	m_StopMass = spawnArgs.GetFloat("stop_mass");
 	m_ParticlesMade = 0;
 
@@ -169,6 +182,33 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		idEntity *other = gameLocal.entities[tr.c.entityNum];
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Attack clipmodel started out inside entity %s.\r", other->name.c_str());
 
+		// additional failsafe trace:
+		if( m_bFailsafeTrace )
+		{
+			trace_t tr2;
+			idVec3 tr2Start, tr2End;
+			tr2Start = (m_vFailsafeTraceStart * m_OldAxis) + m_OldOrigin;
+			tr2End = (m_vFailsafeTraceEnd * m_OldAxis) + m_OldOrigin;
+
+			m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+			gameLocal.clip.TracePoint( tr2, tr2Start, tr2End, TestContents, this );
+			m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
+
+			if( tr2.fraction < 1.0f )
+			{
+				// failsafe trace connected, handle valid collision and return
+				idVec3 velDir = tr2End - tr2Start;
+				velDir.Normalize();
+
+				DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Failsafe trace successful, treating as valid collision\r");
+				HandleValidCollision( tr2, tr2Start, velDir);
+				return;
+			}
+		}
+		
+		// otherwise, we still don't have a valid collision, just an instanced clipmodel already inside something
+		// fill in best guesses for collision data
+
 		// hack to fix crashes in closed Id code, set material hit to NULL
 		// AI don't SEEM to crash and we want to know armour type was hit, so exception for AI:
 		// Update: Nope, AI crash too.  TODO: Fix this when D3 becomes open source
@@ -176,7 +216,15 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		tr.c.material = NULL;
 
 		// the point is also inaccruate sometimes, set to origin of the weapon object
-		tr.c.point = m_OldOrigin;
+		// ishtvan 1/2010: This should be more accurate, to use center of clipmodel
+		// tr.c.point = m_OldOrigin;
+		tr.c.point = pClip->GetBounds().GetCenter();
+		tr.c.point *= m_OldAxis;
+		tr.c.point += m_OldOrigin;
+
+		if( cv_melee_debug.GetBool() )
+			gameRenderWorld->DebugArrow( colorMagenta, m_OldOrigin, tr.c.point, 3, 1000 );
+
 		// set the normal to the owner's view forward
 		idMat3 viewAxis;
 		idVec3 dummy;
@@ -481,7 +529,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	trace_t tr;
 	idMat3 axis;
 	idClipModel *pClip;
-	int ClipMask, location;
+	int ClipMask;
 
 	if( m_WeapClip )
 		pClip = m_WeapClip;
@@ -531,6 +579,33 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 	GetPhysics()->SetContents( contentsEnt );
 	m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
 	
+	// ishtvan: new approach calling separate function HandleValidCollision:
+	if( tr.fraction < 1.0f )
+	{
+		// hit something
+		
+		// Calculate the instantaneous velocity _direction_ of the point that hit
+		// For now, we just need direction of velocity, not magnitude, don't need delta_t
+		idVec3 vLinearTrans = (NewOrigin - OldOrigin);
+
+		// Calc. translation due to angular velocity
+		// velocity of point = r x w
+		// Keep in mind that rotation was defined as a rotation about origin,
+		// not about the center of mass
+		idVec3 r = tr.c.point - OldOrigin;
+		idVec3 vSpinTrans = r.Cross((rotation.ToAngularVelocity()));
+
+		idVec3 PointVelDir = vLinearTrans + vSpinTrans;
+		// TODO: Divide by delta_t if we want to store velocity magnitude later
+		PointVelDir.Normalize();
+
+		HandleValidCollision( tr, OldOrigin, PointVelDir );
+	}
+	
+
+	// ishtvan: Old approach, moved this into another function
+	// leave the commented code around for a while until we're sure we didn't break something
+/*
 	// hit something 
 	if( tr.fraction < 1.0f )
 	{
@@ -766,6 +841,242 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 				DeactivateAttack();
 			}
+		}
+	}
+*/
+}
+
+void CMeleeWeapon::HandleValidCollision(trace_t &tr, idVec3 trOrigin, idVec3 PointVelDir)
+{
+	int location;
+
+	idEntity *other = gameLocal.entities[ tr.c.entityNum ];
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit entity %s\r", other->name.c_str());
+	// Show the initial trace collision point
+	if( cv_melee_debug.GetBool() )
+		gameRenderWorld->DebugArrow( colorBlue, trOrigin, tr.c.point, 3, 1000 );
+
+	location = JOINT_HANDLE_TO_CLIPMODEL_ID( tr.c.id );
+
+	// Secondary trace for when we hit the AF structure of an AI and want
+	// to see where we would hit on the actual model
+	if(	(tr.c.contents & CONTENTS_CORPSE)
+		&& other->IsType(idAFEntity_Base::Type) )
+	{
+		idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
+		trace_t tr2;
+
+		// NOTE: Just extrapolating along the velocity can fail when the AF
+		// extends outside of the rendermodel
+		// Just using the AF face normal can fail when hit at a corner
+		// So take an equal average of both
+		idVec3 trDir = ( PointVelDir - tr.c.normal ) / 2.0f;
+		trDir.Normalize();
+
+		idVec3 start = tr.c.point - 8.0f * trDir;
+		int contentsEnt = GetPhysics()->GetContents();
+		GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+		
+		gameLocal.clip.TracePoint
+			( 
+				tr2, start, tr.c.point + 8.0f * trDir, 
+				CONTENTS_RENDERMODEL, m_Owner.GetEntity() 
+			);
+		GetPhysics()->SetContents( contentsEnt );
+
+		// Ishtvan: Ignore secondary trace if we hit a swapped-in head model on the first pass
+		// we want to register a hit on that swapped in head body for gameplay reasons
+		bool bHitSwappedHead = false;
+		if( otherAF->IsType(idAI::Type) )
+		{
+			idAI *otherAI = static_cast<idAI *>(otherAF);
+			if( otherAI->m_bHeadCMSwapped && (tr.c.id == otherAI->m_HeadBodyID) )
+				bHitSwappedHead = true;
+		}
+
+		if( tr2.fraction < 1.0f && !bHitSwappedHead )
+		{
+			
+			tr = tr2;
+			other = gameLocal.entities[ tr.c.entityNum ];
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: CONTENTS_CORPSE secondary trace hit entity %s\r", other->name.c_str());
+
+			// Draw the new collision point
+			if( cv_melee_debug.GetBool() )
+			{
+				gameRenderWorld->DebugArrow( colorRed, start, tr2.c.point, 3, 1000 );
+			}
+
+			other = gameLocal.entities[tr2.c.entityNum];
+			// update location
+			location = JOINT_HANDLE_TO_CLIPMODEL_ID( tr.c.id );
+		}
+		else
+		{
+			// failed to connect with the rendermodel.  
+			// Last ditch effort to find the correct AF body
+			location = otherAF->JointForBody(tr.c.id);
+
+			// If we failed to find anything, draw the attempted trace in green
+			if( cv_melee_debug.GetBool() )
+				gameRenderWorld->DebugArrow( colorGreen, start, tr.c.point + 8.0f * PointVelDir, 3, 1000 );
+		}
+
+		// Uncomment for translational and angular velocity debugging
+		if( cv_melee_debug.GetBool() )
+		{
+		// no longer works with new function format
+		// if we really want to separate angular and linear,
+		// we could do this same operation in outer function
+		/*
+			idVec3 vLinDir = vLinearTrans;
+			idVec3 vSpinDir = vSpinTrans;
+			vLinDir.Normalize();
+			vSpinDir.Normalize();
+
+			gameRenderWorld->DebugArrow
+				(
+					colorCyan, (tr.c.point - 8.0f * vLinDir), 
+					(tr.c.point + 8.0f * vLinDir), 3, 1000
+				);
+			// Uncomment for translational and angular velocity debugging
+			gameRenderWorld->DebugArrow
+				(
+					colorPurple, (tr.c.point - 8.0f * vSpinDir), 
+					(tr.c.point + 8.0f * vSpinDir), 3, 1000
+				);
+		*/
+		// instead, show combined velocity
+			gameRenderWorld->DebugArrow
+			(
+				colorCyan, (tr.c.point - 8.0f * PointVelDir), 
+				(tr.c.point + 8.0f * PointVelDir), 3, 1000
+			);
+		}
+	}
+
+	// Direction of the velocity of point that hit (renamed it for brevity)
+	idVec3 dir = PointVelDir;
+
+	idActor *AttachOwner(NULL);
+	idEntity *OthBindMaster(NULL);
+	if( other->IsType(idAFAttachment::Type) )
+	{
+		idEntity *othBody = static_cast<idAFAttachment *>(other)->GetBody();
+		if( othBody->IsType(idActor::Type) )
+			AttachOwner = static_cast<idActor *>(othBody);
+	}
+	// Also check for any object bound to an actor (helmets, etc)
+	else if( (OthBindMaster = other->GetBindMaster()) != NULL
+				&& OthBindMaster->IsType(idActor::Type) )
+		AttachOwner = static_cast<idActor *>(OthBindMaster);
+
+	CMeleeStatus *pStatus = &m_Owner.GetEntity()->m_MeleeStatus;
+
+	// Check if we hit a melee parry or held object 
+	// (for some reason tr.c.contents erroneously returns CONTENTS_MELEEWEAP for everything except the world)
+	// if( (tr.c.contents & CONTENTS_MELEEWEAP) != 0 )
+	// this doesn't always work either, it misses linked clipmodels on melee weapons
+	// if( other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP) )
+	// have to do this to catch all cases:
+	if
+		( 
+			(other->GetPhysics() && ( other->GetPhysics()->GetContents(tr.c.id) & CONTENTS_MELEEWEAP))
+			|| ( other->IsType(CMeleeWeapon::Type) && static_cast<CMeleeWeapon *>(other)->GetOwner() )
+		)
+	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit someting with CONTENTS_MELEEWEAP\r");
+		// hit a parry (make sure we don't hit our own other melee weapons)
+		if( other->IsType(CMeleeWeapon::Type)
+			&& static_cast<CMeleeWeapon *>(other)->GetOwner()
+			&& static_cast<CMeleeWeapon *>(other)->GetOwner() != m_Owner.GetEntity() )
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING
+				("MeleeWeapon: Hit a melee parry put up by %s\r", 
+				  static_cast<CMeleeWeapon *>(other)->GetOwner()->name.c_str() );
+			// Test our attack against their parry
+			TestParry( static_cast<CMeleeWeapon *>(other), dir, &tr );
+		}
+		// hit a held object
+		else if( other == gameLocal.m_Grabber->GetSelected() )
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit an object held by the player\r");
+			
+			MeleeCollision( other, dir, &tr, location );
+
+			// TODO: Message the grabber that the grabbed object has been hit
+			// So that it can fly out of player's hands if desired
+			
+			// update AI status (consider this a miss)
+			pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+			pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
+			// TODO: Message the attacking AI to play a bounce off animation if appropriate
+
+			DeactivateAttack();
+		}
+		else
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit something with CONTENTS_MELEEWEAP that's not an active parry or a held object (this shouldn't normally happen).\r");
+			MeleeCollision( other, dir, &tr, location );
+
+			// update AI status (consider this a miss)
+			pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+			pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
+			DeactivateAttack();
+		}
+	}
+	// Hit an actor, or an AF attachment that is part of an actor
+	else if( other->IsType(idActor::Type) || AttachOwner != NULL )
+	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit actor or part of actor %s\r", other->name.c_str());
+		
+		idActor *owner = m_Owner.GetEntity();
+		idActor *otherAct;
+
+		if( AttachOwner )
+			otherAct = AttachOwner;
+		else
+			otherAct = static_cast<idActor *>(other);
+
+		// Don't do anything if we hit our own AF attachment
+		// AI also don't do damage to friendlies/neutral
+		if( AttachOwner != owner 
+			&& !(owner->IsType(idAI::Type) && !(static_cast<idAI *>(owner)->IsEnemy(otherAct))) )
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit AI other than ourselves.\r");
+			// TODO: Scale damage with instantaneous velocity of the blade?
+			MeleeCollision( other, dir, &tr, location );
+
+			// update actor's melee status
+			pStatus->m_ActionResult = MELEERESULT_AT_HIT;
+			pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
+			DeactivateAttack();
+		}
+		else
+		{
+			DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit yourself.  Stop hitting yourself!\r");
+		}
+	}
+	// Hit something else in the world (only happens to the player)
+	else
+	{
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Hit a non-AI object: %s\r", other->name.c_str());
+		MeleeCollision( other, dir, &tr, location );
+		
+		// TODO: Message the attacking actor to play a bounce off animation if appropriate
+
+		// keep the attack going if the object hit is a moveable below a certain mass
+		// TODO: Handle moveables bound to other things and use the total mass of the system?
+		if( !( other->IsType(idMoveable::Type) && other->GetPhysics()->GetMass() < m_StopMass ) )
+		{
+			// message the AI, consider this a miss
+			pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+			pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+
+			DeactivateAttack();
 		}
 	}
 }

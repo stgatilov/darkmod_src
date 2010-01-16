@@ -103,6 +103,18 @@ protected:
 	void TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace );
 
 	/**
+	* Handle valid collision, called when trace hit something valid
+	* in either StarAttack or CheckAttack
+	* Arguments:
+	* tr: Trace object that should be the result of a trace that was found to have hit something
+	* OldOrigin: Used for debug display of trace lines, can be origin of CM in previous frame,
+	* or just the start point of the trace.
+	* PointVelDir: Normalized velocity direction vector of the collision point.
+	* Used for debug display and imparting velocity to objects hit
+	**/
+	void HandleValidCollision( trace_t &tr, idVec3 OldOrigin, idVec3 PointVelDir );
+
+	/**
 	* Called to handle physics, particle FX, sound, damage
 	* When a melee attack hits something
 	* Location is the JOINT HANDLE that was hit
@@ -192,6 +204,21 @@ protected:
 	* (Applies to player weapon parries)
 	**/
 	bool					m_bParryStopOnSuccess;
+
+	/**
+	* Set to true if we want to execute a failsafe trace for certain attacks
+	* This happens after the attack CM starts out colliding with something
+	* as soon as it is instanced.  Try do do another ray-trace to fix this.
+	**/
+	bool					m_bFailsafeTrace;
+	/**
+	* Start of the failsafe trace, in the coordinates of the attack CM
+	**/
+	idVec3					m_vFailsafeTraceStart;
+	/**
+	* End of the failsafe trace, in the coordinates of the attack CM
+	**/
+	idVec3					m_vFailsafeTraceEnd;
 
 // Cosmetic stuff:
 
