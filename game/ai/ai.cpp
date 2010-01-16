@@ -6305,9 +6305,10 @@ void idAI::UpdateAttachmentContents(bool makeSolid)
 
 		if (ent == NULL || !m_Attachments[i].ent.IsValid()) continue;
 
-		if (!ent->IsType(CMeleeWeapon::Type)) continue;
+		if (!ent->IsType(CMeleeWeapon::Type) && !ent->m_bAttachedAlertControlsSolidity) 
+			continue;
 		
-		// Found a melee weapon attachment
+		// Found a melee weapon or other attachment that should become solid on alert
 		idAFBody *body;
 		if (makeSolid)
 		{

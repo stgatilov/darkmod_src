@@ -331,6 +331,13 @@ public:
 	float					m_FrobBias;
 
 	/**
+	* Controls whether this entity, when attached to an AI, will become solid when the AI
+	* is alerted and nonsolid when the AI is not alerted.
+	* Often applied in conjunction with attach_set_nonsolid spawnarg
+	**/
+	bool					m_bAttachedAlertControlsSolidity;
+
+	/**
 	* Set to true if this entity is a climbable rope.  This could be set on either
 	* static ropes or AF entities, so it makes sense to let all entities have this var
 	**/

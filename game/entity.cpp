@@ -721,6 +721,7 @@ idEntity::idEntity()
 	m_FrobChangeTime = 0;
 	m_FrobPeerFloodFrame = 0;
 	m_FrobActionLock = false;
+	m_bAttachedAlertControlsSolidity = false;
 	m_bIsObjective = false;
 	m_bIsClimbableRope = false;
 	m_bIsMantleable = false;
@@ -1151,6 +1152,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 		savefile->WriteString(m_UsedBy[i].c_str());
 	}
 
+	savefile->WriteBool(m_bAttachedAlertControlsSolidity);
 	savefile->WriteBool(m_bIsObjective);
 	savefile->WriteBool(m_bFrobable);
 	savefile->WriteBool(m_bFrobSimple);
@@ -1340,6 +1342,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 		savefile->ReadString(m_UsedBy[i]);
 	}
 
+	savefile->ReadBool(m_bAttachedAlertControlsSolidity);
 	savefile->ReadBool(m_bIsObjective);
 	savefile->ReadBool(m_bFrobable);
 	savefile->ReadBool(m_bFrobSimple);
@@ -7517,6 +7520,8 @@ void idEntity::LoadTDMSettings(void)
 	m_AbsenceNoticeability = spawnArgs.GetFloat("absence_noticeability", "0");
 
 	team = spawnArgs.GetInt("team", "-1");
+
+	m_bAttachedAlertControlsSolidity = spawnArgs.GetBool("on_attach_alert_become_solid");
 
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
