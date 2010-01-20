@@ -3561,11 +3561,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 
 		gui->SetStateInt("melee_difficulty", setting);
-		// have the gui enable/disable auto parry
+		// have the gui enable/disable auto parry ( NOT WORKING! )
 		gui->HandleNamedEvent("UpdateAutoParryOptions");
-		// TEST:
-		if( bForbidAuto )
-			gui->HandleNamedEvent("DisableAutoParry");
 	}
 	else if (cmd == "mainmenu_init")
 	{
