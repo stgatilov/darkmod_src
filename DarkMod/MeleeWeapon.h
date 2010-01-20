@@ -247,7 +247,7 @@ protected:
 	/**
 	* List of AI whose CMs we've changed
 	**/
-	idList<idEntityPtr<idAI>>	m_AIWithModCMs;
+	idList< idEntityPtr<idAI> >	m_AIWithModCMs;
 
 };
 
