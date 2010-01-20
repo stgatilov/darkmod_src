@@ -371,7 +371,7 @@ idCVar cv_ambient_method("tdm_ambient_method",	"0",	CVAR_GAME | CVAR_BOOL | CVAR
 /**
  * Volume of speakers with s_music set
  */
-idCVar cv_music_volume("tdm_music_volume",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for speakers with s_music set." );
+idCVar cv_music_volume("tdm_music_volume",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for speakers with s_music set. Goes from -40 to 0." );
 
 idCVar cv_moveable_collision("tdm_show_moveable_collision",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1, shows the velocity at which the moveable collides and the volume of the resulting sound." );
 
