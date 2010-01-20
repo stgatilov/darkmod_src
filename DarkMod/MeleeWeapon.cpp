@@ -42,6 +42,9 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_StopMass = 0.0f;
 	m_ParticlesMade = 0;
 
+	m_bModAICMs = false;
+	m_AIWithModCMs.Clear();
+
 	m_OldOrigin = vec3_zero;
 	m_OldAxis = mat3_identity;
 	m_bParryStopOnSuccess = false;
@@ -75,6 +78,14 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_MeleeType );
 	savefile->WriteFloat( m_StopMass );
 	savefile->WriteInt( m_ParticlesMade );
+
+	savefile->WriteBool( m_bModAICMs );
+	savefile->WriteInt( m_AIWithModCMs.Num() );
+	for( int i=0; i < m_AIWithModCMs.Num(); i++ )
+	{
+		m_AIWithModCMs[i].Save( savefile );
+	}
+
 	savefile->WriteVec3( m_OldOrigin );
 	savefile->WriteMat3( m_OldAxis );
 	savefile->WriteBool( m_bParryStopOnSuccess );
@@ -102,6 +113,17 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	m_MeleeType = (EMeleeType) mType;
 	savefile->ReadFloat( m_StopMass );
 	savefile->ReadInt( m_ParticlesMade );
+
+	savefile->ReadBool( m_bModAICMs );
+	m_AIWithModCMs.Clear();
+	int num;
+	savefile->ReadInt( num );
+	m_AIWithModCMs.SetNum( num );
+	for( int i=0; i < num; i++ )
+	{
+		m_AIWithModCMs[i].Restore( savefile );
+	}
+
 	savefile->ReadVec3( m_OldOrigin );
 	savefile->ReadMat3( m_OldAxis );
 	savefile->ReadBool( m_bParryStopOnSuccess );
@@ -143,6 +165,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	m_vFailsafeTraceEnd = spawnArgs.GetVector( va("att_failsafe_trace_end_%s", AttName) );
 	m_StopMass = spawnArgs.GetFloat("stop_mass");
 	m_ParticlesMade = 0;
+	m_bModAICMs = spawnArgs.GetBool("use_larger_ai_head_CMs");
 
 	m_WeapClip = NULL;
 	pClip = GetPhysics()->GetClipModel();
@@ -156,6 +179,10 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	m_OldAxis = GetPhysics()->GetAxis() * m_ClipRotation;
 
 	
+	// before initial collision test, see if we should mod head CMs on any AI in range
+	if( m_bModAICMs )
+		CheckAICMSwaps();
+
 	// Initial collision test (if we start out already colliding with something)
 	// Hack to ignore the owner during the trace
 	int contentsOwner = m_Owner.GetEntity()->GetPhysics()->GetContents();
@@ -286,6 +313,16 @@ void CMeleeWeapon::DeactivateAttack( void )
 	{
 		m_bAttacking = false;
 		ClearClipModel();
+
+		// Undo any clipmodel modifications we made to AI during this test
+		for( int i=0; i < m_AIWithModCMs.Num(); i++ )
+		{
+			if( m_AIWithModCMs[i].IsValid() )
+			{
+				m_AIWithModCMs[i].GetEntity()->SwapHeadAFCM(false);
+			}
+		}
+		m_AIWithModCMs.Clear();
 	}
 }
 
@@ -542,6 +579,13 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 
 	idRotation rotation = axis.ToRotation();
 	rotation.SetOrigin( OldOrigin );
+
+	// before collision test, check for AI in range whose head CMs we should modify
+	// for best accuracy, we should run this every frame here in CheckAttack
+	// this accounts for enemy and AI closing at high velocities
+	// If this causes slowdown, we can comment it out and lose the accuracy
+	if( m_bModAICMs )
+		CheckAICMSwaps();
 
 	if( m_bWorldCollide )
 		ClipMask = CONTENTS_MELEE_WORLDCOLLIDE;
@@ -1394,4 +1438,39 @@ void CMeleeWeapon::AttachedToActor(idActor *actor)
 			actor->m_MeleePredictedAttTime = 0.001f * atof(kv->GetValue().c_str());
 	}
 
+}
+
+void CMeleeWeapon::CheckAICMSwaps( )
+{
+	// check for AI within a bounds around weapon origin
+	// if AI is conscious and not in combat alert state, try to swap to larger head CM
+	idBounds b;
+	b.Zero();
+	b.ExpandSelf(50.0f);
+	b.TranslateSelf( GetPhysics()->GetOrigin() + m_ClipOffset );
+
+	idEntity *ents[MAX_GENTITIES];
+	int numEnts;
+	numEnts = gameLocal.clip.EntitiesTouchingBounds( b, CONTENTS_BODY, ents, MAX_GENTITIES );
+
+	for( int i = 0; i < numEnts; i++ )
+	{
+		idEntity *pEnt = ents[i];
+		if( !pEnt->IsType(idAI::Type) )
+			continue;
+		idAI *pAI = static_cast<idAI *>(pEnt);
+		if( pAI->IsKnockedOut() || pAI->health < 0 || pAI->AI_AlertIndex >= 5 )
+			continue;
+		
+		// do the swap
+		idEntityPtr<idAI> AIEntPtr;
+		AIEntPtr = pAI;
+
+		int num = m_AIWithModCMs.Num();
+		int index;
+		index = m_AIWithModCMs.AddUnique( AIEntPtr );
+		// sneaky way of checking if we're handling this AI for the first time:
+		if( index == num )
+			pAI->SwapHeadAFCM( true );
+	}
 }

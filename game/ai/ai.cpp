@@ -1736,12 +1736,6 @@ void idAI::Spawn( void )
 		m_HeadBodyID = BodyForJoint(m_HeadJointID);
 	}
 
-	// modify the head clipmodel while conscious to facilitate KO'ing, if applicable
-	if( spawnArgs.FindKey("living_headbox_mins") != NULL && af.IsLoaded() )
-	{
-		SwapHeadAFCM( true );
-	}
-
 	if( head.GetEntity() )
 	{
 		CopyHeadKOInfo();
@@ -10444,12 +10438,12 @@ float idAI::StealthDamageMult()
 		return 1.0;
 }
 
-void idAI::SwapHeadAFCM( bool bConscious )
+void idAI::SwapHeadAFCM( bool bUseLargerCM )
 {
 	idAFBody *headBody;
 	headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
 
-	if( bConscious && spawnArgs.FindKey("living_headbox_mins") )
+	if( bUseLargerCM && !m_bHeadCMSwapped && spawnArgs.FindKey("blackjack_headbox_mins") )
 	{
 		idClipModel *oldClip = headBody->GetClipModel();
 		idVec3	CMorig	= oldClip->GetOrigin();
@@ -10461,8 +10455,8 @@ void idAI::SwapHeadAFCM( bool bConscious )
 		m_OrigHeadCM = new idClipModel(oldClip);
 
 		idBounds HeadBounds;
-		spawnArgs.GetVector( "living_headbox_mins", NULL, HeadBounds[0] );
-		spawnArgs.GetVector( "living_headbox_maxs", NULL, HeadBounds[1] );
+		spawnArgs.GetVector( "blackjack_headbox_mins", NULL, HeadBounds[0] );
+		spawnArgs.GetVector( "blackjack_headbox_maxs", NULL, HeadBounds[1] );
 
 		idTraceModel trm;
 		trm.SetupBox( HeadBounds );
@@ -10484,7 +10478,7 @@ void idAI::SwapHeadAFCM( bool bConscious )
 		m_bHeadCMSwapped = true;
 	}
 	// swap back to original CM when going unconscious, if we swapped earlier
-	else if( !bConscious && m_bHeadCMSwapped )
+	else if( !bUseLargerCM && m_bHeadCMSwapped )
 	{
 		idClipModel *oldClip = headBody->GetClipModel();
 		idVec3	CMorig	= oldClip->GetOrigin();

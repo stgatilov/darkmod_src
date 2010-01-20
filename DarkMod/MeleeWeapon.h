@@ -103,6 +103,12 @@ protected:
 	void TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace );
 
 	/**
+	* Check to see what AI are in range, and whether we should modify their CMs
+	* (We do this if there is a flag on the weapon, if the AI is conscious, and not at combat alert)
+	**/
+	void CheckAICMSwaps( void );
+
+	/**
 	* Handle valid collision, called when trace hit something valid
 	* in either StarAttack or CheckAttack
 	* Arguments:
@@ -231,6 +237,17 @@ protected:
 	* Number of particles we've generated in this attack
 	**/
 	int						m_ParticlesMade;
+
+	/**
+	* Whether this attack swaps in different CMs on the AI in range
+	* (for example, the blackjack swapping in easy-KO CMs)
+	**/
+	bool					m_bModAICMs;
+
+	/**
+	* List of AI whose CMs we've changed
+	**/
+	idList<idEntityPtr<idAI>>	m_AIWithModCMs;
 
 };
 

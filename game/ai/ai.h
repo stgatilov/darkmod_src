@@ -446,8 +446,12 @@ public:
 	**/
 	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
 
-	/** Ishtvan: Swap the head CM while conscious **/
-	void SwapHeadAFCM( bool bConscious );
+	/** 
+	* Ishtvan: Swap the AI's head CM to a larger one
+	* (Used to make blackjacking easier, currently only called when a blackjack swings nearby)
+	* If the argument is true, the larger CM is used, otherwise, the original CM is swapped back.
+	**/
+	void SwapHeadAFCM( bool bUseLargerCM );
 
 	/**
 	* Return a damage multiplier if a sneak attack has occurred
