@@ -3561,14 +3561,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 
 		gui->SetStateInt("melee_difficulty", setting);
-
+		// have the gui enable/disable auto parry
+		gui->HandleNamedEvent("UpdateAutoParryOptions");
+		// TEST:
 		if( bForbidAuto )
-		{
-			// also lock and gray out the auto parry option
-			// tried to do this in the gui with onTime 0 or 10, but it didn't work
-			gui->SetStateString("MeleeAutoParry::choices", "Disabled");
-			gui->SetStateString("MeleeAutoParry::forecolor", "0.5 0.5 0.5 0.85");
-		}
+			gui->HandleNamedEvent("DisableAutoParry");
 	}
 	else if (cmd == "mainmenu_init")
 	{
