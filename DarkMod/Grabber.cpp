@@ -490,6 +490,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	m_drag.SetDragPosition( draggedPosition );
 
 	// Test: Drop the object if it is stuck
+	// TODO: Also put absolute distance check and angle offset check in here
 	CheckStuck();
 	if( m_bObjStuck )
 	{
@@ -808,6 +809,14 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		trace_t trResults;
 		physics->ClipRotation( trResults, m_rotation, NULL );
 		physics->Rotate( m_rotation * trResults.fraction );
+
+		// FIXME: If a bindmaster hits a bind slave when rotated, will it stop??
+		// debugging this here:
+		if( trResults.fraction < 1.0f )
+		{
+			// gameLocal.Printf("GRABBER ROTATION TO FACE PLAYER: Grabbed object %s hit object %s\n", m_dragEnt.GetEntity()->name.c_str(), gameLocal.entities[trResults.c.entityNum]->name.c_str() );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER ROTATION TO FACE PLAYER: Grabbed object %s hit object %s\r", m_dragEnt.GetEntity()->name.c_str(), gameLocal.entities[trResults.c.entityNum]->name.c_str() );
+		}
 
 		if( !m_bMaintainPitch )
 		{
