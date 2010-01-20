@@ -9748,6 +9748,7 @@ void idAI::DropOnRagdoll( void )
 	// Id style def_drops
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
 	
+	// old D3 code for spawning things at AI's feet when they die
 	while( kv )
 	{
 		idDict args;
@@ -9781,7 +9782,34 @@ void idAI::DropOnRagdoll( void )
 		{
 			int curContents = ent->GetPhysics()->GetContents();
 
-			ent->GetPhysics()->SetContents(curContents & ~(CONTENTS_SOLID|CONTENTS_SOLID));
+			// ishtvan: Also clear the CONTENTS_CORPSE flag (maybe this was a typo in original code?)
+			ent->GetPhysics()->SetContents(curContents & ~(CONTENTS_SOLID|CONTENTS_CORPSE));
+
+			// ishtvan: If this entity was added to the AF, set the AF body nonsolid as well
+			idAFBody *EntBody = AFBodyForEnt( ent );
+			if( EntBody != NULL )
+			{
+				int curBodyContents = EntBody->GetClipModel()->GetContents();
+				EntBody->GetClipModel()->SetContents( curBodyContents  & ~(CONTENTS_SOLID|CONTENTS_CORPSE) );
+			}
+
+			// also have to iterate thru stuff attached to this attachment
+			// ishtvan: left this commentd out because I'm not sure if GetTeamChildren is bugged or not
+			// don't want to accidentally set all attachments to the AI to nonsolid
+			/*
+			idList<idEntity *> AttChildren;
+			ent->GetTeamChildren( &AttChildren );
+			gameLocal.Printf("TEST: drop_set_nonsolid, Num team children = %d", AttChildren.Num() );
+			for( int i=0; i < AttChildren.Num(); i++ )
+			{
+				idPhysics *pChildPhys = AttChildren[i]->GetPhysics();
+				if( pChildPhys == NULL )
+					continue;
+
+				int childContents = pChildPhys->GetContents();
+				pChildPhys->SetContents( childContents & ~(CONTENTS_SOLID|CONTENTS_CORPSE) );
+			}
+			*/
 		}
 
 		bool bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
@@ -9845,6 +9873,11 @@ void idAI::DropOnRagdoll( void )
 
 		ent->GetPhysics()->Activate();
 	}
+
+	// also perform some of these same operations on attachments to our head,
+	// because they are stored differently than attachments to us
+	if( head.GetEntity() )
+		head.GetEntity()->DropOnRagdoll();
 }
 
 int idAI::StartSearchForHidingSpotsWithExclusionArea

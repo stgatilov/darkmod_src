@@ -143,6 +143,9 @@ public:
 	/** Also overload PostUnBind to clear the body information **/
 	virtual void PostUnbind( void );
 
+	/** Use this to set up stuff attached to AI's heads when they go ragdoll **/
+	virtual void DropOnRagdoll( void );
+
 protected:
 	idEntity *				body;
 	idClipModel *			combatModel;	// render model for hit detection of head
