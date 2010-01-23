@@ -2292,8 +2292,7 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 	// Tell the GUI to set its values
 	ui->HandleNamedEvent("GetObjectivesInfo");
 
-	int numObjectivesPerPage = 5;
-	numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
+	int numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
 
 	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
 
