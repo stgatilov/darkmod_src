@@ -1201,15 +1201,8 @@ protected:
 	bool						m_bFrobHighlightState;
 
 	/**
-	* Records the frame number of when the ent was frob peer flooded
-	* Also counts an object hilighting itself as peer flooding
-	**/
-	int							m_FrobPeerFloodFrame;
-
-	/**
 	* Timestamp indicating when the frob highlight last changed
-	* Used for continuous fade in and fade out, distinct from
-	* m_FrobPeerFloodFrame which is used for flooding the frob to peers.
+	* Used for continuous fade in and fade out.
 	**/
 	int							m_FrobChangeTime;
 

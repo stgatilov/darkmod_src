@@ -719,7 +719,6 @@ idEntity::idEntity()
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
 	m_FrobChangeTime = 0;
-	m_FrobPeerFloodFrame = 0;
 	m_FrobActionLock = false;
 	m_bAttachedAlertControlsSolidity = false;
 	m_bIsObjective = false;
@@ -1173,7 +1172,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bFrobbed);
 	savefile->WriteBool(m_bFrobHighlightState);
-	savefile->WriteInt(m_FrobPeerFloodFrame);
 	savefile->WriteInt(m_FrobChangeTime);
 
 	savefile->WriteString(m_FrobActionScript);
@@ -1364,7 +1362,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_bFrobbed);
 	savefile->ReadBool(m_bFrobHighlightState);
-	savefile->ReadInt(m_FrobPeerFloodFrame);
 	savefile->ReadInt(m_FrobChangeTime);
 
 	savefile->ReadString(m_FrobActionScript);
@@ -7550,10 +7547,10 @@ void idEntity::UpdateFrobState()
 	if( !m_bFrobbed )	
 	{
 		// The m_bFrobbed variable is FALSE, hence the player is not looking at this entity
-		// Check if we need to change our state
+		// or any of its peers. Check if we need to change our state.
 		if (m_bFrobHighlightState)
 		{
-			// stop highlight, tell peers
+			// stop highlight
 			SetFrobHighlightState(false);
 		}
 
@@ -7564,52 +7561,19 @@ void idEntity::UpdateFrobState()
 	// The player is looking at this entity, clear m_bFrobbed for the next frame
 	m_bFrobbed = false;
 
-	// Check if we are newly frob-highlighting this frame
-	if (!m_bFrobHighlightState)
-	{
-		// Change the highlight state to TRUE
-		SetFrobHighlightState(true);
-	}
+	// Change the highlight state to TRUE
+	SetFrobHighlightState(true);
 }
 
-void idEntity::SetFrobHighlightState( bool bVal )
+void idEntity::SetFrobHighlightState(bool newState)
 {
-	// Stop flooding the frob peers if we've already been updated this frame
-	if( m_FrobPeerFloodFrame == gameLocal.framenum)
-	{
-		// Only ignore FALSE flood calls in the same frame, let TRUE go through
-		if (!bVal) return;
+	if (m_bFrobHighlightState == newState) return; // Avoid unnecessary work
 
-		// But even if we have a TRUE call, only proceed if the state actually changed
-		if (bVal == m_bFrobHighlightState) return;
-	}
+	// The incoming state is differing from our current one, save the timestamp
+	m_FrobChangeTime = gameLocal.time;
 
-	// greebo: Update the frob peer flood frame
-	// Also, ignore if bVal == m_bFrobHighlightState, we need to flood our peers 
-	// and update their timestamps in any case
-	m_FrobPeerFloodFrame = gameLocal.framenum;
-
-	// update our timestamp
-	if (bVal != m_bFrobHighlightState)
-	{
-		m_FrobChangeTime = gameLocal.time;
-	}
-
-	m_bFrobHighlightState = bVal;
-	
-	// resolve the peer names into entities
-	for (int i = 0; i < m_FrobPeers.Num(); i++)
-	{
-		if (m_FrobPeers[i].Length() == 0) continue;
-
-		idEntity* ent = gameLocal.FindEntity( m_FrobPeers[i] );
-
-		// don't call it on self, would get stuck in a loop
-		if (ent != NULL && ent != this)
-		{
-			ent->SetFrobHighlightState( bVal );
-		}
-	}
+	// Update the boolean, the UpdateFrobDisplay() routine will pick it up
+	m_bFrobHighlightState = newState;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s] is highlighted\r", name.c_str());
 }
@@ -7757,7 +7721,23 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 void idEntity::SetFrobbed( bool val )
 {
+	if (m_bFrobbed == val) return; // avoid loopbacks and unnecessary work
+
 	m_bFrobbed = val;
+
+	// resolve the peer names into entities
+	for (int i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		if (m_FrobPeers[i].Length() == 0) continue;
+
+		idEntity* ent = gameLocal.FindEntity(m_FrobPeers[i]);
+
+		// don't call it on self, would get stuck in a loop
+		if (ent != NULL && ent != this)
+		{
+			ent->SetFrobbed(m_bFrobbed);
+		}
+	}
 }
 
 bool idEntity::IsFrobbed( void )
