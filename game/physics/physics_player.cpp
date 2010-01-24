@@ -3315,6 +3315,12 @@ const idVec3 &idPhysics_Player::GetLinearVelocity( int id ) const {
 	return current.velocity;
 }
 
+bool idPhysics_Player::HasRunningVelocity()
+{
+	// Return true when about 7% above walkspeed
+	return (current.velocity.LengthSqr() > Square(pm_walkspeed.GetFloat()) * 1.15);
+}
+
 /*
 ================
 idPhysics_Player::SetPushed

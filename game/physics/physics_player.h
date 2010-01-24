@@ -202,6 +202,9 @@ public:	// common physics interface
 
 	const idVec3 &			GetLinearVelocity( int id = 0 ) const;
 
+	// This is true as soon as the player's velocity is well enough above walk speed
+	bool					HasRunningVelocity();
+
 	void					SetPushed( int deltaTime );
 	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;
 	void					ClearPushedVelocity( void );

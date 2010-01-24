@@ -9811,7 +9811,14 @@ float idPlayer::GetMovementVolMod( void )
 	// NOTE: running always has priority over creeping
 	else if( AI_RUN )
 	{
-		returnval = (isCrouched) ? m_stepvol_crouch_run : m_stepvol_run;
+		if (physicsObj.HasRunningVelocity())
+		{
+			returnval = (isCrouched) ? m_stepvol_crouch_run : m_stepvol_run;
+		}
+		else
+		{
+			returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
+		}
 	}
 	else if( AI_CREEP )
 	{
@@ -10936,9 +10943,11 @@ void idPlayer::PlayFootStepSound()
 			moveType = "_crouch";
 		}
 
-		if (AI_RUN)
+		// greebo: Make sure that "_run" is only applied when actually running
+		if (AI_RUN && physicsObj.HasRunningVelocity())
 		{
 			moveType += "_run";
+			gameLocal.Printf("Running.");
 		}
 		else if (AI_CREEP)
 		{
@@ -10947,6 +10956,7 @@ void idPlayer::PlayFootStepSound()
 		else
 		{
 			moveType += "_walk";
+			gameLocal.Printf("Walking.");
 		}
 	}
 
