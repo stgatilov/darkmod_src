@@ -6328,7 +6328,13 @@ void idPlayer::AdjustSpeed( void )
 	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
 	{
 		// TDM: Removed stamina. TDM does not use stamina
-		bobFrac = 1.0f;
+		
+		// greebo: Only adjust bob fraction if actually running
+		if (physicsObj.HasRunningVelocity())
+		{
+			bobFrac = 1.0f;
+		}
+
 		speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
 		
 		// ishtvan: we'll see if this works to prevent backwards running, depends on order things are set
@@ -10947,7 +10953,6 @@ void idPlayer::PlayFootStepSound()
 		if (AI_RUN && physicsObj.HasRunningVelocity())
 		{
 			moveType += "_run";
-			gameLocal.Printf("Running.");
 		}
 		else if (AI_CREEP)
 		{
@@ -10956,7 +10961,6 @@ void idPlayer::PlayFootStepSound()
 		else
 		{
 			moveType += "_walk";
-			gameLocal.Printf("Walking.");
 		}
 	}
 
