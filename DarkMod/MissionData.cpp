@@ -2286,6 +2286,15 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		}
 	}
 
+	/*const idDict& state = ui->State();
+
+	for (int i = 0; i < state.GetNumKeyVals(); ++i)
+	{
+		const idKeyValue* kv = state.GetKeyVal(i);
+
+		gameLocal.Printf("%s: %s\n", kv->GetKey().c_str(), kv->GetValue().c_str());
+	}*/
+
 	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 	ui->SetStateInt("ObjectiveBoxIsVisible", 1);
 
@@ -2295,6 +2304,29 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 	int numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
 
 	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
+
+	// Check if the GUI requests a scroll event, applies to in-game GUI
+	if (ui->GetStateBool("PrevObjectiveRequest"))
+	{
+		ui->SetStateBool("PrevObjectiveRequest", false);
+
+		if (startIdx > 0) 
+		{
+			startIdx--;
+			ui->SetStateInt("ObjStartIdx", startIdx);
+		}
+	}
+
+	if (ui->GetStateBool("NextObjectiveRequest"))
+	{
+		ui->SetStateBool("NextObjectiveRequest", false);
+
+		if (startIdx + numObjectivesPerPage < objIndices.Num()) 
+		{
+			startIdx++;
+			ui->SetStateInt("ObjStartIdx", startIdx);
+		}
+	}
 
 	// Check which buttons should be visible
 	bool nextButtonVisible = (startIdx + numObjectivesPerPage < objIndices.Num());

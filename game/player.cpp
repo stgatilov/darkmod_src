@@ -481,6 +481,7 @@ idPlayer::idPlayer() :
 
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
+	objectivesOverlay		= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursor				= CInventoryCursorPtr();
 
@@ -1142,6 +1143,67 @@ void idPlayer::NextInventoryMap()
 	}
 }
 
+void idPlayer::CreateObjectivesGUI()
+{
+	if (objectivesOverlay != -1) return;
+
+	objectivesOverlay = CreateOverlay(cv_tdm_obj_gui_file.GetString(), LAYER_OBJECTIVES);
+
+	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
+	
+	if (objGUI == NULL)
+	{
+		gameLocal.Error("Failed setting up objectives GUI: %s", cv_tdm_obj_gui_file.GetString());
+		return;
+	}
+
+	objGUI->HandleNamedEvent("InitObjectivesGUI");
+
+	// Set the weapon and inventory immobilisation flags
+	SetImmobilization("objectivesDisplay", EIM_WEAPON_SELECT | EIM_ITEM_USE | EIM_ITEM_SELECT | EIM_ITEM_DROP | EIM_FROB | EIM_FROB_COMPLEX);
+
+	// Trigger an update
+	UpdateObjectivesGUI();
+}
+
+void idPlayer::DestroyObjectivesGUI()
+{
+	if (objectivesOverlay == -1) return;
+
+	SetImmobilization("objectivesDisplay", 0);
+
+	DestroyOverlay(objectivesOverlay);
+	objectivesOverlay = -1;
+}
+
+void idPlayer::ToggleObjectivesGUI()
+{
+	if (objectivesOverlay == -1)
+	{
+		CreateObjectivesGUI();
+	}
+	else
+	{
+		DestroyObjectivesGUI();
+	}
+}
+
+void idPlayer::UpdateObjectivesGUI()
+{
+	if (objectivesOverlay == -1) return;
+
+	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
+	
+	if (objGUI == NULL)
+	{
+		gameLocal.Error("Could not find objectives GUI: %s", cv_tdm_obj_gui_file.GetString());
+		return;
+	}
+
+	// Trigger an update for this GUI
+	gameLocal.m_MissionData->UpdateGUIState(objGUI);
+}
+
 void idPlayer::SetupInventory()
 {
 	m_InventoryOverlay = CreateOverlay(cv_tdm_inv_gui_file.GetString(), LAYER_INVENTORY);
@@ -1595,6 +1657,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(m_InventoryOverlay);
 
+	savefile->WriteInt(objectivesOverlay);
+
 	savefile->WriteBool(m_WeaponCursor != NULL);
 	if (m_WeaponCursor != NULL) {
 		savefile->WriteInt(m_WeaponCursor->GetId());
@@ -1940,6 +2004,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_CrouchIntent );
 
 	savefile->ReadInt(m_InventoryOverlay);
+
+	savefile->ReadInt(objectivesOverlay);
 
 	bool hasWeaponCursor;
 	savefile->ReadBool(hasWeaponCursor);
@@ -5440,6 +5506,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Pass the "next weapon" event to the GUIs
 			m_overlays.broadcastNamedEvent("nextWeapon");
 
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
+
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
 			{
@@ -5456,6 +5525,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			{
 				gameLocal.m_Grabber->IncrementDistance( !cv_reverse_grab_control.GetBool() );
 			}
+
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
 
 			// Pass the "previous weapon" event to the GUIs
 			m_overlays.broadcastNamedEvent("prevWeapon");
@@ -5485,7 +5557,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
-			// TODO: Find a way to toggle the main menu from here
+			ToggleObjectivesGUI();
 			break;
 		}
 		case IMPULSE_20:
@@ -5669,6 +5741,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 				gameLocal.m_Grabber->IncrementDistance( !cv_reverse_grab_control.GetBool() );
 			}
 
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
+
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
 
@@ -5687,6 +5762,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 				gameLocal.m_Grabber->IncrementDistance( cv_reverse_grab_control.GetBool() );
 			}
 
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
+
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
 
@@ -5703,6 +5781,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if (AddGrabberEntityToInventory())
 				return;
 
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
+
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevGroup");
 
@@ -5718,6 +5799,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
 				return;
+
+			// Trigger an objectives GUI update if applicable
+			UpdateObjectivesGUI();
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextGroup");
