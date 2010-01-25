@@ -749,6 +749,8 @@ void idActor::Spawn( void )
 
 	// load melee settings based on AI skill level + player difficulty
 	LoadMeleeSet();
+	// adjust health based on multiplier that may be in melee set
+	health += spawnArgs.GetFloat("health_offset", "0.0");
 	
 	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
 	melee_range							= melee_range_unarmed;
