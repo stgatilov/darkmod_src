@@ -3134,6 +3134,27 @@ void idEntity::Bind( idEntity *master, bool orientated )
 	if ( !InitBind( master ) )
 		return;
 
+	// ishtvan: 30/1/2010 : Check for ragdoll adding on idAFAttachment masters when just bind is called
+	// (previously only done when bindToJoint or bindToBody was called)
+	if	( 
+		master->IsType( idAFAttachment::Type )
+		&& !IsType( idAnimatedEntity::Type )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		gameLocal.Printf("Bind: Found idAfAttachment bindmaster\n");
+		idAFAttachment *masterAFAtt = static_cast<idAFAttachment *>(master);
+		idEntity *masterBody = masterAFAtt->GetBody();
+		if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+		{
+			gameLocal.Printf("Found non-null body, adding ent by joint\n");
+			static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, masterAFAtt->GetAttachJoint() );
+		}
+	}
+
+
 	PreBind();
 
 	bindJoint = INVALID_JOINT;
@@ -3164,6 +3185,7 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 		return;
 	}
 
+	gameLocal.Printf("BindToJoint called, entity %s, master %s\n", name.c_str(), master->name.c_str() );
 	jointnum = masterAnimator->GetJointHandle( jointname );
 
 	if ( !InitBind( master ) )
@@ -3171,7 +3193,7 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
-		master->IsType( idAFEntity_Base::Type )
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
 		&& !IsType( idAnimatedEntity::Type )
 		&& ( jointnum != INVALID_JOINT )
 		&& ( GetPhysics()->GetClipModel() != NULL )
@@ -3179,7 +3201,19 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
 		)
 	{
-		static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		gameLocal.Printf("Found idAfAttachment or idAFEntity_Bases bindmaster\n");
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			gameLocal.Printf("Found idAfAttachment bindmaster\n");
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+			{
+				gameLocal.Printf("Found non-null body, adding ent by body\n");
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, jointnum );
+			}
+		}
 	}
 
 	if ( jointnum == INVALID_JOINT ) {
@@ -3210,9 +3244,10 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 	if ( !InitBind( master ) )
 		return;
 
+	gameLocal.Printf("BindToJoint called, entity %s, master %s\n", name.c_str(), master->name.c_str() );
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
-		master->IsType( idAFEntity_Base::Type )
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
 		&& !IsType( idAnimatedEntity::Type )
 		&& ( jointnum != INVALID_JOINT )
 		&& ( GetPhysics()->GetClipModel() != NULL )
@@ -3220,7 +3255,19 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
 		)
 	{
-		static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		gameLocal.Printf("Found idAfAttachment or idAFEntity_Bases bindmaster\n");
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			gameLocal.Printf("Found idAfAttachment bindmaster\n");
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+			{
+				gameLocal.Printf("Found non-null body, adding ent by body\n");
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, jointnum );
+			}
+		}
 	}
 
 	PreBind();
@@ -3247,16 +3294,29 @@ void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated )
 	if ( !InitBind( master ) )
 		return;
 
+	gameLocal.Printf("BindToBody called, entity %s, master %s\n", name.c_str(), master->name.c_str() );
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
-		master->IsType( idAFEntity_Base::Type )
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
 		&& !IsType( idAnimatedEntity::Type )
 		&& ( GetPhysics()->GetClipModel() != NULL )
 		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
 		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
 		)
 	{
-		static_cast<idAFEntity_Base *>(master)->AddEntByBody( this, bodyId );
+		gameLocal.Printf("Found idAfAttachment or idAFEntity_Bases bindmaster\n");
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByBody( this, bodyId );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			gameLocal.Printf("Found idAfAttachment bindmaster\n");
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+			{
+				gameLocal.Printf("Found non-null body, adding ent by body\n");
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByBody( this, bodyId );
+			}
+		}
 	}
 
 	if ( bodyId < 0 )
@@ -6279,6 +6339,7 @@ idEntity::Event_CopyBind
 
 void idEntity::Event_CopyBind( idEntity* other ) 
 {
+	gameLocal.Printf("CopyBind called\n");
 	if (other == NULL) return;
 
 	idEntity *master = other->GetBindMaster();
@@ -6299,6 +6360,7 @@ void idEntity::Event_CopyBind( idEntity* other )
 	}
 	else
 	{
+		gameLocal.Printf("CopyBind had no bind joint or body \n");
 		// no joint and no body specified to bind to master
 		Bind( master, true );
 

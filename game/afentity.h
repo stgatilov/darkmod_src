@@ -104,6 +104,8 @@ public:
 	void					SetBody( idEntity *bodyEnt, const char *headModel, jointHandle_t attachJoint );
 	void					ClearBody( void );
 	idEntity *				GetBody( void ) const;
+	// ishtvan: Added this
+	jointHandle_t			GetAttachJoint( void ) const;
 
 	bool					IsMantleable( void );
 
@@ -139,6 +141,11 @@ public:
 	* bound to us, we copy over our data on the actor we're bound to
 	**/
 	virtual void BindNotify( idEntity *ent );
+
+	/**
+	* Also overload UnbindNotify to update the clipmodel physics on the AF we're attacehd to
+	**/
+	virtual void			UnbindNotify( idEntity *ent );
 
 	/** Also overload PostUnBind to clear the body information **/
 	virtual void PostUnbind( void );
