@@ -9483,7 +9483,7 @@ void idAI::FOVDebugDraw( void )
 
 	// store head joint base position to HeadCenter, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
-	idMat3 HeadAxisR = HeadAxis * m_FOVRot;
+	idMat3 HeadAxisR =  m_FOVRot * HeadAxis;
 	// offset from head joint position to get the true head center
 	HeadCenter += HeadAxis * m_HeadCenterOffset;
 
