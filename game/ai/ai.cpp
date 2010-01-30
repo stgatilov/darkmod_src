@@ -539,6 +539,7 @@ idAI::idAI()
 	m_KoDotVert = 0;
 	m_KoDotHoriz = 0;
 	m_KoAlertDotHoriz = 0;
+	m_KoRot = mat3_identity;
 
 	m_bCanOperateDoors = false;
 
@@ -821,6 +822,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_KoDotHoriz);
 	savefile->WriteFloat(m_KoAlertDotVert);
 	savefile->WriteFloat(m_KoAlertDotHoriz);
+	savefile->WriteMat3(m_KoRot);
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1167,6 +1169,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_KoDotHoriz);
 	savefile->ReadFloat(m_KoAlertDotVert);
 	savefile->ReadFloat(m_KoAlertDotHoriz);
+	savefile->ReadMat3(m_KoRot);
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -9197,16 +9200,17 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, headAxis );
 
 	KOSpot += headAxis * m_HeadCenterOffset;
+	idMat3 headAxisR = headAxis * m_KoRot;
 
 	idVec3 delta = KOSpot - tr->c.point;
 	float lenDelta = delta.Length();
 
 	// First, project delta into the horizontal plane of the head
 	// Assume HeadAxis[1] is the up direction in head coordinates
-	idVec3 deltaH = delta - headAxis[1] * (headAxis[1] * delta);
+	idVec3 deltaH = delta - headAxisR[1] * (headAxisR[1] * delta);
 	float lenDeltaH = deltaH.Normalize();
 
-	float dotHoriz = headAxis[ 0 ] * deltaH;
+	float dotHoriz = headAxisR[ 0 ] * deltaH;
 	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
 	float dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
@@ -9235,7 +9239,7 @@ void idAI::KnockoutDebugDraw( void )
 	const char * testZone = m_KoZone.c_str();
 	if( AI_KNOCKEDOUT || AI_DEAD || testZone[0] == '\0' )
 	{
-		goto Quit;
+		return;
 	}
 
 	// Check if the AI is above the alert threshold for KOing
@@ -9244,7 +9248,7 @@ void idAI::KnockoutDebugDraw( void )
 	{
 		// Do not display if immune
 		if( m_bKoAlertImmune )
-			goto Quit;
+			return;
 
 		// reduce the angle on alert, if needed
 		AngVert = idMath::ACos( m_KoAlertDotVert );
@@ -9263,16 +9267,17 @@ void idAI::KnockoutDebugDraw( void )
 
 	if( m_HeadJointID == INVALID_JOINT )
 	{
-		goto Quit;
+		return;
 	}
 
 	// store head joint base position to KOSpot, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
 
 	KOSpot += HeadAxis * m_HeadCenterOffset;
+	idMat3 HeadAxisR = HeadAxis * m_KoRot;
 
 	// Assumes the head joint is facing the same way as the look joint
-	ConeDir = -HeadAxis[0];
+	ConeDir = -HeadAxisR[0];
 
 	// vertical angle in green
 	radius = AngVert * 0.5f  * 30.0f;
@@ -9280,9 +9285,6 @@ void idAI::KnockoutDebugDraw( void )
 	// horizontal angle in red
 	radius = AngHoriz * 0.5f * 30.0f;
 	gameRenderWorld->DebugCone( colorRed, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
-
-Quit:
-	return;
 }
 
 /*
@@ -10557,11 +10559,13 @@ void idAI::ParseKnockoutInfo()
 {
 	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
-	idAngles FOVRotAng = spawnArgs.GetAngles("fov_rotation");
-	m_FOVRot = FOVRotAng.ToMat3();
+	idAngles tempAngles = spawnArgs.GetAngles("fov_rotation");
+	m_FOVRot = tempAngles.ToMat3();
 	m_KoZone = spawnArgs.GetString("ko_zone");
 	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
+	tempAngles = spawnArgs.GetAngles("ko_rotation");
+	m_KoRot = tempAngles.ToMat3();
 	
 	float tempAng;
 	tempAng = spawnArgs.GetFloat("ko_angle_vert", "360");

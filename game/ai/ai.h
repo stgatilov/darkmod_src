@@ -938,6 +938,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	float					m_KoDotHoriz;
 	float					m_KoAlertDotVert;
 	float					m_KoAlertDotHoriz;
+	/**
+	* Rotates the KO cone relative to the head joint
+	**/
+	idMat3					m_KoRot;
 
 	/**
 	* Current number of air ticks left for drowning
