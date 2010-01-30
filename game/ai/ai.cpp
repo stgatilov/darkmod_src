@@ -534,6 +534,7 @@ idAI::idAI()
 
 	m_bCanBeKnockedOut = true;
 	m_HeadCenterOffset = vec3_zero;
+	m_FOVRot = mat3_identity;
 	m_bKoAlertImmune = false;
 	m_KoDotVert = 0;
 	m_KoDotHoriz = 0;
@@ -812,6 +813,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(m_MouthOffset);
 	savefile->WriteBool(m_bCanBeKnockedOut);
 	savefile->WriteVec3(m_HeadCenterOffset);
+	savefile->WriteMat3(m_FOVRot);
 	savefile->WriteString(m_KoZone);
 	savefile->WriteInt(m_KoAlertState);
 	savefile->WriteBool(m_bKoAlertImmune);
@@ -1157,6 +1159,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(m_MouthOffset);
 	savefile->ReadBool(m_bCanBeKnockedOut);
 	savefile->ReadVec3(m_HeadCenterOffset);
+	savefile->ReadMat3(m_FOVRot);
 	savefile->ReadString(m_KoZone);
 	savefile->ReadInt(m_KoAlertState);
 	savefile->ReadBool(m_bKoAlertImmune);
@@ -9441,6 +9444,7 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 
 	// ugliness
 	const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+	idMat3 HeadAxisR = HeadAxis * m_FOVRot;
 
 	// Offset to get the center of the head
 	HeadCenter += HeadAxis * m_HeadCenterOffset;
@@ -9449,10 +9453,10 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 
 	// First, project delta into the horizontal plane of the head
 	// Assume HeadAxis[1] is the up direction in head coordinates
-	deltaH = delta - HeadAxis[1] * (HeadAxis[1] * delta);
+	deltaH = delta - HeadAxisR[1] * (HeadAxisR[1] * delta);
 	lenDeltaH = deltaH.Normalize(); // Consider NormalizeFast
 
-	dotHoriz = HeadAxis[ 0 ] * deltaH;
+	dotHoriz = HeadAxisR[ 0 ] * deltaH;
 	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
 	// Technically this lets them see things behind them, but they won't because 
 	// of the horizontal check.
@@ -9469,7 +9473,7 @@ void idAI::FOVDebugDraw( void )
 
 	if( AI_KNOCKEDOUT || AI_DEAD || m_HeadJointID == INVALID_JOINT )
 	{
-		goto Quit;
+		return;
 	}
 
 	// probably expensive, but that's okay since this is just for debug mode
@@ -9479,10 +9483,11 @@ void idAI::FOVDebugDraw( void )
 
 	// store head joint base position to HeadCenter, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+	idMat3 HeadAxisR = HeadAxis * m_FOVRot;
 	// offset from head joint position to get the true head center
 	HeadCenter += HeadAxis * m_HeadCenterOffset;
 
-	ConeDir = HeadAxis[0];
+	ConeDir = HeadAxisR[0];
 
 	// Diverge to keep reasonable cone size
 	float coneLength;
@@ -9519,9 +9524,6 @@ void idAI::FOVDebugDraw( void )
 	}
 
 	gameRenderWorld->DebugCone( colorOrange, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
-
-Quit:
-	return;
 }
 
 moveStatus_t idAI::GetMoveStatus() const
@@ -10555,6 +10557,8 @@ void idAI::ParseKnockoutInfo()
 {
 	m_bCanBeKnockedOut = !( spawnArgs.GetBool("ko_immune", "0") );
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
+	idAngles FOVRotAng = spawnArgs.GetAngles("fov_rotation");
+	m_FOVRot = FOVRotAng.ToMat3();
 	m_KoZone = spawnArgs.GetString("ko_zone");
 	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");

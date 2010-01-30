@@ -986,6 +986,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idVec3					m_HeadCenterOffset;
 
 	/**
+	* Rotates the FOV cone relative to the head joint
+	**/
+	idMat3					m_FOVRot;
+
+	/**
 	* Set to true if we want this AI to push off the player when the
 	* player ends up standing on top of them
 	* Applies only when the AI is alive
