@@ -53,6 +53,8 @@ extern const idEventDef EV_Player_WasDamaged;
 extern const idEventDef EV_Mission_Success;
 extern const idEventDef EV_TriggerMissionEnd;
 extern const idEventDef EV_Player_GetLocation;
+extern const idEventDef EV_Player_GetFrobbed;
+extern const idEventDef EV_Player_SetFrobOnlyUsedByInv;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -352,6 +354,14 @@ public:
 	* Read off by idEntity::UpdateFrob when something has been newly frobbed
 	**/
 	trace_t			m_FrobTrace;
+
+	/**
+	* If true, this only allows frobbing of entities that can be used by
+	* the currently selected inventory item.
+	* This also disables normal frob actions on pressing frob,
+	* only allowing the "used by" action.
+	**/
+	bool			m_bFrobOnlyUsedByInv;
 
 	/**
 	* Set to true if the player is holding an item with the Grabber
@@ -1378,6 +1388,12 @@ private:
 
 	// Sets the currently active map (feedback method for inventory map scripts)
 	void					Event_SetActiveInventoryMapEnt(idEntity* mapEnt);
+
+	// return the frobbed entity
+	void					Event_GetFrobbed();
+	// enables "frob only ents used by active inventory item" mode
+	void					Event_SetFrobOnlyUsedByInv( bool Value );
+
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

@@ -149,6 +149,10 @@ const idEventDef EV_GetCurWeaponName("getCurWeaponName", NULL, 's');
 const idEventDef EV_SetActiveInventoryMapEnt("setActiveInventoryMapEnt", "e");
 const idEventDef EV_ClearActiveInventoryMap("clearActiveInventoryMap", NULL);
 
+// ishtvan: Let scripts get the currently frobbed entity, and set "frob only used by" mode
+const idEventDef EV_Player_GetFrobbed("getFrobbed", NULL, 'e');
+const idEventDef EV_Player_SetFrobOnlyUsedByInv("setFrobOnlyUsedByInv", "d", NULL);
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -232,6 +236,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_GetCurWeaponName,				idPlayer::Event_GetCurWeaponName )
 	EVENT( EV_SetActiveInventoryMapEnt,		idPlayer::Event_SetActiveInventoryMapEnt )
 	EVENT( EV_ClearActiveInventoryMap,		idPlayer::Event_ClearActiveInventoryMap )
+
+	EVENT( EV_Player_GetFrobbed,			idPlayer::Event_GetFrobbed )
+	EVENT( EV_Player_SetFrobOnlyUsedByInv,	idPlayer::Event_SetFrobOnlyUsedByInv )
 
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
@@ -471,6 +478,7 @@ idPlayer::idPlayer() :
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
 	memset(&m_FrobTrace, 0, sizeof(trace_t));
+	m_bFrobOnlyUsedByInv	= false;
 
 	m_bGrabberActive		= false;
 	m_bDraggingBody			= false;
@@ -1416,6 +1424,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteJoint(m_FrobJoint);
 	savefile->WriteInt(m_FrobID);
 	savefile->WriteTrace(m_FrobTrace);
+	savefile->WriteBool(m_bFrobOnlyUsedByInv);
 
 	savefile->WriteInt( buttonMask );
 	savefile->WriteInt( oldButtons );
@@ -1728,6 +1737,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadJoint(m_FrobJoint);
 	savefile->ReadInt(m_FrobID);
 	savefile->ReadTrace(m_FrobTrace);
+	savefile->ReadBool(m_bFrobOnlyUsedByInv);
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -10662,13 +10672,8 @@ void idPlayer::PerformFrobCheck()
 		
 		// This is taking locked items into account
 		bool lockedItemCheck = true;
-
-		// Inventory items might impose a reduction of the frob distance to some entities
-		if (curItem != NULL && ent->CanBeUsedBy(curItem, true) && traceDist > curItem->GetFrobDistanceCap())
-		{
-			// Failed the distance check for locked items, disable this entity
-			lockedItemCheck = false;
-		}
+		// If we are in the mode where we only frob ents used by our inventory item, this checks if it passes the test
+		bool bUsedByCheck = true;
 
 		// greebo: Check if the frobbed entity is the bindmaster of the currently climbed rope
 		bool isRopeMaster = physicsObj.OnRope() && physicsObj.GetRopeEntity()->GetBindMaster() == ent;
@@ -10685,13 +10690,32 @@ void idPlayer::PerformFrobCheck()
 			}
 		}
 
+		// Inventory items might impose a reduction of the frob distance to some entities
+		if (curItem != NULL) 
+		{
+			bool bCanBeUsed = ent->CanBeUsedBy(curItem, true);
+
+			if( bCanBeUsed && traceDist > curItem->GetFrobDistanceCap())
+			{
+				// Failed the distance check for locked items, disable this entity
+				lockedItemCheck = false;
+			}
+
+			if( m_bFrobOnlyUsedByInv && !bCanBeUsed )
+			{
+				// frob only used by is active and ent can't be used, failed check
+				bUsedByCheck = false;
+			}
+		}
+
 		// If shouldering a body, we only allow "simple" frobs
 		bool frobAllowed = !m_bShoulderingBody || ent->m_bFrobSimple;
 	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
-		if( ent->m_bFrobable && frobAllowed && lockedItemCheck && !isRopeMaster && !ent->IsHidden() && 
-			traceDist < ent->m_FrobDistance && ent != gameLocal.m_Grabber->GetSelected())
+		if( ent->m_bFrobable && frobAllowed && lockedItemCheck && bUsedByCheck && !isRopeMaster 
+			&& !ent->IsHidden() && traceDist < ent->m_FrobDistance 
+			&& ent != gameLocal.m_Grabber->GetSelected() )
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 
@@ -10750,6 +10774,12 @@ void idPlayer::PerformFrobCheck()
 			entDistance > curItem->GetFrobDistanceCap())
 		{
 			// Failed inventory item distance check, disable this entity
+			continue;
+		}
+
+		// Frob only used by inv. item is active, and this entity cannot be used by it
+		if( curItem != NULL && m_bFrobOnlyUsedByInv && !ent->CanBeUsedBy(curItem, true) )
+		{
 			continue;
 		}
 
@@ -11178,6 +11208,10 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		}
 	}
 
+	// If FrobUsedOnlyByInv mode is active, we can only perform use_on_frob actions, so skip all the rest
+	if( m_bFrobOnlyUsedByInv )
+		return;
+
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// These actions are only applicable for EPressed buttonstate
@@ -11555,4 +11589,14 @@ void idPlayer::Event_SetActiveInventoryMapEnt(idEntity* mapEnt)
 	}
 
 	m_ActiveInventoryMapEnt = mapEnt;
+}
+
+void idPlayer::Event_GetFrobbed()
+{
+	idThread::ReturnEntity( m_FrobEntity.GetEntity() );
+}
+
+void idPlayer::Event_SetFrobOnlyUsedByInv( bool value )
+{
+	m_bFrobOnlyUsedByInv = value;
 }
