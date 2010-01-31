@@ -314,8 +314,6 @@ extern idCVar cv_music_volume;
 extern idCVar cv_voice_player_volume;
 // Tels: Volume of the "speaker-from-off voice" speaker
 extern idCVar cv_voice_from_off_volume;
-// Tels: Is the player female?
-extern idCVar cv_player_is_female;
 
 // angua: Velocity and sound volume of collisions
 extern idCVar cv_moveable_collision;

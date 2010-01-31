@@ -378,7 +378,6 @@ idCVar cv_music_volume("tdm_music_volume",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_
 // Tels:
 idCVar cv_voice_player_volume("tdm_voice_player_volume",	 "1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the player voice speaker. Goes from 0 .. 60." );
 idCVar cv_voice_from_off_volume("tdm_voice_from_off_volume", "1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the voice-from-off speaker. Goes from 0 .. 60." );
-idCVar cv_player_is_female("tdm_player_is_female",	 		 "0",	CVAR_GAME | CVAR_BOOL  | CVAR_ARCHIVE, "True if the player is female. Used for changing the voice etc." );
 
 idCVar cv_moveable_collision("tdm_show_moveable_collision",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1, shows the velocity at which the moveable collides and the volume of the resulting sound." );
 
