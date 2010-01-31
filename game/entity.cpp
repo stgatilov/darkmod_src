@@ -1147,10 +1147,25 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->Write( &flags, sizeof( flags ) );
 
-	savefile->WriteInt(m_UsedBy.Num());
-	for (i = 0; i < m_UsedBy.Num(); i++)
+	savefile->WriteInt(m_UsedByName.Num());
+	for (i = 0; i < m_UsedByName.Num(); i++)
 	{
-		savefile->WriteString(m_UsedBy[i].c_str());
+		savefile->WriteString(m_UsedByName[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByInvName.Num());
+	for (i = 0; i < m_UsedByInvName.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByInvName[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByCategory.Num());
+	for (i = 0; i < m_UsedByCategory.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByCategory[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByClassname.Num());
+	for (i = 0; i < m_UsedByClassname.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByClassname[i].c_str());
 	}
 
 	savefile->WriteBool(m_bAttachedAlertControlsSolidity);
@@ -1336,10 +1351,28 @@ void idEntity::Restore( idRestoreGame *savefile )
 	LittleBitField( &fl, sizeof( fl ) );
 
 	savefile->ReadInt(num);
-	m_UsedBy.SetNum(num);
+	m_UsedByName.SetNum(num);
 	for (i = 0; i < num; i++)
 	{
-		savefile->ReadString(m_UsedBy[i]);
+		savefile->ReadString(m_UsedByName[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByInvName.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByInvName[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByCategory.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByCategory[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByClassname.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByClassname[i]);
 	}
 
 	savefile->ReadBool(m_bAttachedAlertControlsSolidity);
@@ -7561,8 +7594,26 @@ void idEntity::LoadTDMSettings(void)
 	// Check if this entity can be used by others.
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))
 	{
+		// argh, backwards compatibility, must keep old used_by format for used_by_name
+		// explicitly ignore stuff with other prefixes
+		idStr kn = kv->GetKey();
+		if( !kn.IcmpPrefix("used_by_inv_name") || !kn.IcmpPrefix("used_by_category") || !kn.IcmpPrefix("used_by_classname") )
+			continue;
+
 		// Add each entity name to the list
-		m_UsedBy.AddUnique(kv->GetValue());
+		m_UsedByName.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_inv_name"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_inv_name", kv))
+	{
+		m_UsedByInvName.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_category"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_category", kv))
+	{
+		m_UsedByCategory.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_classname"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_classname", kv))
+	{
+		m_UsedByClassname.AddUnique(kv->GetValue());
 	}
 
 	m_AbsenceNoticeability = spawnArgs.GetFloat("absence_noticeability", "0");
@@ -7740,8 +7791,27 @@ bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 
 	// Redirect the call to the master if we have one
 	idEntity* master = GetFrobMaster();
+	if( master != NULL )
+		return  master->CanBeUsedBy(item, isFrobUse);
 
-	return (master != NULL) ? master->CanBeUsedBy(item, isFrobUse) : false;
+	// No frob master set
+	// Check entity name (if exists), inv_name, inv_category, and classname
+	bool bMatchName( false ), bMatchInvName( false );
+	bool bMatchCategory( false ), bMatchClassname( false );
+
+	idEntity* ent = item->GetItemEntity();
+	if( ent != NULL )
+	{
+		bMatchName = ( m_UsedByName.FindIndex(ent->name) != -1 );
+		bMatchClassname = ( m_UsedByClassname.FindIndex(ent->GetEntityDefName()) != -1 );
+	}
+	if( bMatchName || bMatchClassname )
+		return true;
+
+	bMatchInvName = ( m_UsedByInvName.FindIndex(item->GetName()) != -1 );
+	bMatchCategory = ( m_UsedByCategory.FindIndex(item->Category()->GetName()) != -1 );
+	
+	return (bMatchInvName || bMatchCategory);
 }
 
 bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse) 
@@ -7751,15 +7821,25 @@ bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse)
 	// Redirect the call to the master if we have one
 	idEntity* master = GetFrobMaster();
 
-	if (master != NULL) return master->CanBeUsedBy(entity, isFrobUse);
+	if (master != NULL) 
+		return master->CanBeUsedBy(entity, isFrobUse);
 
 	// No frob master set
+	// Check entity name, inv_name, inv_category, and classname
+	bool bMatchName( false ), bMatchInvName( false );
+	bool bMatchCategory( false ), bMatchClassname( false );
 
-	// Check if the entity's name is in the used_by list 
-	int idx = m_UsedBy.FindIndex(entity->name);
+	bMatchName = ( m_UsedByName.FindIndex(entity->name) != -1 );
+	bMatchClassname = ( m_UsedByClassname.FindIndex(entity->GetEntityDefName()) != -1 );
+	
+	if( bMatchName || bMatchClassname )
+		return true;
 
-	// FindIndex returns an index != -1 if found
-	return (idx != -1);
+	// This may be called when the entity is not in the inventory, so have to read from spawnargs
+	bMatchInvName = ( m_UsedByInvName.FindIndex(entity->spawnArgs.GetString("inv_name")) != -1 );
+	bMatchCategory = ( m_UsedByCategory.FindIndex(entity->spawnArgs.GetString("inv_category")) != -1 );
+
+	return (bMatchInvName || bMatchCategory);
 }
 
 bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)

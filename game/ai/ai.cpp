@@ -10130,7 +10130,7 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 	}
 	
 	// Look through attachments
-	int n = frobMover->m_UsedBy.Num();
+	int n = frobMover->m_UsedByName.Num();
 	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
 		idEntity* ent = m_Attachments[i].ent.GetEntity();
@@ -10142,7 +10142,7 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 		
 		for (int j = 0; j < n; j++)
 		{
-			if (ent->name == frobMover->m_UsedBy[j])
+			if (ent->name == frobMover->m_UsedByName[j])
 			{
 				return true;
 			}

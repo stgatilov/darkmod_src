@@ -422,7 +422,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	if (itemName == "Keys" && impulseState == EPressed) 
 	{
 		// Keys can be used on button PRESS event, let's see if the key matches
-		if (m_UsedBy.FindIndex(itemEntity->name) != -1)
+		if (m_UsedByName.FindIndex(itemEntity->name) != -1)
 		{
 			// If we're locked or closed, just toggle the lock. 
 			if (IsLocked() || IsAtClosedPosition())

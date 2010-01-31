@@ -297,7 +297,21 @@ public:
 	 * In this example the entity can be used by any holy_fountain, any holy_bottle
 	 * and addtionaly by the entity named holy_cross.
 	 */
-	idList<idStr>			m_UsedBy;
+	idList<idStr>			m_UsedByName;
+	/**
+	* Same, but checks against inv_names
+	**/
+	idList<idStr>			m_UsedByInvName;
+	/**
+	* Same, but checks against inv_categories
+	**/
+	idList<idStr>			m_UsedByCategory;
+	/**
+	* Same, but checks against the entityDef name (e.g. atdm:playertools_lockpick*)
+	* This may be redundant sometimes, because classnames are often a part of the 
+	* entity name.  But not always, mappers can rename entities whatever they want
+	**/
+	idList<idStr>			m_UsedByClassname;
 
 	/**
 	* Set to true if objective locations should update the objectives system when
