@@ -398,18 +398,10 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
 	if (item == NULL) return false;
 
-	// First, ask our base class (this also checks for frob masters)
-	// If this doesn't succeed, perform additional checks
-	bool baseCouldBeUsed = idEntity::UseBy(impulseState, item);
-
-	if (baseCouldBeUsed) return true;
-
-	// Base class returned false, check if we have a master
+	// Pass the call on to the master, if we have one
 	if (GetFrobMaster() != NULL) 
 	{
-		// We have a master and the base class has already passed the call to it
-		// but returned false, so let's do the same
-		return false;
+		return GetFrobMaster()->UseBy(impulseState, item);
 	}
 
 	assert(item->Category() != NULL);
