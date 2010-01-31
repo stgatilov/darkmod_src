@@ -155,11 +155,13 @@ void CFrobLock::ToggleLock()
 
 bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
-	// First, ask our base class (this also checks for frob masters)
+	// First, check if the frob master can be used
 	// If this doesn't succeed, perform additional checks
-	bool baseIsUsable = idEntity::CanBeUsedBy(item, isFrobUse);
-
-	if (baseIsUsable) return true;
+	idEntity* master = GetFrobMaster();
+	if( master != NULL && master->CanBeUsedBy(item, isFrobUse) )
+	{
+		return true;
+	}
 
 	if (item == NULL) return false;
 
