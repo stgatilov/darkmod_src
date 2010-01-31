@@ -9148,6 +9148,9 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s\r", name.c_str());
 
+	if( AI_DEAD )
+		return false; // already dead
+
 	if( AI_KNOCKEDOUT )
 	{
 		AI_PAIN = true;

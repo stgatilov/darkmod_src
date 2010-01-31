@@ -3098,8 +3098,14 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			}
 		}
 	}
+	// Ishtvan: Try commenting this out, it doesn't make sense to ignore nonzero "push" in the DmgDef just
+	// because the attack happens to hit armor and do no damage...
+	// Cleary Id was trying to fix something here, but I'm not sure what
+/*
 	else 
 	{
+		// Ishtvan: THIS IS WHAT'S CAUSING PLATE ARMOR HITS NOT TO MOVE AI... WHY DID ID DO THIS?
+
 		// don't accumulate knockback
 		if ( af.IsLoaded() ) 
 		{
@@ -3110,6 +3116,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			BecomeActive( TH_PHYSICS );
 		}
 	}
+*/
 }
 
 /*
