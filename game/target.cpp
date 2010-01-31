@@ -1407,6 +1407,22 @@ void idTarget_LockDoor::Event_Activate( idEntity *activator ) {
 
 idTarget_CallObjectFunction
 
+Tels:
+
+If "pass_self" is true, the first argument of the called object function is the
+triggered entity. This is useful for teleportTo(target), for instance.
+
+If "pass_activator" is true, the first argument of the called object function
+is the entity that caused the trigger.
+This is useful for atdm:voice, for instance.
+
+If "pass_self" and "pass_activator" are true, then the order of arguments 
+is first "target", then as second argument "activator".
+
+Note that the method you want to call needs to have exactly the number
+of arguments, e.g. zero (pass_self and pass_activator false), 1 (pass_self
+or pass_activator true) or two (both are true).
+
 ===============================================================================
 */
 
@@ -1432,6 +1448,8 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
 	float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
 	float delay			= spawnArgs.GetFloat ( "delay", "0");
+	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+	bool pass_activator	= spawnArgs.GetBool  ( "pass_activator", "0");
 
 	// avoid a negative delay
 	if (wait < 0) { wait = 0; }
@@ -1447,7 +1465,11 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			if ( !func ) {
 				gameLocal.Error( "Function '%s' not found on entity '%s' for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
-			if ( func->type->NumParameters() != 1 ) {
+			int numParams = 1;
+			if (pass_self) { numParams ++; }
+			if (pass_activator) { numParams ++; }
+
+			if ( func->type->NumParameters() != numParams ) {
 				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
 			if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
@@ -1456,7 +1478,17 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Starting call for target #%i\r", i);
 			// create a thread and call the function
 			thread = new idThread();
-			thread->CallFunction( ent, func, true );
+			if (numParams == 1) {
+				thread->CallFunction( ent, func, true );
+			} else if (numParams == 2) {
+				if (pass_self) {
+					thread->CallFunctionArgs( func, true, "ee", ent, this );
+				} else {
+					thread->CallFunctionArgs( func, true, "ee", ent, activator );
+				}
+			} else { // if (numParams == 3) {
+				thread->CallFunctionArgs( func, true, "eee", ent, this, activator );
+			}
 			thread->DelayedStart( delay );
 
 			delay += wait;
@@ -1479,7 +1511,7 @@ Tels idTarget_PostScriptEvent
 
 This locks up the named event and then posts it with the specified "delay"
 for each target. The delay is increased for each target as specified with
-the "waitW spawnarg.
+the "wait" spawnarg.
 
 If "pass_self" is true, the first argument of the posted event is the
 triggered entity. This is useful for teleportTo(target), for instance.
@@ -1525,7 +1557,7 @@ void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *e
 			int numParams = 1;
 			if (pass_self) { numParams = 2; }
 
-			if ( func->type->NumParameters() != 2 ) {
+			if ( func->type->NumParameters() != numParams ) {
 				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
 

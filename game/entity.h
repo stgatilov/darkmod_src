@@ -1210,7 +1210,7 @@ protected:
 	 * FrobActionScript will contain the name of the script that is to be
 	 * exected whenever a frobaction occurs. The default should be set by
 	 * the constructor of the respective derived class but can be overriden
-	 * by the property "frob_action_script" in the entity defintion file.
+	 * by the property "frob_action_script" in the entity definition file.
 	 */
 	idStr						m_FrobActionScript;
 
@@ -1359,6 +1359,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_StopSound( int channel, int netSync );
 	void					Event_StartSound( const char *soundName, int channel, int netSync );
 	void					Event_FadeSound( int channel, float to, float over );
+	void					Event_SetSoundVolume( float to );
 	void					Event_GetWorldOrigin( void );
 	void					Event_SetWorldOrigin( idVec3 const &org );
 	void					Event_GetOrigin( void );

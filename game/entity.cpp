@@ -101,6 +101,7 @@ const idEventDef EV_StartSoundShader( "startSoundShader", "sd", 'f' );
 const idEventDef EV_StartSound( "startSound", "sdd", 'f' );
 const idEventDef EV_StopSound( "stopSound", "dd" );
 const idEventDef EV_FadeSound( "fadeSound", "dff" );
+const idEventDef EV_SetSoundVolume( "setSoundVolume", "f" );
 const idEventDef EV_GetNextKey( "getNextKey", "ss", 's' );
 const idEventDef EV_SetKey( "setKey", "ss" );
 const idEventDef EV_GetKey( "getKey", "s", 's' );
@@ -291,6 +292,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StartSound,			idEntity::Event_StartSound )
 	EVENT( EV_StopSound,			idEntity::Event_StopSound )
 	EVENT( EV_FadeSound,			idEntity::Event_FadeSound )
+	EVENT( EV_SetSoundVolume,		idEntity::Event_SetSoundVolume )
 	EVENT( EV_GetWorldOrigin,		idEntity::Event_GetWorldOrigin )
 	EVENT( EV_SetWorldOrigin,		idEntity::Event_SetWorldOrigin )
 	EVENT( EV_GetOrigin,			idEntity::Event_GetOrigin )
@@ -5788,6 +5790,17 @@ void idEntity::Event_FadeSound( int channel, float to, float over ) {
 	if ( refSound.referenceSound ) {
 		refSound.referenceSound->FadeSound( channel, to, over );
 	}
+}
+
+/*
+================
+idEntity::Event_SetSoundVolume
+
+tels:
+================
+*/
+void idEntity::Event_SetSoundVolume( float volume ) {
+	refSound.parms.volume = volume;
 }
 
 /*
