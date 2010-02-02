@@ -10644,6 +10644,14 @@ void idPlayer::PerformFrobCheck()
 		return;
 	}
 
+	// ishtvan: Don't run if frob hilighting is disabled
+	// TODO: Should we just add this functionality to EIM_FROB and get rid of EIM_FROBHILIGHT?
+	if ( GetImmobilization() & EIM_FROB_HILIGHT )
+	{
+		m_FrobEntity = NULL;
+		return;
+	}
+
 	idVec3 eyePos = GetEyePosition();
 	float maxFrobDistance = g_Global.m_MaxFrobDistance;
 

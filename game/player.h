@@ -212,15 +212,16 @@ enum {
 	EIM_CROUCH_HOLD			= BIT( 4),	// Prevent changes to crouching state. (NYI)
 	EIM_JUMP				= BIT( 5),	// Jumping.
 	EIM_MANTLE				= BIT( 6),	// Mantling (excluding jumping)
-	EIM_CLIMB				= BIT( 7),	// Climbing ladders, ropes and mantling. (NYI)
+	EIM_CLIMB				= BIT( 7),	// Climbing ladders, ropes and mantling.
 	EIM_FROB				= BIT( 8),	// Frobbing.
-	EIM_FROB_COMPLEX		= BIT( 9),	// Frobbing of "complex" items (not a door, lever, button, etc)
-	EIM_ATTACK				= BIT(10),	// Using weapons 
-	EIM_ATTACK_RANGED		= BIT(11),	// Using ranged weapons (bows)
-	EIM_WEAPON_SELECT		= BIT(12),	// Selecting weapons.
-	EIM_ITEM_USE			= BIT(13),	// Using items
-	EIM_ITEM_SELECT			= BIT(14),	// Selecting items.
-	EIM_ITEM_DROP			= BIT(15),	// Dropping inventory items.
+	EIM_FROB_HILIGHT		= BIT( 9),	// Frobbing AND frob hilighting (not sure if needed or if EIM_FROB can disable hilight also)
+	EIM_FROB_COMPLEX		= BIT(10),	// Frobbing of "complex" items (not a door, lever, button, etc)
+	EIM_ATTACK				= BIT(11),	// Using weapons 
+	EIM_ATTACK_RANGED		= BIT(12),	// Using ranged weapons (bows)
+	EIM_WEAPON_SELECT		= BIT(13),	// Selecting weapons.
+	EIM_ITEM_USE			= BIT(14),	// Using items
+	EIM_ITEM_SELECT			= BIT(15),	// Selecting items.
+	EIM_ITEM_DROP			= BIT(16),	// Dropping inventory items.
 };
 
 typedef struct {
