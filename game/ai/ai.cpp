@@ -9449,7 +9449,7 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 
 	// ugliness
 	const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
-	idMat3 HeadAxisR = HeadAxis * m_FOVRot;
+	idMat3 HeadAxisR = m_FOVRot * HeadAxis;
 
 	// Offset to get the center of the head
 	HeadCenter += HeadAxis * m_HeadCenterOffset;
