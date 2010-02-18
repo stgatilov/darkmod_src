@@ -235,9 +235,12 @@ const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
 const idEventDef EV_SetFrobable( "setFrobable", "d" );
 const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
 const idEventDef EV_Frob("frob", NULL, 'd');
+const idEventDef EV_FrobHilight("frobHilight", "d" );
 
 // greebo: Script event to check whether this entity can see a target entity
 const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
+
+const idEventDef EV_CanBeUsedBy("canBeUsedBy", "e", 'd');
 
 const idEventDef EV_CheckAbsence("checkAbsence");
 
@@ -417,7 +420,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetFrobable,			idEntity::Event_SetFrobable )
 	EVENT( EV_IsHilighted,			idEntity::Event_IsHilighted )
 	EVENT( EV_Frob,					idEntity::Event_Frob )
+	EVENT( EV_FrobHilight,			idEntity::Event_FrobHilight )
 	EVENT( EV_CanSeeEntity,			idEntity::Event_CanSeeEntity )
+	EVENT( EV_CanBeUsedBy,			idEntity::Event_CanBeUsedBy )
 
 	EVENT( EV_CheckAbsence,			idEntity::Event_CheckAbsence )
 	
@@ -9089,6 +9094,11 @@ void idEntity::Event_IsHilighted( void )
 }
 
 
+void idEntity::Event_FrobHilight( bool bVal )
+{
+	SetFrobHighlightState( bVal );
+}
+
 void idEntity::Event_CheckAbsence()
 {
 	if (m_AbsenceNoticeability > 0)
@@ -9137,6 +9147,11 @@ void idEntity::Event_CheckAbsence()
 
 		PostEventMS(&EV_CheckAbsence, 5000);
 	}
+}
+
+void idEntity::Event_CanBeUsedBy( idEntity *itemEnt )
+{
+	idThread::ReturnInt( CanBeUsedBy( itemEnt, true ) );
 }
 
 
