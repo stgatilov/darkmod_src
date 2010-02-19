@@ -510,12 +510,16 @@ void idGameLocal::Init( void ) {
 		// Use D3 interaction
 		Printf("Using D3 interaction.vfp\n");
 		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+		r_HDR_postProcess.SetBool( false );
 	}
 	else
 	{
 		// Use rebb's enhanced interaction
-		Printf("Using TDM's enhanced interaction.vfp\n");
+		// Rebb's interaction has been replaced by mine for now. -JC Denton
+		//Printf("Using TDM's enhanced interaction.vfp\n");
+		Printf("Using TDM's HDR\n");
 		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+		r_HDR_postProcess.SetBool( true );
 	}
 }
 
@@ -2880,12 +2884,16 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 					// Use D3 interaction
 					Printf("Switching to D3 interaction.vfp\n");
 					cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+					r_HDR_postProcess.SetBool( false );
 				}
 				else
 				{
 					// Use rebb's enhanced interaction
-					Printf("Switching to TDM's enhanced interaction.vfp\n");
+					//Printf("Switching to TDM's enhanced interaction.vfp\n");
+					// Replacing Rebb's interaction with HDR for now. - JC Denton
+					Printf("Switching to TDM's HDR\n");
 					cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+					r_HDR_postProcess.SetBool( true );
 				}
 			}
 		}

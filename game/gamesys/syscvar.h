@@ -576,16 +576,19 @@ extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
 
 #endif
 
-// Bloom related - by JC_Denton & Maha_X - added by Dram
-extern idCVar	r_bloom;
-extern idCVar	r_bloom_blur_mult;
-extern idCVar	r_bloom_src_mult;
-extern idCVar   r_bloom_contrast_mult;				// clone_jc_denton
-extern idCVar   r_bloom_contrast_min;				// clone_jc_denton
-extern idCVar   r_bloom_shift_delay;				// clone_jc_denton
-extern idCVar   r_bloom_blurIterations;				// clone_jc_denton
-extern idCVar   r_bloom_buffer;						// clone_jc_denton
-extern idCVar	r_bloom_hud;
-extern idCVar	r_bloom_lightRayScale;
+// HDR related - J.C.Denton
+
+extern idCVar r_HDR_postProcess;				
+extern idCVar r_HDR_middleGray;			
+extern idCVar r_HDR_brightPassThreshold;
+extern idCVar r_HDR_brightPassOffset;	
+extern idCVar r_HDR_min_luminance;	
+extern idCVar r_HDR_max_luminance;	
+extern idCVar r_HDR_colorCurveBias;
+extern idCVar r_HDR_enableDebugMode;
+extern idCVar r_HDR_debugTextureIndex;
+extern idCVar r_HDR_eyeAdjustmentDelay;
+extern idCVar r_HDR_maxColorIntensity;
+extern idCVar r_HDR_bloomIntensity;
 
 #endif /* !__SYS_CVAR_H__ */

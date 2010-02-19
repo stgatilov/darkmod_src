@@ -27,16 +27,40 @@ static int MakePowerOfTwo( int num ) {
 
 const int IMPULSE_DELAY = 150;
 
-// Bloom related - by JC_Denton & Maha_X - added by Dram
-const char *blurxMaterial[6] = { "textures/fsfx/blurx64", "textures/fsfx/blurx128", "textures/fsfx/blurx256", "textures/fsfx/blurx512", "textures/fsfx/blurx1024", "textures/fsfx/blurx2048" };
-const char *bluryMaterial[6] = { "textures/fsfx/blury32", "textures/fsfx/blury64", "textures/fsfx/blury128", "textures/fsfx/blury256", "textures/fsfx/blury512", "textures/fsfx/blury1024" };
-
 /*
 ==============
 idPlayerView::idPlayerView
 ==============
 */
-idPlayerView::idPlayerView() {
+idPlayerView::idPlayerView() 
+// HDR related - J.C.Denton
+: 
+m_imageCurrentRender				( "_currentRender"			),
+m_imageCurrentRender8x8DownScaled	( "_RTtoTextureScaled64x"	),
+m_imageLuminance64x64				( "_luminanceTexture64x64"	),
+m_imageluminance4x4					( "_luminanceTexture4x4"	),
+m_imageAdaptedLuminance1x1			( "_adaptedLuminance"		),
+m_imageBloom						( "_bloomImage"				),
+m_imageHalo							( "_haloImage"				),
+
+m_matAvgLuminance64x	( declManager->FindMaterial( "postprocess/averageLum64" )	), 
+m_matAvgLumSample4x4	( declManager->FindMaterial( "postprocess/averageLum4" )	),
+m_matAdaptLuminance		( declManager->FindMaterial( "postprocess/adaptLum" )		),
+m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPass" )		),
+m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
+m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
+m_matHalo				( declManager->FindMaterial(  "postprocess/halo" )			),
+m_matGaussBlurXHalo		( declManager->FindMaterial( "postprocess/blurx_halo" )		),
+m_matGaussBlurYHalo		( declManager->FindMaterial( "postprocess/blury_halo" )		),
+m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
+
+// Materials for debugging intermediate textures
+m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
+m_matDecodedLumTexture4x4	( declManager->FindMaterial( "postprocess/decode_luminanceTexture4x4" )		),
+m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adaptedLuminance" )		)
+// ------------------------
+
+{
 	memset( screenBlobs, 0, sizeof( screenBlobs ) );
 	memset( &view, 0, sizeof( view ) );
 	player = NULL;
@@ -49,10 +73,7 @@ idPlayerView::idPlayerView() {
 	bfgMaterial = declManager->FindMaterial( "textures/decals/bfgvision" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
 	bfgVision = false;
-
-	// Bloom related - by JC_Denton - added by Dram
-	shiftSensitivityDelay = 0;
-	screenHeight = screenWidth = 0;
+	m_iScreenHeight = m_iScreenWidth = 0;		// HDR related - J.C.Denton
 
 	dvFinishTime = 0;
 	kickFinishTime = 0;
@@ -654,11 +675,12 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, shift, dvMaterial );
 
+        // Do not post-process the HUD - JC Denton
 	// Bloom related - added by Dram
-	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
-	{
-		player->DrawHUD(hud);
-	}
+// 	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+// 	{
+// 		player->DrawHUD(hud);
+// 	}
 }
 
 /*
@@ -790,30 +812,39 @@ idPlayerView::RenderPlayerView
 void idPlayerView::RenderPlayerView( idUserInterface *hud )
 {
 	const renderView_t *view = player->GetRenderView();
+	static const float fBloomImageDownScale = 4.0f;
+	static const float fHaloImageDownScale = 8.0f;
+	static const float fBackbufferLumDownScale = 8.0f;
 
 	if(g_skipViewEffects.GetBool())
 	{
 		SingleView( hud, view );
-	}
-	else 
-	{
-		// Bloom related - by JC_Denton & Maha_X - added by Dram
+	} else {
+
+		// HDR related - J.C.Denton
 		// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-		if( screenHeight != renderSystem->GetScreenHeight() || screenWidth !=renderSystem->GetScreenWidth() ) {
-			int width = 1, height = 1;	
+		if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
+	{
+			int width = 256, height = 256;	
 
-			screenHeight	= renderSystem->GetScreenHeight();
-			screenWidth		= renderSystem->GetScreenWidth();
+			// 			m_iScreenHeight	= renderSystem->GetScreenHeight();
+			// 			m_iScreenWidth	= renderSystem->GetScreenWidth();
 
-			while( width < screenWidth ) {
+			// This should probably fix the ATI issue...
+			renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
+
+			//assert( iScreenWidth != 0 && iScreenHeight != 0 );
+
+			while( width < m_iScreenWidth ) {
 				width <<= 1;
 			}
-			while( height < screenHeight ) {
+			while( height < m_iScreenHeight ) {
 				height <<= 1;
 			}
-			shiftScale_x = screenWidth  / (float)width;
-			shiftScale_y = screenHeight / (float)height;
+			m_fShiftScale_x = m_iScreenWidth  / (float)width;
+			m_fShiftScale_y = m_iScreenHeight / (float)height;
 		}
+		//-----------------------------
 
 		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
 			InfluenceVision( hud, view );
@@ -828,140 +859,130 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		}
 		else
 		{
-			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
-			{
-				SingleView( hud, view );
-			}
-			else
+                        // Do not postprocess the HUD
+// 			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+// 			{
+// 				SingleView( hud, view );
+// 			}
+// 			else
 			{
 				SingleView( hud, view, false );
 			}
 		}
 		//}
 
-		// =====================================================
-		// Bloom related - by JC_Denton & Maha_X - added by Dram
-		// =====================================================
+		// HDR related - J.C.Denton
+		/* Perform HDR postprocess */
+		const int iPostProcessType = r_HDR_postProcess.GetInteger();
+		if (iPostProcessType != 0 && !player->objectiveSystemOpen) {
 
-		if ( !r_bloom.GetBool() ) // if bloom is disabled
-		{
-			// A global parameter (0) that is used by fake bloom effects to hide/lessen them etc - by Dram
-			if ( gameLocal.globalShaderParms[0] != 1 ) // if the brightness of the hazes is not 1
-			{
-				gameLocal.globalShaderParms[0] = 1; // set it to 1
-			}
-
-			// A global parameter (1) that is used to scale the brightness of light rays if bloom is on - by Dram
-			if ( gameLocal.globalShaderParms[1] != 1 ) // if the brightness scale of the light rays is not 1
-			{
-				gameLocal.globalShaderParms[1] = 1; // set it to 1
-			}
-		}
-		else // if bloom is enabled
-		{
-			// set up the light haze brightness - by Dram
-			float lightHazeBrightness = 1 - ( r_bloom_blur_mult.GetFloat() - 0.5 ); // get the blur mult and derive a haze brightness
-
-			if ( lightHazeBrightness < 0.2f ) // if the haze brightness is lower then 0.2
-			{
-				lightHazeBrightness = 0.2f; // set it to 0.2
-			}
-			else if ( lightHazeBrightness > 1 ) // if the haze brightness is higher then 1
-			{
-				lightHazeBrightness = 1; // set it to 1
-			}
-
-			if ( gameLocal.globalShaderParms[0] != lightHazeBrightness ) // if the haze global parameter other then equals the light haze brightness
-			{
-				gameLocal.globalShaderParms[0] = lightHazeBrightness; // set it to light haze brightness
-			}
-
-			if ( gameLocal.globalShaderParms[1] != r_bloom_lightRayScale.GetFloat() ) // if the brightness scale of the light rays is not r_bloom_lightRayScale
-			{
-				gameLocal.globalShaderParms[1] = r_bloom_lightRayScale.GetFloat(); // set it to r_bloom_lightRayScale
-			}
-
-			renderSystem->CaptureRenderToImage( "_currentRender" );
-
-			//------------------------------------------------
-			// Maha_x's Shift Sensitivity - Modified for compatibilty by Clone JCDenton
-			//------------------------------------------------
-
-			bool disableShiftSensitivity = ( r_bloom_shift_delay.GetInteger() == -1 );
-
-			if( !disableShiftSensitivity && gameLocal.time > shiftSensitivityDelay ) { 
-				renderSystem->CropRenderSize(2, 2, true, true);
-				shiftSensitivityDelay = gameLocal.time + r_bloom_shift_delay.GetInteger(); 
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXweight" ) );
-				renderSystem->CaptureRenderToImage( "_afxweight" );
-				renderSystem->UnCrop();
-			}
-			//------------------------------------------------
+			renderSystem->CaptureRenderToImage( m_imageCurrentRender );
 
 			//-------------------------------------------------
-			// User configurable buffer size - By Clone JC Denton
+			// Downscale 
 			//-------------------------------------------------
-
-			int bufferMult = 6 - r_bloom_buffer.GetInteger();
-			int blurMtrIndex;
-
-			if( bufferMult < 6 ) {
-				if( bufferMult <= 0 ) {
-					bufferMult = 1;
-					blurMtrIndex = 5;
-				}
-				else {
-					blurMtrIndex = 5 - bufferMult;
-					bufferMult = 1<<bufferMult;
-				}
-				renderSystem->CropRenderSize(2048/bufferMult, 1024/bufferMult, true, true);
-			}
-			else {
-				renderSystem->CropRenderSize(512, 256, true, true);
-				blurMtrIndex = 3;
-			}
-			//-------------------------------------------------
+			renderSystem->CropRenderSize(m_iScreenWidth/fBackbufferLumDownScale, m_iScreenHeight/fBackbufferLumDownScale, true);
 
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, shiftScale_y, shiftScale_x, 0, declManager->FindMaterial( "_currentRender" ) );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageCurrentRender );
+			renderSystem->CaptureRenderToImage( m_imageCurrentRender8x8DownScaled );
+			renderSystem->UnCrop();
+			// 			//---------------------
+			renderSystem->CropRenderSize(64, 64, true);
+			renderSystem->SetColor4( 1.0f/min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
+			renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
+			renderSystem->UnCrop();
+			//---------------------
+			renderSystem->CropRenderSize(4, 4, true);
+			renderSystem->SetColor4( 1.0f/16.0f, 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLumSample4x4 );
+			renderSystem->CaptureRenderToImage( m_imageluminance4x4 );
+			renderSystem->UnCrop();
+			//---------------------
+			renderSystem->CropRenderSize(1, 1, true);
+			renderSystem->SetColor4( float( gameLocal.time - gameLocal.previousTime )/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
+			renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
+			renderSystem->UnCrop();
+			//---------------------
 
-			//Use the blurred image for obtaining bloom contrast.
-			renderSystem->CaptureRenderToImage( "_fsfx_input" );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
-			renderSystem->CaptureRenderToImage( "_fsfx_input" );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
-			renderSystem->CaptureRenderToImage( "_fsfx_input" );	
+			//---------------------
+			renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, true);
 
-			if( !disableShiftSensitivity ) {
-				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_min.GetFloat(), 1, 1);
-			} else {
-				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_mult.GetFloat(), 1, 1);
-			}
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXmodulate" ) );
+			renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat() );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
 
-			for( int i=0; i < r_bloom_blurIterations.GetInteger(); i++ ) {
-				// Two pass gaussian filter					
-				renderSystem->CaptureRenderToImage( "_fsfx_input" );
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
-				renderSystem->CaptureRenderToImage( "_fsfx_input" );
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
-			}
+			renderSystem->CaptureRenderToImage( m_imageBloom );
 
-			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
+			renderSystem->CaptureRenderToImage( m_imageBloom );
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
 
+			renderSystem->CaptureRenderToImage( m_imageBloom );
+				renderSystem->UnCrop();
+			//---------------------
+
+			renderSystem->CropRenderSize(m_iScreenWidth/fHaloImageDownScale, m_iScreenHeight/fHaloImageDownScale, true);
+
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matHalo );
+			renderSystem->CaptureRenderToImage( m_imageHalo );
+
+			renderSystem->SetColor4( fHaloImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurXHalo );
+			renderSystem->CaptureRenderToImage( m_imageHalo );
+			renderSystem->SetColor4( fHaloImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurYHalo );
+
+			renderSystem->CaptureRenderToImage( m_imageHalo );
 			renderSystem->UnCrop();
 
-			renderSystem->SetColor4( r_bloom_blur_mult.GetFloat(), r_bloom_src_mult.GetFloat(), 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXadd" ) );
+			//---------------------
+			const float fMaxColorIntensity = max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
+			renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_colorCurveBias.GetFloat(), 1.0f/fMaxColorIntensity );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
 
-			if ( !r_bloom_hud.GetBool() ) // If HUD blooming is disabled
+			const int iDebugMode = r_HDR_enableDebugMode.GetInteger();
+
+			if( 1 == iDebugMode )
 			{
-				player->DrawHUD(hud);
+				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+				renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageLuminance64x64 );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageluminance4x4 );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageAdaptedLuminance1x1 );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
+
 			}
+			else if ( 2 == iDebugMode )
+			{
+		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+				renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,		SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture64x64 );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture4x4 );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedAdaptLuminance );
+				renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
+			}
+
+			const int iDebugTexture = r_HDR_debugTextureIndex.GetInteger();
+			if( 0!= iDebugMode && 0 < iDebugTexture && 4 > iDebugTexture ) 
+			{
+				const dnImageWrapper *arrImages[2] = { &m_imageBloom, &m_imageHalo };
+				if( 1 == iDebugTexture )
+					renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
+				else
+					renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, m_fShiftScale_y, m_fShiftScale_x, 0, *arrImages[iDebugTexture-2] );
+			}
+		//---------------------------------------------------------------------
 		}
 
 		ScreenFade();
 	}
+
+	player->DrawHUD(hud);
 
 	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
