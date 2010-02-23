@@ -785,6 +785,8 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 {
 	if (aas == NULL) return -1;
 
+	if (GetPhysics() == NULL) return -1;
+
 	idClipModel *clipModel = GetPhysics()->GetClipModel();
 	if (clipModel == NULL)
 	{
