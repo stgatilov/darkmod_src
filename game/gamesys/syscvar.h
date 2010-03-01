@@ -585,6 +585,7 @@ extern idCVar r_HDR_brightPassOffset;
 extern idCVar r_HDR_min_luminance;	
 extern idCVar r_HDR_max_luminance;	
 extern idCVar r_HDR_colorCurveBias;
+extern idCVar r_HDR_blueShiftBias;
 extern idCVar r_HDR_enableDebugMode;
 extern idCVar r_HDR_debugTextureIndex;
 extern idCVar r_HDR_eyeAdjustmentDelay;

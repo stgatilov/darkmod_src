@@ -91,17 +91,13 @@ private:
 
 	// HDR related - J.C.Denton : Start
 
-	int					m_iScreenHeight;
-	int					m_iScreenWidth;
-	float				m_fShiftScale_x;
-	float				m_fShiftScale_y;
-
 	class dnImageWrapper
 	{
 	private:	
-		const idStr	m_strImage;
+		// Changed const idStr to idStr, so that compiler can provide a default assignment operator. 
+		// E.g. copying contents of idPlayerView object to another would be impossible otherwise.
+		idStr m_strImage;
 		const idMaterial *m_matImage;
-// 		const idMaterial *m_matImageGenerator;
 
 	public:
 		dnImageWrapper( const char *a_strImage ) : 
@@ -117,8 +113,15 @@ private:
 		{
 			return m_matImage;
 		}
-
 	};
+
+	class dnPostProcessManager
+	{
+	private:
+		int					m_iScreenHeight;
+		int					m_iScreenWidth;
+		float				m_fShiftScale_x;
+		float				m_fShiftScale_y;
 
 	dnImageWrapper m_imageCurrentRender;
 	dnImageWrapper m_imageCurrentRender8x8DownScaled;
@@ -128,6 +131,11 @@ private:
 	dnImageWrapper m_imageBloom;
 	dnImageWrapper m_imageHalo;
 	
+		// Every channel of this image will have a cooked mathematical data. 
+		// Since we might need more of these textures, I am numbering them.
+		dnImageWrapper		m_imageCookedMath0;
+		const idMaterial*	m_matCookMath0;
+
 	const idMaterial *m_matAvgLuminance64x;
 	const idMaterial *m_matAvgLumSample4x4;
 	const idMaterial *m_matAdaptLuminance;
@@ -144,6 +152,21 @@ private:
 	const idMaterial *m_matDecodedLumTexture4x4;
 	const idMaterial *m_matDecodedAdaptLuminance;
 
+	public:
+		dnPostProcessManager();
+		// 		~dnPostProcessManager();
+
+		// Methods
+		void Initialize	();						// This method should be invoked when idPlayerView::Restore is called.
+		void Update		();						// Called Every Frame. 
+
+	private:
+		// Following methods should not be called by any other object, but itself.
+		void UpdateBackBufferParameters	();		
+		void RenderDebugTextures		();		
+	};
+
+	dnPostProcessManager m_postProcessManager;
 	// HDR related - J.C.Denton : End
 
 	const idMaterial *	tunnelMaterial;		// health tunnel vision

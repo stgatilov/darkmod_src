@@ -703,6 +703,7 @@ idCVar r_HDR_min_luminance			( "r_HDR_min_luminance",		"0.06",			CVAR_GAME | CVA
 idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.22",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
 idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"1.6",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
 idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.3",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
+idCVar r_HDR_blueShiftBias			( "r_HDR_blueShiftBias",		"0.0",			CVAR_GAME | CVAR_FLOAT,		" Enables Blue Shift (range 0 to 1), 1 = Full Blue Shift, 0= No Blue Shift");
 idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"3.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusting this value will cause color burnout in a controllable fashion (range 0.0 - 256.0) \nHigher values reduces the contrast, lower values increases the contrast.");
 
 idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity ");
