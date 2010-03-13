@@ -29,7 +29,7 @@
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR 1
-#define TDM_VERSION_MINOR 1
+#define TDM_VERSION_MINOR 2
 
 /*!
 Darkmod LAS
