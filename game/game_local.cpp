@@ -1546,6 +1546,19 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 		MapShutdown();
 	}
 
+	idStr mapNameStr = mapName;
+	mapNameStr.StripLeadingOnce("maps/");
+	mapNameStr.StripFileExtension();
+
+	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
+
+	if (loadingGUI != NULL)
+	{
+		// Use our own randomizer, the gameLocal.random one is not yet initialised
+		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
+	}
+	
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
 	m_MissionData->Clear();
 

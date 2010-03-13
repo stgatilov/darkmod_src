@@ -6312,9 +6312,8 @@ void idPlayer::AdjustSpeed( void )
 	float speed(0.0f);
 	float crouchspeed(0.0f);
 	float rate(0.0f);
-	float MaxSpeed(0.0f);
-
-	MaxSpeed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * GetHinderance();
+	
+	float maxSpeed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * GetHinderance();
 
 	if ( spectating )
 	{
@@ -6337,48 +6336,48 @@ void idPlayer::AdjustSpeed( void )
 	// TDM: removed check for not crouching..
 	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
 	{
-		// TDM: Removed stamina. TDM does not use stamina
-		
+		float walkSpeed = pm_walkspeed.GetFloat();
+
+		speed = walkSpeed * cv_pm_runmod.GetFloat();
+
 		// greebo: Only adjust bob fraction if actually running
 		if (physicsObj.HasRunningVelocity())
 		{
-			bobFrac = 1.0f;
+			// Scale the viewbob with the velocity
+			// At walkspeed, bobfrac is 0, at full run speed it should be 1
+			const idVec3& vel = physicsObj.GetLinearVelocity();
+			bobFrac = idMath::ClampFloat(0, 1, (vel.LengthFast() - walkSpeed) / (speed - walkSpeed));
 		}
-
-		speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
 		
 		// ishtvan: we'll see if this works to prevent backwards running, depends on order things are set
 		// Don't apply backwards run penalty to crouch run.  It's already slow enough.
 		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
 		if( usercmd.forwardmove < 0 )
+		{
 			speed *= cv_pm_run_backmod.GetFloat();
+		}
 
 		// Clamp to encumbrance limits:
-		if( speed > MaxSpeed )
-			speed = MaxSpeed;
-		if( crouchspeed > MaxSpeed )
-			crouchspeed = MaxSpeed;
+		speed = idMath::ClampFloat(0, maxSpeed, speed);
+		crouchspeed = idMath::ClampFloat(0, maxSpeed, crouchspeed);
 	}
-	// standing still, walking, or creeping case
-	else 
+	else // standing still, walking, or creeping case
 	{
-		// TDM: Removed stamina
-
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
 
 		// apply creep modifier; creep is on button_5
 		if( usercmd.buttons & BUTTON_5 )
+		{
 			speed *= cv_pm_creepmod.GetFloat();
+		}
 
 		// apply movement multipliers to crouch as well
 		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
 
 		// Clamp to encumbrance limits:
-		if( speed > MaxSpeed )
-			speed = MaxSpeed;
-		if( crouchspeed > MaxSpeed )
-			crouchspeed = MaxSpeed;
+		speed = idMath::ClampFloat(0, maxSpeed, speed);
+		crouchspeed = idMath::ClampFloat(0, maxSpeed, crouchspeed);
 	}
 
 	// greebo: Clamp speed if swimming to 1.3 x walkspeed
@@ -6390,12 +6389,16 @@ void idPlayer::AdjustSpeed( void )
 	// TDM: leave this in for speed potions or something
 	speed *= PowerUpModifier(SPEED);
 
-	if ( influenceActive == INFLUENCE_LEVEL3 ) 
+	if (influenceActive == INFLUENCE_LEVEL3)
 	{
 		speed *= 0.33f;
 	}
 
-	physicsObj.SetSpeed( speed, crouchspeed );
+	physicsObj.SetSpeed(speed, crouchspeed);
+
+	//gameRenderWorld->DrawText(va("bobFrac: %f\n", bobFrac), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameRenderWorld->DrawText(va("speed: %f\n", physicsObj.GetLinearVelocity().Length()), GetEyePosition() + idVec3(0,0,-20) + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameLocal.Printf("bobFrac: %f\n", bobFrac);
 }
 
 /*
