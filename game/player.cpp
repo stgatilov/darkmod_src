@@ -2663,9 +2663,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	}
 
 	if(_hud)
+		{
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
+		}
 	else
+		{
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: NULL\r");
+		}
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
 		return;
@@ -9818,17 +9822,13 @@ idPlayer::GetMovementVolMod
 
 float idPlayer::GetMovementVolMod( void )
 {
-	float returnval;
+	float returnval = 0.0f;
 
 	bool isCrouched = AI_CROUCH != 0;
 
-	// figure out which of the 6 cases we have:
-	if( !AI_RUN && !AI_CREEP )
-	{
-		returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
-	}
+	// figure out which of the 6 possible cases we have:
 	// NOTE: running always has priority over creeping
-	else if( AI_RUN )
+	if( AI_RUN )
 	{
 		if (physicsObj.HasRunningVelocity())
 		{
@@ -9843,9 +9843,10 @@ float idPlayer::GetMovementVolMod( void )
 	{
 		returnval = (isCrouched) ? m_stepvol_crouch_creep : m_stepvol_creep;
 	}
-	else 
+ 	// else it is not: AI_RUN or AI_CREEP
+	else
 	{
-		gameLocal.Error("idPlayer::GetMovementVolMod: Logic Error.");
+		returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
 	}
 	//gameRenderWorld->DrawText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
 
