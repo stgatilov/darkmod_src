@@ -27,6 +27,15 @@ static int MakePowerOfTwo( int num ) {
 
 const int IMPULSE_DELAY = 150;
 
+// Tels: for gcc and GNU C (we could use a >? b and a <? b, but only in GNU C++):
+#ifndef min
+#define min(a,b) fmin(a,b)
+#endif
+
+#ifndef max
+#define max(a,b) fmax(a,b)
+#endif
+
 /*
 ==============
 idPlayerView::idPlayerView
@@ -961,7 +970,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		// Measure Luminance from Downscaled Image
 		//-------------------------------------------------
 		renderSystem->CropRenderSize(64, 64, true);
-		renderSystem->SetColor4( 1.0f/min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
+		renderSystem->SetColor4( 1.0f/min(192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
 		renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
 		renderSystem->UnCrop();
@@ -1026,7 +1035,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		//-------------------------------------------------
 		// Calculate and Render Final Image
 		//-------------------------------------------------
-		const float fMaxColorIntensity = max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
+		const float fMaxColorIntensity = max(r_HDR_maxColorIntensity.GetFloat(), 0.00001f);
 		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_colorCurveBias.GetFloat(), 1.0f/fMaxColorIntensity );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
 
