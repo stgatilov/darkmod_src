@@ -28,10 +28,11 @@ namespace ai
 #define AIUSE_PET				"AIUSE_PET"
 #define AIUSE_MONSTER			"AIUSE_MONSTER"  // a random or caged monster, not a pet
 #define AIUSE_UNDEAD			"AIUSE_UNDEAD" // An undead creature
+#define AIUSE_STEAMBOT			"AIUSE_STEAMBOT"  // steambots
 #define AIUSE_CATTLE			"AIUSE_CATTLE"
 #define AIUSE_PERSON			"AIUSE_PERSON"
 #define AIUSE_PEST				"AIUSE_PEST"
-#define AIUSE_DRINK			"AIUSE_DRINK"
+#define AIUSE_DRINK				"AIUSE_DRINK"
 #define AIUSE_DOOR				"AIUSE_DOOR"
 #define AIUSE_ELEVATOR			"AIUSE_ELEVATOR"
 #define AIUSE_MISSING_ITEM_MARKER "AIUSE_MISSING_ITEM_MARKER"

@@ -10478,13 +10478,14 @@ float idAI::StealthDamageMult()
 		return 1.0;
 }
 
-void idAI::SwapHeadAFCM( bool bUseLargerCM )
+void idAI::SwapHeadAFCM(bool bUseLargerCM)
 {
-	idAFBody *headBody;
-	headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
+	if (m_HeadJointID == -1) return; // safety check for AI without head
 
-	if( bUseLargerCM && !m_bHeadCMSwapped && spawnArgs.FindKey("blackjack_headbox_mins") )
+	if (bUseLargerCM && !m_bHeadCMSwapped && spawnArgs.FindKey("blackjack_headbox_mins"))
 	{
+		idAFBody* headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
+
 		idClipModel *oldClip = headBody->GetClipModel();
 		idVec3	CMorig	= oldClip->GetOrigin();
 		idMat3	CMaxis	= oldClip->GetAxis();
@@ -10520,6 +10521,8 @@ void idAI::SwapHeadAFCM( bool bUseLargerCM )
 	// swap back to original CM when going unconscious, if we swapped earlier
 	else if( !bUseLargerCM && m_bHeadCMSwapped )
 	{
+		idAFBody* headBody = af.GetPhysics()->GetBody(af.BodyForJoint(m_HeadJointID));
+
 		idClipModel *oldClip = headBody->GetClipModel();
 		idVec3	CMorig	= oldClip->GetOrigin();
 		idMat3	CMaxis	= oldClip->GetAxis();
