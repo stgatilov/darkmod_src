@@ -62,6 +62,13 @@ void DeadState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 	owner->commSubsystem->ClearTasks();
 
+	// Swap skin on death if required
+	idStr deathSkin;
+	if (owner->spawnArgs.GetString("skin_dead", "", deathSkin))
+	{
+		owner->Event_SetSkin(deathSkin);
+	}
+
 	_waitingForDeath = true;
 }
 
