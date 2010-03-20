@@ -21,6 +21,7 @@ namespace ai
 class CombatState :
 	public State
 {
+protected:
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
 	int _criticalHealth;

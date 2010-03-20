@@ -922,6 +922,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\CombatStateLanternBot.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\CombatStateLanternBot.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\ConversationState.cpp"
 						>
 					</File>
