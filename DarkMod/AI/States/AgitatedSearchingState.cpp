@@ -45,7 +45,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->Event_CloseHidingSpotSearch();
-		owner->GetMind()->PushState(STATE_COMBAT);
+		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
 		return false;
 	}
 

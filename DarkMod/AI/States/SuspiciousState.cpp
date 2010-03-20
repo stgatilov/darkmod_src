@@ -41,7 +41,7 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 	else if (owner->AI_AlertIndex > 2)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_SEARCHING);
+		owner->GetMind()->PushState(owner->backboneStates[EInvestigating]);
 		return false;
 	}
 

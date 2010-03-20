@@ -58,6 +58,10 @@ public:
 protected:
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
+
+	// Checks enemy status (dead, visible, not an enemy anymore).
+	// Returns false if the enemy is not applicable anymore and the state has ended
+	bool CheckEnemyStatus(idActor* enemy, idAI* owner);
 };
 
 } // namespace ai

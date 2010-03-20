@@ -44,7 +44,7 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 	else if (owner->AI_AlertIndex > 3)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_AGITATED_SEARCHING);
+		owner->GetMind()->PushState(owner->backboneStates[EAgitatedSearching]);
 		return false;
 	}
 

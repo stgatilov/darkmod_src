@@ -146,7 +146,7 @@ void ConversationState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) 
 	{
-		owner->GetMind()->SwitchState(STATE_OBSERVANT);
+		owner->GetMind()->SwitchState(owner->backboneStates[EObservant]);
 		return;
 	}
 

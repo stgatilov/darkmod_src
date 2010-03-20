@@ -43,7 +43,7 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 	else if (owner->AI_AlertIndex > 1)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_SUSPICIOUS);
+		owner->GetMind()->PushState(owner->backboneStates[ESuspicious]);
 		return false;
 	}
 

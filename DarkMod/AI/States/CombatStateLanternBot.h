@@ -21,14 +21,6 @@ namespace ai
 class CombatStateLanternBot :
 	public CombatState
 {
-	// The AI's enemy
-	idEntityPtr<idActor> _enemy;
-	int _criticalHealth;
-	bool _meleePossible;
-	bool _rangedPossible;
-
-	ECombatType _combatType;
-
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;

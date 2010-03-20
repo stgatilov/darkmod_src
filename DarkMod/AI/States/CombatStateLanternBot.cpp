@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "CombatStateLanternBot.h"
+#include "../Tasks/ScriptTask.h"
 
 namespace ai
 {
@@ -32,62 +33,34 @@ void CombatStateLanternBot::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatStateLanternBot initialised.\r");
 	assert(owner);
 
-	// TODO
+	// Add the script task blowing the alarm whistle
+	owner->actionSubsystem->PushTask(TaskPtr(new ScriptTask("startAlarmWhistle")));
 }
 
 // Gets called each time the mind is thinking
 void CombatStateLanternBot::Think(idAI* owner)
 {
-	/*idActor* enemy = _enemy.GetEntity();
-	if (enemy == NULL)
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
-		owner->GetMind()->EndState();
-		return;
-	}
-
-	if (enemy->AI_DEAD)
-	{
-		owner->ClearEnemy();
-		owner->StopMove(MOVE_STATUS_DONE);
-
-		// TODO: Check if more enemies are in range
-		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
-
-		// Emit the killed player bark
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
-		);
-
-		owner->GetMind()->EndState();
-		return;
-	}
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
 		owner->GetMind()->EndState();
 		return;
 	}
-	Memory& memory = owner->GetMemory();
 
-	if (!owner->IsEnemy(enemy))
+	idActor* enemy = _enemy.GetEntity();
+
+	if (!CheckEnemyStatus(enemy, owner))
 	{
-		// angua: the relation to the enemy has changed, this is not an enemy any more
-		owner->StopMove(MOVE_STATUS_DONE);
-		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
-		owner->ClearEnemy();
-		owner->GetMind()->EndState();
-		
-		owner->movementSubsystem->ClearTasks();
-		owner->senseSubsystem->ClearTasks();
-		owner->actionSubsystem->ClearTasks();
-
-		return;
+		return; // state has ended
 	}
 
 	// angua: look at ememy
 	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
+
+	/*
+	Memory& memory = owner->GetMemory();
+
+	
 
 	// Flee if we are damaged and the current melee action is finished
 	if (owner->health < _criticalHealth && owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY)

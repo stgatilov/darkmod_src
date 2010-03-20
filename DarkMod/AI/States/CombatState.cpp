@@ -231,52 +231,18 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
-	idActor* enemy = _enemy.GetEntity();
-	if (enemy == NULL)
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
-		owner->GetMind()->EndState();
-		return;
-	}
-
-	if (enemy->AI_DEAD)
-	{
-		owner->ClearEnemy();
-		owner->StopMove(MOVE_STATUS_DONE);
-
-		// TODO: Check if more enemies are in range
-		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
-
-		// Emit the killed player bark
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
-		);
-
-		owner->GetMind()->EndState();
-		return;
-	}
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
 		owner->GetMind()->EndState();
 		return;
 	}
-	Memory& memory = owner->GetMemory();
 
-	if (!owner->IsEnemy(enemy))
+	idActor* enemy = _enemy.GetEntity();
+
+	if (!CheckEnemyStatus(enemy, owner))
 	{
-		// angua: the relation to the enemy has changed, this is not an enemy any more
-		owner->StopMove(MOVE_STATUS_DONE);
-		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
-		owner->ClearEnemy();
-		owner->GetMind()->EndState();
-		
-		owner->movementSubsystem->ClearTasks();
-		owner->senseSubsystem->ClearTasks();
-		owner->actionSubsystem->ClearTasks();
-
-		return;
+		return; // state has ended
 	}
 
 	// angua: look at ememy
@@ -321,6 +287,8 @@ void CombatState::Think(idAI* owner)
 		_combatType = COMBAT_MELEE;
 	}
 
+	Memory& memory = owner->GetMemory();
+
 	// Check the distance to the enemy, the subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
 	if( owner->m_bMeleePredictProximity )
@@ -346,6 +314,50 @@ void CombatState::Think(idAI* owner)
 			return;
 		}
 	}
+}
+
+bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
+{
+	if (enemy == NULL)
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
+		owner->GetMind()->EndState();
+		return false;
+	}
+
+	if (enemy->AI_DEAD)
+	{
+		owner->ClearEnemy();
+		owner->StopMove(MOVE_STATUS_DONE);
+
+		// TODO: Check if more enemies are in range
+		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+
+		// Emit the killed player bark
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
+		);
+
+		owner->GetMind()->EndState();
+		return false;
+	}
+
+	if (!owner->IsEnemy(enemy))
+	{
+		// angua: the relation to the enemy has changed, this is not an enemy any more
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+		owner->ClearEnemy();
+		owner->GetMind()->EndState();
+		
+		owner->movementSubsystem->ClearTasks();
+		owner->senseSubsystem->ClearTasks();
+		owner->actionSubsystem->ClearTasks();
+
+		return false;
+	}
+
+	return true; // Enemy still alive and kicking
 }
 
 void CombatState::Save(idSaveGame* savefile) const

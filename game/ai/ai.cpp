@@ -24,6 +24,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/States/DeadState.h"
 #include "../../DarkMod/AI/States/ConversationState.h"
 #include "../../DarkMod/AI/States/PainState.h"
+#include "../../DarkMod/AI/States/IdleState.h"
+#include "../../DarkMod/AI/States/ObservantState.h"
+#include "../../DarkMod/AI/States/SuspiciousState.h"
+#include "../../DarkMod/AI/States/SearchingState.h"
+#include "../../DarkMod/AI/States/AgitatedSearchingState.h"
+#include "../../DarkMod/AI/States/CombatState.h"
 #include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 #include "../../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../../DarkMod/Relations.h"
@@ -857,8 +863,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime4_fuzzyness);
 	savefile->WriteFloat(atime_fleedone_fuzzyness);
 
-	savefile->WriteInt(static_cast<int>(stateRedirects.size()));
-	for (StateRedirectMap::const_iterator i = stateRedirects.begin(); i != stateRedirects.end(); ++i)
+	savefile->WriteInt(static_cast<int>(backboneStates.size()));
+	for (BackboneStateMap::const_iterator i = backboneStates.begin(); i != backboneStates.end(); ++i)
 	{
 		savefile->WriteInt(i->first);
 		savefile->WriteString(i->second);
@@ -1211,7 +1217,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime4_fuzzyness);
 	savefile->ReadFloat(atime_fleedone_fuzzyness);
 
-	stateRedirects.clear();
+	backboneStates.clear();
 	savefile->ReadInt(num);
 
 	for (int i = 0; i < num; ++i)
@@ -1219,8 +1225,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		int state = 0;
 		savefile->ReadInt(state);
 		
-		std::pair<StateRedirectMap::iterator, bool> result = stateRedirects.insert(
-			StateRedirectMap::value_type(static_cast<ai::EAlertState>(state), idStr())
+		std::pair<BackboneStateMap::iterator, bool> result = backboneStates.insert(
+			BackboneStateMap::value_type(static_cast<ai::EAlertState>(state), idStr())
 		);
 
 		savefile->ReadString(result.first->second);
@@ -1422,31 +1428,16 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time_fleedone",				"60",		atime_fleedone );
 	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"10",		atime_fleedone_fuzzyness );
 
-	// State Redirect setup
-	stateRedirects.clear();
+	// State setup
+	backboneStates.clear();
 
-	for (const idKeyValue* kv = spawnArgs.MatchPrefix("state_redirect_"); kv != NULL; kv = spawnArgs.MatchPrefix("state_redirect_", kv))
-	{
-	   // Do something with the key and the value
-	   idStr key = kv->GetKey();
-	   key.StripLeadingOnce("state_redirect_");
-
-	   try
-	   {
-		   int stateInt = boost::lexical_cast<int>(key.c_str());
-
-		   if (stateInt < ai::ERelaxed || stateInt > ai::EAlertStateNum) continue;
-
-		   // Insert into mapping
-		   stateRedirects[static_cast<ai::EAlertState>(stateInt)] = kv->GetValue();
-	   }
-	   catch (boost::bad_lexical_cast&)
-	   {
-		   gameLocal.Warning("Invalid state redirect number specified on AI %s: %s", name.c_str(), key.c_str());
-		   continue; // not an integer
-	   }
-	}
-
+	backboneStates[ai::ERelaxed]			= spawnArgs.GetString("state_name_0", STATE_IDLE);
+	backboneStates[ai::EObservant]			= spawnArgs.GetString("state_name_1", STATE_OBSERVANT);
+	backboneStates[ai::ESuspicious]			= spawnArgs.GetString("state_name_2", STATE_SUSPICIOUS);
+	backboneStates[ai::EInvestigating]		= spawnArgs.GetString("state_name_3", STATE_SEARCHING);
+	backboneStates[ai::EAgitatedSearching]	= spawnArgs.GetString("state_name_4", STATE_AGITATED_SEARCHING);
+	backboneStates[ai::ECombat]				= spawnArgs.GetString("state_name_5", STATE_COMBAT);
+	
 	spawnArgs.GetInt( "max_interleave_think_frames",		"12",		m_maxInterleaveThinkFrames );
 	spawnArgs.GetFloat( "min_interleave_think_dist",		"1000",		m_minInterleaveThinkDist);
 	spawnArgs.GetFloat( "max_interleave_think_dist",		"3000",		m_maxInterleaveThinkDist);

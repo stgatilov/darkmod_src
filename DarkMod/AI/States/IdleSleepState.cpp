@@ -43,7 +43,7 @@ bool IdleSleepState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > 0)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_OBSERVANT);
+		owner->GetMind()->PushState(owner->backboneStates[EObservant]);
 		return false;
 	}
 
@@ -75,7 +75,7 @@ void IdleSleepState::Init(idAI* owner)
 			|| owner->GetCurrentYaw() != memory.idleYaw))
 	{
 		// we need to get to the bed first before starting to sleep, back to idle state
-		owner->GetMind()->SwitchState(STATE_IDLE);
+		owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
 		return;
 	}
 
@@ -123,7 +123,7 @@ void IdleSleepState::Think(idAI* owner)
 	}
 	else if (owner->GetMoveType() == MOVETYPE_GET_UP_FROM_LYING)
 	{
-		owner->GetMind()->SwitchState(STATE_IDLE);
+		owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
 		owner->commSubsystem->ClearTasks();
 		return;
 	}

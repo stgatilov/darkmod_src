@@ -43,7 +43,7 @@ bool IdleState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > 0)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_OBSERVANT);
+		owner->GetMind()->PushState(owner->backboneStates[EObservant]);
 		return false;
 	}
 
