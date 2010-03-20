@@ -69,6 +69,41 @@ void DeadState::Init(idAI* owner)
 		owner->Event_SetSkin(deathSkin);
 	}
 
+	// Run a death FX
+	idStr deathFX;
+	if (owner->spawnArgs.GetString("fx_on_death", "", deathFX))
+	{
+		owner->Event_StartFx(deathFX);
+	}
+
+	// Run a death script, if applicable
+	idStr deathScript;
+	if (owner->spawnArgs.GetString("death_script", "", deathScript))
+	{
+		const function_t* scriptFunction = owner->scriptObject.GetFunction(deathScript);
+		if (scriptFunction == NULL)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", deathScript.c_str());
+			scriptFunction = gameLocal.program.FindFunction(deathScript.c_str());
+		}
+
+		if (scriptFunction)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Running Death Script\r");
+
+			idThread* thread = new idThread(scriptFunction);
+			thread->CallFunctionArgs(scriptFunction, true, "e", owner);
+			thread->DelayedStart(0);
+
+			// Start execution immediately
+			thread->Execute();
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Death Script not found! [%s]\r", deathScript.c_str());
+		}
+	}
+
 	_waitingForDeath = true;
 }
 
