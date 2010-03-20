@@ -46,6 +46,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "tdmAASFindEscape.h"
 #include "../../DarkMod/AI/AreaManager.h"
 
+#include <boost/lexical_cast.hpp>
+
 //TODO: Move these to AI def:
 
 // Visual detection parameters
@@ -855,6 +857,13 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime4_fuzzyness);
 	savefile->WriteFloat(atime_fleedone_fuzzyness);
 
+	savefile->WriteInt(static_cast<int>(stateRedirects.size()));
+	for (StateRedirectMap::const_iterator i = stateRedirects.begin(); i != stateRedirects.end(); ++i)
+	{
+		savefile->WriteInt(i->first);
+		savefile->WriteString(i->second);
+	}
+
 	savefile->WriteInt(m_maxInterleaveThinkFrames);
 	savefile->WriteFloat(m_minInterleaveThinkDist);
 	savefile->WriteFloat(m_maxInterleaveThinkDist);
@@ -1202,6 +1211,21 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime4_fuzzyness);
 	savefile->ReadFloat(atime_fleedone_fuzzyness);
 
+	stateRedirects.clear();
+	savefile->ReadInt(num);
+
+	for (int i = 0; i < num; ++i)
+	{
+		int state = 0;
+		savefile->ReadInt(state);
+		
+		std::pair<StateRedirectMap::iterator, bool> result = stateRedirects.insert(
+			StateRedirectMap::value_type(static_cast<ai::EAlertState>(state), idStr())
+		);
+
+		savefile->ReadString(result.first->second);
+	}
+	
 	savefile->ReadInt(m_maxInterleaveThinkFrames);
 	savefile->ReadFloat(m_minInterleaveThinkDist);
 	savefile->ReadFloat(m_maxInterleaveThinkDist);
@@ -1397,6 +1421,31 @@ void idAI::Spawn( void )
 
 	spawnArgs.GetFloat( "alert_time_fleedone",				"60",		atime_fleedone );
 	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"10",		atime_fleedone_fuzzyness );
+
+	// State Redirect setup
+	stateRedirects.clear();
+
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("state_redirect_"); kv != NULL; kv = spawnArgs.MatchPrefix("state_redirect_", kv))
+	{
+	   // Do something with the key and the value
+	   idStr key = kv->GetKey();
+	   key.StripLeadingOnce("state_redirect_");
+
+	   try
+	   {
+		   int stateInt = boost::lexical_cast<int>(key.c_str());
+
+		   if (stateInt < ai::ERelaxed || stateInt > ai::EAlertStateNum) continue;
+
+		   // Insert into mapping
+		   stateRedirects[static_cast<ai::EAlertState>(stateInt)] = kv->GetValue();
+	   }
+	   catch (boost::bad_lexical_cast&)
+	   {
+		   gameLocal.Warning("Invalid state redirect number specified on AI %s: %s", name.c_str(), key.c_str());
+		   continue; // not an integer
+	   }
+	}
 
 	spawnArgs.GetInt( "max_interleave_think_frames",		"12",		m_maxInterleaveThinkFrames );
 	spawnArgs.GetFloat( "min_interleave_think_dist",		"1000",		m_minInterleaveThinkDist);
