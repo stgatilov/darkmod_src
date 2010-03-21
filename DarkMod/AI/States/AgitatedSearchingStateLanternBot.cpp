@@ -26,6 +26,21 @@ const idStr& AgitatedSearchingStateLanternBot::GetName() const
 	return _name;
 }
 
+bool AgitatedSearchingStateLanternBot::CheckAlertLevel(idAI* owner)
+{
+	if (owner->AI_AlertIndex < 4)
+	{
+		// Alert index is too low for this state, fall back
+		owner->GetMind()->EndState();
+		return false;
+	}
+
+	// Don't let this AI go higher than this state
+
+	// Alert Index is matching, return OK
+	return true;
+}
+
 void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 {
 	// Init base class first
