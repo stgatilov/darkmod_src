@@ -1700,7 +1700,7 @@ void idAFEntity_Base::ReAttachToPos
  
 	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
 	idAFBody *body = NULL;
-	int bodyContents, bodyClipMask;
+	int bodyContents = 0, bodyClipMask = 0;
 	bool bStoredAFBodyInfo = false;
 	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
 	{
@@ -1742,7 +1742,7 @@ void idAFEntity_Base::ReAttachToCoords
 
 	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
 	idAFBody *body = NULL;
-	int bodyContents, bodyClipMask;
+	int bodyContents = 0, bodyClipMask = 0;
 	bool bStoredAFBodyInfo = false;
 	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
 	{
