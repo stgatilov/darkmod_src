@@ -43,6 +43,7 @@ Memory::Memory(idAI* owningAI) :
 	alertClass(EAlertClassCount),
 	alertType(EAlertTypeCount),
 	alertRadius(-1),
+	lastAudioAlertTime(-1),
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
 	alertedDueToCommunication(false),

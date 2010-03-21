@@ -922,11 +922,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\States\CombatStateLanternBot.cpp"
+						RelativePath=".\DarkMod\Ai\States\AgitatedSearchingStateLanternBot.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\States\CombatStateLanternBot.h"
+						RelativePath=".\DarkMod\Ai\States\AgitatedSearchingStateLanternBot.h"
 						>
 					</File>
 					<File

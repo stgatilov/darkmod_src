@@ -227,6 +227,9 @@ public:
 	// radius of alert causing stimulus (depends on the type and distance)
 	float alertRadius;
 
+	// The last time we had an incoming audio alert
+	int lastAudioAlertTime;
+
 	// This is true if the original alert position is to be searched
 	bool stimulusLocationItselfShouldBeSearched;
 

@@ -53,6 +53,12 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	return true;
 }
 
+void AgitatedSearchingState::CalculateAlertDecreaseRate(idAI* owner)
+{
+	float alertTime = owner->atime4 + owner->atime4_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / alertTime;
+}
+
 void AgitatedSearchingState::Init(idAI* owner)
 {
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
@@ -67,9 +73,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	float alertTime = owner->atime4 + owner->atime4_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
-	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / alertTime;
-
+	CalculateAlertDecreaseRate(owner);
+	
 	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
 		owner->GetUp();

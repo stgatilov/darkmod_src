@@ -268,6 +268,7 @@ void State::OnAudioAlert()
 	memory.alertClass = EAlertAudio;
 	memory.alertType = EAlertTypeSuspicious;
 	memory.alertPos = owner->GetSndDir();
+	memory.lastAudioAlertTime = gameLocal.time;
 
 	// Search within radius of stimulus that is 1/3 the distance from the
 	// observer to the point at the time heard

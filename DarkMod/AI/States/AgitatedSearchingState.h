@@ -27,7 +27,7 @@ namespace ai
 #define STATE_AGITATED_SEARCHING "AgitatedSearching"
 
 class AgitatedSearchingState :
-	protected SearchingState
+	public SearchingState
 {
 public:
 	// Get the name of this state
@@ -44,6 +44,8 @@ public:
 protected:
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
+
+	virtual void CalculateAlertDecreaseRate(idAI* owner);
 };
 
 } // namespace ai

@@ -199,7 +199,7 @@ AI/States/AgitatedSearchingState.cpp \
 AI/States/AlertIdleState.cpp \
 AI/States/BlindedState.cpp \
 AI/States/CombatState.cpp \
-AI/States/CombatStateLanternBot.cpp \
+AI/States/AgitatedSearchingStateLanternBot.cpp \
 AI/States/ConversationState.cpp \
 AI/States/DeadState.cpp \
 AI/States/EmergeFromCoverState.cpp \
