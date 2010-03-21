@@ -548,7 +548,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetHealth,				idActor::Event_GetHealth )
 	
 	EVENT ( AI_Attach,					idActor::Event_Attach )
-	EVENT ( AI_Attach,					idActor::Event_AttachToPos )
+	EVENT ( AI_AttachToPos,				idActor::Event_AttachToPos )
 	EVENT ( AI_ReAttachToPos,			idActor::ReAttachToPos )
 	EVENT ( AI_ReAttachToCoords,		idActor::ReAttachToCoords )
 	EVENT ( AI_DropAttachment,			idActor::Detach )
