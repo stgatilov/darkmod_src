@@ -82,7 +82,7 @@ void AgitatedSearchingStateLanternBot::Think(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Look at alert position
-	owner->Event_LookAtPosition(memory.alertPos, gameLocal.msec);
+	owner->TurnToward(memory.alertPos);
 }
 
 StatePtr AgitatedSearchingStateLanternBot::CreateInstance()
