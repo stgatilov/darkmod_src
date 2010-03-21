@@ -5616,8 +5616,11 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	AI_DEAD	= true;
 
 	// make monster nonsolid
-	physicsObj.SetContents( 0 );
-	physicsObj.GetClipModel()->Unlink();
+	if (spawnArgs.GetBool("nonsolid_on_ragdoll", "1"))
+	{
+		physicsObj.SetContents(0);
+		physicsObj.GetClipModel()->Unlink();
+	}
 
 	Unbind();
 
@@ -5644,9 +5647,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		physicsObj.DisableImpact();
 	}
 
-	// AI becomes frobable on death
-	// greebo: Add a delay before the AI becomes actually frobable
-	PostEventMS(&EV_SetFrobable, 750, 1);
+	if (spawnArgs.GetBool("set_frobable_on_death", "1"))
+	{
+		// AI becomes frobable on death
+		// greebo: Add a delay before the AI becomes actually frobable
+		PostEventMS(&EV_SetFrobable, 750, 1);
+	}
 	
 	restartParticles = false;
 
@@ -9435,9 +9441,12 @@ void idAI::PostKnockOut()
 		physicsObj.DisableImpact();
 	}
 
-	// AI becomes frobable on KO
-	// greebo: Add a delay before the AI becomes actually frobable
-	PostEventMS(&EV_SetFrobable, 750, 1);
+	if (spawnArgs.GetBool("set_frobable_on_knockout", "1"))
+	{
+		// AI becomes frobable on KO
+		// greebo: Add a delay before the AI becomes actually frobable
+		PostEventMS(&EV_SetFrobable, 750, 1);
+	}
 
 	restartParticles = false;
 

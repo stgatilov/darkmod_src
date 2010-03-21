@@ -2143,7 +2143,10 @@ bool idActor::StartRagdoll( void ) {
 	}
 
 	// disable the monster bounding box
-	GetPhysics()->DisableClip();
+	if (spawnArgs.GetBool("nonsolid_on_ragdoll", "1"))
+	{
+		GetPhysics()->DisableClip();
+	}
 
 	// ishtvan: Establish AF constraints for any AF bodies of bound entities
 	UpdateAddedEntConstraints();
