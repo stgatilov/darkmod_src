@@ -21,6 +21,9 @@ namespace ai
 class AgitatedSearchingStateLanternBot :
 	public AgitatedSearchingState
 {
+protected:
+	idVec3 _curAlertPos;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -33,9 +36,18 @@ public:
 
 	static StatePtr CreateInstance();
 
+	// Override base class signal
+	virtual void OnMovementBlocked(idAI* owner);
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
+
 protected:
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
+
+	void MoveTowardAlertPos(idAI* owner);
 };
 
 } // namespace

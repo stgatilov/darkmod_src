@@ -83,8 +83,6 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		else
 		{
 			// AI is moving, this is ok
-			
-			// TODO: check_blocked() port from scripts
 		}
 	}
 	else 

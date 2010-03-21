@@ -52,25 +52,24 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	CalculateAlertDecreaseRate(owner);
-
-	// Shortcut reference
-	Memory& memory = owner->GetMemory();
-
-	owner->StopMove(MOVE_STATUS_DONE);
-
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 
-	// Fill the subsystems with their tasks
+	owner->StopMove(MOVE_STATUS_DONE);
+
+	// Start with an invalid position
+	_curAlertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+
+	// Move to a position where we can light up the alert position from
+	MoveTowardAlertPos(owner);
 
 	// This will hold the message to be delivered with the inaudible bark
 	CommMessagePtr message(new CommMessage(
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL,// from this AI to anyone 
 		NULL,
-		memory.alertPos
+		_curAlertPos
 	));
 
 	// The communication system plays starting bark
@@ -80,6 +79,14 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 
 	// Add the script task blowing the alarm whistle
 	owner->actionSubsystem->PushTask(TaskPtr(new ScriptTask("startAlarmWhistle")));
+}
+
+void AgitatedSearchingStateLanternBot::OnMovementBlocked(idAI* owner)
+{
+	AgitatedSearchingState::OnMovementBlocked(owner);
+
+	// Begin counting down the alertness, we're blocked
+	CalculateAlertDecreaseRate(owner);
 }
 
 // Gets called each time the mind is thinking
@@ -94,10 +101,64 @@ void AgitatedSearchingStateLanternBot::Think(idAI* owner)
 		return;
 	}
 
+	// Move (if alert position has changed)
+	MoveTowardAlertPos(owner);
+
+	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
+	{
+		// Look at alert position, now that we've finished moving
+		owner->TurnToward(_curAlertPos);
+
+		// Let the alertness decrease from now on
+		CalculateAlertDecreaseRate(owner);
+	}
+	else
+	{
+		// Moving along, ensure that we're not dropping out of this state as long as we're moving
+		_alertLevelDecreaseRate = 0;
+		return;
+	}
+}
+
+void AgitatedSearchingStateLanternBot::MoveTowardAlertPos(idAI* owner)
+{
 	Memory& memory = owner->GetMemory();
 
-	// Look at alert position
-	owner->TurnToward(memory.alertPos);
+	if (_curAlertPos.Compare(memory.alertPos, 150))
+	{
+		// alert position is roughly the same as the current one, quit
+		return;
+	}
+
+	// Memorise this position
+	_curAlertPos = memory.alertPos;
+	
+	aasGoal_t goal = owner->GetPositionWithinRange(_curAlertPos);
+
+	if (goal.areaNum != -1)
+	{
+		// Found a suitable attack position, now move to it
+		owner->MoveToPosition(goal.origin);
+	}
+	else
+	{
+		// No suitable position fall back to the direct position
+		owner->MoveToPosition(_curAlertPos);
+	}
+}
+
+void AgitatedSearchingStateLanternBot::Save(idSaveGame* savefile) const
+{
+	AgitatedSearchingState::Save(savefile);
+
+	savefile->WriteVec3(_curAlertPos);
+}
+
+void AgitatedSearchingStateLanternBot::Restore(idRestoreGame* savefile)
+{
+	AgitatedSearchingState::Restore(savefile);
+
+	savefile->ReadVec3(_curAlertPos);
 }
 
 StatePtr AgitatedSearchingStateLanternBot::CreateInstance()
