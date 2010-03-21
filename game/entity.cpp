@@ -167,7 +167,7 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
 const idEventDef EV_AddInvItem("addInvItem", "e");					// Adds an entity to the inventory
-const idEventDef EV_ReplaceInvItem("replaceInvItem", "ee", 'd');	// olditem, newitem -> 1 if succeeded
+const idEventDef EV_ReplaceInvItem("replaceInvItem", "eE", 'd');	// olditem, newitem -> 1 if succeeded
 const idEventDef EV_GetNextInvItem("getNextInvItem", "", 'e');		// switches to the next inventory item
 const idEventDef EV_GetPrevInvItem("getPrevInvItem", "", 'e');		// switches to the previous inventory item
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
