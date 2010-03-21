@@ -99,7 +99,7 @@ void SearchingState::Init(idAI* owner)
 			{
 				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
-					bark = "snd_alert3ch";
+					bark = "snd_alert3hc";
 				}
 				else
 				{
