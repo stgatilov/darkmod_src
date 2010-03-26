@@ -48,7 +48,7 @@ public:
 	/**
 	 * greebo: Adds the given item to this category
 	 */
-	void					PutItem(CInventoryItemPtr Item);
+	void					PutItem(const CInventoryItemPtr& Item);
 
 	/**
 	 * greebo: Removes the specified <item> from this category.
