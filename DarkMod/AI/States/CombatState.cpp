@@ -100,6 +100,9 @@ void CombatState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	// Set end time to something invalid
+	_endTime = -1;
+
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatState initialised.\r");
 	assert(owner);
 
@@ -231,6 +234,17 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
+	// Do we have an expiry date?
+	if (_endTime > 0)
+	{
+		if (gameLocal.time >= _endTime)
+		{
+			owner->GetMind()->EndState();
+		}
+
+		return;
+	}
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
@@ -330,6 +344,9 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 		owner->ClearEnemy();
 		owner->StopMove(MOVE_STATUS_DONE);
 
+		// Stop doing melee fighting
+		owner->actionSubsystem->ClearTasks();
+
 		// TODO: Check if more enemies are in range
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 
@@ -338,7 +355,9 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
 		);
 
-		owner->GetMind()->EndState();
+		// Set the expiration date of this state
+		_endTime = gameLocal.time + 3000;
+
 		return false;
 	}
 
@@ -371,6 +390,8 @@ void CombatState::Save(idSaveGame* savefile) const
 	savefile->WriteInt(static_cast<int>(_combatType));
 
 	_enemy.Save(savefile);
+
+	savefile->WriteInt(_endTime);
 }
 
 void CombatState::Restore(idRestoreGame* savefile)
@@ -386,6 +407,8 @@ void CombatState::Restore(idRestoreGame* savefile)
 	_combatType = static_cast<ECombatType>(temp);
 
 	_enemy.Restore(savefile);
+
+	savefile->ReadInt(_endTime);
 }
 
 StatePtr CombatState::CreateInstance()

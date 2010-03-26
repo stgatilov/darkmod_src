@@ -30,6 +30,9 @@ protected:
 
 	ECombatType _combatType;
 
+	// When end time is set, the state is just waiting to be finished
+	// and is not performing any routines anymore
+	int _endTime;
 
 public:
 	// Get the name of this state
