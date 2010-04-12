@@ -648,13 +648,13 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 	}
 	// tels:
-	else if ( token == "detach" ) 
+	else if ( token == "destroy" ) 
 	{
 		// first argument (attachment name)
 		if( !src.ReadTokenOnLine( &token ) )
 			return "Unexpected end of line";
 
-		fc.type = FC_DETACH;
+		fc.type = FC_DESTROY;
 		fc.string = new idStr( token );
 	}
 	// tels:
@@ -1123,7 +1123,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					break;
 				}
 				// tels: detach and destroy an attachment
-				case FC_DETACH:
+				case FC_DESTROY:
 				{
 					// get the attachment
 					idEntity* AttEntity = ent->GetAttachment( command.string->c_str() );

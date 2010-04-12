@@ -152,7 +152,7 @@ typedef enum {
 /**
 * Tels: Detach and destroy the named attachement
 **/
-	FC_DETACH,
+	FC_DESTROY,
 /**
 * Tels: Detach and drop the named attachement
 **/
