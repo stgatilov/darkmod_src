@@ -146,6 +146,18 @@ typedef enum {
 **/
 	FC_REATTACH,
 /**
+* Tels: Spawn an item (the item contains where to attach it)
+**/
+	FC_ATTACH,
+/**
+* Tels: Detach and destroy the named attachement
+**/
+	FC_DETACH,
+/**
+* Tels: Detach and drop the named attachement
+**/
+	FC_DROP,
+/**
 * Pause the animation at its current frame, wait for unpause from somewhere else
 **/
 	FC_PAUSE,
