@@ -667,6 +667,28 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_DROP;
 		fc.string = new idStr( token );
 	}
+	// tels:
+	else if ( token == "pickup" ) 
+	{
+		// first argument (either entity name, or AIUSE class)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_PICKUP;
+		fc.string = new idStr( token );
+
+		// second argument (attach name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+
+		// third argument (attach position)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
 	else if ( token == "pause" ) 
 	{
 		fc.type = FC_PAUSE;
@@ -1141,7 +1163,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					ent->Detach( command.string->c_str() );
 					break;
 				}
-				// spawn an entity
+				// tels: spawn an entity and attach it
 				case FC_ATTACH:
 				{
 					// possible formats:
@@ -1175,8 +1197,53 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
 					}
 					gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-					// gameLocal.Warning ( "'%s' '%s' '%s'\n", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
+					// gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'\n", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
 					ent->Attach( spawnedEntity, AttPos, AttName );
+					break;
+				}
+				// tels: pick up an entity from the world
+				case FC_PICKUP:
+				{
+					// possible formats:
+					// "atdm_some_book book hand_r"
+					// "AIUSE_EAT food hand_l"
+					// "AIUSE_DRINK drink hand_l"
+
+					gameLocal.Warning ( "Picking up '%s'\n", command.string->c_str() );
+
+					int spcind = command.string->Find(" ");
+					// format of AttName is afterwards "food hand_r"
+					idStr EntityName = command.string->Left( spcind );
+					idStr AttName = command.string->Mid( spcind+1, command.string->Length() );
+
+					idStr AttPos;
+					spcind = AttName.Find(" ");
+					if (spcind > 0)
+					{
+						AttPos = AttName.Mid( spcind+1, AttName.Length() );
+						AttName = AttName.Left( spcind );
+					}
+
+					gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+					// now find the entity
+					idEntity* attTarget = gameLocal.FindEntity(EntityName);
+					if (attTarget == NULL)
+					{
+						// generic AIUSE class, find a suitable entity
+						gameLocal.Warning ( " Trying to find an entity matching '%s'\n", EntityName.c_str() );
+					}
+
+					// now attach it
+					if (attTarget)
+					{
+						gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						ent->Attach( attTarget, AttPos, AttName );
+					}
+					else
+					{
+						// no entity found, abort animation?
+						gameLocal.Warning( " Could not find entity '%s' to attach", EntityName.c_str() );
+					}
 					break;
 				}
 				case FC_PAUSE:

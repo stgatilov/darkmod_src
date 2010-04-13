@@ -158,6 +158,10 @@ typedef enum {
 **/
 	FC_DROP,
 /**
+* Tels: Pickup an object (either the direct name, or the AIUSE class)
+**/
+	FC_PICKUP,
+/**
 * Pause the animation at its current frame, wait for unpause from somewhere else
 **/
 	FC_PAUSE,

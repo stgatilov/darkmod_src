@@ -1,11 +1,13 @@
 /***************************************************************************
  *
+ * vim:ts=4:sw=4:cindent
  * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
  * $Author$
  *
  ***************************************************************************/
+
 
 #ifndef __AI_MEMORY_H__
 #define __AI_MEMORY_H__
@@ -19,33 +21,36 @@
 namespace ai
 {
 
-#define AIUSE_WEAPON			"AIUSE_WEAPON"
-#define AIUSE_LIGHTSOURCE		"AIUSE_LIGHTSOURCE"
 #define AIUSE_BLOOD_EVIDENCE	"AIUSE_BLOOD_EVIDENCE"
-#define AIUSE_SEAT				"AIUSE_SEAT"
-#define AIUSE_COOK				"AIUSE_COOK"
-#define AIUSE_EAT				"AIUSE_EAT"
-#define AIUSE_PET				"AIUSE_PET"
-#define AIUSE_MONSTER			"AIUSE_MONSTER"  // a random or caged monster, not a pet
-#define AIUSE_UNDEAD			"AIUSE_UNDEAD" // An undead creature
-#define AIUSE_STEAMBOT			"AIUSE_STEAMBOT"  // steambots
+#define AIUSE_BROKEN_ITEM		"AIUSE_BROKEN_ITEM"
+#define AIUSE_CARRY				"AIUSE_CARRY"		// for specific animations
 #define AIUSE_CATTLE			"AIUSE_CATTLE"
-#define AIUSE_PERSON			"AIUSE_PERSON"
-#define AIUSE_PEST				"AIUSE_PEST"
+#define AIUSE_COOK				"AIUSE_COOK"
 #define AIUSE_DRINK				"AIUSE_DRINK"
 #define AIUSE_DOOR				"AIUSE_DOOR"
 #define AIUSE_ELEVATOR			"AIUSE_ELEVATOR"
+#define AIUSE_EAT				"AIUSE_EAT"
+#define AIUSE_KEY				"AIUSE_KEY"			// Tels: for specific animations
+#define AIUSE_LIGHTSOURCE		"AIUSE_LIGHTSOURCE"
 #define AIUSE_MISSING_ITEM_MARKER "AIUSE_MISSING_ITEM_MARKER"
-#define AIUSE_BROKEN_ITEM		"AIUSE_BROKEN_ITEM"
+#define AIUSE_MONSTER			"AIUSE_MONSTER"		// a random or caged monster, not a pet
+#define AIUSE_PERSON			"AIUSE_PERSON"
+#define AIUSE_PEST				"AIUSE_PEST"
+#define AIUSE_PET				"AIUSE_PET"
+#define AIUSE_READ				"AIUSE_READ"		// Tels: for specific animations
+#define AIUSE_SEAT				"AIUSE_SEAT"
+#define AIUSE_STEAMBOT			"AIUSE_STEAMBOT"	// steambots
+#define AIUSE_UNDEAD			"AIUSE_UNDEAD"		// An undead creature
+#define AIUSE_WEAPON			"AIUSE_WEAPON"
 
 //----------------------------------------------------------------------------------------
 // The following key and values are used for identifying types of lights
 #define AIUSE_LIGHTTYPE_KEY		"lightType"
 #define AIUSE_LIGHTTYPE_TORCH	"AIUSE_LIGHTTYPE_TORCH"
-#define AIUSE_LIGHTTYPE_GASLAMP	 "AIUSE_LIGHTTYPE_GASLAMP"
+#define AIUSE_LIGHTTYPE_GASLAMP	"AIUSE_LIGHTTYPE_GASLAMP"
 #define AIUSE_LIGHTTYPE_ELECTRIC "AIUSE_LIGHTTYPE_ELECTRIC"
-#define AIUSE_LIGHTTYPE_MAGIC	 "AIUSE_LIGHTTYPE_MAGIC"
-#define AIUSE_LIGHTTYPE_AMBIENT	 "AIUSE_LIGHTTYPE_AMBIENT"
+#define AIUSE_LIGHTTYPE_MAGIC	"AIUSE_LIGHTTYPE_MAGIC"
+#define AIUSE_LIGHTTYPE_AMBIENT	"AIUSE_LIGHTTYPE_AMBIENT"
 
 //----------------------------------------------------------------------------------------
 // The following key is used to identify the name of the switch entity used to turn on
@@ -65,7 +70,7 @@ namespace ai
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 
-// SZ: Someone hearing a distress call won't bother to shout that it is coming to their assisitance unless
+// SZ: Someone hearing a distress call won't bother to shout that they are coming to their assistance unless
 // it is at least this far away. This is to simulate more natural human behaivior.
 #define MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE 200
 
