@@ -1163,8 +1163,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					// get the attachment
 					idEntity* attEntity = ent->GetAttachment( command.string->c_str() );
 					ent->Detach( command.string->c_str() );
-					// call this to remove override animations:
-					ent->UnbindNotify( attEntity );
 					// and now remove it from the game world
 					// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
 					attEntity->PostEventMS( &EV_Remove, 0 );
@@ -1177,8 +1175,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 					// only detach and unbind it
 					ent->Detach( command.string->c_str() );
-					// call this to remove override animations:
-					ent->UnbindNotify( detachedEntity );
 					// avoid the entity clipping into the hand by teleporting it down half a unit
 					if (detachedEntity)
 					{
@@ -1194,8 +1190,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 					// detach and unbind it
 					ent->Detach( command.string->c_str() );
-					// call this to remove override animations:
-					ent->UnbindNotify( detachedEntity );
 
 					// now restore origin and angles
 					const idKeyValue *tempkv;
@@ -1265,8 +1259,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
 					// gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
 					ent->Attach( spawnedEntity, AttPos, AttName );
-					// let the attached entity override animations
-					ent->BindNotify( spawnedEntity );
 					break;
 				}
 				// tels: pick up an entity from the world
@@ -1312,8 +1304,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						gameLocal.Warning ( "Saving %f %f %f and %f %f %f", origin.x, origin.y, origin.z, ang[0], ang[1], ang[2] );
 						// and now attach it
 						ent->Attach( attTarget, AttPos, AttName );
-						// let the attached entity override animations
-						ent->BindNotify( attTarget );
 					}
 					else
 					{
