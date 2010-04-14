@@ -24,6 +24,9 @@ static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
 };
 
+// how many units to displace to-be-dropped entity down to avoid collision with hand
+#define DROP_DOWN_ADJUSTMENT 8.0f
+
 /***********************************************************************
 
 	idAnim
@@ -657,7 +660,7 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_DESTROY;
 		fc.string = new idStr( token );
 	}
-	// tels:
+	// tels: detach entity, put a bit down and let it fall
 	else if ( token == "drop" ) 
 	{
 		// first argument (attachment name)
@@ -665,6 +668,16 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 			return "Unexpected end of line";
 
 		fc.type = FC_DROP;
+		fc.string = new idStr( token );
+	}
+	// tels: detach entity and set or restore it's position
+	else if ( token == "putdown" ) 
+	{
+		// first argument (attachment name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_PUTDOWN;
 		fc.string = new idStr( token );
 	}
 	// tels:
@@ -1148,19 +1161,72 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				case FC_DESTROY:
 				{
 					// get the attachment
-					idEntity* AttEntity = ent->GetAttachment( command.string->c_str() );
-						// detach and unbind it
-						// ent->Detach( command.string->c_str() );
-					// simple remove it, that will also detach it
+					idEntity* attEntity = ent->GetAttachment( command.string->c_str() );
+					ent->Detach( command.string->c_str() );
+					// call this to remove override animations:
+					ent->UnbindNotify( attEntity );
+					// and now remove it from the game world
 					// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
-					AttEntity->PostEventMS( &EV_Remove, 0 );
+					attEntity->PostEventMS( &EV_Remove, 0 );
 					break;
 				}
 				// tels: drop an attachement
 				case FC_DROP:
 				{
+					idEntity* detachedEntity = ent->GetAttachment( command.string->c_str() );
+
 					// only detach and unbind it
 					ent->Detach( command.string->c_str() );
+					// call this to remove override animations:
+					ent->UnbindNotify( detachedEntity );
+					// avoid the entity clipping into the hand by teleporting it down half a unit
+					if (detachedEntity)
+					{
+						idVec3 origin = detachedEntity->GetPhysics()->GetOrigin();
+						origin.z -= DROP_DOWN_ADJUSTMENT; detachedEntity->GetPhysics()->SetOrigin( origin );
+					}
+					break;
+				}
+				// tels: put down an attachement, works like drop, but restores origin and angles
+				case FC_PUTDOWN:
+				{
+					idEntity* detachedEntity = ent->GetAttachment( command.string->c_str() );
+
+					// detach and unbind it
+					ent->Detach( command.string->c_str() );
+					// call this to remove override animations:
+					ent->UnbindNotify( detachedEntity );
+
+					// now restore origin and angles
+					const idKeyValue *tempkv;
+
+					idVec3 origin;
+					idAngles angles;
+					tempkv = ent->spawnArgs.FindKey( "putdown_origin" );
+					if( tempkv == NULL )
+					{
+						// if the entity itself specifies where it should be put down, use this
+						origin = detachedEntity->spawnArgs.GetVector( "putdown_origin", "0 0 0" );
+					}
+					else
+					{
+						// if not set on entity, restore pre-pickup values
+						origin = detachedEntity->spawnArgs.GetVector( "pre_pickup_origin", "0 0 0" );
+					}
+					tempkv = ent->spawnArgs.FindKey( "putdown_angles" );
+					if( tempkv == NULL )
+					{
+						// if the entity itself specifies how it should be put down, use this
+						angles = idAngles( detachedEntity->spawnArgs.GetVector( "putdown_angles", "0 0 0" ) );
+					}
+					else
+					{
+						// if not set on entity, restore pre-pickup values
+						angles = idAngles( detachedEntity->spawnArgs.GetVector( "pre_pickup_angles", "0 0 0" ) );
+					}
+					gameLocal.Printf("Restoring origin %f %f %f and angles %f %f %f on putdown", origin.x, origin.y, origin.z, angles[0], angles[1], angles[2] ); 
+					detachedEntity->GetPhysics()->SetOrigin( origin );
+					detachedEntity->SetAngles( angles );
 					break;
 				}
 				// tels: spawn an entity and attach it
@@ -1197,8 +1263,10 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
 					}
 					gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-					// gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'\n", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
+					// gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
 					ent->Attach( spawnedEntity, AttPos, AttName );
+					// let the attached entity override animations
+					ent->BindNotify( spawnedEntity );
 					break;
 				}
 				// tels: pick up an entity from the world
@@ -1208,8 +1276,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					// "atdm_some_book book hand_r"
 					// "AIUSE_EAT food hand_l"
 					// "AIUSE_DRINK drink hand_l"
-
-					gameLocal.Warning ( "Picking up '%s'\n", command.string->c_str() );
 
 					int spcind = command.string->Find(" ");
 					// format of AttName is afterwards "food hand_r"
@@ -1224,20 +1290,30 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						AttName = AttName.Left( spcind );
 					}
 
-					gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+					gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
 					// now find the entity
 					idEntity* attTarget = gameLocal.FindEntity(EntityName);
 					if (attTarget == NULL)
 					{
 						// generic AIUSE class, find a suitable entity
-						gameLocal.Warning ( " Trying to find an entity matching '%s'\n", EntityName.c_str() );
+						gameLocal.Warning ( " Trying to find an entity matching '%s'", EntityName.c_str() );
 					}
 
-					// now attach it
+					// did we find a suitable entity?
 					if (attTarget)
 					{
-						gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						// first get the origin and rotation of the entity
+						idVec3 origin = attTarget->GetPhysics()->GetOrigin();
+						idAngles ang = attTarget->GetPhysics()->GetAxis().ToAngles();
+						// now store them in temp. spawnargs
+						attTarget->spawnArgs.SetVector( "pre_pickup_origin", origin );
+						attTarget->spawnArgs.SetVector( "pre_pickup_angles", idVec3( ang[0], ang[1], ang[2] ) );
+						gameLocal.Warning ( "Saving %f %f %f and %f %f %f", origin.x, origin.y, origin.z, ang[0], ang[1], ang[2] );
+						// and now attach it
 						ent->Attach( attTarget, AttPos, AttName );
+						// let the attached entity override animations
+						ent->BindNotify( attTarget );
 					}
 					else
 					{

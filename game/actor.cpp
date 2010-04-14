@@ -2293,6 +2293,7 @@ void idActor::BindNotify( idEntity *ent )
 		idStr key = KeyVal->GetKey();
 		key.StripLeadingOnce("replace_anim_");
 
+		//gameLocal.Warning( "idActor: Replacing animation %s with %s", key.c_str(), KeyVal->GetValue().c_str() );
 		m_replacementAnims.Set( key, KeyVal->GetValue() );
 
 		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
@@ -2318,6 +2319,7 @@ void idActor::UnbindNotify( idEntity *ent )
 		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue().c_str()) == 0 )
 		{
 			// This animation override is present, so remove it
+			//gameLocal.Warning( "idActor: Removing replacement animation %s", KeyVal->GetValue().c_str() );
 			m_replacementAnims.Delete( key );
 		}
 

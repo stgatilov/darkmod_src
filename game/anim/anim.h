@@ -158,7 +158,11 @@ typedef enum {
 **/
 	FC_DROP,
 /**
-* Tels: Pickup an object (either the direct name, or the AIUSE class)
+* Tels: Detach and put down the named attachement (e.g. restore origin and angles to "before pickup")
+**/
+	FC_PUTDOWN,
+/**
+* Tels: Pickup an object (either the direct entity name, or the AIUSE class)
 **/
 	FC_PICKUP,
 /**
