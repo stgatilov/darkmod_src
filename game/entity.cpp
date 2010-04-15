@@ -1,5 +1,6 @@
 /***************************************************************************
  *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
@@ -1876,7 +1877,7 @@ void idEntity::BecomeBroken( idEntity *activator )
 	if (this->spawnArgs.GetString("break_up_script", "", str))
 	{
 		// Call the script
-        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", this);
+        	idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", this);
 		if (thread != NULL)
 		{
 			// Run the thread at once, the script result might be needed below.
@@ -7232,8 +7233,8 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 		originOffset = pos->originOffset;
 		angleOffset = pos->angleOffset;
 
-		// etity-specific offsets to a given position
-		// etity-specific offsets to a given position
+		// entity-specific offsets to a given position
+		// entity-specific offsets to a given position
 		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
 		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
 	}
@@ -7311,7 +7312,7 @@ idAnimatedEntity::ReAttachToCoords
 */
 void idAnimatedEntity::ReAttachToCoords
 	( const char *AttName, idStr jointName, 
-		idVec3 offset, idAngles angles  ) 
+		const idVec3 offset, const idAngles angles  ) 
 {
 	idEntity		*ent( NULL );
 	idVec3			origin;
@@ -7393,16 +7394,176 @@ void idAnimatedEntity::CacheAnimRates( void )
 
 /*
 ================
+idAnimatedEntity::GetJointWorldPos
+
+Returns the position of the joint (by joint name) in worldspace
+================
+*/
+idVec3 idAnimatedEntity::GetJointWorldPos( const char *jointname ) {
+	idVec3 offset;
+	idMat3 axis;
+
+	jointHandle_t jointnum = animator.GetJointHandle( jointname );
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, offset, axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
+
+	return offset;
+}
+
+/*
+================
+idAnimatedEntity::GetEntityFromClassClosestToJoint
+
+tels: Returns the entity that is nearest to the given joint, selected from all entities
+that have a spawnarg "AIUse" matching AIUseType. max_dist_sqr = max_dist * max_dist
+================
+*/
+idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint_origin, const char* AIUseType, const float max_dist_sqr ) {
+	idEntity* closest = NULL;
+	float closest_distance = 1000000.0f;
+	int i;
+
+	idStr aiuse = AIUseType;
+	aiuse = aiuse.Left(6);
+
+	// if the selector is not "AIUSE_...", skip this step
+	if (aiuse != "AIUSE_") {
+		return NULL;
+	}
+
+	// for all entities
+    for ( int i = 0; i < gameLocal.num_entities; i++ ) {
+    	idEntity *ent = gameLocal.entities[i];
+        if ( ent == NULL ) { continue; }
+
+		// does it have the proper AIUse spawnarg?
+		const idKeyValue *tempkv = ent->spawnArgs.FindKey( "AIUse" );
+		if ( !tempkv ) { continue; }
+
+		gameLocal.Warning ( "  Looking at entity for AIUse spawnarg %s", tempkv->GetValue().c_str() );
+
+		if ( tempkv->GetValue() != AIUseType ) { continue; }
+
+		// has the proper AIUse type, so compute distance	
+		gameLocal.Warning ( "Has %s", AIUseType );
+
+		idVec3 deb = ent->GetPhysics()->GetOrigin();
+		idVec3 diff = joint_origin - ent->GetPhysics()->GetOrigin();
+		gameLocal.Warning ( " Distance: %f %f %f - %f %f %f = %f %f %f", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z );
+		float distance = diff.LengthSqr();
+		if (distance < closest_distance && distance < max_dist_sqr) {
+			// use this one
+			gameLocal.Warning ( "   Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.", distance, closest_distance, max_dist_sqr );
+			closest_distance = distance;
+			closest = ent;
+		}
+		// try ent
+	}
+
+	return closest;
+}
+
+/*
+================
+idAnimatedEntity::GetEntityClosestToJoint
+
+tels: Returns the entity that is nearest to the given joint. The entitySelector is either
+an entity name (like "atdm_moveable_food_apple_2" or an entity AIUSE type like "AIUSE_FOOD".
+
+First the code looks at the idAnimatedEntity itself for spawnargs matching the given prefix,
+each entity mentioned in this spawnarg is used as the entitySelector first.
+If after this round no entity could be found, we fall back to entitySelector and try again.
+================
+*/
+idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const char* entitySelector, const char* prefix, const float max_dist ) {
+	idEntity* closest = NULL;
+	float closest_distance = 1000000.0f;
+	idVec3 joint_origin;
+	idMat3 joint_axis;
+	const float max_dist_sqr = max_dist * max_dist;
+	SAttachPosition *pos;
+
+	jointHandle_t jointnum = INVALID_JOINT;
+	
+// New position system:
+	if( (pos = GetAttachPosition(posName)) != NULL) {
+		jointnum = pos->joint;
+	}
+	if (jointnum < 0) {
+		gameLocal.Warning( "GetEntityClosestToJoint: Cannot find joint from attach pos %s", posName );
+		return NULL;
+	}
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, joint_origin, joint_axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
+
+	// first see if the entity (the animation is running on) defines an entity
+	// via spawnarg: "pickup_" + "name_of_the_animation" (we get this as prefix)
+
+	const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
+	while( kv ) {
+		idEntity *target = gameLocal.FindEntity( kv->GetValue() );
+		if (!target) {
+			gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
+			// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
+			target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
+		}
+		// if we found an entity and it is not ourself:
+		if (target and target != this) {
+			// check that it is closer than the closest match so far
+			idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
+			float distance = diff.LengthSqr();
+			if (distance < closest_distance && distance < max_dist_sqr) {
+				// closer and close enough
+				gameLocal.Warning ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+				closest_distance = distance;
+				closest = target;
+			}
+		}
+	// next spawnarg
+	kv = spawnArgs.MatchPrefix( prefix, kv );
+	}
+
+	if (closest == NULL) {
+		// couldn't find any usable entity from the the spawnargs
+		// so try to use the entity named in the animation
+		gameLocal.Warning ( " Didn't find an entity from the pickup_ spawnargs, trying %s directly.", entitySelector );
+		closest = gameLocal.FindEntity( entitySelector );
+		if (closest) {
+			idVec3 diff = joint_origin - closest->GetPhysics()->GetOrigin();
+			float distance = diff.LengthSqr();
+			if (distance > max_dist_sqr) {
+				// cannot use this one, too far
+				gameLocal.Warning ( "   Direct entity %s too far away. (%f > %f).", entitySelector, distance, max_dist_sqr );
+				closest = NULL;
+			}
+		}
+		// could not be found either or was too far away?
+		if (closest == NULL) {
+			// maybe it is a generic AIUSE class, try to find a suitable entity
+			gameLocal.Warning ( "   Can't find entity by name %s, so looking for AIUSE class.", entitySelector );
+			closest = GetEntityFromClassClosestToJoint( joint_origin, entitySelector, max_dist_sqr );
+		}
+	}
+
+	gameLocal.Warning ( "   End of selecting closest entity.");
+
+	// now return the found entity or NULL
+	return closest;
+}
+
+/*
+================
 idAnimatedEntity::Event_GetJointHandle
 
 looks up the number of the specified joint.  returns INVALID_JOINT if the joint is not found.
 ================
 */
 void idAnimatedEntity::Event_GetJointHandle( const char *jointname ) {
-	jointHandle_t joint;
 
-	joint = animator.GetJointHandle( jointname );
-	idThread::ReturnInt( joint );
+	jointHandle_t jointnum = animator.GetJointHandle( jointname );
+	idThread::ReturnInt( jointnum );
 }
 
 /*
@@ -7489,6 +7650,14 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idVec3 vec( ang[ 0 ], ang[ 1 ], ang[ 2 ] );
 	idThread::ReturnVector( vec );
 }
+
+/*
+===============================================================================
+
+  End of idAnimatedEntity
+	
+===============================================================================
+*/
 
 void idEntity::Flinderize( idEntity *activator )
 {
@@ -8675,7 +8844,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 		originOffset = pos->originOffset;
 		angleOffset = pos->angleOffset;
 
-		// etity-specific offsets to a given position
+		// entity-specific offsets to a given position
 		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
 		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
 	}

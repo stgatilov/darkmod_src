@@ -879,7 +879,7 @@ public:
 	* A different version taking a joint argument exists on idAnimatedEntity
 	* for things with MD5 structures
 	**/
-	virtual void ReAttachToCoords( const char *AttName, idVec3 offset, idAngles angles );
+	virtual void ReAttachToCoords( const char *AttName, const idVec3 offset, const idAngles angles );
 
 	/**
 	* Reattach to a predefined attach position, otherwise same as above
@@ -1650,6 +1650,28 @@ public:
 	* Always called at spawn, sometimes called later if spawnargs changed and rates need recaching
 	**/
 	virtual void			CacheAnimRates( void );
+
+
+	/**
+	* Tels: Return the position of the joint (by name) in world coordinates
+	**/
+	idVec3 				GetJointWorldPos( const char *jointname );
+
+	/**
+	* Tels: Return the entity closest to the given joint, excluding itself. AIUseType is something
+	*	like "AIUSE_FOOD" and only entites that have the spawnarg "AIUse" "AIUSE_FOOD" will be
+	*	considered. From all these entities, the one closest to the joint is returned, or NULL
+	*	if no such entity could be found. Called from GetEntityClosestToJoint().
+	**/
+	idEntity* GetEntityFromClassClosestToJoint( const idVec3 joint_origin, const char* AIUseType, const float max_dist_sqr );
+
+	/**
+	* Tels: Return the entity closest to the given joint, excluding itself. entitySelector is either
+	*	a direct entity name or something like "AIUSE_FOOD". First we look at all spawnargs with
+	*	prefix "prefix", and if these all fail to produce an entity, fall back to entitySelector.
+	*	Returns NULL if no suitable entity could be found.
+	**/
+	idEntity* GetEntityClosestToJoint( const char* jointname, const char* entitySelector, const char* prefix, const float max_dist );
 
 	enum {
 		EVENT_ADD_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,

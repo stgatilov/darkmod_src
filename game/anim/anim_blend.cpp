@@ -1,5 +1,6 @@
 /***************************************************************************
  *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
@@ -25,7 +26,9 @@ static const char *channelNames[ ANIM_NumAnimChannels ] = {
 };
 
 // how many units to displace to-be-dropped entity down to avoid collision with hand
-#define DROP_DOWN_ADJUSTMENT 8.0f
+#define DROP_DOWN_ADJUSTMENT	8.0f
+// max distance between joint and object we pickup, anything farther is ignored
+#define MAX_PICKUP_DIST		40.0f
 
 /***********************************************************************
 
@@ -1192,11 +1195,9 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					ent->Detach( command.string->c_str() );
 
 					// now restore origin and angles
-					const idKeyValue *tempkv;
-
 					idVec3 origin;
 					idAngles angles;
-					tempkv = ent->spawnArgs.FindKey( "putdown_origin" );
+					const idKeyValue *tempkv = ent->spawnArgs.FindKey( "putdown_origin" );
 					if( tempkv )
 					{
 						// if the entity itself specifies where it should be put down, use this
@@ -1289,26 +1290,11 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 					gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
 
-					// first see if the entity the animation is running on defines an entity to use
-					// via spawnarg: "pickup_" + "name_of_the_animation"
 					idStr Spawnarg = "pickup_"; Spawnarg.Append( name );
-
-					// gameLocal.Warning ( "Lookign for entity defined via spawnarg '%s'", Spawnarg.c_str());
-					idStr SpawnargEntityName = ent->spawnArgs.GetString( Spawnarg, "" );
-					idEntity* attTarget = gameLocal.FindEntity( SpawnargEntityName );
-
-					if (attTarget == NULL)
-					{
-						// the spawnarg entity could not be found
-						// so try to use the entity named in the animation
-						attTarget = gameLocal.FindEntity( EntityName );
-						// could not be found either?
-						if (attTarget == NULL)
-						{
-							// generic AIUSE class, find a suitable entity
-							gameLocal.Warning ( " Trying to find an entity matching '%s'", EntityName.c_str() );
-						}
-					}
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						AttPos.c_str(), EntityName.c_str(), Spawnarg.c_str(), MAX_PICKUP_DIST );
 
 					// did we find an entity to pickup?
 					if (attTarget)
