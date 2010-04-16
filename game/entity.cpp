@@ -7419,10 +7419,10 @@ tels: Returns the entity that is nearest to the given joint, selected from all e
 that have a spawnarg "AIUse" matching AIUseType. max_dist_sqr = max_dist * max_dist
 ================
 */
-idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint_origin, const char* AIUseType, const float max_dist_sqr ) {
+idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint_origin, const char* AIUseType, const float max_dist_sqr )
+{
 	idEntity* closest = NULL;
-	float closest_distance = 1000000.0f;
-	int i;
+	float closest_distance = idMath::INFINITY;
 
 	idStr aiuse = AIUseType;
 	aiuse = aiuse.Left(6);
@@ -7433,31 +7433,36 @@ idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint
 	}
 
 	// for all entities
-    for ( int i = 0; i < gameLocal.num_entities; i++ ) {
-    	idEntity *ent = gameLocal.entities[i];
+    for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
         if ( ent == NULL ) { continue; }
 
 		// does it have the proper AIUse spawnarg?
-		const idKeyValue *tempkv = ent->spawnArgs.FindKey( "AIUse" );
-		if ( !tempkv ) { continue; }
-
-		gameLocal.Warning ( "  Looking at entity for AIUse spawnarg %s", tempkv->GetValue().c_str() );
-
-		if ( tempkv->GetValue() != AIUseType ) { continue; }
+		if (idStr::Cmp(ent->spawnArgs.GetString("AIUse"), AIUseType) != 0)
+		{
+			continue;
+		}
+		
+		//gameLocal.Warning ( "  Looking at entity for AIUse spawnarg %s", tempkv->GetValue().c_str() );
 
 		// has the proper AIUse type, so compute distance	
-		gameLocal.Warning ( "Has %s", AIUseType );
+		gameLocal.Printf("Has %s\n", AIUseType);
 
-		idVec3 deb = ent->GetPhysics()->GetOrigin();
-		idVec3 diff = joint_origin - ent->GetPhysics()->GetOrigin();
-		gameLocal.Warning ( " Distance: %f %f %f - %f %f %f = %f %f %f", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z );
+		const idVec3& deb = ent->GetPhysics()->GetOrigin();
+		idVec3 diff = joint_origin - deb;
+
+		gameLocal.Printf("Distance: %f %f %f - %f %f %f = %f %f %f\n", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z);
+
 		float distance = diff.LengthSqr();
-		if (distance < closest_distance && distance < max_dist_sqr) {
+
+		if (distance < closest_distance && distance < max_dist_sqr)
+		{
 			// use this one
-			gameLocal.Warning ( "   Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.", distance, closest_distance, max_dist_sqr );
+			gameLocal.Printf(" Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.\n", distance, closest_distance, max_dist_sqr);
 			closest_distance = distance;
 			closest = ent;
 		}
+
 		// try ent
 	}
 
@@ -7510,7 +7515,8 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 			target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
 		}
 		// if we found an entity and it is not ourself:
-		if (target and target != this) {
+		if (target != NULL && target != this)
+		{
 			// check that it is closer than the closest match so far
 			idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
 			float distance = diff.LengthSqr();
