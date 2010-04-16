@@ -175,6 +175,9 @@ public:
 	// The game time, the AlertLevel was last increased.
 	int lastAlertRiseTime;
 
+	// Time in msecs to pass before alert level starts decreasing
+	int deadTimeAfterAlertRise;
+
 	// The last time the AI has been barking when patrolling
 	int lastPatrolChatTime;
 

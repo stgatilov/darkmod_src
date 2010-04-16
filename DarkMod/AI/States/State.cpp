@@ -73,6 +73,9 @@ void State::Init(idAI* owner)
 {
 	_owner = owner;
 	_alertLevelDecreaseRate = 0;
+
+	// Load the value from the spawnargs to avoid looking it up each frame
+	owner->GetMemory().deadTimeAfterAlertRise = owner->spawnArgs.GetInt("alert_decrease_deadtime", "300");
 }
 
 bool State::CheckAlertLevel(idAI* owner)
@@ -90,9 +93,12 @@ void State::UpdateAlertLevel()
 	idAI* owner = _owner.GetEntity();
 	int currentTime = gameLocal.time;
 	int thinkDuration = currentTime - owner->m_lastThinkTime;
+
+	Memory& memory = owner->GetMemory();
 	
 	// angua: alert level stays for a short time before starting to decrease
-	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertLevel > 0)
+	if (currentTime >= memory.lastAlertRiseTime + memory.deadTimeAfterAlertRise && 
+		owner->AI_AlertLevel > 0)
 	{
 		float decrease = _alertLevelDecreaseRate * MS2SEC(thinkDuration);
 		float newAlertLevel = owner->AI_AlertLevel - decrease;

@@ -22,6 +22,7 @@ Memory::Memory(idAI* owningAI) :
 	owner(owningAI),
 	alertState(ERelaxed),
 	lastAlertRiseTime(-1),
+	deadTimeAfterAlertRise(300),
 	lastPatrolChatTime(-1),
 	lastTimeFriendlyAISeen(-1000),
 	lastTimeEnemySeen(-1),
