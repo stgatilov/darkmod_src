@@ -28,7 +28,9 @@ static const char *channelNames[ ANIM_NumAnimChannels ] = {
 // how many units to displace to-be-dropped entity down to avoid collision with hand
 #define DROP_DOWN_ADJUSTMENT	8.0f
 // max distance between joint and object we pickup, anything farther is ignored
-#define MAX_PICKUP_DIST		40.0f
+#define MAX_PICKUP_DIST			30.0f
+// max distance between joint and object we try to activate, anything farther is ignored
+#define MAX_ACTIVATE_DIST		50.0f
 
 /***********************************************************************
 
@@ -705,6 +707,32 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 
 		fc.string->Append(va(" %s", token.c_str() ));
 	}
+	// tels:
+	else if ( token == "activate_at_joint" ) 
+	{
+		// first argument (joint name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_ACTIVATE_AT_JOINT;
+		fc.string = new idStr( token );
+	}
+	// tels:
+	else if ( token == "activate_near" ) 
+	{
+		// first argument (either entity name, or AIUSE class)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_ACTIVATE_NEAR;
+		fc.string = new idStr( token );
+
+		// second argument (joint name for distance check)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
 	else if ( token == "pause" ) 
 	{
 		fc.type = FC_PAUSE;
@@ -1176,6 +1204,36 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				{
 					idEntity* detachedEntity = ent->GetAttachment( command.string->c_str() );
 
+					if (!detachedEntity)
+					{
+						gameLocal.Printf(" Couldn't find attachment position by name %s\n", command.string->c_str());
+
+						// couldn't find the attached entity by attachment name, so try all attachments:
+
+						// Tels: That does not work, as it doesn't save the joint info
+						// New position system:
+						CAttachInfo	*info;
+						SAttachPosition *pos;
+
+						if( (info = ent->GetAttachInfo( command.string->c_str() )) != NULL)
+						{
+							gameLocal.Printf(" Found attachment position %s\n", info->name.c_str() );
+							detachedEntity = info->ent.GetEntity();
+							if( !info->ent.IsValid() || !detachedEntity )
+					        {
+								DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Invalid attached entity at position %s on entity %s\r", info->name.c_str(), name.c_str());
+								detachedEntity = NULL;
+						 	}
+						}
+/*					    if( (pos = ent->GetAttachPosition( command.string->c_str() )) != NULL)
+					    {
+							gameLocal.Printf(" Found attachment position %s\n", pos->name.c_str() );
+							//detachedEntity = ent->GetAttachment( pos.name );
+							//detachedEntity = pos->ent;
+						}
+						*/
+					}
+
 					// only detach and unbind it
 					ent->Detach( command.string->c_str() );
 					// avoid the entity clipping into the hand by teleporting it down half a unit
@@ -1318,6 +1376,47 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					{
 						// no entity found, abort animation?
 						gameLocal.Warning( " Could not find entity '%s' to attach", EntityName.c_str() );
+					}
+					break;
+				}
+				// tels: activate the entity attached at the given joint
+				case FC_ACTIVATE_AT_JOINT:
+				{
+					idEntity* activateEntity = ent->GetAttachment( command.string->c_str() );
+					if (activateEntity)
+					{
+						gameLocal.Warning ( "%s is activating %s.", name.c_str(), activateEntity->GetName() );
+						activateEntity->Activate( ent );
+					}
+					else
+					{
+						gameLocal.Warning ( "%s has no entity at joint %s to activate.", name.c_str(), command.string->c_str());
+					}
+					break;
+				}
+				// tels: activate the given entity near the given joint
+				case FC_ACTIVATE_NEAR:
+				{
+					// possible formats:
+					// "atdm_some_entity hand_r"
+					// "AIUSE_EAT hand_l"
+
+					int spcind = command.string->Find(" ");
+					idStr EntityName = command.string->Left( spcind );
+					idStr AttPos = command.string->Mid( spcind+1, command.string->Length() );
+
+					idStr Spawnarg = "activate_"; Spawnarg.Append( name );
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						AttPos.c_str(), EntityName.c_str(), Spawnarg.c_str(), MAX_ACTIVATE_DIST );
+
+					// did we find an entity to activate?
+					if (attTarget)
+					{
+						// gameLocal.Warning ( "Found entity %s", attTarget->name.c_str() );
+						gameLocal.Warning ( "%s is activating %s near joint %s.", name.c_str(), EntityName.c_str(), AttPos.c_str());
+						attTarget->Activate( ent );
 					}
 					break;
 				}

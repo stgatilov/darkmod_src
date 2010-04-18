@@ -1,5 +1,6 @@
 /***************************************************************************
  *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
@@ -165,6 +166,14 @@ typedef enum {
 * Tels: Pickup an object (either the direct entity name, or the AIUSE class)
 **/
 	FC_PICKUP,
+/**
+* Tels: Activate the attached entity at the named joint
+**/
+	FC_ACTIVATE_AT_JOINT,
+/**
+* Tels: Activate the entity (either direct name or AIUSE class)
+**/
+	FC_ACTIVATE_NEAR,
 /**
 * Pause the animation at its current frame, wait for unpause from somewhere else
 **/
