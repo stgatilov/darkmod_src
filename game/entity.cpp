@@ -7451,9 +7451,11 @@ idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint
 		const idVec3& deb = ent->GetPhysics()->GetOrigin();
 		idVec3 diff = joint_origin - deb;
 
-		gameLocal.Printf("Distance: %f %f %f - %f %f %f = %f %f %f\n", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z);
+		// gameLocal.Printf("Distance: %f %f %f - %f %f %f = %f %f %f\n", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z);
 
 		float distance = diff.LengthSqr();
+
+		//gameLocal.Printf(" Distance %f < closest %f ? < max_dist_sqr %f ?.\n", distance, closest_distance, max_dist_sqr);
 
 		if (distance < closest_distance && distance < max_dist_sqr)
 		{
@@ -7522,7 +7524,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 			float distance = diff.LengthSqr();
 			if (distance < closest_distance && distance < max_dist_sqr) {
 				// closer and close enough
-				gameLocal.Warning ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+				gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
 				closest_distance = distance;
 				closest = target;
 			}
@@ -7534,7 +7536,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 	if (closest == NULL) {
 		// couldn't find any usable entity from the the spawnargs
 		// so try to use the entity named in the animation
-		gameLocal.Warning ( " Didn't find an entity from the pickup_ spawnargs, trying %s directly.", entitySelector );
+		gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
 		closest = gameLocal.FindEntity( entitySelector );
 		if (closest) {
 			idVec3 diff = joint_origin - closest->GetPhysics()->GetOrigin();
@@ -7553,7 +7555,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 		}
 	}
 
-	gameLocal.Warning ( "   End of selecting closest entity.");
+	gameLocal.Printf ( "   End of selecting closest entity.");
 
 	// now return the found entity or NULL
 	return closest;
@@ -9118,6 +9120,24 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 	else
 		return NULL;
 }
+
+/* Tels: Get the entity attached at the position given by the attachment position
+CAttachInfo *idEntity::GetAttachmentByPosition( const char *AttPos )
+{
+
+	int num = m_Attachments.Num();
+
+	for (int ind = 0; ind < num; ind ++)
+	{
+		if ((m_Attachments[ind].ent != NULL) && ())
+			{
+			m_Attachments[ind].ent;
+			}
+	}
+	// not found
+	return NULL;
+}
+*/
 
 idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 {

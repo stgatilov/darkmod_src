@@ -26,9 +26,9 @@ static const char *channelNames[ ANIM_NumAnimChannels ] = {
 };
 
 // how many units to displace to-be-dropped entity down to avoid collision with hand
-#define DROP_DOWN_ADJUSTMENT	8.0f
+#define DROP_DOWN_ADJUSTMENT	20.0f
 // max distance between joint and object we pickup, anything farther is ignored
-#define MAX_PICKUP_DIST			30.0f
+#define MAX_PICKUP_DIST			40.0f
 // max distance between joint and object we try to activate, anything farther is ignored
 #define MAX_ACTIVATE_DIST		50.0f
 
@@ -1193,10 +1193,13 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				{
 					// get the attachment
 					idEntity* attEntity = ent->GetAttachment( command.string->c_str() );
-					ent->Detach( command.string->c_str() );
-					// and now remove it from the game world
-					// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
-					attEntity->PostEventMS( &EV_Remove, 0 );
+					if (attEntity)
+					{
+						ent->Detach( command.string->c_str() );
+						// and now remove it from the game world
+						// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
+						attEntity->PostEventMS( &EV_Remove, 0 );
+					}
 					break;
 				}
 				// tels: drop an attachement
@@ -1212,7 +1215,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 						// Tels: That does not work, as it doesn't save the joint info
 						// New position system:
-						CAttachInfo	*info;
+/*						CAttachInfo	*info;
 						SAttachPosition *pos;
 
 						if( (info = ent->GetAttachInfo( command.string->c_str() )) != NULL)
@@ -1225,7 +1228,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 								detachedEntity = NULL;
 						 	}
 						}
-/*					    if( (pos = ent->GetAttachPosition( command.string->c_str() )) != NULL)
+					    if( (pos = ent->GetAttachPosition( command.string->c_str() )) != NULL)
 					    {
 							gameLocal.Printf(" Found attachment position %s\n", pos->name.c_str() );
 							//detachedEntity = ent->GetAttachment( pos.name );
@@ -1234,11 +1237,12 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						*/
 					}
 
-					// only detach and unbind it
-					ent->Detach( command.string->c_str() );
 					// avoid the entity clipping into the hand by teleporting it down half a unit
 					if (detachedEntity)
 					{
+						// only detach and unbind it if we have an entity
+						ent->Detach( command.string->c_str() );
+
 						idVec3 origin = detachedEntity->GetPhysics()->GetOrigin();
 						origin.z -= DROP_DOWN_ADJUSTMENT; detachedEntity->GetPhysics()->SetOrigin( origin );
 					}
@@ -1382,11 +1386,22 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				// tels: activate the entity attached at the given joint
 				case FC_ACTIVATE_AT_JOINT:
 				{
-					idEntity* activateEntity = ent->GetAttachment( command.string->c_str() );
-					if (activateEntity)
+					// possible formats:
+					// "hand_r"
+
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						// invalid spawnarg name and entity name to disable these features (just get closest attached entity)
+						command.string->c_str(), "", "", 0.1f );
+
+					// did we find an entity to pickup?
+					// TODO: check that this entity is attached to ourselves
+					if (attTarget)
 					{
-						gameLocal.Warning ( "%s is activating %s.", name.c_str(), activateEntity->GetName() );
-						activateEntity->Activate( ent );
+						// TODO: check that this entity is not attached to something/someone else
+						gameLocal.Warning ( "%s is activating %s.", name.c_str(), attTarget->GetName() );
+						attTarget->Activate( ent );
 					}
 					else
 					{
