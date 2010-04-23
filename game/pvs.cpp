@@ -1119,8 +1119,10 @@ idPVS::FreeCurrentPVS
 */
 void idPVS::FreeCurrentPVS( pvsHandle_t handle ) const {
 	if ( handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h ) {
-		gameLocal.Error( "idPVS::FreeCurrentPVS: invalid handle" );
+		gameLocal.Warning( "idPVS::FreeCurrentPVS: invalid handle" );
+		return;
 	}
+
 	currentPVS[handle.i].handle.i = -1;
 }
 
