@@ -966,6 +966,9 @@ private:
 
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
+
+	// Chooses between the various VFP files according to the CVAR settings. Only call this if settings got changed.
+	void					UpdateInteractionShader();
 };
 
 //============================================================================
