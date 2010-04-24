@@ -5624,18 +5624,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	Unbind();
 
-	idStr DeathSound = "snd_death";
+	idStr deathSound = MouthIsUnderwater() ? "snd_death_liquid" : "snd_death";
+
+	StartSound( deathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
 
 	// swaps the head CM back if a different one was swapped in while conscious
 	SwapHeadAFCM( false );
-
-	if ( StartRagdoll() )
-	{
-		if( MouthIsUnderwater() )
-			DeathSound = "snd_death_liquid";
-	}
-
-	StartSound( DeathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
 
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
@@ -5769,6 +5763,9 @@ idAI::PostDeath
 */
 void idAI::PostDeath()
 {
+	// Start going to ragdoll here, instead of in Killed() to enable death anims
+	StartRagdoll();
+
 	headAnim.StopAnim(1);
 	legsAnim.StopAnim(1);
 	torsoAnim.StopAnim(1);

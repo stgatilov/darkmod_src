@@ -149,8 +149,8 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 
 	if (cv_ai_debug_anims.GetBool() && self != gameLocal.GetLocalPlayer())
 	{
-		gameLocal.Printf("Frame %d: New animstate %s (%s)\n", gameLocal.framenum, state.c_str(), self->name.c_str());
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame %d: New animstate %s (%s)\r", gameLocal.framenum, state.c_str(), self->name.c_str());
+		gameLocal.Printf("Frame %d: New animstate %s (%s)\n", gameLocal.framenum, statename, self->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame %d: New animstate %s (%s)\r", gameLocal.framenum, statename, self->name.c_str());
 	}
 
 	state = statename;
@@ -2769,7 +2769,7 @@ int idActor::GetAnim( int channel, const char *animname ) {
 
 		const char* replacement = LookupReplacementAnim( temp );
 
-		if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
+		if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer() && idStr::Cmp(replacement, temp) != 0)
 		{
 			gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
@@ -2784,7 +2784,7 @@ int idActor::GetAnim( int channel, const char *animname ) {
 
 	const char* replacement = LookupReplacementAnim( animname );
 
-	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
+	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer() && idStr::Cmp(replacement, animname) != 0)
 	{
 		gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
