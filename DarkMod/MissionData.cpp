@@ -1137,6 +1137,11 @@ void CMissionData::HealthReceivedByPlayer(int amount)
 	m_Stats.HealthReceived += amount;
 }
 
+void CMissionData::HandleMissionEvent(idEntity* objEnt, EMissionEventType eventType, const char* argument)
+{
+	// TODO
+}
+
 // ============================== Misc.  ==============================
 
 void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )

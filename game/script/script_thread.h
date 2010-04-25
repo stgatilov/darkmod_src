@@ -68,6 +68,8 @@ extern const idEventDef EV_PointInLiquid;
 extern const idEventDef EV_TDM_SetPortSoundLoss;
 extern const idEventDef EV_TDM_GetPortSoundLoss;
 
+extern const idEventDef EV_HandleMissionEvent;
+
 class idThread : public idClass {
 private:
 	static idThread				*currentThread;
@@ -212,6 +214,9 @@ private:
 	
 	// The scriptevent counterpart of DM_LOG
 	void						Event_LogString(int logClass, int logType, const char* output);
+
+	// The script interface for raising mission events, like readable callbacks
+	void						Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument);
 
 public:							
 								CLASS_PROTOTYPE( idThread );

@@ -44,6 +44,23 @@ typedef enum
 #include "EMissionResult.h"
 
 /**
+ * greebo: Mission event type enumeration. This lists all possible event types
+ * which can be passed to MissionData::HandleMissionEvent. 
+ *
+ * See further documentation at method declaration.
+ *
+ * Important: when adding or changing this enum, keep the #defines in
+ * tdm_defs.script in sync!
+ */
+enum EMissionEventType
+{
+	EVENT_NOTHING = 0,
+	EVENT_READABLE_OPENED = 1,
+	EVENT_READABLE_CLOSED = 2,
+	EVENT_INVALID,
+};
+
+/**
 * Objective component specification types
 **/
 typedef enum
@@ -631,6 +648,18 @@ public:
 		bool bWhileAirborne = false
 		)
 	{ MissionEvent( CompType, Ent1, NULL, bBoolArg, bWhileAirborne ); }
+
+	/**
+	 * "HandleMissionEvent" is designed to be the script counterpart 
+	 * of MissionData::MissionEvent() which isn't usable by D3 scripts. 
+	 *
+	 * Example:
+	 * sys.handleMissionEvent(self, EVENT_READABLE_OPENED, "");
+	 *
+	 * MissionData::HandleMissionEvent will just digest the arguments 
+	 * and pass them on to the actual MissionEvent() method for further processing.
+	 */ 
+	void HandleMissionEvent(idEntity* objEnt, EMissionEventType eventType, const char* argument);
 
 	/**
 	* Fill the SObjEntParms data from an entity.  Does not fill in value and superGroupValue

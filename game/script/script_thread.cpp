@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/decltdm_matinfo.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/sndProp.h"
+#include "../../DarkMod/MissionData.h"
 
 class CRelations;
 class CsndProp;
@@ -125,6 +126,12 @@ const idEventDef EV_LogString("logString", "dds");
 // Propagates the string to the sessioncommand variable in gameLocal
 const idEventDef EV_SessionCommand("sessionCommand", "s");
 
+// Generic interface for passing on mission events from scripts to the SDK
+// First argument is the entity which has triggered this event (e.g. a readable)
+// Second argument is a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event
+// Third argument is an optional string parameter
+const idEventDef EV_HandleMissionEvent("handleMissionEvent", "eds");
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -218,6 +225,8 @@ CLASS_DECLARATION( idClass, idThread )
 	
 	EVENT( EV_LogString,					idThread::Event_LogString )
 	EVENT( EV_SessionCommand,				idThread::Event_SessionCommand )
+
+	EVENT( EV_HandleMissionEvent,			idThread::Event_HandleMissionEvent )
 
 END_CLASS
 
@@ -1973,4 +1982,17 @@ void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity 
 void idThread::Event_SessionCommand(const char* cmd)
 {
 	gameLocal.sessionCommand = cmd;
+}
+
+void idThread::Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument)
+{
+	// Safety check the enum
+	if (eventType < EVENT_NOTHING || eventType >= EVENT_INVALID)
+	{
+		gameLocal.Warning("Invalid mission event type passed by %s to handleMissionEvent(): %d", entity->name.c_str(), eventType);
+		return;
+	}
+
+	// Pass on the call
+	gameLocal.m_MissionData->HandleMissionEvent(entity, static_cast<EMissionEventType>(eventType), argument);
 }
