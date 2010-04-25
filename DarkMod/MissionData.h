@@ -85,7 +85,7 @@ typedef enum
 * TODO: Move to game_local.h so that it can be used in external calls
 * NOTE: Any change to these must be kept up to date in CompTypeNames hash, defined in MissionData.cpp
 **/
-typedef enum
+enum EComponentType
 {
 // AI components - MUST BE KEPT TOGETHER IN THE ENUM because later these enums are used as an array index
 // COMP_KILL must be kept as the first one
@@ -105,8 +105,13 @@ typedef enum
 	COMP_CUSTOM_CLOCKED,
 	COMP_INFO_LOCATION, // like location, but uses existing info_location areas instead of an info_objectivelocation entity
 	COMP_DISTANCE,		// distance from origin of ent X to that of ent Y
+
+// Readable-related
+	COMP_READABLE_OPENED, // readable is opened by the player, since TDM 1.02
+	COMP_READABLE_CLOSED, // readable is closed (can be considered "has read") by the player, since TDM 1.02
+
 	COMP_COUNT			// Dummy entry to yield the number of valid types
-} EComponentType;
+};
 
 // TODO: move to game_local.h?
 typedef struct SObjEntParms_s

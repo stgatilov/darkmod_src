@@ -39,7 +39,9 @@ static const char *gCompTypeName[COMP_COUNT] =
 	"custom",
 	"custom_clocked",
 	"info_location",
-	"distance"
+	"distance",
+	"readable_opened",
+	"readable_closed"
 };
 
 /**
@@ -1139,7 +1141,27 @@ void CMissionData::HealthReceivedByPlayer(int amount)
 
 void CMissionData::HandleMissionEvent(idEntity* objEnt, EMissionEventType eventType, const char* argument)
 {
-	// TODO
+	if (objEnt == NULL) return;
+
+	// Setup the entity parameters
+	SObjEntParms parms;
+
+	FillParmsData(objEnt, &parms);
+
+	switch (eventType)
+	{
+	case EVENT_NOTHING:
+		break;
+	case EVENT_READABLE_OPENED:
+		MissionEvent(COMP_READABLE_OPENED, &parms, true);
+		break;
+	case EVENT_READABLE_CLOSED:
+		MissionEvent(COMP_READABLE_CLOSED, &parms, true);
+		break;
+	default:
+		gameLocal.Warning("Unknown event type encountered in HandleMissionEvent: %d", eventType);
+		break;
+	};
 }
 
 // ============================== Misc.  ==============================
