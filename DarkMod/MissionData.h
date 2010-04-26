@@ -21,6 +21,7 @@
 
 #include "../idlib/precompiled.h"
 #include "DarkModGlobals.h"
+#include <boost/shared_ptr.hpp>
 
 // Maximum array sizes:
 #define MAX_TEAMS 64
@@ -57,6 +58,7 @@ enum EMissionEventType
 	EVENT_NOTHING = 0,
 	EVENT_READABLE_OPENED = 1,
 	EVENT_READABLE_CLOSED = 2,
+	EVENT_READABLE_PAGE_REACHED = 3,
 	EVENT_INVALID,
 };
 
@@ -109,6 +111,7 @@ enum EComponentType
 // Readable-related
 	COMP_READABLE_OPENED, // readable is opened by the player, since TDM 1.02
 	COMP_READABLE_CLOSED, // readable is closed (can be considered "has read") by the player, since TDM 1.02
+	COMP_READABLE_PAGE_REACHED, // readable is displaying a certain page, since TDM 1.02
 
 	COMP_COUNT			// Dummy entry to yield the number of valid types
 };
@@ -910,6 +913,7 @@ protected:
 	unsigned int	m_TotalGamePlayTime;
 
 }; // CMissionData
+typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
 
 // Helper entity for objective locations
 class CObjectiveLocation : public idEntity

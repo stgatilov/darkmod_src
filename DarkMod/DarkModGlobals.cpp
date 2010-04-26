@@ -145,7 +145,6 @@ SH_DECL_HOOK0_void(idCommon, Frame, SH_NOATTRIB, 0);
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
-CMissionData	g_MissionData;
 
 static idList<const char *> *s_FileVersion = NULL;
 
@@ -287,7 +286,7 @@ void CGlobal::Init()
 
 #ifdef _WINDOWS_
 
-	std::string iniPath = GetDarkmodPath().c_str();
+	std::string iniPath = GetDarkmodPath();
 	iniPath += "\\darkmod.ini";
 
 #else   // LINUX

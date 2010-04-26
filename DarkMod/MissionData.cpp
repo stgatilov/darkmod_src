@@ -41,7 +41,8 @@ static const char *gCompTypeName[COMP_COUNT] =
 	"info_location",
 	"distance",
 	"readable_opened",
-	"readable_closed"
+	"readable_closed",
+	"readable_page_reached"
 };
 
 /**
@@ -633,7 +634,20 @@ bool	CMissionData::EvaluateObjective
 		// greebo: The first component argument holds the number of times this event should happen
 		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
+	else if (CompType == COMP_READABLE_PAGE_REACHED) // checks page number
+	{
+		// The argument holds the page to be reached
+		int pageToBeReached = atoi(pComp->m_Args[0]);
 
+		// The value holds the page which has been reached
+		if (EntDat1->value == pageToBeReached)
+		{
+			pComp->m_EventCount++;
+			return true; // success
+		}
+
+		return false; // fail by default
+	}
 	// Everything else: Increment and check event counter
 	else
 	{
@@ -1157,6 +1171,11 @@ void CMissionData::HandleMissionEvent(idEntity* objEnt, EMissionEventType eventT
 		break;
 	case EVENT_READABLE_CLOSED:
 		MissionEvent(COMP_READABLE_CLOSED, &parms, true);
+		break;
+	case EVENT_READABLE_PAGE_REACHED:
+		// The first argument should contain the reached page number
+		parms.value = atoi(argument);
+		MissionEvent(COMP_READABLE_PAGE_REACHED, &parms, true);
 		break;
 	default:
 		gameLocal.Warning("Unknown event type encountered in HandleMissionEvent: %d", eventType);

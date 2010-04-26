@@ -195,6 +195,7 @@ class CsndProp;
 class CRelations;
 typedef boost::shared_ptr<CRelations> CRelationsPtr;
 class CMissionData;
+typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
 class CStimResponse;
 class CEscapePointManager;
 
@@ -490,7 +491,7 @@ public:
 	/**
 	* Pointer to global Mission Data object (objectives & stats)
 	**/
-	CMissionData *			m_MissionData;
+	CMissionDataPtr			m_MissionData;
 	EMissionResult			m_MissionResult; // holds the global mission state
 
 	/**

@@ -220,6 +220,7 @@ idGameLocal::idGameLocal()
 	m_HighestSRId = 0;
 	m_MissionResult = MISSION_NOTEVENSTARTED;
 	successScreenActive = false;
+
 	Clear();
 }
 
@@ -250,9 +251,13 @@ void idGameLocal::Clear( void )
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = CRelationsPtr();
-	m_MissionData = &g_MissionData;
-	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
-	m_MissionData->ClearGUIState();
+
+	// greebo: don't destroy the MissionData object, Clear() is called during map shutdown
+	// We need the MissionData manager to stay alive until Shutdown() is called
+	if (m_MissionData != NULL)
+	{
+		m_MissionData->ClearGUIState();
+	}
 
 	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
@@ -429,6 +434,8 @@ void idGameLocal::Init( void ) {
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
 
+	m_MissionData = CMissionDataPtr(new CMissionData);
+
 	Clear();
 
 	idEvent::Init();
@@ -564,9 +571,9 @@ void idGameLocal::Shutdown( void ) {
 
 	MapShutdown();
 
-	// greebo: Separately clear the missiondata, which is not 
-	// cleared in MapShutdown() (needed for mission statistics)
-	m_MissionData->Clear();
+	// greebo: De-allocate the missiondata singleton, this is not 
+	// done in MapShutdown() (needed for mission statistics)
+	m_MissionData.reset();
 
 	// Destroy the conversation system
 	m_ConversationSystem = ai::ConversationSystemPtr();
