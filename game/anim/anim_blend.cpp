@@ -654,6 +654,7 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		{
 			fc.string->Append(va(" %s", token.c_str() ));
 		}
+
 	}
 	// tels:
 	else if ( token == "destroy" ) 
@@ -1321,16 +1322,26 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 							AttName = AttName.Left( spcind );
 						}
 					}
-					// spawn the entity
-					idEntity* spawnedEntity;
-					const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
-					if (!entityDef)
+
+					// check that there isn't already something attached:
+					idEntity* attEntity = ent->GetAttachment( AttPos.c_str() );
+					if (attEntity)
 					{
-						gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
+						gameLocal.Warning ( "Already got an attachment at %s, skipping frame command.", AttPos.c_str() );
 					}
-					gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-					// gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'", EntClass.c_str(), AttName.c_str(), AttPos.c_str());
-					ent->Attach( spawnedEntity, AttPos, AttName );
+					else
+					{
+						// spawn the entity
+						idEntity* spawnedEntity;
+						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
+						if (!entityDef)
+						{
+							gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
+						}
+						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
+						gameLocal.Printf ( "Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
+						ent->Attach( spawnedEntity, AttPos, AttName );
+					}
 					break;
 				}
 				// tels: pick up an entity from the world
@@ -1369,7 +1380,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 						// gameLocal.Warning ( "Found entity %s", attTarget->name.c_str() );
 
-						gameLocal.Warning ( "Attaching '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						gameLocal.Printf ( "Attaching '%s' as '%s' to '%s' (in pickup)\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
 						// first get the origin and rotation of the entity
 						idVec3 origin = attTarget->GetPhysics()->GetOrigin();
 						idAngles ang = attTarget->GetPhysics()->GetAxis().ToAngles();
