@@ -1,11 +1,11 @@
 /***************************************************************************
-*
-* PROJECT: The Dark Mod
-* $Revision$
-* $Date$
-* $Author$
-*
-***************************************************************************/
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
 //
@@ -27,23 +27,16 @@ static int MakePowerOfTwo( int num ) {
 
 const int IMPULSE_DELAY = 150;
 
-// Tels: for gcc and GNU C (we could use a >? b and a <? b, but only in GNU C++):
-#ifndef min
-#define min(a,b) fmin(a,b)
-#endif
-
-#ifndef max
-#define max(a,b) fmax(a,b)
-#endif
+// Bloom related - by JC_Denton & Maha_X - added by Dram
+const char *blurxMaterial[6] = { "textures/fsfx/blurx64", "textures/fsfx/blurx128", "textures/fsfx/blurx256", "textures/fsfx/blurx512", "textures/fsfx/blurx1024", "textures/fsfx/blurx2048" };
+const char *bluryMaterial[6] = { "textures/fsfx/blury32", "textures/fsfx/blury64", "textures/fsfx/blury128", "textures/fsfx/blury256", "textures/fsfx/blury512", "textures/fsfx/blury1024" };
 
 /*
 ==============
 idPlayerView::idPlayerView
 ==============
 */
-idPlayerView::idPlayerView() :
-m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Denton
-{
+idPlayerView::idPlayerView() {
 	memset( screenBlobs, 0, sizeof( screenBlobs ) );
 	memset( &view, 0, sizeof( view ) );
 	player = NULL;
@@ -57,6 +50,10 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
 	bfgVision = false;
 
+	// Bloom related - by JC_Denton - added by Dram
+	shiftSensitivityDelay = 0;
+	screenHeight = screenWidth = 0;
+
 	dvFinishTime = 0;
 	kickFinishTime = 0;
 	kickAngles.Zero();
@@ -68,14 +65,14 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	fadeColor.Zero();
 	shakeAng.Zero();
 
-	/*
+/*
 	fxManager = NULL;
 
 	if ( !fxManager ) {
-	fxManager = new FullscreenFXManager;
-	fxManager->Initialize( this );
+		fxManager = new FullscreenFXManager;
+		fxManager->Initialize( this );
 	}
-	*/
+*/
 
 	ClearEffects();
 
@@ -188,9 +185,6 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 	savefile->ReadRenderView( view );
 
 	savefile->ReadBool(cur_amb_method);
-
-	// Re-Initialize the PostProcess Manager.	- JC Denton
-	this->m_postProcessManager.Initialize();
 }
 
 /*
@@ -306,7 +300,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 		blob->x += ( gameLocal.random.RandomInt()&63 ) - 32;
 		blob->y = damageDef->GetFloat( "blob_y" );
 		blob->y += ( gameLocal.random.RandomInt()&63 ) - 32;
-
+		
 		float scale = ( 256 + ( ( gameLocal.random.RandomInt()&63 ) - 32 ) ) / 256.0f;
 		blob->w = damageDef->GetFloat( "blob_width" ) * g_blobSize.GetFloat() * scale;
 		blob->h = damageDef->GetFloat( "blob_height" ) * g_blobSize.GetFloat() * scale;
@@ -332,9 +326,9 @@ but having it localized here lets the material be pre-looked up etc.
 ==================
 */
 void idPlayerView::AddBloodSpray( float duration ) {
-	/*
+/*
 	if ( duration <= 0 || bloodSprayMaterial == NULL || g_skipViewEffects.GetBool() ) {
-	return;
+		return;
 	}
 	// visit this for chainsaw
 	screenBlob_t *blob = GetScreenBlob();
@@ -352,22 +346,22 @@ void idPlayerView::AddBloodSpray( float duration ) {
 	float s2 = 1.0f;
 	float t2 = 1.0f;
 	if ( blob->driftAmount < 0.6 ) {
-	s1 = 1.0f;
-	s2 = 0.0f;
+		s1 = 1.0f;
+		s2 = 0.0f;
 	} else if ( blob->driftAmount < 0.75 ) {
-	t1 = 1.0f;
-	t2 = 0.0f;
+		t1 = 1.0f;
+		t2 = 0.0f;
 	} else if ( blob->driftAmount < 0.85 ) {
-	s1 = 1.0f;
-	s2 = 0.0f;
-	t1 = 1.0f;
-	t2 = 0.0f;
+		s1 = 1.0f;
+		s2 = 0.0f;
+		t1 = 1.0f;
+		t2 = 0.0f;
 	}
 	blob->s1 = s1;
 	blob->t1 = t1;
 	blob->s2 = s2;
 	blob->t2 = t2;
-	*/
+*/
 }
 
 /*
@@ -425,7 +419,7 @@ idMat3 idPlayerView::ShakeAxis() const {
 ===================
 idPlayerView::AngleOffset
 
-kickVector, a world space direction that the attack should 
+  kickVector, a world space direction that the attack should 
 ===================
 */
 idAngles idPlayerView::AngleOffset() const {
@@ -514,7 +508,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 	gameRenderWorld->RenderScene( &hackedView );
 	// process the frame
 
-	//	fxManager->Process( &hackedView );
+//	fxManager->Process( &hackedView );
 
 
 	if ( player->spectating ) {
@@ -528,7 +522,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 			if ( blob->finishTime <= gameLocal.time ) {
 				continue;
 			}
-
+			
 			blob->y += blob->driftAmount;
 
 			float	fade = (float)( blob->finishTime - gameLocal.time ) / ( blob->finishTime - blob->startFadeTime );
@@ -579,20 +573,20 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		}
 
 		/*if ( player->PowerUpActive(BERSERK) ) {
-		int berserkTime = player->inventory.powerupEndTime[ BERSERK ] - gameLocal.time;
-		if ( berserkTime > 0 ) {
-		// start fading if within 10 seconds of going away
-		alpha = (berserkTime < 10000) ? (float)berserkTime / 10000 : 1.0f;
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, alpha );
-		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, berserkMaterial );
-		}
+			int berserkTime = player->inventory.powerupEndTime[ BERSERK ] - gameLocal.time;
+			if ( berserkTime > 0 ) {
+				// start fading if within 10 seconds of going away
+				alpha = (berserkTime < 10000) ? (float)berserkTime / 10000 : 1.0f;
+				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, alpha );
+				renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, berserkMaterial );
+			}
 		}*/
 
 		if ( bfgVision ) {
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, bfgMaterial );
 		}
-
+		
 	}
 
 	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg) - added by Dram
@@ -651,8 +645,8 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	// carry red tint if in berserk mode
 	idVec4 color(1, 1, 1, 1);
 	/*if ( gameLocal.time < player->inventory.powerupEndTime[ BERSERK ] ) {
-	color.y = 0;
-	color.z = 0;
+		color.y = 0;
+		color.z = 0;
 	}*/
 
 	renderSystem->SetColor4( color.x, color.y, color.z, 1.0f );
@@ -660,12 +654,11 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, shift, dvMaterial );
 
-	// Do not post-process the HUD - JC Denton
 	// Bloom related - added by Dram
-	// 	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
-	// 	{
-	// 		player->DrawHUD(hud);
-	// 	}
+	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+	{
+		player->DrawHUD(hud);
+	}
 }
 
 /*
@@ -801,12 +794,31 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	if(g_skipViewEffects.GetBool())
 	{
 		SingleView( hud, view );
-	} else {
+	}
+	else 
+	{
+		// Bloom related - by JC_Denton & Maha_X - added by Dram
+		// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
+		if( screenHeight != renderSystem->GetScreenHeight() || screenWidth !=renderSystem->GetScreenWidth() ) {
+			int width = 1, height = 1;	
+
+			screenHeight	= renderSystem->GetScreenHeight();
+			screenWidth		= renderSystem->GetScreenWidth();
+
+			while( width < screenWidth ) {
+				width <<= 1;
+			}
+			while( height < screenHeight ) {
+				height <<= 1;
+			}
+			shiftScale_x = screenWidth  / (float)width;
+			shiftScale_y = screenHeight / (float)height;
+		}
 
 		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
-		InfluenceVision( hud, view );
+			InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
-		DoubleVision( hud, view, dvFinishTime - gameLocal.time );
+			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
 		} else {*/
 
 		// greebo: For underwater effects, use the Doom3 Doubleview
@@ -816,28 +828,145 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		}
 		else
 		{
-			// Do not postprocess the HUD
-			// 			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
-			// 			{
-			// 				SingleView( hud, view );
-			// 			}
-			// 			else
+			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+			{
+				SingleView( hud, view );
+			}
+			else
 			{
 				SingleView( hud, view, false );
 			}
 		}
 		//}
 
-		// HDR related - J.C.Denton
-		/* Update HDR post-process */
-		if ( !player->objectiveSystemOpen )
-			this->m_postProcessManager.Update();
+		// =====================================================
+		// Bloom related - by JC_Denton & Maha_X - added by Dram
+		// =====================================================
+
+		if ( !r_bloom.GetBool() ) // if bloom is disabled
+		{
+			// A global parameter (0) that is used by fake bloom effects to hide/lessen them etc - by Dram
+			if ( gameLocal.globalShaderParms[0] != 1 ) // if the brightness of the hazes is not 1
+			{
+				gameLocal.globalShaderParms[0] = 1; // set it to 1
+			}
+
+			// A global parameter (1) that is used to scale the brightness of light rays if bloom is on - by Dram
+			if ( gameLocal.globalShaderParms[1] != 1 ) // if the brightness scale of the light rays is not 1
+			{
+				gameLocal.globalShaderParms[1] = 1; // set it to 1
+			}
+		}
+		else // if bloom is enabled
+		{
+			// set up the light haze brightness - by Dram
+			float lightHazeBrightness = 1 - ( r_bloom_blur_mult.GetFloat() - 0.5 ); // get the blur mult and derive a haze brightness
+
+			if ( lightHazeBrightness < 0.2f ) // if the haze brightness is lower then 0.2
+			{
+				lightHazeBrightness = 0.2f; // set it to 0.2
+			}
+			else if ( lightHazeBrightness > 1 ) // if the haze brightness is higher then 1
+			{
+				lightHazeBrightness = 1; // set it to 1
+			}
+
+			if ( gameLocal.globalShaderParms[0] != lightHazeBrightness ) // if the haze global parameter other then equals the light haze brightness
+			{
+				gameLocal.globalShaderParms[0] = lightHazeBrightness; // set it to light haze brightness
+			}
+
+			if ( gameLocal.globalShaderParms[1] != r_bloom_lightRayScale.GetFloat() ) // if the brightness scale of the light rays is not r_bloom_lightRayScale
+			{
+				gameLocal.globalShaderParms[1] = r_bloom_lightRayScale.GetFloat(); // set it to r_bloom_lightRayScale
+			}
+
+			renderSystem->CaptureRenderToImage( "_currentRender" );
+
+			//------------------------------------------------
+			// Maha_x's Shift Sensitivity - Modified for compatibilty by Clone JCDenton
+			//------------------------------------------------
+
+			bool disableShiftSensitivity = ( r_bloom_shift_delay.GetInteger() == -1 );
+
+			if( !disableShiftSensitivity && gameLocal.time > shiftSensitivityDelay ) { 
+				renderSystem->CropRenderSize(2, 2, true, true);
+				shiftSensitivityDelay = gameLocal.time + r_bloom_shift_delay.GetInteger(); 
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXweight" ) );
+				renderSystem->CaptureRenderToImage( "_afxweight" );
+				renderSystem->UnCrop();
+			}
+			//------------------------------------------------
+
+			//-------------------------------------------------
+			// User configurable buffer size - By Clone JC Denton
+			//-------------------------------------------------
+
+			int bufferMult = 6 - r_bloom_buffer.GetInteger();
+			int blurMtrIndex;
+
+			if( bufferMult < 6 ) {
+				if( bufferMult <= 0 ) {
+					bufferMult = 1;
+					blurMtrIndex = 5;
+				}
+				else {
+					blurMtrIndex = 5 - bufferMult;
+					bufferMult = 1<<bufferMult;
+				}
+				renderSystem->CropRenderSize(2048/bufferMult, 1024/bufferMult, true, true);
+			}
+			else {
+				renderSystem->CropRenderSize(512, 256, true, true);
+				blurMtrIndex = 3;
+			}
+			//-------------------------------------------------
+
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, shiftScale_y, shiftScale_x, 0, declManager->FindMaterial( "_currentRender" ) );
+
+			//Use the blurred image for obtaining bloom contrast.
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );	
+
+			if( !disableShiftSensitivity ) {
+				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_min.GetFloat(), 1, 1);
+			} else {
+				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_mult.GetFloat(), 1, 1);
+			}
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXmodulate" ) );
+
+			for( int i=0; i < r_bloom_blurIterations.GetInteger(); i++ ) {
+				// Two pass gaussian filter					
+				renderSystem->CaptureRenderToImage( "_fsfx_input" );
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
+				renderSystem->CaptureRenderToImage( "_fsfx_input" );
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
+			}
+
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+
+			renderSystem->UnCrop();
+
+			renderSystem->SetColor4( r_bloom_blur_mult.GetFloat(), r_bloom_src_mult.GetFloat(), 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXadd" ) );
+
+			if ( !r_bloom_hud.GetBool() ) // If HUD blooming is disabled
+			{
+				player->DrawHUD(hud);
+			}
+		}
 
 		ScreenFade();
 	}
 
-	player->DrawHUD(hud);
-
+	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
+		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
+	}
 
 	// TDM Ambient Method checking. By Dram
 	if ( cur_amb_method != cv_ambient_method.GetBool() ) // If the ambient method option has changed
@@ -850,7 +979,7 @@ void idPlayerView::UpdateAmbientLight()
 {
 	// Looks for a light named "ambient_world"
 	idEntity* ambient_light = gameLocal.FindEntity("ambient_world");
-
+	
 	if (ambient_light != NULL) // If the light exists
 	{
 		if (!cv_ambient_method.GetBool()) // If the Ambient Light method is used
@@ -883,225 +1012,4 @@ void idPlayerView::UpdateAmbientLight()
 	}
 
 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
-}
-
-
-/*
-===================
-idPlayerView::dnPostProcessManager Class Definitions - JC Denton
-===================
-*/
-
-idPlayerView::dnPostProcessManager::dnPostProcessManager():
-m_imageCurrentRender				( "_currentRender"			),
-m_imageCurrentRender8x8DownScaled	( "_RTtoTextureScaled64x"	),
-m_imageLuminance64x64				( "_luminanceTexture64x64"	),
-m_imageluminance4x4					( "_luminanceTexture4x4"	),
-m_imageAdaptedLuminance1x1			( "_adaptedLuminance"		),
-m_imageBloom						( "_bloomImage"				),
-m_imageHalo							( "_haloImage"				),
-m_imageCookedMath0					( "_cookedMath0"				),
-
-m_matAvgLuminance64x	( declManager->FindMaterial( "postprocess/averageLum64" )	), 
-m_matAvgLumSample4x4	( declManager->FindMaterial( "postprocess/averageLum4" )	),
-m_matAdaptLuminance		( declManager->FindMaterial( "postprocess/adaptLum" )		),
-m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPass" )		),
-m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
-m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
-m_matHalo				( declManager->FindMaterial(  "postprocess/halo" )			),
-m_matGaussBlurXHalo		( declManager->FindMaterial( "postprocess/blurx_halo" )		),
-m_matGaussBlurYHalo		( declManager->FindMaterial( "postprocess/blury_halo" )		),
-m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
-
-m_matCookMath0			( declManager->FindMaterial( "postprocess/cookMath0" )		),
-
-// Materials for debugging intermediate textures
-m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
-m_matDecodedLumTexture4x4	( declManager->FindMaterial( "postprocess/decode_luminanceTexture4x4" )		),
-m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adaptedLuminance" )		)
-{
-
-	m_iScreenHeight = m_iScreenWidth = 0;
-
-	// Initialize once this object is created.	
-	this->Initialize();
-}
-
-// idPlayerView::dnPostProcessManager::~dnPostProcessManager()
-// {
-// 	// Do nothing for now. 
-// }
-
-void idPlayerView::dnPostProcessManager::Initialize()
-{
-	//	// Create a Texture to store the math to.
-	// 	renderSystem->CropRenderSize(256, 1, true);
-	// 
-	// 	renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_blueShiftBias.GetFloat(), 1.0f, 1.0f );
-	// 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath0 );
-	// 	renderSystem->CaptureRenderToImage( m_imageCookedMath0 );
-
-}
-
-void idPlayerView::dnPostProcessManager::Update( void )
-{
-	static const float fBloomImageDownScale = 2.0f;
-	static const float fHaloImageDownScale = 8.0f;
-	static const float fBackbufferLumDownScale = 8.0f;
-
-
-	const int iPostProcessType = r_HDR_postProcess.GetInteger();
-
-	if ( iPostProcessType != 0 ) {
-
-		this->UpdateBackBufferParameters();
-
-		renderSystem->CaptureRenderToImage( m_imageCurrentRender );
-
-		//-------------------------------------------------
-		// Downscale 
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(m_iScreenWidth/fBackbufferLumDownScale, m_iScreenHeight/fBackbufferLumDownScale, true);
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageCurrentRender );
-		renderSystem->CaptureRenderToImage( m_imageCurrentRender8x8DownScaled );
-		renderSystem->UnCrop();
-		//-------------------------------------------------
-		// Measure Luminance from Downscaled Image
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(64, 64, true);
-		renderSystem->SetColor4( 1.0f/min(192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
-		renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
-		renderSystem->UnCrop();
-		//-------------------------------------------------
-		// Average out the luminance of the scene to a 4x4 Texture
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(4, 4, true);
-		renderSystem->SetColor4( 1.0f/16.0f, 1.0f, 1.0f, 1.0f );			 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLumSample4x4 );
-		renderSystem->CaptureRenderToImage( m_imageluminance4x4 );
-		renderSystem->UnCrop();
-		//-------------------------------------------------
-		// Adapt to the newly calculated Luminance from previous Luminance.
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(1, 1, true);
-		renderSystem->SetColor4( float( gameLocal.time - gameLocal.previousTime )/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
-		renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
-		renderSystem->UnCrop();
-		//---------------------
-
-		//-------------------------------------------------
-		// Apply the bright-pass filter to acquire bloom image
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, true);
-
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat() );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
-		renderSystem->CaptureRenderToImage( m_imageBloom );
-
-		//-------------------------------------------------
-		// Apply Gaussian Smoothing to create bloom
-		//-------------------------------------------------
-		renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
-		renderSystem->CaptureRenderToImage( m_imageBloom );
-		renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
-
-		renderSystem->CaptureRenderToImage( m_imageBloom );
-		renderSystem->UnCrop();
-		//---------------------
-
-		//-------------------------------------------------
-		// Downscale bloom image and blur again to obtain Halo Image
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(m_iScreenWidth/fHaloImageDownScale, m_iScreenHeight/fHaloImageDownScale, true);
-
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matHalo );
-		renderSystem->CaptureRenderToImage( m_imageHalo );
-
-		renderSystem->SetColor4( fHaloImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurXHalo );
-		renderSystem->CaptureRenderToImage( m_imageHalo );
-		renderSystem->SetColor4( fHaloImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurYHalo );
-
-		renderSystem->CaptureRenderToImage( m_imageHalo );
-		renderSystem->UnCrop();
-
-		//-------------------------------------------------
-		// Calculate and Render Final Image
-		//-------------------------------------------------
-		const float fMaxColorIntensity = max(r_HDR_maxColorIntensity.GetFloat(), 0.00001f);
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_colorCurveBias.GetFloat(), 1.0f/fMaxColorIntensity );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
-
-		//---------------------------------------------------------------------
-
-		this->RenderDebugTextures();
-	}
-}
-
-void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
-{
-	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-	if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
-	{
-		int width = 256, height = 256;
-
-		// This should probably fix the ATI issue...
-		renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
-
-		//assert( iScreenWidth != 0 && iScreenHeight != 0 );
-
-		while( width < m_iScreenWidth ) {
-			width <<= 1;
-		}
-		while( height < m_iScreenHeight ) {
-			height <<= 1;
-		}
-		m_fShiftScale_x = m_iScreenWidth  / (float)width;
-		m_fShiftScale_y = m_iScreenHeight / (float)height;
-	}
-}
-
-void idPlayerView::dnPostProcessManager::RenderDebugTextures()
-{
-	const int iDebugMode = r_HDR_enableDebugMode.GetInteger();
-
-	if( 1 == iDebugMode )
-	{
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageLuminance64x64 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageluminance4x4 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageAdaptedLuminance1x1 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
-
-	}
-	else if ( 2 == iDebugMode )
-	{
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,		SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture64x64 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture4x4 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedAdaptLuminance );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
-	}
-
-	const int iDebugTexture = r_HDR_debugTextureIndex.GetInteger();
-	if( 0!= iDebugMode && 0 < iDebugTexture && 4 > iDebugTexture ) 
-	{
-		const dnImageWrapper *arrImages[2] = { &m_imageBloom, &m_imageHalo };
-
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-
-		if( 1 == iDebugTexture )
-			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		else
-			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, m_fShiftScale_y, m_fShiftScale_x, 0, *arrImages[iDebugTexture-2] );
-	}
 }

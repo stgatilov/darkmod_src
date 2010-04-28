@@ -111,7 +111,7 @@ idCVar cv_show_health (          "tdm_show_health",   "0",            CVAR_ARCHI
 
 idCVar cv_ai_show_aasfuncobstacle_state("tdm_ai_show_aasfuncobstacle_state",	"0", CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
-idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the HDR interaction shaders are used. Set to 0 to use TDM's enhanced ones." );
+idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the enhanced interaction shaders are used. Set to 0 to use the default D3 one." );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );
 
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
@@ -692,24 +692,17 @@ idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_AR
 
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
 
-// HDR related - J.C.Denton
-
-idCVar r_HDR_enableDebugMode		( "r_HDR_enableDebugMode",		"0",			CVAR_GAME | CVAR_INTEGER,	" Shows all the textures generated for HDR postprocess. \n 1: Shows all textures \n 2: Decodes and shows all textures");
-idCVar r_HDR_postProcess			( "r_HDR_postProcess",			"1",			CVAR_GAME | CVAR_INTEGER,	" Activates HDR bloom ( Requires DX9 compliant Hardware ). \n 1: HDR Bloom with automatic eye exposure \n 2: HDR Bloom (without auto exposure) ");
-idCVar r_HDR_middleGray				( "r_HDR_middleGray",			"0.08",			CVAR_GAME | CVAR_FLOAT,		" Middle gray value for overall scene . Range 0 - 1. (Works only when automatic exposure is on) ");
-idCVar r_HDR_brightPassThreshold	( "r_HDR_brightPassThreshold",	"5.0",			CVAR_GAME | CVAR_FLOAT,		" brightness threshold for Bright-pass (Works only when automatic exposure is on)");
-idCVar r_HDR_brightPassOffset		( "r_HDR_brightPassOffset",		"10.0",			CVAR_GAME | CVAR_FLOAT,		" Brightness offset for bright pass (Works only when automatic exposure is on)");
-idCVar r_HDR_min_luminance			( "r_HDR_min_luminance",		"0.06",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control whiteness when in pitch dark areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.22",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"1.6",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
-idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.3",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
-idCVar r_HDR_blueShiftBias			( "r_HDR_blueShiftBias",		"0.0",			CVAR_GAME | CVAR_FLOAT,		" Enables Blue Shift (range 0 to 1), 1 = Full Blue Shift, 0= No Blue Shift");
-idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"3.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusting this value will cause color burnout in a controllable fashion (range 0.0 - 256.0) \nHigher values reduces the contrast, lower values increases the contrast.");
-
-idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity ");
-idCVar r_HDR_debugTextureIndex		( "r_HDR_debugTextureIndex",	"0",			CVAR_GAME | CVAR_INTEGER,	" Show intermediate textures used for HDR postprocess \n 1: scene Image(64x Scaled down) \n 2: Average Luminance Initial pass texture\n 3: Average luminance ");
-
-//----------------------------------
+// Bloom related - by JC_Denton & Maha_X - added by Dram
+idCVar r_bloom( "r_bloom", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable Bloom Post-Process Effects (requires DX9 Compliant Hardware)" );
+idCVar r_bloom_blur_mult( "r_bloom_blur_mult", "0.5", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Blurred image multiplier for bloom");
+idCVar r_bloom_src_mult( "r_bloom_src_mult", "1.0", CVAR_GAME | CVAR_FLOAT, "Source image multiplier for bloom");
+idCVar r_bloom_buffer( "r_bloom_buffer", "4", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Bloom buffer image size: \n1 = 64x32\n2 = 128x64\n3 = 256x128\n4 = 512x256\n5 = 1024x512\n6 = 2048x1024"); // New by Clone JCD
+idCVar r_bloom_contrast_mult( "r_bloom_contrast_mult", "1.55", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Contrast multiplier");
+idCVar r_bloom_contrast_min( "r_bloom_contrast_min", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "This is the minimum contrast value when (shift sensitivity based)bloom drops \nWhen shift sensitivty is turned on bloom contrast varies from (constrast_image x r_bloom_contrast_min) to (constrast_image x r_bloom_contrast_mult)");
+idCVar r_bloom_shift_delay( "r_bloom_shift_delay", "0", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Delay in millisecs for shifting the bloom sensitivity \n0 = No shift sensitivity delay, sensitvity shifts immediately. \n-1 = Disables sensitivity shifting"); // New by Clone JCD
+idCVar r_bloom_blurIterations( "r_bloom_blurIterations", "1", CVAR_GAME | CVAR_INTEGER, "Blur iterations for bloom"); // New by Clone JCD
+idCVar r_bloom_hud( "r_bloom_hud", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable blooming of the HUD" );
+idCVar r_bloom_lightRayScale( "r_bloom_lightRayScale", "1.3", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Brightness scale of light ray effects when bloom is active");
 
 #ifndef __linux__
 idCVar s_driver("s_driver", "0", CVAR_GUI, "Dummy CVAR introduced by TDM to fix a console warning in Windows. Seems to be missing, but D3's mpmain.gui references this.");
