@@ -27,15 +27,6 @@ static int MakePowerOfTwo( int num ) {
 
 const int IMPULSE_DELAY = 150;
 
-// Tels: for gcc and GNU C (we could use a >? b and a <? b, but only in GNU C++):
-#ifndef min
-#define min(a,b) fmin(a,b)
-#endif
-
-#ifndef max
-#define max(a,b) fmax(a,b)
-#endif
-
 /*
 ==============
 idPlayerView::idPlayerView
@@ -81,7 +72,9 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 
 	// greebo: Set the bool to the inverse of the CVAR, so that the code triggers 
 	// an update in the first frame
-	cur_amb_method = !cv_ambient_method.GetBool();
+	//cur_amb_method = !cv_ambient_method.GetBool();
+        // JC: Just set the flag so that we know that the update is needed.
+	cv_ambient_method.SetModified();
 }
 
 /*
@@ -134,7 +127,8 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject( player );
 	savefile->WriteRenderView( view );
 
-	savefile->WriteBool(cur_amb_method);
+// Save games are not going to work after this change - JC Denton
+// 	savefile->WriteBool(cur_amb_method);
 }
 
 /*
@@ -187,7 +181,8 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( player ) );
 	savefile->ReadRenderView( view );
 
-	savefile->ReadBool(cur_amb_method);
+// Save games are not going to work after this change - JC Denton
+// 	savefile->ReadBool(cur_amb_method);
 
 	// Re-Initialize the PostProcess Manager.	- JC Denton
 	this->m_postProcessManager.Initialize();
@@ -840,7 +835,8 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 
 	// TDM Ambient Method checking. By Dram
-	if ( cur_amb_method != cv_ambient_method.GetBool() ) // If the ambient method option has changed
+	// Modified by JC Denton
+	if ( cv_ambient_method.IsModified() ) // If the ambient method option has changed
 	{
 		UpdateAmbientLight();
 	}
@@ -853,7 +849,7 @@ void idPlayerView::UpdateAmbientLight()
 
 	if (ambient_light != NULL) // If the light exists
 	{
-		if (!cv_ambient_method.GetBool()) // If the Ambient Light method is used
+ 		if ( 0 == cv_ambient_method.GetInteger() ) // If the Ambient Light method is used
 		{
 			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
 			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
@@ -866,6 +862,8 @@ void idPlayerView::UpdateAmbientLight()
 		}
 		else // If the Texture Brightness method is used
 		{
+
+			gameLocal.globalShaderParms[5] = Min( 2, Max (1, cv_ambient_method.GetInteger() ) );
 			idVec3 ambient_color = ambient_light->spawnArgs.GetVector( "_color" ); // Get the ambient color from the spawn arguments
 			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
 			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
@@ -881,8 +879,9 @@ void idPlayerView::UpdateAmbientLight()
 	{
 		gameLocal.Printf( "Note: Ambient light by name of 'ambient_world' not found\n"); // Show in console of light not existing in map
 	}
-
-	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
+	cv_ambient_method.ClearModified();
+// Clean this up later since not needed. JC Denton
+// 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
 }
 
 
@@ -900,20 +899,22 @@ m_imageluminance4x4					( "_luminanceTexture4x4"	),
 m_imageAdaptedLuminance1x1			( "_adaptedLuminance"		),
 m_imageBloom						( "_bloomImage"				),
 m_imageHalo							( "_haloImage"				),
-m_imageCookedMath0					( "_cookedMath0"				),
+m_imageCookedMath					( "_cookedMath"				),
 
 m_matAvgLuminance64x	( declManager->FindMaterial( "postprocess/averageLum64" )	), 
 m_matAvgLumSample4x4	( declManager->FindMaterial( "postprocess/averageLum4" )	),
 m_matAdaptLuminance		( declManager->FindMaterial( "postprocess/adaptLum" )		),
-m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPass" )		),
+m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPassOptimized" )		),
 m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
 m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
 m_matHalo				( declManager->FindMaterial(  "postprocess/halo" )			),
 m_matGaussBlurXHalo		( declManager->FindMaterial( "postprocess/blurx_halo" )		),
 m_matGaussBlurYHalo		( declManager->FindMaterial( "postprocess/blury_halo" )		),
-m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
+//m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
+m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOptimized" )	),
 
-m_matCookMath0			( declManager->FindMaterial( "postprocess/cookMath0" )		),
+m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
+m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
 
 // Materials for debugging intermediate textures
 m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
@@ -934,14 +935,58 @@ m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adap
 
 void idPlayerView::dnPostProcessManager::Initialize()
 {
-	//	// Create a Texture to store the math to.
-	// 	renderSystem->CropRenderSize(256, 1, true);
-	// 
-	// 	renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_blueShiftBias.GetFloat(), 1.0f, 1.0f );
-	// 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath0 );
-	// 	renderSystem->CaptureRenderToImage( m_imageCookedMath0 );
+	m_bForceUpdateOnCookedData = true;
 
+	// Make sure that we always measure luminance at first frame. 
+	m_nFramesSinceLumUpdate	= r_HDR_lumUpdateRate.GetInteger();
+	m_fDeltaTime			= 0.0f;
 }
+
+void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
+{
+	const idMaterial*  matImageCookedMath = m_imageCookedMath;
+
+
+	if (	m_bForceUpdateOnCookedData || 
+			r_HDR_middleGray.IsModified() || r_HDR_maxColorIntensity.IsModified() || 
+			r_HDR_colorCurveBias.IsModified() || r_HDR_brightPassOffset.IsModified() || 
+			r_HDR_brightPassThreshold.IsModified() || r_HDR_sceneExposure.IsModified() ||
+			r_HDR_gammaCorrection.IsModified()	
+		)
+	{
+
+		if( m_bForceUpdateOnCookedData )
+			gameLocal.Printf( "Forcing an update on cooked math data.\n" );
+
+		gameLocal.Printf( "Cooking math data please wait...\n" );
+
+		renderSystem->CropRenderSize(1024, 256, true);
+
+		// Changed from max to Max for cross platform compiler compatibility.
+		const float fMaxColorIntensity = Max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
+
+		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), 1.0f/fMaxColorIntensity, r_HDR_colorCurveBias.GetFloat(), r_HDR_sceneExposure.GetFloat() );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
+		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+
+		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat(), r_HDR_gammaCorrection.GetFloat() );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
+		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+		renderSystem->UnCrop();
+		
+		r_HDR_middleGray.ClearModified();
+		r_HDR_maxColorIntensity.ClearModified();
+		r_HDR_colorCurveBias.ClearModified(); 
+		r_HDR_brightPassOffset.ClearModified();
+		r_HDR_brightPassThreshold.ClearModified();
+		r_HDR_sceneExposure.ClearModified();
+		r_HDR_gammaCorrection.ClearModified();
+		m_bForceUpdateOnCookedData = false;
+
+		gameLocal.Printf( "Cooking complete.\n" );
+	}
+}
+
 
 void idPlayerView::dnPostProcessManager::Update( void )
 {
@@ -950,14 +995,41 @@ void idPlayerView::dnPostProcessManager::Update( void )
 	static const float fBackbufferLumDownScale = 8.0f;
 
 
+	// Check the interaction.vfp settings
+// 	if( cv_interaction_vfp_type.IsModified() )
+// 	{
+// 		if (cv_interaction_vfp_type.GetInteger() == 0)
+// 		{
+// 			// Use D3 interaction
+// 			gameLocal.Printf("Using D3 interaction.vfp\n");
+// 			cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+// 			r_HDR_postProcess.SetBool( false );
+// 		}
+// 		else
+// 		{
+// 			// Use rebb's enhanced interaction
+// 			// Rebb's interaction has been replaced by mine for now. -JC Denton
+// 			//Printf("Using TDM's enhanced interaction.vfp\n");
+// 			gameLocal.Printf("Using TDM's HDR\n");
+// 			cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+// 			r_HDR_postProcess.SetBool( true );
+// 		}
+// 		cv_interaction_vfp_type.ClearModified();
+// 	}
+
 	const int iPostProcessType = r_HDR_postProcess.GetInteger();
 
-	if ( iPostProcessType != 0 ) {
-
+	if ( iPostProcessType != 0 ) 
+	{
 		this->UpdateBackBufferParameters();
 
 		renderSystem->CaptureRenderToImage( m_imageCurrentRender );
+		this->UpdateCookedData();
 
+		// Delayed luminance measurement and adaptation for performance improvement.
+		if( m_nFramesSinceLumUpdate >= r_HDR_lumUpdateRate.GetInteger() )
+		{
+			m_fDeltaTime += gameLocal.time - gameLocal.previousTime;
 		//-------------------------------------------------
 		// Downscale 
 		//-------------------------------------------------
@@ -970,7 +1042,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		// Measure Luminance from Downscaled Image
 		//-------------------------------------------------
 		renderSystem->CropRenderSize(64, 64, true);
-		renderSystem->SetColor4( 1.0f/min(192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
+			renderSystem->SetColor4( 1.0f/Min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
 		renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
 		renderSystem->UnCrop();
@@ -986,24 +1058,41 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		// Adapt to the newly calculated Luminance from previous Luminance.
 		//-------------------------------------------------
 		renderSystem->CropRenderSize(1, 1, true);
-		renderSystem->SetColor4( float( gameLocal.time - gameLocal.previousTime )/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
+			renderSystem->SetColor4( m_fDeltaTime/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
 		renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
 		renderSystem->UnCrop();
 		//---------------------
 
+			// Reset vars
+			m_nFramesSinceLumUpdate	= 1;
+			m_fDeltaTime			= 0.0f;
+		}
+		else
+		{
+			//Calculate cumulative frame render time for luminance adaptation.
+			m_fDeltaTime += gameLocal.time - gameLocal.previousTime;
+			m_nFramesSinceLumUpdate ++;
+		}
+
+		const float fHDRBloomIntensity = r_HDR_bloomIntensity.GetFloat();
+		const float fHDRHaloIntensity = fHDRBloomIntensity > 0.0f ? r_HDR_haloIntensity.GetFloat() : 0.0f;
+
+		if( fHDRBloomIntensity > 0.0f )
+		{
 		//-------------------------------------------------
 		// Apply the bright-pass filter to acquire bloom image
 		//-------------------------------------------------
 		renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, true);
 
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat() );
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
 		renderSystem->CaptureRenderToImage( m_imageBloom );
 
 		//-------------------------------------------------
 		// Apply Gaussian Smoothing to create bloom
 		//-------------------------------------------------
+
 		renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
 		renderSystem->CaptureRenderToImage( m_imageBloom );
@@ -1014,6 +1103,8 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		renderSystem->UnCrop();
 		//---------------------
 
+			if(  fHDRHaloIntensity > 0.0f )
+			{
 		//-------------------------------------------------
 		// Downscale bloom image and blur again to obtain Halo Image
 		//-------------------------------------------------
@@ -1028,18 +1119,17 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		renderSystem->CaptureRenderToImage( m_imageHalo );
 		renderSystem->SetColor4( fHaloImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurYHalo );
-
 		renderSystem->CaptureRenderToImage( m_imageHalo );
 		renderSystem->UnCrop();
+			}
+		}
 
 		//-------------------------------------------------
 		// Calculate and Render Final Image
 		//-------------------------------------------------
-		const float fMaxColorIntensity = max(r_HDR_maxColorIntensity.GetFloat(), 0.00001f);
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_min_luminance.GetFloat(), r_HDR_colorCurveBias.GetFloat(), 1.0f/fMaxColorIntensity );
+		renderSystem->SetColor4( fHDRBloomIntensity, fHDRHaloIntensity, .5f, 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
-
-		//---------------------------------------------------------------------
+		//-------------------------------------------------
 
 		this->RenderDebugTextures();
 	}
@@ -1093,12 +1183,10 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 	}
 
 	const int iDebugTexture = r_HDR_debugTextureIndex.GetInteger();
-	if( 0!= iDebugMode && 0 < iDebugTexture && 4 > iDebugTexture ) 
+	if( 0!= iDebugMode && 0 < iDebugTexture && 5 > iDebugTexture ) 
 	{
-		const dnImageWrapper *arrImages[2] = { &m_imageBloom, &m_imageHalo };
-
+		const dnImageWrapper *arrImages[3] = { &m_imageBloom, &m_imageHalo, &m_imageCookedMath };
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-
 		if( 1 == iDebugTexture )
 			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
 		else

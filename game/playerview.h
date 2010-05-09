@@ -101,15 +101,15 @@ private:
 
 	public:
 		dnImageWrapper( const char *a_strImage ) : 
-		m_strImage			( a_strImage ),
-		m_matImage			( declManager->FindMaterial(a_strImage) )
+		m_matImage			( declManager->FindMaterial(a_strImage) ),
+		m_strImage			( a_strImage )
 		{
 		}
-		operator const char * () const
+		ID_INLINE operator const char * () const
 		{
 			return m_strImage.c_str();
 		}
-		operator const idMaterial *() const
+		ID_INLINE operator const idMaterial *() const
 		{
 			return m_matImage;
 		}
@@ -123,6 +123,12 @@ private:
 		float				m_fShiftScale_x;
 		float				m_fShiftScale_y;
 
+		unsigned char		m_nFramesSinceLumUpdate;				
+		float				m_fDeltaTime;
+		
+		
+		bool				m_bForceUpdateOnCookedData;
+
 	dnImageWrapper m_imageCurrentRender;
 	dnImageWrapper m_imageCurrentRender8x8DownScaled;
 	dnImageWrapper m_imageLuminance64x64;
@@ -131,6 +137,12 @@ private:
 	dnImageWrapper m_imageBloom;
 	dnImageWrapper m_imageHalo;
 	
+		// Every channel of this image will have a cooked mathematical data. 
+		// Since we might need more of these textures, I am numbering them.
+		dnImageWrapper		m_imageCookedMath;
+		const idMaterial*	m_matCookMath_pass1;
+		const idMaterial*	m_matCookMath_pass2;
+
 	const idMaterial *m_matAvgLuminance64x;
 	const idMaterial *m_matAvgLumSample4x4;
 	const idMaterial *m_matAdaptLuminance;
@@ -141,11 +153,6 @@ private:
 	const idMaterial *m_matGaussBlurXHalo;
 	const idMaterial *m_matGaussBlurYHalo;
 	const idMaterial *m_matFinalScenePass;
-
-		// Every channel of this image will have a cooked mathematical data. 
-		// Since we might need more of these textures, I am numbering them.
-		dnImageWrapper		m_imageCookedMath0;
-		const idMaterial*	m_matCookMath0;
 
 	// For debug renders
 	const idMaterial *m_matDecodedLumTexture64x64;
@@ -164,6 +171,7 @@ private:
 		// Following methods should not be called by any other object, but itself.
 		void UpdateBackBufferParameters	();		
 		void RenderDebugTextures		();		
+		void UpdateCookedData			();
 	};
 
 	dnPostProcessManager m_postProcessManager;
@@ -190,7 +198,8 @@ private:
 	renderView_t		view;
 
 	// TDM Related
-	bool				cur_amb_method;		// Current ambient method. Used for checking whether ambient method grpahics option has changed. By Dram
+        // This flag is no longer needed. -JCDenton
+	//bool				cur_amb_method;		// Current ambient method. Used for checking whether ambient method grpahics option has changed. By Dram
 };
 
 #endif /* !__GAME_PLAYERVIEW_H__ */
