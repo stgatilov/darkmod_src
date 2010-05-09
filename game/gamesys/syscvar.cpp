@@ -368,7 +368,7 @@ idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from t
 /**
  * Ambient light method variable
  */
-idCVar cv_ambient_method("tdm_ambient_method",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Method used for ambient light rendering.\n\n0 = Ambient Light method (uses the ambient light for the ambient brightness) \n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)" );
+idCVar cv_ambient_method("tdm_ambient_method",	"0",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Method used for ambient light rendering.\n\n0 = Ambient Light method (uses the ambient light for the ambient brightness) \n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)" );
 
 /**
  * Volume of speakers with s_music set
@@ -700,14 +700,17 @@ idCVar r_HDR_middleGray				( "r_HDR_middleGray",			"0.08",			CVAR_GAME | CVAR_FL
 idCVar r_HDR_brightPassThreshold	( "r_HDR_brightPassThreshold",	"5.0",			CVAR_GAME | CVAR_FLOAT,		" brightness threshold for Bright-pass (Works only when automatic exposure is on)");
 idCVar r_HDR_brightPassOffset		( "r_HDR_brightPassOffset",		"10.0",			CVAR_GAME | CVAR_FLOAT,		" Brightness offset for bright pass (Works only when automatic exposure is on)");
 idCVar r_HDR_min_luminance			( "r_HDR_min_luminance",		"0.06",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control whiteness when in pitch dark areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.22",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
+idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.12",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
 idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"1.6",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
 idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.3",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
+idCVar r_HDR_sceneExposure			( "r_HDR_sceneExposure",		"1.38",			CVAR_GAME | CVAR_FLOAT,		" Scene exposure. Try values lower or greater than 1.0");
+idCVar r_HDR_gammaCorrection		( "r_HDR_gammaCorrection",		"1.15",			CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
 idCVar r_HDR_blueShiftBias			( "r_HDR_blueShiftBias",		"0.0",			CVAR_GAME | CVAR_FLOAT,		" Enables Blue Shift (range 0 to 1), 1 = Full Blue Shift, 0= No Blue Shift");
 idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"3.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusting this value will cause color burnout in a controllable fashion (range 0.0 - 256.0) \nHigher values reduces the contrast, lower values increases the contrast.");
-
-idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity ");
+idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables both bloom as well as halo passes");
+idCVar r_HDR_haloIntensity			( "r_HDR_HaloIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Halo intensity. Set to 0.0 disables halo pass. ");
 idCVar r_HDR_debugTextureIndex		( "r_HDR_debugTextureIndex",	"0",			CVAR_GAME | CVAR_INTEGER,	" Show intermediate textures used for HDR postprocess \n 1: scene Image(64x Scaled down) \n 2: Average Luminance Initial pass texture\n 3: Average luminance ");
+idCVar r_HDR_lumUpdateRate			( "r_HDR_lumUpdateRate",		"3",			CVAR_GAME | CVAR_INTEGER,	" Updates luminance data after every these many number of frames. "	);												
 
 //----------------------------------
 
