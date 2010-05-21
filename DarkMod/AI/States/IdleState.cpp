@@ -208,6 +208,14 @@ void IdleState::InitialiseMovement(idAI* owner)
 	// The movement subsystem should start patrolling
 	owner->movementSubsystem->ClearTasks();
 
+	// angua: store the position at map start
+	if (memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	{
+		// No idle position saved yet, take the current one
+		memory.idlePosition = owner->GetPhysics()->GetOrigin();
+		memory.idleYaw = owner->GetCurrentYaw();
+	}
+
 	owner->movementSubsystem->StartPatrol();
 
 	// Check if the owner has patrol routes set
@@ -218,13 +226,8 @@ void IdleState::InitialiseMovement(idAI* owner)
 	{
 		// We don't have any patrol routes, so we're supposed to stand around
 		// where the mapper has put us.
-		if (memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
-		{
-			// No idle position saved yet, take the current one
-			memory.idlePosition = owner->GetPhysics()->GetOrigin();
-			memory.idleYaw = owner->GetCurrentYaw();
-		}
-		else if (owner->GetMoveType() == MOVETYPE_ANIM)
+		
+		if (owner->GetMoveType() == MOVETYPE_ANIM)
 		{
 			// angua: don't do this when we are sitting or sleeping
 			// We already HAVE an idle position set, this means that we are

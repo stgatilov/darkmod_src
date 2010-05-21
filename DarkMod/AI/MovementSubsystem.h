@@ -63,9 +63,12 @@ public:
 	virtual bool PerformTask();
 
 	void StartPatrol();
+	void RestartPatrol();
+
 	void Patrol();
 
 	virtual void StartPathTask();
+
 	virtual void NextPath();
 
 	virtual void ClearTasks();
@@ -89,6 +92,9 @@ public:
 
 protected:
 	virtual void CheckBlocked(idAI* owner);
+
+	// Returns the next actual path_corner entity, or NULL if nothing found or stuck in loops/dead ends
+	idPathCorner* GetNextPathCorner(idPathCorner* curPath, idAI* owner);
 
 private:
 	void DebugDraw(idAI* owner);

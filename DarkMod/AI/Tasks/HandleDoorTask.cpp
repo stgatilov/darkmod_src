@@ -1511,8 +1511,17 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 void HandleDoorTask::DrawDebugOutput(idAI* owner)
 {
-	gameRenderWorld->DebugArrow(colorYellow, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
-	gameRenderWorld->DebugArrow(colorGreen, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
+	gameRenderWorld->DebugArrow(colorCyan, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
+	gameRenderWorld->DrawText("front", 
+		(_frontPos + idVec3(0, 0, 30)), 
+		0.2f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+
+	gameRenderWorld->DebugArrow(colorYellow, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
+	gameRenderWorld->DrawText("back", 
+		(_backPos + idVec3(0, 0, 30)), 
+		0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+
+
 	idStr str;
 	switch (_doorHandlingState)
 	{
@@ -1550,6 +1559,25 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+
+	Memory& memory = owner->GetMemory();
+	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
+	idActor* masterUser = frobDoor->GetUserManager().GetMasterUser();
+
+	if (owner == masterUser)
+	{
+		gameRenderWorld->DrawText("Master", 
+			(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
+			0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+	}
+	else
+	{
+		gameRenderWorld->DrawText("Slave", 
+			(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
+			0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+
+	}
+
 }
 
 void HandleDoorTask::Save(idSaveGame* savefile) const

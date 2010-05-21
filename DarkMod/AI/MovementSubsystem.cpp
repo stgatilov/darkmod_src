@@ -29,6 +29,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Tasks/PathShowTask.h"
 #include "Tasks/PathLookatTask.h"
 #include "Tasks/PathInteractTask.h"
+#include "Tasks/MoveToPositionTask.h"
+
 
 namespace ai
 {
@@ -36,6 +38,7 @@ namespace ai
 #define HISTORY_SIZE 32
 #define HISTORY_BOUNDS_THRESHOLD 10 // units
 #define BLOCK_TIME_OUT 800 // milliseconds
+#define MAX_PATH_CORNER_SEARCH_ITERATIONS 100
 
 MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	Subsystem(subsystemId, owner),
@@ -91,8 +94,32 @@ void MovementSubsystem::StartPatrol()
 				memory.nextPath = idPathCorner::RandomPath(path, NULL, owner);
 			}
 		}
+		else if (path != NULL)
+		{
+			// we already have a stored path, patrolling was already started and is resumed now
+			idPathCorner* candidate = GetNextPathCorner(path, owner);
 
-		if (path != NULL || animalPatrol)
+			if (candidate != NULL)
+			{
+				// advance to next path corner, don't resume other path tasks at the current (presumably wrong) position 
+				memory.currentPath = candidate;
+				memory.nextPath = idPathCorner::RandomPath(candidate, NULL, owner);
+			}
+			else
+			{
+				// We don't have a valid path_corner in our current path branch,
+				// or we ended in a "dead end" or in a loop, restart the system
+				RestartPatrol();
+			}
+		}
+		else // path == NULL && last path != NULL
+		{
+			// patrol routine had ended before
+			// restart patrolling
+			RestartPatrol();
+		}
+
+		if (memory.currentPath.GetEntity() != NULL || animalPatrol)
 		{
 			if (animalPatrol)
 			{
@@ -106,6 +133,58 @@ void MovementSubsystem::StartPatrol()
 		
 			_patrolling = true;
 		}
+	}
+}
+
+idPathCorner* MovementSubsystem::GetNextPathCorner(idPathCorner* curPath, idAI* owner)
+{
+	if (curPath == NULL) return NULL; // safety check
+
+	idPathCorner* currentTestPath = curPath;
+	
+	for (int i = 0; i < MAX_PATH_CORNER_SEARCH_ITERATIONS; i++)
+	{
+		if (idStr::Cmp(currentTestPath->spawnArgs.GetString("classname"), "path_corner") == 0)
+		{
+			// found a path_corner
+			return currentTestPath;
+		}
+
+		// get next path
+		currentTestPath = idPathCorner::RandomPath(currentTestPath, NULL, owner);
+
+		if (currentTestPath == NULL)
+		{
+			// dead end, return NULL
+			return NULL;
+		}
+		else if (currentTestPath == curPath)
+		{
+			// loop detected
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
+void MovementSubsystem::RestartPatrol()
+{
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+
+	idPathCorner* newPath = idPathCorner::RandomPath(owner, NULL, owner);
+	memory.currentPath = newPath;
+	memory.nextPath = idPathCorner::RandomPath(newPath, NULL, owner);
+
+	// if the first path is a path corner, just start with that
+	// otherwise, move to idle position before restarting patrol
+	if (idStr::Cmp(newPath->spawnArgs.GetString("classname"), "path_corner") != 0)
+	{
+		float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
+		owner->movementSubsystem->PushTask(
+			TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance))
+		);
 	}
 }
 
