@@ -120,13 +120,14 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 	// Have the PVS system identify locations containing the hide from position
 	hideFromPVSAreas[0] = gameLocal.pvs.GetPVSArea(hideFromPosition);
 	numHideFromPVSAreas = 1;
+}
 
-    // Setup our local copy of the pvs node graph
-	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS
-	(
-		hideFromPVSAreas, 
-		numHideFromPVSAreas 
-	);
+void CDarkmodAASHidingSpotFinder::EnsurePVS()
+{
+	if (h_hideFromPVS.i != -1) return; // already initialised
+
+	// Setup our local copy of the pvs node graph
+	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS(hideFromPVSAreas, numHideFromPVSAreas);
 }
 
 //----------------------------------------------------------------------------
@@ -142,14 +143,6 @@ bool CDarkmodAASHidingSpotFinder::initialize
 	idEntity* in_p_ignoreEntity
 )
 {
-	// Be certain we free our PVS node graph
-	if (h_hideFromPVS.h != 0 || h_hideFromPVS.i != -1)
-	{
-		gameLocal.pvs.FreeCurrentPVS(h_hideFromPVS);
-		h_hideFromPVS.h = 0;
-		h_hideFromPVS.i = -1;
-	}
-
 	// Remember the hide form position
 	hideFromPosition = hideFromPos;
 
@@ -179,8 +172,7 @@ bool CDarkmodAASHidingSpotFinder::initialize
 	hideFromPVSAreas[0] = gameLocal.pvs.GetPVSArea(hideFromPosition);
 	numHideFromPVSAreas = 1;
 
-    // Setup our local copy of the pvs node graph
-	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS(hideFromPVSAreas, numHideFromPVSAreas);
+	// greebo: PVS handle will be allocated on demand.
 	
 	return true;
 }
@@ -191,9 +183,10 @@ bool CDarkmodAASHidingSpotFinder::initialize
 CDarkmodAASHidingSpotFinder::~CDarkmodAASHidingSpotFinder(void)
 {
 	// Be certain we free our PVS node graph
-	if (h_hideFromPVS.h != 0 || h_hideFromPVS.i != -1)
+	if (h_hideFromPVS.i != -1)
 	{
 		gameLocal.pvs.FreeCurrentPVS(h_hideFromPVS);
+
 		h_hideFromPVS.h = 0;
 		h_hideFromPVS.i = -1;
 	}
@@ -214,8 +207,8 @@ void CDarkmodAASHidingSpotFinder::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt(numHideFromPVSAreas);
 	
-	savefile->WriteInt(h_hideFromPVS.i);
-	savefile->WriteUnsignedInt(h_hideFromPVS.h);
+	// greebo: The PVS handle is not saved, as it potentially changes next time we load a map
+	// It will be set to an invalid value on Restore()
 
 	// PVS areas we need to test as good hiding spots
 	savefile->WriteInt(numPVSAreas);
@@ -273,8 +266,10 @@ void CDarkmodAASHidingSpotFinder::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt(numHideFromPVSAreas);
 	
-	savefile->ReadInt(h_hideFromPVS.i);
-	savefile->ReadUnsignedInt(h_hideFromPVS.h);
+	// greebo: The PVS handle is not saved, as it potentially changes next time we load a map
+	// Just set the handle to an "empty" value on load, it will be re-requested when needed
+	h_hideFromPVS.i = -1;
+	h_hideFromPVS.h = 0;
 
 	// PVS areas we need to test as good hiding spots
 	savefile->ReadInt(numPVSAreas);
@@ -327,12 +322,6 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 )
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Find more hiding spots called, searchState = %d.\r", searchState);
-	// Make sure search wasn't destroyed
-	if (h_hideFromPVS.h == 0 && h_hideFromPVS.i == -1)
-	{
-		// Search was destroyed, there are no more hiding spots
-		return false;
-	}
 
 	// The number of areas we tested in this pass.
 	areasTestedThisPass = 0;
@@ -414,6 +403,9 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 		}
 
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Testing PVS area %d, which is %d out of %d in the set\r", PVSAreas[numPVSAreasIterated], numPVSAreasIterated+1, numPVSAreas);
+
+		// Make sure we have a valid PVS handle in our hands
+		EnsurePVS();
 
 		// Our current PVS given by h_hidePVS holds the list of areas visible from
 		// the "hide from" point.
@@ -1119,13 +1111,6 @@ void CDarkmodAASHidingSpotFinder::testFindHidingSpots
 
 bool CDarkmodAASHidingSpotFinder::isSearchCompleted()
 {
-	// Make sure search wasn't destroyed
-	if (h_hideFromPVS.h == 0 && h_hideFromPVS.i == -1)
-	{
-		// Search was destroyed, search is done
-		return true;
-	}
-
 	// Done if in searchDone state
 	return (searchState == EDone);
 }

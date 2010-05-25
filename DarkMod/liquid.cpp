@@ -75,6 +75,18 @@ void idLiquid::Restore( idRestoreGame *savefile ) {
 	savefile->ReadParticle(this->waves);
 }
 
+idLiquid::~idLiquid()
+{
+	// Traverse all spawned entities and remove ourselves as water if necessary
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (ent->GetPhysics()->GetWater() == &physicsObj)
+		{
+			ent->GetPhysics()->SetWater(NULL);
+		}
+	}
+}
+
 /*
 ================
 idLiquid::Spawn

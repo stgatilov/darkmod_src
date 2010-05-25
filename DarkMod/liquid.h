@@ -33,6 +33,8 @@ public:
 
 	idLiquid( void );
 
+	virtual ~idLiquid();
+
 	void				Spawn( void );
 
 	void				Save( idSaveGame *savefile ) const;

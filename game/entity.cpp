@@ -7446,7 +7446,7 @@ idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint
 		//gameLocal.Warning ( "  Looking at entity for AIUse spawnarg %s", tempkv->GetValue().c_str() );
 
 		// has the proper AIUse type, so compute distance	
-		gameLocal.Printf("Has %s\n", AIUseType);
+		//gameLocal.Printf("Has %s\n", AIUseType);
 
 		const idVec3& deb = ent->GetPhysics()->GetOrigin();
 		idVec3 diff = joint_origin - deb;
@@ -7460,7 +7460,7 @@ idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint
 		if (distance < closest_distance && distance < max_dist_sqr)
 		{
 			// use this one
-			gameLocal.Printf(" Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.\n", distance, closest_distance, max_dist_sqr);
+			//gameLocal.Printf(" Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.\n", distance, closest_distance, max_dist_sqr);
 			closest_distance = distance;
 			closest = ent;
 		}

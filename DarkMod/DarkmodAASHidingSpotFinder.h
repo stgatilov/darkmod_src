@@ -77,7 +77,8 @@ protected:
 	int numHideFromPVSAreas;
 
 	// The handle to the PVS system describing the PVS areas we are hiding from
-	pvsHandle_t h_hideFromPVS;
+	// greebo: Do not save this handle to savegames, the PVS index is changing in between saves.
+	mutable pvsHandle_t h_hideFromPVS;
 
 	// PVS areas we need to test as good hiding spots
 	int numPVSAreas;
@@ -287,6 +288,11 @@ protected:
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
+
+	// greebo: Makes sure we have a valid PVS handle to work with
+	// Call this right before a PVS operation to ensure that the PVS
+	// handle is initialised.
+	void EnsurePVS();
 
 public:
 

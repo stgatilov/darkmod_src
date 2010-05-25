@@ -5628,6 +5628,13 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	StartSound( deathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
 
+	// Go to ragdoll mode immediately, if we don't have a death anim
+	// If death anims are enabled, we need to wait with going to ragdoll until PostKilled()
+	if (!spawnArgs.GetBool("enable_death_anim", "0"))
+	{
+		StartRagdoll();
+	}
+
 	// swaps the head CM back if a different one was swapped in while conscious
 	SwapHeadAFCM( false );
 
@@ -5763,8 +5770,12 @@ idAI::PostDeath
 */
 void idAI::PostDeath()
 {
-	// Start going to ragdoll here, instead of in Killed() to enable death anims
-	StartRagdoll();
+	// For death anims, we need to wait with going to ragdoll until here
+	if (spawnArgs.GetBool("enable_death_anim", "0"))
+	{
+		// Start going to ragdoll here, instead of in Killed() to enable death anims
+		StartRagdoll();
+	}
 
 	headAnim.StopAnim(1);
 	legsAnim.StopAnim(1);
