@@ -271,7 +271,7 @@ void MovementSubsystem::StartPathTask()
 		else 
 		{
 			// No "angle" key set, just schedule the animation task
-			task = PathAnimTaskPtr(new PathAnimTask(path));
+			tasks.push_back(TaskPtr(new PathAnimTask(path)));
 		}
 	}
 	else if (classname == "path_cycleanim")
