@@ -125,86 +125,99 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && owner->GetMoveType() != MOVETYPE_SIT)
 			{
-				// AI is not walking or sitting, play animations affecting all channels
-				int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
-
-				// If we have more than one anim, don't play the same anim twice
-				while (animIdx == _lastIdleAnim && _idleAnimations.Num() > 1)
+				int animCount = _idleAnimations.Num();
+				if (animCount > 0)
 				{
-					animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+					// AI is not walking or sitting, play animations affecting all channels
+					int animIdx = gameLocal.random.RandomInt(animCount);
+
+					// If we have more than one anim, don't play the same anim twice
+					while (animIdx == _lastIdleAnim && animCount > 1)
+					{
+						animIdx = gameLocal.random.RandomInt(animCount);
+					}
+
+					_lastIdleAnim = animIdx;
+
+					const idStr& animName = _idleAnimations[animIdx];
+
+					// Check if the animation exists
+					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0 || 
+						owner->GetAnim(ANIMCHANNEL_LEGS, animName) == 0)
+					{
+						gameLocal.Warning("Could not find anim %s on entity %s", animName.c_str(), owner->name.c_str());
+						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s\r", animName.c_str(), owner->name.c_str());
+						return true; // done with errors
+					}
+
+					// Issue the playanim call
+					owner->SetNextIdleAnim(animName);
+
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
+					owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
 				}
-
-				_lastIdleAnim = animIdx;
-
-				const idStr& animName = _idleAnimations[animIdx];
-
-				// Check if the animation exists
-				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0 || 
-					owner->GetAnim(ANIMCHANNEL_LEGS, animName) == 0)
-				{
-					gameLocal.Warning("Could not find anim %s on entity %s", animName.c_str(), owner->name.c_str());
-					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s\r", animName.c_str(), owner->name.c_str());
-					return true; // done with errors
-				}
-
-				// Issue the playanim call
-				owner->SetNextIdleAnim(animName);
-
-				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
-				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
 			}
 			else if (owner->GetMoveType() == MOVETYPE_SIT)
 			{
 				// AI is sitting, only use sitting animations on torso channel
-				int animIdx = gameLocal.random.RandomInt(_idleAnimationsSitting.Num());
-
-				// If we have more than one anim, don't play the same anim twice
-				while (animIdx == _lastIdleAnim && _idleAnimationsSitting.Num() > 1)
+				int animCount = _idleAnimationsSitting.Num();
+				if (animCount > 0)
 				{
-					animIdx = gameLocal.random.RandomInt(_idleAnimationsSitting.Num());
+
+					int animIdx = gameLocal.random.RandomInt(animCount);
+
+					// If we have more than one anim, don't play the same anim twice
+					while (animIdx == _lastIdleAnim && animCount > 1)
+					{
+						animIdx = gameLocal.random.RandomInt(animCount);
+					}
+
+					_lastIdleAnim = animIdx;
+
+					const idStr& animName = _idleAnimationsSitting[animIdx];
+
+					// Check if the animation exists
+					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
+					{
+						gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
+						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
+						return true; // done with errors
+					}
+
+					owner->SetNextIdleAnim(animName);
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 				}
-
-				_lastIdleAnim = animIdx;
-
-				const idStr& animName = _idleAnimationsSitting[animIdx];
-
-				// Check if the animation exists
-				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
-				{
-					gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
-					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
-					return true; // done with errors
-				}
-
-				owner->SetNextIdleAnim(animName);
-				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 
 			}
 			else
 			{
 				// AI is walking, only use animations for the Torso channel
-				int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
-
-				// If we have more than one anim, don't play the same anim twice
-				while (animIdx == _lastIdleAnim && _idleAnimationsTorso.Num() > 1)
+				int animCount = _idleAnimationsTorso.Num();
+				if (animCount > 0)
 				{
-					animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
+					int animIdx = gameLocal.random.RandomInt(animCount);
+
+					// If we have more than one anim, don't play the same anim twice
+					while (animIdx == _lastIdleAnim && animCount > 1)
+					{
+						animIdx = gameLocal.random.RandomInt(animCount);
+					}
+
+					_lastIdleAnim = animIdx;
+
+					const idStr& animName = _idleAnimationsTorso[animIdx];
+
+					// Check if the animation exists
+					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
+					{
+						gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
+						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
+						return true; // done with errors
+					}
+
+					owner->SetNextIdleAnim(animName);
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 				}
-
-				_lastIdleAnim = animIdx;
-
-				const idStr& animName = _idleAnimationsTorso[animIdx];
-
-				// Check if the animation exists
-				if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
-				{
-					gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
-					DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
-					return true; // done with errors
-				}
-
-				owner->SetNextIdleAnim(animName);
-				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
 			}
 		}
 		
