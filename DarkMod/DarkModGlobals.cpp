@@ -371,7 +371,6 @@ void CGlobal::LoadINISettings(void *p)
 	PROFILE_SECTION *ps;
 	PROFILE_MAP *pm;
 	FILE *logfile;
-	bool Frame = false;
 
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Loading INI settings\r");
 
@@ -461,200 +460,26 @@ void CGlobal::LoadINISettings(void *p)
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %c\r", pm->Value[0]);
 		}
 
-		if(FindMap(ps, "LogClass_FRAME", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_FRAME] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FRAME: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_SYSTEM", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_SYSTEM] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SYSTEM: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_MISC] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MISC: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_FROBBING] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FROBBING: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_AI", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_AI] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_AI: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_SOUND", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_SOUND] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SOUND: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_FUNCTION", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_FUNCTION] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FUNCTION: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_ENTITY", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_ENTITY] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_ENTITY: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_INVENTORY] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_INVENTORY: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_LIGHT] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LIGHT: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_WEAPON", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_WEAPON] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_WEAPON: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_MATH] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MATH: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_MOVEMENT] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MOVEMENT: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_STIM_RESPONSE", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_STIM_RESPONSE] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_STIM_RESPONSE: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_OBJECTIVES", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_OBJECTIVES] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_OBJECTIVES: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_DIFFICULTY", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_DIFFICULTY] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_DIFFICULTY: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_CONVERSATION", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_CONVERSATION] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_CONVERSATION: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_MAINMENU", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_MAINMENU] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MAINMENU: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-			{
-				m_ClassArray[LC_LOCKPICK] = true;
-				Frame = true;
-			}
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LOCKPICK: %c\r", pm->Value[0]);
-		}
-
+		CheckLogClass(ps, "LogClass_FRAME", LC_FRAME);
+		CheckLogClass(ps, "LogClass_SYSTEM", LC_SYSTEM);
+		CheckLogClass(ps, "LogClass_MISC", LC_MISC);
+		CheckLogClass(ps, "LogClass_FROBBING", LC_FROBBING);
+		CheckLogClass(ps, "LogClass_AI", LC_AI);
+		CheckLogClass(ps, "LogClass_SOUND", LC_SOUND);
+		CheckLogClass(ps, "LogClass_FUNCTION", LC_FUNCTION);
+		CheckLogClass(ps, "LogClass_ENTITY", LC_ENTITY);
+		CheckLogClass(ps, "LogClass_INVENTORY", LC_INVENTORY);
+		CheckLogClass(ps, "LogClass_LIGHT", LC_LIGHT);
+		CheckLogClass(ps, "LogClass_WEAPON", LC_WEAPON);
+		CheckLogClass(ps, "LogClass_MATH", LC_MATH);
+		CheckLogClass(ps, "LogClass_MOVEMENT", LC_MOVEMENT);
+		CheckLogClass(ps, "LogClass_STIM_RESPONSE", LC_STIM_RESPONSE);
+		CheckLogClass(ps, "LogClass_OBJECTIVES", LC_OBJECTIVES);
+		CheckLogClass(ps, "LogClass_DIFFICULTY", LC_DIFFICULTY);
+		CheckLogClass(ps, "LogClass_CONVERSATION", LC_CONVERSATION);
+		CheckLogClass(ps, "LogClass_MAINMENU", LC_MAINMENU);
+		CheckLogClass(ps, "LogClass_LOCKPICK", LC_LOCKPICK);
 	}
-//	m_ClassArray[LC_FRAME] = Frame;
-
 
 	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))
 	{
@@ -755,6 +580,20 @@ void CGlobal::LoadINISettings(void *p)
 	}
 }
 
+void CGlobal::CheckLogClass(PROFILE_SECTION* ps, const char* key, LC_LogClass logClass)
+{
+	PROFILE_MAP* pm = NULL;
+
+	if (FindMap(ps, key, TRUE, &pm) != static_cast<ULONG>(-1))
+	{
+		if (pm->Value[0] == '1')
+		{
+			m_ClassArray[logClass] = true;
+		}
+
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("%s: %c\r", key, pm->Value[0]);
+	}
+}
 
 CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 {

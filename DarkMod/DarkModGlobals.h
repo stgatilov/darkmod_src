@@ -35,6 +35,7 @@
 Darkmod LAS
 */
 #include "../DarkMod/darkModLAS.h"
+#include "Profile.h"
 
 class CRenderPipe;
 
@@ -229,6 +230,8 @@ public:
 
 private:
 	void LoadINISettings(void *);
+
+	void CheckLogClass(PROFILE_SECTION* ps, const char* key, LC_LogClass logClass);
 
 	// Sets up the surface hardness mapping
 	void InitSurfaceHardness();
