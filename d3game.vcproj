@@ -41,7 +41,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=""
+				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;include/zlib"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS, _CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB"
@@ -145,6 +145,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"

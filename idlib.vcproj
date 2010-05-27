@@ -41,6 +41,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="mssdk/include;include;win32/include"
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,_DEBUG,_WINDOWS,GAME_DLL,_CRT_SECURE_NO_DEPRECATE"
@@ -116,7 +117,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/O2 /Ob2 /Oi /Ot /Oy"
+				AdditionalOptions="/O2 /Ob2 /Oi /Ot /Oy /MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
