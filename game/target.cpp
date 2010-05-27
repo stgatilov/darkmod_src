@@ -620,42 +620,6 @@ void idTarget_Give::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveEmail )
-EVENT( EV_Activate,				idTarget_GiveEmail::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Spawn
-================
-*/
-void idTarget_GiveEmail::Spawn( void ) {
-}
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveEmail::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	const idDeclPDA *pda = player->GetPDA();
-	if ( pda ) {
-		//player->GiveEmail( spawnArgs.GetString( "email" ) );
-	} else {
-		player->ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_PDANeeded" ), true );
-	}
-}
-
-
-/*
-===============================================================================
-
 idTarget_SetModel
 
 ===============================================================================

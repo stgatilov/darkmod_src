@@ -112,21 +112,6 @@ private:
 	int						type;
 };
 
-class idVideoCDItem : public idItem {
-public:
-	CLASS_PROTOTYPE( idVideoCDItem );
-
-	void					Spawn();
-	virtual bool			GiveToPlayer( idPlayer *player );
-};
-
-class idPDAItem : public idItem {
-public:
-	CLASS_PROTOTYPE( idPDAItem );
-
-	virtual bool			GiveToPlayer( idPlayer *player );
-};
-
 class idMoveableItem : public idItem {
 public:
 	CLASS_PROTOTYPE( idMoveableItem );
@@ -161,32 +146,6 @@ private:
 
 	void					Event_DropToFloor( void );
 	void					Event_Gib( const char *damageDefName );
-};
-
-class idMoveablePDAItem : public idMoveableItem {
-public:
-	CLASS_PROTOTYPE( idMoveablePDAItem );
-
-	virtual bool			GiveToPlayer( idPlayer *player );
-};
-
-/*
-===============================================================================
-
-  Item removers.
-
-===============================================================================
-*/
-
-class idItemRemover : public idEntity {
-public:
-	CLASS_PROTOTYPE( idItemRemover );
-
-	void					Spawn();
-	void					RemoveItem( idPlayer *player );
-
-private:
-	void					Event_Trigger( idEntity *activator );
 };
 
 #endif /* !__GAME_ITEM_H__ */

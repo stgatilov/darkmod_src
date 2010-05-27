@@ -28,10 +28,6 @@ typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 ===============================================================================
 */
 
-/* FORWARD DECLS */
-class idDeclPDA;
-class idDeclVideo;
-
 extern const idEventDef EV_Player_GetButtons;
 extern const idEventDef EV_Player_GetMove;
 extern const idEventDef EV_Player_GetViewAngles;
@@ -406,7 +402,6 @@ public:
 	idList<idStr>			inventoryPickedUpMessages;
 
 	int						weapon_soulcube;
-	int						weapon_pda;
 	int						weapon_fists;
 
 	bool					m_HeartBeatAllow; /// disable hearbeat except when dying or drowning - Need this to track state
@@ -618,8 +613,6 @@ public:
 	void					GiveItem( const char *name );
 	void					GiveHealthPool( float amt );
 	
-	void					GivePDA( const char *pdaName, idDict *item );
-
 	bool					GivePowerUp( int powerup, int time );
 	float					PowerUpModifier( int type );
 
@@ -725,7 +718,6 @@ public:
 	EMouseDir				GetMouseGesture( void );
 
 	void					Spectate( bool spectate );
-	void					TogglePDA( void );
 	void					ToggleScoreboard( void );
 
 	void					RouteGuiMouse( idUserInterface *gui );
@@ -738,7 +730,6 @@ public:
 	void					UpdateInventoryHUD();
 	void					UpdateInventoryPickedUpMessages();
 
-	const idDeclPDA *		GetPDA( void ) const;
 	void					SetInfluenceFov( float fov );
 	void					SetInfluenceView( const char *mtr, const char *skinname, float radius, idEntity *ent );
 	void					SetInfluenceLevel( int level );
@@ -750,9 +741,6 @@ public:
 	void					UpdateHudStats( idUserInterface *hud );
 	void					UpdateHudAmmo();
 
-	void					Event_StopAudioLog( void );
-	void					StartAudioLog( void );
-	void					StopAudioLog( void );
 	void					ShowTip( const char *title, const char *tip, bool autoHide );
 	void					HideTip( void );
 	bool					IsTipVisible( void ) { return tipUp; };
@@ -1148,10 +1136,6 @@ private:
 	int						oldMouseX;
 	int						oldMouseY;
 
-	idStr					pdaAudio;
-	idStr					pdaVideo;
-	idStr					pdaVideoWave;
-
 	bool					tipUp;
 
 	int						lastDamageDef;
@@ -1235,8 +1219,6 @@ private:
 
 	void					UpdateLocation( void );
 	idUserInterface *		ActiveGui( void );
-	void					UpdatePDAInfo( bool updatePDASel );
-	int						AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui );
 	void					ExtractEmailInfo( const idStr &email, const char *scan, idStr &out );
 
 	void					UseVehicle( void );
@@ -1253,9 +1235,6 @@ private:
 	void					Event_GetPreviousWeapon( void );
 	void					Event_SelectWeapon( const char *weaponName );
 	void					Event_GetWeaponEntity( void );
-	void					Event_OpenPDA( void );
-	void					Event_PDAAvailable( void );
-	void					Event_InPDA( void );
 	void					Event_ExitTeleporter( void );
 	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );

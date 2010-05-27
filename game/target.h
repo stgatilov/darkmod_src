@@ -263,24 +263,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-class idTarget_GiveEmail : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveEmail );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_SetModel
 
 ===============================================================================

@@ -426,7 +426,7 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclFolder( "fx",				".fx",				DECL_FX );
 	declManager->RegisterDeclFolder( "particles",		".prt",				DECL_PARTICLE );
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
-	declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
+	//declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
 	// TDM specific DECLs
 	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
 	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
