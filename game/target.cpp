@@ -1342,31 +1342,6 @@ void idTarget_SetFov::Think( void ) {
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_SetPrimaryObjective )
-	EVENT( EV_Activate,	idTarget_SetPrimaryObjective::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_SetPrimaryObjective::Event_Activate
-================
-*/
-void idTarget_SetPrimaryObjective::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player && player->objectiveSystem ) {
-		player->objectiveSystem->SetStateString( "missionobjective", spawnArgs.GetString( "text", common->GetLanguageDict()->GetString( "#str_04253" ) ) );
-	}
-}
-
 /*
 ===============================================================================
 

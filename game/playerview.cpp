@@ -460,12 +460,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 	// TODO: Support overriding the location area so that reverb settings can be applied for listening thru doors?
 	gameSoundWorld->PlaceListener( player->GetListenerLoc(), view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
 
-	// if the objective system is up, don't do normal drawing
-	if ( player->objectiveSystemOpen ) {
-		player->objectiveSystem->Redraw( gameLocal.time );
-		return;
-	}
-
 	// hack the shake in at the very last moment, so it can't cause any consistency problems
 	renderView_t	hackedView = *view;
 	hackedView.viewaxis = hackedView.viewaxis * ShakeAxis();
@@ -825,8 +819,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 		// HDR related - J.C.Denton
 		/* Update HDR post-process */
-		if ( !player->objectiveSystemOpen )
-			this->m_postProcessManager.Update();
+		this->m_postProcessManager.Update();
 
 		ScreenFade();
 	}

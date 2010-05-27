@@ -384,22 +384,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-class idTarget_SetPrimaryObjective : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_SetPrimaryObjective );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_LockDoor
 
 ===============================================================================

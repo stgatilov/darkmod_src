@@ -964,7 +964,7 @@ void idObjective::Event_HideObjective(idEntity *e) {
 	if ( player ) {
 		idVec3 v = player->GetPhysics()->GetOrigin() - playerPos;
 		if ( v.Length() > 64.0f ) {
-			player->HideObjective();
+			//player->HideObjective();
 			PostEventMS( &EV_Remove, 0 );
 		} else {
 			PostEventMS( &EV_HideObjective, 100, player );

@@ -291,9 +291,6 @@ idPlayer::idPlayer() :
 	hud						= NULL;
 	inventoryHUDNeedsUpdate = true;
 
-	objectiveSystem			= NULL;
-	objectiveSystemOpen		= false;
-
 	heartRate				= BASE_HEARTRATE;
 	heartInfo.Init( 0, 0, 0, 0 );
 	lastHeartAdjust			= 0;
@@ -442,7 +439,6 @@ idPlayer::idPlayer() :
 	tourneyLine				= 0;
 	hiddenWeapon			= false;
 	tipUp					= false;
-	objectiveUp				= false;
 	teleportEntity			= NULL;
 	teleportKiller			= -1;
 	respawning				= false;
@@ -779,7 +775,6 @@ void idPlayer::Init( void ) {
 
 	hiddenWeapon		= false;
 	tipUp				= false;
-	objectiveUp			= false;
 	teleportEntity		= NULL;
 	teleportKiller		= -1;
 	leader				= false;
@@ -877,9 +872,6 @@ void idPlayer::Spawn( void )
 		if ( cursor ) {
 			cursor->Activate( true, gameLocal.time );
 		}
-
-		objectiveSystem = uiManager->FindGui( "guis/pda.gui", true, false, true );
-		objectiveSystemOpen = false;
 	}
 
 	// Remove entity GUIs from our overlay system.
@@ -974,7 +966,6 @@ void idPlayer::Spawn( void )
 	}
 
 	tipUp = false;
-	objectiveUp = false;
 
 	// See if any levelTriggers are pending. Trigger them now, if this is the case
 	if ( levelTriggers.Num() )
@@ -1449,8 +1440,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteUserInterface( hud, false );
 	savefile->WriteBool(inventoryHUDNeedsUpdate);
-	savefile->WriteUserInterface( objectiveSystem, false );
-	savefile->WriteBool( objectiveSystemOpen );
 
 	savefile->WriteInt(hudMessages.Num());
 	for (int i = 0; i < hudMessages.Num(); i++) 
@@ -1637,7 +1626,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( pdaVideoWave );
 
 	savefile->WriteBool( tipUp );
-	savefile->WriteBool( objectiveUp );
 
 	savefile->WriteInt( lastDamageDef );
 	savefile->WriteVec3( lastDamageDir );
@@ -1768,8 +1756,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadUserInterface( hud );
 	savefile->ReadBool(inventoryHUDNeedsUpdate);
-	savefile->ReadUserInterface( objectiveSystem );
-	savefile->ReadBool( objectiveSystemOpen );
 
 	savefile->ReadInt(num);
 	hudMessages.Clear();
@@ -1977,7 +1963,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString( pdaVideoWave );
 
 	savefile->ReadBool( tipUp );
-	savefile->ReadBool( objectiveUp );
 
 	savefile->ReadInt( lastDamageDef );
 	savefile->ReadVec3( lastDamageDir );
@@ -2907,11 +2892,6 @@ void idPlayer::FireWeapon( void )
 		if ( tipUp ) {
 			HideTip();
 		}
-		// may want to track with with a bool as well
-		// keep from looking up named events so often
-		if ( objectiveUp ) {
-			HideObjective();
-		}
 	}
 }
 
@@ -3577,10 +3557,8 @@ void idPlayer::StealWeapon( idPlayer *player )
 idPlayer::ActiveGui
 ===============
 */
-idUserInterface *idPlayer::ActiveGui( void ) {
-	if ( objectiveSystemOpen )
-		return objectiveSystem;
-
+idUserInterface *idPlayer::ActiveGui( void )
+{
 	if ( m_overlays.findInteractive() )
 		return m_overlays.findInteractive();
 
@@ -3782,15 +3760,13 @@ void idPlayer::WeaponRisingCallback( void ) {
 idPlayer::Weapon_GUI
 ===============
 */
-void idPlayer::Weapon_GUI( void ) {
-
-	if ( !objectiveSystemOpen ) {
-		if ( idealWeapon != currentWeapon ) {
-			Weapon_Combat();
-		}
-		StopFiring();
-		weapon.GetEntity()->LowerWeapon();
+void idPlayer::Weapon_GUI( void )
+{
+	if ( idealWeapon != currentWeapon ) {
+		Weapon_Combat();
 	}
+	StopFiring();
+	weapon.GetEntity()->LowerWeapon();
 
 	// disable click prediction for the GUIs. handy to check the state sync does the right thing
 	if ( gameLocal.isClient && !net_clientPredictGUI.GetBool() ) {
@@ -4147,20 +4123,20 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 	}
 
 	if ( token.Icmp( "stoppdavideo" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaVideoWave.Length() > 0 ) {
+		/*if ( objectiveSystem && objectiveSystemOpen && pdaVideoWave.Length() > 0 ) {
 			StopSound( SND_CHANNEL_PDA, false );
-		}
+		}*/
 		return true;
 	}
 
 	if ( token.Icmp( "close" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen ) {
+		/*if ( objectiveSystem && objectiveSystemOpen ) {
 			TogglePDA();
-		}
+		}*/
 	}
 
 	if ( token.Icmp( "playpdavideo" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaVideo.Length() > 0 ) {
+		/*if ( objectiveSystem && objectiveSystemOpen && pdaVideo.Length() > 0 ) {
 			const idMaterial *mat = declManager->FindMaterial( pdaVideo );
 			if ( mat ) {
 				int c = mat->GetNumStages();
@@ -4175,27 +4151,27 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 					StartSoundShader( shader, SND_CHANNEL_PDA, 0, false, NULL );
 				}
 			}
-		}
+		}*/
 	}
 
 	if ( token.Icmp( "playpdaaudio" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
+		/*if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
 			const idSoundShader *shader = declManager->FindSound( pdaAudio );
 			int ms;
 			StartSoundShader( shader, SND_CHANNEL_PDA, 0, false, &ms );
 			StartAudioLog();
 			CancelEvents( &EV_Player_StopAudioLog );
 			PostEventMS( &EV_Player_StopAudioLog, ms + 150 );
-		}
+		}*/
 		return true;
 	}
 
 	if ( token.Icmp( "stoppdaaudio" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
+		/*if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
 			// idSoundShader *shader = declManager->FindSound( pdaAudio );
 			StopAudioLog();
 			StopSound( SND_CHANNEL_PDA, false );
-		}
+		}*/
 		return true;
 	}
 
@@ -4750,7 +4726,9 @@ void idPlayer::UpdateViewAngles( void )
 	idAngles delta;
 	idAngles TestAngles = viewAngles;
 
-	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || GetImmobilization() & EIM_VIEW_ANGLE ) ) 
+	if ( !noclip && 
+		( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || 
+		  influenceActive == INFLUENCE_LEVEL2 || GetImmobilization() & EIM_VIEW_ANGLE ) ) 
 	{
 		// no view changes at all, but we still want to update the deltas or else when
 		// we get out of this mode, our view will snap to a kind of random angle
@@ -5958,11 +5936,6 @@ bool idPlayer::HandleESC( void ) {
 		return SkipCinematic();
 	}
 
-	if ( objectiveSystemOpen ) {
-		TogglePDA();
-		return true;
-	}
-
 	if ( m_overlays.findInteractive() ) {
 		// Handle the escape?
 		// Not yet implemented.
@@ -7106,10 +7079,8 @@ void idPlayer::Think( void )
 		oldFlags = usercmd.flags;
 	}
 
-	if ( objectiveSystemOpen || gameLocal.inCinematic || influenceActive ) {
-		if ( objectiveSystemOpen && AI_PAIN ) {
-			TogglePDA();
-		}
+	if ( gameLocal.inCinematic || influenceActive )
+	{
 		usercmd.forwardmove = 0;
 		usercmd.rightmove = 0;
 		usercmd.upmove = 0;
@@ -8790,7 +8761,7 @@ idPlayer::Event_InPDA
 ==================
 */
 void idPlayer::Event_InPDA( void ) {
-	idThread::ReturnInt( objectiveSystemOpen );
+	idThread::ReturnInt( 0 );
 }
 
 /*
@@ -8877,12 +8848,6 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
-
-	if ( objectiveSystemOpen ) {
-		usercmd.forwardmove = 0;
-		usercmd.rightmove = 0;
-		usercmd.upmove = 0;
-	}
 
 	// clear the ik before we do anything else so the skeleton doesn't get updated twice
 	walkIK.ClearJointMods();
@@ -9412,26 +9377,6 @@ idPlayer::Event_HideTip
 */
 void idPlayer::Event_HideTip( void ) {
 	HideTip();
-}
-
-/*
-===============
-idPlayer::ShowObjective
-===============
-*/
-void idPlayer::ShowObjective( const char *obj ) {
-	hud->HandleNamedEvent( obj );
-	objectiveUp = true;
-}
-
-/*
-===============
-idPlayer::HideObjective
-===============
-*/
-void idPlayer::HideObjective( void ) {
-	hud->HandleNamedEvent( "closeObjective" );
-	objectiveUp = false;
 }
 
 /*
