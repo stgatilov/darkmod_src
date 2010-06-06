@@ -28,6 +28,9 @@
  */
 class CStimResponseCollection {
 public:
+
+	~CStimResponseCollection();
+
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);
 
@@ -40,37 +43,57 @@ public:
 	 * extensively, because it may become invalid.
 	 */
 // TODO: Add additional parameters to AddStim: Magnitude, Interleave duration, duration
-	CStim			*AddStim(idEntity *Owner, int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
-	CResponse		*AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
-
-	/**
-	 * AddStim/Response with already configured objects. If the type already exists, the new object is not added 
-	 * and the pointer to the existing object is returned, otherwise the added pointer is returned.
-	 */
-	CStim			*AddStim(CStim *);
-	CResponse		*AddResponse(CResponse *);
+	CStimPtr		AddStim(idEntity *Owner, int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
+	CResponsePtr	AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
 
 	/**
 	 * RemoveStim will remove the stim of the given type and the object is destroyed.
 	 * Any pointer that still exists will become invalid after that.
-	 * The number of remaining stims are returned.
+	 * The number of remaining stims is returned.
 	 */
-	int				RemoveStim(int Type);
-	int				RemoveResponse(int Type);
-	int				RemoveStim(CStim *);
-	int				RemoveResponse(CResponse *);
+	int				RemoveStim(StimType type);
+	int				RemoveResponse(StimType type);
 
 	/**
-	* Returns true if the stim response collection has any stims or responses
-	**/
-	bool			HasStim( void );
-	bool			HasResponse( void );
+	 * Returns true if the stim response collection has any stims or responses
+	 **/
+	bool			HasStim();
+	bool			HasResponse();
 
 	/**
 	 * greebo: Tries to find the Stim/Response with the given ID.
 	 * @returns: the pointer to the class, or NULL if the uniqueId couldn't be found.
 	 */
-	CStimResponse*	FindStimResponse(int uniqueId);
+	CStimResponsePtr	FindStimResponse(int uniqueId);
+
+	// Returns the number of stims
+	int				GetNumStims() { return m_Stims.Num(); }
+
+	// Returns stim by index [0..GetNumStims())
+	const CStimPtr&	GetStim(int index) { return m_Stims[index]; }
+
+	// Returns the number of responses
+	int				GetNumResponses() { return m_Responses.Num(); }
+
+	// Returns stim by index [0..GetNumResponses())
+	const CResponsePtr&	GetResponse(int index) { return m_Responses[index]; }	
+
+	/** 
+	 * greebo: Returns the stim with the given type, or NULL if nothing found.
+	 */
+	CStimPtr		GetStimByType(StimType type);
+
+	/**
+	 * greebo: Returns the response with the given type, or NULL if nothing found.
+	 */
+	CResponsePtr	GetResponseByType(StimType type);
+
+	// Parses the given entity key values and constructs stims/responses using that information
+	void			InitFromSpawnargs(const idDict& args, idEntity* owner);
+
+private:
+
+	bool			ParseSpawnArg(const idDict& args, idEntity* owner, const char sr_class, int index);
 
 	/**
 	 * If the stim contains information for a timed event, this function parses the string
@@ -94,18 +117,14 @@ public:
 	 * Value: { 0 | 1 } - Set true if timer should wait for StartTimer to start
 	 * Otherwise starts on spawn.
 	 */
-	void			CreateTimer(const idDict *args, CStim *Owner, int Counter);
-	void			CreateTimer(CStim *Owner);
+	void			CreateTimer(const idDict& args, const CStimPtr& stim, int index);
 
- 	idList<CStim *>	&GetStimList(void) { return m_Stim; };
-	idList<CResponse *>	&GetResponseList(void) { return m_Response; };
-
-	CStimResponse	*GetStimResponse(int StimType, bool Stim);
-	CStim			*GetStim(int StimType);
-	CResponse		*GetResponse(int StimType);
-
-	void			ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner);
-	bool			ParseSpawnArg(const idDict *args, idEntity *Owner, const char Class, int Counter);
+	/**
+	 * AddStim/Response with already configured objects. If the type already exists, the new object is not added 
+	 * and the pointer to the existing object is returned, otherwise the added pointer is returned.
+	 */
+	CStimPtr		AddStim(const CStimPtr& stim);
+	CResponsePtr	AddResponse(const CResponsePtr& response);
 
 	/*
 	* This static method is used to allocate, on the heap, a stim of a given type.
@@ -117,7 +136,7 @@ public:
 	*
 	* @param type The enumerated stim type value
 	*/
-	static			CStim *createStim(idEntity* p_Owner, StimType type);
+	static CStimPtr CreateStim(idEntity* p_Owner, StimType type);
 
 	/*
 	* This static method is used to allocate, on the heap, a response of a given type.
@@ -129,11 +148,11 @@ public:
 	*
 	* @param type The enumerated stim type value for the response
 	*/
-	static			CResponse *createResponse (idEntity* p_owner, StimType type);
+	static CResponsePtr CreateResponse(idEntity* p_owner, StimType type);
 
-protected:
-	idList<CStim *>		m_Stim;
-	idList<CResponse *>	m_Response;
+private:
+	idList<CStimPtr>		m_Stims;
+	idList<CResponsePtr>	m_Responses;
 };
 
 #endif /* SR_STIMRESPONSECOLLECTION__H */

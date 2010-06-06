@@ -60,10 +60,10 @@ void CBloodMarker::Init(const idStr& splat, const idStr& splatFading, float size
 	_isFading = false;
 
 	AddResponse(ST_WATER);
-	ResponseEnable(ST_WATER, 1);
+	EnableResponse(ST_WATER);
 }
 
-void CBloodMarker::OnStim(CStim* stim, idEntity* stimSource)
+void CBloodMarker::OnStim(const CStimPtr& stim, idEntity* stimSource)
 {
 	// Call the base class in any case
 	idEntity::OnStim(stim, stimSource);

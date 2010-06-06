@@ -2291,6 +2291,10 @@
 						RelativePath=".\DarkMod\StimResponse\StimResponseTimer.h"
 						>
 					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimType.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="Inventory"

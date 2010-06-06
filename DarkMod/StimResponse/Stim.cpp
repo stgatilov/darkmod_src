@@ -18,8 +18,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 /********************************************************************/
 /*                     CStim                                        */
 /********************************************************************/
-CStim::CStim(idEntity *e, int Type, int uniqueId)
-: CStimResponse(e, Type, uniqueId)
+CStim::CStim(idEntity *e, StimType type, int uniqueId) : 
+	CStimResponse(e, type, uniqueId)
 {
 	m_bUseEntBounds = false;
 	m_bCollisionBased = false;
@@ -40,9 +40,9 @@ CStim::CStim(idEntity *e, int Type, int uniqueId)
 	m_Velocity = idVec3(0,0,0);
 }
 
-CStim::~CStim(void)
+CStim::~CStim()
 {
-	gameLocal.m_StimTimer.Remove(this);
+	RemoveTimerFromGame();
 }
 
 void CStim::Save(idSaveGame *savefile) const
@@ -135,22 +135,24 @@ void CStim::RemoveResponseIgnore(idEntity *e)
 	}
 }
 
-bool CStim::CheckResponseIgnore(idEntity *e)
+bool CStim::CheckResponseIgnore(idEntity* e)
 {
-	bool rc = false;
-	int i, n;
+	int n = m_ResponseIgnore.Num();
 
-	n = m_ResponseIgnore.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < n; i++)
 	{
-		if(m_ResponseIgnore[i].GetEntity() == e)
+		if (m_ResponseIgnore[i].GetEntity() == e)
 		{
-			rc = true;
-			break;
+			return true;
 		}
 	}
 
-	return rc;
+	return false;
+}
+
+void CStim::ClearResponseIgnoreList()
+{
+	m_ResponseIgnore.Clear();
 }
 
 float CStim::GetRadius()
@@ -171,7 +173,7 @@ float CStim::GetRadius()
 	}
 }
 
-CStimResponseTimer* CStim::AddTimerToGame(void)
+CStimResponseTimer* CStim::AddTimerToGame()
 {
 	gameLocal.m_StimTimer.AddUnique(this);
 	m_Timer.SetTicks(sys->ClockTicksPerSecond()/1000);
@@ -179,7 +181,7 @@ CStimResponseTimer* CStim::AddTimerToGame(void)
 	return(&m_Timer);
 }
 
-void CStim::RemoveTimerFromGame(void)
+void CStim::RemoveTimerFromGame()
 {
 	gameLocal.m_StimTimer.Remove(this);
 }

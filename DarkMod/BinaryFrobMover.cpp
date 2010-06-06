@@ -835,8 +835,8 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 void CBinaryFrobMover::OnMoveStart(bool open)
 {
 	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
+	ClearStimIgnoreList(ST_VISUAL);
+	EnableStim(ST_VISUAL);
 }
 
 bool CBinaryFrobMover::PreOpen() 

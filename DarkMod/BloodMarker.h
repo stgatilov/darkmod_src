@@ -37,7 +37,7 @@ public:
 	 * greebo: Overrides the OnStim method of the base class to check
 	 * for water stims.
 	 */
-	void					OnStim(CStim* stim, idEntity* stimSource);
+	void					OnStim(const CStimPtr& stim, idEntity* stimSource);
 
 	// Save and restore
 	void					Save( idSaveGame *savefile ) const;

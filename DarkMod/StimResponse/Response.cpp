@@ -19,8 +19,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 /********************************************************************/
 /*                   CResponse                                      */
 /********************************************************************/
-CResponse::CResponse(idEntity *e, int Type, int uniqueId)
-: CStimResponse(e, Type, uniqueId)
+CResponse::CResponse(idEntity* owner, StimType type, int uniqueId) : 
+	CStimResponse(owner, type, uniqueId)
 {
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
@@ -28,11 +28,10 @@ CResponse::CResponse(idEntity *e, int Type, int uniqueId)
 	m_NumRandomEffects = 0;
 }
 
-CResponse::~CResponse(void)
+CResponse::~CResponse()
 {
 	// Remove all the allocated response effects from the heap
-	for (int i = 0; i < m_ResponseEffects.Num(); i++)
-		delete m_ResponseEffects[i];
+	m_ResponseEffects.DeleteContents(true);
 }
 
 void CResponse::Save(idSaveGame *savefile) const
@@ -70,33 +69,31 @@ void CResponse::Restore(idRestoreGame *savefile)
 	}
 }
 
-void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
+void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
 	// Perform the probability check
-	if (!checkChance()) {
-		return;
-	}
+	if (!CheckChance()) return;
 
 	idEntity* owner = m_Owner.GetEntity();
 
 	// Notify the owner entity
 	owner->OnStim(stim, sourceEntity);
 
-	const function_t *pScriptFkt = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
-	if(pScriptFkt == NULL)
+	const function_t* func = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	if (func == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
-		pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
+		func = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
 	}
 
-	if(pScriptFkt)
+	if (func != NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
-		idThread *pThread = new idThread(pScriptFkt);
+		idThread *pThread = new idThread(func);
 		int n = pThread->GetThreadNum();
-		pThread->CallFunctionArgs(pScriptFkt, true, "eef", owner, sourceEntity, n);
+		pThread->CallFunctionArgs(func, true, "eef", owner, sourceEntity, n);
 		pThread->DelayedStart(0);
 	}
 	else
@@ -107,7 +104,8 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 	// Default magnitude (in case we have a NULL stim)
 	float magnitude = 10;
 
-	if (stim != NULL) {
+	if (stim != NULL)
+	{
 		// We have a "real" stim causing this response, retrieve the properties
 
 		// Calculate the magnitude of the stim based on the distance and the falloff model
@@ -144,9 +142,9 @@ void CResponse::SetResponseAction(idStr const &action)
 	m_ScriptFunction = action;
 }
 
-CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef, 
+CResponseEffect* CResponse::AddResponseEffect(const idStr& effectEntityDef, 
 											  const idStr& effectPostfix, 
-											  const idDict *args)
+											  const idDict& args)
 {
 	CResponseEffect* returnValue = NULL;
 	
@@ -161,7 +159,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 		sprintf(key, "sr_effect_%s_arg1", effectPostfix.c_str());
 		
 		// Get the script argument from the entity's spawnargs
-		idStr scriptStr = args->GetString(key);
+		idStr scriptStr = args.GetString(key);
 
 		if (scriptStr != "")
 		{

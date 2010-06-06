@@ -61,9 +61,6 @@ tdmFuncShooter::Spawn
 */
 void tdmFuncShooter::Spawn()
 {
-	// Setup any stims/responses
-	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
-
 	_active = !spawnArgs.GetBool("start_off");
 	_lastFireTime = 0;
 	_fireInterval = spawnArgs.GetInt("fire_interval", "-1");
@@ -73,7 +70,7 @@ void tdmFuncShooter::Spawn()
 	idStr reqStimStr = spawnArgs.GetString("required_stim");
 
 	if (!reqStimStr.IsEmpty()) {
-		_requiredStim = CStimResponse::getStimType(reqStimStr);
+		_requiredStim = CStimResponse::GetStimType(reqStimStr);
 		_requiredStimTimeOut = spawnArgs.GetInt("required_stim_timeout", "5000");
 	}
 
@@ -267,6 +264,12 @@ void tdmFuncShooter::Fire()
 
 		idEntity* ent = NULL;
 		gameLocal.SpawnEntityDef(*projectileDict, &ent);
+
+		if (ent == NULL) 
+		{
+			gameLocal.Warning("Could not spawn projectile type: %s", projectileDef.c_str());
+			return;
+		}
 
 		if (ent->IsType(idProjectile::Type))
 		{

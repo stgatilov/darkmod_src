@@ -1056,6 +1056,9 @@ CInventoryWeaponItemPtr idPlayer::GetWeaponItem(const idStr& weaponName)
 
 void idPlayer::AddWeaponsToInventory()
 {
+	// A local storage, to sort weapons by index
+	std::map<int, CInventoryWeaponItemPtr> weapons;
+
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_weapon"); kv != NULL; kv = spawnArgs.MatchPrefix("def_weapon", kv))
 	{
 		if (kv->GetValue().IsEmpty()) continue; // skip empty spawnargs
@@ -1085,11 +1088,20 @@ void idPlayer::AddWeaponsToInventory()
 			
 		item->SetWeaponIndex(weaponNum);
 
-		// Add it to the weapon category
-		m_WeaponCursor->GetCurrentCategory()->PutItem(item);
+		// Store into the map, to have it sorted by name
+		weapons[weaponNum] = item;
 	}
 
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->GetNumItems());
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Number of weapons found: %d\r", static_cast<int>(weapons.size()));
+
+	// Finally, add all found weapons to our inventory category, sorted by their index
+	for (std::map<int, CInventoryWeaponItemPtr>::const_iterator i = weapons.begin(); i != weapons.end(); ++i)
+	{
+		// Add it to the weapon category
+		m_WeaponCursor->GetCurrentCategory()->PutItemBack(i->second);
+	}
+
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons added: %d\r", m_WeaponCursor->GetCurrentCategory()->GetNumItems());
 }
 
 void idPlayer::NextInventoryMap()
@@ -3220,6 +3232,33 @@ void idPlayer::NextBestWeapon( void ) {
 	NextWeapon();
 }
 
+int idPlayer::GetHightestWeaponIndex()
+{
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+	assert(weaponCategory != NULL);
+
+	int numWeapons = weaponCategory->GetNumItems();
+
+	int highestIndex = -1;
+
+	for (int i = 0; i < numWeapons; ++i)
+	{
+		CInventoryWeaponItemPtr item = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		assert(item != NULL);
+
+		int candidate = item->GetWeaponIndex();
+
+		if (candidate > highestIndex)
+		{
+			highestIndex = candidate;
+		}
+	}
+
+	return highestIndex;
+}
+
 /*
 ===============
 idPlayer::NextWeapon
@@ -3254,21 +3293,17 @@ void idPlayer::NextWeapon() {
 	}
 
 	int curWeaponIndex = curItem->GetWeaponIndex();
-
-	CInventoryWeaponItemPtr lastWeapon =
-		boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(weaponCategory->GetNumItems() - 1));
-
-	if (lastWeapon == NULL) return;
-
-	int highestIndex = lastWeapon->GetWeaponIndex();
+	int highestIndex = GetHightestWeaponIndex();
 
 	int nextWeaponIndex = curWeaponIndex;
 
-	do {
+	do
+	{
 		// Try to select the next weapon item
 		nextWeaponIndex++;
 
-		if (nextWeaponIndex > highestIndex) {
+		if (nextWeaponIndex > highestIndex)
+		{
 			nextWeaponIndex = 0;
 		}
 	} while (!SelectWeapon(nextWeaponIndex, false) && nextWeaponIndex != curWeaponIndex);
@@ -3308,21 +3343,17 @@ void idPlayer::PrevWeapon( void ) {
 	}
 
 	int curWeaponIndex = curItem->GetWeaponIndex();
-
-	CInventoryWeaponItemPtr lastWeapon =
-		boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(weaponCategory->GetNumItems() - 1));
-
-	if (lastWeapon == NULL) return;
-
-	int highestIndex = lastWeapon->GetWeaponIndex();
+	int highestIndex = GetHightestWeaponIndex();
 	
 	int prevWeaponIndex = curWeaponIndex;
 
-	do {
+	do
+	{
 		// Try to select the previous weapon item
 		prevWeaponIndex--;
 
-		if (prevWeaponIndex < 0) {
+		if (prevWeaponIndex < 0)
+		{
 			prevWeaponIndex = highestIndex;
 		}
 	} while (!SelectWeapon(prevWeaponIndex, false) && prevWeaponIndex != curWeaponIndex);
@@ -10691,7 +10722,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	if (impulseState == EPressed)
 	{
 		// Fire the STIM_FROB response on key down (if defined) on this entity
-		target->ResponseTrigger(this, ST_FROB);
+		target->TriggerResponse(this, ST_FROB);
 	}
 
 	// Do we allow use on frob?

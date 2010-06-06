@@ -504,7 +504,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	if (stimSource->IsType(idWeapon::Type))
 	{
@@ -777,7 +777,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 	if (ignoreStimulusFromNowOn)
 	{
 		// We've seen this object, don't respond to it again
-		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
 	}
 }
 
@@ -1109,7 +1109,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 		memory.deadPeopleHaveBeenFound = true;
 
 		// We've seen this object, don't respond to it again
-		person->ResponseIgnore(ST_VISUAL, owner);
+		person->IgnoreResponse(ST_VISUAL, owner);
 
 		// Three more piece of evidence of something out of place: A dead body is a REALLY bad thing
 		memory.countEvidenceOfIntruders += 3;
@@ -1189,7 +1189,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		memory.unconsciousPeopleHaveBeenFound = true;
 
 		// We've seen this object, don't respond to it again
-		person->ResponseIgnore(ST_VISUAL, owner);
+		person->IgnoreResponse(ST_VISUAL, owner);
 
 		// Determine what to say
 		idStr soundName;
@@ -1399,7 +1399,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Ignore from now on
-	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// angua: ignore blood after dead bodies have been found
 	if (memory.deadPeopleHaveBeenFound)
@@ -1461,7 +1461,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		// We've seen this light and it is on.
 		// Don't respond to it again until it changes state and clears
 		// its ignore list
-		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
 		return;
 	}
 
@@ -1531,7 +1531,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	{
 		// Can't light torches
 		turnLightOn = false;
-		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
 			memory.lastTimeVisualStimBark = gameLocal.time;
@@ -1545,7 +1545,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	{
 		// Can't operate switchlights
 		turnLightOn = false;
-		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
 	}
 	else if (owner->HasSeenEvidence() || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
 	{
@@ -1567,7 +1567,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 	
 	// Can we notice missing items
 	if (owner->spawnArgs.GetFloat("chanceNoticeMissingItem") <= 0.0)
@@ -1645,7 +1645,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	gameLocal.Printf("Something is broken over there!\n");
 
@@ -1710,7 +1710,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	// We've seen this object, don't respond to it again
 	// Will get cleared if door changes state again
-	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// Is it supposed to be closed?
 	if (!stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))

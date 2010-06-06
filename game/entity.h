@@ -14,12 +14,15 @@
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
+#include "../DarkMod/StimResponse/StimType.h"
 #include "../DarkMod/overlaySys.h"
 #include "../DarkMod/UserManager.h"
 
 class CStimResponseCollection;
 class CStim;
+typedef boost::shared_ptr<CStim> CStimPtr;
 class CResponse;
+typedef boost::shared_ptr<CResponse> CResponsePtr;
 class CAbsenceMarker;
 
 class CInventory;
@@ -1060,6 +1063,46 @@ public:
 		return m_userManager;
 	}
 
+	// Stim/Response methods
+	CStimPtr				AddStim(StimType type, float radius = 0.0f, bool removable = true, bool isDefault = false);
+	CResponsePtr			AddResponse(StimType type, bool removable = true, bool isDefault = false);
+
+	/**
+	 * RemoveStim/Response removes the given stim. If the entity has no 
+	 * stims/responses left, it is also removed from the global list in gameLocal.
+	 */
+	void					RemoveStim(StimType type);
+	void					RemoveResponse(StimType type);
+
+	void					IgnoreResponse(StimType type, idEntity* fromEntity);
+	void					AllowResponse(StimType type, idEntity* fromEntity);
+
+	void					EnableResponse(StimType type) { SetResponseEnabled(type, true); }
+	void					DisableResponse(StimType type) { SetResponseEnabled(type, false); }
+
+	// Enables / disables the given response
+	void					SetResponseEnabled(StimType type, bool enabled);
+
+	void					EnableStim(StimType type) { SetStimEnabled(type, true); }
+	void					DisableStim(StimType type) { SetStimEnabled(type, false); }
+
+	void					SetStimEnabled(StimType type, bool enabled);
+
+	void					ClearStimIgnoreList(StimType type);
+
+	/**
+	 * This triggers a stand-alone response (without an actual Stim) on this entity.
+	 *
+	 * @source: The entity that caused the response.
+	 * @stimType: the according stim index (e.g. ST_FROB)
+	 */
+	void					TriggerResponse(idEntity* source, StimType type);
+
+	// greebo: Callback invoked by the response on incoming stims to trigger custom code
+	// To be overridden by subclasses, default implementation is empty
+	virtual void			OnStim(const CStimPtr& stim, idEntity* stimSource) 
+	{ }
+
 	/**
 	 * greebo: Script events to get/set the team of this entity.
 	 */
@@ -1164,17 +1207,6 @@ protected:
 	* Return the ind_th bind team member
 	**/
 	void					Event_GetBindChild( int ind );
-
-	CStim					*AddStim(int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
-	CResponse				*AddResponse(int Type, bool Removable = true, bool Default = false);
-
-	/**
-	 * RemoveStim/Response removes the given stim. If the entity has no 
-	 * stims/responses left, it is also removed from the global list in gameLocal.
-	 * 
-	 */
-	void					RemoveStim(int Type);
-	void					RemoveResponse(int Type);
 
 protected:
 	renderEntity_t			renderEntity;				//!< used to present a model to the renderer
@@ -1496,36 +1528,22 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetCurInvItemId();
 	void					Event_GetCurInvIcon();
 
-	void					StimAdd(int Type, float Radius);
-	void					StimRemove(int Type);
-	void					StimEnable(int Type, int State);
-	void					StimClearIgnoreList (int Type);
-	void					ResponseAdd(int Type);
-	void					ResponseRemove(int Type);
-	void					ResponseEnable(int Type, int State);
-
 	// tels: remove all bound entities that have "unbindonalertlevel" higher or equal than alertlevel
 	void					RemoveBindsOnAlert( const int alertIndex );
 	void					DetachOnAlert( const int alertIndex );
 
-	/**
-	* This triggers a stand-alone response (without an actual Stim) on this entity.
-	*
-	* @source: The entity that caused the response.
-	* @stimType: the according stim index (e.g. ST_FROB)
-	*/
-	void					ResponseTrigger(idEntity* source, int stimType);
-
-	// Add/Remove the response to/from the stim with the given type
-	void					ResponseIgnore(int StimType, idEntity *);
-	void					ResponseAllow(int StimType, idEntity *);
-	void					ResponseSetAction(int StimType, const char *Action);
-
-	// greebo: Callback invoked by the response on incoming stims to trigger custom code
-	// To be overridden by subclasses, default implementation is empty
-	virtual void			OnStim(CStim* stim, idEntity* stimSource);
-
-	// Script event pendant to GetResponseEntity();
+	// Stim/Response Script Event Interface
+	void					Event_StimAdd(int stimType, float radius);
+	void					Event_StimRemove(int stimType);
+	void					Event_StimEnable(int stimType, int state);
+	void					Event_StimClearIgnoreList(int stimType);
+	void					Event_ResponseAdd(int stimType);
+	void					Event_ResponseRemove(int stimType);
+	void					Event_ResponseEnable(int stimType, int State);
+	void					Event_ResponseTrigger(idEntity* source, int stimType);
+	void					Event_ResponseIgnore(int stimType, idEntity*);
+	void					Event_ResponseAllow(int stimType, idEntity*);
+	void					Event_ResponseSetAction(int stimType, const char* action);
 	void					Event_GetResponseEntity();
 
 	void					Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond);

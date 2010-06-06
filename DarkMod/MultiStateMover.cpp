@@ -232,7 +232,7 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 void CMultiStateMover::Activate(idEntity* activator)
 {
 	// Fire the TRIGGER response
-	ResponseTrigger(activator, ST_TRIGGER);
+	TriggerResponse(activator, ST_TRIGGER);
 
 	if (activator == NULL) return;
 

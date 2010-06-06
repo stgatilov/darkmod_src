@@ -501,7 +501,7 @@ void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryNam
 	}
 
 	// Pack the item into the category
-	category->PutItem(item);
+	category->PutItemFront(item);
 
 	// Objective callback for non-loot items:
 	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1

@@ -52,11 +52,11 @@ const char *cStimType[] = {
 /********************************************************************/
 /*                    CStimResponse                                 */
 /********************************************************************/
-CStimResponse::CStimResponse(idEntity *Owner, int Type, int uniqueId)
+CStimResponse::CStimResponse(idEntity* owner, StimType type, int uniqueId)
 {
 	m_UniqueId = uniqueId;
-	m_StimTypeId = Type;
-	m_Owner = Owner;
+	m_StimTypeId = type;
+	m_Owner = owner;
 	m_State = SS_DISABLED;
 	m_Removable = true;
 	m_Default = false;
@@ -67,11 +67,7 @@ CStimResponse::CStimResponse(idEntity *Owner, int Type, int uniqueId)
 	m_NextChanceTime = -1;
 }
 
-CStimResponse::~CStimResponse(void)
-{
-}
-
-int	CStimResponse::getUniqueId() const
+int	CStimResponse::GetUniqueId() const
 {
 	return m_UniqueId;
 }
@@ -79,7 +75,7 @@ int	CStimResponse::getUniqueId() const
 void CStimResponse::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(m_UniqueId);
-	savefile->WriteInt(m_StimTypeId);
+	savefile->WriteInt(static_cast<int>(m_StimTypeId));
 	savefile->WriteString(m_StimTypeName.c_str());
 	savefile->WriteBool(m_Removable);
 	savefile->WriteInt(static_cast<int>(m_State));
@@ -95,11 +91,14 @@ void CStimResponse::Save(idSaveGame *savefile) const
 void CStimResponse::Restore(idRestoreGame *savefile)
 {
 	savefile->ReadInt(m_UniqueId);
-	savefile->ReadInt(m_StimTypeId);
+
+	int tempInt;
+	savefile->ReadInt(tempInt);
+	m_StimTypeId = static_cast<StimType>(tempInt);
+
 	savefile->ReadString(m_StimTypeName);
 	savefile->ReadBool(m_Removable);
 
-	int tempInt;
 	savefile->ReadInt(tempInt);
 	m_State = static_cast<StimState>(tempInt);
 
@@ -112,37 +111,40 @@ void CStimResponse::Restore(idRestoreGame *savefile)
 	m_Owner.Restore(savefile);
 }
 
-StimType CStimResponse::getStimType(const idStr& stimName) {
-	int i = 0;
-	
-	while (cStimType[i] != NULL)	{
-		if (stimName == cStimType[i]) {
+StimType CStimResponse::GetStimType(const idStr& stimName)
+{
+	for (int i = 0; cStimType[i] != NULL; ++i)
+	{
+		if (stimName == cStimType[i])
+		{
 			return static_cast<StimType>(i);
 		}
-		i++;
 	}
 
 	// Not found
 	return ST_DEFAULT;
 }
 
-void CStimResponse::EnableSR(bool bEnable)
+void CStimResponse::SetEnabled(bool enabled)
 {
-	if(bEnable == true)
+	if (enabled)
 	{
 		m_State = SS_ENABLED;
 		m_EnabledTimeStamp = gameLocal.time;
 	}
 	else
+	{
 		m_State = SS_DISABLED;
+	}
 }
 
-bool CStimResponse::checkChance()
+bool CStimResponse::CheckChance()
 {
 	if (m_Chance < 1.0f)
 	{
 		// Chance timer still active?
-		if (m_NextChanceTime > gameLocal.GetTime()) {
+		if (m_NextChanceTime > gameLocal.GetTime())
+		{
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CStimResponse::checkChance: Timeout still active.\r");
 
 			// Next chance time is still in the future, return false
@@ -151,22 +153,27 @@ bool CStimResponse::checkChance()
 
 		// The stim only fires if the (hopefully uniformly distributed)
 		// random variable is within the interval (0, m_Chance]
-		if (gameLocal.random.RandomFloat() <= m_Chance) {
+		if (gameLocal.random.RandomFloat() <= m_Chance)
+		{
 			// Reset the next chance time
 			m_NextChanceTime = -1;
 			return true;
 		}
-		else {
+		else
+		{
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CStimResponse::checkChance: Chance test failed.\r");
 			// Test failed, should we use a timeout?
-			if (m_ChanceTimer > 0) {
+			if (m_ChanceTimer > 0)
+			{
 				// Save the earliest time of the next response chance
 				m_NextChanceTime = gameLocal.GetTime() + m_ChanceTimer;
 			}
+
 			return false;
 		}
 	}
-	else {
+	else
+	{
 		// 100% chance => return true
 		return true;
 	}

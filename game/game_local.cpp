@@ -879,7 +879,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt(m_StimTimer.Num());
 	for (int i = 0; i < m_StimTimer.Num(); i++)
 	{
-		savegame.WriteInt(m_StimTimer[i]->getUniqueId());
+		savegame.WriteInt(m_StimTimer[i]->GetUniqueId());
 	}
 
 	savegame.WriteInt(m_StimEntity.Num());
@@ -1995,7 +1995,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_StimTimer.SetNum(tempStimTimerIdList.Num());
 	for (int i = 0; i < tempStimTimerIdList.Num(); i++)
 	{
-		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]));
+		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]).get());
 	}
 
 	Printf( "--------------------------------------\n" );
@@ -6126,7 +6126,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	}
 }
 
-int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
+int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
 {
 	int numResponses = 0;
 
@@ -6158,7 +6158,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 			static_cast<tdmFuncShooter*>(srEntities[i])->stimulate(static_cast<StimType>(stim->m_StimTypeId));
 		}
 
-		CResponse* response = srEntities[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId);
+		CResponsePtr response = srEntities[i]->GetStimResponseCollection()->GetResponseByType(stim->m_StimTypeId);
 
 		if (response != NULL)
 		{
@@ -6167,7 +6167,7 @@ int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* origin
 				// Check duration, disable if past duration
 				if (response->m_Duration && (gameLocal.time - response->m_EnabledTimeStamp) > response->m_Duration )
 				{
-					response->EnableSR(false);
+					response->Disable();
 					continue;
 				}
 
@@ -6211,14 +6211,13 @@ void idGameLocal::ProcessTimer(unsigned long ticks)
 	}
 }
 
-CStimResponse* idGameLocal::FindStimResponse(int uniqueId)
+CStimResponsePtr idGameLocal::FindStimResponse(int uniqueId)
 {
-	for (int i = 0; i < MAX_GENTITIES; i++)
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
 	{
-		if (entities[i] != NULL && entities[i]->GetStimResponseCollection() != NULL)
+		if (ent->GetStimResponseCollection() != NULL)
 		{
-			CStimResponse* candidate = 
-				entities[i]->GetStimResponseCollection()->FindStimResponse(uniqueId);
+			CStimResponsePtr candidate = ent->GetStimResponseCollection()->FindStimResponse(uniqueId);
 
 			if (candidate != NULL)
 			{
@@ -6230,8 +6229,9 @@ CStimResponse* idGameLocal::FindStimResponse(int uniqueId)
 	}
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Warning: StimResponse with Id %d NOT found.\r", uniqueId);
+
 	// Search did not produce any results
-	return NULL;
+	return CStimResponsePtr();
 }
 
 void idGameLocal::ProcessStimResponse(unsigned long ticks)
@@ -6250,6 +6250,8 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 	{
 		CStim* stim = m_StimTimer[i];
 
+		if (stim == NULL) continue;
+
 		// Only advance the timer if the stim can be fired in the first place
 		if (stim->m_MaxFireCount > 0 || stim->m_MaxFireCount == -1)
 		{
@@ -6262,7 +6264,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				{
 					//gameLocal.Printf("Timer elapsed!\n");
 					// Enable the stim when the timer has expired
-					stim->EnableSR(true);
+					stim->Enable();
 				}
 			}
 		}
@@ -6284,12 +6286,12 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 
 		idVec3 origin(entity->GetPhysics()->GetOrigin());
 
-		idList<CStim*>& stimList = srColl->GetStimList();
+		int numStims = srColl->GetNumStims();
 
 		// Traverse through all the stims on this entity
-		for (int stimIdx = 0; stimIdx < stimList.Num(); stimIdx++)
+		for (int stimIdx = 0; stimIdx < numStims; ++stimIdx)
 		{
-			CStim* stim = stimList[stimIdx];
+			const CStimPtr& stim = srColl->GetStim(stimIdx);
 
 			if (stim->m_MaxFireCount == 0)
 				// Maximum number of firings reached, do not process this stim
@@ -6308,7 +6310,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			// If stim has a finite duration, check if it expired. If so, disable the stim.
 			if (stim->m_Duration != 0 && (gameLocal.time - stim->m_EnabledTimeStamp) > stim->m_Duration )
 			{
-				stim->EnableSR(false);
+				stim->Disable();
 				continue;
 			}
 
@@ -6331,7 +6333,8 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			// greebo: Check if the stim passes the "chance" test
 			// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
 			// from being re-evaluated in the very next frame in case it failed the test.
-			if (!stim->checkChance()) {
+			if (!stim->CheckChance())
+			{
 				continue;
 			}
 

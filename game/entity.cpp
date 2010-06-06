@@ -381,17 +381,17 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
 	EVENT( EV_InitInventory,		idEntity::Event_InitInventory )
 
-	EVENT( EV_StimAdd,				idEntity::StimAdd)
-	EVENT( EV_StimRemove,			idEntity::StimRemove)
-	EVENT( EV_StimEnable,			idEntity::StimEnable)
-	EVENT( EV_StimClearIgnoreList,	idEntity::StimClearIgnoreList)
-	EVENT( EV_ResponseEnable,		idEntity::ResponseEnable)
-	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
-	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
-	EVENT( EV_ResponseIgnore,		idEntity::ResponseIgnore)
-	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
-	EVENT( EV_ResponseSetAction,	idEntity::ResponseSetAction)
-	EVENT( EV_ResponseTrigger,		idEntity::ResponseTrigger)
+	EVENT( EV_StimAdd,				idEntity::Event_StimAdd)
+	EVENT( EV_StimRemove,			idEntity::Event_StimRemove)
+	EVENT( EV_StimEnable,			idEntity::Event_StimEnable)
+	EVENT( EV_StimClearIgnoreList,	idEntity::Event_StimClearIgnoreList)
+	EVENT( EV_ResponseEnable,		idEntity::Event_ResponseEnable)
+	EVENT( EV_ResponseAdd,			idEntity::Event_ResponseAdd)
+	EVENT( EV_ResponseRemove,		idEntity::Event_ResponseRemove)
+	EVENT( EV_ResponseIgnore,		idEntity::Event_ResponseIgnore)
+	EVENT( EV_ResponseAllow,		idEntity::Event_ResponseAllow)
+	EVENT( EV_ResponseSetAction,	idEntity::Event_ResponseSetAction)
+	EVENT( EV_ResponseTrigger,		idEntity::Event_ResponseTrigger)
 	EVENT( EV_GetResponseEntity,	idEntity::Event_GetResponseEntity)
 
 	EVENT( EV_TimerCreate,			idEntity::Event_TimerCreate )
@@ -904,7 +904,7 @@ void idEntity::Spawn( void )
 		ConstructScriptObject();
 	}
 
-	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
+	m_StimResponseColl->InitFromSpawnargs(spawnArgs, this);
 
 	// greebo: Post the inventory check event. If this entity should be added
 	// to someone's inventory, the event takes care of that. This must happen
@@ -2631,7 +2631,7 @@ renderView_t *idEntity::GetRenderView( void ) {
 void idEntity::Activate(idEntity* activator)
 {
 	// Fire the TRIGGER response
-	ResponseTrigger(activator, ST_TRIGGER);
+	TriggerResponse(activator, ST_TRIGGER);
 
 	if (RespondsTo(EV_Activate) || HasSignal(SIG_TRIGGER))
 	{
@@ -8143,141 +8143,171 @@ void idEntity::SetFrobable( bool bVal )
 	}
 }
 
-void idEntity::StimAdd(int Type, float Radius)
+void idEntity::Event_StimAdd(int stimType, float radius)
 {
-	AddStim(Type, Radius);
+	AddStim(static_cast<StimType>(stimType), radius);
 }
 
-void idEntity::StimRemove(int Type)
+void idEntity::Event_StimRemove(int stimType)
 {
-	RemoveStim(Type);
+	RemoveStim(static_cast<StimType>(stimType));
 }
 
-void idEntity::StimEnable(int Type, int State)
+void idEntity::Event_StimEnable(int stimType, int enabled)
 {
-	CStim *stim;
-
-	if((stim = m_StimResponseColl->GetStim(Type)) != NULL)
-		stim->EnableSR(State);
+	SetStimEnabled(static_cast<StimType>(stimType), enabled != 0);
 }
 
-void idEntity::StimClearIgnoreList (int Type)
+void idEntity::Event_StimClearIgnoreList(int stimType)
 {
-	CStim *stim = m_StimResponseColl->GetStim(Type);
-
-	if(stim)
-	{
-		stim->m_ResponseIgnore.Clear();
-	}
-
+	ClearStimIgnoreList(static_cast<StimType>(stimType));
 }
 
-void idEntity::ResponseEnable(int Type, int State)
+void idEntity::Event_ResponseEnable(int stimType, int enabled)
 {
-	CResponse *resp;
-
-	if((resp = m_StimResponseColl->GetResponse(Type)) != NULL)
-		resp->EnableSR(State);
+	SetResponseEnabled(static_cast<StimType>(stimType), enabled != 0);
 }
 
-void idEntity::ResponseAdd(int Type)
+void idEntity::Event_ResponseAdd(int stimType)
 {
-	AddResponse(Type);
+	AddResponse(static_cast<StimType>(stimType));
 }
 
-void idEntity::ResponseTrigger(idEntity* source, int stimType)
+void idEntity::Event_ResponseTrigger(idEntity* source, int stimType)
 {
-	// Try to lookup the response for this item
-	CResponse* resp = GetStimResponseCollection()->GetResponse(stimType);
+	TriggerResponse(source, static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseRemove(int stimType)
+{
+	RemoveResponse(static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseIgnore(int stimType, idEntity *e)
+{
+	IgnoreResponse(static_cast<StimType>(stimType), e);
+}
+
+void idEntity::Event_ResponseAllow(int stimType, idEntity *e)
+{
+	AllowResponse(static_cast<StimType>(stimType), e);
+}
+
+void idEntity::Event_ResponseSetAction(int stimType, const char* action)
+{
+	CResponsePtr resp = m_StimResponseColl->GetResponseByType(static_cast<StimType>(stimType));
 
 	if (resp != NULL)
 	{
-		// There is a response defined
-		if (resp->m_State == SS_ENABLED)
-		{
-			// Check duration, disable if past duration
-			if (resp->m_Duration && (gameLocal.time - resp->m_EnabledTimeStamp) > resp->m_Duration )
-			{
-				resp->EnableSR(false);
-			}
-			else 
-			{
-				// Fire the response and pass the originating entity plus a NULL as stim object
-				// NULL means that this is no "real" stim just a temporary or virtual one
-				resp->TriggerResponse(source, NULL);
-			}
-		}
+		resp->SetResponseAction(action);
 	}
 }
 
-void idEntity::ResponseRemove(int Type)
+void idEntity::AllowResponse(StimType type, idEntity* fromEntity)
 {
-	RemoveResponse(Type);
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->RemoveResponseIgnore(fromEntity);
+	}
 }
 
-void idEntity::RemoveStim(int Type)
+void idEntity::IgnoreResponse(StimType type, idEntity* fromEntity)
 {
-	if(m_StimResponseColl->RemoveStim(Type) == 0)
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->AddResponseIgnore(fromEntity);
+	}
+}
+
+void idEntity::SetStimEnabled(StimType type, bool enabled)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->SetEnabled(enabled);
+	}
+}
+
+void idEntity::SetResponseEnabled(StimType type, bool enabled)
+{
+	CResponsePtr response = m_StimResponseColl->GetResponseByType(type);
+
+	if (response != NULL)
+	{
+		response->SetEnabled(enabled);
+	}
+}
+
+void idEntity::ClearStimIgnoreList(StimType type)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->ClearResponseIgnoreList();
+	}
+}
+
+void idEntity::RemoveStim(StimType type)
+{
+	if (m_StimResponseColl->RemoveStim(type) == 0)
+	{
 		gameLocal.RemoveStim(this);
+	}
 }
 
-void idEntity::RemoveResponse(int Type)
+void idEntity::RemoveResponse(StimType type)
 {
-	if(m_StimResponseColl->RemoveResponse(Type) == 0)
+	if (m_StimResponseColl->RemoveResponse(type) == 0)
+	{
 		gameLocal.RemoveResponse(this);
+	}
 }
 
-
-CStim *idEntity::AddStim(int Type, float Radius, bool Removable, bool Default)
+CStimPtr idEntity::AddStim(StimType type, float radius, bool removable, bool isDefault)
 {
-	CStim *pStim;
+	CStimPtr stim = m_StimResponseColl->AddStim(this, type, radius, removable, isDefault);
 
-	pStim = m_StimResponseColl->AddStim(this, Type, Radius, Removable, Default);
 	gameLocal.AddStim(this);
 
-	return pStim;
-
+	return stim;
 }
 
-CResponse *idEntity::AddResponse(int Type, bool Removable, bool Default)
+CResponsePtr idEntity::AddResponse(StimType type, bool removable, bool isDefault)
 {
-	CResponse *pResp;
+	CResponsePtr response = m_StimResponseColl->AddResponse(this, type, removable, isDefault);
 
-	pResp = m_StimResponseColl->AddResponse(this, Type, Removable, Default);
 	gameLocal.AddResponse(this);
 
-	return pResp;
-
+	return response;
 }
 
-void idEntity::ResponseIgnore(int StimType, idEntity *e)
+void idEntity::TriggerResponse(idEntity* source, StimType type)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	// Try to lookup the response for this item
+	CResponsePtr resp = GetStimResponseCollection()->GetResponseByType(type);
 
-	if(stim)
-		stim->AddResponseIgnore(e);
+	if (resp == NULL || resp->m_State != SS_ENABLED) return;
+
+	// There is an enablede response defined
+	// Check duration, disable if past duration
+	if (resp->m_Duration && (gameLocal.time - resp->m_EnabledTimeStamp) > resp->m_Duration)
+	{
+		resp->Disable();
+	}
+	else 
+	{
+		// Fire the response and pass the originating entity and no stim object
+		// no stim means that this is no "real" stim just a temporary or virtual one
+		resp->TriggerResponse(source);
+	}
 }
 
-void idEntity::ResponseAllow(int StimType, idEntity *e)
-{
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-
-	if(stim)
-		stim->RemoveResponseIgnore(e);
-}
-
-void idEntity::ResponseSetAction(int StimType, const char *s)
-{
-	CResponse *resp = m_StimResponseColl->GetResponse(StimType);
-
-	if(resp)
-		resp->SetResponseAction(s);
-}
-
-void idEntity::OnStim(CStim* stim, idEntity* stimSource)
-{
-	// Nothing
-}
 
 /**	Called when m_renderTrigger is rendered.
  *	It will resume the m_renderWaitingThread.
@@ -9187,78 +9217,83 @@ void idEntity::UnbindNotify( idEntity *ent )
 	physics->Activate();
 }
 
-void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Millisecond)
+void idEntity::Event_TimerCreate(int stimType, int Hour, int Minute, int Seconds, int Millisecond)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer;
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Create Timer: Stimtype %d, Hour: %d, Minute: %d, Seconds: %d, Milliseconds: %d\r",
+		stimType, Hour, Minute, Seconds, Millisecond);
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Create Timer: Stimtype-%d Hour: %d  Minute: %d   Seconds: %d   Milliseconds: %d\r",
-		StimType, Hour, Minute, Seconds, Millisecond);
-	timer = stim->AddTimerToGame();
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+
+	CStimResponseTimer* timer = stim->AddTimerToGame();
 	timer->SetTimer(Hour, Minute, Seconds, Millisecond);
 }
 
-void idEntity::Event_TimerStop(int StimType)
+void idEntity::Event_TimerStop(int stimType)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StopTimer: Stimtype-%d \r", StimType);
-	if(timer)
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StopTimer: Stimtype %d\r", stimType);
+	if (timer != NULL)
 	{
 		timer->Stop();
 	}
 }
 
-void idEntity::Event_TimerStart(int StimType)
+void idEntity::Event_TimerStart(int stimType)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StartTimer: Stimtype-%d \r", StimType);
-	if(timer)
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StartTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
 	{
 		timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
 	}
 }
 
-void idEntity::Event_TimerRestart(int StimType)
+void idEntity::Event_TimerRestart(int stimType)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("RestartTimer: Stimtype-%d \r", StimType);
-	if(timer)
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("RestartTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
 	{
 		timer->Restart(static_cast<unsigned long>(sys->GetClockTicks()));
 	}
 }
 
-void idEntity::Event_TimerReset(int StimType)
+void idEntity::Event_TimerReset(int stimType)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("ResetTimer: Stimtype-%d \r", StimType);
-	if(timer)
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("ResetTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
 	{
 		timer->Reset();
 	}
 }
 
-void idEntity::Event_TimerSetState(int StimType, int State)
+void idEntity::Event_TimerSetState(int stimType, int state)
 {
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("SetTimerState: Stimtype-%d State: %d\r", StimType, State);
-	if(timer)
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("SetTimerState: Stimtype-%d State: %d\r", stimType, state);
+
+	if (timer != NULL)
 	{
-	timer->SetState((CStimResponseTimer::TimerState)State);
+		timer->SetState(static_cast<CStimResponseTimer::TimerState>(state));
 	}
 }
 
-void idEntity::Event_SetFrobable( bool bVal )
+void idEntity::Event_SetFrobable(bool bVal)
 {
 	SetFrobable( bVal );
 }
@@ -10307,42 +10342,48 @@ void idEntity::Event_CanSeeEntity(idEntity* target, int useLighting)
 
 void idEntity::ProcCollisionStims( idEntity *other, int body )
 {
-	CStimResponseCollection *coll(NULL), *coll2(NULL);
-	idEntity *reroute(NULL);
-
-	if( !other || ((coll = GetStimResponseCollection()) == NULL) )
-		return;
-	
-	if( other->IsType(idAFEntity_Base::Type) && body >= 0 )
+	if (!other)
 	{
-		idAFBody *StruckBody(NULL);
-
-		idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
-		int bodID = otherAF->BodyForClipModelId( body );
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
-		StruckBody = otherAF->GetAFPhysics()->GetBody( bodID );
-		reroute = StruckBody->GetRerouteEnt();
-		if( reroute )
-			other = reroute;
+		return;
 	}
 
-	if(	(coll2 = other->GetStimResponseCollection()) != NULL
-		&& coll2->HasResponse() )
+	if (other->IsType(idAFEntity_Base::Type) && body >= 0)
 	{
-		// check each stim to see if it's a collision stim
-		idList<CStim*>& StimList = coll->GetStimList();
-		for( int i=0; i<StimList.Num(); i++ )
+		idAFEntity_Base* otherAF = static_cast<idAFEntity_Base*>(other);
+		int bodID = otherAF->BodyForClipModelId( body );
+
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
+
+		idAFBody* struckBody = otherAF->GetAFPhysics()->GetBody(bodID);
+
+		idEntity* reroute = struckBody->GetRerouteEnt();
+
+		if (reroute)
 		{
-			CStim *pStim = StimList[i];
-			if( pStim->m_bCollisionBased )
-			{
-				pStim->m_bCollisionFired = true;
-				pStim->m_CollisionEnts.Append( other );
-			}
+			other = reroute;
 		}
 	}
 
-	return;
+	assert(other->GetStimResponseCollection() != NULL); // always non-NULL by design
+
+	if (other->GetStimResponseCollection()->HasResponse())
+	{
+		CStimResponseCollection* thisColl = GetStimResponseCollection();
+
+		// check each stim to see if it's a collision stim
+		int numStims = thisColl->GetNumStims();
+
+		for (int i = 0; i < numStims; ++i)
+		{
+			const CStimPtr& stim = thisColl->GetStim(i);
+			
+			if (stim->m_bCollisionBased)
+			{
+				stim->m_bCollisionFired = true;
+				stim->m_CollisionEnts.Append(other);
+			}
+		}
+	}
 }
 
 /* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 

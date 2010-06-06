@@ -100,16 +100,24 @@ void CInventoryCategory::SetOwner(idEntity *owner)
 	}
 }
 
-void CInventoryCategory::PutItem(const CInventoryItemPtr& item)
+void CInventoryCategory::PutItem(const CInventoryItemPtr& item, bool insertAtFront)
 {
 	if (item == NULL) return;
 
 	item->SetOwner(m_Owner.GetEntity());
 	item->SetCategory(this);
 
-	// Insert this item at the front of the list.
-	// This is a tad slower, but has been requested (issue #2144)
-	m_Item.Insert(item, 0);
+	if (insertAtFront)
+	{
+		// Insert this item at the front of the list.
+		// This is a tad slower, but has been requested (issue #2144)
+		m_Item.Insert(item, 0);
+	}
+	else
+	{
+		// Add to end of list
+		m_Item.Append(item);
+	}
 }
 
 bool CInventoryCategory::SwapItemPosition(const CInventoryItemPtr& item1, const CInventoryItemPtr& item2)

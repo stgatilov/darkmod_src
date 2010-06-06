@@ -46,9 +46,20 @@ public:
 	int						GetLoot(int& gold, int& jewelry, int& goods);
 
 	/**
-	 * greebo: Adds the given item to this category
+	 * greebo: Adds the given item to this category, behaves like std::list::push_front()
 	 */
-	void					PutItem(const CInventoryItemPtr& Item);
+	void					PutItemFront(const CInventoryItemPtr& item)
+	{
+		PutItem(item, true);
+	}
+
+	/**
+	 * greebo: Adds the given item to this category, behaves like std::list::push_back()
+	 */
+	void					PutItemBack(const CInventoryItemPtr& item)
+	{
+		PutItem(item, false);
+	}
 
 	/**
 	 * greebo: Removes the specified <item> from this category.
@@ -71,6 +82,9 @@ public:
 
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);
+
+private:
+	void					PutItem(const CInventoryItemPtr& item, bool insertAtFront);
 
 private:
 	CInventory*				m_Inventory;			// The inventory this group belongs to.

@@ -13,20 +13,26 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "StimResponseCollection.h"
 
+CStimResponseCollection::~CStimResponseCollection()
+{
+	m_Stims.Clear();
+	m_Responses.Clear();
+}
+
 void CStimResponseCollection::Save(idSaveGame *savefile) const
 {
-	savefile->WriteInt(m_Stim.Num());
-	for (int i = 0; i < m_Stim.Num(); i++)
+	savefile->WriteInt(m_Stims.Num());
+	for (int i = 0; i < m_Stims.Num(); i++)
 	{
-		savefile->WriteInt(static_cast<int>(m_Stim[i]->m_StimTypeId));
-		m_Stim[i]->Save(savefile);
+		savefile->WriteInt(static_cast<int>(m_Stims[i]->m_StimTypeId));
+		m_Stims[i]->Save(savefile);
 	}
 
-	savefile->WriteInt(m_Response.Num());
-	for (int i = 0; i < m_Response.Num(); i++)
+	savefile->WriteInt(m_Responses.Num());
+	for (int i = 0; i < m_Responses.Num(); i++)
 	{
-		savefile->WriteInt(static_cast<int>(m_Response[i]->m_StimTypeId));
-		m_Response[i]->Save(savefile);
+		savefile->WriteInt(m_Responses[i]->m_StimTypeId);
+		m_Responses[i]->Save(savefile);
 	}
 }
 
@@ -35,323 +41,266 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 	int num;
 
 	savefile->ReadInt(num);
-	m_Stim.SetNum(num);
+	m_Stims.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
 		// Allocate a new stim class (according to the type info)
 		int typeInt;
 		savefile->ReadInt(typeInt);
-		m_Stim[i] = new CStim(NULL, 0, -1);
-		m_Stim[i]->Restore(savefile);
+		m_Stims[i] = CStimPtr(new CStim(NULL, static_cast<StimType>(typeInt), -1));
+		m_Stims[i]->Restore(savefile);
 	}
 
 	savefile->ReadInt(num);
-	m_Response.SetNum(num);
+	m_Responses.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
 		// Allocate a new response class (according to the type info)
 		int typeInt;
 		savefile->ReadInt(typeInt);
-		m_Response[i] = new CResponse(NULL, 0, -1);
-		m_Response[i]->Restore(savefile);
+		m_Responses[i] = CResponsePtr(new CResponse(NULL, static_cast<StimType>(typeInt), -1));
+		m_Responses[i]->Restore(savefile);
 	}
 }
 
-CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
+CStimPtr CStimResponseCollection::CreateStim(idEntity* p_owner, StimType type)
 {
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Stim with ID: %d\r", gameLocal.m_HighestSRId);
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CStim\r");
-	CStim* pRet = new CStim(p_owner, type, gameLocal.m_HighestSRId);
 	
-	return pRet;
+	return CStimPtr(new CStim(p_owner, type, gameLocal.m_HighestSRId));
 }
 
-CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType type)
+CResponsePtr CStimResponseCollection::CreateResponse(idEntity* p_owner, StimType type)
 {
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Response with ID: %d\r", gameLocal.m_HighestSRId);
 
-	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CResponse\r");
-	CResponse* pRet = new CResponse(p_owner, type, gameLocal.m_HighestSRId);
-	
 	// Optimization: Set contents to include CONTENTS_RESPONSE
 	p_owner->GetPhysics()->SetContents( p_owner->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
-	return pRet;
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating CResponse\r");
+	return CResponsePtr(new CResponse(p_owner, type, gameLocal.m_HighestSRId));
 }
 
-CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius, bool bRemovable, bool bDefault)
+CStimPtr CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius, bool bRemovable, bool bDefault)
 {
-	CStim *pRet = NULL;
+	CStimPtr stim;
 	int i, n;
 
-	n = m_Stim.Num();
+	n = m_Stims.Num();
 	for(i = 0; i < n; i++)
 	{
-		if(m_Stim[i]->m_StimTypeId == Type)
+		if(m_Stims[i]->m_StimTypeId == Type)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim of that type is already in collection, returning it.\r");
-			pRet = m_Stim[i];
+			stim = m_Stims[i];
 			break;
 		}
 	}
 
-	if(pRet == NULL)
+	if (stim == NULL)
 	{
 		// Create either type specific descended class, or the default base class
-		pRet = createStim(Owner, (StimType) Type);
-		m_Stim.Append(pRet);
+		stim = CreateStim(Owner, (StimType) Type);
+		m_Stims.Append(stim);
 	}
 
-	if(pRet != NULL)
+	if (stim != NULL)
 	{
-		pRet->m_Default = bDefault;
-		pRet->m_Removable = bRemovable;
-		pRet->m_Radius = fRadius;
-		pRet->m_State = SS_DISABLED;
+		stim->m_Default = bDefault;
+		stim->m_Removable = bRemovable;
+		stim->m_Radius = fRadius;
+		stim->m_State = SS_DISABLED;
 
 		gameLocal.AddStim(Owner);
 	}
 
-	return pRet;
+	return stim;
 }
 
-CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool bRemovable, bool bDefault)
+CResponsePtr CStimResponseCollection::AddResponse(idEntity *Owner, int type, bool bRemovable, bool bDefault)
 {
-	CResponse *pRet = NULL;
-	int i, n;
+	CResponsePtr rv;
 
-	n = m_Response.Num();
-	for(i = 0; i < n; i++)
+	int n = m_Responses.Num();
+
+	for (int i = 0; i < n; ++i)
 	{
-		if(m_Response[i]->m_StimTypeId == Type)
+		if (m_Responses[i]->m_StimTypeId == type)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response of that type is already in collection, returning it");
-			pRet = m_Response[i];
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response of that type is already in collection, returning it\r");
+			rv = m_Responses[i];
 			break;
 		}
 	}
 
-	if(pRet == NULL)
+	if (rv == NULL)
 	{
-		pRet = createResponse (Owner, (StimType) Type);
-		m_Response.Append(pRet);
+		rv = CreateResponse(Owner, static_cast<StimType>(type));
+		m_Responses.Append(rv);
 	}
 
-	if(pRet != NULL)
+	if (rv != NULL)
 	{
-		pRet->m_Default = bDefault;
-		pRet->m_Removable = bRemovable;
+		rv->m_Default = bDefault;
+		rv->m_Removable = bRemovable;
 
 		gameLocal.AddResponse(Owner); 
 	}
 
 	// Optimization: Update clip contents to include contents_response
 
-	return pRet;
+	return rv;
 }
 
-CStim *CStimResponseCollection::AddStim(CStim *s)
+CStimPtr CStimResponseCollection::AddStim(const CStimPtr& stim)
 {
-	CStim *pRet = NULL;
-	int i, n;
+	if (stim == NULL) return stim;
 
-	if(s == NULL)
-		goto Quit;
+	CStimPtr rv;
 
-	n = m_Stim.Num();
-	for(i = 0; i < n; i++)
+	int n = m_Stims.Num();
+	for (int i = 0; i < n; ++i)
 	{
-		if(m_Stim[i]->m_StimTypeId == s->m_StimTypeId)
+		if (m_Stims[i]->m_StimTypeId == stim->m_StimTypeId)
 		{
-			pRet = m_Stim[i];
+			rv = m_Stims[i];
 			break;
 		}
 	}
 
-	if(pRet == NULL)
+	if (rv == NULL)
 	{
-		pRet = s;
-		m_Stim.Append(pRet);
+		rv = stim;
+		m_Stims.Append(rv);
 
-		gameLocal.AddStim(s->m_Owner.GetEntity());
+		gameLocal.AddStim(stim->m_Owner.GetEntity());
 	}
 
-Quit:
-	return pRet;
+	return rv;
 }
 
-CResponse *CStimResponseCollection::AddResponse(CResponse *r)
+CResponsePtr CStimResponseCollection::AddResponse(const CResponsePtr& response)
 {
-	CResponse *pRet = NULL;
-	int i, n;
+	CResponsePtr rv;
 
-	if(r == NULL)
-		goto Quit;
+	if (response == NULL) return rv;
 
-	n = m_Response.Num();
-	for(i = 0; i < n; i++)
+	int n = m_Responses.Num();
+	for (int i = 0; i < n; ++i)
 	{
-		if(m_Response[i]->m_StimTypeId == r->m_StimTypeId)
+		if (m_Responses[i]->m_StimTypeId == response->m_StimTypeId)
 		{
-			pRet = m_Response[i];
+			rv = m_Responses[i];
 			break;
 		}
 	}
 
-	if(pRet == NULL)
+	if (rv == NULL)
 	{
-		pRet = r;
-		m_Response.Append(pRet);
+		rv = response;
+		m_Responses.Append(rv);
 
-		gameLocal.AddResponse(r->m_Owner.GetEntity());
+		gameLocal.AddResponse(response->m_Owner.GetEntity());
 	}
 
-Quit:
-	return pRet;
+	return rv;
 }
 
 
-int CStimResponseCollection::RemoveStim(int Type)
+int CStimResponseCollection::RemoveStim(StimType type)
 {
-	CStim *pRet = NULL;
-	int i, n;
+	int n = m_Stims.Num();
 
-	n = m_Stim.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < n; ++i)
 	{
-		if(m_Stim[i]->m_StimTypeId == Type)
+		const CStimPtr& stim = m_Stims[i];
+
+		if (stim->m_StimTypeId == type)
 		{
-			pRet = m_Stim[i];
-			if(pRet->m_Removable == true)
+			if (stim->m_Removable)
 			{
-				m_Stim.RemoveIndex(i);
-				delete pRet;
+				m_Stims.RemoveIndex(i);
 			}
+
 			break;
 		}
 	}
 
-	return m_Stim.Num();
+	return m_Stims.Num();
 }
 
-int CStimResponseCollection::RemoveResponse(int Type)
+int CStimResponseCollection::RemoveResponse(StimType type)
 {
-	idEntity *owner = NULL;
-	CResponse *pRet = NULL;
-	int i, n;
+	idEntity* owner = NULL;
+	int n = m_Responses.Num();
 
-	n = m_Response.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < n; ++i)
 	{
-		if(m_Response[i]->m_StimTypeId == Type)
+		const CResponsePtr& response = m_Responses[i];
+
+		if (response->m_StimTypeId == type)
 		{
-			pRet = m_Response[i];
-			if(pRet->m_Removable == true)
+			if (response->m_Removable)
 			{
-				owner = pRet->m_Owner.GetEntity();
-				m_Response.RemoveIndex(i);
-				delete pRet;
+				owner = response->m_Owner.GetEntity();
+				m_Responses.RemoveIndex(i);
 			}
+
 			break;
 		}
 	}
 
 	// Remove the CONTENTS_RESPONSE flag if no more responses
-	if( m_Response.Num() <= 0 && owner != NULL )
-		owner->GetPhysics()->SetContents( owner->GetPhysics()->GetContents() & ~CONTENTS_RESPONSE );
+	if (m_Responses.Num() <= 0 && owner != NULL)
+	{
+		owner->GetPhysics()->SetContents(owner->GetPhysics()->GetContents() & ~CONTENTS_RESPONSE);
+	}
 
-	return m_Response.Num();
+	return m_Responses.Num();
 }
 
-int CStimResponseCollection::RemoveStim(CStim *s)
+CStimPtr CStimResponseCollection::GetStimByType(StimType type)
 {
-	CStim *pRet = NULL;
-	int i, n;
-
-	n = m_Stim.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < m_Stims.Num(); ++i)
 	{
-		if(m_Stim[i] == s)
+		if (m_Stims[i]->m_StimTypeId == type)
 		{
-			pRet = m_Stim[i];
-			if(pRet->m_Removable == true)
-			{
-				m_Stim.RemoveIndex(i);
-				delete pRet;
-			}
-			break;
+			return m_Stims[i];
 		}
 	}
 
-	return m_Stim.Num();
+	return CStimPtr();
 }
 
-int CStimResponseCollection::RemoveResponse(CResponse *r)
+CResponsePtr CStimResponseCollection::GetResponseByType(StimType type)
 {
-	CResponse *pRet = NULL;
-	int i, n;
-
-	n = m_Response.Num();
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < m_Responses.Num(); ++i)
 	{
-		if(m_Response[i] == r)
+		if (m_Responses[i]->m_StimTypeId == type)
 		{
-			pRet = m_Response[i];
-			if(pRet->m_Removable == true)
-			{
-				m_Response.RemoveIndex(i);
-				delete pRet;
-			}
-			break;
+			return m_Responses[i];
 		}
 	}
 
-	return m_Response.Num();
+	return CResponsePtr();
 }
 
-CStimResponse *CStimResponseCollection::GetStimResponse(int StimType, bool Stim)
-{
-	CStimResponse *rc = NULL, *sr;
-	int i, n;
-	idList<CStimResponse *> *oList = (Stim == true) ? (idList<CStimResponse *> *)&m_Stim : (idList<CStimResponse *> *)&m_Response;
-
-	n = oList->Num();
-	for(i = 0; i < n; i++)
-	{
-		sr = oList->operator[](i);
-		if(sr->m_StimTypeId == StimType)
-		{
-			rc = sr;
-			break;
-		}
-	}
-
-	return rc;
-}
-
-CStim *CStimResponseCollection::GetStim(int StimType)
-{
-	return (CStim *)GetStimResponse(StimType, true);
-}
-
-CResponse *CStimResponseCollection::GetResponse(int StimType)
-{
-	return (CResponse *)GetStimResponse(StimType, false);
-}
-
-bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner, const char sr_class, int index)
+bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner, const char sr_class, int index)
 {
 	bool rc = false;
 	idStr str;
-	CStim *stim = NULL;
-	CResponse *resp = NULL;
-	CStimResponse *sr = NULL;
+
+	CStimPtr stim;
+	CResponsePtr resp;
+	CStimResponsePtr sr;
+
 	float Radius = 0.0f;
 	StimState state( SS_DISABLED );
 	StimType typeOfStim;
@@ -364,12 +313,12 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	}
 
 	// Get the id of the stim/response type so we know what sub-class to create
-	args->GetString(va("sr_type_%u", index), "-1", str);
+	args.GetString(va("sr_type_%u", index), "-1", str);
 
 	// This is invalid as an entity definition
 	if(str == "-1")
 	{
-		sr = NULL;
+		sr.reset();
 		goto Quit;
 	}
 
@@ -381,13 +330,13 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		|| (str[0] >= 'A' && str[0] <= 'Z'))
 	{
 		// Try to recognise the string as known Stim type
-		typeOfStim = CStimResponse::getStimType(str);
+		typeOfStim = CStimResponse::GetStimType(str);
 		
 		// If the string hasn't been found, we have id == ST_DEFAULT.
 		if (typeOfStim == ST_DEFAULT)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_type id [%s]\r", str.c_str());
-			sr = NULL;
+			sr.reset();
 			goto Quit;
 		}
 	}
@@ -398,19 +347,19 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	else		// neither a character nor a number, thus it is invalid.
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_type id [%s]\r", str.c_str());
-		sr = NULL;
+		sr.reset();
 		goto Quit;
 	}
 
 
 	if(sr_class == 'S')
 	{
-		stim = createStim (Owner, typeOfStim);
+		stim = CreateStim(owner, typeOfStim);
 		sr = stim;
 	}
 	else if (sr_class == 'R')
 	{
-		resp = createResponse (Owner, typeOfStim);
+		resp = CreateResponse(owner, typeOfStim);
 		sr = resp;
 	}
 
@@ -421,57 +370,57 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	sr->m_StimTypeName = str;
 
 	// Read stim response state from the def file
-	state = static_cast<StimState>(args->GetInt(va("sr_state_%u", index), "1"));
+	state = static_cast<StimState>(args.GetInt(va("sr_state_%u", index), "1"));
 
-	sr->EnableSR(state == SS_ENABLED);
+	sr->SetEnabled(state == SS_ENABLED);
 	
-	sr->m_Chance = args->GetFloat(va("sr_chance_%u", index), "1.0");
+	sr->m_Chance = args.GetFloat(va("sr_chance_%u", index), "1.0");
 
 	// A stim also may have a radius
 	if(sr_class == 'S')
 	{
-		stim->m_Radius = args->GetFloat(va("sr_radius_%u", index), "0");
-		stim->m_RadiusFinal = args->GetFloat(va("sr_radius_final_%u", index), "-1");
+		stim->m_Radius = args.GetFloat(va("sr_radius_%u", index), "0");
+		stim->m_RadiusFinal = args.GetFloat(va("sr_radius_final_%u", index), "-1");
 
-		stim->m_FallOffExponent = args->GetInt(va("sr_falloffexponent_%u", index), "0");
-		stim->m_bUseEntBounds = args->GetBool(va("sr_use_bounds_%u", index), "0");
-		stim->m_bCollisionBased = args->GetBool(va("sr_collision_%u", index), "0");
+		stim->m_FallOffExponent = args.GetInt(va("sr_falloffexponent_%u", index), "0");
+		stim->m_bUseEntBounds = args.GetBool(va("sr_use_bounds_%u", index), "0");
+		stim->m_bCollisionBased = args.GetBool(va("sr_collision_%u", index), "0");
 
-		stim->m_Velocity = args->GetVector(va("sr_velocity_%u", index), "0 0 0");
+		stim->m_Velocity = args.GetVector(va("sr_velocity_%u", index), "0 0 0");
 
-		stim->m_Bounds[0] = args->GetVector(va("sr_bounds_mins_%u", index), "0 0 0");
-		stim->m_Bounds[1] = args->GetVector(va("sr_bounds_maxs_%u", index), "0 0 0");
+		stim->m_Bounds[0] = args.GetVector(va("sr_bounds_mins_%u", index), "0 0 0");
+		stim->m_Bounds[1] = args.GetVector(va("sr_bounds_maxs_%u", index), "0 0 0");
 
 		// set up time interleaving so the stim isn't fired every frame
-		stim->m_TimeInterleave = args->GetInt(va("sr_time_interval_%u", index), "0");
+		stim->m_TimeInterleave = args.GetInt(va("sr_time_interval_%u", index), "0");
 
 		// greebo: Add fuzzyness to the timer (ranging from 0.9 - 1.3);
 		stim->m_TimeInterleave = static_cast<int>(stim->m_TimeInterleave * (0.9f + gameLocal.random.RandomFloat()*0.4f));
 
 		// userfriendly stim duration time
-		stim->m_Duration = args->GetInt(va("sr_duration_%u", index), "0");
-		stim->m_Magnitude = args->GetFloat(va("sr_magnitude_%u", index), "1.0");
+		stim->m_Duration = args.GetInt(va("sr_duration_%u", index), "0");
+		stim->m_Magnitude = args.GetFloat(va("sr_magnitude_%u", index), "1.0");
 
-		stim->m_MaxFireCount = args->GetInt(va("sr_max_fire_count_%u", index), "-1");
+		stim->m_MaxFireCount = args.GetInt(va("sr_max_fire_count_%u", index), "-1");
 
 		// Check if we have a timer on this stim.
 		CreateTimer(args, stim, index);
 	}
 	else	// this is only for responses
 	{
-		sr->m_ChanceTimer = args->GetInt(va("sr_chance_timeout_%u", index), "-1");
+		sr->m_ChanceTimer = args.GetInt(va("sr_chance_timeout_%u", index), "-1");
 
-		resp->m_NumRandomEffects = args->GetInt(va("sr_random_effects_%u", index), "0");
+		resp->m_NumRandomEffects = args.GetInt(va("sr_random_effects_%u", index), "0");
 
 		// Get the name of the script function for processing the response
-		args->GetString("sr_script_" + str, "", str);
+		args.GetString("sr_script_" + str, "", str);
 		resp->m_ScriptFunction = str;
 
 		// Try to identify the ResponseEffect spawnargs
 		int effectIdx = 1;
 		while (effectIdx > 0) {
 			// Try to find a string like "sr_effect_2_1"
-			args->GetString(va("sr_effect_%u_%u", index, effectIdx), "", str);
+			args.GetString(va("sr_effect_%u_%u", index, effectIdx), "", str);
 
 			if (str.IsEmpty())
 			{
@@ -482,7 +431,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 				// Assemble the postfix of this effect for later key/value lookup
 				// This is passed to the effect script eventually
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Adding response effect\r");
-				resp->addResponseEffect(str, va("%u_%u", index, effectIdx), args);
+				resp->AddResponseEffect(str, va("%u_%u", index, effectIdx), args);
 				effectIdx++;
 			}
 		}
@@ -495,14 +444,14 @@ Quit:
 	{
 		if(stim != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim %s added to collection for %s\r", stim->m_StimTypeName.c_str(), Owner->name.c_str());
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim %s added to collection for %s\r", stim->m_StimTypeName.c_str(), owner->name.c_str());
 			AddStim(stim);
 			stim->m_State = state;
 		}
 
 		if(resp != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response %08lX added to collection for %s\r", resp->m_StimTypeName.c_str(), Owner->name.c_str());
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response %s added to collection for %s\r", resp->m_StimTypeName.c_str(), owner->name.c_str());
 			AddResponse(resp);
 		}
 	}
@@ -510,63 +459,53 @@ Quit:
 	return rc;
 }
 
-void CStimResponseCollection::ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner)
+void CStimResponseCollection::InitFromSpawnargs(const idDict& args, idEntity* owner)
 {
-	idStr str;
-	idStr name;
-	int i;
-	char sr_class;
-
-	if(Owner == NULL)
+	if (owner == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Owner set to NULL is not allowed!\r");
-		goto Quit;
+		return;
 	}
 
-	i = 1;
-	while (i != 0)
+	idStr name;
+
+	for (int i = 1; /* in-loop break */; ++i)
 	{
-		sprintf(name, "sr_class_%u", i);
+		idStr name = va("sr_class_%u", i);
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Looking for %s\r", name.c_str());
-		if(!args->GetString(name, "X", str))
-			goto Quit;
 
-		sr_class = str[0];
-		if(ParseSpawnArg(args, Owner, sr_class, i) == false)
-			goto Quit;
+		idStr str;
+		if (!args.GetString(name, "X", str))
+		{
+			break;
+		}
 
-		i++;
+		char sr_class = str[0];
+
+		if (ParseSpawnArg(args, owner, sr_class, i) == false)
+		{
+			break;
+		}
 	}
-
-Quit:
-	return;
 }
 
 
-void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int Counter)
+void CStimResponseCollection::CreateTimer(const idDict& args, const CStimPtr& stim, int index)
 {
-	idStr str;
-	int n;
-	
 	CStimResponseTimer* timer = stim->GetTimer();
 
-	args->GetInt( va("sr_timer_reload_%u",Counter) , "-1", n);
-	timer->m_Reload = n;
+	timer->m_Reload = args.GetInt(va("sr_timer_reload_%u", index) , "-1");
 
-	args->GetString( va("sr_timer_type_%u",Counter), "", str);
-	if(str.Cmp("RELOAD") == 0) {
-		timer->m_Type = CStimResponseTimer::SRTT_RELOAD;
-	}
-	else {
-		timer->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
-	}
+	idStr str = args.GetString(va("sr_timer_type_%u", index), "");
 
-	args->GetString( va("sr_timer_time_%u",Counter), "0:0:0:0", str );
-    TimerValue val;
-	val = CStimResponseTimer::ParseTimeString( str );
+	timer->m_Type = (str == "RELOAD") ? CStimResponseTimer::SRTT_RELOAD : CStimResponseTimer::SRTT_SINGLESHOT;
+	
+	args.GetString(va("sr_timer_time_%u", index), "0:0:0:0", str);
+
+    TimerValue val = CStimResponseTimer::ParseTimeString(str);
 	
 	// if timer is actually set
-	if( val.Time.Hour || val.Time.Minute || val.Time.Second || val.Time.Millisecond )
+	if (val.Time.Hour || val.Time.Minute || val.Time.Second || val.Time.Millisecond)
 	{
 		// TODO: Return a bool here so that the outer function knows not to add this to m_Stim in the collection?
 
@@ -574,42 +513,43 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int C
 		timer->SetTimer(val.Time.Hour, val.Time.Minute, val.Time.Second, val.Time.Millisecond);
 		
 		// timer starts on map startup by default, otherwise wait for start
-		if( !(args->GetBool( va("sr_timer_waitforstart_%u",Counter), "0" )) ) {
+		if (!args.GetBool(va("sr_timer_waitforstart_%u", index), "0"))
+		{
 			timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
 		}
 	}
 }
 
-bool CStimResponseCollection::HasStim( void )
+bool CStimResponseCollection::HasStim()
 {
-	return (m_Stim.Num() > 0);
+	return m_Stims.Num() > 0;
 }
 
-bool CStimResponseCollection::HasResponse( void )
+bool CStimResponseCollection::HasResponse()
 {
-	return (m_Response.Num() > 0);
+	return m_Responses.Num() > 0;
 }
 
-CStimResponse* CStimResponseCollection::FindStimResponse(int uniqueId)
+CStimResponsePtr CStimResponseCollection::FindStimResponse(int uniqueId)
 {
 	// Search the stims
-	for (int i = 0; i < m_Stim.Num(); i++)
+	for (int i = 0; i < m_Stims.Num(); ++i)
 	{
-		if (m_Stim[i]->getUniqueId() == uniqueId)
+		if (m_Stims[i]->GetUniqueId() == uniqueId)
 		{
-			return m_Stim[i];
+			return m_Stims[i];
 		}
 	}
 
 	// Search the responses
-	for (int i = 0; i < m_Response.Num(); i++)
+	for (int i = 0; i < m_Responses.Num(); i++)
 	{
-		if (m_Response[i]->getUniqueId() == uniqueId)
+		if (m_Responses[i]->GetUniqueId() == uniqueId)
 		{
-			return m_Response[i];
+			return m_Responses[i];
 		}
 	}
 
 	// Nothing found
-	return NULL;
+	return CStimResponsePtr();
 }

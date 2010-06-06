@@ -622,6 +622,10 @@ public:
 	void					NextBestWeapon( void );
 	void					PrevWeapon( void );
 
+	// greebo: Returns the highest weapon index in the weapon inventory category (-1 if empty/error)
+	// Traverses the entire category, so this is not the fastest code
+	int						GetHightestWeaponIndex();
+
 	// returns FALSE if the weapon with the requested index could not be selected
 	bool					SelectWeapon( int num, bool force );
 

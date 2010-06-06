@@ -9,47 +9,16 @@
 #ifndef SR_STIMRESPONSE__H
 #define SR_STIMRESPONSE__H
 
+#include "StimType.h"
+
 extern const char *cStimType[];
 
-// If default stims are to be added here, the static array in the CPP file
-// also must be updated. USER and UNDEFINED are not to be added though, as
-// they have special meanings.
-typedef enum {
-	ST_FROB,			// Frobbed
-	ST_FIRE,			// Fire
-	ST_WATER,			// Water
-	ST_DAMAGE,			// damages target
-	ST_SHIELD,			// protects against arrows or physical blows
-	ST_HEALING,			// heals target
-	ST_HOLY,			// holy is applied
-	ST_MAGIC,			// Magic is being used
-	ST_TOUCH,			// triggered if touched
-	ST_KNOCKOUT,		// target is knocked out
-	ST_KILL,			// target is killed
-	ST_RESTORE,			// target is restored
-	ST_LIGHT,			// triggered by light
-	ST_SOUND,			// triggered by sound
-	ST_VISUAL,			// visual contact
-	ST_INVITE,			// can be used to trigger special behaviour (like a stool can invite an AI to sit down)
-	ST_READ,			// Can be read
-	ST_RANDOM,			// Random response is selected
-	ST_TIMER,			// Timer trigger
-	ST_COMMUNICATION,	// A communication stimulus (see CommunicationStim.h)
-	ST_GAS,				// triggered by gas arrows
-	ST_TRIGGER,			// Triggered by triggering :)
-	ST_TARGET_REACHED,	// Emitted, if the AI has reached its target (induced by effect_moveToPosition)
-	ST_PLAYER,			// The Stim emitted by the player
-	ST_FLASH,			// Emitted by flashbombs
-	ST_BLIND,			// A stim that immediately blinds the AI (no visibility is needed) - for use in flashmines
-	ST_USER				= 1000,	// User defined types should use this as it's base
-	ST_DEFAULT			= -1
-} StimType;
-
-typedef enum {
+enum StimState
+{
 	SS_DISABLED,		// Stim is disabled and can not be triggered
 	SS_ENABLED,			// Stim is enabled and waits for activation
 	SS_DEFAULT
-} StimState;
+};
 
 /**
  * CStimResponse is the baseclass for stims and responses
@@ -59,26 +28,29 @@ class CStimResponse {
 	friend class CStimResponseCollection;
 
 protected:
-	CStimResponse(idEntity *Owner, int Type, int uniqueId);
-	virtual ~CStimResponse(void);
+	CStimResponse(idEntity* owner, StimType type, int uniqueId);
 
 public:
 	virtual void Save(idSaveGame *savefile) const;
 	virtual void Restore(idRestoreGame *savefile);
 
-	void EnableSR(bool Enable = true);
+	void SetEnabled(bool enabled = true);
+
+	// Shortcuts to SetEnabled
+	void Enable() { SetEnabled(true); }
+	void Disable() { SetEnabled(false); }
 
 	/**
 	 * greebo: Returns the unique ID used to identify this S/R after map load.
 	 */
-	int	getUniqueId() const;
+	int	GetUniqueId() const;
 
 	/** 
 	* greebo: This evaluates the m_Chance member variable against a random float.
 	*
 	* @returns: TRUE, if the S/R passed the check and can be fired
 	*/
-	bool checkChance();
+	bool CheckChance();
 
 	/**
 	* greebo: This retrieves the stim type id for the given stimName.
@@ -86,7 +58,7 @@ public:
 	* @stimName: The name of the stim (e.g. "STIM_THIEF")
 	* @returns: the according StimType (if the name is known), or ST_DEFAULT (== -1) if unknown
 	*/
-	static StimType getStimType(const idStr& stimName);
+	static StimType GetStimType(const idStr& stimName);
 
 public:
 	// A unique ID as assigned by the StimResponseCollection. Used to identify 
@@ -97,7 +69,7 @@ public:
 	 * Id for the stimulus that uniquely identifies a stim, so they can
 	 * be associated to each other.
 	 */
-	int					m_StimTypeId;
+	StimType			m_StimTypeId;
 
 	// This is only populated with the Id as used in the entity definition. We
 	// store the name here to reference the script action key.
@@ -157,5 +129,6 @@ public:
 
 	idEntityPtr<idEntity>	m_Owner;
 };
+typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
 
 #endif /* SR_STIMRESPONSE__H */

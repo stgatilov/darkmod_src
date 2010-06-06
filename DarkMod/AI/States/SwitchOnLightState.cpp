@@ -108,12 +108,12 @@ void SwitchOnLightState::Init(idAI* owner)
 						);
 					}
 					*/
-					light->ResponseIgnore(ST_VISUAL, owner);
+					light->IgnoreResponse(ST_VISUAL, owner);
 				}
 				else
 				{
 					// Probably can't reach light, no path to goal found
-					light->ResponseIgnore(ST_VISUAL, owner);
+					light->IgnoreResponse(ST_VISUAL, owner);
 					
 					/* greebo: Disabled bark when light is unreachable					
 					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
@@ -130,7 +130,7 @@ void SwitchOnLightState::Init(idAI* owner)
 			else
 			{
 				// Probably can't reach the light, too far above ground
-				light->ResponseIgnore(ST_VISUAL, owner);
+				light->IgnoreResponse(ST_VISUAL, owner);
 				/*
 				if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 				{
@@ -165,7 +165,7 @@ void SwitchOnLightState::Think(idAI* owner)
 	owner->PerformVisualScan();
 	if (owner->AI_AlertLevel >= owner->thresh_5)
 	{
-		light->ResponseAllow(ST_VISUAL, owner);
+		light->AllowResponse(ST_VISUAL, owner);
 		owner->GetMind()->EndState();
 		return;
 	}

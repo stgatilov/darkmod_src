@@ -23,10 +23,11 @@ class CStim :
 	friend class CStimResponseCollection;
 
 protected:
-	CStim(idEntity *, int Type, int uniqueId);
-	virtual ~CStim();
+	CStim(idEntity* owner, StimType type, int uniqueId);
 
 public:
+	virtual ~CStim();
+
 	virtual void Save(idSaveGame *savefile) const;
 	virtual void Restore(idRestoreGame *savefile);
 
@@ -37,6 +38,8 @@ public:
 	void AddResponseIgnore(idEntity *);
 	void RemoveResponseIgnore(idEntity *);
 	bool CheckResponseIgnore(idEntity *);
+
+	void ClearResponseIgnoreList();
 
 	/**
 	 * greebo: Returns the current radius value. Note that stims can have
@@ -49,10 +52,10 @@ public:
 	* greebo: This adds/removes the stim timer to/from the list 
 	*		  maintained by class gameLocal
 	*/
-	CStimResponseTimer* AddTimerToGame(void);
-	void RemoveTimerFromGame(void);
+	CStimResponseTimer* AddTimerToGame();
+	void RemoveTimerFromGame();
 
-	CStimResponseTimer *GetTimer(void) { return &m_Timer; };
+	CStimResponseTimer *GetTimer() { return &m_Timer; };
 
 protected:
 	/**
@@ -181,7 +184,7 @@ public:
 	* indicate there were no active responders present.
 	*/
 	virtual void PostFired (int numResponses);
-
 };
+typedef boost::shared_ptr<CStim> CStimPtr;
 
 #endif /* SR_STIM__H */
