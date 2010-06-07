@@ -280,14 +280,6 @@ public:
 	**/
 	idStrList m_AcuityNames;
 	idHashIndex m_AcuityHash;
-
-	/**
-	 * WeakLigthgem is set to true if the mathemmatical lightgem should be used.
-	 * The prefered solution will be to use the rendersnapshot mechanism, but 
-	 * this may not work for slower computers and the old solution is still available.
-	 * This solution is less accurate, though. Default for this value is false.
-	 */
-	bool m_WeakLightgem;
 };
 
 extern CGlobal g_Global;

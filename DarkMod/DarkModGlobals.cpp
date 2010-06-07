@@ -173,7 +173,6 @@ CGlobal::CGlobal()
 	m_LogType = LT_DEBUG;
 	m_Filename = "undefined";
 	m_Linenumber = 0;
-	m_WeakLightgem = false;
 	
 	m_LogFile = fopen(DARKMOD_LOGFILE, "w+b");
 
@@ -427,16 +426,6 @@ void CGlobal::LoadINISettings(void *p)
 	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))
 	{
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
-
-		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_WeakLightgem = atof(pm->Value);
-		}
-
-		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_WeakLightgem = atof(pm->Value);
-		}
 	}
 }
 
