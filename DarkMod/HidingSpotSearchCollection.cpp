@@ -241,7 +241,7 @@ int CHidingSpotSearchCollection::getOrCreateSearch
 	bool b_moreProcessingToDo = search.startHidingSpotSearch
 	(
 		search.hidingSpotList,
-		g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
+		cv_ai_max_hiding_spot_tests_per_frame.GetInteger(),
 		frameIndex
 	);
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("First pass of hiding spot search found %d spots\r", search.hidingSpotList.getNumSpots());

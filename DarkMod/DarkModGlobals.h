@@ -288,12 +288,6 @@ public:
 	 * This solution is less accurate, though. Default for this value is false.
 	 */
 	bool m_WeakLightgem;
-
-	/**
-	* This is the maximum number of hiding spot point tests to do in a single AI frame.
-	* Values in the 100 range seem to maintain decent frame rates
-	*/
-	int m_maxNumHidingSpotPointTestsPerAIFrame;
 };
 
 extern CGlobal g_Global;

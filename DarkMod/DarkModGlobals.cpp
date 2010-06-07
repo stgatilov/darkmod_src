@@ -42,9 +42,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "renderpipe.h"
 #include "RevisionTracker.h"
 
-// Darkmod 
-#define DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME 10.0
-
 class idAI;
 
 // Name of the logfile to use for Dark Mod logging
@@ -177,12 +174,13 @@ CGlobal::CGlobal()
 	m_Filename = "undefined";
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
-	m_maxNumHidingSpotPointTestsPerAIFrame = int(DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME);
 	
-	m_LogFile = NULL;
+	m_LogFile = fopen(DARKMOD_LOGFILE, "w+b");
 
-	if((m_LogFile = fopen(DARKMOD_LOGFILE, "w+b")) != NULL)
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Initialzing mod logging\r");
+	if (m_LogFile != NULL)
+	{
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Initializing mod logging\r");
+	}
 
 	// initialize the AI Acuities hash
 
@@ -439,18 +437,6 @@ void CGlobal::LoadINISettings(void *p)
 		{
 			m_WeakLightgem = atof(pm->Value);
 		}
-
-		if (FindMap (ps, "maxHidingSpotTestsPerAIFrame", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_maxNumHidingSpotPointTestsPerAIFrame = atoi(pm->Value);
-			if (m_maxNumHidingSpotPointTestsPerAIFrame < 10)
-			{
-				DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame cannot be less than 10");
-				m_maxNumHidingSpotPointTestsPerAIFrame = 10;
-			}
-		}
-
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame: %d\r", m_maxNumHidingSpotPointTestsPerAIFrame);
 	}
 }
 

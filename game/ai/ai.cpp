@@ -10026,7 +10026,7 @@ int idAI::ContinueSearchForHidingSpots()
 		bool moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
 		(
 			p_hidingSpotFinder->hidingSpotList,
-			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
+			cv_ai_max_hiding_spot_tests_per_frame.GetInteger(),
 			gameLocal.framenum
 		);
 
