@@ -280,22 +280,6 @@ public:
 	*/
 	float m_hidingSpotMaxLightQuotient;
 
-	/*!
-	* Milliseconds of time it takes for the player to enter
-	* or exit a lean
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_leanMove_Milliseconds;
-
-	/*!
-	* The angle to which a player rolls to the side during
-	* a lean. The center of the circle is the player's feet,
-	* so lean angles are smaller than they would be if the
-	* player had a waist joint.
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_leanMove_DegreesTilt;
-
 	/**
 	* List of AI Acuities
 	**/
