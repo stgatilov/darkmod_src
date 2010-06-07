@@ -280,49 +280,6 @@ public:
 	*/
 	float m_hidingSpotMaxLightQuotient;
 
-	// Mantle trigger timer for holding jump key
-	float m_jumpHoldMantleTrigger_Milliseconds;
-	
-	/*!
-	* The meters per second of relative velocity beyond which the player takes damage 
-	* when trying to mantle a target 
-	*/
-	float m_minimumVelocityForMantleDamage;
-
-	/*!
-	* The damage points per meter per second over the damage
-	* velocity minimum
-	*/
-	float m_damagePointsPerMetersPerSecondOverMinimum;
-
-	/*!
-	* Milliseconds of time that player hangs if mantle begins
-	* with the player's feet of the ground
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_mantleHang_Milliseconds;
-
-	/*!
-	* Milliseconds of time it takes for the player to pull themselves
-	* up to shoulder level with the mantle surface
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_mantlePull_Milliseconds;
-
-	/*!
-	* Milliseconds of time it takes for the player to shift their
-	* hands from pulling to pushing
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_mantleShiftHands_Milliseconds;
-
-	/*!
-	* Milliseconds of time it takes for the player to push
-	* themselves up onto the mantle surface
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_mantlePush_Milliseconds;
-
 	/*!
 	* Milliseconds of time it takes for the player to enter
 	* or exit a lean

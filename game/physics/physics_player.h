@@ -506,7 +506,7 @@ protected:
 	* tiredness, length of lift....
 	* @param[in] mantlePhase The mantle phase for which the duration is to be retrieved
 	*/
-	float getMantleTimeForPhase(EMantlePhase mantlePhase);
+	float GetMantleTimeForPhase(EMantlePhase mantlePhase);
 
 	/*!
 	*

@@ -3451,36 +3451,26 @@ void idPhysics_Player::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 // Start Mantling Mod
 //################################################################
 
-float idPhysics_Player::getMantleTimeForPhase(EMantlePhase mantlePhase)
+float idPhysics_Player::GetMantleTimeForPhase(EMantlePhase mantlePhase)
 {
-	float retValue;
-
 	// Current implementation uses constants
 	switch (mantlePhase)
 	{
 	case hang_DarkModMantlePhase:
-		retValue = g_Global.m_mantleHang_Milliseconds;
-		break;
+		return cv_pm_mantle_hang_msecs.GetFloat();
 
 	case pull_DarkModMantlePhase:
-		retValue = g_Global.m_mantlePull_Milliseconds;
-		break;
+		return cv_pm_mantle_pull_msecs.GetFloat();
 
 	case shiftHands_DarkModMantlePhase:
-		retValue = g_Global.m_mantleShiftHands_Milliseconds;
-		break;
+		return cv_pm_mantle_shift_hands_msecs.GetFloat();
 
 	case push_DarkModMantlePhase:
-		retValue = g_Global.m_mantlePush_Milliseconds;
-		break;
+		return cv_pm_mantle_push_msecs.GetFloat();
 
 	default:
-		retValue = 0.0;
-		break;
-
+		return 0.0f;
 	}
-
-	return retValue;
 }
 
 //----------------------------------------------------------------------
@@ -3489,12 +3479,12 @@ void idPhysics_Player::MantleMove()
 {
 	idVec3 newPosition = current.origin;
 	idVec3 totalMove(0,0,0);
-	float timeForMantlePhase = getMantleTimeForPhase(m_mantlePhase);
+	float timeForMantlePhase = GetMantleTimeForPhase(m_mantlePhase);
 
 	// Compute proportion into the current movement phase which we are
 	float timeRatio = 0.0f;
 
-	if (timeForMantlePhase != 0.0f)
+	if (timeForMantlePhase != 0)
 	{
 		timeRatio = (timeForMantlePhase - m_mantleTime) /  timeForMantlePhase;
 	}
@@ -3642,7 +3632,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			}
 
 			// Get time it takes to perform a mantling phase
-			m_mantleTime = getMantleTimeForPhase(m_mantlePhase);
+			m_mantleTime = GetMantleTimeForPhase(m_mantlePhase);
 			
 			// Handle end of mantle
 			if (m_mantlePhase == fixClipping_DarkModMantlePhase)
@@ -3765,7 +3755,7 @@ void idPhysics_Player::StartMantle
 	}
 
 	m_mantlePhase = initialMantlePhase;
-	m_mantleTime = getMantleTimeForPhase(m_mantlePhase);
+	m_mantleTime = GetMantleTimeForPhase(m_mantlePhase);
 
 	// Make positions relative to entity
 	if (m_p_mantledEntity != NULL)
@@ -3803,7 +3793,7 @@ void idPhysics_Player::StartMantle
 
 bool idPhysics_Player::CheckJumpHeldDown()
 {
-	return (m_jumpHeldDownTime > g_Global.m_jumpHoldMantleTrigger_Milliseconds);
+	return m_jumpHeldDownTime > cv_pm_mantle_jump_hold_trigger.GetInteger();
 }
 
 //----------------------------------------------------------------------

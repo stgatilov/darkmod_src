@@ -135,6 +135,14 @@ extern idCVar cv_pm_weightmod;
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;
+extern idCVar cv_pm_mantle_jump_hold_trigger;
+extern idCVar cv_pm_mantle_min_velocity_for_damage;
+extern idCVar cv_pm_mantle_damage_per_velocity_over_minimum;
+extern idCVar cv_pm_mantle_hang_msecs;
+extern idCVar cv_pm_mantle_pull_msecs;
+extern idCVar cv_pm_mantle_shift_hands_msecs;
+extern idCVar cv_pm_mantle_push_msecs;
+
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
 extern idCVar cv_pm_rope_swing_impulse;

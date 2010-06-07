@@ -29,7 +29,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "MissionData.h"
 #include "Misc.h"
 #include "Profile.h"
-//#include "direct.h" [OrbWeaver] does not exist?
 #include "IL/il.h"
 #include "sndPropLoader.h"
 #include "sndProp.h"
@@ -43,26 +42,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "renderpipe.h"
 #include "RevisionTracker.h"
 
-// Default length of time for holding down jump key to start
-// mantling.
-#define DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS 100.0f
-
-// Default time values for phases of mantling
-#define DARKMOD_MANTLE_MILLISECONDS_HANG		750.0f
-#define DARKMOD_MANTLE_MILLISECONDS_PULL		750.0f
-#define DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS	500.0f
-#define DARKMOD_MANTLE_MILLISECONDS_PUSH		800.0f
-
 // The default max light quotient for hiding spots
 #define MAX_HIDING_SPOT_MAX_LIGHT_QUOTIENT 2.0
-
-// Default damage scale for mantling at high velocities
-// The 15.0 m/s minimum limit is based on OCEA guidance (United States labor laws)
-#define DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE 15.0f
-
-// TODO: The 0.5 damager/m/s scale is completely made up based on a scarce
-// few tests and should be tweaked for gameplay
-#define DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY 0.5f
 
 // Default time value for phases of leaning
 #define DARKMOD_NUM_MILLISECONDS_FOR_LEAN_MOVE 600.0f
@@ -181,26 +162,25 @@ CGlobal::CGlobal()
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
 
+	// Initialise all logtypes to false
+	for (int i = 0; i < LT_COUNT; ++i)
+	{
+		m_LogArray[i] = false;
+	}
+
+	// Except for these two
 	m_LogArray[LT_INIT] = true;			// This is always on
 	m_LogArray[LT_FORCE] = true;			// This is always on
-	m_LogArray[LT_ERROR] = false;
-	m_LogArray[LT_BEGIN] = false;
-	m_LogArray[LT_END] = false;
-	m_LogArray[LT_DEBUG] = false;
+	
+	// Initialise all logging values to false
+	for (int i = 0; i < LC_COUNT; ++i)
+	{
+		m_ClassArray[i] = false;
+	}
 
+	// Except for these two, these are always on
 	m_ClassArray[LC_INIT] = true;
-	m_ClassArray[LC_FORCE] = true;			// This is always on
-	m_ClassArray[LC_SYSTEM] = false;
-	m_ClassArray[LC_FROBBING] = false;
-	m_ClassArray[LC_AI] = false;
-	m_ClassArray[LC_SOUND] = false;
-	m_ClassArray[LC_FUNCTION] = false;
-	m_ClassArray[LC_MOVEMENT] = false;
-	m_ClassArray[LC_OBJECTIVES] = false;
-	m_ClassArray[LC_DIFFICULTY] = false;
-	m_ClassArray[LC_STIM_RESPONSE] = false;
-	m_ClassArray[LC_CONVERSATION] = false;
-	m_ClassArray[LC_MAINMENU] = false;
+	m_ClassArray[LC_FORCE] = true;
 
 	m_Frame = 0;
 	m_MaxFrobDistance = 0;
@@ -220,12 +200,12 @@ CGlobal::CGlobal()
 
 	// initialize the AI Acuities hash
 
-/**
-* Define AI Acuities Here:
-* NOTE: If you add an acuity, your total number of acuities
-* must be below s_MAXACUITIES defined in AI.h, unless you
-* want to chagne that and recompile everything.
-**/
+	/**
+	* Define AI Acuities Here:
+	* NOTE: If you add an acuity, your total number of acuities
+	* must be below s_MAXACUITIES defined in AI.h, unless you
+	* want to chagne that and recompile everything.
+	**/
 	m_AcuityNames.Append("vis");
 	m_AcuityNames.Append("aud");
 	m_AcuityNames.Append("tact");
@@ -239,26 +219,11 @@ CGlobal::CGlobal()
 		m_AcuityHash.Add( m_AcuityHash.GenerateKey( m_AcuityNames[i].c_str(), false ), i );
 	}
 
-	//*******
-	// Initialize the Mantling and Leaning variables
-	//*******
-	m_jumpHoldMantleTrigger_Milliseconds = DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS;
-
-	// Default time values for phases of mantling
-	m_mantleHang_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_HANG;
-	m_mantlePull_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_PULL;
-	m_mantleShiftHands_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS;
-	m_mantlePush_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_PUSH;
-
 	// Default time value for leaning
 	m_leanMove_Milliseconds = DARKMOD_NUM_MILLISECONDS_FOR_LEAN_MOVE;
 
 	// Default angle for leaning
 	m_leanMove_DegreesTilt = DARKMOD_MAX_LEAN_TILT_DEGREES;
-
-	// Default minimum velocity for mantling damage and damage scale
-	m_minimumVelocityForMantleDamage = DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE;
-	m_damagePointsPerMetersPerSecondOverMinimum = DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY;
 
 	/* initialize Sourcehook required global */
 	g_SHPtr = static_cast<SourceHook::ISourceHook*>(&g_SourceHook); 
@@ -485,46 +450,6 @@ void CGlobal::LoadINISettings(void *p)
 	{
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
 
-		if(FindMap(ps, "Mantle_JumpHoldMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_jumpHoldMantleTrigger_Milliseconds = atof(pm->Value);
-		}
-
-		if(FindMap(ps, "Mantle_HangMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_mantleHang_Milliseconds = atof(pm->Value);
-		}
-
-		if(FindMap(ps, "Mantle_PullMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_mantlePull_Milliseconds = atof(pm->Value);
-		}
-
-		if(FindMap(ps, "Mantle_ShiftHandsMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_mantleShiftHands_Milliseconds = atof(pm->Value);
-		}
-
-		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_mantlePush_Milliseconds = atof(pm->Value);
-		}
-				
-		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_mantlePush_Milliseconds = atof(pm->Value);
-		}
-
-		if(FindMap(ps, "Mantle_MinimumMetersPerSecondForDamage", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_minimumVelocityForMantleDamage = atof(pm->Value);
-		}
-
-		if (FindMap(ps, "Mantle_DamagerPerMetersPerSecondOverMinimum", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			m_damagePointsPerMetersPerSecondOverMinimum = atof(pm->Value);
-		}
-
 		if (FindMap(ps, "Lean_Milliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_leanMove_Milliseconds = atof(pm->Value);
@@ -565,12 +490,6 @@ void CGlobal::LoadINISettings(void *p)
 			m_hidingSpotMaxLightQuotient = atof(pm->Value);
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_hidingSpotMaxLightQuotient set to %f", m_hidingSpotMaxLightQuotient);
 		}
-
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle pull milliseconds: %f\r", m_mantlePull_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle shift hands milliseconds: %f\r", m_mantleShiftHands_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle push milliseconds: %f\r", m_mantlePush_Milliseconds);
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean milliseconds: %f\r", m_leanMove_Milliseconds);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
