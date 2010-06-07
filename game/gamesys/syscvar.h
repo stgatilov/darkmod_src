@@ -63,6 +63,7 @@ extern idCVar cv_ai_opt_novisualstim;
 extern idCVar cv_ai_opt_nolipsync;
 extern idCVar cv_ai_opt_nopresent;
 extern idCVar cv_ai_opt_noobstacleavoidance;
+extern idCVar cv_ai_hiding_spot_max_light_quotient;
 extern idCVar cv_ai_debug_anims;
 extern idCVar cv_show_health;
 

@@ -275,11 +275,6 @@ public:
 	**/
 	float m_MaxFrobDistance;
 
-	/*!
-	* Hiding spot search light quotient. This value probably needs tweaking.
-	*/
-	float m_hidingSpotMaxLightQuotient;
-
 	/**
 	* List of AI Acuities
 	**/
@@ -295,24 +290,10 @@ public:
 	bool m_WeakLightgem;
 
 	/**
-	* The maximum distance a Responder can be from an Entity with an active 
-	* AIComm stim (ST_COMMUNICATION) and have its responses potentially triggered.
-	* Note that each Message has its own internal radius which if less than this
-	* value, furthere restricts responding on message by message basis.
-	*
-	* However, this radius is the one that is used to find entities that will
-	* check through the response list. Therefore, setting it higher may make
-	* the processing of ST_COMMUNICATION stims take longer.
-	*/
-	float m_AICommStimRadius;
-
-	/**
 	* This is the maximum number of hiding spot point tests to do in a single AI frame.
 	* Values in the 100 range seem to maintain decent frame rates
 	*/
 	int m_maxNumHidingSpotPointTestsPerAIFrame;
-
-
 };
 
 extern CGlobal g_Global;
