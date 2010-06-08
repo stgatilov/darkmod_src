@@ -38,6 +38,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/RevisionTracker.h"
+#include "../DarkMod/Missions/MissionManager.h"
+#include "../DarkMod/Missions/MissionInfoDecl.h"
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -420,16 +422,17 @@ void idGameLocal::Init( void ) {
 	// TDM specific DECLs
 	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
 	declManager->RegisterDeclType( "tdm_matinfo",		DECL_TDM_MATINFO,	idDeclAllocator<tdmDeclTDM_MatInfo> );
+	declManager->RegisterDeclType( "tdm_missioninfo",	DECL_TDM_MISSIONINFO,	idDeclAllocator<CMissionInfoDecl> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
 	declManager->RegisterDeclFolder( "fx",				".fx",				DECL_FX );
 	declManager->RegisterDeclFolder( "particles",		".prt",				DECL_PARTICLE );
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
-	//declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
 	// TDM specific DECLs
 	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
 	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
+	declManager->RegisterDeclFolder( "fms",				".tdminfo",			DECL_TDM_MISSIONINFO );
 
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
@@ -503,6 +506,10 @@ void idGameLocal::Init( void ) {
 		// Out of memory
 		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Out of memory when allocating render pipe\n");
 	}
+
+	// Initialise the mission manager
+	m_MissionManager = CMissionManagerPtr(new CMissionManager);
+	m_MissionManager->Init();
 
 	// Initialise the mod menu class to load the FMs
 	assert(m_ModMenu != NULL);
@@ -581,6 +588,9 @@ void idGameLocal::Shutdown( void ) {
 	// Clear the mod menu
 	m_ModMenu = CModMenuPtr();
 	m_Shop = CShopPtr();
+
+	// Clear the mission manager
+	m_MissionManager = CMissionManagerPtr();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
