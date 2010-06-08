@@ -14,6 +14,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MissionInfoDecl.h"
 
+const char* const CMissionInfoDecl::TYPE_NAME = "tdm_missioninfo";
+
 CMissionInfoDecl::~CMissionInfoDecl()
 {
 	FreeData();
@@ -254,6 +256,28 @@ bool CMissionInfoDecl::Parse( const char *text, const int textLength )
 		MakeDefault();
 	}*/
 	return successfulParse;
+}
+
+void CMissionInfoDecl::Update(const idStr& name)
+{
+	idStr body;
+	
+	body += TYPE_NAME;
+	body += " " + name;
+	body += "\n{\n";
+
+	// Dump the keyvalues
+	for (int i = 0; i < data.GetNumKeyVals(); ++i)
+	{
+		const idKeyValue* kv = data.GetKeyVal(i);
+
+		body += "\t\"" + kv->GetKey() + "\"";
+		body += "\t\"" + kv->GetValue() + "\"\n";
+	}
+
+	body += "\n}\n\n";
+
+	this->SetText(body.c_str());
 }
 
 CMissionInfoDecl* CMissionInfoDecl::Find(const idStr& name)

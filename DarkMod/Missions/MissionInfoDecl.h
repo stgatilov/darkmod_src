@@ -26,6 +26,9 @@ public:
 	/// Key/value data parsed from the mission info decl.
 	idDict					data;
 
+	// Regenerates the declaration body using the given name as decl name
+	void					Update(const idStr& name);
+
 	// Returns the declaration or NULL if no declaration has been registered so far
 	static CMissionInfoDecl*	Find(const idStr& name);
 
@@ -36,6 +39,8 @@ public:
 	// Convenience method, combining the above two. The declaration will be created
 	// using Create() if not found after calling Find().
 	static CMissionInfoDecl*	FindOrCreate(const idStr& name);
+
+	static const char* const TYPE_NAME;
 };
 
 #endif /* _MISSION_INFO_DECL_H_ */

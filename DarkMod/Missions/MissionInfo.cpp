@@ -39,10 +39,10 @@ void CMissionInfo::SetKeyValue(const char* key, const char* value)
 void CMissionInfo::Save()
 {
 	// Don't do unnecessary work
-	if (!_declDirty) return;
+	//if (!_declDirty) return;
 
 	// Generate new declaration body text
-	_decl->SetText("\"Test\" \"Body\"");
+	_decl->Update(modName);
 	_decl->ReplaceSourceFileText();
 }
 

@@ -422,7 +422,7 @@ void idGameLocal::Init( void ) {
 	// TDM specific DECLs
 	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
 	declManager->RegisterDeclType( "tdm_matinfo",		DECL_TDM_MATINFO,	idDeclAllocator<tdmDeclTDM_MatInfo> );
-	declManager->RegisterDeclType( "tdm_missioninfo",	DECL_TDM_MISSIONINFO,	idDeclAllocator<CMissionInfoDecl> );
+	declManager->RegisterDeclType( CMissionInfoDecl::TYPE_NAME,	DECL_TDM_MISSIONINFO,	idDeclAllocator<CMissionInfoDecl> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
@@ -589,8 +589,7 @@ void idGameLocal::Shutdown( void ) {
 	m_ModMenu = CModMenuPtr();
 	m_Shop = CShopPtr();
 
-	// Clear the mission manager
-	m_MissionManager->Shutdown();
+	// Destroy the mission manager
 	m_MissionManager = CMissionManagerPtr();
 
 	aasList.DeleteContents( true );
@@ -3464,6 +3463,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
+	}
+	else if (cmd == "quit")
+	{
+		// Tell the mission manager about the upcoming shutdown.
+		// We can't call MissionManager::Shutdown during 
+		// idGameLocal::Shutdown, as all the mission declarations
+		// are already destructed at that time - so call this here.
+		m_MissionManager->Shutdown();
 	}
 	else if (cmd == "close_success_screen")
 	{
