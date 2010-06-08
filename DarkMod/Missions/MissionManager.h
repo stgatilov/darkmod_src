@@ -36,13 +36,16 @@ public:
 	// This initialises the list of available missions
 	void Init();
 
+	// Should be called when the game is shutting down
+	void Shutdown();
+
 	// Returns the number of available missions
 	int GetNumMissions();
 
 	// Returns the mission info by index (or NULL if out of bounds)
 	CMissionInfoPtr GetMissionInfo(int index);
 
-	// returns the mission info by name (or NULL if no such mission)
+	// returns the mission info by name (always non-NULL)
 	CMissionInfoPtr GetMissionInfo(const idStr& name);
 
 private:

@@ -15,36 +15,42 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "MissionDB.h"
 #include "MissionInfoDecl.h"
 
-namespace fs = boost::filesystem;
-
 CMissionDB::CMissionDB()
 {}
 
 void CMissionDB::Init()
 {
-	// Traverse all declarations?
+	// Nothing for now
+}
+
+void CMissionDB::Shutdown()
+{
+	// Save changed declarations
+	for (MissionInfoMap::iterator i = _missionInfo.begin(); i != _missionInfo.end(); ++i)
+	{
+		i->second->Save();
+	}
 }
 
 const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
 {
 	MissionInfoMap::iterator i = _missionInfo.find(name.c_str());
 	
-	if (i == _missionInfo.end())
+	if (i != _missionInfo.end())
 	{
-		// Get the mission info declaration (or create it if not found so far)
-		CMissionInfoDecl* decl = CMissionInfoDecl::FindOrCreate(name);
-
-		std::pair<MissionInfoMap::iterator, bool> result = _missionInfo.insert(
-			MissionInfoMap::value_type(name.c_str(), CMissionInfoPtr(new CMissionInfo(decl)))
-		);
-
-		i = result.first;
+		return i->second;
 	}
 
-	return i->second;
-}
+	// Get the mission info declaration (or create it if not found so far)
+	CMissionInfoDecl* decl = CMissionInfoDecl::FindOrCreate(name);
 
-void CMissionDB::LoadFromFile(const fs::path& file)
-{
-	// TODO
+	CMissionInfoPtr missionInfo(new CMissionInfo(name, decl));
+
+	std::pair<MissionInfoMap::iterator, bool> result = _missionInfo.insert(
+		MissionInfoMap::value_type(name.c_str(), missionInfo));
+
+	// Load the data from the text files, if possible
+	missionInfo->LoadMetaData();
+
+	return result.first->second;
 }

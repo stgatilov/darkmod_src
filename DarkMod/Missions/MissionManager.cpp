@@ -26,6 +26,11 @@ void CMissionManager::Init()
 	ReloadMissionList();
 }
 
+void CMissionManager::Shutdown()
+{
+	_missionDB->Shutdown();
+}
+
 // Returns the number of available missions
 int CMissionManager::GetNumMissions()
 {
@@ -34,7 +39,7 @@ int CMissionManager::GetNumMissions()
 
 CMissionInfoPtr CMissionManager::GetMissionInfo(int index)
 {
-	if (index <= 0 || index >= _availableMissions.Num())
+	if (index < 0 || index >= _availableMissions.Num())
 	{
 		return CMissionInfoPtr(); // out of bounds
 	}
@@ -45,7 +50,7 @@ CMissionInfoPtr CMissionManager::GetMissionInfo(int index)
 
 CMissionInfoPtr CMissionManager::GetMissionInfo(const idStr& name)
 {
-	return CMissionInfoPtr(); // TODO
+	return _missionDB->GetMissionInfo(name);
 }
 
 void CMissionManager::SearchForNewMissions()
@@ -270,7 +275,7 @@ int CMissionManager::MissionSortCompare(const int* a, const int* b)
 
 	if (aInfo == NULL || bInfo == NULL) return 0;
 
-	return aInfo->displayName.Icmp(aInfo->displayName);
+	return aInfo->displayName.Icmp(bInfo->displayName);
 }
 
 void CMissionManager::SortMissionList()

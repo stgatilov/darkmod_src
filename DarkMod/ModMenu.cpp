@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/declxdata.h"
 #include "boost/filesystem.hpp"
 #include "../DarkMod/ZipLoader/ZipLoader.h"
+#include "../DarkMod/Missions/MissionManager.h"
 
 #include <string>
 #ifdef _WINDOWS
@@ -272,22 +273,22 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 
 		int available = 0;
 
-		// Empty mod info structure for default values
-		ModInfo info;
+		int missionIndex = _modTop + modIndex;
+		int numMissions = gameLocal.m_MissionManager->GetNumMissions();
 
-		if (_modTop + modIndex < _modsAvailable.Num())
+		CMissionInfoPtr info;
+
+		// Retrieve the mission info
+		if (_modTop + modIndex < numMissions)
 		{
-			// Load the mod info structure
-			info = GetModInfo(_modTop + modIndex);
-
-			available = 1;
+			info = gameLocal.m_MissionManager->GetMissionInfo(missionIndex);
 		}
 
-		gui->SetStateInt(guiAvailable, available);
-		gui->SetStateString(guiName, info.title);
-		gui->SetStateString(guiDesc, info.desc);
-		gui->SetStateString(guiAuthor, info.author);
-		gui->SetStateString(guiImage, info.image);
+		gui->SetStateInt(guiAvailable,	info != NULL ? 1 : 0);
+		gui->SetStateString(guiName,	info != NULL ? info->displayName : "");
+		gui->SetStateString(guiDesc,	info != NULL ? info->description : "");
+		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
+		gui->SetStateString(guiImage,	info != NULL ? info->image : "");
 	}
 
 	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);

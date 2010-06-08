@@ -45,11 +45,12 @@ public:
 	int requiredMajor;
 	int requiredMinor;
 
-	CMissionInfo(CMissionInfoDecl* detailsDecl) :
+	CMissionInfo(const idStr& modName_, CMissionInfoDecl* detailsDecl) :
 		_decl(detailsDecl),
 		_declDirty(false),
 		_modFolderSize(0),
 		_modFolderSizeComputed(false),
+		modName(modName_),
 		requiredMajor(TDM_VERSION_MAJOR),
 		requiredMinor(TDM_VERSION_MINOR)
 	{}
@@ -66,6 +67,9 @@ public:
 
 	// Will save any changes to the internal dictionary to disk
 	void	Save();
+
+	// Load stuff from darkmod.txt
+	void	LoadMetaData();
 };
 typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
 

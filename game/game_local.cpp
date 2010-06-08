@@ -590,6 +590,7 @@ void idGameLocal::Shutdown( void ) {
 	m_Shop = CShopPtr();
 
 	// Clear the mission manager
+	m_MissionManager->Shutdown();
 	m_MissionManager = CMissionManagerPtr();
 
 	aasList.DeleteContents( true );
