@@ -34,7 +34,7 @@ public:
 	// Loads all stored data from disk
 	void Init();
 
-	// Returns the mission info structure for this name
+	// Returns the mission info structure for this fs_game
 	// Always returns non-NULL, if the name is not existing, 
 	// a new structure will be created
 	const CMissionInfoPtr& GetMissionInfo(const idStr& name);

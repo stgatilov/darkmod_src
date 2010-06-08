@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MissionDB.h"
+#include "MissionInfoDecl.h"
 
 namespace fs = boost::filesystem;
 
@@ -21,7 +22,7 @@ CMissionDB::CMissionDB()
 
 void CMissionDB::Init()
 {
-	// TODO
+	// Traverse all declarations?
 }
 
 const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
@@ -30,8 +31,11 @@ const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
 	
 	if (i == _missionInfo.end())
 	{
+		// Get the mission info declaration (or create it if not found so far)
+		CMissionInfoDecl* decl = CMissionInfoDecl::FindOrCreate(name);
+
 		std::pair<MissionInfoMap::iterator, bool> result = _missionInfo.insert(
-			MissionInfoMap::value_type(name.c_str(), CMissionInfoPtr(new CMissionInfo))
+			MissionInfoMap::value_type(name.c_str(), CMissionInfoPtr(new CMissionInfo(decl)))
 		);
 
 		i = result.first;

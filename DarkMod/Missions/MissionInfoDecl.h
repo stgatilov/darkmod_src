@@ -23,8 +23,19 @@ public:
 	virtual void			FreeData( void );
 	virtual bool			Parse( const char *text, const int textLength );
 
-	/// Key/value data parsed from the xdata decl.
+	/// Key/value data parsed from the mission info decl.
 	idDict					data;
+
+	// Returns the declaration or NULL if no declaration has been registered so far
+	static CMissionInfoDecl*	Find(const idStr& name);
+
+	// Creates a new declaration with the given name. When written, the declaration
+	// will be saved to the default filename as given in the corresponding CVAR.
+	static CMissionInfoDecl*	Create(const idStr& name);
+
+	// Convenience method, combining the above two. The declaration will be created
+	// using Create() if not found after calling Find().
+	static CMissionInfoDecl*	FindOrCreate(const idStr& name);
 };
 
 #endif /* _MISSION_INFO_DECL_H_ */

@@ -22,6 +22,8 @@
 **/
 extern idCVar cv_player_spawnclass;
 
+extern idCVar cv_default_mission_info_file;
+
 extern idCVar cv_ai_sndvol;
 extern idCVar cv_ai_bark_show;
 extern idCVar cv_ai_bumpobject_impulse;

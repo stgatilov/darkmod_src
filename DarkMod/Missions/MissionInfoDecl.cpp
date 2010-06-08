@@ -255,3 +255,30 @@ bool CMissionInfoDecl::Parse( const char *text, const int textLength )
 	}*/
 	return successfulParse;
 }
+
+CMissionInfoDecl* CMissionInfoDecl::Find(const idStr& name)
+{
+	return const_cast<CMissionInfoDecl*>(static_cast<const CMissionInfoDecl*>(
+		declManager->FindType(DECL_TDM_MISSIONINFO, name.c_str(), false)
+	));
+}
+
+// Creates a new declaration with the given name, in the given filename
+CMissionInfoDecl* CMissionInfoDecl::Create(const idStr& name)
+{
+	return static_cast<CMissionInfoDecl*>(
+		declManager->CreateNewDecl(DECL_TDM_MISSIONINFO, name.c_str(), cv_default_mission_info_file.GetString())
+	);
+}
+
+CMissionInfoDecl* CMissionInfoDecl::FindOrCreate(const idStr& name)
+{
+	CMissionInfoDecl* decl = Find(name);
+	
+	if (decl == NULL)
+	{
+		decl = Create(name);
+	}
+
+	return decl;
+}
