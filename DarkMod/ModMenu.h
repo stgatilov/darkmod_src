@@ -99,7 +99,7 @@ private:
 	void InitStartingMap();
 
 	// Loads the contents of the readme.txt file to the GUI
-	idStr GetModNotes(int modIndex);
+	//idStr GetModNotes(int modIndex);
 
 	// Retries a mod info structure for the given mod (folder) name
 	ModInfo GetModInfo(const idStr& modName);

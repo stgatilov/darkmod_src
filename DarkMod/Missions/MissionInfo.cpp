@@ -39,6 +39,8 @@ std::size_t CMissionInfo::GetMissionFolderSize()
 		for (fs::recursive_directory_iterator i(missionPath); 
 			i != fs::recursive_directory_iterator(); ++i)
 		{
+			if (fs::is_directory(i->path())) continue;
+
 			_modFolderSize += fs::file_size(i->path());
 		}
 	}
@@ -98,6 +100,33 @@ void CMissionInfo::Save()
 	// Generate new declaration body text
 	_decl->Update(modName);
 	_decl->ReplaceSourceFileText();
+}
+
+bool CMissionInfo::HasMissionNotes()
+{
+	// Check for the readme.txt file
+	idStr notesFileName = cv_tdm_fm_path.GetString() + modName + "/" + cv_tdm_fm_notes_file.GetString();
+
+	return fileSystem->ReadFile(notesFileName, NULL) != -1;
+}
+
+idStr CMissionInfo::GetMissionNotes()
+{
+	// Check for the readme.txt file
+	idStr notesFileName = cv_tdm_fm_path.GetString() + modName + "/" + cv_tdm_fm_notes_file.GetString();
+
+	char* buffer = NULL;
+
+	if (fileSystem->ReadFile(notesFileName, reinterpret_cast<void**>(&buffer)) == -1)
+	{
+		// File not found
+		return "";
+	}
+
+	idStr modNotes(buffer);
+	fileSystem->FreeFile(buffer);
+
+	return modNotes;
 }
 
 void CMissionInfo::LoadMetaData()

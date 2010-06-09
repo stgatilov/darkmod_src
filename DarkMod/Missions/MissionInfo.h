@@ -59,6 +59,12 @@ public:
 	// Returns 0 if the mod has not been installed yet
 	std::size_t GetMissionFolderSize();
 
+	// Fast check whether the readme.txt file exists
+	bool HasMissionNotes();
+
+	// Retrieves the readme.txt contents (is never cached, always read live from disk)
+	idStr GetMissionNotes();
+
 	// Returns a human-readable format string (i.e. 1.33 GB)
 	idStr	GetMissionFolderSizeString();
 

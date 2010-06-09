@@ -120,49 +120,48 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
 		// Load the readme.txt contents, if available
-		gui->SetStateString("ModNotesText", GetModNotes(modIndex));
+		gui->SetStateString("ModNotesText", info != NULL ? info->GetMissionNotes() : "");
 	}
 	else if (cmd == "onMissionSelected")
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
-		// TODO
-		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
 
-		int numAvailableMissions = gameLocal.m_MissionManager->GetNumMissions();
-
-		if (modIndex >= 0 && modIndex < numAvailableMissions)
+		if (info != NULL)
 		{
-			CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+			bool missionIsCurrentlyInstalled = _curModName == info->modName;
 			
 			// Don't display the install button if the mod is already installed
-			gui->SetStateBool("installModButtonVisible", _curModName != info->modName);
+			gui->SetStateBool("installModButtonVisible", !missionIsCurrentlyInstalled);
+			gui->SetStateBool("hasModNoteButton", info->HasMissionNotes());
 
 			// Set the mod size info
 			std::size_t missionSize = info->GetMissionFolderSize();
 			idStr missionSizeStr = info->GetMissionFolderSizeString();
-			gui->SetStateString("selectedModSize", missionSizeStr);
+			gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
 
-			if (missionSize > 0)
-			{
-				gui->SetStateBool("eraseSelectedModButtonVisible", true);
-			}
+			gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
 		}
 		else
 		{
 			gui->SetStateBool("installModButtonVisible", false);
 			gui->SetStateString("selectedModSize", "0 Bytes");
 			gui->SetStateBool("eraseSelectedModButtonVisible", false);
+			gui->SetStateBool("hasModNoteButton", false);
 		}
+	}
+	else if (cmd == "eraseSelectedModFromDisk")
+	{
+		// TODO
 	}
 	else if (cmd == "update")
 	{
-		// Get selected mod
-		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
-
-		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+		gameLocal.Error("Deprecated update method called by main menu.");
 	}
 	else if (cmd == "modsNextPage")
 	{
@@ -329,7 +328,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateString("currentModDesc", curModInfo.desc);
 }
 
-idStr CModMenu::GetModNotes(int modIndex)
+/*idStr CModMenu::GetModNotes(int modIndex)
 {
 	// Sanity check
 	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
@@ -354,7 +353,7 @@ idStr CModMenu::GetModNotes(int modIndex)
 	fileSystem->FreeFile(buffer);
 
 	return modNotes;
-}
+}*/
 
 CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 {
