@@ -127,37 +127,23 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	}
 	else if (cmd == "onMissionSelected")
 	{
-		// Get selected mod
+		UpdateSelectedMod(gui);
+	}
+	else if (cmd == "eraseSelectedModFromDisk")
+	{
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
 		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
 
 		if (info != NULL)
 		{
-			bool missionIsCurrentlyInstalled = _curModName == info->modName;
-			
-			// Don't display the install button if the mod is already installed
-			gui->SetStateBool("installModButtonVisible", !missionIsCurrentlyInstalled);
-			gui->SetStateBool("hasModNoteButton", info->HasMissionNotes());
-
-			// Set the mod size info
-			std::size_t missionSize = info->GetMissionFolderSize();
-			idStr missionSizeStr = info->GetMissionFolderSizeString();
-			gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
-
-			gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
+			gameLocal.m_MissionManager->EraseModFolder(info->modName);
 		}
-		else
-		{
-			gui->SetStateBool("installModButtonVisible", false);
-			gui->SetStateString("selectedModSize", "0 Bytes");
-			gui->SetStateBool("eraseSelectedModButtonVisible", false);
-			gui->SetStateBool("hasModNoteButton", false);
-		}
-	}
-	else if (cmd == "eraseSelectedModFromDisk")
-	{
-		// TODO
+
+		gui->HandleNamedEvent("OnSelectedMissionErasedFromDisk");
+
+		// Update the selected mission
+		UpdateSelectedMod(gui);
 	}
 	else if (cmd == "update")
 	{
@@ -220,6 +206,42 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	else if (cmd == "uninstallMod")
 	{
 		UninstallMod(gui);
+	}
+}
+
+void CModMenu::UpdateSelectedMod(idUserInterface* gui)
+{
+	// Get selected mod
+	int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+	CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
+	if (info != NULL)
+	{
+		bool missionIsCurrentlyInstalled = _curModName == info->modName;
+		
+		// Don't display the install button if the mod is already installed
+		gui->SetStateBool("installModButtonVisible", !missionIsCurrentlyInstalled);
+		gui->SetStateBool("hasModNoteButton", info->HasMissionNotes());
+
+		// Set the mod size info
+		std::size_t missionSize = info->GetMissionFolderSize();
+		idStr missionSizeStr = info->GetMissionFolderSizeString();
+		gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
+
+		gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
+
+		idStr eraseMissionText = va("You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
+			"\n\n%s\n\nNote that the downloaded mission PK4 in your darkmod/fms/ folder will not be "
+			"affected by this operation, you're still able to re-install the mission.", info->GetMissionFolderPath().c_str());
+		gui->SetStateString("eraseMissionText", eraseMissionText);
+	}
+	else
+	{
+		gui->SetStateBool("installModButtonVisible", false);
+		gui->SetStateString("selectedModSize", "0 Bytes");
+		gui->SetStateBool("eraseSelectedModButtonVisible", false);
+		gui->SetStateBool("hasModNoteButton", false);
 	}
 }
 

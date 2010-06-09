@@ -59,6 +59,11 @@ public:
 	// Returns 0 if the mod has not been installed yet
 	std::size_t GetMissionFolderSize();
 
+	// Returns the full OS path to the mod folder
+	idStr GetMissionFolderPath();
+
+	void ClearMissionFolderSize();
+
 	// Fast check whether the readme.txt file exists
 	bool HasMissionNotes();
 

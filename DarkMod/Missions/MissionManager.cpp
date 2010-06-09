@@ -53,6 +53,32 @@ CMissionInfoPtr CMissionManager::GetMissionInfo(const idStr& name)
 	return _missionDB->GetMissionInfo(name);
 }
 
+void CMissionManager::EraseModFolder(const idStr& name)
+{
+	CMissionInfoPtr info = GetMissionInfo(name);
+
+	if (info == NULL)
+	{
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Cannot erase mission folder for mod %s, mission info not found\r", name.c_str());
+		return;
+	}
+
+	// Delete folder contents
+	fs::path missionPath = info->GetMissionFolderPath().c_str();
+
+	if (fs::exists(missionPath))
+	{
+		fs::remove_all(missionPath);
+	}
+	else
+	{
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Cannot erase mission folder for mod %s, mission folder not found\r", missionPath.file_string().c_str());
+		return;
+	}
+
+	info->ClearMissionFolderSize();
+}
+
 void CMissionManager::SearchForNewMissions()
 {
 	// List all PK4s in the fms/ directory

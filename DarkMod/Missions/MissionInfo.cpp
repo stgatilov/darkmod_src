@@ -48,6 +48,12 @@ std::size_t CMissionInfo::GetMissionFolderSize()
 	return _modFolderSize;
 }
 
+void CMissionInfo::ClearMissionFolderSize()
+{
+	_modFolderSize = 0;
+	_modFolderSizeComputed = false;
+}
+
 idStr CMissionInfo::GetMissionFolderSizeString()
 {
 	float size = static_cast<float>(GetMissionFolderSize());
@@ -100,6 +106,16 @@ void CMissionInfo::Save()
 	// Generate new declaration body text
 	_decl->Update(modName);
 	_decl->ReplaceSourceFileText();
+}
+
+idStr CMissionInfo::GetMissionFolderPath()
+{
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	fs::path missionPath = parentPath / modName.c_str();
+
+	return missionPath.file_string().c_str();
 }
 
 bool CMissionInfo::HasMissionNotes()
