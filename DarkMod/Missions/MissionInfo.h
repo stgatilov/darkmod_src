@@ -57,7 +57,10 @@ public:
 
 	// Returns the size requirements of the fs_game folder
 	// Returns 0 if the mod has not been installed yet
-	std::size_t GetModFolderSize();
+	std::size_t GetMissionFolderSize();
+
+	// Returns a human-readable format string (i.e. 1.33 GB)
+	idStr	GetMissionFolderSizeString();
 
 	// Returns a specific key value from the mission info declaration's dictionary
 	idStr	GetKeyValue(const char* key);

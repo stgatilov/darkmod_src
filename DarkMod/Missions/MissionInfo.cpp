@@ -14,10 +14,63 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MissionInfo.h"
 #include "MissionInfoDecl.h"
+#include <boost/filesystem.hpp>
 
-std::size_t CMissionInfo::GetModFolderSize()
+namespace fs = boost::filesystem;
+
+std::size_t CMissionInfo::GetMissionFolderSize()
 {
-	return 0;
+	if (_modFolderSizeComputed)
+	{
+		return _modFolderSize;
+	}
+
+	_modFolderSizeComputed = true;
+	_modFolderSize = 0;
+
+	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	parentPath = parentPath.remove_leaf().remove_leaf();
+
+	fs::path missionPath = parentPath / modName.c_str();
+
+	if (fs::exists(missionPath))
+	{
+		// Iterate over all files in the mod folder
+		for (fs::recursive_directory_iterator i(missionPath); 
+			i != fs::recursive_directory_iterator(); ++i)
+		{
+			_modFolderSize += fs::file_size(i->path());
+		}
+	}
+
+	return _modFolderSize;
+}
+
+idStr CMissionInfo::GetMissionFolderSizeString()
+{
+	float size = static_cast<float>(GetMissionFolderSize());
+
+	// TODO: i18n
+	idStr str;
+
+	if (size < 1024)
+	{
+		str = va("%0.2f Bytes", size);
+	}
+	else if (size < 1024*1024)
+	{
+		str = va("%0.2f kB", size/1024.0f);
+	}
+	else if (size < 1024.0f*1024.0f*1024.0f)
+	{
+		str = va("%0.2f MB", size/(1024.0f*1024.0f));
+	}
+	else if (size < 1024.0f*1024.0f*1024.0f*1024.0f)
+	{
+		str = va("%0.2f GB", size/(1024.0f*1024.0f*1024.0f));
+	}
+
+	return str;
 }
 
 idStr CMissionInfo::GetKeyValue(const char* key)
