@@ -275,6 +275,8 @@ void CMissionInfoDecl::Update(const idStr& name)
 		body += "\t\"" + kv->GetValue() + "\"\n";
 	}
 
+	body += " test ";
+
 	body += "\n}\n\n";
 
 	this->SetText(body.c_str());

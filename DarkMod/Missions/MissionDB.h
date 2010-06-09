@@ -31,7 +31,7 @@ public:
 	void Init();
 
 	// Saves changed data to disk
-	void Shutdown();
+	void Save();
 
 	// Returns the mission info structure for this fs_game
 	// Always returns non-NULL, if the name is not existing, 

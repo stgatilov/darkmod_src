@@ -48,6 +48,17 @@ public:
 	// returns the mission info by name (always non-NULL)
 	CMissionInfoPtr GetMissionInfo(const idStr& name);
 
+	// Convenience method which copies a file from <source> to <dest>
+	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
+	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
+	static bool DoCopyFile(const fs::path& source, const fs::path& dest, bool overwrite = false);
+
+	// Removes the given file, returns TRUE if this succeeded or if file wasn't there in the first place, FALSE on error
+	static bool DoRemoveFile(const fs::path& fileToRemove);
+
+	// Moves the given file, from <fromPath> to <toPath>
+	static bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
+
 private:
 	void SearchForNewMissions();
 
@@ -69,17 +80,6 @@ private:
 
 	// Compare functor to sort mods by display name
 	static int MissionSortCompare(const int* a, const int* b);
-
-	// Convenience method which copies a file from <source> to <dest>
-	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
-	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
-	bool DoCopyFile(const fs::path& source, const fs::path& dest, bool overwrite = false);
-
-	// Removes the given file, returns TRUE if this succeeded or if file wasn't there in the first place, FALSE on error
-	bool DoRemoveFile(const fs::path& fileToRemove);
-
-	// Moves the given file, from <fromPath> to <toPath>
-	bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
 };
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 

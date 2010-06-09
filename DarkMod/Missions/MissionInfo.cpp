@@ -40,6 +40,7 @@ void CMissionInfo::Save()
 {
 	// Don't do unnecessary work
 	//if (!_declDirty) return;
+	//if (modName != "thieves") return;
 
 	// Generate new declaration body text
 	_decl->Update(modName);

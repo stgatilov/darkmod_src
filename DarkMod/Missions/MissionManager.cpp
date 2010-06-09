@@ -28,7 +28,7 @@ void CMissionManager::Init()
 
 void CMissionManager::Shutdown()
 {
-	_missionDB->Shutdown();
+	_missionDB->Save();
 }
 
 // Returns the number of available missions
