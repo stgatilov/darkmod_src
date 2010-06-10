@@ -13,8 +13,12 @@
 
 #pragma once
 
-#include "boost/filesystem.hpp"
+#include <boost/shared_ptr.hpp>
+#include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
+
+class CMissionInfo;
+typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
 
 // Handles mainmenu that displays list of mods (FMs) and lets user
 // chose which one to load. Also handles display of briefing page
@@ -34,10 +38,14 @@ public:
 
 private:
 
+	// Performs the version check and returns TRUE if positive,
+	// returns FALSE otherwise (and issues failure calls to the given GUI)
+	bool PerformVersionCheck(const CMissionInfoPtr& mission, idUserInterface* gui);
+
 	void UpdateSelectedMod(idUserInterface* gui);
 
-	// Installs the given mod
-	void InstallMod(int modIndex, idUserInterface* gui);
+	// Installs the given mission (doesn't accept NULL pointers);
+	void InstallMission(const CMissionInfoPtr& mission, idUserInterface* gui);
 
 	// Uninstalls the current FM
 	void UninstallMod(idUserInterface* gui);

@@ -125,12 +125,33 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "darkmodLoad")
+	else if (cmd == "onClickInstallSelectedMission")
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
-		InstallMod(modIndex, gui);
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
+		if (info == NULL) return; // sanity check
+
+		// Issue the named command to the GUI
+		gui->SetStateString("modInstallProgressText", "Installing Mission Package\n\n" + info->displayName);
+	}
+	else if (cmd == "installSelectedMission")
+	{
+		// Get selected mod
+		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
+		if (info == NULL) return; // sanity check
+
+		if (!PerformVersionCheck(info, gui))
+		{
+			return; // version check failed
+		}
+
+		InstallMission(info, gui);
 	}
 	else if (cmd == "darkmodRestart")
 	{
@@ -302,144 +323,57 @@ fs::path CModMenu::GetDarkmodPath()
 	return fs::path(g_Global.GetDarkmodPath());
 }
 
-void CModMenu::InstallMod(int modIndex, idUserInterface* gui)
+bool CModMenu::PerformVersionCheck(const CMissionInfoPtr& mission, idUserInterface* gui)
 {
-	// Path to the parent directory
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
-	// Sanity-check
-	if (modIndex < 0 || modIndex >= gameLocal.m_MissionManager->GetNumMissions())
-	{
-		return;
-	}
-
-	CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
-	const idStr& modDirName = info->modName;
-
 	// Check the required TDM version of this FM
-	if (info->requiredMajor > TDM_VERSION_MAJOR || info->requiredMinor > TDM_VERSION_MINOR)
+	if (mission->requiredMajor > TDM_VERSION_MAJOR || mission->requiredMinor > TDM_VERSION_MINOR)
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
 			va("Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running %s v%d.%02d. Please run the tdm_update application to update your installation.",
-			GAME_VERSION, info->requiredMajor, info->requiredMinor, GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+
 		gui->HandleNamedEvent("OnRequiredVersionCheckFail");
-		return;
+
+		return false;
 	}
 
-	// Issue the named command to the GUI
-	gui->SetStateString("modInstallProgressText", "Installing Mission Package\n\n" + info->displayName);
-	gui->HandleNamedEvent("OnModInstallationStart");
+	return true; // version check passed
+}
 
-	// Ensure that the target folder exists
-	fs::path targetFolder = parentPath / modDirName.c_str();
+void CModMenu::InstallMission(const CMissionInfoPtr& mission, idUserInterface* gui)
+{
+	assert(mission != NULL);
+	assert(gui != NULL);
 
-	if (!fs::create_directory(targetFolder))
+	// Perform the installation
+	CMissionManager::InstallResult result = gameLocal.m_MissionManager->InstallMission(mission->modName);
+
+	if (result != CMissionManager::INSTALLED_OK)
 	{
-		// Directory exists, not a problem, but log this
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("FM targetFolder already exists: %s\r", targetFolder.string().c_str());
-	}
+		idStr msg;
 
-	// Path to the darkmod directory
-	fs::path darkmodPath = GetDarkmodPath();
-
-	// Copy all PK4s from the FM folder (and all subdirectories)
-	idFileList* pk4Files = fileSystem->ListFilesTree(info->pathToFMPackage, ".pk4", false);
-
-	for (int i = 0; i < pk4Files->GetNumFiles(); ++i)
-	{
-		// Source file (full OS path)
-		fs::path pk4fileOsPath = GetDarkmodPath() / pk4Files->GetFile(i);
-
-		// Target location
-		fs::path targetFile = targetFolder / pk4fileOsPath.leaf();
-
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
-
-		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
-		//fileeSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
-
-		// Copy the PK4 file and make sure any target file with the same name is removed beforehand
-		CMissionManager::DoCopyFile(pk4fileOsPath, targetFile, true);
-	}
-
-	fileSystem->FreeFileList(pk4Files);
-
-	// Path to file that holds the current FM name
-	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
-
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.file_string().c_str());
-
-	// Save the name of the new mod
-	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
-
-	if (currentFM != NULL)
-	{
-		fputs(modDirName, currentFM);
-		fclose(currentFM);
-	}
-	else
-	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.file_string().c_str());
-	}
-
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
-
-	// Assemble the path to the FM's DoomConfig.cfg
-	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
-	
-	// Check if we should synchronise DoomConfig.cfg files
-	if (cv_tdm_fm_sync_config_files.GetBool())
-	{
-		// Yes, sync DoomConfig.cfg
-
-		// Always copy the DoomConfig.cfg from darkmod/ to the new mod/
-		// Remove any DoomConfig.cfg that might exist there beforehand
-		CMissionManager::DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath, true);
-	}
-	else
-	{
-		// No, don't sync DoomConfig.cfg, but at least copy a basic one over there if it doesn't exist
-		if (!fs::exists(doomConfigPath))
+		switch (result)
 		{
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("DoomConfig.cfg not found in FM folder, copy over from darkmod.\r");
+		case CMissionManager::COPY_FAILURE:
+			msg = "Could not copy files. Maybe the target files are write protected or you're running out of disk space or lacking the required permissions?";
+			break;
+		default:
+			msg = "No further explanation available. Well, this was kind of unexpected.";
+		};
 
-			CMissionManager::DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath);
-		}
+		// Feed error messages to GUI
+		gui->SetStateString("modInstallationFailedText", msg);
+		gui->HandleNamedEvent("OnModInstallationFailed");
 	}
-
-	// Check if the config.spec file already exists in the mod folder
-	fs::path configSpecPath = targetFolder / "config.spec";
-	if (!fs::exists(configSpecPath))
+	else
 	{
-		// Copy the config.spec file from darkmod/ to the new mod/
-		CMissionManager::DoCopyFile(darkmodPath / "config.spec", configSpecPath);
+		gui->HandleNamedEvent("OnModInstallationFinished");
 	}
-
-	gui->HandleNamedEvent("OnModInstallationFinished");
 }
 
 void CModMenu::UninstallMod(idUserInterface* gui)
 {
-	// To uninstall the current FM, just clear the FM name in currentfm.txt	
-
-	// Path to the darkmod directory
-	fs::path darkmodPath = GetDarkmodPath();
-
-	// Path to file that holds the current FM name
-	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
-
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to clear current FM name in %s\r", currentFMPath.file_string().c_str());
-
-	if (CMissionManager::DoRemoveFile(currentFMPath))
-	{
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Current FM file removed: %s.\r", currentFMPath.string().c_str());
-	}
-	else
-	{
-		// Log removal error
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s.\r", currentFMPath.string().c_str());
-	}
+	gameLocal.m_MissionManager->UninstallMission();
 
 	gui->HandleNamedEvent("OnModUninstallFinished");
 }
