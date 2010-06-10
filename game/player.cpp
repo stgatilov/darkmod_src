@@ -6321,32 +6321,24 @@ void idPlayer::Move( void )
 	}
 
 	// play rope movement sounds
-	if( physicsObj.OnRope() )
+	if (physicsObj.OnRope())
 	{
-		int old_vert(0), new_vert(0);
 		// Correct for moving reference frame
 		int startTime = gameLocal.previousTime;
 		int endTime = gameLocal.time;
-		float RefZOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel().z;
+		float refZOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel().z;
 		
-		old_vert = static_cast<int>(savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger());
-		new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefZOffset) / cv_pm_rope_snd_rep_dist.GetInteger());
+		int old_vert = static_cast<int>(savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger());
+		int new_vert = static_cast<int>((physicsObj.GetOrigin().z - refZOffset) / cv_pm_rope_snd_rep_dist.GetInteger());
 		
-		if ( old_vert != new_vert ) 
+		if (old_vert != new_vert) 
 		{
 			StartSound( "snd_rope_climb", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 	}
-
-
 	// play climbing movement sounds
-	if ( AI_ONLADDER ) 
+	else if (AI_ONLADDER) 
 	{
-		idStr TempStr, LocalSound, sound;
-		bool bSoundPlayed = false;
-		sound.Clear();
-		int old_vert(0), new_vert(0), old_horiz(0), new_horiz(0);
-		
 		// Correct for moving reference frame
 		int startTime = gameLocal.previousTime;
 		int endTime = gameLocal.time;
@@ -6354,48 +6346,50 @@ void idPlayer::Move( void )
 		idVec3 GravNormal = physicsObj.GetGravityNormal();
 		idVec3 RefFrameOffsetXY = RefFrameOffset - (RefFrameOffset * GravNormal ) * GravNormal;
 
-		old_vert = static_cast<int>(savedOrigin.z / physicsObj.GetClimbSndRepDistVert());
-		new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert());
+		int old_vert = static_cast<int>(savedOrigin.z / physicsObj.GetClimbSndRepDistVert());
+		int new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert());
 
-		old_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz());
-		new_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz());
+		int old_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz());
+		int new_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz());
 
-		if ( old_vert != new_vert ) 
+		idStr localSound;
+
+		if (old_vert != new_vert) 
 		{
-			LocalSound = "snd_climb_vert_";
-			bSoundPlayed = true;
+			localSound = "snd_climb_vert_";
+		}
+		else if (old_horiz != new_horiz)
+		{
+			localSound = "snd_climb_horiz_";
 		}
 
-		else if( old_horiz != new_horiz )
+		if (localSound.Length() > 0)
 		{
-			LocalSound = "snd_climb_horiz_";
-			bSoundPlayed = true;
-		}
+			idStr surfaceName = physicsObj.GetClimbSurfaceType();
 
-		if( bSoundPlayed )
-		{
-			idStr SurfName = physicsObj.GetClimbSurfaceType();
-			TempStr = LocalSound + SurfName;
-			sound = spawnArgs.GetString( TempStr.c_str() );
-			if( sound.IsEmpty() )
+			idStr tempStr = localSound + surfaceName;
+			idStr sound = spawnArgs.GetString(tempStr.c_str());
+
+			if (sound.Length() == 0)
 			{
-				TempStr = LocalSound + "default";
-				sound = spawnArgs.GetString( TempStr.c_str() );
+				tempStr = localSound + "default";
+				sound = spawnArgs.GetString(tempStr.c_str());
 			}
 
 			// DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Climb sound: %s\r", TempStr.c_str() );
-			if ( !sound.IsEmpty() )
-				StartSound( TempStr.c_str(), SND_CHANNEL_ANY, 0, false, NULL );
+			if (sound.Length() > 0)
+			{
+				StartSound(tempStr.c_str(), SND_CHANNEL_ANY, 0, false, NULL);
+			}
 		}
 	}
 
-	if ( health > 0 )
+	if (health > 0)
 	{
-		CrashLand( savedOrigin, savedVelocity );
+		CrashLand(savedOrigin, savedVelocity);
 	}
 
-	BobCycle( pushVelocity );
-
+	BobCycle(pushVelocity);
 }
 
 /*
