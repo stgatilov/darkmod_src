@@ -141,6 +141,38 @@ CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
 	return GetMissionInfo(curMission);
 }
 
+int CMissionManager::GetNumNewMissions()
+{
+	return _newFoundMissions.Num();
+}
+
+idStr CMissionManager::GetNewFoundMissionsText()
+{
+	if (_newFoundMissions.Num() == 0)
+	{
+		return "";
+	}
+
+	idStr text;
+
+	for (int i = 0; i < _newFoundMissions.Num(); ++i)
+	{
+		CMissionInfoPtr info = GetMissionInfo(_newFoundMissions[i]);
+
+		if (info == NULL) continue;
+
+		text += (text.IsEmpty()) ? "" : "\n";
+		text += info->displayName;
+	}
+
+	return text;
+}
+
+void CMissionManager::ClearNewMissionList()
+{
+	_newFoundMissions.Clear();
+}
+
 void CMissionManager::SearchForNewMissions()
 {
 	// List all PK4s in the fms/ directory
@@ -214,6 +246,9 @@ CMissionManager::MoveList CMissionManager::SearchForNewMissions(const idStr& ext
 		modName.ToLower();
 
 		if (modName.IsEmpty()) continue; // error?
+
+		// Remember this for the user to display
+		_newFoundMissions.Append(modName);
 
 		// Clean modName string from any weird characters
 		for (int i = 0; i < modName.Length(); ++i)
