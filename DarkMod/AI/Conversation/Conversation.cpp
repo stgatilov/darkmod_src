@@ -140,6 +140,12 @@ void Conversation::Start()
 
 	// Set the index to the first command
 	_currentCommand = 0;
+
+	// Reset the command execution status to ready
+	for (int i = 0; i < _commands.Num(); i++)
+	{
+		_commands[i]->SetState(ConversationCommand::EReadyForExecution);
+	}
 }
 
 void Conversation::End()
