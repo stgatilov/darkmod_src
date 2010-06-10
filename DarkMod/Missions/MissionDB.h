@@ -37,6 +37,9 @@ public:
 	// Always returns non-NULL, if the name is not existing, 
 	// a new structure will be created
 	const CMissionInfoPtr& GetMissionInfo(const idStr& name);
+
+private:
+	void ReloadMissionInfoFile();
 };
 typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
 

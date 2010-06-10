@@ -14,13 +14,14 @@
 #include <boost/shared_ptr.hpp>
 
 class CMissionInfoDecl;
+typedef boost::shared_ptr<CMissionInfoDecl> CMissionInfoDeclPtr;
 
 class CMissionInfo
 {
 private:
 	// The "internal" mission info declaration, 
 	// holding the persistent information about a mission (completion status, etc.)
-	CMissionInfoDecl* _decl;
+	CMissionInfoDeclPtr _decl;
 
 	// TRUE if the underlying declaration has been altered and needs saving
 	bool _declDirty;
@@ -45,7 +46,7 @@ public:
 	int requiredMajor;
 	int requiredMinor;
 
-	CMissionInfo(const idStr& modName_, CMissionInfoDecl* detailsDecl) :
+	CMissionInfo(const idStr& modName_, const CMissionInfoDeclPtr& detailsDecl) :
 		_decl(detailsDecl),
 		_declDirty(false),
 		_modFolderSize(0),
@@ -87,8 +88,8 @@ public:
 	// Saves a key into the internal declaration dictionary
 	void	SetKeyValue(const char* key, const char* value);
 
-	// Will save any changes to the internal dictionary to disk
-	void	Save();
+	// Will save any persistent info to the given file
+	void	SaveToFile(idFile* file);
 
 	// Load stuff from darkmod.txt
 	void	LoadMetaData();

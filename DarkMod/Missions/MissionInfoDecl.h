@@ -11,36 +11,29 @@
 #define _MISSION_INFO_DECL_H_
 
 #include "../../idlib/precompiled.h"
+#include <boost/shared_ptr.hpp>
 
-class CMissionInfoDecl : 
-	public idDecl
+class CMissionInfoDecl
 {
-public:
-	~CMissionInfoDecl();
+private:
+	// The body text used for saving
+	idStr _bodyText;
 
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual void			FreeData( void );
-	virtual bool			Parse( const char *text, const int textLength );
+public:
+	// Construct this declaration from the given token stream
+	bool Parse(idLexer& src);
 
 	/// Key/value data parsed from the mission info decl.
-	idDict					data;
+	idDict data;
 
 	// Regenerates the declaration body using the given name as decl name
-	void					Update(const idStr& name);
+	void Update(const idStr& name);
 
-	// Returns the declaration or NULL if no declaration has been registered so far
-	static CMissionInfoDecl*	Find(const idStr& name);
-
-	// Creates a new declaration with the given name. When written, the declaration
-	// will be saved to the default filename as given in the corresponding CVAR.
-	static CMissionInfoDecl*	Create(const idStr& name);
-
-	// Convenience method, combining the above two. The declaration will be created
-	// using Create() if not found after calling Find().
-	static CMissionInfoDecl*	FindOrCreate(const idStr& name);
+	// Append the data to the given file
+	void SaveToFile(idFile* file);
 
 	static const char* const TYPE_NAME;
 };
+typedef boost::shared_ptr<CMissionInfoDecl> CMissionInfoDeclPtr;
 
 #endif /* _MISSION_INFO_DECL_H_ */

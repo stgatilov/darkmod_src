@@ -137,29 +137,26 @@ idStr CMissionInfo::GetMissionCompletedString()
 
 idStr CMissionInfo::GetKeyValue(const char* key, const char* defaultStr)
 {
-	assert(_decl != NULL);
+	if (_decl == NULL) return defaultStr;
 
 	return _decl->data.GetString(key, defaultStr);
 }
 
 void CMissionInfo::SetKeyValue(const char* key, const char* value)
 {
-	assert(_decl != NULL);
+	if (_decl == NULL) return;
 
 	_declDirty = true;
 
 	_decl->data.Set(key, value);
 }
 
-void CMissionInfo::Save()
+void CMissionInfo::SaveToFile(idFile* file)
 {
-	// Don't do unnecessary work
-	//if (!_declDirty) return;
-	//if (modName != "thieves") return;
+	if (_decl == NULL) return;
 
-	// Generate new declaration body text
 	_decl->Update(modName);
-	_decl->ReplaceSourceFileText();
+	_decl->SaveToFile(file);
 }
 
 idStr CMissionInfo::GetMissionFolderPath()
