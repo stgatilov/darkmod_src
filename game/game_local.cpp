@@ -38,6 +38,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/RevisionTracker.h"
+#include "../DarkMod/Missions/MissionManager.h"
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -426,7 +427,6 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclFolder( "fx",				".fx",				DECL_FX );
 	declManager->RegisterDeclFolder( "particles",		".prt",				DECL_PARTICLE );
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
-	//declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
 	// TDM specific DECLs
 	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
 	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
@@ -503,6 +503,10 @@ void idGameLocal::Init( void ) {
 		// Out of memory
 		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Out of memory when allocating render pipe\n");
 	}
+
+	// Initialise the mission manager
+	m_MissionManager = CMissionManagerPtr(new CMissionManager);
+	m_MissionManager->Init();
 
 	// Initialise the mod menu class to load the FMs
 	assert(m_ModMenu != NULL);
@@ -581,6 +585,10 @@ void idGameLocal::Shutdown( void ) {
 	// Clear the mod menu
 	m_ModMenu = CModMenuPtr();
 	m_Shop = CShopPtr();
+
+	// Destroy the mission manager
+	m_MissionManager->Shutdown();
+	m_MissionManager = CMissionManagerPtr();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
@@ -1630,6 +1638,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	gamestate = GAMESTATE_ACTIVE;
 	m_MissionResult = MISSION_INPROGRESS;
 
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
+
 	// We need an objectives update now that we've loaded the map
 	m_MissionData->ClearGUIState();
 
@@ -1997,6 +2008,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	{
 		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]).get());
 	}
+
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
 
 	Printf( "--------------------------------------\n" );
 

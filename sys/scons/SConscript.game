@@ -169,6 +169,10 @@ Inventory/Cursor.cpp \
 Inventory/Inventory.cpp \
 Inventory/Item.cpp \
 Inventory/WeaponItem.cpp \
+Missions/MissionDB.cpp \
+Missions/MissionInfo.cpp \
+Missions/MissionInfoDecl.cpp \
+Missions/MissionManager.cpp \
 randomizer/mersenne.cpp \
 randomizer/mother.cpp \
 randomizer/ranrotb.cpp \

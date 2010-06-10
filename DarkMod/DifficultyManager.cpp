@@ -78,10 +78,21 @@ int DifficultyManager::GetDifficultyLevel() const
 	return _difficulty;
 }
 
-const idStr& DifficultyManager::GetDifficultyName(int level)
+idStr DifficultyManager::GetDifficultyName(int level)
 {
 	assert(level >= 0 && level < DIFFICULTY_COUNT);
-	return _difficultyNames[level];
+
+	if (_difficultyNames[level].Length() > 0)
+	{
+		return _difficultyNames[level];
+	}
+	else // return default names from entityDef
+	{
+		const idDecl* diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
+		const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
+
+		return diffDef->dict.GetString(va("diff%ddefault", level), "");
+	}
 }
 
 void DifficultyManager::Save(idSaveGame* savefile)

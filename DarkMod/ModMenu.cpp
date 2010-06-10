@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/declxdata.h"
 #include "boost/filesystem.hpp"
 #include "../DarkMod/ZipLoader/ZipLoader.h"
+#include "../DarkMod/Missions/MissionManager.h"
 
 #include <string>
 #ifdef _WINDOWS
@@ -106,45 +107,65 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
 	idStr cmd = menuCommand;
 
-	if (cmd == "updateModList")
+	if (cmd == "refreshMissionList")
 	{
-		// Reload the mod list and update the GUI
-		BuildModList();
+		gameLocal.m_MissionManager->ReloadMissionList();
 
 		// Update the GUI state
 		UpdateGUI(gui);
+
+		int numNewMissions = gameLocal.m_MissionManager->GetNumNewMissions();
+
+		if (numNewMissions > 0)
+		{
+			if (numNewMissions > 1)
+			{
+				gui->SetStateString("newFoundMissionsText", va("%d new missions are available", numNewMissions));
+			}
+			else
+			{
+				gui->SetStateString("newFoundMissionsText", va("A new mission is available", numNewMissions));
+			}
+
+			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundMissionsText());
+			gui->HandleNamedEvent("OnNewMissionsFound");
+
+			gameLocal.m_MissionManager->ClearNewMissionList();
+		}
 	}
 	else if (cmd == "loadModNotes")
 	{
 		// Get selected mod
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
 		// Load the readme.txt contents, if available
-		gui->SetStateString("ModNotesText", GetModNotes(modIndex));
+		gui->SetStateString("ModNotesText", info != NULL ? info->GetMissionNotes() : "");
 	}
-	else if (cmd == "updateButtonVisibility")
+	else if (cmd == "onMissionSelected")
 	{
-		// Get selected mod
+		UpdateSelectedMod(gui);
+	}
+	else if (cmd == "eraseSelectedModFromDisk")
+	{
 		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
 
-		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+		CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
 
-		if (modIndex >= 0 && modIndex < _modsAvailable.Num())
+		if (info != NULL)
 		{
-			ModInfo selModInfo = GetModInfo(modIndex);
-			gui->SetStateBool("installModButtonVisible", idStr::Icmp(_curModName, _modsAvailable[modIndex]) != 0);
+			gameLocal.m_MissionManager->EraseModFolder(info->modName);
 		}
-		else
-		{
-			gui->SetStateBool("installModButtonVisible", false);
-		}
+
+		gui->HandleNamedEvent("OnSelectedMissionErasedFromDisk");
+
+		// Update the selected mission
+		UpdateSelectedMod(gui);
 	}
 	else if (cmd == "update")
 	{
-		// Get selected mod
-		int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
-
-		gui->SetStateBool("hasModNoteButton", !GetModNotes(modIndex).IsEmpty());
+		gameLocal.Error("Deprecated update method called by main menu.");
 	}
 	else if (cmd == "modsNextPage")
 	{
@@ -206,6 +227,45 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	}
 }
 
+void CModMenu::UpdateSelectedMod(idUserInterface* gui)
+{
+	// Get selected mod
+	int modIndex = gui->GetStateInt("modSelected", "0") + _modTop;
+
+	CMissionInfoPtr info = gameLocal.m_MissionManager->GetMissionInfo(modIndex);
+
+	if (info != NULL)
+	{
+		bool missionIsCurrentlyInstalled = _curModName == info->modName;
+		
+		// Don't display the install button if the mod is already installed
+		gui->SetStateBool("installModButtonVisible", !missionIsCurrentlyInstalled);
+		gui->SetStateBool("hasModNoteButton", info->HasMissionNotes());
+
+		// Set the mod size info
+		std::size_t missionSize = info->GetMissionFolderSize();
+		idStr missionSizeStr = info->GetMissionFolderSizeString();
+		gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
+
+		gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
+
+		idStr eraseMissionText = va("You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
+			"\n\n%s\n\nNote that the downloaded mission PK4 in your darkmod/fms/ folder will not be "
+			"affected by this operation, you're still able to re-install the mission.", info->GetMissionFolderPath().c_str());
+		gui->SetStateString("eraseMissionText", eraseMissionText);
+
+		gui->SetStateString("selectedModCompleted", info->GetMissionCompletedString());
+		gui->SetStateString("selectedModLastPlayDate", info->GetKeyValue("last_play_date", "-"));
+	}
+	else
+	{
+		gui->SetStateBool("installModButtonVisible", false);
+		gui->SetStateString("selectedModSize", "0 Bytes");
+		gui->SetStateBool("eraseSelectedModButtonVisible", false);
+		gui->SetStateBool("hasModNoteButton", false);
+	}
+}
+
 // Displays the current page of briefing text
 void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 {
@@ -264,30 +324,32 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	// Display the name of each FM
 	for (int modIndex = 0; modIndex < modsPerPage; ++modIndex)
 	{
-		idStr guiName = idStr("mod") + modIndex + "_name";
-		idStr guiDesc = idStr("mod") + modIndex + "_desc";
-		idStr guiAuthor = idStr("mod") + modIndex + "_author";
-		idStr guiImage = idStr("mod") + modIndex + "_image";
-		idStr guiAvailable = idStr("modAvail") + modIndex;
+		idStr guiName = va("mod%d_name", modIndex);
+		idStr guiDesc = va("mod%d_desc", modIndex);
+		idStr guiAuthor = va("mod%d_author", modIndex);
+		idStr guiImage = va("mod%d_image", modIndex);
+		idStr guiAvailable = va("modAvail%d", modIndex);
+		idStr guiCompleted = va("modCompleted%d", modIndex);
 
 		int available = 0;
 
-		// Empty mod info structure for default values
-		ModInfo info;
+		int missionIndex = _modTop + modIndex;
+		int numMissions = gameLocal.m_MissionManager->GetNumMissions();
 
-		if (_modTop + modIndex < _modsAvailable.Num())
+		CMissionInfoPtr info;
+
+		// Retrieve the mission info
+		if (_modTop + modIndex < numMissions)
 		{
-			// Load the mod info structure
-			info = GetModInfo(_modTop + modIndex);
-
-			available = 1;
+			info = gameLocal.m_MissionManager->GetMissionInfo(missionIndex);
 		}
 
-		gui->SetStateInt(guiAvailable, available);
-		gui->SetStateString(guiName, info.title);
-		gui->SetStateString(guiDesc, info.desc);
-		gui->SetStateString(guiAuthor, info.author);
-		gui->SetStateString(guiImage, info.image);
+		gui->SetStateInt(guiAvailable,	info != NULL ? 1 : 0);
+		gui->SetStateString(guiName,	info != NULL ? info->displayName : "");
+		gui->SetStateString(guiDesc,	info != NULL ? info->description : "");
+		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
+		gui->SetStateString(guiImage,	info != NULL ? info->image : "");
+		gui->SetStateBool(guiCompleted,	info != NULL ? info->MissionCompleted() : false);
 	}
 
 	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);
@@ -311,7 +373,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateString("currentModDesc", curModInfo.desc);
 }
 
-idStr CModMenu::GetModNotes(int modIndex)
+/*idStr CModMenu::GetModNotes(int modIndex)
 {
 	// Sanity check
 	if (modIndex < 0 || modIndex >= _modsAvailable.Num())
@@ -336,7 +398,7 @@ idStr CModMenu::GetModNotes(int modIndex)
 	fileSystem->FreeFile(buffer);
 
 	return modNotes;
-}
+}*/
 
 CModMenu::ModInfo CModMenu::GetModInfo(int modIndex)
 {

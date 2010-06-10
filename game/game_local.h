@@ -199,6 +199,8 @@ typedef boost::shared_ptr<CStim> CStimPtr;
 class CStimResponseTimer;
 class CGrabber;
 class CEscapePointManager;
+class CMissionManager;
+typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 
 // Forward declare the Conversation System
 namespace ai { 
@@ -471,6 +473,11 @@ public:
 	 * greebo: The fan-mission-handling class. Also contains GUI handling code.
 	 */
 	CModMenuPtr				m_ModMenu;
+
+	/**
+	 * greebo: The mission manager instance, for manipulating mission PK4s and saving play info.
+	 */
+	CMissionManagerPtr		m_MissionManager;
 
 	/**
 	 * greebo: The class handling the main menu's shop GUI.

@@ -65,6 +65,8 @@ public:
 
 private:
 
+	void UpdateSelectedMod(idUserInterface* gui);
+
 	// Searches for new PK4 files in the fms/ root folder
 	void SearchForNewMods();
 	// Sub-routine of SearchForNewMods() investigating the FM folder using the given extension (including dot ".pk4", ".zip")
@@ -99,7 +101,7 @@ private:
 	void InitStartingMap();
 
 	// Loads the contents of the readme.txt file to the GUI
-	idStr GetModNotes(int modIndex);
+	//idStr GetModNotes(int modIndex);
 
 	// Retries a mod info structure for the given mod (folder) name
 	ModInfo GetModInfo(const idStr& modName);
