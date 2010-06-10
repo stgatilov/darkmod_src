@@ -134,37 +134,40 @@ public:
 	 */
 	idEntity*				GetRopeEntity();
 
-    bool					OnRope( void ) const;
+    bool					OnRope() const;
+
 	/**
 	* True if the player is climbing on a ladder or wall
 	**/
-	bool					OnLadder( void ) const;
+	bool					OnLadder() const;
+
 	/**
 	* Returns the surface type the player is climbing
 	* Returns empty string if the player is not climbing
 	**/
-	idStr					GetClimbSurfaceType( void ) const;
+	idStr					GetClimbSurfaceType() const;
+
 	/**
 	* Returns the lateral world coordinates resolved into the lateral direction
 	* of the climbing surface.  Used to keep track of lateral position for climb movement sounds
 	**/
-	float					GetClimbLateralCoord( idVec3 OrigVec ) const;
+	float					GetClimbLateralCoord(const idVec3& origVec) const;
+
 	/**
 	* Returns the distance between climbing sounds, in horizontal and vertical coords
 	**/
-	int						GetClimbSndRepDistVert( void ) { return m_ClimbSndRepDistVert; }
-	int						GetClimbSndRepDistHoriz( void ) { return m_ClimbSndRepDistHoriz; }
+	int						GetClimbSndRepDistVert() { return m_ClimbSndRepDistVert; }
+	int						GetClimbSndRepDistHoriz() { return m_ClimbSndRepDistHoriz; }
 
-
-	const idVec3 &			PlayerGetOrigin( void ) const;	// != GetOrigin
+	const idVec3 &			PlayerGetOrigin() const;	// != GetOrigin
 
 	/**
 	* Get the view yaw and pitch changes between last frame and this frame
 	* Useful for rotating items in response to yaw, rope arrow, etc
 	* Returns the change in degrees
 	**/
-	float					GetDeltaViewYaw( void );
-	float					GetDeltaViewPitch( void );
+	float					GetDeltaViewYaw();
+	float					GetDeltaViewPitch();
 
 public:
 
