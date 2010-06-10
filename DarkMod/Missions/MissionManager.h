@@ -54,6 +54,9 @@ public:
 	// Returns the info structure for the currently ongoing mod/mission (or NULL if none)
 	CMissionInfoPtr GetCurrentMissionInfo();
 
+	// Returns the name of the currently installed mod/mission
+	idStr GetCurrentMissionName();
+
 	void EraseModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission

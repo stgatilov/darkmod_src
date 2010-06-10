@@ -129,8 +129,10 @@ void CMissionManager::OnMissionComplete()
 
 CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
 {
-	// Get the name of the current mission
-	idStr curMission = cvarSystem->GetCVarString("fs_game");
+	idStr gameBase = cvarSystem->GetCVarString("fs_game_base");
+
+	// We only have a mod if game_base is set correctly, otherwise we're in "darkmod".
+	idStr curMission = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_game") : "";
 
 	if (curMission.IsEmpty() || curMission == "darkmod") 
 	{
@@ -139,6 +141,13 @@ CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
 	}
 
 	return GetMissionInfo(curMission);
+}
+
+idStr CMissionManager::GetCurrentMissionName()
+{
+	CMissionInfoPtr info = GetCurrentMissionInfo();
+
+	return (info != NULL) ? info->modName : "";
 }
 
 int CMissionManager::GetNumNewMissions()
