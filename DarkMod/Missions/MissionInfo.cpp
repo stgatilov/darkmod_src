@@ -81,6 +81,26 @@ idStr CMissionInfo::GetMissionFolderSizeString()
 	return str;
 }
 
+bool CMissionInfo::MissionCompleted(int difficultyLevel)
+{
+	bool anyCompleted = false;
+
+	for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+	{
+		bool diffCompleted = GetKeyValue(va("mission_completed_%d", i)) == "1";
+
+		if (difficultyLevel == i)
+		{
+			return diffCompleted;
+		}
+
+		// Accumulate the information
+		anyCompleted |= diffCompleted;
+	}
+
+	return anyCompleted;
+}
+
 idStr CMissionInfo::GetKeyValue(const char* key)
 {
 	assert(_decl != NULL);

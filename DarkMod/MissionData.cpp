@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DifficultyManager.h"
 #include "../game/player.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "Missions/MissionManager.h"
 
 /**
 * Add new component type names here.  Must be in exact same order as EComponentType
@@ -991,9 +992,9 @@ void CMissionData::Event_NewObjective()
 	player->UpdateObjectivesGUI();
 }
 
-void CMissionData::Event_MissionComplete( void )
+void CMissionData::Event_MissionComplete()
 {
-	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETED.\r");
 	gameLocal.Printf("MISSION COMPLETED\n");
 
 	// Fire the general mission end event
@@ -1004,8 +1005,9 @@ void CMissionData::Event_MissionComplete( void )
 	// greebo: Stop the gameplay timer, we've completed all objectives
 	m_TotalGamePlayTime = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
 	
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if (player)
+	idPlayer* player = gameLocal.GetLocalPlayer();
+
+	if (player != NULL)
 	{
 		// Remember the player team, all entities are about to be removed
 		SetPlayerTeam(player->team);
@@ -1016,6 +1018,9 @@ void CMissionData::Event_MissionComplete( void )
 		player->PostEventMS(&EV_TriggerMissionEnd, 100);
 
 		player->UpdateObjectivesGUI();
+
+		// Notify the mission database
+		gameLocal.m_MissionManager->OnMissionComplete();
 	}
 }
 

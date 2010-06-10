@@ -235,6 +235,8 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 			"\n\n%s\n\nNote that the downloaded mission PK4 in your darkmod/fms/ folder will not be "
 			"affected by this operation, you're still able to re-install the mission.", info->GetMissionFolderPath().c_str());
 		gui->SetStateString("eraseMissionText", eraseMissionText);
+
+		gui->SetStateBool(va("modCompleted%d", modIndex), info->MissionCompleted());
 	}
 	else
 	{
@@ -303,11 +305,12 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	// Display the name of each FM
 	for (int modIndex = 0; modIndex < modsPerPage; ++modIndex)
 	{
-		idStr guiName = idStr("mod") + modIndex + "_name";
-		idStr guiDesc = idStr("mod") + modIndex + "_desc";
-		idStr guiAuthor = idStr("mod") + modIndex + "_author";
-		idStr guiImage = idStr("mod") + modIndex + "_image";
-		idStr guiAvailable = idStr("modAvail") + modIndex;
+		idStr guiName = va("mod%d_name", modIndex);
+		idStr guiDesc = va("mod%d_desc", modIndex);
+		idStr guiAuthor = va("mod%d_author", modIndex);
+		idStr guiImage = va("mod%d_image", modIndex);
+		idStr guiAvailable = va("modAvail%d", modIndex);
+		idStr guiCompleted = va("modCompleted%d", modIndex);
 
 		int available = 0;
 
@@ -327,6 +330,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiDesc,	info != NULL ? info->description : "");
 		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
 		gui->SetStateString(guiImage,	info != NULL ? info->image : "");
+		gui->SetStateBool(guiCompleted,	info != NULL ? info->MissionCompleted() : false);
 	}
 
 	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);

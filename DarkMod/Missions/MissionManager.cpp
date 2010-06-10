@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "MissionManager.h"
 #include "MissionDB.h"
 #include "../ZipLoader/ZipLoader.h"
+#include "../Inventory/Inventory.h"
 
 CMissionManager::CMissionManager() :
 	_missionDB(new CMissionDB)
@@ -77,6 +78,35 @@ void CMissionManager::EraseModFolder(const idStr& name)
 	}
 
 	info->ClearMissionFolderSize();
+}
+
+void CMissionManager::OnMissionComplete()
+{
+	// Get the name of the current mission
+	idStr curMission = cvarSystem->GetCVarString("fs_game");
+
+	if (curMission.IsEmpty() || curMission == "darkmod") return; // don't do this when no mission is installed or "darkmod"
+
+	CMissionInfoPtr info = GetMissionInfo(curMission);
+
+	if (info == NULL)
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not find mission info for mod %s.\r", curMission.c_str());
+		return;
+	}
+
+	// Mark the current difficulty level as completed
+	info->SetKeyValue(va("mission_completed_%d", gameLocal.m_DifficultyManager.GetDifficultyLevel()), "1");
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+
+	if (player != NULL)
+	{
+		int gold, jewelry, goods;
+		int total = player->Inventory()->GetLoot(gold, jewelry, goods);
+
+		info->SetKeyValue(va("mission_loot_collected_%d", gameLocal.m_DifficultyManager.GetDifficultyLevel()), idStr(total));
+	}
 }
 
 void CMissionManager::SearchForNewMissions()

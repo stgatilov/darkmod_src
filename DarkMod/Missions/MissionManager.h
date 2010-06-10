@@ -50,6 +50,9 @@ public:
 
 	void EraseModFolder(const idStr& name);
 
+	// Called by MissionData when the player completed a mission
+	void OnMissionComplete();
+
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
 	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
