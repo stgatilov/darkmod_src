@@ -64,7 +64,7 @@ public:
 	int GetDifficultyLevel() const;
 
 	// Returns the display name for the given level, which must an integer in [0..DIFFICULTY_COUNT)
-	const idStr& GetDifficultyName(int level);
+	idStr GetDifficultyName(int level);
 
 	/**
 	 * greebo: Applies the spawnarg modifiers of the currently chosen

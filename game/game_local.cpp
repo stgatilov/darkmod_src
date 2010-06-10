@@ -1640,6 +1640,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	gamestate = GAMESTATE_ACTIVE;
 	m_MissionResult = MISSION_INPROGRESS;
 
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
+
 	// We need an objectives update now that we've loaded the map
 	m_MissionData->ClearGUIState();
 
@@ -2007,6 +2010,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	{
 		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]).get());
 	}
+
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
 
 	Printf( "--------------------------------------\n" );
 

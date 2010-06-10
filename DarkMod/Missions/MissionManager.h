@@ -48,10 +48,16 @@ public:
 	// returns the mission info by name (always non-NULL)
 	CMissionInfoPtr GetMissionInfo(const idStr& name);
 
+	// Returns the info structure for the currently ongoing mod/mission (or NULL if none)
+	CMissionInfoPtr GetCurrentMissionInfo();
+
 	void EraseModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission
 	void OnMissionComplete();
+
+	// Called by gameLocal when the player start/loads a mission
+	void OnMissionStart();
 
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand

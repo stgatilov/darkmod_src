@@ -101,11 +101,45 @@ bool CMissionInfo::MissionCompleted(int difficultyLevel)
 	return anyCompleted;
 }
 
-idStr CMissionInfo::GetKeyValue(const char* key)
+idStr CMissionInfo::GetMissionCompletedString()
+{
+	if (modName == "training_mission")
+	{
+		return "Not completable";
+	}
+
+	idStr diffStr;
+
+	bool anyCompleted = false;
+
+	for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+	{
+		bool diffCompleted = GetKeyValue(va("mission_completed_%d", i)) == "1";
+
+		if (diffCompleted)
+		{
+			diffStr += diffStr.Length() > 0 ? ", " : "";
+			diffStr += gameLocal.m_DifficultyManager.GetDifficultyName(i);
+
+			anyCompleted = true;
+		}
+	}
+
+	if (anyCompleted)
+	{
+		return va("Yes (%s)", diffStr.c_str());
+	}
+	else
+	{
+		return "Not yet";
+	}
+}
+
+idStr CMissionInfo::GetKeyValue(const char* key, const char* defaultStr)
 {
 	assert(_decl != NULL);
 
-	return _decl->data.GetString(key);
+	return _decl->data.GetString(key, defaultStr);
 }
 
 void CMissionInfo::SetKeyValue(const char* key, const char* value)

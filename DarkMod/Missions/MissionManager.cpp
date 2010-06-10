@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
+#include <time.h>
 #include "MissionManager.h"
 #include "MissionDB.h"
 #include "../ZipLoader/ZipLoader.h"
@@ -80,18 +81,33 @@ void CMissionManager::EraseModFolder(const idStr& name)
 	info->ClearMissionFolderSize();
 }
 
-void CMissionManager::OnMissionComplete()
+void CMissionManager::OnMissionStart()
 {
-	// Get the name of the current mission
-	idStr curMission = cvarSystem->GetCVarString("fs_game");
-
-	if (curMission.IsEmpty() || curMission == "darkmod") return; // don't do this when no mission is installed or "darkmod"
-
-	CMissionInfoPtr info = GetMissionInfo(curMission);
+	CMissionInfoPtr info = GetCurrentMissionInfo();
 
 	if (info == NULL)
 	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not find mission info for mod %s.\r", curMission.c_str());
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not find mission info for current mod.\r");
+		return;
+	}
+
+	time_t seconds;
+	tm* timeInfo;
+
+	seconds = time(NULL);
+	timeInfo = localtime(&seconds);
+
+	// Mark the current difficulty level as completed
+	info->SetKeyValue("last_play_date", va("%d-%02d-%02d", timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday));
+}
+
+void CMissionManager::OnMissionComplete()
+{
+	CMissionInfoPtr info = GetCurrentMissionInfo();
+
+	if (info == NULL)
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not find mission info for current mod.\r");
 		return;
 	}
 
@@ -107,6 +123,20 @@ void CMissionManager::OnMissionComplete()
 
 		info->SetKeyValue(va("mission_loot_collected_%d", gameLocal.m_DifficultyManager.GetDifficultyLevel()), idStr(total));
 	}
+}
+
+CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
+{
+	// Get the name of the current mission
+	idStr curMission = cvarSystem->GetCVarString("fs_game");
+
+	if (curMission.IsEmpty() || curMission == "darkmod") 
+	{
+		// return NULL when no mission is installed or "darkmod"
+		return CMissionInfoPtr();
+	}
+
+	return GetMissionInfo(curMission);
 }
 
 void CMissionManager::SearchForNewMissions()

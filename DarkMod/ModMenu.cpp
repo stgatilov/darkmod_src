@@ -236,7 +236,8 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 			"affected by this operation, you're still able to re-install the mission.", info->GetMissionFolderPath().c_str());
 		gui->SetStateString("eraseMissionText", eraseMissionText);
 
-		gui->SetStateBool(va("modCompleted%d", modIndex), info->MissionCompleted());
+		gui->SetStateString("selectedModCompleted", info->GetMissionCompletedString());
+		gui->SetStateString("selectedModLastPlayDate", info->GetKeyValue("last_play_date", "-"));
 	}
 	else
 	{
