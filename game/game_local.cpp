@@ -508,10 +508,6 @@ void idGameLocal::Init( void ) {
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
 	m_MissionManager->Init();
 
-	// Initialise the mod menu class to load the FMs
-	assert(m_ModMenu != NULL);
-	m_ModMenu->Init();
-
 	assert(m_Shop != NULL);
 	m_Shop->Init();
 
@@ -720,7 +716,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_AreaManager.Save(&savegame);
 	m_ConversationSystem->Save(&savegame);
 	m_RelationsManager->Save(&savegame);
-	m_ModMenu->Save(&savegame);
 	m_Shop->Save(&savegame);
 	LAS.Save(&savegame);
 
@@ -1719,7 +1714,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_AreaManager.Restore(&savegame);
 	m_ConversationSystem->Restore(&savegame);
 	m_RelationsManager->Restore(&savegame);
-	m_ModMenu->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
 

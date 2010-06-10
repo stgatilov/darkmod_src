@@ -33,6 +33,9 @@ private:
 	// The list of new mods
 	idStringList _newFoundMissions;
 
+	// The map which should be the starting point
+	idStr _curStartingMap;
+
 public:
 	CMissionManager();
 
@@ -87,6 +90,10 @@ public:
 	static bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
 
 private:
+	// Finds out which map is the starting map (must be called after InitCurrentMod)
+	// After this call the CVAR tdm_mapName is initialised and holds the map name.
+	void InitStartingMap();
+
 	void SearchForNewMissions();
 
 	// Sub-routine of SearchForNewMissions() investigating the FM folder

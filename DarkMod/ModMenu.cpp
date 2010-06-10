@@ -34,26 +34,6 @@ CModMenu::CModMenu() :
 	_modTop(0)
 {}
 
-void CModMenu::Init()
-{
-	InitStartingMap();
-}
-
-void CModMenu::Clear()
-{
-	_startingMap.Empty();
-}
-
-void CModMenu::Save(idSaveGame* savefile) const
-{
-	// Nothing to save yet
-}
-
-void CModMenu::Restore(idRestoreGame* savefile)
-{
-	// Nothing to restore yet
-}
-
 namespace fs = boost::filesystem;
 
 // Handle mainmenu commands
@@ -315,40 +295,6 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateBool("hasCurrentMod", curModInfo != NULL);
 	gui->SetStateString("currentModName", curModInfo != NULL ? curModInfo->displayName : "<No Mission Installed>");
 	gui->SetStateString("currentModDesc", curModInfo != NULL ? curModInfo->description : "");	
-}
-
-void CModMenu::InitStartingMap()
-{
-	_startingMap.Empty();
-
-	idStr curModName = gameLocal.m_MissionManager->GetCurrentMissionName();
-
-	if (curModName.IsEmpty())
-	{
-		return;
-	}
-
-	// Find out which is the starting map of the current mod
-	fs::path doomPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	doomPath /= "..";
-
-	fs::path startingMapPath(cv_tdm_fm_path.GetString());
-	startingMapPath = startingMapPath / gameLocal.m_MissionManager->GetCurrentMissionName().c_str() / cv_tdm_fm_startingmap_file.GetString();
-
-	char* buffer = NULL;
-
-	if (fileSystem->ReadFile(startingMapPath.string().c_str(), reinterpret_cast<void**>(&buffer)) != -1)
-	{
-		// We have a startingmap
-		_startingMap = buffer;
-		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
-
-		cv_tdm_mapName.SetString(_startingMap);
-	}
-	else
-	{
-		gameLocal.Warning("No '%s' file for the current mod: %s", startingMapPath.string().c_str(), gameLocal.m_MissionManager->GetCurrentMissionName().c_str());
-	}
 }
 
 fs::path CModMenu::GetDarkmodPath()
