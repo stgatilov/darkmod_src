@@ -14,15 +14,16 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
+#include <string>
+#include <boost/filesystem.hpp>
+
 #include "ModMenu.h"
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/declxdata.h"
-#include "boost/filesystem.hpp"
 #include "../DarkMod/ZipLoader/ZipLoader.h"
 #include "../DarkMod/Missions/MissionManager.h"
 
-#include <string>
 #ifdef _WINDOWS
 #include <process.h>
 #else
@@ -318,10 +319,6 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateString("currentModDesc", curModInfo != NULL ? curModInfo->description : "");	
 }
 
-fs::path CModMenu::GetDarkmodPath()
-{
-	return fs::path(g_Global.GetDarkmodPath());
-}
 
 bool CModMenu::PerformVersionCheck(const CMissionInfoPtr& mission, idUserInterface* gui)
 {
@@ -385,7 +382,7 @@ void CModMenu::RestartGame()
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
 	// Path to the darkmod directory
-	fs::path darkmodPath = GetDarkmodPath();
+	fs::path darkmodPath = g_Global.GetDarkmodPath();
 
 	// path to tdmlauncher
 #ifdef _WINDOWS

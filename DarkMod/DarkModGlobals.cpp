@@ -41,6 +41,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sourcehook/sourcehook_impl.h"
 #include "renderpipe.h"
 #include "RevisionTracker.h"
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 class idAI;
 

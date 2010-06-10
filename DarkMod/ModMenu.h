@@ -8,14 +8,12 @@
  *
  ***************************************************************************/
 
-#ifndef __MODS_H__
-#define	__MODS_H__
+#ifndef _MOD_MENU_H_
+#define	_MOD_MENU_H_
 
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
 
 class CMissionInfo;
 typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
@@ -24,6 +22,12 @@ typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
 // chose which one to load. Also handles display of briefing page
 class CModMenu
 {
+private:
+	// The index of the first displayed mod
+	int _modTop;
+
+	int _briefingPage;
+
 public:
 	CModMenu();
 
@@ -52,15 +56,6 @@ private:
 
 	// Restarts the game after mod installation
 	void RestartGame();
-
-	// Returns the darkmod path
-	fs::path GetDarkmodPath();
-
-private:
-	// The index of the first displayed mod
-	int _modTop;
-
-	int _briefingPage;
 };
 
-#endif	/* !__MODS_H__ */
+#endif	/* _MOD_MENU_H_ */
