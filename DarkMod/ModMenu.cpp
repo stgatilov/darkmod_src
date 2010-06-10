@@ -109,8 +109,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 	if (cmd == "updateModList")
 	{
-		// Reload the mod list and update the GUI
-		BuildModList();
+		gameLocal.m_MissionManager->ReloadMissionList();
 
 		// Update the GUI state
 		UpdateGUI(gui);

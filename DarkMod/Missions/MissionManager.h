@@ -59,6 +59,9 @@ public:
 	// Called by gameLocal when the player start/loads a mission
 	void OnMissionStart();
 
+	// Clears the mission list and searches for mods to install, then calls GenerateMissionList()
+	void ReloadMissionList();
+
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
 	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
@@ -79,9 +82,6 @@ private:
 
 	// Returns the path to the "darkmod" base
 	fs::path GetDarkmodPath();
-
-	// Clears the mission list and searches for mods to install, then calls GenerateMissionList()
-	void ReloadMissionList();
 
 	// Finds all available missions
 	void GenerateMissionList();
