@@ -1309,41 +1309,6 @@ void idTarget_SetFov::Think( void ) {
 /*
 ===============================================================================
 
-idTarget_LockDoor
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_LockDoor )
-	EVENT( EV_Activate,	idTarget_LockDoor::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_LockDoor::Event_Activate
-================
-*/
-void idTarget_LockDoor::Event_Activate( idEntity *activator ) {
-	int i;
-	idEntity *ent;
-	int lock;
-
-	lock = spawnArgs.GetInt( "locked", "1" );
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent && ent->IsType( idDoor::Type ) ) {
-			if ( static_cast<idDoor *>( ent )->IsLocked() ) {
-				static_cast<idDoor *>( ent )->Lock( 0 );
-			} else {
-				static_cast<idDoor *>( ent )->Lock( lock );
-			}
-		}
-	}
-}
-
-/*
-===============================================================================
-
 idTarget_CallObjectFunction
 
 Tels:
