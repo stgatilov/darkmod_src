@@ -2465,10 +2465,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\framework\declpda.h"
-					>
-				</File>
-				<File
 					RelativePath=".\framework\declskin.h"
 					>
 				</File>

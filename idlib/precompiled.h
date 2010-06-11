@@ -110,7 +110,6 @@
 #include "../framework/declfx.h"
 #include "../framework/declparticle.h"
 #include "../framework/declaf.h"
-#include "../framework/declpda.h"
 
 // We have expression parsing and evaluation code in multiple places:
 // materials, sound shaders, and guis. We should unify them.
