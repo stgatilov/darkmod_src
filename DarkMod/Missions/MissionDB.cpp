@@ -30,6 +30,16 @@ void CMissionDB::ReloadMissionInfoFile()
 	// Clear mission info structure first
 	_missionInfo.clear();
 
+	// Check if the mission info file exists
+	if (fileSystem->ReadFile(cv_default_mission_info_file.GetString(), NULL) == -1)
+	{
+		// File doesn't exist, skip this step
+		gameLocal.Printf("Parsed 0 mission declarations, no mission database file present.\n");
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("TDM Mission Info file not existing, skipping parse.\r");
+		return;
+	}
+
 	idLexer src(cv_default_mission_info_file.GetString());
 	src.SetFlags(DECL_LEXER_FLAGS & ~LEXFL_NOSTRINGESCAPECHARS );
 	
