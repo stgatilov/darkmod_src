@@ -1459,18 +1459,18 @@ void idPhysics_Player::LadderMove( void )
 		m_bClimbInitialPhase = false;
 
 		// Update sounds and movement speed caps for the surface if we change surfaces
-		idStr SurfName;
-		g_Global.GetSurfName( SurfTrace.c.material, SurfName );
-		if( SurfName != m_ClimbSurfName )
+		idStr surfName = g_Global.GetSurfName(SurfTrace.c.material);
+		
+		if (surfName != m_ClimbSurfName)
 		{
 			idStr LookUpName, TempStr;
-			idKeyValue *kv = NULL;
+			const idKeyValue *kv = NULL;
 			
-			m_ClimbSurfName = SurfName;
+			m_ClimbSurfName = surfName;
 
 			LookUpName = "climb_max_speed_vert_";
-			TempStr = LookUpName + SurfName;
-			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
+			TempStr = LookUpName + surfName;
+			if( ( kv = self->spawnArgs.FindKey(LookUpName.c_str()) ) != NULL )
 				m_ClimbMaxVelVert = atof( kv->GetValue().c_str() );
 			else
 			{
@@ -1479,7 +1479,7 @@ void idPhysics_Player::LadderMove( void )
 			}
 
 			LookUpName = "climb_max_speed_horiz_";
-			TempStr = LookUpName + SurfName;
+			TempStr = LookUpName + surfName;
 			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
 				m_ClimbMaxVelHoriz = atof( kv->GetValue().c_str() );
 			else
@@ -1490,7 +1490,7 @@ void idPhysics_Player::LadderMove( void )
 
 			// sound repitition distances
 			LookUpName = "climb_snd_repdist_vert_";
-			TempStr = LookUpName + SurfName;
+			TempStr = LookUpName + surfName;
 			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
 				m_ClimbSndRepDistVert = atoi( kv->GetValue().c_str() );
 			else
@@ -1501,7 +1501,7 @@ void idPhysics_Player::LadderMove( void )
 
 			// sound repitition distances
 			LookUpName = "climb_snd_repdist_horiz_";
-			TempStr = LookUpName + SurfName;
+			TempStr = LookUpName + surfName;
 			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
 				m_ClimbSndRepDistHoriz = atoi( kv->GetValue().c_str() );
 			else

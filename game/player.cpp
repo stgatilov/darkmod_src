@@ -6333,7 +6333,36 @@ void idPlayer::Move( void )
 		
 		if (old_vert != new_vert) 
 		{
-			StartSound( "snd_rope_climb", SND_CHANNEL_ANY, 0, false, NULL );
+			// greebo: Get the rope entity and read the material/sound type from its spawnargs
+			idEntity* rope = physicsObj.GetRopeEntity();
+
+			// If we have a valid rope entity, copy the rope movement snd_ value from it to the player's spawnargs
+			if (rope != NULL)
+			{
+				const char* const tempKey = "snd_rope_climb_temp__"; // temporary key
+
+				// Check if the rope has an override keyvalue
+				const idKeyValue* kv = rope->spawnArgs.FindKey("snd_rope_climb");
+
+				// Fill the temporary key on the player entity
+				if (kv != NULL && kv->GetValue().Length() > 0)
+				{
+					spawnArgs.Set(tempKey, kv->GetValue());
+				}
+				else
+				{
+					// No special climb sound on the entity, use the one in the player def
+					spawnArgs.Set(tempKey, spawnArgs.GetString("snd_rope_climb"));
+				}
+
+				// Start the sound using the temporary key
+				StartSound(tempKey, SND_CHANNEL_ANY, 0, false, NULL);	
+			}
+			else
+			{
+				// No rope entity?! Fall back to player default
+				StartSound("snd_rope_climb", SND_CHANNEL_ANY, 0, false, NULL); 
+			}
 		}
 	}
 	// play climbing movement sounds
