@@ -1726,31 +1726,6 @@ void idTarget_Tip::Event_TipOff( void ) {
 /*
 ===============================================================================
 
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveSecurity )
-EVENT( EV_Activate,	idTarget_GiveSecurity::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveSecurity::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		//player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
-	}
-}
-
-
-/*
-===============================================================================
-
 idTarget_RemoveWeapons
 
 ===============================================================================

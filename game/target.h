@@ -459,21 +459,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-class idTarget_GiveSecurity : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveSecurity );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
 idTarget_RemoveWeapons
 
 ===============================================================================
