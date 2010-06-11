@@ -472,20 +472,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_EnableStamina
-
-===============================================================================
-*/
-class idTarget_EnableStamina : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_EnableStamina );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_FadeSoundClass
 
 ===============================================================================

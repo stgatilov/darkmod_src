@@ -1750,38 +1750,6 @@ void idTarget_LevelTrigger::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idTarget_EnableStamina
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_EnableStamina )
-EVENT( EV_Activate,	idTarget_EnableStamina::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_EnableStamina::Event_Activate
-================
-*/
-void idTarget_EnableStamina::Event_Activate( idEntity *activator ) {
-	for( int i = 0; i < gameLocal.numClients; i++ ) {
-		// Commented out by Dram. TDM does not use stamina
-		/*if ( gameLocal.entities[ i ] ) {
-			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-			if ( spawnArgs.GetBool( "enable" ) ) {
-				pm_stamina.SetFloat( player->spawnArgs.GetFloat( "pm_stamina" ) );
-			} else {
-				pm_stamina.SetFloat( 0.0f );
-			}
-		}*/
-		return;
-	}
-}
-
-/*
-===============================================================================
-
 idTarget_FadeSoundClass
 
 ===============================================================================
