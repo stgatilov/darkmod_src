@@ -220,60 +220,6 @@ struct floorInfo_s {
 	int						floor;
 };
 
-class idElevator : public idMover {
-public:
-	CLASS_PROTOTYPE( idElevator );
-
-							idElevator( void );
-
-	void					Spawn();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
-	void					Event_GotoFloor( int floor );
-	floorInfo_s *			GetFloorInfo( int floor );
-
-protected:
-	virtual void			DoneMoving( void );
-	virtual void			BeginMove( idThread *thread = NULL );
-	void					SpawnTrigger( const idVec3 &pos );
-	void					GetLocalTriggerPosition();
-	void					Event_Touch( idEntity *other, trace_t *trace );
-
-private:
-	typedef enum {
-		INIT,
-		IDLE,
-		WAITING_ON_DOORS
-	} elevatorState_t;
-
-	elevatorState_t			state;
-	idList<floorInfo_s>		floorInfo;
-	int						currentFloor;
-	int						pendingFloor;
-	int						lastFloor;
-	bool					controlsDisabled;
-	float					returnTime;
-	int						returnFloor;
-	int						lastTouchTime;
-
-	class idDoor *			GetDoor( const char *name );
-	void					Think( void );
-	void					OpenInnerDoor( void );
-	void					OpenFloorDoor( int floor );
-	void					CloseAllDoors( void );
-	void					DisableAllDoors( void );
-	void					EnableProperDoors( void );
-
-	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
-	void					Event_Activate( idEntity *activator );
-	void					Event_PostFloorArrival();
-
-};
-
-
 /*
 ===============================================================================
 
@@ -374,74 +320,6 @@ protected:
 	void					Event_InitGuiTargets( void );
 
 	static void				GetMovedir( float dir, idVec3 &movedir );
-};
-
-class idDoor : public idMover_Binary
-{
-public:
-	CLASS_PROTOTYPE( idDoor );
-
-							idDoor( void );
-							~idDoor( void );
-
-	void					Spawn( void );
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	virtual void			Think( void );
-	virtual void			PreBind( void );
-	virtual void			PostBind( void );
-	virtual void			Hide( void );
-	virtual void			Show( void );
-
-	bool					IsOpen( void );
-	bool					IsNoTouch( void );
-	int						IsLocked( void );
-	void					Lock( int f );
-	void					Use( idEntity *other, idEntity *activator );
-	void					Close( void );
-	void					Open( void );
-	void					SetCompanion( idDoor *door );
-
-private:
-	float					triggersize;
-	bool					crusher;
-	bool					noTouch;
-	bool					aas_area_closed;
-	idStr					buddyStr;
-	idClipModel *			trigger;
-	idClipModel *			sndTrigger;
-	int						nextSndTriggerTime;
-	idVec3					localTriggerOrigin;
-	idMat3					localTriggerAxis;
-	idStr					requires;
-	int						removeItem;
-	idStr					syncLock;
-	int						normalAxisIndex;		// door faces X or Y for spectator teleports
-	idDoor *				companionDoor;
-
-	void					SetAASAreaState( bool closed );
-
-	void					GetLocalTriggerPosition( const idClipModel *trigger );
-	void					CalcTriggerBounds( float size, idBounds &bounds );
-
-	void					Event_Reached_BinaryMover( void );
-	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
-	void					Event_PartBlocked( idEntity *blockingEntity );
-	void					Event_Touch( idEntity *other, trace_t *trace );
-	void					Event_Activate( idEntity *activator );
-	void					Event_StartOpen( void );
-	void					Event_SpawnDoorTrigger( void );
-	void					Event_SpawnSoundTrigger( void );
-	void					Event_Close( void );
-	void					Event_Open( void );
-	void					Event_Lock( int f );
-	void					Event_IsOpen( void );
-	void					Event_Locked( void );
-	void					Event_SpectatorTouch( idEntity *other, trace_t *trace );
-	void					Event_OpenPortal( void );
-	void					Event_ClosePortal( void );
 };
 
 class idPlat : public idMover_Binary {

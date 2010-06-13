@@ -617,9 +617,10 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	// MP: projectiles open doors
-	if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
-		ent->ProcessEvent( &EV_Activate , this );
-	}
+	// tels: TODO 2010-06-11 need another way to find out if entity is a door (low priority, we don't have MP in TDM yet)
+	//if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
+	//	ent->ProcessEvent( &EV_Activate , this );
+	//}
 
 	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
 		if ( !projectileFlags.detonate_on_actor ) {
