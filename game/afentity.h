@@ -639,29 +639,4 @@ private:
 };
 
 
-/*
-===============================================================================
-
-idAFEntity_ClawFourFingers
-
-===============================================================================
-*/
-
-class idAFEntity_ClawFourFingers : public idAFEntity_Base {
-public:
-	CLASS_PROTOTYPE( idAFEntity_ClawFourFingers );
-
-							idAFEntity_ClawFourFingers( void );
-
-	void					Spawn( void );
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-private:
-	idAFConstraint_Hinge *	fingers[4];
-
-	void					Event_SetFingerAngle( float angle );
-	void					Event_StopFingers( void );
-};
-
 #endif /* !__GAME_AFENTITY_H__ */
