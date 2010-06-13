@@ -3302,7 +3302,6 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 		int width = 1024;
 		int height = 600;
 
-		// "0;5;1;6;2;3;7;4" ==> "1024x600;1280x720;1280x800;1366x768;1440x900;1680x1050;1920x1080;1920x1200"
 		switch (mode)
 		{
 		case 0:
@@ -3326,12 +3325,12 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 			height = 1200;
 			break;
 		case 5:
-			width = 1280;
-			height = 720;
-			break;
-		case 6:
 			width = 1366;
 			height = 768;
+			break;
+		case 6:
+			width = 1280;
+			height = 720;
 			break;
 		case 7:
 			width = 1920;
@@ -3442,8 +3441,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			switch (width)
 			{
 			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
-			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : 5); break;
-			case 1366: cv_tdm_widescreenmode.SetInteger(6); break;
+			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : 6); break;
+			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
 			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
 			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
 			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
