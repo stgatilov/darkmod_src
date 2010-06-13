@@ -50,6 +50,8 @@ BUILD (default debug)
 	debug-all: no optimisations, debugging symbols
 	debug: -O -g
 	release: all optimisations, including CPU target etc.
+	profile: gcc only: compile with "-pg" to build a profiling build for use with gprof
+		 (consider using oprofile instead of gprof, tho)
 
 BUILD_ROOT (default 'build')
 	change the build root directory
@@ -305,6 +307,11 @@ if ( BUILD == 'debug-all' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
+	if ( ID_MCHECK == '0' ):
+		ID_MCHECK = '1'
+elif ( BUILD == 'profile' ):
+	print 'Building a profile build.'
+	OPTCPPFLAGS = [ '-pg', '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations' ]
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
