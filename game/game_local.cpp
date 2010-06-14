@@ -252,25 +252,18 @@ void idGameLocal::Clear( void )
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = CRelationsPtr();
-
-	// greebo: don't destroy the MissionData object, Clear() is called during map shutdown
-	// We need the MissionData manager to stay alive until Shutdown() is called
-	if (m_MissionData != NULL)
-	{
-		m_MissionData->ClearGUIState();
-	}
+	m_MissionData.reset();
 
 	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
 
-	m_ModMenu = CModMenuPtr(new CModMenu);
-	m_Shop = CShopPtr(new CShop);
+	m_ModMenu.reset();
+	m_Shop.reset();
 
 	m_guiError.Clear();
 
 	m_AreaManager.Clear();
-	// Allocate a new ConversationSystem
-	m_ConversationSystem = ai::ConversationSystemPtr(new ai::ConversationSystem);
+	m_ConversationSystem.reset();
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Clear();
@@ -369,8 +362,6 @@ void idGameLocal::Clear( void )
 	portalSkyActive			= false;
 	//	ResetSlowTimeVars();
 
-	m_EscapePointManager->Clear();
-
 	m_GamePlayTimer.Clear();
 
 	musicSpeakers.Clear();
@@ -434,8 +425,6 @@ void idGameLocal::Init( void ) {
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
 
-	m_MissionData = CMissionDataPtr(new CMissionData);
-
 	Clear();
 
 	idEvent::Init();
@@ -482,8 +471,11 @@ void idGameLocal::Init( void ) {
 
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 
+	m_MissionData = CMissionDataPtr(new CMissionData);
 	m_RelationsManager = CRelationsPtr(new CRelations);
-
+	m_ModMenu = CModMenuPtr(new CModMenu);
+	m_ConversationSystem = ai::ConversationSystemPtr(new ai::ConversationSystem);
+	
 	// load the soundprop globals from the def file
 	m_sndPropLoader->GlobalsFromDef();
 
@@ -508,7 +500,7 @@ void idGameLocal::Init( void ) {
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
 	m_MissionManager->Init();
 
-	assert(m_Shop != NULL);
+	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
 
 	// Check the interaction.vfp settings
@@ -554,7 +546,7 @@ void idGameLocal::Shutdown( void ) {
 	if (cv_tdm_fm_sync_config_files.GetBool())
 	{
 		// greebo: Check if we have a game base. If yes, write the current configuration back to the
-		// "darkmod" game base folder, to preserver any settings made while an FM is installed.
+		// "darkmod" game base folder, to preserve any settings made while an FM is installed.
 		idStr fs_game_base(cvarSystem->GetCVarString("fs_game_base"));
 
 		if (!fs_game_base.IsEmpty())
@@ -576,11 +568,7 @@ void idGameLocal::Shutdown( void ) {
 	m_MissionData.reset();
 
 	// Destroy the conversation system
-	m_ConversationSystem = ai::ConversationSystemPtr();
-
-	// Clear the mod menu
-	m_ModMenu = CModMenuPtr();
-	m_Shop = CShopPtr();
+	m_ConversationSystem.reset();
 
 	// Destroy the mission manager
 	m_MissionManager->Shutdown();
