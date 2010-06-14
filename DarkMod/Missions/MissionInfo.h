@@ -88,6 +88,12 @@ public:
 	// Saves a key into the internal declaration dictionary
 	void	SetKeyValue(const char* key, const char* value);
 
+	// Removes a certain keyvalue
+	void	RemoveKeyValue(const char* key);
+
+	// Removes key values matching the given prefix
+	void	RemoveKeyValuesMatchingPrefix(const char* prefix);
+
 	// Will save any persistent info to the given file
 	void	SaveToFile(idFile* file);
 

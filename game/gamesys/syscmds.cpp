@@ -24,6 +24,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/Inventory/Item.h"
 #include "../../DarkMod/TimerManager.h"
 #include "../../DarkMod/AI/Conversation/ConversationSystem.h"
+#include "../../DarkMod/Missions/MissionManager.h"
+#include "../../DarkMod/Missions/MissionInfo.h"
 
 #include "typeinfo.h"
 
@@ -79,6 +81,80 @@ void Cmd_RestartGuiCmd_UpdateObjectives_f(const idCmdArgs &args)
 	}
 	
 	gameLocal.m_MissionData->UpdateGUIState(gui);
+}
+
+void Cmd_ListMissions_f(const idCmdArgs& args)
+{
+	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMissions());
+
+	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMissions(); ++i)
+	{
+		CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(i);
+
+		if (missionInfo == NULL) continue;
+
+		gameLocal.Printf("%02d: %s = %s\n", i, missionInfo->modName.c_str(), missionInfo->displayName.c_str());
+	}
+}
+
+void Cmd_SetMissionCompleted_f(const idCmdArgs& args)
+{
+	if (args.Argc() < 2)
+	{
+		gameLocal.Printf("Usage: tdm_set_mission_completed <missionName> [-c]\n");
+		gameLocal.Printf("The -c argument is optional, can be used to clear the 'completed' flag, such that the mission isn't listed as completed in the mission menu.\n\n");
+		gameLocal.Printf("Example: 'tdm_set_mission_completed heart'\n");
+		return;
+	}
+
+	bool clearFlag = false;
+	idStr missionName;
+
+	for (int i = 1; i < args.Argc(); ++i)
+	{
+		idStr arg = args.Argv(i);
+
+		if (arg == "-") 
+		{
+			if (++i < args.Argc() && idStr::Cmp(args.Argv(i), "c") == 0)
+			{
+				clearFlag = true;
+			}
+		}
+		else
+		{
+			missionName = arg;
+		}
+	}
+
+	if (missionName.IsEmpty())
+	{
+		return;
+	}
+
+	CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(missionName);
+
+	if (missionInfo == NULL)
+	{
+		gameLocal.Printf("Mission %s not found.\n", missionName.c_str());
+		return;
+	}
+
+	if (clearFlag)
+	{
+		// Remove completed flags
+		missionInfo->RemoveKeyValuesMatchingPrefix("mission_completed_");
+	}
+	else
+	{
+		// Mark mission as completed on all difficulties
+		for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+		{
+			missionInfo->SetKeyValue(va("mission_completed_%d", i), "1");
+		}
+	}
+
+	gameLocal.Printf("OK");
 }
 
 /*
@@ -3443,6 +3519,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_batchConvertMaterials",	Cmd_BatchConvertMaterials_f,	CMD_FL_GAME,	"Converts all the materials to support new ambient lighting" );
 
 	cmdSystem->AddCommand( "tdm_restart_gui_update_objectives", Cmd_RestartGuiCmd_UpdateObjectives_f, CMD_FL_GAME, "Don't use. Reserved for internal use to dispatch restart GUI commands to the local game instance.");
+
+	cmdSystem->AddCommand( "tdm_list_missions", Cmd_ListMissions_f, CMD_FL_GAME, "Lists all available missions.");
+	cmdSystem->AddCommand( "tdm_set_mission_completed", Cmd_SetMissionCompleted_f, CMD_FL_GAME, "Sets or clears the 'completed' flag of a named mission.");
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );

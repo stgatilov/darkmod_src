@@ -151,6 +151,27 @@ void CMissionInfo::SetKeyValue(const char* key, const char* value)
 	_decl->data.Set(key, value);
 }
 
+void CMissionInfo::RemoveKeyValue(const char* key)
+{
+	if (_decl == NULL) return;
+
+	_declDirty = true;
+
+	_decl->data.Delete(key);
+}
+
+void CMissionInfo::RemoveKeyValuesMatchingPrefix(const char* prefix)
+{
+	if (_decl == NULL) return;
+
+	for (const idKeyValue* kv = _decl->data.MatchPrefix(prefix, NULL); 
+		 kv != NULL; 
+		 kv = _decl->data.MatchPrefix(prefix, NULL))
+	{
+		_decl->data.Delete(kv->GetKey());
+	}
+}
+
 void CMissionInfo::SaveToFile(idFile* file)
 {
 	if (_decl == NULL) return;
