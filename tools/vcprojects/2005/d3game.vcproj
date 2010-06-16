@@ -744,10 +744,6 @@
 					>
 				</File>
 				<File
-					RelativePath="game\ai\AI_Vagary.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\Ai\BasicMind.cpp"
 					>
 				</File>

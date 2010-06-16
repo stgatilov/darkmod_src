@@ -543,9 +543,6 @@
 					RelativePath="game\ai\ai_pathing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\ai_Vagary.cpp">
-				</File>
-				<File
 					RelativePath="DarkMod\AI\DoorInfo.h">
 				</File>
 				<File
