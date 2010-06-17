@@ -24,10 +24,12 @@ CMissionManager::CMissionManager() :
 
 void CMissionManager::Init()
 {
-	_missionDB->Init();
-
 	// (Re-)generate mission list on start
 	ReloadMissionList();
+
+	// greebo: Now that any new PK4 files have been copied/moved,
+	// reload the mission database.
+	_missionDB->Init();
 
 	InitStartingMap();
 }
