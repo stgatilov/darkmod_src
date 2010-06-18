@@ -1852,16 +1852,6 @@ void idEntity::BecomeBroken( idEntity *activator )
 			if (clipmodel && clipmodel->IsTraceModel() && GetPhysics())
 			{
 				GetPhysics()->SetClipModel( clipmodel, 1.0f );
-				// tels: should not be nec.
-				//GetPhysics()->SetContents( CONTENTS_SOLID );
-				// SR CONTENTS_RESONSE FIX
-			/**
-			* Ishtvan: shouldn't have to do this again here
-				if( m_StimResponseColl->HasResponse() )
-				{
-					GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
-				}
-			**/
 			}
 		}
 	} 
