@@ -353,7 +353,7 @@ const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v')
 /**
 * This event handles a knockout of the AI (takes the attacker as argument)
 **/
-const idEventDef AI_Knockout( "knockout", "e" );
+const idEventDef AI_Knockout( "knockout", "E" );
 
 const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
 
