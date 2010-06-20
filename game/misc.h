@@ -14,6 +14,11 @@
 #ifndef __GAME_MISC_H__
 #define __GAME_MISC_H__
 
+/* Tels: Define the number of supported LOD levels (0..LOD_LEVELS + hide)
+ *		 About higher than 10 starts take performance instead of gaining it.
+ *		 Do not go higher than 31, as each level needs 1 bit in a 32bit int.
+ */
+#define LOD_LEVELS 7
 
 /*
 ===============================================================================
@@ -353,20 +358,14 @@ private:
 	int					m_DistCheckInterval;
 	
 	/**
-	* Distance squared beyond which the entity hides, if it is distance dependent
-	**/
-	float				m_DistShowSq;
-
-	/**
 	* Tels: Distance squared beyond which the entity switches to LOD model/skin #1,#2,#3
 	* if it is distance dependent
+	* The last number is the distance squared beyond which the entity hides.
 	**/
-	float				m_DistLOD1Sq;
-	float				m_DistLOD2Sq;
-	float				m_DistLOD3Sq;
+	float				m_DistLODSq[ LOD_LEVELS ];
 
 	/**
-	* Tels: LOD (0 - normal, 1,2,3 LOD, 4 hidden)
+	* Tels: LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden)
 	**/
 	int					m_LODLevel;
 
@@ -374,21 +373,20 @@ private:
 	* Tels: Models and skins to be used for the different LOD distances
 	* for level 0 we use "model" and "skin"
 	**/
-	idStr				m_ModelLOD1;
-	idStr				m_ModelLOD2;
-	idStr				m_ModelLOD3;
-	idStr				m_SkinLOD1;
-	idStr				m_SkinLOD2;
-	idStr				m_SkinLOD3;
+	idStr				m_ModelLOD[ LOD_LEVELS ];
+	idStr				m_SkinLOD[ LOD_LEVELS ];
 
-	/* Tels: different LOD models might need different offsets to match */
-	idVec3				m_OffsetLOD0;
-	idVec3				m_OffsetLOD1;
-	idVec3				m_OffsetLOD2;
-	idVec3				m_OffsetLOD3;
+	/** one bit for each LOD level, telling noshadows (1) or not (0) */
+	int					m_noshadowsLOD;
 
-	/* Tels: Store the current model and skin to avoid flicker when switching
-	   from one model to the same model */
+	/* Tels: different LOD models might need different offsets to match
+	*		 the position of the LOD 0 level. */
+	idVec3				m_OffsetLOD[ LOD_LEVELS ];
+
+	/* Tels: Store the current model and skin to avoid flicker by not
+	*		 switching from one model/skin to the same model/skin when
+	*		 changing the LOD.
+	*/
 	idStr				m_ModelLODCur;
 	idStr				m_SkinLODCur;
 };

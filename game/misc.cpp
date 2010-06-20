@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -1460,27 +1461,19 @@ idStaticEntity::idStaticEntity( void ) {
 	runGui = false;
 	
 	m_bDistDependent = false;
-	m_DistLOD1Sq = 0;
-	m_DistLOD2Sq = 0;
-	m_DistLOD3Sq = 0;
-	m_DistShowSq = 0;
-
-	m_ModelLOD1 = "";
-	m_ModelLOD2 = "";
-	m_ModelLOD3 = "";
-	m_SkinLOD1 = "";
-	m_SkinLOD2 = "";
-	m_SkinLOD3 = "";
-
-	m_OffsetLOD0 = idVec3(0,0,0);
-	m_OffsetLOD1 = idVec3(0,0,0);
-	m_OffsetLOD2 = idVec3(0,0,0);
-	m_OffsetLOD3 = idVec3(0,0,0);
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+		m_DistLODSq[i] = 0;
+		m_ModelLOD[i] = "";
+		m_SkinLOD[i] = "";
+		m_OffsetLOD[i] = idVec3(0,0,0);
+	}
 
 	m_ModelLODCur = "";
 	m_SkinLODCur = "";
+	m_noshadowsLOD = 0;
 
-	/* 0 => normal model;  1,2 => LOD 1,2;  3 => hide */
+	/* 0 => normal model;  1..X LOD X, X+1 => hide */
 	m_LODLevel = 0;
 
 	m_DistCheckTimeStamp = 0;
@@ -1503,29 +1496,24 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( runGui );
 
 	savefile->WriteBool( m_bDistDependent );
-	/* Tels: Only write the distance data if we are distance dependent */
+	/* Tels: Only write the LOD data if we are distance dependent */
 	if (m_bDistDependent )
 	{
-		savefile->WriteFloat( m_DistShowSq );
 		savefile->WriteInt( m_DistCheckTimeStamp );
 		savefile->WriteInt( m_DistCheckInterval );
 		savefile->WriteBool( m_bDistCheckXYOnly );
 
 		savefile->WriteInt( m_LODLevel );
+		savefile->WriteInt( m_noshadowsLOD );
 
-		savefile->WriteString( m_ModelLOD1 );
-		savefile->WriteString( m_ModelLOD2 );
-		savefile->WriteString( m_ModelLOD3 );
+		for (int i = 0; i < LOD_LEVELS; i++)
+		{
+			savefile->WriteString( m_ModelLOD[i] );
+			savefile->WriteString( m_SkinLOD[i] );
+			savefile->WriteVec3( m_OffsetLOD[i] );
+		}
 		savefile->WriteString( m_ModelLODCur );
-		savefile->WriteString( m_SkinLOD1 );
-		savefile->WriteString( m_SkinLOD2 );
-		savefile->WriteString( m_SkinLOD3 );
 		savefile->WriteString( m_SkinLODCur );
-
-		savefile->WriteVec3( m_OffsetLOD0 );
-		savefile->WriteVec3( m_OffsetLOD1 );
-		savefile->WriteVec3( m_OffsetLOD2 );
-		savefile->WriteVec3( m_OffsetLOD3 );
 	}
 }
 
@@ -1544,28 +1532,23 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( runGui );
 
 	savefile->ReadBool( m_bDistDependent );
-	/* Tels: Only read the distance data if we are distance dependent */
+	/* Tels: Only read the LOD data if we are distance dependent */
 	if (m_bDistDependent )
 	{
-		savefile->ReadFloat( m_DistShowSq );
 		savefile->ReadInt( m_DistCheckTimeStamp );
 		savefile->ReadInt( m_DistCheckInterval );
 		savefile->ReadBool( m_bDistCheckXYOnly );
 
 		savefile->ReadInt( m_LODLevel );
-		savefile->ReadString( m_ModelLOD1 );
-		savefile->ReadString( m_ModelLOD2 );
-		savefile->ReadString( m_ModelLOD3 );
+		savefile->ReadInt( m_noshadowsLOD );
+		for (int i = 0; i < LOD_LEVELS; i++)
+		{
+			savefile->ReadString( m_ModelLOD[i] );
+			savefile->ReadString( m_SkinLOD[i] );
+			savefile->ReadVec3( m_OffsetLOD[i] );
+		}
 		savefile->ReadString( m_ModelLODCur );
-		savefile->ReadString( m_SkinLOD1 );
-		savefile->ReadString( m_SkinLOD2 );
-		savefile->ReadString( m_SkinLOD3 );
 		savefile->ReadString( m_SkinLODCur );
-
-		savefile->ReadVec3( m_OffsetLOD0 );
-		savefile->ReadVec3( m_OffsetLOD1 );
-		savefile->ReadVec3( m_OffsetLOD2 );
-		savefile->ReadVec3( m_OffsetLOD3 );
 	}
 }
 
@@ -1613,6 +1596,7 @@ void idStaticEntity::Spawn( void ) {
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
 	}
 	m_SkinLODCur = spawnArgs.GetString( "skin" );
+	m_noshadowsLOD = spawnArgs.GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
 
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
@@ -1625,28 +1609,70 @@ void idStaticEntity::Spawn( void ) {
 		BecomeActive( TH_THINK );
 	}
 
-	// Distance dependence:
-	m_DistShowSq = spawnArgs.GetFloat( "hide_distance", "0.0" );	// can also be <0 to disable hide
-	m_DistLOD1Sq = spawnArgs.GetFloat( "lod_1_distance", "0.0" );
-	m_DistLOD2Sq = spawnArgs.GetFloat( "lod_2_distance", "0.0" );
-	m_DistLOD3Sq = spawnArgs.GetFloat( "lod_3_distance", "0.0" );
+	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 
-	if( m_DistShowSq > 0 || m_DistLOD1Sq > 0 || m_DistLOD2Sq > 0 || m_DistLOD3Sq > 0)
+	float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
+	m_bDistDependent = m_DistCheckInterval != 0 || fHideDistance != 0;
+
+	if (m_bDistDependent)
 	{
+		idStr temp;
 		// distance dependent LOD from this point on:
-		m_bDistDependent = true;
-		// -1 should stay -1 to signal "don't use this level"
-		if (m_DistShowSq > 0)
+		m_OffsetLOD[0] = renderEntity.origin;
+
+		// start at 1, since 0 is "the original level" setup already above
+		for (int i = 1; i < LOD_LEVELS; i++)
 		{
-			m_DistShowSq *= m_DistShowSq;
+			sprintf(temp, "lod_%i_distance", i);
+			m_DistLODSq[i] = spawnArgs.GetFloat( temp, "0.0" );
+			if (i == LOD_LEVELS - 1)
+			{
+				// last distance is named differently so you don't need to know how many levels the code supports:
+				m_DistLODSq[i] = fHideDistance;
+			}
+
+			//gameLocal.Printf (" %s: init LOD %i m_DistLODSq=%f\n", GetName(), i, m_DistLODSq[i]); 
+
+			if (i > 0 && m_DistLODSq[i] > 0 && (m_DistLODSq[i] * m_DistLODSq[i]) < m_DistLODSq[i-1])
+			{
+				gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
+					GetName(), i, m_DistLODSq[i] * m_DistLODSq[i], i-1, m_DistLODSq[i-1]); 
+			}
+			// -1 should stay -1 to signal "don't use this level"
+			if (m_DistLODSq[i] > 0)
+			{
+				m_bDistDependent = true;
+				m_DistLODSq[i] *= m_DistLODSq[i];
+
+				// the last level is "hide", so we don't need a model, skin or offset here
+				if (i < LOD_LEVELS - 1)
+				{
+					sprintf(temp, "model_lod_%i", i);
+					m_ModelLOD[i] = spawnArgs.GetString( temp );
+					if (m_ModelLOD[i].Length() == 0) { m_ModelLOD[i] = m_ModelLODCur; }
+
+					sprintf(temp, "skin_lod_%i", i);
+					m_SkinLOD[i] = spawnArgs.GetString( temp );
+					if (m_SkinLOD[i].Length() == 0) { m_SkinLOD[i] = m_SkinLODCur; }
+
+					// set the right bit
+					sprintf(temp, "noshadows_lod_%i", i );
+									  // 1, 2, 4, 8, 16 etc
+					m_noshadowsLOD |= (spawnArgs.GetBool( temp, "0" ) ? 1 : 0) << i;
+				}
+				// setup the manual offset for this LOD stage (needed to align some models)
+				if (i < LOD_LEVELS - 1)
+				{
+					sprintf(temp, "offset_lod_%i", i);
+					m_OffsetLOD[i] = m_OffsetLOD[0] + spawnArgs.GetVector( temp, "0,0,0" );
+				}
+				// else hiding needs no offset
+
+				//gameLocal.Printf (" noshadowsLOD 0x%08x model %s skin %s\n", m_noshadowsLOD, m_ModelLOD[i].c_str(), m_SkinLOD[i].c_str() );
+			}
 		}
-		m_DistLOD1Sq *= m_DistLOD1Sq;
-		m_DistLOD2Sq *= m_DistLOD2Sq;
-		m_DistLOD3Sq *= m_DistLOD3Sq;
 
 		m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
-
-		m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.5" ));
 
 		// add some phase diversity to the checks so that they don't all run in one frame
 		// make sure they all run on the first frame though, by initializing m_TimeStamp to
@@ -1654,23 +1680,11 @@ void idStaticEntity::Spawn( void ) {
 		//m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + 0.5f*gameLocal.random.RandomFloat()) );
 		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 
-		m_ModelLOD1 = spawnArgs.GetString( "model_lod_1" );
-		if (m_ModelLOD1.Length() == 0) { m_ModelLOD1 = m_ModelLODCur; }
-		m_ModelLOD2 = spawnArgs.GetString( "model_lod_2" );
-		if (m_ModelLOD2.Length() == 0) { m_ModelLOD2 = m_ModelLODCur; }
-		m_ModelLOD3 = spawnArgs.GetString( "model_lod_3" );
-		if (m_ModelLOD3.Length() == 0) { m_ModelLOD3 = m_ModelLODCur; }
-		m_SkinLOD1 = spawnArgs.GetString( "skin_lod_1" );
-		if (m_SkinLOD1.Length() == 0) { m_SkinLOD1 = m_SkinLODCur; }
-		m_SkinLOD2 = spawnArgs.GetString( "skin_lod_2" );
-		if (m_SkinLOD2.Length() == 0) { m_SkinLOD2 = m_SkinLODCur; }
-		m_SkinLOD3 = spawnArgs.GetString( "skin_lod_3" );
-		if (m_SkinLOD3.Length() == 0) { m_SkinLOD3 = m_SkinLODCur; }
+		// setup level 0 (aka "The one and only original")
+		m_ModelLOD[0] = m_ModelLODCur;
+		m_SkinLOD[0] = m_SkinLODCur;
 
-		m_OffsetLOD0 = renderEntity.origin;
-		m_OffsetLOD1 = m_OffsetLOD0 + spawnArgs.GetVector( "offset_lod_1", "0,0,0" );
-		m_OffsetLOD2 = m_OffsetLOD0 + spawnArgs.GetVector( "offset_lod_2", "0,0,0" );
-		m_OffsetLOD3 = m_OffsetLOD0 + spawnArgs.GetVector( "offset_lod_3", "0,0,0" );
+		//gameLocal.Printf (" LOD default model %s default skin %s\n", m_ModelLODCur.c_str(), m_SkinLODCur.c_str() );
 
 		// Have to start thinking if we're distance dependent
 		BecomeActive( TH_THINK );
@@ -1692,7 +1706,6 @@ idStaticEntity::Think
 */
 void idStaticEntity::Think( void ) 
 {
-
 
 	idEntity::Think();
 
@@ -1718,138 +1731,83 @@ void idStaticEntity::Think( void )
 		// cache that value
 		float deltaSq = delta.LengthSqr();
 
-		/* Tels: LOD level 0 */
-		bWithinDist = (deltaSq < m_DistLOD1Sq);
-		if ( bWithinDist && m_LODLevel > 0)
+		/* Tels: check in which LOD level we are */
+		for (int i = 0; i < LOD_LEVELS; i++)
 		{
-			if (fl.hidden)
+			// skip this level
+			if (m_DistLODSq[i] <= 0)
 			{
-				Show();
-			}
-			m_LODLevel = 0;
-			idStr model = spawnArgs.GetString( "model" );
-			if (m_ModelLODCur != model)
-			{
-				//gameLocal.Printf( "%s switching to LOD 0 (model %s offset %f %f %f)\n", GetName(), model.c_str(), m_OffsetLOD0.x, m_OffsetLOD0.y, m_OffsetLOD0.z );
-				SetModel( model );
-				m_ModelLODCur = model;
-				SetOrigin( m_OffsetLOD0 );
+				continue;
 			}
 
-			idStr skin = spawnArgs.GetString( "skin" );
-			if ( m_SkinLODCur != skin)
+			// find the next usable level
+			int nextLevel = i + 1;
+			while (nextLevel < LOD_LEVELS && m_DistLODSq[nextLevel] <= 0 )
 			{
-				const idDeclSkin *skinD = declManager->FindSkin( skin );
-				if (skinD)
+				nextLevel++;
+			}
+
+			if (nextLevel < LOD_LEVELS)
+			{
+				bWithinDist = (deltaSq > m_DistLODSq[i]) && (deltaSq <= m_DistLODSq[nextLevel]);
+			}
+			else
+			{
+				// last usable level goes to infinity
+				bWithinDist = (deltaSq > m_DistLODSq[i]);
+			}
+
+			//gameLocal.Printf ("%s passed LOD %i distance check %f (%f), inside?: %i \n", GetName(), i, m_DistLODSq[i], deltaSq, bWithinDist);
+			
+			// don't do anything when we are already at that level
+			if ( bWithinDist && m_LODLevel != i)
+			{
+
+				m_LODLevel = i;
+				// last level, hide the entity?
+				if (i == LOD_LEVELS - 1)
 				{
-					SetSkin( skinD );
+					if (!fl.hidden)
+					{
+						//gameLocal.Printf("Hiding %s (LOD %i)\n", GetName(), i);
+						Hide();
+					}
 				}
-				m_SkinLODCur = skin;
-				
-			}
-			renderEntity.noShadow = spawnArgs.GetBool( "noshadows", "0" );
-		}
-
-		/* Tels: LOD level 1 */
-		bWithinDist = (deltaSq < m_DistLOD2Sq && deltaSq >= m_DistLOD1Sq);
-		if ( bWithinDist && m_LODLevel != 1)
-		{
-			if (fl.hidden)
-			{
-				Show();
-			}
-			m_LODLevel = 1;
-			if (m_ModelLODCur != m_ModelLOD1)
-			{
-				//gameLocal.Printf( "%s switching to LOD 1 (model %s offset %f %f %f)\n", GetName(), m_ModelLOD1.c_str(), m_OffsetLOD1.x, m_OffsetLOD1.y, m_OffsetLOD1.z );
-				SetModel( m_ModelLOD1 );
-				m_ModelLODCur = m_ModelLOD1;
-				SetOrigin( m_OffsetLOD1 );
-				//renderEntity.origin = m_OffsetLOD1;
-			}
-			if (m_SkinLODCur != m_SkinLOD1)
-			{
-				const idDeclSkin *skin = declManager->FindSkin( m_SkinLOD1 );
-				if (skin)
+				else
 				{
-					SetSkin( skin );
-					m_SkinLODCur = m_SkinLOD1;
-				}
-			}
-			// default to the shadow level of LOD 0 (lets you turn on/off shadows for all levels)
-			renderEntity.noShadow = spawnArgs.GetBool( "noshadows_lod_1", spawnArgs.GetString( "noshadows" ));
-		}
 
-		/* Tels: LOD level 2 */
-		bWithinDist = (deltaSq < m_DistLOD3Sq && deltaSq >= m_DistLOD2Sq);
-		if ( bWithinDist && m_LODLevel != 2)
-		{
-			if (fl.hidden)
-			{
-				Show();
-			}
-			m_LODLevel = 2;
-			if (m_ModelLODCur != m_ModelLOD2)
-			{
-				//gameLocal.Printf( "%s switching to LOD 2 (model %s)\n", GetName(), m_ModelLOD2.c_str() );
-				SetModel( m_ModelLOD2 );
-				m_ModelLODCur = m_ModelLOD2;
-				SetOrigin( m_OffsetLOD2 );
-				//renderEntity.origin = m_OffsetLOD2;
-			}
-			if (m_SkinLODCur != m_SkinLOD2)
-			{
-				const idDeclSkin *skin = declManager->FindSkin( m_SkinLOD2 );
-				if (skin)
-				{
-					SetSkin( skin );
-					m_SkinLODCur = m_SkinLOD2;
-				}
-			}
-			// default to the shadow level of LOD 0 (lets you turn on/off shadows for all levels)
-			renderEntity.noShadow = spawnArgs.GetBool( "noshadows_lod_2", spawnArgs.GetString( "noshadows" ));
-		}
+					// LOD level number i, switch model, skin, noshadows etc
+					// TODO: Hiding a LOD entity temp. completely would fail,
+					//		 as the LOD levels < LAST_LOD_LEVEL would show it again.
+					if (fl.hidden)
+					{
+						//gameLocal.Printf("Showing %s again (LOD %i)\n", GetName(), i);
+						Show();
+					}
+					if (m_ModelLODCur != m_ModelLOD[i])
+					{
+						//gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+						//	GetName(), i, m_ModelLOD[i].c_str(), m_OffsetLOD[i].x, m_OffsetLOD[i].y, m_OffsetLOD[i].z );
+						SetModel( m_ModelLOD[i] );
+						m_ModelLODCur = m_ModelLOD[i];
+						SetOrigin( m_OffsetLOD[i] );
+					}
 
-		/* Tels: LOD level 3 */
-		bWithinDist = ((m_DistShowSq < 0 || deltaSq < m_DistShowSq) && deltaSq >= m_DistLOD3Sq);
-		if ( bWithinDist && m_LODLevel != 3)
-		{
-			if (fl.hidden)
-			{
-				Show();
-			}
-			m_LODLevel = 3;
-			if (m_ModelLODCur != m_ModelLOD3)
-			{
-				//gameLocal.Printf( "%s switching to LOD 3 (model %s)\n", GetName(), m_ModelLOD3.c_str() );
-				SetModel( m_ModelLOD3 );
-				m_ModelLODCur = m_ModelLOD3;
-				SetOrigin( m_OffsetLOD3 );
-				//renderEntity.origin = m_OffsetLOD3;
-			}
-			if (m_SkinLODCur != m_SkinLOD3)
-			{
-				const idDeclSkin *skin = declManager->FindSkin( m_SkinLOD3 );
-				if (skin)
-				{
-					SetSkin( skin );
-					m_SkinLODCur = m_SkinLOD3;
+					if ( m_SkinLODCur != m_SkinLOD[i])
+					{
+						const idDeclSkin *skinD = declManager->FindSkin( m_SkinLOD[i] );
+						if (skinD)
+						{
+							SetSkin( skinD );
+						}
+						m_SkinLODCur = m_SkinLOD[i];
+					}
+					renderEntity.noShadow = (m_noshadowsLOD & (1 << i)) > 0 ? 1 : 0;
 				}
+				// abort the loop, we found the right level (micro-optimize)
+				i = LOD_LEVELS;
 			}
-			// default to the shadow level of LOD 0 (lets you turn on/off shadows for all levels)
-			renderEntity.noShadow = spawnArgs.GetBool( "noshadows_lod_3", spawnArgs.GetString( "noshadows" ));
-		}
-
-		/* Tels: LOD level 4 ake hide */
-		bWithinDist = (m_DistShowSq > 0) && (deltaSq >= m_DistShowSq);
-		if ( bWithinDist && m_LODLevel != 4)
-		{
-			//gameLocal.Printf( "%s switching to LOD 4 (hidden)\n", GetName());
-			if (!fl.hidden)
-			{
-				Hide();
-			}
-			m_LODLevel = 4;
+		// end for all LOD levels
 		}
 
 	}
