@@ -39,6 +39,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/RevisionTracker.h"
 #include "../DarkMod/Missions/MissionManager.h"
+#include "../DarkMod/Http/HttpConnection.h"
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -505,6 +506,8 @@ void idGameLocal::Init( void ) {
 
 	// Check the interaction.vfp settings
 	UpdateInteractionShader();
+
+	CHttpConnection conn;
 }
 
 void idGameLocal::UpdateInteractionShader()

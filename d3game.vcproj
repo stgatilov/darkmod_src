@@ -43,8 +43,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;include/zlib"
-				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS, _CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib"
+				PreprocessorDefinitions="__DOOM__;GAME_DLL;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB;CURL_STATICLIB"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -77,7 +77,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib"
+				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib"
 				OutputFile="../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -151,8 +151,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;include/zlib"
-				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS,IL_STATIC_LIB, _CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib"
+				PreprocessorDefinitions="__DOOM__;GAME_DLL;WIN32;NDEBUG;_WINDOWS;IL_STATIC_LIB;CURL_STATICLIB;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
@@ -185,11 +185,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib"
 				OutputFile="../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib"
+				IgnoreDefaultLibraryNames="LIBCMT.LIB"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -2413,6 +2414,18 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Missions\MissionManager.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Http"
+					>
+					<File
+						RelativePath=".\DarkMod\Http\HttpConnection.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Http\HttpConnection.h"
 						>
 					</File>
 				</Filter>
