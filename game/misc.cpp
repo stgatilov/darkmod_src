@@ -1728,8 +1728,8 @@ void idStaticEntity::Think( void )
 			delta -= (vGravNorm * delta) * vGravNorm;
 		}
 
-		// cache that value
-		float deltaSq = delta.LengthSqr();
+		// multiply with the user LOD bias setting, and cache that the result:
+		float deltaSq = delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat());
 
 		/* Tels: check in which LOD level we are */
 		for (int i = 0; i < LOD_LEVELS; i++)
