@@ -12,6 +12,9 @@
 
 #include <boost/shared_ptr.hpp>
 
+class CHttpRequest;
+typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
+
 /**
  * greebo: An object representing a single HttpConnection, holding 
  * proxy settings and providing error handling.
@@ -22,6 +25,13 @@ class CHttpConnection
 {
 public:
 	CHttpConnection();
+
+	~CHttpConnection();
+
+	/**
+	 * Constructs a new HTTP request using the given URL
+	 */ 
+	CHttpRequestPtr CreateRequest(const std::string& url);
 };
 typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 

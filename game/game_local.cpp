@@ -40,6 +40,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/RevisionTracker.h"
 #include "../DarkMod/Missions/MissionManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
+#include "../DarkMod/Http/HttpRequest.h"
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -508,6 +509,11 @@ void idGameLocal::Init( void ) {
 	UpdateInteractionShader();
 
 	CHttpConnection conn;
+
+	CHttpRequestPtr req = conn.CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version_info.xml");
+
+	req->Perform();
+	gameLocal.Printf("Result:\n%s\n\n", req->GetResultString().c_str());
 }
 
 void idGameLocal::UpdateInteractionShader()
