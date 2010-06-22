@@ -1629,6 +1629,16 @@ void idStaticEntity::Spawn( void ) {
 			{
 				// last distance is named differently so you don't need to know how many levels the code supports:
 				m_DistLODSq[i] = fHideDistance;
+
+				// compute a random number and check it against the hide probability spawnarg
+				// do this only once at setup time, so the setting is stable during runtime
+				float fHideProbability = spawnArgs.GetFloat( "hide_probability", "1.0" );
+				float fRandom = gameLocal.random.RandomFloat();	// 0.0 .. 1.0
+				if (fRandom <= fHideProbability)
+				{
+					m_DistLODSq[i] = -1.0f;		// disable
+				}
+					
 			}
 
 			//gameLocal.Printf (" %s: init LOD %i m_DistLODSq=%f\n", GetName(), i, m_DistLODSq[i]); 
@@ -1713,6 +1723,7 @@ void idStaticEntity::Think( void )
 	if( m_bDistDependent 
 		&& ( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval ) )
 	{
+		
 		idVec3 delta, vGravNorm;
 		bool bWithinDist = false;
 
