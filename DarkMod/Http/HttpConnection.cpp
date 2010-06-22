@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 3939 $
- * $Date: 2010-06-11 05:39:35 +0200 (Fr, 11 Jun 2010) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: MissionDB.cpp 3939 2010-06-11 03:39:35Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "HttpConnection.h"
 
@@ -75,7 +75,7 @@ CHttpConnection::CHttpConnection()
 	curl_handle = curl_easy_init();
 
 	/* specify URL to get */ 
-	curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.mindplaces.com/darkmod/downloads.php");
+	curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.bloodgate.com/mirrors/tdm/pub/tdm_version_info.xml");
 
 	/* send all data to this function  */ 
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
