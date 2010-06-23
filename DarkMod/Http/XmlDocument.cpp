@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 3973 $
- * $Date: 2010-06-23 03:38:58 +0200 (Mi, 23 Jun 2010) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: HttpRequest.cpp 3973 2010-06-23 01:38:58Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "XmlDocument.h"
 #include "XPathException.h"
