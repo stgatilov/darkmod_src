@@ -63,7 +63,7 @@ void CHttpRequest::Perform()
 	_handle = NULL;
 }
 
-CHttpRequest::Status CHttpRequest::GetStatus()
+CHttpRequest::RequestStatus CHttpRequest::GetStatus()
 {
 	return _status;
 }
