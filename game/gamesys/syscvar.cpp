@@ -395,6 +395,11 @@ idCVar cv_moveable_collision("tdm_show_moveable_collision",	"0",	CVAR_GAME | CVA
 idCVar cv_darkradiant_rcfserver_enable("darkradiant_rcfserver_enable",	"0",	CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 the DarkRadiant RCF Server will be enabled during the next startup." );
 
 /**
+* DarkMod LOD system
+**/
+idCVar cv_lod_bias("tdm_lod_bias",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "A factor to multiply the LOD (level of detail) distance with. Default is 1.0 (meaning no change). Values < 1.0 make the distances smaller, reducing detail and increasing framerate, values > 1 increase the distance and thus detail at the expense of framerate." );
+
+/**
 * End DarkMod cvars
 **/
 

@@ -330,6 +330,9 @@ extern idCVar cv_voice_from_off_volume;
 // angua: Velocity and sound volume of collisions
 extern idCVar cv_moveable_collision;
 
+// Tels: LOD system: multiplier for the LOD distance to be used
+extern idCVar cv_lod_bias;
+
 /**
 * CVars added for Darkmod knockout and field of vision changes
 */
