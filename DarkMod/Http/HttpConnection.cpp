@@ -15,7 +15,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "HttpConnection.h"
 #include "HttpRequest.h"
 
+#ifdef WIN32
 #include <winsock2.h> // greebo: need to include winsock2 before curl/curl.h
+#endif
+
 #include <curl/curl.h>
 
 CHttpConnection::CHttpConnection()

@@ -24,6 +24,15 @@ typedef void CURL;
  */
 class CHttpRequest
 {
+public:
+	enum Status
+	{
+		NOT_PERFORMED_YET = -1,
+		OK = 0,	// successful
+		IN_PROGRESS,
+		FAILED
+	};
+
 private:
 	// The connection we're working with
 	CHttpConnection& _conn;
@@ -36,11 +45,16 @@ private:
 	// The curl handle
 	CURL* _handle;
 
+	// The current state
+	Status _status;
+
 public:
 	CHttpRequest(CHttpConnection& conn, const std::string& url);
 
 	// Callback for CURL
 	static size_t WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self);
+
+	Status GetStatus();
 
 	// Perform the request
 	void Perform();

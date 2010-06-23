@@ -15,29 +15,17 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "HttpRequest.h"
 #include "HttpConnection.h"
 
+#ifdef WIN32
 #include <winsock2.h> // greebo: need to include winsock2 before curl/curl.h
+#endif
+
 #include <curl/curl.h>
 
-struct MemoryStruct
-{
-	char *memory;
-	size_t size;
-};
- 
-static void* myrealloc(void *ptr, size_t size)
-{
-	/* There might be a realloc() out there that doesn't like reallocing
-	 NULL pointers, so we take care of it here */ 
-	if (ptr)
-		return realloc(ptr, size);
-	else
-		return malloc(size);
-}
- 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_conn(conn),
 	_url(url),
-	_handle(NULL)
+	_handle(NULL),
+	_status(NOT_PERFORMED_YET)
 {
 	// Init the curl session
 	_handle = curl_easy_init();
@@ -53,15 +41,31 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 
 	// Set agent
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+	// TODO: Get the proxy from the HttpConnection class
 }
 
 void CHttpRequest::Perform()
 {
 	CURLcode result = curl_easy_perform(_handle);
 
+	switch (result)
+	{
+	case CURLE_OK:
+		_status = OK;
+		break;
+	default:
+		_status = FAILED;
+	};
+
 	curl_easy_cleanup(_handle);
 
 	_handle = NULL;
+}
+
+CHttpRequest::Status CHttpRequest::GetStatus()
+{
+	return _status;
 }
 
 std::string CHttpRequest::GetResultString()
