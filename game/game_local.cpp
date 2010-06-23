@@ -510,18 +510,34 @@ void idGameLocal::Init( void ) {
 
 	CHttpConnection conn;
 
-	CHttpRequestPtr req = conn.CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version_info.xml");
+	Printf("Checking http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml...\n");
+	CHttpRequestPtr req = conn.CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml");
 
 	req->Perform();
-	gameLocal.Printf("Result:\n%s\n\n", req->GetResultString().c_str());
 
 	xml::Document result = req->GetResultXml();
 
-	xml::NodeList nodes = result.FindXPath("tdm/currentVersion");
+	xml::NodeList nodes = result.FindXPath("//tdm/currentVersion");
 
 	if (!nodes.empty())
 	{
-		Printf("Current TDM Version: %s", nodes[0].GetAttributeValue("value").c_str());
+		int major = atoi(nodes[0].GetAttributeValue("major").c_str());
+		int minor = atoi(nodes[0].GetAttributeValue("minor").c_str());
+
+		Printf("Most recent TDM Version is: %d.%02d\n", major, minor);
+
+		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
+		{
+		case EQUAL:
+			Printf("Your version %d.%02d is up to date.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		case OLDER:
+			Printf("Your version %d.%02d needs updating.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		case NEWER:
+			Printf("Your version %d.%02d is newer than the most recently published one.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		};
 	}
 	else
 	{
