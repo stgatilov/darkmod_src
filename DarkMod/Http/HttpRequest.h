@@ -10,6 +10,7 @@
 #ifndef _HTTP_REQUEST_H_
 #define _HTTP_REQUEST_H_
 
+#include "XmlDocument.h"
 #include <boost/shared_ptr.hpp>
 
 class CHttpConnection;
@@ -61,6 +62,9 @@ public:
 
 	// Returns the result string
 	std::string GetResultString();
+
+	// Returns the result as XML document
+	xml::Document GetResultXml();
 };
 typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
 

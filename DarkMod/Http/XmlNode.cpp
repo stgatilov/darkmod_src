@@ -26,13 +26,13 @@ Node::Node(xmlNodePtr node):
 {}
 
 // Return the actual node ptr
-xmlNodePtr Node::getNodePtr() const
+xmlNodePtr Node::GetNodePtr() const
 {
 	return _xmlNode;
 }
 
 // Return the name of a node 
-const std::string Node::getName() const
+const std::string Node::GetName() const
 {
 	if (_xmlNode) {
 		return std::string( reinterpret_cast<const char*>(_xmlNode->name) );
@@ -43,7 +43,7 @@ const std::string Node::getName() const
 }
 
 // Return a NodeList of all children of this node
-NodeList Node::getChildren() const
+NodeList Node::GetChildren() const
 {
     NodeList retval;
     
@@ -57,7 +57,7 @@ NodeList Node::getChildren() const
 }
 
 // Creates a new child with no content (i.e. <name />)
-Node Node::createChild(const std::string& name)
+Node Node::CreateChild(const std::string& name)
 {
 	xmlChar* nodeName = xmlCharStrdup(name.c_str());
 
@@ -72,7 +72,7 @@ Node Node::createChild(const std::string& name)
 
 // Return a NodeList of named children of this node
 
-NodeList Node::getNamedChildren(const std::string& name) const
+NodeList Node::GetNamedChildren(const std::string& name) const
 {
     NodeList retval;
     
@@ -88,7 +88,7 @@ NodeList Node::getNamedChildren(const std::string& name) const
 }
 
 // Set the value of the given attribute
-void Node::setAttributeValue(const std::string& key, const std::string& value)
+void Node::SetAttributeValue(const std::string& key, const std::string& value)
 {
 	xmlChar* k = xmlCharStrdup(key.c_str());
 	xmlChar* v = xmlCharStrdup(value.c_str());
@@ -102,7 +102,7 @@ void Node::setAttributeValue(const std::string& key, const std::string& value)
 // Return the value of a given attribute, or throw AttributeNotFoundException
 // if the attribute does not exist.
 
-std::string Node::getAttributeValue(const std::string& key) const
+std::string Node::GetAttributeValue(const std::string& key) const
 {
     // Iterate through the chain of attributes to find the requested one.
     for (xmlAttrPtr attr = _xmlNode->properties; attr != NULL; attr = attr->next) {
@@ -118,7 +118,7 @@ std::string Node::getAttributeValue(const std::string& key) const
 // Return the textual content of a given node. This may be an empty string if there is no
 // content available.
 
-std::string Node::getContent() const
+std::string Node::GetContent() const
 {
 	if (_xmlNode->children && _xmlNode->children->content) {
 		return std::string(reinterpret_cast<const char*>(_xmlNode->children->content));
@@ -128,7 +128,7 @@ std::string Node::getContent() const
 	}
 }
 
-void Node::addText(const std::string& text)
+void Node::AddText(const std::string& text)
 {
 	// Allocate a new text node
 	xmlNodePtr whitespace = xmlNewText(
@@ -139,7 +139,7 @@ void Node::addText(const std::string& text)
 	xmlAddSibling(_xmlNode, whitespace);
 }
 
-void Node::erase()
+void Node::Erase()
 {
 	// unlink the node from the list first, otherwise: crashes ahead!
 	xmlUnlinkNode(_xmlNode);

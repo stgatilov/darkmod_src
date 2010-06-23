@@ -28,22 +28,26 @@ Document::Document(xmlDocPtr doc):
     _xmlDoc(doc)
 {}
 
-Document::Document(const std::string& filename) :
-	_xmlDoc(xmlParseFile(filename.c_str()))
-{}
+Document Document::CreateFromFile(const std::string& filename)
+{
+	return xml::Document(xmlParseFile(filename.c_str()));
+}
 
-Document::Document(const Document& other) :
-	_xmlDoc(other._xmlDoc) 
-{}
+Document Document::CreateFromString(const std::string& str)
+{
+	return xml::Document(xmlParseMemory(str.c_str(), str.length()));
+}
 
-Document::~Document() {
-	if (_xmlDoc != NULL) {
+Document::~Document()
+{
+	if (_xmlDoc != NULL)
+	{
 		// Free the xml document memory
 		xmlFreeDoc(_xmlDoc);
 	}
 }
 
-Document Document::create()
+Document Document::Create()
 {
 	xmlChar* versionStr = xmlCharStrdup("1.0");
 
@@ -55,8 +59,8 @@ Document Document::create()
 	return Document(doc);
 }
 
-void Document::addTopLevelNode(const std::string& name) {
-	if (!isValid()) {
+void Document::AddTopLevelNode(const std::string& name) {
+	if (!IsValid()) {
 		return; // is not Valid, place an assertion here?
 	}
 
@@ -77,8 +81,8 @@ void Document::addTopLevelNode(const std::string& name) {
 	xmlFree(emptyStr);
 }
 
-Node Document::getTopLevelNode() const {
-	if (!isValid()) {
+Node Document::GetTopLevelNode() const {
+	if (!IsValid()) {
 		// Invalid Document, return a NULL node
 		return Node(NULL);
 	}
@@ -86,11 +90,11 @@ Node Document::getTopLevelNode() const {
 	return Node(_xmlDoc->children);
 }
 
-void Document::importDocument(Document& other, Node& importNode) {
+void Document::ImportDocument(Document& other, Node& importNode) {
 	// Locate the top-level node(s) of the other document
-	xml::NodeList topLevelNodes = other.findXPath("/*");
+	xml::NodeList topLevelNodes = other.FindXPath("/*");
 	
-	xmlNodePtr targetNode = importNode.getNodePtr();
+	xmlNodePtr targetNode = importNode.GetNodePtr();
 
 	if (targetNode->children == NULL || targetNode->name == NULL) {
 		// invalid importnode
@@ -100,30 +104,30 @@ void Document::importDocument(Document& other, Node& importNode) {
 	// Add each of the imported nodes to the target importNode
 	for (std::size_t i = 0; i < topLevelNodes.size(); i++) {
 		xmlAddPrevSibling(targetNode->children, 
-						  topLevelNodes[i].getNodePtr());
+						  topLevelNodes[i].GetNodePtr());
 	}
 }
 
-void Document::copyNodes(const NodeList& nodeList) {
-	if (!isValid() || _xmlDoc->children == NULL) {
+void Document::CopyNodes(const NodeList& nodeList) {
+	if (!IsValid() || _xmlDoc->children == NULL) {
 		return; // is not Valid, place an assertion here?
 	}
 
 	// Copy the child nodes one by one
 	for (std::size_t i = 0; i < nodeList.size(); i++) {
 		// Copy the node
-		xmlNodePtr node = xmlCopyNode(nodeList[i].getNodePtr(), 1);
+		xmlNodePtr node = xmlCopyNode(nodeList[i].GetNodePtr(), 1);
 		// Add this node to the top level node of this document
 		xmlAddChild(xmlDocGetRootElement(_xmlDoc), node);
 	}
 }
 
-bool Document::isValid() const {
+bool Document::IsValid() const {
 	return _xmlDoc != NULL;
 }
 
 // Evaluate an XPath expression and return matching Nodes.
-NodeList Document::findXPath(const std::string& path) const
+NodeList Document::FindXPath(const std::string& path) const
 {
     // Set up the XPath context
     xmlXPathContextPtr context = xmlXPathNewContext(_xmlDoc);
@@ -160,7 +164,7 @@ NodeList Document::findXPath(const std::string& path) const
 }
 
 // Saves the file to the disk via xmlSaveFormatFile
-void Document::saveToFile(const std::string& filename) const {
+void Document::SaveToFile(const std::string& filename) const {
 	xmlSaveFormatFile(filename.c_str(), _xmlDoc, 1);
 }
 

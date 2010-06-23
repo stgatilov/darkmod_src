@@ -514,6 +514,19 @@ void idGameLocal::Init( void ) {
 
 	req->Perform();
 	gameLocal.Printf("Result:\n%s\n\n", req->GetResultString().c_str());
+
+	xml::Document result = req->GetResultXml();
+
+	xml::NodeList nodes = result.FindXPath("tdm/currentVersion");
+
+	if (!nodes.empty())
+	{
+		Printf("Current TDM Version: %s", nodes[0].GetAttributeValue("value").c_str());
+	}
+	else
+	{
+		Printf("Couldn't find current version tag.\n");
+	}
 }
 
 void idGameLocal::UpdateInteractionShader()

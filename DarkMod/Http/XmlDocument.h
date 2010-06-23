@@ -31,42 +31,46 @@ public:
     // Construct a Document using the provided xmlDocPtr.
 	Document(xmlDocPtr doc);
 
-	// Construct a xml::Document from the given filename (must be the full path).
-	// Use the isValid() method to check if the load was successful.
-	Document(const std::string& filename);
-	
 	// Copy constructor
 	Document(const Document& other);
+
+	// Construct a xml::Document from the given filename (must be the full path).
+	// Use the isValid() method to check if the load was successful.
+	static Document CreateFromFile(const std::string& filename);
+
+	// Named constructor. Construct a xml::Document from the given string in memory.
+	// Use the isValid() method to check if the load was successful.
+	static Document CreateFromString(const std::string& str);
+
+	// Creates a new xml::Document object (allocates a new xmlDoc)
+	static Document Create();
 
 	// Destructor, frees the xmlDocPtr
 	~Document();
 
-	// Creates a new xml::Document object (allocates a new xmlDoc)
-	static Document create();
-
 	// Add a new toplevel node with the given name to this Document
-	void addTopLevelNode(const std::string& name);
+	void AddTopLevelNode(const std::string& name);
 
 	// Returns the top level node (or an empty Node object if none exists)
-	Node getTopLevelNode() const;
+	Node GetTopLevelNode() const;
 
 	// Merges the (top-level) nodes of the <other> document into this one.
 	// The insertion point in this Document is specified by <importNode>.
-	void importDocument(Document& other, Node& importNode);
+	void ImportDocument(Document& other, Node& importNode);
 
 	// Copies the given Nodes into this document (a top level node
 	// must be created beforehand)
-	void copyNodes(const NodeList& nodeList);
+	void CopyNodes(const NodeList& nodeList);
     
 	// Returns TRUE if the document is ok and can be queried.
-	bool isValid() const;
+	bool IsValid() const;
 
     // Evaluate the given XPath expression and return a NodeList of matching
     // nodes.
-    NodeList findXPath(const std::string& path) const;
+    NodeList FindXPath(const std::string& path) const;
     
     // Saves the file to the disk via xmlSaveFormatFile
-    void saveToFile(const std::string& filename) const;
+    void SaveToFile(const std::string& filename) const;
 };
 
 } // namespace

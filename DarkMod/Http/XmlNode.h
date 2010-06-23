@@ -36,40 +36,39 @@ public:
 	Node(xmlNodePtr node);
 	
 	// Get the actual node pointer to a given node
-    xmlNodePtr getNodePtr() const;
+    xmlNodePtr GetNodePtr() const;
     
     // Get the name of the given node
-    const std::string getName() const;
+    const std::string GetName() const;
 	
 	// Get a list of nodes which are children of this node
-    NodeList getChildren() const;
+    NodeList GetChildren() const;
 
 	// Creates a new child under this XML Node
-	Node createChild(const std::string& name);
+	Node CreateChild(const std::string& name);
 
 	// Get a list of nodes which are children of this node and match the
     // given name.
-    NodeList getNamedChildren(const std::string& name) const;
+    NodeList GetNamedChildren(const std::string& name) const;
     
     // Return the value of the given attribute, or an empty string
     // if the attribute is not present on this Node.
-    std::string getAttributeValue(const std::string& key) const;
+    std::string GetAttributeValue(const std::string& key) const;
     
     // Set the value of the given attribute    
-    void setAttributeValue(const std::string& key, const std::string& value);
+    void SetAttributeValue(const std::string& key, const std::string& value);
     
     /** Return the text content of this node.
      * 
      * @returns
      * The text content of this node.
      */
-     
-	std::string getContent() const;
+	std::string GetContent() const;
 
-	void addText(const std::string& text);
+	void AddText(const std::string& text);
 
 	// Unlink and delete the node and all its children
-	void erase();
+	void Erase();
 };
 
 
