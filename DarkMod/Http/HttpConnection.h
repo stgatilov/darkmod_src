@@ -28,6 +28,12 @@ public:
 
 	~CHttpConnection();
 
+	bool HasProxy();
+
+	idStr GetProxyHost();
+	idStr GetProxyUsername();
+	idStr GetProxyPassword();
+
 	/**
 	 * Constructs a new HTTP request using the given URL
 	 */ 

@@ -32,6 +32,26 @@ CHttpConnection::~CHttpConnection()
 	curl_global_cleanup();
 }
 
+bool CHttpConnection::HasProxy()
+{
+	return idStr::Length(cv_tdm_proxy.GetString()) > 0;
+}
+
+idStr CHttpConnection::GetProxyHost()
+{
+	return cv_tdm_proxy.GetString();
+}
+
+idStr CHttpConnection::GetProxyUsername()
+{
+	return cv_tdm_proxy_user.GetString();
+}
+
+idStr CHttpConnection::GetProxyPassword()
+{
+	return cv_tdm_proxy_pass.GetString();
+}
+
 CHttpRequestPtr CHttpConnection::CreateRequest(const std::string& url)
 {
 	return CHttpRequestPtr(new CHttpRequest(*this, url));

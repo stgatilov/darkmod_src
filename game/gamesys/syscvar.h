@@ -88,6 +88,10 @@ extern idCVar cv_tdm_fm_splashimage_file;
 extern idCVar cv_tdm_fm_sync_config_files;
 extern idCVar cv_tdm_fm_restart_delay;
 
+extern idCVar cv_tdm_proxy;
+extern idCVar cv_tdm_proxy_user;
+extern idCVar cv_tdm_proxy_pass;
+
 extern idCVar cv_debug_aastype;
 
 extern idCVar cv_las_showtraces;
