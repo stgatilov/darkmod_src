@@ -1511,6 +1511,7 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 			savefile->WriteString( m_ModelLOD[i] );
 			savefile->WriteString( m_SkinLOD[i] );
 			savefile->WriteVec3( m_OffsetLOD[i] );
+			savefile->WriteFloat( m_DistLODSq[ i ] );
 		}
 		savefile->WriteString( m_ModelLODCur );
 		savefile->WriteString( m_SkinLODCur );
@@ -1546,6 +1547,7 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 			savefile->ReadString( m_ModelLOD[i] );
 			savefile->ReadString( m_SkinLOD[i] );
 			savefile->ReadVec3( m_OffsetLOD[i] );
+			savefile->ReadFloat( m_DistLODSq[ i ] );
 		}
 		savefile->ReadString( m_ModelLODCur );
 		savefile->ReadString( m_SkinLODCur );
@@ -1611,6 +1613,8 @@ void idStaticEntity::Spawn( void ) {
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 
+	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
+
 	float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
 	m_bDistDependent = m_DistCheckInterval != 0 || fHideDistance != 0;
 
@@ -1638,7 +1642,6 @@ void idStaticEntity::Spawn( void ) {
 				{
 					m_DistLODSq[i] = -1.0f;		// disable
 				}
-					
 			}
 
 			//gameLocal.Printf (" %s: init LOD %i m_DistLODSq=%f\n", GetName(), i, m_DistLODSq[i]); 
@@ -1687,6 +1690,7 @@ void idStaticEntity::Spawn( void ) {
 		// add some phase diversity to the checks so that they don't all run in one frame
 		// make sure they all run on the first frame though, by initializing m_TimeStamp to
 		// be at least one interval early.
+		// old code, only using half the interval:
 		//m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + 0.5f*gameLocal.random.RandomFloat()) );
 		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 
