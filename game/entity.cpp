@@ -1983,7 +1983,7 @@ void idEntity::SetShaderParm( int parmnum, float value )
 idEntity::SetColor
 ================
 */
-void idEntity::SetColor( float red, float green, float blue ) {
+void idEntity::SetColor( const float red, const float green, const float blue ) {
 	renderEntity.shaderParms[ SHADERPARM_RED ]		= red;
 	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= green;
 	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= blue;
@@ -2021,6 +2021,16 @@ void idEntity::SetColor( const idVec4 &color ) {
 	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= color[ 1 ];
 	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= color[ 2 ];
 	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::SetAlpha
+================
+*/
+void idEntity::SetAlpha( const float alpha ) {
+	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= alpha;
 	UpdateVisuals();
 }
 
