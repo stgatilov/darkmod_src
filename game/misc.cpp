@@ -1561,7 +1561,6 @@ idStaticEntity::Spawn
 */
 void idStaticEntity::Spawn( void ) {
 	bool solid;
-	bool hidden;
 
 	// an inline static model will not do anything at all
 	if ( spawnArgs.GetBool( "inline" ) || gameLocal.world->spawnArgs.GetBool( "inlineAllStatics" ) ) {
@@ -1570,7 +1569,6 @@ void idStaticEntity::Spawn( void ) {
 	}
 
 	solid = spawnArgs.GetBool( "solid" );
-	hidden = spawnArgs.GetBool( "hide" );
 
 	// ishtvan fix : Let clearing contents happen naturally on Hide instead of
 	// checking hidden here and clearing contents prematurely
