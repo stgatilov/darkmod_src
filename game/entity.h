@@ -450,6 +450,10 @@ public:
 	 * Tels: Only set the alpha channel to fade in/out
 	 */
 	virtual void			SetAlpha( const float alpha );
+	/**
+	 * Tels: Same as SetAlpha(); but sends bound children, too, if doTeam is true
+	 */
+	virtual void			SetAlpha( const float alpha, const bool doTeam );
 
 	/**
 	 * greebo: Returns the light quotient for this entity, a value determined by the 

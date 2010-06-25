@@ -2027,10 +2027,43 @@ void idEntity::SetColor( const idVec4 &color ) {
 /*
 ================
 idEntity::SetAlpha
+
+Tels: Just set the alpha value
 ================
 */
 void idEntity::SetAlpha( const float alpha ) {
 	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= alpha;
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::SetAlpha
+
+Tels: Set alpha including on our children
+================
+*/
+void idEntity::SetAlpha( const float alpha, const bool bound ) {
+
+	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= alpha;
+
+	if (!bound)
+	{
+		return;
+	}
+
+	// show our bind-children
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+	{
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) 
+		{
+			ent->SetAlpha( alpha );
+		}
+	}
 	UpdateVisuals();
 }
 
