@@ -1632,7 +1632,7 @@ void idStaticEntity::Spawn( void ) {
 
 				// compute a random number and check it against the hide probability spawnarg
 				// do this only once at setup time, so the setting is stable during runtime
-				float fHideProbability = spawnArgs.GetFloat( "hide_probability", "1.0" );
+				float fHideProbability = spawnArgs.GetFloat( "lod_hide_probability", "1.0" );
 				float fRandom = gameLocal.random.RandomFloat();	// 0.0 .. 1.0
 				if (fRandom <= fHideProbability)
 				{
