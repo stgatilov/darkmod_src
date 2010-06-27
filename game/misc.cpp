@@ -2011,7 +2011,6 @@ idStaticEntity::Event_Activate
 ================
 */
 void idStaticEntity::Event_Activate( idEntity *activator ) {
-	idStr activateGui;
 
 	spawnTime = gameLocal.time;
 	active = !active;
