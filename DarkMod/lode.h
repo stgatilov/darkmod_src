@@ -16,7 +16,7 @@
 /*
 ===============================================================================
 
-  LodeRunner - Level Of Detail Entity Runner
+  Lode - Level Of Detail Entity Runner
   
   Automatically creates/culls entities based on distance from player.
 
@@ -43,11 +43,11 @@ struct lode_entity_t {
 	int						classIdx;		// index into Classes
 };
 
-class LodeRunner : public idStaticEntity {
+class Lode : public idStaticEntity {
 public:
-	CLASS_PROTOTYPE( LodeRunner );
+	CLASS_PROTOTYPE( Lode );
 
-						LodeRunner( void );
+						Lode( void );
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );

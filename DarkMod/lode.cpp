@@ -23,23 +23,23 @@ static bool init_version = FileVersionList("$Id: lode.cpp 3981 2010-06-25 05:27:
 #include "lode.h"
 
 /*
-   LodeRunner
+   Lode
 
    Entity that spawns/culls other entities, but is invisible on its own.
 
 ===============================================================================
 */
 
-CLASS_DECLARATION( idStaticEntity, LodeRunner )
-	EVENT( EV_Activate,				LodeRunner::Event_Activate )
+CLASS_DECLARATION( idStaticEntity, Lode )
+	EVENT( EV_Activate,				Lode::Event_Activate )
 END_CLASS
 
 /*
 ===============
-LodeRunner::LodeRunner
+Lode::Lode
 ===============
 */
-LodeRunner::LodeRunner( void ) {
+Lode::Lode( void ) {
 
 	spawnTime = 0;
 
@@ -59,10 +59,10 @@ LodeRunner::LodeRunner( void ) {
 
 /*
 ===============
-LodeRunner::Save
+Lode::Save
 ===============
 */
-void LodeRunner::Save( idSaveGame *savefile ) const {
+void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( spawnTime );
 	savefile->WriteBool( active );
 
@@ -97,10 +97,10 @@ void LodeRunner::Save( idSaveGame *savefile ) const {
 
 /*
 ===============
-LodeRunner::Restore
+Lode::Restore
 ===============
 */
-void LodeRunner::Restore( idRestoreGame *savefile ) {
+void Lode::Restore( idRestoreGame *savefile ) {
 	int num;
 
 	savefile->ReadInt( spawnTime );
@@ -140,23 +140,23 @@ void LodeRunner::Restore( idRestoreGame *savefile ) {
 
 /*
 ===============
-LodeRunner::RandomFloat
+Lode::RandomFloat
 ===============
 */
-ID_INLINE float LodeRunner::RandomFloat( void ) {
+ID_INLINE float Lode::RandomFloat( void ) {
 	unsigned long i;
 	m_iSeed = 1664525L * m_iSeed + 1013904223L;
-	i = LodeRunner::IEEE_ONE | ( m_iSeed & LodeRunner::IEEE_MASK );
+	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
 	return ( ( *(float *)&i ) - 1.0f );
 }
 
 /*
 ===============
-LodeRunner::Spawn
+Lode::Spawn
 ===============
 */
-void LodeRunner::Spawn( void ) {
-	// the LodeRunner itself is sneaky and hides itsel
+void Lode::Spawn( void ) {
+	// the Lode itself is sneaky and hides itsel
 	Hide();
 
 	// And is nonsolid, too!
@@ -171,7 +171,7 @@ void LodeRunner::Spawn( void ) {
 	// do we have a cull range?
 	m_fCullRange = spawnArgs.GetFloat( "lod_cull_range", "0.0" );
 
-	gameLocal.Printf (" LodeRunner %s: cull range = %0.2f.\n", GetName(), m_fCullRange );
+	gameLocal.Printf (" Lode %s: cull range = %0.2f.\n", GetName(), m_fCullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -189,7 +189,7 @@ void LodeRunner::Spawn( void ) {
 Create the places for all entities that we control
 ===============
 */
-void LodeRunner::Prepare( void ) {
+void Lode::Prepare( void ) {
 	lode_class_t			LodeClass;
 	int						numEntities;
 
@@ -262,7 +262,7 @@ void LodeRunner::Prepare( void ) {
 	PrepareEntities();
 }
 
-void LodeRunner::PrepareEntities( void )
+void Lode::PrepareEntities( void )
 {
 	idVec3					origin;
 	lode_entity_t			LodeEntity;
@@ -294,10 +294,10 @@ void LodeRunner::PrepareEntities( void )
 
 /*
 ================
-LodeRunner::Think
+Lode::Think
 ================
 */
-void LodeRunner::Think( void ) 
+void Lode::Think( void ) 
 {
 	struct lode_entity_t* ent;
 	struct lode_class_t*  lclass;
@@ -412,10 +412,10 @@ void LodeRunner::Think( void )
 
 /*
 ================
-LodeRunner::Event_Activate
+Lode::Event_Activate
 ================
 */
-void LodeRunner::Event_Activate( idEntity *activator ) {
+void Lode::Event_Activate( idEntity *activator ) {
 
 	spawnTime = gameLocal.time;
 	active = !active;
