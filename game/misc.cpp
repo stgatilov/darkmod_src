@@ -1619,9 +1619,9 @@ void idStaticEntity::Spawn( void ) {
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
+	m_bDistDependent = m_DistCheckInterval != 0;
 
 	float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
-	m_bDistDependent = m_DistCheckInterval != 0 || fHideDistance != 0;
 
 	if (m_bDistDependent)
 	{
