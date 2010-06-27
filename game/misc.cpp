@@ -1618,8 +1618,10 @@ void idStaticEntity::Spawn( void ) {
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 
+	//gameLocal.Printf (" %s: dist_check_period %i\n", GetName(), m_DistCheckInterval);
+
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	m_bDistDependent = m_DistCheckInterval != 0;
+	m_bDistDependent = (m_DistCheckInterval != 0) ? true : false;
 
 	float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
 
@@ -1681,7 +1683,7 @@ void idStaticEntity::Spawn( void ) {
 					m_fLODFadeInRange *= m_fLODFadeInRange;
 				}
 
-				gameLocal.Printf (" %s: lod_fadeout_range %0.2f lod_fadein_range %0.2f.\n", GetName(), m_fLODFadeOutRange, m_fLODFadeInRange);
+				//gameLocal.Printf (" %s: lod_fadeout_range %0.2f lod_fadein_range %0.2f.\n", GetName(), m_fLODFadeOutRange, m_fLODFadeInRange);
 			}
 
 			//gameLocal.Printf (" %s: init LOD %i m_DistLODSq=%f\n", GetName(), i, m_DistLODSq[i]); 
@@ -1820,7 +1822,7 @@ void idStaticEntity::Think( void )
 				
 					if (m_fLODFadeOutRange > 0)
 					{
-						gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_DistLODSq[i], deltaSq, m_fLODFadeOutRange);
+						//gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_DistLODSq[i], deltaSq, m_fLODFadeOutRange);
 
 						if (deltaSq > (m_DistLODSq[i] + m_fLODFadeOutRange))
 						{
@@ -1837,7 +1839,7 @@ void idStaticEntity::Think( void )
 							{
 								Show();
 							}
-							gameLocal.Printf ("%s fading out to %0.2f\n", GetName(), fAlpha);
+							//gameLocal.Printf ("%s fading out to %0.2f\n", GetName(), fAlpha);
 							SetAlpha( fAlpha, true );
 						}
 						// set the timestamp so we think the next frame again to get a smooth blend:
@@ -1892,7 +1894,7 @@ void idStaticEntity::Think( void )
 						{
 							Show();
 						}
-						gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
+						//gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
 						SetAlpha( fAlpha, true );
 					}
 					// set the timestamp so we think the next frame again to get a smooth blend:
