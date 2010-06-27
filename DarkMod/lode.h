@@ -28,6 +28,7 @@ struct lode_class_t {
 	idStr					classname;		// Entity class to respawn entities
 	idStr					skin;			// Either "skinname" or "random:skinname1,skinname2" etc.
 	int						score;			// to find out how many entities (calculate at spawn time from score)
+	idVec3					origin;			// origin of the original target entity, useful for "flooring"
 	float					cullDist;		// distance after where we remove the entity from the world
 	float					spawnDist;		// distance where we respawn the entity
 };

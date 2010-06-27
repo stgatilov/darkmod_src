@@ -66,6 +66,7 @@ Lode::Save
 ===============
 */
 void Lode::Save( idSaveGame *savefile ) const {
+
 	savefile->WriteInt( spawnTime );
 	savefile->WriteBool( active );
 
@@ -79,7 +80,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDistCheckXYOnly );
 
 	savefile->WriteInt( m_Entities.Num() );
-	for( int i = 0; i < m_Entities.Num(); i++ ) {
+	for( int i = 0; i < m_Entities.Num(); i++ )
+	{
 		savefile->WriteString( m_Entities[i].skin );
 		savefile->WriteVec3( m_Entities[i].origin );
 		savefile->WriteAngles( m_Entities[i].angles );
@@ -90,11 +92,13 @@ void Lode::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteInt( m_Classes.Num() );
-	for( int i = 0; i < m_Classes.Num(); i++ ) {
+	for( int i = 0; i < m_Classes.Num(); i++ )
+	{
 		savefile->WriteString( m_Classes[i].classname );
 		savefile->WriteInt( m_Classes[i].score );
 		savefile->WriteFloat( m_Classes[i].cullDist );
 		savefile->WriteFloat( m_Classes[i].spawnDist );
+		savefile->WriteVec3( m_Classes[i].origin );
 	}
 }
 
@@ -224,6 +228,9 @@ void Lode::Prepare( void ) {
 				LodeClass.classname = ent->GetEntityDefName();
 				LodeClass.skin = ent->spawnArgs.GetString( "skin", "" );
 				LodeClass.spawnDist = 0;
+				// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
+				// the entity already between spawning and us querying the info:
+				LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
 				LodeClass.cullDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
 				if (LodeClass.cullDist > 0)
 				{
@@ -281,7 +288,9 @@ void Lode::PrepareEntities( void )
 		gameLocal.Printf( "LODE %s: Creating %i entities of class %s.\n", GetName(), iEntities, m_Classes[i].classname.c_str() );
 		for (int j = 0; j < iEntities; j++)
 		{
-			LodeEntity.origin = origin + idVec3( RandomFloat() * 1500, RandomFloat() * 1500, RandomFloat() * -20.0f );
+			// TODO: allow the "floor" direction be set via spawnarg
+			LodeEntity.origin = origin + idVec3( RandomFloat() * 1500, RandomFloat() * 1500, 0 );
+			LodeEntity.origin.z = m_Classes[i].origin.z;
 			// TODO: choose skin randomly
 			LodeEntity.skin = m_Classes[i].skin;
 			LodeEntity.angles = idAngles( 0, RandomFloat() * 359.9, 0 );
@@ -374,6 +383,8 @@ void Lode::Think( void )
 					idDict args;
 
 					args.Set("classname", lclass->classname);
+					// move to right place
+					args.SetVector("origin", ent->origin );
 					// spawn as hidden
 					//args.Set("hide", "1");
 					// disable LOD checks on entities (we take care of this)
@@ -386,10 +397,9 @@ void Lode::Think( void )
 								GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
 						ent->exists = true;
 						ent->entity = ent2->entityNumber;
-						// move to right place
-						ent2->SetOrigin( ent->origin );
 						// and rotate
 						ent2->SetAxis( ent->angles.ToMat3() );
+						ent2->BecomeInactive( TH_THINK );
 					}
 				}
 			}	
