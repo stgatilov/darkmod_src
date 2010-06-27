@@ -383,6 +383,12 @@ private:
 	*		 the position of the LOD 0 level. */
 	idVec3				m_OffsetLOD[ LOD_LEVELS ];
 
+	/**
+	* Tels: fade out and fade in range in D3 units
+	**/
+	float				m_fLODFadeOutRange;
+	float				m_fLODFadeInRange;
+
 	/* Tels: Store the current model and skin to avoid flicker by not
 	*		 switching from one model/skin to the same model/skin when
 	*		 changing the LOD.
