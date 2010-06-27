@@ -16,7 +16,7 @@
 /*
 ===============================================================================
 
-  Lode - Level Of Detail Entity Runner
+  Lode - Level Of Detail Entity
   
   Automatically creates/culls entities based on distance from player.
 
@@ -43,6 +43,9 @@ struct lode_entity_t {
 	int						classIdx;		// index into Classes
 };
 
+extern const idEventDef EV_Deactivate;
+extern const idEventDef EV_CullAll;
+
 class Lode : public idStaticEntity {
 public:
 	CLASS_PROTOTYPE( Lode );
@@ -54,6 +57,15 @@ public:
 
 	void				Spawn( void );
 	virtual void		Think( void );
+
+	/**
+	* Stop thinking and no longer cull/spawn entities.
+	*/
+	void				Event_Deactivate( idEntity *activator );
+	/*
+	* Cull all entities. Only useful after Deactivate().
+	*/
+	void				Event_CullAll( void );
 
 private:
 	void				Event_Activate( idEntity *activator );

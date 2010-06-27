@@ -22,6 +22,9 @@ static bool init_version = FileVersionList("$Id: lode.cpp 3981 2010-06-25 05:27:
 #include "../game/game_local.h"
 #include "lode.h"
 
+const idEventDef EV_Deactivate( "deactivate", "e" );
+const idEventDef EV_CullAll( "cullAll", "" );
+
 /*
    Lode
 
@@ -162,8 +165,7 @@ void Lode::Spawn( void ) {
 	// And is nonsolid, too!
 	GetPhysics()->SetContents( 0 );
 
-	spawnTime = gameLocal.time;
-	active = false;
+	active = true;
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 	m_iSeed = spawnArgs.GetFloat( "seed", "3" );
@@ -196,6 +198,7 @@ void Lode::Prepare( void ) {
 	if ( targets.Num() == 0 )
 	{
 		gameLocal.Warning( "LODE %s has no targets!", GetName() );
+		BecomeInactive( TH_THINK );
 		return;
 	}
 
@@ -315,7 +318,7 @@ void Lode::Think( void )
 			// could not create any entities?
 			gameLocal.Printf( "LODE %s: Have no entities to control, becoming inactive.\n", GetName() );
 			// Tels: Does somehow not work, bouncing us again and again into this branch?
-			BecomeInactive(TH_PHYSICS|TH_THINK);
+			BecomeInactive(TH_THINK);
 			return;
 		}
 	}
@@ -417,26 +420,45 @@ Lode::Event_Activate
 */
 void Lode::Event_Activate( idEntity *activator ) {
 
-	spawnTime = gameLocal.time;
-	active = !active;
+	active = true;
+	BecomeActive(TH_THINK);
+}
 
-	// TODO: tels: what to do if activated?
-
-	/*const idKeyValue *kv = spawnArgs.FindKey( "hide" );
-	if ( kv ) {
-		if ( IsHidden() ) {
-			Show();
-		} else {
-			Hide();
-		}
-	}
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
-	renderEntity.shaderParms[5] = active;
-	// this change should be a good thing, it will automatically turn on 
-	// lights etc.. when triggered so that does not have to be specifically done
-	// with trigger parms.. it MIGHT break things so need to keep an eye on it
-	renderEntity.shaderParms[ SHADERPARM_MODE ] = ( renderEntity.shaderParms[ SHADERPARM_MODE ] ) ?  0.0f : 1.0f;
-	BecomeActive( TH_UPDATEVISUALS );
+/*
+================
+Lode::Event_Deactivate
+================
 */
+void Lode::Event_Deactivate( idEntity *activator ) {
+
+	active = false;
+	BecomeInactive(TH_THINK);
+}
+
+/*
+================
+Lode::Event_CullAll
+================
+*/
+void Lode::Event_CullAll( void ) {
+	struct lode_entity_t* ent;
+
+	for (int i = 0; i < m_Entities.Num(); i++)
+	{
+		ent = &m_Entities[i];
+		if (ent->exists)
+		{
+			idEntity *ent2 = gameLocal.entities[ ent->entity ];
+			if (ent2)
+			{
+				// TODO: SafeRemve?
+				ent2->PostEventMS( &EV_Remove, 0 );
+			}
+
+			// cull (remove) the entity
+			gameLocal.Printf( "LODE %s: Culling entity #%i.\n", GetName(), i );
+			ent->exists = false;
+		}
+	}	
 }
 
