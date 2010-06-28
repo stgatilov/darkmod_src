@@ -172,7 +172,6 @@ void Lode::Spawn( void ) {
 	active = true;
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
-	m_iSeed = spawnArgs.GetFloat( "seed", "3" );
 
 	// do we have a cull range?
 	m_fCullRange = spawnArgs.GetFloat( "lod_cull_range", "0.0" );
@@ -278,6 +277,9 @@ void Lode::PrepareEntities( void )
 	lode_entity_t			LodeEntity;
 
 	m_Entities.Clear();
+
+	// re-init the seed so that we get exactly the same sequence every time
+	m_iSeed = spawnArgs.GetFloat( "seed", "3" );
 
 	// Compute random positions for all entities that we want to spawn
 	// for each class
