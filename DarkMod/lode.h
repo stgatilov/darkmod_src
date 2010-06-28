@@ -31,6 +31,16 @@ struct lode_class_t {
 	idVec3					origin;			// origin of the original target entity, useful for "flooring"
 	float					cullDist;		// distance after where we remove the entity from the world
 	float					spawnDist;		// distance where we respawn the entity
+	bool					floor;			// if true, the entities will be floored (on by default, use
+											// "lode_floor" "0" to disable, then entities will be positioned
+											// at "z" where the are in the editor
+	bool					stack;			// if true, the entities can stack on top of each other
+	int						nocollide;		// should this entity collide with:
+   											// 1 other auto-generated entities from the same class?
+											// 2 other auto-generated entities (other classes)
+											// 4 other static entities already present
+											// 8 world geometry
+	idBounds				bounds;			// bounds of the model, for collision tests
 };
 
 // Defines one entity to be spawned/culled
@@ -150,6 +160,11 @@ private:
 	static const unsigned long	IEEE_ONE = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 
+	static const unsigned long	NOCOLLIDE_SAME   = 0x001;
+	static const unsigned long	NOCOLLIDE_OTHER  = 0x002;
+	static const unsigned long	NOCOLLIDE_STATIC = 0x004;
+	static const unsigned long	NOCOLLIDE_WORLD  = 0x008;
+	static const unsigned long	NOCOLLIDE_ATALL  = NOCOLLIDE_WORLD + NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
 };
 
 #endif /* !__GAME_LODE_H__ */
