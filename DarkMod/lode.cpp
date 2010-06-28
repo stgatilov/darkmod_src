@@ -245,13 +245,12 @@ void Lode::Prepare( void ) {
 		}
 	}
 
-
-	// TODO: compute entity count dynamically from area that we cover
 	m_iNumEntities = spawnArgs.GetInt( "entity_count", "100" );
 
-	if (m_iNumEntities < 0)
+	if (m_iNumEntities <= 0)
 	{
 		gameLocal.Warning( "LODE %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+		// TODO: compute entity count dynamically from area that we cover
 	}
 
 	gameLocal.Printf( "LODE %s: Overall score: %i.\n", GetName(), m_iScore );
@@ -293,9 +292,15 @@ void Lode::PrepareEntities( void )
 			// TODO: allow the "floor" direction be set via spawnarg
 			LodeEntity.origin = origin + idVec3( RandomFloat() * 1500, RandomFloat() * 1500, 0 );
 			LodeEntity.origin.z = m_Classes[i].origin.z;
+			LodeEntity.angles = idAngles( 0, RandomFloat() * 359.9, 0 );
+
+			// TODO: check that the entity does not collide with any other entity
+			//if (m_Classes[i].nocollide)
+		//	{
+		//	}
+
 			// TODO: choose skin randomly
 			LodeEntity.skin = m_Classes[i].skin;
-			LodeEntity.angles = idAngles( 0, RandomFloat() * 359.9, 0 );
 			// will be automatically spawned when we are in range
 			LodeEntity.hidden = true;
 			LodeEntity.exists = false;
@@ -338,9 +343,8 @@ void Lode::Think( void )
 	idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
 	float lodBias = cv_lod_bias.GetFloat();
 
-	// square these to avoid taking the square root from the distance
+	// square to avoid taking the square root from the distance
 	lodBias *= lodBias;
-	vGravNorm = vGravNorm;
 
 	// Distance dependence checks
 	if( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval )
@@ -352,10 +356,7 @@ void Lode::Think( void )
 		for (int i = 0; i < m_Entities.Num(); i++)
 		{
 
-			// TODO: cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
-			// TODO: let all auto-generated entities know about the new distance
-
-			bool bWithinDist = false;
+			// TODO: let all auto-generated entities know about their new distance
 
 			// TODO: What to do about player looking thru spyglass?
 			idVec3 delta = playerOrigin - m_Entities[i].origin;
@@ -388,7 +389,7 @@ void Lode::Think( void )
 					// move to right place
 					args.SetVector("origin", ent->origin );
 					// spawn as hidden
-					//args.Set("hide", "1");
+					args.Set("hide", "1");
 					// disable LOD checks on entities (we take care of this)
 					args.Set("dist_check_period", "0");
 
@@ -402,11 +403,13 @@ void Lode::Think( void )
 						// and rotate
 						ent2->SetAxis( ent->angles.ToMat3() );
 						ent2->BecomeInactive( TH_THINK );
+						//ent2->DisableLOD();
 					}
 				}
 			}	
 			else
 			{
+				// cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
 				if (ent->exists && deltaSq > lclass->cullDist)
 				{
 					idEntity *ent2 = gameLocal.entities[ ent->entity ];
