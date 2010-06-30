@@ -31,6 +31,7 @@ struct lode_class_t {
 	idVec3					origin;			// origin of the original target entity, useful for "flooring"
 	float					cullDist;		// distance after where we remove the entity from the world
 	float					spawnDist;		// distance where we respawn the entity
+	float					spacing;		// min. distance between entities of this class
 	bool					floor;			// if true, the entities will be floored (on by default, use
 											// "lode_floor" "0" to disable, then entities will be positioned
 											// at "z" where the are in the editor
@@ -52,6 +53,8 @@ struct lode_entity_t {
 	bool					exists;			// false if culled
 	int						entity;			// nr of the entity if exists == true
 	int						classIdx;		// index into Classes
+	// only needed during construct, so we use a temp. idList to save memory
+	//idBounds				bounds;			// bounds of the model, for fast collision tests
 };
 
 extern const idEventDef EV_Deactivate;

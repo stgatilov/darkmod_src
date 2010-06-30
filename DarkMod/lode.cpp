@@ -95,6 +95,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Classes[i].score );
 		savefile->WriteFloat( m_Classes[i].cullDist );
 		savefile->WriteFloat( m_Classes[i].spawnDist );
+		savefile->WriteFloat( m_Classes[i].spacing );
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteBool( m_Classes[i].floor );
@@ -124,7 +125,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 
     savefile->ReadInt( num );
 	assert( num == m_Entities.Num() );
-	for( int i = 0; i < num; i++ ) {
+	for( int i = 0; i < num; i++ )
+	{
 		savefile->ReadString( m_Entities[i].skin );
 		savefile->ReadVec3( m_Entities[i].origin );
 		savefile->ReadAngles( m_Entities[i].angles );
@@ -136,12 +138,14 @@ void Lode::Restore( idRestoreGame *savefile ) {
 
     savefile->ReadInt( num );
 	assert( num == m_Classes.Num() );
-	for( int i = 0; i < num; i++ ) {
+	for( int i = 0; i < num; i++ )
+	{
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].skin );
 		savefile->ReadInt( m_Classes[i].score );
 		savefile->ReadFloat( m_Classes[i].cullDist );
 		savefile->ReadFloat( m_Classes[i].spawnDist );
+		savefile->ReadFloat( m_Classes[i].spacing );
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadBool( m_Classes[i].floor );
@@ -219,6 +223,12 @@ void Lode::Prepare( void ) {
 
 	   	if ( ent )
 		{
+			// TODO: if this is a LODE inhibitor, add it to our "forbidden zones":
+			if ( idStr( ent->GetEntityDefName() ) == "atdm::no_lode" )
+			{
+				continue;
+			}
+
 			int iEntScore = ent->spawnArgs.GetInt( "lod_score", "1" );
 			if (iEntScore < 0)
 			{
@@ -237,6 +247,7 @@ void Lode::Prepare( void ) {
 				LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
 				LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
 				LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
+				LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
 				LodeClass.nocollide	= NOCOLLIDE_ATALL;
 				// TODO: place at origin
 				LodeClass.bounds = ent->GetRenderEntity()->bounds;
@@ -284,18 +295,23 @@ void Lode::PrepareEntities( void )
 {
 	idVec3					origin;
 	lode_entity_t			LodeEntity;
-	idBounds				testBounds;		// to test whether the translated/rotated entity is inside the LODE
+	idBounds				testBounds;			// to test whether the translated/rotated entity is inside the LODE
+	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks
 
 	m_Entities.Clear();
+	LodeEntityBounds.Clear();
 
-	// re-init the seed so that we get exactly the same sequence every time
-	m_iSeed = spawnArgs.GetFloat( "seed", "3" );
+	// Re-init the seed. 0 means random sequence, otherwise use the specified value
+    // so that we get exactly the same sequence every time:
+	m_iSeed = spawnArgs.GetFloat( "seed", "0" ) || gameLocal.random.RandomInt();
 
 	// To compute positions
 	idBounds bounds = renderEntity.bounds;
 	// Use a sphere with that radious to find random position, then clip
 	// any outside our bounds, this makes it also worked with rotated LODE:
 	float radius = bounds.GetRadius() + 0.01f;
+
+	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
 	// Compute random positions for all entities that we want to spawn
 	// for each class
@@ -327,29 +343,52 @@ void Lode::PrepareEntities( void )
 
 				// inside LODE bounds?
 				testBounds = (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3();
-				//if (bounds.IntersectsBounds( testBounds ))
-				if (3 < 5)
+				if (testBounds.IntersectsBounds( bounds ))
+				//if (3 < 5)
 				{
+					gameLocal.Printf( "LODE %s: Checking spacing constraint.\n", GetName() );
+
+					// check the min. spacing constraint
+				 	float use_spacing = spacing;
+					if (m_Classes[i].spacing != 0)
+					{
+						use_spacing = m_Classes[i].spacing;
+					}
+
+					// check that the entity does not collide with any other entity
+					if (m_Classes[i].nocollide > 0 || use_spacing > 0)
+					{
+						bool collides = false;
+
+						testBounds = (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3();
+						// expand the testBounds with the spacing
+						testBounds.ExpandSelf( use_spacing );
+
+						for (int k = 0; k < iEntities; k++)
+						{
+							// TODO: take the bounds of the entity class, translate/rotate it to the
+							// position of iEntites[k]:
+							//idBounds otherBounds = (m_Classes[ m_Entities[k].classIdx ].bounds + m_Entities[k].origin) * m_Entities[k].angles.ToMat3();
+							idBounds otherBounds = LodeEntityBounds[k];
+							if (otherBounds.IntersectsBounds (testBounds))
+							{
+								gameLocal.Printf( "LODE %s: Entity %i collides with entity %i, trying again.\n", GetName(), j, k );
+								collides = true;
+								break;
+							}
+						}
+						if (collides)
+						{
+							continue;
+						}
+					}
+
 					gameLocal.Printf( "LODE %s: Found valid position for entity %i.\n", GetName(), j );
 					break;
 				}
 			}
 			// couldn't place entity even after 10 tries?
 			if (tries >= 10) continue;
-
-			// check that the entity does not collide with any other entity
-			if (m_Classes[i].nocollide > 0)
-			{
-				/*
-				for (int k = 0; k < iEntities; k++)
-				{
-					// TODO: take the bounds of the entity class, translate/rotate it to the
-					// position of iEntites[k] and call IntersectsBounds( )
-					testBounds = (m_Classes[i].bounds + m_Entities[k].origin) * m_Entities[k].angles.ToMat3();
-				}
-				*/
-
-			}
 
 			// TODO: choose skin randomly
 			LodeEntity.skin = m_Classes[i].skin;
@@ -358,6 +397,8 @@ void Lode::PrepareEntities( void )
 			LodeEntity.exists = false;
 			LodeEntity.entity = 0;
 			LodeEntity.classIdx = i;
+			// precompute
+			LodeEntityBounds.Append( (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3() );
 			m_Entities.Append( LodeEntity );
 		}
 	}
