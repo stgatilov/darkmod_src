@@ -196,7 +196,8 @@ Lode::Spawn
 ===============
 */
 void Lode::Spawn( void ) {
-	// the Lode itself is sneaky and hides itsel
+
+	// the Lode itself is sneaky and hides itself
 	Hide();
 
 	// And is nonsolid, too!
@@ -258,7 +259,9 @@ void Lode::Prepare( void ) {
 				// gameLocal.Printf( "LODE %s: Inhibitor size %0.2f %0.2f %0.2f\n", GetName(), s.x, s.y, s.z );
 
 				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
-				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize(), ent->GetPhysics()->GetAxis() );
+				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
+				// or rotation spawnarg. Use clipmodel instead?
+				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize() / 2, ent->GetPhysics()->GetAxis() );
 				m_Inhibitors.Append ( LodeInhibitor );
 				continue;
 			}
@@ -373,10 +376,10 @@ void Lode::PrepareEntities( void )
 	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
 	idBounds bounds = renderEntity.bounds;
 	idVec3 size = bounds.GetSize();
+	// rotating the func-static in DR rotates the brush, but does not change the axis or
+	// add a spawnarg, so this will not work properly:
 	idMat3 axis = renderEntity.axis;
 
-	// rotating the func-static in DR rotates the brush, but does not change the axis or
-	// add a spawnarg, so the user is expected to add an "rotation" spawnarg:
 	idAngles angles = axis.ToAngles();		// debug
 
 	box = idBox( renderEntity.origin, size, axis );
@@ -462,7 +465,7 @@ void Lode::PrepareEntities( void )
 						use_spacing = m_Classes[i].spacing;
 					}
 
-					gameLocal.Printf( "LODE %s: Using spacing constraint %0.2f for entity %i.\n", GetName(), use_spacing, j );
+					// gameLocal.Printf( "LODE %s: Using spacing constraint %0.2f for entity %i.\n", GetName(), use_spacing, j );
 
 					// check that the entity does not collide with any other entity
 					if (m_Classes[i].nocollide > 0 || use_spacing > 0)
@@ -591,6 +594,8 @@ void Lode::Think( void )
 				// spawn the entity and note its number
 				gameLocal.Printf( "LODE %s: Spawning entity #%i (%s).\n", GetName(), i, lclass->classname.c_str() );
 
+				// TODO: Limit number of entities to spawn per frame
+
 				const char* pstr_DefName = lclass->classname.c_str();
 				const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
 				if( p_Def )
@@ -628,6 +633,8 @@ void Lode::Think( void )
 				// cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
 				if (ent->exists && deltaSq > lclass->cullDist)
 				{
+					// TODO: Limit number of entities to cull per frame
+
 					// cull (remove) the entity
 					idEntity *ent2 = gameLocal.entities[ ent->entity ];
 					if (ent2)
