@@ -54,6 +54,12 @@ public:
 																	// Use GetVolume() instead.
 	float			GetRadius( const idVec3 &center ) const;		// returns the radius relative to the given center
 	float			GetVolume( void ) const;						// returns the volume of the bounds
+
+	/**
+	* Tels: Get the size of the bounds, that is b1 - b0
+	*/
+	idVec3			GetSize( void ) const;
+
 	bool			IsCleared( void ) const;						// returns true if bounds are inside out
 
 	bool			AddPoint( const idVec3 &v );					// add the point, returns true if the bounds expanded
@@ -206,7 +212,14 @@ ID_INLINE float idBounds::GetVolume( void ) const {
 	}
 	return ( ( b[1][0] - b[0][0] ) * ( b[1][1] - b[0][1] ) * ( b[1][2] - b[0][2] ) );
 }
-
+	
+/**
+* Tels: Get the size of the bounds, that is b1 - b0
+*/
+ID_INLINE idVec3 idBounds::GetSize( void ) const {
+	return idVec3( b[1][0] - b[0][0], b[1][1] - b[0][1], b[1][2] - b[0][2] );
+}
+	
 ID_INLINE bool idBounds::IsCleared( void ) const {
 	return b[0][0] > b[1][0];
 }
