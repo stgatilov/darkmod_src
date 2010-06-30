@@ -96,7 +96,6 @@ private:
 	*/
 	float				RandomFloat();
 
-	int					spawnTime;
 	bool				active;
 
 	/**

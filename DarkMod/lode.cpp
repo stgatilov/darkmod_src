@@ -44,8 +44,6 @@ Lode::Lode
 */
 Lode::Lode( void ) {
 
-	spawnTime = 0;
-
 	active = false;
 
 	m_fCullRange = 0.0f;
@@ -67,7 +65,6 @@ Lode::Save
 */
 void Lode::Save( idSaveGame *savefile ) const {
 
-	savefile->WriteInt( spawnTime );
 	savefile->WriteBool( active );
 
 	savefile->WriteFloat( m_fCullRange );
@@ -114,7 +111,6 @@ Lode::Restore
 void Lode::Restore( idRestoreGame *savefile ) {
 	int num;
 
-	savefile->ReadInt( spawnTime );
 	savefile->ReadBool( active );
 
 	savefile->ReadFloat( m_fCullRange );
