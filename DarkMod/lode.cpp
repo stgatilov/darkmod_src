@@ -203,6 +203,35 @@ void Lode::Spawn( void ) {
 	// And is nonsolid, too!
 	GetPhysics()->SetContents( 0 );
 
+	/*
+	idClipModel *clip = GetPhysics()->GetClipModel();
+	idVec3 o = clip->GetOrigin();
+	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f.\n", GetName(), o.x, o.y, o.z );
+
+	idBounds bounds = renderEntity.bounds;
+	idVec3 size = bounds.GetSize();
+	idAngles angles = renderEntity.axis.ToAngles();
+
+	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
+
+	// how to get the current model (rough outline)
+
+   get number of surfaces:
+	// NumBaseSurfaces will not count any overlays added to dynamic models
+    virtual int                                     NumBaseSurfaces() const = 0;
+
+   get all surfaces:
+    // get a pointer to a surface
+    virtual const modelSurface_t *Surface( int surfaceNum ) const = 0;
+
+   for each surface, get all vertices
+
+   then from these vertices, create a vertic-list and from this a trcemodel:
+
+	idTraceModel trace = idTraceModel();
+	trace.SetupPolygon( vertices, int );
+*/
+
 	active = true;
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
@@ -288,6 +317,7 @@ void Lode::Prepare( void ) {
 				// set rotation of entity to 0, so we get the unrotated bounds size
 				ent->SetAxis( mat3_identity );
 				LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
+				// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
 				// TODO: use a projection along the "floor-normal"
 				// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
 				f_avgSize += (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
@@ -418,7 +448,7 @@ void Lode::PrepareEntities( void )
 				// TODO: allow the "floor" direction be set via spawnarg
 
 				// restrict to our AAB (unrotated)
-				LodeEntity.origin = idVec3( RandomFloat() * size.x, RandomFloat() * size.y, 0 );
+				LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
 
 				// Rotate around our rotation axis (to support rotated LODE brushes)
 				// for random placement, this does not matter, but f.i. for grid placement
