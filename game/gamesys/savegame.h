@@ -65,6 +65,7 @@ public:
 	void					WriteVec4( const idVec4 &vec );
 	void					WriteVec6( const idVec6 &vec );
 	void					WriteWinding( const idWinding &winding );
+	void					WriteBox( const idBox &box );
 	void					WriteBounds( const idBounds &bounds );
 	void					WriteMat3( const idMat3 &mat );
 	void					WriteAngles( const idAngles &angles );
@@ -130,6 +131,7 @@ public:
 	void					ReadVec6( idVec6 &vec );
 	void					ReadWinding( idWinding &winding );
 	void					ReadBounds( idBounds &bounds );
+	void					ReadBox( idBox &box );
 	void					ReadMat3( idMat3 &mat );
 	void					ReadAngles( idAngles &angles );
 	void					ReadObject( idClass *&obj );

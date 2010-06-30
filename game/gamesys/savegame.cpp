@@ -281,6 +281,17 @@ void idSaveGame::WriteBounds( const idBounds &bounds ) {
 
 /*
 ================
+idSaveGame::WriteBox
+================
+*/
+void idSaveGame::WriteBox( const idBox &box ) {
+	idBox b = box;
+	LittleRevBytes( &b, sizeof(float), sizeof(b)/sizeof(float) );
+	file->Write( &b, sizeof( b ) );
+}
+
+/*
+================
 idSaveGame::WriteBounds
 ================
 */
@@ -1045,6 +1056,16 @@ idRestoreGame::ReadBounds
 void idRestoreGame::ReadBounds( idBounds &bounds ) {
 	file->Read( &bounds, sizeof( bounds ) );
 	LittleRevBytes( &bounds, sizeof(float), sizeof(bounds)/sizeof(float) );
+}
+
+/*
+================
+idRestoreGame::ReadBox
+================
+*/
+void idRestoreGame::ReadBox( idBox &box ) {
+	file->Read( &box, sizeof( box ) );
+	LittleRevBytes( &box, sizeof(float), sizeof(box)/sizeof(float) );
 }
 
 /*
