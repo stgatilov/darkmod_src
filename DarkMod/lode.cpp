@@ -328,6 +328,7 @@ void Lode::Prepare( void ) {
 			f_avgSize = 4;
 		}
 		m_iNumEntities = (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
+		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, f_avgSize, m_iNumEntities );
 		// TODO: remove the limit once culling works
 		if (m_iNumEntities > 4000)
 		{
@@ -371,7 +372,14 @@ void Lode::PrepareEntities( void )
 
 	// Re-init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
-	m_iSeed = spawnArgs.GetFloat( "seed", "0" ) || gameLocal.random.RandomInt();
+	m_iSeed = spawnArgs.GetInt( "seed", "0" );
+    if (m_iSeed == 0)
+	{
+		// The randseed upon loading a map seems to be always 0, so 
+		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
+		time_t seconds = time (NULL);
+	    m_iSeed = (int) (1664525L * (int) seconds + 1013904223L) & 0x7FFFFFFFL;
+	}
 
 	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
 	idBounds bounds = renderEntity.bounds;
