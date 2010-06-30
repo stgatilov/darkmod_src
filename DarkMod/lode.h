@@ -41,7 +41,6 @@ struct lode_class_t {
 											// 2 other auto-generated entities (other classes)
 											// 4 other static entities already present
 											// 8 world geometry
-	//idBounds				bounds;			// bounds of the model, for collision tests
 	idVec3					size;			// size of the model for collision tests
 };
 
@@ -139,9 +138,19 @@ private:
 	int					m_iScore;
 
 	/**
-	* Number of entities to create overall.
+	* Number of entities to manage overall.
 	**/
 	int					m_iNumEntities;
+
+	/**
+	* Number of entities currently visible.
+	**/
+	int					m_iNumVisible;
+
+	/**
+	* Number of entities currently existing (visible or not).
+	**/
+	int					m_iNumExisting;
 
 	/**
 	* If true, the LOD distance check will only consider distance

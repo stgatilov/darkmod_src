@@ -56,6 +56,10 @@ Lode::Lode( void ) {
 	m_bPrepared = false;
 	m_Entities.Clear();
 
+	m_iNumEntities = 0;
+	m_iNumExisting = 0;
+	m_iNumVisible = 0;
+
 	m_DistCheckTimeStamp = 0;
 	m_DistCheckInterval = 0.5f;
 	m_bDistCheckXYOnly = false;
@@ -74,6 +78,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iScore );
 	savefile->WriteInt( m_iNumEntities );
+	savefile->WriteInt( m_iNumExisting );
+	savefile->WriteInt( m_iNumVisible );
 
     savefile->WriteInt( m_DistCheckTimeStamp );
 	savefile->WriteInt( m_DistCheckInterval );
@@ -127,6 +133,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iScore );
 	savefile->ReadInt( m_iNumEntities );
+	savefile->ReadInt( m_iNumExisting );
+	savefile->ReadInt( m_iNumVisible );
 	
     savefile->ReadInt( m_DistCheckTimeStamp );
 	savefile->ReadInt( m_DistCheckInterval );
@@ -267,7 +275,6 @@ void Lode::Prepare( void ) {
 				LodeClass.score = iEntScore;
 				LodeClass.classname = ent->GetEntityDefName();
 				LodeClass.skin = ent->spawnArgs.GetString( "skin", "" );
-				LodeClass.spawnDist = 0;
 				// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
 				// the entity already between spawning and us querying the info:
 				LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
@@ -283,10 +290,11 @@ void Lode::Prepare( void ) {
 				f_avgSize += (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
 				// gameLocal.Printf( "LODE %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), LodeClass.size.x, LodeClass.size.y, LodeClass.size.z );
 				LodeClass.cullDist = 0;
-				LodeClass.hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
-				if (m_fCullRange > 0)
+				LodeClass.spawnDist = 0;
+				float hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
+				if (m_fCullRange > 0 && hideDist > 0)
 				{
-					LodeClass.cullDist += m_fCullRange;
+					LodeClass.cullDist = hideDist + m_fCullRange;
 					LodeClass.spawnDist = LodeClass.cullDist - (m_fCullRange / 2);
 					// square for easier compare
 					LodeClass.cullDist *= LodeClass.cullDist;
@@ -381,6 +389,9 @@ void Lode::PrepareEntities( void )
 	LodeEntityBounds.Clear();
 	LodeEntityBoxes.Clear();
 
+	m_iNumExisting = 0;
+	m_iNumVisible = 0;
+	
 	// Compute random positions for all entities that we want to spawn for each class
 	origin = GetPhysics()->GetOrigin();
 	for (int i = 0; i < m_Classes.Num(); i++)
@@ -520,8 +531,10 @@ void Lode::Think( void )
 {
 	struct lode_entity_t* ent;
 	struct lode_class_t*  lclass;
+	int culled = 0;
+	int spawned = 0;
 
-	// tels: neccessary?
+	// tels: seems unneccessary.
 	// idEntity::Think();
 
 	// haven't initialized entities yet?
@@ -539,18 +552,18 @@ void Lode::Think( void )
 		}
 	}
 
-	idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-	idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-	float lodBias = cv_lod_bias.GetFloat();
-
-	// square to avoid taking the square root from the distance
-	lodBias *= lodBias;
-
 	// Distance dependence checks
 	if( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval )
 	{
-
 		m_DistCheckTimeStamp = gameLocal.time;
+
+		// cache these values for speed
+		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		float lodBias = cv_lod_bias.GetFloat();
+
+		// square to avoid taking the square root from the distance
+		lodBias *= lodBias;
 
 		// for each of our "entities", do the distance check
 		for (int i = 0; i < m_Entities.Num(); i++)
@@ -596,14 +609,17 @@ void Lode::Think( void )
 					gameLocal.SpawnEntityDef( args, &ent2 );
 					if (ent2)
 					{
-						gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
-								GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
+						//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
+						//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
 						ent->exists = true;
 						ent->entity = ent2->entityNumber;
 						// and rotate
 						ent2->SetAxis( ent->angles.ToMat3() );
 						ent2->BecomeInactive( TH_THINK );
 						//ent2->DisableLOD();
+						m_iNumExisting ++;
+						m_iNumVisible ++;
+						spawned++;
 					}
 				}
 			}	
@@ -612,6 +628,7 @@ void Lode::Think( void )
 				// cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
 				if (ent->exists && deltaSq > lclass->cullDist)
 				{
+					// cull (remove) the entity
 					idEntity *ent2 = gameLocal.entities[ ent->entity ];
 					if (ent2)
 					{
@@ -619,11 +636,19 @@ void Lode::Think( void )
 						ent2->PostEventMS( &EV_Remove, 0 );
 					}
 
-					// cull (remove) the entity
-					gameLocal.Printf( "LODE %s: Culling entity #%i.\n", GetName(), i );
+					//gameLocal.Printf( "LODE %s: Culling entity #%i.\n", GetName(), i );
+					m_iNumExisting --;
+					m_iNumVisible --;
+					culled++;
 					ent->exists = false;
 				}
+				// TODO: Normal LOD code here (replicate from entity)
 			}
+		}
+		if (spawned > 0 || culled > 0)
+		{
+			gameLocal.Printf( "LODE %s: Spawned %i, culled %i, now existing: %i, now visible: %i\n",
+				GetName(), spawned, culled, m_iNumExisting, m_iNumVisible );
 		}
 	}
 }
