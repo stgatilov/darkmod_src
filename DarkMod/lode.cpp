@@ -315,10 +315,11 @@ void Lode::Prepare( void ) {
 	// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
 	f_avgSize /= m_Classes.Num();
 
-	m_iNumEntities = spawnArgs.GetInt( "entity_count", "0" );
+	m_iNumEntities = spawnArgs.GetInt( "max_entities", "0" );
 	if (m_iNumEntities == 0)
 	{
 		// compute entity count dynamically from area that we cover
+		float fDensity = spawnArgs.GetFloat( "density", "1.0" );
 		idBounds bounds = renderEntity.bounds;
 		idVec3 size = bounds.GetSize();
 
@@ -327,7 +328,7 @@ void Lode::Prepare( void ) {
 		{
 			f_avgSize = 4;
 		}
-		m_iNumEntities = (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
+		m_iNumEntities = fDensity * (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
 		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, f_avgSize, m_iNumEntities );
 		// TODO: remove the limit once culling works
 		if (m_iNumEntities > 4000)
@@ -360,7 +361,7 @@ void Lode::Prepare( void ) {
 
 void Lode::PrepareEntities( void )
 {
-	idVec3					origin;
+	idVec3					origin;				// The center of the LODE
 	lode_entity_t			LodeEntity;
 	idBounds				testBounds;			// to test whether the translated/rotated entity
    												// collides with another entity (fast check)
@@ -389,8 +390,9 @@ void Lode::PrepareEntities( void )
 	idMat3 axis = renderEntity.axis;
 
 	idAngles angles = axis.ToAngles();		// debug
+	origin = renderEntity.origin;
 
-	box = idBox( renderEntity.origin, size, axis );
+	box = idBox( origin, size, axis );
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
@@ -404,7 +406,6 @@ void Lode::PrepareEntities( void )
 	m_iNumVisible = 0;
 	
 	// Compute random positions for all entities that we want to spawn for each class
-	origin = GetPhysics()->GetOrigin();
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
 		int iEntities = m_iNumEntities * (static_cast<float>(m_Classes[i].score)) / m_iScore;	// sum 2, this one 1 => 50% of this class
