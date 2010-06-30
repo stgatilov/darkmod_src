@@ -22,6 +22,9 @@ static bool init_version = FileVersionList("$Id: lode.cpp 3981 2010-06-25 05:27:
 #include "../game/game_local.h"
 #include "lode.h"
 
+// maximum number of tries to place an entity
+#define MAX_TRIES 16
+
 const idEventDef EV_Deactivate( "deactivate", "e" );
 const idEventDef EV_CullAll( "cullAll", "" );
 
@@ -100,7 +103,13 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteBool( m_Classes[i].floor );
 		savefile->WriteBool( m_Classes[i].stack );
-		savefile->WriteBounds( m_Classes[i].bounds );
+		savefile->WriteVec3( m_Classes[i].size );
+	}
+	savefile->WriteInt( m_Inhibitors.Num() );
+	for( int i = 0; i < m_Inhibitors.Num(); i++ )
+	{
+		savefile->WriteVec3( m_Inhibitors[i].origin );
+		savefile->WriteBox( m_Inhibitors[i].box );
 	}
 }
 
@@ -150,7 +159,14 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadBool( m_Classes[i].floor );
 		savefile->ReadBool( m_Classes[i].stack );
-		savefile->ReadBounds( m_Classes[i].bounds );
+		savefile->ReadVec3( m_Classes[i].size );
+	}
+    savefile->ReadInt( num );
+	assert( num == m_Inhibitors.Num() );
+	for( int i = 0; i < num; i++ )
+	{
+		savefile->ReadVec3( m_Inhibitors[i].origin );
+		savefile->ReadBox( m_Inhibitors[i].box );
 	}
 }
 
@@ -182,10 +198,10 @@ void Lode::Spawn( void ) {
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 
-	// do we have a cull range?
-	m_fCullRange = spawnArgs.GetFloat( "lod_cull_range", "0.0" );
+	// do we have a cull range? (default is 150 units after the hide distance)
+	m_fCullRange = spawnArgs.GetFloat( "cull_range", "150" );
 
-	gameLocal.Printf (" Lode %s: cull range = %0.2f.\n", GetName(), m_fCullRange );
+	gameLocal.Printf (" LODE %s: cull range = %0.2f.\n", GetName(), m_fCullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -205,7 +221,9 @@ Create the places for all entities that we control
 */
 void Lode::Prepare( void ) {
 	lode_class_t			LodeClass;
+	lode_inhibitor_t		LodeInhibitor;
 	int						numEntities;
+	float					f_avgSize;		// avg floorspace of all classes
 
 	if ( targets.Num() == 0 )
 	{
@@ -216,6 +234,7 @@ void Lode::Prepare( void ) {
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
+	f_avgSize = 0;
 	m_Classes.Clear();
 	for( int i = 0; i < targets.Num(); i++ )
 	{
@@ -224,19 +243,26 @@ void Lode::Prepare( void ) {
 	   	if ( ent )
 		{
 			// TODO: if this is a LODE inhibitor, add it to our "forbidden zones":
-			if ( idStr( ent->GetEntityDefName() ) == "atdm::no_lode" )
+			if ( idStr( ent->GetEntityDefName() ) == "atdm:no_lode")
 			{
+				idBounds b = ent->GetRenderEntity()->bounds; 
+				idVec3 s = b.GetSize();
+				// gameLocal.Printf( "LODE %s: Inhibitor size %0.2f %0.2f %0.2f\n", GetName(), s.x, s.y, s.z );
+
+				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
+				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize(), ent->GetPhysics()->GetAxis() );
+				m_Inhibitors.Append ( LodeInhibitor );
 				continue;
 			}
 
-			int iEntScore = ent->spawnArgs.GetInt( "lod_score", "1" );
+			int iEntScore = ent->spawnArgs.GetInt( "lode_score", "1" );
 			if (iEntScore < 0)
 			{
-				gameLocal.Warning( "LODE %s: Target %s has invalid lod_score %i!\n", GetName(), ent->GetName(), iEntScore );
+				gameLocal.Warning( "LODE %s: Target %s has invalid lode_score %i!\n", GetName(), ent->GetName(), iEntScore );
 			}
 			else
 			{
-				// add this entity
+				// add a class based on this entity
 				m_iScore += iEntScore;
 				LodeClass.score = iEntScore;
 				LodeClass.classname = ent->GetEntityDefName();
@@ -249,10 +275,16 @@ void Lode::Prepare( void ) {
 				LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
 				LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
 				LodeClass.nocollide	= NOCOLLIDE_ATALL;
-				// TODO: place at origin
-				LodeClass.bounds = ent->GetRenderEntity()->bounds;
-				LodeClass.cullDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
-				if (LodeClass.cullDist > 0)
+				// set rotation of entity to 0, so we get the unrotated bounds size
+				ent->SetAxis( mat3_identity );
+				LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
+				// TODO: use a projection along the "floor-normal"
+				// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
+				f_avgSize += (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
+				// gameLocal.Printf( "LODE %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), LodeClass.size.x, LodeClass.size.y, LodeClass.size.z );
+				LodeClass.cullDist = 0;
+				LodeClass.hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
+				if (m_fCullRange > 0)
 				{
 					LodeClass.cullDist += m_fCullRange;
 					LodeClass.spawnDist = LodeClass.cullDist - (m_fCullRange / 2);
@@ -266,15 +298,38 @@ void Lode::Prepare( void ) {
 		}
 	}
 
-	m_iNumEntities = spawnArgs.GetInt( "entity_count", "100" );
+	// increase the avg by X% to allow some spacing (even if spacing = 0)
+	f_avgSize *= 1.3;
+
+	// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
+	f_avgSize /= m_Classes.Num();
+
+	m_iNumEntities = spawnArgs.GetInt( "entity_count", "0" );
+	if (m_iNumEntities == 0)
+	{
+		// compute entity count dynamically from area that we cover
+		idBounds bounds = renderEntity.bounds;
+		idVec3 size = bounds.GetSize();
+
+		// avoid values too small or even 0
+		if (f_avgSize < 4)
+		{
+			f_avgSize = 4;
+		}
+		m_iNumEntities = (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
+		// TODO: remove the limit once culling works
+		if (m_iNumEntities > 4000)
+		{
+			m_iNumEntities = 4000;
+		}
+	}
 
 	if (m_iNumEntities <= 0)
 	{
 		gameLocal.Warning( "LODE %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
-		// TODO: compute entity count dynamically from area that we cover
 	}
 
-	gameLocal.Printf( "LODE %s: Overall score: %i.\n", GetName(), m_iScore );
+	gameLocal.Printf( "LODE %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
 
 	// remove all our targets from the game
 	for( int i = 0; i < targets.Num(); i++ )
@@ -295,26 +350,38 @@ void Lode::PrepareEntities( void )
 {
 	idVec3					origin;
 	lode_entity_t			LodeEntity;
-	idBounds				testBounds;			// to test whether the translated/rotated entity is inside the LODE
-	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks
-
-	m_Entities.Clear();
-	LodeEntityBounds.Clear();
+	idBounds				testBounds;			// to test whether the translated/rotated entity
+   												// collides with another entity (fast check)
+	idBox					testBox;			// to test whether the translated/rotated entity is inside the LODE
+												// or collides with another entity (slow, but more precise)
+	idBox					box;				// LODE box
+	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks (fast)
+	idList<idBox>			LodeEntityBoxes;	// precompute entity box for collision checks (slow, but thorough)
 
 	// Re-init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
 	m_iSeed = spawnArgs.GetFloat( "seed", "0" ) || gameLocal.random.RandomInt();
 
-	// To compute positions
+	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
 	idBounds bounds = renderEntity.bounds;
-	// Use a sphere with that radious to find random position, then clip
-	// any outside our bounds, this makes it also worked with rotated LODE:
-	float radius = bounds.GetRadius() + 0.01f;
+	idVec3 size = bounds.GetSize();
+	idMat3 axis = renderEntity.axis;
+
+	// rotating the func-static in DR rotates the brush, but does not change the axis or
+	// add a spawnarg, so the user is expected to add an "rotation" spawnarg:
+	idAngles angles = axis.ToAngles();		// debug
+
+	box = idBox( renderEntity.origin, size, axis );
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
-	// Compute random positions for all entities that we want to spawn
-	// for each class
+	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
+
+	m_Entities.Clear();
+	LodeEntityBounds.Clear();
+	LodeEntityBoxes.Clear();
+
+	// Compute random positions for all entities that we want to spawn for each class
 	origin = GetPhysics()->GetOrigin();
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
@@ -323,11 +390,21 @@ void Lode::PrepareEntities( void )
 		for (int j = 0; j < iEntities; j++)
 		{
 			int tries = 0;
-			while (tries++ < 10)
+			while (tries++ < MAX_TRIES)
 			{
 				// TODO: allow the "floor" direction be set via spawnarg
-				// TODO: use bounds of LODE entity
-				LodeEntity.origin = origin + idVec3( RandomFloat() * radius, RandomFloat() * radius, 0 );
+
+				// restrict to our AAB (unrotated)
+				LodeEntity.origin = idVec3( RandomFloat() * size.x, RandomFloat() * size.y, 0 );
+
+				// Rotate around our rotation axis (to support rotated LODE brushes)
+				// for random placement, this does not matter, but f.i. for grid placement
+				// we need to rotate the initialposition to rotate the grid
+				LodeEntity.origin *= axis;
+
+				// add origin of the LODE
+				LodeEntity.origin += origin;
+
 				if (m_Classes[i].floor)
 				{
 					// TODO: spawn entity, use GetFloorPos(); reposition, then hide?
@@ -338,15 +415,34 @@ void Lode::PrepareEntities( void )
 					// just use the Z axis from the editor pos
 					LodeEntity.origin.z = m_Classes[i].origin.z;
 				}
+
+				// LodeEntity.origin might now be outside of our oriented box, we check this later
+
 				// randomly rotate
-				LodeEntity.angles = idAngles( 0, RandomFloat() * 359.9, 0 );
+				LodeEntity.angles = idAngles( 0, RandomFloat() * 359.99, 0 );
 
 				// inside LODE bounds?
-				testBounds = (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3();
-				if (testBounds.IntersectsBounds( bounds ))
-				//if (3 < 5)
+				testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
+				if (testBox.IntersectsBox( box ))
 				{
-					gameLocal.Printf( "LODE %s: Checking spacing constraint.\n", GetName() );
+					//gameLocal.Printf( "LODE %s: Entity would be inside our box. Checking against inhibitors.\n", GetName() );
+
+					bool inhibited = false;
+					for (int k = 0; k < m_Inhibitors.Num(); k++)
+					{
+						if (testBox.IntersectsBox( m_Inhibitors[k].box ) )
+						{
+							// inside an inhibitor, skip
+							gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying again.\n", GetName(), k );
+							inhibited = true;
+							break;							
+						}
+					}
+
+					if ( inhibited )
+					{
+						continue;
+					}
 
 					// check the min. spacing constraint
 				 	float use_spacing = spacing;
@@ -355,26 +451,35 @@ void Lode::PrepareEntities( void )
 						use_spacing = m_Classes[i].spacing;
 					}
 
+					gameLocal.Printf( "LODE %s: Using spacing constraint %0.2f for entity %i.\n", GetName(), use_spacing, j );
+
 					// check that the entity does not collide with any other entity
 					if (m_Classes[i].nocollide > 0 || use_spacing > 0)
 					{
 						bool collides = false;
 
-						testBounds = (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3();
-						// expand the testBounds with the spacing
+						// expand the testBounds and testBox with the spacing
+						testBounds = (idBounds( m_Classes[i].size ) + LodeEntity.origin) * LodeEntity.angles.ToMat3();
 						testBounds.ExpandSelf( use_spacing );
+						testBox.ExpandSelf( use_spacing );
 
-						for (int k = 0; k < iEntities; k++)
+						for (int k = 0; k < m_Entities.Num(); k++)
 						{
-							// TODO: take the bounds of the entity class, translate/rotate it to the
-							// position of iEntites[k]:
-							//idBounds otherBounds = (m_Classes[ m_Entities[k].classIdx ].bounds + m_Entities[k].origin) * m_Entities[k].angles.ToMat3();
+							// do a quick check on bounds first
 							idBounds otherBounds = LodeEntityBounds[k];
 							if (otherBounds.IntersectsBounds (testBounds))
 							{
-								gameLocal.Printf( "LODE %s: Entity %i collides with entity %i, trying again.\n", GetName(), j, k );
-								collides = true;
-								break;
+								//gameLocal.Printf( "LODE %s: Entity %i bounds collides with entity %i bounds, checking box.\n", GetName(), j, k );
+								// do a thorough check against the box here
+
+								idBox otherBox = LodeEntityBoxes[k];
+								if (otherBox.IntersectsBox (testBox))
+								{
+									gameLocal.Printf( "LODE %s: Entity %i box collides with entity %i box, trying another place.\n", GetName(), j, k );
+									collides = true;
+									break;
+								}
+								// no collision, place is usable
 							}
 						}
 						if (collides)
@@ -383,12 +488,12 @@ void Lode::PrepareEntities( void )
 						}
 					}
 
-					gameLocal.Printf( "LODE %s: Found valid position for entity %i.\n", GetName(), j );
+					gameLocal.Printf( "LODE %s: Found valid position for entity %i with %i tries.\n", GetName(), j, tries );
 					break;
 				}
 			}
 			// couldn't place entity even after 10 tries?
-			if (tries >= 10) continue;
+			if (tries >= MAX_TRIES) continue;
 
 			// TODO: choose skin randomly
 			LodeEntity.skin = m_Classes[i].skin;
@@ -397,8 +502,10 @@ void Lode::PrepareEntities( void )
 			LodeEntity.exists = false;
 			LodeEntity.entity = 0;
 			LodeEntity.classIdx = i;
-			// precompute
-			LodeEntityBounds.Append( (m_Classes[i].bounds + LodeEntity.origin) * LodeEntity.angles.ToMat3() );
+			// precompute bounds for a fast collision check
+			LodeEntityBounds.Append( (idBounds (m_Classes[i].size ) + LodeEntity.origin) * LodeEntity.angles.ToMat3() );
+			// precompute box for slow collision check
+			LodeEntityBoxes.Append( idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() ) );
 			m_Entities.Append( LodeEntity );
 		}
 	}

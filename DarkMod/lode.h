@@ -41,7 +41,14 @@ struct lode_class_t {
 											// 2 other auto-generated entities (other classes)
 											// 4 other static entities already present
 											// 8 world geometry
-	idBounds				bounds;			// bounds of the model, for collision tests
+	//idBounds				bounds;			// bounds of the model, for collision tests
+	idVec3					size;			// size of the model for collision tests
+};
+
+// Defines one area that inhibits entity spawning
+struct lode_inhibitor_t {
+	idVec3					origin;			// origin of the area
+	idBox					box;			// oriented box of the area
 };
 
 // Defines one entity to be spawned/culled
@@ -153,6 +160,11 @@ private:
 	* The classes of entities that we need to construct.
 	**/
 	idList<lode_class_t>	m_Classes;
+
+	/**
+	* The entities that inhibit us from spawning inside their area.
+	**/
+	idList<lode_inhibitor_t>	m_Inhibitors;
 
 	/**
 	* Info about each entitiy that we spawn or cull.
