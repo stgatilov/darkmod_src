@@ -285,7 +285,7 @@ void Lode::Prepare( void ) {
 			{
 				idBounds b = ent->GetRenderEntity()->bounds; 
 				idVec3 s = b.GetSize();
-				// gameLocal.Printf( "LODE %s: Inhibitor size %0.2f %0.2f %0.2f\n", GetName(), s.x, s.y, s.z );
+				gameLocal.Printf( "LODE %s: Inhibitor size %0.2f %0.2f %0.2f\n", GetName(), s.x, s.y, s.z );
 
 				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
 				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
@@ -401,6 +401,10 @@ void Lode::PrepareEntities( void )
 	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks (fast)
 	idList<idBox>			LodeEntityBoxes;	// precompute entity box for collision checks (slow, but thorough)
 
+	idList< int >			ClassIndex;			// random shuffling of classes
+	int						s;
+	float					f;
+
 	// Re-init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
 	m_iSeed = spawnArgs.GetInt( "seed", "0" );
@@ -434,12 +438,53 @@ void Lode::PrepareEntities( void )
 
 	m_iNumExisting = 0;
 	m_iNumVisible = 0;
-	
-	// Compute random positions for all entities that we want to spawn for each class
+
+	// Compute a random order of classes, so that when the mapper specified m_iNumEntities well below
+	// the limit (e.g. 1), he gets a random entity from a random class (and not just one from the first
+	// class always):
+	ClassIndex.Clear();			// random shuffling of classes
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
+		ClassIndex.Append ( i );		// 1,2,3,...
+	}
+
+	// shuffle at least 3 times
+	s = m_Classes.Num(); f = s; s *= 3;
+	for (int i = 0; i < s; i++)
+	{
+		int first = (int)(RandomFloat() * f);
+		int second = (int)(RandomFloat() * f);
+		int temp = ClassIndex[first]; ClassIndex[first] = ClassIndex[second]; ClassIndex[second] = temp;
+	}
+
+	// default random rotate
+	idStr rand_rotate_min = spawnArgs.GetString("rotate_min", "0 0 0");
+	idStr rand_rotate_max = spawnArgs.GetString("rotate_max", "5 360 5");
+
+	// Compute random positions for all entities that we want to spawn for each class
+	for (int idx = 0; idx < m_Classes.Num(); idx++)
+	{
+		if (m_Entities.Num() >= m_iNumEntities)
+		{
+			// have enough entities, stop
+			break;
+		}
+
+		// progress with random shuffled class
+		int i = ClassIndex[idx];
+
 		int iEntities = m_iNumEntities * (static_cast<float>(m_Classes[i].score)) / m_iScore;	// sum 2, this one 1 => 50% of this class
-		gameLocal.Printf( "LODE %s: Creating %i entities of class %s.\n", GetName(), iEntities, m_Classes[i].classname.c_str() );
+		// try at least one from each class (so "select 1 from 4 classes" works correctly)
+		if (iEntities == 0)
+		{
+			iEntities = 1;
+		}
+		gameLocal.Printf( "LODE %s: Creating %i entities of class %s (#%i index %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx );
+
+		// default to what the LODE says
+		idAngles class_rotate_min = spawnArgs.GetAngles("lode_rotate_min", rand_rotate_min);
+		idAngles class_rotate_max = spawnArgs.GetAngles("lode_rotate_max", rand_rotate_max);
+
 		for (int j = 0; j < iEntities; j++)
 		{
 			int tries = 0;
@@ -472,11 +517,28 @@ void Lode::PrepareEntities( void )
 				// LodeEntity.origin might now be outside of our oriented box, we check this later
 
 				// randomly rotate
-				LodeEntity.angles = idAngles( 0, RandomFloat() * 359.99, 0 );
+				// pitch, yaw, roll
+				LodeEntity.angles = idAngles( 
+						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
+						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
+						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ) );
+				gameLocal.Printf ("LODE %s: rand rotate for (%0.2f %0.2f %0.2f) %0.2f %0.2f %0.2f => %s\n", GetName(),
+						class_rotate_min.pitch,
+						class_rotate_min.yaw,
+						class_rotate_min.roll,
+						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
+						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
+						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ), LodeEntity.angles.ToString() );
+				// Clamp to be safe:
+				//LodeEntity.angles.Clamp( class_rotate_min, class_rotate_max );
 
 				// inside LODE bounds?
-				testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
-				if (testBox.IntersectsBox( box ))
+				// The IntersectsBox() also includes touching, but we want the entity to be completely inside
+				// so we just check that the origin is inside, which is also faster:
+				// TODO: The entity can stick still outside, we need to "shrink" the testbox by half the classsize
+				//testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
+				//if (testBox.IntersectsBox( box ))
+				if (testBox.ContainsPoint( LodeEntity.origin ))
 				{
 					//gameLocal.Printf( "LODE %s: Entity would be inside our box. Checking against inhibitors.\n", GetName() );
 
@@ -560,6 +622,12 @@ void Lode::PrepareEntities( void )
 			// precompute box for slow collision check
 			LodeEntityBoxes.Append( idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() ) );
 			m_Entities.Append( LodeEntity );
+
+			if (m_Entities.Num() >= m_iNumEntities)
+			{
+				// have enough entities, stop
+				break;
+			}
 		}
 	}
 }
