@@ -476,7 +476,7 @@ void Lode::PrepareEntities( void )
    												// collides with another entity (fast check)
 	idBox					testBox;			// to test whether the translated/rotated entity is inside the LODE
 												// or collides with another entity (slow, but more precise)
-	idBox					box;				// LODE box
+	idBox					box;				// The oriented box of the LODE
 	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks (fast)
 	idList<idBox>			LodeEntityBoxes;	// precompute entity box for collision checks (slow, but thorough)
 
@@ -621,15 +621,16 @@ void Lode::PrepareEntities( void )
 				// The IntersectsBox() also includes touching, but we want the entity to be completely inside
 				// so we just check that the origin is inside, which is also faster:
 				// TODO: The entity can stick still outside, we need to "shrink" the testbox by half the class size
-				//testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
+				testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
 				//if (testBox.IntersectsBox( box ))
-				if (testBox.ContainsPoint( LodeEntity.origin ))
+				if (box.ContainsPoint( LodeEntity.origin ))
 				{
 					//gameLocal.Printf( "LODE %s: Entity would be inside our box. Checking against inhibitors.\n", GetName() );
 
 					bool inhibited = false;
 					for (int k = 0; k < m_Inhibitors.Num(); k++)
 					{
+						// this test ensures that entities "peeking" into the inhibitor will be inhibited, too
 						if (testBox.IntersectsBox( m_Inhibitors[k].box ) )
 						{
 							// inside an inhibitor, skip
