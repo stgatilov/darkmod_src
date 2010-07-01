@@ -105,6 +105,14 @@ private:
 	*/
 	float				RandomFloat();
 
+	/**
+	* Spawn the entity with the given index, return true if it could be spawned.
+	* If managed is true, the LODE will take care of this entity.
+	*/
+	bool				spawnEntity( const int idx, const bool managed );
+
+	/* *********************** Members *********************/
+
 	bool				active;
 
 	/**

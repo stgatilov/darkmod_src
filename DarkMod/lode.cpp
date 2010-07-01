@@ -25,6 +25,15 @@ static bool init_version = FileVersionList("$Id: lode.cpp 3981 2010-06-25 05:27:
 // maximum number of tries to place an entity
 #define MAX_TRIES 16
 
+// Avoid that we run out of entities:
+
+// TODO: if the number of entities is higher then this,
+// then we favour to spawn big(ger) entities over smaller ones
+#define SPAWN_SMALL_LIMIT (MAX_GENTITIES - 500)
+
+// if the number of entities is higher than this, then we no longer spawn entities
+#define SPAWN_LIMIT (MAX_GENTITIES - 100)
+
 const idEventDef EV_Deactivate( "deactivate", "e" );
 const idEventDef EV_CullAll( "cullAll", "" );
 
@@ -254,7 +263,7 @@ void Lode::Spawn( void ) {
 
 /*
 ===============
-Create the places for all entities that we control
+Create the places for all entities that we control so we can later spawn them.
 ===============
 */
 void Lode::Prepare( void ) {
@@ -262,6 +271,8 @@ void Lode::Prepare( void ) {
 	lode_inhibitor_t		LodeInhibitor;
 	int						numEntities;
 	float					f_avgSize;		// avg floorspace of all classes
+
+	bool					remove = spawnArgs.GetBool("remove","0");			// remove ourself after spawn?
 
 	if ( targets.Num() == 0 )
 	{
@@ -387,6 +398,40 @@ void Lode::Prepare( void ) {
 	targets.Clear();
 
 	PrepareEntities();
+
+	// check for "remove" spawnarg
+	if (remove)
+	{
+		// spawn all entities
+		gameLocal.Printf( "LODE %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
+
+		// for each of our "entities", do the distance check
+		for (int i = 0; i < m_Entities.Num(); i++)
+		{
+			spawnEntity(i, false);		// spawn as unmanaged
+		}
+
+		// clear out memory just to be sure
+		m_Classes.Clear();
+		m_Entities.Clear();
+		m_iNumEntities = 0;
+
+		BecomeInactive( TH_THINK );
+
+		// post event to remove ourselfes
+		PostEventMS( &EV_Remove, 0 );
+	}
+	else
+	{
+		m_bPrepared = true;
+		if (m_Entities.Num() == 0)
+		{
+			// could not create any entities?
+			gameLocal.Printf( "LODE %s: Have no entities to control, becoming inactive.\n", GetName() );
+			// Tels: Does somehow not work, bouncing us again and again into this branch?
+			BecomeInactive(TH_THINK);
+		}
+	}
 }
 
 void Lode::PrepareEntities( void )
@@ -522,6 +567,7 @@ void Lode::PrepareEntities( void )
 						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
 						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
 						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ) );
+				/*
 				gameLocal.Printf ("LODE %s: rand rotate for (%0.2f %0.2f %0.2f) %0.2f %0.2f %0.2f => %s\n", GetName(),
 						class_rotate_min.pitch,
 						class_rotate_min.yaw,
@@ -529,13 +575,12 @@ void Lode::PrepareEntities( void )
 						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
 						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
 						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ), LodeEntity.angles.ToString() );
-				// Clamp to be safe:
-				//LodeEntity.angles.Clamp( class_rotate_min, class_rotate_max );
+				*/
 
 				// inside LODE bounds?
 				// The IntersectsBox() also includes touching, but we want the entity to be completely inside
 				// so we just check that the origin is inside, which is also faster:
-				// TODO: The entity can stick still outside, we need to "shrink" the testbox by half the classsize
+				// TODO: The entity can stick still outside, we need to "shrink" the testbox by half the class size
 				//testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
 				//if (testBox.IntersectsBox( box ))
 				if (testBox.ContainsPoint( LodeEntity.origin ))
@@ -634,6 +679,65 @@ void Lode::PrepareEntities( void )
 
 /*
 ================
+Lode::spawnEntity - spawn the entity with the given index, returns true if it was spawned
+================
+*/
+
+bool Lode::spawnEntity( const int idx, const bool managed )
+{
+	struct lode_entity_t* ent = &m_Entities[idx];
+	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
+
+	// spawn the entity and note its number
+	gameLocal.Printf( "LODE %s: Spawning entity #%i (%s).\n", GetName(), idx, lclass->classname.c_str() );
+
+	// avoid that we run out of entities during run time
+	if (gameLocal.num_entities > SPAWN_LIMIT)
+	{
+		return false;
+	}
+
+	// TODO: Limit number of entities to spawn per frame
+
+	const char* pstr_DefName = lclass->classname.c_str();
+	const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
+	if( p_Def )
+	{
+		idEntity *ent2;
+		idDict args;
+
+		args.Set("classname", lclass->classname);
+		// move to right place
+		args.SetVector("origin", ent->origin );
+		// TODO: spawn as hidden, then later unhide them via LOD code
+		//args.Set("hide", "1");
+		// disable LOD checks on entities (we take care of this)
+		if (managed)
+		{
+			args.Set("dist_check_period", "0");
+		}
+
+		gameLocal.SpawnEntityDef( args, &ent2 );
+		if (ent2)
+		{
+			//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
+			//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
+			ent->exists = true;
+			ent->entity = ent2->entityNumber;
+			// and rotate
+			ent2->SetAxis( ent->angles.ToMat3() );
+			ent2->BecomeInactive( TH_THINK );
+			//ent2->DisableLOD();
+			m_iNumExisting ++;
+			m_iNumVisible ++;
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
 Lode::Think
 ================
 */
@@ -651,15 +755,6 @@ void Lode::Think( void )
 	if (!m_bPrepared)
 	{
 		Prepare();
-		m_bPrepared = true;
-		if (m_Entities.Num() == 0)
-		{
-			// could not create any entities?
-			gameLocal.Printf( "LODE %s: Have no entities to control, becoming inactive.\n", GetName() );
-			// Tels: Does somehow not work, bouncing us again and again into this branch?
-			BecomeInactive(TH_THINK);
-			return;
-		}
 	}
 
 	// Distance dependence checks
@@ -698,41 +793,9 @@ void Lode::Think( void )
 			lclass = &(m_Classes[ ent->classIdx ]);
 			if (!ent->exists && deltaSq < lclass->spawnDist)
 			{
-				// spawn the entity and note its number
-				gameLocal.Printf( "LODE %s: Spawning entity #%i (%s).\n", GetName(), i, lclass->classname.c_str() );
-
-				// TODO: Limit number of entities to spawn per frame
-
-				const char* pstr_DefName = lclass->classname.c_str();
-				const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
-				if( p_Def )
+				if (spawnEntity( i, true ))
 				{
-					idEntity *ent2;
-					idDict args;
-
-					args.Set("classname", lclass->classname);
-					// move to right place
-					args.SetVector("origin", ent->origin );
-					// TODO: spawn as hidden, then later unhide them via LOD code
-					//args.Set("hide", "1");
-					// disable LOD checks on entities (we take care of this)
-					args.Set("dist_check_period", "0");
-
-					gameLocal.SpawnEntityDef( args, &ent2 );
-					if (ent2)
-					{
-						//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
-						//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
-						ent->exists = true;
-						ent->entity = ent2->entityNumber;
-						// and rotate
-						ent2->SetAxis( ent->angles.ToMat3() );
-						ent2->BecomeInactive( TH_THINK );
-						//ent2->DisableLOD();
-						m_iNumExisting ++;
-						m_iNumVisible ++;
-						spawned++;
-					}
+					spawned ++;
 				}
 			}	
 			else
