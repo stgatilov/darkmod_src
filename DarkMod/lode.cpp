@@ -64,6 +64,8 @@ Lode::Lode( void ) {
 
 	m_bPrepared = false;
 	m_Entities.Clear();
+	m_Classes.Clear();
+	m_Inhibitors.Clear();
 
 	m_iNumEntities = 0;
 	m_iNumExisting = 0;
@@ -243,7 +245,7 @@ void Lode::Spawn( void ) {
 
 	active = true;
 
-	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
+	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
 	// do we have a cull range? (default is 150 units after the hide distance)
 	m_fCullRange = spawnArgs.GetFloat( "cull_range", "150" );
@@ -252,7 +254,7 @@ void Lode::Spawn( void ) {
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
-	// add some phase diversity to the checks so that they don't all run in one frame
+	// Add some phase diversity to the checks so that they don't all run in one frame
 	// make sure they all run on the first frame though, by initializing m_TimeStamp to
 	// be at least one interval early.
 	m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
@@ -263,11 +265,56 @@ void Lode::Spawn( void ) {
 
 /*
 ===============
+Lode::addClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
+===============
+*/
+float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
+{
+	lode_class_t			LodeClass;
+
+	LodeClass.score = iEntScore;
+	LodeClass.classname = ent->GetEntityDefName();
+	LodeClass.skin = ent->spawnArgs.GetString( "skin", "" );
+	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
+	// the entity already between spawning and us querying the info:
+	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
+	// these are ignored for pseudo classes:
+	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
+	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
+	LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
+	LodeClass.nocollide	= NOCOLLIDE_ATALL;
+	// set rotation of entity to 0, so we get the unrotated bounds size
+	ent->SetAxis( mat3_identity );
+	LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
+	// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
+	// TODO: use a projection along the "floor-normal"
+	// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
+
+	// gameLocal.Printf( "LODE %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), LodeClass.size.x, LodeClass.size.y, LodeClass.size.z );
+	LodeClass.cullDist = 0;
+	LodeClass.spawnDist = 0;
+	float hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
+	if (m_fCullRange > 0 && hideDist > 0)
+	{
+		LodeClass.cullDist = hideDist + m_fCullRange;
+		LodeClass.spawnDist = LodeClass.cullDist - (m_fCullRange / 2);
+		// square for easier compare
+		LodeClass.cullDist *= LodeClass.cullDist;
+		LodeClass.spawnDist *= LodeClass.spawnDist;
+	}
+	m_Classes.Append ( LodeClass );
+
+	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
+
+	return (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
+}
+
+/*
+===============
 Create the places for all entities that we control so we can later spawn them.
 ===============
 */
 void Lode::Prepare( void ) {
-	lode_class_t			LodeClass;
 	lode_inhibitor_t		LodeInhibitor;
 	int						numEntities;
 	float					f_avgSize;		// avg floorspace of all classes
@@ -285,13 +332,15 @@ void Lode::Prepare( void ) {
 	m_iScore = 0;
 	f_avgSize = 0;
 	m_Classes.Clear();
+	m_Inhibitors.Clear();
+
 	for( int i = 0; i < targets.Num(); i++ )
 	{
 		idEntity *ent = targets[ i ].GetEntity();
 
 	   	if ( ent )
 		{
-			// TODO: if this is a LODE inhibitor, add it to our "forbidden zones":
+			// if this is a LODE inhibitor, add it to our "forbidden zones":
 			if ( idStr( ent->GetEntityDefName() ) == "atdm:no_lode")
 			{
 				idBounds b = ent->GetRenderEntity()->bounds; 
@@ -306,6 +355,19 @@ void Lode::Prepare( void ) {
 				continue;
 			}
 
+			// If this entity wants us to watch over his brethren, add them to our list:
+			if ( ent->spawnArgs.GetBool( "lode_watch_brethren", "0" ) )
+			{
+				gameLocal.Printf( "LODE %s: %s (%s) wants us to take care of his brethren.\n",
+						GetName(), ent->GetName(), ent->GetEntityDefName() );
+
+				// add a pseudo class and ignore the size returned
+				addClassFromEntity( ent, 0 );
+
+				// no more to do for this target
+				continue;
+			}
+
 			int iEntScore = ent->spawnArgs.GetInt( "lode_score", "1" );
 			if (iEntScore < 0)
 			{
@@ -315,37 +377,7 @@ void Lode::Prepare( void ) {
 			{
 				// add a class based on this entity
 				m_iScore += iEntScore;
-				LodeClass.score = iEntScore;
-				LodeClass.classname = ent->GetEntityDefName();
-				LodeClass.skin = ent->spawnArgs.GetString( "skin", "" );
-				// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
-				// the entity already between spawning and us querying the info:
-				LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
-				LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
-				LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
-				LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
-				LodeClass.nocollide	= NOCOLLIDE_ATALL;
-				// set rotation of entity to 0, so we get the unrotated bounds size
-				ent->SetAxis( mat3_identity );
-				LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
-				// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
-				// TODO: use a projection along the "floor-normal"
-				// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
-				f_avgSize += (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
-				// gameLocal.Printf( "LODE %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), LodeClass.size.x, LodeClass.size.y, LodeClass.size.z );
-				LodeClass.cullDist = 0;
-				LodeClass.spawnDist = 0;
-				float hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
-				if (m_fCullRange > 0 && hideDist > 0)
-				{
-					LodeClass.cullDist = hideDist + m_fCullRange;
-					LodeClass.spawnDist = LodeClass.cullDist - (m_fCullRange / 2);
-					// square for easier compare
-					LodeClass.cullDist *= LodeClass.cullDist;
-					LodeClass.spawnDist *= LodeClass.spawnDist;
-				}
-				m_Classes.Append ( LodeClass );
-				gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
+				f_avgSize += addClassFromEntity( ent, iEntScore );
 			}
 		}
 	}
@@ -371,11 +403,13 @@ void Lode::Prepare( void ) {
 		}
 		m_iNumEntities = fDensity * (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
 		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, f_avgSize, m_iNumEntities );
-		// TODO: remove the limit once culling works
-		if (m_iNumEntities > 4000)
+
+		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
+		/* if (m_iNumEntities > SPAWN_LIMIT)
 		{
-			m_iNumEntities = 4000;
+			m_iNumEntities = SPAWN_LIMIT;
 		}
+		*/
 	}
 
 	if (m_iNumEntities <= 0)
@@ -384,6 +418,8 @@ void Lode::Prepare( void ) {
 	}
 
 	gameLocal.Printf( "LODE %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
+
+	PrepareEntities();
 
 	// remove all our targets from the game
 	for( int i = 0; i < targets.Num(); i++ )
@@ -396,8 +432,6 @@ void Lode::Prepare( void ) {
 		}
 	}
 	targets.Clear();
-
-	PrepareEntities();
 
 	// check for "remove" spawnarg
 	if (remove)
@@ -437,7 +471,7 @@ void Lode::Prepare( void ) {
 void Lode::PrepareEntities( void )
 {
 	idVec3					origin;				// The center of the LODE
-	lode_entity_t			LodeEntity;
+	lode_entity_t			LodeEntity;			// temp. storage
 	idBounds				testBounds;			// to test whether the translated/rotated entity
    												// collides with another entity (fast check)
 	idBox					testBox;			// to test whether the translated/rotated entity is inside the LODE
@@ -517,6 +551,12 @@ void Lode::PrepareEntities( void )
 
 		// progress with random shuffled class
 		int i = ClassIndex[idx];
+
+		// ignore pseudo classes used for watching brethren only:
+		if (m_Classes[i].score == 0)
+		{
+			continue;
+		}
 
 		int iEntities = m_iNumEntities * (static_cast<float>(m_Classes[i].score)) / m_iScore;	// sum 2, this one 1 => 50% of this class
 		// try at least one from each class (so "select 1 from 4 classes" works correctly)
@@ -675,6 +715,45 @@ void Lode::PrepareEntities( void )
 			}
 		}
 	}
+
+	// if we have requests for watch brethren, do add them now
+	for (int i = 0; i < m_Classes.Num(); i++)
+	{
+		// only care for classes where score == 0 (meaning: watch)
+		if (m_Classes[i].score != 0)
+		{
+			continue;
+		}
+		// go through all entities
+		for (int j = 0; j < gameLocal.num_entities; j++)
+		{
+			idEntity *ent = gameLocal.entities[ j ];
+
+			if (!ent)
+			{
+				continue;
+			}
+			idVec3 origin = ent->GetPhysics()->GetOrigin();
+
+			// the class we should watch?
+			if (( ent->GetEntityDefName() == m_Classes[i].classname) &&
+				// and is this entity in our box?
+				(box.ContainsPoint( origin )) )
+			{
+				gameLocal.Printf( "LODE %s: Watching over brethren %s at %02f %0.2f %0.2f.\n", GetName(), ent->GetName(), origin.x, origin.y, origin.z );
+				// add this entity to our list
+				LodeEntity.origin = origin;
+				LodeEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
+				LodeEntity.skin = ent->spawnArgs.GetString("skin","");
+				// already exists
+				LodeEntity.hidden = false;
+				LodeEntity.exists = true;
+				LodeEntity.entity = j;
+				LodeEntity.classIdx = i;
+				m_Entities.Append( LodeEntity );
+			}
+		}
+	}
 }
 
 /*
@@ -709,6 +788,9 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 		args.Set("classname", lclass->classname);
 		// move to right place
 		args.SetVector("origin", ent->origin );
+
+		// TODO: set skin
+
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");
 		// disable LOD checks on entities (we take care of this)
@@ -725,8 +807,17 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 			ent->exists = true;
 			ent->entity = ent2->entityNumber;
 			// and rotate
+			// TODO: Would it be faster to set this as spawnarg before spawn?
 			ent2->SetAxis( ent->angles.ToMat3() );
-			ent2->BecomeInactive( TH_THINK );
+			if (managed)
+			{
+				ent2->BecomeInactive( TH_THINK );
+			}
+			// TODO: activate physics for moveables
+
+			// TODO: Tell the entity to disable LOD on all it's attachments, and handle
+			// them ourselves. Alternatively, handle this by telling the entity to
+			// switch LOD when we tell it to:
 			//ent2->DisableLOD();
 			m_iNumExisting ++;
 			m_iNumVisible ++;
@@ -775,6 +866,7 @@ void Lode::Think( void )
 		{
 
 			// TODO: let all auto-generated entities know about their new distance
+			//		 so they can manage their attachment's LOD, too.
 
 			// TODO: What to do about player looking thru spyglass?
 			idVec3 delta = playerOrigin - m_Entities[i].origin;
@@ -801,7 +893,7 @@ void Lode::Think( void )
 			else
 			{
 				// cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
-				if (ent->exists && deltaSq > lclass->cullDist)
+				if (ent->exists && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame
 
@@ -813,7 +905,8 @@ void Lode::Think( void )
 						ent2->PostEventMS( &EV_Remove, 0 );
 					}
 
-					//gameLocal.Printf( "LODE %s: Culling entity #%i.\n", GetName(), i );
+					// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
+
 					m_iNumExisting --;
 					m_iNumVisible --;
 					culled++;
@@ -824,8 +917,11 @@ void Lode::Think( void )
 		}
 		if (spawned > 0 || culled > 0)
 		{
-			gameLocal.Printf( "LODE %s: Spawned %i, culled %i, now existing: %i, now visible: %i\n",
-				GetName(), spawned, culled, m_iNumExisting, m_iNumVisible );
+			// the overall number seems to be the maximum number of entities that ever existed, so
+			// to get the true real amount, one would probably go through gameLocal.entities[] and
+			// count the valid ones:
+			gameLocal.Printf( "%s: spawned %i, culled %i, existing: %i, visible: %i, overall: %i\n",
+				GetName(), spawned, culled, m_iNumExisting, m_iNumVisible, gameLocal.num_entities );
 		}
 	}
 }

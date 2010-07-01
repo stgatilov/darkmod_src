@@ -111,6 +111,12 @@ private:
 	*/
 	bool				spawnEntity( const int idx, const bool managed );
 
+	/**
+	* Take the given entity as template and add a class from its values. Returns
+	* the floor-space-size of this entity class.
+	*/
+	float				addClassFromEntity( idEntity *ent, const int iEntScore );
+
 	/* *********************** Members *********************/
 
 	bool				active;
@@ -176,7 +182,7 @@ private:
 	/**
 	* The classes of entities that we need to construct.
 	**/
-	idList<lode_class_t>	m_Classes;
+	idList<lode_class_t>		m_Classes;
 
 	/**
 	* The entities that inhibit us from spawning inside their area.
@@ -186,7 +192,7 @@ private:
 	/**
 	* Info about each entitiy that we spawn or cull.
 	**/
-	idList<lode_entity_t>	m_Entities;
+	idList<lode_entity_t>		m_Entities;
 
 	static const unsigned long	IEEE_ONE = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
