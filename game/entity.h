@@ -451,7 +451,7 @@ public:
 	 */
 	virtual void			SetAlpha( const float alpha );
 	/**
-	 * Tels: Same as SetAlpha(); but sends bound children, too, if doTeam is true
+	 * Tels: Same as SetAlpha(); but set bound children, too, if doTeam is true
 	 */
 	virtual void			SetAlpha( const float alpha, const bool doTeam );
 
@@ -677,6 +677,11 @@ public:
 	 * Evaluate def_flinder spawnargs and call SpawnFlinder() for each found.
 	*/
 	virtual void			Flinderize (idEntity *activator);
+
+	/**
+	* Parses spawnarg list of attachments and puts them into the list.
+	**/
+	void ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from );
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
@@ -1189,7 +1194,7 @@ protected:
 	void SetFrobHighlightState( bool bVal );
 
 	/**
-	* Parses spawnarg list of attachments and binds them on to the ent
+	* Call ParseAttachmentSpawnargs, spawns the attachements and binds them on to the entity.
 	**/
 	virtual void ParseAttachments( void );
 

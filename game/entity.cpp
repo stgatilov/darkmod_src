@@ -887,7 +887,7 @@ void idEntity::Spawn( void )
 	//TDM: Parse list of pre-defined attachment positions from spawnargs
 	ParseAttachPositions();
 
-	//TDM: Spawn and attach any attachments
+	//TDM: Parse and spawn and attach any attachments
 	ParseAttachments();
 
 	// auto-start a sound on the entity
@@ -10424,16 +10424,14 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 	}
 }
 
-/* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 
- * that are mentioned there. Before each entity is spawned, spawnargs of the
- * format "set XYZ on ABC" are parsed and either applied to the newly spawned
- * entity, so it can pass them along to its own def_attachments, or converted
- * to a real spawnarg and applied to the entity before spawn. */
-void idEntity::ParseAttachments( void )
+/* tels: Parses "def_attach" spawnargs and builds a list of idDicts that
+ * contain the spawnargs to spawn the attachments, which is done in
+ * SpawnAttachments() later. This is a two-phase process to allow other
+ * code (e.g. LODE) to just parse the attachments without spawning them.
+ */
+void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from )
 {
-	idEntity *ent		= NULL;			// each spawned entity
-
-	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
+	const idKeyValue *kv = from->MatchPrefix( "def_attach", NULL );
 	while ( kv )
 	{
 		idDict args;
@@ -10457,15 +10455,19 @@ void idEntity::ParseAttachments( void )
 			idStr PosKey = "pos_attach" + Suffix;
 			// String name of the attachment for later accessing
 			idStr AttName = "name_attach" + Suffix;
-			idStr AttNameValue = spawnArgs.GetString(AttName);
+			idStr AttNameValue = from->GetString(AttName);
 			if (! AttNameValue)
 			{
 				// fall back to the position if no name was defined
-				AttNameValue = spawnArgs.GetString(PosKey);
+				AttNameValue = from->GetString(PosKey);
 			}
 
+			// store for later query
+			from->Set("_poskey", PosKey);
+			from->Set("_attnamevalue", AttNameValue );
+
 			// tels: parse all "set .." spawnargs
-			const idKeyValue *kv_set = spawnArgs.MatchPrefix( "set ", NULL );
+			const idKeyValue *kv_set = from->MatchPrefix( "set ", NULL );
 			while ( kv_set )
 			{
 				// "set FOO on BAR" "0.5 0.5 0"
@@ -10491,7 +10493,7 @@ void idEntity::ParseAttachments( void )
 				{
 					gameLocal.Warning( "Invalid spawnarg '%s' on entity '%s'",
 					  kv_set->GetValue().c_str(), name.c_str() );
-					kv_set = spawnArgs.MatchPrefix( "set ", kv_set );
+					kv_set = from->MatchPrefix( "set ", kv_set );
 					continue;		
 				}
 
@@ -10519,32 +10521,52 @@ void idEntity::ParseAttachments( void )
 					args.Set( kv_set->GetKey(), SpawnargValue );
 				}
 
-				kv_set = spawnArgs.MatchPrefix( "set ", kv_set );
+				kv_set = from->MatchPrefix( "set ", kv_set );
 				// end while ( kv_set )
 			}
 
-			gameLocal.SpawnEntityDef( args, &ent );
+			argsList->Append (args );
+		}
 
-			if ( ent != NULL)
+		kv = from->MatchPrefix( "def_attach", kv );
+	}
+}
+
+/* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 
+ * that are mentioned there. Before each entity is spawned, spawnargs of the
+ * format "set XYZ on ABC" are parsed and either applied to the newly spawned
+ * entity, so it can pass them along to its own def_attachments, or converted
+ * to a real spawnarg and applied to the entity before spawn. */
+void idEntity::ParseAttachments( void )
+{
+	idEntity *ent			= NULL;			// each spawned entity
+	const idKeyValue *kv	= NULL;
+	idList<idDict>			args;
+   
+	ParseAttachmentSpawnargs( &args, &spawnArgs );
+
+	for (int i = 0; i < args.Num(); i++)
+	{
+
+		gameLocal.SpawnEntityDef( args[i], &ent );
+
+		if ( ent != NULL)
+		{
+			if( args[i].FindKey( "_poskey" ))
 			{
-				if( spawnArgs.FindKey(PosKey.c_str()) )
-				{
-					Attach( ent, spawnArgs.GetString(PosKey.c_str()), AttNameValue.c_str() );
-					//gameLocal.Printf(" Attaching '%s' at pos '%s'\n", AttNameValue.c_str(), spawnArgs.GetString(PosKey.c_str()) );
-				}
-				else
-				{
-					Attach( ent, NULL, AttNameValue.c_str() );
-					//gameLocal.Printf(" Attaching '%s' at pos 'Unknown'\n", AttNameValue.c_str() );
-				}
+				Attach( ent, spawnArgs.GetString( args[i].GetString( "_poskey" ) ), args[i].GetString( "_attnamevalue") );
+				//gameLocal.Printf(" Attaching '%s' at pos '%s'\n", AttNameValue.c_str(), spawnArgs.GetString( args[i].GetString("poskey") ) );
 			}
 			else
 			{
-				gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
+				Attach( ent, NULL, args[i].GetString( "_attnamevalue") );
+				//gameLocal.Printf(" Attaching '%s' at pos 'Unknown'\n", AttNameValue.c_str() );
 			}
 		}
-
-		kv = spawnArgs.MatchPrefix( "def_attach", kv );
+		else
+		{
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", args[i].GetString("name"), name.c_str() );
+		}
 	}
 
 	// after we have spawned all our attachments, we can parse the "add_link" spawnargs:
