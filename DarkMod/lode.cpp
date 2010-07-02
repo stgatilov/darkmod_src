@@ -805,9 +805,14 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 		gameLocal.SpawnEntityDef( args, &ent2 );
 		if (ent2)
 		{
+			// TODO: check if the entity has been spawned for the first time and if so,
+			// 		 also take control of any attachments it has? Or spawn it during build
+			//		 and then parse the attachments as new class?
+
 			//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
 			//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
 			ent->exists = true;
+			ent->visible = true;
 			ent->entity = ent2->entityNumber;
 			// and rotate
 			// TODO: Would it be faster to set this as spawnarg before spawn?
@@ -818,10 +823,18 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 			}
 			// TODO: activate physics for moveables
 
-			// TODO: Tell the entity to disable LOD on all it's attachments, and handle
-			// them ourselves. Alternatively, handle this by telling the entity to
-			// switch LOD when we tell it to:
-			//ent2->DisableLOD();
+			// Tell the entity to disable LOD on all it's attachments, and handle
+			// them ourselves.
+			idStaticEntity *s_ent = static_cast<idStaticEntity*>( ent2 );
+			/* TODO: Disable LOD for attachments, too, then manage them outselves.
+			   Currently, if you spawn 100 entities with 1 attachement each, we
+			   save thinking on 100 entities, but still have 100 attachements think
+			   each other.
+			if (s_ent)
+			{
+				s_ent->StopLOD( true );
+			}
+			*/
 			m_iNumExisting ++;
 			m_iNumVisible ++;
 			return true;
