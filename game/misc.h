@@ -324,6 +324,12 @@ public:
 	void				Fade( const idVec4 &to, float fadeTime );
 	virtual void		Think( void );
 
+	/**
+	 * Tels: Stop LOD changes. If doTeam is true, also disables it on teammembers.
+	 */
+	void				StopLOD( const bool doTeam);
+
+
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
 

@@ -1755,6 +1755,49 @@ idStaticEntity::ShowEditingDialog
 void idStaticEntity::ShowEditingDialog( void ) {
 	common->InitTool( EDITOR_PARTICLE, &spawnArgs );
 }
+
+/*
+================
+idStaticEntity::StopLOD
+
+Tels: Disable LOD checks including all attachements
+================
+*/
+void idStaticEntity::StopLOD( const bool doTeam )
+{
+	BecomeInactive( TH_THINK );
+	m_DistCheckInterval = 0; 
+
+	if (!doTeam)
+	{
+		return;
+	}
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+
+	idEntity* bindM = GetBindMaster();
+	if ( bindM )
+		{
+		NextEnt = bindM;	
+		}
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		if ( idStr( NextEnt->spawnArgs.GetString( "spawnclass", "") ) == "idStaticEntity")
+		{
+			idStaticEntity *ent = static_cast<idStaticEntity*>( NextEnt );
+			if (ent)
+			{
+				ent->StopLOD( false );
+			}
+		}
+	/* get next Team member */
+	NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
 /*
 ================
 idStaticEntity::Think
@@ -1767,6 +1810,7 @@ void idStaticEntity::Think( void )
 
 	// Distance dependence checks
 	if( m_bDistDependent 
+		&& (m_DistCheckInterval > 0) 
 		&& ( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval ) )
 	{
 		
