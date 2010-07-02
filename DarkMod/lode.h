@@ -32,6 +32,7 @@ struct lode_class_t {
 	float					cullDist;		// distance after where we remove the entity from the world
 	float					spawnDist;		// distance where we respawn the entity
 	float					spacing;		// min. distance between entities of this class
+	float					bunching;		// bunching threshold (0 - none, 1.0 - all)
 	bool					floor;			// if true, the entities will be floored (on by default, use
 											// "lode_floor" "0" to disable, then entities will be positioned
 											// at "z" where the are in the editor
@@ -194,14 +195,16 @@ private:
 	**/
 	idList<lode_entity_t>		m_Entities;
 
-	static const unsigned long	IEEE_ONE = 0x3f800000;
+	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 
-	static const unsigned long	NOCOLLIDE_SAME   = 0x001;
-	static const unsigned long	NOCOLLIDE_OTHER  = 0x002;
-	static const unsigned long	NOCOLLIDE_STATIC = 0x004;
-	static const unsigned long	NOCOLLIDE_WORLD  = 0x008;
+	static const unsigned long	NOCOLLIDE_SAME   = 0x01;
+	static const unsigned long	NOCOLLIDE_OTHER  = 0x02;
+	static const unsigned long	NOCOLLIDE_STATIC = 0x04;
+	static const unsigned long	NOCOLLIDE_WORLD  = 0x08;
 	static const unsigned long	NOCOLLIDE_ATALL  = NOCOLLIDE_WORLD + NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
+	static const unsigned long	COLLIDE_WORLD    = NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
+	static const unsigned long	COLLIDE_ALL  	 = 0x00;
 };
 
 #endif /* !__GAME_LODE_H__ */
