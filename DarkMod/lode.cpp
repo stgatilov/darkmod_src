@@ -47,6 +47,8 @@ const idEventDef EV_CullAll( "cullAll", "" );
 
 CLASS_DECLARATION( idStaticEntity, Lode )
 	EVENT( EV_Activate,				Lode::Event_Activate )
+	EVENT( EV_Deactivate,			Lode::Event_Deactivate )
+	EVENT( EV_CullAll,				Lode::Event_CullAll )
 END_CLASS
 
 /*
