@@ -42,6 +42,8 @@ struct lode_class_t {
 											// 2 other auto-generated entities (other classes)
 											// 4 other static entities already present
 											// 8 world geometry
+	int						falloff;		// Entity random distribution method
+											// 0 - none, 1 - cutoff, 2 - square, 3 - exponential
 	idVec3					size;			// size of the model for collision tests
 };
 
@@ -105,6 +107,16 @@ private:
 	* In the range 0.. 1.0, using our own m_iSeed value.
 	*/
 	float				RandomFloat();
+
+	/**
+	* Squared falloff
+	*/
+	float				RandomFloatSqr( void );
+
+	/**
+	* Exponential falloff
+	*/
+	float				RandomFloatExp( const float lambda );
 
 	/**
 	* Spawn the entity with the given index, return true if it could be spawned.

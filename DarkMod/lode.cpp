@@ -121,6 +121,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( m_Classes[i].bunching );
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
+		savefile->WriteInt( m_Classes[i].falloff );
 		savefile->WriteBool( m_Classes[i].floor );
 		savefile->WriteBool( m_Classes[i].stack );
 		savefile->WriteVec3( m_Classes[i].size );
@@ -180,6 +181,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( m_Classes[i].bunching );
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
+		savefile->ReadInt( m_Classes[i].falloff );
 		savefile->ReadBool( m_Classes[i].floor );
 		savefile->ReadBool( m_Classes[i].stack );
 		savefile->ReadVec3( m_Classes[i].size );
@@ -203,6 +205,44 @@ ID_INLINE float Lode::RandomFloat( void ) {
 	m_iSeed = 1664525L * m_iSeed + 1013904223L;
 	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
 	return ( ( *(float *)&i ) - 1.0f );
+}
+
+/*
+===============
+Lode::RandomFloatExp - Random float between 0 and 1 with exponential falloff (param lambda != 0)
+===============
+*/
+ID_INLINE float Lode::RandomFloatExp( const float lambda ) {
+	unsigned long i;
+	float U;
+
+	m_iSeed = 1664525L * m_iSeed + 1013904223L;
+	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
+	U = ( *(float *)&i ) - 1.0f;
+	if (U <= 0)
+	{
+		gameLocal.Warning("RandomFloatExp: U is %0.2f\n", U);
+		return 1.0;
+	}
+	U = - idMath::Log( U ) / lambda;
+	// clamp to 0.0 .. 1.0
+	if (U > 1.0) { U = 1.0; }
+	return U;
+}
+
+/*
+===============
+Lode::RandomFloatSqr - Random float between 0 and 1 with squared falloff (param lambda != 0)
+===============
+*/
+ID_INLINE float Lode::RandomFloatSqr( void ) {
+	unsigned long i;
+	float U;
+
+	m_iSeed = 1664525L * m_iSeed + 1013904223L;
+	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
+	U = ( *(float *)&i ) - 1.0f;
+	return U * U;
 }
 
 /*
@@ -275,6 +315,7 @@ Lode::addClassFromEntity - take an entity as template and add a class from it. R
 float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 {
 	lode_class_t			LodeClass;
+	idStr falloff;
 
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
@@ -286,6 +327,31 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
 	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
 	LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
+
+	LodeClass.falloff = -1;	// none
+	falloff = ent->spawnArgs.GetString( "lode_falloff", spawnArgs.GetString( "falloff", "none") );
+	if (falloff == "none")
+	{
+		LodeClass.falloff = 0;
+	}
+	if (falloff == "cutoff")
+	{
+		LodeClass.falloff = 1;
+	}
+	if (falloff == "square")
+	{
+		LodeClass.falloff = 2;
+	}
+	if (falloff == "exp")
+	{
+		LodeClass.falloff = 3;
+	}
+	if (LodeClass.falloff == -1)
+	{
+		gameLocal.Warning ("LODE %s: Invalid falloff %s, expect one of none, cutoff, square or exp.\n", GetName(), falloff.c_str() );
+		LodeClass.falloff = 0;
+	}
+
 	LodeClass.bunching = ent->spawnArgs.GetFloat( "lode_bunching", spawnArgs.GetString( "bunching", "0") );
 	if (LodeClass.bunching < 0 || LodeClass.bunching > 1.0)
 	{
@@ -645,8 +711,32 @@ void Lode::PrepareEntities( void )
 				else
 				// no bunching, just random placement
 				{
-					// restrict to our AAB (unrotated)
-					LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
+        			if (m_Classes[i].falloff == 0)
+					{
+						// restrict to our AAB (unrotated)
+						LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
+					}
+					else
+					{
+						switch (m_Classes[i].falloff)
+						{
+						case 1:
+							// cutoff - polar coordinates in the range (0..1.0, 0.360)
+							LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
+							break;
+						case 2:
+							// square
+							LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
+							break;
+						default:
+							// exp
+							LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0 ).ToVec3();
+							break;
+						}
+						// scale the result to our box size
+						LodeEntity.origin.x *= size.x / 2;
+						LodeEntity.origin.y *= size.y / 2;
+					}
 				}
 
 				// Rotate around our rotation axis (to support rotated LODE brushes)
