@@ -12,6 +12,9 @@
 
 /*
 Level Of Detail Entities
+
+TODO: Watch cv_lod_bias and if it changes, regenerate all entities with the
+	  new setting.
 */
 
 #include "../idlib/precompiled.h"
@@ -62,7 +65,9 @@ Lode::Lode( void ) {
 
 	m_fCullRange = 0.0f;
 	m_iSeed = 3;
+	m_iOrgSeed = 3;
 	m_iScore = 0;
+	m_fLODBias = 0;
 
 	m_bPrepared = false;
 	m_Entities.Clear();
@@ -89,10 +94,13 @@ void Lode::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteFloat( m_fCullRange );
 	savefile->WriteInt( m_iSeed );
+	savefile->WriteInt( m_iOrgSeed );
 	savefile->WriteInt( m_iScore );
 	savefile->WriteInt( m_iNumEntities );
 	savefile->WriteInt( m_iNumExisting );
 	savefile->WriteInt( m_iNumVisible );
+	savefile->WriteFloat( m_fAvgSize );
+	savefile->WriteFloat( m_fLODBias );
 
     savefile->WriteInt( m_DistCheckTimeStamp );
 	savefile->WriteInt( m_DistCheckInterval );
@@ -146,10 +154,13 @@ void Lode::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat( m_fCullRange );
 	savefile->ReadInt( m_iSeed );
+	savefile->ReadInt( m_iOrgSeed );
 	savefile->ReadInt( m_iScore );
 	savefile->ReadInt( m_iNumEntities );
 	savefile->ReadInt( m_iNumExisting );
 	savefile->ReadInt( m_iNumVisible );
+	savefile->ReadFloat( m_fAvgSize );
+	savefile->ReadFloat( m_fLODBias );
 	
     savefile->ReadInt( m_DistCheckTimeStamp );
 	savefile->ReadInt( m_DistCheckInterval );
@@ -287,6 +298,8 @@ void Lode::Spawn( void ) {
 	trace.SetupPolygon( vertices, int );
 */
 
+	m_fLODBias = cv_lod_bias.GetFloat();
+
 	active = true;
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
@@ -396,14 +409,79 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 
 /*
 ===============
+Generate a scaling factor depending on the GUI setting
+===============
+*/
+float Lode::LODBIAS ( void )
+{
+	// scale density with GUI setting
+	// The GUI specifies: 0.5;0.75;1.0;1.5;2.0;3.0, but 0.5 and 3.0 are quite extreme,
+	// so we scale the values first:
+	float lod_bias = cv_lod_bias.GetFloat();
+	if (lod_bias < 0.8)
+	{
+		lod_bias *= 1.2;										// 0.5, 0.75 => 0.57, 0.87
+	}
+	else if (lod_bias > 1.0f)
+	{
+																// 1.5, 2, 3 => 1.16, 1.33, 1.5
+		lod_bias = ( lod_bias > 2.0f ? 0.5f : 1.0f) + ((lod_bias - 1.0f) / 3.0f);
+	}
+
+	// 0.57, 0.87, 1.0, 1.16, 1.33, 1.5
+	return lod_bias;
+}
+
+/*
+===============
+Create the places for all entities that we control so we can later spawn them.
+===============
+*/
+void Lode::ComputeEntityCount( void )
+{
+	m_iNumEntities = spawnArgs.GetInt( "max_entities", "0" );
+	if (m_iNumEntities == 0)
+	{
+		// compute entity count dynamically from area that we cover
+		float fDensity = spawnArgs.GetFloat( "density", "1.0" );
+
+		// Scaled by GUI setting?
+		if (spawnArgs.GetBool( "lod_scale_density", "1"))
+		{
+			fDensity *= LODBIAS();
+		}
+
+		idBounds bounds = renderEntity.bounds;
+		idVec3 size = bounds.GetSize();
+
+		m_iNumEntities = fDensity * (size.x * size.y) / m_fAvgSize;		// naive asumption each entity covers on avg X units
+		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, m_fAvgSize, m_iNumEntities );
+
+		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
+		/* if (m_iNumEntities > SPAWN_LIMIT)
+		{
+			m_iNumEntities = SPAWN_LIMIT;
+		}
+		*/
+	}
+    else
+	{
+		// scale the amount of entities that the mapper requested, but only if it's > 10 or what was requested:
+		if (m_iNumEntities > spawnArgs.GetFloat( "lod_scaling_limit", "10" ))
+		{
+			m_iNumEntities *= LODBIAS();
+		}
+	}
+}
+
+/*
+===============
 Create the places for all entities that we control so we can later spawn them.
 ===============
 */
 void Lode::Prepare( void ) {
 	lode_inhibitor_t		LodeInhibitor;
 	int						numEntities;
-	float					f_avgSize;		// avg floorspace of all classes
-
 	bool					remove = spawnArgs.GetBool("remove","0");			// remove ourself after spawn?
 
 	if ( targets.Num() == 0 )
@@ -415,7 +493,7 @@ void Lode::Prepare( void ) {
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
-	f_avgSize = 0;
+	m_fAvgSize = 0;
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
@@ -462,40 +540,25 @@ void Lode::Prepare( void ) {
 			{
 				// add a class based on this entity
 				m_iScore += iEntScore;
-				f_avgSize += addClassFromEntity( ent, iEntScore );
+				m_fAvgSize += addClassFromEntity( ent, iEntScore );
 			}
 		}
 	}
 
 	// increase the avg by X% to allow some spacing (even if spacing = 0)
-	f_avgSize *= 1.3;
+	m_fAvgSize *= 1.3;
 
 	// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
-	f_avgSize /= m_Classes.Num();
+	m_fAvgSize /= m_Classes.Num();
 
-	m_iNumEntities = spawnArgs.GetInt( "max_entities", "0" );
-	if (m_iNumEntities == 0)
+	// avoid values too small or even 0
+	if (m_fAvgSize < 4)
 	{
-		// compute entity count dynamically from area that we cover
-		float fDensity = spawnArgs.GetFloat( "density", "1.0" );
-		idBounds bounds = renderEntity.bounds;
-		idVec3 size = bounds.GetSize();
-
-		// avoid values too small or even 0
-		if (f_avgSize < 4)
-		{
-			f_avgSize = 4;
-		}
-		m_iNumEntities = fDensity * (size.x * size.y) / f_avgSize;		// naive asumption each entity covers on avg X units
-		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, f_avgSize, m_iNumEntities );
-
-		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
-		/* if (m_iNumEntities > SPAWN_LIMIT)
-		{
-			m_iNumEntities = SPAWN_LIMIT;
-		}
-		*/
+		m_fAvgSize = 4;
 	}
+
+	// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
+	ComputeEntityCount();
 
 	if (m_iNumEntities <= 0)
 	{
@@ -503,6 +566,19 @@ void Lode::Prepare( void ) {
 	}
 
 	gameLocal.Printf( "LODE %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
+
+	// Init the seed. 0 means random sequence, otherwise use the specified value
+    // so that we get exactly the same sequence every time:
+	m_iSeed = spawnArgs.GetInt( "seed", "0" );
+    if (m_iSeed == 0)
+	{
+		// The randseed upon loading a map seems to be always 0, so 
+		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
+		time_t seconds = time (NULL);
+	    m_iSeed = (int) (1664525L * (int) seconds + 1013904223L) & 0x7FFFFFFFL;
+	}
+	// to restart the same sequence, f.i. when the user changes level of detail in GUI
+	m_iOrgSeed = m_iSeed;
 
 	PrepareEntities();
 
@@ -535,6 +611,7 @@ void Lode::Prepare( void ) {
 		m_Entities.Clear();
 		m_iNumEntities = 0;
 
+		active = false;
 		BecomeInactive( TH_THINK );
 
 		// post event to remove ourselfes
@@ -568,17 +645,6 @@ void Lode::PrepareEntities( void )
 	idList< int >			ClassIndex;			// random shuffling of classes
 	int						s;
 	float					f;
-
-	// Re-init the seed. 0 means random sequence, otherwise use the specified value
-    // so that we get exactly the same sequence every time:
-	m_iSeed = spawnArgs.GetInt( "seed", "0" );
-    if (m_iSeed == 0)
-	{
-		// The randseed upon loading a map seems to be always 0, so 
-		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
-		time_t seconds = time (NULL);
-	    m_iSeed = (int) (1664525L * (int) seconds + 1013904223L) & 0x7FFFFFFFL;
-	}
 
 	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
 	idBounds bounds = renderEntity.bounds;
@@ -1028,6 +1094,30 @@ void Lode::Think( void )
 	if (!m_bPrepared)
 	{
 		Prepare();
+	}
+	// GUI setting changed?
+	if ( idMath::Fabs(cv_lod_bias.GetFloat() - m_fLODBias) > 0.1)
+	{
+		gameLocal.Printf ("LODE %s: GUI setting changed, recomputing.\n", GetName() );
+
+		int cur_entities = m_iNumEntities;
+
+		ComputeEntityCount();
+
+		if (cur_entities != m_iNumEntities)
+		{
+			// TODO: We could keep the first N entities and only add the new ones if the quality
+			// raises, and cull the last M entities if it sinks for more speed:
+			Event_CullAll();
+
+			// create same sequence again
+			m_iSeed = m_iOrgSeed;
+
+			gameLocal.Printf ("LODE %s: Have now %i entities.\n", GetName(), m_iNumEntities );
+			PrepareEntities();
+			// save the new value
+		}
+		m_fLODBias = cv_lod_bias.GetFloat();
 	}
 
 	// Distance dependence checks

@@ -130,6 +130,17 @@ private:
 	*/
 	float				addClassFromEntity( idEntity *ent, const int iEntScore );
 
+	/**
+	* Generate a scaling factor depending on the GUI setting.
+	*/
+	float				LODBIAS ( void );
+
+	/**
+	* Set m_iNumEntities from spawnarg, or density, taking GUI setting into account.
+	*/
+	void				ComputeEntityCount( void );
+
+
 	/* *********************** Members *********************/
 
 	bool				active;
@@ -154,10 +165,15 @@ private:
 	float				m_fCullRange;
 
 	/**
-	* Seed value for the random generator, which generates the sequence used to place
+	* Current seed value for the random generator, which generates the sequence used to place
 	* entities. Same seed value gives same sequence, thus same placing every time.
 	**/
 	int					m_iSeed;
+
+	/**
+	* Seed start value for the random generator, used to restart the sequence.
+	**/
+	int					m_iOrgSeed;
 
 	/**
 	* Sum of all entity scores, used to distribute the entities according to their score.
@@ -206,6 +222,16 @@ private:
 	* Info about each entitiy that we spawn or cull.
 	**/
 	idList<lode_entity_t>		m_Entities;
+
+	/**
+	* A copy of cv_lod_bias, to detect changes during runtime.
+	*/
+	float						m_fLODBias;
+
+	/**
+	* Average floorspace of all classes
+	*/
+	float						m_fAvgSize;
 
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
