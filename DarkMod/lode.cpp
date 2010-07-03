@@ -11,10 +11,7 @@
 // Copyright (C) 2010 Tels (Donated to The Dark Mod Team)
 
 /*
-Level Of Detail Entities
-
-TODO: Watch cv_lod_bias and if it changes, regenerate all entities with the
-	  new setting.
+Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 */
 
 #include "../idlib/precompiled.h"
@@ -788,6 +785,12 @@ void Lode::PrepareEntities( void )
 						{
 						case 1:
 							// cutoff - polar coordinates in the range (0..1.0, 0.360)
+							// TODO: The area for the entities is smaller than for "none" (square vs. circle
+							// 		 but same entity count), account for this?
+							// TODO: The random polar coordinates make it occupy less space in the center
+							// 		 than in the outer areas, but distrubute the entity distance equally.
+							//		 This leads to the center getting ever so slightly more entities then
+							//		 the outer areas, compensate for this in the random generator formular?
 							LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
 							break;
 						case 2:
@@ -1173,6 +1176,12 @@ void Lode::Think( void )
 					idEntity *ent2 = gameLocal.entities[ ent->entity ];
 					if (ent2)
 					{
+						// Before we remove the entity, save it's position and angles
+						// That makes it work for moveables or anything else that
+						// might have changed position (teleported away etc)
+						ent->origin = ent2->GetPhysics()->GetOrigin();
+						ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
+
 						// TODO: SafeRemve?
 						ent2->PostEventMS( &EV_Remove, 0 );
 					}
