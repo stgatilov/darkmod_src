@@ -124,6 +124,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( m_Classes[i].spawnDist );
 		savefile->WriteFloat( m_Classes[i].spacing );
 		savefile->WriteFloat( m_Classes[i].bunching );
+		savefile->WriteFloat( m_Classes[i].sink_min );
+		savefile->WriteFloat( m_Classes[i].sink_max );
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteInt( m_Classes[i].falloff );
@@ -187,6 +189,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( m_Classes[i].spawnDist );
 		savefile->ReadFloat( m_Classes[i].spacing );
 		savefile->ReadFloat( m_Classes[i].bunching );
+		savefile->ReadFloat( m_Classes[i].sink_min );
+		savefile->ReadFloat( m_Classes[i].sink_max );
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadInt( m_Classes[i].falloff );
@@ -336,7 +340,15 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	// these are ignored for pseudo classes:
 	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
 	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
-	LodeClass.spacing = ent->spawnArgs.GetBool( "lode_spacing", "0" );
+	LodeClass.spacing = ent->spawnArgs.GetFloat( "lode_spacing", "0" );
+
+	// too randomly sink entities into the floor
+	LodeClass.sink_min = ent->spawnArgs.GetFloat( "lode_sink_min", spawnArgs.GetString( "sink_min", "0") );
+	LodeClass.sink_max = ent->spawnArgs.GetFloat( "lode_sink_max", spawnArgs.GetString( "sink_max", "0") );
+	if (LodeClass.sink_max < LodeClass.sink_min)
+	{
+		LodeClass.sink_max = LodeClass.sink_min;
+	}
 
 	LodeClass.falloff = -1;	// none
 	falloff = ent->spawnArgs.GetString( "lode_falloff", spawnArgs.GetString( "falloff", "none") );
@@ -825,6 +837,15 @@ void Lode::PrepareEntities( void )
 				{
 					// just use the Z axis from the editor pos
 					LodeEntity.origin.z = m_Classes[i].origin.z;
+				}
+
+				// compute a random sink value
+				if (m_Classes[i].sink_max > 0)
+				{
+					// TODO: use a gravity normal
+					float sink = m_Classes[i].sink_min + RandomFloat() * m_Classes[i].sink_max;
+					// modify the z-axis according to the sink-value
+					LodeEntity.origin.z -= sink;
 				}
 
 				// LodeEntity.origin might now be outside of our oriented box, we check this later

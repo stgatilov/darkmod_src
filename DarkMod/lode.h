@@ -33,6 +33,8 @@ struct lode_class_t {
 	float					spawnDist;		// distance where we respawn the entity
 	float					spacing;		// min. distance between entities of this class
 	float					bunching;		// bunching threshold (0 - none, 1.0 - all)
+	float					sink_min;		// sink into floor at minimum
+	float					sink_max;		// sink into floor at maximum
 	bool					floor;			// if true, the entities will be floored (on by default, use
 											// "lode_floor" "0" to disable, then entities will be positioned
 											// at "z" where the are in the editor
