@@ -1863,8 +1863,6 @@ void idStaticEntity::Think( void )
 				}
 				else
 				{
-					gameLocal.Printf ("%s nextLevel %i (i=%i)\n", GetName(), nextLevel, i);
-
 					// only hide if hiding isn't disabled
 					// last usable level goes to infinity
 					bWithinDist = m_DistLODSq[i] > 0 && (deltaSq > m_DistLODSq[i]);
