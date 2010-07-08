@@ -174,14 +174,14 @@ Missions/MissionInfoDecl.cpp \
 Missions/MissionManager.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
-Http/XmlDocument.cpp \
-Http/XmlNode.cpp \
 randomizer/mersenne.cpp \
 randomizer/mother.cpp \
 randomizer/ranrotb.cpp \
 randomizer/ranrotw.cpp \
 randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
+pugixml/pugixml.cpp \
+pugixml/pugixpath.cpp \
 shop.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
@@ -283,7 +283,6 @@ local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 local_env.Append(LIBS = [
     File('#/linux/devil/lib/libIL.a'),
     File('#/linux/libcurl/libcurl.a'),
-    File('#/linux/libxml2/libxml2.a'),
 #    File('/lib32/libboost_filesystem.a'),
 #    File('/lib32/libboost_system.a'),
 # greebo: I needed to add these 3 to compile in Ubuntu 9.10 x64, uncomment them if needed

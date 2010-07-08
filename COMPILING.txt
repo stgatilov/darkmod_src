@@ -4,20 +4,7 @@ http://modetwo.net/darkmod/wiki/index.php?title=The_Dark_Mod_-_Compilation_Guide
 
 See also the README.linux file for further info about how to compile the code for Linux.
 
---- Additional info about building the static 32-bit libraries libcurl and libxml2 ---
-
-== libxml2 ==
-
-Download libxml2 2.7.7, extract package into any folder, and run the following commands:
-
-env CFLAGS="-m32" LDFLAGS="-m32" ./configure --build=i686-unknown-linux-gnu --with-legacy=no --with-regexps=no --with-zlib=no --with-iconv=no --with-iso8859x=no --with-schemas=no --with-schematron=no --with-python=no
-make
-sudo make install
-
-The library is then located in /usr/local/lib/libxml2.a.
-Copy that to darkmod_src/linux/libxml2/
-
-== libcurl ==
+=== Additional info about building the static 32-bit library libcurl ===
 
 Download the libcurl 7.21 source package, and extract it on your system, then run the following commands:
 
