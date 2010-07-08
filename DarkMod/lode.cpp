@@ -429,7 +429,7 @@ float Lode::LODBIAS ( void )
 	float lod_bias = cv_lod_bias.GetFloat();
 	if (lod_bias < 0.8)
 	{
-		lod_bias *= 1.2;										// 0.5, 0.75 => 0.57, 0.87
+		lod_bias *= 1.2f;										// 0.5, 0.75 => 0.57, 0.87
 	}
 	else if (lod_bias > 1.0f)
 	{
@@ -488,17 +488,16 @@ void Lode::ComputeEntityCount( void )
 Create the places for all entities that we control so we can later spawn them.
 ===============
 */
-void Lode::Prepare( void ) {
-	lode_inhibitor_t		LodeInhibitor;
-	int						numEntities;
-	bool					remove = spawnArgs.GetBool("remove","0");			// remove ourself after spawn?
-
+void Lode::Prepare( void )
+{	
 	if ( targets.Num() == 0 )
 	{
 		gameLocal.Warning( "LODE %s has no targets!", GetName() );
 		BecomeInactive( TH_THINK );
 		return;
 	}
+
+	lode_inhibitor_t LodeInhibitor;
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
@@ -555,7 +554,7 @@ void Lode::Prepare( void ) {
 	}
 
 	// increase the avg by X% to allow some spacing (even if spacing = 0)
-	m_fAvgSize *= 1.3;
+	m_fAvgSize *= 1.3f;
 
 	// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
 	m_fAvgSize /= m_Classes.Num();
@@ -603,8 +602,8 @@ void Lode::Prepare( void ) {
 	}
 	targets.Clear();
 
-	// check for "remove" spawnarg
-	if (remove)
+	// remove ourself after spawn?
+	if (spawnArgs.GetBool("remove","0"))
 	{
 		// spawn all entities
 		gameLocal.Printf( "LODE %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
@@ -745,7 +744,6 @@ void Lode::PrepareEntities( void )
 					// TODO: allow bunching with other classes, too:
 
 					idList <int> BunchEntities;
-					int	bunchtarget;
 
 					// radius
 					float distance = m_Classes[i].size.x * m_Classes[i].size.x + 

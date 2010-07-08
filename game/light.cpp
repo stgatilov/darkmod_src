@@ -525,7 +525,8 @@ void idLight::GetColor( idVec4 &out ) const {
 idLight::SetColor
 ================
 */
-void idLight::SetColor( float red, float green, float blue ) {
+void idLight::SetColor( const float red, const float green, const float blue )
+{
 	// Tels: If the light is currently fading, stop this:
 	fadeEnd = 0;
 	BecomeInactive( TH_THINK );
