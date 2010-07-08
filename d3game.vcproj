@@ -43,8 +43,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib;win32/libxml2/include"
-				PreprocessorDefinitions="__DOOM__;GAME_DLL;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB;CURL_STATICLIB;LIBXML_STATIC"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib"
+				PreprocessorDefinitions="__DOOM__;GAME_DLL;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;IL_STATIC_LIB;CURL_STATICLIB"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -77,12 +77,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib libxml2.lib"
+				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib"
 				OutputFile="../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="DebugDLL;lib;win32/lib;win32/devil/lib;&quot;win32/lib/$(ConfigurationName)&quot;"
-				IgnoreDefaultLibraryNames="LIBCMTD.lib;LIBCMT.lib"
+				AdditionalLibraryDirectories="DebugDLL;lib;win32/lib;win32/devil/lib"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -151,7 +151,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib;win32/libxml2/include"
+				AdditionalIncludeDirectories="mssdk/include;DarkMod;include;win32/include;win32/devil/include;win32/libcurl/include;include/zlib"
 				PreprocessorDefinitions="__DOOM__;GAME_DLL;WIN32;NDEBUG;_WINDOWS;IL_STATIC_LIB;CURL_STATICLIB;_CRT_SECURE_NO_DEPRECATE;LIBXML_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -185,11 +185,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib libxml2.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib"
 				OutputFile="../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib;&quot;win32/lib/$(ConfigurationName)&quot;"
+				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib"
 				IgnoreDefaultLibraryNames="LIBCMT.LIB"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
@@ -2444,24 +2444,24 @@
 						RelativePath=".\DarkMod\Http\HttpRequest.h"
 						>
 					</File>
+				</Filter>
+				<Filter
+					Name="PugiXML"
+					>
 					<File
-						RelativePath=".\DarkMod\Http\XmlDocument.cpp"
+						RelativePath=".\DarkMod\pugixml\pugiconfig.hpp"
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Http\XmlDocument.h"
+						RelativePath=".\DarkMod\pugixml\pugixml.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Http\XmlNode.cpp"
+						RelativePath=".\DarkMod\pugixml\pugixml.hpp"
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Http\XmlNode.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Http\XPathException.h"
+						RelativePath=".\DarkMod\pugixml\pugixpath.cpp"
 						>
 					</File>
 				</Filter>

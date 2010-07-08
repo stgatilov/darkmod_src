@@ -10,12 +10,15 @@
 #ifndef _HTTP_REQUEST_H_
 #define _HTTP_REQUEST_H_
 
-#include "XmlDocument.h"
 #include <boost/shared_ptr.hpp>
 
 class CHttpConnection;
 
+#include "../pugixml/pugixml.hpp"
 typedef void CURL;
+
+// Shared_ptr typedef
+typedef boost::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 /**
  * greebo: An object representing a single HttpRequest, holding 
@@ -65,7 +68,7 @@ public:
 	std::string GetResultString();
 
 	// Returns the result as XML document
-	xml::Document GetResultXml();
+	XmlDocumentPtr GetResultXml();
 };
 typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
 

@@ -78,9 +78,13 @@ std::string CHttpRequest::GetResultString()
 	return _buffer.empty() ? "" : std::string(&_buffer.front());
 }
 
-xml::Document CHttpRequest::GetResultXml()
+XmlDocumentPtr CHttpRequest::GetResultXml()
 {
-	return xml::Document::CreateFromString(GetResultString());
+	XmlDocumentPtr doc(new pugi::xml_document);
+	
+	doc->load(GetResultString().c_str());
+
+	return doc;
 }
 
 size_t CHttpRequest::WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, CHttpRequest* self)

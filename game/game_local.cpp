@@ -515,15 +515,15 @@ void idGameLocal::Init( void ) {
 
 	req->Perform();
 
-	xml::Document result = req->GetResultXml();
+	XmlDocumentPtr doc = req->GetResultXml();
 
-	xml::NodeList nodes = result.FindXPath("//tdm/currentVersion");
+	pugi::xpath_node node = doc->select_single_node("//tdm/currentVersion");
 
-	if (!nodes.empty())
+	if (node)
 	{
-		int major = atoi(nodes[0].GetAttributeValue("major").c_str());
-		int minor = atoi(nodes[0].GetAttributeValue("minor").c_str());
-
+		int major = node.node().attribute("major").as_int();
+		int minor = node.node().attribute("minor").as_int();
+		
 		Printf("Most recent TDM Version is: %d.%02d\n", major, minor);
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
