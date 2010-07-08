@@ -31,6 +31,17 @@
 #define TDM_VERSION_MAJOR 1
 #define TDM_VERSION_MINOR 3
 
+enum VersionCheckResult
+{
+	EQUAL,
+	OLDER,
+	NEWER,
+};
+
+// Compares the version pair <major, minor> to <toMajor, toMinor> and returns the result
+// @returns: OLDER when <major, minor> is OLDER than <toMajor, toMinor>
+VersionCheckResult CompareVersion(int major, int minor, int toMajor, int toMinor);
+
 /*!
 Darkmod LAS
 */

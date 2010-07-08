@@ -47,6 +47,26 @@ namespace fs = boost::filesystem;
 
 class idAI;
 
+VersionCheckResult CompareVersion(int major, int minor, int toMajor, int toMinor)
+{
+	// Equality check
+	if (major == toMajor && minor == toMinor) return EQUAL;
+
+	// Not equal, find the difference
+	if (major < toMajor)
+	{
+		return OLDER; // major version is older
+	}
+	else if (major > toMajor)
+	{
+		return NEWER;
+	}
+	else // Major version equal, check minor versions
+	{
+		return (minor < toMinor) ? OLDER : NEWER;
+	}
+}
+
 // Name of the logfile to use for Dark Mod logging
 #ifdef __linux__
 const char* DARKMOD_LOGFILE = "/tmp/DarkMod.log";

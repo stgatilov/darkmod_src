@@ -323,7 +323,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 bool CModMenu::PerformVersionCheck(const CMissionInfoPtr& mission, idUserInterface* gui)
 {
 	// Check the required TDM version of this FM
-	if (mission->requiredMajor > TDM_VERSION_MAJOR || mission->requiredMinor > TDM_VERSION_MINOR)
+	if (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, mission->requiredMajor, mission->requiredMinor) == OLDER)
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
 			va("Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running %s v%d.%02d. Please run the tdm_update application to update your installation.",
