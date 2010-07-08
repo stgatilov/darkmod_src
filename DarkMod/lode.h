@@ -39,6 +39,7 @@ struct lode_class_t {
 											// "lode_floor" "0" to disable, then entities will be positioned
 											// at "z" where the are in the editor
 	bool					stack;			// if true, the entities can stack on top of each other
+	bool					noinhibit;		// if true, the entities of this class will not be inhibited
 	int						nocollide;		// should this entity collide with:
    											// 1 other auto-generated entities from the same class?
 											// 2 other auto-generated entities (other classes)

@@ -134,6 +134,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Classes[i].falloff );
 		savefile->WriteBool( m_Classes[i].floor );
 		savefile->WriteBool( m_Classes[i].stack );
+		savefile->WriteBool( m_Classes[i].noinhibit );
 		savefile->WriteVec3( m_Classes[i].size );
 	}
 	savefile->WriteInt( m_Inhibitors.Num() );
@@ -201,6 +202,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Classes[i].falloff );
 		savefile->ReadBool( m_Classes[i].floor );
 		savefile->ReadBool( m_Classes[i].stack );
+		savefile->ReadBool( m_Classes[i].noinhibit );
 		savefile->ReadVec3( m_Classes[i].size );
 	}
     savefile->ReadInt( num );
@@ -270,16 +272,18 @@ Lode::Spawn
 */
 void Lode::Spawn( void ) {
 
-	// the Lode itself is sneaky and hides itself
-	Hide();
-
-	// And is nonsolid, too!
-	GetPhysics()->SetContents( 0 );
-
-	/*
 	idClipModel *clip = GetPhysics()->GetClipModel();
 	idVec3 o = clip->GetOrigin();
-	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f.\n", GetName(), o.x, o.y, o.z );
+	idVec3 s = clip->GetBounds().GetSize();
+	idAngles a = clip->GetAxis().ToAngles();
+	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
+
+//	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
+//	idVec3 o = trace->GetOrigin();
+//	idVec3 s = trace->GetBounds().GetSize();
+//	idAngles a = trace->GetAxis().ToAngles();
+
+//	gameLocal.Printf( "LODE %s: Tracemodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
 	idBounds bounds = renderEntity.bounds;
 	idVec3 size = bounds.GetSize();
@@ -287,6 +291,7 @@ void Lode::Spawn( void ) {
 
 	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
 
+/*
 	// how to get the current model (rough outline)
 
    get number of surfaces:
@@ -304,6 +309,12 @@ void Lode::Spawn( void ) {
 	idTraceModel trace = idTraceModel();
 	trace.SetupPolygon( vertices, int );
 */
+
+	// the Lode itself is sneaky and hides itself
+	Hide();
+
+	// And is nonsolid, too!
+	GetPhysics()->SetContents( 0 );
 
 	m_fLODBias = cv_lod_bias.GetFloat();
 
@@ -343,12 +354,14 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
 	// the entity already between spawning and us querying the info:
 	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
-	// these are ignored for pseudo classes:
+	// these are ignored for pseudo classes (e.g. watch_breathren):
 	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
 	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
+	LodeClass.noinhibit = ent->spawnArgs.GetBool( "lode_noinhibit", "0" );
+
 	LodeClass.spacing = ent->spawnArgs.GetFloat( "lode_spacing", "0" );
 
-	// too randomly sink entities into the floor
+	// to randomly sink entities into the floor
 	LodeClass.sink_min = ent->spawnArgs.GetFloat( "lode_sink_min", spawnArgs.GetString( "sink_min", "0") );
 	LodeClass.sink_max = ent->spawnArgs.GetFloat( "lode_sink_max", spawnArgs.GetString( "sink_max", "0") );
 	if (LodeClass.sink_max < LodeClass.sink_min)
@@ -847,7 +860,7 @@ void Lode::PrepareEntities( void )
 				if (m_Classes[i].sink_max > 0)
 				{
 					// TODO: use a gravity normal
-					float sink = m_Classes[i].sink_min + RandomFloat() * m_Classes[i].sink_max;
+					float sink = m_Classes[i].sink_min + RandomFloat() * ( m_Classes[i].sink_max - m_Classes[i].sink_min );
 					// modify the z-axis according to the sink-value
 					LodeEntity.origin.z -= sink;
 				}
@@ -880,24 +893,27 @@ void Lode::PrepareEntities( void )
 
 					testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
 
-					bool inhibited = false;
-					for (int k = 0; k < m_Inhibitors.Num(); k++)
+					// only if this class can be inhibited
+					if (! m_Classes[i].noinhibit)
 					{
-						// TODO: do a faster bounds check first?
-
-						// this test ensures that entities "peeking" into the inhibitor will be inhibited, too
-						if (testBox.IntersectsBox( m_Inhibitors[k].box ) )
+						bool inhibited = false;
+						for (int k = 0; k < m_Inhibitors.Num(); k++)
 						{
-							// inside an inhibitor, skip
-							gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying again.\n", GetName(), k );
-							inhibited = true;
-							break;							
+							// TODO: do a faster bounds check first?
+							// this test ensures that entities "peeking" into the inhibitor will be inhibited, too
+							if (testBox.IntersectsBox( m_Inhibitors[k].box ) )
+							{
+								// inside an inhibitor, skip
+								gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying again.\n", GetName(), k );
+								inhibited = true;
+								break;							
+							}
 						}
-					}
 
-					if ( inhibited )
-					{
-						continue;
+						if ( inhibited )
+						{
+							continue;
+						}
 					}
 
 					// check the min. spacing constraint
