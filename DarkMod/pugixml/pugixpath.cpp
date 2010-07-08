@@ -1,4 +1,4 @@
-/**
+/**__USE_ISOC99
  * pugixml parser - version 0.5
  * --------------------------------------------------------
  * Copyright (C) 2006-2009, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
@@ -33,6 +33,16 @@
 #	pragma warning(disable: 4127) // conditional expression is constant
 #	pragma warning(disable: 4702) // unreachable code
 #	pragma warning(disable: 4996) // this function or variable may be unsafe
+#endif
+
+// greebo: Compile fix for gcc. The C99 macros are disabled in the Linux build for some reason
+// I just copied that macro over from <math.h>
+#if defined(__linux__) && !defined(isfinite)
+#  define isfinite(x) \
+     (sizeof (x) == sizeof (float)					      \
+      ? __finitef (x)							      \
+      : sizeof (x) == sizeof (double)					      \
+      ? __finite (x) : __finitel (x))
 #endif
 
 namespace
