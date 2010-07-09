@@ -34,7 +34,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // then we favour to spawn big(ger) entities over smaller ones
 #define SPAWN_SMALL_LIMIT (MAX_GENTITIES - 500)
 
-// if the number of entities is higher than this, then we no longer spawn entities
+// if the number of entities is higher than this, we no longer spawn entities
 #define SPAWN_LIMIT (MAX_GENTITIES - 100)
 
 const idEventDef EV_Deactivate( "deactivate", "e" );
@@ -136,6 +136,15 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].stack );
 		savefile->WriteBool( m_Classes[i].noinhibit );
 		savefile->WriteVec3( m_Classes[i].size );
+
+		savefile->WriteFloat( m_Classes[i].defaultProb );
+
+		savefile->WriteInt( m_Classes[i].materials.Num() );
+		for( int j = 0; j < m_Classes[i].materials.Num(); j++ )
+		{
+			savefile->WriteString( m_Classes[i].materials[j].name );
+			savefile->WriteFloat( m_Classes[i].materials[j].probability );
+		}
 	}
 	savefile->WriteInt( m_Inhibitors.Num() );
 	for( int i = 0; i < m_Inhibitors.Num(); i++ )
@@ -204,6 +213,17 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].stack );
 		savefile->ReadBool( m_Classes[i].noinhibit );
 		savefile->ReadVec3( m_Classes[i].size );
+
+		savefile->ReadFloat( m_Classes[i].defaultProb );
+
+		savefile->ReadInt( num );
+		m_Classes[i].materials.Clear();
+		m_Classes[i].materials.SetNum( num );
+		for( int j = 0; j < num; j++ )
+		{
+			savefile->ReadString( m_Classes[i].materials[j].name );
+			savefile->ReadFloat( m_Classes[i].materials[j].probability );
+		}
 	}
     savefile->ReadInt( num );
 	m_Inhibitors.Clear();
@@ -346,6 +366,7 @@ Lode::addClassFromEntity - take an entity as template and add a class from it. R
 float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 {
 	lode_class_t			LodeClass;
+	lode_material_t			LodeMaterial;
 	idStr falloff;
 
 	LodeClass.score = iEntScore;
@@ -428,6 +449,33 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 		LodeClass.cullDist *= LodeClass.cullDist;
 		LodeClass.spawnDist *= LodeClass.spawnDist;
 	}
+
+	LodeClass.materials.Clear();
+
+	// The default probability for all materials not matching anything in materials:
+	LodeClass.defaultProb = ent->spawnArgs.GetFloat( "lode_probability", spawnArgs.GetString( "probability", "1.0" ) );
+
+	// all probabilities for the different materials
+	const idKeyValue *kv = ent->spawnArgs.MatchPrefix( "lode_material_", NULL );
+	while( kv ) {
+		// "lode_material_grass" => "grass"
+		LodeMaterial.name = kv->GetKey().Mid( 14, kv->GetKey().Length() - 14 );
+		// "lode_material_grass" "1.0" => 1.0
+		LodeMaterial.probability = ent->spawnArgs.GetFloat( kv->GetKey(), "1.0");
+		if (LodeMaterial.probability < 0 || LodeMaterial.probability > 1.0)
+		{
+			gameLocal.Warning( "LODE %s: Invalid probability %0.2f (should be 0 .. 1.0) for material %s, ignoring it.\n",
+					GetName(), LodeMaterial.probability, LodeMaterial.name.c_str() );
+		}
+		else
+		{
+			gameLocal.Warning( "LODE %s: Using material %s, probability %0.2f (%s)\n",
+					GetName(), LodeMaterial.name.c_str(), LodeMaterial.probability, kv->GetKey().c_str() );
+			LodeClass.materials.Append( LodeMaterial );
+		}
+		kv = ent->spawnArgs.MatchPrefix( "lode_material_", kv );
+	}
+
 	m_Classes.Append ( LodeClass );
 
 	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
@@ -843,6 +891,99 @@ void Lode::PrepareEntities( void )
 				// add origin of the LODE
 				LodeEntity.origin += origin;
 
+				// should only appear on certain ground texture?
+				if (m_Classes[i].materials.Num() > 0)
+				{
+					// end of the trace (downwards the length from entity class position to bottom of LODE)
+					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = origin.z - size.z;
+					// TODO: adjust for different "down" directions
+					//vTest *= GetGravityNormal();
+
+					trace_t trTest;
+					idVec3 traceStart = LodeEntity.origin;
+
+					//gameLocal.Printf ("LODE %s: TracePoint start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f\n",
+					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z );
+					gameLocal.clip.TracePoint( trTest, traceStart, traceEnd, 
+							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
+
+					// Didn't hit anything?
+					if ( trTest.fraction < 1.0f )
+					{
+						const idMaterial *mat = trTest.c.material;
+
+						surfTypes_t type = mat->GetSurfaceType();
+						idStr descr = "";
+
+						// in case the description is empty
+						switch (type)
+						{
+							case SURFTYPE_METAL:
+								descr = "metal";
+								break;
+							case SURFTYPE_STONE:
+								descr = "stone";
+								break;
+							case SURFTYPE_FLESH:
+								descr = "flesh";
+								break;
+							case SURFTYPE_WOOD:
+								descr = "wood";
+								break;
+							case SURFTYPE_CARDBOARD:
+								descr = "cardboard";
+								break;
+							case SURFTYPE_LIQUID:
+								descr = "liquid";
+								break;
+							case SURFTYPE_GLASS:
+								descr = "glass";
+								break;
+							case SURFTYPE_PLASTIC:
+								descr = "plastic";
+								break;
+							case SURFTYPE_15:
+								descr = mat->GetDescription();
+								break;
+							default:
+								break;
+						}
+
+						// hit something
+						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s)\n",
+						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z, descr.c_str() );
+
+						float probability = m_Classes[i].defaultProb;		// the default if nothing hits
+
+						// see if this entity is inhibited by this material
+						for (int e = 0; e < m_Classes[i].materials.Num(); e++)
+						{
+							// starts with the same as the one we look at?
+							if ( m_Classes[i].materials[e].name.Find( descr ) == 0 )
+							{
+								probability = m_Classes[i].materials[e].probability;
+
+								//gameLocal.Printf ("LODE %s: Material (%s) matches class material %i (%s), using probability %0.2f\n",
+								//		GetName(), descr.c_str(), e, m_Classes[i].materials[e].name.c_str(), probability); 
+								// found a match, break
+								break;
+							}	
+						}
+						// gameLocal.Printf ("LODE %s: Using material probability %0.2f.\n", GetName(), probability );
+						// check against the probability (0 => always skip, 1.0 - never skip, 0.5 - skip half)
+						float r = RandomFloat();
+						if (r > probability)
+						{
+							gameLocal.Printf ("LODE %s: Skipping placement on material %s, %0.2f > %0.2f.\n", GetName(), descr.c_str(), r, probability);
+							continue;
+						}
+					}
+					else
+					{
+						// didn't hit anything, floating in air?
+					}
+				}	
+
 				if (m_Classes[i].floor)
 				{
 					gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
@@ -863,9 +1004,9 @@ void Lode::PrepareEntities( void )
 
 					idVec3 traceStart = LodeEntity.origin;
 
-					gameLocal.Printf ("LODE %s: start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
-							GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
-						   	class_bounds.ToString()	); 
+					//gameLocal.Printf ("LODE %s: TraceBounds start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
+					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
+					//	   	class_bounds.ToString()	); 
 					gameLocal.clip.TraceBounds( trTest, traceStart, traceEnd, class_bounds, 
 							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
 
@@ -873,8 +1014,8 @@ void Lode::PrepareEntities( void )
 					if ( trTest.fraction != 1.0f )
 					{
 						// hit something
-						gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
-							GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
+						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
+						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
 						LodeEntity.origin = trTest.endpos;
 						LodeEntity.angles = trTest.endAxis.ToAngles();
 

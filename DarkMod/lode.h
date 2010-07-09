@@ -20,8 +20,21 @@
   
   Automatically creates/culls entities based on distance from player.
 
+  Can spawn entities based on templates in random places, or manage already
+  existing entities. The rules where to spawn what are quite flexible, either
+  random, with distribution functions, based on underlying texture etc.
+
+  Inhibitor entities can also be placed, these inhibit spawning of certain
+  entity classes (or all entitites).
+
 ===============================================================================
 */
+
+// Defines one material class that modulates how often entities appear on it:
+struct lode_material_t {
+	idStr					name;			// a part, like "grass", or the full name like "sand_dark"
+	float					probability;	// 0 .. 1.0
+};
 
 // Defines one entity class to be spawned/culled
 struct lode_class_t {
@@ -40,6 +53,10 @@ struct lode_class_t {
 											// at "z" where the are in the editor
 	bool					stack;			// if true, the entities can stack on top of each other
 	bool					noinhibit;		// if true, the entities of this class will not be inhibited
+	float					defaultProb;	// Probabiliy with that entity class will appear. Only used if
+											// materialNames is not empty, and then used as the default when
+											// no entry in this list matches the texture the entity stands on.
+	idList<lode_material_t>	materials;		// List of material name parts that we can match against
 	int						nocollide;		// should this entity collide with:
    											// 1 other auto-generated entities from the same class?
 											// 2 other auto-generated entities (other classes)
