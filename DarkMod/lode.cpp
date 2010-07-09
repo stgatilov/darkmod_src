@@ -355,7 +355,7 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	// the entity already between spawning and us querying the info:
 	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
 	// these are ignored for pseudo classes (e.g. watch_breathren):
-	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", "0" );
+	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", spawnArgs.GetString( "floor", "0") );
 	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
 	LodeClass.noinhibit = ent->spawnArgs.GetBool( "lode_noinhibit", "0" );
 
@@ -1068,7 +1068,8 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 		// move to right place
 		args.SetVector("origin", ent->origin );
 
-		// TODO: set skin
+		// TODO: set random skin
+	    args.Set("skin", lclass->skin );
 
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");

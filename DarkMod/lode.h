@@ -204,7 +204,7 @@ private:
 	* turning on rainclouds high above the player.
 	**/
 	bool				m_bDistCheckXYOnly;
-	
+
 	/**
 	* Timestamp and interval between distance checks, in milliseconds
 	**/
