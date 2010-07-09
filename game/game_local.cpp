@@ -656,6 +656,7 @@ void idGameLocal::Shutdown( void ) {
 
 	// Clear http connection
 	m_HttpConnection.reset();
+	m_GuiMessages.Clear();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
