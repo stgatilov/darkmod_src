@@ -190,7 +190,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib"
-				IgnoreDefaultLibraryNames="LIBCMT.LIB"
+				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"

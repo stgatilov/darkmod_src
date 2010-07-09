@@ -537,7 +537,17 @@ void idGameLocal::CheckTDMVersion(idUserInterface* ui)
 
 	req->Perform();
 
-	// TODO: Check Request Status
+	// Check Request Status
+	if (req->GetStatus() != CHttpRequest::OK)
+	{
+		Printf("Connection Error.\n");
+
+		msg.title = "Version Check Failed";
+		msg.message = va("Cannot connect to server.");
+
+		AddMainMenuMessage(msg);
+		return;
+	}
 
 	XmlDocumentPtr doc = req->GetResultXml();
 
