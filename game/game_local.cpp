@@ -508,12 +508,36 @@ void idGameLocal::Init( void ) {
 	// Check the interaction.vfp settings
 	UpdateInteractionShader();
 
-	/*CHttpConnection conn;
+	// Construct a new http connection object
+	if (cv_tdm_allow_http_access.GetBool())
+	{
+		m_HttpConnection = CHttpConnectionPtr(new CHttpConnection);
+	}
+}
+
+void idGameLocal::CheckTDMVersion(idUserInterface* ui)
+{
+	GuiMessage msg;
+	msg.type = GuiMessage::MSG_OK;
+	msg.okCmd = "close_msg_box";
+
+	if (m_HttpConnection == NULL) 
+	{
+		Printf("HTTP requests disabled, skipping TDM version check.\n");
+
+		msg.title = "Version Check Failed";
+		msg.message = va("HTTP Requests have been disabled,\n cannot check for updates.");
+
+		AddMainMenuMessage(msg);
+		return;
+	}
 
 	Printf("Checking http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml...\n");
-	CHttpRequestPtr req = conn.CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml");
+	CHttpRequestPtr req = m_HttpConnection->CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml");
 
 	req->Perform();
+
+	// TODO: Check Request Status
 
 	XmlDocumentPtr doc = req->GetResultXml();
 
@@ -523,26 +547,34 @@ void idGameLocal::Init( void ) {
 	{
 		int major = node.node().attribute("major").as_int();
 		int minor = node.node().attribute("minor").as_int();
-		
-		Printf("Most recent TDM Version is: %d.%02d\n", major, minor);
+
+		msg.title = va("Most recent TDM Version is: %d.%02d\n", major, minor);
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
 		{
 		case EQUAL:
-			Printf("Your version %d.%02d is up to date.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va("Your version %d.%02d is up to date.", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case OLDER:
-			Printf("Your version %d.%02d needs updating.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va("Your version %d.%02d needs updating.", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case NEWER:
-			Printf("Your version %d.%02d is newer than the most recently published one.\n", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va("Your version %d.%02d is newer than the most recently published one.", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		};
 	}
 	else
 	{
-		Printf("Couldn't find current version tag.\n");
-	}*/
+		msg.title = "Version Check Failed";
+		msg.message = va("Couldn't find current version tag.");
+	}
+
+	AddMainMenuMessage(msg);
+}
+
+void idGameLocal::AddMainMenuMessage(const GuiMessage& message)
+{
+	m_GuiMessages.Append(message);
 }
 
 void idGameLocal::UpdateInteractionShader()
@@ -611,6 +643,9 @@ void idGameLocal::Shutdown( void ) {
 	// Destroy the mission manager
 	m_MissionManager->Shutdown();
 	m_MissionManager = CMissionManagerPtr();
+
+	// Clear http connection
+	m_HttpConnection.reset();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
@@ -3376,6 +3411,50 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 	}
 }
 
+void idGameLocal::HandleGuiMessages(idUserInterface* ui)
+{
+	if (m_GuiMessages.Num() == 0) return;
+
+	const GuiMessage& msg = m_GuiMessages[0];
+
+	ui->SetStateBool("MsgBoxVisible", true);
+
+	ui->SetStateString("MsgBoxTitle", msg.title);
+	ui->SetStateString("MsgBoxText", msg.message);
+
+	switch (msg.type)
+	{
+	case GuiMessage::MSG_OK:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
+		ui->SetStateBool("MsgBoxRightButtonVisible", false);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
+		ui->SetStateString("MsgBoxMiddleButtonText", "OK");
+		break;
+	case GuiMessage::MSG_OK_CANCEL:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
+		ui->SetStateBool("MsgBoxRightButtonVisible", true);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
+
+		ui->SetStateString("MsgBoxLeftButtonText", "OK");
+		ui->SetStateString("MsgBoxRightButtonText", "Cancel");
+		break;
+	case GuiMessage::MSG_YES_NO:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
+		ui->SetStateBool("MsgBoxRightButtonVisible", true);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
+
+		ui->SetStateString("MsgBoxLeftButtonText", "Yes");
+		ui->SetStateString("MsgBoxRightButtonText", "No");
+		break;
+	};
+
+	ui->SetStateString("MsgBoxRightButtonCmd", msg.negativeCmd);
+	ui->SetStateString("MsgBoxLeftButtonCmd", msg.positiveCmd);
+	ui->SetStateString("MsgBoxMiddleButtonCmd", msg.okCmd);
+
+	m_GuiMessages.RemoveIndex(0);
+}
+
 /*
 ================
 idGameLocal::HandleMainMenuCommands
@@ -3436,6 +3515,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			// Clear the string again
 			m_guiError.Empty();
+		}
+
+		// Check messages
+		if (m_GuiMessages.Num() > 0)
+		{
+			HandleGuiMessages(gui);
 		}
 
 		// Propagate the video CVARs to the GUI
@@ -3626,6 +3711,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "mainmenu_init")
 	{
 		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+	}
+	else if (cmd == "check_tdm_version")
+	{
+		CheckTDMVersion(gui);
+	}
+	else if (cmd == "close_msg_box")
+	{
+		gui->SetStateBool("MsgBoxVisible", false);
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());

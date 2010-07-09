@@ -201,6 +201,8 @@ class CGrabber;
 class CEscapePointManager;
 class CMissionManager;
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
+class CHttpConnection;
+typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 
 // Forward declare the Conversation System
 namespace ai { 
@@ -281,6 +283,26 @@ typedef enum {
 	GAMESTATE_COMPLETED,			// greebo: Active during "Mission Complete" (TDM)
 	GAMESTATE_SHUTDOWN				// inside MapShutdown().  clearing memory.
 } gameState_t;
+
+// Message type for user interaction in the main menu
+struct GuiMessage
+{
+	idStr title;
+	idStr message;
+	
+	enum Type
+	{
+		MSG_OK,
+		MSG_YES_NO,
+		MSG_OK_CANCEL,
+	};
+
+	Type type;
+
+	idStr positiveCmd;	// which "cmd" to execute on OK / Yes
+	idStr negativeCmd;	// which "cmd" to execute on Cancel / No
+	idStr okCmd;		// which "cmd" to execute on OK (only for MSG_OK)
+};
 
 typedef struct {
 	idEntity	*ent;
@@ -491,6 +513,8 @@ public:
 	 */
 	mutable idStr			m_guiError;
 
+	mutable idList<GuiMessage>	m_GuiMessages;
+
 	/**
 	* Pointer to global AI Relations object
 	**/
@@ -522,6 +546,9 @@ public:
 	 * greebo: This timer keeps track of the actual gameplay time.
 	 */
 	GamePlayTimer m_GamePlayTimer;
+
+	// The singleton connection object
+	CHttpConnectionPtr		m_HttpConnection;
 	
 	/**
 	* Temporary storage of the walkspeed.  This is a workaround
@@ -855,6 +882,12 @@ public:
 	 */
 	void					CheckSDKSignals();
 	void					AddSDKSignal(idEntity *oObject);
+
+	// Checks the TDM version
+	void					CheckTDMVersion(idUserInterface* ui);
+
+	void					AddMainMenuMessage(const GuiMessage& message);
+	void					HandleGuiMessages(idUserInterface* ui);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
