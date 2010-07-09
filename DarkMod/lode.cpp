@@ -838,8 +838,6 @@ void Lode::PrepareEntities( void )
 				}
 
 				// Rotate around our rotation axis (to support rotated LODE brushes)
-				// for random placement, this does not matter, but f.i. for grid placement
-				// we need to rotate the initialposition to rotate the grid
 				LodeEntity.origin *= axis;
 
 				// add origin of the LODE
@@ -847,8 +845,53 @@ void Lode::PrepareEntities( void )
 
 				if (m_Classes[i].floor)
 				{
-					// TODO: spawn entity, use GetFloorPos(); reposition, then hide?
-					gameLocal.Printf( "LODE %s: Flooring entity %i.\n", GetName(), j );
+					gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
+
+					// end of the trace (downwards the length from entity class position to bottom of LODE)
+					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = origin.z - size.z;
+					// TODO: adjust for different "down" directions
+					//vTest *= GetGravityNormal();
+
+					// bounds of the class entity
+					idVec3 b_1 = - m_Classes[i].size / 2;
+					idVec3 b_2 = m_Classes[i].size / 2;
+					// assume the entity origin is at the entity bottom
+					b_1.z = 0;
+					b_2.z = m_Classes[i].size.z;
+					idBounds class_bounds = idBounds( b_1, b_2 );
+					trace_t trTest;
+
+					idVec3 traceStart = LodeEntity.origin;
+
+					gameLocal.Printf ("LODE %s: start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
+							GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
+						   	class_bounds.ToString()	); 
+					gameLocal.clip.TraceBounds( trTest, traceStart, traceEnd, class_bounds, 
+							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
+
+					// Didn't hit anything?
+					if ( trTest.fraction != 1.0f )
+					{
+						// hit something
+						gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
+							GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
+						LodeEntity.origin = trTest.endpos;
+						LodeEntity.angles = trTest.endAxis.ToAngles();
+
+						// TODO: If the model bounds are quite big, but the model itself is "thin"
+						// at the bottom (like a tree with a trunk), then the model will "float"
+						// in the air. A "min_sink" value can fix this, but only for small inclines.
+						// A pine on a 30° slope might still hover 12 units in the air. Let the mapper
+						// override the bounds used for collision checks? For instance using a cylinder
+						// would already help, using a smaller diameter would help even more.
+						// Or could we trace agains the real model?
+					}
+					else
+					{
+						// hit nothing
+						gameLocal.Printf ("LODE %s: Hit nothing at %0.2f (%0.2f %0.2f %0.2f)\n",
+							GetName(), trTest.fraction, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z );
+					}
 				}
 				else
 				{
