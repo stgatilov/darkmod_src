@@ -469,8 +469,8 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 		}
 		else
 		{
-			gameLocal.Warning( "LODE %s: Using material %s, probability %0.2f (%s)\n",
-					GetName(), LodeMaterial.name.c_str(), LodeMaterial.probability, kv->GetKey().c_str() );
+			//gameLocal.Warning( "LODE %s: Using material %s, probability %0.2f (%s)\n",
+			//		GetName(), LodeMaterial.name.c_str(), LodeMaterial.probability, kv->GetKey().c_str() );
 			LodeClass.materials.Append( LodeMaterial );
 		}
 		kv = ent->spawnArgs.MatchPrefix( "lode_material_", kv );
@@ -950,8 +950,8 @@ void Lode::PrepareEntities( void )
 						}
 
 						// hit something
-						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s)\n",
-						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z, descr.c_str() );
+						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s (%s))\n",
+						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z, descr.c_str(), mat->GetName() );
 
 						float probability = m_Classes[i].defaultProb;		// the default if nothing hits
 
@@ -1260,7 +1260,7 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 		// disable LOD checks on entities (we take care of this)
 		if (managed)
 		{
-			//args.Set("dist_check_period", "0");
+			args.Set("dist_check_period", "0");
 		}
 
 		gameLocal.SpawnEntityDef( args, &ent2 );
