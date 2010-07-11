@@ -26,7 +26,15 @@ CDownloadMenu::CDownloadMenu() :
 
 void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 {
-	if (cmd == "refreshAvailableMissionList")
+	if (cmd == "mainmenu_heartbeat")
+	{
+		// Update download progress
+		if (_selectedMissions.Num() > 0)
+		{
+			UpdateDownloadProgress(gui);
+		}
+	}
+	else if (cmd == "refreshAvailableMissionList")
 	{
 		gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog in any case
 
@@ -142,7 +150,10 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 
 		CDownloadPtr download(new CDownload(url, targetPath));
 
-		gameLocal.m_DownloadManager->AddDownload(download);
+		int id = gameLocal.m_DownloadManager->AddDownload(download);
+
+		// Store this ID
+		_downloads[missionIndex] = id;
 	}
 }
 
@@ -189,4 +200,55 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 	gui->HandleNamedEvent("UpdateAvailableMissionColours");
 	gui->HandleNamedEvent("UpdateSelectedMissionColours");
+}
+
+void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
+{
+	int numSelectedMissionsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
+
+	// Missions in the download queue
+	for (int i = 0; i < numSelectedMissionsPerPage; ++i)
+	{
+		// Apply page offset
+		int listIndex = i + _selectedListTop;
+		bool listItemExists = listIndex < _selectedMissions.Num();
+
+		// Get the referenced mission index, -1 ==> no mission
+		int missionIndex = listItemExists ? _selectedMissions[listIndex] : -1;
+
+		if (!listItemExists || missionIndex == -1)
+		{
+			gui->SetStateString(va("dl_mission_progress_%d", i), "");
+			continue;
+		}
+
+		// Find the download ID
+		ActiveDownloads::const_iterator it = _downloads.find(missionIndex);
+
+		if (it == _downloads.end())
+		{
+			gui->SetStateString(va("dl_mission_progress_%d", i), "queued ");
+			continue;
+		}
+		
+		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(it->second);
+
+		if (download == NULL) continue;
+
+		switch (download->GetStatus())
+		{
+		case CDownload::NOT_STARTED_YET:
+			gui->SetStateString(va("dl_mission_progress_%d", i), "queued ");
+			break;
+		case CDownload::FAILED:
+			gui->SetStateString(va("dl_mission_progress_%d", i), "failed ");
+			break;
+		case CDownload::IN_PROGRESS:
+			gui->SetStateString(va("dl_mission_progress_%d", i), "0%");
+			break;
+		case CDownload::SUCCESS:
+			gui->SetStateString(va("dl_mission_progress_%d", i), "100%");
+			break;
+		};
+	}
 }
