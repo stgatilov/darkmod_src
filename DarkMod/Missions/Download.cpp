@@ -61,6 +61,11 @@ void CDownload::Stop()
 	}
 }
 
+double CDownload::GetProgressFraction()
+{
+	return _request != NULL ? _request->GetProgressFraction() : 0.0;
+}
+
 void CDownload::Perform()
 {
 	_request = gameLocal.m_HttpConnection->CreateRequest(_url.c_str(), _destFilename.c_str());

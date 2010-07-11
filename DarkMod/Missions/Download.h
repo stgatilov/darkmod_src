@@ -58,6 +58,8 @@ public:
 	// The current status of this download
 	Status GetStatus();
 
+	double GetProgressFraction();
+
 private:
 	// Thread entry point
 	void Perform();

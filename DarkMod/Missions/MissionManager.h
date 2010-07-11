@@ -27,6 +27,7 @@ struct DownloadableMission
 	float sizeMB;
 	idStr releaseDate;
 	idStr language;
+	int version;
 
 	idStringList downloadLocations;
 };

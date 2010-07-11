@@ -26,7 +26,8 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_url(url),
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET),
-	_cancelFlag(false)
+	_cancelFlag(false),
+	_progress(0)
 {
 	Construct();
 }
@@ -37,7 +38,8 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const 
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET),
 	_destFilename(destFilename),
-	_cancelFlag(false)
+	_cancelFlag(false),
+	_progress(0)
 {
 	Construct();
 }
@@ -76,6 +78,8 @@ void CHttpRequest::Construct()
 
 void CHttpRequest::Perform()
 {
+	_progress = 0;
+
 	// Check target file
 	if (!_destFilename.empty())
 	{
@@ -100,6 +104,7 @@ void CHttpRequest::Perform()
 		{
 		case CURLE_OK:
 			_status = OK;
+			_progress = 1.0;
 			break;
 		default:
 			_status = FAILED;
@@ -122,6 +127,11 @@ CHttpRequest::RequestStatus CHttpRequest::GetStatus()
 	return _status;
 }
 
+double CHttpRequest::GetProgressFraction()
+{
+	return _progress;
+}
+
 std::string CHttpRequest::GetResultString()
 {
 	return _buffer.empty() ? "" : std::string(&_buffer.front());
@@ -134,6 +144,34 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 	doc->load(GetResultString().c_str());
 
 	return doc;
+}
+
+void CHttpRequest::UpdateProgress()
+{
+	double size;
+	double downloaded;
+	CURLcode result = curl_easy_getinfo(_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size);
+
+	if (result != CURLE_OK) 
+	{
+		_progress = 0;
+		return;
+	}
+
+	result = curl_easy_getinfo(_handle, CURLINFO_SIZE_DOWNLOAD, &downloaded);
+
+	if (result != CURLE_OK) 
+	{
+		_progress = 0;
+		return;
+	}
+
+	_progress = downloaded / size;
+
+	if (_progress > 1.0)
+	{
+		_progress = 1.0;
+	}
 }
 
 size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self)
@@ -162,6 +200,8 @@ size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, C
 		buf[buf.size() - 1] = 0;
 	}
 
+	self->UpdateProgress();
+
 	return static_cast<size_t>(bytesToCopy);
 }
 
@@ -176,6 +216,8 @@ size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHt
 	std::size_t bytesToCopy = size * nmemb;
 
 	self->_destStream.write(static_cast<const char*>(ptr), bytesToCopy);
+
+	self->UpdateProgress();
 
 	return static_cast<size_t>(bytesToCopy);
 }

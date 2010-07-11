@@ -62,6 +62,8 @@ private:
 	// True if we should cancel the download
 	bool _cancelFlag;
 
+	double _progress;
+
 public:
 	CHttpRequest(CHttpConnection& conn, const std::string& url);
 
@@ -78,6 +80,9 @@ public:
 
 	void Cancel();
 
+	// Between 0.0 and 1.0
+	double GetProgressFraction();
+
 	// Returns the result string
 	std::string GetResultString();
 
@@ -87,6 +92,8 @@ public:
 private:
 	// shared constructor code
 	void Construct();
+
+	void UpdateProgress();
 };
 typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
 

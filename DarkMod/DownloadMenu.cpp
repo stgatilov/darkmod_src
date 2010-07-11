@@ -244,10 +244,10 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 			gui->SetStateString(va("dl_mission_progress_%d", i), "failed ");
 			break;
 		case CDownload::IN_PROGRESS:
-			gui->SetStateString(va("dl_mission_progress_%d", i), "0%");
+			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.0f%s", download->GetProgressFraction()*100, "% "));
 			break;
 		case CDownload::SUCCESS:
-			gui->SetStateString(va("dl_mission_progress_%d", i), "100%");
+			gui->SetStateString(va("dl_mission_progress_%d", i), "100% ");
 			break;
 		};
 	}
