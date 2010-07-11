@@ -40,6 +40,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/RevisionTracker.h"
 #include "../DarkMod/Missions/MissionManager.h"
+#include "../DarkMod/Missions/DownloadManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
 
@@ -262,6 +263,7 @@ void idGameLocal::Clear( void )
 
 	m_ModMenu.reset();
 	m_DownloadMenu.reset();
+	m_DownloadManager.reset();
 	m_Shop.reset();
 
 	m_guiError.Clear();
@@ -479,6 +481,7 @@ void idGameLocal::Init( void ) {
 	m_RelationsManager = CRelationsPtr(new CRelations);
 	m_ModMenu = CModMenuPtr(new CModMenu);
 	m_DownloadMenu = CDownloadMenuPtr(new CDownloadMenu);
+	m_DownloadManager = CDownloadManagerPtr(new CDownloadManager);
 	m_ConversationSystem = ai::ConversationSystemPtr(new ai::ConversationSystem);
 	
 	// load the soundprop globals from the def file

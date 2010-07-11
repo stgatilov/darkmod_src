@@ -214,6 +214,8 @@ class CModMenu;
 typedef boost::shared_ptr<CModMenu> CModMenuPtr;
 class CDownloadMenu;
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
+class CDownloadManager;
+typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
 
 class CShop;
 typedef boost::shared_ptr<CShop> CShopPtr;
@@ -498,8 +500,11 @@ public:
 	 */
 	CModMenuPtr				m_ModMenu;
 
-	// The download menu manager
+	// The download menu handler
 	CDownloadMenuPtr		m_DownloadMenu;
+
+	// The download manager
+	CDownloadManagerPtr		m_DownloadManager;
 
 	/**
 	 * greebo: The mission manager instance, for manipulating mission PK4s and saving play info.

@@ -56,3 +56,8 @@ CHttpRequestPtr CHttpConnection::CreateRequest(const std::string& url)
 {
 	return CHttpRequestPtr(new CHttpRequest(*this, url));
 }
+
+CHttpRequestPtr CHttpConnection::CreateRequest(const std::string& url, const std::string& destFilename)
+{
+	return CHttpRequestPtr(new CHttpRequest(*this, url, destFilename));
+}

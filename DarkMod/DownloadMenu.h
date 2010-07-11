@@ -31,6 +31,9 @@ public:
 
 	// updates the GUI variables
 	void UpdateGUI(idUserInterface* gui);
+
+private:
+	void StartDownload(idUserInterface* gui);
 };
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 

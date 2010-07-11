@@ -2401,6 +2401,22 @@
 					Name="Missions"
 					>
 					<File
+						RelativePath=".\DarkMod\Missions\Download.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\Download.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\DownloadManager.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\DownloadManager.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Missions\MissionDB.cpp"
 						>
 					</File>

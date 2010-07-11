@@ -45,9 +45,10 @@ public:
 	idStr GetProxyPassword();
 
 	/**
-	 * Constructs a new HTTP request using the given URL
+	 * Constructs a new HTTP request using the given URL (optional: filename)
 	 */ 
 	CHttpRequestPtr CreateRequest(const std::string& url);
+	CHttpRequestPtr CreateRequest(const std::string& url, const std::string& destFilename);
 };
 typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 

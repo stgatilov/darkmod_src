@@ -27,6 +27,8 @@ struct DownloadableMission
 	float sizeMB;
 	idStr releaseDate;
 	idStr language;
+
+	idStringList downloadLocations;
 };
 typedef idList<DownloadableMission> DownloadableMissionList;
 

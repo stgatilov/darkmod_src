@@ -27,14 +27,36 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET)
 {
+	Construct();
+}
+
+CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const std::string& destFilename) :
+	_conn(conn),
+	_url(url),
+	_handle(NULL),
+	_status(NOT_PERFORMED_YET),
+	_destFilename(destFilename)
+{
+	Construct();
+}
+
+void CHttpRequest::Construct()
+{
 	// Init the curl session
 	_handle = curl_easy_init();
 
 	// specify URL to get
-	curl_easy_setopt(_handle, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(_handle, CURLOPT_URL, _url.c_str());
 
-	// send all data to this function
-	curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteMemoryCallback);
+	// Connect the callback
+	if (!_destFilename.empty())
+	{
+		curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteFileCallback);
+	}
+	else
+	{
+		curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteMemoryCallback);
+	}
 
 	// We pass ourselves as user data pointer to the callback function
 	curl_easy_setopt(_handle, CURLOPT_WRITEDATA, this);
@@ -52,7 +74,16 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 
 void CHttpRequest::Perform()
 {
+	// Check target file
+	if (!_destFilename.empty())
+	{
+		_destStream.open(_destFilename.c_str(), std::ofstream::out|std::ofstream::binary);
+	}
+
 	CURLcode result = curl_easy_perform(_handle);
+
+	_destStream.flush();
+	_destStream.close();
 
 	switch (result)
 	{
@@ -87,7 +118,7 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 	return doc;
 }
 
-size_t CHttpRequest::WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, CHttpRequest* self)
+size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self)
 {
 	// Needed size
 	std::size_t bytesToCopy = size * nmemb;
@@ -107,6 +138,16 @@ size_t CHttpRequest::WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, C
 	{
 		buf[buf.size() - 1] = 0;
 	}
+
+	return static_cast<size_t>(bytesToCopy);
+}
+
+size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self)
+{
+	// Needed size
+	std::size_t bytesToCopy = size * nmemb;
+
+	self->_destStream.write(static_cast<const char*>(ptr), bytesToCopy);
 
 	return static_cast<size_t>(bytesToCopy);
 }

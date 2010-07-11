@@ -169,6 +169,8 @@ Inventory/Cursor.cpp \
 Inventory/Inventory.cpp \
 Inventory/Item.cpp \
 Inventory/WeaponItem.cpp \
+Missions/Download.cpp \
+Missions/DownloadManager.cpp \
 Missions/MissionDB.cpp \
 Missions/MissionInfo.cpp \
 Missions/MissionInfoDecl.cpp \

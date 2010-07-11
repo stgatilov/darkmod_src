@@ -723,21 +723,29 @@ void CMissionManager::ReloadDownloadableMissions()
 	{
 		pugi::xml_node node = i->node();
 
-		DownloadableMission& mission = _downloadableMissions.Alloc();
+		DownloadableMission mission;
 
 		mission.title = node.attribute("title").value();
 		mission.sizeMB = node.attribute("size").as_float();
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();
 
-		// Only accept English downloadlinks
-		pugi::xpath_node_set downloadLocations = node.select_nodes("//downloadLocation");
+		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
 		for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
 		{
 			pugi::xml_node locNode = loc->node();
 
+			// Only accept English downloadlinks
+			if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
 
+			mission.downloadLocations.Append(locNode.attribute("url").value());
+		}
+
+		// Only add missions with valid locations
+		if (mission.downloadLocations.Num() > 0)
+		{
+			_downloadableMissions.Append(mission);
 		}
 	}
 }
