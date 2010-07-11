@@ -12,6 +12,7 @@
 
 #include "../Http/HttpRequest.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 /**
  * An object representing a single download
@@ -40,6 +41,9 @@ private:
 	// The corresponding HTTP request
 	CHttpRequestPtr _request;
 
+	typedef boost::shared_ptr<boost::thread> ThreadPtr;
+	ThreadPtr _thread;
+
 public:
 	CDownload(const idStr& url, const idStr& destFilename);
 
@@ -53,6 +57,10 @@ public:
 	
 	// The current status of this download
 	Status GetStatus();
+
+private:
+	// Thread entry point
+	void Perform();
 };
 typedef boost::shared_ptr<CDownload> CDownloadPtr;
 

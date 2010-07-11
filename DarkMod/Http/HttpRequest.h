@@ -36,7 +36,8 @@ public:
 		NOT_PERFORMED_YET,
 		OK,	// successful
 		IN_PROGRESS,
-		FAILED
+		FAILED,
+		ABORTED,
 	};
 
 private:
@@ -58,6 +59,9 @@ private:
 
 	std::ofstream _destStream;
 
+	// True if we should cancel the download
+	bool _cancelFlag;
+
 public:
 	CHttpRequest(CHttpConnection& conn, const std::string& url);
 
@@ -71,6 +75,8 @@ public:
 
 	// Perform the request
 	void Perform();
+
+	void Cancel();
 
 	// Returns the result string
 	std::string GetResultString();
