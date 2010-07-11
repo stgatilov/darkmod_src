@@ -18,6 +18,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../ZipLoader/ZipLoader.h"
 #include "../Inventory/Inventory.h"
 
+#include "../DarkMod/Http/HttpConnection.h"
+#include "../DarkMod/Http/HttpRequest.h"
+#include "../pugixml/pugixml.hpp"
+
 CMissionManager::CMissionManager() :
 	_missionDB(new CMissionDB)
 {}
@@ -674,4 +678,71 @@ void CMissionManager::UninstallMission()
 		// Log removal error
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s.\r", currentFMPath.string().c_str());
 	}
+}
+
+void CMissionManager::ReloadDownloadableMissions()
+{
+	_downloadableMissions.Clear();
+
+	if (gameLocal.m_HttpConnection == NULL) return;
+
+	// Form a new HTTP request
+	CHttpRequestPtr req = gameLocal.m_HttpConnection->CreateRequest("http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php");
+
+	req->Perform();
+
+	// Check Request Status
+	if (req->GetStatus() != CHttpRequest::OK)
+	{
+		gameLocal.Printf("Connection Error.\n");
+
+		GuiMessage msg;
+		msg.title = "Unable to contact Mission Archive";
+		msg.message = "Cannot connect to server.";
+		msg.type = GuiMessage::MSG_OK;
+		msg.okCmd = "close_msg_box";
+
+		gameLocal.AddMainMenuMessage(msg);
+		return;
+	}
+
+	XmlDocumentPtr doc = req->GetResultXml();
+
+	/* Example XML Snippet
+	
+	<mission id="11" title="Living Expenses" releaseDate="2010-01-02" size="5.9" author="Sonosuke">
+		<downloadLocation language="English" url="http://www.bloodgate.com/mirrors/tdm/pub/pk4/fms/living_expenses.pk4"/>
+		<downloadLocation language="German" url="http://www.bloodgate.com/mirrors/tdm/pub/pk4/fms/living_expenses_de.pk4"/>
+	</mission>
+	
+	*/
+
+	pugi::xpath_node_set nodes = doc->select_nodes("//tdm/availableMissions//mission");
+
+	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
+	{
+		pugi::xml_node node = i->node();
+
+		DownloadableMission& mission = _downloadableMissions.Alloc();
+
+		mission.title = node.attribute("title").value();
+		mission.sizeMB = node.attribute("size").as_float();
+		mission.author = node.attribute("author").value();
+		mission.releaseDate = node.attribute("releaseDate").value();
+
+		// Only accept English downloadlinks
+		pugi::xpath_node_set downloadLocations = node.select_nodes("//downloadLocation");
+
+		for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
+		{
+			pugi::xml_node locNode = loc->node();
+
+
+		}
+	}
+}
+
+const DownloadableMissionList& CMissionManager::GetDownloadableMissions() const
+{
+	return _downloadableMissions;
 }

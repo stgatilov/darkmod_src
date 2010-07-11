@@ -124,6 +124,7 @@ declxdata.cpp \
 DifficultyMenu.cpp \
 DifficultyManager.cpp \
 DifficultySettings.cpp \
+DownloadMenu.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
 fdchar.cpp \

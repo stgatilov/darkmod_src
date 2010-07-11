@@ -1866,6 +1866,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\DownloadMenu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\DownloadMenu.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\EscapePointEvaluator.cpp"
 					>
 				</File>

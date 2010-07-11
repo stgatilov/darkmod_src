@@ -34,6 +34,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/shop.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
+#include "../DarkMod/DownloadMenu.h"
 #include "../DarkMod/renderpipe.h"
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
@@ -260,6 +261,7 @@ void idGameLocal::Clear( void )
 	m_DifficultyManager.Clear();
 
 	m_ModMenu.reset();
+	m_DownloadMenu.reset();
 	m_Shop.reset();
 
 	m_guiError.Clear();
@@ -476,6 +478,7 @@ void idGameLocal::Init( void ) {
 	m_MissionData = CMissionDataPtr(new CMissionData);
 	m_RelationsManager = CRelationsPtr(new CRelations);
 	m_ModMenu = CModMenuPtr(new CModMenu);
+	m_DownloadMenu = CDownloadMenuPtr(new CDownloadMenu);
 	m_ConversationSystem = ai::ConversationSystemPtr(new ai::ConversationSystem);
 	
 	// load the soundprop globals from the def file
@@ -3734,6 +3737,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
 	m_ModMenu->HandleCommands(menuCommand, gui);
+	m_DownloadMenu->HandleCommands(cmd, gui);
 
 	/*if (cv_debug_mainmenu.GetBool())
 	{

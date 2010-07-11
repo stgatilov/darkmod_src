@@ -19,6 +19,17 @@ typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
 
 namespace fs = boost::filesystem;
 
+struct DownloadableMission
+{
+	idStr modName;
+	idStr title;
+	idStr author;
+	float sizeMB;
+	idStr releaseDate;
+	idStr language;
+};
+typedef idList<DownloadableMission> DownloadableMissionList;
+
 class CMissionManager
 {
 private:
@@ -35,6 +46,8 @@ private:
 
 	// The map which should be the starting point
 	idStr _curStartingMap;
+
+	DownloadableMissionList _downloadableMissions;
 
 public:
 	enum InstallResult
@@ -94,6 +107,12 @@ public:
 
 	// Uninstalls the currently installed FM, basically clearing our currentfm.txt
 	void UninstallMission();
+
+	// Checks online for available missions
+	void ReloadDownloadableMissions();
+
+	// Accessor to the downloadble mission list
+	const DownloadableMissionList& GetDownloadableMissions() const;
 
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand

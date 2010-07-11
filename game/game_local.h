@@ -212,6 +212,8 @@ namespace ai {
 
 class CModMenu;
 typedef boost::shared_ptr<CModMenu> CModMenuPtr;
+class CDownloadMenu;
+typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 
 class CShop;
 typedef boost::shared_ptr<CShop> CShopPtr;
@@ -495,6 +497,9 @@ public:
 	 * greebo: The fan-mission-handling class. Also contains GUI handling code.
 	 */
 	CModMenuPtr				m_ModMenu;
+
+	// The download menu manager
+	CDownloadMenuPtr		m_DownloadMenu;
 
 	/**
 	 * greebo: The mission manager instance, for manipulating mission PK4s and saving play info.
