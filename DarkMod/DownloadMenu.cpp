@@ -118,6 +118,22 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
+	else if (cmd == "onSelectedMissionScrollUp")
+	{
+		int itemsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
+		_selectedListTop -= itemsPerPage;
+
+		if (_selectedListTop < 0) _selectedListTop = 0;
+
+		UpdateGUI(gui);
+	}
+	else if (cmd == "onSelectedMissionScrollDown")
+	{
+		int itemsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
+		_selectedListTop += itemsPerPage;
+
+		UpdateGUI(gui);
+	}
 	else if (cmd == "onStartDownload")
 	{
 		StartDownload(gui);
@@ -193,6 +209,9 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateBool(va("dl_mission_avail_%d", i), listItemExists);
 		gui->SetStateString(va("dl_mission_name_%d", i), missionIndex != -1 ? missions[missionIndex].title : "");
 	}
+
+	gui->SetStateBool("dl_mission_scroll_up_visible", _selectedListTop > 0);
+	gui->SetStateBool("dl_mission_scroll_down_visible", _selectedListTop + numSelectedMissionsPerPage < _selectedMissions.Num());
 
 	gui->SetStateInt("dl_mission_count", _selectedMissions.Num());
 	gui->SetStateBool("dl_button_available", _selectedMissions.Num() > 0); //  TODO: && noDownloadInProgress
