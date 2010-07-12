@@ -63,7 +63,6 @@ Lode::Lode( void ) {
 
 	active = false;
 
-	m_fCullRange = 0.0f;
 	m_iSeed = 3;
 	m_iOrgSeed = 3;
 	m_iScore = 0;
@@ -92,7 +91,6 @@ void Lode::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( active );
 
-	savefile->WriteFloat( m_fCullRange );
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iOrgSeed );
 	savefile->WriteInt( m_iScore );
@@ -164,7 +162,6 @@ void Lode::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( active );
 
-	savefile->ReadFloat( m_fCullRange );
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iOrgSeed );
 	savefile->ReadInt( m_iScore );
@@ -345,10 +342,8 @@ void Lode::Spawn( void ) {
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
-	// do we have a cull range? (default is 150 units after the hide distance)
-	m_fCullRange = spawnArgs.GetFloat( "cull_range", "150" );
-
-	gameLocal.Printf (" LODE %s: cull range = %0.2f.\n", GetName(), m_fCullRange );
+	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
+	gameLocal.Printf (" LODE %s: cull range = %0.2f.\n", GetName(), cullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -444,10 +439,11 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.cullDist = 0;
 	LodeClass.spawnDist = 0;
 	float hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
-	if (m_fCullRange > 0 && hideDist > 0)
+	float cullRange = ent->spawnArgs.GetFloat( "lode_cull_range", spawnArgs.GetString( "cull_range", "150" ) );
+	if (cullRange > 0 && hideDist > 0)
 	{
-		LodeClass.cullDist = hideDist + m_fCullRange;
-		LodeClass.spawnDist = LodeClass.cullDist - (m_fCullRange / 2);
+		LodeClass.cullDist = hideDist + cullRange;
+		LodeClass.spawnDist = hideDist + (cullRange / 2);
 		// square for easier compare
 		LodeClass.cullDist *= LodeClass.cullDist;
 		LodeClass.spawnDist *= LodeClass.spawnDist;
@@ -1396,7 +1392,7 @@ void Lode::Think( void )
 			}	
 			else
 			{
-				// cull entities that are outside "hide_distance + fade_out_distance + m_fCullRange
+				// cull entities that are outside "hide_distance + fade_out_distance + cullRange
 				if (ent->exists && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame

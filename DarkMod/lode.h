@@ -179,12 +179,6 @@ private:
 	bool				m_bDistDependent;
 
 	/**
-	* Entities further from player than "hide_distance" + m_fCullRange will be culled.
-	* Set to 0 to disable.
-	**/
-	float				m_fCullRange;
-
-	/**
 	* Current seed value for the random generator, which generates the sequence used to place
 	* entities. Same seed value gives same sequence, thus same placing every time.
 	**/
