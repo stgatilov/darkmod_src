@@ -175,6 +175,9 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Store this ID
 		_downloads[missionIndex] = id;
 	}
+
+	// Let the download manager start its downloads
+	gameLocal.m_DownloadManager->ProcessDownloads();
 }
 
 void CDownloadMenu::UpdateGUI(idUserInterface* gui)
