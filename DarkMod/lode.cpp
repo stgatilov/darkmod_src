@@ -238,6 +238,9 @@ void Lode::Restore( idRestoreGame *savefile ) {
 /*
 ===============
 Lode::RandomFloat
+
+Implement our own random generator with our own seed, so we are independent
+from the seed in gameLocal:
 ===============
 */
 ID_INLINE float Lode::RandomFloat( void ) {
@@ -272,7 +275,7 @@ ID_INLINE float Lode::RandomFloatExp( const float lambda ) {
 
 /*
 ===============
-Lode::RandomFloatSqr - Random float between 0 and 1 with squared falloff (param lambda != 0)
+Lode::RandomFloatSqr - Random float between 0 and 1 with squared falloff
 ===============
 */
 ID_INLINE float Lode::RandomFloatSqr( void ) {
@@ -510,7 +513,7 @@ float Lode::LODBIAS ( void )
 
 /*
 ===============
-Create the places for all entities that we control so we can later spawn them.
+Compute the max. number of entities that we manage
 ===============
 */
 void Lode::ComputeEntityCount( void )
@@ -557,14 +560,14 @@ Create the places for all entities that we control so we can later spawn them.
 */
 void Lode::Prepare( void )
 {	
+	lode_inhibitor_t LodeInhibitor;
+
 	if ( targets.Num() == 0 )
 	{
 		gameLocal.Warning( "LODE %s has no targets!", GetName() );
 		BecomeInactive( TH_THINK );
 		return;
 	}
-
-	lode_inhibitor_t LodeInhibitor;
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
@@ -587,7 +590,8 @@ void Lode::Prepare( void )
 
 				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
 				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
-				// or rotation spawnarg. Use clipmodel instead?
+				// or rotation spawnarg. Use clipmodel instead? Note: Unrotating the entity, but adding an "axis"
+				// spawnarg works.
 				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize() / 2, ent->GetPhysics()->GetAxis() );
 				m_Inhibitors.Append ( LodeInhibitor );
 				continue;
@@ -753,13 +757,12 @@ void Lode::PrepareEntities( void )
 		ClassIndex.Append ( i );		// 1,2,3,...
 	}
 
-	// shuffle at least 3 times
-	s = m_Classes.Num(); f = s; s *= 3;
+	// shuffle at least 2 times
+	s = m_Classes.Num(); f = s; s *= 2;
 	for (int i = 0; i < s; i++)
 	{
-		int first = (int)(RandomFloat() * f);
 		int second = (int)(RandomFloat() * f);
-		int temp = ClassIndex[first]; ClassIndex[first] = ClassIndex[second]; ClassIndex[second] = temp;
+		int temp = ClassIndex[i]; ClassIndex[i] = ClassIndex[second]; ClassIndex[second] = temp;
 	}
 
 	// default random rotate
