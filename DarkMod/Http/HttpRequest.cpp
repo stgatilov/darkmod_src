@@ -28,9 +28,7 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_status(NOT_PERFORMED_YET),
 	_cancelFlag(false),
 	_progress(0)
-{
-	Construct();
-}
+{}
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const std::string& destFilename) :
 	_conn(conn),
@@ -40,11 +38,9 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const 
 	_destFilename(destFilename),
 	_cancelFlag(false),
 	_progress(0)
-{
-	Construct();
-}
+{}
 
-void CHttpRequest::Construct()
+void CHttpRequest::InitRequest()
 {
 	// Init the curl session
 	_handle = curl_easy_init();
@@ -78,7 +74,10 @@ void CHttpRequest::Construct()
 
 void CHttpRequest::Perform()
 {
+	InitRequest();
+
 	_progress = 0;
+	_status = IN_PROGRESS;
 
 	// Check target file
 	if (!_destFilename.empty())

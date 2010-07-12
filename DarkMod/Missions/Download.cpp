@@ -87,11 +87,11 @@ void CDownload::Perform()
 	{
 		if (_request->GetStatus() == CHttpRequest::ABORTED)
 		{
-			gameLocal.Printf("Download from %s aborted.\n", _url.c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from %s aborted.\r", _url.c_str());
 		}
 		else
 		{
-			gameLocal.Printf("Connection Error.\n");
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error.\r");
 		}
 
 		_status = FAILED;

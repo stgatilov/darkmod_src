@@ -90,8 +90,7 @@ public:
 	XmlDocumentPtr GetResultXml();
 
 private:
-	// shared constructor code
-	void Construct();
+	void InitRequest();
 
 	void UpdateProgress();
 };
