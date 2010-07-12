@@ -32,6 +32,8 @@ public:
 
 	void ProcessDownloads();
 
+	void ClearDownloads();
+
 	int AddDownload(const CDownloadPtr& download);
 	void RemoveDownload(int id);
 

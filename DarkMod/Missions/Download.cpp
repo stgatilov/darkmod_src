@@ -66,6 +66,9 @@ void CDownload::Stop()
 		_request.reset();
 
 		_status = FAILED;
+
+		// Remove temporary file
+		CMissionManager::DoRemoveFile(_tempFilename.c_str());
 	}
 }
 

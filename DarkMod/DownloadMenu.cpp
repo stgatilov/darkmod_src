@@ -57,7 +57,10 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		// Refresh list
 		gameLocal.m_MissionManager->ReloadDownloadableMissions();
 
+		_selectedMissions.Clear();
+
 		UpdateGUI(gui);
+		UpdateDownloadProgress(gui);
 	}
 	else if (cmd == "onDownloadableMissionSelected")
 	{
@@ -101,6 +104,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		_selectedMissions.Remove(_selectedMissions[index]);
 
 		UpdateGUI(gui);
+		UpdateDownloadProgress(gui);
 	}
 	else if (cmd == "onDownloadableMissionScrollUp")
 	{
@@ -137,6 +141,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	else if (cmd == "onStartDownload")
 	{
 		StartDownload(gui);
+		UpdateDownloadProgress(gui); // do this first
 		UpdateGUI(gui);
 	}
 }
@@ -144,8 +149,6 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 void CDownloadMenu::StartDownload(idUserInterface* gui)
 {
 	// Add a new download for each selected mission
-	gui->SetStateBool("dl_button_visible", false);
-
 	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
 
 	for (int i = 0; i < _selectedMissions.Num(); ++i)
@@ -172,8 +175,6 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Store this ID
 		_downloads[missionIndex] = id;
 	}
-
-	gui->SetStateBool("mission_download_in_progress", true);
 }
 
 void CDownloadMenu::UpdateGUI(idUserInterface* gui)
@@ -219,8 +220,8 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 	gui->SetStateBool("dl_mission_scroll_down_visible", _selectedListTop + numSelectedMissionsPerPage < _selectedMissions.Num());
 
 	gui->SetStateInt("dl_mission_count", _selectedMissions.Num());
-	gui->SetStateBool("dl_button_available", _selectedMissions.Num() > 0); //  TODO: && noDownloadInProgress
-	gui->SetStateBool("dl_button_visible", true);
+	gui->SetStateBool("dl_button_available", _selectedMissions.Num() > 0 && !downloadInProgress);
+	gui->SetStateBool("dl_button_visible", !downloadInProgress);
 
 	gui->HandleNamedEvent("UpdateAvailableMissionColours");
 	gui->HandleNamedEvent("UpdateSelectedMissionColours");
@@ -276,5 +277,72 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 		};
 	}
 
-	gui->SetStateBool("mission_download_in_progress", gameLocal.m_DownloadManager->DownloadInProgress());
+	bool previousValue = gui->GetStateBool("mission_download_in_progress");
+	bool newValue = gameLocal.m_DownloadManager->DownloadInProgress();
+
+	gui->SetStateBool("mission_download_in_progress", newValue);
+
+	if (previousValue != newValue)
+	{
+		gui->HandleNamedEvent("UpdateAvailableMissionColours");
+
+		if (newValue == false)
+		{
+			// Fire the "finished downloaded" event
+			ShowDownloadResult(gui);
+		}
+	}
+}
+
+void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
+{
+	int successfulDownloads = 0;
+	int failedDownloads = 0;
+
+	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
+	{
+		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(i->second);
+
+		if (download == NULL) continue;
+
+		switch (download->GetStatus())
+		{
+		case CDownload::NOT_STARTED_YET:
+			// ??
+			gameLocal.Warning("Some downloads haven't been processed?");
+			break;
+		case CDownload::FAILED:
+			failedDownloads++;
+			break;
+		case CDownload::IN_PROGRESS:
+			gameLocal.Warning("Some downloads still in progress?");
+			break;
+		case CDownload::SUCCESS:
+			successfulDownloads++;
+			break;
+		};
+	}
+
+	gameLocal.Printf("Successful downloads: %d\nFailed downloads: %d\n", successfulDownloads, failedDownloads);
+
+	// Display the popup box
+	GuiMessage msg;
+	msg.type = GuiMessage::MSG_OK;
+	msg.okCmd = "close_msg_box;refreshAvailableMissionList";
+	msg.title = "Mission Download Result";
+	msg.message = va("%d missions have been successfully downloaded. You'll find the missions in the 'New Mission' page.", successfulDownloads);
+	
+	if (failedDownloads > 0)
+	{
+		msg.message += va("\n%d missions couldn't be downloaded. Please check your disk space (or maybe some file is "
+			"write protected) and try again.", failedDownloads);
+	}
+
+	gameLocal.AddMainMenuMessage(msg);
+
+	// Remove all downloads
+	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
+	{
+		gameLocal.m_DownloadManager->RemoveDownload(i->second);
+	}
 }

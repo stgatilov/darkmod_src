@@ -37,6 +37,11 @@ CDownloadPtr CDownloadManager::GetDownload(int id)
 	return (found != _downloads.end()) ? found->second : CDownloadPtr();
 }
 
+void CDownloadManager::ClearDownloads()
+{
+	_downloads.clear();
+}
+
 bool CDownloadManager::DownloadInProgress()
 {
 	for (Downloads::const_iterator i = _downloads.begin(); i != _downloads.end(); ++i)

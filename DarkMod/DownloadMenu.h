@@ -41,6 +41,8 @@ private:
 	void StartDownload(idUserInterface* gui);
 
 	void UpdateDownloadProgress(idUserInterface* gui);
+
+	void ShowDownloadResult(idUserInterface* gui);
 };
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 
