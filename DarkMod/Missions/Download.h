@@ -26,6 +26,9 @@ private:
 	// destination file
 	idStr _destFilename;
 
+	// Temporary filename for partial download data
+	idStr _tempFilename;
+
 public:
 	enum Status
 	{

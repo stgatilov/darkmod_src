@@ -137,6 +137,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	else if (cmd == "onStartDownload")
 	{
 		StartDownload(gui);
+		UpdateGUI(gui);
 	}
 }
 
@@ -171,11 +172,15 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Store this ID
 		_downloads[missionIndex] = id;
 	}
+
+	gui->SetStateBool("mission_download_in_progress", true);
 }
 
 void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 {
 	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+
+	bool downloadInProgress = gui->GetStateBool("mission_download_in_progress");
 
 	int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");
 
@@ -186,7 +191,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 		bool missionExists = missionIndex < missions.Num();
 
 		bool missionSelected = _selectedMissions.FindIndex(missionIndex) != -1;
-		gui->SetStateBool(va("av_mission_avail_%d", i), missionExists && !missionSelected);
+		gui->SetStateBool(va("av_mission_avail_%d", i), missionExists && !missionSelected && !downloadInProgress);
 		gui->SetStateBool(va("av_mission_selected_%d", i), missionSelected);
 		gui->SetStateString(va("av_mission_name_%d", i), missionExists ? missions[missionIndex].title : "");
 	}
@@ -270,4 +275,6 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 			break;
 		};
 	}
+
+	gui->SetStateBool("mission_download_in_progress", gameLocal.m_DownloadManager->DownloadInProgress());
 }
