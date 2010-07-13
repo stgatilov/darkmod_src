@@ -25,22 +25,22 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_conn(conn),
 	_url(url),
 	_handle(NULL),
-	_status(NOT_PERFORMED_YET)
-{
-	Construct();
-}
+	_status(NOT_PERFORMED_YET),
+	_cancelFlag(false),
+	_progress(0)
+{}
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const std::string& destFilename) :
 	_conn(conn),
 	_url(url),
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET),
-	_destFilename(destFilename)
-{
-	Construct();
-}
+	_destFilename(destFilename),
+	_cancelFlag(false),
+	_progress(0)
+{}
 
-void CHttpRequest::Construct()
+void CHttpRequest::InitRequest()
 {
 	// Init the curl session
 	_handle = curl_easy_init();
@@ -74,6 +74,11 @@ void CHttpRequest::Construct()
 
 void CHttpRequest::Perform()
 {
+	InitRequest();
+
+	_progress = 0;
+	_status = IN_PROGRESS;
+
 	// Check target file
 	if (!_destFilename.empty())
 	{
@@ -82,26 +87,48 @@ void CHttpRequest::Perform()
 
 	CURLcode result = curl_easy_perform(_handle);
 
-	_destStream.flush();
-	_destStream.close();
-
-	switch (result)
+	if (!_destFilename.empty())
 	{
-	case CURLE_OK:
-		_status = OK;
-		break;
-	default:
-		_status = FAILED;
-	};
+		_destStream.flush();
+		_destStream.close();
+	}
+
+	if (_cancelFlag)
+	{
+		_status = ABORTED;
+	}
+	else
+	{
+		switch (result)
+		{
+		case CURLE_OK:
+			_status = OK;
+			_progress = 1.0;
+			break;
+		default:
+			_status = FAILED;
+		};
+	}
 
 	curl_easy_cleanup(_handle);
 
 	_handle = NULL;
 }
 
+void CHttpRequest::Cancel()
+{
+	// The memory callback will catch this flag
+	_cancelFlag = true;
+}
+
 CHttpRequest::RequestStatus CHttpRequest::GetStatus()
 {
 	return _status;
+}
+
+double CHttpRequest::GetProgressFraction()
+{
+	return _progress;
 }
 
 std::string CHttpRequest::GetResultString()
@@ -118,8 +145,41 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 	return doc;
 }
 
+void CHttpRequest::UpdateProgress()
+{
+	double size;
+	double downloaded;
+	CURLcode result = curl_easy_getinfo(_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size);
+
+	if (result != CURLE_OK) 
+	{
+		_progress = 0;
+		return;
+	}
+
+	result = curl_easy_getinfo(_handle, CURLINFO_SIZE_DOWNLOAD, &downloaded);
+
+	if (result != CURLE_OK) 
+	{
+		_progress = 0;
+		return;
+	}
+
+	_progress = downloaded / size;
+
+	if (_progress > 1.0)
+	{
+		_progress = 1.0;
+	}
+}
+
 size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self)
 {
+	if (self->_cancelFlag)
+	{
+		return 0; // cancel the process
+	}
+
 	// Needed size
 	std::size_t bytesToCopy = size * nmemb;
 
@@ -139,15 +199,24 @@ size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, C
 		buf[buf.size() - 1] = 0;
 	}
 
+	self->UpdateProgress();
+
 	return static_cast<size_t>(bytesToCopy);
 }
 
 size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self)
 {
+	if (self->_cancelFlag)
+	{
+		return 0; // cancel the process
+	}
+
 	// Needed size
 	std::size_t bytesToCopy = size * nmemb;
 
 	self->_destStream.write(static_cast<const char*>(ptr), bytesToCopy);
+
+	self->UpdateProgress();
 
 	return static_cast<size_t>(bytesToCopy);
 }

@@ -729,6 +729,22 @@ void CMissionManager::ReloadDownloadableMissions()
 		mission.sizeMB = node.attribute("size").as_float();
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();
+		mission.modName = node.attribute("internalName").value();
+		mission.version = node.attribute("version").as_int();
+
+		bool missionExists = false;
+
+		// Check if this mission is already downloaded
+		for (int j = 0; j < _availableMissions.Num(); ++j)
+		{
+			if (idStr::Icmp(_availableMissions[j], mission.modName) == 0)
+			{
+				missionExists = true;
+				break;
+			}
+		}
+
+		// TODO if (missionExists) continue;
 
 		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 

@@ -11,6 +11,7 @@
 #ifndef _DOWNLOAD_MENU_H_
 #define	_DOWNLOAD_MENU_H_
 
+#include <map>
 #include <boost/shared_ptr.hpp>
 
 // Handles mainmenu that displays list of downloadable missions
@@ -23,6 +24,10 @@ private:
 
 	idList<int> _selectedMissions;
 
+	// A mapping "selected mission id" => "download id"
+	typedef std::map<int, int> ActiveDownloads;
+	ActiveDownloads _downloads;
+
 public:
 	CDownloadMenu();
 
@@ -34,6 +39,10 @@ public:
 
 private:
 	void StartDownload(idUserInterface* gui);
+
+	void UpdateDownloadProgress(idUserInterface* gui);
+
+	void ShowDownloadResult(idUserInterface* gui);
 };
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 

@@ -2951,6 +2951,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	// Check for any activated signals, and trigger them.
 	CheckSDKSignals();
 
+	// Handle any mission downloads in progress
+	m_DownloadManager->ProcessDownloads();
+
 	// Update the gameplay timer
 	m_GamePlayTimer.Update();
 
@@ -3539,6 +3542,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			HandleGuiMessages(gui);
 		}
+
+		// Handle downloads in progress
+		m_DownloadManager->ProcessDownloads();
 
 		// Propagate the video CVARs to the GUI
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
