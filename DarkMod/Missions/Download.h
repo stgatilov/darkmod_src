@@ -96,7 +96,7 @@ public:
 	void EnableValidPK4Check(bool enable);
 	
 	// The current status of this download
-	Status GetStatus();
+	DownloadStatus GetStatus();
 
 	double GetProgressFraction();
 

@@ -41,7 +41,7 @@ CDownload::~CDownload()
 	Stop();
 }
 
-CDownload::Status CDownload::GetStatus()
+CDownload::DownloadStatus CDownload::GetStatus()
 {
 	return _status;
 }
