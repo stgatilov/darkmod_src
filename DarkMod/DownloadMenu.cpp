@@ -152,6 +152,14 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		UpdateDownloadProgress(gui); // do this first
 		UpdateGUI(gui);
 	}
+	else if (cmd == "onDownloadCompleteConfirm")
+	{
+		// Let the mission list be refreshed
+		gameLocal.m_MissionManager->ReloadMissionList();
+
+		// Let the GUI request another refresh of downloadable missions (with delay)
+		gui->HandleNamedEvent("QueueDownloadableMissionListRefresh");
+	}
 }
 
 void CDownloadMenu::StartDownload(idUserInterface* gui)
@@ -345,7 +353,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	// Display the popup box
 	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
-	msg.okCmd = "close_msg_box;refreshAvailableMissionList";
+	msg.okCmd = "close_msg_box;onDownloadCompleteConfirm";
 	msg.title = "Mission Download Result";
 	msg.message = "";
 

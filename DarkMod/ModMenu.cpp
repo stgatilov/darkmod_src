@@ -53,15 +53,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		if (numNewMissions > 0)
 		{
-			if (numNewMissions > 1)
-			{
-				gui->SetStateString("newFoundMissionsText", va("%d new missions are available", numNewMissions));
-			}
-			else
-			{
-				gui->SetStateString("newFoundMissionsText", va("A new mission is available", numNewMissions));
-			}
-
+			gui->SetStateString("newFoundMissionsText", "New missions available");
 			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundMissionsText());
 			gui->HandleNamedEvent("OnNewMissionsFound");
 
