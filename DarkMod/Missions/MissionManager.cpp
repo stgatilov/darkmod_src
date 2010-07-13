@@ -719,6 +719,8 @@ void CMissionManager::ReloadDownloadableMissions()
 
 	pugi::xpath_node_set nodes = doc->select_nodes("//tdm/availableMissions//mission");
 
+	const char* fs_game = cvarSystem->GetCVarString("fs_game");
+
 	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
 	{
 		pugi::xml_node node = i->node();
@@ -732,6 +734,12 @@ void CMissionManager::ReloadDownloadableMissions()
 		mission.modName = node.attribute("internalName").value();
 		mission.version = node.attribute("version").as_int();
 		mission.isUpdate = false;
+
+		if (idStr::Cmp(mission.modName.c_str(), fs_game) == 0)
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removing currently installed mission %s from the list of downloadable missions.\r", fs_game);
+			continue;
+		}
 
 		bool missionExists = false;
 
