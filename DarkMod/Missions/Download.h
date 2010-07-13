@@ -49,7 +49,7 @@ private:
 	idStr _tempFilename;
 
 public:
-	enum Status
+	enum DownloadStatus
 	{
 		NOT_STARTED_YET,
 		IN_PROGRESS,
@@ -58,7 +58,7 @@ public:
 	};
 
 private:
-	Status _status;
+	DownloadStatus _status;
 
 	// The corresponding HTTP request
 	CHttpRequestPtr _request;
