@@ -196,6 +196,8 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 {
 	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
 
+	gui->SetStateBool("av_no_download_available", missions.Num() == 0);
+
 	bool downloadInProgress = gui->GetStateBool("mission_download_in_progress");
 
 	int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");

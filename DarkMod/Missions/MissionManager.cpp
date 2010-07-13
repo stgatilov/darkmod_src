@@ -744,7 +744,7 @@ void CMissionManager::ReloadDownloadableMissions()
 			}
 		}
 
-		// TODO if (missionExists) continue;
+		if (missionExists) continue;
 
 		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
