@@ -28,6 +28,7 @@ struct DownloadableMission
 	idStr releaseDate;
 	idStr language;
 	int version;
+	bool isUpdate;
 
 	idStringList downloadLocations;
 };

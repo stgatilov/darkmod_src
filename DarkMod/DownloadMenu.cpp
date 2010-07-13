@@ -154,9 +154,6 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	}
 	else if (cmd == "onDownloadCompleteConfirm")
 	{
-		// Let the mission list be refreshed
-		gameLocal.m_MissionManager->ReloadMissionList();
-
 		// Let the GUI request another refresh of downloadable missions (with delay)
 		gui->HandleNamedEvent("QueueDownloadableMissionListRefresh");
 	}
@@ -208,8 +205,10 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 	bool downloadInProgress = gui->GetStateBool("mission_download_in_progress");
 
+	bool updateInList = false;
+	
 	int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");
-
+	
 	for (int i = 0; i < numMissionsPerPage; ++i)
 	{
 		// Apply page offset
@@ -219,9 +218,26 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 		bool missionSelected = _selectedMissions.FindIndex(missionIndex) != -1;
 		gui->SetStateBool(va("av_mission_avail_%d", i), missionExists && !missionSelected && !downloadInProgress);
 		gui->SetStateBool(va("av_mission_selected_%d", i), missionSelected);
-		gui->SetStateString(va("av_mission_name_%d", i), missionExists ? missions[missionIndex].title : "");
+
+		if (missionExists)
+		{
+			idStr title = missions[missionIndex].title;
+
+			if (missions[missionIndex].isUpdate)
+			{
+				title += "*";
+				updateInList = true;
+			}
+
+			gui->SetStateString(va("av_mission_name_%d", i), title);
+		}
+		else
+		{
+			gui->SetStateString(va("av_mission_name_%d", i), "");
+		}
 	}
 
+	gui->SetStateBool("av_mission_update_in_list", updateInList);
 	gui->SetStateBool("av_mission_scroll_up_visible", _availListTop > 0);
 	gui->SetStateBool("av_mission_scroll_down_visible", _availListTop + numMissionsPerPage < missions.Num());
 
@@ -321,8 +337,14 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 
 void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 {
+	// greebo: Let the mission list be refreshed
+	// We need the information from darkmod.txt later down this road
+	gameLocal.m_MissionManager->ReloadMissionList();
+
 	int successfulDownloads = 0;
 	int failedDownloads = 0;
+
+	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
 
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
 	{
@@ -330,10 +352,13 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 
 		if (download == NULL) continue;
 
+		if (i->first > missions.Num()) continue;
+
+		const DownloadableMission& mission = missions[i->first];
+
 		switch (download->GetStatus())
 		{
 		case CDownload::NOT_STARTED_YET:
-			// ??
 			gameLocal.Warning("Some downloads haven't been processed?");
 			break;
 		case CDownload::FAILED:
@@ -343,7 +368,13 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 			gameLocal.Warning("Some downloads still in progress?");
 			break;
 		case CDownload::SUCCESS:
-			successfulDownloads++;
+			{
+				successfulDownloads++;
+
+				// Save the mission version into the MissionDB for later use
+				CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(mission.modName);
+				missionInfo->SetKeyValue("downloaded_version", idStr(mission.version).c_str());
+			}
 			break;
 		};
 	}

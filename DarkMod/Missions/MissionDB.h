@@ -38,6 +38,9 @@ public:
 	// a new structure will be created
 	const CMissionInfoPtr& GetMissionInfo(const idStr& name);
 
+	// Checks whether there is a record for the given mission name
+	bool MissionInfoExists(const idStr& name);
+
 private:
 	void ReloadMissionInfoFile();
 };

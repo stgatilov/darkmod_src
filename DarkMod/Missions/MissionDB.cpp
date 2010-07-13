@@ -174,3 +174,8 @@ const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
 
 	return result.first->second;
 }
+
+bool CMissionDB::MissionInfoExists(const idStr& name)
+{
+	return _missionInfo.find(name.c_str()) != _missionInfo.end();
+}

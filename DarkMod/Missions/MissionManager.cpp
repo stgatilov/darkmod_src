@@ -731,6 +731,7 @@ void CMissionManager::ReloadDownloadableMissions()
 		mission.releaseDate = node.attribute("releaseDate").value();
 		mission.modName = node.attribute("internalName").value();
 		mission.version = node.attribute("version").as_int();
+		mission.isUpdate = false;
 
 		bool missionExists = false;
 
@@ -744,7 +745,26 @@ void CMissionManager::ReloadDownloadableMissions()
 			}
 		}
 
-		if (missionExists) continue;
+		if (missionExists)
+		{
+			// Check Mission version, there might be an update available
+			if (_missionDB->MissionInfoExists(mission.modName))
+			{
+				CMissionInfoPtr missionInfo = _missionDB->GetMissionInfo(mission.modName);
+
+				idStr versionStr = missionInfo->GetKeyValue("downloaded_version", "1");
+				int existingVersion = atoi(versionStr.c_str());
+
+				if (existingVersion >= mission.version)
+				{
+					continue; // Our version is up to date
+				}
+				else
+				{
+					mission.isUpdate = true;
+				}
+			}
+		}
 
 		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
