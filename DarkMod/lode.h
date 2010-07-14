@@ -63,7 +63,16 @@ struct lode_class_t {
 											// 4 other static entities already present
 											// 8 world geometry
 	int						falloff;		// Entity random distribution method
-											// 0 - none, 1 - cutoff, 2 - square, 3 - exponential
+											// 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func
+	float					func_x;			// only used when falloff == 4
+	float					func_y;
+	float					func_s;
+	float					func_a;
+	int						func_Xt;		// 1 => X, 2 => X*X
+	int						func_Yt;		// 1 => X, 2 => X*X
+	int						func_f;			// 1 => Clamp, 0 => Zeroclamp
+	float					func_min;
+	float					func_max;
 	idVec3					size;			// size of the model for collision tests
 };
 

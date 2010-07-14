@@ -15,6 +15,7 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
+TODO: Creating func_statics out of brushes/patches does not work, the models are lost
 */
 
 #include "../idlib/precompiled.h"
@@ -143,6 +144,20 @@ void Lode::Save( idSaveGame *savefile ) const {
 			savefile->WriteString( m_Classes[i].materials[j].name );
 			savefile->WriteFloat( m_Classes[i].materials[j].probability );
 		}
+
+		// only save these if they are used
+		if ( m_Classes[i].falloff == 4)
+		{
+			savefile->WriteFloat( m_Classes[i].func_x );
+			savefile->WriteFloat( m_Classes[i].func_y );
+			savefile->WriteFloat( m_Classes[i].func_s );
+			savefile->WriteFloat( m_Classes[i].func_a );
+			savefile->WriteInt( m_Classes[i].func_Xt );
+			savefile->WriteInt( m_Classes[i].func_Yt );
+			savefile->WriteInt( m_Classes[i].func_f );
+			savefile->WriteFloat( m_Classes[i].func_min );
+			savefile->WriteFloat( m_Classes[i].func_max );
+		}
 	}
 	savefile->WriteInt( m_Inhibitors.Num() );
 	for( int i = 0; i < m_Inhibitors.Num(); i++ )
@@ -220,6 +235,20 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		{
 			savefile->ReadString( m_Classes[i].materials[j].name );
 			savefile->ReadFloat( m_Classes[i].materials[j].probability );
+		}
+
+		// only restore these if they are used
+		if ( m_Classes[i].falloff == 4)
+		{
+			savefile->ReadFloat( m_Classes[i].func_x );
+			savefile->ReadFloat( m_Classes[i].func_y );
+			savefile->ReadFloat( m_Classes[i].func_s );
+			savefile->ReadFloat( m_Classes[i].func_a );
+			savefile->ReadInt( m_Classes[i].func_Xt );
+			savefile->ReadInt( m_Classes[i].func_Yt );
+			savefile->ReadInt( m_Classes[i].func_f );
+			savefile->ReadFloat( m_Classes[i].func_min );
+			savefile->ReadFloat( m_Classes[i].func_max );
 		}
 	}
     savefile->ReadInt( num );
@@ -406,9 +435,67 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 	{
 		LodeClass.falloff = 3;
 	}
+	LodeClass.func_x = 0;
+	LodeClass.func_y = 0;
+	LodeClass.func_s = 0;
+	LodeClass.func_a = 0;
+	LodeClass.func_Xt = 0;
+	LodeClass.func_Yt = 0;
+	LodeClass.func_f = 0;
+	if (falloff == "func")
+	{
+		LodeClass.falloff = 4;
+		// default is 0.5 * (x + y + 0)
+		LodeClass.func_a = ent->spawnArgs.GetFloat( "lode_func_a", spawnArgs.GetString( "func_a", "0") );
+		LodeClass.func_s = ent->spawnArgs.GetFloat( "lode_func_s", spawnArgs.GetString( "func_s", "0.5") );
+		LodeClass.func_Xt = 1;			// 1 - X, 2 -> X * X
+		idStr x = ent->spawnArgs.GetString( "lode_func_Xt", spawnArgs.GetString( "func_Xt", "X") );
+		if (x == "X*X")
+		{
+			LodeClass.func_Xt = 2;		// 1 - X, 2 -> X * X
+		}
+		LodeClass.func_Yt = 1;			// 1 - X, 2 -> X * X
+		x = ent->spawnArgs.GetString( "lode_func_Yt", spawnArgs.GetString( "func_Yt", "Y") );
+		if (x == "Y*Y")
+		{
+			LodeClass.func_Yt = 2;		// 1 - Y, 2 -> Y * Y
+		}
+		LodeClass.func_x = ent->spawnArgs.GetFloat( "lode_func_x", spawnArgs.GetString( "func_x", "1") );
+		LodeClass.func_y = ent->spawnArgs.GetFloat( "lode_func_y", spawnArgs.GetString( "func_y", "1") );
+		LodeClass.func_min = ent->spawnArgs.GetFloat( "lode_func_min", spawnArgs.GetString( "func_min", "0") );
+		LodeClass.func_max = ent->spawnArgs.GetFloat( "lode_func_max", spawnArgs.GetString( "func_max", "1.0") );
+		if (LodeClass.func_min < 0.0f)
+		{
+			gameLocal.Warning ("LODE %s: func_min %0.2f < 0, setting it to 0.\n", GetName(), LodeClass.func_min );
+			LodeClass.func_min = 0.0f;
+		}
+		if (LodeClass.func_max > 1.0f)
+		{
+			gameLocal.Warning ("LODE %s: func_max %0.2f < 1.0, setting it to 1.0.\n", GetName(), LodeClass.func_max );
+			LodeClass.func_max = 1.0f;
+		}
+		if (LodeClass.func_min > LodeClass.func_max)
+		{
+			gameLocal.Warning ("LODE %s: func_min %0.2f > func_max %0.2f, setting it to 0.\n", GetName(), LodeClass.func_min, LodeClass.func_max );
+			LodeClass.func_min = 0.0f;
+		}
+
+		x = ent->spawnArgs.GetString( "lode_func_f", spawnArgs.GetString( "func_f", "clamp") );
+		if (x == "clamp")
+		{
+			LodeClass.func_f = 1;
+		}
+		else if (x != "zeroclamp")
+		{
+			gameLocal.Error ("LODE %s: func_clamp is invalid, expected 'clamp' or 'zeroclamp', found '%s'\n", GetName(), x.c_str() );
+		}
+		gameLocal.Warning ("LODE %s: Using falloff func p = %s( %0.2f, %0.2f, %0.2f * ( %s * %0.2f + %s * %0.2f + %0.2f) )\n", 
+				GetName(), x.c_str(), LodeClass.func_min, LodeClass.func_max, LodeClass.func_s, LodeClass.func_Xt == 1 ? "X" : "X*X", LodeClass.func_x, 
+				LodeClass.func_Yt == 1 ? "Y" : "Y*Y", LodeClass.func_y, LodeClass.func_a );
+	}
 	if (LodeClass.falloff == -1)
 	{
-		gameLocal.Warning ("LODE %s: Invalid falloff %s, expect one of none, cutoff, square or exp.\n", GetName(), falloff.c_str() );
+		gameLocal.Warning ("LODE %s: Invalid falloff %s, expect one of 'none', 'cutoff', 'square', 'exp' or 'func'.\n", GetName(), falloff.c_str() );
 		LodeClass.falloff = 0;
 	}
 
@@ -753,11 +840,11 @@ void Lode::PrepareEntities( void )
 		ClassIndex.Append ( i );		// 1,2,3,...
 	}
 
-	// shuffle at least 2 times
-	s = m_Classes.Num(); f = s; s *= 2;
+	// shuffle all entries
+	s = m_Classes.Num();
 	for (int i = 0; i < s; i++)
 	{
-		int second = (int)(RandomFloat() * f);
+		int second = (int)(RandomFloat() * s);
 		int temp = ClassIndex[i]; ClassIndex[i] = ClassIndex[second]; ClassIndex[second] = temp;
 	}
 
@@ -850,38 +937,79 @@ void Lode::PrepareEntities( void )
 				else
 				// no bunching, just random placement
 				{
-        			if (m_Classes[i].falloff == 0)
+					switch (m_Classes[i].falloff)
 					{
+					case 0:
+					case 4:
 						// restrict to our AAB (unrotated)
 						LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
+						break;
+					case 1:
+						// cutoff - polar coordinates in the range (0..1.0, 0.360)
+						// TODO: The area for the entities is smaller than for "none" (square vs. circle
+						// 		 but same entity count), account for this?
+						// TODO: The random polar coordinates make it occupy less space in the center
+						// 		 than in the outer areas, but distrubute the entity distance equally.
+						//		 This leads to the center getting ever so slightly more entities then
+						//		 the outer areas, compensate for this in the random generator formular?
+						LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
+						break;
+					case 2:
+						// square
+						LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
+						break;
+					default:
+						// 3 - exp
+						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0 ).ToVec3();
+						break;
 					}
-					else
+					if (m_Classes[i].falloff > 0 && m_Classes[i].falloff < 4)
 					{
-						switch (m_Classes[i].falloff)
-						{
-						case 1:
-							// cutoff - polar coordinates in the range (0..1.0, 0.360)
-							// TODO: The area for the entities is smaller than for "none" (square vs. circle
-							// 		 but same entity count), account for this?
-							// TODO: The random polar coordinates make it occupy less space in the center
-							// 		 than in the outer areas, but distrubute the entity distance equally.
-							//		 This leads to the center getting ever so slightly more entities then
-							//		 the outer areas, compensate for this in the random generator formular?
-							LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
-							break;
-						case 2:
-							// square
-							LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
-							break;
-						default:
-							// exp
-							LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0 ).ToVec3();
-							break;
-						}
-						// scale the result to our box size
+						// cutoff, square and exp: scale the result to our box size
 						LodeEntity.origin.x *= size.x / 2;
 						LodeEntity.origin.y *= size.y / 2;
 					}
+				}
+
+				// what is the probability it will appear here?
+				float probability = 1.0f;	// start with "always"
+
+				// if falloff == 4, compute the falloff probability
+       			if (m_Classes[i].falloff == 4)
+				{
+					// p = s * (Xt * x + Yt * y + a)
+					float x = (LodeEntity.origin.x / size.x) + 0.5f;		// 0 .. 1.0
+					if (m_Classes[i].func_Xt == 2)
+					{
+						x *= x;							// 2 => X*X
+					}
+
+					float y = (LodeEntity.origin.y / size.y) + 0.5f;		// 0 .. 1.0
+					if (m_Classes[i].func_Yt == 2)
+					{
+						y *= y;							// 2 => X*X
+					}
+
+					float p = m_Classes[i].func_s * ( x * m_Classes[i].func_x + y * m_Classes[i].func_y + m_Classes[i].func_a);
+					// apply custom clamp function
+					if (m_Classes[i].func_f == 0)
+					{
+						if (p < m_Classes[i].func_min || p > m_Classes[i].func_max)
+						{
+							// outside range, zero-clamp
+							//probability = 0.0f;
+							// placement will fail, anyway:
+							gameLocal.Printf ("LODE %s: Skipping placement, probability == 0 (min %0.2f, p=%0.2f, max %0.2f).\n", 
+									GetName(), m_Classes[i].func_min, p, m_Classes[i].func_max );
+							continue;
+						}
+					}
+					else
+					{
+						// clamp to min .. max
+						probability = idMath::ClampFloat( m_Classes[i].func_min, m_Classes[i].func_max, p );
+					}
+					gameLocal.Printf ("LODE %s: falloff func gave p = %0.2f (clamped %0.2f)\n", GetName(), p, probability);
 				}
 
 				// Rotate around our rotation axis (to support rotated LODE brushes)
@@ -890,7 +1018,7 @@ void Lode::PrepareEntities( void )
 				// add origin of the LODE
 				LodeEntity.origin += origin;
 
-				// should only appear on certain ground texture?
+				// should only appear on certain ground material(s)?
 				if (m_Classes[i].materials.Num() > 0)
 				{
 					// end of the trace (downwards the length from entity class position to bottom of LODE)
@@ -952,7 +1080,7 @@ void Lode::PrepareEntities( void )
 						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s (%s))\n",
 						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z, descr.c_str(), mat->GetName() );
 
-						float probability = m_Classes[i].defaultProb;		// the default if nothing hits
+						float p = m_Classes[i].defaultProb;		// the default if nothing hits
 
 						// see if this entity is inhibited by this material
 						for (int e = 0; e < m_Classes[i].materials.Num(); e++)
@@ -960,7 +1088,7 @@ void Lode::PrepareEntities( void )
 							// starts with the same as the one we look at?
 							if ( m_Classes[i].materials[e].name.Find( descr ) == 0 )
 							{
-								probability = m_Classes[i].materials[e].probability;
+								p = m_Classes[i].materials[e].probability;
 
 								//gameLocal.Printf ("LODE %s: Material (%s) matches class material %i (%s), using probability %0.2f\n",
 								//		GetName(), descr.c_str(), e, m_Classes[i].materials[e].name.c_str(), probability); 
@@ -968,20 +1096,30 @@ void Lode::PrepareEntities( void )
 								break;
 							}	
 						}
-						// gameLocal.Printf ("LODE %s: Using material probability %0.2f.\n", GetName(), probability );
-						// check against the probability (0 => always skip, 1.0 - never skip, 0.5 - skip half)
-						float r = RandomFloat();
-						if (r > probability)
-						{
-							gameLocal.Printf ("LODE %s: Skipping placement on material %s, %0.2f > %0.2f.\n", GetName(), descr.c_str(), r, probability);
-							continue;
-						}
-					}
+
+						gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), p );
+
+						// multiply probability with p (so 0.5 * 0.5 results in 0.25)
+						probability *= p;
+
+						// TODO: height based probability, angle-of-surface probability
+
+					}	
 					else
 					{
 						// didn't hit anything, floating in air?
 					}
-				}	
+
+				} // end of per-material probability
+
+				gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), probability );
+				// check against the probability (0 => always skip, 1.0 - never skip, 0.5 - skip half)
+				float r = RandomFloat();
+				if (r > probability)
+				{
+					gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
+					continue;
+				}
 
 				if (m_Classes[i].floor)
 				{
