@@ -172,15 +172,11 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 
 		const DownloadableMission& mission = missions[missionIndex];
 
-		// Take the filename from the first URL
-		idStr url = mission.downloadLocations[0];
-		idStr filename;
-		url.ExtractFileName(filename);
-
+		// The filename is deduced from the mod name found on the website
 		idStr targetPath = g_Global.GetDarkmodPath().c_str();
 		targetPath += "/";
 		targetPath += cv_tdm_fm_path.GetString();
-		targetPath += filename;
+		targetPath += mission.modName + ".pk4";
 
 		CDownloadPtr download(new CDownload(mission.downloadLocations, targetPath));
 
