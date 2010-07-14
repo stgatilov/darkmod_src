@@ -10463,8 +10463,8 @@ void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from 
 			}
 
 			// store for later query
-			from->Set("_poskey", PosKey);
-			from->Set("_attnamevalue", AttNameValue );
+			args.Set("_poskey", PosKey);
+			args.Set("_attnamevalue", AttNameValue );
 
 			// tels: parse all "set .." spawnargs
 			const idKeyValue *kv_set = from->MatchPrefix( "set ", NULL );
