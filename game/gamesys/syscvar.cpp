@@ -131,7 +131,7 @@ idCVar cv_tdm_fm_splashimage_file( "tdm_fm_splashimage_file", "install_splash.tg
 idCVar cv_tdm_fm_sync_config_files("tdm_fm_sync_config_files", "1", CVAR_BOOL | CVAR_ARCHIVE, "If true (1) the FM loader will sync DoomConfig.cfg files from the darkmod folder to the FM directory and back.");
 idCVar cv_tdm_fm_restart_delay("tdm_fm_restart_delay",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "If non-zero, this is the timespan in milliseconds to wait between D3 restarts (to let the previous D3 process fully release all resources)." );
 
-idCVar cv_tdm_proxy("tdm_proxy", "", CVAR_ARCHIVE, "The proxy to use when connecting to the internet, format: hostname:8080" );
+idCVar cv_tdm_proxy("tdm_proxy", "", CVAR_ARCHIVE, "The proxy to use when connecting to the internet, format: hostname:port" );
 idCVar cv_tdm_proxy_user("tdm_proxy_user", "", CVAR_ARCHIVE, "The proxy user to use when connecting to the internet via proxy." );
 idCVar cv_tdm_proxy_pass("tdm_proxy_pass", "", CVAR_ARCHIVE, "The proxy password to use when connecting to the internet via proxy." );
 idCVar cv_tdm_allow_http_access("tdm_allow_http_access",		"1",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If true (nonzero), TDM is allowed to send HTTP request to the TDM servers to check for updates, missions, etc. Setting this to false disables all web functionality." );
