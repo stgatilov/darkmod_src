@@ -886,6 +886,9 @@ void idActor::Spawn( void )
 
 	LoadVocalSet();
 
+	// Load replacement animations from our own spawnargs
+	LoadReplacementAnims(spawnArgs);
+
 	FinishSetup();
 
 	CREATE_TIMER(actorGetObstaclesTimer, name, "GetObstacles");
@@ -898,7 +901,6 @@ void idActor::Spawn( void )
 	CREATE_TIMER(actorRouteToGoalTimer, name, "RouteToGoal");
 	CREATE_TIMER(actorSubSampleWalkPathTimer, name, "SubSampleWalkPath");
 	CREATE_TIMER(actorWalkPathValidTimer, name, "WalkPathValid");
-
 }
 
 /*
@@ -2287,17 +2289,7 @@ void idActor::BindNotify( idEntity *ent )
 	idAFEntity_Base::BindNotify(ent);
 
 	// Override our animations based on the bound entity's replace_anim_* spawnargs
-	const idKeyValue *KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", NULL );
-	while ( KeyVal )
-	{
-		idStr key = KeyVal->GetKey();
-		key.StripLeadingOnce("replace_anim_");
-
-		//gameLocal.Warning( "idActor: Replacing animation %s with %s", key.c_str(), KeyVal->GetValue().c_str() );
-		m_replacementAnims.Set( key, KeyVal->GetValue() );
-
-		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
-	}
+	LoadReplacementAnims(ent->spawnArgs);
 }
 
 /*
@@ -2851,6 +2843,18 @@ const char* idActor::LookupReplacementAnim( const char *animname )
 	}
 
 	return replacement;
+}
+
+void idActor::LoadReplacementAnims(const idDict& spawnArgs)
+{
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("replace_anim_", NULL);
+		 kv != NULL; kv = spawnArgs.MatchPrefix("replace_anim_", kv))
+	{
+		idStr key = kv->GetKey();
+		key.StripLeadingOnce("replace_anim_");
+
+		SetReplacementAnim(key, kv->GetValue());
+	}
 }
 
 void idActor::SetReplacementAnim(const idStr& animToReplace, const idStr& replacementAnim)

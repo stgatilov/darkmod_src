@@ -545,6 +545,10 @@ public:
 							// animation state control
 	int						GetAnim( int channel, const char *name );
 	idAnimator*				GetAnimatorForChannel(int channel);
+
+	// greebo: Searches the given dictionary for animation replacement spawnargs and applies them to this actor
+	void					LoadReplacementAnims(const idDict& spawnArgs);
+
 	const char*				LookupReplacementAnim( const char *name );
 
 	// greebo: Replaces the given animToReplace by the animation replacementAnim
