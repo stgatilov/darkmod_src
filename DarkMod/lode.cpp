@@ -15,7 +15,8 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
-TODO: Creating func_statics out of brushes/patches does not work, the models are lost
+TODO: Creating func_statics out of brushes/patches does not work, the models are still
+	  invisible and the clipmodel of the dummy model lingers around
 */
 
 #include "../idlib/precompiled.h"
@@ -28,6 +29,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 // maximum number of tries to place an entity
 #define MAX_TRIES 16
+
+// the name of the class where to look for shared models
+#define FUNC_STATIC "func_static"
+// the name of the dummy func static with a visual model
+// Used because I could not get it to work with spawning an
+// empty func_static, then adding the model (modelDefHandle is protected)
+#define FUNC_DUMMY "atdm:lode_dummy_static"
 
 // Avoid that we run out of entities:
 
@@ -158,6 +166,17 @@ void Lode::Save( idSaveGame *savefile ) const {
 			savefile->WriteFloat( m_Classes[i].func_min );
 			savefile->WriteFloat( m_Classes[i].func_max );
 		}
+
+		// only write the model if it is used
+		if ( NULL != m_Classes[i].hModel)
+		{
+			savefile->WriteBool( true );
+			savefile->WriteModel( m_Classes[i].hModel );
+		}
+		else
+		{
+			savefile->WriteBool( false );
+		}
 	}
 	savefile->WriteInt( m_Inhibitors.Num() );
 	for( int i = 0; i < m_Inhibitors.Num(); i++ )
@@ -174,6 +193,7 @@ Lode::Restore
 */
 void Lode::Restore( idRestoreGame *savefile ) {
 	int num;
+	bool bHaveModel;
 
 	savefile->ReadBool( active );
 
@@ -250,6 +270,14 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( m_Classes[i].func_min );
 			savefile->ReadFloat( m_Classes[i].func_max );
 		}
+
+		savefile->ReadBool( bHaveModel );
+		m_Classes[i].hModel = NULL;
+		// only read the model if it is actually used
+		if ( bHaveModel )
+		{
+			savefile->ReadModel( m_Classes[i].hModel );
+		}
 	}
     savefile->ReadInt( num );
 	m_Inhibitors.Clear();
@@ -316,6 +344,101 @@ ID_INLINE float Lode::RandomFloatSqr( void ) {
 
 /*
 ===============
+Lode::DuplicateModel - Duplicate a render model
+===============
+*/
+idRenderModel * Lode::DuplicateModel ( const idRenderModel *source, const char* snapshotName, const bool dupData ) {
+	int numSurfaces;
+	int numVerts, numIndexes;
+	const modelSurface_t *surf;
+	modelSurface_s newSurf;
+
+	// allocate memory for the model
+	idRenderModel *hModel = renderModelManager->AllocModel();
+	// and init it as dynamic empty model
+	hModel->InitEmpty( snapshotName );
+
+	// get the number of base surfaces (minus decals) on the old model
+	numSurfaces = source->NumBaseSurfaces();
+
+	// count the tris
+	numIndexes = 0; numVerts = 0;
+	// for each surface
+	for (int i = 0; i < numSurfaces; i++)
+	{
+		// get a pointer to a surface
+		surf = source->Surface( i );
+		if (surf)
+		{
+			/* typedef struct modelSurface_s {
+		        int                                                     id;
+		        const idMaterial *                      shader;
+		        srfTriangles_t *                        geometry;
+			} modelSurface_t; */
+			numVerts += surf->geometry->numVerts; 
+			numIndexes += surf->geometry->numIndexes;
+
+			// copy the material
+			newSurf.shader = surf->shader;
+			if (dupData)
+			{
+				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
+				// copy the data over
+				for (int j = 0; j < numVerts; j++)
+				{
+					newSurf.geometry->verts[j] = surf->geometry->verts[j];
+				}
+				for (int j = 0; j < numIndexes; j++)
+				{
+					newSurf.geometry->indexes[j] = surf->geometry->indexes[j];
+				}
+			}
+			else
+			{
+				// caller needs to make sure that the shared data is not deallocated twice
+				newSurf.geometry = surf->geometry;
+			}
+			newSurf.id = 0;
+			hModel->AddSurface( newSurf );
+		}
+	}
+	hModel->FinishSurfaces();
+
+	gameLocal.Printf ("LODE %s: Duplicated model for %s with %i surfaces, %i verts and %i indexes.\n", GetName(), snapshotName, numSurfaces, numVerts, numIndexes );
+
+	return hModel;
+}
+
+/*
+===============
+Lode::FreeSharedModelData - manipulate memory of a duplicate model so that shared data does not get freed twice
+===============
+*/
+void Lode::FreeSharedModelData ( const idRenderModel *source )
+{
+	const modelSurface_t *surf;
+
+	// get the number of base surfaces (minus decals) on the old model
+	int numSurfaces = source->NumBaseSurfaces();
+
+	// for each surface
+	for (int i = 0; i < numSurfaces; i++)
+	{
+		// get a pointer to a surface
+		surf = source->Surface( i );
+		if (surf)
+		{
+			// null out the geometry with the shared data
+			surf->geometry->numVerts = 0;
+			surf->geometry->verts = NULL;
+			surf->geometry->numIndexes = 0;
+			surf->geometry->indexes = NULL;
+		}
+	}
+}
+
+/*
+===============
 Lode::Spawn
 ===============
 */
@@ -372,7 +495,7 @@ void Lode::Spawn( void ) {
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
 	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
-	gameLocal.Printf (" LODE %s: cull range = %0.2f.\n", GetName(), cullRange );
+	gameLocal.Printf ("LODE %s: cull range = %0.2f.\n", GetName(), cullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -387,10 +510,10 @@ void Lode::Spawn( void ) {
 
 /*
 ===============
-Lode::addClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
+Lode::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
 */
-float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
+float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 {
 	lode_class_t			LodeClass;
 	lode_material_t			LodeMaterial;
@@ -562,6 +685,18 @@ float Lode::addClassFromEntity( idEntity *ent, const int iEntScore )
 		kv = ent->spawnArgs.MatchPrefix( "lode_material_", kv );
 	}
 
+	// has a model with shared data?
+	LodeClass.hModel = NULL;
+	if (LodeClass.classname == FUNC_STATIC)
+	{
+		// make a copy, but without sharing the data
+		// TODO: need to use a distinc name here?
+		gameLocal.Printf( "LODE %s: Duplicating model for %s.\n", GetName(), LodeClass.classname.c_str() );
+		LodeClass.hModel = DuplicateModel( ent->GetRenderEntity()->hModel, LodeClass.classname.c_str(), false );
+		LodeClass.classname = FUNC_DUMMY;
+	}
+
+	// all data setup, append to the list
 	m_Classes.Append ( LodeClass );
 
 	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
@@ -687,7 +822,7 @@ void Lode::Prepare( void )
 						GetName(), ent->GetName(), ent->GetEntityDefName() );
 
 				// add a pseudo class and ignore the size returned
-				addClassFromEntity( ent, 0 );
+				AddClassFromEntity( ent, 0 );
 
 				// no more to do for this target
 				continue;
@@ -702,7 +837,7 @@ void Lode::Prepare( void )
 			{
 				// add a class based on this entity
 				m_iScore += iEntScore;
-				m_fAvgSize += addClassFromEntity( ent, iEntScore );
+				m_fAvgSize += AddClassFromEntity( ent, iEntScore );
 			}
 		}
 	}
@@ -765,7 +900,7 @@ void Lode::Prepare( void )
 		// for each of our "entities", do the distance check
 		for (int i = 0; i < m_Entities.Num(); i++)
 		{
-			spawnEntity(i, false);		// spawn as unmanaged
+			SpawnEntity(i, false);		// spawn as unmanaged
 		}
 
 		// clear out memory just to be sure
@@ -1358,11 +1493,11 @@ void Lode::PrepareEntities( void )
 
 /*
 ================
-Lode::spawnEntity - spawn the entity with the given index, returns true if it was spawned
+Lode::SpawnEntity - spawn the entity with the given index, returns true if it was spawned
 ================
 */
 
-bool Lode::spawnEntity( const int idx, const bool managed )
+bool Lode::SpawnEntity( const int idx, const bool managed )
 {
 	struct lode_entity_t* ent = &m_Entities[idx];
 	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
@@ -1379,6 +1514,7 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 	// TODO: Limit number of entities to spawn per frame
 
 	const char* pstr_DefName = lclass->classname.c_str();
+
 	const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
 	if( p_Def )
 	{
@@ -1435,9 +1571,114 @@ bool Lode::spawnEntity( const int idx, const bool managed )
 			*/
 			m_iNumExisting ++;
 			m_iNumVisible ++;
+
+			// Is this an idStaticEntity? If yes, simply spawning will not recreate the model
+			// so we need to do this manually.
+			if ( lclass->classname == FUNC_DUMMY )
+			{
+				// cache this
+				renderEntity_t *r = ent2->GetRenderEntity();
+				
+				// free the old, empty model
+				if (r->hModel)
+				{
+					gameLocal.Printf("LODE %s: Freeing old func_static model.\n", GetName() );
+					ent2->FreeModelDef();
+					r->hModel = NULL;
+				}
+
+				// duplicate the class model with shared data
+				r->hModel = DuplicateModel( lclass->hModel, lclass->classname, true );
+				if ( r->hModel )
+				{
+					r->bounds = r->hModel->Bounds( r );
+				}
+				else
+				{
+					// should not happen
+					r->bounds.Zero();
+				}
+
+				// TODO: this all does not work yet, model is still invisible in game:
+
+				// force
+					// add to refresh list
+				//	if ( modelDefHandle == -1 ) {
+				//		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+				//	} else {
+				//		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
+				//	}
+				ent2->Present();
+
+				//ent2->BecomeActive( TH_UPDATEVISUALS );
+
+				// TODO: does not work yet:
+				// update the clip model, too, otherwise the "dummy object"'s clipmodel lingers around
+				idClipModel *clipmodel = new idClipModel( ent2->GetModelDefHandle() );
+				//if (clipmodel && clipmodel->IsTraceModel() && ent2->GetPhysics())
+				// is not a trace model, so will this still work?
+				if (clipmodel && ent2->GetPhysics())
+				{
+					gameLocal.Printf("LODE %s: Setting new clipmodel.\n", GetName() );
+					// need to set origin and axis first?
+					ent2->GetPhysics()->SetClipModel( clipmodel, 1.0f );		// density 1.0f?
+				}
+
+				// short version of "UpdateVisuals()"
+				// set to invalid number to force an update the next time the PVS areas are retrieved
+				ent2->ClearPVSAreas();
+
+				// ensure that we call Present this frame (also presents our model to the renderworld)
+				//ent2->BecomeActive( TH_UPDATEVISUALS );
+			}
 			return true;
 		}
 	}
+	return false;
+}
+
+/*
+================
+Lode::CullEntity - cull the entity with the given index, returns true if it was culled
+================
+*/
+bool Lode::CullEntity( const int idx )
+{
+	struct lode_entity_t* ent = &m_Entities[idx];
+
+	if ( !ent->exists )
+	{
+		return false;
+	}
+
+	// cull (remove) the entity
+	idEntity *ent2 = gameLocal.entities[ ent->entity ];
+	if (ent2)
+		{
+		// Before we remove the entity, save it's position and angles
+		// That makes it work for moveables or anything else that
+		// might have changed position (teleported away etc)
+		ent->origin = ent2->GetPhysics()->GetOrigin();
+		ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
+
+		// If the class has a model with shared data, manage this to avoid double frees
+		if ( m_Classes[ ent->classIdx ].hModel )
+		{
+			FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
+		}
+		// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
+
+		m_iNumExisting --;
+		m_iNumVisible --;
+		ent->exists = false;
+		ent->hidden = true;
+
+		// TODO: SafeRemve?
+		ent2->PostEventMS( &EV_Remove, 0 );
+
+		return true;
+		}
+
 	return false;
 }
 
@@ -1521,9 +1762,9 @@ void Lode::Think( void )
 
 			ent = &m_Entities[i];
 			lclass = &(m_Classes[ ent->classIdx ]);
-			if (!ent->exists && deltaSq < lclass->spawnDist)
+			if (!ent->exists && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
-				if (spawnEntity( i, true ))
+				if (SpawnEntity( i, true ))
 				{
 					spawned ++;
 				}
@@ -1534,27 +1775,11 @@ void Lode::Think( void )
 				if (ent->exists && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame
-
-					// cull (remove) the entity
-					idEntity *ent2 = gameLocal.entities[ ent->entity ];
-					if (ent2)
+					if (CullEntity( i ))
 					{
-						// Before we remove the entity, save it's position and angles
-						// That makes it work for moveables or anything else that
-						// might have changed position (teleported away etc)
-						ent->origin = ent2->GetPhysics()->GetOrigin();
-						ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
-
-						// TODO: SafeRemve?
-						ent2->PostEventMS( &EV_Remove, 0 );
+						culled ++;
 					}
 
-					// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
-
-					m_iNumExisting --;
-					m_iNumVisible --;
-					culled++;
-					ent->exists = false;
 				}
 				// TODO: Normal LOD code here (replicate from entity)
 			}
@@ -1598,24 +1823,10 @@ Lode::Event_CullAll
 ================
 */
 void Lode::Event_CullAll( void ) {
-	struct lode_entity_t* ent;
 
 	for (int i = 0; i < m_Entities.Num(); i++)
 	{
-		ent = &m_Entities[i];
-		if (ent->exists)
-		{
-			idEntity *ent2 = gameLocal.entities[ ent->entity ];
-			if (ent2)
-			{
-				// TODO: SafeRemve?
-				ent2->PostEventMS( &EV_Remove, 0 );
-			}
-
-			// cull (remove) the entity
-			gameLocal.Printf( "LODE %s: Culling entity #%i.\n", GetName(), i );
-			ent->exists = false;
-		}
+		CullEntity( i );
 	}	
 }
 

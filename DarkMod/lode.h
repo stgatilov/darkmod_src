@@ -40,6 +40,9 @@ struct lode_material_t {
 struct lode_class_t {
 	idStr					classname;		// Entity class to respawn entities
 	idStr					skin;			// Either "skinname" or "random:skinname1,skinname2" etc.
+	idRenderModel*			hModel;			// Used to share data between many entities with the same model
+											// (f.i. when you turn a brush inside DR into a idStaticEntity and
+											// use it as template)
 	int						score;			// to find out how many entities (calculate at spawn time from score)
 	idVec3					origin;			// origin of the original target entity, useful for "flooring"
 	float					cullDist;		// distance after where we remove the entity from the world
@@ -119,6 +122,21 @@ public:
 	*/
 	void				Event_CullAll( void );
 
+	/**
+	* Given a pointer to a render model, calls AllocModel() on the rendermanager, then
+	* copies all surface data from the old model to the new model. Used to construct a
+	* copy of an existing model, so it can then be used as blue-print for other models,
+	* which will share the same data. If dupData is true, memory for verts and indexes
+	* is duplicated, otherwise the new model shares the data of the old model. In this
+	* case the memory of the new model needs to be freed differently, of course :)
+	*/
+	idRenderModel*		DuplicateModel( const idRenderModel *source, const char *snapshotName, const bool dupData = true );
+
+	/**
+	* Manipulate memory of a duplicate model so that shared data does not get freed twice.
+	*/
+	void				FreeSharedModelData ( const idRenderModel *model );
+
 private:
 	void				Event_Activate( idEntity *activator );
 
@@ -149,15 +167,21 @@ private:
 
 	/**
 	* Spawn the entity with the given index, return true if it could be spawned.
-	* If managed is true, the LODE will take care of this entity.
+	* If managed is true, the LODE will take care of this entity for LOD changes.
 	*/
-	bool				spawnEntity( const int idx, const bool managed );
+	bool				SpawnEntity( const int idx, const bool managed );
+
+	/**
+	* Cull the entity with the given index, if it exists, return true if it could
+	* be culled.
+	*/
+	bool				CullEntity( const int idx );
 
 	/**
 	* Take the given entity as template and add a class from its values. Returns
 	* the floor-space-size of this entity class.
 	*/
-	float				addClassFromEntity( idEntity *ent, const int iEntScore );
+	float				AddClassFromEntity( idEntity *ent, const int iEntScore );
 
 	/**
 	* Generate a scaling factor depending on the GUI setting.
