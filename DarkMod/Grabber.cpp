@@ -1515,20 +1515,33 @@ bool CGrabber::Equip( void )
 		m_bEquippedEntInWorld = true;
 	}
 
-	m_EquippedEnt = ent;
-
 	// Specific case of shouldering a body
-	if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
+	if (ent->IsType(idAFEntity_Base::Type))
 	{
-		StopDrag();
+		// greebo: Only shoulderable AF should get "equipped"
+		if (ent->spawnArgs.GetBool("shoulderable"))
+		{
+			m_EquippedEnt = ent;
 
-		ShoulderBody( static_cast<idAFEntity_Base *>(ent) );
+			StopDrag();
 
-		// greebo: Clear the drag entity, otherwise frobbing interferes
-		m_dragEnt = NULL;
+			ShoulderBody(static_cast<idAFEntity_Base*>(ent));
+
+			// greebo: Clear the drag entity, otherwise frobbing interferes
+			m_dragEnt = NULL;
+
+			return true; // equipped
+		}
+
+		// non-shoulderable AF entity, did not equip this one
+		return false; 
 	}
-
-	return true;
+	else
+	{
+		// Non-AF entity, mark it as equipped
+		m_EquippedEnt = ent;
+		return true;
+	}
 }
 
 bool CGrabber::Dequip( void )
