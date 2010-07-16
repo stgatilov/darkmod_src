@@ -48,47 +48,16 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
 
 	// Read the general-purpose animations first
-	std::string animStringList(owner->spawnArgs.GetString("idle_animations", ""));
-
-	std::vector<std::string> anims; // will hold the separated strings
-	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
-
-	// Copy the strings into the idList<idStr>
-	for (std::size_t i = 0; i < anims.size(); i++)
-	{
-		if (!anims[i].empty())
-		{
-			_idleAnimations.Append(idStr(anims[i].c_str()));
-		}
-	}
-
+	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations"), _idleAnimations);
+	
 	// Now read the anims for the torso only
-	animStringList = owner->spawnArgs.GetString("idle_animations_torso", "");
-	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
-
-	// Copy the strings into the idList<idStr>
-	for (std::size_t i = 0; i < anims.size(); i++)
-	{
-		if (!anims[i].empty())
-		{
-			_idleAnimationsTorso.Append(idStr(anims[i].c_str()));
-		}
-	}
+	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_torso"), _idleAnimationsTorso);
 
 	// Now read the anims for sitting AI
-	animStringList = owner->spawnArgs.GetString("idle_animations_sitting", "");
-	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
 
-	// Copy the strings into the idList<idStr>
-	for (std::size_t i = 0; i < anims.size(); i++)
-	{
-		if (!anims[i].empty())
-		{
-			_idleAnimationsSitting.Append(idStr(anims[i].c_str()));
-		}
-	}
-
-	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() || _idleAnimationsSitting.Num()))
+	if (_idleAnimationInterval > 0 && 
+		(_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() > 0 || _idleAnimationsSitting.Num() > 0))
 	{
 		_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
 	}
@@ -96,6 +65,21 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// No idle animation interval set or no animations, finish this task
 		subsystem.FinishTask();
+	}
+}
+
+void IdleAnimationTask::ParseAnimsToList(const std::string& animStringList, idStringList& targetList)
+{
+	std::vector<std::string> anims; // will hold the separated strings
+	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+
+	// Copy the strings into the target idStringList
+	for (std::size_t i = 0; i < anims.size(); i++)
+	{
+		if (!anims[i].empty())
+		{
+			targetList.Append(idStr(anims[i].c_str()));
+		}
 	}
 }
 
@@ -125,99 +109,18 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && owner->GetMoveType() != MOVETYPE_SIT)
 			{
-				int animCount = _idleAnimations.Num();
-				if (animCount > 0)
-				{
-					// AI is not walking or sitting, play animations affecting all channels
-					int animIdx = gameLocal.random.RandomInt(animCount);
-
-					// If we have more than one anim, don't play the same anim twice
-					while (animIdx == _lastIdleAnim && animCount > 1)
-					{
-						animIdx = gameLocal.random.RandomInt(animCount);
-					}
-
-					_lastIdleAnim = animIdx;
-
-					const idStr& animName = _idleAnimations[animIdx];
-
-					// Check if the animation exists
-					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0 || 
-						owner->GetAnim(ANIMCHANNEL_LEGS, animName) == 0)
-					{
-						gameLocal.Warning("Could not find anim %s on entity %s", animName.c_str(), owner->name.c_str());
-						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s\r", animName.c_str(), owner->name.c_str());
-						return true; // done with errors
-					}
-
-					// Issue the playanim call
-					owner->SetNextIdleAnim(animName);
-
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
-					owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
-				}
+				// AI is not walking or sitting, play animations affecting all channels
+				AttemptToPlayAnim(owner, _idleAnimations, false);
 			}
 			else if (owner->GetMoveType() == MOVETYPE_SIT)
 			{
 				// AI is sitting, only use sitting animations on torso channel
-				int animCount = _idleAnimationsSitting.Num();
-				if (animCount > 0)
-				{
-
-					int animIdx = gameLocal.random.RandomInt(animCount);
-
-					// If we have more than one anim, don't play the same anim twice
-					while (animIdx == _lastIdleAnim && animCount > 1)
-					{
-						animIdx = gameLocal.random.RandomInt(animCount);
-					}
-
-					_lastIdleAnim = animIdx;
-
-					const idStr& animName = _idleAnimationsSitting[animIdx];
-
-					// Check if the animation exists
-					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
-					{
-						gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
-						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
-						return true; // done with errors
-					}
-
-					owner->SetNextIdleAnim(animName);
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
-				}
-
+				AttemptToPlayAnim(owner, _idleAnimationsSitting, true); // TORSO only
 			}
 			else
 			{
 				// AI is walking, only use animations for the Torso channel
-				int animCount = _idleAnimationsTorso.Num();
-				if (animCount > 0)
-				{
-					int animIdx = gameLocal.random.RandomInt(animCount);
-
-					// If we have more than one anim, don't play the same anim twice
-					while (animIdx == _lastIdleAnim && animCount > 1)
-					{
-						animIdx = gameLocal.random.RandomInt(animCount);
-					}
-
-					_lastIdleAnim = animIdx;
-
-					const idStr& animName = _idleAnimationsTorso[animIdx];
-
-					// Check if the animation exists
-					if (owner->GetAnim(ANIMCHANNEL_TORSO, animName) == 0)			
-					{
-						gameLocal.Warning("Could not find anim %s on entity %s for channel TORSO", animName.c_str(), owner->name.c_str());
-						DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s for channel TORSO\r", animName.c_str(), owner->name.c_str());
-						return true; // done with errors
-					}
-
-					owner->SetNextIdleAnim(animName);
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
-				}
+				AttemptToPlayAnim(owner, _idleAnimationsTorso, true); // TORSO only
 			}
 		}
 		
@@ -228,6 +131,111 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	}
 
 	return false; // not finished yet
+}
+
+void IdleAnimationTask::AttemptToPlayAnim(idAI* owner, const idStringList& anims, bool torsoOnly)
+{
+	// Get a new index into the given array
+	int animIndex = GetNewIdleAnimIndex(anims, owner);
+
+	if (animIndex != -1)
+	{
+		_lastIdleAnim = animIndex;
+
+		// Issue the playanim call
+		owner->SetNextIdleAnim(anims[animIndex]);
+
+		// Play on TORSO and LEGS
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomIdleAnim", 4);
+
+		if (!torsoOnly)
+		{
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
+		}
+	}
+}
+
+int IdleAnimationTask::GetNewIdleAnimIndex(const idStringList& anims, idAI* owner)
+{
+	int animCount = anims.Num();
+
+	if (animCount > 1)
+	{
+		idList<int> excludedIndices;
+		excludedIndices.Append(_lastIdleAnim);
+
+		// Be sure to select one which doesn't interfere and is different to the last one
+		while (excludedIndices.Num() < animCount)
+		{
+			int animIdx = gameLocal.random.RandomInt(animCount);
+
+			// If we already tried that anim, get a new one
+			if (excludedIndices.FindIndex(animIdx) != -1) continue;
+
+			// Check if anim is suitable at this point
+			if (!AnimIsApplicable(owner, anims[animIdx]))
+			{
+				// Cannot play this one
+				excludedIndices.Append(animIdx);
+				continue;
+			}
+
+			// Found a good one
+			return animIdx;
+		}
+
+		// Did not find a suitable one
+		return -1;
+	}
+	else if (animCount == 1)
+	{
+		// Only one single anim present
+		if (AnimIsApplicable(owner, anims[0]))
+		{
+			return 0; // anim is OK
+		}
+		
+		// Anim not suitable
+		return -1;
+	}
+	else
+	{
+		// No idle anims in list
+		return -1;
+	}
+}
+
+bool IdleAnimationTask::AnimIsApplicable(idAI* owner, const idStr& animName)
+{
+	int torsoAnimNum = owner->GetAnim(ANIMCHANNEL_TORSO, animName);
+
+	if (torsoAnimNum == 0)
+	{
+		gameLocal.Warning("Could not find anim %s on entity %s", animName.c_str(), owner->name.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find anim %s on entity %s\r", animName.c_str(), owner->name.c_str());
+
+		return false;
+	}
+
+	// Check if this anim interferes with random head turning
+	if (owner->GetMemory().currentlyHeadTurning && AnimHasNoHeadTurnFlag(owner, torsoAnimNum))
+	{
+		gameLocal.Printf("Inhibited idle animation %s, since random head turning is active.\n", animName.c_str());
+
+		// Cannot play this one at this point
+		return false;
+	}
+
+	// OK
+	return true; 
+}
+
+bool IdleAnimationTask::AnimHasNoHeadTurnFlag(idAI* owner, int animNum)
+{
+	idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_TORSO);
+	animFlags_t animflags = animator->GetAnimFlags(animNum);
+
+	return animflags.no_random_headturning;
 }
 
 void IdleAnimationTask::OnFinish(idAI* owner)

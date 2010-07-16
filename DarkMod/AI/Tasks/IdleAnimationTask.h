@@ -26,9 +26,9 @@ class IdleAnimationTask :
 {
 	int _nextAnimationTime;
 
-	idList<idStr> _idleAnimations;
-	idList<idStr> _idleAnimationsTorso;
-	idList<idStr> _idleAnimationsSitting;
+	idStringList _idleAnimations;
+	idStringList _idleAnimationsTorso;
+	idStringList _idleAnimationsSitting;
 
 	int _idleAnimationInterval;
 
@@ -48,13 +48,28 @@ public:
 
 	virtual void OnFinish(idAI* owner);
 
-
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
 	static IdleAnimationTaskPtr CreateInstance();
+
+protected:
+	// De-serialises the comma-separated string list of animations
+	void ParseAnimsToList(const std::string& animStringList, idStringList& targetList);
+
+	// Attempt to play an animation from the given list. Set torsoOnly to true if legs channel is forbidden
+	void AttemptToPlayAnim(idAI* owner, const idStringList& anims, bool torsoOnly);
+
+	// Returns TRUE if the given anim has no_random_head_turning set 
+	bool AnimHasNoHeadTurnFlag(idAI* owner, int animNum);
+
+	// Returns a new idle anim index
+	virtual int GetNewIdleAnimIndex(const idStringList& anims, idAI* owner);
+
+	// Returns true if the named anim is ok at this point
+	virtual bool AnimIsApplicable(idAI* owner, const idStr& animName);
 };
 
 } // namespace ai
