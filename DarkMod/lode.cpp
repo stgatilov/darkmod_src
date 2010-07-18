@@ -82,6 +82,10 @@ Lode::Lode( void ) {
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
+	// always put the empty skin into the list so it has index 0
+	m_Skins.Clear();
+	m_Skins.Append ( idStr("") );
+
 	m_iNumEntities = 0;
 	m_iNumExisting = 0;
 	m_iNumVisible = 0;
@@ -116,7 +120,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_Entities.Num() );
 	for( int i = 0; i < m_Entities.Num(); i++ )
 	{
-		savefile->WriteString( m_Entities[i].skin );
+		savefile->WriteInt( m_Entities[i].skinIdx );
 		savefile->WriteVec3( m_Entities[i].origin );
 		savefile->WriteAngles( m_Entities[i].angles );
 		savefile->WriteBool( m_Entities[i].hidden );
@@ -145,6 +149,12 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Classes[i].size );
 
 		savefile->WriteFloat( m_Classes[i].defaultProb );
+
+		savefile->WriteInt( m_Classes[i].skins.Num() );
+		for( int j = 0; j < m_Classes[i].skins.Num(); j++ )
+		{
+			savefile->WriteInt( m_Classes[i].skins[j] );
+		}
 
 		savefile->WriteInt( m_Classes[i].materials.Num() );
 		for( int j = 0; j < m_Classes[i].materials.Num(); j++ )
@@ -184,6 +194,11 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Inhibitors[i].origin );
 		savefile->WriteBox( m_Inhibitors[i].box );
 	}
+	savefile->WriteInt( m_Skins.Num() );
+	for( int i = 0; i < m_Skins.Num(); i++ )
+	{
+		savefile->WriteString( m_Skins[i] );
+	}
 }
 
 /*
@@ -215,7 +230,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	m_Entities.SetNum( num );
 	for( int i = 0; i < num; i++ )
 	{
-		savefile->ReadString( m_Entities[i].skin );
+		savefile->ReadInt( m_Entities[i].skinIdx );
 		savefile->ReadVec3( m_Entities[i].origin );
 		savefile->ReadAngles( m_Entities[i].angles );
 		savefile->ReadBool( m_Entities[i].hidden );
@@ -230,7 +245,6 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadString( m_Classes[i].classname );
-		savefile->ReadString( m_Classes[i].skin );
 		savefile->ReadInt( m_Classes[i].score );
 		savefile->ReadFloat( m_Classes[i].cullDist );
 		savefile->ReadFloat( m_Classes[i].spawnDist );
@@ -247,6 +261,14 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( m_Classes[i].size );
 
 		savefile->ReadFloat( m_Classes[i].defaultProb );
+
+		savefile->ReadInt( num );
+		m_Classes[i].skins.Clear();
+		m_Classes[i].skins.SetNum( num );
+		for( int j = 0; j < num; j++ )
+		{
+			savefile->ReadInt( m_Classes[i].skins[j] );
+		}
 
 		savefile->ReadInt( num );
 		m_Classes[i].materials.Clear();
@@ -279,13 +301,22 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadModel( m_Classes[i].hModel );
 		}
 	}
-    savefile->ReadInt( num );
+
+	savefile->ReadInt( num );
 	m_Inhibitors.Clear();
 	m_Inhibitors.SetNum( num );
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadVec3( m_Inhibitors[i].origin );
 		savefile->ReadBox( m_Inhibitors[i].box );
+	}
+
+	savefile->ReadInt( num );
+	m_Skins.Clear();
+	m_Skins.SetNum( num );
+	for( int i = 0; i < num; i++ )
+	{
+		savefile->ReadString( m_Skins[i] );
 	}
 }
 
@@ -450,6 +481,8 @@ void Lode::Spawn( void ) {
 	idAngles a = clip->GetAxis().ToAngles();
 	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
+	gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, idEntity %i.\n", GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(idEntity) );
+
 //	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
 //	idVec3 o = trace->GetOrigin();
 //	idVec3 s = trace->GetBounds().GetSize();
@@ -510,6 +543,26 @@ void Lode::Spawn( void ) {
 
 /*
 ===============
+Lode::AddSkin - add one skin name to the skins list (if it isn't in there already), and return the index
+===============
+*/
+int Lode::AddSkin( const idStr *skin )
+{
+	for( int i = 0; i < m_Skins.Num(); i++ )
+	{
+		if (m_Skins[i] == *skin)
+		{
+			return i;
+		}
+	}
+
+	// not yet in list
+	m_Skins.Append (*skin);
+	return m_Skins.Num() - 1;
+}
+
+/*
+===============
 Lode::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
 */
@@ -518,10 +571,30 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	lode_class_t			LodeClass;
 	lode_material_t			LodeMaterial;
 	idStr falloff;
+	const idKeyValue *kv;
 
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
-	LodeClass.skin = ent->spawnArgs.GetString( "skin", "" );
+	
+	// get all "skin" and "skin_xx" spawnargs
+
+	LodeClass.skins.Clear();
+	// if no skin spawnarg exists, add the empty skin so we at least have one entry
+	if ( ! ent->spawnArgs.FindKey("skin") )
+	{
+		LodeClass.skins.Append ( 0 );
+	}
+   	kv = ent->spawnArgs.MatchPrefix( "skin", NULL );
+	while( kv )
+	{
+		// find the proper skin index
+		idStr skin = kv->GetValue();
+		int skinIdx = AddSkin( &skin );
+		gameLocal.Printf( "LODE %s: Adding skin %s (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+		LodeClass.skins.Append ( skinIdx );
+		kv = ent->spawnArgs.MatchPrefix( "skin", kv );
+	}
+
 	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
 	// the entity already between spawning and us querying the info:
 	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
@@ -665,7 +738,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.defaultProb = ent->spawnArgs.GetFloat( "lode_probability", spawnArgs.GetString( "probability", "1.0" ) );
 
 	// all probabilities for the different materials
-	const idKeyValue *kv = ent->spawnArgs.MatchPrefix( "lode_material_", NULL );
+	kv = ent->spawnArgs.MatchPrefix( "lode_material_", NULL );
 	while( kv ) {
 		// "lode_material_grass" => "grass"
 		LodeMaterial.name = kv->GetKey().Mid( 14, kv->GetKey().Length() - 14 );
@@ -1232,7 +1305,7 @@ void Lode::PrepareEntities( void )
 							}	
 						}
 
-						gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), p );
+						//gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), p );
 
 						// multiply probability with p (so 0.5 * 0.5 results in 0.25)
 						probability *= p;
@@ -1247,7 +1320,7 @@ void Lode::PrepareEntities( void )
 
 				} // end of per-material probability
 
-				gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), probability );
+				// gameLocal.Printf ("LODE %s: Using final p=%0.2f.\n", GetName(), probability );
 				// check against the probability (0 => always skip, 1.0 - never skip, 0.5 - skip half)
 				float r = RandomFloat();
 				if (r > probability)
@@ -1430,8 +1503,9 @@ void Lode::PrepareEntities( void )
 			// couldn't place entity even after 10 tries?
 			if (tries >= MAX_TRIES) continue;
 
-			// TODO: choose skin randomly
-			LodeEntity.skin = m_Classes[i].skin;
+			// choose skin randomly
+			LodeEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
+			//gameLocal.Printf( "LODE %s: Using skin %i.\n", GetName(), LodeEntity.skinIdx );
 			// will be automatically spawned when we are in range
 			LodeEntity.hidden = true;
 			LodeEntity.exists = false;
@@ -1479,7 +1553,8 @@ void Lode::PrepareEntities( void )
 				// add this entity to our list
 				LodeEntity.origin = origin;
 				LodeEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
-				LodeEntity.skin = ent->spawnArgs.GetString("skin","");
+				idStr skin = ent->spawnArgs.GetString("skin","");
+				LodeEntity.skinIdx = AddSkin( &skin );
 				// already exists
 				LodeEntity.hidden = false;
 				LodeEntity.exists = true;
@@ -1503,7 +1578,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
 	// spawn the entity and note its number
-	gameLocal.Printf( "LODE %s: Spawning entity #%i (%s).\n", GetName(), idx, lclass->classname.c_str() );
+	gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s).\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str() );
 
 	// avoid that we run out of entities during run time
 	if (gameLocal.num_entities > SPAWN_LIMIT)
@@ -1525,8 +1600,8 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 		// move to right place
 		args.SetVector("origin", ent->origin );
 
-		// TODO: set random skin
-	    args.Set("skin", lclass->skin );
+		// set previously defined (possible random) skin
+	    args.Set("skin", m_Skins[ ent->skinIdx ] );
 
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");

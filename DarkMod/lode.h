@@ -39,7 +39,7 @@ struct lode_material_t {
 // Defines one entity class to be spawned/culled
 struct lode_class_t {
 	idStr					classname;		// Entity class to respawn entities
-	idStr					skin;			// Either "skinname" or "random:skinname1,skinname2" etc.
+	idList< int >			skins;			// index into skins array
 	idRenderModel*			hModel;			// Used to share data between many entities with the same model
 											// (f.i. when you turn a brush inside DR into a idStaticEntity and
 											// use it as template)
@@ -87,15 +87,13 @@ struct lode_inhibitor_t {
 
 // Defines one entity to be spawned/culled
 struct lode_entity_t {
-	idStr					skin;			// the final skin for this entity (might be randomly choosen)
-	idVec3					origin;			// (semi-random) origin relatively to LODE origin
+	int						skinIdx;		// index into skin list, the final skin for this entity (might be randomly choosen)
+	idVec3					origin;			// (semi-random) origin
 	idAngles				angles;			// zyx (yaw, pitch, roll) (semi-random) angles
 	bool					hidden;			// hidden?
 	bool					exists;			// false if culled
 	int						entity;			// nr of the entity if exists == true
 	int						classIdx;		// index into Classes
-	// only needed during construct, so we use a temp. idList to save memory
-	//idBounds				bounds;			// bounds of the model, for fast collision tests
 };
 
 extern const idEventDef EV_Deactivate;
@@ -184,6 +182,11 @@ private:
 	float				AddClassFromEntity( idEntity *ent, const int iEntScore );
 
 	/**
+	* Add an entry to the skin list unless it is there already. Return the index.
+	*/
+	int 				AddSkin( const idStr *skin );
+
+	/**
 	* Generate a scaling factor depending on the GUI setting.
 	*/
 	float				LODBIAS ( void );
@@ -269,6 +272,11 @@ private:
 	* Info about each entitiy that we spawn or cull.
 	**/
 	idList<lode_entity_t>		m_Entities;
+
+	/**
+	* Names of all different skins.
+	**/
+	idList<idStr>				m_Skins;
 
 	/**
 	* A copy of cv_lod_bias, to detect changes during runtime.
