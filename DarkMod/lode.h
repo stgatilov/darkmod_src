@@ -288,6 +288,19 @@ private:
 	*/
 	float						m_fAvgSize;
 
+	/**
+	* The PVS this LODE spans - can be more than one when it crosses a visportal.
+	* TODO: What if it are more than 64?
+	*/
+	int							m_iNumPVSAreas;
+	int							m_iPVSAreas[64];
+
+	/**
+	* If we are outside the PVS area, only think every Nth time. This counter is set
+	* to 0 evertime we think and increased if outside the PVS.
+	*/
+	int							m_iThinkCounter;
+
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 

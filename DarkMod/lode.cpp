@@ -90,6 +90,9 @@ Lode::Lode( void ) {
 	m_iNumExisting = 0;
 	m_iNumVisible = 0;
 
+	m_iNumPVSAreas = 0;
+	m_iThinkCounter = 0;
+
 	m_DistCheckTimeStamp = 0;
 	m_DistCheckInterval = 0.5f;
 	m_bDistCheckXYOnly = false;
@@ -110,6 +113,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_iNumEntities );
 	savefile->WriteInt( m_iNumExisting );
 	savefile->WriteInt( m_iNumVisible );
+	savefile->WriteInt( m_iThinkCounter );
 	savefile->WriteFloat( m_fAvgSize );
 	savefile->WriteFloat( m_fLODBias );
 
@@ -199,6 +203,12 @@ void Lode::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteString( m_Skins[i] );
 	}
+
+	savefile->WriteInt( m_iNumPVSAreas );
+	for( int i = 0; i < m_iNumPVSAreas; i++ )
+	{
+		savefile->WriteInt( m_iPVSAreas[i] );
+	}
 }
 
 /*
@@ -218,6 +228,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_iNumEntities );
 	savefile->ReadInt( m_iNumExisting );
 	savefile->ReadInt( m_iNumVisible );
+	savefile->ReadInt( m_iThinkCounter );
 	savefile->ReadFloat( m_fAvgSize );
 	savefile->ReadFloat( m_fLODBias );
 	
@@ -317,6 +328,12 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadString( m_Skins[i] );
+	}
+
+	savefile->ReadInt( m_iNumPVSAreas );
+	for( int i = 0; i < m_iNumPVSAreas; i++ )
+	{
+		savefile->ReadInt( m_iPVSAreas[i] );
 	}
 }
 
@@ -494,7 +511,13 @@ void Lode::Spawn( void ) {
 	idVec3 size = bounds.GetSize();
 	idAngles angles = renderEntity.axis.ToAngles();
 
-	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
+
+	// cache in which PVS(s) we are, so we can later check if we are in Player PVS
+	idBounds modelAbsBounds;
+    modelAbsBounds.FromTransformedBounds( bounds, renderEntity.origin, renderEntity.axis );
+	m_iNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, m_iPVSAreas, sizeof( m_iPVSAreas ) / sizeof( m_iPVSAreas[0] ) );
+
+	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
 
 /*
 	// how to get the current model (rough outline)
@@ -856,7 +879,10 @@ void Lode::Prepare( void )
 	if ( targets.Num() == 0 )
 	{
 		gameLocal.Warning( "LODE %s has no targets!", GetName() );
+		// TODO: somehow does not work?
 		BecomeInactive( TH_THINK );
+		// early out
+		m_iNumEntities = -1;
 		return;
 	}
 
@@ -979,7 +1005,7 @@ void Lode::Prepare( void )
 		// clear out memory just to be sure
 		m_Classes.Clear();
 		m_Entities.Clear();
-		m_iNumEntities = 0;
+		m_iNumEntities = -1;
 
 		active = false;
 		BecomeInactive( TH_THINK );
@@ -996,6 +1022,7 @@ void Lode::Prepare( void )
 			gameLocal.Printf( "LODE %s: Have no entities to control, becoming inactive.\n", GetName() );
 			// Tels: Does somehow not work, bouncing us again and again into this branch?
 			BecomeInactive(TH_THINK);
+			m_iNumEntities = -1;
 		}
 	}
 }
@@ -1772,6 +1799,12 @@ void Lode::Think( void )
 	// tels: seems unneccessary.
 	// idEntity::Think();
 
+	// for some reason disabling thinking doesn't work, so return early in case we have no targets
+	if (m_iNumEntities < 0)
+	{
+		return;
+	}
+
 	// haven't initialized entities yet?
 	if (!m_bPrepared)
 	{
@@ -1806,6 +1839,23 @@ void Lode::Think( void )
 	if( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval )
 	{
 		m_DistCheckTimeStamp = gameLocal.time;
+
+		// are we outside the player PVS?
+		if ( m_iThinkCounter < 20 &&
+			 ! gameLocal.pvs.InCurrentPVS( gameLocal.GetPlayerPVS(), m_iPVSAreas, m_iNumPVSAreas ) )
+		{
+			// if so, do nothing until think counter is high enough again
+			//gameLocal.Printf( "LODE %s: Outside player PVS, think counter = %i, exiting.\n", GetName(), m_iThinkCounter );
+			m_iThinkCounter ++;
+			return;
+
+			// TODO: cull all entities if m_iNumExisting > 0?
+			// TODO: investigate if hiding brings us any performance, probably not, because
+			//		 things outside the player PVS are not rendered anyway, but hiding/showing
+			//		 them takes time.
+		}
+
+		m_iThinkCounter = 0;
 
 		// cache these values for speed
 		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
@@ -1902,6 +1952,6 @@ void Lode::Event_CullAll( void ) {
 	for (int i = 0; i < m_Entities.Num(); i++)
 	{
 		CullEntity( i );
-	}	
+	}
 }
 
