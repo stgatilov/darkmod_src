@@ -15,8 +15,9 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
-TODO: Creating func_statics out of brushes/patches does not work, the models are still
-	  invisible and the clipmodel of the dummy model lingers around
+TODO: Find out why Duplicating a model with shared data does not work
+TODO: Write a model combiner (recreate the work from Ground Zero Mod team) to
+	  overcome the "10000 renderentities" limit in the D3 engine.
 */
 
 #include "../idlib/precompiled.h"
@@ -418,11 +419,6 @@ idRenderModel * Lode::DuplicateModel ( const idRenderModel *source, const char* 
 		surf = source->Surface( i );
 		if (surf)
 		{
-			/* typedef struct modelSurface_s {
-		        int                                                     id;
-		        const idMaterial *                      shader;
-		        srfTriangles_t *                        geometry;
-			} modelSurface_t; */
 			numVerts += surf->geometry->numVerts; 
 			numIndexes += surf->geometry->numIndexes;
 
@@ -453,7 +449,8 @@ idRenderModel * Lode::DuplicateModel ( const idRenderModel *source, const char* 
 			hModel->AddSurface( newSurf );
 		}
 	}
-	hModel->FinishSurfaces();
+	// not needed, interferes actually
+	//hModel->FinishSurfaces();
 
 	// TODO: copy the bounds, too
 
@@ -1698,14 +1695,15 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				}
 
 				// duplicate the class model with shared data
-				r->hModel = DuplicateModel( lclass->hModel, lclass->classname, true );
+				// TODO: using "true" here does not work for some unknown reason so for now copy the data
+				r->hModel = DuplicateModel( lclass->hModel, lclass->classname, false );
 				if ( r->hModel )
 				{
-					r->bounds = r->hModel->Bounds( r );
-					gameLocal.Printf("LODE %s: Bounds of new model: %s.\n", GetName(), r->bounds.ToString() );
-					gameLocal.Printf("LODE %s: Bounds of old model: %s.\n", GetName(), lclass->hModel->Bounds().ToString() );
-					// overwrite wrong bounds with correct version?
-					r->bounds = lclass->hModel->Bounds();
+					// take the model bounds and transform them for the renderentity
+					r->bounds.FromTransformedBounds( lclass->hModel->Bounds(), r->origin, r->axis );
+					//r->bounds = r->hModel->Bounds( r );
+					// gameLocal.Printf("LODE %s: Bounds of new model: %s.\n", GetName(), r->bounds.ToString() );
+					// gameLocal.Printf("LODE %s: Bounds of old model: %s.\n", GetName(), lclass->hModel->Bounds().ToString() );
 				}
 				else
 				{
@@ -1733,8 +1731,10 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				// is not a trace model, so will this still work?
 				if (clipmodel && ent2->GetPhysics())
 				{
-					gameLocal.Printf("LODE %s: Setting new clipmodel.\n", GetName() );
-					// need to set origin and axis first?
+					// need to set origin on the clipmodel first
+					clipmodel->Translate( ent->origin );
+					clipmodel->Rotate( ent->angles.ToRotation() );
+					gameLocal.Printf("LODE %s: Setting new clipmodel, origin %s.\n", GetName(), clipmodel->GetOrigin().ToString() );
 					ent2->GetPhysics()->SetClipModel( clipmodel, 1.0f );		// density 1.0f?
 				}
 
@@ -1778,7 +1778,8 @@ bool Lode::CullEntity( const int idx )
 		// If the class has a model with shared data, manage this to avoid double frees
 		if ( m_Classes[ ent->classIdx ].hModel )
 		{
-			FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
+			// TODO: do not all this as we don't use shared data yet
+			// FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
 		}
 		// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
 
