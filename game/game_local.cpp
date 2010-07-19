@@ -508,6 +508,10 @@ void idGameLocal::Init( void ) {
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
 	m_MissionManager->Init();
 
+	// Initialise the model generator
+	m_ModelGenerator = CModelGeneratorPtr(new CModelGenerator);
+	m_ModelGenerator->Init();
+
 	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
 
@@ -659,6 +663,10 @@ void idGameLocal::Shutdown( void ) {
 	// Destroy the mission manager
 	m_MissionManager->Shutdown();
 	m_MissionManager = CMissionManagerPtr();
+
+	// Destroy the model generator
+	m_ModelGenerator->Shutdown();
+	m_ModelGenerator = CModelGeneratorPtr();
 
 	// Clear http connection
 	m_HttpConnection.reset();
@@ -1792,6 +1800,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_AreaManager.Restore(&savegame);
 	m_ConversationSystem->Restore(&savegame);
 	m_RelationsManager->Restore(&savegame);
+	m_ModelGenerator->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
 
@@ -2187,6 +2196,7 @@ void idGameLocal::MapShutdown( void ) {
 	}
 	m_ConversationSystem->Clear();
 	m_DifficultyManager.Clear();
+	m_ModelGenerator->Clear();
 
 	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
 	// m_Shop->Clear();

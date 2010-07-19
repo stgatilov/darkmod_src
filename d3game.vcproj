@@ -2002,6 +2002,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\ModelGenerator.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\ModelGenerator.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\lode.cpp"
 					>
 				</File>

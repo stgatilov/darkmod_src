@@ -271,6 +271,7 @@ AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \
 lode.cpp \
+ModelGenerator.cpp \
 sourcehook/sourcehook.cpp'
 
 darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
