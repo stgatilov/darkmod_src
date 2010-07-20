@@ -177,3 +177,25 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 	}
 }
 
+/*
+===============
+	Add the source model to the target model.
+===============
+*/
+model_combineinfo_t CModelGenerator::CombineModels( const idRenderModel *source, const idRenderModel *target )
+{
+	model_combineinfo_t info;
+
+	return info;
+}
+
+/*
+===============
+	Given the info CombineModels(), sep. the given model out again.
+===============
+*/
+void CModelGenerator::RemoveModel( const idRenderModel *source, const model_combineinfo_t *info)
+{
+	return;
+}
+
