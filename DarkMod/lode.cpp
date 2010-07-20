@@ -1497,6 +1497,26 @@ void Lode::PrepareEntities( void )
 			}
 		}
 	}
+
+	// combine the spawned entities into megamodels if possible
+	CombineEntities();
+}
+
+void Lode::CombineEntities( void )
+{
+	model_combineinfo_t	info;
+
+	for (int i = 0; i < m_Entities.Num(); i++)
+	{
+		// try to combine as much entities into this one
+		// O(N*N) performance, but only if we don't combine any entities, otherwise
+		// every combine step reduces the number of entities to look at next:
+		for (int j = i; j < m_Entities.Num(); j++)
+		{
+			// TODO write this code using gameLocal.m_ModelGenerator.CombineModels()
+			//info = gameLocal.m_ModelGenerator.CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target );
+		}
+	}
 }
 
 /*
@@ -1688,6 +1708,7 @@ bool Lode::CullEntity( const int idx )
 		m_iNumVisible --;
 		ent->exists = false;
 		ent->hidden = true;
+		ent->entity = 0;
 
 		// TODO: SafeRemve?
 		ent2->PostEventMS( &EV_Remove, 0 );

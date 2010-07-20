@@ -105,7 +105,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// for each surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
-		// get a pointer to a surface
+		// get a pointer to the surface
 		surf = source->Surface( i );
 		if (surf)
 		{
@@ -127,8 +127,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 					newSurf.geometry->indexes[j] = surf->geometry->indexes[j];
 				}
 				// copy the bounds, too
-                newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
-                newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
+				newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
+				newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
 			}
 			else
 			{
@@ -182,10 +182,121 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 	Add the source model to the target model.
 ===============
 */
-model_combineinfo_t CModelGenerator::CombineModels( const idRenderModel *source, const idRenderModel *target )
+model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target )
 {
 	model_combineinfo_t info;
 
+	int numSurfaces;
+	int numVerts, numIndexes;
+	const modelSurface_t *surf, *targetSurf;
+	modelSurface_s newSurf;
+
+	// get the number of base surfaces (minus decals) on the old model
+	numSurfaces = source->NumBaseSurfaces();
+
+	// count the tris
+	numIndexes = 0; numVerts = 0;
+	// for each surface
+	for (int i = 0; i < numSurfaces; i++)
+	{
+		// get a pointer to the surface
+		surf = source->Surface( i );
+		if (surf)
+		{
+			numVerts += surf->geometry->numVerts; 
+			numIndexes += surf->geometry->numIndexes;
+
+			// find out if the material on the old surface already exists on the target
+			int numTargetSurfaces = target->NumBaseSurfaces();
+			bool found = false;
+			for (int j = 0; j < numTargetSurfaces; j++)
+			{
+				// get a pointer to a surface
+				targetSurf = target->Surface( j );
+				if (targetSurf->shader == surf->shader)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			info.numVerts = numVerts;
+			info.numIndexes = numIndexes;
+
+			if (!found)
+			{
+				// not found, allocate a new surface
+				// copy the material
+				newSurf.shader = surf->shader;
+				// will only copy the source
+				newSurf.geometry = target->AllocSurfaceTriangles( numVerts, numIndexes );
+				info.firstVert = 0;
+				info.firstIndex = 0;
+			}
+			else
+			{
+				// found, need to append the data, so make a copy from target first
+				newSurf.geometry = target->AllocSurfaceTriangles( numVerts + targetSurf->geometry->numVerts, numIndexes + targetSurf->geometry->numIndexes );
+
+				// copy the old data over
+				for (int j = 0; j < targetSurf->geometry->numVerts; j++)
+				{
+					newSurf.geometry->verts[j] = targetSurf->geometry->verts[j];
+				}
+				for (int j = 0; j < targetSurf->geometry->numIndexes; j++)
+				{
+					newSurf.geometry->indexes[j] = targetSurf->geometry->indexes[j];
+				}
+				// append the new data
+				info.firstVert = targetSurf->geometry->numVerts;
+				info.firstIndex = targetSurf->geometry->numIndexes;
+
+				// free the old target surface
+				target->FreeSurfaceTriangles( targetSurf->geometry );
+
+				// and swap in the new, appended version
+				// not the most elegant code, but it works...
+				//targetSurf->geometry = newSurf.geometry;
+			}
+
+			// now copy the source data over, but translate/rotate it at the same time
+			for (int j = 0; j < numVerts; j++)
+			{
+				newSurf.geometry->verts[j + info.firstVert ] = surf->geometry->verts[j];
+				idDrawVert *v = &newSurf.geometry->verts[j + info.firstVert ];
+				//v->Clear();
+				v->xyz = *ofs;
+				//v->st[0] = winding[0].s;
+				//v->st[1] = winding[0].t;
+				//v->normal = tangents[0];
+				//v->tangents[0] = tangents[1];
+				//v->tangents[1] = tangents[2];
+				//v->SetColor( packedColor );
+			}
+			// we might need to shift the indexes, so add info.firstIndex
+			for (int j = 0; j < numIndexes; j++)
+			{
+				newSurf.geometry->indexes[j + info.firstIndex] = surf->geometry->indexes[j] + info.firstIndex;
+			}
+
+			// copy the bounds, too
+			// TODO: calculate the new bounds
+			newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
+			newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
+			
+			//if (!found)
+			{
+				// was not found, need to create the new surface
+				newSurf.id = 0;
+				// TODO: find out what happens if we add a surface with id != 0 and the same id again,
+				// does it replace an already existing surface? So far it seems we can only add surfaces
+				// but not delete/replace them...
+				target->AddSurface( newSurf );
+			}
+		}
+	}
+
+	// TODO: copy the bounds, too
 	return info;
 }
 

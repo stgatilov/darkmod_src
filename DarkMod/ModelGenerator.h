@@ -30,9 +30,9 @@ typedef struct {
 	int					firstSurface;		// which was the first surface to be added, -1 for none
 	int					Surfaces;			// how many surfaces where added
 	int					firstVert;			// which was the first vert to be added, >= 0
-	int					verts;				// how many verts where added
+	int					numVerts;				// how many verts where added
 	int					firstIndex;			// which was the first index to be added, >= 0
-	int					lastIndex;			// how many indexes where added
+	int					numIndexes;			// how many indexes where added
 } model_combineinfo_t;
 
 class CModelGenerator {
@@ -66,7 +66,7 @@ public:
 	* struct with info about the operation, which can be used to later sep. the models
 	* again with RemoveModelParts().
 	*/
-	model_combineinfo_t		CombineModels( const idRenderModel *source, const idRenderModel *target );
+	model_combineinfo_t		CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target );
 
 	/**
 	* Given the info CombineModels(), sep. the given model out again.

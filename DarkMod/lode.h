@@ -24,8 +24,12 @@
   existing entities. The rules where to spawn what are quite flexible, either
   random, with distribution functions, based on underlying texture etc.
 
-  Inhibitor entities can also be placed, these inhibit spawning of certain
-  entity classes (or all entitites).
+  Inhibitors can also be placed, these inhibit spawning of either all entities
+  from one class or all entitites.
+
+  Can also combine spawned entities into "megamodels", where the model consists
+  of all the surfaces of the combined models, to reduce entity cound and number
+  of drawcalls.
 
 ===============================================================================
 */
@@ -93,7 +97,7 @@ struct lode_entity_t {
 	bool					hidden;			// hidden?
 	bool					exists;			// false if culled
 	int						entity;			// nr of the entity if exists == true
-	int						classIdx;		// index into Classes
+	int						classIdx;		// index into m_Classes
 };
 
 extern const idEventDef EV_Deactivate;
@@ -120,6 +124,8 @@ public:
 	*/
 	void				Event_CullAll( void );
 
+	void				Event_Activate( idEntity *activator );
+
 	/**
 	* Given a pointer to a render model, calls AllocModel() on the rendermanager, then
 	* copies all surface data from the old model to the new model. Used to construct a
@@ -136,7 +142,6 @@ public:
 	void				FreeSharedModelData ( const idRenderModel *model );
 
 private:
-	void				Event_Activate( idEntity *activator );
 
 	/**
 	* Look at our targets and create the entity classes. Calls PrepareEntities().
@@ -147,6 +152,11 @@ private:
 	* Create the entity positions.
 	*/
 	void				PrepareEntities( void );
+
+	/**
+	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
+	*/
+	void				CombineEntities( void );
 
 	/**
 	* In the range 0.. 1.0, using our own m_iSeed value.
