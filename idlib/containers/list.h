@@ -573,7 +573,7 @@ ID_INLINE type &idList<type>::operator[]( int index ) {
 ================
 idList<type>::Ptr
 
-Returns a pointer to the begining of the array.  Useful for iterating through the list in loops.
+Returns a pointer to the beginning of the array.  Useful for iterating through the list in loops.
 
 Note: may return NULL if the list is empty.
 
@@ -711,7 +711,10 @@ Returns the size of the new combined list
 */
 template< class type >
 ID_INLINE int idList<type>::Append( const idList<type> &other ) {
-	if ( !list ) {
+
+	// Tels: Old code, with quadratic (O(N*N) performance, it would call Resize
+	// 	 every so often, which is a O(N) copy operation.
+/*	if ( !list ) {
 		if ( granularity == 0 ) {	// this is a hack to fix our memset classes
 			granularity = 16;
 		}
@@ -724,6 +727,22 @@ ID_INLINE int idList<type>::Append( const idList<type> &other ) {
 	}
 
 	return Num();
+*/
+
+	// Tels 2010-07-21: new code, resize only once, then copy data over O(N)
+	if ( granularity == 0 ) {	// this is a hack to fix our memset classes
+		granularity = 16;
+	}
+	int n = other.Num();
+	int newsize = size + granularity + n;
+	Resize( newsize - newsize % granularity );
+
+	for (int i = 0; i < n; i++) {
+		// simply copy data over
+		list[num + i] = other[i];
+	}
+	num += n;
+	return num;
 }
 
 /*
