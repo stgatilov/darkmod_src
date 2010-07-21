@@ -719,15 +719,22 @@ float Lode::LODBIAS ( void )
 	float lod_bias = cv_lod_bias.GetFloat();
 	if (lod_bias < 0.8)
 	{
-		lod_bias *= 1.2f;										// 0.5, 0.75 => 0.57, 0.87
+		if (lod_bias < 0.7)
+		{
+			lod_bias *= 1.4f;									// 0.5 => 0.7
+		}
+		else
+		{
+			lod_bias *= 1.2f;									// 0.75 => 0.90
+		}
 	}
 	else if (lod_bias > 1.0f)
 	{
-																// 1.5, 2, 3 => 1.16, 1.33, 1.5
-		lod_bias = ( lod_bias > 2.0f ? 0.5f : 1.0f) + ((lod_bias - 1.0f) / 3.0f);
+																// 1.5, 2, 3 => 1.13, 1.25, 1.4
+		lod_bias = ( lod_bias > 2.0f ? 0.9f : 1.0f) + ((lod_bias - 1.0f) / 4.0f);
 	}
 
-	// 0.57, 0.87, 1.0, 1.16, 1.33, 1.5
+	// 0.7, 0.9, 1.0, 1.13, 1.25, 1.4
 	return lod_bias;
 }
 
