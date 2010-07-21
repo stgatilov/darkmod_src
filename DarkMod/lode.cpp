@@ -249,6 +249,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	}
 
     savefile->ReadInt( num );
+	// TODO: FreeModel( hModel ) here
 	m_Classes.Clear();
 	m_Classes.SetNum( num );
 	for( int i = 0; i < num; i++ )
@@ -499,6 +500,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	idStr falloff;
 	const idKeyValue *kv;
 
+	LodeClass.pseudo = false;		// this is a true entity class
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
 	
@@ -916,6 +918,7 @@ void Lode::Prepare( void )
 		}
 
 		// clear out memory just to be sure
+		// TODO: FreeModel( hModel ) here
 		m_Classes.Clear();
 		m_Entities.Clear();
 		m_iNumEntities = -1;
@@ -956,6 +959,8 @@ void Lode::PrepareEntities( void )
 	int						s;
 	float					f;
 
+	int start = (int) time (NULL);
+
 	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
 	idBounds bounds = renderEntity.bounds;
 	idVec3 size = bounds.GetSize();
@@ -973,6 +978,12 @@ void Lode::PrepareEntities( void )
 	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
 
 	m_Entities.Clear();
+	if (m_iNumEntities > 100)
+	{
+		// TODO: still O(N*N) time, tho
+		m_Entities.SetGranularity( 64 );	// we append potentially thousands of entries, and every $granularity step
+											// the entire list is re-allocated and copied over again, so avoid this
+	}
 	LodeEntityBounds.Clear();
 	LodeEntityBoxes.Clear();
 
@@ -982,6 +993,22 @@ void Lode::PrepareEntities( void )
 	// Compute a random order of classes, so that when the mapper specified m_iNumEntities well below
 	// the limit (e.g. 1), he gets a random entity from a random class (and not just one from the first
 	// class always):
+
+	// remove pseudo classes as we start over fresh
+	idList< lode_class_t > newClasses;
+
+	for (int i = 0; i < m_Classes.Num(); i++)
+	{
+		if (m_Classes[i].pseudo)
+		{
+			renderModelManager->FreeModel( m_Classes[i].hModel );
+			m_Classes[i].hModel = NULL;
+			continue;
+		}
+		newClasses.Append ( m_Classes[i] );
+	}
+	m_Classes = newClasses;		// copy over
+
 	ClassIndex.Clear();			// random shuffling of classes
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
@@ -1505,6 +1532,9 @@ void Lode::PrepareEntities( void )
 		}
 	}
 
+	int end = (int) time (NULL);
+	gameLocal.Printf("LODE %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
+
 	// combine the spawned entities into megamodels if possible
 	CombineEntities();
 }
@@ -1512,18 +1542,200 @@ void Lode::PrepareEntities( void )
 void Lode::CombineEntities( void )
 {
 	model_combineinfo_t	info;
+	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
+	idList < int > pvs;								//!< in which PVS is this entity?
+	idBounds modelAbsBounds;						//!< for per-entity PVS check
+	idBounds entityBounds;							//!< for per-entity PVS check
+	int iNumPVSAreas = 0;							//!< for per-entity PVS check
+	int iPVSAreas[2];								//!< for per-entity PVS check
+	lode_class_t PseudoClass;
+	idList< lode_entity_t > newEntities;
+	int mergedCount = 0;
 
-	for (int i = 0; i < m_Entities.Num(); i++)
+	// does not work yet, needs work on the ModelGenerator
+	return;
+
+	int start = (int) time (NULL);
+
+	// benchmark list append
+/*	idList< int > test1;
+	idList< int > test2;
+
+	test1.Clear();
+	test2.Clear();
+	int t = 2000; int e = 16000;
+	for (int i = 0; i < e; i++)
 	{
+		test2.Append ( i );
+	}
+	int start = (int) time (NULL);
+	for (int i = 0; i < t; i++)
+	{
+		test1.Clear();
+		test1.Append( test2 );
+	}
+	int end = (int) time (NULL);
+	gameLocal.Warning ("LODE %s: Benchmark list append on empty list: %i seconds for %i (%i * %i) appends.\n", GetName(), end-start, t * e, t, e );
+
+	start = (int) time (NULL);
+	test1.Clear();
+	t = 20;
+	for (int i = 0; i < t; i++)
+	{
+		test1.Append( test2 );
+	}
+	end = (int) time (NULL);
+	gameLocal.Warning ("LODE %s: Benchmark list append on growing list: %i seconds for %i (%i * %i) appends.\n", GetName(), end-start, t * e, t, e );
+
+	return;
+*/
+
+	// for each entity, find out in which PVS it is, unless we only have one PVS on the lode,
+	// we then expect all entities to be in the same PVS, too:
+	if (multiPVS)
+	{
+		gameLocal.Printf("LODE %s: MultiPVS.\n", GetName() );
+		// O(N)
+		pvs.Clear();
+		for (int i = 0; i < m_Entities.Num(); i++)
+		{
+			// find out in which PVS this entity is
+			idVec3 size = m_Classes[ m_Entities[i].classIdx ].size / 2; 
+		    modelAbsBounds.FromTransformedBounds( idBounds( -size, size ), m_Entities[i].origin, m_Entities[i].angles.ToMat3() );
+			int iNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, iPVSAreas, sizeof( iPVSAreas ) / sizeof( iPVSAreas[0] ) );
+			if (iNumPVSAreas > 1)
+			{
+				// more than one PVS area, never combine this entity
+				pvs.Append(-1);
+			}
+			else
+			{
+				// remember this value
+				pvs.Append( iPVSAreas[0] );
+			}
+		}
+	}
+	else
+	{
+		gameLocal.Printf("LODE %s: SinglePVS.\n", GetName() );
+	}
+
+	int n = m_Entities.Num();
+	// we mark all entities that we combine with another entity with "-1" in the classIdx
+	for (int i = 0; i < n - 1; i++)
+	{
+		int merged = 0;				//!< merged 0 other entities into this one
+
+		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
+		if (m_Entities[i].classIdx == -1)
+		{
+			// already combined, skip
+			gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
+			continue;
+		}
+
+		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
+
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
 		// every combine step reduces the number of entities to look at next:
-		for (int j = i; j < m_Entities.Num(); j++)
+		for (int j = i + 1; j < n; j++)
 		{
-			// TODO write this code using gameLocal.m_ModelGenerator.CombineModels()
-			//info = gameLocal.m_ModelGenerator.CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target );
+			//gameLocal.Printf("LODE %s: %i: At entity %i\n", GetName(), i, j);
+			if (m_Entities[j].classIdx == -1)
+			{
+				// already combined, skip
+				gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
+				continue;
+			}
+			if (m_Entities[j].classIdx != m_Entities[i].classIdx)
+			{
+				// have different classes
+				gameLocal.Printf("LODE %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
+				continue;
+			}
+			if (m_Entities[j].skinIdx != m_Entities[i].skinIdx)
+			{
+				// have different classes
+				gameLocal.Printf("LODE %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
+				continue;
+			}
+			// in different PVS?
+			if ( multiPVS && pvs[j] != pvs[i])
+			{
+				gameLocal.Printf("LODE %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
+				continue;
+			}
+			// distance too big?
+			idVec3 dist = (m_Entities[i].origin - m_Entities[j].origin);
+			float distSq = dist.LengthSqr();
+			// TODO: make that a spawnarg
+			if (distSq > 1024 * 1024)
+			{
+				gameLocal.Printf("LODE %s: Distance from entity %i to entity %i to far (%f > 1024), skipping it.\n", GetName(), j, i, dist.Length() );
+				continue;
+			}
+			if (merged == 0)
+			{
+				PseudoClass.pseudo = true;
+				PseudoClass.spawnDist = entityClass->spawnDist;
+				PseudoClass.cullDist = entityClass->cullDist;
+				PseudoClass.size = entityClass->size;
+				// a combined entity must be of this class
+				PseudoClass.classname = entityClass->classname;
+				// duplicate the model
+				if (entityClass->hModel)
+				{
+					PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), false );
+				}
+				else
+				{
+					gameLocal.Printf("LODE %s: Entity %i: Empty hmodel.\n", GetName(), i );
+				}
+			}
+			// for this entity
+			merged ++;
+			// overall
+			mergedCount ++;
+			gameLocal.Printf("LODE %s: Merging entity %i into entity %i.\n", GetName(), j, i );
+			const idAngles *a = &idAngles(0,0,0);
+			info = gameLocal.m_ModelGenerator->CombineModels( entityClass->hModel, &dist, a, PseudoClass.hModel );
+			// mark as "to be deleted"
+			m_Entities[j].classIdx = -1;
+		}
+		if (merged > 0)
+		{
+			// replace the old class with the new pseudo class which contains the merged model
+			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 		}
 	}
+
+	if (mergedCount > 0)
+	{
+		gameLocal.Printf("LODE %s: Merged entity positions, now building combined final list.\n", GetName() );
+
+		// delete all entities that got merged
+
+		newEntities.Clear();
+		// avoid low performance when we append one-by-one with occasional copy of the entire list
+		// TODO: still O(N*N) time, tho
+		if (m_Entities.Num() - mergedCount > 100)
+		{
+			newEntities.SetGranularity(64);
+		}
+		for (int i = 0; i < m_Entities.Num(); i++)
+		{
+			// we marked all entities that we combine with another entity with "-1" in the classIdx, so skip these
+			if (m_Entities[i].classIdx != -1)
+			{
+				newEntities.Append( m_Entities[i] );
+			}
+		}
+		m_Entities.Swap( newEntities );
+		newEntities.Clear();				// should get freed at return, anyway
+	}
+	int end = (int) time (NULL);
+	gameLocal.Printf("LODE %s: Combining %i entities into %i entities took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
 }
 
 /*

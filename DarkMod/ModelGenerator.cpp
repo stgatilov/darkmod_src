@@ -182,7 +182,7 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 	Add the source model to the target model.
 ===============
 */
-model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target )
+model_combineinfo_t	CModelGenerator::CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target )
 {
 	model_combineinfo_t info;
 
@@ -225,6 +225,7 @@ model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *of
 
 			if (!found)
 			{
+				gameLocal.Printf("ModelGenerator: Found no existing surface with shader.\n");
 				// not found, allocate a new surface
 				// copy the material
 				newSurf.shader = surf->shader;
@@ -235,6 +236,8 @@ model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *of
 			}
 			else
 			{
+				gameLocal.Printf("ModelGenerator: Found existing surface, copy %i verts and %i indexes.\n", 
+						targetSurf->geometry->numVerts, targetSurf->geometry->numIndexes);
 				// found, need to append the data, so make a copy from target first
 				newSurf.geometry = target->AllocSurfaceTriangles( numVerts + targetSurf->geometry->numVerts, numIndexes + targetSurf->geometry->numIndexes );
 
@@ -252,11 +255,11 @@ model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *of
 				info.firstIndex = targetSurf->geometry->numIndexes;
 
 				// free the old target surface
-				target->FreeSurfaceTriangles( targetSurf->geometry );
+				//target->FreeSurfaceTriangles( targetSurf->geometry );
 
 				// and swap in the new, appended version
 				// not the most elegant code, but it works...
-				//targetSurf->geometry = newSurf.geometry;
+				//targetSurf->geometry = NULL; //newSurf.geometry;
 			}
 
 			// now copy the source data over, but translate/rotate it at the same time
@@ -265,7 +268,7 @@ model_combineinfo_t	CombineModels( const idRenderModel *source, const idVec3 *of
 				newSurf.geometry->verts[j + info.firstVert ] = surf->geometry->verts[j];
 				idDrawVert *v = &newSurf.geometry->verts[j + info.firstVert ];
 				//v->Clear();
-				v->xyz = *ofs;
+				v->xyz += *ofs;
 				//v->st[0] = winding[0].s;
 				//v->st[1] = winding[0].t;
 				//v->normal = tangents[0];

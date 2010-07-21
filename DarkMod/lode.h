@@ -13,6 +13,8 @@
 #ifndef __GAME_LODE_H__
 #define __GAME_LODE_H__
 
+#include "ModelGenerator.h"
+
 /*
 ===============================================================================
 
@@ -28,7 +30,7 @@
   from one class or all entitites.
 
   Can also combine spawned entities into "megamodels", where the model consists
-  of all the surfaces of the combined models, to reduce entity cound and number
+  of all the surfaces of the combined models, to reduce entity count and number
   of drawcalls.
 
 ===============================================================================
@@ -36,51 +38,58 @@
 
 // Defines one material class that modulates how often entities appear on it:
 struct lode_material_t {
-	idStr					name;			// a part, like "grass", or the full name like "sand_dark"
-	float					probability;	// 0 .. 1.0
+	idStr					name;			//!< a part, like "grass", or the full name like "sand_dark"
+	float					probability;	//!< 0 .. 1.0
 };
 
-// Defines one entity class to be spawned/culled
+// Defines one entity class
 struct lode_class_t {
-	idStr					classname;		// Entity class to respawn entities
-	idList< int >			skins;			// index into skins array
-	idRenderModel*			hModel;			// Used to share data between many entities with the same model
-											// (f.i. when you turn a brush inside DR into a idStaticEntity and
-											// use it as template)
-	int						score;			// to find out how many entities (calculate at spawn time from score)
-	idVec3					origin;			// origin of the original target entity, useful for "flooring"
-	float					cullDist;		// distance after where we remove the entity from the world
-	float					spawnDist;		// distance where we respawn the entity
-	float					spacing;		// min. distance between entities of this class
-	float					bunching;		// bunching threshold (0 - none, 1.0 - all)
-	float					sink_min;		// sink into floor at minimum
-	float					sink_max;		// sink into floor at maximum
-	bool					floor;			// if true, the entities will be floored (on by default, use
-											// "lode_floor" "0" to disable, then entities will be positioned
-											// at "z" where the are in the editor
-	bool					stack;			// if true, the entities can stack on top of each other
-	bool					noinhibit;		// if true, the entities of this class will not be inhibited
-	float					defaultProb;	// Probabiliy with that entity class will appear. Only used if
-											// materialNames is not empty, and then used as the default when
-											// no entry in this list matches the texture the entity stands on.
-	idList<lode_material_t>	materials;		// List of material name parts that we can match against
-	int						nocollide;		// should this entity collide with:
-   											// 1 other auto-generated entities from the same class?
-											// 2 other auto-generated entities (other classes)
-											// 4 other static entities already present
-											// 8 world geometry
-	int						falloff;		// Entity random distribution method
-											// 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func
-	float					func_x;			// only used when falloff == 4
+	idStr					classname;		//!< Entity class to respawn entities
+	idList< int >			skins;			//!< index into skins array
+	idRenderModel*			hModel;			//!< Used to share data between many entities with the same model
+											//!< (f.i. when you turn a brush inside DR into a idStaticEntity and
+											//!< use it as template)
+	bool					pseudo;			//!< if true, this class is a pseudo-class, and describes an
+											//!< entity with a megamodel (a combined model from many entities),
+											//!< the model is still stored in hModel.
+											//!< These classes will be skipped when recreating the entities.
+	idList<model_combineinfo_t>	info;		//!< For each entity, an entry with the
+											//!< where the model starts, so that we
+											//!< later can remove it again. Not used yet.
+	int						score;			//!< to find out how many entities (calculated at spawn time from score)
+	idVec3					origin;			//!< origin of the original target entity, useful for "flooring"
+	float					cullDist;		//!< distance after where we remove the entity from the world
+	float					spawnDist;		//!< distance where we respawn the entity
+	float					spacing;		//!< min. distance between entities of this class
+	float					bunching;		//!< bunching threshold (0 - none, 1.0 - all)
+	float					sink_min;		//!< sink into floor at minimum
+	float					sink_max;		//!< sink into floor at maximum
+	bool					floor;			//!< if true, the entities will be floored (on by default, use
+											//!< "lode_floor" "0" to disable, then entities will be positioned
+											//!< at "z" where the are in the editor
+	bool					stack;			//!< if true, the entities can stack on top of each other
+	bool					noinhibit;		//!< if true, the entities of this class will not be inhibited
+	float					defaultProb;	//!< Probabiliy with that entity class will appear. Only used if
+											//!< materialNames is not empty, and then used as the default when
+											//!< no entry in this list matches the texture the entity stands on.
+	idList<lode_material_t>	materials;		//!< List of material name parts that we can match against
+	int						nocollide;		//!< should this entity collide with:
+   											//!< 1 other auto-generated entities from the same class?
+											//!< 2 other auto-generated entities (other classes)
+											//!< 4 other static entities already present
+											//!< 8 world geometry
+	int						falloff;		//!< Entity random distribution method
+											//!< 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func
+	float					func_x;			//!< only used when falloff == 4
 	float					func_y;
 	float					func_s;
 	float					func_a;
-	int						func_Xt;		// 1 => X, 2 => X*X
-	int						func_Yt;		// 1 => X, 2 => X*X
-	int						func_f;			// 1 => Clamp, 0 => Zeroclamp
+	int						func_Xt;		//!< 1 => X, 2 => X*X
+	int						func_Yt;		//!< 1 => X, 2 => X*X
+	int						func_f;			//!< 1 => Clamp, 0 => Zeroclamp
 	float					func_min;
 	float					func_max;
-	idVec3					size;			// size of the model for collision tests
+	idVec3					size;			//!< size of the model for collision tests
 };
 
 // Defines one area that inhibits entity spawning
