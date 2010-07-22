@@ -1062,7 +1062,9 @@ void Lode::PrepareEntities( void )
 		m_Classes[i].seed = RandomSeed();		// random generator 2 inits the random generator 1
 	}
 
-	// shuffle all entries
+	// shuffle all entries, but use the second generator for a "predictable" class sequence
+	// that does not change when the menu changes
+	m_iSeed = RandomSeed();
 	s = m_Classes.Num();
 	for (int i = 0; i < s; i++)
 	{
