@@ -128,6 +128,11 @@ public:
 	virtual void		Think( void );
 
 	/**
+	* Clear the m_Classes list and also free any allocated models.
+	*/
+	void				ClearClasses( void );
+
+	/**
 	* Stop thinking and no longer cull/spawn entities.
 	*/
 	void				Event_Deactivate( idEntity *activator );
