@@ -2890,7 +2890,6 @@ void Cmd_DeactivateLog_f(const idCmdArgs& args)
 	}
 }
 
-<<<<<<< .mine
 //-------------------------------------------------------------
 // Do not account for centerScale or Scroll for now.
 typedef struct _ImageInfo{
@@ -3055,11 +3054,11 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 	{
 
 		uiSearchIndex = idStr::FindText( a_text, (*iter).c_str(), false, uiSearchOffset );
-//  		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
+		//  		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
 
 		if( uiSearchIndex < 0 )
 		{
-//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
+			//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
 			return false;
 		}
 
@@ -3070,7 +3069,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 		{
 			if( uiSearchIndex != uiSearchOffset )
 			{
-//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
+				//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
 
 				//Start the search from the first word again, since all of the search words are important.
 				bAreAllWordFound = false;
@@ -3097,7 +3096,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 
 	if( bAreAllWordFound )
 	{
-// 		gameLocal.Printf( " Total %d word(s) found \n", a_arrSearchWords.size() );
+		// 		gameLocal.Printf( " Total %d word(s) found \n", a_arrSearchWords.size() );
 
 		if( a_arrSearchWords.size() == 1 )
 		{
@@ -3123,17 +3122,17 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 			{
 				// Adjust end offset by one extra character to make sure that we account the closing block.
 				a_uiEndOffset ++;
-//  				idStr myBlock( a_text, a_uiStartOffset, a_uiEndOffset );
-//  				gameLocal.Printf( "Found block from %d to %d, search offset is %d\n", a_uiStartOffset, a_uiEndOffset, uiSearchOffset );
-//  				gameLocal.Printf( "%s \n", myBlock.c_str() );
+				//  				idStr myBlock( a_text, a_uiStartOffset, a_uiEndOffset );
+				//  				gameLocal.Printf( "Found block from %d to %d, search offset is %d\n", a_uiStartOffset, a_uiEndOffset, uiSearchOffset );
+				//  				gameLocal.Printf( "%s \n", myBlock.c_str() );
 				return true;
 			}
 		}
-// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
+		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
 	}
 
-// 	if( !bAreAllWordFound )
-//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
+	// 	if( !bAreAllWordFound )
+	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
 	return false;
 }
 
@@ -3375,489 +3374,7 @@ void Cmd_VidRestart_f( const idCmdArgs& args )
 	r_HDR_colorCurveBias.SetModified();
 }
 
-=======
-//-------------------------------------------------------------
-// Do not account for centerScale or Scroll for now.
-typedef struct _ImageInfo{
-	idStr strImageName;
-	idStr strUVScale;
 
-	_ImageInfo() :
-	strImageName(),
-		strUVScale("1, 1")
-	{
-	}
-}ImageInfo_s;
-
-//-------------------------------------------------------------
-// GetValidStageTextureName
-//
-// Description: Obtains a valid texture name with trailing white spaces and curly brackets (if found any) removed.
-//				A check for valid number of opening and closing brackets performed.
-//-------------------------------------------------------------
-bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureName )
-{
-	int iOffset, nBrackets, infiBreaker = 0;
-	a_strStageTextureName.Empty();
-
-	std::vector< idStr > arrStrInvalidTokens;
-	
-	arrStrInvalidTokens.push_back( "bumpmap" );
-	arrStrInvalidTokens.push_back( "diffusemap" );
-	arrStrInvalidTokens.push_back( "specularmap" );
-	arrStrInvalidTokens.push_back( "map" );
-
-	idToken tknParsedLine;
-	for( nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
-	{
-		if( infiBreaker ++ > 500 )
-		{
-			gameLocal.Printf( "Breaking Infinity in GetValidStageExpression \n" );		
-			break;
-		}
-
-		while(a_lexSource.ReadToken( &tknParsedLine )) 
-		{
-			if ( tknParsedLine.linesCrossed ) {
-				break;
-			}
-			if ( a_strStageTextureName.Length() ) {
-				a_strStageTextureName += " ";
-			}
-			bool bIsValidToken = true;
-			for( std::vector<idStr>::iterator iter = arrStrInvalidTokens.begin() ; arrStrInvalidTokens.end() != iter; iter ++ )
-			{
-				if( 0 != tknParsedLine.Icmp( *iter ) )
-					continue;
-
-				bIsValidToken = false;
-				break;
-			}
-			if( bIsValidToken )
-				a_strStageTextureName += tknParsedLine;
-			else
-				break;
-		}
-
-		a_strStageTextureName.Strip('\n');
-		a_strStageTextureName.Strip('\t');
-		a_strStageTextureName.Strip('\r');
-		a_strStageTextureName.Strip(' ');
-
-		// Make sure that we have equal number of opening bracket and closing brackets.
-		for(iOffset = 0, nBrackets = 0; 0 <= (iOffset = a_strStageTextureName.Find( '(', iOffset )); nBrackets ++, iOffset ++ );
-		for(iOffset = 0; 0 <= (iOffset = a_strStageTextureName.Find( ')', iOffset )); nBrackets --, iOffset ++ );
-
-		if ( 0 == nBrackets )
-		{
-			a_strStageTextureName.Strip('}');
-			a_strStageTextureName.Strip('{');
-			if( a_strStageTextureName.Length() <= 0 )
-				return false;
-
-			gameLocal.Printf(" Val Exp: %s \n ", a_strStageTextureName.c_str() );
-			return true;
-		}
-
-		// Append the first token of the newly read line.
-		a_strStageTextureName += tknParsedLine;
-	}
-
-	return false;
-}
-
-//-------------------------------------------------------------
-// GetMaterialStageInfo
-//
-// Description: For a given material stage (any one of "diffusemap", "bumpmap" & specular map ) finds out number of 
-//				textures (pathnames) being used along with their UV scales. 
-//-------------------------------------------------------------
-void GetMaterialStageInfo ( const char* a_strMatStageName, idLexer &a_lexSource, std::vector<ImageInfo_s> & a_arrMatStageInfo )
-{
-	a_lexSource.Reset();
-	while ( 1 == a_lexSource.SkipUntilString( a_strMatStageName ) )
-	{
-		ImageInfo_s currentImageInfo ;
-
-		if( true == GetValidStageExpression( a_lexSource, currentImageInfo.strImageName ) )
-		{
-			a_arrMatStageInfo.push_back( currentImageInfo );
-		}
-	}
-
-	a_lexSource.Reset();
-	while ( 1 == a_lexSource.SkipUntilString( "blend" ) )
-	{
-		idToken tknMatStage;
-		if( 1 == a_lexSource.ReadToken( &tknMatStage ) && 0 == tknMatStage.Icmp(a_strMatStageName) )
-		{
-			if( 1 == a_lexSource.ExpectTokenString( "map" ) )
-			{
-				ImageInfo_s currentImageInfo;
-
-				if( true == GetValidStageExpression( a_lexSource, currentImageInfo.strImageName ) )
-				{
-					while( "}" != tknMatStage )
-					{
-						if( !a_lexSource.ReadToken( &tknMatStage ) )
-						{
-							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. \n");
-							break;
-						}
-						if( "scale" == tknMatStage )
-						{
-							idStr strScale;
-							if( true == GetValidStageExpression( a_lexSource, strScale ) )
-								currentImageInfo.strUVScale = strScale;
-
-							break;
-						}
-					}
-					a_arrMatStageInfo.push_back( currentImageInfo );
-				}
-			}
-		}
-	}
-}
-//-------------------------------------------------------------
-// FindFastAmbientBlock
-//
-// Description: Inside a specified material shader block, finds the character offsets for start & end of the block 
-//				that contains the words (specified by vector of strings) in their exact order.
-//	Return value: True if the block is found.
-//-------------------------------------------------------------
-
-bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSearchWords, unsigned int & a_uiStartOffset, unsigned int & a_uiEndOffset )
-{
-	int	uiSearchIndex;
-	unsigned int uiSearchOffset = 0;
-	unsigned int iTextLength = idStr::Length(a_text);
-	bool bAreAllWordFound = false;
-
-	for(std::vector<idStr>::iterator iter = a_arrSearchWords.begin(); ; )
-	{
-
-		uiSearchIndex = idStr::FindText( a_text, (*iter).c_str(), false, uiSearchOffset );
-//  		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
-
-		if( uiSearchIndex < 0 )
-		{
-//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
-			return false;
-		}
-
-		bAreAllWordFound = true;
-
-		// Make sure that, this is not the first word we have found.
-		if( a_arrSearchWords.begin() != iter )
-		{
-			if( uiSearchIndex != uiSearchOffset )
-			{
-//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
-
-				//Start the search from the first word again, since all of the search words are important.
-				bAreAllWordFound = false;
-				iter = a_arrSearchWords.begin();
-				continue;
-			}
-		}
-
-		// Increment the iterator.
-		iter ++;
-
-		if( a_arrSearchWords.end() == iter )
-			break;
-
-		//Read white spaces and adjust the search offset accordingly for the next search.
-		for( uiSearchOffset = uiSearchIndex + (*(iter-1)).Length(); uiSearchOffset < iTextLength; uiSearchOffset++ )
-		{
-			if( ' ' == a_text[ uiSearchOffset ] || '\t' == a_text[ uiSearchOffset ] || '\r' == a_text[ uiSearchOffset ] )
-				continue;
-
-			break;
-		}
-	}
-
-	if( bAreAllWordFound )
-	{
-// 		gameLocal.Printf( " Total %d word(s) found \n", a_arrSearchWords.size() );
-
-		if( a_arrSearchWords.size() == 1 )
-		{
-			uiSearchOffset = uiSearchIndex;
-		}
-
-		// Start tracking offsets to the opening and closing of the block from the last search-Index.
-		bool bIsStartOffsetFound	= false;
-		bool bIsEndOffsetFound		= false;
-		for( a_uiStartOffset = a_uiEndOffset = uiSearchOffset ; a_uiStartOffset > 0 &&  a_uiEndOffset < iTextLength ; )
-		{
-			if( '{' == a_text[ a_uiStartOffset ] )
-				bIsStartOffsetFound = true;
-			else
-				a_uiStartOffset --;
-
-			if( '}' == a_text[ a_uiEndOffset ] )
-				bIsEndOffsetFound = true;
-			else
-				a_uiEndOffset ++;
-
-			if( bIsStartOffsetFound && bIsEndOffsetFound )
-			{
-				// Adjust end offset by one extra character to make sure that we account the closing block.
-				a_uiEndOffset ++;
-//  				idStr myBlock( a_text, a_uiStartOffset, a_uiEndOffset );
-//  				gameLocal.Printf( "Found block from %d to %d, search offset is %d\n", a_uiStartOffset, a_uiEndOffset, uiSearchOffset );
-//  				gameLocal.Printf( "%s \n", myBlock.c_str() );
-				return true;
-			}
-		}
-// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
-	}
-
-// 	if( !bAreAllWordFound )
-//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
-	return false;
-}
-
-void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
-{
-
-	if( args.Argc() < 3 )
-	{
-		gameLocal.Printf( "Usage: tdm_batchConvertMaterials <nMaterials> <StartIndex> [forceUpdateAll] \n" );
-		return;
-	}
-
-	bool bForceUpdateAllMaterials = false;
-	if( args.Argc() > 3 )
-	{
-		 bForceUpdateAllMaterials = (0 == idStr::Icmp( args.Argv(3), "forceupdateall" ));
-	}
-		
-	const unsigned int uiMaterialsToProcess	= atoi(args.Argv(1));
-	const unsigned int uiStartIndex			= atoi(args.Argv(2));
-
-	const unsigned long uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
-
-	gameLocal.Printf("Parsing %d materials, this may take few minutes...\n", uiTotalMats );
-
-	unsigned long ulMaterialsProcessed = 0;
-	unsigned long i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
-	const unsigned uiMaxMaterialsToProcess = i + uiMaterialsToProcess;
-	for ( ; i < uiTotalMats && i < uiMaxMaterialsToProcess; i++ )
-	{
-
-		idMaterial *mat = const_cast<idMaterial *>(declManager->MaterialByIndex( i ));
-		//idMaterial *mat = const_cast<idMaterial *>(declManager->FindMaterial( "guis/assets/glassy" ));
-	
-		if( NULL == mat )
-			continue;
-
-		std::vector< char > charBuffer; 
-		std::vector< ImageInfo_s > arrDiffusemapInfo;	
-		std::vector< ImageInfo_s > arrBumpMapInfo;	
-		std::vector< ImageInfo_s > arrSpecularmapInfo;	
-
-		charBuffer.resize(  mat->GetTextLength() + 1, 0 );
-		mat->GetText( &charBuffer[0] );
-
-		idLexer lexSource( &charBuffer[0], charBuffer.size(), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
-
-		for ( int j=0; j < mat->GetNumStages(); j++ )
-		{
-			const shaderStage_t *pShaderStage = mat->GetStage(j);
-
-			if( NULL == pShaderStage )
-			{
-// 				mat->Invalidate();
-// 				mat->FreeData();			
-				continue;
-			}
-
-			if ( SL_BUMP != pShaderStage->lighting && SL_DIFFUSE != pShaderStage->lighting && SL_SPECULAR != pShaderStage->lighting ) 
-			{
-// 				mat->Invalidate();
-// 				mat->FreeData();				
-				continue;	
-			}
-
-			if( SL_BUMP == pShaderStage->lighting )
-				GetMaterialStageInfo( "bumpmap", lexSource, arrBumpMapInfo );
-			else if( SL_DIFFUSE == pShaderStage->lighting ) 
-				GetMaterialStageInfo( "diffusemap", lexSource, arrDiffusemapInfo );
-			else
-				GetMaterialStageInfo( "specularmap", lexSource, arrSpecularmapInfo );
-		}
-
-		if( arrBumpMapInfo.size() == 0 && arrDiffusemapInfo.size() == 0 && arrSpecularmapInfo.size() == 0 )
-		{
-// 			mat->Invalidate();
-// 			mat->FreeData();		
-			continue;
-		}
-		unsigned int uiBlockStartOffset, uiBlockEndOffset;
-		std::vector< idStr >arrSearchWords;
-		bool bIsAmbientBlockFound = false;
-
-		// Note that, the spaces in the string:"if (global5 == 1)" and an externally modified material may not match. 
-		// So avoid changing new ambient lighting blocks by hand, at least "if (global5 == 1)" part.
-		arrSearchWords.clear();
-		arrSearchWords.push_back("if (global5 == 1)");
-		bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
-		
-		gameLocal.Printf( "ForceUpdate is: %s\n", bForceUpdateAllMaterials? "true": "false" );
-		if( bIsAmbientBlockFound  )
-		{
-			gameLocal.Printf( "Found new ambient block\n" );
-			if( !bForceUpdateAllMaterials )
-				continue;
-
-			gameLocal.Printf( "Removing new ambient block\n" );
-			charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
-
-			arrSearchWords.clear();
-			arrSearchWords.push_back("if (global5 == 2)");
-			bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
-			if( bIsAmbientBlockFound  )
-				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
-		}
-		else
-		{
-			arrSearchWords.clear();
-			arrSearchWords.push_back("red");
-			arrSearchWords.push_back("global2");
-			bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
-			if( bIsAmbientBlockFound  )
-			{
-				gameLocal.Printf( "Found old ambient block\n" );
-				gameLocal.Printf( "Removing old ambient block\n" );
-				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
-			}
-		}
-		
- 
-
-
-		static const char newAmbientBlock[] = {	
-			"\n	{							\n"
-			"		if (global5 == 1)		\n"
-			"		blend add				\n"
-			"		map				%s		\n"
-			"		scale			%s		\n"
-			"		red			global2		\n"
-			"		green			global3	\n"
-			"		blue			global4	\n"
-			"	}							\n"
-			"	{							\n"
-			"		if (global5 == 2)		\n"
-			"		blend add				\n"
-			"		program	ambientEnvironment.vfp	\n"
-			"		vertexParm		0		%s, %s		// UV Scales for Diffuse and Bump	\n"
-			"		vertexParm		1		%s, 1, 1	// (X,Y) UV Scale for specular,	Z: ambient reflection scale	\n"
-			"		vertexParm		2		global2, global3, global4, 1	\n"
-			"		vertexParm		3		0								\n"
-			"		fragmentMap		0		cubeMap env/gen1				\n"
-			"		fragmentMap		1		%s			// Bump				\n"
-			"		fragmentMap		2		%s			// Diffuse			\n"
-			"		fragmentMap		3		%s			// Specular			\n"
-			"	}"
-		};
-
-
-		std::vector<char> arrCharNewAmbientBlock;
-		unsigned int uiBlockSize =	idStr::Length( newAmbientBlock ) + 1 + 
-			(arrDiffusemapInfo.size() > 0 ? arrDiffusemapInfo[0].strImageName.Length()	: idStr::Length("_black")	) * 2	+
-			(arrDiffusemapInfo.size() > 0 ? arrDiffusemapInfo[0].strUVScale.Length()	: idStr::Length("1, 1")		) * 2	+ 
-			(	arrBumpMapInfo.size() > 0 ? arrBumpMapInfo[0].strImageName.Length()		: idStr::Length("_flat")	)		+ 
-			(	arrBumpMapInfo.size() > 0 ? arrBumpMapInfo[0].strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
-			(arrSpecularmapInfo.size() > 0 ? arrSpecularmapInfo[0].strImageName.Length(): idStr::Length("_black")	)		+ 
-			(arrSpecularmapInfo.size() > 0 ? arrSpecularmapInfo[0].strUVScale.Length()	: idStr::Length("1, 1")		); 
-
-		arrCharNewAmbientBlock.resize( uiBlockSize, 0 );
-
-		idStr::snPrintf( &arrCharNewAmbientBlock[0], uiBlockSize, newAmbientBlock, 
-			arrDiffusemapInfo.size() > 0 ?	arrDiffusemapInfo[0].strImageName.c_str()	: "_black", 
-			arrDiffusemapInfo.size() > 0 ?	arrDiffusemapInfo[0].strUVScale.c_str()		: "1, 1", 
-			arrDiffusemapInfo.size() > 0 ?	arrDiffusemapInfo[0].strUVScale.c_str()		: "1, 1", 
-			arrBumpMapInfo.size() > 0 ?		arrBumpMapInfo[0].strUVScale.c_str()		: "1, 1", 
-			arrSpecularmapInfo.size() > 0 ? arrSpecularmapInfo[0].strUVScale.c_str()	: "1, 1", 
-			arrBumpMapInfo.size() > 0 ?		arrBumpMapInfo[0].strImageName.c_str()		: "_flat", 
-			arrDiffusemapInfo.size() > 0 ?	arrDiffusemapInfo[0].strImageName.c_str()	: "_black", 
-			arrSpecularmapInfo.size() > 0 ?	arrSpecularmapInfo[0].strImageName.c_str()	: "_black"
-			);
-		
-
-		idStr strMatTextWithNewBlock( &charBuffer[0] );
-		unsigned int uiOffset = 0;
-
-		if( bIsAmbientBlockFound )
-		{
-			uiOffset = uiBlockStartOffset;
-		}
-		else
-		{
-			int i;
-			for( i= charBuffer.size() - 1; i > 0; i-- )
-			{
-				if( '}' == charBuffer[i] )
-					break;
-			}
-
-			if( i > 1 )
-			{
-				strMatTextWithNewBlock.Insert( "\n\n	// TDM Ambient Method Related \n", i - 1 );
-				uiOffset = i - 1 + idStr::Length(  "\n\n	// TDM Ambient Method Related \n" );
-				strMatTextWithNewBlock.Insert( '\n', uiOffset );
-			}
-			else
-			{
-				gameLocal.Warning( "Could not determine end of the material block. Skipping this material.\n" );
-// 				mat->Invalidate();
-// 				mat->FreeData();
-				continue;
-			}
-		}
-
-		gameLocal.Printf( "Processing Material %s \n", mat->GetName() );
-
-		strMatTextWithNewBlock.Insert( &arrCharNewAmbientBlock[0], uiOffset );
-
-		ulMaterialsProcessed ++;
-	
-		// Update the material text and save to the file.
-		mat->SetText( strMatTextWithNewBlock.c_str() );
-
-		if( !mat->Parse( strMatTextWithNewBlock.c_str(), strMatTextWithNewBlock.Length() ) )
-		{
-		  gameLocal.Warning( "Material %s had error in the newly inserted text %s. \n Aborting.\n", mat->GetName(), &arrCharNewAmbientBlock[0] );
-		  break;
-		}
-		mat->ReplaceSourceFileText();
-		mat->Invalidate();
-		mat->FreeData();
-	}
-	gameLocal.Printf(" %d Materials processed and changed in total.\n", ulMaterialsProcessed );
-}
-
-void Cmd_ReloadImages_f( const idCmdArgs& args )
-{
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "ReloadImages" );
-	r_HDR_colorCurveBias.SetModified();
-}
-
-void Cmd_updateCookedMathData_f( const idCmdArgs& args )
-{
-	r_HDR_colorCurveBias.SetModified();
-}
-
-void Cmd_VidRestart_f( const idCmdArgs& args )
-{
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart" );
-	r_HDR_colorCurveBias.SetModified();
-}
-
->>>>>>> .r4077
 #ifdef TIMING_BUILD
 void Cmd_ListTimers_f(const idCmdArgs& args) 
 {
