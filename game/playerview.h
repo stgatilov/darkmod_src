@@ -101,8 +101,8 @@ private:
 
 	public:
 		dnImageWrapper( const char *a_strImage ) : 
-		m_strImage			( a_strImage ),
-		m_matImage			( declManager->FindMaterial(a_strImage) )
+		m_matImage			( declManager->FindMaterial(a_strImage) ),
+		m_strImage			( a_strImage )
 		{
 		}
 		ID_INLINE operator const char * () const

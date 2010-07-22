@@ -1568,4 +1568,11 @@ void idLight::Event_InPVS()
 	idThread::ReturnFloat( gameLocal.pvs.InCurrentPVS( gameLocal.GetPlayerPVS(), localPVSAreas, localNumPVSAreas ) );
 }
 
+// Returns true if this is an ambient light. - J.C.Denton
+bool idLight::IsAmbient(void)
+{
+	if( renderLight.shader )
+		return renderLight.shader->IsAmbientLight();
 
+	return false; 
+}

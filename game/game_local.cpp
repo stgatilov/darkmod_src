@@ -1400,6 +1400,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	{
 		m_MissionData->ClearGUIState();
 	}
+
+	m_strMainAmbientLightName = "ambient_world"; // Default name for main ambient light. J.C.Denton.
+
 }
 
 /*
@@ -6675,4 +6678,72 @@ void idGameLocal::SetMissionResult(EMissionResult result)
 EMissionResult idGameLocal::GetMissionResult() const 
 {
 	return m_MissionResult;
+}
+
+/*
+===================
+Dark Mod:
+idGameLocal::FindMainAmbientLight
+Author: J.C.Denton 
+Usage:	Finds main ambient light by the name "ambient_world". 
+		If it can't be found, finds ambient light with largest radius and rename it to ambient_world before returning pointer to it. 
+===================
+*/
+
+idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= false */ )
+{
+	int hash, i;
+	idEntity *pEntMainAmbientLight = NULL;
+
+	hash = entityHash.GenerateKey( m_strMainAmbientLightName, true );
+	for ( i = entityHash.First( hash ); i != -1; i = entityHash.Next( i ) ) {
+		if ( entities[i] && entities[i]->name.Icmp( m_strMainAmbientLightName ) == 0 ) {
+			pEntMainAmbientLight =  entities[i];
+			break;
+		}
+	}
+
+	if ( NULL != pEntMainAmbientLight && pEntMainAmbientLight->IsType(idLight::Type) )
+		return static_cast<idLight *>( pEntMainAmbientLight );
+	else if( !a_bCreateNewIfNotFound ) 
+		return NULL;
+
+	gameLocal.Printf( "Ambient light by name of 'ambient_world' not found, attempting to create a new one. \n"); 
+
+	idLight *pLightEntMainAmbient = NULL;
+	float fMaxRadius = 0.0f;
+	int j=1;
+	for (int i = 0; i < MAX_GENTITIES; i++)
+	{
+		// Find the ambient light with greatest radius.
+		if( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
+		{
+			idVec3 vec3LightRadius; 
+			idLight *pLight =  static_cast<idLight *>( entities[i] );
+			gameLocal.Printf( "Light found %i \n", j++ ); 
+
+			if (!pLight->IsAmbient())
+				continue;
+
+			pLight->GetRadius( vec3LightRadius );
+
+			float fRadius = vec3LightRadius.Length();
+			//gameLocal.Printf( "The Light is ambient, max radius: %f current radius: %f  \n", fMaxRadius, fRadius ); 
+
+			if( fRadius > fMaxRadius )
+			{
+				fMaxRadius = fRadius;
+				pLightEntMainAmbient = pLight;
+			}
+		}
+	}
+
+	if( pLightEntMainAmbient )
+	{
+		m_strMainAmbientLightName = pLightEntMainAmbient->GetName();
+		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
+	}
+
+	return pLightEntMainAmbient;
+
 }

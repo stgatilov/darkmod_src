@@ -112,6 +112,8 @@ bool FileVersionList(const char *str, bool state);
 #define protected	public
 #endif
 
+class idLight;			// J.C.Denton: Required for the declaration of FindMainAmbientLight
+
 class idRenderWorld;
 extern idRenderWorld *				gameRenderWorld;
 
@@ -850,6 +852,12 @@ public:
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);
 	void					RemoveResponse(idEntity *);
+	
+	/************************************************************************/
+	/* J.C.Denton:	Finds the main ambient light and creates a new one if	*/
+	/*				the main ambient is not found							*/
+	/************************************************************************/
+	idLight *				FindMainAmbientLight( bool a_bCreateNewIfNotFound = false );  
 
 	/** 
 	 * greebo: Links the given entity into the list of Stim entities, such that
@@ -911,6 +919,7 @@ public:
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
+	idStr					m_strMainAmbientLightName;	// The name of main ambient light, default is: "ambient_world". - J.C.Denton
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
 	bool					mapCycleLoaded;

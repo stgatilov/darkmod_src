@@ -124,6 +124,7 @@ public:
 	inline bool		IsParallel(void) { return renderLight.parallel; };
 	inline bool		IsPointlight(void) { return renderLight.pointLight; };
 	bool			CastsShadow(void);
+	bool			IsAmbient(void);	// Returns true if this is an ambient light. - J.C.Denton
 
 	/**
 	 * GetLightCone returns the lightdata.
