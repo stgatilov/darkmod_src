@@ -15,6 +15,11 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
+TODO: add debug spawnag to limit print messages
+TODO: add random entity coloring (lode_color_min lode_color_max)
+TODO: turn "exists" and "hidden" into flags field, add there a "pseudoclass" bit so
+	  we can use much smaller structs for pseudo classes (we might have thousands
+	  of pseudoclass structs due to each having a different hmodel)
 */
 
 #include "../idlib/precompiled.h"
@@ -71,7 +76,8 @@ Lode::Lode( void ) {
 	active = false;
 
 	m_iSeed = 3;
-	m_iOrgSeed = 3;
+	m_iSeed_2 = 7;
+	m_iOrgSeed = 7;
 	m_iScore = 0;
 	m_fLODBias = 0;
 
@@ -106,6 +112,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( active );
 
 	savefile->WriteInt( m_iSeed );
+	savefile->WriteInt( m_iSeed_2 );
 	savefile->WriteInt( m_iOrgSeed );
 	savefile->WriteInt( m_iScore );
 	savefile->WriteInt( m_iNumEntities );
@@ -221,6 +228,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( active );
 
 	savefile->ReadInt( m_iSeed );
+	savefile->ReadInt( m_iSeed_2 );
 	savefile->ReadInt( m_iOrgSeed );
 	savefile->ReadInt( m_iScore );
 	savefile->ReadInt( m_iNumEntities );
@@ -334,6 +342,20 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadInt( m_iPVSAreas[i] );
 	}
+}
+
+/*
+===============
+Lode::RandomSeed
+
+Implement our own, independent random generator with our own seed, so we are
+independent from the seed in gameLocal and the one used in RandomFloat. This
+one is used to calculate the seeds per-class:
+===============
+*/
+ID_INLINE int Lode::RandomSeed( void ) {
+	m_iSeed_2 = 1103515245L * m_iSeed_2 + 12345L;
+	return m_iSeed_2 & 0x7FFFFFF;
 }
 
 /*
@@ -880,16 +902,19 @@ void Lode::Prepare( void )
 
 	// Init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
-	m_iSeed = spawnArgs.GetInt( "seed", "0" );
-    if (m_iSeed == 0)
+	m_iSeed_2 = spawnArgs.GetInt( "seed", "0" );
+    if (m_iSeed_2 == 0)
 	{
 		// The randseed upon loading a map seems to be always 0, so 
 		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
-		time_t seconds = time (NULL);
-	    m_iSeed = (int) (1664525L * (int) seconds + 1013904223L) & 0x7FFFFFFFL;
+		// add the entity number so that different lodes spawned in the same second
+		// don't display the same pattern
+		unsigned long seconds = (unsigned long) time (NULL) + (unsigned long) entityNumber;
+	    m_iSeed_2 = (int) (1664525L * seconds + 1013904223L) & 0x7FFFFFFFL;
 	}
+
 	// to restart the same sequence, f.i. when the user changes level of detail in GUI
-	m_iOrgSeed = m_iSeed;
+	m_iOrgSeed = m_iSeed_2;
 
 	PrepareEntities();
 
@@ -975,7 +1000,7 @@ void Lode::PrepareEntities( void )
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
-	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString() );
+	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString() );
 
 	m_Entities.Clear();
 	if (m_iNumEntities > 100)
@@ -1007,12 +1032,16 @@ void Lode::PrepareEntities( void )
 		}
 		newClasses.Append ( m_Classes[i] );
 	}
-	m_Classes = newClasses;		// copy over
+	m_Classes.Swap( newClasses );		// copy over
+	newClasses.Clear();					// remove
 
+	// random shuffle the class indexes around
+	// also calculate the per-class seed:
 	ClassIndex.Clear();			// random shuffling of classes
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
-		ClassIndex.Append ( i );		// 1,2,3,...
+		ClassIndex.Append ( i );				// 1,2,3,...
+		m_Classes[i].seed = RandomSeed();		// random generator 2 inits the random generator 1
 	}
 
 	// shuffle all entries
@@ -1045,13 +1074,15 @@ void Lode::PrepareEntities( void )
 			continue;
 		}
 
+		m_iSeed = m_Classes[i].seed;		// random generator 2 inits the random generator 1
+
 		int iEntities = m_iNumEntities * (static_cast<float>(m_Classes[i].score)) / m_iScore;	// sum 2, this one 1 => 50% of this class
 		// try at least one from each class (so "select 1 from 4 classes" works correctly)
 		if (iEntities == 0)
 		{
 			iEntities = 1;
 		}
-		gameLocal.Printf( "LODE %s: Creating %i entities of class %s (#%i index %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx );
+		gameLocal.Printf( "LODE %s: Creating %i entities of class %s (#%i index %i, seed %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx, m_iSeed );
 
 		// default to what the LODE says
 		idAngles class_rotate_min = spawnArgs.GetAngles("lode_rotate_min", rand_rotate_min);
@@ -1980,9 +2011,10 @@ void Lode::Think( void )
 			Event_CullAll();
 
 			// create same sequence again
-			m_iSeed = m_iOrgSeed;
+			m_iSeed_2 = m_iOrgSeed;
 
 			gameLocal.Printf ("LODE %s: Have now %i entities.\n", GetName(), m_iNumEntities );
+
 			PrepareEntities();
 			// save the new value
 		}

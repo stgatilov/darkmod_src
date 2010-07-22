@@ -56,6 +56,9 @@ struct lode_class_t {
 	idList<model_combineinfo_t>	info;		//!< For each entity, an entry with the
 											//!< where the model starts, so that we
 											//!< later can remove it again. Not used yet.
+	int						seed;			//!< per-class seed so each class generates the same sequence of
+											//!< entities independ from the other classes, helps when the menu
+   											//!> setting changes
 	int						score;			//!< to find out how many entities (calculated at spawn time from score)
 	idVec3					origin;			//!< origin of the original target entity, useful for "flooring"
 	float					cullDist;		//!< distance after where we remove the entity from the world
@@ -168,9 +171,15 @@ private:
 	void				CombineEntities( void );
 
 	/**
+	* Return a random int independedn from RandomFloat/RandomFloatSqr/RandomFloatExp, so we
+	* can seed the other random generator per class.
+	*/
+	int					RandomSeed( void );
+
+	/**
 	* In the range 0.. 1.0, using our own m_iSeed value.
 	*/
-	float				RandomFloat();
+	float				RandomFloat( void );
 
 	/**
 	* Squared falloff
@@ -240,7 +249,13 @@ private:
 	int					m_iSeed;
 
 	/**
-	* Seed start value for the random generator, used to restart the sequence.
+	* Current seed value for the second random generator, which generates the sequence used
+	* initialize the first generator.
+	**/
+	int					m_iSeed_2;
+
+	/**
+	* Seed start value for the second random generator, used to restart the sequence.
 	**/
 	int					m_iOrgSeed;
 
