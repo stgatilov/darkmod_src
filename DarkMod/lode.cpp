@@ -185,6 +185,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 			savefile->WriteFloat( m_Classes[i].func_min );
 			savefile->WriteFloat( m_Classes[i].func_max );
 		}
+		//image based distribution
+		savefile->WriteString( m_Classes[i].map );
 
 		// only write the model if it is used
 		if ( NULL != m_Classes[i].hModel)
@@ -230,6 +232,12 @@ void Lode::ClearClasses( void )
 		{
 			renderModelManager->FreeModel( m_Classes[i].hModel );
 			m_Classes[i].hModel = NULL;
+		}
+		if (NULL != m_Classes[i].img)
+		{
+			m_Classes[i].img->Unload(true);
+			delete m_Classes[i].img;
+			m_Classes[i].img = NULL;
 		}
 	}
 	m_Classes.Clear();
@@ -328,6 +336,32 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadInt( m_Classes[i].func_f );
 			savefile->ReadFloat( m_Classes[i].func_min );
 			savefile->ReadFloat( m_Classes[i].func_max );
+		}
+		savefile->ReadString( m_Classes[i].map );
+	    if (!m_Classes[i].map.IsEmpty())
+		{
+			// image based distribution
+			if (NULL == m_Classes[i].img )
+			{
+				m_Classes[i].img = new CImage();
+			}
+			else
+			{
+				m_Classes[i].img->Unload( false );
+			}
+			m_Classes[i].img->LoadImage( m_Classes[i].map );
+			m_Classes[i].img->InitImageInfo();
+		}
+		else
+		{
+			if (NULL != m_Classes[i].img )
+			{
+				// TODO: if we restore a savegame during a map, the image should not change
+				// so we could save us the "destroy and reload" step.
+				m_Classes[i].img->Unload( true );
+				delete m_Classes[i].img;
+				m_Classes[i].img = NULL;
+			}
 		}
 
 		savefile->ReadBool( bHaveModel );
@@ -588,18 +622,22 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	{
 		LodeClass.falloff = 0;
 	}
-	if (falloff == "cutoff")
+	else
 	{
-		LodeClass.falloff = 1;
+		if (falloff == "cutoff")
+		{
+			LodeClass.falloff = 1;
+		}
+		if (falloff == "square")
+		{
+			LodeClass.falloff = 2;
+		}
+		if (falloff == "exp")
+		{
+			LodeClass.falloff = 3;
+		}
 	}
-	if (falloff == "square")
-	{
-		LodeClass.falloff = 2;
-	}
-	if (falloff == "exp")
-	{
-		LodeClass.falloff = 3;
-	}
+
 	LodeClass.func_x = 0;
 	LodeClass.func_y = 0;
 	LodeClass.func_s = 0;
@@ -662,6 +700,17 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	{
 		gameLocal.Warning ("LODE %s: Invalid falloff %s, expect one of 'none', 'cutoff', 'square', 'exp' or 'func'.\n", GetName(), falloff.c_str() );
 		LodeClass.falloff = 0;
+	}
+
+	// image based map?
+	LodeClass.map = ent->spawnArgs.GetString( "lode_falloff_map", spawnArgs.GetString( "falloff_map", "") );
+	LodeClass.img = NULL;
+	// starts with "textures" => image based map
+	if ( ! LodeClass.map.IsEmpty())
+	{
+		LodeClass.img = new CImage();
+		LodeClass.img->LoadImage( LodeClass.map );
+		m_Classes[i].img->InitImageInfo();
 	}
 
 	LodeClass.bunching = ent->spawnArgs.GetFloat( "lode_bunching", spawnArgs.GetString( "bunching", "0") );
@@ -1238,6 +1287,12 @@ void Lode::PrepareEntities( void )
 					gameLocal.Printf ("LODE %s: falloff func gave p = %0.2f (clamped %0.2f)\n", GetName(), p, probability);
 				}
 
+       			// image based falloff probability
+				if (m_Classes[i].img)
+				{
+
+				}
+
 				// Rotate around our rotation axis (to support rotated LODE brushes)
 				LodeEntity.origin *= axis;
 
@@ -1602,9 +1657,8 @@ void Lode::CombineEntities( void )
 	lode_class_t PseudoClass;
 	idList< lode_entity_t > newEntities;
 	int mergedCount = 0;
-
-	// does not work yet, needs work on the ModelGenerator
-	return;
+	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
+	model_ofs_t ofs;
 
 	int start = (int) time (NULL);
 
@@ -1676,6 +1730,7 @@ void Lode::CombineEntities( void )
 	for (int i = 0; i < n - 1; i++)
 	{
 		int merged = 0;				//!< merged 0 other entities into this one
+		offsets.Clear();
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
 		if (m_Entities[i].classIdx == -1)
@@ -1687,6 +1742,13 @@ void Lode::CombineEntities( void )
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
+		if (NULL == entityClass->hModel)
+		{
+			// cannot combine entities without a model
+			// TODO: load model, then combine away
+			gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
+			continue;
+		}
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
 		// every combine step reduces the number of entities to look at next:
@@ -1726,6 +1788,12 @@ void Lode::CombineEntities( void )
 				gameLocal.Printf("LODE %s: Distance from entity %i to entity %i to far (%f > 1024), skipping it.\n", GetName(), j, i, dist.Length() );
 				continue;
 			}
+
+			ofs.offset = dist;
+			// TODO:
+			ofs.angle  = idAngles(0,0,0);
+			offsets.Append( ofs );
+
 			if (merged == 0)
 			{
 				PseudoClass.pseudo = true;
@@ -1734,7 +1802,7 @@ void Lode::CombineEntities( void )
 				PseudoClass.size = entityClass->size;
 				// a combined entity must be of this class
 				PseudoClass.classname = entityClass->classname;
-				// duplicate the model
+/*				// duplicate the model
 				if (entityClass->hModel)
 				{
 					PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), false );
@@ -1743,19 +1811,22 @@ void Lode::CombineEntities( void )
 				{
 					gameLocal.Printf("LODE %s: Entity %i: Empty hmodel.\n", GetName(), i );
 				}
+				*/
 			}
 			// for this entity
 			merged ++;
 			// overall
 			mergedCount ++;
 			gameLocal.Printf("LODE %s: Merging entity %i into entity %i.\n", GetName(), j, i );
-			const idAngles *a = &idAngles(0,0,0);
-			info = gameLocal.m_ModelGenerator->CombineModels( entityClass->hModel, &dist, a, PseudoClass.hModel );
+//			const idAngles *a = &idAngles(0,0,0);
+//			info = gameLocal.m_ModelGenerator->CombineModels( entityClass->hModel, &dist, a, PseudoClass.hModel );
 			// mark as "to be deleted"
 			m_Entities[j].classIdx = -1;
 		}
 		if (merged > 0)
 		{
+			// build the combined model
+			PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), true, &offsets );
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 		}

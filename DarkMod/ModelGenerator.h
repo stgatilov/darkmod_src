@@ -35,6 +35,12 @@ typedef struct {
 	int					numIndexes;			// how many indexes where added
 } model_combineinfo_t;
 
+// Defines offset and rotation for a model combine operation
+typedef struct {
+	idVec3				offset;
+	idAngles			angle;
+} model_ofs_t;
+
 class CModelGenerator {
 public:
 	//CLASS_PROTOTYPE( CModelGenerator );
@@ -59,7 +65,7 @@ public:
 	* is duplicated, otherwise the new model shares the data of the old model. In this
 	* case the memory of the new model needs to be freed differently, of course :)
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel *source, const char *snapshotName, const bool dupData = true );
+	idRenderModel*			DuplicateModel( const idRenderModel *source, const char* snapshotName, bool dupData = true, const idList<model_ofs_t>* offsets = NULL);
 
 	/**
 	* Given two render models, adds all surfaces of the first the second. Returns some

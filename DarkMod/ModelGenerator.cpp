@@ -11,7 +11,9 @@
 // Copyright (C) 2010 Tels (Donated to The Dark Mod Team)
 
 /*
-Manipulate/Generate models at run time
+   ModelGenerator
+
+   Manipulate/Generate models at run time
 
 TODO: Find out why Duplicating a model with shared data does not work
 TODO: Write a model combiner (recreate the work from Ground Zero Mod team) to
@@ -24,12 +26,6 @@ TODO: Write a model combiner (recreate the work from Ground Zero Mod team) to
 static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07-18 13:57:08Z tels $", init_version);
 
 #include "ModelGenerator.h"
-
-/*
-   ModelGenerator
-
-===============================================================================
-*/
 
 /*
 ===============
@@ -84,14 +80,24 @@ void CModelGenerator::Shutdown( void ) {
 /*
 ===============
 CModelGenerator::DuplicateModel - Duplicate a render model
+
+If the given list of model_ofs_t is filled, the model will be copied X times, each time
+offset and rotated by the given values.
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, const char* snapshotName, const bool dupData ) {
+idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets) {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
 	modelSurface_s newSurf;
+	idList<model_ofs_t> ofs;
+	model_ofs_t op;
+	model_ofs_t op_zero;
 
+	if (NULL == source)
+	{
+		gameLocal.Error("Dup model with NULL ptr.\n");
+	}
 	// allocate memory for the model
 	idRenderModel *hModel = renderModelManager->AllocModel();
 	// and init it as dynamic empty model
@@ -102,6 +108,29 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 
 	// count the tris
 	numIndexes = 0; numVerts = 0;
+
+		gameLocal.Warning("Dup model\n");
+	// if the given list of offsets is empty, replace it by one list with (0,0,0)
+	if (NULL == offsets)
+	{
+		ofs.Clear();
+		op_zero.offset = idVec3(0,0,0);
+		op_zero.angle  = idAngles(0,0,0);
+		ofs.Append( op_zero );
+		offsets = &ofs;
+	}
+	else
+	{
+		// we cannot share the data if given a list of offsets
+		if (!dupData)
+		{
+			gameLocal.Warning("Sharing data on model with different offsets will not work.\n");
+			dupData = true;
+		}
+	}
+	gameLocal.Warning("Duplicating.\n");
+
+	// duplicate everything and offset it
 	// for each surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
@@ -116,17 +145,31 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			newSurf.shader = surf->shader;
 			if (dupData)
 			{
-				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
-				// copy the data over
-				for (int j = 0; j < numVerts; j++)
+				gameLocal.Warning("Duplicating %i verts and %i indexes.\n", numVerts * offsets->Num(), numIndexes * offsets->Num() );
+				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * offsets->Num(), numIndexes * offsets->Num() );
+
+				int nV = 0;
+				int nI = 0;
+				// for each offset
+				for (int o = 0; o < offsets->Num(); o++)
 				{
-					newSurf.geometry->verts[j] = surf->geometry->verts[j];
-				}
-				for (int j = 0; j < numIndexes; j++)
-				{
-					newSurf.geometry->indexes[j] = surf->geometry->indexes[j];
-				}
+					op = offsets->Ptr()[o];
+					// copy the data over
+					for (int j = 0; j < numVerts; j++)
+					{
+						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
+						idDrawVert *v = &newSurf.geometry->verts[j];
+						v->xyz += op.offset;
+						nV ++;
+						// TODO: rotate
+					}
+					for (int j = 0; j < numIndexes; j++)
+					{
+						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j];
+					}
+				} // end for each offset
 				// copy the bounds, too
+				// TODO: if op.offset != 0,0,0, compute new bounds
 				newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
 				newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
 			}
@@ -139,12 +182,11 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			hModel->AddSurface( newSurf );
 		}
 	}
-	// not needed, interferes actually
-	//hModel->FinishSurfaces();
 
-	// TODO: copy the bounds, too
+	// TODO: copy/calculate the bounds, too
 
-	gameLocal.Printf ("ModelGenerator: Duplicated model for %s with %i surfaces, %i verts and %i indexes.\n", snapshotName, numSurfaces, numVerts, numIndexes );
+	gameLocal.Printf ("ModelGenerator: Duplicated model for %s %i times, with %i surfaces, %i verts and %i indexes.\n",
+			snapshotName, offsets->Num(), numSurfaces, numVerts, numIndexes );
 
 	return hModel;
 }

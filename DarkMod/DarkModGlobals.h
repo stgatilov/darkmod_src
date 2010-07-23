@@ -131,8 +131,9 @@ public:
 	unsigned char *GetImage(void);
 
 	/**
-	 * GetImage returns the pointer to the actual image data. the image has to be already
-	 * loaded, otherwise NULL is returned.
+	 * Returns the buffer length of the loaded image data in bytes. Each pixel will have
+	 * m_Bpp bits (8 or 24 or 32), and there are m_Width * m_Height pixel. The data will
+	 * not be padded per-line (as f.i. with BMP) if you loaded a TGA file.
 	 */
 	unsigned long GetBufferLen(void);
 

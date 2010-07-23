@@ -81,8 +81,10 @@ struct lode_class_t {
 											//!< 2 other auto-generated entities (other classes)
 											//!< 4 other static entities already present
 											//!< 8 world geometry
+	idVec3					size;			//!< size of the model for collision tests
+
 	int						falloff;		//!< Entity random distribution method
-											//!< 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func
+											//!< 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func, 5 - map
 	float					func_x;			//!< only used when falloff == 4
 	float					func_y;
 	float					func_s;
@@ -92,7 +94,8 @@ struct lode_class_t {
 	int						func_f;			//!< 1 => Clamp, 0 => Zeroclamp
 	float					func_min;
 	float					func_max;
-	idVec3					size;			//!< size of the model for collision tests
+	idStr					map;			//!< falloff == 5: name of the image map (greyscale 8-bit TGA)
+	CImage*					img;			//!< falloff == 5: ptr to the distribution image map
 };
 
 // Defines one area that inhibits entity spawning
