@@ -15,7 +15,6 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
-TODO: add debug spawnarg to limit print messages
 TODO: add random entity coloring (lode_color_min lode_color_max)
 TODO: turn "exists" and "hidden" into flags field, add there a "pseudoclass" bit so
 	  we can use much smaller structs for pseudo classes (we might have thousands
@@ -81,6 +80,8 @@ Lode::Lode( void ) {
 	m_iScore = 0;
 	m_fLODBias = 0;
 
+	m_iDebug = 0;
+
 	m_bPrepared = false;
 	m_Entities.Clear();
 	m_Classes.Clear();
@@ -110,6 +111,8 @@ Lode::Save
 void Lode::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( active );
+
+	savefile->WriteInt( m_iDebug );
 
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iSeed_2 );
@@ -253,6 +256,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	bool bHaveModel;
 
 	savefile->ReadBool( active );
+
+	savefile->ReadInt( m_iDebug );
 
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iSeed_2 );
@@ -477,7 +482,7 @@ void Lode::Spawn( void ) {
 	idAngles a = clip->GetAxis().ToAngles();
 	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
-	gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, idEntity %i.\n", GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(idEntity) );
+	// gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, idEntity %i.\n", GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(idEntity) );
 
 //	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
 //	idVec3 o = trace->GetOrigin();
@@ -526,6 +531,8 @@ void Lode::Spawn( void ) {
 	m_fLODBias = cv_lod_bias.GetFloat();
 
 	active = true;
+
+	m_iDebug = spawnArgs.GetInt( "debug", "0" );
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
@@ -711,6 +718,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		LodeClass.img = new CImage();
 		LodeClass.img->LoadImage( LodeClass.map );
 		LodeClass.img->InitImageInfo();
+
+		gameLocal.Printf("LODE %s: Loaded %i x %i pixel image with %i bpp = %li bytes.\n", 
+				GetName(), LodeClass.img->m_Width, LodeClass.img->m_Height, LodeClass.img->m_Bpp, LodeClass.img->GetBufferLen() );
+
+		if (LodeClass.img->m_Bpp != 8)
+		{
+			gameLocal.Error("LODE %s: Bits per pixel must be 8 but is %i!\n", GetName(), LodeClass.img->m_Bpp );
+		}
 	}
 
 	LodeClass.bunching = ent->spawnArgs.GetFloat( "lode_bunching", spawnArgs.GetString( "bunching", "0") );
@@ -732,6 +747,11 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// set rotation of entity to 0, so we get the unrotated bounds size
 	ent->SetAxis( mat3_identity );
 	LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
+
+	if (LodeClass.size.x == 0)
+	{
+			gameLocal.Warning( "LODE %s: Size == 0 for class.\n", GetName() );
+	}
 	// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
 	// TODO: use a projection along the "floor-normal"
 	// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
@@ -795,7 +815,17 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
 
-	return (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
+	// if falloff != none, correct the density, because the ellipse-shape is smaller then the rectangle
+	float size = (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
+
+	if ( LodeClass.falloff >= 1 && LodeClass.falloff <= 3)
+	{
+		// Rectangle is W * H, ellipse is W/2 * H/2 * PI. When W = H = 1, then the rectangle
+		// area is 1.0, and the ellipse 0.785398, so correct for 1 / 0.785398, this will
+		// reduce the density, and thus the entity count:
+		size *= 1.2732f; 
+	}
+	return size;
 }
 
 /*
@@ -852,8 +882,14 @@ void Lode::ComputeEntityCount( void )
 		idBounds bounds = renderEntity.bounds;
 		idVec3 size = bounds.GetSize();
 
+		if (fDensity < 0.00001)
+		{
+			fDensity = 0.00001;
+		}
+
+		// m_fAvgSize is corrected for "per-class" falloff already
 		m_iNumEntities = fDensity * (size.x * size.y) / m_fAvgSize;		// naive asumption each entity covers on avg X units
-		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f / %0.2f = %i.\n", GetName(), size.x, size.y, m_fAvgSize, m_iNumEntities );
+		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f * %0.2f / %0.2f = %i.\n", GetName(), fDensity, size.x, size.y, m_fAvgSize, m_iNumEntities );
 
 		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
 		/* if (m_iNumEntities > SPAWN_LIMIT)
@@ -953,9 +989,9 @@ void Lode::Prepare( void )
 	m_fAvgSize /= m_Classes.Num();
 
 	// avoid values too small or even 0
-	if (m_fAvgSize < 4)
+	if (m_fAvgSize < 2)
 	{
-		m_fAvgSize = 4;
+		m_fAvgSize = 2;
 	}
 
 	// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
@@ -1290,6 +1326,8 @@ void Lode::PrepareEntities( void )
        			// image based falloff probability
 				if (m_Classes[i].img)
 				{
+					unsigned char *imgData = m_Classes[i].img->GetImage();
+					// compute the pixel we need to query
 
 				}
 
@@ -1562,7 +1600,7 @@ void Lode::PrepareEntities( void )
 						}
 					}
 
-					if (tries < MAX_TRIES)
+					if (tries < MAX_TRIES && m_iDebug > 0)
 					{
 						gameLocal.Printf( "LODE %s: Found valid position for entity %i with %i tries.\n", GetName(), j, tries );
 					}
@@ -1746,7 +1784,10 @@ void Lode::CombineEntities( void )
 		{
 			// cannot combine entities without a model
 			// TODO: load model, then combine away
-			gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
+			if (m_iDebug > 0)
+			{
+				gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
+			}
 			continue;
 		}
 		// try to combine as much entities into this one
@@ -1872,7 +1913,10 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
 	// spawn the entity and note its number
-	gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s).\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str() );
+	if (m_iDebug)
+	{
+		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s).\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str() );
+	}
 
 	// avoid that we run out of entities during run time
 	if (gameLocal.num_entities > SPAWN_LIMIT)

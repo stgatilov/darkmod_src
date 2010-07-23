@@ -343,6 +343,11 @@ private:
 	*/
 	int							m_iThinkCounter;
 
+	/**
+	* Debug level. Default 0. Higher values will print more debug info.
+	*/
+	int							m_iDebug;
+
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 
