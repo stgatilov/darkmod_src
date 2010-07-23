@@ -710,7 +710,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	{
 		LodeClass.img = new CImage();
 		LodeClass.img->LoadImage( LodeClass.map );
-		m_Classes[i].img->InitImageInfo();
+		LodeClass.img->InitImageInfo();
 	}
 
 	LodeClass.bunching = ent->spawnArgs.GetFloat( "lode_bunching", spawnArgs.GetString( "bunching", "0") );
