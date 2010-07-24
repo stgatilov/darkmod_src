@@ -515,9 +515,6 @@ void idGameLocal::Init( void ) {
 	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
 
-	// Check the interaction.vfp settings
-	UpdateInteractionShader();
-
 	// Construct a new http connection object
 	if (cv_tdm_allow_http_access.GetBool())
 	{
@@ -595,30 +592,6 @@ void idGameLocal::CheckTDMVersion(idUserInterface* ui)
 void idGameLocal::AddMainMenuMessage(const GuiMessage& message)
 {
 	m_GuiMessages.Append(message);
-}
-
-void idGameLocal::UpdateInteractionShader()
-{
-	// Check the CVARs
-	switch (cv_interaction_vfp_type.GetInteger())
-	{
-	case 0: // Rebb's enhanced interaction shader
-		Printf("Using TDM's enhanced interaction.vfp\n");
-		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
-		r_HDR_postProcess.SetBool(false);
-		break;
-
-	case 1: // JC Denton's HDR
-		Printf("Using TDM's HDR\n");
-		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
-		r_HDR_postProcess.SetBool(true);
-		break;
-
-	default:
-		Warning("Unknown interaction type setting found, reverting to enhanced standard.");
-		cv_interaction_vfp_type.SetInteger(0);
-		UpdateInteractionShader();
-	};
 }
 
 /*
@@ -3005,13 +2978,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			view = player->GetRenderView();
 			if ( view ) {
 				gameRenderWorld->SetRenderView( view );
-			}
-
-			// Check the interaction.vfp settings
-			if (cv_interaction_vfp_type.IsModified())
-			{
-				UpdateInteractionShader();
-				cv_interaction_vfp_type.ClearModified();
 			}
 		}
 

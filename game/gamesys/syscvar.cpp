@@ -722,7 +722,7 @@ idCVar r_HDR_brightPassThreshold	( "r_HDR_brightPassThreshold",	"5.0",			CVAR_GA
 idCVar r_HDR_brightPassOffset		( "r_HDR_brightPassOffset",		"10.0",			CVAR_GAME | CVAR_FLOAT,		" Brightness offset for bright pass (Works only when automatic exposure is on)");
 idCVar r_HDR_min_luminance			( "r_HDR_min_luminance",		"0.06",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control whiteness when in pitch dark areas. (Works only when automatic exposure is on)");
 idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.12",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"1.6",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
+idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"2.6",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
 idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.3",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
 idCVar r_HDR_sceneExposure			( "r_HDR_sceneExposure",		"1.38",			CVAR_GAME | CVAR_FLOAT,		" Scene exposure. Try values lower or greater than 1.0");
 idCVar r_HDR_gammaCorrection		( "r_HDR_gammaCorrection",		"1.15",			CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
@@ -731,7 +731,7 @@ idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"3.0",			CVAR_GAME 
 idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables both bloom as well as halo passes");
 idCVar r_HDR_haloIntensity			( "r_HDR_HaloIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Halo intensity. Set to 0.0 disables halo pass. ");
 idCVar r_HDR_debugTextureIndex		( "r_HDR_debugTextureIndex",	"0",			CVAR_GAME | CVAR_INTEGER,	" Show intermediate textures used for HDR postprocess \n 1: scene Image(64x Scaled down) \n 2: Average Luminance Initial pass texture\n 3: Average luminance ");
-idCVar r_HDR_lumUpdateRate			( "r_HDR_lumUpdateRate",		"3",			CVAR_GAME | CVAR_INTEGER,	" Updates luminance data after every these many number of frames. "	);												
+idCVar r_HDR_lumUpdateRate			( "r_HDR_lumUpdateRate",		"11",			CVAR_GAME | CVAR_INTEGER,	" Updates luminance data after every these many number of frames. "	);												
 
 //----------------------------------
 

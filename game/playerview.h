@@ -89,12 +89,10 @@ private:
 
 	bool				bfgVision;			// 
 
-	// HDR related - J.C.Denton : Start
-
 	class dnImageWrapper
 	{
 	private:	
-		// Changed const idStr to idStr, so that compiler can provide a default assignment operator. 
+		// Changed const idStr to idStr, so that compiler can provide a default implementation for the assignment operator. 
 		// E.g. copying contents of idPlayerView object to another would be impossible otherwise.
 		idStr m_strImage;
 		const idMaterial *m_matImage;
@@ -123,9 +121,7 @@ private:
 		float				m_fShiftScale_x;
 		float				m_fShiftScale_y;
 
-		unsigned char		m_nFramesSinceLumUpdate;				
-		float				m_fDeltaTime;
-		
+		unsigned char		m_nFramesSinceLumUpdate;						
 		
 		bool				m_bForceUpdateOnCookedData;
 
@@ -138,7 +134,6 @@ private:
 	dnImageWrapper m_imageHalo;
 	
 		// Every channel of this image will have a cooked mathematical data. 
-		// Since we might need more of these textures, I am numbering them.
 		dnImageWrapper		m_imageCookedMath;
 		const idMaterial*	m_matCookMath_pass1;
 		const idMaterial*	m_matCookMath_pass2;
@@ -172,10 +167,10 @@ private:
 		void UpdateBackBufferParameters	();		
 		void RenderDebugTextures		();		
 		void UpdateCookedData			();
+		void UpdateInteractionShader	(); 	// Chooses between the various VFP files according to the CVAR settings. Only call this if settings got changed.
 	};
 
 	dnPostProcessManager m_postProcessManager;
-	// HDR related - J.C.Denton : End
 
 	const idMaterial *	tunnelMaterial;		// health tunnel vision
 	const idMaterial *	armorMaterial;		// armor damage view effect
@@ -196,10 +191,6 @@ private:
 
 	idPlayer *			player;
 	renderView_t		view;
-
-	// TDM Related
-        // This flag is no longer needed. -JCDenton
-	//bool				cur_amb_method;		// Current ambient method. Used for checking whether ambient method grpahics option has changed. By Dram
 };
 
 #endif /* !__GAME_PLAYERVIEW_H__ */

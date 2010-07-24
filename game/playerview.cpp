@@ -853,9 +853,9 @@ void idPlayerView::UpdateAmbientLight()
 		}
 		else // If the Texture Brightness method is used
 		{
+
 			gameLocal.globalShaderParms[5] = Min( 2, Max (1, cv_ambient_method.GetInteger() ) );
 			idVec3 ambient_color = pAmbientLight->spawnArgs.GetVector( "_color" );				 // Get the ambient color from the spawn arguments
-
 			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
 			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
 			gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
@@ -868,7 +868,6 @@ void idPlayerView::UpdateAmbientLight()
 	{
 		gameLocal.Printf( "Note: The main ambient light could not be determined\n"); // Show in console of light not existing in map
 	}
-
 	cv_ambient_method.ClearModified();
 	// Clean this up later since not needed. JC Denton
 	// 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
@@ -929,9 +928,7 @@ void idPlayerView::dnPostProcessManager::Initialize()
 
 	// Make sure that we always measure luminance at first frame. 
 	m_nFramesSinceLumUpdate	= r_HDR_lumUpdateRate.GetInteger();
-	m_fDeltaTime			= 0.0f;
 }
-
 
 void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 {
@@ -979,7 +976,6 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 }
 
 
-
 void idPlayerView::dnPostProcessManager::Update( void )
 {
 	static const float fBloomImageDownScale = 2.0f;
@@ -990,22 +986,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 	// Check the interaction.vfp settings
 	if( cv_interaction_vfp_type.IsModified() )
 	{
-		if (cv_interaction_vfp_type.GetInteger() == 0)
-		{
-			// Use D3 interaction
-			gameLocal.Printf("Using D3 interaction.vfp\n");
-			cvarSystem->SetCVarInteger("r_testARBProgram", 0);
-			r_HDR_postProcess.SetBool( false );
-		}
-		else
-		{
-			// Use rebb's enhanced interaction
-			// Rebb's interaction has been replaced by mine for now. -JC Denton
-			//Printf("Using TDM's enhanced interaction.vfp\n");
-			gameLocal.Printf("Using TDM's HDR\n");
-			cvarSystem->SetCVarInteger("r_testARBProgram", 1);
-			r_HDR_postProcess.SetBool( true );
-		}
+		this->UpdateInteractionShader();
 		cv_interaction_vfp_type.ClearModified();
 	}
 
@@ -1019,6 +1000,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		this->UpdateCookedData();
 
 		// Delayed luminance measurement and adaptation for performance improvement.
+
 		if( m_nFramesSinceLumUpdate >= r_HDR_lumUpdateRate.GetInteger() )
 		{
 			//-------------------------------------------------
@@ -1055,19 +1037,16 @@ void idPlayerView::dnPostProcessManager::Update( void )
 			m_nFramesSinceLumUpdate ++;
 		}
 
-		//Calculate frame render time for luminance adaptation.
-		m_fDeltaTime = gameLocal.time - gameLocal.previousTime;
-
 		//-------------------------------------------------
 		// Adapt to the newly calculated Luminance from previous Luminance.
 		//-------------------------------------------------
 		renderSystem->CropRenderSize(1, 1, true);
-		renderSystem->SetColor4( m_fDeltaTime/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
-
+		renderSystem->SetColor4( (gameLocal.time - gameLocal.previousTime)/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
 		renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
 		renderSystem->UnCrop();
 		//---------------------
+
 
 		const float fHDRBloomIntensity = r_HDR_bloomIntensity.GetFloat();
 		const float fHDRHaloIntensity = fHDRBloomIntensity > 0.0f ? r_HDR_haloIntensity.GetFloat() : 0.0f;
@@ -1096,6 +1075,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 			renderSystem->UnCrop();
 			//---------------------
+
 			if(  fHDRHaloIntensity > 0.0f )
 			{
 				//-------------------------------------------------
@@ -1185,4 +1165,31 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 		else
 			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, m_fShiftScale_y, m_fShiftScale_x, 0, *arrImages[iDebugTexture-2] );
 	}
+}
+
+// Moved Greebo's method from gameLocal to here. - J.C.Denton
+// The CVar are rendering related and from now on, would work when g_stoptime is set to 0
+
+void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
+{
+	// Check the CVARs
+	switch (cv_interaction_vfp_type.GetInteger())
+	{
+	case 0: // Rebb's enhanced interaction shader
+		gameLocal.Printf("Using TDM's enhanced interaction.vfp\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+		r_HDR_postProcess.SetBool(false);
+		break;
+
+	case 1: // JC Denton's HDR
+		gameLocal.Printf("Using TDM's HDR\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+		r_HDR_postProcess.SetBool(true);
+		break;
+
+	default:
+		gameLocal.Warning("Unknown interaction type setting found, reverting to enhanced standard.");
+		cv_interaction_vfp_type.SetInteger(0);
+		this->UpdateInteractionShader();
+	};
 }
