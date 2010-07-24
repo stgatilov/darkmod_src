@@ -6686,7 +6686,7 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 		{
 			idVec3 vec3LightRadius; 
 			idLight *pLight =  static_cast<idLight *>( entities[i] );
-			gameLocal.Printf( "Light found %i \n", j++ ); 
+// 			gameLocal.Printf( "Light found %i \n", j++ ); 
 
 			if (!pLight->IsAmbient())
 				continue;
