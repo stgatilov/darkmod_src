@@ -482,7 +482,8 @@ void Lode::Spawn( void ) {
 	idAngles a = clip->GetAxis().ToAngles();
 	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
-	// gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, idEntity %i.\n", GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(idEntity) );
+	gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i.\n", 
+			GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity) );
 
 //	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
 //	idVec3 o = trace->GetOrigin();

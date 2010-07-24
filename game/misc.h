@@ -14,12 +14,6 @@
 #ifndef __GAME_MISC_H__
 #define __GAME_MISC_H__
 
-/* Tels: Define the number of supported LOD levels (0..LOD_LEVELS + hide)
- *		 About higher than 10 starts take performance instead of gaining it.
- *		 Do not go higher than 31, as each level needs 1 bit in a 32bit int.
- */
-#define LOD_LEVELS 7
-
 /*
 ===============================================================================
 
@@ -324,12 +318,6 @@ public:
 	void				Fade( const idVec4 &to, float fadeTime );
 	virtual void		Think( void );
 
-	/**
-	 * Tels: Stop LOD changes. If doTeam is true, also disables it on teammembers.
-	 */
-	void				StopLOD( const bool doTeam);
-
-
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
 
@@ -343,64 +331,6 @@ private:
 	int					fadeStart;
 	int					fadeEnd;
 	bool				runGui;
-
-	/**
-	* Set to true if whether this static entity should hide
-	* or change models/skins when outside a certain distance from the player
-	**/
-	bool				m_bDistDependent;
-
-	/**
-	* If true, the LOD distance check will only consider distance
-	* orthogonal to gravity.  This can be useful for things like
-	* turning on rainclouds high above the player.
-	**/
-	bool				m_bDistCheckXYOnly;
-	
-	/**
-	* Timestamp and interval between distance checks, in milliseconds
-	**/
-	int					m_DistCheckTimeStamp;
-	int					m_DistCheckInterval;
-	
-	/**
-	* Tels: Distance squared beyond which the entity switches to LOD model/skin #1,#2,#3
-	* if it is distance dependent
-	* The last number is the distance squared beyond which the entity hides.
-	**/
-	float				m_DistLODSq[ LOD_LEVELS ];
-
-	/**
-	* Tels: LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden)
-	**/
-	int					m_LODLevel;
-
-	/**
-	* Tels: Models and skins to be used for the different LOD distances
-	* for level 0 we use "model" and "skin"
-	**/
-	idStr				m_ModelLOD[ LOD_LEVELS ];
-	idStr				m_SkinLOD[ LOD_LEVELS ];
-
-	/** one bit for each LOD level, telling noshadows (1) or not (0) */
-	int					m_noshadowsLOD;
-
-	/* Tels: different LOD models might need different offsets to match
-	*		 the position of the LOD 0 level. */
-	idVec3				m_OffsetLOD[ LOD_LEVELS ];
-
-	/**
-	* Tels: fade out and fade in range in D3 units
-	**/
-	float				m_fLODFadeOutRange;
-	float				m_fLODFadeInRange;
-
-	/* Tels: Store the current model and skin to avoid flicker by not
-	*		 switching from one model/skin to the same model/skin when
-	*		 changing the LOD.
-	*/
-	idStr				m_ModelLODCur;
-	idStr				m_SkinLODCur;
 };
 
 

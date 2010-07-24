@@ -75,6 +75,10 @@ idMoveable::idMoveable( void ) {
 	wasPushedLastFrame = false;
 	pushDirection = vec3_zero;
 	lastPushOrigin = vec3_zero;
+
+	// by default no LOD
+	m_LOD = NULL;
+	m_DistCheckTimeStamp = 0;
 }
 
 /*
@@ -232,6 +236,8 @@ void idMoveable::Spawn( void ) {
 
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
+	ParseLODSpawnargs();
+
 	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
 }
 
@@ -268,6 +274,8 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(wasPushedLastFrame);
 	savefile->WriteVec3(pushDirection);
 	savefile->WriteVec3(lastPushOrigin);
+
+	SaveLOD( savefile );
 }
 
 /*
@@ -311,6 +319,8 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(wasPushedLastFrame);
 	savefile->ReadVec3(pushDirection);
 	savefile->ReadVec3(lastPushOrigin);
+
+	RestoreLOD( savefile );
 }
 
 /*
@@ -622,11 +632,12 @@ idMoveable::Think
 */
 void idMoveable::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
-		if ( !FollowInitialSplinePath() && !isPushed) {
+		if ( !FollowInitialSplinePath() && !isPushed && !m_LOD) {
 			BecomeInactive( TH_THINK );
 		}
 	}
 
+	// will also handle LOD thinking
 	idEntity::Think();
 
 	UpdateSlidingSounds();

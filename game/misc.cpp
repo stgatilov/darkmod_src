@@ -1459,29 +1459,8 @@ idStaticEntity::idStaticEntity( void ) {
 	fadeStart = 0;
 	fadeEnd	= 0;
 	runGui = false;
-	
-	m_bDistDependent = false;
-	for (int i = 0; i < LOD_LEVELS; i++)
-	{
-		m_DistLODSq[i] = 0;
-		m_ModelLOD[i] = "";
-		m_SkinLOD[i] = "";
-		m_OffsetLOD[i] = idVec3(0,0,0);
-	}
 
-	m_ModelLODCur = "";
-	m_SkinLODCur = "";
-	m_noshadowsLOD = 0;
-
-	/* 0 => normal model;  1..X LOD X, X+1 => hide */
-	m_LODLevel = 0;
-
-	m_fLODFadeOutRange = 0.0f;
-	m_fLODFadeInRange = 0.0f;
-
-	m_DistCheckTimeStamp = 0;
-	m_DistCheckInterval = 0;
-	m_bDistCheckXYOnly = false;
+	m_LOD = NULL;
 }
 
 /*
@@ -1498,29 +1477,7 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( runGui );
 
-	savefile->WriteBool( m_bDistDependent );
-	/* Tels: Only write the LOD data if we are distance dependent */
-	if (m_bDistDependent )
-	{
-		savefile->WriteInt( m_DistCheckTimeStamp );
-		savefile->WriteInt( m_DistCheckInterval );
-		savefile->WriteBool( m_bDistCheckXYOnly );
-
-		savefile->WriteInt( m_LODLevel );
-		savefile->WriteInt( m_noshadowsLOD );
-
-		for (int i = 0; i < LOD_LEVELS; i++)
-		{
-			savefile->WriteString( m_ModelLOD[i] );
-			savefile->WriteString( m_SkinLOD[i] );
-			savefile->WriteVec3( m_OffsetLOD[i] );
-			savefile->WriteFloat( m_DistLODSq[ i ] );
-		}
-		savefile->WriteString( m_ModelLODCur );
-		savefile->WriteString( m_SkinLODCur );
-		savefile->WriteFloat( m_fLODFadeOutRange );
-		savefile->WriteFloat( m_fLODFadeInRange );
-	}
+	SaveLOD( savefile );
 }
 
 /*
@@ -1537,28 +1494,7 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( runGui );
 
-	savefile->ReadBool( m_bDistDependent );
-	/* Tels: Only read the LOD data if we are distance dependent */
-	if (m_bDistDependent )
-	{
-		savefile->ReadInt( m_DistCheckTimeStamp );
-		savefile->ReadInt( m_DistCheckInterval );
-		savefile->ReadBool( m_bDistCheckXYOnly );
-
-		savefile->ReadInt( m_LODLevel );
-		savefile->ReadInt( m_noshadowsLOD );
-		for (int i = 0; i < LOD_LEVELS; i++)
-		{
-			savefile->ReadString( m_ModelLOD[i] );
-			savefile->ReadString( m_SkinLOD[i] );
-			savefile->ReadVec3( m_OffsetLOD[i] );
-			savefile->ReadFloat( m_DistLODSq[ i ] );
-		}
-		savefile->ReadString( m_ModelLODCur );
-		savefile->ReadString( m_SkinLODCur );
-		savefile->ReadFloat( m_fLODFadeOutRange );
-		savefile->ReadFloat( m_fLODFadeInRange );
-	}
+	RestoreLOD( savefile );
 }
 
 /*
@@ -1596,14 +1532,12 @@ void idStaticEntity::Spawn( void ) {
 	spawnTime = gameLocal.time;
 	active = false;
 
-	m_ModelLODCur = spawnArgs.GetString( "model" );
-	if ( m_ModelLODCur.Find( ".prt" ) >= 0 ) {
+	idStr model = spawnArgs.GetString( "model" );
+	if ( model.Find( ".prt" ) >= 0 ) {
 
 		// we want the parametric particles out of sync with each other
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
 	}
-	m_SkinLODCur = spawnArgs.GetString( "skin" );
-	m_noshadowsLOD = spawnArgs.GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
 
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
@@ -1616,134 +1550,7 @@ void idStaticEntity::Spawn( void ) {
 		BecomeActive( TH_THINK );
 	}
 
-	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
-
-	//gameLocal.Printf (" %s: dist_check_period %i\n", GetName(), m_DistCheckInterval);
-
-	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	m_bDistDependent = (m_DistCheckInterval != 0) ? true : false;
-
-	if (m_bDistDependent)
-	{
-		float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
-
-		idStr temp;
-		// distance dependent LOD from this point on:
-		m_OffsetLOD[0] = renderEntity.origin;
-
-		// start at 1, since 0 is "the original level" setup already above
-		for (int i = 1; i < LOD_LEVELS; i++)
-		{
-			sprintf(temp, "lod_%i_distance", i);
-			m_DistLODSq[i] = spawnArgs.GetFloat( temp, "0.0" );
-			if (i == LOD_LEVELS - 1)
-			{
-				// last distance is named differently so you don't need to know how many levels the code supports:
-				m_DistLODSq[i] = fHideDistance;
-
-				// compute a random number and check it against the hide probability spawnarg
-				// do this only once at setup time, so the setting is stable during runtime
-				float fHideProbability = spawnArgs.GetFloat( "lod_hide_probability", "1.0" );
-				float fRandom = gameLocal.random.RandomFloat();	// 0.0 .. 1.0
-				if (fRandom > fHideProbability)
-				{
-					// disable hiding
-					m_DistLODSq[i] = -1.0f;		// disable
-				}
-
-				// do we have a lod_fadeout_range?
-				m_fLODFadeOutRange = spawnArgs.GetFloat( "lod_fadeout_range", "0.0" );
-
-				if (m_fLODFadeOutRange < 0)
-				{
-					gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_fLODFadeOutRange);
-					m_fLODFadeOutRange = 0.0f;
-				}
-				else
-				{
-					// square for easier comparisation with deltaSq
-					m_fLODFadeOutRange *= m_fLODFadeOutRange;
-				}
-
-				// do we have a lod_fadein_range?
-				m_fLODFadeInRange = spawnArgs.GetFloat( "lod_fadein_range", "0.0" );
-
-				if (m_fLODFadeInRange < 0)
-				{
-					gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_fLODFadeInRange);
-					m_fLODFadeInRange = 0.0f;
-				}
-				else if (m_fLODFadeInRange > 0 && m_fLODFadeInRange > m_DistLODSq[1])
-				{
-					gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.\n", GetName(), m_DistLODSq[1], m_fLODFadeInRange);
-					m_fLODFadeOutRange = 0.0f;
-				}
-				else
-				{
-					// square for easier comparisation with deltaSq
-					m_fLODFadeInRange *= m_fLODFadeInRange;
-				}
-
-				//gameLocal.Printf (" %s: lod_fadeout_range %0.2f lod_fadein_range %0.2f.\n", GetName(), m_fLODFadeOutRange, m_fLODFadeInRange);
-			}
-
-			//gameLocal.Printf (" %s: init LOD %i m_DistLODSq=%f\n", GetName(), i, m_DistLODSq[i]); 
-
-			if (i > 0 && m_DistLODSq[i] > 0 && (m_DistLODSq[i] * m_DistLODSq[i]) < m_DistLODSq[i-1])
-			{
-				gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
-					GetName(), i, m_DistLODSq[i] * m_DistLODSq[i], i-1, m_DistLODSq[i-1]); 
-			}
-			// -1 should stay -1 to signal "don't use this level"
-			if (m_DistLODSq[i] > 0)
-			{
-				m_bDistDependent = true;
-				m_DistLODSq[i] *= m_DistLODSq[i];
-
-				// the last level is "hide", so we don't need a model, skin or offset here
-				if (i < LOD_LEVELS - 1)
-				{
-					sprintf(temp, "model_lod_%i", i);
-					m_ModelLOD[i] = spawnArgs.GetString( temp );
-					if (m_ModelLOD[i].Length() == 0) { m_ModelLOD[i] = m_ModelLODCur; }
-
-					sprintf(temp, "skin_lod_%i", i);
-					m_SkinLOD[i] = spawnArgs.GetString( temp );
-					if (m_SkinLOD[i].Length() == 0) { m_SkinLOD[i] = m_SkinLODCur; }
-
-					// set the right bit
-					sprintf(temp, "noshadows_lod_%i", i );
-									  // 1, 2, 4, 8, 16 etc
-					m_noshadowsLOD |= (spawnArgs.GetBool( temp, "0" ) ? 1 : 0) << i;
-
-					// setup the manual offset for this LOD stage (needed to align some models)
-					sprintf(temp, "offset_lod_%i", i);
-					m_OffsetLOD[i] = m_OffsetLOD[0] + spawnArgs.GetVector( temp, "0,0,0" );
-				}
-				// else hiding needs no offset
-
-				//gameLocal.Printf (" noshadowsLOD 0x%08x model %s skin %s\n", m_noshadowsLOD, m_ModelLOD[i].c_str(), m_SkinLOD[i].c_str() );
-			}
-		}
-
-		m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
-
-		// add some phase diversity to the checks so that they don't all run in one frame
-		// make sure they all run on the first frame though, by initializing m_TimeStamp to
-		// be at least one interval early.
-		// old code, only using half the interval:
-		//m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + 0.5f*gameLocal.random.RandomFloat()) );
-		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
-
-		// setup level 0 (aka "The one and only original")
-		m_ModelLOD[0] = m_ModelLODCur;
-		m_SkinLOD[0] = m_SkinLODCur;
-
-		//gameLocal.Printf (" LOD default model %s default skin %s\n", m_ModelLODCur.c_str(), m_SkinLODCur.c_str() );
-
-		// Have to start thinking if we're distance dependent
-		BecomeActive( TH_THINK );
-	}
+	ParseLODSpawnargs();
 }
 
 /*
@@ -1757,240 +1564,13 @@ void idStaticEntity::ShowEditingDialog( void ) {
 
 /*
 ================
-idStaticEntity::StopLOD
-
-Tels: Disable LOD checks including all attachements
-================
-*/
-void idStaticEntity::StopLOD( const bool doTeam )
-{
-	BecomeInactive( TH_THINK );
-	m_DistCheckInterval = 0; 
-
-	if (!doTeam)
-	{
-		return;
-	}
-
-	/* also all the bound entities in our team */
-	idEntity* NextEnt = this;
-
-	idEntity* bindM = GetBindMaster();
-	if ( bindM )
-		{
-		NextEnt = bindM;	
-		}
-
-	while ( NextEnt != NULL )
-	{
-		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
-		if ( idStr( NextEnt->spawnArgs.GetString( "spawnclass", "") ) == "idStaticEntity")
-		{
-			idStaticEntity *ent = static_cast<idStaticEntity*>( NextEnt );
-			if (ent)
-			{
-				ent->StopLOD( false );
-			}
-		}
-	/* get next Team member */
-	NextEnt = NextEnt->GetNextTeamEntity();
-	}
-}
-
-/*
-================
 idStaticEntity::Think
 ================
 */
 void idStaticEntity::Think( void ) 
 {
-
+	// will also do LOD thinking:
 	idEntity::Think();
-
-	// Distance dependence checks
-	if( m_bDistDependent 
-		&& (m_DistCheckInterval > 0) 
-		&& ( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval ) )
-	{
-		
-		idVec3 delta, vGravNorm;
-		bool bWithinDist = false;
-
-		m_DistCheckTimeStamp = gameLocal.time;
-
-		// TODO: What to do about player looking thru spyglass?
-		delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-		delta -= GetPhysics()->GetOrigin();
-
-		if( m_bDistCheckXYOnly )
-		{
-			vGravNorm = GetPhysics()->GetGravityNormal();
-			delta -= (vGravNorm * delta) * vGravNorm;
-		}
-
-		// multiply with the user LOD bias setting, and cache that the result:
-		float deltaSq = delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat());
-
-		// by default fully visible
-		float fAlpha = 1.0f;
-
-		/* Tels: check in which LOD level we are */
-		for (int i = 0; i < LOD_LEVELS; i++)
-		{
-			// skip this level
-			if (m_DistLODSq[i] <= 0)
-			{
-				//gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_DistLODSq[i]);
-				continue;
-			}
-
-			// find the next usable level
-			int nextLevel = i + 1;
-			while (nextLevel < LOD_LEVELS && m_DistLODSq[nextLevel] <= 0 )
-			{
-				nextLevel++;
-			}
-
-			if (nextLevel < LOD_LEVELS)
-			{
-				bWithinDist = (deltaSq > m_DistLODSq[i]) && (deltaSq <= m_DistLODSq[nextLevel]);
-			}
-			else
-			{
-				if (i < LOD_LEVELS - 1)
-				{
-					bWithinDist = (deltaSq < m_DistLODSq[ LOD_LEVELS - 1]);
-				}
-				else
-				{
-					// only hide if hiding isn't disabled
-					// last usable level goes to infinity
-					bWithinDist = m_DistLODSq[i] > 0 && (deltaSq > m_DistLODSq[i]);
-				}
-
-				// compute the alpha value of still inside the fade range
-				if (bWithinDist)
-				{
-				
-					if (m_fLODFadeOutRange > 0)
-					{
-						//gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_DistLODSq[i], deltaSq, m_fLODFadeOutRange);
-
-						if (deltaSq > (m_DistLODSq[i] + m_fLODFadeOutRange))
-						{
-							// just hide
-							if (!fl.hidden)
-							{
-								Hide();
-							}
-						}
-						else
-						{
-							fAlpha = 1.0f - ( (deltaSq - m_DistLODSq[i]) / m_fLODFadeOutRange );
-							if (fl.hidden)
-							{
-								Show();
-							}
-							//gameLocal.Printf ("%s fading out to %0.2f\n", GetName(), fAlpha);
-							SetAlpha( fAlpha, true );
-						}
-						// set the timestamp so we think the next frame again to get a smooth blend:
-						m_DistCheckTimeStamp = gameLocal.time - m_DistCheckInterval - 0.1;
-					}
-					else
-					{
-						// just hide if outside
-						if (!fl.hidden)
-						{
-							//gameLocal.Printf ("%s hiding due to out-of-range %0.2f\n", GetName(), deltaSq);
-							Hide();
-						}
-					}
-
-					m_LODLevel = i;
-					bWithinDist = 0;
-
-					// early out
-					i = LOD_LEVELS;
-			   		continue;
-				}
-			}
-
-			//gameLocal.Printf ("%s passed LOD %i distance check %f (%f), inside?: %i (old level %i)\n", GetName(), i, m_DistLODSq[i], deltaSq, bWithinDist, m_LODLevel);
-			
-			// don't do anything when we are already at that level
-			if ( bWithinDist && m_LODLevel != i)
-			{
-
-				m_LODLevel = i;
-
-				// LOD level number i, switch model, skin, noshadows etc
-				// TODO: Hiding a LOD entity temp. completely would fail,
-				//		 as the LOD levels < LAST_LOD_LEVEL would show it again.
-
-				if (i == 0 && m_fLODFadeInRange > 0)
-				{
-					// do we need to hide the entity, or fade it?
-					if (deltaSq < (m_DistLODSq[0] - m_fLODFadeInRange))
-					{
-						fAlpha = 0.0f;	// hide
-						if (!fl.hidden)
-						{
-							Hide();
-						}
-					}
-					else
-					{
-						fAlpha = (deltaSq - (m_DistLODSq[0] - m_fLODFadeInRange)) / m_fLODFadeOutRange;
-						if (fl.hidden)
-						{
-							Show();
-						}
-						//gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
-						SetAlpha( fAlpha, true );
-					}
-					// set the timestamp so we think the next frame again to get a smooth blend:
-					m_DistCheckTimeStamp = gameLocal.time - m_DistCheckInterval - 0.1;
-				}
-				else
-				{
-					// visible in all other levels
-					if (fl.hidden)
-					{
-						//gameLocal.Printf("Showing %s again (LOD %i)\n", GetName(), i);
-						SetAlpha( 1.0f, fAlpha );
-						Show();
-					}
-				}
-
-				if (m_ModelLODCur != m_ModelLOD[i])
-				{
-					//gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-					//	GetName(), i, m_ModelLOD[i].c_str(), m_OffsetLOD[i].x, m_OffsetLOD[i].y, m_OffsetLOD[i].z );
-					SetModel( m_ModelLOD[i] );
-					m_ModelLODCur = m_ModelLOD[i];
-					SetOrigin( m_OffsetLOD[i] );
-				}
-
-				if ( m_SkinLODCur != m_SkinLOD[i])
-				{
-					const idDeclSkin *skinD = declManager->FindSkin( m_SkinLOD[i] );
-					if (skinD)
-					{
-						SetSkin( skinD );
-					}
-					m_SkinLODCur = m_SkinLOD[i];
-				}
-				renderEntity.noShadow = (m_noshadowsLOD & (1 << i)) > 0 ? 1 : 0;
-
-				// abort the loop, we found the right level (micro-optimize)
-				i = LOD_LEVELS;
-			}
-
-		// end for all LOD levels
-		}
-
-	}
 
 	if ( thinkFlags & TH_THINK ) 
 	{
@@ -2018,7 +1598,7 @@ void idStaticEntity::Think( void )
 				fadeEnd = 0;
 				
 				// TDM: Don't deactivate if we have to keep doing distance checks
-				if( !m_bDistDependent )
+				if (m_DistCheckTimeStamp == 0)
 					BecomeInactive( TH_THINK );
 			}
 			SetColor( color );

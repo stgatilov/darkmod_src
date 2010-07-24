@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -31,6 +32,12 @@ class CInventoryItem;
 typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
 typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
+
+/* Tels: Define the number of supported LOD levels (0..LOD_LEVELS + hide)
+ *		 About higher than 10 starts take performance instead of gaining it.
+ *		 Do not go higher than 31, as each level needs 1 bit in a 32bit int.
+ */
+#define LOD_LEVELS 7
 
 /**
 * SDK_SIGNALS are used to signal either from a script to the SDK code or
@@ -228,6 +235,54 @@ typedef struct SAttachPosition_s
 	void			Restore( idRestoreGame *savefile );
 } SAttachPosition;
 
+/**
+* Tels: Info structure for LOD data, can be shared between many entities.
+**/
+struct lod_data_t
+{
+	/**
+	* If true, the LOD distance check will only consider distance
+	* orthogonal to gravity.  This can be useful for things like
+	* turning on rainclouds high above the player.
+	**/
+	bool				bDistCheckXYOnly;
+	
+	/**
+	* Interval between distance checks, in milliseconds.
+	**/
+	int					DistCheckInterval;
+	
+	/**
+	* Distance squared beyond which the entity switches to LOD model/skin #1,#2,#3
+	* if it is distance dependent
+	* The last number is the distance squared beyond which the entity hides.
+	**/
+	float				DistLODSq[ LOD_LEVELS ];
+
+	/**
+	* Models and skins to be used for the different LOD distances
+	* for level 0 we use "model" and "skin"
+	**/
+	idStr				ModelLOD[ LOD_LEVELS ];
+	idStr				SkinLOD[ LOD_LEVELS ];
+
+	/** one bit for each LOD level, telling noshadows (1) or not (0) */
+	int					noshadowsLOD;
+
+	/**
+	* Different LOD models might need different offsets to match
+	* the position of the LOD 0 level.
+	*/
+	idVec3				OffsetLOD[ LOD_LEVELS ];
+
+	/**
+	* Fade out and fade in range in D3 units.
+	**/
+	float				fLODFadeOutRange;
+	float				fLODFadeInRange;
+
+};
+
 class idEntity : public idClass {
 public:
 	static const int		MAX_PVS_AREAS = 4;
@@ -386,6 +441,29 @@ public:
 	// The last time the above value has been calculated
 	int						m_LightQuotientLastEvalTime;
 
+	/**
+	* Tels: Contains (sharable, constant) LOD data if non-NULL.
+	*/
+	lod_data_t*				m_LOD;
+
+	/**
+	* Tels: Info for LOD, per entity. used if m_LOD != NULL:
+	* Timestamp for next LOD think.
+	**/
+	int						m_DistCheckTimeStamp;
+
+	/**
+	* Current LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden)
+	**/
+	int						m_LODLevel;
+
+	/* Store the current model and skin to avoid flicker by not
+	*  switching from one model/skin to the same model/skin when
+	*  changing the LOD.
+	*/
+	int						m_ModelLODCur;
+	int						m_SkinLODCur;
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -400,8 +478,24 @@ public:
 	*/
 	virtual void			LoadModels( void );
 
+	/**
+	* Parse the LOD spawnargs and fill the m_LOD and m_LODData structs if nec.
+	*/
+	void					ParseLODSpawnargs( void );
+
+	/**
+	 * Tels: Stop LOD changes. If doTeam is true, also disables it on teammembers.
+	 */
+	void					StopLOD( const bool doTeam);
+
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
+
+	/**
+	 * Tels: Save/Restore optional LOD data.
+	 */
+	void					SaveLOD( idSaveGame *savefile ) const;
+	void					RestoreLOD( idRestoreGame *savefile );
 
 	const char *			GetEntityDefName( void ) const;
 	void					SetName( const char *name );
@@ -418,6 +512,11 @@ public:
 
 	// thinking
 	virtual void			Think( void );
+	// Tels: If LOD is enabled on this entity, check distance and do the right thing
+	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,
+	// so the lode can pre-compute the distance.
+	virtual void			ThinkAboutLOD( const lod_data_t* lod_data, const float deltaSq );
+
 	bool					CheckDormant( void );	//!< dormant == on the active list, but out of PVS
 	virtual	void			DormantBegin( void );	//!< called when entity becomes dormant
 	virtual	void			DormantEnd( void );		//!< called when entity wakes from being dormant
