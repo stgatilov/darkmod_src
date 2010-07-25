@@ -112,6 +112,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 		ofs.Clear();
 		op_zero.offset = idVec3(0,0,0);
 		op_zero.angle  = idAngles(0,0,0);
+		op_zero.color  = idVec3(0,0,0);
 		ofs.Append( op_zero );
 		offsets = &ofs;
 	}
@@ -162,7 +163,9 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 						idDrawVert *v = &newSurf.geometry->verts[nV];
 
 						v->xyz += op.offset;
-						if (o == 1 || o == 2)
+						// TODO: add coloring support here
+						// TODO: add rotation support here
+/*						if (o == 1 || o == 2)
 						{
 						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
 								j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
@@ -172,8 +175,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 								v->color[3]
 							   	);
 						}
+						*/
 						nV ++;
-						// TODO: rotate
 					}
 					for (int j = 0; j < numIndexes; j++)
 					{

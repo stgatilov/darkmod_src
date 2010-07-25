@@ -35,10 +35,11 @@ typedef struct {
 	int					numIndexes;			// how many indexes where added
 } model_combineinfo_t;
 
-// Defines offset and rotation for a model combine operation
+// Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
 	idAngles			angle;
+	idVec3				color;
 } model_ofs_t;
 
 class CModelGenerator {

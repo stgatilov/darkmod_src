@@ -15,7 +15,6 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
-TODO: add random entity coloring (lode_color_min lode_color_max)
 TODO: turn "exists" and "hidden" into flags field, add there a "pseudoclass" bit so
 	  we can use much smaller structs for pseudo classes (we might have thousands
 	  of pseudoclass structs due to each having a different hmodel)
@@ -145,6 +144,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Entities[i].skinIdx );
 		savefile->WriteVec3( m_Entities[i].origin );
 		savefile->WriteAngles( m_Entities[i].angles );
+		savefile->WriteVec3( m_Entities[i].color );
 		savefile->WriteBool( m_Entities[i].hidden );
 		savefile->WriteBool( m_Entities[i].exists );
 		savefile->WriteInt( m_Entities[i].entity );
@@ -170,6 +170,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].stack );
 		savefile->WriteBool( m_Classes[i].noinhibit );
 		savefile->WriteVec3( m_Classes[i].size );
+		savefile->WriteVec3( m_Classes[i].color_min );
+		savefile->WriteVec3( m_Classes[i].color_max );
 
 		savefile->WriteFloat( m_Classes[i].defaultProb );
 
@@ -298,6 +300,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Entities[i].skinIdx );
 		savefile->ReadVec3( m_Entities[i].origin );
 		savefile->ReadAngles( m_Entities[i].angles );
+		savefile->ReadVec3( m_Entities[i].color );
 		savefile->ReadBool( m_Entities[i].hidden );
 		savefile->ReadBool( m_Entities[i].exists );
 		savefile->ReadInt( m_Entities[i].entity );
@@ -326,6 +329,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].stack );
 		savefile->ReadBool( m_Classes[i].noinhibit );
 		savefile->ReadVec3( m_Classes[i].size );
+		savefile->ReadVec3( m_Classes[i].color_min );
+		savefile->ReadVec3( m_Classes[i].color_max );
 
 		savefile->ReadFloat( m_Classes[i].defaultProb );
 
@@ -808,6 +813,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		ent->GetRenderEntity()->hModel = NULL;
 		LodeClass.classname = FUNC_DUMMY;
 	}
+
+	// uses color variance?
+	// fall back to LODE "color_mxx", if not set, fall back to entity color, if this is unset, use 1 1 1
+	LodeClass.color_min  = ent->spawnArgs.GetVector("lode_color_min", spawnArgs.GetString("color_min", ent->spawnArgs.GetString("_color", "1 1 1")));
+	LodeClass.color_max  = ent->spawnArgs.GetVector("lode_color_max", spawnArgs.GetString("color_max", ent->spawnArgs.GetString("_color", "1 1 1")));
+
+    LodeClass.color_min.Clamp( idVec3(0,0,0), idVec3(1,1,1) );
+    LodeClass.color_max.Clamp( LodeClass.color_min, idVec3(1,1,1) );
 
 	// all data setup, append to the list
 	m_Classes.Append ( LodeClass );
@@ -1633,6 +1646,12 @@ void Lode::PrepareEntities( void )
 			// couldn't place entity even after 10 tries?
 			if (tries >= MAX_TRIES) continue;
 
+			// compute a random color value
+			LodeEntity.color = m_Classes[i].color_max - m_Classes[i].color_min; 
+			LodeEntity.color.x = LodeEntity.color.x * RandomFloat() + m_Classes[i].color_min.x;
+			LodeEntity.color.y = LodeEntity.color.y * RandomFloat() + m_Classes[i].color_min.y;
+			LodeEntity.color.z = LodeEntity.color.z * RandomFloat() + m_Classes[i].color_min.z;
+
 			// choose skin randomly
 			LodeEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
 			//gameLocal.Printf( "LODE %s: Using skin %i.\n", GetName(), LodeEntity.skinIdx );
@@ -1717,7 +1736,7 @@ void Lode::CombineEntities( void )
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	model_ofs_t ofs;
 
-	if ( ! spawnArgs.GetBool("combine","1"))
+	if ( ! spawnArgs.GetBool("combine", "0"))
 	{
 		gameLocal.Printf("LODE %s: combine = 0, skipping combine step.\n", GetName() );
 		return;
@@ -1763,8 +1782,10 @@ void Lode::CombineEntities( void )
 	{
 		int merged = 0;				//!< merged 0 other entities into this one
 		offsets.Clear();
+		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
 		ofs.offset = idVec3(0,0,0);	// the first copy is the original
+		ofs.color  = m_Entities[i].color;
 		// TODO:
 		ofs.angle  = idAngles(0,0,0);
 		offsets.Append(ofs);
@@ -1836,6 +1857,7 @@ void Lode::CombineEntities( void )
 
 			ofs.offset = dist;
 			ofs.angle  = m_Entities[j].angles;
+			ofs.color  = m_Entities[j].color;
 			offsets.Append( ofs );
 
 			if (merged == 0)
@@ -1944,6 +1966,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 		// set previously defined (possible random) skin
 	    args.Set("skin", m_Skins[ ent->skinIdx ] );
+
+		// set previously defined (possible random) color
+	    args.SetVector("_color", ent->color );
 
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");
