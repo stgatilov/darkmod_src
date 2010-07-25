@@ -137,6 +137,7 @@ private:
 		dnImageWrapper		m_imageCookedMath;
 		const idMaterial*	m_matCookMath_pass1;
 		const idMaterial*	m_matCookMath_pass2;
+		const idMaterial*	m_matCookMath_pass3;
 
 	const idMaterial *m_matAvgLuminance64x;
 	const idMaterial *m_matAvgLumSample4x4;

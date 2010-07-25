@@ -607,7 +607,6 @@ extern idCVar r_HDR_max_luminance;
 extern idCVar r_HDR_colorCurveBias;
 extern idCVar r_HDR_sceneExposure;
 extern idCVar r_HDR_gammaCorrection;
-extern idCVar r_HDR_blueShiftBias;
 extern idCVar r_HDR_enableDebugMode;
 extern idCVar r_HDR_debugTextureIndex;
 extern idCVar r_HDR_eyeAdjustmentDelay;
@@ -616,5 +615,8 @@ extern idCVar r_HDR_bloomIntensity;
 extern idCVar r_HDR_haloIntensity;
 extern idCVar r_HDR_lumUpdateRate;
 extern idCVar r_HDR_eyeAdjustmentDelay;
+extern idCVar r_HDR_eyeAdjustmentBias;	
+extern idCVar r_HDR_vignetteBias;
+
 
 #endif /* !__SYS_CVAR_H__ */

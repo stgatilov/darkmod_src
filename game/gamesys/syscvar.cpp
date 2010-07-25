@@ -726,12 +726,13 @@ idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"2.6",			CVAR_GAM
 idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.3",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
 idCVar r_HDR_sceneExposure			( "r_HDR_sceneExposure",		"1.4",			CVAR_GAME | CVAR_FLOAT,		" Scene exposure. Try values lower or greater than 1.0");
 idCVar r_HDR_gammaCorrection		( "r_HDR_gammaCorrection",		"1.1",			CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
-idCVar r_HDR_blueShiftBias			( "r_HDR_blueShiftBias",		"0.0",			CVAR_GAME | CVAR_FLOAT,		" Enables Blue Shift (range 0 to 1), 1 = Full Blue Shift, 0= No Blue Shift");
 idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"3.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusting this value will cause color burnout in a controllable fashion (range 0.0 - 256.0) \nHigher values reduces the contrast, lower values increases the contrast.");
 idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables both bloom as well as halo passes");
 idCVar r_HDR_haloIntensity			( "r_HDR_HaloIntensity",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Halo intensity. Set to 0.0 disables halo pass. ");
 idCVar r_HDR_debugTextureIndex		( "r_HDR_debugTextureIndex",	"0",			CVAR_GAME | CVAR_INTEGER,	" Show intermediate textures used for HDR postprocess \n 1: scene Image(64x Scaled down) \n 2: Average Luminance Initial pass texture\n 3: Average luminance ");
 idCVar r_HDR_lumUpdateRate			( "r_HDR_lumUpdateRate",		"11",			CVAR_GAME | CVAR_INTEGER,	" Updates luminance data after every these many number of frames. "	);												
+idCVar r_HDR_eyeAdjustmentBias		( "r_HDR_eyeAdjustmentBias",	"0.4",			CVAR_GAME | CVAR_FLOAT,		" Automatic eye exposure factor (range 0 to 1) \n e.g. 0.0 - No automatic eye exposure, \n 0.5 - 50% automatic eye exposure, \n 1.0 Full automatic eye exposure. "	);												
+idCVar r_HDR_vignetteBias			( "r_HDR_vignetteBias",			"0.3",			CVAR_GAME | CVAR_FLOAT,		" Vignette: Fading-of-edges-of-the-screen effect(range 0 to 1) "	);												
 
 //----------------------------------
 

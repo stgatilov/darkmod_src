@@ -2921,12 +2921,16 @@ bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureNam
 	arrStrInvalidTokens.push_back( "specularmap" );
 	arrStrInvalidTokens.push_back( "map" );
 
+// 	gameLocal.Printf("Entering loop. \n" );
+
 	idToken tknParsedLine;
+	int i=0;
 	for( nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
 	{
 		while(a_lexSource.ReadToken( &tknParsedLine )) 
 		{
 			if ( tknParsedLine.linesCrossed ) {
+// 				gameLocal.Printf("End of the line reached. \n" );
 				break;
 			}
 			if ( a_strStageTextureName.Length() ) {
@@ -2939,15 +2943,20 @@ bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureNam
 					continue;
 
 				bIsValidToken = false;
+// 				gameLocal.Printf("Invalid token found. \n" );
 				break;
 			}
 			if( bIsValidToken )
+			{
 				a_strStageTextureName += tknParsedLine;
+// 				gameLocal.Printf("constructing \"%s\" with a valid token. \n", a_strStageTextureName.c_str() );
+			}
 			else
+			{
+// 				gameLocal.Printf("%s is an invalid token. \n", tknParsedLine.c_str() );
 				break;
+			}
 		}
-		// We have gone one token ahead than needed in the lexer so offset it back again.
-		a_lexSource.UnreadToken( &tknParsedLine );
 
 		a_strStageTextureName.Strip('\n');
 		a_strStageTextureName.Strip('\t');
@@ -2960,12 +2969,16 @@ bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureNam
 
 		if ( 0 == nBrackets )
 		{
+			// We have gone one token ahead than needed in the lexer so offset it back again.
+// 			gameLocal.Printf("Unreading token %s. \n", tknParsedLine.c_str() );
+			a_lexSource.UnreadToken( &tknParsedLine );
+
 			a_strStageTextureName.Strip('}');
 			a_strStageTextureName.Strip('{');
 			if( a_strStageTextureName.Length() <= 0 )
 				return false;
 
-			gameLocal.Printf(" Val Exp: %s \n ", a_strStageTextureName.c_str() );
+			gameLocal.Printf(" Found valid expression: %s \n ", a_strStageTextureName.c_str() );
 			return true;
 		}
 
@@ -2985,17 +2998,23 @@ bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureNam
 void GetMaterialStageInfo ( const char* a_strMatStageName, idLexer &a_lexSource, std::vector<ImageInfo_s> & a_arrMatStageInfo )
 {
 	a_lexSource.Reset();
+// 	gameLocal.Printf( "Looking for valid %s stage information (w/o blend). \n", a_strMatStageName );
 	while ( 1 == a_lexSource.SkipUntilString( a_strMatStageName ) )
 	{
 		ImageInfo_s currentImageInfo ;
 
 		if( true == GetValidStageExpression( a_lexSource, currentImageInfo.strImageName ) )
 		{
+// 			gameLocal.Printf( "Found valid %s stage information (w/o blend). \n", a_strMatStageName );
 			a_arrMatStageInfo.push_back( currentImageInfo );
 		}
 	}
+// 	if( a_arrMatStageInfo.size() == 0 )
+// 		gameLocal.Printf( "Could not find valid %s stage information w/o blend. \n", a_strMatStageName);
 
 	a_lexSource.Reset();
+
+// 	gameLocal.Printf( "Looking for %s stage information with blend. \n", a_strMatStageName );
 	while ( 1 == a_lexSource.SkipUntilString( "blend" ) )
 	{
 		idToken tknMatStage;
@@ -3048,7 +3067,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 	int	uiSearchIndex;
 	unsigned int uiSearchOffset = 0;
 	unsigned int iTextLength = idStr::Length(a_text);
-	bool bAreAllWordFound = false;
+	bool bAreAllWordsFound = false;
 
 	for(std::vector<idStr>::iterator iter = a_arrSearchWords.begin(); ; )
 	{
@@ -3062,7 +3081,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 			return false;
 		}
 
-		bAreAllWordFound = true;
+		bAreAllWordsFound = true;
 
 		// Make sure that, this is not the first word we have found.
 		if( a_arrSearchWords.begin() != iter )
@@ -3072,7 +3091,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 				//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
 
 				//Start the search from the first word again, since all of the search words are important.
-				bAreAllWordFound = false;
+				bAreAllWordsFound = false;
 				iter = a_arrSearchWords.begin();
 				continue;
 			}
@@ -3094,7 +3113,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 		}
 	}
 
-	if( bAreAllWordFound )
+	if( bAreAllWordsFound )
 	{
 		// 		gameLocal.Printf( " Total %d word(s) found \n", a_arrSearchWords.size() );
 
@@ -3131,7 +3150,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
 	}
 
-	// 	if( !bAreAllWordFound )
+	// 	if( !bAreAllWordsFound )
 	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
 	return false;
 }
@@ -3170,6 +3189,8 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		if( NULL == mat )
 			continue;
 
+		gameLocal.Printf("Material %s loaded. \n", mat->GetName() );
+
 		std::vector< char > charBuffer; 
 		std::vector< ImageInfo_s > arrDiffusemapInfo;	
 		std::vector< ImageInfo_s > arrBumpMapInfo;	
@@ -3179,6 +3200,8 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		mat->GetText( &charBuffer[0] );
 
 		idLexer lexSource( &charBuffer[0], charBuffer.size(), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+
+		gameLocal.Printf("Finding out shader stages... \n" );
 
 		for ( int j=0; j < mat->GetNumStages(); j++ )
 		{
@@ -3194,18 +3217,23 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 			switch( pShaderStage->lighting )
 			{
 			case SL_BUMP:
+				gameLocal.Printf("Bumpmap stage found, extracting bumpmap information... \n" );
 				GetMaterialStageInfo( "bumpmap", lexSource, arrBumpMapInfo );
 				break;
 			case SL_DIFFUSE:
+				gameLocal.Printf("Diffusemap stage found, extracting bumpmap information... \n" );
 				GetMaterialStageInfo( "diffusemap", lexSource, arrDiffusemapInfo );
 				break;
 			case SL_SPECULAR:
+				gameLocal.Printf("Specularmap stage found, extracting bumpmap information... \n" );
 				GetMaterialStageInfo( "specularmap", lexSource, arrSpecularmapInfo );
 				break;
 			default:
 				continue;
 			}
 		}
+		gameLocal.Printf("Done. \n" );
+// 		break; // remove me!!!
 
 		if( arrBumpMapInfo.size() == 0 && arrDiffusemapInfo.size() == 0 && arrSpecularmapInfo.size() == 0 )
 		{
@@ -3224,11 +3252,9 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
 		
 		gameLocal.Printf( "ForceUpdate is: %s\n", bForceUpdateAllMaterials? "true": "false" );
-		if( bIsAmbientBlockFound  )
+		if( bIsAmbientBlockFound )
 		{
 			gameLocal.Printf( "Found new ambient block\n" );
-			if( !bForceUpdateAllMaterials )
-				continue;
 
 			gameLocal.Printf( "Removing new ambient block\n" );
 			charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
@@ -3239,18 +3265,25 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 			if( bIsAmbientBlockFound  )
 				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
 		}
-		else
+
+		//Some materials have old ambient block along with the new one. So remove it if found.
 		{
+			bool bIsOldAmbientBlockFound;
 			arrSearchWords.clear();
 			arrSearchWords.push_back("red");
 			arrSearchWords.push_back("global2");
-			bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
-			if( bIsAmbientBlockFound  )
+			bIsOldAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+			if( bIsOldAmbientBlockFound  )
 			{
 				gameLocal.Printf( "Found old ambient block\n" );
 				gameLocal.Printf( "Removing old ambient block\n" );
 				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+				bIsAmbientBlockFound = true;
 			}
+			// If we couldn't find old ambient block and we have new ambient block in place, 
+			// then we can safely skip this material.
+			else if( !bForceUpdateAllMaterials && bIsAmbientBlockFound )
+				continue;
 		}
 		
  

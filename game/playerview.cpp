@@ -904,6 +904,7 @@ m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOpt
 
 m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
 m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
+m_matCookMath_pass3		( declManager->FindMaterial( "postprocess/cookMath_pass3" )		),
 
 // Materials for debugging intermediate textures
 m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
@@ -936,10 +937,11 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 
 
 	if (	m_bForceUpdateOnCookedData || 
-			r_HDR_middleGray.IsModified() || r_HDR_maxColorIntensity.IsModified() || 
-			r_HDR_colorCurveBias.IsModified() || r_HDR_brightPassOffset.IsModified() || 
-			r_HDR_brightPassThreshold.IsModified() || r_HDR_sceneExposure.IsModified() ||
-			r_HDR_gammaCorrection.IsModified()	
+			r_HDR_middleGray.IsModified() || r_HDR_maxColorIntensity.IsModified()		|| 
+			r_HDR_colorCurveBias.IsModified() || r_HDR_brightPassOffset.IsModified()	|| 
+			r_HDR_brightPassThreshold.IsModified() || r_HDR_sceneExposure.IsModified()	||
+			r_HDR_gammaCorrection.IsModified()	|| r_HDR_vignetteBias.IsModified()		||
+			r_HDR_eyeAdjustmentBias.IsModified()
 		)
 	{
 
@@ -953,12 +955,19 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		// Changed from max to Max for cross platform compiler compatibility.
 		const float fMaxColorIntensity = Max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
 
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), 1.0f/fMaxColorIntensity, r_HDR_colorCurveBias.GetFloat(), r_HDR_sceneExposure.GetFloat() );
+		//------------------------------------------------------------------------
+		// Cook math Pass 1 
+		//------------------------------------------------------------------------
+		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), 1.0f/fMaxColorIntensity, r_HDR_sceneExposure.GetFloat(), r_HDR_eyeAdjustmentBias.GetFloat() );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat(), r_HDR_gammaCorrection.GetFloat() );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
+ 		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat(), r_HDR_eyeAdjustmentBias.GetFloat() );
+ 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
+ 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+
+		renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_gammaCorrection.GetFloat(), r_HDR_vignetteBias.GetFloat(), 0.0f  );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass3 );
 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 		renderSystem->UnCrop();
 		
@@ -969,6 +978,9 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		r_HDR_brightPassThreshold.ClearModified();
 		r_HDR_sceneExposure.ClearModified();
 		r_HDR_gammaCorrection.ClearModified();
+		r_HDR_vignetteBias.ClearModified();
+		r_HDR_eyeAdjustmentBias.ClearModified();
+
 		m_bForceUpdateOnCookedData = false;
 
 		gameLocal.Printf( "Cooking complete.\n" );
@@ -1000,53 +1012,54 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		this->UpdateCookedData();
 
 		// Delayed luminance measurement and adaptation for performance improvement.
-
-		if( m_nFramesSinceLumUpdate >= r_HDR_lumUpdateRate.GetInteger() )
+		if( r_HDR_eyeAdjustmentBias.GetFloat() > 0.0f )
 		{
+			if( m_nFramesSinceLumUpdate >= r_HDR_lumUpdateRate.GetInteger() )
+			{
+				//-------------------------------------------------
+				// Downscale 
+				//-------------------------------------------------
+				renderSystem->CropRenderSize(m_iScreenWidth/fBackbufferLumDownScale, m_iScreenHeight/fBackbufferLumDownScale, true);
+				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageCurrentRender );
+				renderSystem->CaptureRenderToImage( m_imageCurrentRender8x8DownScaled );
+				renderSystem->UnCrop();
+				//-------------------------------------------------
+				// Measure Luminance from Downscaled Image
+				//-------------------------------------------------
+				renderSystem->CropRenderSize(64, 64, true);
+				renderSystem->SetColor4( 1.0f/Min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
+				renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
+				renderSystem->UnCrop();
+				//-------------------------------------------------
+				// Average out the luminance of the scene to a 4x4 Texture
+				//-------------------------------------------------
+				renderSystem->CropRenderSize(4, 4, true);
+				renderSystem->SetColor4( 1.0f/16.0f, 1.0f, 1.0f, 1.0f );			 
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLumSample4x4 );
+				renderSystem->CaptureRenderToImage( m_imageluminance4x4 );
+				renderSystem->UnCrop();
+
+
+				// Reset vars
+				m_nFramesSinceLumUpdate	= 1;
+			}
+			else
+			{
+				m_nFramesSinceLumUpdate ++;
+			}
+
 			//-------------------------------------------------
-			// Downscale 
+			// Adapt to the newly calculated Luminance from previous Luminance.
 			//-------------------------------------------------
-			renderSystem->CropRenderSize(m_iScreenWidth/fBackbufferLumDownScale, m_iScreenHeight/fBackbufferLumDownScale, true);
-			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageCurrentRender );
-			renderSystem->CaptureRenderToImage( m_imageCurrentRender8x8DownScaled );
+			renderSystem->CropRenderSize(1, 1, true);
+			renderSystem->SetColor4( (gameLocal.time - gameLocal.previousTime)/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
+			renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
 			renderSystem->UnCrop();
-			//-------------------------------------------------
-			// Measure Luminance from Downscaled Image
-			//-------------------------------------------------
-			renderSystem->CropRenderSize(64, 64, true);
-			renderSystem->SetColor4( 1.0f/Min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
-			renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
-			renderSystem->UnCrop();
-			//-------------------------------------------------
-			// Average out the luminance of the scene to a 4x4 Texture
-			//-------------------------------------------------
-			renderSystem->CropRenderSize(4, 4, true);
-			renderSystem->SetColor4( 1.0f/16.0f, 1.0f, 1.0f, 1.0f );			 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLumSample4x4 );
-			renderSystem->CaptureRenderToImage( m_imageluminance4x4 );
-			renderSystem->UnCrop();
-
-
-			// Reset vars
-			m_nFramesSinceLumUpdate	= 1;
-		}
-		else
-		{
-			m_nFramesSinceLumUpdate ++;
-		}
-
-		//-------------------------------------------------
-		// Adapt to the newly calculated Luminance from previous Luminance.
-		//-------------------------------------------------
-		renderSystem->CropRenderSize(1, 1, true);
-		renderSystem->SetColor4( (gameLocal.time - gameLocal.previousTime)/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
-		renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
-		renderSystem->UnCrop();
-		//---------------------
-
+			//---------------------
+		}	// End of : r_HDR_eyeAdjustmentBias.GetFloat() > 0.0f 
 
 		const float fHDRBloomIntensity = r_HDR_bloomIntensity.GetFloat();
 		const float fHDRHaloIntensity = fHDRBloomIntensity > 0.0f ? r_HDR_haloIntensity.GetFloat() : 0.0f;
