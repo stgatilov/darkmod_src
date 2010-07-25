@@ -105,6 +105,16 @@ Lode::Lode( void ) {
 
 /*
 ===============
+Lode::~Lode
+===============
+*/
+Lode::~Lode(void) {
+
+	gameLocal.Warning ("LODE %s: Shutdown.\n", GetName() );
+	ClearClasses();
+}
+/*
+===============
 Lode::Save
 ===============
 */
@@ -145,6 +155,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	for( int i = 0; i < m_Classes.Num(); i++ )
 	{
 		savefile->WriteString( m_Classes[i].classname );
+		savefile->WriteString( m_Classes[i].modelname );
 		savefile->WriteInt( m_Classes[i].score );
 		savefile->WriteFloat( m_Classes[i].cullDist );
 		savefile->WriteFloat( m_Classes[i].spawnDist );
@@ -224,6 +235,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 /*
 ===============
 Lode::ClearClasses
+
+Free memory from render models and CImages
 ===============
 */
 void Lode::ClearClasses( void )
@@ -233,7 +246,10 @@ void Lode::ClearClasses( void )
 	{
 		if (NULL != m_Classes[i].hModel)
 		{
-			renderModelManager->FreeModel( m_Classes[i].hModel );
+			if (m_Classes[i].pseudo)
+			{
+				renderModelManager->FreeModel( m_Classes[i].hModel );
+			}
 			m_Classes[i].hModel = NULL;
 		}
 		if (NULL != m_Classes[i].img)
@@ -295,6 +311,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadString( m_Classes[i].classname );
+		savefile->ReadString( m_Classes[i].modelname );
 		savefile->ReadInt( m_Classes[i].score );
 		savefile->ReadFloat( m_Classes[i].cullDist );
 		savefile->ReadFloat( m_Classes[i].spawnDist );
@@ -343,30 +360,13 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( m_Classes[i].func_max );
 		}
 		savefile->ReadString( m_Classes[i].map );
+		m_Classes[i].img = NULL;
 	    if (!m_Classes[i].map.IsEmpty())
 		{
 			// image based distribution
-			if (NULL == m_Classes[i].img )
-			{
-				m_Classes[i].img = new CImage();
-			}
-			else
-			{
-				m_Classes[i].img->Unload( false );
-			}
+			m_Classes[i].img = new CImage();
 			m_Classes[i].img->LoadImage( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
-		}
-		else
-		{
-			if (NULL != m_Classes[i].img )
-			{
-				// TODO: if we restore a savegame during a map, the image should not change
-				// so we could save us the "destroy and reload" step.
-				m_Classes[i].img->Unload( true );
-				delete m_Classes[i].img;
-				m_Classes[i].img = NULL;
-			}
 		}
 
 		savefile->ReadBool( bHaveModel );
@@ -586,6 +586,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.pseudo = false;		// this is a true entity class
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
+	LodeClass.modelname = ent->spawnArgs.GetString("model","");
 	
 	// get all "skin" and "skin_xx" spawnargs
 
@@ -801,10 +802,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.hModel = NULL;
 	if (LodeClass.classname == FUNC_STATIC)
 	{
-		// make a copy, but without sharing the data
-		// TODO: need to use a distinc name here?
-		gameLocal.Printf( "LODE %s: Duplicating model for %s.\n", GetName(), LodeClass.classname.c_str() );
-		//LodeClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( ent->GetRenderEntity()->hModel, LodeClass.classname.c_str(), false );
+		// simply point to the already existing model:
 		LodeClass.hModel = ent->GetRenderEntity()->hModel;
 		// prevent a double free
 		ent->GetRenderEntity()->hModel = NULL;
@@ -1719,40 +1717,13 @@ void Lode::CombineEntities( void )
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	model_ofs_t ofs;
 
+	if ( ! spawnArgs.GetBool("combine","1"))
+	{
+		gameLocal.Printf("LODE %s: combine = 0, skipping combine step.\n", GetName() );
+		return;
+	}
+
 	int start = (int) time (NULL);
-
-	// benchmark list append
-/*	idList< int > test1;
-	idList< int > test2;
-
-	test1.Clear();
-	test2.Clear();
-	int t = 2000; int e = 16000;
-	for (int i = 0; i < e; i++)
-	{
-		test2.Append ( i );
-	}
-	int start = (int) time (NULL);
-	for (int i = 0; i < t; i++)
-	{
-		test1.Clear();
-		test1.Append( test2 );
-	}
-	int end = (int) time (NULL);
-	gameLocal.Warning ("LODE %s: Benchmark list append on empty list: %i seconds for %i (%i * %i) appends.\n", GetName(), end-start, t * e, t, e );
-
-	start = (int) time (NULL);
-	test1.Clear();
-	t = 20;
-	for (int i = 0; i < t; i++)
-	{
-		test1.Append( test2 );
-	}
-	end = (int) time (NULL);
-	gameLocal.Warning ("LODE %s: Benchmark list append on growing list: %i seconds for %i (%i * %i) appends.\n", GetName(), end-start, t * e, t, e );
-
-	return;
-*/
 
 	// for each entity, find out in which PVS it is, unless we only have one PVS on the lode,
 	// we then expect all entities to be in the same PVS, too:
@@ -1784,12 +1755,19 @@ void Lode::CombineEntities( void )
 		gameLocal.Printf("LODE %s: SinglePVS.\n", GetName() );
 	}
 
+	idRenderModel* tempModel = NULL;
+
 	int n = m_Entities.Num();
 	// we mark all entities that we combine with another entity with "-1" in the classIdx
 	for (int i = 0; i < n - 1; i++)
 	{
 		int merged = 0;				//!< merged 0 other entities into this one
 		offsets.Clear();
+
+		ofs.offset = idVec3(0,0,0);	// the first copy is the original
+		// TODO:
+		ofs.angle  = idAngles(0,0,0);
+		offsets.Append(ofs);
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
 		if (m_Entities[i].classIdx == -1)
@@ -1805,11 +1783,16 @@ void Lode::CombineEntities( void )
 		{
 			// cannot combine entities without a model
 			// TODO: load model, then combine away
-			if (m_iDebug > 0)
+//			if (m_iDebug > 0)
+//			{
+//				gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
+//			}
+			tempModel = renderModelManager->FindModel( entityClass->modelname );
+			if (! tempModel)
 			{
-				gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
+				gameLocal.Warning("LODE %s: Could not load model %s for entity %i, skipping it.\n", GetName(), entityClass->modelname.c_str(), i);
+				continue;
 			}
-			continue;
 		}
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
@@ -1852,8 +1835,7 @@ void Lode::CombineEntities( void )
 			}
 
 			ofs.offset = dist;
-			// TODO:
-			ofs.angle  = idAngles(0,0,0);
+			ofs.angle  = m_Entities[j].angles;
 			offsets.Append( ofs );
 
 			if (merged == 0)
@@ -1862,35 +1844,33 @@ void Lode::CombineEntities( void )
 				PseudoClass.spawnDist = entityClass->spawnDist;
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
+				PseudoClass.img = NULL;
 				// a combined entity must be of this class
 				PseudoClass.classname = entityClass->classname;
-/*				// duplicate the model
-				if (entityClass->hModel)
-				{
-					PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), false );
-				}
-				else
-				{
-					gameLocal.Printf("LODE %s: Entity %i: Empty hmodel.\n", GetName(), i );
-				}
-				*/
 			}
 			// for this entity
 			merged ++;
 			// overall
 			mergedCount ++;
 			gameLocal.Printf("LODE %s: Merging entity %i into entity %i.\n", GetName(), j, i );
-//			const idAngles *a = &idAngles(0,0,0);
-//			info = gameLocal.m_ModelGenerator->CombineModels( entityClass->hModel, &dist, a, PseudoClass.hModel );
 			// mark as "to be deleted"
 			m_Entities[j].classIdx = -1;
 		}
 		if (merged > 0)
 		{
 			// build the combined model
-			PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), true, &offsets );
+			if (tempModel)
+			{
+				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( tempModel, GetName(), true, &offsets );
+			}
+			else
+			{
+				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), true, &offsets );
+			}
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
+			// don't try to rotate the combined model after spawn
+			m_Entities[i].angles = idAngles(0,0,0);
 		}
 	}
 
@@ -1917,9 +1897,12 @@ void Lode::CombineEntities( void )
 		}
 		m_Entities.Swap( newEntities );
 		newEntities.Clear();				// should get freed at return, anyway
+
 	}
 	int end = (int) time (NULL);
-	gameLocal.Printf("LODE %s: Combining %i entities into %i entities took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
+	gameLocal.Printf("LODE %s: Combined %i entities into %i entities, took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
+
+	return;
 }
 
 /*
@@ -1993,7 +1976,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 			// Tell the entity to disable LOD on all it's attachments, and handle
 			// them ourselves.
-			idStaticEntity *s_ent = static_cast<idStaticEntity*>( ent2 );
+			//idStaticEntity *s_ent = static_cast<idStaticEntity*>( ent2 );
 			/* TODO: Disable LOD for attachments, too, then manage them outselves.
 			   Currently, if you spawn 100 entities with 1 attachement each, we
 			   save thinking on 100 entities, but still have 100 attachements think
@@ -2022,31 +2005,31 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				}
 
 				// duplicate the class model with shared data
-				// TODO: using "true" here does not work for some unknown reason so for now copy the data
-				r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, false );
-				if ( r->hModel )
+				if (lclass->pseudo)
 				{
-					// take the model bounds and transform them for the renderentity
-					r->bounds.FromTransformedBounds( lclass->hModel->Bounds(), r->origin, r->axis );
-					//r->bounds = r->hModel->Bounds( r );
-					// gameLocal.Printf("LODE %s: Bounds of new model: %s.\n", GetName(), r->bounds.ToString() );
-					// gameLocal.Printf("LODE %s: Bounds of old model: %s.\n", GetName(), lclass->hModel->Bounds().ToString() );
+					// each pseudoclass spawns only one entity
+					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
+					//r->hModel = lclass->hModel;
+					r->bounds = lclass->hModel->Bounds();
+					//gameLocal.Printf("Pseudoclass!\n");
 				}
 				else
 				{
-					// should not happen
-					r->bounds.Zero();
+					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, false );
+					if ( r->hModel )
+					{
+						// take the model bounds and transform them for the renderentity
+						r->bounds.FromTransformedBounds( lclass->hModel->Bounds(), r->origin, r->axis );
+						// gameLocal.Printf("LODE %s: Bounds of new model: %s.\n", GetName(), r->bounds.ToString() );
+						// gameLocal.Printf("LODE %s: Bounds of old model: %s.\n", GetName(), lclass->hModel->Bounds().ToString() );
+					}
+					else
+					{
+						// should not happen
+						r->bounds.Zero();
+					}
 				}
 
-				// TODO: this all does not work yet, model is still invisible in game:
-
-				// force
-					// add to refresh list
-				//	if ( modelDefHandle == -1 ) {
-				//		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
-				//	} else {
-				//		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
-				//	}
 				ent2->Present();
 
 				//ent2->BecomeActive( TH_UPDATEVISUALS );
@@ -2068,9 +2051,6 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				// short version of "UpdateVisuals()"
 				// set to invalid number to force an update the next time the PVS areas are retrieved
 				ent2->ClearPVSAreas();
-
-				// ensure that we call Present this frame (also presents our model to the renderworld)
-				//ent2->BecomeActive( TH_UPDATEVISUALS );
 			}
 			return true;
 		}

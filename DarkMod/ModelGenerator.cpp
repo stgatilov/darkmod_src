@@ -13,11 +13,8 @@
 /*
    ModelGenerator
 
-   Manipulate/Generate models at run time
+   Manipulate/Generate models at run time.
 
-TODO: Find out why Duplicating a model with shared data does not work
-TODO: Write a model combiner (recreate the work from Ground Zero Mod team) to
-	  overcome the "10000 renderentities" limit in the D3 engine.
 */
 
 #include "../idlib/precompiled.h"
@@ -109,8 +106,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// count the tris
 	numIndexes = 0; numVerts = 0;
 
-		gameLocal.Warning("Dup model\n");
-	// if the given list of offsets is empty, replace it by one list with (0,0,0)
+	// if the given list of offsets is empty, replace it by a list with (0,0,0)
 	if (NULL == offsets)
 	{
 		ofs.Clear();
@@ -128,12 +124,13 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			dupData = true;
 		}
 	}
-	gameLocal.Warning("Duplicating.\n");
 
 	// duplicate everything and offset it
 	// for each surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
+		gameLocal.Warning("Duplicating surface %i.\n", i);
+
 		// get a pointer to the surface
 		surf = source->Surface( i );
 		if (surf)
@@ -145,33 +142,51 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			newSurf.shader = surf->shader;
 			if (dupData)
 			{
-				gameLocal.Warning("Duplicating %i verts and %i indexes.\n", numVerts * offsets->Num(), numIndexes * offsets->Num() );
-				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * offsets->Num(), numIndexes * offsets->Num() );
+				int n = offsets->Num();
 
+				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", numVerts, numIndexes, n );
+				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
+
+				gameLocal.Printf( "tris = %i indexes = %i\n", newSurf.geometry->numVerts, newSurf.geometry->numIndexes );
 				int nV = 0;
 				int nI = 0;
 				// for each offset
-				for (int o = 0; o < offsets->Num(); o++)
+				for (int o = 0; o < n; o++)
 				{
 					op = offsets->Ptr()[o];
+					//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
 					// copy the data over
 					for (int j = 0; j < numVerts; j++)
 					{
-						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
-						idDrawVert *v = &newSurf.geometry->verts[j];
+						newSurf.geometry->verts[nV] = idDrawVert( surf->geometry->verts[j] );
+						idDrawVert *v = &newSurf.geometry->verts[nV];
+
 						v->xyz += op.offset;
+						if (o == 1 || o == 2)
+						{
+						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
+								j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
+								v->color[0],
+								v->color[1],
+								v->color[2],
+								v->color[3]
+							   	);
+						}
 						nV ++;
 						// TODO: rotate
 					}
 					for (int j = 0; j < numIndexes; j++)
 					{
-						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j];
+						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j] + numIndexes * o;
 					}
 				} // end for each offset
-				// copy the bounds, too
-				// TODO: if op.offset != 0,0,0, compute new bounds
-				newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
-				newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
+
+				//newSurf.geometry->tangentsCalculated = true;
+				newSurf.geometry->numVerts = nV;
+				newSurf.geometry->numIndexes = nI;
+				// calculate new bounds
+				SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
+				gameLocal.Printf("New bounds: %s.\n", newSurf.geometry->bounds.ToString());
 			}
 			else
 			{
@@ -183,10 +198,12 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 		}
 	}
 
-	// TODO: copy/calculate the bounds, too
+	// TODO: copy/calculate the bounds, too?
 
 	gameLocal.Printf ("ModelGenerator: Duplicated model for %s %i times, with %i surfaces, %i verts and %i indexes.\n",
 			snapshotName, offsets->Num(), numSurfaces, numVerts, numIndexes );
+
+	hModel->Print();
 
 	return hModel;
 }
@@ -222,6 +239,8 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 /*
 ===============
 	Add the source model to the target model.
+
+	Unused, might not work.
 ===============
 */
 model_combineinfo_t	CModelGenerator::CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target )
@@ -309,25 +328,20 @@ model_combineinfo_t	CModelGenerator::CombineModels( const idRenderModel *source,
 			{
 				newSurf.geometry->verts[j + info.firstVert ] = surf->geometry->verts[j];
 				idDrawVert *v = &newSurf.geometry->verts[j + info.firstVert ];
-				//v->Clear();
 				v->xyz += *ofs;
-				//v->st[0] = winding[0].s;
-				//v->st[1] = winding[0].t;
-				//v->normal = tangents[0];
-				//v->tangents[0] = tangents[1];
-				//v->tangents[1] = tangents[2];
-				//v->SetColor( packedColor );
-			}
+		}
 			// we might need to shift the indexes, so add info.firstIndex
 			for (int j = 0; j < numIndexes; j++)
 			{
 				newSurf.geometry->indexes[j + info.firstIndex] = surf->geometry->indexes[j] + info.firstIndex;
 			}
 
-			// copy the bounds, too
-			// TODO: calculate the new bounds
-			newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
-			newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
+			// set numVerts and numIndexes
+			newSurf.geometry->numVerts = numVerts;
+			newSurf.geometry->numIndexes = numIndexes;
+
+			// calculate new bounds
+			SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
 			
 			//if (!found)
 			{
