@@ -38,7 +38,7 @@ typedef struct {
 // Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
-	idAngles			angle;
+	idAngles			angles;
 	idVec3				color;
 } model_ofs_t;
 

@@ -1784,10 +1784,9 @@ void Lode::CombineEntities( void )
 		offsets.Clear();
 		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
-		ofs.offset = idVec3(0,0,0);	// the first copy is the original
+		ofs.offset = idVec3(0,0,0); // the first copy is the original
 		ofs.color  = m_Entities[i].color;
-		// TODO:
-		ofs.angle  = idAngles(0,0,0);
+		ofs.angles = m_Entities[i].angles;
 		offsets.Append(ofs);
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
@@ -1800,14 +1799,10 @@ void Lode::CombineEntities( void )
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
+		tempModel = NULL;
 		if (NULL == entityClass->hModel)
 		{
-			// cannot combine entities without a model
-			// TODO: load model, then combine away
-//			if (m_iDebug > 0)
-//			{
-//				gameLocal.Printf("LODE %s: Entity %i has null model, skipping it.\n", GetName(), i);
-//			}
+			// load model, then combine away
 			tempModel = renderModelManager->FindModel( entityClass->modelname );
 			if (! tempModel)
 			{
@@ -1856,7 +1851,7 @@ void Lode::CombineEntities( void )
 			}
 
 			ofs.offset = dist;
-			ofs.angle  = m_Entities[j].angles;
+			ofs.angles = m_Entities[j].angles;
 			ofs.color  = m_Entities[j].color;
 			offsets.Append( ofs );
 
@@ -1893,6 +1888,7 @@ void Lode::CombineEntities( void )
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
+			//m_Entities[i].origin = idVec3(0,0,0);
 		}
 	}
 

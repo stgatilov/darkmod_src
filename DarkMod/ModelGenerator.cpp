@@ -111,8 +111,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	{
 		ofs.Clear();
 		op_zero.offset = idVec3(0,0,0);
-		op_zero.angle  = idAngles(0,0,0);
-		op_zero.color  = idVec3(0,0,0);
+		op_zero.angles = idAngles(0,0,0);
+		op_zero.color  = idVec3(1,1,1);
 		ofs.Append( op_zero );
 		offsets = &ofs;
 	}
@@ -145,7 +145,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			{
 				int n = offsets->Num();
 
-				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", numVerts, numIndexes, n );
+				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
 				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
 
 				gameLocal.Printf( "tris = %i indexes = %i\n", newSurf.geometry->numVerts, newSurf.geometry->numIndexes );
@@ -157,14 +157,17 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 					op = offsets->Ptr()[o];
 					//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
 					// copy the data over
-					for (int j = 0; j < numVerts; j++)
+					dword packedColor = PackColor( op.color );
+					for (int j = 0; j < surf->geometry->numVerts; j++)
 					{
 						newSurf.geometry->verts[nV] = idDrawVert( surf->geometry->verts[j] );
 						idDrawVert *v = &newSurf.geometry->verts[nV];
 
 						v->xyz += op.offset;
-						// TODO: add coloring support here
+						// "per-entity" color:
+						v->SetColor( packedColor );
 						// TODO: add rotation support here
+
 /*						if (o == 1 || o == 2)
 						{
 						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
@@ -178,7 +181,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 						*/
 						nV ++;
 					}
-					for (int j = 0; j < numIndexes; j++)
+					for (int j = 0; j < surf->geometry->numIndexes; j++)
 					{
 						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j] + numIndexes * o;
 					}
