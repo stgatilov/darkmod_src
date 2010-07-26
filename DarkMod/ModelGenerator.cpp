@@ -145,10 +145,9 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			{
 				int n = offsets->Num();
 
-				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
+				//gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
 				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
 
-				gameLocal.Printf( "tris = %i indexes = %i\n", newSurf.geometry->numVerts, newSurf.geometry->numIndexes );
 				int nV = 0;
 				int nI = 0;
 				// for each offset
@@ -160,7 +159,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 					dword packedColor = PackColor( op.color );
 					for (int j = 0; j < surf->geometry->numVerts; j++)
 					{
-						newSurf.geometry->verts[nV] = idDrawVert( surf->geometry->verts[j] );
+						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
 						idDrawVert *v = &newSurf.geometry->verts[nV];
 
 						v->xyz += op.offset;
@@ -181,9 +180,10 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 						*/
 						nV ++;
 					}
+					int no = surf->geometry->numVerts * o;					// correction factor
 					for (int j = 0; j < surf->geometry->numIndexes; j++)
 					{
-						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j] + numIndexes * o;
+						newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j] + no;
 					}
 				} // end for each offset
 
@@ -192,7 +192,6 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 				newSurf.geometry->numIndexes = nI;
 				// calculate new bounds
 				SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
-				gameLocal.Printf("New bounds: %s.\n", newSurf.geometry->bounds.ToString());
 			}
 			else
 			{
@@ -204,12 +203,10 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 		}
 	}
 
-	// TODO: copy/calculate the bounds, too?
+//	gameLocal.Printf ("ModelGenerator: Duplicated model for %s %i times, with %i surfaces, %i verts and %i indexes.\n",
+//			snapshotName, offsets->Num(), numSurfaces, numVerts, numIndexes );
 
-	gameLocal.Printf ("ModelGenerator: Duplicated model for %s %i times, with %i surfaces, %i verts and %i indexes.\n",
-			snapshotName, offsets->Num(), numSurfaces, numVerts, numIndexes );
-
-	hModel->Print();
+//	hModel->Print();
 
 	return hModel;
 }

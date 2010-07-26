@@ -1781,13 +1781,6 @@ void Lode::CombineEntities( void )
 	for (int i = 0; i < n - 1; i++)
 	{
 		int merged = 0;				//!< merged 0 other entities into this one
-		offsets.Clear();
-		offsets.SetGranularity(64);	// we might have a few hundred entities in there
-
-		ofs.offset = idVec3(0,0,0); // the first copy is the original
-		ofs.color  = m_Entities[i].color;
-		ofs.angles = m_Entities[i].angles;
-		offsets.Append(ofs);
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
 		if (m_Entities[i].classIdx == -1)
@@ -1796,6 +1789,14 @@ void Lode::CombineEntities( void )
 			gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
 			continue;
 		}
+
+		offsets.Clear();
+		offsets.SetGranularity(64);	// we might have a few hundred entities in there
+
+		ofs.offset = idVec3(0,0,0); // the first copy is the original
+		ofs.color  = m_Entities[i].color;
+		ofs.angles = m_Entities[i].angles;
+		offsets.Append(ofs);
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
@@ -1869,26 +1870,33 @@ void Lode::CombineEntities( void )
 			merged ++;
 			// overall
 			mergedCount ++;
-			gameLocal.Printf("LODE %s: Merging entity %i into entity %i.\n", GetName(), j, i );
+			gameLocal.Printf("LODE %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
+					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
 			// mark as "to be deleted"
 			m_Entities[j].classIdx = -1;
 		}
 		if (merged > 0)
 		{
 			// build the combined model
+			idVec3 corr = idVec3(0,0,0);
 			if (tempModel)
 			{
+				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
+				corr -= tempModel->Bounds()[0];
 				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( tempModel, GetName(), true, &offsets );
 			}
 			else
 			{
+				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), entityClass->hModel->Bounds().ToString() );
+				corr -= entityClass->hModel->Bounds()[0];
 				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), true, &offsets );
 			}
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
-			//m_Entities[i].origin = idVec3(0,0,0);
+			//gameLocal.Printf("LODE %s: Correction: %s\n", GetName(), idVec3( PseudoClass.hModel->Bounds()[0]).ToString() );
+			//m_Entities[i].origin -= PseudoClass.hModel->Bounds()[0];
 		}
 	}
 
