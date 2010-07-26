@@ -807,6 +807,8 @@ void idEntity::ParseLODSpawnargs(void)
 	// distance dependent LOD from this point on:
 	m_LOD->OffsetLOD[0] = renderEntity.origin;
 
+	m_LOD->DistLODSq[0] = 0;
+
 	// start at 1, since 0 is "the original level" setup already above
 	for (int i = 1; i < LOD_LEVELS; i++)
 	{
