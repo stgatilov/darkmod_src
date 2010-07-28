@@ -155,17 +155,22 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 				{
 					op = offsets->Ptr()[o];
 					//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
-					// copy the data over
+
+					// precompute these
+					idMat3 a = op.angles.ToMat3();
 					dword packedColor = PackColor( op.color );
+					// copy the data over
 					for (int j = 0; j < surf->geometry->numVerts; j++)
 					{
 						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
 						idDrawVert *v = &newSurf.geometry->verts[nV];
 
+						// rotate
+						v->xyz *= a;
+						// then offset
 						v->xyz += op.offset;
-						// "per-entity" color:
+						// Set "per-entity" color:
 						v->SetColor( packedColor );
-						// TODO: add rotation support here
 
 /*						if (o == 1 || o == 2)
 						{
