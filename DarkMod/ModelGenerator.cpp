@@ -107,18 +107,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// count the tris
 	numIndexes = 0; numVerts = 0;
 
-	// if the given list of offsets is empty, replace it by a list with (0,0,0)
-	if (NULL == offsets)
-	{
-		ofs.Clear();
-		op_zero.offset = idVec3(0,0,0);
-		op_zero.angles = idAngles(0,0,0);
-		op_zero.color  = PackColor( idVec3(1,1,1) );
-		op_zero.lod    = 0;
-		ofs.Append( op_zero );
-		offsets = &ofs;
-	}
-	else
+	if (NULL != offsets)
 	{
 		// we cannot share the data if given a list of offsets
 		if (!dupData)
@@ -144,53 +133,67 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			newSurf.shader = surf->shader;
 			if (dupData)
 			{
-				int n = offsets->Num();
+				int n = 1;
+				if (NULL != offsets)
+				{	
+					n = offsets->Num();
+				}
 
-		//		gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
+				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
 				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
 
-			//	gameLocal.Printf(" Surface data: numMirroredVerts %i.\n", surf->geometry->numMirroredVerts );
-			//	gameLocal.Printf(" Surface data: numDupVerts %i.\n", surf->geometry->numDupVerts );
-			//	gameLocal.Printf(" Surface data: numSilEdges %i.\n", surf->geometry->numSilEdges );
-			//	gameLocal.Printf(" Surface data: numShadowIndexesNoFrontCaps %i.\n", surf->geometry->numShadowIndexesNoFrontCaps );
-			//	gameLocal.Printf(" Surface data: shadowCapPlaneBits %i.\n", surf->geometry->shadowCapPlaneBits );
+				//	gameLocal.Printf(" Surface data: numMirroredVerts %i.\n", surf->geometry->numMirroredVerts );
+				//	gameLocal.Printf(" Surface data: numDupVerts %i.\n", surf->geometry->numDupVerts );
+				//	gameLocal.Printf(" Surface data: numSilEdges %i.\n", surf->geometry->numSilEdges );
+				//	gameLocal.Printf(" Surface data: numShadowIndexesNoFrontCaps %i.\n", surf->geometry->numShadowIndexesNoFrontCaps );
+				//	gameLocal.Printf(" Surface data: shadowCapPlaneBits %i.\n", surf->geometry->shadowCapPlaneBits );
 
 				int nV = 0;		// vertexes
 				int nI = 0;		// indexes
+
 				// for each offset
 				for (int o = 0; o < n; o++)
 				{
-					op = offsets->Ptr()[o];
-					//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
-
-					// precompute these
-					idMat3 a = op.angles.ToMat3();
-
-					// copy the vertexes
-					for (int j = 0; j < surf->geometry->numVerts; j++)
+					if (NULL != offsets)
 					{
-						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
-						idDrawVert *v = &newSurf.geometry->verts[nV];
+						op = offsets->Ptr()[o];
+						//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
 
-						// rotate
-						v->xyz *= a;
-						// then offset
-						v->xyz += op.offset;
-						// Set "per-entity" color:
-						v->SetColor( op.color );
+						// precompute these
+						idMat3 a = op.angles.ToMat3();
 
-/*						if (o == 1 || o == 2)
+						// copy the vertexes
+						for (int j = 0; j < surf->geometry->numVerts; j++)
 						{
-						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
+							newSurf.geometry->verts[nV] = surf->geometry->verts[j];
+							idDrawVert *v = &newSurf.geometry->verts[nV];
+
+							// rotate
+							v->xyz *= a;
+							// then offset
+							v->xyz += op.offset;
+							// Set "per-entity" color if we have more than one entity:
+							v->SetColor( op.color );
+							if (o == 1 || o == 2)
+							{
+							gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
 								j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
 								v->color[0],
 								v->color[1],
 								v->color[2],
 								v->color[3]
 							   	);
+							}
+							nV ++;
 						}
-					*/
-						nV ++;
+					}
+					else
+					{
+						// just one direct copy
+						for (int j = 0; j < surf->geometry->numVerts; j++)
+						{
+							newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+						}
 					}
 
 					// copy indexes
@@ -204,8 +207,17 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 				//newSurf.geometry->tangentsCalculated = true;
 				newSurf.geometry->numVerts = nV;
 				newSurf.geometry->numIndexes = nI;
-				// calculate new bounds
-				SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
+				if (NULL != offsets)
+				{
+					// calculate new bounds
+					SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
+				}
+				else
+				{
+					// just copy bounds
+					newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
+					newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
+				}
 			}
 			else
 			{
@@ -229,7 +241,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
 
-//	hModel->Print();
+	hModel->Print();
 
 	return hModel;
 }
