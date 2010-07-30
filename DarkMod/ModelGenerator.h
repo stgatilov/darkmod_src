@@ -25,22 +25,30 @@
 ===============================================================================
 */
 
-// Defines info about a model combine operation
+// Defines info about a change to a combined model. E.g. if a combined model was
+// combined from 2 times model A, and we want to change the second model from A
+// to B, we use this struct:
 typedef struct {
-	int					firstSurface;		// which was the first surface to be added, -1 for none
-	int					Surfaces;			// how many surfaces where added
-	int					firstVert;			// which was the first vert to be added, >= 0
-	int					numVerts;				// how many verts where added
-	int					firstIndex;			// which was the first index to be added, >= 0
-	int					numIndexes;			// how many indexes where added
-} model_combineinfo_t;
+	int				oldLOD;					// the original model combined into the megamodel
+	int				newLOD;					// the new model to be combined into the megamodel
+} model_changeinfo_t;
 
 // Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
 	idAngles			angles;
-	idVec3				color;
+	dword				color;	// packed color
+	int					lod; 	// which LOD model stage to use?
 } model_ofs_t;
+
+// Contains the info about a megamodel, e.g a model combined from many small models
+// TODO: Turn this into a class
+typedef struct {
+	idRenderModel*				hModel;			// ptr to the combined model
+	idList<model_ofs_t>			offsets;		// list of the individual entity combined into the model
+	idList<model_changeinfo_t>	changes;		// list with changes
+	int							lastUpdate;		// time the mode was last regenerated
+} megamodel_t;
 
 class CModelGenerator {
 public:
@@ -69,16 +77,9 @@ public:
 	idRenderModel*			DuplicateModel( const idRenderModel *source, const char* snapshotName, bool dupData = true, const idList<model_ofs_t>* offsets = NULL);
 
 	/**
-	* Given two render models, adds all surfaces of the first the second. Returns some
-	* struct with info about the operation, which can be used to later sep. the models
-	* again with RemoveModelParts().
-	*/
-	model_combineinfo_t		CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target );
-
-	/**
 	* Given the info CombineModels(), sep. the given model out again.
 	*/
-	void					RemoveModel( const idRenderModel *source, const model_combineinfo_t *info);
+	//void					RemoveModel( const idRenderModel *source, const model_combineinfo_t *info);
 
 	/**
 	* Manipulate memory of a duplicate of a model so that the shared data does not get

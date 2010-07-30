@@ -80,7 +80,7 @@ void CModelGenerator::Shutdown( void ) {
 CModelGenerator::DuplicateModel - Duplicate a render model
 
 If the given list of model_ofs_t is filled, the model will be copied X times, each time
-offset and rotated by the given values.
+offset and rotated by the given values, also filling in the right vertex color.
 ===============
 */
 idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets) {
@@ -113,7 +113,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 		ofs.Clear();
 		op_zero.offset = idVec3(0,0,0);
 		op_zero.angles = idAngles(0,0,0);
-		op_zero.color  = idVec3(1,1,1);
+		op_zero.color  = PackColor( idVec3(1,1,1) );
+		op_zero.lod    = 0;
 		ofs.Append( op_zero );
 		offsets = &ofs;
 	}
@@ -164,7 +165,6 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 
 					// precompute these
 					idMat3 a = op.angles.ToMat3();
-					dword packedColor = PackColor( op.color );
 
 					// copy the vertexes
 					for (int j = 0; j < surf->geometry->numVerts; j++)
@@ -177,7 +177,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 						// then offset
 						v->xyz += op.offset;
 						// Set "per-entity" color:
-						v->SetColor( packedColor );
+						v->SetColor( op.color );
 
 /*						if (o == 1 || o == 2)
 						{
@@ -260,138 +260,5 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 			surf->geometry->indexes = NULL;
 		}
 	}
-}
-
-/*
-===============
-	Add the source model to the target model.
-
-	Unused, might not work.
-===============
-*/
-model_combineinfo_t	CModelGenerator::CombineModels( const idRenderModel *source, const idVec3 *ofs, const idAngles *angles, idRenderModel *target )
-{
-	model_combineinfo_t info;
-
-	int numSurfaces;
-	int numVerts, numIndexes;
-	const modelSurface_t *surf, *targetSurf;
-	modelSurface_s newSurf;
-
-	// get the number of base surfaces (minus decals) on the old model
-	numSurfaces = source->NumBaseSurfaces();
-
-	// count the tris
-	numIndexes = 0; numVerts = 0;
-	// for each surface
-	for (int i = 0; i < numSurfaces; i++)
-	{
-		// get a pointer to the surface
-		surf = source->Surface( i );
-		if (surf)
-		{
-			numVerts += surf->geometry->numVerts; 
-			numIndexes += surf->geometry->numIndexes;
-
-			// find out if the material on the old surface already exists on the target
-			int numTargetSurfaces = target->NumBaseSurfaces();
-			bool found = false;
-			for (int j = 0; j < numTargetSurfaces; j++)
-			{
-				// get a pointer to a surface
-				targetSurf = target->Surface( j );
-				if (targetSurf->shader == surf->shader)
-				{
-					found = true;
-					break;
-				}
-			}
-
-			info.numVerts = numVerts;
-			info.numIndexes = numIndexes;
-
-			if (!found)
-			{
-				gameLocal.Printf("ModelGenerator: Found no existing surface with shader.\n");
-				// not found, allocate a new surface
-				// copy the material
-				newSurf.shader = surf->shader;
-				// will only copy the source
-				newSurf.geometry = target->AllocSurfaceTriangles( numVerts, numIndexes );
-				info.firstVert = 0;
-				info.firstIndex = 0;
-			}
-			else
-			{
-				gameLocal.Printf("ModelGenerator: Found existing surface, copy %i verts and %i indexes.\n", 
-						targetSurf->geometry->numVerts, targetSurf->geometry->numIndexes);
-				// found, need to append the data, so make a copy from target first
-				newSurf.geometry = target->AllocSurfaceTriangles( numVerts + targetSurf->geometry->numVerts, numIndexes + targetSurf->geometry->numIndexes );
-
-				// copy the old data over
-				for (int j = 0; j < targetSurf->geometry->numVerts; j++)
-				{
-					newSurf.geometry->verts[j] = targetSurf->geometry->verts[j];
-				}
-				for (int j = 0; j < targetSurf->geometry->numIndexes; j++)
-				{
-					newSurf.geometry->indexes[j] = targetSurf->geometry->indexes[j];
-				}
-				// append the new data
-				info.firstVert = targetSurf->geometry->numVerts;
-				info.firstIndex = targetSurf->geometry->numIndexes;
-
-				// free the old target surface
-				//target->FreeSurfaceTriangles( targetSurf->geometry );
-
-				// and swap in the new, appended version
-				// not the most elegant code, but it works...
-				//targetSurf->geometry = NULL; //newSurf.geometry;
-			}
-
-			// now copy the source data over, but translate/rotate it at the same time
-			for (int j = 0; j < numVerts; j++)
-			{
-				newSurf.geometry->verts[j + info.firstVert ] = surf->geometry->verts[j];
-				idDrawVert *v = &newSurf.geometry->verts[j + info.firstVert ];
-				v->xyz += *ofs;
-		}
-			// we might need to shift the indexes, so add info.firstIndex
-			for (int j = 0; j < numIndexes; j++)
-			{
-				newSurf.geometry->indexes[j + info.firstIndex] = surf->geometry->indexes[j] + info.firstIndex;
-			}
-
-			// set numVerts and numIndexes
-			newSurf.geometry->numVerts = numVerts;
-			newSurf.geometry->numIndexes = numIndexes;
-
-			// calculate new bounds
-			SIMDProcessor->MinMax( newSurf.geometry->bounds[0], newSurf.geometry->bounds[1], newSurf.geometry->verts, newSurf.geometry->numVerts );
-			
-			//if (!found)
-			{
-				// was not found, need to create the new surface
-				newSurf.id = 0;
-				// TODO: find out what happens if we add a surface with id != 0 and the same id again,
-				// does it replace an already existing surface? So far it seems we can only add surfaces
-				// but not delete/replace them...
-				target->AddSurface( newSurf );
-			}
-		}
-	}
-
-	// TODO: copy the bounds, too
-	return info;
-}
-
-/*
-===============
-	Given the info CombineModels(), sep. the given model out again.
-===============
-*/
-void CModelGenerator::RemoveModel( const idRenderModel *source, const model_combineinfo_t *info)
-{
-	return;
 }
 

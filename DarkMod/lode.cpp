@@ -1468,7 +1468,7 @@ void Lode::PrepareEntities( void )
 				float r = RandomFloat();
 				if (r > probability)
 				{
-					gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
+					//gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
 					continue;
 				}
 
@@ -1723,7 +1723,6 @@ void Lode::PrepareEntities( void )
 
 void Lode::CombineEntities( void )
 {
-	model_combineinfo_t	info;
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
 	idList < int > pvs;								//!< in which PVS is this entity?
 	idBounds modelAbsBounds;						//!< for per-entity PVS check
@@ -1749,8 +1748,8 @@ void Lode::CombineEntities( void )
 	if (multiPVS)
 	{
 		gameLocal.Printf("LODE %s: MultiPVS.\n", GetName() );
-		// O(N)
 		pvs.Clear();
+		// O(N)
 		for (int i = 0; i < m_Entities.Num(); i++)
 		{
 			// find out in which PVS this entity is
@@ -1786,7 +1785,7 @@ void Lode::CombineEntities( void )
 		if (m_Entities[i].classIdx == -1)
 		{
 			// already combined, skip
-			gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
+			//gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
 			continue;
 		}
 
@@ -1794,8 +1793,9 @@ void Lode::CombineEntities( void )
 		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
 		ofs.offset = idVec3(0,0,0); // the first copy is the original
-		ofs.color  = m_Entities[i].color;
+		ofs.color  = PackColor( m_Entities[i].color );
 		ofs.angles = m_Entities[i].angles;
+		ofs.lod = 0;
 		offsets.Append(ofs);
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
@@ -1820,7 +1820,7 @@ void Lode::CombineEntities( void )
 			if (m_Entities[j].classIdx == -1)
 			{
 				// already combined, skip
-				gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
+				//gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
 				continue;
 			}
 			if (m_Entities[j].classIdx != m_Entities[i].classIdx)
@@ -1853,7 +1853,8 @@ void Lode::CombineEntities( void )
 
 			ofs.offset = dist;
 			ofs.angles = m_Entities[j].angles;
-			ofs.color  = m_Entities[j].color;
+			ofs.color  = PackColor( m_Entities[j].color );
+			ofs.lod    = 0;
 			offsets.Append( ofs );
 
 			if (merged == 0)
