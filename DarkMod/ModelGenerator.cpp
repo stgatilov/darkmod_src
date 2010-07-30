@@ -174,6 +174,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 							v->xyz += op.offset;
 							// Set "per-entity" color if we have more than one entity:
 							v->SetColor( op.color );
+							/*
 							if (o == 1 || o == 2)
 							{
 							gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
@@ -184,6 +185,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 								v->color[3]
 							   	);
 							}
+								*/
 							nV ++;
 						}
 					}

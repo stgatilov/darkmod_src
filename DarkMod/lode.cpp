@@ -1745,6 +1745,15 @@ void Lode::CombineEntities( void )
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	model_ofs_t ofs;
 
+	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
+	if (max_combine_distance < 10)
+	{
+		gameLocal.Warning("LODE %s: combine distance %0.2f < 10, enforcing minimum 10.\n", GetName(), max_combine_distance);
+		max_combine_distance = 10;
+	}
+	// square for easier comparing
+	max_combine_distance *= max_combine_distance;
+
 	if ( ! spawnArgs.GetBool("combine", "0"))
 	{
 		gameLocal.Printf("LODE %s: combine = 0, skipping combine step.\n", GetName() );
@@ -1854,10 +1863,9 @@ void Lode::CombineEntities( void )
 			// distance too big?
 			idVec3 dist = (m_Entities[i].origin - m_Entities[j].origin);
 			float distSq = dist.LengthSqr();
-			// TODO: make that a spawnarg
-			if (distSq > 1024 * 1024)
+			if (distSq > max_combine_distance)
 			{
-				gameLocal.Printf("LODE %s: Distance from entity %i to entity %i to far (%f > 1024), skipping it.\n", GetName(), j, i, dist.Length() );
+				// gameLocal.Printf("LODE %s: Distance from entity %i to entity %i to far (%f > %f), skipping it.\n", GetName(), j, i, dist.Length(), max_combine_distance );
 				continue;
 			}
 
