@@ -15,6 +15,7 @@
 
    Manipulate/Generate models at run time.
 
+TODO: Multiple colors does somehow not work, using only the first color.
 */
 
 #include "../idlib/precompiled.h"
@@ -130,9 +131,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// for each surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
-		gameLocal.Warning("Duplicating surface %i.\n", i);
+		//gameLocal.Warning("Duplicating surface %i.\n", i);
 
-		// get a pointer to the surface
 		surf = source->Surface( i );
 		if (surf)
 		{
@@ -145,11 +145,17 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			{
 				int n = offsets->Num();
 
-				//gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
+		//		gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
 				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
 
-				int nV = 0;
-				int nI = 0;
+			//	gameLocal.Printf(" Surface data: numMirroredVerts %i.\n", surf->geometry->numMirroredVerts );
+			//	gameLocal.Printf(" Surface data: numDupVerts %i.\n", surf->geometry->numDupVerts );
+			//	gameLocal.Printf(" Surface data: numSilEdges %i.\n", surf->geometry->numSilEdges );
+			//	gameLocal.Printf(" Surface data: numShadowIndexesNoFrontCaps %i.\n", surf->geometry->numShadowIndexesNoFrontCaps );
+			//	gameLocal.Printf(" Surface data: shadowCapPlaneBits %i.\n", surf->geometry->shadowCapPlaneBits );
+
+				int nV = 0;		// vertexes
+				int nI = 0;		// indexes
 				// for each offset
 				for (int o = 0; o < n; o++)
 				{
@@ -159,7 +165,8 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 					// precompute these
 					idMat3 a = op.angles.ToMat3();
 					dword packedColor = PackColor( op.color );
-					// copy the data over
+
+					// copy the vertexes
 					for (int j = 0; j < surf->geometry->numVerts; j++)
 					{
 						newSurf.geometry->verts[nV] = surf->geometry->verts[j];
@@ -182,9 +189,11 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 								v->color[3]
 							   	);
 						}
-						*/
+					*/
 						nV ++;
 					}
+
+					// copy indexes
 					int no = surf->geometry->numVerts * o;					// correction factor
 					for (int j = 0; j < surf->geometry->numIndexes; j++)
 					{
@@ -205,11 +214,20 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 			}
 			newSurf.id = 0;
 			hModel->AddSurface( newSurf );
+
+			// If this surface should create backsides, the next surface will be the automatically
+			// created backsides, so skip them, as FinishSurfaces() below will recreate them:
+			if (newSurf.shader->ShouldCreateBackSides())
+			{
+				// skip next surface
+				i++;
+			}
 		}
+
 	}
 
-//	gameLocal.Printf ("ModelGenerator: Duplicated model for %s %i times, with %i surfaces, %i verts and %i indexes.\n",
-//			snapshotName, offsets->Num(), numSurfaces, numVerts, numIndexes );
+	// generate shadow hull as well as tris for twosided materials
+	hModel->FinishSurfaces();
 
 //	hModel->Print();
 
