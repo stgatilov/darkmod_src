@@ -847,7 +847,15 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// reduce the density, and thus the entity count:
 		size *= 1.2732f; 
 	}
-	return size;
+
+	// scale the per-class size by the per-class density
+	float fDensity = ent->spawnArgs.GetFloat( "lode_density", "1.0" );
+	if (fDensity <= 0.0001)
+	{
+		fDensity = 0.0001;
+	}
+
+	return size / fDensity;
 }
 
 /*

@@ -15,7 +15,8 @@
 
    Manipulate/Generate models at run time.
 
-TODO: Multiple colors does somehow not work, using only the first color.
+  TODO: duplicating too many verts can cause segfaults. Find out what the limit
+  		is and how to tell the LODE to only combine X entities base on this.
 */
 
 #include "../idlib/precompiled.h"
@@ -139,7 +140,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 					n = offsets->Num();
 				}
 
-				gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
+				// gameLocal.Warning("Duplicating %i verts and %i indexes %i times.\n", surf->geometry->numVerts, surf->geometry->numIndexes, n );
 				newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts * n, numIndexes * n );
 
 				//	gameLocal.Printf(" Surface data: numMirroredVerts %i.\n", surf->geometry->numMirroredVerts );
@@ -243,7 +244,7 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
 
-	hModel->Print();
+//	hModel->Print();
 
 	return hModel;
 }
