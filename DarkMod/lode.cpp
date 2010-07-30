@@ -1875,6 +1875,7 @@ void Lode::CombineEntities( void )
 			// mark as "to be deleted"
 			m_Entities[j].classIdx = -1;
 		}
+
 		if (merged > 0)
 		{
 			// build the combined model
@@ -1896,7 +1897,14 @@ void Lode::CombineEntities( void )
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
 			//gameLocal.Printf("LODE %s: Correction: %s\n", GetName(), idVec3( PseudoClass.hModel->Bounds()[0]).ToString() );
-			//m_Entities[i].origin -= PseudoClass.hModel->Bounds()[0];
+			// get center of model
+			idVec3 center = PseudoClass.hModel->Bounds().GetSize() / 2;
+			center += PseudoClass.hModel->Bounds()[0];
+			//gameLocal.Printf(" Correction: %s Size: %s Lower: %s Upper: %s\n", 
+			//		center.ToString(), PseudoClass.hModel->Bounds().GetSize().ToString(), PseudoClass.hModel->Bounds()[0].ToString(), PseudoClass.hModel->Bounds()[1].ToString() );
+			// this seems not right, tho:
+			center.z = 0;
+			m_Entities[i].origin -= center;
 		}
 	}
 
@@ -2020,7 +2028,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 			// Is this an idStaticEntity? If yes, simply spawning will not recreate the model
 			// so we need to do this manually.
-			if ( lclass->classname == FUNC_DUMMY )
+			if ( lclass->pseudo || lclass->classname == FUNC_DUMMY )
 			{
 				// cache this
 				renderEntity_t *r = ent2->GetRenderEntity();
