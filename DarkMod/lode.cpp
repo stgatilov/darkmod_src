@@ -1040,15 +1040,60 @@ void Lode::Prepare( void )
 			// move to origin of ourselfs
 			args.SetVector("origin", origin);
 
+			// want it floored
+			args.Set("lode_floor", "1");
+
 			// set previously defined (possible random) skin
 		    // TODO: split "spawn_skin" at "," then set all of them as "skin", "skin1" etc:
-			args.Set("skin", "");
-			// m_Skins[ ent->skinIdx ] );
 
-			// random skin wanted?
-			//int skinIdx = AddSkin( &skin );
-			//gameLocal.Printf( "LODE %s: Adding skin %s (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
-			//LodeClass.skins.Append ( skinIdx );
+			// spawn_classX => spawn_skinX
+			idStr skin = idStr("spawn_skin") + kv->GetKey().Mid( 11, kv->GetKey().Length() - 11 );
+			// spawn_classX => "abc, def, '', abc"
+			skin = spawnArgs.GetString( skin );
+
+			// parse skin args
+			idList<idStr> skins;
+
+			int start, end;
+			start = 0; end = skin.Find( ',' );
+			if (end == -1)
+			{
+				// only one
+				args.Set("skin", skin);
+			}
+			else
+			{
+				while (end >= start)
+				{
+					gameLocal.Printf ("Cutting %s between %i and %i.\n", skin.c_str(), start, end );
+					// cut out between start and end (but leave off the ',')
+					idStr s = skin.Mid( start, end - start);
+					//gameLocal.Printf ("Got '%s'.\n", s.c_str() );
+					s.Strip(' ');
+					//gameLocal.Printf ("Using '%s'.\n", s.c_str() );
+					if (s == "''")
+					{
+						// empty skin
+						s = "";
+					}
+					skins.Append( s );
+
+					start = end + 1;					// leave off the ","
+					end = skin.Find( ',', start + 1 );
+					if (end == -1)
+					{
+						// ends
+						end = skin.Length();
+					}
+				}
+				// select one at random
+				if (skins.Num() > 0)
+				{
+					int i = RandomFloat() * skins.Num();
+					// gameLocal.Printf ("Setting skin to %i %s\n", i, skins[i].c_str() );
+					args.Set( "skin", skins[i] );
+				}
+			}
 
 			gameLocal.SpawnEntityDef( args, &ent );
 			if (ent)

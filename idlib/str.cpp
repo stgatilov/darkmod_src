@@ -453,6 +453,7 @@ idStr::StripLeading
 ============
 */
 void idStr::StripLeading( const char c ) {
+	// Tels: TODO: first count how many chars to remove, then move only once
 	while( data[ 0 ] == c ) {
 		memmove( &data[ 0 ], &data[ 1 ], len );
 		len--;
