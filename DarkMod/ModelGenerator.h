@@ -10,8 +10,8 @@
 
 // Copyright (C) 2010 Tels (Donated to The Dark Mod)
 
-#ifndef __GAME_MODELGENERATOR_H__
-#define __GAME_MODELGENERATOR_H__
+#ifndef __DARKMOD_MODELGENERATOR_H__
+#define __DARKMOD_MODELGENERATOR_H__
 
 /*
 ===============================================================================
@@ -25,14 +25,6 @@
 ===============================================================================
 */
 
-// Defines info about a change to a combined model. E.g. if a combined model was
-// combined from 2 times model A, and we want to change the second model from A
-// to B, we use this struct:
-typedef struct {
-	int				oldLOD;					// the original model combined into the megamodel
-	int				newLOD;					// the new model to be combined into the megamodel
-} model_changeinfo_t;
-
 // Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
@@ -40,15 +32,6 @@ typedef struct {
 	dword				color;	// packed color
 	int					lod; 	// which LOD model stage to use?
 } model_ofs_t;
-
-// Contains the info about a megamodel, e.g a model combined from many small models
-// TODO: Turn this into a class
-typedef struct {
-	idRenderModel*				hModel;			// ptr to the combined model
-	idList<model_ofs_t>			offsets;		// list of the individual entity combined into the model
-	idList<model_changeinfo_t>	changes;		// list with changes
-	int							lastUpdate;		// time the mode was last regenerated
-} megamodel_t;
 
 class CModelGenerator {
 public:
@@ -74,7 +57,12 @@ public:
 	* is duplicated, otherwise the new model shares the data of the old model. In this
 	* case the memory of the new model needs to be freed differently, of course :)
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel *source, const char* snapshotName, bool dupData = true, const idList<model_ofs_t>* offsets = NULL);
+	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData = true, const idList<model_ofs_t>* offsets = NULL);
+
+	/**
+	* Same as DuplicateModel, but with only one LOD stage as source
+	*/
+	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true);
 
 	/**
 	* Given the info CombineModels(), sep. the given model out again.
@@ -91,5 +79,5 @@ private:
 
 };
 
-#endif /* !__GAME_MODELGENERATOR_H__ */
+#endif /* !__DARKMOD_MODELGENERATOR_H__ */
 

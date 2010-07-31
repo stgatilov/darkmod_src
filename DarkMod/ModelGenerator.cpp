@@ -84,7 +84,24 @@ If the given list of model_ofs_t is filled, the model will be copied X times, ea
 offset and rotated by the given values, also filling in the right vertex color.
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets) {
+idRenderModel * CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData) {
+
+	idList<const idRenderModel*> LODs;
+	const idList<const idRenderModel*> *l = &LODs;
+
+	LODs.Append( source );
+	return DuplicateLODModels( l, snapshotName, dupData, NULL );
+}
+
+/*
+===============
+CModelGenerator::DuplicateLODModels - Duplicate a render model based on LOD stages.
+
+If the given list of model_ofs_t is filled, the model will be copied X times, each time
+offset and rotated by the given values, also filling in the right vertex color.
+===============
+*/
+idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets) {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
@@ -92,6 +109,9 @@ idRenderModel * CModelGenerator::DuplicateModel ( const idRenderModel *source, c
 	idList<model_ofs_t> ofs;
 	model_ofs_t op;
 	model_ofs_t op_zero;
+
+	// TODO: use the appropriate source model according to the LOD field in offsets
+	const idRenderModel* source = LODs->Ptr()[0];
 
 	if (NULL == source)
 	{

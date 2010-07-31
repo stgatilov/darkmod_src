@@ -14,11 +14,12 @@
 #define __GAME_LODE_H__
 
 #include "ModelGenerator.h"
+#include "MegaModel.h"
 
 /*
 ===============================================================================
 
-  Lode - Level Of Detail Entity
+  Lode - Level Of Detail Entity Manager
   
   Automatically creates/culls entities based on distance from player.
 
@@ -55,7 +56,7 @@ struct lode_class_t {
 											//!< entity with a megamodel (a combined model from many entities),
 											//!< the model is still stored in hModel.
 											//!< These classes will be skipped when recreating the entities.
-	megamodel_t* 	  		megamodel;		//!< If we combined many entities into one megamodel, track
+	CMegaModel* 	  		megamodel;		//!< If we combined many entities into one megamodel, track
 											//!< here which ones at which LOD stage, so we can upate it.
 	int						seed;			//!< per-class seed so each class generates the same sequence of
 											//!< entities independ from the other classes, helps when the menu

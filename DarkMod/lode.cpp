@@ -1909,22 +1909,25 @@ void Lode::CombineEntities( void )
 		{
 			// build the combined model
 			idVec3 corr = idVec3(0,0,0);
+			idList<const idRenderModel*> LODs;
+			LODs.Clear();
 			if (tempModel)
 			{
 				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
 				corr -= tempModel->Bounds()[0];
-				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( tempModel, GetName(), true, &offsets );
+				LODs.Append( tempModel );
+				//PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( &LODs, GetName(), true, &offsets );
 			}
 			else
 			{
 				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), entityClass->hModel->Bounds().ToString() );
 				corr -= entityClass->hModel->Bounds()[0];
-				PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( entityClass->hModel, GetName(), true, &offsets );
+				LODs.Append( entityClass->hModel );
 			}
-			PseudoClass.megamodel = new megamodel_t;
-			PseudoClass.megamodel->offsets.Append( offsets );
-			PseudoClass.megamodel->changes.Clear();
-			PseudoClass.megamodel->lastUpdate = gameLocal.time;
+			//PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( &LODs, GetName(), true, &offsets );
+			// use a megamodel to get the combined model, that we later can update, too:
+			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets );
+			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
@@ -2075,12 +2078,12 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					r->hModel = NULL;
 				}
 
-				// duplicate the class model with shared data
+				// duplicate the class model
 				if (lclass->pseudo)
 				{
 					// each pseudoclass spawns only one entity
-					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
-					//r->hModel = lclass->hModel;
+					//r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
+					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
 					//gameLocal.Printf("Pseudoclass!\n");
 				}
@@ -2137,6 +2140,7 @@ Lode::CullEntity - cull the entity with the given index, returns true if it was 
 bool Lode::CullEntity( const int idx )
 {
 	struct lode_entity_t* ent = &m_Entities[idx];
+	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
 	if ( !ent->exists )
 	{
@@ -2154,10 +2158,23 @@ bool Lode::CullEntity( const int idx )
 		ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
 
 		// If the class has a model with shared data, manage this to avoid double frees
-		if ( m_Classes[ ent->classIdx ].hModel )
+		if ( lclass->pseudo )
 		{
-			// TODO: do not all this as we don't use shared data yet
-			// gameLocal.m_ModelGenerator->FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
+			// is just a pointer to a rendermodel
+			lclass->hModel = NULL;
+			// mark as inactive (because the entity is no longer existing)
+			// TODO: cl.megaModel.stopUpdates();
+			// avoid freeing the composed model
+			ent2->GetRenderEntity()->hModel = NULL;
+		}
+		else
+		{
+			// do nothing, the class model is a duplicate and can be freed
+			if ( lclass->hModel )
+			{
+				// TODO: do not all this as we don't use shared data yet
+				// gameLocal.m_ModelGenerator->FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
+			}
 		}
 		// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
 
