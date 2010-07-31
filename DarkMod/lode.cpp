@@ -165,6 +165,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( m_Classes[i].sink_max );
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
+		savefile->WriteBool( m_Classes[i].nocombine );
 		savefile->WriteInt( m_Classes[i].falloff );
 		savefile->WriteBool( m_Classes[i].floor );
 		savefile->WriteBool( m_Classes[i].stack );
@@ -331,6 +332,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( m_Classes[i].sink_max );
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
+		savefile->ReadBool( m_Classes[i].nocombine );
 		savefile->ReadInt( m_Classes[i].falloff );
 		savefile->ReadBool( m_Classes[i].floor );
 		savefile->ReadBool( m_Classes[i].stack );
@@ -603,6 +605,8 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.modelname = ent->spawnArgs.GetString("model","");
 	LodeClass.megamodel = NULL;
 	
+	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","0") ? false : true;
+
 	// get all "skin" and "skin_xx" spawnargs
 
 	LodeClass.skins.Clear();
@@ -1816,6 +1820,13 @@ void Lode::CombineEntities( void )
 			continue;
 		}
 
+		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
+
+		// if this class says no combine, skip them
+		if (entityClass->nocombine)
+		{
+			continue;
+		}
 		offsets.Clear();
 		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
@@ -1825,7 +1836,6 @@ void Lode::CombineEntities( void )
 		ofs.lod = 0;
 		offsets.Append(ofs);
 
-		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
 		tempModel = NULL;
 		if (NULL == entityClass->hModel)
