@@ -951,7 +951,7 @@ void Lode::Prepare( void )
 {	
 	lode_inhibitor_t LodeInhibitor;
 
-	if ( targets.Num() == 0 )
+/*	if ( targets.Num() == 0 )
 	{
 		gameLocal.Warning( "LODE %s has no targets!", GetName() );
 		// TODO: somehow does not work?
@@ -960,6 +960,7 @@ void Lode::Prepare( void )
 		m_iNumEntities = -1;
 		return;
 	}
+*/
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
@@ -1016,6 +1017,72 @@ void Lode::Prepare( void )
 		}
 	}
 
+	// the same, but this time for the "spawn_class/spawn_count/spawn_skin" spawnargs:
+	
+	idVec3 origin = GetPhysics()->GetOrigin();
+
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "spawn_class", NULL );
+	while( kv )
+	{
+		idStr entityClass = kv->GetValue();
+
+		// spawn an entity of this class so we can copy it's values
+		// TODO: avoid the spawn for speed reasons?
+
+		const char* pstr_DefName = entityClass.c_str();
+		const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
+		if( p_Def )
+		{
+			idEntity *ent;
+			idDict args;
+
+			args.Set("classname", entityClass);
+			// move to origin of ourselfs
+			args.SetVector("origin", origin);
+
+			// set previously defined (possible random) skin
+		    // TODO: split "spawn_skin" at "," then set all of them as "skin", "skin1" etc:
+			args.Set("skin", "");
+			// m_Skins[ ent->skinIdx ] );
+
+			// random skin wanted?
+			//int skinIdx = AddSkin( &skin );
+			//gameLocal.Printf( "LODE %s: Adding skin %s (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+			//LodeClass.skins.Append ( skinIdx );
+
+			gameLocal.SpawnEntityDef( args, &ent );
+			if (ent)
+			{
+				int iEntScore = ent->spawnArgs.GetInt( "lode_score", "1" );
+				if (iEntScore < 0)
+				{
+					gameLocal.Warning( "LODE %s: Target %s has invalid lode_score %i!\n", GetName(), ent->GetName(), iEntScore );
+				}
+				else
+				{
+					// add a class based on this entity
+					m_iScore += iEntScore;
+					m_fAvgSize += AddClassFromEntity( ent, iEntScore );
+				}
+				// remove the temp. entity 
+				ent->PostEventMS( &EV_Remove, 0 );
+			}
+			else
+			{
+				gameLocal.Warning("LODE %s: Could not spawn entity from class %s to add it as my target.\n", 
+						GetName(), entityClass.c_str() );
+			}
+		}
+		else
+		{
+				gameLocal.Warning("LODE %s: Could not find entity def for class %s to add it as my target.\n", 
+						GetName(), entityClass.c_str() );
+		}
+
+		// next one please
+		kv = spawnArgs.MatchPrefix( "spawn_class", kv );
+	}
+
 	// increase the avg by X% to allow some spacing (even if spacing = 0)
 	m_fAvgSize *= 1.3f;
 
@@ -1063,7 +1130,7 @@ void Lode::Prepare( void )
 		if (ent)
 		{
 			// TODO: SafeRemove?
-			ent->PostEventMS( &EV_Remove, 50 );
+			ent->PostEventMS( &EV_Remove, 0 );
 		}
 	}
 	targets.Clear();
