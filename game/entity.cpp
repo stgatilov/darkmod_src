@@ -517,7 +517,16 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 		renderEntity->bounds.Zero();
 	}
 
-	temp = args->GetString( "skin" );
+	idStr rskin = args->GetString( "random_skin", "" );
+	if ( !rskin.IsEmpty() ) {
+		// found list, select a random skin
+		temp = rskin.RandomPart().c_str();
+	}
+	else {
+		// else just use the "skin" spawnarg
+		temp = args->GetString( "skin" );
+	}
+
 	if ( temp[0] != '\0' ) {
 		renderEntity->customSkin = declManager->FindSkin( temp );
 	} else if ( modelDef ) {
@@ -914,7 +923,15 @@ void idEntity::ParseLODSpawnargs(void)
 
 	// setup level 0 (aka "The one and only original")
 	m_LOD->ModelLOD[0] = spawnArgs.GetString( "model" );
-	m_LOD->SkinLOD[0] = spawnArgs.GetString( "skin" );
+	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
+	if ( renderEntity.customSkin )
+	{
+		m_LOD->SkinLOD[0] = renderEntity.customSkin->GetName(); 
+	}
+	else
+	{
+		m_LOD->SkinLOD[0] = "";
+	}
 
 	//gameLocal.Printf (" LOD default model %s default skin %s\n", m_ModelLODCur.c_str(), m_SkinLODCur.c_str() );
 
