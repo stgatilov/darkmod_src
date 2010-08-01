@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -181,6 +182,10 @@ public:
 
 	int					Find( const char c, int start = 0, int end = -1 ) const;
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
+	// Tels: Count how often c occurs between start and end
+	int					Count( const char c, int start = 0, int end = -1 ) const;
+	// Tels: Given a list like "abc, def" (where c can be changed), returns one part of it randomly
+	idStr				RandomPart( const char c = ',') const;
 	bool				Filter( const char *filter, bool casesensitive ) const;
 	int					Last( const char c ) const;						// return the index to the last occurance of 'c', returns -1 if not found
 	const char *		Left( int len, idStr &result ) const;			// store the leftmost 'len' characters in the result
@@ -240,6 +245,7 @@ public:
 	static int			snPrintf( char *dest, int size, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	static int			vsnPrintf( char *dest, int size, const char *fmt, va_list argptr );
 	static int			FindChar( const char *str, const char c, int start = 0, int end = -1 );
+	static int			CountChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			FindText( const char *str, const char *text, bool casesensitive = true, int start = 0, int end = -1 );
 	static bool			Filter( const char *filter, const char *name, bool casesensitive );
 	static void			StripMediaName( const char *name, idStr &mediaName );
@@ -841,6 +847,13 @@ ID_INLINE void idStr::Fill( const char ch, int newlen ) {
 	len = newlen;
 	memset( data, ch, len );
 	data[ len ] = 0;
+}
+
+ID_INLINE int idStr::Count( const char c, int start, int end ) const {
+	if ( end == -1 ) {
+		end = len;
+	}
+	return idStr::CountChar( data, c, start, end );
 }
 
 ID_INLINE int idStr::Find( const char c, int start, int end ) const {
