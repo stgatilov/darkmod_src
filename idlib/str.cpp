@@ -453,11 +453,18 @@ idStr::StripLeading
 ============
 */
 void idStr::StripLeading( const char c ) {
-	// Tels: TODO: first count how many chars to remove, then move only once
-	while( data[ 0 ] == c ) {
-		memmove( &data[ 0 ], &data[ 1 ], len );
-		len--;
+	// Tels: The string is zero-terminated, so exit if trying to remove zeros
+	if (c == 0x00) {
+		return;
 	}
+	// Tels: first count how many chars to remove, then move only once
+	int remove = 0;
+	while( data[ remove ] == c ) {
+		remove ++;
+	}
+	len -= remove;
+	// +1 to copy the 0x00 at the end
+	memmove( &data[ 0 ], &data[ remove ], len + 1 );
 }
 
 /*
