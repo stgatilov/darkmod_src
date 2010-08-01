@@ -141,7 +141,7 @@ const idEventDef EV_SetDroppable( "setDroppable", "d" );
 // tels: set noShadow on this entity to the given argument (true/false)
 const idEventDef EV_NoShadows( "noShadows", "d" );
 
-// tels: Find all lights in the same PVS, then returns their sum.
+// tels: Find all lights in the player PVS, then returns their sum.
 const idEventDef EV_GetLightInPVS("getLightInPVS", "", 'v');
 
 //===============================================================
@@ -10812,21 +10812,22 @@ void idEntity::Event_GetLightInPVS( void )
 	idVec3 local_light;
 	idVec3 local_light_radius;
 
-	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
+// 	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
 
-	// Find all light entities, then call PointInArea on them to check
-	// if they are in the same area:
+	// Find all light entities, then check if they are in the same area as the player:
 
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		if ( !ent->IsType( idLight::Type ) ) {
+		if ( !ent || !ent->IsType( idLight::Type ) ) {
 			continue;
 		}
 
 		idLight* light = static_cast<idLight*>( ent );
 
 		// light is in the same area?
-		if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
+		// fix bug #2326:
+		if ( gameLocal.InPlayerPVS( light ) ) {
+		//if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
 			light->GetColor( local_light );
 			// multiple the light color by the radius to get a fake "light energy":
 			light->GetRadius( local_light_radius );
