@@ -1295,7 +1295,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	firstFreeIndex	= MAX_CLIENTS;
 
 	// reset the random number generator.
-	random.SetSeed( isMultiplayer ? randseed : 0 );
+	// Tels: use a random seed for single-player, too, otherwise map content can't be random
+	//random.SetSeed( isMultiplayer ? randseed : 0 );
+	random.SetSeed( randseed );
 
 	camera			= NULL;
 	world			= NULL;
