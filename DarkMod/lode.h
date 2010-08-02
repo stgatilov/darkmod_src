@@ -352,6 +352,11 @@ private:
 	int							m_iThinkCounter;
 
 	/**
+	* If true, wait until triggered before spawning entities.
+	*/
+	bool						m_bWaitForTrigger;
+
+	/**
 	* Debug level. Default 0. Higher values will print more debug info.
 	*/
 	int							m_iDebug;

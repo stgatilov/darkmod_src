@@ -81,6 +81,8 @@ Lode::Lode( void ) {
 
 	m_iDebug = 0;
 
+	m_bWaitForTrigger = false;
+
 	m_bPrepared = false;
 	m_Entities.Clear();
 	m_Classes.Clear();
@@ -109,7 +111,7 @@ Lode::~Lode
 */
 Lode::~Lode(void) {
 
-	gameLocal.Warning ("LODE %s: Shutdown.\n", GetName() );
+	//gameLocal.Warning ("LODE %s: Shutdown.\n", GetName() );
 	ClearClasses();
 }
 /*
@@ -120,6 +122,7 @@ Lode::Save
 void Lode::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( active );
+	savefile->WriteBool( m_bWaitForTrigger );
 
 	savefile->WriteInt( m_iDebug );
 
@@ -282,6 +285,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	bool bHaveModel;
 
 	savefile->ReadBool( active );
+	savefile->ReadBool( m_bWaitForTrigger );
 
 	savefile->ReadInt( m_iDebug );
 
@@ -550,6 +554,7 @@ void Lode::Spawn( void ) {
 	active = true;
 
 	m_iDebug = spawnArgs.GetInt( "debug", "0" );
+	m_bWaitForTrigger = spawnArgs.GetBool("wait_for_trigger", "0");
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
@@ -606,6 +611,12 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.megamodel = NULL;
 	
 	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","0") ? false : true;
+
+	// never combine moveables
+	if ( ent->IsType( idMoveable::Type ) )
+	{
+		LodeClass.nocombine = false;
+	}
 
 	// get all "skin" and "skin_xx" spawnargs
 
@@ -1896,7 +1907,7 @@ void Lode::CombineEntities( void )
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
-		// if this class says no combine, skip them
+		// if this class says no combine, skit it
 		if (entityClass->nocombine)
 		{
 			continue;
@@ -2217,6 +2228,12 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				// set to invalid number to force an update the next time the PVS areas are retrieved
 				ent2->ClearPVSAreas();
 			}
+			else
+			// might be a moveable?
+			if ( ent2->IsType( idMoveable::Type ) ) {
+				idMoveable *ment = static_cast<idMoveable*>( ent2 );
+				ment->ActivatePhysics( this );
+			}
 			return true;
 		}
 	}
@@ -2300,7 +2317,8 @@ void Lode::Think( void )
 	// idEntity::Think();
 
 	// for some reason disabling thinking doesn't work, so return early in case we have no targets
-	if (m_iNumEntities < 0)
+	// also return until activated
+	if (m_iNumEntities < 0 || m_bWaitForTrigger)
 	{
 		return;
 	}
@@ -2429,6 +2447,7 @@ Lode::Event_Activate
 void Lode::Event_Activate( idEntity *activator ) {
 
 	active = true;
+	m_bWaitForTrigger = false;	// enough waiting around, lets do some action
 	BecomeActive(TH_THINK);
 }
 
