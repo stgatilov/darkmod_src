@@ -1055,18 +1055,19 @@ void Lode::Prepare( void )
 			args.Set("lode_floor", "1");
 
 			// set previously defined (possible random) skin
-		    // TODO: split "spawn_skin" at "," then set all of them as "skin", "skin1" etc:
-
 			// spawn_classX => spawn_skinX
 			idStr skin = idStr("spawn_skin") + kv->GetKey().Mid( 11, kv->GetKey().Length() - 11 );
 
 			// spawn_classX => "abc, def, '', abc"
-			skin = spawnArgs.GetString( skin );
+			skin = spawnArgs.GetString( skin, "" );
 			// select one at random
 			skin = skin.RandomPart();
 
 			//gameLocal.Printf("Using random skin '%s'.\n", skin.c_str() );
 			args.Set( "skin", skin );
+
+			// TODO: if the entity contains a "random_skin", too, use the info from there, then remove it
+			args.Set( "random_skin", "" );
 
 			gameLocal.SpawnEntityDef( args, &ent );
 			if (ent)
@@ -1809,6 +1810,7 @@ void Lode::PrepareEntities( void )
 				// add this entity to our list
 				LodeEntity.origin = origin;
 				LodeEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
+				// TODO: support "random_skin" here by using GetCurrentSkin()
 				idStr skin = ent->spawnArgs.GetString("skin","");
 				LodeEntity.skinIdx = AddSkin( &skin );
 				// already exists
@@ -2117,6 +2119,8 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 		// set previously defined (possible random) skin
 	    args.Set("skin", m_Skins[ ent->skinIdx ] );
+		// disable any other random_skin on the entity class or it would interfere
+	    args.Set("random_skin", "");
 
 		// set previously defined (possible random) color
 	    args.SetVector("_color", ent->color );
