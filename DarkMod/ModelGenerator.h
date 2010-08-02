@@ -57,7 +57,8 @@ public:
 	* is duplicated, otherwise the new model shares the data of the old model. In this
 	* case the memory of the new model needs to be freed differently, of course :)
 	*/
-	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData = true, const idList<model_ofs_t>* offsets = NULL);
+	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData = true,
+												const idList<model_ofs_t>* offsets = NULL, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL);
 
 	/**
 	* Same as DuplicateModel, but with only one LOD stage as source

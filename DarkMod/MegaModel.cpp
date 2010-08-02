@@ -29,7 +29,7 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 CMegaModel::CMegaModel
 ===============
 */
-CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const int iUpdateTime ) {
+CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *playerPos, const idVec3 *origin, const int iUpdateTime ) {
 
 	m_hModel = NULL;
 	m_iUpdateTime = iUpdateTime;
@@ -43,7 +43,7 @@ CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>*
 
 	m_Changes.Clear();
 
-	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", true, offsets );
+	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", true, offsets, origin, playerPos );
 }
 
 /*

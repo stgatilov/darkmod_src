@@ -101,7 +101,7 @@ If the given list of model_ofs_t is filled, the model will be copied X times, ea
 offset and rotated by the given values, also filling in the right vertex color.
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets) {
+idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets, const idVec3 *playerPos, const idVec3 *origin) {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
@@ -110,7 +110,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	model_ofs_t op;
 	model_ofs_t op_zero;
 
-	// TODO: use the appropriate source model according to the LOD field in offsets
+	// TODO: use the appropriate source model according to the LOD field in offsets and origin/playerPos
 	const idRenderModel* source = LODs->Ptr()[0];
 
 	if (NULL == source)

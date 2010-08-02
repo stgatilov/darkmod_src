@@ -2009,8 +2009,15 @@ void Lode::CombineEntities( void )
 				LODs.Append( entityClass->hModel );
 			}
 			//PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( &LODs, GetName(), true, &offsets );
+			// Get the player pos
+			idPlayer *player = gameLocal.GetLocalPlayer();
+			// if we have no player (how can this happen?), use our own origin as stand-in
+			idVec3 playerPos = renderEntity.origin;
+			if ( player ) {
+				playerPos = player->GetPhysics()->GetOrigin();
+			}
 			// use a megamodel to get the combined model, that we later can update, too:
-			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets );
+			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin );
 			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
 			// replace the old class with the new pseudo class which contains the merged model

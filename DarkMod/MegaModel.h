@@ -39,7 +39,7 @@ public:
 	/**
 	* Construct the megamodel from the given list of LOD stages and offsets/rotations/colors.
 	*/
-							CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const int iUpdateTime = 1000 );
+							CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *playerPos, const idVec3 *origin, const int iUpdateTime = 1000 );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
