@@ -47,7 +47,7 @@ public:
 	/**
 	* Returns a pointer to the combined render model.
 	*/
-	idRenderModel*			GetRenderModel();
+	idRenderModel*			GetRenderModel() const;
 
 	/**
 	* Marks the model for the entity #entity (offset into Offsets list) to be changed to newLOD.

@@ -57,6 +57,10 @@ void CMegaModel::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_iNextUpdate );
 	savefile->WriteInt( m_iUpdateTime );
 
+	// TODO: Wouldn't the existing entity also save the model?
+	// TODO: Could we simply regenerate the model on Restore()?
+	savefile->WriteModel( m_hModel );
+
 	savefile->WriteInt( m_Offsets.Num() );
 	for (int i = 0; i < m_Offsets.Num(); i++ )
 	{
@@ -85,6 +89,8 @@ void CMegaModel::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bActive );
 	savefile->ReadInt( m_iNextUpdate );
 	savefile->ReadInt( m_iUpdateTime );
+
+	savefile->ReadModel( m_hModel );
 
 	m_Offsets.Clear();
 	int n;
@@ -115,7 +121,7 @@ void CMegaModel::Restore( idRestoreGame *savefile ) {
 CMegaModel::GetRenderModel
 ===============
 */
-idRenderModel* CMegaModel::GetRenderModel()
+idRenderModel* CMegaModel::GetRenderModel() const
 {
 	return m_hModel;
 }
@@ -170,7 +176,7 @@ void CMegaModel::AddChange( const int entity, const int newLOD ) {
 
 	change.entity = entity;
 	change.oldLOD = m_Offsets[ entity ].lod;
-	change.oldLOD = newLOD;
+	change.newLOD = newLOD;
 
 	m_Changes.Append( change );
 
