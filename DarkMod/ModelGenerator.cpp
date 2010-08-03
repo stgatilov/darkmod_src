@@ -297,3 +297,42 @@ void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
 	}
 }
 
+/*
+===============
+Returns the maximum number of models that can be combined from this model:
+*/
+unsigned int CModelGenerator::GetMaxModelCount( const idRenderModel* hModel ) const
+{
+	const modelSurface_t *surf;
+
+	// compute vertex and index count on this model
+	unsigned int numVerts = 0;
+	unsigned int numIndexes = 0;
+
+	// get the number of base surfaces (minus decals) on the old model
+	int numSurfaces = hModel->NumBaseSurfaces();
+
+	for (int i = 0; i < numSurfaces; i++)
+	{
+		surf = hModel->Surface( i );
+		if (surf)
+		{
+			numVerts += surf->geometry->numVerts; 
+			numIndexes += surf->geometry->numIndexes;
+		}
+	}
+
+	// avoid divide by zero for empty models
+	if (numVerts == 0) { numVerts = 1; }
+	if (numIndexes == 0) { numIndexes = 1; }
+
+	int v = MAX_MODEL_VERTS / numVerts;
+	int i = MAX_MODEL_INDEXES / numIndexes;
+
+	// minimum of the two
+	if (v < i) { i = v; }
+
+	return i;
+}
+
+

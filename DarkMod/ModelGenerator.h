@@ -25,6 +25,10 @@
 ===============================================================================
 */
 
+// Tels: If set to 2 << 20, it crashes on my system
+#define MAX_MODEL_VERTS		(2 << 18)		// never combine more than this into one model
+#define MAX_MODEL_INDEXES	(2 << 18)		// never combine more than this into one model
+
 // Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
@@ -64,6 +68,11 @@ public:
 	* Same as DuplicateModel, but with only one LOD stage as source
 	*/
 	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true);
+
+	/**
+	* Returns the maximum number of models that can be combined from this model:
+	*/
+	unsigned int			GetMaxModelCount( const idRenderModel* hModel ) const;
 
 	/**
 	* Given the info CombineModels(), sep. the given model out again.

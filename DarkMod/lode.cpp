@@ -610,7 +610,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.modelname = ent->spawnArgs.GetString("model","");
 	LodeClass.megamodel = NULL;
 	
-	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","0") ? false : true;
+	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","1") ? false : true;
 
 	// never combine moveables
 	if ( ent->IsType( idMoveable::Type ) )
@@ -1840,7 +1840,7 @@ void Lode::CombineEntities( void )
 	int iPVSAreas[2];								//!< for per-entity PVS check
 	lode_class_t PseudoClass;
 	idList< lode_entity_t > newEntities;
-	int mergedCount = 0;
+	unsigned int mergedCount = 0;
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	model_ofs_t ofs;
 
@@ -1897,7 +1897,7 @@ void Lode::CombineEntities( void )
 	// we mark all entities that we combine with another entity with "-1" in the classIdx
 	for (int i = 0; i < n - 1; i++)
 	{
-		int merged = 0;				//!< merged 0 other entities into this one
+		unsigned int merged = 0;				//!< merged 0 other entities into this one
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
 		if (m_Entities[i].classIdx == -1)
@@ -1923,7 +1923,6 @@ void Lode::CombineEntities( void )
 		ofs.lod = 0;
 		offsets.Append(ofs);
 
-
 		tempModel = NULL;
 		if (NULL == entityClass->hModel)
 		{
@@ -1935,6 +1934,20 @@ void Lode::CombineEntities( void )
 				continue;
 			}
 		}
+
+		// how many can we combine at most?
+		// TODO: use LOD 0 here for an worse-case estimate
+		unsigned int maxModelCount = 0;
+		if (tempModel)
+		{
+			maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
+		}
+		else
+		{
+			maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( entityClass->hModel );
+		}
+		gameLocal.Printf("LODE %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
+
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
 		// every combine step reduces the number of entities to look at next:
@@ -2000,6 +2013,11 @@ void Lode::CombineEntities( void )
 					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
 			// mark as "to be deleted"
 			m_Entities[j].classIdx = -1;
+
+			if (merged >= maxModelCount)
+			{
+				break;
+			}
 		}
 
 		if (merged > 0)
