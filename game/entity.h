@@ -1615,7 +1615,7 @@ public:			// Events should be public, so they can be used from other places as w
 	/**
 	* Tels: Return the sum of all lights in the entities PVS.
 	*/
-	void 					Event_GetLightInPVS();
+	void 					Event_GetLightInPVS( const float lightFalloff, const float lightDistScale);
 
 	/**
 	* Tels: Toggle the noShadow flag on this entity.

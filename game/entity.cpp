@@ -142,7 +142,7 @@ const idEventDef EV_SetDroppable( "setDroppable", "d" );
 const idEventDef EV_NoShadows( "noShadows", "d" );
 
 // tels: Find all lights in the player PVS, then returns their sum.
-const idEventDef EV_GetLightInPVS("getLightInPVS", "", 'v');
+const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
 
 //===============================================================
 //                   TDM GUI interface
@@ -10806,12 +10806,19 @@ void idEntity::Event_SetDroppable( bool Droppable )
 }
 
 // tels:
-void idEntity::Event_GetLightInPVS( void )
+// lightFalloff == 0   - none
+// lightFalloff == 0.5 - sqrt(linear)
+// lightFalloff == 1   - liniear with distance (falls off already too fast)
+// lightFalloff == 2   - squared with distance
+// lightDistScale is a scaling factor to divide the distance. Sensible values are around 1..2
+void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightDistScale )
 {
 	idVec3 sum(0,0,0);
 	idVec3 local_light;
 	idVec3 local_light_radius;
- 	int areaNum = -1;
+	idVec3 origin;
+	// divide dist by this factor, so 1 as light in 1000 units stays, is half in 2000 etc
+	float dist_scaling = 10000 * lightDistScale;
 
 	// If this is a player, use the eye location to match what the script does
 	// with $player1.GetLocation()
@@ -10819,12 +10826,13 @@ void idEntity::Event_GetLightInPVS( void )
 	
 	if (player == this)
 	{
- 		areaNum = gameRenderWorld->PointInArea( player->GetEyePosition() );
+		origin = player->GetEyePosition();
 	}
 	else
 	{
- 		areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
+		origin = GetPhysics()->GetOrigin();
 	}
+	int areaNum = gameRenderWorld->PointInArea( origin );
 
 	// Find all light entities, then check if they are in the same area as the player:
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
@@ -10839,7 +10847,8 @@ void idEntity::Event_GetLightInPVS( void )
 		//if ( gameLocal.InPlayerPVS( light ) ) {
 
 		// light is in the same area?
-		if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
+		idVec3 light_origin = light->GetLightOrigin();
+		if ( areaNum == gameRenderWorld->PointInArea( light_origin ) ) {
 			light->GetColor( local_light );
 			// multiple the light color by the radius to get a fake "light energy":
 			light->GetRadius( local_light_radius );
@@ -10850,7 +10859,37 @@ void idEntity::Event_GetLightInPVS( void )
 			local_light *= (float)
 				(local_light_radius.x + 
 				 local_light_radius.y + 
-				 local_light_radius.z) / 2400; 
+				 local_light_radius.z) / 2400;
+			// dimish light with distance?
+			if (lightFalloff > 0)
+			{
+				// compute distance
+				idVec3 dist3 = light_origin - origin;
+				// == 1
+				float dist;
+				if (lightFalloff < 1)
+				{
+					dist = dist3.Length();
+					dist /= dist;			// square root of dist
+				}
+				else if (lightFalloff > 1)
+					{
+						// squared
+						dist = dist3.LengthSqr();
+					}
+					else
+					{
+						// linear
+						dist = dist3.Length();
+					}
+				// divide by dist
+				gameLocal.Warning(" dist %0.2f, falloff %0.0f\n", dist, lightFalloff );
+				dist /= dist_scaling;
+				gameLocal.Warning(" dist is now %0.2f\n", dist );
+				gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+				local_light /= dist;
+				gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+			}
 			sum += local_light;
 		}
     }
