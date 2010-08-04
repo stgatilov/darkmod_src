@@ -10811,8 +10811,20 @@ void idEntity::Event_GetLightInPVS( void )
 	idVec3 sum(0,0,0);
 	idVec3 local_light;
 	idVec3 local_light_radius;
+ 	int areaNum = -1;
 
- 	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
+	// If this is a player, use the eye location to match what the script does
+	// with $player1.GetLocation()
+	const idPlayer* player = gameLocal.GetLocalPlayer();
+	
+	if (player == this)
+	{
+ 		areaNum = gameRenderWorld->PointInArea( player->GetEyePosition() );
+	}
+	else
+	{
+ 		areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
+	}
 
 	// Find all light entities, then check if they are in the same area as the player:
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
