@@ -10812,10 +10812,9 @@ void idEntity::Event_GetLightInPVS( void )
 	idVec3 local_light;
 	idVec3 local_light_radius;
 
-// 	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
+ 	int areaNum = gameRenderWorld->PointInArea( GetPhysics()->GetOrigin() );
 
 	// Find all light entities, then check if they are in the same area as the player:
-
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
 		if ( !ent || !ent->IsType( idLight::Type ) ) {
@@ -10824,16 +10823,18 @@ void idEntity::Event_GetLightInPVS( void )
 
 		idLight* light = static_cast<idLight*>( ent );
 
+		// this makes it add all lights in the PVS, which is not good, albeit it makes leaning a bit better
+		//if ( gameLocal.InPlayerPVS( light ) ) {
+
 		// light is in the same area?
-		// fix bug #2326:
-		if ( gameLocal.InPlayerPVS( light ) ) {
-		//if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
+		if ( areaNum == gameRenderWorld->PointInArea( light->GetLightOrigin() ) ) {
 			light->GetColor( local_light );
 			// multiple the light color by the radius to get a fake "light energy":
 			light->GetRadius( local_light_radius );
 			// fireplace: 180+180+120/3 => 160 / 800 => 0.2
 			// candle:    130+130+120/3 => 123 / 800 => 0.15
 			// firearrow:  10+ 10+ 10/3 =>  10 / 800 => 0.0125
+			//gameLocal.Printf (" Adding light %s color %s radius %s\n", light->GetName(), local_light.ToString(),  local_light_radius.ToString() );
 			local_light *= (float)
 				(local_light_radius.x + 
 				 local_light_radius.y + 
