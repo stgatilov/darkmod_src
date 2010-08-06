@@ -101,7 +101,9 @@ If the given list of model_ofs_t is filled, the model will be copied X times, ea
 offset and rotated by the given values, also filling in the right vertex color.
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets, const idVec3 *playerPos, const idVec3 *origin) {
+idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs,
+			const char* snapshotName, bool dupData, const idList<model_ofs_t> *offsets, const idVec3 *playerPos, const idVec3 *origin,
+			const idMaterial *shader ) {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
@@ -150,8 +152,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			numVerts += surf->geometry->numVerts; 
 			numIndexes += surf->geometry->numIndexes;
 
-			// copy the material
-			newSurf.shader = surf->shader;
+			// copy the material (or set the wanted shader if given)
+			idStr n = surf->shader->GetName();
+			newSurf.shader = (shader != NULL && n != "textures/common/shadow") ? shader : surf->shader;
 			if (dupData)
 			{
 				int n = 1;
@@ -245,6 +248,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			else
 			{
 				// caller needs to make sure that the shared data is not deallocated twice
+				idStr n = surf->shader->GetName();
+				newSurf.shader = (shader != NULL && n != "textures/common/shadow") ? shader : surf->shader;
+				//newSurf.shader = (shader != NULL) ? shader : surf->shader;
 				newSurf.geometry = surf->geometry;
 			}
 			newSurf.id = 0;

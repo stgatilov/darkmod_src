@@ -18,7 +18,7 @@
 
   Model Generator - Generate/combine/scale models at run-time
 
-  This class is a singleton and initiatied/destroyed from gameLocal.
+  This class is a singleton and initiated/destroyed from gameLocal.
 
   At the moment it does not use any memory, but this might change later.
 
@@ -60,9 +60,11 @@ public:
 	* which will share the same data. If dupData is true, memory for verts and indexes
 	* is duplicated, otherwise the new model shares the data of the old model. In this
 	* case the memory of the new model needs to be freed differently, of course :)
+	* If shader is != NULL, all shaders of the models will be switched to this shader.
 	*/
 	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData = true,
-												const idList<model_ofs_t>* offsets = NULL, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL);
+												const idList<model_ofs_t>* offsets = NULL, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL,
+												const idMaterial *shader = NULL);
 
 	/**
 	* Same as DuplicateModel, but with only one LOD stage as source

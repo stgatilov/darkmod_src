@@ -37,6 +37,24 @@
 ===============================================================================
 */
 
+#define LODE_DEBUG_MATERIAL_COUNT 13
+// list of debug materials to use
+const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
+	"debug_red",
+	"debug_blue",
+	"debug_green",
+	"debug_dark_green",
+	"debug_pale_green",
+	"debug_yellow",
+	"debug_purple",
+	"debug_cyan",
+	"debug_dark_blue",
+	"debug_pale_blue",
+	"debug_dark_red",
+	"debug_orange",
+	"debug_brown",
+};
+
 // Defines one material class that modulates how often entities appear on it:
 struct lode_material_t {
 	idStr					name;			//!< a part, like "grass", or the full name like "sand_dark"
@@ -360,6 +378,11 @@ private:
 	* Debug level. Default 0. Higher values will print more debug info.
 	*/
 	int							m_iDebug;
+
+	/**
+	* If true, debug colors are used instead of normal skins.
+	*/
+	bool						m_bDebugColors;
 
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;

@@ -26,6 +26,7 @@ TODO: turn "exists" and "hidden" into flags field, add there a "pseudoclass" bit
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
+#include "../idlib/containers/list.h"
 #include "lode.h"
 
 // maximum number of tries to place an entity
@@ -80,6 +81,7 @@ Lode::Lode( void ) {
 	m_fLODBias = 0;
 
 	m_iDebug = 0;
+	m_bDebugColors = false;
 
 	m_bWaitForTrigger = false;
 
@@ -125,6 +127,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bWaitForTrigger );
 
 	savefile->WriteInt( m_iDebug );
+	savefile->WriteBool( m_bDebugColors );
 
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iSeed_2 );
@@ -288,6 +291,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bWaitForTrigger );
 
 	savefile->ReadInt( m_iDebug );
+	savefile->ReadBool( m_bDebugColors );
 
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iSeed_2 );
@@ -554,6 +558,8 @@ void Lode::Spawn( void ) {
 	active = true;
 
 	m_iDebug = spawnArgs.GetInt( "debug", "0" );
+	m_bDebugColors = spawnArgs.GetBool( "debug_colors", "0" );
+
 	m_bWaitForTrigger = spawnArgs.GetBool("wait_for_trigger", "0");
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
@@ -1830,6 +1836,19 @@ void Lode::PrepareEntities( void )
 	CombineEntities();
 }
 
+// sort a list of offsets by their distance
+int SortOffsetsByDistance( const model_ofs_t *a, const model_ofs_t *b ) {
+	float d = a->offset.LengthSqr() - b->offset.LengthSqr();
+
+	if ( d < 0 ) {
+		return -1;
+	}
+	if ( d > 0 ) {
+		return 1;
+	}
+	return 0;
+}
+
 void Lode::CombineEntities( void )
 {
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
@@ -1843,6 +1862,7 @@ void Lode::CombineEntities( void )
 	unsigned int mergedCount = 0;
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	model_ofs_t ofs;
+	idList<int> tobedeleted;
 
 	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
 	if (max_combine_distance < 10)
@@ -1900,7 +1920,7 @@ void Lode::CombineEntities( void )
 		unsigned int merged = 0;				//!< merged 0 other entities into this one
 
 		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
-		if (m_Entities[i].classIdx == -1)
+		if (m_Entities[i].classIdx < 0)
 		{
 			// already combined, skip
 			//gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
@@ -1922,6 +1942,9 @@ void Lode::CombineEntities( void )
 		ofs.angles = m_Entities[i].angles;
 		ofs.lod = 0;
 		offsets.Append(ofs);
+
+		tobedeleted.Clear();
+		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
 
 		tempModel = NULL;
 		if (NULL == entityClass->hModel)
@@ -2009,19 +2032,42 @@ void Lode::CombineEntities( void )
 			merged ++;
 			// overall
 			mergedCount ++;
-			gameLocal.Printf("LODE %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
-					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
-			// mark as "to be deleted"
-			m_Entities[j].classIdx = -1;
-
-			if (merged >= maxModelCount)
-			{
-				break;
-			}
+//			gameLocal.Printf("LODE %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
+//					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
+			// remember to mark as "to be deleted"
+			tobedeleted.Append( j );
+			// mark with negative entity so we can skip it
+			m_Entities[j].classIdx = -m_Entities[j].classIdx;
 		}
 
 		if (merged > 0)
 		{
+			// if we have more entities to merge than what will fit into the model,
+			// sort them based on distance and select the N nearest:
+			if (merged > maxModelCount)
+			{
+				// so we can select the N nearest
+				offsets.Sort( SortOffsetsByDistance );
+				// truncate to only combine as much as we can:
+				offsets.SetNum( maxModelCount );
+			}
+			// mark all entities that will be merged as "deleted", but
+			// skip the rest
+			for (int d = 0; d < tobedeleted.Num(); d++)
+			{
+				int todo = tobedeleted[d];
+				// mark
+				if (d < maxModelCount)
+				{
+					m_Entities[ todo ].classIdx = -1;
+				}
+				else
+				{
+					// restore classIdx
+					m_Entities[todo].classIdx = -m_Entities[todo].classIdx;
+				}
+			}
+
 			// build the combined model
 			idVec3 corr = idVec3(0,0,0);
 			idList<const idRenderModel*> LODs;
@@ -2031,7 +2077,6 @@ void Lode::CombineEntities( void )
 				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
 				corr -= tempModel->Bounds()[0];
 				LODs.Append( tempModel );
-				//PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( &LODs, GetName(), true, &offsets );
 			}
 			else
 			{
@@ -2039,7 +2084,6 @@ void Lode::CombineEntities( void )
 				corr -= entityClass->hModel->Bounds()[0];
 				LODs.Append( entityClass->hModel );
 			}
-			//PseudoClass.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( &LODs, GetName(), true, &offsets );
 			// Get the player pos
 			idPlayer *player = gameLocal.GetLocalPlayer();
 			// if we have no player (how can this happen?), use our own origin as stand-in
@@ -2047,8 +2091,16 @@ void Lode::CombineEntities( void )
 			if ( player ) {
 				playerPos = player->GetPhysics()->GetOrigin();
 			}
+			const idMaterial* material = NULL;
+			if (m_bDebugColors)
+			{
+				// select one at random
+				idStr m = "textures/darkmod/debug/";
+			   	m += lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
+				material = declManager->FindMaterial( m, false );
+			}
 			// use a megamodel to get the combined model, that we later can update, too:
-			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin );
+			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin, material );
 			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
 			// replace the old class with the new pseudo class which contains the merged model
