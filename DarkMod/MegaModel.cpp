@@ -20,7 +20,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07-18 13:57:08Z tels $", init_version);
+static bool init_version = FileVersionList("$Id: MegaModel.cpp 4071 2010-07-18 13:57:08Z tels $", init_version);
 
 #include "MegaModel.h"
 
@@ -43,6 +43,8 @@ CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>*
 	m_Offsets.Append( *offsets );
 
 	m_Changes.Clear();
+	// avoid frequent resizes
+	m_Changes.SetGranularity(32);
 
 	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", true, offsets, origin, playerPos, material );
 }
