@@ -230,7 +230,10 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 					}
 				} // end for each offset
 
-				//newSurf.geometry->tangentsCalculated = true;
+		        newSurf.geometry->tangentsCalculated = true;
+				// TODO: are these nec.?
+		        newSurf.geometry->facePlanesCalculated = false;
+		        newSurf.geometry->generateNormals = true;
 				newSurf.geometry->numVerts = nV;
 				newSurf.geometry->numIndexes = nI;
 				if (NULL != offsets)

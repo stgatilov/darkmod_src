@@ -2010,6 +2010,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\StaticMulti.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\StaticMulti.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\ModelGenerator.cpp"
 					>
 				</File>

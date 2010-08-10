@@ -273,6 +273,7 @@ AI/Tasks/WanderInLocationTask.cpp \
 lode.cpp \
 ModelGenerator.cpp \
 MegaModel.cpp \
+StaticMulti.cpp \
 sourcehook/sourcehook.cpp'
 
 darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
