@@ -2053,7 +2053,8 @@ void Lode::CombineEntities( void )
 			}
 			// mark all entities that will be merged as "deleted", but
 			// skip the rest
-			for (int d = 0; d < tobedeleted.Num(); d++)
+			unsigned int n = (unsigned int)tobedeleted.Num();
+			for (unsigned int d = 0; d < n; d++)
 			{
 				int todo = tobedeleted[d];
 				// mark
