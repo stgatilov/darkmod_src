@@ -208,16 +208,24 @@ void Lode::Save( idSaveGame *savefile ) const {
 			savefile->WriteFloat( m_Classes[i].func_min );
 			savefile->WriteFloat( m_Classes[i].func_max );
 		}
-		//image based distribution
+		// image based distribution
 		savefile->WriteString( m_Classes[i].map );
 
-		// TODO: write megamodel struct
-
-		// only write the model if it is used
+		// only write the rendermodel if it is used
 		if ( NULL != m_Classes[i].hModel)
 		{
 			savefile->WriteBool( true );
 			savefile->WriteModel( m_Classes[i].hModel );
+		}
+		else
+		{
+			savefile->WriteBool( false );
+		}
+		// only write the clipmodel if it is used
+		if ( NULL != m_Classes[i].physicsObj)
+		{
+			savefile->WriteBool( true );
+			m_Classes[i].physicsObj->Save( savefile );
 		}
 		else
 		{
@@ -262,6 +270,11 @@ void Lode::ClearClasses( void )
 				renderModelManager->FreeModel( m_Classes[i].hModel );
 			}
 			m_Classes[i].hModel = NULL;
+		}
+		if (NULL != m_Classes[i].physicsObj)
+		{
+			delete m_Classes[i].physicsObj;
+			m_Classes[i].physicsObj = NULL;
 		}
 		if (NULL != m_Classes[i].megamodel)
 		{
@@ -399,6 +412,15 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		if ( bHaveModel )
 		{
 			savefile->ReadModel( m_Classes[i].hModel );
+		}
+
+		savefile->ReadBool( bHaveModel );
+		m_Classes[i].physicsObj = NULL;
+		// only read the model if it is actually used
+		if ( bHaveModel )
+		{
+			m_Classes[i].physicsObj = new idPhysics_StaticMulti;
+			m_Classes[i].physicsObj->Restore( savefile );
 		}
 	}
 
@@ -624,6 +646,9 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		LodeClass.nocombine = false;
 	}
 
+	// only for pseudo classes
+	LodeClass.physicsObj = NULL;
+	
 	// get all "skin" and "skin_xx" spawnargs
 
 	LodeClass.skins.Clear();
@@ -1946,8 +1971,8 @@ void Lode::CombineEntities( void )
 		tobedeleted.Clear();
 		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
 
-		tempModel = NULL;
-		if (NULL == entityClass->hModel)
+		tempModel = entityClass->hModel;
+		if (NULL == tempModel)
 		{
 			// load model, then combine away
 			tempModel = renderModelManager->FindModel( entityClass->modelname );
@@ -1960,15 +1985,7 @@ void Lode::CombineEntities( void )
 
 		// how many can we combine at most?
 		// TODO: use LOD 0 here for an worse-case estimate
-		unsigned int maxModelCount = 0;
-		if (tempModel)
-		{
-			maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
-		}
-		else
-		{
-			maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( entityClass->hModel );
-		}
+		unsigned int maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
 		gameLocal.Printf("LODE %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
 
 		// try to combine as much entities into this one
@@ -2026,6 +2043,7 @@ void Lode::CombineEntities( void )
 				// a combined entity must be of this class
 				PseudoClass.classname = entityClass->classname;
 				PseudoClass.hModel = NULL;
+				PseudoClass.physicsObj = new idPhysics_StaticMulti;
 				PseudoClass.megamodel = NULL;
 			}
 			// for this entity
@@ -2051,8 +2069,7 @@ void Lode::CombineEntities( void )
 				// truncate to only combine as much as we can:
 				offsets.SetNum( maxModelCount );
 			}
-			// mark all entities that will be merged as "deleted", but
-			// skip the rest
+			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)tobedeleted.Num();
 			for (unsigned int d = 0; d < n; d++)
 			{
@@ -2071,20 +2088,15 @@ void Lode::CombineEntities( void )
 
 			// build the combined model
 			idVec3 corr = idVec3(0,0,0);
+
+			// TODO: use all LOD stages here
 			idList<const idRenderModel*> LODs;
 			LODs.Clear();
-			if (tempModel)
-			{
-				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
-				corr -= tempModel->Bounds()[0];
-				LODs.Append( tempModel );
-			}
-			else
-			{
-				// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), entityClass->hModel->Bounds().ToString() );
-				corr -= entityClass->hModel->Bounds()[0];
-				LODs.Append( entityClass->hModel );
-			}
+
+			// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
+			corr -= tempModel->Bounds()[0];
+			LODs.Append( tempModel );
+
 			// Get the player pos
 			idPlayer *player = gameLocal.GetLocalPlayer();
 			// if we have no player (how can this happen?), use our own origin as stand-in
@@ -2255,14 +2267,13 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					r->hModel = NULL;
 				}
 
-				// duplicate the class model
+				// setup the rendermodel and the clipmodel
 				if (lclass->pseudo)
 				{
 					// each pseudoclass spawns only one entity
-					//r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
-					//gameLocal.Printf("Pseudoclass!\n");
+					ent2->SetPhysics( lclass->physicsObj );
 				}
 				else
 				{
@@ -2279,8 +2290,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 						// should not happen
 						r->bounds.Zero();
 					}
+					// clipmodel will be already correct:
+					// ent2->GetPhysics()->SetClipModel( ... );
 				}
-
 				ent2->Present();
 
 				//ent2->BecomeActive( TH_UPDATEVISUALS );

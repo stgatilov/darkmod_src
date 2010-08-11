@@ -68,6 +68,9 @@ struct lode_class_t {
 	idRenderModel*			hModel;			//!< Used to share data between many entities with the same model
 											//!< (f.i. when you turn a brush inside DR into a idStaticEntity and
 											//!< use it as template)
+	idPhysics_StaticMulti*	physicsObj;		//!< Used to share data between many entities with the same model
+											//!< (f.i. when you turn a brush inside DR into a idStaticEntity and
+											//!< use it as template)
 	idStr					modelname;		//!< To load the rendermodel for combining it w/o spawning
 											//!< the entity first.
 	bool					pseudo;			//!< if true, this class is a pseudo-class, and describes an
