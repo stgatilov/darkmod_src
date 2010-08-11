@@ -2273,6 +2273,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
+					// TODO: remove old physics object first
 					ent2->SetPhysics( lclass->physicsObj );
 				}
 				else
@@ -2361,6 +2362,8 @@ bool Lode::CullEntity( const int idx )
 			// TODO: cl.megaModel.stopUpdates();
 			// avoid freeing the composed model
 			ent2->GetRenderEntity()->hModel = NULL;
+			// TODO: either swap physics object or set to NULL to avoid freeing
+			// 		 the object from the pseudo class
 		}
 		else
 		{
