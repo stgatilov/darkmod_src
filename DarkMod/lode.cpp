@@ -15,8 +15,8 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
-TODO: turn "exists" and "hidden" into flags field, add there a "pseudoclass" bit so
-	  we can use much smaller structs for pseudo classes (we might have thousands
+TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
+	  smaller structs for pseudo classes (we might have thousands
 	  of pseudoclass structs due to each having a different hmodel)
 */
 
@@ -150,9 +150,9 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Entities[i].skinIdx );
 		savefile->WriteVec3( m_Entities[i].origin );
 		savefile->WriteAngles( m_Entities[i].angles );
-		savefile->WriteVec3( m_Entities[i].color );
-		savefile->WriteBool( m_Entities[i].hidden );
-		savefile->WriteBool( m_Entities[i].exists );
+		// a dword is "unsigned int"
+		savefile->WriteInt( m_Entities[i].color );
+		savefile->WriteInt( m_Entities[i].flags );
 		savefile->WriteInt( m_Entities[i].entity );
 		savefile->WriteInt( m_Entities[i].classIdx );
 	}
@@ -324,14 +324,16 @@ void Lode::Restore( idRestoreGame *savefile ) {
     savefile->ReadInt( num );
 	m_Entities.Clear();
 	m_Entities.SetNum( num );
+	int clr;
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadInt( m_Entities[i].skinIdx );
 		savefile->ReadVec3( m_Entities[i].origin );
 		savefile->ReadAngles( m_Entities[i].angles );
-		savefile->ReadVec3( m_Entities[i].color );
-		savefile->ReadBool( m_Entities[i].hidden );
-		savefile->ReadBool( m_Entities[i].exists );
+		// a dword is "unsigned int"
+		savefile->ReadInt( clr );
+		m_Entities[i].color = (dword)clr;
+		savefile->ReadInt( m_Entities[i].flags );
 		savefile->ReadInt( m_Entities[i].entity );
 		savefile->ReadInt( m_Entities[i].classIdx );
 	}
@@ -1778,17 +1780,18 @@ void Lode::PrepareEntities( void )
 			if (tries >= MAX_TRIES) continue;
 
 			// compute a random color value
-			LodeEntity.color = m_Classes[i].color_max - m_Classes[i].color_min; 
-			LodeEntity.color.x = LodeEntity.color.x * RandomFloat() + m_Classes[i].color_min.x;
-			LodeEntity.color.y = LodeEntity.color.y * RandomFloat() + m_Classes[i].color_min.y;
-			LodeEntity.color.z = LodeEntity.color.z * RandomFloat() + m_Classes[i].color_min.z;
+			idVec3 color = m_Classes[i].color_max - m_Classes[i].color_min; 
+			color.x = color.x * RandomFloat() + m_Classes[i].color_min.x;
+			color.y = color.y * RandomFloat() + m_Classes[i].color_min.y;
+			color.z = color.z * RandomFloat() + m_Classes[i].color_min.z;
+			// and store it packed
+			LodeEntity.color = PackColor( color );
 
 			// choose skin randomly
 			LodeEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
 			//gameLocal.Printf( "LODE %s: Using skin %i.\n", GetName(), LodeEntity.skinIdx );
 			// will be automatically spawned when we are in range
-			LodeEntity.hidden = true;
-			LodeEntity.exists = false;
+			LodeEntity.flags = LODE_ENTITY_HIDDEN; // but not LODE_ENTITY_EXISTS nor LODE_ENTITY_FIRSTSPAWN
 			LodeEntity.entity = 0;
 			LodeEntity.classIdx = i;
 			// precompute bounds for a fast collision check
@@ -1836,9 +1839,8 @@ void Lode::PrepareEntities( void )
 				// support "random_skin" by looking at the actual set skin:
 				idStr skin = ent->GetSkin()->GetName();
 				LodeEntity.skinIdx = AddSkin( &skin );
-				// already exists
-				LodeEntity.hidden = false;
-				LodeEntity.exists = true;
+				// already exists, already visible and spawned
+				LodeEntity.flags = LODE_ENTITY_EXISTS + LODE_ENTITY_SPAWNED;
 				LodeEntity.entity = j;
 				LodeEntity.classIdx = i;
 				m_Entities.Append( LodeEntity );
@@ -1955,7 +1957,7 @@ void Lode::CombineEntities( void )
 		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
 		ofs.offset = idVec3(0,0,0); // the first copy is the original
-		ofs.color  = PackColor( m_Entities[i].color );
+		ofs.color  = m_Entities[i].color;
 		ofs.angles = m_Entities[i].angles;
 		ofs.lod = 0;
 		offsets.Append(ofs);
@@ -2021,7 +2023,7 @@ void Lode::CombineEntities( void )
 
 			ofs.offset = dist;
 			ofs.angles = m_Entities[j].angles;
-			ofs.color  = PackColor( m_Entities[j].color );
+			ofs.color  = m_Entities[j].color;
 			ofs.lod    = 0;
 			offsets.Append( ofs );
 
@@ -2135,6 +2137,10 @@ void Lode::CombineEntities( void )
 
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
+
+			// marks as using a pseudo class
+			m_Entities[i].flags += LODE_ENTITY_PSEUDO;
+
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
 			//gameLocal.Printf("LODE %s: Correction: %s\n", GetName(), idVec3( PseudoClass.hModel->Bounds()[0]).ToString() );
@@ -2223,7 +2229,8 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 	    args.Set("random_skin", "");
 
 		// set previously defined (possible random) color
-	    args.SetVector("_color", ent->color );
+		idVec3 clr; UnpackColor( ent->color, clr );
+	    args.SetVector("_color", clr );
 
 		// set floor to 0 to avoid moveables to be floored
 	    args.Set("floor", "0");
@@ -2245,8 +2252,13 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 			//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
 			//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
-			ent->exists = true;
-			ent->hidden = false;
+			if ((ent->flags & LODE_ENTITY_SPAWNED) == 0)
+			{
+				// never spawned before, do some special things with it:
+				// TODO: impulse_min/impulse_max etc
+			}
+			// preserve PSEUDO flag
+			ent->flags = LODE_ENTITY_SPAWNED + LODE_ENTITY_EXISTS + (ent->flags & LODE_ENTITY_PSEUDO);
 			ent->entity = ent2->entityNumber;
 			// and rotate
 			// TODO: Would it be faster to set this as spawnarg before spawn?
@@ -2355,7 +2367,7 @@ bool Lode::CullEntity( const int idx )
 	struct lode_entity_t* ent = &m_Entities[idx];
 	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
-	if ( !ent->exists )
+	if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 )
 	{
 		return false;
 	}
@@ -2395,8 +2407,9 @@ bool Lode::CullEntity( const int idx )
 
 		m_iNumExisting --;
 		m_iNumVisible --;
-		ent->exists = false;
-		ent->hidden = true;
+		// add visible, reset exists, keep the others
+		ent->flags += LODE_ENTITY_HIDDEN;
+		ent->flags &= (! LODE_ENTITY_EXISTS);
 		ent->entity = 0;
 
 		// TODO: SafeRemve?
@@ -2513,7 +2526,7 @@ void Lode::Think( void )
 
 			ent = &m_Entities[i];
 			lclass = &(m_Classes[ ent->classIdx ]);
-			if (!ent->exists && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
+			if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
 				if (SpawnEntity( i, true ))
 				{
@@ -2523,7 +2536,7 @@ void Lode::Think( void )
 			else
 			{
 				// cull entities that are outside "hide_distance + fade_out_distance + cullRange
-				if (ent->exists && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
+				if ( (ent->flags & LODE_ENTITY_EXISTS) != 0 && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame
 					if (CullEntity( i ))

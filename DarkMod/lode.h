@@ -38,7 +38,7 @@
 */
 
 #define LODE_DEBUG_MATERIAL_COUNT 13
-// list of debug materials to use
+/** List of debug materials to use for the LODE megamodels */
 const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
 	"debug_red",
 	"debug_blue",
@@ -55,13 +55,13 @@ const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
 	"debug_brown",
 };
 
-// Defines one material class that modulates how often entities appear on it:
+/** Defines one material class that modulates how often entities appear on it: */
 struct lode_material_t {
 	idStr					name;			//!< a part, like "grass", or the full name like "sand_dark"
 	float					probability;	//!< 0 .. 1.0
 };
 
-// Defines one entity class
+/* Defines one entity class for the LODE system */
 struct lode_class_t {
 	idStr					classname;		//!< Entity class to respawn entities
 	idList< int >			skins;			//!< index into skins array
@@ -125,22 +125,33 @@ struct lode_class_t {
 	CImage*					img;			//!< if map != "": ptr to the distribution image map
 };
 
-// Defines one area that inhibits entity spawning
+/** Defines one area that inhibits entity spawning */
 struct lode_inhibitor_t {
-	idVec3					origin;			// origin of the area
-	idBox					box;			// oriented box of the area
+	idVec3					origin;			//!< origin of the area
+	idBox					box;			//!< oriented box of the area
+};
+
+enum lode_entity_flags {
+	LODE_ENTITY_HIDDEN		= 0x01,
+	LODE_ENTITY_EXISTS		= 0x02,
+	LODE_ENTITY_SPAWNED		= 0x04,
+	LODE_ENTITY_PSEUDO		= 0x08
 };
 
 // Defines one entity to be spawned/culled
 struct lode_entity_t {
-	int						skinIdx;		// index into skin list, the final skin for this entity (might be randomly choosen)
-	idVec3					origin;			// (semi-random) origin
-	idAngles				angles;			// zyx (yaw, pitch, roll) (semi-random) angles
-	idVec3					color;			// (semi-random) color, computed from base/min/max colors of the class
-	bool					hidden;			// hidden?
-	bool					exists;			// false if culled
-	int						entity;			// nr of the entity if exists == true
-	int						classIdx;		// index into m_Classes
+	int						skinIdx;		//!< index into skin list, the final skin for this entity (might be randomly choosen)
+	idVec3					origin;			//!< (semi-random) origin
+	idAngles				angles;			//!< zyx (yaw, pitch, roll) (semi-random) angles
+	dword					color;			//!< (semi-random) color, computed from base/min/max colors of the class
+	int						flags;			/*!< flags:
+												0x01 hidden? 1 = hidden, 0 => visible
+												0x02 exists? 1 => exists, 0 => culled
+												0x04 0 => never spawned before, 1 => already spawned at least once
+												0x08 if 1, this entity has a pseudo class (e.g. it is a combined entity)
+											 */
+	int						entity;			//!< nr of the entity if exists == true
+	int						classIdx;		//!< index into m_Classes
 };
 
 extern const idEventDef EV_Deactivate;
