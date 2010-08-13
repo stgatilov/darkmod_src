@@ -640,10 +640,12 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	
 	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","1") ? false : true;
 
-	// never combine moveables
-	if ( ent->IsType( idMoveable::Type ) )
+	// never combine moveables, actors or lights
+	if ( ent->IsType( idMoveable::Type ) ||
+		 ent->IsType( idActor::Type ) ||
+		 ent->IsType( idLight::Type ) )
 	{
-		LodeClass.nocombine = false;
+		LodeClass.nocombine = true;
 	}
 
 	// only for pseudo classes
