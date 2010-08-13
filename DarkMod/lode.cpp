@@ -993,17 +993,6 @@ void Lode::Prepare( void )
 {	
 	lode_inhibitor_t LodeInhibitor;
 
-/*	if ( targets.Num() == 0 )
-	{
-		gameLocal.Warning( "LODE %s has no targets!", GetName() );
-		// TODO: somehow does not work?
-		BecomeInactive( TH_THINK );
-		// early out
-		m_iNumEntities = -1;
-		return;
-	}
-*/
-
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
 	m_fAvgSize = 0;
@@ -1084,6 +1073,9 @@ void Lode::Prepare( void )
 
 			// want it floored
 			args.Set("lode_floor", "1");
+
+			// but if it is a moveable, don't floor it
+			args.Set("floor", "0");
 
 			// set previously defined (possible random) skin
 			// spawn_classX => spawn_skinX
@@ -1408,8 +1400,6 @@ void Lode::PrepareEntities( void )
 						break;
 					case 1:
 						// cutoff - polar coordinates in the range (0..1.0, 0.360)
-						// TODO: The area for the entities is smaller than for "none" (square vs. circle
-						// 		 but same entity count), account for this?
 						// TODO: The random polar coordinates make it occupy less space in the center
 						// 		 than in the outer areas, but distrubute the entity distance equally.
 						//		 This leads to the center getting ever so slightly more entities then
@@ -1841,8 +1831,8 @@ void Lode::PrepareEntities( void )
 				// add this entity to our list
 				LodeEntity.origin = origin;
 				LodeEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
-				// TODO: support "random_skin" here by using GetCurrentSkin()
-				idStr skin = ent->spawnArgs.GetString("skin","");
+				// support "random_skin" by looking at the actual set skin:
+				idStr skin = ent->GetSkin()->GetName();
 				LodeEntity.skinIdx = AddSkin( &skin );
 				// already exists
 				LodeEntity.hidden = false;
@@ -2060,12 +2050,30 @@ void Lode::CombineEntities( void )
 
 		if (merged > 0)
 		{
+			// TODO: use all LOD stages here
+			idList<const idRenderModel*> LODs;
+			LODs.Clear();
+			LODs.Append( tempModel );
+
+			// load the clipmodel for the lowest LOD stage
+			idClipModel* lod_0_clip = new idClipModel();
+			bool clipLoaded = lod_0_clip->LoadModel( entityClass->modelname );
+
+			if (!clipLoaded)
+			{
+				gameLocal.Warning("LODE %s: Could not load clip model for %s.\n", GetName(), entityClass->modelname.c_str() );
+			}
+			else
+			{
+				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for model %s.\n", GetName(), lod_0_clip->GetBounds().ToString(), entityClass->modelname.c_str() );
+			}
 			// if we have more entities to merge than what will fit into the model,
 			// sort them based on distance and select the N nearest:
 			if (merged > maxModelCount)
 			{
 				// so we can select the N nearest
 				offsets.Sort( SortOffsetsByDistance );
+				gameLocal.Printf( " first %s second %s\n", offsets[0].offset.ToString(), offsets[1].offset.ToString() );
 				// truncate to only combine as much as we can:
 				offsets.SetNum( maxModelCount );
 			}
@@ -2078,6 +2086,18 @@ void Lode::CombineEntities( void )
 				if (d < maxModelCount)
 				{
 					m_Entities[ todo ].classIdx = -1;
+					// add the clipmodel to the multi-clipmodel
+					if (clipLoaded)
+					{
+						// TODO: if this comes last, it uses the already set origin and axis, but does this matter?
+						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1, d, true);
+						PseudoClass.physicsObj->SetOrigin(m_Entities[ todo ].origin);
+						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3());
+				        //physicsObj.SetClipModel(clipModel,1,numberOfWindings,true);
+						//physicsObj.SetOrigin(ent->GetPhysics()->GetOrigin(),numberOfWindings);
+						//physicsObj.SetAxis(ent->GetPhysics()->GetAxis(),numberOfWindings);
+
+					}
 				}
 				else
 				{
@@ -2089,13 +2109,8 @@ void Lode::CombineEntities( void )
 			// build the combined model
 			idVec3 corr = idVec3(0,0,0);
 
-			// TODO: use all LOD stages here
-			idList<const idRenderModel*> LODs;
-			LODs.Clear();
-
 			// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
 			corr -= tempModel->Bounds()[0];
-			LODs.Append( tempModel );
 
 			// Get the player pos
 			idPlayer *player = gameLocal.GetLocalPlayer();
@@ -2208,6 +2223,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 		// set previously defined (possible random) color
 	    args.SetVector("_color", ent->color );
 
+		// set floor to 0 to avoid moveables to be floored
+	    args.Set("floor", "0");
+
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");
 		// disable LOD checks on entities (we take care of this)
@@ -2235,8 +2253,6 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 			{
 				ent2->BecomeInactive( TH_THINK );
 			}
-			// TODO: activate physics for moveables
-
 			// Tell the entity to disable LOD on all it's attachments, and handle
 			// them ourselves.
 			//idStaticEntity *s_ent = static_cast<idStaticEntity*>( ent2 );
@@ -2273,7 +2289,6 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
-					// TODO: remove old physics object first
 					ent2->SetPhysics( lclass->physicsObj );
 				}
 				else
