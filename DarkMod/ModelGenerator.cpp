@@ -196,6 +196,10 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 							v->xyz *= a;
 							// then offset
 							v->xyz += op.offset;
+							// rotate normal and tangents
+							v->normal *= a;
+							v->tangents[0] *= a;
+							v->tangents[1] *= a;
 							// Set "per-entity" color if we have more than one entity:
 							v->SetColor( op.color );
 							/*
@@ -233,7 +237,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		        newSurf.geometry->tangentsCalculated = true;
 				// TODO: are these nec.?
 		        newSurf.geometry->facePlanesCalculated = false;
-		        newSurf.geometry->generateNormals = true;
+		        //newSurf.geometry->generateNormals = true;
+		        newSurf.geometry->generateNormals = false;
 				newSurf.geometry->numVerts = nV;
 				newSurf.geometry->numIndexes = nI;
 				if (NULL != offsets)

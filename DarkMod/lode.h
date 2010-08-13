@@ -96,9 +96,10 @@ struct lode_class_t {
 	bool					stack;			//!< if true, the entities can stack on top of each other
 	bool					noinhibit;		//!< if true, the entities of this class will not be inhibited
 	bool					nocombine;		//!< if true, the entities of this class will never be combined into megamodels
-	idVec3					color_base;		//!< base color
 	idVec3					color_min;		//!< random color minimum value
 	idVec3					color_max;		//!< random color maximum value
+	idVec3					impulse_min;	//!< random impulse on spawn for moveables
+	idVec3					impulse_max;	//!< random impulse on spawn for moveables
 	float					defaultProb;	//!< Probabiliy with that entity class will appear. Only used if
 											//!< materialNames is not empty, and then used as the default when
 											//!< no entry in this list matches the texture the entity stands on.

@@ -882,6 +882,15 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
     LodeClass.color_min.Clamp( idVec3(0,0,0), idVec3(1,1,1) );
     LodeClass.color_max.Clamp( LodeClass.color_min, idVec3(1,1,1) );
 
+	// apply random impulse?
+	// fall back to LODE "impulse_mxx", if not set, use 0 0 0
+	LodeClass.impulse_min  = ent->spawnArgs.GetVector("lode_impulse_min", spawnArgs.GetString("impulse_min", "0 -90 0"));
+	LodeClass.impulse_max  = ent->spawnArgs.GetVector("lode_impulse_max", spawnArgs.GetString("impulse_max", "0 90 360"));
+
+	// clamp to 0..360, -180..180, 0..1000
+    LodeClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9) );
+    LodeClass.impulse_max.Clamp( LodeClass.impulse_min, idVec3(1000,+90,360) );
+
 	// all data setup, append to the list
 	m_Classes.Append ( LodeClass );
 
@@ -1382,7 +1391,7 @@ void Lode::PrepareEntities( void )
 					// minimum origin distance (or entity will stick inside the other) is 2 * distance
 					// maximum bunch radius is 3 times (2 + 1) the radius
 					// TODO: make bunch_size and bunch_min_distance a spawnarg
-					LodeEntity.origin = idPolar3( 2 * distance + RandomFloat() * distance / 3, RandomFloat() * 360.0f, 0 ).ToVec3();
+					LodeEntity.origin = idPolar3( 2 * distance + RandomFloat() * distance / 3, 0, RandomFloat() * 360.0f ).ToVec3();
 					gameLocal.Printf ("LODE %s: Random origin from distance (%0.2f) %0.2f %0.2f %0.2f (%i)\n",
 							GetName(), distance, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z, bunchTarget );
 					// subtract the LODE origin, as m_Entities[ bunchTarget ].origin already contains it and we would
@@ -1408,15 +1417,15 @@ void Lode::PrepareEntities( void )
 						// 		 than in the outer areas, but distrubute the entity distance equally.
 						//		 This leads to the center getting ever so slightly more entities then
 						//		 the outer areas, compensate for this in the random generator formular?
-						LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloat(), 0, RandomFloat() * 360.0f ).ToVec3();
 						break;
 					case 2:
 						// square
-						LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloatSqr(), 0, RandomFloat() * 360.0f ).ToVec3();
 						break;
 					default:
 						// 3 - exp
-						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0 ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), 0, RandomFloat() * 360.0f ).ToVec3();
 						break;
 					}
 					if (m_Classes[i].falloff > 0 && m_Classes[i].falloff < 4)
@@ -1948,22 +1957,11 @@ void Lode::CombineEntities( void )
 
 		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
-		// if this class says no combine, skit it
+		// if this class says no combine, skip it
 		if (entityClass->nocombine)
 		{
 			continue;
 		}
-		offsets.Clear();
-		offsets.SetGranularity(64);	// we might have a few hundred entities in there
-
-		ofs.offset = idVec3(0,0,0); // the first copy is the original
-		ofs.color  = m_Entities[i].color;
-		ofs.angles = m_Entities[i].angles;
-		ofs.lod = 0;
-		offsets.Append(ofs);
-
-		tobedeleted.Clear();
-		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
 
 		tempModel = entityClass->hModel;
 		if (NULL == tempModel)
@@ -1976,6 +1974,18 @@ void Lode::CombineEntities( void )
 				continue;
 			}
 		}
+
+		offsets.Clear();
+		offsets.SetGranularity(64);	// we might have a few hundred entities in there
+
+		ofs.offset = idVec3(0,0,0); // the first copy is the original
+		ofs.color  = m_Entities[i].color;
+		ofs.angles = m_Entities[i].angles;
+		ofs.lod = 0;
+		offsets.Append(ofs);
+
+		tobedeleted.Clear();
+		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
 
 		// how many can we combine at most?
 		// TODO: use LOD 0 here for an worse-case estimate
@@ -2077,7 +2087,7 @@ void Lode::CombineEntities( void )
 			{
 				// so we can select the N nearest
 				offsets.Sort( SortOffsetsByDistance );
-				gameLocal.Printf( " first %s second %s\n", offsets[0].offset.ToString(), offsets[1].offset.ToString() );
+				// gameLocal.Printf( " first %s second %s third %s\n", offsets[0].offset.ToString(), offsets[1].offset.ToString(), offsets[2].offset.ToString() );
 				// truncate to only combine as much as we can:
 				offsets.SetNum( maxModelCount );
 			}
@@ -2094,13 +2104,9 @@ void Lode::CombineEntities( void )
 					if (clipLoaded)
 					{
 						// TODO: if this comes last, it uses the already set origin and axis, but does this matter?
-						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1, d, true);
-						PseudoClass.physicsObj->SetOrigin(m_Entities[ todo ].origin);
-						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3());
-				        //physicsObj.SetClipModel(clipModel,1,numberOfWindings,true);
-						//physicsObj.SetOrigin(ent->GetPhysics()->GetOrigin(),numberOfWindings);
-						//physicsObj.SetAxis(ent->GetPhysics()->GetAxis(),numberOfWindings);
-
+						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, d, true);
+						PseudoClass.physicsObj->SetOrigin(m_Entities[ todo ].origin, d);
+						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), d);
 					}
 				}
 				else
@@ -2252,13 +2258,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 			//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
 			//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
-			if ((ent->flags & LODE_ENTITY_SPAWNED) == 0)
-			{
-				// never spawned before, do some special things with it:
-				// TODO: impulse_min/impulse_max etc
-			}
-			// preserve PSEUDO flag
-			ent->flags = LODE_ENTITY_SPAWNED + LODE_ENTITY_EXISTS + (ent->flags & LODE_ENTITY_PSEUDO);
+
 			ent->entity = ent2->entityNumber;
 			// and rotate
 			// TODO: Would it be faster to set this as spawnarg before spawn?
@@ -2303,6 +2303,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
+					//ent2->UnlinkClipModel();
 					ent2->SetPhysics( lclass->physicsObj );
 				}
 				else
@@ -2320,37 +2321,64 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 						// should not happen
 						r->bounds.Zero();
 					}
+
 					// clipmodel will be already correct:
 					// ent2->GetPhysics()->SetClipModel( ... );
-				}
-				ent2->Present();
+				
+					// TODO: does not work yet:
+					// update the clip model, too, otherwise the "dummy object"'s clipmodel lingers around
+		/*			idClipModel *clipmodel = new idClipModel( ent2->GetModelDefHandle() );
 
+					//if (clipmodel && clipmodel->IsTraceModel() && ent2->GetPhysics())
+					// is not a trace model, so will this still work?
+					if (clipmodel && ent2->GetPhysics())
+					{
+						// need to set origin on the clipmodel first
+						clipmodel->Translate( ent->origin );
+						clipmodel->Rotate( ent->angles.ToRotation() );
+						gameLocal.Printf("LODE %s: Setting new clipmodel, origin %s.\n", GetName(), clipmodel->GetOrigin().ToString() );
+						ent2->GetPhysics()->SetClipModel( clipmodel, 1.0f );		// density 1.0f?
+					}
+				*/
+				}
 				//ent2->BecomeActive( TH_UPDATEVISUALS );
 
-				// TODO: does not work yet:
-				// update the clip model, too, otherwise the "dummy object"'s clipmodel lingers around
-				idClipModel *clipmodel = new idClipModel( ent2->GetModelDefHandle() );
-				//if (clipmodel && clipmodel->IsTraceModel() && ent2->GetPhysics())
-				// is not a trace model, so will this still work?
-				if (clipmodel && ent2->GetPhysics())
-				{
-					// need to set origin on the clipmodel first
-					clipmodel->Translate( ent->origin );
-					clipmodel->Rotate( ent->angles.ToRotation() );
-					gameLocal.Printf("LODE %s: Setting new clipmodel, origin %s.\n", GetName(), clipmodel->GetOrigin().ToString() );
-					ent2->GetPhysics()->SetClipModel( clipmodel, 1.0f );		// density 1.0f?
-				}
+				//ent2->Present();
 
 				// short version of "UpdateVisuals()"
 				// set to invalid number to force an update the next time the PVS areas are retrieved
 				ent2->ClearPVSAreas();
 			}
 			else
-			// might be a moveable?
-			if ( ent2->IsType( idMoveable::Type ) ) {
-				idMoveable *ment = static_cast<idMoveable*>( ent2 );
-				ment->ActivatePhysics( this );
+			{
+				// might be a moveable?
+				if ( ent2->IsType( idMoveable::Type ) ) {
+					idMoveable *ment = static_cast<idMoveable*>( ent2 );
+					ment->ActivatePhysics( this );
+
+					// first spawn ever?
+					if ((ent->flags & LODE_ENTITY_SPAWNED) == 0)
+					{
+				   		// add a random impulse
+
+						// spherical coordinates: radius (magnitude), theta (inclination +-90°), phi (azimut 0..369°)
+						idVec3 impulse = lclass->impulse_max - lclass->impulse_min; 
+						impulse.x = impulse.x * RandomFloat() + lclass->impulse_min.x;
+						impulse.y = impulse.y * RandomFloat() + lclass->impulse_min.y;
+						impulse.z = impulse.z * RandomFloat() + lclass->impulse_min.z;
+						// gameLocal.Printf("LODE %s: Applying random impulse (polar %s, vec3 %s) to entity.\n", GetName(), impulse.ToString(), idPolar3( impulse ).ToVec3().ToString() );
+						ent2->GetPhysics()->SetLinearVelocity( 
+							// ent2->GetPhysics()->GetLinearVelocity() +
+							idPolar3( impulse ).ToVec3() );
+						//ent2->ApplyImpulse( this, 0, ent->origin, idPolar3( impulse ).ToVec3() );
+					}
+
+				}
 			}
+
+			// preserve PSEUDO flag
+			ent->flags = LODE_ENTITY_SPAWNED + LODE_ENTITY_EXISTS + (ent->flags & LODE_ENTITY_PSEUDO);
+
 			return true;
 		}
 	}
