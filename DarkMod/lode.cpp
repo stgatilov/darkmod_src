@@ -273,7 +273,8 @@ void Lode::ClearClasses( void )
 		}
 		if (NULL != m_Classes[i].physicsObj)
 		{
-			delete m_Classes[i].physicsObj;
+			// avoid double free:
+			//delete m_Classes[i].physicsObj;
 			m_Classes[i].physicsObj = NULL;
 		}
 		if (NULL != m_Classes[i].megamodel)
@@ -2292,7 +2293,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				// free the old, empty model
 				if (r->hModel)
 				{
-					gameLocal.Printf("LODE %s: Freeing old func_static model.\n", GetName() );
+					//gameLocal.Printf("LODE %s: Freeing old func_static model.\n", GetName() );
 					ent2->FreeModelDef();
 					r->hModel = NULL;
 				}
@@ -2303,7 +2304,6 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
-					//ent2->UnlinkClipModel();
 					ent2->SetPhysics( lclass->physicsObj );
 				}
 				else
@@ -2415,12 +2415,13 @@ bool Lode::CullEntity( const int idx )
 		{
 			// is just a pointer to a rendermodel
 			lclass->hModel = NULL;
-			// mark as inactive (because the entity is no longer existing)
-			// TODO: cl.megaModel.stopUpdates();
+			// mark as inactive and remove changes because the entity will be no longer existing
+			lclass->megamodel->StopUpdating();
+			lclass->megamodel->ClearChanges();
 			// avoid freeing the composed model
 			ent2->GetRenderEntity()->hModel = NULL;
-			// TODO: either swap physics object or set to NULL to avoid freeing
-			// 		 the object from the pseudo class
+			// Avoid freeing the combied physics (clip)model
+			ent2->SetPhysics(NULL);
 		}
 		else
 		{

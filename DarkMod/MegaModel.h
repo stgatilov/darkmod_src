@@ -61,6 +61,16 @@ public:
 	*/
 	bool					Update();
 
+	/**
+	* The entity presenting/using this model is going to get culled, so stop all updates.
+	*/
+	void					StopUpdating();
+
+	/**
+	* The entity presenting/using this model is going to get culled, so remove all changes.
+	*/
+	void					ClearChanges();
+
 private:
 
 	idRenderModel*				m_hModel;			//!< ptr to the combined model

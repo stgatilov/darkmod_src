@@ -147,8 +147,34 @@ bool CMegaModel::Update()
 
 	m_iNextUpdate = gameLocal.time + m_iUpdateTime;
 
-	// TODO:
+	// TODO: update the model
 	return false;
+}
+
+/*
+===============
+CMegaModel::StopUpdating
+
+The entity with this megamodel will be hidden, so stop updating.
+===============
+*/
+void CMegaModel::StopUpdating()
+{
+	m_bActive = false;
+	m_iNextUpdate = gameLocal.time;
+}
+
+/*
+===============
+CMegaModel::ClearChanges
+
+The entity with this megamodel will get destroyed, so we can throw away
+all changes.
+===============
+*/
+void CMegaModel::ClearChanges()
+{
+	m_Changes.Clear();
 }
 
 /*
