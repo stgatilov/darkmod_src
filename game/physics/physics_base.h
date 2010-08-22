@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -131,10 +132,11 @@ public:	// common physics interface
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
 #ifdef MOD_WATERPHYSICS
-	idPhysics_Liquid *		GetWater();				// MOD_WATERPHYSICS
-	void					SetWater( idPhysics_Liquid *e );	// MOD_WATERPHYSICS
-	float					SetWaterLevelf();		// MOD_WATERPHYSICS
-	float					GetWaterLevelf() const;	// MOD_WATERPHYSICS
+	idPhysics_Liquid *		GetWater();												// MOD_WATERPHYSICS
+	float					GetWaterMurkiness() const;								// TDM Tels
+	void					SetWater( idPhysics_Liquid *e, const float murkiness );	// MOD_WATERPHYSICS
+	float					SetWaterLevelf();										// MOD_WATERPHYSICS
+	float					GetWaterLevelf() const;									// MOD_WATERPHYSICS
 #endif	// MOD_WATERPHYSICS
 
 protected:
@@ -148,6 +150,8 @@ protected:
 #ifdef MOD_WATERPHYSICS
 // the water object the object is in, we use this to check density/viscosity
 	idPhysics_Liquid		*water;					// MOD_WATERPHYSICS
+// TDM Tels: The murkiness of this water, 0 => clear as crystal, 1 => opaque
+	float					m_fWaterMurkiness;
 #endif
 
 protected:

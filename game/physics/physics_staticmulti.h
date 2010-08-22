@@ -132,13 +132,13 @@ public:	// common physics interface
 	// just some functions to avoid making this class abstract.  Water has no effect on a static object
 	// so it sort of makes sense these functions do nothing.
 	virtual idPhysics_Liquid	*GetWater() { return NULL; } // MOD_WATERPHYSICS
-	virtual void				SetWater( idPhysics_Liquid *e ) {} // MOD_WATERPHYSICS
+	virtual void				SetWater( idPhysics_Liquid *e, const float murkiness ) {} // MOD_WATERPHYSICS
 #endif
 
 protected:
 	idEntity *				self;					// entity using this physics object
 	idList<staticPState_t>	current;				// physics state
-	idList<idClipModel *>	clipModels;				// collision model
+	idList<idClipModel *>	clipModels;				// collision model(s)
 
 	// master
 	bool					hasMaster;

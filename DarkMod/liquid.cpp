@@ -82,7 +82,7 @@ idLiquid::~idLiquid()
 	{
 		if (ent->GetPhysics()->GetWater() == &physicsObj)
 		{
-			ent->GetPhysics()->SetWater(NULL);
+			ent->GetPhysics()->SetWater(NULL, 0.0f);
 		}
 	}
 }

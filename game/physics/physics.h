@@ -182,7 +182,7 @@ public:	// common physics interface
 
 	virtual idPhysics_Liquid	*GetWater() = 0; // MOD_WATERPHYSICS
 
-	virtual void				SetWater( idPhysics_Liquid *e ) = 0; // MOD_WATERPHYSICS
+	virtual void				SetWater( idPhysics_Liquid *e, const float murkiness) = 0; // MOD_WATERPHYSICS
 
 #endif
 

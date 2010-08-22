@@ -443,7 +443,7 @@ void idPhysics_Actor::SetWaterLevel( bool updateWaterLevelChanged ) {
 		}
 	}
 	else
-		this->SetWater(NULL);
+		this->SetWater(NULL, 0.0f);
 
 	if (updateWaterLevelChanged)
 	{

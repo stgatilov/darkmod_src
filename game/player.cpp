@@ -9169,6 +9169,16 @@ int idPlayer::ProcessLightgem(bool processing)
 	value += cv_lg_adjust.GetFloat();
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
 
+	// Tels: #2324 Water should decrease visibility
+	// Subtract the adjustment value from the water body we are in so we can
+	// have clear water, murky water etc.
+	if (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD)
+	{
+		float murkiness = physicsObj.GetWaterMurkiness();
+		value -= murkiness;
+		// gameLocal.Printf( "Water murkiness %0.2f, final value: %0.2f\n", murkiness, value);
+	}
+
 	m_fColVal = value;
 	m_LightgemValue = int(DARKMOD_LG_MAX * value);
 

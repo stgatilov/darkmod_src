@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -737,6 +738,7 @@ private:
 	float					liquidMass;					// mass of object in a liquid MOD_WATERPHYSICS
 	float					invLiquidMass;				// inverse liquid mass MOD_WATERPHYSICS
 	float					waterLevel;					// percent of body in water MOD_WATERPHYSICS
+	float					m_fWaterMurkiness;			// Tels: murkiness of the water body this entity is in
 #endif 	// MOD_WATERPHYSICS
 	idVec3					centerOfMass;				// center of mass of body
 	idMat3					inertiaTensor;				// inertia tensor

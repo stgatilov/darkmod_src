@@ -237,7 +237,7 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 		next.i.angularMomentum += (bCenter - next.i.position).Cross(rForce);
 
 		// take the body out of water if it's not in water.
-		if( !inWater ) this->SetWater(NULL);
+		if( !inWater ) this->SetWater(NULL, 0.0f);
 	} else 
 #endif
 	next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
@@ -563,7 +563,7 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 					}
 				}
 
-				this->SetWater(liquid);
+				this->SetWater(liquid, ent->spawnArgs.GetFloat("murkiness", "0"));
 				this->water->Splash(this->self,this->volume,info,waterCollision);
 			}
 		}
@@ -883,6 +883,7 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	inverseInertiaTensor.Identity();
 #ifdef MOD_WATERPHYSICS
 	this->water = NULL;
+	this->m_fWaterMurkiness = 0.0f;
 #endif
 
 	// use the least expensive euler integrator
