@@ -2049,6 +2049,14 @@ void Lode::CombineEntities( void )
 				PseudoClass.classname = entityClass->classname;
 				PseudoClass.hModel = NULL;
 				PseudoClass.physicsObj = new idPhysics_StaticMulti;
+
+				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL );
+	
+				// TODO:	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
+				//	// SR CONTENTS_RESONSE FIX
+				//	if( m_StimResponseColl->HasResponse() )
+				//		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 				PseudoClass.megamodel = NULL;
 			}
 			// for this entity
@@ -2092,6 +2100,13 @@ void Lode::CombineEntities( void )
 				// truncate to only combine as much as we can:
 				offsets.SetNum( maxModelCount );
 			}
+
+			if (clipLoaded)
+			{
+				// TODO: expose this:
+				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
+				//clipModels.SetNum( 1 );
+			}
 			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)tobedeleted.Num();
 			for (unsigned int d = 0; d < n; d++)
@@ -2104,9 +2119,12 @@ void Lode::CombineEntities( void )
 					// add the clipmodel to the multi-clipmodel
 					if (clipLoaded)
 					{
+						// TODO: this does not help: idClipModel *clipModel = new idClipModel( lod_0_clip );
+
 						// TODO: if this comes last, it uses the already set origin and axis, but does this matter?
 						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, d, true);
-						PseudoClass.physicsObj->SetOrigin(m_Entities[ todo ].origin, d);
+
+						PseudoClass.physicsObj->SetOrigin(offsets[d].offset, d);
 						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), d);
 					}
 				}
