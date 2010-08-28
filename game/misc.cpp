@@ -1550,7 +1550,11 @@ void idStaticEntity::Spawn( void ) {
 		BecomeActive( TH_THINK );
 	}
 
-	ParseLODSpawnargs();
+	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
+		{
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+		}
 }
 
 /*

@@ -236,7 +236,12 @@ void idMoveable::Spawn( void ) {
 
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
-	ParseLODSpawnargs();
+	// parse LOD spawnargs
+	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
+		{
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+		}
 
 	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
 }

@@ -783,21 +783,25 @@ void idEntity::FixupLocalizedStrings()
 idEntity::ParseLODSpawnargs
 
 Tels: Look at dist_think_interval, lod_1_distance etc. and fill the m_LOD
-	  data.
+	  data. The passed in dict is usually just this->spawnArgs, but can also
+	  be from a completely different entity def so we can parse the spawnargs
+	  without having to actually have the entity spawned. The fRandom
+	  value is used to selectively hide some entities when hide_probability
+	  is set, and should be between 0 and 1.0.
 ================
 */
-void idEntity::ParseLODSpawnargs(void)
+bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 {
 	m_LOD = NULL;
 
-	int d = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
+	int d = (int) (1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	m_DistCheckTimeStamp = 0;
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
 	if (d == 0)
 	{
 		// no LOD wanted
-		return;
+		return false;
 	}
 
 	// allocate new memory
@@ -807,10 +811,11 @@ void idEntity::ParseLODSpawnargs(void)
 
 	m_SkinLODCur = 0;
 	m_ModelLODCur = 0;
+	m_LODLevel = 0;
 
-	m_LOD->noshadowsLOD = spawnArgs.GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
 
-	float fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
+	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
 	idStr temp;
 	// distance dependent LOD from this point on:
@@ -822,7 +827,7 @@ void idEntity::ParseLODSpawnargs(void)
 	for (int i = 1; i < LOD_LEVELS; i++)
 	{
 		sprintf(temp, "lod_%i_distance", i);
-		m_LOD->DistLODSq[i] = spawnArgs.GetFloat( temp, "0.0" );
+		m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
 		if (i == LOD_LEVELS - 1)
 		{
 			// last distance is named differently so you don't need to know how many levels the code supports:
@@ -830,8 +835,7 @@ void idEntity::ParseLODSpawnargs(void)
 
 			// compute a random number and check it against the hide probability spawnarg
 			// do this only once at setup time, so the setting is stable during runtime
-			float fHideProbability = spawnArgs.GetFloat( "lod_hide_probability", "1.0" );
-			float fRandom = gameLocal.random.RandomFloat();	// 0.0 .. 1.0
+			float fHideProbability = dict->GetFloat( "lod_hide_probability", "1.0" );
 			if (fRandom > fHideProbability)
 			{
 				// disable hiding
@@ -840,7 +844,7 @@ void idEntity::ParseLODSpawnargs(void)
 			}
 
 			// do we have a lod_fadeout_range?
-			m_LOD->fLODFadeOutRange = spawnArgs.GetFloat( "lod_fadeout_range", "0.0" );
+			m_LOD->fLODFadeOutRange = dict->GetFloat( "lod_fadeout_range", "0.0" );
 
 			if (m_LOD->fLODFadeOutRange < 0)
 			{
@@ -854,7 +858,7 @@ void idEntity::ParseLODSpawnargs(void)
 			}
 
 			// do we have a lod_fadein_range?
-			m_LOD->fLODFadeInRange = spawnArgs.GetFloat( "lod_fadein_range", "0.0" );
+			m_LOD->fLODFadeInRange = dict->GetFloat( "lod_fadein_range", "0.0" );
 
 			if (m_LOD->fLODFadeInRange < 0)
 			{
@@ -891,21 +895,27 @@ void idEntity::ParseLODSpawnargs(void)
 			if (i < LOD_LEVELS - 1)
 			{
 				sprintf(temp, "model_lod_%i", i);
-				m_LOD->ModelLOD[i] = spawnArgs.GetString( temp );
+				m_LOD->ModelLOD[i] = dict->GetString( temp );
 				if (m_LOD->ModelLOD[i].Length() == 0) { m_LOD->ModelLOD[i] = m_LOD->ModelLOD[0]; }
 
 				sprintf(temp, "skin_lod_%i", i);
-				m_LOD->SkinLOD[i] = spawnArgs.GetString( temp );
+				m_LOD->SkinLOD[i] = dict->GetString( temp );
 				if (m_LOD->SkinLOD[i].Length() == 0) { m_LOD->SkinLOD[i] = m_LOD->SkinLOD[0]; }
 
-				// set the right bit
+				// set the right bit for noshadows
 				sprintf(temp, "noshadows_lod_%i", i );
 									  // 1, 2, 4, 8, 16 etc
-				m_LOD->noshadowsLOD |= (spawnArgs.GetBool( temp, "0" ) ? 1 : 0) << i;
+				m_LOD->noshadowsLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
+
+//				// set the right bit for "standin". "standins" are models that always rotate in
+//				// XY to face the player, but unlike particles, don't tilt with the view
+//				sprintf(temp, "standin_lod_%i", i );
+//									  // 1, 2, 4, 8, 16 etc
+//				m_LOD->standinLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
 
 				// setup the manual offset for this LOD stage (needed to align some models)
 				sprintf(temp, "offset_lod_%i", i);
-				m_LOD->OffsetLOD[i] = m_LOD->OffsetLOD[0] + spawnArgs.GetVector( temp, "0,0,0" );
+				m_LOD->OffsetLOD[i] = m_LOD->OffsetLOD[0] + dict->GetVector( temp, "0,0,0" );
 			}
 		// else hiding needs no offset
 
@@ -913,7 +923,7 @@ void idEntity::ParseLODSpawnargs(void)
 		}
 	}
 
-	m_LOD->bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
+	m_LOD->bDistCheckXYOnly = dict->GetBool( "dist_check_xy", "0" );
 
 	// add some phase diversity to the checks so that they don't all run in one frame
 	// make sure they all run on the first frame though, by initializing m_TimeStamp to
@@ -922,7 +932,7 @@ void idEntity::ParseLODSpawnargs(void)
 	m_DistCheckTimeStamp = gameLocal.time - (int) (m_LOD->DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 
 	// setup level 0 (aka "The one and only original")
-	m_LOD->ModelLOD[0] = spawnArgs.GetString( "model" );
+	m_LOD->ModelLOD[0] = dict->GetString( "model" );
 	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
 	if ( renderEntity.customSkin )
 	{
@@ -935,10 +945,7 @@ void idEntity::ParseLODSpawnargs(void)
 
 	//gameLocal.Printf (" LOD default model %s default skin %s\n", m_ModelLODCur.c_str(), m_SkinLODCur.c_str() );
 
-	// Have to start thinking if we're distance dependent
-	BecomeActive( TH_THINK );
-
-	return;
+	return true;
 }
 
 /*
@@ -1097,8 +1104,12 @@ void idEntity::Spawn( void )
 	m_StartBounds = GetPhysics()->GetAbsBounds();
 	m_AbsenceStatus = false;
 
-	// has LOD data?
-	ParseLODSpawnargs();
+	// parse LOD spawnargs
+	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
+		{
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+		}
 }
 
 /*

@@ -479,9 +479,10 @@ public:
 	virtual void			LoadModels( void );
 
 	/**
-	* Parse the LOD spawnargs and fill the m_LOD and m_LODData structs if nec.
+	* Parse the LOD spawnargs and fill the m_LOD struct  if nec.
+	* Returns true if this entity (or the passed in entity def) has LOD.
 	*/
-	void					ParseLODSpawnargs( void );
+	bool					ParseLODSpawnargs( const idDict* dict, const float fRandom);
 
 	/**
 	 * Tels: Stop LOD changes. If doTeam is true, also disables it on teammembers.
