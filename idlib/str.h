@@ -184,7 +184,7 @@ public:
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
 	// Tels: Count how often c occurs between start and end
 	int					Count( const char c, int start = 0, int end = -1 ) const;
-	// Tels: Given a list like "abc, def" (where c can be changed), returns one part of it randomly
+	// Tels: Given a list like "abcX def" (where X = ',' but can be changed), returns one part of it randomly
 	idStr				RandomPart( const char c = ',') const;
 	bool				Filter( const char *filter, bool casesensitive ) const;
 	int					Last( const char c ) const;						// return the index to the last occurance of 'c', returns -1 if not found
