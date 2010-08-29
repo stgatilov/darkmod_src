@@ -1917,24 +1917,37 @@ const char * idEntity::GetName( void ) const {
 
 /***********************************************************************
 
-	Thinking
+ Thinking about LOD
 	
+ We pass a ptr to the current data, so that the LODE can let the spawned
+ entities think while still keeping their LOD data only once per class.
+
+ This routine will only modify:
+  * m_LODLevel
+  * m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+
+ It will also return the new alpha value for this entity, where 0.0f means
+ hidden and alpha > 0 means visible.
+
+ The caller is responsible for calling SetAlpha() and Hide/Show on the
+ proper entity (e.g. the entity thet the m_LOD is for) as well as
+ switching the model and skin.
+
 ***********************************************************************/
-
-// We pass a ptr to the current data, so that the LODE can let the spawned
-// entities think while still keeping their LOD data only once per class.
-void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
+float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
 {
-	bool bWithinDist = false;
-
 	// have no LOD
 	if (NULL == m_LOD)
 	{
-		return;
+		return false;
 	}
+
+	bool bWithinDist = false;
 
 	// by default fully visible
 	float fAlpha = 1.0f;
+
+//	gameLocal.Warning("ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", m_LOD, deltaSq);
 
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
@@ -1942,7 +1955,7 @@ void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 		// skip this level
 		if (m_LOD->DistLODSq[i] <= 0)
 		{
-			//gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_DistLODSq[i]);
+//			gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
 			continue;
 		}
 
@@ -1978,21 +1991,11 @@ void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 					//gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
 					if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
 					{
-						// just hide
-						if (!fl.hidden)
-						{
-							Hide();
-						}
+						fAlpha = 0.0f;
 					}
 					else
 					{
 						fAlpha = 1.0f - ( (deltaSq - m_LOD->DistLODSq[i]) / m_LOD->fLODFadeOutRange );
-						if (fl.hidden)
-							{
-							Show();
-							}
-						//gameLocal.Printf ("%s fading out to %0.2f\n", GetName(), fAlpha);
-						SetAlpha( fAlpha, true );
 					}
 					// set the timestamp so we think the next frame again to get a smooth blend:
 					m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
@@ -2000,29 +2003,23 @@ void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				else
 				{
 					// just hide if outside
-					if (!fl.hidden)
-					{
-						//gameLocal.Printf ("%s hiding due to out-of-range %0.2f\n", GetName(), deltaSq);
-						Hide();
-					}
+					fAlpha = 0.0f;
 				}
 				m_LODLevel = i;
 
-				bWithinDist = false;
-				// early out
-				i = LOD_LEVELS;
-				continue;
+				// early out, we found the right level and switched
+				return true;
 			}
 		}
 
-		//gameLocal.Printf ("%s passed LOD %i distance check %f (%f), inside?: %i (old level %i)\n", GetName(), i, m_DistLODSq[i], deltaSq, bWithinDist, m_LODLevel);
+//		gameLocal.Printf ("%s passed LOD %i distance check %f (%f), inside?: %i (old level %i)\n", GetName(), i, m_LOD->DistLODSq[i], deltaSq, bWithinDist, m_LODLevel);
 
 		// don't do anything when we are already at that level
 		if ( bWithinDist && m_LODLevel != i)
 		{
 			m_LODLevel = i;
 
-			// LOD level number i, switch model, skin, noshadows etc
+			// LOD level number i
 			// TODO: Hiding a LOD entity temp. completely would fail,
 			//		 as the LOD levels < LAST_LOD_LEVEL would show it again.
 
@@ -2032,20 +2029,11 @@ void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				if (deltaSq < (m_LOD->DistLODSq[0] - m_LOD->fLODFadeInRange))
 				{
 					fAlpha = 0.0f;	// hide
-					if (!fl.hidden)
-					{
-						Hide();
-					}
 				}
 				else
 				{
 					fAlpha = (deltaSq - (m_LOD->DistLODSq[0] - m_LOD->fLODFadeInRange)) / m_LOD->fLODFadeOutRange;
-					if (fl.hidden)
-					{
-						Show();
-					}
 					//gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
-					SetAlpha( fAlpha, true );
 				}
 				// set the timestamp so we think the next frame again to get a smooth blend:
 				m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
@@ -2053,42 +2041,71 @@ void idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 			else
 			{
 				// visible in all other levels
-				if (fl.hidden)
-				{
-					//gameLocal.Printf("Showing %s again (LOD %i)\n", GetName(), i);
-					SetAlpha( 1.0f, fAlpha );
-					Show();
-				}
+				fAlpha = 1.0f;	// show
 			}
 
-			if (m_ModelLODCur != i)
-			{
-				//gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-				//	GetName(), i, m_ModelLOD[i].c_str(), m_OffsetLOD[i].x, m_OffsetLOD[i].y, m_OffsetLOD[i].z );
-				SetModel( m_LOD->ModelLOD[i] );
-				m_ModelLODCur = i;
-				SetOrigin( m_LOD->OffsetLOD[i] );
-			}
-
-			if ( m_SkinLODCur != i)
-			{
-				const idDeclSkin *skinD = declManager->FindSkin( m_LOD->SkinLOD[i] );
-				if (skinD)
-				{
-					SetSkin( skinD );
-				}
-				m_SkinLODCur = i;
-			}
-			renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << i)) > 0 ? 1 : 0;
-
-			// abort the loop, we found the right level (micro-optimize)
-			i = LOD_LEVELS;
+			// We found the right level and switched to it
+			return true;
 		}
 
 	// end for all LOD levels
 	}
 
-	return;
+	return false;
+}
+
+/* Tels:
+   
+   Call ThinkAboutLOD, then do the nec. things like calling Hide()/Show(), SetAlpha() etc.
+*/
+bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
+{
+	// remember the current level
+	int oldLODLevel = m_LODLevel;
+	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
+
+	if (fAlpha == 0.0f && !fl.hidden)
+	{
+		Hide();
+	}
+	else
+	{
+		if (fl.hidden)
+		{
+			//gameLocal.Printf("Showing %s again (LOD %i)\n", GetName(), i);
+			Show();
+		}
+		SetAlpha( fAlpha, true );
+	}
+
+	if (m_LODLevel != oldLODLevel)
+	{
+		if (m_ModelLODCur != m_LODLevel)
+			{
+				//gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+				//	GetName(), i, m_ModelLOD[i].c_str(), m_OffsetLOD[i].x, m_OffsetLOD[i].y, m_OffsetLOD[i].z );
+				SetModel( m_LOD->ModelLOD[m_LODLevel] );
+				m_ModelLODCur = m_LODLevel;
+				SetOrigin( m_LOD->OffsetLOD[m_LODLevel] );
+			}
+
+		if ( m_SkinLODCur != m_LODLevel)
+		{
+			const idDeclSkin *skinD = declManager->FindSkin( m_LOD->SkinLOD[m_LODLevel] );
+			if (skinD)
+			{
+				SetSkin( skinD );
+			}
+			m_SkinLODCur = m_LODLevel;
+		}
+		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
+
+		// switched LOD
+		return true;
+	}
+
+	// no switch done
+	return false;
 }
 
 /*
@@ -2118,22 +2135,17 @@ void idEntity::Think( void )
 
 		m_DistCheckTimeStamp = gameLocal.time;
 
-		idVec3 delta, vGravNorm;
-
-		// TODO: What to do about player looking thru spyglass?
-		delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-		delta -= GetPhysics()->GetOrigin();
-
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 		if( m_LOD->bDistCheckXYOnly )
 		{
-			vGravNorm = GetPhysics()->GetGravityNormal();
+			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
 			delta -= (vGravNorm * delta) * vGravNorm;
 		}
 
-		// multiply with the user LOD bias setting, and cache that the result:
+		// multiply with the user LOD bias setting, and return the result:
 		float deltaSq = delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat());
 
-		ThinkAboutLOD( m_LOD, deltaSq );
+		SwitchLOD( m_LOD, deltaSq );
 	}
 	Present();
 }
