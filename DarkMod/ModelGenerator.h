@@ -37,6 +37,17 @@ typedef struct {
 	int					lod; 	// which LOD model stage to use?
 } model_ofs_t;
 
+// When combining different models (e.g. different LOD stages), every model
+// can have different source surfaces, that map to different target surfaces.
+// For each of these target surfaces we need to track a few information and
+// this struct holds them:
+
+typedef struct {
+	int					numVerts;
+	int					numIndexes;
+	modelSurface_s		surf;		// the actual new surface
+} model_target_surf;
+
 class CModelGenerator {
 public:
 	//CLASS_PROTOTYPE( CModelGenerator );
@@ -62,8 +73,8 @@ public:
 	* case the memory of the new model needs to be freed differently, of course :)
 	* If shader is != NULL, all shaders of the models will be switched to this shader.
 	*/
-	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName, bool dupData = true,
-												const idList<model_ofs_t>* offsets = NULL, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL,
+	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName,
+												const idList<model_ofs_t>* offsets, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL,
 												const idMaterial *shader = NULL);
 
 	/**
