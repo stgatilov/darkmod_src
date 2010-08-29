@@ -223,6 +223,11 @@ private:
 	void				PrepareEntities( void );
 
 	/**
+	* Compute the LOD distance based on delta vector and entity LOD data (like xydistcheckonly)
+	*/
+	float				LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const;
+
+	/**
 	* Compute the LOD level for this entity based on distance to player.
 	*/
 	int					ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const;

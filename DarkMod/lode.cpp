@@ -1900,16 +1900,19 @@ int SortOffsetsByDistance( const model_ofs_t *a, const model_ofs_t *b ) {
 	return 0;
 }
 
-int Lode::ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const
+// compute the LOD distance for this delta vector and for this entity
+float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 {
-	// entity has no LOD stages
-	if (NULL == m_LOD)
+	if( m_LOD && m_LOD->bDistCheckXYOnly )
 	{
-		return 0;
+		// TODO: do this per-entity
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		delta -= (vGravNorm * delta) * vGravNorm;
 	}
 
-	// TODO:
-	return 0;
+	// multiply with the user LOD bias setting, and return the result:
+	float bias = cv_lod_bias.GetFloat();
+	return delta.LengthSqr() / (bias * bias);
 }
 
 void Lode::CombineEntities( void )
@@ -2023,9 +2026,17 @@ void Lode::CombineEntities( void )
 		offsets.SetGranularity(64);	// we might have a few hundred entities in there
 
 		ofs.offset = idVec3(0,0,0); // the first copy is the original
-		ofs.color  = m_Entities[i].color;
 		ofs.angles = m_Entities[i].angles;
-		ofs.lod    = ComputeLODLevel( entityClass->m_LOD, m_Entities[i].origin - playerPos );
+
+		// compute the alpha value and the LOD level
+		float fAlpha  = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+		ofs.lod	   = m_LODLevel;
+//		gameLocal.Warning("LODE %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
+		// TODO: pack in the correct alpha value
+		ofs.color  = m_Entities[i].color;
+		// restore our value (it is not used, anyway)
+		m_LODLevel = 0;
+
 		offsets.Append(ofs);
 
 		tobedeleted.Clear();
@@ -2077,8 +2088,16 @@ void Lode::CombineEntities( void )
 
 			ofs.offset = dist;
 			ofs.angles = m_Entities[j].angles;
+
+			// compute the alpha value and the LOD level
+			float fAlpha = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+			ofs.lod		= m_LODLevel;
+//			gameLocal.Warning("LODE %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
+			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
-			ofs.lod	   = ComputeLODLevel( entityClass->m_LOD, m_Entities[i].origin - playerPos);
+			// restore our value (it is not used, anyway)
+			m_LODLevel = 0;
+
 			offsets.Append( ofs );
 
 			if (merged == 0)
@@ -2119,6 +2138,8 @@ void Lode::CombineEntities( void )
 			// TODO: use all LOD stages here
 			idList<const idRenderModel*> LODs;
 
+			LODs.Append( tempModel );							// LOD 0 - default model
+
 			idStr lowest_LOD_model = entityClass->modelname;	// default for no LOD
 			// if entities of this class have LOD:
 			if (entityClass->m_LOD)
@@ -2149,11 +2170,7 @@ void Lode::CombineEntities( void )
 					LODs.Append( tModel );
 				}
 			}
-			else
-			{
-				// just one stage
-				LODs.Append( tempModel );
-			}
+			// else just one stage
 
 			idClipModel* lod_0_clip = new idClipModel();
 			// load the clipmodel for the lowest LOD stage for collision detection
@@ -2227,6 +2244,7 @@ void Lode::CombineEntities( void )
 				material = declManager->FindMaterial( m, false );
 			}
 			// use a megamodel to get the combined model, that we later can update, too:
+			gameLocal.Warning("Going to call CMegaModel");
 			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin, material );
 			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
@@ -2448,7 +2466,6 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					if ((ent->flags & LODE_ENTITY_SPAWNED) == 0)
 					{
 				   		// add a random impulse
-
 						// spherical coordinates: radius (magnitude), theta (inclination +-90°), phi (azimut 0..369°)
 						idVec3 impulse = lclass->impulse_max - lclass->impulse_min; 
 						impulse.x = impulse.x * RandomFloat() + lclass->impulse_min.x;
@@ -2624,14 +2641,17 @@ void Lode::Think( void )
 		// for each of our "entities", do the distance check
 		for (int i = 0; i < m_Entities.Num(); i++)
 		{
-
 			// TODO: let all auto-generated entities know about their new distance
 			//		 so they can manage their attachment's LOD, too.
 
 			// TODO: What to do about player looking thru spyglass?
 			idVec3 delta = playerOrigin - m_Entities[i].origin;
 
-			if( m_bDistCheckXYOnly )
+			ent = &m_Entities[i];
+			lclass = &(m_Classes[ ent->classIdx ]);
+
+			// per class
+			if( lclass->m_LOD && lclass->m_LOD->bDistCheckXYOnly )
 			{
 				delta -= (delta * vGravNorm) * vGravNorm;
 			}
@@ -2640,9 +2660,6 @@ void Lode::Think( void )
 			float deltaSq = delta.LengthSqr() / lodBias;
 
 			// normal distance checks now
-
-			ent = &m_Entities[i];
-			lclass = &(m_Classes[ ent->classIdx ]);
 			if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
 				if (SpawnEntity( i, true ))
@@ -2663,6 +2680,20 @@ void Lode::Think( void )
 
 				}
 				// TODO: Normal LOD code here (replicate from entity)
+				// todo: int oldLODLevel = ent->lod;
+				float fAlpha = ThinkAboutLOD( lclass->m_LOD, deltaSq );
+				if (fAlpha == 0.0f)
+				{
+					// hide the entity
+				}
+				else
+				{
+					// if hidden, show the entity
+
+					// if not combined entity
+					// setAlpha
+					// switchModel/switchSkin/noshadows
+				}
 			}
 		}
 		if (spawned > 0 || culled > 0)

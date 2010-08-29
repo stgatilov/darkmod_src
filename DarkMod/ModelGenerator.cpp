@@ -13,10 +13,8 @@
 /*
    ModelGenerator
 
-   Manipulate/Generate models at run time.
+   Manipulate, combine or generate models at run time.
 
-  TODO: duplicating too many verts can cause segfaults. Find out what the limit
-  		is and how to tell the LODE to only combine X entities base on this.
 */
 
 #include "../idlib/precompiled.h"
@@ -25,6 +23,9 @@
 static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07-18 13:57:08Z tels $", init_version);
 
 #include "ModelGenerator.h"
+
+// set to 1 to have debug printouts
+#define M_DEBUG 0
 
 /*
 ===============
@@ -215,6 +216,26 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		gameLocal.Error("NULL offsets in DuplicateLODModels");
 	}
 
+	// for each offset, correct missing LOD models
+	int nSources = LODs->Num();
+	if (nSources == 0)
+	{
+		gameLocal.Error("No LOD models DuplicateLODModels");
+	}
+
+	for (int i = 0; i < offsets->Num(); i++)
+	{
+		op = offsets->Ptr()[i];
+		if (op.lod < 0)
+		{
+			op.lod = 0;
+		}
+		else if (op.lod >= nSources)
+		{
+			op.lod = nSources - 1;
+		}
+	}
+
 	// If we have multiple LOD models with different surfaces, then we need to combine
 	// all surfaces from all models, so first we need to build a list of needed surfaces
 	// by shader name. This ensures that if LOD 0 has A and B and LOD 1 has B and C, we
@@ -223,15 +244,16 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 
 	targetSurfInfo.Clear();
 
-	int nSources = LODs->Num();
     int shaderIndexStartOfs = 0;
 	for (int i = 0; i < nSources; i++)
 	{
 		const idRenderModel* source = LODs->Ptr()[i];
 		if (NULL == source)
 		{
-//			gameLocal.Warning("Skipping empty LOD stage %i", i);
-			continue;	// skip non-existing LOD stages
+			// Use the default model
+			source = LODs->Ptr()[0];
+			//gameLocal.Warning("Skipping empty LOD stage %i", i);
+//			continue;	// skip non-existing LOD stages
 		}
 
 		// count how many instances in offsets use this LOD model, so we can compute the
@@ -249,6 +271,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		// if not used at all, skip it
 		if (used == 0)
 		{
+			shaderIndexStart.Append( -1 );	// dummy value, not used but need to reserve the spot
 			continue;
 		}
 
@@ -291,7 +314,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 				newTargetSurfInfo.surf.shader = surf->shader;
 				newTargetSurfInfo.surf.id = 0;
 				targetSurfInfo.Append( newTargetSurfInfo );
-				gameLocal.Warning("ModelGenerator: Need shader %s.", n.c_str() );
+			//	gameLocal.Warning("ModelGenerator: Need shader %s.", n.c_str() );
 				found = targetSurfInfo.Num() - 1;
 			}
 
@@ -317,13 +340,30 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	{
 			gameLocal.Error("Dup model (%i LOD stages) with no surfaces at all.\n", nSources);
 	}
-//	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.", targetSurfInfo.Num() );
+	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.\n", targetSurfInfo.Num() );
 
-	// debug: print info for each new surface
+#ifdef M_DEBUG	
+	// debug: print shaderIndex array
+	gameLocal.Printf("ModelGenerator: Dumping shaderIndex:\n");
+	for (int i = 0; i < shaderIndex.Num(); i++)
+	{
+		gameLocal.Printf(" %i = %i\n", i, shaderIndex[i] );
+	}
+	gameLocal.Printf("ModelGenerator: Dumping shaderIndexStart:\n");
+	for (int i = 0; i < shaderIndexStart.Num(); i++)
+	{
+		gameLocal.Printf(" %i = %i\n", i, shaderIndexStart[i] );
+	}
+#endif
+
 	for (int j = 0; j < targetSurfInfo.Num(); j++)
 	{
+#ifdef M_DEBUG	
+		// debug: print info for each new surface
 		gameLocal.Printf(" Allocating for surface %i: %s numVerts %i numIndexes %i\n", 
-				j, targetSurfInfo[j].surf.shader->GetName(), targetSurfInfo[j].numVerts, targetSurfInfo[j].numIndexes );
+			j, targetSurfInfo[j].surf.shader->GetName(), targetSurfInfo[j].numVerts, targetSurfInfo[j].numIndexes );
+#endif
+
 		targetSurfInfo[j].surf.geometry = hModel->AllocSurfaceTriangles( targetSurfInfo[j].numVerts, targetSurfInfo[j].numIndexes );
 		targetSurfInfo[j].surf.geometry->numVerts = targetSurfInfo[j].numVerts;
 		targetSurfInfo[j].surf.geometry->numIndexes = targetSurfInfo[j].numIndexes;
@@ -339,18 +379,29 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	{
 		op = offsets->Ptr()[o];
 
-		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f.\n", op.offset.x, op.offset.y, op.offset.z );
+		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
 
 		// precompute these
 		idMat3 a = op.angles.ToMat3();
 
 		const idRenderModel* source = LODs->Ptr()[op.lod];
+
+		if (!source)
+		{
+			// use the default model
+			//gameLocal.Warning(" Using LOD model 0 as replacement." );
+			source = LODs->Ptr()[0];
+		}
+
 		// TODO:
 		//const bool noShadow = op.noShadow;
 
 		numSurfaces = source->NumBaseSurfaces();
 
 		int si = shaderIndexStart[op.lod];
+
+		//gameLocal.Warning("ModelGenerator: op.lod = %i si = %i", op.lod, si);
+
 		// for each surface of the model
 		for (int i = 0; i < numSurfaces; i++)
 		{
@@ -369,7 +420,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			// find the surface on the target
 			int st = shaderIndex[ si + i ];
 
-		//	gameLocal.Warning("ModelGenerator: Final surface number for add: %i (%i + %i)", st, si, i);
+			//gameLocal.Warning("ModelGenerator: Final surface number for add: %i (%i + %i)", st, si, i);
 
 			newTargetSurfInfoPtr = &(targetSurfInfo[st]);
 
@@ -432,6 +483,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	{
 		newSurf = &targetSurfInfo[j].surf;
 
+#ifdef M_DEBUG
 		// sanity check
 		if (targetSurfInfo[j].surf.geometry->numVerts != targetSurfInfo[j].numVerts)
 		{
@@ -443,6 +495,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			gameLocal.Warning ("ModelGenerator: surface %i differs between allocated (%i) and created numIndexes (%i)",
 				j, targetSurfInfo[j].surf.geometry->numIndexes, targetSurfInfo[j].numIndexes );
 		}
+#endif
 
         newSurf->geometry->tangentsCalculated = true;
 		// TODO: are these nec.?
@@ -460,7 +513,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
 
-//	hModel->Print();
+#ifdef M_DEBUG
+	hModel->Print();
+#endif
 
 	return hModel;
 }

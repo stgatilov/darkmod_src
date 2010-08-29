@@ -33,7 +33,7 @@
 typedef struct {
 	idVec3				offset;
 	idAngles			angles;
-	dword				color;	// packed color
+	dword				color;	// packed color (including alpha)
 	int					lod; 	// which LOD model stage to use?
 } model_ofs_t;
 
