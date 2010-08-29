@@ -838,6 +838,26 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		LodeClass.spawnDist *= LodeClass.spawnDist;
 	}
 
+	const idDict* dict = gameLocal.FindEntityDefDict( LodeClass.classname );
+
+	if (!dict)
+	{
+		gameLocal.Error("LODE %s: Error, cannot find entity def dict for %s.\n", GetName(), LodeClass.classname.c_str() );
+	}
+
+	// parse the spawnargs from this entity def for LOD data, and ignore any hide_probability:
+	float has_lod = ParseLODSpawnargs( dict, 1.0f );
+
+	if (has_lod)
+		{
+		// Store m_LOD at the class
+		LodeClass.m_LOD = m_LOD;
+		m_LOD = NULL;				// prevent double free
+		}
+	else
+		{
+		LodeClass.m_LOD = NULL;
+		}
 	LodeClass.materials.Clear();
 
 	// The default probability for all materials not matching anything in materials:
@@ -923,7 +943,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 Generate a scaling factor depending on the GUI setting
 ===============
 */
-float Lode::LODBIAS ( void )
+float Lode::LODBIAS ( void ) const
 {
 	// scale density with GUI setting
 	// The GUI specifies: 0.5;0.75;1.0;1.5;2.0;3.0, but 0.5 and 3.0 are quite extreme,
@@ -1802,6 +1822,8 @@ void Lode::PrepareEntities( void )
 			//gameLocal.Printf( "LODE %s: Using skin %i.\n", GetName(), LodeEntity.skinIdx );
 			// will be automatically spawned when we are in range
 			LodeEntity.flags = LODE_ENTITY_HIDDEN; // but not LODE_ENTITY_EXISTS nor LODE_ENTITY_FIRSTSPAWN
+
+			// TODO: add waiting flag and enter in waiting_queue if wanted
 			LodeEntity.entity = 0;
 			LodeEntity.classIdx = i;
 			// precompute bounds for a fast collision check
@@ -1878,6 +1900,18 @@ int SortOffsetsByDistance( const model_ofs_t *a, const model_ofs_t *b ) {
 	return 0;
 }
 
+int Lode::ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const
+{
+	// entity has no LOD stages
+	if (NULL == m_LOD)
+	{
+		return 0;
+	}
+
+	// TODO:
+	return 0;
+}
+
 void Lode::CombineEntities( void )
 {
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
@@ -1909,6 +1943,15 @@ void Lode::CombineEntities( void )
 	}
 
 	int start = (int) time (NULL);
+
+	// Get the player pos
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	// if we have no player (how can this happen?), use our own origin as stand-in
+	idVec3 playerPos = renderEntity.origin;
+	if ( player )
+	{
+		playerPos = player->GetPhysics()->GetOrigin();
+	}
 
 	// for each entity, find out in which PVS it is, unless we only have one PVS on the lode,
 	// we then expect all entities to be in the same PVS, too:
@@ -1982,14 +2025,14 @@ void Lode::CombineEntities( void )
 		ofs.offset = idVec3(0,0,0); // the first copy is the original
 		ofs.color  = m_Entities[i].color;
 		ofs.angles = m_Entities[i].angles;
-		ofs.lod = 0;
+		ofs.lod    = ComputeLODLevel( entityClass->m_LOD, m_Entities[i].origin - playerPos );
 		offsets.Append(ofs);
 
 		tobedeleted.Clear();
 		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
 
 		// how many can we combine at most?
-		// TODO: use LOD 0 here for an worse-case estimate
+		// use LOD 0 here for an worse-case estimate
 		unsigned int maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
 		gameLocal.Printf("LODE %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
 
@@ -2035,7 +2078,7 @@ void Lode::CombineEntities( void )
 			ofs.offset = dist;
 			ofs.angles = m_Entities[j].angles;
 			ofs.color  = m_Entities[j].color;
-			ofs.lod    = 0;
+			ofs.lod	   = ComputeLODLevel( entityClass->m_LOD, m_Entities[i].origin - playerPos);
 			offsets.Append( ofs );
 
 			if (merged == 0)
@@ -2075,12 +2118,46 @@ void Lode::CombineEntities( void )
 		{
 			// TODO: use all LOD stages here
 			idList<const idRenderModel*> LODs;
-			LODs.Clear();
-			LODs.Append( tempModel );
 
-			// load the clipmodel for the lowest LOD stage
+			idStr lowest_LOD_model = entityClass->modelname;	// default for no LOD
+			// if entities of this class have LOD:
+			if (entityClass->m_LOD)
+			{
+				lod_data_t* tmlod = entityClass->m_LOD;	// shortcut
+				
+				// load and store all LOD models in LODs so the model combiner can use them
+				for (int mi = 0; mi < LOD_LEVELS; mi++)
+				{
+					// load model, then combine away
+//					gameLocal.Warning("LODE %s: Trying to load LOD model #%i %s for entity %i.", 
+//							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
+					idRenderModel* tModel = NULL;
+					idStr* mName = &(tmlod->ModelLOD[mi]);
+					if (! mName->IsEmpty() )
+					{
+						tModel = renderModelManager->FindModel( mName->c_str() );
+						if (!tModel)
+						{
+							gameLocal.Warning("LODE %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
+									GetName(), mi, mName->c_str(), i);
+						}
+						else
+						{
+							lowest_LOD_model = mName->c_str();
+						}
+					}
+					LODs.Append( tModel );
+				}
+			}
+			else
+			{
+				// just one stage
+				LODs.Append( tempModel );
+			}
+
 			idClipModel* lod_0_clip = new idClipModel();
-			bool clipLoaded = lod_0_clip->LoadModel( entityClass->modelname );
+			// load the clipmodel for the lowest LOD stage for collision detection
+			bool clipLoaded = lod_0_clip->LoadModel( lowest_LOD_model );
 
 			if (!clipLoaded)
 			{
@@ -2141,13 +2218,6 @@ void Lode::CombineEntities( void )
 			// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
 			corr -= tempModel->Bounds()[0];
 
-			// Get the player pos
-			idPlayer *player = gameLocal.GetLocalPlayer();
-			// if we have no player (how can this happen?), use our own origin as stand-in
-			idVec3 playerPos = renderEntity.origin;
-			if ( player ) {
-				playerPos = player->GetPhysics()->GetOrigin();
-			}
 			const idMaterial* material = NULL;
 			if (m_bDebugColors)
 			{

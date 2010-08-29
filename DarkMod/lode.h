@@ -124,6 +124,8 @@ struct lode_class_t {
 	float					func_max;
 	idStr					map;			//!< name of the image map (greyscale 8-bit TGA)
 	CImage*					img;			//!< if map != "": ptr to the distribution image map
+
+	lod_data_t*				m_LOD;			//!< Contains (sharable, constant) LOD data if non-NULL.
 };
 
 /** Defines one area that inhibits entity spawning */
@@ -132,11 +134,15 @@ struct lode_inhibitor_t {
 	idBox					box;			//!< oriented box of the area
 };
 
+#define LODE_ENTITY_FLAGMASK 0x00FFFFFF
+#define LODE_ENTITY_FLAGSHIFT 24
+
 enum lode_entity_flags {
-	LODE_ENTITY_HIDDEN		= 0x01,
-	LODE_ENTITY_EXISTS		= 0x02,
-	LODE_ENTITY_SPAWNED		= 0x04,
-	LODE_ENTITY_PSEUDO		= 0x08
+	LODE_ENTITY_HIDDEN		= 0x0001,
+	LODE_ENTITY_EXISTS		= 0x0002,
+	LODE_ENTITY_SPAWNED		= 0x0004,
+	LODE_ENTITY_PSEUDO		= 0x0008,
+	LODE_ENTITY_WAITING		= 0x0010
 };
 
 // Defines one entity to be spawned/culled
@@ -145,11 +151,13 @@ struct lode_entity_t {
 	idVec3					origin;			//!< (semi-random) origin
 	idAngles				angles;			//!< zyx (yaw, pitch, roll) (semi-random) angles
 	dword					color;			//!< (semi-random) color, computed from base/min/max colors of the class
-	int						flags;			/*!< flags:
-												0x01 hidden? 1 = hidden, 0 => visible
-												0x02 exists? 1 => exists, 0 => culled
-												0x04 0 => never spawned before, 1 => already spawned at least once
-												0x08 if 1, this entity has a pseudo class (e.g. it is a combined entity)
+	int						flags;			/*!< flags & 0x00FFFFFF:
+												  0x01 hidden? 1 = hidden, 0 => visible
+												  0x02 exists? 1 => exists, 0 => culled
+												  0x04 0 => never spawned before, 1 => already spawned at least once
+												  0x08 if 1, this entity has a pseudo class (e.g. it is a combined entity)
+												 flags >> 24:
+												  Current LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden)
 											 */
 	int						entity;			//!< nr of the entity if exists == true
 	int						classIdx;		//!< index into m_Classes
@@ -215,6 +223,11 @@ private:
 	void				PrepareEntities( void );
 
 	/**
+	* Compute the LOD level for this entity based on distance to player.
+	*/
+	int					ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const;
+
+	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
 	*/
 	void				CombineEntities( void );
@@ -266,7 +279,7 @@ private:
 	/**
 	* Generate a scaling factor depending on the GUI setting.
 	*/
-	float				LODBIAS ( void );
+	float				LODBIAS ( void ) const;
 
 	/**
 	* Set m_iNumEntities from spawnarg, or density, taking GUI setting into account.
