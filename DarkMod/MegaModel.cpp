@@ -46,7 +46,7 @@ CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>*
 	// avoid frequent resizes
 	m_Changes.SetGranularity(32);
 
-	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", true, offsets, origin, playerPos, material );
+	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", offsets, origin, playerPos, material );
 }
 
 /*
