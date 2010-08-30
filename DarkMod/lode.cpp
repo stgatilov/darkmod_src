@@ -2107,8 +2107,8 @@ void Lode::CombineEntities( void )
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
 				PseudoClass.img = NULL;
-				// a combined entity must be of this class
-				PseudoClass.classname = entityClass->classname;
+				// a combined entity must be of this class to get the multi-clipmodel working
+				PseudoClass.classname = FUNC_DUMMY;
 				PseudoClass.hModel = NULL;
 				PseudoClass.physicsObj = new idPhysics_StaticMulti;
 
@@ -2178,11 +2178,13 @@ void Lode::CombineEntities( void )
 
 			if (!clipLoaded)
 			{
-				gameLocal.Warning("LODE %s: Could not load clip model for %s.\n", GetName(), entityClass->modelname.c_str() );
+				gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n",
+						GetName(), lowest_LOD_model.c_str() );
 			}
 			else
 			{
-				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for model %s.\n", GetName(), lod_0_clip->GetBounds().ToString(), entityClass->modelname.c_str() );
+				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for %s.\n",
+						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
 			}
 			// if we have more entities to merge than what will fit into the model,
 			// sort them based on distance and select the N nearest:
@@ -2213,12 +2215,12 @@ void Lode::CombineEntities( void )
 					// add the clipmodel to the multi-clipmodel
 					if (clipLoaded)
 					{
-						// TODO: this does not help: idClipModel *clipModel = new idClipModel( lod_0_clip );
-
 						// TODO: if this comes last, it uses the already set origin and axis, but does this matter?
 						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, d, true);
 
-						PseudoClass.physicsObj->SetOrigin(offsets[d].offset, d);
+						//gameLocal.Printf("Set clipmodel %i from %i at %s + %s\n", d, n, offsets[d].offset.ToString(), m_Entities[ todo ].origin.ToString() );
+
+						PseudoClass.physicsObj->SetOrigin(offsets[d].offset + m_Entities[ todo ].origin, d);
 						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), d);
 					}
 				}
@@ -2244,7 +2246,6 @@ void Lode::CombineEntities( void )
 				material = declManager->FindMaterial( m, false );
 			}
 			// use a megamodel to get the combined model, that we later can update, too:
-			gameLocal.Warning("Going to call CMegaModel");
 			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin, material );
 			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
@@ -2410,7 +2411,10 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
+					//gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 					ent2->SetPhysics( lclass->physicsObj );
+					// enable thinking (mainly for debug draw)
+					ent2->BecomeActive( TH_THINK );
 				}
 				else
 				{
