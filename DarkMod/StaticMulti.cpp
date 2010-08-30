@@ -23,6 +23,9 @@ static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18
 
 #include "StaticMulti.h"
 
+// if defined, draw debug output
+//#define M_DEBUG 1
+
 CLASS_DECLARATION( idStaticEntity, CStaticMulti )
 	EVENT( EV_Activate,				CStaticMulti::Event_Activate )
 END_CLASS
@@ -47,6 +50,30 @@ void CStaticMulti::Think( void )
 {
 	// will also do LOD thinking:
 	idStaticEntity::Think();
+
+#ifdef M_DEBUG
+	int num = GetPhysics()->GetNumClipModels();
+//	gameLocal.Printf("CStaticMulti::Think %i clipmodels\n", num);
+
+   	idVec4 markerColor (0.3, 0.8, 1.0, 1.0);
+   	idVec3 arrowLength (0.0, 0.0, 50.0);
+
+	idPhysics *p = GetPhysics();
+
+	// DEBUG draw arrows for each part of the physics object
+	for (int i = 0; i < num; i++)
+	{
+		idVec3 org = p->GetOrigin( i );
+	//gameLocal.Printf("CStaticMulti::Think clip %i %s\n", i, org.ToString() );
+	    gameRenderWorld->DebugArrow
+			(
+			markerColor,
+			org + arrowLength,
+			org,
+			3,
+	    	1 );
+	}
+#endif
 }
 
 /*
