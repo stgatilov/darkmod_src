@@ -17,6 +17,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 
+#include "sourcehook/sourcehook.h"
+
+extern SourceHook::ISourceHook *g_SHPtr;
+extern int g_PLID;
+
+SH_DECL_HOOK2_void( idCmdSystem, BufferCommandText, SH_NOATTRIB, 0, cmdExecution_t, const char * );
+
 static int MakePowerOfTwo( int num ) {
 	int		pot;
 
@@ -905,6 +912,7 @@ m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOpt
 m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
 m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
 m_matCookMath_pass3		( declManager->FindMaterial( "postprocess/cookMath_pass3" )		),
+m_matCookVignette		( declManager->FindMaterial( "postprocess/cookVignette" )		),
 
 // Materials for debugging intermediate textures
 m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
@@ -913,15 +921,38 @@ m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adap
 {
 
 	m_iScreenHeight = m_iScreenWidth = 0;
+	m_nFramesToUpdateCookedData = 0;
 
 	// Initialize once this object is created.	
 	this->Initialize();
+
+	SH_ADD_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
+
 }
 
-// idPlayerView::dnPostProcessManager::~dnPostProcessManager()
-// {
-// 	// Do nothing for now. 
-// }
+ idPlayerView::dnPostProcessManager::~dnPostProcessManager()
+ {
+ 	// Remove Source Hook before closing. 
+	 SH_REMOVE_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
+ }
+
+ void idPlayerView::dnPostProcessManager::Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText )
+ {
+	 // Using idStr::FindText to make sure that we account for trailing white spaces. However, even an invalid command 
+	 // e.g. like "reloadImagesADEAW" would update the cooked data, but that should not be a problem.
+	 if( NULL != a_pcText && 
+		( 0 == idStr::FindText( a_pcText, "reloadimages", false ) || 0 == idStr::FindText(a_pcText, "vid_restart", false ) )
+		 )
+	 {
+		 m_nFramesToUpdateCookedData = 1;
+		 if( r_HDR_postProcess.GetBool() )
+			gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData  );
+		 else
+			 gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_HDR_postProcess is enabled.\n", m_nFramesToUpdateCookedData  );
+	 }
+
+	 RETURN_META(MRES_IGNORED );
+ }
 
 void idPlayerView::dnPostProcessManager::Initialize()
 {
@@ -933,8 +964,13 @@ void idPlayerView::dnPostProcessManager::Initialize()
 
 void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 {
-	const idMaterial*  matImageCookedMath = m_imageCookedMath;
 
+	if( m_nFramesToUpdateCookedData > 0 )
+	{
+		m_nFramesToUpdateCookedData --;
+		m_bForceUpdateOnCookedData = true;
+		return;
+	}
 
 	if (	m_bForceUpdateOnCookedData || 
 			r_HDR_middleGray.IsModified() || r_HDR_maxColorIntensity.IsModified()		|| 
@@ -950,7 +986,11 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 
 		gameLocal.Printf( "Cooking math data please wait...\n" );
 
+		//------------------------------------------------------------------------
+		// Crop backbuffer image to the size of our cooked math image
+		//------------------------------------------------------------------------
 		renderSystem->CropRenderSize(1024, 256, true);
+		//------------------------------------------------------------------------
 
 		// Changed from max to Max for cross platform compiler compatibility.
 		const float fMaxColorIntensity = Max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
@@ -962,15 +1002,29 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
+		//------------------------------------------------------------------------
+		// Cook math Pass 2 
+		//------------------------------------------------------------------------
  		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat(), r_HDR_eyeAdjustmentBias.GetFloat() );
  		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
  		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
-		renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_gammaCorrection.GetFloat(), r_HDR_vignetteBias.GetFloat(), 0.0f  );
+		//------------------------------------------------------------------------
+		// Cook math Pass 3 
+		//------------------------------------------------------------------------
+		renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_gammaCorrection.GetFloat(), 0.0f, 0.0f  );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass3 );
 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+
+		//------------------------------------------------------------------------
+		// Cooke Vignette image 
+		//------------------------------------------------------------------------
+		renderSystem->SetColor4( r_HDR_vignetteBias.GetFloat(), 1.0f/m_fShiftScale_x, 1.0f/m_fShiftScale_y, 0.0f  );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookVignette );
+		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+		//------------------------------------------------------------------------
 		renderSystem->UnCrop();
-		
+		//------------------------------------------------------------------------
 		r_HDR_middleGray.ClearModified();
 		r_HDR_maxColorIntensity.ClearModified();
 		r_HDR_colorCurveBias.ClearModified(); 
@@ -1126,21 +1180,21 @@ void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
 	if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
 	{
-		int width = 256, height = 256;
+		int iWidth = 256, iHeight = 256;
 
 		// This should probably fix the ATI issue...
 		renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
 
 		//assert( iScreenWidth != 0 && iScreenHeight != 0 );
 
-		while( width < m_iScreenWidth ) {
-			width <<= 1;
+		while( iWidth < m_iScreenWidth ) {
+			iWidth <<= 1;
 		}
-		while( height < m_iScreenHeight ) {
-			height <<= 1;
+		while( iHeight < m_iScreenHeight ) {
+			iHeight <<= 1;
 		}
-		m_fShiftScale_x = m_iScreenWidth  / (float)width;
-		m_fShiftScale_y = m_iScreenHeight / (float)height;
+		m_fShiftScale_x = m_iScreenWidth  / (float)iWidth;
+		m_fShiftScale_y = m_iScreenHeight / (float)iHeight;
 	}
 }
 
@@ -1161,7 +1215,7 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 	else if ( 2 == iDebugMode )
 	{
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,		SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
+		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
 		renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture64x64 );
 		renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture4x4 );
 		renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedAdaptLuminance );
@@ -1171,12 +1225,23 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 	const int iDebugTexture = r_HDR_debugTextureIndex.GetInteger();
 	if( 0!= iDebugMode && 0 < iDebugTexture && 5 > iDebugTexture ) 
 	{
-		const dnImageWrapper *arrImages[3] = { &m_imageBloom, &m_imageHalo, &m_imageCookedMath };
+		struct {
+			dnImageWrapper *m_pImage;
+			float m_fShiftScaleX, m_fShiftScaleY;
+		} 
+		const arrStretchedImages[4] = { 
+				{&m_imageCurrentRender8x8DownScaled, 1, 1},
+				{&m_imageBloom,			m_fShiftScale_x, m_fShiftScale_y },
+				{&m_imageHalo,			m_fShiftScale_x, m_fShiftScale_y },
+				{&m_imageCookedMath,	1, 1},
+		};
+		
+		int i = iDebugTexture - 1;
+
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		if( 1 == iDebugTexture )
-			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		else
-			renderSystem->DrawStretchPic( 0, SCREEN_WIDTH * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, m_fShiftScale_y, m_fShiftScale_x, 0, *arrImages[iDebugTexture-2] );
+ 			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 
+				arrStretchedImages[i].m_fShiftScaleY, arrStretchedImages[i].m_fShiftScaleX, 0, 
+				*arrStretchedImages[i].m_pImage );
 	}
 }
 
@@ -1206,3 +1271,4 @@ void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
 		this->UpdateInteractionShader();
 	};
 }
+

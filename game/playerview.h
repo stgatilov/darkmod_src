@@ -121,6 +121,8 @@ private:
 		float				m_fShiftScale_x;
 		float				m_fShiftScale_y;
 
+		int					m_nFramesToUpdateCookedData; // After these number of frames Cooked data will be updated. 0 means no update.
+
 		unsigned char		m_nFramesSinceLumUpdate;						
 		
 		bool				m_bForceUpdateOnCookedData;
@@ -149,15 +151,28 @@ private:
 	const idMaterial *m_matGaussBlurXHalo;
 	const idMaterial *m_matGaussBlurYHalo;
 	const idMaterial *m_matFinalScenePass;
+	const idMaterial *m_matCookVignette;
 
 	// For debug renders
 	const idMaterial *m_matDecodedLumTexture64x64;
 	const idMaterial *m_matDecodedLumTexture4x4;
 	const idMaterial *m_matDecodedAdaptLuminance;
 
+#ifdef _ADD_MATERIAL_SOURCE_HOOK
+	// A non constant reference to cookedMath image - Used by source hook.
+	idMaterial *m_pCookedMathImage;
+#endif
+
 	public:
 		dnPostProcessManager();
-		// 		~dnPostProcessManager();
+		~dnPostProcessManager();
+
+#ifdef _ADD_MATERIAL_SOURCE_HOOK
+
+		// Hook to handle cookedMathData's reload.
+		void Hook_cookedMathDataReload( bool a_bForce );
+
+#endif
 
 		// Methods
 		void Initialize	();						// This method should be invoked when idPlayerView::Restore is called.
@@ -169,6 +184,7 @@ private:
 		void RenderDebugTextures		();		
 		void UpdateCookedData			();
 		void UpdateInteractionShader	(); 	// Chooses between the various VFP files according to the CVAR settings. Only call this if settings got changed.
+		void Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText );	// Source Hook for idCmdSystem::BufferCommandText - JC.
 	};
 
 	dnPostProcessManager m_postProcessManager;

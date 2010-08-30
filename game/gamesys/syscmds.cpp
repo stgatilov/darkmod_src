@@ -11,6 +11,7 @@
 //
 
 #include "../../idlib/precompiled.h"
+
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);
@@ -3390,23 +3391,11 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 	gameLocal.Printf(" %d Materials processed and changed in total.\n", ulMaterialsProcessed );
 }
 
-void Cmd_ReloadImages_f( const idCmdArgs& args )
-{
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "ReloadImages" );
-	r_HDR_colorCurveBias.SetModified();
-}
 
 void Cmd_updateCookedMathData_f( const idCmdArgs& args )
 {
 	r_HDR_colorCurveBias.SetModified();
 }
-
-void Cmd_VidRestart_f( const idCmdArgs& args )
-{
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart" );
-	r_HDR_colorCurveBias.SetModified();
-}
-
 
 #ifdef TIMING_BUILD
 void Cmd_ListTimers_f(const idCmdArgs& args) 
@@ -3504,8 +3493,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "testBlend",				idTestModel::TestBlend_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"tests animation blending" );
 	cmdSystem->AddCommand( "reloadScript",			Cmd_ReloadScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"reloads scripts" );
 
-	cmdSystem->AddCommand( "tdm_reloadImages",			Cmd_ReloadImages_f,			CMD_FL_RENDERER,	"reloads Images & re-cooks lookup textures" );
-	cmdSystem->AddCommand( "tdm_vid_restart",			Cmd_VidRestart_f,			CMD_FL_RENDERER,	"Restarts the renderer" );
 	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_RENDERER,	"Updates lookup textures" );
 
 	cmdSystem->AddCommand( "script",				Cmd_Script_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"executes a line of script" );
