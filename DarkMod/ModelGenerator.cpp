@@ -24,8 +24,8 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 
 #include "ModelGenerator.h"
 
-// set to 1 to have debug printouts
-#define M_DEBUG 0
+// uncomment to have debug printouts
+//#define M_DEBUG r10
 
 /*
 ===============
