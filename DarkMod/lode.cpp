@@ -2078,7 +2078,7 @@ void Lode::CombineEntities( void )
 				continue;
 			}
 			// distance too big?
-			idVec3 dist = (m_Entities[i].origin - m_Entities[j].origin);
+			idVec3 dist = (m_Entities[j].origin - m_Entities[i].origin);
 			float distSq = dist.LengthSqr();
 			if (distSq > max_combine_distance)
 			{
@@ -2199,9 +2199,17 @@ void Lode::CombineEntities( void )
 
 			if (clipLoaded)
 			{
-				// TODO: expose this:
+				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
-				//clipModels.SetNum( 1 );
+				//clipModels.SetNum( ... );
+
+				// add the zeroth clipmodel (from the original entity)
+				PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, 0, true);
+				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
+
+				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin, 0);
+				PseudoClass.physicsObj->SetAxis( m_Entities[i].angles.ToMat3(), 0);
+				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, 0 );
 			}
 			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)tobedeleted.Num();
@@ -2215,13 +2223,15 @@ void Lode::CombineEntities( void )
 					// add the clipmodel to the multi-clipmodel
 					if (clipLoaded)
 					{
-						// TODO: if this comes last, it uses the already set origin and axis, but does this matter?
-						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, d, true);
+						int clipNr = d + 1;	// 0 is the original entity
+						// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
+						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
 
-						//gameLocal.Printf("Set clipmodel %i from %i at %s + %s\n", d, n, offsets[d].offset.ToString(), m_Entities[ todo ].origin.ToString() );
+						gameLocal.Printf("Set clipmodel %i from %i at %s\n", clipNr, n, m_Entities[ todo ].origin.ToString() );
 
-						PseudoClass.physicsObj->SetOrigin(offsets[d].offset + m_Entities[ todo ].origin, d);
-						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), d);
+						PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
+						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
+						PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, clipNr );
 					}
 				}
 				else
@@ -2257,15 +2267,6 @@ void Lode::CombineEntities( void )
 
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
-			//gameLocal.Printf("LODE %s: Correction: %s\n", GetName(), idVec3( PseudoClass.hModel->Bounds()[0]).ToString() );
-			// get center of model
-			idVec3 center = PseudoClass.hModel->Bounds().GetSize() / 2;
-			center += PseudoClass.hModel->Bounds()[0];
-			//gameLocal.Printf(" Correction: %s Size: %s Lower: %s Upper: %s\n", 
-			//		center.ToString(), PseudoClass.hModel->Bounds().GetSize().ToString(), PseudoClass.hModel->Bounds()[0].ToString(), PseudoClass.hModel->Bounds()[1].ToString() );
-			// this seems not right, tho:
-			center.z = 0;
-			m_Entities[i].origin -= center;
 		}
 	}
 
@@ -2413,8 +2414,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					r->bounds = lclass->hModel->Bounds();
 					//gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 					ent2->SetPhysics( lclass->physicsObj );
+					lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
-					ent2->BecomeActive( TH_THINK );
+					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
 				}
 				else
 				{
