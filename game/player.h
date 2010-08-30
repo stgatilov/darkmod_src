@@ -1111,10 +1111,12 @@ private:
 	 * DARKMOD_LG_MIN (1) <= N <= DARKMOG_LG_MAX (32)
 	 */
 	int							m_LightgemValue;
+
 	/**
 	 * Contains the last lightgem value. This is stored for interleaving.
 	 */
 	float						m_fColVal;
+	float						m_fBlendColVal;						// Store the result for smooth fading of lightgem - J.C.Denton
 
 	// An integer keeping track of the lightgem interleaving
 	int							m_LightgemInterleave;

@@ -297,6 +297,8 @@ extern idCVar cv_lg_velocity_mod_min_velocity;
 extern idCVar cv_lg_velocity_mod_max_velocity;
 extern idCVar cv_lg_velocity_mod_amount;
 
+extern idCVar cv_lg_fade_delay;						// Added by  J.C.Denton
+
 extern idCVar cv_empty_model;
 
 extern idCVar cv_tdm_s_doorDistanceAdd;

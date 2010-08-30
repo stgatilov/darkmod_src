@@ -481,6 +481,7 @@ idPlayer::idPlayer() :
 	m_LightgemModifier		= 0;
 	m_LightgemValue			= 0;
 	m_fColVal				= 0;
+	m_fBlendColVal			= 0;	
 	m_LightgemInterleave	= 0;
 }
 
@@ -2681,8 +2682,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		CalculateWeakLightgem();
 	}
 
+	// J.C.Denton Start
+	float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 
+	m_fBlendColVal = Lerp( m_fBlendColVal, (float)m_LightgemValue, (gameLocal.time - gameLocal.previousTime)/(1000.0f * fFadeDelay ) );
+	// J.C.Denton End
+
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", m_LightgemValue, hud);
-	hud->SetStateInt("lightgem_val", m_LightgemValue);
+	hud->SetStateFloat("lightgem_val", m_fBlendColVal );
 }
 
 /*
@@ -9147,7 +9153,7 @@ bool idPlayer::NeedsIcon( void ) {
 
 int idPlayer::ProcessLightgem(bool processing)
 {
-	float value = m_fColVal;
+	float fValue = m_fColVal;
 
 	int n = cv_lg_interleave.GetInteger();
 
@@ -9160,13 +9166,13 @@ int idPlayer::ProcessLightgem(bool processing)
 		{
 			m_LightgemInterleave = 0;
 
-			value = gameLocal.CalcLightgem(this);
+			fValue = gameLocal.CalcLightgem(this);
 		}
 	}
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", value);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fValue);
 
-	value += cv_lg_adjust.GetFloat();
+	fValue += cv_lg_adjust.GetFloat();
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
 
 	// Tels: #2324 Water should decrease visibility
@@ -9175,12 +9181,12 @@ int idPlayer::ProcessLightgem(bool processing)
 	if (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD)
 	{
 		float murkiness = physicsObj.GetWaterMurkiness();
-		value -= murkiness;
+		fValue -= murkiness;
 		// gameLocal.Printf( "Water murkiness %0.2f, final value: %0.2f\n", murkiness, value);
 	}
 
-	m_fColVal = value;
-	m_LightgemValue = int(DARKMOD_LG_MAX * value);
+	m_fColVal = fValue;
+	m_LightgemValue = int(DARKMOD_LG_MAX * fValue);
 
 	// Give the inventory items a chance to adjust the lightgem (fire arrow, crouching)
 	m_LightgemValue = GetLightgemModifier(m_LightgemValue);
