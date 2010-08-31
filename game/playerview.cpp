@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 
-#include "sourcehook/sourcehook.h"
+#include "../DarkMod/sourcehook/sourcehook.h"
 
 extern SourceHook::ISourceHook *g_SHPtr;
 extern int g_PLID;
