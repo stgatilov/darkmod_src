@@ -54,7 +54,7 @@ private:
 //	int						fadeStart;
 //	int						fadeEnd;
 //	bool					runGui;
-	idPhysics_StaticMulti		physicsObj;
+	idPhysics_StaticMulti		physics;
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */
