@@ -81,9 +81,13 @@ void CModelGenerator::Shutdown( void ) {
 ===============
 CModelGenerator::DuplicateModel - Duplicate a render model
 
+If given a target model, will replace the contents of this model, otherwise allocate a new model.
+
+Returns the given (or allocated) model.
+
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData) {
+idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel) const {
 
 	int numSurfaces;
 	int numVerts, numIndexes;
@@ -92,11 +96,15 @@ idRenderModel * CModelGenerator::DuplicateModel (const idRenderModel* source, co
 
 	if (NULL == source)
 	{
-		gameLocal.Error("ModelGenerator: Dup with NULL model.\n");
+		gameLocal.Error("ModelGenerator: Dup with NULL source model.\n");
 	}
 
-	// allocate memory for the model
-	idRenderModel *hModel = renderModelManager->AllocModel();
+	// allocate memory for the model?
+	if (NULL == hModel)
+	{
+		idRenderModel *hModel = renderModelManager->AllocModel();
+	}
+
 	// and init it as dynamic empty model
 	hModel->InitEmpty( snapshotName );
 
@@ -152,6 +160,7 @@ idRenderModel * CModelGenerator::DuplicateModel (const idRenderModel* source, co
 		else
 		{
 			// caller needs to make sure that the shared data is not deallocated twice
+			// by calling FreeSharedModelSurfaces() before destroy:
 			newSurf.shader = surf->shader;
 			newSurf.geometry = surf->geometry;
 		}
@@ -183,7 +192,7 @@ offset and rotated by the given values, also filling in the right vertex color.
 */
 idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs,
 			const char* snapshotName, const idList<model_ofs_t> *offsets, const idVec3 *playerPos, const idVec3 *origin,
-			const idMaterial *shader ) {
+			const idMaterial *shader ) const {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
@@ -394,7 +403,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		}
 
 		// TODO:
-		//const bool noShadow = op.noShadow;
+		const bool noShadow = (op.flags & LODE_MODEL_NOSHADOW);
 
 		numSurfaces = source->NumBaseSurfaces();
 
@@ -525,7 +534,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 CModelGenerator::FreeSharedModelData - manipulate memory of a duplicate model so that shared data does not get freed twice
 ===============
 */
-void CModelGenerator::FreeSharedModelData ( const idRenderModel *source )
+void CModelGenerator::FreeSharedModelData ( const idRenderModel *source ) const
 {
 	const modelSurface_t *surf;
 

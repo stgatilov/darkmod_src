@@ -29,12 +29,18 @@
 #define MAX_MODEL_VERTS		(2 << 18)		// never combine more than this into one model
 #define MAX_MODEL_INDEXES	(2 << 18)		// never combine more than this into one model
 
+enum lode_model_flags {
+	LODE_MODEL_NOSHADOW		= 0x0001,		// remove common/shadow surfaces
+	LODE_MODEL_NOCLIP		= 0x0002,		// remove common/collision or tdm_collision_X surfaces
+};
+
 // Defines offset, rotation and vertex color for a model combine operation
 typedef struct {
 	idVec3				offset;
 	idAngles			angles;
 	dword				color;	// packed color (including alpha)
 	int					lod; 	// which LOD model stage to use?
+	int					flags; 	// flags for each model, see lode_model_flags
 } model_ofs_t;
 
 // When combining different models (e.g. different LOD stages), every model
@@ -75,12 +81,16 @@ public:
 	*/
 	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName,
 												const idList<model_ofs_t>* offsets, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL,
-												const idMaterial *shader = NULL);
+												const idMaterial *shader = NULL) const;
 
 	/**
-	* Same as DuplicateModel, but with only one LOD stage as source
+	* Copies the surfaces of the source model to a new model. If dupData is true, a full copy will
+	* be made, otherwise just pointers to the surfaces are set. In this case caller needs to make sure
+	* that references to the surfaces are not freed twice by calling FreeSharedModelData() on the
+	* returned model before destroying it.
+	* If target is NULL a new model will be allocated. Returns target or the newly allocated model.
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true);
+	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL) const;
 
 	/**
 	* Returns the maximum number of models that can be combined from this model:
@@ -96,7 +106,7 @@ public:
 	* Manipulate memory of a duplicate of a model so that the shared data does not get
 	* freed twice.
 	*/
-	void					FreeSharedModelData ( const idRenderModel *model );
+	void					FreeSharedModelData ( const idRenderModel *model ) const;
 
 private:
 
