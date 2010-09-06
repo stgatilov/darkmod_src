@@ -179,6 +179,11 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Classes[i].size );
 		savefile->WriteVec3( m_Classes[i].color_min );
 		savefile->WriteVec3( m_Classes[i].color_max );
+		savefile->WriteBool( m_Classes[i].z_invert );
+		savefile->WriteFloat( m_Classes[i].z_min );
+		savefile->WriteFloat( m_Classes[i].z_max );
+		savefile->WriteFloat( m_Classes[i].z_fadein );
+		savefile->WriteFloat( m_Classes[i].z_fadeout );
 
 		savefile->WriteFloat( m_Classes[i].defaultProb );
 
@@ -364,6 +369,11 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( m_Classes[i].size );
 		savefile->ReadVec3( m_Classes[i].color_min );
 		savefile->ReadVec3( m_Classes[i].color_max );
+		savefile->ReadBool( m_Classes[i].z_invert );
+		savefile->ReadFloat( m_Classes[i].z_min );
+		savefile->ReadFloat( m_Classes[i].z_max );
+		savefile->ReadFloat( m_Classes[i].z_fadein );
+		savefile->ReadFloat( m_Classes[i].z_fadeout );
 
 		savefile->ReadFloat( m_Classes[i].defaultProb );
 
@@ -912,6 +922,42 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
     LodeClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9) );
     LodeClass.impulse_max.Clamp( LodeClass.impulse_min, idVec3(1000,+90,360) );
 
+    LodeClass.z_invert = ent->spawnArgs.GetBool("lode_z_invert", spawnArgs.GetString("z_invert", "0"));
+    LodeClass.z_min = ent->spawnArgs.GetFloat("lode_z_min", spawnArgs.GetString("z_min", "-1000000"));
+    LodeClass.z_max = ent->spawnArgs.GetFloat("lode_z_max", spawnArgs.GetString("z_max", "1000000"));
+
+	if (LodeClass.z_max < LodeClass.z_max)
+	{
+		// hm, should we warn?
+		LodeClass.z_max = LodeClass.z_min;
+	}
+    LodeClass.z_fadein  = ent->spawnArgs.GetFloat("lode_z_fadein",  spawnArgs.GetString("z_fadein", "0"));
+    LodeClass.z_fadeout = ent->spawnArgs.GetFloat("lode_z_fadeout", spawnArgs.GetString("z_fadeout", "0"));
+	if (LodeClass.z_fadein < 0)
+	{
+		gameLocal.Warning( "LODE %s: Invalid z-fadein %0.2f (should be >= 0) for class %s, ignoring it.\n",
+				GetName(), LodeClass.z_fadein, LodeClass.classname.c_str() );
+		LodeClass.z_fadein = 0;
+	}
+	if (LodeClass.z_fadeout < 0)
+	{
+		gameLocal.Warning( "LODE %s: Invalid z-fadeout %0.2f (should be >= 0) for class %s, ignoring it.\n",
+				GetName(), LodeClass.z_fadeout, LodeClass.classname.c_str() );
+		LodeClass.z_fadeout = 0;
+	}
+	
+	if (LodeClass.z_min + LodeClass.z_fadein > LodeClass.z_max - LodeClass.z_fadeout)
+	{
+		// hm, should we warn?
+	    LodeClass.z_fadein = LodeClass.z_max - LodeClass.z_fadeout - LodeClass.z_min;
+	}
+
+	if (LodeClass.z_min != -1000000 && !LodeClass.floor)
+	{
+		gameLocal.Warning( "LODE %s: Warning: Setting lode_z_min/lode_z_max without setting 'lode_floor' to true won't work!\n", GetName() );
+		// just use flooring for this class
+		LodeClass.floor = true;
+	}
 	// all data setup, append to the list
 	m_Classes.Append ( LodeClass );
 
@@ -1691,7 +1737,50 @@ void Lode::PrepareEntities( void )
 					LodeEntity.origin.z = m_Classes[i].origin.z;
 				}
 
-				// compute a random sink value
+				// after flooring, check if it is inside z_min/z_max band
+       			if ( !m_Classes[i].z_invert )
+				{
+						gameLocal.Printf ("LODE %s: z_invert true, min %0.2f max %0.2f cur %0.2f\n", 
+       						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
+       				if ( LodeEntity.origin.z < m_Classes[i].z_min || LodeEntity.origin.z > m_Classes[i].z_max )
+					{
+						// outside the band, skip
+						continue;
+					}
+					// TODO: use z_fadein/z_fadeout
+				}
+				else
+				{
+						gameLocal.Printf ("LODE %s: z_invert false, min %0.2f max %0.2f cur %0.2f\n", 
+       						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
+					// TODO: use z_fadein/z_fadeout
+       				if ( LodeEntity.origin.z > m_Classes[i].z_min && LodeEntity.origin.z < m_Classes[i].z_max )
+					{
+						// inside the band, skip
+						continue;
+					}
+       				if ( m_Classes[i].z_fadein > 0 && LodeEntity.origin.z < m_Classes[i].z_min + m_Classes[i].z_fadein )
+					{
+						float d = ((m_Classes[i].z_min + m_Classes[i].z_fadein) - LodeEntity.origin.z) / m_Classes[i].z_fadein;
+						probability *= d;
+						gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+					}
+       				if ( m_Classes[i].z_fadeout > 0 && LodeEntity.origin.z > m_Classes[i].z_max - m_Classes[i].z_fadeout )
+					{
+						float d = (m_Classes[i].z_max - LodeEntity.origin.z) / m_Classes[i].z_fadeout;
+						probability *= d;
+						gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+					}
+				}
+
+				if (r > probability)
+				{
+					//gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
+					continue;
+				}
+
+				// compute a random sink value (that is added ater flooring and after the z-min/max check, so you can
+				// have some variability, too)
 				if (m_Classes[i].sink_max > 0)
 				{
 					// TODO: use a gravity normal
@@ -2034,7 +2123,7 @@ void Lode::CombineEntities( void )
 //		gameLocal.Warning("LODE %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
-//		ofs.flags  = 0;
+		ofs.flags  = 0;
 		// restore our value (it is not used, anyway)
 		m_LODLevel = 0;
 
@@ -2096,7 +2185,7 @@ void Lode::CombineEntities( void )
 //			gameLocal.Warning("LODE %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
-//			ofs.flags  = 0;
+			ofs.flags  = 0;
 			// restore our value (it is not used, anyway)
 			m_LODLevel = 0;
 

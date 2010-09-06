@@ -125,6 +125,12 @@ struct lode_class_t {
 	idStr					map;			//!< name of the image map (greyscale 8-bit TGA)
 	CImage*					img;			//!< if map != "": ptr to the distribution image map
 
+	float					z_min;			// depends on z_invert
+	float					z_max;			// depends on z_invert
+	float					z_fadein;		// depends on z_invert
+	float					z_fadeout;		// depends on z_invert
+	bool					z_invert;		// false => entities spawn between z_min => z_max, otherwise outside
+
 	lod_data_t*				m_LOD;			//!< Contains (sharable, constant) LOD data if non-NULL.
 };
 
