@@ -48,7 +48,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // if the number of entities is higher than this, we no longer spawn entities
 #define SPAWN_LIMIT (MAX_GENTITIES - 100)
 
-const idEventDef EV_Deactivate( "deactivate", "e" );
 const idEventDef EV_CullAll( "cullAll", "" );
 
 /*
@@ -61,7 +60,8 @@ const idEventDef EV_CullAll( "cullAll", "" );
 
 CLASS_DECLARATION( idStaticEntity, Lode )
 	EVENT( EV_Activate,				Lode::Event_Activate )
-	EVENT( EV_Deactivate,			Lode::Event_Deactivate )
+	EVENT( EV_Enable,				Lode::Event_Enable )
+	EVENT( EV_Disable,				Lode::Event_Disable )
 	EVENT( EV_CullAll,				Lode::Event_CullAll )
 END_CLASS
 
@@ -1011,7 +1011,7 @@ void Lode::ComputeEntityCount( void )
     else
 	{
 		// scale the amount of entities that the mapper requested, but only if it's > 10 or what was requested:
-		if (m_iNumEntities > spawnArgs.GetFloat( "lod_scaling_limit", "10" ))
+		if (m_iNumEntities > 0 && m_iNumEntities > spawnArgs.GetFloat( "lod_scaling_limit", "10" ))
 		{
 			m_iNumEntities *= LODBIAS();
 		}
@@ -2034,6 +2034,7 @@ void Lode::CombineEntities( void )
 //		gameLocal.Warning("LODE %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
+//		ofs.flags  = 0;
 		// restore our value (it is not used, anyway)
 		m_LODLevel = 0;
 
@@ -2095,6 +2096,7 @@ void Lode::CombineEntities( void )
 //			gameLocal.Warning("LODE %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
+//			ofs.flags  = 0;
 			// restore our value (it is not used, anyway)
 			m_LODLevel = 0;
 
@@ -2207,10 +2209,15 @@ void Lode::CombineEntities( void )
 				PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, 0, true);
 				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
 
+				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin, 0);
 				PseudoClass.physicsObj->SetAxis( m_Entities[i].angles.ToMat3(), 0);
 				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, 0 );
+				// ??
+				PseudoClass.physicsObj->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
 			}
+			idBounds bounds; bounds.Clear();
+
 			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)tobedeleted.Num();
 			for (unsigned int d = 0; d < n; d++)
@@ -2224,14 +2231,26 @@ void Lode::CombineEntities( void )
 					if (clipLoaded)
 					{
 						int clipNr = d + 1;	// 0 is the original entity
+					//	idClipModel* clip = new idClipModel();
+					//	bool clipLoaded1 = clip->LoadModel( lowest_LOD_model );
+					
+						//clip->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
+						//clip->SetOrigin( m_Entities[ todo ].origin);
+
 						// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
 						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
 
-						gameLocal.Printf("Set clipmodel %i from %i at %s\n", clipNr, n, m_Entities[ todo ].origin.ToString() );
+						gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
 
 						PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
+//						idClipModel* c = PseudoClass.physicsObj->GetClipModel( clipNr );
+//						c->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
 						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
 						PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, clipNr );
+
+						bounds += lod_0_clip->GetBounds() + m_Entities[ todo ].origin;
+
+						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
 					}
 				}
 				else
@@ -2239,6 +2258,12 @@ void Lode::CombineEntities( void )
 					// restore classIdx
 					m_Entities[todo].classIdx = -m_Entities[todo].classIdx;
 				}
+			}
+
+			// correct the bounds of the physics obj
+			if (merged > 0)
+			{
+				//PseudoClass.physicsObj->SetBounds( bounds );
 			}
 
 			// build the combined model
@@ -2381,8 +2406,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 			//idStaticEntity *s_ent = static_cast<idStaticEntity*>( ent2 );
 			/* TODO: Disable LOD for attachments, too, then manage them outselves.
 			   Currently, if you spawn 100 entities with 1 attachement each, we
-			   save thinking on 100 entities, but still have 100 attachements think
-			   each other.
+			   save thinking on 100 entities, but still have 100 attachements think.
 			if (s_ent)
 			{
 				s_ent->StopLOD( true );
@@ -2412,9 +2436,12 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
-					//gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
+					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
+
 					ent2->SetPhysics( lclass->physicsObj );
 					lclass->physicsObj->SetSelf( ent2 );
+
+					//lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
 					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
 				}
@@ -2727,12 +2754,23 @@ void Lode::Event_Activate( idEntity *activator ) {
 
 /*
 ================
-Lode::Event_Deactivate
+Lode::Event_Disable
 ================
 */
-void Lode::Event_Deactivate( idEntity *activator ) {
+void Lode::Event_Disable( void ) {
 
 	active = false;
+	BecomeInactive(TH_THINK);
+}
+
+/*
+================
+Lode::Event_Enable
+================
+*/
+void Lode::Event_Enable( void ) {
+
+	active = true;
 	BecomeInactive(TH_THINK);
 }
 

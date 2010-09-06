@@ -163,6 +163,8 @@ struct lode_entity_t {
 	int						classIdx;		//!< index into m_Classes
 };
 
+extern const idEventDef EV_Disable;
+extern const idEventDef EV_Enable;
 extern const idEventDef EV_Deactivate;
 extern const idEventDef EV_CullAll;
 
@@ -187,7 +189,13 @@ public:
 	/**
 	* Stop thinking and no longer cull/spawn entities.
 	*/
-	void				Event_Deactivate( idEntity *activator );
+	void				Event_Disable( void );
+
+	/**
+	* Start thinking and cull/spawn entities again.
+	*/
+	void				Event_Enable( void );
+
 	/*
 	* Cull all entities. Only useful after Deactivate().
 	*/
