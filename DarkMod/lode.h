@@ -109,7 +109,10 @@ struct lode_class_t {
 											//!< 2 other auto-generated entities (other classes)
 											//!< 4 other static entities already present
 											//!< 8 world geometry
-	idVec3					size;			//!< size of the model for collision tests
+	idVec3					size;			//!< size of the model for collision tests during placement
+
+	idVec3					scale_min;		//!< X Y Z min factors for randomly scaling rendermodels
+	idVec3					scale_max;		//!< X Y Z max factor for randomly scaling rendermodels
 
 	int						falloff;		//!< Entity random distribution method
 											//!< 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func

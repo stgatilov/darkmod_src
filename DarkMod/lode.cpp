@@ -18,6 +18,7 @@ TODO: take over LOD changes from entity
 TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
 	  smaller structs for pseudo classes (we might have thousands
 	  of pseudoclass structs due to each having a different hmodel)
+TODO: Feed sink_min/sink_max to the ModelGenerator (needs first a scaling field in offsets)
 */
 
 #include "../idlib/precompiled.h"
@@ -169,6 +170,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( m_Classes[i].bunching );
 		savefile->WriteFloat( m_Classes[i].sink_min );
 		savefile->WriteFloat( m_Classes[i].sink_max );
+		savefile->WriteVec3( m_Classes[i].scale_min );
+		savefile->WriteVec3( m_Classes[i].scale_max );
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteBool( m_Classes[i].nocombine );
@@ -359,6 +362,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( m_Classes[i].bunching );
 		savefile->ReadFloat( m_Classes[i].sink_min );
 		savefile->ReadFloat( m_Classes[i].sink_max );
+		savefile->ReadVec3( m_Classes[i].scale_min );
+		savefile->ReadVec3( m_Classes[i].scale_max );
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadBool( m_Classes[i].nocombine );
@@ -696,10 +701,13 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// to randomly sink entities into the floor
 	LodeClass.sink_min = ent->spawnArgs.GetFloat( "lode_sink_min", spawnArgs.GetString( "sink_min", "0") );
 	LodeClass.sink_max = ent->spawnArgs.GetFloat( "lode_sink_max", spawnArgs.GetString( "sink_max", "0") );
-	if (LodeClass.sink_max < LodeClass.sink_min)
-	{
-		LodeClass.sink_max = LodeClass.sink_min;
-	}
+	if (LodeClass.sink_max < LodeClass.sink_min) { LodeClass.sink_max = LodeClass.sink_min; }
+
+	LodeClass.scale_min = ent->spawnArgs.GetVector( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+	LodeClass.scale_max = ent->spawnArgs.GetVector( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+	if (LodeClass.scale_max.x < LodeClass.scale_min.x) { LodeClass.scale_max.x = LodeClass.scale_min.x; }
+	if (LodeClass.scale_max.y < LodeClass.scale_min.y) { LodeClass.scale_max.y = LodeClass.scale_min.y; }
+	if (LodeClass.scale_max.z < LodeClass.scale_min.z) { LodeClass.scale_max.z = LodeClass.scale_min.z; }
 
 	LodeClass.falloff = -1;	// none
 	falloff = ent->spawnArgs.GetString( "lode_falloff", spawnArgs.GetString( "falloff", "none") );
