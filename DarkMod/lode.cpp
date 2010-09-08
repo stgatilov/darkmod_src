@@ -19,8 +19,9 @@ TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
 	  smaller structs for pseudo classes (we might have thousands
 	  of pseudoclass structs due to each having a different hmodel)
 TODO: add "watch_models" (or "combine_models"?) so the mapper can place models and
-	  then use the modelgenerator to combine them into one big rendermodel. also
-	  test if doom's "combine_models" works or not.
+	  then use the modelgenerator to combine them into one big rendermodel. The current
+	  way of targeting and using "watch_brethren" does get all "func_static" as it is
+	  classname based, not model name based.
 */
 
 #include "../idlib/precompiled.h"
