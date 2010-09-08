@@ -34,9 +34,10 @@ enum lode_model_flags {
 	LODE_MODEL_NOCLIP		= 0x0002,		// remove common/collision or tdm_collision_X surfaces
 };
 
-// Defines offset, rotation and vertex color for a model combine operation
+// Defines offset, rotation, vertex color etc. for a model combine operation
 typedef struct {
 	idVec3				offset;
+	idVec3				scale;
 	idAngles			angles;
 	dword				color;	// packed color (including alpha)
 	int					lod; 	// which LOD model stage to use?
@@ -90,7 +91,7 @@ public:
 	* returned model before destroying it.
 	* If target is NULL a new model will be allocated. Returns target or the newly allocated model.
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL) const;
+	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL, const idVec3 *scale = NULL) const;
 
 	/**
 	* Returns the maximum number of models that can be combined from this model:

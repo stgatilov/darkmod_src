@@ -87,7 +87,7 @@ Returns the given (or allocated) model.
 
 ===============
 */
-idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel) const {
+idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel, const idVec3 *scale) const {
 
 	int numSurfaces;
 	int numVerts, numIndexes;
