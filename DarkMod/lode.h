@@ -159,6 +159,7 @@ struct lode_entity_t {
 	int						skinIdx;		//!< index into skin list, the final skin for this entity (might be randomly choosen)
 	idVec3					origin;			//!< (semi-random) origin
 	idAngles				angles;			//!< zyx (yaw, pitch, roll) (semi-random) angles
+	idVec3					scale;			//!< XYZ scale factor
 	dword					color;			//!< (semi-random) color, computed from base/min/max colors of the class
 	int						flags;			/*!< flags & 0x00FFFFFF:
 												  0x01 hidden? 1 = hidden, 0 => visible
