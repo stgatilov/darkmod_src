@@ -15,6 +15,8 @@
 
    Manipulate, combine or generate models at run time.
 
+TODO: use the supplied scale value when duplicating/combining models
+TODO: skip nodraw shaders when combining models
 */
 
 #include "../idlib/precompiled.h"
@@ -25,7 +27,7 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 #include "ModelGenerator.h"
 
 // uncomment to have debug printouts
-//#define M_DEBUG r10
+//#define M_DEBUG 1
 
 /*
 ===============
@@ -381,7 +383,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		targetSurfInfo[j].numIndexes = 0;
 	}
 
-	// now combine everything into one mode
+	// now combine everything into one model
 
 	// for each offset
 	for (int o = 0; o < offsets->Num(); o++)
@@ -439,7 +441,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			int nV = newTargetSurfInfoPtr->numVerts;
 			int nI = newTargetSurfInfoPtr->numIndexes;
 			int vmax = surf->geometry->numVerts;
-			// copy the vertexes
+			// copy the vertexes and modify them at the same time (scale, rotate, offset)
 			for (int j = 0; j < vmax; j++)
 			{
 				newSurf->geometry->verts[nV] = surf->geometry->verts[j];
