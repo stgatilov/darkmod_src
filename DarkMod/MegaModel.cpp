@@ -15,6 +15,8 @@
 
    Contains a rendermodel combined from different LOD stages of the same model
 
+	TODO: Put the definition of the changes into ModelGenerator.h.
+
 */
 
 #include "../idlib/precompiled.h"
@@ -195,10 +197,22 @@ void CMegaModel::AddChange( const int entity, const int newLOD ) {
 	{
 		if (m_Changes[i].entity == entity)
 		{
-
-			// TODO: if the new change changes the model back to what it already is, remove
+			// If the new change changes the model back to what it already is, remove
 			// the change set:
-			m_Changes[i].newLOD = newLOD;
+			if ( m_Changes[i].oldLOD == newLOD )
+			{
+				// TODO: m_Changes.RemoveIndex(i,false);
+				m_Changes.RemoveIndex(i);
+			}
+			else
+			{
+				// keep the change set with the new value
+				m_Changes[i].newLOD = newLOD;
+			}
+			// TODO: move changed change sets to the front of the list, based
+			// on the assumption they might change back again when the player
+			// moves forth and back?
+
 			// done
 			return;
 		}
