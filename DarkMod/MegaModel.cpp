@@ -68,8 +68,10 @@ void CMegaModel::Save( idSaveGame *savefile ) const {
 	for (int i = 0; i < m_Offsets.Num(); i++ )
 	{
 		savefile->WriteVec3( m_Offsets[i].offset );
+		savefile->WriteVec3( m_Offsets[i].scale );
 		savefile->WriteAngles( m_Offsets[i].angles );
 		savefile->WriteInt( m_Offsets[i].lod );
+		savefile->WriteInt( m_Offsets[i].flags );
 		savefile->WriteUnsignedInt( m_Offsets[i].color );
 	}
 
@@ -103,8 +105,10 @@ void CMegaModel::Restore( idRestoreGame *savefile ) {
 	for (int i = 0; i < n; i ++)
 	{
 		savefile->ReadVec3( m_Offsets[i].offset );
+		savefile->ReadVec3( m_Offsets[i].scale );
 		savefile->ReadAngles( m_Offsets[i].angles );
 		savefile->ReadInt( m_Offsets[i].lod );
+		savefile->ReadInt( m_Offsets[i].flags );
 		savefile->ReadUnsignedInt( m_Offsets[i].color );
 	}
 
