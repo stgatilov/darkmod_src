@@ -155,6 +155,16 @@ void idLiquid::Spawn() {
 
 	this->SetPhysics( &this->physicsObj );
 
+	renderEntity.shaderParms[ 3 ]	= spawnArgs.GetFloat( "shaderParm3", "1" );
+	renderEntity.shaderParms[ 4 ]	= spawnArgs.GetFloat( "shaderParm4", "0" );
+	renderEntity.shaderParms[ 5 ]	= spawnArgs.GetFloat( "shaderParm5", "0" );
+	renderEntity.shaderParms[ 6 ]	= spawnArgs.GetFloat( "shaderParm6", "0" );
+	renderEntity.shaderParms[ 7 ]	= spawnArgs.GetFloat( "shaderParm7", "0" );
+	renderEntity.shaderParms[ 8 ]	= spawnArgs.GetFloat( "shaderParm8", "0" );
+	renderEntity.shaderParms[ 9 ]	= spawnArgs.GetFloat( "shaderParm9", "0" );
+	renderEntity.shaderParms[ 10 ]	= spawnArgs.GetFloat( "shaderParm10", "0" );
+	renderEntity.shaderParms[ 11 ]	= spawnArgs.GetFloat( "shaderParm11", "0" );
+
 	BecomeActive( TH_THINK );
 }
 
