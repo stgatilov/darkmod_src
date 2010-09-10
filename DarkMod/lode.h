@@ -141,6 +141,8 @@ struct lode_class_t {
 struct lode_inhibitor_t {
 	idVec3					origin;			//!< origin of the area
 	idBox					box;			//!< oriented box of the area
+	idList< idStr >			classnames;		//!< Contains a list of classes to inhibit/allow, depending on "inhibit_only"
+	bool					inhibit_only;	//!< If false, classes in 'classnames' are allowed instead of inhibited
 };
 
 #define LODE_ENTITY_FLAGMASK 0x00FFFFFF

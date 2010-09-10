@@ -248,6 +248,13 @@ void Lode::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteVec3( m_Inhibitors[i].origin );
 		savefile->WriteBox( m_Inhibitors[i].box );
+		savefile->WriteBool( m_Inhibitors[i].inhibit_only );
+		int n = m_Inhibitors[i].classnames.Num();
+		savefile->WriteInt( n );
+		for( int j = 0; j < n; j++ )
+		{
+			savefile->WriteString( m_Inhibitors[i].classnames[j] );
+		}
 	}
 	savefile->WriteInt( m_Skins.Num() );
 	for( int i = 0; i < m_Skins.Num(); i++ )
@@ -452,6 +459,15 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadVec3( m_Inhibitors[i].origin );
 		savefile->ReadBox( m_Inhibitors[i].box );
+		savefile->ReadBool( m_Inhibitors[i].inhibit_only );
+		int n;
+		savefile->ReadInt( n );
+		m_Inhibitors[i].classnames.Clear();
+		m_Inhibitors[i].classnames.SetNum(n);
+		for( int j = 0; j < n; j++ )
+		{
+			savefile->ReadString( m_Inhibitors[i].classnames[j] );
+		}
 	}
 
 	savefile->ReadInt( num );
@@ -1108,6 +1124,45 @@ void Lode::Prepare( void )
 				// or rotation spawnarg. Use clipmodel instead? Note: Unrotating the entity, but adding an "axis"
 				// spawnarg works.
 				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize() / 2, ent->GetPhysics()->GetAxis() );
+
+				// default is "noinhibit" (and this will be ignored if classnames.Num() == 0)
+				LodeInhibitor.inhibit_only = false;
+				LodeInhibitor.classnames.Clear();
+
+				const idKeyValue *kv;
+				idStr prefix = "inhibit";
+
+				// if "inhibit" is set, it will only inhibit the given classes, and we ignore "noinhibit":
+				if ( ent->spawnArgs.FindKey(prefix) )
+				{
+					LodeInhibitor.inhibit_only = true;
+				}
+				else
+				{
+					prefix = "noinhibit";
+					if (! ent->spawnArgs.FindKey(prefix) )
+					{
+						// LodeInhibitor.inhibit_only = true;		// will be ignored anyway
+						prefix = "";
+					}
+
+				}
+
+				// have either inhibit or noinhibit in the spawnargs?
+				if ( !prefix.IsEmpty())
+				{
+					gameLocal.Printf( "LODE %s: Inhibitor has %s set.\n", GetName(), prefix.c_str() );
+   					kv = ent->spawnArgs.MatchPrefix( prefix, NULL );
+					while( kv )
+					{
+						idStr classname = kv->GetValue();
+						gameLocal.Printf( "LODE %s: Inhibitor adding class '%s' (%s)\n", GetName(), classname.c_str(), LodeInhibitor.inhibit_only ? "inhibit" : "noinhibit" );
+						LodeInhibitor.classnames.Append( classname );
+						// next one please
+						kv = ent->spawnArgs.MatchPrefix( prefix, kv );
+					}
+				}
+
 				m_Inhibitors.Append ( LodeInhibitor );
 				continue;
 			}
@@ -1694,7 +1749,7 @@ void Lode::PrepareEntities( void )
 
 				if (m_Classes[i].floor)
 				{
-					gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
+					//gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
 
 					// end of the trace (downwards the length from entity class position to bottom of LODE)
 					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = origin.z - size.z;
@@ -1751,8 +1806,8 @@ void Lode::PrepareEntities( void )
 				// after flooring, check if it is inside z_min/z_max band
        			if ( !m_Classes[i].z_invert )
 				{
-						gameLocal.Printf ("LODE %s: z_invert true, min %0.2f max %0.2f cur %0.2f\n", 
-       						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
+//						gameLocal.Printf ("LODE %s: z_invert true, min %0.2f max %0.2f cur %0.2f\n", 
+  //     						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
        				if ( LodeEntity.origin.z < m_Classes[i].z_min || LodeEntity.origin.z > m_Classes[i].z_max )
 					{
 						// outside the band, skip
@@ -1762,8 +1817,8 @@ void Lode::PrepareEntities( void )
 				}
 				else
 				{
-						gameLocal.Printf ("LODE %s: z_invert false, min %0.2f max %0.2f cur %0.2f\n", 
-       						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
+	//					gameLocal.Printf ("LODE %s: z_invert false, min %0.2f max %0.2f cur %0.2f\n", 
+      // 						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
 					// TODO: use z_fadein/z_fadeout
        				if ( LodeEntity.origin.z > m_Classes[i].z_min && LodeEntity.origin.z < m_Classes[i].z_max )
 					{
@@ -1774,13 +1829,13 @@ void Lode::PrepareEntities( void )
 					{
 						float d = ((m_Classes[i].z_min + m_Classes[i].z_fadein) - LodeEntity.origin.z) / m_Classes[i].z_fadein;
 						probability *= d;
-						gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+		//				gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
 					}
        				if ( m_Classes[i].z_fadeout > 0 && LodeEntity.origin.z > m_Classes[i].z_max - m_Classes[i].z_fadeout )
 					{
 						float d = (m_Classes[i].z_max - LodeEntity.origin.z) / m_Classes[i].z_fadeout;
 						probability *= d;
-						gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+		//				gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
 					}
 				}
 
@@ -1838,10 +1893,34 @@ void Lode::PrepareEntities( void )
 							// this test ensures that entities "peeking" into the inhibitor will be inhibited, too
 							if (testBox.IntersectsBox( m_Inhibitors[k].box ) )
 							{
-								// inside an inhibitor, skip
-								gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying again.\n", GetName(), k );
-								inhibited = true;
-								break;							
+								// inside an inhibitor
+								inhibited = true;		// default is inhibit
+								
+								// check against classnames and allow/inhibit
+								int n = m_Inhibitors[k].classnames.Num();
+								if (n > 0)
+								{
+									// "inhibit" set => inhibit_only true => start with false
+									// "noinhibit" set and "inhibit" not set => inhibit_only false => start with true
+									inhibited = ! m_Inhibitors[k].inhibit_only;
+									for (int c = 0; c < n; c++)
+									{
+										if (m_Inhibitors[k].classnames[c] == m_Classes[i].classname)
+										{
+											// flip the true/false value if we found a match
+											inhibited = !inhibited;
+											gameLocal.Printf( "LODE %s: Entity class %s %s by inhibitor %i.\n", 
+													GetName(), m_Classes[i].classname.c_str(), inhibited ? "inhibited" : "allowed" );
+											break;
+										}
+									}
+								}
+
+								if (inhibited == true)
+								{
+									gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
+									break;							
+								}
 							}
 						}
 
@@ -1968,6 +2047,7 @@ void Lode::PrepareEntities( void )
 			idVec3 origin = ent->GetPhysics()->GetOrigin();
 
 			// the class we should watch?
+			// TODO: also compare the "model" spawnarg, otherwise multiple func_statics won't work
 			if (( ent->GetEntityDefName() == m_Classes[i].classname) &&
 				// and is this entity in our box?
 				(box.ContainsPoint( origin )) )
