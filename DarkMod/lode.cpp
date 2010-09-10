@@ -925,12 +925,12 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		{
 		// Store m_LOD at the class
 		LodeClass.m_LOD = m_LOD;
-		m_LOD = NULL;				// prevent double free
 		}
 	else
 		{
 		LodeClass.m_LOD = NULL;
 		}
+	m_LOD = NULL;				// prevent double free (and LODE doesn't have LOD)
 	LodeClass.materials.Clear();
 
 	// The default probability for all materials not matching anything in materials:
@@ -1946,7 +1946,7 @@ void Lode::PrepareEntities( void )
 											// flip the true/false value if we found a match
 											inhibited = !inhibited;
 											gameLocal.Printf( "LODE %s: Entity class %s %s by inhibitor %i.\n", 
-													GetName(), m_Classes[i].classname.c_str(), inhibited ? "inhibited" : "allowed" );
+													GetName(), m_Classes[i].classname.c_str(), inhibited ? "inhibited" : "allowed", k );
 											break;
 										}
 									}
