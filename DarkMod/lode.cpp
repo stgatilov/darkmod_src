@@ -688,8 +688,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// only for pseudo classes
 	LodeClass.physicsObj = NULL;
 	
-	// get all "skin" and "skin_xx" spawnargs
-
+	// get all "skin" and "skin_xx", as well as "random_skin" spawnargs
 	LodeClass.skins.Clear();
 	// if no skin spawnarg exists, add the empty skin so we at least have one entry
 	if ( ! ent->spawnArgs.FindKey("skin") )
@@ -705,6 +704,43 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		gameLocal.Printf( "LODE %s: Adding skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
 		LodeClass.skins.Append ( skinIdx );
 		kv = ent->spawnArgs.MatchPrefix( "skin", kv );
+	}
+	idStr random_skin = ent->spawnArgs.GetString("random_skin","");
+	if ( !random_skin.IsEmpty() )
+	{
+		gameLocal.Printf( "LODE %s: Entity has random_skin '%s'.\n", GetName(), random_skin.c_str() );
+		// TODO: split up at "," and add all these to the skins
+		// if we have X commata, we have X+1 pieces, so go through all of them
+		int start = 0; int end = 0;
+		int numChars = random_skin.Length();
+		gameLocal.Printf(" start %i numChars %i\n", start, numChars);
+		while (start < numChars)
+		{
+			// find first non-"," and non " "
+			while (start < numChars && (random_skin[start] == ',' ||random_skin[start] == ' ') )
+			{
+				start++;
+			}
+			if (start < numChars)
+			{
+				// have at least one non ','
+				end = start + 1;
+				while (end < numChars && random_skin[end] != ',')
+				{
+					end++;
+				}
+				// cut between start and end
+				if (end - start > 0)
+				{
+					idStr skin = random_skin.Mid(start, end - start);
+					int skinIdx = AddSkin( &skin );
+					gameLocal.Printf( "LODE %s: Adding random skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+					LodeClass.skins.Append ( skinIdx );
+				}
+				start = end;
+				// next part
+			}
+		}
 	}
 
 	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
@@ -2252,19 +2288,19 @@ void Lode::CombineEntities( void )
 			if (m_Entities[j].classIdx != m_Entities[i].classIdx)
 			{
 				// have different classes
-				gameLocal.Printf("LODE %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
+//				gameLocal.Printf("LODE %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
 				continue;
 			}
 			if (m_Entities[j].skinIdx != m_Entities[i].skinIdx)
 			{
-				// have different classes
-				gameLocal.Printf("LODE %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
+				// have different skins
+//				gameLocal.Printf("LODE %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
 				continue;
 			}
 			// in different PVS?
 			if ( multiPVS && pvs[j] != pvs[i])
 			{
-				gameLocal.Printf("LODE %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
+//				gameLocal.Printf("LODE %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
 				continue;
 			}
 			// distance too big?
