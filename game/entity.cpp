@@ -1988,7 +1988,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 			{
 				if (m_LOD->fLODFadeOutRange > 0)
 				{
-					//gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
+//					gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
 					if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
 					{
 						fAlpha = 0.0f;
@@ -2008,7 +2008,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				m_LODLevel = i;
 
 				// early out, we found the right level and switched
-				return true;
+				return fAlpha;
 			}
 		}
 
@@ -2033,7 +2033,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				else
 				{
 					fAlpha = (deltaSq - (m_LOD->DistLODSq[0] - m_LOD->fLODFadeInRange)) / m_LOD->fLODFadeOutRange;
-					//gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
+	//				gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
 				}
 				// set the timestamp so we think the next frame again to get a smooth blend:
 				m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
@@ -2045,13 +2045,13 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 			}
 
 			// We found the right level and switched to it
-			return true;
+			return fAlpha;
 		}
 
 	// end for all LOD levels
 	}
 
-	return false;
+	return fAlpha;
 }
 
 /* Tels:
@@ -2064,15 +2064,21 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 	int oldLODLevel = m_LODLevel;
 	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
 
-	if (fAlpha == 0.0f && !fl.hidden)
+//		 gameLocal.Printf("%s: Got fAlpha %0.2f\n", GetName(), fAlpha);
+
+	if (fAlpha < 0.0001f)
 	{
-		Hide();
+	   	if (!fl.hidden)
+		{
+//					gameLocal.Printf( "%s Hiding\n", GetName() );
+			Hide();
+		}
 	}
 	else
 	{
 		if (fl.hidden)
 		{
-			//gameLocal.Printf("Showing %s again (LOD %i)\n", GetName(), i);
+//			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
 			Show();
 		}
 		SetAlpha( fAlpha, true );
@@ -2080,10 +2086,12 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 
 	if (m_LODLevel != oldLODLevel)
 	{
+//				gameLocal.Printf( "%s LOD level changed from %i to %i\n",
+//					GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
 			{
-				//gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-				//	GetName(), i, m_ModelLOD[i].c_str(), m_OffsetLOD[i].x, m_OffsetLOD[i].y, m_OffsetLOD[i].z );
+//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
 				SetModel( m_LOD->ModelLOD[m_LODLevel] );
 				m_ModelLODCur = m_LODLevel;
 				SetOrigin( m_LOD->OffsetLOD[m_LODLevel] );
