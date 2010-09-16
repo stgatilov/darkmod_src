@@ -197,7 +197,10 @@ void CMissionManager::SearchForNewMissions()
 	MoveList zipMoveList = SearchForNewMissions(".zip");
 
 	// Merge the zips into the pk4 list
-	moveList.merge(zipMoveList);
+	if (!zipMoveList.empty())
+	{
+		moveList.merge(zipMoveList);
+	}
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %d new mission packages.\r", static_cast<int>(moveList.size()));
 	gameLocal.Printf("Found %d new mission packages.\n", static_cast<int>(moveList.size()));
