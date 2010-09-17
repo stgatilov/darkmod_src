@@ -760,6 +760,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	// Save our grabber pointer
 	savegame.WriteObject(m_Grabber);
 
+	// Save the model generator data
+	m_ModelGenerator->Save(&savegame);
+
 	m_DifficultyManager.Save(&savegame);
 
 	for ( i = 0; i < NumAAS(); i++)
