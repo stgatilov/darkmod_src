@@ -483,7 +483,29 @@ public:
 
 	void				Spawn( void );
 
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+	qhandle_t			GetPortalHandle( void ) const;
+	void				Event_GetPortalHandle( void );	
+
 private:
+
+	/**
+	* Soundprop: Volume loss for sounds traveling through this portal, in
+	* addition to a potential door on this portal.
+	**/
+	float				m_SoundLoss;
+
+	/**
+	* Tels: Lightprop: Volume loss for sounds traveling through this portal
+	**/
+	float				m_LightLoss;
+
+	/**
+	* Tels: Handle of the portal this entity touches.
+	**/
+	qhandle_t			m_Portal;
 };
 
 class idVacuumSeparatorEntity : public idEntity {
