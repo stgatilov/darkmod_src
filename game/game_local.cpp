@@ -512,6 +512,10 @@ void idGameLocal::Init( void ) {
 	m_ModelGenerator = CModelGeneratorPtr(new CModelGenerator);
 	m_ModelGenerator->Init();
 
+	// Initialise the light controller
+	m_LightController = CLightControllerPtr(new CLightController);
+	m_LightController->Init();
+
 	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
 
@@ -641,6 +645,10 @@ void idGameLocal::Shutdown( void ) {
 	m_ModelGenerator->Shutdown();
 	m_ModelGenerator = CModelGeneratorPtr();
 
+	// Destroy the light controller
+	m_LightController->Shutdown();
+	m_LightController = CLightControllerPtr();
+
 	// Clear http connection
 	m_HttpConnection.reset();
 	m_GuiMessages.Clear();
@@ -760,8 +768,11 @@ void idGameLocal::SaveGame( idFile *f ) {
 	// Save our grabber pointer
 	savegame.WriteObject(m_Grabber);
 
-	// Save the model generator data
+	// Save whatever the model generator needs
 	m_ModelGenerator->Save(&savegame);
+
+	// Save whatever the light controller needs
+	m_LightController->Save(&savegame);
 
 	m_DifficultyManager.Save(&savegame);
 
@@ -1782,6 +1793,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_ConversationSystem->Restore(&savegame);
 	m_RelationsManager->Restore(&savegame);
 	m_ModelGenerator->Restore(&savegame);
+	m_LightController->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
 
@@ -2178,6 +2190,7 @@ void idGameLocal::MapShutdown( void ) {
 	m_ConversationSystem->Clear();
 	m_DifficultyManager.Clear();
 	m_ModelGenerator->Clear();
+	m_LightController->Clear();
 
 	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
 	// m_Shop->Clear();

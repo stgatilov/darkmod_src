@@ -179,6 +179,7 @@ void gameError( const char *fmt, ... );
 #include "../DarkMod/AI/AreaManager.h"
 #include "../DarkMod/GamePlayTimer.h"
 #include "../DarkMod/ModelGenerator.h"
+#include "../DarkMod/LightController.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -209,6 +210,8 @@ typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 
 class CModelGenerator;
 typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
+class CLightController;
+typedef boost::shared_ptr<CLightController> CLightControllerPtr;
 
 // Forward declare the Conversation System
 namespace ai { 
@@ -521,6 +524,11 @@ public:
 	 * tels: The model generator instance, for manipulating/generating models on the fly.
 	 */
 	CModelGeneratorPtr		m_ModelGenerator;
+
+	/**
+	 * tels: The light controller instance, used to control local ambient lights.
+	 */
+	CLightControllerPtr		m_LightController;
 
 	/**
 	 * greebo: The class handling the main menu's shop GUI.

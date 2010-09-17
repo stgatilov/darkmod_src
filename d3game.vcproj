@@ -2026,6 +2026,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\LightController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\LightController.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\lode.cpp"
 					>
 				</File>
