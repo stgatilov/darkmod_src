@@ -487,6 +487,8 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	qhandle_t			GetPortalHandle( void ) const;
+	// Returns a factor (0..1.0) that says how  much light the portal lets through
+	float				GetLightLoss( void ) const;
 	void				Event_GetPortalHandle( void );	
 
 private:

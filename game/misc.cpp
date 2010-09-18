@@ -2198,6 +2198,16 @@ void idLocationSeparatorEntity::Event_GetPortalHandle( void )
 	idThread::ReturnFloat( (float) m_Portal );
 }
 
+qhandle_t idLocationSeparatorEntity::GetPortalHandle( void ) const
+{
+	return m_Portal;
+}
+
+float idLocationSeparatorEntity::GetLightLoss( void ) const
+{
+	return m_LightLoss;
+}
+
 /*
 ===============================================================================
 
