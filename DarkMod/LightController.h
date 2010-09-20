@@ -51,9 +51,9 @@ public:
 	/**
 	* Called by gameLocal.
 	*/
-	void				Init ( void );
-	void				Shutdown ( void );
-	void				Clear ( void );
+	void				Init ( void ) {}
+	void				Shutdown ( void ) {}
+	void				Clear ( void ) {}
 
 	/**
 	* Register a light with the controller.
