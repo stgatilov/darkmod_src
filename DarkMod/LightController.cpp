@@ -44,6 +44,35 @@ CLightController::CLightController( void ) {
 
 /*
 ===============
+CLightController::Init - will be called by game_local
+===============
+*/
+void CLightController::Init ( void )
+{
+}
+
+/*
+===============
+CLightController::Shutdown - will be called by game_local
+===============
+*/
+void CLightController::Shutdown ( void )
+{
+}
+
+/*
+===============
+CLightController::Clear - will be called by game_local
+===============
+*/
+void CLightController::Clear ( void )
+{
+	m_Ambients.Clear();
+	m_Lights.Clear();
+}
+
+/*
+===============
 CLightController::Save
 ===============
 */
