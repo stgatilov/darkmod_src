@@ -433,6 +433,11 @@ private:
 	int							m_iDebug;
 
 	/**
+	* The origin of the LODE brush.
+	*/
+	idVec3						m_origin;
+
+	/**
 	* If true, debug colors are used instead of normal skins.
 	*/
 	bool						m_bDebugColors;

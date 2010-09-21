@@ -22,6 +22,19 @@ TODO: add "watch_models" (or "combine_models"?) so the mapper can place models a
 	  then use the modelgenerator to combine them into one big rendermodel. The current
 	  way of targeting and using "watch_brethren" does get all "func_static" as it is
 	  classname based, not model name based.
+TODO: Sort all the generated entities into multiple lists, keyed on a hash-key that
+	  contains all the relevant info for combining entities, so only entities that
+	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
+	  Then only look at entities from one list when combining, this will reduce the
+	  O(N*N) to something like O(N/X) where X is the set of combinable entities.
+TODO: Make it so we can also combine entities from different classes, e.g. not just
+	  take their class and skin, instead build a set of surfaces for each entities
+	  *after* the skin is applied, then use this set for matching. F.i. cattails2
+	  and cattails4 can be combined as they have the same surface, but cattails2-yellow
+	  cannot, as they don't share a surface. This will lead to better combining and
+	  thus reduce the drawcalls. Problem: different clipmodels and LOD stages might
+	  prevent this from working - but it could work for non-solids and things without
+	  any LOD stages at all (like the cattails).
 */
 
 #include "../idlib/precompiled.h"
@@ -147,6 +160,8 @@ void Lode::Save( idSaveGame *savefile ) const {
     savefile->WriteInt( m_DistCheckTimeStamp );
 	savefile->WriteInt( m_DistCheckInterval );
 	savefile->WriteBool( m_bDistCheckXYOnly );
+
+	savefile->WriteVec3( m_origin );
 
 	savefile->WriteInt( m_Entities.Num() );
 	for( int i = 0; i < m_Entities.Num(); i++ )
@@ -339,6 +354,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
     savefile->ReadInt( m_DistCheckTimeStamp );
 	savefile->ReadInt( m_DistCheckInterval );
 	savefile->ReadBool( m_bDistCheckXYOnly );
+
+	savefile->ReadVec3( m_origin );
 
     savefile->ReadInt( num );
 	m_Entities.Clear();
@@ -559,14 +576,20 @@ Lode::Spawn
 */
 void Lode::Spawn( void ) {
 
-	idClipModel *clip = GetPhysics()->GetClipModel();
-	idVec3 o = clip->GetOrigin();
-	idVec3 s = clip->GetBounds().GetSize();
-	idAngles a = clip->GetAxis().ToAngles();
-	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
-
+	// DEBUG
 	gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i.\n", 
 			GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity) );
+
+	// if we subtract the render entity origin from the physics origin (this is where the mapper places
+	// the origin inside DR), we magically arrive at the true origin of the visible brush placed in DR.
+	// Don't ask my why and don't mention I found this out after several days. Signed, a mellow Tels.
+	m_origin = GetPhysics()->GetOrigin() + renderEntity.bounds.GetCenter();
+
+//	idClipModel *clip = GetPhysics()->GetClipModel();
+//	idVec3 o = clip->GetOrigin();
+//	idVec3 s = clip->GetBounds().GetSize();
+//	idAngles a = clip->GetAxis().ToAngles();
+//	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
 //	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
 //	idVec3 o = trace->GetOrigin();
@@ -575,14 +598,15 @@ void Lode::Spawn( void ) {
 
 //	gameLocal.Printf( "LODE %s: Tracemodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
-	idBounds bounds = renderEntity.bounds;
-	idVec3 size = bounds.GetSize();
+	idVec3 size = renderEntity.bounds.GetSize();
 	idAngles angles = renderEntity.axis.ToAngles();
 
-
 	// cache in which PVS(s) we are, so we can later check if we are in Player PVS
+	// calculate our bounds
+
+	idBounds b = idBounds( - size / 2, size / 2 );	// a size/2 bunds centered around 0, will below move to m_origin
 	idBounds modelAbsBounds;
-    modelAbsBounds.FromTransformedBounds( bounds, renderEntity.origin, renderEntity.axis );
+    modelAbsBounds.FromTransformedBounds( b, m_origin, renderEntity.axis );
 	m_iNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, m_iPVSAreas, sizeof( m_iPVSAreas ) / sizeof( m_iPVSAreas[0] ) );
 
 	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
@@ -1398,7 +1422,6 @@ void Lode::Prepare( void )
 
 void Lode::PrepareEntities( void )
 {
-	idVec3					origin;				// The center of the LODE
 	lode_entity_t			LodeEntity;			// temp. storage
 	idBounds				testBounds;			// to test whether the translated/rotated entity
    												// collides with another entity (fast check)
@@ -1414,21 +1437,24 @@ void Lode::PrepareEntities( void )
 
 	int start = (int) time (NULL);
 
-	// Get our bounds (fast estimate) and the oriented box (slow, but thorough)
-	idBounds bounds = renderEntity.bounds;
-	idVec3 size = bounds.GetSize();
+	idVec3 size = renderEntity.bounds.GetSize();
 	// rotating the func-static in DR rotates the brush, but does not change the axis or
-	// add a spawnarg, so this will not work properly:
+	// add a spawnarg, so this will not work properly unless the mapper sets an "angle" spawnarg:
 	idMat3 axis = renderEntity.axis;
 
-	idAngles angles = axis.ToAngles();		// debug
-	origin = renderEntity.origin;
+	gameLocal.Printf( "LODE %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
 
-	box = idBox( origin, size, axis );
+// DEBUG:	
+//	idVec4 markerColor (0.7, 0.2, 0.2, 1.0);
+//	idBounds b = idBounds( - size / 2, size / 2 );	
+//	gameRenderWorld->DebugBounds( markerColor, b, m_origin, 5000);
+
+	box = idBox( m_origin, size, axis );
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
-	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString() );
+	idAngles angles = axis.ToAngles();		// debug
+	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString());
 
 	m_Entities.Clear();
 	if (m_iNumEntities > 100)
@@ -1565,7 +1591,7 @@ void Lode::PrepareEntities( void )
 							GetName(), distance, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z, bunchTarget );
 					// subtract the LODE origin, as m_Entities[ bunchTarget ].origin already contains it and we would
 					// otherwise add it twice below:
-					LodeEntity.origin += m_Entities[ bunchTarget ].origin - origin;
+					LodeEntity.origin += m_Entities[ bunchTarget ].origin - m_origin;
 					gameLocal.Printf ("LODE %s: Random origin plus bunchTarget origin %0.2f %0.2f %0.2f\n",
 							GetName(), LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z );
 
@@ -1678,13 +1704,13 @@ void Lode::PrepareEntities( void )
 				LodeEntity.origin *= axis;
 
 				// add origin of the LODE
-				LodeEntity.origin += origin;
+				LodeEntity.origin += m_origin;
 
 				// should only appear on certain ground material(s)?
 				if (m_Classes[i].materials.Num() > 0)
 				{
 					// end of the trace (downwards the length from entity class position to bottom of LODE)
-					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = origin.z - size.z;
+					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = m_origin.z - size.z;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
@@ -1788,7 +1814,7 @@ void Lode::PrepareEntities( void )
 					//gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
 
 					// end of the trace (downwards the length from entity class position to bottom of LODE)
-					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = origin.z - size.z;
+					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = m_origin.z - size.z;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
