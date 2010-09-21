@@ -271,8 +271,14 @@ void idGameLocal::Clear( void )
 	m_AreaManager.Clear();
 	m_ConversationSystem.reset();
 
-	m_ModelGenerator->Clear();
-	m_LightController->Clear();
+	if (m_ModelGenerator)
+	{
+		m_ModelGenerator->Clear();
+	}
+	if (m_LightController)
+	{
+		m_LightController->Clear();
+	}
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Clear();
