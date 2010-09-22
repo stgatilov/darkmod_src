@@ -2459,7 +2459,7 @@ void Lode::CombineEntities( void )
 
 				// add the zeroth clipmodel (from the original entity)
 				PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, 0, true);
-				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
+//				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
 
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin, 0);
@@ -2492,7 +2492,7 @@ void Lode::CombineEntities( void )
 						// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
 						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
 
-						gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
+//						gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
 
 						PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
 //						idClipModel* c = PseudoClass.physicsObj->GetClipModel( clipNr );
@@ -2502,7 +2502,7 @@ void Lode::CombineEntities( void )
 
 						bounds += lod_0_clip->GetBounds() + m_Entities[ todo ].origin;
 
-						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
+//						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
 					}
 				}
 				else
@@ -2688,7 +2688,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					// each pseudoclass spawns only one entity
 					r->hModel = lclass->hModel;
 					r->bounds = lclass->hModel->Bounds();
-					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
+//					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 
 					ent2->SetPhysics( lclass->physicsObj );
 					lclass->physicsObj->SetSelf( ent2 );
