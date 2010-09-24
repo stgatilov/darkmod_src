@@ -2408,7 +2408,9 @@ void Lode::CombineEntities( void )
 					// load model, then combine away
 //					gameLocal.Warning("LODE %s: Trying to load LOD model #%i %s for entity %i.", 
 //							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
-					idRenderModel* tModel = NULL;
+					// for "model_lod_1" "" => use default model
+					idRenderModel* tModel = tempModel;
+					// else:
 					idStr* mName = &(tmlod->ModelLOD[mi]);
 					if (! mName->IsEmpty() )
 					{
@@ -2427,6 +2429,9 @@ void Lode::CombineEntities( void )
 				}
 			}
 			// else just one stage
+			{
+				LODs.Append( NULL );							// LOD 1 - same as default model
+			}
 
 			idClipModel* lod_0_clip = new idClipModel();
 			// load the clipmodel for the lowest LOD stage for collision detection
