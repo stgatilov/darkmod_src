@@ -233,6 +233,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 	{
 		gameLocal.Error("No LOD models DuplicateLODModels");
 	}
+//    gameLocal.Warning("Have %i LOD stages.", nSources);
 
 	// correct entries that are out-of-bounds
 	for (int i = 0; i < offsets->Num(); i++)
@@ -264,7 +265,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		{
 			// Use the default model
 			source = LODs->Ptr()[0];
-			//gameLocal.Warning("Skipping empty LOD stage %i", i);
+//			gameLocal.Warning("Using default for empty LOD stage %i", i);
 //			continue;	// skip non-existing LOD stages
 		}
 
@@ -295,9 +296,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		shaderIndexStart.Append( shaderIndexStartOfs );	// where in shaderIndex starts the map for this LOD stage?
 
 		// get each surface
-		for (int i = 0; i < numSurfaces; i++)
+		for (int s = 0; s < numSurfaces; s++)
 		{
-			surf = source->Surface( i );
+			surf = source->Surface( s );
 			if (!surf)
 			{
 				continue;
@@ -343,7 +344,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			if (surf->shader->ShouldCreateBackSides())
 			{
 				// skip next surface
-				i++;
+				s++;
 			}
 		}
 	}
