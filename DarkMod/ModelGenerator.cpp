@@ -189,7 +189,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 CModelGenerator::DuplicateLODModels - Duplicate a render model based on LOD stages.
 
 If the given list of model_ofs_t is filled, the model will be copied X times, each time
-offset and rotated by the given values, also filling in the right vertex color.
+offset and rotated by the given values, scaled, and also fills in the right vertex color.
 ===============
 */
 idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs,
@@ -234,6 +234,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		gameLocal.Error("No LOD models DuplicateLODModels");
 	}
 
+	// correct entries that are out-of-bounds
 	for (int i = 0; i < offsets->Num(); i++)
 	{
 		op = offsets->Ptr()[i];
