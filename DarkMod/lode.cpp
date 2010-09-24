@@ -2280,7 +2280,8 @@ void Lode::CombineEntities( void )
 
 		// compute the alpha value and the LOD level
 		float fAlpha  = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
-		ofs.lod	   = m_LODLevel;
+		// 0 => default model, 1 => first stage etc
+		ofs.lod	   = m_LODLevel + 1;
 //		gameLocal.Warning("LODE %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
@@ -2343,7 +2344,8 @@ void Lode::CombineEntities( void )
 
 			// compute the alpha value and the LOD level
 			float fAlpha = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
-			ofs.lod		= m_LODLevel;
+			// 0 => default model, 1 => level 0 etc.
+			ofs.lod		= m_LODLevel + 1;
 //			gameLocal.Warning("LODE %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
