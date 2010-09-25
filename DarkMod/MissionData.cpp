@@ -1675,6 +1675,38 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	return ReturnVal;
 }
 
+bool    CMissionData::MatchLocationObjectives( idEntity * entity )
+{
+    if ( !entity )
+        return false;
+    
+    SObjEntParms    entParms;
+    
+    //  iterate over all components of the objectives and test the COMP_LOCATION components against the entity.
+    //  returns on the first match.
+    for ( int i = 0; i < m_Objectives.Num(); i++ )
+    {
+        CObjective  & currentObjective = m_Objectives[ i ];
+        for ( int j = 0; j < currentObjective.m_Components.Num(); j++ )
+        {
+            CObjectiveComponent & currentComponent = currentObjective.m_Components[ j ];
+            if ( currentComponent.m_Type != COMP_LOCATION )
+            {
+                continue;
+            }
+            
+            entParms.Clear();
+            FillParmsData( entity, &entParms );
+            if ( MatchSpec( &currentComponent, &entParms, 0 ) )
+            {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
 idMapFile* CMissionData::LoadMap(const idStr& mapFileName)
 {
 	// First, check if we already have a map loaded

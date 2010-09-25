@@ -731,6 +731,13 @@ public:
 	int AddObjsFromEnt( idEntity *ent );
 	int AddObjsFromDict(const idDict& dict);
 
+    /**
+     * Baal: This checks if the entity is referenced by any COMP_LOCATION component of any objective.
+     * Called when a stackable item is dropped to set the m_bIsObjective flag that's used by 
+     * "info_tdm_objective_location" entities.
+    **/
+    bool    MatchLocationObjectives( idEntity * );
+    
 	/**
 	 * greebo: Load the objectives directly from the given map file.
 	 * This is called by the main menu SDK code.
