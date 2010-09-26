@@ -64,11 +64,13 @@ CStaticMulti::Think
 */
 void CStaticMulti::Think( void ) 
 {
-	// will also do LOD thinking, so skip it as this entity consists of multiple clipmodels
-	// plus one rendermodel:
+	// will also do LOD thinking but we don't need this
 	//idStaticEntity::Think();
 
 	// TODO: Update the rendermodel if enough changes have accumulated
+
+	// Make ourselves visible and known:
+	Present();
 
 #ifdef M_DEBUG
 	int num = GetPhysics()->GetNumClipModels();
