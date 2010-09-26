@@ -928,10 +928,15 @@ class CObjectiveLocation : public idEntity
 public:
 	CLASS_PROTOTYPE( CObjectiveLocation );
 	
-	CObjectiveLocation( void );
+	CObjectiveLocation();
+
+	~CObjectiveLocation();
 
 	void Think( void );
 	void Spawn( void );
+
+	// Called by ~idEntity to catch entity destructions
+	void OnEntityDestroyed(idEntity* ent);
 
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );

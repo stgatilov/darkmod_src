@@ -28,6 +28,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/Cursor.h"
 #include "../DarkMod/AbsenceMarker.h"
+#include "../DarkMod/MissionData.h"
 
 /*
 ===============================================================================
@@ -1274,6 +1275,16 @@ idEntity::~idEntity
 idEntity::~idEntity( void )
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
+
+	// Let each objective entity we're currently in know about our destruction
+	for (int i = 0; i < m_objLocations.Num(); ++i)
+	{
+		CObjectiveLocation* locationEnt = m_objLocations[i].GetEntity();
+
+		if (locationEnt == NULL) continue; // probably already deleted
+
+		locationEnt->OnEntityDestroyed(this);
+	}
 
 	gameLocal.RemoveResponse(this);
 	gameLocal.RemoveStim(this);
@@ -8973,6 +8984,28 @@ const CInventoryCursorPtr& idEntity::InventoryCursor()
 	}
 
 	return m_InventoryCursor;
+}
+
+void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
+{
+	idEntityPtr<CObjectiveLocation> locationEntPtr;
+	locationEntPtr = locationEnt;
+
+	// Ensure that objective locations don't add themselves twice or more times
+	assert(m_objLocations.FindIndex(locationEntPtr) == -1);
+
+	m_objLocations.Alloc() = locationEntPtr;
+}
+
+void idEntity::OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt)
+{
+	idEntityPtr<CObjectiveLocation> locationEntPtr;
+	locationEntPtr = locationEnt;
+
+	// Ensure that only registered location ents are removed
+	assert(m_objLocations.FindIndex(locationEntPtr) != -1);
+
+	m_objLocations.Remove(locationEntPtr);
 }
 
 void idEntity::Event_PropSound( const char *sndName )

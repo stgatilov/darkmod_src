@@ -25,6 +25,7 @@ typedef boost::shared_ptr<CStim> CStimPtr;
 class CResponse;
 typedef boost::shared_ptr<CResponse> CResponsePtr;
 class CAbsenceMarker;
+class CObjectiveLocation;
 
 class CInventory;
 typedef boost::shared_ptr<CInventory> CInventoryPtr;
@@ -379,6 +380,13 @@ public:
 	* May also determine inventory callbacks to objective system.
 	**/
 	bool					m_bIsObjective;
+
+	/**
+	 * greebo: The list of objective locations whose bounds this entity is currently within.
+	 * This is needed to raise a safe mission event when this entity is destroyed, otherwise
+	 * the objective location entity is unable to catch entity destructions.
+	 */
+	idList<idEntityPtr<CObjectiveLocation> > m_objLocations;
 
 	/**
 	* Set to true if the entity is frobable.  May be dynamically changed.
@@ -937,6 +945,18 @@ public:
 	const CInventoryPtr&		Inventory();
 	// Returns (and creates if necessary) this entity's inventory cursor.
 	const CInventoryCursorPtr&	InventoryCursor();
+
+	/**
+	 * greebo: This is called when an objective location adds this entity
+	 * to its list and starts tracking it.
+	 */
+	void OnAddToLocationEntity(CObjectiveLocation* locationEnt);
+
+	/**
+	 * greebo: This is called when an objective location removes this entity
+	 * from its internal list and stops tracking it.
+	 */
+	void OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt);
 
 	/**
 	 * greebo: This event gets fired right after spawn time. It checks the spawnargs

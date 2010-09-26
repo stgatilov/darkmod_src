@@ -2786,6 +2786,19 @@ CObjectiveLocation::CObjectiveLocation( void )
 	m_EntsInBounds.Clear();
 }
 
+CObjectiveLocation::~CObjectiveLocation()
+{
+	// On destruction, deregister ourselves from each entity 
+	for (int i = 0; i < m_EntsInBounds.Num(); ++i)
+	{
+		idEntity* entity = m_EntsInBounds[i].GetEntity();
+
+		if (entity == NULL) continue; // probably already deleted
+
+		entity->OnRemoveFromLocationEntity(this);
+	}
+}
+
 void CObjectiveLocation::Spawn()
 {
 	m_Interval = static_cast<int>(1000.0f * spawnArgs.GetFloat( "interval", "1.0" ));
@@ -2913,6 +2926,9 @@ void CObjectiveLocation::Think()
 			// Not found, call objectives system for all missing or added ents
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", current[i].GetEntity()->name.c_str(), name.c_str() );
 			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, current[i].GetEntity(), this, true );
+
+			// Mark this entity as "currently within location entity bounds", by adding ourselves to its list
+			current[i].GetEntity()->OnAddToLocationEntity(this);	
 		}
 	}
 
@@ -2924,6 +2940,9 @@ void CObjectiveLocation::Think()
 			// not found in current, must be missing
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", m_EntsInBounds[i].GetEntity()->name.c_str(), name.c_str() );
 			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, m_EntsInBounds[i].GetEntity(), this, false );
+
+			// Remove ourselves from this entity
+			m_EntsInBounds[i].GetEntity()->OnRemoveFromLocationEntity(this);
 		}
 	}
 
@@ -2933,4 +2952,20 @@ void CObjectiveLocation::Think()
 Quit:
 	idEntity::Think();
 	return;
+}
+
+void CObjectiveLocation::OnEntityDestroyed(idEntity* ent)
+{
+	for (int i = 0; i < m_EntsInBounds.Num(); i++)
+	{
+		if (m_EntsInBounds[i].GetEntity() == ent)
+		{
+			// Handle this entity as if it were missing
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s in objective location %s was destroyed\r", ent->name.c_str(), name.c_str());
+			gameLocal.m_MissionData->MissionEvent(COMP_LOCATION, ent, this, false);
+
+			// greebo: No need to call OnRemoveFromLocationEntity(), as the entity is about to be destroyed anyway
+			// calling it would only complicate the routine in the destructor
+		}
+	}
 }
