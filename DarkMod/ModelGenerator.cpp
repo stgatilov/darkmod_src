@@ -309,7 +309,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 			// TODO: replace linear search with a hash for more speed in case 
 			// the number of shaders gets higher than 4
 
-			idStr n = surf->shader->GetName();
+			// if given a shader, use this instead, so everyting will be in
+			// one surface
+			idStr n = shader ? shader->GetName() : surf->shader->GetName();
 			int found = -1;
 			for (int j = 0; j < targetSurfInfo.Num(); j++)
 			{
@@ -324,7 +326,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 				newTargetSurfInfo.numVerts = 0;
 				newTargetSurfInfo.numIndexes = 0;
 				newTargetSurfInfo.surf.geometry = NULL;
-				newTargetSurfInfo.surf.shader = surf->shader;
+				// if given a shader, use this instead.
+				newTargetSurfInfo.surf.shader = shader ? shader : surf->shader;
 				newTargetSurfInfo.surf.id = 0;
 				targetSurfInfo.Append( newTargetSurfInfo );
 			//	gameLocal.Warning("ModelGenerator: Need shader %s.", n.c_str() );
