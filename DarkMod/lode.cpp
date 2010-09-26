@@ -13,6 +13,13 @@
 /*
 Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 
+Important things to do:
+
+TODO: Restore() crashes
+TODO: DuplicateModel() crashes for func_statics
+
+Nice-to-have:
+
 TODO: add console command to save all LODE entities as prefab?
 TODO: take over LOD changes from entity
 TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
@@ -2165,6 +2172,28 @@ float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 	return delta.LengthSqr() / (bias * bias);
 }
 
+// a small helper routine to cut down on code copy&paste
+bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx )
+{
+	idClipModel* clip = new idClipModel();
+	// load the clipmodel for the lowest LOD stage for collision detection
+	bool clipLoaded = clip->LoadModel( modelName );
+	if (clipLoaded)
+	{
+		// add the clipmodel
+		physics->SetClipModel(clip, 1.0f, idx, true);
+
+		physics->SetOrigin( origin, idx);
+		physics->SetAxis( angles.ToMat3(), idx);
+		// Make it solid
+		physics->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, idx );
+		// nec.?
+		physics->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
+	}
+
+	return clipLoaded;
+}
+
 void Lode::CombineEntities( void )
 {
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
@@ -2431,20 +2460,6 @@ void Lode::CombineEntities( void )
 				LODs.Append( NULL );							// LOD 1 - same as default model
 			}
 
-			idClipModel* lod_0_clip = new idClipModel();
-			// load the clipmodel for the lowest LOD stage for collision detection
-			bool clipLoaded = lod_0_clip->LoadModel( lowest_LOD_model );
-
-			if (!clipLoaded)
-			{
-				gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n",
-						GetName(), lowest_LOD_model.c_str() );
-			}
-			else
-			{
-				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for %s.\n",
-						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
-			}
 			// if we have more entities to merge than what will fit into the model,
 			// sort them based on distance and select the N nearest:
 			if (merged > maxModelCount)
@@ -2470,25 +2485,41 @@ void Lode::CombineEntities( void )
 			{
 				offsets.Append( sortedOffsets[si].ofs );
 			}
+			bool clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
 
-			if (clipLoaded)
+/*			idClipModel* lod_0_clip = new idClipModel();
+			// load the clipmodel for the lowest LOD stage for collision detection
+			bool clipLoaded = lod_0_clip->LoadModel( lowest_LOD_model );
+
+*/			if (!clipLoaded)
 			{
+				gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n",
+						GetName(), lowest_LOD_model.c_str() );
+			}
+			else
+			{
+//				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for %s.\n",
+//						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
+
 				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
 				//clipModels.SetNum( ... );
 
-				// add the zeroth clipmodel (from the original entity)
+//				SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
+				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
+
+/*				// add the zeroth clipmodel (from the original entity)
 				PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, 0, true);
 //				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
 
-				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin, 0);
 				PseudoClass.physicsObj->SetAxis( m_Entities[i].angles.ToMat3(), 0);
-				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, 0 );
+				// ??
+				PseudoClass.physicsObj->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, 0 );
 				// ??
 				PseudoClass.physicsObj->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
+*/
 			}
-			idBounds bounds; bounds.Clear();
 
 			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)sortedOffsets.Num();
@@ -2498,41 +2529,32 @@ void Lode::CombineEntities( void )
 				// mark as combined
 //				gameLocal.Printf( " Combined entity %i\n", todo );
 				m_Entities[todo].classIdx = -1;
-				// add the clipmodel to the multi-clipmodel
+
+				// add the clipmodel to the multi-clipmodel if we have one
 				if (clipLoaded)
 				{
 					int clipNr = d + 1;	// 0 is the original entity
-				//	idClipModel* clip = new idClipModel();
-				//	bool clipLoaded1 = clip->LoadModel( lowest_LOD_model );
-					
-					//clip->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
-					//clip->SetOrigin( m_Entities[ todo ].origin);
 
-					// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
-					PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
+					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, clipNr );
+
+/*					// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
+					idClipModel* lod_n_clip = new idClipModel();
+					// load the clipmodel for the lowest LOD stage for collision detection
+					bool clipLoaded = lod_n_clip->LoadModel( lowest_LOD_model );
+					PseudoClass.physicsObj->SetClipModel( lod_n_clip, 1.0f, clipNr, true);
 
 //					gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
 
 					PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
-//					idClipModel* c = PseudoClass.physicsObj->GetClipModel( clipNr );
-//					c->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
 					PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
-					PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, clipNr );
-
-					bounds += lod_0_clip->GetBounds() + m_Entities[ todo ].origin;
-
+					PseudoClass.physicsObj->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, clipNr );
+					PseudoClass.physicsObj->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, clipNr);
+*/
 //						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
 				}
 			}
-			gameLocal.Printf("Lode %s: Combined %i entities.\n", GetName(), sortedOffsets.Num());
+			gameLocal.Printf("Lode %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
 			sortedOffsets.Clear();
-
-			// correct the bounds of the physics obj
-/*			if (merged > 0)
-			{
-				//PseudoClass.physicsObj->SetBounds( bounds );
-			}
-*/
 
 			// build the combined model
 			const idMaterial* material = NULL;
@@ -2627,6 +2649,8 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 		idEntity *ent2;
 		idDict args;
 
+//		gameLocal.Printf("Spawning %s\n", lclass->classname.c_str());
+
 		args.Set("classname", lclass->classname);
 		// move to right place
 		args.SetVector("origin", ent->origin );
@@ -2707,7 +2731,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 //					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 
 					ent2->SetPhysics( lclass->physicsObj );
+
 					lclass->physicsObj->SetSelf( ent2 );
+					lclass->physicsObj->SetOrigin( ent->origin );
 
 					//lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
@@ -2715,6 +2741,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				}
 				else
 				{
+					// TODO: this crashes for func_statics:
 					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, false );
 					if ( r->hModel )
 					{

@@ -260,6 +260,12 @@ private:
 	int					ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const;
 
 	/**
+	* Helper routine to load and set a clipmodel on a idPhysics_StaticMulti object. Returns true
+	* if the clip model could be loaded.
+	*/
+	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx );
+
+	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
 	*/
 	void				CombineEntities( void );
