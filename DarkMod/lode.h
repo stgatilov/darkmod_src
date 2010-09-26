@@ -55,6 +55,13 @@ const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
 	"debug_brown",
 };
 
+/** To sort a list of offsets by distance, but still keep the info which offset
+    belongs to which entity so we can take the N nearest: */
+struct lode_sort_ofs_t {
+	model_ofs_t	ofs;					//!< the offset data
+	int			entity;					//!< Index into m_Entities
+};
+
 /** Defines one material class that modulates how often entities appear on it: */
 struct lode_material_t {
 	idStr					name;			//!< a part, like "grass", or the full name like "sand_dark"

@@ -2138,8 +2138,8 @@ void Lode::PrepareEntities( void )
 }
 
 // sort a list of offsets by their distance
-int SortOffsetsByDistance( const model_ofs_t *a, const model_ofs_t *b ) {
-	float d = a->offset.LengthSqr() - b->offset.LengthSqr();
+int SortOffsetsByDistance( const lode_sort_ofs_t *a, const lode_sort_ofs_t *b ) {
+	float d = a->ofs.offset.LengthSqr() - b->ofs.offset.LengthSqr();
 
 	if ( d < 0 ) {
 		return -1;
@@ -2177,8 +2177,9 @@ void Lode::CombineEntities( void )
 	idList< lode_entity_t > newEntities;
 	unsigned int mergedCount = 0;
 	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
+	idList < lode_sort_ofs_t > sortedOffsets;		//!< To merge the N nearest entities
 	model_ofs_t ofs;
-	idList<int> tobedeleted;
+	lode_sort_ofs_t sortOfs;
 
 	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
 	if (max_combine_distance < 10)
@@ -2272,8 +2273,8 @@ void Lode::CombineEntities( void )
 			}
 		}
 
-		offsets.Clear();
-		offsets.SetGranularity(64);	// we might have a few hundred entities in there
+		sortedOffsets.Clear();
+		sortedOffsets.SetGranularity(64);	// we might have a few hundred entities in there
 
 		ofs.offset = idVec3(0,0,0); // the first copy is the original
 		ofs.angles = m_Entities[i].angles;
@@ -2287,13 +2288,11 @@ void Lode::CombineEntities( void )
 		ofs.color  = m_Entities[i].color;
 		ofs.scale  = m_Entities[i].scale;
 		ofs.flags  = 0;
+
 		// restore our value (it is not used, anyway)
 		m_LODLevel = 0;
 
-		offsets.Append(ofs);
-
-		tobedeleted.Clear();
-		tobedeleted.SetGranularity(64);	// we might have a few hundred entities in there
+		sortOfs.ofs = ofs; sortOfs.entity = i; sortedOffsets.Append (sortOfs);
 
 		// how many can we combine at most?
 		// use LOD 0 here for an worse-case estimate
@@ -2354,7 +2353,7 @@ void Lode::CombineEntities( void )
 			// restore our value (it is not used, anyway)
 			m_LODLevel = 0;
 
-			offsets.Append( ofs );
+			sortOfs.ofs = ofs; sortOfs.entity = j; sortedOffsets.Append (sortOfs);
 
 			if (merged == 0)
 			{
@@ -2383,9 +2382,8 @@ void Lode::CombineEntities( void )
 			mergedCount ++;
 //			gameLocal.Printf("LODE %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
 //					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
-			// remember to mark as "to be deleted"
-			tobedeleted.Append( j );
-			// mark with negative entity so we can skip it
+
+			// mark with negative classIdx so we can skip it, or restore the classIdx (be negating it again)
 			m_Entities[j].classIdx = -m_Entities[j].classIdx;
 		}
 
@@ -2451,11 +2449,26 @@ void Lode::CombineEntities( void )
 			// sort them based on distance and select the N nearest:
 			if (merged > maxModelCount)
 			{
-				// so we can select the N nearest
-				offsets.Sort( SortOffsetsByDistance );
-				// gameLocal.Printf( " first %s second %s third %s\n", offsets[0].offset.ToString(), offsets[1].offset.ToString(), offsets[2].offset.ToString() );
-				// truncate to only combine as much as we can:
-				offsets.SetNum( maxModelCount );
+				// sort the offsets so we can select the N nearest
+				sortedOffsets.Sort( SortOffsetsByDistance );
+
+				// for every entity after the first "maxModelCount", restore their class index
+				// so they get later checked again
+				for (int si = maxModelCount; si < sortedOffsets.Num(); si++)
+				{
+					int idx = sortedOffsets[si].entity;
+					m_Entities[ idx ].classIdx = -m_Entities[idx].classIdx;
+				}
+				// now truncate to only combine as much as we can:
+				gameLocal.Printf( " merged %i > maxModelCount %i\n", merged, maxModelCount);
+				sortedOffsets.SetNum( maxModelCount );
+			}
+			// build the offsets list
+			offsets.Clear();
+			offsets.SetGranularity(64);
+			for (int si = 0; si < sortedOffsets.Num(); si++)
+			{
+				offsets.Append( sortedOffsets[si].ofs );
 			}
 
 			if (clipLoaded)
@@ -2478,59 +2491,50 @@ void Lode::CombineEntities( void )
 			idBounds bounds; bounds.Clear();
 
 			// mark all entities that will be merged as "deleted", but skip the rest
-			unsigned int n = (unsigned int)tobedeleted.Num();
+			unsigned int n = (unsigned int)sortedOffsets.Num();
 			for (unsigned int d = 0; d < n; d++)
 			{
-				int todo = tobedeleted[d];
-				// mark
-				if (d < maxModelCount)
+				int todo = sortedOffsets[d].entity;
+				// mark as combined
+				gameLocal.Printf( " Combined entity %i\n", todo );
+				m_Entities[todo].classIdx = -1;
+				// add the clipmodel to the multi-clipmodel
+				if (clipLoaded)
 				{
-					m_Entities[ todo ].classIdx = -1;
-					// add the clipmodel to the multi-clipmodel
-					if (clipLoaded)
-					{
-						int clipNr = d + 1;	// 0 is the original entity
-					//	idClipModel* clip = new idClipModel();
-					//	bool clipLoaded1 = clip->LoadModel( lowest_LOD_model );
+					int clipNr = d + 1;	// 0 is the original entity
+				//	idClipModel* clip = new idClipModel();
+				//	bool clipLoaded1 = clip->LoadModel( lowest_LOD_model );
 					
-						//clip->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
-						//clip->SetOrigin( m_Entities[ todo ].origin);
+					//clip->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
+					//clip->SetOrigin( m_Entities[ todo ].origin);
 
-						// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
-						PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
+					// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
+					PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, clipNr, true);
 
-//						gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
+//					gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
 
-						PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
-//						idClipModel* c = PseudoClass.physicsObj->GetClipModel( clipNr );
-//						c->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
-						PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
-						PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, clipNr );
+					PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
+//					idClipModel* c = PseudoClass.physicsObj->GetClipModel( clipNr );
+//					c->Translate( m_Entities[i].origin - m_Entities[ todo ].origin );
+					PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
+					PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL, clipNr );
 
-						bounds += lod_0_clip->GetBounds() + m_Entities[ todo ].origin;
+					bounds += lod_0_clip->GetBounds() + m_Entities[ todo ].origin;
 
 //						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
-					}
-				}
-				else
-				{
-					// restore classIdx
-					m_Entities[todo].classIdx = -m_Entities[todo].classIdx;
 				}
 			}
+			gameLocal.Printf("Lode %s: Combined %i entities.\n", GetName(), sortedOffsets.Num());
+			sortedOffsets.Clear();
 
 			// correct the bounds of the physics obj
-			if (merged > 0)
+/*			if (merged > 0)
 			{
 				//PseudoClass.physicsObj->SetBounds( bounds );
 			}
+*/
 
 			// build the combined model
-			idVec3 corr = idVec3(0,0,0);
-
-			// gameLocal.Printf("LODE %s: Bounds before duplicate %s.\n", GetName(), tempModel->Bounds().ToString() );
-			corr -= tempModel->Bounds()[0];
-
 			const idMaterial* material = NULL;
 			if (m_bDebugColors)
 			{
@@ -2579,6 +2583,11 @@ void Lode::CombineEntities( void )
 		newEntities.Clear();				// should get freed at return, anyway
 
 	}
+
+	// TODO: is this nec.?
+	offsets.Clear();
+	sortedOffsets.Clear();
+
 	int end = (int) time (NULL);
 	gameLocal.Printf("LODE %s: Combined %i entities into %i entities, took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
 
