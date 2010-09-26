@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18
 #include "StaticMulti.h"
 
 // if defined, draw debug output
-//#define M_DEBUG 1
+// #define M_DEBUG 1
 
 CLASS_DECLARATION( idStaticEntity, CStaticMulti )
 	EVENT( EV_Activate,				CStaticMulti::Event_Activate )
@@ -35,10 +35,26 @@ END_CLASS
 CStaticMulti::CStaticMulti
 ===============
 */
-CStaticMulti::CStaticMulti( void ) {
+CStaticMulti::CStaticMulti( void )
+{
 	active = false;
-
 	m_LOD = NULL;
+}
+
+void CStaticMulti::Spawn( void )
+{
+	bool solid = spawnArgs.GetBool( "solid" );
+
+	// ishtvan fix : Let clearing contents happen naturally on Hide instead of
+	// checking hidden here and clearing contents prematurely
+	if ( solid )
+	{
+		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
+	}
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 }
 
 /*
@@ -48,12 +64,14 @@ CStaticMulti::Think
 */
 void CStaticMulti::Think( void ) 
 {
-	// will also do LOD thinking:
-	idStaticEntity::Think();
+	// will also do LOD thinking, so skip it as this entity consists of multiple clipmodels
+	// plus one rendermodel:
+	//idStaticEntity::Think();
+
+	// TODO: Update the rendermodel if enough changes have accumulated
 
 #ifdef M_DEBUG
 	int num = GetPhysics()->GetNumClipModels();
-//	gameLocal.Printf("CStaticMulti::Think %i clipmodels\n", num);
 
    	idVec4 markerColor (0.3, 0.8, 1.0, 1.0);
    	idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -64,7 +82,6 @@ void CStaticMulti::Think( void )
 	for (int i = 0; i < num; i++)
 	{
 		idVec3 org = p->GetOrigin( i );
-	//gameLocal.Printf("CStaticMulti::Think clip %i %s\n", i, org.ToString() );
 	    gameRenderWorld->DebugArrow
 			(
 			markerColor,
@@ -74,6 +91,19 @@ void CStaticMulti::Think( void )
 	    	1 );
 	}
 #endif
+}
+
+void CStaticMulti::Save( idSaveGame *savefile ) const {
+
+	savefile->WriteBool( active );
+	savefile->WriteStaticObject( physics );
+}
+
+void CStaticMulti::Restore( idRestoreGame *savefile ) {
+
+	savefile->ReadBool( active );
+	savefile->ReadStaticObject( physics );
+	RestorePhysics( &physics );
 }
 
 /*

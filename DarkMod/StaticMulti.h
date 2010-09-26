@@ -14,6 +14,7 @@
 #define __DARKMOD_STATICMULTI_H__
 
 #include "../game/misc.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -31,14 +32,13 @@ public:
 
 						CStaticMulti( void );
 
-//	void				Save( idSaveGame *savefile ) const;
-//	void				Restore( idRestoreGame *savefile );
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
 
-//	void				Spawn( void );
-//	void				ShowEditingDialog( void );
+	void				Spawn( void );
+
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
-//	void				Fade( const idVec4 &to, float fadeTime );
 	virtual void		Think( void );
 
 //	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
@@ -47,13 +47,7 @@ public:
 private:
 	void				Event_Activate( idEntity *activator );
 	
-//	int						spawnTime;
-	bool					active;
-//	idVec4					fadeFrom;
-//	idVec4					fadeTo;
-//	int						fadeStart;
-//	int						fadeEnd;
-//	bool					runGui;
+	bool						active;
 	idPhysics_StaticMulti		physics;
 };
 
