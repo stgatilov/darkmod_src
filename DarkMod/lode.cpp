@@ -2496,7 +2496,7 @@ void Lode::CombineEntities( void )
 			{
 				int todo = sortedOffsets[d].entity;
 				// mark as combined
-				gameLocal.Printf( " Combined entity %i\n", todo );
+//				gameLocal.Printf( " Combined entity %i\n", todo );
 				m_Entities[todo].classIdx = -1;
 				// add the clipmodel to the multi-clipmodel
 				if (clipLoaded)
