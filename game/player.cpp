@@ -9774,9 +9774,12 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 
 			// Replace the entity to be dropped with the newly spawned one.
 			ent = spawnedEntity;
+        }
             
-            // Set flag used by objective location entities so that stackable items 
-            // can trigger objectives even if their entity definition doesn't have "objective_ent" set.
+        // If the item is referenced by any objective with a item-location component set the flag
+        // so it will be considered by location entities.
+        if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
+        {
             ent->m_bIsObjective = true;
         }
 
