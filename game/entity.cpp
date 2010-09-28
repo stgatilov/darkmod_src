@@ -1459,6 +1459,13 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bAttachedAlertControlsSolidity);
 	savefile->WriteBool(m_bIsObjective);
+
+	savefile->WriteInt(m_objLocations.Num());
+	for (i = 0; i < m_objLocations.Num(); ++i)
+	{
+		m_objLocations[i].Save(savefile);
+	}
+
 	savefile->WriteBool(m_bFrobable);
 	savefile->WriteBool(m_bFrobSimple);
 	savefile->WriteInt(m_FrobDistance);
@@ -1704,6 +1711,14 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_bAttachedAlertControlsSolidity);
 	savefile->ReadBool(m_bIsObjective);
+
+	savefile->ReadInt(num);
+	m_objLocations.SetNum(num);
+	for (i = 0; i < num; ++i)
+	{
+		m_objLocations[i].Restore(savefile);
+	}
+
 	savefile->ReadBool(m_bFrobable);
 	savefile->ReadBool(m_bFrobSimple);
 	savefile->ReadInt(m_FrobDistance);
