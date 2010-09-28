@@ -2735,6 +2735,9 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					lclass->physicsObj->SetSelf( ent2 );
 					lclass->physicsObj->SetOrigin( ent->origin );
 
+					// enable updates to LOD stages again
+					lclass->megamodel->StartUpdating();
+
 					//lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
 					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
@@ -2846,14 +2849,12 @@ bool Lode::CullEntity( const int idx )
 		// If the class has a model with shared data, manage this to avoid double frees
 		if ( lclass->pseudo )
 		{
-			// is just a pointer to a rendermodel
-			lclass->hModel = NULL;
 			// mark as inactive and remove changes because the entity will be no longer existing
 			lclass->megamodel->StopUpdating();
-			lclass->megamodel->ClearChanges();
+
 			// avoid freeing the composed model
 			ent2->GetRenderEntity()->hModel = NULL;
-			// Avoid freeing the combied physics (clip)model
+			// Avoid freeing the combined physics (clip)model
 			ent2->SetPhysics(NULL);
 		}
 		else
