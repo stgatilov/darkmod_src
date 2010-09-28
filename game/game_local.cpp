@@ -1785,6 +1785,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// Restore our grabber pointer
 	savegame.ReadObject( reinterpret_cast<idClass*&>(m_Grabber) );
 
+	m_ModelGenerator->Restore(&savegame);
+	m_LightController->Restore(&savegame);
+
 	m_DifficultyManager.Restore(&savegame);
 
 	for ( i = 0; i < NumAAS(); i++)
@@ -1801,8 +1804,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_AreaManager.Restore(&savegame);
 	m_ConversationSystem->Restore(&savegame);
 	m_RelationsManager->Restore(&savegame);
-	m_ModelGenerator->Restore(&savegame);
-	m_LightController->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
 
