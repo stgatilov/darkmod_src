@@ -67,6 +67,11 @@ public:
 	void					StopUpdating();
 
 	/**
+	* The entity presenting/using this model is spawned again, so start updates.
+	*/
+	void					StartUpdating();
+
+	/**
 	* The entity presenting/using this model is going to get culled, so remove all changes.
 	*/
 	void					ClearChanges();

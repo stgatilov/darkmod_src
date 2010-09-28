@@ -168,6 +168,20 @@ void CMegaModel::StopUpdating()
 {
 	m_bActive = false;
 	m_iNextUpdate = gameLocal.time;
+	m_Changes.Clear();
+}
+
+/*
+===============
+CMegaModel::StartUpdating
+
+The entity with this megamodel is visible again, so start updates.
+===============
+*/
+void CMegaModel::StartUpdating()
+{
+	m_bActive = true;
+	m_iNextUpdate = gameLocal.time + m_iUpdateTime;
 }
 
 /*
