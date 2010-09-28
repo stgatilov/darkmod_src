@@ -16,7 +16,7 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 Important things to do:
 
 TODO: Restore() crashes
-TODO: DuplicateModel() crashes for func_statics
+TODO: Respawning a StaticMulti offsets it's rendermodel
 
 Nice-to-have:
 
@@ -2630,7 +2630,8 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 	// spawn the entity and note its number
 	if (m_iDebug)
 	{
-		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s).\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str() );
+		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s), managed: %s.\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str(), 
+					managed ? "yes" : "no" );
 	}
 
 	// avoid that we run out of entities during run time
@@ -2735,16 +2736,19 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					lclass->physicsObj->SetSelf( ent2 );
 					lclass->physicsObj->SetOrigin( ent->origin );
 
-					// enable updates to LOD stages again
-					lclass->megamodel->StartUpdating();
+					// tell the CStaticMulti entity that it should
+					// track updates:
+					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
+					// Tell it what MegaModel is responsible for it
+					sment->SetLODData( lclass->megamodel, lclass->m_LOD);
+					
 					//lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
 					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
 				}
 				else
 				{
-					// TODO: this crashes for func_statics:
 					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, false );
 					if ( r->hModel )
 					{
@@ -2843,21 +2847,12 @@ bool Lode::CullEntity( const int idx )
 		// Before we remove the entity, save it's position and angles
 		// That makes it work for moveables or anything else that
 		// might have changed position (teleported away etc)
+		// TODO: this might be responsible for CStaticMulti shifting away
 		ent->origin = ent2->GetPhysics()->GetOrigin();
 		ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
 
 		// If the class has a model with shared data, manage this to avoid double frees
-		if ( lclass->pseudo )
-		{
-			// mark as inactive and remove changes because the entity will be no longer existing
-			lclass->megamodel->StopUpdating();
-
-			// avoid freeing the composed model
-			ent2->GetRenderEntity()->hModel = NULL;
-			// Avoid freeing the combined physics (clip)model
-			ent2->SetPhysics(NULL);
-		}
-		else
+		if ( !lclass->pseudo )
 		{
 			// do nothing, the class model is a duplicate and can be freed
 			if ( lclass->hModel )
@@ -2991,7 +2986,9 @@ void Lode::Think( void )
 			// normal distance checks now
 			if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
-				if (SpawnEntity( i, true ))
+				// Spawn and manage LOD, except for CStaticMulti entities with a megamodel,
+				// these need to do their own LOD thinking:
+				if (SpawnEntity( i, lclass->pseudo ? false : true ))
 				{
 					spawned ++;
 				}

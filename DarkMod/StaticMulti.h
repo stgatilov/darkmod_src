@@ -15,6 +15,7 @@
 
 #include "../game/misc.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/MegaModel.h"
 
 /*
 ===============================================================================
@@ -31,11 +32,16 @@ public:
 	CLASS_PROTOTYPE( CStaticMulti );
 
 						CStaticMulti( void );
+						virtual ~CStaticMulti();
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
+
+	virtual float		ThinkAboutLOD( const lod_data_t* lod_data, const float deltaSq );
+
+	void				SetLODData( CMegaModel* megaModel, lod_data_t *LOD);
 
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
@@ -49,6 +55,14 @@ private:
 	
 	bool						active;
 	idPhysics_StaticMulti		physics;
+	CMegaModel*					m_MegaModel;
+
+	// TODO: use these from m_LOD:
+	int							m_DistCheckTimeStamp;
+	int							m_DistCheckInterval;
+	float						m_fHideDistance;
+	bool						m_bDistCheckXYOnly;
+
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */

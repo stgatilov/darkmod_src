@@ -14,7 +14,7 @@
 #define __GAME_LODE_H__
 
 #include "ModelGenerator.h"
-#include "MegaModel.h"
+#include "StaticMulti.h"
 
 /*
 ===============================================================================

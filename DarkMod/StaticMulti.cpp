@@ -39,8 +39,37 @@ CStaticMulti::CStaticMulti( void )
 {
 	active = false;
 	m_LOD = NULL;
+	m_MegaModel = NULL;
+	m_DistCheckTimeStamp = 0;
+	m_DistCheckInterval = 0;
+	m_fHideDistance = 0.0f;
+	m_bDistCheckXYOnly = false;
 }
 
+CStaticMulti::~CStaticMulti()
+{
+	// mark as inactive and remove changes because the entity will be no longer existing
+	if (m_MegaModel)
+	{
+		m_MegaModel->StopUpdating();
+	}
+
+	// no need to free these as they are just ptr to a copy
+	m_LOD = NULL;
+	m_MegaModel = NULL;
+
+	// avoid freeing the already combined model (we can re-use it on respawn)
+	renderEntity.hModel = NULL;
+
+	// Avoid freeing the combined physics (clip)model
+	SetPhysics(NULL);
+}
+
+/*
+===============
+CStaticMulti::Spawn
+===============
+*/
 void CStaticMulti::Spawn( void )
 {
 	bool solid = spawnArgs.GetBool( "solid" );
@@ -55,6 +84,50 @@ void CStaticMulti::Spawn( void )
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
+	int d = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
+	if (d <= 0)
+	{
+		d = 0;
+	}
+	else
+	{
+		m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
+		m_DistCheckInterval = d;
+		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
+		m_fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
+	}
+}
+
+/*
+================
+CStaticMulti::ThinkAboutLOD
+================
+*/
+float CStaticMulti::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
+{
+	// ignored m_LOD
+
+	// give our MegaModel a chance to update the rendermodel based on distance
+	// to player
+
+	//gameLocal.Warning("ThinkAboutLOD CStaticMulti called with m_LOD %p deltaSq %0.2f", m_LOD, deltaSq);
+
+	return 1.0f;
+}
+
+/*
+================
+CStaticMulti::SetLODData
+
+Store the data like our megamodel (the visible combined rendermodel including data how to
+assemble it), and the LOD stages (contain the distance for each LOD stage)
+================
+*/
+void CStaticMulti::SetLODData( CMegaModel* megaModel, lod_data_t *LOD)
+{
+	m_MegaModel = megaModel;
+	m_LOD = LOD;
 }
 
 /*
@@ -64,10 +137,24 @@ CStaticMulti::Think
 */
 void CStaticMulti::Think( void ) 
 {
-	// will also do LOD thinking but we don't need this
-	//idStaticEntity::Think();
+	// Distance dependence checks
+	if ( (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
+		{
+		m_DistCheckTimeStamp = gameLocal.time;
 
-	// TODO: Update the rendermodel if enough changes have accumulated
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+		if( m_bDistCheckXYOnly )
+		{
+			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+			delta -= (vGravNorm * delta) * vGravNorm;
+		}
+
+		// multiply with the user LOD bias setting, and return the result:
+		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+		float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
+
+		ThinkAboutLOD( NULL, deltaSq );
+	}
 
 	// Make ourselves visible and known:
 	Present();
@@ -97,8 +184,12 @@ void CStaticMulti::Think( void )
 
 void CStaticMulti::Save( idSaveGame *savefile ) const {
 
+	// TODO: Save MegaModel, then remove this from the LODE
 	savefile->WriteBool( active );
 	savefile->WriteStaticObject( physics );
+	savefile->WriteInt( m_DistCheckInterval );
+	savefile->WriteInt( m_DistCheckTimeStamp );
+	savefile->WriteBool( m_bDistCheckXYOnly );
 }
 
 void CStaticMulti::Restore( idRestoreGame *savefile ) {
@@ -106,6 +197,9 @@ void CStaticMulti::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( active );
 	savefile->ReadStaticObject( physics );
 	RestorePhysics( &physics );
+	savefile->ReadInt( m_DistCheckInterval );
+	savefile->ReadInt( m_DistCheckTimeStamp );
+	savefile->ReadBool( m_bDistCheckXYOnly );
 }
 
 /*
