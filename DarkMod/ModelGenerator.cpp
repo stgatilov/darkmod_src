@@ -105,6 +105,10 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	if (NULL == hModel)
 	{
 		idRenderModel *hModel = renderModelManager->AllocModel();
+		if (NULL == hModel)
+		{
+			gameLocal.Error("ModelGenerator: Could not allocate new model.\n");
+		}
 	}
 
 	// and init it as dynamic empty model
