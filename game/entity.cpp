@@ -1965,7 +1965,8 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// have no LOD
 	if (NULL == m_LOD)
 	{
-		return false;
+		// fully visible
+		return 1.0f;
 	}
 
 	bool bWithinDist = false;
@@ -2177,7 +2178,8 @@ void idEntity::Think( void )
 		}
 
 		// multiply with the user LOD bias setting, and return the result:
-		float deltaSq = delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat());
+		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+		float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
 
 		SwitchLOD( m_LOD, deltaSq );
 	}
