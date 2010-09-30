@@ -33,7 +33,14 @@ TODO: Sort all the generated entities into multiple lists, keyed on a hash-key t
 	  contains all the relevant info for combining entities, so only entities that
 	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
 	  Then only look at entities from one list when combining, this will reduce the
-	  O(N*N) to something like O(N/X) where X is the set of combinable entities.
+	  O(N*N) to something like O( (N/X)*(N/X) ) where X is the set of combinable entities.
+
+Optimizations:
+
+TODO: Make the max-combine-distance setting depending on the LOD stages, if the model
+	  has none + hide, or none and no hide, we can use a bigger distance because the
+	  rendermodel will be less often (or never) be rebuild. Also benchmark wether
+	  a bigger distance is slower/faster even with rendermodel rebuilds.
 TODO: Make it so we can also combine entities from different classes, e.g. not just
 	  take their class and skin, instead build a set of surfaces for each entities
 	  *after* the skin is applied, then use this set for matching. F.i. cattails2
@@ -42,6 +49,10 @@ TODO: Make it so we can also combine entities from different classes, e.g. not j
 	  thus reduce the drawcalls. Problem: different clipmodels and LOD stages might
 	  prevent this from working - but it could work for non-solids and things without
 	  any LOD stages at all (like the cattails).
+TODO: add a "entity" field (int) to the offsets list, so we avoid having to
+	  construct a sortOffsets list first, then truncated and rebuild the offsets
+	  list from that. (But benchmark if that isn't actually faster as the sortedOffsets
+	  list contans only one int and a ptr)
 */
 
 #include "../idlib/precompiled.h"
