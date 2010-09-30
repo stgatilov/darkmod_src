@@ -2071,7 +2071,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				fAlpha = 1.0f;	// show
 			}
 
-			// We found the right level and switched to it
+			// We found the right level and wil switch to it
 			return fAlpha;
 		}
 

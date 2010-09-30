@@ -39,8 +39,6 @@ public:
 
 	void				Spawn( void );
 
-	virtual float		ThinkAboutLOD( const lod_data_t* lod_data, const float deltaSq );
-
 	void				SetLODData( CMegaModel* megaModel, lod_data_t *LOD);
 
 //	virtual void		Hide( void );

@@ -2577,7 +2577,7 @@ void Lode::CombineEntities( void )
 				material = declManager->FindMaterial( m, false );
 			}
 			// use a megamodel to get the combined model, that we later can update, too:
-			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &playerPos, &m_Entities[i].origin, material );
+			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &m_Entities[i].origin, material );
 			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
 
 			// replace the old class with the new pseudo class which contains the merged model

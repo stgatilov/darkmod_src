@@ -31,7 +31,7 @@ static bool init_version = FileVersionList("$Id: MegaModel.cpp 4071 2010-07-18 1
 CMegaModel::CMegaModel
 ===============
 */
-CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *playerPos, const idVec3 *origin,
+CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *origin,
 		const idMaterial* material, const int iUpdateTime ) {
 
 	m_hModel = NULL;
@@ -48,7 +48,12 @@ CMegaModel::CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>*
 	// avoid frequent resizes
 	m_Changes.SetGranularity(32);
 
-	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", offsets, origin, playerPos, material );
+	m_Origin = *origin;
+	m_LODs = LODs;
+
+	m_Material = material;
+
+	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( LODs, "megamodel", offsets, origin, material );
 }
 
 /*
@@ -61,6 +66,12 @@ void CMegaModel::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bActive );
 	savefile->WriteInt( m_iNextUpdate );
 	savefile->WriteInt( m_iUpdateTime );
+	savefile->WriteVec3( m_Origin );
+	savefile->WriteInt( m_iMaxChanges );
+
+	// TODO: how to save a pointer? probably write out the underlying object, then restore it,
+	// 		 but wouldn't leavethis us with a lot of copies after Restore()?
+//	savefile->WritePtr( m_Material );
 
 	// TODO: Wouldn't the existing entity also save the model?
 	// TODO: Could we simply regenerate the model on Restore()?
@@ -96,6 +107,8 @@ void CMegaModel::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bActive );
 	savefile->ReadInt( m_iNextUpdate );
 	savefile->ReadInt( m_iUpdateTime );
+	savefile->ReadVec3( m_Origin );
+	savefile->ReadInt( m_iMaxChanges );
 
 	savefile->ReadModel( m_hModel );
 
@@ -137,24 +150,155 @@ idRenderModel* CMegaModel::GetRenderModel() const
 
 /*
 ===============
-CMegaModel::Update
+CMegaModel::UpdateRenderModel
 
 Updates the rendermodel if nec. and returns true if it was updated.
 ===============
 */
-bool CMegaModel::Update()
+bool CMegaModel::UpdateRenderModel()
 {
 	if (m_bActive == false ||
 		m_Changes.Num() == 0 ||
-		(m_Changes.Num() < m_iMaxChanges && gameLocal.time < m_iNextUpdate) )
+		(m_Changes.Num() < m_iMaxChanges) )
 	{
 		return false;
 	}
 
+	int n = m_Changes.Num();
+	// apply all our changes to the offsets list
+	for (int i = 0; i < n; i++)
+	{
+		m_Offsets[ m_Changes[i].entity ].lod = m_Changes[i].newLOD;
+	}
+
+	// now clear the changes
+	m_Changes.Clear();
+
+	// TODO: this might not work?
+
+	// free our old model
+	delete m_hModel;
+
+	// and create a new one
+	m_hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( m_LODs, "megamodel", &m_Offsets, &m_Origin, m_Material );
+
+	return true;
+}
+
+/*
+===============
+CMegaModel::Update
+
+Checks for each offset what LOD stage to use and queues all updates, then
+calls UpdateRenderModel(). deltaSq is the distance from the model origin to
+the player origin.
+===============
+*/
+bool CMegaModel::Update( const idVec3 *playerOrigin, const float lod_bias, idVec3 *gravity, const bool xycheck )
+{
+	if (m_bActive == false ||
+		gameLocal.time < m_iNextUpdate)
+	{
+		// not time yet to update
+		return false;
+	}
+
+	int n = m_Offsets.Num();
+	float dist;
+
+	for (int i = 0; i < n; i++)
+	{
+		// TODO: make xycheck work
+		idVec3 delta = m_Origin + m_Offsets[i].offset - *playerOrigin;
+
+		if ( xycheck )
+		{
+			delta -= (*gravity * delta) * *gravity;
+		}
+
+		// multiply with the user LOD bias setting
+		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+		float deltaSq = idMath::Floor( delta.LengthSqr() / lod_bias );
+
+		// TODO: check LOD stage and add into m_Changes
+
+		bool bWithinDist = false;
+
+		// by default fully visible
+		float fAlpha = 1.0f;
+
+//	gameLocal.Warning("ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", m_LOD, deltaSq);
+
+		// Tels: check in which LOD level we are 
+		for (int i = 0; i < LOD_LEVELS; i++)
+		{
+
+			// TODO: we need more information than just the rendermodels for each LOD stage to
+			// 		 get this to work:
+
+/*			// skip this level
+			if (m_LOD->DistLODSq[i] <= 0)
+			{
+	//			gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
+				continue;
+			}
+
+			// find the next usable level
+			int nextLevel = i + 1;
+			while (nextLevel < LOD_LEVELS && m_LOD->DistLODSq[nextLevel] <= 0 )
+			{
+				nextLevel++;
+			}
+
+			if (nextLevel < LOD_LEVELS)
+			{
+				bWithinDist = (deltaSq > m_LOD->DistLODSq[i]) && (deltaSq <= m_LOD->DistLODSq[nextLevel]);
+			}
+			else
+			{
+				if (i < LOD_LEVELS - 1)
+				{
+					bWithinDist = (deltaSq < m_LOD->DistLODSq[ LOD_LEVELS - 1]);
+				}
+				else
+				{
+					// only hide if hiding isn't disabled
+					// last usable level goes to infinity
+					bWithinDist = m_LOD->DistLODSq[i] > 0 && (deltaSq > m_LOD->DistLODSq[i]);
+				}
+
+				// compute the alpha value of still inside the fade range
+				if (bWithinDist)
+				{
+					if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
+					{
+						fAlpha = 0.0f;
+					}
+					else
+					{
+						fAlpha = 1.0f - ( (deltaSq - m_LOD->DistLODSq[i]) / m_LOD->fLODFadeOutRange );
+					}
+					// set the timestamp so we think the next frame again to get a smooth blend:
+					m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+				}
+				else
+				{
+					// just hide if outside
+					fAlpha = 0.0f;
+				}
+				m_LODLevel = i;
+
+				// early out, we found the right level and switched
+				return fAlpha;
+*/
+		}
+	}
+
+//	gameLocal.Printf("%i: megamodel checked %i offsets\n", gameLocal.time, n);
+
 	m_iNextUpdate = gameLocal.time + m_iUpdateTime;
 
-	// TODO: update the model
-	return false;
+	return UpdateRenderModel();
 }
 
 /*

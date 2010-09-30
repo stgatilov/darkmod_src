@@ -39,8 +39,8 @@ public:
 	/**
 	* Construct the megamodel from the given list of LOD stages and offsets/rotations/colors.
 	*/
-							CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *playerPos, const idVec3 *origin,
-										const idMaterial* material = NULL, const int iUpdateTime = 1000 ); 
+							CMegaModel( idList<const idRenderModel*>* LODs, idList<model_ofs_t>* offsets, const idVec3 *origin,
+										idMaterial const* material = NULL, const int iUpdateTime = 1000 ); 
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -55,11 +55,9 @@ public:
 	*/
 	void					AddChange( const int entity, const int newLOD );
 
-	/**
-	* If there are enough changes or enough time has passed, updates the render model. Returns true
-	* if the update did happen.
-	*/
-	bool					Update();
+	/** Check the given distance to player and update changes, then update the rendermodel
+	   if enough changes have accumulated */
+	bool					Update( const idVec3 *playerOrigin, const float lod_bias, idVec3 *gravity, const bool xycheck );
 
 	/**
 	* The entity presenting/using this model is going to get culled, so stop all updates.
@@ -77,6 +75,10 @@ public:
 	void					ClearChanges();
 
 private:
+	/**
+	* If there are enough changes, updates the render model. Returns true if the update did happen.
+	*/
+	bool						UpdateRenderModel();
 
 	idRenderModel*				m_hModel;			//!< ptr to the combined model
 
@@ -84,12 +86,18 @@ private:
 
 	idList<model_changeinfo_t>	m_Changes;			//!< list with changes
 
+	idList<const idRenderModel*>* m_LODs;			//!< list with LOD models to use
+
+	idVec3						m_Origin;			//!< Origin of the model, for LOD change computation
+
 	int							m_iMaxChanges;		//!< maximum number of changes before we update
 
 	int							m_iNextUpdate;		//!< time in ms when the next update should happen
 	int							m_iUpdateTime;		//!< time in ms between updates
 
 	bool						m_bActive;			//!< Is actively updating the combined model?
+
+	idMaterial const*			m_Material;			//!< Ptr to a material, if non-NULL, use this (debug_colors)
 
 };
 

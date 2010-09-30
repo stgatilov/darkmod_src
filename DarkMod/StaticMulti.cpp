@@ -101,23 +101,6 @@ void CStaticMulti::Spawn( void )
 
 /*
 ================
-CStaticMulti::ThinkAboutLOD
-================
-*/
-float CStaticMulti::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
-{
-	// ignored m_LOD
-
-	// give our MegaModel a chance to update the rendermodel based on distance
-	// to player
-
-	//gameLocal.Warning("ThinkAboutLOD CStaticMulti called with m_LOD %p deltaSq %0.2f", m_LOD, deltaSq);
-
-	return 1.0f;
-}
-
-/*
-================
 CStaticMulti::SetLODData
 
 Store the data like our megamodel (the visible combined rendermodel including data how to
@@ -138,34 +121,46 @@ CStaticMulti::Think
 void CStaticMulti::Think( void ) 
 {
 	// Distance dependence checks
-	if ( (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
-		{
+	if ( m_MegaModel && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
+	{
 		m_DistCheckTimeStamp = gameLocal.time;
 
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-		if( m_bDistCheckXYOnly )
+		// TODO: skip this if the distance to the player has not changed
+
+		// the MegaModel needs to calculate the offset for each model position alone,
+		// but we can precompute certain constants
+		float lod_bias = cv_lod_bias.GetFloat(); lod_bias *= lod_bias;
+		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
+		idVec3 gravityNormal = GetPhysics()->GetGravityNormal();
+		if ( m_MegaModel->Update( &playerOrigin, lod_bias, &gravityNormal, m_bDistCheckXYOnly ) )
 		{
-			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-			delta -= (vGravNorm * delta) * vGravNorm;
+			// the model changed
+			renderEntity.hModel = m_MegaModel->GetRenderModel();
+			// TODO: do we need this?
+			Present();
 		}
-
-		// multiply with the user LOD bias setting, and return the result:
-		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
-		float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
-
-		ThinkAboutLOD( NULL, deltaSq );
 	}
 
 	// Make ourselves visible and known:
+	// TODO: Do we need to do this every Think()?
 	Present();
 
 #ifdef M_DEBUG
-	int num = GetPhysics()->GetNumClipModels();
-
+	idPhysics *p = GetPhysics();
    	idVec4 markerColor (0.3, 0.8, 1.0, 1.0);
    	idVec3 arrowLength (0.0, 0.0, 50.0);
 
-	idPhysics *p = GetPhysics();
+	// our center
+	idVec3 org = renderEntity.origin;
+    gameRenderWorld->DebugArrow
+			(
+			markerColor,
+			org + arrowLength,
+			org,
+			3,
+	    	1 );
+	}
+	int num = p->GetNumClipModels();
 
 	// DEBUG draw arrows for each part of the physics object
 	for (int i = 0; i < num; i++)
