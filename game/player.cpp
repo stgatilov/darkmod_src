@@ -9167,6 +9167,17 @@ int idPlayer::ProcessLightgem(bool processing)
 			m_LightgemInterleave = 0;
 
 			fValue = gameLocal.CalcLightgem(this);
+
+// 			if( cv_interaction_vfp_type.GetBool() ) // If HDR is enabled then make sure that we decode the compressed value and tone-map it. J.C.Denton
+// 			{
+// 				//Decode 
+// 				fValue = fValue /( 1 - fValue );
+// 				
+// 				// Tone-map
+// 				fValue *= ((1.0f / Max(cv_lg_maxColorIntensity.GetFloat(), 0.0001f )) * fValue + 1.0);
+// 				fValue /= (fValue + 1);
+// 				
+// 			}
 		}
 	}
 
