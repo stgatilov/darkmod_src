@@ -115,7 +115,7 @@ idCVar cv_show_health (          "tdm_show_health",   "0",            CVAR_ARCHI
 
 idCVar cv_ai_show_aasfuncobstacle_state("tdm_ai_show_aasfuncobstacle_state",	"0", CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
-idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the HDR interaction shaders are used. Set to 0 to use TDM's enhanced ones." );
+idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the new enhanced interaction are used. Set to 0 to use default interaction shader." );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );
 
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
@@ -357,8 +357,7 @@ idCVar cv_lg_velocity_mod_min_velocity("tdm_lg_velocity_mod_min_velocity", "0", 
 idCVar cv_lg_velocity_mod_max_velocity("tdm_lg_velocity_mod_max_velocity", "300", CVAR_GAME | CVAR_FLOAT, "The maximum player speed taken into account for the lightgem.");
 idCVar cv_lg_velocity_mod_amount("tdm_lg_velocity_mod_amount", "1", CVAR_GAME | CVAR_FLOAT, "The maximum light level increase factor due to player velocity (this will be multiplied when the player velocity is >= tdm_lg_player_velocity_mod_max).");
 
-idCVar cv_lg_fade_delay("tdm_lg_fade_delay",		"0.04",		CVAR_GAME | CVAR_FLOAT,	"lightgem fade time from previous value to new value in seconds." );		// J.C.Denton
-
+idCVar cv_lg_fade_delay			("tdm_lg_fade_delay",			"0.04",		CVAR_GAME | CVAR_FLOAT,	"lightgem fade time from previous value to new value in seconds." );		// J.C.Denton
 
 idCVar cv_empty_model("tdm_empty_model", "models/darkmod/misc/system/empty.lwo", CVAR_GAME | CVAR_ARCHIVE, "The empty model referenced by the 'waitForRender' script event.");
 
@@ -716,27 +715,17 @@ idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_AR
 
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
 
-// HDR related - J.C.Denton
+// bloom related - J.C.Denton
 
-idCVar r_HDR_enableDebugMode		( "r_HDR_enableDebugMode",		"0",			CVAR_GAME | CVAR_INTEGER,	" Shows all the textures generated for HDR postprocess. \n 1: Shows all textures \n 2: Decodes and shows all textures");
-idCVar r_HDR_postProcess			( "r_HDR_postProcess",			"1",			CVAR_GAME | CVAR_INTEGER,	" Activates HDR bloom ( Requires DX9 compliant Hardware ). \n 1: HDR Bloom with automatic eye exposure \n 2: HDR Bloom (without auto exposure) ");
-idCVar r_HDR_middleGray				( "r_HDR_middleGray",			"0.1",			CVAR_GAME | CVAR_FLOAT,		" Middle gray value for overall scene . Range 0 - 1. (Works only when automatic exposure is on) ");
-idCVar r_HDR_brightPassThreshold	( "r_HDR_brightPassThreshold",	"1.0",			CVAR_GAME | CVAR_FLOAT,		" brightness threshold for Bright-pass (Works only when automatic exposure is on)");
-idCVar r_HDR_brightPassOffset		( "r_HDR_brightPassOffset",		"5.0",			CVAR_GAME | CVAR_FLOAT,		" Brightness offset for bright pass (Works only when automatic exposure is on)");
-idCVar r_HDR_min_luminance			( "r_HDR_min_luminance",		"0.045",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control whiteness when in pitch dark areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_max_luminance			( "r_HDR_max_luminance",		"0.12",			CVAR_GAME | CVAR_FLOAT,		" Luminance is restricted to this value to control darkness when in super-bright areas. (Works only when automatic exposure is on)");
-idCVar r_HDR_eyeAdjustmentDelay		( "r_HDR_eyeAdjustmentDelay",	"2.2",			CVAR_GAME | CVAR_FLOAT,		" Total time in second taken to adjust eye exposure.(Works only when automatic exposure is on)");
-idCVar r_HDR_colorCurveBias			( "r_HDR_colorCurveBias",		"0.24",			CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
-idCVar r_HDR_sceneExposure			( "r_HDR_sceneExposure",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Scene exposure. Try values lower or greater than 1.0");
-idCVar r_HDR_gammaCorrection		( "r_HDR_gammaCorrection",		"1.0",			CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
-idCVar r_HDR_maxColorIntensity		( "r_HDR_maxColorIntensity",	"1.0",			CVAR_GAME | CVAR_FLOAT,		" Adjusting this value will cause color burnout in a controllable fashion (range 0.0 - 256.0) \nHigher values reduces the contrast, lower values increases the contrast.");
-idCVar r_HDR_bloomIntensity			( "r_HDR_bloomIntensity",		"0.5",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables both bloom as well as halo passes");
-idCVar r_HDR_haloIntensity			( "r_HDR_HaloIntensity",		"0.6",			CVAR_GAME | CVAR_FLOAT,		" Adjusts the Halo intensity. Set to 0.0 disables halo pass. ");
-idCVar r_HDR_debugTextureIndex		( "r_HDR_debugTextureIndex",	"0",			CVAR_GAME | CVAR_INTEGER,	" Show intermediate textures used for HDR postprocess \n 1: scene Image(64x Scaled down) \n 2: Average Luminance Initial pass texture\n 3: Average luminance ");
-idCVar r_HDR_lumUpdateRate			( "r_HDR_lumUpdateRate",		"11",			CVAR_GAME | CVAR_INTEGER,	" Updates luminance data after every these many number of frames. "	);												
-idCVar r_HDR_eyeAdjustmentBias		( "r_HDR_eyeAdjustmentBias",	"0.4",			CVAR_GAME | CVAR_FLOAT,		" Automatic eye exposure factor (range 0 to 1) \n e.g. 0.0 - No automatic eye exposure, \n 0.5 - 50% automatic eye exposure, \n 1.0 Full automatic eye exposure. "	);												
-idCVar r_HDR_vignetteBias			( "r_HDR_vignetteBias",			"0.45",			CVAR_GAME | CVAR_FLOAT,		" Vignette: Fading-of-edges-of-the-screen effect(range 0 to 1) "	);												
-
+idCVar r_postprocess_debugMode				( "r_postprocess_debugMode",			"0",		CVAR_GAME | CVAR_INTEGER,	" Shows all the textures generated for postprocessing effects. \n 1: Shows currentRender \n 2: Shows bloom Images \n 3: Shows Cooked Math Data.");
+idCVar r_postprocess						( "r_postprocess",						"1",		CVAR_GAME | CVAR_INTEGER,	" Activates bloom ( Requires DX9 compliant Hardware )");
+idCVar r_postprocess_brightPassThreshold	( "r_postprocess_brightPassThreshold",	"0.17",		CVAR_GAME | CVAR_FLOAT,		" Intensities of this value are subtracted from scene render to extract bloom image");
+idCVar r_postprocess_brightPassOffset		( "r_postprocess_brightPassOffset",		".9",		CVAR_GAME | CVAR_FLOAT,		" Bloom image receives smooth fade along a curve from bright to very bright areas based on this variable's value");
+idCVar r_postprocess_colorCurveBias			( "r_postprocess_colorCurveBias",		"0.3",		CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
+idCVar r_postprocess_sceneExposure			( "r_postprocess_sceneExposure",		"1.1",		CVAR_GAME | CVAR_FLOAT,		" Scene render is linearly scaled up. Try values lower or greater than 1.0");
+idCVar r_postprocess_sceneGamma				( "r_postprocess_sceneGamma",			"0.93",		CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
+idCVar r_postprocess_bloomIntensity			( "r_postprocess_bloomIntensity",		"0.6",		CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected.");
+idCVar r_postprocess_bloomKernelSize		( "r_postprocess_bloomKernelSize",		"1",		CVAR_GAME | CVAR_INTEGER,	" Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
 //----------------------------------
 
 #ifndef __linux__

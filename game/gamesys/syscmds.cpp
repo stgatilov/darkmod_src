@@ -3394,7 +3394,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 void Cmd_updateCookedMathData_f( const idCmdArgs& args )
 {
-	r_HDR_colorCurveBias.SetModified();
+	r_postprocess_colorCurveBias.SetModified();
 }
 
 #ifdef TIMING_BUILD

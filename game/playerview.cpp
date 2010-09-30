@@ -824,8 +824,8 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		}
 		//}
 
-		// HDR related - J.C.Denton
-		/* Update HDR post-process */
+		// Bloom related - J.C.Denton
+		/* Update  post-process */
 		this->m_postProcessManager.Update();
 
 		ScreenFade();
@@ -889,38 +889,21 @@ idPlayerView::dnPostProcessManager Class Definitions - JC Denton
 
 idPlayerView::dnPostProcessManager::dnPostProcessManager():
 m_imageCurrentRender				( "_currentRender"			),
-m_imageCurrentRender8x8DownScaled	( "_RTtoTextureScaled64x"	),
-m_imageLuminance64x64				( "_luminanceTexture64x64"	),
-m_imageluminance4x4					( "_luminanceTexture4x4"	),
-m_imageAdaptedLuminance1x1			( "_adaptedLuminance"		),
 m_imageBloom						( "_bloomImage"				),
-m_imageHalo							( "_haloImage"				),
 m_imageCookedMath					( "_cookedMath"				),
 
-m_matAvgLuminance64x	( declManager->FindMaterial( "postprocess/averageLum64" )	), 
-m_matAvgLumSample4x4	( declManager->FindMaterial( "postprocess/averageLum4" )	),
-m_matAdaptLuminance		( declManager->FindMaterial( "postprocess/adaptLum" )		),
 m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPassOptimized" )		),
 m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
 m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
-m_matHalo				( declManager->FindMaterial(  "postprocess/halo" )			),
-m_matGaussBlurXHalo		( declManager->FindMaterial( "postprocess/blurx_halo" )		),
-m_matGaussBlurYHalo		( declManager->FindMaterial( "postprocess/blury_halo" )		),
 //m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
 m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOptimized" )	),
 
 m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
-m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
-m_matCookMath_pass3		( declManager->FindMaterial( "postprocess/cookMath_pass3" )		),
-m_matCookVignette		( declManager->FindMaterial( "postprocess/cookVignette" )		),
-
-// Materials for debugging intermediate textures
-m_matDecodedLumTexture64x64	( declManager->FindMaterial( "postprocess/decode_luminanceTexture64x64" )	), 
-m_matDecodedLumTexture4x4	( declManager->FindMaterial( "postprocess/decode_luminanceTexture4x4" )		),
-m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adaptedLuminance" )		)
+m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		)
 {
 
 	m_iScreenHeight = m_iScreenWidth = 0;
+	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
 	m_nFramesToUpdateCookedData = 0;
 
 	// Initialize once this object is created.	
@@ -945,10 +928,10 @@ m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adap
 		 )
 	 {
 		 m_nFramesToUpdateCookedData = 1;
-		 if( r_HDR_postProcess.GetBool() )
+		 if( r_postprocess.GetBool() )
 			gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData  );
 		 else
-			 gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_HDR_postProcess is enabled.\n", m_nFramesToUpdateCookedData  );
+			 gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_postprocess is enabled.\n", m_nFramesToUpdateCookedData  );
 	 }
 
 	 RETURN_META(MRES_IGNORED );
@@ -957,9 +940,7 @@ m_matDecodedAdaptLuminance	( declManager->FindMaterial( "postprocess/decode_adap
 void idPlayerView::dnPostProcessManager::Initialize()
 {
 	m_bForceUpdateOnCookedData = true;
-
-	// Make sure that we always measure luminance at first frame. 
-	m_nFramesSinceLumUpdate	= r_HDR_lumUpdateRate.GetInteger();
+	r_postprocess_bloomKernelSize.SetModified(); // This will print message in console about bloom kernel size. 
 }
 
 void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
@@ -973,11 +954,9 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 	}
 
 	if (	m_bForceUpdateOnCookedData || 
-			r_HDR_middleGray.IsModified() || r_HDR_maxColorIntensity.IsModified()		|| 
-			r_HDR_colorCurveBias.IsModified() || r_HDR_brightPassOffset.IsModified()	|| 
-			r_HDR_brightPassThreshold.IsModified() || r_HDR_sceneExposure.IsModified()	||
-			r_HDR_gammaCorrection.IsModified()	|| r_HDR_vignetteBias.IsModified()		||
-			r_HDR_eyeAdjustmentBias.IsModified()
+			r_postprocess_colorCurveBias.IsModified() || r_postprocess_brightPassOffset.IsModified()	|| 
+			r_postprocess_brightPassThreshold.IsModified() || r_postprocess_sceneExposure.IsModified()	||
+			r_postprocess_sceneGamma.IsModified()		
 		)
 	{
 
@@ -989,65 +968,50 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		//------------------------------------------------------------------------
 		// Crop backbuffer image to the size of our cooked math image
 		//------------------------------------------------------------------------
-		renderSystem->CropRenderSize(1024, 256, true);
+		renderSystem->CropRenderSize(256, 1, true);
 		//------------------------------------------------------------------------
-
-		// Changed from max to Max for cross platform compiler compatibility.
-		const float fMaxColorIntensity = Max( r_HDR_maxColorIntensity.GetFloat(), 0.00001f );
 
 		//------------------------------------------------------------------------
 		// Cook math Pass 1 
 		//------------------------------------------------------------------------
-		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), 1.0f/fMaxColorIntensity, r_HDR_sceneExposure.GetFloat(), r_HDR_eyeAdjustmentBias.GetFloat() );
+		renderSystem->SetColor4( r_postprocess_colorCurveBias.GetFloat(), r_postprocess_sceneGamma.GetFloat(), r_postprocess_sceneExposure.GetFloat(), 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
 		//------------------------------------------------------------------------
 		// Cook math Pass 2 
 		//------------------------------------------------------------------------
- 		renderSystem->SetColor4( r_HDR_middleGray.GetFloat(), r_HDR_brightPassThreshold.GetFloat(), r_HDR_brightPassOffset.GetFloat(), r_HDR_eyeAdjustmentBias.GetFloat() );
+ 		renderSystem->SetColor4( r_postprocess_brightPassThreshold.GetFloat(), r_postprocess_brightPassOffset.GetFloat(), 1.0f, 1.0f );
  		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
  		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
 		//------------------------------------------------------------------------
-		// Cook math Pass 3 
-		//------------------------------------------------------------------------
-		renderSystem->SetColor4( r_HDR_colorCurveBias.GetFloat(), r_HDR_gammaCorrection.GetFloat(), 0.0f, 0.0f  );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass3 );
-		renderSystem->CaptureRenderToImage( m_imageCookedMath );
-
-		//------------------------------------------------------------------------
-		// Cooke Vignette image 
-		//------------------------------------------------------------------------
-		renderSystem->SetColor4( r_HDR_vignetteBias.GetFloat(), 1.0f/m_fShiftScale_x, 1.0f/m_fShiftScale_y, 0.0f  );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookVignette );
-		renderSystem->CaptureRenderToImage( m_imageCookedMath );
-		//------------------------------------------------------------------------
 		renderSystem->UnCrop();
 		//------------------------------------------------------------------------
-		r_HDR_middleGray.ClearModified();
-		r_HDR_maxColorIntensity.ClearModified();
-		r_HDR_colorCurveBias.ClearModified(); 
-		r_HDR_brightPassOffset.ClearModified();
-		r_HDR_brightPassThreshold.ClearModified();
-		r_HDR_sceneExposure.ClearModified();
-		r_HDR_gammaCorrection.ClearModified();
-		r_HDR_vignetteBias.ClearModified();
-		r_HDR_eyeAdjustmentBias.ClearModified();
+		r_postprocess_colorCurveBias.ClearModified(); 
+		r_postprocess_brightPassOffset.ClearModified();
+		r_postprocess_brightPassThreshold.ClearModified();
+		r_postprocess_sceneExposure.ClearModified();
+		r_postprocess_sceneGamma.ClearModified();
 
 		m_bForceUpdateOnCookedData = false;
 
 		gameLocal.Printf( "Cooking complete.\n" );
+
+		//gameLocal.Printf( "Screen size: %d, %d Power of 2 Size: %d, %d", m_iScreenWidth, m_iScreenHeight, m_iScreenWidthPowOf2, m_iScreenHeightPowOf2 );
 	}
 }
 
 
 void idPlayerView::dnPostProcessManager::Update( void )
 {
-	static const float fBloomImageDownScale = 2.0f;
-	static const float fHaloImageDownScale = 8.0f;
-	static const float fBackbufferLumDownScale = 8.0f;
+	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
 
+	if( r_postprocess_bloomKernelSize.IsModified() )
+	{
+		gameLocal.Printf(" Bloom Kernel size is set to: %s \n", fBloomImageDownScale == 2.0f ? "Large": "Small" );
+		r_postprocess_bloomKernelSize.ClearModified();
+	}
 
 	// Check the interaction.vfp settings
 	if( cv_interaction_vfp_type.IsModified() )
@@ -1056,118 +1020,52 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		cv_interaction_vfp_type.ClearModified();
 	}
 
-	const int iPostProcessType = r_HDR_postProcess.GetInteger();
+	const int iPostProcessType = r_postprocess.GetInteger();
 
 	if ( iPostProcessType != 0 ) 
 	{
 		this->UpdateBackBufferParameters();
 
+		// Note to self1: CropRenderSize if not used before CaptureRenderToImage, then image caputured is of screen's size(non power of two) 
+		// Note to self2: CropRenderSize when used with dimensions greater than backbuffer res, automatically crops screen to res <= backbuffer res.
+
 		renderSystem->CaptureRenderToImage( m_imageCurrentRender );
+
 		this->UpdateCookedData();
 
-		// Delayed luminance measurement and adaptation for performance improvement.
-		if( r_HDR_eyeAdjustmentBias.GetFloat() > 0.0f )
-		{
-			if( m_nFramesSinceLumUpdate >= r_HDR_lumUpdateRate.GetInteger() )
-			{
-				//-------------------------------------------------
-				// Downscale 
-				//-------------------------------------------------
-				renderSystem->CropRenderSize(m_iScreenWidth/fBackbufferLumDownScale, m_iScreenHeight/fBackbufferLumDownScale, true);
-				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageCurrentRender );
-				renderSystem->CaptureRenderToImage( m_imageCurrentRender8x8DownScaled );
-				renderSystem->UnCrop();
-				//-------------------------------------------------
-				// Measure Luminance from Downscaled Image
-				//-------------------------------------------------
-				renderSystem->CropRenderSize(64, 64, true);
-				renderSystem->SetColor4( 1.0f/Min( 192.0f, m_iScreenWidth/fBackbufferLumDownScale), 1.0f, 1.0f, 1.0f );			 
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLuminance64x );
-				renderSystem->CaptureRenderToImage( m_imageLuminance64x64 );
-				renderSystem->UnCrop();
-				//-------------------------------------------------
-				// Average out the luminance of the scene to a 4x4 Texture
-				//-------------------------------------------------
-				renderSystem->CropRenderSize(4, 4, true);
-				renderSystem->SetColor4( 1.0f/16.0f, 1.0f, 1.0f, 1.0f );			 
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAvgLumSample4x4 );
-				renderSystem->CaptureRenderToImage( m_imageluminance4x4 );
-				renderSystem->UnCrop();
-
-
-				// Reset vars
-				m_nFramesSinceLumUpdate	= 1;
-			}
-			else
-			{
-				m_nFramesSinceLumUpdate ++;
-			}
-
-			//-------------------------------------------------
-			// Adapt to the newly calculated Luminance from previous Luminance.
-			//-------------------------------------------------
-			renderSystem->CropRenderSize(1, 1, true);
-			renderSystem->SetColor4( (gameLocal.time - gameLocal.previousTime)/(1000.0f * r_HDR_eyeAdjustmentDelay.GetFloat() ), r_HDR_max_luminance.GetFloat(), r_HDR_min_luminance.GetFloat(), 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matAdaptLuminance );
-			renderSystem->CaptureRenderToImage( m_imageAdaptedLuminance1x1 );
-			renderSystem->UnCrop();
-			//---------------------
-		}	// End of : r_HDR_eyeAdjustmentBias.GetFloat() > 0.0f 
-
-		const float fHDRBloomIntensity = r_HDR_bloomIntensity.GetFloat();
-		const float fHDRHaloIntensity = fHDRBloomIntensity > 0.0f ? r_HDR_haloIntensity.GetFloat() : 0.0f;
-
-		if( fHDRBloomIntensity > 0.0f )
+		const float fBloomIntensity = r_postprocess_bloomIntensity.GetFloat();
+		
+		if( fBloomIntensity > 0.0f )
 		{
 			//-------------------------------------------------
 			// Apply the bright-pass filter to acquire bloom image
 			//-------------------------------------------------
-			renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, true);
+			renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, false, true);
 
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matBrightPass );
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 
 			//-------------------------------------------------
 			// Apply Gaussian Smoothing to create bloom
 			//-------------------------------------------------
 
-			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidthPowOf2, 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matGaussBlurX );
 			renderSystem->CaptureRenderToImage( m_imageBloom );
-			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeightPowOf2, 1.0f, 1.0f, 1.0f );		 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matGaussBlurY );
 
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 			renderSystem->UnCrop();
 			//---------------------
 
-			if(  fHDRHaloIntensity > 0.0f )
-			{
-				//-------------------------------------------------
-				// Downscale bloom image and blur again to obtain Halo Image
-				//-------------------------------------------------
-				renderSystem->CropRenderSize(m_iScreenWidth/fHaloImageDownScale, m_iScreenHeight/fHaloImageDownScale, true);
-
-				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matHalo );
-				renderSystem->CaptureRenderToImage( m_imageHalo );
-
-				renderSystem->SetColor4( fHaloImageDownScale/m_iScreenWidth, 1.0f, 1.0f, 1.0f );			 
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurXHalo );
-				renderSystem->CaptureRenderToImage( m_imageHalo );
-				renderSystem->SetColor4( fHaloImageDownScale/m_iScreenHeight, 1.0f, 1.0f, 1.0f );		 
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurYHalo );
-				renderSystem->CaptureRenderToImage( m_imageHalo );
-				renderSystem->UnCrop();
-			}
 		}
 
 		//-------------------------------------------------
 		// Calculate and Render Final Image
 		//-------------------------------------------------
-		renderSystem->SetColor4( fHDRBloomIntensity, fHDRHaloIntensity, .5f, 1.0f );
+		renderSystem->SetColor4( fBloomIntensity, 1.0f, 1.0f, 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
 		//-------------------------------------------------
 
@@ -1180,60 +1078,38 @@ void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
 	if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
 	{
-		int iWidth = 256, iHeight = 256;
+		m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
 
 		// This should probably fix the ATI issue...
 		renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
 
 		//assert( iScreenWidth != 0 && iScreenHeight != 0 );
 
-		while( iWidth < m_iScreenWidth ) {
-			iWidth <<= 1;
+		while( m_iScreenWidthPowOf2 < m_iScreenWidth ) {
+			m_iScreenWidthPowOf2 <<= 1;
 		}
-		while( iHeight < m_iScreenHeight ) {
-			iHeight <<= 1;
+		while( m_iScreenHeightPowOf2 < m_iScreenHeight ) {
+			m_iScreenHeightPowOf2 <<= 1;
 		}
-		m_fShiftScale_x = m_iScreenWidth  / (float)iWidth;
-		m_fShiftScale_y = m_iScreenHeight / (float)iHeight;
+		m_fShiftScale_x = m_iScreenWidth  / (float)m_iScreenWidthPowOf2;
+		m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
 	}
 }
 
 void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 {
-	const int iDebugMode = r_HDR_enableDebugMode.GetInteger();
+	const int iDebugTexture = r_postprocess_debugMode.GetInteger();
 
-	if( 1 == iDebugMode )
-	{
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageLuminance64x64 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageluminance4x4 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageAdaptedLuminance1x1 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
-
-	}
-	else if ( 2 == iDebugMode )
-	{
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0,				0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_imageCurrentRender8x8DownScaled );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH/5,	0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture64x64 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*2/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedLumTexture4x4 );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*3/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, 1, 1, 0, m_matDecodedAdaptLuminance );
-		renderSystem->DrawStretchPic( SCREEN_WIDTH*4/5, 0, SCREEN_WIDTH/6,	SCREEN_HEIGHT/6, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_imageBloom );
-	}
-
-	const int iDebugTexture = r_HDR_debugTextureIndex.GetInteger();
-	if( 0!= iDebugMode && 0 < iDebugTexture && 5 > iDebugTexture ) 
+	if( 0 < iDebugTexture && 4 > iDebugTexture ) 
 	{
 		struct {
 			dnImageWrapper *m_pImage;
 			float m_fShiftScaleX, m_fShiftScaleY;
 		} 
-		const arrStretchedImages[4] = { 
-				{&m_imageCurrentRender8x8DownScaled, 1, 1},
+		const arrStretchedImages[3] = { 
+				{&m_imageCurrentRender,	m_fShiftScale_x, m_fShiftScale_y },
 				{&m_imageBloom,			m_fShiftScale_x, m_fShiftScale_y },
-				{&m_imageHalo,			m_fShiftScale_x, m_fShiftScale_y },
-				{&m_imageCookedMath,	1, 1},
+				{&m_imageCookedMath,	1.0f, 1.0f},
 		};
 		
 		int i = iDebugTexture - 1;
@@ -1246,23 +1122,21 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 }
 
 // Moved Greebo's method from gameLocal to here. - J.C.Denton
-// The CVar are rendering related and from now on, would work when g_stoptime is set to 0
+// The CVar is rendering related and from now on, would work when g_stoptime is set to 0
 
 void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
 {
 	// Check the CVARs
 	switch (cv_interaction_vfp_type.GetInteger())
 	{
-	case 0: // Rebb's enhanced interaction shader
-		gameLocal.Printf("Using TDM's enhanced interaction.vfp\n");
+	case 0: // Doom 3's default interaction shader
+		gameLocal.Printf("Using default interaction.vfp\n");
 		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
-		r_HDR_postProcess.SetBool(false);
 		break;
 
-	case 1: // JC Denton's HDR
-		gameLocal.Printf("Using TDM's HDR\n");
+	case 1: // JC Denton's enhanced interaction
+		gameLocal.Printf("Using TDM's enhanced interaction\n");
 		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
-		r_HDR_postProcess.SetBool(true);
 		break;
 
 	default:

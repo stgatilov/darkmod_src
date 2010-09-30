@@ -118,61 +118,32 @@ private:
 	private:
 		int					m_iScreenHeight;
 		int					m_iScreenWidth;
+		int					m_iScreenHeightPowOf2;
+		int					m_iScreenWidthPowOf2;
 		float				m_fShiftScale_x;
 		float				m_fShiftScale_y;
 
 		int					m_nFramesToUpdateCookedData; // After these number of frames Cooked data will be updated. 0 means no update.
 
-		unsigned char		m_nFramesSinceLumUpdate;						
-		
 		bool				m_bForceUpdateOnCookedData;
 
-	dnImageWrapper m_imageCurrentRender;
-	dnImageWrapper m_imageCurrentRender8x8DownScaled;
-	dnImageWrapper m_imageLuminance64x64;
-	dnImageWrapper m_imageluminance4x4;
-	dnImageWrapper m_imageAdaptedLuminance1x1;
-	dnImageWrapper m_imageBloom;
-	dnImageWrapper m_imageHalo;
-	
+		dnImageWrapper m_imageCurrentRender;
+		dnImageWrapper m_imageBloom;
+		
 		// Every channel of this image will have a cooked mathematical data. 
 		dnImageWrapper		m_imageCookedMath;
 		const idMaterial*	m_matCookMath_pass1;
 		const idMaterial*	m_matCookMath_pass2;
-		const idMaterial*	m_matCookMath_pass3;
 
-	const idMaterial *m_matAvgLuminance64x;
-	const idMaterial *m_matAvgLumSample4x4;
-	const idMaterial *m_matAdaptLuminance;
-	const idMaterial *m_matBrightPass;
-	const idMaterial *m_matGaussBlurX;
-	const idMaterial *m_matGaussBlurY;
-	const idMaterial *m_matHalo;
-	const idMaterial *m_matGaussBlurXHalo;
-	const idMaterial *m_matGaussBlurYHalo;
-	const idMaterial *m_matFinalScenePass;
-	const idMaterial *m_matCookVignette;
+		const idMaterial *m_matBrightPass;
+		const idMaterial *m_matGaussBlurX;
+		const idMaterial *m_matGaussBlurY;
 
-	// For debug renders
-	const idMaterial *m_matDecodedLumTexture64x64;
-	const idMaterial *m_matDecodedLumTexture4x4;
-	const idMaterial *m_matDecodedAdaptLuminance;
-
-#ifdef _ADD_MATERIAL_SOURCE_HOOK
-	// A non constant reference to cookedMath image - Used by source hook.
-	idMaterial *m_pCookedMathImage;
-#endif
+		const idMaterial *m_matFinalScenePass;
 
 	public:
 		dnPostProcessManager();
 		~dnPostProcessManager();
-
-#ifdef _ADD_MATERIAL_SOURCE_HOOK
-
-		// Hook to handle cookedMathData's reload.
-		void Hook_cookedMathDataReload( bool a_bForce );
-
-#endif
 
 		// Methods
 		void Initialize	();						// This method should be invoked when idPlayerView::Restore is called.
