@@ -2197,10 +2197,22 @@ void idGameLocal::MapShutdown( void ) {
 	{
 		m_RelationsManager->Clear();
 	}
-	m_ConversationSystem->Clear();
+	if (m_ConversationSystem != NULL)
+	{
+		m_ConversationSystem->Clear();
+	}
+
 	m_DifficultyManager.Clear();
-	m_ModelGenerator->Clear();
-	m_LightController->Clear();
+
+	if (m_ModelGenerator != NULL)
+	{
+		m_ModelGenerator->Clear();
+	}
+	
+	if (m_LightController != NULL)
+	{
+		m_LightController->Clear();
+	}
 
 	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
 	// m_Shop->Clear();
