@@ -133,6 +133,9 @@ void IdleState::Init(idAI* owner)
 		{
 			owner->AI_SIT_DOWN_ANGLE = memory.idleYaw;
 		}
+
+		owner->AI_SIT_DOWN_ANGLE = idMath::AngleNormalize180(owner->AI_SIT_DOWN_ANGLE);
+
 		owner->AI_SIT_UP_ANGLE = memory.idleYaw;
 	}	
 

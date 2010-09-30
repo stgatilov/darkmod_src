@@ -73,6 +73,8 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 	owner->AI_SIT_UP_ANGLE = owner->GetCurrentYaw();
 
+	owner->AI_SIT_DOWN_ANGLE = idMath::AngleNormalize180(owner->AI_SIT_DOWN_ANGLE);
+
 	
 	if (owner->GetMoveType() != MOVETYPE_SIT)
 	{
