@@ -197,7 +197,7 @@ offset and rotated by the given values, scaled, and also fills in the right vert
 ===============
 */
 idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs,
-			const char* snapshotName, const idList<model_ofs_t> *offsets, const idVec3 *playerPos, const idVec3 *origin,
+			const char* snapshotName, const idList<model_ofs_t> *offsets, const idVec3 *origin,
 			const idMaterial *shader ) const {
 	int numSurfaces;
 	int numVerts, numIndexes;
@@ -358,7 +358,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 
 	if (targetSurfInfo.Num() == 0)
 	{
-			gameLocal.Error("Dup model (%i LOD stages) with no surfaces at all.\n", nSources);
+		// TODO: this can happen if the model contains no visible LOD stages, but wasn't
+		//		 culled or made invisible yet. So allow it.
+		gameLocal.Error("Dup model (%i LOD stages) with no surfaces at all.\n", nSources);
 	}
 	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.\n", targetSurfInfo.Num() );
 

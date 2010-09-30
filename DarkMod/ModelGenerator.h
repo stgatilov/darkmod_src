@@ -81,7 +81,7 @@ public:
 	* If shader is != NULL, all shaders of the models will be switched to this shader.
 	*/
 	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName,
-												const idList<model_ofs_t>* offsets, const idVec3 *playerPos = NULL, const idVec3 *origin = NULL,
+												const idList<model_ofs_t>* offsets, const idVec3 *origin = NULL,
 												const idMaterial *shader = NULL) const;
 
 	/**
