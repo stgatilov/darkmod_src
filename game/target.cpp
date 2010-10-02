@@ -1471,7 +1471,7 @@ void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *e
 
 			// create a thread and call the function
 			idThread *thread = new idThread();
-			if (pass_self) {
+			if (numParams == 1) {
 				thread->CallFunction( ent, func, true );
 			} else {
 				thread->CallFunctionArgs( func, true, "ee", ent, this );
