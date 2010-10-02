@@ -16,7 +16,7 @@
    Manipulate, combine or generate models at run time.
 
 TODO: use the supplied scale value when duplicating/combining models
-TODO: skip nodraw shaders when combining models
+TODO: skip nodraw/_emptyname shaders when combining models
 */
 
 #include "../idlib/precompiled.h"
@@ -196,7 +196,7 @@ If the given list of model_ofs_t is filled, the model will be copied X times, ea
 offset and rotated by the given values, scaled, and also fills in the right vertex color.
 ===============
 */
-idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRenderModel*> *LODs,
+idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRenderModel*> *LODs,
 			const char* snapshotName, const idList<model_ofs_t> *offsets, const idVec3 *origin,
 			const idMaterial *shader ) const {
 	int numSurfaces;
@@ -269,6 +269,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 		{
 			// Use the default model
 			source = LODs->Ptr()[0];
+			if (NULL == source)
+			{
+				gameLocal.Warning("NULL source ptr for default LOD stage (was default for %i)", i);
+				continue;
+			}
 //			gameLocal.Warning("Using default for empty LOD stage %i", i);
 //			continue;	// skip non-existing LOD stages
 		}
@@ -334,7 +339,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels ( const idList<const idRende
 				newTargetSurfInfo.surf.shader = shader ? shader : surf->shader;
 				newTargetSurfInfo.surf.id = 0;
 				targetSurfInfo.Append( newTargetSurfInfo );
-			//	gameLocal.Warning("ModelGenerator: Need shader %s.", n.c_str() );
+#ifdef M_DEBUG	
+				gameLocal.Warning("ModelGenerator: Need shader %s.", n.c_str() );
+#endif
 				found = targetSurfInfo.Num() - 1;
 			}
 

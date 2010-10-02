@@ -18,6 +18,7 @@
 #include "../DarkMod/StimResponse/StimType.h"
 #include "../DarkMod/overlaySys.h"
 #include "../DarkMod/UserManager.h"
+#include "../DarkMod/ModelGenerator.h"
 
 class CStimResponseCollection;
 class CStim;
@@ -33,12 +34,6 @@ class CInventoryItem;
 typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
 typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
-
-/* Tels: Define the number of supported LOD levels (0..LOD_LEVELS + hide)
- *		 About higher than 10 starts take performance instead of gaining it.
- *		 Do not go higher than 31, as each level needs 1 bit in a 32bit int.
- */
-#define LOD_LEVELS 7
 
 /**
 * SDK_SIGNALS are used to signal either from a script to the SDK code or
@@ -236,53 +231,6 @@ typedef struct SAttachPosition_s
 	void			Restore( idRestoreGame *savefile );
 } SAttachPosition;
 
-/**
-* Tels: Info structure for LOD data, can be shared between many entities.
-**/
-struct lod_data_t
-{
-	/**
-	* If true, the LOD distance check will only consider distance
-	* orthogonal to gravity.  This can be useful for things like
-	* turning on rainclouds high above the player.
-	**/
-	bool				bDistCheckXYOnly;
-	
-	/**
-	* Interval between distance checks, in milliseconds.
-	**/
-	int					DistCheckInterval;
-	
-	/**
-	* Distance squared beyond which the entity switches to LOD model/skin #1,#2,#3
-	* if it is distance dependent
-	* The last number is the distance squared beyond which the entity hides.
-	**/
-	float				DistLODSq[ LOD_LEVELS ];
-
-	/**
-	* Models and skins to be used for the different LOD distances
-	* for level 0 we use "model" and "skin"
-	**/
-	idStr				ModelLOD[ LOD_LEVELS ];
-	idStr				SkinLOD[ LOD_LEVELS ];
-
-	/** one bit for each LOD level, telling noshadows (1) or not (0) */
-	int					noshadowsLOD;
-
-	/**
-	* Different LOD models might need different offsets to match
-	* the position of the LOD 0 level.
-	*/
-	idVec3				OffsetLOD[ LOD_LEVELS ];
-
-	/**
-	* Fade out and fade in range in D3 units.
-	**/
-	float				fLODFadeOutRange;
-	float				fLODFadeInRange;
-
-};
 
 class idEntity : public idClass {
 public:

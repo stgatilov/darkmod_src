@@ -273,7 +273,6 @@ AI/Tasks/WanderInLocationTask.cpp \
 lode.cpp \
 ModelGenerator.cpp \
 LightController.cpp \
-MegaModel.cpp \
 StaticMulti.cpp \
 sourcehook/sourcehook.cpp'
 

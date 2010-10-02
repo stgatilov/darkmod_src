@@ -316,7 +316,7 @@ void Lode::ClearClasses( void )
 	{
 		if (NULL != m_Classes[i].hModel)
 		{
-			if (m_Classes[i].pseudo)
+			if (m_Classes[i].pseudo && m_Classes[i].hModel)
 			{
 				renderModelManager->FreeModel( m_Classes[i].hModel );
 			}
@@ -327,11 +327,6 @@ void Lode::ClearClasses( void )
 			// avoid double free:
 			//delete m_Classes[i].physicsObj;
 			m_Classes[i].physicsObj = NULL;
-		}
-		if (NULL != m_Classes[i].megamodel)
-		{
-			delete m_Classes[i].megamodel;
-			m_Classes[i].megamodel = NULL;
 		}
 		if (NULL != m_Classes[i].img)
 		{
@@ -466,8 +461,6 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			m_Classes[i].img->LoadImage( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
 		}
-
-		// TODO: read megamodel struct
 
 		savefile->ReadBool( bHaveModel );
 		m_Classes[i].hModel = NULL;
@@ -715,7 +708,6 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
 	LodeClass.modelname = ent->spawnArgs.GetString("model","");
-	LodeClass.megamodel = NULL;
 	
 	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","1") ? false : true;
 
@@ -729,6 +721,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	// only for pseudo classes
 	LodeClass.physicsObj = NULL;
+
+	// debug_colors?
+	LodeClass.materialName = "";
+	if (m_bDebugColors)
+	{
+		// select one at random
+		LodeClass.materialName = idStr("textures/darkmod/debug/") + lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
+	}
 	
 	// get all "skin" and "skin_xx", as well as "random_skin" spawnargs
 	LodeClass.skins.Clear();
@@ -999,14 +999,15 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		kv = ent->spawnArgs.MatchPrefix( "lode_material_", kv );
 	}
 
-	// has a model with shared data?
+	// store the rendermodel to make func_statics work
 	LodeClass.hModel = NULL;
 	if (LodeClass.classname == FUNC_STATIC)
 	{
 		// simply point to the already existing model:
-		LodeClass.hModel = ent->GetRenderEntity()->hModel;
+//		LodeClass.hModel = ent->GetRenderEntity()->hModel;
+//		gameLocal.Warning("%s: Got hmodel %p from renderEntity\n", GetName(), LodeClass.hModel);
 		// prevent a double free
-		ent->GetRenderEntity()->hModel = NULL;
+//		ent->GetRenderEntity()->hModel = NULL;
 		LodeClass.classname = FUNC_DUMMY;
 	}
 
@@ -1496,7 +1497,7 @@ void Lode::PrepareEntities( void )
 
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
-		if (m_Classes[i].pseudo)
+		if (m_Classes[i].pseudo && m_Classes[i].hModel)
 		{
 			renderModelManager->FreeModel( m_Classes[i].hModel );
 			m_Classes[i].hModel = NULL;
@@ -2216,7 +2217,6 @@ void Lode::CombineEntities( void )
 	lode_class_t PseudoClass;
 	idList< lode_entity_t > newEntities;
 	unsigned int mergedCount = 0;
-	idList < model_ofs_t > offsets;					//!< To merge the other entities into the first, record their offset and angle
 	idList < lode_sort_ofs_t > sortedOffsets;		//!< To merge the N nearest entities
 	model_ofs_t ofs;
 	lode_sort_ofs_t sortOfs;
@@ -2305,6 +2305,7 @@ void Lode::CombineEntities( void )
 		if (NULL == tempModel)
 		{
 			// load model, then combine away
+//			gameLocal.Warning("LODE %s: Load model %s for entity %i.\n", GetName(), entityClass->modelname.c_str(), i);
 			tempModel = renderModelManager->FindModel( entityClass->modelname );
 			if (! tempModel)
 			{
@@ -2398,23 +2399,19 @@ void Lode::CombineEntities( void )
 			if (merged == 0)
 			{
 				PseudoClass.pseudo = true;
+				PseudoClass.m_LOD = entityClass->m_LOD;
+				PseudoClass.modelname = entityClass->modelname;
 				PseudoClass.spawnDist = entityClass->spawnDist;
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
 				PseudoClass.img = NULL;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
-				PseudoClass.hModel = NULL;
+				// in case the combined model needs to be combined from multiple func_statics
+				PseudoClass.hModel = entityClass->hModel;
 				PseudoClass.physicsObj = new idPhysics_StaticMulti;
 
 				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL );
-	
-				// TODO:	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
-				//	// SR CONTENTS_RESONSE FIX
-				//	if( m_StimResponseColl->HasResponse() )
-				//		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
-
-				PseudoClass.megamodel = NULL;
 			}
 			// for this entity
 			merged ++;
@@ -2429,30 +2426,25 @@ void Lode::CombineEntities( void )
 
 		if (merged > 0)
 		{
-			// TODO: use all LOD stages here
-			idList<const idRenderModel*> LODs;
-
-			LODs.Append( tempModel );							// LOD 0 - default model
 
 			idStr lowest_LOD_model = entityClass->modelname;	// default for no LOD
+
 			// if entities of this class have LOD:
 			if (entityClass->m_LOD)
 			{
 				lod_data_t* tmlod = entityClass->m_LOD;	// shortcut
 				
-				// load and store all LOD models in LODs so the model combiner can use them
+				// try to load all LOD models in LODs to see if they exist
 				for (int mi = 0; mi < LOD_LEVELS; mi++)
 				{
 					// load model, then combine away
 //					gameLocal.Warning("LODE %s: Trying to load LOD model #%i %s for entity %i.", 
 //							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
-					// for "model_lod_1" "" => use default model
-					idRenderModel* tModel = tempModel;
-					// else:
+
 					idStr* mName = &(tmlod->ModelLOD[mi]);
 					if (! mName->IsEmpty() )
 					{
-						tModel = renderModelManager->FindModel( mName->c_str() );
+						idRenderModel* tModel = renderModelManager->FindModel( mName->c_str() );
 						if (!tModel)
 						{
 							gameLocal.Warning("LODE %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
@@ -2463,12 +2455,7 @@ void Lode::CombineEntities( void )
 							lowest_LOD_model = mName->c_str();
 						}
 					}
-					LODs.Append( tModel );
 				}
-			}
-			// else just one stage
-			{
-				LODs.Append( NULL );							// LOD 1 - same as default model
 			}
 
 			// if we have more entities to merge than what will fit into the model,
@@ -2490,19 +2477,15 @@ void Lode::CombineEntities( void )
 				sortedOffsets.SetNum( maxModelCount );
 			}
 			// build the offsets list
-			offsets.Clear();
-			offsets.SetGranularity(64);
+			PseudoClass.offsets.Clear();
+			PseudoClass.offsets.SetGranularity(64);
 			for (int si = 0; si < sortedOffsets.Num(); si++)
 			{
-				offsets.Append( sortedOffsets[si].ofs );
+				PseudoClass.offsets.Append( sortedOffsets[si].ofs );
 			}
 			bool clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
 
-/*			idClipModel* lod_0_clip = new idClipModel();
-			// load the clipmodel for the lowest LOD stage for collision detection
-			bool clipLoaded = lod_0_clip->LoadModel( lowest_LOD_model );
-
-*/			if (!clipLoaded)
+			if (!clipLoaded)
 			{
 				gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n",
 						GetName(), lowest_LOD_model.c_str() );
@@ -2516,20 +2499,7 @@ void Lode::CombineEntities( void )
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
 				//clipModels.SetNum( ... );
 
-//				SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
-
-/*				// add the zeroth clipmodel (from the original entity)
-				PseudoClass.physicsObj->SetClipModel(lod_0_clip, 1.0f, 0, true);
-//				gameLocal.Printf("Set clipmodel %i from %i at %s\n", 0, merged > maxModelCount ? maxModelCount : merged, m_Entities[i].origin.ToString() );
-
-				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin, 0);
-				PseudoClass.physicsObj->SetAxis( m_Entities[i].angles.ToMat3(), 0);
-				// ??
-				PseudoClass.physicsObj->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, 0 );
-				// ??
-				PseudoClass.physicsObj->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
-*/
 			}
 
 			// mark all entities that will be merged as "deleted", but skip the rest
@@ -2544,41 +2514,25 @@ void Lode::CombineEntities( void )
 				// add the clipmodel to the multi-clipmodel if we have one
 				if (clipLoaded)
 				{
-					int clipNr = d + 1;	// 0 is the original entity
+					// d + 1 because 0 is the original entity
+					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, d + 1 );
 
-					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, clipNr );
-
-/*					// TODO: It might be faster to have a routine which can set clipmodel, origin and axis in one go
-					idClipModel* lod_n_clip = new idClipModel();
-					// load the clipmodel for the lowest LOD stage for collision detection
-					bool clipLoaded = lod_n_clip->LoadModel( lowest_LOD_model );
-					PseudoClass.physicsObj->SetClipModel( lod_n_clip, 1.0f, clipNr, true);
-
-//					gameLocal.Printf("Set clipmodel %i from %i at %s bounds %s\n", clipNr, n, m_Entities[ todo ].origin.ToString(), lod_0_clip->GetBounds().ToString() );
-
-					PseudoClass.physicsObj->SetOrigin( m_Entities[ todo ].origin, clipNr);
-					PseudoClass.physicsObj->SetAxis(m_Entities[ todo ].angles.ToMat3(), clipNr);
-					PseudoClass.physicsObj->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, clipNr );
-					PseudoClass.physicsObj->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, clipNr);
-*/
-//						gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( clipNr )->GetBounds().ToString() );
+//					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
 				}
 			}
 			gameLocal.Printf("Lode %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
 			sortedOffsets.Clear();
 
 			// build the combined model
-			const idMaterial* material = NULL;
+			PseudoClass.materialName = "";
 			if (m_bDebugColors)
 			{
 				// select one at random
-				idStr m = "textures/darkmod/debug/";
-			   	m += lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
-				material = declManager->FindMaterial( m, false );
+				PseudoClass.materialName = idStr("textures/darkmod/debug/") + lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
 			}
-			// use a megamodel to get the combined model, that we later can update, too:
-			PseudoClass.megamodel = new CMegaModel( &LODs, &offsets, &m_Entities[i].origin, material );
-			PseudoClass.hModel = PseudoClass.megamodel->GetRenderModel();
+
+			// we construct this later during entity spawn (as only at this time is the player position correct)
+			//PseudoClass.hModel = NULL;
 
 			// replace the old class with the new pseudo class which contains the merged model
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
@@ -2618,7 +2572,6 @@ void Lode::CombineEntities( void )
 	}
 
 	// TODO: is this nec.?
-	offsets.Clear();
 	sortedOffsets.Clear();
 
 	int end = (int) time (NULL);
@@ -2738,23 +2691,21 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				if (lclass->pseudo)
 				{
 					// each pseudoclass spawns only one entity
-					r->hModel = lclass->hModel;
-					r->bounds = lclass->hModel->Bounds();
 //					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 
 					ent2->SetPhysics( lclass->physicsObj );
 
 					lclass->physicsObj->SetSelf( ent2 );
+					// TODO: lclass->origin?
 					lclass->physicsObj->SetOrigin( ent->origin );
 
 					// tell the CStaticMulti entity that it should
 					// track updates:
 					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
-					// Tell it what MegaModel is responsible for it
-					sment->SetLODData( lclass->megamodel, lclass->m_LOD);
+					// Let the StaticMulti store the nec. data to create the combined rendermodel
+					sment->SetLODData( lclass->m_LOD, lclass->modelname, &lclass->offsets, lclass->materialName, lclass->hModel );
 					
-					//lclass->physicsObj->SetSelf( ent2 );
 					// enable thinking (mainly for debug draw)
 					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
 				}
@@ -2773,30 +2724,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 						// should not happen
 						r->bounds.Zero();
 					}
-
-					// clipmodel will be already correct:
-					// ent2->GetPhysics()->SetClipModel( ... );
-				
-					// TODO: does not work yet:
-					// update the clip model, too, otherwise the "dummy object"'s clipmodel lingers around
-		/*			idClipModel *clipmodel = new idClipModel( ent2->GetModelDefHandle() );
-
-					//if (clipmodel && clipmodel->IsTraceModel() && ent2->GetPhysics())
-					// is not a trace model, so will this still work?
-					if (clipmodel && ent2->GetPhysics())
-					{
-						// need to set origin on the clipmodel first
-						clipmodel->Translate( ent->origin );
-						clipmodel->Rotate( ent->angles.ToRotation() );
-						gameLocal.Printf("LODE %s: Setting new clipmodel, origin %s.\n", GetName(), clipmodel->GetOrigin().ToString() );
-						ent2->GetPhysics()->SetClipModel( clipmodel, 1.0f );		// density 1.0f?
-					}
-				*/
 				}
-				//ent2->BecomeActive( TH_UPDATEVISUALS );
-
-				//ent2->Present();
-
 				// short version of "UpdateVisuals()"
 				// set to invalid number to force an update the next time the PVS areas are retrieved
 				ent2->ClearPVSAreas();
