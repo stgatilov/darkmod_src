@@ -137,7 +137,7 @@ public:
 	*/
 	idRenderModel*			DuplicateLODModels( const idList<const idRenderModel*> *LODs, const char* snapshotName,
 												const idList<model_ofs_t>* offsets, const idVec3 *origin = NULL,
-												const idMaterial *shader = NULL) const;
+												const idMaterial *shader = NULL, idRenderModel* hModel = NULL) const;
 
 	/**
 	* Copies the surfaces of the source model to a new model. If dupData is true, a full copy will

@@ -198,7 +198,7 @@ offset and rotated by the given values, scaled, and also fills in the right vert
 */
 idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRenderModel*> *LODs,
 			const char* snapshotName, const idList<model_ofs_t> *offsets, const idVec3 *origin,
-			const idMaterial *shader ) const {
+			const idMaterial *shader, idRenderModel* hModel ) const {
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
@@ -219,7 +219,14 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	model_target_surf* newTargetSurfInfoPtr;
 
 	// allocate memory for the model
-	idRenderModel *hModel = renderModelManager->AllocModel();
+	if (NULL == hModel)
+	{
+		hModel = renderModelManager->AllocModel();
+		if (NULL == hModel)
+		{
+			gameLocal.Error("ModelGenerator: Could not allocate new model.\n");
+		}
+	}
 	// and init it as dynamic empty model
 	hModel->InitEmpty( snapshotName );
 
@@ -243,11 +250,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	for (int i = 0; i < offsets->Num(); i++)
 	{
 		op = offsets->Ptr()[i];
-		if (op.lod < 0)
-		{
-			op.lod = 0;
-		}
-		else if (op.lod >= nSources)
+//		if (op.lod < 0)	// invisible
+		if (op.lod >= nSources)
 		{
 			op.lod = nSources - 1;
 		}
@@ -408,6 +412,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	{
 		op = offsets->Ptr()[o];
 
+		// should be invisible, so skip
+		if (op.lod < 0)
+		{
+			continue;
+		}
+
 		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
 
 		// precompute these
@@ -529,6 +539,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
         newSurf->geometry->tangentsCalculated = true;
 		// TODO: are these nec.?
         newSurf->geometry->facePlanesCalculated = false;
+        //newSurf->geometry->facePlanesCalculated = true;
         //newSurf->geometry->generateNormals = true;
         newSurf->geometry->generateNormals = false;
 		// calculate new bounds
