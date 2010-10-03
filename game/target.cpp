@@ -1,5 +1,6 @@
 /***************************************************************************
  *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
@@ -2177,24 +2178,63 @@ void CTarget_CallScriptFunction::Event_Activate( idEntity *activator )
 {
 	// Get the function name
 	idStr funcName = spawnArgs.GetString("call");
-
 	if (funcName.IsEmpty())
 	{
 		gameLocal.Warning("Target %s has no script function to call!", name.c_str());
 		return;
 	}
 
+	// Get the function
 	const function_t* scriptFunction = gameLocal.program.FindFunction(funcName);
-	
-	if (scriptFunction != NULL)
-	{
-		idThread* thread = new idThread(scriptFunction);
-		thread->DelayedStart(0);
-	}
-	else
+	if (scriptFunction == NULL)
 	{
 		// script function not found!
 		gameLocal.Warning("Target %s specifies non-existent script function!", funcName.c_str());
+		return;
+	}
+
+	bool forEach = spawnArgs.GetBool("foreach","0");
+	
+	if (forEach)
+	{
+		// we delay each call by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
+		float wait			= spawnArgs.GetFloat ( "wait", "0");
+		float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+		float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
+		float delay			= spawnArgs.GetFloat ( "delay", "0");
+
+		// avoid a negative delay
+		if (wait < 0) { wait = 0; }
+		if (delay < 0) { delay = 0; }
+		// wait_add can be negative, we will later make sure that wait is never negative
+
+		for(int i = 0; i < targets.Num(); i++ )
+		{
+			idEntity* ent = targets[ i ].GetEntity();
+			if (!ent)
+			{
+				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity for script call on target #%i.\r", i );
+				continue;
+			}
+
+			// each call in its own thread so they can run in parallel
+			idThread* thread = new idThread();
+			// Call "Foo(target, activator, triggred_entity);"
+			thread->CallFunctionArgs( scriptFunction, true, "eee", ent, activator, this );
+			// and finally start the new thread after "delay" ms:
+			thread->DelayedStart(delay);
+
+			delay += wait;
+			wait += wait_add;
+			wait *= wait_mul;
+			// avoid a negative delay
+			if (wait < 0) { wait = 0; }
+		}
+	}
+	else
+	{
+		idThread* thread = new idThread(scriptFunction);
+		thread->DelayedStart(0);
 	}
 }
 
