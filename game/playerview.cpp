@@ -1040,10 +1040,10 @@ void idPlayerView::dnPostProcessManager::Update( void )
 			//-------------------------------------------------
 			// Apply the bright-pass filter to acquire bloom image
 			//-------------------------------------------------
-			renderSystem->CropRenderSize(m_iScreenWidth/fBloomImageDownScale, m_iScreenHeight/fBloomImageDownScale, false, true);
+			renderSystem->CropRenderSize(m_iScreenWidthPowOf2/fBloomImageDownScale, m_iScreenHeightPowOf2/fBloomImageDownScale, true);
 
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matBrightPass );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 
 			//-------------------------------------------------
@@ -1051,10 +1051,10 @@ void idPlayerView::dnPostProcessManager::Update( void )
 			//-------------------------------------------------
 
 			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidthPowOf2, 1.0f, 1.0f, 1.0f );			 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matGaussBlurX );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeightPowOf2, 1.0f, 1.0f, 1.0f );		 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matGaussBlurY );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
 
 			renderSystem->CaptureRenderToImage( m_imageBloom );
 			renderSystem->UnCrop();
