@@ -393,7 +393,7 @@ public:
 
 private:
 	void	Event_Activate( idEntity *activator );
-	void	TryPostOrCall( idEntity *ent, const idEventDef *ev, const char* funcName, const bool pass_self, const float delay);
+	void	TryPostOrCall( idEntity *ent, idEntity *activator, const idEventDef *ev, const char* funcName, const bool pass_self, const bool pass_activator, const float delay);
 };
 
 /*

@@ -1606,6 +1606,8 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetLootAmount(int lootType);
 	void					Event_ChangeLootAmount(int lootType, int amount);
 	void					Event_AddInvItem(idEntity* ent);
+	// Tels: The reverse of AddInvItem()
+	void					Event_AddItemToInv(idEntity* ent);
 	void					Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem);
 	void					Event_GetNextInvItem();
 	void					Event_GetPrevInvItem();

@@ -1418,7 +1418,10 @@ for each target. The delay is increased for each target as specified with
 the "wait" spawnarg.
 
 If "pass_self" is true, the first argument of the posted event is the
-triggered entity. This is useful for teleportTo(target), for instance.
+triggered entity. This is useful for target->teleportTo(triggeredEntity).
+
+If "pass_activator" is true, the first argument of the posted event is the
+entity that activated the trigger. This is useful for target->AddItemToInv(activator).
 
 If "propagate_to_team" is true, then the event will be posted to all members
 of the team that the target is a member of. Useful for posting events
@@ -1435,21 +1438,19 @@ CLASS_DECLARATION( idTarget, idTarget_PostScriptEvent )
 	EVENT( EV_Activate,	idTarget_PostScriptEvent::Event_Activate )
 END_CLASS
 
-/*
-================
-idTarget_PostScriptEvent::Event_Activate
-================
-*/
-
-void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *ev, const char* funcName, const bool pass_self, const float delay)
+void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, idEntity *activator, const idEventDef *ev, const char* funcName, const bool pass_self, const bool pass_activator, const float delay)
 {
 	const function_t	*func;
 
 	if (ev) {
 		if (pass_self) {
 			ent->PostEventSec( ev, delay, this );
+		}
+		else if (pass_activator && !pass_self) {
+			ent->PostEventSec( ev, delay, activator );
 		} else {
-			ent->PostEventSec( ev, delay );
+			// both pass_self and pass_activator
+			ent->PostEventSec( ev, delay, this, activator );
 		}
 	} else {
 		// try the script object function
@@ -1459,7 +1460,8 @@ void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *e
 				gameLocal.Error( "Function '%s' not found on entity '%s' for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
 			int numParams = 1;
-			if (pass_self) { numParams = 2; }
+			if (pass_self || pass_activator) { numParams = 2; }
+			if (pass_self && pass_activator) { numParams = 3; }
 
 			if ( func->type->NumParameters() != numParams ) {
 				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
@@ -1473,8 +1475,10 @@ void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *e
 			idThread *thread = new idThread();
 			if (numParams == 1) {
 				thread->CallFunction( ent, func, true );
-			} else {
+			} else if (numParams == 2) {
 				thread->CallFunctionArgs( func, true, "ee", ent, this );
+			} else {
+				thread->CallFunctionArgs( func, true, "eee", ent, this, activator );
 			}
 			thread->DelayedStart( delay );
 		}
@@ -1484,6 +1488,12 @@ void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, const idEventDef *e
 		}
 	}
 }
+
+/*
+================
+idTarget_PostScriptEvent::Event_Activate
+================
+*/
 
 void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
 	int					i;
@@ -1497,6 +1507,7 @@ void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
 	float delay			= spawnArgs.GetFloat ( "delay", "0");
 	const char* evName	= spawnArgs.GetString( "event" );
 	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+	bool pass_activator	= spawnArgs.GetBool  ( "pass_activator", "0");
 	bool do_team		= spawnArgs.GetBool  ( "propagate_to_team", "0");
 
 	// avoid a negative delay
@@ -1526,14 +1537,14 @@ void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
     
 			while ( NextEnt != NULL ) {	
 				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING(" Posting event on team member %s of target #%i.\r", NextEnt->GetName(), i);
-				TryPostOrCall( NextEnt, ev, evName, pass_self, delay);
+				TryPostOrCall( NextEnt, activator, ev, evName, pass_self, pass_activator, delay);
 				/* get next Team member */
 				NextEnt = NextEnt->GetNextTeamEntity();
 			}
 
 		} else {
 			// we should post only to the target directly
-			TryPostOrCall( ent, ev, evName, pass_self, delay);
+			TryPostOrCall( ent, activator, ev, evName, pass_self, pass_activator, delay);
 		}
 
 		delay += wait;

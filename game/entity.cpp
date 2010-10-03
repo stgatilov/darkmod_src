@@ -169,6 +169,7 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
 const idEventDef EV_AddInvItem("addInvItem", "e");					// Adds an entity to the inventory
+const idEventDef EV_AddItemToInv("addItemToInv", "e");					// Adds this entity to the inventory of the given entity (reversed AddInvItem)
 const idEventDef EV_ReplaceInvItem("replaceInvItem", "eE", 'd');	// olditem, newitem -> 1 if succeeded
 const idEventDef EV_GetNextInvItem("getNextInvItem", "", 'e');		// switches to the next inventory item
 const idEventDef EV_GetPrevInvItem("getPrevInvItem", "", 'e');		// switches to the previous inventory item
@@ -367,6 +368,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
 	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
 	EVENT( EV_AddInvItem,			idEntity::Event_AddInvItem )
+	EVENT( EV_AddItemToInv,			idEntity::Event_AddItemToInv )
 	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
 	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
 	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
@@ -10358,6 +10360,25 @@ void idEntity::Event_AddInvItem(idEntity* ent)
 	}
 
 	AddToInventory(ent);
+}
+
+void idEntity::Event_AddItemToInv(idEntity* ent)
+{
+	// no target, ignore
+	if (ent == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s to inventory of NULL target", GetName() );
+		return;
+	}
+
+	if (spawnArgs.FindKey("inv_name") == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", GetName(), ent->name.c_str() );
+		return;
+	}
+
+	gameLocal.Printf("Adding entity %s to inventory of %s.\n", GetName(), ent->name.c_str() );
+	ent->AddToInventory(this);
 }
 
 CInventoryItemPtr idEntity::AddToInventory(idEntity *ent)
