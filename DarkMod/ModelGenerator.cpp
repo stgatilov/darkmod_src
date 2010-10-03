@@ -301,7 +301,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			continue;
 		}
 
+#ifdef M_DEBUG
 		gameLocal.Printf("ModelGenerator: LOD stage %i is used %i times.\n", i, used );
+#endif
 
 		// get the number of base surfaces (minus decals) on the source model
 		numSurfaces = source->NumBaseSurfaces();
@@ -373,9 +375,10 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		//		 culled or made invisible yet. So allow it.
 		gameLocal.Error("Dup model (%i LOD stages) with no surfaces at all.\n", nSources);
 	}
-	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.\n", targetSurfInfo.Num() );
 
 #ifdef M_DEBUG	
+	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.\n", targetSurfInfo.Num() );
+
 	// debug: print shaderIndex array
 	gameLocal.Printf("ModelGenerator: Dumping shaderIndex:\n");
 	for (int i = 0; i < shaderIndex.Num(); i++)

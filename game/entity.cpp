@@ -842,7 +842,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 			if (fRandom > fHideProbability)
 			{
 				// disable hiding
-				m_LOD->DistLODSq[i] = -1.0f;		// disablea
+				m_LOD->DistLODSq[i] = -1.0f;		// disable
 				continue;
 			}
 
@@ -1981,8 +1981,8 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
-		// skip this level
-		if (m_LOD->DistLODSq[i] <= 0)
+		// skip this level (but not the first)
+		if (m_LOD->DistLODSq[i] <= 0 && i > 0)
 		{
 //			gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
 			continue;
@@ -1995,49 +1995,61 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 			nextLevel++;
 		}
 
+//		gameLocal.Printf ("%s ThinkAboutLOD deltaSq = %0.2f (this=%0.2f, nextLevel=%i, next=%0.2f, i=%i)\n", GetName(), deltaSq, m_LOD->DistLODSq[i],
+//					nextLevel, nextLevel < LOD_LEVELS ? m_LOD->DistLODSq[nextLevel] : -1, i );
+
+		// found a usable next level, or the last level is -1 (means no hide)
 		if (nextLevel < LOD_LEVELS)
 		{
-			bWithinDist = (deltaSq > m_LOD->DistLODSq[i]) && (deltaSq <= m_LOD->DistLODSq[nextLevel]);
+			bWithinDist = ((deltaSq > m_LOD->DistLODSq[i]) && (deltaSq <= m_LOD->DistLODSq[nextLevel]));
 		}
 		else
 		{
-			if (i < LOD_LEVELS - 1)
+		   	if (m_LOD->DistLODSq[ LOD_LEVELS - 1] < 0)
 			{
-				bWithinDist = (deltaSq < m_LOD->DistLODSq[ LOD_LEVELS - 1]);
+//				gameLocal.Printf ("%s no next level (last level is -1)\n", GetName() );
+				bWithinDist = (deltaSq > m_LOD->DistLODSq[ i ]);
 			}
 			else
 			{
-				// only hide if hiding isn't disabled
-				// last usable level goes to infinity
-				bWithinDist = m_LOD->DistLODSq[i] > 0 && (deltaSq > m_LOD->DistLODSq[i]);
-			}
-
-			// compute the alpha value of still inside the fade range
-			if (bWithinDist)
-			{
-				if (m_LOD->fLODFadeOutRange > 0)
+				if (i < LOD_LEVELS - 1)
 				{
-//					gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
-					if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
-					{
-						fAlpha = 0.0f;
-					}
-					else
-					{
-						fAlpha = 1.0f - ( (deltaSq - m_LOD->DistLODSq[i]) / m_LOD->fLODFadeOutRange );
-					}
-					// set the timestamp so we think the next frame again to get a smooth blend:
-					m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+					bWithinDist = (deltaSq < m_LOD->DistLODSq[ LOD_LEVELS - 1]);
 				}
 				else
 				{
-					// just hide if outside
-					fAlpha = 0.0f;
+					// only hide if hiding isn't disabled
+					// last usable level goes to infinity
+					bWithinDist = m_LOD->DistLODSq[i] > 0 && (deltaSq > m_LOD->DistLODSq[i]);
 				}
-				m_LODLevel = i;
 
-				// early out, we found the right level and switched
-				return fAlpha;
+				// compute the alpha value of still inside the fade range
+				if (bWithinDist)
+				{
+					if (m_LOD->fLODFadeOutRange > 0)
+					{
+//						gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
+						if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
+						{
+							fAlpha = 0.0f;
+						}
+						else
+						{
+							fAlpha = 1.0f - ( (deltaSq - m_LOD->DistLODSq[i]) / m_LOD->fLODFadeOutRange );
+						}
+						// set the timestamp so we think the next frame again to get a smooth blend:
+						m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+					}
+					else
+					{
+						// just hide if outside
+						fAlpha = 0.0f;
+					}
+					m_LODLevel = i;
+	
+					// early out, we found the right level and switched
+					return fAlpha;
+				}
 			}
 		}
 

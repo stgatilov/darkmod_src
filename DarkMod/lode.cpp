@@ -1350,24 +1350,27 @@ void Lode::Prepare( void )
 		kv = spawnArgs.MatchPrefix( "spawn_class", kv );
 	}
 
-	// increase the avg by X% to allow some spacing (even if spacing = 0)
-	m_fAvgSize *= 1.3f;
-
-	// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
-	m_fAvgSize /= m_Classes.Num();
-
-	// avoid values too small or even 0
-	if (m_fAvgSize < 2)
+	if (m_Classes.Num() > 0)
 	{
-		m_fAvgSize = 2;
-	}
+		// increase the avg by X% to allow some spacing (even if spacing = 0)
+		m_fAvgSize *= 1.3f;
 
-	// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
-	ComputeEntityCount();
+		// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
+		m_fAvgSize /= m_Classes.Num();
 
-	if (m_iNumEntities <= 0)
-	{
-		gameLocal.Warning( "LODE %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+		// avoid values too small or even 0
+		if (m_fAvgSize < 2)
+		{
+			m_fAvgSize = 2;
+		}
+
+		// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
+		ComputeEntityCount();
+
+		if (m_iNumEntities <= 0)
+		{
+			gameLocal.Warning( "LODE %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+		}
 	}
 
 	gameLocal.Printf( "LODE %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
@@ -2944,7 +2947,8 @@ void Lode::Think( void )
 					}
 
 				}
-				// TODO: Normal LOD code here (replicate from entity)
+
+/*				// TODO: Normal LOD code here (replicate from entity)
 				// todo: int oldLODLevel = ent->lod;
 				float fAlpha = ThinkAboutLOD( lclass->m_LOD, deltaSq );
 				if (fAlpha == 0.0f)
@@ -2959,6 +2963,7 @@ void Lode::Think( void )
 					// setAlpha
 					// switchModel/switchSkin/noshadows
 				}
+*/
 			}
 		}
 		if (spawned > 0 || culled > 0)

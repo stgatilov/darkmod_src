@@ -23,8 +23,8 @@ static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18
 
 #include "StaticMulti.h"
 
-// if defined, draw debug output
-// #define M_DEBUG 1
+// if defined, debug output
+//#define M_DEBUG 1
 
 CLASS_DECLARATION( idStaticEntity, CStaticMulti )
 	EVENT( EV_Activate,				CStaticMulti::Event_Activate )
@@ -45,7 +45,8 @@ CStaticMulti::CStaticMulti( void )
 	m_hModel = NULL;
 	m_modelName = "";
 
-	m_iMaxChanges = 25;
+	m_iVisibleModels = 0;
+	m_iMaxChanges = 1;
 	
 	m_DistCheckTimeStamp = 0;
 	m_DistCheckInterval = 0;
@@ -60,6 +61,10 @@ CStaticMulti::~CStaticMulti()
 
 	// Avoid freeing the combined physics (clip)model as we can re-use it on next respawn:
 	SetPhysics(NULL);
+
+	// make sure the render entity is freed before the model is freed
+	FreeModelDef();
+	renderModelManager->FreeModel( renderEntity.hModel );
 }
 
 /*
@@ -109,9 +114,12 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	active = true;
 
 	m_LOD = LOD;
+
 	m_Offsets = offsets;
 	m_MaterialName = materialName;
 
+	m_iVisibleModels = m_Offsets->Num();
+   
 	// if we need to combine from a func_static, store a ptr to it's renderModel
 	m_hModel = hModel;
 
@@ -143,18 +151,44 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	}
 
 	idVec3 origin = GetPhysics()->GetOrigin();
-	gameLocal.Printf("%s updating renderModel at %s.\n", GetName(), origin.ToString());
 
 	int n = m_Changes.Num();
+#ifdef M_DEBUG
+	gameLocal.Printf("%s updating renderModel at %s with %i changes.\n", GetName(), origin.ToString(), n);
+#endif
 
 	// apply all our changes to the offsets list
 	for (int i = 0; i < n; i++)
 	{
+#ifdef M_DEBUG
+		gameLocal.Printf("%s updating offset %i from LOD %i to %i\n", GetName(), i, m_Offsets->Ptr()[ m_Changes[i].entity ].lod, m_Changes[i].newLOD);
+#endif
 		m_Offsets->Ptr()[ m_Changes[i].entity ].lod = m_Changes[i].newLOD;
 	}
-
 	// now clear the changes
 	m_Changes.Clear();
+
+	// count visible models
+	m_iVisibleModels = 0;
+	n = m_Offsets->Num();
+	for (int i = 0; i < n; i++)
+	{
+		if (m_Offsets->Ptr()[ i ].lod >= 0)
+		{
+			m_iVisibleModels ++;
+		}
+	}
+
+	if (m_iVisibleModels == 0)
+	{
+		Hide();
+		return true;
+	}
+	else
+	{
+		// show again
+		if (fl.hidden) { Show(); }
+	}
 
 	// compute a list of rendermodels
 	idList< const idRenderModel*> LODs;
@@ -185,7 +219,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		idStr m = m_modelName;
 		if (m_LOD)
 		{
-			m = m_LOD->ModelLOD[0];
+			m = m_LOD->ModelLOD[i];
 		}
 		const idRenderModel* hModel = renderModelManager->FindModel( m );
 		LODs.Append(hModel);
@@ -198,15 +232,32 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		declManager->FindMaterial( m_MaterialName, false );
 	}
 
-	// TODO: this might not work?
-	if (renderEntity.hModel)
+	if (force)
 	{
-		renderModelManager->FreeModel( renderEntity.hModel );
+		// TODO: this might not work?
+		if (renderEntity.hModel)
+		{
+			renderModelManager->FreeModel( renderEntity.hModel );
+		}
+		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
+	}
+	else
+	{
+		// re-use the already existing object
+		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
-	renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m);
+	renderEntity.origin = GetPhysics()->GetOrigin();
 
-	Present();
+	// force an update because the bounds/origin/axis may stay the same while the model changes
+	renderEntity.forceUpdate = true;
+
+	// add to refresh list
+	if ( modelDefHandle == -1 ) {
+		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+	} else {
+		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
+	}
 
 	return true;
 }
@@ -218,12 +269,15 @@ CStaticMulti::Think
 */
 void CStaticMulti::Think( void ) 
 {
+	lod_data_t* LOD;
+
 	// Distance dependence checks
 	if ( active && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
 	{
 		m_DistCheckTimeStamp = gameLocal.time;
 
 		idVec3 origin = GetPhysics()->GetOrigin();
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
 
 //		gameLocal.Printf("%s thinking at %s.\n", GetName(), origin.ToString());
 
@@ -232,37 +286,90 @@ void CStaticMulti::Think( void )
 		// Calculate the offset for each model position alone, so precompute certain constants:
 		float lod_bias = cv_lod_bias.GetFloat(); lod_bias *= lod_bias;
 		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-		idVec3 gravityNormal = GetPhysics()->GetGravityNormal();
+
+		if (m_LOD)
+		{
+			LOD = m_LOD;
+#ifdef M_DEBUG
+			gameLocal.Printf("%s LOD data %p.\n", GetName(), LOD );
+				gameLocal.Printf(" checkXY %i\n", LOD->bDistCheckXYOnly );
+				gameLocal.Printf(" interval %i\n", LOD->DistCheckInterval );
+			for (int i = 0; i < LOD_LEVELS; i ++)
+			{
+				gameLocal.Printf(" LOD %i dist %0.2f.\n", i, LOD->DistLODSq[i] );
+				gameLocal.Printf(" LOD %i model %s.\n",   i, LOD->ModelLOD[i].c_str() );
+				gameLocal.Printf(" LOD %i skin %s.\n",    i, LOD->SkinLOD[i].c_str() );
+				gameLocal.Printf(" LOD %i offset %s.\n",  i, LOD->OffsetLOD[i].ToString() );
+			}
+#endif
+		}
+		else
+		{
+#ifdef M_DEBUG
+			gameLocal.Printf("%s dummy LOD data.\n", GetName() );
+#endif
+			LOD = new lod_data_t;
+		}
+
+		bool bDistCheckXYOnly = LOD && LOD->bDistCheckXYOnly ? true : false;
 
 		// TODO: go through all offsets and calculate the new LOD stage
 		int num = m_Offsets->Num();
 		for (int i = 0; i < num; i++)
 		{
+			model_ofs_t ofs = m_Offsets->Ptr()[i];
+			// 0 => default model, 1 => first stage etc
+			int orgLOD = ofs.lod - 1;
+			m_LODLevel = orgLOD;
+
+			idVec3 delta = origin + ofs.offset - playerOrigin;
+			if (bDistCheckXYOnly)
+			{
+				delta -= (vGravNorm * delta) * vGravNorm;
+			}
+			// divide by the user LOD bias setting (squared)
+			float dist = delta.LengthSqr() / lod_bias;
+
+			float fAlpha  = ThinkAboutLOD( LOD, dist );
+
+			if (fAlpha == 0)
+			{
+				// the entity should be invisible
+				m_LODLevel = -2;
+			}
+			// if differs, add a changeset
+			if (orgLOD != m_LODLevel)
+			{
+#ifdef M_DEBUG
+				gameLocal.Printf("%s: changing from LOD %i to %i\n", GetName(), orgLOD, m_LODLevel);
+#endif
+				// 0 => default model, 1 => first stage etc
+				AddChange(i, m_LODLevel + 1);
+			}
 		}
+
+		// restore our value (it is not used, anyway)
+		m_LODLevel = 0;
 
 		// update the render model if nec.
 		UpdateRenderModel();
 	}
 
-	// Make ourselves visible and known:
-	// TODO: Do we need to do this every Think()?
-	Present();
-
 #ifdef M_DEBUG
 	idPhysics *p = GetPhysics();
    	idVec4 markerColor (0.3, 0.8, 1.0, 1.0);
+   	idVec4 centerColor (1, 0.8, 0.2, 1.0);
    	idVec3 arrowLength (0.0, 0.0, 50.0);
 
 	// our center
 	idVec3 org = renderEntity.origin;
     gameRenderWorld->DebugArrow
 			(
-			markerColor,
-			org + arrowLength,
+			centerColor,
+			org + arrowLength * 2,
 			org,
 			3,
 	    	1 );
-	}
 	int num = p->GetNumClipModels();
 
 	// DEBUG draw arrows for each part of the physics object
@@ -289,6 +396,7 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDistCheckXYOnly );
 	savefile->WriteString( m_MaterialName );
 	savefile->WriteString( m_modelName );
+	savefile->WriteInt( m_iVisibleModels );
 
 	// TODO: is it faster to Save/Restore this, or just recreate it from
 	// scratch? Saving it also might waste a lot of space in the savegame:
@@ -327,6 +435,12 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bDistCheckXYOnly );
 	savefile->ReadString( m_MaterialName );
 	savefile->ReadString( m_modelName );
+	savefile->ReadInt( m_iVisibleModels );
+
+	// from brittlefracture.cpp
+//	renderEntity.hModel = renderModelManager->AllocModel();
+//	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
+//	renderEntity.callback = idBrittleFracture::ModelCallback;
 
 //	savefile->ReadModel( m_hModel );
 
@@ -413,10 +527,16 @@ void CStaticMulti::AddChange( const int entity, const int newLOD ) {
 			if ( m_Changes[i].oldLOD == newLOD )
 			{
 				// TODO: m_Changes.RemoveIndex(i,false);
+#ifdef M_DEBUG
+				gameLocal.Printf("%s: Removing change for entity %i\n", GetName(), entity);
+#endif
 				m_Changes.RemoveIndex(i);
 			}
 			else
 			{
+#ifdef M_DEBUG
+				gameLocal.Printf("%s: Modifying change for entity %i from LOD %i to %i (was %i)\n", GetName(), entity, m_Changes[i].oldLOD, newLOD, m_Changes[i].newLOD );
+#endif
 				// keep the change set with the new value
 				m_Changes[i].newLOD = newLOD;
 			}
@@ -436,6 +556,9 @@ void CStaticMulti::AddChange( const int entity, const int newLOD ) {
 	change.oldLOD = m_Offsets->Ptr()[ entity ].lod;
 	change.newLOD = newLOD;
 
+#ifdef M_DEBUG
+	gameLocal.Printf("%s: Adding change for entity %i from LOD %i to %i\n", GetName(), entity, change.oldLOD, change.newLOD );
+#endif
 	m_Changes.Append( change );
 
 	// done	

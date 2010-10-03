@@ -100,6 +100,7 @@ private:
 	idStr						m_modelName;		//!< in case we have no LOD struct, this is our model name
 
 	int							m_iMaxChanges;		//!< maximum number of changes before we update
+	int							m_iVisibleModels;	//!< how many of our models are currently visible? if == 0, we are invisible, too
 
 	// TODO: use these from m_LOD:
 	int							m_DistCheckTimeStamp;
