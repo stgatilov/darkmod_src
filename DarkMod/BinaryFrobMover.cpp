@@ -76,6 +76,8 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
 	m_bFineControlStarting = false;
+
+	m_iActivator = -1;
 }
 
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
@@ -119,6 +121,8 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
 	savefile->WriteBool(m_bFineControlStarting);
+
+	savefile->WriteInt(m_iActivator);
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -162,6 +166,8 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
 	savefile->ReadBool(m_bFineControlStarting);
+
+	savefile->ReadInt(m_iActivator);
 }
 
 void CBinaryFrobMover::Spawn()
@@ -647,6 +653,9 @@ void CBinaryFrobMover::CallStateScript()
 
 void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
+	// svae the entity index so we can relay it along
+	m_iActivator = activator->entityNumber;
+
 	ToggleOpen();
 }
 
@@ -882,7 +891,7 @@ void CBinaryFrobMover::OnStartOpen(bool wasClosed, bool bMaster)
 		// trigger our targets on opening, if set to do so
 		if (spawnArgs.GetBool("trigger_on_open", "0"))
 		{
-			ActivateTargets(this);
+			ActivateTargets( m_iActivator < 0 ? this : gameLocal.entities[ m_iActivator ] );
 		}
 	}
 
@@ -901,7 +910,7 @@ void CBinaryFrobMover::OnOpenPositionReached()
 	// trigger our targets when completely opened, if set to do so
 	if (spawnArgs.GetBool("trigger_when_opened", "0"))
 	{
-		ActivateTargets(this);
+		ActivateTargets( m_iActivator < 0 ? this : gameLocal.entities[ m_iActivator ] );
 	}
 
 	// Check if we should move back to the closedpos after use
@@ -921,7 +930,7 @@ void CBinaryFrobMover::OnClosedPositionReached()
 	// trigger our targets on completely closing, if set to do so
 	if (spawnArgs.GetBool("trigger_on_close", "0"))
 	{
-		ActivateTargets(this);
+		ActivateTargets( m_iActivator < 0 ? this : gameLocal.entities[ m_iActivator ] );
 	}
 
 	// Check if we should move back to the openpos

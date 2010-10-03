@@ -497,6 +497,14 @@ protected:
 	* True when frob is held down but not long enough to initialize fine control
 	**/
 	bool						m_bFineControlStarting;
+
+
+	/**
+	* Tels: The entity that activated us, so we can relay it to our targets. Stored
+	*	as entity index, as it could get destroyed before the ActivateTargets()
+	*	happens.
+	**/
+	int						m_iActivator;
 };
 
 #endif /* !BINARYFROBMOVER */
