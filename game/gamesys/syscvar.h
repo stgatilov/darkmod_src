@@ -604,11 +604,13 @@ extern idCVar r_postprocess;
 extern idCVar r_postprocess_brightPassThreshold;
 extern idCVar r_postprocess_brightPassOffset;	
 extern idCVar r_postprocess_colorCurveBias;
+extern idCVar r_postprocess_colorCorrection;
+extern idCVar r_postprocess_colorCorrectBias;
 extern idCVar r_postprocess_sceneExposure;
 extern idCVar r_postprocess_sceneGamma;
 extern idCVar r_postprocess_debugMode;
 extern idCVar r_postprocess_bloomKernelSize;
 extern idCVar r_postprocess_bloomIntensity;
-
+extern idCVar r_postprocess_destaturation;
 
 #endif /* !__SYS_CVAR_H__ */

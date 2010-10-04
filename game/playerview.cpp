@@ -956,7 +956,8 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 	if (	m_bForceUpdateOnCookedData || 
 			r_postprocess_colorCurveBias.IsModified() || r_postprocess_brightPassOffset.IsModified()	|| 
 			r_postprocess_brightPassThreshold.IsModified() || r_postprocess_sceneExposure.IsModified()	||
-			r_postprocess_sceneGamma.IsModified()		
+			r_postprocess_sceneGamma.IsModified() || r_postprocess_colorCorrection.IsModified()			||
+			r_postprocess_colorCorrectBias.IsModified()
 		)
 	{
 
@@ -981,7 +982,8 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		//------------------------------------------------------------------------
 		// Cook math Pass 2 
 		//------------------------------------------------------------------------
- 		renderSystem->SetColor4( r_postprocess_brightPassThreshold.GetFloat(), r_postprocess_brightPassOffset.GetFloat(), 1.0f, 1.0f );
+		float fColorCurveBias = Max ( Min ( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
+ 		renderSystem->SetColor4( r_postprocess_brightPassThreshold.GetFloat(), r_postprocess_brightPassOffset.GetFloat(), r_postprocess_colorCorrection.GetFloat(), fColorCurveBias );
  		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
  		renderSystem->CaptureRenderToImage( m_imageCookedMath );
 
@@ -993,6 +995,8 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 		r_postprocess_brightPassThreshold.ClearModified();
 		r_postprocess_sceneExposure.ClearModified();
 		r_postprocess_sceneGamma.ClearModified();
+		r_postprocess_colorCorrection.ClearModified();
+		r_postprocess_colorCorrectBias.ClearModified();
 
 		m_bForceUpdateOnCookedData = false;
 
@@ -1065,7 +1069,8 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		//-------------------------------------------------
 		// Calculate and Render Final Image
 		//-------------------------------------------------
-		renderSystem->SetColor4( fBloomIntensity, 1.0f, 1.0f, 1.0f );
+		float fDesaturation = Max ( Min ( r_postprocess_destaturation.GetFloat(), 1.0f ), 0.0f );
+		renderSystem->SetColor4( fBloomIntensity, fDesaturation, 1.0f, 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
 		//-------------------------------------------------
 
