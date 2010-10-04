@@ -724,7 +724,7 @@ idCVar r_postprocess_brightPassOffset		( "r_postprocess_brightPassOffset",		".9"
 idCVar r_postprocess_colorCurveBias			( "r_postprocess_colorCurveBias",		"0.65",		CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
 idCVar r_postprocess_colorCorrection		( "r_postprocess_colorCorrection",		"1.8",		CVAR_GAME | CVAR_FLOAT,		" Applies an exponential color correction function to final scene ");
 idCVar r_postprocess_colorCorrectBias		( "r_postprocess_colorCorrectBias",		"0.8",		CVAR_GAME | CVAR_FLOAT,		" Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value ");
-idCVar r_postprocess_destaturation			( "r_postprocess_destaturation",		"0.1",		CVAR_GAME | CVAR_FLOAT,		" Desaturates the scene ");
+idCVar r_postprocess_desaturation			( "r_postprocess_desaturation",			"0.1",		CVAR_GAME | CVAR_FLOAT,		" Desaturates the scene ");
 idCVar r_postprocess_sceneExposure			( "r_postprocess_sceneExposure",		"1.1",		CVAR_GAME | CVAR_FLOAT,		" Scene render is linearly scaled up. Try values lower or greater than 1.0");
 idCVar r_postprocess_sceneGamma				( "r_postprocess_sceneGamma",			"0.93",		CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
 idCVar r_postprocess_bloomIntensity			( "r_postprocess_bloomIntensity",		"1.0",		CVAR_GAME | CVAR_FLOAT,		" Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected.");

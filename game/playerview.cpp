@@ -1069,7 +1069,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		//-------------------------------------------------
 		// Calculate and Render Final Image
 		//-------------------------------------------------
-		float fDesaturation = Max ( Min ( r_postprocess_destaturation.GetFloat(), 1.0f ), 0.0f );
+		float fDesaturation = Max ( Min ( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
 		renderSystem->SetColor4( fBloomIntensity, fDesaturation, 1.0f, 1.0f );
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
 		//-------------------------------------------------
