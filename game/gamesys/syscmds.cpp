@@ -3376,7 +3376,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 	if( args.Argc() < 3 )
 	{
-		gameLocal.Printf( "Usage: tdm_batchConvertMaterials <StartIndex> <nMaterials> [forceUpdateAll] \n OR \n" );
+		gameLocal.Printf( "Usage: tdm_batchConvertMaterials <StartIndex> <nMaterials> [forceUpdateAll] \n" );
 		return;
 	}
 
@@ -3421,7 +3421,6 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		idLexer lexSource( &charBuffer[0], charBuffer.size(), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
 
 		gameLocal.Printf("Finding out shader stages... \n" );
-
 
 		bool bAreBumpmapsExtracted		=false;
 		bool bAreDiffusemapsExtracted	=false;
