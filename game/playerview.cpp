@@ -82,6 +82,7 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	//cur_amb_method = !cv_ambient_method.GetBool();
 	// JC: Just set the flag so that we know that the update is needed.
 	cv_ambient_method.SetModified();
+	cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
 }
 
 /*
