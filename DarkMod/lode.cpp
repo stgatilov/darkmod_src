@@ -1003,11 +1003,16 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.hModel = NULL;
 	if (LodeClass.classname == FUNC_STATIC)
 	{
-		// simply point to the already existing model:
-//		LodeClass.hModel = ent->GetRenderEntity()->hModel;
-//		gameLocal.Warning("%s: Got hmodel %p from renderEntity\n", GetName(), LodeClass.hModel);
-		// prevent a double free
-//		ent->GetRenderEntity()->hModel = NULL;
+		// check if this is a func_static with a model, or an "inline map geometry" func static
+		if (LodeClass.modelname == ent->GetName())
+		{
+			// simply point to the already existing model, so we can recover the into-the-map-inlined geometry:
+			LodeClass.hModel = ent->GetRenderEntity()->hModel;
+			// prevent a double free
+			ent->GetRenderEntity()->hModel = NULL;
+			// set a dummy model
+			LodeClass.modelname = "models/darkmod/junk/plank_short.lwo";
+		}
 		LodeClass.classname = FUNC_DUMMY;
 	}
 
@@ -1609,14 +1614,17 @@ void Lode::PrepareEntities( void )
 					// maximum bunch radius is 3 times (2 + 1) the radius
 					// TODO: make bunch_size and bunch_min_distance a spawnarg
 					LodeEntity.origin = idPolar3( 2 * distance + RandomFloat() * distance / 3, 0, RandomFloat() * 360.0f ).ToVec3();
+#ifdef M_DEBUG					
 					gameLocal.Printf ("LODE %s: Random origin from distance (%0.2f) %0.2f %0.2f %0.2f (%i)\n",
 							GetName(), distance, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z, bunchTarget );
+#endif
 					// subtract the LODE origin, as m_Entities[ bunchTarget ].origin already contains it and we would
 					// otherwise add it twice below:
 					LodeEntity.origin += m_Entities[ bunchTarget ].origin - m_origin;
+#ifdef M_DEBUG					
 					gameLocal.Printf ("LODE %s: Random origin plus bunchTarget origin %0.2f %0.2f %0.2f\n",
 							GetName(), LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z );
-
+#endif
 				}
 				else
 				// no bunching, just random placement
@@ -1634,15 +1642,15 @@ void Lode::PrepareEntities( void )
 						// 		 than in the outer areas, but distrubute the entity distance equally.
 						//		 This leads to the center getting ever so slightly more entities then
 						//		 the outer areas, compensate for this in the random generator formular?
-						LodeEntity.origin = idPolar3( RandomFloat(), 0, RandomFloat() * 360.0f ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
 						break;
 					case 2:
 						// square
-						LodeEntity.origin = idPolar3( RandomFloatSqr(), 0, RandomFloat() * 360.0f ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
 						break;
 					default:
 						// 3 - exp
-						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), 0, RandomFloat() * 360.0f ).ToVec3();
+						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
 						break;
 					}
 					if (m_Classes[i].falloff > 0 && m_Classes[i].falloff < 4)
@@ -2190,6 +2198,10 @@ float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 // a small helper routine to cut down on code copy&paste
 bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx )
 {
+#ifdef M_DEBUG
+	gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
+#endif
+
 	idClipModel* clip = new idClipModel();
 	// load the clipmodel for the lowest LOD stage for collision detection
 	bool clipLoaded = clip->LoadModel( modelName );
@@ -2597,8 +2609,10 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 	// spawn the entity and note its number
 	if (m_iDebug)
 	{
-		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s), managed: %s.\n", GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str(), 
-					managed ? "yes" : "no" );
+		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s, model %s), managed: %s.\n",
+				GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str(), 
+				lclass->modelname.c_str(),
+				managed ? "yes" : "no" );
 	}
 
 	// avoid that we run out of entities during run time
@@ -2617,9 +2631,11 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 		idEntity *ent2;
 		idDict args;
 
-//		gameLocal.Printf("Spawning %s\n", lclass->classname.c_str());
-
 		args.Set("classname", lclass->classname);
+
+		// has a model?
+		args.Set("model", lclass->modelname);
+
 		// move to right place
 		args.SetVector("origin", ent->origin );
 
@@ -2682,11 +2698,11 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				// cache this
 				renderEntity_t *r = ent2->GetRenderEntity();
 				
-				// free the old, empty model
-				if (r->hModel)
+				if (lclass->pseudo || lclass->hModel)
 				{
-					//gameLocal.Printf("LODE %s: Freeing old func_static model.\n", GetName() );
 					ent2->FreeModelDef();
+					// keep the acutal model around, because someone else might have a ptr to it:
+					//renderModelManager->FreeModel( r->hModel );
 					r->hModel = NULL;
 				}
 
@@ -2694,7 +2710,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				if (lclass->pseudo)
 				{
 					// each pseudoclass spawns only one entity
-//					gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
+					// gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 
 					ent2->SetPhysics( lclass->physicsObj );
 
@@ -2714,19 +2730,22 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				}
 				else
 				{
-					r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, false );
-					if ( r->hModel )
+					if (lclass->hModel)
 					{
-						// take the model bounds and transform them for the renderentity
-						r->bounds.FromTransformedBounds( lclass->hModel->Bounds(), r->origin, r->axis );
-						// gameLocal.Printf("LODE %s: Bounds of new model: %s.\n", GetName(), r->bounds.ToString() );
-						// gameLocal.Printf("LODE %s: Bounds of old model: %s.\n", GetName(), lclass->hModel->Bounds().ToString() );
+						// just duplicate it (for func_statics from map geometry)
+						r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
+						if ( r->hModel )
+						{
+							// take the model bounds and transform them for the renderentity
+							r->bounds.FromTransformedBounds( lclass->hModel->Bounds(), r->origin, r->axis );
+						}
+						else
+						{
+							// should not happen
+							r->bounds.Zero();
+						}
 					}
-					else
-					{
-						// should not happen
-						r->bounds.Zero();
-					}
+					// else: the correct model was already loaded
 				}
 				// short version of "UpdateVisuals()"
 				// set to invalid number to force an update the next time the PVS areas are retrieved
