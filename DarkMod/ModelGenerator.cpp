@@ -98,13 +98,13 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 	if (NULL == source)
 	{
-		gameLocal.Error("ModelGenerator: Dup with NULL source model.\n");
+		gameLocal.Error("ModelGenerator: Dup with NULL source model (snapshotName = %s).\n", snapshotName);
 	}
 
 	// allocate memory for the model?
 	if (NULL == hModel)
 	{
-		idRenderModel *hModel = renderModelManager->AllocModel();
+		hModel = renderModelManager->AllocModel();
 		if (NULL == hModel)
 		{
 			gameLocal.Error("ModelGenerator: Could not allocate new model.\n");
@@ -117,10 +117,15 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	numVerts = 0;
 	numIndexes = 0;
 	numSurfaces = source->NumBaseSurfaces();
+
+#ifdef M_DEBUG
+	gameLocal.Printf("Source with %i surfaces. snapshot %s\n", numSurfaces, snapshotName);
+#endif
+
 	// for each needed surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
-		//gameLocal.Warning("Duplicating surface %i.\n", i);
+		// gameLocal.Warning("Duplicating surface %i.\n", i);
 		surf = source->Surface( i );
 		if (!surf)
 		{
@@ -184,6 +189,10 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
+
+#ifdef M_DEBUG
+	hModel->Print();
+#endif
 
 	return hModel;
 }
