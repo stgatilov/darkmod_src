@@ -3121,101 +3121,6 @@ void idFuncAASObstacle::SetAASState(bool newState)
 /*
 ===============================================================================
 
-idFuncRadioChatter
-
-===============================================================================
-*/
-
-const idEventDef EV_ResetRadioHud( "<resetradiohud>", "e" );
-
-
-CLASS_DECLARATION( idEntity, idFuncRadioChatter )
-EVENT( EV_Activate,				idFuncRadioChatter::Event_Activate )
-EVENT( EV_ResetRadioHud,		idFuncRadioChatter::Event_ResetRadioHud )
-END_CLASS
-
-/*
-===============
-idFuncRadioChatter::idFuncRadioChatter
-===============
-*/
-idFuncRadioChatter::idFuncRadioChatter() {
-	time = 0.0;
-}
-
-/*
-===============
-idFuncRadioChatter::Save
-===============
-*/
-void idFuncRadioChatter::Save( idSaveGame *savefile ) const {
-	savefile->WriteFloat( time );
-}
-
-/*
-===============
-idFuncRadioChatter::Restore
-===============
-*/
-void idFuncRadioChatter::Restore( idRestoreGame *savefile ) {
-	savefile->ReadFloat( time );
-}
-
-/*
-===============
-idFuncRadioChatter::Spawn
-===============
-*/
-void idFuncRadioChatter::Spawn( void ) {
-	time = spawnArgs.GetFloat( "time", "5.0" );
-}
-
-/*
-================
-idFuncRadioChatter::Event_Activate
-================
-*/
-void idFuncRadioChatter::Event_Activate( idEntity *activator ) {
-	idPlayer *player;
-	const char	*sound;
-	const idSoundShader *shader;
-	int length;
-	
-	if ( activator->IsType( idPlayer::Type ) ) {
-		player = static_cast<idPlayer *>( activator );
-	} else {
-		player = gameLocal.GetLocalPlayer();
-	}
-
-	player->hud->HandleNamedEvent( "radioChatterUp" );
-
-	sound = spawnArgs.GetString( "snd_radiochatter", "" );
-	if ( sound && *sound ) {
-		shader = declManager->FindSound( sound );
-		player->StartSoundShader( shader, SND_CHANNEL_RADIO, SSF_GLOBAL, false, &length );
-		time = MS2SEC( length + 150 );
-	}
-	// we still put the hud up because this is used with no sound on 
-	// certain frame commands when the chatter is triggered
-	PostEventSec( &EV_ResetRadioHud, time, player );
-
-}
-
-/*
-================
-idFuncRadioChatter::Event_ResetRadioHud
-================
-*/
-void idFuncRadioChatter::Event_ResetRadioHud( idEntity *activator ) {
-	idPlayer *player = ( activator->IsType( idPlayer::Type ) ) ? static_cast<idPlayer *>( activator ) : gameLocal.GetLocalPlayer();
-	player->hud->HandleNamedEvent( "radioChatterDown" );
-	ActivateTargets( activator );
-}
-
-
-/*
-===============================================================================
-
 	idPhantomObjects
 
 ===============================================================================
@@ -3475,95 +3380,51 @@ void idPhantomObjects::Think( void ) {
 }
 
 /*
-
 ===============================================================================
-
-
-
 idPortalSky
-
-
-
 ===============================================================================
-
 */
-
-
 
 CLASS_DECLARATION( idEntity, idPortalSky )
 
 	EVENT( EV_PostSpawn,			idPortalSky::Event_PostSpawn )
-
 	EVENT( EV_Activate,				idPortalSky::Event_Activate )
 
 END_CLASS
 
-
-
 /*
-
 ===============
-
 idPortalSky::idPortalSky
-
 ===============
-
 */
 
 idPortalSky::idPortalSky( void ) {
-
-
-
 }
 
-
-
 /*
-
 ===============
-
 idPortalSky::~idPortalSky
-
 ===============
-
 */
 
 idPortalSky::~idPortalSky( void ) {
-
-
-
 }
 
-
-
 /*
-
 ===============
-
 idPortalSky::Spawn
-
 ===============
-
 */
 
 void idPortalSky::Spawn( void ) {
-
 	if ( !spawnArgs.GetBool( "triggered" ) ) {
-
 		PostEventMS( &EV_PostSpawn, 1 );
-
 	}
-
 }
 
-
-
 /*
-
 ================
-
 idPortalSky::Event_PostSpawn
-
 ================
 
 */
@@ -3574,21 +3435,13 @@ void idPortalSky::Event_PostSpawn() {
 
 }
 
-
-
 /*
-
 ================
-
 idPortalSky::Event_Activate
-
 ================
-
 */
 
 void idPortalSky::Event_Activate( idEntity *activator ) {
-
 	gameLocal.SetPortalSkyEnt( this );
-
 }
 

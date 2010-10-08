@@ -2698,11 +2698,7 @@ idPlayer::EnterCinematic
 */
 void idPlayer::EnterCinematic( void ) {
 	Hide();
-	StopSound( SND_CHANNEL_PDA, false );
-	if ( hud ) {
-		hud->HandleNamedEvent( "radioChatterDown" );
-	}
-	
+
 	physicsObj.SetLinearVelocity( vec3_origin );
 	
 	SetState( "EnterCinematic" );

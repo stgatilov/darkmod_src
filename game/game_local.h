@@ -1129,7 +1129,7 @@ public:
 
 //
 // these defines work for all startsounds from all entity types
-// make sure to change script/doom_defs.script if you add any channels, or change their order
+// make sure to change script/tdm_defs.script if you add any channels, or change their order
 //
 typedef enum {
 	SND_CHANNEL_ANY = SCHANNEL_ANY,
@@ -1141,11 +1141,12 @@ typedef enum {
 	SND_CHANNEL_WEAPON,
 	SND_CHANNEL_ITEM,
 	SND_CHANNEL_HEART,
-	SND_CHANNEL_PDA,
+	SND_CHANNEL_UNUSED,
 	SND_CHANNEL_DEMONIC,
-	SND_CHANNEL_RADIO,
+	SND_CHANNEL_UNUSED_2,
 
 	// internal use only.  not exposed to script or framecommands.
+	// tels: Have now been exposed to script and framecommands. Why were they internal only?
 	SND_CHANNEL_AMBIENT,
 	SND_CHANNEL_DAMAGE
 } gameSoundChannel_t;
