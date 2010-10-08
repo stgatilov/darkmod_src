@@ -132,6 +132,45 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 			continue;
 		}
 
+		if (!surf->shader->ShouldCreateBackSides())
+		{
+
+			// skip this surface if it was doubled because the original surface was two-sided
+			// it will be automatically recreated by FinishSurfaces() below.
+#ifdef M_DEBUG
+			gameLocal.Printf("Surface %i creates no backsides, checking if we should skip it.\n", i);
+#endif
+			bool found = false;
+
+			idStr shaderName = surf->shader->GetName();
+			// the original surface comes before this if this is a duplicated surface
+			for (int s2 = 0; s2 < i; s2++)
+			{
+				const modelSurface_t *surf_org = source->Surface( s2 );
+				if (!surf_org)
+				{
+					continue;
+				}
+				if (surf_org->shader->ShouldCreateBackSides() &&
+						surf_org->geometry->numIndexes == surf->geometry->numIndexes &&
+						surf_org->geometry->numVerts == surf->geometry->numVerts &&
+						shaderName == surf_org->shader->GetName() )
+				{
+#ifdef M_DEBUG
+					gameLocal.Printf("Found perfect match at %i\n", s2);
+#endif
+					found = true;
+					break;
+				}
+			}
+			// found a matching original surface for this one, so skip it, as FinishSurfaces will
+			// recreate it:
+			if (found)
+			{
+				continue;
+			}
+		} // end backside test
+
 		numVerts += surf->geometry->numVerts; 
 		numIndexes += surf->geometry->numIndexes;
 
@@ -177,14 +216,6 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		}
 		newSurf.id = 0;
 		hModel->AddSurface( newSurf );
-
-		// If this surface should create backsides, the next surface will be the automatically
-		// created backsides, so skip them, as FinishSurfaces() below will recreate them:
-		if (newSurf.shader->ShouldCreateBackSides())
-		{
-			// skip next surface
-			i++;
-		}
 	}
 	
 	// generate shadow hull as well as tris for twosided materials
@@ -210,7 +241,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			const idMaterial *shader, idRenderModel* hModel ) const {
 	int numSurfaces;
 	int numVerts, numIndexes;
-	const modelSurface_t *surf;
+	const modelSurface_t *surf, *surf_org;
 	modelSurface_t *newSurf;
 
 	idList<model_ofs_t> ofs;
@@ -328,13 +359,66 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				continue;
 			}
 
+			// see if we must skip one later surface for this one. For instance a model with:
+			//    verts  tris material
+			//		 0:   813   639 bc_lily
+			//		 1:   144   108 bc_lilyleaf
+			//		 2:   111   108 orchid
+			//		 3:   264    96 textures/common/shadow2
+			//		 4:   813   639 bc_lily						SKIP!
+			//		 5:   144   108 bc_lilyleaf					SKIP!
+
+			// this surface creates no back sides
+			if (!surf->shader->ShouldCreateBackSides())
+			{
+#ifdef M_DEBUG
+				gameLocal.Printf("Surface %i creates no backsides, checking if we should skip it.\n", s);
+#endif
+				idStr shaderName = surf->shader->GetName();
+				bool found = false;
+				// the original surface comes before this if this is a duplicated surface
+				for (int s2 = 0; s2 < s; s2++)
+					{
+					surf_org = source->Surface( s2 );
+					if (!surf_org)
+					{
+						continue;
+					}
+#ifdef M_DEBUG
+					gameLocal.Printf("Testing %s against %s (index=%i, ShouldCreateBacksides=%i, v: %i == %i, i: %i == %i)\n", 
+								surf->shader->GetName(), surf_org->shader->GetName(), s2,
+								surf_org->shader->ShouldCreateBackSides(),
+								surf_org->geometry->numIndexes, surf->geometry->numIndexes, surf_org->geometry->numVerts, surf->geometry->numVerts);
+#endif
+					if (surf_org->shader->ShouldCreateBackSides() &&
+							surf_org->geometry->numIndexes == surf->geometry->numIndexes &&
+							surf_org->geometry->numVerts == surf->geometry->numVerts &&
+							shaderName == surf_org->shader->GetName() )
+					{
+#ifdef M_DEBUG
+						gameLocal.Printf("Found perfect match at %i\n", s2);
+#endif
+						found = true;
+						break;
+					}
+				}
+				// found a matching original surface for this one, so skip it, as FinishSurfaces will
+				// recreate it:
+				if (found)
+				{
+					// append a dummy entry that says "skip this"
+					shaderIndex.Append( -1 );		// surface i ( X - shaderIndexStartOfs ) => shaders[Y];
+					// for each LOD model, note which source surface maps to which target surface
+					shaderIndexStartOfs ++;
+					continue;
+				}
+			}
 			// Do we have already a surface with that shader?
 
-			// TODO: replace linear search with a hash for more speed in case 
-			// the number of shaders gets higher than 4
+			// The linear search here is ok, since most models have only a few surfaces, since every
+			// surface creates one expensive draw call.
 
-			// if given a shader, use this instead, so everyting will be in
-			// one surface
+			// if given a shader, use this instead, so everyting will be in one surface:
 			idStr n = shader ? shader->GetName() : surf->shader->GetName();
 			int found = -1;
 			for (int j = 0; j < targetSurfInfo.Num(); j++)
@@ -367,14 +451,6 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			shaderIndex.Append( found );		// surface i ( X - shaderIndexStartOfs ) => shaders[Y];
 			// for each LOD model, note which source surface maps to which target surface
 			shaderIndexStartOfs ++;
-
-			// If this surface should create backsides, the next surface will be the automatically
-			// created backsides, so skip them, as FinishSurfaces() below will recreate them:
-			if (surf->shader->ShouldCreateBackSides())
-			{
-				// skip next surface
-				s++;
-			}
 		}
 	}
 
@@ -419,10 +495,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 	// now combine everything into one model
 
+	const model_ofs_t *OffsetsPtr = offsets->Ptr();
+
 	// for each offset
 	for (int o = 0; o < offsets->Num(); o++)
 	{
-		op = offsets->Ptr()[o];
+		op = OffsetsPtr[o];	//offsets->Ptr()[o];
 
 		// should be invisible, so skip
 		if (op.lod < 0)
@@ -442,6 +520,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			// use the default model
 			//gameLocal.Warning(" Using LOD model 0 as replacement." );
 			source = LODs->Ptr()[0];
+
+			if (!source)
+			{
+				gameLocal.Warning(" LOD model 0 as replacement for stage %i is empty.", op.lod );
+				continue;
+			}
 		}
 
 		// TODO:
@@ -451,7 +535,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 		int si = shaderIndexStart[op.lod];
 
-		//gameLocal.Warning("ModelGenerator: op.lod = %i si = %i", op.lod, si);
+		// gameLocal.Warning("ModelGenerator: op.lod = %i si = %i", op.lod, si);
 
 		// for each surface of the model
 		for (int i = 0; i < numSurfaces; i++)
@@ -471,9 +555,26 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			// find the surface on the target
 			int st = shaderIndex[ si + i ];
 
-			//gameLocal.Warning("ModelGenerator: Final surface number for add: %i (%i + %i)", st, si, i);
+#ifdef M_DEBUG
+			gameLocal.Warning("ModelGenerator: Final surface number for add: %i (%i + %i)", st, si, i);
+#endif
+
+			// -1 => skip this surface
+			if (st < 0)
+			{
+				gameLocal.Warning("Skipping surface %i.\n", i);
+#ifdef M_DEBUG
+#endif
+				continue;
+			}
 
 			newTargetSurfInfoPtr = &(targetSurfInfo[st]);
+
+			if (!newTargetSurfInfoPtr)
+			{
+				gameLocal.Warning("newTargetSurfInfoPtr = NULL");
+				continue;
+			}
 
 			// shortcut
 			newSurf = &newTargetSurfInfoPtr->surf;
@@ -518,14 +619,6 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			}
 			newTargetSurfInfoPtr->numVerts += vmax;
 			newTargetSurfInfoPtr->numIndexes += imax;
-
-			// If this surface should create backsides, the next surface will be the automatically
-			// created backsides, so skip them, as FinishSurfaces() below will recreate them:
-			if (newSurf->shader->ShouldCreateBackSides())
-			{
-				// skip next surface
-				i++;
-			}
 		} // end for each surface on this offset
 	}	// end for each offset
 
