@@ -29,6 +29,10 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 
+// This enables the code to test (and skip) automaticaly created backsides. Since NumBaseSurfaces()
+// seems to return only the first N original surfaces, this code is not neccessary and thus disabled:
+//#define M_TEST_BACKSIDES
+
 /*
 ===============
 CModelGenerator::CModelGenerator
@@ -132,6 +136,8 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 			continue;
 		}
 
+#ifdef M_TEST_BACKSIDES
+
 		if (!surf->shader->ShouldCreateBackSides())
 		{
 
@@ -170,6 +176,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 				continue;
 			}
 		} // end backside test
+#endif // M_TEST_BACKSIDES
 
 		numVerts += surf->geometry->numVerts; 
 		numIndexes += surf->geometry->numIndexes;
@@ -341,12 +348,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			continue;
 		}
 
-#ifdef M_DEBUG
-		gameLocal.Printf("ModelGenerator: LOD stage %i is used %i times.\n", i, used );
-#endif
-
-		// get the number of base surfaces (minus decals) on the source model
+		// get the number of base surfaces (minus decals and minus automatically created backsides) on the source model
 		numSurfaces = source->NumBaseSurfaces();
+
+#ifdef M_DEBUG
+		gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used %i times.\n", i, numSurfaces, used );
+#endif
 
 		shaderIndexStart.Append( shaderIndexStartOfs );	// where in shaderIndex starts the map for this LOD stage?
 
@@ -359,6 +366,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				continue;
 			}
 
+#ifdef M_TEST_BACKSIDES
 			// see if we must skip one later surface for this one. For instance a model with:
 			//    verts  tris material
 			//		 0:   813   639 bc_lily
@@ -384,11 +392,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 					{
 						continue;
 					}
-#ifdef M_DEBUG
 					gameLocal.Printf("Testing %s against %s (index=%i, ShouldCreateBacksides=%i, v: %i == %i, i: %i == %i)\n", 
 								surf->shader->GetName(), surf_org->shader->GetName(), s2,
 								surf_org->shader->ShouldCreateBackSides(),
 								surf_org->geometry->numIndexes, surf->geometry->numIndexes, surf_org->geometry->numVerts, surf->geometry->numVerts);
+#ifdef M_DEBUG
 #endif
 					if (surf_org->shader->ShouldCreateBackSides() &&
 							surf_org->geometry->numIndexes == surf->geometry->numIndexes &&
@@ -413,6 +421,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 					continue;
 				}
 			}
+#endif // M_TEST_BACKSIDES
+
 			// Do we have already a surface with that shader?
 
 			// The linear search here is ok, since most models have only a few surfaces, since every
