@@ -119,7 +119,11 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	m_MaterialName = materialName;
 
 	m_iVisibleModels = m_Offsets->Num();
-   
+
+#ifdef M_DEBUG
+	gameLocal.Printf("%s hModel %p modelname %s.\n", GetName(), hModel, modelName.c_str() );
+#endif
+
 	// if we need to combine from a func_static, store a ptr to it's renderModel
 	m_hModel = hModel;
 
@@ -154,7 +158,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 
 	int n = m_Changes.Num();
 #ifdef M_DEBUG
-	gameLocal.Printf("%s updating renderModel at %s with %i changes.\n", GetName(), origin.ToString(), n);
+	gameLocal.Printf("%s updating renderModel at %s with %i changes (%i models).\n", GetName(), origin.ToString(), n, m_Offsets->Num());
 #endif
 
 	// apply all our changes to the offsets list
@@ -170,14 +174,19 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 
 	// count visible models
 	m_iVisibleModels = 0;
+	model_ofs_t* p = m_Offsets->Ptr();
 	n = m_Offsets->Num();
 	for (int i = 0; i < n; i++)
 	{
-		if (m_Offsets->Ptr()[ i ].lod >= 0)
+		if (p[ i ].lod >= 0)
 		{
 			m_iVisibleModels ++;
 		}
 	}
+
+#ifdef M_DEBUG
+		gameLocal.Printf("Has %i visible models.\n", m_iVisibleModels);
+#endif
 
 	if (m_iVisibleModels == 0)
 	{
@@ -204,7 +213,15 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		{
 			m = m_LOD->ModelLOD[0];
 		}
-		const idRenderModel* hModel = renderModelManager->FindModel( m );
+		const idRenderModel* hModel = NULL;
+		if (!m.IsEmpty())
+		{
+			hModel = renderModelManager->FindModel( m );
+			if (!hModel)
+			{
+				gameLocal.Warning("Could not load model %s.\n", m.c_str() );
+			}
+		}
 		LODs.Append(hModel);
 	}
 
@@ -221,7 +238,15 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		{
 			m = m_LOD->ModelLOD[i];
 		}
-		const idRenderModel* hModel = renderModelManager->FindModel( m );
+		const idRenderModel* hModel = NULL;
+		if (!m.IsEmpty())
+		{
+			hModel = renderModelManager->FindModel( m );
+			if (!hModel)
+			{
+				gameLocal.Warning("Could not load model %s.\n", m.c_str() );
+			}
+		}
 		LODs.Append(hModel);
 	}
 	const idList< const idRenderModel*> *l = &LODs;
@@ -234,10 +259,11 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 
 	if (force)
 	{
-		// TODO: this might not work?
 		if (renderEntity.hModel)
 		{
-			renderModelManager->FreeModel( renderEntity.hModel );
+			FreeModelDef();
+			// do not free the rendermodel, somebody else might have a ptr to it
+			// renderModelManager->FreeModel( renderEntity.hModel );
 		}
 		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
 	}
