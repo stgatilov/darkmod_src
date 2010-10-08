@@ -1931,7 +1931,7 @@ void Lode::PrepareEntities( void )
 
 				// compute a random sink value (that is added ater flooring and after the z-min/max check, so you can
 				// have some variability, too)
-				if (m_Classes[i].sink_max > 0)
+				if (m_Classes[i].sink_min != 0 || m_Classes[i].sink_max != 0)
 				{
 					// TODO: use a gravity normal
 					float sink = m_Classes[i].sink_min + RandomFloat() * ( m_Classes[i].sink_max - m_Classes[i].sink_min );
@@ -2002,7 +2002,7 @@ void Lode::PrepareEntities( void )
 
 								if (inhibited == true)
 								{
-									gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
+									//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
 									break;							
 								}
 							}
