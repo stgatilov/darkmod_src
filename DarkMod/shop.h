@@ -34,6 +34,8 @@ private:
 	// when this shop item is purchased
 	idStringList classNames;
 	
+	bool		stackable; // grayman (#2376)
+
 public:
 	CShopItem();
 
@@ -44,7 +46,8 @@ public:
 			  const idStr& image, 
 			  int count, 
 			  bool persistent = false, 
-			  bool canDrop = true);
+			  bool canDrop = true,
+			  bool stackable = false); // grayman (#2376)
 
 	CShopItem(const CShopItem& item, 
 			  int count, 
@@ -83,6 +86,10 @@ public:
 	bool GetCanDrop();
 	void SetCanDrop(bool canDrop);
 
+	// grayman (#2376) - whether the item can be stacked
+	bool GetStackable();
+	void SetStackable(bool stackable);
+
 	// modifies number of items
 	void ChangeCount( int amount );
 
@@ -110,6 +117,10 @@ private:
 
 	// True if the purchase menu should be skipped
 	bool			skipShop;
+	
+	// grayman (#2376) - Lockpick handling
+	bool			pickSetShop;
+	bool			pickSetStarting;
 
 public:
 	void Init();
@@ -139,6 +150,12 @@ public:
 
 	// put item in the Starting Items list
 	void AddStartingItem(const CShopItemPtr& shopItem);
+
+	// grayman (#2376) - put inv_map_start entities in the Starting Items list
+	void AddMapItems(idMapFile* mapFile);
+
+	// grayman (#2376) - check for individual lockpicks
+	void CheckPicks(ShopItemList& list);
 
 	// initializes the 'list' based on the map
 	int AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list);

@@ -27,11 +27,12 @@ CShopItem::CShopItem() :
 	image(""),
 	count(0),
 	persistent(false),
-	canDrop(false)
+	canDrop(false),
+	stackable(false) // grayman (#2376)
 {}
 
 CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _description,
-					 int _cost, const idStr& _image, int _count, bool _persistent, bool _canDrop) :
+					 int _cost, const idStr& _image, int _count, bool _persistent, bool _canDrop, bool _stackable) : // grayman (#2376)
 	id(_id),
 	name(_name),
 	description(_description),
@@ -39,7 +40,8 @@ CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _descrip
 	image(_image),
 	count(_count),
 	persistent(_persistent),
-	canDrop(_canDrop)
+	canDrop(_canDrop),
+	stackable(_stackable) // grayman (#2376)
 {}
 
 CShopItem::CShopItem(const CShopItem& item, int _count, int _cost, bool _persistent) :
@@ -51,7 +53,8 @@ CShopItem::CShopItem(const CShopItem& item, int _count, int _cost, bool _persist
 	count(_count),
 	persistent(_persistent == false ? item.persistent : _persistent),
 	canDrop(item.canDrop),
-	classNames(item.classNames)
+	classNames(item.classNames),
+	stackable(item.stackable) // grayman (#2376)
 {}
 
 const idStr& CShopItem::GetID() const {
@@ -100,6 +103,16 @@ void CShopItem::SetCanDrop(bool canDrop) {
 	this->canDrop = canDrop;
 }
 
+// grayman (#2376) - add stackable methods
+
+bool CShopItem::GetStackable() {
+	return this->stackable;
+}
+
+void CShopItem::SetStackable(bool stackable) {
+	this->stackable = stackable;
+}
+
 void CShopItem::ChangeCount(int amount) {
 	this->count += amount;
 }
@@ -121,6 +134,7 @@ void CShopItem::Save(idSaveGame *savefile) const
 	{
 		savefile->WriteString(classNames[i]);
 	}
+	savefile->WriteBool(stackable); // grayman (#2376)
 }
 
 void CShopItem::Restore(idRestoreGame *savefile)
@@ -142,6 +156,7 @@ void CShopItem::Restore(idRestoreGame *savefile)
 	{
 		savefile->ReadString(classNames[i]);
 	}
+	savefile->ReadBool(stackable); // grayman (#2376)
 }
 
 // ================= Shop ============================
@@ -161,6 +176,8 @@ void CShop::Clear()
 	purchasedTop = 0;
 	startingTop = 0;
 	skipShop = false;
+	pickSetShop = false;     // grayman (#2376) -
+	pickSetStarting = false; // Lockpick handling
 }
 
 void CShop::Save(idSaveGame *savefile) const
@@ -480,12 +497,14 @@ void CShop::LoadShopItemDefinitions()
 			const char* itemClassname = dict.GetString("itemClassname", "");
 			const char* image = dict.GetString("image", "");
 			int cost = dict.GetInt("price", "0");
+			bool stackable = dict.GetBool("stackable","0"); // grayman (#2376)
 
 			idStr id = name;
 			id.StripLeadingOnce("shopitem_");
 			id = "atdm:" + id;
 
 			CShopItemPtr theItem(new CShopItem(id, displayName, displayDesc, cost, image, 0));
+			theItem->SetStackable(stackable); // grayman (#2376)
 
 			// Add all "itemClassname*" spawnargs to the list
 			for (const idKeyValue* kv = dict.MatchPrefix("itemClassname"); kv != NULL; 
@@ -506,13 +525,25 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 	
 	int itemsAdded = 0;
 
-	for (const idKeyValue* kv = mapDict.MatchPrefix(itemKey); kv != NULL; kv = mapDict.MatchPrefix(itemKey, kv))
+	// grayman (#2376)
+	// Convert itemKey to lowercase. mapDict methods ignore case, but
+	// StripLeadingOnce() doesn't. This change allows recognition of shop items defined as
+	// "startingItem_*", "startingitem_*", "shopItem_*", and "shopitem_*.
+
+	idStr itemKeyLower = itemKey;
+	itemKeyLower.ToLower();
+
+	bool isShopList = (itemKeyLower.Find("shop") >= 0); // for lockpick checking
+
+	for (const idKeyValue* kv = mapDict.MatchPrefix(itemKeyLower); kv != NULL; kv = mapDict.MatchPrefix(itemKeyLower, kv))
 	{
 		// Inspect the matching prefix, check whether the difficulty level applies
 		idStr postfix = kv->GetKey();
+		postfix.ToLower(); // grayman (#2376) convert postfix to lowercase so StripLeadingOnce()
+						   // matches lowercase against lowercase
 
 		// Cut off the prefix including the following underscore _
-		postfix.StripLeadingOnce(itemKey + "_");
+		postfix.StripLeadingOnce(itemKeyLower + "_");
 		
 		int pos = postfix.Find("_item");
 		
@@ -563,33 +594,84 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 			quantity = mapDict.GetInt(itemPrefix + diffLevelStr + "_qty");
 		}
 
-		// look for price
-		int price = mapDict.GetInt(itemPrefix + "_price");
-
-		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_price") != NULL)
-		{
-			price = mapDict.GetInt(itemPrefix + diffLevelStr + "_price");
-		}
-
-		// look for persistency
-		bool persistent = mapDict.GetBool(itemPrefix + "_persistent");
-
-		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_persistent") != NULL)
-		{
-			persistent = mapDict.GetBool(itemPrefix + diffLevelStr + "_persistent");
-		}
-
-		// look for canDrop flag 
-		bool canDrop = mapDict.GetBool(itemPrefix + "_canDrop", "1"); // items can be dropped by default
-
-		if (mapDict.FindKey(itemPrefix + diffLevelStr + "_canDrop") != NULL)
-		{
-			canDrop = mapDict.GetBool(itemPrefix + diffLevelStr + "_canDrop", "1");
-		}
-
 		// put the item in the shop
 		if (quantity > 0)
 		{
+			// grayman (#2376) - Special handling for weapon quantities.
+
+			int index = itemName.Find("weapon_");
+			if (index >= 0)
+			{
+				// A shop entity should use atdm:weapon_*, but there's at least one
+				// that uses weapon_*, so convert the latter to the former.
+
+				idStr weaponName;
+				if (index == 0)
+				{
+					weaponName = "atdm:" + itemName;
+				}
+				else
+				{
+					weaponName = itemName;
+				}
+
+				// Weapon quantities have limits. (Arrows in particular.)
+				// Get the "max_ammo" spawnarg from the weapon dictionary.
+
+				const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponName);
+				if (weaponDict != NULL)
+				{
+					int max_ammo = weaponDict->GetInt("max_ammo", "1");
+					quantity = (quantity > max_ammo) ? max_ammo : quantity;
+				}
+			}
+
+			/* grayman (#2376) - Since a lockpick_set comprises individual picks, putting one
+								 on either the shopItems or startingItems list means we don't
+								 have to put individual picks on the same list.
+								 For now, just register whether a lockpick_set is being added
+								 to either list. We'll post-process after the lists are built.
+			 */
+
+			if (isShopList)
+			{
+				if (!pickSetShop && (itemName.Find("lockpick_set") >= 0))
+				{
+					pickSetShop = true;
+				}
+			}
+			else
+			{
+				if (!pickSetStarting && (itemName.Find("lockpick_set") >= 0))
+				{
+					pickSetStarting = true;
+				}
+			}
+
+			// look for price
+			int price = mapDict.GetInt(itemPrefix + "_price");
+
+			if (mapDict.FindKey(itemPrefix + diffLevelStr + "_price") != NULL)
+			{
+				price = mapDict.GetInt(itemPrefix + diffLevelStr + "_price");
+			}
+
+			// look for persistency
+			bool persistent = mapDict.GetBool(itemPrefix + "_persistent");
+
+			if (mapDict.FindKey(itemPrefix + diffLevelStr + "_persistent") != NULL)
+			{
+				persistent = mapDict.GetBool(itemPrefix + diffLevelStr + "_persistent");
+			}
+
+			// look for canDrop flag 
+			bool canDrop = mapDict.GetBool(itemPrefix + "_canDrop", "1"); // items can be dropped by default
+
+			if (mapDict.FindKey(itemPrefix + diffLevelStr + "_canDrop") != NULL)
+			{
+				canDrop = mapDict.GetBool(itemPrefix + diffLevelStr + "_canDrop", "1");
+			}
+
 			CShopItemPtr found = FindByID(itemDefs, itemName);
 
 			if (found == NULL)
@@ -600,6 +682,9 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 
 			if (found != NULL) 
 			{
+				// grayman - TODO: If there are multiple shops, you can get multiple
+				// entries for the same item. You need to group them into a single item.
+
 				CShopItemPtr anItem(new CShopItem(*found, quantity, price, persistent));
 				anItem->SetCanDrop(canDrop);
 				list.Append(anItem);
@@ -614,6 +699,164 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 	}
 
 	return itemsAdded;
+}
+
+// grayman (#2376) Add map entities where inv_map_start = 1 to the shop's starting list
+
+void CShop::AddMapItems(idMapFile* mapFile)
+{
+	// get the difficulty level
+
+	idStr diffString = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_nospawn";
+
+	// Cycle through map entities. Since the number of entities can change in the loop,
+	// always refresh the entity count used to terminate the loop.
+
+	// Skip entity 0, which is the world.
+
+	for (int i = 1; i < mapFile->GetNumEntities(); i++)
+	{
+		idMapEntity* mapEnt = mapFile->GetEntity(i);
+
+		// does this entity have an inv_map_start spawnflag set to 1?
+
+		if (mapEnt->epairs.GetBool("inv_map_start", "0"))
+		{
+			// does this entity exist in the chosen difficulty level?
+
+			if (idStr::Icmp(mapEnt->epairs.GetString(diffString, "0"), "0") == 0)
+			{
+				idStr itemName = mapEnt->epairs.GetString("classname");
+				int quantity;
+				bool isWeapon = false; // is this an arrow?
+				int max_ammo; // in case this is a weapon
+
+				// Special handling for arrows. The shop definitions allow for
+				// atdm:weapon_*, but not atdm:ammo_*. The latter form is used on
+				// map entities. If this is an atdm:ammo_* entity, change its ID (itemName)
+				// to the allowable atdm:weapon_* form.
+
+				if (itemName.Find("atdm:ammo_") >= 0)
+				{
+					isWeapon = true;
+					itemName.Replace( "atdm:ammo_", "atdm:weapon_" );
+
+					// An arrow's quantity is defined by "inv_ammo_amount" instead
+					// of "inv_count". Look for that.
+
+					quantity = mapEnt->epairs.GetInt("inv_ammo_amount", "0");
+
+					// Arrow quantities have limits. See if you can find the limit
+					// for this weapon.
+
+					if (quantity > 0)
+					{
+						// Get the "max_ammo" spawnarg from the weapon dictionary
+						const idDict* weaponDict = gameLocal.FindEntityDefDict(itemName);
+						if (weaponDict != NULL)
+						{
+							max_ammo = weaponDict->GetInt("max_ammo", "1");
+							quantity = (quantity > max_ammo) ? max_ammo : quantity;
+						}
+					}
+				}
+				else
+				{
+					quantity = mapEnt->epairs.GetInt("inv_count", "1");
+				}
+
+				if (quantity > 0)
+				{
+					CShopItemPtr found = FindByID(itemDefs, itemName);
+
+					if (found == NULL)
+					{
+						// Try again with "atdm:" prepended
+						found = FindByID(itemDefs, "atdm:" + itemName);
+					}
+
+					if (found != NULL)
+					{
+						// If this item is stackable, and already exists in the startingItems list,
+						// bump up the quantity there instead of appending the item to the list.
+						// If the item is not stackable, and we already have it, ignore it.
+
+						bool appendMapItem = true;
+						for (int j = 0 ; j < startingItems.Num(); j++)
+						{
+							CShopItemPtr listItem = startingItems[j];
+							if (idStr::Icmp(listItem->GetID(),itemName) == 0)
+							{
+								int oldQuantity = listItem->GetCount();
+								int newQuantity = oldQuantity + quantity;
+								bool isStackable = listItem->GetStackable();
+
+								// Weapons have ammo limits. Even though you might have
+								// adjusted that already in the incoming item,
+								// you have to check again when it's added to
+								// the existing amount already in the starting items.
+
+								if (isWeapon)
+								{
+									if (newQuantity > max_ammo)
+									{
+										newQuantity = max_ammo;
+									}
+									quantity = newQuantity - oldQuantity; // amount to give
+								}
+								else if (!isStackable)
+								{
+									quantity = 0; // don't adjust item's quantity
+								}
+
+								if (quantity > 0)
+								{
+									listItem->ChangeCount(quantity); // add quantity to count
+								}
+								appendMapItem = false;
+								break;
+							}
+						}
+
+						// Append the item to the list if it didn't contribute quantity to
+						// an existing list item.
+
+						if (appendMapItem)
+						{
+							CShopItemPtr anItem(new CShopItem(*found, quantity, 0, false));
+							bool canDrop = mapEnt->epairs.GetBool("inv_droppable", "1");
+							anItem->SetCanDrop(canDrop);
+							startingItems.Append(anItem);
+						}
+					}
+					else
+					{
+						gameLocal.Warning("Map entity is not a valid shop item: %s", itemName.c_str());
+					}
+				}
+			}
+		}
+	}
+}
+
+// grayman (#2376) - Post processing to remove individual lockpicks when a lockpick_set
+// is in either the for sale or starting items lists.
+
+void CShop::CheckPicks(ShopItemList& list)
+{
+	// Post processing for lockpicks. A lockpick_set is present,
+	// so remove individual triangle and snake picks from the list,
+	// since you get them from lockpick_set.
+
+	for (int i = 0; i < list.Num(); i++) // regrab list size each iteration because it can change
+	{
+		idStr itemName = list[i]->GetName();
+		if ((idStr::Icmp(itemName,"Snake Lockpick") == 0) ||
+			(idStr::Icmp(itemName,"Triangle Lockpick") == 0))
+		{
+			list.RemoveIndex(i--); // decrement index to account for removed item
+		}
+	}
 }
 
 void CShop::DisplayShop(idUserInterface *gui)
@@ -643,6 +886,19 @@ void CShop::DisplayShop(idUserInterface *gui)
 		// Shop data says: skip da shoppe
 		gui->HandleNamedEvent("SkipShop");
 		return;
+	}
+
+	// grayman (#2376) add "inv_map_start" items to the shop's list of starting items,
+	// then check for lockpick duplications.
+
+	AddMapItems(mapFile);
+	if (pickSetShop)
+	{
+		CheckPicks(itemsForSale);
+	}
+	if (pickSetStarting)
+	{
+		CheckPicks(startingItems);
 	}
 
 	UpdateGUI(gui);

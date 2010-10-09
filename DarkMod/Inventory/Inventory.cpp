@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/game_local.h"
 
 #include "../MissionData.h"
+#include "../DarkMod/shop.h" // grayman (#2376)
 
 static idStr sLootTypeName[CInventoryItem::LT_COUNT] = 
 {
@@ -103,7 +104,7 @@ void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInvento
 	player->SendInventoryPickedUpMessage(pickedUpMsg);
 }
 
-CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
+CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop) // grayman (#2376)
 {
 	CInventoryItemPtr rc;
 	int LGroupVal = 0;
@@ -111,6 +112,14 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent)
 
 	CInventoryItem::LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
 	int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
+
+	// grayman (#2376) - if anyone ever marks loot "inv_map_start" and it's a valid shop
+	// item, the player inventory will already have it at this point.
+
+	if (gotFromShop)
+	{
+		value = -1;
+	}
 
 	if (lootType != CInventoryItem::LT_NONE && value > 0)
 	{
@@ -312,8 +321,15 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// Sanity checks
 	if (ent == NULL || owner == NULL) return CInventoryItemPtr();
 
+	// grayman (#2376) - If there's a shop with this item in it,
+	// and this is an inv_map_start item, we won't put it into the
+	// inventory because the player already has it.
+
+	ShopItemList startingItems = gameLocal.m_Shop->GetPlayerStartingEquipment();
+	bool gotFromShop = ((startingItems.Num() > 0) && (ent->spawnArgs.GetBool("inv_map_start", "0")));
+
 	// Check for loot items
-	CInventoryItemPtr returnValue = ValidateLoot(ent);
+	CInventoryItemPtr returnValue = ValidateLoot(ent,gotFromShop); // grayman (#2376)
 
 	if (ent->GetAbsenceNoticeability() > 0)
 	{
@@ -332,7 +348,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	}
 
 	// Let's see if this is an ammonition item
-	returnValue = ValidateAmmo(ent);
+	returnValue = ValidateAmmo(ent,gotFromShop); // grayman (#2376)
 
 	if (returnValue != NULL)
 	{
@@ -345,7 +361,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	}
 
 	// Check for a weapon item
-	returnValue = ValidateWeapon(ent);
+	returnValue = ValidateWeapon(ent,gotFromShop); // grayman (#2376)
 
 	if (returnValue != NULL)
 	{
@@ -383,6 +399,17 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Item is stackable, determine how many items should be added to the stack
 		int count = ent->spawnArgs.GetInt("inv_count", "1");
 		
+		// grayman (#2376) - If there's a shop in this mission, all stackable inv_map_start items were shown in
+		// the shop's startingItems list, and have already been given to the player. Check if this
+		// entity is an inv_map_start entity. If it is, check the size of the startingItems list.
+		// If it's 0, then there's no shop and we have to give the player the count from this
+		// entity. If > 0, zero the count because the player already has it.
+
+		if (gotFromShop)
+		{
+			count = 0;	// Item count already given, so clear it.
+		}
+
 		// Increase the stack count
 		existing->SetCount(existing->GetCount() + count);
 
@@ -419,6 +446,10 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	else
 	{
 		// Item doesn't exist, create a new InventoryItem
+
+		// grayman (#2376) - if we got here, the item isn't already in the inventory,
+		// so it wasn't given by the shop. No code changes needed.
+
 		CInventoryItemPtr item(new CInventoryItem(ent, owner));
 
 		if (item != NULL)
@@ -746,7 +777,7 @@ void CInventory::RemoveCategory(const CInventoryCategoryPtr& category)
 	m_Category.Remove(category);
 }
 
-CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
+CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent, const bool gotFromShop) // grayman (#2376)
 {
 	// Sanity check
 	if (ent == NULL) return CInventoryItemPtr();
@@ -768,6 +799,16 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
 		gameLocal.Warning("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
 		return returnValue;
+	}
+
+	// grayman (#2376)
+	// If we already got this from the shop, zero the ammo count. 
+
+	if (gotFromShop)
+	{
+		amount = 0; // Ammo already given, so clear it. We could leave at
+					// this point, but the calling method expects a CInventoryItemPtr,
+					// so we have to execute the following code to obtain it.
 	}
 
 	// Find the weapon category
@@ -813,7 +854,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent)
 	return returnValue;
 }
 
-CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent)
+CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent, const bool gotFromShop) // grayman (#2376)
 {
 	// Sanity check
 	if (ent == NULL) return CInventoryItemPtr();
@@ -849,7 +890,11 @@ CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent)
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Entity %s is matching the melee weapon %s.\r", ent->name.c_str(), weaponName.c_str());
 
 			// Enable this weapon
-			weaponItem->SetEnabled(true);
+
+			if (!gotFromShop) // grayman (#2376)
+			{
+				weaponItem->SetEnabled(true);
+			}
 
 			if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 			{
