@@ -2074,7 +2074,7 @@ void Lode::PrepareEntities( void )
 				}
 				else
 				{
-					gameLocal.Printf( "LODE %s: Test position outside our box, trying again.\n", GetName() );
+					// gameLocal.Printf( "LODE %s: Test position outside our box, trying again.\n", GetName() );
 				}
 			}
 			// couldn't place entity even after 10 tries?
@@ -2514,7 +2514,8 @@ void Lode::CombineEntities( void )
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
 				//clipModels.SetNum( ... );
 
-				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);	// need this
+				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);		// need this
+				PseudoClass.physicsObj->SetAxis( idAngles(0,0,0).ToMat3() );	// set zero rotation
 			}
 
 			// mark all entities that will be merged as "deleted", but skip the rest
@@ -2701,7 +2702,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 				if (lclass->pseudo || lclass->hModel)
 				{
 					ent2->FreeModelDef();
-					// keep the acutal model around, because someone else might have a ptr to it:
+					// keep the actual model around, because someone else might have a ptr to it:
 					//renderModelManager->FreeModel( r->hModel );
 					r->hModel = NULL;
 				}
@@ -2809,8 +2810,11 @@ bool Lode::CullEntity( const int idx )
 		// That makes it work for moveables or anything else that
 		// might have changed position (teleported away etc)
 		// TODO: this might be responsible for CStaticMulti shifting away
+
 		ent->origin = ent2->GetPhysics()->GetOrigin();
 		ent->angles = ent2->GetPhysics()->GetAxis().ToAngles();
+
+		// gameLocal.Printf("Saving entity pos for %s: origin %s angles %s.\n", ent2->GetName(), ent->origin.ToString(), ent->angles.ToString() );
 
 		// If the class has a model with shared data, manage this to avoid double frees
 		if ( !lclass->pseudo )

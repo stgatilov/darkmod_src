@@ -155,10 +155,11 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	}
 
 	idVec3 origin = GetPhysics()->GetOrigin();
-
 	int n = m_Changes.Num();
+
 #ifdef M_DEBUG
-	gameLocal.Printf("%s updating renderModel at %s with %i changes (%i models).\n", GetName(), origin.ToString(), n, m_Offsets->Num());
+	idAngles angles = GetPhysics()->GetAxis().ToAngles();
+	gameLocal.Printf("%s updating renderModel at %s (angles %s) with %i changes (%i models).\n", GetName(), origin.ToString(), angles.ToString(), n, m_Offsets->Num());
 #endif
 
 	// apply all our changes to the offsets list
@@ -190,7 +191,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 
 	if (m_iVisibleModels == 0)
 	{
-		Hide();
+		if (!fl.hidden) { Hide(); }
 		return true;
 	}
 	else
@@ -273,7 +274,8 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
-	renderEntity.origin = GetPhysics()->GetOrigin();
+	// TODO: this seems unnec.:
+	renderEntity.origin = origin;
 
 	// force an update because the bounds/origin/axis may stay the same while the model changes
 	renderEntity.forceUpdate = true;
