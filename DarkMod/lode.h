@@ -31,8 +31,9 @@
   from one class or all entitites.
 
   Can also combine spawned entities into "megamodels", where the model consists
-  of all the surfaces of the combined models, to reduce entity count and number
-  of drawcalls.
+  of all the surfaces of the combined models, plus a physics model with multiple
+  clipmodels, to reduce entity count and number of drawcalls. These combined
+  entities are of the CStaticMulti class.
 
 ===============================================================================
 */
@@ -101,6 +102,7 @@ struct lode_class_t {
 	bool					stack;			//!< if true, the entities can stack on top of each other
 	bool					noinhibit;		//!< if true, the entities of this class will not be inhibited
 	bool					nocombine;		//!< if true, the entities of this class will never be combined into megamodels
+	bool					solid;			//!< if true, is solid and has thus a clipmodel
 	idVec3					color_min;		//!< random color minimum value
 	idVec3					color_max;		//!< random color maximum value
 	idVec3					impulse_min;	//!< random impulse on spawn for moveables

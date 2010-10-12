@@ -211,6 +211,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Classes[i].origin );
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteBool( m_Classes[i].nocombine );
+		savefile->WriteBool( m_Classes[i].solid );
 		savefile->WriteInt( m_Classes[i].falloff );
 		savefile->WriteBool( m_Classes[i].floor );
 		savefile->WriteBool( m_Classes[i].stack );
@@ -407,6 +408,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( m_Classes[i].origin );
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadBool( m_Classes[i].nocombine );
+		savefile->ReadBool( m_Classes[i].solid );
 		savefile->ReadInt( m_Classes[i].falloff );
 		savefile->ReadBool( m_Classes[i].floor );
 		savefile->ReadBool( m_Classes[i].stack );
@@ -708,7 +710,9 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.score = iEntScore;
 	LodeClass.classname = ent->GetEntityDefName();
 	LodeClass.modelname = ent->spawnArgs.GetString("model","");
-	
+
+	// is solid?	
+	LodeClass.solid = ent->spawnArgs.GetBool("solid","1");
 	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","1") ? false : true;
 
 	// never combine moveables, actors or lights
@@ -2430,6 +2434,7 @@ void Lode::CombineEntities( void )
 				PseudoClass.spawnDist = entityClass->spawnDist;
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
+				PseudoClass.solid = entityClass->solid;
 				PseudoClass.img = NULL;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
@@ -2509,14 +2514,23 @@ void Lode::CombineEntities( void )
 			{
 				PseudoClass.offsets.Append( sortedOffsets[si].ofs );
 			}
-			bool clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
 
-			if (!clipLoaded)
+			// if the original entity has "solid" "0", skip the entire clip model loading/setting:
+
+			bool clipLoaded = false;
+			// don't bother with clipmodels if the entity is not solid	
+			if (entityClass->solid)
 			{
-				gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n",
-						GetName(), lowest_LOD_model.c_str() );
+				// TODO: fix this for func_statics build from geometry (brushes/patches) inside DR
+				// try to load the clipmodel
+				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
+				if (!clipLoaded)
+				{
+					gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
+				}
 			}
-			else
+
+			if (clipLoaded)
 			{
 //				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for %s.\n",
 //						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
@@ -2524,9 +2538,8 @@ void Lode::CombineEntities( void )
 				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
 				//clipModels.SetNum( ... );
-
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);		// need this
-				PseudoClass.physicsObj->SetAxis( idAngles(0,0,0).ToMat3() );	// set zero rotation
+				PseudoClass.physicsObj->SetAxis( idAngles(0,0,0).ToMat3() );	// need to set zero rotation
 			}
 
 			// mark all entities that will be merged as "deleted", but skip the rest
