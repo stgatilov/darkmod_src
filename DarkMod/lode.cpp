@@ -1505,16 +1505,26 @@ void Lode::PrepareEntities( void )
 
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
-		if (m_Classes[i].pseudo && m_Classes[i].hModel)
+		if (m_Classes[i].pseudo)
 		{
-			renderModelManager->FreeModel( m_Classes[i].hModel );
-			m_Classes[i].hModel = NULL;
+			// remove the render model
+		   	if (m_Classes[i].hModel)
+			{
+				renderModelManager->FreeModel( m_Classes[i].hModel );
+				m_Classes[i].hModel = NULL;
+			}
+			// remove the physics object
+			if (m_Classes[i].physicsObj)
+			{
+				delete m_Classes[i].physicsObj;
+				m_Classes[i].physicsObj = NULL;
+			}
 			continue;
 		}
 		newClasses.Append ( m_Classes[i] );
 	}
 	m_Classes.Swap( newClasses );		// copy over
-	newClasses.Clear();					// remove
+	newClasses.Clear();					// remove old entries (including pseudoclasses)
 
 	// random shuffle the class indexes around
 	// also calculate the per-class seed:
@@ -1526,7 +1536,7 @@ void Lode::PrepareEntities( void )
 	}
 
 	// shuffle all entries, but use the second generator for a "predictable" class sequence
-	// that does not change when the menu changes
+	// that does not change when the menui setting changes
 	m_iSeed = RandomSeed();
 	s = m_Classes.Num();
 	for (int i = 0; i < s; i++)
@@ -1788,6 +1798,7 @@ void Lode::PrepareEntities( void )
 								descr = "plastic";
 								break;
 							case SURFTYPE_15:
+								// TODO: only use the first word (until the first space)
 								descr = mat->GetDescription();
 								break;
 							default:
