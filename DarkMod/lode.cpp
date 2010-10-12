@@ -200,6 +200,16 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( m_Classes[i].classname );
 		savefile->WriteString( m_Classes[i].modelname );
 		savefile->WriteInt( m_Classes[i].score );
+
+		if (m_Classes[i].clip)
+		{
+			savefile->WriteBool( true );
+			savefile->WriteClipModel( m_Classes[i].clip );
+		}
+		else
+		{
+			savefile->WriteBool( false );
+		}
 		savefile->WriteFloat( m_Classes[i].cullDist );
 		savefile->WriteFloat( m_Classes[i].spawnDist );
 		savefile->WriteFloat( m_Classes[i].spacing );
@@ -397,6 +407,15 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].modelname );
 		savefile->ReadInt( m_Classes[i].score );
+
+		savefile->ReadBool( bHaveModel );
+		m_Classes[i].clip = NULL;
+		// only read the clip model if it is actually used
+		if ( bHaveModel )
+		{
+			savefile->ReadClipModel( m_Classes[i].clip );
+		}
+
 		savefile->ReadFloat( m_Classes[i].cullDist );
 		savefile->ReadFloat( m_Classes[i].spawnDist );
 		savefile->ReadFloat( m_Classes[i].spacing );
@@ -1005,6 +1024,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	// store the rendermodel to make func_statics work
 	LodeClass.hModel = NULL;
+	LodeClass.clip = NULL;
 	if (LodeClass.classname == FUNC_STATIC)
 	{
 		// check if this is a func_static with a model, or an "inline map geometry" func static
@@ -1016,6 +1036,12 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 			ent->GetRenderEntity()->hModel = NULL;
 			// set a dummy model
 			LodeClass.modelname = "models/darkmod/junk/plank_short.lwo";
+
+			// store a copy of the clipmodel, so we can later reuse it
+			LodeClass.clip = new idClipModel( ent->GetPhysics()->GetClipModel() );
+#ifdef M_DEBUG
+			gameLocal.Printf("Using clip from rendermodel ptr=0x%p bounds %s\n", LodeClass.clip, LodeClass.clip->GetBounds().ToString());
+#endif
 		}
 		LodeClass.classname = FUNC_DUMMY;
 	}
@@ -2211,15 +2237,30 @@ float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 }
 
 // a small helper routine to cut down on code copy&paste
-bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx )
+bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx, idClipModel* clipModel )
 {
-#ifdef M_DEBUG
-	gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
-#endif
+	idClipModel *clip;
 
-	idClipModel* clip = new idClipModel();
 	// load the clipmodel for the lowest LOD stage for collision detection
-	bool clipLoaded = clip->LoadModel( modelName );
+	bool clipLoaded = true;
+
+	if (clipModel)
+	{
+		// make a copy
+		clip = new idClipModel( clipModel );
+#ifdef M_DEBUG
+		gameLocal.Printf("Reusing clipmodel from renderModel 0x%p, bounds %s.\n", clipModel, clip->GetBounds().ToString() );
+#endif
+	}
+	else
+	{
+#ifdef M_DEBUG
+		gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
+#endif
+		clip = new idClipModel;
+		clipLoaded = clip->LoadModel( modelName );
+	}
+
 	if (clipLoaded)
 	{
 		// add the clipmodel
@@ -2232,7 +2273,6 @@ bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr mod
 		// nec.?
 		physics->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
 	}
-
 	return clipLoaded;
 }
 
@@ -2435,6 +2475,7 @@ void Lode::CombineEntities( void )
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
 				PseudoClass.solid = entityClass->solid;
+				PseudoClass.clip = entityClass->clip;
 				PseudoClass.img = NULL;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
@@ -2523,7 +2564,7 @@ void Lode::CombineEntities( void )
 			{
 				// TODO: fix this for func_statics build from geometry (brushes/patches) inside DR
 				// try to load the clipmodel
-				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0 );
+				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0, PseudoClass.clip );
 				if (!clipLoaded)
 				{
 					gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
@@ -2555,7 +2596,7 @@ void Lode::CombineEntities( void )
 				if (clipLoaded)
 				{
 					// d + 1 because 0 is the original entity
-					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, d + 1 );
+					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, d + 1, PseudoClass.clip );
 
 //					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
 				}

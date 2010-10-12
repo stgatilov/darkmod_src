@@ -75,6 +75,8 @@ struct lode_class_t {
 	idList< int >			skins;			//!< index into skins array
 	idRenderModel*			hModel;			//!< When you turn a brush inside DR into a idStaticEntity and use it as template,
    											//!< this is used to keep their renderModel (as it is not loadable by name).
+	idClipModel*			clip;			//!< If the rendermodel is not a named model, but instead static geometry from brushes/patches,
+											//!< we need to store this, so we can use it later even after freeing the original target entity.
 	idStr					modelname;		//!< To load the rendermodel for combining it w/o spawning
 											//!< the entity first. Used to calculate f.i. how many models
 											//!< can be combined at most (as this model is the high-poly version).
@@ -261,9 +263,10 @@ private:
 
 	/**
 	* Helper routine to load and set a clipmodel on a idPhysics_StaticMulti object. Returns true
-	* if the clip model could be loaded.
+	* if the clip model could be loaded. If renderModelHandle != -1, then the clipmodel will be
+	* created from this render model.
 	*/
-	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx );
+	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx, idClipModel* clipModel = NULL);
 
 	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
