@@ -16,7 +16,6 @@ Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
 Important things to do:
 
 TODO: Restore() crashes
-TODO: Respawning a StaticMulti offsets it's rendermodel
 
 Nice-to-have:
 
@@ -29,11 +28,6 @@ TODO: add "watch_models" (or "combine_models"?) so the mapper can place models a
 	  then use the modelgenerator to combine them into one big rendermodel. The current
 	  way of targeting and using "watch_brethren" does get all "func_static" as it is
 	  classname based, not model name based.
-TODO: Sort all the generated entities into multiple lists, keyed on a hash-key that
-	  contains all the relevant info for combining entities, so only entities that
-	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
-	  Then only look at entities from one list when combining, this will reduce the
-	  O(N*N) to something like O( (N/X)*(N/X) ) where X is the set of combinable entities.
 
 Optimizations:
 
@@ -53,6 +47,11 @@ TODO: add a "entity" field (int) to the offsets list, so we avoid having to
 	  construct a sortOffsets list first, then truncated and rebuild the offsets
 	  list from that. (But benchmark if that isn't actually faster as the sortedOffsets
 	  list contans only one int and a ptr)
+TODO: Sort all the generated entities into multiple lists, keyed on a hash-key that
+	  contains all the relevant info for combining entities, so only entities that
+	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
+	  Then only look at entities from one list when combining, this will reduce the
+	  O(N*N) to something like O( (N/X)*(N/X) ) where X is the set of combinable entities.
 */
 
 #include "../idlib/precompiled.h"
@@ -1566,7 +1565,7 @@ void Lode::PrepareEntities( void )
 	}
 
 	// shuffle all entries, but use the second generator for a "predictable" class sequence
-	// that does not change when the menui setting changes
+	// that does not change when the menu setting changes
 	m_iSeed = RandomSeed();
 	s = m_Classes.Num();
 	for (int i = 0; i < s; i++)
@@ -2180,7 +2179,7 @@ void Lode::PrepareEntities( void )
 			idVec3 origin = ent->GetPhysics()->GetOrigin();
 
 			// the class we should watch?
-			// TODO: also compare the "model" spawnarg, otherwise multiple func_statics won't work
+			// also compare the "model" spawnarg, otherwise multiple func_statics won't work
 			if (( ent->GetEntityDefName() == m_Classes[i].classname) &&
 				// and is this entity in our box?
 				(box.ContainsPoint( origin )) )
@@ -2556,14 +2555,11 @@ void Lode::CombineEntities( void )
 				PseudoClass.offsets.Append( sortedOffsets[si].ofs );
 			}
 
-			// if the original entity has "solid" "0", skip the entire clip model loading/setting:
-
 			bool clipLoaded = false;
-			// don't bother with clipmodels if the entity is not solid	
+			// if the original entity has "solid" "0", skip the entire clip model loading/setting:
 			if (entityClass->solid)
 			{
-				// TODO: fix this for func_statics build from geometry (brushes/patches) inside DR
-				// try to load the clipmodel
+				// Load or use the clipmodel
 				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0, PseudoClass.clip );
 				if (!clipLoaded)
 				{
@@ -2578,7 +2574,6 @@ void Lode::CombineEntities( void )
 
 				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
 				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
-				//clipModels.SetNum( ... );
 				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);		// need this
 				PseudoClass.physicsObj->SetAxis( idAngles(0,0,0).ToMat3() );	// need to set zero rotation
 			}
@@ -2589,7 +2584,6 @@ void Lode::CombineEntities( void )
 			{
 				int todo = sortedOffsets[d].entity;
 				// mark as combined
-//				gameLocal.Printf( " Combined entity %i\n", todo );
 				m_Entities[todo].classIdx = -1;
 
 				// add the clipmodel to the multi-clipmodel if we have one
@@ -2612,10 +2606,7 @@ void Lode::CombineEntities( void )
 				PseudoClass.materialName = idStr("textures/darkmod/debug/") + lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
 			}
 
-			// we construct this later during entity spawn (as only at this time is the player position correct)
-			//PseudoClass.hModel = NULL;
-
-			// replace the old class with the new pseudo class which contains the merged model
+			// replace the old class with the new pseudo class
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 
 			// marks as using a pseudo class
