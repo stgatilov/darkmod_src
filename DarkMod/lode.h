@@ -124,8 +124,8 @@ struct lode_class_t {
 	idVec3					scale_max;		//!< X Y Z max factor for randomly scaling rendermodels
 
 	int						falloff;		//!< Entity random distribution method
-											//!< 0 - none, 1 - cutoff, 2 - square, 3 - exp(onential), 4 - func
-	float					func_x;			//!< only used when falloff == 4
+											//!< 0 - none, 1 - cutoff, 2 - power, 3 - root, 4 - linear, 5 - func
+	float					func_x;			//!< only used when falloff == 5
 	float					func_y;
 	float					func_s;
 	float					func_a;
@@ -152,6 +152,9 @@ struct lode_inhibitor_t {
 	idBox					box;			//!< oriented box of the area
 	idList< idStr >			classnames;		//!< Contains a list of classes to inhibit/allow, depending on "inhibit_only"
 	bool					inhibit_only;	//!< If false, classes in 'classnames' are allowed instead of inhibited
+	int						falloff;		//!< Entity random inhibition method
+											//!< 0 - none, 1 - cutoff, 2 - power, 3 - root, 4 - linear
+	float					factor;			//!< if falloff == 2: X ** factor, if falloff == 3: factor'th root of X
 };
 
 #define LODE_ENTITY_FLAGMASK 0x00FFFFFF
@@ -305,6 +308,11 @@ private:
 	* be culled.
 	*/
 	bool				CullEntity( const int idx );
+
+	/**
+	* Parse the falloff spawnarg and return an integer representing it.
+	*/
+	int					ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const;
 
 	/**
 	* Take the given entity as template and add a class from its values. Returns

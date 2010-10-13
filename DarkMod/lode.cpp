@@ -250,7 +250,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		}
 
 		// only save these if they are used
-		if ( m_Classes[i].falloff == 4)
+		if ( m_Classes[i].falloff == 5)
 		{
 			savefile->WriteFloat( m_Classes[i].func_x );
 			savefile->WriteFloat( m_Classes[i].func_y );
@@ -261,6 +261,10 @@ void Lode::Save( idSaveGame *savefile ) const {
 			savefile->WriteInt( m_Classes[i].func_f );
 			savefile->WriteFloat( m_Classes[i].func_min );
 			savefile->WriteFloat( m_Classes[i].func_max );
+		}
+		if ( m_Classes[i].falloff >= 2 && m_Classes[i].falloff <= 3)
+		{
+			savefile->WriteFloat( m_Classes[i].func_a );
 		}
 		// image based distribution
 		savefile->WriteString( m_Classes[i].map );
@@ -292,6 +296,8 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Inhibitors[i].origin );
 		savefile->WriteBox( m_Inhibitors[i].box );
 		savefile->WriteBool( m_Inhibitors[i].inhibit_only );
+		savefile->WriteInt( m_Inhibitors[i].falloff );
+		savefile->WriteFloat( m_Inhibitors[i].factor );
 		int n = m_Inhibitors[i].classnames.Num();
 		savefile->WriteInt( n );
 		for( int j = 0; j < n; j++ )
@@ -460,7 +466,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		}
 
 		// only restore these if they are used
-		if ( m_Classes[i].falloff == 4)
+		if ( m_Classes[i].falloff == 5)
 		{
 			savefile->ReadFloat( m_Classes[i].func_x );
 			savefile->ReadFloat( m_Classes[i].func_y );
@@ -471,6 +477,10 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadInt( m_Classes[i].func_f );
 			savefile->ReadFloat( m_Classes[i].func_min );
 			savefile->ReadFloat( m_Classes[i].func_max );
+		}
+		if ( m_Classes[i].falloff >= 2 && m_Classes[i].falloff <= 3)
+		{
+			savefile->ReadFloat( m_Classes[i].func_a );
 		}
 		savefile->ReadString( m_Classes[i].map );
 		m_Classes[i].img = NULL;
@@ -508,6 +518,8 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( m_Inhibitors[i].origin );
 		savefile->ReadBox( m_Inhibitors[i].box );
 		savefile->ReadBool( m_Inhibitors[i].inhibit_only );
+		savefile->ReadInt( m_Inhibitors[i].falloff );
+		savefile->ReadFloat( m_Inhibitors[i].factor );
 		int n;
 		savefile->ReadInt( n );
 		m_Inhibitors[i].classnames.Clear();
@@ -713,6 +725,57 @@ int Lode::AddSkin( const idStr *skin )
 }
 
 /*
+Lode::ParseFalloff - interpret the falloff spawnarg from the given dictionary
+*/
+int Lode::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const
+{
+	int rc = 0;
+
+	idStr falloff = dict->GetString( "lode_falloff", defaultName );
+	if (falloff == "none")
+	{
+		return 0;
+	}
+	if (falloff == "cutoff")
+	{
+		return 1;
+	}
+	if (falloff == "linear")
+	{
+		return 4;
+	}
+	if (falloff == "func")
+	{
+		return 5;
+	}
+
+	if (falloff == "power")
+	{
+		rc = 2;
+	}
+	if (falloff == "root")
+	{
+		rc = 3;
+	}
+
+	if (rc == 0)
+	{
+		gameLocal.Warning("LODE %s: Wrong falloff %s, expected one of none, cutoff, power, root, linear or func.\n", GetName(), falloff.c_str() );
+		return 0;
+	}
+
+	// power or root, store the factor in func_a
+	*func_a = dict->GetFloat( "lode_func_a", defaultFactor );
+	if (*func_a < 2.0f)
+	{
+		gameLocal.Warning( "LODE %s: Expect lode_func_a >= 2 when falloff is %s.\n", GetName(), falloff.c_str());
+		*func_a = 2.0f;
+	}
+
+	return rc;
+}
+
+/*
 ===============
 Lode::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
@@ -721,7 +784,6 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 {
 	lode_class_t			LodeClass;
 	lode_material_t			LodeMaterial;
-	idStr falloff;
 	const idKeyValue *kv;
 
 	LodeClass.pseudo = false;		// this is a true entity class
@@ -828,28 +890,6 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if (LodeClass.scale_max.y < LodeClass.scale_min.y) { LodeClass.scale_max.y = LodeClass.scale_min.y; }
 	if (LodeClass.scale_max.z < LodeClass.scale_min.z) { LodeClass.scale_max.z = LodeClass.scale_min.z; }
 
-	LodeClass.falloff = -1;	// none
-	falloff = ent->spawnArgs.GetString( "lode_falloff", spawnArgs.GetString( "falloff", "none") );
-	if (falloff == "none")
-	{
-		LodeClass.falloff = 0;
-	}
-	else
-	{
-		if (falloff == "cutoff")
-		{
-			LodeClass.falloff = 1;
-		}
-		if (falloff == "square")
-		{
-			LodeClass.falloff = 2;
-		}
-		if (falloff == "exp")
-		{
-			LodeClass.falloff = 3;
-		}
-	}
-
 	LodeClass.func_x = 0;
 	LodeClass.func_y = 0;
 	LodeClass.func_s = 0;
@@ -857,9 +897,11 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.func_Xt = 0;
 	LodeClass.func_Yt = 0;
 	LodeClass.func_f = 0;
-	if (falloff == "func")
+
+	LodeClass.falloff = ParseFalloff( &ent->spawnArgs, spawnArgs.GetString( "falloff", "none"), spawnArgs.GetString( "func_a", "2"), &LodeClass.func_a);
+	// falloff == func
+	if (LodeClass.falloff == 5)
 	{
-		LodeClass.falloff = 4;
 		// default is 0.5 * (x + y + 0)
 		LodeClass.func_a = ent->spawnArgs.GetFloat( "lode_func_a", spawnArgs.GetString( "func_a", "0") );
 		LodeClass.func_s = ent->spawnArgs.GetFloat( "lode_func_s", spawnArgs.GetString( "func_s", "0.5") );
@@ -907,11 +949,6 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		gameLocal.Warning ("LODE %s: Using falloff func p = %s( %0.2f, %0.2f, %0.2f * ( %s * %0.2f + %s * %0.2f + %0.2f) )\n", 
 				GetName(), x.c_str(), LodeClass.func_min, LodeClass.func_max, LodeClass.func_s, LodeClass.func_Xt == 1 ? "X" : "X*X", LodeClass.func_x, 
 				LodeClass.func_Yt == 1 ? "Y" : "Y*Y", LodeClass.func_y, LodeClass.func_a );
-	}
-	if (LodeClass.falloff == -1)
-	{
-		gameLocal.Warning ("LODE %s: Invalid falloff %s, expect one of 'none', 'cutoff', 'square', 'exp' or 'func'.\n", GetName(), falloff.c_str() );
-		LodeClass.falloff = 0;
 	}
 
 	// image based map?
@@ -1103,16 +1140,17 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
 
-	// if falloff != none, correct the density, because the ellipse-shape is smaller then the rectangle
 	float size = (LodeClass.size.x + LodeClass.spacing) * (LodeClass.size.y + LodeClass.spacing);
 
+	// if falloff != none, correct the density, because the ellipse-shape is smaller then the rectangle
 	if ( LodeClass.falloff >= 1 && LodeClass.falloff <= 3)
 	{
 		// Rectangle is W * H, ellipse is W/2 * H/2 * PI. When W = H = 1, then the rectangle
-		// area is 1.0, and the ellipse 0.785398, so correct for 1 / 0.785398, this will
+		// area is 1.0, and the ellipse 0.785398, so correct for 1 / 0.785398 = 1.2732, this will
 		// reduce the density, and thus the entity count:
 		size *= 1.2732f; 
 	}
+	// TODO: take into account inhibitors (these should reduce the density)
 
 	// scale the per-class size by the per-class density
 	float fDensity = ent->spawnArgs.GetFloat( "lode_density", "1.0" );
@@ -1237,6 +1275,14 @@ void Lode::Prepare( void )
 				// or rotation spawnarg. Use clipmodel instead? Note: Unrotating the entity, but adding an "axis"
 				// spawnarg works.
 				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize() / 2, ent->GetPhysics()->GetAxis() );
+
+				LodeInhibitor.falloff = ParseFalloff( &ent->spawnArgs, ent->spawnArgs.GetString( "falloff", "none"), ent->spawnArgs.GetString( "func_a", "2"), &LodeInhibitor.factor );
+				if (LodeInhibitor.falloff > 4)
+				{
+					// func is not supported
+					gameLocal.Warning( "LODE %s: falloff=func not yet supported on inhibitors.\n", GetName() );
+					LodeInhibitor.falloff = 0;
+				}
 
 				// default is "noinhibit" (and this will be ignored if classnames.Num() == 0)
 				LodeInhibitor.inhibit_only = false;
@@ -1668,43 +1714,92 @@ void Lode::PrepareEntities( void )
 				else
 				// no bunching, just random placement
 				{
-					switch (m_Classes[i].falloff)
+					// not "none" nor "func"
+					if (m_Classes[i].falloff > 0 && m_Classes[i].falloff < 5)
 					{
-					case 0:
-					case 4:
-						// restrict to our AAB (unrotated)
+						int falloff_tries = 0;
+						float p = 0.0f;
+						float factor = m_Classes[i].func_a;
+						int falloff = m_Classes[i].falloff;
+						float x = 0;
+						float y = 0;
+						while (falloff_tries++ < 16)
+						{
+							// x and y are between -1 and +1
+							x = 2.0f * (RandomFloat() - 0.5f);
+							y = 2.0f * (RandomFloat() - 0.5f);
+
+							// then see if it passes the test (inside and higher than the probability)
+							// compute distance to center
+							float d = idMath::Sqrt( x * x + y * y );
+
+							if (d > 1.0f)
+							{
+								// outside the circle, try again
+								continue;
+							}
+							if (falloff == 1)
+							{
+								// always 1.0f inside the unit-circle for cutoff or func, so abort right away
+								p = 1.0f;
+								LodeEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
+								break;
+							}
+
+							// compute the probability this position would pass based on "d" (0..1.0f)
+							switch (falloff)
+							{
+							case 2:
+								// 2 - power
+								// compute 1 - d ** N
+								p = 1.0f - idMath::Pow( d, factor );
+								break;
+							case 3:
+								// 3 - root
+								// compute 1 - root(d, N)
+								p = 1.0f - idMath::Pow( d, 1.0f / factor );
+								break;
+							case 4:
+								// 4 - linear
+								// compute 1 - d
+								p = 1.0f - d;
+								break;
+							default:
+								break;	
+							}
+							gameLocal.Printf(" falloff = %i p = %0.2f d = %0.2f factor = %0.2f\n", falloff, p, d, factor);
+
+							// compute a random value and see if it is bigger than p
+							if (RandomFloat() < p)
+							{
+								p = 1.0f;
+								break;
+							}
+							// nope, not allowed here, try again
+						}
+						if (p < 0.000001f)
+						{
+							// did not find a valid position, skip this
+							continue;
+						}
+						//	compute the relative position to our LODE center
+						// x/2 => from -1.0 .. 1.0 => -0.5 .. 0.5
+						LodeEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
+
+					} // end for any falloff other than "none"
+					else
+					{
+						// falloff = none
+						// compute a random position in a unit-square
 						LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
-						break;
-					case 1:
-						// cutoff - polar coordinates in the range (0..1.0, 0.360)
-						// TODO: The random polar coordinates make it occupy less space in the center
-						// 		 than in the outer areas, but distrubute the entity distance equally.
-						//		 This leads to the center getting ever so slightly more entities then
-						//		 the outer areas, compensate for this in the random generator formular?
-						LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
-						break;
-					case 2:
-						// square
-						LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
-						break;
-					default:
-						// 3 - exp
-						LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
-						break;
-					}
-					if (m_Classes[i].falloff > 0 && m_Classes[i].falloff < 4)
-					{
-						// cutoff, square and exp: scale the result to our box size
-						LodeEntity.origin.x *= size.x / 2;
-						LodeEntity.origin.y *= size.y / 2;
 					}
 				}
 
 				// what is the probability it will appear here?
-				float probability = 1.0f;	// start with "always"
+				float probability = 1.0f;	// has passed a potential falloff, so start with "always"
 
-				// if falloff == 4, compute the falloff probability
-       			if (m_Classes[i].falloff == 4)
+				// if falloff == 5, compute the falloff probability
+       			if (m_Classes[i].falloff == 5)
 				{
 					// p = s * (Xt * x + Yt * y + a)
 					float x = (LodeEntity.origin.x / size.x) + 0.5f;		// 0 .. 1.0
@@ -2050,8 +2145,39 @@ void Lode::PrepareEntities( void )
 
 								if (inhibited == true)
 								{
-									//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
-									break;							
+									// if it would have been inhibited in the first place, see if the
+									// falloff does allow it, tho:
+									switch (m_Inhibitors[k].falloff)
+									{
+									case 0:
+										// falloff none, do nothing
+										break;
+									case 4:
+										// not yet done
+										// LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
+										break;
+									case 1:
+										// cutoff - check if the coordinates are inside the circle
+										//LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
+										break;
+									case 2:
+										// 2 - power
+										//LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
+										break;
+									case 3:
+										// 3 - root
+										// LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
+										break;
+									default:
+										// 4 - linear
+										// LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
+										break;
+									}
+									if (inhibited == true)
+									{
+										//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
+										break;
+									}
 								}
 							}
 						}
@@ -2595,7 +2721,7 @@ void Lode::CombineEntities( void )
 //					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
 				}
 			}
-			gameLocal.Printf("Lode %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
+			gameLocal.Printf("LODE %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
 			sortedOffsets.Clear();
 
 			// build the combined model
