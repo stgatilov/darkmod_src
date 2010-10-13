@@ -576,44 +576,6 @@ ID_INLINE float Lode::RandomFloat( void ) {
 
 /*
 ===============
-Lode::RandomFloatExp - Random float between 0 and 1 with exponential falloff (param lambda != 0)
-===============
-*/
-ID_INLINE float Lode::RandomFloatExp( const float lambda ) {
-	unsigned long i;
-	float U;
-
-	m_iSeed = 1664525L * m_iSeed + 1013904223L;
-	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
-	U = ( *(float *)&i ) - 1.0f;
-	if (U <= 0)
-	{
-		gameLocal.Warning("RandomFloatExp: U is %0.2f\n", U);
-		return 1.0;
-	}
-	U = - idMath::Log( U ) / lambda;
-	// clamp to 0.0 .. 1.0
-	if (U > 1.0) { U = 1.0; }
-	return U;
-}
-
-/*
-===============
-Lode::RandomFloatSqr - Random float between 0 and 1 with squared falloff
-===============
-*/
-ID_INLINE float Lode::RandomFloatSqr( void ) {
-	unsigned long i;
-	float U;
-
-	m_iSeed = 1664525L * m_iSeed + 1013904223L;
-	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
-	U = ( *(float *)&i ) - 1.0f;
-	return U * U;
-}
-
-/*
-===============
 Lode::Spawn
 ===============
 */
@@ -1721,6 +1683,11 @@ void Lode::PrepareEntities( void )
 						float p = 0.0f;
 						float factor = m_Classes[i].func_a;
 						int falloff = m_Classes[i].falloff;
+						if (falloff == 3)
+						{
+							// X ** 1/N = Nth root of X
+							factor = 1 / factor;
+						}
 						float x = 0;
 						float y = 0;
 						while (falloff_tries++ < 16)
@@ -1747,34 +1714,22 @@ void Lode::PrepareEntities( void )
 							}
 
 							// compute the probability this position would pass based on "d" (0..1.0f)
-							switch (falloff)
+							// 2 or 3 => pow
+							if (falloff == 4)
 							{
-							case 2:
-								// 2 - power
-								// compute 1 - d ** N
-								p = 1.0f - idMath::Pow( d, factor );
-								break;
-							case 3:
-								// 3 - root
-								// compute 1 - root(d, N)
-								p = 1.0f - idMath::Pow( d, 1.0f / factor );
-								break;
-							case 4:
-								// 4 - linear
-								// compute 1 - d
 								p = 1.0f - d;
-								break;
-							default:
-								break;	
 							}
-							gameLocal.Printf(" falloff = %i p = %0.2f d = %0.2f factor = %0.2f\n", falloff, p, d, factor);
-
+							else
+							{
+								p = 1.0f - idMath::Pow( d, factor );
+							}
 							// compute a random value and see if it is bigger than p
 							if (RandomFloat() < p)
 							{
 								p = 1.0f;
 								break;
 							}
+							p = 0.0f;
 							// nope, not allowed here, try again
 						}
 						if (p < 0.000001f)
