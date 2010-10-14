@@ -75,7 +75,6 @@ const idEventDef EV_Player_GetPreviousWeapon( "getPreviousWeapon", NULL, 's' );
 const idEventDef EV_Player_SelectWeapon( "selectWeapon", "s" );
 const idEventDef EV_Player_GetWeaponEntity( "getWeaponEntity", NULL, 'e' );
 const idEventDef EV_Player_ExitTeleporter( "exitTeleporter" );
-const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon", NULL, 's' );
@@ -167,7 +166,6 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SelectWeapon,			idPlayer::Event_SelectWeapon )
 	EVENT( EV_Player_GetWeaponEntity,		idPlayer::Event_GetWeaponEntity )
 	EVENT( EV_Player_ExitTeleporter,		idPlayer::Event_ExitTeleporter )
-	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
@@ -2878,12 +2876,6 @@ void idPlayer::FireWeapon( void )
 			NextBestWeapon();
 		}
 	}
-
-	if ( hud ) {
-		if ( tipUp ) {
-			HideTip();
-		}
-	}
 }
 
 /*
@@ -3835,10 +3827,6 @@ void idPlayer::UpdateWeapon( void ) {
 		} else {
 			return;
 		}
-	}
-
-	if ( hiddenWeapon && tipUp && usercmd.buttons & BUTTON_ATTACK ) {
-		HideTip();
 	}
 
 	if ( g_dragEntity.GetBool() ) {
@@ -8956,43 +8944,6 @@ void idPlayer::Show( void ) {
 	if ( weap ) {
 		weap->ShowWorldModel();
 	}
-}
-
-/*
-===============
-idPlayer::ShowTip
-===============
-*/
-void idPlayer::ShowTip( const char *title, const char *tip, bool autoHide ) {
-	if ( tipUp ) {
-		return;
-	}
-	hud->SetStateString( "tip", tip );
-	hud->SetStateString( "tiptitle", title );
-	hud->HandleNamedEvent( "tipWindowUp" ); 
-	if ( autoHide ) {
-		PostEventSec( &EV_Player_HideTip, 5.0f );
-	}
-	tipUp = true;
-}
-
-/*
-===============
-idPlayer::HideTip
-===============
-*/
-void idPlayer::HideTip( void ) {
-	hud->HandleNamedEvent( "tipWindowDown" ); 
-	tipUp = false;
-}
-
-/*
-===============
-idPlayer::Event_HideTip
-===============
-*/
-void idPlayer::Event_HideTip( void ) {
-	HideTip();
 }
 
 /*

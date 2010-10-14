@@ -745,10 +745,6 @@ public:
 	void					UpdateHudStats( idUserInterface *hud );
 	void					UpdateHudAmmo();
 
-	void					ShowTip( const char *title, const char *tip, bool autoHide );
-	void					HideTip( void );
-	bool					IsTipVisible( void ) { return tipUp; };
-
 	virtual void			ClientPredictionThink( void );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
@@ -1242,7 +1238,6 @@ private:
 	void					Event_SelectWeapon( const char *weaponName );
 	void					Event_GetWeaponEntity( void );
 	void					Event_ExitTeleporter( void );
-	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
 	void					Event_GetIdealWeapon( void );
