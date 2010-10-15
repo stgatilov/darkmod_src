@@ -211,10 +211,9 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 				newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j];
 			}
 
+			// set these so they don't get recalculated in FinishSurfaces():
 	        newSurf.geometry->tangentsCalculated = true;
-			// TODO: are these nec.?
 	        newSurf.geometry->facePlanesCalculated = false;
-    	    //newSurf.geometry->generateNormals = true;
         	newSurf.geometry->generateNormals = false;
 			newSurf.geometry->numVerts = nV;
 			newSurf.geometry->numIndexes = nI;
@@ -232,7 +231,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		newSurf.id = 0;
 		hModel->AddSurface( newSurf );
 	}
-	
+
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
 
@@ -258,6 +257,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	int numVerts, numIndexes;
 	const modelSurface_t *surf, *surf_org;
 	modelSurface_t *newSurf;
+	bool needFinish = false;
 
 	idList<model_ofs_t> ofs;
 	model_ofs_t op;
@@ -377,6 +377,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			if (!surf)
 			{
 				continue;
+			}
+
+			// we need FinishSurfaces() to create the backsides
+			if (surf->shader->ShouldCreateBackSides())
+			{
+				needFinish = true;
 			}
 
 #ifdef M_TEST_BACKSIDES
@@ -532,7 +538,6 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		{
 			continue;
 		}
-
 		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
 
 		// precompute these
@@ -553,11 +558,15 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			}
 		}
 
-		// TODO:
 		const bool noShadow = (op.flags & LODE_MODEL_NOSHADOW);
 
-		numSurfaces = source->NumBaseSurfaces();
+		// if this model has shadows, we need FinishSurfaces() below:
+		if (!noShadow)
+		{
+			needFinish = true;
+		}
 
+		numSurfaces = source->NumBaseSurfaces();
 		int si = shaderIndexStart[op.lod];
 
 		// gameLocal.Warning("ModelGenerator: op.lod = %i si = %i", op.lod, si);
@@ -687,8 +696,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 #ifdef M_TIMINGS
 	timer_finishsurfaces.Start();
 #endif
-	// generate shadow hull as well as tris for twosided materials
-	hModel->FinishSurfaces();
+	if (needFinish)
+	{	
+		// generate shadow hull as well as tris for twosided materials
+		hModel->FinishSurfaces();
+	}
 
 #ifdef M_TIMINGS
 	timer_finishsurfaces.Stop();
