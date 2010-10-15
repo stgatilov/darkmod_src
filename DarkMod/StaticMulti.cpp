@@ -26,6 +26,17 @@ static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18
 // if defined, debug output
 //#define M_DEBUG 1
 
+// if define, measure time to update rendermodel
+//#define M_TIMINGS
+
+#ifdef M_TIMINGS
+static idTimer timer_updatemodel, timer_total;
+int updates = 0;
+#endif
+
+
+
+//===============================================================
 CLASS_DECLARATION( idStaticEntity, CStaticMulti )
 	EVENT( EV_Activate,				CStaticMulti::Event_Activate )
 END_CLASS
@@ -154,6 +165,11 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		return false;
 	}
 
+#ifdef M_TIMINGS
+	updates ++;
+	timer_total.Start();
+#endif
+
 	idVec3 origin = GetPhysics()->GetOrigin();
 	int n = m_Changes.Num();
 
@@ -258,6 +274,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		declManager->FindMaterial( m_MaterialName, false );
 	}
 
+#ifdef M_TIMINGS
+	timer_updatemodel.Start();
+#endif
+
 	if (force)
 	{
 		if (renderEntity.hModel)
@@ -274,6 +294,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
+#ifdef M_TIMINGS
+	timer_updatemodel.Stop();
+#endif
+
 	// TODO: this seems unnec.:
 	renderEntity.origin = origin;
 
@@ -286,6 +310,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	} else {
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
+
+#ifdef M_TIMINGS
+	timer_total.Stop();
+#endif
 
 	return true;
 }
@@ -302,6 +330,19 @@ void CStaticMulti::Think( void )
 	// Distance dependence checks
 	if ( active && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
 	{
+#ifdef M_TIMINGS
+		if (updates > 0)
+		{
+			gameLocal.Printf( "%s: updates %i, total time %0.2f ms (per update %0.2f ms), rendermodel %0.2f ms (per update %0.2f ms)\n",
+					GetName(),
+					updates,
+					timer_total.Milliseconds(),
+					timer_total.Milliseconds() / updates,
+					timer_updatemodel.Milliseconds(),
+					timer_updatemodel.Milliseconds() / updates );
+		}
+#endif
+
 		m_DistCheckTimeStamp = gameLocal.time;
 
 		idVec3 origin = GetPhysics()->GetOrigin();
