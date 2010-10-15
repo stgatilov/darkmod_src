@@ -13,7 +13,7 @@
 /*
    StaticMulti - a variant of func_static that can use a idPhys_StaticMulti
    				 for the clipmodel, e.g. has more than one clipmodel.
-				 Used for entities with megamodels as rendermodel.
+				 Used for entities with many models combined into one rendermodel.
 */
 
 #include "../idlib/precompiled.h"

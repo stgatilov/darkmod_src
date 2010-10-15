@@ -15,7 +15,6 @@
 
    Manipulate, combine or generate models at run time.
 
-TODO: use the supplied scale value when duplicating/combining models
 TODO: skip nodraw/_emptyname shaders when combining models
 */
 
@@ -29,8 +28,11 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 
+// uncomment to get the old, slower copy-vet code
+//#define M_COPY
+
 // uncomment to get detailed timing info
-//#define M_TIMINGS 1
+#define M_TIMINGS 1
 
 #ifdef M_TIMINGS
 static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces;
@@ -107,6 +109,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
 	modelSurface_s newSurf;
+	bool needScale = false;
 
 	if (NULL == source)
 	{
@@ -133,6 +136,11 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 #ifdef M_DEBUG
 	gameLocal.Printf("Source with %i surfaces. snapshot %s\n", numSurfaces, snapshotName);
 #endif
+
+	if (scale->x != 1.0f || scale->y != 1.0f || scale->z != 1.0f)
+	{
+		needScale = true;
+	}
 
 	// for each needed surface
 	for (int i = 0; i < numSurfaces; i++)
@@ -199,10 +207,25 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 			int nV = 0;		// vertexes
 			int nI = 0;		// indexes
 
-			// just one direct copy
-			for (int j = 0; j < surf->geometry->numVerts; j++)
+			if (needScale)
 			{
-				newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+				// a direct copy with scaling
+				for (int j = 0; j < surf->geometry->numVerts; j++)
+				{
+					idDrawVert *v = &(newSurf.geometry->verts[nV]);
+					newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+					v->xyz[0] *= scale->x;
+					v->xyz[1] *= scale->y;
+					v->xyz[2] *= scale->z;
+				}
+			}
+			else
+			{
+				// just one direct copy
+				for (int j = 0; j < surf->geometry->numVerts; j++)
+				{
+					newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+				}
 			}
 
 			// copy indexes
@@ -213,7 +236,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 			// set these so they don't get recalculated in FinishSurfaces():
 	        newSurf.geometry->tangentsCalculated = true;
-	        newSurf.geometry->facePlanesCalculated = false;
+	        newSurf.geometry->facePlanesCalculated = true;
         	newSurf.geometry->generateNormals = false;
 			newSurf.geometry->numVerts = nV;
 			newSurf.geometry->numIndexes = nI;
@@ -542,6 +565,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 		// precompute these
 		idMat3 a = op.angles.ToMat3();
+		idVec3 scale = op.scale;
 
 		const idRenderModel* source = LODs->Ptr()[op.lod];
 
@@ -616,12 +640,21 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			int nV = newTargetSurfInfoPtr->numVerts;
 			int nI = newTargetSurfInfoPtr->numIndexes;
 			int vmax = surf->geometry->numVerts;
+
+			dword newColor = op.color; 
+
 			// copy the vertexes and modify them at the same time (scale, rotate, offset)
 			for (int j = 0; j < vmax; j++)
 			{
-				newSurf->geometry->verts[nV] = surf->geometry->verts[j];
 				idDrawVert *v = &(newSurf->geometry->verts[nV]);
 
+				// copy data
+#ifdef M_COPY
+				newSurf->geometry->verts[nV] = surf->geometry->verts[j];
+				// scale
+				v->xyz[0] = v->xyz[0] * scale.x;
+				v->xyz[1] = v->xyz[1] * scale.y;
+				v->xyz[2] = v->xyz[2] * scale.z;
 				// rotate
 				v->xyz *= a;
 				// then offset
@@ -631,7 +664,29 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				v->tangents[0] *= a;
 				v->tangents[1] *= a;
 				// Set "per-entity" color if we have more than one entity:
-				v->SetColor( op.color );
+				v->SetColor( newColor );
+#else
+				idDrawVert *vs = &(surf->geometry->verts[j]);
+
+			//		idVec3 * idMat3 = 
+			//mat[ 0 ].x * vec.x + mat[ 1 ].x * vec.y + mat[ 2 ].x * vec.z,
+			//mat[ 0 ].y * vec.x + mat[ 1 ].y * vec.y + mat[ 2 ].y * vec.z,
+			//mat[ 0 ].z * vec.x + mat[ 1 ].z * vec.y + mat[ 2 ].z * vec.z );
+				
+				// copy-and-modify at once
+				// scale - rotate - translate
+				v->xyz[0] = vs->xyz[0] * scale.x;
+				v->xyz[1] = vs->xyz[1] * scale.y;
+				v->xyz[2] = vs->xyz[2] * scale.z;
+				v->xyz *= a;
+				v->xyz += op.offset;
+				v->normal = vs->normal * a;
+				v->tangents[0] = vs->tangents[0] * a;
+				v->tangents[1] = vs->tangents[1] * a;
+				v->SetColor( newColor );
+				v->st = vs->st;
+#endif
+
 /*				if (o == 1 || o == 2)
 				{
 					gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
@@ -708,7 +763,12 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 	if (model_combines % 10 == 0)
 	{
-		gameLocal.Printf( "ModelGenerator: combines %i, total time %0.2f ms (for each %0.2f ms), copy data %0.2f ms (for each %0.2f ms), finish surfaces %0.2f ms (for each %0.2f ms)\n",
+		gameLocal.Printf( "ModelGenerator: %s: combines %i, total time %0.2f ms (for each %0.2f ms), copy data %0.2f ms (for each %0.2f ms), finish surfaces %0.2f ms (for each %0.2f ms)\n",
+#ifdef M_COPY
+				"M_COPY",
+#else
+				"COPY_MODIFY",
+#endif
 				model_combines,
 				timer_combinemodels.Milliseconds(),
 				timer_combinemodels.Milliseconds() / model_combines,
