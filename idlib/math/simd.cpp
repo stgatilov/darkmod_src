@@ -82,8 +82,8 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 
 	if ( newProcessor != SIMDProcessor ) {
 		SIMDProcessor = newProcessor;
-		idLib::common->Printf( "%s using %s for SIMD processing\n", module, SIMDProcessor->GetName() );
 	}
+	idLib::common->Printf( "%s using %s for SIMD processing.\n", module, SIMDProcessor->GetName() );
 
 	if ( cpuid & CPUID_FTZ ) {
 		idLib::sys->FPU_SetFTZ( true );
