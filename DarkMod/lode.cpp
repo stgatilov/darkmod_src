@@ -294,6 +294,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 	for( int i = 0; i < m_Inhibitors.Num(); i++ )
 	{
 		savefile->WriteVec3( m_Inhibitors[i].origin );
+		savefile->WriteVec3( m_Inhibitors[i].size );
 		savefile->WriteBox( m_Inhibitors[i].box );
 		savefile->WriteBool( m_Inhibitors[i].inhibit_only );
 		savefile->WriteInt( m_Inhibitors[i].falloff );
@@ -516,6 +517,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 	for( int i = 0; i < num; i++ )
 	{
 		savefile->ReadVec3( m_Inhibitors[i].origin );
+		savefile->ReadVec3( m_Inhibitors[i].size );
 		savefile->ReadBox( m_Inhibitors[i].box );
 		savefile->ReadBool( m_Inhibitors[i].inhibit_only );
 		savefile->ReadInt( m_Inhibitors[i].falloff );
@@ -834,6 +836,9 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
 	// the entity already between spawning and us querying the info:
 	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
+
+	// TODO: add "lode_offset" to correct for mismatched origins
+
 	// these are ignored for pseudo classes (e.g. watch_breathren):
 	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", spawnArgs.GetString( "floor", "0") );
 	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
@@ -1229,20 +1234,20 @@ void Lode::Prepare( void )
 			if ( idStr( ent->GetEntityDefName() ) == "atdm:no_lode")
 			{
 				idBounds b = ent->GetRenderEntity()->bounds; 
-				idVec3 s = b.GetSize();
-				gameLocal.Printf( "LODE %s: Inhibitor size %0.2f %0.2f %0.2f\n", GetName(), s.x, s.y, s.z );
+				LodeInhibitor.size = b.GetSize();
+				gameLocal.Printf( "LODE %s: Inhibitor size %s\n", GetName(), LodeInhibitor.size.ToString() );
 
 				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
 				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
 				// or rotation spawnarg. Use clipmodel instead? Note: Unrotating the entity, but adding an "axis"
 				// spawnarg works.
-				LodeInhibitor.box = idBox( LodeInhibitor.origin, ent->GetRenderEntity()->bounds.GetSize() / 2, ent->GetPhysics()->GetAxis() );
+				LodeInhibitor.box = idBox( LodeInhibitor.origin, LodeInhibitor.size / 2, ent->GetPhysics()->GetAxis() );
 
 				LodeInhibitor.falloff = ParseFalloff( &ent->spawnArgs, ent->spawnArgs.GetString( "falloff", "none"), ent->spawnArgs.GetString( "func_a", "2"), &LodeInhibitor.factor );
 				if (LodeInhibitor.falloff > 4)
 				{
 					// func is not supported
-					gameLocal.Warning( "LODE %s: falloff=func not yet supported on inhibitors.\n", GetName() );
+					gameLocal.Warning( "LODE %s: falloff=func not yet supported on inhibitors, ignoring it.\n", GetName() );
 					LodeInhibitor.falloff = 0;
 				}
 
@@ -2103,40 +2108,55 @@ void Lode::PrepareEntities( void )
 									}
 								}
 
-								if (inhibited == true)
+								if (inhibited == true && m_Inhibitors[k].falloff > 0)
 								{
 									// if it would have been inhibited in the first place, see if the
 									// falloff does allow it, tho:
-									switch (m_Inhibitors[k].falloff)
+									float p = 1.0f;						// probability that it gets inhibitied
+
+									float factor = m_Inhibitors[k].factor;
+									int falloff = m_Inhibitors[k].falloff;
+									if (falloff == 3)
 									{
-									case 0:
-										// falloff none, do nothing
-										break;
-									case 4:
-										// not yet done
-										// LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
-										break;
-									case 1:
-										// cutoff - check if the coordinates are inside the circle
-										//LodeEntity.origin = idPolar3( RandomFloat(), RandomFloat() * 360.0f, 0 ).ToVec3();
-										break;
-									case 2:
-										// 2 - power
-										//LodeEntity.origin = idPolar3( RandomFloatSqr(), RandomFloat() * 360.0f, 0 ).ToVec3();
-										break;
-									case 3:
-										// 3 - root
-										// LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
-										break;
-									default:
-										// 4 - linear
-										// LodeEntity.origin = idPolar3( RandomFloatExp( 2.0f ), RandomFloat() * 360.0f, 0  ).ToVec3();
-										break;
+										// X ** 1/N = Nth root of X
+										factor = 1 / factor;
 									}
-									if (inhibited == true)
+									// distance to inhibitor center, normalized to 1x1 square
+									float x = 2.0f * (LodeEntity.origin.x - m_Inhibitors[k].origin.x) / m_Inhibitors[k].size.x;
+									float y = 2.0f * (LodeEntity.origin.y - m_Inhibitors[k].origin.y) / m_Inhibitors[k].size.y;
+									// Skip computing the SQRT() since sqrt(1) == 1, sqrt(d < 1) < 1 and sqrt(d > 1) > 1:
+									float d = x * x + y * y;
+									// outside, gets not inhibited
+									inhibited = false;
+									// inside the circle?
+									if (d < 1.0f)
 									{
-										//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
-										break;
+										if (falloff == 1)
+										{
+											// cutoff - always inhibit
+											p = 0.0f;
+										}
+										else
+										{
+											if (falloff == 4)
+											{
+												// 4 - linear
+												p = d;
+											}
+											else
+											{
+												// 2 or 3
+												p = idMath::Pow(d, factor);
+											}
+										}
+										// 5 - func (not implemented yet)
+										// if a random number is greater than "p", it will get prohibitied
+										if (RandomFloat() > p)
+										{
+											//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
+											inhibited = true;
+											break;
+										}
 									}
 								}
 							}
