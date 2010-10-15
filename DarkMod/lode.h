@@ -92,6 +92,8 @@ struct lode_class_t {
    											//!> setting changes
 	int						score;			//!< to find out how many entities (calculated at spawn time from score)
 	idVec3					origin;			//!< origin of the original target entity, useful for "flooring"
+	idVec3					offset;			//!< offset to displace the final entity, used to correct for models with their
+											//!< origin not at the base
 	float					cullDist;		//!< distance after where we remove the entity from the world
 	float					spawnDist;		//!< distance where we respawn the entity
 	float					spacing;		//!< min. distance between entities of this class

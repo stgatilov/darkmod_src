@@ -218,6 +218,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( m_Classes[i].scale_min );
 		savefile->WriteVec3( m_Classes[i].scale_max );
 		savefile->WriteVec3( m_Classes[i].origin );
+		savefile->WriteVec3( m_Classes[i].offset );
 		savefile->WriteInt( m_Classes[i].nocollide );
 		savefile->WriteBool( m_Classes[i].nocombine );
 		savefile->WriteBool( m_Classes[i].solid );
@@ -431,6 +432,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( m_Classes[i].scale_min );
 		savefile->ReadVec3( m_Classes[i].scale_max );
 		savefile->ReadVec3( m_Classes[i].origin );
+		savefile->ReadVec3( m_Classes[i].offset );
 		savefile->ReadInt( m_Classes[i].nocollide );
 		savefile->ReadBool( m_Classes[i].nocombine );
 		savefile->ReadBool( m_Classes[i].solid );
@@ -837,7 +839,8 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// the entity already between spawning and us querying the info:
 	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
 
-	// TODO: add "lode_offset" to correct for mismatched origins
+	// add "lode_offset" to correct for mismatched origins
+	LodeClass.offset = ent->spawnArgs.GetVector( "lode_offset", "0 0 0" );
 
 	// these are ignored for pseudo classes (e.g. watch_breathren):
 	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", spawnArgs.GetString( "floor", "0") );
@@ -2047,6 +2050,9 @@ void Lode::PrepareEntities( void )
 					LodeEntity.origin.z -= sink;
 				}
 
+				// correct for misplaced origins
+				LodeEntity.origin += m_Classes[i].offset;
+					
 				// LodeEntity.origin might now be outside of our oriented box, we check this later
 
 				// randomly rotate
@@ -2582,6 +2588,7 @@ void Lode::CombineEntities( void )
 				PseudoClass.solid = entityClass->solid;
 				PseudoClass.clip = entityClass->clip;
 				PseudoClass.img = NULL;
+				PseudoClass.offset = entityClass->offset;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics
