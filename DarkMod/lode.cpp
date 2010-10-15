@@ -1696,9 +1696,13 @@ void Lode::PrepareEntities( void )
 							x = 2.0f * (RandomFloat() - 0.5f);
 							y = 2.0f * (RandomFloat() - 0.5f);
 
-							// then see if it passes the test (inside and higher than the probability)
-							// compute distance to center
-							float d = idMath::Sqrt( x * x + y * y );
+							// Then see if it passes the test (inside and higher than the probability)
+							// compute distance to center. We skip computing the square root here,
+							// because SQRT(X) where X < 1 always produces a result < 1, and if X > 1
+							// the result is always > 1, so SQRT() does not change the result in regard
+							// to comparing it against 1.0f:
+							//float d = idMath::Sqrt( x * x + y * y );
+							float d = x * x + y * y;
 
 							if (d > 1.0f)
 							{
@@ -1714,17 +1718,18 @@ void Lode::PrepareEntities( void )
 							}
 
 							// compute the probability this position would pass based on "d" (0..1.0f)
-							// 2 or 3 => pow
+							// 4 => linear
 							if (falloff == 4)
 							{
-								p = 1.0f - d;
+								p = d;
 							}
+							// 2 or 3 => pow
 							else
 							{
-								p = 1.0f - idMath::Pow( d, factor );
+								p = idMath::Pow( d, factor );
 							}
 							// compute a random value and see if it is bigger than p
-							if (RandomFloat() < p)
+							if (RandomFloat() > p)
 							{
 								p = 1.0f;
 								break;
