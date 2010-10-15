@@ -32,7 +32,7 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 //#define M_COPY
 
 // uncomment to get detailed timing info
-#define M_TIMINGS 1
+//#define M_TIMINGS 1
 
 #ifdef M_TIMINGS
 static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces;
