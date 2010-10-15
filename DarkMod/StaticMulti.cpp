@@ -26,7 +26,7 @@ static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18
 // if defined, debug output
 //#define M_DEBUG 1
 
-// if define, measure time to update rendermodel
+// uncomment to measure time to update rendermodels
 //#define M_TIMINGS
 
 #ifdef M_TIMINGS

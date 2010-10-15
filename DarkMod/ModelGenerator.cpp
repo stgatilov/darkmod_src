@@ -29,6 +29,14 @@ static bool init_version = FileVersionList("$Id: ModelGenerator.cpp 4071 2010-07
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 
+// uncomment to get detailed timing info
+//#define M_TIMINGS 1
+
+#ifdef M_TIMINGS
+static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces;
+int model_combines = 0;
+#endif
+
 // This enables the code to test (and skip) automaticaly created backsides. Since NumBaseSurfaces()
 // seems to return only the first N original surfaces, this code is not neccessary and thus disabled:
 //#define M_TEST_BACKSIDES
@@ -264,6 +272,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	idList< model_target_surf > targetSurfInfo;
 	model_target_surf newTargetSurfInfo;
 	model_target_surf* newTargetSurfInfoPtr;
+
+#ifdef M_TIMINGS
+	timer_combinemodels.Start();
+	model_combines ++;
+#endif
 
 	// allocate memory for the model
 	if (NULL == hModel)
@@ -504,14 +517,16 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	}
 
 	// now combine everything into one model
+#ifdef M_TIMINGS
+	timer_copymodeldata.Start();
+#endif
 
 	const model_ofs_t *OffsetsPtr = offsets->Ptr();
 
 	// for each offset
 	for (int o = 0; o < offsets->Num(); o++)
 	{
-		op = OffsetsPtr[o];	//offsets->Ptr()[o];
-
+		op = OffsetsPtr[o];
 		// should be invisible, so skip
 		if (op.lod < 0)
 		{
@@ -632,6 +647,10 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		} // end for each surface on this offset
 	}	// end for each offset
 
+#ifdef M_TIMINGS
+	timer_copymodeldata.Stop();
+#endif
+
 	// finish the surfaces
 	for (int j = 0; j < targetSurfInfo.Num(); j++)
 	{
@@ -653,8 +672,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
         newSurf->geometry->tangentsCalculated = true;
 		// TODO: are these nec.?
-        newSurf->geometry->facePlanesCalculated = false;
-        //newSurf->geometry->facePlanesCalculated = true;
+        //newSurf->geometry->facePlanesCalculated = false;
+        newSurf->geometry->facePlanesCalculated = true;
         //newSurf->geometry->generateNormals = true;
         newSurf->geometry->generateNormals = false;
 		// calculate new bounds
@@ -665,8 +684,28 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		targetSurfInfo[j].surf.geometry = NULL;
 	}
 
+#ifdef M_TIMINGS
+	timer_finishsurfaces.Start();
+#endif
 	// generate shadow hull as well as tris for twosided materials
 	hModel->FinishSurfaces();
+
+#ifdef M_TIMINGS
+	timer_finishsurfaces.Stop();
+    timer_combinemodels.Stop();
+
+	if (model_combines % 10 == 0)
+	{
+		gameLocal.Printf( "ModelGenerator: combines %i, total time %0.2f ms (for each %0.2f ms), copy data %0.2f ms (for each %0.2f ms), finish surfaces %0.2f ms (for each %0.2f ms)\n",
+				model_combines,
+				timer_combinemodels.Milliseconds(),
+				timer_combinemodels.Milliseconds() / model_combines,
+				timer_copymodeldata.Milliseconds(),
+				timer_copymodeldata.Milliseconds() / model_combines,
+				timer_finishsurfaces.Milliseconds(),
+				timer_finishsurfaces.Milliseconds() / model_combines );
+	}
+#endif
 
 #ifdef M_DEBUG
 	hModel->Print();
