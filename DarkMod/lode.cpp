@@ -854,8 +854,23 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.sink_max = ent->spawnArgs.GetFloat( "lode_sink_max", spawnArgs.GetString( "sink_max", "0") );
 	if (LodeClass.sink_max < LodeClass.sink_min) { LodeClass.sink_max = LodeClass.sink_min; }
 
-	LodeClass.scale_min = ent->spawnArgs.GetVector( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
-	LodeClass.scale_max = ent->spawnArgs.GetVector( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+	// to support scaling of all axes with the same value, peek into lode_scale_min and lode_scale_max
+	idStr scale_min = ent->spawnArgs.GetString( "lode_scale_min", "1.0");
+	idStr scale_max = ent->spawnArgs.GetString( "lode_scale_max", "1.0");
+
+	if (scale_min.Find(' ') < 0 && scale_max.Find(' ') < 0)
+	{
+		float max = ent->spawnArgs.GetFloat( "lode_scale_max", "1.0");
+		float min = ent->spawnArgs.GetFloat( "lode_scale_min", "1.0");
+		// set x and y to 0 to signal code to use axes-equal scaling
+		LodeClass.scale_max = idVec3( 0, 0, max );
+		LodeClass.scale_min = idVec3( 0, 0, min );
+	}
+	else
+	{
+		LodeClass.scale_min = ent->spawnArgs.GetVector( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+		LodeClass.scale_max = ent->spawnArgs.GetVector( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+	}
 	if (LodeClass.scale_max.x < LodeClass.scale_min.x) { LodeClass.scale_max.x = LodeClass.scale_min.x; }
 	if (LodeClass.scale_max.y < LodeClass.scale_min.y) { LodeClass.scale_max.y = LodeClass.scale_min.y; }
 	if (LodeClass.scale_max.z < LodeClass.scale_min.z) { LodeClass.scale_max.z = LodeClass.scale_min.z; }
@@ -2251,11 +2266,20 @@ void Lode::PrepareEntities( void )
 			LodeEntity.classIdx = i;
 
 			// compute a random value between scale_min and scale_max
-			idVec3 scale = m_Classes[i].scale_max - m_Classes[i].scale_min; 
-			scale.x = scale.x * RandomFloat() + m_Classes[i].scale_min.x;
-			scale.y = scale.y * RandomFloat() + m_Classes[i].scale_min.y;
-			scale.z = scale.z * RandomFloat() + m_Classes[i].scale_min.z;
-			LodeEntity.scale = scale;
+			if (m_Classes[i].scale_min.x == 0)
+			{
+				// axes-equal scaling
+				float factor = RandomFloat() * (m_Classes[i].scale_max.z - m_Classes[i].scale_min.z) + m_Classes[i].scale_min.z;
+				LodeEntity.scale = idVec3( factor, factor, factor );
+			}
+			else
+			{
+				idVec3 scale = m_Classes[i].scale_max - m_Classes[i].scale_min; 
+				scale.x = scale.x * RandomFloat() + m_Classes[i].scale_min.x;
+				scale.y = scale.y * RandomFloat() + m_Classes[i].scale_min.y;
+				scale.z = scale.z * RandomFloat() + m_Classes[i].scale_min.z;
+				LodeEntity.scale = scale;
+			}
 
 			// precompute bounds for a fast collision check
 			LodeEntityBounds.Append( (idBounds (m_Classes[i].size ) + LodeEntity.origin) * LodeEntity.angles.ToMat3() );
