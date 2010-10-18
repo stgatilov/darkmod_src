@@ -420,11 +420,12 @@ void CStaticMulti::Think( void )
 				// 0 => default model, 1 => first stage etc
 				// TODO: compute flags for noclip
 				int flags = 0;
+				m_LODLevel ++;
 				if ( LOD->noshadowsLOD & (1 << m_LODLevel) )
 				{
 					flags += LODE_MODEL_NOSHADOW;
 				}
-				AddChange(i, m_LODLevel + 1, flags);
+				AddChange(i, m_LODLevel, flags);
 			}
 		}
 
