@@ -894,9 +894,10 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		{
 			m_LOD->DistLODSq[i] *= m_LOD->DistLODSq[i];
 
-			// the last level is "hide", so we don't need a model, skin or offset here
+			// the last level is "hide", so we don't need a model, skin, offset or noshadows there
 			if (i < LOD_LEVELS - 1)
 			{
+				// not the last level
 				sprintf(temp, "model_lod_%i", i);
 				m_LOD->ModelLOD[i] = dict->GetString( temp );
 				if (m_LOD->ModelLOD[i].Length() == 0) { m_LOD->ModelLOD[i] = m_LOD->ModelLOD[0]; }
@@ -2147,7 +2148,8 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 			}
 			m_SkinLODCur = m_LODLevel;
 		}
-		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
+		// level 0 is the default
+		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << (m_LODLevel + 1))) > 0 ? 1 : 0;
 
 		// switched LOD
 		return true;
