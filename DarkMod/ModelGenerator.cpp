@@ -15,7 +15,14 @@
 
    Manipulate, combine or generate models at run time.
 
-TODO: skip nodraw/_emptyname shaders when combining models
+TODO: implement create-backsides code, that simply merges the front and backside,
+	  this would mean we don't need to call FinishSurfaces(). We could even pre-compute
+	  models with the backsides already created. Would be useful for models that have
+	  backsides, but no shadowcasting surfaces.
+TODO: If a material casts a shadow (but is not textures/common/shadow*), but the model
+	  should not cast a shadow after combine, then clone the material (keep track of
+	  all clone materials, Save/Restore/Destroy them) and set noshadows on the clone,
+	  then use it in a new surface.
 */
 
 #include "../idlib/precompiled.h"
@@ -67,6 +74,7 @@ CModelGenerator::Restore
 ===============
 */
 void CModelGenerator::Restore( idRestoreGame *savefile ) {
+	m_shadowTexturePrefix = "textures/common/shadow";
 }
 
 /*
@@ -75,6 +83,7 @@ ModelGenerator::Init
 ===============
 */
 void CModelGenerator::Init( void ) {
+	m_shadowTexturePrefix = "textures/common/shadow";
 }
 
 /*
@@ -368,19 +377,31 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		// count how many instances in offsets use this LOD model, so we can compute the
 		// number of needed vertexes/indexes:
 		int used = 0;
+		// Count how many instances in offsets use this LOD model, and need shadow-casting
+		// surfaces intact.
+		int shadows = 0;
 		for (int o = 0; o < offsets->Num(); o++)
 		{
 			op = offsets->Ptr()[o];
 			if (op.lod == i)
 			{
 				used ++;
+				if (! (op.flags & LODE_MODEL_NOSHADOW) )
+				{
+					shadows++;
+				}
 			}
 		}
 
-		// if not used at all, skip it
-		if (used == 0)
+		// if not used at all (but use shadow as it is <= used), skip it
+		if (shadows == 0)
 		{
 			shaderIndexStart.Append( -1 );	// dummy value, not used but need to reserve the spot
+
+#ifdef M_DEBUG
+			numSurfaces = source->NumBaseSurfaces();
+			gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used 0 times\n", i, numSurfaces );
+#endif
 			continue;
 		}
 
@@ -388,7 +409,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		numSurfaces = source->NumBaseSurfaces();
 
 #ifdef M_DEBUG
-		gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used %i times.\n", i, numSurfaces, used );
+		gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used %i times, %i times with shadows.\n", i, numSurfaces, used, shadows );
 #endif
 
 		shaderIndexStart.Append( shaderIndexStartOfs );	// where in shaderIndex starts the map for this LOD stage?
@@ -497,8 +518,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			}
 
 			// increase the nec. counts
-			targetSurfInfo[found].numVerts += used * surf->geometry->numVerts;
-			targetSurfInfo[found].numIndexes += used * surf->geometry->numIndexes;
+			// shadow is <= used, so use it to get the correct counts:
+			targetSurfInfo[found].numVerts += shadows * surf->geometry->numVerts;
+			targetSurfInfo[found].numIndexes += shadows * surf->geometry->numIndexes;
 
 			shaderIndex.Append( found );		// surface i ( X - shaderIndexStartOfs ) => shaders[Y];
 			// for each LOD model, note which source surface maps to which target surface
@@ -584,12 +606,6 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 		const bool noShadow = (op.flags & LODE_MODEL_NOSHADOW);
 
-		// if this model has shadows, we need FinishSurfaces() below:
-		if (!noShadow)
-		{
-			needFinish = true;
-		}
-
 		numSurfaces = source->NumBaseSurfaces();
 		int si = shaderIndexStart[op.lod];
 
@@ -604,11 +620,29 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				continue;
 			}
 
-			// TODO:
-			// if (noShadow && surf->shader->GetName() == 'textures/common/shadow')
-			//{
-			//	continue;
-			//}
+			bool castsShadow = surf->shader->SurfaceCastsShadow();
+
+			idStr shaderName = surf->shader->GetName();
+
+			idStr s = shaderName.Left( m_shadowTexturePrefix.Length() );
+#ifdef M_DEBUG
+			gameLocal.Printf("ModelGenerator: Surface %i (%s (%s)) castsShadows %s stage noshadow %s, prefix: %s\n", 
+					i, surf->shader->GetName(), s.c_str(), castsShadow ? "yes" : "no", noShadow ? "yes" : "no", m_shadowTexturePrefix.c_str() );
+#endif
+			// if this is a pure shadow-casting surface, skip it
+			if (noShadow && castsShadow && shaderName.Left( m_shadowTexturePrefix.Length() ) == m_shadowTexturePrefix )
+			{
+#ifdef M_DEBUG
+				gameLocal.Printf("Skipping surface %i (%s).\n", i, surf->shader->GetName() );
+#endif
+				continue;
+			}
+
+			// if this surface casts a shadow, we need FinishSurfaces() below:
+			if ( castsShadow )
+			{
+				needFinish = true;
+			}
 
 			// find the surface on the target
 			int st = shaderIndex[ si + i ];
@@ -620,8 +654,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			// -1 => skip this surface
 			if (st < 0)
 			{
-				gameLocal.Warning("Skipping surface %i.\n", i);
 #ifdef M_DEBUG
+				gameLocal.Warning("Skipping surface %i.\n", i);
 #endif
 				continue;
 			}

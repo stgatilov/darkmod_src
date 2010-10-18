@@ -166,6 +166,8 @@ public:
 
 private:
 
+	// used to identify textures that are pure shadow casting
+	idStr					m_shadowTexturePrefix;
 };
 
 #endif /* !__DARKMOD_MODELGENERATOR_H__ */
