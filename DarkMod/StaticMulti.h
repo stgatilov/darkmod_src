@@ -34,6 +34,8 @@ typedef struct {
 	int				entity;					// the entity index in the offsets list this change applies to
 	int				oldLOD;					// the original model combined into the megamodel
 	int				newLOD;					// the new model to be combined into the megamodel
+	int				oldFlags;				// the original flags for this offset
+	int				newFlags;				// the new flags (f.i. noshadows)
 } model_changeinfo_t;
 
 class CStaticMulti : public idStaticEntity {
@@ -61,9 +63,10 @@ private:
 	void						Event_Activate( idEntity *activator );
 	
 	/**
-	* Marks the model for the entity #entity (offset into Offsets list) to be changed to newLOD.
+	* Marks the model for the entity #entity (offset into Offsets list) to be changed to newLOD, and the
+	* new flags set in newFlags (f.i. noShadows).
 	*/
-	void						AddChange( const int entity, const int newLOD );
+	void						AddChange( const int entity, const int newLOD, const int newFlags );
 
 	/**
 	* The entity presenting/using this model is going to get culled, so stop all updates.

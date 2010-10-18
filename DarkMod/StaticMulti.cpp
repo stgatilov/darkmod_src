@@ -14,6 +14,9 @@
    StaticMulti - a variant of func_static that can use a idPhys_StaticMulti
    				 for the clipmodel, e.g. has more than one clipmodel.
 				 Used for entities with many models combined into one rendermodel.
+
+TODO: track skin changes on the different LOD stages
+
 */
 
 #include "../idlib/precompiled.h"
@@ -377,10 +380,11 @@ void CStaticMulti::Think( void )
 #ifdef M_DEBUG
 			gameLocal.Printf("%s dummy LOD data.\n", GetName() );
 #endif
+			// TODO: fill this structure
 			LOD = new lod_data_t;
 		}
 
-		bool bDistCheckXYOnly = LOD && LOD->bDistCheckXYOnly ? true : false;
+		bool bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
 
 		// TODO: go through all offsets and calculate the new LOD stage
 		int num = m_Offsets->Num();
@@ -407,13 +411,20 @@ void CStaticMulti::Think( void )
 				m_LODLevel = -2;
 			}
 			// if differs, add a changeset
+			// TODO: compare flags, if they differ, also add a change
 			if (orgLOD != m_LODLevel)
 			{
 #ifdef M_DEBUG
 				gameLocal.Printf("%s: changing from LOD %i to %i\n", GetName(), orgLOD, m_LODLevel);
 #endif
 				// 0 => default model, 1 => first stage etc
-				AddChange(i, m_LODLevel + 1);
+				// TODO: compute flags for noclip
+				int flags = 0;
+				if ( LOD->noshadowsLOD & (1 << m_LODLevel) )
+				{
+					flags += LODE_MODEL_NOSHADOW;
+				}
+				AddChange(i, m_LODLevel + 1, flags);
 			}
 		}
 
@@ -489,6 +500,8 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Changes[i].entity );
 		savefile->WriteInt( m_Changes[i].oldLOD );
 		savefile->WriteInt( m_Changes[i].newLOD );
+		savefile->WriteInt( m_Changes[i].oldFlags );
+		savefile->WriteInt( m_Changes[i].newFlags );
 	}
 }
 
@@ -541,11 +554,12 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Changes[i].entity );
 		savefile->ReadInt( m_Changes[i].oldLOD );
 		savefile->ReadInt( m_Changes[i].newLOD );
+		savefile->ReadInt( m_Changes[i].oldFlags );
+		savefile->ReadInt( m_Changes[i].newFlags );
 	}
 
-	// recompute our combined model
+	// recompute our combined model to restore it
 	UpdateRenderModel( true);
-
 }
 
 /*
@@ -582,7 +596,7 @@ void CStaticMulti::Event_Activate( idEntity *activator ) {
 CStaticMulti::AddChange
 ===============
 */
-void CStaticMulti::AddChange( const int entity, const int newLOD ) {
+void CStaticMulti::AddChange( const int entity, const int newLOD, const int newFlags ) {
 
 	// go through our changes and see if we already have one for this entity
 	int n = m_Changes.Num();
@@ -593,7 +607,9 @@ void CStaticMulti::AddChange( const int entity, const int newLOD ) {
 		{
 			// If the new change changes the model back to what it already is, remove
 			// the change set:
-			if ( m_Changes[i].oldLOD == newLOD )
+			// TODO: track skin changes
+			if ( ( m_Changes[i].oldLOD == newLOD ) &&
+				 ( m_Changes[i].oldFlags == newFlags ) )
 			{
 				// TODO: m_Changes.RemoveIndex(i,false);
 #ifdef M_DEBUG
@@ -608,6 +624,7 @@ void CStaticMulti::AddChange( const int entity, const int newLOD ) {
 #endif
 				// keep the change set with the new value
 				m_Changes[i].newLOD = newLOD;
+				m_Changes[i].newFlags = newFlags;
 			}
 			// TODO: move changed change sets to the front of the list, based
 			// on the assumption they might change back again when the player
@@ -623,10 +640,12 @@ void CStaticMulti::AddChange( const int entity, const int newLOD ) {
 
 	change.entity = entity;
 	change.oldLOD = m_Offsets->Ptr()[ entity ].lod;
+	change.oldFlags = m_Offsets->Ptr()[ entity ].flags;
 	change.newLOD = newLOD;
+	change.newFlags = newFlags;
 
 #ifdef M_DEBUG
-	gameLocal.Printf("%s: Adding change for entity %i from LOD %i to %i\n", GetName(), entity, change.oldLOD, change.newLOD );
+	gameLocal.Printf("%s: Adding change for entity %i from LOD %i (flags %i) to %i (flags %i)\n", GetName(), entity, change.oldLOD, change.oldFlags, change.newLOD, change.newFlags );
 #endif
 	m_Changes.Append( change );
 
