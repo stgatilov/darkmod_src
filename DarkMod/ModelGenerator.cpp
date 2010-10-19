@@ -23,6 +23,8 @@ TODO: If a material casts a shadow (but is not textures/common/shadow*), but the
 	  should not cast a shadow after combine, then clone the material (keep track of
 	  all clone materials, Save/Restore/Destroy them) and set noshadows on the clone,
 	  then use it in a new surface.
+TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vertexes,
+	  and omit FinishSurfaces() on the combined model. Might speed it up a lot.
 */
 
 #include "../idlib/precompiled.h"
