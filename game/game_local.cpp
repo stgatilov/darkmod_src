@@ -99,10 +99,11 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 
 /* This list isn't actually used by the code, it's here just for reference. The code
    accepts any first word in the description as the surface type name: */
+// grayman - #1421/1422 - added "hardwood"
 const char *idGameLocal::m_NewSurfaceTypes[ MAX_SURFACE_TYPES * 2 + 1] = {
 	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
 	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "slate",
-	"straw", "armor_leath", "armor_chain", "armor_plate", "climbable", "paper"
+	"straw", "armor_leath", "armor_chain", "armor_plate", "climbable", "paper","hardwood"
 };
 
 fontInfoEx_t font_an;

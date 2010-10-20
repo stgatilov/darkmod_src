@@ -6394,11 +6394,10 @@ void idPlayer::Move( void )
 				tempStr = localSound + "default";
 				sound = spawnArgs.GetString(tempStr.c_str());
 			}
-
 			// DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Climb sound: %s\r", TempStr.c_str() );
 			if (sound.Length() > 0)
 			{
-				StartSound(tempStr.c_str(), SND_CHANNEL_ANY, 0, false, NULL);
+				StartSound(tempStr.c_str(), SND_CHANNEL_BODY, 0, false, NULL); // grayman - #2341 - was SND_CHANNEL_ANY
 			}
 		}
 	}

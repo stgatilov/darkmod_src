@@ -1114,6 +1114,12 @@ void idEntity::Spawn( void )
 		// Have to start thinking if we're distance dependent
 		BecomeActive( TH_THINK );
 		}
+
+	// init most recent voice and body sound data for AI - grayman #2341
+	previousVoiceShader = NULL;	// shader for the most recent voice request
+	previousVoiceIndex = 0;		// index of most recent voice sound requested (1->N, where there are N sounds)
+	previousBodyShader = NULL;	// shader for the most recent body sound request
+	previousBodyIndex = 0;		// index of most recent body sound requested (1->N, where there are N sounds)
 }
 
 /*
@@ -1601,6 +1607,13 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
 
 	SaveLOD(savefile);
+
+	// grayman #2341 - save previous voice and body shaders and indices
+
+	savefile->WriteSoundShader(previousVoiceShader);
+	savefile->WriteInt(previousVoiceIndex);
+	savefile->WriteSoundShader(previousBodyShader);
+	savefile->WriteInt(previousBodyIndex);
 }
 
 void idEntity::RestoreLOD( idRestoreGame *savefile )
@@ -1897,6 +1910,13 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
 
 	RestoreLOD( savefile );
+
+	// grayman #2341 - restore previous voice and body shaders and indices
+
+	savefile->ReadSoundShader((const idSoundShader *&)previousVoiceShader);
+	savefile->ReadInt(previousVoiceIndex);
+	savefile->ReadSoundShader((const idSoundShader *&)previousBodyShader);
+	savefile->ReadInt(previousBodyIndex);
 }
 
 /*
@@ -3308,6 +3328,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 
 	// play the audible sound
 	shader = declManager->FindSound( sound );
+
 	return StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
 }
 
@@ -3344,9 +3365,37 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	}
 
 	// set a random value for diversity unless one was parsed from the entity
-	if ( refSound.diversity < 0.0f ) {
+
+	if ( refSound.diversity < 0.0f )
+	{
 		diversity = gameLocal.random.RandomFloat();
-	} else {
+
+		// grayman #2341 - adjust diversity based on previous sound request,
+		//				   to eliminate consecutive sounds. This
+		//				   is necessary because sometimes the engine plays the
+		//				   wrong sound when the 'no_dup' flag is set.
+
+		int n = shader->GetNumSounds();
+		if (n > 1) // duplication is expected when there's only 1 sound choice
+		{
+			if (channel == SND_CHANNEL_VOICE)
+			{
+				if ((shader == previousVoiceShader) && (previousVoiceIndex == static_cast<int>(diversity * n) + 1))
+				{
+					diversity = (static_cast<float> (previousVoiceIndex % n))/(static_cast<float> (n)) + 0.01; // add 0.01 to move off the boundary
+				}
+			}
+			else if (channel == SND_CHANNEL_BODY)
+			{
+				if ((shader == previousBodyShader) && (previousBodyIndex == static_cast<int>(diversity * n) + 1))
+				{
+					diversity = (static_cast<float> (previousBodyIndex % n))/(static_cast<float> (n)) + 0.01; // add 0.01 to move off the boundary
+				}
+			}
+		}
+	}
+	else
+	{
 		diversity = refSound.diversity;
 	}
 
@@ -3354,10 +3403,28 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	if ( !refSound.referenceSound ) {
 		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter();
 	}
-
+			
 	UpdateSound();
 
 	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
+
+	// grayman #2341 - It's rare for the engine to not play the sound, but it can happen. If this happens, don't
+	// register this sound as the previous sound played. Stick with the one before that.
+
+	if (len > 0)
+	{
+		if (channel == SND_CHANNEL_VOICE)
+		{
+			previousVoiceShader = (idSoundShader*)shader;	// shader for the most recent voice request
+			previousVoiceIndex  = static_cast<int>(diversity * shader->GetNumSounds()) + 1;	// index of most recent sound requested (1->N, where there are N sounds)
+		}
+		else if (channel == SND_CHANNEL_BODY)
+		{
+			previousBodyShader = (idSoundShader*)shader;	// shader for the most recent body request
+			previousBodyIndex  = static_cast<int>(diversity * shader->GetNumSounds()) + 1;	// index of most recent sound requested (1->N, where there are N sounds)
+		}
+	}
+
 	if ( length ) {
 		*length = len;
 	}
@@ -3890,7 +3957,7 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 	if ( !InitBind( master ) )
 		return;
 
-	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+		// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
 		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
 		&& !IsType( idAnimatedEntity::Type )
@@ -6991,7 +7058,6 @@ void idEntity::Event_CopyBind( idEntity* other )
 	jointHandle_t joint = other->GetBindJoint();
 
 	int body = other->GetBindBody();
-
 	if( joint != INVALID_JOINT )
 	{
 		// joint is specified so bind to that joint
@@ -7004,7 +7070,7 @@ void idEntity::Event_CopyBind( idEntity* other )
 	}
 	else
 	{
-		// no joint and no body specified to bind to master
+		// no joint and no body specified, so bind to master
 		Bind( master, true );
 
 		// greebo: If the bind master is static, set the solid for team flag

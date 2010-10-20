@@ -921,6 +921,7 @@ void CGlobal::InitSurfaceHardness()
 	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("armor_chain"), hard );
 	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("armor_plate"), hard );
 	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("climbable"), hard );
+	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("hardwood"), hard ); // grayman #1421/1422
 
 	// The soft ones
 	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("flesh"), soft );
