@@ -180,6 +180,7 @@ public:
 	void				CapLength( int );
 	void				Fill( const char ch, int newlen );
 
+	// returns -1 if not found otherwise the index of the char
 	int					Find( const char c, int start = 0, int end = -1 ) const;
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
 	// Tels: Count how often c occurs between start and end
@@ -244,6 +245,7 @@ public:
 	static void			Copynz( char *dest, const char *src, int destsize );
 	static int			snPrintf( char *dest, int size, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	static int			vsnPrintf( char *dest, int size, const char *fmt, va_list argptr );
+	// returns -1 if not found otherwise the index of the char
 	static int			FindChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			CountChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			FindText( const char *str, const char *text, bool casesensitive = true, int start = 0, int end = -1 );
