@@ -60,10 +60,11 @@ const float MANTLE_TEST_INCREMENT = 1.0;
 * This was determined for PM_FRICTION = 6.0 and should change if
 *	PM_FRICTION changes from 6.0.
 **/
-const float PM_NOFRICTION_SPEED = 71.0f;
+const float PM_NOFRICTION_SPEED   = 71.0f;
 
-const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
-const float OVERCLIP			= 1.001f;
+const float MIN_WALK_NORMAL		  = 0.7f;  // can't walk on very steep slopes (run = 1, rise = 1)
+const float MIN_WALK_SLICK_NORMAL = 0.89f; // grayman #2409 - higher value for slippery slopes (run = 1, rise = 0.5)
+const float OVERCLIP			  = 1.001f;
 
 // TODO (ishtvan): Move the following to INI file or player def file:
 
@@ -1754,8 +1755,21 @@ void idPhysics_Player::CheckGround( void ) {
 		return;
 	}
 	
+	// grayman #2409 - apply velocity change due to friction loss on slick surfaces
+	
+	bool slick = ((groundMaterial->GetSurfaceFlags() & SURF_SLICK) != 0);
+	float walkNormal = MIN_WALK_NORMAL;
+	if (slick)
+	{
+		idVec3 velocityChange = groundTrace.c.normal;
+		velocityChange.z = 0; // no vertical component
+		current.velocity += 3*velocityChange;
+		walkNormal = MIN_WALK_SLICK_NORMAL;
+	}
+
 	// slopes that are too steep will not be considered onground
-	if ( ( groundTrace.c.normal * -gravityNormal ) < MIN_WALK_NORMAL ) {
+	if ( ( groundTrace.c.normal * -gravityNormal ) < walkNormal ) // grayman #2409
+	{
 		if ( debugLevel ) {
 			gameLocal.Printf( "%i:steep\n", c_pmove );
 		}
