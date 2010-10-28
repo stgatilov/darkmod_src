@@ -604,7 +604,7 @@ void idPhysics_Player::Friction( void )
 			// grayman - #2409 - less friction on slick surfaces
 
 			float friction = PM_FRICTION; // default
-			if (groundMaterial && (groundMaterial->GetSurfaceFlags() & SURF_SLICK))
+			if (groundMaterial && (groundMaterial->IsSlick()))
 			{
 				friction *= PM_SLICK; // reduce friction
 			}
@@ -848,7 +848,7 @@ void idPhysics_Player::WalkMove( void )
 	float accelerate = 0;
 
 	// when a player gets hit, they temporarily lose full control, which allows them to be moved a bit
-	if ( /*( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || grayman #2409 */ current.movementFlags & PMF_TIME_KNOCKBACK ) {
+	if ( /*( groundMaterial && groundMaterial->IsSlick() ) || grayman #2409 */ current.movementFlags & PMF_TIME_KNOCKBACK ) {
 		accelerate = PM_AIRACCELERATE;
 	}
 	else 
@@ -865,7 +865,7 @@ void idPhysics_Player::WalkMove( void )
 
 	Accelerate( wishdir, wishspeed, accelerate );
 
-	if ( /*( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || grayman #2409 */ current.movementFlags & PMF_TIME_KNOCKBACK )
+	if ( /*( groundMaterial && groundMaterial->IsSlick() ) || grayman #2409 */ current.movementFlags & PMF_TIME_KNOCKBACK )
 	{
 		current.velocity += gravityVector * frametime;
 	}
@@ -1457,7 +1457,7 @@ void idPhysics_Player::LadderMove( void )
 
 	// if there is a climbable surface in front of the player, stick to it
 	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
-		&& (SurfTrace.c.material->GetSurfaceFlags() & SURF_LADDER ) )
+		&& (SurfTrace.c.material->IsLadder()) )
 	{
 		m_vClimbPoint = SurfTrace.endpos + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
 		AttachVel = 10 * (m_vClimbPoint - current.origin);
@@ -1757,7 +1757,7 @@ void idPhysics_Player::CheckGround( void ) {
 	
 	// grayman #2409 - apply velocity change due to friction loss on slick surfaces
 	
-	bool slick = ((groundMaterial->GetSurfaceFlags() & SURF_SLICK) != 0);
+	bool slick = groundMaterial->IsSlick();
 	float walkNormal = MIN_WALK_NORMAL;
 	if (slick)
 	{
@@ -2096,7 +2096,7 @@ void idPhysics_Player::CheckClimbable( void )
 		// if a climbable surface
 		if ( 
 			trace.c.material 
-			&& (trace.c.material->GetSurfaceFlags() & SURF_LADDER)
+			&& (trace.c.material->IsLadder())
 			&& 	gameLocal.time > m_NextAttachTime
 			) 
 		{
@@ -2112,7 +2112,7 @@ void idPhysics_Player::CheckClimbable( void )
 			if ( trace.fraction < 1.0f ) 
 			{
 				// if it also is a ladder surface
-				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
+				if ( trace.c.material && trace.c.material->IsLadder() )
 				{
 					m_vClimbNormal = trace.c.normal;
 					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
