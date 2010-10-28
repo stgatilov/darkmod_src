@@ -365,8 +365,8 @@ public:
 	bool				IsDrawn( void ) const { return ( numStages > 0 || entityGui != 0 || gui != NULL ); }
 
 						// Tels: Added for TDM v1.03
-	bool				IsSlick( void ) const { return ((materialFlags & SURF_SLICK) != 0); };
-	bool				IsLadder( void ) const { return ((materialFlags & SURF_LADDER) != 0); };
+	bool				IsSlick( void ) const { return ((surfaceFlags & SURF_SLICK) != 0); };
+	bool				IsLadder( void ) const { return ((surfaceFlags & SURF_LADDER) != 0); };
 
 						// returns true if the material will draw any non light interaction stages
 	bool				HasAmbient( void ) const { return ( numAmbientStages > 0 ); }
