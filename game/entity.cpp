@@ -1608,12 +1608,13 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	SaveLOD(savefile);
 
-	// grayman #2341 - save previous voice and body shaders and indices
+	// grayman #2341 - don't save previous voice and body shaders and indices,
+	// since they're irrelevant across saved games
 
-	savefile->WriteSoundShader(previousVoiceShader);
-	savefile->WriteInt(previousVoiceIndex);
-	savefile->WriteSoundShader(previousBodyShader);
-	savefile->WriteInt(previousBodyIndex);
+	savefile->WriteSoundShader(NULL);	// previousVoiceShader
+	savefile->WriteInt(0);				// previousVoiceIndex
+	savefile->WriteSoundShader(NULL);	// previousBodyShader
+	savefile->WriteInt(0);				// previousBodyIndex
 }
 
 void idEntity::RestoreLOD( idRestoreGame *savefile )
