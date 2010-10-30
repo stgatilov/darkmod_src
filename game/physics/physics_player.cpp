@@ -1757,7 +1757,7 @@ void idPhysics_Player::CheckGround( void ) {
 	
 	// grayman #2409 - apply velocity change due to friction loss on slick surfaces
 	
-	bool slick = groundMaterial->IsSlick();
+	bool slick = (groundMaterial && (groundMaterial->IsSlick()));
 	float walkNormal = MIN_WALK_NORMAL;
 	if (slick)
 	{
