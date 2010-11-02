@@ -524,6 +524,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 				p_hidingAreaNode, 
 				hidingSpot.goal, 
 				hidingSpot.hidingSpotTypes,
+				// TODO: gcc says these two are used uninitialized:
 				hidingSpot.lightQuotient,
 				hidingSpot.qualityWithoutDistanceFactor,
 				hidingSpot.quality,
