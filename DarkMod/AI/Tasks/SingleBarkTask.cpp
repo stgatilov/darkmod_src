@@ -81,23 +81,32 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	// Push the message and play the sound
-	if (_message != NULL)
+	// grayman #2169 - no barks while underwater
+
+	if (!owner->MouthIsUnderwater())
 	{
-		owner->AddMessage(_message);
+		// Push the message and play the sound
+		if (_message != NULL)
+		{
+			owner->AddMessage(_message);
+		}
+
+		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+	
+		// Sanity check the returned length
+		if (_barkLength == 0)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Received 0 sound length when playing %s.\r", _soundName.c_str());
+		}
+	}
+	else
+	{
+		_barkLength = 0;
 	}
 
-	_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
 	_barkStartTime = gameLocal.time;
-
 	_endTime = _barkStartTime + _barkLength;
 
-	// Sanity check the returned length
-	if (_barkLength == 0)
-	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Received 0 sound length when playing %s.\r", _soundName.c_str());
-	}
-	
 	// End the task as soon as we've finished playing the sound
 	return !IsBarking();
 }

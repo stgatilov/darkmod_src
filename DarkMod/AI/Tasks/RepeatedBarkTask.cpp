@@ -67,13 +67,22 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 	{
 		// The time has come, bark now
 
-		// Setup the message to be propagated, if we have one
-		if (_message != NULL)
-		{
-			owner->AddMessage(_message);
-		}
+		// grayman #2169 - no barks while underwater
 
-		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+		if (!owner->MouthIsUnderwater())
+		{
+			// Setup the message to be propagated, if we have one
+			if (_message != NULL)
+			{
+				owner->AddMessage(_message);
+			}
+
+			_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+		}
+		else
+		{
+			_barkLength = 0;
+		}
 
 		_barkStartTime = gameLocal.time;
 
