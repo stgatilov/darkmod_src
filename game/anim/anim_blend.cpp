@@ -1249,7 +1249,8 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						ent->Detach( command.string->c_str() );
 
 						idVec3 origin = detachedEntity->GetPhysics()->GetOrigin();
-						origin.z -= DROP_DOWN_ADJUSTMENT; detachedEntity->GetPhysics()->SetOrigin( origin );
+						origin.z -= DROP_DOWN_ADJUSTMENT;
+						detachedEntity->GetPhysics()->SetOrigin( origin );
 					}
 					break;
 				}
