@@ -44,6 +44,7 @@ const idEventDef EV_TDM_GetSurfType( "getSurfType", NULL, 's' );
 const idEventDef EV_TDM_GetSurfNormal( "getSurfNormal", NULL, 'v' );
 const idEventDef EV_TDM_GetStruckEnt( "getStruckEnt", NULL, 'e' );
 const idEventDef EV_TDM_GetIncidenceAngle( "getIncidenceAngle", NULL, 'f' );
+const idEventDef EV_TDM_GetActualStruckEnt( "getActualStruckEnt", NULL, 'e' ); // grayman #837
 
 CLASS_DECLARATION( idEntity, CProjectileResult )
 	EVENT( EV_TDM_GetFinalVel,				CProjectileResult::Event_GetFinalVel )
@@ -54,6 +55,7 @@ CLASS_DECLARATION( idEntity, CProjectileResult )
 	EVENT( EV_TDM_GetSurfNormal,			CProjectileResult::Event_GetSurfNormal )
 	EVENT( EV_TDM_GetStruckEnt,				CProjectileResult::Event_GetStruckEnt )
 	EVENT( EV_TDM_GetIncidenceAngle,		CProjectileResult::Event_GetIncidenceAngle )
+	EVENT( EV_TDM_GetActualStruckEnt,		CProjectileResult::Event_GetActualStruckEnt ) // grayman #837
 END_CLASS
 
 CProjectileResult::CProjectileResult( void )
@@ -299,3 +301,33 @@ void CProjectileResult::Event_GetIncidenceAngle( void )
 {
 	idThread::ReturnFloat( m_ProjData.IncidenceAngle );
 }
+
+// grayman #837 - return the entity belonging to an AI's attachment
+// when that attachment is struck by an arrow. The collision entity
+// that comes back from the trace is the AI itself.
+
+void CProjectileResult::Event_GetActualStruckEnt( void )
+{
+	idEntity* struckEnt = gameLocal.entities[ m_Collision.c.entityNum ];
+	idEntity* returnEnt = NULL;
+
+	if (struckEnt && struckEnt->IsType(idActor::Type))
+	{
+		idActor* actor = static_cast<idActor*>(struckEnt);
+		if (actor)
+		{
+			int bodyId = actor->BodyForClipModelId( m_Collision.c.id );
+			idAFBody* body = actor->GetAFPhysics()->GetBody( bodyId );
+			if (body)
+			{
+				idEntity* rerouteEnt = body->GetRerouteEnt();
+				if (rerouteEnt)
+				{
+					returnEnt = rerouteEnt; // entity where damage/impulse is rerouted
+				}
+			}
+		}
+	}
+	idThread::ReturnEntity(returnEnt);
+}
+

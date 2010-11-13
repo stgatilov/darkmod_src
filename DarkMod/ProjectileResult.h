@@ -81,6 +81,7 @@ protected:
 
 	void Event_GetIncidenceAngle( void );
 
+	void Event_GetActualStruckEnt( void ); // grayman #837
 };
 
 #endif
