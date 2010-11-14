@@ -52,6 +52,7 @@ CStaticMulti::CStaticMulti
 CStaticMulti::CStaticMulti( void )
 {
 	active = false;
+	m_bNeedModelUpdates = true;
 	m_LOD = NULL;
 
 	m_Changes.Clear();
@@ -101,6 +102,14 @@ void CStaticMulti::Spawn( void )
 	if( m_StimResponseColl->HasResponse() )
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
+	m_bNeedModelUpdates = true;
+
+	if ( spawnArgs.GetBool( "no_model_updates", "0" ) )
+	{
+		gameLocal.Printf ("%s: Disabling render model updates.\n", GetName() );
+		m_bNeedModelUpdates = false;
+	}
+
 	int d = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 	if (d <= 0)
 	{
@@ -144,10 +153,14 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	// in case it doesn't have LOD
 	m_modelName = modelName;
 
+	// TODO: set this to false if we don't have LOD
+	//	m_bNeedModelUpdates = false;
+
 	m_Changes.Clear();
 	// avoid frequent resizes
 	m_Changes.SetGranularity(32);
 
+	// generate the first render model
 	UpdateRenderModel(true);
 }
 
@@ -331,7 +344,7 @@ void CStaticMulti::Think( void )
 	lod_data_t* LOD;
 
 	// Distance dependence checks
-	if ( active && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
+	if ( active && m_bNeedModelUpdates && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
 	{
 #ifdef M_TIMINGS
 		if (updates > 0)
@@ -471,6 +484,7 @@ void CStaticMulti::Think( void )
 void CStaticMulti::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( active );
+	savefile->WriteBool( m_bNeedModelUpdates );
 	savefile->WriteStaticObject( physics );
 	savefile->WriteInt( m_DistCheckInterval );
 	savefile->WriteInt( m_DistCheckTimeStamp );
@@ -511,6 +525,7 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	int n;
 
 	savefile->ReadBool( active );
+	savefile->ReadBool( m_bNeedModelUpdates );
 	savefile->ReadStaticObject( physics );
 	RestorePhysics( &physics );
 	savefile->ReadInt( m_DistCheckInterval );

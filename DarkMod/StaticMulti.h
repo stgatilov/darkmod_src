@@ -90,6 +90,9 @@ private:
 	bool						UpdateRenderModel( const bool force = false);
 
 	bool						active;
+	// if none of our offsets have LOD stages, we don't need to update the model
+	bool						m_bNeedModelUpdates;
+
 	idPhysics_StaticMulti		physics;
 
 	/** override material for debug_colors: */
