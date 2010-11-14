@@ -153,8 +153,11 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	// in case it doesn't have LOD
 	m_modelName = modelName;
 
-	// TODO: set this to false if we don't have LOD
-	//	m_bNeedModelUpdates = false;
+	// set this to false if we don't have LOD
+	if (!LOD)
+	{
+		m_bNeedModelUpdates = false;
+	}
 
 	m_Changes.Clear();
 	// avoid frequent resizes
@@ -223,12 +226,18 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 
 	if (m_iVisibleModels == 0)
 	{
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
+#endif
 		if (!fl.hidden) { Hide(); }
 		return true;
 	}
 	else
 	{
 		// show again
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
+#endif
 		if (fl.hidden) { Show(); }
 	}
 
@@ -372,10 +381,22 @@ void CStaticMulti::Think( void )
 		float lod_bias = cv_lod_bias.GetFloat(); lod_bias *= lod_bias;
 		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
 
-		if (m_LOD)
+		bool bDistCheckXYOnly = false;
+
+		if (!m_LOD)
+		{
+			// TODO: fill this structure
+			LOD = NULL;
+		}
+		else
 		{
 			LOD = m_LOD;
+			bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
+		}
+
 #ifdef M_DEBUG
+		if (LOD)
+		{
 			gameLocal.Printf("%s LOD data %p.\n", GetName(), LOD );
 				gameLocal.Printf(" checkXY %i\n", LOD->bDistCheckXYOnly );
 				gameLocal.Printf(" interval %i\n", LOD->DistCheckInterval );
@@ -386,18 +407,8 @@ void CStaticMulti::Think( void )
 				gameLocal.Printf(" LOD %i skin %s.\n",    i, LOD->SkinLOD[i].c_str() );
 				gameLocal.Printf(" LOD %i offset %s.\n",  i, LOD->OffsetLOD[i].ToString() );
 			}
-#endif
 		}
-		else
-		{
-#ifdef M_DEBUG
-			gameLocal.Printf("%s dummy LOD data.\n", GetName() );
 #endif
-			// TODO: fill this structure
-			LOD = new lod_data_t;
-		}
-
-		bool bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
 
 		// TODO: go through all offsets and calculate the new LOD stage
 		int num = m_Offsets->Num();
@@ -434,7 +445,7 @@ void CStaticMulti::Think( void )
 				// TODO: compute flags for noclip
 				int flags = 0;
 				m_LODLevel ++;
-				if ( LOD->noshadowsLOD & (1 << m_LODLevel) )
+				if ( LOD && LOD->noshadowsLOD & (1 << m_LODLevel) )
 				{
 					flags += LODE_MODEL_NOSHADOW;
 				}
