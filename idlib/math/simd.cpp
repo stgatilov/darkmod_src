@@ -48,6 +48,7 @@ idSIMD::InitProcessor
 */
 void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	cpuid_t cpuid;
+	int cores = 0;
 	idSIMDProcessor *newProcessor;
 
 	cpuid = idLib::sys->GetProcessorId();
@@ -61,14 +62,14 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 
 	/* Check for AMD or Intel first */
 	__asm__ __volatile__ (
-		"	pushl	%%ebx;    "	// Save ebx (needed for PIC (position independend code)
-		"	movl	$0, %%eax;"	// CPUID with EAX = 0
-		"	cpuid;		  "	// Returns data into eax, ebx, ecx, edx
-		"	movl	%%ebx, %%eax;"	// EAX => EBX
-		"	popl	%%ebx;    "	// Restore EBX
+		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
+		"	movl	$0, %%eax;"			// CPUID with EAX = 0
+		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
+		"	movl	%%ebx, %%eax;"		// EAX => EBX
+		"	popl	%%ebx;"				// Restore EBX
 		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
-      		:				// no inputs
-		: );				// clobbers no additional registers (except EAX, ECX and EDX)
+      		:							// no inputs
+		: );							// clobbers no additional registers (except EAX, ECX and EDX)
 
 	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
 
@@ -79,26 +80,36 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 		result = CPUID_AMD;
 	}
 	else
-	// "GenuineIntel"
+		// "GenuineIntel"
 		if (( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) )
 		{
 		result = CPUID_INTEL;
 		}
 	
 	__asm__ __volatile__ (
-		"	pushl	%%ebx;    "	// Save ebx (needed for PIC (position independend code)
-		"	movl	$1, %%eax;"	// CPUID with EAX = 1
-		"	cpuid;		  "	// Returns data into eax, ebx, ecx, edx
-		"	popl	%%ebx;    "	// Restore ebx
-		: "=d" (d), "=c" (c)		// EDX => d, ECX => c
-      		:				// no inputs
-		: "%eax" );			// clobbers EAX (ECX and EDX are output and thus already known)
+		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
+		"	movl	$1, %%eax;"			// CPUID with EAX = 1
+		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
+		"	movl	%%ebx, %%eax;"		// Put EBX value into EAX (so we can return it)
+		"	popl	%%ebx;"				// Restore ebx
+		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
+      		:							// no inputs
+		: );							// clobbers no extra registers beside the outputs
 
 	// This can only be checked on AMD CPUs
 	if ( (result & CPUID_AMD) && (d & 0x10000000l) )		// >> 31 does not work here
 	{
 		result += CPUID_3DNOW;
 	}
+	// Check bits 16..23 of EBX (count of CPUs, works for AMD, too)
+	cores = (a >> 16) & 0xFF;
+	// Only on Intel we can have Hyper-Threading
+	if ( (result & CPUID_INTEL) && ((d >> 28) & 0x1) && cores > 1 )
+	{
+		result += CPUID_HTT;
+	}
+
+	// These tests are the same for AMD and Intel
 	if ((d >> 23) & 0x1)
 	{
 		result += CPUID_MMX;
@@ -125,12 +136,16 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU with:%s%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU%s with %i %s, features:%s%s%s%s%s%s\n",
 			// Vendor
 			cpuid & CPUID_AMD ? "AMD" : 
 			cpuid & CPUID_INTEL ? "Intel" : 
 			cpuid & CPUID_GENERIC ? "Generic" : 
 			"Unsupported",
+			// Hyper-Threading?
+			cpuid & CPUID_HTT ? " with Hyper-Threading enabled and" : "",
+			cores,
+		   	cores > 1 ? "cores" : "core",
 			// Flags
 			cpuid & CPUID_MMX ? " MMX" : "",
 			cpuid & CPUID_SSE ? " SSE" : "",
