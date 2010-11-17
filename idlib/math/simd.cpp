@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -8,7 +9,7 @@
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
-//
+// Copyright (C) 2010 The Dark Mod Team
 
 #include "../precompiled.h"
 #pragma hdrstop
@@ -22,7 +23,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "simd_sse2.h"
 #include "simd_sse3.h"
 #include "simd_altivec.h"
-
 
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
@@ -51,6 +51,93 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	idSIMDProcessor *newProcessor;
 
 	cpuid = idLib::sys->GetProcessorId();
+
+	/*
+	* Tels: Bug #2413: Under Linux, cpuid_t is 0, so use inline assembly to get
+	*       the correct flags:
+	*/
+#ifdef __linux__
+	dword a,c,d, result;
+
+	/* Check for AMD or Intel first */
+	__asm__ __volatile__ (
+		"	pushl	%%ebx;    "	// Save ebx (needed for PIC (position independend code)
+		"	movl	$0, %%eax;"	// CPUID with EAX = 0
+		"	cpuid;		  "	// Returns data into eax, ebx, ecx, edx
+		"	movl	%%ebx, %%eax;"	// EAX => EBX
+		"	popl	%%ebx;    "	// Restore EBX
+		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
+      		:				// no inputs
+		: );				// clobbers no additional registers (except EAX, ECX and EDX)
+
+	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
+
+	result = CPUID_GENERIC;
+	// "AuthenticAMD"
+	if (( 0x68747541l == a ) && ( 0x444d4163l == c ) && ( 0x69746e65l == d ) )
+	{
+		result = CPUID_AMD;
+	}
+	else
+	// "GenuineIntel"
+		if (( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) )
+		{
+		result = CPUID_INTEL;
+		}
+	
+	__asm__ __volatile__ (
+		"	pushl	%%ebx;    "	// Save ebx (needed for PIC (position independend code)
+		"	movl	$1, %%eax;"	// CPUID with EAX = 1
+		"	cpuid;		  "	// Returns data into eax, ebx, ecx, edx
+		"	popl	%%ebx;    "	// Restore ebx
+		: "=d" (d), "=c" (c)		// EDX => d, ECX => c
+      		:				// no inputs
+		: "%eax" );			// clobbers EAX (ECX and EDX are output and thus already known)
+
+	// This can only be checked on AMD CPUs
+	if ( (result & CPUID_AMD) && (d & 0x10000000l) )		// >> 31 does not work here
+	{
+		result += CPUID_3DNOW;
+	}
+	if ((d >> 23) & 0x1)
+	{
+		result += CPUID_MMX;
+	}
+	if ((d >> 25) & 0x1)
+	{
+		result += CPUID_SSE;
+	}
+	if ((d >> 26) & 0x1)
+	{
+		result += CPUID_SSE2;
+	}
+	if ((d >> 15) & 0x1)
+	{
+		result += CPUID_CMOV;
+	}
+	if (c & 0x1)
+	{
+		result += CPUID_SSE3;
+	}
+
+	//idLib::common->Printf( "cpuid result is %i (c = %i d = %i)\n", result, c, d);
+	cpuid = (cpuid_t)result;
+#endif
+
+	// Print what we found to console
+	idLib::common->Printf( "Found %s CPU with:%s%s%s%s%s%s\n",
+			// Vendor
+			cpuid & CPUID_AMD ? "AMD" : 
+			cpuid & CPUID_INTEL ? "Intel" : 
+			cpuid & CPUID_GENERIC ? "Generic" : 
+			"Unsupported",
+			// Flags
+			cpuid & CPUID_MMX ? " MMX" : "",
+			cpuid & CPUID_SSE ? " SSE" : "",
+			cpuid & CPUID_SSE2 ? " SSE2" : "",
+			cpuid & CPUID_SSE3 ? " SSE3" : "",
+			cpuid & CPUID_3DNOW ? " 3DNow!" : "",
+			cpuid & CPUID_CMOV ? " CMOV" : "" );
 
 	if ( forceGeneric ) {
 
