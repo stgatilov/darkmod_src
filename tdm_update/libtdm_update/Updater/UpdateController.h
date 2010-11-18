@@ -1,0 +1,122 @@
+#pragma once
+
+#include <set>
+#include "Updater.h"
+#include "UpdateView.h"
+#include "UpdaterOptions.h"
+#include "../ExceptionSafeThread.h"
+#include "../TraceLog.h"
+#include <boost/lexical_cast.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include "ProgressHandler.h"
+
+namespace tdm
+{
+
+namespace updater
+{
+
+/** 
+ * The high-level application logic is contained in this object.
+ * The controller will dispatch calls to the underlying Updater object,
+ * maintain threads, etc. It accepts an IUpdateView implementation
+ * which will be receiving some events about the current update state.
+ *
+ * Upon entering the StartOrContinue() method, a controller thread 
+ * will be constructed running the logic. The thread can be configured
+ * to automatically stop before entering certain update steps.
+ */
+class UpdateController
+{
+private:
+	IUpdateView& _view;
+
+	// The update step we're currently in
+	UpdateStep _curStep;
+
+	// If a certain step is mentioned here, the controller thread will
+	// pause before entering it.
+	std::set<UpdateStep> _interruptionPoints;
+
+	// The main worker thread. A new one is created each time 
+	// StartOrContinue is called.
+	ExceptionSafeThreadPtr _workerThread;
+
+	// The main updater object (containing the non-threaded methods)
+	Updater _updater;
+
+	// Aborted flag, once called this won't go back to false
+	bool _abortFlag;
+
+	// The download progress callback
+	ProgressHandlerPtr _progress;
+
+public:
+	// Options will be passed to the Updater object
+	UpdateController(IUpdateView& view, const fs::path& executableName, UpdaterOptions& options);
+
+	~UpdateController();
+
+	// Instruct the controller to wait before entering the next step
+	void PauseAt(UpdateStep step);
+
+	// Main trigger - call this to let the controller continue to the next
+	// step. The thread will drive the update process until it's done or
+	// the next interruption point is reached. Calling StartOrContinue()
+	// after reaching an interruption point will resume the update process.
+	// Calling this method while the Controller is still active will do nothing.
+	void StartOrContinue();
+
+	// Calling abort will try to terminate the update process in a controlled fashion.
+	// Does not block execution, you'll need to query AllThreadsDone() to check whether
+	// all worker threads have been terminated
+	void Abort();
+
+	// Returns true if the controller has no more running threads
+	bool AllThreadsDone();
+
+	// Used by the console updater on Ctrl-C, should not be called by regular GUIs
+	void PerformPostUpdateCleanup();
+
+	// Status query
+	std::size_t GetNumMirrors();
+
+	// Returns true if a new updater is available for download
+	bool NewUpdaterAvailable();
+
+	// Returns true if any files need to be updated
+	bool LocalFilesNeedUpdate();
+
+	std::size_t GetTotalDownloadSize();
+	std::size_t GetNumFilesToBeUpdated();
+
+	bool RestartRequired();
+
+	bool DifferentialUpdateAvailable();
+
+	std::string GetLocalVersion();
+	std::string GetNewestVersion();
+	
+	std::size_t GetTotalDifferentialUpdateSize();
+
+	DifferentialUpdateInfo GetDifferentialUpdateInfo();
+
+private:
+	void StartStepThread(UpdateStep step);
+
+	// The entry point for the worker thread
+	void PerformStep(UpdateStep step);
+
+	// Invoked by the ExceptionSafeThread when a step is done, do some error handling here
+	void OnFinishStep(UpdateStep step);
+
+	void TryToProceedTo(UpdateStep step);
+
+	// Returns true if we are allowed to proceed to the given step
+	bool IsAllowedToContinueTo(UpdateStep step);
+};
+typedef boost::shared_ptr<UpdateController> UpdateControllerPtr;
+
+} // namespace
+
+} // namespace

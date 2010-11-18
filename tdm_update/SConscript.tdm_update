@@ -1,0 +1,41 @@
+# The Dark Mod Updater build script
+# Adapted from id's game sconscript
+# Author: greebo
+
+import sys, os, string
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+def BuildList( s_prefix, s_string ):
+	s_list = string.split( s_string )
+	for i in range( len( s_list ) ):
+		s_list[ i ] = s_prefix + '/' + s_list[ i ]
+	return s_list
+
+# Master list of source files to compile
+tdm_update_list = BuildList('./', 'tdm_update.cpp ConsoleUpdater.cpp')
+
+local_env = g_env.Copy()
+local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ])
+
+local_env.Append(CPPPATH = '#/../include')
+local_env.Append(CPPPATH = '#/libtdm_update')
+
+# Use local Boost
+
+local_env.Append(LIBS = [
+#	File('#/../linux/boost/lib/libboost_filesystem.a'),
+#	File('#/../linux/boost/lib/libboost_program_options.a'),
+#	File('#/../linux/boost/lib/libboost_thread.a'),
+#	File('#/../linux/boost/lib/libboost_regex.a'),
+#	File('#/../linux/boost/lib/libboost_system.a'),
+    File('#/../linux/libcurl/libcurl.a')
+])
+
+minizip_list = SConscript( './SConscript.minizip' )
+libtdm_update_list = SConscript( './SConscript.libtdm_update' )
+
+ret = local_env.Program('tdm_update.linux', tdm_update_list + libtdm_update_list + minizip_list)
+Return( 'ret' )
+
