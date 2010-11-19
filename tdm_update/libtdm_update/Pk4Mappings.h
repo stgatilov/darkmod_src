@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <list>
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/spirit.hpp>
 #include <boost/bind.hpp>

@@ -1,6 +1,7 @@
 #include "Packager.h"
 
 #include "../Constants.h"
+#include "../Util.h"
 #include "../ExceptionSafeThread.h"
 
 #include <boost/thread.hpp>
@@ -639,7 +640,7 @@ void Packager::CreatePackage()
 		}
 
 		// Sleep 50 msec before attempting to create a new thread
-		Sleep(50);
+		Util::Wait(50);
 	}
 
 	// No more unassigned packages, wait till all threads are done
@@ -659,7 +660,7 @@ void Packager::CreatePackage()
 			}
 		}
 
-		Sleep(50);
+		Util::Wait(50);
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
