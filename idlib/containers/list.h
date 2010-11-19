@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -112,7 +113,8 @@ public:
 	type *			Find( type const & obj ) const;						// find pointer to the given element
 	int				FindNull( void ) const;								// find the index for the first NULL pointer in the list
 	int				IndexOf( const type *obj ) const;					// returns the index for the pointer to an element in the list
-	bool			RemoveIndex( int index );							// remove the element at the given index
+	bool			RemoveIndex( const int index );						// remove the element at the given index and keep items sorted
+	bool			RemoveIndex( const int index, bool keepSorted );	// Tels: remove the element at the given index, keep sorted only if wanted
 	bool			Remove( const type & obj );							// remove the element
 	void			Sort( cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			SortSubSection( int startIndex, int endIndex, cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
@@ -874,6 +876,48 @@ ID_INLINE bool idList<type>::RemoveIndex( int index ) {
 	num--;
 	for( i = index; i < num; i++ ) {
 		list[ i ] = list[ i + 1 ];
+	}
+
+	return true;
+}
+
+/*
+================
+idList<type>::RemoveIndex
+
+Removes the element at the specified index and if keepSorted is true, moves all data following the element down to
+fill in the gap. If keepSorted is false, just fills the gap with the last element in the list (if any).
+The number of elements in the list is reduced by one.  Returns false if the index is outside the bounds of the list.
+Note that the element is not destroyed, so any memory used by it may not be freed until the destruction of the list.
+================
+*/
+template< class type >
+ID_INLINE bool idList<type>::RemoveIndex( const int index, const bool keepSorted ) {
+
+	assert( list != NULL );
+	assert( index >= 0 );
+	assert( index < num );
+
+	if ( ( index < 0 ) || ( index >= num ) ) {
+		return false;
+	}
+
+	num--;
+	if (keepSorted)
+	{
+		//gameLocal.Printf("Moving %i list entries (index = %i)\n", num - index, index );
+		for( int i = index; i < num; i++ ) {
+			list[ i ] = list[ i + 1 ];
+		}
+	}
+	else
+	{
+		// [1,2,3,4] (remove 2, num was 4, is now 3, index = 1) => (num = 2), [1,4,3]
+		// if index == num, we removed the last element, so nothing to do
+		if ( index < num )
+		{
+			list[ index ] = list[ num ];
+		}
 	}
 
 	return true;
