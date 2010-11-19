@@ -5663,7 +5663,11 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// drop items
 	DropOnRagdoll();
 
-	if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	if ( attacker && (attacker == gameLocal.GetLocalPlayer()) && inflictor)
+	{
+		bPlayerResponsible = true;
+	}
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
 	{
 		bPlayerResponsible = (attacker != gameLocal.world &&
 			attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer());
