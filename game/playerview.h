@@ -64,9 +64,6 @@ public:
 
 	void				AddBloodSpray( float duration );
 
-	// temp for view testing
-	void				EnableBFGVision( bool b ) { bfgVision = b; };
-
 private:
 	void				SingleView( idUserInterface *hud, const renderView_t *view, bool drawHUD = true);
 	void				DoubleVision( idUserInterface *hud, const renderView_t *view, int offset );
@@ -86,8 +83,6 @@ private:
 
 	int					kickFinishTime;		// view kick will be stopped at this time
 	idAngles			kickAngles;			
-
-	bool				bfgVision;			// 
 
 	class dnImageWrapper
 	{
@@ -165,7 +160,6 @@ private:
 	const idMaterial *	berserkMaterial;	// berserk effect
 	const idMaterial *	irGogglesMaterial;	// ir effect
 	const idMaterial *	bloodSprayMaterial; // blood spray
-	const idMaterial *	bfgMaterial;		// when targeted with BFG
 	const idMaterial *	lagoMaterial;		// lagometer drawing
 	float				lastDamageTime;		// accentuate the tunnel effect for a while
 

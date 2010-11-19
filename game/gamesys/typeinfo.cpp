@@ -373,10 +373,6 @@ bool IsRenderHandleVariable( const char *varName, const char *varType, const cha
 		if ( idStr::Icmp( varName, "lightDefHandle" ) == 0 ) {
 			return true;
 		}
-	} else if ( idStr::Icmp( scope, "idBFGProjectile" ) == 0 ) {
-		if ( idStr::Icmp( varName, "secondModelDefHandle" ) == 0 ) {
-			return true;
-		}
 	} else if ( idStr::Icmp( scope, "idSmokeParticles" ) == 0 ) {
 		if ( idStr::Icmp( varName, "renderEntityHandle" ) == 0 ) {
 			return true;

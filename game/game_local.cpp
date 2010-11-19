@@ -2276,7 +2276,6 @@ void idGameLocal::DumpOggSounds( void ) {
 					if (	soundName.Find( "weapon", false ) != -1 ||
 							soundName.Find( "gun", false ) != -1 ||
 							soundName.Find( "bullet", false ) != -1 ||
-							soundName.Find( "bfg", false ) != -1 ||
 							soundName.Find( "plasma", false ) != -1 ) {
 						weaponSounds.AddUnique( soundName );
 						continue;

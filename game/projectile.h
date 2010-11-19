@@ -212,38 +212,6 @@ private:
 	float					burstVelocity;
 };
 
-struct beamTarget_t {
-	idEntityPtr<idEntity>	target;
-	renderEntity_t			renderEntity;
-	qhandle_t				modelDefHandle;
-};
-
-class idBFGProjectile : public idProjectile {
-public :
-	CLASS_PROTOTYPE( idBFGProjectile );
-
-							idBFGProjectile();
-							~idBFGProjectile();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
-	virtual void			Explode( const trace_t &collision, idEntity *ignore );
-
-private:
-	idList<beamTarget_t>	beamTargets;
-	renderEntity_t			secondModel;
-	qhandle_t				secondModelDefHandle;
-	int						nextDamageTime;
-	idStr					damageFreq;
-
-	void					FreeBeams();
-	void					Event_RemoveBeams();
-	void					ApplyDamage();
-};
 
 /*
 ===============================================================================
