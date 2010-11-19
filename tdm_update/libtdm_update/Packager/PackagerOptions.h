@@ -53,6 +53,10 @@ public:
 		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --register-update-package --package=update_1.02_to_1.03.pk4 --outputdir=d:/temp/darkmod_update");
 		TraceLog::WriteLine(LOG_STANDARD, " This will register the given PK4 in the tdm_version_info.txt file located in the specified output directory. If the version info file doesn't exist yet, it will be created.");
 		TraceLog::WriteLine(LOG_STANDARD, "");
+		TraceLog::WriteLine(LOG_STANDARD, "-------------------------------------------------------------------------------------");
+		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-crc-info --basedir=d:/temp/darkmod1.02");
+		TraceLog::WriteLine(LOG_STANDARD, " This will calculate the CRCs for the release set in the given base dir and write/overwrite the crc_info.txt into the same folder.");
+		TraceLog::WriteLine(LOG_STANDARD, "");
 	}
 
 private:
@@ -62,6 +66,7 @@ private:
 		_desc.add_options()
 			("create-package", "Create a full release package, needs outputdir and darkmoddir as argument.\n")
 			("create-update-package", "Create an update package, containing the difference between a defined base and head PK4 set.\n")
+			("create-crc-info", "Create a crc_info.txt file for the release set in the given basedir.\n")
 			("update-version-info-file", "Updates the INI/TXT containing the version information. The information gathered from 'basedir' will be added to the file in 'outputdir'.\n")
 			("register-update-package", "Registers the specified update package in the specified version info file.\n")
 			("outputdir", bpo::value<std::string>(), "The folder the update package PK4 should be saved to.\n")

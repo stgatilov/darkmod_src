@@ -121,7 +121,9 @@ public:
 	void ForeachSection(SectionVisitor& visitor) const;
 
 	// Saves the contents into the given text file (target will be overwritten if existing)
-	void ExportToFile(const fs::path& file) const;
+	// One can pass a header string which will be prepended at the top of the file, in comment form.
+	// The header string should be passed without the # character, these are added automatically.
+	void ExportToFile(const fs::path& file, const std::string& headerComments = "") const;
 
 private:
 	void ParseFromString(const std::string& str);

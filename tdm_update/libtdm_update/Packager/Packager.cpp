@@ -21,6 +21,7 @@ void Packager::GatherBaseSet()
 {
 	std::set<std::string> ignoreList;
 	ignoreList.insert(TDM_CRC_INFO_FILE);
+	ignoreList.insert(TDM_VERSION_INFO_FILE);
 
 	_baseSet = ReleaseFileSet::LoadFromFolder(_options.Get("basedir"), ignoreList);
 }
@@ -29,6 +30,7 @@ void Packager::GatherHeadSet()
 {
 	std::set<std::string> ignoreList;
 	ignoreList.insert(TDM_CRC_INFO_FILE);
+	ignoreList.insert(TDM_VERSION_INFO_FILE);
 
 	_headSet = ReleaseFileSet::LoadFromFolder(_options.Get("headdir"), ignoreList);
 }
@@ -664,6 +666,52 @@ void Packager::CreatePackage()
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
+}
+
+void Packager::CreateCrcInfoFile()
+{
+	IniFilePtr iniFile = IniFile::Create();
+
+	fs::path destPath = fs::path(_options.Get("basedir")) / TDM_CRC_INFO_FILE;
+
+	std::string header = "The file (in windows .ini format) contains the checksums and sizes for all\nfiles of The Dark Mod (http://www.thedarkmod.com) and is used by tdm_update.";
+
+	for (ReleaseFileSet::const_iterator i = _baseSet.begin(); i != _baseSet.end(); ++i)
+	{
+		std::string section = (boost::format("File %s") % i->second.file.string()).str();
+
+		iniFile->SetValue(section, "crc", CRC::ToString(i->second.crc));
+		iniFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(i->second.filesize));
+
+		// Add ZIP file members, if applicable
+		// [Member tdm_shared_stuff.zip:AUTHORS.txt]
+		if (File::IsZip(i->second.file))
+		{
+			for (std::set<ReleaseFile>::const_iterator m = i->second.members.begin(); m != i->second.members.end(); ++m)
+			{
+				section = (boost::format("Member %s:%s") % i->second.file.string() % m->file.string()).str();
+
+				iniFile->SetValue(section, "crc", CRC::ToString(m->crc));
+				iniFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(m->filesize));
+			}
+		}
+	}
+
+	// Add the legacy maintenance section
+	iniFile->SetValue("Maintenance", "tdm_ai_humanoid01.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures01.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures02.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures03.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures04.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures05.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures06.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures07.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures08.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures09.pk4", "remove");
+	iniFile->SetValue("Maintenance", "tdm_textures10.pk4", "remove");
+
+	// Save
+	iniFile->ExportToFile(destPath, header);
 }
 
 } // namespace 

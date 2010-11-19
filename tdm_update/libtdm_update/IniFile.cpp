@@ -9,6 +9,7 @@
 #include <boost/program_options/detail/config_file.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/spirit.hpp>
 #include <boost/bind.hpp>
 
@@ -156,9 +157,24 @@ void IniFile::ForeachSection(SectionVisitor& visitor) const
 	}
 }
 
-void IniFile::ExportToFile(const fs::path& file) const
+void IniFile::ExportToFile(const fs::path& file, const std::string& headerComments) const
 {
 	std::ofstream stream(file.file_string().c_str());
+
+	if (!headerComments.empty())
+	{
+		// Split the header text into lines and export it as INI comment
+		std::vector<std::string> lines;
+		boost::algorithm::split(lines, headerComments, boost::algorithm::is_any_of("\n"));
+
+		for (std::size_t i = 0; i < lines.size(); ++i)
+		{
+			stream << "# " << lines[i] << std::endl;
+		}
+
+		// add some additional line break after the header
+		stream << std::endl;
+	}
 
 	for (SettingMap::const_iterator i = _settings.begin(); i != _settings.end(); ++i)
 	{

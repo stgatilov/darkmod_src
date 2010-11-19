@@ -154,6 +154,30 @@ int main(int argc, char* argv[])
 
 			TraceLog::WriteLine(LOG_STANDARD, "Done.");
 		}
+		else if (options.IsSet("create-crc-info"))
+		{
+			if (options.Get("basedir").empty())
+			{
+				options.PrintHelp();
+				return EXIT_SUCCESS;
+			}
+
+			Packager packager(options);
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+	
+			// Analyse base
+			packager.GatherBaseSet();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			// Write the base CRC info to the basedir.
+			packager.CreateCrcInfoFile();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			TraceLog::WriteLine(LOG_STANDARD, "Done.");
+		}
 	}
 	catch (std::runtime_error& ex)
 	{

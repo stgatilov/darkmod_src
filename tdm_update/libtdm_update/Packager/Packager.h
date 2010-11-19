@@ -93,6 +93,9 @@ public:
 	// Creates the package at the given output folder
 	void CreatePackage();
 
+	// Create the crc_info.txt in the basedir (call GatherBaseSet() beforehand)
+	void CreateCrcInfoFile();
+
 private:
 	// Worker thread for creating a release archive
 	void ProcessPackageElement(Package::const_iterator p);
