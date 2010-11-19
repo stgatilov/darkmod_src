@@ -419,7 +419,7 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 	zfi.external_fa = 0;
 
 	// Prepare the zip file for writing
-	int status = zipOpenNewFileInZip(_handle,
+	int status = zipOpenNewFileInZip3(_handle,
 					destPath.c_str(),
 					&zfi,
 					NULL,
@@ -428,7 +428,13 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 					0,
 					NULL,
 					(method == DEFLATE || method == DEFLATE_MAX) ? Z_DEFLATED : 0, // deflate or store
-					(method == DEFLATE_MAX) ? Z_BEST_COMPRESSION : Z_DEFAULT_COMPRESSION);
+					(method == DEFLATE_MAX) ? Z_BEST_COMPRESSION : Z_DEFAULT_COMPRESSION,
+					0,				// not raw
+					MAX_WBITS,		// window bits
+					MAX_MEM_LEVEL,	// memory level
+					Z_DEFAULT_STRATEGY,	// strategy
+					NULL,	// no password
+					0);		// no crypting
 
 	if (status != ZIP_OK)
 	{
