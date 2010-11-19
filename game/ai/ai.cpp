@@ -5663,12 +5663,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// drop items
 	DropOnRagdoll();
 
-	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) )
-	{
-		static_cast< idPlayer* >( attacker )->AddAIKill();
-		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
-	}
-	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
 	{
 		bPlayerResponsible = (attacker != gameLocal.world &&
 			attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer());

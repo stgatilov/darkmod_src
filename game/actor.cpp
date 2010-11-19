@@ -3032,10 +3032,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		attacker = gameLocal.world;
 	}
 
-	/*if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
-		return;
-	}*/
-
 	// Try to find the damage entityDef
 	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {

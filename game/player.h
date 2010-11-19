@@ -401,7 +401,6 @@ public:
 	idList<idStr>			hudMessages;
 	idList<idStr>			inventoryPickedUpMessages;
 
-	int						weapon_soulcube;
 	int						weapon_fists;
 
 	bool					m_HeartBeatAllow; /// disable hearbeat except when dying or drowning - Need this to track state
@@ -426,7 +425,6 @@ public:
 
 
 	bool					hiddenWeapon;		// if the weapon is hidden ( in noWeapons maps )
-	idEntityPtr<idProjectile> soulCubeProjectile;
 
 	// mp stuff
 	static idVec3			colorBarTable[ 5 ];
@@ -654,9 +652,6 @@ public:
 	bool					CanShowWeaponViewmodel( void ) const;
 	// greebo: This method updates the player's movement hinderance when weapons are drawn
 	void					UpdateWeaponEncumbrance();
-
-	void					AddAIKill( void );
-	void					SetSoulCubeProjectile( idProjectile *projectile );
 
 	void					AdjustHeartRate( int target, float timeInSecs, float delay, bool force );
 	void					SetCurrentHeartRate( void );

@@ -2271,9 +2271,7 @@ void idGameLocal::DumpOggSounds( void ) {
 				// if not voice over or combat chatter
 				if (	soundName.Find( "/vo/", false ) == -1 &&
 						soundName.Find( "/combat_chatter/", false ) == -1 &&
-						soundName.Find( "/bfgcarnage/", false ) == -1 &&
-						soundName.Find( "/enpro/", false ) == - 1 &&
-						soundName.Find( "/soulcube/energize_01.wav", false ) == -1 ) {
+						soundName.Find( "/enpro/", false ) == - 1 ) {
 					// don't OGG weapon sounds
 					if (	soundName.Find( "weapon", false ) != -1 ||
 							soundName.Find( "gun", false ) != -1 ||
@@ -4483,11 +4481,6 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	}
 #endif
 
-	if ( gameLocal.isMultiplayer ) {
-		name = spawnArgs.GetString( "classname" );
-		if ( idStr::Icmp( name, "weapon_bfg" ) == 0 || idStr::Icmp( name, "weapon_soulcube" ) == 0 ) {
-			result = true;
-		}
 	}*/
 
 	// Consult the difficulty manager, whether this entity should be prevented from being spawned.

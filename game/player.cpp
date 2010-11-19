@@ -344,7 +344,6 @@ idPlayer::idPlayer() :
 	previousWeapon			= -1;
 	weaponSwitchTime		=  0;
 	weaponEnabled			= true;
-	weapon_soulcube			= -1;
 	weapon_fists			= -1;
 	showWeaponViewModel		= true;
 
@@ -567,7 +566,6 @@ void idPlayer::Init( void ) {
 	previousWeapon			= -1;
 	weaponSwitchTime		= 0;
 	weaponEnabled			= true;
-	weapon_soulcube			= -1;//SlotForWeapon( "weapon_soulcube" );
 	weapon_fists			= 0;//SlotForWeapon( "weapon_fists" );
 	showWeaponViewModel		= GetUserInfo()->GetBool( "ui_showGun" );
 
@@ -1452,7 +1450,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteString(inventoryPickedUpMessages[i]);
 	}
 
-	savefile->WriteInt( weapon_soulcube );
 	savefile->WriteInt( weapon_fists );
 
 	savefile->WriteInt( heartRate );
@@ -1481,7 +1478,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(healthPoolTimeIntervalFactor);
 
 	savefile->WriteBool( hiddenWeapon );
-	soulCubeProjectile.Save( savefile );
 
 	savefile->WriteInt( spectator );
 	savefile->WriteVec3( colorBar );
@@ -1767,7 +1763,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString(inventoryPickedUpMessages[i]);
 	}
 
-	savefile->ReadInt( weapon_soulcube );
 	savefile->ReadInt( weapon_fists );
 
 	savefile->ReadInt( heartRate );
@@ -1800,7 +1795,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(healthPoolTimeIntervalFactor);
 
 	savefile->ReadBool( hiddenWeapon );
-	soulCubeProjectile.Restore( savefile );
 
 	savefile->ReadInt( spectator );
 	savefile->ReadVec3( colorBar );
@@ -2863,14 +2857,6 @@ void idPlayer::FireWeapon( void )
 		{
 			AI_ATTACK_HELD = true;
 			weapon.GetEntity()->BeginAttack();
-			if ( ( weapon_soulcube >= 0 ) && ( currentWeapon == weapon_soulcube ) ) 
-			{
-				if ( hud ) 
-				{
-					hud->HandleNamedEvent( "soulCubeNotReady" );
-				}
-				SelectWeapon( previousWeapon, false );
-			}
 		} else if( cv_weapon_next_on_empty.GetBool() )
 		{
 			NextBestWeapon();
@@ -3578,10 +3564,6 @@ void idPlayer::Weapon_Combat( void ) {
 		}
 	} else {
 		AI_RELOAD = false;
-	}
-
-	if ( idealWeapon == weapon_soulcube && soulCubeProjectile.GetEntity() != NULL ) {
-		idealWeapon = currentWeapon;
 	}
 
 	if ( idealWeapon != currentWeapon ) {
@@ -8067,25 +8049,6 @@ void idPlayer::CalculateRenderView( void ) {
 	if ( g_showviewpos.GetBool() ) {
 		gameLocal.Printf( "%s : %s\n", renderView->vieworg.ToString(), renderView->viewaxis.ToAngles().ToString() );
 	}
-}
-
-/*
-=============
-idPlayer::AddAIKill
-=============
-*/
-void idPlayer::AddAIKill( void ) {
-	// greebo: Disabled this routine, no soulcube in TDM
-	return;
-}
-
-/*
-=============
-idPlayer::SetSoulCubeProjectile
-=============
-*/
-void idPlayer::SetSoulCubeProjectile( idProjectile *projectile ) {
-	soulCubeProjectile = projectile;
 }
 
 /*
