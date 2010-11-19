@@ -1,8 +1,9 @@
 #pragma once
 
-#include "IniFile.h"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include "IniFile.h"
 #include "CRC.h"
 #include "File.h"
 

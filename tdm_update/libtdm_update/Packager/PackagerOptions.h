@@ -38,6 +38,10 @@ public:
 		TraceLog::WriteLine(LOG_STANDARD, "");
 		TraceLog::WriteLine(LOG_STANDARD, "Examples:");
 		TraceLog::WriteLine(LOG_STANDARD, "-------------------------------------------------------------------------------------");
+		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-package [--name=darkmod] --darkmoddir=c:/games/doom3/darkmod --outputdir=d:/temp/package");
+		TraceLog::WriteLine(LOG_STANDARD, " This will create a full release PK4 set in the specified output directory. The name argument is optional and will default to 'darkmod'. The darkmoddir parameter specifies the darkmod SVN repository. The manifest will be taken from <darkmoddir>/devel/manifests/<releasename>.txt");
+		TraceLog::WriteLine(LOG_STANDARD, "");
+		TraceLog::WriteLine(LOG_STANDARD, "-------------------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-update-package --basedir=d:/temp/darkmod1.02 --baseversion=1.02 --headdir=d:/temp/darkmod1.03 --headversion=1.03 --outputdir=d:/temp/darkmod_update");
 		TraceLog::WriteLine(LOG_STANDARD, " This will compare the PK4 set in 'basedir' against the newer version in 'headdir' and create an update package in the folder 'outputdir'.");
 		TraceLog::WriteLine(LOG_STANDARD, "");
@@ -56,10 +60,13 @@ private:
 	{
 		// Get options from command line
 		_desc.add_options()
+			("create-package", "Create a full release package, needs outputdir and darkmoddir as argument.\n")
 			("create-update-package", "Create an update package, containing the difference between a defined base and head PK4 set.\n")
 			("update-version-info-file", "Updates the INI/TXT containing the version information. The information gathered from 'basedir' will be added to the file in 'outputdir'.\n")
 			("register-update-package", "Registers the specified update package in the specified version info file.\n")
 			("outputdir", bpo::value<std::string>(), "The folder the update package PK4 should be saved to.\n")
+			("darkmoddir", bpo::value<std::string>(), "The folder the darkmod SVN repository is checked out to.\n")
+			("name", bpo::value<std::string>()->default_value("darkmod"), "The name of the release/manifest, as used by the --create-package option. Defaults to 'darkmod'.\n")
 			("package", bpo::value<std::string>(), "The package which should be registered in a version info file (applicable for --register-update-package).\n")
 			("basedir", bpo::value<std::string>(), "The folder containing the 'old' or base PK4 set.\ne.g. --basedir=c:\\temp\\darkmod1.02\n")
 			("baseversion", bpo::value<std::string>(), "The version number of the base PK4 set, e.g. '1.02'\n")

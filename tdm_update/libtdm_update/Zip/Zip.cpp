@@ -427,8 +427,8 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 					NULL,
 					0,
 					NULL,
-					method == DEFLATE ? Z_DEFLATED : 0, // deflate or store
-					method == DEFLATE_MAX ? Z_BEST_COMPRESSION : Z_DEFAULT_COMPRESSION);
+					(method == DEFLATE || method == DEFLATE_MAX) ? Z_DEFLATED : 0, // deflate or store
+					(method == DEFLATE_MAX) ? Z_BEST_COMPRESSION : Z_DEFAULT_COMPRESSION);
 
 	if (status != ZIP_OK)
 	{

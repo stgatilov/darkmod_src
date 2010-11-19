@@ -20,6 +20,10 @@ const char* const TDM_UPDATE_UPDATER_BATCH_FILE = "tdm_update_updater.cmd";
 // The standard mod path below D3
 const char* const TDM_STANDARD_MOD_FOLDER = "darkmod";
 
+// The standard manifest folder, relative to darkmod
+const char* const TDM_MANIFEST_PATH = "devel/manifests/";
+const char* const TDM_MANIFEST_EXTENSION = ".txt";
+
 const char* const TMP_FILE_PREFIX = "__";
 
 } // namespace

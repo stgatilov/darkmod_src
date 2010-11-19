@@ -419,6 +419,199 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 	targetFile->ExportToFile(targetPath);
 }
 
-} 
+void Packager::LoadManifest()
+{
+	fs::path manifestPath = _options.Get("darkmoddir");
+	manifestPath /= TDM_MANIFEST_PATH;
+	manifestPath /= _options.Get("name") + TDM_MANIFEST_EXTENSION;
 
+	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + manifestPath.file_string() + "...");
+
+	_manifest.LoadFromFile(manifestPath);
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest contains %d files.") % _manifest.size()).str());
 }
+
+void Packager::CheckRepository()
+{
+	TraceLog::Write(LOG_STANDARD, "Checking if the darkmod repository is complete...");
+
+	std::size_t missingFiles = 0;
+
+	fs::path darkmodPath = _options.Get("darkmoddir");
+
+	for (ReleaseManifest::iterator i = _manifest.begin(); i != _manifest.end(); ++i)
+	{
+		if (!fs::exists(darkmodPath / i->sourceFile))
+		{
+			missingFiles++;
+		}
+	}
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+
+	if (missingFiles > 0)
+	{
+		TraceLog::Error((boost::format("The manifest contains %d files which are missing in your darkmod path.") % missingFiles).str());
+	}
+}
+
+void Packager::LoadPk4Mapping()
+{
+	fs::path mappingFile = _options.Get("darkmoddir");
+	mappingFile /= TDM_MANIFEST_PATH;
+	mappingFile /= (boost::format("%s_pk4s%s") % _options.Get("name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_pk4s.txt
+
+	TraceLog::Write(LOG_STANDARD, "Loading PK4 mapping file: " + mappingFile.file_string() + "...");
+
+	_pk4Mappings.LoadFromFile(mappingFile);
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The mapping file defines %d PK4s.") % _pk4Mappings.size()).str());
+}
+
+void Packager::SortFilesIntoPk4s()
+{
+	TraceLog::WriteLine(LOG_STANDARD, "Sorting files into PK4s...");
+
+	_package.clear();
+
+	fs::path darkmodPath = _options.Get("darkmoddir");
+
+	// Go through each file in the manifest and check which pattern applies
+	for (ReleaseManifest::iterator i = _manifest.begin(); i != _manifest.end(); /* in-loop increment */)
+	{
+		bool matched = false;
+
+		// The patterns are applied in the order they appear in the darkmod_pk4s.txt file
+		for (Pk4Mappings::const_iterator m = _pk4Mappings.begin(); !matched && m != _pk4Mappings.end(); ++m)
+		{
+			// Does this filename match any of the patterns of this PK4 file?
+			for (Patterns::const_iterator p = m->second.begin(); p != m->second.end(); ++p)
+			{
+				if (boost::regex_search(i->destFile.string(), *p))
+				{
+					// Match
+					ManifestFiles& files = _package.insert(Package::value_type(m->first, ManifestFiles())).first->second;
+
+					//TraceLog::WriteLine(LOG_STANDARD, "Putting file " + i->destFile.string() + " => " + m->first);
+
+					// Copy that file into the release package
+					files.push_back(*i);
+
+					// Remove the file from our manifest
+					_manifest.erase(i++);
+
+					matched = true;
+					break;
+				}
+			}
+		}
+
+		if (!matched) 
+		{
+			// If the file is a PK4 file itself, just add it to the list
+			if (File::IsArchive(i->destFile))
+			{
+				_package.insert(Package::value_type(i->sourceFile.string(), ManifestFiles()));
+
+				_manifest.erase(i++);
+			}
+			else if (fs::is_directory(darkmodPath / i->destFile)) // Check if this is a folder
+			{
+				// Unmatched folders can be removed
+				_manifest.erase(i++);
+			}
+			else
+			{
+				TraceLog::WriteLine(LOG_STANDARD, "Could not match file: " + i->destFile.string());
+				++i;
+			}
+		}
+	}
+
+	TraceLog::WriteLine(LOG_STANDARD, "done");
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("%d entries in the manifest could not be matched, check the logs.") % _manifest.size()).str());
+}
+
+void Packager::ProcessPackageElement(Package::const_iterator p)
+{
+	fs::path outputDir = _options.Get("outputdir");
+
+	if (!fs::exists(outputDir))
+	{
+		fs::create_directories(outputDir);
+	}
+
+	fs::path darkmodPath = _options.Get("darkmoddir");
+
+	// Target file
+	fs::path pk4Path = outputDir / p->first;
+
+	// Make sure all folders exist
+	fs::path pk4Folder = pk4Path;
+	pk4Folder.remove_leaf().remove_leaf();
+
+	fs::create_directories(pk4Folder);
+
+	// Remove destination file before writing
+	File::Remove(pk4Path);
+
+	// Copy-only switch for PK4 files mentioned in the manifest (those have 0 members to compress, like tdm_game01.pk4)
+	if (File::IsArchive(p->first) && p->second.empty())
+	{
+		TraceLog::WriteLine(LOG_STANDARD, (boost::format("Copying file: %s") % pk4Path.string()).str());
+
+		if (!File::Copy(darkmodPath / p->first, pk4Path))
+		{
+			TraceLog::Error((boost::format("Could not copy file: %s") % pk4Path.string()).str());
+		}
+
+		return;
+	}
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Compressing package: %s") % pk4Path.string()).str());
+	
+	ZipFileWritePtr pk4 = Zip::OpenFileWrite(pk4Path, Zip::CREATE);
+
+	if (pk4 == NULL)
+	{
+		throw FailureException("Failed to process element: " + p->first);
+	}
+
+	for (ManifestFiles::const_iterator m = p->second.begin(); m != p->second.end(); ++m)
+	{
+		fs::path sourceFile = darkmodPath / m->sourceFile;
+		const fs::path& targetFile = m->destFile;
+
+		// Make sure folders get added as such
+		if (fs::is_directory(sourceFile))
+		{
+			continue;
+		}
+
+		ZipFileWrite::CompressionMethod method = ZipFileWrite::DEFLATE_MAX;
+
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Deflating file %s.") % sourceFile.string()).str());
+
+		pk4->DeflateFile(sourceFile, targetFile.string(), method);
+	}
+}
+
+void Packager::CreatePackage()
+{
+	// Create worker threads to compress stuff into the target PK4s
+
+	//std::vector<ExceptionSafeThreadPtr> threads;
+
+	for (Package::const_iterator i = _package.begin(); i != _package.end(); ++i)
+	{
+		ProcessPackageElement(i);
+	}
+}
+
+} // namespace 
+
+} // namespace

@@ -120,6 +120,40 @@ int main(int argc, char* argv[])
 
 			TraceLog::WriteLine(LOG_STANDARD, "Done.");
 		}
+		else if (options.IsSet("create-package"))
+		{
+			if (options.Get("darkmoddir").empty() || options.Get("outputdir").empty())
+			{
+				options.PrintHelp();
+				return EXIT_SUCCESS;
+			}
+
+			Packager packager(options);
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.LoadManifest();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.CheckRepository();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.LoadPk4Mapping();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.SortFilesIntoPk4s();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.CreatePackage();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			TraceLog::WriteLine(LOG_STANDARD, "Done.");
+		}
 	}
 	catch (std::runtime_error& ex)
 	{

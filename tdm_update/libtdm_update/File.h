@@ -59,6 +59,15 @@ public:
 		return extension == ".pk4";
 	}
 
+	// Predicate to check whether the given file is a compressed one and whether it makes sense to deflate it at all
+	static bool IsCompressed(const fs::path& file)
+	{
+		std::string extension = boost::to_lower_copy(fs::extension(file));
+
+		return extension == ".pk4" || extension == ".jpg" || extension == ".ogg" ||
+			   extension == ".zip";
+	}
+
 	static bool Remove(const fs::path& fileToRemove)
 	{
 		try
@@ -90,6 +99,23 @@ public:
 		catch (fs::basic_filesystem_error<fs::path>& e)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Exception while moving file: " + std::string(e.what()));
+
+			return false;
+		}
+	}
+
+	static bool Copy(const fs::path& fromPath, const fs::path& toPath)
+	{
+		try
+		{
+			fs::copy_file(fromPath, toPath);
+			TraceLog::WriteLine(LOG_VERBOSE, "Copied " + fromPath.file_string() + " to " + toPath.file_string());
+
+			return true;
+		}
+		catch (fs::basic_filesystem_error<fs::path>& e)
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "Exception while copying file: " + std::string(e.what()));
 
 			return false;
 		}

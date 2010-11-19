@@ -287,11 +287,19 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Pk4Mappings.h"
+			>
+		</File>
+		<File
 			RelativePath=".\ProgramOptions.h"
 			>
 		</File>
 		<File
 			RelativePath=".\ReleaseFileset.h"
+			>
+		</File>
+		<File
+			RelativePath=".\ReleaseManifest.h"
 			>
 		</File>
 		<File
