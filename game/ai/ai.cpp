@@ -2005,8 +2005,10 @@ void idAI::Think( void )
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
-		// Check air ticks (is interleaved and not checked each frame)
-		UpdateAir();
+		if (health > 0) // grayman #1488 - only do this if you're still alive
+		{
+			UpdateAir(); // Check air ticks (is interleaved and not checked each frame)
+		}
 
 		if (num_cinematics > 0)
 		{
@@ -2244,22 +2246,57 @@ void idAI::SetNextThinkFrame()
 {
 	int frameNum = gameLocal.framenum;
 	int thinkFrame = GetThinkInterleave();
+	int thinkDelta = 1;
+
 	if (thinkFrame > 1)
 	{
 		// Let them think for the first few frames to initialize state and tasks
-		if (frameNum < (5 + gameLocal.random.RandomInt(5)))
+		if (frameNum >= (5 + gameLocal.random.RandomInt(5)))
 		{
-			m_nextThinkFrame = frameNum + 1;
-		}
-		else
-		{
-			m_nextThinkFrame = frameNum + thinkFrame;
+			// grayman #2414 - think more often if
+			//
+			//   * working on a door-handling task
+			//   * nearing a goal position
+			//   * handling an elevator
+
+			bool thinkMore = false;
+			thinkDelta = thinkFrame;
+			ai::Memory& memory = GetMemory();
+			CFrobDoor *door = memory.doorRelated.currentDoor.GetEntity();
+
+			if (door)
+			{
+				idVec3 origin = GetPhysics()->GetOrigin();
+				idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
+				float distance = (doorOrigin - origin).LengthFast();
+
+				if (distance <= TEMP_THINK_DISTANCE)
+				{
+					thinkMore = true; // avoid obstruction & damage
+				}
+			}
+			else if (m_HandlingElevator)
+			{
+				thinkMore = true; // avoid death
+			}
+			else if ((move.moveCommand == MOVE_TO_POSITION) && (move.moveStatus == MOVE_STATUS_MOVING))
+			{
+				idVec3 origin = GetPhysics()->GetOrigin();
+				float distance = (move.moveDest - origin).LengthFast();
+
+				if (distance <= TEMP_THINK_FACTOR*thinkFrame)
+				{
+					thinkMore = true; // avoid confusion and becoming stuck
+				}
+			}
+			if (thinkMore)
+			{
+				thinkDelta = min(thinkFrame,TEMP_THINK_INTERLEAVE);
+			}
 		}
 	}
-	else
-	{
-		m_nextThinkFrame = frameNum + 1;
-	}
+
+	m_nextThinkFrame = frameNum + thinkDelta;
 }
 
 /*
@@ -2267,7 +2304,7 @@ void idAI::SetNextThinkFrame()
 idAI::GetThinkInterleave
 =====================
 */
-int idAI::GetThinkInterleave()
+int idAI::GetThinkInterleave() const // grayman 2414 - add 'const'
 {
 	int maxFrames = m_maxInterleaveThinkFrames;
 	if (cv_ai_opt_interleavethinkframes.GetInteger() > 0)
@@ -4432,6 +4469,7 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 	}
 
 	delta *= physicsObj.GetGravityAxis();
+
 }
 
 /*
@@ -4695,7 +4733,7 @@ void idAI::AnimMove()
 			StopMove(MOVE_STATUS_DONE);
 		}
 	}
-	else if (allowMove)
+	else if (allowMove && (move.moveCommand != MOVE_NONE)) // grayman 2414 - add MOVE_NONE check
 	{
 		// Moving is allowed, get the delta
 		GetMoveDelta( oldaxis, viewAxis, delta );
@@ -4954,6 +4992,7 @@ void idAI::SlideMove( void ) {
 			TurnToward( vel.ToYaw() );
 		}
 	}
+
 	Turn();
 
 	if ( ai_debugMove.GetBool() ) {
@@ -9631,8 +9670,8 @@ bool idAI::MouthIsUnderwater( void )
 
 	idEntity *headEnt = head.GetEntity();
 
-	// def file will store the coordinates of the mouth relative to the head origin
-	// this will be entered by the modeler
+	// *.def file will store the coordinates of the mouth relative ("mouth_offset") to the head origin
+	// or relative to the eyes ("eye_height"). This should be defined by the modeler.
 
 	// check for attached head
 	if( headEnt )
@@ -9650,13 +9689,39 @@ bool idAI::MouthIsUnderwater( void )
 		MouthPosition += af.GetPhysics()->GetAxis( m_HeadBodyID ) * m_MouthOffset;
 	}
 	else
+	{
 		MouthPosition = GetEyePosition();
+		MouthPosition.z += m_MouthOffset.z; // grayman #1488 - check at the mouth, not the eyes
+	}
 
 	// check if the mouth position is underwater
 
 	int contents = gameLocal.clip.Contents( MouthPosition, NULL, mat3_identity, -1, this );
-
 	bReturnVal = (contents & MASK_WATER) > 0;
+	
+#if 0
+	// grayman #1488
+	//
+	// For debugging drowning deaths - indicate onscreen whether underwater or breathing, plus health level
+	
+	idStr str;
+	idVec4 color;
+	idStr healthLevel;
+
+	if (bReturnVal)
+	{
+		str = "Drowning";
+		color = colorRed;
+	}
+	else
+	{
+		str = "Breathing";
+		color = colorGreen;
+	}
+	sprintf( healthLevel, " (%d)", health );
+	gameRenderWorld->DrawText((str + healthLevel).c_str(),(GetEyePosition() - GetPhysics()->GetGravityNormal()*60.0f), 
+		0.25f, color, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 150 * gameLocal.msec);
+#endif
 
 	return bReturnVal;
 }
@@ -9761,6 +9826,9 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 
 void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 {
+	// grayman - might have to add drowning check here if anyone
+	// ever uses this function in a script.
+
 	idThread::ReturnInt(static_cast<int>(MS2SEC(PlayAndLipSync(soundName, animName))));
 }
 

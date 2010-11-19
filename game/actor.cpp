@@ -3099,6 +3099,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			if ( damageDef->GetBool( "no_air" ) ) 
 			{
 				StopSound( SND_CHANNEL_VOICE, false );
+				SetSoundVolume(-10); // grayman #1488 - less volume underwater
 				StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
 			}
 		}

@@ -18,6 +18,11 @@ namespace ai
 // Define the name of this task
 #define TASK_PATH_CORNER "PathCorner"
 
+// grayman #2414 - For path prediction
+const int PATH_PREDICTION_MOVES = 2; // Number of moves to look ahead
+const float PATH_PREDICTION_CONSTANT = 26.0; // Empirically determined for smooth
+											 // turns at any m_maxInterleaveThinkFrames
+
 class PathCornerTask;
 typedef boost::shared_ptr<PathCornerTask> PathCornerTaskPtr;
 

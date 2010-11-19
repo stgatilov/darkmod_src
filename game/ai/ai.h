@@ -40,6 +40,14 @@ const float	AI_FLY_DAMPENING			= 0.15f;
 const float	AI_HEARING_RANGE			= 2048.0f;
 const int	DEFAULT_FLY_OFFSET			= 68;
 
+// grayman 2414 - TEMP_THINK constants used with interleaved thinking
+const int	TEMP_THINK_INTERLEAVE		= 4;	// maximum interleave think frames when
+												// more interleaved thinking is needed
+const int	TEMP_THINK_DISTANCE			= 200;	// increase interleave think frames
+												// when door is closer than this
+const int	TEMP_THINK_FACTOR			= 8;	// used to determine when to increase thinking
+												// when moving to a goal position
+
 
 // used to declare the Dark Mod Acuity values array.
 // THIS MUST BE CHANGED if you want more than 15 acuities
@@ -959,7 +967,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_AirCheckInterval;
 
 	/**
-	* Offset relative to the eye position, used to locate the mouth
+	* Offset relative to the head origin when the head is separate, or the eye 
+	* when the head is attached. Used to locate the mouth.
 	**/
 	idVec3					m_MouthOffset;
 
@@ -1163,7 +1172,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// returns interleave think frames
 	// the AI will only think once in this number of frames
-	int						GetThinkInterleave();
+	int						GetThinkInterleave() const; // grayman 2414 - add 'const'
 	int						m_nextThinkFrame;
 
 	// Below min dist, the AI thinks normally every frame.
