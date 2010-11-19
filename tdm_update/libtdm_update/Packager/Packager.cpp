@@ -1,6 +1,9 @@
 #include "Packager.h"
 
 #include "../Constants.h"
+#include "../ExceptionSafeThread.h"
+
+#include <boost/thread.hpp>
 
 namespace tdm
 {
@@ -604,12 +607,62 @@ void Packager::CreatePackage()
 {
 	// Create worker threads to compress stuff into the target PK4s
 
-	//std::vector<ExceptionSafeThreadPtr> threads;
+	unsigned numHardwareThreads = boost::thread::hardware_concurrency();
 
-	for (Package::const_iterator i = _package.begin(); i != _package.end(); ++i)
+	if (numHardwareThreads == 0) 
 	{
-		ProcessPackageElement(i);
+		numHardwareThreads = 1;
 	}
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Using %d threads to compress files.") % numHardwareThreads).str());
+
+	std::vector<ExceptionSafeThreadPtr> threads(numHardwareThreads);
+
+	Package::const_iterator i = _package.begin();
+
+	// Keep pushing threads until we've reached the end of the list
+	while (i != _package.end())
+	{
+		// Go through each thread and find a free one
+		for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
+		{
+			if (threads[threadNum] == NULL || threads[threadNum]->done())
+			{
+				// Allocate a new thread using the package being pointed at
+				threads[threadNum].reset(new ExceptionSafeThread(boost::bind(&Packager::ProcessPackageElement, this, i)));
+
+				// Next candidate
+				++i;
+
+				break;
+			}
+		}
+
+		// Sleep 50 msec before attempting to create a new thread
+		Sleep(50);
+	}
+
+	// No more unassigned packages, wait till all threads are done
+	bool stillProcessing = true;
+
+	while (stillProcessing)
+	{
+		stillProcessing = false;
+
+		// As long as we've still one processing thread, set the bool back to true
+		for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
+		{
+			if (threads[threadNum] != NULL && !threads[threadNum]->done())
+			{
+				stillProcessing = true;
+				break;
+			}
+		}
+
+		Sleep(50);
+	}
+
+	TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
 }
 
 } // namespace 
