@@ -171,29 +171,30 @@ void UpdaterDialog::OnBnClickedButtonAbort()
 		_controller->StartOrContinue();
 		DestroyWindow();
 	}
+	else if (_controller->IsDone())
+	{
+		DestroyWindow();
+	}
+	else if (_failed)
+	{
+		// Updater has failed, don't ask for quit
+		PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
+		_shutdown = true;
+	}
 	else
 	{
-		if (_failed)
+		// Display a confirmation popup
+		int result = MessageBox(CString("This will abort the update process. Are you sure?"), 
+			CString("Cancel update process?"), MB_YESNO);
+
+		if (result == IDYES)
 		{
-			// Updater has failed, don't ask for quit
+			_controller->Abort();
+
 			PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
+
+			_continueButton.ShowWindow(FALSE);
 			_shutdown = true;
-		}
-		else
-		{
-			// Display a confirmation popup
-			int result = MessageBox(CString("This will abort the update process. Are you sure?"), 
-				CString("Cancel update process?"), MB_YESNO);
-
-			if (result == IDYES)
-			{
-				_controller->Abort();
-
-				PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
-
-				_continueButton.ShowWindow(FALSE);
-				_shutdown = true;
-			}
 		}
 	}
 }
@@ -514,7 +515,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 
 		if (_controller->GetLocalVersion().empty())
 		{
-			versionFound = " no luck, PK4 files do not match.";
+			versionFound = " no exact match.";
 		}
 		else
 		{

@@ -92,6 +92,9 @@ public:
 
 	bool RestartRequired();
 
+	// True if the update process has reached the end of the sequence
+	bool IsDone();
+
 	bool DifferentialUpdateAvailable();
 
 	std::string GetLocalVersion();

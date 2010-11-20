@@ -167,9 +167,22 @@ void Updater::NotifyFileProgress(const fs::path& file, CurFileInfo::Operation op
 
 void Updater::DetermineLocalVersion()
 {
-	_localVersion.clear();
+	_pureLocalVersion.clear();
+	_fileVersions.clear();
+	_localVersions.clear();
+	_applicableDifferentialUpdates.clear();
 
 	TraceLog::WriteLine(LOG_VERBOSE, " Trying to determine installed TDM version...");
+
+	std::size_t totalItems = 0;
+
+	// Get the total count of version information items, for calculating the progress
+	for (ReleaseVersions::const_iterator v = _releaseVersions.begin(); v != _releaseVersions.end(); ++v)
+	{
+		totalItems += v->second.size();
+	}
+
+	std::size_t curItem = 0;
 
 	for (ReleaseVersions::const_iterator v = _releaseVersions.begin(); v != _releaseVersions.end(); ++v)
 	{
@@ -180,11 +193,11 @@ void Updater::DetermineLocalVersion()
 		// Will be true on first mismatching file
 		bool mismatch = false;
 
-		std::size_t count = 0;
-
 		for (ReleaseFileSet::const_iterator f = set.begin(); f != set.end(); ++f)
 		{
-			NotifyFileProgress(f->second.file, CurFileInfo::Check, static_cast<double>(count) / set.size());
+			NotifyFileProgress(f->second.file, CurFileInfo::Check, static_cast<double>(curItem) / totalItems);
+
+			curItem++;
 			
 			fs::path candidate = GetTargetPath() / f->second.file;
 
@@ -198,7 +211,7 @@ void Updater::DetermineLocalVersion()
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is missing.") % candidate.file_string()).str());
 				mismatch = true;
-				break;
+				continue;
 			}
 
 			if (f->second.localChangesAllowed) 
@@ -207,12 +220,14 @@ void Updater::DetermineLocalVersion()
 				continue;
 			}
 
-			if (fs::file_size(candidate) != f->second.filesize)
+			std::size_t candidateFilesize = static_cast<std::size_t>(fs::file_size(candidate));
+
+			if (candidateFilesize != f->second.filesize)
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching size, expected %d but found %d.")
-					% candidate.file_string() % f->second.filesize % fs::file_size(candidate)).str());
+					% candidate.file_string() % f->second.filesize % candidateFilesize).str());
 				mismatch = true;
-				break;
+				continue;
 			}
 
 			// Calculate the CRC of this file
@@ -223,18 +238,26 @@ void Updater::DetermineLocalVersion()
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching CRC, expected %x but found %x.")
 					% candidate.file_string() % f->second.crc % crc).str());
 				mismatch = true;
-				break;
+				continue;
 			}
 
-			count++;
+			// The file is matching - record this version
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is matching version %s.") % candidate.file_string() % v->first).str());
+
+			_fileVersions[candidate.string()] = v->first;
+
+			// sum up the totals for this version
+			VersionTotal& total = _localVersions.insert(LocalVersionBreakdown::value_type(v->first, VersionTotal())).first->second;
+
+			total.numFiles++;
+			total.filesize += candidateFilesize;
 		}
 
 		// All files passed the check?
 		if (!mismatch) 
 		{
-			_localVersion = v->first;
-			TraceLog::WriteLine(LOG_VERBOSE, " Local installation matches version: " + _localVersion);
-			break;
+			_pureLocalVersion = v->first;
+			TraceLog::WriteLine(LOG_VERBOSE, " Local installation matches version: " + _pureLocalVersion);
 		}
 	}
 
@@ -243,29 +266,81 @@ void Updater::DetermineLocalVersion()
 		_fileProgressCallback->OnFileOperationFinish();
 	}
 
-	if (_localVersion.empty())
+	if (_pureLocalVersion.empty())
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, " Could not determine local version.");
+	}
+
+	if (!_localVersions.empty())
+	{
+		for (LocalVersionBreakdown::const_iterator i = _localVersions.begin(); i != _localVersions.end(); ++i)
+		{
+			const std::string& version = i->first;
+
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Files matching version %s: %d (size: %d)") % 
+				version % i->second.numFiles % i->second.filesize).str());
+
+			// Check if this differential update is wise, from an economic point of view
+			UpdatePackageInfo::const_iterator package = _updatePackages.find(version);
+
+			if (package != _updatePackages.end())
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Some files match version " + version + ", a differential update is available for that version.");
+
+				UpdatePackageInfo::const_iterator package = _updatePackages.find(version);
+
+				assert(package != _updatePackages.end());
+
+				if (package->second.filesize < i->second.filesize)
+				{
+					TraceLog::WriteLine(LOG_VERBOSE, "The differential package size is smaller than the total size of files needing it, this is good.");
+					_applicableDifferentialUpdates.insert(version);
+				}
+				else
+				{
+					TraceLog::WriteLine(LOG_VERBOSE, "The differential package size is larger than the total size of files needing it, will not download that.");
+				}
+			}
+			else
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Some files match version " + version + ", but no differential update is available for that version.");
+			}
+		}
 	}
 }
 
 bool Updater::DifferentialUpdateAvailable()
 {
-	if (_localVersion.empty())
+	std::string version = "none";
+
+	if (!_pureLocalVersion.empty())
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, "Local version is not determined, no differential update can be applied.");
-		return false;
+		// Local installation is pure, differential update is possible
+		if (DifferentialUpdateAvailableForVersion(_pureLocalVersion))
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "Local version is exactly determined, differential update is available.");
+			return true;
+		}
+
+		TraceLog::WriteLine(LOG_VERBOSE, "Local version is exactly determined, but no differential update is available.");
 	}
 
-	// Check if an update package is available for this version
-	for (UpdatePackageInfo::const_iterator it = _updatePackages.find(_localVersion);
-		 it != _updatePackages.upper_bound(_localVersion) && it != _updatePackages.end();
-		 ++it)
+	// Check applicable differential updates
+	if (!_applicableDifferentialUpdates.empty())
 	{
 		return true;
 	}
 
+	TraceLog::WriteLine(LOG_VERBOSE, "No luck, differential updates don't seem to be applicable.");
+
 	return false;
+}
+
+bool Updater::DifferentialUpdateAvailableForVersion(const std::string& version)
+{
+	UpdatePackageInfo::const_iterator it = _updatePackages.find(version);
+
+	return it != _updatePackages.end();
 }
 
 std::string Updater::GetNewestVersion()
@@ -283,13 +358,40 @@ std::size_t Updater::GetTotalDifferentialUpdateSize()
 {
 	std::size_t size = 0;
 
-	UpdatePackageInfo::const_iterator it = _updatePackages.find(_localVersion);
-
-	while (it != _updatePackages.end())
+	if (!_pureLocalVersion.empty())
 	{
-		size += it->second.filesize;
+		UpdatePackageInfo::const_iterator it = _updatePackages.find(_pureLocalVersion);
 
-		it = _updatePackages.find(it->second.toVersion);
+		while (it != _updatePackages.end())
+		{
+			size += it->second.filesize;
+
+			it = _updatePackages.find(it->second.toVersion);
+		}
+	}
+	else
+	{
+		std::set<std::string> visitedPackages;
+
+		// Non-pure local install, check all differential update paths - consider duplicate visits
+		for (std::set<std::string>::const_iterator i = _applicableDifferentialUpdates.begin(); 
+			 i != _applicableDifferentialUpdates.end(); ++i)
+		{
+			UpdatePackageInfo::const_iterator p = _updatePackages.find(*i);
+
+			while (p != _updatePackages.end())
+			{
+				if (visitedPackages.find(p->first) == visitedPackages.end())
+				{
+					visitedPackages.insert(p->first);
+
+					size += p->second.filesize;	
+				}
+
+				// Traverse up the version path
+				p = _updatePackages.find(p->second.toVersion);
+			}
+		}
 	}
 
 	return size;
@@ -297,9 +399,9 @@ std::size_t Updater::GetTotalDifferentialUpdateSize()
 
 DifferentialUpdateInfo Updater::GetDifferentialUpdateInfo()
 {
-	UpdatePackageInfo::const_iterator it = _updatePackages.find(_localVersion);
-
 	DifferentialUpdateInfo info;
+
+	UpdatePackageInfo::const_iterator it = _updatePackages.find(_pureLocalVersion);
 
 	if (it != _updatePackages.end())
 	{
@@ -307,16 +409,32 @@ DifferentialUpdateInfo Updater::GetDifferentialUpdateInfo()
 		info.toVersion = it->second.toVersion;
 		info.filesize = it->second.filesize;
 	}
+	// Check applicable differential updates, return the info of the first item
+	else if (!_applicableDifferentialUpdates.empty())
+	{
+		std::string firstApplicableVersion = *_applicableDifferentialUpdates.begin();
+
+		it = _updatePackages.find(firstApplicableVersion);
+
+		if (it != _updatePackages.end())
+		{
+			info.fromVersion = it->second.fromVersion;
+			info.toVersion = it->second.toVersion;
+			info.filesize = it->second.filesize;
+		}
+	}
 
 	return info;
 }
 
 void Updater::DownloadDifferentialUpdate()
 {
-	TraceLog::WriteLine(LOG_VERBOSE, " Downloading differential update package for version " + _localVersion);
+	DifferentialUpdateInfo info = GetDifferentialUpdateInfo();
+
+	TraceLog::WriteLine(LOG_VERBOSE, " Downloading differential update package for version " + info.fromVersion);
 
 	// Use the first package available for the local version, even if multiple ones might be registered
-	UpdatePackageInfo::const_iterator it = _updatePackages.find(_localVersion);
+	UpdatePackageInfo::const_iterator it = _updatePackages.find(info.fromVersion);
 
 	if (it == _updatePackages.end())
 	{
@@ -376,10 +494,12 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 
 void Updater::PerformDifferentialUpdateStep()
 {
-	TraceLog::WriteLine(LOG_VERBOSE, " Applying differential update package for version " + _localVersion);
+	DifferentialUpdateInfo updateInfo = GetDifferentialUpdateInfo();
+
+	TraceLog::WriteLine(LOG_VERBOSE, " Applying differential update package for version " + updateInfo.fromVersion);
 
 	// Use the first package available for the local version, even if multiple ones might be registered
-	UpdatePackageInfo::iterator it = _updatePackages.find(_localVersion);
+	UpdatePackageInfo::iterator it = _updatePackages.find(updateInfo.fromVersion);
 
 	if (it == _updatePackages.end())
 	{
@@ -480,7 +600,7 @@ void Updater::PerformDifferentialUpdateStep()
 
 		if (crc != diff.checksumBefore)
 		{
-			TraceLog::Error("  Cannot apply change, PK4 checksum is different.");
+			TraceLog::WriteLine(LOG_VERBOSE, "  Cannot apply change, PK4 checksum is different.");
 			continue;
 		}
 
@@ -622,7 +742,7 @@ void Updater::PerformDifferentialUpdateStep()
 
 std::string Updater::GetDeterminedLocalVersion()
 {
-	return _localVersion;
+	return _pureLocalVersion;
 }
 
 void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)

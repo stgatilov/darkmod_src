@@ -681,7 +681,7 @@ void Packager::CreateCrcInfoFile()
 		std::string section = (boost::format("File %s") % i->second.file.string()).str();
 
 		iniFile->SetValue(section, "crc", CRC::ToString(i->second.crc));
-		iniFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(i->second.filesize));
+		iniFile->SetValue(section, "size", boost::lexical_cast<std::string>(i->second.filesize));
 
 		// Add ZIP file members, if applicable
 		// [Member tdm_shared_stuff.zip:AUTHORS.txt]
@@ -692,7 +692,7 @@ void Packager::CreateCrcInfoFile()
 				section = (boost::format("Member %s:%s") % i->second.file.string() % m->file.string()).str();
 
 				iniFile->SetValue(section, "crc", CRC::ToString(m->crc));
-				iniFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(m->filesize));
+				iniFile->SetValue(section, "size", boost::lexical_cast<std::string>(m->filesize));
 			}
 		}
 	}

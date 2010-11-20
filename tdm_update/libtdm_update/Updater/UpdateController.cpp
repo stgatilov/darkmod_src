@@ -381,6 +381,11 @@ bool UpdateController::IsAllowedToContinueTo(UpdateStep step)
 	return _interruptionPoints.find(step) == _interruptionPoints.end();
 }
 
+bool UpdateController::IsDone()
+{
+	return _curStep == Done;
+}
+
 } // namespace
 
 } // namespace

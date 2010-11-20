@@ -133,7 +133,30 @@ private:
 	UpdatePackageInfo _updatePackages;
 
 	// The version the local installation has been found to match (empty if no match)
-	std::string _localVersion;
+	// For this to be non-empty the local install needs to be "pure", i.e. all files must match
+	std::string _pureLocalVersion;
+
+	// A list of determined versions for the local files ("tdm_x.pk4" => "1.02", "tdm_y.pk4" => "1.03") 
+	// If just one file matches 1.02, a differential update might be beneficial, so record all
+	// versions here. If a file matches two different versions, the most recent one is taken.
+	typedef std::map<std::string, std::string> FileVersionMap;
+	FileVersionMap _fileVersions;
+
+	struct VersionTotal
+	{
+		std::size_t numFiles; // the number of files matching this version
+		std::size_t filesize; // the total size of those files
+
+		VersionTotal() : numFiles(0), filesize(0)
+		{}
+	};
+
+	// A map of [version] => [number of files matching that version]
+	typedef std::map<std::string, VersionTotal> LocalVersionBreakdown;
+	LocalVersionBreakdown _localVersions;
+
+	// The local versions a differential update is applicable to
+	std::set<std::string> _applicableDifferentialUpdates;
 
 public:
 	// Pass the program options to this class
@@ -253,6 +276,8 @@ private:
 
 	// Checks if the given update package is already present at the given location
 	bool VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& package);
+
+	bool DifferentialUpdateAvailableForVersion(const std::string& version);
 
 #ifdef WIN32
 	// Prepare the update batch file (for Win32 builds only)
