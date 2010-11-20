@@ -200,6 +200,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LogViewer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -247,6 +251,10 @@
 			</File>
 			<File
 				RelativePath=".\FileProgressHandler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LogViewer.h"
 				>
 			</File>
 			<File

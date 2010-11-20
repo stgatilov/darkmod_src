@@ -3,10 +3,12 @@
 // Used by tdm_update_mfc.rc
 //
 #define IDD_TDM_UPDATE_MFC_DIALOG       102
+#define IDR_HTML_LOGVIEWDIALOG          103
 #define IDI_TDM_ICON                    129
 #define IDI_ICON1                       130
 #define IDI_TDM_ICON_GREY               130
 #define IDD_ADV_OPTIONS_DIALOG          133
+#define IDD_LOGVIEWER_DIALOG            134
 #define IDC_UPDATER_TITLE               1000
 #define IDC_UPDATER_SUBTITLE            1001
 #define IDC_PROGRESS1                   1002
@@ -34,8 +36,10 @@
 #define IDC_NOSELFUPDATE                1019
 #define IDC_CHECK3                      1020
 #define IDC_KEEP_UPDATE_PACKAGES        1020
+#define IDC_SHOW_LOG_BUTTON             1020
 #define IDC_EDIT1                       1021
 #define IDC_TARGET_DIR                  1021
+#define IDC_LOGVIEW                     1021
 #define IDC_STEP6_STATE                 1022
 #define IDC_PROXY                       1022
 #define IDC_STEP7_STATE                 1023
@@ -50,9 +54,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1026
-#define _APS_NEXT_SYMED_VALUE           101
+#define _APS_NEXT_SYMED_VALUE           105
 #endif
 #endif

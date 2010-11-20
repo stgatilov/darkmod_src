@@ -47,6 +47,10 @@ UpdaterDialog::UpdaterDialog(const fs::path& executableName,
 UpdaterDialog::~UpdaterDialog()
 {
 	TraceLog::WriteLine(LOG_VERBOSE, "~UpdaterDialog()");
+
+	TraceLog::Instance().Unregister(_logViewer);
+
+	_logViewer.reset();
 }
 
 void UpdaterDialog::DoDataExchange(CDataExchange* pDX)
@@ -76,6 +80,7 @@ void UpdaterDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STEP8_STATE, _step8State);
 	DDX_Control(pDX, IDC_PROGRESS_SPEED, _progressSpeedText);
 	DDX_Control(pDX, IDC_ADV_OPTIONS_BUTTON, _advOptionsButton);
+	DDX_Control(pDX, IDC_SHOW_LOG_BUTTON, _showLogButton);
 }
 
 BEGIN_MESSAGE_MAP(UpdaterDialog, CDialog)
@@ -86,6 +91,7 @@ BEGIN_MESSAGE_MAP(UpdaterDialog, CDialog)
 	ON_BN_CLICKED(ID_BUTTON_CONTINUE, &UpdaterDialog::OnBnClickedButtonContinue)
 	ON_MESSAGE(WM_DESTROY_WHEN_THREADS_DONE, OnDestroyWhenThreadsDone)
 	ON_BN_CLICKED(IDC_ADV_OPTIONS_BUTTON, &UpdaterDialog::OnBnClickedAdvOptionsButton)
+	ON_BN_CLICKED(IDC_SHOW_LOG_BUTTON, &UpdaterDialog::OnBnClickedShowLogButton)
 END_MESSAGE_MAP()
 
 // UpdaterDialog message handlers
@@ -110,6 +116,11 @@ BOOL UpdaterDialog::OnInitDialog()
 
 	// Perform the initial cleanup right off at start
 	_controller->StartOrContinue();
+
+	_logViewer.reset(new LogViewer);
+	_logViewer->Create(LogViewer::IDD);
+
+	TraceLog::Instance().Register(_logViewer);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -808,4 +819,12 @@ void UpdaterDialog::OnBnClickedAdvOptionsButton()
 	AdvancedOptionsDialog dialog(_options, this);
 
 	dialog.DoModal();
+}
+
+void UpdaterDialog::OnBnClickedShowLogButton()
+{
+	if (!_logViewer->IsWindowVisible())
+	{
+		_logViewer->ShowWindow(SW_SHOW);
+	}
 }

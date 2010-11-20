@@ -59,7 +59,8 @@ BEGIN
     LTEXT           "",IDC_STEP7_STATE,33,126,8,8
     LTEXT           "",IDC_STEP8_STATE,33,138,8,8
     CTEXT           "",IDC_PROGRESS_SPEED,7,192,305,8
-    PUSHBUTTON      "Advanced Options",IDC_ADV_OPTIONS_BUTTON,7,212,67,14
+    PUSHBUTTON      "Advanced Options",IDC_ADV_OPTIONS_BUTTON,64,212,67,14
+    PUSHBUTTON      "Show Log",IDC_SHOW_LOG_BUTTON,7,212,53,14
 END
 
 
@@ -159,6 +160,15 @@ BEGIN
     LTEXT           "Format: http://username:password@proxy.company.com:port/",IDC_STATIC,24,148,300,8
 END
 
+IDD_LOGVIEWER_DIALOG DIALOGEX 0, 0, 355, 185
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "TDM Update Log Window"
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Close",IDOK,298,164,50,14
+    EDITTEXT        IDC_LOGVIEW,7,7,341,150,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -174,6 +184,14 @@ BEGIN
         RIGHTMARGIN, 325
         TOPMARGIN, 7
         BOTTOMMARGIN, 182
+    END
+
+    IDD_LOGVIEWER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 348
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 178
     END
 END
 #endif    // APSTUDIO_INVOKED

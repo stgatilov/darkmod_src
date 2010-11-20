@@ -7,6 +7,8 @@
 #include "Updater/UpdateStep.h"
 #include "ExceptionSafeThread.h"
 
+#include "LogViewer.h"
+
 // UpdaterDialog dialog
 class UpdaterDialog : 
 	public CDialog,
@@ -19,6 +21,8 @@ private:
 	bool _shutdown;
 
 	bool _failed;
+
+	LogViewerPtr _logViewer;
 
 public:
 	UpdaterDialog(const fs::path& executableName, 
@@ -91,4 +95,6 @@ public:
 	CStatic _progressSpeedText;
 	afx_msg void OnBnClickedAdvOptionsButton();
 	CButton _advOptionsButton;
+	CButton _showLogButton;
+	afx_msg void OnBnClickedShowLogButton();
 };
