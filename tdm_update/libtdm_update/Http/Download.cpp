@@ -3,6 +3,7 @@
 #include "../Zip/Zip.h"
 #include "../TraceLog.h"
 #include "../File.h"
+#include "../CRC.h"
 #include "../Constants.h"
 
 #include <boost/bind.hpp>
@@ -17,7 +18,11 @@ Download::Download(const HttpConnectionPtr& conn, const std::string& url, const 
 	_destFilename(destFilename),
 	_conn(conn),
 	_status(NOT_STARTED_YET),
-	_pk4CheckEnabled(false)
+	_pk4CheckEnabled(false),
+	_crcCheckEnabled(false),
+	_filesizeCheckEnabled(false),
+	_requiredFilesize(0),
+	_requiredCrc(0)
 {
 	_urls.push_back(url);
 }
@@ -28,7 +33,11 @@ Download::Download(const HttpConnectionPtr& conn, const std::vector<std::string>
 	_destFilename(destFilename),
 	_conn(conn),
 	_status(NOT_STARTED_YET),
-	_pk4CheckEnabled(false)
+	_pk4CheckEnabled(false),
+	_crcCheckEnabled(false),
+	_filesizeCheckEnabled(false),
+	_requiredFilesize(0),
+	_requiredCrc(0)
 {}
 
 Download::~Download()
@@ -122,6 +131,26 @@ void Download::EnableValidPK4Check(bool enable)
 	_pk4CheckEnabled = enable;
 }
 
+void Download::EnableCrcCheck(bool enable)
+{
+	_crcCheckEnabled = enable;
+}
+
+void Download::EnableFilesizeCheck(bool enable)
+{
+	_filesizeCheckEnabled = enable;
+}
+
+void Download::SetRequiredCrc(boost::uint32_t requiredCrc)
+{
+	_requiredCrc = requiredCrc;
+}
+
+void Download::SetRequiredFilesize(std::size_t requiredSize)
+{
+	_requiredFilesize = requiredSize;
+}
+
 void Download::Perform()
 {
 	while (_curUrl < _urls.size())
@@ -140,19 +169,16 @@ void Download::Perform()
 		if (_request->GetStatus() == HttpRequest::OK)
 		{
 			// Check the downloaded file
-			if (_pk4CheckEnabled)
-			{
-				bool valid = CheckValidPK4(_tempFilename);
+			bool valid = CheckIntegrity();
 
-				if (!valid)
-				{
-					_curUrl++;
-					continue;
-				}
-				else
-				{
-					TraceLog::WriteLine(LOG_VERBOSE, "Downloaded file is a valid archive.");
-				}
+			if (!valid)
+			{
+				_curUrl++;
+				continue;
+			}
+			else
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Downloaded file failed the integrity checks.");
 			}
 
 			// Remove the destination filename before moving the temporary file over
@@ -207,11 +233,43 @@ std::string Download::GetFilename() const
 	return _destFilename.leaf();
 }
 
-bool Download::CheckValidPK4(const fs::path& path)
+bool Download::CheckIntegrity()
 {
-	ZipFileReadPtr zipFile = Zip::OpenFileRead(path.file_string());
+	if (_filesizeCheckEnabled)
+	{
+		if (fs::file_size(_tempFilename) != _requiredFilesize)
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file has the wrong size, expected %d but found %d") %
+				_requiredFilesize % fs::file_size(_tempFilename)).str());
+			return false; // failed the file size check
+		}
+	}
 
-	return (zipFile != NULL);
+	if (_pk4CheckEnabled)
+	{
+		ZipFileReadPtr zipFile = Zip::OpenFileRead(_tempFilename);
+
+		if (zipFile == NULL) 
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file failed the zip check: %s") %
+				_tempFilename.file_string()).str());
+			return false; // failed the ZIP check
+		}
+	}
+
+	if (_crcCheckEnabled)
+	{
+		boost::uint32_t crc = CRC::GetCrcForFile(_tempFilename);
+
+		if (crc != _requiredCrc)
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file has the wrong size, expected %x but found %x") %
+				_requiredCrc % crc).str());
+			return false; // failed the crc check
+		}
+	}
+
+	return true; // no failed checks, assume OK
 }
 
 }

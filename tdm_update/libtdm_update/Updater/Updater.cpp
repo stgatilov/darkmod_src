@@ -942,10 +942,15 @@ void Updater::PrepareUpdateStep()
 		// Create a mirrored download
 		DownloadPtr download(new MirrorDownload(_conn, _mirrors, i->second.file.string(), targetPath / i->second.file));
 
-		// Check archives after download
+		// Check archives after download, pass crc and filesize to download
 		if (File::IsArchive(i->second.file))
 		{
 			download->EnableValidPK4Check(true);
+			download->EnableCrcCheck(true);
+			download->EnableFilesizeCheck(true);
+
+			download->SetRequiredCrc(i->second.crc);
+			download->SetRequiredFilesize(i->second.filesize);
 		}
 
 		i->second.downloadId = _downloadManager->AddDownload(download);

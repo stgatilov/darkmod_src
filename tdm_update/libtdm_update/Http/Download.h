@@ -66,6 +66,11 @@ protected:
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;
+	bool _crcCheckEnabled;
+	bool _filesizeCheckEnabled;
+
+	std::size_t _requiredFilesize;
+	std::size_t _requiredCrc;
 
 public:
 	/** 
@@ -91,8 +96,20 @@ public:
 	// Cancel the download. If the download has already finished, this does nothing.
 	void Stop();
 
-	// Enable the validation of the downloaded file
+	// Enable or disable the "is a zip" validation of the downloaded file
 	void EnableValidPK4Check(bool enable);
+
+	// Enable or disable CRC validation after download
+	void EnableCrcCheck(bool enable);
+
+	// Enable or disable the filesize check after download
+	void EnableFilesizeCheck(bool enable);
+
+	// Set the required CRC for this download
+	void SetRequiredCrc(boost::uint32_t requiredCrc);
+
+	// Set the required filesize for this download
+	void SetRequiredFilesize(std::size_t requiredSize);
 	
 	// The current status of this download
 	DownloadStatus GetStatus();
@@ -115,12 +132,12 @@ public:
 	// Get the destination filename (leaf) of the current download (remote filename)
 	std::string GetFilename() const;
 
-	// Check method
-	static bool CheckValidPK4(const fs::path& path);
-
 protected:
 	// Thread entry point
 	void Perform();
+
+	// Check method
+	bool CheckIntegrity();
 };
 typedef boost::shared_ptr<Download> DownloadPtr;
 
