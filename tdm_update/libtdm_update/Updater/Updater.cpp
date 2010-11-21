@@ -785,7 +785,7 @@ void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
 fs::path Updater::GetTargetPath()
 {
 	// Use the target directory 
-	if (_options.IsSet("targetdir"))
+	if (_options.IsSet("targetdir") && !_options.Get("targetdir").empty())
 	{
 		return fs::path(_options.Get("targetdir"));
 	}
@@ -1124,7 +1124,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 		arguments += " " + *i;
 	}
 
-	batch << "@" << updater.file_string() << " " << arguments;
+	batch << "@start " << updater.file_string() << " " << arguments;
 }
 #endif
 
@@ -1256,8 +1256,29 @@ void Updater::RestartUpdater()
 
 		TraceLog::WriteLine(LOG_VERBOSE, "Starting batch file " + _updateBatchFile.file_string() + " in " + parentPath.file_string());
 
-		CreateProcess(NULL, (LPSTR) _updateBatchFile.file_string().c_str(), NULL, NULL,  false, 0, NULL,
+		BOOL success = CreateProcess(NULL, (LPSTR) _updateBatchFile.file_string().c_str(), NULL, NULL,  false, 0, NULL,
 			parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
+
+		if (!success)
+		{
+			LPVOID lpMsgBuf;
+
+			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+						  NULL,
+						  GetLastError(),
+						  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+						  (LPTSTR) &lpMsgBuf,
+						  0,
+						  NULL);
+
+			throw FailureException("Could not start new process: " + std::string((LPCTSTR)lpMsgBuf));
+			
+			LocalFree(lpMsgBuf);
+		}
+		else
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "Process started");
+		}
 	}
 #else
 	// TODO: Implement relaunch for *nix systems

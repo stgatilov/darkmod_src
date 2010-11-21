@@ -116,11 +116,25 @@ void AdvancedOptionsDialog::SaveValuesToOptions()
 	wValueStr = (LPCTSTR)value;
 	valueStr.assign(wValueStr.begin(), wValueStr.end());
 
-	_options.Set("targetdir", valueStr);
+	if (!valueStr.empty())
+	{
+		_options.Set("targetdir", valueStr);
+	}
+	else
+	{
+		_options.Unset("targetdir");
+	}
 
 	_proxy.GetWindowText(value);
 	wValueStr = (LPCTSTR)value;
 	valueStr.assign(wValueStr.begin(), wValueStr.end());
 
-	_options.Set("proxy", valueStr);
+	if (!valueStr.empty())
+	{
+		_options.Set("proxy", valueStr);
+	}
+	else
+	{
+		_options.Unset("proxy");
+	}
 }

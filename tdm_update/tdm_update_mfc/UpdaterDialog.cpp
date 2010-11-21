@@ -129,7 +129,11 @@ afx_msg LRESULT UpdaterDialog::OnDestroyWhenThreadsDone(UINT wParam, LONG lParam
 
 	if (_controller->AllThreadsDone())
 	{
-		_controller->PerformPostUpdateCleanup();
+		if (!_controller->RestartRequired())
+		{
+			_controller->PerformPostUpdateCleanup();
+		}
+
 		DestroyWindow();
 	}
 	else
@@ -178,7 +182,8 @@ void UpdaterDialog::OnBnClickedButtonAbort()
 	if (_controller->RestartRequired())
 	{
 		_controller->StartOrContinue();
-		DestroyWindow();
+		
+		PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
 	}
 	else if (_controller->IsDone())
 	{
