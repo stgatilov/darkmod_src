@@ -2291,7 +2291,9 @@ void idAI::SetNextThinkFrame()
 			}
 			if (thinkMore)
 			{
-				thinkDelta = min(thinkFrame,TEMP_THINK_INTERLEAVE);
+				// Tels: gcc doesn't like "min(...)":
+				//thinkDelta = min(thinkFrame,TEMP_THINK_INTERLEAVE);
+				thinkDelta = (thinkFrame < TEMP_THINK_INTERLEAVE ? thinkFrame : TEMP_THINK_INTERLEAVE);
 			}
 		}
 	}
