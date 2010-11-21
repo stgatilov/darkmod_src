@@ -592,15 +592,36 @@ void Updater::PerformDifferentialUpdateStep()
 		TraceLog::Write(LOG_VERBOSE, (boost::format(" Changing PK4: %s...") % pk4Diff->first).str());
 
 		fs::path targetPk4Path = targetPath / pk4Diff->first;
-		
-		// Double-check the PK4 checksum before doing the merge
-		boost::uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
 
 		const UpdatePackage::PK4Difference& diff = pk4Diff->second;
 
-		if (crc != diff.checksumBefore)
+		NotifyFileProgress(pk4Diff->first, CurFileInfo::Check, static_cast<double>(curOperation) / totalFileOperations);
+		
+		bool fileIsMatching = false;
+
+		// Double-check the PK4 checksum before doing the merge
+		try
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "  Cannot apply change, PK4 checksum is different.");
+			boost::uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
+
+			if (crc == diff.checksumBefore)
+			{
+				fileIsMatching = true;
+			}
+			else
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "  Cannot apply change, PK4 checksum is different.");
+			}
+		}
+		catch (std::runtime_error&)
+		{} // leave fileIsMatching at false
+
+		if (!fileIsMatching)
+		{
+			curOperation += diff.membersToBeRemoved.size();
+			curOperation += diff.membersToBeReplaced.size();
+			curOperation += diff.membersToBeAdded.size();
+
 			continue;
 		}
 

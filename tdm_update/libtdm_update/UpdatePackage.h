@@ -72,7 +72,7 @@ public:
 
 		TraceLog::WriteLine(LOG_VERBOSE, "Update Package Parse results:");
 		TraceLog::WriteLine(LOG_VERBOSE, 
-			(boost::format("PK4s to be removed: %d, PK4s to be added: %d, PK4s to be replaced: %d") %
+			(boost::format("PK4s to be removed: %d, PK4s to be added: %d, PK4s to be changed: %d") %
 				pk4sToBeRemoved.size() % pk4sToBeAdded.size() % pk4Differences.size()
 			).str());
 		TraceLog::WriteLine(LOG_VERBOSE, 

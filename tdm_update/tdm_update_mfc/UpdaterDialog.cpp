@@ -733,6 +733,11 @@ void UpdaterDialog::OnFailure(UpdateStep step, const std::string& errorMessage)
 	};
 }
 
+void UpdaterDialog::OnMessage(const std::string& message)
+{
+	MessageBox(CString(message.c_str()), CString("TDM Updater Message"), MB_OK);
+}
+
 void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 {
 	_progressSpeedText.SetWindowText(CString(""));

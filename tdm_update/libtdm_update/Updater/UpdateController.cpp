@@ -11,7 +11,8 @@ UpdateController::UpdateController(IUpdateView& view, const fs::path& executable
 	_curStep(Init),
 	_updater(options, executableName.leaf()),
 	_abortFlag(false),
-	_progress(new ProgressHandler(_view))
+	_progress(new ProgressHandler(_view)),
+	_differentialUpdatePerformed(false)
 {
 	_updater.SetDownloadProgressCallback(_progress);
 	_updater.SetFileOperationProgressCallback(_progress);
@@ -300,6 +301,12 @@ void UpdateController::OnFinishStep(UpdateStep step)
 				}
 				else
 				{
+					// Did we already perform a differential update?
+					if (_differentialUpdatePerformed)
+					{
+						_view.OnMessage("A differential update has been applied to your installation,\nthough some files still need to be updated.");
+					}
+
 					TryToProceedTo(DownloadFullUpdate);
 				}
 			}
@@ -332,6 +339,8 @@ void UpdateController::OnFinishStep(UpdateStep step)
 
 	case PerformDifferentialUpdate:
 		{
+			_differentialUpdatePerformed = true;
+
 			// After applying a differential update, check our progress
 			DifferentialUpdateInfo info = _updater.GetDifferentialUpdateInfo();
 

@@ -51,6 +51,9 @@ private:
 	// The download progress callback
 	ProgressHandlerPtr _progress;
 
+	// True if the differential update step has been completed at least once
+	bool _differentialUpdatePerformed;
+
 public:
 	// Options will be passed to the Updater object
 	UpdateController(IUpdateView& view, const fs::path& executableName, UpdaterOptions& options);

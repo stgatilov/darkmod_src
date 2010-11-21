@@ -331,6 +331,11 @@ void ConsoleUpdater::OnFailure(UpdateStep step, const std::string& errorMessage)
 	_done = true; // break main loop
 }
 
+void ConsoleUpdater::OnMessage(const std::string& message)
+{
+	TraceLog::WriteLine(LOG_STANDARD, message);
+}
+
 void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 {
 	switch (info.type)
