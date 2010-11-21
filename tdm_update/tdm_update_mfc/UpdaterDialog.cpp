@@ -742,13 +742,13 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 {
 	_progressSpeedText.SetWindowText(CString(""));
 
-	SetProgress(info.overallProgressFraction);
+	SetProgress(info.progressFraction);
 
 	if (!info.file.empty())
 	{
 		switch (info.type)
 		{
-		case ProgressInfo::Download:
+		case ProgressInfo::FileDownload:
 		{
 			std::string text = (boost::format("Downloading from mirror %s: %s") % 
 								info.mirrorDisplayName % info.file.string()).str();

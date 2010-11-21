@@ -29,9 +29,9 @@ public:
 	{
 		ProgressInfo progress;
 
-		progress.type = ProgressInfo::Download;
+		progress.type = ProgressInfo::FileDownload;
 		progress.file = info.file;
-		progress.overallProgressFraction = info.progressFraction > 1.0 ? 1.0 : info.progressFraction;
+		progress.progressFraction = info.progressFraction > 1.0 ? 1.0 : info.progressFraction;
 		progress.mirrorDisplayName = info.mirrorDisplayName;
 		progress.downloadSpeed = info.downloadSpeed;
 		progress.downloadedBytes = info.downloadedBytes;
@@ -45,8 +45,8 @@ public:
 	{
 		ProgressInfo progress;
 
-		progress.type = ProgressInfo::Download;
-		progress.overallProgressFraction = 1.0;
+		progress.type = ProgressInfo::FileDownload;
+		progress.progressFraction = 1.0;
 		progress.downloadSpeed = _recentDownloadSpeed;
 
 		_view.OnProgressChange(progress);
@@ -58,7 +58,7 @@ public:
 
 		progress.type = ProgressInfo::FileOperation;
 		progress.file = info.file;
-		progress.overallProgressFraction = info.overallProgressFraction > 1.0 ? 1.0 : info.overallProgressFraction;
+		progress.progressFraction = info.progressFraction > 1.0 ? 1.0 : info.progressFraction;
 		progress.operationType = GetOperationTypeForFileInfo(info);
 
 		_view.OnProgressChange(progress);
@@ -69,7 +69,7 @@ public:
 		ProgressInfo progress;
 
 		progress.type = ProgressInfo::FileOperation;
-		progress.overallProgressFraction = 1.0;
+		progress.progressFraction = 1.0;
 		progress.operationType = ProgressInfo::Unspecified;
 
 		_view.OnProgressChange(progress);

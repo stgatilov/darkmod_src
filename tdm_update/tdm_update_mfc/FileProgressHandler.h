@@ -21,7 +21,7 @@ public:
 
 	void OnProgress(const updater::CurFileInfo& info)
 	{
-		_dialog.SetProgress(info.overallProgressFraction);
+		_dialog.SetProgress(info.progressFraction);
 		_dialog.SetProgressText(info.file.string());
 	}
 

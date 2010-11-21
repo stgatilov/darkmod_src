@@ -340,7 +340,7 @@ void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 {
 	switch (info.type)
 	{
-	case ProgressInfo::Download:
+	case ProgressInfo::FileDownload:
 		// Download progress
 		if (!_info.file.empty() && !info.file.empty() && info.file != _info.file)
 		{
@@ -363,7 +363,7 @@ void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 		PrintProgress();
 
 		// Add a new line if we're done here
-		if (info.overallProgressFraction >= 1)
+		if (info.progressFraction >= 1)
 		{
 			TraceLog::WriteLine(LOG_PROGRESS, "");
 		}
@@ -377,7 +377,7 @@ void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 		PrintProgress();
 
 		// Add a new line if we're done here
-		if (info.overallProgressFraction >= 1)
+		if (info.progressFraction >= 1)
 		{
 			TraceLog::WriteLine(LOG_PROGRESS, "");
 		}
@@ -390,18 +390,18 @@ void ConsoleUpdater::PrintProgress()
 	TraceLog::Write(LOG_PROGRESS, "\r");
 
 	// Progress bar
-	std::size_t numTicks = static_cast<std::size_t>(floor(_info.overallProgressFraction * PROGRESS_METER_WIDTH));
+	std::size_t numTicks = static_cast<std::size_t>(floor(_info.progressFraction * PROGRESS_METER_WIDTH));
 	std::string progressBar(numTicks, '=');
 	std::string progressSpace(PROGRESS_METER_WIDTH - numTicks, ' ');
 
 	std::string line = " [" + progressBar + progressSpace + "]";
 	
 	// Percent
-	line += (boost::format(" %2.1f%%") % (_info.overallProgressFraction*100)).str();
+	line += (boost::format(" %2.1f%%") % (_info.progressFraction*100)).str();
 
 	switch (_info.type)
 	{
-	case ProgressInfo::Download:	
+	case ProgressInfo::FileDownload:	
 	{
 		line += " at " + Util::GetHumanReadableBytes(static_cast<std::size_t>(_info.downloadSpeed)) + "/sec ";
 	}

@@ -14,8 +14,8 @@ struct ProgressInfo
 {
 	enum Type
 	{
-		Download,
-		FileOperation,
+		FileDownload,	// File download progress (single file)
+		FileOperation,	// File operation
 	};
 
 	// The type of progress
@@ -41,7 +41,7 @@ struct ProgressInfo
 	std::string mirrorDisplayName;
 
 	// The progress fraction of the entire step in [0..1]
-	double overallProgressFraction;
+	double progressFraction;
 
 	// The current download speed, if applicable, in bytes/sec
 	double downloadSpeed;

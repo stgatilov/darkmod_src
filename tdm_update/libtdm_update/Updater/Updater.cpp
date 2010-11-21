@@ -159,7 +159,7 @@ void Updater::NotifyFileProgress(const fs::path& file, CurFileInfo::Operation op
 		CurFileInfo info;
 		info.operation = op;
 		info.file = file;
-		info.overallProgressFraction = fraction;
+		info.progressFraction = fraction;
 
 		_fileProgressCallback->OnFileOperationProgress(info);
 	}
@@ -885,7 +885,7 @@ void Updater::CheckLocalFiles()
 			CurFileInfo info;
 			info.operation = CurFileInfo::Check;
 			info.file = i->second.file;
-			info.overallProgressFraction = static_cast<double>(count) / _latestRelease.size();
+			info.progressFraction = static_cast<double>(count) / _latestRelease.size();
 
 			_fileProgressCallback->OnFileOperationProgress(info);
 		}

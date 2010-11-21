@@ -56,7 +56,7 @@ struct CurFileInfo
 	fs::path file;
 
 	// The progress of the whole operation
-	double overallProgressFraction;
+	double progressFraction;
 };
 
 class Updater
