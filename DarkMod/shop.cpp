@@ -728,8 +728,8 @@ void CShop::AddMapItems(idMapFile* mapFile)
 			{
 				idStr itemName = mapEnt->epairs.GetString("classname");
 				int quantity;
-				bool isWeapon = false; // is this an arrow?
-				int max_ammo; // in case this is a weapon
+				bool isWeapon = false;	// is this an arrow?
+				int max_ammo = 1;	// in case this is a weapon
 
 				// Special handling for arrows. The shop definitions allow for
 				// atdm:weapon_*, but not atdm:ammo_*. The latter form is used on
