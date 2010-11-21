@@ -58,7 +58,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
 	{
 		aasGoal_t hideGoal;
-		if (_takingCoverPossible = owner->LookForCover(hideGoal, enemy, owner->lastVisibleEnemyPos))
+		if ( (_takingCoverPossible = owner->LookForCover(hideGoal, enemy, owner->lastVisibleEnemyPos)) )
 		{
 			// We should not go into TakeCoverState if we are already at a suitable position
 			if (hideGoal.origin == owner->GetPhysics()->GetOrigin() )
