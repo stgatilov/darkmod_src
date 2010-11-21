@@ -40,6 +40,8 @@ void LogViewer::DoDataExchange(CDataExchange* pDX)
 
 void LogViewer::WriteLog(LogClass lc, const std::string& str)
 {
+	if (m_hWnd == NULL) return;
+
 	// get the initial text length
 	int nLength = _logView.GetWindowTextLength();
 

@@ -46,8 +46,6 @@ UpdaterDialog::UpdaterDialog(const fs::path& executableName,
 
 UpdaterDialog::~UpdaterDialog()
 {
-	TraceLog::WriteLine(LOG_VERBOSE, "~UpdaterDialog()");
-
 	TraceLog::Instance().Unregister(_logViewer);
 
 	_logViewer.reset();
