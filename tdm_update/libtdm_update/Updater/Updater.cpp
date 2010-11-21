@@ -452,8 +452,8 @@ void Updater::DownloadDifferentialUpdate()
 	}
 	else
 	{
-		// Download the file from one of our mirrors
-		PerformSingleMirroredDownload(packageFilename.string());
+		// Download the file from one of our mirrors, with CRC check
+		PerformSingleMirroredDownload(packageFilename.string(), it->second.filesize, it->second.crc);
 
 		if (!VerifyUpdatePackageAt(it->second, packageTargetPath))
 		{
@@ -745,7 +745,7 @@ std::string Updater::GetDeterminedLocalVersion()
 	return _pureLocalVersion;
 }
 
-void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
+DownloadPtr Updater::PrepareMirroredDownload(const std::string& remoteFile)
 {
 	AssertMirrorsNotEmpty();
 
@@ -757,6 +757,38 @@ void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
 	// Create a mirrored download
 	DownloadPtr download(new MirrorDownload(_conn, _mirrors, remoteFile, targetPath));
 
+	if (File::IsArchive(remoteFile))
+	{
+		download->EnableValidPK4Check(true);
+	}
+
+	return download;
+}
+
+void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
+{
+	// Create a mirrored download
+	DownloadPtr download = PrepareMirroredDownload(remoteFile);
+
+	// Perform and wait for completion
+	PerformSingleMirroredDownload(download);
+}
+
+void Updater::PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc)
+{
+	DownloadPtr download = PrepareMirroredDownload(remoteFile);
+
+	download->EnableCrcCheck(true);
+	download->EnableFilesizeCheck(true);
+	download->SetRequiredCrc(requiredCrc);
+	download->SetRequiredFilesize(requiredSize);
+
+	// Perform and wait for completion
+	PerformSingleMirroredDownload(download);
+}
+
+void Updater::PerformSingleMirroredDownload(const DownloadPtr& download)
+{
 	int downloadId = _downloadManager->AddDownload(download);
 
 	while (_downloadManager->HasPendingDownloads())

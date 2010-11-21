@@ -271,8 +271,17 @@ private:
 	// Extract the contents of the given zip file (and remove the zip afterwards)
 	void ExtractAndRemoveZip(const fs::path& zipFilePath);
 
+	// Creates a mirrored download
+	DownloadPtr PrepareMirroredDownload(const std::string& remoteFile);
+
 	// Downloads a file from a random mirror to the target folder
 	void PerformSingleMirroredDownload(const std::string& remoteFile);
+
+	// Downloads a file from a random mirror to the target folder, checking required size and CRC after download
+	void PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc);
+
+	// Starts the download and waits for completion
+	void PerformSingleMirroredDownload(const DownloadPtr& download);
 
 	// Checks if the given update package is already present at the given location
 	bool VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& package);

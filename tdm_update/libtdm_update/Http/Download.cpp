@@ -178,7 +178,7 @@ void Download::Perform()
 			}
 			else
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, "Downloaded file failed the integrity checks.");
+				TraceLog::WriteLine(LOG_VERBOSE, "Downloaded file passed the integrity checks.");
 			}
 
 			// Remove the destination filename before moving the temporary file over
@@ -237,6 +237,9 @@ bool Download::CheckIntegrity()
 {
 	if (_filesizeCheckEnabled)
 	{
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking filesize of downloaded file, expecting %d") %
+				_requiredFilesize).str());
+
 		if (fs::file_size(_tempFilename) != _requiredFilesize)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file has the wrong size, expected %d but found %d") %
@@ -247,6 +250,8 @@ bool Download::CheckIntegrity()
 
 	if (_pk4CheckEnabled)
 	{
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking download for 'is-a-zipfile'.")).str());
+
 		ZipFileReadPtr zipFile = Zip::OpenFileRead(_tempFilename);
 
 		if (zipFile == NULL) 
@@ -259,6 +264,9 @@ bool Download::CheckIntegrity()
 
 	if (_crcCheckEnabled)
 	{
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking CRC of downloaded file, expecting %x") %
+				_requiredCrc).str());
+
 		boost::uint32_t crc = CRC::GetCrcForFile(_tempFilename);
 
 		if (crc != _requiredCrc)
