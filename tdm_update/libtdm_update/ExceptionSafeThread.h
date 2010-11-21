@@ -61,7 +61,7 @@ public:
 
 	~ExceptionSafeThread()
 	{
-		if (_thread != NULL && !_thread->timed_join(boost::posix_time::milliseconds(0)))
+		if (_thread != NULL && !_done)
 		{
 			_thread->interrupt();
 		}

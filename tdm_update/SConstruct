@@ -134,11 +134,6 @@ if ( g_os == 'Linux' ):
 	# help 64 bit machines to find the compatibility 32bit libraries
 	BASELINKFLAGS.append( '-L/lib32' )
 	BASELINKFLAGS.append( '-L/usr/lib32' )
-	BASELINKFLAGS.append( '-lboost_system' )
-	BASELINKFLAGS.append( '-lboost_filesystem' )
-	BASELINKFLAGS.append( '-lboost_thread' )
-	BASELINKFLAGS.append( '-lboost_regex' )
-	BASELINKFLAGS.append( '-lboost_program_options' )
 
 if ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]

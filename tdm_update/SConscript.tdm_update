@@ -25,12 +25,12 @@ local_env.Append(CPPPATH = '#/libtdm_update')
 # Use local Boost
 
 local_env.Append(LIBS = [
-#	File('#/../linux/boost/lib/libboost_filesystem.a'),
-#	File('#/../linux/boost/lib/libboost_program_options.a'),
-#	File('#/../linux/boost/lib/libboost_thread.a'),
-#	File('#/../linux/boost/lib/libboost_regex.a'),
-#	File('#/../linux/boost/lib/libboost_system.a'),
-    File('#/../linux/libcurl/libcurl.a')
+	File('/usr/lib/libboost_filesystem.a'),
+	File('/usr/lib/libboost_program_options.a'),
+	File('/usr/lib/libboost_thread.a'),
+	File('/usr/lib/libboost_regex.a'),
+	File('/usr/lib/libboost_system.a'),
+	File('#/../linux/libcurl/libcurl.a')
 ])
 
 minizip_list = SConscript( './SConscript.minizip' )

@@ -172,13 +172,13 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
 	{
 	case Init:
 	{
-		// nothing
+		TraceLog::WriteLine(LOG_STANDARD, " Done.");
 	}
 	break;
 
 	case CleanupPreviousSession:
 	{
-		// nothing
+		TraceLog::WriteLine(LOG_STANDARD, " Done.");
 	}
 	break;
 
