@@ -262,6 +262,17 @@ void UpdaterDialog::SetProgress(double progressFraction)
 	_progressMain.SetPos(static_cast<int>(100*progressFraction));
 }
 
+void UpdaterDialog::SetFullDownloadProgress(double progressFraction)
+{
+	std::string str = (boost::format("Downloading updates... %0.2f%%") % (progressFraction*100)).str();
+	_step5Text.SetWindowText(CString(str.c_str()));
+}
+
+void UpdaterDialog::SetTaskbarProgress(double progressFraction)
+{
+	// TODO
+}
+
 void UpdaterDialog::ClearSteps()
 {
 	_step1Text.SetWindowText(CString());
@@ -415,7 +426,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		// Update header title in this step
 		_subTitle.SetWindowText(CString("Downloading updates from server"));
 
-		_step5Text.SetWindowText(CString("Downloading TDM Update..."));
+		_step5Text.SetWindowText(CString("Downloading updates..."));
 		_step5State.SetWindowText(CString("--"));
 
 		_step6Text.SetWindowText(CString(""));
@@ -740,8 +751,13 @@ void UpdaterDialog::OnMessage(const std::string& message)
 
 void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 {
-	_progressSpeedText.SetWindowText(CString(""));
+	if (info.type == ProgressInfo::FullUpdateDownload)
+	{
+		SetFullDownloadProgress(info.progressFraction);
+		return;
+	}
 
+	_progressSpeedText.SetWindowText(CString(""));
 	SetProgress(info.progressFraction);
 
 	if (!info.file.empty())
@@ -750,20 +766,28 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 		{
 		case ProgressInfo::FileDownload:
 		{
+			_progressSpeedText.SetWindowText(CString(""));
+			SetProgress(info.progressFraction);
+
 			std::string text = (boost::format("Downloading from mirror %s: %s") % 
 								info.mirrorDisplayName % info.file.string()).str();
 			SetProgressText(text);
 
-			std::string speed = (boost::format("Downloaded: %s - Current download speed: %s/sec.") % 
-								Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadedBytes)) % 
-								Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadSpeed))).str();
-
-			SetProgressSpeedText(speed);
+			if (info.progressFraction < 1.0f)
+			{
+				std::string speed = (boost::format("Downloaded: %s - Current download speed: %s/sec.") % 
+									Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadedBytes)) % 
+									Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadSpeed))).str();
+				SetProgressSpeedText(speed);
+			}
 		}
 		break;
 
 		case ProgressInfo::FileOperation:
 		{
+			_progressSpeedText.SetWindowText(CString(""));
+			SetProgress(info.progressFraction);
+
 			std::string verb;
 
 			switch (info.operationType)
@@ -791,7 +815,6 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 			SetProgressText(text);
 		}
 		break;
-
 		};
 	}
 }

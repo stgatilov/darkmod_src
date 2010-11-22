@@ -21,6 +21,27 @@ namespace tdm
 namespace updater
 {
 
+// The progress taking information about the entire download
+struct OverallDownloadProgressInfo
+{
+	enum UpdateType
+	{
+		Differential,
+		Full
+	};
+
+	UpdateType updateType;
+
+	// The progress fraction
+	double progressFraction;
+
+	// Number of bytes received
+	std::size_t downloadedBytes;
+
+	// Number of bytes left
+	std::size_t bytesLeftToDownload;
+};
+
 struct CurDownloadInfo
 {
 	// The filename we're downloading
@@ -76,8 +97,13 @@ public:
 	class DownloadProgress
 	{
 	public:
+		// Entire step progress (differential or full update)
+		virtual void OnOverallProgress(const OverallDownloadProgressInfo& info) = 0;
+
+		// Single-file progress
 		virtual void OnDownloadProgress(const CurDownloadInfo& info) = 0;
 
+		// called on finishing the single-file
 		virtual void OnDownloadFinish() = 0;
 	};
 	typedef boost::shared_ptr<DownloadProgress> DownloadProgressPtr;
@@ -258,6 +284,7 @@ private:
 	void AssertMirrorsNotEmpty();
 
 	void NotifyDownloadProgress();
+	void NotifyFullUpdateProgress();
 
 	// Notifier shortcut
 	void NotifyFileProgress(const fs::path& file, CurFileInfo::Operation op, double fraction);

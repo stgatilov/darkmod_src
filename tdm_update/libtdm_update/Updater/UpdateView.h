@@ -16,6 +16,8 @@ struct ProgressInfo
 	{
 		FileDownload,	// File download progress (single file)
 		FileOperation,	// File operation
+		DifferentialPackageDownload,	// differential update download
+		FullUpdateDownload,				// full update download
 	};
 
 	// The type of progress

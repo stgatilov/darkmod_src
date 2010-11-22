@@ -4,6 +4,7 @@
 #include "../TraceLog.h"
 #include "../File.h"
 #include "../CRC.h"
+#include "../Util.h"
 #include "../Constants.h"
 
 #include <boost/bind.hpp>
@@ -94,8 +95,8 @@ void Download::Stop()
 		// Cancel the request
 		_request->Cancel();
 
-		// Wait for the thread to finish
-		_thread->join();
+		// Wait for the thread to finish, max. 1/2 second
+		Util::Wait(500);
 
 		_thread.reset();
 		_request.reset();

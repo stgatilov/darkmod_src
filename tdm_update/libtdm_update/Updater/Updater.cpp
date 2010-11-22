@@ -1027,6 +1027,8 @@ void Updater::PerformUpdateStep()
 
 		NotifyDownloadProgress();
 
+		NotifyFullUpdateProgress();
+
 		Util::Wait(100);
 	}
 
@@ -1056,6 +1058,54 @@ void Updater::PerformUpdateStep()
 			}
 		}
 	}
+}
+
+void Updater::NotifyFullUpdateProgress()
+{
+	if (_downloadProgressCallback == NULL)
+	{
+		return;
+	}
+
+	std::size_t totalDownloadSize = GetTotalDownloadSize();
+	std::size_t totalBytesDownloaded = 0;
+
+	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
+	{
+		boost::this_thread::interruption_point();
+
+		if (i->second.downloadId == -1)
+		{
+			continue;
+		}
+
+		DownloadPtr download = _downloadManager->GetDownload(i->second.downloadId);
+
+		if (download == NULL) continue;
+
+		if (download->GetStatus() == Download::SUCCESS)
+		{
+			totalBytesDownloaded += i->second.filesize;
+		}
+		else if (download->GetStatus() == Download::IN_PROGRESS)
+		{
+			totalBytesDownloaded += download->GetDownloadedBytes();
+		}
+	}
+
+	OverallDownloadProgressInfo info;
+
+	if (totalBytesDownloaded > totalDownloadSize)
+	{
+		totalBytesDownloaded = totalDownloadSize;
+	}
+
+	info.updateType = OverallDownloadProgressInfo::Full;
+	info.bytesLeftToDownload = totalDownloadSize - totalBytesDownloaded;
+	info.downloadedBytes = totalBytesDownloaded;
+	info.progressFraction = static_cast<double>(totalBytesDownloaded) / totalDownloadSize;
+	
+	_downloadProgressCallback->OnOverallProgress(info);
 }
 
 void Updater::NotifyDownloadProgress()

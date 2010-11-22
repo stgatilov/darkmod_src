@@ -25,6 +25,28 @@ public:
 		_view(view)
 	{}
 
+	void OnOverallProgress(const OverallDownloadProgressInfo& info)
+	{
+		ProgressInfo progress;
+
+		switch (info.updateType)
+		{
+		case OverallDownloadProgressInfo::Full:
+			progress.type = ProgressInfo::FullUpdateDownload;
+			break;
+		case OverallDownloadProgressInfo::Differential:
+			progress.type = ProgressInfo::DifferentialPackageDownload;
+			break;
+		default:
+			return; // ignore unknown cases
+		};
+
+		progress.progressFraction = info.progressFraction > 1.0 ? 1.0 : info.progressFraction;
+		progress.downloadedBytes = info.downloadedBytes;
+
+		_view.OnProgressChange(progress);
+	}
+
 	void OnDownloadProgress(const CurDownloadInfo& info)
 	{
 		ProgressInfo progress;

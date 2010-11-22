@@ -127,4 +127,12 @@ bool DownloadManager::HasFailedDownloads()
 	return false;
 }
 
+void DownloadManager::ForeachDownload(DownloadVisitor& visitor)
+{
+	for (Downloads::const_iterator i = _downloads.begin(); i != _downloads.end(); ++i)
+	{
+		visitor.Visit(i->first, i->second);
+	}
+}
+
 }

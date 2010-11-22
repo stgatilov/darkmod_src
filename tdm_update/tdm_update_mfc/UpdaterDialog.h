@@ -37,6 +37,9 @@ public:
 	void SetProgressText(const std::string& text);
 	void SetProgressSpeedText(const std::string& text);
 	void SetProgress(double progressFraction);
+	void SetFullDownloadProgress(double progressFraction);
+
+	void SetTaskbarProgress(double progressFraction);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support

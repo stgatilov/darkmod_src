@@ -11,6 +11,15 @@ namespace tdm
  */
 class DownloadManager
 {
+public:
+	class DownloadVisitor
+	{
+	public:
+		// Called per download object, with the assigned ID
+		// The visitor should not change any downloads of the manager class
+		virtual void Visit(int id, const DownloadPtr& download) = 0;
+	};
+
 private:
 	// Ongoing downloads
 	typedef std::map<int, DownloadPtr> Downloads;
@@ -46,6 +55,9 @@ public:
 
 	// Returns true if one or more downloads have failed status
 	bool HasFailedDownloads();
+
+	// Iterate over all registered downloads
+	void ForeachDownload(DownloadVisitor& visitor);
 };
 typedef boost::shared_ptr<DownloadManager> DownloadManagerPtr;
 
