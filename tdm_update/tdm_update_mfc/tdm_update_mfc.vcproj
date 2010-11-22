@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libtdm_update.lib libcurl.lib ZipLoader.lib WS2_32.lib"
+				AdditionalDependencies="libtdm_update.lib libcurl.lib ZipLoader.lib WS2_32.lib psapi.lib"
 				OutputFile="$(OutDir)/GuiUpdater/tdm_update.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;"
@@ -154,7 +154,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libtdm_update.lib libcurl.lib ZipLoader.lib WS2_32.lib"
+				AdditionalDependencies="libtdm_update.lib libcurl.lib ZipLoader.lib WS2_32.lib psapi.lib"
 				OutputFile="$(OutDir)/GuiUpdater/tdm_update.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;"

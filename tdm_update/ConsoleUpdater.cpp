@@ -336,6 +336,17 @@ void ConsoleUpdater::OnMessage(const std::string& message)
 	TraceLog::WriteLine(LOG_STANDARD, message);
 }
 
+void ConsoleUpdater::OnWarning(const std::string& message)
+{
+	TraceLog::WriteLine(LOG_STANDARD, "============== WARNING ================");
+	TraceLog::WriteLine(LOG_STANDARD, message);
+	TraceLog::WriteLine(LOG_STANDARD, "=======================================");
+
+	TraceLog::WriteLine(LOG_STANDARD, "Waiting 10 seconds before continuing automatically...");
+
+	Util::Wait(10000);
+}
+
 void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 {
 	switch (info.type)

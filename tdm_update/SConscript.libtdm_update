@@ -14,6 +14,7 @@ Import( GLOBALS )
 libtdm_update_string = ' \
 	IniFile.cpp \
 	TraceLog.cpp \
+	Util.cpp \
 	Updater/Updater.cpp \
 	Updater/UpdateController.cpp \
 	Packager/Packager.cpp \

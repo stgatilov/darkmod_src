@@ -1,5 +1,7 @@
 #include "UpdateController.h"
 
+#include "../Util.h"
+
 namespace tdm
 {
 
@@ -144,7 +146,12 @@ void UpdateController::PerformStep(UpdateStep step)
 	switch (step)
 	{
 	case Init:
-		// nothing to do in Init.
+		// Check if D3 is active
+		if (Util::D3IsRunning())
+		{
+			_view.OnWarning("The Doom 3 process was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit Doom 3 before continuing.");
+		}
+
 		break;
 
 	case CleanupPreviousSession:

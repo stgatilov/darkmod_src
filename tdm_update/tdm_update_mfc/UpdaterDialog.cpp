@@ -749,6 +749,11 @@ void UpdaterDialog::OnMessage(const std::string& message)
 	MessageBox(CString(message.c_str()), CString("TDM Updater Message"), MB_OK);
 }
 
+void UpdaterDialog::OnWarning(const std::string& message)
+{
+	MessageBox(CString(message.c_str()), CString("TDM Updater Warning"), MB_OK);
+}
+
 void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 {
 	if (info.type == ProgressInfo::FullUpdateDownload)

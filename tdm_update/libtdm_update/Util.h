@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 
 // Platform-specific Sleep(int msec) definition
 #ifdef WIN32
@@ -10,6 +11,8 @@
 	#include <unistd.h>
 	#define Sleep(x) usleep(static_cast<int>(1000 * (x)))
 #endif 
+
+namespace fs = boost::filesystem;
 
 namespace tdm
 {
@@ -67,6 +70,9 @@ public:
 	{
 		Sleep(millisecs);
 	}
+
+	// Platform-dependent process check routine (searches for gamex86.dll/gamex86.so)
+	static bool D3IsRunning();
 };
 
 } // namespace

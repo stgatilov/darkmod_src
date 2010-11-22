@@ -51,6 +51,7 @@ public:
 	void OnFailure(tdm::updater::UpdateStep step, const std::string& errorMessage);
 	void OnProgressChange(const tdm::updater::ProgressInfo& info);
 	void OnMessage(const std::string& message);
+	void OnWarning(const std::string& message);
 	void OnStartDifferentialUpdate(const tdm::updater::DifferentialUpdateInfo& info);
 	void OnPerformDifferentialUpdate(const tdm::updater::DifferentialUpdateInfo& info);
 	void OnFinishDifferentialUpdate(const tdm::updater::DifferentialUpdateInfo& info);

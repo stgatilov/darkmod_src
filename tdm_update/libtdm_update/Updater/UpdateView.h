@@ -99,6 +99,13 @@ public:
 	 */
 	virtual void OnMessage(const std::string& message) = 0;
 
+	/** 
+	 * Use this method to send a warning to the view - this might result in
+	 * a popup being displayed, or a line printed to the console, this depends
+	 * on the implementation.
+	 */
+	virtual void OnWarning(const std::string& message) = 0;
+
 	/**
 	 * Called when the controller starts to download a differential update package.
 	 */

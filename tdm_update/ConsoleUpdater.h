@@ -64,6 +64,7 @@ public:
 	void OnFailure(UpdateStep step, const std::string& errorMessage);
 	void OnProgressChange(const ProgressInfo& info);
 	void OnMessage(const std::string& message);
+	void OnWarning(const std::string& message);
 	void OnStartDifferentialUpdate(const DifferentialUpdateInfo& info);
 	void OnPerformDifferentialUpdate(const DifferentialUpdateInfo& info);
 	void OnFinishDifferentialUpdate(const DifferentialUpdateInfo& info);
