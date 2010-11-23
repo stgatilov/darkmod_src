@@ -99,6 +99,9 @@ public:
 
 	// Load stuff from darkmod.txt
 	void	LoadMetaData();
+
+	// Moves articles from the front of the string to its back "The Alchemist" => "Alchemist, The"
+	static void MoveArticlesToBack(idStr& title);
 };
 typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
 

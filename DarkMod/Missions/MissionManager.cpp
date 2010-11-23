@@ -799,6 +799,10 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 		DownloadableMission mission;
 
 		mission.title = node.attribute("title").value();
+
+		// Remove articles from mission titles
+		CMissionInfo::MoveArticlesToBack(mission.title);
+
 		mission.sizeMB = node.attribute("size").as_float();
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();

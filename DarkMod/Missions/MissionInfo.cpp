@@ -265,6 +265,9 @@ void CMissionInfo::LoadMetaData()
 		displayName.StripLeading(" ");
 		displayName.StripLeading("\t");
 		displayName.StripTrailingWhitespace();
+
+		// Remove articles from mission titles
+		MoveArticlesToBack(displayName);
 	}
 
 	if (descPos >= 0)
@@ -310,5 +313,18 @@ void CMissionInfo::LoadMetaData()
 		splashImageName.StripFileExtension();
 
 		image = pathToFMPackage + splashImageName;
+	}
+}
+
+void CMissionInfo::MoveArticlesToBack(idStr& title)
+{
+	if (title.StripLeadingOnce("The "))
+	{
+		title += ", The";
+	}
+
+	if (title.StripLeadingOnce("A "))
+	{
+		title += ", A";
 	}
 }
