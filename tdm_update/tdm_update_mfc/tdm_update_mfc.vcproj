@@ -281,6 +281,10 @@
 				RelativePath=".\UpdaterDialog.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Win7Decls.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

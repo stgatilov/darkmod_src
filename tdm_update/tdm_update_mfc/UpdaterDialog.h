@@ -3,8 +3,7 @@
 #include "afxwin.h"
 #include "afxcmn.h"
 
-// This file needs to come from the Win7 SDK, for ITaskBarList3
-#include "Shobjidl.h"
+#include "Win7Decls.h"
 
 #include "Updater/UpdateController.h"
 #include "Updater/UpdateStep.h"
