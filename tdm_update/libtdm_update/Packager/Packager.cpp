@@ -184,6 +184,11 @@ void Packager::CreateUpdatePackage()
 	fs::path headDir = _options.Get("headdir");
 	fs::path outputDir = _options.Get("outputdir");
 
+	if (!fs::exists(outputDir))
+	{
+		fs::create_directories(outputDir);
+	}
+	
 	fs::path updatePackagePath = outputDir / updatePackageFileName; 
 
 	_difference.filename = updatePackagePath;
@@ -302,6 +307,11 @@ void Packager::CreateVersionInformation()
 	assert(_options.IsSet("baseversion"));
 
 	fs::path outputDir = _options.Get("outputdir");
+
+	if (!fs::exists(outputDir))
+	{
+		fs::create_directories(outputDir);
+	}
 
 	fs::path versionInfoFile = outputDir / TDM_VERSION_INFO_FILE;
 
@@ -560,7 +570,10 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 	fs::path pk4Folder = pk4Path;
 	pk4Folder.remove_leaf().remove_leaf();
 
-	fs::create_directories(pk4Folder);
+	if (!fs::exists(pk4Folder))
+	{
+		fs::create_directories(pk4Folder);
+	}
 
 	// Remove destination file before writing
 	File::Remove(pk4Path);
