@@ -225,6 +225,11 @@ void UpdaterDialog::OnBnClickedButtonAbort()
 
 		if (result == IDYES)
 		{
+			// Unregister the logwriters when aborting, the download thread call log messages and 
+			// and end up in a deadlock in the LogViewer class
+			TraceLog::Instance().Unregister(_logViewer);
+			_logViewer.reset();
+			
 			_controller->Abort();
 
 			PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
