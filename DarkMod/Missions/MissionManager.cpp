@@ -698,6 +698,7 @@ int CMissionManager::StartReloadDownloadableMissions()
 	// TODO: Move this list to some config file or CVAR
 	idStringList missionListUrls;
 
+	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/available_missions.xml";
 	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php";
 
 	{
