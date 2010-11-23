@@ -133,6 +133,12 @@ void CDownload::Perform()
 				}
 			}
 
+			// Make sure the destination file is overwritten
+			if (fs::exists(_destFilename.c_str()))
+			{
+				CMissionManager::DoRemoveFile(_destFilename.c_str());
+			}
+
 			// Move temporary file to the real one
 			if (CMissionManager::DoMoveFile(_tempFilename.c_str(), _destFilename.c_str()))
 			{

@@ -18,12 +18,18 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../ZipLoader/ZipLoader.h"
 #include "../Inventory/Inventory.h"
 
+#include "DownloadManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
-#include "../pugixml/pugixml.hpp"
+
+namespace
+{
+	const char* const TMP_MISSION_LIST_FILENAME = "__missionlist.xml.temp";
+}
 
 CMissionManager::CMissionManager() :
-	_missionDB(new CMissionDB)
+	_missionDB(new CMissionDB),
+	_refreshMissionListDownloadId(-1)
 {}
 
 void CMissionManager::Init()
@@ -683,33 +689,95 @@ void CMissionManager::UninstallMission()
 	}
 }
 
-void CMissionManager::ReloadDownloadableMissions()
+int CMissionManager::StartReloadDownloadableMissions()
 {
 	_downloadableMissions.Clear();
 
-	if (gameLocal.m_HttpConnection == NULL) return;
+	if (gameLocal.m_HttpConnection == NULL) return -1;
 
-	// Form a new HTTP request
-	CHttpRequestPtr req = gameLocal.m_HttpConnection->CreateRequest("http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php");
+	// TODO: Move this list to some config file or CVAR
+	idStringList missionListUrls;
 
-	req->Perform();
+	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php";
 
-	// Check Request Status
-	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		gameLocal.Printf("Connection Error.\n");
+		fs::path tempFilename = g_Global.GetDarkmodPath();
+		tempFilename /= TMP_MISSION_LIST_FILENAME;
 
-		GuiMessage msg;
-		msg.title = "Unable to contact Mission Archive";
-		msg.message = "Cannot connect to server.";
-		msg.type = GuiMessage::MSG_OK;
-		msg.okCmd = "close_msg_box";
+		CDownloadPtr download(new CDownload(missionListUrls, tempFilename.file_string().c_str()));
 
-		gameLocal.AddMainMenuMessage(msg);
-		return;
+		_refreshMissionListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+
+		return _refreshMissionListDownloadId;
+	}
+}
+
+bool CMissionManager::IsDownloadableMissionsRequestInProgress()
+{
+	return _refreshMissionListDownloadId != -1;
+}
+
+CMissionManager::MissionListDownloadStatus CMissionManager::ProcessReloadDownloadableMissionsRequest()
+{
+	if (!IsDownloadableMissionsRequestInProgress()) 
+	{
+		return DOWNLOAD_NOT_IN_PROGRESS;
 	}
 
-	XmlDocumentPtr doc = req->GetResultXml();
+	CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_refreshMissionListDownloadId);
+
+	if (download == NULL) return DOWNLOAD_NOT_IN_PROGRESS;
+
+	MissionListDownloadStatus status = DOWNLOAD_NOT_IN_PROGRESS;
+
+	switch (download->GetStatus())
+	{
+	case CDownload::NOT_STARTED_YET:	
+		status = DOWNLOAD_IN_PROGRESS;
+		break;
+
+	case CDownload::IN_PROGRESS:
+		status = DOWNLOAD_IN_PROGRESS;
+		break;
+
+	case CDownload::FAILED:
+		status = DOWNLOAD_FAILED;
+		break;
+
+	case CDownload::SUCCESS:
+		status = DOWNLOAD_SUCCESSFUL;
+		break;
+	};
+
+	// Clean up the result if the request is complete
+	if (status == DOWNLOAD_FAILED || status == DOWNLOAD_SUCCESSFUL)
+	{
+		fs::path tempFilename = g_Global.GetDarkmodPath();
+		tempFilename /= TMP_MISSION_LIST_FILENAME;
+
+		if (status == DOWNLOAD_SUCCESSFUL)
+		{
+			XmlDocumentPtr doc(new pugi::xml_document);
+		
+			doc->load_file(tempFilename.file_string().c_str());
+
+			LoadMissionListFromXml(doc);
+		}
+
+		// Remove the temporary file
+		DoRemoveFile(tempFilename);
+
+		// Clear the download
+		gameLocal.m_DownloadManager->RemoveDownload(_refreshMissionListDownloadId);
+		_refreshMissionListDownloadId = -1;
+	}
+
+	return status;
+}
+
+void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
+{
+	assert(doc != NULL);
 
 	/* Example XML Snippet
 	

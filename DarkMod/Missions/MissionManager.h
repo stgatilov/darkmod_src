@@ -14,6 +14,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
 
+// Shared_ptr typedef
+#include "../pugixml/pugixml.hpp"
+typedef boost::shared_ptr<pugi::xml_document> XmlDocumentPtr;
+
 class CMissionDB;
 typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
 
@@ -53,12 +57,23 @@ private:
 
 	DownloadableMissionList _downloadableMissions;
 
+	// The ID of the "Downloading mission list from server" message
+	int _refreshMissionListDownloadId;
+
 public:
 	enum InstallResult
 	{
 		INSTALLED_OK,
 		INDEX_OUT_OF_BOUNDS,
 		COPY_FAILURE,
+	};
+
+	enum MissionListDownloadStatus
+	{
+		DOWNLOAD_NOT_IN_PROGRESS,
+		DOWNLOAD_IN_PROGRESS,
+		DOWNLOAD_FAILED,
+		DOWNLOAD_SUCCESSFUL,
 	};
 
 public:
@@ -112,8 +127,16 @@ public:
 	// Uninstalls the currently installed FM, basically clearing our currentfm.txt
 	void UninstallMission();
 
-	// Checks online for available missions
-	void ReloadDownloadableMissions();
+	// Checks online for available missions, returns the download ID for progress checking
+	int StartReloadDownloadableMissions();
+
+	// Returns true if the mission list download is currently in progress,
+	// call ProcessReloadDownloadableMissionsRequest() to process it
+	bool IsDownloadableMissionsRequestInProgress();
+
+	// Processes the pending mission list download request. Returns the download status
+	// for reference (FAILED, SUCCESS, etc.)
+	MissionListDownloadStatus ProcessReloadDownloadableMissionsRequest();
 
 	// Accessor to the downloadble mission list
 	const DownloadableMissionList& GetDownloadableMissions() const;
@@ -151,6 +174,9 @@ private:
 
 	// Compare functor to sort mods by display name
 	static int MissionSortCompare(const int* a, const int* b);
+
+	// Loads the mission list from the given XML
+	void LoadMissionListFromXml(const XmlDocumentPtr& doc);
 };
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 
