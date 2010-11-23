@@ -23,6 +23,8 @@ using namespace updater;
 
 // UpdaterDialog dialog
 
+UINT UpdaterDialog::WM_TASKBARBTNCREATED = RegisterWindowMessage(_T("TaskbarButtonCreated"));
+
 UpdaterDialog::UpdaterDialog(const fs::path& executableName, 
 							 UpdaterOptions& options, 
 							 CWnd* pParent)
@@ -88,6 +90,7 @@ BEGIN_MESSAGE_MAP(UpdaterDialog, CDialog)
 	ON_BN_CLICKED(ID_BUTTON_ABORT, &UpdaterDialog::OnBnClickedButtonAbort)
 	ON_BN_CLICKED(ID_BUTTON_CONTINUE, &UpdaterDialog::OnBnClickedButtonContinue)
 	ON_MESSAGE(WM_DESTROY_WHEN_THREADS_DONE, OnDestroyWhenThreadsDone)
+	ON_REGISTERED_MESSAGE(WM_TASKBARBTNCREATED, OnTaskbarBtnCreated)
 	ON_BN_CLICKED(IDC_ADV_OPTIONS_BUTTON, &UpdaterDialog::OnBnClickedAdvOptionsButton)
 	ON_BN_CLICKED(IDC_SHOW_LOG_BUTTON, &UpdaterDialog::OnBnClickedShowLogButton)
 END_MESSAGE_MAP()
@@ -123,7 +126,7 @@ BOOL UpdaterDialog::OnInitDialog()
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
-afx_msg LRESULT UpdaterDialog::OnDestroyWhenThreadsDone(UINT wParam, LONG lParam)
+LRESULT UpdaterDialog::OnDestroyWhenThreadsDone(UINT wParam, LONG lParam)
 {
 	_progressSpeedText.SetWindowText(CString("Waiting for threads to terminate..."));
 
@@ -134,6 +137,7 @@ afx_msg LRESULT UpdaterDialog::OnDestroyWhenThreadsDone(UINT wParam, LONG lParam
 			_controller->PerformPostUpdateCleanup();
 		}
 
+		_taskbarList.Release();
 		DestroyWindow();
 	}
 	else
@@ -142,6 +146,23 @@ afx_msg LRESULT UpdaterDialog::OnDestroyWhenThreadsDone(UINT wParam, LONG lParam
 		PostMessage(WM_DESTROY_WHEN_THREADS_DONE);
 	}
 
+	return 0;
+}
+
+LRESULT UpdaterDialog::OnTaskbarBtnCreated(WPARAM, LPARAM)
+{
+	DWORD dwMajor = LOBYTE(LOWORD(GetVersion()));
+	DWORD dwMinor = HIBYTE(LOWORD(GetVersion()));
+
+	// Check at runtime that the OS is Win 7 or later (Win 7 is v6.1),
+	// otherwise ignore this signal
+	if ( dwMajor > 6 || ( dwMajor == 6 && dwMinor > 0 ) )
+	{
+		_taskbarList.Release();
+
+		_taskbarList.CoCreateInstance ( CLSID_TaskbarList );
+	}
+	
 	return 0;
 }
 
@@ -187,6 +208,7 @@ void UpdaterDialog::OnBnClickedButtonAbort()
 	}
 	else if (_controller->IsDone())
 	{
+		_taskbarList.Release();
 		DestroyWindow();
 	}
 	else if (_failed)
@@ -217,6 +239,8 @@ void UpdaterDialog::OnFail()
 {
 	_continueButton.ShowWindow(FALSE);
 	_failed = true;
+
+	SetTaskbarProgress(TBP_Error, 0);
 }
 
 void UpdaterDialog::OnBnClickedButtonContinue()
@@ -260,6 +284,8 @@ void UpdaterDialog::SetProgress(double progressFraction)
 {
 	_progressMain.SetRange(0, 100);
 	_progressMain.SetPos(static_cast<int>(100*progressFraction));
+
+	SetTaskbarProgress(TBP_Normal, progressFraction);
 }
 
 void UpdaterDialog::SetFullDownloadProgress(double progressFraction)
@@ -268,13 +294,36 @@ void UpdaterDialog::SetFullDownloadProgress(double progressFraction)
 	_step5Text.SetWindowText(CString(str.c_str()));
 }
 
-void UpdaterDialog::SetTaskbarProgress(double progressFraction)
+void UpdaterDialog::SetTaskbarProgress(TaskbarProgressType type, double progressFraction)
 {
-	// TODO
+	if (_taskbarList)
+	{
+		switch (type)
+		{
+		case TBP_NoProgress:
+			_taskbarList->SetProgressState(m_hWnd, TBPF_NOPROGRESS);
+			break;
+		case TBP_Indeterminate:
+			_taskbarList->SetProgressState(m_hWnd, TBPF_INDETERMINATE);
+			break;
+		case TBP_Normal:
+			_taskbarList->SetProgressState(m_hWnd, TBPF_NORMAL);
+			_taskbarList->SetProgressValue(m_hWnd, static_cast<ULONGLONG>(100*progressFraction), 100);
+			break;
+		case TBP_Paused:
+			_taskbarList->SetProgressState(m_hWnd, TBPF_PAUSED);
+			break;
+		case TBP_Error:
+			_taskbarList->SetProgressState(m_hWnd, TBPF_ERROR);
+			break;
+		}
+	}
 }
 
 void UpdaterDialog::ClearSteps()
 {
+	SetTaskbarProgress(TBP_NoProgress, 0);
+
 	_step1Text.SetWindowText(CString());
 	_step2Text.SetWindowText(CString());
 	_step3Text.SetWindowText(CString());
@@ -297,6 +346,9 @@ void UpdaterDialog::ClearSteps()
 void UpdaterDialog::OnStartStep(UpdateStep step)
 {
 	if (_shutdown) return;
+
+	// Always reset the task bar progress when starting a step
+	SetTaskbarProgress(TBP_NoProgress, 0);
 
 	switch (step)
 	{

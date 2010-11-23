@@ -3,6 +3,9 @@
 #include "afxwin.h"
 #include "afxcmn.h"
 
+// This file needs to come from the Win7 SDK, for ITaskBarList3
+#include "Shobjidl.h"
+
 #include "Updater/UpdateController.h"
 #include "Updater/UpdateStep.h"
 #include "ExceptionSafeThread.h"
@@ -24,6 +27,15 @@ private:
 
 	LogViewerPtr _logViewer;
 
+	enum TaskbarProgressType
+	{
+		TBP_NoProgress,
+		TBP_Indeterminate,
+		TBP_Normal,
+		TBP_Paused,
+		TBP_Error,
+	};
+
 public:
 	UpdaterDialog(const fs::path& executableName, 
 				  tdm::updater::UpdaterOptions& options, 
@@ -39,7 +51,7 @@ public:
 	void SetProgress(double progressFraction);
 	void SetFullDownloadProgress(double progressFraction);
 
-	void SetTaskbarProgress(double progressFraction);
+	void SetTaskbarProgress(TaskbarProgressType type, double progressFraction);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
@@ -70,7 +82,13 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	afx_msg LRESULT OnDestroyWhenThreadsDone(UINT wParam, LONG lParam);
+	afx_msg LRESULT OnTaskbarBtnCreated(WPARAM wParam, LPARAM lParam);
+
 	DECLARE_MESSAGE_MAP()
+
+	CComPtr<ITaskbarList3>  _taskbarList;
+	static UINT WM_TASKBARBTNCREATED;
+
 public:
 	CStatic _title;
 	CStatic _subTitle;

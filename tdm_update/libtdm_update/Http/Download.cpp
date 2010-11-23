@@ -95,8 +95,8 @@ void Download::Stop()
 		// Cancel the request
 		_request->Cancel();
 
-		// Wait for the thread to finish, max. 1/2 second
-		Util::Wait(500);
+		// Wait for the thread to finish
+		_thread->join();
 
 		_thread.reset();
 		_request.reset();
