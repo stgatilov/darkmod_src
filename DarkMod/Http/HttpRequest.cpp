@@ -62,7 +62,9 @@ void CHttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_WRITEDATA, this);
 
 	// Set agent
-	curl_easy_setopt(_handle, CURLOPT_USERAGENT, "The Dark Mod libcurl-agent/1.0");
+	idStr agent = "The Dark Mod Agent/";
+	agent += va("%d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
