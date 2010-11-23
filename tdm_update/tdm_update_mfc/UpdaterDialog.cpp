@@ -229,6 +229,8 @@ void UpdaterDialog::OnBnClickedButtonAbort()
 			// and end up in a deadlock in the LogViewer class
 			TraceLog::Instance().Unregister(_logViewer);
 			_logViewer.reset();
+
+			_showLogButton.ShowWindow(FALSE);
 			
 			_controller->Abort();
 
@@ -916,7 +918,7 @@ void UpdaterDialog::OnBnClickedAdvOptionsButton()
 
 void UpdaterDialog::OnBnClickedShowLogButton()
 {
-	if (!_logViewer->IsWindowVisible())
+	if (_logViewer && !_logViewer->IsWindowVisible())
 	{
 		_logViewer->ShowWindow(SW_SHOW);
 	}
