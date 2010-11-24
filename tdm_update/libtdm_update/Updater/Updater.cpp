@@ -11,6 +11,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
+#ifndef WIN32
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 namespace tdm
 {
 
@@ -1384,8 +1389,44 @@ void Updater::RestartUpdater()
 		}
 	}
 #else
-	// TODO: Implement relaunch for *nix systems
-	TraceLog::WriteLine(LOG_VERBOSE, "Please re-run tdm_update to complete the update of your TDM installation!");
+
+	if (RestartRequired())
+	{
+		TraceLog::WriteLine(LOG_STANDARD, "Re-launching tdm_update...");
+		
+		fs::path updaterPath = GetTargetPath();
+		updaterPath /= _executable;
+
+		// Construct the full command line - make sure the target file is executable
+		std::string commandLine = "chmod +x " + updaterPath.file_string();
+
+		// Add a small delay to give this application time to free all resource locks
+		commandLine += " && sleep 2s";
+
+		// Add the actual execution command
+		commandLine += " && " + updaterPath.file_string();
+
+		const std::vector<std::string>& args = _options.GetRawCmdLineArgs();
+
+		// Merge arguments into the full shell string
+		for (std::size_t i = 0; i < args.size(); ++i)
+		{
+			commandLine += " " + args[i];
+		}
+
+		// Perform the system command in a fork
+		if (fork() == 0)
+		{
+			system(commandLine.c_str());
+			exit(EXIT_SUCCESS);
+			return;
+		}
+
+		TraceLog::WriteLine(LOG_VERBOSE, "Process spawned.");
+
+		// Done here too
+		return;
+	}
 #endif
 }
 

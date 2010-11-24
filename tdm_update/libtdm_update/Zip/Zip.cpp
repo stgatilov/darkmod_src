@@ -135,6 +135,9 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 
 	if (result != UNZ_OK) return false;
 
+	// Make sure the destination file is not existing
+	File::Remove(destPath);
+
 	// Try to open the destination path before uncompressing the file
 	FILE* outFile = fopen(destPath.file_string().c_str(), "wb");
 
