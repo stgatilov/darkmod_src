@@ -115,7 +115,6 @@ BASECPPFLAGS.append( '-Wall' )
 
 # Don't throw warnings for unknown pragmas (used by VC++)
 BASECPPFLAGS.append('-Wno-unknown-pragmas')
-BASECPPFLAGS.append('-Wno-non-virtual-dtor')
 
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )

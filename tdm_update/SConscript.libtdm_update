@@ -31,18 +31,9 @@ for i in range( len( libtdm_update_list ) ):
 	libtdm_update_list[ i ] = './libtdm_update/' + libtdm_update_list[ i ]
 
 local_env = g_env.Copy()
-local_env_noopt = g_env.Copy()
 
+local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
 local_env.Append(CPPPATH = '#/../include')
-
-# max allowed -O1
-flags = OPTCPPFLAGS
-try:
-	flags.remove( '-O3' )
-	flags.insert( 0, '-O1' )
-except:
-	pass
-local_env_noopt.Append( CPPFLAGS = flags )
 
 ret_list = []
 
