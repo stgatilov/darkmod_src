@@ -2,6 +2,7 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 namespace tdm
 {
@@ -11,6 +12,9 @@ class FileLogWriter :
 {
 private:
 	FILE* _logFile;
+
+	boost::mutex _mutex;
+
 public:
 	FileLogWriter(const std::string& path) :
 		_logFile(fopen(path.c_str(), "w"))
@@ -41,6 +45,9 @@ public:
 		// Don't write progress stuff into the logfile
 		if (lc != LOG_PROGRESS)
 		{
+			// Make sure only one thread is writing to the file at a time
+			boost::mutex::scoped_lock lock(_mutex);
+
 			fputs(str.c_str(), _logFile);
 			fflush(_logFile);
 		}
