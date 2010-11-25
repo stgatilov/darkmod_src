@@ -9,9 +9,6 @@ prerequisites:
   * Python
   * libdevil-dev
   * libdevil1c2
-  * libboost-filesystem-dev
-  * libboost-date-time-dev
-  * libboost-thread-dev
 
 In addition, when running Doom and using the DarkMod, you will also need:
 
@@ -60,8 +57,6 @@ and unzip them manually:
 	libdevil1c2_1.6.7-5_i386.deb
 	libdevil-dev_1.6.7-5_i386.deb
 	libmng1_1.0.9-1_i386.deb
-	libboost-filesystem1.34.1_1.34.1-2ubuntu1_i386.deb
-	libboost-thread1.34.1_1.34.1-2ubuntu1_i386.deb
 	libstdc++6_4.3.2-2_i386.deb
 
 You might get slightly newer versions, but it should work. Note that this
@@ -71,13 +66,9 @@ matching 64 bit developer packages.
 Then, as root, copy all the files that are in these packages under ./usr to your
 /lib32 directory.
 
-Also, make sure that you rename the libboost_filesystem-gcc41-1_34_1.so etc. file to
+Also, make sure that you rename the libstdc++6_4.3_..._.so etc. file to
 just the basename like so:
 
-	/lib32/libboost_filesystem.so
-	/lib32/libboost_filesystem-mt.so
-	/lib32/libboost_thread.so
-	/lib32/libboost_thread-mt.so
 	/lib32/libstdc++.so
 
 Then run:
