@@ -1854,6 +1854,10 @@ void Lode::PrepareEntities( void )
 				LodeEntity.origin += m_origin;
 
 				// should only appear on certain ground material(s)?
+
+				// TODO: do the ground trace also: if only appears for certain angles
+				// TODO: do the ground trace also: if we rotate the spawned entity to match the ground
+
 				if (m_Classes[i].materials.Num() > 0)
 				{
 					// end of the trace (downwards the length from entity class position to bottom of LODE)
@@ -1938,7 +1942,7 @@ void Lode::PrepareEntities( void )
 						// multiply probability with p (so 0.5 * 0.5 results in 0.25)
 						probability *= p;
 
-						// TODO: height based probability, angle-of-surface probability
+						// TODO: angle-of-surface probability
 
 					}	
 					else
@@ -1991,6 +1995,8 @@ void Lode::PrepareEntities( void )
 						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
 						LodeEntity.origin = trTest.endpos;
 						LodeEntity.angles = trTest.endAxis.ToAngles();
+
+						// TODO: take trTest.c.normal and angle the entity on this instead
 
 						// TODO: If the model bounds are quite big, but the model itself is "thin"
 						// at the bottom (like a tree with a trunk), then the model will "float"
