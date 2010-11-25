@@ -101,7 +101,9 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	{
 		result += CPUID_3DNOW;
 	}
-	// Check bits 16..23 of EBX (count of CPUs, works for AMD, too)
+	// The calculation how many physical/logical CPUs the machine has is rather
+	// convuluted and differes between AMD and Intel, so we don't attempt it, we
+	// only check bits 16..23 of EBX to see if it is > 1:
 	cores = (a >> 16) & 0xFF;
 	// Only on Intel we can have Hyper-Threading
 	if ( (result & CPUID_INTEL) && ((d >> 28) & 0x1) && cores > 1 )
@@ -136,16 +138,19 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU%s with %i %s, features:%s%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU%s, features:%s%s%s%s%s%s\n",
 			// Vendor
 			cpuid & CPUID_AMD ? "AMD" : 
 			cpuid & CPUID_INTEL ? "Intel" : 
 			cpuid & CPUID_GENERIC ? "Generic" : 
 			"Unsupported",
 			// Hyper-Threading?
-			cpuid & CPUID_HTT ? " with Hyper-Threading enabled and" : "",
-			cores,
-		   	cores > 1 ? "cores" : "core",
+			cpuid & CPUID_HTT ? " with Hyper-Threading enabled" : "",
+
+			// the calculation how many physical/logical CPUs the machine has is rather
+			// convuluted and differes between AMD and Intel, so we don't attempt it:
+//			cores,
+//		   	cores > 1 ? "cores" : "core",
 			// Flags
 			cpuid & CPUID_MMX ? " MMX" : "",
 			cpuid & CPUID_SSE ? " SSE" : "",
