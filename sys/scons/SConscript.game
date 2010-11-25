@@ -291,8 +291,7 @@ local_env.Append(LIBS = [
     File('#/linux/libcurl/libcurl.a'),
     File('#/linux/boost/lib/libboost_filesystem.a'),
     File('#/linux/boost/lib/libboost_system.a'),
-    File('#/linux/boost/lib/libboost_thread.a'),
-    File('#/linux/libstdc/libstdc++.so')
+    File('#/linux/boost/lib/libboost_thread.a')
 ])
 
 ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects + ziploader_list )
