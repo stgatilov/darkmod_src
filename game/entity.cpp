@@ -1285,6 +1285,18 @@ idEntity::~idEntity( void )
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
+	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
+	if (gameLocal.m_Grabber->GetEquipped() == this)
+	{
+		if ( spawnArgs.GetBool("shoulderable") )
+		{
+			gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
+			gameLocal.m_Grabber->UnShoulderBody(this);
+		}
+		gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
+		gameLocal.m_Grabber->Forget(this);
+	}
+
 	// Let each objective entity we're currently in know about our destruction
 	for (int i = 0; i < m_objLocations.Num(); ++i)
 	{

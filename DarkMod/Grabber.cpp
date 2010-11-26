@@ -1577,7 +1577,7 @@ bool CGrabber::Dequip( void )
 	}
 
 	// tels: Execute a potential dequip script
-    if( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
+	if( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
 	{ 
 		// Call the script
         idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
@@ -1709,6 +1709,12 @@ void CGrabber::Forget( idEntity* ent )
     if ( m_dragEnt.GetEntity() == ent || m_EquippedEnt.GetEntity() == ent )
 	{
 		StopDrag();
+
+		if ( m_EquippedEnt.GetEntity() == ent )
+		{
+			// Tels: Fix #2430
+			m_EquippedEnt = NULL;
+		}
 
 		// try to remove from grabber clip list
 		if( ent->IsType(idEntity::Type) )
