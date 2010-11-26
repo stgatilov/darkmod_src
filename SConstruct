@@ -293,6 +293,7 @@ if ( g_os == 'Linux' ):
 	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
+#	BASELINKFLAGS.append( '-Wl,-z,defs' )
 	# help 64 bit machines to find the compatibility 32bit libraries
 	BASELINKFLAGS.append( '-L/lib32' )
 	BASELINKFLAGS.append( '-L/usr/lib32' )

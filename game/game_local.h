@@ -1,4 +1,5 @@
 /***************************************************************************
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  *
  * PROJECT: The Dark Mod
  * $Revision$
@@ -469,6 +470,8 @@ public:
 	// greebo: Is set to TRUE if the success screen is currently active. (Usually these state variables should
 	// be kept in the GUI, but in this case I need it to be accessible when the player loads a new map via the console.)
 	bool					successScreenActive;
+
+	bool					mainMenuExited;			// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 
 	// can be used to automatically effect every material in the world that references globalParms
 	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];	

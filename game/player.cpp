@@ -6663,6 +6663,7 @@ Called every tic for each player
 */
 void idPlayer::Think( void )
 {
+	bool allowAttack = false;
 	renderEntity_t *headRenderEnt;
 	UpdatePlayerIcons();
 
@@ -6674,6 +6675,13 @@ void idPlayer::Think( void )
 	usercmd = gameLocal.usercmds[ entityNumber ];
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
+
+	// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
+	if ( ! (gameLocal.mainMenuExited && ( usercmd.buttons & BUTTON_ATTACK )) )
+	{
+        	allowAttack = true;
+		gameLocal.mainMenuExited = false;
+	}
 
 	// angua: disable doom3 crouching
 	if (usercmd.upmove < 0)
@@ -6842,7 +6850,8 @@ void idPlayer::Think( void )
 	// Check if we just hit the attack button
 	idEntity* frobbedEnt = m_FrobEntity.GetEntity();
 
-	if (frobbedEnt != NULL && usercmd.buttons & BUTTON_ATTACK && !(oldButtons & BUTTON_ATTACK))
+	// Solarsplace: allowAttack - bug fix for #2424
+	if (frobbedEnt != NULL && usercmd.buttons & BUTTON_ATTACK && !(oldButtons & BUTTON_ATTACK) && allowAttack)
 	{
 		frobbedEnt->AttackAction(this);
 	}
@@ -6861,7 +6870,7 @@ void idPlayer::Think( void )
 */
 	if ( spectating ) {
 		UpdateSpectating();
-	} else if ( health > 0 ) {
+	} else if ( health > 0 && allowAttack) {
 		UpdateWeapon();
 	}
 
@@ -6914,7 +6923,7 @@ void idPlayer::Think( void )
 	if ( !g_stopTime.GetBool() ) {
 		UpdateAnimation();
 
-        Present();
+	        Present();
 
 		UpdateDamageEffects();
 
