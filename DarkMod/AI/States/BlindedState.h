@@ -23,7 +23,7 @@ class BlindedState :
 {
 private:
 	int _endTime;
-	float _oldAcuity;
+	float _oldAcuity;	// to restore visual acuity
 
 public:
 	// Get the name of this state

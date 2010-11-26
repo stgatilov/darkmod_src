@@ -479,6 +479,9 @@ public:
 	// GetUp is used both for getting up from sitting or sleeping
 	void GetUp();
 
+private:
+
+	float				m_oldVisualAcuity;	// Tels: fixes 2408
 
 public:
 	/**

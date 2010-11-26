@@ -384,6 +384,8 @@ void State::OnVisualStim(idEntity* stimSource)
 		return;
 	}
 
+	// gameLocal.Printf("Visual stim for %s, visual acuity %0.2f\n", owner->GetName(), owner->GetAcuity("vis") );
+
 	// Don't respond to NULL entities or when dead/knocked out/blind and no enemy in sight
 	if (stimSource == NULL || 
 		owner->AI_KNOCKEDOUT || owner->AI_DEAD || owner->GetAcuity("vis") == 0)

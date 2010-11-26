@@ -1515,6 +1515,7 @@ void idAI::Spawn( void )
 		m_Acuities.Append( tempFloat );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
+	m_oldVisualAcuity = GetAcuity("vis");	// Tels fix #2408
 
 	spawnArgs.GetFloat("alert_aud_thresh", va("%f",gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold), m_AudThreshold );
 
@@ -10550,24 +10551,26 @@ void idAI::SitDown()
 
 void idAI::GetUp()
 {
-	if (GetMoveType() != MOVETYPE_SIT && GetMoveType() != MOVETYPE_SLEEP)
+	moveType_t moveType = GetMoveType();
+
+	if (moveType != MOVETYPE_SIT && moveType != MOVETYPE_SLEEP)
 	{
 		return;
 	}
 
-	if (GetMoveType() == MOVETYPE_SIT)
+	if (moveType == MOVETYPE_SIT)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 
 	}
-	else if (GetMoveType() == MOVETYPE_SLEEP)
+	else // if (moveType == MOVETYPE_SLEEP)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
 
-			
-		// Reset hearing and tactile acuity
+		// Reset visual, hearing and tactile acuity
+		SetAcuity("vis", m_oldVisualAcuity);		// Tels: fix #2408
 		SetAcuity("aud", GetAcuity("aud") * 2);
 		SetAcuity("tact", GetAcuity("tact") * 2);
 	}
@@ -10586,6 +10589,10 @@ void idAI::LayDown()
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
+
+	// Tels: Sleepers are blind
+	m_oldVisualAcuity = GetAcuity("vis");
+	SetAcuity("vis", 0);
 
 	// Reduce hearing and tactile acuity by 50%
 	// TODO: use spawn args
