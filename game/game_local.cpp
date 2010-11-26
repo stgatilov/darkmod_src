@@ -3505,9 +3505,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	// When this is set to TRUE, the next command will be dumped to the console
 	static bool logNextCommand = false;
 
-	// TODO Tels: Verify this is the right place!
-	mainMenuExited = true;
-
 	idStr cmd(menuCommand);
 
 	// Watch out for objectives GUI-related commands
@@ -3615,6 +3612,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}	
 	else if (cmd == "close") 
 	{
+		// Solarsplace: fix for #2424:
+		mainMenuExited = true;
+
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
