@@ -1,4 +1,5 @@
 /***************************************************************************
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
  *
  * PROJECT: The Dark Mod
  * $Revision$
@@ -697,7 +698,15 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 	// Tels: If the fade time is shorter than 1/60 (e.g. one frame), just set the color directly
 	if (fadeTime < 0.0167f)
 		{
-		SetColor(to);
+		if (to == colorBlack)
+		{
+			// The fade does not happen (time too short), so Off() would not be called so do it now (#2440)
+			Off();
+		}
+		else
+		{
+			SetColor(to);
+		}
 		return;
 		}
 	fadeTo = to;
@@ -712,8 +721,16 @@ idLight::FadeOut
 ================
 */
 void idLight::FadeOut( float time ) {
-	Fade( colorBlack, time );
-	// tels: at the end of the fade, set the skin to skin_unlit?
+	if (fadeFrom == colorBlack)
+	{
+		// The fade would not happen, so Off() would not be called, so do it now (#2440)
+		Off();
+	}
+	else
+	{
+		// Tels: Think() will call Off() once the fade is done, since we use colorBlack as fade target
+		Fade( colorBlack, time );
+	}
 }
 
 /*
@@ -905,6 +922,11 @@ void idLight::Think( void ) {
 			} else {
 				color = fadeTo;
 				fadeEnd = 0;
+				// Tels: Fix issues like 2440: FadeOff() does not switch the light to the off state
+				if (color[0] == 0 && color[1] == 0 && color[2] == 0)
+				{
+					Off();
+				}
 				BecomeInactive( TH_THINK );
 			}
 			// don't call SetColor(), as it stops the fade, instead inline the second part of it:

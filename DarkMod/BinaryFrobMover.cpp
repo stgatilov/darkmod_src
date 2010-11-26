@@ -653,7 +653,7 @@ void CBinaryFrobMover::CallStateScript()
 
 void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
-	// svae the entity index so we can relay it along
+	// save the entity index so we can relay it along
 	m_iActivator = activator->entityNumber;
 
 	ToggleOpen();
