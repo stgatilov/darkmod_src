@@ -479,10 +479,6 @@ public:
 	// GetUp is used both for getting up from sitting or sleeping
 	void GetUp();
 
-private:
-
-	float				m_oldVisualAcuity;	// Tels: fixes 2408
-
 public:
 	/**
 	* DarkMod AI Member Vars
@@ -816,6 +812,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Array containing the various AI acuities (visual, aural, tactile, etc)
 	**/
 	idList<float>			m_Acuities;
+
+
+	float					m_oldVisualAcuity;	// Tels: fixes 2408
 
 	/**
 	* Audio detection threshold (in dB of Sound Pressure Level)

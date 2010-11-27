@@ -524,6 +524,7 @@ idAI::idAI()
 	m_AlertGraceCount = 0;
 	m_AlertGraceCountLimit = 0;
 	m_AudThreshold = 0.0f;
+	m_oldVisualAcuity = 0.0f;
 
 	/**
 	* Darkmod: No hiding spot search by default
@@ -768,6 +769,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteFloat( m_Acuities[ i ] );
 	}
+	savefile->WriteFloat(m_oldVisualAcuity);
 	savefile->WriteFloat( m_AudThreshold );
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
@@ -1108,6 +1110,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadFloat( m_Acuities[ i ] );
 	}
+	savefile->ReadFloat(m_oldVisualAcuity);
 	savefile->ReadFloat( m_AudThreshold );
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
@@ -10553,18 +10556,13 @@ void idAI::GetUp()
 {
 	moveType_t moveType = GetMoveType();
 
-	if (moveType != MOVETYPE_SIT && moveType != MOVETYPE_SLEEP)
-	{
-		return;
-	}
-
 	if (moveType == MOVETYPE_SIT)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 
 	}
-	else // if (moveType == MOVETYPE_SLEEP)
+	else if (moveType == MOVETYPE_SLEEP)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
