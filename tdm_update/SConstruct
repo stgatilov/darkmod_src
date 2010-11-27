@@ -151,6 +151,7 @@ else:
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 
 g_base_env.Append(CPPPATH = '#/')
+g_base_env.Append(CPPPATH = '#/../include/zlib')
 
 g_env = g_base_env.Copy()
 
