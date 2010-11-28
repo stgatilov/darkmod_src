@@ -3,7 +3,7 @@
 # TTimo <ttimo@idsoftware.com>
 # http://scons.sourceforge.net
 
-import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, string
+import sys, os, time, commands, re, pickle, StringIO, commands, pdb, zipfile, string
 import SCons
 
 sys.path.append( 'sys/scons' )
@@ -22,6 +22,8 @@ serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATE
 g_sdk = not os.path.exists( 'sys/scons/SConscript.core' )
 
 # ------------------------------------------------
+
+EnsureSConsVersion( 0, 98 )
 
 # help -------------------------------------------
 
@@ -241,7 +243,7 @@ if ( g_sdk or SDK != '0' ):
 g_build = BUILD_ROOT + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
-SourceSignatures('timestamp')
+Decider('MD5-timestamp')
 
 if ( GL_HARDLINK != '0' ):
 	g_build += '-hardlink'
@@ -360,16 +362,16 @@ g_base_env.Append(CPPPATH = '#/linux/devil/include')
 
 g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
-g_env = g_base_env.Copy()
+g_env = g_base_env.Clone()
 
 g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env['CPPFLAGS'] += CORECPPFLAGS
 g_env['LINKFLAGS'] += CORELINKFLAGS
 
-g_env_noopt = g_base_env.Copy()
+g_env_noopt = g_base_env.Clone()
 g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
 
-g_game_env = g_base_env.Copy()
+g_game_env = g_base_env.Clone()
 
 g_game_env['CPPFLAGS'] += OPTCPPFLAGS
 g_game_env['CPPFLAGS'] += GAMECPPFLAGS

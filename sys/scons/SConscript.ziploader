@@ -1,15 +1,10 @@
-# -*- mode: python -*-
-# DOOM build script
-# TTimo <ttimo@idsoftware.com>
-# http://scons.sourceforge.net
-
 #***************************************************************************
 #*
 #* PROJECT: The Dark Mod
 #* $Source$
-#* $Revision: 915 $
-#* $Date: 2009-01-16 22:10:27 +0200 (Fri, 16 Jan 2009) $
-#* $Author: greebo $
+#* $Revision$
+#* $Date$
+#* $Author$
 #*
 #* $Log$
 #* Revision 1.3  2005/11/11 22:50:09  sparhawk
@@ -52,17 +47,7 @@ ziploader_list = scons_utils.BuildList( '', ziploader_string )
 for i in range( len( ziploader_list ) ):
 	ziploader_list[ i ] = '../../lib/' + ziploader_list[ i ]
 
-local_env = g_env.Copy()
-local_env_noopt = g_env.Copy()
-
-# max allowed -O1
-flags = OPTCPPFLAGS
-try:
-	flags.remove( '-O3' )
-	flags.insert( 0, '-O1' )
-except:
-	pass
-local_env_noopt.Append( CPPFLAGS = flags )
+local_env = g_env.Clone()
 
 ret_list = []
 

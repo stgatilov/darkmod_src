@@ -18,7 +18,7 @@
 #*
 #***************************************************************************
 
-import sys, os, string, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, tempfile
+import sys, os, string, time, commands, re, pickle, StringIO, commands, pdb, zipfile, tempfile
 import SCons
 
 # need an Environment and a matching buffered_spawn API .. encapsulate
