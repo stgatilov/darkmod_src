@@ -57,7 +57,7 @@ public:
 	void SetProgressText(const std::string& text);
 	void SetProgressSpeedText(const std::string& text);
 	void SetProgress(double progressFraction);
-	void SetFullDownloadProgress(double progressFraction);
+	void SetFullDownloadProgress(const tdm::updater::ProgressInfo& info);
 
 	void SetTaskbarProgress(TaskbarProgressType type, double progressFraction);
 

@@ -100,6 +100,7 @@ public:
 	bool LocalFilesNeedUpdate();
 
 	std::size_t GetTotalDownloadSize();
+	std::size_t GetTotalBytesDownloaded();
 	std::size_t GetNumFilesToBeUpdated();
 
 	bool RestartRequired();

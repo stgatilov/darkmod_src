@@ -1115,9 +1115,11 @@ void Updater::NotifyFullUpdateProgress()
 	}
 
 	info.updateType = OverallDownloadProgressInfo::Full;
+	info.totalDownloadSize = totalDownloadSize;
 	info.bytesLeftToDownload = totalDownloadSize - totalBytesDownloaded;
 	info.downloadedBytes = totalBytesDownloaded;
 	info.progressFraction = static_cast<double>(totalBytesDownloaded) / totalDownloadSize;
+	info.filesToDownload = _downloadQueue.size();
 	
 	_downloadProgressCallback->OnOverallProgress(info);
 }
@@ -1278,6 +1280,11 @@ std::size_t Updater::GetTotalDownloadSize()
 	}
 
 	return totalSize;
+}
+
+std::size_t Updater::GetTotalBytesDownloaded()
+{
+	return _conn->GetBytesDownloaded();
 }
 
 void Updater::SetDownloadProgressCallback(const DownloadProgressPtr& callback)

@@ -19,7 +19,8 @@
 namespace tdm
 {
 
-HttpConnection::HttpConnection()
+HttpConnection::HttpConnection() :
+	_bytesDownloaded(0)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -73,6 +74,19 @@ HttpRequestPtr HttpConnection::CreateRequest(const std::string& url)
 HttpRequestPtr HttpConnection::CreateRequest(const std::string& url, const std::string& destFilename)
 {
 	return HttpRequestPtr(new HttpRequest(*this, url, destFilename));
+}
+
+void HttpConnection::AddBytesDownloaded(std::size_t bytes)
+{
+	// Make sure only one thread is accessing the counter at a time
+	boost::mutex::scoped_lock lock(_bytesDownloadedMutex);
+
+	_bytesDownloaded += bytes;
+}
+
+std::size_t HttpConnection::GetBytesDownloaded() const
+{
+	return _bytesDownloaded;
 }
 
 }
