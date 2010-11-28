@@ -1,5 +1,14 @@
-# The Dark Mod Launcher build script for Linux
-# Adapted from id's game sconscript
+#############################################################################
+# 
+#  PROJECT: The Dark Mod - Updater
+#  $Revision$
+#  $Date$
+#  $Author$
+# 
+##############################################################################
+
+# The Dark Mod Updater build script for Linux
+# Based on id's game sconscript
 # Author: greebo
 
 import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, string

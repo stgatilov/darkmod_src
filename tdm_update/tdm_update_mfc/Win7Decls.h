@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 /**
  * greebo: I copied the main part of this auxiliary header 
  * directly from the TortoiseSVN repository.

@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 // AdvancedOptionsDialog.cpp : implementation file
 //
 

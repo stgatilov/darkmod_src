@@ -1,3 +1,12 @@
+#############################################################################
+# 
+#  PROJECT: The Dark Mod - Updater
+#  $Revision$
+#  $Date$
+#  $Author$
+# 
+##############################################################################
+
 # The Dark Mod Updater build script
 # Adapted from id's game sconscript
 # Author: greebo

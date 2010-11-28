@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 
 // tdm_update_mfc.cpp : Defines the class behaviors for the application.
 //
