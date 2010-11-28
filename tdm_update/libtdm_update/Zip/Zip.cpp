@@ -421,6 +421,12 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 	zfi.internal_fa = 0;
 	zfi.external_fa = 0;
 
+	// Make sure 0-byte files are not DEFLATED, otherwise they end up with 2 bytes compressed size
+	if (fs::file_size(fileToCompress) == 0)
+	{
+		method = STORE;
+	}
+
 	// Prepare the zip file for writing
 	int status = zipOpenNewFileInZip3(_handle,
 					destPath.c_str(),
