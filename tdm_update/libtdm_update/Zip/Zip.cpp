@@ -199,9 +199,9 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 	return returnValue;
 }
 
-void ZipFileRead::ExtractAllFilesTo(const fs::path& destPath, 
-									const std::set<std::string>& ignoreIfExisting, 
-									const std::set<std::string>& ignoreList)
+std::list<fs::path> ZipFileRead::ExtractAllFilesTo(const fs::path& destPath, 
+												   const std::set<std::string>& ignoreIfExisting, 
+												   const std::set<std::string>& ignoreList)
 {
 	int result = unzGoToFirstFile(_handle);
 
@@ -251,10 +251,19 @@ void ZipFileRead::ExtractAllFilesTo(const fs::path& destPath,
 
 	TraceLog::WriteLine(LOG_VERBOSE, "Found " + boost::lexical_cast<std::string>(filesToExtract.size()) + " files to extract.");
 
+	// The list of extracted files, for returning to the caller
+	std::list<fs::path> extractedFiles;
+
 	for (std::size_t i = 0; i < filesToExtract.size(); ++i)
 	{
-		ExtractFileTo(filesToExtract[i], destPath / filesToExtract[i]);
-	}	
+		fs::path destFile = destPath / filesToExtract[i];
+
+		ExtractFileTo(filesToExtract[i], destFile);
+
+		extractedFiles.push_back(destFile);
+	}
+
+	return extractedFiles;
 }
 
 ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string& filename)
