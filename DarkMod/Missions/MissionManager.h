@@ -35,8 +35,18 @@ struct DownloadableMission
 	bool isUpdate;
 
 	idStringList downloadLocations;
+
+	// Static sort compare functor, sorting by mission title
+	typedef DownloadableMission* DownloadableMissionPtr;
+
+	static int SortCompare(const DownloadableMissionPtr* a, const DownloadableMissionPtr* b)
+	{
+		return idStr::Cmp((*a)->title, (*b)->title);
+	}
 };
-typedef idList<DownloadableMission> DownloadableMissionList;
+// Use raw pointers in the DownloadableMissionList
+// to allow the use of the qsort algorithm as used in idStr::Sort()
+typedef idList<DownloadableMission*> DownloadableMissionList;
 
 class CMissionManager
 {
@@ -78,6 +88,8 @@ public:
 
 public:
 	CMissionManager();
+
+	~CMissionManager();
 
 	// This initialises the list of available missions
 	void Init();
@@ -177,6 +189,9 @@ private:
 
 	// Loads the mission list from the given XML
 	void LoadMissionListFromXml(const XmlDocumentPtr& doc);
+
+	// Sorts the mission list
+	void SortDownloadableMissions();
 };
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 
