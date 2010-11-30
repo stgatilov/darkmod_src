@@ -52,6 +52,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			{
 				case CMissionManager::DOWNLOAD_FAILED:
 				{
+					gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog
+
 					// Issue a failure message
 					gameLocal.Printf("Connection Error.\n");
 
