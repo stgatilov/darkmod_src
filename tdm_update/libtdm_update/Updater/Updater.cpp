@@ -891,6 +891,16 @@ void Updater::CheckLocalFiles()
 
 	TraceLog::WriteLine(LOG_VERBOSE, "Checking target folder: " + targetPath.file_string());
 
+	// List PK4 inventory to logfile, for reference
+	for (fs::directory_iterator i = fs::directory_iterator(targetPath); 
+		 i != fs::directory_iterator(); ++i)
+	{
+		if (File::IsPK4(*i))
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + i->string());
+		}
+	}
+
 	std::size_t count = 0;
 
 	for (ReleaseFileSet::const_iterator i = _latestRelease.begin(); i != _latestRelease.end(); ++i)
