@@ -166,6 +166,11 @@ void UpdateController::PerformStep(UpdateStep step)
 			_view.OnWarning("The Doom 3 process was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit Doom 3 before continuing.");
 		}
 
+		if (Util::DarkRadiantIsRunning())
+		{
+			_view.OnWarning("DarkRadiant was found to be in the list of active processes.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit DarkRadiant before continuing.");
+		}
+
 		break;
 
 	case CleanupPreviousSession:

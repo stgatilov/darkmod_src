@@ -82,6 +82,9 @@ public:
 
 	// Platform-dependent process check routine (searches for gamex86.dll/gamex86.so)
 	static bool D3IsRunning();
+
+	// Platform-dependent process check routine (searches for DarkRadiant)
+	static bool DarkRadiantIsRunning();
 };
 
 } // namespace
