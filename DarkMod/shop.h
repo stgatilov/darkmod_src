@@ -201,6 +201,10 @@ private:
 
 	// Copies purchasedItems into startingItems
 	void CopyPurchasedIntoStartingEquipment();
+
+	// grayman - Provides max_ammo value
+	int GetMaxAmmo(const idStr& weaponName);
+
 };
 
 

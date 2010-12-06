@@ -519,6 +519,33 @@ void CShop::LoadShopItemDefinitions()
 	}
 }
 
+// grayman - provide max_ammo if defined
+
+int CShop::GetMaxAmmo(const idStr& weaponName)
+{
+	// For now, hard-code a max_ammo limit of 50 for these weapons
+	// because it takes too long to query FindEntityDefDict().
+
+	// TODO - move the FindEntityDefDict() calls up in parallel with
+	// the briefing if that's possible and drop the hard-coded limit.
+	// Then you can query those results from here during shop processing.
+
+	// The blackjack and sword also come through here, and their limit
+	// is 1, but that's handled elsewhere, even if we return 50 here.
+
+#if 1
+	return 50;
+#else
+	int max_ammo = 1;
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponName);
+	if (weaponDict != NULL)
+	{
+		max_ammo = weaponDict->GetInt("max_ammo", "1");
+	}
+	return (max_ammo);
+#endif
+}
+
 int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list)
 {
 	int diffLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
@@ -616,14 +643,9 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 				}
 
 				// Weapon quantities have limits. (Arrows in particular.)
-				// Get the "max_ammo" spawnarg from the weapon dictionary.
 
-				const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponName);
-				if (weaponDict != NULL)
-				{
-					int max_ammo = weaponDict->GetInt("max_ammo", "1");
-					quantity = (quantity > max_ammo) ? max_ammo : quantity;
-				}
+				int max_ammo = GetMaxAmmo(weaponName);
+				quantity = (quantity > max_ammo) ? max_ammo : quantity;
 			}
 
 			/* grayman (#2376) - Since a lockpick_set comprises individual picks, putting one
@@ -751,13 +773,8 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 					if (quantity > 0)
 					{
-						// Get the "max_ammo" spawnarg from the weapon dictionary
-						const idDict* weaponDict = gameLocal.FindEntityDefDict(itemName);
-						if (weaponDict != NULL)
-						{
-							max_ammo = weaponDict->GetInt("max_ammo", "1");
-							quantity = (quantity > max_ammo) ? max_ammo : quantity;
-						}
+						max_ammo = GetMaxAmmo(itemName);
+						quantity = (quantity > max_ammo) ? max_ammo : quantity;
 					}
 				}
 				else
