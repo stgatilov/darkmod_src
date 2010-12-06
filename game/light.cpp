@@ -721,7 +721,8 @@ idLight::FadeOut
 ================
 */
 void idLight::FadeOut( float time ) {
-	if (fadeFrom == colorBlack)
+	if (baseColor.x == 0 && baseColor.y == 0 && baseColor.z == 0)
+	//if (fadeFrom == colorBlack)
 	{
 		// The fade would not happen, so Off() would not be called, so do it now (#2440)
 		Off();
@@ -743,6 +744,7 @@ void idLight::FadeIn( float time ) {
 	idVec4 color4;
 
 	currentLevel = levels;
+	// restore the original light color
 	spawnArgs.GetVector( "_color", "1 1 1", color );
 	color4.Set( color.x, color.y, color.z, 1.0f );
 	Fade( color4, time );
