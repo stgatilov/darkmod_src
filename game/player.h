@@ -61,6 +61,8 @@ const int	FOCUS_GUI_TIME = 500;
 #define TDM_PLAYER_WEAPON_CATEGORY			"Weapons"
 #define TDM_PLAYER_MAPS_CATEGORY			"Maps"
 
+#define ARROW_WEAPON_INDEX_BEGIN 3		// grayman #597 - weapons at or above this index are arrows
+
 const int DEAD_HEARTRATE = 0;			// fall to as you die
 const int LOWHEALTH_HEARTRATE_ADJ = 20; // 
 const int DYING_HEARTRATE = 30;			// used for volumen calc when dying/dead

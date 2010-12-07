@@ -3584,6 +3584,13 @@ void idPlayer::Weapon_Combat( void ) {
 			}
 			weaponCatchup = false;			
 		} else {
+
+			// grayman #597 - if the current weapon is an arrow, and the ideal
+			// weapon is also an arrow, make the switch, but
+			// don't play the "lower bow, then raise bow" animation.
+
+			weapon.GetEntity()->SetArrow2Arrow((currentWeapon >= ARROW_WEAPON_INDEX_BEGIN) && (idealWeapon >= ARROW_WEAPON_INDEX_BEGIN));
+
 			if ( weapon.GetEntity()->IsReady() ) {
 				weapon.GetEntity()->PutAway();
 			}
@@ -3599,7 +3606,6 @@ void idPlayer::Weapon_Combat( void ) {
 				animPrefix = spawnArgs.GetString( va( "def_weapon%d", currentWeapon ) );
 				weapon.GetEntity()->GetWeaponDef( animPrefix, 0/*inventory.clip[ currentWeapon ]*/ );
 				animPrefix.Strip( "weapon_" );
-
 				weapon.GetEntity()->Raise();
 			}
 		}

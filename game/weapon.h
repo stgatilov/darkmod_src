@@ -94,6 +94,7 @@ public:
 	idEntity *				DropItem( const idVec3 &velocity, int activateDelay, int removeDelay, bool died );
 	bool					CanDrop( void ) const;
 	void					WeaponStolen( void );
+	void					SetArrow2Arrow( bool state); // grayman #597
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -240,6 +241,8 @@ private:
 	bool					lightOn;
 	bool					allowDrop;
 
+	int						hideUntilTime; // grayman #597 - keep hidden until timer expires (for arrow spawning)
+
 	// effects
 	bool					hasBloodSplat;
 
@@ -306,6 +309,9 @@ private:
 	float					weaponAngleOffsetMax;
 	float					weaponOffsetTime;
 	float					weaponOffsetScale;
+
+	// weapon switching
+	bool					arrow2Arrow;		// grayman #597
 
 	// flashlight
 	void					AlertMonsters( void );

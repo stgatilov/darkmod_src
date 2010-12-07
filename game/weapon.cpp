@@ -1075,6 +1075,11 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 						weaponDef->dict.GetString(AttName.c_str()) );
 			else
 				Attach( ent, NULL, weaponDef->dict.GetString(AttName.c_str()) );
+			if (IsRanged()) // grayman #597 - hide arrows for one second
+			{
+				ent->Hide();
+				ent->SetHideUntilTime(gameLocal.time + 1000);
+			}
 		}
 		KeyVal = weaponDef->dict.MatchPrefix( "def_attach", KeyVal );
 	}
@@ -1381,6 +1386,17 @@ void idWeapon::PutAway( void ) {
 
 /*
 ================
+idWeapon::SetArrow2Arrow
+================
+*/
+void idWeapon::SetArrow2Arrow(  bool state ) // grayman #597
+{
+	arrow2Arrow = state;
+}
+
+
+/*
+================
 idWeapon::Reload
 NOTE: this is only for impulse-triggered reload, auto reload is scripted
 ================
@@ -1463,9 +1479,16 @@ void idWeapon::ShowWeapon( void ) {
 	}
 
 	// show attachments
-	for(int i=0; i<m_Attachments.Num(); i++)
+
+	// grayman #597 - don't show attachments if they're hidden and there's a hide timeout
+
+	for (int i = 0; i < m_Attachments.Num() ; i++)
 	{
-		m_Attachments[i].ent.GetEntity()->Show();
+		idEntity *e = m_Attachments[i].ent.GetEntity();
+		if ((gameLocal.time >= e->GetHideUntilTime()) && e->IsHidden())
+		{
+			e->Show();
+		}
 	}
 }
 
@@ -1531,7 +1554,22 @@ void idWeapon::BeginAttack( void )
 		if ( sndHum ) {
 			StopSound( SND_CHANNEL_BODY, false );
 		}
+
+		// grayman #597 - show hidden arrows the first time through
+
+		if (IsRanged())
+		{
+			for (int i = 0; i < m_Attachments.Num() ; i++)
+			{
+				idEntity *e = m_Attachments[i].ent.GetEntity();
+				if (e->IsHidden())
+				{
+					e->Show();
+				}
+			}
+		}
 	}
+
 	WEAPON_ATTACK = true;
 }
 
@@ -2194,6 +2232,7 @@ void idWeapon::EnterCinematic( void ) {
 	}
 
 	disabled = true;
+	arrow2Arrow = false; // grayman #597 - for arrow switching
 
 	LowerWeapon();
 }
@@ -2768,15 +2807,35 @@ void idWeapon::Event_PlayAnim( int channel, const char *animname ) {
 		animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
 		animDoneTime = 0;
 	} else {
-		if ( !( owner && owner->GetInfluenceLevel() ) ) {
-			Show();
+
+		// grayman #597 - if this is a raise or lower animation, and we're
+		// switching from one arrow to another, skip the animation.
+
+		idStr raiseString = "raise";
+		idStr lowerString = "lower";
+		bool raiseOrLower = ((raiseString.Cmp(animname) == 0) || (lowerString.Cmp(animname) == 0));
+		if (arrow2Arrow && raiseOrLower)
+		{
+			animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
+			animDoneTime = 0;
+			if (lowerString.Cmp(animname) == 0)
+			{
+				status = WP_HOLSTERED;	// do this right away, otherwise it takes 12 frames to have it done elsewhere
+										// and you see a gap in the bow animation
+			}
 		}
-		animator.PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
-		animDoneTime = animator.CurrentAnim( channel )->GetEndTime();
-		if ( worldModel.GetEntity() ) {
-			anim = worldModel.GetEntity()->GetAnimator()->GetAnim( animname );
-			if ( anim ) {
-				worldModel.GetEntity()->GetAnimator()->PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+		else
+		{
+			if ( !( owner && owner->GetInfluenceLevel() ) ) {
+				Show();
+			}
+			animator.PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+			animDoneTime = animator.CurrentAnim( channel )->GetEndTime();
+			if ( worldModel.GetEntity() ) {
+				anim = worldModel.GetEntity()->GetAnimator()->GetAnim( animname );
+				if ( anim ) {
+					worldModel.GetEntity()->GetAnimator()->PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+				}
 			}
 		}
 	}

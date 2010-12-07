@@ -420,6 +420,12 @@ public:
 	int						m_ModelLODCur;
 	int						m_SkinLODCur;
 
+	/* grayman #597 - hide until this timer expires. For
+	*  hiding arrows when they're first nocked.
+	*/
+	int						m_HideUntilTime;
+
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -693,6 +699,9 @@ public:
 	bool					TouchTriggers( void ) const;
 	idCurve_Spline<idVec3> *GetSpline( void ) const;
 	virtual void			ShowEditingDialog( void );
+
+	void					SetHideUntilTime(int time);	// grayman #597
+	int						GetHideUntilTime(void);		// grayman #597
 
 	enum {
 		EVENT_STARTSOUNDSHADER,
