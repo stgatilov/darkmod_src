@@ -719,8 +719,8 @@ idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIV
 
 idCVar r_postprocess_debugMode				( "r_postprocess_debugMode",			"0",		CVAR_GAME | CVAR_INTEGER,	" Shows all the textures generated for postprocessing effects. \n 1: Shows currentRender \n 2: Shows bloom Images \n 3: Shows Cooked Math Data.");
 idCVar r_postprocess						( "r_postprocess",						"0",		CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	" Activates bloom ( Requires DX9 compliant Hardware )");
-idCVar r_postprocess_brightPassThreshold	( "r_postprocess_brightPassThreshold",	"0.4",		CVAR_GAME | CVAR_FLOAT,		" Intensities of this value are subtracted from scene render to extract bloom image");
-idCVar r_postprocess_brightPassOffset		( "r_postprocess_brightPassOffset",		".8",		CVAR_GAME | CVAR_FLOAT,		" Bloom image receives smooth fade along a curve from bright to very bright areas based on this variable's value");
+idCVar r_postprocess_brightPassThreshold	( "r_postprocess_brightPassThreshold",	"0.06",		CVAR_GAME | CVAR_FLOAT,		" Intensities of this value are subtracted from scene render to extract bloom image");
+idCVar r_postprocess_brightPassOffset		( "r_postprocess_brightPassOffset",		"6",		CVAR_GAME | CVAR_FLOAT,		" Bloom image receives smooth fade along a curve from bright to very bright areas based on this variable's value");
 idCVar r_postprocess_colorCurveBias			( "r_postprocess_colorCurveBias",		"0.8",		CVAR_GAME | CVAR_FLOAT,		" Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve");
 idCVar r_postprocess_colorCorrection		( "r_postprocess_colorCorrection",		"5",		CVAR_GAME | CVAR_FLOAT,		" Applies an exponential color correction function to final scene ");
 idCVar r_postprocess_colorCorrectBias		( "r_postprocess_colorCorrectBias",		"0.1",		CVAR_GAME | CVAR_FLOAT,		" Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value ");
