@@ -728,7 +728,7 @@ idCVar r_postprocess_desaturation			( "r_postprocess_desaturation",			"0.05",		C
 idCVar r_postprocess_sceneExposure			( "r_postprocess_sceneExposure",		"0.9",		CVAR_GAME | CVAR_FLOAT,		" Scene render is linearly scaled up. Try values lower or greater than 1.0");
 idCVar r_postprocess_sceneGamma				( "r_postprocess_sceneGamma",			"0.82",		CVAR_GAME | CVAR_FLOAT,		" Gamma Correction.");
 idCVar r_postprocess_bloomIntensity			( "r_postprocess_bloomIntensity",		"0",		CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,		" Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected.");
-idCVar r_postprocess_bloomKernelSize		( "r_postprocess_bloomKernelSize",		"2",		CVAR_GAME | CVAR_INTEGER,	" Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
+idCVar r_postprocess_bloomKernelSize		( "r_postprocess_bloomKernelSize",		"2",		CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	" Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
 //----------------------------------
 
 #ifndef __linux__
