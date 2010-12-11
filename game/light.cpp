@@ -660,13 +660,13 @@ void idLight::On( void ) {
 idLight::Off
 ================
 */
-void idLight::Off( void ) {
+void idLight::Off( const bool stopSound ) {
 	const char *skinName;
 	const idDeclSkin *skin;
 
 	currentLevel = 0;
-	// kill any sound it was making
-	if ( refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
+
+	if ( stopSound && refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
 		StopSound( SND_CHANNEL_ANY, false );
 		soundWasPlaying = true;
 	}
@@ -701,7 +701,8 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 		if (to == colorBlack)
 		{
 			// The fade does not happen (time too short), so Off() would not be called so do it now (#2440)
-			Off();
+			// avoid the sound stopping, because this might be snd_extinguished
+			Off( false );
 		}
 		else
 		{
@@ -722,10 +723,10 @@ idLight::FadeOut
 */
 void idLight::FadeOut( float time ) {
 	if (baseColor.x == 0 && baseColor.y == 0 && baseColor.z == 0)
-	//if (fadeFrom == colorBlack)
 	{
 		// The fade would not happen, so Off() would not be called, so do it now (#2440)
-		Off();
+		// avoid the sound stopping, because this might be snd_extinguished
+		Off( false );
 	}
 	else
 	{
@@ -927,7 +928,8 @@ void idLight::Think( void ) {
 				// Tels: Fix issues like 2440: FadeOff() does not switch the light to the off state
 				if (color[0] == 0 && color[1] == 0 && color[2] == 0)
 				{
-					Off();
+					// avoid the sound stopping, because this might be snd_extinguished
+					Off( false );
 				}
 				BecomeInactive( TH_THINK );
 			}
