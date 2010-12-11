@@ -178,6 +178,7 @@ void CShop::Clear()
 	skipShop = false;
 	pickSetShop = false;     // grayman (#2376) -
 	pickSetStarting = false; // Lockpick handling
+	gold = 0; // grayman - needs to be initialized
 }
 
 void CShop::Save(idSaveGame *savefile) const
