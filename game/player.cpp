@@ -1361,6 +1361,11 @@ void idPlayer::SetupInventory()
 				// Inhibit pickup messages for these items
 				entity->spawnArgs.Set("inv_no_pickup_message", "1");
 
+				// grayman #2467 - Items added in this manner should be set to inv_map_start = 0.
+				// Otherwise they run the risk of being deleted when the map processes inv_map_start/1 items.
+				// Since this item is now in the inventory, inv_map_start should no longer need to be queried.
+				entity->spawnArgs.Set("inv_map_start", "0");
+
 				// add it to the inventory
 				CInventoryItemPtr invItem = crsr->Inventory()->PutItem(entity, this);
 
