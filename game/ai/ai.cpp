@@ -4739,7 +4739,8 @@ void idAI::AnimMove()
 			StopMove(MOVE_STATUS_DONE);
 		}
 	}
-	else if (allowMove && (move.moveCommand != MOVE_NONE)) // grayman 2414 - add MOVE_NONE check
+	else if (allowMove) // grayman - remove the second check, because it caused animation jitter at path_corners
+//	else if (allowMove && (move.moveCommand != MOVE_NONE)) // grayman #2414 - add MOVE_NONE check
 	{
 		// Moving is allowed, get the delta
 		GetMoveDelta( oldaxis, viewAxis, delta );
