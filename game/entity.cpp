@@ -797,6 +797,9 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 {
 	m_LOD = NULL;
 
+	// greebo: Disable this for TDM 1.03
+	return false;
+
 	int d = (int) (1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	m_DistCheckTimeStamp = 0;
