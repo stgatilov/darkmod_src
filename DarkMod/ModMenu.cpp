@@ -173,6 +173,11 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	{
 		UninstallMod(gui);
 	}
+	else if (cmd == "updateCookedMathData")		// Adding a way to update cooked data from menu - J.C.Denton
+	{
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
+	}
 }
 
 void CModMenu::UpdateSelectedMod(idUserInterface* gui)

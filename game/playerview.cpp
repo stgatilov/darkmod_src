@@ -913,9 +913,10 @@ m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )
 	 // Using idStr::FindText to make sure that we account for trailing white spaces. However, even an invalid command 
 	 // e.g. like "reloadImagesADEAW" would update the cooked data, but that should not be a problem.
 	 if( NULL != a_pcText && 
-		( 0 == idStr::FindText( a_pcText, "reloadimages", false ) || 0 == idStr::FindText(a_pcText, "vid_restart", false ) )
+		( 0 == idStr::FindText( a_pcText, "reloadimages", false ) || 0 == idStr::FindText(a_pcText, "vid_restart", false ) || 0 == idStr::FindText(a_pcText, "image_anisotropy", false ) )
 		 )
 	 {
+	 
 		 m_nFramesToUpdateCookedData = 1;
 		 if( r_postprocess.GetBool() )
 			gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData  );
