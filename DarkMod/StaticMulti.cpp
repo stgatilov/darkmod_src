@@ -632,30 +632,27 @@ void CStaticMulti::AddChange( const int entity, const int newLOD, const int newF
 	{
 		if (m_Changes[i].entity == entity)
 		{
-			// If the new change changes the model back to what it already is, remove
-			// the change set:
+			// If the new change changes this back to what it already was,
+			// remove the change set:
 			// TODO: track skin changes
 			if ( ( m_Changes[i].oldLOD == newLOD ) &&
 				 ( m_Changes[i].oldFlags == newFlags ) )
 			{
-				// TODO: m_Changes.RemoveIndex(i,false);
 #ifdef M_DEBUG
 				gameLocal.Printf("%s: Removing change for entity %i\n", GetName(), entity);
 #endif
-				m_Changes.RemoveIndex(i);
+				// false => we don't need the list to be kept sorted
+				m_Changes.RemoveIndex(i,false);
 			}
 			else
 			{
 #ifdef M_DEBUG
 				gameLocal.Printf("%s: Modifying change for entity %i from LOD %i to %i (was %i)\n", GetName(), entity, m_Changes[i].oldLOD, newLOD, m_Changes[i].newLOD );
 #endif
-				// keep the change set with the new value
+				// keep the change set with the new values
 				m_Changes[i].newLOD = newLOD;
 				m_Changes[i].newFlags = newFlags;
 			}
-			// TODO: move changed change sets to the front of the list, based
-			// on the assumption they might change back again when the player
-			// moves forth and back?
 
 			// done
 			return;
