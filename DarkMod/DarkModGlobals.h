@@ -29,7 +29,7 @@
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR 1
-#define TDM_VERSION_MINOR 3
+#define TDM_VERSION_MINOR 4
 
 enum VersionCheckResult
 {
