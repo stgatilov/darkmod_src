@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 
 // tdm_update_mfc.h : main header file for the PROJECT_NAME application
 //
@@ -14,17 +23,13 @@
 // UpdaterApplication:
 // See tdm_update_mfc.cpp for the implementation of this class
 //
-
 class UpdaterApplication : public CWinAppEx
 {
 public:
 	UpdaterApplication();
 
-// Overrides
-	public:
+public:
 	virtual BOOL InitInstance();
-
-// Implementation
 
 	DECLARE_MESSAGE_MAP()
 };

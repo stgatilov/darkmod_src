@@ -1,3 +1,12 @@
+#############################################################################
+# 
+#  PROJECT: The Dark Mod - Updater
+#  $Revision$
+#  $Date$
+#  $Author$
+# 
+##############################################################################
+
 # -*- mode: python -*-
 
 import string
@@ -30,7 +39,7 @@ libtdm_update_list = BuildList( '', libtdm_update_string )
 for i in range( len( libtdm_update_list ) ):
 	libtdm_update_list[ i ] = './libtdm_update/' + libtdm_update_list[ i ]
 
-local_env = g_env.Copy()
+local_env = g_env.Clone()
 
 local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
 local_env.Append(CPPPATH = '#/../include')

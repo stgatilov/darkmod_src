@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 
 // UpdaterDialog.cpp : implementation file
 //
@@ -248,6 +257,9 @@ void UpdaterDialog::OnFail()
 	_failed = true;
 
 	SetTaskbarProgress(TBP_Error, 0);
+
+	std::string totalBytesStr = (boost::format("Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded())).str();
+	_progressSpeedText.SetWindowText(CString(totalBytesStr.c_str()));
 }
 
 void UpdaterDialog::OnBnClickedButtonContinue()
@@ -295,9 +307,15 @@ void UpdaterDialog::SetProgress(double progressFraction)
 	SetTaskbarProgress(TBP_Normal, progressFraction);
 }
 
-void UpdaterDialog::SetFullDownloadProgress(double progressFraction)
+void UpdaterDialog::SetFullDownloadProgress(const ProgressInfo& info)
 {
-	std::string str = (boost::format("Downloading updates... %0.2f%%") % (progressFraction*100)).str();
+	std::string totalBytesStr = Util::GetHumanReadableBytes(info.bytesToDownload);
+
+	std::string str = (boost::format("Downloading updates... %0.2f%% of %s (%d %s)") % 
+		(info.progressFraction*100) % 
+		totalBytesStr %
+		info.filesToDownload %
+		(info.filesToDownload == 1 ? "file" : "files")).str();
 	_step5Text.SetWindowText(CString(str.c_str()));
 }
 
@@ -701,11 +719,13 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 
 	case DownloadFullUpdate:
 	{
-		CString prevText;
-		_step5Text.GetWindowText(prevText);
-
-		_step5Text.SetWindowText(prevText + " done.");
+		_step5Text.SetWindowText(CString("Downloading updates... done."));
 		_statusText.SetWindowText(CString("Done downloading update."));
+
+		if (!_controller->LocalFilesNeedUpdate())
+		{
+			_statusText.SetWindowText(CString("Your TDM installation is up to date."));
+		}
 	}
 	break;
 
@@ -714,6 +734,9 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		// Hide the continue button
 		_continueButton.ShowWindow(FALSE);
 		_abortButton.SetWindowText(CString("Close"));
+
+		std::string totalBytesStr = (boost::format("Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded())).str();
+		_progressSpeedText.SetWindowText(CString(totalBytesStr.c_str()));
 	}
 	break;
 
@@ -817,7 +840,7 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 {
 	if (info.type == ProgressInfo::FullUpdateDownload)
 	{
-		SetFullDownloadProgress(info.progressFraction);
+		SetFullDownloadProgress(info);
 		return;
 	}
 

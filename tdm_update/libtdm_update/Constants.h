@@ -1,9 +1,18 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma once
 
 namespace tdm
 {
 
-const char* const LIBTDM_UPDATE_VERSION = "0.47";
+const char* const LIBTDM_UPDATE_VERSION = "0.48";
 
 const char* const TDM_MIRRORS_FILE = "tdm_mirrors.txt";
 const char* const TDM_MIRRORS_SERVER = "http://bloodgate.com/mirrors/tdm/pub/pk4/";

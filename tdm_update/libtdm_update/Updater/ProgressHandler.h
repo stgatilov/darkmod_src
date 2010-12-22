@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma once
 
 #include "Updater.h"
@@ -43,6 +52,8 @@ public:
 
 		progress.progressFraction = info.progressFraction > 1.0 ? 1.0 : info.progressFraction;
 		progress.downloadedBytes = info.downloadedBytes;
+		progress.bytesToDownload = info.totalDownloadSize;
+		progress.filesToDownload = info.filesToDownload;
 
 		_view.OnProgressChange(progress);
 	}
@@ -57,6 +68,8 @@ public:
 		progress.mirrorDisplayName = info.mirrorDisplayName;
 		progress.downloadSpeed = info.downloadSpeed;
 		progress.downloadedBytes = info.downloadedBytes;
+		progress.bytesToDownload = 0;
+		progress.filesToDownload = 1;
 
 		_view.OnProgressChange(progress);
 

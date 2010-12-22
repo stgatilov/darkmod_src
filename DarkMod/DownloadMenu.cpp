@@ -52,6 +52,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			{
 				case CMissionManager::DOWNLOAD_FAILED:
 				{
+					gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog
+
 					// Issue a failure message
 					gameLocal.Printf("Connection Error.\n");
 
@@ -115,10 +117,10 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		if (missionIndex > missions.Num()) return;
 
-		gui->SetStateString("av_mission_title", missions[missionIndex].title);
-		gui->SetStateString("av_mission_author", missions[missionIndex].author);
-		gui->SetStateString("av_mission_release_date", missions[missionIndex].releaseDate);
-		gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex].sizeMB));
+		gui->SetStateString("av_mission_title", missions[missionIndex]->title);
+		gui->SetStateString("av_mission_author", missions[missionIndex]->author);
+		gui->SetStateString("av_mission_release_date", missions[missionIndex]->releaseDate);
+		gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex]->sizeMB));
 
 		gui->SetStateBool("av_mission_details_visible", true);
 
@@ -204,7 +206,7 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 
 		if (missionIndex > missions.Num()) continue;
 
-		const DownloadableMission& mission = missions[missionIndex];
+		const DownloadableMission& mission = *missions[missionIndex];
 
 		// The filename is deduced from the mod name found on the website
 		idStr targetPath = g_Global.GetDarkmodPath().c_str();
@@ -251,9 +253,9 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (missionExists)
 		{
-			idStr title = missions[missionIndex].title;
+			idStr title = missions[missionIndex]->title;
 
-			if (missions[missionIndex].isUpdate)
+			if (missions[missionIndex]->isUpdate)
 			{
 				title += "*";
 				updateInList = true;
@@ -284,7 +286,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 		int missionIndex = listItemExists ? _selectedMissions[listIndex] : -1;
 
 		gui->SetStateBool(va("dl_mission_avail_%d", i), listItemExists);
-		gui->SetStateString(va("dl_mission_name_%d", i), missionIndex != -1 ? missions[missionIndex].title : "");
+		gui->SetStateString(va("dl_mission_name_%d", i), missionIndex != -1 ? missions[missionIndex]->title : "");
 	}
 
 	gui->SetStateBool("dl_mission_scroll_up_visible", _selectedListTop > 0);
@@ -384,7 +386,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 
 		if (i->first > missions.Num()) continue;
 
-		const DownloadableMission& mission = missions[i->first];
+		const DownloadableMission& mission = *missions[i->first];
 
 		switch (download->GetStatus())
 		{

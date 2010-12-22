@@ -77,8 +77,8 @@ idlib_list = scons_utils.BuildList( 'idlib', idlib_string )
 for i in range( len( idlib_list ) ):
 	idlib_list[ i ] = '../../' + idlib_list[ i ]
 
-local_env = g_env.Copy()
-local_env_noopt = g_env.Copy()
+local_env = g_env.Clone()
+local_env_noopt = g_env.Clone()
 
 # max allowed -O1
 flags = OPTCPPFLAGS
@@ -90,6 +90,7 @@ except:
 local_env_noopt.Append( CPPFLAGS = flags )
 
 ret_list = []
+
 if ( local_idlibpic == 0 ):
 	for f in idlib_list:
 		ret_list += local_env.StaticObject( source = f )
@@ -98,4 +99,5 @@ else:
 	for f in idlib_list:
 		ret_list += local_env.SharedObject( source = f )
 	ret_list += local_env_noopt.SharedObject( source = [ '../../idlib/bv/frustum_gcc.cpp' ] )
+
 Return( 'ret_list' )

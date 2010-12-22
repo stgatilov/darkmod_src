@@ -322,9 +322,12 @@ void CMissionInfo::MoveArticlesToBack(idStr& title)
 	{
 		title += ", The";
 	}
-
-	if (title.StripLeadingOnce("A "))
+	else if (title.StripLeadingOnce("A "))
 	{
 		title += ", A";
+	}
+	else if (title.StripLeadingOnce("An "))
+	{
+		title += ", An";
 	}
 }

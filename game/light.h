@@ -63,7 +63,7 @@ public:
 	void			SetRadiusXYZ( const float x, const float y, const float z );
 	void			SetRadius( const float radius );
 	void			On( void );
-	void			Off( void );
+	void			Off( const bool stopSound = true );
 	void			Fade( const idVec4 &to, float fadeTime );
 	void			FadeOut( float time );
 	void			FadeIn( float time );

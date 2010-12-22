@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma once
 
 #include <stdexcept>
@@ -38,8 +47,14 @@ struct OverallDownloadProgressInfo
 	// Number of bytes received
 	std::size_t downloadedBytes;
 
+	// Number of bytes to download
+	std::size_t totalDownloadSize;
+
 	// Number of bytes left
 	std::size_t bytesLeftToDownload;
+
+	// Number of files to download
+	std::size_t filesToDownload;
 };
 
 struct CurDownloadInfo
@@ -252,6 +267,9 @@ public:
 
 	// Returns the number of bytes which need to be downloaded
 	std::size_t GetTotalDownloadSize();
+
+	// Returns the number of bytes which have been downloaded (including broken downloads, etc.)
+	std::size_t GetTotalBytesDownloaded();
 
 	// Calls with information about the current download status (periodically)
 	void SetDownloadProgressCallback(const DownloadProgressPtr& callback);

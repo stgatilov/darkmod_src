@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #include "Updater.h"
 
 #include "../TraceLog.h"
@@ -14,6 +23,7 @@
 #ifndef WIN32
 #include <limits.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 namespace tdm
@@ -881,6 +891,16 @@ void Updater::CheckLocalFiles()
 
 	TraceLog::WriteLine(LOG_VERBOSE, "Checking target folder: " + targetPath.file_string());
 
+	// List PK4 inventory to logfile, for reference
+	for (fs::directory_iterator i = fs::directory_iterator(targetPath); 
+		 i != fs::directory_iterator(); ++i)
+	{
+		if (File::IsPK4(*i))
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + i->string());
+		}
+	}
+
 	std::size_t count = 0;
 
 	for (ReleaseFileSet::const_iterator i = _latestRelease.begin(); i != _latestRelease.end(); ++i)
@@ -1106,9 +1126,11 @@ void Updater::NotifyFullUpdateProgress()
 	}
 
 	info.updateType = OverallDownloadProgressInfo::Full;
+	info.totalDownloadSize = totalDownloadSize;
 	info.bytesLeftToDownload = totalDownloadSize - totalBytesDownloaded;
 	info.downloadedBytes = totalBytesDownloaded;
 	info.progressFraction = static_cast<double>(totalBytesDownloaded) / totalDownloadSize;
+	info.filesToDownload = _downloadQueue.size();
 	
 	_downloadProgressCallback->OnOverallProgress(info);
 }
@@ -1162,6 +1184,8 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			_updatingUpdater = true;
 		}
 
+		std::list<fs::path> extractedFiles;
+
 #ifdef WIN32
 		if (zipFile->ContainsFile(_executable.string()))
 		{
@@ -1171,7 +1195,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 			// Extract all but the updater
 			// Ignore DoomConfig.cfg, etc. if already existing
-			zipFile->ExtractAllFilesTo(destPath, _ignoreList, hardIgnoreList); 
+			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList, hardIgnoreList); 
 
 			// Extract the updater to a temporary filename
 			zipFile->ExtractFileTo(_executable.string(), destPath / ("_" + _executable.string()));
@@ -1182,14 +1206,37 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 		else
 		{
 			// Regular archive (without updater), extract all files, ignore existing DoomConfig.cfg
-			zipFile->ExtractAllFilesTo(destPath, _ignoreList);
+			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
 		}
 #else	
 		// Non-Win32 case: just extract all files, ignore existing DoomConfig.cfg
-		zipFile->ExtractAllFilesTo(destPath, _ignoreList);
+		extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
 #endif
 
 		TraceLog::WriteLine(LOG_VERBOSE, "All files successfully extracted from " + zipFilePath.file_string());
+
+#ifndef WIN32
+		// In Linux, mark *.linux files as executable after extraction
+		for (std::list<fs::path>::const_iterator i = extractedFiles.begin(); i != extractedFiles.end(); ++i)
+		{
+			std::string extension = boost::to_lower_copy(fs::extension(*i));
+
+			if (extension == ".linux")
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Marking extracted file as executable: " + i->file_string());
+				
+				struct stat mask;
+				stat(i->file_string().c_str(), &mask);
+
+				mask.st_mode |= S_IXUSR|S_IXGRP|S_IXOTH;
+
+				if (chmod(i->file_string().c_str(), mask.st_mode) == -1)
+				{
+					TraceLog::Error("Could not mark extracted file as executable: " + i->file_string());
+				}
+			}
+		}
+#endif
 		
 		// Close the zip file before removal
 		zipFile.reset();
@@ -1269,6 +1316,11 @@ std::size_t Updater::GetTotalDownloadSize()
 	}
 
 	return totalSize;
+}
+
+std::size_t Updater::GetTotalBytesDownloaded()
+{
+	return _conn->GetBytesDownloaded();
 }
 
 void Updater::SetDownloadProgressCallback(const DownloadProgressPtr& callback)

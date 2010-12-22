@@ -1,9 +1,9 @@
 /***************************************************************************
  *
- * PROJECT: The Dark Mod
- * $Revision: 4055 $
- * $Date: 2010-07-13 13:17:09 +0200 (Di, 13 Jul 2010) $
- * $Author: greebo $
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -81,7 +81,7 @@ void HttpRequest::Perform()
 {
 	_errorMessage.clear();
 
-	tdm::TraceLog::WriteLine(LOG_VERBOSE, "Initiating Download from " + _url);
+	TraceLog::WriteLine(LOG_VERBOSE, "Initiating Download from " + _url);
 
 	InitRequest();
 
@@ -113,12 +113,12 @@ void HttpRequest::Perform()
 		case CURLE_OK:
 			_status = OK;
 			_progress = 1.0;
-			tdm::TraceLog::WriteLine(LOG_VERBOSE, "Download successful: " + _url);
+			TraceLog::WriteLine(LOG_VERBOSE, "Download successful: " + _url);
 			break;
 		default:
 			_status = FAILED;
 			_errorMessage = curl_easy_strerror(result);
-			tdm::TraceLog::WriteLine(LOG_VERBOSE, "Download failed: " + _errorMessage);
+			TraceLog::WriteLine(LOG_VERBOSE, "Download failed: " + _errorMessage);
 		};
 	}
 
@@ -203,13 +203,16 @@ void HttpRequest::UpdateProgress()
 
 size_t HttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, HttpRequest* self)
 {
+	// Needed size
+	std::size_t bytesToCopy = size * nmemb;
+
+	// Add to the "total bytes downloaded" counter, regardless of whether we're saving it or not
+	self->_conn.AddBytesDownloaded(bytesToCopy);
+
 	if (self->_cancelFlag)
 	{
 		return 0; // cancel the process
 	}
-
-	// Needed size
-	std::size_t bytesToCopy = size * nmemb;
 
 	std::vector<char>& buf = self->_buffer; // shortcut 
 
@@ -234,13 +237,16 @@ size_t HttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, Ht
 
 size_t HttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, HttpRequest* self)
 {
+	// Needed size
+	std::size_t bytesToCopy = size * nmemb;
+
+	// Add to the "total bytes downloaded" counter, regardless of whether we're saving it or not
+	self->_conn.AddBytesDownloaded(bytesToCopy);
+
 	if (self->_cancelFlag)
 	{
 		return 0; // cancel the process
 	}
-
-	// Needed size
-	std::size_t bytesToCopy = size * nmemb;
 
 	self->_destStream.write(static_cast<const char*>(ptr), bytesToCopy);
 

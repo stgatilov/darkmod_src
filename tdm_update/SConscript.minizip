@@ -1,3 +1,11 @@
+#############################################################################
+# 
+#  PROJECT: The Dark Mod - Updater
+#  $Revision$
+#  $Date$
+#  $Author$
+# 
+##############################################################################
 
 import string
 
@@ -36,21 +44,11 @@ ziploader_list = BuildList( '', ziploader_string )
 for i in range( len( ziploader_list ) ):
 	ziploader_list[ i ] = '#/../lib/' + ziploader_list[ i ]
 
-local_env = g_env.Copy()
-local_env_noopt = g_env.Copy()
+local_env = g_env.Clone()
 
 local_env.Append(CPPPATH = '#/../include')
 local_env.Append(CPPPATH = '#/../include/minizip')
 local_env.Append(CPPPATH = '#/../include/zlib')
-
-# max allowed -O1
-flags = OPTCPPFLAGS
-try:
-	flags.remove( '-O3' )
-	flags.insert( 0, '-O1' )
-except:
-	pass
-local_env_noopt.Append( CPPFLAGS = flags )
 
 ret_list = []
 

@@ -32,6 +32,12 @@ CMissionManager::CMissionManager() :
 	_refreshMissionListDownloadId(-1)
 {}
 
+CMissionManager::~CMissionManager()
+{
+	// Clear contents and the list elements themselves
+	_downloadableMissions.DeleteContents(true);
+}
+
 void CMissionManager::Init()
 {
 	// (Re-)generate mission list on start
@@ -691,7 +697,8 @@ void CMissionManager::UninstallMission()
 
 int CMissionManager::StartReloadDownloadableMissions()
 {
-	_downloadableMissions.Clear();
+	// Clear contents and the list elements themselves
+	_downloadableMissions.DeleteContents(true);
 
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
@@ -865,9 +872,17 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 		// Only add missions with valid locations
 		if (mission.downloadLocations.Num() > 0)
 		{
-			_downloadableMissions.Append(mission);
+			// Copy-construct the local mission struct into the heap-allocated one
+			_downloadableMissions.Append(new DownloadableMission(mission));
 		}
 	}
+
+	SortDownloadableMissions();
+}
+
+void CMissionManager::SortDownloadableMissions()
+{
+	_downloadableMissions.Sort(DownloadableMission::SortCompare);
 }
 
 const DownloadableMissionList& CMissionManager::GetDownloadableMissions() const

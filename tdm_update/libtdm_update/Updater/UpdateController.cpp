@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #include "UpdateController.h"
 
 #include "../Util.h"
@@ -90,6 +99,11 @@ std::size_t UpdateController::GetTotalDownloadSize()
 	return _updater.GetTotalDownloadSize();
 }
 
+std::size_t UpdateController::GetTotalBytesDownloaded()
+{
+	return _updater.GetTotalBytesDownloaded();
+}
+
 std::size_t UpdateController::GetNumFilesToBeUpdated()
 {
 	return _updater.GetNumFilesToBeUpdated();
@@ -150,6 +164,11 @@ void UpdateController::PerformStep(UpdateStep step)
 		if (Util::D3IsRunning())
 		{
 			_view.OnWarning("The Doom 3 process was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit Doom 3 before continuing.");
+		}
+
+		if (Util::DarkRadiantIsRunning())
+		{
+			_view.OnWarning("DarkRadiant was found to be in the list of active processes.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit DarkRadiant before continuing.");
 		}
 
 		break;
@@ -218,6 +237,7 @@ void UpdateController::PerformStep(UpdateStep step)
 	case DownloadFullUpdate:
 		_updater.PrepareUpdateStep();
 		_updater.PerformUpdateStep();
+		_updater.CleanupUpdateStep();
 		break;
 
 	case PostUpdateCleanup:
@@ -359,10 +379,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 		break;
 
 	case DownloadFullUpdate:
-		{
-			_updater.CleanupUpdateStep();
-			TryToProceedTo(PostUpdateCleanup);
-		}
+		TryToProceedTo(PostUpdateCleanup);
 		break;
 
 	case PostUpdateCleanup:

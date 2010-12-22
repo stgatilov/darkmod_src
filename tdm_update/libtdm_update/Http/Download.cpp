@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #include "Download.h"
 #include "../Http/HttpConnection.h"
 #include "../Zip/Zip.h"

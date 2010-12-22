@@ -1,6 +1,16 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma once
 
 #include <set>
+#include <list>
 #include <vector>
 #include <time.h>
 #include <boost/shared_ptr.hpp>
@@ -95,8 +105,9 @@ public:
 	 * @ignoreList contains all the files which should not be extracted whatsoever.
 	 *
 	 * @throws: std::runtime_error if anything bad happens.
+	 * @returns: the list of files which have been extracted.
 	 */
-	void ExtractAllFilesTo(const fs::path& destPath, 
+	std::list<fs::path> ExtractAllFilesTo(const fs::path& destPath, 
 						   const std::set<std::string>& ignoreIfExisting = std::set<std::string>(),
 						   const std::set<std::string>& ignoreList = std::set<std::string>());
 

@@ -1,6 +1,16 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #include "Util.h"
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -76,6 +86,50 @@ bool Util::D3IsRunning()
 	return false;
 }
 
+bool Util::DarkRadiantIsRunning()
+{
+	DWORD processes[1024];
+	DWORD num;
+
+	if (!EnumProcesses(processes, sizeof(processes), &num))
+	{
+		return false;
+	}
+
+	// Iterate over the processes
+	for (int i = 0; i < int(num/sizeof(DWORD)); i++)
+	{
+		char szProcessName[MAX_PATH] = "unknown";
+
+		// Get the handle for this process
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, FALSE, processes[i]);
+
+		if (hProcess)
+		{
+			HMODULE hMod;
+			DWORD countBytes;
+
+			if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &countBytes))
+			{
+				GetModuleBaseName(hProcess, hMod, szProcessName, sizeof(szProcessName));
+
+				std::string processName(szProcessName);
+				boost::algorithm::to_lower(processName);
+
+				if (processName == "darkradiant.exe")
+				{
+					CloseHandle(hProcess); // close the handle, we're terminating
+					return true;
+				}
+			}
+		}
+
+		CloseHandle(hProcess);
+	}
+
+	return false;
+}
+
 } // namespace
 
 #else
@@ -94,7 +148,7 @@ namespace
 	const std::string PROC_FOLDER("/proc/");
 	const std::string DOOM_PROCESS_NAME("doom.x86"); 
 
-	bool CheckProcessFile(const std::string& name)
+	bool CheckProcessFile(const std::string& name, const std::string& processName)
 	{
 		// Try to cast the filename to an integer number (=PID)
 		try
@@ -114,10 +168,10 @@ namespace
 			if (cmdLineFile.is_open())
 			{
 				// Read the command line from the process file
-				std::string cmdLine("");
+				std::string cmdLine;
 				getline(cmdLineFile, cmdLine);
 				
-				if (cmdLine.find(DOOM_PROCESS_NAME) != std::string::npos)
+				if (cmdLine.find(processName) != std::string::npos)
 				{
 					// Process found, return success
 					return true;
@@ -142,7 +196,21 @@ bool Util::D3IsRunning()
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
 	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
 	{
-		if (CheckProcessFile(i->leaf()))
+		if (CheckProcessFile(i->leaf(), DOOM_PROCESS_NAME))
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool Util::DarkRadiantIsRunning()
+{
+	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
+	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
+	{
+		if (CheckProcessFile(i->leaf(), "darkradiant"))
 		{
 			return true;
 		}

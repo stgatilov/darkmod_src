@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod - Updater
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #include "ConsoleUpdater.h"
 
 namespace tdm
@@ -98,7 +107,7 @@ void ConsoleUpdater::AbortSignalHandler(int signal)
 
 void ConsoleUpdater::OnAbort(int signal)
 {
-	TraceLog::Error("\nCtrl-C pressed.");
+	TraceLog::Error("\nAbort signal received, trying to exit gracefully.");
 
 	_controller.Abort();
 
@@ -307,6 +316,15 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
 	case DownloadFullUpdate:
 	{
 		TraceLog::WriteLine(LOG_STANDARD, " Done downloading updates.");
+
+		std::string totalBytesStr = (boost::format(" Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller.GetTotalBytesDownloaded())).str();
+		TraceLog::WriteLine(LOG_STANDARD, totalBytesStr);
+
+		if (!_controller.LocalFilesNeedUpdate())
+		{
+			TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
+			TraceLog::WriteLine(LOG_STANDARD, " Your TDM installation is up to date.");
+		}
 	}
 	break;
 
@@ -333,6 +351,7 @@ void ConsoleUpdater::OnFailure(UpdateStep step, const std::string& errorMessage)
 
 void ConsoleUpdater::OnMessage(const std::string& message)
 {
+	TraceLog::WriteLine(LOG_STANDARD, "=======================================");
 	TraceLog::WriteLine(LOG_STANDARD, message);
 }
 

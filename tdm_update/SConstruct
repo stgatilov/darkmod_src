@@ -1,8 +1,17 @@
-# The Dark Mod Launcher build script for Linux
-# Adapted from id's game sconscript
+#############################################################################
+# 
+#  PROJECT: The Dark Mod - Updater
+#  $Revision$
+#  $Date$
+#  $Author$
+# 
+##############################################################################
+
+# The Dark Mod Updater build script for Linux
+# Based on id's game sconscript
 # Author: greebo
 
-import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, string
+import sys, os, time, commands, re, pickle, StringIO, commands, pdb, string
 import SCons
 
 # choose configuration variables which should be saved between runs
@@ -43,7 +52,7 @@ Help( help_string )
 
 # sanity -----------------------------------------
 
-EnsureSConsVersion( 0, 96 )
+EnsureSConsVersion( 0, 98 )
 
 # end sanity -------------------------------------
 
@@ -88,7 +97,7 @@ for k in ARGUMENTS.keys():
 g_build = './build/' + BUILD
 
 SConsignFile( 'scons.signatures' )
-SourceSignatures('timestamp')
+Decider('MD5-timestamp')
 
 SetOption('num_jobs', JOBS)
 
@@ -153,7 +162,7 @@ g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPP
 g_base_env.Append(CPPPATH = '#/')
 g_base_env.Append(CPPPATH = '#/../include/zlib')
 
-g_env = g_base_env.Copy()
+g_env = g_base_env.Clone()
 
 g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
