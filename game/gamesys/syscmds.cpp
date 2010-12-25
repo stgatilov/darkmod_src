@@ -3525,6 +3525,13 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
 				bIsAmbientBlockFound = true;
 			}
+
+			// Try the search again, in case the material is vertex color blended and there is second inverse-vertex-colored ambient block.
+			bIsOldAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+
+			if( bIsOldAmbientBlockFound  )
+				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+
 			// If we couldn't find old ambient block and we have new ambient block in place, 
 			// then we can safely skip this material.
 			else if( !bForceUpdateAllMaterials && bIsAmbientBlockFound )
