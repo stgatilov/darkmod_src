@@ -17,6 +17,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #ifdef WIN32
 #include <winsock2.h> // greebo: need to include winsock2 before curl/curl.h
+#include <Ws2tcpip.h>
+#include <Wspiapi.h>
 #endif
 
 #include <curl/curl.h>
