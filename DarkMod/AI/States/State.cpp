@@ -658,6 +658,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			}
 			else
 			{
+				if (otherAI->GetMoveType() == MOVETYPE_SLEEP) // grayman #2464 - is the other asleep?
+				{
+					return; // nothing else to do
+				}
+
 				// Issue a communication stim to the friend we spotted.
 				// We can issue warnings, greetings, etc...
 
