@@ -130,6 +130,9 @@ public:
 
 	void ClearNewMissionList();
 
+	// Reload darkmod.txt for newly downloaded/found missions, to update any outdated mission db entries
+	void RefreshMetaDataForNewFoundMissions();
+
 	// Installs mission (by index)
 	InstallResult InstallMission(int index);
 

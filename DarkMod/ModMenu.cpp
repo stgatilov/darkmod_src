@@ -44,21 +44,24 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 	if (cmd == "refreshMissionList")
 	{
-		gameLocal.m_MissionManager->ReloadMissionList();
-
-		// Update the GUI state
-		UpdateGUI(gui);
-
 		int numNewMissions = gameLocal.m_MissionManager->GetNumNewMissions();
 
 		if (numNewMissions > 0)
 		{
+			// Update mission DB records
+			gameLocal.m_MissionManager->RefreshMetaDataForNewFoundMissions();
+
 			gui->SetStateString("newFoundMissionsText", "New missions available");
 			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundMissionsText());
 			gui->HandleNamedEvent("OnNewMissionsFound");
 
 			gameLocal.m_MissionManager->ClearNewMissionList();
 		}
+
+		gameLocal.m_MissionManager->ReloadMissionList();
+
+		// Update the GUI state
+		UpdateGUI(gui);
 	}
 	else if (cmd == "loadModNotes")
 	{

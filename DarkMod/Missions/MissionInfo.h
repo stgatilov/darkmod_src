@@ -97,8 +97,8 @@ public:
 	// Will save any persistent info to the given file
 	void	SaveToFile(idFile* file);
 
-	// Load stuff from darkmod.txt
-	void	LoadMetaData();
+	// Load stuff from darkmod.txt, returns FALSE if the file couldn't be read
+	bool	LoadMetaData();
 
 	// Moves articles from the front of the string to its back "The Alchemist" => "Alchemist, The"
 	static void MoveArticlesToBack(idStr& title);

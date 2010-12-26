@@ -278,9 +278,6 @@ CMissionManager::MoveList CMissionManager::SearchForNewMissions(const idStr& ext
 
 		if (modName.IsEmpty()) continue; // error?
 
-		// Remember this for the user to display
-		_newFoundMissions.Append(modName);
-
 		// Clean modName string from any weird characters
 		for (int i = 0; i < modName.Length(); ++i)
 		{
@@ -288,6 +285,9 @@ CMissionManager::MoveList CMissionManager::SearchForNewMissions(const idStr& ext
 
 			modName[i] = '_'; // replace non-ASCII keys with underscores
 		}
+
+		// Remember this for the user to display
+		_newFoundMissions.Append(modName);
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
@@ -448,6 +448,28 @@ void CMissionManager::SortMissionList()
 	for (int i = 0; i < indexList.Num(); ++i)
 	{
 		_availableMissions[i] = temp[indexList[i]];
+	}
+}
+
+void CMissionManager::RefreshMetaDataForNewFoundMissions()
+{
+	// greebo: If we have new found missions, refresh the meta data of the corresponding MissionDB entries
+	// otherwise we end up with empty display names after downloading a mission we had on the HDD before
+	for (int i = 0; i < _newFoundMissions.Num(); ++i)
+	{
+		CMissionInfoPtr info = GetMissionInfo(_newFoundMissions[i]);
+
+		if (info != NULL) 
+		{
+			if (info->LoadMetaData())
+			{
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Successfully read meta data for newly found mission %s\r", _newFoundMissions[i].c_str());
+			}
+			else
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not read meta data for newly found mission %s\r", _newFoundMissions[i].c_str());
+			}
+		}
 	}
 }
 
