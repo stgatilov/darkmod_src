@@ -6853,10 +6853,19 @@ void idPlayer::Think( void )
 	// position the view weapon, among other things
 	CalculateFirstPersonView();
 
-	// this may use firstPersonView, or a thirdPeroson / camera view
+	// this may use firstPersonView, or a thirdPerson / camera view
 	CalculateRenderView();
 
 	PerformFrobCheck();
+
+	// greebo: Close any opened inventory maps when releasing the attack button (#2460)
+	if (m_ActiveInventoryMapEnt.GetEntity() != NULL && (oldButtons & BUTTON_ATTACK) && !(usercmd.buttons & BUTTON_ATTACK))
+	{
+		ClearActiveInventoryMap();
+
+		// Disallow attacks to avoid triggering the weapon immediately after closing the map
+		allowAttack = false;
+	}
 
 	// Check if we just hit the attack button
 	idEntity* frobbedEnt = m_FrobEntity.GetEntity();
