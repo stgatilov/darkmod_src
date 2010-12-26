@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/Misc.h"
 #include "../../DarkMod/MeleeWeapon.h"
+#include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
@@ -932,24 +933,47 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					}
 					break;
 				}
-				case FC_SOUND_VOICE: {
-					if ( !command.soundShader ) {
-						if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE, 0, false, NULL ) ) {
+				case FC_SOUND_VOICE:
+				{
+					if (command.soundShader == NULL)
+					{
+						// greebo: Use the communication subsystem for AI (issue #2483)
+						if (ent->IsType(idAI::Type))
+						{
+							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+							);
+						}
+						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE, 0, false, NULL ) ) {
 							gameLocal.Warning( "Framecommand 'sound_voice' on entity '%s', anim '%s', frame %d: Could not find sound '%s'",
 								ent->name.c_str(), FullName(), frame + 1, command.string->c_str() );
 						}
-					} else {
+					}
+					else
+					{
 						ent->StartSoundShader( command.soundShader, SND_CHANNEL_VOICE, 0, false, NULL );
 					}
 					break;
 				}
-				case FC_SOUND_VOICE2: {
-					if ( !command.soundShader ) {
-						if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE2, 0, false, NULL ) ) {
+				case FC_SOUND_VOICE2:
+				{
+					if (command.soundShader == NULL)
+					{
+						// greebo: Use the communication subsystem for AI (issue #2483)
+						if (ent->IsType(idAI::Type))
+						{
+							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+							);
+						}
+						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE2, 0, false, NULL ) )
+						{
 							gameLocal.Warning( "Framecommand 'sound_voice2' on entity '%s', anim '%s', frame %d: Could not find sound '%s'",
 								ent->name.c_str(), FullName(), frame + 1, command.string->c_str() );
 						}
-					} else {
+					}
+					else 
+					{
 						ent->StartSoundShader( command.soundShader, SND_CHANNEL_VOICE2, 0, false, NULL );
 					}
 					break;
