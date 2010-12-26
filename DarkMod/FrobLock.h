@@ -21,7 +21,7 @@ class CFrobLock :
 	public idStaticEntity
 {
 	// The actual lock implementation
-	PickableLock	m_Lock;
+	PickableLock*	m_Lock;
 
 	/**
 	 * Handles that are associated with this lock.
@@ -35,6 +35,7 @@ public:
 	CLASS_PROTOTYPE( CFrobLock );
 
 	CFrobLock();
+	virtual ~CFrobLock();
 
 	void			Spawn();
 
@@ -60,6 +61,9 @@ public:
 	virtual bool	UseBy(EImpulseState impulseState, const CInventoryItemPtr& item);	// Overrides idEntity::UseBy
 
 	virtual void	AttackAction(idPlayer* player); // Override idEntity::AttackAction to catch attack key presses from the player during lockpicking
+
+	// Override idEntity to register the PickableLock class as object
+	virtual void	AddObjectsToSaveGame(idSaveGame* savefile);
 
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);

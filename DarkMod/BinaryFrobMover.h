@@ -44,11 +44,16 @@ public:
 	// Constructor
 	CBinaryFrobMover();
 
+	virtual ~CBinaryFrobMover();
+
 	void					Spawn();
 	void					Event_PostSpawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
+
+	// Override idEntity to register the PickableLock class.
+	virtual void			AddObjectsToSaveGame(idSaveGame* savefile);
 
 	/**
 	 * greebo: A set of convenience methods, which set the master bool to TRUE.
@@ -108,12 +113,12 @@ public:
 	*/
 	virtual bool			IsLocked()
 	{
-		return m_Lock.IsLocked();
+		return m_Lock->IsLocked();
 	}
 
 	virtual bool			IsPickable()
 	{
-		return m_Lock.IsPickable();
+		return m_Lock->IsPickable();
 	}
 
 	/**
@@ -363,7 +368,7 @@ protected:
 protected:
 
 	// The actual lock implementation for this mover
-	PickableLock				m_Lock;
+	PickableLock*				m_Lock;
 
 	/**
 	* m_Open is only set to false when the door is completely closed

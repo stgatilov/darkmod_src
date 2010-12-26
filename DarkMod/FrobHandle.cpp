@@ -52,7 +52,7 @@ void CFrobHandle::Spawn()
 	m_bInterruptable = false;
 
 	// greebo: The handle itself must never locked, otherwise it can't move in Tap()
-	m_Lock.SetLocked(false);
+	m_Lock->SetLocked(false);
 }
 
 void CFrobHandle::Event_Tap()

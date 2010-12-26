@@ -54,9 +54,8 @@ END_CLASS
 
 CBinaryFrobMover::CBinaryFrobMover()
 {
-	m_Lock.SetOwner(this);
-	m_Lock.SetLocked(false);
-
+	m_Lock = NULL;
+	
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_binary_mover";
 	m_Open = false;
@@ -78,9 +77,22 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_bFineControlStarting = false;
 }
 
+CBinaryFrobMover::~CBinaryFrobMover()
+{
+	delete m_Lock;
+}
+
+void CBinaryFrobMover::AddObjectsToSaveGame(idSaveGame* savefile)
+{
+	idEntity::AddObjectsToSaveGame(savefile);
+
+	savefile->AddObject(m_Lock);
+}
+
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
 {
-	m_Lock.Save(savefile);
+	// The lock class is saved by the idSaveGame class on close, no need to handle it here
+	savefile->WriteObject(m_Lock);
 
 	savefile->WriteBool(m_Open);
 	savefile->WriteBool(m_bIntentOpen);
@@ -123,7 +135,8 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 {
-	m_Lock.Restore(savefile);
+	// The lock class is restored by the idRestoreGame, don't handle it here
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock));
 
 	savefile->ReadBool(m_Open);
 	savefile->ReadBool(m_bIntentOpen);
@@ -166,6 +179,11 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 void CBinaryFrobMover::Spawn()
 {
+	// Setup our PickableLock instance
+	m_Lock = static_cast<PickableLock*>(PickableLock::CreateInstance());
+	m_Lock->SetOwner(this);
+	m_Lock->SetLocked(false);
+
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
 	m_Open = spawnArgs.GetBool("open");
@@ -181,7 +199,7 @@ void CBinaryFrobMover::Spawn()
 	}
 
 	// Load the spawnargs for the lock
-	m_Lock.InitFromSpawnargs(spawnArgs);
+	m_Lock->InitFromSpawnargs(spawnArgs);
 	
 	// Schedule a post-spawn event to parse the rest of the spawnargs
 	// greebo: Be sure to use 16 ms as delay to allow the SpawnBind event to execute before this one.
@@ -362,7 +380,7 @@ void CBinaryFrobMover::Lock(bool bMaster)
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is locked\r", name.c_str());
 
-	m_Lock.SetLocked(true);
+	m_Lock->SetLocked(true);
 	CallStateScript();
 
 	// Fire the event for the subclasses
@@ -379,7 +397,7 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 	
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is unlocked\r", name.c_str());
 
-	m_Lock.SetLocked(false);
+	m_Lock->SetLocked(false);
 	CallStateScript();
 
 	// Fire the event for the subclasses
@@ -394,7 +412,7 @@ void CBinaryFrobMover::ToggleLock()
 		Close();
 	}
 
-	if (m_Lock.IsLocked())
+	if (m_Lock->IsLocked())
 	{
 		Unlock();
 	}
@@ -640,8 +658,8 @@ void CBinaryFrobMover::CallStateScript()
 	if (!functionName.IsEmpty())
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d, Locked: %d Interrupted: %d\r",
-			functionName.c_str(), m_Open, m_Lock.IsLocked(), m_bInterrupted);
-		CallScriptFunctionArgs(functionName, true, 0, "ebbb", this, m_Open, m_Lock.IsLocked(), m_bInterrupted);
+			functionName.c_str(), m_Open, m_Lock->IsLocked(), m_bInterrupted);
+		CallScriptFunctionArgs(functionName, true, 0, "ebbb", this, m_Open, m_Lock->IsLocked(), m_bInterrupted);
 	}
 }
 
@@ -841,7 +859,7 @@ void CBinaryFrobMover::OnMoveStart(bool open)
 
 bool CBinaryFrobMover::PreOpen() 
 {
-	if (m_Lock.IsLocked()) 
+	if (m_Lock->IsLocked()) 
 	{
 		// Play the "I'm locked" sound 
 		FrobMoverStartSound("snd_locked");
@@ -954,12 +972,12 @@ void CBinaryFrobMover::OnLock(bool bMaster)
 {
 	FrobMoverStartSound("snd_lock");
 
-	m_Lock.OnLock();
+	m_Lock->OnLock();
 }
 
 void CBinaryFrobMover::OnUnlock(bool bMaster)
 {
-	m_Lock.OnUnlock();
+	m_Lock->OnUnlock();
 
 	int soundLength = FrobMoverStartSound("snd_unlock");
 

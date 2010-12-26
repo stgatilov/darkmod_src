@@ -1415,6 +1415,12 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		savefile->WriteInt( 0 );
 	}
 }
+
+void idEntity::AddObjectsToSaveGame(idSaveGame* savefile)
+{
+	// empty default implementation
+}
+
 /*
 ================
 idEntity::Save

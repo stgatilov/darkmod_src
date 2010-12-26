@@ -731,8 +731,6 @@ the session may have written some data to the file already
 */
 void idGameLocal::SaveGame( idFile *f ) {
 	int i;
-	idEntity *ent;
-	idEntity *link;
 
 	idSaveGame savegame( f );
 
@@ -746,16 +744,23 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteCodeRevision();
 
 	// go through all entities and threads and add them to the object list
-	for( i = 0; i < MAX_GENTITIES; i++ ) {
-		ent = entities[i];
+	for (i = 0; i < MAX_GENTITIES; i++)
+	{
+		idEntity* ent = entities[i];
 
-		if ( ent ) {
-			if ( ent->GetTeamMaster() && ent->GetTeamMaster() != ent ) {
-				continue;
-			}
-			for ( link = ent; link != NULL; link = link->GetNextTeamEntity() ) {
-				savegame.AddObject( link );
-			}
+		if (ent == NULL) continue;
+
+		// greebo: Give all entities a chance to register sub-objects (to resolve issue #2502)
+		ent->AddObjectsToSaveGame(&savegame);
+
+		if (ent->GetTeamMaster() && ent->GetTeamMaster() != ent)
+		{
+			continue; // skip bindslaves, these are added by the team master
+		}
+
+		for (idEntity* link = ent; link != NULL; link = link->GetNextTeamEntity())
+		{
+			savegame.AddObject( link );
 		}
 	}
 
@@ -833,12 +838,12 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteObject( world );
 
 	savegame.WriteInt( spawnedEntities.Num() );
-	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		savegame.WriteObject( ent );
 	}
 
 	savegame.WriteInt( activeEntities.Num() );
-	for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+	for (idEntity* ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 		savegame.WriteObject( ent );
 	}
 

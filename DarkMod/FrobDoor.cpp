@@ -380,7 +380,7 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	}
 	else if (itemName == "Lockpicks")
 	{
-		if (!m_Lock.IsPickable())
+		if (!m_Lock->IsPickable())
 		{
 			// Lock is not pickable
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
@@ -440,7 +440,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	}
 	else if (itemName == "Lockpicks")
 	{
-		if (!m_Lock.IsPickable())
+		if (!m_Lock->IsPickable())
 		{
 			// Lock is not pickable
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
@@ -469,7 +469,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			}
 
 			// Pass the call to the lockpick routine
-			return m_Lock.ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
+			return m_Lock->ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
 		}
 		else
 		{
@@ -577,7 +577,7 @@ void CFrobDoor::SetFrobbed(bool val)
 		handle->SetFrobbed(val);
 	}
 
-	m_Lock.OnFrobbedStatusChange(val);
+	m_Lock->OnFrobbedStatusChange(val);
 }
 
 bool CFrobDoor::IsFrobbed()
@@ -609,7 +609,7 @@ void CFrobDoor::UpdateHandlePosition()
 	m_LastHandleUpdateTime = gameLocal.time;
 
 	// Calculate the fraction based on the current pin/sample state
-	float fraction = m_Lock.CalculateHandleMoveFraction();
+	float fraction = m_Lock->CalculateHandleMoveFraction();
 
 	if (cv_lp_debug_hud.GetBool())
 	{
@@ -650,7 +650,7 @@ void CFrobDoor::AttackAction(idPlayer* player)
 	}
 
 	// No master
-	m_Lock.AttackAction(player);
+	m_Lock->AttackAction(player);
 }
 
 void CFrobDoor::OpenPeers()

@@ -38,15 +38,25 @@ CLASS_DECLARATION( idStaticEntity, CFrobLock )
 END_CLASS
 
 CFrobLock::CFrobLock() :
+	m_Lock(NULL),
 	m_LastHandleUpdateTime(-1)
+{}
+
+CFrobLock::~CFrobLock() 
 {
-	m_Lock.SetOwner(this);
-	m_Lock.SetLocked(false);
+	delete m_Lock;
+}
+
+void CFrobLock::AddObjectsToSaveGame(idSaveGame* savefile)
+{
+	idEntity::AddObjectsToSaveGame(savefile);
+
+	savefile->AddObject(m_Lock);
 }
 
 void CFrobLock::Save(idSaveGame *savefile) const
 {
-	m_Lock.Save(savefile);
+	savefile->WriteObject(m_Lock);
 
 	savefile->WriteInt(m_Lockhandles.Num());
 	for (int i = 0; i < m_Lockhandles.Num(); i++)
@@ -59,7 +69,7 @@ void CFrobLock::Save(idSaveGame *savefile) const
 
 void CFrobLock::Restore( idRestoreGame *savefile )
 {
-	m_Lock.Restore(savefile);
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock));
 
 	int num;
 	savefile->ReadInt(num);
@@ -74,8 +84,12 @@ void CFrobLock::Restore( idRestoreGame *savefile )
 
 void CFrobLock::Spawn()
 {
+	m_Lock = static_cast<PickableLock*>(PickableLock::CreateInstance());
+	m_Lock->SetOwner(this);
+	m_Lock->SetLocked(false);
+
 	// Load the lock spawnargs
-	m_Lock.InitFromSpawnargs(spawnArgs);
+	m_Lock->InitFromSpawnargs(spawnArgs);
 
 	// Schedule a post-spawn event to parse the rest of the spawnargs
 	// greebo: Be sure to use 16 ms as delay to allow the SpawnBind event to execute before this one.
@@ -117,17 +131,17 @@ void CFrobLock::PostSpawn()
 
 void CFrobLock::OnLock()
 {
-	m_Lock.OnLock();
+	m_Lock->OnLock();
 }
 
 void CFrobLock::OnUnlock()
 {
-	m_Lock.OnUnlock();
+	m_Lock->OnUnlock();
 }
 
 void CFrobLock::Lock()
 {
-	m_Lock.SetLocked(true);
+	m_Lock->SetLocked(true);
 
 	// Fire the event
 	OnLock();
@@ -135,7 +149,7 @@ void CFrobLock::Lock()
 
 void CFrobLock::Unlock()
 {
-	m_Lock.SetLocked(false);
+	m_Lock->SetLocked(false);
 
 	// Fire the event
 	OnUnlock();
@@ -177,7 +191,7 @@ bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	}
 	else if (name == "Lockpicks")
 	{
-		if (!m_Lock.IsPickable())
+		if (!m_Lock->IsPickable())
 		{
 			// Lock is not pickable
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobLock %s is not pickable\r", name.c_str());
@@ -227,7 +241,7 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	}
 	else if (itemName == "Lockpicks")
 	{
-		if (!m_Lock.IsPickable())
+		if (!m_Lock->IsPickable())
 		{
 			// Lock is not pickable
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobLock %s is not pickable\r", name.c_str());
@@ -254,7 +268,7 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			}
 
 			// Pass the call to the lockpick routine
-			return m_Lock.ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
+			return m_Lock->ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
 		}
 		else
 		{
@@ -277,7 +291,7 @@ void CFrobLock::AttackAction(idPlayer* player)
 	}
 
 	// No master
-	m_Lock.AttackAction(player);
+	m_Lock->AttackAction(player);
 }
 
 int CFrobLock::FrobLockStartSound(const char* soundName)
@@ -291,12 +305,12 @@ int CFrobLock::FrobLockStartSound(const char* soundName)
 
 bool CFrobLock::IsLocked()
 {
-	return m_Lock.IsLocked();
+	return m_Lock->IsLocked();
 }
 
 bool CFrobLock::IsPickable()
 {
-	return m_Lock.IsPickable();
+	return m_Lock->IsPickable();
 }
 
 void CFrobLock::Open()
@@ -485,7 +499,7 @@ void CFrobLock::UpdateHandlePosition()
 	m_LastHandleUpdateTime = gameLocal.time;
 
 	// Calculate the fraction based on the current pin/sample state
-	float fraction = m_Lock.CalculateHandleMoveFraction();
+	float fraction = m_Lock->CalculateHandleMoveFraction();
 
 	if (cv_lp_debug_hud.GetBool())
 	{

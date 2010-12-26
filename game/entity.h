@@ -455,6 +455,13 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	/**
+	 * greebo: This method is called before the savegame is writing its "object list" to the file,
+	 * to give this entity an opportunity to register its subobjects (like the PickableLock class
+	 * which is a non-spawned object of the BinaryFrobMover class).
+	 */
+	virtual void			AddObjectsToSaveGame(idSaveGame* savefile);
+
+	/**
 	 * Tels: Save/Restore optional LOD data.
 	 */
 	void					SaveLOD( idSaveGame *savefile ) const;
