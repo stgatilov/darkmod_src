@@ -346,6 +346,7 @@ extern idCVar cv_lod_bias;
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
 
+extern idCVar cv_tdm_enable_multithreading;
 
 /**
 * End DarkMod cvars

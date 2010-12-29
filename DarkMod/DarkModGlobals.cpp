@@ -108,6 +108,7 @@ static const char *LCString[LC_COUNT+1] = {
 	"DIFFICULTY",
 	"CONVERSATION",
 	"MAINMENU",
+	"THREAD",
 	"(empty)"
 };
 
@@ -307,6 +308,8 @@ void CGlobal::LogMat3(idStr const &Name, idMat3 const &Mat)
 
 void CGlobal::LogString(const char *fmt, ...)
 {
+	boost::mutex::scoped_lock lock(_logMutex);
+
 	if(m_LogFile == NULL)
 		return;
 
@@ -444,6 +447,7 @@ void CGlobal::LoadINISettings(void *p)
 		CheckLogClass(ps, "LogClass_CONVERSATION", LC_CONVERSATION);
 		CheckLogClass(ps, "LogClass_MAINMENU", LC_MAINMENU);
 		CheckLogClass(ps, "LogClass_LOCKPICK", LC_LOCKPICK);
+		CheckLogClass(ps, "LogClass_THREAD", LC_THREAD);
 	}
 
 	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))

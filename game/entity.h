@@ -141,7 +141,8 @@ enum {
 	TH_PHYSICS				= 2,		// run physics each frame
 	TH_ANIMATE				= 4,		// update animation each frame
 	TH_UPDATEVISUALS		= 8,		// update renderEntity
-	TH_UPDATEPARTICLES		= 16
+	TH_UPDATEPARTICLES		= 16,
+	TH_MULTITHREADED		= 32		// supports multi-threaded think routines
 };
 
 // The impulse states a button can have
@@ -482,6 +483,16 @@ public:
 
 	// thinking
 	virtual void			Think( void );
+
+	/**
+	 * greebo: Entry point for multi-threaded thinking. It's important that stuff performed or call
+	 * by this method is not interfering with any system that is not thread-safe. It's admittedly
+	 * hard to tell what *is* thread-safe in the D3 SDK environment where everything was designed
+	 * for single-threading - so if you're unsure just don't touch this.
+	 *
+	 * Empty default implementation for idEntity.
+	 */
+	virtual void			ThinkMT() {}
 
 	// Tels: If LOD is enabled on this entity, compute new LOD level and new alpha value.
 	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,

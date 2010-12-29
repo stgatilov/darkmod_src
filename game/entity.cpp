@@ -2562,8 +2562,17 @@ void idEntity::BecomeActive( int flags )
 	}
 
 	int oldFlags = thinkFlags;
+
+	// Set the mulit-thread think flag for active ents
+	if (flags & TH_THINK)
+	{
+		flags |= TH_MULTITHREADED;
+	}
+
 	thinkFlags |= flags;
-	if ( thinkFlags ) {
+
+	if ( thinkFlags )
+	{
 		if ( !IsActive() ) {
 			activeNode.AddToEnd( gameLocal.activeEntities );
 		} else if ( !oldFlags ) {
@@ -2592,8 +2601,15 @@ void idEntity::BecomeInactive( int flags )
 		}
 	}
 
-	if ( thinkFlags ) {
+	if ( thinkFlags )
+	{
+		if (flags & TH_THINK)
+		{
+			flags |= TH_MULTITHREADED;
+		}
+		
 		thinkFlags &= ~flags;
+
 		if ( !thinkFlags && IsActive() ) {
 			gameLocal.numEntitiesToDeactivate++;
 		}

@@ -53,6 +53,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/AreaManager.h"
 
 #include <boost/lexical_cast.hpp>
+#include <boost/thread/thread.hpp>
 
 //TODO: Move these to AI def:
 
@@ -1937,22 +1938,26 @@ void idAI::DormantEnd( void ) {
 	m_lastThinkTime = gameLocal.time;
 }
 
-/*
-=====================
-idAI::Think
-=====================
-*/
-void idAI::Think( void ) 
+void idAI::ThinkMT()
 {
-	START_SCOPED_TIMING(aiThinkTimer, scopedThinkTimer);
+	std::stringstream str;
+
+	str << boost::this_thread::get_id();
+	DM_LOG(LC_THREAD, LT_INFO)LOGSTRING("Entity %s thinking on thread %s.\r", name.c_str(), str.str().c_str()); 
+
+	// By default, we'll be thinking
+	m_shouldThinkThisFrame = true;
+
 	if (cv_ai_opt_nothink.GetBool()) 
 	{
+		m_shouldThinkThisFrame = false;
 		return; // Thinking is disabled.
 	}
 
 	// Interleaved thinking
 	if (!ThinkingIsAllowed())
 	{
+		m_shouldThinkThisFrame = false;
 		return;
 	}
 
@@ -1961,9 +1966,49 @@ void idAI::Think( void )
 	// if we are completely closed off from the player, don't do anything at all
 	// angua: only go dormant while in idle
 	bool outsidePVS = CheckDormant();
-	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
+	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool())
+	{
+		m_shouldThinkThisFrame = false;
 		return;
 	}
+
+	// TODO
+}
+
+/*
+=====================
+idAI::Think
+=====================
+*/
+void idAI::Think( void ) 
+{
+	START_SCOPED_TIMING(aiThinkTimer, scopedThinkTimer);
+
+	// The boolean is calculated in ThinkMT() which is always called before this method
+	if (!m_shouldThinkThisFrame)
+	{
+		return;
+	}
+
+	/*if (cv_ai_opt_nothink.GetBool()) 
+	{
+		return; // Thinking is disabled.
+	}*/
+
+	/*// Interleaved thinking
+	if (!ThinkingIsAllowed())
+	{
+		return;
+	}*/
+
+	//SetNextThinkFrame();
+
+	// if we are completely closed off from the player, don't do anything at all
+	// angua: only go dormant while in idle
+	/*bool outsidePVS = CheckDormant();
+	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
+		return;
+	}*/
 			
 	// save old origin and velocity for crashlanding
 	idVec3 oldOrigin = physicsObj.GetOrigin();

@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include "../game/game_local.h"
+#include <boost/thread/mutex.hpp>
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR 1
@@ -95,6 +96,7 @@ typedef enum {
 	LC_DIFFICULTY,		// anything difficulty-related
 	LC_CONVERSATION,	// conversation/dialogue stuff
 	LC_MAINMENU,		// main menu logging
+	LC_THREAD,			// multithreading-related
 	LC_COUNT
 } LC_LogClass;
 
@@ -182,7 +184,11 @@ protected:
 	int			m_MapIndex;
 };
 
-class CGlobal {
+class CGlobal
+{
+private:
+	boost::mutex _logMutex;
+
 public:
 	CGlobal();
 	~CGlobal();
