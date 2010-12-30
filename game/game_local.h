@@ -665,8 +665,8 @@ public:
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
 
-	// Performs ThinkMT() for entities that support it. The entNumModulo is a not-too-elegant way to distribute entities among threads
-	void					RunThinkFrameMT(int modulo);
+	// Performs ThinkMT() for entities that support it. The moduloRemainder is a not-too-elegant way to distribute entities among threads
+	void					RunThinkFrameMT(int modulo, int remainder);
 
 	/**
 	* TDM: Pause/Unpause game

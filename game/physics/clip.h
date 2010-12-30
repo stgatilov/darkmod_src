@@ -17,6 +17,8 @@
 #include "cm/collisionmodel.h"
 #endif
 
+#include <boost/thread/mutex.hpp>
+
 /*
 ===============================================================================
 
@@ -313,6 +315,11 @@ private:
 	int						numRenderModelTraces;
 	int						numContents;
 	int						numContacts;
+
+	boost::mutex			_translationMutex;
+	boost::mutex			_rotationMutex;
+	boost::mutex			_contentsMutex;
+	boost::mutex			_contactsMutex;
 
 private:
 	struct clipSector_s *	CreateClipSectors_r( const int depth, const idBounds &bounds, idVec3 &maxSector );

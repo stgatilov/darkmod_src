@@ -1940,10 +1940,10 @@ void idAI::DormantEnd( void ) {
 
 void idAI::ThinkMT()
 {
-	std::stringstream str;
+	/*std::stringstream str;
 
 	str << boost::this_thread::get_id();
-	DM_LOG(LC_THREAD, LT_INFO)LOGSTRING("Entity %s thinking on thread %s.\r", name.c_str(), str.str().c_str()); 
+	DM_LOG(LC_THREAD, LT_INFO)LOGSTRING("Entity %s thinking on thread %s.\r", name.c_str(), str.str().c_str()); */
 
 	// By default, we'll be thinking
 	m_shouldThinkThisFrame = true;
@@ -1971,48 +1971,6 @@ void idAI::ThinkMT()
 		m_shouldThinkThisFrame = false;
 		return;
 	}
-
-	// TODO
-}
-
-/*
-=====================
-idAI::Think
-=====================
-*/
-void idAI::Think( void ) 
-{
-	START_SCOPED_TIMING(aiThinkTimer, scopedThinkTimer);
-
-	// The boolean is calculated in ThinkMT() which is always called before this method
-	if (!m_shouldThinkThisFrame)
-	{
-		return;
-	}
-
-	/*if (cv_ai_opt_nothink.GetBool()) 
-	{
-		return; // Thinking is disabled.
-	}*/
-
-	/*// Interleaved thinking
-	if (!ThinkingIsAllowed())
-	{
-		return;
-	}*/
-
-	//SetNextThinkFrame();
-
-	// if we are completely closed off from the player, don't do anything at all
-	// angua: only go dormant while in idle
-	/*bool outsidePVS = CheckDormant();
-	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
-		return;
-	}*/
-			
-	// save old origin and velocity for crashlanding
-	idVec3 oldOrigin = physicsObj.GetOrigin();
-	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
 
 	if (thinkFlags & TH_THINK)
 	{
@@ -2061,6 +2019,211 @@ void idAI::Think( void )
 
 		if (num_cinematics > 0)
 		{
+			/*// Active cinematics
+			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
+				PlayCinematic();
+			}
+			RunPhysics();*/
+		}
+		else if (!allowHiddenMovement && IsHidden())
+		{
+			// hidden monsters
+			/*UpdateScript();*/
+		}
+		else
+		{
+			// clear the ik before we do anything else so the skeleton doesn't get updated twice
+			walkIK.ClearJointMods();
+
+			// Update moves, depending on move type 
+			switch (move.moveType)
+			{
+			case MOVETYPE_DEAD :
+				/*// dead monsters
+				UpdateScript();
+				DeadMove();*/
+				break;
+
+			case MOVETYPE_FLY :
+				// flying monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				FlyMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_STATIC :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				StaticMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_ANIM :
+				// animation based movement
+				UpdateEnemyPosition();
+				/*UpdateScript();
+				if (!cv_ai_opt_noanims.GetBool())
+				{
+					AnimMove();
+				}
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_SLIDE :
+				// velocity based movement
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				SlideMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_SIT :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving not allowed, turning around sitting pivot
+				SittingMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_SIT_DOWN :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				NoTurnMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_SLEEP :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				NoTurnMove();*/
+				break;
+
+			case MOVETYPE_LAY_DOWN :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				LayDownMove();*/
+				break;
+
+			case MOVETYPE_GET_UP :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving not allowed
+				SittingMove();
+				CheckBlink();*/
+				break;
+
+			case MOVETYPE_GET_UP_FROM_LYING :
+				// static monsters
+				/*UpdateEnemyPosition();
+				UpdateScript();
+				// moving and turning not allowed
+				LayDownMove();*/
+				break;
+
+
+			default:
+				break;
+			}
+		}
+	}
+}
+
+/*
+=====================
+idAI::Think
+=====================
+*/
+void idAI::Think( void ) 
+{
+	START_SCOPED_TIMING(aiThinkTimer, scopedThinkTimer);
+
+	// The boolean is calculated in ThinkMT() which is always called before this method
+	if (!m_shouldThinkThisFrame)
+	{
+		return;
+	}
+
+	/*if (cv_ai_opt_nothink.GetBool()) 
+	{
+		return; // Thinking is disabled.
+	}*/
+
+	/*// Interleaved thinking
+	if (!ThinkingIsAllowed())
+	{
+		return;
+	}*/
+
+	//SetNextThinkFrame();
+
+	// if we are completely closed off from the player, don't do anything at all
+	// angua: only go dormant while in idle
+	/*bool outsidePVS = CheckDormant();
+	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
+		return;
+	}*/
+			
+	// save old origin and velocity for crashlanding
+	idVec3 oldOrigin = physicsObj.GetOrigin();
+	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
+
+	if (thinkFlags & TH_THINK)
+	{
+		// clear out the enemy when he dies
+		/*idActor* enemyEnt = enemy.GetEntity();
+		if (enemyEnt != NULL)
+		{
+			if (enemyEnt->health <= 0)
+			{
+				EnemyDead();
+			}
+		}*/
+
+		// Calculate the new view axis based on the turning settings
+		/*current_yaw += deltaViewAngles.yaw;
+		ideal_yaw = idMath::AngleNormalize180(ideal_yaw + deltaViewAngles.yaw);
+		deltaViewAngles.Zero();
+		viewAxis = idAngles(0, current_yaw, 0).ToMat3();*/
+
+		// TDM: Fake lipsync
+		/*if (m_lipSyncActive && !cv_ai_opt_nolipsync.GetBool() && GetSoundEmitter())
+		{
+			if (gameLocal.time < m_lipSyncEndTimer && head.GetEntity() != NULL)
+			{
+				// greebo: Get the number of frames from the head animator
+				int numFrames = head.GetEntity()->GetAnimator()->NumFrames(m_lipSyncAnim);
+
+				int frame = static_cast<int>(numFrames * idMath::Sqrt16(GetSoundEmitter()->CurrentAmplitude()));
+				frame = idMath::ClampInt(0, numFrames, frame);
+				headAnim.SetFrame(m_lipSyncAnim, frame);
+			}
+			else
+			{
+				// We're done; stop the animation
+				StopLipSync();
+			}
+		}*/
+
+		/*// Check for tactile alert due to AI movement
+		CheckTactile();*/
+
+		/*if (health > 0) // grayman #1488 - only do this if you're still alive
+		{
+			UpdateAir(); // Check air ticks (is interleaved and not checked each frame)
+		}*/
+
+		if (num_cinematics > 0)
+		{
 			// Active cinematics
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
 				PlayCinematic();
@@ -2074,8 +2237,8 @@ void idAI::Think( void )
 		}
 		else
 		{
-			// clear the ik before we do anything else so the skeleton doesn't get updated twice
-			walkIK.ClearJointMods();
+			/*// clear the ik before we do anything else so the skeleton doesn't get updated twice
+			walkIK.ClearJointMods();*/
 
 			// Update moves, depending on move type 
 			switch (move.moveType)
@@ -2104,7 +2267,7 @@ void idAI::Think( void )
 
 			case MOVETYPE_ANIM :
 				// animation based movement
-				UpdateEnemyPosition();
+				/*UpdateEnemyPosition();*/
 				UpdateScript();
 				if (!cv_ai_opt_noanims.GetBool())
 				{
