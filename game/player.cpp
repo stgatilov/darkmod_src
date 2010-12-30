@@ -480,6 +480,7 @@ idPlayer::idPlayer() :
 	m_fColVal				= 0;
 	m_fBlendColVal			= 0;	
 	m_LightgemInterleave	= 0;
+	ignoreWeaponAttack		= false; // grayman #597
 }
 
 /*
@@ -1681,6 +1682,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_LightgemValue);
 	savefile->WriteFloat(m_fColVal);
 	savefile->WriteInt(m_LightgemInterleave);
+	savefile->WriteBool(ignoreWeaponAttack); // grayman #597
 
 	if(hud)
 	{
@@ -2033,6 +2035,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
 	savefile->ReadInt(m_LightgemInterleave);
+	savefile->ReadBool(ignoreWeaponAttack); // grayman #597
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -2883,6 +2886,7 @@ void idPlayer::BlockWeapon( void )
 
 	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) 
 	{
+		ignoreWeaponAttack = true; // grayman #597
 		AI_BLOCK_HELD = true;
 		weapon.GetEntity()->BeginBlock();
 	}
@@ -3598,6 +3602,10 @@ void idPlayer::Weapon_Combat( void ) {
 
 			if ( weapon.GetEntity()->IsReady() ) {
 				weapon.GetEntity()->PutAway();
+				if (usercmd.buttons & BUTTON_ATTACK) // grayman #597 - is this an aborted attack while the attack button is depressed?
+				{
+					ignoreWeaponAttack = true; // this stays true until the attack button is released
+				}
 			}
 
 			if ( weapon.GetEntity()->IsHolstered() ) {
@@ -3642,13 +3650,22 @@ void idPlayer::Weapon_Combat( void ) {
 		}
 	}
 
+	if (!(usercmd.buttons & BUTTON_ATTACK) && (oldButtons & BUTTON_ATTACK)) // grayman #597 - was the attack button just released?
+	{
+		ignoreWeaponAttack = false;
+	}
+
 	// check for attack
 	AI_WEAPON_FIRED = false;
 	if ( !influenceActive ) 
 	{
-		if ( ( usercmd.buttons & BUTTON_ATTACK ) && !weaponGone ) {
+		// grayman #597 - if ignoreWeaponAttack is true, the weapon is no longer in the attack state, but the attack button is still depressed
+		if ( ( usercmd.buttons & BUTTON_ATTACK ) && !weaponGone && !ignoreWeaponAttack)
+		{
 			FireWeapon();
-		} else if ( oldButtons & BUTTON_ATTACK ) {
+		}
+		else if ( oldButtons & BUTTON_ATTACK )
+		{
 			AI_ATTACK_HELD = false;
 			weapon.GetEntity()->EndAttack();
 		}
@@ -3659,7 +3676,9 @@ void idPlayer::Weapon_Combat( void ) {
 	if ( !influenceActive ) 
 	{
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && !weaponGone )
+		{
 			BlockWeapon();
+		}
 		else if ( oldButtons & BUTTON_ZOOM ) 
 		{
 			AI_BLOCK_HELD = false;

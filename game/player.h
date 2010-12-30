@@ -1114,6 +1114,9 @@ private:
 	// An integer keeping track of the lightgem interleaving
 	int							m_LightgemInterleave;
 
+	// grayman #597 - ignore attack button if depressed, but weapon has been lowered
+	bool						ignoreWeaponAttack;
+
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]
 	static const int		NUM_LOGGED_ACCELS = 16;			// for weapon turning angle offsets

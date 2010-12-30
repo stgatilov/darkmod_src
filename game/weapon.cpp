@@ -1075,10 +1075,19 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 						weaponDef->dict.GetString(AttName.c_str()) );
 			else
 				Attach( ent, NULL, weaponDef->dict.GetString(AttName.c_str()) );
-			if (IsRanged()) // grayman #597 - hide arrows for one second
+			if (IsRanged()) // grayman #597 - hide arrows for one second & play an 'equip' sound
 			{
 				ent->Hide();
 				ent->SetHideUntilTime(gameLocal.time + 1000);
+
+				// Play an arrow-equipping sound
+
+				if (arrow2Arrow)
+				{
+					const char *shader = "arrow_equip";
+					const idSoundShader *sndEquip = declManager->FindSound(shader);
+					StartSoundShader(sndEquip,SND_CHANNEL_BODY,0,false,NULL);
+				}
 			}
 		}
 		KeyVal = weaponDef->dict.MatchPrefix( "def_attach", KeyVal );
