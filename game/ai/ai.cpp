@@ -2063,8 +2063,8 @@ void idAI::ThinkMT()
 			case MOVETYPE_ANIM :
 				// animation based movement
 				UpdateEnemyPosition();
-				/*UpdateScript();
-				if (!cv_ai_opt_noanims.GetBool())
+				UpdateScript();
+				/*if (!cv_ai_opt_noanims.GetBool())
 				{
 					AnimMove();
 				}
@@ -2267,8 +2267,8 @@ void idAI::Think( void )
 
 			case MOVETYPE_ANIM :
 				// animation based movement
-				/*UpdateEnemyPosition();*/
-				UpdateScript();
+				/*UpdateEnemyPosition();
+				UpdateScript();*/
 				if (!cv_ai_opt_noanims.GetBool())
 				{
 					AnimMove();

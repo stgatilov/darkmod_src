@@ -13,6 +13,8 @@
 #ifndef __SCRIPT_THREAD_H__
 #define __SCRIPT_THREAD_H__
 
+#include <boost/thread/recursive_mutex.hpp>
+
 extern const idEventDef EV_Thread_Execute;
 extern const idEventDef EV_Thread_SetCallback;
 extern const idEventDef EV_Thread_SetRenderCallback;
@@ -93,6 +95,8 @@ private:
 	static idList<idThread *>	threadList;
 
 	static trace_t				trace;
+
+	static boost::recursive_mutex	_executionMutex;
 
 	void						Init( void );
 	void						Pause( void );

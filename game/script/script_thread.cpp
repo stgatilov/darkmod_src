@@ -234,6 +234,7 @@ idThread			*idThread::currentThread = NULL;
 int					idThread::threadIndex = 0;
 idList<idThread *>	idThread::threadList;
 trace_t				idThread::trace;
+boost::recursive_mutex		idThread::_executionMutex;
 
 /*
 ================
@@ -681,7 +682,10 @@ void idThread::KillThread( int num ) {
 idThread::Execute
 ================
 */
-bool idThread::Execute( void ) {
+bool idThread::Execute( void )
+{
+	boost::recursive_mutex::scoped_lock executionLock(_executionMutex);
+
 	idThread	*oldThread;
 	bool		done;
 
