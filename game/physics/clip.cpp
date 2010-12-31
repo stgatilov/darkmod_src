@@ -474,7 +474,12 @@ void idClipModel::GetMassProperties( const float density, float &mass, idVec3 &c
 idClipModel::Unlink
 ===============
 */
-void idClipModel::Unlink( void ) {
+void idClipModel::Unlink( void )
+{
+	// Get write access to idClip::clipSectors
+	boost::upgrade_lock<boost::shared_mutex> lock(idClip::_clipSectorMutex);
+	boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(lock);
+
 	clipLink_t *link;
 
 	for ( link = clipLinks; link; link = clipLinks ) {
@@ -558,6 +563,10 @@ void idClipModel::Link( idClip &clp ) {
 	absBounds[0] -= vec3_boxEpsilon;
 	absBounds[1] += vec3_boxEpsilon;
 
+	// Get write access to idClip::clipSectors
+	boost::upgrade_lock<boost::shared_mutex> lock(idClip::_clipSectorMutex);
+	boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(lock);
+
 	Link_r( clp.clipSectors );
 }
 
@@ -599,6 +608,8 @@ cmHandle_t idClipModel::CheckModel( const char *name ) {
 
 ===============================================================
 */
+
+boost::shared_mutex	idClip::_clipSectorMutex;
 
 /*
 ===============
@@ -787,7 +798,8 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 idClip::ClipModelsTouchingBounds
 ================
 */
-int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClipModel **clipModelList, int maxCount ) const {
+int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClipModel **clipModelList, int maxCount ) const
+{
 	listParms_t parms;
 
 	if (	bounds[0][0] > bounds[1][0] ||
@@ -804,6 +816,9 @@ int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, i
 	parms.list = clipModelList;
 	parms.count = 0;
 	parms.maxCount = maxCount;
+
+	// Get read access to idClip::clipSectors
+	boost::shared_lock<boost::shared_mutex> lock(_clipSectorMutex);
 
 	touchCount++;
 	ClipModelsTouchingBounds_r( clipSectors, parms );
@@ -1013,7 +1028,7 @@ void idClip::TranslationEntities( trace_t &results, const idVec3 &start, const i
 			idClip::numRenderModelTraces++;
 			TraceRenderModel( trace, start, end, radius, trmAxis, touch );
 		} else {
-			boost::mutex::scoped_lock lock(_translationMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 			idClip::numTranslations++;
 			collisionModelManager->Translation( &trace, start, end, trm, trmAxis, contentMask,
 									touch->Handle(), touch->origin, touch->axis );
@@ -1053,7 +1068,7 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
 		{
-			boost::mutex::scoped_lock lock(_translationMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 			// test world
 			idClip::numTranslations++;
 			collisionModelManager->Translation( &results, start, end, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
@@ -1091,7 +1106,7 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 			TraceRenderModel( trace, start, end, radius, trmAxis, touch );
 		} else
 		{
-			boost::mutex::scoped_lock lock(_translationMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 			idClip::numTranslations++;
 			collisionModelManager->Translation( &trace, start, end, trm, trmAxis, contentMask,
 									touch->Handle(), touch->origin, touch->axis );
@@ -1128,7 +1143,7 @@ bool idClip::Rotation( trace_t &results, const idVec3 &start, const idRotation &
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD ) {
 		{
 			// test world
-			boost::mutex::scoped_lock lock(_rotationMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 			idClip::numRotations++;
 			collisionModelManager->Rotation( &results, start, rotation, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
 		}
@@ -1164,7 +1179,7 @@ bool idClip::Rotation( trace_t &results, const idVec3 &start, const idRotation &
 		}
 
 		{
-			boost::mutex::scoped_lock lock(_rotationMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 			idClip::numRotations++;
 			collisionModelManager->Rotation( &trace, start, rotation, trm, trmAxis, contentMask,
 								touch->Handle(), touch->origin, touch->axis );
@@ -1228,7 +1243,7 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		boost::mutex::scoped_lock lock(_translationMutex);
+		boost::mutex::scoped_lock lock(_cmMutex);
 
 		// translational collision with world
 		idClip::numTranslations++;
@@ -1268,7 +1283,7 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 				TraceRenderModel( trace, start, end, radius, trmAxis, touch );
 			} else
 			{
-				boost::mutex::scoped_lock lock(_translationMutex);
+				boost::mutex::scoped_lock lock(_cmMutex);
 				idClip::numTranslations++;
 				collisionModelManager->Translation( &trace, start, end, trm, trmAxis, contentMask,
 										touch->Handle(), touch->origin, touch->axis );
@@ -1293,7 +1308,7 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		boost::mutex::scoped_lock lock(_rotationMutex);
+		boost::mutex::scoped_lock lock(_cmMutex);
 		// rotational collision with world
 		idClip::numRotations++;
 		collisionModelManager->Rotation( &rotationalTrace, endPosition, endRotation, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
@@ -1325,7 +1340,7 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 			}
 
 			{
-				boost::mutex::scoped_lock lock(_rotationMutex);
+				boost::mutex::scoped_lock lock(_cmMutex);
 
 				idClip::numRotations++;
 				collisionModelManager->Rotation( &trace, endPosition, endRotation, trm, trmAxis, contentMask,
@@ -1371,7 +1386,7 @@ int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVe
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		boost::mutex::scoped_lock lock(_contactsMutex);
+		boost::mutex::scoped_lock lock(_cmMutex);
 		// test world
 		idClip::numContacts++;
 		numContacts = collisionModelManager->Contacts( contacts, maxContacts, start, dir, depth, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
@@ -1410,7 +1425,7 @@ int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVe
 		}
 
 		{
-			boost::mutex::scoped_lock lock(_contactsMutex);
+			boost::mutex::scoped_lock lock(_cmMutex);
 
 			idClip::numContacts++;
 			n = collisionModelManager->Contacts( contacts + numContacts, maxContacts - numContacts,
@@ -1447,7 +1462,7 @@ int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		boost::mutex::scoped_lock lock(_contentsMutex);
+		boost::mutex::scoped_lock lock(_cmMutex);
 		// test world
 		idClip::numContents++;
 		contents = collisionModelManager->Contents( start, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
@@ -1489,7 +1504,7 @@ int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 
 			continue;
 		}
 
-		boost::mutex::scoped_lock lock(_contentsMutex);
+		boost::mutex::scoped_lock lock(_cmMutex);
 
 		idClip::numContents++;
 		if ( collisionModelManager->Contents( start, trm, trmAxis, contentMask, touch->Handle(), touch->origin, touch->axis ) ) {
@@ -1511,7 +1526,7 @@ void idClip::TranslationModel( trace_t &results, const idVec3 &start, const idVe
 {
 	const idTraceModel *trm = TraceModelForClipModel( mdl );
 
-	boost::mutex::scoped_lock lock(_translationMutex);
+	boost::mutex::scoped_lock lock(_cmMutex);
 
 	idClip::numTranslations++;
 	collisionModelManager->Translation( &results, start, end, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
@@ -1528,7 +1543,7 @@ void idClip::RotationModel( trace_t &results, const idVec3 &start, const idRotat
 {
 	const idTraceModel *trm = TraceModelForClipModel( mdl );
 
-	boost::mutex::scoped_lock lock(_rotationMutex);
+	boost::mutex::scoped_lock lock(_cmMutex);
 
 	idClip::numRotations++;
 	collisionModelManager->Rotation( &results, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
@@ -1545,7 +1560,7 @@ int idClip::ContactsModel( contactInfo_t *contacts, const int maxContacts, const
 {
 	const idTraceModel *trm = TraceModelForClipModel( mdl );
 
-	boost::mutex::scoped_lock lock(_contactsMutex);
+	boost::mutex::scoped_lock lock(_cmMutex);
 
 	idClip::numContacts++;
 	return collisionModelManager->Contacts( contacts, maxContacts, start, dir, depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
@@ -1562,7 +1577,7 @@ int idClip::ContentsModel( const idVec3 &start,
 {
 	const idTraceModel *trm = TraceModelForClipModel( mdl );
 
-	boost::mutex::scoped_lock lock(_contentsMutex);
+	boost::mutex::scoped_lock lock(_cmMutex);
 
 	idClip::numContents++;
 	return collisionModelManager->Contents( start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );

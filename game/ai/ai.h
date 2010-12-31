@@ -584,6 +584,12 @@ protected:
 	// A stack of movestates, used for saving and restoring moves in PushMove() and PopMove()
 	std::list<idMoveState>	moveStack;
 
+	// temporaries to pass between AnimMoveMT and AnimMove
+	mutable idVec3			m_animMoveGoalPos;
+	mutable idVec3			m_animMoveOldorigin;
+	mutable idMat3			m_animMoveOldaxis;
+	mutable bool			m_animMoveGetMovePosResult;
+
 	float					kickForce;
 	bool					ignore_obstacles;
 	float					blockedRadius;
@@ -1203,7 +1209,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta );
 	void					CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos );
 	void					DeadMove( void );
-	void					AnimMove( void );
+	void					AnimMove();
+	void					AnimMoveMT();
 	void					SlideMove( void );
 	void					SittingMove();
 	void					NoTurnMove();

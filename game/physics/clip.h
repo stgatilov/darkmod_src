@@ -18,6 +18,7 @@
 #endif
 
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 /*
 ===============================================================================
@@ -316,10 +317,9 @@ private:
 	int						numContents;
 	int						numContacts;
 
-	boost::mutex			_translationMutex;
-	boost::mutex			_rotationMutex;
-	boost::mutex			_contentsMutex;
-	boost::mutex			_contactsMutex;
+	boost::mutex			_cmMutex;
+
+	static boost::shared_mutex	_clipSectorMutex;	// multi-read/single-write mutex for altering clipSectors
 
 private:
 	struct clipSector_s *	CreateClipSectors_r( const int depth, const idBounds &bounds, idVec3 &maxSector );

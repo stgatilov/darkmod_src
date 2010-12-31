@@ -140,6 +140,8 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 		return true;
 	}
 
+	idAI* ai = (actor != NULL && actor->IsType(idAI::Type)) ? static_cast<idAI*>(actor) : NULL;
+
 	lastAreas[0] = lastAreas[1] = lastAreas[2] = lastAreas[3] = areaNum;
 	lastAreaIndex = 0;
 
@@ -189,8 +191,16 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 				continue;
 			}
 
+			int areaTravelFlags = file->GetArea( reach->toAreaNum ).travelFlags;
+
 			// if undesired travel flags are required to travel through the area
-			if ( file->GetArea( reach->toAreaNum ).travelFlags & ~travelFlags ) {
+			if (areaTravelFlags & ~travelFlags)
+			{
+				continue;
+			}
+
+			if ((areaTravelFlags & TFL_POTENTIALLY_DISABLED) && ai != NULL && gameLocal.m_AreaManager.AreaIsForbidden(reach->toAreaNum, ai))
+			{
 				continue;
 			}
 

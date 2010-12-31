@@ -408,7 +408,7 @@ idAI::idAI()
 	aiNode.SetOwner(this);
 
 	aas					= NULL;
-	travelFlags			= TFL_WALK|TFL_AIR|TFL_DOOR;
+	travelFlags			= TFL_WALK|TFL_AIR|TFL_DOOR|TFL_POTENTIALLY_DISABLED;
 	lastAreaReevaluationTime = -1;
 	maxAreaReevaluationInterval = 2000; // msec
 	doorRetryTime		= 120000; // msec
@@ -2064,11 +2064,11 @@ void idAI::ThinkMT()
 				// animation based movement
 				UpdateEnemyPosition();
 				UpdateScript();
-				/*if (!cv_ai_opt_noanims.GetBool())
+				if (!cv_ai_opt_noanims.GetBool())
 				{
-					AnimMove();
+					AnimMoveMT();
 				}
-				CheckBlink();*/
+				/*CheckBlink();*/
 				break;
 
 			case MOVETYPE_SLIDE :
@@ -2948,13 +2948,14 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	}
 	
 	bool returnval;
-	gameLocal.m_AreaManager.DisableForbiddenAreas(this);
+	// Areas are already flagged as potentially disabled, the routing code will check the AreaManager on the fly
+	//gameLocal.m_AreaManager.DisableForbiddenAreas(this);
 	if ( move.moveType == MOVETYPE_FLY ) {
 		returnval = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	} else {
 		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
 	}
-	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
+	//gameLocal.m_AreaManager.EnableForbiddenAreas(this);
 
 	return returnval;
 }
@@ -4874,15 +4875,12 @@ void idAI::DeadMove( void ) {
 idAI::AnimMove
 =====================
 */
-void idAI::AnimMove()
+void idAI::AnimMoveMT()
 {
 	START_SCOPED_TIMING(aiAnimMoveTimer, scopedAnimMoveTimer);
 
-	idVec3				goalPos;
-	idVec3				goalDelta;
-
-	idVec3 oldorigin = physicsObj.GetOrigin();
-	idMat3 oldaxis = viewAxis;
+	m_animMoveOldorigin = physicsObj.GetOrigin();
+	m_animMoveOldaxis = viewAxis;
 
 	AI_BLOCKED = false;
 
@@ -4892,33 +4890,39 @@ void idAI::AnimMove()
 	}
 
 	move.obstacle = NULL;
+
 	if (move.moveCommand == MOVE_FACE_ENEMY && enemy.GetEntity())
 	{
 		TurnToward( lastVisibleEnemyPos );
-		goalPos = oldorigin;
+		m_animMoveGoalPos = m_animMoveOldorigin;
 	}
 	else if (move.moveCommand == MOVE_FACE_ENTITY && move.goalEntity.GetEntity())
 	{
 		TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
-		goalPos = oldorigin;
+		m_animMoveGoalPos = m_animMoveOldorigin;
 	} 
-	else if (GetMovePos(goalPos)) 
+	else 
 	{
-		// greebo: We have a valid goalposition (not reached the target yet), check for obstacles
-		if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
-		{
-			idVec3 newDest;
-			CheckObstacleAvoidance( goalPos, newDest );
+		m_animMoveGetMovePosResult = GetMovePos(m_animMoveGoalPos);
 
-			TurnToward(newDest);
-		} 
-		else // MOVE_WANDER || MOVE_VECTOR
+		/*if (m_animMoveGetMovePosResult) 
 		{
-			TurnToward(goalPos);
-		}
+			// greebo: We have a valid goalposition (not reached the target yet), check for obstacles
+			if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
+			{
+				idVec3 newDest;
+				CheckObstacleAvoidance( m_animMoveGoalPos, newDest );
+
+				TurnToward(newDest);
+			} 
+			else // MOVE_WANDER || MOVE_VECTOR
+			{
+				TurnToward(m_animMoveGoalPos);
+			}
+		}*/
 	}
 
-	// greebo: This should take care of rats running around in circles around their goal
+	/*// greebo: This should take care of rats running around in circles around their goal
 	// due to not turning fast enough to their goalPos, sending them into a stable orbit.
 	float oldTurnRate = turnRate;
 
@@ -4990,6 +4994,132 @@ void idAI::AnimMove()
 
 	const idVec3& org = physicsObj.GetOrigin();
 	if (oldorigin != org) {
+		TouchTriggers();
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		DrawRoute();
+	}*/
+}
+
+void idAI::AnimMove()
+{
+	START_SCOPED_TIMING(aiAnimMoveTimer, scopedAnimMoveTimer);
+
+	/*AI_BLOCKED = false;
+
+	if ( move.moveCommand < NUM_NONMOVING_COMMANDS ){
+		move.lastMoveOrigin.Zero();
+		move.lastMoveTime = gameLocal.time;
+	}
+
+	move.obstacle = NULL;*/
+	if (move.moveCommand == MOVE_FACE_ENEMY && enemy.GetEntity())
+	{
+		/*TurnToward( lastVisibleEnemyPos );
+		m_animMoveGoalPos = m_animMoveOldorigin;*/
+	}
+	else if (move.moveCommand == MOVE_FACE_ENTITY && move.goalEntity.GetEntity())
+	{
+		/*TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
+		m_animMoveGoalPos = m_animMoveOldorigin;*/
+	} 
+	else 
+	{
+		/*m_animMoveGetMovePosResult = GetMovePos(m_animMoveGoalPos);*/
+
+		if (m_animMoveGetMovePosResult)
+		{
+			// greebo: We have a valid goalposition (not reached the target yet), check for obstacles
+			if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
+			{
+				idVec3 newDest;
+				CheckObstacleAvoidance( m_animMoveGoalPos, newDest );
+
+				TurnToward(newDest);
+			} 
+			else // MOVE_WANDER || MOVE_VECTOR
+			{
+				TurnToward(m_animMoveGoalPos);
+			}
+		}
+	}
+
+	// greebo: This should take care of rats running around in circles around their goal
+	// due to not turning fast enough to their goalPos, sending them into a stable orbit.
+	float oldTurnRate = turnRate;
+
+	if ((m_animMoveGoalPos - physicsObj.GetOrigin()).LengthSqr() < Square(50))
+	{
+		turnRate *= gameLocal.random.RandomFloat() + 1;
+	}
+
+	// greebo: Now actually turn towards the "ideal" yaw.
+	Turn();
+
+	// Revert the turnRate changes
+	turnRate = oldTurnRate;
+
+	// Determine the delta depending on the move type
+	idVec3 delta(0,0,0);
+	if (move.moveCommand == MOVE_SLIDE_TO_POSITION)
+	{
+		if ( gameLocal.time < move.startTime + move.duration ) {
+			m_animMoveGoalPos = move.moveDest - move.moveDir * MS2SEC( move.startTime + move.duration - gameLocal.time );
+			delta = m_animMoveGoalPos - m_animMoveOldorigin;
+			delta.z = 0.0f;
+		} else {
+			delta = move.moveDest - m_animMoveOldorigin;
+			delta.z = 0.0f;
+			StopMove(MOVE_STATUS_DONE);
+		}
+	}
+	else if (allowMove) // grayman - remove the second check, because it caused animation jitter at path_corners
+//	else if (allowMove && (move.moveCommand != MOVE_NONE)) // grayman #2414 - add MOVE_NONE check
+	{
+		// Moving is allowed, get the delta
+		GetMoveDelta( m_animMoveOldaxis, viewAxis, delta );
+	}
+
+	if ( move.moveCommand == MOVE_TO_POSITION ) {
+		idVec3 goalDelta = move.moveDest - m_animMoveOldorigin;
+		float goalDist = goalDelta.LengthFast();
+		if ( goalDist < delta.LengthFast() ) {
+			delta = goalDelta;
+		}
+	}
+
+	physicsObj.SetDelta( delta );
+	physicsObj.ForceDeltaMove( disableGravity );
+
+	{
+		START_SCOPED_TIMING(aiPhysicsTimer, scopedPhysicsTimer);
+		RunPhysics();
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugLine( colorCyan, m_animMoveOldorigin, physicsObj.GetOrigin(), 5000 );
+	}
+
+	monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
+	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
+		DirectDamage( attack, enemy.GetEntity() );
+	} else {
+		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
+		if ( blockEnt && blockEnt->IsType( idMoveable::Type ) && blockEnt->GetPhysics()->IsPushable() ) {
+			KickObstacles( viewAxis[ 0 ], kickForce, blockEnt );
+		}
+	}
+
+	BlockedFailSafe();
+
+	AI_ONGROUND = physicsObj.OnGround();
+
+	const idVec3& org = physicsObj.GetOrigin();
+	if (m_animMoveOldorigin != org) {
 		TouchTriggers();
 	}
 

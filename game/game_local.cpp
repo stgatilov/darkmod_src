@@ -2954,7 +2954,7 @@ void idGameLocal::RunThinkFrameMT(int modulo, int remainder)
 		}
 	}
 
-	DM_LOG(LC_THREAD, LT_INFO)LOGSTRING("Thread (modulo %d) performed multi-threaded thinking for %d entities.\r", modulo, count);
+	DM_LOG(LC_THREAD, LT_INFO)LOGSTRING("Thread (modulo %d) performed multi-threaded thinking for %d entities, thread id %s.\r", modulo, count, str.str().c_str());
 }
 
 /*

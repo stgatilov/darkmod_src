@@ -21,6 +21,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/MissionData.h"
 
+#include <boost/thread.hpp>
+
 class CRelations;
 class CsndProp;
 
@@ -684,12 +686,21 @@ idThread::Execute
 */
 bool idThread::Execute( void )
 {
+	std::stringstream str;
+	str << boost::this_thread::get_id();
+
+	DM_LOG(LC_THREAD, LT_DEBUG)LOGSTRING("Thread %s entering idThread::Execute.\r", str.str().c_str());
+
 	boost::recursive_mutex::scoped_lock executionLock(_executionMutex);
+
+	DM_LOG(LC_THREAD, LT_DEBUG)LOGSTRING("Thread %s got the lock\r", str.str().c_str());
 
 	idThread	*oldThread;
 	bool		done;
 
-	if ( manualControl && ( waitingUntil > gameLocal.time ) ) {
+	if ( manualControl && ( waitingUntil > gameLocal.time ) )
+	{
+		DM_LOG(LC_THREAD, LT_DEBUG)LOGSTRING("Thread %s about to leave idThread::Execute returning false\r", str.str().c_str());
 		return false;
 	}
 
@@ -714,6 +725,7 @@ bool idThread::Execute( void )
 
 	currentThread = oldThread;
 
+	DM_LOG(LC_THREAD, LT_DEBUG)LOGSTRING("Thread %s about to leave idThread::Execute returning done\r", str.str().c_str());
 	return done;
 }
 

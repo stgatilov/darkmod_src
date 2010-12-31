@@ -420,6 +420,34 @@ void idAASLocal::EnableArea( int areaNum ) {
 	RemoveRoutingCacheUsingArea( areaNum );
 }
 
+void idAASLocal::MarkAreaAsPotentiallyDisabled(int areaNum)
+{
+	assert(areaNum > 0 && areaNum < file->GetNumAreas());
+
+	if (file->GetArea( areaNum ).travelFlags & TFL_POTENTIALLY_DISABLED)
+	{
+		return;
+	}
+
+	file->SetAreaTravelFlag(areaNum, TFL_POTENTIALLY_DISABLED);
+
+	RemoveRoutingCacheUsingArea(areaNum);
+}
+
+void idAASLocal::RemovePotentiallyDisabledFlag(int areaNum)
+{
+	assert(areaNum > 0 && areaNum < file->GetNumAreas());
+
+	if (!(file->GetArea( areaNum ).travelFlags & TFL_POTENTIALLY_DISABLED))
+	{
+		return;
+	}
+
+	file->RemoveAreaTravelFlag(areaNum, TFL_POTENTIALLY_DISABLED);
+
+	RemoveRoutingCacheUsingArea(areaNum);
+}
+
 /*
 ============
 idAASLocal::SetAreaState_r
@@ -872,22 +900,31 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 idAASLocal::GetAreaRoutingCache
 ============
 */
-idRoutingCache *idAASLocal::GetAreaRoutingCache( int clusterNum, int areaNum, int travelFlags ) const {
-	int clusterAreaNum;
-	idRoutingCache *cache, *clusterCache;
-
+idRoutingCache *idAASLocal::GetAreaRoutingCache( int clusterNum, int areaNum, int travelFlags ) const
+{
 	// number of the area in the cluster
-	clusterAreaNum = ClusterAreaNum( clusterNum, areaNum );
+	int clusterAreaNum = ClusterAreaNum( clusterNum, areaNum );
+
+	// Acquire a read access lock
+	boost::upgrade_lock<boost::shared_mutex> lock(_areaCacheMutex);
+
 	// pointer to the cache for the area in the cluster
-	clusterCache = areaCacheIndex[clusterNum][clusterAreaNum];
+	idRoutingCache* clusterCache = areaCacheIndex[clusterNum][clusterAreaNum];
+
+	idRoutingCache* cache;
+
 	// check if cache without undesired travel flags already exists
-	for ( cache = clusterCache; cache; cache = cache->next ) {
-		if ( cache->travelFlags == travelFlags ) {
+	for (cache = clusterCache; cache; cache = cache->next)
+	{
+		if (cache->travelFlags == travelFlags)
+		{
 			break;
 		}
 	}
+
 	// if no cache found
-	if ( !cache ) {
+	if (cache == NULL)
+	{
 		cache = new idRoutingCache( file->GetCluster( clusterNum ).numReachableAreas );
 		cache->type = CACHETYPE_AREA;
 		cache->cluster = clusterNum;
@@ -896,12 +933,20 @@ idRoutingCache *idAASLocal::GetAreaRoutingCache( int clusterNum, int areaNum, in
 		cache->travelFlags = travelFlags;
 		cache->prev = NULL;
 		cache->next = clusterCache;
-		if ( clusterCache ) {
+
+		if ( clusterCache )
+		{
 			clusterCache->prev = cache;
 		}
+
+		boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(lock);
+
 		areaCacheIndex[clusterNum][clusterAreaNum] = cache;
 		UpdateAreaRoutingCache( cache );
 	}
+
+	boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(lock);
+
 	LinkCache( cache );
 	return cache;
 }
@@ -1006,6 +1051,9 @@ idAASLocal::GetPortalRoutingCache
 idRoutingCache *idAASLocal::GetPortalRoutingCache( int clusterNum, int areaNum, int travelFlags ) const {
 	idRoutingCache *cache;
 
+	// Acquire a read access lock
+	boost::upgrade_lock<boost::shared_mutex> lock(_portalCacheMutex);	
+
 	// check if cache without undesired travel flags already exists
 	for ( cache = portalCacheIndex[areaNum]; cache; cache = cache->next ) {
 		if ( cache->travelFlags == travelFlags ) {
@@ -1025,9 +1073,14 @@ idRoutingCache *idAASLocal::GetPortalRoutingCache( int clusterNum, int areaNum, 
 		if ( portalCacheIndex[areaNum] ) {
 			portalCacheIndex[areaNum]->prev = cache;
 		}
+
+		boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(lock);
+
 		portalCacheIndex[areaNum] = cache;
 		UpdatePortalRoutingCache( cache );
 	}
+
+	boost::upgrade_to_unique_lock<boost::shared_mutex> writeLock(lock);
 	LinkCache( cache );
 	return cache;
 }

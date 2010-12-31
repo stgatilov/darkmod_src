@@ -61,6 +61,9 @@ void AreaManager::AddForbiddenArea(int areanum, const idAI* ai)
 			std::pair<AiAreasMap::iterator, bool> result = _aiAreas.insert(AiAreasMap::value_type(ai, AreaSet()) );
 			result.first->second.insert(areanum);
 		}
+
+		// Set the flag on the area right now
+		ai->GetAAS()->MarkAreaAsPotentiallyDisabled(areanum);
 	}
 }
 
@@ -93,6 +96,12 @@ void AreaManager::RemoveForbiddenArea(int areanum, const idAI* ai)
 		}
 	}
 
+	// Clear the flag on any area that is not forbidden for any AI
+	if (_forbiddenAreas.find(areanum) == _forbiddenAreas.end())
+	{
+		ai->GetAAS()->RemovePotentiallyDisabledFlag(areanum);
+	}
+
 	AiAreasMap::iterator foundAI = _aiAreas.find(ai);
 	if (foundAI != _aiAreas.end())
 	{
@@ -110,9 +119,9 @@ void AreaManager::DisableForbiddenAreas(const idAI* ai)
 	if (foundAI != _aiAreas.end())
 	{
 		idAAS* aas = ai->GetAAS();
-		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); i++)
+		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); ++i)
 		{
-			aas->DisableArea(*i);
+			aas->MarkAreaAsPotentiallyDisabled(*i);
 		}
 	}
 }
@@ -123,9 +132,9 @@ void AreaManager::EnableForbiddenAreas(const idAI* ai)
 	if (foundAI != _aiAreas.end())
 	{
 		idAAS* aas = ai->GetAAS();
-		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); i++)
+		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); ++i)
 		{
-			aas->EnableArea(*i);
+			aas->RemovePotentiallyDisabledFlag(*i);
 		}
 	}
 }

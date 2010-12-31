@@ -41,6 +41,7 @@
 #define TFL_WATER					BIT(21)		// travel through water
 #define TFL_AIR						BIT(22)		// travel through air
 #define TFL_DOOR					BIT(23)		// travel through a not-open door
+#define TFL_POTENTIALLY_DISABLED	BIT(24)		// potentially disabled for AI, needs specific check
 
 // face flags
 #define FACE_SOLID					BIT(0)		// solid at the other side
