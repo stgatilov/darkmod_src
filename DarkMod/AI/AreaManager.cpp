@@ -110,7 +110,7 @@ void AreaManager::DisableForbiddenAreas(const idAI* ai)
 	if (foundAI != _aiAreas.end())
 	{
 		idAAS* aas = ai->GetAAS();
-		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); i++)
+		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); ++i)
 		{
 			aas->DisableArea(*i);
 		}
@@ -123,7 +123,7 @@ void AreaManager::EnableForbiddenAreas(const idAI* ai)
 	if (foundAI != _aiAreas.end())
 	{
 		idAAS* aas = ai->GetAAS();
-		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); i++)
+		for (AreaSet::iterator i = foundAI->second.begin(); i != foundAI->second.end(); ++i)
 		{
 			aas->EnableArea(*i);
 		}
