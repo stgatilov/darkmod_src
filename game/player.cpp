@@ -2886,7 +2886,10 @@ void idPlayer::BlockWeapon( void )
 
 	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) 
 	{
-		ignoreWeaponAttack = true; // grayman #597
+		if (AI_ATTACK_HELD) // grayman #597
+		{
+			ignoreWeaponAttack = true;
+		}
 		AI_BLOCK_HELD = true;
 		weapon.GetEntity()->BeginBlock();
 	}
