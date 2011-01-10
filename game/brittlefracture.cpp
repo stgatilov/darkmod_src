@@ -323,7 +323,7 @@ idBrittleFracture::RemoveShard
 ================
 */
 void idBrittleFracture::RemoveShard( int index ) {
-	int i;
+//	int i; // grayman - commented to stop compiler complaint
 
 	delete shards[index];
 	shards.RemoveIndex( index, false );	// Tels: false => don't bother to keep shards sorted
