@@ -1047,6 +1047,9 @@ private:
 
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
+
+	// Platform-specific implementation to change the D3's title and icon
+	void					ChangeWindowTitleAndIcon();
 };
 
 //============================================================================
