@@ -832,6 +832,11 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 				if (end - start > 0)
 				{
 					idStr skin = random_skin.Mid(start, end - start);
+					// "''" => "" (default skin)
+					if (skin == "''")
+					{
+						skin = "";
+					}
 					int skinIdx = AddSkin( &skin );
 					gameLocal.Printf( "LODE %s: Adding random skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
 					LodeClass.skins.Append ( skinIdx );
