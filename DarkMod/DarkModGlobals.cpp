@@ -721,7 +721,6 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 
 			memcpy(m_Image, pipe_buf, m_BufferLength);
 			InitImageInfo();
-			m_Loaded = true;
 		}
 	}
 
@@ -764,7 +763,6 @@ bool CImage::LoadImageFromVfs(const char* filename)
 		fileSystem->CloseFile(fl);
 
 		InitImageInfo();
-		m_Loaded = true;
 
 		rc = true;
 //		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
@@ -820,7 +818,6 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 		fclose(fh);
 
 		InitImageInfo();
-		m_Loaded = true;
 	}
 
 	return true;
@@ -836,6 +833,18 @@ void CImage::InitImageInfo()
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error while loading image [%s]\r", m_Name.c_str());
 		return;
 	}
+
+	if (rc == false)
+	{
+		ILenum error = ilGetError();
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error %i while loading image [%s]\r", (int)error, m_Name.c_str());
+		// Tels: Couldn't load image from memory buffer, free memory
+		m_Loaded = false;
+		return;
+	}
+
+	// else: loading success
+	m_Loaded = true;
 
 	m_Width = ilGetInteger(IL_IMAGE_WIDTH);
 	m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
