@@ -57,7 +57,6 @@ idlib_string = ' \
 	math/quat.cpp \
 	math/rotation.cpp \
 	math/simd.cpp \
-	math/simd_altivec.cpp \
 	math/simd_generic.cpp \
 	math/simd_mmx.cpp \
 	math/simd_sse.cpp \
@@ -78,6 +77,10 @@ idlib_string = ' \
 	base64.cpp \
 	timer.cpp \
 	heap.cpp'
+
+# greebo: Compile the altivec file in MacOSX only
+if g_os == 'MacOSX':
+	idlib_string += ' math/simd_altivec.cpp '
 
 idlib_list = scons_utils.BuildList( 'idlib', idlib_string )
 
