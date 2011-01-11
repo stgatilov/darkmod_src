@@ -1,4 +1,6 @@
 # -*- mode: python -*-
+# coding=utf-8
+
 # DOOM build script
 # TTimo <ttimo@idsoftware.com>
 # http://scons.sourceforge.net
