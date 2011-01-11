@@ -64,6 +64,8 @@ const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
 const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
 const idEventDef EV_Thread_Sine( "sin", "f", 'f' );
 const idEventDef EV_Thread_Cosine( "cos", "f", 'f' );
+const idEventDef EV_Thread_Log( "log", "f", 'f' );
+const idEventDef EV_Thread_Pow( "pow", "ff", 'f' );
 const idEventDef EV_Thread_SquareRoot( "sqrt", "f", 'f' );
 const idEventDef EV_Thread_Normalize( "vecNormalize", "v", 'v' );
 const idEventDef EV_Thread_VecLength( "vecLength", "v", 'f' );
@@ -169,6 +171,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
 	EVENT( EV_Thread_Sine,					idThread::Event_GetSine )
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
+	EVENT( EV_Thread_Log,				idThread::Event_GetLog )
+	EVENT( EV_Thread_Pow,				idThread::Event_GetPow )
 	EVENT( EV_Thread_SquareRoot,			idThread::Event_GetSquareRoot )
 	EVENT( EV_Thread_Normalize,				idThread::Event_VecNormalize )
 	EVENT( EV_Thread_VecLength,				idThread::Event_VecLength )
@@ -1326,7 +1330,7 @@ void idThread::Event_AngToUp( idAngles &ang ) {
 idThread::Event_GetSine
 ================
 */
-void idThread::Event_GetSine( float angle ) {
+void idThread::Event_GetSine( const float angle ) {
 	ReturnFloat( idMath::Sin( DEG2RAD( angle ) ) );
 }
 
@@ -1335,8 +1339,26 @@ void idThread::Event_GetSine( float angle ) {
 idThread::Event_GetCosine
 ================
 */
-void idThread::Event_GetCosine( float angle ) {
+void idThread::Event_GetCosine( const float angle ) {
 	ReturnFloat( idMath::Cos( DEG2RAD( angle ) ) );
+}
+
+/*
+================
+Tels: idThread::Event_GetLog
+================
+*/
+void idThread::Event_GetLog( const float x ) {
+	ReturnFloat( idMath::Log( x ) );
+}
+
+/*
+================
+Tels: idThread::Event_GetPow
+================
+*/
+void idThread::Event_GetPow( const float x, const float y ) {
+	ReturnFloat( idMath::Pow( x, y ) );
 }
 
 /*
