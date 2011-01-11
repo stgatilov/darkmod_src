@@ -687,12 +687,16 @@ idEntityFx *idEntityFx::StartFx( const char *fx, const idVec3 *useOrigin, const 
 		nfx->SetAxis( (useAxis) ? *useAxis : ent->GetPhysics()->GetAxis() );
 	}
 
-	if ( bind ) {
+	// greebo: Don't call Bind again if a we're bound to a joint
+	if (bind && (nfx->Joint() == NULL || *nfx->Joint() == NULL))
+	{
 		// never bind to world spawn
-		if ( ent != gameLocal.world ) {
-			nfx->Bind( ent, true );
+		if (ent != gameLocal.world)
+		{
+			nfx->Bind(ent, true);
 		}
 	}
+
 	nfx->Show();
 	return nfx;
 }
