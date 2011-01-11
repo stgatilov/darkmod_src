@@ -1049,7 +1049,7 @@ void CMissionManager::LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int m
 
 		int screenshotNum = mission.screenshots.Append(screenshot);
 
-		fs::path localPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum);
+		fs::path localPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum).c_str();
 
 		if (fs::exists(localPath))
 		{
@@ -1202,7 +1202,7 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 		fs::create_directories(targetPath);
 	}
 
-	targetPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum);
+	targetPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum).c_str();
 	
 	// Save the file locally as JPEG
 	if (!image.SaveToFile(targetPath, CImage::JPG))
