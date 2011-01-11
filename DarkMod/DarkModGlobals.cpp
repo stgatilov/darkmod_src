@@ -830,12 +830,6 @@ void CImage::InitImageInfo()
 
 	if (ilLoadL(m_defaultImageType, m_Image, m_BufferLength) == IL_FALSE)
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error while loading image [%s]\r", m_Name.c_str());
-		return;
-	}
-
-	if (rc == false)
-	{
 		ILenum error = ilGetError();
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error %i while loading image [%s]\r", (int)error, m_Name.c_str());
 		// Tels: Couldn't load image from memory buffer, free memory
