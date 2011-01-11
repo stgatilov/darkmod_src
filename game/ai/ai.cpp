@@ -1960,9 +1960,24 @@ void idAI::Think( void )
 
 	// if we are completely closed off from the player, don't do anything at all
 	// angua: only go dormant while in idle
-	bool outsidePVS = CheckDormant();
-	if (outsidePVS && AI_AlertIndex < 1 && cv_ai_opt_disable.GetBool()) {
-		return;
+	// grayman #2536 - move alert check up in front
+	if (AI_AlertIndex < 1)
+	{
+		bool outsidePVS = CheckDormant();
+		if (outsidePVS && cv_ai_opt_disable.GetBool())
+		{
+			return;
+		}
+	}
+
+	// grayman #2536 - if dormant and alert index > 0, wake up
+
+	if ((AI_AlertIndex > 0) && fl.isDormant)
+	{
+		dormantStart = 0;
+		fl.hasAwakened = true;
+		fl.isDormant = false;
+		DormantEnd();
 	}
 			
 	// save old origin and velocity for crashlanding
@@ -8098,8 +8113,10 @@ bool idAI::CheckHearing( SSprParms *propParms )
 {
 	bool returnval(false);
 
-	if( propParms->loudness > m_AudThreshold)
+	if (propParms->loudness > m_AudThreshold)
+	{
 		returnval = true;
+	}
 
 	return returnval;
 }
