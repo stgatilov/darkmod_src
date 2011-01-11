@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceHook ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -297,6 +289,7 @@ namespace SourceHook
 	}
 
 	// Versions which do take a this
+
 	template<class X, class Y, class RetType>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(), MemFuncInfo &out)
 	{
@@ -595,6 +588,7 @@ namespace SourceHook
 	// GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
 #if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
 
+
 	template<class X, class Y, class RetType>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(...), MemFuncInfo &out)
 	{
@@ -608,6 +602,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, ...), MemFuncInfo &out)
@@ -623,6 +618,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, ...), MemFuncInfo &out)
 	{
@@ -636,6 +632,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, ...), MemFuncInfo &out)
@@ -651,6 +648,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, ...), MemFuncInfo &out)
 	{
@@ -664,6 +662,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, ...), MemFuncInfo &out)
@@ -679,6 +678,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, ...), MemFuncInfo &out)
 	{
@@ -692,6 +692,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...), MemFuncInfo &out)
@@ -707,6 +708,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...), MemFuncInfo &out)
 	{
@@ -720,6 +722,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...), MemFuncInfo &out)
@@ -735,6 +738,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...), MemFuncInfo &out)
 	{
@@ -748,6 +752,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...), MemFuncInfo &out)
@@ -763,6 +768,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...), MemFuncInfo &out)
 	{
@@ -776,6 +782,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...), MemFuncInfo &out)
@@ -791,6 +798,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...), MemFuncInfo &out)
 	{
@@ -804,6 +812,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...), MemFuncInfo &out)
@@ -819,6 +828,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...), MemFuncInfo &out)
 	{
@@ -832,6 +842,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...), MemFuncInfo &out)
@@ -847,6 +858,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...), MemFuncInfo &out)
 	{
@@ -861,6 +873,7 @@ namespace SourceHook
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
+
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...), MemFuncInfo &out)
 	{
@@ -874,6 +887,7 @@ namespace SourceHook
 		RetType(Y::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
+
 
 	template<class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...), MemFuncInfo &out)
@@ -890,10 +904,9 @@ namespace SourceHook
 	}
 
 
+
 #endif
 
 }
 
 #endif
-
-

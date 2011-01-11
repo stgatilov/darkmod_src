@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -59,6 +51,16 @@ public:
 		assign(src.c_str()); 
 	}
 
+	bool operator ==(const String &other)
+	{
+		return (compare(other.c_str()) == 0);
+	}
+
+	bool operator ==(const char *other)
+	{
+		return (compare(other) == 0);
+	}
+
 	const char *c_str() { return v?v:""; }
 
 	const char *c_str() const { return v?v:""; }
@@ -104,7 +106,7 @@ public:
 			v[0] = '\0';
 	}
 
-	int compare (const char *d)
+	int compare (const char *d) const
 	{
 		if (!v)
 			return strcmp("", d);
@@ -113,7 +115,7 @@ public:
 	}
 
 	//Added this for amxx inclusion
-	bool empty()
+	bool empty() const
 	{
 		if (!v)
 			return true;
@@ -124,7 +126,7 @@ public:
 		return false;
 	}
 
-	size_t size()
+	size_t size() const
 	{
 		if (v)
 			return strlen(v);
@@ -132,7 +134,7 @@ public:
 			return 0;
 	}
 
-	int find(const char c, int index = 0)
+	int find(const char c, int index = 0) const
 	{
 		int len = static_cast<int>(size());
 		if (len < 1)
@@ -151,7 +153,31 @@ public:
 		return npos;
 	}
 
-	bool is_space(int c)
+	int find_last_of(const char c, int index = npos) const
+	{
+		int len = static_cast<int>(size());
+		if (len < 1)
+			return npos;
+		if (index >= len || index < npos)
+			return npos;
+		int i;
+		if (index == npos)
+			i = len - 1;
+		else
+			i = index;
+
+		for (; i>=0; i--)
+		{
+			if (v[i] == c)
+			{
+				return i;
+			}
+		}
+
+		return npos;
+	}
+
+	bool is_space(int c) const
 	{
 		if (c == '\f' || c == '\n' ||
 			c == '\t' || c == '\r' ||
@@ -233,7 +259,7 @@ public:
 		unsigned int i = 0;
 		size_t len = size();
 		//check for bounds
-		if (num == npos || start+num > len-num+1)
+		if (num == npos || start+num > len-start)
 			num = len - start;
 		//do the erasing
 		bool copyflag = false;
@@ -261,7 +287,7 @@ public:
 		v[len] = 0;
 	}
 
-	String substr(unsigned int index, int num = npos)
+	String substr(unsigned int index, int num = npos) const
 	{
 		if (!v)
 		{
@@ -320,7 +346,7 @@ public:
 
 	}
 
-	char operator [] (unsigned int index)
+	char operator [] (unsigned int index) const
 	{
 		if (index > size() || !v)
 		{
@@ -330,7 +356,7 @@ public:
 		}
 	}
 
-	int at(int a)
+	int at(int a) const
 	{
 		if (a < 0 || a >= (int)size() || !v)
 			return -1;

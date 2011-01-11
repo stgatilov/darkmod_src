@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceHook ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -25,6 +17,133 @@
 #include "sh_tinyhash.h"
 #include "sh_stack.h"
 
+/*
+
+IMPLEMENTATION INFO
+
+---------------------------------------
+Protos ("Prototypes")
+	The purpose of protos is to provide the amount of type information about a function
+	which is required to be able to execute a function call without corrupting the stack.
+	Our protos do not fully do this, but they provide the size of the return value, the number of
+	parameters, and the size of each parameter, which is enough for most situations.
+
+	There are two version of protos:
+	OLD:
+		C-Style strings.
+
+		0_void:
+		"attrib"
+		1_void:
+		"attrib|param1_type"
+		2_void:
+		"attrib|param1_type|param2_type
+		0:
+		"attrib|ret_type"
+		1:
+		"attrib|ret_type|param1_type"
+		2:
+		"attrib|ret_type|param2_type"
+
+		Old protos are deprecated.
+
+	NEW:
+		New protos are in fact pointers to the ProtoInfo structure (see sourcehook.h)
+
+	Old protos begin with a non-zero byte, new protos begin with a zero byte.
+
+	Protos are usually stored in a CProto instance.
+
+---------------------------------------
+Hook managers and hook manager containers
+	Each hookman container is tied to _one_ proto/vtable index/vtable offset info.
+	Hookman containers then contain a list of hook managers provided by plugins, sorted by version.
+	(higher versions come first)
+
+	Duplicate hook managers are ignored (ie. hook managers where proto, vtable index, vtable offset,
+	plugin, version are the same as in an already exisiting hook manager)
+
+	A new hook manager is always added to the end of the version group in the corresponding
+	hook container. 
+
+	If the new hook manager was added to the beginning of the container (which only happens if
+	it is the first one or if it has a higher version than the previously first hook manager),
+	the now second hook manager is shut down and the new hook manager takes its job.
+
+	A "hook manager container id" (HMCI) consits of three values: proto, vtbl index, vtbl offset.
+---------------------------------------
+Hooks 
+	When adding a hook, first the proposed hook manager is added to the corresponding
+	hook manager container as described above.
+
+	Then the first hook manager in the the manhook container is chosen to handle the function.
+
+	Removing a hook does not neccessarily unreigster the plugin's hook manager. In order to do this,
+	use RemoveHookManager or UnloadPlugin/
+
+	Hooks can be paused - they remain in memory but they are not called. In SH, the hook iterator
+	classes handle pausing transparently.
+
+	The hook loop is supposed to call ShouldContinue before each iteration. This makes hook handlers
+	able to remove themselves.
+
+---------------------------------------
+Call classes
+	Call classes are identified by a this pointer and an instance size
+
+	We use the instance size because a derived class instance and a base class instance could
+	have the same this pointers, and we want to avoid that the derived class
+	(which could be bigger) gets the same callclass as the base class (mainly if the
+	base class' callclass was requested first).
+
+	Call classes are reference counted.
+
+	The original function pointers are stored in a vector (in order to allow fast random access).
+	These vectors are stored as the value type of a hash. The key type is int and represents the
+	vtable offset.
+
+	If the hash key doesn't exist or the vtblidx is out of range or the corresponding element in the
+	vector is NULL, there is no hook on that function.
+
+---------------------------------------
+Recalls
+	Recalls are used for the META_RETURN_(VALUE_)NEWPARAMS macros, ie. to change the parameters
+	in the hook loop on the fly.
+	
+	First, the macro calls DoRecall(), then it calls the function the hook is attached to -> it 
+	calls the hookfunc. SourceHook makes sure that the newly invoked hook loop starts where the last
+	one left off and that status variables like status, previous result, override return are kept.
+	When this recurisvely called hookfunc returns, the macro returns what it returned
+	(using MRES_SUPERCEDE). CSourceHookImpl returns false from ShouldContinue so the original hook loop
+	is abandonned.
+
+Post Recalls
+	People wanted to be able to use META_RETURN_(VALUE_)NEWPARAMS from post hooks as well. Crazy people!
+	Anyway, for this, we have to know where a hook handler is. Is it executing pre or post hooks at the moment?
+	The only way we can know this is watching when it calls CHookList::GetIter(). So CHookList gets a new variable:
+	m_RequestedFlag. It also gets two new functions: RQFlagReset() and RQFlagGet().
+	HookLoopBegin() calls RQFlagReset on both hooklists of the iface; then DoRecall() checks whether the postlist's 
+	RQ flag is set. if yes, the hook loop is in post mode.
+
+	So, what a about a recall in post mode? The first ShouldContinue returns false and sets Status to supercede. 
+	This way the pre hooks and the function call will be skipped. Then, then next ShouldContinue returns true, so we get
+	into the post hooks. HA!
+
+Return Values in Post Recalls
+	The easy case is when we already have an override return value. In this case, the status register gets transferred,
+	and so does the override return pointer. So, basically, everything is ok.
+
+	However, what happens if we don't? ie. the status register is on MRES_IGNORED? In this case we'd have to transfer the
+	orig ret value. But we can't: There's no way to tell the hookfunc: "Use this as orig ret pointer". It uses its own.
+	So, we emulate it. GetOrigRet will return the orig ret pointer from the old hook loop. If still no one overrides it,
+	we'd have to return it. BUT! HOW TO DO THIS? Check out SH_RETURN(). First calls HookLoopEnd(), then decides whether
+	to return the override retval or the orig retval. But it doesn't ask for a new override return. So we give the function
+	the last orig return value as its new override return value; but leave status where it is so everything works, and in
+	HookLoopEnd we make sure that status is high enough so that the override return will be returned. crazy.
+
+	All this stuff could be much less complicated if I didn't try to preserve binary compatibility :)
+*/
+
 namespace SourceHook
 {
 	/**
@@ -33,6 +152,49 @@ namespace SourceHook
 	class CSourceHookImpl : public ISourceHook
 	{
 	private:
+		class CProto
+		{
+			char *m_Proto;
+
+			static bool Equal(const char *p1, const char *p2);
+			char *DupProto(const char *src);
+			void FreeProto(char *prot);
+		public:
+			CProto(const char *szProto) : m_Proto(DupProto(szProto))
+			{
+			}
+
+			CProto(const CProto &other) : m_Proto(DupProto(other.m_Proto))
+			{
+			}
+
+			~CProto()
+			{
+				FreeProto(m_Proto);
+				m_Proto = NULL;
+			}
+
+			void operator = (const char *szProto)
+			{
+				m_Proto = DupProto(szProto);
+			}
+
+			void operator = (const CProto &other)
+			{
+				m_Proto = DupProto(other.m_Proto);
+			}
+
+			bool operator == (const char *szProto) const
+			{
+				return Equal(szProto, m_Proto);
+			}
+			bool operator == (const CProto &other) const
+			{
+				return Equal(other.m_Proto, m_Proto);
+			}
+		};
+
+
 		/**
 		*	@brief A hook can be removed if you have this information
 		*/
@@ -51,6 +213,17 @@ namespace SourceHook
 			HookManagerPubFunc hookman;
 			ISHDelegate *handler;
 			bool post;
+		};
+
+		struct RemoveHookManInfo
+		{
+			RemoveHookManInfo(Plugin pplug, HookManagerPubFunc phookman)
+				: plug(pplug), hookman(phookman)
+			{
+			}
+
+			Plugin plug;
+			HookManagerPubFunc hookman;
 		};
 
 		struct HookInfo
@@ -84,6 +257,8 @@ namespace SourceHook
 				virtual ~CIter();
 
 				void GoToBegin();
+				void GoToEnd();
+				void Set(CIter *pOther);
 
 				bool End();
 				void Next();
@@ -97,8 +272,22 @@ namespace SourceHook
 			};
 
 			CIter *m_FreeIters;
-			CIter *m_UsedIters;
+			CIter *m_UsedIters;		// The last returned and not-yet-released iter is always m_UsedIters
 
+			// For recalls
+			bool m_Recall;
+			bool m_RQFlag;
+			bool m_RelFlag;
+
+			void SetRecallState();	// Sets the list into a state where the next returned
+									// iterator (from GetIter) will be a copy of the last
+									// returned iterator, incremented by one. This is used in Recalls.
+									// The hook resets this state automatically on:
+									// GetIter, ReleaseIter
+
+			void RQFlagReset() { m_RQFlag = false; m_RelFlag = false; }
+			bool RQFlagGet() { return m_RQFlag; }
+			bool RelFlagGet() { return m_RelFlag; }
 			CHookList();
 			CHookList(const CHookList &other);
 			virtual ~CHookList();
@@ -173,18 +362,92 @@ namespace SourceHook
 
 			VfnPtrList m_VfnPtrs;
 
+			int m_HookManVersion;
 		public:
+			CHookManagerInfo();
 			virtual ~CHookManagerInfo();
 
 			IVfnPtr *FindVfnPtr(void *vfnptr);
 
 			void SetInfo(int vtbl_offs, int vtbl_idx, const char *proto);
 			void SetHookfuncVfnptr(void *hookfunc_vfnptr);
+
+			void SetVersion(int version);
+
+			bool operator < (const CHookManagerInfo &other)
+			{
+				return m_HookManVersion < other.m_HookManVersion;
+			}
+
+			struct Descriptor
+			{
+				Descriptor(Plugin pplug, HookManagerPubFunc ppubFunc) : plug(pplug), pubFunc(ppubFunc)
+				{
+				}
+
+				Plugin plug;
+				HookManagerPubFunc pubFunc;
+			};
+
+			bool operator == (const Descriptor desc)
+			{
+				return m_Func == desc.pubFunc && m_Plug == desc.plug;
+			}
 		};
-		/**
-		*	@brief A list of CHookManagerInfo classes
-		*/
+
 		typedef List<CHookManagerInfo> HookManInfoList;
+
+		class CHookManagerContainer : public HookManInfoList
+		{
+		public:
+			// HMCI (Hook Manager Container Identification)
+			class HMCI
+			{
+				CProto m_Proto;
+				int m_VtableOffset;
+				int m_VtableIndex;
+			public:
+				HMCI(const char *proto, int vtbloffs, int vtblidx) :
+				  m_Proto(proto), m_VtableOffset(vtbloffs), m_VtableIndex(vtblidx)
+				  {
+				  }
+				  ~HMCI()
+				  {
+				  }
+
+				  bool operator==(const HMCI &other) const
+				  {
+					  return
+						  other.m_VtableIndex == m_VtableIndex &&
+						  other.m_Proto == m_Proto &&
+						  other.m_VtableOffset == m_VtableOffset;
+				  }
+
+				  const CProto &GetProto() const
+				  {
+					  return m_Proto;
+				  }
+				  int GetVtableOffset() const
+				  {
+					  return m_VtableOffset;
+				  }
+				  int GetVtableIndex() const
+				  {
+					  return m_VtableIndex;
+				  }
+			};
+			HMCI m_HCMI;
+
+		public:
+			CHookManagerContainer(const HMCI &hmci) : m_HCMI(hmci)
+			{
+			}
+			bool operator == (const HMCI &other) const
+			{
+				return m_HCMI == other;
+			}
+			void AddHookManager(Plugin plug, const CHookManagerInfo &hookman);
+		};
 
 		class CCallClassImpl : public GenericCallClass
 		{
@@ -220,28 +483,38 @@ namespace SourceHook
 		typedef List<CCallClassImpl> Impl_CallClassList;
 
 		Impl_CallClassList m_CallClasses;			//!< A list of already generated callclasses
-		HookManInfoList m_HookMans;					//!< A list of hook managers
+
+		/**
+		*	@brief A list of CHookManagerContainers
+		*/
+		typedef List<CHookManagerContainer> HookManContList;
+
+		HookManContList m_HookMans;					//!< A list of hook managers
 
 		struct HookLoopInfo
 		{
+			enum RecallType
+			{
+				Recall_No=0,
+				Recall_Pre,
+				Recall_Post1,
+				Recall_Post2
+			};
+
 			META_RES *pStatus;
 			META_RES *pPrevRes;
 			META_RES *pCurRes;
 
+			META_RES temporaryStatus;				//!< Stored during Post1 recall phase
 			bool shouldContinue;
+			RecallType recall;						//!< Specifies which kind of recall we're in.
 
 			IIface *pCurIface;
 			const void *pOrigRet;
-			const void *pOverrideRet;
+			void *pOverrideRet;
 			void **pIfacePtrPtr;
 		};
 		typedef CStack<HookLoopInfo> HookLoopInfoStack;
-
-		/**
-		*	@brief Finds a hook manager for a function based on a text-prototype, a vtable offset and a vtable index
-		*/
-		HookManInfoList::iterator FindHookMan(HookManInfoList::iterator begin, HookManInfoList::iterator end,
-			const char *proto, int vtblofs, int vtblidx);
 
 		void ApplyCallClassPatches(CCallClassImpl &cc);
 		void ApplyCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx, void *orig_entry);
@@ -363,10 +636,24 @@ namespace SourceHook
 		void SetStatusPtr(META_RES *mres);			//!< Sets pointer to the status variable
 		void SetIfacePtrPtr(void **pp);				//!< Sets pointer to the interface this pointer
 		void SetOrigRetPtr(const void *ptr);		//!< Sets the original return pointer
-		void SetOverrideRetPtr(const void *ptr);	//!< Sets the override result pointer
+		void SetOverrideRetPtr(void *ptr);			//!< Sets the override result pointer
 		bool ShouldContinue();						//!< Returns false if the hook loop should exit
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*   @param pubFunc The hook manager's info function
+		*/
+		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
+		virtual void RemoveHookManager(RemoveHookManInfo info);
+
+		virtual void DoRecall();					//!< Initiates a recall sequence
+		virtual void *GetOverrideRetPtr();			//!< Returns the pointer set by SetOverrideRetPtr
+
+		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
+			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr);
 	};
 }
 
 #endif
-

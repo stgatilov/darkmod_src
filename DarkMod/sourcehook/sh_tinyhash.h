@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -28,6 +20,12 @@ namespace SourceHook
 	template <class K>
 	int HashFunction(const K & k);
 
+	template <class U>
+	int HashAlt(const U &u);
+
+	template <class U, class K>
+	int CompareAlt(const U &k1, const K &k2);
+
 	template <class K>
 	int Compare(const K & k1, const K & k2);
 
@@ -45,11 +43,17 @@ namespace SourceHook
 				key(k), val(v)
 				{
 				};
+			THashNode & operator =(const THashNode &other)
+			{
+				key = other.key;
+				val = other.val;
+			}
 			K key;
 			V val;
 		};
 		typedef List<THashNode *> *	NodePtr;
 	public:
+		class const_iterator;
 		THash() : m_Buckets(NULL), m_numBuckets(0), m_percentUsed(0.0f)
 		{
 			_Refactor();
@@ -94,10 +98,18 @@ namespace SourceHook
 	private:
 		void _Clear()
 		{
+			typename List<THashNode *>::iterator iter, end;
 			for (size_t i=0; i<m_numBuckets; i++)
 			{
 				if (m_Buckets[i])
 				{
+					end = m_Buckets[i]->end();
+					iter = m_Buckets[i]->begin();
+					while (iter != end)
+					{
+						delete (*iter);
+						iter++;
+					}
 					delete m_Buckets[i];
 					m_Buckets[i] = NULL;
 				}
@@ -107,6 +119,38 @@ namespace SourceHook
 			m_Buckets = NULL;
 			m_numBuckets = 0;
 		}
+	public:
+		template <typename U>
+		V & AltFindOrInsert(const U & ukey)
+		{
+			size_t place = HashAlt(ukey) % m_numBuckets;
+			THashNode *pNode = NULL;
+			if (!m_Buckets[place])
+			{
+				m_Buckets[place] = new List<THashNode *>;
+				pNode = new THashNode(ukey, V());
+				m_Buckets[place]->push_back(pNode);
+				m_percentUsed += (1.0f / (float)m_numBuckets);
+			} else {
+				typename List<THashNode *>::iterator iter;
+				for (iter=m_Buckets[place]->begin(); iter!=m_Buckets[place]->end(); iter++)
+				{
+					if (CompareAlt(ukey, (*iter)->key) == 0)
+					{
+						return (*iter)->val;
+					}
+				}
+				//node does not exist
+				pNode = new THashNode(ukey, V());
+				m_Buckets[place]->push_back(pNode);
+			}
+			if (PercentUsed() > 0.75f)
+			{
+				_Refactor();
+			}
+			return pNode->val;
+		}
+	private:
 		THashNode *_FindOrInsert(const K & key)
 		{
 			size_t place = HashFunction(key) % m_numBuckets;
@@ -129,7 +173,9 @@ namespace SourceHook
 				m_Buckets[place]->push_back(pNode);
 			}
 			if (PercentUsed() > 0.75f)
+			{
 				_Refactor();
+			}
 			return pNode;
 		}
 		void _Refactor()
@@ -251,6 +297,7 @@ namespace SourceHook
 				// Remove this element and move to the next one
 				iterator tmp = *this;
 				++tmp;
+				delete (*iter);
 				hash->m_Buckets[curbucket]->erase(iter);
 				*this = tmp;
 
@@ -450,7 +497,20 @@ namespace SourceHook
 			}
 			return end();
 		}
-
+		template <typename U>
+		iterator FindAlt(const U & u)
+		{
+			iterator b = begin();
+			iterator e = end();
+			for (iterator iter = b; iter != e; iter++)
+			{
+				if (CompareAlt(u, (*iter).key) == 0)
+				{
+					return iter;
+				}
+			}
+			return e;
+		}
 		iterator erase(iterator where)
 		{
 			where.erase();

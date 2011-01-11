@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -18,6 +10,8 @@
 
 #ifndef __SH_STACK_H__
 #define __SH_STACK_H__
+
+#include <stddef.h>
 
 #define SH_STACK_DEFAULT_SIZE 4
 
@@ -167,9 +161,15 @@ namespace SourceHook
 			m_Elements[m_UsedSize++] = val;
 			return true;
 		}
+
 		void pop()
 		{
 			--m_UsedSize;
+		}
+
+		void popall()
+		{
+			m_UsedSize = 0;
 		}
 
 		T &front()
@@ -180,6 +180,16 @@ namespace SourceHook
 		const T &front() const
 		{
 			return m_Elements[m_UsedSize - 1];
+		}
+
+		T &second()
+		{
+			return m_Elements[m_UsedSize - 2];
+		}
+
+		const T &second() const
+		{
+			return m_Elements[m_UsedSize - 2];
 		}
 
 		iterator begin()

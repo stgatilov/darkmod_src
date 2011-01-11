@@ -1,13 +1,5 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -27,39 +19,58 @@ namespace SourceHook
 // Vector
 template <class T> class CVector
 {
-	bool Grow()
+	bool Grow(size_t amount)
 	{
 		// automatic grow
 		size_t newSize = m_Size * 2;
+
 		if (newSize == 0)
-			newSize = 8;					// a good init value
+		{
+			newSize = 8;
+		}
+
+		while (m_CurrentUsedSize + amount > newSize)
+		{
+			newSize *= 2;
+		}
+
 		T *newData = new T[newSize];
-		if (!newData)
-			return false;
+
 		if (m_Data)
 		{
 			for (size_t i=0; i<m_CurrentUsedSize; i++)
+			{
 				newData[i] = m_Data[i];
+			}
+
 			delete [] m_Data;
 		}
+
 		m_Data = newData;
 		m_Size = newSize;
+
 		return true;
 	}
 
-	bool GrowIfNeeded()
+	bool GrowIfNeeded(size_t amount)
 	{
-		if (m_CurrentUsedSize >= m_Size)
-			return Grow();
+		if (m_CurrentUsedSize + amount >= m_Size)
+		{
+			return Grow(amount);
+		}
 		else
+		{
 			return true;
+		}
 	}
 
 	bool ChangeSize(size_t size)
 	{
 		// change size
 		if (size == m_Size)
+		{
 			return true;
+		}
 
 		if (!size)
 		{
@@ -73,19 +84,24 @@ template <class T> class CVector
 		}
 
 		T *newData = new T[size];
-		if (!newData)
-			return false;
+
 		if (m_Data)
 		{
 			size_t end = (m_CurrentUsedSize < size) ? (m_CurrentUsedSize) : size;
 			for (size_t i=0; i<end; i++)
+			{
 				newData[i] = m_Data[i];
+			}
+
 			delete [] m_Data;
 		}
 		m_Data = newData;
 		m_Size = size;
+
 		if (m_CurrentUsedSize > m_Size)
+		{
 			m_CurrentUsedSize = m_Size;
+		}
 
 		return true;
 	}
@@ -93,7 +109,9 @@ template <class T> class CVector
 	void FreeMemIfPossible()
 	{
 		if (!m_Data)
+		{
 			return;
+		}
 
 		if (!m_CurrentUsedSize)
 		{
@@ -103,10 +121,14 @@ template <class T> class CVector
 
 		size_t newSize = m_Size;
 		while (m_CurrentUsedSize <= newSize / 2)
+		{
 			newSize /= 2;
+		}
 
 		if (newSize != m_Size)
+		{
 			ChangeSize(newSize);
+		}
 	}
 protected:
 	T *m_Data;
@@ -282,6 +304,16 @@ public:
 		clear();
 	}
 
+	CVector & operator =(const CVector<T> & other)
+	{
+		clear();
+		ChangeSize(other.size());
+		m_CurrentUsedSize = other.size();
+		for (size_t i=0; i<other.size(); i++)
+			m_Data[i] = other.at(i);
+		return *this;
+	}
+
 	// interface
 	size_t size() const
 	{
@@ -319,14 +351,13 @@ public:
 
 	bool push_back(const T & elem)
 	{
-		++m_CurrentUsedSize;
-		if (!GrowIfNeeded())
+		if (!GrowIfNeeded(1))
 		{
-			--m_CurrentUsedSize;
 			return false;
 		}
 
-		m_Data[m_CurrentUsedSize - 1] = elem;
+		m_Data[m_CurrentUsedSize++] = elem;
+
 		return true;
 	}
 
@@ -341,8 +372,15 @@ public:
 
 	bool resize(size_t newSize)
 	{
+		return resize(newSize, T());
+	}
+
+	bool resize(size_t newSize, T defval)
+	{
 		if (!ChangeSize(newSize))
 			return false;
+		for (size_t i = m_CurrentUsedSize; i < newSize; ++i)
+			m_Data[i] = defval;
 		m_CurrentUsedSize = newSize;
 		return true;
 	}
@@ -424,12 +462,12 @@ public:
 
 		size_t ofs = where - begin();
 
-		++m_CurrentUsedSize;
-		if (!GrowIfNeeded())
+		if (!GrowIfNeeded(1))
 		{
-			--m_CurrentUsedSize;
 			return false;
 		}
+
+		++m_CurrentUsedSize;
 
 		where = begin() + ofs;
 
@@ -479,4 +517,3 @@ public:
 };	//namespace SourceHook
 
 #endif // __CVECTOR_H__
-
