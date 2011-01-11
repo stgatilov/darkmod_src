@@ -2018,6 +2018,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\MaterialConverter.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\MaterialConverter.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\MatrixSq.h"
 					>
 				</File>

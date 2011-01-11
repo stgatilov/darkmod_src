@@ -142,6 +142,7 @@ HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
 Intersection.cpp \
 liquid.cpp \
+MaterialConverter.cpp \
 MeleeWeapon.cpp \
 MissionData.cpp \
 ModMenu.cpp \
