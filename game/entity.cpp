@@ -802,9 +802,11 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	int d = (int) (1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
+	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
+
 	m_DistCheckTimeStamp = 0;
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	if (d == 0)
+	if (d == 0 || fHideDistance < 0.1f)
 	{
 		// no LOD wanted
 		return false;
@@ -820,8 +822,6 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	m_LODLevel = 0;
 
 	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
-
-	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
 	idStr temp;
 	// distance dependent LOD from this point on:
