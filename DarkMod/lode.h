@@ -8,7 +8,7 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010 Tels (Donated to The Dark Mod)
+// Copyright (C) 2010-2011 Tels (Donated to The Dark Mod)
 
 #ifndef __GAME_LODE_H__
 #define __GAME_LODE_H__
@@ -80,13 +80,15 @@ struct lode_class_t {
 	idStr					modelname;		//!< To load the rendermodel for combining it w/o spawning
 											//!< the entity first. Used to calculate f.i. how many models
 											//!< can be combined at most (as this model is the high-poly version).
+
 	bool					pseudo;			//!< if true, this class is a pseudo-class, and describes an
 											//!< entity with a megamodel (a combined model from many entities),
 											//!< the model is still stored in hModel.
 											//!< These classes will be skipped when recreating the entities.
 	idPhysics_StaticMulti*	physicsObj;		//!< if pseudo: If you turn multiple entities into one, this keeps their clipmodels.
 	idStr					materialName;	//!< Override material for debug_colors.
-	idList< model_ofs_t >	offsets;		//!< List of enitity offsets to construct a combined model
+	idList< model_ofs_t >	offsets;		//!< if pseudo: List of enitity offsets to construct a combined model
+
 	int						seed;			//!< per-class seed so each class generates the same sequence of
 											//!< entities independ from the other classes, helps when the menu
    											//!> setting changes
@@ -138,6 +140,7 @@ struct lode_class_t {
 	float					func_max;
 	idStr					map;			//!< name of the image map (greyscale 8-bit TGA)
 	CImage*					img;			//!< if map != "": ptr to the distribution image map
+	bool					map_invert;		//!< if map != "": should the image map be inverted?
 
 	float					z_min;			// depends on z_invert
 	float					z_max;			// depends on z_invert

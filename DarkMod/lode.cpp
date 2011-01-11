@@ -32,6 +32,8 @@ TODO: add spawnarg-based scaling factor and offset to image-maps
 
 Optimizations:
 
+TODO: Load image maps only once, then share their data. Alternatively, free the image
+	  data after creating the entities.
 TODO: Make the max-combine-distance setting depending on the LOD stages, if the model
 	  has none + hide, or none and no hide, we can use a bigger distance because the
 	  rendermodel will be less often (or never) be rebuild. Also benchmark wether
@@ -270,6 +272,7 @@ void Lode::Save( idSaveGame *savefile ) const {
 		}
 		// image based distribution
 		savefile->WriteString( m_Classes[i].map );
+		savefile->WriteBool( m_Classes[i].map_invert );
 
 		// only write the rendermodel if it is used
 		if ( NULL != m_Classes[i].hModel)
@@ -487,12 +490,14 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( m_Classes[i].func_a );
 		}
 		savefile->ReadString( m_Classes[i].map );
+		savefile->ReadBool( m_Classes[i].map_invert );
 		m_Classes[i].img = NULL;
 	    if (!m_Classes[i].map.IsEmpty())
 		{
 			// image based distribution
+			// TODO: Do we really need the image at this point?
 			m_Classes[i].img = new CImage();
-			m_Classes[i].img->LoadImageFromVfs( m_Classes[i].map );
+			m_Classes[i].img->LoadImage( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
 		}
 
@@ -939,13 +944,26 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	}
 
 	// image based map?
-	LodeClass.map = ent->spawnArgs.GetString( "lode_falloff_map", spawnArgs.GetString( "falloff_map", "") );
+	LodeClass.map = ent->spawnArgs.GetString( "lode_map", spawnArgs.GetString( "map", "") );
 	LodeClass.img = NULL;
+	LodeClass.map_invert = false;
 	// starts with "textures" => image based map
 	if ( ! LodeClass.map.IsEmpty())
 	{
+	    LodeClass.map_invert = ent->spawnArgs.GetBool( "lode_map_invert", spawnArgs.GetString( "map_invert", "0") );
+
 		LodeClass.img = new CImage();
-		LodeClass.img->LoadImageFromVfs( LodeClass.map );
+
+		// If the map name does not start with "textures/lode/", prepend it:
+		idStr mapName = LodeClass.map;
+		if (mapName.Left(14) != "textures/lode/")
+		{
+			mapName = "textures/lode/" + LodeClass.map;
+		}
+		gameLocal.Printf("LODE %s: Trying to load %s.\n", GetName(), mapName.c_str() );
+
+		// TODO: If the map name does not end in .tga or .png, try .png first
+		LodeClass.img->LoadImage( mapName );
 		LodeClass.img->InitImageInfo();
 
 		unsigned char *imgData = LodeClass.img->GetImage();
@@ -975,8 +993,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// divide the sum by W and H and 256 so we arrive at 0 .. 1.0
 		fImgDensity /= (float)(w * h * 256.0f);
 
-		gameLocal.Printf("LODE %s: Loaded %s: %i x %i px, %i bpp = %li bytes, average density %0.4f.\n", 
-				GetName(), LodeClass.map.c_str(), LodeClass.img->m_Width, LodeClass.img->m_Height, LodeClass.img->m_Bpp, LodeClass.img->GetBufferLen(), fImgDensity );
+		// if the map is inverted, use 1 - x:
+		if (LodeClass.map_invert)
+		{
+			fImgDensity = 1 - fImgDensity;
+		}
+
+		gameLocal.Printf("LODE %s: Loaded %s: %ix%i px, %i bpp = %li bytes, average density %0.4f.\n", 
+				GetName(), mapName.c_str(), LodeClass.img->m_Width, LodeClass.img->m_Height, LodeClass.img->m_Bpp, LodeClass.img->GetBufferLen(), fImgDensity );
 		if (fImgDensity < 0.001)
 		{
 			gameLocal.Warning("The average density of this image map is very low.");
@@ -1873,6 +1897,10 @@ void Lode::PrepareEntities( void )
 
 					unsigned char *imgData = m_Classes[i].img->GetImage();
 					int value = imgData[ofs];
+					if (m_Classes[i].map_invert)
+					{
+						value = 255 - value;
+					}
 					//gameLocal.Printf("LODE %s: Pixel at %i, %i (ofs = %i) has value %i (p=%0.2f).\n", GetName(), px, py, ofs, value, (float)value / 256.0f);
 					probability *= (float)value / 256.0f;
 
