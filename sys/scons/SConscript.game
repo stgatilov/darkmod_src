@@ -297,21 +297,17 @@ if g_os == 'MacOSX':
 	])
 else:
 	# Linux
-	# Use static Boost and DevIL
 	local_env.Append(LIBS = [
-		File('#/linux/devil/lib/libIL.a'),
 		File('#/linux/libcurl/libcurl.a'),
 		File('#/linux/boost/lib/libboost_filesystem.a'),
 		File('#/linux/boost/lib/libboost_system.a'),
 		File('#/linux/boost/lib/libboost_thread.a')
 	])
 
-full_list = game_list + darkModList + idlib_objects + ziploader_list
+# greebo: Use custom compiled devIL in Linux and Mac OS X
+devil_list = SConscript( '../../sys/scons/SConscript.devil' )
 
-# greebo: Use a custom devIL compile in Mac OS X
-if g_os == 'MacOSX':
-	devil_list = SConscript( '../../sys/scons/SConscript.devil' )
-	full_list = full_list + devil_list
+full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list
 
 ret = local_env.SharedLibrary('game', full_list )
 

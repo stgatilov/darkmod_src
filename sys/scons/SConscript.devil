@@ -81,15 +81,15 @@ devil_string = ' \
 
 devil_list = scons_utils.BuildList( '', devil_string )
 
+# greebo: The source files are located in darkmod_src/lib/devil, for all platforms
+
 for i in range( len( devil_list ) ):
-	devil_list[ i ] = '../../macosx/devil/src/' + devil_list[ i ]
+	devil_list[ i ] = '../../lib/devil/' + devil_list[ i ]
 
 local_env = g_env.Clone()
 
-# Take the config from the macosx include dir
-local_env.Append(CPPPATH = '#/macosx/devil/include/IL')
-local_env.Append(CPPPATH = '#/macosx/devil/include')
-
+# Use the config header in include/devil/IL
+local_env.Append(CPPPATH = '#/include/devil/IL')
 local_env.Append(CPPFLAGS = '-DHAVE_CONFIG_H')
 
 ret_list = []

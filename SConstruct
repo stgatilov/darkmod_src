@@ -382,15 +382,12 @@ scons_utils.SetupUtils( g_base_env )
 g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
+g_base_env.Append(CPPPATH = '#/include/devil')
 g_base_env.Append(CPPPATH = '#/')
 
-# Use local devIL headers
+# greebo: Help finding the openGL headers in OS X, for Leopard I had these in X11's include folder 
 if g_os == 'MacOSX':
-	g_base_env.Append(CPPPATH = '#/macosx/devil/include')
-	# greebo: Help finding the openGL headers, for Leopard I had these in X11's include folder 
 	g_base_env.Append(CPPPATH = '/Developer/SDKs/MacOSX10.6.sdk/usr/X11/include/')
-else:
-	g_base_env.Append(CPPPATH = '#/linux/devil/include')
 
 g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
