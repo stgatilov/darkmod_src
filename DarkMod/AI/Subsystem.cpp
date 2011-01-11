@@ -50,7 +50,7 @@ bool Subsystem::IsEmpty() const
 
 idStr Subsystem::GetDebugInfo()
 {
-	return (_enabled) ? GetCurrentTaskName() + " (" + idStr(_taskQueue.size()) + ")" : "";
+	return (_enabled) ? GetCurrentTaskName() + " (" + idStr(static_cast<unsigned>(_taskQueue.size())) + ")" : "";
 }
 
 idStr Subsystem::GetCurrentTaskName() const

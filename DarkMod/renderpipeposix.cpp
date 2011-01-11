@@ -7,6 +7,9 @@
  *
  ***************************************************************************/
 
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -20,13 +23,14 @@
 #include "framework/filesystem.h"
 #include "renderpipe.h"
 
-// This "render pipe" isn't actually a pipe at all on POSIX systems. It's a file in /dev/shm (shared memory).
+// This "render pipe" isn't actually a pipe at all on POSIX systems. It's a file in /dev/shm (shared memory) or /tmp (Mac OS X).
 // This is because the Doom 3 SDK's CaptureRenderToFile function refuses to write to a named pipe,
 // but it will write to files in /dev/shm since they look like "regular files".
 // Files in /dev/shm never touch the disk so there's no additional performance penalty, and as an added
 // bonus they're nicer to code with than named pipes.
 
-CRenderPipe::CRenderPipe() : m_fd(INVALID_HANDLE_VALUE)
+CRenderPipe::CRenderPipe() : 
+	m_fd(INVALID_HANDLE_VALUE)
 {
 	// We want the filename of the render "pipe" to be "/dev/shm/tdm_lg_render.tga". To make a relative
 	// path to that location, we need to count the slashes (and hence directories) in fs_savepath, and prepend
@@ -55,11 +59,18 @@ CRenderPipe::CRenderPipe() : m_fd(INVALID_HANDLE_VALUE)
 		*filename_ptr = '/'; filename_ptr++;
 	}
 	
-	// Finally, append the pathname we want (this includes the null terminator)
-	strcpy(filename_ptr, "dev/shm/tdm_lg_render.tga");
+#ifdef MACOS_X
+	const char* const renderPipeFile = "/tmp/tdm_lg_render.tga";
 
+	// Finally, append the pathname we want (this includes the null terminator)
+	strcpy(filename_ptr, "tmp/tdm_lg_render.tga");
+#else
 	const char* const renderPipeFile = "/dev/shm/tdm_lg_render.tga";
 	
+	// Finally, append the pathname we want (this includes the null terminator)
+	strcpy(filename_ptr, "dev/shm/tdm_lg_render.tga");
+#endif
+
 	gameLocal.Printf("Renderpipe: Trying to open file: %s\n", renderPipeFile);
 
 	// m_filename now contains the required path, so open m_fd to point to it
@@ -67,9 +78,16 @@ CRenderPipe::CRenderPipe() : m_fd(INVALID_HANDLE_VALUE)
 	// O_RDONLY: Read-only (we don't need to write using this file descriptor).
 	// O_NOATIME: Don't update the access time of the file. Supposedly faster.
 
+	int flags = O_CREAT|O_RDONLY;
+
+#ifdef __linux__
+	// greebo: In BSD there is no O_NOATIME flag for open(), do that only for non-Mac builds
+	flags |= O_NOATIME;
+#endif
+
 	// greebo: open() can use absolute paths just as fine, use this to avoid problems
 	// with the current directory being different to the darkmod/ folder.
-	m_fd = open(renderPipeFile, O_CREAT|O_RDONLY|O_NOATIME, 0666);
+	m_fd = open(renderPipeFile, flags, 0666);
 
 	// If an error occurs, save the error code in m_fd, but negative so we can
 	// tell it apart from a successfully opened descriptor.

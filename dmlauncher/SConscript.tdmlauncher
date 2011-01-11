@@ -26,20 +26,23 @@ def BuildList( s_prefix, s_string ):
 # Master list of source files to compile
 tdmlauncher_list = BuildList('./', 'Launcher.cpp dmlauncher.cpp TraceLog.cpp D3ProcessChecker.cpp')
 
-local_env = g_env.Copy()
+local_env = g_env.Clone()
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
-# Use local Boost
+if g_os == 'MacOSX':
+	target_filename = 'tdmlauncher.macosx'
+	local_env.Append(LIBS = [
+		File('#/../macosx/boost/lib/libboost_filesystem.a'),
+		File('#/../macosx/boost/lib/libboost_system.a')
+	])
+else:
+	# Linux
+	target_filename = 'tdmlauncher.linux'
+	# Use static Boost
+	local_env.Append(LIBS = [
+		File('#/../linux/boost/lib/libboost_filesystem.a'),
+		File('#/../linux/boost/lib/libboost_system.a')
+	])
 
-local_env.Append(LIBS = [
-# Tels: Had to add these to compile on Ubuntu 64bit 9.10
-    File('#/../linux/boost/lib/libboost_filesystem.a'),
-    File('#/../linux/boost/lib/libboost_system.a'),
-#    File('#/libs/libboost_filesystem-gcc43-1_34_1.a') 
-#    File('#/./libboost_system-gcc43-1_35.a')
-#    File('#/linux/libstdc/libstdc++.so')
-])
-
-ret = local_env.Program('tdmlauncher.linux', tdmlauncher_list )
+ret = local_env.Program(target_filename, tdmlauncher_list )
 Return( 'ret' )
-

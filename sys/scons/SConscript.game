@@ -285,16 +285,32 @@ local_env = g_game_env.Clone()
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
-# Use static Boost and DevIL
-local_env.Append(LIBS = [
-    File('#/linux/devil/lib/libIL.a'),
-    File('#/linux/libcurl/libcurl.a'),
-    File('#/linux/boost/lib/libboost_filesystem.a'),
-    File('#/linux/boost/lib/libboost_system.a'),
-    File('#/linux/boost/lib/libboost_thread.a')
-])
+if g_os == 'MacOSX':
+	local_env.Append(LIBS = [
+		File('#/macosx/libcurl/libcurl.a'),
+		File('#/macosx/boost/lib/libboost_filesystem.a'),
+		File('#/macosx/boost/lib/libboost_system.a'),
+		File('#/macosx/boost/lib/libboost_thread.a')
+	])
+else:
+	# Linux
+	# Use static Boost and DevIL
+	local_env.Append(LIBS = [
+		File('#/linux/devil/lib/libIL.a'),
+		File('#/linux/libcurl/libcurl.a'),
+		File('#/linux/boost/lib/libboost_filesystem.a'),
+		File('#/linux/boost/lib/libboost_system.a'),
+		File('#/linux/boost/lib/libboost_thread.a')
+	])
 
-ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects + ziploader_list )
+full_list = game_list + darkModList + idlib_objects + ziploader_list
+
+# greebo: Use a custom devIL compile in Mac OS X
+if g_os == 'MacOSX':
+	devil_list = SConscript( '../../sys/scons/SConscript.devil' )
+	full_list = full_list + devil_list
+
+ret = local_env.SharedLibrary('game', full_list )
 
 Return( 'ret' )
 

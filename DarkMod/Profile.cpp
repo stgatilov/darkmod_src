@@ -29,13 +29,23 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning( push )
 #pragma warning( disable: 4245 )
+
+// No malloc.h in OS X 
+#if !defined(MACOS_X)
 #include <malloc.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #ifdef _WINDOWS_
 #include <io.h>
+#endif
+
+#ifdef MACOS_X
+#include <unistd.h>
+#include <strings.h>
 #endif
 
 #include <fcntl.h>
@@ -237,7 +247,13 @@ BOOL WriteProfile(PROFILE_HANDLE *h)
 
 	f = h->FileHandle;
 	fseek(f, 0, SEEK_SET);
+
+#ifdef MACOS_X
+	// greebo: no chsize in darwin
+	ftruncate(fileno(f), 0);
+#else
 	chsize(fileno(f), 0);
+#endif
 
 	nh = h->Sections;
 	for(ih = 0; ih < nh; ih++)
@@ -487,7 +503,11 @@ ULONG FindSection(PROFILE_HANDLE *h, const char *sn, PROFILE_SECTION **ps)
 		if(h->Case == TRUE)
 			v = strcmp(s->SectionName, sn);
 		else
+#ifdef MACOS_X
+			v = strcasecmp(s->SectionName, sn);
+#else
 			v = stricmp(s->SectionName, sn);
+#endif
 
 		if(v == 0)
 		{
@@ -518,7 +538,11 @@ ULONG FindMap(PROFILE_SECTION *s, const char *k, BOOL CaseSensitive, PROFILE_MAP
 		if(CaseSensitive == TRUE)
 			v = strcmp(s->MapEntry[i]->Key, k);
 		else
+#ifdef MACOS_X
+			v = strcasecmp(s->MapEntry[i]->Key, k);
+#else
 			v = stricmp(s->MapEntry[i]->Key, k);
+#endif
 
 		if(v == 0)
 		{

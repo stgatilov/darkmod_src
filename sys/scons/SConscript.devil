@@ -1,0 +1,100 @@
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision: 4379 $
+#* $Date: 2010-12-22 15:49:40 +0100 (Mi, 22 Dez 2010) $
+#* $Author: greebo $
+#*
+#* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
+#* Revision 1.2  2004/11/28 19:23:11  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+devil_string = ' \
+	altivec_common.c \
+	altivec_typeconversion.c \
+	il_alloc.c \
+	il_bits.c \
+	il_bmp.c \
+	il_convbuff.c \
+	il_convert.c \
+	il_cut.c \
+	il_dcx.c \
+	il_dds-save.c \
+	il_dds.c \
+	il_devil.c \
+	il_doom.c \
+	il_endian.c \
+	il_error.c \
+	il_fastconv.c \
+	il_files.c \
+	il_gif.c \
+	il_hdr.c \
+	il_header.c \
+	il_icns.c \
+	il_icon.c \
+	il_internal.c \
+	il_io.c \
+	il_jp2.c \
+	il_jpeg.c \
+	il_lif.c \
+	il_main.c \
+	il_manip.c \
+	il_mdl.c \
+	il_mng.c \
+	il_neuquant.c \
+	il_pal.c \
+	il_pcd.c \
+	il_pcx.c \
+	il_pic.c \
+	il_pix.c \
+	il_png.c \
+	il_pnm.c \
+	il_profiles.c \
+	il_psd.c \
+	il_psp.c \
+	il_pxr.c \
+	il_quantizer.c \
+	il_raw.c \
+	il_rawdata.c \
+	il_register.c \
+	il_rle.c \
+	il_sgi.c \
+	il_stack.c \
+	il_states.c \
+	il_targa.c \
+	il_tiff.c \
+	il_utility.c \
+	il_wal.c \
+	il_xpm.c'
+
+devil_list = scons_utils.BuildList( '', devil_string )
+
+for i in range( len( devil_list ) ):
+	devil_list[ i ] = '../../macosx/devil/src/' + devil_list[ i ]
+
+local_env = g_env.Clone()
+
+# Take the config from the macosx include dir
+local_env.Append(CPPPATH = '#/macosx/devil/include/IL')
+local_env.Append(CPPPATH = '#/macosx/devil/include')
+
+local_env.Append(CPPFLAGS = '-DHAVE_CONFIG_H')
+
+ret_list = []
+
+for f in devil_list:
+	ret_list += local_env.SharedObject( source = f )
+
+Return( 'ret_list' )

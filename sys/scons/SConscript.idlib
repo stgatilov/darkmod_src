@@ -55,7 +55,12 @@ idlib_string = ' \
 	math/quat.cpp \
 	math/rotation.cpp \
 	math/simd.cpp \
+	math/simd_altivec.cpp \
 	math/simd_generic.cpp \
+	math/simd_mmx.cpp \
+	math/simd_sse.cpp \
+	math/simd_sse2.cpp \
+	math/simd_sse3.cpp \
 	math/vector.cpp \
 	bitmsg.cpp \
 	langdict.cpp \
@@ -88,6 +93,12 @@ try:
 except:
 	pass
 local_env_noopt.Append( CPPFLAGS = flags )
+
+# greebo: Need SSE2 instruction set to compile simd_sse2.cpp 
+local_env.Append(CPPFLAGS = '-msse2')
+
+if g_os == 'MacOSX':
+	local_env.Append(CPPFLAGS = '-faltivec')
 
 ret_list = []
 

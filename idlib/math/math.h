@@ -21,6 +21,9 @@
 #endif
 
 #ifdef MACOS_X
+// greebo: Include this for ID_INLINE
+#include "sys/sys_public.h"
+
 // for square root estimate instruction
 #include <ppc_intrinsics.h>
 // for FLT_MIN

@@ -387,8 +387,12 @@ void CModMenu::RestartGame()
 	// path to tdmlauncher
 #ifdef _WINDOWS
 	fs::path launcherExe(darkmodPath / "tdmlauncher.exe");
-#else
+#elif __linux__
 	fs::path launcherExe(darkmodPath / "tdmlauncher.linux");
+#elif MACOS_X
+	fs::path launcherExe(darkmodPath / "tdmlauncher.macosx");
+#else
+#error 'Unsupported platform.'
 #endif
 
 	if (!fs::exists(launcherExe))

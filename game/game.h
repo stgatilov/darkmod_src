@@ -13,7 +13,7 @@
 #ifndef __GAME_H__
 #define __GAME_H__
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOS_X)
 #include "idlib/lib.h"
 #include "sound/sound.h"
 #endif

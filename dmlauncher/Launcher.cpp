@@ -34,12 +34,19 @@ const std::string STEAM_ARGS = "-applaunch 9050 ";
 #undef FindExecutable
 #endif
 
-#else 
+#elif __linux__
 	// Linux
 	#include <unistd.h>
 	#include <errno.h>
 
 	#define ENGINE_EXECUTABLE "doom.x86"
+#elif MACOS_X
+	#include <unistd.h>
+	#include <errno.h>
+
+	#define ENGINE_EXECUTABLE "Doom 3"
+#else
+	#error 'Unsupported platform.'
 #endif
 
 Launcher::Launcher(int argc, char* argv[]) :

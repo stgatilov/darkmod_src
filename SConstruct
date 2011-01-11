@@ -15,7 +15,7 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS']
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'MACOSX_TARGET_ARCH']
 
 # global build mode ------------------------------
 
@@ -126,17 +126,15 @@ SDK (default 0, not saved)
 NOCURL (default 0)
 	set to 1 to disable usage of libcurl and http/ftp downloads feature
 
+MACOSX_TARGET_ARCH (default 'i386')
+	The target architecture when building in Mac OS X.
+	valid values: 'ppc' or 'i386'. 
+
 """
 
 Help( help_string )
 
 # end help ---------------------------------------
-
-# sanity -----------------------------------------
-
-EnsureSConsVersion( 0, 96 )
-
-# end sanity -------------------------------------
 
 # system detection -------------------------------
 
@@ -151,7 +149,11 @@ else:
 		cpu = 'ppc'
 	else:
 		cpu = 'cpu'
-g_os = 'Linux'
+
+if sys.platform == 'darwin':
+	g_os = 'MacOSX'
+else:
+	g_os = 'Linux'
 
 # end system detection ---------------------------
 
@@ -180,6 +182,7 @@ NOCONF = '0'
 NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
+MACOSX_TARGET_ARCH = 'i386'
 
 # end default settings ---------------------------
 
@@ -261,7 +264,7 @@ LINK = CXX
 # common flags
 # BASE + CORE + OPT for engine
 # BASE + GAME + OPT for game
-# _noopt versions of the environements are built without the OPT
+# _noopt versions of the environments are built without the OPT
 
 BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
@@ -289,20 +292,34 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
-if ( g_os == 'Linux' ):
+if ( g_os == 'Linux' or g_os == 'MacOSX' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
 	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
 #	BASELINKFLAGS.append( '-Wl,-z,defs' )
-	# help 64 bit machines to find the compatibility 32bit libraries
-	BASELINKFLAGS.append( '-L/lib32' )
-	BASELINKFLAGS.append( '-L/usr/lib32' )
-	BASELINKFLAGS.append( '-L/usr/lib32/gcc/i486-linux-gnu/4.2/' )
 
-	# Add the __linux__ define
-	BASECPPFLAGS.append('-D__linux__')
+	if g_os == 'Linux':
+		# help 64 bit machines to find the compatibility 32bit libraries
+		BASELINKFLAGS.append( '-L/lib32' )
+		BASELINKFLAGS.append( '-L/usr/lib32' )
+		BASELINKFLAGS.append( '-L/usr/lib32/gcc/i486-linux-gnu/4.2/' )
+	
+		# Add the __linux__ define
+		BASECPPFLAGS.append('-D__linux__')
+	else:
+		# Mac OS X
+		BASECPPFLAGS.append('-DMACOS_X')
+
+		if MACOSX_TARGET_ARCH == 'i386':
+			# Perform an Intel build
+			BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
+			BASELINKFLAGS.append(['-arch', 'i386'])
+		elif MACOSX_TARGET_ARCH == 'ppc':
+			# Perform a PowerPC build
+			BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
+			BASELINKFLAGS.append(['-arch', 'ppc'])
 
 if ( BUILD == 'debug-all' ):
 	OPTCPPFLAGS = [ '-g', '-D_DEBUG' ]
@@ -314,16 +331,26 @@ elif ( BUILD == 'debug' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'profile' ):
 	print 'Building a profile build.'
-	OPTCPPFLAGS = [ '-pg', '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations' ]
+	OPTCPPFLAGS = [ '-pg', '-O3', '-ffast-math', '-fno-unsafe-math-optimizations' ]
+
+	if g_os == 'Linux':
+		OPTCPPFLAGS.append( ['-march=pentium3'] )
+
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
 	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
-	#   on x86 have to set it explicitely
+	#   on x86 have to set it explicitly
 	# -finline-functions: implicit at -O3
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+
+	# Flags applicable to both Linux and MacOSX
+	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+
+	if g_os == 'Linux':
+		OPTCPPFLAGS.append( ['-march=pentium3'] )
+
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
 else:
@@ -357,8 +384,13 @@ g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/')
 
-# Uncomment this to use local devIL
-g_base_env.Append(CPPPATH = '#/linux/devil/include')
+# Use local devIL headers
+if g_os == 'MacOSX':
+	g_base_env.Append(CPPPATH = '#/macosx/devil/include')
+	# greebo: Help finding the openGL headers, for Leopard I had these in X11's include folder 
+	g_base_env.Append(CPPPATH = '/Developer/SDKs/MacOSX10.6.sdk/usr/X11/include/')
+else:
+	g_base_env.Append(CPPPATH = '#/linux/devil/include')
 
 g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
@@ -468,14 +500,32 @@ if ( TARGET_GAME == '1'):
 		# clear the build directory to be safe
 		g_env.PreBuildSDK( [ g_build + '/game' ] )
 		dupe = 1
+
 	BuildDir( g_build + '/game', '.', duplicate = dupe )
+	
+	if g_os == 'MacOSX':
+		game_binary_name = '#game%s-base.dylib' % MACOSX_TARGET_ARCH
+	else:
+		# Linux
+		game_binary_name = '#game%s-base.so' % cpu
+
 	idlib_objects = SConscript( g_build + '/game/sys/scons/SConscript.idlib' )
-	if ( TARGET_GAME == '1' ):
-		Export( 'GLOBALS ' + GLOBALS )
-		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
-		game_base = InstallAs( '#game%s-base.so' % cpu, game )
-		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#tdm_game02.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
+	
+	Export( 'GLOBALS ' + GLOBALS )
+	game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
+
+	game_base = InstallAs( game_binary_name, game )
+
+	# Game PAK name
+	if ( BUILD_GAMEPAK == '1' ):
+		if g_os == 'MacOSX':
+			game_pak = '#tdm_game03.pk4'
+		else:
+			game_pak = '#tdm_game02.pk4'
+
+		Command( game_pak, [ game_base, game ], Action( g_env.BuildGamePak ) )
+
+	# End TARGET_GAME
 	
 if ( TARGET_MONO == '1' ):
 	local_gamedll = 0

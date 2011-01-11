@@ -157,11 +157,23 @@ class idGamePaks( idSetupBase ):
 	def BuildGamePak( self, target = None, source = None, env = None ):
 		# NOTE: ew should have done with zipfile module
 		temp_dir = tempfile.mkdtemp( prefix = 'gamepak' )
-		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, 'gamex86.so' ) ) )
+
+		if sys.platform == 'darwin':
+			# Mac OS X has OS number 1
+			os_id = '1'
+			target_game_file_name = 'game.dylib'
+		else:
+			# Linux has OS number 2
+			os_id = '2'
+			target_game_file_name = 'gamex86.so'
+
+		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, target_game_file_name ) ) )
 		# Removed by Crispy: don't strip the .so; debugging symbols are useful
-		#self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, 'gamex86.so' ) )
-		self.SimpleCommand( 'echo 2 > %s' % ( os.path.join( temp_dir, 'binary.conf' ) ) )
-		self.SimpleCommand( 'cd %s ; zip %s gamex86.so binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ) ) )
+		#self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, target_game_file_name ) )
+
+		self.SimpleCommand( 'echo %s > %s' % ( os_id, os.path.join( temp_dir, 'binary.conf' ) ) )
+
+		self.SimpleCommand( 'cd %s ; zip %s %s binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ), target_game_file_name ) )
 		self.SimpleCommand( 'rm -r %s' % temp_dir )
 		return None
 

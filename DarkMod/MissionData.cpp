@@ -7,6 +7,7 @@
  *
  ***************************************************************************/
 
+#include "../idlib/precompiled.h"
 #pragma hdrstop
 
 #include "../game/game_local.h"
