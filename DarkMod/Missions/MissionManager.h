@@ -261,7 +261,7 @@ public:
 	// -------- Screenshot Requests -----------
 	bool IsMissionScreenshotRequestInProgress();
 	int StartDownloadingMissionScreenshot(int missionIndex, int screenshotNum);
-	CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest();
+	CMissionManager::RequestStatus ProcessMissionScreenshotRequest();
 
 	// Accessor to the downloadble mission list
 	const DownloadableMissionList& GetDownloadableMissions() const;
