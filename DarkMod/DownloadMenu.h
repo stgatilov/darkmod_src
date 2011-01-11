@@ -43,6 +43,13 @@ private:
 	void UpdateDownloadProgress(idUserInterface* gui);
 
 	void ShowDownloadResult(idUserInterface* gui);
+
+	void UpdateMissionDetails(idUserInterface* gui);
+
+	void PerformScreenshotStep(idUserInterface* gui, int step);
+
+	void UpdateNextScreenshotData(idUserInterface* gui, int nextScreenshotNum);
+	void UpdateScreenshotItemVisibility(idUserInterface* gui);
 };
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 

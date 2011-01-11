@@ -23,25 +23,108 @@ typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
 
 namespace fs = boost::filesystem;
 
+const char* const TMP_MISSION_SCREENSHOT_PREFIX = "previewshot_";
+const char* const TMP_MISSION_SCREENSHOT_FOLDER = "_missionshots"; // relative to fms/
+
+struct MissionScreenshot
+{
+	// Image filename relative to the fms/<mission>/ folder
+	// This will empty if the screenie hasn't been downloaded yet
+	idStr	filename;
+
+	// The server-relative URL for downloading that screenshot
+	idStr	serverRelativeUrl;
+
+	// Get the local image file name without path, e.g. "monastery01.jpg"
+	idStr GetLocalFilename() const
+	{
+		idStr temp;
+		serverRelativeUrl.ExtractFileName(temp);
+
+		idStr ext;
+		temp.ExtractFileExtension(ext);
+
+		temp.StripTrailingOnce(ext);
+		temp.StripTrailingOnce(".");
+
+		// Locally We save screenshots as JPG
+		return temp + ".jpg";
+	}
+
+	// Returns the image filename including extension
+	idStr GetRemoteFilename() const
+	{
+		idStr temp;
+		serverRelativeUrl.ExtractFileName(temp);
+		
+		return temp;
+	}
+
+	// Returns the file extension of the server file (lowercase, without dot, e.g. "png")
+	idStr GetRemoteFileExtension() const
+	{
+		idStr temp;
+		serverRelativeUrl.ExtractFileExtension(temp);
+		temp.ToLower();
+
+		return temp;
+	}
+};
+typedef boost::shared_ptr<MissionScreenshot> MissionScreenshotPtr;
+
 struct DownloadableMission
 {
-	idStr modName;
-	idStr title;
-	idStr author;
-	float sizeMB;
-	idStr releaseDate;
-	idStr language;
-	int version;
-	bool isUpdate;
+	int		id;				// ID of the mission in the online database
+	idStr	modName;		// usually the name of the pk4 (e.g. "heart")
+	idStr	title;			// the title or display name ("Heart of Lone Salvation")
+	idStr	author;			// author/s
+	float	sizeMB;			// size in MB
+	idStr	releaseDate;	// date of release in ISO format (2010-12-30)
+	idStr	language;		// the language ("english")
+	int		version;		// version number, initial release carries version 1
+	bool	isUpdate;		// whether this mission is an update of one already installed
 
+	// The list of HTTP download URLs
 	idStringList downloadLocations;
+
+	// Begin Initially empty variables, need to be filled per request by the mission manager
+
+	// This is false by default, is set to true once the mission manager has filled in the details
+	bool	detailsLoaded;
+
+	// A single- or multi-line text, as defined in the online FM database
+	idStr	description;
+
+	// A list of screenshots as downloaded from the mission database
+	idList<MissionScreenshotPtr> screenshots;
+
+	// End Initially empty variables
+
+	// Default constructor
+	DownloadableMission() :
+		id(-1), // invalid ID
+		version(1),
+		isUpdate(false),
+		detailsLoaded(false)
+	{}
 
 	// Static sort compare functor, sorting by mission title
 	typedef DownloadableMission* DownloadableMissionPtr;
 
-	static int SortCompare(const DownloadableMissionPtr* a, const DownloadableMissionPtr* b)
+	static int SortCompareTitle(const DownloadableMissionPtr* a, const DownloadableMissionPtr* b)
 	{
 		return idStr::Cmp((*a)->title, (*b)->title);
+	}
+
+	// Gets the local path to the screenshot image (relative to darkmod path, e.g. fms/_missionshots/preview_monst02.jpg)
+	idStr GetLocalScreenshotPath(int screenshotNum) const
+	{
+		assert(screenshotNum >= 0 && screenshotNum < screenshots.Num());
+
+		return cv_tdm_fm_path.GetString() + 
+			   idStr(TMP_MISSION_SCREENSHOT_FOLDER) + "/" + 
+			   TMP_MISSION_SCREENSHOT_PREFIX +
+			   screenshots[screenshotNum]->GetLocalFilename();
 	}
 };
 // Use raw pointers in the DownloadableMissionList
@@ -70,6 +153,12 @@ private:
 	// The ID of the "Downloading mission list from server" message
 	int _refreshMissionListDownloadId;
 
+	// The ID of the "get mission details" request
+	int _missionDetailsDownloadId;
+
+	// The ID of the screenshot download
+	int _missionScreenshotDownloadId;
+
 public:
 	enum InstallResult
 	{
@@ -78,12 +167,13 @@ public:
 		COPY_FAILURE,
 	};
 
-	enum MissionListDownloadStatus
+	// Status of various requests managed by this class (download mission list, 
+	enum RequestStatus
 	{
-		DOWNLOAD_NOT_IN_PROGRESS,
-		DOWNLOAD_IN_PROGRESS,
-		DOWNLOAD_FAILED,
-		DOWNLOAD_SUCCESSFUL,
+		NOT_IN_PROGRESS,
+		IN_PROGRESS,
+		FAILED,
+		SUCCESSFUL,
 	};
 
 public:
@@ -142,6 +232,8 @@ public:
 	// Uninstalls the currently installed FM, basically clearing our currentfm.txt
 	void UninstallMission();
 
+	// --------- Downloadable Mission List Request --------
+
 	// Checks online for available missions, returns the download ID for progress checking
 	int StartReloadDownloadableMissions();
 
@@ -151,7 +243,25 @@ public:
 
 	// Processes the pending mission list download request. Returns the download status
 	// for reference (FAILED, SUCCESS, etc.)
-	MissionListDownloadStatus ProcessReloadDownloadableMissionsRequest();
+	RequestStatus ProcessReloadDownloadableMissionsRequest();
+
+	// -------- Mission Details Request ----------
+
+	// Starts a new request to download details of the given mission number
+	int StartDownloadingMissionDetails(int missionNum);
+
+	// Returns true if the mission details download is currently in progress,
+	// call ProcessReloadMissionDetailsRequest() to process it
+	bool IsMissionDetailsRequestInProgress();
+
+	// Processes the pending mission details download request. Returns the status
+	// for reference (FAILED, SUCCESS, etc.)
+	RequestStatus ProcessReloadMissionDetailsRequest();
+
+	// -------- Screenshot Requests -----------
+	bool IsMissionScreenshotRequestInProgress();
+	int StartDownloadingMissionScreenshot(int missionIndex, int screenshotNum);
+	CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest();
 
 	// Accessor to the downloadble mission list
 	const DownloadableMissionList& GetDownloadableMissions() const;
@@ -193,8 +303,19 @@ private:
 	// Loads the mission list from the given XML
 	void LoadMissionListFromXml(const XmlDocumentPtr& doc);
 
+	// Loads mission details from the given XML, storing the data in the mission with the given number
+	void LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int missionNum);
+
+	// Request status according to the pending download
+	RequestStatus GetRequestStatusForDownloadId(int downloadId);
+
 	// Sorts the mission list
 	void SortDownloadableMissions();
+
+	// Replaces stuff like &#13;
+	idStr ReplaceXmlEntities(const idStr& input);
+
+	bool ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMission& mission, int screenshotNum);
 };
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 

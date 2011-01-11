@@ -45,12 +45,12 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		// Do we have a pending mission list request?
 		if (gameLocal.m_MissionManager->IsDownloadableMissionsRequestInProgress())
 		{
-			CMissionManager::MissionListDownloadStatus status = 
+			CMissionManager::RequestStatus status = 
 				gameLocal.m_MissionManager->ProcessReloadDownloadableMissionsRequest();
 			
 			switch (status)
 			{
-				case CMissionManager::DOWNLOAD_FAILED:
+				case CMissionManager::FAILED:
 				{
 					gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog
 
@@ -67,7 +67,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 				}
 				break;
 
-				case CMissionManager::DOWNLOAD_SUCCESSFUL:
+				case CMissionManager::SUCCESSFUL:
 				{
 					gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog
 
@@ -75,6 +75,88 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					UpdateDownloadProgress(gui);
 				}
 				break;
+
+				default: break;
+			};
+		}
+
+		// Process pending details download request
+		if (gameLocal.m_MissionManager->IsMissionDetailsRequestInProgress())
+		{
+			CMissionManager::RequestStatus status = 
+				gameLocal.m_MissionManager->ProcessReloadMissionDetailsRequest();
+
+			switch (status)
+			{
+				case CMissionManager::FAILED:
+				{
+					gui->HandleNamedEvent("onDownloadableMissionDetailsDownloadFailed"); // hide progress dialog
+
+					// Issue a failure message
+					gameLocal.Printf("Connection Error.\n");
+
+					GuiMessage msg;
+					msg.title = "Mission Details Download Failed";
+					msg.message = "Failed to download the details XML file.";
+					msg.type = GuiMessage::MSG_OK;
+					msg.okCmd = "close_msg_box";
+
+					gameLocal.AddMainMenuMessage(msg);
+				}
+				break;
+
+				case CMissionManager::SUCCESSFUL:
+				{
+					gui->HandleNamedEvent("onDownloadableMissionDetailsLoaded"); // hide progress dialog
+
+					UpdateMissionDetails(gui);
+					UpdateScreenshotItemVisibility(gui);
+				}
+				break;
+
+				default: break;
+			};
+		}
+
+		// Process pending screenshot download request
+		if (gameLocal.m_MissionManager->IsMissionScreenshotRequestInProgress())
+		{
+			CMissionManager::RequestStatus status = 
+				gameLocal.m_MissionManager->ProcessMissionScreenshotRequest();
+
+			switch (status)
+			{
+				case CMissionManager::FAILED:
+				{
+					gui->HandleNamedEvent("onFailedToDownloadScreenshot");
+
+					// Issue a failure message
+					gameLocal.Printf("Connection Error.\n");
+
+					GuiMessage msg;
+					msg.title = "Mission Screenshot Download Failed";
+					msg.message = "Failed to download the screenshot file.";
+					msg.type = GuiMessage::MSG_OK;
+					msg.okCmd = "close_msg_box";
+
+					gameLocal.AddMainMenuMessage(msg);
+				}
+				break;
+
+				case CMissionManager::SUCCESSFUL:
+				{
+					// Load data into GUI
+					// Get store "next" number from the GUI
+					int nextScreenNum = gui->GetStateInt("av_mission_next_screenshot_num");
+
+					UpdateNextScreenshotData(gui, nextScreenNum);
+
+					// Ready to fade
+					gui->HandleNamedEvent("onStartFadeToNextScreenshot");
+				}
+				break;
+
+				default: break;
 			};
 		}
 	}
@@ -120,6 +202,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		gui->SetStateString("av_mission_title", missions[missionIndex]->title);
 		gui->SetStateString("av_mission_author", missions[missionIndex]->author);
 		gui->SetStateString("av_mission_release_date", missions[missionIndex]->releaseDate);
+		gui->SetStateString("av_mission_version", va("%d", missions[missionIndex]->version));
 		gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex]->sizeMB));
 
 		gui->SetStateBool("av_mission_details_visible", true);
@@ -143,7 +226,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		int selectedItem = gui->GetStateInt("dl_mission_selected");
 		int index = selectedItem + _selectedListTop;
 
-		if (index > _selectedMissions.Num()) return;
+		if (index >= _selectedMissions.Num()) return;
 
 		_selectedMissions.Remove(_selectedMissions[index]);
 
@@ -182,6 +265,16 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
+	else if (cmd == "onDownloadableMissionShowDetails")
+	{
+		int selectedMission = gui->GetStateInt("av_mission_selected");
+		int missionIndex = selectedMission + _availListTop;
+
+		// Issue a new download request
+		gameLocal.m_MissionManager->StartDownloadingMissionDetails(missionIndex);
+
+		gui->HandleNamedEvent("onDownloadableMissionDetailsLoaded");
+	}
 	else if (cmd == "onStartDownload")
 	{
 		StartDownload(gui);
@@ -192,6 +285,108 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	{
 		// Let the GUI request another refresh of downloadable missions (with delay)
 		gui->HandleNamedEvent("QueueDownloadableMissionListRefresh");
+	}
+	else if (cmd == "onGetNextScreenshotForAvailableMission")
+	{
+		PerformScreenshotStep(gui, +1);
+		UpdateScreenshotItemVisibility(gui);
+	}
+	else if (cmd == "onGetPrevScreenshotForAvailableMission")
+	{
+		PerformScreenshotStep(gui, -1);
+		UpdateScreenshotItemVisibility(gui);
+	}
+}
+
+void CDownloadMenu::UpdateScreenshotItemVisibility(idUserInterface* gui)
+{
+	int selectedMission = gui->GetStateInt("av_mission_selected");
+	int missionIndex = selectedMission + _availListTop;
+
+	// Check if the screenshot is downloaded already
+	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+
+	assert(missionIndex >= 0 && missionIndex < missions.Num());
+
+	int numScreens = missions[missionIndex]->screenshots.Num();
+
+	gui->SetStateBool("av_no_screens_available", numScreens == 0);
+	gui->SetStateBool("av_mission_screenshot_prev_visible", numScreens > 1);
+	gui->SetStateBool("av_mission_screenshot_next_visible", numScreens > 1);
+}
+
+void CDownloadMenu::UpdateNextScreenshotData(idUserInterface* gui, int nextScreenshotNum)
+{
+	int selectedMission = gui->GetStateInt("av_mission_selected");
+	int missionIndex = selectedMission + _availListTop;
+
+	// Check if the screenshot is downloaded already
+	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+
+	assert(missionIndex >= 0 && missionIndex < missions.Num());
+
+	if (missions[missionIndex]->screenshots.Num() == 0)
+	{
+		return; // no screenshots for this mission
+	}
+
+	MissionScreenshot& screenshotInfo = *missions[missionIndex]->screenshots[nextScreenshotNum];
+
+	// Update the current screenshot number
+	gui->SetStateInt("av_mission_cur_screenshot_num", nextScreenshotNum);
+
+	// Load next screenshot path, remove image extension
+	idStr path = screenshotInfo.filename;
+	path.StripFileExtension();
+
+	gui->SetStateString("av_mission_next_screenshot", path);
+}
+
+void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
+{
+	int selectedMission = gui->GetStateInt("av_mission_selected");
+	int missionIndex = selectedMission + _availListTop;
+
+	// Check if the screenshot is downloaded already
+	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+
+	assert(missionIndex >= 0 && missionIndex < missions.Num());
+
+	int numScreens = missions[missionIndex]->screenshots.Num();
+
+	if (numScreens == 0)
+	{
+		return; // no screenshots for this mission
+	}
+
+	int curScreenNum = gui->GetStateInt("av_mission_cur_screenshot_num");
+	int nextScreenNum = (curScreenNum + step + numScreens) % numScreens; // ensure index is always positive
+
+	assert(nextScreenNum >= 0);
+
+	// Store the next number in the GUI
+	gui->SetStateInt("av_mission_next_screenshot_num", nextScreenNum);
+
+	if (nextScreenNum != curScreenNum || curScreenNum == 0)
+	{
+		MissionScreenshot& screenshotInfo = *missions[missionIndex]->screenshots[nextScreenNum];
+
+		if (screenshotInfo.filename.IsEmpty())
+		{
+			// No local file yet, start downloading it
+			gui->HandleNamedEvent("onStartDownloadingNextScreenshot");
+
+			// New request
+			gameLocal.m_MissionManager->StartDownloadingMissionScreenshot(missionIndex, nextScreenNum);
+		}
+		else
+		{
+			// Load data necessary to fade into the GUI
+			UpdateNextScreenshotData(gui, nextScreenNum);
+			
+			// There is a local file, this means we already downloaded that screenshot
+			gui->HandleNamedEvent("onStartFadeToNextScreenshot");
+		}
 	}
 }
 
@@ -227,6 +422,41 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 
 	// Let the download manager start its downloads
 	gameLocal.m_DownloadManager->ProcessDownloads();
+}
+
+void CDownloadMenu::UpdateMissionDetails(idUserInterface* gui)
+{
+	// Get the selected mission index
+	int selectedMission = gui->GetStateInt("av_mission_selected");
+	int missionIndex = selectedMission + _availListTop;
+
+	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+
+	if (missionIndex < 0 || missionIndex >= missions.Num())
+	{
+		return;
+	}
+
+	if (!missions[missionIndex]->detailsLoaded)
+	{
+		GuiMessage msg;
+		msg.type = GuiMessage::MSG_OK;
+		msg.okCmd = "close_msg_box";
+		msg.title = "Code Logic Error";
+		msg.message = "No mission details loaded.";
+
+		gameLocal.AddMainMenuMessage(msg);
+
+		return;
+	}
+
+	gui->SetStateString("av_mission_title", missions[missionIndex]->title);
+	gui->SetStateString("av_mission_author", missions[missionIndex]->author);
+	gui->SetStateString("av_mission_release_date", missions[missionIndex]->releaseDate);
+	gui->SetStateString("av_mission_version", va("%d", missions[missionIndex]->version));
+	gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex]->sizeMB));
+
+	gui->SetStateString("av_mission_description", missions[missionIndex]->description);
 }
 
 void CDownloadMenu::UpdateGUI(idUserInterface* gui)
@@ -304,6 +534,8 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 {
 	int numSelectedMissionsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
 
+	bool downloadsInProgress = false;
+
 	// Missions in the download queue
 	for (int i = 0; i < numSelectedMissionsPerPage; ++i)
 	{
@@ -343,6 +575,7 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 			break;
 		case CDownload::IN_PROGRESS:
 			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.0f%s", download->GetProgressFraction()*100, "% "));
+			downloadsInProgress = true;
 			break;
 		case CDownload::SUCCESS:
 			gui->SetStateString(va("dl_mission_progress_%d", i), "100% ");
@@ -350,16 +583,15 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 		};
 	}
 
-	bool previousValue = gui->GetStateBool("mission_download_in_progress");
-	bool newValue = gameLocal.m_DownloadManager->DownloadInProgress();
+	bool prevDownloadsInProgress = gui->GetStateBool("mission_download_in_progress");
+	
+	gui->SetStateBool("mission_download_in_progress", downloadsInProgress);
 
-	gui->SetStateBool("mission_download_in_progress", newValue);
-
-	if (previousValue != newValue)
+	if (prevDownloadsInProgress != downloadsInProgress)
 	{
 		gui->HandleNamedEvent("UpdateAvailableMissionColours");
 
-		if (newValue == false)
+		if (downloadsInProgress == false)
 		{
 			// Fire the "finished downloaded" event
 			ShowDownloadResult(gui);

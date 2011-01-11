@@ -25,11 +25,15 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace
 {
 	const char* const TMP_MISSION_LIST_FILENAME = "__missionlist.xml.temp";
+	const char* const TMP_MISSION_DETAILS_FILENAME = "__missiondetails.xml.temp";
+	const char* const TMP_MISSION_SCREENSHOT_FILENAME = "__missionscreenshot.temp";
 }
 
 CMissionManager::CMissionManager() :
 	_missionDB(new CMissionDB),
-	_refreshMissionListDownloadId(-1)
+	_refreshMissionListDownloadId(-1),
+	_missionDetailsDownloadId(-1),
+	_missionScreenshotDownloadId(-1)
 {}
 
 CMissionManager::~CMissionManager()
@@ -192,6 +196,15 @@ idStr CMissionManager::GetNewFoundMissionsText()
 
 		text += (text.IsEmpty()) ? "" : "\n";
 		text += info->displayName;
+
+		if (i == 1 && _newFoundMissions.Num() > 3)
+		{
+			// Truncate the text
+			int rest = _newFoundMissions.Num() - (i + 1);
+			text += va("\nAnd %d more mission%s.", rest, rest == 1 ? "" : "s");
+
+			break;
+		}
 	}
 
 	return text;
@@ -730,16 +743,14 @@ int CMissionManager::StartReloadDownloadableMissions()
 	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/available_missions.xml";
 	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php";
 
-	{
-		fs::path tempFilename = g_Global.GetDarkmodPath();
-		tempFilename /= TMP_MISSION_LIST_FILENAME;
+	fs::path tempFilename = g_Global.GetDarkmodPath();
+	tempFilename /= TMP_MISSION_LIST_FILENAME;
 
-		CDownloadPtr download(new CDownload(missionListUrls, tempFilename.file_string().c_str()));
+	CDownloadPtr download(new CDownload(missionListUrls, tempFilename.file_string().c_str()));
 
-		_refreshMissionListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+	_refreshMissionListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
 
-		return _refreshMissionListDownloadId;
-	}
+	return _refreshMissionListDownloadId;
 }
 
 bool CMissionManager::IsDownloadableMissionsRequestInProgress()
@@ -747,51 +758,35 @@ bool CMissionManager::IsDownloadableMissionsRequestInProgress()
 	return _refreshMissionListDownloadId != -1;
 }
 
-CMissionManager::MissionListDownloadStatus CMissionManager::ProcessReloadDownloadableMissionsRequest()
+CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableMissionsRequest()
 {
 	if (!IsDownloadableMissionsRequestInProgress()) 
 	{
-		return DOWNLOAD_NOT_IN_PROGRESS;
+		return NOT_IN_PROGRESS;
 	}
 
-	CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_refreshMissionListDownloadId);
-
-	if (download == NULL) return DOWNLOAD_NOT_IN_PROGRESS;
-
-	MissionListDownloadStatus status = DOWNLOAD_NOT_IN_PROGRESS;
-
-	switch (download->GetStatus())
-	{
-	case CDownload::NOT_STARTED_YET:	
-		status = DOWNLOAD_IN_PROGRESS;
-		break;
-
-	case CDownload::IN_PROGRESS:
-		status = DOWNLOAD_IN_PROGRESS;
-		break;
-
-	case CDownload::FAILED:
-		status = DOWNLOAD_FAILED;
-		break;
-
-	case CDownload::SUCCESS:
-		status = DOWNLOAD_SUCCESSFUL;
-		break;
-	};
+	RequestStatus status = GetRequestStatusForDownloadId(_refreshMissionListDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == DOWNLOAD_FAILED || status == DOWNLOAD_SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= TMP_MISSION_LIST_FILENAME;
 
-		if (status == DOWNLOAD_SUCCESSFUL)
+		if (status == SUCCESSFUL)
 		{
 			XmlDocumentPtr doc(new pugi::xml_document);
 		
-			doc->load_file(tempFilename.file_string().c_str());
-
-			LoadMissionListFromXml(doc);
+			pugi::xml_parse_result result = doc->load_file(tempFilename.file_string().c_str());
+			
+			if (result)
+			{
+				LoadMissionListFromXml(doc);
+			}
+			else
+			{
+				status = FAILED; 
+			}
 		}
 
 		// Remove the temporary file
@@ -803,6 +798,275 @@ CMissionManager::MissionListDownloadStatus CMissionManager::ProcessReloadDownloa
 	}
 
 	return status;
+}
+
+int CMissionManager::StartDownloadingMissionDetails(int missionNum)
+{
+	// Index out of bounds?
+	if (missionNum < 0 || missionNum >= _downloadableMissions.Num()) return -1;
+
+	// HTTP requests allowed?
+	if (gameLocal.m_HttpConnection == NULL) return -1;
+
+	const DownloadableMission& mission = *_downloadableMissions[missionNum];
+
+	idStr url = va("http://www.mindplaces.com/darkmod/missiondb/get_mission_details.php?id=%d", mission.id);
+
+	fs::path tempFilename = g_Global.GetDarkmodPath();
+	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
+
+	CDownloadPtr download(new CDownload(url, tempFilename.file_string().c_str()));
+
+	// Store the mission number in the download class
+	download->GetUserData().id = missionNum;
+
+	_missionDetailsDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+
+	return _missionDetailsDownloadId;
+}
+
+bool CMissionManager::IsMissionDetailsRequestInProgress()
+{
+	return _missionDetailsDownloadId != -1;
+}
+
+CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsRequest()
+{
+	if (!IsMissionDetailsRequestInProgress()) 
+	{
+		return NOT_IN_PROGRESS;
+	}
+
+	RequestStatus status = GetRequestStatusForDownloadId(_missionDetailsDownloadId);
+
+	// Clean up the result if the request is complete
+	if (status == FAILED || status == SUCCESSFUL)
+	{
+		fs::path tempFilename = g_Global.GetDarkmodPath();
+		tempFilename /= TMP_MISSION_DETAILS_FILENAME;
+
+		if (status == SUCCESSFUL)
+		{
+			XmlDocumentPtr doc(new pugi::xml_document);
+		
+			pugi::xml_parse_result result = doc->load_file(tempFilename.file_string().c_str());
+
+			if (result)
+			{
+				CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_missionDetailsDownloadId);
+				assert(download != NULL);
+
+				// Mission was stored as userdata in the download object
+				int missionNum = download->GetUserData().id;
+
+				LoadMissionDetailsFromXml(doc, missionNum);
+			}
+			else
+			{
+				// Failed to parse XML
+				status = FAILED; 
+			}
+		}
+
+		// Remove the temporary file
+		DoRemoveFile(tempFilename);
+
+		// Clear the download
+		gameLocal.m_DownloadManager->RemoveDownload(_missionDetailsDownloadId);
+		_missionDetailsDownloadId = -1;
+	}
+
+	return status;
+}
+
+bool CMissionManager::IsMissionScreenshotRequestInProgress()
+{
+	return _missionScreenshotDownloadId != -1;
+}
+
+int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int screenshotNum)
+{
+	assert(_missionScreenshotDownloadId == -1); // ensure no download is in progress when this is called
+
+	// Index out of bounds?
+	if (missionIndex < 0 || missionIndex >= _downloadableMissions.Num()) return -1;
+
+	// HTTP requests allowed?
+	if (gameLocal.m_HttpConnection == NULL) return -1;
+
+	const DownloadableMission& mission = *_downloadableMissions[missionIndex];
+
+	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
+
+	idStr url = va("http://www.mindplaces.com/%s", mission.screenshots[screenshotNum]->serverRelativeUrl.c_str());
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Downloading screenshot from %s\r", url.c_str());
+
+	fs::path tempFilename = g_Global.GetDarkmodPath();
+	tempFilename /= cv_tdm_fm_path.GetString();
+	tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
+
+	CDownloadPtr download(new CDownload(url, tempFilename.file_string().c_str()));
+
+	// Store the mission and screenshot number in the download class
+	download->GetUserData().id = missionIndex;
+	download->GetUserData().id2 = screenshotNum;
+
+	_missionScreenshotDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+
+	return _missionScreenshotDownloadId;
+}
+
+CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest()
+{
+	if (!IsMissionScreenshotRequestInProgress()) 
+	{
+		return NOT_IN_PROGRESS;
+	}
+
+	RequestStatus status = GetRequestStatusForDownloadId(_missionScreenshotDownloadId);
+
+	// Clean up the result if the request is complete
+	if (status == FAILED || status == SUCCESSFUL)
+	{
+		fs::path tempFilename = g_Global.GetDarkmodPath();
+		tempFilename /= cv_tdm_fm_path.GetString();
+		tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
+
+		if (status == SUCCESSFUL)
+		{
+			CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_missionScreenshotDownloadId);
+			assert(download != NULL);
+
+			// Mission was stored as userdata in the download object
+			int missionIndex = download->GetUserData().id;
+			int screenshotNum = download->GetUserData().id2;
+
+			assert(missionIndex >= 0 && missionIndex < _downloadableMissions.Num());
+
+			DownloadableMission& mission = *_downloadableMissions[missionIndex];
+
+			assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
+
+			// Open, convert and save the image
+			if (!ProcessMissionScreenshot(tempFilename, mission, screenshotNum))
+			{
+				gameLocal.Warning("Failed to process downloaded screenshot, mission %s, screenshot #%d", 
+					mission.modName.c_str(), screenshotNum);
+				DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Failed to process downloaded screenshot, mission %s, screenshot #%d\r", 
+					mission.modName.c_str(), screenshotNum);
+
+				status = FAILED;
+			}
+		}
+
+		// Remove the temporary file
+		DoRemoveFile(tempFilename);
+
+		// Clear the download
+		gameLocal.m_DownloadManager->RemoveDownload(_missionScreenshotDownloadId);
+		_missionScreenshotDownloadId = -1;
+	}
+
+	return status;
+}
+
+CMissionManager::RequestStatus CMissionManager::GetRequestStatusForDownloadId(int downloadId)
+{
+	CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(downloadId);
+
+	if (download == NULL) return NOT_IN_PROGRESS;
+
+	switch (download->GetStatus())
+	{
+	case CDownload::NOT_STARTED_YET:	
+		return IN_PROGRESS;
+
+	case CDownload::IN_PROGRESS:
+		return IN_PROGRESS;
+
+	case CDownload::FAILED:
+		return FAILED;
+
+	case CDownload::SUCCESS:
+		return SUCCESSFUL;
+
+	default: 
+		gameLocal.Printf("Unknown download status encountered in GetRequestStatusForDownloadId()\n");
+		return NOT_IN_PROGRESS;
+	};
+}
+
+void CMissionManager::LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int missionNum)
+{
+	assert(doc != NULL);
+
+	/* Example XML Snippet
+	
+	<?xml version="1.0"?>
+	<tdm>
+		<mission id="10">
+			<id>10</id>
+			<title>Trapped!</title>
+			<releaseDate>2009-12-30</releaseDate>
+			<size>6.3</size>
+			<version>1</version>
+			<internalName>trapped</internalName>
+			<author>RailGun</author>
+			<description>I was hired ...</description>
+			<downloadLocations>
+				<downloadLocation language="English" url="http://www.bloodgate.com/mirrors/tdm/pub/pk4/fms/trapped.pk4" />
+			</downloadLocations>
+			<screenshots>
+				<screenshot thumbpath="/darkmod/screenshots/tp2-1442_thumb.png" path="/darkmod/screenshots/tp2-1442.jpg" />
+				<screenshot thumbpath="/darkmod/screenshots/tp10317_thumb.png" path="/darkmod/screenshots/tp10317.jpg" />
+			</screenshots>
+		</mission>
+	</tdm>
+	
+	*/
+
+	pugi::xpath_node node = doc->select_single_node("//tdm/mission");
+	
+	assert(missionNum >= 0 && missionNum < _downloadableMissions.Num());
+
+	DownloadableMission& mission = *_downloadableMissions[missionNum];
+
+	mission.detailsLoaded = true;
+
+	// Description
+	mission.description = ReplaceXmlEntities(node.node().child("description").child_value());
+
+	// Screenshots
+	pugi::xpath_node_set nodes = doc->select_nodes("//tdm/mission/screenshots//screenshot");
+
+	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
+	{
+		pugi::xml_node node = i->node();
+
+		MissionScreenshotPtr screenshot(new MissionScreenshot);
+		screenshot->serverRelativeUrl = node.attribute("path").value();
+
+		int screenshotNum = mission.screenshots.Append(screenshot);
+
+		fs::path localPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum);
+
+		if (fs::exists(localPath))
+		{
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found existing local screenshot copy %s\r", localPath.file_string().c_str());
+
+			// File exists, store that in the screenshot filename
+			screenshot->filename = mission.GetLocalScreenshotPath(screenshotNum);
+		}
+	}
+}
+
+idStr CMissionManager::ReplaceXmlEntities(const idStr& input)
+{
+	idStr output = input;
+	output.Replace("&#13;&#10;", "\n");
+
+	return output;
 }
 
 void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
@@ -833,6 +1097,7 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 		// Remove articles from mission titles
 		CMissionInfo::MoveArticlesToBack(mission.title);
 
+		mission.id = node.attribute("id").as_int();
 		mission.sizeMB = node.attribute("size").as_float();
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();
@@ -904,10 +1169,52 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 
 void CMissionManager::SortDownloadableMissions()
 {
-	_downloadableMissions.Sort(DownloadableMission::SortCompare);
+	_downloadableMissions.Sort(DownloadableMission::SortCompareTitle);
 }
 
 const DownloadableMissionList& CMissionManager::GetDownloadableMissions() const
 {
 	return _downloadableMissions;
+}
+
+bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMission& mission, int screenshotNum)
+{
+	CImage image(tempFilename.file_string().c_str());
+	image.SetDefaultImageType(CImage::AUTO_DETECT);
+
+	if (!image.LoadImageFromFile(tempFilename))
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Failed to load image: %s\r", tempFilename.file_string().c_str());
+		return false;
+	}
+
+	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
+	
+	MissionScreenshot& screenshot = *mission.screenshots[screenshotNum];
+
+	// Build the target path
+	fs::path targetPath = GetDarkmodPath();
+	targetPath /= cv_tdm_fm_path.GetString();
+	targetPath /= TMP_MISSION_SCREENSHOT_FOLDER;
+
+	if (!fs::exists(targetPath))
+	{
+		fs::create_directories(targetPath);
+	}
+
+	targetPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum);
+	
+	// Save the file locally as JPEG
+	if (!image.SaveToFile(targetPath, CImage::JPG))
+	{
+		gameLocal.Printf("Could not save image to %s\n", targetPath.file_string().c_str());
+		return false;
+	}
+	else
+	{
+		// Store the filename into the screenshot object, this indicates it's ready for use
+		screenshot.filename = mission.GetLocalScreenshotPath(screenshotNum);
+	}
+
+	return true;
 }
