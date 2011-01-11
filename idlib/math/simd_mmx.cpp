@@ -15,8 +15,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Simd_Generic.h"
-#include "Simd_MMX.h"
+#include "simd_generic.h"
+#include "simd_mmx.h"
 
 
 //===============================================================
