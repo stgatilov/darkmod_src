@@ -491,7 +491,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 		{
 			// image based distribution
 			m_Classes[i].img = new CImage();
-			m_Classes[i].img->LoadImage( m_Classes[i].map );
+			m_Classes[i].img->LoadImageFromVfs( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
 		}
 
@@ -943,7 +943,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if ( ! LodeClass.map.IsEmpty())
 	{
 		LodeClass.img = new CImage();
-		LodeClass.img->LoadImage( LodeClass.map );
+		LodeClass.img->LoadImageFromVfs( LodeClass.map );
 		LodeClass.img->InitImageInfo();
 
 		gameLocal.Printf("LODE %s: Loaded %i x %i pixel image with %i bpp = %li bytes.\n", 

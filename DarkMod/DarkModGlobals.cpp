@@ -613,32 +613,50 @@ unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 	return(rc);
 }
 
-CImage::CImage(idStr const &Name)
-{
-	m_Name = Name;
-	m_Image = NULL;
-	m_BufferLength = 0L;
-	m_ImageId = (ILuint)-1;
-	m_Width = 0;
-	m_Height = 0;
-	m_Loaded = false;
-	m_Bpp = 0;
-}
+CImage::CImage() :
+	m_BufferLength(0L),
+	m_Image(NULL),
+	m_ImageId((ILuint)-1),
+	m_Loaded(false),
+	m_defaultImageType(IL_TGA),
+	m_Width(0),
+	m_Height(0),
+	m_Bpp(0)
+{}
 
-CImage::CImage(void)
-{
-	m_Image = NULL;
-	m_BufferLength = 0L;
-	m_ImageId = (ILuint)-1;
-	m_Width = 0;
-	m_Height = 0;
-	m_Loaded = false;
-	m_Bpp = 0;
-}
+CImage::CImage(const idStr& name) :
+	m_BufferLength(0L),
+	m_Image(NULL),
+	m_ImageId((ILuint)-1),
+	m_Loaded(false),
+	m_defaultImageType(IL_TGA),
+	m_Name(name),
+	m_Width(0),
+	m_Height(0),
+	m_Bpp(0)
+{}
 
 CImage::~CImage(void)
 {
 	Unload(true);
+}
+
+void CImage::SetDefaultImageType(CImage::Type type)
+{
+	m_defaultImageType = GetILTypeForImageType(type);
+}
+
+ILenum CImage::GetILTypeForImageType(Type type)
+{
+	switch (type)
+	{
+	case AUTO_DETECT:	return IL_TYPE_UNKNOWN;
+	case TGA:			return IL_TGA;
+	case PNG:			return IL_PNG;
+	case JPG:			return IL_JPG;
+	case GIF:			return IL_GIF;
+	default:			return IL_TYPE_UNKNOWN;
+	};
 }
 
 void CImage::Unload(bool FreeMemory)
@@ -674,9 +692,7 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 			
 #ifdef _DEBUG
 			// For debugging
-			for (int i=0; i<DARKMOD_LG_RENDERPIPE_BUFSIZE; i++) {
-				pipe_buf[i] = 42;
-			}
+			memset(pipe_buf, 42, BufLen);
 #endif
 			
 			pipe->Read(pipe_buf, &BufLen);
@@ -709,18 +725,18 @@ Quit:
 	return rc;
 }
 
-bool CImage::LoadImage(const char *Filename)
+bool CImage::LoadImageFromVfs(const char* filename)
 {
 	bool rc = false;
 	idFile *fl = NULL;
 
-	if(Filename != NULL)
+	if (filename != NULL)
 	{
 		Unload(false);
-		m_Name = Filename;
+		m_Name = filename;
 	}
 
-	if(m_Loaded == false)
+	if (m_Loaded == false)
 	{
 		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
 		{
@@ -739,6 +755,8 @@ bool CImage::LoadImage(const char *Filename)
 
 		InitImageInfo();
 		m_Loaded = true;
+
+		rc = true;
 //		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
 	}
 
@@ -752,42 +770,122 @@ Quit:
 	return rc;
 }
 
-void CImage::InitImageInfo(void)
+bool CImage::LoadImageFromFile(const fs::path& path)
+{
+	if (!fs::exists(path))
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", path.file_string().c_str());
+		return false;
+	}
+
+	m_Name = path.file_string().c_str();
+
+	if (!m_Loaded)
+	{
+		// Load the image into memory
+		unsigned long length = static_cast<unsigned long>(fs::file_size(path));
+
+		if (length != m_BufferLength)
+		{
+			// Free the old buffer first
+			Unload(true);
+
+			m_BufferLength = length;
+
+			// Re-allocate to match buffer size
+			m_Image = new unsigned char[m_BufferLength];
+
+			if (m_Image == NULL)
+			{
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+				return false;
+			}
+		}
+
+		// Read into buffer
+		FILE* fh = fopen(path.file_string().c_str(), "rb");
+
+		fread(m_Image, 1, m_BufferLength, fh);
+
+		fclose(fh);
+
+		InitImageInfo();
+		m_Loaded = true;
+	}
+
+	return true;
+}
+
+void CImage::InitImageInfo()
 {
 	ilGenImages(1, &m_ImageId);
 	ilBindImage(m_ImageId);
 
-	if(ilLoadL(IL_TGA, m_Image, m_BufferLength) == IL_FALSE)
+	if (ilLoadL(m_defaultImageType, m_Image, m_BufferLength) == IL_FALSE)
 	{
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error while loading image [%s]\r", m_Name.c_str());
-		goto Quit;
+		return;
 	}
 
 	m_Width = ilGetInteger(IL_IMAGE_WIDTH);
 	m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
 	m_Bpp = ilGetInteger(IL_IMAGE_BPP);
-
-Quit:
-	return;
 }
 
-unsigned long CImage::GetBufferLen(void)
+unsigned long CImage::GetBufferLen()
 {
 	return m_BufferLength;
 }
 
-unsigned char *CImage::GetImage(void)
+unsigned char* CImage::GetImage()
 {
-	unsigned char *rc = NULL;
-
-	if(m_Loaded == true && m_Image != NULL)
+	if (m_Loaded && m_Image != NULL)
 	{
 		ilBindImage(m_ImageId);
-		ilLoadL(IL_TGA, m_Image, m_BufferLength);
-		rc = (unsigned char *)ilGetData();
+		ilLoadL(m_defaultImageType, m_Image, m_BufferLength);
+
+		return static_cast<unsigned char*>(ilGetData());
 	}
 
-	return rc;
+	return NULL;
+}
+
+bool CImage::SaveToFile(const fs::path& path, Type type)
+{
+	if (!m_Loaded) 
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image before loading data (%s).\r", path.file_string().c_str());
+		return false;
+	}
+	else if (m_Loaded && m_ImageId == (ILuint)-1 && m_Image != NULL)
+	{
+		// Ensure buffer is bound to devIL
+		ilBindImage(m_ImageId);
+		ilLoadL(m_defaultImageType, m_Image, m_BufferLength);
+	}
+
+	// Overwrite option
+	ilEnable(IL_FILE_OVERWRITE);
+
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Saving image to path: %s, type %d.\r", path.file_string().c_str(), type);
+
+	// devIL wants to have a non-const char* pointer, wtf?
+	char filename[1024];
+
+	if (path.file_string().size() > sizeof(filename))
+	{
+		return false;
+	}
+
+	strcpy(filename, path.file_string().c_str());
+
+	if (!ilSave(GetILTypeForImageType(type), filename))
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not save image to path %s (type %d): error message %s.\r", path.file_string().c_str(), type, ilGetString(ilGetError()));
+		return false;
+	}
+
+	return true;
 }
 
 void DM_Printf(const char* fmt, ...)
