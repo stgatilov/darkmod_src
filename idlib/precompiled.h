@@ -56,6 +56,7 @@
 #include <malloc.h>							// no malloc.h on mac or unix
 
 #define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
+#define NOMINMAX
 #include <windows.h>						// for qgl.h
 #undef FindText								// stupid namespace poluting Microsoft monkeys
 

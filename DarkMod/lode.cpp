@@ -497,7 +497,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			// image based distribution
 			// TODO: Do we really need the image at this point?
 			m_Classes[i].img = new CImage();
-			m_Classes[i].img->LoadImage( m_Classes[i].map );
+			m_Classes[i].img->LoadImageFromVfs( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
 		}
 
@@ -968,7 +968,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		gameLocal.Printf("LODE %s: Trying to load %s.\n", GetName(), mapName.c_str() );
 
 		// TODO: If the map name does not end in .tga or .png, try .png first
-		LodeClass.img->LoadImage( mapName );
+		LodeClass.img->LoadImageFromVfs( mapName );
 		LodeClass.img->InitImageInfo();
 
 		unsigned char *imgData = LodeClass.img->GetImage();
@@ -1188,7 +1188,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// consisting of a flat plane get 0 as size:
 //	gameLocal.Printf( "LODE %s: size %0.2f x %0.2f.\n", GetName(), fmax( 0.1, LodeClass.size.x), fmax( 0.1, LodeClass.size.y ) );
 
-	float size = (fmax( 0.1, LodeClass.size.x) + LodeClass.spacing) * (fmax( 0.1, LodeClass.size.y) + LodeClass.spacing);
+	float size = (std::max(0.1f, LodeClass.size.x) + LodeClass.spacing) * (std::max( 0.1f, LodeClass.size.y) + LodeClass.spacing);
 
 	// if falloff != none, correct the density, because the ellipse-shape is smaller then the rectangle
 	if ( LodeClass.falloff >= 1 && LodeClass.falloff <= 3)
