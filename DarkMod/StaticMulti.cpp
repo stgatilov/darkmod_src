@@ -8,7 +8,7 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010 Tels (Donated to The Dark Mod Team)
+// Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 /*
    StaticMulti - a variant of func_static that can use a idPhys_StaticMulti
@@ -80,6 +80,8 @@ CStaticMulti::~CStaticMulti()
 	// make sure the render entity is freed before the model is freed
 	FreeModelDef();
 	renderModelManager->FreeModel( renderEntity.hModel );
+	// need this to avoid crashes due to double-free
+	renderEntity.hModel = NULL;
 }
 
 /*
@@ -136,6 +138,7 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 {
 	active = true;
 
+	/* ptr to the shared data structure */
 	m_LOD = LOD;
 
 	m_Offsets = offsets;
