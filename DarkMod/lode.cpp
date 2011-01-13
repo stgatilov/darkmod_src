@@ -28,12 +28,12 @@ TODO: add "watch_models" (or "combine_models"?) so the mapper can place models a
 	  then use the modelgenerator to combine them into one big rendermodel. The current
 	  way of targeting and using "watch_brethren" does get all "func_static" as it is
 	  classname based, not model name based.
-TODO: add spawnarg-based scaling factor and offset to image-maps
 
 Optimizations:
 
 TODO: Load image maps only once, then share their data. Alternatively, free the image
 	  data after creating the entities.
+	  And don't restore the image in Restore() as we do no longer need it.
 TODO: Make the max-combine-distance setting depending on the LOD stages, if the model
 	  has none + hide, or none and no hide, we can use a bigger distance because the
 	  rendermodel will be less often (or never) be rebuild. Also benchmark wether
@@ -55,6 +55,8 @@ TODO: Sort all the generated entities into multiple lists, keyed on a hash-key t
 	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
 	  Then only look at entities from one list when combining, this will reduce the
 	  O(N*N) to something like O( (N/X)*(N/X) ) where X is the set of combinable entities.
+TODO: Use a point (at least for nonsolids or vegetation?) instead of a box when determining
+	  the underlying material/placement - this could be much faster.
 */
 
 #include "../idlib/precompiled.h"
@@ -272,7 +274,14 @@ void Lode::Save( idSaveGame *savefile ) const {
 		}
 		// image based distribution
 		savefile->WriteString( m_Classes[i].map );
-		savefile->WriteBool( m_Classes[i].map_invert );
+		if (!m_Classes[i].map.IsEmpty())
+		{
+			savefile->WriteBool( m_Classes[i].map_invert );
+			savefile->WriteFloat( m_Classes[i].map_scale_x );
+			savefile->WriteFloat( m_Classes[i].map_scale_y );
+			savefile->WriteFloat( m_Classes[i].map_ofs_x );
+			savefile->WriteFloat( m_Classes[i].map_ofs_y );
+		}
 
 		// only write the rendermodel if it is used
 		if ( NULL != m_Classes[i].hModel)
@@ -490,15 +499,26 @@ void Lode::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( m_Classes[i].func_a );
 		}
 		savefile->ReadString( m_Classes[i].map );
-		savefile->ReadBool( m_Classes[i].map_invert );
+		m_Classes[i].map_invert = false;
+		m_Classes[i].map_scale_x = 1.0f;
+		m_Classes[i].map_scale_y = 1.0f;
+		m_Classes[i].map_ofs_x = 0.0f;
+		m_Classes[i].map_ofs_y = 0.0f;
 		m_Classes[i].img = NULL;
 	    if (!m_Classes[i].map.IsEmpty())
 		{
 			// image based distribution
 			// TODO: Do we really need the image at this point?
 			m_Classes[i].img = new CImage();
+			m_Classes[i].img->SetDefaultImageType(CImage::AUTO_DETECT);
 			m_Classes[i].img->LoadImageFromVfs( m_Classes[i].map );
 			m_Classes[i].img->InitImageInfo();
+
+			savefile->ReadBool( m_Classes[i].map_invert );
+			savefile->ReadFloat( m_Classes[i].map_scale_x );
+			savefile->ReadFloat( m_Classes[i].map_scale_y );
+			savefile->ReadFloat( m_Classes[i].map_ofs_x );
+			savefile->ReadFloat( m_Classes[i].map_ofs_y );
 		}
 
 		savefile->ReadBool( bHaveModel );
@@ -952,12 +972,43 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.map = ent->spawnArgs.GetString( "lode_map", spawnArgs.GetString( "map", "") );
 	LodeClass.img = NULL;
 	LodeClass.map_invert = false;
-	// starts with "textures" => image based map
+	LodeClass.map_scale_x = 1.0f;
+	LodeClass.map_scale_y = 1.0f;
+	LodeClass.map_ofs_x = 0.0f;
+	LodeClass.map_ofs_y = 0.0f;
+	// not empty => image based map
 	if ( ! LodeClass.map.IsEmpty())
 	{
 	    LodeClass.map_invert = ent->spawnArgs.GetBool( "lode_map_invert", spawnArgs.GetString( "map_invert", "0") );
 
+		LodeClass.map_scale_x = 
+			ent->spawnArgs.GetFloat( "lode_map_scale_x", 
+					ent->spawnArgs.GetString( "lode_map_scale",			// if lode_map_scale_x is not set, try "lode_map_scale"
+					   	spawnArgs.GetString( "map_scale_x",				// and if that isn't set either, try map_scale_x
+						   	spawnArgs.GetString( "map_scale",			// and if that isn't set either, try map_scale
+						   	"1.0" ) ) ) );								// finally fallback to 1.0
+		LodeClass.map_scale_y = 
+			ent->spawnArgs.GetFloat( "lode_map_scale_y", 
+					ent->spawnArgs.GetString( "lode_map_scale",			// if lode_map_scale_y is not set, try "lode_map_scale"
+					   	spawnArgs.GetString( "map_scale_y",				// and if that isn't set either, try LODE::map_scale_y
+						   	spawnArgs.GetString( "map_scale",			// and if that isn't set either, try LODE::map_scale
+						   	"1.0" ) ) ) );								// finally fallback to 1.0
+		LodeClass.map_ofs_x = 
+			ent->spawnArgs.GetFloat( "lode_map_ofs_x", 
+					ent->spawnArgs.GetString( "lode_map_ofs",			// if lode_map_scale_x is not set, try "lode_map_ofs"
+					   	spawnArgs.GetString( "map_ofs_x",				// and if that isn't set either, try LODE::map_scale_x
+						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try LODE::map_scale
+						   	"0" ) ) ) );								// finally fallback to 0
+		LodeClass.map_ofs_y = 
+			ent->spawnArgs.GetFloat( "lode_map_ofs_y", 
+					ent->spawnArgs.GetString( "lode_map_ofs",			// if lode_map_scale_y is not set, try "lode_map_ofs"
+					   	spawnArgs.GetString( "map_ofs_y",				// and if that isn't set either, try LODE::map_scale_y
+						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try LODE::map_scale
+						   	"0" ) ) ) );								// finally fallback to 0
+
 		LodeClass.img = new CImage();
+		// need this to load PNG and JPG
+		LodeClass.img->SetDefaultImageType(CImage::AUTO_DETECT);
 
 		// If the map name does not start with "textures/lode/", prepend it:
 		idStr mapName = LodeClass.map;
@@ -965,16 +1016,49 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		{
 			mapName = "textures/lode/" + LodeClass.map;
 		}
-		gameLocal.Printf("LODE %s: Trying to load %s.\n", GetName(), mapName.c_str() );
 
-		// TODO: If the map name does not end in .tga or .png, try .png first
+		// try to find PNG, TGA or JPG version
+		idFile *fl = NULL;
+		if((fl = fileSystem->OpenFileRead(mapName)) == NULL)
+		{
+			//gameLocal.Warning("LODE %s: Could not find %s, trying .png next.\n", GetName(), mapName.c_str() );
+			idStr m = mapName + ".png";
+			if((fl = fileSystem->OpenFileRead(m)) == NULL)
+			{
+				//gameLocal.Warning("LODE %s: Could not find %s, trying .tga next.\n", GetName(), m.c_str() );
+				// can't find PNG, try TGA
+				m = mapName + ".tga";
+				if((fl = fileSystem->OpenFileRead(m)) == NULL)
+				{
+					// gameLocal.Warning("LODE %s: Could not find %s, trying .jpg next.\n", GetName(), m.c_str() );
+					// can't find TGA, try JPG as last resort
+					mapName += ".jpg";
+				}
+				else
+				{
+					mapName += ".tga";
+				}
+			}
+			else
+			{
+				// use PNG
+				mapName += ".png";
+			}
+
+		}
+		if (fl)
+		{
+			fileSystem->CloseFile(fl);
+		}
+
+		gameLocal.Warning("LODE %s: Trying to load %s.\n", GetName(), mapName.c_str() );
 		LodeClass.img->LoadImageFromVfs( mapName );
 		LodeClass.img->InitImageInfo();
 
 		unsigned char *imgData = LodeClass.img->GetImage();
 		if (!imgData)
 		{
-			gameLocal.Error("LODE %s: Could not access image data.\n", GetName() );
+			gameLocal.Error("LODE %s: Could not access image data from %s.\n", GetName(), mapName.c_str() );
 		}
 
 		if (LodeClass.img->m_Bpp != 1)
@@ -988,11 +1072,21 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 		int w = LodeClass.img->m_Width;
 		int h = LodeClass.img->m_Height;
+		double wd = LodeClass.img->m_Width;
+		double hd = LodeClass.img->m_Height;
+		double xo = LodeClass.img->m_Width * LodeClass.map_ofs_x;
+		double yo = LodeClass.img->m_Width * LodeClass.map_ofs_y;
+		double xs = LodeClass.map_scale_x;
+		double ys = LodeClass.map_scale_y;
 		for (int x = 0; x < w; x++)
 		{
 			for (int y = 0; y < h; y++)
 			{
-				fImgDensity += (float)imgData[ w * y + x];	// 0 .. 255
+				// compute X and Y based on scaling/offset
+				// first fmod => -w .. +w => +w => 0 .. 2 * w => fmod => 0 .. w
+				int x1 = fmod( fmod( x * xs + xo, wd ) + wd, wd);
+				int y1 = fmod( fmod( y * ys + yo, hd ) + hd, hd);
+				fImgDensity += (float)imgData[ w * y1 + x1 ];	// 0 .. 255
 			}
 		}
 		// divide the sum by W and H and 256 so we arrive at 0 .. 1.0
@@ -1032,12 +1126,23 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	}
 	// set rotation of entity to 0, so we get the unrotated bounds size
 	ent->SetAxis( mat3_identity );
+
+	// TODO: in case the entity is non-solid, this ends up as 0x0, try to find the size.
 	LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
 
-	if (LodeClass.size.x == 0)
+	// in case the size is something like 8x0 (a single flat poly) or 0x0 (no clipmodel):
+	float fMin = 1.0f;
+	if (LodeClass.size.x < 0.001f)
 	{
-			gameLocal.Warning( "LODE %s: Size == 0 for class.\n", GetName() );
+		gameLocal.Warning( "LODE %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		LodeClass.size.x = std::max(fMin, LodeClass.size.x);
 	}
+	if (LodeClass.size.y < 0.001f)
+	{
+		gameLocal.Warning( "LODE %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		LodeClass.size.y = std::max(fMin, LodeClass.size.y);
+	}
+
 	// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
 	// TODO: use a projection along the "floor-normal"
 	// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
@@ -1067,14 +1172,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	float has_lod = ParseLODSpawnargs( dict, 1.0f );
 
 	if (has_lod)
-		{
+	{
 		// Store m_LOD at the class
 		LodeClass.m_LOD = m_LOD;
-		}
+	}
 	else
-		{
+	{
 		LodeClass.m_LOD = NULL;
-		}
+	}
 	m_LOD = NULL;				// prevent double free (and LODE doesn't have LOD)
 	LodeClass.materials.Clear();
 
@@ -1083,7 +1188,8 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	// all probabilities for the different materials
 	kv = ent->spawnArgs.MatchPrefix( "lode_material_", NULL );
-	while( kv ) {
+	while( kv )
+   	{
 		// "lode_material_grass" => "grass"
 		LodeMaterial.name = kv->GetKey().Mid( 14, kv->GetKey().Length() - 14 );
 		// "lode_material_grass" "1.0" => 1.0
@@ -1200,15 +1306,17 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	}
 	// TODO: take into account inhibitors (these should reduce the density)
 
-	// scale the per-class size by the per-class density
-	float fDensity = ent->spawnArgs.GetFloat( "lode_density", "1.0" );
-	if (fDensity <= 0.0001)
-	{
-		fDensity = 0.0001;
-	}
-//	gameLocal.Printf( "LODE %s: Scaling class size by %0.2f.\n", GetName(), fDensity);
+	// minimum density values
+	fMin = 0.000001f;
 
-	return ( size / fImgDensity ) / fDensity;
+	// scale the per-class size by the per-class density
+	float fDensity = std::max( fMin, ent->spawnArgs.GetFloat( "lode_density", "1.0" ) );
+	// scale the per-class size by the per-class density multiplied by the base density
+	float fBaseDensity = std::max( fMin, ent->spawnArgs.GetFloat( "lode_base_density", "1.0" ) );
+
+//	gameLocal.Printf( "LODE %s: Scaling class size by %0.4f (0.6f * 0.6f).\n", GetName(), fDensity*fBaseDensity, fDensity, fBaseDensity);
+
+	return ( size / fImgDensity ) / (fDensity * fBaseDensity);
 }
 
 /*
@@ -1888,8 +1996,13 @@ void Lode::PrepareEntities( void )
 				{
 					// compute the pixel we need to query
 					// TODO: add spawnarg-based scaling factor and offset here
-					float x = (LodeEntity.origin.x / size.x) + 0.5f;		// 0 .. 1.0
-					float y = (LodeEntity.origin.y / size.y) + 0.5f;		// 0 .. 1.0
+					float x = m_Classes[i].map_scale_x * (LodeEntity.origin.x / size.x) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
+					float y = m_Classes[i].map_scale_y * (LodeEntity.origin.y / size.y) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
+
+					// if n < 0 or n > 1.0: map back into range 0..1.0
+					// second fmod() is for handling negative numbers
+					x = fmod( fmod(x, 1.0f) + 1.0, 1.0);
+					y = fmod( fmod(y, 1.0f) + 1.0, 1.0);
 
 					// 1 - x to correct for top-left images
 					int px = (1.0f - x) * m_Classes[i].img->m_Width;		// 0 .. w (f.i. 0 .. 1024)
@@ -1898,6 +2011,7 @@ void Lode::PrepareEntities( void )
 					// calculate the correct offset
 					//int ofs = m_Classes[i].img->m_Bpp * (py * m_Classes[i].img->m_Height + px);
 					// Bpp is 1
+
 					int ofs = (py * m_Classes[i].img->m_Height + px);
 
 					unsigned char *imgData = m_Classes[i].img->GetImage();

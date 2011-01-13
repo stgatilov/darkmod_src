@@ -141,6 +141,10 @@ struct lode_class_t {
 	idStr					map;			//!< name of the image map (greyscale 8-bit TGA)
 	CImage*					img;			//!< if map != "": ptr to the distribution image map
 	bool					map_invert;		//!< if map != "": should the image map be inverted?
+	float					map_scale_x;	//!< if map != "": scale the map in x direction
+	float					map_scale_y;	//!< if map != "": scale the map in y direction
+	float					map_ofs_x;		//!< x offset for the map (0..1.0)
+	float					map_ofs_y;		//!< y offset for the map (0..1.0)
 
 	float					z_min;			// depends on z_invert
 	float					z_max;			// depends on z_invert
