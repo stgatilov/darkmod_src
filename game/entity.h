@@ -284,6 +284,7 @@ public:
 	**/
 	int					m_preHideContents;
 	int					m_preHideClipMask;
+
 	/**
 	* Entity contents may be overwritten by a custom contents spawnarg
 	* Store it here to keep track of it, because derived classes can
@@ -1318,6 +1319,9 @@ protected:
 	int						modelDefHandle;				//!< handle to static renderer model
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
+
+	/* Tels: The origin is nec. for LOD computation, as an hidden entity has "0,0,0" as origin */
+	idVec3					m_preHideOrigin;
 
 	/**
 	* List storing attachment data for each attachment

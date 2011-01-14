@@ -703,6 +703,8 @@ idEntity::idEntity()
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
 
+	m_preHideOrigin			= idVec3(0,0,0);	// Tels: Only used if entity is hidden
+
 	physics			= NULL;
 	bindMaster		= NULL;
 	bindJoint		= INVALID_JOINT;
@@ -806,7 +808,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	m_DistCheckTimeStamp = 0;
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	if (d == 0 || fHideDistance < 0.1f)
+	if (d == 0 && fHideDistance < 0.1f)
 	{
 		// no LOD wanted
 		return false;
@@ -815,7 +817,8 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// allocate new memory
 	m_LOD = new lod_data_t;
 
-	m_LOD->DistCheckInterval = d;
+	// if interval not set, use twice per second
+	m_LOD->DistCheckInterval = d == 0 ? 500 : d;
 
 	m_SkinLODCur = 0;
 	m_ModelLODCur = 0;
@@ -885,7 +888,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 			//gameLocal.Printf (" %s: lod_fadeout_range %0.2f lod_fadein_range %0.2f.\n", GetName(), m_LOD->fLODFadeOutRange, m_LOD->fLODFadeInRange);
 		}
 
-		//gameLocal.Printf (" %s: init LOD %i m_LOD->DistLODSq=%f\n", GetName(), i, m_LOD->DistLODSq[i]); 
+//		gameLocal.Printf (" %s: init LOD %i m_LOD->DistLODSq=%f\n", GetName(), i, m_LOD->DistLODSq[i]); 
 
 		if (i > 0 && m_LOD->DistLODSq[i] > 0 && (m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i]) < m_LOD->DistLODSq[i-1])
 		{
@@ -1408,6 +1411,11 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		}
 		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
 		savefile->WriteFloat( m_LOD->fLODFadeInRange );
+
+		if (fl.hidden)
+		{
+			savefile->WriteVec3( m_preHideOrigin );
+		}
 	}
 	else
 	{
@@ -1653,6 +1661,7 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_DistCheckTimeStamp );
 
+	m_preHideOrigin = idVec3(0,0,0);
 	if ( m_DistCheckTimeStamp > 0)
 	{
 		/* Tels: Only read the LOD data if we are distance dependent */
@@ -1675,6 +1684,10 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 		}
 		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
 		savefile->ReadFloat( m_LOD->fLODFadeInRange );
+		if (fl.hidden)
+		{
+			savefile->ReadVec3( m_preHideOrigin );
+		}
 	}
 }
 
@@ -2054,11 +2067,13 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// by default fully visible
 	float fAlpha = 1.0f;
 
-//	gameLocal.Warning("ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", m_LOD, deltaSq);
+//	gameLocal.Warning("\n%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
 
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
+//		gameLocal.Printf ("%s considering LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
+
 		// skip this level (but not the first)
 		if (m_LOD->DistLODSq[i] <= 0 && i > 0)
 		{
@@ -2125,16 +2140,20 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 					}
 					m_LODLevel = i;
 	
+//					gameLocal.Printf (" %s returning LOD level %i, fAlpha = %0.2f", GetName(), i, fAlpha);
+
 					// early out, we found the right level and switched
 					return fAlpha;
 				}
 			}
 		}
 
-//		gameLocal.Printf ("%s passed LOD %i distance check %f (%f), inside?: %i (old level %i)\n", GetName(), i, m_LOD->DistLODSq[i], deltaSq, bWithinDist, m_LODLevel);
+//		gameLocal.Printf (" %s passed LOD %i distance check %f (%f), inside?: %i (old level %i, prel. alpha %0.2f)\n",
+//				GetName(), i, m_LOD->DistLODSq[i], deltaSq, bWithinDist, m_LODLevel, fAlpha);
 
-		// don't do anything when we are already at that level
-		if ( bWithinDist && m_LODLevel != i)
+		// do this even if we are already in the same level 
+		// && m_LODLevel != i)
+		if ( bWithinDist )
 		{
 			m_LODLevel = i;
 
@@ -2163,12 +2182,16 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 				fAlpha = 1.0f;	// show
 			}
 
-			// We found the right level and wil switch to it
+//			gameLocal.Printf (" %s returning LOD level %i, fAlpha = %0.2f (step 2)", GetName(), i, fAlpha);
+
+			// We found the right level and will switch to it
 			return fAlpha;
 		}
 
 	// end for all LOD levels
 	}
+
+//	gameLocal.Warning("%s: ThinkAboutLOD fall out of lod levels, using fAlpha = 1.0f", GetName() );
 
 	return fAlpha;
 }
@@ -2247,6 +2270,7 @@ void idEntity::Think( void )
 	if ( (thinkFlags & TH_PHYSICS) && m_FrobBox ) 
 	{
 		// update trigger position
+		// TODO: Tels: What about hidden entities, these would use (0,0,0) as origin here?
 		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
 
@@ -2263,7 +2287,14 @@ void idEntity::Think( void )
 
 		m_DistCheckTimeStamp = gameLocal.time;
 
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+		// if the entity is hidden, GetPhysics()->GetOrigin() == "0,0,0", so we cannot use it
+		idVec3 origin = fl.hidden ? m_preHideOrigin : GetPhysics()->GetOrigin();
+
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - origin;
+
+//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i",
+//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval );
+
 		if( m_LOD->bDistCheckXYOnly )
 		{
 			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
@@ -2863,8 +2894,11 @@ void idEntity::Hide( void )
 	{
 		fl.hidden = true;
 
-		m_preHideContents = GetPhysics()->GetContents();
-		m_preHideClipMask = GetPhysics()->GetClipMask();
+		idPhysics* p = GetPhysics();
+
+		m_preHideOrigin = p->GetOrigin();		// Tels: Store this for LOD computations
+		m_preHideContents = p->GetContents();
+		m_preHideClipMask = p->GetClipMask();
 
 		if( m_FrobBox )
 			m_FrobBox->SetContents(0);
