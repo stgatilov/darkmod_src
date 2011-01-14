@@ -327,6 +327,8 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 		int soldItem = gui->GetStateInt("soldItem", "0");
 		SellItem(soldItem);
 		UpdateGUI(gui);
+
+		gui->HandleNamedEvent("UpdateItemColoursForSale");
 	}
 	else if (idStr::Icmp(menuCommand, "shopDrop") == 0)
 	{

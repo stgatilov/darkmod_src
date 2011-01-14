@@ -2146,10 +2146,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\README.txt"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\Relations.cpp"
 					>
 				</File>
