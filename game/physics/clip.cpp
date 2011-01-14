@@ -772,7 +772,7 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 		}
 
 		if ( parms.count >= parms.maxCount ) {
-			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count" );
+			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count (%i) reached", parms.maxCount );
 			return;
 		}
 
@@ -831,7 +831,7 @@ int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idE
 		}
 		if ( j >= entCount ) {
 			if ( entCount >= maxCount ) {
-				gameLocal.Warning( "idClip::EntitiesTouchingBounds: max count" );
+				gameLocal.Warning( "idClip::EntitiesTouchingBounds: max count (%i) reached.", maxCount );
 				return entCount;
 			}
 			entityList[entCount] = clipModelList[i]->entity;
