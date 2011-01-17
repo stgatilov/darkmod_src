@@ -39,6 +39,9 @@ public:
 
 		// Add some custom examples
 		TraceLog::WriteLine(LOG_STANDARD, "");
+		TraceLog::WriteLine(LOG_STANDARD, "Command: --create-manifest --darkmoddir=c:/games/doom3/darkmod [--release-name=darkmod]");
+		TraceLog::WriteLine(LOG_STANDARD, " The parameter 'darkmoddir' is mandatory, the optional --release-name parameter specifies the name of the package (defaults to 'darkmod').");
+		TraceLog::WriteLine(LOG_STANDARD, "");
 		TraceLog::WriteLine(LOG_STANDARD, "Command: --create-update-package");
 		TraceLog::WriteLine(LOG_STANDARD, " The parameters 'basedir', 'headdir', 'baseversion', 'headversion' and 'outputdir' are mandatory.");
 		TraceLog::WriteLine(LOG_STANDARD, "");
@@ -73,6 +76,7 @@ private:
 	{
 		// Get options from command line
 		_desc.add_options()
+			("create-manifest", "Create a list of files to be released, needs the darkmod SVN folder as argument.\n")
 			("create-package", "Create a full release package, needs outputdir and darkmoddir as argument.\n")
 			("create-update-package", "Create an update package, containing the difference between a defined base and head PK4 set.\n")
 			("create-crc-info", "Create a crc_info.txt file for the release set in the given basedir.\n")
@@ -85,7 +89,9 @@ private:
 			("basedir", bpo::value<std::string>(), "The folder containing the 'old' or base PK4 set.\ne.g. --basedir=c:\\temp\\darkmod1.02\n")
 			("baseversion", bpo::value<std::string>(), "The version number of the base PK4 set, e.g. '1.02'\n")
 			("headdir", bpo::value<std::string>(), "The folder containing the 'new' or head PK4 set.\ne.g. --headdir=c:\\temp\\darkmod1.03\n")
+			("release-name", bpo::value<std::string>()->default_value("darkmod"), "The name of the release package to generate the manifest for, e.g. --release-name=saintlucia \n")
 			("headversion", bpo::value<std::string>(), "The version number of the head PK4 set, e.g. '1.03'\n")
+			("allow-unversioned-files", "Skips the 'is under SVN version control' check when creating the manifest (use this only if you actually exported your SVN working copy for packaging.)\n")
 			("help", "Display this help page")
 			;
 	}

@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)/bin"
-			IntermediateDirectory="$(SolutionDir)/Build/$(ProjectName)/$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin"
+			IntermediateDirectory="$(SolutionDir)Build/$(ProjectName)/$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
 			>
@@ -49,7 +49,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
-				DisableSpecificWarnings="4355"
+				DisableSpecificWarnings="4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libtdm_update.lib ZipLoader.lib WS2_32.lib"
+				AdditionalDependencies="libtdm_update.lib ZipLoader.lib WS2_32.lib libsvn_client-1.lib libapr-1.lib libsvn_subr-1.lib libsvn_fs_fs-1.lib libsvn_fs_base-1.lib libsvn_fs-1.lib libsvn_wc-1.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;;&quot;$(SolutionDir)/../win32/subversion/lib&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/apr&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/apr-util&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/serf&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/neon&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/sasl&quot;"
 				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -92,12 +92,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copying Subversion binaries to bin/"
+				CommandLine="echo copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)\.&#x0D;&#x0A;copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)/bin"
-			IntermediateDirectory="$(SolutionDir)/Build/$(ProjectName)/$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin"
+			IntermediateDirectory="$(SolutionDir)Build/$(ProjectName)/$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -129,7 +131,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4355"
+				DisableSpecificWarnings="4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -142,9 +144,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libtdm_update.lib ZipLoader.lib WS2_32.lib"
+				AdditionalDependencies="libtdm_update.lib ZipLoader.lib WS2_32.lib libsvn_client-1.lib libapr-1.lib libsvn_subr-1.lib libsvn_fs_fs-1.lib libsvn_fs_base-1.lib libsvn_fs-1.lib libsvn_wc-1.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)/Build/lib/$(ConfigurationName)&quot;;&quot;$(SolutionDir)/../win32/lib&quot;;&quot;$(SolutionDir)/../win32/subversion/lib&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/apr&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/apr-util&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/serf&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/neon&quot;;&quot;$(SolutionDir)/../win32/subversion/lib/sasl&quot;"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -174,6 +177,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copying Subversion binaries to bin/"
+				CommandLine="echo copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)\.&#x0D;&#x0A;copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 	</Configurations>

@@ -458,6 +458,25 @@ void Packager::LoadManifest()
 	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest contains %d files.") % _manifest.size()).str());
 }
 
+void Packager::SaveManifestAsOldManifest()
+{
+	_oldManifest = _manifest;
+}
+
+void Packager::LoadBaseManifest()
+{
+	fs::path baseManifestPath = _options.Get("darkmoddir");
+	baseManifestPath /= TDM_MANIFEST_PATH;
+	baseManifestPath /= std::string("base") + TDM_MANIFEST_EXTENSION;
+
+	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + baseManifestPath.file_string() + "...");
+
+	_baseManifest.LoadFromFile(baseManifestPath);
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The base manifest contains %d files.") % _baseManifest.size()).str());
+}
+
 void Packager::CheckRepository()
 {
 	TraceLog::Write(LOG_STANDARD, "Checking if the darkmod repository is complete...");
@@ -480,6 +499,71 @@ void Packager::CheckRepository()
 	{
 		TraceLog::Error((boost::format("The manifest contains %d files which are missing in your darkmod path.") % missingFiles).str());
 	}
+}
+
+void Packager::LoadInstructionFile()
+{
+	fs::path instrFile = _options.Get("darkmoddir");
+	instrFile /= TDM_MANIFEST_PATH;
+	instrFile /= (boost::format("%s_maps%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_maps.txt
+
+	TraceLog::Write(LOG_STANDARD, "Loading package instruction file: " + instrFile.file_string() + "...");
+
+	_instructionFile.LoadFromFile(instrFile);
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The package instruction file has %d entries.") % _instructionFile.size()).str());
+}
+
+void Packager::CollectFilesForManifest()
+{
+	// Clear the manifest by assigning the base manifest first
+	_manifest = _baseManifest;
+
+	// Load files from the repository
+	_manifest.CollectFilesFromRepository(_options.Get("darkmoddir"), _instructionFile);
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest has now %d entries.") % _manifest.size()).str());
+}
+
+void Packager::CleanupAndSortManifest()
+{
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting manifest...")).str());
+
+	// Sort manifest
+	_manifest.sort();
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting done.")).str());
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Removing duplicates...")).str());
+
+	// Remove dupes using the standard algorithm (requires the list to be sorted)
+	_manifest.unique();
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Removal done.")).str());
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest has now %d entries.") % _manifest.size()).str());
+}
+
+void Packager::ShowManifestComparison()
+{
+	// TODO
+}
+
+void Packager::SaveManifest()
+{
+	fs::path manifestPath = _options.Get("darkmoddir");
+	manifestPath /= TDM_MANIFEST_PATH;
+	manifestPath /= (boost::format("%s%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod.txt
+
+	TraceLog::WriteLine(LOG_STANDARD, "");
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Writing manifest to %s...") % manifestPath.file_string()).str());
+
+	_manifest.WriteToFile(manifestPath);
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Done writing manifest file.")).str());
 }
 
 void Packager::LoadPk4Mapping()

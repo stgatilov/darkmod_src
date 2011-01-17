@@ -14,6 +14,7 @@
 #include "../UpdatePackage.h"
 #include "../ReleaseManifest.h"
 #include "../Pk4Mappings.h"
+#include "../PackageInstructions.h"
 
 namespace tdm
 {
@@ -52,6 +53,19 @@ private:
 	// The PK4 representing the difference between base and head
 	UpdatePackage _difference;
 
+	// ---- Manifest creation ---
+
+	// The pre-existing manifest before we're starting to create a new one
+	ReleaseManifest _oldManifest;
+
+	// The manifest as defined by "base.txt"
+	ReleaseManifest _baseManifest;
+
+	// The file containing the include/exclude statements
+	PackageInstructions _instructionFile;
+
+	// ---- Manifest creation End ----
+
 	// ---- Package creation ----
 
 	// The manifest of a specific release
@@ -89,6 +103,27 @@ public:
 
 	// Loads the manifest information from the options - needs darkmoddir set to something
 	void LoadManifest();
+
+	// Copies the loaded manifest as "old" manifest for later comparison
+	void SaveManifestAsOldManifest();
+
+	// Loads the base manifest ("base.txt") from the darkmoddir specified in the options
+	void LoadBaseManifest();
+
+	// Load the file containing the INCLUDE/EXCLUDE/FM statements
+	void LoadInstructionFile();
+
+	// Traverse the repository to collect all files that should go into the manifest
+	void CollectFilesForManifest();
+
+	// Sorts the manifest and removes any duplicates
+	void CleanupAndSortManifest();
+
+	// Compares the "old" manifest with the new one and prints a summary
+	void ShowManifestComparison();
+
+	// Saves the manifest to devel/manifests/<name>.txt, including the base manifest
+	void SaveManifest();
 
 	// Checks if all files in the manifest are existing
 	void CheckRepository();

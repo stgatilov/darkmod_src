@@ -14,6 +14,9 @@
 #include <boost/spirit.hpp>
 #include <boost/bind.hpp>
 
+#include "PackageInstructions.h"
+#include "SvnClient.h"
+
 namespace bs = boost::spirit;
 
 namespace tdm
@@ -37,6 +40,18 @@ struct ManifestFile
 		sourceFile(sourceFile_),
 		destFile(destFile_)
 	{}
+
+	// Comparison operator for sorting
+	bool operator<(const ManifestFile& other) const
+	{
+		return this->sourceFile < other.sourceFile;
+	}
+
+	// Comparison operator for removing duplicates
+	bool operator==(const ManifestFile& other) const
+	{
+		return this->sourceFile == other.sourceFile && this->destFile == other.destFile;
+	}
 };
 
 /**
@@ -125,7 +140,183 @@ public:
 		}
 	}
 
+	/**
+	 * greebo: Collects all files from the SVN repository if they are meant to be included by
+	 * the instructions given (which were loaded from darkmod_maps.txt).
+	 * If @skipVersioningCheck is true no SVN client checks are performed. Still, .svn folders won't be included.
+	 */
+	void CollectFilesFromRepository(const fs::path& repositoryRoot, const PackageInstructions& instructions, 
+									bool skipVersioningCheck = false)
+	{
+		SvnClient svn;
+
+		if (skipVersioningCheck)
+		{
+			// Deactivate the client class (won't perform checks, will always return true)
+			svn.SetActive(false);
+		}
+
+		// Process the inclusion commands and exclude all files as instructed
+		for (PackageInstructions::const_iterator instr = instructions.begin(); instr != instructions.end(); ++instr)
+		{
+			if (instr->type == PackageInstruction::Include)
+			{
+				ProcessInclusion(repositoryRoot, instructions, *instr, svn);
+			}
+		}
+	}
+
+	void WriteToFile(const fs::path& manifestPath)
+	{
+		std::ofstream manifest(manifestPath.file_string().c_str());
+
+		time_t rawtime;
+		time(&rawtime);
+
+		manifest << "#" << std::endl;
+		manifest << "# This file was generated automatically:" << std::endl;
+		manifest << "#   by tdm_package.exe" << std::endl;
+		manifest << "#   at " << asctime(localtime(&rawtime)) << std::endl;
+		manifest << "# Any modifications to this file will be lost, instead modify:" << std::endl;
+		manifest << "#   devel/manifests/base.txt" << std::endl;
+		manifest << "#" << std::endl;
+		manifest << std::endl;
+
+		for (const_iterator i = begin(); i != end(); ++i)
+		{
+			manifest << "./" << i->sourceFile;
+
+			// Do we have a redirection?
+			if (i->destFile != i->sourceFile)
+			{
+				manifest << " => ./" << i->destFile;
+			}
+
+			manifest << std::endl;
+		}
+	}
+
 private:
+	void ProcessInclusion(const fs::path& repositoryRoot, const PackageInstructions& instructions, 
+						  const PackageInstruction& inclusion, SvnClient& svn)
+	{
+		TraceLog::WriteLine(LOG_STANDARD, "Processing inclusion: " + inclusion.value);
+
+		// Construct the starting path
+		fs::path inclusionPath = repositoryRoot;
+		inclusionPath /= inclusion.value;
+
+		// Add the inclusion path itself
+		std::string relativeInclusionPath = inclusionPath.string().substr(repositoryRoot.string().length() + 1);
+
+		// Cut off the trailing slash
+		if (boost::algorithm::ends_with(relativeInclusionPath, "/"))
+		{
+			relativeInclusionPath = relativeInclusionPath.substr(0, relativeInclusionPath.length() - 1);
+		}
+
+		TraceLog::WriteLine(LOG_VERBOSE, "Adding inclusion path: " + relativeInclusionPath);
+		push_back(ManifestFile(relativeInclusionPath));
+
+		// Check for a file
+		if (fs::is_regular_file(inclusionPath))
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "Investigating file: " + inclusionPath.string());
+
+			// Add this item, if versioned
+			if (!svn.FileIsUnderVersionControl(inclusionPath))
+			{
+				TraceLog::WriteLine(LOG_STANDARD, "Skipping unversioned file mentioned in INCLUDE statements: " + inclusionPath.string());
+				return;
+			}
+
+			// Cut off the repository path to receive a relative path (cut off the trailing slash too)
+			std::string relativePath = inclusionPath.string().substr(repositoryRoot.string().length() + 1);
+
+			if (!instructions.IsExcluded(relativePath))
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Adding file: " + relativePath);
+				push_back(ManifestFile(relativePath));
+			}
+			else
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "File is excluded: " + relativePath);
+				return;
+			}
+		}
+		
+		if (!fs::is_directory(inclusionPath))
+		{
+			TraceLog::WriteLine(LOG_PROGRESS, "Skipping non-file and non-folder: " + inclusionPath.string());
+			return;
+		}
+
+		ProcessDirectory(repositoryRoot, inclusionPath, instructions, svn);
+	}
+
+	// Adds stuff in the given directory (absolute path), adds stuff only if not excluded, returns the number of added items
+	std::size_t ProcessDirectory(const fs::path& repositoryRoot, const fs::path& dir, 
+								 const PackageInstructions& instructions, SvnClient& svn)
+	{
+		assert(fs::exists(dir));
+
+		std::size_t itemsAdded = 0;
+
+		// Traverse this folder
+		for (fs::directory_iterator i = fs::directory_iterator(dir);
+			 i != fs::directory_iterator(); ++i)
+		{
+			if (boost::algorithm::ends_with(i->string(), ".svn"))
+			{
+				// Prevent adding .svn folders
+				continue;
+			}
+
+			// Ensure this item is under version control
+			if (!svn.FileIsUnderVersionControl(*i))
+			{
+				TraceLog::WriteLine(LOG_PROGRESS, "Skipping unversioned item: " + i->string());
+				continue;
+			}
+
+			TraceLog::WriteLine(LOG_VERBOSE, "Investigating item: " + i->string());
+
+			// Cut off the repository path to receive a relative path (cut off the trailing slash too)
+			std::string relativePath = i->string().substr(repositoryRoot.string().length() + 1);
+
+			// Consider the exclusion list
+			if (instructions.IsExcluded(relativePath))
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "Item is excluded: " + relativePath);
+				continue;
+			}
+			
+			if (fs::is_directory(*i))
+			{
+				// Versioned folder, enter recursion
+				std::size_t folderItems = ProcessDirectory(repositoryRoot, *i, instructions, svn);
+
+				if (folderItems > 0)
+				{
+					// Add an entry for this folder itself, it's not empty
+					push_back(ManifestFile(relativePath));
+				}
+
+				itemsAdded += folderItems;
+			}
+			else
+			{
+				// Versioned file, add it
+				TraceLog::WriteLine(LOG_VERBOSE, "Adding file: " + relativePath);
+				push_back(ManifestFile(relativePath));
+
+				itemsAdded++;
+			}
+		}
+
+		return itemsAdded;
+	}
+
 	void AddSourceFile(char const* beg, char const* end)
 	{
 		if (end - beg < 2) return; // skip strings smaller than 2 chars

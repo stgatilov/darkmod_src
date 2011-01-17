@@ -23,11 +23,6 @@
 
 #include <map>
 
-namespace tdm
-{
-
-} // namespace
-
 using namespace tdm;
 using namespace packager;
 
@@ -36,7 +31,7 @@ int main(int argc, char* argv[])
 	// Start logging
 	RegisterLogWriters();
 
-	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.01 (c) 2010 by greebo. Part of The Dark Mod (http://www.thedarkmod.com).");
+	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.02 (c) 2010 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// Parse the command line
@@ -50,7 +45,51 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if (options.IsSet("create-update-package"))
+		if (options.IsSet("create-manifest"))
+		{
+			if (options.Get("darkmoddir").empty())
+			{
+				options.PrintHelp();
+				return EXIT_SUCCESS;
+			}
+
+			Packager packager(options);
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			// Load old manifest if existing
+			packager.LoadManifest();
+
+			// Store it for later reference
+			packager.SaveManifestAsOldManifest();
+
+			// Read release base manifest (files to be released in any case)
+			packager.LoadBaseManifest();
+
+			// TODO Analyse script files
+			// TODO Parse declarations
+			// TODO Add hardcoded entityDefs
+
+			// Load darkmod_maps.txt (INCLUDE/EXCLUDE/FM)
+			packager.LoadInstructionFile();
+
+			// TODO ? Add stuff from maps/prefabs (this is redundant I think)
+			// TODO Parse GUIs
+			// TODO Parse MD5 Meshes
+
+			// Add versioned files as specified by INCLUDE 
+			packager.CollectFilesForManifest();
+
+			// Sort manifest and remove duplicates
+			packager.CleanupAndSortManifest();
+
+			// Print the manifest differences
+			packager.ShowManifestComparison();
+
+			// Write manifest to disk
+			packager.SaveManifest();
+		}
+		else if (options.IsSet("create-update-package"))
 		{
 			if (options.Get("basedir").empty() || options.Get("headdir").empty() ||
 				options.Get("baseversion").empty() || options.Get("headversion").empty() ||
