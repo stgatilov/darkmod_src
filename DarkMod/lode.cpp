@@ -889,22 +889,28 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if (LodeClass.sink_max < LodeClass.sink_min) { LodeClass.sink_max = LodeClass.sink_min; }
 
 	// to support scaling of all axes with the same value, peek into lode_scale_min and lode_scale_max
-	idStr scale_min = ent->spawnArgs.GetString( "lode_scale_min", "1.0");
-	idStr scale_max = ent->spawnArgs.GetString( "lode_scale_max", "1.0");
-
-	if (scale_min.Find(' ') < 0 && scale_max.Find(' ') < 0)
+	idStr scale_min = ent->spawnArgs.GetString( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+	idStr scale_max = ent->spawnArgs.GetString( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+	if (scale_min.Find(' ') < 0)
 	{
-		float max = ent->spawnArgs.GetFloat( "lode_scale_max", "1.0");
-		float min = ent->spawnArgs.GetFloat( "lode_scale_min", "1.0");
 		// set x and y to 0 to signal code to use axes-equal scaling
-		LodeClass.scale_max = idVec3( 0, 0, max );
-		LodeClass.scale_min = idVec3( 0, 0, min );
+		LodeClass.scale_min = idVec3( 0, 0, ent->spawnArgs.GetFloat( "lode_scale_min", spawnArgs.GetString( "scale_min", "1") ) );
 	}
 	else
 	{
 		LodeClass.scale_min = ent->spawnArgs.GetVector( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+	}
+
+	if (scale_max.Find(' ') < 0)
+	{
+		// set x and y to 0 to signal code to use axes-equal scaling
+		LodeClass.scale_max = idVec3( 0, 0, ent->spawnArgs.GetFloat( "lode_scale_max", spawnArgs.GetString( "scale_max", "1") ) );
+	}
+	else
+	{
 		LodeClass.scale_max = ent->spawnArgs.GetVector( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
 	}
+
 	if (LodeClass.scale_max.x < LodeClass.scale_min.x) { LodeClass.scale_max.x = LodeClass.scale_min.x; }
 	if (LodeClass.scale_max.y < LodeClass.scale_min.y) { LodeClass.scale_max.y = LodeClass.scale_min.y; }
 	if (LodeClass.scale_max.z < LodeClass.scale_min.z) { LodeClass.scale_max.z = LodeClass.scale_min.z; }
@@ -2563,7 +2569,7 @@ float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 }
 
 // a small helper routine to cut down on code copy&paste
-bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx, idClipModel* clipModel )
+bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const lode_entity_t* entity, const int idx, idClipModel* clipModel )
 {
 	idClipModel *clip;
 
@@ -2592,8 +2598,10 @@ bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr mod
 		// add the clipmodel
 		physics->SetClipModel(clip, 1.0f, idx, true);
 
-		physics->SetOrigin( origin, idx);
-		physics->SetAxis( angles.ToMat3(), idx);
+		physics->SetOrigin( entity->origin, idx);
+		physics->SetAxis( entity->angles.ToMat3(), idx);
+		// Scale the clipmodel
+		physics->Scale( entity->scale );
 		// Make it solid
 		physics->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, idx );
 		// nec.?
@@ -2888,7 +2896,7 @@ void Lode::CombineEntities( void )
 			if (entityClass->solid)
 			{
 				// Load or use the clipmodel
-				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[i].origin, m_Entities[i].angles, 0, PseudoClass.clip );
+				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, &m_Entities[i], 0, PseudoClass.clip );
 				if (!clipLoaded)
 				{
 					gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
@@ -2918,7 +2926,7 @@ void Lode::CombineEntities( void )
 				if (clipLoaded)
 				{
 					// d + 1 because 0 is the original entity
-					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, m_Entities[todo].origin, m_Entities[todo].angles, d + 1, PseudoClass.clip );
+					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, &m_Entities[todo], d + 1, PseudoClass.clip );
 
 //					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
 				}

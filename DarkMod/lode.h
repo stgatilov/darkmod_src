@@ -279,7 +279,7 @@ private:
 	* if the clip model could be loaded. If idClipModel != NULL, then this clipmodel will be
 	* used, this happens f.i. for func_statics created from brush/patch geometry inside DR.
 	*/
-	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const idVec3 origin, const idAngles angles, const int idx, idClipModel* clipModel = NULL);
+	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const lode_entity_t* entity, const int idx, idClipModel* clipModel = NULL);
 
 	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
