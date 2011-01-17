@@ -562,6 +562,30 @@ void idPhysics_StaticMulti::Translate( const idVec3 &translation, int id ) {
 
 /*
 ================
+Tels: idPhysics_StaticMulti::Scale
+================
+*/
+void idPhysics_StaticMulti::Scale( const idVec3 &scale, int id ) {
+	int i;
+
+	if ( id >= 0 && id < clipModels.Num() ) {
+		if ( clipModels[id] ) {
+			clipModels[id]->Scale( scale );
+			// Tels: nec.?
+			clipModels[id]->Link( gameLocal.clip, self, id, current[id].origin, current[id].axis );
+		}
+	} else if ( id == -1 ) {
+		for ( i = 0; i < clipModels.Num(); i++ ) {
+			if ( clipModels[i] ) {
+				clipModels[i]->Scale( scale );
+				clipModels[i]->Link( gameLocal.clip, self, i, current[i].origin, current[i].axis );
+			}
+		}
+	}
+}
+
+/*
+================
 idPhysics_StaticMulti::Rotate
 ================
 */
