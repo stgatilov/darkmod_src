@@ -12,7 +12,7 @@
 namespace tdm
 {
 
-const char* const LIBTDM_UPDATE_VERSION = "0.49";
+const char* const LIBTDM_UPDATE_VERSION = "0.50";
 
 const char* const TDM_MIRRORS_FILE = "tdm_mirrors.txt";
 const char* const TDM_MIRRORS_SERVER = "http://bloodgate.com/mirrors/tdm/pub/pk4/";
