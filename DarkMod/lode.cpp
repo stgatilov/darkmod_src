@@ -581,7 +581,8 @@ Lode::RandomSeed
 
 Implement our own, independent random generator with our own seed, so we are
 independent from the seed in gameLocal and the one used in RandomFloat. This
-one is used to calculate the seeds per-class:
+one is used to calculate the seeds per-class, values choosen per:
+http://en.wikipedia.org/wiki/Linear_congruential_generator
 ===============
 */
 ID_INLINE int Lode::RandomSeed( void ) {
@@ -594,7 +595,8 @@ ID_INLINE int Lode::RandomSeed( void ) {
 Lode::RandomFloat
 
 Implement our own random generator with our own seed, so we are independent
-from the seed in gameLocal:
+from the seed in gameLocal, also needs to be independent from Lode::RandomSeed:
+http://en.wikipedia.org/wiki/Linear_congruential_generator
 ===============
 */
 ID_INLINE float Lode::RandomFloat( void ) {
@@ -1302,7 +1304,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// Rectangle is W * H, ellipse is W/2 * H/2 * PI. When W = H = 1, then the rectangle
 		// area is 1.0, and the ellipse 0.785398, so correct for 1 / 0.785398 = 1.2732, this will
 		// reduce the density, and thus the entity count:
-		size *= 1.2732f; 
+		size *= 4 / idMath::PI; 
 	}
 	// TODO: take into account inhibitors (these should reduce the density)
 
