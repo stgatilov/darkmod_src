@@ -1019,6 +1019,76 @@ void idTraceModel::Translate( const idVec3 &translation ) {
 idTraceModel::Rotate
 ============
 */
+void idTraceModel::Rotate( const idMat3 &rotation, bool isRotationOrthogonal ) {
+	int i, j, edgeNum;
+
+	idMat3 normalRotation = rotation;
+	if (!isRotationOrthogonal) {
+                bool nonSingular = normalRotation.InverseSelf();
+                assert(nonSingular);
+		normalRotation.TransposeSelf();
+	}
+
+	for ( i = 0; i < numVerts; i++ ) {
+		verts[i] *= rotation;
+	}
+
+	bounds.Clear();
+	for ( i = 0; i < numPolys; i++ ) {
+		polys[i].normal *= normalRotation;
+		if (!isRotationOrthogonal)
+			polys[i].normal.Normalize();
+		polys[i].bounds.Clear();
+		edgeNum = 0;
+		for ( j = 0; j < polys[i].numEdges; j++ ) {
+			edgeNum = polys[i].edges[j];
+			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
+		}
+		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
+		bounds += polys[i].bounds;
+	}
+
+	GenerateEdgeNormals();
+}
+
+/*
+============
+idTraceModel::Scale
+============
+*/
+void idTraceModel::Scale( const idVec3 &scale ) {
+	int i, j, edgeNum, d;
+	const float *scalePtr = scale.ToFloatPtr();
+	for ( d = 0; d < 3; d++ )
+		assert(scalePtr[d] != 0.0f);
+
+	for ( i = 0; i < numVerts; i++ ) {
+		for ( d = 0; d < 3; d++ )
+			verts[i].ToFloatPtr()[d] *= scalePtr[d];
+	}
+
+	bounds.Clear();
+	for ( i = 0; i < numPolys; i++ ) {
+		for ( d = 0; d < 3; d++ )
+			polys[i].normal.ToFloatPtr()[d] /= scalePtr[d];
+		polys[i].normal.Normalize();
+		polys[i].bounds.Clear();
+		edgeNum = 0;
+		for ( j = 0; j < polys[i].numEdges; j++ ) {
+			edgeNum = polys[i].edges[j];
+			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
+		}
+		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
+		bounds += polys[i].bounds;
+	}
+
+	GenerateEdgeNormals();
+}
+
+/* Old code, commented out tels 2011-01-13
+============
+idTraceModel::Rotate
+============
 void idTraceModel::Rotate( const idMat3 &rotation ) {
 	int i, j, edgeNum;
 
@@ -1041,6 +1111,7 @@ void idTraceModel::Rotate( const idMat3 &rotation ) {
 
 	GenerateEdgeNormals();
 }
+*/
 
 /*
 ============
