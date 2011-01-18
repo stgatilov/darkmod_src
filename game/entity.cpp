@@ -10707,11 +10707,24 @@ void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory,
 void idEntity::NextInventoryItem()
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
-	
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
 	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetNextItem();
+	if (prev != NULL && prev->GetName() == TDM_DUMMY_ITEM && IsType(idPlayer::Type))
+	{
+		// If current item is dummy then try to restore cursor to the last real item
+		CInventoryItemPtr lastItemRestored = Inventory()->GetItem(static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear);
+		if (lastItemRestored != NULL)
+		{
+			cursor->SetCurrentItem(lastItemRestored);
+		}
+		static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
+	}
+	// If the current item has not changed yet, move to the next item
+	if (cursor->GetCurrentItem() == prev)
+	{
+		cursor->GetNextItem();
+	}
 
 	// Call the selection changed event
 	OnInventorySelectionChanged(prev);
@@ -10723,7 +10736,21 @@ void idEntity::PrevInventoryItem()
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
 	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetPrevItem();
+	if (prev != NULL && prev->GetName() == TDM_DUMMY_ITEM && IsType(idPlayer::Type))
+	{
+		// If current item is dummy then try to restore cursor to the last real item
+		CInventoryItemPtr lastItemRestored = Inventory()->GetItem(static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear);
+		if (lastItemRestored != NULL)
+		{
+			cursor->SetCurrentItem(lastItemRestored);
+		}
+		static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
+	}
+	// If the current item has not changed yet, move to the prev item
+	if (cursor->GetCurrentItem() == prev)
+	{
+		cursor->GetPrevItem();
+	}
 
 	// Call the selection changed event
 	OnInventorySelectionChanged(prev);

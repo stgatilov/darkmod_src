@@ -471,6 +471,8 @@ public:
 	CInventoryCursorPtr		m_WeaponCursor;
 	// A pointer to the current map/floorplan.
 	CInventoryCursorPtr		m_MapCursor;
+	// The name of the item that was current before pressing inventory clear
+	idStr					m_LastItemNameBeforeClear;
 
 	// The currently active inventory map entity
 	idEntityPtr<idEntity>	m_ActiveInventoryMapEnt;
@@ -891,7 +893,8 @@ public:
 	bool UseInventoryItem(EImpulseState nState, const CInventoryItemPtr& item, int holdTime, bool isFrobUse);
 
 	// Changes the inventory selection to the item with the given name
-	void SelectInventoryItem(const idStr& name);
+	// Returns false if there is no such item
+	bool SelectInventoryItem(const idStr& name);
 
 	// Override idEntity method to get notified upon item changes
 	virtual void OnInventoryItemChanged();

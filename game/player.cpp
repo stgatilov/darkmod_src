@@ -474,6 +474,7 @@ idPlayer::idPlayer() :
 	objectivesOverlay		= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursor				= CInventoryCursorPtr();
+	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
 
 	m_LightgemModifier		= 0;
 	m_LightgemValue			= 0;
@@ -1300,7 +1301,7 @@ void idPlayer::SetupInventory()
 	// in the weapon slot AND in the inventory at the same time.
 	crsr->AddCategoryIgnored(TDM_PLAYER_WEAPON_CATEGORY);
 
-	// The player always gets a dumyyentry (so the player can have an empty space if he 
+	// The player always gets a dummyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
 	CInventoryItemPtr it(new CInventoryItem(this));
 	it->SetName(TDM_DUMMY_ITEM);
@@ -1311,6 +1312,7 @@ void idPlayer::SetupInventory()
 
 	// Focus on the empty dummy inventory item
 	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
+	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
 
 	// greebo: Set up the loot inventory item
 	const idDeclEntityDef* lootItemDef = static_cast<const idDeclEntityDef*>(
@@ -1662,6 +1664,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_MapCursor->GetId());
 	}
 
+	savefile->WriteString(m_LastItemNameBeforeClear.c_str());
+
 	m_ActiveInventoryMapEnt.Save(savefile);
 
 	savefile->WriteInt(m_LightgemModifier);
@@ -2007,6 +2011,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(cursorId);
 		m_MapCursor = Inventory()->GetCursor(cursorId);
 	}
+
+	savefile->ReadString(m_LastItemNameBeforeClear);
 
 	m_ActiveInventoryMapEnt.Restore(savefile);
 
@@ -9564,7 +9570,7 @@ void idPlayer::DropInventoryItem()
 	}
 }
 
-void idPlayer::SelectInventoryItem(const idStr& name)
+bool idPlayer::SelectInventoryItem(const idStr& name)
 {
 	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
 	idStr itemName(name);
@@ -9573,6 +9579,11 @@ void idPlayer::SelectInventoryItem(const idStr& name)
 	{
 		// Empty name specified, clear the inventory cursor
 		itemName = TDM_DUMMY_ITEM;
+		if (prev->GetName() != itemName)
+		{
+			// Save name of current item (to restore it in NextInventoryItem / PrevInventoryItem)
+			m_LastItemNameBeforeClear = prev->GetName();
+		}
 	}
 	
 	// Try to lookup the item in the inventory
@@ -9585,10 +9596,12 @@ void idPlayer::SelectInventoryItem(const idStr& name)
 
 		// Trigger an update, passing the previous item along
 		OnInventorySelectionChanged(prev);
+		return true;
 	}
 	else
 	{
 		gameLocal.Printf("Could not find item in player inventory: %s\n", itemName.c_str());
+		return false;
 	}
 }
 
