@@ -1092,10 +1092,12 @@ public:
 	 */
 	virtual CInventoryItemPtr AddToInventory(idEntity *ent);
 
-	virtual void NextInventoryItem();	// Cycles to the next item in the inventory.
-	virtual void PrevInventoryItem();	// Cycles to the previous item in the inventory.
-	virtual void NextInventoryGroup();	// Cycles to the next group in the inventory.
-	virtual void PrevInventoryGroup();	// Cycles to the previous group in the inventory.
+	// Cycles to the prev/next item in the inventory.
+	// direction<0 - cycles to previous, direction>0 - cycles to next
+	virtual void NextPrevInventoryItem(int direction);
+	// Cycles to the prev/next group in the inventory.
+	// direction<0 - cycles to previous, direction>0 - cycles to next
+	virtual void NextPrevInventoryGroup(int direction);	
 
 	/**
 	 * greebo: This cycles through a specific inventory group (=category). 

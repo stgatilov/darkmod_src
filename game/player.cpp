@@ -5386,7 +5386,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			PrevInventoryItem();
+			NextPrevInventoryItem(-1);
 		}
 		break;
 
@@ -5407,7 +5407,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			NextInventoryItem();
+			NextPrevInventoryItem(1);
 		}
 		break;
 
@@ -5426,7 +5426,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			PrevInventoryGroup();
+			NextPrevInventoryGroup(-1);
 		}
 		break;
 
@@ -5445,7 +5445,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			NextInventoryGroup();
+			NextPrevInventoryGroup(1);
 		}
 		break;
 
@@ -9581,7 +9581,7 @@ bool idPlayer::SelectInventoryItem(const idStr& name)
 		itemName = TDM_DUMMY_ITEM;
 		if (prev->GetName() != itemName)
 		{
-			// Save name of current item (to restore it in NextInventoryItem / PrevInventoryItem)
+			// Save name of current item (to restore it in idEntity::NextPrevInventoryItem)
 			m_LastItemNameBeforeClear = prev->GetName();
 		}
 	}

@@ -10408,7 +10408,7 @@ void idEntity::Event_GetBindChild( int ind )
 
 void idEntity::Event_GetNextInvItem()
 {
-	NextInventoryItem();
+	NextPrevInventoryItem(1);
 	
 	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
@@ -10417,7 +10417,7 @@ void idEntity::Event_GetNextInvItem()
 
 void idEntity::Event_GetPrevInvItem()
 {
-	PrevInventoryItem();
+	NextPrevInventoryItem(-1);
 	
 	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
@@ -10704,7 +10704,7 @@ void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory,
 	}
 }
 
-void idEntity::NextInventoryItem()
+void idEntity::NextPrevInventoryItem(int direction)
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
@@ -10720,62 +10720,29 @@ void idEntity::NextInventoryItem()
 		}
 		static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
 	}
-	// If the current item has not changed yet, move to the next item
+	// If the current item has not changed yet, move to the prev/next item
 	if (cursor->GetCurrentItem() == prev)
 	{
-		cursor->GetNextItem();
+		// direction parameter specifies whether next of previous item is chosen
+		if (direction > 0) cursor->GetNextItem();
+		if (direction < 0) cursor->GetPrevItem();
 	}
 
 	// Call the selection changed event
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::PrevInventoryItem()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	if (prev != NULL && prev->GetName() == TDM_DUMMY_ITEM && IsType(idPlayer::Type))
-	{
-		// If current item is dummy then try to restore cursor to the last real item
-		CInventoryItemPtr lastItemRestored = Inventory()->GetItem(static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear);
-		if (lastItemRestored != NULL)
-		{
-			cursor->SetCurrentItem(lastItemRestored);
-		}
-		static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
-	}
-	// If the current item has not changed yet, move to the prev item
-	if (cursor->GetCurrentItem() == prev)
-	{
-		cursor->GetPrevItem();
-	}
-
-	// Call the selection changed event
-	OnInventorySelectionChanged(prev);
-}
-
-void idEntity::NextInventoryGroup()
+void idEntity::NextPrevInventoryGroup(int direction)
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
 	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetNextCategory();
-	
-	OnInventorySelectionChanged(prev);
-}
 
-void idEntity::PrevInventoryGroup()
-{
-	const CInventoryCursorPtr& cursor = InventoryCursor();
-	
-	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
-
-	CInventoryItemPtr prev = cursor->GetCurrentItem();
-	cursor->GetPrevCategory();
+	// direction parameter specifies whether next of previous item is chosen
+	if (direction > 0) cursor->GetNextCategory();
+	if (direction < 0) cursor->GetPrevCategory();
 	
 	OnInventorySelectionChanged(prev);
 }
