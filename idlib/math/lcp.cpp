@@ -325,7 +325,7 @@ idLCP_Square::CalcForceDelta
   modifies this->delta_f
 ============
 */
-ID_INLINE void idLCP_Square::CalcForceDelta( int d, float dir ) {
+inline void idLCP_Square::CalcForceDelta( int d, float dir ) {
 	int i;
 	float *ptr;
 

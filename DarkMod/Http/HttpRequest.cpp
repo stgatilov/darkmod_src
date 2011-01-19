@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "HttpConnection.h"
 
 #ifdef WIN32
+#pragma warning(disable: 4800) // stgatilov: suppress "forcing value to bool" warning in WinSDK
 #include <winsock2.h> // greebo: need to include winsock2 before curl/curl.h
 #include <Ws2tcpip.h>
 #include <Wspiapi.h>

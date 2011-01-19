@@ -48,7 +48,6 @@ idSIMD::InitProcessor
 */
 void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	cpuid_t cpuid;
-	int cores = 0;
 	idSIMDProcessor *newProcessor;
 
 	cpuid = idLib::sys->GetProcessorId();
@@ -58,6 +57,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	*       the correct flags:
 	*/
 #ifdef __linux__
+	int cores = 0;
 	dword a,c,d, result;
 
 	/* Check for AMD or Intel first */

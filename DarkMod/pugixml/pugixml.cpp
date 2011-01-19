@@ -856,6 +856,11 @@ namespace
 	{
 		xml_allocator& alloc;
 		
+		// stgatilov: suppress "ERROR redefinition" warning
+		#ifdef ERROR
+			#undef ERROR
+		#endif
+
 		// Parser utilities.
 		#define SKIPWS()			{ while (is_chartype(*s, ct_space)) ++s; }
 		#define OPTSET(OPT)			( optmsk & OPT )

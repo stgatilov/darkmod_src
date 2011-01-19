@@ -2430,7 +2430,7 @@ ID_INLINE void idMatX::Clamp( float min, float max ) {
 	}
 }
 
-ID_INLINE idMatX &idMatX::SwapRows( int r1, int r2 ) {
+inline idMatX &idMatX::SwapRows( int r1, int r2 ) {
 	float *ptr;
 
 	ptr = (float *) _alloca16( numColumns * sizeof( float ) );

@@ -1108,11 +1108,11 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 		gameLocal.Printf("LODE %s: Loaded %s: %ix%i px, %i bpp = %li bytes, average density %0.4f.\n", 
 				GetName(), mapName.c_str(), LodeClass.img->m_Width, LodeClass.img->m_Height, LodeClass.img->m_Bpp, LodeClass.img->GetBufferLen(), fImgDensity );
-		if (fImgDensity < 0.001)
+		if (fImgDensity < 0.001f)
 		{
 			gameLocal.Warning("The average density of this image map is very low.");
 			// avoid divide-by-zero
-			fImgDensity = 0.001;
+			fImgDensity = 0.001f;
 		}
 	}
 
@@ -1254,7 +1254,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	LodeClass.impulse_max  = ent->spawnArgs.GetVector("lode_impulse_max", spawnArgs.GetString("impulse_max", "0 90 360"));
 
 	// clamp to 0..360, -180..180, 0..1000
-    LodeClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9) );
+    LodeClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9f) );
     LodeClass.impulse_max.Clamp( LodeClass.impulse_min, idVec3(1000,+90,360) );
 
     LodeClass.z_invert = ent->spawnArgs.GetBool("lode_z_invert", spawnArgs.GetString("z_invert", "0"));
@@ -1381,9 +1381,9 @@ void Lode::ComputeEntityCount( void )
 		idBounds bounds = renderEntity.bounds;
 		idVec3 size = bounds.GetSize();
 
-		if (fDensity < 0.00001)
+		if (fDensity < 0.00001f)
 		{
-			fDensity = 0.00001;
+			fDensity = 0.00001f;
 		}
 
 		// m_fAvgSize is corrected for "per-class" falloff already

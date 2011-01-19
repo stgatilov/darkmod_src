@@ -1024,8 +1024,9 @@ void idTraceModel::Rotate( const idMat3 &rotation, bool isRotationOrthogonal ) {
 
 	idMat3 normalRotation = rotation;
 	if (!isRotationOrthogonal) {
-                bool nonSingular = normalRotation.InverseSelf();
-                assert(nonSingular);
+		bool nonSingular = normalRotation.InverseSelf();
+		nonSingular;	//eliminates "never used" warning in release
+		assert(nonSingular);
 		normalRotation.TransposeSelf();
 	}
 
