@@ -3108,7 +3108,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	idVec3			dir;
 	float			ang;
 	float			spin;
-	float			distance;
 	trace_t			tr;
 	idVec3			start;
 	idVec3			muzzle_pos;
@@ -3256,16 +3255,23 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
 
-			// make sure the projectile starts inside the bounding box of the owner
+			// make sure the projectile start point does not clip with anything
 			if ( i == 0 ) {
 				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-				if ( ( ownerBounds - projBounds).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) ) {
-					start = muzzle_pos + distance * playerViewAxis[0];
-				} else {
-					start = ownerBounds.GetCenter();
+				start = ownerBounds.GetCenter();
+				/* stgatilov: translate to viewpoint first, then to muzzle point.
+				 Otherwise shot while leaning over the corner would lag. Picture:
+				  XXXX M		C - center of player's bbox
+				  XXXX |		V - player's view origin
+				  XXXX |		M - muzzle position
+				  C----V
+				*/
+				idClipModel *clm = proj->GetPhysics()->GetClipModel();
+				if (!gameLocal.clip.Translation( tr, start, playerViewOrigin, clm, clm->GetAxis(), MASK_SHOT_RENDERMODEL, owner )) {
+					gameLocal.clip.Translation( tr, playerViewOrigin, muzzle_pos, clm, clm->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
 				}
-				gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
 				muzzle_pos = tr.endpos;
+				
 			}
 
 			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
