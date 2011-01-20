@@ -1592,7 +1592,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					TestMelee( void ) const;
 	/** ishtvan: test melee anticipating future positions **/
 	bool					TestMeleeFuture( void ) const;
-	bool					TestRanged( void ) const;
+	bool					TestRanged( void );
 	bool					AttackMelee( const char *meleeDefName );
 	void					BeginAttack( const char *name );
 	void					EndAttack( void );

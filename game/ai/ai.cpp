@@ -7257,7 +7257,7 @@ bool idAI::TestMeleeFuture( void ) const {
 idAI::TestRanged
 =====================
 */
-bool idAI::TestRanged() const 
+bool idAI::TestRanged()
 {
 	idActor *enemyEnt = enemy.GetEntity();
 
@@ -7272,10 +7272,18 @@ bool idAI::TestRanged() const
 		return false;
 	}
 
-	// Test if the enemy is within range, in FOV and not occluded
-	float dist = (GetEyePosition() - enemyEnt->GetEyePosition()).LengthFast();
+	// Calculate the point on enemy AI needs to see
+	idVec3 enemyPoint;
+	// stgatilov: Look at the UNLEANED player's eye position
+	// to achieve this, we treat player as ordinary actor
+	if (enemyEnt->IsType(idPlayer::Type))
+		enemyPoint = enemyEnt->idActor::GetEyePosition();
+	else
+		enemyPoint = enemyEnt->GetEyePosition();
 
-	return dist <= fire_range && CanSeeExt(enemyEnt, false, false);
+	// Test if the enemy is within range, in FOV and not occluded
+	float dist = (GetEyePosition() - enemyPoint).LengthFast();
+	return dist <= fire_range && CanSeePositionExt(enemyPoint, false, false);
 }
 
 
