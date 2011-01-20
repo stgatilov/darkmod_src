@@ -2010,11 +2010,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\lode.cpp"
+					RelativePath=".\DarkMod\SEED.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\lode.h"
+					RelativePath=".\DarkMod\SEED.h"
 					>
 				</File>
 				<File

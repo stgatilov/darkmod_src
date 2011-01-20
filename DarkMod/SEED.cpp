@@ -8,10 +8,13 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010 Tels (Donated to The Dark Mod Team)
+// Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 /*
-Level Of Detail Entities - Manage other entities based on LOD (e.g. distance)
+  System for Environmental Entity Distribution (SEED, formerly known as LODE)
+
+  Manage other entities based on LOD (e.g. distance), as well as create entities
+  based on rules in semi-random places/rotations/sizes and colors.
 
 Important things to do:
 
@@ -66,7 +69,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
 #include "../idlib/containers/list.h"
-#include "lode.h"
+#include "SEED.h"
 
 // maximum number of tries to place an entity
 #define MAX_TRIES 8

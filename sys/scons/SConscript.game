@@ -273,7 +273,7 @@ AI/Tasks/ScriptTask.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \
-lode.cpp \
+SEED.cpp \
 ModelGenerator.cpp \
 LightController.cpp \
 StaticMulti.cpp \
