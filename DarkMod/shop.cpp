@@ -313,6 +313,9 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 
 		// init and update the shop GUI
 		DisplayShop(gui);
+
+		// refresh the display so items are greyed out
+		gui->HandleNamedEvent("UpdateItemColours");
 	}
 	else if (idStr::Icmp(menuCommand, "shopBuy") == 0)
 	{
@@ -327,8 +330,6 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 		int soldItem = gui->GetStateInt("soldItem", "0");
 		SellItem(soldItem);
 		UpdateGUI(gui);
-
-		gui->HandleNamedEvent("UpdateItemColoursForSale");
 	}
 	else if (idStr::Icmp(menuCommand, "shopDrop") == 0)
 	{
@@ -1013,7 +1014,11 @@ void CShop::BuyItem(int index)
 void CShop::DropItem(int index)
 {
 	const CShopItemPtr& dropItem = startingItems[startingTop + index];
-	dropItem->ChangeCount(-1);
+	// Tels: Only drop if droppable (to stop a messed up GUI letting you drop it)
+	if (dropItem->GetCanDrop())
+	{
+		dropItem->ChangeCount(-1);
+	}
 };
 
 void CShop::ChangeGold(int amount)
@@ -1036,9 +1041,6 @@ int CShop::GetGold()
  */
 void CShop::UpdateGUI(idUserInterface* gui)
 {
-	gui->SetStateInt("boughtItem", -1);
-	gui->SetStateInt("soldItem", -1);
-	gui->SetStateInt("dropItem", -1);
 	gui->SetStateInt("gold", gold);
 	gui->SetStateInt("forSaleMoreVisible", itemsForSale.Num() > LIST_SIZE_FOR_SALE);
 	gui->SetStateInt("purchasedMoreVisible", itemsPurchased.Num() > LIST_SIZE_PURCHASED);
@@ -1136,7 +1138,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 			name = item->GetName() + " (" + item->GetCount() + ")";
 			desc = item->GetName() + ": " + item->GetDescription();
 			image = item->GetImage();
-			available = item->GetCost() <= gold ? item->GetCount() : 0;
+			// Tels: Fix #2563 (startingItems can always be dropped, regardless of how much gold you have)
+			// available = item->GetCost() <= gold ? item->GetCount() : 0;
+			available = item->GetCount();
 			dropVisible = item->GetCanDrop();
 		}
 
@@ -1146,5 +1150,14 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiDesc, desc);
 		gui->SetStateString(guiImage, image);
 	}
+
+	// Tels: Always tell the GUI to refresh the display so the colors change
+	gui->HandleNamedEvent("UpdateItemColours");
+
+	// Tels: Reset these only after UpdateItemColors
+	gui->SetStateInt("boughtItem", -1);
+	gui->SetStateInt("soldItem", -1);
+	gui->SetStateInt("dropItem", -1);
+
 }
 
