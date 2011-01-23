@@ -2628,6 +2628,12 @@ void Seed::CombineEntities( void )
 	model_ofs_t ofs;
 	seed_sort_ofs_t sortOfs;
 
+	if ( ! spawnArgs.GetBool("combine", "0"))
+	{
+		gameLocal.Printf("SEED %s: combine = 0, skipping combine step.\n", GetName() );
+		return;
+	}
+
 	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
 	if (max_combine_distance < 10)
 	{
@@ -2636,12 +2642,6 @@ void Seed::CombineEntities( void )
 	}
 	// square for easier comparing
 	max_combine_distance *= max_combine_distance;
-
-	if ( ! spawnArgs.GetBool("combine", "0"))
-	{
-		gameLocal.Printf("SEED %s: combine = 0, skipping combine step.\n", GetName() );
-		return;
-	}
 
 	int start = (int) time (NULL);
 
