@@ -19,7 +19,6 @@
 Important things to do:
 
 TODO: #2571: Restore() crashes if you combine func_statics (works fine with combine = 0)
-	  #2570: segfault (crash) when you use combine=0 with func_statics from map geometry 
 
 Nice-to-have:
 
@@ -1646,7 +1645,7 @@ void Seed::Prepare( void )
 
 	// Init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
-	m_iSeed_2 = spawnArgs.GetInt( "seed", "0" );
+	m_iSeed_2 = spawnArgs.GetInt( "randseed", "0" );
     if (m_iSeed_2 == 0)
 	{
 		// The randseed upon loading a map seems to be always 0, so 
@@ -3123,6 +3122,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 					r->hModel = NULL;
 				}
 
+				// gameLocal.Printf("%s: %i physics=%p model=%p\n", GetName(), lclass->pseudo, lclass->physicsObj, lclass->hModel);
 				// setup the rendermodel and the clipmodel
 				if (lclass->pseudo)
 				{
@@ -3147,10 +3147,11 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 				}
 				else
 				{
+					// a "not-combined" entity
 					if (lclass->hModel)
 					{
-						// just duplicate it (for func_statics from map geometry)
-						r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true );
+						// just duplicate it (for func_statics from map geometry), with a possible rescaling
+						r->hModel = gameLocal.m_ModelGenerator->DuplicateModel( lclass->hModel, lclass->classname, true, NULL, &ent->scale );
 						if ( r->hModel )
 						{
 							// take the model bounds and transform them for the renderentity
@@ -3161,9 +3162,25 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 							// should not happen
 							r->bounds.Zero();
 						}
+						// force an update because the bounds/origin/axis may stay the same while the model changes
+						r->forceUpdate = true;
+
+						// set the correct clipmodel (to override the "plank" one)
+						if (lclass->clip)
+						{
+							idClipModel *clip = new idClipModel( lclass->clip );	// make a copy
+							idPhysics *p = ent2->GetPhysics();
+							// translate the copy to the correct position
+							clip->Translate( p->GetOrigin() - clip->GetOrigin() );
+							p->SetClipModel( clip, 1.0f, 0, true );		// true => free old clipmodel
+						}
+
+						// nec. to make the entity appear visually
+						ent2->Present();
 					}
 					// else: the correct model was already loaded
 				}
+
 				// short version of "UpdateVisuals()"
 				// set to invalid number to force an update the next time the PVS areas are retrieved
 				ent2->ClearPVSAreas();
