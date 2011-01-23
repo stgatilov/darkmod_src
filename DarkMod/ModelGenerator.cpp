@@ -144,19 +144,19 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	numIndexes = 0;
 	numSurfaces = source->NumBaseSurfaces();
 
-#ifdef M_DEBUG
-	gameLocal.Printf("Source with %i surfaces. snapshot %s\n", numSurfaces, snapshotName);
-#endif
-
-	if (scale->x != 1.0f || scale->y != 1.0f || scale->z != 1.0f)
+	if (scale && (scale->x != 1.0f || scale->y != 1.0f || scale->z != 1.0f))
 	{
 		needScale = true;
 	}
 
+#ifdef M_DEBUG
+	gameLocal.Warning("Source with %i surfaces. snapshot %s, scaling: %s\n", numSurfaces, snapshotName, needScale ? "yes" : "no");
+#endif
+
 	// for each needed surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
-		// gameLocal.Warning("Duplicating surface %i.\n", i);
+		//gameLocal.Warning("Duplicating surface %i.\n", i);
 		surf = source->Surface( i );
 		if (!surf)
 		{
@@ -212,7 +212,8 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		newSurf.shader = surf->shader;
 		if (dupData)
 		{
-			// gameLocal.Warning("Duplicating %i verts and %i indexes.\n", surf->geometry->numVerts, surf->geometry->numIndexes );
+			//gameLocal.Warning("Duplicating %i verts and %i indexes.\n", surf->geometry->numVerts, surf->geometry->numIndexes );
+
 			newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
 
 			int nV = 0;		// vertexes
@@ -259,7 +260,6 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		{
 			// caller needs to make sure that the shared data is not deallocated twice
 			// by calling FreeSharedModelSurfaces() before destroy:
-			newSurf.shader = surf->shader;
 			newSurf.geometry = surf->geometry;
 		}
 		newSurf.id = 0;
