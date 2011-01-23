@@ -1806,6 +1806,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath=".\DarkMod\CImage.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\DarkModGlobals.h"
 					>
 				</File>
