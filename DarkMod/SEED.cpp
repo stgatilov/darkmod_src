@@ -1667,8 +1667,7 @@ void Seed::Prepare( void )
 		idEntity *ent = targets[ i ].GetEntity();
 		if (ent)
 		{
-			// TODO: SafeRemove?
-			ent->PostEventMS( &EV_Remove, 0 );
+			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
 	}
 	targets.Clear();
@@ -1694,7 +1693,7 @@ void Seed::Prepare( void )
 		BecomeInactive( TH_THINK );
 
 		// post event to remove ourselfes
-		PostEventMS( &EV_Remove, 0 );
+		PostEventMS( &EV_SafeRemove, 0 );
 	}
 	else
 	{
@@ -3268,7 +3267,7 @@ bool Seed::CullEntity( const int idx )
 		ent->flags &= (! SEED_ENTITY_EXISTS);
 		ent->entity = 0;
 
-		// TODO: SafeRemve?
+		// TODO: SafeRemove?
 		ent2->PostEventMS( &EV_Remove, 0 );
 
 		return true;
