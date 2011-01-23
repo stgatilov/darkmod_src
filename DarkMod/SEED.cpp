@@ -18,7 +18,8 @@
 
 Important things to do:
 
-TODO: Restore() crashes
+TODO: #2571: Restore() crashes if you combine func_statics (works fine with combine = 0)
+	  #2570: segfault (crash) when you use combine=0 with func_statics from map geometry 
 
 Nice-to-have:
 
@@ -64,6 +65,9 @@ TODO: Use a point (at least for nonsolids or vegetation?) instead of a box when 
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+// define to output model generation debug info
+//#define M_DEBUG
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
@@ -132,6 +136,8 @@ Seed::Seed( void ) {
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
+	m_bCombine = true;
+
 	// always put the empty skin into the list so it has index 0
 	m_Skins.Clear();
 	m_Skins.Append ( idStr("") );
@@ -170,6 +176,8 @@ void Seed::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( m_iDebug );
 	savefile->WriteBool( m_bDebugColors );
+
+	savefile->WriteBool( m_bCombine );
 
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iSeed_2 );
@@ -386,6 +394,8 @@ void Seed::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( m_iDebug );
 	savefile->ReadBool( m_bDebugColors );
+
+	savefile->ReadBool( m_bCombine );
 
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iSeed_2 );
@@ -682,6 +692,9 @@ void Seed::Spawn( void ) {
 
 	m_iDebug = spawnArgs.GetInt( "debug", "0" );
 	m_bDebugColors = spawnArgs.GetBool( "debug_colors", "0" );
+
+	// default is to combine
+	m_bCombine = spawnArgs.GetBool("combine", "1");
 
 	m_bWaitForTrigger = spawnArgs.GetBool("wait_for_trigger", "0");
 
@@ -1239,8 +1252,16 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 #ifdef M_DEBUG
 			gameLocal.Printf("Using clip from rendermodel ptr=0x%p bounds %s\n", SeedClass.clip, SeedClass.clip->GetBounds().ToString());
 #endif
+			SeedClass.classname = FUNC_DUMMY;
 		}
-		SeedClass.classname = FUNC_DUMMY;
+		else
+		{
+			// Only use the CStaticMulti class if we are going to combine things, otherwise leave it as "func_static"
+			if ( m_bCombine )
+			{
+				SeedClass.classname = FUNC_DUMMY;
+			}
+		}
 	}
 
 	// uses color variance?
@@ -2628,7 +2649,7 @@ void Seed::CombineEntities( void )
 	model_ofs_t ofs;
 	seed_sort_ofs_t sortOfs;
 
-	if ( ! spawnArgs.GetBool("combine", "0"))
+	if ( !m_bCombine )
 	{
 		gameLocal.Printf("SEED %s: combine = 0, skipping combine step.\n", GetName() );
 		return;

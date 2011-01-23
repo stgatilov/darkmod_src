@@ -466,6 +466,11 @@ private:
 	*/
 	bool						m_bDebugColors;
 
+	/**
+	* If true, this SEED will combine entities into StaticMulti entities
+	*/
+	bool						m_bCombine;
+
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 
