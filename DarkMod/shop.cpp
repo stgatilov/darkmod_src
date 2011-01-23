@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -28,7 +29,8 @@ CShopItem::CShopItem() :
 	count(0),
 	persistent(false),
 	canDrop(false),
-	stackable(false) // grayman (#2376)
+	dropped(0),			// tels (#2567) remember how many we dropped	
+	stackable(false)	// grayman (#2376)
 {}
 
 CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _description,
@@ -41,6 +43,7 @@ CShopItem::CShopItem(const idStr& _id, const idStr& _name, const idStr& _descrip
 	count(_count),
 	persistent(_persistent),
 	canDrop(_canDrop),
+	dropped(0),
 	stackable(_stackable) // grayman (#2376)
 {}
 
@@ -53,6 +56,7 @@ CShopItem::CShopItem(const CShopItem& item, int _count, int _cost, bool _persist
 	count(_count),
 	persistent(_persistent == false ? item.persistent : _persistent),
 	canDrop(item.canDrop),
+	dropped(0),
 	classNames(item.classNames),
 	stackable(item.stackable) // grayman (#2376)
 {}
@@ -91,6 +95,10 @@ int CShopItem::GetCount() {
 	return this->count;
 }
 
+int CShopItem::GetDroppedCount() {
+	return this->dropped;
+}
+
 bool CShopItem::GetPersistent() {
 	return this->persistent;
 }
@@ -103,8 +111,25 @@ void CShopItem::SetCanDrop(bool canDrop) {
 	this->canDrop = canDrop;
 }
 
-// grayman (#2376) - add stackable methods
+// tels (#2567)
+void CShopItem::Drop(void) {
+	if (this->canDrop && this->count > 0)
+	{
+		this->dropped = this->count;
+		this->count = 0;
+	}
+}
 
+// tels (#2567)
+void CShopItem::Undrop(void) {
+	if (this->canDrop && this->dropped > 0)
+	{
+		this->count = this->dropped;
+		this->dropped = 0;
+	}
+}
+
+// grayman (#2376) - add stackable methods
 bool CShopItem::GetStackable() {
 	return this->stackable;
 }
@@ -126,6 +151,7 @@ void CShopItem::Save(idSaveGame *savefile) const
 	savefile->WriteInt(cost);
 	savefile->WriteString(image);
 	savefile->WriteInt(count);
+	savefile->WriteInt(dropped);
 	savefile->WriteBool(persistent);
 	savefile->WriteBool(canDrop);
 
@@ -146,6 +172,7 @@ void CShopItem::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(cost);
 	savefile->ReadString(image);
 	savefile->ReadInt(count);
+	savefile->ReadInt(dropped);
 	savefile->ReadBool(persistent);
 	savefile->ReadBool(canDrop);
 
@@ -331,11 +358,12 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 		SellItem(soldItem);
 		UpdateGUI(gui);
 	}
-	else if (idStr::Icmp(menuCommand, "shopDrop") == 0)
+	else if (idStr::Icmp(menuCommand, "shopDropUndrop") == 0)
 	{
 		// Drop one of the starting items
 		int dropItem = gui->GetStateInt("dropItem", "0");
-		DropItem(dropItem);
+		// Decide depending on the item if we should drop or undrop
+		DropUndropItem(dropItem);
 		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopMore") == 0)
@@ -1011,13 +1039,17 @@ void CShop::BuyItem(int index)
 	boughtItem->ChangeCount(1);
 };
 
-void CShop::DropItem(int index)
+void CShop::DropUndropItem(int index)
 {
 	const CShopItemPtr& dropItem = startingItems[startingTop + index];
-	// Tels: Only drop if droppable (to stop a messed up GUI letting you drop it)
-	if (dropItem->GetCanDrop())
+	if (dropItem->GetDroppedCount() > 0)
 	{
-		dropItem->ChangeCount(-1);
+		dropItem->Undrop();
+	}
+	else
+	{
+		// Tels: Drop() will check if the item can be dropped
+		dropItem->Drop();
 	}
 };
 
@@ -1124,6 +1156,7 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		idStr guiDesc = idStr("starting") + i + "_desc";
 		idStr guiImage = idStr("starting") + i + "_image";
 		idStr guiAvailable = idStr("startingAvail") + i;
+		// Tels: if the item can be dropped or undropped, this is 1
 		idStr guiDrop = idStr("dropVisible") + i;
 		idStr name = idStr("");
 		idStr desc = idStr("");

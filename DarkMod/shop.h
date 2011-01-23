@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -29,6 +30,7 @@ private:
 	int			count;
 	bool		persistent;
 	bool		canDrop;
+	int			dropped;	// tels if dropped, store how many we had so player can undo drop
 
 	// The list of entityDef names to add to the player's inventory 
 	// when this shop item is purchased
@@ -79,6 +81,9 @@ public:
 	// or number user has bought, or number user started with)
 	int GetCount();				
 
+	// if starting item and it was dropped, the count before the drop (so we can undrop it)
+	int GetDroppedCount();				
+
 	// whether the item can be carried to the next mission
 	bool GetPersistent();
 
@@ -92,6 +97,12 @@ public:
 
 	// modifies number of items
 	void ChangeCount( int amount );
+
+	// sets dropped => count and count => 0
+	void Drop( void );
+
+	// sets count => dropped and dropped => 0
+	void Undrop( void );
 
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
@@ -171,7 +182,7 @@ public:
 	// adjust the lists
 	void SellItem(int index);
 	void BuyItem(int index);
-	void DropItem(int index);
+	void DropUndropItem(int index);
 
 	// update the GUI variables to match the shop
 	void UpdateGUI(idUserInterface* gui);
