@@ -388,7 +388,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			if (op.lod == i)
 			{
 				used ++;
-				if (! (op.flags & LODE_MODEL_NOSHADOW) )
+				if (! (op.flags & SEED_MODEL_NOSHADOW) )
 				{
 					shadows++;
 				}
@@ -606,7 +606,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			}
 		}
 
-		const bool noShadow = (op.flags & LODE_MODEL_NOSHADOW);
+		const bool noShadow = (op.flags & SEED_MODEL_NOSHADOW);
 
 		numSurfaces = source->NumBaseSurfaces();
 		int si = shaderIndexStart[op.lod];

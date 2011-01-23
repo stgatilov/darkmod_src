@@ -36,9 +36,9 @@
 #define MAX_MODEL_VERTS		(2 << 18)		// never combine more than this into one model
 #define MAX_MODEL_INDEXES	(2 << 18)		// never combine more than this into one model
 
-enum lode_model_flags {
-	LODE_MODEL_NOSHADOW		= 0x0001,		// remove common/shadow surfaces
-	LODE_MODEL_NOCLIP		= 0x0002,		// remove common/collision or tdm_collision_X surfaces
+enum seed_model_flags {
+	SEED_MODEL_NOSHADOW		= 0x0001,		// remove common/shadow surfaces
+	SEED_MODEL_NOCLIP		= 0x0002,		// remove common/collision or tdm_collision_X surfaces
 };
 
 // Defines offset, rotation, vertex color etc. for a model combine operation
@@ -48,7 +48,7 @@ typedef struct {
 	idAngles			angles;
 	dword				color;	// packed color (including alpha)
 	int					lod; 	// which LOD model stage to use?
-	int					flags; 	// flags for each model, see lode_model_flags
+	int					flags; 	// flags for each model, see seed_model_flags
 } model_ofs_t;
 
 // When combining different models (e.g. different LOD stages), every model

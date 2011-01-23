@@ -450,7 +450,7 @@ void CStaticMulti::Think( void )
 				m_LODLevel ++;
 				if ( LOD && LOD->noshadowsLOD & (1 << m_LODLevel) )
 				{
-					flags += LODE_MODEL_NOSHADOW;
+					flags += SEED_MODEL_NOSHADOW;
 				}
 				AddChange(i, m_LODLevel, flags);
 			}

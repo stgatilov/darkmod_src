@@ -21,7 +21,7 @@
 ===============================================================================
 
   StaticMulti - An entity with a physics object consisting of multiple
-  				clipmodels and a megamodel as rendermodel. Used by the LODE
+  				clipmodels and a megamodel as rendermodel. Used by the SEED
 				system to combine multiple entities.
 
 ===============================================================================
