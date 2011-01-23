@@ -180,6 +180,7 @@ void gameError( const char *fmt, ... );
 #include "../DarkMod/AI/AreaManager.h"
 #include "../DarkMod/GamePlayTimer.h"
 #include "../DarkMod/ModelGenerator.h"
+#include "../DarkMod/ImageMapManager.h"
 #include "../DarkMod/LightController.h"
 
 #include <boost/shared_ptr.hpp>
@@ -211,6 +212,8 @@ typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 
 class CModelGenerator;
 typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
+class CImageMapManager;
+typedef boost::shared_ptr<CImageMapManager> CImageMapManagerPtr;
 class CLightController;
 typedef boost::shared_ptr<CLightController> CLightControllerPtr;
 
@@ -527,6 +530,11 @@ public:
 	 * tels: The model generator instance, for manipulating/generating models on the fly.
 	 */
 	CModelGeneratorPtr		m_ModelGenerator;
+
+	/**
+	 * tels: The image mapmanager instance, for loading/sharing image maps for the SEED system.
+	 */
+	CImageMapManagerPtr		m_ImageMapManager;
 
 	/**
 	 * tels: The light controller instance, used to control local ambient lights.

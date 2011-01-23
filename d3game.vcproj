@@ -2062,6 +2062,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\ImageMapManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\ImageMapManager.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\ModMenu.cpp"
 					>
 				</File>
