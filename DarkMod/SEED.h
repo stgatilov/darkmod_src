@@ -10,8 +10,8 @@
 
 // Copyright (C) 2010-2011 Tels (Donated to The Dark Mod)
 
-#ifndef __GAME_LODE_H__
-#define __GAME_LODE_H__
+#ifndef __GAME_SEED_H__
+#define __GAME_SEED_H__
 
 #include "ModelGenerator.h"
 #include "StaticMulti.h"
@@ -19,7 +19,7 @@
 /*
 ===============================================================================
 
-  Lode - Level Of Detail Entity Manager
+  Seed - Level Of Detail Entity Manager
   
   Automatically creates/culls entities based on distance from player.
 
@@ -38,9 +38,9 @@
 ===============================================================================
 */
 
-#define LODE_DEBUG_MATERIAL_COUNT 13
-/** List of debug materials to use for the LODE megamodels */
-const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
+#define SEED_DEBUG_MATERIAL_COUNT 13
+/** List of debug materials to use for the SEED megamodels */
+const char* seed_debug_materials[SEED_DEBUG_MATERIAL_COUNT] = {
 	"debug_red",
 	"debug_blue",
 	"debug_green",
@@ -58,19 +58,19 @@ const char* lode_debug_materials[LODE_DEBUG_MATERIAL_COUNT] = {
 
 /** To sort a list of offsets by distance, but still keep the info which offset
     belongs to which entity so we can take the N nearest: */
-struct lode_sort_ofs_t {
+struct seed_sort_ofs_t {
 	model_ofs_t	ofs;					//!< the offset data
 	int			entity;					//!< Index into m_Entities
 };
 
 /** Defines one material class that modulates how often entities appear on it: */
-struct lode_material_t {
+struct seed_material_t {
 	idStr					name;			//!< a part, like "grass", or the full name like "sand_dark"
 	float					probability;	//!< 0 .. 1.0
 };
 
-/* Defines one entity class for the LODE system */
-struct lode_class_t {
+/* Defines one entity class for the SEED system */
+struct seed_class_t {
 	idStr					classname;		//!< Entity class to respawn entities
 	idList< int >			skins;			//!< index into skins array
 	idRenderModel*			hModel;			//!< When you turn a brush inside DR into a idStaticEntity and use it as template,
@@ -103,7 +103,7 @@ struct lode_class_t {
 	float					sink_min;		//!< sink into floor at minimum
 	float					sink_max;		//!< sink into floor at maximum
 	bool					floor;			//!< if true, the entities will be floored (on by default, use
-											//!< "lode_floor" "0" to disable, then entities will be positioned
+											//!< "seed_floor" "0" to disable, then entities will be positioned
 											//!< at "z" where the are in the editor
 	bool					stack;			//!< if true, the entities can stack on top of each other
 	bool					noinhibit;		//!< if true, the entities of this class will not be inhibited
@@ -116,7 +116,7 @@ struct lode_class_t {
 	float					defaultProb;	//!< Probabiliy with that entity class will appear. Only used if
 											//!< materialNames is not empty, and then used as the default when
 											//!< no entry in this list matches the texture the entity stands on.
-	idList<lode_material_t>	materials;		//!< List of material name parts that we can match against
+	idList<seed_material_t>	materials;		//!< List of material name parts that we can match against
 	int						nocollide;		//!< should this entity collide with:
    											//!< 1 other auto-generated entities from the same class?
 											//!< 2 other auto-generated entities (other classes)
@@ -156,7 +156,7 @@ struct lode_class_t {
 };
 
 /** Defines one area that inhibits entity spawning */
-struct lode_inhibitor_t {
+struct seed_inhibitor_t {
 	idVec3					origin;			//!< origin of the area
 	idVec3					size;			//!< size of the area (for falloff computation)
 	idBox					box;			//!< oriented box of the area
@@ -167,19 +167,19 @@ struct lode_inhibitor_t {
 	float					factor;			//!< if falloff == 2: X ** factor, if falloff == 3: factor'th root of X
 };
 
-#define LODE_ENTITY_FLAGMASK 0x00FFFFFF
-#define LODE_ENTITY_FLAGSHIFT 24
+#define SEED_ENTITY_FLAGMASK 0x00FFFFFF
+#define SEED_ENTITY_FLAGSHIFT 24
 
-enum lode_entity_flags {
-	LODE_ENTITY_HIDDEN		= 0x0001,
-	LODE_ENTITY_EXISTS		= 0x0002,
-	LODE_ENTITY_SPAWNED		= 0x0004,
-	LODE_ENTITY_PSEUDO		= 0x0008,
-	LODE_ENTITY_WAITING		= 0x0010
+enum seed_entity_flags {
+	SEED_ENTITY_HIDDEN		= 0x0001,
+	SEED_ENTITY_EXISTS		= 0x0002,
+	SEED_ENTITY_SPAWNED		= 0x0004,
+	SEED_ENTITY_PSEUDO		= 0x0008,
+	SEED_ENTITY_WAITING		= 0x0010
 };
 
 // Defines one entity to be spawned/culled
-struct lode_entity_t {
+struct seed_entity_t {
 	int						skinIdx;		//!< index into skin list, the final skin for this entity (might be randomly choosen)
 	idVec3					origin;			//!< (semi-random) origin
 	idAngles				angles;			//!< zyx (yaw, pitch, roll) (semi-random) angles
@@ -202,12 +202,12 @@ extern const idEventDef EV_Enable;
 extern const idEventDef EV_Deactivate;
 extern const idEventDef EV_CullAll;
 
-class Lode : public idStaticEntity {
+class Seed : public idStaticEntity {
 public:
-	CLASS_PROTOTYPE( Lode );
+	CLASS_PROTOTYPE( Seed );
 
-						Lode( void );
-	virtual				~Lode( void );
+						Seed( void );
+	virtual				~Seed( void );
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -279,7 +279,7 @@ private:
 	* if the clip model could be loaded. If idClipModel != NULL, then this clipmodel will be
 	* used, this happens f.i. for func_statics created from brush/patch geometry inside DR.
 	*/
-	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const lode_entity_t* entity, const int idx, idClipModel* clipModel = NULL);
+	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const seed_entity_t* entity, const int idx, idClipModel* clipModel = NULL);
 
 	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
@@ -299,7 +299,7 @@ private:
 
 	/**
 	* Spawn the entity with the given index, return true if it could be spawned.
-	* If managed is true, the LODE will take care of this entity for LOD changes.
+	* If managed is true, the SEED will take care of this entity for LOD changes.
 	*/
 	bool				SpawnEntity( const int idx, const bool managed );
 
@@ -406,17 +406,17 @@ private:
 	/**
 	* The classes of entities that we need to construct.
 	**/
-	idList<lode_class_t>		m_Classes;
+	idList<seed_class_t>		m_Classes;
 
 	/**
 	* The entities that inhibit us from spawning inside their area.
 	**/
-	idList<lode_inhibitor_t>	m_Inhibitors;
+	idList<seed_inhibitor_t>	m_Inhibitors;
 
 	/**
 	* Info about each entitiy that we spawn or cull.
 	**/
-	idList<lode_entity_t>		m_Entities;
+	idList<seed_entity_t>		m_Entities;
 
 	/**
 	* Names of all different skins.
@@ -434,7 +434,7 @@ private:
 	float						m_fAvgSize;
 
 	/**
-	* The PVS this LODE spans - can be more than one when it crosses a visportal.
+	* The PVS this SEED spans - can be more than one when it crosses a visportal.
 	* TODO: What if it are more than 64?
 	*/
 	int							m_iNumPVSAreas;
@@ -457,7 +457,7 @@ private:
 	int							m_iDebug;
 
 	/**
-	* The origin of the LODE brush.
+	* The origin of the SEED brush.
 	*/
 	idVec3						m_origin;
 
@@ -478,5 +478,5 @@ private:
 	static const unsigned long	COLLIDE_ALL  	 = 0x00;
 };
 
-#endif /* !__GAME_LODE_H__ */
+#endif /* !__GAME_SEED_H__ */
 

@@ -22,7 +22,7 @@ TODO: Restore() crashes
 
 Nice-to-have:
 
-TODO: add console command to save all LODE entities as prefab?
+TODO: add console command to save all SEED entities as prefab?
 TODO: take over LOD changes from entity
 TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
 	  smaller structs for pseudo classes (we might have thousands
@@ -79,7 +79,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // the name of the dummy func static with a visual model
 // Used because I could not get it to work with spawning an
 // empty func_static, then adding the model (modelDefHandle is protected)
-#define FUNC_DUMMY "atdm:lode_dummy_static"
+#define FUNC_DUMMY "atdm:seed_dummy_static"
 
 // Avoid that we run out of entities:
 
@@ -93,26 +93,26 @@ static bool init_version = FileVersionList("$Id$", init_version);
 const idEventDef EV_CullAll( "cullAll", "" );
 
 /*
-   Lode
+   Seed
 
    Entity that spawns/culls other entities, but is invisible on its own.
 
 ===============================================================================
 */
 
-CLASS_DECLARATION( idStaticEntity, Lode )
-	EVENT( EV_Activate,				Lode::Event_Activate )
-	EVENT( EV_Enable,				Lode::Event_Enable )
-	EVENT( EV_Disable,				Lode::Event_Disable )
-	EVENT( EV_CullAll,				Lode::Event_CullAll )
+CLASS_DECLARATION( idStaticEntity, Seed )
+	EVENT( EV_Activate,				Seed::Event_Activate )
+	EVENT( EV_Enable,				Seed::Event_Enable )
+	EVENT( EV_Disable,				Seed::Event_Disable )
+	EVENT( EV_CullAll,				Seed::Event_CullAll )
 END_CLASS
 
 /*
 ===============
-Lode::Lode
+Seed::Seed
 ===============
 */
-Lode::Lode( void ) {
+Seed::Seed( void ) {
 
 	active = false;
 
@@ -150,20 +150,20 @@ Lode::Lode( void ) {
 
 /*
 ===============
-Lode::~Lode
+Seed::~Seed
 ===============
 */
-Lode::~Lode(void) {
+Seed::~Seed(void) {
 
-	//gameLocal.Warning ("LODE %s: Shutdown.\n", GetName() );
+	//gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
 	ClearClasses();
 }
 /*
 ===============
-Lode::Save
+Seed::Save
 ===============
 */
-void Lode::Save( idSaveGame *savefile ) const {
+void Seed::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( active );
 	savefile->WriteBool( m_bWaitForTrigger );
@@ -338,12 +338,12 @@ void Lode::Save( idSaveGame *savefile ) const {
 
 /*
 ===============
-Lode::ClearClasses
+Seed::ClearClasses
 
 Free memory from render models and CImages
 ===============
 */
-void Lode::ClearClasses( void )
+void Seed::ClearClasses( void )
 {
 	int n = m_Classes.Num();
 	for(int i = 0; i < n; i++ )
@@ -374,10 +374,10 @@ void Lode::ClearClasses( void )
 
 /*
 ===============
-Lode::Restore
+Seed::Restore
 ===============
 */
-void Lode::Restore( idRestoreGame *savefile ) {
+void Seed::Restore( idRestoreGame *savefile ) {
 	int num;
 	bool bHaveModel;
 
@@ -580,7 +580,7 @@ void Lode::Restore( idRestoreGame *savefile ) {
 
 /*
 ===============
-Lode::RandomSeed
+Seed::RandomSeed
 
 Implement our own, independent random generator with our own seed, so we are
 independent from the seed in gameLocal and the one used in RandomFloat. This
@@ -588,37 +588,37 @@ one is used to calculate the seeds per-class, values choosen per:
 http://en.wikipedia.org/wiki/Linear_congruential_generator
 ===============
 */
-ID_INLINE int Lode::RandomSeed( void ) {
+ID_INLINE int Seed::RandomSeed( void ) {
 	m_iSeed_2 = 1103515245L * m_iSeed_2 + 12345L;
 	return m_iSeed_2 & 0x7FFFFFF;
 }
 
 /*
 ===============
-Lode::RandomFloat
+Seed::RandomFloat
 
 Implement our own random generator with our own seed, so we are independent
-from the seed in gameLocal, also needs to be independent from Lode::RandomSeed:
+from the seed in gameLocal, also needs to be independent from Seed::RandomSeed:
 http://en.wikipedia.org/wiki/Linear_congruential_generator
 ===============
 */
-ID_INLINE float Lode::RandomFloat( void ) {
+ID_INLINE float Seed::RandomFloat( void ) {
 	unsigned long i;
 	m_iSeed = 1664525L * m_iSeed + 1013904223L;
-	i = Lode::IEEE_ONE | ( m_iSeed & Lode::IEEE_MASK );
+	i = Seed::IEEE_ONE | ( m_iSeed & Seed::IEEE_MASK );
 	return ( ( *(float *)&i ) - 1.0f );
 }
 
 /*
 ===============
-Lode::Spawn
+Seed::Spawn
 ===============
 */
-void Lode::Spawn( void ) {
+void Seed::Spawn( void ) {
 
 	// DEBUG
-	gameLocal.Printf( "LODE %s: Sizes: lode_entity_t %i, lode_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i.\n", 
-			GetName(), sizeof(lode_entity_t), sizeof(lode_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity) );
+	gameLocal.Printf( "SEED %s: Sizes: seed_entity_t %i, seed_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i.\n", 
+			GetName(), sizeof(seed_entity_t), sizeof(seed_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity) );
 
 	// if we subtract the render entity origin from the physics origin (this is where the mapper places
 	// the origin inside DR), we magically arrive at the true origin of the visible brush placed in DR.
@@ -629,14 +629,14 @@ void Lode::Spawn( void ) {
 //	idVec3 o = clip->GetOrigin();
 //	idVec3 s = clip->GetBounds().GetSize();
 //	idAngles a = clip->GetAxis().ToAngles();
-//	gameLocal.Printf( "LODE %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
+//	gameLocal.Printf( "SEED %s: Clipmodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
 //	idTraceModel *trace = GetPhysics()->GetClipModel()->GetTraceModel();
 //	idVec3 o = trace->GetOrigin();
 //	idVec3 s = trace->GetBounds().GetSize();
 //	idAngles a = trace->GetAxis().ToAngles();
 
-//	gameLocal.Printf( "LODE %s: Tracemodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
+//	gameLocal.Printf( "SEED %s: Tracemodel origin %0.2f %0.2f %0.2f size %0.2f %0.2f %0.2f axis %s.\n", GetName(), o.x, o.y, o.z, s.x, s.y, s.z, a.ToString() );
 
 	idVec3 size = renderEntity.bounds.GetSize();
 	idAngles angles = renderEntity.axis.ToAngles();
@@ -649,7 +649,7 @@ void Lode::Spawn( void ) {
     modelAbsBounds.FromTransformedBounds( b, m_origin, renderEntity.axis );
 	m_iNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, m_iPVSAreas, sizeof( m_iPVSAreas ) / sizeof( m_iPVSAreas[0] ) );
 
-	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
+	gameLocal.Printf( "SEED %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
 
 /*
 	// how to get the current model (rough outline)
@@ -670,7 +670,7 @@ void Lode::Spawn( void ) {
 	trace.SetupPolygon( vertices, int );
 */
 
-	// the Lode itself is sneaky and hides itself
+	// the Seed itself is sneaky and hides itself
 	Hide();
 
 	// And is nonsolid, too!
@@ -688,7 +688,7 @@ void Lode::Spawn( void ) {
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
 	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
-	gameLocal.Printf ("LODE %s: cull range = %0.2f.\n", GetName(), cullRange );
+	gameLocal.Printf ("SEED %s: cull range = %0.2f.\n", GetName(), cullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -703,10 +703,10 @@ void Lode::Spawn( void ) {
 
 /*
 ===============
-Lode::AddSkin - add one skin name to the skins list (if it isn't in there already), and return the index
+Seed::AddSkin - add one skin name to the skins list (if it isn't in there already), and return the index
 ===============
 */
-int Lode::AddSkin( const idStr *skin )
+int Seed::AddSkin( const idStr *skin )
 {
 	for( int i = 0; i < m_Skins.Num(); i++ )
 	{
@@ -722,13 +722,13 @@ int Lode::AddSkin( const idStr *skin )
 }
 
 /*
-Lode::ParseFalloff - interpret the falloff spawnarg from the given dictionary
+Seed::ParseFalloff - interpret the falloff spawnarg from the given dictionary
 */
-int Lode::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const
+int Seed::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const
 {
 	int rc = 0;
 
-	idStr falloff = dict->GetString( "lode_falloff", defaultName );
+	idStr falloff = dict->GetString( "seed_falloff", defaultName );
 	if (falloff == "none")
 	{
 		return 0;
@@ -757,15 +757,15 @@ int Lode::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 
 	if (rc == 0)
 	{
-		gameLocal.Warning("LODE %s: Wrong falloff %s, expected one of none, cutoff, power, root, linear or func.\n", GetName(), falloff.c_str() );
+		gameLocal.Warning("SEED %s: Wrong falloff %s, expected one of none, cutoff, power, root, linear or func.\n", GetName(), falloff.c_str() );
 		return 0;
 	}
 
 	// power or root, store the factor in func_a
-	*func_a = dict->GetFloat( "lode_func_a", defaultFactor );
+	*func_a = dict->GetFloat( "seed_func_a", defaultFactor );
 	if (*func_a < 2.0f)
 	{
-		gameLocal.Warning( "LODE %s: Expect lode_func_a >= 2 when falloff is %s.\n", GetName(), falloff.c_str());
+		gameLocal.Warning( "SEED %s: Expect seed_func_a >= 2 when falloff is %s.\n", GetName(), falloff.c_str());
 		*func_a = 2.0f;
 	}
 
@@ -774,50 +774,50 @@ int Lode::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 
 /*
 ===============
-Lode::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
+Seed::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
 */
-float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
+float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 {
-	lode_class_t			LodeClass;
-	lode_material_t			LodeMaterial;
+	seed_class_t			SeedClass;
+	seed_material_t			SeedMaterial;
 	const idKeyValue *kv;
 	float fImgDensity = 1.0f;		// average "density" of the image map
 
-	LodeClass.pseudo = false;		// this is a true entity class
-	LodeClass.score = iEntScore;
-	LodeClass.classname = ent->GetEntityDefName();
-	LodeClass.modelname = ent->spawnArgs.GetString("model","");
+	SeedClass.pseudo = false;		// this is a true entity class
+	SeedClass.score = iEntScore;
+	SeedClass.classname = ent->GetEntityDefName();
+	SeedClass.modelname = ent->spawnArgs.GetString("model","");
 
 	// is solid?	
-	LodeClass.solid = ent->spawnArgs.GetBool("solid","1");
-	LodeClass.nocombine = ent->spawnArgs.GetBool("lode_combine","1") ? false : true;
+	SeedClass.solid = ent->spawnArgs.GetBool("solid","1");
+	SeedClass.nocombine = ent->spawnArgs.GetBool("seed_combine","1") ? false : true;
 
 	// never combine moveables, actors or lights
 	if ( ent->IsType( idMoveable::Type ) ||
 		 ent->IsType( idActor::Type ) ||
 		 ent->IsType( idLight::Type ) )
 	{
-		LodeClass.nocombine = true;
+		SeedClass.nocombine = true;
 	}
 
 	// only for pseudo classes
-	LodeClass.physicsObj = NULL;
+	SeedClass.physicsObj = NULL;
 
 	// debug_colors?
-	LodeClass.materialName = "";
+	SeedClass.materialName = "";
 	if (m_bDebugColors)
 	{
 		// select one at random
-		LodeClass.materialName = idStr("textures/darkmod/debug/") + lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
+		SeedClass.materialName = idStr("textures/darkmod/debug/") + seed_debug_materials[ gameLocal.random.RandomInt( SEED_DEBUG_MATERIAL_COUNT ) ];
 	}
 	
 	// get all "skin" and "skin_xx", as well as "random_skin" spawnargs
-	LodeClass.skins.Clear();
+	SeedClass.skins.Clear();
 	// if no skin spawnarg exists, add the empty skin so we at least have one entry
 	if ( ! ent->spawnArgs.FindKey("skin") )
 	{
-		LodeClass.skins.Append ( 0 );
+		SeedClass.skins.Append ( 0 );
 	}
    	kv = ent->spawnArgs.MatchPrefix( "skin", NULL );
 	while( kv )
@@ -825,14 +825,14 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// find the proper skin index
 		idStr skin = kv->GetValue();
 		int skinIdx = AddSkin( &skin );
-		gameLocal.Printf( "LODE %s: Adding skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
-		LodeClass.skins.Append ( skinIdx );
+		gameLocal.Printf( "SEED %s: Adding skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+		SeedClass.skins.Append ( skinIdx );
 		kv = ent->spawnArgs.MatchPrefix( "skin", kv );
 	}
 	idStr random_skin = ent->spawnArgs.GetString("random_skin","");
 	if ( !random_skin.IsEmpty() )
 	{
-		gameLocal.Printf( "LODE %s: Entity has random_skin '%s'.\n", GetName(), random_skin.c_str() );
+		gameLocal.Printf( "SEED %s: Entity has random_skin '%s'.\n", GetName(), random_skin.c_str() );
 		// TODO: split up at "," and add all these to the skins
 		// if we have X commata, we have X+1 pieces, so go through all of them
 		int start = 0; int end = 0;
@@ -863,8 +863,8 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 						skin = "";
 					}
 					int skinIdx = AddSkin( &skin );
-					gameLocal.Printf( "LODE %s: Adding random skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
-					LodeClass.skins.Append ( skinIdx );
+					gameLocal.Printf( "SEED %s: Adding random skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+					SeedClass.skins.Append ( skinIdx );
 				}
 				start = end;
 				// next part
@@ -874,174 +874,174 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	// Do not use GetPhysics()->GetOrigin(), as the LOD system might have shifted
 	// the entity already between spawning and us querying the info:
-	LodeClass.origin = ent->spawnArgs.GetVector( "origin" );
+	SeedClass.origin = ent->spawnArgs.GetVector( "origin" );
 
-	// add "lode_offset" to correct for mismatched origins
-	LodeClass.offset = ent->spawnArgs.GetVector( "lode_offset", "0 0 0" );
+	// add "seed_offset" to correct for mismatched origins
+	SeedClass.offset = ent->spawnArgs.GetVector( "seed_offset", "0 0 0" );
 
 	// these are ignored for pseudo classes (e.g. watch_breathren):
-	LodeClass.floor = ent->spawnArgs.GetBool( "lode_floor", spawnArgs.GetString( "floor", "0") );
-	LodeClass.stack = ent->spawnArgs.GetBool( "lode_stack", "1" );
-	LodeClass.noinhibit = ent->spawnArgs.GetBool( "lode_noinhibit", "0" );
+	SeedClass.floor = ent->spawnArgs.GetBool( "seed_floor", spawnArgs.GetString( "floor", "0") );
+	SeedClass.stack = ent->spawnArgs.GetBool( "seed_stack", "1" );
+	SeedClass.noinhibit = ent->spawnArgs.GetBool( "seed_noinhibit", "0" );
 
-	LodeClass.spacing = ent->spawnArgs.GetFloat( "lode_spacing", "0" );
+	SeedClass.spacing = ent->spawnArgs.GetFloat( "seed_spacing", "0" );
 
 	// to randomly sink entities into the floor
-	LodeClass.sink_min = ent->spawnArgs.GetFloat( "lode_sink_min", spawnArgs.GetString( "sink_min", "0") );
-	LodeClass.sink_max = ent->spawnArgs.GetFloat( "lode_sink_max", spawnArgs.GetString( "sink_max", "0") );
-	if (LodeClass.sink_max < LodeClass.sink_min) { LodeClass.sink_max = LodeClass.sink_min; }
+	SeedClass.sink_min = ent->spawnArgs.GetFloat( "seed_sink_min", spawnArgs.GetString( "sink_min", "0") );
+	SeedClass.sink_max = ent->spawnArgs.GetFloat( "seed_sink_max", spawnArgs.GetString( "sink_max", "0") );
+	if (SeedClass.sink_max < SeedClass.sink_min) { SeedClass.sink_max = SeedClass.sink_min; }
 
-	// to support scaling of all axes with the same value, peek into lode_scale_min and lode_scale_max
-	idStr scale_min = ent->spawnArgs.GetString( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
-	idStr scale_max = ent->spawnArgs.GetString( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+	// to support scaling of all axes with the same value, peek into seed_scale_min and seed_scale_max
+	idStr scale_min = ent->spawnArgs.GetString( "seed_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+	idStr scale_max = ent->spawnArgs.GetString( "seed_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
 	if (scale_min.Find(' ') < 0)
 	{
 		// set x and y to 0 to signal code to use axes-equal scaling
-		LodeClass.scale_min = idVec3( 0, 0, ent->spawnArgs.GetFloat( "lode_scale_min", spawnArgs.GetString( "scale_min", "1") ) );
+		SeedClass.scale_min = idVec3( 0, 0, ent->spawnArgs.GetFloat( "seed_scale_min", spawnArgs.GetString( "scale_min", "1") ) );
 	}
 	else
 	{
-		LodeClass.scale_min = ent->spawnArgs.GetVector( "lode_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
+		SeedClass.scale_min = ent->spawnArgs.GetVector( "seed_scale_min", spawnArgs.GetString( "scale_min", "1 1 1") );
 	}
 
 	if (scale_max.Find(' ') < 0)
 	{
 		// set x and y to 0 to signal code to use axes-equal scaling
-		LodeClass.scale_max = idVec3( 0, 0, ent->spawnArgs.GetFloat( "lode_scale_max", spawnArgs.GetString( "scale_max", "1") ) );
+		SeedClass.scale_max = idVec3( 0, 0, ent->spawnArgs.GetFloat( "seed_scale_max", spawnArgs.GetString( "scale_max", "1") ) );
 	}
 	else
 	{
-		LodeClass.scale_max = ent->spawnArgs.GetVector( "lode_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
+		SeedClass.scale_max = ent->spawnArgs.GetVector( "seed_scale_max", spawnArgs.GetString( "scale_max", "1 1 1") );
 	}
 
-	if (LodeClass.scale_max.x < LodeClass.scale_min.x) { LodeClass.scale_max.x = LodeClass.scale_min.x; }
-	if (LodeClass.scale_max.y < LodeClass.scale_min.y) { LodeClass.scale_max.y = LodeClass.scale_min.y; }
-	if (LodeClass.scale_max.z < LodeClass.scale_min.z) { LodeClass.scale_max.z = LodeClass.scale_min.z; }
+	if (SeedClass.scale_max.x < SeedClass.scale_min.x) { SeedClass.scale_max.x = SeedClass.scale_min.x; }
+	if (SeedClass.scale_max.y < SeedClass.scale_min.y) { SeedClass.scale_max.y = SeedClass.scale_min.y; }
+	if (SeedClass.scale_max.z < SeedClass.scale_min.z) { SeedClass.scale_max.z = SeedClass.scale_min.z; }
 
-	LodeClass.func_x = 0;
-	LodeClass.func_y = 0;
-	LodeClass.func_s = 0;
-	LodeClass.func_a = 0;
-	LodeClass.func_Xt = 0;
-	LodeClass.func_Yt = 0;
-	LodeClass.func_f = 0;
+	SeedClass.func_x = 0;
+	SeedClass.func_y = 0;
+	SeedClass.func_s = 0;
+	SeedClass.func_a = 0;
+	SeedClass.func_Xt = 0;
+	SeedClass.func_Yt = 0;
+	SeedClass.func_f = 0;
 
-	LodeClass.falloff = ParseFalloff( &ent->spawnArgs, spawnArgs.GetString( "falloff", "none"), spawnArgs.GetString( "func_a", "2"), &LodeClass.func_a);
+	SeedClass.falloff = ParseFalloff( &ent->spawnArgs, spawnArgs.GetString( "falloff", "none"), spawnArgs.GetString( "func_a", "2"), &SeedClass.func_a);
 	// falloff == func
-	if (LodeClass.falloff == 5)
+	if (SeedClass.falloff == 5)
 	{
 		// default is 0.5 * (x + y + 0)
-		LodeClass.func_a = ent->spawnArgs.GetFloat( "lode_func_a", spawnArgs.GetString( "func_a", "0") );
-		LodeClass.func_s = ent->spawnArgs.GetFloat( "lode_func_s", spawnArgs.GetString( "func_s", "0.5") );
-		LodeClass.func_Xt = 1;			// 1 - X, 2 -> X * X
-		idStr x = ent->spawnArgs.GetString( "lode_func_Xt", spawnArgs.GetString( "func_Xt", "X") );
+		SeedClass.func_a = ent->spawnArgs.GetFloat( "seed_func_a", spawnArgs.GetString( "func_a", "0") );
+		SeedClass.func_s = ent->spawnArgs.GetFloat( "seed_func_s", spawnArgs.GetString( "func_s", "0.5") );
+		SeedClass.func_Xt = 1;			// 1 - X, 2 -> X * X
+		idStr x = ent->spawnArgs.GetString( "seed_func_Xt", spawnArgs.GetString( "func_Xt", "X") );
 		if (x == "X*X")
 		{
-			LodeClass.func_Xt = 2;		// 1 - X, 2 -> X * X
+			SeedClass.func_Xt = 2;		// 1 - X, 2 -> X * X
 		}
-		LodeClass.func_Yt = 1;			// 1 - X, 2 -> X * X
-		x = ent->spawnArgs.GetString( "lode_func_Yt", spawnArgs.GetString( "func_Yt", "Y") );
+		SeedClass.func_Yt = 1;			// 1 - X, 2 -> X * X
+		x = ent->spawnArgs.GetString( "seed_func_Yt", spawnArgs.GetString( "func_Yt", "Y") );
 		if (x == "Y*Y")
 		{
-			LodeClass.func_Yt = 2;		// 1 - Y, 2 -> Y * Y
+			SeedClass.func_Yt = 2;		// 1 - Y, 2 -> Y * Y
 		}
-		LodeClass.func_x = ent->spawnArgs.GetFloat( "lode_func_x", spawnArgs.GetString( "func_x", "1") );
-		LodeClass.func_y = ent->spawnArgs.GetFloat( "lode_func_y", spawnArgs.GetString( "func_y", "1") );
-		LodeClass.func_min = ent->spawnArgs.GetFloat( "lode_func_min", spawnArgs.GetString( "func_min", "0") );
-		LodeClass.func_max = ent->spawnArgs.GetFloat( "lode_func_max", spawnArgs.GetString( "func_max", "1.0") );
-		if (LodeClass.func_min < 0.0f)
+		SeedClass.func_x = ent->spawnArgs.GetFloat( "seed_func_x", spawnArgs.GetString( "func_x", "1") );
+		SeedClass.func_y = ent->spawnArgs.GetFloat( "seed_func_y", spawnArgs.GetString( "func_y", "1") );
+		SeedClass.func_min = ent->spawnArgs.GetFloat( "seed_func_min", spawnArgs.GetString( "func_min", "0") );
+		SeedClass.func_max = ent->spawnArgs.GetFloat( "seed_func_max", spawnArgs.GetString( "func_max", "1.0") );
+		if (SeedClass.func_min < 0.0f)
 		{
-			gameLocal.Warning ("LODE %s: func_min %0.2f < 0, setting it to 0.\n", GetName(), LodeClass.func_min );
-			LodeClass.func_min = 0.0f;
+			gameLocal.Warning ("SEED %s: func_min %0.2f < 0, setting it to 0.\n", GetName(), SeedClass.func_min );
+			SeedClass.func_min = 0.0f;
 		}
-		if (LodeClass.func_max > 1.0f)
+		if (SeedClass.func_max > 1.0f)
 		{
-			gameLocal.Warning ("LODE %s: func_max %0.2f < 1.0, setting it to 1.0.\n", GetName(), LodeClass.func_max );
-			LodeClass.func_max = 1.0f;
+			gameLocal.Warning ("SEED %s: func_max %0.2f < 1.0, setting it to 1.0.\n", GetName(), SeedClass.func_max );
+			SeedClass.func_max = 1.0f;
 		}
-		if (LodeClass.func_min > LodeClass.func_max)
+		if (SeedClass.func_min > SeedClass.func_max)
 		{
-			gameLocal.Warning ("LODE %s: func_min %0.2f > func_max %0.2f, setting it to 0.\n", GetName(), LodeClass.func_min, LodeClass.func_max );
-			LodeClass.func_min = 0.0f;
+			gameLocal.Warning ("SEED %s: func_min %0.2f > func_max %0.2f, setting it to 0.\n", GetName(), SeedClass.func_min, SeedClass.func_max );
+			SeedClass.func_min = 0.0f;
 		}
 
-		x = ent->spawnArgs.GetString( "lode_func_f", spawnArgs.GetString( "func_f", "clamp") );
+		x = ent->spawnArgs.GetString( "seed_func_f", spawnArgs.GetString( "func_f", "clamp") );
 		if (x == "clamp")
 		{
-			LodeClass.func_f = 1;
+			SeedClass.func_f = 1;
 		}
 		else if (x != "zeroclamp")
 		{
-			gameLocal.Error ("LODE %s: func_clamp is invalid, expected 'clamp' or 'zeroclamp', found '%s'\n", GetName(), x.c_str() );
+			gameLocal.Error ("SEED %s: func_clamp is invalid, expected 'clamp' or 'zeroclamp', found '%s'\n", GetName(), x.c_str() );
 		}
-		gameLocal.Warning ("LODE %s: Using falloff func p = %s( %0.2f, %0.2f, %0.2f * ( %s * %0.2f + %s * %0.2f + %0.2f) )\n", 
-				GetName(), x.c_str(), LodeClass.func_min, LodeClass.func_max, LodeClass.func_s, LodeClass.func_Xt == 1 ? "X" : "X*X", LodeClass.func_x, 
-				LodeClass.func_Yt == 1 ? "Y" : "Y*Y", LodeClass.func_y, LodeClass.func_a );
+		gameLocal.Warning ("SEED %s: Using falloff func p = %s( %0.2f, %0.2f, %0.2f * ( %s * %0.2f + %s * %0.2f + %0.2f) )\n", 
+				GetName(), x.c_str(), SeedClass.func_min, SeedClass.func_max, SeedClass.func_s, SeedClass.func_Xt == 1 ? "X" : "X*X", SeedClass.func_x, 
+				SeedClass.func_Yt == 1 ? "Y" : "Y*Y", SeedClass.func_y, SeedClass.func_a );
 	}
 
 	// image based map?
-	LodeClass.map = ent->spawnArgs.GetString( "lode_map", spawnArgs.GetString( "map", "") );
-	LodeClass.img = NULL;
-	LodeClass.map_invert = false;
-	LodeClass.map_scale_x = 1.0f;
-	LodeClass.map_scale_y = 1.0f;
-	LodeClass.map_ofs_x = 0.0f;
-	LodeClass.map_ofs_y = 0.0f;
+	SeedClass.map = ent->spawnArgs.GetString( "seed_map", spawnArgs.GetString( "map", "") );
+	SeedClass.img = NULL;
+	SeedClass.map_invert = false;
+	SeedClass.map_scale_x = 1.0f;
+	SeedClass.map_scale_y = 1.0f;
+	SeedClass.map_ofs_x = 0.0f;
+	SeedClass.map_ofs_y = 0.0f;
 	// not empty => image based map
-	if ( ! LodeClass.map.IsEmpty())
+	if ( ! SeedClass.map.IsEmpty())
 	{
-	    LodeClass.map_invert = ent->spawnArgs.GetBool( "lode_map_invert", spawnArgs.GetString( "map_invert", "0") );
+	    SeedClass.map_invert = ent->spawnArgs.GetBool( "seed_map_invert", spawnArgs.GetString( "map_invert", "0") );
 
-		LodeClass.map_scale_x = 
-			ent->spawnArgs.GetFloat( "lode_map_scale_x", 
-					ent->spawnArgs.GetString( "lode_map_scale",			// if lode_map_scale_x is not set, try "lode_map_scale"
+		SeedClass.map_scale_x = 
+			ent->spawnArgs.GetFloat( "seed_map_scale_x", 
+					ent->spawnArgs.GetString( "seed_map_scale",			// if seed_map_scale_x is not set, try "seed_map_scale"
 					   	spawnArgs.GetString( "map_scale_x",				// and if that isn't set either, try map_scale_x
 						   	spawnArgs.GetString( "map_scale",			// and if that isn't set either, try map_scale
 						   	"1.0" ) ) ) );								// finally fallback to 1.0
-		LodeClass.map_scale_y = 
-			ent->spawnArgs.GetFloat( "lode_map_scale_y", 
-					ent->spawnArgs.GetString( "lode_map_scale",			// if lode_map_scale_y is not set, try "lode_map_scale"
-					   	spawnArgs.GetString( "map_scale_y",				// and if that isn't set either, try LODE::map_scale_y
-						   	spawnArgs.GetString( "map_scale",			// and if that isn't set either, try LODE::map_scale
+		SeedClass.map_scale_y = 
+			ent->spawnArgs.GetFloat( "seed_map_scale_y", 
+					ent->spawnArgs.GetString( "seed_map_scale",			// if seed_map_scale_y is not set, try "seed_map_scale"
+					   	spawnArgs.GetString( "map_scale_y",				// and if that isn't set either, try SEED::map_scale_y
+						   	spawnArgs.GetString( "map_scale",			// and if that isn't set either, try SEED::map_scale
 						   	"1.0" ) ) ) );								// finally fallback to 1.0
-		LodeClass.map_ofs_x = 
-			ent->spawnArgs.GetFloat( "lode_map_ofs_x", 
-					ent->spawnArgs.GetString( "lode_map_ofs",			// if lode_map_scale_x is not set, try "lode_map_ofs"
-					   	spawnArgs.GetString( "map_ofs_x",				// and if that isn't set either, try LODE::map_scale_x
-						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try LODE::map_scale
+		SeedClass.map_ofs_x = 
+			ent->spawnArgs.GetFloat( "seed_map_ofs_x", 
+					ent->spawnArgs.GetString( "seed_map_ofs",			// if seed_map_scale_x is not set, try "seed_map_ofs"
+					   	spawnArgs.GetString( "map_ofs_x",				// and if that isn't set either, try SEED::map_scale_x
+						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try SEED::map_scale
 						   	"0" ) ) ) );								// finally fallback to 0
-		LodeClass.map_ofs_y = 
-			ent->spawnArgs.GetFloat( "lode_map_ofs_y", 
-					ent->spawnArgs.GetString( "lode_map_ofs",			// if lode_map_scale_y is not set, try "lode_map_ofs"
-					   	spawnArgs.GetString( "map_ofs_y",				// and if that isn't set either, try LODE::map_scale_y
-						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try LODE::map_scale
+		SeedClass.map_ofs_y = 
+			ent->spawnArgs.GetFloat( "seed_map_ofs_y", 
+					ent->spawnArgs.GetString( "seed_map_ofs",			// if seed_map_scale_y is not set, try "seed_map_ofs"
+					   	spawnArgs.GetString( "map_ofs_y",				// and if that isn't set either, try SEED::map_scale_y
+						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try SEED::map_scale
 						   	"0" ) ) ) );								// finally fallback to 0
 
-		LodeClass.img = new CImage();
+		SeedClass.img = new CImage();
 		// need this to load PNG and JPG
-		LodeClass.img->SetDefaultImageType(CImage::AUTO_DETECT);
+		SeedClass.img->SetDefaultImageType(CImage::AUTO_DETECT);
 
-		// If the map name does not start with "textures/lode/", prepend it:
-		idStr mapName = LodeClass.map;
-		if (mapName.Left(14) != "textures/lode/")
+		// If the map name does not start with "textures/seed/", prepend it:
+		idStr mapName = SeedClass.map;
+		if (mapName.Left(14) != "textures/seed/")
 		{
-			mapName = "textures/lode/" + LodeClass.map;
+			mapName = "textures/seed/" + SeedClass.map;
 		}
 
 		// try to find PNG, TGA or JPG version
 		idFile *fl = NULL;
 		if((fl = fileSystem->OpenFileRead(mapName)) == NULL)
 		{
-			//gameLocal.Warning("LODE %s: Could not find %s, trying .png next.\n", GetName(), mapName.c_str() );
+			//gameLocal.Warning("SEED %s: Could not find %s, trying .png next.\n", GetName(), mapName.c_str() );
 			idStr m = mapName + ".png";
 			if((fl = fileSystem->OpenFileRead(m)) == NULL)
 			{
-				//gameLocal.Warning("LODE %s: Could not find %s, trying .tga next.\n", GetName(), m.c_str() );
+				//gameLocal.Warning("SEED %s: Could not find %s, trying .tga next.\n", GetName(), m.c_str() );
 				// can't find PNG, try TGA
 				m = mapName + ".tga";
 				if((fl = fileSystem->OpenFileRead(m)) == NULL)
 				{
-					// gameLocal.Warning("LODE %s: Could not find %s, trying .jpg next.\n", GetName(), m.c_str() );
+					// gameLocal.Warning("SEED %s: Could not find %s, trying .jpg next.\n", GetName(), m.c_str() );
 					// can't find TGA, try JPG as last resort
 					mapName += ".jpg";
 				}
@@ -1062,33 +1062,33 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 			fileSystem->CloseFile(fl);
 		}
 
-		gameLocal.Warning("LODE %s: Trying to load %s.\n", GetName(), mapName.c_str() );
-		LodeClass.img->LoadImageFromVfs( mapName );
-		LodeClass.img->InitImageInfo();
+		gameLocal.Warning("SEED %s: Trying to load %s.\n", GetName(), mapName.c_str() );
+		SeedClass.img->LoadImageFromVfs( mapName );
+		SeedClass.img->InitImageInfo();
 
-		unsigned char *imgData = LodeClass.img->GetImage();
+		unsigned char *imgData = SeedClass.img->GetImage();
 		if (!imgData)
 		{
-			gameLocal.Error("LODE %s: Could not access image data from %s.\n", GetName(), mapName.c_str() );
+			gameLocal.Error("SEED %s: Could not access image data from %s.\n", GetName(), mapName.c_str() );
 		}
 
-		if (LodeClass.img->m_Bpp != 1)
+		if (SeedClass.img->m_Bpp != 1)
 		{
-			gameLocal.Error("LODE %s: Bytes per pixel must be 1 but is %i!\n", GetName(), LodeClass.img->m_Bpp );
+			gameLocal.Error("SEED %s: Bytes per pixel must be 1 but is %i!\n", GetName(), SeedClass.img->m_Bpp );
 		}
 
 		// Compute an average density for the image map, so we can correct the number of entities
 		// based on this. An image map with 50% black and 50% white should result in 0.5, as should 50% grey:
 		fImgDensity = 0.0f;
 
-		int w = LodeClass.img->m_Width;
-		int h = LodeClass.img->m_Height;
-		double wd = LodeClass.img->m_Width;
-		double hd = LodeClass.img->m_Height;
-		double xo = LodeClass.img->m_Width * LodeClass.map_ofs_x;
-		double yo = LodeClass.img->m_Width * LodeClass.map_ofs_y;
-		double xs = LodeClass.map_scale_x;
-		double ys = LodeClass.map_scale_y;
+		int w = SeedClass.img->m_Width;
+		int h = SeedClass.img->m_Height;
+		double wd = SeedClass.img->m_Width;
+		double hd = SeedClass.img->m_Height;
+		double xo = SeedClass.img->m_Width * SeedClass.map_ofs_x;
+		double yo = SeedClass.img->m_Width * SeedClass.map_ofs_y;
+		double xs = SeedClass.map_scale_x;
+		double ys = SeedClass.map_scale_y;
 		for (int x = 0; x < w; x++)
 		{
 			for (int y = 0; y < h; y++)
@@ -1104,13 +1104,13 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		fImgDensity /= (float)(w * h * 256.0f);
 
 		// if the map is inverted, use 1 - x:
-		if (LodeClass.map_invert)
+		if (SeedClass.map_invert)
 		{
 			fImgDensity = 1 - fImgDensity;
 		}
 
-		gameLocal.Printf("LODE %s: Loaded %s: %ix%i px, %i bpp = %li bytes, average density %0.4f.\n", 
-				GetName(), mapName.c_str(), LodeClass.img->m_Width, LodeClass.img->m_Height, LodeClass.img->m_Bpp, LodeClass.img->GetBufferLen(), fImgDensity );
+		gameLocal.Printf("SEED %s: Loaded %s: %ix%i px, %i bpp = %li bytes, average density %0.4f.\n", 
+				GetName(), mapName.c_str(), SeedClass.img->m_Width, SeedClass.img->m_Height, SeedClass.img->m_Bpp, SeedClass.img->GetBufferLen(), fImgDensity );
 		if (fImgDensity < 0.001f)
 		{
 			gameLocal.Warning("The average density of this image map is very low.");
@@ -1119,64 +1119,64 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		}
 	}
 
-	LodeClass.bunching = ent->spawnArgs.GetFloat( "lode_bunching", spawnArgs.GetString( "bunching", "0") );
-	if (LodeClass.bunching < 0 || LodeClass.bunching > 1.0)
+	SeedClass.bunching = ent->spawnArgs.GetFloat( "seed_bunching", spawnArgs.GetString( "bunching", "0") );
+	if (SeedClass.bunching < 0 || SeedClass.bunching > 1.0)
 	{
-		gameLocal.Warning ("LODE %s: Invalid bunching value %0.2f, must be between 0 and 1.0.\n", GetName(), LodeClass.bunching );
-		LodeClass.bunching = 0;
+		gameLocal.Warning ("SEED %s: Invalid bunching value %0.2f, must be between 0 and 1.0.\n", GetName(), SeedClass.bunching );
+		SeedClass.bunching = 0;
 	}
-	if (LodeClass.spacing > 0)
+	if (SeedClass.spacing > 0)
 	{
-		LodeClass.nocollide	= NOCOLLIDE_ATALL;
+		SeedClass.nocollide	= NOCOLLIDE_ATALL;
 	}
 	else
 	{
 		// don't collide with other existing statics, but collide with the autogenerated ones
-		// TODO: parse from "lode_nocollide" "same, other, world, static"
-		LodeClass.nocollide	= NOCOLLIDE_STATIC;
+		// TODO: parse from "seed_nocollide" "same, other, world, static"
+		SeedClass.nocollide	= NOCOLLIDE_STATIC;
 	}
 	// set rotation of entity to 0, so we get the unrotated bounds size
 	ent->SetAxis( mat3_identity );
 
 	// TODO: in case the entity is non-solid, this ends up as 0x0, try to find the size.
-	LodeClass.size = ent->GetRenderEntity()->bounds.GetSize();
+	SeedClass.size = ent->GetRenderEntity()->bounds.GetSize();
 
 	// in case the size is something like 8x0 (a single flat poly) or 0x0 (no clipmodel):
 	float fMin = 1.0f;
-	if (LodeClass.size.x < 0.001f)
+	if (SeedClass.size.x < 0.001f)
 	{
-		gameLocal.Warning( "LODE %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
-		LodeClass.size.x = std::max(fMin, LodeClass.size.x);
+		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		SeedClass.size.x = std::max(fMin, SeedClass.size.x);
 	}
-	if (LodeClass.size.y < 0.001f)
+	if (SeedClass.size.y < 0.001f)
 	{
-		gameLocal.Warning( "LODE %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
-		LodeClass.size.y = std::max(fMin, LodeClass.size.y);
+		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		SeedClass.size.y = std::max(fMin, SeedClass.size.y);
 	}
 
-	// gameLocal.Printf( "LODE %s: size of class %i: %0.2f %0.2f\n", GetName(), i, LodeClass.size.x, LodeClass.size.y );
+	// gameLocal.Printf( "SEED %s: size of class %i: %0.2f %0.2f\n", GetName(), i, SeedClass.size.x, SeedClass.size.y );
 	// TODO: use a projection along the "floor-normal"
 	// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
 
-	// gameLocal.Printf( "LODE %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), LodeClass.size.x, LodeClass.size.y, LodeClass.size.z );
-	LodeClass.cullDist = 0;
-	LodeClass.spawnDist = 0;
+	// gameLocal.Printf( "SEED %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), SeedClass.size.x, SeedClass.size.y, SeedClass.size.z );
+	SeedClass.cullDist = 0;
+	SeedClass.spawnDist = 0;
 	float hideDist = ent->spawnArgs.GetFloat( "hide_distance", "0" );
-	float cullRange = ent->spawnArgs.GetFloat( "lode_cull_range", spawnArgs.GetString( "cull_range", "150" ) );
+	float cullRange = ent->spawnArgs.GetFloat( "seed_cull_range", spawnArgs.GetString( "cull_range", "150" ) );
 	if (cullRange > 0 && hideDist > 0)
 	{
-		LodeClass.cullDist = hideDist + cullRange;
-		LodeClass.spawnDist = hideDist + (cullRange / 2);
+		SeedClass.cullDist = hideDist + cullRange;
+		SeedClass.spawnDist = hideDist + (cullRange / 2);
 		// square for easier compare
-		LodeClass.cullDist *= LodeClass.cullDist;
-		LodeClass.spawnDist *= LodeClass.spawnDist;
+		SeedClass.cullDist *= SeedClass.cullDist;
+		SeedClass.spawnDist *= SeedClass.spawnDist;
 	}
 
-	const idDict* dict = gameLocal.FindEntityDefDict( LodeClass.classname );
+	const idDict* dict = gameLocal.FindEntityDefDict( SeedClass.classname );
 
 	if (!dict)
 	{
-		gameLocal.Error("LODE %s: Error, cannot find entity def dict for %s.\n", GetName(), LodeClass.classname.c_str() );
+		gameLocal.Error("SEED %s: Error, cannot find entity def dict for %s.\n", GetName(), SeedClass.classname.c_str() );
 	}
 
 	// parse the spawnargs from this entity def for LOD data, and ignore any hide_probability:
@@ -1185,130 +1185,130 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if (has_lod)
 	{
 		// Store m_LOD at the class
-		LodeClass.m_LOD = m_LOD;
+		SeedClass.m_LOD = m_LOD;
 	}
 	else
 	{
-		LodeClass.m_LOD = NULL;
+		SeedClass.m_LOD = NULL;
 	}
-	m_LOD = NULL;				// prevent double free (and LODE doesn't have LOD)
-	LodeClass.materials.Clear();
+	m_LOD = NULL;				// prevent double free (and SEED doesn't have LOD)
+	SeedClass.materials.Clear();
 
 	// The default probability for all materials not matching anything in materials:
-	LodeClass.defaultProb = ent->spawnArgs.GetFloat( "lode_probability", spawnArgs.GetString( "probability", "1.0" ) );
+	SeedClass.defaultProb = ent->spawnArgs.GetFloat( "seed_probability", spawnArgs.GetString( "probability", "1.0" ) );
 
 	// all probabilities for the different materials
-	kv = ent->spawnArgs.MatchPrefix( "lode_material_", NULL );
+	kv = ent->spawnArgs.MatchPrefix( "seed_material_", NULL );
 	while( kv )
    	{
-		// "lode_material_grass" => "grass"
-		LodeMaterial.name = kv->GetKey().Mid( 14, kv->GetKey().Length() - 14 );
-		// "lode_material_grass" "1.0" => 1.0
-		LodeMaterial.probability = ent->spawnArgs.GetFloat( kv->GetKey(), "1.0");
-		if (LodeMaterial.probability < 0 || LodeMaterial.probability > 1.0)
+		// "seed_material_grass" => "grass"
+		SeedMaterial.name = kv->GetKey().Mid( 14, kv->GetKey().Length() - 14 );
+		// "seed_material_grass" "1.0" => 1.0
+		SeedMaterial.probability = ent->spawnArgs.GetFloat( kv->GetKey(), "1.0");
+		if (SeedMaterial.probability < 0 || SeedMaterial.probability > 1.0)
 		{
-			gameLocal.Warning( "LODE %s: Invalid probability %0.2f (should be 0 .. 1.0) for material %s, ignoring it.\n",
-					GetName(), LodeMaterial.probability, LodeMaterial.name.c_str() );
+			gameLocal.Warning( "SEED %s: Invalid probability %0.2f (should be 0 .. 1.0) for material %s, ignoring it.\n",
+					GetName(), SeedMaterial.probability, SeedMaterial.name.c_str() );
 		}
 		else
 		{
-			//gameLocal.Warning( "LODE %s: Using material %s, probability %0.2f (%s)\n",
-			//		GetName(), LodeMaterial.name.c_str(), LodeMaterial.probability, kv->GetKey().c_str() );
-			LodeClass.materials.Append( LodeMaterial );
+			//gameLocal.Warning( "SEED %s: Using material %s, probability %0.2f (%s)\n",
+			//		GetName(), SeedMaterial.name.c_str(), SeedMaterial.probability, kv->GetKey().c_str() );
+			SeedClass.materials.Append( SeedMaterial );
 		}
-		kv = ent->spawnArgs.MatchPrefix( "lode_material_", kv );
+		kv = ent->spawnArgs.MatchPrefix( "seed_material_", kv );
 	}
 
 	// store the rendermodel to make func_statics work
-	LodeClass.hModel = NULL;
-	LodeClass.clip = NULL;
-	if (LodeClass.classname == FUNC_STATIC)
+	SeedClass.hModel = NULL;
+	SeedClass.clip = NULL;
+	if (SeedClass.classname == FUNC_STATIC)
 	{
 		// check if this is a func_static with a model, or an "inline map geometry" func static
-		if (LodeClass.modelname == ent->GetName())
+		if (SeedClass.modelname == ent->GetName())
 		{
 			// simply point to the already existing model, so we can recover the into-the-map-inlined geometry:
-			LodeClass.hModel = ent->GetRenderEntity()->hModel;
+			SeedClass.hModel = ent->GetRenderEntity()->hModel;
 			// prevent a double free
 			ent->GetRenderEntity()->hModel = NULL;
 			// set a dummy model
-			LodeClass.modelname = "models/darkmod/junk/plank_short.lwo";
+			SeedClass.modelname = "models/darkmod/junk/plank_short.lwo";
 
 			// store a copy of the clipmodel, so we can later reuse it
-			LodeClass.clip = new idClipModel( ent->GetPhysics()->GetClipModel() );
+			SeedClass.clip = new idClipModel( ent->GetPhysics()->GetClipModel() );
 #ifdef M_DEBUG
-			gameLocal.Printf("Using clip from rendermodel ptr=0x%p bounds %s\n", LodeClass.clip, LodeClass.clip->GetBounds().ToString());
+			gameLocal.Printf("Using clip from rendermodel ptr=0x%p bounds %s\n", SeedClass.clip, SeedClass.clip->GetBounds().ToString());
 #endif
 		}
-		LodeClass.classname = FUNC_DUMMY;
+		SeedClass.classname = FUNC_DUMMY;
 	}
 
 	// uses color variance?
-	// fall back to LODE "color_mxx", if not set, fall back to entity color, if this is unset, use 1 1 1
-	LodeClass.color_min  = ent->spawnArgs.GetVector("lode_color_min", spawnArgs.GetString("color_min", ent->spawnArgs.GetString("_color", "1 1 1")));
-	LodeClass.color_max  = ent->spawnArgs.GetVector("lode_color_max", spawnArgs.GetString("color_max", ent->spawnArgs.GetString("_color", "1 1 1")));
+	// fall back to SEED "color_mxx", if not set, fall back to entity color, if this is unset, use 1 1 1
+	SeedClass.color_min  = ent->spawnArgs.GetVector("seed_color_min", spawnArgs.GetString("color_min", ent->spawnArgs.GetString("_color", "1 1 1")));
+	SeedClass.color_max  = ent->spawnArgs.GetVector("seed_color_max", spawnArgs.GetString("color_max", ent->spawnArgs.GetString("_color", "1 1 1")));
 
-    LodeClass.color_min.Clamp( idVec3(0,0,0), idVec3(1,1,1) );
-    LodeClass.color_max.Clamp( LodeClass.color_min, idVec3(1,1,1) );
+    SeedClass.color_min.Clamp( idVec3(0,0,0), idVec3(1,1,1) );
+    SeedClass.color_max.Clamp( SeedClass.color_min, idVec3(1,1,1) );
 
 	// apply random impulse?
-	// fall back to LODE "impulse_mxx", if not set, use 0 0 0
-	LodeClass.impulse_min  = ent->spawnArgs.GetVector("lode_impulse_min", spawnArgs.GetString("impulse_min", "0 -90 0"));
-	LodeClass.impulse_max  = ent->spawnArgs.GetVector("lode_impulse_max", spawnArgs.GetString("impulse_max", "0 90 360"));
+	// fall back to SEED "impulse_mxx", if not set, use 0 0 0
+	SeedClass.impulse_min  = ent->spawnArgs.GetVector("seed_impulse_min", spawnArgs.GetString("impulse_min", "0 -90 0"));
+	SeedClass.impulse_max  = ent->spawnArgs.GetVector("seed_impulse_max", spawnArgs.GetString("impulse_max", "0 90 360"));
 
 	// clamp to 0..360, -180..180, 0..1000
-    LodeClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9f) );
-    LodeClass.impulse_max.Clamp( LodeClass.impulse_min, idVec3(1000,+90,360) );
+    SeedClass.impulse_min.Clamp( idVec3(0,-90,0), idVec3(1000,+90,359.9f) );
+    SeedClass.impulse_max.Clamp( SeedClass.impulse_min, idVec3(1000,+90,360) );
 
-    LodeClass.z_invert = ent->spawnArgs.GetBool("lode_z_invert", spawnArgs.GetString("z_invert", "0"));
-    LodeClass.z_min = ent->spawnArgs.GetFloat("lode_z_min", spawnArgs.GetString("z_min", "-1000000"));
-    LodeClass.z_max = ent->spawnArgs.GetFloat("lode_z_max", spawnArgs.GetString("z_max", "1000000"));
+    SeedClass.z_invert = ent->spawnArgs.GetBool("seed_z_invert", spawnArgs.GetString("z_invert", "0"));
+    SeedClass.z_min = ent->spawnArgs.GetFloat("seed_z_min", spawnArgs.GetString("z_min", "-1000000"));
+    SeedClass.z_max = ent->spawnArgs.GetFloat("seed_z_max", spawnArgs.GetString("z_max", "1000000"));
 
-	if (LodeClass.z_max < LodeClass.z_max)
+	if (SeedClass.z_max < SeedClass.z_max)
 	{
 		// hm, should we warn?
-		LodeClass.z_max = LodeClass.z_min;
+		SeedClass.z_max = SeedClass.z_min;
 	}
-    LodeClass.z_fadein  = ent->spawnArgs.GetFloat("lode_z_fadein",  spawnArgs.GetString("z_fadein", "0"));
-    LodeClass.z_fadeout = ent->spawnArgs.GetFloat("lode_z_fadeout", spawnArgs.GetString("z_fadeout", "0"));
-	if (LodeClass.z_fadein < 0)
+    SeedClass.z_fadein  = ent->spawnArgs.GetFloat("seed_z_fadein",  spawnArgs.GetString("z_fadein", "0"));
+    SeedClass.z_fadeout = ent->spawnArgs.GetFloat("seed_z_fadeout", spawnArgs.GetString("z_fadeout", "0"));
+	if (SeedClass.z_fadein < 0)
 	{
-		gameLocal.Warning( "LODE %s: Invalid z-fadein %0.2f (should be >= 0) for class %s, ignoring it.\n",
-				GetName(), LodeClass.z_fadein, LodeClass.classname.c_str() );
-		LodeClass.z_fadein = 0;
+		gameLocal.Warning( "SEED %s: Invalid z-fadein %0.2f (should be >= 0) for class %s, ignoring it.\n",
+				GetName(), SeedClass.z_fadein, SeedClass.classname.c_str() );
+		SeedClass.z_fadein = 0;
 	}
-	if (LodeClass.z_fadeout < 0)
+	if (SeedClass.z_fadeout < 0)
 	{
-		gameLocal.Warning( "LODE %s: Invalid z-fadeout %0.2f (should be >= 0) for class %s, ignoring it.\n",
-				GetName(), LodeClass.z_fadeout, LodeClass.classname.c_str() );
-		LodeClass.z_fadeout = 0;
+		gameLocal.Warning( "SEED %s: Invalid z-fadeout %0.2f (should be >= 0) for class %s, ignoring it.\n",
+				GetName(), SeedClass.z_fadeout, SeedClass.classname.c_str() );
+		SeedClass.z_fadeout = 0;
 	}
 	
-	if (LodeClass.z_min + LodeClass.z_fadein > LodeClass.z_max - LodeClass.z_fadeout)
+	if (SeedClass.z_min + SeedClass.z_fadein > SeedClass.z_max - SeedClass.z_fadeout)
 	{
 		// hm, should we warn?
-	    LodeClass.z_fadein = LodeClass.z_max - LodeClass.z_fadeout - LodeClass.z_min;
+	    SeedClass.z_fadein = SeedClass.z_max - SeedClass.z_fadeout - SeedClass.z_min;
 	}
 
-	if (LodeClass.z_min != -1000000 && !LodeClass.floor)
+	if (SeedClass.z_min != -1000000 && !SeedClass.floor)
 	{
-		gameLocal.Warning( "LODE %s: Warning: Setting lode_z_min/lode_z_max without setting 'lode_floor' to true won't work!\n", GetName() );
+		gameLocal.Warning( "SEED %s: Warning: Setting seed_z_min/seed_z_max without setting 'seed_floor' to true won't work!\n", GetName() );
 		// just use flooring for this class
-		LodeClass.floor = true;
+		SeedClass.floor = true;
 	}
 	// all data setup, append to the list
-	m_Classes.Append ( LodeClass );
+	m_Classes.Append ( SeedClass );
 
-	gameLocal.Printf( "LODE %s: Adding class %s.\n", GetName(), LodeClass.classname.c_str() );
+	gameLocal.Printf( "SEED %s: Adding class %s.\n", GetName(), SeedClass.classname.c_str() );
 
 	// if the size on x or y is very small, use "0.2" instead. This is to avoid that models
 	// consisting of a flat plane get 0 as size:
-//	gameLocal.Printf( "LODE %s: size %0.2f x %0.2f.\n", GetName(), fmax( 0.1, LodeClass.size.x), fmax( 0.1, LodeClass.size.y ) );
+//	gameLocal.Printf( "SEED %s: size %0.2f x %0.2f.\n", GetName(), fmax( 0.1, SeedClass.size.x), fmax( 0.1, SeedClass.size.y ) );
 
-	float size = (std::max(0.1f, LodeClass.size.x) + LodeClass.spacing) * (std::max( 0.1f, LodeClass.size.y) + LodeClass.spacing);
+	float size = (std::max(0.1f, SeedClass.size.x) + SeedClass.spacing) * (std::max( 0.1f, SeedClass.size.y) + SeedClass.spacing);
 
 	// if falloff != none, correct the density, because the ellipse-shape is smaller then the rectangle
-	if ( LodeClass.falloff >= 1 && LodeClass.falloff <= 3)
+	if ( SeedClass.falloff >= 1 && SeedClass.falloff <= 3)
 	{
 		// Rectangle is W * H, ellipse is W/2 * H/2 * PI. When W = H = 1, then the rectangle
 		// area is 1.0, and the ellipse 0.785398, so correct for 1 / 0.785398 = 1.2732, this will
@@ -1321,11 +1321,11 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	fMin = 0.000001f;
 
 	// scale the per-class size by the per-class density
-	float fDensity = std::max( fMin, ent->spawnArgs.GetFloat( "lode_density", "1.0" ) );
+	float fDensity = std::max( fMin, ent->spawnArgs.GetFloat( "seed_density", "1.0" ) );
 	// scale the per-class size by the per-class density multiplied by the base density
-	float fBaseDensity = std::max( fMin, ent->spawnArgs.GetFloat( "lode_base_density", "1.0" ) );
+	float fBaseDensity = std::max( fMin, ent->spawnArgs.GetFloat( "seed_base_density", "1.0" ) );
 
-//	gameLocal.Printf( "LODE %s: Scaling class size by %0.4f (0.6f * 0.6f).\n", GetName(), fDensity*fBaseDensity, fDensity, fBaseDensity);
+//	gameLocal.Printf( "SEED %s: Scaling class size by %0.4f (0.6f * 0.6f).\n", GetName(), fDensity*fBaseDensity, fDensity, fBaseDensity);
 
 	return ( size / fImgDensity ) / (fDensity * fBaseDensity);
 }
@@ -1335,7 +1335,7 @@ float Lode::AddClassFromEntity( idEntity *ent, const int iEntScore )
 Generate a scaling factor depending on the GUI setting
 ===============
 */
-float Lode::LODBIAS ( void ) const
+float Seed::LODBIAS ( void ) const
 {
 	// scale density with GUI setting
 	// The GUI specifies: 0.5;0.75;1.0;1.5;2.0;3.0, but 0.5 and 3.0 are quite extreme,
@@ -1367,7 +1367,7 @@ float Lode::LODBIAS ( void ) const
 Compute the max. number of entities that we manage
 ===============
 */
-void Lode::ComputeEntityCount( void )
+void Seed::ComputeEntityCount( void )
 {
 	m_iNumEntities = spawnArgs.GetInt( "max_entities", "0" );
 	if (m_iNumEntities == 0)
@@ -1391,7 +1391,7 @@ void Lode::ComputeEntityCount( void )
 
 		// m_fAvgSize is corrected for "per-class" falloff already
 		m_iNumEntities = fDensity * (size.x * size.y) / m_fAvgSize;		// naive asumption each entity covers on avg X units
-		gameLocal.Printf( "LODE %s: Dynamic entity count: %0.2f * %0.2f * %0.2f / %0.2f = %i.\n", GetName(), fDensity, size.x, size.y, m_fAvgSize, m_iNumEntities );
+		gameLocal.Printf( "SEED %s: Dynamic entity count: %0.2f * %0.2f * %0.2f / %0.2f = %i.\n", GetName(), fDensity, size.x, size.y, m_fAvgSize, m_iNumEntities );
 
 		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
 		/* if (m_iNumEntities > SPAWN_LIMIT)
@@ -1415,9 +1415,9 @@ void Lode::ComputeEntityCount( void )
 Create the places for all entities that we control so we can later spawn them.
 ===============
 */
-void Lode::Prepare( void )
+void Seed::Prepare( void )
 {	
-	lode_inhibitor_t LodeInhibitor;
+	seed_inhibitor_t SeedInhibitor;
 
 	// Gather all targets and make a note of them, also summing their "lod_score" up
 	m_iScore = 0;
@@ -1431,30 +1431,30 @@ void Lode::Prepare( void )
 
 	   	if ( ent )
 		{
-			// if this is a LODE inhibitor, add it to our "forbidden zones":
-			if ( idStr( ent->GetEntityDefName() ) == "atdm:no_lode")
+			// if this is a SEED inhibitor, add it to our "forbidden zones":
+			if ( idStr( ent->GetEntityDefName() ) == "atdm:no_seed")
 			{
 				idBounds b = ent->GetRenderEntity()->bounds; 
-				LodeInhibitor.size = b.GetSize();
-				gameLocal.Printf( "LODE %s: Inhibitor size %s\n", GetName(), LodeInhibitor.size.ToString() );
+				SeedInhibitor.size = b.GetSize();
+				gameLocal.Printf( "SEED %s: Inhibitor size %s\n", GetName(), SeedInhibitor.size.ToString() );
 
-				LodeInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
+				SeedInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
 				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
 				// or rotation spawnarg. Use clipmodel instead? Note: Unrotating the entity, but adding an "axis"
 				// spawnarg works.
-				LodeInhibitor.box = idBox( LodeInhibitor.origin, LodeInhibitor.size / 2, ent->GetPhysics()->GetAxis() );
+				SeedInhibitor.box = idBox( SeedInhibitor.origin, SeedInhibitor.size / 2, ent->GetPhysics()->GetAxis() );
 
-				LodeInhibitor.falloff = ParseFalloff( &ent->spawnArgs, ent->spawnArgs.GetString( "falloff", "none"), ent->spawnArgs.GetString( "func_a", "2"), &LodeInhibitor.factor );
-				if (LodeInhibitor.falloff > 4)
+				SeedInhibitor.falloff = ParseFalloff( &ent->spawnArgs, ent->spawnArgs.GetString( "falloff", "none"), ent->spawnArgs.GetString( "func_a", "2"), &SeedInhibitor.factor );
+				if (SeedInhibitor.falloff > 4)
 				{
 					// func is not supported
-					gameLocal.Warning( "LODE %s: falloff=func not yet supported on inhibitors, ignoring it.\n", GetName() );
-					LodeInhibitor.falloff = 0;
+					gameLocal.Warning( "SEED %s: falloff=func not yet supported on inhibitors, ignoring it.\n", GetName() );
+					SeedInhibitor.falloff = 0;
 				}
 
 				// default is "noinhibit" (and this will be ignored if classnames.Num() == 0)
-				LodeInhibitor.inhibit_only = false;
-				LodeInhibitor.classnames.Clear();
+				SeedInhibitor.inhibit_only = false;
+				SeedInhibitor.classnames.Clear();
 
 				const idKeyValue *kv;
 				idStr prefix = "inhibit";
@@ -1462,14 +1462,14 @@ void Lode::Prepare( void )
 				// if "inhibit" is set, it will only inhibit the given classes, and we ignore "noinhibit":
 				if ( ent->spawnArgs.FindKey(prefix) )
 				{
-					LodeInhibitor.inhibit_only = true;
+					SeedInhibitor.inhibit_only = true;
 				}
 				else
 				{
 					prefix = "noinhibit";
 					if (! ent->spawnArgs.FindKey(prefix) )
 					{
-						// LodeInhibitor.inhibit_only = true;		// will be ignored anyway
+						// SeedInhibitor.inhibit_only = true;		// will be ignored anyway
 						prefix = "";
 					}
 
@@ -1478,26 +1478,26 @@ void Lode::Prepare( void )
 				// have either inhibit or noinhibit in the spawnargs?
 				if ( !prefix.IsEmpty())
 				{
-					gameLocal.Printf( "LODE %s: Inhibitor has %s set.\n", GetName(), prefix.c_str() );
+					gameLocal.Printf( "SEED %s: Inhibitor has %s set.\n", GetName(), prefix.c_str() );
    					kv = ent->spawnArgs.MatchPrefix( prefix, NULL );
 					while( kv )
 					{
 						idStr classname = kv->GetValue();
-						gameLocal.Printf( "LODE %s: Inhibitor adding class '%s' (%s)\n", GetName(), classname.c_str(), LodeInhibitor.inhibit_only ? "inhibit" : "noinhibit" );
-						LodeInhibitor.classnames.Append( classname );
+						gameLocal.Printf( "SEED %s: Inhibitor adding class '%s' (%s)\n", GetName(), classname.c_str(), SeedInhibitor.inhibit_only ? "inhibit" : "noinhibit" );
+						SeedInhibitor.classnames.Append( classname );
 						// next one please
 						kv = ent->spawnArgs.MatchPrefix( prefix, kv );
 					}
 				}
 
-				m_Inhibitors.Append ( LodeInhibitor );
+				m_Inhibitors.Append ( SeedInhibitor );
 				continue;
 			}
 
 			// If this entity wants us to watch over his brethren, add them to our list:
-			if ( ent->spawnArgs.GetBool( "lode_watch_brethren", "0" ) )
+			if ( ent->spawnArgs.GetBool( "seed_watch_brethren", "0" ) )
 			{
-				gameLocal.Printf( "LODE %s: %s (%s) wants us to take care of his brethren.\n",
+				gameLocal.Printf( "SEED %s: %s (%s) wants us to take care of his brethren.\n",
 						GetName(), ent->GetName(), ent->GetEntityDefName() );
 
 				// add a pseudo class and ignore the size returned
@@ -1507,10 +1507,10 @@ void Lode::Prepare( void )
 				continue;
 			}
 
-			int iEntScore = ent->spawnArgs.GetInt( "lode_score", "1" );
+			int iEntScore = ent->spawnArgs.GetInt( "seed_score", "1" );
 			if (iEntScore < 0)
 			{
-				gameLocal.Warning( "LODE %s: Target %s has invalid lode_score %i!\n", GetName(), ent->GetName(), iEntScore );
+				gameLocal.Warning( "SEED %s: Target %s has invalid seed_score %i!\n", GetName(), ent->GetName(), iEntScore );
 			}
 			else
 			{
@@ -1545,7 +1545,7 @@ void Lode::Prepare( void )
 			args.SetVector("origin", origin);
 
 			// want it floored
-			args.Set("lode_floor", "1");
+			args.Set("seed_floor", "1");
 
 			// but if it is a moveable, don't floor it
 			args.Set("floor", "0");
@@ -1568,10 +1568,10 @@ void Lode::Prepare( void )
 			gameLocal.SpawnEntityDef( args, &ent );
 			if (ent)
 			{
-				int iEntScore = ent->spawnArgs.GetInt( "lode_score", "1" );
+				int iEntScore = ent->spawnArgs.GetInt( "seed_score", "1" );
 				if (iEntScore < 0)
 				{
-					gameLocal.Warning( "LODE %s: Target %s has invalid lode_score %i!\n", GetName(), ent->GetName(), iEntScore );
+					gameLocal.Warning( "SEED %s: Target %s has invalid seed_score %i!\n", GetName(), ent->GetName(), iEntScore );
 				}
 				else
 				{
@@ -1584,13 +1584,13 @@ void Lode::Prepare( void )
 			}
 			else
 			{
-				gameLocal.Warning("LODE %s: Could not spawn entity from class %s to add it as my target.\n", 
+				gameLocal.Warning("SEED %s: Could not spawn entity from class %s to add it as my target.\n", 
 						GetName(), entityClass.c_str() );
 			}
 		}
 		else
 		{
-				gameLocal.Warning("LODE %s: Could not find entity def for class %s to add it as my target.\n", 
+				gameLocal.Warning("SEED %s: Could not find entity def for class %s to add it as my target.\n", 
 						GetName(), entityClass.c_str() );
 		}
 
@@ -1617,11 +1617,11 @@ void Lode::Prepare( void )
 
 		if (m_iNumEntities <= 0)
 		{
-			gameLocal.Warning( "LODE %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+			gameLocal.Warning( "SEED %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
 		}
 	}
 
-	gameLocal.Printf( "LODE %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
+	gameLocal.Printf( "SEED %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
 
 	// Init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
@@ -1630,7 +1630,7 @@ void Lode::Prepare( void )
 	{
 		// The randseed upon loading a map seems to be always 0, so 
 		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
-		// add the entity number so that different lodes spawned in the same second
+		// add the entity number so that different seeds spawned in the same second
 		// don't display the same pattern
 		unsigned long seconds = (unsigned long) time (NULL) + (unsigned long) entityNumber;
 	    m_iSeed_2 = (int) (1664525L * seconds + 1013904223L) & 0x7FFFFFFFL;
@@ -1657,7 +1657,7 @@ void Lode::Prepare( void )
 	if (spawnArgs.GetBool("remove","0"))
 	{
 		// spawn all entities
-		gameLocal.Printf( "LODE %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
+		gameLocal.Printf( "SEED %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
 
 		// for each of our "entities", do the distance check
 		for (int i = 0; i < m_Entities.Num(); i++)
@@ -1682,7 +1682,7 @@ void Lode::Prepare( void )
 		if (m_Entities.Num() == 0)
 		{
 			// could not create any entities?
-			gameLocal.Printf( "LODE %s: Have no entities to control, becoming inactive.\n", GetName() );
+			gameLocal.Printf( "SEED %s: Have no entities to control, becoming inactive.\n", GetName() );
 			// Tels: Does somehow not work, bouncing us again and again into this branch?
 			BecomeInactive(TH_THINK);
 			m_iNumEntities = -1;
@@ -1690,16 +1690,16 @@ void Lode::Prepare( void )
 	}
 }
 
-void Lode::PrepareEntities( void )
+void Seed::PrepareEntities( void )
 {
-	lode_entity_t			LodeEntity;			// temp. storage
+	seed_entity_t			SeedEntity;			// temp. storage
 	idBounds				testBounds;			// to test whether the translated/rotated entity
    												// collides with another entity (fast check)
-	idBox					testBox;			// to test whether the translated/rotated entity is inside the LODE
+	idBox					testBox;			// to test whether the translated/rotated entity is inside the SEED
 												// or collides with another entity (slow, but more precise)
-	idBox					box;				// The oriented box of the LODE
-	idList<idBounds>		LodeEntityBounds;	// precompute entity bounds for collision checks (fast)
-	idList<idBox>			LodeEntityBoxes;	// precompute entity box for collision checks (slow, but thorough)
+	idBox					box;				// The oriented box of the SEED
+	idList<idBounds>		SeedEntityBounds;	// precompute entity bounds for collision checks (fast)
+	idList<idBox>			SeedEntityBoxes;	// precompute entity box for collision checks (slow, but thorough)
 
 	idList< int >			ClassIndex;			// random shuffling of classes
 	int						s;
@@ -1712,7 +1712,7 @@ void Lode::PrepareEntities( void )
 	// add a spawnarg, so this will not work properly unless the mapper sets an "angle" spawnarg:
 	idMat3 axis = renderEntity.axis;
 
-	gameLocal.Printf( "LODE %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
+	gameLocal.Printf( "SEED %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
 
 // DEBUG:	
 //	idVec4 markerColor (0.7, 0.2, 0.2, 1.0);
@@ -1724,7 +1724,7 @@ void Lode::PrepareEntities( void )
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
 	idAngles angles = axis.ToAngles();		// debug
-	gameLocal.Printf( "LODE %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString());
+	gameLocal.Printf( "SEED %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString());
 
 	m_Entities.Clear();
 	if (m_iNumEntities > 100)
@@ -1733,8 +1733,8 @@ void Lode::PrepareEntities( void )
 		m_Entities.SetGranularity( 64 );	// we append potentially thousands of entries, and every $granularity step
 											// the entire list is re-allocated and copied over again, so avoid this
 	}
-	LodeEntityBounds.Clear();
-	LodeEntityBoxes.Clear();
+	SeedEntityBounds.Clear();
+	SeedEntityBoxes.Clear();
 
 	m_iNumExisting = 0;
 	m_iNumVisible = 0;
@@ -1744,7 +1744,7 @@ void Lode::PrepareEntities( void )
 	// class always):
 
 	// remove pseudo classes as we start over fresh
-	idList< lode_class_t > newClasses;
+	idList< seed_class_t > newClasses;
 
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
@@ -1818,11 +1818,11 @@ void Lode::PrepareEntities( void )
 		{
 			iEntities = 1;
 		}
-		gameLocal.Printf( "LODE %s: Creating %i entities of class %s (#%i index %i, seed %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx, m_iSeed );
+		gameLocal.Printf( "SEED %s: Creating %i entities of class %s (#%i index %i, seed %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx, m_iSeed );
 
-		// default to what the LODE says
-		idAngles class_rotate_min = spawnArgs.GetAngles("lode_rotate_min", rand_rotate_min);
-		idAngles class_rotate_max = spawnArgs.GetAngles("lode_rotate_max", rand_rotate_max);
+		// default to what the SEED says
+		idAngles class_rotate_min = spawnArgs.GetAngles("seed_rotate_min", rand_rotate_min);
+		idAngles class_rotate_max = spawnArgs.GetAngles("seed_rotate_max", rand_rotate_max);
 
 		for (int j = 0; j < iEntities; j++)
 		{
@@ -1866,17 +1866,17 @@ void Lode::PrepareEntities( void )
 					// minimum origin distance (or entity will stick inside the other) is 2 * distance
 					// maximum bunch radius is 3 times (2 + 1) the radius
 					// TODO: make bunch_size and bunch_min_distance a spawnarg
-					LodeEntity.origin = idPolar3( 2 * distance + RandomFloat() * distance / 3, 0, RandomFloat() * 360.0f ).ToVec3();
+					SeedEntity.origin = idPolar3( 2 * distance + RandomFloat() * distance / 3, 0, RandomFloat() * 360.0f ).ToVec3();
 #ifdef M_DEBUG					
-					gameLocal.Printf ("LODE %s: Random origin from distance (%0.2f) %0.2f %0.2f %0.2f (%i)\n",
-							GetName(), distance, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z, bunchTarget );
+					gameLocal.Printf ("SEED %s: Random origin from distance (%0.2f) %0.2f %0.2f %0.2f (%i)\n",
+							GetName(), distance, SeedEntity.origin.x, SeedEntity.origin.y, SeedEntity.origin.z, bunchTarget );
 #endif
-					// subtract the LODE origin, as m_Entities[ bunchTarget ].origin already contains it and we would
+					// subtract the SEED origin, as m_Entities[ bunchTarget ].origin already contains it and we would
 					// otherwise add it twice below:
-					LodeEntity.origin += m_Entities[ bunchTarget ].origin - m_origin;
+					SeedEntity.origin += m_Entities[ bunchTarget ].origin - m_origin;
 #ifdef M_DEBUG					
-					gameLocal.Printf ("LODE %s: Random origin plus bunchTarget origin %0.2f %0.2f %0.2f\n",
-							GetName(), LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z );
+					gameLocal.Printf ("SEED %s: Random origin plus bunchTarget origin %0.2f %0.2f %0.2f\n",
+							GetName(), SeedEntity.origin.x, SeedEntity.origin.y, SeedEntity.origin.z );
 #endif
 				}
 				else
@@ -1919,7 +1919,7 @@ void Lode::PrepareEntities( void )
 							{
 								// always 1.0f inside the unit-circle for cutoff or func, so abort right away
 								p = 1.0f;
-								LodeEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
+								SeedEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
 								break;
 							}
 
@@ -1948,16 +1948,16 @@ void Lode::PrepareEntities( void )
 							// did not find a valid position, skip this
 							continue;
 						}
-						//	compute the relative position to our LODE center
+						//	compute the relative position to our SEED center
 						// x/2 => from -1.0 .. 1.0 => -0.5 .. 0.5
-						LodeEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
+						SeedEntity.origin = idVec3( x * size.x / 2, y * size.y / 2, 0 );
 
 					} // end for any falloff other than "none"
 					else
 					{
 						// falloff = none
 						// compute a random position in a unit-square
-						LodeEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
+						SeedEntity.origin = idVec3( (RandomFloat() - 0.5f) * size.x, (RandomFloat() - 0.5f) * size.y, 0 );
 					}
 				}
 
@@ -1968,13 +1968,13 @@ void Lode::PrepareEntities( void )
        			if (m_Classes[i].falloff == 5)
 				{
 					// p = s * (Xt * x + Yt * y + a)
-					float x = (LodeEntity.origin.x / size.x) + 0.5f;		// 0 .. 1.0
+					float x = (SeedEntity.origin.x / size.x) + 0.5f;		// 0 .. 1.0
 					if (m_Classes[i].func_Xt == 2)
 					{
 						x *= x;							// 2 => X*X
 					}
 
-					float y = (LodeEntity.origin.y / size.y) + 0.5f;		// 0 .. 1.0
+					float y = (SeedEntity.origin.y / size.y) + 0.5f;		// 0 .. 1.0
 					if (m_Classes[i].func_Yt == 2)
 					{
 						y *= y;							// 2 => X*X
@@ -1989,7 +1989,7 @@ void Lode::PrepareEntities( void )
 							// outside range, zero-clamp
 							//probability = 0.0f;
 							// placement will fail, anyway:
-							gameLocal.Printf ("LODE %s: Skipping placement, probability == 0 (min %0.2f, p=%0.2f, max %0.2f).\n", 
+							gameLocal.Printf ("SEED %s: Skipping placement, probability == 0 (min %0.2f, p=%0.2f, max %0.2f).\n", 
 									GetName(), m_Classes[i].func_min, p, m_Classes[i].func_max );
 							continue;
 						}
@@ -1999,7 +1999,7 @@ void Lode::PrepareEntities( void )
 						// clamp to min .. max
 						probability = idMath::ClampFloat( m_Classes[i].func_min, m_Classes[i].func_max, p );
 					}
-					gameLocal.Printf ("LODE %s: falloff func gave p = %0.2f (clamped %0.2f)\n", GetName(), p, probability);
+					gameLocal.Printf ("SEED %s: falloff func gave p = %0.2f (clamped %0.2f)\n", GetName(), p, probability);
 				}
 
        			// image based falloff probability
@@ -2007,8 +2007,8 @@ void Lode::PrepareEntities( void )
 				{
 					// compute the pixel we need to query
 					// TODO: add spawnarg-based scaling factor and offset here
-					float x = m_Classes[i].map_scale_x * (LodeEntity.origin.x / size.x) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
-					float y = m_Classes[i].map_scale_y * (LodeEntity.origin.y / size.y) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
+					float x = m_Classes[i].map_scale_x * (SeedEntity.origin.x / size.x) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
+					float y = m_Classes[i].map_scale_y * (SeedEntity.origin.y / size.y) + m_Classes[i].map_ofs_x + 0.5f;		// 0 .. 1.0
 
 					// if n < 0 or n > 1.0: map back into range 0..1.0
 					// second fmod() is for handling negative numbers
@@ -2031,7 +2031,7 @@ void Lode::PrepareEntities( void )
 					{
 						value = 255 - value;
 					}
-					//gameLocal.Printf("LODE %s: Pixel at %i, %i (ofs = %i) has value %i (p=%0.2f).\n", GetName(), px, py, ofs, value, (float)value / 256.0f);
+					//gameLocal.Printf("SEED %s: Pixel at %i, %i (ofs = %i) has value %i (p=%0.2f).\n", GetName(), px, py, ofs, value, (float)value / 256.0f);
 					probability *= (float)value / 256.0f;
 
 					if (probability < 0.000001)
@@ -2041,11 +2041,11 @@ void Lode::PrepareEntities( void )
 					}
 				}
 
-				// Rotate around our rotation axis (to support rotated LODE brushes)
-				LodeEntity.origin *= axis;
+				// Rotate around our rotation axis (to support rotated SEED brushes)
+				SeedEntity.origin *= axis;
 
-				// add origin of the LODE
-				LodeEntity.origin += m_origin;
+				// add origin of the SEED
+				SeedEntity.origin += m_origin;
 
 				// should only appear on certain ground material(s)?
 
@@ -2054,15 +2054,15 @@ void Lode::PrepareEntities( void )
 
 				if (m_Classes[i].materials.Num() > 0)
 				{
-					// end of the trace (downwards the length from entity class position to bottom of LODE)
-					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = m_origin.z - size.z;
+					// end of the trace (downwards the length from entity class position to bottom of SEED)
+					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
 					trace_t trTest;
-					idVec3 traceStart = LodeEntity.origin;
+					idVec3 traceStart = SeedEntity.origin;
 
-					//gameLocal.Printf ("LODE %s: TracePoint start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f\n",
+					//gameLocal.Printf ("SEED %s: TracePoint start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f\n",
 					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z );
 					gameLocal.clip.TracePoint( trTest, traceStart, traceEnd, 
 							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
@@ -2111,7 +2111,7 @@ void Lode::PrepareEntities( void )
 						}
 
 						// hit something
-						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s (%s))\n",
+						//gameLocal.Printf ("SEED %s: Hit something at %0.2f (%0.2f %0.2f %0.2f material %s (%s))\n",
 						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z, descr.c_str(), mat->GetName() );
 
 						float p = m_Classes[i].defaultProb;		// the default if nothing hits
@@ -2124,14 +2124,14 @@ void Lode::PrepareEntities( void )
 							{
 								p = m_Classes[i].materials[e].probability;
 
-								//gameLocal.Printf ("LODE %s: Material (%s) matches class material %i (%s), using probability %0.2f\n",
+								//gameLocal.Printf ("SEED %s: Material (%s) matches class material %i (%s), using probability %0.2f\n",
 								//		GetName(), descr.c_str(), e, m_Classes[i].materials[e].name.c_str(), probability); 
 								// found a match, break
 								break;
 							}	
 						}
 
-						//gameLocal.Printf ("LODE %s: Using probability %0.2f.\n", GetName(), p );
+						//gameLocal.Printf ("SEED %s: Using probability %0.2f.\n", GetName(), p );
 
 						// multiply probability with p (so 0.5 * 0.5 results in 0.25)
 						probability *= p;
@@ -2146,21 +2146,21 @@ void Lode::PrepareEntities( void )
 
 				} // end of per-material probability
 
-				// gameLocal.Printf ("LODE %s: Using final p=%0.2f.\n", GetName(), probability );
+				// gameLocal.Printf ("SEED %s: Using final p=%0.2f.\n", GetName(), probability );
 				// check against the probability (0 => always skip, 1.0 - never skip, 0.5 - skip half)
 				float r = RandomFloat();
 				if (r > probability)
 				{
-					//gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
+					//gameLocal.Printf ("SEED %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
 					continue;
 				}
 
 				if (m_Classes[i].floor)
 				{
-					//gameLocal.Printf( "LODE %s: Flooring entity #%i.\n", GetName(), j );
+					//gameLocal.Printf( "SEED %s: Flooring entity #%i.\n", GetName(), j );
 
-					// end of the trace (downwards the length from entity class position to bottom of LODE)
-					idVec3 traceEnd = LodeEntity.origin; traceEnd.z = m_origin.z - size.z;
+					// end of the trace (downwards the length from entity class position to bottom of SEED)
+					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
@@ -2173,9 +2173,9 @@ void Lode::PrepareEntities( void )
 					idBounds class_bounds = idBounds( b_1, b_2 );
 					trace_t trTest;
 
-					idVec3 traceStart = LodeEntity.origin;
+					idVec3 traceStart = SeedEntity.origin;
 
-					//gameLocal.Printf ("LODE %s: TraceBounds start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
+					//gameLocal.Printf ("SEED %s: TraceBounds start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
 					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
 					//	   	class_bounds.ToString()	); 
 					gameLocal.clip.TraceBounds( trTest, traceStart, traceEnd, class_bounds, 
@@ -2185,10 +2185,10 @@ void Lode::PrepareEntities( void )
 					if ( trTest.fraction != 1.0f )
 					{
 						// hit something
-						//gameLocal.Printf ("LODE %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
+						//gameLocal.Printf ("SEED %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
 						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
-						LodeEntity.origin = trTest.endpos;
-						LodeEntity.angles = trTest.endAxis.ToAngles();
+						SeedEntity.origin = trTest.endpos;
+						SeedEntity.angles = trTest.endAxis.ToAngles();
 
 						// TODO: take trTest.c.normal and angle the entity on this instead
 
@@ -2203,22 +2203,22 @@ void Lode::PrepareEntities( void )
 					else
 					{
 						// hit nothing
-						gameLocal.Printf ("LODE %s: Hit nothing at %0.2f (%0.2f %0.2f %0.2f)\n",
-							GetName(), trTest.fraction, LodeEntity.origin.x, LodeEntity.origin.y, LodeEntity.origin.z );
+						gameLocal.Printf ("SEED %s: Hit nothing at %0.2f (%0.2f %0.2f %0.2f)\n",
+							GetName(), trTest.fraction, SeedEntity.origin.x, SeedEntity.origin.y, SeedEntity.origin.z );
 					}
 				}
 				else
 				{
 					// just use the Z axis from the editor pos
-					LodeEntity.origin.z = m_Classes[i].origin.z;
+					SeedEntity.origin.z = m_Classes[i].origin.z;
 				}
 
 				// after flooring, check if it is inside z_min/z_max band
        			if ( !m_Classes[i].z_invert )
 				{
-//						gameLocal.Printf ("LODE %s: z_invert true, min %0.2f max %0.2f cur %0.2f\n", 
-  //     						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
-       				if ( LodeEntity.origin.z < m_Classes[i].z_min || LodeEntity.origin.z > m_Classes[i].z_max )
+//						gameLocal.Printf ("SEED %s: z_invert true, min %0.2f max %0.2f cur %0.2f\n", 
+  //     						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, SeedEntity.origin.z );
+       				if ( SeedEntity.origin.z < m_Classes[i].z_min || SeedEntity.origin.z > m_Classes[i].z_max )
 					{
 						// outside the band, skip
 						continue;
@@ -2227,31 +2227,31 @@ void Lode::PrepareEntities( void )
 				}
 				else
 				{
-	//					gameLocal.Printf ("LODE %s: z_invert false, min %0.2f max %0.2f cur %0.2f\n", 
-      // 						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, LodeEntity.origin.z );
+	//					gameLocal.Printf ("SEED %s: z_invert false, min %0.2f max %0.2f cur %0.2f\n", 
+      // 						GetName(), m_Classes[i].z_min, m_Classes[i].z_max, SeedEntity.origin.z );
 					// TODO: use z_fadein/z_fadeout
-       				if ( LodeEntity.origin.z > m_Classes[i].z_min && LodeEntity.origin.z < m_Classes[i].z_max )
+       				if ( SeedEntity.origin.z > m_Classes[i].z_min && SeedEntity.origin.z < m_Classes[i].z_max )
 					{
 						// inside the band, skip
 						continue;
 					}
-       				if ( m_Classes[i].z_fadein > 0 && LodeEntity.origin.z < m_Classes[i].z_min + m_Classes[i].z_fadein )
+       				if ( m_Classes[i].z_fadein > 0 && SeedEntity.origin.z < m_Classes[i].z_min + m_Classes[i].z_fadein )
 					{
-						float d = ((m_Classes[i].z_min + m_Classes[i].z_fadein) - LodeEntity.origin.z) / m_Classes[i].z_fadein;
+						float d = ((m_Classes[i].z_min + m_Classes[i].z_fadein) - SeedEntity.origin.z) / m_Classes[i].z_fadein;
 						probability *= d;
-		//				gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+		//				gameLocal.Printf ("SEED %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
 					}
-       				if ( m_Classes[i].z_fadeout > 0 && LodeEntity.origin.z > m_Classes[i].z_max - m_Classes[i].z_fadeout )
+       				if ( m_Classes[i].z_fadeout > 0 && SeedEntity.origin.z > m_Classes[i].z_max - m_Classes[i].z_fadeout )
 					{
-						float d = (m_Classes[i].z_max - LodeEntity.origin.z) / m_Classes[i].z_fadeout;
+						float d = (m_Classes[i].z_max - SeedEntity.origin.z) / m_Classes[i].z_fadeout;
 						probability *= d;
-		//				gameLocal.Printf ("LODE %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
+		//				gameLocal.Printf ("SEED %s: d=%02.f new prob %0.2f\n", GetName(), d, probability);
 					}
 				}
 
 				if (r > probability)
 				{
-					//gameLocal.Printf ("LODE %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
+					//gameLocal.Printf ("SEED %s: Skipping placement, %0.2f > %0.2f.\n", GetName(), r, probability);
 					continue;
 				}
 
@@ -2262,39 +2262,39 @@ void Lode::PrepareEntities( void )
 					// TODO: use a gravity normal
 					float sink = m_Classes[i].sink_min + RandomFloat() * ( m_Classes[i].sink_max - m_Classes[i].sink_min );
 					// modify the z-axis according to the sink-value
-					LodeEntity.origin.z -= sink;
+					SeedEntity.origin.z -= sink;
 				}
 
 				// correct for misplaced origins
-				LodeEntity.origin += m_Classes[i].offset;
+				SeedEntity.origin += m_Classes[i].offset;
 					
-				// LodeEntity.origin might now be outside of our oriented box, we check this later
+				// SeedEntity.origin might now be outside of our oriented box, we check this later
 
 				// randomly rotate
 				// pitch, yaw, roll
-				LodeEntity.angles = idAngles( 
+				SeedEntity.angles = idAngles( 
 						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
 						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
 						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ) );
 				/*
-				gameLocal.Printf ("LODE %s: rand rotate for (%0.2f %0.2f %0.2f) %0.2f %0.2f %0.2f => %s\n", GetName(),
+				gameLocal.Printf ("SEED %s: rand rotate for (%0.2f %0.2f %0.2f) %0.2f %0.2f %0.2f => %s\n", GetName(),
 						class_rotate_min.pitch,
 						class_rotate_min.yaw,
 						class_rotate_min.roll,
 						class_rotate_min.pitch + RandomFloat() * (class_rotate_max.pitch - class_rotate_min.pitch),
 						class_rotate_min.yaw   + RandomFloat() * (class_rotate_max.yaw   - class_rotate_min.yaw  ),
-						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ), LodeEntity.angles.ToString() );
+						class_rotate_min.roll  + RandomFloat() * (class_rotate_max.roll  - class_rotate_min.roll ), SeedEntity.angles.ToString() );
 				*/
 
-				// inside LODE bounds?
+				// inside SEED bounds?
 				// IntersectsBox() also includes touching, but we want the entity to be completely inside
 				// so we just check that the origin is inside, which is also faster:
 				// The entity can stick still outside, we need to "shrink" the testbox by half the class size
-				if (box.ContainsPoint( LodeEntity.origin ))
+				if (box.ContainsPoint( SeedEntity.origin ))
 				{
-					//gameLocal.Printf( "LODE %s: Entity would be inside our box. Checking against inhibitors.\n", GetName() );
+					//gameLocal.Printf( "SEED %s: Entity would be inside our box. Checking against inhibitors.\n", GetName() );
 
-					testBox = idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() );
+					testBox = idBox ( SeedEntity.origin, m_Classes[i].size, SeedEntity.angles.ToMat3() );
 
 					// only if this class can be inhibited
 					if (! m_Classes[i].noinhibit)
@@ -2322,7 +2322,7 @@ void Lode::PrepareEntities( void )
 										{
 											// flip the true/false value if we found a match
 											inhibited = !inhibited;
-											gameLocal.Printf( "LODE %s: Entity class %s %s by inhibitor %i.\n", 
+											gameLocal.Printf( "SEED %s: Entity class %s %s by inhibitor %i.\n", 
 													GetName(), m_Classes[i].classname.c_str(), inhibited ? "inhibited" : "allowed", k );
 											break;
 										}
@@ -2343,8 +2343,8 @@ void Lode::PrepareEntities( void )
 										factor = 1 / factor;
 									}
 									// distance to inhibitor center, normalized to 1x1 square
-									float x = 2.0f * (LodeEntity.origin.x - m_Inhibitors[k].origin.x) / m_Inhibitors[k].size.x;
-									float y = 2.0f * (LodeEntity.origin.y - m_Inhibitors[k].origin.y) / m_Inhibitors[k].size.y;
+									float x = 2.0f * (SeedEntity.origin.x - m_Inhibitors[k].origin.x) / m_Inhibitors[k].size.x;
+									float y = 2.0f * (SeedEntity.origin.y - m_Inhibitors[k].origin.y) / m_Inhibitors[k].size.y;
 									// Skip computing the SQRT() since sqrt(1) == 1, sqrt(d < 1) < 1 and sqrt(d > 1) > 1:
 									float d = x * x + y * y;
 									// outside, gets not inhibited
@@ -2374,7 +2374,7 @@ void Lode::PrepareEntities( void )
 										// if a random number is greater than "p", it will get prohibitied
 										if (RandomFloat() > p)
 										{
-											//gameLocal.Printf( "LODE %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
+											//gameLocal.Printf( "SEED %s: Entity inhibited by inhibitor %i. Trying new place.\n", GetName(), k );
 											inhibited = true;
 											break;
 										}
@@ -2396,7 +2396,7 @@ void Lode::PrepareEntities( void )
 						use_spacing = m_Classes[i].spacing;
 					}
 
-					// gameLocal.Printf( "LODE %s: Using spacing constraint %0.2f for entity %i.\n", GetName(), use_spacing, j );
+					// gameLocal.Printf( "SEED %s: Using spacing constraint %0.2f for entity %i.\n", GetName(), use_spacing, j );
 
 					// check that the entity does not collide with any other entity
 					if (m_Classes[i].nocollide > 0 || use_spacing > 0)
@@ -2404,23 +2404,23 @@ void Lode::PrepareEntities( void )
 						bool collides = false;
 
 						// expand the testBounds and testBox with the spacing
-						testBounds = (idBounds( m_Classes[i].size ) + LodeEntity.origin) * LodeEntity.angles.ToMat3();
+						testBounds = (idBounds( m_Classes[i].size ) + SeedEntity.origin) * SeedEntity.angles.ToMat3();
 						testBounds.ExpandSelf( use_spacing );
 						testBox.ExpandSelf( use_spacing );
 
 						for (int k = 0; k < m_Entities.Num(); k++)
 						{
 							// do a quick check on bounds first
-							idBounds otherBounds = LodeEntityBounds[k];
+							idBounds otherBounds = SeedEntityBounds[k];
 							if (otherBounds.IntersectsBounds (testBounds))
 							{
-								//gameLocal.Printf( "LODE %s: Entity %i bounds collides with entity %i bounds, checking box.\n", GetName(), j, k );
+								//gameLocal.Printf( "SEED %s: Entity %i bounds collides with entity %i bounds, checking box.\n", GetName(), j, k );
 								// do a thorough check against the box here
 
-								idBox otherBox = LodeEntityBoxes[k];
+								idBox otherBox = SeedEntityBoxes[k];
 								if (otherBox.IntersectsBox (testBox))
 								{
-									gameLocal.Printf( "LODE %s: Entity %i box collides with entity %i box, trying another place.\n", GetName(), j, k );
+									gameLocal.Printf( "SEED %s: Entity %i box collides with entity %i box, trying another place.\n", GetName(), j, k );
 									collides = true;
 									break;
 								}
@@ -2435,13 +2435,13 @@ void Lode::PrepareEntities( void )
 
 					if (tries < MAX_TRIES && m_iDebug > 0)
 					{
-						gameLocal.Printf( "LODE %s: Found valid position for entity %i with %i tries.\n", GetName(), j, tries );
+						gameLocal.Printf( "SEED %s: Found valid position for entity %i with %i tries.\n", GetName(), j, tries );
 					}
 					break;
 				}
 				else
 				{
-					// gameLocal.Printf( "LODE %s: Test position outside our box, trying again.\n", GetName() );
+					// gameLocal.Printf( "SEED %s: Test position outside our box, trying again.\n", GetName() );
 				}
 			}
 			// couldn't place entity even after 10 tries?
@@ -2453,24 +2453,24 @@ void Lode::PrepareEntities( void )
 			color.y = color.y * RandomFloat() + m_Classes[i].color_min.y;
 			color.z = color.z * RandomFloat() + m_Classes[i].color_min.z;
 			// and store it packed
-			LodeEntity.color = PackColor( color );
+			SeedEntity.color = PackColor( color );
 
 			// choose skin randomly
-			LodeEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
-			//gameLocal.Printf( "LODE %s: Using skin %i.\n", GetName(), LodeEntity.skinIdx );
+			SeedEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
+			//gameLocal.Printf( "SEED %s: Using skin %i.\n", GetName(), SeedEntity.skinIdx );
 			// will be automatically spawned when we are in range
-			LodeEntity.flags = LODE_ENTITY_HIDDEN; // but not LODE_ENTITY_EXISTS nor LODE_ENTITY_FIRSTSPAWN
+			SeedEntity.flags = SEED_ENTITY_HIDDEN; // but not SEED_ENTITY_EXISTS nor SEED_ENTITY_FIRSTSPAWN
 
 			// TODO: add waiting flag and enter in waiting_queue if wanted
-			LodeEntity.entity = 0;
-			LodeEntity.classIdx = i;
+			SeedEntity.entity = 0;
+			SeedEntity.classIdx = i;
 
 			// compute a random value between scale_min and scale_max
 			if (m_Classes[i].scale_min.x == 0)
 			{
 				// axes-equal scaling
 				float factor = RandomFloat() * (m_Classes[i].scale_max.z - m_Classes[i].scale_min.z) + m_Classes[i].scale_min.z;
-				LodeEntity.scale = idVec3( factor, factor, factor );
+				SeedEntity.scale = idVec3( factor, factor, factor );
 			}
 			else
 			{
@@ -2478,14 +2478,14 @@ void Lode::PrepareEntities( void )
 				scale.x = scale.x * RandomFloat() + m_Classes[i].scale_min.x;
 				scale.y = scale.y * RandomFloat() + m_Classes[i].scale_min.y;
 				scale.z = scale.z * RandomFloat() + m_Classes[i].scale_min.z;
-				LodeEntity.scale = scale;
+				SeedEntity.scale = scale;
 			}
 
 			// precompute bounds for a fast collision check
-			LodeEntityBounds.Append( (idBounds (m_Classes[i].size ) + LodeEntity.origin) * LodeEntity.angles.ToMat3() );
+			SeedEntityBounds.Append( (idBounds (m_Classes[i].size ) + SeedEntity.origin) * SeedEntity.angles.ToMat3() );
 			// precompute box for slow collision check
-			LodeEntityBoxes.Append( idBox ( LodeEntity.origin, m_Classes[i].size, LodeEntity.angles.ToMat3() ) );
-			m_Entities.Append( LodeEntity );
+			SeedEntityBoxes.Append( idBox ( SeedEntity.origin, m_Classes[i].size, SeedEntity.angles.ToMat3() ) );
+			m_Entities.Append( SeedEntity );
 
 			if (m_Entities.Num() >= m_iNumEntities)
 			{
@@ -2520,31 +2520,31 @@ void Lode::PrepareEntities( void )
 				// and is this entity in our box?
 				(box.ContainsPoint( origin )) )
 			{
-				gameLocal.Printf( "LODE %s: Watching over brethren %s at %02f %0.2f %0.2f.\n", GetName(), ent->GetName(), origin.x, origin.y, origin.z );
+				gameLocal.Printf( "SEED %s: Watching over brethren %s at %02f %0.2f %0.2f.\n", GetName(), ent->GetName(), origin.x, origin.y, origin.z );
 				// add this entity to our list
-				LodeEntity.origin = origin;
-				LodeEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
+				SeedEntity.origin = origin;
+				SeedEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
 				// support "random_skin" by looking at the actual set skin:
 				idStr skin = ent->GetSkin()->GetName();
-				LodeEntity.skinIdx = AddSkin( &skin );
+				SeedEntity.skinIdx = AddSkin( &skin );
 				// already exists, already visible and spawned
-				LodeEntity.flags = LODE_ENTITY_EXISTS + LODE_ENTITY_SPAWNED;
-				LodeEntity.entity = j;
-				LodeEntity.classIdx = i;
-				m_Entities.Append( LodeEntity );
+				SeedEntity.flags = SEED_ENTITY_EXISTS + SEED_ENTITY_SPAWNED;
+				SeedEntity.entity = j;
+				SeedEntity.classIdx = i;
+				m_Entities.Append( SeedEntity );
 			}
 		}
 	}
 
 	int end = (int) time (NULL);
-	gameLocal.Printf("LODE %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
+	gameLocal.Printf("SEED %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
 
 	// combine the spawned entities into megamodels if possible
 	CombineEntities();
 }
 
 // sort a list of offsets by their distance
-int SortOffsetsByDistance( const lode_sort_ofs_t *a, const lode_sort_ofs_t *b ) {
+int SortOffsetsByDistance( const seed_sort_ofs_t *a, const seed_sort_ofs_t *b ) {
 	float d = a->ofs.offset.LengthSqr() - b->ofs.offset.LengthSqr();
 
 	if ( d < 0 ) {
@@ -2557,7 +2557,7 @@ int SortOffsetsByDistance( const lode_sort_ofs_t *a, const lode_sort_ofs_t *b ) 
 }
 
 // compute the LOD distance for this delta vector and for this entity
-float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
+float Seed::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 {
 	if( m_LOD && m_LOD->bDistCheckXYOnly )
 	{
@@ -2572,7 +2572,7 @@ float Lode::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 }
 
 // a small helper routine to cut down on code copy&paste
-bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const lode_entity_t* entity, const int idx, idClipModel* clipModel )
+bool Seed::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const seed_entity_t* entity, const int idx, idClipModel* clipModel )
 {
 	idClipModel *clip;
 
@@ -2613,7 +2613,7 @@ bool Lode::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr mod
 	return clipLoaded;
 }
 
-void Lode::CombineEntities( void )
+void Seed::CombineEntities( void )
 {
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
 	idList < int > pvs;								//!< in which PVS is this entity?
@@ -2621,17 +2621,17 @@ void Lode::CombineEntities( void )
 	idBounds entityBounds;							//!< for per-entity PVS check
 	int iNumPVSAreas = 0;							//!< for per-entity PVS check
 	int iPVSAreas[2];								//!< for per-entity PVS check
-	lode_class_t PseudoClass;
-	idList< lode_entity_t > newEntities;
+	seed_class_t PseudoClass;
+	idList< seed_entity_t > newEntities;
 	unsigned int mergedCount = 0;
-	idList < lode_sort_ofs_t > sortedOffsets;		//!< To merge the N nearest entities
+	idList < seed_sort_ofs_t > sortedOffsets;		//!< To merge the N nearest entities
 	model_ofs_t ofs;
-	lode_sort_ofs_t sortOfs;
+	seed_sort_ofs_t sortOfs;
 
 	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
 	if (max_combine_distance < 10)
 	{
-		gameLocal.Warning("LODE %s: combine distance %0.2f < 10, enforcing minimum 10.\n", GetName(), max_combine_distance);
+		gameLocal.Warning("SEED %s: combine distance %0.2f < 10, enforcing minimum 10.\n", GetName(), max_combine_distance);
 		max_combine_distance = 10;
 	}
 	// square for easier comparing
@@ -2639,7 +2639,7 @@ void Lode::CombineEntities( void )
 
 	if ( ! spawnArgs.GetBool("combine", "0"))
 	{
-		gameLocal.Printf("LODE %s: combine = 0, skipping combine step.\n", GetName() );
+		gameLocal.Printf("SEED %s: combine = 0, skipping combine step.\n", GetName() );
 		return;
 	}
 
@@ -2654,11 +2654,11 @@ void Lode::CombineEntities( void )
 		playerPos = player->GetPhysics()->GetOrigin();
 	}
 
-	// for each entity, find out in which PVS it is, unless we only have one PVS on the lode,
+	// for each entity, find out in which PVS it is, unless we only have one PVS on the seed,
 	// we then expect all entities to be in the same PVS, too:
 	if (multiPVS)
 	{
-		gameLocal.Printf("LODE %s: MultiPVS.\n", GetName() );
+		gameLocal.Printf("SEED %s: MultiPVS.\n", GetName() );
 		pvs.Clear();
 		// O(N)
 		for (int i = 0; i < m_Entities.Num(); i++)
@@ -2681,7 +2681,7 @@ void Lode::CombineEntities( void )
 	}
 	else
 	{
-		gameLocal.Printf("LODE %s: SinglePVS.\n", GetName() );
+		gameLocal.Printf("SEED %s: SinglePVS.\n", GetName() );
 	}
 
 	idRenderModel* tempModel = NULL;
@@ -2692,15 +2692,15 @@ void Lode::CombineEntities( void )
 	{
 		unsigned int merged = 0;				//!< merged 0 other entities into this one
 
-		//gameLocal.Printf("LODE %s: At entity %i\n", GetName(), i);
+		//gameLocal.Printf("SEED %s: At entity %i\n", GetName(), i);
 		if (m_Entities[i].classIdx < 0)
 		{
 			// already combined, skip
-			//gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
+			//gameLocal.Printf("SEED %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
 			continue;
 		}
 
-		const lode_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
+		const seed_class_t * entityClass = & m_Classes[ m_Entities[i].classIdx ];
 
 		// if this class says no combine, skip it
 		if (entityClass->nocombine)
@@ -2712,11 +2712,11 @@ void Lode::CombineEntities( void )
 		if (NULL == tempModel)
 		{
 			// load model, then combine away
-//			gameLocal.Warning("LODE %s: Load model %s for entity %i.\n", GetName(), entityClass->modelname.c_str(), i);
+//			gameLocal.Warning("SEED %s: Load model %s for entity %i.\n", GetName(), entityClass->modelname.c_str(), i);
 			tempModel = renderModelManager->FindModel( entityClass->modelname );
 			if (! tempModel)
 			{
-				gameLocal.Warning("LODE %s: Could not load model %s for entity %i, skipping it.\n", GetName(), entityClass->modelname.c_str(), i);
+				gameLocal.Warning("SEED %s: Could not load model %s for entity %i, skipping it.\n", GetName(), entityClass->modelname.c_str(), i);
 				continue;
 			}
 		}
@@ -2731,7 +2731,7 @@ void Lode::CombineEntities( void )
 		float fAlpha  = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
 		// 0 => default model, 1 => first stage etc
 		ofs.lod	   = m_LODLevel + 1;
-//		gameLocal.Warning("LODE %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
+//		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
 		ofs.scale  = m_Entities[i].scale;
@@ -2745,36 +2745,36 @@ void Lode::CombineEntities( void )
 		// how many can we combine at most?
 		// use LOD 0 here for an worse-case estimate
 		unsigned int maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
-		gameLocal.Printf("LODE %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
+		gameLocal.Printf("SEED %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
 
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
 		// every combine step reduces the number of entities to look at next:
 		for (int j = i + 1; j < n; j++)
 		{
-			//gameLocal.Printf("LODE %s: %i: At entity %i\n", GetName(), i, j);
+			//gameLocal.Printf("SEED %s: %i: At entity %i\n", GetName(), i, j);
 			if (m_Entities[j].classIdx == -1)
 			{
 				// already combined, skip
-				//gameLocal.Printf("LODE %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
+				//gameLocal.Printf("SEED %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
 				continue;
 			}
 			if (m_Entities[j].classIdx != m_Entities[i].classIdx)
 			{
 				// have different classes
-//				gameLocal.Printf("LODE %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
+//				gameLocal.Printf("SEED %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
 				continue;
 			}
 			if (m_Entities[j].skinIdx != m_Entities[i].skinIdx)
 			{
 				// have different skins
-//				gameLocal.Printf("LODE %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
+//				gameLocal.Printf("SEED %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
 				continue;
 			}
 			// in different PVS?
 			if ( multiPVS && pvs[j] != pvs[i])
 			{
-//				gameLocal.Printf("LODE %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
+//				gameLocal.Printf("SEED %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
 				continue;
 			}
 			// distance too big?
@@ -2782,7 +2782,7 @@ void Lode::CombineEntities( void )
 			float distSq = dist.LengthSqr();
 			if (distSq > max_combine_distance)
 			{
-				// gameLocal.Printf("LODE %s: Distance from entity %i to entity %i to far (%f > %f), skipping it.\n", GetName(), j, i, dist.Length(), max_combine_distance );
+				// gameLocal.Printf("SEED %s: Distance from entity %i to entity %i to far (%f > %f), skipping it.\n", GetName(), j, i, dist.Length(), max_combine_distance );
 				continue;
 			}
 
@@ -2793,7 +2793,7 @@ void Lode::CombineEntities( void )
 			float fAlpha = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
 			// 0 => default model, 1 => level 0 etc.
 			ofs.lod		= m_LODLevel + 1;
-//			gameLocal.Warning("LODE %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
+//			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
 			ofs.scale  = m_Entities[j].scale;
@@ -2827,7 +2827,7 @@ void Lode::CombineEntities( void )
 			merged ++;
 			// overall
 			mergedCount ++;
-//			gameLocal.Printf("LODE %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
+//			gameLocal.Printf("SEED %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
 //					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
 
 			// mark with negative classIdx so we can skip it, or restore the classIdx (be negating it again)
@@ -2848,7 +2848,7 @@ void Lode::CombineEntities( void )
 				for (int mi = 0; mi < LOD_LEVELS; mi++)
 				{
 					// load model, then combine away
-//					gameLocal.Warning("LODE %s: Trying to load LOD model #%i %s for entity %i.", 
+//					gameLocal.Warning("SEED %s: Trying to load LOD model #%i %s for entity %i.", 
 //							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
 
 					idStr* mName = &(tmlod->ModelLOD[mi]);
@@ -2857,7 +2857,7 @@ void Lode::CombineEntities( void )
 						idRenderModel* tModel = renderModelManager->FindModel( mName->c_str() );
 						if (!tModel)
 						{
-							gameLocal.Warning("LODE %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
+							gameLocal.Warning("SEED %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
 									GetName(), mi, mName->c_str(), i);
 						}
 						else
@@ -2902,13 +2902,13 @@ void Lode::CombineEntities( void )
 				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, &m_Entities[i], 0, PseudoClass.clip );
 				if (!clipLoaded)
 				{
-					gameLocal.Warning("LODE %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
+					gameLocal.Warning("SEED %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
 				}
 			}
 
 			if (clipLoaded)
 			{
-//				gameLocal.Printf("LODE %s: Loaded clipmodel (bounds %s) for %s.\n",
+//				gameLocal.Printf("SEED %s: Loaded clipmodel (bounds %s) for %s.\n",
 //						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
 
 				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
@@ -2934,7 +2934,7 @@ void Lode::CombineEntities( void )
 //					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
 				}
 			}
-			gameLocal.Printf("LODE %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
+			gameLocal.Printf("SEED %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
 			sortedOffsets.Clear();
 
 			// build the combined model
@@ -2942,14 +2942,14 @@ void Lode::CombineEntities( void )
 			if (m_bDebugColors)
 			{
 				// select one at random
-				PseudoClass.materialName = idStr("textures/darkmod/debug/") + lode_debug_materials[ gameLocal.random.RandomInt( LODE_DEBUG_MATERIAL_COUNT ) ];
+				PseudoClass.materialName = idStr("textures/darkmod/debug/") + seed_debug_materials[ gameLocal.random.RandomInt( SEED_DEBUG_MATERIAL_COUNT ) ];
 			}
 
 			// replace the old class with the new pseudo class
 			m_Entities[i].classIdx = m_Classes.Append( PseudoClass );
 
 			// marks as using a pseudo class
-			m_Entities[i].flags += LODE_ENTITY_PSEUDO;
+			m_Entities[i].flags += SEED_ENTITY_PSEUDO;
 
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
@@ -2958,7 +2958,7 @@ void Lode::CombineEntities( void )
 
 	if (mergedCount > 0)
 	{
-		gameLocal.Printf("LODE %s: Merged entity positions, now building combined final list.\n", GetName() );
+		gameLocal.Printf("SEED %s: Merged entity positions, now building combined final list.\n", GetName() );
 
 		// delete all entities that got merged
 
@@ -2986,26 +2986,26 @@ void Lode::CombineEntities( void )
 	sortedOffsets.Clear();
 
 	int end = (int) time (NULL);
-	gameLocal.Printf("LODE %s: Combined %i entities into %i entities, took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
+	gameLocal.Printf("SEED %s: Combined %i entities into %i entities, took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
 
 	return;
 }
 
 /*
 ================
-Lode::SpawnEntity - spawn the entity with the given index, returns true if it was spawned
+Seed::SpawnEntity - spawn the entity with the given index, returns true if it was spawned
 ================
 */
 
-bool Lode::SpawnEntity( const int idx, const bool managed )
+bool Seed::SpawnEntity( const int idx, const bool managed )
 {
-	struct lode_entity_t* ent = &m_Entities[idx];
-	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
+	struct seed_entity_t* ent = &m_Entities[idx];
+	struct seed_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
 	// spawn the entity and note its number
 	if (m_iDebug)
 	{
-		gameLocal.Printf( "LODE %s: Spawning entity #%i (%s, skin %s, model %s), managed: %s.\n",
+		gameLocal.Printf( "SEED %s: Spawning entity #%i (%s, skin %s, model %s), managed: %s.\n",
 				GetName(), idx, lclass->classname.c_str(), m_Skins[ ent->skinIdx ].c_str(), 
 				lclass->modelname.c_str(),
 				managed ? "yes" : "no" );
@@ -3062,7 +3062,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 			// 		 also take control of any attachments it has? Or spawn it during build
 			//		 and then parse the attachments as new class?
 
-			//gameLocal.Printf( "LODE %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
+			//gameLocal.Printf( "SEED %s: Spawned entity #%i (%s) at  %0.2f, %0.2f, %0.2f.\n",
 			//		GetName(), i, lclass->classname.c_str(), ent->origin.x, ent->origin.y, ent->origin.z );
 
 			ent->entity = ent2->entityNumber;
@@ -3155,7 +3155,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 					ment->ActivatePhysics( this );
 
 					// first spawn ever?
-					if ((ent->flags & LODE_ENTITY_SPAWNED) == 0)
+					if ((ent->flags & SEED_ENTITY_SPAWNED) == 0)
 					{
 				   		// add a random impulse
 						// spherical coordinates: radius (magnitude), theta (inclination +-90°), phi (azimut 0..369°)
@@ -3163,7 +3163,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 						impulse.x = impulse.x * RandomFloat() + lclass->impulse_min.x;
 						impulse.y = impulse.y * RandomFloat() + lclass->impulse_min.y;
 						impulse.z = impulse.z * RandomFloat() + lclass->impulse_min.z;
-						// gameLocal.Printf("LODE %s: Applying random impulse (polar %s, vec3 %s) to entity.\n", GetName(), impulse.ToString(), idPolar3( impulse ).ToVec3().ToString() );
+						// gameLocal.Printf("SEED %s: Applying random impulse (polar %s, vec3 %s) to entity.\n", GetName(), impulse.ToString(), idPolar3( impulse ).ToVec3().ToString() );
 						ent2->GetPhysics()->SetLinearVelocity( 
 							// ent2->GetPhysics()->GetLinearVelocity() +
 							idPolar3( impulse ).ToVec3() );
@@ -3174,7 +3174,7 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 			}
 
 			// preserve PSEUDO flag
-			ent->flags = LODE_ENTITY_SPAWNED + LODE_ENTITY_EXISTS + (ent->flags & LODE_ENTITY_PSEUDO);
+			ent->flags = SEED_ENTITY_SPAWNED + SEED_ENTITY_EXISTS + (ent->flags & SEED_ENTITY_PSEUDO);
 
 			return true;
 		}
@@ -3184,15 +3184,15 @@ bool Lode::SpawnEntity( const int idx, const bool managed )
 
 /*
 ================
-Lode::CullEntity - cull the entity with the given index, returns true if it was culled
+Seed::CullEntity - cull the entity with the given index, returns true if it was culled
 ================
 */
-bool Lode::CullEntity( const int idx )
+bool Seed::CullEntity( const int idx )
 {
-	struct lode_entity_t* ent = &m_Entities[idx];
-	struct lode_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
+	struct seed_entity_t* ent = &m_Entities[idx];
+	struct seed_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
-	if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 )
+	if ( (ent->flags & SEED_ENTITY_EXISTS) == 0 )
 	{
 		return false;
 	}
@@ -3221,13 +3221,13 @@ bool Lode::CullEntity( const int idx )
 				// gameLocal.m_ModelGenerator->FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
 			}
 		}
-		// gameLocal.Printf( "LODE %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
+		// gameLocal.Printf( "SEED %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
 
 		m_iNumExisting --;
 		m_iNumVisible --;
 		// add visible, reset exists, keep the others
-		ent->flags += LODE_ENTITY_HIDDEN;
-		ent->flags &= (! LODE_ENTITY_EXISTS);
+		ent->flags += SEED_ENTITY_HIDDEN;
+		ent->flags &= (! SEED_ENTITY_EXISTS);
 		ent->entity = 0;
 
 		// TODO: SafeRemve?
@@ -3241,13 +3241,13 @@ bool Lode::CullEntity( const int idx )
 
 /*
 ================
-Lode::Think
+Seed::Think
 ================
 */
-void Lode::Think( void ) 
+void Seed::Think( void ) 
 {
-	struct lode_entity_t* ent;
-	struct lode_class_t*  lclass;
+	struct seed_entity_t* ent;
+	struct seed_class_t*  lclass;
 	int culled = 0;
 	int spawned = 0;
 
@@ -3269,7 +3269,7 @@ void Lode::Think( void )
 	// GUI setting changed?
 	if ( idMath::Fabs(cv_lod_bias.GetFloat() - m_fLODBias) > 0.1)
 	{
-		gameLocal.Printf ("LODE %s: GUI setting changed, recomputing.\n", GetName() );
+		gameLocal.Printf ("SEED %s: GUI setting changed, recomputing.\n", GetName() );
 
 		int cur_entities = m_iNumEntities;
 
@@ -3284,7 +3284,7 @@ void Lode::Think( void )
 			// create same sequence again
 			m_iSeed_2 = m_iOrgSeed;
 
-			gameLocal.Printf ("LODE %s: Have now %i entities.\n", GetName(), m_iNumEntities );
+			gameLocal.Printf ("SEED %s: Have now %i entities.\n", GetName(), m_iNumEntities );
 
 			PrepareEntities();
 			// save the new value
@@ -3302,7 +3302,7 @@ void Lode::Think( void )
 			 ! gameLocal.pvs.InCurrentPVS( gameLocal.GetPlayerPVS(), m_iPVSAreas, m_iNumPVSAreas ) )
 		{
 			// if so, do nothing until think counter is high enough again
-			//gameLocal.Printf( "LODE %s: Outside player PVS, think counter = %i, exiting.\n", GetName(), m_iThinkCounter );
+			//gameLocal.Printf( "SEED %s: Outside player PVS, think counter = %i, exiting.\n", GetName(), m_iThinkCounter );
 			m_iThinkCounter ++;
 			return;
 
@@ -3344,7 +3344,7 @@ void Lode::Think( void )
 			float deltaSq = delta.LengthSqr() / lodBias;
 
 			// normal distance checks now
-			if ( (ent->flags & LODE_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
+			if ( (ent->flags & SEED_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
 				// Spawn and manage LOD, except for CStaticMulti entities with a megamodel,
 				// these need to do their own LOD thinking:
@@ -3356,7 +3356,7 @@ void Lode::Think( void )
 			else
 			{
 				// cull entities that are outside "hide_distance + fade_out_distance + cullRange
-				if ( (ent->flags & LODE_ENTITY_EXISTS) != 0 && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
+				if ( (ent->flags & SEED_ENTITY_EXISTS) != 0 && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame
 					if (CullEntity( i ))
@@ -3397,10 +3397,10 @@ void Lode::Think( void )
 
 /*
 ================
-Lode::Event_Activate
+Seed::Event_Activate
 ================
 */
-void Lode::Event_Activate( idEntity *activator ) {
+void Seed::Event_Activate( idEntity *activator ) {
 
 	active = true;
 	m_bWaitForTrigger = false;	// enough waiting around, lets do some action
@@ -3409,10 +3409,10 @@ void Lode::Event_Activate( idEntity *activator ) {
 
 /*
 ================
-Lode::Event_Disable
+Seed::Event_Disable
 ================
 */
-void Lode::Event_Disable( void ) {
+void Seed::Event_Disable( void ) {
 
 	active = false;
 	BecomeInactive(TH_THINK);
@@ -3420,10 +3420,10 @@ void Lode::Event_Disable( void ) {
 
 /*
 ================
-Lode::Event_Enable
+Seed::Event_Enable
 ================
 */
-void Lode::Event_Enable( void ) {
+void Seed::Event_Enable( void ) {
 
 	active = true;
 	BecomeInactive(TH_THINK);
@@ -3431,10 +3431,10 @@ void Lode::Event_Enable( void ) {
 
 /*
 ================
-Lode::Event_CullAll
+Seed::Event_CullAll
 ================
 */
-void Lode::Event_CullAll( void ) {
+void Seed::Event_CullAll( void ) {
 
 	for (int i = 0; i < m_Entities.Num(); i++)
 	{
