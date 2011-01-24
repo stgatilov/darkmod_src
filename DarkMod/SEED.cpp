@@ -1185,7 +1185,7 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		kv = ent->spawnArgs.MatchPrefix( "seed_material_", kv );
 	}
 
-	// store the rendermodel to make func_statics work
+	// store the rendermodel to make func_statics or scaling/combining work
 	SeedClass.hModel = NULL;
 	SeedClass.clip = NULL;
 	if (SeedClass.classname == FUNC_STATIC)
@@ -1213,6 +1213,18 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 			if ( m_bCombine )
 			{
 				SeedClass.classname = FUNC_DUMMY;
+			}
+			// if we are not combining things, but scale, set hModel so it later gets duplicated
+			else
+			{
+				// if scale_min.x == 0, axis-equal scaling
+			   	if (SeedClass.scale_max.z != 1.0f || SeedClass.scale_min.z != 1.0f ||
+			   		(SeedClass.scale_min.x != 0.0f && SeedClass.scale_min.x != 1.0f) ||
+			   		(SeedClass.scale_max.x != 1.0f || SeedClass.scale_min.y != 1.0f || SeedClass.scale_max.y != 1.0f) )
+				{
+				// simply point to the already existing model, so we can clone it later
+				SeedClass.hModel = ent->GetRenderEntity()->hModel;
+				}
 			}
 		}
 	}
