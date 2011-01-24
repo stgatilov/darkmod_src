@@ -6204,7 +6204,7 @@ void idEntity::Event_SetName( const char *newname ) {
 
 /*
 ================
-idEntity::Event_GetTypeName
+idEntity::Event_IsType
 ================
 */
 void idEntity::Event_IsType( const char *pstr_typeName ) 
