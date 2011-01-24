@@ -16,6 +16,7 @@
 #endif
 
 #include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 
 #ifndef ILuint
 typedef unsigned int ILuint;
@@ -24,7 +25,6 @@ typedef unsigned int ILuint;
 #ifndef ILenum
 typedef unsigned int ILenum;
 #endif
-
 
 class CImage
 {

@@ -1786,6 +1786,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\CImage.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\CImage.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\DarkmodAASHidingSpotFinder.cpp"
 					>
 				</File>
@@ -1804,10 +1812,6 @@
 							ForcedIncludeFiles="c:\compiled.h"
 						/>
 					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\DarkMod\CImage.h"
-					>
 				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.h"
@@ -1990,6 +1994,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\ImageMapManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\ImageMapManager.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Intersection.cpp"
 					>
 				</File>
@@ -2011,14 +2023,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\liquid.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\SEED.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\SEED.h"
 					>
 				</File>
 				<File
@@ -2059,14 +2063,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\ModelGenerator.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\ImageMapManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\ImageMapManager.h"
 					>
 				</File>
 				<File
@@ -2179,6 +2175,14 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\RevisionTracker.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\SEED.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\SEED.h"
 					>
 				</File>
 				<File
