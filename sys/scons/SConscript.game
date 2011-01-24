@@ -275,6 +275,7 @@ AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \
 SEED.cpp \
 ModelGenerator.cpp \
+ImageMapManager.cpp \
 LightController.cpp \
 StaticMulti.cpp \
 sourcehook/sourcehook.cpp'
