@@ -610,8 +610,8 @@ Seed::Spawn
 void Seed::Spawn( void ) {
 
 	// DEBUG
-	gameLocal.Printf( "SEED %s: Sizes: seed_entity_t %i, seed_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i.\n", 
-			GetName(), sizeof(seed_entity_t), sizeof(seed_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity) );
+//	gameLocal.Printf( "SEED %s: Sizes: seed_entity_t %i, seed_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i, CImage %i.\n", 
+//			GetName(), sizeof(seed_entity_t), sizeof(seed_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity), sizeof(CImage) );
 
 	// if we subtract the render entity origin from the physics origin (this is where the mapper places
 	// the origin inside DR), we magically arrive at the true origin of the visible brush placed in DR.
@@ -778,7 +778,7 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	seed_class_t			SeedClass;
 	seed_material_t			SeedMaterial;
 	const idKeyValue *kv;
-	float fImgDensity = 1.0f;		// average "density" of the image map
+	float fImgDensity = 0.0f;		// average "density" of the image map
 
 	SeedClass.pseudo = false;		// this is a true entity class
 	SeedClass.score = iEntScore;
@@ -787,22 +787,45 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 	// is solid?	
 	SeedClass.solid = ent->spawnArgs.GetBool("solid","1");
+
+	// can be combined with other entities?
 	SeedClass.nocombine = ent->spawnArgs.GetBool("seed_combine","1") ? false : true;
 
-	// never combine moveables, actors or lights
+	// never combine these types
 	if ( ent->IsType( idMoveable::Type ) ||
+		 ent->IsType( CBinaryFrobMover::Type ) ||
+		 ent->IsType( idBrittleFracture::Type ) ||
+		 ent->IsType( idTarget::Type ) ||
 		 ent->IsType( idActor::Type ) ||
+		 ent->IsType( idAFEntity_Base::Type ) ||
+		 ent->IsType( idAFAttachment::Type ) ||
+		 ent->IsType( idAnimatedEntity::Type ) ||
+		 ent->IsType( idWeapon::Type ) ||
 		 ent->IsType( idLight::Type ) )
 	{
 		SeedClass.nocombine = true;
 	}
-    // never combine entities which have a script object (that won't work)
-	idStr scriptobject = ent->spawnArgs.GetString("scriptobject","");
-	if (!scriptobject.IsEmpty())
+
+	// if can be combined, do some further checks
+	if (!SeedClass.nocombine)
 	{
-		gameLocal.Printf("Not combining entities of this class because 'scriptobject' is set.\n");
-		SeedClass.nocombine = true;
+    	// never combine entities which have a script object (that won't work)
+		idStr scriptobject = ent->spawnArgs.GetString("scriptobject","");
+		if (!scriptobject.IsEmpty())
+		{
+			// gameLocal.Printf("Not combining entities of this class because 'scriptobject' is set.\n");
+			SeedClass.nocombine = true;
+		}
+    	// neither combine entities which have particles as model
+		else if (SeedClass.modelname.Right(4) == ".prt")
+		{
+			// gameLocal.Printf("Not combining entities of this class because model is a particle.\n");
+			SeedClass.nocombine = true;
+		}
 	}
+
+//    // never combine entities which have certain spawnclasses
+//	idStr spawnclass = ent->spawnArgs.GetString("spawnclass","");
 
 	// only for pseudo classes
 	SeedClass.physicsObj = NULL;
@@ -985,6 +1008,7 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// image based map?
 	idStr mapName = ent->spawnArgs.GetString( "seed_map", spawnArgs.GetString( "map", "") );
 
+	SeedClass.imgmap = 0;
 	if (!mapName.IsEmpty())
 	{
 		SeedClass.imgmap = gameLocal.m_ImageMapManager->GetImageMap( mapName );
@@ -1043,8 +1067,6 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 
 		// Compute an average density for the image map, so we can correct the number of entities
 		// based on this. An image map with 50% black and 50% white should result in 0.5, as should 50% grey:
-		fImgDensity = 0.0f;
-
 		unsigned int w = gameLocal.m_ImageMapManager->GetMapWidth( SeedClass.imgmap );
 		unsigned int h = gameLocal.m_ImageMapManager->GetMapHeight( SeedClass.imgmap );
 		if (SeedClass.map_ofs_x == 0 && SeedClass.map_ofs_y == 0 && SeedClass.map_scale_x == 1.0f && SeedClass.map_scale_y == 1.0f)
