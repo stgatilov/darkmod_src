@@ -796,6 +796,13 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	{
 		SeedClass.nocombine = true;
 	}
+    // never combine entities which have a script object (that won't work)
+	idStr scriptobject = ent->spawnArgs.GetString("scriptobject","");
+	if (!scriptobject.IsEmpty())
+	{
+		gameLocal.Printf("Not combining entities of this class because 'scriptobject' is set.\n");
+		SeedClass.nocombine = true;
+	}
 
 	// only for pseudo classes
 	SeedClass.physicsObj = NULL;
