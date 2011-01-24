@@ -34,9 +34,6 @@ TODO: add "watch_models" (or "combine_models"?) so the mapper can place models a
 
 Optimizations:
 
-TODO: Load image maps only once, then share their data. Alternatively, free the image
-	  data after creating the entities.
-	  And don't restore the image in Restore() as we do no longer need it.
 TODO: Make the max-combine-distance setting depending on the LOD stages, if the model
 	  has none + hide, or none and no hide, we can use a bigger distance because the
 	  rendermodel will be less often (or never) be rebuild. Also benchmark wether
@@ -96,10 +93,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 const idEventDef EV_CullAll( "cullAll", "" );
 
 /*
-   Seed
-
-   Entity that spawns/culls other entities, but is invisible on its own.
-
 ===============================================================================
 */
 
@@ -283,8 +276,8 @@ void Seed::Save( idSaveGame *savefile ) const {
 			savefile->WriteFloat( m_Classes[i].func_a );
 		}
 		// image based distribution
-		savefile->WriteString( m_Classes[i].map );
-		if (!m_Classes[i].map.IsEmpty())
+		savefile->WriteUnsignedInt( m_Classes[i].imgmap );
+		if (m_Classes[i].imgmap != 0)
 		{
 			savefile->WriteBool( m_Classes[i].map_invert );
 			savefile->WriteFloat( m_Classes[i].map_scale_x );
@@ -347,7 +340,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 ===============
 Seed::ClearClasses
 
-Free memory from render models and CImages
+Free memory from render models and Images
 ===============
 */
 void Seed::ClearClasses( void )
@@ -369,11 +362,9 @@ void Seed::ClearClasses( void )
 			//delete m_Classes[i].physicsObj;
 			m_Classes[i].physicsObj = NULL;
 		}
-		if (NULL != m_Classes[i].img)
+		if (m_Classes[i].imgmap != 0)
 		{
-			m_Classes[i].img->Unload(true);
-			delete m_Classes[i].img;
-			m_Classes[i].img = NULL;
+			gameLocal.m_ImageMapManager->UnregisterMap( m_Classes[i].imgmap );
 		}
 	}
 	m_Classes.Clear();
@@ -510,22 +501,15 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		{
 			savefile->ReadFloat( m_Classes[i].func_a );
 		}
-		savefile->ReadString( m_Classes[i].map );
 		m_Classes[i].map_invert = false;
 		m_Classes[i].map_scale_x = 1.0f;
 		m_Classes[i].map_scale_y = 1.0f;
 		m_Classes[i].map_ofs_x = 0.0f;
 		m_Classes[i].map_ofs_y = 0.0f;
-		m_Classes[i].img = NULL;
-	    if (!m_Classes[i].map.IsEmpty())
-		{
-			// image based distribution
-			// TODO: Do we really need the image at this point?
-			m_Classes[i].img = new CImage();
-			m_Classes[i].img->SetDefaultImageType(CImage::AUTO_DETECT);
-			m_Classes[i].img->LoadImageFromVfs( m_Classes[i].map );
-			m_Classes[i].img->InitImageInfo();
 
+		savefile->ReadUnsignedInt( m_Classes[i].imgmap );
+	    if (m_Classes[i].imgmap != 0)
+		{
 			savefile->ReadBool( m_Classes[i].map_invert );
 			savefile->ReadFloat( m_Classes[i].map_scale_x );
 			savefile->ReadFloat( m_Classes[i].map_scale_y );
@@ -845,11 +829,11 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if ( !random_skin.IsEmpty() )
 	{
 		gameLocal.Printf( "SEED %s: Entity has random_skin '%s'.\n", GetName(), random_skin.c_str() );
-		// TODO: split up at "," and add all these to the skins
+		// split up at "," and add all these to the skins
 		// if we have X commata, we have X+1 pieces, so go through all of them
 		int start = 0; int end = 0;
 		int numChars = random_skin.Length();
-		gameLocal.Printf(" start %i numChars %i\n", start, numChars);
+		// gameLocal.Printf(" start %i numChars %i\n", start, numChars);
 		while (start < numChars)
 		{
 			// find first non-"," and non " "
@@ -992,15 +976,23 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	}
 
 	// image based map?
-	SeedClass.map = ent->spawnArgs.GetString( "seed_map", spawnArgs.GetString( "map", "") );
-	SeedClass.img = NULL;
+	idStr mapName = ent->spawnArgs.GetString( "seed_map", spawnArgs.GetString( "map", "") );
+
+	if (!mapName.IsEmpty())
+	{
+		SeedClass.imgmap = gameLocal.m_ImageMapManager->GetImageMap( mapName );
+		if (SeedClass.imgmap == 0)
+		{
+			gameLocal.Warning ("SEED %s: Could not load image map mapName: %s", GetName(), gameLocal.m_ImageMapManager->GetLastError() );
+		}
+	}
 	SeedClass.map_invert = false;
 	SeedClass.map_scale_x = 1.0f;
 	SeedClass.map_scale_y = 1.0f;
 	SeedClass.map_ofs_x = 0.0f;
 	SeedClass.map_ofs_y = 0.0f;
 	// not empty => image based map
-	if ( ! SeedClass.map.IsEmpty())
+	if ( SeedClass.imgmap > 0)
 	{
 	    SeedClass.map_invert = ent->spawnArgs.GetBool( "seed_map_invert", spawnArgs.GetString( "map_invert", "0") );
 
@@ -1029,91 +1021,52 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try SEED::map_scale
 						   	"0" ) ) ) );								// finally fallback to 0
 
-		SeedClass.img = new CImage();
-		// need this to load PNG and JPG
-		SeedClass.img->SetDefaultImageType(CImage::AUTO_DETECT);
-
-		// If the map name does not start with "textures/seed/", prepend it:
-		idStr mapName = SeedClass.map;
-		if (mapName.Left(14) != "textures/seed/")
-		{
-			mapName = "textures/seed/" + SeedClass.map;
-		}
-
-		// try to find PNG, TGA or JPG version
-		idFile *fl = NULL;
-		if((fl = fileSystem->OpenFileRead(mapName)) == NULL)
-		{
-			//gameLocal.Warning("SEED %s: Could not find %s, trying .png next.\n", GetName(), mapName.c_str() );
-			idStr m = mapName + ".png";
-			if((fl = fileSystem->OpenFileRead(m)) == NULL)
-			{
-				//gameLocal.Warning("SEED %s: Could not find %s, trying .tga next.\n", GetName(), m.c_str() );
-				// can't find PNG, try TGA
-				m = mapName + ".tga";
-				if((fl = fileSystem->OpenFileRead(m)) == NULL)
-				{
-					// gameLocal.Warning("SEED %s: Could not find %s, trying .jpg next.\n", GetName(), m.c_str() );
-					// can't find TGA, try JPG as last resort
-					mapName += ".jpg";
-				}
-				else
-				{
-					mapName += ".tga";
-				}
-			}
-			else
-			{
-				// use PNG
-				mapName += ".png";
-			}
-
-		}
-		if (fl)
-		{
-			fileSystem->CloseFile(fl);
-		}
-
-		gameLocal.Warning("SEED %s: Trying to load %s.\n", GetName(), mapName.c_str() );
-		SeedClass.img->LoadImageFromVfs( mapName );
-		SeedClass.img->InitImageInfo();
-
-		unsigned char *imgData = SeedClass.img->GetImage();
+		unsigned char *imgData = gameLocal.m_ImageMapManager->GetMapData( SeedClass.imgmap );
 		if (!imgData)
 		{
-			gameLocal.Error("SEED %s: Could not access image data from %s.\n", GetName(), mapName.c_str() );
+			gameLocal.Error("SEED %s: Could not access image data from %s.\n", 
+					GetName(), gameLocal.m_ImageMapManager->GetMapName( SeedClass.imgmap ) );
 		}
 
-		if (SeedClass.img->m_Bpp != 1)
+		unsigned int bpp = gameLocal.m_ImageMapManager->GetMapBpp( SeedClass.imgmap );
+		if (bpp != 1)
 		{
-			gameLocal.Error("SEED %s: Bytes per pixel must be 1 but is %i!\n", GetName(), SeedClass.img->m_Bpp );
+			gameLocal.Error("SEED %s: Bytes per pixel must be 1 but is %i!\n", GetName(), bpp );
 		}
 
 		// Compute an average density for the image map, so we can correct the number of entities
 		// based on this. An image map with 50% black and 50% white should result in 0.5, as should 50% grey:
 		fImgDensity = 0.0f;
 
-		int w = SeedClass.img->m_Width;
-		int h = SeedClass.img->m_Height;
-		double wd = SeedClass.img->m_Width;
-		double hd = SeedClass.img->m_Height;
-		double xo = SeedClass.img->m_Width * SeedClass.map_ofs_x;
-		double yo = SeedClass.img->m_Width * SeedClass.map_ofs_y;
-		double xs = SeedClass.map_scale_x;
-		double ys = SeedClass.map_scale_y;
-		for (int x = 0; x < w; x++)
+		unsigned int w = gameLocal.m_ImageMapManager->GetMapWidth( SeedClass.imgmap );
+		unsigned int h = gameLocal.m_ImageMapManager->GetMapHeight( SeedClass.imgmap );
+		if (SeedClass.map_ofs_x == 0 && SeedClass.map_ofs_y == 0 && SeedClass.map_scale_x == 1.0f && SeedClass.map_scale_y == 1.0f)
 		{
-			for (int y = 0; y < h; y++)
-			{
-				// compute X and Y based on scaling/offset
-				// first fmod => -w .. +w => +w => 0 .. 2 * w => fmod => 0 .. w
-				int x1 = fmod( fmod( x * xs + xo, wd ) + wd, wd);
-				int y1 = fmod( fmod( y * ys + yo, hd ) + hd, hd);
-				fImgDensity += (float)imgData[ w * y1 + x1 ];	// 0 .. 255
-			}
+			// can use the precomputed density of the entire image map
+			fImgDensity = gameLocal.m_ImageMapManager->GetMapDensity( SeedClass.imgmap );
 		}
-		// divide the sum by W and H and 256 so we arrive at 0 .. 1.0
-		fImgDensity /= (float)(w * h * 256.0f);
+		else
+		{
+			double wd = (double)w;
+			double hd = (double)h;
+			double xo = w * SeedClass.map_ofs_x;
+			double yo = h * SeedClass.map_ofs_y;
+			double xs = SeedClass.map_scale_x;
+			double ys = SeedClass.map_scale_y;
+			for (unsigned int x = 0; x < w; x++)
+			{
+				for (unsigned int y = 0; y < h; y++)
+				{
+					// compute X and Y based on scaling/offset
+					// first fmod => -w .. +w => +w => 0 .. 2 * w => fmod => 0 .. w
+					int x1 = fmod( fmod( x * xs + xo, wd ) + wd, wd);
+					int y1 = fmod( fmod( y * ys + yo, hd ) + hd, hd);
+					fImgDensity += (float)imgData[ w * y1 + x1 ];	// 0 .. 255
+				}
+			}
+			// divide the sum by W and H and 256 so we arrive at 0 .. 1.0
+			fImgDensity /= (float)(w * h * 256.0f);
+		}
 
 		// if the map is inverted, use 1 - x:
 		if (SeedClass.map_invert)
@@ -1121,8 +1074,9 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 			fImgDensity = 1 - fImgDensity;
 		}
 
-		gameLocal.Printf("SEED %s: Loaded %s: %ix%i px, %i bpp = %li bytes, average density %0.4f.\n", 
-				GetName(), mapName.c_str(), SeedClass.img->m_Width, SeedClass.img->m_Height, SeedClass.img->m_Bpp, SeedClass.img->GetBufferLen(), fImgDensity );
+		gameLocal.Printf("SEED %s: Using %s: %ix%i px, %i bpp, average density %0.4f.\n", 
+				GetName(), gameLocal.m_ImageMapManager->GetMapName( SeedClass.imgmap ) ,
+			   	w, h, bpp, fImgDensity );
 		if (fImgDensity < 0.001f)
 		{
 			gameLocal.Warning("The average density of this image map is very low.");
@@ -2022,7 +1976,7 @@ void Seed::PrepareEntities( void )
 				}
 
        			// image based falloff probability
-				if (m_Classes[i].img)
+				if (m_Classes[i].imgmap)
 				{
 					// compute the pixel we need to query
 					// TODO: add spawnarg-based scaling factor and offset here
@@ -2035,17 +1989,7 @@ void Seed::PrepareEntities( void )
 					y = fmod( fmod(y, 1.0f) + 1.0, 1.0);
 
 					// 1 - x to correct for top-left images
-					int px = (1.0f - x) * m_Classes[i].img->m_Width;		// 0 .. w (f.i. 0 .. 1024)
-					int py = y * m_Classes[i].img->m_Height;				// 0 .. h (f.i. 0 .. 1024)
-
-					// calculate the correct offset
-					//int ofs = m_Classes[i].img->m_Bpp * (py * m_Classes[i].img->m_Height + px);
-					// Bpp is 1
-
-					int ofs = (py * m_Classes[i].img->m_Height + px);
-
-					unsigned char *imgData = m_Classes[i].img->GetImage();
-					int value = imgData[ofs];
+					int value = gameLocal.m_ImageMapManager->GetMapDataAt( m_Classes[i].imgmap, 1.0f - x, y );
 					if (m_Classes[i].map_invert)
 					{
 						value = 255 - value;
@@ -2832,7 +2776,7 @@ void Seed::CombineEntities( void )
 				PseudoClass.size = entityClass->size;
 				PseudoClass.solid = entityClass->solid;
 				PseudoClass.clip = entityClass->clip;
-				PseudoClass.img = NULL;
+				PseudoClass.imgmap = 0;
 				PseudoClass.offset = entityClass->offset;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
