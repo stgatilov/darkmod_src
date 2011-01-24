@@ -773,7 +773,7 @@ void MaterialConverter::Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		// for testing
 		//idMaterial *pMat = const_cast<idMaterial *>(declManager->FindMaterial( "textures/base_wall/xiantex3_dark_burn" ));
 
-		gameLocal.Printf( matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
+		gameLocal.Printf( "%s", matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
 
 		if( eMaterialConversionStatus_Skipped_ErrorsInConvertedMaterial == matConversionStatus )
 		{
@@ -832,7 +832,7 @@ void MaterialConverter::Cmd_ConvertMaterialsFromFile_f( const idCmdArgs& args )
 
 	if( astrMatNames.size() <= 0 )
 	{
-		gameLocal.Printf( "Could not find any valid materials. Aborting. \n", args.Argv(1) );
+		gameLocal.Printf( "Could not find any valid materials. Aborting. \n" );
 		return;
 	}
 
@@ -853,7 +853,7 @@ void MaterialConverter::Cmd_ConvertMaterialsFromFile_f( const idCmdArgs& args )
 
 		eMaterialConversionStatus matConversionStatus = ConvertMaterial( pMat, bForceUpdateAllMaterials );
 
-		gameLocal.Printf( matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
+		gameLocal.Printf( "%s", matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
 
 		if( eMaterialConversionStatus_Skipped_ErrorsInConvertedMaterial == matConversionStatus )
 		{
@@ -903,7 +903,7 @@ void MaterialConverter::Cmd_ConvertMaterial_f( const idCmdArgs& args )
 	}
 	eMaterialConversionStatus matConversionStatus = ConvertMaterial( pMat, bForceUpdate );
 
-	gameLocal.Printf( matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
+	gameLocal.Printf( "%s", matStatusReport[matConversionStatus].m_strErrorMessage.c_str() );
 }
 
 
