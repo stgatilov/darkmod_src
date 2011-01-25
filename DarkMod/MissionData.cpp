@@ -2619,12 +2619,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr divider(": ");
 	idStr postfix("");
 
-	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
-	key = "Difficulty Level";
-	value = gameLocal.m_DifficultyManager.GetDifficultyName(difficultyLevel);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
-
-	key = "Time";
+	key = "                                            Time";
 	value = idStr(GamePlayTimer::TimeToStr(m_TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
@@ -2668,22 +2663,35 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
-	float stealthScore = 10;
+	gui->SetStateString(prefix + idStr(index++), "Alerts"); 
+	
+	float stealthScore = 0;
 
-	for (int i = 0; i < ai::EAlertStateNum; i++) 
+	for (int i = 2; i < 5; i++) // Adds up alerts from levels 2-4; if you want all alerts, use "1 < ai::EAlertStateNum"
 	{
 		/*key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
 		value = idStr(m_Stats.MaxAlertIndices[i]);
 		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
-		// Increase the stealth factor based on the number of alerted AI weighted with the seriousness
-		stealthScore += -i * m_Stats.AIAlerts[i].Overall;
+		// Increase the stealth factor based on the number of alerted AI (m_Stats.AIAlerts[i].Overall) weighted with the seriousness
+		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
 	}
-	stealthScore = idMath::ClampInt(0, 10, static_cast<int>(stealthScore));
+	
+	stealthScore += m_Stats.AIAlerts[5].Overall;
+		
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
 	key = "Stealth Score";
 	value = idStr(stealthScore);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+
+	// index = 15;  // Starting 2nd column at the top, actually the left-hand column
+	
+	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
+	key = "Difficulty Level";
+	value = gameLocal.m_DifficultyManager.GetDifficultyName(difficultyLevel);
+	gui->SetStateString(prefix + idStr(index), key + divider + value + postfix);
 	
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);
@@ -2694,6 +2702,81 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = "GameLocal.realClientTime";
 	value = idStr(gameLocal.realClientTime);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value + postfix);*/
+	
+	index = 30;  // Reset the index to 30 to start .gui lines for "Stealth Score Details" sub-page, starting from gui::listStatistics_item_30.
+	
+	key = "Stealth Score Details (all alerts x severity)";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
+	key = "                                   0";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+
+	key = "                                   " + idStr(m_Stats.AIAlerts[2].Overall);  
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+		
+	key = "                                   " + idStr(m_Stats.AIAlerts[3].Overall * 2);  
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+
+	key = "                                   " + idStr(m_Stats.AIAlerts[4].Overall * 3);  
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	key = "                                  +" + idStr(m_Stats.AIAlerts[5].Overall * 1);  
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	key = "                                   " + idStr(stealthScore);  
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
+	value = "Key to Alert Levels:";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	
+	value = "  1. Suspicious-1. AI mumbles, continuing on.";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	
+	value = "  2. Suspicious-2. AI mumbles, stops and looks.";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	
+	value = "  3. Search-1. AI searches.";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+
+	value = "  4. Search-2. AI searches, runs, draws sword.";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	
+	value = "  5. Sighting. AI sees you, attacks if can.";
+	gui->SetStateString(prefix + idStr(index++), value + postfix);
+
+	// index = 45;  //  Starting 2nd column at the top, actually the left-hand column
+
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+	
+	key = "Alert 1. Qty: " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	key = "Alert 2. Qty: " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+
+	key = "Alert 3. Qty: " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+
+	key = "Alert 4. Qty: " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	key = "Alert 5. Qty: " + idStr(m_Stats.AIAlerts[5].Overall) + " x 1 :";
+	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	
+	key = "Stealth Score Total";
+	gui->SetStateString(prefix + idStr(index++), key + divider + postfix);
+
+	
+	//key = "Alerts";
+	//value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Minor, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
+	//gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);	
+	
 }
 
 void CObjective::Save( idSaveGame *savefile ) const
