@@ -744,7 +744,7 @@ void idPlayer::Init( void ) {
 
 	AI_CREEP		= false;
 
-
+	m_pathRank		= 1000; // grayman #2345
 
 	// reset the script object
 	ConstructScriptObject();
@@ -2742,6 +2742,8 @@ void idPlayer::EnterCinematic( void ) {
 	AI_LEAN_FORWARD	= false;
 
 	AI_CREEP		= false;
+
+	m_pathRank		= 1000; // grayman #2345
 }
 
 /*
@@ -2799,6 +2801,8 @@ void idPlayer::UpdateConditions( void )
 		AI_STRAFE_LEFT	= false;
 		AI_STRAFE_RIGHT	= false;
 	}
+
+	m_pathRank = AI_FORWARD ? rank : 1000; // grayman #2345
 
 	// stamina disabled, always run regardless of stamina
 	//AI_RUN			= ( usercmd.buttons & BUTTON_RUN ) && ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) );

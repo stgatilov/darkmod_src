@@ -48,9 +48,20 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 
 	groundEntityPtr = gameLocal.entities[ groundTrace.c.entityNum ];
 
-	if ( ( groundTrace.c.normal * -gravityNormal ) < minFloorCosine ) {
-		state.onGround = false;
-		return;
+	if ( ( groundTrace.c.normal * -gravityNormal ) < minFloorCosine )
+	{
+		// grayman #2356 - assumed to be sliding down an incline > 45 degrees, but could also
+		// be sitting on an angled piece of a func_static, so check current origin.z against
+		// previous origin.z to see if you're really sliding. This prevents excessive buildup
+		// of gravity-induced vertical velocity, which leads to death once you get free and
+		// fall to the ground, where Crashland() thinks you fell from a great height.
+
+		idVec3 prevMove = static_cast<idAI*>(self)->movementSubsystem->GetLastMove();
+		if (prevMove.z < 0) // are you truly falling?
+		{
+			state.onGround = false;
+			return;
+		}
 	}
 
 	state.onGround = true;

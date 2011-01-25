@@ -45,7 +45,7 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_blockingEnt == NULL)
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.", owner->name.c_str());
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.\r", owner->name.c_str());
 		subsystem.FinishTask();
 	}
 
@@ -60,29 +60,67 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_blockingEnt->IsType(idAI::Type))
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s", owner->name.c_str(), _blockingEnt->name.c_str());
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingAI(owner, subsystem);
 	}
 	else if (_blockingEnt->IsType(idStaticEntity::Type))
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s", owner->name.c_str(), _blockingEnt->name.c_str());
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingStatic(owner, subsystem);
 	}
 	else
 	{
 		// Unknown entity type, exit task
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve blocking entity: %s", owner->name.c_str(), _blockingEnt->name.c_str());
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		subsystem.FinishTask(); 
 	}
 }
 
 void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 {
-	idVec3 ownerRight, ownerForward;
-	_initialAngles.ToVectors(&ownerForward, &ownerRight);
+	// grayman #2345 - The old method was to move 10 units to the right, but that could make things
+	// worse, by pushing you more into the path of your blocker.
 
-	// Move 10 units to the right
-	owner->MoveToPosition(owner->GetPhysics()->GetOrigin() + ownerRight*10, 5);
+	// Old method:
+
+//		idVec3 ownerRight, ownerForward;
+//		_initialAngles.ToVectors(&ownerForward, &ownerRight);
+//		owner->MoveToPosition(owner->GetPhysics()->GetOrigin() + ownerRight*10, 5);
+
+	// New method:
+
+	// Instead, draw a line from you to your blocker, and find their forward vector.
+	// If their forward vector is on the left of the connecting line, you go to the right.
+	// If their forward vector is on the right of the connecting line, you go to the left.
+	// These are not right and left based on your own forward vector. They're relevant to
+	// the line between you and your blocker.
+
+	idVec3 blockingOrigin = _blockingEnt->GetPhysics()->GetOrigin();
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+	idVec3 delta = (blockingOrigin - ownerOrigin);
+	delta.z = 0; // ignore vertical component
+	delta.Normalize(); // set length = 1
+
+	idVec3 blockingForward = _blockingEnt->GetPhysics()->GetAxis().ToAngles().ToForward();
+
+	float cx = blockingOrigin.x + blockingForward.x;
+	float cy = blockingOrigin.y + blockingForward.y;
+	float result = (blockingOrigin.x - ownerOrigin.x) * (cy - ownerOrigin.y) - (blockingOrigin.y - ownerOrigin.y)*(cx - ownerOrigin.x);
+	idVec3 dest = ownerOrigin;
+	if (result > 0.0f)
+	{
+		// head to the right of the blocking entity
+		dest.x += RESOLVE_MOVE_DIST*delta.y;
+		dest.y -= RESOLVE_MOVE_DIST*delta.x;
+	}
+	else
+	{
+		// head to the left of the blocking entity
+		dest.x -= RESOLVE_MOVE_DIST*delta.y;
+		dest.y += RESOLVE_MOVE_DIST*delta.x;
+	}
+
+	owner->MoveToPosition(dest, 5);
 }
 
 void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsystem)
@@ -90,12 +128,37 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 	// Get the bounds of the blocking entity and see if there is a way around it
 	idPhysics* blockingPhys = _blockingEnt->GetPhysics();
 	idBounds blockBounds = blockingPhys->GetAbsBounds();
+
+	// grayman #2356 - special case of being stuck inside a func_static, i.e. a rat under a bed that's not monster_clipped
+
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+	if (blockBounds.ContainsPoint(ownerOrigin))
+	{
+		// Try to get out, otherwise you're stuck until your surroundings change.
+
+		if (owner->movementSubsystem->AttemptToExtricate())
+		{
+			return;
+		}
+
+		// oh boy, you're really stuck
+
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->AI_BLOCKED = false;
+		owner->AI_DEST_UNREACHABLE = false;
+		subsystem.FinishTask();
+		return;
+	}
+
 	blockBounds[0].z = blockBounds[1].z = 0;
 
-	// Check if there is space right to the obstacle
+	// Check if there is space to the right of the obstacle
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 
-	if (owner->GetAAS() == NULL) return;
+	if (owner->GetAAS() == NULL)
+	{
+		return;
+	}
 
 	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
 	bounds[0][2] += owner->GetAAS()->GetSettings()->maxStepHeight;
@@ -113,7 +176,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 
 	// Take a point to the right
 	idVec3 testPoint = blockingPhys->GetOrigin();
-	testPoint.z = owner->GetPhysics()->GetOrigin().z;
+	testPoint.z = ownerOrigin.z;
 
 	// Move one AAS bounding box size outwards from the model
 	float blockBoundsWidth = blockBounds.GetRadius(blockBounds.GetCenter());
@@ -130,7 +193,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 	if (cv_ai_debug_blocked.GetBool())
 	{
 		idVec3 temp = blockingPhys->GetOrigin();
-		temp.z = owner->GetPhysics()->GetOrigin().z;
+		temp.z = ownerOrigin.z;
 
 		gameRenderWorld->DebugArrow(colorWhite, temp, temp + idVec3(0,0,10), 1, 1000);
 
@@ -140,11 +203,16 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 		gameRenderWorld->DebugBounds(contents ? colorRed : colorGreen, bounds, testPoint, 1000);
 	}
 
-	if (contents != 0)
+	// grayman #2345 - the point tested might be in the VOID, so let's check for a valid AAS area
+
+	int areaNum = owner->PointReachableAreaNum(testPoint);
+
+	if ((contents != 0) || (areaNum == 0))
 	{
-		// Right side is blocked, look at the left
+		// Right side is blocked, look at the left.
+
 		testPoint = blockingPhys->GetOrigin();
-		testPoint.z = owner->GetPhysics()->GetOrigin().z;
+		testPoint.z = ownerOrigin.z;
 		testPoint -= ownerRight * (blockBoundsWidth + aasBoundsWidth + 5);
 
 		contents = gameLocal.clip.Contents(testPoint, &clip, mat3_identity, CONTENTS_SOLID, owner);
@@ -154,28 +222,38 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 			gameRenderWorld->DebugBounds(contents ? colorRed : colorGreen, bounds, testPoint, 1000);
 		}
 
-		if (contents != 0)
+		areaNum = owner->PointReachableAreaNum(testPoint); // testPoint must not be in the VOID
+		
+		if ((contents != 0) || (areaNum == 0))
 		{
-			// Neither left nor right have free space
-			owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
-			owner->AI_BLOCKED = true;
-			owner->AI_DEST_UNREACHABLE = true;
+			// Neither left nor right has free space
 
-			subsystem.FinishTask();
+			// grayman #2345 - before declaring failure, let's try extrication
+
+			owner->RestoreAttachmentContents(); // AttemptToExtricate() will do an attachment save/restore, so we must restore here first
+			if (!owner->movementSubsystem->AttemptToExtricate())
+			{
+				// extrication failed
+
+				owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
+				owner->AI_BLOCKED = true;
+				owner->AI_DEST_UNREACHABLE = true;
+				subsystem.FinishTask();
+			}
 		}
 		else
 		{
 			// Move to left position
 			owner->MoveToPosition(testPoint);
+			owner->RestoreAttachmentContents();
 		}
 	}
 	else
 	{
 		// Move to right position
 		owner->MoveToPosition(testPoint);
+		owner->RestoreAttachmentContents();
 	}
-
-	owner->RestoreAttachmentContents();
 }
 
 bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
@@ -205,36 +283,126 @@ bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
+bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
+{
+	bool result = false;
+
+	// Test the space around you. If the blocking AI is heading generally north/south,
+	// check to your east and west. If the blocking AI is heading generally east/west,
+	// check to your north and south. If there's enough room for the blocking AI to pass
+	// through one of the two spaces you check, then return TRUE. If not, return FALSE.
+	// The calling routine will then make you non-solid if that's necessary to let the
+	// blocking AI pass by.
+
+	// Find out where the blocking AI is headed.
+
+	if (!_blockingEnt->IsType(idAI::Type))
+	{
+		return result; // not an AI
+	}
+	
+	idAI* blockingAI = static_cast<idAI*>(_blockingEnt);
+	idVec3 blockingGoalPos = blockingAI->GetMoveDest();
+	idVec3 blockingOrigin = blockingAI->GetPhysics()->GetOrigin();
+	idVec3 dir = blockingGoalPos - blockingOrigin;
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+	idVec3 end1 = ownerOrigin;
+	idVec3 end2 = ownerOrigin;
+
+	if (abs(dir.y) > abs(dir.x))
+	{
+		// blocking AI is headed n/s, so test to your e/w
+
+		end1.x += 36;
+		end2.x -= 36;
+	}
+	else
+	{
+		// blocking AI is headed e/w, so test to your n/s
+
+		end1.y += 36;
+		end2.y -= 36;
+	}
+
+	trace_t traceResult;
+	idBounds bnds = owner->GetPhysics()->GetBounds();
+	gameLocal.clip.TraceBounds(traceResult, ownerOrigin, end1, bnds, CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+	if (traceResult.fraction >= 1.0)
+	{
+		result = true;
+	}
+	else
+	{
+		gameLocal.clip.TraceBounds(traceResult, ownerOrigin, end2, bnds, CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+		if (traceResult.fraction >= 1.0)
+		{
+			result = true;
+		}
+	}
+	
+	return result;
+}
+
 bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 {
-	if (owner->AI_MOVE_DONE)
+	if (owner->AI_MOVE_DONE && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
 	{
 		idVec3 ownerRight, ownerForward;
 		_initialAngles.ToVectors(&ownerForward, &ownerRight);
-
 		owner->StopMove(MOVE_STATUS_WAITING);
 		owner->TurnToward(owner->GetPhysics()->GetOrigin() - ownerRight);
 
-		if (owner->FacingIdeal() && _preTaskContents == -1)
+		if (owner->FacingIdeal() /*&& _preTaskContents == -1*/) // grayman #2345 - second check is already true
 		{
-			_preTaskContents = owner->GetPhysics()->GetContents();
-			owner->GetPhysics()->SetContents(0);
+			// grayman #2345 - don't become non-solid if your alert index is > 0. This is because
+			// AI tend to bunch together when agitated, and it doesn't look good if one goes non-solid
+			// and the others repeatedly walk through it.
 
-			// Set all attachments to nonsolid, temporarily
-			owner->SaveAttachmentContents();
-			owner->SetAttachmentContents(0);
+			// grayman #2345 - If there's no room to get around you, become non-solid
+
+			if ((owner->AI_AlertIndex == 0) && !Room2Pass(owner))
+			{
+				_preTaskContents = owner->GetPhysics()->GetContents();
+				owner->GetPhysics()->SetContents(0);
+
+				// Set all attachments to nonsolid, temporarily
+
+				owner->SaveAttachmentContents();
+				owner->SetAttachmentContents(0);
+			}
+
+			// Wait for other AI to pass by
+
+			owner->movementSubsystem->SetWaiting(); // grayman #2345
 		}
 	}
 
-	if (_preTaskContents != -1)
+	if (owner->movementSubsystem->IsWaiting()) // grayman #2345
 	{
-		// We are waiting on the other AI to pass by
+		// We are waiting for the other AI to pass by
 		idVec3 dist = _blockingEnt->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
 
 		if (dist.LengthSqr() > Square(60))
 		{
-			// other AI has passed, end the task
+			// other AI has passed by, end the task
 			return true;
+		}
+		
+		// grayman #2345 - check to see if the other AI is waiting. if so, don't wait yourself
+
+		if (_blockingEnt->IsType(idAI::Type))
+		{
+			idAI *e = static_cast<idAI*>(_blockingEnt);
+			if (e && e->movementSubsystem->IsWaiting())
+			{
+				return true; // end the task
+			}
+		}
+
+		if (ai_showObstacleAvoidance.GetBool())
+		{
+			// waiting AI is watching blocking AI
+			gameRenderWorld->DebugLine(colorPink,owner->GetPhysics()->GetOrigin() + idVec3(0,0,72),_blockingEnt->GetPhysics()->GetOrigin() + idVec3(0,0,64),100);
 		}
 	}
 
@@ -250,12 +418,36 @@ void ResolveMovementBlockTask::OnFinish(idAI* owner)
 {
 	owner->GetMemory().resolvingMovementBlock = false;
 
-	if (_preTaskContents != -1)
+	if (owner->movementSubsystem->IsWaiting()) // grayman #2345
 	{
-		owner->GetPhysics()->SetContents(_preTaskContents);
+		if (_preTaskContents != -1)
+		{
+			owner->GetPhysics()->SetContents(_preTaskContents);
+			_preTaskContents = -1;
 
-		// Restore attachment contents again
-		owner->RestoreAttachmentContents();
+			// Restore attachment contents again
+
+			owner->RestoreAttachmentContents();
+		}
+
+		// grayman #2345 - if there's a blocking AI, it's now free to extricate if it needs to
+
+		if (_blockingEnt)
+		{
+			if (_blockingEnt->IsType(idAI::Type))
+			{
+				idAI* ai = static_cast<idAI *>(_blockingEnt);
+				if (ai)
+				{
+					ai->m_canExtricate = true;
+				}
+			}
+			_blockingEnt = NULL; // forget the other entity
+		}
+
+		// grayman #2345 - insurance; there are instances where EWaiting doesn't get turned off when this task is finished
+
+		owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 	}
 
 	owner->PopMove();

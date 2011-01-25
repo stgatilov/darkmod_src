@@ -35,6 +35,7 @@ void MoveToCoverTask::Init(idAI* owner, Subsystem& subsystem)
 	//Move to cover position
 	owner->AI_RUN = true;
 	owner->AI_FORWARD = true;
+	owner->m_pathRank = owner->rank; // grayman #2345
 
 	owner->MoveToCover(enemy, owner->lastVisibleEnemyPos);
 }

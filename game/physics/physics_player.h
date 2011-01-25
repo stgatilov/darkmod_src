@@ -100,6 +100,8 @@ public:
 	float					GetMaxStepHeight( void ) const;
 	void					SetMaxJumpHeight( const float newMaxJumpHeight );
 	void					SetMovementType( const pmtype_t type );
+	int						GetMovementType( void ); // grayman #2345
+
 	/**
 	* Get/set the movement flags, used to force a crouch externally
 	**/

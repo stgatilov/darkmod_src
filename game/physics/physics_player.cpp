@@ -3099,6 +3099,15 @@ void idPhysics_Player::SetMovementType( const pmtype_t type ) {
 
 /*
 ================
+idPhysics_Player::GetMovementType - grayman #2345
+================
+*/
+int idPhysics_Player::GetMovementType( void ) {
+	return current.movementType;
+}
+
+/*
+================
 idPhysics_Player::SetKnockBack
 ================
 */

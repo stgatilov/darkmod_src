@@ -901,6 +901,8 @@ void idActor::Spawn( void )
 	CREATE_TIMER(actorRouteToGoalTimer, name, "RouteToGoal");
 	CREATE_TIMER(actorSubSampleWalkPathTimer, name, "SubSampleWalkPath");
 	CREATE_TIMER(actorWalkPathValidTimer, name, "WalkPathValid");
+
+	m_pathRank = rank; // grayman #2345 - rank for path-finding
 }
 
 /*
@@ -1134,6 +1136,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMin );
 	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMax );
 	savefile->WriteInt( m_MeleeCurrentRepeatedPostParryDelay );
+	savefile->WriteInt( m_pathRank ); // grayman #2345
 
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
@@ -1327,6 +1330,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMin );
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMax );
 	savefile->ReadInt( m_MeleeCurrentRepeatedPostParryDelay );
+	savefile->ReadInt( m_pathRank ); // grayman #2345
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -4644,7 +4648,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	delta = delta*delta*delta;
 	int damage = static_cast<int>(1.4E-16 * delta - 3);
 
-	//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+	// gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 
 	// Check if the damage is above our threshold, ignore otherwise
 	if (damage >= m_damage_thresh_min)

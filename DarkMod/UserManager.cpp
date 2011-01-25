@@ -73,6 +73,26 @@ idActor* UserManager::GetMasterUser()
 	return NULL;
 }
 
+
+idActor* UserManager::GetUserAtIndex(const int index) // grayman #2345
+{
+	if (GetNumUsers() > 0)
+	{
+		return m_users[index].GetEntity();
+	}
+	return NULL;
+}
+
+void UserManager::InsertUserAtIndex(idActor* actor,const int index) // grayman #2345
+{
+	if ((actor != NULL) && (index >= 0))
+	{
+		idEntityPtr<idActor> actorPtr;
+		actorPtr = actor;
+		m_users.Insert(actorPtr,index);
+	}
+}
+
 void UserManager::Save(idSaveGame* savefile) const
 {
 	int num = m_users.Num();
@@ -81,7 +101,6 @@ void UserManager::Save(idSaveGame* savefile) const
 	{
 		m_users[i].Save(savefile);
 	}
-
 }
 
 void UserManager::Restore(idRestoreGame* savefile)

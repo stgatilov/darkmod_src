@@ -30,6 +30,9 @@ public:
 		EPossiblyBlocked,	// might be blocked, watching...
 		EBlocked,			// not been making progress for too long
 		EResolvingBlock,	// resolving block
+		EWaiting,			// grayman #2345 - waiting for an AI to pass by
+		EPaused,			// grayman #2345 - pause treadmilling for a short while
+		ENumBlockedStates,	// grayman #2345 - invalid index - this always has to be the last in the list
 	};
 
 protected:
@@ -53,6 +56,12 @@ protected:
 
 	// The amount of time allowed to pass during EPossiblyBlocked before state is set to EBlocked 
 	int _blockTimeOut;
+	
+	int _timeBlockStarted;		// grayman #2345 - When a block started 
+	int _blockTimeShouldEnd;	// grayman #2345 - The amount of time allowed to pass during EBlocked before trying to extricate yourself
+	int _lastFrameBlockCheck;	// grayman #2345 - the last frame we checked whether we were blocked
+	int _timePauseStarted;		// grayman #2345 - when a treadmill pause started
+	int _pauseTimeOut;			// grayman #2345 - amount of time to pause after treadmilling
 
 public:
 	MovementSubsystem(SubsystemId subsystemId, idAI* owner);
@@ -89,6 +98,21 @@ public:
 	void ResolveBlock(idEntity* blockingEnt);
 
 	bool IsResolvingBlock();
+
+	void SetWaiting();		// grayman #2345
+
+	bool IsWaiting();		// grayman #2345
+
+	bool IsPaused();		// grayman #2345
+
+	bool IsNotBlocked();	// grayman #2345
+
+	idVec3 GetLastMove();	// grayman #2356
+
+	/**
+	 * grayman #2345 - Called when the AI tries to extricate itself from a stuck position
+	 */
+	virtual bool AttemptToExtricate();
 
 protected:
 	virtual void CheckBlocked(idAI* owner);

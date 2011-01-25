@@ -360,6 +360,11 @@ public:
 	**/
 	static const char *		MeleeTypeNames[ NUM_MELEE_TYPES ];
 
+	/**
+	* grayman #2345 - rank for path-finding
+	**/
+	int						m_pathRank;
+
 public:
 							idActor( void );
 	virtual					~idActor( void );

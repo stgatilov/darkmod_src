@@ -17,6 +17,7 @@ namespace ai
 
 // Define the name of this task
 #define TASK_RESOLVE_MOVEMENT_BLOCK "ResolveMovementBlock"
+#define RESOLVE_MOVE_DIST 16 // grayman #2345
 
 class ResolveMovementBlockTask;
 typedef boost::shared_ptr<ResolveMovementBlockTask> ResolveMovementBlockTaskPtr;
@@ -64,6 +65,7 @@ private:
 
 	bool PerformBlockingAI(idAI* owner);
 	bool PerformBlockingStatic(idAI* owner);
+	bool Room2Pass(idAI* owner); // grayman #2345
 };
 
 } // namespace ai

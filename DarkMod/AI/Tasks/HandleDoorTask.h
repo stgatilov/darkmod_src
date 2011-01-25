@@ -20,6 +20,10 @@ namespace ai
 // Define the name of this task
 #define TASK_HANDLE_DOOR "HandleDoor"
 
+#define HANDLE_DOOR_ACCURACY 8	// grayman #2345 - More accuracy when reaching position to work w/door.
+								// '8' says to use a 16x16 bounding box to see if you've reached a goal
+								// position instead of the default 32x32.
+
 class HandleDoorTask;
 typedef boost::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
 
@@ -29,6 +33,7 @@ class HandleDoorTask :
 private:
 	idVec3 _frontPos;
 	idVec3 _backPos;
+	idVec3 _midPos; // grayman #2345
 
 	idEntityPtr<idEntity> _frontPosEnt;
 	idEntityPtr<idEntity> _backPosEnt;
@@ -40,6 +45,7 @@ private:
 		EStateWaitBeforeOpen,
 		EStateStartOpen,
 		EStateOpeningDoor,
+		EStateMovingToMidPos, // grayman #2345
 		EStateMovingToBackPos,
 		EStateWaitBeforeClose,
 		EStateStartClose,
@@ -63,6 +69,9 @@ public:
 
 	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
 	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
+	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor); // grayman #2345
+
+	void PickWhere2Go(CFrobDoor* door); // grayman #2345
 
 	void GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor);
 
@@ -97,6 +106,8 @@ private:
 	// Finds an entity which can operate the door in question (a lever, forex)
 	// If multiple controllers are available, the nearest one is chosen
 	idEntity* GetRemoteControlEntityForDoor();
+
+	void ResetMaster(CFrobDoor* frobDoor); // grayman #2345
 };
 
 } // namespace ai

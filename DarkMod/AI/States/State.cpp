@@ -69,6 +69,8 @@ const float CHANCE_FOR_GREETING = 0.3f; // 30% chance for greeting
 // The following defines a key that should be non-0 if the device should be closed
 #define AIUSE_SHOULDBECLOSED_KEY		"shouldBeClosed"
 
+//----------------------------------------------------------------------------------------
+
 void State::Init(idAI* owner)
 {
 	_owner = owner;
@@ -87,6 +89,7 @@ void State::SetOwner(idAI* owner)
 {
 	_owner = owner;
 }
+
 
 void State::UpdateAlertLevel()
 {
@@ -1313,6 +1316,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	}
 }
 
+
 void State::OnMovementBlocked(idAI* owner)
 {
 	// Determine which type of object is blocking us
@@ -1324,45 +1328,75 @@ void State::OnMovementBlocked(idAI* owner)
 	owner->SetAttachmentContents(0);
 
 	trace_t result;
-	gameLocal.clip.TraceBounds(result, ownerOrigin, ownerOrigin + owner->viewAxis.ToAngles().ToForward()*20, owner->GetPhysics()->GetBounds(),
-								CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+	idVec3 dir = owner->viewAxis.ToAngles().ToForward()*20;
+	idVec3 traceEnd;
+	idBounds bnds = owner->GetPhysics()->GetBounds();
+	traceEnd = ownerOrigin + dir;
+	gameLocal.clip.TraceBounds(result, ownerOrigin, traceEnd, bnds, CONTENTS_SOLID|CONTENTS_CORPSE, owner);
 
-	owner->RestoreAttachmentContents();
-
+	owner->RestoreAttachmentContents(); // Put back attachments
+	
+	idEntity* ent = NULL; // grayman #2345 - moved up
 	if (result.fraction >= 1.0f)
 	{
-		// Trace didn't hit anything?
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked but no entity in view\r", owner->name.c_str());
-		return;
+		idEntity* tactileEntity = owner->GetTactileEntity(); // grayman #2345
+		if (tactileEntity) // grayman #2345
+		{
+			ent = tactileEntity;
+		}
 	}
-
-	idEntity* ent = gameLocal.entities[result.c.entityNum];
+	else
+	{
+		ent = gameLocal.entities[result.c.entityNum];
+	}
 
 	if (ent == NULL) 
 	{
 		// Trace didn't hit anything?
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by NULL entity!\r", owner->name.c_str());
+//		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s can't find what's blocking\r", owner->name.c_str());
 		return;
 	}
 
 	if (ent == gameLocal.world)
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by world!\r", owner->name.c_str());
+//		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by world!\r", owner->name.c_str());
 		return;
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
+//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
 
 	if (cv_ai_debug_blocked.GetBool())
 	{
-		gameRenderWorld->DebugBounds(colorRed, ent->GetPhysics()->GetBounds(), ent->GetPhysics()->GetOrigin(), 2000);
+		gameRenderWorld->DebugBounds(colorRed, ent->GetPhysics()->GetBounds().Rotate(ent->GetPhysics()->GetAxis()), ent->GetPhysics()->GetOrigin(), 2000);
 	}
 
 	// Do something against this blocking entity, depending on its type
-	if (ent->IsType(idAFAttachment::Type))
+	
+	if (ent->IsType(idAI::Type))
+	{
+		// we found what we wanted, so handle it below
+	}
+	else if (ent->IsType(idAFAttachment::Type))
 	{
 		// This ought to be an AI's head, get its body
 		ent = static_cast<idAFAttachment*>(ent)->GetBody();
+	}
+	else // grayman #2345 - take care of bumping into attached func_statics
+	{
+		// This might be a func_static attached to an AI (i.e. a pauldron)
+
+		idEntity* ent2 = ent->GetBindMaster();
+		if (ent2)
+		{
+			if (ent2->IsType(idAI::Type))
+			{
+				ent = ent2; // switch to AI bindMaster
+			}
+			else if (ent2->IsType(idAFAttachment::Type))
+			{
+				ent = static_cast<idAFAttachment*>(ent2)->GetBody(); // switch to the AI bindMaster's owner
+			}
+		}
 	}
 
 	if (ent->IsType(idAI::Type))
@@ -1370,6 +1404,14 @@ void State::OnMovementBlocked(idAI* owner)
 		// Blocked by other AI
 		idAI* master = owner;
 		idAI* slave = static_cast<idAI*>(ent);
+
+		// grayman #2345 - account for rank when determining who should resolve the block
+
+		if (slave->rank > master->rank)
+		{
+			// The master should have equal or higher rank
+			std::swap(master, slave);
+		}
 
 		if (!master->AI_FORWARD && slave->AI_FORWARD)
 		{
@@ -1383,16 +1425,25 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
-		// Tell the slave to get out of the way, but only if none of the AI is currently resolving a block
-		if (!slave->movementSubsystem->IsResolvingBlock() && !master->movementSubsystem->IsResolvingBlock())
+		// Tell the slave to get out of the way, but only if neither AI is currently resolving a block
+		// grayman #2345 - or waiting for the other to pass or if they're handling a door.
+
+		if (!slave->movementSubsystem->IsResolvingBlock() &&
+			!master->movementSubsystem->IsResolvingBlock() &&
+			!slave->movementSubsystem->IsWaiting() &&
+			!master->movementSubsystem->IsWaiting() &&
+			!master->m_HandlingDoor &&
+			!slave->m_HandlingDoor)
 		{
 			slave->movementSubsystem->ResolveBlock(master);
 		}
 	}
 	else if (ent->IsType(idStaticEntity::Type))
 	{
-		// Blocked by func_static, these are not considered by Obstacle Avoidance code.
-		if (!owner->movementSubsystem->IsResolvingBlock())
+		// Blocked by func_static, these are generally not considered by Obstacle Avoidance code.
+		// grayman #2345 - if the AI is bumping into a func_static, that's included.
+
+		if (!owner->movementSubsystem->IsResolvingBlock() && !owner->movementSubsystem->IsWaiting()) // grayman #2345
 		{
 			owner->movementSubsystem->ResolveBlock(ent);
 		}

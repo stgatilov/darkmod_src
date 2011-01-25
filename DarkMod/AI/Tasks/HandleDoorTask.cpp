@@ -49,9 +49,12 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			// add AAS area number of the door to forbidden areas
 			AddToForbiddenAreas(owner, frobDoor);
+
+			// grayman #2345 - to accomodate open doors and ~CanOperateDoors spawnflag
+
+			subsystem.FinishTask(); 
+			return;
 		}
-		subsystem.FinishTask();
-		return;
 	}
 
 	if (frobDoor->spawnArgs.GetBool("ai_should_not_handle"))
@@ -98,6 +101,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
 	frobDoor->GetUserManager().AddUser(owner);
+
 	if (doubleDoor != NULL)
 	{
 		doubleDoor->GetUserManager().AddUser(owner);
@@ -110,12 +114,76 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	_doorHandlingState = EStateNone;
 }
 
-bool HandleDoorTask::Perform(Subsystem& subsystem)
+// grayman #2345 - adjust goal positions based on what's happening around the door.
+
+void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing.\r");
+	// If you're using special door-handling entities, head for the back position.
 
 	idAI* owner = _owner.GetEntity();
+	if (_backPosEnt.IsValid())
+	{
+		if (_doorHandlingState != EStateMovingToBackPos)
+		{
+			owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY);
+			_doorHandlingState = EStateMovingToBackPos;
+		}
+		return;
+	}
+
+	// Are there AI on the door queue who are waiting in
+	// front of you? If so, head for the back position and not the mid position,
+	// so there's less bumping when you exit the door.
+
+	bool useMid = true;
+	int numUsers = door->GetUserManager().GetNumUsers();
+	if (numUsers > 1)
+	{
+		idVec3 myOrg = owner->GetPhysics()->GetOrigin();
+		idVec3 myDir = owner->viewAxis.ToAngles().ToForward();
+
+		for (int i = 1 ; i < numUsers ; i++) // ignore 0, which is yourself
+		{
+			idActor* actor = door->GetUserManager().GetUserAtIndex(i);
+			if (actor->IsType(idAI::Type))
+			{
+				idAI* actorAI = static_cast<idAI*>(actor);
+				if (actorAI->GetMoveStatus() == MOVE_STATUS_WAITING)
+				{
+					idVec3 actorDir = actorAI->viewAxis.ToAngles().ToForward();
+					if ((actorDir * myDir) < 0)
+					{
+						// you and the actor are facing in different directions
+
+						useMid = false; // use _backPos
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if (useMid)
+	{
+		if (_doorHandlingState != EStateMovingToMidPos)
+		{
+			owner->MoveToPosition(_midPos,HANDLE_DOOR_ACCURACY);
+			_doorHandlingState = EStateMovingToMidPos;
+		}
+	}
+	else
+	{
+		owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY);
+		_doorHandlingState = EStateMovingToBackPos;
+	}
+}
+
+bool HandleDoorTask::Perform(Subsystem& subsystem)
+{
+	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s\r",owner->name.c_str());
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -158,7 +226,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// no need to open this one
 					ResetDoor(owner, doubleDoor);
 
-					if (!owner->MoveToPosition(_frontPos))
+					if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning)
 					{
 						// TODO: position not reachable, need a better one
 					}
@@ -184,7 +252,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return false;
 					}
 
-					if (!owner->MoveToPosition(_frontPos))
+					if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
 					{
 						// TODO: position not reachable, need a better one
 					}
@@ -210,7 +278,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 						else
 						{
-							if (!owner->MoveToPosition(_frontPos))
+							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
 							{
 								// TODO: position not reachable, need a better one
 							}
@@ -253,7 +321,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else if (owner->AI_MOVE_DONE)
 				{
-					owner->MoveToPosition(_frontPos);
+					owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 				}
 				break;
 			}
@@ -345,6 +413,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				return true;
 				break;
 				
+			case EStateMovingToMidPos: // grayman #2345
+				// door has closed while we were walking through it.
+				// end this task (it will be initiated again if we are still in front of the door).
+				return true;
+				break;
+				
 			case EStateWaitBeforeClose:
 				// door has already closed before we were attempting to do it
 				// no need for more waiting
@@ -377,7 +451,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// the other part of the double door is still open
 						// we want to close this one too
 						ResetDoor(owner, doubleDoor);
-						owner->MoveToPosition(_backPos);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateMovingToBackPos;
 						break;
 					}
@@ -408,7 +482,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{
 							return true;
 						}
-						owner->MoveToPosition(_frontPos);
+						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateApproachingDoor;
 
 					}
@@ -431,7 +505,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							}
 						}
 
-						owner->MoveToPosition(_frontPos);
+						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
@@ -442,6 +516,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// test the angle between the view direction of the AI and the open door
 					// door can only be in the way when the view direction 
 					// is approximately perpendicular to the open door
+
 					idVec3 ownerDir = owner->viewAxis.ToAngles().ToForward();
 
 					idVec3 testVector = openPos - frobDoorOrg;
@@ -453,10 +528,20 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					float product = idMath::Fabs(ownerDir * testVector);
 
-					if (product > 0.3f)
+					// grayman #2453 - the above test can give a false result depending
+					// on the AI's orientation to the door, so make sure we're close enough
+					// to the door to make the test valid.
+
+					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+					dir.z = 0;
+					float dist2Door = dir.LengthFast();
+
+					if ((product > 0.3f) || (dist2Door > 150))
 					{
-						// door is not in the way and open, just continue walking
-						return true;
+						// door is open and not (yet) in the way
+
+						_doorHandlingState = EStateApproachingDoor; // grayman #2345 - you should pause if necessary
+						return false;
 					}
 
 					// check if there is a way around
@@ -465,7 +550,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	
 					// check point next to the open door
 					
-
 					idVec3 testPoint = frobDoorOrg + testVector * length;
 
 					int contents = gameLocal.clip.Contents(testPoint, &clip, mat3_identity, CONTENTS_SOLID, owner);
@@ -476,7 +560,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// find a suitable position and close the door
 						DoorInTheWay(owner, frobDoor);
 						_doorHandlingState = EStateApproachingDoor;
-
 					}
 					else
 					{
@@ -508,8 +591,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							}
 							else
 							{
-								// door is not in the way and open, just continue walking
-								return true;
+								// door is not in the way and open
+
+								_doorHandlingState = EStateApproachingDoor; // grayman #2345 - you should pause if necessary
+								return false;
 							}
 						}
 					}
@@ -549,7 +634,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 						else
 						{
-							if (!owner->MoveToPosition(_frontPos))
+							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
 							{
 								// TODO: position not reachable, need a better one
 							}
@@ -559,12 +644,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else
 					{
-						owner->StopMove(MOVE_STATUS_WAITING);
+						owner->StopMove(MOVE_STATUS_WAITING); // pause and allow others through first
 					}
 				}
 				else if (owner->MoveDone())
 				{
-					owner->MoveToPosition(_frontPos);
+					owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 				}
 			
 				break;
@@ -584,7 +669,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{
 							return true;
 						}
-						owner->MoveToPosition(_backPos);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateMovingToBackPos;
 					}
 					else if (!AllowedToOpen(owner))
@@ -606,14 +691,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else if (owner->AI_MOVE_DONE)
 					{
-						owner->MoveToPosition(_frontPos);
+						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					}
 				}
-				// door is already open, move to back position
+				// door is already open, move to back position or mid position
 				else if (masterUser == owner)
 				{
-					owner->MoveToPosition(_backPos);
-					_doorHandlingState = EStateMovingToBackPos;
+					// grayman #2345 - introduce use of a midpoint to help AI through doors that were found open
+
+					PickWhere2Go(frobDoor);
 				}
 				break;
 
@@ -649,7 +735,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
-					owner->MoveToPosition(_backPos);
+					owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					_doorHandlingState = EStateMovingToBackPos;
 				}
 				break;
@@ -684,7 +770,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 
 					// no need for waiting, door is already open, let's move
-					owner->MoveToPosition(_backPos);
+					owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					_doorHandlingState = EStateMovingToBackPos;
 				}
 				break;
@@ -699,7 +785,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (FitsThrough() && masterUser == owner)
 					{
 						// gap is large enough, move to back position
-						owner->MoveToPosition(_backPos);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateMovingToBackPos;
 					}
 					else
@@ -764,7 +850,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 
 						// gap is large enough, move to back position
-						owner->MoveToPosition(_backPos);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 						_doorHandlingState = EStateMovingToBackPos;
 					}
 
@@ -791,13 +877,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
-					owner->MoveToPosition(_backPos);
+					owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					_doorHandlingState = EStateMovingToBackPos;
 				}
 				break;
 
+				// grayman #2345 - new state
 
-			case EStateMovingToBackPos:
+			case EStateMovingToMidPos:
 				// check blocked
 				if (frobDoor->IsBlocked() || 
 					(frobDoor->WasInterrupted() && 
@@ -805,6 +892,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (frobDoor->GetLastBlockingEnt() == owner)
 					{
+						if (!owner->m_bCanOperateDoors) // grayman #2345
+						{
+							return true; // can't operate a door
+						}
+
 						// we are blocking the door
 						owner->StopMove(MOVE_STATUS_DONE);
 						owner->TurnToward(closedPos);
@@ -824,7 +916,56 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 				
-				// reached back position
+				// reached mid position
+				if (owner->AI_MOVE_DONE)
+				{
+					if (owner->ReachedPos(_midPos, MOVE_TO_POSITION))
+					{
+						return true;
+					}
+					else
+					{
+						owner->MoveToPosition(_midPos,HANDLE_DOOR_ACCURACY);
+					}
+				}
+				else
+				{
+					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to midPos
+				}
+				break;
+
+			case EStateMovingToBackPos:
+				// check blocked
+				if (frobDoor->IsBlocked() || 
+					(frobDoor->WasInterrupted() && 
+					frobDoor->WasStoppedDueToBlock()))
+				{
+					if (frobDoor->GetLastBlockingEnt() == owner)
+					{
+						if (!owner->m_bCanOperateDoors) // grayman #2345
+						{
+							return true; // can't operate a door
+						}
+
+						// we are blocking the door
+						owner->StopMove(MOVE_STATUS_DONE);
+						owner->TurnToward(closedPos);
+						if (masterUser == owner)
+						{
+							_doorHandlingState = EStateOpeningDoor;
+							if (!OpenDoor())
+							{
+								return true;
+							}
+						}
+					}
+				}
+				else if (frobDoor->WasInterrupted() && !FitsThrough())
+				{
+					// end this task, it will be reinitialized when needed
+					return true;
+				}
+
 				if (owner->AI_MOVE_DONE)
 				{
 					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION))
@@ -857,7 +998,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else
 					{
-						owner->MoveToPosition(_backPos);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					}
 				}
 				break;
@@ -950,8 +1091,9 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 	const idVec3& frobDoorOrg = newDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = newDoor->GetOpenDir();
 	idVec3 awayPos = GetAwayPos(owner, newDoor);
-	idVec3 towardPos =  GetTowardPos(owner, newDoor);
-	
+	idVec3 towardPos = GetTowardPos(owner, newDoor);
+	idVec3 midPos = GetMidPos(owner, newDoor); // grayman #2345
+
 	if (_doorHandlingState == EStateWaitBeforeClose
 		|| _doorHandlingState == EStateStartClose
 		|| _doorHandlingState == EStateClosingDoor)
@@ -961,12 +1103,13 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 		{
 			_frontPos = awayPos;
 			_backPos = towardPos;
-			
+			_midPos = midPos; // grayman #2345
 		}
 		else
 		{
 			_frontPos = towardPos;
 			_backPos = awayPos;
+			_midPos = awayPos; // grayman #2345
 		}
 	}
 	else
@@ -1003,6 +1146,7 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 				{
 					// found door handling position behind the door
 					_backPos = posOrg;
+					_midPos = posOrg; // grayman #2345
 					_backPosEnt = doorHandlingPosition;
 				}
 				else
@@ -1025,12 +1169,14 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 				{
 					// found door handling position behind the door
 					_backPos = posOrg;
+					_midPos = posOrg; // grayman #2345
 					_backPosEnt = doorHandlingPosition;
 				}
 			}
 		}
 	}
 }
+
 idVec3 HandleDoorTask::GetAwayPos(idAI* owner, CFrobDoor* frobDoor)
 {
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
@@ -1063,6 +1209,42 @@ idVec3 HandleDoorTask::GetAwayPos(idAI* owner, CFrobDoor* frobDoor)
 	awayPos.z = frobDoorBounds[0].z + 5;
 
 	return awayPos;
+}
+
+// grayman #2345 - new method to find the mid position
+
+idVec3 HandleDoorTask::GetMidPos(idAI* owner, CFrobDoor* frobDoor)
+{
+	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
+	const idVec3& openDir = frobDoor->GetOpenDir();
+	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
+
+	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
+
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+
+	float size = bounds[1][0];
+
+	idVec3 dir = closedPos - frobDoorOrg;
+	dir.z = 0;
+	idVec3 dirNorm = dir;
+	dirNorm.NormalizeFast();
+	float dist = dir.LengthFast();
+
+	idVec3 openDirNorm = openDir;
+	openDirNorm.z = 0;
+	openDirNorm.NormalizeFast();
+
+	idVec3 parallelMidOffset = dirNorm;
+	parallelMidOffset *= size * 1.4f;
+
+	idVec3 normalMidOffset = openDirNorm;
+	normalMidOffset *= size * 2.5;
+
+	idVec3 midPos = closedPos - parallelMidOffset + normalMidOffset;
+	midPos.z = frobDoorBounds[0].z + 5;
+
+	return midPos;
 }
 
 idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
@@ -1265,6 +1447,8 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 	idVec3 awayPos = GetAwayPos(owner, frobDoor);
 	// calculate where to stand when the door swings towards us
 	idVec3 towardPos =  GetTowardPos(owner, frobDoor);
+	// grayman #2345 - calculate where to head when walking through an open door
+	idVec3 midPos = GetMidPos(owner, frobDoor);
 
 	// check if the door swings towards or away from us
 	if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
@@ -1272,18 +1456,21 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 		// Door opens towards us
 		_frontPos = towardPos;
 		_backPos = awayPos;
+		_midPos = awayPos; // grayman #2345
 	}
 	else
 	{
 		// Door opens away from us
 		_frontPos = awayPos;
 		_backPos = towardPos;
+		_midPos = midPos; // grayman #2345
 	}
 
 	_frontPosEnt = NULL;
 	_backPosEnt = NULL;
 
 	// check for custom door handling positions
+
 	for (const idKeyValue* kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position", kv))
 	{
 		idStr posStr = kv->GetValue();
@@ -1319,12 +1506,12 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 			{
 				// found door handling position behind the door
 				_backPos = posOrg;
+				_midPos = posOrg; // grayman #2345
 				_backPosEnt = doorHandlingPosition;
 			}
 		}
 	}
 }
-
 
 
 void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
@@ -1370,12 +1557,12 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 			_frontPos = frobDoorOrg + parallelOffset - normalOffset;
 		}
 		
-		owner->MoveToPosition(_frontPos);
+		owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 	}
 	else
 	{
 		//Door opens away from us
-		owner->MoveToPosition(_backPos);
+		owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 	}
 }
 
@@ -1474,6 +1661,42 @@ idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
 	return bestController;
 }
 
+// grayman #2345 - whoever's closest to the door now gets to be master,
+// so he has to be moved to the top of the user list. This cuts down on
+// confusion around doors.
+
+void HandleDoorTask::ResetMaster(CFrobDoor* frobDoor)
+{
+	int numUsers = frobDoor->GetUserManager().GetNumUsers();
+	if (numUsers > 1)
+	{
+		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
+		idActor* closestUser = NULL;	// the user closest to the door
+		int masterIndex = 0;			// index of closest user
+		float minDistance = 1000;		// minimum distance of all users
+		for (int i = 0 ; i < numUsers ; i++)
+		{
+			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
+			if (user != NULL)
+			{
+				float distance = (user->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
+				if (distance < minDistance)
+				{
+					masterIndex = i;
+					closestUser = user;
+					minDistance = distance;
+				}
+			}
+		}
+
+		if (masterIndex > 0)
+		{
+			frobDoor->GetUserManager().RemoveUser(closestUser);				// remove AI from current spot
+			frobDoor->GetUserManager().InsertUserAtIndex(closestUser,0);	// and put him at the top
+		}
+	}
+}
+
 void HandleDoorTask::OnFinish(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
@@ -1483,7 +1706,6 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	{
 		owner->PopMove();
 		owner->m_HandlingDoor = false;
-
 	}
 
 	_doorInTheWay = false;
@@ -1498,10 +1720,13 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 		frobDoor->GetUserManager().RemoveUser(owner);
 
+		ResetMaster(frobDoor); // grayman #2345 - redefine which AI is the master
+
 		CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 		if (doubleDoor != NULL)
 		{
-			doubleDoor->GetUserManager().RemoveUser(owner);
+			doubleDoor->GetUserManager().RemoveUser(owner); // grayman #2345 - need to do for this what we did for a single door
+			ResetMaster(doubleDoor); // grayman #2345 - redefine which AI is the master
 		}
 	}
 
@@ -1586,6 +1811,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteVec3(_frontPos);
 	savefile->WriteVec3(_backPos);
+	savefile->WriteVec3(_midPos); // grayman #2345
 	savefile->WriteInt(static_cast<int>(_doorHandlingState));
 	savefile->WriteInt(_waitEndTime);
 	savefile->WriteBool(_wasLocked);
@@ -1602,6 +1828,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 
 	savefile->ReadVec3(_frontPos);
 	savefile->ReadVec3(_backPos);
+	savefile->ReadVec3(_midPos); // grayman #2345
 	int temp;
 	savefile->ReadInt(temp);
 	_doorHandlingState = static_cast<EDoorHandlingState>(temp);

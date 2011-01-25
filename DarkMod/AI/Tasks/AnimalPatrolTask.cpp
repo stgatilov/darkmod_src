@@ -76,25 +76,29 @@ bool AnimalPatrolTask::Perform(Subsystem& subsystem)
 	switch (_state) 
 	{
 		case stateNone: 
-			//gameRenderWorld->DrawText("Choosing", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DrawText("Choosing", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			chooseNewState(owner);
 			break;
 		case stateMovingToNextSpot:
-			//gameRenderWorld->DrawText("MovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
-			//gameRenderWorld->DebugArrow(colorYellow, owner->GetPhysics()->GetOrigin(), owner->GetMoveDest(), 0, 64);
+			// gameRenderWorld->DrawText("MovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugArrow(colorYellow, owner->GetPhysics()->GetOrigin(), owner->GetMoveDest(), 0, 64);
 			movingToNextSpot(owner);
 			break;
 		case stateMovingToNextPathCorner: 
-			//gameRenderWorld->DrawText("MovingToNextCorner", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DrawText("MovingToNextCorner", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			movingToNextPathCorner(owner);
 			break;
 		case stateDoingSomething: 
-			//gameRenderWorld->DrawText("DoingSomething", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DrawText("DoingSomething", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			switchToState(stateWaiting, owner);
 			break;
 		case stateWaiting:
-			//gameRenderWorld->DrawText("Waiting", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DrawText("Waiting", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			waiting(owner);
+			break;
+		case statePreMovingToNextSpot: // grayman #2356 - don't spend so much time waiting; go somewhere
+			// gameRenderWorld->DrawText("PreMovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			switchToState(stateMovingToNextSpot,owner);
 			break;
 		default:
 			break;
@@ -109,21 +113,37 @@ void AnimalPatrolTask::switchToState(EState newState, idAI* owner)
 	{
 	case stateMovingToNextSpot:
 		{
-			// Choose a goal position, somewhere near ourselves
-			float xDelta = gameLocal.random.RandomFloat()*WANDER_RADIUS - WANDER_RADIUS*0.5f;
-			float yDelta = gameLocal.random.RandomFloat()*WANDER_RADIUS - WANDER_RADIUS*0.5f;
-
 			const idVec3& curPos = owner->GetPhysics()->GetOrigin();
-			idVec3 newPos = curPos + idVec3(xDelta, yDelta, 5);
+			_moveEndTime = 0;
+			for (int i = 0 ; i < 5 ; i++) // grayman #2356 - try a few positions to increase movement in small spaces 
+			{
+				// Choose a goal position, somewhere near ourselves
+				float xDelta = gameLocal.random.RandomFloat()*WANDER_RADIUS - WANDER_RADIUS*0.5f;
+				float yDelta = gameLocal.random.RandomFloat()*WANDER_RADIUS - WANDER_RADIUS*0.5f;
 
-			owner->MoveToPosition(newPos);
-
-			// Run with a 20% chance
-			owner->AI_RUN = (gameLocal.random.RandomFloat() < 0.2f);
+				idVec3 newPos = curPos + idVec3(xDelta, yDelta, 1); // grayman #2356 - was '5'; reduced to keep goal positions from becoming too high for rats
+				if (owner->MoveToPosition(newPos))
+				{
+					// Run with a 20% chance
+					owner->AI_RUN = (gameLocal.random.RandomFloat() < 0.2f);
+					_moveEndTime = gameLocal.time + 10000;	// grayman #2356 - 10s timeout on getting to your next position.
+															// This keeps you from getting stuck trying to reach a valid goal
+															// that's unreachable. I.e. the goal is on a ledge and the rat
+															// trying to reach it falls off the ledge.
+					break;
+				}
+			}
 		}
 		break;
 	case stateWaiting:
-		_waitEndTime = gameLocal.time + gameLocal.random.RandomInt(1000);
+		if (owner->m_bCanDrown && owner->MouthIsUnderwater()) // grayman #2356 - don't hang around if you're drowning
+		{
+			_waitEndTime = gameLocal.time;
+		}
+		else
+		{
+			_waitEndTime = gameLocal.time + gameLocal.random.RandomInt(1000);
+		}
 		break;
 	case stateMovingToNextPathCorner:
 		{
@@ -132,6 +152,14 @@ void AnimalPatrolTask::switchToState(EState newState, idAI* owner)
 			{
 				owner->MoveToPosition(path->GetPhysics()->GetOrigin());
 				owner->AI_RUN = path->spawnArgs.GetBool("run", "0");
+			}
+			else // grayman #2356 - if not on path corners, pick somewhere to go
+				 // 50% of the time. This cuts down on waiting, which seemed to be excessive.
+			{
+				if (gameLocal.random.RandomFloat() < 0.5f)
+				{
+					newState = statePreMovingToNextSpot;
+				}
 			}
 		}
 		break;
@@ -153,6 +181,11 @@ void AnimalPatrolTask::chooseNewState(idAI* owner)
 
 void AnimalPatrolTask::movingToNextSpot(idAI* owner) 
 {
+	if ((_moveEndTime > 0) && (gameLocal.time > _moveEndTime)) // grayman #2356 - if movement timeout occurs, end the move (prevents getting stuck)
+	{
+		owner->MoveToPosition(owner->GetPhysics()->GetOrigin()); // reset goal position to your own origin
+	}
+
 	if (owner->AI_MOVE_DONE) 
 	{
 		// We've reached the destination, wait a bit
@@ -163,19 +196,29 @@ void AnimalPatrolTask::movingToNextSpot(idAI* owner)
 			chooseNewState(owner);
 		}
 	}
-	else if (gameLocal.random.RandomFloat() < 0.1f)
+	else
 	{
-		// Still moving, maybe turn a bit
-		owner->Event_SaveMove();
-
-		float xDelta = gameLocal.random.RandomFloat()*20 - 10;
-		float yDelta = gameLocal.random.RandomFloat()*20 - 10;
-
-		// Try to move the goal a bit
-		if (!owner->MoveToPosition(owner->GetMoveDest() + idVec3(xDelta, yDelta, 2)))
+		if (gameLocal.random.RandomFloat() < 0.1f)
 		{
-			// MoveToPosition failed, restore the move state
-			owner->Event_RestoreMove();
+			// Still moving, maybe turn a bit
+			owner->Event_SaveMove();
+
+			float xDelta = gameLocal.random.RandomFloat()*20 - 10;
+			float yDelta = gameLocal.random.RandomFloat()*20 - 10;
+
+			// Try to move the goal a bit
+			if (!owner->MoveToPosition(owner->GetMoveDest() + idVec3(xDelta, yDelta, 1))) // grayman #2356 - was '2'; increase chances of reaching the spot
+			{
+				// MoveToPosition failed, restore the move state
+				owner->Event_RestoreMove();
+			}
+		}
+
+		// grayman #2356 - if you're far from the goal, run. This keeps rats from slow-hopping great distances.
+
+		if ((owner->GetMoveDest() - owner->GetPhysics()->GetOrigin()).LengthFast() > WANDER_RADIUS/2)
+		{
+			owner->AI_RUN = true;
 		}
 	}
 }
@@ -225,6 +268,7 @@ void AnimalPatrolTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(static_cast<int>(_state));
 	savefile->WriteInt(_waitEndTime);
+	savefile->WriteInt(_moveEndTime); // grayman #2356
 }
 
 void AnimalPatrolTask::Restore(idRestoreGame* savefile)
@@ -236,6 +280,7 @@ void AnimalPatrolTask::Restore(idRestoreGame* savefile)
 	_state = static_cast<EState>(temp);
 
 	savefile->ReadInt(_waitEndTime);
+	savefile->ReadInt(_moveEndTime); // grayman #2356
 }
 
 AnimalPatrolTaskPtr AnimalPatrolTask::CreateInstance()

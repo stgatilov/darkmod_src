@@ -33,11 +33,15 @@ class AnimalPatrolTask :
 		stateMovingToNextPathCorner,
 		stateDoingSomething,
 		stateWaiting,
+		statePreMovingToNextSpot, // grayman #2356 - no path corners, go elsewhere
 		stateCount,
 	} _state;
 
 	// For waiting state
 	int _waitEndTime;
+
+	// grayman #2356 - for 'move to position' state
+	int _moveEndTime;
 
 	// Private constructor
 	AnimalPatrolTask();

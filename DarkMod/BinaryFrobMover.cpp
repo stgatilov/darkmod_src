@@ -746,11 +746,13 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 	// Get remaining translation if translating
 	if (m_bIntentOpen)
 	{
-		out_deltaPosition = (m_StartPos + m_Translation) - physicsObj.GetOrigin();
+		out_deltaPosition = (m_OpenOrigin + m_Translation) - physicsObj.GetOrigin(); // grayman #2345
+//		out_deltaPosition = (m_StartPos + m_Translation) - physicsObj.GetOrigin(); // grayman #2345
 	}
 	else
 	{
-		out_deltaPosition = m_StartPos - physicsObj.GetOrigin();
+		out_deltaPosition = m_ClosedOrigin - physicsObj.GetOrigin(); // grayman #2345
+//		out_deltaPosition = m_StartPos - physicsObj.GetOrigin(); // grayman #2345
 	}
 
 	// Get remaining rotation

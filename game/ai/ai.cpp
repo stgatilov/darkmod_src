@@ -507,6 +507,8 @@ idAI::idAI()
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
+	m_canExtricate		= true; // grayman #2345
+	m_tactileEntity		= NULL; // grayman #2345
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -755,7 +757,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( eyeFocusRate );
 	savefile->WriteFloat( headFocusRate );
 	savefile->WriteInt( focusAlignTime );
-
+	savefile->WriteBool(m_canExtricate);		// grayman #2345
+	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1095,6 +1098,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( eyeFocusRate );
 	savefile->ReadFloat( headFocusRate );
 	savefile->ReadInt( focusAlignTime );
+	savefile->ReadBool(m_canExtricate); // grayman #2345
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
 
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
@@ -1825,6 +1830,8 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiGetFloorPosTimer, name, "GetFloorPos");
 	CREATE_TIMER(aiPointReachableAreaNumTimer, name, "PointReachableAreaNum");
 	CREATE_TIMER(aiCanSeeTimer, name, "CanSee");
+
+	m_pathRank = rank; // grayman #2345 - rank for path-finding
 }
 
 /*
@@ -2162,6 +2169,7 @@ void idAI::Think( void )
 		AI_ALERTED = false;
 		m_AlertLevelThisFrame = 0;
 		m_AlertedByActor = NULL;
+		m_tactileEntity = NULL; // grayman #2345
 
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
 		AI_PAIN = false;
@@ -2174,7 +2182,7 @@ void idAI::Think( void )
 		RunPhysics();
 	}
 
-	if (m_bAFPushMoveables)
+	if (m_bAFPushMoveables && !movementSubsystem->IsWaiting()) // grayman #2345 - if you're waiting for someone to go by, you're non-solid, so you can't push anything
 	{
 		START_SCOPED_TIMING(aiPushWithAFTimer, scopedPushWithAFTimer)
 		PushWithAF();
@@ -2277,6 +2285,10 @@ void idAI::SetNextThinkFrame()
 			//   * working on a door-handling task
 			//   * nearing a goal position
 			//   * handling an elevator
+			//
+			// and, for #2345
+			//
+			//   * when resolving a block
 
 			bool thinkMore = false;
 			thinkDelta = thinkFrame;
@@ -2308,6 +2320,11 @@ void idAI::SetNextThinkFrame()
 					thinkMore = true; // avoid confusion and becoming stuck
 				}
 			}
+			else if (!movementSubsystem->IsWaiting() && !movementSubsystem->IsNotBlocked())
+			{
+				thinkMore = true; // avoid chaos
+			}
+
 			if (thinkMore)
 			{
 				// Tels: gcc doesn't like "min(...)":
@@ -2766,6 +2783,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	return returnval;
 }
 
+
 /*
 =====================
 idAI::TravelDistance
@@ -2842,6 +2860,7 @@ idAI::StopMove
 void idAI::StopMove( moveStatus_t status ) {
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
+	m_pathRank			= 1000; // grayman #2345
 	move.moveCommand	= MOVE_NONE;
 	move.moveStatus		= status;
 	move.toAreaNum		= 0;
@@ -2864,6 +2883,11 @@ void idAI::StopMove( moveStatus_t status ) {
 const idVec3& idAI::GetMoveDest() const
 {
 	return move.moveDest;
+}
+
+idEntity* idAI::GetTactileEntity(void) // grayman #2345
+{
+	return m_tactileEntity;
 }
 
 /*
@@ -2890,6 +2914,7 @@ bool idAI::FaceEnemy( void ) {
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
+	m_pathRank			= 1000; // grayman #2345
 	AI_DEST_UNREACHABLE = false;
 
 	return true;
@@ -2918,6 +2943,7 @@ bool idAI::FaceEntity( idEntity *ent ) {
 	move.speed			= 0.0f;
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
+	m_pathRank			= 1000; // grayman #2345
 	AI_DEST_UNREACHABLE = false;
 
 	return true;
@@ -2944,6 +2970,7 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	if ( move.moveType == MOVETYPE_FLY ) {
 		idVec3 dir = pos - physicsObj.GetOrigin();
@@ -2978,6 +3005,7 @@ bool idAI::MoveToEnemyHeight( void ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= false;
+	m_pathRank			= 1000; // grayman #2345
 
 	return true;
 }
@@ -3051,6 +3079,7 @@ bool idAI::MoveToEnemy( void ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3123,6 +3152,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	AI_MOVE_DONE			= false;
 	AI_DEST_UNREACHABLE		= false;
 	AI_FORWARD				= true;
+	m_pathRank				= rank; // grayman #2345
 
 	return true;
 }
@@ -3253,6 +3283,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3497,6 +3528,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3550,6 +3582,7 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3562,7 +3595,8 @@ idAI::MoveToPosition
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
-	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
+	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
+	move.accuracy = accuracy; // grayman #2345 - 'accuracy' must be set before we call ReachedPos()
 
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
@@ -3587,7 +3621,7 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 	aasPath_t path;
 	if ( aas ) {
 		move.toAreaNum = PointReachableAreaNum( org );
-		aas->PushPointIntoAreaNum( move.toAreaNum, org );
+		aas->PushPointIntoAreaNum( move.toAreaNum, org ); // if this point is outside this area, it will be moved to one of the area's edges
 
 		int areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
@@ -3620,7 +3654,7 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
-
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3688,6 +3722,8 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
+
 	//common->Printf("MoveToCover succeeded: Now moving into cover\n");
 
 	return true;
@@ -3711,6 +3747,7 @@ bool idAI::SlideToPosition( const idVec3 &pos, float time ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= false;
+	m_pathRank			= 1000; // grayman #2345
 
 	if ( move.duration > 0 ) {
 		move.moveDir = ( pos - physicsObj.GetOrigin() ) / MS2SEC( move.duration );
@@ -3745,6 +3782,7 @@ bool idAI::WanderAround( void ) {
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -3869,6 +3907,7 @@ bool idAI::MoveAlongVector( float yaw )
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;
+	m_pathRank			= rank; // grayman #2345
 
 	return true;
 }
@@ -4490,7 +4529,6 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 	}
 
 	delta *= physicsObj.GetGravityAxis();
-
 }
 
 /*
@@ -4502,9 +4540,13 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 {
 	START_SCOPED_TIMING(aiObstacleAvoidanceTimer, scopedObstacleAvoidanceTimer);
 
+	newPos = goalPos;	// grayman #2345 - initialize newPos in case nothing changes.
+						// Without this, there's a return from this function
+						// that leaves newPos = [0,0,0], so the AI thinks he
+						// has to go to the world origin, which is a bug.
+
 	if (ignore_obstacles || cv_ai_opt_noobstacleavoidance.GetBool())
 	{
-		newPos = goalPos;
 		move.obstacle = NULL;
 		return;
 	}
@@ -4581,9 +4623,10 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	// We found a path around obstacles, but we should still check for the seekPosObstacle
 	else if (path.seekPosObstacle)
 	{
-		/*gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
+/*		gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
 												  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
-												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);*/
+												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);
+ */
 
 		// greebo: Check if we have a frobdoor entity at our seek position
 		if (path.seekPosObstacle->IsType(CFrobDoor::Type)) 
@@ -4622,7 +4665,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	}
 	else
 	{
-		// If its a door handle, switch the obstacle to the door so we don't get all hung
+		// If it's a door handle, switch the obstacle to the door so we don't get all hung
 		// up on door handles
 		if (obstacle->IsType(CFrobDoorHandle::Type))
 		{
@@ -4638,13 +4681,11 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		
 			// We have a frobmover in our way, raise a signal to the current state
 			mind->GetState()->OnFrobDoorEncounter(p_door);
-			
 		}
 		
 		// Try backing away
 		newPos = obstacle->GetPhysics()->GetOrigin();
-		idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
-			GetPhysics()->GetOrigin();
+		idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 
 		obstacleDelta.NormalizeFast();
 		obstacleDelta *= 128.0;
@@ -4754,8 +4795,7 @@ void idAI::AnimMove()
 			StopMove(MOVE_STATUS_DONE);
 		}
 	}
-	else if (allowMove) // grayman - remove the second check, because it caused animation jitter at path_corners
-//	else if (allowMove && (move.moveCommand != MOVE_NONE)) // grayman #2414 - add MOVE_NONE check
+	else if (allowMove)
 	{
 		// Moving is allowed, get the delta
 		GetMoveDelta( oldaxis, viewAxis, delta );
@@ -7456,20 +7496,30 @@ void idAI::PushWithAF( void ) {
 				}
 
 				// Tactile Alert:
-				if( ent->IsType(idPlayer::Type) )
+
+				// grayman #2345 - when an AI is non-solid, waiting for another AI
+				// to pass by, there's no need to register a tactile alert from another AI
+
+				if (!movementSubsystem->IsWaiting())
 				{
-					// aesthetics: Dont react to dead player?
-					if( ent->health > 0 )
-						HadTactile( static_cast<idActor *>(ent) );
-				}
-				else if( ent->IsType(idAI::Type) && (ent->health > 0) && !static_cast<idAI *>(ent)->AI_KNOCKEDOUT )
-				{
-					HadTactile( static_cast<idActor *>(ent) );
-				}
-				else
-				{
-					// TODO: Touched a dead or unconscious body, should issue a body alert
-					// Touched dead body code goes here: found body alert
+					if( ent->IsType(idPlayer::Type) )
+					{
+						// aesthetics: Dont react to dead player?
+						if( ent->health > 0 )
+							HadTactile( static_cast<idActor *>(ent) );
+					}
+					else if( ent->IsType(idAI::Type) && (ent->health > 0) && !static_cast<idAI *>(ent)->AI_KNOCKEDOUT )
+					{
+						if (!static_cast<idAI *>(ent)->movementSubsystem->IsWaiting()) // grayman #2345 - don't call HadTactile() if the bumped AI is waiting
+						{
+							HadTactile( static_cast<idActor *>(ent) );
+						}
+					}
+					else
+					{
+						// TODO: Touched a dead or unconscious body, should issue a body alert
+						// Touched dead body code goes here: found body alert
+					}
 				}
 			}
 			// Ent was not an actor:
@@ -7866,7 +7916,8 @@ bool idAI::UpdateAnimationControllers( void ) {
 		idAnimator *headAnimator = headEnt->GetAnimator();
 
 		if ( allowEyeFocus ) {
-			idMat3 eyeAxis = ( lookAng + eyeAng ).ToMat3(); idMat3 headTranspose = headEnt->GetPhysics()->GetAxis().Transpose();
+			idMat3 eyeAxis = ( lookAng + eyeAng ).ToMat3();
+			idMat3 headTranspose = headEnt->GetPhysics()->GetAxis().Transpose();
 			axis =  eyeAxis * orientationJointAxis;
 			left = axis[ 1 ] * eyeHorizontalOffset;
 			eyepos -= headEnt->GetPhysics()->GetOrigin();
@@ -8327,6 +8378,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
 	AI_AlertLevel = newAlertLevel;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::SetAlertLevel %s Set AI_AlertLevel = %.2f\r",name.c_str(),AI_AlertLevel);
 
 	if (AI_AlertLevel > m_maxAlertLevel)
 	{
@@ -9233,15 +9285,43 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 void idAI::CheckTactile()
 {
 	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
-	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertLevel < thresh_5)
-	{
-		idEntity* blockingEnt = physicsObj.GetSlideMoveEntity();
 
-		if (blockingEnt != NULL && blockingEnt->IsType(idActor::Type))
+	// grayman #2345 - changed to handle the waiting, non-solid state for AI
+
+	bool bumped = false;
+	idEntity* blockingEnt = NULL;
+	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaiting()) // no bump if I'm waiting
+	{
+		blockingEnt = physicsObj.GetSlideMoveEntity();
+		if (blockingEnt) // grayman #2345 - note what we bumped into
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
-			HadTactile(static_cast<idActor*>(blockingEnt));
+			if (blockingEnt->name != "world") // ignore bumping into the world
+			{
+				m_tactileEntity = blockingEnt;
+			}
 		}
+		if (blockingEnt && blockingEnt->IsType(idPlayer::Type)) // player has no movement subsystem
+		{
+			// aesthetics: Dont react to dead player?
+			if (blockingEnt->health > 0)
+			{
+				bumped = true;
+			}
+		}
+		else if (blockingEnt && blockingEnt->IsType(idActor::Type))
+		{
+			idAI *e = static_cast<idAI*>(blockingEnt);
+			if (e && !e->movementSubsystem->IsWaiting()) // no bump if other entity is waiting
+			{
+				bumped = true;
+			}
+		}
+	}
+
+	if (bumped)
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
+		HadTactile(static_cast<idActor*>(blockingEnt));
 	}
 }
 
@@ -10598,7 +10678,6 @@ void idAI::GetUp()
 		SetAcuity("aud", GetAcuity("aud") * 2);
 		SetAcuity("tact", GetAcuity("tact") * 2);
 	}
-
 }
 
 
