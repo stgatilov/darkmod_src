@@ -234,7 +234,7 @@ bool IdleAnimationTask::AnimIsApplicable(idAI* owner, const idStr& animName)
 	// Check if this anim interferes with random head turning
 	if (owner->GetMemory().currentlyHeadTurning && AnimHasNoHeadTurnFlag(owner, torsoAnimNum))
 	{
-		gameLocal.Printf("Inhibited idle animation %s, since random head turning is active.\n", animName.c_str());
+//		gameLocal.Printf("Inhibited idle animation %s, since random head turning is active.\n", animName.c_str());
 
 		// Cannot play this one at this point
 		return false;
