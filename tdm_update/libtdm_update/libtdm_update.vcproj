@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(SolutionDir)/../include/zlib&quot;;&quot;$(SolutionDir)/../win32/include&quot;;&quot;$(SolutionDir)/../win32/subversion/include&quot;;&quot;$(SolutionDir)/../win32/subversion/include/apr&quot;"
-				PreprocessorDefinitions="DEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="DEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;USE_LIBSVN"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -108,7 +108,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(SolutionDir)/../include/zlib&quot;;&quot;$(SolutionDir)/../win32/include&quot;;&quot;$(SolutionDir)/../win32/subversion/include&quot;;&quot;$(SolutionDir)/../win32/subversion/include/apr&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;USE_LIBSVN"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -318,6 +318,14 @@
 		</File>
 		<File
 			RelativePath=".\SvnClient.h"
+			>
+		</File>
+		<File
+			RelativePath=".\SvnClientImpl.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\SvnClientImpl.h"
 			>
 		</File>
 		<File

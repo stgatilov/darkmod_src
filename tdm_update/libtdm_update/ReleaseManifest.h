@@ -148,12 +148,13 @@ public:
 	void CollectFilesFromRepository(const fs::path& repositoryRoot, const PackageInstructions& instructions, 
 									bool skipVersioningCheck = false)
 	{
-		SvnClient svn;
+		// Acquire an SVN client implementation
+		SvnClientPtr svnClient = SvnClient::Create();
 
 		if (skipVersioningCheck)
 		{
 			// Deactivate the client class (won't perform checks, will always return true)
-			svn.SetActive(false);
+			svnClient->SetActive(false);
 		}
 
 		// Process the inclusion commands and exclude all files as instructed
@@ -161,7 +162,7 @@ public:
 		{
 			if (instr->type == PackageInstruction::Include)
 			{
-				ProcessInclusion(repositoryRoot, instructions, *instr, svn);
+				ProcessInclusion(repositoryRoot, instructions, *instr, *svnClient);
 			}
 		}
 	}

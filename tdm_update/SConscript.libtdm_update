@@ -22,6 +22,8 @@ Import( GLOBALS )
 
 libtdm_update_string = ' \
 	IniFile.cpp \
+	SvnClient.cpp \
+	SvnClientImpl.cpp \
 	TraceLog.cpp \
 	Util.cpp \
 	Updater/Updater.cpp \

@@ -42,13 +42,13 @@ ziploader_string = ' \
 ziploader_list = BuildList( '', ziploader_string )
 
 for i in range( len( ziploader_list ) ):
-	ziploader_list[ i ] = '#/../lib/' + ziploader_list[ i ]
+	ziploader_list[ i ] = './../lib/' + ziploader_list[ i ]
 
 local_env = g_env.Clone()
 
-local_env.Append(CPPPATH = '#/../include')
-local_env.Append(CPPPATH = '#/../include/minizip')
-local_env.Append(CPPPATH = '#/../include/zlib')
+local_env.Append(CPPPATH = './../include')
+local_env.Append(CPPPATH = './../include/minizip')
+local_env.Append(CPPPATH = './../include/zlib')
 
 ret_list = []
 

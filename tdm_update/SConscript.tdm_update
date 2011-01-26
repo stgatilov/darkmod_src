@@ -45,6 +45,6 @@ local_env.Append(LIBS = [
 minizip_list = SConscript( './SConscript.minizip' )
 libtdm_update_list = SConscript( './SConscript.libtdm_update' )
 
-ret = local_env.Program('tdm_update.linux', tdm_update_list + libtdm_update_list + minizip_list)
+ret = local_env.Program('tdm_update.linux', tdm_update_list + minizip_list + libtdm_update_list)
 Return( 'ret' )
 
