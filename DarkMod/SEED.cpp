@@ -377,6 +377,7 @@ Seed::Restore
 */
 void Seed::Restore( idRestoreGame *savefile ) {
 	int num;
+	int numClasses;
 	bool bHaveModel;
 
 	savefile->ReadBool( active );
@@ -421,11 +422,11 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Entities[i].classIdx );
 	}
 
-    savefile->ReadInt( num );
+    savefile->ReadInt( numClasses );
 	// clear m_Classes and free any models in it, too
 	ClearClasses();
-	m_Classes.SetNum( num );
-	for( int i = 0; i < num; i++ )
+	m_Classes.SetNum( numClasses );
+	for( int i = 0; i < numClasses; i++ )
 	{
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].modelname );
