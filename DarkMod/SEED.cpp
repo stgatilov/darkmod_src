@@ -128,6 +128,9 @@ Seed::Seed( void ) {
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
+	m_iNumStaticMulties = 0;
+	m_bRestoreLOD = false;
+
 	m_bCombine = true;
 
 	// always put the empty skin into the list so it has index 0
@@ -187,6 +190,8 @@ void Seed::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDistCheckXYOnly );
 
 	savefile->WriteVec3( m_origin );
+
+	savefile->WriteInt( m_iNumStaticMulties );
 
 	savefile->WriteInt( m_Entities.Num() );
 	for( int i = 0; i < m_Entities.Num(); i++ )
@@ -368,6 +373,7 @@ void Seed::ClearClasses( void )
 		}
 	}
 	m_Classes.Clear();
+	m_iNumStaticMulties = 0;
 }
 
 /*
@@ -404,6 +410,10 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bDistCheckXYOnly );
 
 	savefile->ReadVec3( m_origin );
+
+	savefile->ReadInt( m_iNumStaticMulties );
+	// do the SetLODData() once in Think()
+	m_bRestoreLOD = true;
 
     savefile->ReadInt( num );
 	m_Entities.Clear();
@@ -528,6 +538,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 
 		savefile->ReadBool( bHaveModel );
 		m_Classes[i].physicsObj = NULL;
+
 		// only read the model if it is actually used
 		if ( bHaveModel )
 		{
@@ -1668,28 +1679,36 @@ void Seed::Prepare( void )
 	}
 	targets.Clear();
 
-	// remove ourself after spawn?
+	// Remove ourself after spawn? But not if we have registered entities, these
+	// need our service upon Restore().
 	if (spawnArgs.GetBool("remove","0"))
 	{
-		// spawn all entities
-		gameLocal.Printf( "SEED %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
-
-		// for each of our "entities", do the distance check
-		for (int i = 0; i < m_Entities.Num(); i++)
+		if (m_iNumStaticMulties > 0)
 		{
-			SpawnEntity(i, false);		// spawn as unmanaged
+			gameLocal.Printf( "SEED %s: Cannot remove myself, because I have %i static multies.\n", GetName(), m_iNumStaticMulties );
 		}
+		else
+		{
+			// spawn all entities
+			gameLocal.Printf( "SEED %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
 
-		// clear out memory just to be sure
-		ClearClasses();
-		m_Entities.Clear();
-		m_iNumEntities = -1;
+			// for each of our "entities", do the distance check
+			for (int i = 0; i < m_Entities.Num(); i++)
+			{
+				SpawnEntity(i, false);		// spawn as unmanaged
+			}
 
-		active = false;
-		BecomeInactive( TH_THINK );
+			// clear out memory just to be sure
+			ClearClasses();
+			m_Entities.Clear();
+			m_iNumEntities = -1;
 
-		// post event to remove ourselfes
-		PostEventMS( &EV_SafeRemove, 0 );
+			active = false;
+			BecomeInactive( TH_THINK );
+
+			// post event to remove ourselfes
+			PostEventMS( &EV_SafeRemove, 0 );
+		}
 	}
 	else
 	{
@@ -3120,13 +3139,15 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 					// TODO: lclass->origin?
 					lclass->physicsObj->SetOrigin( ent->origin );
 
-					// tell the CStaticMulti entity that it should
-					// track updates:
+					// tell the CStaticMulti entity that it should track updates:
 					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
 					// Let the StaticMulti store the nec. data to create the combined rendermodel
 					sment->SetLODData( lclass->m_LOD, lclass->modelname, &lclass->offsets, lclass->materialName, lclass->hModel );
 					
+					// Register the new staticmulti entity with ourselves, so we can later Restore() it properly
+					m_iNumStaticMulties ++;
+
 					// enable thinking (mainly for debug draw)
 					ent2->BecomeActive( TH_THINK | TH_PHYSICS );
 				}
@@ -3244,6 +3265,12 @@ bool Seed::CullEntity( const int idx )
 				// gameLocal.m_ModelGenerator->FreeSharedModelData ( ent2->GetRenderEntity()->hModel );
 			}
 		}
+		else
+		{
+			// deregister this static multi with us
+			m_iNumStaticMulties --;
+
+		}
 		// gameLocal.Printf( "SEED %s: Culling entity #%i (%0.2f > %0.2f).\n", GetName(), i, deltaSq, lclass->cullDist );
 
 		m_iNumExisting --;
@@ -3253,7 +3280,7 @@ bool Seed::CullEntity( const int idx )
 		ent->flags &= (! SEED_ENTITY_EXISTS);
 		ent->entity = 0;
 
-		// TODO: SafeRemove?
+		// TODO: Do we need to use SafeRemove?
 		ent2->PostEventMS( &EV_Remove, 0 );
 
 		return true;
@@ -3315,6 +3342,32 @@ void Seed::Think( void )
 		m_fLODBias = cv_lod_bias.GetFloat();
 	}
 
+	// After Restore(), do we need to do SetLODData()?
+	if (m_bRestoreLOD && m_iNumStaticMulties > 0)
+	{
+		// go through all our entities and set things up
+		int numEntities = m_Entities.Num();
+		for (int i = 0; i < numEntities; i++)
+		{
+			ent = &m_Entities[i];
+			lclass = &(m_Classes[ ent->classIdx ]);
+
+			// tell the CStaticMulti entity that it should track updates:
+			if (lclass->pseudo)
+			{
+				idEntity *ent2 = gameLocal.entities[ ent->entity ];
+
+				CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
+
+				// Let the StaticMulti store the nec. data to create the combined rendermodel
+				sment->SetLODData( lclass->m_LOD, lclass->modelname, &lclass->offsets, lclass->materialName, lclass->hModel );
+					
+				// enable thinking (mainly for debug draw)
+				sment->BecomeActive( TH_THINK | TH_PHYSICS );
+			}
+		}
+	}
+
 	// Distance dependence checks
 	if( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval )
 	{
@@ -3346,7 +3399,8 @@ void Seed::Think( void )
 		lodBias *= lodBias;
 
 		// for each of our "entities", do the distance check
-		for (int i = 0; i < m_Entities.Num(); i++)
+		int numEntities = m_Entities.Num();
+		for (int i = 0; i < numEntities; i++)
 		{
 			// TODO: let all auto-generated entities know about their new distance
 			//		 so they can manage their attachment's LOD, too.
@@ -3463,5 +3517,9 @@ void Seed::Event_CullAll( void ) {
 	{
 		CullEntity( i );
 	}
+	// this should be unnec. but just to be safe:
+	m_iNumStaticMulties = 0;
+	m_iNumExisting = 0;
+	m_iNumVisible = 0;
 }
 

@@ -60,6 +60,10 @@ CStaticMulti::CStaticMulti( void )
 	m_hModel = NULL;
 	m_modelName = "";
 
+	// do not free the hModel of the intial entity (we only do so once we
+	// have created our own
+	m_bFree_hModel = false;
+
 	m_iVisibleModels = 0;
 	m_iMaxChanges = 1;
 	
@@ -79,9 +83,13 @@ CStaticMulti::~CStaticMulti()
 
 	// make sure the render entity is freed before the model is freed
 	FreeModelDef();
-	renderModelManager->FreeModel( renderEntity.hModel );
-	// need this to avoid crashes due to double-free
-	renderEntity.hModel = NULL;
+
+	if (m_bFree_hModel)
+	{
+		renderModelManager->FreeModel( renderEntity.hModel );
+		// need this to avoid crashes due to double-free
+		renderEntity.hModel = NULL;
+	}
 }
 
 /*
@@ -138,10 +146,10 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 {
 	active = true;
 
-	/* ptr to the shared data structure */
+	/* ptr to the shared data structures */
 	m_LOD = LOD;
-
 	m_Offsets = offsets;
+
 	m_MaterialName = materialName;
 
 	m_iVisibleModels = m_Offsets->Num();
@@ -179,9 +187,11 @@ Updates the rendermodel if nec. and returns true if it was updated.
 */
 bool CStaticMulti::UpdateRenderModel( const bool force )
 {
-	if ( !force && 
-		(active == false ||
-		m_Changes.Num() < m_iMaxChanges ) )
+	if ( (!force) && 
+		 (active == false ||
+		  // During Restore() the offsets might not yet be there, so just return
+		 (!m_Offsets) ||
+		 m_Changes.Num() < m_iMaxChanges ) )
 	{
 		// no update nec. yet:
 		return false;
@@ -311,9 +321,11 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		if (renderEntity.hModel)
 		{
 			FreeModelDef();
-			// do not free the rendermodel, somebody else might have a ptr to it
+			// do not free the rendermodel, somebody else (since the dummy model is used) has a ptr to it
 			// renderModelManager->FreeModel( renderEntity.hModel );
 		}
+		// signal Restore() that it must free the hModel 
+		m_bFree_hModel = true;
 		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
 	}
 	else
@@ -506,23 +518,8 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( m_MaterialName );
 	savefile->WriteString( m_modelName );
 	savefile->WriteInt( m_iVisibleModels );
+	savefile->WriteBool( m_bFree_hModel );
 
-	// TODO: is it faster to Save/Restore this, or just recreate it from
-	// scratch? Saving it also might waste a lot of space in the savegame:
-//	savefile->WriteModel( m_hModel );
-
-	// Don't need to save the offsets, they are saved with the PseudoClass
-/*	savefile->WriteInt( m_Offsets.Num() );
-	for (int i = 0; i < m_Offsets.Num(); i++ )
-	{
-		savefile->WriteVec3( m_Offsets[i].offset );
-		savefile->WriteVec3( m_Offsets[i].scale );
-		savefile->WriteAngles( m_Offsets[i].angles );
-		savefile->WriteInt( m_Offsets[i].lod );
-		savefile->WriteInt( m_Offsets[i].flags );
-		savefile->WriteUnsignedInt( m_Offsets[i].color );
-	}
-*/
 	savefile->WriteInt( m_Changes.Num() );
 	for (int i = 0; i < m_Changes.Num(); i++ )
 	{
@@ -538,6 +535,8 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 {
 	int n;
 
+	//gameLocal.Printf("Restoring %s\n", GetName());
+
 	savefile->ReadBool( active );
 	savefile->ReadBool( m_bNeedModelUpdates );
 	savefile->ReadStaticObject( physics );
@@ -548,32 +547,13 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	savefile->ReadString( m_MaterialName );
 	savefile->ReadString( m_modelName );
 	savefile->ReadInt( m_iVisibleModels );
+	savefile->ReadBool( m_bFree_hModel );
 
-	// from brittlefracture.cpp
-//	renderEntity.hModel = renderModelManager->AllocModel();
-//	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
-//	renderEntity.callback = idBrittleFracture::ModelCallback;
-
-//	savefile->ReadModel( m_hModel );
-
-/*	m_Offsets.Clear();
-
-	savefile->ReadInt( n );
-	m_Offsets.SetGranularity(64);
-	m_Offsets.SetNum(n);
-	for (int i = 0; i < n; i ++)
-	{
-		savefile->ReadVec3( m_Offsets[i].offset );
-		savefile->ReadVec3( m_Offsets[i].scale );
-		savefile->ReadAngles( m_Offsets[i].angles );
-		savefile->ReadInt( m_Offsets[i].lod );
-		savefile->ReadInt( m_Offsets[i].flags );
-		savefile->ReadUnsignedInt( m_Offsets[i].color );
-	}
-*/
-
-	// need a way to restore this and the rendermodel!
+	// These will be set by the SEED entity managing us
+	// no update until the data is there!
 	m_Offsets = NULL;
+	m_LOD = NULL;
+	m_hModel = NULL;
 
 	m_Changes.Clear();
 	savefile->ReadInt( n );
@@ -588,8 +568,12 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Changes[i].newFlags );
 	}
 
-	// recompute our combined model to restore it
-	UpdateRenderModel( true);
+	renderEntity.hModel = NULL;
+
+	// hide until the LOD data arrives
+	//if (!fl.hidden) { Hide(); }
+
+	BecomeInactive( TH_THINK | TH_PHYSICS );
 }
 
 /*
@@ -627,6 +611,12 @@ CStaticMulti::AddChange
 ===============
 */
 void CStaticMulti::AddChange( const int entity, const int newLOD, const int newFlags ) {
+
+	if (!m_Offsets)
+	{
+		// During Restore() the offsets might not yet be there, so just return
+		return;
+	}
 
 	// go through our changes and see if we already have one for this entity
 	int n = m_Changes.Num();

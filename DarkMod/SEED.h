@@ -472,6 +472,16 @@ private:
 	*/
 	bool						m_bCombine;
 
+	/**
+	* How many StaticMulti entities do we have that require a SetLODData?
+	*/
+	int							m_iNumStaticMulties;
+
+	/**
+	* If Restore() just finished, the next Think() does need to do this.
+	*/
+	bool 						m_bRestoreLOD;
+
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 

@@ -108,6 +108,8 @@ private:
 	int							m_iMaxChanges;		//!< maximum number of changes before we update
 	int							m_iVisibleModels;	//!< how many of our models are currently visible? if == 0, we are invisible, too
 
+	bool						m_bFree_hModel;		//!< The initial hModel cannot be freed as it is used by the engine, but once we create our own, we need to free it.
+
 	// TODO: use these from m_LOD:
 	int							m_DistCheckTimeStamp;
 	int							m_DistCheckInterval;
