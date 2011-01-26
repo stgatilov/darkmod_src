@@ -8393,7 +8393,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
 	AI_AlertLevel = newAlertLevel;
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::SetAlertLevel %s Set AI_AlertLevel = %.2f\r",name.c_str(),AI_AlertLevel);
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::SetAlertLevel %s Set AI_AlertLevel = %.2f\r", name.c_str(), newAlertLevel);
 
 	if (AI_AlertLevel > m_maxAlertLevel)
 	{
