@@ -11611,6 +11611,9 @@ void idEntity::ParseAttachPositions( void )
 			pPos->originOffset += trans;
 			// TODO: Prove mathematically that adding the angles is the same as converting
 			// the angles to rotation matrices and multiplying them??
+			// stgatilov: It is wrong. As soon as anyone starts using this spawnarg the proper meaning
+			// of this line should be worked out.
+			gameLocal.Error( "Using spawn attach_posmod_* with uncertain meaning: report to coders.");
 			pPos->angleOffset += ang;
 		}
 	}
