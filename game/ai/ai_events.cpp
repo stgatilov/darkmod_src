@@ -2624,12 +2624,8 @@ void idAI::Event_LookAtPosition (const idVec3& lookAtWorldPosition, float durati
 
 void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, float rollAngle, float durationInSeconds)
 {
-	// Get our physical axis
-	idMat3 physicalAxis = GetPhysics()->GetAxis();
-	idAngles physicalAngles = physicalAxis.ToAngles ();
-
-	// FIX (Ishtvan)
-	physicalAngles.yaw = current_yaw;
+	// Get current physical angles
+	idAngles physicalAngles(0.0f, current_yaw, 0.0f);
 
 	// Now rotate it by the given angles
 	idAngles lookAngles = idAngles(pitchAngleUp, yawAngleClockwise, rollAngle);
