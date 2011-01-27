@@ -327,7 +327,7 @@ private:
 			beg += 2; // skip leading ./
 		}
 
-		push_back(ManifestFile(std::string(beg, end)));
+		push_back(ManifestFile(boost::algorithm::trim_copy(std::string(beg, end))));
 	}
 
 	void AddDestFile(char const* beg, char const* end)
@@ -342,7 +342,7 @@ private:
 		// Set the destination on the last element
 		assert(!empty());
 
-		back().destFile = std::string(beg, end);
+		back().destFile = boost::algorithm::trim_copy(std::string(beg, end));
 	}
 
 };

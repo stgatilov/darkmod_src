@@ -507,7 +507,7 @@ void Packager::LoadInstructionFile()
 	instrFile /= TDM_MANIFEST_PATH;
 	instrFile /= (boost::format("%s_maps%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_maps.txt
 
-	TraceLog::Write(LOG_STANDARD, "Loading package instruction file: " + instrFile.file_string() + "...");
+	TraceLog::WriteLine(LOG_STANDARD, "Loading package instruction file: " + instrFile.file_string() + "...");
 
 	_instructionFile.LoadFromFile(instrFile);
 
@@ -549,7 +549,56 @@ void Packager::CleanupAndSortManifest()
 
 void Packager::ShowManifestComparison()
 {
-	// TODO
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting old manifest and removing duplicates...")).str());
+
+	// Sort the old manifest before doing a set difference
+	_oldManifest.sort();
+
+	// Remove dupes using the standard algorithm (requires the list to be sorted)
+	_oldManifest.unique();
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("done.")).str());
+
+	std::list<ManifestFile> removedFiles;
+	std::list<ManifestFile> addedFiles;
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Calculating changes...")).str());
+
+	std::set_difference(_oldManifest.begin(), _oldManifest.end(), _manifest.begin(), _manifest.end(), 
+						std::back_inserter(removedFiles));
+
+	std::set_difference(_manifest.begin(), _manifest.end(), _oldManifest.begin(), _oldManifest.end(), 
+						std::back_inserter(addedFiles));
+
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("done.")).str());
+
+	if (!removedFiles.empty())
+	{
+		TraceLog::WriteLine(LOG_STANDARD, (boost::format("The following %d files were removed:") % removedFiles.size()).str());
+
+		for (std::list<ManifestFile>::const_iterator i = removedFiles.begin(); i != removedFiles.end(); ++i)
+		{
+			TraceLog::WriteLine(LOG_STANDARD, (boost::format("  Removed: %s") % i->sourceFile.string()).str());
+		}
+	}
+	else
+	{
+		TraceLog::WriteLine(LOG_STANDARD, (boost::format("No files were removed.")).str());
+	}
+
+	if (!addedFiles.empty())
+	{
+		TraceLog::WriteLine(LOG_STANDARD, (boost::format("The following %d files were added:") % addedFiles.size()).str());
+
+		for (std::list<ManifestFile>::const_iterator i = addedFiles.begin(); i != addedFiles.end(); ++i)
+		{
+			TraceLog::WriteLine(LOG_STANDARD, (boost::format("  Added: %s") % i->sourceFile.string()).str());
+		}
+	}
+	else
+	{
+		TraceLog::WriteLine(LOG_STANDARD, (boost::format("No files were added.")).str());
+	}
 }
 
 void Packager::SaveManifest()
