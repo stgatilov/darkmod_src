@@ -13,7 +13,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include <IL/il.h>
-#include "renderpipe.h"
 
 CImage::CImage() :
 	m_BufferLength(0L),
@@ -78,28 +77,20 @@ void CImage::Unload(bool FreeMemory)
 	m_ImageId = (ILuint)-1;
 }
 
-bool CImage::LoadImage(CRenderPipe* pipe)
+bool CImage::LoadImage(const idList<char> &imageBuffer)
 {
 	bool rc = false;
 
-	if(pipe != NULL)
+	if (imageBuffer.Num())
 		Unload(false);
 
 	if(m_Loaded == false)
 	{
-		if(pipe != NULL)
+		if(imageBuffer.Num())
 		{
-			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
-			unsigned int BufLen = DARKMOD_LG_RENDERPIPE_BUFSIZE;
-			
-#ifdef _DEBUG
-			// For debugging
-			memset(pipe_buf, 42, BufLen);
-#endif
-			
-			pipe->Read(pipe_buf, &BufLen);
-
-			if(BufLen > m_BufferLength || m_Image == NULL)
+			// resize m_Image if necessary
+			size_t BufLen = imageBuffer.Num();
+			if(BufLen != m_BufferLength || m_Image == NULL)
 			{
 				Unload(true);
 				m_BufferLength = BufLen;
@@ -109,9 +100,10 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 					goto Quit;
 				}
 			}
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_BufferLength, m_Image);
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderbuffer [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_BufferLength, m_Image);
 
-			memcpy(m_Image, pipe_buf, m_BufferLength);
+			// copy buffer data to image buffer
+			memcpy(m_Image, &imageBuffer[0], m_BufferLength);
 			InitImageInfo();
 		}
 	}

@@ -50,8 +50,6 @@ Darkmod LAS
 #include "Profile.h"
 #include <boost/filesystem.hpp>
 
-class CRenderPipe;
-
 typedef enum {
 	LT_INIT,
 	LT_FORCE,			// Never use this
