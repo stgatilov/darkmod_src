@@ -1,3 +1,6 @@
+# -*- mode: python -*-
+# coding=utf-8
+
 #############################################################################
 # 
 #  PROJECT: The Dark Mod - Updater
@@ -7,7 +10,7 @@
 # 
 ##############################################################################
 
-# The Dark Mod Updater build script for Linux
+# The Dark Mod Packager build script for Linux
 # Based on id's game sconscript
 # Author: greebo
 
