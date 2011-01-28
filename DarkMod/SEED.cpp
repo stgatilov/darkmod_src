@@ -115,7 +115,6 @@ Seed::Seed( void ) {
 	m_iSeed = 3;
 	m_iSeed_2 = 7;
 	m_iOrgSeed = 7;
-	m_iScore = 0;
 	m_fLODBias = 0;
 
 	m_iDebug = 0;
@@ -177,12 +176,10 @@ void Seed::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_iSeed );
 	savefile->WriteInt( m_iSeed_2 );
 	savefile->WriteInt( m_iOrgSeed );
-	savefile->WriteInt( m_iScore );
 	savefile->WriteInt( m_iNumEntities );
 	savefile->WriteInt( m_iNumExisting );
 	savefile->WriteInt( m_iNumVisible );
 	savefile->WriteInt( m_iThinkCounter );
-	savefile->WriteFloat( m_fAvgSize );
 	savefile->WriteFloat( m_fLODBias );
 
     savefile->WriteInt( m_DistCheckTimeStamp );
@@ -211,6 +208,11 @@ void Seed::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteString( m_Classes[i].classname );
 		savefile->WriteString( m_Classes[i].modelname );
+		savefile->WriteBool( m_Classes[i].pseudo );
+		savefile->WriteBool( m_Classes[i].watch );
+
+		savefile->WriteInt( m_Classes[i].maxEntities );
+		savefile->WriteInt( m_Classes[i].numEntities );
 		savefile->WriteInt( m_Classes[i].score );
 
 		if (m_Classes[i].clip)
@@ -240,6 +242,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].stack );
 		savefile->WriteBool( m_Classes[i].noinhibit );
 		savefile->WriteVec3( m_Classes[i].size );
+		savefile->WriteFloat( m_Classes[i].avgSize );
 		savefile->WriteVec3( m_Classes[i].color_min );
 		savefile->WriteVec3( m_Classes[i].color_max );
 		savefile->WriteBool( m_Classes[i].z_invert );
@@ -397,12 +400,10 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_iSeed );
 	savefile->ReadInt( m_iSeed_2 );
 	savefile->ReadInt( m_iOrgSeed );
-	savefile->ReadInt( m_iScore );
 	savefile->ReadInt( m_iNumEntities );
 	savefile->ReadInt( m_iNumExisting );
 	savefile->ReadInt( m_iNumVisible );
 	savefile->ReadInt( m_iThinkCounter );
-	savefile->ReadFloat( m_fAvgSize );
 	savefile->ReadFloat( m_fLODBias );
 	
     savefile->ReadInt( m_DistCheckTimeStamp );
@@ -440,6 +441,11 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].modelname );
+		savefile->ReadBool( m_Classes[i].pseudo );
+		savefile->ReadBool( m_Classes[i].watch );
+
+		savefile->ReadInt( m_Classes[i].maxEntities );
+		savefile->ReadInt( m_Classes[i].numEntities );
 		savefile->ReadInt( m_Classes[i].score );
 
 		savefile->ReadBool( bHaveModel );
@@ -468,6 +474,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].stack );
 		savefile->ReadBool( m_Classes[i].noinhibit );
 		savefile->ReadVec3( m_Classes[i].size );
+		savefile->ReadFloat( m_Classes[i].avgSize );
 		savefile->ReadVec3( m_Classes[i].color_min );
 		savefile->ReadVec3( m_Classes[i].color_max );
 		savefile->ReadBool( m_Classes[i].z_invert );
@@ -785,15 +792,18 @@ int Seed::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 Seed::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
 */
-float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
+void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 {
 	seed_class_t			SeedClass;
 	seed_material_t			SeedMaterial;
 	const idKeyValue *kv;
 	float fImgDensity = 0.0f;		// average "density" of the image map
 
+	// TODO: support for "seed_spawn_probability" (if < 1.0, only spawn entities of this class if RandomFloat() <= seed_spawn_probability)
+
+	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.pseudo = false;		// this is a true entity class
-	SeedClass.score = iEntScore;
+	SeedClass.watch = watch;		// watch over this entity?
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.modelname = ent->spawnArgs.GetString("model","");
 
@@ -849,7 +859,18 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// select one at random
 		SeedClass.materialName = idStr("textures/darkmod/debug/") + seed_debug_materials[ gameLocal.random.RandomInt( SEED_DEBUG_MATERIAL_COUNT ) ];
 	}
-	
+
+	SeedClass.score = 0;
+	if (!SeedClass.watch)
+	{
+		// score = 0 for pseudo classes or watch-classes
+		SeedClass.score = ent->spawnArgs.GetInt("seed_score","1");
+		if (SeedClass.score < 1)
+		{
+			SeedClass.score = 1;
+		}
+	}
+
 	// get all "skin" and "skin_xx", as well as "random_skin" spawnargs
 	SeedClass.skins.Clear();
 	// if no skin spawnarg exists, add the empty skin so we at least have one entry
@@ -1153,17 +1174,16 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	if (SeedClass.size.x < 0.001f)
 	{
 		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
-		SeedClass.size.x = std::max(fMin, SeedClass.size.x);
+		SeedClass.size.x = fMin;
 	}
 	if (SeedClass.size.y < 0.001f)
 	{
 		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
-		SeedClass.size.y = std::max(fMin, SeedClass.size.y);
+		SeedClass.size.y = fMin;
 	}
 
 	// gameLocal.Printf( "SEED %s: size of class %i: %0.2f %0.2f\n", GetName(), i, SeedClass.size.x, SeedClass.size.y );
 	// TODO: use a projection along the "floor-normal"
-	// TODO: multiply the average class size with the class score (so little used entities don't "use" more space)
 
 	// gameLocal.Printf( "SEED %s: Entity class size %0.2f %0.2f %0.2f\n", GetName(), SeedClass.size.x, SeedClass.size.y, SeedClass.size.z );
 	SeedClass.cullDist = 0;
@@ -1323,9 +1343,6 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 		// just use flooring for this class
 		SeedClass.floor = true;
 	}
-	// all data setup, append to the list
-	m_Classes.Append ( SeedClass );
-
 	gameLocal.Printf( "SEED %s: Adding class %s.\n", GetName(), SeedClass.classname.c_str() );
 
 	// if the size on x or y is very small, use "0.2" instead. This is to avoid that models
@@ -1352,9 +1369,20 @@ float Seed::AddClassFromEntity( idEntity *ent, const int iEntScore )
 	// scale the per-class size by the per-class density multiplied by the base density
 	float fBaseDensity = std::max( fMin, ent->spawnArgs.GetFloat( "seed_base_density", "1.0" ) );
 
-//	gameLocal.Printf( "SEED %s: Scaling class size by %0.4f (0.6f * 0.6f).\n", GetName(), fDensity*fBaseDensity, fDensity, fBaseDensity);
+//	gameLocal.Printf( "SEED %s: Scaling class size by %0.4f (%0.6f * %0.6f).\n", GetName(), fDensity*fBaseDensity, fDensity, fBaseDensity);
+//	gameLocal.Printf( "SEED %s: size = %0.6f fImgDensity = %0.6f\n", GetName(), size, fImgDensity );
 
-	return ( size / fImgDensity ) / (fDensity * fBaseDensity);
+	// Simple reduce the size if the density should increase
+	SeedClass.avgSize = size / ( fBaseDensity * fImgDensity * fDensity );
+
+	// if the mapper wants a hard limit on this class
+	SeedClass.maxEntities = spawnArgs.GetInt( "seed_max_entities", "0" );
+	SeedClass.numEntities = 0;
+
+	// all data setup, append to the list
+	m_Classes.Append ( SeedClass );
+
+	return;
 }
 
 /*
@@ -1396,45 +1424,98 @@ Compute the max. number of entities that we manage
 */
 void Seed::ComputeEntityCount( void )
 {
-	m_iNumEntities = spawnArgs.GetInt( "max_entities", "0" );
-	if (m_iNumEntities == 0)
+	// compute entity count dynamically from area that we cover
+	float fDensity = spawnArgs.GetFloat( "density", "1.0" );
+
+	// Scaled by GUI setting?
+	if (spawnArgs.GetBool( "lod_scale_density", "1"))
 	{
-		// compute entity count dynamically from area that we cover
-		float fDensity = spawnArgs.GetFloat( "density", "1.0" );
-
-		// Scaled by GUI setting?
-		if (spawnArgs.GetBool( "lod_scale_density", "1"))
-		{
-			fDensity *= LODBIAS();
-		}
-
-		idBounds bounds = renderEntity.bounds;
-		idVec3 size = bounds.GetSize();
-
-		if (fDensity < 0.00001f)
-		{
-			fDensity = 0.00001f;
-		}
-
-		// m_fAvgSize is corrected for "per-class" falloff already
-		m_iNumEntities = fDensity * (size.x * size.y) / m_fAvgSize;		// naive asumption each entity covers on avg X units
-		gameLocal.Printf( "SEED %s: Dynamic entity count: %0.2f * %0.2f * %0.2f / %0.2f = %i.\n", GetName(), fDensity, size.x, size.y, m_fAvgSize, m_iNumEntities );
-
-		// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
-		/* if (m_iNumEntities > SPAWN_LIMIT)
-		{
-			m_iNumEntities = SPAWN_LIMIT;
-		}
-		*/
+		fDensity *= LODBIAS();
 	}
-    else
+
+	fDensity = std::max( fDensity, 0.00001f);		// at minimum 0.00001f
+
+	idBounds bounds = renderEntity.bounds;
+	idVec3 size = bounds.GetSize();
+
+	float fArea = (size.x + 1) * (size.y + 1);
+//	gameLocal.Printf( "SEED %s: Area: %0.2f fDensity %0.4f\n", GetName(), fArea, fDensity);
+	fArea *= fDensity;
+
+	int n = m_Classes.Num();
+
+	// compute the overall score
+	int iScoreSum = 0;
+
+	// limit the overall entity count?
+	int max_entities = spawnArgs.GetInt( "max_entities", "0" );
+   	if (max_entities > 0)
 	{
-		// scale the amount of entities that the mapper requested, but only if it's > 10 or what was requested:
-		if (m_iNumEntities > 0 && m_iNumEntities > spawnArgs.GetFloat( "lod_scaling_limit", "10" ))
+	   	if (max_entities > spawnArgs.GetFloat( "lod_scaling_limit", "10" ))
 		{
-			m_iNumEntities *= LODBIAS();
+			max_entities *= LODBIAS();
+		}
+		for( int i = 0; i < n; i++ )
+		{
+			// pseudo classes and watch-over-breathren have score == 0
+			iScoreSum += m_Classes[i].score;
 		}
 	}
+
+	// sum the entities for each class together (otherwise we would compute the average entity count
+	// over all classes):
+	int numRealClasses = 0;
+
+	m_iNumEntities = 0;
+	for( int i = 0; i < n; i++ )
+	{
+		// ignore pseudo classes and watch-over-breathren
+		if (m_Classes[i].pseudo || m_Classes[i].watch)
+		{
+			continue;
+		}
+		numRealClasses ++;
+
+		int newNum = 0;
+		if (max_entities > 0)
+		{
+			// max entities is set on the SEED, so use the score to calculate the entities for each class
+			newNum = std::max( 1, (max_entities * m_Classes[i].score) / iScoreSum );	// at least one from each class
+		}
+		else
+		{
+			if ( m_Classes[i].avgSize > 0)
+			{
+				newNum = fArea / m_Classes[i].avgSize;
+			}
+//			gameLocal.Printf( "SEED %s: Dynamic entity count: %i += %i ( fArea = %0.4f, fAvgSize = %0.4f).\n", 
+//					GetName(), m_iNumEntities, newNum, fArea, m_Classes[i].avgSize );
+		}
+
+		if (m_Classes[i].maxEntities > 0 && newNum > m_Classes[i].maxEntities)
+		{ 
+			newNum = m_Classes[i].maxEntities;
+		}
+
+		m_Classes[i].numEntities = newNum;
+		m_iNumEntities += newNum;
+	}
+
+	if (max_entities > 0)
+	{
+		// limit the overall count to max_entities, even if all classes together have more, to make
+		// the "1 out of 4 classes" work:
+		m_iNumEntities = max_entities;
+	}
+
+	gameLocal.Printf( "SEED %s: Entity count: %i.\n", GetName(), m_iNumEntities );
+
+	// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
+	/* if (m_iNumEntities > SPAWN_LIMIT)
+	{
+		m_iNumEntities = SPAWN_LIMIT;
+	}
+	*/
 }
 
 /*
@@ -1446,9 +1527,7 @@ void Seed::Prepare( void )
 {	
 	seed_inhibitor_t SeedInhibitor;
 
-	// Gather all targets and make a note of them, also summing their "lod_score" up
-	m_iScore = 0;
-	m_fAvgSize = 0;
+	// Gather all targets and make a note of them
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
@@ -1528,23 +1607,14 @@ void Seed::Prepare( void )
 						GetName(), ent->GetName(), ent->GetEntityDefName() );
 
 				// add a pseudo class and ignore the size returned
-				AddClassFromEntity( ent, 0 );
+				AddClassFromEntity( ent, true );
 
 				// no more to do for this target
 				continue;
 			}
 
-			int iEntScore = ent->spawnArgs.GetInt( "seed_score", "1" );
-			if (iEntScore < 0)
-			{
-				gameLocal.Warning( "SEED %s: Target %s has invalid seed_score %i!\n", GetName(), ent->GetName(), iEntScore );
-			}
-			else
-			{
-				// add a class based on this entity
-				m_iScore += iEntScore;
-				m_fAvgSize += AddClassFromEntity( ent, iEntScore );
-			}
+			// add a class based on this entity
+			AddClassFromEntity( ent );
 		}
 	}
 
@@ -1595,17 +1665,8 @@ void Seed::Prepare( void )
 			gameLocal.SpawnEntityDef( args, &ent );
 			if (ent)
 			{
-				int iEntScore = ent->spawnArgs.GetInt( "seed_score", "1" );
-				if (iEntScore < 0)
-				{
-					gameLocal.Warning( "SEED %s: Target %s has invalid seed_score %i!\n", GetName(), ent->GetName(), iEntScore );
-				}
-				else
-				{
-					// add a class based on this entity
-					m_iScore += iEntScore;
-					m_fAvgSize += AddClassFromEntity( ent, iEntScore );
-				}
+				// add a class based on this entity
+				AddClassFromEntity( ent );
 				// remove the temp. entity 
 				ent->PostEventMS( &EV_Remove, 0 );
 			}
@@ -1627,28 +1688,17 @@ void Seed::Prepare( void )
 
 	if (m_Classes.Num() > 0)
 	{
-		// increase the avg by X% to allow some spacing (even if spacing = 0)
-		m_fAvgSize *= 1.3f;
-
-		// (32 * 32 + 64 * 64 ) / 2 => 50 * 50
-		m_fAvgSize /= m_Classes.Num();
-
-		// avoid values too small or even 0
-		if (m_fAvgSize < 2)
-		{
-			m_fAvgSize = 2;
-		}
-
 		// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
 		ComputeEntityCount();
 
 		if (m_iNumEntities <= 0)
 		{
 			gameLocal.Warning( "SEED %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+			m_iNumEntities = 0;
 		}
 	}
 
-	gameLocal.Printf( "SEED %s: Overall score: %i. Max. entity count: %i\n", GetName(), m_iScore, m_iNumEntities );
+	gameLocal.Printf( "SEED %s: Max. entity count: %i\n", GetName(), m_iNumEntities );
 
 	// Init the seed. 0 means random sequence, otherwise use the specified value
     // so that we get exactly the same sequence every time:
@@ -1803,8 +1853,7 @@ void Seed::PrepareEntities( void )
 	m_Classes.Swap( newClasses );		// copy over
 	newClasses.Clear();					// remove old entries (including pseudoclasses)
 
-	// random shuffle the class indexes around
-	// also calculate the per-class seed:
+	// Calculate the per-class seed:
 	ClassIndex.Clear();			// random shuffling of classes
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
@@ -1812,7 +1861,7 @@ void Seed::PrepareEntities( void )
 		m_Classes[i].seed = RandomSeed();		// random generator 2 inits the random generator 1
 	}
 
-	// shuffle all entries, but use the second generator for a "predictable" class sequence
+	// Randomly shuffle all entries, but use the second generator for a "predictable" class sequence
 	// that does not change when the menu setting changes
 	m_iSeed = RandomSeed();
 	s = m_Classes.Num();
@@ -1839,19 +1888,25 @@ void Seed::PrepareEntities( void )
 		int i = ClassIndex[idx];
 
 		// ignore pseudo classes used for watching brethren only:
-		if (m_Classes[i].score == 0)
+		if (m_Classes[i].watch)
 		{
 			continue;
 		}
 
 		m_iSeed = m_Classes[i].seed;		// random generator 2 inits the random generator 1
 
-		int iEntities = m_iNumEntities * (static_cast<float>(m_Classes[i].score)) / m_iScore;	// sum 2, this one 1 => 50% of this class
-		// try at least one from each class (so "select 1 from 4 classes" works correctly)
-		if (iEntities == 0)
+		// compute the number of entities for this class
+		// But try at least one from each class (so "select 1 from 4 classes" works correctly)
+		int iEntities = m_Classes[i].maxEntities;
+		if (iEntities <= 0)
 		{
-			iEntities = 1;
+			iEntities = m_Classes[i].numEntities;
+			if (iEntities < 0)
+			{
+				iEntities = 0;
+			}
 		}
+
 		gameLocal.Printf( "SEED %s: Creating %i entities of class %s (#%i index %i, seed %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx, m_iSeed );
 
 		// default to what the SEED says
@@ -2522,8 +2577,8 @@ void Seed::PrepareEntities( void )
 	// if we have requests for watch brethren, do add them now
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
-		// only care for classes where score == 0 (meaning: watch)
-		if (m_Classes[i].score != 0)
+		// only care for classes where we watch an entity
+		if (!m_Classes[i].watch)
 		{
 			continue;
 		}
@@ -2838,7 +2893,10 @@ void Seed::CombineEntities( void )
 				PseudoClass.solid = entityClass->solid;
 				PseudoClass.clip = entityClass->clip;
 				PseudoClass.imgmap = 0;
+				PseudoClass.score = 0;
 				PseudoClass.offset = entityClass->offset;
+				PseudoClass.numEntities = 0;
+				PseudoClass.maxEntities = 0;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics

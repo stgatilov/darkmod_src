@@ -85,6 +85,7 @@ struct seed_class_t {
 											//!< entity with a megamodel (a combined model from many entities),
 											//!< the model is still stored in hModel.
 											//!< These classes will be skipped when recreating the entities.
+	bool					watch;			//!< if true, this class is just used to watch over a certain entity
 	idPhysics_StaticMulti*	physicsObj;		//!< if pseudo: If you turn multiple entities into one, this keeps their clipmodels.
 	idStr					materialName;	//!< Override material for debug_colors.
 	idList< model_ofs_t >	offsets;		//!< if pseudo: List of enitity offsets to construct a combined model
@@ -92,7 +93,8 @@ struct seed_class_t {
 	int						seed;			//!< per-class seed so each class generates the same sequence of
 											//!< entities independ from the other classes, helps when the menu
    											//!> setting changes
-	int						score;			//!< to find out how many entities (calculated at spawn time from score)
+	int						maxEntities;	//!< to find out how many entities. If != 0, this is the maximum count.
+	int						numEntities;	//!< Either maxEntities, or calculated from density
 	idVec3					origin;			//!< origin of the original target entity, useful for "flooring"
 	idVec3					offset;			//!< offset to displace the final entity, used to correct for models with their
 											//!< origin not at the base
@@ -123,6 +125,8 @@ struct seed_class_t {
 											//!< 4 other static entities already present
 											//!< 8 world geometry
 	idVec3					size;			//!< size of the model for collision tests during placement
+	float					avgSize;		//!< Avg. size of a model to compute entity count
+	int						score;			//!< Only used when max_entitites of the SEED != 0
 
 	idVec3					scale_min;		//!< X Y Z min factors for randomly scaling rendermodels
 	idVec3					scale_max;		//!< X Y Z max factor for randomly scaling rendermodels
@@ -316,10 +320,9 @@ private:
 	int					ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const;
 
 	/**
-	* Take the given entity as template and add a class from its values. Returns
-	* the floor-space-size of this entity class.
+	* Take the given entity as template and add a class from its values.
 	*/
-	float				AddClassFromEntity( idEntity *ent, const int iEntScore );
+	void				AddClassFromEntity( idEntity *ent, const bool watch = false );
 
 	/**
 	* Add an entry to the skin list unless it is there already. Return the index.
@@ -370,11 +373,6 @@ private:
 	* Seed start value for the second random generator, used to restart the sequence.
 	**/
 	int					m_iOrgSeed;
-
-	/**
-	* Sum of all entity scores, used to distribute the entities according to their score.
-	**/
-	int					m_iScore;
 
 	/**
 	* Number of entities to manage overall.
@@ -428,11 +426,6 @@ private:
 	* A copy of cv_lod_bias, to detect changes during runtime.
 	*/
 	float						m_fLODBias;
-
-	/**
-	* Average floorspace of all classes
-	*/
-	float						m_fAvgSize;
 
 	/**
 	* The PVS this SEED spans - can be more than one when it crosses a visportal.
