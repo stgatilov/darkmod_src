@@ -636,7 +636,10 @@ int DM_WriteFile(const char *relativePath, const void *buffer, int size, const c
 	// stgatilov: if it is lightgem render, save it to m_LightGemRenderBuffer
 	if (idStr::Cmp(relativePath, DARKMOD_LG_FILENAME) == 0)
 	{
-		gameLocal.GetLightgemRenderBuffer().SetNum(size);
+		// resize buffer if necessary
+		if (gameLocal.GetLightgemRenderBuffer().Num() != size)
+			gameLocal.GetLightgemRenderBuffer().SetNum(size);
+
 		memcpy(&gameLocal.GetLightgemRenderBuffer()[0], buffer, size);
 		Ret = MRES_SUPERCEDE;
 		iRet = size;

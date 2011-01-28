@@ -642,6 +642,7 @@ void idGameLocal::Shutdown( void ) {
 	Printf( "------------ Game Shutdown -----------\n" );
 	
 	delete m_LightgemRenderBuffer;
+	m_LightgemRenderBuffer = NULL;
 
 	mpGame.Shutdown();
 
