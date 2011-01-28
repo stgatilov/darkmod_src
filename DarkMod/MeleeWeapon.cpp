@@ -184,9 +184,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		CheckAICMSwaps();
 
 	// Initial collision test (if we start out already colliding with something)
-	// Hack to ignore the owner during the trace
-	int contentsOwner = m_Owner.GetEntity()->GetPhysics()->GetContents();
-	m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+
 
 	int TestContents;
 	if( m_bWorldCollide )
@@ -194,13 +192,16 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	else
 		TestContents = CONTENTS_MELEE_ACTCOLLIDE;
 
-	trace_t tr;
-	gameLocal.clip.Translation
-		( 
-			tr, m_OldOrigin, m_OldOrigin, 
-			pClip, m_OldAxis, TestContents, this 
-		);
+	// Hack to ignore the owner during the trace
+	// stgatilov: ignore combat model too if it exists (do not hit self: #2339)
+	int contentsOwner = m_Owner.GetEntity()->GetPhysics()->GetContents();
+	m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	bool combatModelContents = ActOwner->SetCombatContents(false);
 
+	trace_t tr;
+	gameLocal.clip.Translation(tr, m_OldOrigin, m_OldOrigin, pClip, m_OldAxis, TestContents, this);
+
+	ActOwner->SetCombatContents(combatModelContents);
 	m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
 
 	// If we started out in something we hit, we're already done
@@ -218,7 +219,9 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 			tr2End = (m_vFailsafeTraceEnd * m_OldAxis) + m_OldOrigin;
 
 			m_Owner.GetEntity()->GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+			combatModelContents = ActOwner->SetCombatContents(false);
 			gameLocal.clip.TracePoint( tr2, tr2Start, tr2End, TestContents, this );
+			ActOwner->SetCombatContents(combatModelContents);
 			m_Owner.GetEntity()->GetPhysics()->SetContents( contentsOwner );
 
 			if( tr2.fraction < 1.0f )

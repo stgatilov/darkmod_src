@@ -1211,8 +1211,9 @@ idClipModel *idAFEntity_Base::GetCombatModel( void ) const {
 idAFEntity_Base::SetCombatContents
 ================
 */
-void idAFEntity_Base::SetCombatContents( bool enable ) {
+bool idAFEntity_Base::SetCombatContents( bool enable ) {
 	assert( combatModel );
+	bool oldIsEnabled = (combatModel->GetContents() != 0);
 	if ( enable && combatModelContents ) {
 		assert( !combatModel->GetContents() );
 		combatModel->SetContents( combatModelContents );
@@ -1222,6 +1223,7 @@ void idAFEntity_Base::SetCombatContents( bool enable ) {
 		combatModelContents = combatModel->GetContents();
 		combatModel->SetContents( 0 );
 	}
+	return oldIsEnabled;
 }
 
 /*
