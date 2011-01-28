@@ -61,31 +61,6 @@ bool FileVersionList(const char *str, bool state);
 // enables water physics
 #define MOD_WATERPHYSICS
 
-// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
-// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
-// shape would be sufficient to cover all lighting situations. For silouhette detection we might
-// consider more stages though.
-#define DARKMOD_LG_MAX_RENDERPASSES			2
-#define DARKMOD_LG_MAX_IMAGESPLIT			4
-#define DARKMOD_LG_RENDER_MODEL				"models/darkmod/misc/system/lightgem.lwo"
-#define DARKMOD_LG_ENTITY_NAME				"lightgem_surface"
-#define DARKMOD_LG_FILENAME					"$?!lgf"
-// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
-#define DARKMOD_LG_VIEWID					-1
-#define DARKMOD_LG_RENDER_WIDTH				50
-// The colour is converted to a grayscale value which determines the state
-// of the lightgem.
-// LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
-
-#define DARKMOD_LG_MIN						1
-#define DARKMOD_LG_MAX						32
-#define DARKMOD_LG_FRACTION					(1.0f/32.0f)
-#define DARKMOD_LG_RED						0.29900f
-#define DARKMOD_LG_GREEN					0.58700f
-#define DARKMOD_LG_BLUE						0.11400f
-#define DARKMOD_LG_SCALE					(1.0/255.0)			// scaling factor for grayscale value
-
-
 /*
 ===============================================================================
 
@@ -440,6 +415,10 @@ private:
 	int						spawnId;
 };
 
+// Note: Because lightgem.h uses idEntityPr, the file should be included here or 
+// idEntityPtr Definition should be moved to lightgem.h. - J.C.Denton
+
+#include "../DarkMod/lightgem.h"
 //============================================================================
 
 class idDeclEntityDef;
@@ -848,14 +827,11 @@ public:
 	 */
 	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
-	// Returns render buffer for lightgem rendering
-	idList<char> &			GetLightgemRenderBuffer();
-
 	/**
 	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
 	 * that no multiple copies of it will exist.
 	 */
-	void					SpawnLightgemEntity(void);
+	//void					SpawnLightgemEntity(void);
 
 	/**
 	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
@@ -867,7 +843,6 @@ public:
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
 	 * determining the lightvalue for the given image.
 	 */
-	void					AnalyzeRenderImage(const idList<char> &imageBuffer, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
 	
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
@@ -994,13 +969,13 @@ private:
 	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
 	 * is constantly required and therfore we store it permanently.
 	 */
-	idEntityPtr<idEntity>	m_LightgemSurface;
+// 	idEntityPtr<idEntity>	m_LightgemSurface;
+
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
-	int						m_LightgemShotSpot;
-	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
-	
-	// stgatilov: The buffer for captured lightgem image
-	idList<char>			*m_LightgemRenderBuffer;
+	LightGem				m_lightGem;
+
+// 	int						m_LightgemShotSpot;
+// 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	
 	idList<idEntity *>		m_SignalList;
 
@@ -1061,6 +1036,12 @@ private:
 
 	// Platform-specific implementation to change the D3's title and icon
 	void					ChangeWindowTitleAndIcon();
+
+public:
+	ID_INLINE idList<char> & GetLightgemRenderBuffer(void) const
+	{
+		return m_lightGem.GetLightgemRenderBuffer();
+	}
 };
 
 //============================================================================

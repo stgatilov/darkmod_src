@@ -298,6 +298,7 @@ extern idCVar cv_lg_velocity_mod_max_velocity;
 extern idCVar cv_lg_velocity_mod_amount;
 
 extern idCVar cv_lg_fade_delay;						// Added by  J.C.Denton
+extern idCVar cv_lg_timeSlice;						// Added by  J.C.Denton			
 
 extern idCVar cv_empty_model;
 
