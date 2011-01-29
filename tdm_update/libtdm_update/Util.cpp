@@ -132,7 +132,7 @@ bool Util::DarkRadiantIsRunning()
 
 } // namespace
 
-#else
+#elif defined(__linux__)
 // Linux implementation
 
 #include <iostream>
@@ -221,4 +221,26 @@ bool Util::DarkRadiantIsRunning()
 
 } // namespace
 
+#elif defined(MACOS_X)
+// Mac OS X
+
+namespace tdm
+{
+
+bool Util::D3IsRunning()
+{
+	// Not implemented for Mac
+	return false;
+}
+
+bool Util::DarkRadiantIsRunning()
+{
+	// Not implemented for Mac
+	return false;
+}
+
+} // namespace
+
+#else
+#error Unsupported Platform
 #endif
