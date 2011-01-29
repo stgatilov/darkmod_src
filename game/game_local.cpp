@@ -4308,7 +4308,15 @@ void idGameLocal::RegisterEntity( idEntity *ent ) {
 	spawnIds[ spawn_entnum ] = spawnCount++;
 	ent->entityNumber = spawn_entnum;
 	ent->spawnNode.AddToEnd( spawnedEntities );
-	ent->spawnArgs.TransferKeyValues( spawnArgs );
+
+	// stgatilov: copy all spawnargs except editor spawnargs
+	ent->spawnArgs.Clear();
+	for (int i = 0; i < spawnArgs.GetNumKeyVals(); i++) {
+		const idKeyValue *pkv = spawnArgs.GetKeyVal(i);
+		if (pkv->GetKey().IcmpPrefix("editor_") == 0) continue;
+		ent->spawnArgs.Set(pkv->GetKey(), pkv->GetValue());
+	}
+	spawnArgs.Clear();
 
 	if ( spawn_entnum >= num_entities ) {
 		num_entities++;
