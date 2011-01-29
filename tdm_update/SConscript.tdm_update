@@ -35,19 +35,35 @@ local_env.Append(CPPPATH = '#/../include')
 local_env.Append(CPPPATH = '#/libtdm_update')
 
 # Use local Boost
-
-local_env.Append(LIBS = [
-	File('#/../linux/boost/lib/libboost_filesystem.a'),
-	File('#/../linux/boost/lib/libboost_program_options.a'),
-	File('#/../linux/boost/lib/libboost_thread.a'),
-	File('#/../linux/boost/lib/libboost_regex.a'),
-	File('#/../linux/boost/lib/libboost_system.a'),
-	File('#/../linux/libcurl/libcurl.a')
-])
+if g_os == 'MacOSX':
+	local_env.Append(LIBS = [
+		File('#/../macosx/boost/lib/libboost_filesystem.a'),
+		File('#/../macosx/boost/lib/libboost_program_options.a'),
+		File('#/../macosx/boost/lib/libboost_thread.a'),
+		File('#/../macosx/boost/lib/libboost_regex.a'),
+		File('#/../macosx/boost/lib/libboost_system.a'),
+		File('#/../macosx/libcurl/libcurl.a')
+	])
+else:
+	local_env.Append(LIBS = [
+		File('#/../linux/boost/lib/libboost_filesystem.a'),
+		File('#/../linux/boost/lib/libboost_program_options.a'),
+		File('#/../linux/boost/lib/libboost_thread.a'),
+		File('#/../linux/boost/lib/libboost_regex.a'),
+		File('#/../linux/boost/lib/libboost_system.a'),
+		File('#/../linux/libcurl/libcurl.a')
+	])
 
 minizip_list = SConscript( './SConscript.minizip' )
 libtdm_update_list = SConscript( './SConscript.libtdm_update' )
 
-ret = local_env.Program('tdm_update.linux', tdm_update_list + minizip_list + libtdm_update_list)
+executable_name = 'tdm_update'
+
+if g_os == 'MacOSX':
+	executable_name = executable_name + '.macosx'
+else:
+	executable_name = executable_name + '.linux'
+
+ret = local_env.Program(executable_name, tdm_update_list + minizip_list + libtdm_update_list)
 Return( 'ret' )
 

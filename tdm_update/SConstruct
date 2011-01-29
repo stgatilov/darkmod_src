@@ -47,6 +47,10 @@ BUILD (default debug)
 	debug: -O -g
 	release: all optimisations, including CPU target etc.
 
+MACOSX_TARGET_ARCH (default 'i386')
+	The target architecture when building in Mac OS X.
+	valid values: 'ppc' or 'i386'. 
+
 """
 
 Help( help_string )
@@ -72,7 +76,11 @@ else:
 		cpu = 'ppc'
 	else:
 		cpu = 'cpu'
-g_os = 'Linux'
+
+if sys.platform == 'darwin':
+	g_os = 'MacOSX'
+else:
+	g_os = 'Linux'
 
 # end system detection ---------------------------
 
@@ -81,8 +89,9 @@ g_os = 'Linux'
 CC = 'gcc'
 CXX = 'g++'
 JOBS = '1'
-BUILD = 'debug'
+BUILD = 'release'
 BASEFLAGS = ''
+MACOSX_TARGET_ARCH = 'i386'
 
 # end default settings ---------------------------
 
@@ -134,17 +143,32 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
-if ( g_os == 'Linux' ):
-	# Add the __linux__ define
-	BASECPPFLAGS.append('-D__linux__')
+if ( g_os == 'Linux' or g_os == 'MacOSX' ):
 	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-pthread' )
-	BASELINKFLAGS.append( '-lrt' )
-	# help 64 bit machines to find the compatibility 32bit libraries
-	BASELINKFLAGS.append( '-L/lib32' )
-	BASELINKFLAGS.append( '-L/usr/lib32' )
+
+	if g_os == 'Linux':
+		# help 64 bit machines to find the compatibility 32bit libraries
+		BASELINKFLAGS.append( '-L/lib32' )
+		BASELINKFLAGS.append( '-L/usr/lib32' )
+		BASELINKFLAGS.append( '-pthread' )
+		BASELINKFLAGS.append( '-lrt' )
+	
+		# Add the __linux__ define
+		BASECPPFLAGS.append('-D__linux__')
+	else:
+		# Mac OS X
+		BASECPPFLAGS.append('-DMACOS_X')
+
+		if MACOSX_TARGET_ARCH == 'i386':
+			# Perform an Intel build
+			BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
+			BASELINKFLAGS.append(['-arch', 'i386'])
+		elif MACOSX_TARGET_ARCH == 'ppc':
+			# Perform a PowerPC build
+			BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
+			BASELINKFLAGS.append(['-arch', 'ppc'])
 
 if ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
