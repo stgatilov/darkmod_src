@@ -8,12 +8,12 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010 Tels (Donated to The Dark Mod Team)
-
 /*
-   ModelGenerator
+	ModelGenerator
 
-   Manipulate, combine or generate models at run time.
+	Manipulate, combine or generate models at run time.
+
+	Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 TODO: implement create-backsides code, that simply merges the front and backside,
 	  this would mean we don't need to call FinishSurfaces(). We could even pre-compute
@@ -37,7 +37,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 
-// uncomment to get the old, slower copy-vet code
+// uncomment to get the old, slower copy-vert code
 //#define M_COPY
 
 // uncomment to get detailed timing info
