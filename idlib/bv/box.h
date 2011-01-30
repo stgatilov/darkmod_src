@@ -90,9 +90,13 @@ public:
 	int				GetProjectionSilhouetteVerts( const idVec3 &projectionOrigin, idVec3 silVerts[6] ) const;
 	int				GetParallelProjectionSilhouetteVerts( const idVec3 &projectionDir, idVec3 silVerts[6] ) const;
 
-					// angua: fills in the 8 corner vertices of the box
-					// verts must be an array of 8 idVec3s.
+	// angua: fills in the 8 corner vertices of the box
+	// verts must be an array of 8 idVec3s.
 	void			GetVerts(idVec3* verts) const;
+
+	// Tels: added
+	const char *		ToString( const int precision = 2 ) const;
+
 
 private:
 	idVec3			center;
