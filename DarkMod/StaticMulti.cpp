@@ -8,12 +8,13 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 /*
-   StaticMulti - a variant of func_static that can use a idPhys_StaticMulti
-   				 for the clipmodel, e.g. has more than one clipmodel.
-				 Used for entities with many models combined into one rendermodel.
+	StaticMulti - 	A variant of func_static that can use a idPhys_StaticMulti
+					for the clipmodel, e.g. has more than one clipmodel. Used
+					for entities with many models combined into one rendermodel.
+
+	Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 TODO: track skin changes on the different LOD stages
 
@@ -155,7 +156,7 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	m_iVisibleModels = m_Offsets->Num();
 
 #ifdef M_DEBUG
-	gameLocal.Printf("%s hModel %p modelname %s.\n", GetName(), hModel, modelName.c_str() );
+	gameLocal.Printf("%s SetLODData: hModel %p modelname %s.\n", GetName(), hModel, modelName.c_str() );
 #endif
 
 	// if we need to combine from a func_static, store a ptr to it's renderModel
@@ -251,7 +252,13 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 #ifdef M_DEBUG
 		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
 #endif
-		if (fl.hidden) { Show(); }
+		if (fl.hidden)
+		{
+			Show();
+#ifdef M_DEBUG
+			gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
+#endif
+		}
 	}
 
 	// compute a list of rendermodels
@@ -324,7 +331,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 			// do not free the rendermodel, somebody else (since the dummy model is used) has a ptr to it
 			// renderModelManager->FreeModel( renderEntity.hModel );
 		}
-		// signal Restore() that it must free the hModel 
+		// signal Restore() that it must free the hModel from now on
 		m_bFree_hModel = true;
 		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
 	}
@@ -337,9 +344,6 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 #ifdef M_TIMINGS
 	timer_updatemodel.Stop();
 #endif
-
-	// TODO: this seems unnec.:
-	renderEntity.origin = origin;
 
 	// force an update because the bounds/origin/axis may stay the same while the model changes
 	renderEntity.forceUpdate = true;
