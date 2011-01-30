@@ -37,21 +37,23 @@ local_env.Append(CPPPATH = '#/../libtdm_update')
 # Use local Boost
 if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
-		File('#/../macosx/boost/lib/libboost_filesystem.a'),
-		File('#/../macosx/boost/lib/libboost_program_options.a'),
-		File('#/../macosx/boost/lib/libboost_thread.a'),
-		File('#/../macosx/boost/lib/libboost_regex.a'),
-		File('#/../macosx/boost/lib/libboost_system.a'),
-		File('#/../macosx/libcurl/libcurl.a')
+		File('#/../../macosx/boost/lib/libboost_filesystem.a'),
+		File('#/../../macosx/boost/lib/libboost_program_options.a'),
+		File('#/../../macosx/boost/lib/libboost_thread.a'),
+		File('#/../../macosx/boost/lib/libboost_regex.a'),
+		File('#/../../macosx/boost/lib/libboost_system.a'),
+		File('#/../../macosx/libcurl/libcurl.a'),
+		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libsvn_fs-1.dylib'),
+		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libapr-1.dylib'),
 	])
 else:
 	local_env.Append(LIBS = [
-		File('#/../linux/boost/lib/libboost_filesystem.a'),
-		File('#/../linux/boost/lib/libboost_program_options.a'),
-		File('#/../linux/boost/lib/libboost_thread.a'),
-		File('#/../linux/boost/lib/libboost_regex.a'),
-		File('#/../linux/boost/lib/libboost_system.a'),
-		File('#/../linux/libcurl/libcurl.a')
+		File('#/../../linux/boost/lib/libboost_filesystem.a'),
+		File('#/../../linux/boost/lib/libboost_program_options.a'),
+		File('#/../../linux/boost/lib/libboost_thread.a'),
+		File('#/../../linux/boost/lib/libboost_regex.a'),
+		File('#/../../linux/boost/lib/libboost_system.a'),
+		File('#/../../linux/libcurl/libcurl.a')
 	])
 
 # Build the dependencies
