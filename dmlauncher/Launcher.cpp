@@ -43,6 +43,7 @@ const std::string STEAM_ARGS = "-applaunch 9050 ";
 #elif MACOS_X
 	#include <unistd.h>
 	#include <errno.h>
+	#include <mach-o/dyld.h>
 
 	#define ENGINE_EXECUTABLE "Doom 3"
 #else
@@ -62,11 +63,23 @@ Launcher::Launcher(int argc, char* argv[]) :
 		dmlauncher = boost::filesystem::initial_path() / dmlauncher;
 	}
 
-#else
+#elif defined(__linux__)
 	char exepath[PATH_MAX] = {0};
 	std::size_t bytesRead = readlink("/proc/self/exe", exepath, sizeof(exepath));
 
 	boost::filesystem::path dmlauncher(exepath);
+#elif defined (MACOS_X)
+	char exepath[4096];
+	uint32_t size = sizeof(exepath);
+	
+	if (_NSGetExecutablePath(exepath, &size) != 0)
+	{
+		TraceLog::WriteLine("Cannot read executable path, buffer too small.");
+	}
+	
+	boost::filesystem::path dmlauncher(exepath);
+#else
+#error Unsupported Platform
 #endif
 	
 	TraceLog::WriteLine("Path to tdmlauncher is " + dmlauncher.file_string());
