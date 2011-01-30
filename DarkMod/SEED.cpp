@@ -57,6 +57,9 @@ TODO: Use a point (at least for nonsolids or vegetation?) instead of a box when 
 // define to output model generation debug info
 //#define M_DEBUG
 
+// define to output debug info about watched and combined entities
+//#define M_DEBUG_COMBINE
+
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/game_local.h"
@@ -2764,13 +2767,17 @@ void Seed::CreateWatchedList(void) {
 						}
 						// we take all skins, the combine step will later sort them out
 					}
+#ifdef M_DEBUG_COMBINE
 					gameLocal.Printf( "SEED %s: Watching over %s at %s (model? %s).\n", 
 						GetName(), ent->GetName(), entOrigin.ToString(), noModel ? "yes" : "no");
+#endif
 				}
 
 				else {
+#ifdef M_DEBUG_COMBINE
 					gameLocal.Printf( "SEED %s: Watching over %s at %s.\n", 
 						GetName(), ent->GetName(), entOrigin.ToString() );
+#endif
 				}
 
 				// add this entity to our list, we will later see with what others we can combine it
@@ -2894,7 +2901,7 @@ void Seed::CombineEntities( void )
 		return;
 	}
 
-	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "1024");
+	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "2048");
 	if (max_combine_distance < 10)
 	{
 		gameLocal.Warning("SEED %s: combine distance %0.2f < 10, enforcing minimum 10.\n", GetName(), max_combine_distance);
@@ -3012,29 +3019,38 @@ void Seed::CombineEntities( void )
 		// every combine step reduces the number of entities to look at next:
 		for (int j = i + 1; j < n; j++)
 		{
-			//gameLocal.Printf("SEED %s: %i: At entity %i\n", GetName(), i, j);
+//			gameLocal.Printf("SEED %s: %i: At entity %i\n", GetName(), i, j);
 			if (m_Entities[j].classIdx == -1)
 			{
 				// already combined, skip
-				//gameLocal.Printf("SEED %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
+#ifdef M_DEBUG_COMBINE
+				gameLocal.Printf("SEED %s: Entity %i already combined into another entity, skipping it.\n", GetName(), j);
+#endif
 				continue;
 			}
 			if (m_Entities[j].classIdx != m_Entities[i].classIdx)
 			{
 				// have different classes
-//				gameLocal.Printf("SEED %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
+#ifdef M_DEBUG_COMBINE
+				gameLocal.Printf("SEED %s: Entity classes from %i (%i) and %i (%i) differ, skipping it.\n", GetName(), i, m_Entities[i].classIdx, j, m_Entities[j].classIdx);
+#endif
 				continue;
 			}
 			if (m_Entities[j].skinIdx != m_Entities[i].skinIdx)
 			{
 				// have different skins
-//				gameLocal.Printf("SEED %s: Entity skins from %i and %i differ, skipping it.\n", GetName(), i, j);
+#ifdef M_DEBUG_COMBINE
+				gameLocal.Printf("SEED %s: Entity skins from %i (%s) and %i (%s) differ, skipping it.\n",
+						GetName(), i, m_Skins[ m_Entities[i].skinIdx ].c_str(), j, m_Skins[ m_Entities[j].skinIdx ].c_str() );
+#endif
 				continue;
 			}
 			// in different PVS?
 			if ( multiPVS && pvs[j] != pvs[i])
 			{
-//				gameLocal.Printf("SEED %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
+#ifdef M_DEBUG_COMBINE
+				gameLocal.Printf("SEED %s: Entity %i in different PVS than entity %i, skipping it.\n", GetName(), j, i);
+#endif
 				continue;
 			}
 			// distance too big?
@@ -3042,7 +3058,9 @@ void Seed::CombineEntities( void )
 			float distSq = dist.LengthSqr();
 			if (distSq > max_combine_distance)
 			{
-				// gameLocal.Printf("SEED %s: Distance from entity %i to entity %i to far (%f > %f), skipping it.\n", GetName(), j, i, dist.Length(), max_combine_distance );
+#ifdef M_DEBUG_COMBINE
+				gameLocal.Printf("SEED %s: Distance from entity %i to entity %i too far (%f > %f), skipping it.\n", GetName(), j, i, dist.Length(), max_combine_distance );
+#endif
 				continue;
 			}
 
