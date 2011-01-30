@@ -1426,14 +1426,12 @@ void State::OnMovementBlocked(idAI* owner)
 		}
 
 		// Tell the slave to get out of the way, but only if neither AI is currently resolving a block
-		// grayman #2345 - or waiting for the other to pass or if they're handling a door.
+		// grayman #2345 - or waiting for the other to pass.
 
 		if (!slave->movementSubsystem->IsResolvingBlock() &&
 			!master->movementSubsystem->IsResolvingBlock() &&
 			!slave->movementSubsystem->IsWaiting() &&
-			!master->movementSubsystem->IsWaiting() &&
-			!master->m_HandlingDoor &&
-			!slave->m_HandlingDoor)
+			!master->movementSubsystem->IsWaiting())
 		{
 			slave->movementSubsystem->ResolveBlock(master);
 		}
@@ -1443,7 +1441,7 @@ void State::OnMovementBlocked(idAI* owner)
 		// Blocked by func_static, these are generally not considered by Obstacle Avoidance code.
 		// grayman #2345 - if the AI is bumping into a func_static, that's included.
 
-		if (!owner->movementSubsystem->IsResolvingBlock() && !owner->movementSubsystem->IsWaiting()) // grayman #2345
+		if (!owner->movementSubsystem->IsResolvingBlock()) // grayman #2345
 		{
 			owner->movementSubsystem->ResolveBlock(ent);
 		}

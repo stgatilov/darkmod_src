@@ -27,6 +27,8 @@ public:
 	idActor* GetUserAtIndex(const int index); // grayman #2345
 	void InsertUserAtIndex(idActor* actor,const int index); // grayman #2345
 
+	int GetIndex(idActor* user); // grayman #2345
+
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 

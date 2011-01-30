@@ -93,6 +93,13 @@ void UserManager::InsertUserAtIndex(idActor* actor,const int index) // grayman #
 	}
 }
 
+int UserManager::GetIndex(idActor* actor) // grayman #2345
+{
+	idEntityPtr<idActor> actorPtr;
+	actorPtr = actor;
+	return (m_users.FindIndex(actorPtr));
+}
+
 void UserManager::Save(idSaveGame* savefile) const
 {
 	int num = m_users.Num();

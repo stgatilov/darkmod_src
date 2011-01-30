@@ -36,6 +36,11 @@ const idStr& ResolveMovementBlockTask::GetName() const
 	return _name;
 }
 
+bool ResolveMovementBlockTask::IsSolid() // grayman #2345
+{
+	return (_preTaskContents == -1);
+}
+
 void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
@@ -352,7 +357,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 		owner->StopMove(MOVE_STATUS_WAITING);
 		owner->TurnToward(owner->GetPhysics()->GetOrigin() - ownerRight);
 
-		if (owner->FacingIdeal() /*&& _preTaskContents == -1*/) // grayman #2345 - second check is already true
+		if (owner->FacingIdeal() && _preTaskContents == -1)
 		{
 			// grayman #2345 - don't become non-solid if your alert index is > 0. This is because
 			// AI tend to bunch together when agitated, and it doesn't look good if one goes non-solid
@@ -369,11 +374,12 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 				owner->SaveAttachmentContents();
 				owner->SetAttachmentContents(0);
+				owner->movementSubsystem->SetWaiting(false); // grayman #2345
 			}
-
-			// Wait for other AI to pass by
-
-			owner->movementSubsystem->SetWaiting(); // grayman #2345
+			else
+			{
+				owner->movementSubsystem->SetWaiting(true); // grayman #2345
+			}
 		}
 	}
 
@@ -388,12 +394,12 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			return true;
 		}
 		
-		// grayman #2345 - check to see if the other AI is waiting. if so, don't wait yourself
+		// grayman #2345 - check to see if the other AI is standing still. If so, end the task.
 
 		if (_blockingEnt->IsType(idAI::Type))
 		{
 			idAI *e = static_cast<idAI*>(_blockingEnt);
-			if (e && e->movementSubsystem->IsWaiting())
+			if (e && !e->AI_FORWARD)
 			{
 				return true; // end the task
 			}
@@ -444,12 +450,9 @@ void ResolveMovementBlockTask::OnFinish(idAI* owner)
 			}
 			_blockingEnt = NULL; // forget the other entity
 		}
-
-		// grayman #2345 - insurance; there are instances where EWaiting doesn't get turned off when this task is finished
-
-		owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 	}
 
+	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
 	owner->PopMove();
 }
 

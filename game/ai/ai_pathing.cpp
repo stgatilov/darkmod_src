@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/BinaryFrobMover.h"
 #include "../../DarkMod/FrobDoor.h"
 #include "../../DarkMod/TimerManager.h"
+#include "../../DarkMod/AI/Memory.h"
 
 /*
 ===============================================================================
@@ -259,7 +260,7 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 GetFirstBlockingObstacle
 ============
 */
-bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum ) {
+bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum, int &blockingDoorNum ) { // grayman #2345
 	int i, edgeNums[2];
 	float dist, scale1, scale2;
 	idVec2 bounds[2];
@@ -272,6 +273,7 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 
 	// test for obstacles blocking the path
 	blockingScale = idMath::INFINITY;
+	float blockingScaleDoor = idMath::INFINITY; // grayman #2345
 	dist = delta.Length();
 	for ( i = 0; i < numObstacles; i++ ) {
 		if ( i == skipObstacle ) {
@@ -286,6 +288,18 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 				blockingScale = scale1;
 				blockingObstacle = i;
 				blockingEdgeNum = edgeNums[0];
+				
+				// grayman #2345 - Return the index number of the closest blocking door,
+				// regardless of whether the door is the closest blocking obstacle.
+
+				if ((obstacles[i].entity != NULL) && obstacles[i].entity->IsType(CFrobDoor::Type))
+				{
+					if (blockingScale < blockingScaleDoor)
+					{
+						blockingDoorNum = i;
+						blockingScaleDoor = blockingScale;
+					}
+				}
 			}
 		}
 	}
@@ -523,7 +537,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 				CFrobDoor *frobDoor = static_cast<CFrobDoor*>(p_binaryFrobMover);
 				int lastTimeSeen = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeSeen;
-				if ((lastTimeSeen > -1) && (gameLocal.time < lastTimeSeen + 3000))
+				if ((lastTimeSeen > -1) && (gameLocal.time < lastTimeSeen + 5000))
 				{
 					continue; // ignore this door
 				}
@@ -645,13 +659,14 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 	int blockingObstacle; // will hold the index to the first blocking obstacle
 	int blockingEdgeNum; // will hold the edge number of the winding which intersects the path
+	int blockingDoorNum = -1;	// grayman #2345 - will hold the index to the first blocking door
 	float blockingScale;
 	// if the current path doesn't intersect any dynamic obstacles the path should be through valid AAS space
 	int startObstacleNum = PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2());
 	if (startObstacleNum == -1 )
 	{
 		if (!GetFirstBlockingObstacle(obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
-									  blockingScale, blockingObstacle, blockingEdgeNum))
+									  blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
 		{
 			// No first obstacle found
 			return 0;
@@ -659,9 +674,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 		// grayman #2345 - rather than test to see if the first blocking obstacle
 		// is a door, test to see if ANY is a door. If so, mark the first one.
-#if 0
-		// old code
 
+#if 0
+	// old code
 		if (blockingObstacle != -1 && obstacles[blockingObstacle].entity != NULL && 
 			obstacles[blockingObstacle].entity->IsType(CFrobDoor::Type))
 		{
@@ -673,19 +688,16 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	{
 		pathInfo.doorObstacle = static_cast<CFrobDoor*>(obstacles[startObstacleNum].entity);
 	}
+	// end old code
 #else
-		// new code
-
-		for (int i = 0 ; i < numObstacles ; i++)
+	// new code
+		if (blockingDoorNum >= 0)
 		{
-			idEntity *e = obstacles[i].entity;
-			if ((e != NULL) && e->IsType(CFrobDoor::Type))
-			{
-				pathInfo.doorObstacle = static_cast<CFrobDoor*>(e);
-				break;
-			}
+			idEntity* door = obstacles[blockingDoorNum].entity; // we already know this is a valid door
+			pathInfo.doorObstacle = static_cast<CFrobDoor*>(door);
 		}
 	}
+	// end new code
 #endif
 
 	// create obstacles for AAS walls
@@ -928,7 +940,10 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 		}
 
 		// if an obstacle is blocking the path
-		if ( GetFirstBlockingObstacle( obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum ) ) {
+
+		int blockingDoorNum; // grayman #2345 - will hold the index to the first blocking door
+		if ( GetFirstBlockingObstacle( obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
+		{
 
 			if ( path.firstObstacle == NULL ) {
 				path.firstObstacle = obstacles[blockingObstacle].entity;

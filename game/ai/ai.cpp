@@ -509,6 +509,7 @@ idAI::idAI()
 	focusAlignTime		= 0;
 	m_canExtricate		= true; // grayman #2345
 	m_tactileEntity		= NULL; // grayman #2345
+	m_canResolveBlock	= true; // grayman #2345
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -759,6 +760,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( focusAlignTime );
 	savefile->WriteBool(m_canExtricate);		// grayman #2345
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
+	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1108,6 +1110,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( focusAlignTime );
 	savefile->ReadBool(m_canExtricate); // grayman #2345
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
+	savefile->ReadBool(m_canResolveBlock); // grayman #2345
 
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
@@ -2197,7 +2200,7 @@ void idAI::Think( void )
 		RunPhysics();
 	}
 
-	if (m_bAFPushMoveables && !movementSubsystem->IsWaiting()) // grayman #2345 - if you're waiting for someone to go by, you're non-solid, so you can't push anything
+	if (m_bAFPushMoveables && !movementSubsystem->IsWaitingNonSolid()) // grayman #2345 - if you're waiting for someone to go by, you're non-solid, so you can't push anything
 	{
 		START_SCOPED_TIMING(aiPushWithAFTimer, scopedPushWithAFTimer)
 		PushWithAF();
@@ -3610,8 +3613,10 @@ idAI::MoveToPosition
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
-	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
-	move.accuracy = accuracy; // grayman #2345 - 'accuracy' must be set before we call ReachedPos()
+	if (movementSubsystem->IsPaused()) // grayman #2345
+	{
+		movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
+	}
 
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
@@ -7515,7 +7520,7 @@ void idAI::PushWithAF( void ) {
 				// grayman #2345 - when an AI is non-solid, waiting for another AI
 				// to pass by, there's no need to register a tactile alert from another AI
 
-				if (!movementSubsystem->IsWaiting())
+				if (!movementSubsystem->IsWaitingNonSolid())
 				{
 					if( ent->IsType(idPlayer::Type) )
 					{
@@ -7525,7 +7530,7 @@ void idAI::PushWithAF( void ) {
 					}
 					else if( ent->IsType(idAI::Type) && (ent->health > 0) && !static_cast<idAI *>(ent)->AI_KNOCKEDOUT )
 					{
-						if (!static_cast<idAI *>(ent)->movementSubsystem->IsWaiting()) // grayman #2345 - don't call HadTactile() if the bumped AI is waiting
+						if (!static_cast<idAI *>(ent)->movementSubsystem->IsWaitingNonSolid()) // grayman #2345 - don't call HadTactile() if the bumped AI is waiting
 						{
 							HadTactile( static_cast<idActor *>(ent) );
 						}
@@ -9305,7 +9310,7 @@ void idAI::CheckTactile()
 
 	bool bumped = false;
 	idEntity* blockingEnt = NULL;
-	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaiting()) // no bump if I'm waiting
+	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaitingNonSolid()) // no bump if I'm waiting
 	{
 		blockingEnt = physicsObj.GetSlideMoveEntity();
 		if (blockingEnt) // grayman #2345 - note what we bumped into
