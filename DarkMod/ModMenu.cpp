@@ -31,6 +31,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include <unistd.h>
 #endif
 
+#ifdef MACOS_X
+#include <mach-o/dyld.h>
+#endif
+
 CModMenu::CModMenu() :
 	_modTop(0)
 {}
@@ -414,12 +418,24 @@ void CModMenu::RestartGame()
 	cmdLine.StripLeading("\t");
 
 	enginePath = cmdLine.c_str();
-#else
+#elif defined(__linux__)
 	// TDM launcher needs to know where the engine is located, pass this as first argument
 	char exepath[PATH_MAX] = {0};
 	readlink("/proc/self/exe", exepath, sizeof(exepath));
 
 	enginePath = fs::path(exepath);
+#elif defined (MACOS_X)
+	char exepath[4096] = {0};
+	uint32_t size = sizeof(exepath);
+	
+	if (_NSGetExecutablePath(exepath, &size) != 0)
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Cannot read executable path, buffer too small\r");
+	}
+	
+	enginePath = fs::path(exepath);
+#else
+#error Unsupported Platform
 #endif
 
 	// command line to spawn tdmlauncher
