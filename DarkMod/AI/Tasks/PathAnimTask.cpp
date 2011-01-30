@@ -57,6 +57,9 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	// Play the anim on the TORSO channel (will override the LEGS channel)
 	owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
 	owner->Event_PlayAnim(ANIMCHANNEL_LEGS, animName);
+
+	// greebo: Be sure to sync the anim channels, otherwise we get duplicate frame commands
+	owner->Event_SyncAnimChannels(ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, 0);
 	
 	// Set the name of the state script
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn);

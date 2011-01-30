@@ -1329,18 +1329,18 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					// "atdm:foo_bar book"
 					// "atdm:foo_bar book hip_left"
 
-					idStr EntClass = command.string->Left(0);
+					idStr EntClass = "";
 					// use these as defaults
 					idStr AttName = "";
 					idStr AttPos = "";
 
-					int spcind = command.string->Find(" ");
+					int spcind = command.string->Find(' ');
 					if (spcind > 0)
 					{
 						// format of AttName is afterwards either "book" or "book hip_left"
 						EntClass = command.string->Left( spcind );
 						AttName = command.string->Mid( spcind+1, command.string->Length() );
-						spcind = AttName.Find(" ");
+						spcind = AttName.Find(' ');
 						if (spcind > 0)
 						{
 							AttPos = AttName.Mid( spcind+1, AttName.Length() );
@@ -1352,20 +1352,22 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					idEntity* attEntity = ent->GetAttachment( AttPos.c_str() );
 					if (attEntity)
 					{
-						gameLocal.Warning ( "Already got an attachment at %s, skipping frame command.", AttPos.c_str() );
+						gameLocal.Warning("Already got an attachment at %s, skipping frame command.", AttPos.c_str());
 					}
 					else
 					{
 						// spawn the entity
 						idEntity* spawnedEntity;
 						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
+
 						if (!entityDef)
 						{
-							gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
+							gameLocal.Error("Cannot spawn %s - no such entityDef", EntClass.c_str() );
 						}
 						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-						gameLocal.Printf ( "Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
-						ent->Attach( spawnedEntity, AttPos, AttName );
+						gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
+
+						ent->Attach(spawnedEntity, AttPos, AttName);
 					}
 					break;
 				}
