@@ -1798,12 +1798,7 @@ void Seed::PrepareEntities( void )
 
 	gameLocal.Printf( "SEED %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
 
-// DEBUG:	
-//	idVec4 markerColor (0.7, 0.2, 0.2, 1.0);
-//	idBounds b = idBounds( - size / 2, size / 2 );	
-//	gameRenderWorld->DebugBounds( markerColor, b, m_origin, 5000);
-
-	box = idBox( m_origin, size, axis );
+	box = idBox( m_origin, size / 2, axis );
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
