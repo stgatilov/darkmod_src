@@ -19,7 +19,7 @@
 /*
 ===============================================================================
 
-  Seed - Level Of Detail Entity Manager
+  System for Environmental Entity Distribution (SEED, formerly known as LODE)
   
   Automatically creates/culls entities based on distance from player.
 
@@ -85,7 +85,10 @@ struct seed_class_t {
 											//!< entity with a megamodel (a combined model from many entities),
 											//!< the model is still stored in hModel.
 											//!< These classes will be skipped when recreating the entities.
+
 	bool					watch;			//!< if true, this class is just used to watch over a certain entity
+	idStr					combine_as;		//!< If watch is true, this is the value from "seed_combine_as"
+
 	idPhysics_StaticMulti*	physicsObj;		//!< if pseudo: If you turn multiple entities into one, this keeps their clipmodels.
 	idStr					materialName;	//!< Override material for debug_colors.
 	idList< model_ofs_t >	offsets;		//!< if pseudo: List of enitity offsets to construct a combined model
@@ -180,7 +183,9 @@ enum seed_entity_flags {
 	SEED_ENTITY_EXISTS		= 0x0002,
 	SEED_ENTITY_SPAWNED		= 0x0004,
 	SEED_ENTITY_PSEUDO		= 0x0008,
-	SEED_ENTITY_WAITING		= 0x0010
+	SEED_ENTITY_WAITING		= 0x0010,
+	SEED_ENTITY_WATCHED		= 0x0020		// Set on entities that are merely watched, so we do not cull
+											// them unnec., f.i. when the menu setting changes
 };
 
 // Defines one entity to be spawned/culled
@@ -236,7 +241,13 @@ public:
 	void				Event_Enable( void );
 
 	/*
-	* Cull all entities. Only useful after Deactivate().
+	* Cull all entities, including the watched-over ones (this is false in
+	* case the menu changes, because then we do not want to cull+respawn them).
+	*/
+	void				CullAll( bool includingWatched = false );
+
+	/*
+	* Cull all entities (including watched ones). Only useful after Deactivate().
 	*/
 	void				Event_CullAll( void );
 
@@ -265,9 +276,14 @@ private:
 	void				Prepare( void );
 
 	/**
-	* Create the entity positions.
+	* Create the entity (pseudo-randomly choosen) positions.
 	*/
 	void				PrepareEntities( void );
+
+	/**
+	* Create the entity positions based on entities we watch.
+	*/
+	void				CreateWatchedList( void );
 
 	/**
 	* Compute the LOD distance based on delta vector and entity LOD data (like xydistcheckonly)
@@ -358,14 +374,14 @@ private:
 	bool				m_bDistDependent;
 
 	/**
-	* Current seed value for the random generator, which generates the sequence used to place
-	* entities. Same seed value gives same sequence, thus same placing every time.
+	* Current seed value for the random generator, which generates the sequence used to
+	* place entities. Same seed value gives same sequence, thus same placing every time.
 	**/
 	int					m_iSeed;
 
 	/**
 	* Current seed value for the second random generator, which generates the sequence used
-	* initialize the first generator.
+	* to initialize the first generator.
 	**/
 	int					m_iSeed_2;
 
@@ -416,6 +432,19 @@ private:
 	* Info about each entitiy that we spawn or cull.
 	**/
 	idList<seed_entity_t>		m_Entities;
+
+	/**
+	* Info about each entitiy that we watch (e.g. that already existed and
+	* that we just cloned).
+	**/
+	idList<seed_entity_t>		m_Watched;
+
+	/**
+	* List of entities that we need to remove along with our targets, this
+	* are entity numbers for things that we watch over. Gets filled by
+	* CreateWatchList() and emptied when we remove our targets.
+	**/
+	idList< int >				m_Remove;
 
 	/**
 	* Names of all different skins.

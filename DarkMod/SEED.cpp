@@ -16,10 +16,6 @@
   Manage other entities based on LOD (e.g. distance), as well as create entities
   based on rules in semi-random places/rotations/sizes and colors.
 
-Important things to do:
-
-TODO: #2571: Restore() crashes if you combine func_statics (works fine with combine = 0)
-
 Nice-to-have:
 
 TODO: add console command to save all SEED entities as prefab?
@@ -27,10 +23,6 @@ TODO: take over LOD changes from entity
 TODO: add a "pseudoclass" bit so into the entity flags field, so we can use much
 	  smaller structs for pseudo classes (we might have thousands
 	  of pseudoclass structs due to each having a different hmodel)
-TODO: add "watch_models" (or "combine_models"?) so the mapper can place models and
-	  then use the modelgenerator to combine them into one big rendermodel. The current
-	  way of targeting and using "watch_brethren" does get all "func_static" as it is
-	  classname based, not model name based.
 
 Optimizations:
 
@@ -124,6 +116,8 @@ Seed::Seed( void ) {
 
 	m_bPrepared = false;
 	m_Entities.Clear();
+	m_Watched.Clear();
+	m_Remove.Clear();
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
 
@@ -190,6 +184,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( m_iNumStaticMulties );
 
+	// save the entity list
 	savefile->WriteInt( m_Entities.Num() );
 	for( int i = 0; i < m_Entities.Num(); i++ )
 	{
@@ -204,6 +199,28 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Entities[i].classIdx );
 	}
 
+	// save the watch list
+	savefile->WriteInt( m_Watched.Num() );
+	for( int i = 0; i < m_Watched.Num(); i++ )
+	{
+		savefile->WriteInt( m_Watched[i].skinIdx );
+		savefile->WriteVec3( m_Watched[i].origin );
+		savefile->WriteVec3( m_Watched[i].scale );
+		savefile->WriteAngles( m_Watched[i].angles );
+		// a dword is "unsigned int"
+		savefile->WriteInt( m_Watched[i].color );
+		savefile->WriteInt( m_Watched[i].flags );
+		savefile->WriteInt( m_Watched[i].entity );
+		savefile->WriteInt( m_Watched[i].classIdx );
+	}
+
+	// save the remove list
+	savefile->WriteInt( m_Remove.Num() );
+	for( int i = 0; i < m_Remove.Num(); i++ )
+	{
+		savefile->WriteInt( m_Remove[i] );
+	}
+
 	savefile->WriteInt( m_Classes.Num() );
 	for( int i = 0; i < m_Classes.Num(); i++ )
 	{
@@ -211,6 +228,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( m_Classes[i].modelname );
 		savefile->WriteBool( m_Classes[i].pseudo );
 		savefile->WriteBool( m_Classes[i].watch );
+		savefile->WriteString( m_Classes[i].combine_as );
 
 		savefile->WriteInt( m_Classes[i].maxEntities );
 		savefile->WriteInt( m_Classes[i].numEntities );
@@ -417,6 +435,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	// do the SetLODData() once in Think()
 	m_bRestoreLOD = true;
 
+	// Restore the entity list
     savefile->ReadInt( num );
 	m_Entities.Clear();
 	m_Entities.SetNum( num );
@@ -435,6 +454,33 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Entities[i].classIdx );
 	}
 
+	// Restore the watch list
+    savefile->ReadInt( num );
+	m_Watched.Clear();
+	m_Watched.SetNum( num );
+	for( int i = 0; i < num; i++ )
+	{
+		savefile->ReadInt( m_Watched[i].skinIdx );
+		savefile->ReadVec3( m_Watched[i].origin );
+		savefile->ReadVec3( m_Watched[i].scale );
+		savefile->ReadAngles( m_Watched[i].angles );
+		// a dword is "unsigned int"
+		savefile->ReadInt( clr );
+		m_Entities[i].color = (dword)clr;
+		savefile->ReadInt( m_Watched[i].flags );
+		savefile->ReadInt( m_Watched[i].entity );
+		savefile->ReadInt( m_Watched[i].classIdx );
+	}
+
+	// Restore the Remove list
+    savefile->ReadInt( num );
+	m_Remove.Clear();
+	m_Remove.SetNum( num );
+	for( int i = 0; i < num; i++ )
+	{
+		savefile->ReadInt( m_Remove[i] );
+	}
+
     savefile->ReadInt( numClasses );
 	// clear m_Classes and free any models in it, too
 	ClearClasses();
@@ -445,6 +491,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( m_Classes[i].modelname );
 		savefile->ReadBool( m_Classes[i].pseudo );
 		savefile->ReadBool( m_Classes[i].watch );
+		savefile->ReadString( m_Classes[i].combine_as );
 
 		savefile->ReadInt( m_Classes[i].maxEntities );
 		savefile->ReadInt( m_Classes[i].numEntities );
@@ -806,6 +853,9 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.pseudo = false;		// this is a true entity class
 	SeedClass.watch = watch;		// watch over this entity?
+
+	SeedClass.combine_as = ent->spawnArgs.GetString("seed_combine_as",""); // find others with the same tag?
+
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.modelname = ent->spawnArgs.GetString("model","");
 
@@ -1527,11 +1577,13 @@ Create the places for all entities that we control so we can later spawn them.
 */
 void Seed::Prepare( void )
 {	
-	seed_inhibitor_t SeedInhibitor;
+	seed_inhibitor_t	SeedInhibitor;
+	seed_entity_t		SeedEntity;
 
 	// Gather all targets and make a note of them
 	m_Classes.Clear();
 	m_Inhibitors.Clear();
+	m_Watched.Clear();
 
 	for( int i = 0; i < targets.Num(); i++ )
 	{
@@ -1605,23 +1657,44 @@ void Seed::Prepare( void )
 			// If this entity wants us to watch over his brethren, add them to our list:
 			if ( ent->spawnArgs.GetBool( "seed_watch_brethren", "0" ) )
 			{
-				gameLocal.Printf( "SEED %s: %s (%s) wants us to take care of his brethren.\n",
-						GetName(), ent->GetName(), ent->GetEntityDefName() );
-
-				// add a pseudo class and ignore the size returned
+				gameLocal.Printf( "SEED %s: %s (class %s, model %s) wants us to take care of his brethren.\n",
+						GetName(), ent->GetName(), ent->GetEntityDefName(), ent->spawnArgs.GetString("model","") );
 				AddClassFromEntity( ent, true );
 
-				// no more to do for this target
-				continue;
-			}
+				idPhysics *p = ent->GetPhysics();
 
-			// add a class based on this entity
-			AddClassFromEntity( ent );
+				// add this entity to our list, we will later see with what others we need to watch, too
+				SeedEntity.origin = p->GetOrigin();
+				SeedEntity.angles = p->GetAxis().ToAngles();
+				// TODO: Support an individual "scale" spawnarg
+				SeedEntity.scale = idVec3(1.0f,1.0f,1.0f);
+
+				// support "random_skin" by looking at the actual set skin:
+				const idDeclSkin *skin = ent->GetSkin();
+				idStr skinName = "";
+				if (skin)
+				{
+					skinName = skin->GetName();
+				}
+				SeedEntity.skinIdx = AddSkin( &skinName );
+				// put HIDDEN as it will be removed as target, thus does not exist afterwards
+				SeedEntity.flags = SEED_ENTITY_HIDDEN + SEED_ENTITY_WATCHED;
+				SeedEntity.entity = 0;
+				SeedEntity.classIdx = m_Classes.Num() - 1;
+				SeedEntity.color = 0;
+				m_Watched.Append( SeedEntity );
+
+				// do not put on the m_Remove() list, as it is a target and will be removed automatically
+			}
+			else
+			{
+				// add a class based on this entity
+				AddClassFromEntity( ent );
+			}
 		}
 	}
 
 	// the same, but this time for the "spawn_class/spawn_count/spawn_skin" spawnargs:
-	
 	idVec3 origin = GetPhysics()->GetOrigin();
 
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "spawn_class", NULL );
@@ -1664,6 +1737,8 @@ void Seed::Prepare( void )
 			// TODO: if the entity contains a "random_skin", too, use the info from there, then remove it
 			args.Set( "random_skin", "" );
 
+			gameLocal.Warning("SEED %s: Spawning a %s.\n", GetName(), entityClass.c_str() );
+
 			gameLocal.SpawnEntityDef( args, &ent );
 			if (ent)
 			{
@@ -1693,10 +1768,14 @@ void Seed::Prepare( void )
 		// set m_iNumEntities from spawnarg, or density, taking GUI setting into account
 		ComputeEntityCount();
 
-		if (m_iNumEntities <= 0)
+		if (m_iNumEntities < 0)
 		{
-			gameLocal.Warning( "SEED %s: entity count is invalid: %i!\n", GetName(), m_iNumEntities );
+			gameLocal.Warning( "SEED %s: Entity count %i is invalid!\n", GetName(), m_iNumEntities );
 			m_iNumEntities = 0;
+		}
+		if (m_iNumEntities == 0 && m_Watched.Num() == 0)
+		{
+			gameLocal.Warning( "SEED %s: Feeling lonely with zero entities to care for.\n", GetName() );
 		}
 	}
 
@@ -1718,6 +1797,11 @@ void Seed::Prepare( void )
 	// to restart the same sequence, f.i. when the user changes level of detail in GUI
 	m_iOrgSeed = m_iSeed_2;
 
+	m_Watched.Clear();
+
+	// Do this once at spawn time
+	CreateWatchedList();
+
 	PrepareEntities();
 
 	// remove all our targets from the game
@@ -1730,6 +1814,19 @@ void Seed::Prepare( void )
 		}
 	}
 	targets.Clear();
+
+	// also remove all entities on the remove list
+	int num = m_Remove.Num();
+	for( int i = 0; i < num; i++ )
+	{
+		idEntity *ent = gameLocal.entities[ m_Remove[ i ] ];
+		if (ent)
+		{
+			ent->PostEventMS( &EV_SafeRemove, 0 );
+		}
+	}
+	// no longer needed
+	m_Remove.Clear();
 
 	// Remove ourself after spawn? But not if we have registered entities, these
 	// need our service upon Restore().
@@ -1776,6 +1873,7 @@ void Seed::Prepare( void )
 	}
 }
 
+// Creates the list of pseudo-randomly spawned entities
 void Seed::PrepareEntities( void )
 {
 	seed_entity_t			SeedEntity;			// temp. storage
@@ -2535,7 +2633,7 @@ void Seed::PrepareEntities( void )
 			SeedEntity.skinIdx = m_Classes[i].skins[ RandomFloat() * m_Classes[i].skins.Num() ];
 			//gameLocal.Printf( "SEED %s: Using skin %i.\n", GetName(), SeedEntity.skinIdx );
 			// will be automatically spawned when we are in range
-			SeedEntity.flags = SEED_ENTITY_HIDDEN; // but not SEED_ENTITY_EXISTS nor SEED_ENTITY_FIRSTSPAWN
+			SeedEntity.flags = SEED_ENTITY_HIDDEN; // but not SEED_ENTITY_EXISTS
 
 			// TODO: add waiting flag and enter in waiting_queue if wanted
 			SeedEntity.entity = 0;
@@ -2571,6 +2669,33 @@ void Seed::PrepareEntities( void )
 		}
 	}
 
+	// append the entities from the watch list
+	m_Entities.Append( m_Watched );
+
+	int end = (int) time (NULL);
+	gameLocal.Printf("SEED %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
+
+	// combine the spawned entities into megamodels if possible
+	CombineEntities();
+}
+
+// Creates a list of entities that we need to watch over
+void Seed::CreateWatchedList(void) {
+	seed_entity_t			SeedEntity;			// temp. storage
+	int numWatchClasses = 0;
+
+	int start = (int) time (NULL);
+
+	idVec3 size = renderEntity.bounds.GetSize();
+	// rotating the func-static in DR rotates the brush, but does not change the axis or
+	// add a spawnarg, so this will not work properly unless the mapper sets an "angle" spawnarg:
+	idMat3 axis = renderEntity.axis;
+
+	idBox box = idBox( m_origin, size / 2, axis );
+
+	gameLocal.Printf("SEED %s: Looking for watch-targets.\n", GetName());
+	
+	m_Remove.Clear();
 	// if we have requests for watch brethren, do add them now
 	for (int i = 0; i < m_Classes.Num(); i++)
 	{
@@ -2579,6 +2704,10 @@ void Seed::PrepareEntities( void )
 		{
 			continue;
 		}
+
+		gameLocal.Printf("SEED %s: Looking for brethren of %s (combine as '%s'), model %s.\n", 
+				GetName(), m_Classes[i].classname.c_str(), m_Classes[i].combine_as.c_str(), m_Classes[i].modelname.c_str() );
+
 		// go through all entities
 		for (int j = 0; j < gameLocal.num_entities; j++)
 		{
@@ -2588,35 +2717,90 @@ void Seed::PrepareEntities( void )
 			{
 				continue;
 			}
-			idVec3 origin = ent->GetPhysics()->GetOrigin();
+			idVec3 entOrigin = ent->GetPhysics()->GetOrigin();
 
-			// the class we should watch?
-			// also compare the "model" spawnarg, otherwise multiple func_statics won't work
-			if (( ent->GetEntityDefName() == m_Classes[i].classname) &&
-				// and is this entity in our box?
-				(box.ContainsPoint( origin )) )
+			// is this entity in our box?
+			if ( box.ContainsPoint( entOrigin ) )
 			{
-				gameLocal.Printf( "SEED %s: Watching over brethren %s at %02f %0.2f %0.2f.\n", GetName(), ent->GetName(), origin.x, origin.y, origin.z );
-				// add this entity to our list
-				SeedEntity.origin = origin;
+				idStr entClassname = ent->GetEntityDefName();
+		
+			 	idStr classnameFromClass = m_Classes[i].classname;
+				// if the class treats this entity as FUNC_DUMMY, use FUNC_STATIC for comparisation
+				if (classnameFromClass == FUNC_DUMMY)
+				{
+					classnameFromClass = FUNC_STATIC;
+				}	
+
+				if (classnameFromClass != entClassname)
+				{
+//					gameLocal.Printf( "SEED %s:  Wrong class %s.\n", GetName(), entClassname.c_str() );
+					continue;
+				}
+
+				// Since we only compare the classname above, all func_statics will end up
+				// here. We later decide in CombineEntities() if they should be combined + removed,
+				// or just being watched.
+
+				if (entClassname == FUNC_STATIC)
+				{
+					idStr entModel = ent->spawnArgs.GetString("model");
+
+					// is this a map-geometry based func_static?
+					bool noModel = (ent->GetName() == entModel) ? true : false;
+
+					if (noModel)
+					{
+						gameLocal.Printf( "SEED %s: TODO: watch over func_statics based on map geometry.\n", GetName() );
+						// skip for now
+						continue;
+					}
+					else
+					{
+						// func_static, but different model?
+						if (entModel != m_Classes[i].modelname)
+						{
+//							gameLocal.Printf( "SEED %s: func_static with different model %s, skipping.\n", GetName(), entModel.c_str() );
+							continue;
+						}
+						// we take all skins, the combine step will later sort them out
+					}
+					gameLocal.Printf( "SEED %s: Watching over %s at %s (model? %s).\n", 
+						GetName(), ent->GetName(), entOrigin.ToString(), noModel ? "yes" : "no");
+				}
+
+				else {
+					gameLocal.Printf( "SEED %s: Watching over %s at %s.\n", 
+						GetName(), ent->GetName(), entOrigin.ToString() );
+				}
+
+				// add this entity to our list, we will later see with what others we can combine it
+				SeedEntity.origin = entOrigin;
 				SeedEntity.angles = ent->GetPhysics()->GetAxis().ToAngles();
+				// TODO: support an individual "scale" keyword
+				SeedEntity.scale = idVec3(1.0f,1.0f,1.0f);
 				// support "random_skin" by looking at the actual set skin:
-				idStr skin = ent->GetSkin()->GetName();
-				SeedEntity.skinIdx = AddSkin( &skin );
-				// already exists, already visible and spawned
-				SeedEntity.flags = SEED_ENTITY_EXISTS + SEED_ENTITY_SPAWNED;
+				const idDeclSkin *skin = ent->GetSkin();
+				idStr skinName = "";
+				if (skin)
+				{
+					skinName = skin->GetName();
+				}
+				SeedEntity.skinIdx = AddSkin( &skinName );
+				// only set HIDDEN, as it will be removed with m_Remove
+				SeedEntity.flags = SEED_ENTITY_HIDDEN + SEED_ENTITY_WATCHED;
 				SeedEntity.entity = j;
 				SeedEntity.classIdx = i;
-				m_Entities.Append( SeedEntity );
+				SeedEntity.color = 0; // PackColor( idVec3(0,0,0) );
+				m_Watched.Append( SeedEntity );
+
+				// we also need to remove the entity later
+				m_Remove.Append( j );
 			}
 		}
 	}
 
 	int end = (int) time (NULL);
-	gameLocal.Printf("SEED %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
-
-	// combine the spawned entities into megamodels if possible
-	CombineEntities();
+	gameLocal.Printf("SEED %s: Creating %i watch list entities took %i seconds.\n", GetName(), m_Watched.Num(), end - start );
 }
 
 // sort a list of offsets by their distance
@@ -3001,6 +3185,20 @@ void Seed::CombineEntities( void )
 			for (unsigned int d = 0; d < n; d++)
 			{
 				int todo = sortedOffsets[d].entity;
+
+				seed_class_t* entityClass = &m_Classes[ m_Entities[todo].classIdx ];
+
+				// is this an entity we watch over, that exists? So remove it:
+				if (entityClass->watch && ( m_Entities[todo].flags == (SEED_ENTITY_EXISTS + SEED_ENTITY_SPAWNED) ))
+				{
+					idEntity *entRemove = gameLocal.entities[ m_Entities[todo].entity ];
+					if (entRemove)
+					{
+						gameLocal.Printf("SEED %s: Removing entity (watched over) %i.\n", GetName(), todo );
+						entRemove->PostEventMS( &EV_SafeRemove, 0 );
+					}
+				}
+
 				// mark as combined
 				m_Entities[todo].classIdx = -1;
 
@@ -3272,8 +3470,8 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 				}
 			}
 
-			// preserve PSEUDO flag
-			ent->flags = SEED_ENTITY_SPAWNED + SEED_ENTITY_EXISTS + (ent->flags & SEED_ENTITY_PSEUDO);
+			// preserve PSEUDO and WATCHED flag
+			ent->flags = SEED_ENTITY_SPAWNED + SEED_ENTITY_EXISTS + (ent->flags & SEED_ENTITY_PSEUDO) + (ent->flags & SEED_ENTITY_WATCHED);
 
 			return true;
 		}
@@ -3384,7 +3582,9 @@ void Seed::Think( void )
 		{
 			// TODO: We could keep the first N entities and only add the new ones if the quality
 			// raises, and cull the last M entities if it sinks for more speed:
-			Event_CullAll();
+
+			// Cull all, except watched over ones
+			CullAll( false );
 
 			// create same sequence again
 			m_iSeed_2 = m_iOrgSeed;
@@ -3392,8 +3592,8 @@ void Seed::Think( void )
 			gameLocal.Printf ("SEED %s: Have now %i entities.\n", GetName(), m_iNumEntities );
 
 			PrepareEntities();
-			// save the new value
 		}
+		// save the new value
 		m_fLODBias = cv_lod_bias.GetFloat();
 	}
 
@@ -3475,9 +3675,13 @@ void Seed::Think( void )
 			// multiply with the user LOD bias setting, and cache that result:
 			float deltaSq = delta.LengthSqr() / lodBias;
 
+//			gameLocal.Printf( "SEED %s: In LOD check: Flags for entity %i: 0x%08x, spawndist %i, deltaSq %i.\n", GetName(), i, ent->flags, (int)lclass->spawnDist, (int)deltaSq );
+			
 			// normal distance checks now
 			if ( (ent->flags & SEED_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
+
+
 				// Spawn and manage LOD, except for CStaticMulti entities with a megamodel,
 				// these need to do their own LOD thinking:
 				if (SpawnEntity( i, lclass->pseudo ? false : true ))
@@ -3563,18 +3767,36 @@ void Seed::Event_Enable( void ) {
 
 /*
 ================
+Seed::CullAll
+================
+*/
+void Seed::CullAll( const bool watched ) {
+
+	int survivors = 0;
+	for (int i = 0; i < m_Entities.Num(); i++)
+	{
+		if (watched || ((m_Entities[i].flags & SEED_ENTITY_WATCHED) == 0))
+		{
+			CullEntity( i );
+		}
+		else
+		{
+			survivors ++;
+		}
+	}
+	// this should be unnec. but just to be safe:
+	m_iNumStaticMulties = 0;
+	m_iNumExisting = survivors;
+	// TODO: this might not be right
+	m_iNumVisible = 0;
+}
+
+/*
+================
 Seed::Event_CullAll
 ================
 */
 void Seed::Event_CullAll( void ) {
-
-	for (int i = 0; i < m_Entities.Num(); i++)
-	{
-		CullEntity( i );
-	}
-	// this should be unnec. but just to be safe:
-	m_iNumStaticMulties = 0;
-	m_iNumExisting = 0;
-	m_iNumVisible = 0;
+	CullAll(true);
 }
 
