@@ -59,7 +59,8 @@ public:
 	idBox			Translate( const idVec3 &translation ) const;	// return translated box
 	idBox &			TranslateSelf( const idVec3 &translation );		// translate this box
 	idBox			Rotate( const idMat3 &rotation ) const;			// return rotated box
-	idBox &			RotateSelf( const idMat3 &rotation );			// rotate this box
+	idBox &			RotateSelf( const idMat3 &rotation );			// rotate this box around the origin
+	idBox &			RotateSelfAroundCenter( const idMat3 &rotation );	// rotate this box around the center of the box
 
 	float			PlaneDistance( const idPlane &plane ) const;
 	int				PlaneSide( const idPlane &plane, const float epsilon = ON_EPSILON ) const;
@@ -248,6 +249,11 @@ ID_INLINE idBox idBox::Rotate( const idMat3 &rotation ) const {
 
 ID_INLINE idBox &idBox::RotateSelf( const idMat3 &rotation ) {
 	center *= rotation;
+	axis *= rotation;
+	return *this;
+}
+
+ID_INLINE idBox &idBox::RotateSelfAroundCenter( const idMat3 &rotation ) {
 	axis *= rotation;
 	return *this;
 }
