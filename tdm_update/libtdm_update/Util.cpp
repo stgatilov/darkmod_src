@@ -11,6 +11,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include "TraceLog.h"
 
 namespace fs = boost::filesystem;
 
@@ -223,20 +224,71 @@ bool Util::DarkRadiantIsRunning()
 
 #elif defined(MACOS_X)
 // Mac OS X
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/sysctl.h>
 
 namespace tdm
 {
 
+// greebo: Checks for a named process, modeled loosely after
+// http://developer.apple.com/library/mac/#qa/qa2001/qa1123.html
+bool FindProcessByName(const char* processName)
+{
+    int name[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+    size_t length = 0;
+	
+	// Call sysctl with a NULL buffer.
+	int err = sysctl(name, 4, NULL, &length, NULL, 0);
+	
+	if (err == -1)
+	{
+		TraceLog::WriteLine(LOG_ERROR, "Failed to receive buffer size for process list.");
+		return false;
+	}
+	
+    kinfo_proc* procList = static_cast<kinfo_proc*>(malloc(length));
+	
+	if (procList == NULL)
+	{
+		TraceLog::WriteLine(LOG_ERROR, "Out of Memory trying to allocate process buffer");
+		return false;
+	}
+	
+	// Load process info
+	sysctl(name, 4, procList, &length, NULL, 0);
+	
+	size_t procCount = length / sizeof(kinfo_proc);
+	bool result = false;
+	
+	for (size_t i = 0; i < procCount; ++i)
+	{
+		//TraceLog::WriteLine(LOG_STANDARD, procList[i].kp_proc.p_comm);
+		
+		if (strcmp(procList[i].kp_proc.p_comm, processName) == 0)
+		{
+			result = true;
+			break;
+		}
+	}
+	
+	free(procList);
+	
+	return result;
+}
+
 bool Util::D3IsRunning()
 {
-	// Not implemented for Mac
-	return false;
+	return FindProcessByName("Doom 3");
 }
 
 bool Util::DarkRadiantIsRunning()
 {
-	// Not implemented for Mac
-	return false;
+	// DarkRadiant isn't existing in Mac so far
+	return FindProcessByName("DarkRadiant");
 }
 
 } // namespace
