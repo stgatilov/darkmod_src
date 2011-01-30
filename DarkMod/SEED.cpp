@@ -195,6 +195,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteInt( m_Entities[i].skinIdx );
 		savefile->WriteVec3( m_Entities[i].origin );
+		savefile->WriteVec3( m_Entities[i].scale );
 		savefile->WriteAngles( m_Entities[i].angles );
 		// a dword is "unsigned int"
 		savefile->WriteInt( m_Entities[i].color );
@@ -424,6 +425,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadInt( m_Entities[i].skinIdx );
 		savefile->ReadVec3( m_Entities[i].origin );
+		savefile->ReadVec3( m_Entities[i].scale );
 		savefile->ReadAngles( m_Entities[i].angles );
 		// a dword is "unsigned int"
 		savefile->ReadInt( clr );
