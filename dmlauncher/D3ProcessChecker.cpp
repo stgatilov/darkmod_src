@@ -76,7 +76,7 @@ bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::st
 	return false;
 }
 
-#else
+#elif defined(__linux__)
 // Linux implementation
 
 #include <iostream>
@@ -172,6 +172,73 @@ bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::st
 	
 	return processFound;
 }
+#elif defined(MACOS_X)
 
+// Mac OS X implementation
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/sysctl.h>
+
+namespace
+{
+
+// greebo: Checks for a named process, modeled loosely after
+// http://developer.apple.com/library/mac/#qa/qa2001/qa1123.html
+bool FindProcessByName(const char* processName)
+{
+	int name[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	size_t length = 0;
+	
+	// Call sysctl with a NULL buffer.
+	int err = sysctl(name, 4, NULL, &length, NULL, 0);
+	
+	if (err == -1)
+	{
+		TraceLog::WriteLine("Error: Failed to receive buffer size for process list.");
+		return false;
+	}
+	
+	kinfo_proc* procList = static_cast<kinfo_proc*>(malloc(length));
+	
+	if (procList == NULL)
+	{
+		TraceLog::WriteLine("Error: Out of Memory trying to allocate process buffer");
+		return false;
+	}
+	
+	// Load process info
+	sysctl(name, 4, procList, &length, NULL, 0);
+	
+	size_t procCount = length / sizeof(kinfo_proc);
+	bool result = false;
+	
+	for (size_t i = 0; i < procCount; ++i)
+	{
+		//TraceLog::WriteLine(procList[i].kp_proc.p_comm);
+		
+		if (strcmp(procList[i].kp_proc.p_comm, processName) == 0)
+		{
+			result = true;
+			break;
+		}
+	}
+	
+	free(procList);
+	
+	return result;
+}
+
+} // namespace
+
+bool D3ProcessChecker::D3IsRunning(const std::string& processName, const std::string& moduleName)
+{
+	return FindProcessByName(processName.c_str());
+}
+
+#else
+#error Unsupported Platform
 #endif
 

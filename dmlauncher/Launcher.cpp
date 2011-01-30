@@ -381,7 +381,7 @@ bool Launcher::Launch()
 	// Check for a D3 process (max. 10 seconds)
 	int timeout = 10000;
 	
-	// Don't pass a module name in Linux, this is not necessary
+	// Don't pass a module name in Linux/MacOSX, this is not necessary
 	while (D3ProcessChecker::D3IsRunning(ENGINE_EXECUTABLE, "") && timeout >= 0)
 	{
 		TraceLog::WriteLine("Doom 3 is still running, waiting one second...");
