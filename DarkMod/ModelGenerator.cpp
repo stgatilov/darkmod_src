@@ -37,9 +37,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 
-// uncomment to get the old, slower copy-vert code
-//#define M_COPY
-
 // uncomment to get detailed timing info
 //#define M_TIMINGS 1
 
@@ -229,6 +226,15 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 					v->xyz[0] *= scale->x;
 					v->xyz[1] *= scale->y;
 					v->xyz[2] *= scale->z;
+					v->normal[0] /= scale->x;
+					v->normal[1] /= scale->y;
+					v->normal[2] /= scale->z;
+					v->tangents[0][0] /= scale->x;
+					v->tangents[0][1] /= scale->y;
+					v->tangents[0][2] /= scale->z;
+					v->tangents[1][0] /= scale->x;
+					v->tangents[1][1] /= scale->y;
+					v->tangents[1][2] /= scale->z;
 				}
 			}
 			else
@@ -588,19 +594,15 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
 
 		// precompute these
-		idMat4 a = op.angles.ToMat4();
-		idMat4 at = op.angles.ToRotation().ToMat4();
-		if (at.InverseSelf())
-		{
-			at.TransposeSelf();
-		}
-		else
-		{
-			gameLocal.Warning("Could not inverse matrix based on angles %s", op.angles.ToString() );
-		}
+		idMat3 mRot = op.angles.ToMat3();						// for rotating normals
+		idMat4 vMat = idMat4( op.angles.ToMat3(), op.offset );	// for rotating+translating vertices
 		idVec3 scale = op.scale;
+		float needScale = false;
 
-		idMat4 vMat = idMat4( op.angles.ToRotation().ToMat3(), op.offset );
+		if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f)
+		{
+			needScale = true;
+		}
 
 		const idRenderModel* source = LODs->Ptr()[op.lod];
 
@@ -690,61 +692,101 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 			dword newColor = op.color; 
 
-			// copy the vertexes and modify them at the same time (scale, rotate, offset)
-			for (int j = 0; j < vmax; j++)
+			// TODO: put the "needScale" if out of the loop
+
+			if (needScale)
 			{
-				idDrawVert *v = &(newSurf->geometry->verts[nV]);
-
-				// copy data
-#ifdef M_COPY
-				newSurf->geometry->verts[nV] = surf->geometry->verts[j];
-				// scale
-				v->xyz[0] = v->xyz[0] * scale.x;
-				v->xyz[1] = v->xyz[1] * scale.y;
-				v->xyz[2] = v->xyz[2] * scale.z;
-				// rotate and translate
-				v->xyz *= vMat;
-				// rotate normal and tangents
-				v->normal *= at;
-				v->normal += op.offset;
-				v->normal.Normalize();
-				v->tangents[0] *= at;
-				v->tangents[1] *= at;
-				// Set "per-entity" color if we have more than one entity:
-				v->SetColor( newColor );
-#else
-				idDrawVert *vs = &(surf->geometry->verts[j]);
-
-				// copy-and-modify at once
-				// scale - rotate - translate
-				v->xyz[0] = vs->xyz[0] * scale.x;
-				v->xyz[1] = vs->xyz[1] * scale.y;
-				v->xyz[2] = vs->xyz[2] * scale.z;
-				v->xyz *= vMat;
-				//v->normal = vs->normal * at;
-				v->normal = (vs->normal * at) + op.offset;
-				v->normal.Normalize();
-				v->tangents[0] = vs->tangents[0] * at;
-				v->tangents[1] = vs->tangents[1] * at;
-				v->SetColor( newColor );
-				v->st = vs->st;
-#endif
-
-				// seems unnec.?
-				//v->Normalize();
-
-/*				if (o == 1 || o == 2)
+				// copy the vertexes and modify them at the same time (scale, rotate, offset)
+				for (int j = 0; j < vmax; j++)
 				{
-					gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
-						j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
-						v->color[0],
-						v->color[1],
-						v->color[2],
-						v->color[3]
-					   	);
+
+					// target
+					idDrawVert *v = &(newSurf->geometry->verts[nV]);
+					// source
+					idDrawVert *vs = &(surf->geometry->verts[j]);
+
+					// copy and modify at once
+					// scale
+					v->xyz[0] = vs->xyz[0] * scale.x;
+					v->xyz[1] = vs->xyz[1] * scale.y;
+					v->xyz[2] = vs->xyz[2] * scale.z;
+					v->normal[0] = vs->normal[0] / scale.x;
+					v->normal[1] = vs->normal[1] / scale.y;
+					v->normal[2] = vs->normal[2] / scale.z;
+					v->tangents[0][0] = vs->tangents[0][0] / scale.x;
+					v->tangents[0][1] = vs->tangents[0][1] / scale.y;
+					v->tangents[0][2] = vs->tangents[0][2] / scale.z;
+					v->tangents[1][0] = vs->tangents[1][0] / scale.x;
+					v->tangents[1][1] = vs->tangents[1][1] / scale.y;
+					v->tangents[1][2] = vs->tangents[1][2] / scale.z;
+
+					// rotate
+					v->xyz *= mRot;
+					// translate
+					v->xyz += op.offset;
+
+					// rotate only
+					v->normal *= mRot;
+					v->tangents[0] *= mRot;
+					v->tangents[1] *= mRot;
+
+					// scale tangent space basis to make |normal| = 1
+					float nLen = v->normal.Length();
+					v->normal /= nLen;
+					v->tangents[0] /= nLen;
+					v->tangents[1] /= nLen;
+					//NOTE (in case of non-isotropic scaling):
+					//if tangents are normalized then bumpmapped surface will look different
+
+					v->SetColor( newColor );
+
+					// copy st
+					v->st = vs->st;
+
+					nV ++;
+				}	// end of all verts
+
+			} // end of scale version
+			else
+			{
+				// no scale
+
+				// copy the vertexes and modify them at the same time (rotate, offset)
+				for (int j = 0; j < vmax; j++)
+				{
+					// target
+					idDrawVert *v = &(newSurf->geometry->verts[nV]);
+					// source
+					idDrawVert *vs = &(surf->geometry->verts[j]);
+
+					// rotate and translate
+					v->xyz = vs->xyz * vMat;					// all in one go
+					// v->xyz = vs->xyz * mRot + op.offset;
+					// rotate
+					v->normal = vs->normal * mRot;
+					v->tangents[0] = vs->tangents[0] * mRot;
+					v->tangents[1] = vs->tangents[1] * mRot;
+
+					v->SetColor( newColor );
+
+					// copy st
+					v->st = vs->st;
+					nV ++;
+
+/*					if (o == 1 || o == 2)
+					{
+						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
+							j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
+							v->color[0],
+							v->color[1],
+							v->color[2],
+							v->color[3]
+						   	);
+					}
+*/			
 				}
-*/				nV ++;
 			}
+
 			// copy indexes
 			int no = newTargetSurfInfoPtr->numVerts;			// correction factor (before adding nV!)
 			int imax = surf->geometry->numIndexes;
@@ -809,12 +851,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 	if (model_combines % 10 == 0)
 	{
-		gameLocal.Printf( "ModelGenerator: %s: combines %i, total time %0.2f ms (for each %0.2f ms), copy data %0.2f ms (for each %0.2f ms), finish surfaces %0.2f ms (for each %0.2f ms)\n",
-#ifdef M_COPY
-				"M_COPY",
-#else
-				"COPY_MODIFY",
-#endif
+		gameLocal.Printf( "ModelGenerator: combines %i, total time %0.2f ms (for each %0.2f ms), copy data %0.2f ms (for each %0.2f ms), finish surfaces %0.2f ms (for each %0.2f ms)\n",
 				model_combines,
 				timer_combinemodels.Milliseconds(),
 				timer_combinemodels.Milliseconds() / model_combines,
