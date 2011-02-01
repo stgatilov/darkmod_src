@@ -1903,6 +1903,7 @@ void Seed::Prepare( void )
 	// need our service upon Restore().
 	if (spawnArgs.GetBool("remove","0"))
 	{
+		// if we do have pseudo classes, I cannot remove myself as they need me
 		if (m_iNumStaticMulties > 0)
 		{
 			gameLocal.Printf( "SEED %s: Cannot remove myself, because I have %i static multies.\n", GetName(), m_iNumStaticMulties );
@@ -1910,37 +1911,52 @@ void Seed::Prepare( void )
 		else
 		{
 			// spawn all entities
-			gameLocal.Printf( "SEED %s: Spawning all %i entities and then removing myself.\n", GetName(), m_iNumEntities );
+			int num = m_Entities.Num();
+			gameLocal.Printf( "SEED %s: Spawning all %i entities.\n", GetName(), num );
+
+			bool canRemoveMyself = true;
 
 			// for each of our "entities", do the distance check
-			for (int i = 0; i < m_Entities.Num(); i++)
+			for (int i = 0; i < num; i++)
 			{
+				seed_class_t *entityClass = &m_Classes[ m_Entities[i].classIdx ];
+				if (entityClass && entityClass->pseudo)
+				{
+					canRemoveMyself = false;
+					gameLocal.Printf( "SEED %s: Cannot remove myself, because I have at least one static multi.\n", GetName() );
+					// no sense in spawning the rest right now
+					break;
+				}
 				SpawnEntity(i, false);		// spawn as unmanaged
 			}
 
-			// clear out memory just to be sure
-			ClearClasses();
-			m_Entities.Clear();
-			m_iNumEntities = -1;
+			if (canRemoveMyself)
+			{
+				gameLocal.Printf( "SEED %s: Removing myself.\n", GetName() );
+				// clear out memory just to be sure
+				ClearClasses();
+				m_Entities.Clear();
+				m_iNumEntities = -1;
 
-			active = false;
-			BecomeInactive( TH_THINK );
+				active = false;
+				BecomeInactive( TH_THINK );
+				m_bPrepared = true;
 
-			// post event to remove ourselfes
-			PostEventMS( &EV_SafeRemove, 0 );
+				// post event to remove ourselfes
+				PostEventMS( &EV_SafeRemove, 0 );
+				return;
+			}
 		}
 	}
-	else
+
+	m_bPrepared = true;
+	if (m_Entities.Num() == 0)
 	{
-		m_bPrepared = true;
-		if (m_Entities.Num() == 0)
-		{
-			// could not create any entities?
-			gameLocal.Printf( "SEED %s: Have no entities to control, becoming inactive.\n", GetName() );
-			// Tels: Does somehow not work, bouncing us again and again into this branch?
-			BecomeInactive(TH_THINK);
-			m_iNumEntities = -1;
-		}
+		// could not create any entities?
+		gameLocal.Printf( "SEED %s: Have no entities to control, becoming inactive.\n", GetName() );
+		// Tels: Does somehow not work, bouncing us again and again into this branch?
+		BecomeInactive(TH_THINK);
+		m_iNumEntities = -1;
 	}
 }
 
@@ -3365,6 +3381,12 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 	struct seed_entity_t* ent = &m_Entities[idx];
 	struct seed_class_t*  lclass = &(m_Classes[ ent->classIdx ]);
 
+	if ( (ent->flags & SEED_ENTITY_EXISTS) != 0)
+	{
+		// already exists
+		return false;
+	}
+
 	// spawn the entity and note its number
 	if (m_iDebug)
 	{
@@ -3766,8 +3788,6 @@ void Seed::Think( void )
 			// normal distance checks now
 			if ( (ent->flags & SEED_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
-
-
 				// Spawn and manage LOD, except for CStaticMulti entities with a megamodel,
 				// these need to do their own LOD thinking:
 				if (SpawnEntity( i, lclass->pseudo ? false : true ))
