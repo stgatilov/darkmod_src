@@ -1431,7 +1431,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	SeedClass.avgSize = size / ( fBaseDensity * fImgDensity * fDensity );
 
 	// if the mapper wants a hard limit on this class
-	SeedClass.maxEntities = spawnArgs.GetInt( "seed_max_entities", "0" );
+	SeedClass.maxEntities = ent->spawnArgs.GetInt( "seed_max_entities", spawnArgs.GetString("max_entities", "0") );
 	SeedClass.numEntities = 0;
 
 	// all data setup, append to the list
