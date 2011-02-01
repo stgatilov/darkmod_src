@@ -1965,7 +1965,7 @@ void Seed::PrepareEntities( void )
 	s = m_Classes.Num();
 	for (int i = 0; i < s; i++)
 	{
-		int second = (int)(RandomFloat() * s);
+		int second = (int)(RandomFloat() * (i+1));
 		int temp = ClassIndex[i]; ClassIndex[i] = ClassIndex[second]; ClassIndex[second] = temp;
 	}
 
