@@ -113,7 +113,9 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 		float distance = (owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
 		
 		using std::min;
-		float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
+		// greebo: Be sure to use GetRadius() to consider time-dependent radii
+		float radius = stim->GetRadius();
+		float base = 1 - min(radius, distance) / radius;
 		
 		// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
 		magnitude *= pow(base, stim->m_FallOffExponent);
