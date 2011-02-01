@@ -2613,6 +2613,8 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	int index(0);
 	idStr key("");
 	idStr value("");
+	idStr sightingBust("");
+	idStr sightingScore("");
 	// The listdef item (name + _) prefix
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
@@ -2677,9 +2679,19 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
 	}
 	
-	stealthScore += m_Stats.AIAlerts[5].Overall;
+	if ( m_Stats.AIAlerts[5].Overall > 0 )
+	{
+		sightingBust = "Yes";
+		stealthScore += 20;
+		sightingScore = "20";
+	}
+	else
+	{
+		sightingBust = "No";
+		sightingScore = "0";
+	}
 		
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + "Sightings: " + sightingBust;
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
 	key = "Stealth Score";
@@ -2722,7 +2734,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = "                                   " + idStr(m_Stats.AIAlerts[4].Overall * 3);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "                                  +" + idStr(m_Stats.AIAlerts[5].Overall * 1);  
+	key = "                                  +" + sightingScore + " (Work in Progress, " + idStr(m_Stats.AIAlerts[5].Overall) + ")";  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = "                                   " + idStr(stealthScore);  
@@ -2766,7 +2778,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = "Alert 4. Qty: " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 5. Qty: " + idStr(m_Stats.AIAlerts[5].Overall) + " x 1 :";
+	key = "Alert 5. " + sightingBust + " + 20 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = "Stealth Score Total";
