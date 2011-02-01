@@ -1825,7 +1825,9 @@ void Seed::Prepare( void )
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "template", NULL );
 	while( kv )
 	{
-		if (kv->GetKey().Find('_') < 0)
+		int found = kv->GetKey().Find('_',9);
+		// ignore "template1_count" or "template_1_count", but not "template_1"
+		if (found < 0)
 		{
 			// ignore things like "template_skin"
 			AddTemplateFromEntityDef( kv->GetKey(), &sa );
