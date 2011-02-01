@@ -1574,6 +1574,100 @@ void Seed::ComputeEntityCount( void )
 }
 
 /*
+   Given a class (and optional model, for class "func_static"), adds a class
+   based on this entity.
+*/
+void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
+{
+	idStr entityClass = spawnArgs.GetString( base );
+	idStr entityModel = "";
+
+	// see if this is an entityDef name
+	const char* pstr_DefName = entityClass.c_str();
+	const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
+
+	if( !p_Def )
+	{
+		// try "func_static" with that as model
+		gameLocal.Printf ("SEED %s: Cannot find entityDef %s, trying func_static with model.\n", GetName(), entityClass.c_str() );
+		entityModel = entityClass;
+		entityClass = "func_static";
+		p_Def = gameLocal.FindEntityDefDict( "func_static", false );
+	}
+
+	if (p_Def)
+	{
+		idEntity *ent;
+		idDict args;
+		idVec3 origin = GetPhysics()->GetOrigin();
+
+		// move to origin of ourselfs
+		args.SetVector("origin", origin);
+
+		// classname and model
+		args.Set("classname", entityClass);
+		if (!entityModel.IsEmpty())
+		{
+			args.Set("model", entityModel);
+		}
+
+		// want it floored
+		args.Set("seed_floor", "1");
+
+		// but if it is a moveable, don't floor it
+		args.Set("floor", "0");
+
+		// set previously defined (possible random) skin
+		// templateX_skin = "abc, def, '', abc"
+		idStr skin = spawnArgs.GetString( base + "_skin", "" );
+		// select one at random
+		skin = skin.RandomPart();
+
+		//gameLocal.Printf("Using random skin '%s'.\n", skin.c_str() );
+		args.Set( "skin", skin );
+
+		// TODO: if the entity contains a "random_skin", too, use the info from there, then remove it
+		args.Set( "random_skin", "" );
+
+		args.Set( "seed_max_entities", spawnArgs.GetString( base + "_count", "" ) );
+
+		// relay additional seed spawnargs (#2595)
+		int num = sa->Num();
+		for (int i = 0; i < num; i++)
+		{
+			const idStr *s = sa->Ptr();
+			if (spawnArgs.FindKey( base + s[i] ))
+			{
+				// gameLocal.Printf("SEED %s: Relaying %s = %s\n", GetName(), idStr(base + s[i]).c_str(), spawnArgs.GetString( base + s[i], "" ) );
+				args.Set( "seed_" + s[i], spawnArgs.GetString( base + s[i], "" ) );
+			}
+		}
+		gameLocal.Warning("SEED %s: TODO #2599: Spawning a %s.", GetName(), entityClass.c_str() );
+
+		gameLocal.SpawnEntityDef( args, &ent );
+		if (ent)
+		{
+			// add a class based on this entity
+			AddClassFromEntity( ent );
+			// remove the temp. entity again
+			ent->PostEventMS( &EV_SafeRemove, 0 );
+		}
+		else
+		{
+			gameLocal.Warning("SEED %s: Could not spawn entity from class %s (model '%s') to add it as my target.\n", 
+					GetName(), entityClass.c_str(), entityModel.c_str() );
+		}
+	}
+	else
+	{
+			gameLocal.Warning("SEED %s: Could not find entity def for class %s to add it as my target.\n", 
+					GetName(), entityClass.c_str() );
+	}
+
+	return;	// next one please
+}
+
+/*
 ===============
 Create the places for all entities that we control so we can later spawn them.
 ===============
@@ -1697,73 +1791,47 @@ void Seed::Prepare( void )
 		}
 	}
 
-	// the same, but this time for the "spawn_class/spawn_count/spawn_skin" spawnargs:
-	idVec3 origin = GetPhysics()->GetOrigin();
+	// to relay these spawnargs
+	idList< idStr > sa;
+	sa.Clear();
+	sa.Append("_bunching");
+	sa.Append("_color_min");
+	sa.Append("_color_max");
+	sa.Append("_combine");
+	sa.Append("_cull_range");
+	sa.Append("_density");
+	sa.Append("_falloff");
+	sa.Append("_floor");
+	sa.Append("_map");
+	sa.Append("_map_invert");
+	sa.Append("_max_entities");		// can also be set as "template_count"
+	sa.Append("_noinhibit");
+	sa.Append("_offset");
+	sa.Append("_probability");
+	sa.Append("_rotate_min");
+	sa.Append("_rotate_max");
+	sa.Append("_score");
+	sa.Append("_scale_min");
+	sa.Append("_scale_max");
+	sa.Append("_spacing");
+	sa.Append("_sink_min");
+	sa.Append("_sink_max");
+	sa.Append("_z_invert");
+	sa.Append("_z_min");
+	sa.Append("_z_max");
+	sa.Append("_watch_brethren");
 
-	const idKeyValue *kv = spawnArgs.MatchPrefix( "spawn_class", NULL );
+	// the same, but this time for the template spawnargs:
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "template", NULL );
 	while( kv )
 	{
-		idStr entityClass = kv->GetValue();
-
-		// spawn an entity of this class so we can copy it's values
-		// TODO: avoid the spawn for speed reasons?
-
-		const char* pstr_DefName = entityClass.c_str();
-		const idDict *p_Def = gameLocal.FindEntityDefDict( pstr_DefName, false );
-		if( p_Def )
+		if (kv->GetKey().Find('_') < 0)
 		{
-			idEntity *ent;
-			idDict args;
-
-			args.Set("classname", entityClass);
-			// move to origin of ourselfs
-			args.SetVector("origin", origin);
-
-			// want it floored
-			args.Set("seed_floor", "1");
-
-			// but if it is a moveable, don't floor it
-			args.Set("floor", "0");
-
-			// set previously defined (possible random) skin
-			// spawn_classX => spawn_skinX
-			idStr skin = idStr("spawn_skin") + kv->GetKey().Mid( 11, kv->GetKey().Length() - 11 );
-
-			// spawn_classX => "abc, def, '', abc"
-			skin = spawnArgs.GetString( skin, "" );
-			// select one at random
-			skin = skin.RandomPart();
-
-			//gameLocal.Printf("Using random skin '%s'.\n", skin.c_str() );
-			args.Set( "skin", skin );
-
-			// TODO: if the entity contains a "random_skin", too, use the info from there, then remove it
-			args.Set( "random_skin", "" );
-
-			gameLocal.Warning("SEED %s: Spawning a %s.\n", GetName(), entityClass.c_str() );
-
-			gameLocal.SpawnEntityDef( args, &ent );
-			if (ent)
-			{
-				// add a class based on this entity
-				AddClassFromEntity( ent );
-				// remove the temp. entity 
-				ent->PostEventMS( &EV_Remove, 0 );
-			}
-			else
-			{
-				gameLocal.Warning("SEED %s: Could not spawn entity from class %s to add it as my target.\n", 
-						GetName(), entityClass.c_str() );
-			}
+			// ignore things like "template_skin"
+			AddTemplateFromEntityDef( kv->GetKey(), &sa );
 		}
-		else
-		{
-				gameLocal.Warning("SEED %s: Could not find entity def for class %s to add it as my target.\n", 
-						GetName(), entityClass.c_str() );
-		}
-
 		// next one please
-		kv = spawnArgs.MatchPrefix( "spawn_class", kv );
+		kv = spawnArgs.MatchPrefix( "template", kv );
 	}
 
 	if (m_Classes.Num() > 0)
