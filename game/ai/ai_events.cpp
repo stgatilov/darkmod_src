@@ -231,7 +231,7 @@ const idEventDef AI_LookAtAngles ("lookAtAngles", "ffff");
 /*!
 * script callable: spawnThrowableProjectile
 *
-* @param projectileName The name of the prjectile to spawn
+* @param projectileName The name of the projectile to spawn
 *	(as seen in a .def file) Must be descended from idProjectile
 *
 * @param pstr_attachJointName The name of the joint on the model
