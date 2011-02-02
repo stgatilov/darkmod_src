@@ -230,7 +230,7 @@ const idEventDef AI_LookAtAngles ("lookAtAngles", "ffff");
 /*!
 * script callable: spawnThrowableProjectile
 *
-* @param pstr_projectileName The name of the prjectile to spawn
+* @param projectileName The name of the prjectile to spawn
 *	(as seen in a .def file) Must be descended from idProjectile
 *
 * @param pstr_attachJointName The name of the joint on the model
@@ -831,50 +831,43 @@ void idAI::Event_MuzzleFlash( const char *jointname )
 idAI::Event_SpawnThrowableProjectile
 =====================
 */
-void idAI::Event_SpawnThrowableProjectile
-(
-	const char* pstr_projectileName,
-	const char* pstr_jointName
-)
+void idAI::Event_SpawnThrowableProjectile(const char* projectileName, const char* jointName)
 {
+	// Remove the currently active projectile if necessary
+	RemoveProjectile();
+	
 	// Load definition from movable.def
-	projectileDef = gameLocal.FindEntityDefDict( pstr_projectileName );
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(projectileName);
+
 	if (!projectileDef)
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", pstr_projectileName);
-		idThread::ReturnEntity (NULL);
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", projectileName);
+		idThread::ReturnEntity(NULL);
 	}
 
 	// Create the projectile
 	idVec3 projectileDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
 	idVec3 projectileOrigin = physicsObj.GetOrigin();
-	CreateProjectile (projectileOrigin, projectileDir);
 
-	// Create a clip model for the projectile
-	if (projectile.GetEntity() == NULL)
-	{
-		idThread::ReturnEntity (NULL);
-	}
+	// Spawn a new active projectile from the given dictionary (will throw gameLocal.Error on failure)
+	CreateProjectileFromDict(projectileOrigin, projectileDir, projectileDef);
 
-	// Create clip model
-	if ( projectileClipModel == NULL ) 
-	{
-		CreateProjectileClipModel();
-	}
+	// Ensure that the clip model
+	EnsureActiveProjectileInfo();
 
 	// Bind to joint
-	if ( !pstr_jointName || !pstr_jointName[ 0 ] ) 
+	if (jointName == NULL || jointName[0] == NULL)
 	{
-		projectile.GetEntity()->Bind( this, true );
+		// No valid joint name
+		activeProjectile.projEnt.GetEntity()->Bind(this, true);
 	}	
 	else
 	{
-		projectile.GetEntity()->BindToJoint( this, pstr_jointName, true );
+		activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointName, true);
 	}
 
-	// Return it
-	idThread::ReturnEntity (projectile.GetEntity());
-
+	// Return to script thread
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
 }
 
 /*
@@ -882,27 +875,36 @@ void idAI::Event_SpawnThrowableProjectile
 idAI::Event_CreateMissile
 =====================
 */
-void idAI::Event_CreateMissile( const char *jointname ) {
-	idVec3 muzzle;
-	idMat3 axis;
-
-	if ( !projectileDef ) {
+void idAI::Event_CreateMissile( const char *jointname )
+{
+	if (projectileInfo.Num() == 0)
+	{
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
 		idThread::ReturnEntity( NULL );
 
 		return;
 	}
 
-	GetMuzzle( jointname, muzzle, axis );
-	CreateProjectile( muzzle, viewAxis[ 0 ] * physicsObj.GetGravityAxis() );
-	if ( projectile.GetEntity() ) {
-		if ( !jointname || !jointname[ 0 ] ) {
-			projectile.GetEntity()->Bind( this, true );
-		} else {
-			projectile.GetEntity()->BindToJoint( this, jointname, true );
+	idVec3 muzzle;
+	idMat3 axis;
+	GetMuzzle(jointname, muzzle, axis);
+
+	// Create a new random projectile
+	CreateProjectile(muzzle, viewAxis[0] * physicsObj.GetGravityAxis());
+
+	if (activeProjectile.projEnt.GetEntity())
+	{
+		if (!jointname || !jointname[ 0 ])
+		{
+			activeProjectile.projEnt.GetEntity()->Bind(this, true);
+		}
+		else
+		{
+			activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointname, true);
 		}
 	}
-	idThread::ReturnEntity( projectile.GetEntity() );
+
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
 }
 
 /*
@@ -940,52 +942,60 @@ void idAI::Event_FireMissileAtTarget( const char *jointname, const char *targetn
 idAI::Event_LaunchMissile
 =====================
 */
-void idAI::Event_LaunchMissile( const idVec3 &org, const idAngles &ang ) {
-	idVec3		start;
-	trace_t		tr;
-	idBounds	projBounds;
-	const idClipModel *projClip;
-	idMat3		axis;
-	float		distance;
-
-	if ( !projectileDef ) {
-		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
-		idThread::ReturnEntity( NULL );
+void idAI::Event_LaunchMissile(const idVec3& org, const idAngles& ang)
+{
+	if (projectileInfo.Num() == 0)
+	{
+		gameLocal.Warning("%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName());
+		idThread::ReturnEntity(NULL);
 		return;
 	}
 
-	axis = ang.ToMat3();
-	if ( !projectile.GetEntity() ) {
-		CreateProjectile( org, axis[ 0 ] );
-	}
+	idMat3 axis = ang.ToMat3();
+
+	// Ensure we have a projectile (does nothing if active projectile is non-NULL)
+	CreateProjectile(org, axis[0]);
 
 	// make sure the projectile starts inside the monster bounding box
 	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = projectile.GetEntity()->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate( projClip->GetAxis() );
+
+	const idClipModel* projClip = activeProjectile.projEnt.GetEntity()->GetPhysics()->GetClipModel();
+	idBounds projBounds = projClip->GetBounds().Rotate(projClip->GetAxis());
+
+	idVec3	start;
+	float	distance;
 
 	// check if the owner bounds is bigger than the projectile bounds
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
-		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
-		if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) ) {
+		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) )
+	{
+		if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) )
+		{
 			start = org + distance * viewAxis[ 0 ];
-		} else {
+		} 
+		else
+		{
 			start = ownerBounds.GetCenter();
 		}
-	} else {
+	}
+	else
+	{
 		// projectile bounds bigger than the owner bounds, so just start it from the center
 		start = ownerBounds.GetCenter();
 	}
 
+	trace_t tr;
 	gameLocal.clip.Translation( tr, start, org, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this );
 
 	// launch the projectile
-	idThread::ReturnEntity( projectile.GetEntity() );
-	projectile.GetEntity()->Launch( tr.endpos, axis[ 0 ], vec3_origin );
-	projectile = NULL;
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
 
-	TriggerWeaponEffects( tr.endpos );
+	// greebo: Launch and free our projectile slot to get ready for the next round
+	activeProjectile.projEnt.GetEntity()->Launch( tr.endpos, axis[ 0 ], vec3_origin );
+	activeProjectile.projEnt = NULL;
+
+	TriggerWeaponEffects(tr.endpos);
 
 	lastAttackTime = gameLocal.time;
 }
@@ -1883,13 +1893,12 @@ void idAI::Event_CanHitEnemyFromAnim( const char *animname ) {
 	axis = local_dir.ToMat3();
 	fromPos = physicsObj.GetOrigin() + missileLaunchOffset[ anim ] * axis;
 
-	if ( projectileClipModel == NULL ) {
-		CreateProjectileClipModel();
-	}
-
+	// Ensure we have a valid clipmodel
+	ProjectileInfo& info = EnsureActiveProjectileInfo();
+	
 	// check if the owner bounds is bigger than the projectile bounds
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	const idBounds &projBounds = projectileClipModel->GetBounds();
+	const idBounds& ownerBounds = physicsObj.GetAbsBounds();
+	const idBounds& projBounds = info.clipModel->GetBounds();
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
 		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
@@ -1903,7 +1912,7 @@ void idAI::Event_CanHitEnemyFromAnim( const char *animname ) {
 		start = ownerBounds.GetCenter();
 	}
 
-	gameLocal.clip.Translation( tr, start, fromPos, projectileClipModel, mat3_identity, MASK_SHOT_RENDERMODEL, this );
+	gameLocal.clip.Translation( tr, start, fromPos, info.clipModel, mat3_identity, MASK_SHOT_RENDERMODEL, this );
 	fromPos = tr.endpos;
 
 	if ( GetAimDir( fromPos, enemy.GetEntity(), this, dir ) ) {
@@ -1948,13 +1957,12 @@ void idAI::Event_CanHitEnemyFromJoint( const char *jointname ) {
 	animator.GetJointTransform( joint, gameLocal.time, muzzle, axis );
 	muzzle = org + ( muzzle + modelOffset ) * viewAxis * physicsObj.GetGravityAxis();
 
-	if ( projectileClipModel == NULL ) {
-		CreateProjectileClipModel();
-	}
+	// Ensure the current projectile clipmodel is valid
+	ProjectileInfo& curProjInfo = EnsureActiveProjectileInfo();
 
 	// check if the owner bounds is bigger than the projectile bounds
 	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	const idBounds &projBounds = projectileClipModel->GetBounds();
+	const idBounds &projBounds = curProjInfo.clipModel->GetBounds();
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
 		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
@@ -1968,10 +1976,10 @@ void idAI::Event_CanHitEnemyFromJoint( const char *jointname ) {
 		start = ownerBounds.GetCenter();
 	}
 
-	gameLocal.clip.Translation( tr, start, muzzle, projectileClipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
+	gameLocal.clip.Translation( tr, start, muzzle, curProjInfo.clipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
 	muzzle = tr.endpos;
 
-	gameLocal.clip.Translation( tr, muzzle, toPos, projectileClipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
+	gameLocal.clip.Translation( tr, muzzle, toPos, curProjInfo.clipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
 	if ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == enemyEnt ) ) {
 		lastHitCheckResult = true;
 	} else {
