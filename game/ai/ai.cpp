@@ -1049,8 +1049,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 		savefile->ReadString(info.defName);
 		// Resolve projectile def pointers from names
-		info.def = gameLocal.FindEntityDefDict(info.defName);
-
+		info.def = (info.defName.Length() > 0) ? gameLocal.FindEntityDefDict(info.defName) : NULL;
+		
 		// leave clipmodel pointer alone, is already initialised to NULL
 		savefile->ReadFloat(info.radius);
 		savefile->ReadFloat(info.speed);
@@ -1062,6 +1062,17 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	// Active Projectile
 	savefile->ReadString(activeProjectile.info.defName);
+
+	// Resolve projectile def pointers from names
+	if (activeProjectile.info.defName.Length() > 0)
+	{
+		activeProjectile.info.def = gameLocal.FindEntityDefDict(activeProjectile.info.defName);
+	}
+	else
+	{
+		activeProjectile.info.def = NULL;
+	}
+
 	savefile->ReadFloat(activeProjectile.info.radius);
 	savefile->ReadFloat(activeProjectile.info.speed);
 	savefile->ReadVec3(activeProjectile.info.velocity);
@@ -3661,7 +3672,7 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 		}
 
 		// Move the def pointer of the "next" projectile info into the active one
-		activeProjectile.info.def = projectileInfo[curProjectileIndex].def;
+		activeProjectile.info = projectileInfo[curProjectileIndex];
 	}
 
 	idAASFindAttackPosition findGoal( this, physicsObj.GetGravityAxis(), ent, pos, missileLaunchOffset[ attack_anim ] );
@@ -7086,8 +7097,9 @@ idProjectile* idAI::CreateProjectileFromDict(const idVec3 &pos, const idVec3 &di
 {
 	if (activeProjectile.projEnt.GetEntity() == NULL)
 	{
-		// Store the def pointer for later use
+		// Store the def for later use
 		activeProjectile.info.def = dict;
+		activeProjectile.info.defName = dict->GetString("classname");
 
 		// Fill the current projectile entity pointer
 		activeProjectile.projEnt = SpawnProjectile(dict);
