@@ -1982,7 +1982,6 @@ void Seed::PrepareEntities( void )
 
 	idList< int >			ClassIndex;			// random shuffling of classes
 	int						s;
-	float					f;
 
 	int start = (int) time (NULL);
 
@@ -3576,10 +3575,12 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 						impulse.x = impulse.x * RandomFloat() + lclass->impulse_min.x;
 						impulse.y = impulse.y * RandomFloat() + lclass->impulse_min.y;
 						impulse.z = impulse.z * RandomFloat() + lclass->impulse_min.z;
+						idVec3 impulseVec = (impulse.x == 0.0f ? idVec3() : idPolar3( impulse ).ToVec3());
 						// gameLocal.Printf("SEED %s: Applying random impulse (polar %s, vec3 %s) to entity.\n", GetName(), impulse.ToString(), idPolar3( impulse ).ToVec3().ToString() );
 						ent2->GetPhysics()->SetLinearVelocity( 
 							// ent2->GetPhysics()->GetLinearVelocity() +
-							idPolar3( impulse ).ToVec3() );
+							impulseVec
+							 );
 						//ent2->ApplyImpulse( this, 0, ent->origin, idPolar3( impulse ).ToVec3() );
 					}
 

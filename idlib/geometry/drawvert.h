@@ -40,6 +40,8 @@ public:
 	void			LerpAll( const idDrawVert &a, const idDrawVert &b, const float f );
 
 	void			Normalize( void );
+	// stgatilov: this normalization scales normal/tangents by common factor, so that normal becomes unit length.
+	void			ScaleToUnitNormal( void );
 
 	void			SetColor( dword color );
 	dword			GetColor( void ) const;
@@ -87,5 +89,13 @@ ID_INLINE void idDrawVert::SetColor( dword color ) {
 ID_INLINE dword idDrawVert::GetColor( void ) const {
 	return *reinterpret_cast<const dword *>(this->color);
 }
+
+ID_INLINE void idDrawVert::ScaleToUnitNormal( void ) {
+	float invNormLen = idMath::RSqrt(normal.LengthSqr());
+	normal *= invNormLen;
+	tangents[0] *= invNormLen;
+	tangents[1] *= invNormLen;
+}
+
 
 #endif /* !__DRAWVERT_H__ */

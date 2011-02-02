@@ -223,18 +223,11 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 				{
 					idDrawVert *v = &(newSurf.geometry->verts[nV]);
 					newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
-					v->xyz[0] *= scale->x;
-					v->xyz[1] *= scale->y;
-					v->xyz[2] *= scale->z;
-					v->normal[0] /= scale->x;
-					v->normal[1] /= scale->y;
-					v->normal[2] /= scale->z;
-					v->tangents[0][0] /= scale->x;
-					v->tangents[0][1] /= scale->y;
-					v->tangents[0][2] /= scale->z;
-					v->tangents[1][0] /= scale->x;
-					v->tangents[1][1] /= scale->y;
-					v->tangents[1][2] /= scale->z;
+					v->xyz.MulCW(*scale);
+					v->normal.DivCW(*scale);
+					v->tangents[0].DivCW(*scale);
+					v->tangents[1].DivCW(*scale);
+					v->ScaleToUnitNormal();
 				}
 			}
 			else
@@ -295,7 +288,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			const idMaterial *shader, idRenderModel* hModel ) const {
 	int numSurfaces;
 	int numVerts, numIndexes;
-	const modelSurface_t *surf, *surf_org;
+	const modelSurface_t *surf;
 	modelSurface_t *newSurf;
 	bool needFinish = false;
 
@@ -593,16 +586,19 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		}
 		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
 
-		// precompute these
-		idMat3 mRot = op.angles.ToMat3();						// for rotating normals
-		idMat4 vMat = idMat4( op.angles.ToMat3(), op.offset );	// for rotating+translating vertices
-		idVec3 scale = op.scale;
-		float needScale = false;
-
-		if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f)
-		{
-			needScale = true;
-		}
+		// precompute these (stgatilov):
+		// scale matrix
+		idMat3 mScale(op.scale.x, 0, 0, 
+					  0, op.scale.y, 0, 
+					  0, 0, op.scale.z);
+		// rotate matrix
+		idMat3 mRot = op.angles.ToRotation().ToMat3();
+		// direction transformation = scale + rotate
+		idMat3 tDir = mScale * mRot;
+		// normal transformation = (scale + rotate) inverse transpose
+		idMat3 tNorm = tDir.Inverse().Transpose();
+		// position transformation = scale + rotate + translate
+		idMat4 tPos = idMat4(tDir, op.offset);
 
 		const idRenderModel* source = LODs->Ptr()[op.lod];
 
@@ -692,100 +688,40 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 			dword newColor = op.color; 
 
-			// TODO: put the "needScale" if out of the loop
-
-			if (needScale)
+			// copy the vertexes and modify them at the same time (scale, rotate, offset)
+			for (int j = 0; j < vmax; j++)
 			{
-				// copy the vertexes and modify them at the same time (scale, rotate, offset)
-				for (int j = 0; j < vmax; j++)
+
+				// target
+				idDrawVert *v = &(newSurf->geometry->verts[nV]);
+				// source
+				idDrawVert *vs = &(surf->geometry->verts[j]);
+
+				// stgatilov: fast and proper transformation
+				v->xyz = tPos * vs->xyz;
+				v->normal = vs->normal * tNorm;
+				v->tangents[0] = vs->tangents[0] * tNorm;
+				v->tangents[1] = vs->tangents[1] * tNorm;
+				v->st = vs->st;
+				v->SetColor(newColor);
+				// some normalization
+				v->ScaleToUnitNormal();
+				//NOTE (in case of non-isotropic scaling):
+				//if tangents are normalized then bumpmapped surface will look different
+
+/*				if (o == 1 || o == 2)
 				{
+					gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
+						j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
+						v->color[0],
+						v->color[1],
+						v->color[2],
+						v->color[3]
+					   	);
+				}*/
+				nV ++;
 
-					// target
-					idDrawVert *v = &(newSurf->geometry->verts[nV]);
-					// source
-					idDrawVert *vs = &(surf->geometry->verts[j]);
-
-					// copy and modify at once
-					// scale
-					v->xyz[0] = vs->xyz[0] * scale.x;
-					v->xyz[1] = vs->xyz[1] * scale.y;
-					v->xyz[2] = vs->xyz[2] * scale.z;
-					v->normal[0] = vs->normal[0] / scale.x;
-					v->normal[1] = vs->normal[1] / scale.y;
-					v->normal[2] = vs->normal[2] / scale.z;
-					v->tangents[0][0] = vs->tangents[0][0] / scale.x;
-					v->tangents[0][1] = vs->tangents[0][1] / scale.y;
-					v->tangents[0][2] = vs->tangents[0][2] / scale.z;
-					v->tangents[1][0] = vs->tangents[1][0] / scale.x;
-					v->tangents[1][1] = vs->tangents[1][1] / scale.y;
-					v->tangents[1][2] = vs->tangents[1][2] / scale.z;
-
-					// rotate
-					v->xyz *= mRot;
-					// translate
-					v->xyz += op.offset;
-
-					// rotate only
-					v->normal *= mRot;
-					v->tangents[0] *= mRot;
-					v->tangents[1] *= mRot;
-
-					// scale tangent space basis to make |normal| = 1
-					float nLen = v->normal.Length();
-					v->normal /= nLen;
-					v->tangents[0] /= nLen;
-					v->tangents[1] /= nLen;
-					//NOTE (in case of non-isotropic scaling):
-					//if tangents are normalized then bumpmapped surface will look different
-
-					v->SetColor( newColor );
-
-					// copy st
-					v->st = vs->st;
-
-					nV ++;
-				}	// end of all verts
-
-			} // end of scale version
-			else
-			{
-				// no scale
-
-				// copy the vertexes and modify them at the same time (rotate, offset)
-				for (int j = 0; j < vmax; j++)
-				{
-					// target
-					idDrawVert *v = &(newSurf->geometry->verts[nV]);
-					// source
-					idDrawVert *vs = &(surf->geometry->verts[j]);
-
-					// rotate and translate
-					v->xyz = vs->xyz * vMat;					// all in one go
-					// v->xyz = vs->xyz * mRot + op.offset;
-					// rotate
-					v->normal = vs->normal * mRot;
-					v->tangents[0] = vs->tangents[0] * mRot;
-					v->tangents[1] = vs->tangents[1] * mRot;
-
-					v->SetColor( newColor );
-
-					// copy st
-					v->st = vs->st;
-					nV ++;
-
-/*					if (o == 1 || o == 2)
-					{
-						gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
-							j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
-							v->color[0],
-							v->color[1],
-							v->color[2],
-							v->color[3]
-						   	);
-					}
-*/			
-				}
-			}
+			}	// end of all verts
 
 			// copy indexes
 			int no = newTargetSurfInfoPtr->numVerts;			// correction factor (before adding nV!)
