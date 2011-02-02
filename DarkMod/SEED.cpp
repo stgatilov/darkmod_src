@@ -849,11 +849,10 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	seed_class_t			SeedClass;
 	seed_material_t			SeedMaterial;
 	const idKeyValue *kv;
-	float fImgDensity = 1.0f;		// average "density" of the image map, 1.0f in case we have no image map
+	float fImgDensity = 1.0f;		// average "density" of the image map, 1.0f if no image is used
 
 	// TODO: support for "seed_spawn_probability" (if < 1.0, only spawn entities of this class if RandomFloat() <= seed_spawn_probability)
 
-	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.pseudo = false;		// this is a true entity class
 	SeedClass.watch = watch;		// watch over this entity?
 
@@ -1218,11 +1217,13 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 		// TODO: parse from "seed_nocollide" "same, other, world, static"
 		SeedClass.nocollide	= NOCOLLIDE_STATIC;
 	}
+	idMat3 axis = ent->GetPhysics()->GetAxis();
 	// set rotation of entity to 0, so we get the unrotated bounds size
 	ent->SetAxis( mat3_identity );
-
 	// TODO: in case the entity is non-solid, this ends up as 0x0, try to find the size.
 	SeedClass.size = ent->GetRenderEntity()->bounds.GetSize();
+	// restore axis!
+	ent->SetAxis( axis );
 
 	// in case the size is something like 8x0 (a single flat poly) or 0x0 (no clipmodel):
 	float fMin = 1.0f;
@@ -1325,13 +1326,8 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 		}
 		else
 		{
-			// Only use the CStaticMulti class if we are going to combine things, otherwise leave it as "func_static"
-			if ( m_bCombine )
-			{
-				SeedClass.classname = FUNC_DUMMY;
-			}
+			if ( !m_bCombine )
 			// if we are not combining things, but scale, set hModel so it later gets duplicated
-			else
 			{
 				// if scale_min.x == 0, axis-equal scaling
 			   	if (SeedClass.scale_max.z != 1.0f || SeedClass.scale_min.z != 1.0f ||
@@ -3082,7 +3078,7 @@ void Seed::CombineEntities( void )
 		sortedOffsets.Clear();
 		sortedOffsets.SetGranularity(64);	// we might have a few hundred entities in there
 
-		ofs.offset = idVec3(0,0,0); // the first copy is the original
+		ofs.offset = idVec3(0,0,0); 		// the first copy is the original
 		ofs.angles = m_Entities[i].angles;
 
 		// compute the alpha value and the LOD level
@@ -3460,7 +3456,12 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 			ent->entity = ent2->entityNumber;
 			// and rotate
 			// TODO: Would it be faster to set this as spawnarg before spawn?
-			ent2->SetAxis( ent->angles.ToMat3() );
+
+			// do not rotate combined entities, they come out alright:
+			if (!lclass->pseudo)
+			{
+				ent2->SetAxis( ent->angles.ToMat3() );
+			}
 			if (managed)
 			{
 				ent2->BecomeInactive( TH_THINK );
