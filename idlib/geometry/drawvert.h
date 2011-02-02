@@ -92,6 +92,7 @@ ID_INLINE dword idDrawVert::GetColor( void ) const {
 
 ID_INLINE void idDrawVert::ScaleToUnitNormal( void ) {
 	float invNormLen = idMath::RSqrt(normal.LengthSqr());
+	if (invNormLen == 1.0f) return;
 	normal *= invNormLen;
 	tangents[0] *= invNormLen;
 	tangents[1] *= invNormLen;
