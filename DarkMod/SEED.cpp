@@ -849,7 +849,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	seed_class_t			SeedClass;
 	seed_material_t			SeedMaterial;
 	const idKeyValue *kv;
-	float fImgDensity = 0.0f;		// average "density" of the image map
+	float fImgDensity = 1.0f;		// average "density" of the image map, 1.0f in case we have no image map
 
 	// TODO: support for "seed_spawn_probability" (if < 1.0, only spawn entities of this class if RandomFloat() <= seed_spawn_probability)
 
