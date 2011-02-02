@@ -540,7 +540,34 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_CREATEMISSILE;
 		fc.string = new idStr( token );
-	} else if ( token == "launch_missile" ) {
+	}
+	else if (token == "create_missile_from_def" )
+	{
+		// Read def name
+		if (!src.ReadTokenOnLine(&token))
+		{
+			return "Unexpected end of line";
+		}
+
+		idStr projectileDefName = token;
+
+		assert(projectileDefName.Length() > 0);
+
+		// Read joint name
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+
+		if ( !modelDef->FindJoint( token ) ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+
+		fc.type = FC_CREATEMISSILE_FROM_DEF;
+
+		// Connect the projectile def and joint name with a pipe and store that
+		fc.string = new idStr(projectileDefName + "|" + token);
+	}
+	else if ( token == "launch_missile" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -1105,6 +1132,19 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				}
 				case FC_CREATEMISSILE: {
 					ent->ProcessEvent( &AI_CreateMissile, command.string->c_str() );
+					break;
+				}
+				case FC_CREATEMISSILE_FROM_DEF:
+				{
+					// Split the def name and the joint name again
+					int pipePos = command.string->Find('|');
+
+					assert(pipePos != -1);
+
+					idStr defName = command.string->Left(pipePos);
+					idStr jointName = command.string->Mid(pipePos+1, command.string->Length() - pipePos - 1);
+
+					ent->ProcessEvent(&AI_CreateMissileFromDef, defName.c_str(), jointName.c_str());
 					break;
 				}
 				case FC_LAUNCHMISSILE: {

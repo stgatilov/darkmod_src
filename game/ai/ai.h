@@ -104,6 +104,7 @@ extern const idEventDef AI_BeginAttack;
 extern const idEventDef AI_EndAttack;
 extern const idEventDef AI_MuzzleFlash;
 extern const idEventDef AI_CreateMissile;
+extern const idEventDef AI_CreateMissileFromDef;
 extern const idEventDef AI_AttackMissile;
 extern const idEventDef AI_FireMissileAtTarget;
 extern const idEventDef AI_AttackMelee;
@@ -1799,6 +1800,7 @@ public:
 	void					Event_FoundBody( idEntity *body );
 	void					Event_MuzzleFlash( const char *jointname );
 	void					Event_CreateMissile( const char *jointname );
+	void					Event_CreateMissileFromDef(const char* defName, const char* jointname);
 	void					Event_AttackMissile( const char *jointname );
 	void					Event_FireMissileAtTarget( const char *jointname, const char *targetname );
 	void					Event_LaunchMissile( const idVec3 &muzzle, const idAngles &ang );

@@ -51,6 +51,7 @@ const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
 const idEventDef AI_MuzzleFlash( "muzzleFlash", "s" );
 const idEventDef AI_CreateMissile( "createMissile", "s", 'e' );
+const idEventDef AI_CreateMissileFromDef( "createMissileFromDef", "ss", 'e' ); // arg1 = def name, arg2 = joint name
 const idEventDef AI_AttackMissile( "attackMissile", "s", 'e' );
 const idEventDef AI_FireMissileAtTarget( "fireMissileAtTarget", "ss", 'e' );
 const idEventDef AI_LaunchMissile( "launchMissile", "vv", 'e' );
@@ -379,6 +380,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
 	EVENT( AI_MuzzleFlash,						idAI::Event_MuzzleFlash )
 	EVENT( AI_CreateMissile,					idAI::Event_CreateMissile )
+	EVENT( AI_CreateMissileFromDef,				idAI::Event_CreateMissileFromDef )
 	EVENT( AI_AttackMissile,					idAI::Event_AttackMissile )
 	EVENT( AI_FireMissileAtTarget,				idAI::Event_FireMissileAtTarget )
 	EVENT( AI_LaunchMissile,					idAI::Event_LaunchMissile )
@@ -891,6 +893,42 @@ void idAI::Event_CreateMissile( const char *jointname )
 
 	// Create a new random projectile
 	CreateProjectile(muzzle, viewAxis[0] * physicsObj.GetGravityAxis());
+
+	if (activeProjectile.projEnt.GetEntity())
+	{
+		if (!jointname || !jointname[ 0 ])
+		{
+			activeProjectile.projEnt.GetEntity()->Bind(this, true);
+		}
+		else
+		{
+			activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointname, true);
+		}
+	}
+
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
+}
+
+void idAI::Event_CreateMissileFromDef(const char* defName, const char *jointname)
+{
+	// Remove any other projectile if we have one
+	RemoveProjectile();
+
+	// Load definition from movable.def
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(defName);
+
+	if (!projectileDef)
+	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", defName);
+		idThread::ReturnEntity(NULL);
+	}
+
+	idVec3 muzzle;
+	idMat3 axis;
+	GetMuzzle(jointname, muzzle, axis);
+
+	// Create a new named projectile
+	CreateProjectileFromDict(muzzle, viewAxis[0] * physicsObj.GetGravityAxis(), projectileDef);
 
 	if (activeProjectile.projEnt.GetEntity())
 	{
