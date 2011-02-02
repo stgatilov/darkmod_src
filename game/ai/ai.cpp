@@ -7171,7 +7171,7 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	idMat3				axis;
 	idVec3				tmp;
 
-	if (projectileInfo.Num() == NULL)
+	if (projectileInfo.Num() == 0)
 	{
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
 		return NULL;
