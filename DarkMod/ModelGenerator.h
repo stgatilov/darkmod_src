@@ -110,6 +110,28 @@ struct lod_data_t
 
 };
 
+/** Describes a model stage used at a specific origin. Used internally to figure
+*	out which surface to skip, or where to append it.
+*/
+struct model_stage_info_t {
+	bool						couldCastShadow;	// if false - no shadow casting surfaces at all
+	unsigned int				usedShadowless;		// how often is this model used without shadows (or doesn't have shadow casting surfaces)
+	unsigned int				usedShadowing;		// how often is this model used with shadow casting on?
+	const idRenderModel* 		source;				// the actual render model to use
+
+	// these lists give for each source surface the target (or -1 for skip)
+	idList< int > noshadowSurfaces;					// in case used shadowless
+	idList< int > shadowSurfaces;					// The same as noshadowSurfaces, but in case of actual shadow casting
+
+	// this list gives for each source surface on the model whether this is a backside or a pure shadow caster
+	// * backsides are automatically created flipped copies of two-sided materials
+	// * pure shadow casters have no diffuse, just a shadow
+	idList< int > surface_info;						// 0 => no pure shadow caster and no backside
+													// 1 => no pure shadow caster, but is backside
+													// 2 => pure shadow caster, and not a backside
+													// 3 => pure shadow caster and a backside, too (?)
+};
+
 class CModelGenerator {
 public:
 	//CLASS_PROTOTYPE( CModelGenerator );
@@ -126,6 +148,15 @@ public:
 	void				Shutdown ( void );
 	void				Clear ( void );
 
+	/** Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries
+	*	to find the bakside for this surface, e.g. the surface which was copied and flipped. Returns
+	*	either the surface index number, or -1 for "not twosided or not found":
+	*/
+	int					GetBacksideForSurface( const idRenderModel * source, const int surfaceIdx ) const;
+
+	/** Returns true if the model has at least one surface that casts a shadow */
+	bool				ModelHasShadow( const idRenderModel * source ) const;
+	
 	/**
 	* Given a pointer to a render model, calls AllocModel() on the rendermanager, then
 	* copies all surface data from the old model to the new model. Used to construct a

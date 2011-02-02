@@ -15,16 +15,14 @@
 
 	Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
-TODO: implement create-backsides code, that simply merges the front and backside,
-	  this would mean we don't need to call FinishSurfaces(). We could even pre-compute
-	  models with the backsides already created. Would be useful for models that have
-	  backsides, but no shadowcasting surfaces.
 TODO: If a material casts a shadow (but is not textures/common/shadow*), but the model
 	  should not cast a shadow after combine, then clone the material (keep track of
 	  all clone materials, Save/Restore/Destroy them) and set noshadows on the clone,
 	  then use it in a new surface.
 TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vertexes,
 	  and omit FinishSurfaces() on the combined model. Might speed it up a lot.
+TODO: Use the new strategy/code on DuplicateModel(), too, as it would fail for the ivy
+	  model and needlessly duplicate the second surface.
 */
 
 #include "../idlib/precompiled.h"
@@ -44,10 +42,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces;
 int model_combines = 0;
 #endif
-
-// This enables the code to test (and skip) automaticaly created backsides. Since NumBaseSurfaces()
-// seems to return only the first N original surfaces, this code is not neccessary and thus disabled:
-//#define M_TEST_BACKSIDES
 
 /*
 ===============
@@ -99,6 +93,90 @@ CModelGenerator::Shutdown
 ===============
 */
 void CModelGenerator::Shutdown( void ) {
+}
+
+/* Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries
+   to find the bakside for this surface, e.g. the surface which was copied and flipped. Returns
+   either the surface index number, or -1 for "not twosided or not found":
+*/
+int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const int surfaceIdx ) const {
+	const modelSurface_t *firstSurf;
+	const idMaterial *firstShader;
+
+	// no source model?
+	if (!source) { return -1; }
+		
+	int numSurfaces = source->NumSurfaces();
+
+	if ( surfaceIdx >= numSurfaces || surfaceIdx < 0)
+	{
+		// surfaceIdx must be valid
+		return -1;
+	}
+
+	firstSurf = source->Surface( surfaceIdx );
+	if (!firstSurf) { return -1; }
+	firstShader = firstSurf->shader;
+	if (!firstShader) { return -1; }
+
+	// if this is the last surface, it cannot have a flipped backside, because that
+	// should come after it. We will fall through the loop and return -1 at the end:
+
+	// Run through all surfaces, starting with the one we have + 1
+	for (int s = surfaceIdx + 1; s < numSurfaces; s++)
+	{
+		// skip self
+//		if (s == surfaceIdx) { continue; }	// can't happen here as s > surfaceIdx
+
+		// get each surface
+		const modelSurface_t *surf = source->Surface( s );
+
+		// if the original creates backsides, the clone must to, because it uses the same shader
+		if (!surf || !surf->shader->ShouldCreateBackSides()) { continue; }
+
+		// check if they have the same shader
+		const idMaterial *shader = surf->shader;
+		if (surf->shader == firstShader)
+		{
+			// same shader, but has it the same size?
+			if (surf->geometry && firstSurf->geometry && 
+					surf->geometry->numIndexes == firstSurf->geometry->numIndexes &&
+					surf->geometry->numVerts   == firstSurf->geometry->numVerts)
+			{
+				// TODO: more tests to see that this is the real flipped surface and not just a double material?
+				// found it
+				return s;
+			}
+		}
+	}
+	// not found
+	return -1;
+}
+
+/* Given a rendermodel, returns true if this model has any surface that would cast a shadow.
+*/
+bool CModelGenerator::ModelHasShadow( const idRenderModel * source ) const {
+
+	// no source model?
+	if (!source) { return -1; }
+		
+	int numSurfaces = source->NumSurfaces();
+
+	// Run through all surfaces
+	for (int s = 0; s < numSurfaces; s++)
+	{
+		// get each surface
+		const modelSurface_t *surf = source->Surface( s );
+		if (!surf) { continue; }
+
+		const idMaterial *shader = surf->shader;
+		if ( shader->SurfaceCastsShadow() )
+		{
+			// found at least one surface casting a shadow
+			return true;
+		}
+	}
+	return false;
 }
 
 /*
@@ -281,6 +359,9 @@ CModelGenerator::DuplicateLODModels - Duplicate a render model based on LOD stag
 
 If the given list of model_ofs_t is filled, the model will be copied X times, each time
 offset and rotated by the given values, scaled, and also fills in the right vertex color.
+
+The models in LODs do not have to be LOD stages, they can be anything as long as for
+each offset the corrosponding entry in LOD exists.
 ===============
 */
 idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRenderModel*> *LODs,
@@ -290,17 +371,13 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
 	modelSurface_t *newSurf;
-	bool needFinish = false;
+	bool needFinish;				// do we need to call FinishSurfaces() at the end?
 
-	idList<model_ofs_t> ofs;
-	model_ofs_t op;
+	// info about each model (how often used, how often shadow casting, which surfaces to copy where)
+	idList<model_stage_info_t> modelStages;
+	model_stage_info_t *modelStage;	// ptr to current model stage
 
-	// f.i. model 1 with surf A and B, and model 2 with surf B,C,D would result in:
-	// (model 0) (model 1)
-	// 0,1,      1,2,3      in shaderIndex and 0,2 in shaderIndexStart:
-
-	idList< int > shaderIndex;			// for each LOD model, note which source surface maps to which target surface
-	idList< int > shaderIndexStart;		// where in shaderIndex starts the map for this LOD stage?
+	const model_ofs_t *op;
 
 	idList< model_target_surf > targetSurfInfo;
 	model_target_surf newTargetSurfInfo;
@@ -323,7 +400,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	// and init it as dynamic empty model
 	hModel->InitEmpty( snapshotName );
 
-	// count the tris
+	// count the tris overall
 	numIndexes = 0; numVerts = 0;
 
 	if (NULL == offsets)
@@ -331,169 +408,277 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		gameLocal.Error("NULL offsets in DuplicateLODModels");
 	}
 
-	// for each offset, correct missing LOD models
 	int nSources = LODs->Num();
 	if (nSources == 0)
 	{
 		gameLocal.Error("No LOD models DuplicateLODModels");
 	}
-//    gameLocal.Warning("Have %i LOD stages.", nSources);
+    //gameLocal.Warning("Have %i LOD stages.", nSources);
 
-	// correct entries that are out-of-bounds
-	for (int i = 0; i < offsets->Num(); i++)
+	// Stages of our plan:
+
+	/* ** 1 ** 
+	* First check for each potentially-used model if it has a shadow-casting surface
+	*	O(N*M) - N is number of stages/models 						 (usually 7 or less)
+	*			 M is number of surfaces (on average) for each stage (usually 1..3)
+	* At this point we only know that we don't need to call FinishSurfaces() if there
+	* are no shadow-casting models at all, but if there, we are still not sure because
+	* it can turn out the shadow-casting ones aren't actually used. So:
+	*/
+
+	/* ** 2 **
+	* Then check for each offset which model stage it uses, and count them.
+	* Also correct out-of-bounds entries here.
+	*		O(N) where N the number of offsets.
+	*/
+
+	/* ** 3 **
+	* Now that we know whether we need FinishSurfaces(), we also know whether we
+	* need to skip backsides, or not. So lets map out which surface of which stage
+	* gets copied to what surface of the final model.
+	*	O(N*M) - N is number of stages/models 						 (usually 7 or less)
+	*			 M is number of surfaces (on average) for each stage (usually 1..3)
+	*/
+
+	/* ** 4 **
+	* Allocate memory for all nec. surfaces.
+	*/
+
+	/* ** 5 **
+	* Finally we can copy the data together, scaling/rotating/translating models as
+	* we go.
+	*	O(V) - V is number of tris we need to copy
+	*/
+
+
+	/* Let the play begin: */
+	modelStages.SetNum(nSources);
+	needFinish = false;				// do we need to call FinishSurfaces() at the end?
+
+	/* ** Stage 1 ** */
+	// For each model count how many shadow casting surfaces it has
+	// And init modelStages, too.
+
+#ifdef M_DEBUG
+	gameLocal.Printf("Stage #1\n");
+#endif
+
+	// TODO: If this prove to be an expensive step (which I doubt), then we could
+	//		 cache the result, because the ptr to the renderModel should be stable.
+	for (int i = 0; i < nSources; i++)
 	{
-		op = offsets->Ptr()[i];
-//		if (op.lod < 0)	// invisible
-		if (op.lod >= nSources)
+		modelStage = &modelStages[i];
+
+		// init fields
+		modelStage->usedShadowless = 0;
+		modelStage->usedShadowing = 0;
+		modelStage->couldCastShadow = false;
+		modelStage->noshadowSurfaces.Clear();
+		modelStage->shadowSurfaces.Clear();
+		modelStage->surface_info.Clear();
+
+		if (NULL == (modelStage->source = LODs->Ptr()[i]))
 		{
-			op.lod = nSources - 1;
+			// Use the default model
+			if (NULL == (modelStage->source = LODs->Ptr()[0]))
+			{
+				gameLocal.Warning("NULL source ptr for default LOD stage (was default for %i)", i);
+				// cannot use this
+				continue;
+			}
+		}
+#ifdef M_DEBUG
+		// print the source model
+		modelStage->source->Print();
+#endif
+		if (modelStage->source->NumSurfaces() == 0)
+		{
+			// ignore empty models
+			modelStage->source = NULL;
+			continue;
+		}
+
+		// false if there are no shadow-casting surfaces at all
+		modelStage->couldCastShadow = ModelHasShadow( modelStage->source );
+	}
+
+#ifdef M_DEBUG
+	gameLocal.Printf("Stage #2\n");
+#endif
+
+	/* ** Stage 2 ** */
+	// For each offset, count what stages it uses (and with or without shadow) and also
+	// correct missing (LOD) models
+	const model_ofs_t *OffsetsPtr = offsets->Ptr();
+
+	int numOffsets = offsets->Num();
+	for (int i = 0; i < numOffsets; i++)
+	{
+		op = &OffsetsPtr[i];
+		// correct entries that are out-of-bounds
+		int lod = op->lod;
+		if (lod >= nSources) { lod = nSources - 1; }
+		// otherwise invisible
+		if (lod < 0)
+		{
+			continue;
+		}
+		// uses stage op->lod
+		modelStage = &modelStages[lod];
+
+		// the stage is used with shadow only if 
+		// BOTH the model could cast a shadow and the offset says it wants a shadow
+		if ( modelStage->couldCastShadow && !(op->flags & SEED_MODEL_NOSHADOW) )
+		{
+			modelStage->usedShadowing ++;
+			// can and could cast a shadow, so we need FinishSurface()
+			needFinish = true;
+		}
+		else
+		{
+			modelStage->usedShadowless ++;
 		}
 	}
 
-	// If we have multiple LOD models with different surfaces, then we need to combine
+#ifdef M_DEBUG
+	gameLocal.Printf("Stage #3\n");
+#endif
+
+	/* ** Stage 3 ** */
+	// If we have multiple models with different surfaces, then we need to combine
 	// all surfaces from all models, so first we need to build a list of needed surfaces
 	// by shader name. This ensures that if LOD 0 has A and B and LOD 1 has B and C, we
 	// create only three surfaces A, B and C, and not four (A, B.1, B.2 and C). This will
 	// help reducing drawcalls:
-
 	targetSurfInfo.Clear();
 
-    int shaderIndexStartOfs = 0;
 	for (int i = 0; i < nSources; i++)
 	{
-		const idRenderModel* source = LODs->Ptr()[i];
-		if (NULL == source)
-		{
-			// Use the default model
-			source = LODs->Ptr()[0];
-			if (NULL == source)
-			{
-				gameLocal.Warning("NULL source ptr for default LOD stage (was default for %i)", i);
-				continue;
-			}
-//			gameLocal.Warning("Using default for empty LOD stage %i", i);
-//			continue;	// skip non-existing LOD stages
-		}
+		modelStage = &modelStages[i];
 
-		// count how many instances in offsets use this LOD model, so we can compute the
-		// number of needed vertexes/indexes:
-		int used = 0;
-		// Count how many instances in offsets use this LOD model, and need shadow-casting
-		// surfaces intact.
-		int shadows = 0;
-		for (int o = 0; o < offsets->Num(); o++)
+		int modelUsageCount = modelStage->usedShadowless + modelStage->usedShadowing;
+		// not used at all?
+		if ( (0 == modelUsageCount) || (NULL == modelStage->source) )
 		{
-			op = offsets->Ptr()[o];
-			if (op.lod == i)
-			{
-				used ++;
-				if (! (op.flags & SEED_MODEL_NOSHADOW) )
-				{
-					shadows++;
-				}
-			}
-		}
-
-		// if not used at all (but use shadow as it is <= used), skip it
-		if (shadows == 0)
-		{
-			shaderIndexStart.Append( -1 );	// dummy value, not used but need to reserve the spot
-
+			// skip
 #ifdef M_DEBUG
-			numSurfaces = source->NumBaseSurfaces();
-			gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used 0 times\n", i, numSurfaces );
+			gameLocal.Printf("Stage #%i is not used at all, skipping it.\n", i);
 #endif
 			continue;
 		}
+		const idRenderModel* source = modelStage->source;
 
-		// get the number of base surfaces (minus decals and minus automatically created backsides) on the source model
-		numSurfaces = source->NumBaseSurfaces();
+		// get the number of all surfaces
+		numSurfaces = source->NumSurfaces();
 
 #ifdef M_DEBUG
-		gameLocal.Printf("ModelGenerator: LOD stage %i (%i base surfaces) is used %i times, %i times with shadows.\n", i, numSurfaces, used, shadows );
+		gameLocal.Printf("At stage #%i with %i surfaces, used %i times (%i shadow, %i noshadow).\n", i, numSurfaces, modelUsageCount, modelStage->usedShadowing, modelStage->usedShadowless);
 #endif
 
-		shaderIndexStart.Append( shaderIndexStartOfs );	// where in shaderIndex starts the map for this LOD stage?
-
-		// get each surface
-		for (int s = 0; s < numSurfaces; s++)
+		// If we have not yet filled this array, so do it now to avoid costly rechecks:
+		if (modelStage->surface_info.Num() == 0)
 		{
-			surf = source->Surface( s );
-			if (!surf)
+			// Do this as extra step before, so it is completely filled before we go
+			// through the surfaces and decide whether to keep them or not:
+			modelStage->surface_info.SetNum( numSurfaces );
+			modelStage->noshadowSurfaces.SetNum( numSurfaces );
+			modelStage->shadowSurfaces.SetNum( numSurfaces );
+			// init to 0
+			for (int s = 0; s < numSurfaces; s++)
 			{
-				continue;
+				modelStage->surface_info[s] = 0;
+				modelStage->noshadowSurfaces[s] = -1;	// default: skip
+				modelStage->shadowSurfaces[s] = -1;		// default: skip
 			}
 
-			// we need FinishSurfaces() to create the backsides
-			if (surf->shader->ShouldCreateBackSides())
+			for (int s = 0; s < numSurfaces; s++)
 			{
-				needFinish = true;
-			}
+				surf = source->Surface( s );
+				if (!surf) { continue; }
+				const idMaterial *curShader = surf->shader;
 
-#ifdef M_TEST_BACKSIDES
-			// see if we must skip one later surface for this one. For instance a model with:
-			//    verts  tris material
-			//		 0:   813   639 bc_lily
-			//		 1:   144   108 bc_lilyleaf
-			//		 2:   111   108 orchid
-			//		 3:   264    96 textures/common/shadow2
-			//		 4:   813   639 bc_lily						SKIP!
-			//		 5:   144   108 bc_lilyleaf					SKIP!
-
-			// this surface creates no back sides
-			if (!surf->shader->ShouldCreateBackSides())
-			{
-#ifdef M_DEBUG
-				gameLocal.Printf("Surface %i creates no backsides, checking if we should skip it.\n", s);
-#endif
-				idStr shaderName = surf->shader->GetName();
-				bool found = false;
-				// the original surface comes before this if this is a duplicated surface
-				for (int s2 = 0; s2 < s; s2++)
+				// Surfaces that have the backside bit already set are not considered here
+				// or we would find maybe their source by accident (we only want to skip
+				// the backside, not the frontside)
+				if ((modelStage->surface_info[s] & 1) == 0)
+				{
+					int backside = GetBacksideForSurface( modelStage->source, s );
+					// -1 not found, 0 can't happen as we start with 0 and 0 can't be its own backside
+					if (backside > 0)
 					{
-					surf_org = source->Surface( s2 );
-					if (!surf_org)
-					{
-						continue;
-					}
-					gameLocal.Printf("Testing %s against %s (index=%i, ShouldCreateBacksides=%i, v: %i == %i, i: %i == %i)\n", 
-								surf->shader->GetName(), surf_org->shader->GetName(), s2,
-								surf_org->shader->ShouldCreateBackSides(),
-								surf_org->geometry->numIndexes, surf->geometry->numIndexes, surf_org->geometry->numVerts, surf->geometry->numVerts);
-#ifdef M_DEBUG
-#endif
-					if (surf_org->shader->ShouldCreateBackSides() &&
-							surf_org->geometry->numIndexes == surf->geometry->numIndexes &&
-							surf_org->geometry->numVerts == surf->geometry->numVerts &&
-							shaderName == surf_org->shader->GetName() )
-					{
-#ifdef M_DEBUG
-						gameLocal.Printf("Found perfect match at %i\n", s2);
-#endif
-						found = true;
-						break;
+						// set bit 0 to true, so we know this is a backside
+						modelStage->surface_info[backside] &= 1;	// 0b0001
 					}
 				}
-				// found a matching original surface for this one, so skip it, as FinishSurfaces will
-				// recreate it:
-				if (found)
+				if (curShader->SurfaceCastsShadow())
 				{
-					// append a dummy entry that says "skip this"
-					shaderIndex.Append( -1 );		// surface i ( X - shaderIndexStartOfs ) => shaders[Y];
-					// for each LOD model, note which source surface maps to which target surface
-					shaderIndexStartOfs ++;
+					// is this is a pure shadow casting surface?
+					idStr shaderName = curShader->GetName();
+					if (shaderName.Left( m_shadowTexturePrefix.Length() ) == m_shadowTexturePrefix )
+					{
+						// yes, mark it
+						modelStage->surface_info[s] &= 2;			// 0b0010
+					}
+				}
+			}
+		}
+
+#ifdef M_DEBUG
+		gameLocal.Printf("Run through all %i surfaces\n", numSurfaces);
+#endif
+		// Run through all surfaces
+		for (int s = 0; s < numSurfaces; s++)
+		{
+			// get each surface
+			surf = source->Surface( s );
+			if (!surf) { continue; }
+
+			const idMaterial *curShader = surf->shader;
+			const int flags = modelStage->surface_info[s];
+		   
+			/* Two cases: 
+			*  1: need to call FinishSurfaces() at the end:
+			*	  1a: then we need to skip backsides (the clones of two-sided surfaces)
+			*	  1b: and we also need to skip pure shadow casting if the model is used with noshadows
+			*  2: no need to call FinishSurfaces() at the end:
+			*	  2a: need to skip ONLY pure shadow casting surfaces (they probably would not harm, but
+			*		  use up memory and time to copy)
+			*/
+			bool pureShadow = false;
+
+			if (needFinish)
+			{
+				/* case 1a */
+				if ((flags & 0x1) != 0)
+				{
+					continue;
+				}
+				/* case 2a */
+				if ((flags & 0x1) != 0)
+				{
+					pureShadow = true;
+				}
+			}
+			else
+			{
+				/* case 2a: need to skip ONLY pure shadow casting surfaces */
+				if ((flags & 0x2) != 0)
+				{
+					// this this is a pure shadow casting surface
 					continue;
 				}
 			}
-#endif // M_TEST_BACKSIDES
+
+			// Now we know that we need the surface at all, and if we need it in the case of "shadow"
+			// Decide to which target surface we need to append
+
+			// TODO: Backside surfaces get automatically added to the frontside, too. Is this ok?
 
 			// Do we have already a surface with that shader?
-
 			// The linear search here is ok, since most models have only a few surfaces, since every
 			// surface creates one expensive draw call.
-
 			// if given a shader, use this instead, so everyting will be in one surface:
-			idStr n = shader ? shader->GetName() : surf->shader->GetName();
+			idStr n = shader ? shader->GetName() : curShader->GetName();
 			int found = -1;
 			for (int j = 0; j < targetSurfInfo.Num(); j++)
 			{
@@ -509,7 +694,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				newTargetSurfInfo.numIndexes = 0;
 				newTargetSurfInfo.surf.geometry = NULL;
 				// if given a shader, use this instead.
-				newTargetSurfInfo.surf.shader = shader ? shader : surf->shader;
+				newTargetSurfInfo.surf.shader = shader ? shader : curShader;
 				newTargetSurfInfo.surf.id = 0;
 				targetSurfInfo.Append( newTargetSurfInfo );
 #ifdef M_DEBUG	
@@ -518,14 +703,24 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				found = targetSurfInfo.Num() - 1;
 			}
 
-			// increase the nec. counts
-			// shadow is <= used, so use it to get the correct counts:
-			targetSurfInfo[found].numVerts += shadows * surf->geometry->numVerts;
-			targetSurfInfo[found].numIndexes += shadows * surf->geometry->numIndexes;
-
-			shaderIndex.Append( found );		// surface i ( X - shaderIndexStartOfs ) => shaders[Y];
-			// for each LOD model, note which source surface maps to which target surface
-			shaderIndexStartOfs ++;
+			// Increase the nec. counts, if the stage is used X times with shadows and
+			// Y times without, the surface needs to be copied X+Y times:
+			int count = modelUsageCount;
+			if (pureShadow)
+			{
+				// only count it for shadow models usage, e.g. skip it for non-shadow cases
+				count = modelStage->usedShadowing;
+			}
+			else
+			{
+				// in case of noshadow, include it since it is not a pure shadow
+				modelStage->noshadowSurfaces[s] = found;
+				// modelStage->shadowSurfaces[s] stays as -1
+			}
+			// include everything in the shadow case
+			modelStage->shadowSurfaces[s] = found;
+			targetSurfInfo[found].numVerts += count * surf->geometry->numVerts;
+			targetSurfInfo[found].numIndexes += count * surf->geometry->numIndexes;
 		}
 	}
 
@@ -538,20 +733,13 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 #ifdef M_DEBUG	
 	gameLocal.Printf("ModelGenerator: Need %i surfaces on the final model.\n", targetSurfInfo.Num() );
-
-	// debug: print shaderIndex array
-	gameLocal.Printf("ModelGenerator: Dumping shaderIndex:\n");
-	for (int i = 0; i < shaderIndex.Num(); i++)
-	{
-		gameLocal.Printf(" %i = %i\n", i, shaderIndex[i] );
-	}
-	gameLocal.Printf("ModelGenerator: Dumping shaderIndexStart:\n");
-	for (int i = 0; i < shaderIndexStart.Num(); i++)
-	{
-		gameLocal.Printf(" %i = %i\n", i, shaderIndexStart[i] );
-	}
 #endif
 
+#ifdef M_DEBUG
+	gameLocal.Printf("Stage #4\n");
+#endif
+
+	/* ** Stage 4 - allocate surface memory */
 	for (int j = 0; j < targetSurfInfo.Num(); j++)
 	{
 #ifdef M_DEBUG	
@@ -568,110 +756,74 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		targetSurfInfo[j].numIndexes = 0;
 	}
 
-	// now combine everything into one model
+#ifdef M_DEBUG
+	gameLocal.Printf("Stage #5\n");
+#endif
+
 #ifdef M_TIMINGS
 	timer_copymodeldata.Start();
 #endif
 
-	const model_ofs_t *OffsetsPtr = offsets->Ptr();
-
+	/* ** Stage 5 - now combine everything into one model */
 	// for each offset
-	for (int o = 0; o < offsets->Num(); o++)
+	for (int o = 0; o < numOffsets; o++)
 	{
-		op = OffsetsPtr[o];
+		op = &OffsetsPtr[o];
 		// should be invisible, so skip
-		if (op.lod < 0)
+		int lod = op->lod;
+		if (lod < 0)
 		{
 			continue;
 		}
-		//gameLocal.Warning(" Offset %0.2f, %0.2f, %0.2f LOD %i.\n", op.offset.x, op.offset.y, op.offset.z, op.lod );
+	   	if (lod >= nSources) { lod = nSources - 1; }
 
 		// precompute these (stgatilov):
 		// scale matrix
-		idMat3 mScale(op.scale.x, 0, 0, 
-					  0, op.scale.y, 0, 
-					  0, 0, op.scale.z);
+		idMat3 mScale(op->scale.x, 0, 0, 
+					  0, op->scale.y, 0, 
+					  0, 0, op->scale.z);
 		// rotate matrix
-		idMat3 mRot = op.angles.ToRotation().ToMat3();
+		idMat3 mRot = op->angles.ToRotation().ToMat3();
 		// direction transformation = scale + rotate
 		idMat3 tDir = mScale * mRot;
 		// normal transformation = (scale + rotate) inverse transpose
 		idMat3 tNorm = tDir.Inverse().Transpose();
 		// position transformation = scale + rotate + translate
-		idMat4 tPos = idMat4(tDir, op.offset);
+		idMat4 tPos = idMat4(tDir, op->offset);
 
-		const idRenderModel* source = LODs->Ptr()[op.lod];
+		modelStage = &modelStages[lod];
 
-		if (!source)
-		{
-			// use the default model
-			//gameLocal.Warning(" Using LOD model 0 as replacement." );
-			source = LODs->Ptr()[0];
+		const idRenderModel* source = modelStage->source;
+		const bool noShadow = (op->flags & SEED_MODEL_NOSHADOW);
 
-			if (!source)
-			{
-				gameLocal.Warning(" LOD model 0 as replacement for stage %i is empty.", op.lod );
-				continue;
-			}
-		}
-
-		const bool noShadow = (op.flags & SEED_MODEL_NOSHADOW);
-
-		numSurfaces = source->NumBaseSurfaces();
-		int si = shaderIndexStart[op.lod];
-
-		// gameLocal.Warning("ModelGenerator: op.lod = %i si = %i", op.lod, si);
+		// gameLocal.Warning("ModelGenerator: op->lod = %i si = %i", op->lod, si);
 
 		// for each surface of the model
-		for (int i = 0; i < numSurfaces; i++)
+		numSurfaces = source->NumSurfaces();
+		for (int s = 0; s < numSurfaces; s++)
 		{
-			surf = source->Surface( i );
-			if (!surf)
+			//gameLocal.Warning("At surface %i of stage %i at offset %i\n", s, lod, o);
+
+			surf = source->Surface( s );
+			if (!surf) { continue; }
+
+			// get the target surface
+			int st = modelStage->shadowSurfaces[s];
+			if (noShadow)
 			{
-				continue;
+				st = modelStage->noshadowSurfaces[s];
 			}
-
-			bool castsShadow = surf->shader->SurfaceCastsShadow();
-
-			idStr shaderName = surf->shader->GetName();
-
-			idStr s = shaderName.Left( m_shadowTexturePrefix.Length() );
-#ifdef M_DEBUG
-			gameLocal.Printf("ModelGenerator: Surface %i (%s (%s)) castsShadows %s stage noshadow %s, prefix: %s\n", 
-					i, surf->shader->GetName(), s.c_str(), castsShadow ? "yes" : "no", noShadow ? "yes" : "no", m_shadowTexturePrefix.c_str() );
-#endif
-			// if this is a pure shadow-casting surface, skip it
-			if (noShadow && castsShadow && shaderName.Left( m_shadowTexturePrefix.Length() ) == m_shadowTexturePrefix )
-			{
-#ifdef M_DEBUG
-				gameLocal.Printf("Skipping surface %i (%s).\n", i, surf->shader->GetName() );
-#endif
-				continue;
-			}
-
-			// if this surface casts a shadow, we need FinishSurfaces() below:
-			if ( castsShadow )
-			{
-				needFinish = true;
-			}
-
-			// find the surface on the target
-			int st = shaderIndex[ si + i ];
-
-#ifdef M_DEBUG
-			gameLocal.Warning("ModelGenerator: Final surface number for add: %i (%i + %i)", st, si, i);
-#endif
 
 			// -1 => skip this surface
 			if (st < 0)
 			{
 #ifdef M_DEBUG
-				gameLocal.Warning("Skipping surface %i.\n", i);
+				gameLocal.Warning("Skipping surface %i.\n", s);
 #endif
 				continue;
 			}
 
-			newTargetSurfInfoPtr = &(targetSurfInfo[st]);
+			newTargetSurfInfoPtr = &targetSurfInfo[st];
 
 			if (!newTargetSurfInfoPtr)
 			{
@@ -686,12 +838,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			int nI = newTargetSurfInfoPtr->numIndexes;
 			int vmax = surf->geometry->numVerts;
 
-			dword newColor = op.color; 
+			dword newColor = op->color; 
 
 			// copy the vertexes and modify them at the same time (scale, rotate, offset)
 			for (int j = 0; j < vmax; j++)
 			{
-
 				// target
 				idDrawVert *v = &(newSurf->geometry->verts[nV]);
 				// source
@@ -759,10 +910,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 #endif
 
         newSurf->geometry->tangentsCalculated = true;
-		// TODO: are these nec.?
-        //newSurf->geometry->facePlanesCalculated = false;
         newSurf->geometry->facePlanesCalculated = true;
-        //newSurf->geometry->generateNormals = true;
         newSurf->geometry->generateNormals = false;
 		// calculate new bounds
 		SIMDProcessor->MinMax( newSurf->geometry->bounds[0], newSurf->geometry->bounds[1], newSurf->geometry->verts, newSurf->geometry->numVerts );
@@ -776,7 +924,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	timer_finishsurfaces.Start();
 #endif
 	if (needFinish)
-	{	
+	{
 		// generate shadow hull as well as tris for twosided materials
 		hModel->FinishSurfaces();
 	}
