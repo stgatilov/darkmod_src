@@ -1099,7 +1099,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	if (!mapName.IsEmpty())
 	{
 		SeedClass.imgmap = gameLocal.m_ImageMapManager->GetImageMap( mapName );
-		if (SeedClass.imgmap == 0)
+		if (SeedClass.imgmap < 0)
 		{
 			gameLocal.Warning ("SEED %s: Could not load image map mapName: %s", GetName(), gameLocal.m_ImageMapManager->GetLastError() );
 		}
@@ -1142,7 +1142,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 		unsigned char *imgData = gameLocal.m_ImageMapManager->GetMapData( SeedClass.imgmap );
 		if (!imgData)
 		{
-			gameLocal.Error("SEED %s: Could not access image data from %s.\n", 
+			gameLocal.Error("SEED %s: Can't access image data from %s, maybe the image file is corrupt?\n", 
 					GetName(), gameLocal.m_ImageMapManager->GetMapName( SeedClass.imgmap ) );
 		}
 
