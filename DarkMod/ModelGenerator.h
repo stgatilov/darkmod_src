@@ -174,10 +174,11 @@ public:
 	* Copies the surfaces of the source model to a new model. If dupData is true, a full copy will
 	* be made, otherwise just pointers to the surfaces are set. In this case caller needs to make sure
 	* that references to the surfaces are not freed twice by calling FreeSharedModelData() on the
-	* returned model before destroying it.
+	* returned model before destroying it. If noshadow = true, will try to eliminate shadow casting
+	* surfaces and also not build a shadow hull.
 	* If target is NULL a new model will be allocated. Returns target or the newly allocated model.
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL, const idVec3 *scale = NULL) const;
+	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL, const idVec3 *scale = NULL, const bool noshadow = false) const;
 
 	/**
 	* Returns the maximum number of models that can be combined from this model:

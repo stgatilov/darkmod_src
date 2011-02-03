@@ -21,8 +21,6 @@ TODO: If a material casts a shadow (but is not textures/common/shadow*), but the
 	  then use it in a new surface.
 TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vertexes,
 	  and omit FinishSurfaces() on the combined model. Might speed it up a lot.
-TODO: Use the new strategy/code on DuplicateModel(), too, as it would fail for the ivy
-	  model and needlessly duplicate the second surface.
 */
 
 #include "../idlib/precompiled.h"
@@ -39,7 +37,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //#define M_TIMINGS 1
 
 #ifdef M_TIMINGS
-static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces;
+static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces, timer_dupmodel;
 int model_combines = 0;
 #endif
 
@@ -189,13 +187,19 @@ Returns the given (or allocated) model.
 
 ===============
 */
-idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel, const idVec3 *scale) const {
+idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel, const idVec3 *scale, const bool noshadow) const {
 
 	int numSurfaces;
 	int numVerts, numIndexes;
 	const modelSurface_t *surf;
 	modelSurface_s newSurf;
 	bool needScale = false;
+	idList< bool > backsides;
+	idMat3 mScale;
+
+#ifdef M_TIMINGS
+	timer_dupmodel.Start();
+#endif
 
 	if (NULL == source)
 	{
@@ -215,70 +219,76 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	// and init it as dynamic empty model
 	hModel->InitEmpty( snapshotName );
 
+	bool needFinish = false;
+	// if !noshadow & this model has a shadow casting surface, we need to call FinishSurfaces():
+	if (!noshadow && ModelHasShadow( source ))
+	{
+		needFinish = true;
+	}
+
 	numVerts = 0;
 	numIndexes = 0;
-	numSurfaces = source->NumBaseSurfaces();
+	numSurfaces = source->NumSurfaces();
 
+	// scale matrix
 	if (scale && (scale->x != 1.0f || scale->y != 1.0f || scale->z != 1.0f))
 	{
 		needScale = true;
 	}
 
+	gameLocal.Warning("Source with %i surfaces. snapshot %s, scaling: %s, needFinish: %s\n", numSurfaces, snapshotName, needScale ? "yes" : "no", needFinish ? "yes" : "no");
 #ifdef M_DEBUG
-	gameLocal.Warning("Source with %i surfaces. snapshot %s, scaling: %s\n", numSurfaces, snapshotName, needScale ? "yes" : "no");
 #endif
 
+	backsides.Clear();
+
+	// If we need to call FinishSurfaces(), we need to skip all backsides. So lets
+	// find out which surfaces are cloned frontsides:
+	if (needFinish)
+	{
+		backsides.SetNum(numSurfaces);
+		for (int i = 0; i < numSurfaces; i++)
+		{
+			backsides[i] = false;
+		}
+		// for each needed surface
+		for (int i = 0; i < numSurfaces; i++)
+		{
+			// find its backside, if it has one
+	
+			// if this surface is already marked as backside, skip this test
+			if (backsides[i]) { continue; }
+			int backsideIdx = GetBacksideForSurface( source, i );
+			if (backsideIdx > 0 && backsideIdx < numSurfaces)
+			{
+				backsides[backsideIdx] = true;
+			}
+		}
+	}
+
+	// Now that we know which surface is a backside, we can copy all (or only the frontsides)
 	// for each needed surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
 		//gameLocal.Warning("Duplicating surface %i.\n", i);
 		surf = source->Surface( i );
-		if (!surf)
+
+		// if we need to call FinishSurface() and this is a backside, skip it
+		if (!surf || (needFinish && backsides[i]))
 		{
 			continue;
 		}
 
-#ifdef M_TEST_BACKSIDES
-
-		if (!surf->shader->ShouldCreateBackSides())
+		// If we don't need shadows, and this is a pure shadow caster (e.g. otherwise invisible)
+		// then skip it. Can only happen if noshadows = true:
+		if (!needFinish && surf->shader->SurfaceCastsShadow())
 		{
-
-			// skip this surface if it was doubled because the original surface was two-sided
-			// it will be automatically recreated by FinishSurfaces() below.
-#ifdef M_DEBUG
-			gameLocal.Printf("Surface %i creates no backsides, checking if we should skip it.\n", i);
-#endif
-			bool found = false;
-
 			idStr shaderName = surf->shader->GetName();
-			// the original surface comes before this if this is a duplicated surface
-			for (int s2 = 0; s2 < i; s2++)
-			{
-				const modelSurface_t *surf_org = source->Surface( s2 );
-				if (!surf_org)
-				{
-					continue;
-				}
-				if (surf_org->shader->ShouldCreateBackSides() &&
-						surf_org->geometry->numIndexes == surf->geometry->numIndexes &&
-						surf_org->geometry->numVerts == surf->geometry->numVerts &&
-						shaderName == surf_org->shader->GetName() )
-				{
-#ifdef M_DEBUG
-					gameLocal.Printf("Found perfect match at %i\n", s2);
-#endif
-					found = true;
-					break;
-				}
-			}
-			// found a matching original surface for this one, so skip it, as FinishSurfaces will
-			// recreate it:
-			if (found)
+			if (shaderName.Left( m_shadowTexturePrefix.Length() ) == m_shadowTexturePrefix )
 			{
 				continue;
 			}
-		} // end backside test
-#endif // M_TEST_BACKSIDES
+		}
 
 		numVerts += surf->geometry->numVerts; 
 		numIndexes += surf->geometry->numIndexes;
@@ -343,11 +353,22 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		hModel->AddSurface( newSurf );
 	}
 
-	// generate shadow hull as well as tris for twosided materials
-	hModel->FinishSurfaces();
+	// generate shadow hull as well as backsides for twosided materials
+	if (needFinish)
+	{
+#ifdef M_DEBUG
+		gameLocal.Printf("Calling FinishSurfaces().\n");
+#endif
+		hModel->FinishSurfaces();
+	}
 
 #ifdef M_DEBUG
 	hModel->Print();
+#endif
+
+#ifdef M_TIMINGS
+	timer_dupmodel.Stop();
+	gameLocal.Printf( "ModelGenerator: dupmodel %0.2f ms\n", timer_dupmodel.Milliseconds() );
 #endif
 
 	return hModel;
