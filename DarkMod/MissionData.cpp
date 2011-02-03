@@ -2682,19 +2682,19 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	if ( m_Stats.AIAlerts[5].Overall > 0 )
 	{
-		sightingBust = "Busted";
-		sightingBust2 = "Busted + 20 :";
+		sightingBust = "You were seen";
+		sightingBust2 = "Seen + 20 :";
 		stealthScore += 20;
 		sightingScore = "20";
 	}
 	else
 	{
-		sightingBust = "None";
-		sightingBust2 = "None :";
+		sightingBust = "You were not seen";
+		sightingBust2 = "Not seen :";
 		sightingScore = "0";
 	}
 		
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + "Sightings: " + sightingBust;
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + sightingBust;
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
 	key = "Stealth Score";
@@ -2769,16 +2769,16 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 	
-	key = "Alert 1. Qty: " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
+	key = "Alert 1. " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 2. Qty: " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
+	key = "Alert 2. " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 3. Qty: " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
+	key = "Alert 3. " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 4. Qty: " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
+	key = "Alert 4. " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = "Alert 5. " + sightingBust2;
