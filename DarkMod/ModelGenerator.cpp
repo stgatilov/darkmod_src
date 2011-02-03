@@ -96,7 +96,7 @@ void CModelGenerator::Shutdown( void ) {
 }
 
 /* Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries
-   to find the bakside for this surface, e.g. the surface which was copied and flipped. Returns
+   to find the backside for this surface, e.g. the surface which was copied and flipped. Returns
    either the surface index number, or -1 for "not twosided or not found":
 */
 int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const int surfaceIdx ) const {
@@ -119,7 +119,7 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 	firstShader = firstSurf->shader;
 	if (!firstShader) { return -1; }
 
-	// if this is the last surface, it cannot have a flipped backside, because that
+	// If this is the last surface, it cannot have a flipped backside, because that
 	// should come after it. We will fall through the loop and return -1 at the end:
 
 	// Run through all surfaces, starting with the one we have + 1
@@ -131,7 +131,7 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 		// get each surface
 		const modelSurface_t *surf = source->Surface( s );
 
-		// if the original creates backsides, the clone must to, because it uses the same shader
+		// if the original creates backsides, the clone must do so, too, because it uses the same shader
 		if (!surf || !surf->shader->ShouldCreateBackSides()) { continue; }
 
 		// check if they have the same shader
@@ -158,7 +158,7 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 bool CModelGenerator::ModelHasShadow( const idRenderModel * source ) const {
 
 	// no source model?
-	if (!source) { return -1; }
+	if (!source) { return false; }
 		
 	int numSurfaces = source->NumSurfaces();
 
