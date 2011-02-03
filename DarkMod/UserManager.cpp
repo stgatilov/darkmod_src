@@ -76,7 +76,7 @@ idActor* UserManager::GetMasterUser()
 
 idActor* UserManager::GetUserAtIndex(const int index) // grayman #2345
 {
-	if (GetNumUsers() > 0)
+	if (GetNumUsers() > index)
 	{
 		return m_users[index].GetEntity();
 	}

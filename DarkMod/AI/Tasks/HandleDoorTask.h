@@ -59,6 +59,7 @@ private:
 	bool _doorInTheWay;
 	int _retryCount;
 	int _leaveQueue; // grayman #2345
+	bool _triedFitting; // grayman #2345
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -112,6 +113,7 @@ private:
 
 	void ResetMaster(CFrobDoor* frobDoor); // grayman #2345
 	void AddUser(idAI* owner, CFrobDoor* frobDoor); // grayman #2345
+
 };
 
 } // namespace ai

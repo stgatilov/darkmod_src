@@ -260,10 +260,19 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 GetFirstBlockingObstacle
 ============
 */
-bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum, int &blockingDoorNum ) { // grayman #2345
+bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum, int &blockingDoorNum ) { // grayman #2345
 	int i, edgeNums[2];
 	float dist, scale1, scale2;
 	idVec2 bounds[2];
+
+	// grayman #2345 - get AI version of yourself
+
+	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf());
+	idAI* selfAI = NULL;
+	if (self->IsType(idAI::Type))
+	{
+		selfAI = static_cast<idAI*>(self);
+	}
 
 	// get bounds for the current movement delta
 	bounds[0] = startPos - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
@@ -290,12 +299,21 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 				blockingEdgeNum = edgeNums[0];
 				
 				// grayman #2345 - Return the index number of the closest blocking door,
-				// regardless of whether the door is the closest blocking obstacle.
+				// regardless of whether the door is the closest blocking obstacle. Ignore
+				// a door that you recently used. This keeps you from going back and forth
+				// through the same door.
 
-				if ((obstacles[i].entity != NULL) && obstacles[i].entity->IsType(CFrobDoor::Type))
+				idEntity* e = obstacles[i].entity;
+				if ((e != NULL) && e->IsType(CFrobDoor::Type))
 				{
 					if (blockingScale < blockingScaleDoor)
 					{
+						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
+						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 5000))
+						{
+							continue; // ignore this door
+						}
 						blockingDoorNum = i;
 						blockingScaleDoor = blockingScale;
 					}
@@ -518,11 +536,10 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		// Get the box bounding the obstacle
 		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 
-#if 1
 		// grayman #2345 - To get AI to queue at an open door and not cause logjams, treat an open door
 		// as if it's closed. This could also apply to all binary frob movers, but since many of those
 		// are simple wall switches, and should be ignored, we'll limit this code to doors. The door-handling
-		// task sorts out the reality of whether the door is open or closed.
+		// task sorts out whether the door is actually open or closed.
 
 		if (p_binaryFrobMover != NULL)
 		{
@@ -530,75 +547,68 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 			if (p_binaryFrobMover->IsType(CFrobDoor::Type))
 			{
-				// If we've just finished handling this door, some time needs to pass
-				// before we consider it an obstacle again. This keeps AI from going back through a
-				// door when it isn't on their forward path. This is a workaround until I (grayman) can
-				// better understand the pathing code.
-
-				CFrobDoor *frobDoor = static_cast<CFrobDoor*>(p_binaryFrobMover);
-				int lastTimeSeen = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeSeen;
-				if ((lastTimeSeen > -1) && (gameLocal.time < lastTimeSeen + 5000))
-				{
-					continue; // ignore this door
-				}
-
 				if (p_binaryFrobMover->IsOpen())
 				{
 					if (self->IsType(idAI::Type))
 					{
 						idAI *selfAI = static_cast<idAI*>(self);
-						if (!selfAI->m_HandlingDoor) // If we're already handling a door, don't include the open door in the path calculation
+						if (!selfAI->m_HandlingDoor) // If we're already handling a door, don't include the closed door in the obstacle calculation
 						{
 							// The following calculations are necessary for the AI to see the door in its closed position.
 
-							// Get remaining movement
+							idBox moveBox = p_binaryFrobMover->GetClosedBox();
+							if (moveBox.IsCleared()) // has the closed position already been calculated?
+							{
+								// Get remaining movement
 
-							idVec3 deltaPosition;
-							idAngles deltaAngles;
-							idRotation rotation;
+								idVec3 deltaPosition;
+								idAngles deltaAngles;
+								idRotation rotation;
 
-							p_binaryFrobMover->GetRemainingMovement(deltaPosition, deltaAngles);
+								p_binaryFrobMover->GetRemainingMovement(deltaPosition, deltaAngles);
 
-							// Make translated version of self and add to bounds
+								// Make translated version of self and add to bounds
 
-							idBox moveBox = box.Translate (deltaPosition);
-							box.AddBox (moveBox);
+								moveBox = box.Translate (deltaPosition);
+								box.AddBox (moveBox);
 
-							idVec3 o = p_binaryFrobMover->GetPhysics()->GetOrigin();
+								idVec3 o = p_binaryFrobMover->GetPhysics()->GetOrigin();
 
-							// Translate to the world origin, rotate, and transfer back. Using RotateSelf(),
-							// I (grayman) couldn't get the door to rotate in place. It would rotate around the world origin.
+								// Translate to the world origin, rotate, and transfer back. Using RotateSelf(),
+								// I (grayman) couldn't get the door to rotate in place. It would rotate around the world origin.
 
-							moveBox = moveBox.Translate (-o);
+								moveBox = moveBox.Translate (-o);
 
-							// Rotate
+								// Rotate
 
-							rotation = deltaAngles.ToRotation();
-							rotation.SetOrigin(o);
+								rotation = deltaAngles.ToRotation();
+								rotation.SetOrigin(o);
 
-							idMat3 r = rotation.ToMat3();
-							moveBox.RotateSelf(r);
+								idMat3 r = rotation.ToMat3();
+								moveBox.RotateSelf(r);
 
-							// Translate back to start position
+								// Translate back to start position
 
-							moveBox = moveBox.Translate(o);
+								moveBox = moveBox.Translate(o);
+								p_binaryFrobMover->SetClosedBox(moveBox); // save for next time
+							}
 							box.AddBox (moveBox);
 						}
 					}
 				}
 			}
 		}
-#else
+/*
 		// grayman #2345 - original code that didn't work
 
 		if (p_binaryFrobMover != NULL)
 		{
-		/* TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
-		* the current position to where it is winding up, so the AI knows to stay clear
-		*/
+		// TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
+		// the current position to where it is winding up, so the AI knows to stay clear
+		//
 
-		/* This isn't working due to rotation problem
-		*/
+		// This isn't working due to rotation problem
+
 			// Get remaining movement
 			idVec3 deltaPosition;
 			idAngles deltaAngles;
@@ -619,7 +629,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			moveBox.TranslateSelf (deltaPosition);
 			box.AddBox (moveBox);
 		}
-#endif
+*/
 		// project the box containing the obstacle onto the floor plane
 		int numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
 
@@ -657,15 +667,15 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		return 0;
 	}
 
-	int blockingObstacle; // will hold the index to the first blocking obstacle
-	int blockingEdgeNum; // will hold the edge number of the winding which intersects the path
+	int blockingObstacle;	// will hold the index to the first blocking obstacle
+	int blockingEdgeNum;	// will hold the edge number of the winding which intersects the path
 	int blockingDoorNum = -1;	// grayman #2345 - will hold the index to the first blocking door
 	float blockingScale;
 	// if the current path doesn't intersect any dynamic obstacles the path should be through valid AAS space
 	int startObstacleNum = PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2());
 	if (startObstacleNum == -1 )
 	{
-		if (!GetFirstBlockingObstacle(obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
+		if (!GetFirstBlockingObstacle(physics, obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
 									  blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
 		{
 			// No first obstacle found
@@ -752,6 +762,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			// AAS areas never change during map runtime, so why calculate them each time?
 			// 15/06/2008: Did some profiling, the section below is harmless, it's the 
 			// aas->GetWallEdges and aas->SortWallEdges() calls above which are expensive.
+
+			// grayman: If they're expensive, can't they also be done once and cached? An AAS
+			// area doesn't change over time.
 
 			// Start to fill the values in the new obstacle structure
 			obstacle_t& obstacle = obstacles[numObstacles++];
@@ -909,7 +922,8 @@ bool GetPathNodeDelta( pathNode_t *node, const obstacle_t *obstacles, const idVe
 BuildPathTree
 ============
 */
-pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const idBounds &clipBounds, const idVec2 &startPos, const idVec2 &seekPos, obstaclePath_t &path ) {
+pathNode_t *BuildPathTree( const idPhysics *physics, const obstacle_t *obstacles, int numObstacles, const idBounds &clipBounds, const idVec2 &startPos, const idVec2 &seekPos, obstaclePath_t &path ) // grayman #2345 - added 'physics'
+{
 	int blockingEdgeNum, blockingObstacle, obstaclePoints, bestNumNodes = MAX_OBSTACLE_PATH;
 	float blockingScale;
 	pathNode_t *root, *node, *child;
@@ -941,10 +955,9 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 
 		// if an obstacle is blocking the path
 
-		int blockingDoorNum; // grayman #2345 - will hold the index to the first blocking door
-		if ( GetFirstBlockingObstacle( obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
+		int blockingDoorNum = -1; // grayman #2345 - will hold the index to the first blocking door
+		if ( GetFirstBlockingObstacle(physics, obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
 		{
-
 			if ( path.firstObstacle == NULL ) {
 				path.firstObstacle = obstacles[blockingObstacle].entity;
 			}
@@ -1248,7 +1261,7 @@ idAI::FindPathAroundObstacles
   Finds a path around dynamic obstacles using a path tree with clockwise and counter clockwise edge walks.
 ============
 */
-bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner ) {
+bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner ) {
 	// Initialise the path structure with reasonable defaults
 	path.seekPos = seekPos;
 	path.firstObstacle = NULL;
@@ -1304,7 +1317,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 
 	START_TIMING(owner->actorBuildPathTreeTimer);
 	// build a path tree
-	pathNode_t* root = BuildPathTree( obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path );
+	pathNode_t* root = BuildPathTree(physics, obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path ); // grayman #2345 - added 'physics'
 	STOP_TIMING(owner->actorBuildPathTreeTimer);
 
 	// draw the path tree

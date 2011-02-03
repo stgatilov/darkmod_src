@@ -108,6 +108,9 @@ public:
 		return m_LastBlockingEnt.GetEntity();
 	}
 
+	void SetClosedBox(idBox box);	// grayman #2345
+	idBox GetClosedBox();			// grayman #2345
+
 	/**
 	* This is the non-script version of GetLock
 	*/
@@ -502,6 +505,12 @@ protected:
 	* True when frob is held down but not long enough to initialize fine control
 	**/
 	bool						m_bFineControlStarting;
+
+	/**
+	* grayman #2345 - idBox of the closed mover, used in pathfinding
+	**/
+
+	idBox						m_closedBox;
 };
 
 #endif /* !BINARYFROBMOVER */

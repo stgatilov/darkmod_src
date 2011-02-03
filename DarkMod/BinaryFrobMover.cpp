@@ -75,11 +75,23 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
 	m_bFineControlStarting = false;
+	m_closedBox = box_zero; // grayman #2345 - holds closed position
+	m_closedBox.Clear();	// grayman #2345
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
 {
 	delete m_Lock;
+}
+
+void CBinaryFrobMover::SetClosedBox(idBox box) // grayman #2345
+{
+	m_closedBox = box;
+}
+
+idBox CBinaryFrobMover::GetClosedBox() // grayman #2345
+{
+	return m_closedBox;
 }
 
 void CBinaryFrobMover::AddObjectsToSaveGame(idSaveGame* savefile)
@@ -131,6 +143,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
 	savefile->WriteBool(m_bFineControlStarting);
+	savefile->WriteBox(m_closedBox); // grayman #2345
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -175,6 +188,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
 	savefile->ReadBool(m_bFineControlStarting);
+	savefile->ReadBox(m_closedBox); // grayman #2345
 }
 
 void CBinaryFrobMover::Spawn()

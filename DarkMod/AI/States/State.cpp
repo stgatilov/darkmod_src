@@ -1425,16 +1425,12 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
-		// Tell the slave to get out of the way, but only if neither AI is currently resolving a block
-		// grayman #2345 - or waiting for the other to pass.
-
-		if (!slave->movementSubsystem->IsResolvingBlock() &&
-			!master->movementSubsystem->IsResolvingBlock() &&
-			!slave->movementSubsystem->IsWaiting() &&
-			!master->movementSubsystem->IsWaiting())
+		if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
 		{
-			slave->movementSubsystem->ResolveBlock(master);
+			std::swap(master, slave);
 		}
+
+		slave->movementSubsystem->ResolveBlock(master);
 	}
 	else if (ent->IsType(idStaticEntity::Type))
 	{
@@ -2260,6 +2256,14 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// grayman #2345 - don't handle this door if we just finished handling it.
+
+	int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+	if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 5000))
+	{
+		return;
+	}
 
 	if (cv_ai_door_show.GetBool()) 
 	{

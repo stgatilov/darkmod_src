@@ -38,7 +38,7 @@ namespace ai
 #define HISTORY_SIZE 32
 #define HISTORY_BOUNDS_THRESHOLD 40	// units (grayman #2345 changed to 40 for quicker blocking recognition; was 10)
 #define BLOCK_TIME_OUT 400			// milliseconds (grayman #2345 changed to 400 for quicker blocking recognition; was 800)
-#define BLOCKED_TOO_LONG 400		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
+#define BLOCKED_TOO_LONG 800		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
 #define MAX_PATH_CORNER_SEARCH_ITERATIONS 100
 #define PAUSE_TIME 3000				// milliseconds (grayman #2345 - how long to stay paused after treadmilling)
 
@@ -51,7 +51,7 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	_blockTimeOut(BLOCK_TIME_OUT),
 	_timeBlockStarted(-1), // grayman #2345
 	_blockTimeShouldEnd(BLOCKED_TOO_LONG), // grayman #2345
-	_lastFrameBlockCheck(-1),	// grayman #2345
+//	_lastFrameBlockCheck(-1),	// grayman #2345
 	_timePauseStarted(-1),		// grayman #2345
 	_pauseTimeOut(PAUSE_TIME)	// grayman #2345
 
@@ -61,6 +61,7 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	_historyBounds.Clear();
 
 	_originHistory.SetNum(HISTORY_SIZE);
+	_frameHistory.SetNum(HISTORY_SIZE); // grayman #2345
 }
 
 // Called regularly by the Mind to run the currently assigned routine.
@@ -231,8 +232,11 @@ void MovementSubsystem::NextPath()
 
 	idPathCorner* path = memory.currentPath.GetEntity();
 
-	// The current path gets stored in lastPath
-    memory.lastPath = path;
+	// The current path gets stored in lastPath (grayman #2345 - but only if it's a path_corner)
+	if (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)
+	{
+		memory.lastPath = path;
+	}
 
     // The pre-selected "next path" is now our current one
     idPathCorner* currentPath = memory.nextPath.GetEntity();
@@ -400,11 +404,6 @@ bool MovementSubsystem::AttemptToExtricate()
 {
 	idAI* owner = _owner.GetEntity();
 
-	if (!owner->m_canExtricate)
-	{
-		return false;
-	}
-
 	// Look around to see if there's somewhere you can go.
 
 	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
@@ -466,6 +465,27 @@ bool MovementSubsystem::AttemptToExtricate()
 	return true;
 }
 
+float MovementSubsystem::GetPrevTraveled()
+{
+	int i = _curHistoryIndex - 2;
+	if (i < 0)
+	{
+		i = _originHistory.Num() + i;
+	}
+	int j = _curHistoryIndex - 1;
+	if (j < 0)
+	{
+		j = _originHistory.Num() + j;
+	}
+	const idVec3& originI = _originHistory[i];
+	const idVec3& originJ = _originHistory[j];
+	idVec3 vecTraveled = originJ - originI;
+	vecTraveled.z = 0.0; // ignore vertical component
+	float traveledPrev = vecTraveled.LengthFast();
+	traveledPrev /= (_frameHistory[j] - _frameHistory[i]); // normalize to a per-frame value
+	return traveledPrev;
+}
+
 void MovementSubsystem::CheckBlocked(idAI* owner)
 {
 	// grayman #2345 - this section was moved up from below, so that it happens
@@ -478,7 +498,8 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 	{
 		prevIndex = _originHistory.Num() - 1;
 	}
-	_originHistory[_curHistoryIndex++] = ownerOrigin;
+	_originHistory[_curHistoryIndex] = ownerOrigin;
+	_frameHistory[_curHistoryIndex++] = gameLocal.framenum;
 
 	// Wrap the index around if needed
 	_curHistoryIndex %= _originHistory.Num();
@@ -503,11 +524,13 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		// to see how far off you are.
 
 		idVec3 prevOrigin = _originHistory[prevIndex];
+		int prevFrame = _frameHistory[prevIndex];
 		idVec3 currentOrigin = ownerOrigin;
 		currentOrigin.z = prevOrigin.z = 0.0; // ignore vertical components
 		idVec3 vecTraveled = currentOrigin - prevOrigin;
-		float traveledPrev = vecTraveled.LengthFast(); // new
-		traveledPrev /= (gameLocal.framenum - _lastFrameBlockCheck); // normalize to a per-frame value
+		float traveledPrev = vecTraveled.LengthFast();
+		traveledPrev /= (gameLocal.framenum - prevFrame); // normalize to a per-frame value
+
 		float yawDiff = idMath::AngleNormalize180(owner->GetCurrentYaw() - owner->GetIdealYaw()); // how close are you to your ideal yaw?
 		idEntity *tactileEntity = owner->GetTactileEntity(); // grayman #2345
 
@@ -624,7 +647,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		}
 	}
 
-	_lastFrameBlockCheck = gameLocal.framenum; // grayman #2345
+//	_lastFrameBlockCheck = gameLocal.framenum; // grayman #2345
 
 	DebugDraw(owner);
 }
@@ -692,17 +715,6 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 
 	// Remember this state
 	SetBlockedState(EResolvingBlock);
-
-	// grayman #2345 - tell the blocking AI not to try to extricate if it has a chance
-
-	if (blockingEnt->IsType(idAI::Type))
-	{
-		idAI* ai = static_cast<idAI*>(blockingEnt);
-		if (ai)
-		{
-			ai->m_canExtricate = false;
-		}
-	}
 }
 
 bool MovementSubsystem::IsResolvingBlock()
@@ -722,7 +734,6 @@ idVec3 MovementSubsystem::GetLastMove(void)	// grayman #2356 - used to help dete
 	return (ownerOrigin - prevOrigin);
 }
 
-
 // Save/Restore methods
 void MovementSubsystem::Save(idSaveGame* savefile) const
 {
@@ -737,6 +748,15 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 		savefile->WriteVec3(_originHistory[i]);
 	}
 
+	// grayman #2345 - save frame history
+
+	savefile->WriteInt(_frameHistory.Num());
+
+	for (int i = 0; i < _frameHistory.Num(); i++)
+	{
+		savefile->WriteInt(_frameHistory[i]);
+	}
+
 	savefile->WriteInt(_curHistoryIndex);
 	savefile->WriteBounds(_historyBounds);
 	savefile->WriteFloat(_historyBoundsThreshold);
@@ -745,7 +765,7 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_blockTimeOut);
 	savefile->WriteInt(_timeBlockStarted);		// grayman #2345
 	savefile->WriteInt(_blockTimeShouldEnd);	// grayman #2345
-	savefile->WriteInt(_lastFrameBlockCheck);	// grayman #2345
+//	savefile->WriteInt(_lastFrameBlockCheck);	// grayman #2345
 	savefile->WriteInt(_pauseTimeOut);			// grayman #2345
 }
 
@@ -765,6 +785,16 @@ void MovementSubsystem::Restore(idRestoreGame* savefile)
 		savefile->ReadVec3(_originHistory[i]);
 	}
 
+	// grayman #2345 - restore frame history
+
+	savefile->ReadInt(num);
+	_frameHistory.SetNum(num);
+
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(_frameHistory[i]);
+	}
+
 	savefile->ReadInt(_curHistoryIndex);
 	savefile->ReadBounds(_historyBounds);
 	savefile->ReadFloat(_historyBoundsThreshold);
@@ -778,7 +808,7 @@ void MovementSubsystem::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_blockTimeOut);
 	savefile->ReadInt(_timeBlockStarted);		// grayman #2345
 	savefile->ReadInt(_blockTimeShouldEnd);		// grayman #2345
-	savefile->ReadInt(_lastFrameBlockCheck);	// grayman #2345
+//	savefile->ReadInt(_lastFrameBlockCheck);	// grayman #2345
 	savefile->ReadInt(_pauseTimeOut);			// grayman #2345
 }
 
@@ -792,6 +822,39 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 	if (!_historyBounds.IsCleared())
 	{
 		gameRenderWorld->DebugBox(colorWhite, idBox(_historyBounds), 3* gameLocal.msec);
+	}
+
+	/*	grayman #2345
+
+		Show the door situation along with movement state.
+
+		Format is:
+	  
+			<EBlockedState> <DoorName> - <Position in door queue>/<# users in door queue>
+
+		For example:
+
+			ENotBlocked Door4 - 2/3
+
+		means the AI is in movement state "ENotBlocked" and is currently in the second
+		slot in a door queue of 3 users on door Door4.
+	 */
+
+	idStr position = "";
+	if (owner->m_HandlingDoor)
+	{
+		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+		if (frobDoor != NULL)
+		{
+			idStr doorName = frobDoor->name;
+			int numUsers = frobDoor->GetUserManager().GetNumUsers();
+			int slot = frobDoor->GetUserManager().GetIndex(owner) + 1;
+			position = " " + doorName + " - " + slot + "/" + numUsers;
+		}
+		else
+		{
+			position = " (ERROR: no door)";
+		}
 	}
 
 	idStr str;
@@ -816,7 +879,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			break;
 		case EWaitingSolid: // grayman #2345
 			str = "EWaitingSolid";
-			colour = colorBlue;
+			colour = colorWhite;
 			break;
 		case EWaitingNonSolid: // grayman #2345
 			str = "EWaitingNonSolid";
@@ -827,10 +890,11 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			colour = colorBlue;
 			break;
 	}
+	str += position;
 
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colour, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3 * gameLocal.msec);
-}
+	}
 
 } // namespace ai

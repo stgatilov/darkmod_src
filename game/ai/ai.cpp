@@ -503,9 +503,9 @@ idAI::idAI()
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
-	m_canExtricate		= true; // grayman #2345
 	m_tactileEntity		= NULL; // grayman #2345
-	m_canResolveBlock	= true; // grayman #2345
+	m_canResolveBlock	= true;	// grayman #2345
+	m_leftQueue			= false; // grayman #2345
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -773,9 +773,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( eyeFocusRate );
 	savefile->WriteFloat( headFocusRate );
 	savefile->WriteInt( focusAlignTime );
-	savefile->WriteBool(m_canExtricate);		// grayman #2345
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
+	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1150,9 +1150,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( eyeFocusRate );
 	savefile->ReadFloat( headFocusRate );
 	savefile->ReadInt( focusAlignTime );
-	savefile->ReadBool(m_canExtricate); // grayman #2345
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
-	savefile->ReadBool(m_canResolveBlock); // grayman #2345
+	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
+	savefile->ReadBool(m_leftQueue);		// grayman #2345
 
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
@@ -2426,8 +2426,6 @@ void idAI::SetNextThinkFrame()
 
 			if (thinkMore)
 			{
-				// Tels: gcc doesn't like "min(...)":
-				//thinkDelta = min(thinkFrame,TEMP_THINK_INTERLEAVE);
 				thinkDelta = (thinkFrame < TEMP_THINK_INTERLEAVE ? thinkFrame : TEMP_THINK_INTERLEAVE);
 			}
 		}
@@ -9480,7 +9478,7 @@ void idAI::CheckTactile()
 		else if (blockingEnt && blockingEnt->IsType(idActor::Type))
 		{
 			idAI *e = static_cast<idAI*>(blockingEnt);
-			if (e && !e->movementSubsystem->IsWaiting()) // no bump if other entity is waiting
+			if (e && !e->movementSubsystem->IsWaitingNonSolid()) // no bump if other entity is waiting
 			{
 				bumped = true;
 			}

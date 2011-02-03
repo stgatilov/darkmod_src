@@ -42,6 +42,9 @@ protected:
 	// The origin history, contains the origin position of the last few frames
 	idList<idVec3> _originHistory;
 
+	// grayman #2345 - The frame history, contains the frames where origins were recorded
+	idList<int> _frameHistory;
+
 	// Currently active list index
 	int _curHistoryIndex;
 
@@ -60,7 +63,7 @@ protected:
 	
 	int _timeBlockStarted;		// grayman #2345 - When a block started 
 	int _blockTimeShouldEnd;	// grayman #2345 - The amount of time allowed to pass during EBlocked before trying to extricate yourself
-	int _lastFrameBlockCheck;	// grayman #2345 - the last frame we checked whether we were blocked
+//	int _lastFrameBlockCheck;	// grayman #2345 - the last frame we checked whether we were blocked
 	int _timePauseStarted;		// grayman #2345 - when a treadmill pause started
 	int _pauseTimeOut;			// grayman #2345 - amount of time to pause after treadmilling
 
@@ -114,10 +117,12 @@ public:
 
 	idVec3 GetLastMove();	// grayman #2356
 
+	float GetPrevTraveled(); // grayman #2345
+
 	/**
 	 * grayman #2345 - Called when the AI tries to extricate itself from a stuck position
 	 */
-	virtual bool AttemptToExtricate();
+	bool AttemptToExtricate();
 
 protected:
 	virtual void CheckBlocked(idAI* owner);

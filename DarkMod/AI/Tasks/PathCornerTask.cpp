@@ -75,6 +75,25 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
+	// grayman #2345 - if you've timed out of a door queue, go back to your
+	// previous path_corner
+
+	if (owner->m_leftQueue)
+	{
+		owner->m_leftQueue = false;
+		Memory& memory = owner->GetMemory();
+		idPathCorner* tempPath = memory.lastPath.GetEntity();
+		if (tempPath != NULL)
+		{
+			memory.lastPath = path;
+			_path = tempPath;
+			path = tempPath;
+			memory.currentPath = path;
+			memory.nextPath = idPathCorner::RandomPath(path, NULL, owner);
+			owner->StopMove(MOVE_STATUS_DONE); // lets the new pathing take over
+		}
+	}
+
 	if (_moveInitiated)
 	{
 		const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
