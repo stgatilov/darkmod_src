@@ -1098,10 +1098,15 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	SeedClass.imgmap = 0;
 	if (!mapName.IsEmpty())
 	{
-		SeedClass.imgmap = gameLocal.m_ImageMapManager->GetImageMap( mapName );
-		if (SeedClass.imgmap < 0)
+		// need int here, as the return value can be -1
+		int img = gameLocal.m_ImageMapManager->GetImageMap( mapName );
+		if (img < 0)
 		{
-			gameLocal.Warning ("SEED %s: Could not load image map mapName: %s", GetName(), gameLocal.m_ImageMapManager->GetLastError() );
+			gameLocal.Warning ("SEED %s: Could not load image map %s: %s", GetName(), mapName.c_str(), gameLocal.m_ImageMapManager->GetLastError() );
+		}
+		else
+		{
+			SeedClass.imgmap = img;
 		}
 	}
 	SeedClass.map_invert = false;

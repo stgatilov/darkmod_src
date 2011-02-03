@@ -163,6 +163,7 @@ int CImageMapManager::GetImageMap( idStr name ) {
 				if((fl = fileSystem->OpenFileRead(mapName)) == NULL)
 				{
 					// not found at all
+					m_lastError = "File not found.";
 					return -1;
 				}
 			}
