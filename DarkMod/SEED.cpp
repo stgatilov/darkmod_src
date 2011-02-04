@@ -3321,7 +3321,7 @@ void Seed::CombineEntities( void )
 					m_Entities[idx].flags = (m_Entities[idx].flags & ~SEED_ENTITY_COMBINED);
 				}
 				// now truncate to only combine as much as we can:
-				gameLocal.Printf( " merged %i > maxModelCount %i\n", merged, maxModelCount);
+				// gameLocal.Printf( " merged %i > maxModelCount %i\n", merged, maxModelCount);
 				sortedOffsets.SetNum( maxModelCount );
 			}
 			// build the offsets list
