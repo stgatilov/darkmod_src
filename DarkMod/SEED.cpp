@@ -3055,7 +3055,7 @@ void Seed::CombineEntities( void )
 		unsigned int merged = 0;				//!< merged 0 other entities into this one
 
 		//gameLocal.Printf("SEED %s: At entity %i\n", GetName(), i);
-		if (m_Entities[i].classIdx < 0)
+		if ((m_Entities[i].flags & SEED_ENTITY_COMBINED) != 0)
 		{
 			// already combined, skip
 			//gameLocal.Printf("SEED %s: Entity %i already combined into another entity, skipping it.\n", GetName(), i);
@@ -3115,7 +3115,7 @@ void Seed::CombineEntities( void )
 		for (int j = i + 1; j < n; j++)
 		{
 //			gameLocal.Printf("SEED %s: %i: At entity %i\n", GetName(), i, j);
-			if (m_Entities[j].classIdx == -1)
+			if ((m_Entities[j].flags & SEED_ENTITY_COMBINED) != 0)
 			{
 				// already combined, skip
 #ifdef M_DEBUG_COMBINE
@@ -3206,8 +3206,8 @@ void Seed::CombineEntities( void )
 //			gameLocal.Printf("SEED %s: Merging entity %i (origin %s) into entity %i (origin %s, dist %s).\n", 
 //					GetName(), j, m_Entities[j].origin.ToString(), i, m_Entities[i].origin.ToString(), dist.ToString() );
 
-			// mark with negative classIdx so we can skip it, or restore the classIdx (be negating it again)
-			m_Entities[j].classIdx = -m_Entities[j].classIdx;
+			// mark as "already combined" so we can skip it
+			m_Entities[j].flags += SEED_ENTITY_COMBINED;
 		}
 
 		if (merged > 0)
@@ -3251,12 +3251,13 @@ void Seed::CombineEntities( void )
 				// sort the offsets so we can select the N nearest
 				sortedOffsets.Sort( SortOffsetsByDistance );
 
-				// for every entity after the first "maxModelCount", restore their class index
-				// so they get later checked again
+				// For every entity after the first "maxModelCount", remove the
+				// SEED_ENTITY_COMBINED flag, so they get later checked again
 				for (int si = maxModelCount; si < sortedOffsets.Num(); si++)
 				{
 					int idx = sortedOffsets[si].entity;
-					m_Entities[ idx ].classIdx = -m_Entities[idx].classIdx;
+					assert( (m_Entities[idx].flags & SEED_ENTITY_COMBINED) != 0);
+					m_Entities[idx].flags = (m_Entities[idx].flags & ~SEED_ENTITY_COMBINED);
 				}
 				// now truncate to only combine as much as we can:
 				gameLocal.Printf( " merged %i > maxModelCount %i\n", merged, maxModelCount);
@@ -3299,21 +3300,8 @@ void Seed::CombineEntities( void )
 			{
 				int todo = sortedOffsets[d].entity;
 
-				seed_class_t* entityClass = &m_Classes[ m_Entities[todo].classIdx ];
-
-				// is this an entity we watch over, that exists? So remove it:
-				if (entityClass->watch && ( m_Entities[todo].flags == (SEED_ENTITY_EXISTS + SEED_ENTITY_SPAWNED) ))
-				{
-					idEntity *entRemove = gameLocal.entities[ m_Entities[todo].entity ];
-					if (entRemove)
-					{
-						gameLocal.Printf("SEED %s: Removing entity (watched over) %i.\n", GetName(), todo );
-						entRemove->PostEventMS( &EV_SafeRemove, 0 );
-					}
-				}
-
 				// mark as combined
-				m_Entities[todo].classIdx = -1;
+				m_Entities[todo].flags |= SEED_ENTITY_COMBINED;
 
 				// add the clipmodel to the multi-clipmodel if we have one
 				if (clipLoaded)
@@ -3350,7 +3338,7 @@ void Seed::CombineEntities( void )
 	{
 		gameLocal.Printf("SEED %s: Merged entity positions, now building combined final list.\n", GetName() );
 
-		// delete all entities that got merged
+		// delete all entities that got merged by copying all that got not merged, then throw away the others
 
 		newEntities.Clear();
 		// avoid low performance when we append one-by-one with occasional copy of the entire list
@@ -3361,15 +3349,13 @@ void Seed::CombineEntities( void )
 		}
 		for (int i = 0; i < m_Entities.Num(); i++)
 		{
-			// we marked all entities that we combine with another entity with "-1" in the classIdx, so skip these
-			if (m_Entities[i].classIdx != -1)
+			if ( (m_Entities[i].flags & SEED_ENTITY_COMBINED) == 0)
 			{
 				newEntities.Append( m_Entities[i] );
 			}
 		}
 		m_Entities.Swap( newEntities );
 		newEntities.Clear();				// should get freed at return, anyway
-
 	}
 
 	// TODO: is this nec.?
