@@ -2756,7 +2756,7 @@ void Seed::PrepareEntities( void )
 			// precompute bounds for a fast collision check
 			SeedEntityBounds.Append( (idBounds (m_Classes[i].size ) + SeedEntity.origin) * SeedEntity.angles.ToMat3() );
 			// precompute box for slow collision check
-			SeedEntityBoxes.Append( idBox ( SeedEntity.origin, m_Classes[i].size, SeedEntity.angles.ToMat3() ) );
+			SeedEntityBoxes.Append( idBox ( SeedEntity.origin, m_Classes[i].size / 2, SeedEntity.angles.ToMat3() ) );
 			m_Entities.Append( SeedEntity );
 
 			if (m_Entities.Num() >= m_iNumEntities)
