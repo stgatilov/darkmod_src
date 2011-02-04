@@ -497,7 +497,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadAngles( m_Watched[i].angles );
 		// a dword is "unsigned int"
 		savefile->ReadInt( clr );
-		m_Entities[i].color = (dword)clr;
+		m_Watched[i].color = (dword)clr;
 		savefile->ReadInt( m_Watched[i].flags );
 		savefile->ReadInt( m_Watched[i].entity );
 		savefile->ReadInt( m_Watched[i].classIdx );

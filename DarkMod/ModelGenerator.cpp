@@ -883,12 +883,21 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 /*				if (o == 1 || o == 2)
 				{
-					gameLocal.Printf ("Vert %i (%i): xyz %s st %s tangent %s %s normal %s color %i %i %i %i.\n",
-						j, nV, v->xyz.ToString(), v->st.ToString(), v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
-						v->color[0],
-						v->color[1],
-						v->color[2],
-						v->color[3]
+					gameLocal.Printf ("Was Vert %d (%d): xyz (%s) st (%s) tangent (%s) (%s) normal (%s) color %d %d %d %d.\n",
+						j, nV, vs->xyz.ToString(), vs->st.ToString(),
+						vs->tangents[0].ToString(), vs->tangents[1].ToString(), vs->normal.ToString(),
+						int(vs->color[0]),
+						int(vs->color[1]),
+						int(vs->color[2]),
+						int(vs->color[3])
+					   	);
+					gameLocal.Printf ("Now Vert %d (%d): xyz (%s) st (%s) tangent (%s) (%s) normal (%s) color %d %d %d %d.\n",
+						j, nV, v->xyz.ToString(), v->st.ToString(), 
+						v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
+						int(v->color[0]),
+						int(v->color[1]),
+						int(v->color[2]),
+						int(v->color[3])
 					   	);
 				}*/
 				nV ++;
