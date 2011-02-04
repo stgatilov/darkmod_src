@@ -633,7 +633,7 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &B
 		if((im = g_Global.GetImage(m_FallOffIndex)) != NULL)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Falloff [%s]\r", im->m_Name.c_str());
-			rc = im->GetImage();
+			rc = im->GetImageData();
 			Width = im->m_Width;
 			Height = im->m_Height;
 			Bpp = im->m_Bpp;
@@ -653,7 +653,7 @@ unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 		if((im = g_Global.GetImage(m_MapIndex)) != NULL)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Image [%s]\r", im->m_Name.c_str());
-			rc = im->GetImage();
+			rc = im->GetImageData();
 			Width = im->m_Width;
 			Height = im->m_Height;
 			Bpp = im->m_Bpp;

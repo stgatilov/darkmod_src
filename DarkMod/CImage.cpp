@@ -15,10 +15,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include <IL/il.h>
 #include "renderpipe.h"
 
+#define IL_IMAGE_NONE ((ILuint)-1)
+
 CImage::CImage() :
-	m_BufferLength(0L),
-	m_Image(NULL),
-	m_ImageId((ILuint)-1),
+	m_ImageBufferLength(0L),
+	m_ImageBuffer(NULL),
+	m_ImageId(IL_IMAGE_NONE),
 	m_Loaded(false),
 	m_defaultImageType(IL_TGA),
 	m_Width(0),
@@ -27,9 +29,9 @@ CImage::CImage() :
 {}
 
 CImage::CImage(const idStr& name) :
-	m_BufferLength(0L),
-	m_Image(NULL),
-	m_ImageId((ILuint)-1),
+	m_ImageBufferLength(0L),
+	m_ImageBuffer(NULL),
+	m_ImageId(IL_IMAGE_NONE),
 	m_Loaded(false),
 	m_defaultImageType(IL_TGA),
 	m_Name(name),
@@ -66,16 +68,16 @@ void CImage::Unload(bool FreeMemory)
 	m_Loaded = false;
 	if(FreeMemory == true)
 	{
-		if(m_Image != NULL)
-			delete [] m_Image;
+		if(m_ImageBuffer != NULL)
+			delete [] m_ImageBuffer;
 
-		m_Image = NULL;
+		m_ImageBuffer = NULL;
 	}
 
-	if(m_ImageId != static_cast<unsigned char>(-1))
+	if(m_ImageId != IL_IMAGE_NONE)
 		ilDeleteImages(1, &m_ImageId);
 
-	m_ImageId = (ILuint)-1;
+	m_ImageId = IL_IMAGE_NONE;
 }
 
 bool CImage::LoadImage(CRenderPipe* pipe)
@@ -99,28 +101,28 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 			
 			pipe->Read(pipe_buf, &BufLen);
 
-			if(BufLen > m_BufferLength || m_Image == NULL)
+			if(BufLen > m_ImageBufferLength || m_ImageBuffer == NULL)
 			{
 				Unload(true);
-				m_BufferLength = BufLen;
-				if((m_Image = new unsigned char[m_BufferLength]) == NULL)
+				m_ImageBufferLength = BufLen;
+				if((m_ImageBuffer = new unsigned char[m_ImageBufferLength]) == NULL)
 				{
-					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
 					goto Quit;
 				}
 			}
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_BufferLength, m_Image);
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_ImageBufferLength, m_ImageBuffer);
 
-			memcpy(m_Image, pipe_buf, m_BufferLength);
+			memcpy(m_ImageBuffer, pipe_buf, m_ImageBufferLength);
 			InitImageInfo();
 		}
 	}
 
 Quit:
-	if(m_Loaded == false && m_Image != NULL)
+	if(m_Loaded == false && m_ImageBuffer != NULL)
 	{
-		delete [] m_Image;
-		m_Image = NULL;
+		delete [] m_ImageBuffer;
+		m_ImageBuffer = NULL;
 	}
 
 	return rc;
@@ -133,7 +135,7 @@ bool CImage::LoadImageFromVfs(const char* filename)
 
 	if (filename != NULL)
 	{
-		Unload(false);
+		Unload(true);
 		m_Name = filename;
 	}
 
@@ -145,26 +147,26 @@ bool CImage::LoadImageFromVfs(const char* filename)
 			goto Quit;
 		}
 
-		m_BufferLength = fl->Length();
-		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
+		m_ImageBufferLength = fl->Length();
+		if((m_ImageBuffer = new unsigned char[m_ImageBufferLength]) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
 			goto Quit;
 		}
-		fl->Read(m_Image, m_BufferLength);
+		fl->Read(m_ImageBuffer, m_ImageBufferLength);
 		fileSystem->CloseFile(fl);
 
 		InitImageInfo();
 
 		rc = true;
-//		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
+//		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_ImageBufferLength);
 	}
 
 Quit:
-	if(m_Loaded == false && m_Image != NULL)
+	if(m_Loaded == false && m_ImageBuffer != NULL)
 	{
-		delete [] m_Image;
-		m_Image = NULL;
+		delete [] m_ImageBuffer;
+		m_ImageBuffer = NULL;
 	}
 
 	return rc;
@@ -185,19 +187,19 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 		// Load the image into memory
 		unsigned long length = static_cast<unsigned long>(fs::file_size(path));
 
-		if (length != m_BufferLength)
+		if (length != m_ImageBufferLength)
 		{
 			// Free the old buffer first
 			Unload(true);
 
-			m_BufferLength = length;
+			m_ImageBufferLength = length;
 
 			// Re-allocate to match buffer size
-			m_Image = new unsigned char[m_BufferLength];
+			m_ImageBuffer = new unsigned char[m_ImageBufferLength];
 
-			if (m_Image == NULL)
+			if (m_ImageBuffer == NULL)
 			{
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
 				return false;
 			}
 		}
@@ -205,7 +207,7 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 		// Read into buffer
 		FILE* fh = fopen(path.file_string().c_str(), "rb");
 
-		fread(m_Image, 1, m_BufferLength, fh);
+		fread(m_ImageBuffer, 1, m_ImageBufferLength, fh);
 
 		fclose(fh);
 
@@ -220,7 +222,7 @@ void CImage::InitImageInfo()
 	ilGenImages(1, &m_ImageId);
 	ilBindImage(m_ImageId);
 
-	if (ilLoadL(m_defaultImageType, m_Image, m_BufferLength) == IL_FALSE)
+	if (ilLoadL(m_defaultImageType, m_ImageBuffer, m_ImageBufferLength) == IL_FALSE)
 	{
 		ILenum error = ilGetError();
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error %i while loading image [%s]\r", (int)error, m_Name.c_str());
@@ -237,18 +239,22 @@ void CImage::InitImageInfo()
 	m_Bpp = ilGetInteger(IL_IMAGE_BPP);
 }
 
-unsigned long CImage::GetBufferLen()
+unsigned long CImage::GetDataLength()
 {
-	return m_BufferLength;
-}
-
-unsigned char* CImage::GetImage()
-{
-	if (m_Loaded && m_Image != NULL)
+	if (m_Loaded && m_ImageBuffer != NULL)
 	{
 		ilBindImage(m_ImageId);
-		ilLoadL(m_defaultImageType, m_Image, m_BufferLength);
+		return static_cast<unsigned long>(ilGetInteger(IL_IMAGE_SIZE_OF_DATA));
+	}
 
+	return 0;
+}
+
+unsigned char* CImage::GetImageData()
+{
+	if (m_Loaded && m_ImageBuffer != NULL)
+	{
+		ilBindImage(m_ImageId);
 		return static_cast<unsigned char*>(ilGetData());
 	}
 
@@ -257,16 +263,16 @@ unsigned char* CImage::GetImage()
 
 bool CImage::SaveToFile(const fs::path& path, Type type)
 {
-	if (!m_Loaded) 
+	if (!m_Loaded)
 	{
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image before loading data (%s).\r", path.file_string().c_str());
 		return false;
 	}
-	else if (m_Loaded && m_ImageId == (ILuint)-1 && m_Image != NULL)
+	else if (m_Loaded && m_ImageId == (ILuint)-1 && m_ImageBuffer != NULL)
 	{
 		// Ensure buffer is bound to devIL
 		ilBindImage(m_ImageId);
-		ilLoadL(m_defaultImageType, m_Image, m_BufferLength);
+		ilLoadL(m_defaultImageType, m_ImageBuffer, m_ImageBufferLength);
 	}
 
 	// Overwrite option

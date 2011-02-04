@@ -232,7 +232,7 @@ unsigned char* CImageMapManager::GetMapData( const unsigned int id )
 
 	if (img)
 	{
-		return img->GetImage();
+		return img->GetImageData();
 	}
 
 	// some error happened
@@ -334,7 +334,7 @@ unsigned int CImageMapManager::GetMapDataAt( const unsigned int id, const float 
 		m_lastError = "X or Y out of range.";
 		return 0;
 	}
-    unsigned char *imgData = img->GetImage();
+    unsigned char *imgData = img->GetImageData();
 
 	if (imgData)
 	{
@@ -430,7 +430,7 @@ bool CImageMapManager::LoadImage( imagemap_t* map ) {
 	}
 
 	map->density = 0.0f;
-	unsigned char* imgData = map->img->GetImage();
+	unsigned char* imgData = map->img->GetImageData();
 	if (!imgData)
 	{
 		return false;

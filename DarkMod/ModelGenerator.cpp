@@ -34,7 +34,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //#define M_DEBUG 1
 
 // uncomment to get detailed timing info
-//#define M_TIMINGS 1
+#define M_TIMINGS 1
 
 #ifdef M_TIMINGS
 static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces, timer_dupmodel;

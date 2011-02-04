@@ -6157,7 +6157,7 @@ void idGameLocal::AnalyzeRenderImage(CRenderPipe* pipe, float fColVal[DARKMOD_LG
 	int i, in, k, kn, h, x;
 	
 	im->LoadImage(pipe);
-	unsigned char *buffer = im->GetImage();
+	unsigned char *buffer = im->GetImageData();
 
 	// This is just an errorhandling to inform the player that something is wrong.
 	// The lightgem will simply blink if the renderpipe doesn't work.
