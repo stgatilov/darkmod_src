@@ -179,9 +179,9 @@ struct seed_inhibitor_t {
 #define SEED_ENTITY_FLAGSHIFT 24
 
 enum seed_entity_flags {
-	SEED_ENTITY_HIDDEN		= 0x0001,		//!< the entity is currently not existing
-	SEED_ENTITY_EXISTS		= 0x0002,		//!< the entity is currently existing
-	SEED_ENTITY_SPAWNED		= 0x0004,		//!< entity was spawned at least once (to trigger actions on first spawn)
+	SEED_ENTITY_HIDDEN		= 0x0001,		//!< the entity is currently not existing (e.g. was culled or never spawned)
+	SEED_ENTITY_EXISTS		= 0x0002,		//!< the entity is currently existing (e.g. was spawned)
+	SEED_ENTITY_WAS_SPAWNED	= 0x0004,		//!< entity was spawned at least once (to trigger actions on first spawn)
 	SEED_ENTITY_PSEUDO		= 0x0008,		//!< the entity is a pseudo-class entity, e.g. a multi-static
 	SEED_ENTITY_WAITING		= 0x0010,		//!< the entity is still waiting for a timer before being spawned
 	SEED_ENTITY_WATCHED		= 0x0020,		//!< Set on entities that are merely watched, so we do not cull

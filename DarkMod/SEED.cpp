@@ -178,6 +178,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_iNumVisible );
 	savefile->WriteInt( m_iThinkCounter );
 	savefile->WriteFloat( m_fLODBias );
+	savefile->WriteBool( m_bPrepared );
 
     savefile->WriteInt( m_DistCheckTimeStamp );
 	savefile->WriteInt( m_DistCheckInterval );
@@ -234,6 +235,47 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].pseudo );
 		savefile->WriteBool( m_Classes[i].watch );
 		savefile->WriteString( m_Classes[i].combine_as );
+
+		if (m_Classes[i].pseudo)
+		{
+			// save the offsets list so we can restore StaticMulties correctly
+			int onum = m_Classes[i].offsets.Num();
+			savefile->WriteInt( onum );
+			for( int o = 0; o < onum; o++ )
+			{
+				const model_ofs_t *op = &m_Classes[i].offsets[o];
+				savefile->WriteVec3( op->offset );
+				savefile->WriteVec3( op->scale );
+				savefile->WriteAngles( op->angles );
+				// dword = int
+				savefile->WriteInt( (int)op->color );
+				savefile->WriteInt( op->lod );
+				savefile->WriteInt( op->flags );
+			}
+		}
+
+		// save m_LOD data structure
+		if (m_Classes[i].m_LOD)
+		{
+			savefile->WriteBool( true );
+			const lod_data_t* lod = m_Classes[i].m_LOD;
+			savefile->WriteBool( lod->bDistCheckXYOnly );
+			savefile->WriteInt( lod->DistCheckInterval );
+			savefile->WriteInt( lod->noshadowsLOD );
+			savefile->WriteFloat( lod->fLODFadeOutRange );
+			savefile->WriteFloat( lod->fLODFadeInRange );
+			for (int l = 0; l < LOD_LEVELS; l++)
+			{
+				savefile->WriteFloat( lod->DistLODSq[ l ] );
+				savefile->WriteString( lod->ModelLOD[ l ] );
+				savefile->WriteString( lod->SkinLOD[ l ] );
+				savefile->WriteVec3( lod->OffsetLOD[ l ] );
+			}	
+		}
+		else
+		{
+			savefile->WriteBool( false );
+		}
 
 		savefile->WriteInt( m_Classes[i].maxEntities );
 		savefile->WriteInt( m_Classes[i].numEntities );
@@ -370,17 +412,16 @@ void Seed::ClearClasses( void )
 	int n = m_Classes.Num();
 	for(int i = 0; i < n; i++ )
 	{
-		if (NULL != m_Classes[i].hModel)
-		{
-			if (m_Classes[i].pseudo && m_Classes[i].hModel)
-			{
-				renderModelManager->FreeModel( m_Classes[i].hModel );
-			}
-			m_Classes[i].hModel = NULL;
-		}
+		// no need to free these as they are just ptrs
+		m_Classes[i].hModel = NULL;
 		if (m_Classes[i].imgmap != 0)
 		{
 			gameLocal.m_ImageMapManager->UnregisterMap( m_Classes[i].imgmap );
+		}
+		if (m_Classes[i].m_LOD)
+		{
+			delete m_Classes[i].m_LOD;
+			m_Classes[i].m_LOD = NULL;
 		}
 	}
 	m_Classes.Clear();
@@ -413,6 +454,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_iNumVisible );
 	savefile->ReadInt( m_iThinkCounter );
 	savefile->ReadFloat( m_fLODBias );
+	savefile->ReadBool( m_bPrepared );
 	
     savefile->ReadInt( m_DistCheckTimeStamp );
 	savefile->ReadInt( m_DistCheckInterval );
@@ -470,6 +512,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Remove[i] );
 	}
 
+	// Restore our classes
     savefile->ReadInt( numClasses );
 	// clear m_Classes and free any models in it, too
 	ClearClasses();
@@ -482,6 +525,55 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].pseudo );
 		savefile->ReadBool( m_Classes[i].watch );
 		savefile->ReadString( m_Classes[i].combine_as );
+
+		// restore the offsets
+		if (m_Classes[i].pseudo)
+		{
+			// save the offsets list so we can restore StaticMulties correctly
+			int onum;
+			savefile->ReadInt( onum );
+			m_Classes[i].offsets.Clear();
+			m_Classes[i].offsets.SetNum(onum);
+			int clr;
+			for( int o = 0; o < onum; o++ )
+			{
+				model_ofs_t *op = &m_Classes[i].offsets[o];
+				savefile->ReadVec3( op->offset );
+				savefile->ReadVec3( op->scale );
+				savefile->ReadAngles( op->angles );
+				// dword = int
+				savefile->ReadInt( clr );
+				op->color = clr;
+				savefile->ReadInt( op->lod );
+				savefile->ReadInt( op->flags );
+			}
+		}
+
+		// restore m_LOD data structure
+		bool haveLOD;
+		savefile->ReadBool(haveLOD);
+		if (haveLOD)
+		{
+			m_Classes[i].m_LOD = new lod_data_t;
+			lod_data_t *lod = m_Classes[i].m_LOD;
+
+			savefile->ReadBool( lod->bDistCheckXYOnly );
+			savefile->ReadInt( lod->DistCheckInterval );
+			savefile->ReadInt( lod->noshadowsLOD );
+			savefile->ReadFloat( lod->fLODFadeOutRange );
+			savefile->ReadFloat( lod->fLODFadeInRange );
+			for (int l = 0; l < LOD_LEVELS; l++)
+			{
+				savefile->ReadFloat( lod->DistLODSq[ l ] );
+				savefile->ReadString( lod->ModelLOD[ l ] );
+				savefile->ReadString( lod->SkinLOD[ l ] );
+				savefile->ReadVec3( lod->OffsetLOD[ l ] );
+			}
+		}
+		else
+		{
+			m_Classes[i].m_LOD = NULL;
+		}
 
 		savefile->ReadInt( m_Classes[i].maxEntities );
 		savefile->ReadInt( m_Classes[i].numEntities );
@@ -616,6 +708,12 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	for( int i = 0; i < m_iNumPVSAreas; i++ )
 	{
 		savefile->ReadInt( m_iPVSAreas[i] );
+	}
+
+	if (m_iDebug)
+	{
+		gameLocal.Printf("Restored SEED %s. Have %i entities (%i) and %i on watch list, and %i classes.\n",
+			GetName(), m_iNumEntities, m_Entities.Num(), m_Watched.Num(), m_Classes.Num() );
 	}
 }
 
@@ -1248,7 +1346,22 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	if (has_lod)
 	{
 		// Store m_LOD at the class
-		SeedClass.m_LOD = m_LOD;
+		SeedClass.m_LOD = new lod_data_t;
+
+		// TODO: later we should store this data f.i. at the ModelGenerator and share it. For now make a copy.
+		SeedClass.m_LOD->bDistCheckXYOnly = m_LOD->bDistCheckXYOnly;
+		SeedClass.m_LOD->DistCheckInterval = m_LOD->DistCheckInterval;
+		SeedClass.m_LOD->noshadowsLOD = m_LOD->noshadowsLOD;
+		SeedClass.m_LOD->fLODFadeOutRange = m_LOD->fLODFadeOutRange;
+		SeedClass.m_LOD->fLODFadeInRange = m_LOD->fLODFadeInRange;
+
+		for (int l = 0; l < LOD_LEVELS; l++)
+		{
+			SeedClass.m_LOD->DistLODSq[ l ] = m_LOD->DistLODSq[ l ];
+			SeedClass.m_LOD->ModelLOD[ l ] = m_LOD->ModelLOD[ l ];
+			SeedClass.m_LOD->SkinLOD[ l ] = m_LOD->SkinLOD[ l ];
+			SeedClass.m_LOD->OffsetLOD[ l ] = m_LOD->OffsetLOD[ l ];
+		}	
 	}
 	else
 	{
@@ -1908,6 +2021,8 @@ void Seed::Prepare( void )
 				{
 					canRemoveMyself = false;
 					gameLocal.Printf( "SEED %s: Cannot remove myself, because I have at least one static multi.\n", GetName() );
+					// set to at least one so Restore() works
+					m_iNumStaticMulties = 1;
 					// no sense in spawning the rest right now
 					break;
 				}
@@ -2749,7 +2864,6 @@ void Seed::PrepareEntities( void )
 // Creates a list of entities that we need to watch over
 void Seed::CreateWatchedList(void) {
 	seed_entity_t			SeedEntity;			// temp. storage
-	int numWatchClasses = 0;
 
 	int start = (int) time (NULL);
 
@@ -2908,7 +3022,6 @@ void Seed::CombineEntities( void )
 	idList < int > pvs;								//!< in which PVS is this entity?
 	idBounds modelAbsBounds;						//!< for per-entity PVS check
 	idBounds entityBounds;							//!< for per-entity PVS check
-	int iNumPVSAreas = 0;							//!< for per-entity PVS check
 	int iPVSAreas[2];								//!< for per-entity PVS check
 	seed_class_t PseudoClass;
 	idList< seed_entity_t > newEntities;
@@ -2981,7 +3094,6 @@ void Seed::CombineEntities( void )
 	{
 		unsigned int merged = 0;				//!< merged 0 other entities into this one
 
-		//gameLocal.Printf("SEED %s: At entity %i\n", GetName(), i);
 		if ((m_Entities[i].flags & SEED_ENTITY_COMBINED) != 0)
 		{
 			// already combined, skip
@@ -3017,7 +3129,7 @@ void Seed::CombineEntities( void )
 		ofs.angles = m_Entities[i].angles;
 
 		// compute the alpha value and the LOD level
-		float fAlpha  = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+		ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
 		// 0 => default model, 1 => first stage etc
 		ofs.lod	   = m_LODLevel + 1;
 //		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
@@ -3041,7 +3153,6 @@ void Seed::CombineEntities( void )
 		// every combine step reduces the number of entities to look at next:
 		for (int j = i + 1; j < n; j++)
 		{
-//			gameLocal.Printf("SEED %s: %i: At entity %i\n", GetName(), i, j);
 			if ((m_Entities[j].flags & SEED_ENTITY_COMBINED) != 0)
 			{
 				// already combined, skip
@@ -3090,7 +3201,7 @@ void Seed::CombineEntities( void )
 			ofs.angles = m_Entities[j].angles;
 
 			// compute the alpha value and the LOD level
-			float fAlpha = ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+			ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
 			// 0 => default model, 1 => level 0 etc.
 			ofs.lod		= m_LODLevel + 1;
 //			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
@@ -3106,7 +3217,32 @@ void Seed::CombineEntities( void )
 			if (merged == 0)
 			{
 				PseudoClass.pseudo = true;
-				PseudoClass.m_LOD = entityClass->m_LOD;
+				// PseudoClass.m_LOD = entityClass->m_LOD;
+	
+				if (entityClass->m_LOD)
+				{	
+					// Store m_LOD at the class
+					PseudoClass.m_LOD = new lod_data_t;
+
+					// TODO: later we should store this data f.i. at the ModelGenerator and share it. For now make a copy.
+					PseudoClass.m_LOD->bDistCheckXYOnly = entityClass->m_LOD->bDistCheckXYOnly;
+					PseudoClass.m_LOD->DistCheckInterval = entityClass->m_LOD->DistCheckInterval;
+					PseudoClass.m_LOD->noshadowsLOD = entityClass->m_LOD->noshadowsLOD;
+					PseudoClass.m_LOD->fLODFadeOutRange = entityClass->m_LOD->fLODFadeOutRange;
+					PseudoClass.m_LOD->fLODFadeInRange = entityClass->m_LOD->fLODFadeInRange;
+
+					for (int l = 0; l < LOD_LEVELS; l++)
+					{
+						PseudoClass.m_LOD->DistLODSq[ l ] = entityClass->m_LOD->DistLODSq[ l ];
+						PseudoClass.m_LOD->ModelLOD[ l ] = entityClass->m_LOD->ModelLOD[ l ];
+						PseudoClass.m_LOD->SkinLOD[ l ] = entityClass->m_LOD->SkinLOD[ l ];
+						PseudoClass.m_LOD->OffsetLOD[ l ] = entityClass->m_LOD->OffsetLOD[ l ];
+					}	
+				}
+				else
+				{
+					PseudoClass.m_LOD = NULL;
+				}
 				PseudoClass.modelname = entityClass->modelname;
 				PseudoClass.spawnDist = entityClass->spawnDist;
 				PseudoClass.cullDist = entityClass->cullDist;
@@ -3453,7 +3589,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 					ment->ActivatePhysics( this );
 
 					// first spawn ever?
-					if ((ent->flags & SEED_ENTITY_SPAWNED) == 0)
+					if ((ent->flags & SEED_ENTITY_WAS_SPAWNED) == 0)
 					{
 				   		// add a random impulse
 						// spherical coordinates: radius (magnitude), theta (inclination +-90°), phi (azimut 0..369°)
@@ -3474,7 +3610,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 			}
 
 			// preserve PSEUDO and WATCHED flag
-			ent->flags = SEED_ENTITY_SPAWNED + SEED_ENTITY_EXISTS + (ent->flags & SEED_ENTITY_PSEUDO) + (ent->flags & SEED_ENTITY_WATCHED);
+			ent->flags = SEED_ENTITY_WAS_SPAWNED + SEED_ENTITY_EXISTS + (ent->flags & SEED_ENTITY_PSEUDO) + (ent->flags & SEED_ENTITY_WATCHED);
 
 			return true;
 		}
@@ -3531,7 +3667,7 @@ bool Seed::CullEntity( const int idx )
 
 		m_iNumExisting --;
 		m_iNumVisible --;
-		// add visible, reset exists, keep the others
+		// add visible, reset exists, but keep the others (esp. ENTITY_WAS_SPAWNED and ENTITY_WATCHED)
 		ent->flags += SEED_ENTITY_HIDDEN;
 		ent->flags &= (! SEED_ENTITY_EXISTS);
 		ent->entity = 0;
@@ -3570,6 +3706,7 @@ void Seed::Think( void )
 	// haven't initialized entities yet?
 	if (!m_bPrepared)
 	{
+		gameLocal.Printf("SEED %s: Preparing entities.\n", GetName() );
 		Prepare();
 	}
 	// GUI setting changed?
@@ -3601,7 +3738,7 @@ void Seed::Think( void )
 	}
 
 	// After Restore(), do we need to do SetLODData()?
-	if (m_bRestoreLOD && m_iNumStaticMulties > 0)
+	if (m_bRestoreLOD)
 	{
 		// go through all our entities and set things up
 		int numEntities = m_Entities.Num();
@@ -3611,21 +3748,28 @@ void Seed::Think( void )
 			lclass = &(m_Classes[ ent->classIdx ]);
 
 			// tell the CStaticMulti entity that it should track updates:
-			if (lclass->pseudo)
+			if (lclass->pseudo && (ent->flags & SEED_ENTITY_EXISTS) != 0)
 			{
 				idEntity *ent2 = gameLocal.entities[ ent->entity ];
+				if (ent2)
+				{
+					if (m_iDebug)
+					{
+						gameLocal.Printf("Restoring LOD data for entity %i (%s).\n", i, ent2->GetName() );
+					}
 
-				gameLocal.Printf("Restoring LOD data for entity %i(%s).\n", i, ent2->GetName() );
+					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
-				CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
-
-				// Let the StaticMulti store the nec. data to create the combined rendermodel
-				sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
+					// Let the StaticMulti store the nec. data to create the combined rendermodel
+					sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
 					
-				// enable thinking (mainly for debug draw)
-				sment->BecomeActive( TH_THINK | TH_PHYSICS );
+					// enable thinking (mainly for debug draw)
+					sment->BecomeActive( TH_THINK | TH_PHYSICS );
+				}
 			}
 		}
+		// done here
+		m_bRestoreLOD = false;
 	}
 
 	// Distance dependence checks

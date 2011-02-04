@@ -79,9 +79,6 @@ CStaticMulti::~CStaticMulti()
 	// no need to free these as they are just ptr to a copy
 	m_LOD = NULL;
 
-	// TODO: fix me
-	//SetPhysics(NULL);
-
 	// make sure the render entity is freed before the model is freed
 	FreeModelDef();
 
@@ -155,11 +152,12 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 
 	m_MaterialName = materialName;
 
-	m_iVisibleModels = m_Offsets->Num();
-
 #ifdef M_DEBUG
-	gameLocal.Printf("%s SetLODData: hModel %p modelname %s.\n", GetName(), hModel, modelName.c_str() );
+	gameLocal.Printf("%s SetLODData: LOD %p, hModel %p, model %s, offsets %p (%i).\n",
+			GetName(), m_LOD, hModel, modelName.c_str(), m_Offsets, m_Offsets ? m_Offsets->Num() : -1 );
 #endif
+
+	m_iVisibleModels = m_Offsets->Num();
 
 	// if we need to combine from a func_static, store a ptr to it's renderModel
 	m_hModel = hModel;
@@ -182,6 +180,7 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 
 	// Generate our physics model
 	physics.SetSelf( this );
+	physics.SetOrigin( origin );
 	physics.SetAxis( mat3_identity );
 
 	bool solid = spawnArgs.GetBool( "solid" );
@@ -215,13 +214,9 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 		model_ofs_t* o = offsets->Ptr();
 		for (int idx = 0; idx < m_iVisibleModels; idx++)
 		{
-			gameLocal.Printf("Setting clip for position #%i, offset %s, origin %s\n", idx, o[idx].offset.ToString(), origin.ToString() );
-
 			int i = idx + 1;
-
 			// add a new copy of the clipmodel for each position
 			idClipModel *c = new idClipModel( clip );
-			//c->SetOrigin( o[idx].offset );
 			physics.SetClipModel( c, 1.0f, i, true);
 			physics.SetOrigin( origin + o[idx].offset, i);
 			physics.SetAxis( o[idx].angles.ToMat3(), i);
@@ -294,29 +289,6 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		gameLocal.Printf("Has %i visible models.\n", m_iVisibleModels);
 #endif
 
-	if (m_iVisibleModels == 0)
-	{
-#ifdef M_DEBUG
-		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
-#endif
-		if (!fl.hidden) { Hide(); }
-		return true;
-	}
-	else
-	{
-		// show again
-#ifdef M_DEBUG
-		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
-#endif
-		if (fl.hidden)
-		{
-			Show();
-#ifdef M_DEBUG
-			gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
-#endif
-		}
-	}
-
 	// compute a list of rendermodels
 	idList< const idRenderModel*> LODs;
 	// default model
@@ -383,6 +355,9 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	{
 		if (renderEntity.hModel)
 		{
+#ifdef M_DEBUG
+			gameLocal.Printf("StaticMulti %s: Allocating new render model.\n", GetName());
+#endif
 			FreeModelDef();
 			// do not free the rendermodel, somebody else (since the dummy model is used) has a ptr to it
 			// renderModelManager->FreeModel( renderEntity.hModel );
@@ -393,6 +368,9 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	}
 	else
 	{
+#ifdef M_DEBUG
+			gameLocal.Printf("StaticMulti %s: Updating existing render model.\n", GetName());
+#endif
 		// re-use the already existing object
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
@@ -414,6 +392,31 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	} else {
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
+
+	// now show or hide ourselves
+	if (m_iVisibleModels == 0)
+	{
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
+#endif
+		if (!fl.hidden) { Hide(); }
+		return true;
+	}
+	else
+	{
+		// show again
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
+#endif
+		if (fl.hidden)
+		{
+			Show();
+#ifdef M_DEBUG
+			gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
+#endif
+		}
+	}
+
 
 #ifdef M_TIMINGS
 	timer_total.Stop();
@@ -473,7 +476,7 @@ void CStaticMulti::Think( void )
 			bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
 		}
 
-#ifdef M_DEBUG
+#ifdef M_DEBUG_1
 		if (LOD)
 		{
 			gameLocal.Printf("%s LOD data %p.\n", GetName(), LOD );
@@ -632,6 +635,7 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Changes[i].newFlags );
 	}
 
+	// stop us freeing it later, but not now as it is a shared ptr
 	renderEntity.hModel = NULL;
 
 	// hide until the LOD data arrives
