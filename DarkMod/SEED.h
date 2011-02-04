@@ -80,6 +80,7 @@ struct seed_class_t {
 	idStr					modelname;		//!< To load the rendermodel for combining it w/o spawning
 											//!< the entity first. Used to calculate f.i. how many models
 											//!< can be combined at most (as this model is the high-poly version).
+	idStr					lowestLOD;		//!< Name of the model with the lowest LOD, used as clipmodel
 
 	bool					pseudo;			//!< if true, this class is a pseudo-class, and describes an
 											//!< entity with a megamodel (a combined model from many entities),
@@ -89,7 +90,6 @@ struct seed_class_t {
 	bool					watch;			//!< if true, this class is just used to watch over a certain entity
 	idStr					combine_as;		//!< If watch is true, this is the value from "seed_combine_as"
 
-	idPhysics_StaticMulti*	physicsObj;		//!< if pseudo: If you turn multiple entities into one, this keeps their clipmodels.
 	idStr					materialName;	//!< Override material for debug_colors.
 	idList< model_ofs_t >	offsets;		//!< if pseudo: List of enitity offsets to construct a combined model
 
@@ -295,13 +295,6 @@ private:
 	* Compute the LOD level for this entity based on distance to player.
 	*/
 	int					ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const;
-
-	/**
-	* Helper routine to load and set a clipmodel on a idPhysics_StaticMulti object. Returns true
-	* if the clip model could be loaded. If idClipModel != NULL, then this clipmodel will be
-	* used, this happens f.i. for func_statics created from brush/patch geometry inside DR.
-	*/
-	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const seed_entity_t* entity, const int idx, idClipModel* clipModel = NULL);
 
 	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().

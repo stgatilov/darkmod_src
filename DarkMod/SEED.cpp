@@ -224,11 +224,13 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Remove[i] );
 	}
 
+	// save the class list
 	savefile->WriteInt( m_Classes.Num() );
 	for( int i = 0; i < m_Classes.Num(); i++ )
 	{
 		savefile->WriteString( m_Classes[i].classname );
 		savefile->WriteString( m_Classes[i].modelname );
+		savefile->WriteString( m_Classes[i].lowestLOD );
 		savefile->WriteBool( m_Classes[i].pseudo );
 		savefile->WriteBool( m_Classes[i].watch );
 		savefile->WriteString( m_Classes[i].combine_as );
@@ -326,16 +328,6 @@ void Seed::Save( idSaveGame *savefile ) const {
 		{
 			savefile->WriteBool( false );
 		}
-		// only write the clipmodel if it is used
-		if ( NULL != m_Classes[i].physicsObj)
-		{
-			savefile->WriteBool( true );
-			m_Classes[i].physicsObj->Save( savefile );
-		}
-		else
-		{
-			savefile->WriteBool( false );
-		}
 	}
 	savefile->WriteInt( m_Inhibitors.Num() );
 	for( int i = 0; i < m_Inhibitors.Num(); i++ )
@@ -385,12 +377,6 @@ void Seed::ClearClasses( void )
 				renderModelManager->FreeModel( m_Classes[i].hModel );
 			}
 			m_Classes[i].hModel = NULL;
-		}
-		if (NULL != m_Classes[i].physicsObj)
-		{
-			// avoid double free:
-			//delete m_Classes[i].physicsObj;
-			m_Classes[i].physicsObj = NULL;
 		}
 		if (m_Classes[i].imgmap != 0)
 		{
@@ -492,6 +478,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	{
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].modelname );
+		savefile->ReadString( m_Classes[i].lowestLOD );
 		savefile->ReadBool( m_Classes[i].pseudo );
 		savefile->ReadBool( m_Classes[i].watch );
 		savefile->ReadString( m_Classes[i].combine_as );
@@ -593,16 +580,6 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		if ( bHaveModel )
 		{
 			savefile->ReadModel( m_Classes[i].hModel );
-		}
-
-		savefile->ReadBool( bHaveModel );
-		m_Classes[i].physicsObj = NULL;
-
-		// only read the model if it is actually used
-		if ( bHaveModel )
-		{
-			m_Classes[i].physicsObj = new idPhysics_StaticMulti;
-			m_Classes[i].physicsObj->Restore( savefile );
 		}
 	}
 
@@ -860,6 +837,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.modelname = ent->spawnArgs.GetString("model","");
+	SeedClass.lowestLOD = "";												// only used for pseudo classes
 
 	// is solid?	
 	SeedClass.solid = ent->spawnArgs.GetBool("solid","1");
@@ -902,9 +880,6 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 
 //    // never combine entities which have certain spawnclasses
 //	idStr spawnclass = ent->spawnArgs.GetString("spawnclass","");
-
-	// only for pseudo classes
-	SeedClass.physicsObj = NULL;
 
 	// debug_colors?
 	SeedClass.materialName = "";
@@ -2030,12 +2005,6 @@ void Seed::PrepareEntities( void )
 				renderModelManager->FreeModel( m_Classes[i].hModel );
 				m_Classes[i].hModel = NULL;
 			}
-			// remove the physics object
-			if (m_Classes[i].physicsObj)
-			{
-				delete m_Classes[i].physicsObj;
-				m_Classes[i].physicsObj = NULL;
-			}
 			continue;
 		}
 		newClasses.Append ( m_Classes[i] );
@@ -2933,48 +2902,6 @@ float Seed::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 	return delta.LengthSqr() / (bias * bias);
 }
 
-// a small helper routine to cut down on code copy&paste
-bool Seed::SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const seed_entity_t* entity, const int idx, idClipModel* clipModel )
-{
-	idClipModel *clip;
-
-	// load the clipmodel for the lowest LOD stage for collision detection
-	bool clipLoaded = true;
-
-	if (clipModel)
-	{
-		// make a copy
-		clip = new idClipModel( clipModel );
-#ifdef M_DEBUG
-		gameLocal.Printf("Reusing clipmodel from renderModel 0x%p, bounds %s.\n", clipModel, clip->GetBounds().ToString() );
-#endif
-	}
-	else
-	{
-#ifdef M_DEBUG
-		gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
-#endif
-		clip = new idClipModel;
-		clipLoaded = clip->LoadModel( modelName );
-	}
-
-	if (clipLoaded)
-	{
-		// add the clipmodel
-		physics->SetClipModel(clip, 1.0f, idx, true);
-
-		physics->SetOrigin( entity->origin, idx);
-		physics->SetAxis( entity->angles.ToMat3(), idx);
-		// Scale the clipmodel
-		physics->Scale( entity->scale );
-		// Make it solid
-		physics->SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, idx );
-		// nec.?
-		physics->SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
-	}
-	return clipLoaded;
-}
-
 void Seed::CombineEntities( void )
 {
 	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
@@ -3195,10 +3122,39 @@ void Seed::CombineEntities( void )
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics
 				PseudoClass.hModel = entityClass->hModel;
-				PseudoClass.physicsObj = new idPhysics_StaticMulti;
 
-				PseudoClass.physicsObj->SetContents( CONTENTS_RENDERMODEL );
+				// TODO: put this into m_LOD as there it can be shared and doesn't need to be
+				//		 calculated anew every time:
+				PseudoClass.lowestLOD = entityClass->modelname;		// default for no LOD
+				if (entityClass->m_LOD)
+				{
+					lod_data_t* tmlod = entityClass->m_LOD;	// shortcut
+				
+					// try to load all LOD models in LODs to see if they exist
+					for (int mi = 0; mi < LOD_LEVELS; mi++)
+					{
+						// load model, then combine away
+	//					gameLocal.Warning("SEED %s: Trying to load LOD model #%i %s for entity %i.", 
+	//							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
+
+						idStr* mName = &(tmlod->ModelLOD[mi]);
+						if (! mName->IsEmpty() )
+						{
+							idRenderModel* tModel = renderModelManager->FindModel( mName->c_str() );
+							if (!tModel)
+							{
+								gameLocal.Warning("SEED %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
+									GetName(), mi, mName->c_str(), i);
+							}
+							else
+							{
+								PseudoClass.lowestLOD = mName->c_str();
+							}
+						}
+					}
+				}
 			}
+
 			// for this entity
 			merged ++;
 			// overall
@@ -3208,42 +3164,11 @@ void Seed::CombineEntities( void )
 
 			// mark as "already combined" so we can skip it
 			m_Entities[j].flags += SEED_ENTITY_COMBINED;
+
 		}
 
 		if (merged > 0)
 		{
-
-			idStr lowest_LOD_model = entityClass->modelname;	// default for no LOD
-
-			// if entities of this class have LOD:
-			if (entityClass->m_LOD)
-			{
-				lod_data_t* tmlod = entityClass->m_LOD;	// shortcut
-				
-				// try to load all LOD models in LODs to see if they exist
-				for (int mi = 0; mi < LOD_LEVELS; mi++)
-				{
-					// load model, then combine away
-//					gameLocal.Warning("SEED %s: Trying to load LOD model #%i %s for entity %i.", 
-//							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
-
-					idStr* mName = &(tmlod->ModelLOD[mi]);
-					if (! mName->IsEmpty() )
-					{
-						idRenderModel* tModel = renderModelManager->FindModel( mName->c_str() );
-						if (!tModel)
-						{
-							gameLocal.Warning("SEED %s: Could not load LOD model #%i %s for entity %i, skipping it.", 
-									GetName(), mi, mName->c_str(), i);
-						}
-						else
-						{
-							lowest_LOD_model = mName->c_str();
-						}
-					}
-				}
-			}
-
 			// if we have more entities to merge than what will fit into the model,
 			// sort them based on distance and select the N nearest:
 			if (merged > maxModelCount)
@@ -3271,48 +3196,15 @@ void Seed::CombineEntities( void )
 				PseudoClass.offsets.Append( sortedOffsets[si].ofs );
 			}
 
-			bool clipLoaded = false;
-			// if the original entity has "solid" "0", skip the entire clip model loading/setting:
-			if (entityClass->solid)
-			{
-				// Load or use the clipmodel
-				clipLoaded = SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, &m_Entities[i], 0, PseudoClass.clip );
-				if (!clipLoaded)
-				{
-					gameLocal.Warning("SEED %s: Could not load clipmodel for %s.\n", GetName(), lowest_LOD_model.c_str() );
-				}
-			}
-
-			if (clipLoaded)
-			{
-//				gameLocal.Printf("SEED %s: Loaded clipmodel (bounds %s) for %s.\n",
-//						GetName(), lod_0_clip->GetBounds().ToString(), lowest_LOD_model.c_str() );
-
-				// TODO: expose this so we avoid resizing the clipmodel idList for every model we add:
-				// PseudoClass.physicsObj->SetClipModelsNum( merged > maxModelCount ? maxModelCount : merged );
-				PseudoClass.physicsObj->SetOrigin( m_Entities[i].origin);		// need this
-				PseudoClass.physicsObj->SetAxis( idAngles(0,0,0).ToMat3() );	// need to set zero rotation
-			}
-
 			// mark all entities that will be merged as "deleted", but skip the rest
 			unsigned int n = (unsigned int)sortedOffsets.Num();
 			for (unsigned int d = 0; d < n; d++)
 			{
 				int todo = sortedOffsets[d].entity;
-
 				// mark as combined
 				m_Entities[todo].flags |= SEED_ENTITY_COMBINED;
-
-				// add the clipmodel to the multi-clipmodel if we have one
-				if (clipLoaded)
-				{
-					// d + 1 because 0 is the original entity
-					SetClipModelForMulti( PseudoClass.physicsObj, lowest_LOD_model, &m_Entities[todo], d + 1, PseudoClass.clip );
-
-//					gameLocal.Printf("Set clipmodel bounds %s\n", PseudoClass.physicsObj->GetClipModel( d + 1 )->GetBounds().ToString() );
-				}
 			}
-			gameLocal.Printf("SEED %s: Combined %i entities, used %s clipmodel.\n", GetName(), sortedOffsets.Num(), clipLoaded ? "a" : "no" );
+			gameLocal.Printf("SEED %s: Combined %i entities.\n", GetName(), sortedOffsets.Num() );
 			sortedOffsets.Clear();
 
 			// build the combined model
@@ -3328,6 +3220,9 @@ void Seed::CombineEntities( void )
 
 			// marks as using a pseudo class
 			m_Entities[i].flags += SEED_ENTITY_PSEUDO;
+
+			// and remove te COMBINED flag so it survives
+			m_Entities[i].flags &= ~SEED_ENTITY_COMBINED;
 
 			// don't try to rotate the combined model after spawn
 			m_Entities[i].angles = idAngles(0,0,0);
@@ -3429,6 +3324,8 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 		// set floor to 0 to avoid moveables to be floored
 	    args.Set("floor", "0");
 
+		args.Set("solid", lclass->solid ? "1" : "0");
+
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");
 		// disable LOD checks on entities (we take care of this)
@@ -3489,24 +3386,18 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 					r->hModel = NULL;
 				}
 
-				// gameLocal.Printf("%s: %i physics=%p model=%p\n", GetName(), lclass->pseudo, lclass->physicsObj, lclass->hModel);
+				// gameLocal.Printf("%s: %i model=%p\n", GetName(), lclass->pseudo, lclass->hModel);
 				// setup the rendermodel and the clipmodel
 				if (lclass->pseudo)
 				{
 					// each pseudoclass spawns only one entity
 					// gameLocal.Printf ("Enabling pseudoclass model %s\n", lclass->classname.c_str() );
 
-					ent2->SetPhysics( lclass->physicsObj );
-
-					lclass->physicsObj->SetSelf( ent2 );
-					// TODO: lclass->origin?
-					lclass->physicsObj->SetOrigin( ent->origin );
-
 					// tell the CStaticMulti entity that it should track updates:
 					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
 					// Let the StaticMulti store the nec. data to create the combined rendermodel
-					sment->SetLODData( lclass->m_LOD, lclass->modelname, &lclass->offsets, lclass->materialName, lclass->hModel );
+					sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
 					
 					// Register the new staticmulti entity with ourselves, so we can later Restore() it properly
 					m_iNumStaticMulties ++;
@@ -3724,10 +3615,12 @@ void Seed::Think( void )
 			{
 				idEntity *ent2 = gameLocal.entities[ ent->entity ];
 
+				gameLocal.Printf("Restoring LOD data for entity %i(%s).\n", i, ent2->GetName() );
+
 				CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
 				// Let the StaticMulti store the nec. data to create the combined rendermodel
-				sment->SetLODData( lclass->m_LOD, lclass->modelname, &lclass->offsets, lclass->materialName, lclass->hModel );
+				sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
 					
 				// enable thinking (mainly for debug draw)
 				sment->BecomeActive( TH_THINK | TH_PHYSICS );

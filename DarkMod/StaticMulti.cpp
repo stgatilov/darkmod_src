@@ -79,8 +79,8 @@ CStaticMulti::~CStaticMulti()
 	// no need to free these as they are just ptr to a copy
 	m_LOD = NULL;
 
-	// Avoid freeing the combined physics (clip)model as we can re-use it on next respawn:
-	SetPhysics(NULL);
+	// TODO: fix me
+	//SetPhysics(NULL);
 
 	// make sure the render entity is freed before the model is freed
 	FreeModelDef();
@@ -143,8 +143,10 @@ Store the data like our megamodel (the visible combined rendermodel including da
 assemble it), and the LOD stages (contain the distance for each LOD stage)
 ================
 */
-void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel )
+void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clipModel )
 {
+	idClipModel *clip;
+	bool clipLoaded = false;
 	active = true;
 
 	/* ptr to the shared data structures */
@@ -177,6 +179,60 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 
 	// generate the first render model
 	UpdateRenderModel(true);
+
+	// Generate our physics model
+	physics.SetSelf( this );
+	physics.SetAxis( mat3_identity );
+
+	bool solid = spawnArgs.GetBool( "solid" );
+
+	physics.SetContents( CONTENTS_RENDERMODEL );
+	if (solid)
+	{
+		clipLoaded = true;
+		// load the clipmodel for the lowest LOD stage for collision detection
+		if (clipModel)
+		{
+			// will make a copy below
+			clip = new idClipModel( clipModel );
+#ifdef M_DEBUG
+			gameLocal.Printf("Reusing clipmodel from renderModel 0x%p, bounds %s.\n", clipModel, clip->GetBounds().ToString() );
+#endif
+		}
+		else
+		{
+#ifdef M_DEBUG
+			gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
+#endif
+			clip = new idClipModel;
+			clipLoaded = clip->LoadModel( modelName );
+		}
+	}
+
+	// will be false for non-solid
+	if (clipLoaded)
+	{
+		model_ofs_t* o = offsets->Ptr();
+		for (int idx = 0; idx < m_iVisibleModels; idx++)
+		{
+			gameLocal.Printf("Setting clip for position #%i, offset %s, origin %s\n", idx, o[idx].offset.ToString(), origin.ToString() );
+
+			int i = idx + 1;
+
+			// add a new copy of the clipmodel for each position
+			idClipModel *c = new idClipModel( clip );
+			//c->SetOrigin( o[idx].offset );
+			physics.SetClipModel( c, 1.0f, i, true);
+			physics.SetOrigin( origin + o[idx].offset, i);
+			physics.SetAxis( o[idx].angles.ToMat3(), i);
+			// Scale the clipmodel
+			physics.Scale( o[idx].scale, i );
+			// Make it solid
+			physics.SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, i );
+		}
+		// TODO: nec.?
+		physics.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
+	}
 }
 
 /*
@@ -341,6 +397,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
+//	for (int ii =0; ii < 100; ii++)
+//	{
+//		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
+//	}
 #ifdef M_TIMINGS
 	timer_updatemodel.Stop();
 #endif

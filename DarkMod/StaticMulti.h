@@ -50,7 +50,7 @@ public:
 
 	void				Spawn( void );
 
-	void				SetLODData( lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel);
+	void				SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
 
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
