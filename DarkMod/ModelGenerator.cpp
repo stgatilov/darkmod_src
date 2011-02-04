@@ -133,7 +133,6 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 		if (!surf || !surf->shader->ShouldCreateBackSides()) { continue; }
 
 		// check if they have the same shader
-		const idMaterial *shader = surf->shader;
 		if (surf->shader == firstShader)
 		{
 			// same shader, but has it the same size?
@@ -448,7 +447,8 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	*/
 
 	/* ** 2 **
-	* Then check for each offset which model stage it uses, and count them.
+	* Then check for each offset which model stage it uses, and count them. If one of the
+	* offsets uses a model with a shadow casting surface, we need to call FinishSurfaces().
 	* Also correct out-of-bounds entries here.
 	*		O(N) where N the number of offsets.
 	*/
