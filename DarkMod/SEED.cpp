@@ -1080,8 +1080,21 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	// the entity already between spawning and us querying the info:
 	SeedClass.origin = ent->spawnArgs.GetVector( "origin" );
 
-	// add "seed_offset" to correct for mismatched origins
-	SeedClass.offset = ent->spawnArgs.GetVector( "seed_offset", "0 0 0" );
+	// If no seed_offset is set, and this is a moveable, correct the offset from
+	// the entity, because moveables have their origin usually at the center to
+	// make physics work:
+	if ( !ent->spawnArgs.FindKey("seed_offset") && ent->IsType( idMoveable::Type ) )
+	{
+		// get size
+		idVec3 size = ent->GetRenderEntity()->bounds.GetSize();
+		// correct z-axis position
+		SeedClass.offset = idVec3( 0, 0, size.z / 2);
+	}
+	else
+	{
+		// add manually set "seed_offset" to correct for mismatched origins
+		SeedClass.offset = ent->spawnArgs.GetVector( "seed_offset", "0 0 0" );
+	}
 
 	// these are ignored for pseudo classes (e.g. watch_breathren):
 	SeedClass.floor = ent->spawnArgs.GetBool( "seed_floor", spawnArgs.GetString( "floor", "0") );
@@ -1339,12 +1352,12 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	float fMin = 1.0f;
 	if (SeedClass.size.x < 0.001f)
 	{
-		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
 		SeedClass.size.x = fMin;
 	}
 	if (SeedClass.size.y < 0.001f)
 	{
-		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.\n", GetName(), fMin );
+		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
 		SeedClass.size.y = fMin;
 	}
 
