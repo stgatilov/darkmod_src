@@ -68,8 +68,6 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game/game_local.h"
-#include "../idlib/containers/list.h"
 #include "SEED.h"
 
 // maximum number of tries to place an entity

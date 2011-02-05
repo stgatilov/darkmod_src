@@ -13,9 +13,6 @@
 #ifndef __GAME_SEED_H__
 #define __GAME_SEED_H__
 
-#include "ModelGenerator.h"
-#include "StaticMulti.h"
-
 /*
 ===============================================================================
 
@@ -37,6 +34,10 @@
 
 ===============================================================================
 */
+
+#include "../game/game_local.h"
+#include "StaticMulti.h"
+#include "../idlib/containers/list.h"
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
 /** List of debug materials to use for the SEED megamodels */
@@ -253,21 +254,6 @@ public:
 	void				Event_CullAll( void );
 
 	void				Event_Activate( idEntity *activator );
-
-	/**
-	* Given a pointer to a render model, calls AllocModel() on the rendermanager, then
-	* copies all surface data from the old model to the new model. Used to construct a
-	* copy of an existing model, so it can then be used as blue-print for other models,
-	* which will share the same data. If dupData is true, memory for verts and indexes
-	* is duplicated, otherwise the new model shares the data of the old model. In this
-	* case the memory of the new model needs to be freed differently, of course :)
-	*/
-	idRenderModel*		DuplicateModel( const idRenderModel *source, const char *snapshotName, const bool dupData = true );
-
-	/**
-	* Manipulate memory of a duplicate model so that shared data does not get freed twice.
-	*/
-	void				FreeSharedModelData ( const idRenderModel *model );
 
 private:
 
