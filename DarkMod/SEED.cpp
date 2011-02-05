@@ -240,6 +240,16 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].watch );
 		savefile->WriteString( m_Classes[i].combine_as );
 
+		if (m_Classes[i].spawnArgs)
+		{
+			savefile->WriteBool(true);
+			savefile->WriteDict( m_Classes[i].spawnArgs );
+		}
+		else
+		{
+			savefile->WriteBool(false);
+		}
+
 		if (m_Classes[i].pseudo)
 		{
 			// save the offsets list so we can restore StaticMulties correctly
@@ -427,6 +437,11 @@ void Seed::ClearClasses( void )
 			delete m_Classes[i].m_LOD;
 			m_Classes[i].m_LOD = NULL;
 		}
+		if (m_Classes[i].spawnArgs)
+		{
+			delete m_Classes[i].spawnArgs;
+			m_Classes[i].spawnArgs = NULL;
+		}
 	}
 	m_Classes.Clear();
 	m_iNumStaticMulties = 0;
@@ -529,6 +544,17 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].pseudo );
 		savefile->ReadBool( m_Classes[i].watch );
 		savefile->ReadString( m_Classes[i].combine_as );
+
+		savefile->ReadBool( bHaveModel );
+		if (bHaveModel)
+		{
+			m_Classes[i].spawnArgs = new idDict;
+			savefile->ReadDict( m_Classes[i].spawnArgs );
+		}
+		else
+		{
+			m_Classes[i].spawnArgs = NULL;
+		}
 
 		// restore the offsets
 		if (m_Classes[i].pseudo)
@@ -932,10 +958,75 @@ int Seed::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 
 /*
 ===============
+Seed::LoadSpawnArgsFromMap - load spawnargs set in the mapfile for an entity
+
+Is used f.i. if the target entity has additional spawnargs like "smoke" and
+we need to preserve them, or the entity would otherwise break.
+===============
+*/
+idDict* Seed::LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entityName, const idStr &entityClass) const
+{
+	idDict *args = NULL;
+
+//	gameLocal.Printf("Rumaging through mapfile to find entity %s (class %s).\n", entityName.c_str(), entityClass.c_str() );
+
+	// Look through all map entities (except 0 = worldspawn) to find the one we have
+	int num = mapFile->GetNumEntities();
+	for (int i = 1; i < num; ++i)
+	{
+		idMapEntity* mapEnt = mapFile->GetEntity(i);
+
+		if (mapEnt && mapEnt->epairs.GetString("name") == entityName)
+		{
+			if (idStr::Icmp(mapEnt->epairs.GetString("classname"), entityClass) == 0)
+			{
+				// Found entity, process its spawnargs
+				args = new idDict;
+				int numKeys = mapEnt->epairs.GetNumKeyVals();
+				for (int k = 0; k < numKeys; k++)
+				{
+					const idKeyValue *kv = mapEnt->epairs.GetKeyVal(k);
+					idStr key = kv->GetKey();
+					// remove things like "classname", "name", "comment", any "editor_*" etc
+					// TODO: Create a list with things to skip as idStrs so this is faster?
+					if (key == "classname" ||
+						key == "name" ||
+						key == "origin" ||
+						key == "model" ||
+						key == "angle" ||
+						key == "rotation" ||
+						key == "skin" ||
+						key == "model" ||
+						key == "_color" ||
+						key.Left(7) == "editor_" ||
+						key.Left(5) == "seed_" ||
+						key.Left(6) == "target"
+					   )
+					{
+#ifdef M_DEBUG
+						//gameLocal.Printf("Skipping %s\n", key.c_str() );
+#endif
+						continue;
+					}
+#ifdef M_DEBUG
+					gameLocal.Printf("Using %s\n", key.c_str() );
+#endif
+					args->Set( kv->GetKey(), kv->GetValue() );
+				}
+				// done here
+				return args;
+			}
+		}
+	}
+	return args;
+}
+
+/*
+===============
 Seed::AddClassFromEntity - take an entity as template and add a class from it. Returns the size of this class
 ===============
 */
-void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
+void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSpawnargs )
 {
 	seed_class_t			SeedClass;
 	seed_material_t			SeedMaterial;
@@ -952,6 +1043,27 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.modelname = ent->spawnArgs.GetString("model","");
 	SeedClass.lowestLOD = "";												// only used for pseudo classes
+
+	SeedClass.spawnArgs = NULL;
+
+	// #2579: parse from map file
+	if (getSpawnargs)
+	{
+	    // Load the map from the missiondata class (provides cached loading)
+		idStr filename = gameLocal.GetMapFileName();
+	    idMapFile* mapFile = gameLocal.m_MissionData->LoadMap(filename);
+
+    	if (NULL != mapFile)
+    	{
+			// loaded the map file, see if we can find the entity in there
+			SeedClass.spawnArgs = LoadSpawnArgsFromMap(mapFile, ent->GetName(), SeedClass.classname);
+		}
+		else
+		{
+			// shouldn't happen
+			gameLocal.Warning("SEED %s: Couldn't load map %s, skipping spawnargs parsing.", GetName(), filename.c_str());
+		}
+	}
 
 	// is solid?	
 	SeedClass.solid = ent->spawnArgs.GetBool("solid","1");
@@ -1788,7 +1900,7 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 		if (ent)
 		{
 			// add a class based on this entity
-			AddClassFromEntity( ent );
+			AddClassFromEntity( ent, false, false );
 			// remove the temp. entity again
 			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
@@ -1896,7 +2008,7 @@ void Seed::Prepare( void )
 			{
 				gameLocal.Printf( "SEED %s: %s (class %s, model %s) wants us to take care of his brethren.\n",
 						GetName(), ent->GetName(), ent->GetEntityDefName(), ent->spawnArgs.GetString("model","") );
-				AddClassFromEntity( ent, true );
+				AddClassFromEntity( ent, true, false );
 
 				idPhysics *p = ent->GetPhysics();
 
@@ -1926,7 +2038,7 @@ void Seed::Prepare( void )
 			else
 			{
 				// add a class based on this entity
-				AddClassFromEntity( ent );
+				AddClassFromEntity( ent, false, true );
 			}
 		}
 	}
@@ -3475,6 +3587,13 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 		idEntity *ent2;
 		idDict args;
 
+		//if the class has an idDict, add it first
+		if (lclass->spawnArgs)
+		{
+			args.Copy( *lclass->spawnArgs );
+		}
+
+		// now override the important spawnargs
 		args.Set("classname", lclass->classname);
 
 		// has a model?

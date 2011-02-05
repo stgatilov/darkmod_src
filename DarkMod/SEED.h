@@ -13,8 +13,7 @@
 #ifndef __GAME_SEED_H__
 #define __GAME_SEED_H__
 
-/*
-===============================================================================
+/*===============================================================================
 
   System for Environmental Entity Distribution (SEED, formerly known as LODE)
   
@@ -32,11 +31,11 @@
   clipmodels, to reduce entity count and number of drawcalls. These combined
   entities are of the CStaticMulti class.
 
-===============================================================================
-*/
+  ============================================================================= */
 
 #include "../game/game_local.h"
 #include "StaticMulti.h"
+#include "MissionData.h"
 #include "../idlib/containers/list.h"
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
@@ -162,6 +161,8 @@ struct seed_class_t {
 	bool					z_invert;		// false => entities spawn between z_min => z_max, otherwise outside
 
 	lod_data_t*				m_LOD;			//!< Contains (sharable, constant) LOD data if non-NULL
+
+	idDict					*spawnArgs;		// pointer to a dictionary with additional spawnargs that were present in the map file
 };
 
 /** Defines one area that inhibits entity spawning */
@@ -316,9 +317,16 @@ private:
 	int					ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const;
 
 	/**
+	* Parses a (potentially cached copy) mapfile and looks for the entity with the name and class, to find out
+	* which spawnargs were set on it in the editor, since we need to preserve these. Returns a dict with these,
+	* where common ones like "classname", "editor_", "seed_" etc. are already removed.
+	*/
+	idDict* 			LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entityName, const idStr &entityClass) const;
+
+	/**
 	* Take the given entity as template and add a template class from its values.
 	*/
-	void				AddClassFromEntity( idEntity *ent, const bool watch = false );
+	void				AddClassFromEntity( idEntity *ent, const bool watch = false, const bool getSpawnArgs = true );
 
 	/**
 	* Take the given spawn_class or spawn_model spawnarg and add a template class based on it.
