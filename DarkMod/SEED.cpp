@@ -971,6 +971,12 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch )
 		 ent->IsType( idAFAttachment::Type ) ||
 		 ent->IsType( idAnimatedEntity::Type ) ||
 		 ent->IsType( idWeapon::Type ) ||
+		 ent->IsType( idFuncEmitter::Type ) ||
+		 ent->IsType( idFuncSmoke::Type ) ||
+		 ent->IsType( idFuncSplat::Type ) ||
+		 ent->IsType( idFuncPortal::Type ) ||
+		 ent->IsType( idFuncAASPortal::Type ) ||
+		 ent->IsType( idFuncAASObstacle::Type ) ||
 		 ent->IsType( idLight::Type ) )
 	{
 		SeedClass.nocombine = true;
