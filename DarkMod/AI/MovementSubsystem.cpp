@@ -51,7 +51,6 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 	_blockTimeOut(BLOCK_TIME_OUT),
 	_timeBlockStarted(-1), // grayman #2345
 	_blockTimeShouldEnd(BLOCKED_TOO_LONG), // grayman #2345
-//	_lastFrameBlockCheck(-1),	// grayman #2345
 	_timePauseStarted(-1),		// grayman #2345
 	_pauseTimeOut(PAUSE_TIME)	// grayman #2345
 
@@ -416,53 +415,30 @@ bool MovementSubsystem::AttemptToExtricate()
 	// whichever destination lets you travel the farthest.
 
 	trace_t result;
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float extricateDistance = 2*(bounds[1][0] + bounds[1][1]); // 2 x (x_size/2 + y_size/2)
-	idVec3 dir = extricateDistance*owner->viewAxis.ToAngles().ToForward();
-
-	idVec3 traceEnd;
 	idBounds bnds = owner->GetPhysics()->GetBounds();
-	idVec3 moveTo = ownerOrigin; // initialize to your origin
+	float extricateDistance = 1.5*(bnds[1][0] + bnds[1][1]); // 1.5 x (x_size/2 + y_size/2)
+	idAngles angles = owner->viewAxis.ToAngles();
+	float forward = angles.yaw;
 	float moveFraction = 0;		 // fractional distance from your origin to moveTo
 
 	for (int i = 0 ; i < 3 ; i++)
 	{
-		// rotate 90 degrees clockwise around z
+		float tryAngle = forward + 90.0 + 180.0*gameLocal.random.RandomFloat();
+		idAngles tryAngles = idAngles(0,tryAngle,0);
+		tryAngles.Normalize180();
 
-		float temp = dir.x;
-		dir.x = dir.y;
-		dir.y = -temp;
-
-		traceEnd = ownerOrigin + dir;
-		gameLocal.clip.TraceBounds(result, ownerOrigin, traceEnd, bnds, CONTENTS_SOLID|CONTENTS_CORPSE, owner);
+		idVec3 moveTo = ownerOrigin + extricateDistance*tryAngles.ToForward();
+		gameLocal.clip.TraceBounds(result, ownerOrigin, moveTo, bnds, CONTENTS_SOLID|CONTENTS_CORPSE, owner);
 
 		if (result.fraction >= 1.0f) // didn't hit anything, so quit looking
 		{
-			moveTo = traceEnd;
-			moveFraction = 1;
-			break;
+			owner->MoveToPosition(moveTo);
+			owner->RestoreAttachmentContents(); // Put back attachments
+			return true;
 		}
-
-		 // Trace hit something. Is this move the farthest yet?
-
-		if (result.fraction > moveFraction)
-		{
-			moveTo = traceEnd;
-			moveFraction = result.fraction;
-		}	
 	}
-
 	owner->RestoreAttachmentContents(); // Put back attachments
-
-	if (moveFraction == 0) // Going anywhere?
-	{
-		// No way out. Try again later. Something might move out of the way.
-		return false;
-	}
-
-	owner->MoveToPosition(moveTo);
-
-	return true;
+	return false;
 }
 
 float MovementSubsystem::GetPrevTraveled()
@@ -647,8 +623,6 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		}
 	}
 
-//	_lastFrameBlockCheck = gameLocal.framenum; // grayman #2345
-
 	DebugDraw(owner);
 }
 
@@ -672,6 +646,19 @@ void MovementSubsystem::SetWaiting(bool solid) // grayman #2345
 	else
 	{
 		_state = EWaitingNonSolid;
+	}
+	
+	// If you are handling a door, you have to be taken off
+	// that door's queue, so that others can handle the door
+
+	idAI* owner = _owner.GetEntity();
+	if (owner->m_HandlingDoor)
+	{
+		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+		if (frobDoor != NULL)
+		{
+			frobDoor->GetUserManager().RemoveUser(owner);
+		}
 	}
 }
 
@@ -765,7 +752,6 @@ void MovementSubsystem::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_blockTimeOut);
 	savefile->WriteInt(_timeBlockStarted);		// grayman #2345
 	savefile->WriteInt(_blockTimeShouldEnd);	// grayman #2345
-//	savefile->WriteInt(_lastFrameBlockCheck);	// grayman #2345
 	savefile->WriteInt(_pauseTimeOut);			// grayman #2345
 }
 
@@ -808,7 +794,6 @@ void MovementSubsystem::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_blockTimeOut);
 	savefile->ReadInt(_timeBlockStarted);		// grayman #2345
 	savefile->ReadInt(_blockTimeShouldEnd);		// grayman #2345
-//	savefile->ReadInt(_lastFrameBlockCheck);	// grayman #2345
 	savefile->ReadInt(_pauseTimeOut);			// grayman #2345
 }
 
@@ -849,7 +834,10 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			idStr doorName = frobDoor->name;
 			int numUsers = frobDoor->GetUserManager().GetNumUsers();
 			int slot = frobDoor->GetUserManager().GetIndex(owner) + 1;
-			position = " " + doorName + " - " + slot + "/" + numUsers;
+			if (slot > 0)
+			{
+				position = " " + doorName + " - " + slot + "/" + numUsers;
+			}
 		}
 		else
 		{

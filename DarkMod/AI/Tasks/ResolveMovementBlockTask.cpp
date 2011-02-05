@@ -236,15 +236,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 			// grayman #2345 - before declaring failure, let's try extrication
 
 			owner->RestoreAttachmentContents(); // AttemptToExtricate() will do an attachment save/restore, so we must restore here first
-			if (!owner->movementSubsystem->AttemptToExtricate())
-			{
-				// extrication failed
-
-				owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
-				owner->AI_BLOCKED = true;
-				owner->AI_DEST_UNREACHABLE = true;
-				subsystem.FinishTask();
-			}
+			owner->movementSubsystem->AttemptToExtricate();
 		}
 		else
 		{
@@ -318,15 +310,15 @@ bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
 	{
 		// blocking AI is headed n/s, so test to your e/w
 
-		end1.x += 36;
-		end2.x -= 36;
+		end1.x += 48;
+		end2.x -= 48;
 	}
 	else
 	{
 		// blocking AI is headed e/w, so test to your n/s
 
-		end1.y += 36;
-		end2.y -= 36;
+		end1.y += 48;
+		end2.y -= 48;
 	}
 
 	trace_t traceResult;
@@ -434,9 +426,21 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 	return false;
 }
 
-bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner)
+bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #2345 - entirely replaced
 {
-	return owner->AI_MOVE_DONE ? true : false;
+	if (owner->AI_MOVE_DONE)
+	{
+		return true;
+	}
+
+	// If you're not getting anywhere, try extricating yourself.
+
+	if (owner->movementSubsystem->GetPrevTraveled() < 0.1)
+	{
+		owner->movementSubsystem->AttemptToExtricate();
+	}
+
+	return false;
 }
 
 void ResolveMovementBlockTask::OnFinish(idAI* owner)

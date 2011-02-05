@@ -48,6 +48,7 @@ const int 	MAX_AAS_WALL_EDGES			= 256;
 const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
 const int 	MAX_OBSTACLE_PATH			= 64;
+const int	REUSE_DOOR_DELAY			= 10000; // grayman #2345 - wait before using a door again
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -310,7 +311,7 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 					{
 						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
 						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 5000))
+						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
 						{
 							continue; // ignore this door
 						}
@@ -428,6 +429,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 		if (obEnt->IsType(idActor::Type))
 		{
+			idActor* obEntActor = static_cast<idActor*>(obEnt); // grayman #2345
 			actorFound = true; // grayman #2345
 			idPhysics* obPhys = obEnt->GetPhysics();
 
@@ -443,40 +445,53 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			Use m_pathRank to determine who will walk around the other. At init time, m_pathRank
 			is set to rank. A higher m_pathRank will not walk around a lower m_pathRank. A lower
 			m_pathRank will walk around a higher m_pathRank. If m_pathRanks are equal at first
-			encounter, self's m_pathRank will be bumped up. (Whoever sights the other first gets
+			encounter, self's m_pathRank will be bumped up. Whoever sights the other first gets
 			to have a higher m_pathRank. m_pathRank = 1000 for a non-moving actor, so others
 			will walk around him. m_pathRank is reset to rank when an AI begins moving again.
 			
 			*/
 
-			idActor* obEntActor = static_cast<idActor*>(obEnt);
+			bool sameDirection = false;		// self and actor traveling in roughly the same direction?
+			bool actorSameFaster = false;	// actor is traveling at the same speed or faster than you
+			const idVec3& actorVel = obPhys->GetLinearVelocity();
+			float actorSpeedSqr = actorVel.LengthSqr();
+			idVec3 myVel = physics->GetLinearVelocity();
+			float mySpeedSqr = myVel.LengthSqr();
+			// moving in about the same direction?
+			if (actorVel * myVel > 0.0f)
+			{
+				sameDirection = true;
+			}
+
+			// actor's speed is faster or equal to self?
+			if (actorSpeedSqr >= mySpeedSqr)
+			{
+				actorSameFaster = true;
+			}
+
 			if (self->m_pathRank > obEntActor->m_pathRank)
 			{
-				continue; // ignore lower path ranks
+				if (actorSameFaster)
+				{
+					continue;
+				}
+				else if (!sameDirection)
+				{
+					continue;
+				}
 			}
-			if (self->m_pathRank == obEntActor->m_pathRank)
+			else if (self->m_pathRank == obEntActor->m_pathRank)
 			{
 				self->m_pathRank++; // increase mine and ignore the other actor
-				continue;
+				continue; // ignore
 			}
 
-			// if the actor is moving in the same direction and is traveling at the same speed or faster than you, ignore them
+			// Self's path rank is lower than the actor's. If the actor is moving in the same
+			// direction and is traveling at the same speed or faster, ignore them.
 
-			const idVec3& theirVel = obPhys->GetLinearVelocity();
-			if (theirVel.LengthSqr() > Square(10.0f))
+			else if (sameDirection && actorSameFaster)
 			{
-				idVec3 myVel = physics->GetLinearVelocity();
-				if (myVel.LengthSqr() > Square(10.0f))
-				{
-					// if moving in about the same direction
-					if (theirVel * myVel > 0.0f)
-					{
-						if (theirVel.LengthSqr() >= myVel.LengthSqr())
-						{
-							continue; // ignore
-						}
-					}
-				}
+				continue; // ignore
 			}
 		} 
 		// SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too

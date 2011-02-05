@@ -1430,6 +1430,8 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
+		// Tell the slave to get out of the way.
+
 		slave->movementSubsystem->ResolveBlock(master);
 	}
 	else if (ent->IsType(idStaticEntity::Type))
@@ -2260,7 +2262,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	// grayman #2345 - don't handle this door if we just finished handling it.
 
 	int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-	if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 5000))
+	if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
 	{
 		return;
 	}

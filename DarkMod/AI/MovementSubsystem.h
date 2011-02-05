@@ -63,7 +63,6 @@ protected:
 	
 	int _timeBlockStarted;		// grayman #2345 - When a block started 
 	int _blockTimeShouldEnd;	// grayman #2345 - The amount of time allowed to pass during EBlocked before trying to extricate yourself
-//	int _lastFrameBlockCheck;	// grayman #2345 - the last frame we checked whether we were blocked
 	int _timePauseStarted;		// grayman #2345 - when a treadmill pause started
 	int _pauseTimeOut;			// grayman #2345 - amount of time to pause after treadmilling
 

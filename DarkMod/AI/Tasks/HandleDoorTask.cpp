@@ -33,23 +33,6 @@ const idStr& HandleDoorTask::GetName() const
 
 void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	/* grayman #2345 - it's possible to be here after:
-	  
-	     1) Beginning to handle this door.
-
-	     2) Having to resolve a movement block, during which door-handling is pushed onto the task queue and ignored.
-
-	     3) Coming back here when the the block is resolved and the door-handling task
-		    is popped off the task queue.
-	  
-	   So we have to check if we're already handling a door. If so, leave.
-	 */
-
-	if (owner->m_HandlingDoor) // grayman #2345
-	{
-		return;
-	}
-
 	// Init the base class
 	Task::Init(owner, subsystem);
 
@@ -64,6 +47,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
 	{
+		subsystem.FinishTask(); // grayman #2345 - can't perform the task if there's no door
 		return;
 	}
 
@@ -366,7 +350,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateMovingToSafePos: // grayman #2345
 			{
-				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION))
+				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
 					owner->TurnToward(closedPos);
@@ -398,7 +382,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
+				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
 				{
 					// reached front position
 					owner->StopMove(MOVE_STATUS_DONE);
@@ -713,7 +697,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					// grayman #2345 - if you've been in queue too long, leave
 
-						if ((_leaveQueue != -1) && (gameLocal.time >= _leaveQueue))
+					if ((_leaveQueue != -1) && (gameLocal.time >= _leaveQueue))
 					{
 						owner->m_leftQueue = true; // timed out of a door queue
 						_leaveQueue = -1;
@@ -765,7 +749,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			
 			case EStateMovingToSafePos: // grayman #2345
 			{
-				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION))
+				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
 					owner->TurnToward(closedPos);
@@ -806,7 +790,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					idVec3 currentPos = frobDoor->GetCurrentPos();
 					// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
 
-					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION))
+					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
 					{
 						// reached front position
 						owner->StopMove(MOVE_STATUS_DONE);
@@ -1005,8 +989,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
-					owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
-					_doorHandlingState = EStateMovingToBackPos;
+					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to midPos
 				}
 				break;
 
@@ -1047,7 +1030,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// reached mid position
 				if (owner->AI_MOVE_DONE)
 				{
-					if (owner->ReachedPos(_midPos, MOVE_TO_POSITION))
+					if (owner->ReachedPos(_midPos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #2345
 					{
 						return true;
 					}
@@ -1096,7 +1079,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if (owner->AI_MOVE_DONE)
 				{
-					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION))
+					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
 					{
 						if (!AllowedToClose(owner))
 						{
@@ -1372,7 +1355,7 @@ idVec3 HandleDoorTask::GetMidPos(idAI* owner, CFrobDoor* frobDoor)
 	parallelMidOffset *= size * 1.4f;
 
 	idVec3 normalMidOffset = openDirNorm;
-	normalMidOffset *= size * 2.5;
+	normalMidOffset *= size * 3.0;
 
 	idVec3 midPos = closedPos - parallelMidOffset + normalMidOffset;
 	midPos.z = frobDoorBounds[0].z + 5;
@@ -1843,12 +1826,11 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 	int numUsers = frobDoor->GetUserManager().GetNumUsers();
 	if (numUsers > 0)
 	{
-		// Is newUser already on the door queue?
-
-		if (frobDoor->GetUserManager().GetIndex(newUser) >= 0)
-		{
-			return;
-		}
+		frobDoor->GetUserManager().RemoveUser(newUser); // If newUser is already on the door queue, remove
+														// them, because the queue is ordered by distance
+														// from the door, and they need to be re-inserted
+														// at the correct spot. If they're not already on
+														// the queue, RemoveUser() does nothing.
 
 		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
 		float newUserDistance = (newUser->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
