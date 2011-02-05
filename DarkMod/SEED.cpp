@@ -47,8 +47,14 @@ TODO: Sort all the generated entities into multiple lists, keyed on a hash-key t
 	  could be combined have the same hash key. F.i. "skin-name,model-name,class-name,etc".
 	  Then only look at entities from one list when combining, this will reduce the
 	  O(N*N) to something like O( (N/X)*(N/X) ) where X is the set of combinable entities.
-TODO: Use a point (at least for nonsolids or vegetation?) instead of a box when determining
-	  the underlying material/placement - this could be much faster.
+TODO: We currently determine the material by doing a point-trace, then when the material
+	  is suitable, we do a trace with the bounds/box downwards. This has two implications:
+	  * It is slower to do two traces if we actually need both
+	  * the point trace can "miss" f.i. a table, hit grass and say "ok place here", and then
+	    the box trace will collide with the table, placing the entity in mid-air nex to the
+		table surface.
+      This needs re-organistion.
+	  In addition, the trace do not take entity rotation into account.
 */
 
 #include "../idlib/precompiled.h"
@@ -1753,11 +1759,13 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 			const idStr *s = sa->Ptr();
 			if (spawnArgs.FindKey( base + s[i] ))
 			{
-				// gameLocal.Printf("SEED %s: Relaying %s = %s\n", GetName(), idStr(base + s[i]).c_str(), spawnArgs.GetString( base + s[i], "" ) );
-				args.Set( "seed_" + s[i], spawnArgs.GetString( base + s[i], "" ) );
+				//gameLocal.Printf("SEED %s: Relaying %s = %s as \"%s\".\n", 
+				//	GetName(), idStr(base + s[i]).c_str(), spawnArgs.GetString( base + s[i], "" ), idStr("seed" + s[i]).c_str() );
+				// "seed" + "_offset" => "seed_offset"
+				args.Set( "seed" + s[i], spawnArgs.GetString( base + s[i], "" ) );
 			}
 		}
-		gameLocal.Warning("SEED %s: TODO #2599: Spawning a %s.", GetName(), entityClass.c_str() );
+		// gameLocal.Warning("SEED %s: TODO #2599: Spawning a %s.", GetName(), entityClass.c_str() );
 
 		gameLocal.SpawnEntityDef( args, &ent );
 		if (ent)
