@@ -455,7 +455,11 @@ Seed::Restore
 void Seed::Restore( idRestoreGame *savefile ) {
 	int num;
 	int numClasses;
-	bool bHaveModel;
+	bool bHaveIt;
+
+#ifdef M_DEBUG
+	gameLocal.Printf("Restoring %s\n", GetName());
+#endif
 
 	savefile->ReadBool( active );
 	savefile->ReadBool( m_bWaitForTrigger );
@@ -538,6 +542,9 @@ void Seed::Restore( idRestoreGame *savefile ) {
 	m_Classes.SetNum( numClasses );
 	for( int i = 0; i < numClasses; i++ )
 	{
+#ifdef M_DEBUG
+		gameLocal.Printf("Restoring class %i.\n", i);
+#endif
 		savefile->ReadString( m_Classes[i].classname );
 		savefile->ReadString( m_Classes[i].modelname );
 		savefile->ReadString( m_Classes[i].lowestLOD );
@@ -545,15 +552,12 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].watch );
 		savefile->ReadString( m_Classes[i].combine_as );
 
-		savefile->ReadBool( bHaveModel );
-		if (bHaveModel)
+		savefile->ReadBool( bHaveIt );
+		m_Classes[i].spawnArgs = NULL;
+		if (bHaveIt)
 		{
 			m_Classes[i].spawnArgs = new idDict;
 			savefile->ReadDict( m_Classes[i].spawnArgs );
-		}
-		else
-		{
-			m_Classes[i].spawnArgs = NULL;
 		}
 
 		// restore the offsets
@@ -609,10 +613,10 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( m_Classes[i].numEntities );
 		savefile->ReadInt( m_Classes[i].score );
 
-		savefile->ReadBool( bHaveModel );
+		savefile->ReadBool( bHaveIt );
 		m_Classes[i].clip = NULL;
 		// only read the clip model if it is actually used
-		if ( bHaveModel )
+		if ( bHaveIt )
 		{
 			savefile->ReadClipModel( m_Classes[i].clip );
 		}
@@ -696,10 +700,10 @@ void Seed::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( m_Classes[i].map_ofs_y );
 		}
 
-		savefile->ReadBool( bHaveModel );
+		savefile->ReadBool( bHaveIt );
 		m_Classes[i].hModel = NULL;
 		// only read the model if it is actually used
-		if ( bHaveModel )
+		if ( bHaveIt )
 		{
 			savefile->ReadModel( m_Classes[i].hModel );
 		}
@@ -968,7 +972,9 @@ idDict* Seed::LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entity
 {
 	idDict *args = NULL;
 
-//	gameLocal.Printf("Rumaging through mapfile to find entity %s (class %s).\n", entityName.c_str(), entityClass.c_str() );
+#ifdef M_DEBUG
+	gameLocal.Printf("Rumaging through mapfile to find entity %s (class %s).\n", entityName.c_str(), entityClass.c_str() );
+#endif
 
 	// Look through all map entities (except 0 = worldspawn) to find the one we have
 	int num = mapFile->GetNumEntities();
@@ -1004,7 +1010,7 @@ idDict* Seed::LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entity
 					   )
 					{
 #ifdef M_DEBUG
-						//gameLocal.Printf("Skipping %s\n", key.c_str() );
+						gameLocal.Printf("Skipping %s\n", key.c_str() );
 #endif
 						continue;
 					}
@@ -3392,6 +3398,14 @@ void Seed::CombineEntities( void )
 				}
 				PseudoClass.modelname = entityClass->modelname;
 				PseudoClass.spawnDist = entityClass->spawnDist;
+				if (entityClass->spawnArgs)
+				{
+					PseudoClass.spawnArgs = new idDict( *entityClass->spawnArgs );
+				}
+				else
+				{
+					PseudoClass.spawnArgs = NULL;
+				}
 				PseudoClass.cullDist = entityClass->cullDist;
 				PseudoClass.size = entityClass->size;
 				PseudoClass.solid = entityClass->solid;
@@ -3587,7 +3601,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 		idEntity *ent2;
 		idDict args;
 
-		//if the class has an idDict, add it first
+		// if the class has an idDict, add it first
 		if (lclass->spawnArgs)
 		{
 			args.Copy( *lclass->spawnArgs );
