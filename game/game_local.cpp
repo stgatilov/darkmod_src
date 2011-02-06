@@ -548,9 +548,9 @@ void idGameLocal::Init( void ) {
 	}
 }
 
-idStr idGameLocal::GetMapFileName() const
+const idStr& idGameLocal::GetMapFileName() const
 {
-	return idStr( mapFileName );
+	return mapFileName;
 }
 
 void idGameLocal::CheckTDMVersion(idUserInterface* ui)

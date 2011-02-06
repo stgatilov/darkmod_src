@@ -936,7 +936,7 @@ public:
 	void					HandleGuiMessages(idUserInterface* ui);
 
 	// Tels: Return mapFileName as it is private
-	idStr					GetMapFileName() const;
+	const idStr&			GetMapFileName() const;
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
