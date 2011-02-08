@@ -424,7 +424,7 @@ void CGlobal::LoadINISettings(void *p)
 					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 								t->tm_year+1900, t->tm_mon, t->tm_mday, 
 								t->tm_hour, t->tm_min, t->tm_sec);
-					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
+					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
 				}
 			}
 		}
