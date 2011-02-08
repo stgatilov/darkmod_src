@@ -51,6 +51,10 @@ MACOSX_TARGET_ARCH (default 'i386')
 	The target architecture when building in Mac OS X.
 	valid values: 'ppc' or 'i386'.
 
+LINUX_TARGET_ARCH (default: 'i386')
+	The target architecture when building in Linux.
+	valid values: 'i386' or 'debian50-amd64'
+
 """
 
 Help( help_string )
@@ -92,6 +96,7 @@ JOBS = '1'
 BUILD = 'debug'
 BASEFLAGS = ''
 MACOSX_TARGET_ARCH = 'i386'
+LINUX_TARGET_ARCH = 'i386'
 
 # end default settings ---------------------------
 
@@ -144,14 +149,18 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
 if ( g_os == 'Linux' or g_os == 'MacOSX' ):
-	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
-	BASECPPFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-m32' )
 
 	if g_os == 'Linux':
-		# help 64 bit machines to find the compatibility 32bit libraries
-		BASELINKFLAGS.append( '-L/lib32' )
-		BASELINKFLAGS.append( '-L/usr/lib32' )
+
+		if LINUX_TARGET_ARCH == 'i386':
+			# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
+			BASECPPFLAGS.append( '-m32' )
+			BASELINKFLAGS.append( '-m32' )
+
+			# help 64 bit machines to find the compatibility 32bit libraries
+			BASELINKFLAGS.append( '-L/lib32' )
+			BASELINKFLAGS.append( '-L/usr/lib32' )
+		
 		BASELINKFLAGS.append( '-pthread' )
 		BASELINKFLAGS.append( '-lrt' )
 	
@@ -159,6 +168,10 @@ if ( g_os == 'Linux' or g_os == 'MacOSX' ):
 		BASECPPFLAGS.append('-D__linux__')
 	else:
 		# Mac OS X
+		# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
+		BASECPPFLAGS.append( '-m32' )
+		BASELINKFLAGS.append( '-m32' )
+
 		BASECPPFLAGS.append('-DMACOS_X')
 
 		if MACOSX_TARGET_ARCH == 'i386':
@@ -217,7 +230,7 @@ minizip_list = []
 libtdm_update_list = []
 
 # mark the globals
-GLOBALS = 'g_env g_os OPTCPPFLAGS'
+GLOBALS = 'g_env g_os OPTCPPFLAGS LINUX_TARGET_ARCH'
 
 # end general configuration ----------------------
 
