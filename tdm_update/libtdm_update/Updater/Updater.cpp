@@ -260,12 +260,6 @@ void Updater::DetermineLocalVersion()
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is matching version %s.") % candidate.file_string() % v->first).str());
 
 			_fileVersions[candidate.string()] = v->first;
-
-			// sum up the totals for this version
-			VersionTotal& total = _localVersions.insert(LocalVersionBreakdown::value_type(v->first, VersionTotal())).first->second;
-
-			total.numFiles++;
-			total.filesize += candidateFilesize;
 		}
 
 		// All files passed the check?
@@ -275,6 +269,19 @@ void Updater::DetermineLocalVersion()
 			TraceLog::WriteLine(LOG_VERBOSE, " Local installation matches version: " + _pureLocalVersion);
 		}
 	}
+
+	// Sum up the totals for all files, each file has exactly one version
+	for (FileVersionMap::const_iterator i = _fileVersions.begin(); i != _fileVersions.end(); ++i)
+	{
+		// sum up the totals for this version
+		const std::string& version = i->second;
+		VersionTotal& total = _localVersions.insert(LocalVersionBreakdown::value_type(version, VersionTotal())).first->second;
+
+		total.numFiles++;
+		total.filesize += static_cast<std::size_t>(fs::file_size(i->first));
+	}
+
+	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("The local files are matching %d different versions.") % _localVersions.size()).str());
 
 	if (_fileProgressCallback != NULL)
 	{
@@ -292,8 +299,8 @@ void Updater::DetermineLocalVersion()
 		{
 			const std::string& version = i->first;
 
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Files matching version %s: %d (size: %d)") % 
-				version % i->second.numFiles % i->second.filesize).str());
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Files matching version %s: %d (size: %s)") % 
+				version % i->second.numFiles % Util::GetHumanReadableBytes(i->second.filesize)).str());
 
 			// Check if this differential update is wise, from an economic point of view
 			UpdatePackageInfo::const_iterator package = _updatePackages.find(version);
