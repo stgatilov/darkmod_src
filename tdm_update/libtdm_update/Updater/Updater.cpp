@@ -1288,7 +1288,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	updater = GetTargetPath() / updater;
 
 	batch << "#!/bin/bash" << std::endl;
-	batch << "sleep 10s" << std::endl;
+	batch << "sleep 2s" << std::endl;
 	batch << "mv -f " << tempUpdater.file_string() << " " << updater.file_string() << std::endl;
 	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
 	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
