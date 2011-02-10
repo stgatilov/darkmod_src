@@ -1193,8 +1193,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 		std::list<fs::path> extractedFiles;
 
-#ifdef WIN32
-		if (zipFile->ContainsFile(_executable.string()))
+		if (_updatingUpdater)
 		{
 			// Update all files, but save the updater binary, this will be handled seperately
 			std::set<std::string> hardIgnoreList;
@@ -1215,20 +1214,16 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			// Regular archive (without updater), extract all files, ignore existing DoomConfig.cfg
 			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
 		}
-#else	
-		// Non-Win32 case: just extract all files, ignore existing DoomConfig.cfg
-		extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
-#endif
 
 		TraceLog::WriteLine(LOG_VERBOSE, "All files successfully extracted from " + zipFilePath.file_string());
 
 #ifndef WIN32
-		// In Linux, mark *.linux files as executable after extraction
+		// In Linux or Mac, mark *.linux files as executable after extraction
 		for (std::list<fs::path>::const_iterator i = extractedFiles.begin(); i != extractedFiles.end(); ++i)
 		{
 			std::string extension = boost::to_lower_copy(fs::extension(*i));
 
-			if (extension == ".linux")
+			if (extension == ".linux" || extension == ".macosx")
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, "Marking extracted file as executable: " + i->file_string());
 				
@@ -1257,7 +1252,6 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 	}
 }
 
-#ifdef WIN32
 void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 {
 	// Create a new batch file in the target location
@@ -1270,13 +1264,6 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	fs::path tempUpdater = temporaryUpdater.leaf();
 	fs::path updater = _executable.leaf();
 
-	batch << "@ping 127.0.0.1 -n 2 -w 1000 > nul" << std::endl; // # hack equivalent to Wait 2
-	batch << "@copy " << tempUpdater.file_string() << " " << updater.file_string() << " >nul" << std::endl;
-	batch << "@del " << tempUpdater.file_string() << std::endl;
-	batch << "@echo TDM Updater executable has been updated." << std::endl;
-
-	batch << "@echo Re-launching TDM Updater executable." << std::endl << std::endl;
-
 	// Append the current set of command line arguments to the new instance
 	std::string arguments;
 
@@ -1286,9 +1273,44 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 		arguments += " " + *i;
 	}
 
+#ifdef WIN32
+	batch << "@ping 127.0.0.1 -n 2 -w 1000 > nul" << std::endl; // # hack equivalent to Wait 2
+	batch << "@copy " << tempUpdater.file_string() << " " << updater.file_string() << " >nul" << std::endl;
+	batch << "@del " << tempUpdater.file_string() << std::endl;
+	batch << "@echo TDM Updater executable has been updated." << std::endl;
+
+	batch << "@echo Re-launching TDM Updater executable." << std::endl << std::endl;
+
 	batch << "@start " << updater.file_string() << " " << arguments;
-}
+#else // POSIX
+	
+	tempUpdater = GetTargetPath() / tempUpdater;
+	updater = GetTargetPath() / updater;
+
+	batch << "#!/bin/bash" << std::endl;
+	batch << "sleep 10s" << std::endl;
+	batch << "mv -f " << tempUpdater.file_string() << " " << updater.file_string() << std::endl;
+	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
+	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
+
+	batch << updater.file_string() << " " << arguments;
 #endif
+
+	batch.close();
+
+#ifndef WIN32
+	// Mark the shell script as executable in *nix
+	struct stat mask;
+	stat(_updateBatchFile.file_string().c_str(), &mask);
+
+	mask.st_mode |= S_IXUSR|S_IXGRP|S_IXOTH;
+
+	if (chmod(_updateBatchFile.file_string().c_str(), mask.st_mode) == -1)
+	{
+		TraceLog::Error("Could not mark extracted file as executable: " + _updateBatchFile.file_string());
+	}
+#endif
+}
 
 void Updater::CleanupUpdateStep()
 {
@@ -1449,34 +1471,15 @@ void Updater::RestartUpdater()
 	}
 #else
 
-	if (RestartRequired())
+	if (!_updateBatchFile.empty())
 	{
-		TraceLog::WriteLine(LOG_STANDARD, "Re-launching tdm_update...");
-		
-		fs::path updaterPath = GetTargetPath();
-		updaterPath /= _executable;
-
-		// Construct the full command line - make sure the target file is executable
-		std::string commandLine = "chmod +x " + updaterPath.file_string();
-
-		// Add a small delay to give this application time to free all resource locks
-		commandLine += " && sleep 2s";
-
-		// Add the actual execution command
-		commandLine += " && " + updaterPath.file_string();
-
-		const std::vector<std::string>& args = _options.GetRawCmdLineArgs();
-
-		// Merge arguments into the full shell string
-		for (std::size_t i = 0; i < args.size(); ++i)
-		{
-			commandLine += " " + args[i];
-		}
+		TraceLog::WriteLine(LOG_STANDARD, "Relaunching tdm_update via shell script " + _updateBatchFile.file_string());
 
 		// Perform the system command in a fork
 		if (fork() == 0)
 		{
-			system(commandLine.c_str());
+			// Don't wait for the subprocess to finish
+			system((_updateBatchFile.file_string() + " &").c_str());
 			exit(EXIT_SUCCESS);
 			return;
 		}
