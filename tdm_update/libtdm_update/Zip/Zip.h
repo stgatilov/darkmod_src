@@ -100,7 +100,7 @@ public:
 	 * greebo: Extracts all contained files to the given destination path.
 	 * Files found in the ignore list are not extracted.
 	 *
-	 * @ignreoIfExisting contains the filenames which should not be extracted if their
+	 * @ignoreIfExisting contains the filenames which should not be extracted if their
 	 * destination file already exists.
 	 * @ignoreList contains all the files which should not be extracted whatsoever.
 	 *
