@@ -110,6 +110,8 @@ private:
 
 	bool						m_bFree_hModel;		//!< The initial hModel cannot be freed as it is used by the engine, but once we create our own, we need to free it.
 
+	bool						m_bNoshadows;		//!< if true, completely disable shadows
+
 	// TODO: use these from m_LOD:
 	int							m_DistCheckTimeStamp;
 	int							m_DistCheckInterval;
