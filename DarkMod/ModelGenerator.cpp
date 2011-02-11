@@ -37,7 +37,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //#define M_TIMINGS 1
 
 #ifdef M_TIMINGS
-static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces, timer_dupmodel;
+static idTimer timer_combinemodels, timer_copymodeldata, timer_finishsurfaces, timer_dupmodel, timer_dupverts, timer_dupindexes;
 int model_combines = 0;
 #endif
 
@@ -278,6 +278,8 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 			continue;
 		}
 
+		//gameLocal.Printf("numSilEdges %i silEdges %p\n", surf->geometry->numSilEdges, surf->geometry->silEdges);
+
 		// If we don't need shadows, and this is a pure shadow caster (e.g. otherwise invisible)
 		// then skip it. Can only happen if noshadows = true:
 		if (!needFinish && surf->shader->SurfaceCastsShadow())
@@ -326,6 +328,8 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 				}
 			}
 
+			// TODO: unroll loop, timing says:
+			// ModelGenerator: dup verts total time 215.91 ms (for each 3.08 ms), dup indexes 65.29 ms (for each 0.93 ms)
 			// copy indexes
 			for (int j = 0; j < surf->geometry->numIndexes; j++)
 			{
@@ -861,6 +865,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 			dword newColor = op->color; 
 
+#ifdef M_TIMINGS
+			timer_dupverts.Start();
+#endif
 			// copy the vertexes and modify them at the same time (scale, rotate, offset)
 			for (int j = 0; j < vmax; j++)
 			{
@@ -903,14 +910,25 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				nV ++;
 
 			}	// end of all verts
-
+#ifdef M_TIMINGS
+			timer_dupverts.Stop();
+			timer_dupindexes.Start();
+#endif
 			// copy indexes
 			int no = newTargetSurfInfoPtr->numVerts;			// correction factor (before adding nV!)
 			int imax = surf->geometry->numIndexes;
+			// TODO: unroll loop, timing says:
+			// ModelGenerator: dup verts total time 215.91 ms (for each 3.08 ms), dup indexes 65.29 ms (for each 0.93 ms)
+			// we are dealing with triangles, so each tris has 3 indexes
+			//int itodo = imax / 3;
+			//assert( (imax % 3) == 0);
 			for (int j = 0; j < imax; j++)
 			{
 				newSurf->geometry->indexes[nI ++] = surf->geometry->indexes[j] + no;
 			}
+#ifdef M_TIMINGS
+			timer_dupindexes.Stop();
+#endif
 			newTargetSurfInfoPtr->numVerts += vmax;
 			newTargetSurfInfoPtr->numIndexes += imax;
 		} // end for each surface on this offset
@@ -973,6 +991,11 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				timer_copymodeldata.Milliseconds() / model_combines,
 				timer_finishsurfaces.Milliseconds(),
 				timer_finishsurfaces.Milliseconds() / model_combines );
+		gameLocal.Printf( "ModelGenerator: dup verts total time %0.2f ms (for each %0.2f ms), dup indexes %0.2f ms (for each %0.2f ms)\n",
+				timer_dupverts.Milliseconds(),
+				timer_dupverts.Milliseconds() / model_combines,
+				timer_dupindexes.Milliseconds(),
+				timer_dupindexes.Milliseconds() / model_combines );
 	}
 #endif
 
