@@ -9,6 +9,8 @@
 
 #include "ConsoleUpdater.h"
 
+#include "Util.h"
+
 namespace tdm
 {
 

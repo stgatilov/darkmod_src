@@ -199,10 +199,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DownloadProgressPrinter.h"
-				>
-			</File>
-			<File
 				RelativePath=".\LogWriters.h"
 				>
 			</File>

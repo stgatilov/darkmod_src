@@ -17,8 +17,6 @@
 #include "ExceptionSafeThread.h"
 #include <signal.h>
 
-#include "DownloadProgressPrinter.h"
-
 namespace tdm
 {
 
