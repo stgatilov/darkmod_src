@@ -2110,7 +2110,7 @@ void Seed::Prepare( void )
 		}
 	}
 
-	gameLocal.Printf( "SEED %s: Max. entity count: %i\n", GetName(), m_iNumEntities );
+//	gameLocal.Printf( "SEED %s: Max. entity count: %i\n", GetName(), m_iNumEntities );
 
 	m_Watched.Clear();
 
@@ -2220,22 +2220,26 @@ void Seed::PrepareEntities( void )
 
 	idList< int >			ClassIndex;			// random shuffling of classes
 	int						s;
+	idTimer					timer_prepare;		// measure sub-second time
 
-	int start = (int) time (NULL);
+	timer_prepare.Clear();
+	timer_prepare.Start();
 
 	idVec3 size = renderEntity.bounds.GetSize();
 	// rotating the func-static in DR rotates the brush, but does not change the axis or
 	// add a spawnarg, so this will not work properly unless the mapper sets an "angle" spawnarg:
 	idMat3 axis = renderEntity.axis;
 
-	gameLocal.Printf( "SEED %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
-
 	box = idBox( m_origin, size / 2, axis );
 
 	float spacing = spawnArgs.GetFloat( "spacing", "0" );
 
 	idAngles angles = axis.ToAngles();		// debug
-	gameLocal.Printf( "SEED %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString());
+	if (m_iDebug > 0)
+	{
+		gameLocal.Printf( "SEED %s: Origin %0.2f %0.2f %0.2f\n", GetName(), m_origin.x, m_origin.y, m_origin.z );
+		gameLocal.Printf( "SEED %s: Seed %i Size %0.2f %0.2f %0.2f Axis %s.\n", GetName(), m_iSeed_2, size.x, size.y, size.z, angles.ToString());
+	}
 
 	m_Entities.Clear();
 	if (m_iNumEntities > 100)
@@ -3001,8 +3005,8 @@ void Seed::PrepareEntities( void )
 	// append the entities from the watch list
 	m_Entities.Append( m_Watched );
 
-	int end = (int) time (NULL);
-	gameLocal.Printf("SEED %s: Preparing %i entities took %i seconds.\n", GetName(), m_Entities.Num(), end - start );
+	timer_prepare.Stop();
+	gameLocal.Printf("SEED %s: Preparing %i entities took %0.0f ms.\n", GetName(), m_Entities.Num(), timer_prepare.Milliseconds() );
 
 	// combine the spawned entities into megamodels if possible
 	CombineEntities();
@@ -3011,8 +3015,10 @@ void Seed::PrepareEntities( void )
 // Creates a list of entities that we need to watch over
 void Seed::CreateWatchedList(void) {
 	seed_entity_t			SeedEntity;			// temp. storage
+	idTimer					timer_create;		// measure sub-second time
 
-	int start = (int) time (NULL);
+	timer_create.Clear();
+	timer_create.Start();
 
 	idVec3 size = renderEntity.bounds.GetSize();
 	// rotating the func-static in DR rotates the brush, but does not change the axis or
@@ -3021,8 +3027,6 @@ void Seed::CreateWatchedList(void) {
 
 	idBox box = idBox( m_origin, size / 2, axis );
 
-	gameLocal.Printf("SEED %s: Looking for watch-targets.\n", GetName());
-	
 	m_Remove.Clear();
 	// if we have requests for watch brethren, do add them now
 	for (int i = 0; i < m_Classes.Num(); i++)
@@ -3131,8 +3135,9 @@ void Seed::CreateWatchedList(void) {
 		}
 	}
 
-	int end = (int) time (NULL);
-	gameLocal.Printf("SEED %s: Creating %i watch list entities took %i seconds.\n", GetName(), m_Watched.Num(), end - start );
+    timer_create.Stop();
+
+	gameLocal.Printf("SEED %s: Creating %i watch list entities took %0.0f ms.\n", GetName(), m_Watched.Num(), timer_create.Milliseconds() );
 }
 
 // sort a list of offsets by their distance
@@ -3165,17 +3170,20 @@ float Seed::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 
 void Seed::CombineEntities( void )
 {
-	bool multiPVS = m_iNumPVSAreas > 1 ? true : false;
-	idList < int > pvs;								//!< in which PVS is this entity?
-	idBounds modelAbsBounds;						//!< for per-entity PVS check
-	idBounds entityBounds;							//!< for per-entity PVS check
-	int iPVSAreas[2];								//!< for per-entity PVS check
-	seed_class_t PseudoClass;
-	idList< seed_entity_t > newEntities;
-	unsigned int mergedCount = 0;
-	idList < seed_sort_ofs_t > sortedOffsets;		//!< To merge the N nearest entities
-	model_ofs_t ofs;
-	seed_sort_ofs_t sortOfs;
+	bool multiPVS =				m_iNumPVSAreas > 1 ? true : false;
+	idList < int >				pvs;				//!< in which PVS is this entity?
+	idBounds					modelAbsBounds;		//!< for per-entity PVS check
+	idBounds					entityBounds;		//!< for per-entity PVS check
+	int							iPVSAreas[2];		//!< for per-entity PVS check
+	seed_class_t				PseudoClass;
+	idList< seed_entity_t >		newEntities;
+	unsigned int				mergedCount = 0;
+	idList < seed_sort_ofs_t >	sortedOffsets;		//!< To merge the N nearest entities
+	model_ofs_t					ofs;
+	seed_sort_ofs_t				sortOfs;
+	idTimer						timer_combine;
+
+	timer_combine.Clear(); timer_combine.Start();
 
 	if ( !m_bCombine )
 	{
@@ -3191,8 +3199,6 @@ void Seed::CombineEntities( void )
 	}
 	// square for easier comparing
 	max_combine_distance *= max_combine_distance;
-
-	int start = (int) time (NULL);
 
 	// Get the player pos
 	idPlayer *player = gameLocal.GetLocalPlayer();
@@ -3228,7 +3234,7 @@ void Seed::CombineEntities( void )
 			}
 		}
 	}
-	else
+	else if (m_iDebug > 1)
 	{
 		gameLocal.Printf("SEED %s: SinglePVS.\n", GetName() );
 	}
@@ -3539,8 +3545,9 @@ void Seed::CombineEntities( void )
 	// TODO: is this nec.?
 	sortedOffsets.Clear();
 
-	int end = (int) time (NULL);
-	gameLocal.Printf("SEED %s: Combined %i entities into %i entities, took %i seconds.\n", GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), end - start );
+	timer_combine.Stop();
+	gameLocal.Printf("SEED %s: Combined %i entities into %i entities, took %0.0f ms.\n",
+		GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), timer_combine.Milliseconds() );
 
 	return;
 }
