@@ -3411,6 +3411,8 @@ void Seed::CombineEntities( void )
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics
 				PseudoClass.hModel = entityClass->hModel;
+				// not used here
+				PseudoClass.spawnArgs = NULL;
 
 				// TODO: put this into m_LOD as there it can be shared and doesn't need to be
 				//		 calculated anew every time:
