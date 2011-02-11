@@ -612,6 +612,7 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( m_modelName );
 	savefile->WriteInt( m_iVisibleModels );
 	savefile->WriteBool( m_bFree_hModel );
+	savefile->WriteBool( m_bNoshadows );
 
 	savefile->WriteInt( m_Changes.Num() );
 	for (int i = 0; i < m_Changes.Num(); i++ )
@@ -641,6 +642,7 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	savefile->ReadString( m_modelName );
 	savefile->ReadInt( m_iVisibleModels );
 	savefile->ReadBool( m_bFree_hModel );
+	savefile->ReadBool( m_bNoshadows );
 
 	// These will be set by the SEED entity managing us
 	// no update until the data is there!
