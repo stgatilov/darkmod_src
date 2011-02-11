@@ -156,7 +156,7 @@ Seed::~Seed
 */
 Seed::~Seed(void) {
 
-	//gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
+	// gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
 	ClearClasses();
 }
 /*
@@ -426,7 +426,11 @@ void Seed::ClearClasses( void )
 	int n = m_Classes.Num();
 	for(int i = 0; i < n; i++ )
 	{
-		// no need to free these as they are just ptrs
+		// need to free this?
+		if (!m_Classes[i].pseudo && m_Classes[i].hModel)
+		{
+			renderModelManager->FreeModel( m_Classes[i].hModel );
+		}
 		m_Classes[i].hModel = NULL;
 		if (m_Classes[i].imgmap != 0)
 		{
@@ -1570,10 +1574,8 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		// check if this is a func_static with a model, or an "inline map geometry" func static
 		if (SeedClass.modelname == ent->GetName())
 		{
-			// simply point to the already existing model, so we can recover the into-the-map-inlined geometry:
-			SeedClass.hModel = ent->GetRenderEntity()->hModel;
-			// prevent a double free
-			ent->GetRenderEntity()->hModel = NULL;
+			// Make a copy of the already existing model, so we can safely free it anytime:
+			SeedClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( ent->GetRenderEntity()->hModel, SeedClass.classname, true );
 			// set a dummy model
 			SeedClass.modelname = "models/darkmod/junk/plank_short.lwo";
 
@@ -1594,8 +1596,8 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 			   		(SeedClass.scale_min.x != 0.0f && SeedClass.scale_min.x != 1.0f) ||
 			   		(SeedClass.scale_max.x != 1.0f || SeedClass.scale_min.y != 1.0f || SeedClass.scale_max.y != 1.0f) )
 				{
-				// simply point to the already existing model, so we can clone it later
-				SeedClass.hModel = ent->GetRenderEntity()->hModel;
+				// Make a copy of the already existing model, so we can safely free it anytime:
+				SeedClass.hModel = gameLocal.m_ModelGenerator->DuplicateModel( ent->GetRenderEntity()->hModel, SeedClass.classname, true );
 				}
 			}
 		}
@@ -1808,6 +1810,9 @@ void Seed::ComputeEntityCount( void )
 			newNum = m_Classes[i].maxEntities;
 		}
 
+#ifdef M_DEBUG
+		gameLocal.Printf( "SEED %s: Entity count for class %i: %i.\n", GetName(), i, newNum );
+#endif
 		m_Classes[i].numEntities = newNum;
 		m_iNumEntities += newNum;
 	}
@@ -2267,14 +2272,10 @@ void Seed::PrepareEntities( void )
 	{
 		if (m_Classes[i].pseudo)
 		{
-			// remove the render model
-		   	if (m_Classes[i].hModel)
-			{
-				renderModelManager->FreeModel( m_Classes[i].hModel );
-				m_Classes[i].hModel = NULL;
-			}
+			// skip this class
 			continue;
 		}
+		// keep this class
 		newClasses.Append ( m_Classes[i] );
 	}
 	m_Classes.Swap( newClasses );		// copy over
@@ -2286,6 +2287,9 @@ void Seed::PrepareEntities( void )
 	{
 		ClassIndex.Append ( i );				// 1,2,3,...
 		m_Classes[i].seed = RandomSeed();		// random generator 2 inits the random generator 1
+#ifdef M_DEBUG
+		gameLocal.Printf("SEED %s: Using seed %i for class %i.\n", GetName(), m_Classes[i].seed, i );
+#endif
 	}
 
 	// Randomly shuffle all entries, but use the second generator for a "predictable" class sequence
@@ -3370,8 +3374,6 @@ void Seed::CombineEntities( void )
 			if (merged == 0)
 			{
 				PseudoClass.pseudo = true;
-				// PseudoClass.m_LOD = entityClass->m_LOD;
-	
 				if (entityClass->m_LOD)
 				{	
 					// Store m_LOD at the class
@@ -3419,6 +3421,8 @@ void Seed::CombineEntities( void )
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics
 				PseudoClass.hModel = entityClass->hModel;
+				// this is just a ptr, never free it
+				PseudoClass.spawnArgs = NULL;
 
 				// TODO: put this into m_LOD as there it can be shared and doesn't need to be
 				//		 calculated anew every time:
