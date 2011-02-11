@@ -80,14 +80,17 @@ CStaticMulti::~CStaticMulti()
 	m_LOD = NULL;
 
 	// make sure the render entity is freed before the model is freed
-	FreeModelDef();
+	if ( modelDefHandle != -1 )
+	{
+		FreeModelDef();
+	}
 
 	if (m_bFree_hModel)
 	{
 		renderModelManager->FreeModel( renderEntity.hModel );
-		// need this to avoid crashes due to double-free
-		renderEntity.hModel = NULL;
 	}
+	// need this to avoid crashes due to double-free
+	renderEntity.hModel = NULL;
 }
 
 /*
@@ -129,6 +132,9 @@ void CStaticMulti::Spawn( void )
 		m_DistCheckInterval = d;
 		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 		m_fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
+#ifdef M_DEBUG
+		gameLocal.Printf("%s: hide_distance %0.0f", m_fHideDistance);
+#endif
 	}
 }
 
@@ -387,9 +393,12 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	renderEntity.forceUpdate = true;
 
 	// add to refresh list
-	if ( modelDefHandle == -1 ) {
+	if ( modelDefHandle == -1 )
+	{
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
-	} else {
+	}
+	else
+   	{
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
 
