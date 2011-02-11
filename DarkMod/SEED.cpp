@@ -239,6 +239,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].pseudo );
 		savefile->WriteBool( m_Classes[i].watch );
 		savefile->WriteString( m_Classes[i].combine_as );
+		savefile->WriteBool( m_Classes[i].noshadows );
 
 		if (m_Classes[i].spawnArgs)
 		{
@@ -548,6 +549,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].pseudo );
 		savefile->ReadBool( m_Classes[i].watch );
 		savefile->ReadString( m_Classes[i].combine_as );
+		savefile->ReadBool( m_Classes[i].noshadows );
 
 		savefile->ReadBool( bHaveModel );
 		if (bHaveModel)
@@ -1047,6 +1049,12 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	SeedClass.classname = ent->GetEntityDefName();
 	SeedClass.modelname = ent->spawnArgs.GetString("model","");
 	SeedClass.lowestLOD = "";												// only used for pseudo classes
+
+	SeedClass.noshadows = false;
+	if (ent->spawnArgs.FindKey("noshadows"))
+	{
+		SeedClass.noshadows = ent->spawnArgs.GetBool("noshadows","0");
+	}
 
 	SeedClass.spawnArgs = NULL;
 
@@ -1773,6 +1781,9 @@ void Seed::ComputeEntityCount( void )
 	// over all classes):
 	int numRealClasses = 0;
 
+#ifdef M_DEBUG
+	gameLocal.Printf( "SEED %s: scoreSum %i.\n", GetName(), iScoreSum );
+#endif
 	m_iNumEntities = 0;
 	for( int i = 0; i < n; i++ )
 	{
@@ -3409,6 +3420,7 @@ void Seed::CombineEntities( void )
 				PseudoClass.offset = entityClass->offset;
 				PseudoClass.numEntities = 0;
 				PseudoClass.maxEntities = 0;
+				PseudoClass.noshadows = entityClass->noshadows;
 				// a combined entity must be of this class to get the multi-clipmodel working
 				PseudoClass.classname = FUNC_DUMMY;
 				// in case the combined model needs to be combined from multiple func_statics
@@ -3625,7 +3637,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 		// set floor to 0 to avoid moveables to be floored
 	    args.Set("floor", "0");
 
-		args.Set("solid", lclass->solid ? "1" : "0");
+		args.SetBool("solid", lclass->solid );
 
 		// TODO: spawn as hidden, then later unhide them via LOD code
 		//args.Set("hide", "1");
@@ -3634,6 +3646,8 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 		{
 			args.Set("dist_check_period", "0");
 		}
+
+		args.SetBool( "noshadows", lclass->noshadows );
 
 		gameLocal.SpawnEntityDef( args, &ent2 );
 		if (ent2)

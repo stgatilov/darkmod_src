@@ -65,6 +65,8 @@ CStaticMulti::CStaticMulti( void )
 	// have created our own
 	m_bFree_hModel = false;
 
+	m_bNoshadows = false;
+
 	m_iVisibleModels = 0;
 	m_iMaxChanges = 1;
 	
@@ -121,6 +123,8 @@ void CStaticMulti::Spawn( void )
 		m_bNeedModelUpdates = false;
 	}
 
+	m_bNoshadows = spawnArgs.GetBool( "noshadows" );
+
 	int d = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 	if (d <= 0)
 	{
@@ -175,6 +179,19 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 	if (!LOD)
 	{
 		m_bNeedModelUpdates = false;
+	}
+	else if (m_bNoshadows)
+	{
+		// if noshadows, turn off shadows for all LOD stages
+		m_LOD->noshadowsLOD = 0xFF;
+		// We need to go through all our offsets and set the NOSHADOW flag,
+		// because the ModelGenerator does not have access to the noshadowsLOD field
+		// and would otherwise needlessly try to use shadows:
+		model_ofs_t *op = m_Offsets->Ptr();
+		for (int i = 0; i < m_iVisibleModels; i++)
+		{
+			op[i].flags |= SEED_MODEL_NOSHADOW;
+		}
 	}
 
 	m_Changes.Clear();
@@ -536,7 +553,7 @@ void CStaticMulti::Think( void )
 				// TODO: compute flags for noclip
 				int flags = 0;
 				m_LODLevel ++;
-				if ( LOD && LOD->noshadowsLOD & (1 << m_LODLevel) )
+				if ( LOD && (LOD->noshadowsLOD & (1 << m_LODLevel)) )
 				{
 					flags += SEED_MODEL_NOSHADOW;
 				}
