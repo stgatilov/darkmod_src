@@ -331,9 +331,17 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 			// TODO: unroll loop, timing says:
 			// ModelGenerator: dup verts total time 215.91 ms (for each 3.08 ms), dup indexes 65.29 ms (for each 0.93 ms)
 			// copy indexes
-			for (int j = 0; j < surf->geometry->numIndexes; j++)
+			glIndex_t *dst = newSurf.geometry->indexes;
+			glIndex_t *src = surf->geometry->indexes;
+			int imax = surf->geometry->numIndexes;
+			// we are dealing with triangles, so each tris has 3 indexes
+			assert( (imax % 3) == 0);
+			// unrolled 3 loops into one
+			for (int j = 0; j < imax; j++)
 			{
-				newSurf.geometry->indexes[nI ++] = surf->geometry->indexes[j];
+				dst[nI ++] = src[j]; j++;
+				dst[nI ++] = src[j]; j++;
+				dst[nI ++] = src[j];
 			}
 
 			// set these so they don't get recalculated in FinishSurfaces():
@@ -868,13 +876,16 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 #ifdef M_TIMINGS
 			timer_dupverts.Start();
 #endif
+			idDrawVert *dst_v = newSurf->geometry->verts;
+			idDrawVert *src_v = surf->geometry->verts;
+
 			// copy the vertexes and modify them at the same time (scale, rotate, offset)
 			for (int j = 0; j < vmax; j++)
 			{
 				// target
-				idDrawVert *v = &(newSurf->geometry->verts[nV]);
+				idDrawVert *v = &dst_v[nV];
 				// source
-				idDrawVert *vs = &(surf->geometry->verts[j]);
+				idDrawVert *vs = &src_v[j];
 
 				// stgatilov: fast and proper transformation
 				v->xyz = tPos * vs->xyz;
@@ -914,17 +925,22 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			timer_dupverts.Stop();
 			timer_dupindexes.Start();
 #endif
+			// shortcut, this speeds up the copy process
+			glIndex_t *dst = newSurf->geometry->indexes;
+			glIndex_t *src = surf->geometry->indexes;
+
 			// copy indexes
 			int no = newTargetSurfInfoPtr->numVerts;			// correction factor (before adding nV!)
 			int imax = surf->geometry->numIndexes;
-			// TODO: unroll loop, timing says:
-			// ModelGenerator: dup verts total time 215.91 ms (for each 3.08 ms), dup indexes 65.29 ms (for each 0.93 ms)
 			// we are dealing with triangles, so each tris has 3 indexes
-			//int itodo = imax / 3;
-			//assert( (imax % 3) == 0);
+			assert( (imax % 3) == 0);
+			// unrolled 3 loops into one
 			for (int j = 0; j < imax; j++)
 			{
-				newSurf->geometry->indexes[nI ++] = surf->geometry->indexes[j] + no;
+			//	newSurf->geometry->indexes[nI ++] = surf->geometry->indexes[j] + no;
+				dst[nI++] = src[j] + no; j++;
+				dst[nI++] = src[j] + no; j++;
+				dst[nI++] = src[j] + no;
 			}
 #ifdef M_TIMINGS
 			timer_dupindexes.Stop();
