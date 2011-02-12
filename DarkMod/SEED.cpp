@@ -3097,7 +3097,7 @@ void Seed::CreateWatchedList(void) {
 
 					if (noModel)
 					{
-						gameLocal.Printf( "SEED %s: TODO: watch over func_statics based on map geometry.\n", GetName() );
+						//gameLocal.Printf( "SEED %s: TODO: watch over func_statics based on map geometry.\n", GetName() );
 						// skip for now
 						continue;
 					}
