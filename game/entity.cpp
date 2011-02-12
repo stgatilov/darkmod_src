@@ -828,7 +828,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	idStr temp;
 	// distance dependent LOD from this point on:
-	m_LOD->OffsetLOD[0] = renderEntity.origin;
+	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
 
 	m_LOD->DistLODSq[0] = 0;
 
@@ -925,7 +925,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 				// setup the manual offset for this LOD stage (needed to align some models)
 				sprintf(temp, "offset_lod_%i", i);
-				m_LOD->OffsetLOD[i] = m_LOD->OffsetLOD[0] + dict->GetVector( temp, "0,0,0" );
+				m_LOD->OffsetLOD[i] = dict->GetVector( temp, "0,0,0" );
 			}
 		// else hiding needs no offset
 
@@ -2067,7 +2067,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// by default fully visible
 	float fAlpha = 1.0f;
 
-//	gameLocal.Warning("\n%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
+//	gameLocal.Warning("%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
 
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
@@ -2222,8 +2222,14 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 		{
 //			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
 			Show();
+			SetAlpha( fAlpha, true );
 		}
-		SetAlpha( fAlpha, true );
+		// Only set the alpha if we are actually fading, but skip if it is 1.0f
+		else if (renderEntity.shaderParms[ SHADERPARM_ALPHA ] != fAlpha)
+		{
+//			gameLocal.Printf("%s: Setting alpha %0.2f\n", GetName(), fAlpha);
+			SetAlpha( fAlpha, true );
+		}
 	}
 
 	if (m_LODLevel != oldLODLevel)
@@ -2232,11 +2238,19 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 //					GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
 			{
-//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
+				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
 				SetModel( m_LOD->ModelLOD[m_LODLevel] );
 				m_ModelLODCur = m_LODLevel;
-				SetOrigin( m_LOD->OffsetLOD[m_LODLevel] );
+				// Fix 1.04 blinking bug:
+				// if the old LOD level had an offset, we need to revert this.
+				// and if the new one has an offset, we need to add it:
+				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+				{
+					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+				}
 			}
 
 		if ( m_SkinLODCur != m_LODLevel)
@@ -2289,6 +2303,9 @@ void idEntity::Think( void )
 
 		// if the entity is hidden, GetPhysics()->GetOrigin() == "0,0,0", so we cannot use it
 		idVec3 origin = fl.hidden ? m_preHideOrigin : GetPhysics()->GetOrigin();
+
+//		gameLocal.Printf("%s: time=%i: fl.hidden: %i Using preHide origin: %s => %s\n",
+//				GetName(), gameLocal.time, fl.hidden ? 1 : 0, fl.hidden ? "yes" : "no", origin.ToString());
 
 		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - origin;
 
@@ -2739,6 +2756,7 @@ void idEntity::SetAlpha( const float alpha, const bool bound ) {
 
 	if (!bound)
 	{
+		UpdateVisuals();
 		return;
 	}
 
