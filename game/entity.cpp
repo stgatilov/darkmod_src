@@ -703,8 +703,6 @@ idEntity::idEntity()
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
 
-	m_preHideOrigin			= idVec3(0,0,0);	// Tels: Only used if entity is hidden
-
 	physics			= NULL;
 	bindMaster		= NULL;
 	bindJoint		= INVALID_JOINT;
@@ -1411,11 +1409,6 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		}
 		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
 		savefile->WriteFloat( m_LOD->fLODFadeInRange );
-
-		if (fl.hidden)
-		{
-			savefile->WriteVec3( m_preHideOrigin );
-		}
 	}
 	else
 	{
@@ -1661,7 +1654,6 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_DistCheckTimeStamp );
 
-	m_preHideOrigin = idVec3(0,0,0);
 	if ( m_DistCheckTimeStamp > 0)
 	{
 		/* Tels: Only read the LOD data if we are distance dependent */
@@ -1684,10 +1676,6 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 		}
 		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
 		savefile->ReadFloat( m_LOD->fLODFadeInRange );
-		if (fl.hidden)
-		{
-			savefile->ReadVec3( m_preHideOrigin );
-		}
 	}
 }
 
@@ -2238,8 +2226,8 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 //					GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
 			{
-				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
+//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
 				SetModel( m_LOD->ModelLOD[m_LODLevel] );
 				m_ModelLODCur = m_LODLevel;
 				// Fix 1.04 blinking bug:
@@ -2301,16 +2289,10 @@ void idEntity::Think( void )
 
 		m_DistCheckTimeStamp = gameLocal.time;
 
-		// if the entity is hidden, GetPhysics()->GetOrigin() == "0,0,0", so we cannot use it
-		idVec3 origin = fl.hidden ? m_preHideOrigin : GetPhysics()->GetOrigin();
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 
-//		gameLocal.Printf("%s: time=%i: fl.hidden: %i Using preHide origin: %s => %s\n",
-//				GetName(), gameLocal.time, fl.hidden ? 1 : 0, fl.hidden ? "yes" : "no", origin.ToString());
-
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - origin;
-
-//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i",
-//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval );
+//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
 
 		if( m_LOD->bDistCheckXYOnly )
 		{
@@ -2914,7 +2896,6 @@ void idEntity::Hide( void )
 
 		idPhysics* p = GetPhysics();
 
-		m_preHideOrigin = p->GetOrigin();		// Tels: Store this for LOD computations
 		m_preHideContents = p->GetContents();
 		m_preHideClipMask = p->GetClipMask();
 

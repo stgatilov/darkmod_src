@@ -1322,9 +1322,6 @@ protected:
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
 
-	/* Tels: The origin is nec. for LOD computation, as an hidden entity has "0,0,0" as origin */
-	idVec3					m_preHideOrigin;
-
 	/**
 	* List storing attachment data for each attachment
 	**/
