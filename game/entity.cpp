@@ -703,8 +703,6 @@ idEntity::idEntity()
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
 
-	m_preHideOrigin			= idVec3(0,0,0);	// Tels: Only used if entity is hidden
-
 	physics			= NULL;
 	bindMaster		= NULL;
 	bindJoint		= INVALID_JOINT;
@@ -828,7 +826,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	idStr temp;
 	// distance dependent LOD from this point on:
-	m_LOD->OffsetLOD[0] = renderEntity.origin;
+	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
 
 	m_LOD->DistLODSq[0] = 0;
 
@@ -925,7 +923,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 				// setup the manual offset for this LOD stage (needed to align some models)
 				sprintf(temp, "offset_lod_%i", i);
-				m_LOD->OffsetLOD[i] = m_LOD->OffsetLOD[0] + dict->GetVector( temp, "0,0,0" );
+				m_LOD->OffsetLOD[i] = dict->GetVector( temp, "0,0,0" );
 			}
 		// else hiding needs no offset
 
@@ -1411,11 +1409,6 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		}
 		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
 		savefile->WriteFloat( m_LOD->fLODFadeInRange );
-
-		if (fl.hidden)
-		{
-			savefile->WriteVec3( m_preHideOrigin );
-		}
 	}
 	else
 	{
@@ -1661,7 +1654,6 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_DistCheckTimeStamp );
 
-	m_preHideOrigin = idVec3(0,0,0);
 	if ( m_DistCheckTimeStamp > 0)
 	{
 		/* Tels: Only read the LOD data if we are distance dependent */
@@ -1684,10 +1676,6 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 		}
 		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
 		savefile->ReadFloat( m_LOD->fLODFadeInRange );
-		if (fl.hidden)
-		{
-			savefile->ReadVec3( m_preHideOrigin );
-		}
 	}
 }
 
@@ -2067,7 +2055,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// by default fully visible
 	float fAlpha = 1.0f;
 
-//	gameLocal.Warning("\n%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
+//	gameLocal.Warning("%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
 
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
@@ -2222,8 +2210,14 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 		{
 //			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
 			Show();
+			SetAlpha( fAlpha, true );
 		}
-		SetAlpha( fAlpha, true );
+		// Only set the alpha if we are actually fading, but skip if it is 1.0f
+		else if (renderEntity.shaderParms[ SHADERPARM_ALPHA ] != fAlpha)
+		{
+//			gameLocal.Printf("%s: Setting alpha %0.2f\n", GetName(), fAlpha);
+			SetAlpha( fAlpha, true );
+		}
 	}
 
 	if (m_LODLevel != oldLODLevel)
@@ -2236,7 +2230,15 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 //					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
 				SetModel( m_LOD->ModelLOD[m_LODLevel] );
 				m_ModelLODCur = m_LODLevel;
-				SetOrigin( m_LOD->OffsetLOD[m_LODLevel] );
+				// Fix 1.04 blinking bug:
+				// if the old LOD level had an offset, we need to revert this.
+				// and if the new one has an offset, we need to add it:
+				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+				{
+					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+				}
 			}
 
 		if ( m_SkinLODCur != m_LODLevel)
@@ -2287,13 +2289,10 @@ void idEntity::Think( void )
 
 		m_DistCheckTimeStamp = gameLocal.time;
 
-		// if the entity is hidden, GetPhysics()->GetOrigin() == "0,0,0", so we cannot use it
-		idVec3 origin = fl.hidden ? m_preHideOrigin : GetPhysics()->GetOrigin();
+		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - origin;
-
-//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i",
-//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval );
+//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
 
 		if( m_LOD->bDistCheckXYOnly )
 		{
@@ -2739,6 +2738,7 @@ void idEntity::SetAlpha( const float alpha, const bool bound ) {
 
 	if (!bound)
 	{
+		UpdateVisuals();
 		return;
 	}
 
@@ -2896,7 +2896,6 @@ void idEntity::Hide( void )
 
 		idPhysics* p = GetPhysics();
 
-		m_preHideOrigin = p->GetOrigin();		// Tels: Store this for LOD computations
 		m_preHideContents = p->GetContents();
 		m_preHideClipMask = p->GetClipMask();
 
