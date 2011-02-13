@@ -2281,30 +2281,26 @@ void idEntity::Think( void )
 		// If this entity has LOD, let it think about it:
 
 		// Distance dependence checks
-		if ( ( m_LOD->DistCheckInterval <= 0) 
-		  || ( (gameLocal.time - m_DistCheckTimeStamp) <= m_LOD->DistCheckInterval ) )
+		if ( ( m_LOD->DistCheckInterval > 0) 
+		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
 		{
-			return;
+			m_DistCheckTimeStamp = gameLocal.time;
+			idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+
+//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+
+			if( m_LOD->bDistCheckXYOnly )
+			{
+				idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+				delta -= (vGravNorm * delta) * vGravNorm;
+			}
+
+			// multiply with the user LOD bias setting, and return the result:
+			// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+			float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
+			SwitchLOD( m_LOD, deltaSq );
 		}
-
-		m_DistCheckTimeStamp = gameLocal.time;
-
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-
-//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
-//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
-
-		if( m_LOD->bDistCheckXYOnly )
-		{
-			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-			delta -= (vGravNorm * delta) * vGravNorm;
-		}
-
-		// multiply with the user LOD bias setting, and return the result:
-		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
-		float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
-
-		SwitchLOD( m_LOD, deltaSq );
 	}
 	Present();
 }
