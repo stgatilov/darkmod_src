@@ -2263,6 +2263,38 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 
 /*
 ================
+idEntity::GetLODDistance
+
+Returns the distance that should be considered for LOD and hiding, depending on:
+
+* the distance of the origin to the given player origin
+* the lod-bias set in the menu
+* some minimum and maximum distances based on entity size/importance
+
+The returned value is the actual distance squared, and rounded down to an integer.
+================
+*/
+float idEntity::GetLODDistance( const idVec3 &playerOrigin, const float lod_bias ) const
+{
+	idVec3 delta = playerOrigin - GetPhysics()->GetOrigin();
+
+	if( m_LOD && m_LOD->bDistCheckXYOnly )
+	{
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		delta -= (vGravNorm * delta) * vGravNorm;
+	}
+
+	// multiply with the user LOD bias setting, and return the result:
+	// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+	float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
+
+	// TODO: enforce minimum and maximum distances based on entity size/importance
+
+	return deltaSq;
+}
+
+/*
+================
 idEntity::Think
 ================
 */
@@ -2285,21 +2317,11 @@ void idEntity::Think( void )
 		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
 		{
 			m_DistCheckTimeStamp = gameLocal.time;
-			idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 
 //			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
 //					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
 
-			if( m_LOD->bDistCheckXYOnly )
-			{
-				idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-				delta -= (vGravNorm * delta) * vGravNorm;
-			}
-
-			// multiply with the user LOD bias setting, and return the result:
-			// floor the value to avoid inaccurancies leading to toggling when the player stands still:
-			float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
-			SwitchLOD( m_LOD, deltaSq );
+			SwitchLOD( m_LOD, GetLODDistance( gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), cv_lod_bias.GetFloat() ) );
 		}
 	}
 	Present();

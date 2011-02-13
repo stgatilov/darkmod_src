@@ -3171,6 +3171,7 @@ int SortOffsetsByDistance( const seed_sort_ofs_t *a, const seed_sort_ofs_t *b ) 
 // compute the LOD distance for this delta vector and for this entity
 float Seed::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
 {
+	// TODO: Should use idEntity::GetLODDistance
 	if( m_LOD && m_LOD->bDistCheckXYOnly )
 	{
 		// TODO: do this per-entity
