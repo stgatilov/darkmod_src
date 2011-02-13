@@ -2274,19 +2274,21 @@ Returns the distance that should be considered for LOD and hiding, depending on:
 The returned value is the actual distance squared, and rounded down to an integer.
 ================
 */
-float idEntity::GetLODDistance( const idVec3 &playerOrigin, const float lod_bias ) const
+float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const
 {
-	idVec3 delta = playerOrigin - GetPhysics()->GetOrigin();
+	idVec3 delta = playerOrigin - entOrigin;
 
 	if( m_LOD && m_LOD->bDistCheckXYOnly )
 	{
+		// todo: allow passing in a different gravityNormal
 		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
 		delta -= (vGravNorm * delta) * vGravNorm;
 	}
 
 	// multiply with the user LOD bias setting, and return the result:
 	// floor the value to avoid inaccurancies leading to toggling when the player stands still:
-	float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
+	assert(lod_bias > 0.01f);
+	float deltaSq = idMath::Floor( delta.LengthSqr() / (lod_bias * lod_bias) );
 
 	// TODO: enforce minimum and maximum distances based on entity size/importance
 
@@ -2321,7 +2323,8 @@ void idEntity::Think( void )
 //			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
 //					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
 
-			SwitchLOD( m_LOD, GetLODDistance( gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), cv_lod_bias.GetFloat() ) );
+			SwitchLOD( m_LOD, 
+				GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
 		}
 	}
 	Present();

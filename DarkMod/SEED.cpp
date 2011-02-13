@@ -3168,22 +3168,6 @@ int SortOffsetsByDistance( const seed_sort_ofs_t *a, const seed_sort_ofs_t *b ) 
 	return 0;
 }
 
-// compute the LOD distance for this delta vector and for this entity
-float Seed::LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const
-{
-	// TODO: Should use idEntity::GetLODDistance
-	if( m_LOD && m_LOD->bDistCheckXYOnly )
-	{
-		// TODO: do this per-entity
-		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-		delta -= (vGravNorm * delta) * vGravNorm;
-	}
-
-	// multiply with the user LOD bias setting, and return the result:
-	float bias = cv_lod_bias.GetFloat();
-	return delta.LengthSqr() / (bias * bias);
-}
-
 void Seed::CombineEntities( void )
 {
 	bool multiPVS =				m_iNumPVSAreas > 1 ? true : false;
@@ -3298,7 +3282,7 @@ void Seed::CombineEntities( void )
 		ofs.angles = m_Entities[i].angles;
 
 		// compute the alpha value and the LOD level
-		ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+		ThinkAboutLOD( entityClass->m_LOD, GetLODDistance( entityClass->m_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 		// 0 => default model, 1 => first stage etc
 		ofs.lod	   = m_LODLevel + 1;
 //		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
@@ -3370,7 +3354,7 @@ void Seed::CombineEntities( void )
 			ofs.angles = m_Entities[j].angles;
 
 			// compute the alpha value and the LOD level
-			ThinkAboutLOD( entityClass->m_LOD, LODDistance( entityClass->m_LOD, m_Entities[i].origin - playerPos ) );
+			ThinkAboutLOD( entityClass->m_LOD, GetLODDistance( entityClass->m_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 			// 0 => default model, 1 => level 0 etc.
 			ofs.lod		= m_LODLevel + 1;
 //			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );

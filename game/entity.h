@@ -494,7 +494,7 @@ public:
 	//	* the lod-bias set in the menu
 	//	* some minimum and maximum distances based on entity size/importance
 	// The returned value is the actual distance squared, and rounded down to an integer.
-	float					GetLODDistance( const idVec3 &playerOrigin, const float lod_bias ) const;
+	float					GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const;
 
 	// Tels: If LOD is enabled on this entity, call ThinkAboutLOD, computing new LOD level and new
 	// alpha value, then do the right things like Hide/Show, SetAlpha, switch models/skin etc.
