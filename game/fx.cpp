@@ -688,7 +688,7 @@ idEntityFx *idEntityFx::StartFx( const char *fx, const idVec3 *useOrigin, const 
 	}
 
 	// greebo: Don't call Bind again if a we're bound to a joint
-	if (bind && (nfx->Joint() == NULL || *nfx->Joint() == NULL))
+	if (bind && ((nfx->Joint() == NULL) || (*nfx->Joint() == '\0')))
 	{
 		// never bind to world spawn
 		if (ent != gameLocal.world)
