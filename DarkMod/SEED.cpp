@@ -1084,22 +1084,25 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	SeedClass.nocombine = ent->spawnArgs.GetBool("seed_combine","1") ? false : true;
 
 	// never combine these types
-	if ( ent->IsType( idMoveable::Type ) ||
-		 ent->IsType( CBinaryFrobMover::Type ) ||
-		 ent->IsType( idBrittleFracture::Type ) ||
-		 ent->IsType( idTarget::Type ) ||
+	if ( ent->IsType( CBinaryFrobMover::Type ) ||
+		 ent->IsType( tdmFuncShooter::Type ) ||
 		 ent->IsType( idActor::Type ) ||
 		 ent->IsType( idAFEntity_Base::Type ) ||
 		 ent->IsType( idAFAttachment::Type ) ||
 		 ent->IsType( idAnimatedEntity::Type ) ||
-		 ent->IsType( idWeapon::Type ) ||
+		 ent->IsType( idBrittleFracture::Type ) ||
+		 ent->IsType( idDamagable::Type ) ||
+		 ent->IsType( idExplodable::Type ) ||
 		 ent->IsType( idFuncEmitter::Type ) ||
 		 ent->IsType( idFuncSmoke::Type ) ||
 		 ent->IsType( idFuncSplat::Type ) ||
 		 ent->IsType( idFuncPortal::Type ) ||
 		 ent->IsType( idFuncAASPortal::Type ) ||
 		 ent->IsType( idFuncAASObstacle::Type ) ||
-		 ent->IsType( idLight::Type ) )
+		 ent->IsType( idLight::Type ) ||
+		 ent->IsType( idMoveable::Type ) ||
+		 ent->IsType( idTarget::Type ) ||
+		 ent->IsType( idWeapon::Type ) )
 	{
 		SeedClass.nocombine = true;
 	}

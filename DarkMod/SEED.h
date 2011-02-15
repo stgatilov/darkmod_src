@@ -36,6 +36,7 @@
 #include "../game/game_local.h"
 #include "StaticMulti.h"
 #include "MissionData.h"
+#include "func_shooter.h"
 #include "../idlib/containers/list.h"
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
