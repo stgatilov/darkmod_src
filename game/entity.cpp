@@ -2026,7 +2026,7 @@ const char * idEntity::GetName( void ) const {
 
  Thinking about LOD
 	
- We pass a ptr to the current data, so that the LODE can let the spawned
+ We pass a ptr to the current data, so that the SEED can let the spawned
  entities think while still keeping their LOD data only once per class.
 
  This routine will only modify:
@@ -11291,7 +11291,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 /* tels: Parses "def_attach" spawnargs and builds a list of idDicts that
  * contain the spawnargs to spawn the attachments, which is done in
  * SpawnAttachments() later. This is a two-phase process to allow other
- * code (e.g. LODE) to just parse the attachments without spawning them.
+ * code (e.g. SEED) to just parse the attachments without spawning them.
  */
 void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from )
 {
@@ -11355,20 +11355,26 @@ void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from 
 
 				if (PosSpace == -1)
 				{
-					gameLocal.Warning( "Invalid spawnarg '%s' on entity '%s'",
-					  kv_set->GetValue().c_str(), name.c_str() );
-					kv_set = from->MatchPrefix( "set ", kv_set );
-					continue;		
+					gameLocal.Warning( "%s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
+						GetName(), kv_set->GetKey().c_str(), kv_set->GetValue().c_str() );
+					//kv_set = from->MatchPrefix( "set ", kv_set );
+					//continue;		
+					// pretend "set _color" "0.1 0.2 0.3" means "set _color on BAR" where BAR is the
+					// current attachement. So it applies to all of them.
+					// SpawnargName is already right
+					SetAttName = AttNameValue;
+				}
+				else
+				{
+					// "FOO on BAR" => "FOO"
+					SpawnargName = SpawnargName.Left( PosSpace );
+					// "FOO on BAR" => "BAR"
+					SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
 				}
 
-				// "FOO on BAR" => "FOO"
-				SpawnargName = SpawnargName.Left( PosSpace );
-				// "FOO on BAR" => "BAR"
-				SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
-
-				//gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
-				//gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
-				//gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
+				// gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
+				// gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
+				// gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
 
 				// does this spawnarg apply to the newly spawned entity?
 				if (SetAttName == AttNameValue)
