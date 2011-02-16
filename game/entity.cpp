@@ -824,6 +824,13 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
 
+	// if > 0, if the entity is closer than this, lod_bias will be at minimum 1.0
+	m_LOD->fLODNormalDistance = dict->GetFloat( "lod_normal_distance", "500" );
+	if (m_LOD->fLODNormalDistance < 0.0f)
+	{
+		m_LOD->fLODNormalDistance = 0.0f;
+	}
+
 	idStr temp;
 	// distance dependent LOD from this point on:
 	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
@@ -1417,6 +1424,7 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		}
 		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
 		savefile->WriteFloat( m_LOD->fLODFadeInRange );
+		savefile->WriteFloat( m_LOD->fLODNormalDistance );
 	}
 	else
 	{
@@ -1684,6 +1692,7 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 		}
 		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
 		savefile->ReadFloat( m_LOD->fLODFadeInRange );
+		savefile->ReadFloat( m_LOD->fLODNormalDistance );
 	}
 }
 
@@ -2296,10 +2305,27 @@ float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOri
 	// multiply with the user LOD bias setting, and return the result:
 	// floor the value to avoid inaccurancies leading to toggling when the player stands still:
 	assert(lod_bias > 0.01f);
-	float deltaSq = idMath::Floor( delta.LengthSqr() / (lod_bias * lod_bias) );
+	float deltaSq = delta.LengthSqr();
 
-	// TODO: enforce minimum and maximum distances based on entity size/importance
+	// enforce an absolute minimum of 500 units for entities w/o LOD
+	float minDist = 0.0f;
+	// but let the mapper override it
+	if (m_LOD && m_LOD->fLODNormalDistance > 0)
+	{
+//		gameLocal.Printf ("%s: Using %0.2f lod_normal_distance, delta %0.2f.\n", GetName(), m_LOD->fLODNormalDistance, deltaSq);
+		minDist = m_LOD->fLODNormalDistance;
+	}
+	// if the entity is inside the "lod_normal_distance", simply ignore any LOD_BIAS < 1.0f
+	if (minDist > 0 && lod_bias < 1.0f && deltaSq < (minDist * minDist))
+	{
+		deltaSq = idMath::Floor( deltaSq );
+	}
+	else
+	{
+		deltaSq = idMath::Floor( deltaSq / (lod_bias * lod_bias) );
+	}
 
+	// TODO: enforce minimum/maximum distances based on entity size/importance
 	return deltaSq;
 }
 

@@ -279,6 +279,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 			savefile->WriteInt( lod->noshadowsLOD );
 			savefile->WriteFloat( lod->fLODFadeOutRange );
 			savefile->WriteFloat( lod->fLODFadeInRange );
+			savefile->WriteFloat( lod->fLODNormalDistance );
 			for (int l = 0; l < LOD_LEVELS; l++)
 			{
 				savefile->WriteFloat( lod->DistLODSq[ l ] );
@@ -598,6 +599,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 			savefile->ReadInt( lod->noshadowsLOD );
 			savefile->ReadFloat( lod->fLODFadeOutRange );
 			savefile->ReadFloat( lod->fLODFadeInRange );
+			savefile->ReadFloat( lod->fLODNormalDistance );
 			for (int l = 0; l < LOD_LEVELS; l++)
 			{
 				savefile->ReadFloat( lod->DistLODSq[ l ] );
@@ -1530,6 +1532,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		SeedClass.m_LOD->noshadowsLOD = m_LOD->noshadowsLOD;
 		SeedClass.m_LOD->fLODFadeOutRange = m_LOD->fLODFadeOutRange;
 		SeedClass.m_LOD->fLODFadeInRange = m_LOD->fLODFadeInRange;
+		SeedClass.m_LOD->fLODNormalDistance = m_LOD->fLODNormalDistance;
 
 		for (int l = 0; l < LOD_LEVELS; l++)
 		{
@@ -1537,7 +1540,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 			SeedClass.m_LOD->ModelLOD[ l ] = m_LOD->ModelLOD[ l ];
 			SeedClass.m_LOD->SkinLOD[ l ] = m_LOD->SkinLOD[ l ];
 			SeedClass.m_LOD->OffsetLOD[ l ] = m_LOD->OffsetLOD[ l ];
-		}	
+		}
 	}
 	else
 	{
@@ -3384,6 +3387,7 @@ void Seed::CombineEntities( void )
 					PseudoClass.m_LOD->noshadowsLOD = entityClass->m_LOD->noshadowsLOD;
 					PseudoClass.m_LOD->fLODFadeOutRange = entityClass->m_LOD->fLODFadeOutRange;
 					PseudoClass.m_LOD->fLODFadeInRange = entityClass->m_LOD->fLODFadeInRange;
+					PseudoClass.m_LOD->fLODNormalDistance = entityClass->m_LOD->fLODNormalDistance;
 
 					for (int l = 0; l < LOD_LEVELS; l++)
 					{
@@ -3962,37 +3966,19 @@ void Seed::Think( void )
 		m_iThinkCounter = 0;
 
 		// cache these values for speed
-		idVec3 playerOrigin = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		idVec3 playerPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
 		float lodBias = cv_lod_bias.GetFloat();
-
-		// square to avoid taking the square root from the distance
-		lodBias *= lodBias;
 
 		// for each of our "entities", do the distance check
 		int numEntities = m_Entities.Num();
 		for (int i = 0; i < numEntities; i++)
 		{
-			// TODO: let all auto-generated entities know about their new distance
-			//		 so they can manage their attachment's LOD, too.
-
-			// TODO: What to do about player looking thru spyglass?
-			idVec3 delta = playerOrigin - m_Entities[i].origin;
-
 			ent = &m_Entities[i];
 			lclass = &(m_Classes[ ent->classIdx ]);
-
-			// per class
-			if( lclass->m_LOD && lclass->m_LOD->bDistCheckXYOnly )
-			{
-				delta -= (delta * vGravNorm) * vGravNorm;
-			}
-
-			// multiply with the user LOD bias setting, and cache that result:
-			float deltaSq = delta.LengthSqr() / lodBias;
+		    float deltaSq = GetLODDistance( lclass->m_LOD, playerPos, ent->origin, lclass->size, lodBias );
 
 //			gameLocal.Printf( "SEED %s: In LOD check: Flags for entity %i: 0x%08x, spawndist %i, deltaSq %i.\n", GetName(), i, ent->flags, (int)lclass->spawnDist, (int)deltaSq );
-			
+
 			// normal distance checks now
 			if ( (ent->flags & SEED_ENTITY_EXISTS) == 0 && (lclass->spawnDist == 0 || deltaSq < lclass->spawnDist))
 			{
@@ -4009,6 +3995,7 @@ void Seed::Think( void )
 				if ( (ent->flags & SEED_ENTITY_EXISTS) != 0 && lclass->cullDist > 0 && deltaSq > lclass->cullDist)
 				{
 					// TODO: Limit number of entities to cull per frame
+					// TODO: Only cull invisible entities?
 					if (CullEntity( i ))
 					{
 						culled ++;
