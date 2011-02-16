@@ -835,6 +835,14 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	{
 		sprintf(temp, "lod_%i_distance", i);
 		m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
+
+		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
+	   	// entity gets really hidden.
+		if (fHideDistance > 1.0f && m_LOD->DistLODSq[i] > fHideDistance)
+		{
+			m_LOD->DistLODSq[i] = fHideDistance - 1.0f;
+		}
+
 		if (i == LOD_LEVELS - 1)
 		{
 			// last distance is named differently so you don't need to know how many levels the code supports:
