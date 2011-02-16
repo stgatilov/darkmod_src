@@ -216,7 +216,7 @@ void CFrobDoor::SetDoorTravelFlag()
 
 void CFrobDoor::ClearDoorTravelFlag()
 {
-	// Flag the AAS areas the door is located in with door travel flag
+	// Remove the door travel flag from the AAS areas the door is located in
 	for (int i = 0; i < gameLocal.NumAAS(); i++)
 	{
 		idAAS*	aas = gameLocal.GetAAS(i);
