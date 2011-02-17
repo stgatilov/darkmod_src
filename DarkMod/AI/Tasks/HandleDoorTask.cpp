@@ -366,7 +366,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateMovingToFrontPos:
 			{
 				owner->m_canResolveBlock = false; // grayman #2345
-				owner->actionSubsystem->ClearTasks(); // grayman #2345 - stop playing an idle animation
 
 				if (doubleDoor != NULL && doubleDoor->IsOpen())
 				{
@@ -764,7 +763,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			
 			case EStateMovingToFrontPos:
 				owner->m_canResolveBlock = false;		// grayman #2345
-				owner->actionSubsystem->ClearTasks();	// grayman #2345 - stop playing an idle animation
 
 				// check if the door was blocked or interrupted
 				if (frobDoor->IsBlocked() || 
