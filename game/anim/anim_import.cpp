@@ -447,10 +447,13 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 
 	lex.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
+	// Save the command's filename
+	const char* currentFileName = parser.GetFileName();
+
 	while( 1 ) {
 
 		if ( !parser.ReadToken( &command ) ) {
-			parser.Error( "Unexpoected end-of-file" );
+			parser.Error( "Unexpected end-of-file" );
 			break;
 		}
 
@@ -508,7 +511,7 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 			}
 			lex.FreeSource();
 		} else {
-			parser.Error( "Unknown token: %s", command.c_str() );
+			parser.Error( "Unknown token: '%s' on line %i, file '%s'", command.c_str(), command.line, currentFileName );
 			parser.SkipBracedSection( false );
 			break;
 		}

@@ -3597,7 +3597,7 @@ bool idDeclModelDef::Parse( const char *text, const int textLength ) {
 			}
 			channelJoints[ channel ].SetNum( num );
 		} else {
-			src.Warning( "unknown token '%s'", token.c_str() );
+			src.Warning( "unknown token '%s' on line %i in '%s'", token.c_str(), token.line, src.GetFileName() );
 			MakeDefault();
 			return false;
 		}
