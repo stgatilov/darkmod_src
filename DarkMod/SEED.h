@@ -494,6 +494,11 @@ private:
 	*/
 	bool 						m_bRestoreLOD;
 
+	/**
+	* Number of currently existing entities, to see if we reached the spawn limit.
+	*/
+	int 						m_iNumEntitiesInGame;
+
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;
 
