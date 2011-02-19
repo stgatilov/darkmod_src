@@ -1888,6 +1888,7 @@ idFuncSmoke::idFuncSmoke() {
 	smokeTime = 0;
 	smoke = NULL;
 	restart = false;
+	m_LOD = NULL;
 }
 
 /*
@@ -1963,7 +1964,7 @@ void idFuncSmoke::Think( void ) {
 		return;
 	}
 
-	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !IsHidden() ) {
+	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !fl.hidden ) {
 		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
 			if ( restart ) {
 				smokeTime = gameLocal.time;
@@ -1974,6 +1975,20 @@ void idFuncSmoke::Think( void ) {
 		}
 	}
 
+	if (m_LOD)
+	{
+		// If this entity has LOD, let it think about it:
+		// Distance dependence checks
+		if ( ( m_LOD->DistCheckInterval > 0) 
+		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
+		{
+			m_DistCheckTimeStamp = gameLocal.time;
+//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+			SwitchLOD( m_LOD, 
+				GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+		}
+	}
 }
 
 
