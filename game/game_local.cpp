@@ -2985,27 +2985,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
-/*
-* Ishtvan: I don't think we need this anymore.
-* Will delete it soon if there are no objections.
-
-	// Before we do the actual impulse, we check if there are some impulses pending for processing.
-	// FIXME: It MIGHT be that this can cause problems in case if usercmd is evaluated while the
-	// impulse is processed, because it would use the same usercmd states as the actual impulse
-	// key that is triggered, which could cause inconsistencies.
-	for(int i = 0; i < IR_COUNT; i++)
-	{
-		k = &m_KeyData[i];
-		if(k->KeyState == KS_UPDATED)
-		{
-			ucmd = player->usercmd;
-			player->usercmd.impulse = k->Impulse;
-			player->PerformImpulse(k->Impulse);
-			player->usercmd = ucmd;
-		}
-	}
-*/
-
 	// Check for any activated signals, and trigger them.
 	CheckSDKSignals();
 
@@ -4358,6 +4337,12 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 	}
 }
 
+// Tels: Define this to get statistics about entity spawn time
+#ifdef TIMING_BUILD
+static idTimer timer_spawnEntity, timer_copySpawnArgs;
+static int spawnsExecuted = 0;
+#endif
+
 /*
 ================
 idGameLocal::SpawnEntityType
@@ -4376,14 +4361,37 @@ idEntity *idGameLocal::SpawnEntityType( const idTypeInfo &classdef, const idDict
 		Error( "Attempted to spawn non-entity class '%s'", classdef.classname );
 	}
 
+#ifdef TIMING_BUILD
+	if (spawnsExecuted == 0)
+	{
+		timer_spawnEntity.Clear();
+		timer_copySpawnArgs.Clear();
+	}
+	spawnsExecuted ++;
+	if (spawnsExecuted % 50 == 0)
+	{
+		gameLocal.Printf("spawns %i %0.2f ms (%0.2f ms per entity) (copy spawnargs %0.2f (%0.2f ms per entity))\n", 
+				spawnsExecuted, timer_spawnEntity.Milliseconds(), timer_spawnEntity.Milliseconds() / spawnsExecuted,
+			   	timer_copySpawnArgs.Milliseconds(), timer_copySpawnArgs.Milliseconds() / spawnsExecuted );
+	}
+	timer_spawnEntity.Start();
+	timer_copySpawnArgs.Start();
+#endif
+
 	try {
 		if ( args ) {
 			spawnArgs = *args;
 		} else {
 			spawnArgs.Clear();
 		}
+#ifdef TIMING_BUILD
+		timer_copySpawnArgs.Stop();
+#endif
 		obj = classdef.CreateInstance();
 		obj->CallSpawn();
+#ifdef TIMING_BUILD
+		timer_spawnEntity.Stop();
+#endif
 	}
 	
 	catch( idAllocError & ) {
@@ -4414,6 +4422,18 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 		*ent = NULL;
 	}
 
+#ifdef TIMING_BUILD
+	spawnsExecuted ++;
+	if (spawnsExecuted % 50 == 0)
+	{
+		gameLocal.Printf("spawned %i %0.2f ms (%0.2f ms per entity) (copy spawnargs %0.2f (%0.2f ms per entity))\n", 
+				spawnsExecuted, timer_spawnEntity.Milliseconds(), timer_spawnEntity.Milliseconds() / spawnsExecuted,
+			   	timer_copySpawnArgs.Milliseconds(), timer_copySpawnArgs.Milliseconds() / spawnsExecuted );
+	}
+	timer_spawnEntity.Start();
+	timer_copySpawnArgs.Start();
+#endif
+
 	spawnArgs = args;
 
 	if ( spawnArgs.GetString( "name", "", &name ) ) {
@@ -4426,10 +4446,18 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 
 	if ( !def ) {
 		Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
+#ifdef TIMING_BUILD
+		timer_copySpawnArgs.Stop();
+		timer_spawnEntity.Stop();
+#endif
 		return false;
 	}
 
 	spawnArgs.SetDefaults( &def->dict );
+
+#ifdef TIMING_BUILD
+	timer_copySpawnArgs.Stop();
+#endif
 
 	// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
 	m_DifficultyManager.ApplyDifficultySettings(spawnArgs);
@@ -4441,12 +4469,18 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 		cls = idClass::GetClass( spawn );
 		if ( !cls ) {
 			Warning( "Could not spawn '%s'.  Class '%s' not found%s.", classname, spawn, error.c_str() );
+#ifdef TIMING_BUILD
+			timer_spawnEntity.Stop();
+#endif
 			return false;
 		}
 
 		obj = cls->CreateInstance();
 		if ( !obj ) {
 			Warning( "Could not spawn '%s'. Instance could not be created%s.", classname, error.c_str() );
+#ifdef TIMING_BUILD
+			timer_spawnEntity.Stop();
+#endif
 			return false;
 		}
 
@@ -4456,6 +4490,9 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 			*ent = static_cast<idEntity *>(obj);
 		}
 
+#ifdef TIMING_BUILD
+		timer_spawnEntity.Stop();
+#endif
 		return true;
 	}
 
@@ -4465,14 +4502,23 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 		const function_t *func = program.FindFunction( spawn );
 		if ( !func ) {
 			Warning( "Could not spawn '%s'.  Script function '%s' not found%s.", classname, spawn, error.c_str() );
+#ifdef TIMING_BUILD
+			timer_spawnEntity.Stop();
+#endif
 			return false;
 		}
 		idThread *thread = new idThread( func );
 		thread->DelayedStart( 0 );
+#ifdef TIMING_BUILD
+		timer_spawnEntity.Stop();
+#endif
 		return true;
 	}
 
 	Warning( "%s doesn't include a spawnfunc or spawnclass%s.", classname, error.c_str() );
+#ifdef TIMING_BUILD
+		timer_spawnEntity.Stop();
+#endif
 	return false;
 }
 
@@ -4624,13 +4670,21 @@ void idGameLocal::SpawnMapEntities( void ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
-		for(int x = 0; x < args.GetNumKeyVals(); x++)
+#ifdef LOGBUILD
+		// Tels: This might need a lot of time, even when the logging is disabled, so make
+		//		 sure we execute this loop only if we need to log:
+		if(g_Global.m_ClassArray[LC_ENTITY] == true && g_Global.m_LogArray[LT_DEBUG] == true)
 		{
-			const idKeyValue *p = args.GetKeyVal(x);
-			const idStr k = p->GetKey();
-			const idStr v = p->GetValue();
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			int n = args.GetNumKeyVals();
+			for(int x = 0; x < n; x++)
+			{
+				const idKeyValue *p = args.GetKeyVal(x);
+				const idStr k = p->GetKey();
+				const idStr v = p->GetValue();
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			}
 		}
+#endif
 
 		if ( !InhibitEntitySpawn( args ) ) {
 			// precache any media specified in the map entity
