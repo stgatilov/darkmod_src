@@ -1010,9 +1010,9 @@ idDict* Seed::LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entity
 						key == "skin" ||
 						key == "model" ||
 						key == "_color" ||
-						key.Left(7) == "editor_" ||
-						key.Left(5) == "seed_" ||
-						key.Left(6) == "target"
+						key.Cmpn("editor_",7) ||
+						key.Cmpn("seed_",5) ||
+						key.Cmpn("target",6)
 					   )
 					{
 #ifdef M_DEBUG
