@@ -376,9 +376,10 @@ void idItem::GetAttributes( idDict &attributes )
 	int					i;
 	const idKeyValue	*arg;
 
-	for( i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
+	int num = spawnArgs.GetNumKeyVals();
+	for( i = 0; i < num; i++ ) {
 		arg = spawnArgs.GetKeyVal( i );
-		if ( arg->GetKey().Left( 4 ) == "inv_" ) {
+		if ( arg->GetKey().Cmpn( "inv_", 4 ) ) {
 			attributes.Set( arg->GetKey().Right( arg->GetKey().Length() - 4 ), arg->GetValue() );
 		}
 	}
