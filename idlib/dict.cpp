@@ -188,14 +188,15 @@ Tels: Like SetDefaults(), but skips all entries starting with skip:
 ================
 */
 void idDict::SetDefaults( const idDict *dict, const idStr &skip ) {
-	int i, n;
+	int i, n, l;
 	const idKeyValue *kv, *def;
 	idKeyValue newkv;
 
 	n = dict->args.Num();
+	l = skip.Length();
 	for( i = 0; i < n; i++ ) {
 		def = &dict->args[i];
-		if (def->GetKey().IcmpPrefix(skip) == 0)
+		if (def->GetKey().Icmpn(skip, l) == 0)
 		{
 			continue;
 		}
