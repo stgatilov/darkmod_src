@@ -1476,8 +1476,6 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( fadeStart );
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( runGui );
-
-	SaveLOD( savefile );
 }
 
 /*
@@ -1493,8 +1491,6 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeStart );
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( runGui );
-
-	RestoreLOD( savefile );
 }
 
 /*
@@ -1730,6 +1726,7 @@ idFuncEmitter::idFuncEmitter
 */
 idFuncEmitter::idFuncEmitter( void ) {
 	hidden = false;
+	m_LOD = NULL;
 }
 
 /*
