@@ -68,6 +68,8 @@ public:
 	bool				Parse( idParser &parser );
 						// copy key/value pairs from other dict not present in this dict
 	void				SetDefaults( const idDict *dict );
+						// Tels: like SetDefaults(), but skip all keys starting with "skip"
+	void				SetDefaults( const idDict *dict, const idStr &skip );
 						// clear dict freeing up memory
 	void				Clear( void );
 						// print the dict
