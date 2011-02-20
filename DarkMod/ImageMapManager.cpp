@@ -141,7 +141,7 @@ int CImageMapManager::GetImageMap( idStr name ) {
 
 	// If the map name does not start with "textures/seed/", prepend it:
 	idStr mapName = name;
-	if (mapName.Left(14) != "textures/seed/")
+	if (!mapName.Cmpn("textures/seed/", 14))
 	{
 		mapName = "textures/seed/" + name;
 	}
