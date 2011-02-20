@@ -347,6 +347,7 @@ public:
 	CLASS_PROTOTYPE( idFuncEmitter );
 
 						idFuncEmitter( void );
+						~idFuncEmitter( void );
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -357,9 +358,23 @@ public:
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	virtual void		Think( void );
+	virtual void		Present( void );
+
+	// switch to a new model
+	virtual void		SetModel( const char *modelname );
+
+protected:
+
+	// add an extra model
+	void				SetModel( int id, const idStr &modelName, const idVec3 &offset );
+
 private:
 	bool				hidden;
 
+	idList<int>				m_modelDefHandles;	// modelDefHandle for each extra model
+	idList<idVec3>			m_modelOffsets;		// offset for each extra model (relative to our origin)
+	idList<idRenderModel *>	m_modelHandles;		// handles of the extra models
 };
 
 
