@@ -519,6 +519,14 @@
 				>
 			</File>
 			<File
+				RelativePath="game\emitter.cpp"
+				>
+			</File>
+			<File
+				RelativePath="game\emitter.h"
+				>
+			</File>
+			<File
 				RelativePath="game\fx.cpp"
 				>
 			</File>

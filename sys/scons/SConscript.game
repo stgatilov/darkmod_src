@@ -36,6 +36,7 @@ game_string = ' \
 	actor.cpp \
 	camera.cpp \
 	entity.cpp \
+	emitter.cpp \
 	brittlefracture.cpp \
 	fx.cpp \
 	gameedit.cpp \
