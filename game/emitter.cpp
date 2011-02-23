@@ -10,7 +10,7 @@
 
 /*
    Copyright (C) 2004 Id Software, Inc.
-   Copyrighr (C) 2011 The Dark Mod
+   Copyright (C) 2011 The Dark Mod
 
 func_emitters - have one or more particle models
 
@@ -24,8 +24,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //#include "game_local.h"
 #include "emitter.h"
 
+const idEventDef EV_EmitterAddModel( "emitterAddModel", "sv" );
+const idEventDef EV_EmitterGetNumModels( "emitterGetNumModels", NULL, 'f' );
+
 CLASS_DECLARATION( idStaticEntity, idFuncEmitter )
-EVENT( EV_Activate,				idFuncEmitter::Event_Activate )
+	EVENT( EV_Activate,				idFuncEmitter::Event_Activate )
+	EVENT( EV_EmitterAddModel,		idFuncEmitter::Event_EmitterAddModel )
+	EVENT( EV_EmitterGetNumModels,	idFuncEmitter::Event_EmitterGetNumModels )
 END_CLASS
 
 /*
@@ -322,6 +327,10 @@ void idFuncEmitter::Restore( idRestoreGame *savefile ) {
 }
 
 /*
+  ****************   Events   ****************************************
+*/
+
+/*
 ================
 idFuncEmitter::Event_Activate
 ================
@@ -337,6 +346,27 @@ void idFuncEmitter::Event_Activate( idEntity *activator ) {
 	}
 	UpdateVisuals();
 }
+
+/*
+================
+idFuncEmitter::Event_EmitterGetNumModels
+================
+*/
+void idFuncEmitter::Event_EmitterGetNumModels( void ) const {
+	idThread::ReturnFloat( m_models.Num() + 1 );
+}
+
+/*
+================
+idFuncEmitter::Event_EmitterAddModel
+================
+*/
+void idFuncEmitter::Event_EmitterAddModel( idStr const &modelName, idVec3 const &modelOffset ) {
+
+	SetModel( m_models.Num(), modelName, modelOffset ); 
+}
+
+
 
 /*
 ================

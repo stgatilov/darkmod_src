@@ -55,6 +55,10 @@ public:
 	// switch to a new model
 	virtual void		SetModel( const char *modelname );
 
+	// public events
+	void				Event_EmitterGetNumModels( void ) const;
+	void				Event_EmitterAddModel( idStr const &modelName, idVec3 const &modelOffset );
+
 protected:
 
 	// add an extra model
