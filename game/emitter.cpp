@@ -168,7 +168,7 @@ void idFuncEmitter::Present( void )
 
 	// present additional models to the renderer
 	const int num = m_models.Num();
-		gameLocal.Printf("%s: Have %i models\n", GetName(), num);
+//		gameLocal.Printf("%s: Have %i models\n", GetName(), num);
 	for (int i = 0; i < num; i++ ) {
 
 		if ( !m_models[i].handle ) {
@@ -180,7 +180,7 @@ void idFuncEmitter::Present( void )
 			// is invisible, ignore it
 			continue;
 		}
-		gameLocal.Printf("%s: Presenting model %i\n", GetName(), i);
+//		gameLocal.Printf("%s: Presenting model %i\n", GetName(), i);
 		renderEntity.origin = GetPhysics()->GetOrigin() + m_models[i].offset;
 		renderEntity.axis = GetPhysics()->GetAxis();
 		renderEntity.hModel = m_models[i].handle;
