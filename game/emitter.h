@@ -24,6 +24,15 @@ idFuncEmitter
 ===============================================================================
 */
 
+/** Defines additional data for emitters with more than one particle */
+typedef struct {
+	int						defHandle;
+	idVec3					offset;
+	idRenderModel *			handle;
+	idStr					name;		// empty when this model equals the first model
+	int						flags;		// 0 => visible, 1 => hidden
+} emitter_models_t;
+
 class idFuncEmitter : public idStaticEntity {
 public:
 	CLASS_PROTOTYPE( idFuncEmitter );
@@ -52,11 +61,10 @@ protected:
 	void				SetModel( int id, const idStr &modelName, const idVec3 &offset );
 
 private:
-	bool				hidden;
+	bool						hidden;
 
-	idList<int>				m_modelDefHandles;	// modelDefHandle for each extra model
-	idList<idVec3>			m_modelOffsets;		// offset for each extra model (relative to our origin)
-	idList<idRenderModel *>	m_modelHandles;		// handles of the extra models
+	idStr						m_modelName;		//! name of the original particle model
+	idList<emitter_models_t> 	m_models;			//! struct with data for additional models
 };
 
 /*

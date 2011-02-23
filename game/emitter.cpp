@@ -37,9 +37,8 @@ idFuncEmitter::idFuncEmitter( void ) {
 	hidden = false;
 	m_LOD = NULL;
 
-	m_modelDefHandles.Clear();	// no extra models
-	m_modelOffsets.Clear();		// no extra models
-	m_modelHandles.Clear();		// no extra models
+	m_modelName = "";
+	m_models.Clear();
 }
 
 /*
@@ -48,13 +47,17 @@ idFuncEmitter::~idFuncEmitter
 ================
 */
 idFuncEmitter::~idFuncEmitter( void ) {
-	const int num = m_modelDefHandles.Num();
-	for (int i = 0; i < num; i++ ) {
-		if ( m_modelDefHandles[i] != -1 ) {
-			gameRenderWorld->FreeEntityDef( m_modelDefHandles[i] );
-			m_modelDefHandles[i] = -1;
+
+	const int num = m_models.Num();
+	for (int i = 0; i < num; i++ )
+	{
+		if ( m_models[i].defHandle != -1 )
+		{
+			gameRenderWorld->FreeEntityDef( m_models[i].defHandle );
+			m_models[i].defHandle = -1;
 		}
 	}
+	m_models.Clear();
 }
 
 /*
@@ -63,12 +66,22 @@ idFuncEmitter::SetModel for additional models
 ================
 */
 void idFuncEmitter::SetModel( int id, const idStr &modelName, const idVec3 &offset ) {
-	m_modelHandles.AssureSize( id+1, NULL );
-	m_modelDefHandles.AssureSize( id+1, -1 );
-	m_modelOffsets.AssureSize( id+1, idVec3(0,0,0) );
-	m_modelHandles[id] = renderModelManager->FindModel( modelName );
-	m_modelOffsets[id] = offset;
-	m_modelDefHandles[id] = -1;
+
+	m_models.AssureSize( id+1 );
+	m_models[id].defHandle = -1;
+	m_models[id].offset = offset;
+	m_models[id].flags = 0;
+	m_models[id].handle = renderModelManager->FindModel( modelName );
+	if (m_modelName != modelName)
+	{
+		// differs
+		m_models[id].name = modelName;
+	}
+	else
+	{
+		// store "" to flag as "same as the original model"
+		m_models[id].name = "";
+	}
 
 	// need to call Present() the next time we Think():
 	BecomeActive( TH_UPDATEVISUALS );
@@ -81,17 +94,32 @@ idFuncEmitter::SetModel for LOD change
 */
 void idFuncEmitter::SetModel( const char* modelName ) 
 {
-	m_modelHandles.AssureSize( 1, NULL );
-	m_modelDefHandles.AssureSize( 1, -1 );
-	m_modelOffsets.AssureSize( 1, idVec3(0,0,0) );
-
-	if ( m_modelDefHandles[0] != -1 ) {
-		gameRenderWorld->FreeEntityDef( m_modelDefHandles[0] );
+	if ( modelDefHandle > 0 )
+	{
+		gameRenderWorld->FreeEntityDef( modelDefHandle );
 	}
-	m_modelDefHandles[0] = -1;
-	m_modelHandles[0] = renderModelManager->FindModel( modelName );
-	m_modelOffsets[0] = idVec3(0,0,0);
+	modelDefHandle = -1;
+	m_modelName = modelName;
 
+	idRenderModel * modelHandle = renderModelManager->FindModel( m_modelName );
+
+	// go through all other models and change them
+	const int num = m_models.Num();
+	for (int i = 0; i < num; i++ ) {
+		if ( m_models[i].name.IsEmpty())
+		{
+			// same as original model, so change it, too
+			if ( m_models[i].defHandle != -1 )
+			{
+				gameRenderWorld->FreeEntityDef( m_models[0].defHandle );
+			}
+			m_models[i].defHandle = -1;
+			m_models[i].handle = modelHandle;
+		}
+		// else: leave it alone
+	}
+
+	// need to call Present() the next time we Think():
 	BecomeActive( TH_UPDATEVISUALS );
 }
 
@@ -115,27 +143,63 @@ void idFuncEmitter::Present( void )
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
 
-	const int num = m_modelHandles.Num();
-//		gameLocal.Printf("%s: Have %i models\n", GetName(), num);
+	// present the first model
+    renderEntity.origin = GetPhysics()->GetOrigin();
+	renderEntity.axis = GetPhysics()->GetAxis();
+	renderEntity.hModel = renderModelManager->FindModel( m_modelName );
+
+	if ( renderEntity.hModel ) {
+		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
+	}
+	else {
+		renderEntity.bounds.Zero();
+	}
+	// TODO: add to the bounds above the bounds of the other models
+
+	renderEntity.bodyId = 0;
+	// make each of them have a unique timeoffset, so they do not appear to be in sync
+	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time - gameLocal.random.RandomInt( 32767 ) );
+	// add to refresh list
+	if ( modelDefHandle == -1 ) {
+		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+	} else {
+		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
+	}
+
+	// present additional models to the renderer
+	const int num = m_models.Num();
+		gameLocal.Printf("%s: Have %i models\n", GetName(), num);
 	for (int i = 0; i < num; i++ ) {
 
-		if ( !m_modelHandles[i] ) {
+		if ( !m_models[i].handle ) {
 			continue;
 		}
 
-//		gameLocal.Printf("%s: Presenting model %i\n", GetName(), i);
-		renderEntity.origin = GetPhysics()->GetOrigin() + m_modelOffsets[i];
+		if ( (m_models[i].flags & 1) != 0)
+		{
+			// is invisible, ignore it
+			continue;
+		}
+		gameLocal.Printf("%s: Presenting model %i\n", GetName(), i);
+		renderEntity.origin = GetPhysics()->GetOrigin() + m_models[i].offset;
 		renderEntity.axis = GetPhysics()->GetAxis();
-		renderEntity.hModel = m_modelHandles[i];
+		renderEntity.hModel = m_models[i].handle;
 		renderEntity.bodyId = i + 1;
 		// make each of them have a unique timeoffset, so they do not appear to be in sync
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time - gameLocal.random.RandomInt( 32767 ) );
 
+		if ( renderEntity.hModel ) {
+			renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
+		}
+		else {
+			renderEntity.bounds.Zero();
+		}
+
 		// add to refresh list
-		if ( m_modelDefHandles[i] == -1 ) {
-			m_modelDefHandles[i] = gameRenderWorld->AddEntityDef( &renderEntity );
+		if ( m_models[i].defHandle == -1 ) {
+			m_models[i].defHandle = gameRenderWorld->AddEntityDef( &renderEntity );
 		} else {
-			gameRenderWorld->UpdateEntityDef( m_modelDefHandles[i], &renderEntity );
+			gameRenderWorld->UpdateEntityDef( m_models[i].defHandle, &renderEntity );
 		}
 	}
 }
@@ -156,6 +220,9 @@ void idFuncEmitter::Spawn( void ) {
 		hidden = false;
 	}
 
+	// we need this to set a default model
+	m_modelName = spawnArgs.GetString("model");
+
 	// check if we have additional models
    	kv = spawnArgs.MatchPrefix( "model", NULL );
 	int model = 0;
@@ -163,17 +230,25 @@ void idFuncEmitter::Spawn( void ) {
 	{
 		idStr suffix = kv->GetKey();
 		idStr modelName = kv->GetValue();
-		if ((suffix.Length() >= 9 && suffix.Cmpn("model_lod",9) == 0))
+		if ((suffix.Length() >= 9 && suffix.Cmpn("model_lod",9) == 0) || suffix == "model")
 		{
-			// ignore "model_lod_2" etc
+			// ignore "model_lod_2" as well as "model"
 			kv = spawnArgs.MatchPrefix( "model", kv );
 			continue;
 		}
 		suffix = suffix.Right( suffix.Length() - 5);	// model_2 => "_2"
+		if (!spawnArgs.FindKey("offset" + suffix))
+		{
+			gameLocal.Warning("FuncEmitter %s: 'offset%s' is undefined and will clash at origin.", GetName(), suffix.c_str() );
+		}
 		idVec3 modelOffset = spawnArgs.GetVector( "offset" + suffix, "0,0,0" );
 //		gameLocal.Printf( "FuncEmitter %s: Adding model %i ('%s') at offset %s (suffix %s).\n", GetName(), model, modelName.c_str(), modelOffset.ToString(), suffix.c_str() );
 		SetModel( model++, modelName, modelOffset );
 		kv = spawnArgs.MatchPrefix( "model", kv );
+	}
+	if (model > 0)
+	{
+		gameLocal.Printf( "FuncEmitter %s: Added %i additional emitters.\n", GetName(), model );
 	}
 }
 
@@ -185,11 +260,13 @@ idFuncEmitter::Save
 void idFuncEmitter::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( hidden );
 
-	const int num = m_modelDefHandles.Num();
+	const int num = m_models.Num();
 	savefile->WriteInt( num );
 	for (int i = 0; i < num; i++ ) {
-		savefile->WriteInt( m_modelDefHandles[i] );
-		savefile->WriteVec3( m_modelOffsets[i] );
+		savefile->WriteInt( m_models[i].defHandle );
+		savefile->WriteVec3( m_models[i].offset );
+		savefile->WriteString( m_models[i].name );
+		savefile->WriteInt( m_models[i].flags );
 	}
 }
 
@@ -204,7 +281,7 @@ void idFuncEmitter::Think( void )
 	idEntity::Think();
 
 	// extra models? Do LOD thinking for them:
-	const int num = m_modelDefHandles.Num();
+	const int num = m_models.Num();
 	// start with 1
 /*	for (int i = 1; i < num; i++)
 	{
@@ -225,18 +302,23 @@ void idFuncEmitter::Restore( idRestoreGame *savefile ) {
 	int num;
 	savefile->ReadInt( num );
 
-	m_modelDefHandles.Clear();
-	m_modelHandles.Clear();
-	m_modelOffsets.Clear();
-	m_modelDefHandles.SetNum(num);
-	m_modelHandles.SetNum(num);
-	m_modelOffsets.SetNum(num);
+	m_models.Clear();
+	m_models.SetNum(num);
 	for (int i = 0; i < num; i++ ) {
-		savefile->ReadInt( m_modelDefHandles[i] );
-		savefile->ReadVec3( m_modelOffsets[i] );
-		// TODO
-		m_modelHandles[i] = NULL;
+		savefile->ReadInt( m_models[i].defHandle );
+		savefile->ReadVec3( m_models[i].offset );
+		savefile->ReadString( m_models[i].name );
+		savefile->ReadInt( m_models[i].flags );
+
+		// find the modelHandle
+		idStr modelName = m_models[i].name;
+		if (modelName.IsEmpty())
+		{
+			modelName = m_modelName;
+		}
+		m_models[i].handle = renderModelManager->FindModel( modelName );
 	}
+	BecomeActive( TH_UPDATEVISUALS );
 }
 
 /*
@@ -265,6 +347,7 @@ void idFuncEmitter::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( hidden ? 1 : 0, 1 );
 	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
 	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+	// TODO: additinal models
 }
 
 /*
@@ -276,6 +359,7 @@ void idFuncEmitter::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	hidden = msg.ReadBits( 1 ) != 0;
 	renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
+	// TODO: additinal models
 	if ( msg.HasChanged() ) {
 		UpdateVisuals();
 	}
