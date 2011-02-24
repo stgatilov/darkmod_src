@@ -20,9 +20,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-const int INVESTIGATE_SPOT_TIME_REMOTE = 600; // ms
+const int INVESTIGATE_SPOT_TIME_REMOTE = 2000; // ms (grayman #2640 - change from 600 -> 2000)
 const int INVESTIGATE_SPOT_TIME_STANDARD = 300; // ms
 const int INVESTIGATE_SPOT_TIME_CLOSELY = 2500; // ms
+
+const int INVESTIGATE_SPOT_STOP_DIST = 100; // grayman #2640 - even if you can see the spot, keep moving if farther away than this
+const int INVESTIGATE_SPOT_MIN_DIST  =  20;
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 
@@ -115,7 +118,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		}
 		else
 		{
-			// Run if the point is more than 500 
+			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING 
 			// greebo: This is taxing and can be replaced by a simpler distance check 
 			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
 			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
@@ -169,9 +172,25 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	{
 		// Can we already see the point? Only stop moving when the spot shouldn't be investigated closely
 		// angua: added distance check to avoid running in circles if the point is too close to a wall.
-		if (!_investigateClosely && 
-			( owner->CanSeePositionExt(_searchSpot, true, true) 
-			|| (_searchSpot - owner->GetPhysics()->GetOrigin()).LengthFast() < 20 ))
+		// grayman #2640 - keep moving if you're > INVESTIGATE_SPOT_STOP_DIST from a point you can see
+
+		bool stopping = false;
+		if (!_investigateClosely)
+		{
+			float distToSpot = (_searchSpot - owner->GetPhysics()->GetOrigin()).LengthFast();
+			if (owner->CanSeePositionExt(_searchSpot, true, true))
+			{
+				if (distToSpot < INVESTIGATE_SPOT_STOP_DIST) 
+				{
+					stopping = true;
+				}
+			}
+			else if (distToSpot < INVESTIGATE_SPOT_MIN_DIST)
+			{
+				stopping = true;
+			}
+		}
+		if (stopping)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Stop, I can see the point now...\r", _searchSpot);
 
@@ -181,9 +200,9 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			//Look at the point to investigate
 			owner->Event_LookAtPosition(_searchSpot, 2.0f);
 
-			// Wait about half a sec., this sets the lifetime of this task
+			// Wait a bit
 			_exitTime = static_cast<int>(
-				gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f)
+				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 			);
 		}
 	}
@@ -208,7 +227,9 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 	_exitTime = -1;
 
 	// Check if we can see the point from where we are (only for remote inspection)
-	if (!_investigateClosely && owner->CanSeePositionExt(_searchSpot, false, true))
+	if (!_investigateClosely &&
+		((_searchSpot - owner->GetPhysics()->GetOrigin()).LengthFast() < INVESTIGATE_SPOT_STOP_DIST) && // grayman #2640 - reduces AI search freezing
+		owner->CanSeePositionExt(_searchSpot, false, true))
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("I can see the point...\r", _searchSpot);
 
@@ -221,9 +242,9 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 		// In any case, look at the point to investigate
 		owner->Event_LookAtPosition(_searchSpot, 2.0f);
 
-		// Wait about half a sec.
+		// Wait a bit
 		_exitTime = static_cast<int>(
-			gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()*0.2f)
+			gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 		);
 	}
 }
@@ -231,6 +252,13 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 void InvestigateSpotTask::SetInvestigateClosely(bool closely)
 {
 	_investigateClosely = closely;
+}
+
+void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
+{
+	// The action subsystem has finished investigating the spot, set the
+	// boolean back to false, so that the next spot can be chosen
+	owner->GetMemory().hidingSpotInvestigationInProgress = false;
 }
 
 void InvestigateSpotTask::Save(idSaveGame* savefile) const

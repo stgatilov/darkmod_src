@@ -142,6 +142,10 @@ void SearchingState::Init(idAI* owner)
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 {
+/* grayman #2560 - InvestigateSpotTask is the only task this was needed
+   for, and this code has been moved to a new OnFinish() for that task. No longer
+   needed here.
+
 	Memory& memory = owner->GetMemory();
 
 	if (memory.hidingSpotInvestigationInProgress && subSystem == SubsysAction)
@@ -150,6 +154,7 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 		// boolean back to false, so that the next spot can be chosen
 		memory.hidingSpotInvestigationInProgress = false;
 	}
+ */
 }
 
 // Gets called each time the mind is thinking
