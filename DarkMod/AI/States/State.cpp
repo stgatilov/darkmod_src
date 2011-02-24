@@ -2259,6 +2259,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	// grayman #2650 - can we handle doors?
+
+	if (!owner->m_bCanOperateDoors)
+	{
+		return;
+	}
+
 	// grayman #2345 - don't handle this door if we just finished handling it.
 
 	int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
