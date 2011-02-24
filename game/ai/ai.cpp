@@ -549,6 +549,9 @@ idAI::idAI()
 	m_KoAlertDotHoriz = 0;
 	m_KoRot = mat3_identity;
 
+	m_bCanBeGassed = true;		// grayman #2468
+	m_koState = KO_NOT;			// grayman #2604
+
 	m_bCanOperateDoors = false;
 
 	m_lipSyncActive		= false;
@@ -853,6 +856,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_KoAlertDotVert);
 	savefile->WriteFloat(m_KoAlertDotHoriz);
 	savefile->WriteMat3(m_KoRot);
+
+	savefile->WriteBool(m_bCanBeGassed);	// grayman #2468
+	savefile->WriteInt( m_koState );		// grayman #2604
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1246,6 +1252,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_KoAlertDotVert);
 	savefile->ReadFloat(m_KoAlertDotHoriz);
 	savefile->ReadMat3(m_KoRot);
+
+	savefile->ReadBool(m_bCanBeGassed); // grayman #2468
+	savefile->ReadInt( i ); // grayman #2604
+	m_koState = static_cast<koState_t>( i );
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1879,6 +1889,8 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiCanSeeTimer, name, "CanSee");
 
 	m_pathRank = rank; // grayman #2345 - rank for path-finding
+
+	m_bCanBeGassed = !(spawnArgs.GetBool( "gas_immune", "0" )); // grayman #2468
 }
 
 void idAI::InitProjectileInfo()
@@ -9593,7 +9605,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	{
 		// We just got knocked the taff out!
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
-		Knockout(attacker);
+		Event_KO_Knockout(attacker); // grayman #2468
 
 		return true;
 	}
@@ -9663,6 +9675,36 @@ void idAI::KnockoutDebugDraw( void )
 
 /*
 =====================
+idAI::Event_KO_Knockout
+=====================
+*/
+
+void idAI::Event_KO_Knockout( idEntity* inflictor )
+{
+	if (m_bCanBeKnockedOut) // grayman #2468 - new place to test ko immunity
+	{
+		m_koState = KO_BLACKJACK; // grayman #2604
+		Knockout(inflictor);
+	}
+}
+
+/*
+=====================
+idAI::Event_Gas_Knockout
+=====================
+*/
+
+void idAI::Event_Gas_Knockout( idEntity* inflictor )
+{
+	if (m_bCanBeGassed) // grayman #2468 - new place to test gas immunity
+	{
+		m_koState = KO_GAS; // grayman #2604
+		Knockout(inflictor);
+	}
+}
+
+/*
+=====================
 idAI::Knockout
 
 Based on idAI::Killed
@@ -9673,8 +9715,8 @@ void idAI::Knockout( idEntity* inflictor )
 {
 	idAngles ang;
 
-	if( !m_bCanBeKnockedOut )
-		return;
+//	if( !m_bCanBeKnockedOut ) // grayman #2468 - this test has been moved up a level
+//		return;
 
 	if( AI_KNOCKEDOUT || AI_DEAD )
 	{
@@ -9750,7 +9792,19 @@ void idAI::PostKnockOut()
 
 	if ( StartRagdoll() )
 	{
-		StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
+		// grayman #2604 - play "gassed" sound if knocked out by gas
+		switch (m_koState)
+		{
+		case KO_BLACKJACK:
+			StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
+			break;
+		case KO_GAS:
+			StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
+			break;
+		case KO_NOT:
+		default:
+			break;
+		}
 	}
 
 	const char *modelKOd;
@@ -10282,6 +10336,7 @@ void idAI::DropOnRagdoll( void )
 		}
 
 		ent->GetPhysics()->Activate();
+		ent->m_droppedByAI = true; // grayman #1330
 	}
 
 	// also perform some of these same operations on attachments to our head,

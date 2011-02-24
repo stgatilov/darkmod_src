@@ -699,6 +699,8 @@ idEntity::idEntity()
 	health			= 0;
 	maxHealth		= 0;
 
+	m_droppedByAI	= false; // grayman #1330
+
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
@@ -1649,6 +1651,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(m_LightQuotient);
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
 
+	savefile->WriteBool(m_droppedByAI); // grayman #1330
+
 	SaveLOD(savefile);
 
 	// grayman #2341 - don't save previous voice and body shaders and indices,
@@ -1957,6 +1961,8 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadFloat(m_LightQuotient);
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
+
+	savefile->ReadBool(m_droppedByAI); // grayman #1330
 
 	RestoreLOD( savefile );
 

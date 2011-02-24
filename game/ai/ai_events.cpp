@@ -350,11 +350,11 @@ const idEventDef AI_GetAlertLevelOfOtherAI ("getAlertLevelOfOtherAI", "e", 'f');
 */
 const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v');
 
-
 /**
-* This event handles a knockout of the AI (takes the attacker as argument)
+* These events handle a knockout of the AI (takes the attacker as argument)
 **/
-const idEventDef AI_Knockout( "knockout", "E" );
+const idEventDef AI_KO_Knockout( "KO_Knockout", "E" ); // grayman #2468
+const idEventDef AI_Gas_Knockout( "Gas_Knockout", "E" ); // grayman #2468
 
 const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
 
@@ -537,16 +537,12 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_GetObservationPosition,			idAI::Event_GetObservationPosition)
 	EVENT ( AI_LookAtPosition,					idAI::Event_LookAtPosition)
 	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
-
 	EVENT ( AI_GetAlertLevelOfOtherAI,			idAI::Event_GetAlertLevelOfOtherAI)
-
-	EVENT( AI_Knockout,							idAI::Knockout )
+	EVENT ( AI_KO_Knockout,						idAI::Event_KO_Knockout) // grayman #2468
+	EVENT ( AI_Gas_Knockout,					idAI::Event_Gas_Knockout) // grayman #2468
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
-
-	EVENT(AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
-
-	EVENT(AI_HasSeenEvidence,					idAI::Event_HasSeenEvidence)
-
+	EVENT ( AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
+	EVENT ( AI_HasSeenEvidence,					idAI::Event_HasSeenEvidence)
 
 END_CLASS
 

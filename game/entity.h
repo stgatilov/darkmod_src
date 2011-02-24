@@ -398,6 +398,8 @@ public:
 	// The last time the above value has been calculated
 	int						m_LightQuotientLastEvalTime;
 
+	bool					m_droppedByAI; // grayman #1330
+
 	/**
 	* Tels: Contains (sharable, constant) LOD data if non-NULL.
 	*/

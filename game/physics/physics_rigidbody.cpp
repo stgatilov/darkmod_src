@@ -1206,6 +1206,7 @@ void idPhysics_RigidBody::Rest( void )
 	current.i.angularMomentum.Zero();
 	self->BecomeInactive( TH_PHYSICS );
 	self->m_SetInMotionByActor = NULL;
+	self->m_droppedByAI = false; // grayman #1330
 }
 
 /*
@@ -1392,7 +1393,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 
 	// if putting the body to rest
-	if ( dropToFloor ) {
+	if (dropToFloor && !self->m_droppedByAI) // grayman #1330 - only go straight to the floor if an AI didn't drop it
+	{
 		DropToFloorAndRest();
 		current.externalForce.Zero();
 		current.externalTorque.Zero();

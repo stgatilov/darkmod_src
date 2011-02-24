@@ -6301,6 +6301,7 @@ void idPhysics_AF::Rest( void ) {
 
 	self->BecomeInactive( TH_PHYSICS );
 	self->m_SetInMotionByActor = NULL;
+	self->m_droppedByAI = false; // grayman #1330
 }
 
 /*
