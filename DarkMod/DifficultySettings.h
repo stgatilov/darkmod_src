@@ -66,8 +66,11 @@ class DifficultySettings
 	typedef std::multimap<std::string, Setting> SettingsMap;
 	SettingsMap _settings;
 
-	// A linked list for representing the inheritance chain
-	typedef std::list<idStr> InheritanceChain;
+	// The inheritance chain class stored in vector
+	typedef std::vector<std::string> InheritanceChain;
+	// This data structure maps each classname to its inheritance chain
+	typedef std::map<std::string, InheritanceChain> InheritanceChainsMap;
+	InheritanceChainsMap _inheritanceChains;
 
 	// the difficulty level these settings are referring to
 	int _level; 
@@ -106,7 +109,7 @@ private:
 	// greebo: Returns the value of the "inherit" spawnarg for the given classname
 	// This parses the raw declaration text on a char-per-char basis, this is 
 	// necessary because the "inherit" key gets removed by the entityDef parser after loading.
-	idStr GetInheritValue(const idStr& className);
+	std::string GetInheritValue(const std::string& className);
 
 	// Returns the inheritance chain for the given dict
 	InheritanceChain GetInheritanceChain(const idDict& dict);

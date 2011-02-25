@@ -176,6 +176,7 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 void DifficultySettings::Clear()
 {
 	_settings.clear();
+	_inheritanceChains.clear();
 	_level = 0;
 }
 
@@ -260,12 +261,12 @@ void DifficultySettings::ApplySettings(idDict& target)
 	// Second step: apply global settings
 
 	// Get the inheritancechain for the given target dict
-	InheritanceChain inheritanceChain = GetInheritanceChain(target);
+	const InheritanceChain &inheritanceChain = GetInheritanceChain(target);
 
 	// Go through the inheritance chain front to back and apply the settings
-	for (InheritanceChain::iterator c = inheritanceChain.begin(); c != inheritanceChain.end(); ++c)
+	for (InheritanceChain::const_iterator c = inheritanceChain.begin(); c != inheritanceChain.end(); ++c)
 	{
-		std::string className = c->c_str();
+		std::string className = *c;
 
 		// Process the list of default settings that apply to this entity class,
 		// but ignore all keys that have been addressed by the entity-specific settings.
@@ -309,6 +310,15 @@ void DifficultySettings::Save(idSaveGame* savefile)
 		savefile->WriteString(className); // key
 		i->second.Save(savefile); // value
 	}
+	savefile->WriteInt(static_cast<int>(_inheritanceChains.size()));
+	for (InheritanceChainsMap::iterator i = _inheritanceChains.begin(); i != _inheritanceChains.end(); ++i)
+	{	//save the whole map
+		savefile->WriteString(i->first.c_str());
+		const InheritanceChain &chain = i->second;
+		savefile->WriteInt(static_cast<int>(chain.size()));
+		for (InheritanceChain::const_iterator j = chain.begin(); j != chain.end(); j++)
+			savefile->WriteString(j->c_str());
+	}
 	savefile->WriteInt(_level);
 }
 
@@ -331,41 +341,63 @@ void DifficultySettings::Restore(idRestoreGame* savefile)
 		// Now restore the struct itself
 		inserted->second.Restore(savefile);
 	}
+	savefile->ReadInt(num);
+	for (int i = 0; i<num; i++)
+	{	//restore the whole map
+		idStr className;
+		savefile->ReadString(className);
+
+		int k;
+		savefile->ReadInt(k);
+		InheritanceChain chain;
+		for (int j = 0; j<k; j++) {
+			idStr str;
+			savefile->ReadString(str);
+			chain.push_back(std::string(str.c_str()));
+		}
+
+		_inheritanceChains[std::string(className.c_str())] = chain;
+	}
 	savefile->ReadInt(_level);
 }
 
 DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(const idDict& dict)
 {
+	std::string className = dict.GetString("classname");
+
+	// stgatilov: Look the class name up in the chains cache
+	InheritanceChainsMap::iterator it = _inheritanceChains.find(className);
+	if (it != _inheritanceChains.end())
+		return it->second;
+
 	InheritanceChain inheritanceChain;
 
 	// Add the classname itself to the end of the list
-	inheritanceChain.push_back(dict.GetString("classname"));
+	inheritanceChain.push_back(className);
 
 	// greebo: Extract the inherit value from the raw declaration text, 
 	// as the "inherit" key has been removed in the given "dict"
-	for (idStr inherit = GetInheritValue(dict.GetString("classname")); 
-		 !inherit.IsEmpty(); 
-		 inherit = GetInheritValue(inherit))
+	for (std::string inherit = GetInheritValue(className); 
+		!inherit.empty();
+		inherit = GetInheritValue(inherit))
 	{
 		// Has parent, add to list
-		inheritanceChain.push_front(inherit);
+		inheritanceChain.push_back(inherit);
 	}
 
-	/*gameLocal.Printf("Inheritance chain: ");
-	for (InheritanceChain::iterator i = inheritanceChain.begin(); i != inheritanceChain.end(); i++)
-	{
-		gameLocal.Printf("%s - ", (*i).c_str());
-	}*/
+	// stgatilov: reverse the chain so that parents go first
+	std::reverse(inheritanceChain.begin(), inheritanceChain.end());
 
-	// TODO: Cache this chain
+	// stgatilov: save the chain in cache
+	_inheritanceChains[className] = inheritanceChain;
 
 	return inheritanceChain;
 }
 
-idStr DifficultySettings::GetInheritValue(const idStr& className)
+std::string DifficultySettings::GetInheritValue(const std::string& className)
 {
 	// Get the raw declaration, in the parsed entitydefs, all "inherit" keys have been remoed
-	const idDecl* decl = declManager->FindType(DECL_ENTITYDEF, className, false);
+	const idDecl* decl = declManager->FindType(DECL_ENTITYDEF, className.c_str(), false);
 
 	if (decl == NULL)
 	{
@@ -391,7 +423,7 @@ idStr DifficultySettings::GetInheritValue(const idStr& className)
 
 	pos++; // skip "
 
-	idStr inherit;
+	std::string inherit;
 
 	while (buffer[pos] != '"' && pos < buffer.size()) {
 		inherit += buffer[pos];
