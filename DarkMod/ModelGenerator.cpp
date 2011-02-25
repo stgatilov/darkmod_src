@@ -186,7 +186,7 @@ Returns the given (or allocated) model.
 
 ===============
 */
-idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, bool dupData, idRenderModel* hModel, const idVec3 *scale, const bool noshadow) const {
+idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, const char* snapshotName, idRenderModel* hModel, const idVec3 *scale, const bool noshadow) const {
 
 	int numSurfaces;
 	int numVerts, numIndexes;
@@ -296,70 +296,59 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 		// copy the material
 		newSurf.shader = surf->shader;
-		if (dupData)
+		//gameLocal.Warning("Duplicating %i verts and %i indexes.\n", surf->geometry->numVerts, surf->geometry->numIndexes );
+
+		newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
+
+		int nV = 0;		// vertexes
+		int nI = 0;		// indexes
+
+		if (needScale)
 		{
-			//gameLocal.Warning("Duplicating %i verts and %i indexes.\n", surf->geometry->numVerts, surf->geometry->numIndexes );
-
-			newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
-
-			int nV = 0;		// vertexes
-			int nI = 0;		// indexes
-
-			if (needScale)
+			// a direct copy with scaling
+			for (int j = 0; j < surf->geometry->numVerts; j++)
 			{
-				// a direct copy with scaling
-				for (int j = 0; j < surf->geometry->numVerts; j++)
-				{
-					idDrawVert *v = &(newSurf.geometry->verts[nV]);
-					newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
-					v->xyz.MulCW(*scale);
-					v->normal.DivCW(*scale);
-					v->tangents[0].DivCW(*scale);
-					v->tangents[1].DivCW(*scale);
-					v->ScaleToUnitNormal();
-				}
+				idDrawVert *v = &(newSurf.geometry->verts[nV]);
+				newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+				v->xyz.MulCW(*scale);
+				v->normal.DivCW(*scale);
+				v->tangents[0].DivCW(*scale);
+				v->tangents[1].DivCW(*scale);
+				v->ScaleToUnitNormal();
 			}
-			else
-			{
-				// just one direct copy
-				for (int j = 0; j < surf->geometry->numVerts; j++)
-				{
-					newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
-				}
-			}
-
-			// TODO: unroll loop, timing says:
-			// ModelGenerator: dup verts total time 215.91 ms (for each 3.08 ms), dup indexes 65.29 ms (for each 0.93 ms)
-			// copy indexes
-			glIndex_t *dst = newSurf.geometry->indexes;
-			glIndex_t *src = surf->geometry->indexes;
-			int imax = surf->geometry->numIndexes;
-			// we are dealing with triangles, so each tris has 3 indexes
-			assert( (imax % 3) == 0);
-			// unrolled 3 loops into one
-			for (int j = 0; j < imax; j++)
-			{
-				dst[nI ++] = src[j]; j++;
-				dst[nI ++] = src[j]; j++;
-				dst[nI ++] = src[j];
-			}
-
-			// set these so they don't get recalculated in FinishSurfaces():
-	        newSurf.geometry->tangentsCalculated = true;
-	        newSurf.geometry->facePlanesCalculated = true;
-        	newSurf.geometry->generateNormals = false;
-			newSurf.geometry->numVerts = nV;
-			newSurf.geometry->numIndexes = nI;
-			// just copy bounds
-			newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
-			newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
 		}
 		else
 		{
-			// caller needs to make sure that the shared data is not deallocated twice
-			// by calling FreeSharedModelSurfaces() before destroy:
-			newSurf.geometry = surf->geometry;
+			// just one direct copy
+			for (int j = 0; j < surf->geometry->numVerts; j++)
+			{
+				newSurf.geometry->verts[nV++] = surf->geometry->verts[j];
+			}
 		}
+
+		// copy indexes
+		glIndex_t *dst = newSurf.geometry->indexes;
+		glIndex_t *src = surf->geometry->indexes;
+		int imax = surf->geometry->numIndexes;
+		// we are dealing with triangles, so each tris has 3 indexes
+		assert( (imax % 3) == 0);
+		// unrolled 3 loops into one
+		for (int j = 0; j < imax; j++)
+		{
+			dst[nI ++] = src[j]; j++;
+			dst[nI ++] = src[j]; j++;
+			dst[nI ++] = src[j];
+		}
+
+		// set these so they don't get recalculated in FinishSurfaces():
+		newSurf.geometry->tangentsCalculated = true;
+		newSurf.geometry->facePlanesCalculated = true;
+		newSurf.geometry->generateNormals = false;
+		newSurf.geometry->numVerts = nV;
+		newSurf.geometry->numIndexes = nI;
+		// just copy bounds
+		newSurf.geometry->bounds[0] = surf->geometry->bounds[0];
+		newSurf.geometry->bounds[1] = surf->geometry->bounds[1];
 		newSurf.id = 0;
 		hModel->AddSurface( newSurf );
 	}
@@ -1032,34 +1021,6 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 #endif
 
 	return hModel;
-}
-
-/*
-===============
-CModelGenerator::FreeSharedModelData - manipulate memory of a duplicate model so that shared data does not get freed twice
-===============
-*/
-void CModelGenerator::FreeSharedModelData ( const idRenderModel *source ) const
-{
-	const modelSurface_t *surf;
-
-	// get the number of base surfaces (minus decals) on the old model
-	int numSurfaces = source->NumBaseSurfaces();
-
-	// for each surface
-	for (int i = 0; i < numSurfaces; i++)
-	{
-		// get a pointer to a surface
-		surf = source->Surface( i );
-		if (surf)
-		{
-			// null out the geometry with the shared data
-			surf->geometry->numVerts = 0;
-			surf->geometry->verts = NULL;
-			surf->geometry->numIndexes = 0;
-			surf->geometry->indexes = NULL;
-		}
-	}
 }
 
 /*

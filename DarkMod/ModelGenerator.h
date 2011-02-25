@@ -54,7 +54,7 @@ typedef struct {
 // When combining different models (e.g. different LOD stages), every model
 // can have different source surfaces, that map to different target surfaces.
 // For each of these target surfaces we need to track a few information and
-// this struct holds them:
+// this struct holds them.
 
 typedef struct {
 	int					numVerts;
@@ -64,6 +64,7 @@ typedef struct {
 
 /**
 * Tels: Info structure for LOD data, can be shared between many entities.
+* The size of this struct is 192 bytes, which is neatly dividable by 16:
 **/
 struct lod_data_t
 {
@@ -93,14 +94,14 @@ struct lod_data_t
 	idStr				ModelLOD[ LOD_LEVELS ];
 	idStr				SkinLOD[ LOD_LEVELS ];
 
-	/** one bit for each LOD level, telling noshadows (1) or not (0) */
-	int					noshadowsLOD;
-
 	/**
 	* Different LOD models might need different offsets to match
 	* the position of the LOD 0 level.
 	*/
 	idVec3				OffsetLOD[ LOD_LEVELS ];
+
+	/** one bit for each LOD level, telling noshadows (1) or not (0) */
+	int					noshadowsLOD;
 
 	/**
 	* Fade out and fade in range in D3 units.
@@ -180,14 +181,12 @@ public:
 												const idMaterial *shader = NULL, idRenderModel* hModel = NULL) const;
 
 	/**
-	* Copies the surfaces of the source model to a new model. If dupData is true, a full copy will
-	* be made, otherwise just pointers to the surfaces are set. In this case caller needs to make sure
-	* that references to the surfaces are not freed twice by calling FreeSharedModelData() on the
-	* returned model before destroying it. If noshadow = true, will try to eliminate shadow casting
-	* surfaces and also not build a shadow hull.
-	* If target is NULL a new model will be allocated. Returns target or the newly allocated model.
+	* Copies the surfaces of the source model to a new model. If noshadow = true, will
+	* try to eliminate shadow casting surfaces and also not build a shadow hull. If
+	* target is NULL, a new model will be allocated. Returns target or the newly
+	* allocated model.
 	*/
-	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, bool dupData = true, idRenderModel* target = NULL, const idVec3 *scale = NULL, const bool noshadow = false) const;
+	idRenderModel*			DuplicateModel( const idRenderModel* source, const char* snapshotName, idRenderModel* target = NULL, const idVec3 *scale = NULL, const bool noshadow = false) const;
 
 	/**
 	* Returns the maximum number of models that can be combined from this model:
@@ -198,12 +197,6 @@ public:
 	* Given the info CombineModels(), sep. the given model out again.
 	*/
 	//void					RemoveModel( const idRenderModel *source, const model_combineinfo_t *info);
-
-	/**
-	* Manipulate memory of a duplicate of a model so that the shared data does not get
-	* freed twice.
-	*/
-	void					FreeSharedModelData ( const idRenderModel *model ) const;
 
 private:
 
