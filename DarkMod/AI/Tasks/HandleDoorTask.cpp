@@ -1917,6 +1917,12 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 		case EStateApproachingDoor:
 			str = "EStateMovingToFrontPos";
 			break;
+		case EStateMovingToMidPos: // grayman #2345
+			str = "EStateMovingToMidPos";
+			break;
+		case EStateMovingToSafePos: // grayman #2345
+			str = "EStateMovingToSafePos";
+			break;
 		case EStateWaitBeforeOpen:
 			str = "EStateWaitBeforeOpen";
 			break;
@@ -1937,6 +1943,9 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			break;
 		case EStateClosingDoor:
 			str = "EStateClosingDoor";
+			break;
+		default: // grayman #2345
+			str = "";
 			break;
 	}
 	gameRenderWorld->DrawText(str.c_str(), 
