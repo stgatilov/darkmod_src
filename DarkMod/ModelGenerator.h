@@ -120,6 +120,16 @@ struct lod_data_t
 	float				fLODNormalDistance;
 };
 
+/** Describes one entry in the global lod_data_t list, and tracks how
+*	many entities use this data. If the number of users drops to zero,
+*	the data can be freed.
+*/
+struct lod_entry_t
+{
+	int					users;		//!< Number of users of this data
+	lod_data_t			*LODPtr;	//!< The actual data
+};
+
 /** Describes a model stage used at a specific origin. Used internally to figure
 *	out which surface to skip, or where to append it.
 */
@@ -158,9 +168,10 @@ public:
 	void				Shutdown ( void );
 	void				Clear ( void );
 
-	/** Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries
-	*	to find the bakside for this surface, e.g. the surface which was copied and flipped. Returns
-	*	either the surface index number, or -1 for "not twosided or not found":
+	/** Given a rendermodel and a surface index, checks if that surface is two-sided,
+	*   and if, tries to find the bakside for this surface, e.g. the surface which
+	*	was copied and flipped. Returns either the surface index, or -1 for
+	*	"not twosided or not found":
 	*/
 	int					GetBacksideForSurface( const idRenderModel * source, const int surfaceIdx ) const;
 
@@ -198,10 +209,36 @@ public:
 	*/
 	//void					RemoveModel( const idRenderModel *source, const model_combineinfo_t *info);
 
+	/**
+	* Presents the ModelManager with the LOD data for this entity, and returns
+	* a handle with that the entity can later access this data.
+	*/
+	int						RegisterLODData( const lod_data_t &mLOD );
+
+	/**
+	* Unregister the LOD data for this handle (returned by RegisterLODData).
+	* Returns true for success, and false in case of errors.
+	*/
+	bool					UnregisterLODData( const unsigned int handle );
+
+	/**
+	* Get a pointer to the LOD data for this handle.
+	*/
+	const lod_data_t*		GetLODDataPtr( const unsigned int handle ) const;
+
 private:
+
+	void					SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) const;
+	void					RestoreLOD( idRestoreGame *savefile, lod_data_t * m_LOD );
+	bool					CompareLODData( const lod_data_t *mLOD, const lod_data_t *mLOD2 ) const;
 
 	// used to identify textures that are pure shadow casting
 	idStr					m_shadowTexturePrefix;
+
+	/**
+	* A list with (possible shared) LOD data.
+	*/
+	idList<lod_entry_t>		m_LODList;
 };
 
 #endif /* !__DARKMOD_MODELGENERATOR_H__ */

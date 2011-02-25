@@ -47,7 +47,33 @@ CModelGenerator::CModelGenerator
 ===============
 */
 CModelGenerator::CModelGenerator( void ) {
+	m_LODList.Clear();
 
+	gameLocal.Printf("Size of LOD data: %i bytes\n", sizeof(lod_data_t));
+}
+
+/*
+================
+CModelGenerator::SaveLOD
+================
+*/
+void CModelGenerator::SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) const
+{
+	// save shared data
+	savefile->WriteInt( m_LOD->DistCheckInterval );
+	savefile->WriteBool( m_LOD->bDistCheckXYOnly );
+	savefile->WriteInt( m_LOD->noshadowsLOD );
+	savefile->WriteFloat( m_LOD->fLODFadeOutRange );
+	savefile->WriteFloat( m_LOD->fLODFadeInRange );
+	savefile->WriteFloat( m_LOD->fLODNormalDistance );
+
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+		savefile->WriteString( m_LOD->ModelLOD[i] );
+		savefile->WriteString( m_LOD->SkinLOD[i] );
+		savefile->WriteVec3( m_LOD->OffsetLOD[i] );
+		savefile->WriteFloat( m_LOD->DistLODSq[ i ] );
+	}
 }
 
 /*
@@ -56,7 +82,41 @@ CModelGenerator::Save
 ===============
 */
 void CModelGenerator::Save( idSaveGame *savefile ) const {
+	int n = m_LODList.Num();
+	savefile->WriteInt(n);
+	for (int i = 0; i < n; i++)
+	{
+		savefile->WriteInt(m_LODList[i].users);
+		if (m_LODList[i].users > 0)
+		{
+			// Write LOD data
+			SaveLOD( savefile, m_LODList[i].LODPtr );
+		}
+	}
+}
 
+/*
+================
+CModelGenerator::RestoreLOD
+================
+*/
+void CModelGenerator::RestoreLOD( idRestoreGame *savefile, lod_data_t * m_LOD )
+{
+	// restore shared data
+	savefile->ReadInt( m_LOD->DistCheckInterval );
+	savefile->ReadBool( m_LOD->bDistCheckXYOnly );
+	savefile->ReadInt( m_LOD->noshadowsLOD );
+	savefile->ReadFloat( m_LOD->fLODFadeOutRange );
+	savefile->ReadFloat( m_LOD->fLODFadeInRange );
+	savefile->ReadFloat( m_LOD->fLODNormalDistance );
+
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+		savefile->ReadString( m_LOD->ModelLOD[i] );
+		savefile->ReadString( m_LOD->SkinLOD[i] );
+		savefile->ReadVec3( m_LOD->OffsetLOD[i] );
+		savefile->ReadFloat( m_LOD->DistLODSq[ i ] );
+	}
 }
 
 /*
@@ -66,6 +126,26 @@ CModelGenerator::Restore
 */
 void CModelGenerator::Restore( idRestoreGame *savefile ) {
 	m_shadowTexturePrefix = "textures/common/shadow";
+
+	Clear();
+
+	int n;
+	savefile->ReadInt(n);
+	m_LODList.SetNum(n);
+	for (int i = 0; i < n; i++)
+	{
+		savefile->ReadInt(m_LODList[i].users);
+		m_LODList[i].LODPtr = NULL;
+		if (m_LODList[i].users > 0)
+		{
+			// Read LOD data
+			if ((m_LODList[i].LODPtr = new lod_data_t) == NULL)
+			{
+				gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", sizeof(lod_data_t));
+			}
+			RestoreLOD( savefile, m_LODList[i].LODPtr );
+		}
+	}
 }
 
 /*
@@ -83,6 +163,17 @@ CModelGenerator::Clear
 ===============
 */
 void CModelGenerator::Clear( void ) {
+
+	int n = m_LODList.Num();
+	for (int i = 0; i < n; i++)
+	{
+		if (m_LODList[i].LODPtr)
+		{
+			delete m_LODList[i].LODPtr;
+			m_LODList[i].LODPtr = NULL;
+		}
+	}
+	m_LODList.Clear();
 }
 
 /*
@@ -91,6 +182,141 @@ CModelGenerator::Shutdown
 ===============
 */
 void CModelGenerator::Shutdown( void ) {
+	Clear();
+}
+
+/*
+* Compares two LOD structs and returns true if their contents are equal.
+*/
+bool CModelGenerator::CompareLODData( const lod_data_t *mLOD, const lod_data_t *mLOD2 ) const {
+
+	if (!mLOD || !mLOD2)
+	{
+		return false;
+	}
+	if ( (mLOD->DistCheckInterval	!= mLOD2->DistCheckInterval) ||
+		 (mLOD->bDistCheckXYOnly	!= mLOD2->bDistCheckXYOnly) ||
+		 (mLOD->noshadowsLOD		!= mLOD2->noshadowsLOD) ||
+		 (mLOD->fLODFadeOutRange	!= mLOD2->fLODFadeOutRange) ||
+		 (mLOD->fLODFadeInRange		!= mLOD2->fLODFadeInRange) ||
+		 (mLOD->fLODNormalDistance	!= mLOD2->fLODNormalDistance) 
+	   )
+	{
+		// something is not equal
+		return false;
+	}
+
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+		if ( (mLOD->ModelLOD[i]		!= mLOD2->ModelLOD[i]) ||
+			 (mLOD->SkinLOD[i]		!= mLOD2->SkinLOD[i]) ||
+			 (mLOD->OffsetLOD[i]	!= mLOD2->OffsetLOD[i]) ||
+			 (mLOD->DistLODSq[i]	!= mLOD2->DistLODSq[i])
+		   )
+		{
+			// something is not equal
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/*
+* Presents the ModelManager with the LOD data for this entity, and returns
+* a handle with that the entity can later access this data.
+*/
+int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
+
+	int n = m_LODList.Num();
+	int smallestFree = n;						// default is no free entries at all
+	// compare to each of our own used entries
+	for (int i = 0; i < n; i++)
+	{
+		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
+		{
+			if (CompareLODData( m_LODList[i].LODPtr, &mLOD ))
+			{
+				// found an equal entry
+				m_LODList[i].users ++;
+				// return the index as handle
+				return i;
+			}
+		}
+		else
+		{
+			// remember this free entry if it is the smallest free one
+			if (i < smallestFree) { smallestFree = i; }
+		}
+	}
+
+	// no equal entry, add a new one at position smallestFree
+	m_LODList.AssureSize( smallestFree );
+	m_LODList[smallestFree].users = 1;
+	m_LODList[smallestFree].LODPtr = new lod_data_t;
+
+	if (m_LODList[smallestFree].LODPtr == NULL)
+	{
+		gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", sizeof(lod_data_t));
+	}
+	// copy data
+	lod_data_t *l = m_LODList[smallestFree].LODPtr;
+  	l->DistCheckInterval		= mLOD.DistCheckInterval;
+  	l->bDistCheckXYOnly			= mLOD.bDistCheckXYOnly;
+	l->fLODFadeOutRange			= mLOD.fLODFadeOutRange;
+	l->fLODFadeInRange			= mLOD.fLODFadeInRange;
+	l->fLODNormalDistance		= mLOD.fLODNormalDistance;
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+		l->ModelLOD[i] = mLOD.ModelLOD[i];
+		l->SkinLOD[i] = mLOD.SkinLOD[i];
+		l->OffsetLOD[i] = mLOD.OffsetLOD[i];
+		l->DistLODSq[i] = mLOD.DistLODSq[i];
+	}
+	return smallestFree;
+}
+
+/*
+* Unregister the LOD data for this handle (returned by RegisterLODData).
+* Returns 0 for success, and -1 for "not found".
+*/
+bool CModelGenerator::UnregisterLODData( const unsigned int handle ) {
+
+	int n = m_LODList.Num();
+
+	if (handle > (unsigned int)n)
+	{
+		// handle out of range
+		gameLocal.Warning("ModelGenerator::UnregisterLODData: Handle %i out of range.", handle);
+		return false;
+	}
+
+	if (m_LODList[handle].users <= 0)
+	{
+		// not registered
+		gameLocal.Warning("ModelGenerator::UnregisterLODData: LOD data %i has no users.", handle);
+		return false;
+	}
+
+	// decrement user count
+	m_LODList[handle].users --;
+	
+	if (m_LODList[handle].users == 0)
+	{
+		// free memory
+		delete m_LODList[handle].LODPtr;
+		m_LODList[handle].LODPtr = NULL;
+	}
+
+	return true;
+}
+
+/*
+* Get a pointer to the LOD data for this handle.
+*/
+const lod_data_t*		CModelGenerator::GetLODDataPtr( const unsigned int handle ) const {
+
+	return NULL;
 }
 
 /* Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries
