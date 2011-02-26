@@ -767,7 +767,7 @@ void Packager::CreatePackage()
 
 	unsigned numHardwareThreads = boost::thread::hardware_concurrency();
 
-	if (numHardwareThreads == 0) 
+	if (numHardwareThreads == 0 || _options.IsSet("use-singlethread-compression")) 
 	{
 		numHardwareThreads = 1;
 	}
@@ -781,46 +781,62 @@ void Packager::CreatePackage()
 	// Keep pushing threads until we've reached the end of the list
 	while (i != _package.end())
 	{
-		// Go through each thread and find a free one
-		for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
+		if (numHardwareThreads > 1)
 		{
-			if (threads[threadNum] == NULL || threads[threadNum]->done())
+			// Go through each thread and find a free one
+			for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
 			{
-				// Allocate a new thread using the package being pointed at
-				threads[threadNum].reset(new ExceptionSafeThread(boost::bind(&Packager::ProcessPackageElement, this, i)));
+				if (threads[threadNum] == NULL || threads[threadNum]->done())
+				{
+					// Allocate a new thread using the package being pointed at
+					threads[threadNum].reset(new ExceptionSafeThread(boost::bind(&Packager::ProcessPackageElement, this, i)));
 
-				// Next candidate
-				++i;
+					// Next candidate
+					++i;
 
-				break;
+					break;
+				}
 			}
-		}
 
-		// Sleep 50 msec before attempting to create a new thread
-		Util::Wait(50);
+			// Sleep 50 msec before attempting to create a new thread
+			Util::Wait(50);
+		}
+		else
+		{
+			// Single-thread mode
+			ProcessPackageElement(i);
+			++i;
+		}
 	}
 
-	// No more unassigned packages, wait till all threads are done
-	bool stillProcessing = true;
-
-	while (stillProcessing)
+	if (numHardwareThreads > 1)
 	{
-		stillProcessing = false;
+		// No more unassigned packages, wait till all threads are done
+		bool stillProcessing = true;
 
-		// As long as we've still one processing thread, set the bool back to true
-		for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
+		while (stillProcessing)
 		{
-			if (threads[threadNum] != NULL && !threads[threadNum]->done())
+			stillProcessing = false;
+
+			// As long as we've still one processing thread, set the bool back to true
+			for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
 			{
-				stillProcessing = true;
-				break;
+				if (threads[threadNum] != NULL && !threads[threadNum]->done())
+				{
+					stillProcessing = true;
+					break;
+				}
 			}
+
+			Util::Wait(50);
 		}
 
-		Util::Wait(50);
+		TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
 	}
-
-	TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
+	else
+	{
+		TraceLog::WriteLine(LOG_STANDARD, "Done.");
+	}
 }
 
 void Packager::CreateCrcInfoFile()

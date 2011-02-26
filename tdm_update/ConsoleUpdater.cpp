@@ -9,6 +9,8 @@
 
 #include "ConsoleUpdater.h"
 
+#include "Util.h"
+
 namespace tdm
 {
 
@@ -374,6 +376,10 @@ void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 		// Download progress
 		if (!_info.file.empty() && !info.file.empty() && info.file != _info.file)
 		{
+			// New file, finish the current download
+			_info.progressFraction = 1.0f;
+			PrintProgress();
+
 			// Add a line break when a new file starts
 			TraceLog::WriteLine(LOG_PROGRESS, "");
 

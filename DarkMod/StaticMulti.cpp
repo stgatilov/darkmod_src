@@ -251,6 +251,9 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 		// TODO: nec.?
 		physics.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
 	}
+#ifdef M_DEBUG
+			gameLocal.Printf("%s: SetLODData done.\n", GetName() );
+#endif
 }
 
 /*
@@ -311,6 +314,17 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 #ifdef M_DEBUG
 		gameLocal.Printf("Has %i visible models.\n", m_iVisibleModels);
 #endif
+	
+	if (m_iVisibleModels == 0)
+	{
+		// no visible models, do not update rendermodel (this would crash),
+		// instead just hide ourselves
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
+#endif
+		if (!fl.hidden) { Hide(); }
+		return false;
+	}
 
 	// compute a list of rendermodels
 	idList< const idRenderModel*> LODs;
@@ -394,7 +408,11 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 #ifdef M_DEBUG
 			gameLocal.Printf("StaticMulti %s: Updating existing render model.\n", GetName());
 #endif
-		// re-use the already existing object
+		if (!renderEntity.hModel)
+		{
+			renderEntity.hModel = renderModelManager->AllocModel();
+		}
+		// and now re-use the already existing object
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
@@ -419,30 +437,17 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
 
-	// now show or hide ourselves
-	if (m_iVisibleModels == 0)
+	// now show ourselves
+#ifdef M_DEBUG
+	gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
+#endif
+	if (fl.hidden)
 	{
+		Show();
 #ifdef M_DEBUG
-		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
+		gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
 #endif
-		if (!fl.hidden) { Hide(); }
-		return true;
 	}
-	else
-	{
-		// show again
-#ifdef M_DEBUG
-		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
-#endif
-		if (fl.hidden)
-		{
-			Show();
-#ifdef M_DEBUG
-			gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
-#endif
-		}
-	}
-
 
 #ifdef M_TIMINGS
 	timer_total.Stop();

@@ -47,14 +47,25 @@ if g_os == 'MacOSX':
 		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libapr-1.dylib'),
 	])
 else:
-	local_env.Append(LIBS = [
-		File('#/../../linux/boost/lib/libboost_filesystem.a'),
-		File('#/../../linux/boost/lib/libboost_program_options.a'),
-		File('#/../../linux/boost/lib/libboost_thread.a'),
-		File('#/../../linux/boost/lib/libboost_regex.a'),
-		File('#/../../linux/boost/lib/libboost_system.a'),
-		File('#/../../linux/libcurl/libcurl.a')
-	])
+	# Linux
+	if LINUX_TARGET_ARCH == 'i386':
+		local_env.Append(LIBS = [
+			File('#/../../linux/boost/lib/libboost_filesystem.a'),
+			File('#/../../linux/boost/lib/libboost_program_options.a'),
+			File('#/../../linux/boost/lib/libboost_thread.a'),
+			File('#/../../linux/boost/lib/libboost_regex.a'),
+			File('#/../../linux/boost/lib/libboost_system.a'),
+			File('#/../../linux/libcurl/libcurl.a')
+		])
+	elif LINUX_TARGET_ARCH == 'debian50-amd64':
+		local_env.Append(LIBS = [
+			File('#/../../linux/boost/lib.debian50-amd64/libboost_filesystem.a'),
+			File('#/../../linux/boost/lib.debian50-amd64/libboost_program_options.a'),
+			File('#/../../linux/boost/lib.debian50-amd64/libboost_thread.a'),
+			File('#/../../linux/boost/lib.debian50-amd64/libboost_regex.a'),
+			File('#/../../linux/boost/lib.debian50-amd64/libboost_system.a'),
+			File('#/../../linux/libcurl/libcurl.debian50-amd64.a')
+		])
 
 # Build the dependencies
 minizip_list = SConscript( '../SConscript.minizip' )
@@ -65,7 +76,10 @@ executable_name = 'tdm_package'
 if g_os == 'MacOSX':
 	executable_name = executable_name + '.macosx'
 else:
-	executable_name = executable_name + '.linux'
+	if LINUX_TARGET_ARCH == 'i386':
+		executable_name = executable_name + '.linux'
+	elif LINUX_TARGET_ARCH == 'debian50-amd64':
+		executable_name = executable_name + '.linux.debian50-amd64'
 
 ret = local_env.Program(executable_name, tdm_package_list + minizip_list + libtdm_update_list)
 Return( 'ret' )

@@ -908,6 +908,8 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 
 void UpdaterDialog::OnStartDifferentialUpdate(const DifferentialUpdateInfo& info)
 {
+	_controller->DontPauseAt(DownloadDifferentialUpdate);
+
 	std::string sizeStr = Util::GetHumanReadableBytes(info.filesize);
 	std::string text = (boost::format("Downloading update package for version %s to %s (size: %s)...") % 
 		info.fromVersion % info.toVersion % sizeStr).str();

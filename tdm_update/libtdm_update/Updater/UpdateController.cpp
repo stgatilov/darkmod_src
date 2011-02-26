@@ -40,6 +40,11 @@ void UpdateController::PauseAt(UpdateStep step)
 	_interruptionPoints.insert(step);
 }
 
+void UpdateController::DontPauseAt(UpdateStep step)
+{
+	_interruptionPoints.erase(step);
+}
+
 void UpdateController::StartOrContinue()
 {
 	assert(_workerThread == NULL); // debug builds take this seriously
