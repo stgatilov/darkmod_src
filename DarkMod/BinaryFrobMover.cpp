@@ -267,36 +267,71 @@ void CBinaryFrobMover::PostSpawn()
 	idAngles partialAngles(0,0,0);
 
 	// Check if the door should spawn as "open"
-	if (spawnArgs.GetBool("open"))
+	if (m_Open)
 	{
-		if (!spawnArgs.GetAngles("start_rotate", "0 0 0", partialAngles) || partialAngles.Compare(idAngles(0,0,0)))
-		{
-			// If no partial angles are defined in the spawnargs, assume fully open door
-			partialAngles = m_OpenAngles - m_ClosedAngles;
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] shall be open at spawn time, checking start_* spawnargs.\r", name.c_str());
 
-			if (!partialAngles.Compare(idAngles(0,0,0)))
+		// greebo: Load values from spawnarg, we might need to adjust them later on
+		partialAngles = spawnArgs.GetAngles("start_rotate", "0 0 0");
+		m_StartPos = spawnArgs.GetVector("start_position", "0 0 0");
+
+		bool hasPartialRotation = !partialAngles.Compare(idAngles(0,0,0));
+		bool hasPartialTranslation = !m_StartPos.Compare(idVec3(0,0,0));
+
+		if (hasPartialRotation && !m_Translation.Compare(idVec3(0,0,0)))
+		{
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] has partial angles set, calculating partial translation automatically.\r", name.c_str());
+
+			// Sliding door has partial angles set, calculate the partial translation automatically
+			idRotation maxRot = (m_OpenAngles - m_ClosedAngles).Normalize360().ToRotation();
+
+			if (maxRot.GetAngle() > 0)
 			{
-				// greebo: In this case, first_frob_open makes no sense, override the settings
-				m_bIntentOpen = false;
-				m_bInterrupted = false;
-				m_StateChange = false;
+				idRotation partialRot = (partialAngles - m_ClosedAngles).Normalize360().ToRotation();
+
+				float fraction = partialRot.GetAngle() / maxRot.GetAngle();
+
+				m_StartPos = m_Translation * fraction;
+			}
+			else
+			{
+				gameLocal.Warning("Mover '%s' has start_rotate set, but rotation angles are zero.\r", name.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has start_rotate set, but rotation angles are zero.\r", name.c_str());
 			}
 		}
-
-		// Original starting position of the door in case it is a sliding door.
-		// Add the initial position offset in case the mapper makes the door start out inbetween states
-		if (!spawnArgs.GetVector("start_position", "0 0 0", m_StartPos) || m_StartPos.Compare(idVec3(0,0,0)))
+		else if (hasPartialTranslation && !m_Rotate.Compare(idAngles(0,0,0)))
 		{
-			// Assume fully translated door, if no start_position is set
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] has partial translation set, calculating partial rotation automatically.\r", name.c_str());
+
+			// Rotating door has partial translation set, calculate the partial rotation automatically
+			float maxTrans = (m_OpenOrigin - m_ClosedOrigin).Length();
+			float partialTrans = m_StartPos.Length();
+
+			if (maxTrans > 0)
+			{
+				float fraction = partialTrans / maxTrans;
+
+				partialAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles) * fraction;
+			}
+			else
+			{
+				gameLocal.Warning("Mover '%s' has start_position set, but translation is zero.\r", name.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has partial translation set, but translation is zero?\r", name.c_str());
+			}
+		}
+		else if (!hasPartialRotation && !hasPartialTranslation)
+		{
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s]: has open='1' but neither partial translation nor rotation are set, assuming fully opened mover.\r", name.c_str());
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s]: Resetting first_frob_open and interrupted flags.\r", name.c_str());
+			
+			// Neither start_position nor start_rotate set, assume fully opened door
+			partialAngles = m_OpenAngles - m_ClosedAngles;
 			m_StartPos = m_OpenOrigin - m_ClosedOrigin;
 
-			if (!m_StartPos.Compare(idVec3(0,0,0)))
-			{
-				// greebo: In this case, first_frob_open makes no sense, override the settings
-				m_bIntentOpen = false;
-				m_bInterrupted = false;
-				m_StateChange = false;
-			}
+			// greebo: In this case, first_frob_open makes no sense, override the settings
+			m_bIntentOpen = false;
+			m_bInterrupted = false;
+			m_StateChange = false; 
 		}
 	}
 
