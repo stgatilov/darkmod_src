@@ -121,7 +121,6 @@ idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTE
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
 
 idCVar cv_tdm_default_relations_def( "tdm_default_relations_def", "atdm:team_relations_default", CVAR_GAME | CVAR_ARCHIVE, "The name of the entityDef holding the TDM default team relationships." );
-idCVar cv_tdm_mapName( "tdm_mapName", "", CVAR_GUI, "(internal) The map which is about to be started by the GUI." );
 idCVar cv_tdm_fm_path( "tdm_fm_path", "fms/", CVAR_GUI, "(internal) The path where the fan mission packages are stored.");
 idCVar cv_tdm_fm_desc_file( "tdm_fm_desc_file", "darkmod.txt", CVAR_GUI, "(internal) The description file name of FM packages.");
 idCVar cv_tdm_fm_notes_file( "tdm_fm_notes_file", "readme.txt", CVAR_GUI, "(internal) The readme file name of FM packages.");

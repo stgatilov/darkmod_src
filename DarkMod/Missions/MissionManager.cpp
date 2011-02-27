@@ -572,13 +572,16 @@ void CMissionManager::InitStartingMap()
 		// We have a startingmap
 		_curStartingMap = buffer;
 		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
-
-		cv_tdm_mapName.SetString(_curStartingMap);
 	}
 	else
 	{
 		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), GetCurrentMissionName().c_str());
 	}
+}
+
+const idStr& CMissionManager::GetCurrentStartingMap() const
+{
+	return _curStartingMap;
 }
 
 CMissionManager::InstallResult CMissionManager::InstallMission(int index)

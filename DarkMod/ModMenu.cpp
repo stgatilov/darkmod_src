@@ -230,7 +230,7 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 void CModMenu::DisplayBriefingPage(idUserInterface *gui)
 {
 	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
-	idStr briefingData = idStr("maps/") + cv_tdm_mapName.GetString() + "/mission_briefing";
+	idStr briefingData = idStr("maps/") + gameLocal.m_MissionManager->GetCurrentStartingMap() + "/mission_briefing";
 
 	gameLocal.Printf("DisplayBriefingPage: briefingData is %s\n", briefingData.c_str());
 

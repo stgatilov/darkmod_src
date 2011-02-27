@@ -2495,7 +2495,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		int objStartXPos = -1;
 
 		// Let the GUI know which map to load
-		gui->SetStateString("mapStartCmd", va("exec 'map %s'", cv_tdm_mapName.GetString()));
+		gui->SetStateString("mapStartCmd", va("exec 'map %s'", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str()));
 
 		if (!gui->GetStateBool("ingame"))
 		{
@@ -2504,7 +2504,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			Clear();
 
 			// Get the starting map file name
-			idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
+			idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 
 			// Ensure that the map is loaded
 			idMapFile* map = LoadMap(startingMapfilename);
@@ -2587,7 +2587,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// reload and redisplay objectives
 		m_Objectives.Clear();
 
-		idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
+		idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 
 		// Ensure that the starting map is loaded
 		LoadMap(startingMapfilename);
