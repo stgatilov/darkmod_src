@@ -33,7 +33,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndProp.h"
 #include "Relations.h"
 #include "shop.h"
-#include "DifficultyMenu.h"
 #include "ModMenu.h"
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"

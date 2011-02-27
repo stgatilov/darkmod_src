@@ -511,19 +511,19 @@
 				>
 			</File>
 			<File
-				RelativePath="game\entity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="game\entity.h"
-				>
-			</File>
-			<File
 				RelativePath="game\emitter.cpp"
 				>
 			</File>
 			<File
 				RelativePath="game\emitter.h"
+				>
+			</File>
+			<File
+				RelativePath="game\entity.cpp"
+				>
+			</File>
+			<File
+				RelativePath="game\entity.h"
 				>
 			</File>
 			<File
@@ -1863,14 +1863,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\DifficultyManager.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\DifficultyMenu.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\DifficultyMenu.h"
 					>
 				</File>
 				<File

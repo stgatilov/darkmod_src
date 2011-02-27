@@ -125,7 +125,6 @@ darkmodHidingSpotTree.cpp \
 darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \
-DifficultyMenu.cpp \
 DifficultyManager.cpp \
 DifficultySettings.cpp \
 DownloadMenu.cpp \
