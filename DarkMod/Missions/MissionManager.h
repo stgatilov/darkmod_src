@@ -184,6 +184,10 @@ public:
 	// This initialises the list of available missions
 	void Init();
 
+	// Save/Restore data
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
+
 	// Should be called when the game is shutting down
 	void Shutdown();
 

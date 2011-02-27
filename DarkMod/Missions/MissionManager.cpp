@@ -54,6 +54,16 @@ void CMissionManager::Init()
 	InitStartingMap();
 }
 
+void CMissionManager::Save(idSaveGame* savefile) const
+{
+	
+}
+
+void CMissionManager::Restore(idRestoreGame* savefile)
+{
+
+}
+
 void CMissionManager::Shutdown()
 {
 	_missionDB->Save();

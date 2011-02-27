@@ -830,6 +830,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_RelationsManager->Save(&savegame);
 	m_Shop->Save(&savegame);
 	LAS.Save(&savegame);
+	m_MissionManager->Save(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Save(&savegame);
@@ -1837,6 +1838,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_RelationsManager->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
+	m_MissionManager->Restore(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Restore(&savegame);
