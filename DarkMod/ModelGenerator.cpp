@@ -49,7 +49,7 @@ CModelGenerator::CModelGenerator
 CModelGenerator::CModelGenerator( void ) {
 	m_LODList.Clear();
 
-	gameLocal.Printf("Size of LOD data: %i bytes\n", sizeof(lod_data_t));
+//	gameLocal.Printf("Size of LOD data struct: %i bytes\n", sizeof(lod_data_t));
 }
 
 /*
@@ -72,7 +72,7 @@ void CModelGenerator::SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) 
 		savefile->WriteString( m_LOD->ModelLOD[i] );
 		savefile->WriteString( m_LOD->SkinLOD[i] );
 		savefile->WriteVec3( m_LOD->OffsetLOD[i] );
-		savefile->WriteFloat( m_LOD->DistLODSq[ i ] );
+		savefile->WriteFloat( m_LOD->DistLODSq[i] );
 	}
 }
 
@@ -115,7 +115,7 @@ void CModelGenerator::RestoreLOD( idRestoreGame *savefile, lod_data_t * m_LOD )
 		savefile->ReadString( m_LOD->ModelLOD[i] );
 		savefile->ReadString( m_LOD->SkinLOD[i] );
 		savefile->ReadVec3( m_LOD->OffsetLOD[i] );
-		savefile->ReadFloat( m_LOD->DistLODSq[ i ] );
+		savefile->ReadFloat( m_LOD->DistLODSq[i] );
 	}
 }
 
@@ -163,6 +163,8 @@ CModelGenerator::Clear
 ===============
 */
 void CModelGenerator::Clear( void ) {
+
+	Print();
 
 	int n = m_LODList.Num();
 	for (int i = 0; i < n; i++)
@@ -273,6 +275,12 @@ int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
 		l->OffsetLOD[i] = mLOD.OffsetLOD[i];
 		l->DistLODSq[i] = mLOD.DistLODSq[i];
 	}
+	
+#ifdef M_DEBUG
+	// report memory usage
+	Print();
+#endif
+
 	return smallestFree;
 }
 
@@ -317,6 +325,31 @@ bool CModelGenerator::UnregisterLODData( const unsigned int handle ) {
 const lod_data_t*		CModelGenerator::GetLODDataPtr( const unsigned int handle ) const {
 
 	return NULL;
+}
+
+/*
+* Print memory usage.
+*/
+void CModelGenerator::Print( void ) const {
+
+	long memory = m_LODList.MemoryUsed();
+
+	int n = m_LODList.Num();
+	for (int i = 0; i < n; i++)
+	{
+		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
+		{
+			// the struct itself
+			memory += sizeof(lod_data_t);
+			lod_data_t *l = m_LODList[i].LODPtr;
+			for (int i = 0; i < LOD_LEVELS; i++)
+			{
+				memory += l->ModelLOD[i].Length() + 1;
+				memory += l->SkinLOD[i].Length() + 1;
+			}
+		}
+	}
+	gameLocal.Printf("ModelGenerator memory usage: %i LOD entries using %d bytes.\n", n, memory);
 }
 
 /* Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries

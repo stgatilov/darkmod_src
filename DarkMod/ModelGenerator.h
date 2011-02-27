@@ -226,6 +226,11 @@ public:
 	*/
 	const lod_data_t*		GetLODDataPtr( const unsigned int handle ) const;
 
+	/**
+	* Print memory usage info.
+    */
+	void					Print( void ) const;
+
 private:
 
 	void					SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) const;
