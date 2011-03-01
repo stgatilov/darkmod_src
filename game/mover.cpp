@@ -3028,7 +3028,9 @@ END_CLASS
 idRotater::idRotater
 ===============
 */
-idRotater::idRotater( void ) {
+idRotater::idRotater( void ) :
+	nextTriggerDirectionIsForward(true)
+{
 	activatedBy = this;
 }
 
@@ -3061,8 +3063,10 @@ void idRotater::Spawn( void )
 idRotater::Save
 ===============
 */
-void idRotater::Save( idSaveGame *savefile ) const {
+void idRotater::Save( idSaveGame *savefile ) const
+{
 	activatedBy.Save( savefile );
+	savefile->WriteBool(nextTriggerDirectionIsForward);
 }
 
 /*
@@ -3070,8 +3074,10 @@ void idRotater::Save( idSaveGame *savefile ) const {
 idRotater::Restore
 ===============
 */
-void idRotater::Restore( idRestoreGame *savefile ) {
+void idRotater::Restore( idRestoreGame *savefile )
+{
 	activatedBy.Restore( savefile );
+	savefile->ReadBool(nextTriggerDirectionIsForward);
 }
 
 /*
@@ -3083,11 +3089,19 @@ void idRotater::Event_Activate( idEntity *activator )
 {
 	activatedBy = activator;
 
-	// greebo: Invert the "rotate" spawnarg
-	spawnArgs.Set("rotate", spawnArgs.GetBool("rotate") ? "0" : "1");
+	bool isRotating = spawnArgs.GetBool("rotate");
+
+	// greebo: If rotate direction inversion is activated, toggle the boolean, else leave it alone
+	if (!isRotating && spawnArgs.GetBool("invert_on_trigger", "0"))
+	{
+		nextTriggerDirectionIsForward = !nextTriggerDirectionIsForward;
+	}
+
+	// greebo: Invert the "rotate" spawnarg, this toggles the rotation itself
+	spawnArgs.Set("rotate", isRotating ? "0" : "1");
 
 	// Start or stop the rotation, based on the spawnargs (forward direction)
-	SetRotationFromSpawnargs(true);
+	SetRotationFromSpawnargs(nextTriggerDirectionIsForward);
 }
 
 void idRotater::SetRotationFromSpawnargs(bool forward)
