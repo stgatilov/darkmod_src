@@ -3083,13 +3083,8 @@ void idRotater::Event_Activate( idEntity *activator )
 {
 	activatedBy = activator;
 
-	// Tels: If "invert_on_trigger" is true (default is "1"), then
-	// rotate the direction on each trigger:
-	if ( spawnArgs.GetBool("invert_on_trigger", "1") )
-	{
-		// greebo: Invert the "rotate" spawnarg
-		spawnArgs.Set("rotate", spawnArgs.GetBool("rotate") ? "0" : "1");
-	}
+	// greebo: Invert the "rotate" spawnarg
+	spawnArgs.Set("rotate", spawnArgs.GetBool("rotate") ? "0" : "1");
 
 	// Start or stop the rotation, based on the spawnargs (forward direction)
 	SetRotationFromSpawnargs(true);
