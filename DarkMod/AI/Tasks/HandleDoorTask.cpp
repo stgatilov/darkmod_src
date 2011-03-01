@@ -716,7 +716,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{	
 							DoorInTheWay(owner, frobDoor);
 							_doorHandlingState = EStateMovingToBackPos;
-
 						}
 						else
 						{
@@ -725,7 +724,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								// TODO: position not reachable, need a better one
 							}
 							_doorHandlingState = EStateMovingToFrontPos;
-
 						}
 					}
 					else if (owner->GetMoveStatus() != MOVE_STATUS_WAITING)
@@ -826,13 +824,16 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 					else if (gameLocal.time >= _waitEndTime)
+					// grayman #720 - need the AI to reach for the door
 					{
-						if (!OpenDoor())
-						{
-							return true;
-						}
+						// if (!OpenDoor())
+						// {
+						//		return true;
+						// }
+						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						_doorHandlingState = EStateStartOpen;
+						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 					}
-						
 				}
 				else
 				{
@@ -881,7 +882,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					_doorHandlingState = EStateMovingToBackPos;
 				}
 				break;
-
 
 			case EStateOpeningDoor:
 				// check blocked
@@ -1019,10 +1019,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				else if (frobDoor->WasInterrupted() && !FitsThrough())
+				else
 				{
+					if (frobDoor->WasInterrupted() && !FitsThrough())
+					{
 					// end this, task, it will be reinitialized when needed
 					return true;
+					}
 				}
 				
 				// reached mid position
@@ -1069,10 +1072,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				else if (frobDoor->WasInterrupted() && !FitsThrough())
+				else
 				{
-					// end this task, it will be reinitialized when needed
-					return true;
+					if (frobDoor->WasInterrupted() && !FitsThrough())
+					{
+						// end this task, it will be reinitialized when needed
+						return true;
+					}
 				}
 
 				if (owner->AI_MOVE_DONE)
@@ -1469,6 +1475,12 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 	return towardPos;
 }
 
+// grayman #720 - the previous FitsThrough() tried to fit an AI through at an angle
+// which required taking wall thickness into account, but it didn't. This caused
+// false positives which led to AI getting stuck trying to get through a door they
+// were told they could fit through.
+
+/*
 bool HandleDoorTask::FitsThrough()
 {
 	// this calculates the gap (depending on the size of the door and the opening angle)
@@ -1493,6 +1505,39 @@ bool HandleDoorTask::FitsThrough()
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = 2 * SQUARE_ROOT_OF_2 * bounds[1][0] + 10;
+
+	return (delta >= size);
+}
+*/
+
+// grayman #720 - this replacement FitsThrough() tries to fit the AI through
+// from a head-on direction, which doesn't care about wall thickness. Doors
+// need to be more open for the AI to fit through, but it no longer gives
+// false positives.
+
+bool HandleDoorTask::FitsThrough()
+{
+	// this calculates the gap (depending on the size of the door and the opening angle)
+	// and checks if it is large enough for the AI to fit through it.
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
+
+	idAngles tempAngle;
+	idPhysics_Parametric* physics = frobDoor->GetMoverPhysics();
+	physics->GetLocalAngles(tempAngle);
+
+	const idVec3& closedPos = frobDoor->GetClosedPos();
+	idVec3 dir = closedPos;
+	dir.z = 0;
+	float dist = dir.LengthFast();
+
+	idAngles alpha = frobDoor->GetClosedAngles() - tempAngle;
+	float absAlpha = idMath::Fabs(alpha.yaw);
+	float delta = dist*(1.0 - idMath::Fabs(idMath::Cos(DEG2RAD(absAlpha))));
+
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+	float size = 2*bounds[1][0] + 8;
 
 	return (delta >= size);
 }
