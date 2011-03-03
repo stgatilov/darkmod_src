@@ -77,6 +77,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_bFineControlStarting = false;
 	m_closedBox = box_zero; // grayman #2345 - holds closed position
 	m_closedBox.Clear();	// grayman #2345
+	m_registeredAI.Clear();	// grayman #1145
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
@@ -144,6 +145,13 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_LockOnClose);
 	savefile->WriteBool(m_bFineControlStarting);
 	savefile->WriteBox(m_closedBox); // grayman #2345
+	
+	// grayman #1145 - registered AI for a locked door
+	savefile->WriteInt(m_registeredAI.Num());
+	for (int i = 0 ; i < m_registeredAI.Num() ; i++ )
+	{
+		m_registeredAI[i].Save(savefile);
+	}
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -189,6 +197,16 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_LockOnClose);
 	savefile->ReadBool(m_bFineControlStarting);
 	savefile->ReadBox(m_closedBox); // grayman #2345
+
+	// grayman #1145 - registered AI for a locked door
+	m_registeredAI.Clear();
+	int num;
+	savefile->ReadInt(num);
+	m_registeredAI.SetNum(num);
+	for (int i = 0 ; i < num ; i++)
+	{
+		m_registeredAI[i].Restore(savefile);
+	}
 }
 
 void CBinaryFrobMover::Spawn()
@@ -450,6 +468,21 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 
 	// Fire the event for the subclasses
 	OnUnlock(bMaster);
+
+	// grayman #1145 - remove this door's area number from each registered AI's forbidden area list
+
+	int numUsers = m_registeredAI.Num();
+
+	for (int i = 0 ; i < numUsers ; i++)
+	{
+		idAI* ai = m_registeredAI[i].GetEntity();
+		idAAS* aas = ai->GetAAS();
+		if (aas != NULL)
+		{
+			gameLocal.m_AreaManager.RemoveForbiddenArea(GetAASArea(aas),ai);
+		}
+	}
+	m_registeredAI.Clear(); // served its purpose, clear for next batch
 }
 
 void CBinaryFrobMover::ToggleLock()
@@ -1238,4 +1271,13 @@ void CBinaryFrobMover::FrobReleased(bool frobMaster, bool isFrobPeerAction, int 
 {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	player->SetImmobilization( "door handling",  0 );
+}
+
+// grayman #1145 - add an AI who unsuccessfully tried to open a locked door
+
+void CBinaryFrobMover::RegisterAI(idAI* ai)
+{
+	idEntityPtr<idAI> aiPtr;
+	aiPtr = ai;
+	m_registeredAI.Append(aiPtr);
 }

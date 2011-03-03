@@ -3379,6 +3379,10 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 		return false;
 	}
 */
+/* grayman - the section below can't be reached because
+   of the 'return true' above, so I'm commenting it out.
+   The section above this, just below the 'return', was
+   already commented out.
 
 	move.moveDest		= moveDest;
 	move.toAreaNum		= moveAreaNum;
@@ -3395,6 +3399,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	m_pathRank			= rank; // grayman #2345
 
 	return true;
+ */
 }
 
 /*

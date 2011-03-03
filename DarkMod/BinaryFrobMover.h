@@ -81,6 +81,8 @@ public:
 	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false);
 	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
 	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
+
+	void					RegisterAI(idAI* ai); // grayman #1145
 		
 	/**
 	* This is the non-script version of GetOpen 
@@ -511,6 +513,12 @@ protected:
 	**/
 
 	idBox						m_closedBox;
+
+	/**
+	* grayman #1145 - list of AI who unsuccessfully tried a locked door
+	**/
+
+	idList<idEntityPtr<idAI>>	m_registeredAI;
 };
 
 #endif /* !BINARYFROBMOVER */

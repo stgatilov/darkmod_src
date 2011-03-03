@@ -1782,6 +1782,7 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		int areaNum = frobDoor->GetAASArea(aas);
 		gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 		owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+		frobDoor->RegisterAI(owner); // grayman #1145 - this AI is interested in this door
 	}
 }
 
