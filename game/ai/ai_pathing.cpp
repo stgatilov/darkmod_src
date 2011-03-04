@@ -301,7 +301,7 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 				
 				// grayman #2345 - Return the index number of the closest blocking door,
 				// regardless of whether the door is the closest blocking obstacle. Ignore
-				// a door that you recently used. This keeps you from going back and forth
+				// a door that you recently used if not alerted. This keeps you from going back and forth
 				// through the same door.
 
 				idEntity* e = obstacles[i].entity;
@@ -309,11 +309,14 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 				{
 					if (blockingScale < blockingScaleDoor)
 					{
-						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
-						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
+						if (selfAI->AI_AlertIndex < 3) // grayman #2670
 						{
-							continue; // ignore this door
+							CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
+							int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+							if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
+							{
+								continue; // ignore this door
+							}
 						}
 						blockingDoorNum = i;
 						blockingScaleDoor = blockingScale;

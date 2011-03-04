@@ -2266,12 +2266,15 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
-	// grayman #2345 - don't handle this door if we just finished handling it.
+	// grayman #2345 - don't handle this door if we just finished handling it, unless alerted.
 
-	int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-	if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
+	if (owner->AI_AlertIndex < 3) // grayman #2670
 	{
-		return;
+		int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
+		{
+			return;
+		}
 	}
 
 	if (cv_ai_door_show.GetBool()) 
