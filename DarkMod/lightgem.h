@@ -53,49 +53,6 @@ private:
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	idEntityPtr<idEntity>	m_LightgemSurface;
-	idTimer					m_timer;
-
-	LightGemState			m_pfnCurrentState;
-	bool					m_bCaptureToGPUTexture;
-	bool					m_bDoneProcessingThisFrame;
-
-// 	enum eLightGemProcessStates
-// 	{
-// 		eLightGemProcessStates_NotStarted,
-// 		eLightGemProcessStates_Setup,
-// 		eLightGemProcessStates_RenderScene1,
-// 		eLightGemProcessStates_RenderScene2,
-// 		eLightGemProcessStates_CaptureRenderToFile1,
-// 		eLightGemProcessStates_CaptureRenderToFile2,
-// 		eLightGemProcessStates_AnalyzeRenderedImage1,
-// 		eLightGemProcessStates_AnalyzeRenderedImage2,
-// 		eLightGemProcessStates_RevertRenderSettings,
-// 		eLightGemProcessStates_NumStates
-// 	};
-
-// 	eLightGemProcessStates m_eCurrentProcessingState;
-
-	//----------------------------------
-	// Frame Persistent variables
-	//----------------------------------
-	float m_fRetVal;
-	float m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
-
-	int m_nHandlePlayerModel;			
-	int m_nHandleHeadModel;		
-	int m_nPlayerId;						// player viewid
-	int m_nHeadId;							// head viewid
-	int m_nPlayerShadowId;				// player shadow viewid
-	int m_nHeadShadowId;				// head shadow viewid
-	int m_iRenderPass;
-
-	renderEntity_t *m_pRenderEntityPlayer;	
-	renderEntity_t *m_pRenderEntityHead;
-
-	renderView_t m_renderViewLighgem;
-
-
-	//----------------------------------
 
 public:
 	//---------------------------------
@@ -127,27 +84,11 @@ public:
 	void InitializeLightGemEntity(); 
 
 	float	Calculate		( idPlayer *	a_pPlayer );
-	float	Process			( idPlayer *	a_pPlayer );
 
-	ID_INLINE float				GetResult				( void ) const { return m_fRetVal; }
 	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) const { return *m_LightgemRenderBuffer; }
 
 private:
 	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
-	void Calculate_new		(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
-
-	void State_Setup				(idPlayer *a_pPlayer);
-	void State_Unsetup				(void);
-
-	void State_RenderLightGem			(void);
-	void State_CaptureRenderToBuffer	(void);
-	void State_AnalyzeLGImage			(void);
-
-	void UpdateCurrentState			(LightGemState a_newState);		// Returns true if the new state is supposed to be executed the same frame.
-
-	//bool UpdateState				(void);
-
-
 };
 
 #endif // __LIGHTGEM_H__

@@ -6411,7 +6411,7 @@ EMissionResult idGameLocal::GetMissionResult() const
 
 float idGameLocal::CalcLightgem( idPlayer *a_pPlayer )
 {
-	return m_lightGem.Process( a_pPlayer );
+	return m_lightGem.Calculate( a_pPlayer );
 }
 /*
 ===================
