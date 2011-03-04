@@ -66,6 +66,13 @@ typedef enum {
 	NUM_TALK_STATES
 } talkState_t;
 
+typedef enum { // grayman #2604 - how the AI was knocked out
+	KO_NOT, // default - not KO'ed
+	KO_BLACKJACK,
+	KO_GAS,
+	NUM_KO_STATES
+} koState_t;
+
 #define	DI_NODIR	-1
 
 // obstacle avoidance
@@ -104,6 +111,7 @@ extern const idEventDef AI_BeginAttack;
 extern const idEventDef AI_EndAttack;
 extern const idEventDef AI_MuzzleFlash;
 extern const idEventDef AI_CreateMissile;
+extern const idEventDef AI_CreateMissileFromDef;
 extern const idEventDef AI_AttackMissile;
 extern const idEventDef AI_FireMissileAtTarget;
 extern const idEventDef AI_AttackMelee;
@@ -194,13 +202,13 @@ private:
 
 class idAASFindAttackPosition : public idAASCallback {
 public:
-						idAASFindAttackPosition( const idAI *self, const idMat3 &gravityAxis, idEntity *target, const idVec3 &targetPos, const idVec3 &fireOffset );
+						idAASFindAttackPosition(idAI *self, const idMat3 &gravityAxis, idEntity *target, const idVec3 &targetPos, const idVec3 &fireOffset);
 						~idAASFindAttackPosition();
 
 	virtual bool		TestArea( const idAAS *aas, int areaNum );
 
 private:
-	const idAI			*self;
+	idAI				*self;
 	idEntity			*target;
 	idBounds			excludeBounds;
 	idVec3				targetPos;
@@ -256,7 +264,7 @@ public:
 	void					TalkTo( idActor *actor );
 	talkState_t				GetTalkState( void ) const;
 
-	bool					GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir ) const;
+	bool					GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir );
 
 	void					TouchedByFlashlight( idActor *flashlight_owner );
 
@@ -639,13 +647,64 @@ protected:
 	float					projectile_height_to_distance_ratio;	// calculates the maximum height a projectile can be thrown
 	idList<idVec3>			missileLaunchOffset;
 
-	const idDict *			projectileDef;
-	mutable idClipModel		*projectileClipModel;
-	float					projectileRadius;
-	float					projectileSpeed;
-	idVec3					projectileVelocity;
-	idVec3					projectileGravity;
-	idEntityPtr<idProjectile> projectile;
+	struct ProjectileInfo
+	{
+		const idDict*	def;
+		idStr			defName;
+		idClipModel*	clipModel;
+		float			radius;
+		float			speed;
+		idVec3			velocity;
+		idVec3			gravity;
+
+		ProjectileInfo() :
+			def(NULL),
+			clipModel(NULL),
+			radius(-1),
+			speed(-1)
+		{}
+
+		~ProjectileInfo()
+		{
+			// Take care of any allocated clipmodels on destruction
+			delete clipModel;
+		}
+	};
+
+	/**
+	 * greebo: An AI can have multiple projectile defs in their entityDef declaration.
+	 * For some routines the properties of each projectile need to be cached, like
+	 * radius, clipmodel and gravity, this is stored in the ProjectileInfo structure.
+	 *
+	 * After each CreateProjectile() call the "current projectile" index is recalculated
+	 * and might point to a different projectile for the next round of firing.
+	 */
+	idList<ProjectileInfo>	projectileInfo;
+
+	// The index of the "current projectile", is recalculated each time CreateProjectile() is called.
+	int						curProjectileIndex;
+
+	/**
+	 * The currently active projectile. It holds the spawned
+	 * projectile entity, which can either be generated from the
+	 * list of possible ProjectileInfo structures above or a custom
+	 * one which has been spawned directly via script or frame commands.
+	 *
+	 * The ActiveProjectile structure is filled either by calling CreateProjectile()
+	 * or by methods like Event_CreateThrowableProjectile()
+	 */
+	struct ActiveProjectile
+	{
+		// The projectile parameter structure
+		ProjectileInfo info;
+		
+		// The currently active projectile entity (might be NULL)
+		idEntityPtr<idProjectile> projEnt;
+	};
+
+	// The currently active projectile, might be an empty structure
+	ActiveProjectile		activeProjectile;
+
 	idStr					attack;
 
 	// chatter/talking
@@ -980,6 +1039,16 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bCanBeKnockedOut;
 
 	/**
+	* Set to true if the AI can be gassed (defaults to true)
+	**/
+	bool					m_bCanBeGassed; // grayman #2468
+
+	/**
+	* How the AI was knocked out
+	**/
+	koState_t				m_koState;		// grayman #2604
+
+	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
 	 */
 	bool					m_bCanOperateDoors;
@@ -1059,8 +1128,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int m_headTurnMinDuration;
 	int m_headTurnMaxDuration;
 
-	bool m_canExtricate;		// grayman #2345 - whether we can use AttemptToExtricate() to stop being stuck
 	idEntity* m_tactileEntity;	// grayman #2345 - something we bumped into this frame, not necessarily an enemy
+	bool m_canResolveBlock;		// grayman #2345 - whether we can resolve a block if asked
+	bool m_leftQueue;			// grayman #2345 - if we timed out waiting in a door queue
 
 	// The mind of this AI
 	ai::MindPtr mind;
@@ -1261,7 +1331,21 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	
 	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,
-	* also can be called by itself and is called by scriptevent Event_Knockout.
+	* also can be called by itself and is called by scriptevent AI_KO_Knockout.
+	*
+	* @inflictor: This is the entity causing the knockout, can be NULL for "unknown originator".
+	**/
+	void					Event_KO_Knockout( idEntity* inflictor );
+
+	/**
+	* grayman #2468 - Tells the AI to go unconscious.  Called by scriptevent AI_Gas_Knockout.
+	*
+	* @inflictor: This is the entity causing the knockout, can be NULL for "unknown originator".
+	**/
+	void					Event_Gas_Knockout( idEntity* inflictor );
+
+	/**
+	* Tells the AI to go unconscious.
 	*
 	* @inflictor: This is the entity causing the knockout, can be NULL for "unknown originator".
 	**/
@@ -1589,10 +1673,50 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	float GetPlayerVisualStimulusAmount() const;
 
 	// attacks
-	void					CreateProjectileClipModel( void ) const;
-	idProjectile			*CreateProjectile( const idVec3 &pos, const idVec3 &dir );
+
+	// greebo: Ensures that the projectile info of the currently active projectile 
+	// is holding a valid clipmodel and returns the info structure for convenience.
+	ProjectileInfo&			EnsureActiveProjectileInfo();
+
+	// Called at spawn time to ensure valid projectile properties in the info structures (except clipmodel)
+	// activeProjectile.projEnt will be NULL after this call
+	void					InitProjectileInfo();
+
+	// Specialised routine to initialise the given projectile info structure from the named or given dictionary
+	// Won't touch the activeProjectile structure, so it's safe to use that as helper.
+	void					InitProjectileInfoFromDict(ProjectileInfo& info, const char* entityDef) const;
+	void					InitProjectileInfoFromDict(ProjectileInfo& info, const idDict* dict) const;
+
+	/**
+	 * greebo: Changed this method to support multiple projectile definitions (D3 suppoerted exactly one).
+	 * The index argument can be set to anything within [0..projectileInfo.Num()) to spawn a specific
+	 * projectile from the list of possible ones, or leave that argument at the default of -1 to
+	 * create a projectile using the "current projectile index". That index is re-rolled each
+	 * time after this method has been called, so the AI will seemingly use random projectiles.
+	 *
+	 * Note: doesn't do anything if the currently active projectile is not NULL.
+	 */
+	idProjectile*			CreateProjectile(const idVec3 &pos, const idVec3 &dir, int index = -1);
+
+private:
+	/**
+	 * greebo: Specialised method similar to the CreateProjectile() variant taking an index.
+	 * This method doesn't use the projectileInfo list, but spawns a new active projectile
+	 * directly from the given dictionary. This can be used to spawn projectiles out of the usual
+	 * loop of known projectile defs.
+	 *
+	 * Note: doesn't do anything if the currently active projectile is not NULL.
+	 */
+	idProjectile*			CreateProjectileFromDict(const idVec3 &pos, const idVec3 &dir, const idDict* dict);
+
+	// Helper routine to spawn an actual projectile with safety checks. Will throw gameLocal.Error on failure.
+	// The result will always be non-NULL
+	idProjectile*			SpawnProjectile(const idDict* dict) const;
+
 	void					RemoveProjectile( void );
-	idProjectile			*LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone );
+
+public:
+	idProjectile*			LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone );
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 	void					DirectDamage( const char *meleeDefName, idEntity *ent );
 	bool					TestMelee( void ) const;
@@ -1707,6 +1831,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_FoundBody( idEntity *body );
 	void					Event_MuzzleFlash( const char *jointname );
 	void					Event_CreateMissile( const char *jointname );
+	void					Event_CreateMissileFromDef(const char* defName, const char* jointname);
 	void					Event_AttackMissile( const char *jointname );
 	void					Event_FireMissileAtTarget( const char *jointname, const char *targetname );
 	void					Event_LaunchMissile( const idVec3 &muzzle, const idAngles &ang );

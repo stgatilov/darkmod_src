@@ -323,6 +323,8 @@ public:
 	idVec3 &		operator/=( const idVec3 &a );
 	idVec3 &		operator/=( const float a );
 	idVec3 &		operator*=( const float a );
+	idVec3 &		MulCW( const idVec3 &a );									// multiply on vector component-wise
+	idVec3 &		DivCW( const idVec3 &a );									// divide on vector component-wise
 
 	friend idVec3	operator*( const float a, const idVec3 b );
 
@@ -478,6 +480,22 @@ ID_INLINE idVec3 &idVec3::operator*=( const float a ) {
 	x *= a;
 	y *= a;
 	z *= a;
+
+	return *this;
+}
+
+ID_INLINE idVec3 &idVec3::MulCW( const idVec3 &a ) {
+	x *= a.x;
+	y *= a.y;
+	z *= a.z;
+
+	return *this;
+}
+
+ID_INLINE idVec3 &idVec3::DivCW( const idVec3 &a ) {
+	x /= a.x;
+	y /= a.y;
+	z /= a.z;
 
 	return *this;
 }

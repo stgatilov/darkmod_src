@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "shop.h"
 #include "../game/game_local.h"
 #include "MissionData.h"
+#include "Missions/MissionManager.h"
 #include "./Inventory/Inventory.h"
 
 CShopItem::CShopItem() :
@@ -910,10 +911,12 @@ void CShop::CheckPicks(ShopItemList& list)
 
 void CShop::DisplayShop(idUserInterface *gui)
 {
-	idStr filename = va("maps/%s", cv_tdm_mapName.GetString());
+	const idStr& curStartingMap = gameLocal.m_MissionManager->GetCurrentStartingMap();
+
+	idStr filename = va("maps/%s", curStartingMap.c_str());
 
 	// Let the GUI know which map to load
-	gui->SetStateString("mapStartCmd", va("exec 'map %s'", cv_tdm_mapName.GetString()));
+	gui->SetStateString("mapStartCmd", va("exec 'map %s'", curStartingMap.c_str()));
 
 	// Load the map from the missiondata class (provides cached loading)
 	idMapFile* mapFile = gameLocal.m_MissionData->LoadMap(filename);
@@ -1083,6 +1086,10 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		// nothing for sale, let the user know
 		gui->SetStateInt("forSaleAvail0", 0);
 		gui->SetStateString("forSale0_name", "<no items for sale>");
+		// Tels: Fix #2661: do not show a description if nothing is for sale
+		gui->SetStateString("gui::forSale0_desc", "");
+		gui->SetStateString("gui::forSale0_image", "");
+		gui->SetStateString("forSaleCost0_cost", "0");
 	}
 	else
 	{

@@ -545,6 +545,11 @@ void idGameLocal::Init( void ) {
 	}
 }
 
+const idStr& idGameLocal::GetMapFileName() const
+{
+	return mapFileName;
+}
+
 void idGameLocal::CheckTDMVersion(idUserInterface* ui)
 {
 	GuiMessage msg;
@@ -821,6 +826,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_RelationsManager->Save(&savegame);
 	m_Shop->Save(&savegame);
 	LAS.Save(&savegame);
+	m_MissionManager->Save(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Save(&savegame);
@@ -1831,6 +1837,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_RelationsManager->Restore(&savegame);
 	m_Shop->Restore(&savegame);
 	LAS.Restore(&savegame);
+	m_MissionManager->Restore(&savegame);
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Restore(&savegame);
@@ -2983,27 +2990,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
-/*
-* Ishtvan: I don't think we need this anymore.
-* Will delete it soon if there are no objections.
-
-	// Before we do the actual impulse, we check if there are some impulses pending for processing.
-	// FIXME: It MIGHT be that this can cause problems in case if usercmd is evaluated while the
-	// impulse is processed, because it would use the same usercmd states as the actual impulse
-	// key that is triggered, which could cause inconsistencies.
-	for(int i = 0; i < IR_COUNT; i++)
-	{
-		k = &m_KeyData[i];
-		if(k->KeyState == KS_UPDATED)
-		{
-			ucmd = player->usercmd;
-			player->usercmd.impulse = k->Impulse;
-			player->PerformImpulse(k->Impulse);
-			player->usercmd = ucmd;
-		}
-	}
-*/
-
 	// Check for any activated signals, and trigger them.
 	CheckSDKSignals();
 
@@ -3466,6 +3452,12 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 			width = 1920;
 			height = 1080;
 			break;
+		case 8:
+			width = 2560;
+			height = 1440;
+		case 9:
+			width = 2560;
+			height = 1600;
 		default:
 			break;
 		};
@@ -3629,6 +3621,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
 			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
 			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
+			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : 9); break;
 			default: cv_tdm_widescreenmode.SetInteger(0); break;
 			}
 		}
@@ -4311,6 +4304,8 @@ void idGameLocal::RegisterEntity( idEntity *ent ) {
 	spawnIds[ spawn_entnum ] = spawnCount++;
 	ent->entityNumber = spawn_entnum;
 	ent->spawnNode.AddToEnd( spawnedEntities );
+
+	// this will also have the effect of spawnArgs.Clear() at the same time:
 	ent->spawnArgs.TransferKeyValues( spawnArgs );
 
 	if ( spawn_entnum >= num_entities ) {
@@ -4412,7 +4407,8 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 		return false;
 	}
 
-	spawnArgs.SetDefaults( &def->dict );
+	// Tels: SetDefaults(), but without the "editor_" spawnargs
+	spawnArgs.SetDefaults( &def->dict, idStr("editor_") );
 
 	// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
 	m_DifficultyManager.ApplyDifficultySettings(spawnArgs);
@@ -4607,13 +4603,21 @@ void idGameLocal::SpawnMapEntities( void ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
-		for(int x = 0; x < args.GetNumKeyVals(); x++)
+#ifdef LOGBUILD
+		// Tels: This might need a lot of time, even when the logging is disabled, so make
+		//		 sure we execute this loop only if we need to log:
+		if(g_Global.m_ClassArray[LC_ENTITY] == true && g_Global.m_LogArray[LT_DEBUG] == true)
 		{
-			const idKeyValue *p = args.GetKeyVal(x);
-			const idStr k = p->GetKey();
-			const idStr v = p->GetValue();
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			int n = args.GetNumKeyVals();
+			for(int x = 0; x < n; x++)
+			{
+				const idKeyValue *p = args.GetKeyVal(x);
+				const idStr k = p->GetKey();
+				const idStr v = p->GetValue();
+				DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			}
 		}
+#endif
 
 		if ( !InhibitEntitySpawn( args ) ) {
 			// precache any media specified in the map entity
@@ -6004,7 +6008,7 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 	for (int i = 0; i < numEntities; i++)
 	{
 		// ignore the original entity because an entity shouldn't respond 
-		// to it's own stims.
+		// to its own stims.
 		if (srEntities[i] == originator || srEntities[i]->GetResponseEntity() == originator)
 			continue;
 
@@ -6016,7 +6020,24 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			if ((srEntities[i]->GetPhysics()->GetOrigin() - stimOrigin).LengthSqr() > radiusSqr)
+			// grayman #2468 - handle AI with no separate head entities 
+
+			idEntity *ent = srEntities[i];
+			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
+			if (!(ent->IsType(idAFAttachment::Type))) // is this an attached head?
+			{
+				// no separate head entity, so find the mouth
+
+				if (ent->IsType(idAI::Type))
+				{
+					idAI* entAI = static_cast<idAI*>(ent);
+
+					entitySpot = entAI->GetEyePosition();
+					entitySpot.z += entAI->m_MouthOffset.z;
+				}
+			}
+
+			if ((entitySpot - stimOrigin).LengthSqr() > radiusSqr)
 			{
 				// Too far away
 				continue;

@@ -43,6 +43,7 @@ const std::string STEAM_ARGS = "-applaunch 9050 ";
 #elif MACOS_X
 	#include <unistd.h>
 	#include <errno.h>
+	#include <mach-o/dyld.h>
 
 	#define ENGINE_EXECUTABLE "Doom 3"
 #else
@@ -62,11 +63,23 @@ Launcher::Launcher(int argc, char* argv[]) :
 		dmlauncher = boost::filesystem::initial_path() / dmlauncher;
 	}
 
-#else
+#elif defined(__linux__)
 	char exepath[PATH_MAX] = {0};
 	std::size_t bytesRead = readlink("/proc/self/exe", exepath, sizeof(exepath));
 
 	boost::filesystem::path dmlauncher(exepath);
+#elif defined (MACOS_X)
+	char exepath[4096];
+	uint32_t size = sizeof(exepath);
+	
+	if (_NSGetExecutablePath(exepath, &size) != 0)
+	{
+		TraceLog::WriteLine("Cannot read executable path, buffer too small.");
+	}
+	
+	boost::filesystem::path dmlauncher(exepath);
+#else
+#error Unsupported Platform
 #endif
 	
 	TraceLog::WriteLine("Path to tdmlauncher is " + dmlauncher.file_string());
@@ -381,7 +394,7 @@ bool Launcher::Launch()
 	// Check for a D3 process (max. 10 seconds)
 	int timeout = 10000;
 	
-	// Don't pass a module name in Linux, this is not necessary
+	// Don't pass a module name in Linux/MacOSX, this is not necessary
 	while (D3ProcessChecker::D3IsRunning(ENGINE_EXECUTABLE, "") && timeout >= 0)
 	{
 		TraceLog::WriteLine("Doom 3 is still running, waiting one second...");

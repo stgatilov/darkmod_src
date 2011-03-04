@@ -479,6 +479,7 @@ void idAFAttachment::DropOnRagdoll( void )
 		}
 
 		ent->GetPhysics()->Activate();
+		ent->m_droppedByAI = true; // grayman #1330
 	}
 }
 

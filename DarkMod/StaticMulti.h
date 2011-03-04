@@ -50,7 +50,7 @@ public:
 
 	void				Spawn( void );
 
-	void				SetLODData( lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel);
+	void				SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
 
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
@@ -109,6 +109,8 @@ private:
 	int							m_iVisibleModels;	//!< how many of our models are currently visible? if == 0, we are invisible, too
 
 	bool						m_bFree_hModel;		//!< The initial hModel cannot be freed as it is used by the engine, but once we create our own, we need to free it.
+
+	bool						m_bNoshadows;		//!< if true, completely disable shadows
 
 	// TODO: use these from m_LOD:
 	int							m_DistCheckTimeStamp;

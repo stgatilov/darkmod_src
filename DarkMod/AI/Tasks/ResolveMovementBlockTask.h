@@ -65,7 +65,9 @@ private:
 
 	bool PerformBlockingAI(idAI* owner);
 	bool PerformBlockingStatic(idAI* owner);
-	bool Room2Pass(idAI* owner); // grayman #2345
+	bool Room2Pass(idAI* owner);	// grayman #2345
+	bool IsSolid();			// grayman #2345
+	void BecomeNonSolid(idAI* owner); // grayman #2345
 };
 
 } // namespace ai

@@ -347,6 +347,9 @@ elif ( BUILD == 'release' ):
 
 	# Flags applicable to both Linux and MacOSX
 	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+	
+	# greebo: Add the NDEBUG define to void-ify the assert() expressions
+	OPTCPPFLAGS.append( ['-DNDEBUG'] )
 
 	if g_os == 'Linux':
 		OPTCPPFLAGS.append( ['-march=pentium3'] )

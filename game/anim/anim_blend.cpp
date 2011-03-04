@@ -540,7 +540,34 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_CREATEMISSILE;
 		fc.string = new idStr( token );
-	} else if ( token == "launch_missile" ) {
+	}
+	else if (token == "create_missile_from_def" )
+	{
+		// Read def name
+		if (!src.ReadTokenOnLine(&token))
+		{
+			return "Unexpected end of line";
+		}
+
+		idStr projectileDefName = token;
+
+		assert(projectileDefName.Length() > 0);
+
+		// Read joint name
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+
+		if ( !modelDef->FindJoint( token ) ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+
+		fc.type = FC_CREATEMISSILE_FROM_DEF;
+
+		// Connect the projectile def and joint name with a pipe and store that
+		fc.string = new idStr(projectileDefName + "|" + token);
+	}
+	else if ( token == "launch_missile" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -1107,6 +1134,19 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					ent->ProcessEvent( &AI_CreateMissile, command.string->c_str() );
 					break;
 				}
+				case FC_CREATEMISSILE_FROM_DEF:
+				{
+					// Split the def name and the joint name again
+					int pipePos = command.string->Find('|');
+
+					assert(pipePos != -1);
+
+					idStr defName = command.string->Left(pipePos);
+					idStr jointName = command.string->Mid(pipePos+1, command.string->Length() - pipePos - 1);
+
+					ent->ProcessEvent(&AI_CreateMissileFromDef, defName.c_str(), jointName.c_str());
+					break;
+				}
 				case FC_LAUNCHMISSILE: {
 					ent->ProcessEvent( &AI_AttackMissile, command.string->c_str() );
 					break;
@@ -1329,18 +1369,18 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					// "atdm:foo_bar book"
 					// "atdm:foo_bar book hip_left"
 
-					idStr EntClass = command.string->Left(0);
+					idStr EntClass = "";
 					// use these as defaults
 					idStr AttName = "";
 					idStr AttPos = "";
 
-					int spcind = command.string->Find(" ");
+					int spcind = command.string->Find(' ');
 					if (spcind > 0)
 					{
 						// format of AttName is afterwards either "book" or "book hip_left"
 						EntClass = command.string->Left( spcind );
 						AttName = command.string->Mid( spcind+1, command.string->Length() );
-						spcind = AttName.Find(" ");
+						spcind = AttName.Find(' ');
 						if (spcind > 0)
 						{
 							AttPos = AttName.Mid( spcind+1, AttName.Length() );
@@ -1352,20 +1392,22 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					idEntity* attEntity = ent->GetAttachment( AttPos.c_str() );
 					if (attEntity)
 					{
-						gameLocal.Warning ( "Already got an attachment at %s, skipping frame command.", AttPos.c_str() );
+						gameLocal.Warning("Already got an attachment at %s, skipping frame command.", AttPos.c_str());
 					}
 					else
 					{
 						// spawn the entity
 						idEntity* spawnedEntity;
 						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
+
 						if (!entityDef)
 						{
-							gameLocal.Error( "Cannot spawn %s - no such entityDef", EntClass.c_str() );
+							gameLocal.Error("Cannot spawn %s - no such entityDef", EntClass.c_str() );
 						}
 						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-						gameLocal.Printf ( "Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
-						ent->Attach( spawnedEntity, AttPos, AttName );
+						gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
+
+						ent->Attach(spawnedEntity, AttPos, AttName);
 					}
 					break;
 				}
@@ -3555,7 +3597,7 @@ bool idDeclModelDef::Parse( const char *text, const int textLength ) {
 			}
 			channelJoints[ channel ].SetNum( num );
 		} else {
-			src.Warning( "unknown token '%s'", token.c_str() );
+			src.Warning( "unknown token '%s' on line %i in '%s'", token.c_str(), token.line, src.GetFileName() );
 			MakeDefault();
 			return false;
 		}

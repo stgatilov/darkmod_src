@@ -33,7 +33,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndProp.h"
 #include "Relations.h"
 #include "shop.h"
-#include "DifficultyMenu.h"
 #include "ModMenu.h"
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
@@ -162,6 +161,38 @@ void FileVersionDump(void)
 		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s\r", (*s_FileVersion)[i]);
 }
 
+#ifdef MACOS_X
+// Platform-specific method to expand the ~ in a path with a full path
+// adjusted from http://developer.apple.com/library/mac/#qa/qa2007/qa1549.html
+
+#include <glob.h>
+
+idStr GetExpandedTildePath(const char* path)
+{
+	assert(path != NULL); // don't accept bogus input
+
+	glob_t globbuf;
+    idStr result;
+
+    if (glob(path, GLOB_TILDE, NULL, &globbuf) == 0) //success
+    {
+        char** v = globbuf.gl_pathv; // list of matched pathnames
+        
+		// //number of matched pathnames, gl_pathc == 1
+		// copy the expanded path into our return value
+		result = v[0];
+
+        globfree(&globbuf);
+    }
+	else
+	{
+		// Could not expand the path, return the input string
+		result = path;
+	}
+
+	return result;
+}
+#endif
 
 CGlobal::CGlobal()
 {
@@ -194,8 +225,15 @@ CGlobal::CGlobal()
 	m_LogType = LT_DEBUG;
 	m_Filename = "undefined";
 	m_Linenumber = 0;
+
+	idStr logFilePath = DARKMOD_LOGFILE;
+
+#ifdef MACOS_X
+	// In OSX we need to resolve the user's home folder first
+	logFilePath = GetExpandedTildePath(logFilePath);
+#endif
 	
-	m_LogFile = fopen(DARKMOD_LOGFILE, "w+b");
+	m_LogFile = fopen(logFilePath.c_str(), "w+b");
 
 	if (m_LogFile != NULL)
 	{
@@ -229,8 +267,10 @@ CGlobal::CGlobal()
 
 CGlobal::~CGlobal()
 {
-	if(m_LogFile != NULL)
+	if (m_LogFile != NULL)
+	{
 		fclose(m_LogFile);
+	}
 }
 
 void CGlobal::Init()
@@ -377,7 +417,7 @@ void CGlobal::LoadINISettings(void *p)
 					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 								t->tm_year+1900, t->tm_mon, t->tm_mday, 
 								t->tm_hour, t->tm_min, t->tm_sec);
-					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
+					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
 				}
 			}
 		}
@@ -586,7 +626,7 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &B
 		if((im = g_Global.GetImage(m_FallOffIndex)) != NULL)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Falloff [%s]\r", im->m_Name.c_str());
-			rc = im->GetImage();
+			rc = im->GetImageData();
 			Width = im->m_Width;
 			Height = im->m_Height;
 			Bpp = im->m_Bpp;
@@ -606,7 +646,7 @@ unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 		if((im = g_Global.GetImage(m_MapIndex)) != NULL)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Image [%s]\r", im->m_Name.c_str());
-			rc = im->GetImage();
+			rc = im->GetImageData();
 			Width = im->m_Width;
 			Height = im->m_Height;
 			Bpp = im->m_Bpp;

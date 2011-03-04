@@ -50,7 +50,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
-				DisableSpecificWarnings="4355"
+				DisableSpecificWarnings="4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -131,7 +131,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4355"
+				DisableSpecificWarnings="4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -196,10 +196,6 @@
 			</File>
 			<File
 				RelativePath=".\ConsoleUpdater.h"
-				>
-			</File>
-			<File
-				RelativePath=".\DownloadProgressPrinter.h"
 				>
 			</File>
 			<File

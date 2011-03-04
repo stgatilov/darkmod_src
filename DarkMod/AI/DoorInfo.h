@@ -23,6 +23,9 @@ struct DoorInfo
 	// When this door was seen the last time (-1 == never)
 	int lastTimeSeen;
 
+	// When this door was used the last time (-1 == never)
+	int lastTimeUsed; // grayman #2345
+
 	// The last time this door was attempted to be opened (-1 == never)
 	int lastTimeTriedToOpen;
 

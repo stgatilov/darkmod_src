@@ -1425,25 +1425,21 @@ void State::OnMovementBlocked(idAI* owner)
 			std::swap(master, slave);
 		}
 
-		// Tell the slave to get out of the way, but only if neither AI is currently resolving a block
-		// grayman #2345 - or waiting for the other to pass or if they're handling a door.
-
-		if (!slave->movementSubsystem->IsResolvingBlock() &&
-			!master->movementSubsystem->IsResolvingBlock() &&
-			!slave->movementSubsystem->IsWaiting() &&
-			!master->movementSubsystem->IsWaiting() &&
-			!master->m_HandlingDoor &&
-			!slave->m_HandlingDoor)
+		if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
 		{
-			slave->movementSubsystem->ResolveBlock(master);
+			std::swap(master, slave);
 		}
+
+		// Tell the slave to get out of the way.
+
+		slave->movementSubsystem->ResolveBlock(master);
 	}
 	else if (ent->IsType(idStaticEntity::Type))
 	{
 		// Blocked by func_static, these are generally not considered by Obstacle Avoidance code.
 		// grayman #2345 - if the AI is bumping into a func_static, that's included.
 
-		if (!owner->movementSubsystem->IsResolvingBlock() && !owner->movementSubsystem->IsWaiting()) // grayman #2345
+		if (!owner->movementSubsystem->IsResolvingBlock()) // grayman #2345
 		{
 			owner->movementSubsystem->ResolveBlock(ent);
 		}
@@ -2262,6 +2258,21 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// grayman #2650 - can we handle doors?
+
+	if (!owner->m_bCanOperateDoors)
+	{
+		return;
+	}
+
+	// grayman #2345 - don't handle this door if we just finished handling it.
+
+	int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+	if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
+	{
+		return;
+	}
 
 	if (cv_ai_door_show.GetBool()) 
 	{

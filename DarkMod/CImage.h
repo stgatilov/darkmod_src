@@ -10,6 +10,10 @@
 #ifndef DARKMODCIMAGE_H
 #define DARKMODCIMAGE_H
 
+//TODO(stgatilov): Do not store m_ImageBuffer data at all.
+//It can be be discarded after loading because IL stores all the necessary data for image
+//Unless it is deleted of course.
+
 #if defined(__linux__) || defined(MACOS_X)
 #include "idlib/lib.h"
 #include "sound/sound.h"
@@ -84,28 +88,28 @@ public:
 	 * GetImage returns the pointer to the actual image data. the image has to be already
 	 * loaded, otherwise NULL is returned.
 	 */
-	unsigned char* GetImage();
+	unsigned char* GetImageData();
 
 	/**
-	 * Returns the buffer length of the loaded image data in bytes. Each pixel will have
-	 * m_Bpp bytes (1 or 3 or 4, depending on format), and there are m_Width * m_Height pixel.
-	 * The data will not be padded per-line (as f.i. with BMP) if you loaded a TGA file.
+	 * Returns the buffer length of the loaded image data in bytes.
+	 * The data is uncompressed and without header - pure pixel data.
+	 * Each pixel will have m_Bpp bytes (1 or 3 or 4, depending on format), and there are m_Width * m_Height pixel.
 	 */
-	unsigned long GetBufferLen();
+	unsigned long GetDataLength();
 
 	/**
-	 * Unload will set the image to not loaded. If FreeMemory == false then the memory is not
-	 * discarded and when you next load another image and it fits in the previous memory
-	 * it will be loaded there. If it does not fit, then the memory is reallocated. This means that
-	 * you can grow the memory usage by subsequently calling this with every groing imagesizes
-	 * but on the other hand it will not constantly allocate and deallocate in case like the
-	 * renderimages.
+	 * Unload will set the image to not loaded.
+	 * If FreeMemory == false then the memory is not deallocated.
+	 * The next loaded image is loaded into the same memory space.
+	 * Do not use it! For renderpipe purpose only.
 	 */
-	void Unload(bool FreeMemory);
+	void Unload(bool FreeMemory = true);
 
 protected:
-	unsigned long	m_BufferLength;
-	unsigned char*	m_Image;
+	// Buffer containing the image file contents (including header, compression, etc.)
+	unsigned long	m_ImageBufferLength;
+	unsigned char*	m_ImageBuffer;
+
 	ILuint			m_ImageId;
 	bool			m_Loaded;
 

@@ -398,6 +398,8 @@ public:
 	// The last time the above value has been calculated
 	int						m_LightQuotientLastEvalTime;
 
+	bool					m_droppedByAI; // grayman #1330
+
 	/**
 	* Tels: Contains (sharable, constant) LOD data if non-NULL.
 	*/
@@ -488,6 +490,13 @@ public:
 	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,
 	// so the lode can pre-compute the distance.
 	virtual float			ThinkAboutLOD( const lod_data_t* lod_data, const float deltaSq );
+
+	// Tels: Returns the distance that should be considered for LOD and hiding, depending on:
+	//	* the distance of the origin to the given player origin
+	//	* the lod-bias set in the menu
+	//	* some minimum and maximum distances based on entity size/importance
+	// The returned value is the actual distance squared, and rounded down to an integer.
+	float					GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const;
 
 	// Tels: If LOD is enabled on this entity, call ThinkAboutLOD, computing new LOD level and new
 	// alpha value, then do the right things like Hide/Show, SetAlpha, switch models/skin etc.
@@ -1321,9 +1330,6 @@ protected:
 	int						modelDefHandle;				//!< handle to static renderer model
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
-
-	/* Tels: The origin is nec. for LOD computation, as an hidden entity has "0,0,0" as origin */
-	idVec3					m_preHideOrigin;
 
 	/**
 	* List storing attachment data for each attachment

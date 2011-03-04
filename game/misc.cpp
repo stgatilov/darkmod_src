@@ -1476,8 +1476,6 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( fadeStart );
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( runGui );
-
-	SaveLOD( savefile );
 }
 
 /*
@@ -1493,8 +1491,6 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeStart );
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( runGui );
-
-	RestoreLOD( savefile );
 }
 
 /*
@@ -1713,166 +1709,6 @@ void idStaticEntity::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 /*
 ===============================================================================
 
-idFuncEmitter
-
-===============================================================================
-*/
-
-
-CLASS_DECLARATION( idStaticEntity, idFuncEmitter )
-EVENT( EV_Activate,				idFuncEmitter::Event_Activate )
-END_CLASS
-
-/*
-===============
-idFuncEmitter::idFuncEmitter
-===============
-*/
-idFuncEmitter::idFuncEmitter( void ) {
-	hidden = false;
-}
-
-/*
-===============
-idFuncEmitter::Spawn
-===============
-*/
-void idFuncEmitter::Spawn( void ) {
-	if ( spawnArgs.GetBool( "start_off" ) ) {
-		hidden = true;
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( 1 );
-		UpdateVisuals();
-	} else {
-		hidden = false;
-	}
-}
-
-/*
-===============
-idFuncEmitter::Save
-===============
-*/
-void idFuncEmitter::Save( idSaveGame *savefile ) const {
-	savefile->WriteBool( hidden );
-}
-
-/*
-===============
-idFuncEmitter::Restore
-===============
-*/
-void idFuncEmitter::Restore( idRestoreGame *savefile ) {
-	savefile->ReadBool( hidden );
-}
-
-/*
-================
-idFuncEmitter::Event_Activate
-================
-*/
-void idFuncEmitter::Event_Activate( idEntity *activator ) {
-	if ( hidden || spawnArgs.GetBool( "cycleTrigger" ) ) {
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-		hidden = false;
-	} else {
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( gameLocal.time );
-		hidden = true;
-	}
-	UpdateVisuals();
-}
-
-/*
-================
-idFuncEmitter::WriteToSnapshot
-================
-*/
-void idFuncEmitter::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteBits( hidden ? 1 : 0, 1 );
-	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
-	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
-}
-
-/*
-================
-idFuncEmitter::ReadFromSnapshot
-================
-*/
-void idFuncEmitter::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	hidden = msg.ReadBits( 1 ) != 0;
-	renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
-	if ( msg.HasChanged() ) {
-		UpdateVisuals();
-	}
-}
-
-
-/*
-===============================================================================
-
-idFuncSplat
-
-===============================================================================
-*/
-
-
-const idEventDef EV_Splat( "<Splat>" );
-CLASS_DECLARATION( idFuncEmitter, idFuncSplat )
-EVENT( EV_Activate,		idFuncSplat::Event_Activate )
-EVENT( EV_Splat,		idFuncSplat::Event_Splat )
-END_CLASS
-
-/*
-===============
-idFuncSplat::idFuncSplat
-===============
-*/
-idFuncSplat::idFuncSplat( void ) {
-}
-
-/*
-===============
-idFuncSplat::Spawn
-===============
-*/
-void idFuncSplat::Spawn( void ) {
-}
-
-/*
-================
-idFuncSplat::Event_Splat
-================
-*/
-void idFuncSplat::Event_Splat( void ) {
-	const char *splat = NULL;
-	int count = spawnArgs.GetInt( "splatCount", "1" );
-	for ( int i = 0; i < count; i++ ) {
-		splat = spawnArgs.RandomPrefix( "mtr_splat", gameLocal.random );
-		if ( splat && *splat ) {
-			float size = spawnArgs.GetFloat( "splatSize", "128" );
-			float dist = spawnArgs.GetFloat( "splatDistance", "128" );
-			float angle = spawnArgs.GetFloat( "splatAngle", "0" );
-			gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetAxis()[2], dist, true, size, splat, angle );
-		}
-	}
-	StartSound( "snd_splat", SND_CHANNEL_ANY, 0, false, NULL );
-}
-
-/*
-================
-idFuncSplat::Event_Activate
-================
-*/
-void idFuncSplat::Event_Activate( idEntity *activator ) {
-	idFuncEmitter::Event_Activate( activator );
-	PostEventSec( &EV_Splat, spawnArgs.GetFloat( "splatDelay", "0.25" ) );
-	StartSound( "snd_spurt", SND_CHANNEL_ANY, 0, false, NULL );
-}
-
-/*
-===============================================================================
-
 idFuncSmoke
 
 ===============================================================================
@@ -1891,6 +1727,7 @@ idFuncSmoke::idFuncSmoke() {
 	smokeTime = 0;
 	smoke = NULL;
 	restart = false;
+	m_LOD = NULL;
 }
 
 /*
@@ -1966,7 +1803,7 @@ void idFuncSmoke::Think( void ) {
 		return;
 	}
 
-	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !IsHidden() ) {
+	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !fl.hidden ) {
 		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
 			if ( restart ) {
 				smokeTime = gameLocal.time;
@@ -1977,6 +1814,20 @@ void idFuncSmoke::Think( void ) {
 		}
 	}
 
+	if (m_LOD)
+	{
+		// If this entity has LOD, let it think about it:
+		// Distance dependence checks
+		if ( ( m_LOD->DistCheckInterval > 0) 
+		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
+		{
+			m_DistCheckTimeStamp = gameLocal.time;
+//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+			SwitchLOD( m_LOD, 
+				GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+		}
+	}
 }
 
 

@@ -8,12 +8,13 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 /*
-   StaticMulti - a variant of func_static that can use a idPhys_StaticMulti
-   				 for the clipmodel, e.g. has more than one clipmodel.
-				 Used for entities with many models combined into one rendermodel.
+	StaticMulti - 	A variant of func_static that can use a idPhys_StaticMulti
+					for the clipmodel, e.g. has more than one clipmodel. Used
+					for entities with many models combined into one rendermodel.
+
+	Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
 
 TODO: track skin changes on the different LOD stages
 
@@ -64,6 +65,8 @@ CStaticMulti::CStaticMulti( void )
 	// have created our own
 	m_bFree_hModel = false;
 
+	m_bNoshadows = false;
+
 	m_iVisibleModels = 0;
 	m_iMaxChanges = 1;
 	
@@ -78,18 +81,18 @@ CStaticMulti::~CStaticMulti()
 	// no need to free these as they are just ptr to a copy
 	m_LOD = NULL;
 
-	// Avoid freeing the combined physics (clip)model as we can re-use it on next respawn:
-	SetPhysics(NULL);
-
 	// make sure the render entity is freed before the model is freed
-	FreeModelDef();
+	if ( modelDefHandle != -1 )
+	{
+		FreeModelDef();
+	}
 
 	if (m_bFree_hModel)
 	{
 		renderModelManager->FreeModel( renderEntity.hModel );
-		// need this to avoid crashes due to double-free
-		renderEntity.hModel = NULL;
 	}
+	// need this to avoid crashes due to double-free
+	renderEntity.hModel = NULL;
 }
 
 /*
@@ -120,6 +123,8 @@ void CStaticMulti::Spawn( void )
 		m_bNeedModelUpdates = false;
 	}
 
+	m_bNoshadows = spawnArgs.GetBool( "noshadows" );
+
 	int d = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0" ));
 	if (d <= 0)
 	{
@@ -131,6 +136,9 @@ void CStaticMulti::Spawn( void )
 		m_DistCheckInterval = d;
 		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 		m_fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
+#ifdef M_DEBUG
+		gameLocal.Printf("%s: hide_distance %0.0f", m_fHideDistance);
+#endif
 	}
 }
 
@@ -142,8 +150,10 @@ Store the data like our megamodel (the visible combined rendermodel including da
 assemble it), and the LOD stages (contain the distance for each LOD stage)
 ================
 */
-void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel )
+void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clipModel )
 {
+	idClipModel *clip;
+	bool clipLoaded = false;
 	active = true;
 
 	/* ptr to the shared data structures */
@@ -152,11 +162,12 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 
 	m_MaterialName = materialName;
 
-	m_iVisibleModels = m_Offsets->Num();
-
 #ifdef M_DEBUG
-	gameLocal.Printf("%s hModel %p modelname %s.\n", GetName(), hModel, modelName.c_str() );
+	gameLocal.Printf("%s SetLODData: LOD %p, hModel %p, model %s, offsets %p (%i).\n",
+			GetName(), m_LOD, hModel, modelName.c_str(), m_Offsets, m_Offsets ? m_Offsets->Num() : -1 );
 #endif
+
+	m_iVisibleModels = m_Offsets->Num();
 
 	// if we need to combine from a func_static, store a ptr to it's renderModel
 	m_hModel = hModel;
@@ -169,6 +180,19 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 	{
 		m_bNeedModelUpdates = false;
 	}
+	else if (m_bNoshadows)
+	{
+		// if noshadows, turn off shadows for all LOD stages
+		m_LOD->noshadowsLOD = 0xFF;
+		// We need to go through all our offsets and set the NOSHADOW flag,
+		// because the ModelGenerator does not have access to the noshadowsLOD field
+		// and would otherwise needlessly try to use shadows:
+		model_ofs_t *op = m_Offsets->Ptr();
+		for (int i = 0; i < m_iVisibleModels; i++)
+		{
+			op[i].flags |= SEED_MODEL_NOSHADOW;
+		}
+	}
 
 	m_Changes.Clear();
 	// avoid frequent resizes
@@ -176,6 +200,60 @@ void CStaticMulti::SetLODData( lod_data_t *LOD, idStr modelName, idList<model_of
 
 	// generate the first render model
 	UpdateRenderModel(true);
+
+	// Generate our physics model
+	physics.SetSelf( this );
+	physics.SetOrigin( origin );
+	physics.SetAxis( mat3_identity );
+
+	bool solid = spawnArgs.GetBool( "solid" );
+
+	physics.SetContents( CONTENTS_RENDERMODEL );
+	if (solid)
+	{
+		clipLoaded = true;
+		// load the clipmodel for the lowest LOD stage for collision detection
+		if (clipModel)
+		{
+			// will make a copy below
+			clip = new idClipModel( clipModel );
+#ifdef M_DEBUG
+			gameLocal.Printf("Reusing clipmodel from renderModel 0x%p, bounds %s.\n", clipModel, clip->GetBounds().ToString() );
+#endif
+		}
+		else
+		{
+#ifdef M_DEBUG
+			gameLocal.Printf("Loading clip for %s.\n", modelName.c_str());
+#endif
+			clip = new idClipModel;
+			clipLoaded = clip->LoadModel( modelName );
+		}
+	}
+
+	// will be false for non-solid
+	if (clipLoaded)
+	{
+		model_ofs_t* o = offsets->Ptr();
+		for (int idx = 0; idx < m_iVisibleModels; idx++)
+		{
+			int i = idx + 1;
+			// add a new copy of the clipmodel for each position
+			idClipModel *c = new idClipModel( clip );
+			physics.SetClipModel( c, 1.0f, i, true);
+			physics.SetOrigin( origin + o[idx].offset, i);
+			physics.SetAxis( o[idx].angles.ToMat3(), i);
+			// Scale the clipmodel
+			physics.Scale( o[idx].scale, i );
+			// Make it solid
+			physics.SetContents( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL, i );
+		}
+		// TODO: nec.?
+		physics.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP | CONTENTS_RENDERMODEL);
+	}
+#ifdef M_DEBUG
+			gameLocal.Printf("%s: SetLODData done.\n", GetName() );
+#endif
 }
 
 /*
@@ -236,22 +314,16 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 #ifdef M_DEBUG
 		gameLocal.Printf("Has %i visible models.\n", m_iVisibleModels);
 #endif
-
+	
 	if (m_iVisibleModels == 0)
 	{
+		// no visible models, do not update rendermodel (this would crash),
+		// instead just hide ourselves
 #ifdef M_DEBUG
 		gameLocal.Printf ("%s: All models invisible, hiding myself.\n", GetName() );
 #endif
 		if (!fl.hidden) { Hide(); }
-		return true;
-	}
-	else
-	{
-		// show again
-#ifdef M_DEBUG
-		gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
-#endif
-		if (fl.hidden) { Show(); }
+		return false;
 	}
 
 	// compute a list of rendermodels
@@ -320,35 +392,61 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	{
 		if (renderEntity.hModel)
 		{
+#ifdef M_DEBUG
+			gameLocal.Printf("StaticMulti %s: Allocating new render model.\n", GetName());
+#endif
 			FreeModelDef();
 			// do not free the rendermodel, somebody else (since the dummy model is used) has a ptr to it
 			// renderModelManager->FreeModel( renderEntity.hModel );
 		}
-		// signal Restore() that it must free the hModel 
+		// signal Restore() that it must free the hModel from now on
 		m_bFree_hModel = true;
 		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
 	}
 	else
 	{
-		// re-use the already existing object
+#ifdef M_DEBUG
+			gameLocal.Printf("StaticMulti %s: Updating existing render model.\n", GetName());
+#endif
+		if (!renderEntity.hModel)
+		{
+			renderEntity.hModel = renderModelManager->AllocModel();
+		}
+		// and now re-use the already existing object
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
 
+//	for (int ii =0; ii < 100; ii++)
+//	{
+//		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
+//	}
 #ifdef M_TIMINGS
 	timer_updatemodel.Stop();
 #endif
-
-	// TODO: this seems unnec.:
-	renderEntity.origin = origin;
 
 	// force an update because the bounds/origin/axis may stay the same while the model changes
 	renderEntity.forceUpdate = true;
 
 	// add to refresh list
-	if ( modelDefHandle == -1 ) {
+	if ( modelDefHandle == -1 )
+	{
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
-	} else {
+	}
+	else
+   	{
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
+	}
+
+	// now show ourselves
+#ifdef M_DEBUG
+	gameLocal.Printf ("%s: Some models visible, showing myself.\n", GetName() );
+#endif
+	if (fl.hidden)
+	{
+		Show();
+#ifdef M_DEBUG
+		gameLocal.Printf ("%s: Was hidden, showing myself.\n", GetName() );
+#endif
 	}
 
 #ifdef M_TIMINGS
@@ -409,7 +507,7 @@ void CStaticMulti::Think( void )
 			bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
 		}
 
-#ifdef M_DEBUG
+#ifdef M_DEBUG_1
 		if (LOD)
 		{
 			gameLocal.Printf("%s LOD data %p.\n", GetName(), LOD );
@@ -460,7 +558,7 @@ void CStaticMulti::Think( void )
 				// TODO: compute flags for noclip
 				int flags = 0;
 				m_LODLevel ++;
-				if ( LOD && LOD->noshadowsLOD & (1 << m_LODLevel) )
+				if ( LOD && (LOD->noshadowsLOD & (1 << m_LODLevel)) )
 				{
 					flags += SEED_MODEL_NOSHADOW;
 				}
@@ -519,6 +617,7 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( m_modelName );
 	savefile->WriteInt( m_iVisibleModels );
 	savefile->WriteBool( m_bFree_hModel );
+	savefile->WriteBool( m_bNoshadows );
 
 	savefile->WriteInt( m_Changes.Num() );
 	for (int i = 0; i < m_Changes.Num(); i++ )
@@ -548,6 +647,7 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	savefile->ReadString( m_modelName );
 	savefile->ReadInt( m_iVisibleModels );
 	savefile->ReadBool( m_bFree_hModel );
+	savefile->ReadBool( m_bNoshadows );
 
 	// These will be set by the SEED entity managing us
 	// no update until the data is there!
@@ -568,6 +668,7 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Changes[i].newFlags );
 	}
 
+	// stop us freeing it later, but not now as it is a shared ptr
 	renderEntity.hModel = NULL;
 
 	// hide until the LOD data arrives

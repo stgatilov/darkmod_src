@@ -78,7 +78,6 @@ extern idCVar cv_tdm_widescreenmode;
 extern idCVar cv_tdm_show_trainer_messages;
 
 extern idCVar cv_tdm_default_relations_def;
-extern idCVar cv_tdm_mapName;
 extern idCVar cv_tdm_fm_path;
 extern idCVar cv_tdm_fm_desc_file;
 extern idCVar cv_tdm_fm_current_file;

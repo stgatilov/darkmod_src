@@ -13,13 +13,9 @@
 #ifndef __GAME_SEED_H__
 #define __GAME_SEED_H__
 
-#include "ModelGenerator.h"
-#include "StaticMulti.h"
+/*===============================================================================
 
-/*
-===============================================================================
-
-  Seed - Level Of Detail Entity Manager
+  System for Environmental Entity Distribution (SEED, formerly known as LODE)
   
   Automatically creates/culls entities based on distance from player.
 
@@ -35,8 +31,14 @@
   clipmodels, to reduce entity count and number of drawcalls. These combined
   entities are of the CStaticMulti class.
 
-===============================================================================
-*/
+  ============================================================================= */
+
+#include "../game/game_local.h"
+#include "StaticMulti.h"
+#include "MissionData.h"
+#include "func_shooter.h"
+#include "../game/emitter.h"
+#include "../idlib/containers/list.h"
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
 /** List of debug materials to use for the SEED megamodels */
@@ -80,13 +82,17 @@ struct seed_class_t {
 	idStr					modelname;		//!< To load the rendermodel for combining it w/o spawning
 											//!< the entity first. Used to calculate f.i. how many models
 											//!< can be combined at most (as this model is the high-poly version).
+	idStr					lowestLOD;		//!< Name of the model with the lowest LOD, used as clipmodel
 
 	bool					pseudo;			//!< if true, this class is a pseudo-class, and describes an
 											//!< entity with a megamodel (a combined model from many entities),
 											//!< the model is still stored in hModel.
 											//!< These classes will be skipped when recreating the entities.
+
+	bool					noshadows;		//!< entities of this class do not have a shadow, even if the model has one
 	bool					watch;			//!< if true, this class is just used to watch over a certain entity
-	idPhysics_StaticMulti*	physicsObj;		//!< if pseudo: If you turn multiple entities into one, this keeps their clipmodels.
+	idStr					combine_as;		//!< If watch is true, this is the value from "seed_combine_as"
+
 	idStr					materialName;	//!< Override material for debug_colors.
 	idList< model_ofs_t >	offsets;		//!< if pseudo: List of enitity offsets to construct a combined model
 
@@ -158,6 +164,8 @@ struct seed_class_t {
 	bool					z_invert;		// false => entities spawn between z_min => z_max, otherwise outside
 
 	lod_data_t*				m_LOD;			//!< Contains (sharable, constant) LOD data if non-NULL
+
+	idDict					*spawnArgs;		// pointer to a dictionary with additional spawnargs that were present in the map file
 };
 
 /** Defines one area that inhibits entity spawning */
@@ -176,11 +184,14 @@ struct seed_inhibitor_t {
 #define SEED_ENTITY_FLAGSHIFT 24
 
 enum seed_entity_flags {
-	SEED_ENTITY_HIDDEN		= 0x0001,
-	SEED_ENTITY_EXISTS		= 0x0002,
-	SEED_ENTITY_SPAWNED		= 0x0004,
-	SEED_ENTITY_PSEUDO		= 0x0008,
-	SEED_ENTITY_WAITING		= 0x0010
+	SEED_ENTITY_HIDDEN		= 0x0001,		//!< the entity is currently not existing (e.g. was culled or never spawned)
+	SEED_ENTITY_EXISTS		= 0x0002,		//!< the entity is currently existing (e.g. was spawned)
+	SEED_ENTITY_WAS_SPAWNED	= 0x0004,		//!< entity was spawned at least once (to trigger actions on first spawn)
+	SEED_ENTITY_PSEUDO		= 0x0008,		//!< the entity is a pseudo-class entity, e.g. a multi-static
+	SEED_ENTITY_WAITING		= 0x0010,		//!< the entity is still waiting for a timer before being spawned
+	SEED_ENTITY_WATCHED		= 0x0020,		//!< Set on entities that are merely watched, so we do not cull
+											//!< them unnec., f.i. when the menu setting changes
+	SEED_ENTITY_COMBINED	= 0x0040		//!< Set on entities combined into other entities already, these will be removed afterwards.
 };
 
 // Defines one entity to be spawned/culled
@@ -236,26 +247,17 @@ public:
 	void				Event_Enable( void );
 
 	/*
-	* Cull all entities. Only useful after Deactivate().
+	* Cull all entities, including the watched-over ones (this is false in
+	* case the menu changes, because then we do not want to cull+respawn them).
+	*/
+	void				CullAll( bool includingWatched = false );
+
+	/*
+	* Cull all entities (including watched ones). Only useful after Deactivate().
 	*/
 	void				Event_CullAll( void );
 
 	void				Event_Activate( idEntity *activator );
-
-	/**
-	* Given a pointer to a render model, calls AllocModel() on the rendermanager, then
-	* copies all surface data from the old model to the new model. Used to construct a
-	* copy of an existing model, so it can then be used as blue-print for other models,
-	* which will share the same data. If dupData is true, memory for verts and indexes
-	* is duplicated, otherwise the new model shares the data of the old model. In this
-	* case the memory of the new model needs to be freed differently, of course :)
-	*/
-	idRenderModel*		DuplicateModel( const idRenderModel *source, const char *snapshotName, const bool dupData = true );
-
-	/**
-	* Manipulate memory of a duplicate model so that shared data does not get freed twice.
-	*/
-	void				FreeSharedModelData ( const idRenderModel *model );
 
 private:
 
@@ -265,26 +267,19 @@ private:
 	void				Prepare( void );
 
 	/**
-	* Create the entity positions.
+	* Create the entity (pseudo-randomly choosen) positions.
 	*/
 	void				PrepareEntities( void );
 
 	/**
-	* Compute the LOD distance based on delta vector and entity LOD data (like xydistcheckonly)
+	* Create the entity positions based on entities we watch.
 	*/
-	float				LODDistance( const lod_data_t* m_LOD, idVec3 delta ) const;
+	void				CreateWatchedList( void );
 
 	/**
 	* Compute the LOD level for this entity based on distance to player.
 	*/
 	int					ComputeLODLevel( const lod_data_t* m_LOD, const idVec3 dist ) const;
-
-	/**
-	* Helper routine to load and set a clipmodel on a idPhysics_StaticMulti object. Returns true
-	* if the clip model could be loaded. If idClipModel != NULL, then this clipmodel will be
-	* used, this happens f.i. for func_statics created from brush/patch geometry inside DR.
-	*/
-	bool				SetClipModelForMulti( idPhysics_StaticMulti* physics, const idStr modelName, const seed_entity_t* entity, const int idx, idClipModel* clipModel = NULL);
 
 	/**
 	* Combine entity models into "megamodels". Called automatically by PrepareEntities().
@@ -320,9 +315,21 @@ private:
 	int					ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFactor, float *func_a) const;
 
 	/**
-	* Take the given entity as template and add a class from its values.
+	* Parses a (potentially cached copy) mapfile and looks for the entity with the name and class, to find out
+	* which spawnargs were set on it in the editor, since we need to preserve these. Returns a dict with these,
+	* where common ones like "classname", "editor_", "seed_" etc. are already removed.
 	*/
-	void				AddClassFromEntity( idEntity *ent, const bool watch = false );
+	idDict* 			LoadSpawnArgsFromMap(const idMapFile* mapFile, const idStr &entityName, const idStr &entityClass) const;
+
+	/**
+	* Take the given entity as template and add a template class from its values.
+	*/
+	void				AddClassFromEntity( idEntity *ent, const bool watch = false, const bool getSpawnArgs = true );
+
+	/**
+	* Take the given spawn_class or spawn_model spawnarg and add a template class based on it.
+	*/
+	void				AddTemplateFromEntityDef(idStr base, const idList<idStr> *sa);
 
 	/**
 	* Add an entry to the skin list unless it is there already. Return the index.
@@ -358,14 +365,14 @@ private:
 	bool				m_bDistDependent;
 
 	/**
-	* Current seed value for the random generator, which generates the sequence used to place
-	* entities. Same seed value gives same sequence, thus same placing every time.
+	* Current seed value for the random generator, which generates the sequence used to
+	* place entities. Same seed value gives same sequence, thus same placing every time.
 	**/
 	int					m_iSeed;
 
 	/**
 	* Current seed value for the second random generator, which generates the sequence used
-	* initialize the first generator.
+	* to initialize the first generator.
 	**/
 	int					m_iSeed_2;
 
@@ -416,6 +423,19 @@ private:
 	* Info about each entitiy that we spawn or cull.
 	**/
 	idList<seed_entity_t>		m_Entities;
+
+	/**
+	* Info about each entitiy that we watch (e.g. that already existed and
+	* that we just cloned).
+	**/
+	idList<seed_entity_t>		m_Watched;
+
+	/**
+	* List of entities that we need to remove along with our targets, this
+	* are entity numbers for things that we watch over. Gets filled by
+	* CreateWatchList() and emptied when we remove our targets.
+	**/
+	idList< int >				m_Remove;
 
 	/**
 	* Names of all different skins.
@@ -474,6 +494,11 @@ private:
 	* If Restore() just finished, the next Think() does need to do this.
 	*/
 	bool 						m_bRestoreLOD;
+
+	/**
+	* Number of currently existing entities, to see if we reached the spawn limit.
+	*/
+	int 						m_iNumEntitiesInGame;
 
 	static const unsigned long	IEEE_ONE  = 0x3f800000;
 	static const unsigned long	IEEE_MASK = 0x007fffff;

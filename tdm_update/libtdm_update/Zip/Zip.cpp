@@ -344,7 +344,13 @@ ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string
 	void* data = !output->data.empty() ? &output->data.front() : NULL;
 	int bytesRead = unzReadCurrentFile(_handle, data, info.compressed_size);
 
-	if (bytesRead != info.compressed_size) 
+	if (bytesRead < 0)
+	{
+		// Return value negative, this is an error
+		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ReadCompressedFile] Error: unzReadCurrentFile returned error code: " + intToStr(bytesRead));
+		return CompressedFilePtr();
+	}
+	else if (static_cast<uLong>(bytesRead) != info.compressed_size) 
 	{
 		// Bytes read != bytes claimed
 		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ReadCompressedFile] Error: Bytes read != compressed size, bailing out: " + filename);

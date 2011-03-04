@@ -831,3 +831,16 @@ int idBox::GetParallelProjectionSilhouetteVerts( const idVec3 &projectionDir, id
 
 	return index[0];
 }
+
+/*
+============
+idBox::ToString
+============
+*/
+const char * idBox::ToString( const int precision ) const {
+	idVec3 min = center - extents;
+	idVec3 max = center + extents;
+	return idStr( min.ToString( precision ) ) + " -> " + idStr( max.ToString( precision ) ) + " (" + idStr( axis.ToString() ) + ")";
+}
+
+

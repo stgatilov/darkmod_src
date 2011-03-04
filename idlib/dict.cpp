@@ -182,6 +182,35 @@ void idDict::SetDefaults( const idDict *dict ) {
 
 /*
 ================
+idDict::SetDefaults
+
+Tels: Like SetDefaults(), but skips all entries starting with skip:
+================
+*/
+void idDict::SetDefaults( const idDict *dict, const idStr &skip ) {
+	int i, n, l;
+	const idKeyValue *kv, *def;
+	idKeyValue newkv;
+
+	n = dict->args.Num();
+	l = skip.Length();
+	for( i = 0; i < n; i++ ) {
+		def = &dict->args[i];
+		if (def->GetKey().Icmpn(skip, l) == 0)
+		{
+			continue;
+		}
+		kv = FindKey( def->GetKey() );
+		if ( !kv ) {
+			newkv.key = globalKeys.CopyString( def->key );
+			newkv.value = globalValues.CopyString( def->value );
+			argHash.Add( argHash.GenerateKey( newkv.GetKey(), false ), args.Append( newkv ) );
+		}
+	}
+}
+
+/*
+================
 idDict::Clear
 ================
 */

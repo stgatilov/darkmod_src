@@ -657,7 +657,8 @@ void idCompiler::NextToken( void ) {
 	// Save the token's line number and filename since when we emit opcodes the current 
 	// token is always the next one to be read 
 	currentLineNumber = token.line;
-	currentFileNumber = gameLocal.program.GetFilenum( parserPtr->GetFileName() );
+	const char* currentFileName = parserPtr->GetFileName();
+	currentFileNumber = gameLocal.program.GetFilenum( currentFileName );
 
 	if ( !parserPtr->ReadToken( &token ) ) {
 		eof = true;
@@ -735,14 +736,14 @@ void idCompiler::NextToken( void ) {
 			return;
 		}
 
-		Error( "Unknown punctuation '%s'", token.c_str() );
+		Error( "Unknown punctuation '%s' on line %i, file '%s'", token.c_str(), currentLineNumber, currentFileName );
 		break;
 
 	case TT_NAME:
 		return;
 
 	default:
-		Error( "Unknown token '%s'", token.c_str() );
+		Error( "Unknown token '%s' on line %i, file '%s'", token.c_str(), currentLineNumber, currentFileName );
 	}
 }
 

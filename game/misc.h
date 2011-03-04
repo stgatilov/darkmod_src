@@ -337,35 +337,6 @@ private:
 /*
 ===============================================================================
 
-idFuncEmitter
-
-===============================================================================
-*/
-
-class idFuncEmitter : public idStaticEntity {
-public:
-	CLASS_PROTOTYPE( idFuncEmitter );
-
-						idFuncEmitter( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-	void				Spawn( void );
-	void				Event_Activate( idEntity *activator );
-
-	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
-
-private:
-	bool				hidden;
-
-};
-
-
-/*
-===============================================================================
-
 idFuncSmoke
 
 ===============================================================================
@@ -389,28 +360,6 @@ private:
 	int						smokeTime;
 	const idDeclParticle *	smoke;
 	bool					restart;
-};
-
-
-/*
-===============================================================================
-
-idFuncSplat
-
-===============================================================================
-*/
-
-class idFuncSplat : public idFuncEmitter {
-public:
-	CLASS_PROTOTYPE( idFuncSplat );
-
-	idFuncSplat( void );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-	void				Event_Splat();
 };
 
 

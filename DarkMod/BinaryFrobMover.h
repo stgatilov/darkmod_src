@@ -81,6 +81,8 @@ public:
 	virtual void			FrobAction(bool frobMaster, bool isFrobPeerAction = false);
 	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
 	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
+
+	void					RegisterAI(idAI* ai); // grayman #1145
 		
 	/**
 	* This is the non-script version of GetOpen 
@@ -107,6 +109,9 @@ public:
 	{
 		return m_LastBlockingEnt.GetEntity();
 	}
+
+	void SetClosedBox(idBox box);	// grayman #2345
+	idBox GetClosedBox();			// grayman #2345
 
 	/**
 	* This is the non-script version of GetLock
@@ -502,6 +507,18 @@ protected:
 	* True when frob is held down but not long enough to initialize fine control
 	**/
 	bool						m_bFineControlStarting;
+
+	/**
+	* grayman #2345 - idBox of the closed mover, used in pathfinding
+	**/
+
+	idBox						m_closedBox;
+
+	/**
+	* grayman #1145 - list of AI who unsuccessfully tried a locked door
+	**/
+
+	idList<idEntityPtr<idAI>>	m_registeredAI;
 };
 
 #endif /* !BINARYFROBMOVER */

@@ -699,11 +699,11 @@ idEntity::idEntity()
 	health			= 0;
 	maxHealth		= 0;
 
+	m_droppedByAI	= false; // grayman #1330
+
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
-
-	m_preHideOrigin			= idVec3(0,0,0);	// Tels: Only used if entity is hidden
 
 	physics			= NULL;
 	bindMaster		= NULL;
@@ -826,17 +826,37 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
 
+	// if > 0, if the entity is closer than this, lod_bias will be at minimum 1.0
+	m_LOD->fLODNormalDistance = dict->GetFloat( "lod_normal_distance", "500" );
+	if (m_LOD->fLODNormalDistance < 0.0f)
+	{
+		m_LOD->fLODNormalDistance = 0.0f;
+	}
+
 	idStr temp;
 	// distance dependent LOD from this point on:
-	m_LOD->OffsetLOD[0] = renderEntity.origin;
+	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
 
 	m_LOD->DistLODSq[0] = 0;
 
 	// start at 1, since 0 is "the original level" setup already above
 	for (int i = 1; i < LOD_LEVELS; i++)
 	{
-		sprintf(temp, "lod_%i_distance", i);
-		m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
+
+		if (i < LOD_LEVELS - 1)
+		{
+			// for i == LOD_LEVELS - 1, we use "hide_distance"
+			sprintf(temp, "lod_%i_distance", i);
+			m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
+		}
+
+		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
+	   	// entity gets really hidden.
+		if (fHideDistance > 1.0f && m_LOD->DistLODSq[i] > fHideDistance)
+		{
+			m_LOD->DistLODSq[i] = fHideDistance - 1.0f;
+		}
+
 		if (i == LOD_LEVELS - 1)
 		{
 			// last distance is named differently so you don't need to know how many levels the code supports:
@@ -925,7 +945,7 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 				// setup the manual offset for this LOD stage (needed to align some models)
 				sprintf(temp, "offset_lod_%i", i);
-				m_LOD->OffsetLOD[i] = m_LOD->OffsetLOD[0] + dict->GetVector( temp, "0,0,0" );
+				m_LOD->OffsetLOD[i] = dict->GetVector( temp, "0,0,0" );
 			}
 		// else hiding needs no offset
 
@@ -1411,11 +1431,7 @@ void idEntity::SaveLOD( idSaveGame *savefile ) const
 		}
 		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
 		savefile->WriteFloat( m_LOD->fLODFadeInRange );
-
-		if (fl.hidden)
-		{
-			savefile->WriteVec3( m_preHideOrigin );
-		}
+		savefile->WriteFloat( m_LOD->fLODNormalDistance );
 	}
 	else
 	{
@@ -1635,6 +1651,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(m_LightQuotient);
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
 
+	savefile->WriteBool(m_droppedByAI); // grayman #1330
+
 	SaveLOD(savefile);
 
 	// grayman #2341 - don't save previous voice and body shaders and indices,
@@ -1661,7 +1679,6 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_DistCheckTimeStamp );
 
-	m_preHideOrigin = idVec3(0,0,0);
 	if ( m_DistCheckTimeStamp > 0)
 	{
 		/* Tels: Only read the LOD data if we are distance dependent */
@@ -1684,10 +1701,7 @@ void idEntity::RestoreLOD( idRestoreGame *savefile )
 		}
 		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
 		savefile->ReadFloat( m_LOD->fLODFadeInRange );
-		if (fl.hidden)
-		{
-			savefile->ReadVec3( m_preHideOrigin );
-		}
+		savefile->ReadFloat( m_LOD->fLODNormalDistance );
 	}
 }
 
@@ -1948,6 +1962,8 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_LightQuotient);
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
 
+	savefile->ReadBool(m_droppedByAI); // grayman #1330
+
 	RestoreLOD( savefile );
 
 	// grayman #2341 - restore previous voice and body shaders and indices
@@ -2038,7 +2054,7 @@ const char * idEntity::GetName( void ) const {
 
  Thinking about LOD
 	
- We pass a ptr to the current data, so that the LODE can let the spawned
+ We pass a ptr to the current data, so that the SEED can let the spawned
  entities think while still keeping their LOD data only once per class.
 
  This routine will only modify:
@@ -2067,7 +2083,7 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// by default fully visible
 	float fAlpha = 1.0f;
 
-//	gameLocal.Warning("\n%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
+//	gameLocal.Warning("%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
 
 	// Tels: check in which LOD level we are 
 	for (int i = 0; i < LOD_LEVELS; i++)
@@ -2222,8 +2238,14 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 		{
 //			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
 			Show();
+			SetAlpha( fAlpha, true );
 		}
-		SetAlpha( fAlpha, true );
+		// Only set the alpha if we are actually fading, but skip if it is 1.0f
+		else if (renderEntity.shaderParms[ SHADERPARM_ALPHA ] != fAlpha)
+		{
+//			gameLocal.Printf("%s: Setting alpha %0.2f\n", GetName(), fAlpha);
+			SetAlpha( fAlpha, true );
+		}
 	}
 
 	if (m_LODLevel != oldLODLevel)
@@ -2236,7 +2258,15 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 //					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
 				SetModel( m_LOD->ModelLOD[m_LODLevel] );
 				m_ModelLODCur = m_LODLevel;
-				SetOrigin( m_LOD->OffsetLOD[m_LODLevel] );
+				// Fix 1.04 blinking bug:
+				// if the old LOD level had an offset, we need to revert this.
+				// and if the new one has an offset, we need to add it:
+				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+				{
+					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+				}
 			}
 
 		if ( m_SkinLODCur != m_LODLevel)
@@ -2261,6 +2291,57 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 
 /*
 ================
+idEntity::GetLODDistance
+
+Returns the distance that should be considered for LOD and hiding, depending on:
+
+* the distance of the origin to the given player origin
+* the lod-bias set in the menu
+* some minimum and maximum distances based on entity size/importance
+
+The returned value is the actual distance squared, and rounded down to an integer.
+================
+*/
+float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const
+{
+	idVec3 delta = playerOrigin - entOrigin;
+
+	if( m_LOD && m_LOD->bDistCheckXYOnly )
+	{
+		// todo: allow passing in a different gravityNormal
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		delta -= (vGravNorm * delta) * vGravNorm;
+	}
+
+	// multiply with the user LOD bias setting, and return the result:
+	// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+	assert(lod_bias > 0.01f);
+	float deltaSq = delta.LengthSqr();
+
+	// enforce an absolute minimum of 500 units for entities w/o LOD
+	float minDist = 0.0f;
+	// but let the mapper override it
+	if (m_LOD && m_LOD->fLODNormalDistance > 0)
+	{
+//		gameLocal.Printf ("%s: Using %0.2f lod_normal_distance, delta %0.2f.\n", GetName(), m_LOD->fLODNormalDistance, deltaSq);
+		minDist = m_LOD->fLODNormalDistance;
+	}
+	// if the entity is inside the "lod_normal_distance", simply ignore any LOD_BIAS < 1.0f
+	if (minDist > 0 && lod_bias < 1.0f && deltaSq < (minDist * minDist))
+	{
+		deltaSq = idMath::Floor( deltaSq );
+	}
+	else
+	{
+		deltaSq = idMath::Floor( deltaSq / (lod_bias * lod_bias) );
+	}
+
+	// TODO: enforce minimum/maximum distances based on entity size/importance
+	return deltaSq;
+}
+
+/*
+================
 idEntity::Think
 ================
 */
@@ -2279,33 +2360,17 @@ void idEntity::Think( void )
 		// If this entity has LOD, let it think about it:
 
 		// Distance dependence checks
-		if ( ( m_LOD->DistCheckInterval <= 0) 
-		  || ( (gameLocal.time - m_DistCheckTimeStamp) <= m_LOD->DistCheckInterval ) )
+		if ( ( m_LOD->DistCheckInterval > 0) 
+		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
 		{
-			return;
+			m_DistCheckTimeStamp = gameLocal.time;
+
+//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+
+			SwitchLOD( m_LOD, 
+				GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
 		}
-
-		m_DistCheckTimeStamp = gameLocal.time;
-
-		// if the entity is hidden, GetPhysics()->GetOrigin() == "0,0,0", so we cannot use it
-		idVec3 origin = fl.hidden ? m_preHideOrigin : GetPhysics()->GetOrigin();
-
-		idVec3 delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - origin;
-
-//		gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i",
-//				GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval );
-
-		if( m_LOD->bDistCheckXYOnly )
-		{
-			idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-			delta -= (vGravNorm * delta) * vGravNorm;
-		}
-
-		// multiply with the user LOD bias setting, and return the result:
-		// floor the value to avoid inaccurancies leading to toggling when the player stands still:
-		float deltaSq = idMath::Floor( delta.LengthSqr() / (cv_lod_bias.GetFloat() * cv_lod_bias.GetFloat()) );
-
-		SwitchLOD( m_LOD, deltaSq );
 	}
 	Present();
 }
@@ -2739,6 +2804,7 @@ void idEntity::SetAlpha( const float alpha, const bool bound ) {
 
 	if (!bound)
 	{
+		UpdateVisuals();
 		return;
 	}
 
@@ -2896,7 +2962,6 @@ void idEntity::Hide( void )
 
 		idPhysics* p = GetPhysics();
 
-		m_preHideOrigin = p->GetOrigin();		// Tels: Store this for LOD computations
 		m_preHideContents = p->GetContents();
 		m_preHideClipMask = p->GetClipMask();
 
@@ -11271,7 +11336,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 /* tels: Parses "def_attach" spawnargs and builds a list of idDicts that
  * contain the spawnargs to spawn the attachments, which is done in
  * SpawnAttachments() later. This is a two-phase process to allow other
- * code (e.g. LODE) to just parse the attachments without spawning them.
+ * code (e.g. SEED) to just parse the attachments without spawning them.
  */
 void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from )
 {
@@ -11335,20 +11400,26 @@ void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from 
 
 				if (PosSpace == -1)
 				{
-					gameLocal.Warning( "Invalid spawnarg '%s' on entity '%s'",
-					  kv_set->GetValue().c_str(), name.c_str() );
-					kv_set = from->MatchPrefix( "set ", kv_set );
-					continue;		
+					gameLocal.Warning( "%s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
+						GetName(), kv_set->GetKey().c_str(), kv_set->GetValue().c_str() );
+					//kv_set = from->MatchPrefix( "set ", kv_set );
+					//continue;		
+					// pretend "set _color" "0.1 0.2 0.3" means "set _color on BAR" where BAR is the
+					// current attachement. So it applies to all of them.
+					// SpawnargName is already right
+					SetAttName = AttNameValue;
+				}
+				else
+				{
+					// "FOO on BAR" => "FOO"
+					SpawnargName = SpawnargName.Left( PosSpace );
+					// "FOO on BAR" => "BAR"
+					SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
 				}
 
-				// "FOO on BAR" => "FOO"
-				SpawnargName = SpawnargName.Left( PosSpace );
-				// "FOO on BAR" => "BAR"
-				SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
-
-				//gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
-				//gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
-				//gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
+				// gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
+				// gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
+				// gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
 
 				// does this spawnarg apply to the newly spawned entity?
 				if (SetAttName == AttNameValue)

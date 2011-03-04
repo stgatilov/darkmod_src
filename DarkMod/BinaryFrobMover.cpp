@@ -75,11 +75,24 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
 	m_bFineControlStarting = false;
+	m_closedBox = box_zero; // grayman #2345 - holds closed position
+	m_closedBox.Clear();	// grayman #2345
+	m_registeredAI.Clear();	// grayman #1145
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
 {
 	delete m_Lock;
+}
+
+void CBinaryFrobMover::SetClosedBox(idBox box) // grayman #2345
+{
+	m_closedBox = box;
+}
+
+idBox CBinaryFrobMover::GetClosedBox() // grayman #2345
+{
+	return m_closedBox;
 }
 
 void CBinaryFrobMover::AddObjectsToSaveGame(idSaveGame* savefile)
@@ -131,6 +144,14 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_stopWhenBlocked);
 	savefile->WriteBool(m_LockOnClose);
 	savefile->WriteBool(m_bFineControlStarting);
+	savefile->WriteBox(m_closedBox); // grayman #2345
+	
+	// grayman #1145 - registered AI for a locked door
+	savefile->WriteInt(m_registeredAI.Num());
+	for (int i = 0 ; i < m_registeredAI.Num() ; i++ )
+	{
+		m_registeredAI[i].Save(savefile);
+	}
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -175,6 +196,17 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_stopWhenBlocked);
 	savefile->ReadBool(m_LockOnClose);
 	savefile->ReadBool(m_bFineControlStarting);
+	savefile->ReadBox(m_closedBox); // grayman #2345
+
+	// grayman #1145 - registered AI for a locked door
+	m_registeredAI.Clear();
+	int num;
+	savefile->ReadInt(num);
+	m_registeredAI.SetNum(num);
+	for (int i = 0 ; i < num ; i++)
+	{
+		m_registeredAI[i].Restore(savefile);
+	}
 }
 
 void CBinaryFrobMover::Spawn()
@@ -253,36 +285,69 @@ void CBinaryFrobMover::PostSpawn()
 	idAngles partialAngles(0,0,0);
 
 	// Check if the door should spawn as "open"
-	if (spawnArgs.GetBool("open"))
+	if (m_Open)
 	{
-		if (!spawnArgs.GetAngles("start_rotate", "0 0 0", partialAngles) || partialAngles.Compare(idAngles(0,0,0)))
-		{
-			// If no partial angles are defined in the spawnargs, assume fully open door
-			partialAngles = m_OpenAngles - m_ClosedAngles;
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] shall be open at spawn time, checking start_* spawnargs.\r", name.c_str());
 
-			if (!partialAngles.Compare(idAngles(0,0,0)))
+		// greebo: Load values from spawnarg, we might need to adjust them later on
+		partialAngles = spawnArgs.GetAngles("start_rotate", "0 0 0");
+		m_StartPos = spawnArgs.GetVector("start_position", "0 0 0");
+
+		bool hasPartialRotation = !partialAngles.Compare(idAngles(0,0,0));
+		bool hasPartialTranslation = !m_StartPos.Compare(idVec3(0,0,0));
+
+		if (hasPartialRotation && !m_Translation.Compare(idVec3(0,0,0)))
+		{
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] has partial angles set, calculating partial translation automatically.\r", name.c_str());
+
+			// Sliding door has partial angles set, calculate the partial translation automatically
+			idRotation maxRot = (m_OpenAngles - m_ClosedAngles).Normalize360().ToRotation();
+
+			if (maxRot.GetAngle() > 0)
 			{
-				// greebo: In this case, first_frob_open makes no sense, override the settings
-				m_bIntentOpen = false;
-				m_bInterrupted = false;
-				m_StateChange = false;
+				idRotation partialRot = partialAngles.Normalize360().ToRotation(); // grayman #720 - fixed partial rotation value
+				float fraction = partialRot.GetAngle() / maxRot.GetAngle();
+				m_StartPos = m_Translation * fraction;
+			}
+			else
+			{
+				gameLocal.Warning("Mover '%s' has start_rotate set, but rotation angles are zero.\r", name.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has start_rotate set, but rotation angles are zero.\r", name.c_str());
 			}
 		}
-
-		// Original starting position of the door in case it is a sliding door.
-		// Add the initial position offset in case the mapper makes the door start out inbetween states
-		if (!spawnArgs.GetVector("start_position", "0 0 0", m_StartPos) || m_StartPos.Compare(idVec3(0,0,0)))
+		else if (hasPartialTranslation && !m_Rotate.Compare(idAngles(0,0,0)))
 		{
-			// Assume fully translated door, if no start_position is set
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] has partial translation set, calculating partial rotation automatically.\r", name.c_str());
+
+			// Rotating door has partial translation set, calculate the partial rotation automatically
+			float maxTrans = (m_OpenOrigin - m_ClosedOrigin).Length();
+			float partialTrans = m_StartPos.Length();
+
+			if (maxTrans > 0)
+			{
+				float fraction = partialTrans / maxTrans;
+
+				partialAngles = m_ClosedAngles + (m_OpenAngles - m_ClosedAngles) * fraction;
+			}
+			else
+			{
+				gameLocal.Warning("Mover '%s' has start_position set, but translation is zero.\r", name.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has partial translation set, but translation is zero?\r", name.c_str());
+			}
+		}
+		else if (!hasPartialRotation && !hasPartialTranslation)
+		{
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s]: has open='1' but neither partial translation nor rotation are set, assuming fully opened mover.\r", name.c_str());
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s]: Resetting first_frob_open and interrupted flags.\r", name.c_str());
+			
+			// Neither start_position nor start_rotate set, assume fully opened door
+			partialAngles = m_OpenAngles - m_ClosedAngles;
 			m_StartPos = m_OpenOrigin - m_ClosedOrigin;
 
-			if (!m_StartPos.Compare(idVec3(0,0,0)))
-			{
-				// greebo: In this case, first_frob_open makes no sense, override the settings
-				m_bIntentOpen = false;
-				m_bInterrupted = false;
-				m_StateChange = false;
-			}
+			// greebo: In this case, first_frob_open makes no sense, override the settings
+			m_bIntentOpen = false;
+			m_bInterrupted = false;
+			m_StateChange = false; 
 		}
 	}
 
@@ -296,6 +361,7 @@ void CBinaryFrobMover::PostSpawn()
 	idBox closedBox(clipModel->GetBounds(), m_ClosedOrigin, m_ClosedAngles.ToMat3());
 	idVec3 closedBoxVerts[8];
 	closedBox.GetVerts(closedBoxVerts);
+	m_closedBox = closedBox; // grayman #720 - save for AI obstacle detection
 
 	float maxDistSquare = 0;
 	for (int i = 0; i < 8; i++)
@@ -307,7 +373,7 @@ void CBinaryFrobMover::PostSpawn()
 			maxDistSquare = distSquare;
 		}
 	}
-	// gameRenderWorld->DebugArrow(colorGreen, GetPhysics()->GetOrigin() + m_ClosedPos, GetPhysics()->GetOrigin() + m_ClosedPos + idVec3(0, 0, 30), 2, 200000);
+	//gameRenderWorld->DebugArrow(colorGreen, GetPhysics()->GetOrigin() + m_ClosedPos, GetPhysics()->GetOrigin() + m_ClosedPos + idVec3(0, 0, 30), 2, 200000);
 
 	idBox openBox(clipModel->GetBounds(), m_OpenOrigin, m_OpenAngles.ToMat3());
 	idVec3 openBoxVerts[8];
@@ -402,6 +468,21 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 
 	// Fire the event for the subclasses
 	OnUnlock(bMaster);
+
+	// grayman #1145 - remove this door's area number from each registered AI's forbidden area list
+
+	int numUsers = m_registeredAI.Num();
+
+	for (int i = 0 ; i < numUsers ; i++)
+	{
+		idAI* ai = m_registeredAI[i].GetEntity();
+		idAAS* aas = ai->GetAAS();
+		if (aas != NULL)
+		{
+			gameLocal.m_AreaManager.RemoveForbiddenArea(GetAASArea(aas),ai);
+		}
+	}
+	m_registeredAI.Clear(); // served its purpose, clear for next batch
 }
 
 void CBinaryFrobMover::ToggleLock()
@@ -844,10 +925,10 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 		// aasLocal->DrawArea(areaNum);
 	}
 
-	// idStr areatext(areaNum);
-	// gameRenderWorld->DebugLine(colorGreen,center,center + idVec3(0,0,20),10000000);
-	// gameRenderWorld->DebugLine(colorOrange,GetPhysics()->GetOrigin(),GetPhysics()->GetOrigin() + m_ClosedPos,10000000);
-	// gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,1), 0.2f, colorGreen, mat3_identity, 1, 10000000);
+//	idStr areatext(areaNum);
+//	gameRenderWorld->DebugLine(colorGreen,center,center + idVec3(0,0,20),10000000);
+//	gameRenderWorld->DebugLine(colorOrange,GetPhysics()->GetOrigin(),GetPhysics()->GetOrigin() + m_ClosedPos,10000000);
+//	gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,1), 0.2f, colorGreen, mat3_identity, 1, 10000000);
 
 	return areaNum;
 }
@@ -1060,15 +1141,20 @@ idVec3 CBinaryFrobMover::GetCurrentPos()
 	closedDir.z = 0;
 	float length = closedDir.LengthFast();
 
-	const idAngles& angles = physicsObj.GetLocalAngles();
-	idAngles deltaAngles = angles - GetClosedAngles();
-	idRotation rot = deltaAngles.ToRotation();
+	// grayman #720 - previous version was giving the wrong result for a
+	// NS door partially opened clockwise. Corrected by normalizing the
+	// closed angle and using abs() on the cos() and sin() calcs and letting
+	// closedDir and m_OpenDir set the signs when calculating currentPos.
 
+	idAngles angles = physicsObj.GetLocalAngles();
+	idAngles closedAngles = GetClosedAngles();
+	idAngles deltaAngles = angles - closedAngles.Normalize360();
+	idRotation rot = deltaAngles.ToRotation();
 	float alpha = idMath::Fabs(rot.GetAngle());
 	
 	idVec3 currentPos = GetPhysics()->GetOrigin() 
-		+ closedDir * idMath::Cos(alpha * idMath::PI / 180)
-		+ m_OpenDir * length * idMath::Sin(alpha* idMath::PI / 180);
+		+ closedDir * idMath::Fabs(idMath::Cos(alpha * idMath::PI / 180))
+		+ m_OpenDir * length * idMath::Fabs(idMath::Sin(alpha * idMath::PI / 180));
 
 	return currentPos;
 }
@@ -1185,4 +1271,13 @@ void CBinaryFrobMover::FrobReleased(bool frobMaster, bool isFrobPeerAction, int 
 {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	player->SetImmobilization( "door handling",  0 );
+}
+
+// grayman #1145 - add an AI who unsuccessfully tried to open a locked door
+
+void CBinaryFrobMover::RegisterAI(idAI* ai)
+{
+	idEntityPtr<idAI> aiPtr;
+	aiPtr = ai;
+	m_registeredAI.Append(aiPtr);
 }

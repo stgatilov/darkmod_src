@@ -404,6 +404,10 @@ private:
 
 	idEntityPtr<idEntity>	activatedBy;
 
+	// If true, the next activation will let the mover rotate in forward direction
+	// this is only used when "invert_on_trigger" is set to "1"
+	bool					nextTriggerDirectionIsForward;
+
 	void					Event_Activate( idEntity *activator );
 };
 

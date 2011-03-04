@@ -72,6 +72,9 @@ public:
 	// Instruct the controller to wait before entering the next step
 	void PauseAt(UpdateStep step);
 
+	// Instruct the controller not to wait before entering the given step
+	void DontPauseAt(UpdateStep step);
+
 	// Main trigger - call this to let the controller continue to the next
 	// step. The thread will drive the update process until it's done or
 	// the next interruption point is reached. Calling StartOrContinue()

@@ -36,6 +36,11 @@ const idStr& ResolveMovementBlockTask::GetName() const
 	return _name;
 }
 
+bool ResolveMovementBlockTask::IsSolid() // grayman #2345
+{
+	return (_preTaskContents == -1);
+}
+
 void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
@@ -231,15 +236,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 			// grayman #2345 - before declaring failure, let's try extrication
 
 			owner->RestoreAttachmentContents(); // AttemptToExtricate() will do an attachment save/restore, so we must restore here first
-			if (!owner->movementSubsystem->AttemptToExtricate())
-			{
-				// extrication failed
-
-				owner->StopMove(MOVE_STATUS_BLOCKED_BY_OBJECT);
-				owner->AI_BLOCKED = true;
-				owner->AI_DEST_UNREACHABLE = true;
-				subsystem.FinishTask();
-			}
+			owner->movementSubsystem->AttemptToExtricate();
 		}
 		else
 		{
@@ -313,15 +310,15 @@ bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
 	{
 		// blocking AI is headed n/s, so test to your e/w
 
-		end1.x += 36;
-		end2.x -= 36;
+		end1.x += 48;
+		end2.x -= 48;
 	}
 	else
 	{
 		// blocking AI is headed e/w, so test to your n/s
 
-		end1.y += 36;
-		end2.y -= 36;
+		end1.y += 48;
+		end2.y -= 48;
 	}
 
 	trace_t traceResult;
@@ -343,6 +340,19 @@ bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
 	return result;
 }
 
+void ResolveMovementBlockTask::BecomeNonSolid(idAI* owner) // grayman #2345
+{
+	bool solid = false;
+	_preTaskContents = owner->GetPhysics()->GetContents();
+	owner->GetPhysics()->SetContents(0);
+
+	// Set all attachments to nonsolid, temporarily
+
+	owner->SaveAttachmentContents();
+	owner->SetAttachmentContents(0);
+	owner->movementSubsystem->SetWaiting(solid);
+}
+
 bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 {
 	if (owner->AI_MOVE_DONE && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
@@ -352,28 +362,23 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 		owner->StopMove(MOVE_STATUS_WAITING);
 		owner->TurnToward(owner->GetPhysics()->GetOrigin() - ownerRight);
 
-		if (owner->FacingIdeal() /*&& _preTaskContents == -1*/) // grayman #2345 - second check is already true
+		if (owner->FacingIdeal() && _preTaskContents == -1)
 		{
 			// grayman #2345 - don't become non-solid if your alert index is > 0. This is because
 			// AI tend to bunch together when agitated, and it doesn't look good if one goes non-solid
 			// and the others repeatedly walk through it.
 
-			// grayman #2345 - If there's no room to get around you, become non-solid
+			// If there's no room to get around you, become non-solid
 
 			if ((owner->AI_AlertIndex == 0) && !Room2Pass(owner))
 			{
-				_preTaskContents = owner->GetPhysics()->GetContents();
-				owner->GetPhysics()->SetContents(0);
-
-				// Set all attachments to nonsolid, temporarily
-
-				owner->SaveAttachmentContents();
-				owner->SetAttachmentContents(0);
+				BecomeNonSolid(owner);
 			}
-
-			// Wait for other AI to pass by
-
-			owner->movementSubsystem->SetWaiting(); // grayman #2345
+			else
+			{
+				bool solid = true;
+				owner->movementSubsystem->SetWaiting(solid);
+			}
 		}
 	}
 
@@ -388,14 +393,26 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			return true;
 		}
 		
-		// grayman #2345 - check to see if the other AI is waiting. if so, don't wait yourself
-
 		if (_blockingEnt->IsType(idAI::Type))
 		{
-			idAI *e = static_cast<idAI*>(_blockingEnt);
-			if (e && e->movementSubsystem->IsWaiting())
+			// grayman #2345 - check to see if the other AI is standing still.
+			// If they are, end the task.
+
+			idAI *_blockingEntAI = static_cast<idAI*>(_blockingEnt);
+			if (_blockingEntAI && !_blockingEntAI->AI_FORWARD)
 			{
 				return true; // end the task
+			}
+
+			// If we're EWaitingSolid, change to EWaitingNonSolid if the other AI is barely moving.
+
+			if (owner->movementSubsystem->IsWaitingSolid())
+			{
+				float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled();
+				if (traveledPrev < 0.1) // grayman #2345
+				{
+					BecomeNonSolid(owner);
+				} 
 			}
 		}
 
@@ -409,9 +426,21 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 	return false;
 }
 
-bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner)
+bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #2345 - entirely replaced
 {
-	return owner->AI_MOVE_DONE ? true : false;
+	if (owner->AI_MOVE_DONE)
+	{
+		return true;
+	}
+
+	// If you're not getting anywhere, try extricating yourself.
+
+	if (owner->movementSubsystem->GetPrevTraveled() < 0.1)
+	{
+		owner->movementSubsystem->AttemptToExtricate();
+	}
+
+	return false;
 }
 
 void ResolveMovementBlockTask::OnFinish(idAI* owner)
@@ -430,26 +459,10 @@ void ResolveMovementBlockTask::OnFinish(idAI* owner)
 			owner->RestoreAttachmentContents();
 		}
 
-		// grayman #2345 - if there's a blocking AI, it's now free to extricate if it needs to
-
-		if (_blockingEnt)
-		{
-			if (_blockingEnt->IsType(idAI::Type))
-			{
-				idAI* ai = static_cast<idAI *>(_blockingEnt);
-				if (ai)
-				{
-					ai->m_canExtricate = true;
-				}
-			}
-			_blockingEnt = NULL; // forget the other entity
-		}
-
-		// grayman #2345 - insurance; there are instances where EWaiting doesn't get turned off when this task is finished
-
-		owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
+		_blockingEnt = NULL; // forget the other entity
 	}
 
+	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
 	owner->PopMove();
 }
 

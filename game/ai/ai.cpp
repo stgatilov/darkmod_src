@@ -216,7 +216,8 @@ bool idAASFindAreaOutOfRange::TestArea( const idAAS *aas, int areaNum ) {
 idAASFindAttackPosition::idAASFindAttackPosition
 ============
 */
-idAASFindAttackPosition::idAASFindAttackPosition( const idAI *self, const idMat3 &gravityAxis, idEntity *target, const idVec3 &targetPos, const idVec3 &fireOffset ) {
+idAASFindAttackPosition::idAASFindAttackPosition(idAI *self, const idMat3 &gravityAxis, idEntity *target, const idVec3 &targetPos, const idVec3 &fireOffset)
+{
 	int	numPVSAreas;
 
 	this->target		= target;
@@ -443,13 +444,8 @@ idAI::idAI()
 	lastAttackTime		= 0;
 	fire_range			= 0.0f;
 	projectile_height_to_distance_ratio = 1.0f;
-	projectileDef		= NULL;
-	projectile			= NULL;
-	projectileClipModel	= NULL;
-	projectileRadius	= 0.0f;
-	projectileVelocity	= vec3_origin;
-	projectileGravity	= vec3_origin;
-	projectileSpeed		= 0.0f;
+	activeProjectile.projEnt = NULL;
+	curProjectileIndex	= -1;
 	talk_state			= TALK_NEVER;
 	talkTarget			= NULL;
 
@@ -507,8 +503,9 @@ idAI::idAI()
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
-	m_canExtricate		= true; // grayman #2345
 	m_tactileEntity		= NULL; // grayman #2345
+	m_canResolveBlock	= true;	// grayman #2345
+	m_leftQueue			= false; // grayman #2345
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -551,6 +548,9 @@ idAI::idAI()
 	m_KoDotHoriz = 0;
 	m_KoAlertDotHoriz = 0;
 	m_KoRot = mat3_identity;
+
+	m_bCanBeGassed = true;		// grayman #2468
+	m_koState = KO_NOT;			// grayman #2604
 
 	m_bCanOperateDoors = false;
 
@@ -598,11 +598,12 @@ idAI::idAI()
 idAI::~idAI
 =====================
 */
-idAI::~idAI() {
-	delete projectileClipModel;
+idAI::~idAI()
+{
 	DeconstructScriptObject();
 	scriptObject.Free();
-	if ( worldMuzzleFlashHandle != -1 ) {
+	if ( worldMuzzleFlashHandle != -1 )
+	{
 		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
 		worldMuzzleFlashHandle = -1;
 	}
@@ -689,14 +690,32 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( missileLaunchOffset[ i ] );
 	}
 
-	idStr projectileName;
-	spawnArgs.GetString( "def_projectile", "", projectileName );
-	savefile->WriteString( projectileName );
-	savefile->WriteFloat( projectileRadius );
-	savefile->WriteFloat( projectileSpeed );
-	savefile->WriteVec3( projectileVelocity );
-	savefile->WriteVec3( projectileGravity );
-	projectile.Save( savefile );
+	savefile->WriteInt(projectileInfo.Num());
+
+	for (i = 0; i < projectileInfo.Num(); ++i)
+	{
+		const ProjectileInfo& info = projectileInfo[i];
+
+		// Save projectile def names instead of dict* pointers, will be resolved at restore time
+		// also leave clipmodel pointer alone, will be initialised to NULL on restore and
+		// reloaded on demand
+		savefile->WriteString(info.defName);
+		savefile->WriteFloat(info.radius);
+		savefile->WriteFloat(info.speed);
+		savefile->WriteVec3(info.velocity);
+		savefile->WriteVec3(info.gravity);
+	}
+
+	savefile->WriteInt(curProjectileIndex);
+
+	// Active Projectile
+	savefile->WriteString(activeProjectile.info.defName);
+	savefile->WriteFloat(activeProjectile.info.radius);
+	savefile->WriteFloat(activeProjectile.info.speed);
+	savefile->WriteVec3(activeProjectile.info.velocity);
+	savefile->WriteVec3(activeProjectile.info.gravity);
+	activeProjectile.projEnt.Save(savefile);
+
 	savefile->WriteString( attack );
 
 	savefile->WriteInt( talk_state );
@@ -757,8 +776,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( eyeFocusRate );
 	savefile->WriteFloat( headFocusRate );
 	savefile->WriteInt( focusAlignTime );
-	savefile->WriteBool(m_canExtricate);		// grayman #2345
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
+	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
+	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -836,6 +856,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_KoAlertDotVert);
 	savefile->WriteFloat(m_KoAlertDotHoriz);
 	savefile->WriteMat3(m_KoRot);
+
+	savefile->WriteBool(m_bCanBeGassed);	// grayman #2468
+	savefile->WriteInt( m_koState );		// grayman #2604
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1023,18 +1046,45 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadVec3( missileLaunchOffset[ i ] );
 	}
 
-	idStr projectileName;
-	savefile->ReadString( projectileName );
-	if ( projectileName.Length() ) {
-		projectileDef = gameLocal.FindEntityDefDict( projectileName );
-	} else {
-		projectileDef = NULL;
+	savefile->ReadInt(num);
+	projectileInfo.SetNum(num);
+
+	for (i = 0; i < projectileInfo.Num(); ++i)
+	{
+		ProjectileInfo& info = projectileInfo[i];
+
+		savefile->ReadString(info.defName);
+		// Resolve projectile def pointers from names
+		info.def = (info.defName.Length() > 0) ? gameLocal.FindEntityDefDict(info.defName) : NULL;
+		
+		// leave clipmodel pointer alone, is already initialised to NULL
+		savefile->ReadFloat(info.radius);
+		savefile->ReadFloat(info.speed);
+		savefile->ReadVec3(info.velocity);
+		savefile->ReadVec3(info.gravity);
 	}
-	savefile->ReadFloat( projectileRadius );
-	savefile->ReadFloat( projectileSpeed );
-	savefile->ReadVec3( projectileVelocity );
-	savefile->ReadVec3( projectileGravity );
-	projectile.Restore( savefile );
+
+	savefile->ReadInt(curProjectileIndex);
+
+	// Active Projectile
+	savefile->ReadString(activeProjectile.info.defName);
+
+	// Resolve projectile def pointers from names
+	if (activeProjectile.info.defName.Length() > 0)
+	{
+		activeProjectile.info.def = gameLocal.FindEntityDefDict(activeProjectile.info.defName);
+	}
+	else
+	{
+		activeProjectile.info.def = NULL;
+	}
+
+	savefile->ReadFloat(activeProjectile.info.radius);
+	savefile->ReadFloat(activeProjectile.info.speed);
+	savefile->ReadVec3(activeProjectile.info.velocity);
+	savefile->ReadVec3(activeProjectile.info.gravity);
+	activeProjectile.projEnt.Restore(savefile);
+
 	savefile->ReadString( attack );
 
 	savefile->ReadInt( i );
@@ -1106,8 +1156,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( eyeFocusRate );
 	savefile->ReadFloat( headFocusRate );
 	savefile->ReadInt( focusAlignTime );
-	savefile->ReadBool(m_canExtricate); // grayman #2345
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
+	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
+	savefile->ReadBool(m_leftQueue);		// grayman #2345
 
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
@@ -1201,6 +1252,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_KoAlertDotVert);
 	savefile->ReadFloat(m_KoAlertDotHoriz);
 	savefile->ReadMat3(m_KoRot);
+
+	savefile->ReadBool(m_bCanBeGassed); // grayman #2468
+	savefile->ReadInt( i ); // grayman #2604
+	m_koState = static_cast<koState_t>( i );
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1722,20 +1777,7 @@ void idAI::Spawn( void )
 
 	SetAAS();
 
-	projectile		= NULL;
-	projectileDef	= NULL;
-	projectileClipModel	= NULL;
-	idStr projectileName;
-	if ( spawnArgs.GetString( "def_projectile", "", projectileName ) && projectileName.Length() ) {
-		projectileDef = gameLocal.FindEntityDefDict( projectileName );
-		CreateProjectile( vec3_origin, viewAxis[ 0 ] );
-		projectileRadius	= projectile.GetEntity()->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
-		projectileVelocity	= idProjectile::GetVelocity( projectileDef );
-		projectileGravity	= idProjectile::GetGravity( projectileDef );
-		projectileSpeed		= projectileVelocity.Length();
-		delete projectile.GetEntity();
-		projectile = NULL;
-	}
+	InitProjectileInfo();
 
 	particles.Clear();
 	restartParticles = true;
@@ -1847,6 +1889,60 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiCanSeeTimer, name, "CanSee");
 
 	m_pathRank = rank; // grayman #2345 - rank for path-finding
+
+	m_bCanBeGassed = !(spawnArgs.GetBool( "gas_immune", "0" )); // grayman #2468
+}
+
+void idAI::InitProjectileInfo()
+{
+	activeProjectile.projEnt = NULL;
+
+	// greebo: Pre-cache the properties of each projectile def.
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_projectile"); kv != NULL; kv = spawnArgs.MatchPrefix("def_projectile", kv))
+	{
+		const idStr& projectileName = kv->GetValue();
+		
+		if (projectileName.Length() == 0) continue;
+
+		ProjectileInfo& info = projectileInfo.Alloc();
+
+		// Pass to specialised routine
+		InitProjectileInfoFromDict(info, projectileName);
+	}
+
+	// Roll a random projectile for starters
+	curProjectileIndex = gameLocal.random.RandomInt(projectileInfo.Num());
+}
+
+void idAI::InitProjectileInfoFromDict(idAI::ProjectileInfo& info, const char* entityDef) const
+{
+	const idDict* dict = gameLocal.FindEntityDefDict(entityDef);
+
+	if (dict == NULL)
+	{
+		gameLocal.Error("Cannot load projectile info for entityDef %s", entityDef);
+	}
+	
+	InitProjectileInfoFromDict(info, dict);
+}
+
+void idAI::InitProjectileInfoFromDict(idAI::ProjectileInfo& info, const idDict* dict) const
+{
+	assert(dict != NULL);
+
+	info.defName = dict->GetString("classname");
+	info.def = dict;
+	
+	// Create a projectile of this specific type to retrieve its properties
+	idProjectile* proj = SpawnProjectile(info.def);
+
+	info.radius	= proj->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
+	info.velocity = idProjectile::GetVelocity(info.def);
+	info.gravity = idProjectile::GetGravity(info.def);
+	info.speed = info.velocity.Length();
+
+	// dispose after this short use
+	delete proj;
 }
 
 /*
@@ -2197,7 +2293,7 @@ void idAI::Think( void )
 		RunPhysics();
 	}
 
-	if (m_bAFPushMoveables && !movementSubsystem->IsWaiting()) // grayman #2345 - if you're waiting for someone to go by, you're non-solid, so you can't push anything
+	if (m_bAFPushMoveables && !movementSubsystem->IsWaitingNonSolid()) // grayman #2345 - if you're waiting for someone to go by, you're non-solid, so you can't push anything
 	{
 		START_SCOPED_TIMING(aiPushWithAFTimer, scopedPushWithAFTimer)
 		PushWithAF();
@@ -2342,8 +2438,6 @@ void idAI::SetNextThinkFrame()
 
 			if (thinkMore)
 			{
-				// Tels: gcc doesn't like "min(...)":
-				//thinkDelta = min(thinkFrame,TEMP_THINK_INTERLEAVE);
 				thinkDelta = (thinkFrame < TEMP_THINK_INTERLEAVE ? thinkFrame : TEMP_THINK_INTERLEAVE);
 			}
 		}
@@ -3285,6 +3379,10 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 		return false;
 	}
 */
+/* grayman - the section below can't be reached because
+   of the 'return true' above, so I'm commenting it out.
+   The section above this, just below the 'return', was
+   already commented out.
 
 	move.moveDest		= moveDest;
 	move.toAreaNum		= moveAreaNum;
@@ -3301,6 +3399,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	m_pathRank			= rank; // grayman #2345
 
 	return true;
+ */
 }
 
 /*
@@ -3578,6 +3677,19 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 		pos = ent->GetPhysics()->GetOrigin();
 	}
 
+	// Make sure we have a active projectile or at least the def
+	if (activeProjectile.info.def == NULL)
+	{
+		if (projectileInfo.Num() == 0)
+		{
+			gameLocal.Warning("AI %s has no projectile info, cannot move to attack position!", name.c_str());
+			return false;
+		}
+
+		// Move the def pointer of the "next" projectile info into the active one
+		activeProjectile.info = projectileInfo[curProjectileIndex];
+	}
+
 	idAASFindAttackPosition findGoal( this, physicsObj.GetGravityAxis(), ent, pos, missileLaunchOffset[ attack_anim ] );
 	if ( !aas->FindNearestGoal( goal, areaNum, org, pos, travelFlags, &obstacle, 1, findGoal ) ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
@@ -3610,8 +3722,10 @@ idAI::MoveToPosition
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
-	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
-	move.accuracy = accuracy; // grayman #2345 - 'accuracy' must be set before we call ReachedPos()
+	if (movementSubsystem->IsPaused()) // grayman #2345
+	{
+		movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
+	}
 
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
@@ -6875,15 +6989,31 @@ void idAI::CalculateAttackOffsets( void ) {
 
 /*
 =====================
-idAI::CreateProjectileClipModel
+idAI::EnsureActiveProjectileInfo
 =====================
 */
-void idAI::CreateProjectileClipModel( void ) const {
-	if ( projectileClipModel == NULL ) {
-		idBounds projectileBounds( vec3_origin );
-		projectileBounds.ExpandSelf( projectileRadius );
-		projectileClipModel	= new idClipModel( idTraceModel( projectileBounds ) );
+idAI::ProjectileInfo& idAI::EnsureActiveProjectileInfo()
+{
+	// Ensure valid projectile clipmodel
+	if (activeProjectile.info.clipModel == NULL)
+	{
+		// Ensure we have a radius
+		if (activeProjectile.info.radius < 0)
+		{
+			// At least we should have the def
+			assert(activeProjectile.info.def != NULL);
+
+			// Load values from the projectile
+			InitProjectileInfoFromDict(activeProjectile.info, activeProjectile.info.def);
+		}
+
+		idBounds projectileBounds(vec3_origin);
+		projectileBounds.ExpandSelf(activeProjectile.info.radius);
+
+		activeProjectile.info.clipModel = new idClipModel(idTraceModel(projectileBounds));
 	}
+
+	return activeProjectile.info;
 }
 
 /*
@@ -6891,7 +7021,8 @@ void idAI::CreateProjectileClipModel( void ) const {
 idAI::GetAimDir
 =====================
 */
-bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir ) const {
+bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir )
+{
 	idVec3	targetPos1;
 	idVec3	targetPos2;
 	idVec3	delta;
@@ -6899,14 +7030,14 @@ bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity 
 	bool	result;
 
 	// if no aimAtEnt or projectile set
-	if ( !aimAtEnt || !projectileDef ) {
+	if (aimAtEnt == NULL || projectileInfo.Num() == 0)
+	{
 		aimDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
 		return false;
 	}
 
-	if ( projectileClipModel == NULL ) {
-		CreateProjectileClipModel();
-	}
+	// Ensure we have a valid clipmodel
+	ProjectileInfo& info = EnsureActiveProjectileInfo();
 
 	if ( aimAtEnt == enemy.GetEntity() ) {
 		static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( lastVisibleEnemyPos, targetPos1, targetPos2 );
@@ -6920,7 +7051,7 @@ bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity 
 	// try aiming for chest
 	delta = firePos - targetPos1;
 	max_height = delta.LengthFast() * projectile_height_to_distance_ratio;
-	result = PredictTrajectory( firePos, targetPos1, projectileSpeed, projectileGravity, projectileClipModel, MASK_SHOT_RENDERMODEL, max_height, ignore, aimAtEnt, ai_debugTrajectory.GetBool() ? 1000 : 0, aimDir );
+	result = PredictTrajectory( firePos, targetPos1, info.speed, info.gravity, info.clipModel, MASK_SHOT_RENDERMODEL, max_height, ignore, aimAtEnt, ai_debugTrajectory.GetBool() ? 1000 : 0, aimDir );
 	if ( result || !aimAtEnt->IsType( idActor::Type ) ) {
 		return result;
 	}
@@ -6928,7 +7059,7 @@ bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity 
 	// try aiming for head
 	delta = firePos - targetPos2;
 	max_height = delta.LengthFast() * projectile_height_to_distance_ratio;
-	result = PredictTrajectory( firePos, targetPos2, projectileSpeed, projectileGravity, projectileClipModel, MASK_SHOT_RENDERMODEL, max_height, ignore, aimAtEnt, ai_debugTrajectory.GetBool() ? 1000 : 0, aimDir );
+	result = PredictTrajectory( firePos, targetPos2, info.speed, info.gravity, info.clipModel, MASK_SHOT_RENDERMODEL, max_height, ignore, aimAtEnt, ai_debugTrajectory.GetBool() ? 1000 : 0, aimDir );
 
 	return result;
 }
@@ -6957,27 +7088,61 @@ void idAI::EndAttack( void ) {
 idAI::CreateProjectile
 =====================
 */
-idProjectile *idAI::CreateProjectile( const idVec3 &pos, const idVec3 &dir ) {
-	idEntity *ent;
-	const char *clsname;
+idProjectile* idAI::CreateProjectile(const idVec3 &pos, const idVec3 &dir, int index)
+{
+	if (activeProjectile.projEnt.GetEntity() == NULL)
+	{
+		assert(curProjectileIndex >= 0 && curProjectileIndex < projectileInfo.Num()); // bounds check
 
-	if ( !projectile.GetEntity() ) {
-		gameLocal.SpawnEntityDef( *projectileDef, &ent, false );
-		if ( !ent ) {
-			clsname = projectileDef->GetString( "classname" );
-			gameLocal.Error( "Could not spawn entityDef '%s'", clsname );
-		}
+		// projectile pointer still NULL, create a new one
+		const idDict* def = projectileInfo[curProjectileIndex].def;
 
-		if ( !ent->IsType( idProjectile::Type ) ) {
-			clsname = ent->GetClassname();
-			gameLocal.Error( "'%s' is not an idProjectile", clsname );
-		}
-		projectile = ( idProjectile * )ent;
+		// Fill the current projectile entity pointer, passing the arguments to the specialised routine
+		// After this call, the activeProjectile.projEnt pointer will be initialised with the new projectile.
+		CreateProjectileFromDict(pos, dir, def);
+
+		// Re-roll the index for the next time
+		curProjectileIndex = gameLocal.random.RandomInt(projectileInfo.Num());
 	}
 
-	projectile.GetEntity()->Create( this, pos, dir );
+	return activeProjectile.projEnt.GetEntity();
+}
 
-	return projectile.GetEntity();
+idProjectile* idAI::CreateProjectileFromDict(const idVec3 &pos, const idVec3 &dir, const idDict* dict)
+{
+	if (activeProjectile.projEnt.GetEntity() == NULL)
+	{
+		// Store the def for later use
+		activeProjectile.info.def = dict;
+		activeProjectile.info.defName = dict->GetString("classname");
+
+		// Fill the current projectile entity pointer
+		activeProjectile.projEnt = SpawnProjectile(dict);
+	}
+
+	activeProjectile.projEnt.GetEntity()->Create(this, pos, dir);
+
+	return activeProjectile.projEnt.GetEntity();
+}
+
+idProjectile* idAI::SpawnProjectile(const idDict* dict) const
+{
+	idEntity* ent;
+	gameLocal.SpawnEntityDef(*dict, &ent, false);
+
+	if (ent == NULL)
+	{
+		const char* clsname = dict->GetString("classname");
+		gameLocal.Error("Could not spawn entityDef '%s'", clsname);
+	}
+
+	if (!ent->IsType(idProjectile::Type))
+	{
+		const char* clsname = ent->GetClassname();
+		gameLocal.Error("'%s' is not an idProjectile", clsname);
+	}
+
+	return static_cast<idProjectile*>(ent);
 }
 
 /*
@@ -6985,10 +7150,14 @@ idProjectile *idAI::CreateProjectile( const idVec3 &pos, const idVec3 &dir ) {
 idAI::RemoveProjectile
 =====================
 */
-void idAI::RemoveProjectile( void ) {
-	if ( projectile.GetEntity() ) {
-		projectile.GetEntity()->PostEventMS( &EV_Remove, 0 );
-		projectile = NULL;
+void idAI::RemoveProjectile()
+{
+	if (activeProjectile.projEnt.GetEntity())
+	{
+		activeProjectile.projEnt.GetEntity()->PostEventMS(&EV_Remove, 0);
+		activeProjectile.projEnt = NULL;
+
+		activeProjectile.info = ProjectileInfo();
 	}
 }
 
@@ -7016,9 +7185,9 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	int					i;
 	idMat3				axis;
 	idVec3				tmp;
-	idProjectile		*lastProjectile;
 
-	if ( !projectileDef ) {
+	if (projectileInfo.Num() == 0)
+	{
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
 		return NULL;
 	}
@@ -7030,11 +7199,10 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 
 	GetMuzzle( jointname, muzzle, axis );
 
-	if ( !projectile.GetEntity() ) {
-		CreateProjectile( muzzle, axis[ 0 ] );
-	}
+	// Ensure we have a set up projectile
+	CreateProjectile(muzzle, axis[0]);
 
-	lastProjectile = projectile.GetEntity();
+	idProjectile* lastProjectile = activeProjectile.projEnt.GetEntity();
 
 	if ( target != NULL ) {
 		tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
@@ -7094,20 +7262,21 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	axis = ang.ToMat3();
 
 	float spreadRad = DEG2RAD( projectile_spread );
-	for( i = 0; i < num_projectiles; i++ ) {
+
+	for( i = 0; i < num_projectiles; i++ )
+	{
 		// spread the projectiles out
 		angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
 		spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
 		dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
 		dir.Normalize();
 
-		// launch the projectile
-		if ( !projectile.GetEntity() ) {
-			CreateProjectile( muzzle, dir );
-		}
-		lastProjectile = projectile.GetEntity();
+		// create, launch and clear the projectile
+		CreateProjectile( muzzle, dir );
+		
+		lastProjectile = activeProjectile.projEnt.GetEntity();
 		lastProjectile->Launch( muzzle, dir, vec3_origin );
-		projectile = NULL;
+		activeProjectile.projEnt = NULL;
 	}
 
 	TriggerWeaponEffects( muzzle );
@@ -7515,7 +7684,7 @@ void idAI::PushWithAF( void ) {
 				// grayman #2345 - when an AI is non-solid, waiting for another AI
 				// to pass by, there's no need to register a tactile alert from another AI
 
-				if (!movementSubsystem->IsWaiting())
+				if (!movementSubsystem->IsWaitingNonSolid())
 				{
 					if( ent->IsType(idPlayer::Type) )
 					{
@@ -7525,7 +7694,7 @@ void idAI::PushWithAF( void ) {
 					}
 					else if( ent->IsType(idAI::Type) && (ent->health > 0) && !static_cast<idAI *>(ent)->AI_KNOCKEDOUT )
 					{
-						if (!static_cast<idAI *>(ent)->movementSubsystem->IsWaiting()) // grayman #2345 - don't call HadTactile() if the bumped AI is waiting
+						if (!static_cast<idAI *>(ent)->movementSubsystem->IsWaitingNonSolid()) // grayman #2345 - don't call HadTactile() if the bumped AI is waiting
 						{
 							HadTactile( static_cast<idActor *>(ent) );
 						}
@@ -9305,7 +9474,7 @@ void idAI::CheckTactile()
 
 	bool bumped = false;
 	idEntity* blockingEnt = NULL;
-	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaiting()) // no bump if I'm waiting
+	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaitingNonSolid()) // no bump if I'm waiting
 	{
 		blockingEnt = physicsObj.GetSlideMoveEntity();
 		if (blockingEnt) // grayman #2345 - note what we bumped into
@@ -9326,7 +9495,7 @@ void idAI::CheckTactile()
 		else if (blockingEnt && blockingEnt->IsType(idActor::Type))
 		{
 			idAI *e = static_cast<idAI*>(blockingEnt);
-			if (e && !e->movementSubsystem->IsWaiting()) // no bump if other entity is waiting
+			if (e && !e->movementSubsystem->IsWaitingNonSolid()) // no bump if other entity is waiting
 			{
 				bumped = true;
 			}
@@ -9441,7 +9610,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	{
 		// We just got knocked the taff out!
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
-		Knockout(attacker);
+		Event_KO_Knockout(attacker); // grayman #2468
 
 		return true;
 	}
@@ -9511,6 +9680,36 @@ void idAI::KnockoutDebugDraw( void )
 
 /*
 =====================
+idAI::Event_KO_Knockout
+=====================
+*/
+
+void idAI::Event_KO_Knockout( idEntity* inflictor )
+{
+	if (m_bCanBeKnockedOut) // grayman #2468 - new place to test ko immunity
+	{
+		m_koState = KO_BLACKJACK; // grayman #2604
+		Knockout(inflictor);
+	}
+}
+
+/*
+=====================
+idAI::Event_Gas_Knockout
+=====================
+*/
+
+void idAI::Event_Gas_Knockout( idEntity* inflictor )
+{
+	if (m_bCanBeGassed) // grayman #2468 - new place to test gas immunity
+	{
+		m_koState = KO_GAS; // grayman #2604
+		Knockout(inflictor);
+	}
+}
+
+/*
+=====================
 idAI::Knockout
 
 Based on idAI::Killed
@@ -9521,8 +9720,8 @@ void idAI::Knockout( idEntity* inflictor )
 {
 	idAngles ang;
 
-	if( !m_bCanBeKnockedOut )
-		return;
+//	if( !m_bCanBeKnockedOut ) // grayman #2468 - this test has been moved up a level
+//		return;
 
 	if( AI_KNOCKEDOUT || AI_DEAD )
 	{
@@ -9598,7 +9797,19 @@ void idAI::PostKnockOut()
 
 	if ( StartRagdoll() )
 	{
-		StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
+		// grayman #2604 - play "gassed" sound if knocked out by gas
+		switch (m_koState)
+		{
+		case KO_BLACKJACK:
+			StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
+			break;
+		case KO_GAS:
+			StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
+			break;
+		case KO_NOT:
+		default:
+			break;
+		}
 	}
 
 	const char *modelKOd;
@@ -10130,6 +10341,7 @@ void idAI::DropOnRagdoll( void )
 		}
 
 		ent->GetPhysics()->Activate();
+		ent->m_droppedByAI = true; // grayman #1330
 	}
 
 	// also perform some of these same operations on attachments to our head,

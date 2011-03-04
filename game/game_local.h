@@ -912,6 +912,9 @@ public:
 	void					AddMainMenuMessage(const GuiMessage& message);
 	void					HandleGuiMessages(idUserInterface* ui);
 
+	// Tels: Return mapFileName as it is private
+	const idStr&			GetMapFileName() const;
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

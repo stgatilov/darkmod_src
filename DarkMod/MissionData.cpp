@@ -2495,7 +2495,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		int objStartXPos = -1;
 
 		// Let the GUI know which map to load
-		gui->SetStateString("mapStartCmd", va("exec 'map %s'", cv_tdm_mapName.GetString()));
+		gui->SetStateString("mapStartCmd", va("exec 'map %s'", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str()));
 
 		if (!gui->GetStateBool("ingame"))
 		{
@@ -2504,7 +2504,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			Clear();
 
 			// Get the starting map file name
-			idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
+			idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 
 			// Ensure that the map is loaded
 			idMapFile* map = LoadMap(startingMapfilename);
@@ -2587,7 +2587,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// reload and redisplay objectives
 		m_Objectives.Clear();
 
-		idStr startingMapfilename = va("maps/%s", cv_tdm_mapName.GetString());
+		idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 
 		// Ensure that the starting map is loaded
 		LoadMap(startingMapfilename);
@@ -2613,6 +2613,9 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	int index(0);
 	idStr key("");
 	idStr value("");
+	idStr sightingBust("");
+	idStr sightingBust2("");
+	idStr sightingScore("");
 	// The listdef item (name + _) prefix
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
@@ -2677,9 +2680,21 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
 	}
 	
-	stealthScore += m_Stats.AIAlerts[5].Overall;
+	if ( m_Stats.AIAlerts[5].Overall > 0 )
+	{
+		sightingBust = "You were seen";
+		sightingBust2 = "Seen + 20 :";
+		stealthScore += 20;
+		sightingScore = "20";
+	}
+	else
+	{
+		sightingBust = "You were not seen";
+		sightingBust2 = "Not seen :";
+		sightingScore = "0";
+	}
 		
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + sightingBust;
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
 	key = "Stealth Score";
@@ -2722,7 +2737,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = "                                   " + idStr(m_Stats.AIAlerts[4].Overall * 3);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "                                  +" + idStr(m_Stats.AIAlerts[5].Overall * 1);  
+	key = "                                  +" + sightingScore;  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = "                                   " + idStr(stealthScore);  
@@ -2754,19 +2769,19 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 	
-	key = "Alert 1. Qty: " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
+	key = "Alert 1. " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 2. Qty: " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
+	key = "Alert 2. " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 3. Qty: " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
+	key = "Alert 3. " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 4. Qty: " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
+	key = "Alert 4. " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 5. Qty: " + idStr(m_Stats.AIAlerts[5].Overall) + " x 1 :";
+	key = "Alert 5. " + sightingBust2;
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = "Stealth Score Total";

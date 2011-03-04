@@ -190,7 +190,7 @@ typedef enum {
 	FC_MELEE_PARRY_STOP,
 	FC_SET_ATTACK_FLAG,   // greebo: enables a certain attack type
 	FC_CLEAR_ATTACK_FLAG, // greebo: disables a certain attack type
-
+	FC_CREATEMISSILE_FROM_DEF,	// greebo: create a specific projectile def for ranged attack
 } frameCommandType_t;
 
 typedef struct {

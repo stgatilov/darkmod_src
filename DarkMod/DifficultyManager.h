@@ -10,13 +10,15 @@
 #ifndef DIFFICULTY_MANAGER_H
 #define DIFFICULTY_MANAGER_H
 
-#include "DifficultyMenu.h"
 #include "DifficultySettings.h"
 
 namespace difficulty {
 
 #define DEFAULT_DIFFICULTY_ENTITYDEF "atdm:difficulty_settings_default"
 #define DIFFICULTY_ENTITYDEF "atdm:difficulty_settings"
+
+// number of difficulty levels
+#define DIFFICULTY_COUNT 3
 
 /**
  * greebo: The Difficulty Manager provides methods to load

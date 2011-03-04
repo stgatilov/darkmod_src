@@ -145,6 +145,14 @@ void SwitchOnLightState::Init(idAI* owner)
 			}
 		}
 	}
+	else
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("SwitchOnLightState can't handle that type of light: %s.\r", lightType.c_str());
+
+		// Can't handle that type of light, exit this state and ignore the light
+		light->IgnoreResponse(ST_VISUAL, owner);
+		owner->GetMind()->EndState();
+	}
 }
 
 // Gets called each time the mind is thinking

@@ -73,6 +73,8 @@ public:
 	 */
 	virtual void SetInvestigateClosely(bool closely);
 
+	virtual void OnFinish(idAI* owner); // grayman #2560
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
