@@ -828,16 +828,15 @@ public:
 	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
 	/**
-	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
-	 * that no multiple copies of it will exist.
-	 */
-	//void					SpawnLightgemEntity(void);
-
-	/**
 	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
 	 * to determine the lightvalue for the lightgem.
 	 */
 	float					CalcLightgem(idPlayer *);
+
+	ID_INLINE idList<char> &GetLightgemRenderBuffer(void)
+	{
+		return m_lightGem.GetLightgemRenderBuffer();
+	}
 
 	/**
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
@@ -968,17 +967,8 @@ private:
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
 
-	/**
-	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
-	 * is constantly required and therfore we store it permanently.
-	 */
-// 	idEntityPtr<idEntity>	m_LightgemSurface;
-
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	LightGem				m_lightGem;
-
-// 	int						m_LightgemShotSpot;
-// 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	
 	idList<idEntity *>		m_SignalList;
 
@@ -1039,12 +1029,6 @@ private:
 
 	// Platform-specific implementation to change the D3's title and icon
 	void					ChangeWindowTitleAndIcon();
-
-public:
-	ID_INLINE idList<char> &GetLightgemRenderBuffer(void)
-	{
-		return m_lightGem.GetLightgemRenderBuffer();
-	}
 };
 
 //============================================================================

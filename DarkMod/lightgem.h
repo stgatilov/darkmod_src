@@ -16,7 +16,7 @@
 #define DARKMOD_LG_VIEWID					-1
 #define DARKMOD_LG_RENDER_WIDTH				50
 
-#define DARKMOD_LG_FILENAME					"DM_lightgem_buffer"
+#define DARKMOD_LG_FILENAME					"TDM_lightgem"
 // The colour is converted to a grayscale value which determines the state
 // of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
@@ -30,31 +30,22 @@
 #define DARKMOD_LG_SCALE					(1.0/255.0)			// scaling factor for grayscale value
 
 //----------------------------------
-// Forward Declarations.
-//----------------------------------
-class LightGem;
-
-//----------------------------------
-// Type Definitions.
-//----------------------------------
-
-typedef void (LightGem::*LightGemState)	(void);
-
-//----------------------------------
 // Class Declarations.
 //----------------------------------
 
 class LightGem
 {
 private:
-	// stgatilov: The buffer for captured lightgem image
-	idList<char>			m_LightgemRenderBuffer;
-
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	idEntityPtr<idEntity>	m_LightgemSurface;
 
+	// stgatilov: The buffer for captured lightgem image
+	idList<char>			m_LightgemRenderBuffer;
+
 public:
+	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
+	
 	//---------------------------------
 	// Construction/Destruction
 	//---------------------------------
@@ -62,7 +53,7 @@ public:
 	~LightGem	();
 
 	//---------------------------------
-	// Initiazation
+	// Initialization
 	//---------------------------------
 	void Initialize		();
 	void Deinitialize	();
@@ -80,12 +71,12 @@ public:
 	//  that no multiple copies of it will exist.
 	//---------------------------------
 	void SpawnLightGemEntity( idMapFile *	a_mapFile );
-
 	void InitializeLightGemEntity(); 
 
+	//---------------------------------
+	// Calculation
+	//---------------------------------
 	float	Calculate		( idPlayer *	a_pPlayer );
-
-	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
 
 private:
 	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
