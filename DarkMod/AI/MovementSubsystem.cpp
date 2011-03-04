@@ -559,11 +559,13 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					_timeBlockStarted =  gameLocal.time - gameLocal.msec;
 				}
 			}
+/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
 				// Bounds are safe, back to green state
 				_state = ENotBlocked;
 			}
+ */
 			break;
 		case EBlocked:
 			if (belowThreshold)
@@ -582,13 +584,14 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					}
 				}
 			}
+/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
 				// grayman #2345 - go back to EPossiblyBlocked, instead of all the way back to ENotBlocked
 				_state = EPossiblyBlocked;
 				_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
-//				_state = ENotBlocked; // Threshold exceeded, we're unblocked again
 			}
+ */
 			break;
 		case EResolvingBlock:
 			// nothing so far
