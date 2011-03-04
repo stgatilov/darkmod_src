@@ -1041,7 +1041,7 @@ private:
 	void					ChangeWindowTitleAndIcon();
 
 public:
-	ID_INLINE idList<char> & GetLightgemRenderBuffer(void) const
+	ID_INLINE idList<char> &GetLightgemRenderBuffer(void)
 	{
 		return m_lightGem.GetLightgemRenderBuffer();
 	}

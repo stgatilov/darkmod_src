@@ -41,8 +41,7 @@ public:																											\
 //------------------------
 // Construction/Destruction
 //----------------------------------------------------
-LightGem::LightGem() :
-m_LightgemRenderBuffer(NULL)
+LightGem::LightGem()
 {
 }
 
@@ -57,25 +56,12 @@ LightGem::~LightGem()
 //----------------------------------------------------
 void LightGem::Initialize()
 {
-	// Create render pipe - One time initialization only.
-	if( !m_LightgemRenderBuffer )
-	{
-		// Create lightgem render buffer
-		m_LightgemRenderBuffer = new idList<char>();
-
-		if (m_LightgemRenderBuffer == NULL) {
-			// Out of memory
-			DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Out of memory when allocating lightgem render buffer\n");
-		}
-	}
 }
 
 void LightGem::Deinitialize()
 {
-	if(m_LightgemRenderBuffer)
-		delete m_LightgemRenderBuffer;
-
-	m_LightgemRenderBuffer = NULL;
+	// free all dynamically allocated memory
+	m_LightgemRenderBuffer.Clear();
 }
 
 void LightGem::Clear()
@@ -154,9 +140,6 @@ void LightGem::Restore( idRestoreGame & a_savedGame )
 //----------------------------------------------------
 float LightGem::Calculate(idPlayer *player)
 {
-	PROFILE_BLOCK(LightGem_Process);
-
-	assert( NULL != m_LightgemRenderBuffer );
 	PROFILE_BLOCK( LightGem_Calculate );
 
 	PROFILE_BLOCK_START( LightGem_Calculate_Setup);
@@ -399,13 +382,11 @@ float LightGem::Calculate(idPlayer *player)
 
 void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 {
-	assert(NULL != m_LightgemRenderBuffer);
-
 	CImage *im = &g_Global.m_RenderImage ;
 	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 
-	im->LoadImage(*m_LightgemRenderBuffer);
+	im->LoadImage(m_LightgemRenderBuffer);
 	unsigned char *buffer = im->GetImageData();
 
 	// This is just an errorhandling to inform the player that something is wrong.

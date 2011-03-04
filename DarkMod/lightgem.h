@@ -48,7 +48,7 @@ class LightGem
 {
 private:
 	// stgatilov: The buffer for captured lightgem image
-	idList<char> *			m_LightgemRenderBuffer;
+	idList<char>			m_LightgemRenderBuffer;
 
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
@@ -85,7 +85,7 @@ public:
 
 	float	Calculate		( idPlayer *	a_pPlayer );
 
-	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) const { return *m_LightgemRenderBuffer; }
+	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
 
 private:
 	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
