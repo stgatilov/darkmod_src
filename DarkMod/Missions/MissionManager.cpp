@@ -52,6 +52,7 @@ void CMissionManager::Init()
 	_missionDB->Init();
 
 	InitStartingMap();
+	InitMapSequence();
 }
 
 void CMissionManager::Save(idSaveGame* savefile) const
@@ -586,6 +587,97 @@ void CMissionManager::InitStartingMap()
 	else
 	{
 		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), GetCurrentMissionName().c_str());
+	}
+}
+
+void CMissionManager::InitMapSequence()
+{
+	_mapSequence.Clear();
+
+	idStr curModName = GetCurrentMissionName();
+
+	if (curModName.IsEmpty())
+	{
+		return;
+	}
+
+	// Find out which is the starting map of the current mod
+	idLexer lexer(cv_tdm_fm_mapsequence_file.GetString());
+
+	punctuation_t punct[] =
+	{
+		{ ":", P_COLON },
+		{ NULL, 0 }
+	};
+	lexer.SetPunctuations(punct);
+
+	if (lexer.IsLoaded())
+	{
+		idToken token;
+
+		// Read until EOF
+		while (lexer.ReadToken(&token))
+		{
+			if (token.type == TT_NAME && token == "Mission")
+			{
+				// Get the mission number
+				if (!lexer.ReadToken(&token))
+				{
+					lexer.Warning("Expected number after 'Mission' keyword in map sequence file.");
+					break;
+				}
+
+				// Parse the mission number
+				int missionNumber = token.GetIntValue();
+
+				if (missionNumber == 0)
+				{
+					lexer.Warning("Cannot parse integer value after 'Mission' keyword in map sequence file.");
+					break;
+				}
+
+				// 0-based index into the sequence structure
+				int missionIndex = missionNumber - 1;
+
+				// Make sure the sequence has enough items 
+				if (_mapSequence.Num() < missionNumber)
+				{
+					_mapSequence.SetNum(missionNumber);
+				}
+
+				if (!lexer.ExpectTokenType(TT_PUNCTUATION, P_COLON, &token))
+				{
+					lexer.Warning("Expected colon ':' after Mission N declaration.");
+					break;
+				}
+
+				token.Clear();
+
+				lexer.ReadRestOfLine(token);
+
+				idLexer mapLexer(token.c_str(), token.Length(), "mapnames");
+
+				idToken mapToken;
+
+				while (mapLexer.ReadToken(&mapToken))
+				{
+					_mapSequence[missionIndex].mapNames.Append(mapToken);
+				}
+
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Mapsequence: Parsed %d maps for mission %d\r", _mapSequence[missionIndex].mapNames.Num(), missionNumber);
+			}
+			else
+			{
+				lexer.Warning("Unrecognized token: %s", token.c_str());
+				continue;
+			}
+		}
+
+		gameLocal.Printf("Parsed map sequence file: %d missions found.\n", _mapSequence.Num());
+	}
+	else
+	{
+		gameLocal.Printf("No '%s' file found for the current mod: %s\n", cv_tdm_fm_mapsequence_file.GetString(), GetCurrentMissionName().c_str());
 	}
 }
 

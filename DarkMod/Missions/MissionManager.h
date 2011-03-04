@@ -131,6 +131,20 @@ struct DownloadableMission
 // to allow the use of the qsort algorithm as used in idStr::Sort()
 typedef idList<DownloadableMission*> DownloadableMissionList;
 
+/**
+ * greebo: A campaign defines a certain map sequence. In the simplest
+ * setup the mapsequence has only one map file name in it, in the 
+ * most complicated case each sequence step has a finite set of 
+ * map files (the second mission in a campaign might consist of 
+ * two actual map files the player is switching in between).
+ */
+struct MapSequenceElement
+{
+	// The list of names applicable for that sequence element
+	idList<idStr> mapNames;
+};
+typedef idList<MapSequenceElement> MapSequence;
+
 class CMissionManager
 {
 private:
@@ -147,6 +161,10 @@ private:
 
 	// The map file which should be loaded next (e.g. "patently_dangerous")
 	idStr _curStartingMap;
+
+	// The map sequence as defined in the map sequence file of campaigns
+	// The first mission has index 0
+	MapSequence _mapSequence;
 
 	DownloadableMissionList _downloadableMissions;
 
@@ -288,8 +306,10 @@ public:
 
 private:
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
-	// After this call the CVAR tdm_mapName is initialised and holds the map name.
 	void InitStartingMap();
+
+	// Attempts to read the map sequence file for the current mod
+	void InitMapSequence();
 
 	void SearchForNewMissions();
 
