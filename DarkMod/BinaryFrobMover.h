@@ -518,7 +518,7 @@ protected:
 	* grayman #1145 - list of AI who unsuccessfully tried a locked door
 	**/
 
-	idList<idEntityPtr<idAI>>	m_registeredAI;
+	idList< idEntityPtr<idAI> >	m_registeredAI;
 };
 
 #endif /* !BINARYFROBMOVER */
