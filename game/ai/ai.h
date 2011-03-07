@@ -1049,6 +1049,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	koState_t				m_koState;		// grayman #2604
 
 	/**
+	* Keep track of initial thinking frame count - important when a cinematic starts the mission
+	**/
+	int						m_earlyThinkCounter;	// grayman #2654
+
+	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
 	 */
 	bool					m_bCanOperateDoors;

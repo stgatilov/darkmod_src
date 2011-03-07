@@ -3088,6 +3088,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 				if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
 					ent->GetPhysics()->UpdateTime( time );
+					if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+					{
+						static_cast<idAI*>(ent)->m_lastThinkTime = time;
+					}
 					continue;
 				}
 				timer_singlethink.Clear();
@@ -3107,6 +3111,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 					if ( g_cinematic.GetBool() && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
+						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+						{
+							static_cast<idAI*>(ent)->m_lastThinkTime = time;
+						}
 						continue;
 					}
 					ent->Think();
