@@ -77,7 +77,7 @@ idMoveable::idMoveable( void ) {
 	lastPushOrigin = vec3_zero;
 
 	// by default no LOD
-	m_LOD = NULL;
+	m_LODHandle = 0;
 	m_DistCheckTimeStamp = 0;
 }
 
@@ -279,8 +279,6 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(wasPushedLastFrame);
 	savefile->WriteVec3(pushDirection);
 	savefile->WriteVec3(lastPushOrigin);
-
-	SaveLOD( savefile );
 }
 
 /*
@@ -324,8 +322,6 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(wasPushedLastFrame);
 	savefile->ReadVec3(pushDirection);
 	savefile->ReadVec3(lastPushOrigin);
-
-	RestoreLOD( savefile );
 }
 
 /*
@@ -637,7 +633,7 @@ idMoveable::Think
 */
 void idMoveable::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
-		if ( !FollowInitialSplinePath() && !isPushed && !m_LOD) {
+		if ( !FollowInitialSplinePath() && !isPushed && !m_LODHandle) {
 			BecomeInactive( TH_THINK );
 		}
 	}

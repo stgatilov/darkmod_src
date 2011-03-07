@@ -668,6 +668,8 @@ void idGameLocal::Shutdown( void ) {
 	m_MissionManager->Shutdown();
 	m_MissionManager = CMissionManagerPtr();
 
+	// Print ModelGenerator Statistics
+	m_ModelGenerator->Print();
 	// Destroy the model generator
 	m_ModelGenerator->Shutdown();
 	m_ModelGenerator = CModelGeneratorPtr();
@@ -2239,6 +2241,7 @@ void idGameLocal::MapShutdown( void ) {
 
 	if (m_ModelGenerator != NULL)
 	{
+		m_ModelGenerator->Print();
 		m_ModelGenerator->Clear();
 	}
 	if (m_ImageMapManager != NULL)

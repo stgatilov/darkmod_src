@@ -50,7 +50,7 @@ public:
 
 	void				Spawn( void );
 
-	void				SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
+	void				SetLODData( const idVec3 &origin, const unsigned int lodHandle, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
 
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
@@ -118,6 +118,7 @@ private:
 	float						m_fHideDistance;
 	bool						m_bDistCheckXYOnly;
 
+	int							m_LODHandle;		//!< to retrieve the LOD Data from the ModelGenerator
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */

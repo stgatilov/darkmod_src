@@ -164,8 +164,6 @@ CModelGenerator::Clear
 */
 void CModelGenerator::Clear( void ) {
 
-	Print();
-
 	int n = m_LODList.Num();
 	for (int i = 0; i < n; i++)
 	{
@@ -184,6 +182,7 @@ CModelGenerator::Shutdown
 ===============
 */
 void CModelGenerator::Shutdown( void ) {
+	//Print();
 	Clear();
 }
 
@@ -226,9 +225,9 @@ bool CModelGenerator::CompareLODData( const lod_data_t *mLOD, const lod_data_t *
 
 /*
 * Presents the ModelManager with the LOD data for this entity, and returns
-* a handle with that the entity can later access this data.
+* a handle (handle >= 0) with that the entity can later access this data. 
 */
-int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
+lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 
 	int n = m_LODList.Num();
 	int smallestFree = n;						// default is no free entries at all
@@ -237,12 +236,12 @@ int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
 	{
 		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
 		{
-			if (CompareLODData( m_LODList[i].LODPtr, &mLOD ))
+			if (CompareLODData( m_LODList[i].LODPtr, mLOD ))
 			{
 				// found an equal entry
 				m_LODList[i].users ++;
 				// return the index as handle
-				return i;
+				return i + 1;
 			}
 		}
 		else
@@ -253,7 +252,11 @@ int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
 	}
 
 	// no equal entry, add a new one at position smallestFree
-	m_LODList.AssureSize( smallestFree );
+	if (smallestFree >= m_LODList.Num())
+	{
+		m_LODList.AssureSize(smallestFree + 1);
+	}
+
 	m_LODList[smallestFree].users = 1;
 	m_LODList[smallestFree].LODPtr = new lod_data_t;
 
@@ -263,43 +266,73 @@ int	CModelGenerator::RegisterLODData( const lod_data_t &mLOD ) {
 	}
 	// copy data
 	lod_data_t *l = m_LODList[smallestFree].LODPtr;
-  	l->DistCheckInterval		= mLOD.DistCheckInterval;
-  	l->bDistCheckXYOnly			= mLOD.bDistCheckXYOnly;
-	l->fLODFadeOutRange			= mLOD.fLODFadeOutRange;
-	l->fLODFadeInRange			= mLOD.fLODFadeInRange;
-	l->fLODNormalDistance		= mLOD.fLODNormalDistance;
+  	l->DistCheckInterval		= mLOD->DistCheckInterval;
+  	l->bDistCheckXYOnly			= mLOD->bDistCheckXYOnly;
+	l->fLODFadeOutRange			= mLOD->fLODFadeOutRange;
+	l->fLODFadeInRange			= mLOD->fLODFadeInRange;
+	l->fLODNormalDistance		= mLOD->fLODNormalDistance;
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
-		l->ModelLOD[i] = mLOD.ModelLOD[i];
-		l->SkinLOD[i] = mLOD.SkinLOD[i];
-		l->OffsetLOD[i] = mLOD.OffsetLOD[i];
-		l->DistLODSq[i] = mLOD.DistLODSq[i];
+		l->ModelLOD[i] = mLOD->ModelLOD[i];
+		l->SkinLOD[i] = mLOD->SkinLOD[i];
+		l->OffsetLOD[i] = mLOD->OffsetLOD[i];
+		l->DistLODSq[i] = mLOD->DistLODSq[i];
 	}
 	
 #ifdef M_DEBUG
 	// report memory usage
 	Print();
+	gameLocal.Printf("ModelGenerator: Registered LOD handle %i, n = %i\n", smallestFree + 1, m_LODList.Num());
 #endif
 
-	return smallestFree;
+	return (lod_handle) (smallestFree + 1);
+}
+
+/*
+* Asks the ModelManager to register a new user for LOD data with the given handle,
+* and returns the same handle, or -1 for error.
+*/
+lod_handle CModelGenerator::RegisterLODData( const lod_handle handle ) {
+	int n = m_LODList.Num();
+
+	if (handle == 0 || handle > (unsigned int)n)
+	{
+		// handle out of range
+		gameLocal.Error("ModelGenerator::GetLODDataPtr: Handle %i out of range.", handle);
+		return -1;
+	}
+
+	int h = handle - 1;
+	if (m_LODList[h].users <= 0)
+	{
+		// not registered
+		gameLocal.Error("ModelGenerator::GetLODDataPtr: LOD data %i has no users.", handle);
+		return -1;
+	}
+	m_LODList[h].users ++;
+
+	return handle;
 }
 
 /*
 * Unregister the LOD data for this handle (returned by RegisterLODData).
-* Returns 0 for success, and -1 for "not found".
+* Returns true for success, and false for "not found".
 */
-bool CModelGenerator::UnregisterLODData( const unsigned int handle ) {
-
+bool CModelGenerator::UnregisterLODData( const lod_handle handle )
+{
 	int n = m_LODList.Num();
 
-	if (handle > (unsigned int)n)
+//	gameLocal.Printf("ModelGenerator::UnregisterLODData: Handle %i, n=%i.\n", handle,n);
+
+	if (handle == 0 || handle > (unsigned int)n)
 	{
 		// handle out of range
 		gameLocal.Warning("ModelGenerator::UnregisterLODData: Handle %i out of range.", handle);
 		return false;
 	}
 
-	if (m_LODList[handle].users <= 0)
+	int h = handle - 1;
+	if (m_LODList[h].users <= 0)
 	{
 		// not registered
 		gameLocal.Warning("ModelGenerator::UnregisterLODData: LOD data %i has no users.", handle);
@@ -307,14 +340,16 @@ bool CModelGenerator::UnregisterLODData( const unsigned int handle ) {
 	}
 
 	// decrement user count
-	m_LODList[handle].users --;
+	m_LODList[h].users --;
 	
-	if (m_LODList[handle].users == 0)
+	if (m_LODList[h].users == 0)
 	{
 		// free memory
-		delete m_LODList[handle].LODPtr;
-		m_LODList[handle].LODPtr = NULL;
+		delete m_LODList[h].LODPtr;
+		m_LODList[h].LODPtr = NULL;
 	}
+
+	// TODO: If we freed the last entry, remove it from the list to save memory?
 
 	return true;
 }
@@ -322,9 +357,25 @@ bool CModelGenerator::UnregisterLODData( const unsigned int handle ) {
 /*
 * Get a pointer to the LOD data for this handle.
 */
-const lod_data_t*		CModelGenerator::GetLODDataPtr( const unsigned int handle ) const {
+const lod_data_t* CModelGenerator::GetLODDataPtr( const lod_handle handle ) const
+{
+	int n = m_LODList.Num();
 
-	return NULL;
+	if (handle == 0 || handle > (unsigned int)n)
+	{
+		// handle out of range
+		gameLocal.Error("ModelGenerator::GetLODDataPtr: Handle %i out of range.", handle);
+		return NULL;
+	}
+
+	int h = handle - 1;
+	if (m_LODList[h].users <= 0)
+	{
+		// not registered
+		gameLocal.Error("ModelGenerator::GetLODDataPtr: LOD data %i has no users.", handle);
+		return NULL;
+	}
+	return m_LODList[h].LODPtr;
 }
 
 /*
@@ -333,23 +384,41 @@ const lod_data_t*		CModelGenerator::GetLODDataPtr( const unsigned int handle ) c
 void CModelGenerator::Print( void ) const {
 
 	long memory = m_LODList.MemoryUsed();
+	long memory_saved = 0;
+    long users = 0;
 
 	int n = m_LODList.Num();
+
+	if (n == 0)
+	{
+		gameLocal.Printf("ModelGenerator memory: No LOD entries.\n" );
+		return;
+	}
 	for (int i = 0; i < n; i++)
 	{
 		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
 		{
 			// the struct itself
-			memory += sizeof(lod_data_t);
+			long this_memory = sizeof(lod_data_t);
 			lod_data_t *l = m_LODList[i].LODPtr;
-			for (int i = 0; i < LOD_LEVELS; i++)
+			for (int j = 0; j < LOD_LEVELS; j++)
 			{
-				memory += l->ModelLOD[i].Length() + 1;
-				memory += l->SkinLOD[i].Length() + 1;
+				this_memory += l->ModelLOD[j].Length() + 1;
+				this_memory += l->SkinLOD[j].Length() + 1;
 			}
+			memory += this_memory;
+			memory_saved += this_memory * (m_LODList[i].users - 1);
+			users += m_LODList[i].users;
 		}
 	}
-	gameLocal.Printf("ModelGenerator memory usage: %i LOD entries using %d bytes.\n", n, memory);
+	if (memory_saved > 0)
+	{
+		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %ld users using %ld bytes, memory saved: %ld bytes.\n", n, users, memory, memory_saved);
+	}
+	else
+	{
+		gameLocal.Printf("ModelGenerator memory: %i LOD entries with %ld users using %ld bytes.\n", n, users, memory);
+	}
 }
 
 /* Given a rendermodel and a surface index, checks if that surface is two-sided, and if, tries

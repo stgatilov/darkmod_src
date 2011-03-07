@@ -51,6 +51,8 @@ typedef struct {
 	int					flags; 	// flags for each model, see seed_model_flags
 } model_ofs_t;
 
+typedef unsigned int lod_handle;
+
 // When combining different models (e.g. different LOD stages), every model
 // can have different source surfaces, that map to different target surfaces.
 // For each of these target surfaces we need to track a few information and
@@ -211,20 +213,26 @@ public:
 
 	/**
 	* Presents the ModelManager with the LOD data for this entity, and returns
-	* a handle with that the entity can later access this data.
+	* a handle (>= 0) with that the entity can later access this data.
 	*/
-	int						RegisterLODData( const lod_data_t &mLOD );
+	lod_handle				RegisterLODData( const lod_data_t *mLOD );
+
+	/**
+	* Asks the ModelManager to register a new user for this handle. Returns
+	* the same handle, or 0 in case of errors.
+	*/
+	lod_handle				RegisterLODData( const lod_handle h );
 
 	/**
 	* Unregister the LOD data for this handle (returned by RegisterLODData).
 	* Returns true for success, and false in case of errors.
 	*/
-	bool					UnregisterLODData( const unsigned int handle );
+	bool					UnregisterLODData( const lod_handle h );
 
 	/**
 	* Get a pointer to the LOD data for this handle.
 	*/
-	const lod_data_t*		GetLODDataPtr( const unsigned int handle ) const;
+	const lod_data_t*		GetLODDataPtr( const lod_handle h ) const;
 
 	/**
 	* Print memory usage info.
