@@ -1405,7 +1405,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 							gameLocal.Error("Cannot spawn %s - no such entityDef", EntClass.c_str() );
 						}
 						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
-						gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
+						// gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
 
 						ent->Attach(spawnedEntity, AttPos, AttName);
 					}
@@ -1447,7 +1447,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 						// gameLocal.Warning ( "Found entity %s", attTarget->name.c_str() );
 
-						gameLocal.Printf ( "Attaching '%s' as '%s' to '%s' (in pickup)\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						// gameLocal.Printf ( "Attaching '%s' as '%s' to '%s' (in pickup)\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
 						// first get the origin and rotation of the entity
 						idVec3 origin = attTarget->GetPhysics()->GetOrigin();
 						idAngles ang = attTarget->GetPhysics()->GetAxis().ToAngles();

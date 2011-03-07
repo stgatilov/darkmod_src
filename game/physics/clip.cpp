@@ -97,6 +97,10 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 
 	entry = new trmCache_t;
 	entry->trm = trm;
+
+	// If density is 1 the volume has the same size as the mass (m = d*v). The calling code wants to know the volume,
+	// and with density equal to 1 it's allowed to use the mass value returned by idTraceModel::GetMassProperties().
+	// That's what's happening here.
 	entry->trm.GetMassProperties( 1.0f, entry->volume, entry->centerOfMass, entry->inertiaTensor );
 	entry->refCount = 1;
 
