@@ -851,6 +851,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteMat3(m_FOVRot);
 	savefile->WriteString(m_KoZone);
 	savefile->WriteInt(m_KoAlertState);
+	savefile->WriteInt(m_KoAlertImmuneState);
 	savefile->WriteBool(m_bKoAlertImmune);
 	savefile->WriteFloat(m_KoDotVert);
 	savefile->WriteFloat(m_KoDotHoriz);
@@ -1248,6 +1249,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadMat3(m_FOVRot);
 	savefile->ReadString(m_KoZone);
 	savefile->ReadInt(m_KoAlertState);
+	savefile->ReadInt(m_KoAlertImmuneState);
 	savefile->ReadBool(m_bKoAlertImmune);
 	savefile->ReadFloat(m_KoDotVert);
 	savefile->ReadFloat(m_KoDotHoriz);
@@ -9582,9 +9584,9 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	float minDotVert = m_KoDotVert;
 	float minDotHoriz = m_KoDotHoriz;
 
-	// Check if the AI is above the alert threshold for KOing
+	// Check if the AI is above the alert threshold for Immunity
 	// Defined the name of the alert threshold in the AI def for generality
-	if (AI_AlertIndex >= m_KoAlertState)
+	if (AI_AlertIndex >= m_KoAlertImmuneState)
 	{
 		// abort KO if the AI is immune when alerted
 		if( m_bKoAlertImmune )
@@ -9656,7 +9658,7 @@ void idAI::KnockoutDebugDraw( void )
 	if( AI_AlertIndex >= m_KoAlertState)
 	{
 		// Do not display if immune
-		if( m_bKoAlertImmune )
+		if( m_bKoAlertImmune && AI_AlertIndex >= m_KoAlertImmuneState )
 			return;
 
 		// reduce the angle on alert, if needed
@@ -11024,9 +11026,9 @@ void idAI::CopyHeadKOInfo( void )
 		return;
 
 	// Change this if the list below changes:
-	const int numArgs = 13;
+	const int numArgs = 14;
 	const char *copyArgs[ numArgs ] = { "ko_immune", "ko_spot_offset", "ko_zone", 
-		"ko_alert_state", "ko_alert_immune",  "ko_angle_vert", "ko_angle_horiz",
+		"ko_alert_state", "ko_alert_immune", "ko_alert_immune_state",  "ko_angle_vert", "ko_angle_horiz",
 		"ko_angle_alert_vert", "ko_angle_alert_horiz", "ko_rotation", "fov",
 		"fov_vert", "fov_rotation"};
 
@@ -11049,6 +11051,7 @@ void idAI::ParseKnockoutInfo()
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
 	m_KoZone = spawnArgs.GetString("ko_zone");
 	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
+	m_KoAlertImmuneState = spawnArgs.GetInt("ko_alert_immune_state");
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
 	idAngles tempAngles = spawnArgs.GetAngles("ko_rotation");
 	m_KoRot = tempAngles.ToMat3();

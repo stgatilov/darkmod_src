@@ -993,6 +993,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	idStr					m_KoZone;
 	/**
+	* Alert state above which their KO Immunity changes (if any)
+	**/
+	int					m_KoAlertImmuneState;
+	/**
+	/**
 	* Alert state above which their KO behavior changes (if any)
 	**/
 	int					m_KoAlertState;
