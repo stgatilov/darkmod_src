@@ -3599,11 +3599,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
 		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
 	}
-	else if (cmd == "loadStatistics")
-	{
-		// Load the statistics into the GUI
-		m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
-	}
 	else if (cmd == "setVideoResWideScreen")
 	{
 		// Called when widescreen size selection changes
@@ -3795,6 +3790,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "close_msg_box")
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
+	}
+	else if (cmd == "updateCookedMathData")		// Adding a way to update cooked data from menu - J.C.Denton
+	{
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());

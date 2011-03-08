@@ -2487,6 +2487,11 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 		m_MissionDataLoadedIntoGUI = true;
 	}
+	else if (cmd == "loadStatistics")
+	{
+		// Load the statistics into the GUI
+		UpdateStatisticsGUI(gui, "listStatistics");
+	}
 	else if (cmd == "objective_open_request")
 	{
 		gui->HandleNamedEvent("GetObjectivesInfo");

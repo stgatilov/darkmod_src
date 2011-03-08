@@ -229,6 +229,9 @@ public:
 	// Example: "patently_dangerous", no file extension, no maps/ prefix.
 	const idStr& GetCurrentStartingMap() const;
 
+	// Returns TRUE if the currently installed mod is a campaign
+	bool CurrentModIsCampaign();
+
 	void EraseModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission

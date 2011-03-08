@@ -686,6 +686,12 @@ const idStr& CMissionManager::GetCurrentStartingMap() const
 	return _curStartingMap;
 }
 
+bool CMissionManager::CurrentModIsCampaign()
+{
+	// A non-empty map sequence indicates we have a campaign
+	return _mapSequence.Num() > 0;
+}
+
 CMissionManager::InstallResult CMissionManager::InstallMission(int index)
 {
 	if (index < 0 || index >= _availableMissions.Num())
