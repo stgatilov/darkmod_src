@@ -232,7 +232,7 @@ void MovementSubsystem::NextPath()
 	idPathCorner* path = memory.currentPath.GetEntity();
 
 	// The current path gets stored in lastPath (grayman #2345 - but only if it's a path_corner)
-	if (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)
+	if ((path == NULL) || (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)) // grayman #2683 - check for null
 	{
 		memory.lastPath = path;
 	}

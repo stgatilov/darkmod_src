@@ -219,7 +219,10 @@ void IdleState::InitialiseMovement(idAI* owner)
 		memory.idleYaw = owner->GetCurrentYaw();
 	}
 
-	owner->movementSubsystem->StartPatrol();
+	if (owner->spawnArgs.GetBool("patrol", "1")) // grayman #2683 - only start patrol if you're supposed to 
+	{
+		owner->movementSubsystem->StartPatrol();
+	}
 
 	// Check if the owner has patrol routes set
 	idPathCorner* path = memory.currentPath.GetEntity();
