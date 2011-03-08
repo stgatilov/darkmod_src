@@ -67,6 +67,10 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Update the GUI state
 		UpdateGUI(gui);
 	}
+	else if (cmd == "mainMenuStartup")
+	{
+		gui->SetStateBool("curModIsCampaign", gameLocal.m_MissionManager->CurrentModIsCampaign());
+	}
 	else if (cmd == "loadModNotes")
 	{
 		// Get selected mod
