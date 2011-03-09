@@ -1819,14 +1819,17 @@ void idFuncSmoke::Think( void ) {
 		// If this entity has LOD, let it think about it:
 		// Distance dependence checks
 		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
-		if ( ( lod->DistCheckInterval > 0) 
-		  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
+		if (lod)
 		{
-			m_DistCheckTimeStamp = gameLocal.time;
-//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
-//					GetName(), lod, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
-			SwitchLOD( lod, 
-				GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+			if ( ( lod->DistCheckInterval > 0) 
+			  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
+			{
+				m_DistCheckTimeStamp = gameLocal.time;
+//				gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//						GetName(), lod, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+				SwitchLOD( lod, 
+					GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+			}
 		}
 	}
 }
