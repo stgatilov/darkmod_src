@@ -378,7 +378,6 @@ void idClipModel::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 	savefile->WriteInt( traceModelIndex );
-	savefile->WriteInt( renderModelHandle );
 	savefile->WriteBool( clipLinks != NULL );
 	savefile->WriteInt( touchCount );
 }
@@ -412,11 +411,10 @@ void idClipModel::Restore( idRestoreGame *savefile ) {
 	if ( traceModelIndex >= 0 ) {
 		traceModelCache[traceModelIndex]->refCount++;
 	}
-	savefile->ReadInt( renderModelHandle );
 	savefile->ReadBool( linked );
 	savefile->ReadInt( touchCount );
 
-	// the render model will be set when the clip model is linked
+	// the render model will be set when the clip model is linked, so do not restore it
 	renderModelHandle = -1;
 	clipLinks = NULL;
 	touchCount = -1;
