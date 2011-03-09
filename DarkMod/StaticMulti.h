@@ -118,7 +118,7 @@ private:
 	float						m_fHideDistance;
 	bool						m_bDistCheckXYOnly;
 
-	int							m_LODHandle;		//!< to retrieve the LOD Data from the ModelGenerator
+	lod_handle					m_LODHandle;		//!< to retrieve the LOD Data from the ModelGenerator
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */
