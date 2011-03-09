@@ -76,8 +76,11 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			if (aas != NULL)
 			{
 				int areaNum = frobDoor->GetAASArea(aas);
-				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
-				owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+				if (areaNum > 0) // grayman #2685 - footlocker lids are doors with no area number
+				{
+					gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+					owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
+				}
 			}
 		}
 		subsystem.FinishTask();
