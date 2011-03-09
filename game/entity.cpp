@@ -862,6 +862,9 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// start at 1, since 0 is "the original level" setup already above
 	for (int i = 1; i < LOD_LEVELS; i++)
 	{
+		// set to 0,0,0 as default in case someone tries to use it
+		m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		
 		if (i < LOD_LEVELS - 1)
 		{
 			// for i == LOD_LEVELS - 1, we use "hide_distance"
@@ -969,6 +972,13 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		// else hiding needs no offset
 
 		//gameLocal.Printf (" noshadowsLOD 0x%08x model %s skin %s\n", m_noshadowsLOD, m_ModelLOD[i].c_str(), m_SkinLOD[i].c_str() );
+		}
+		else
+		{
+			// initialize to empty in case someone tries to access them
+			m_LOD->SkinLOD[i] = "";
+			m_LOD->ModelLOD[i] = "";
+			m_LOD->OffsetLOD[i] = idVec3(0,0,0);
 		}
 	}
 
