@@ -69,19 +69,18 @@ CStaticMulti::CStaticMulti( void )
 
 	m_iVisibleModels = 0;
 	m_iMaxChanges = 1;
-	
+	m_fHideDistance = 0.0f;	
 	m_DistCheckTimeStamp = 0;
 	m_DistCheckInterval = 0;
-	m_fHideDistance = 0.0f;
 	m_bDistCheckXYOnly = false;
 }
 
 CStaticMulti::~CStaticMulti()
 {
-	// no need to free these as they are just ptr to a copy
 	if (m_LODHandle)
 	{
 		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
+		m_LODHandle = 0;
 	}
 
 	// make sure the render entity is freed before the model is freed
@@ -637,7 +636,6 @@ void CStaticMulti::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( m_Changes[i].oldFlags );
 		savefile->WriteInt( m_Changes[i].newFlags );
 	}
-	savefile->WriteInt( m_LODHandle );
 }
 
 void CStaticMulti::Restore( idRestoreGame *savefile )
