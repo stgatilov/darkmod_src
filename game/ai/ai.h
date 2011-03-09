@@ -997,7 +997,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	int					m_KoAlertImmuneState;
 	/**
-	/**
 	* Alert state above which their KO behavior changes (if any)
 	**/
 	int					m_KoAlertState;
