@@ -38,7 +38,7 @@ namespace ai
 #define HISTORY_SIZE 32
 #define HISTORY_BOUNDS_THRESHOLD 40	// units (grayman #2345 changed to 40 for quicker blocking recognition; was 10)
 #define BLOCK_TIME_OUT 400			// milliseconds (grayman #2345 changed to 400 for quicker blocking recognition; was 800)
-#define BLOCKED_TOO_LONG 800		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
+#define BLOCKED_TOO_LONG 600		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
 #define MAX_PATH_CORNER_SEARCH_ITERATIONS 100
 #define PAUSE_TIME 3000				// milliseconds (grayman #2345 - how long to stay paused after treadmilling)
 
@@ -559,13 +559,14 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					_timeBlockStarted =  gameLocal.time - gameLocal.msec;
 				}
 			}
-/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
-				// Bounds are safe, back to green state
-				_state = ENotBlocked;
+				// grayman #2669 - go backwards after a small wait
+				if (gameLocal.time >= _lastTimeNotBlocked + _blockTimeOut*2)
+				{
+					_state = ENotBlocked; // Bounds are safe, back to green state
+				}
 			}
- */
 			break;
 		case EBlocked:
 			if (belowThreshold)
@@ -584,14 +585,15 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					}
 				}
 			}
-/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
-				// grayman #2345 - go back to EPossiblyBlocked, instead of all the way back to ENotBlocked
-				_state = EPossiblyBlocked;
-				_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+				// grayman #2669 - go backwards after a small wait
+				if (gameLocal.time >= _timeBlockStarted + _blockTimeShouldEnd*2)
+				{
+					_state = EPossiblyBlocked;
+					_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+				}
 			}
- */
 			break;
 		case EResolvingBlock:
 			// nothing so far
