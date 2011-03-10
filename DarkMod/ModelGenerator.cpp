@@ -48,6 +48,7 @@ CModelGenerator::CModelGenerator
 */
 CModelGenerator::CModelGenerator( void ) {
 	m_LODList.Clear();
+	m_LODList.SetGranularity(32);
 
 //	gameLocal.Printf("Size of LOD data struct: %i bytes\n", sizeof(lod_data_t));
 }
@@ -132,6 +133,7 @@ void CModelGenerator::Restore( idRestoreGame *savefile ) {
 	int n;
 	savefile->ReadInt(n);
 	m_LODList.SetNum(n);
+	m_LODList.SetGranularity(32);
 	for (int i = 0; i < n; i++)
 	{
 		savefile->ReadInt(m_LODList[i].users);
@@ -283,6 +285,7 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 	// report memory usage
 	Print();
 	gameLocal.Printf("ModelGenerator: Registered LOD handle %i, n = %i\n", smallestFree + 1, m_LODList.Num());
+	gameLocal.Printf("ModelGenerator: Model %s, dist %0.2f.\n", l->ModelLOD[0].c_str(), l->DistLODSq[0] );
 #endif
 
 	return (lod_handle) (smallestFree + 1);
@@ -345,6 +348,9 @@ bool CModelGenerator::UnregisterLODData( const lod_handle handle )
 	if (m_LODList[h].users == 0)
 	{
 		// free memory
+#ifdef M_DEBUG
+		gameLocal.Printf("Freed LOD memory for handle %i, users %i.\n", handle, m_LODList[h].users);
+#endif
 		delete m_LODList[h].LODPtr;
 		m_LODList[h].LODPtr = NULL;
 	}
