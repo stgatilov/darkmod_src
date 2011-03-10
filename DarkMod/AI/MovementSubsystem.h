@@ -32,7 +32,6 @@ public:
 		EResolvingBlock,	// resolving block
 		EWaitingSolid,		// grayman #2345 - waiting while non-solid for an AI to pass by
 		EWaitingNonSolid,	// grayman #2345 - waiting while solid for an AI to pass by
-		EPaused,			// grayman #2345 - pause treadmilling for a short while
 		ENumBlockedStates,	// grayman #2345 - invalid index - this always has to be the last in the list
 	};
 
@@ -109,8 +108,6 @@ public:
 	bool IsWaitingSolid();	// grayman #2345
 
 	bool IsWaitingNonSolid(); // grayman #2345
-
-	bool IsPaused();		// grayman #2345
 
 	bool IsNotBlocked();	// grayman #2345
 

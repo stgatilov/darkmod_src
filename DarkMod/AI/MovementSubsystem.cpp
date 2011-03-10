@@ -574,15 +574,8 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 				// grayman #2345 - blocked too long w/o moving?
 				if (gameLocal.time >= _timeBlockStarted + _blockTimeShouldEnd)
 				{
-					// Do something to extricate yourself. AttemptToExtricate() returns TRUE if
-					// it found somewhere to go.
-					if (!AttemptToExtricate())
-					{
-						_timePauseStarted =  gameLocal.time - gameLocal.msec;
-						_state = EPaused;
-						owner->PushMove();
-						owner->StopMove(MOVE_STATUS_WAITING);
-					}
+					// Do something to extricate yourself.
+					AttemptToExtricate();
 				}
 			}
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
@@ -602,8 +595,6 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 			break;
 		case EWaitingNonSolid:	// grayman #2345 - Waiting for passing AI while non-solid
 			break;
-		case EPaused:			// grayman #2345 - stop treadmilling for a few seconds
-			break;
 		};
 	}
 	else
@@ -612,14 +603,6 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		if (IsWaiting())
 		{
 			// do nothing
-		}
-		else if (IsPaused()) // grayman #2345
-		{
-			if (gameLocal.time >= _timePauseStarted + _pauseTimeOut)
-			{
-				_state = ENotBlocked;
-				owner->PopMove(); // restore move state
-			}
 		}
 		else
 		{
@@ -680,11 +663,6 @@ bool MovementSubsystem::IsWaitingSolid(void) // grayman #2345
 bool MovementSubsystem::IsWaitingNonSolid(void) // grayman #2345
 {
 	return (_state == EWaitingNonSolid);
-}
-
-bool MovementSubsystem::IsPaused(void) // grayman #2345
-{
-	return (_state == EPaused);
 }
 
 bool MovementSubsystem::IsNotBlocked(void) // grayman #2345
@@ -876,10 +854,6 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			break;
 		case EWaitingNonSolid: // grayman #2345
 			str = "EWaitingNonSolid";
-			colour = colorBlue;
-			break;
-		case EPaused: // grayman #2345
-			str = "EPaused";
 			colour = colorBlue;
 			break;
 	}

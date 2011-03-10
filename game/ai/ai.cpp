@@ -1744,7 +1744,7 @@ void idAI::Spawn( void )
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 
 	physicsObj.SetMass( spawnArgs.GetFloat( "mass", "100" ) );
-	kickForce = 1.5*physicsObj.GetMass(); // grayman #2568 - equation arrived at empirically
+	kickForce = 2*physicsObj.GetMass(); // grayman #2568 - equation arrived at empirically
 
 	physicsObj.SetStepUpIncrease(spawnArgs.GetFloat("step_up_increase", "0"));
 
@@ -2630,7 +2630,8 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 
 	// find all possible obstacles
 	clipBounds = physicsObj.GetAbsBounds();
-	clipBounds.TranslateSelf( dir * 32.0f );
+	clipBounds.TranslateSelf( dir * (clipBounds[1].x - clipBounds[0].x + clipBounds[1].y - clipBounds[0].y)/2); // grayman #2667
+//	clipBounds.TranslateSelf( dir * 32.0f ); // grayman #2667 - old way assumed a humanoid
 	clipBounds.ExpandSelf( 8.0f );
 	clipBounds.AddPoint( org );
 	clipmask = physicsObj.GetClipMask();
@@ -3738,10 +3739,7 @@ idAI::MoveToPosition
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
-	if (movementSubsystem->IsPaused()) // grayman #2345
-	{
-		movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
-	}
+	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
