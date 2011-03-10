@@ -301,7 +301,7 @@ lod_handle CModelGenerator::RegisterLODData( const lod_handle handle ) {
 	if (handle == 0 || handle > (unsigned int)n)
 	{
 		// handle out of range
-		gameLocal.Error("ModelGenerator::GetLODDataPtr: Handle %i out of range.", handle);
+		gameLocal.Error("ModelGenerator::RegisterLODData: Handle %i out of range 1..%i.", handle, n);
 		return -1;
 	}
 
@@ -309,7 +309,7 @@ lod_handle CModelGenerator::RegisterLODData( const lod_handle handle ) {
 	if (m_LODList[h].users <= 0)
 	{
 		// not registered
-		gameLocal.Error("ModelGenerator::GetLODDataPtr: LOD data %i has no users.", handle);
+		gameLocal.Error("ModelGenerator::RegisterLODData: LOD data %i has no users.", handle);
 		return -1;
 	}
 	m_LODList[h].users ++;
@@ -330,7 +330,7 @@ bool CModelGenerator::UnregisterLODData( const lod_handle handle )
 	if (handle == 0 || handle > (unsigned int)n)
 	{
 		// handle out of range
-		gameLocal.Warning("ModelGenerator::UnregisterLODData: Handle %i out of range.", handle);
+		gameLocal.Warning("ModelGenerator::UnregisterLODData: Handle %i out of range 1..%i.", handle, n);
 		return false;
 	}
 
@@ -370,7 +370,7 @@ const lod_data_t* CModelGenerator::GetLODDataPtr( const lod_handle handle ) cons
 	if (handle == 0 || handle > (unsigned int)n)
 	{
 		// handle out of range
-		gameLocal.Error("ModelGenerator::GetLODDataPtr: Handle %i out of range.", handle);
+		gameLocal.Error("ModelGenerator::GetLODDataPtr: Handle %i out of range (1..%i).", handle, n);
 		return NULL;
 	}
 
