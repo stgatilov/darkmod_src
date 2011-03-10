@@ -42,7 +42,6 @@ idFuncEmitter::idFuncEmitter( void ) {
 	hidden = false;
 	m_LODHandle = 0;
 
-	m_modelName = "";
 	m_models.Clear();
 }
 
@@ -77,7 +76,7 @@ void idFuncEmitter::SetModel( int id, const idStr &modelName, const idVec3 &offs
 	m_models[id].offset = offset;
 	m_models[id].flags = 0;
 	m_models[id].handle = renderModelManager->FindModel( modelName );
-	if (m_modelName != modelName)
+	if (spawnArgs.GetString("model") != modelName)
 	{
 		// differs
 		m_models[id].name = modelName;
@@ -104,9 +103,9 @@ void idFuncEmitter::SetModel( const char* modelName )
 		gameRenderWorld->FreeEntityDef( modelDefHandle );
 	}
 	modelDefHandle = -1;
-	m_modelName = modelName;
+	spawnArgs.Set("model", modelName);
 
-	idRenderModel * modelHandle = renderModelManager->FindModel( m_modelName );
+	idRenderModel * modelHandle = renderModelManager->FindModel( modelName );
 
 	// go through all other models and change them
 	const int num = m_models.Num();
@@ -151,7 +150,7 @@ void idFuncEmitter::Present( void )
 	// present the first model
     renderEntity.origin = GetPhysics()->GetOrigin();
 	renderEntity.axis = GetPhysics()->GetAxis();
-	renderEntity.hModel = renderModelManager->FindModel( m_modelName );
+	renderEntity.hModel = renderModelManager->FindModel( spawnArgs.GetString("model") );
 
 	renderEntity.bodyId = 0;
 	// make each of them have a unique timeoffset, so they do not appear to be in sync
@@ -225,9 +224,6 @@ void idFuncEmitter::Spawn( void ) {
 		hidden = false;
 	}
 
-	// we need this to set a default model
-	m_modelName = spawnArgs.GetString("model");
-
 	// check if we have additional models
    	kv = spawnArgs.MatchPrefix( "model", NULL );
 	int model = 0;
@@ -264,7 +260,6 @@ idFuncEmitter::Save
 */
 void idFuncEmitter::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( hidden );
-	savefile->WriteString(m_modelName);
 
 	const int num = m_models.Num();
 	savefile->WriteInt( num );
@@ -305,9 +300,10 @@ idFuncEmitter::Restore
 */
 void idFuncEmitter::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( hidden );
-	savefile->ReadString(m_modelName);
 	int num;
 	savefile->ReadInt( num );
+
+	idStr defaultModelName = spawnArgs.GetString("model");
 
 	m_models.Clear();
 	m_models.SetNum(num);
@@ -321,7 +317,7 @@ void idFuncEmitter::Restore( idRestoreGame *savefile ) {
 		idStr modelName = m_models[i].name;
 		if (modelName.IsEmpty())
 		{
-			modelName = m_modelName;
+			modelName = defaultModelName;
 		}
 		m_models[i].handle = renderModelManager->FindModel( modelName );
 	}

@@ -67,7 +67,6 @@ protected:
 private:
 	bool						hidden;
 
-	idStr						m_modelName;		//! name of the original particle model
 	idList<emitter_models_t> 	m_models;			//! struct with data for additional models
 };
 
