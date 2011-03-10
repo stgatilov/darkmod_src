@@ -3230,7 +3230,6 @@ void Seed::CombineEntities( void )
 		m_LODLevel = 0;
 		if (entityClass->m_LODHandle)
 		{
-			gameLocal.Printf("GetLODDataPtr %i\n", entityClass->m_LODHandle);
 			const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
 			ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 		}
@@ -3308,7 +3307,6 @@ void Seed::CombineEntities( void )
 			m_LODLevel = 0;
 			if (entityClass->m_LODHandle)
 			{
-				gameLocal.Printf("GetLODDataPtr %i\n", entityClass->m_LODHandle);
 				const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
 				ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 			}
