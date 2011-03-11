@@ -70,10 +70,14 @@ void CModelGenerator::SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) 
 
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
-		savefile->WriteString( m_LOD->ModelLOD[i] );
-		savefile->WriteString( m_LOD->SkinLOD[i] );
-		savefile->WriteVec3( m_LOD->OffsetLOD[i] );
 		savefile->WriteFloat( m_LOD->DistLODSq[i] );
+		// only save these if the stage is used
+		if ( (i == 0) || m_LOD->DistLODSq[i] > 0.0f)
+		{
+			savefile->WriteString( m_LOD->ModelLOD[i] );
+			savefile->WriteString( m_LOD->SkinLOD[i] );
+			savefile->WriteVec3( m_LOD->OffsetLOD[i] );
+		}
 	}
 }
 
@@ -94,6 +98,7 @@ void CModelGenerator::Save( idSaveGame *savefile ) const {
 			SaveLOD( savefile, m_LODList[i].LODPtr );
 		}
 	}
+//	Print();
 }
 
 /*
@@ -113,10 +118,20 @@ void CModelGenerator::RestoreLOD( idRestoreGame *savefile, lod_data_t * m_LOD )
 
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
-		savefile->ReadString( m_LOD->ModelLOD[i] );
-		savefile->ReadString( m_LOD->SkinLOD[i] );
-		savefile->ReadVec3( m_LOD->OffsetLOD[i] );
 		savefile->ReadFloat( m_LOD->DistLODSq[i] );
+		// only save these if the stage is used
+		if ((i == 0) || m_LOD->DistLODSq[i] > 0.0f)
+		{
+			savefile->ReadString( m_LOD->ModelLOD[i] );
+			savefile->ReadString( m_LOD->SkinLOD[i] );
+			savefile->ReadVec3( m_LOD->OffsetLOD[i] );
+		}
+		else
+		{
+			m_LOD->ModelLOD[i] = "";
+			m_LOD->SkinLOD[i] = "";
+			m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		}
 	}
 }
 
@@ -148,6 +163,7 @@ void CModelGenerator::Restore( idRestoreGame *savefile ) {
 			RestoreLOD( savefile, m_LODList[i].LODPtr );
 		}
 	}
+//	Print();
 }
 
 /*
@@ -166,6 +182,9 @@ CModelGenerator::Clear
 */
 void CModelGenerator::Clear( void ) {
 
+#ifdef M_DEBUG
+	gameLocal.Printf("ModelGenerator::Clear()\n");
+#endif
 	int n = m_LODList.Num();
 	for (int i = 0; i < n; i++)
 	{
@@ -176,6 +195,9 @@ void CModelGenerator::Clear( void ) {
 		}
 	}
 	m_LODList.Clear();
+#ifdef M_DEBUG
+	gameLocal.Printf("ModelGenerator::Clear() done.\n");
+#endif
 }
 
 /*
@@ -266,6 +288,10 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 	{
 		gameLocal.Error("Could not allocate %i bytes for a new LOD struct.\n", sizeof(lod_data_t));
 	}
+#ifdef M_DEBUG
+		gameLocal.Printf("DistCheckInterval %i fLODNormalDistance %0.02f\n",
+					mLOD->DistCheckInterval, mLOD->fLODNormalDistance );
+#endif
 	// copy data
 	lod_data_t *l = m_LODList[smallestFree].LODPtr;
   	l->DistCheckInterval		= mLOD->DistCheckInterval;
@@ -273,6 +299,7 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 	l->fLODFadeOutRange			= mLOD->fLODFadeOutRange;
 	l->fLODFadeInRange			= mLOD->fLODFadeInRange;
 	l->fLODNormalDistance		= mLOD->fLODNormalDistance;
+	l->noshadowsLOD				= mLOD->noshadowsLOD;
 	for (int i = 0; i < LOD_LEVELS; i++)
 	{
 		l->ModelLOD[i] = mLOD->ModelLOD[i];
@@ -282,10 +309,10 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 	}
 	
 #ifdef M_DEBUG
-	// report memory usage
-	Print();
 	gameLocal.Printf("ModelGenerator: Registered LOD handle %i, n = %i\n", smallestFree + 1, m_LODList.Num());
 	gameLocal.Printf("ModelGenerator: Model %s, dist %0.2f.\n", l->ModelLOD[0].c_str(), l->DistLODSq[0] );
+	// report memory usage
+	Print();
 #endif
 
 	return (lod_handle) (smallestFree + 1);
@@ -402,13 +429,29 @@ void CModelGenerator::Print( void ) const {
 	}
 	for (int i = 0; i < n; i++)
 	{
+#ifdef M_DEBUG
+		gameLocal.Printf(" LOD %i: users %i data %p\n", i, m_LODList[i].users, m_LODList[i].LODPtr );
+#endif
 		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
 		{
 			// the struct itself
 			long this_memory = sizeof(lod_data_t);
 			lod_data_t *l = m_LODList[i].LODPtr;
+#ifdef M_DEBUG
+			gameLocal.Printf(" DistCheckInterval %i bDistCheckXYOnly %s noshadowsLOD %04x fLODFadeOutRange %0.02f fLODFadeInRange %0.02f fLODNormalDistance %0.02f\n",
+				l->DistCheckInterval,
+		 		l->bDistCheckXYOnly ? "yes" : "no",
+				l->noshadowsLOD,
+		 		l->fLODFadeOutRange,
+		 		l->fLODFadeInRange,
+		 		l->fLODNormalDistance );
+#endif
 			for (int j = 0; j < LOD_LEVELS; j++)
 			{
+#ifdef M_DEBUG
+				gameLocal.Printf(" LOD %i Stage %i: model %s skin %s dist %0.2f offset %s\n", 
+						i, j, l->ModelLOD[j].c_str(), l->SkinLOD[j].c_str(), l->DistLODSq[j], l->OffsetLOD[j].ToString() );
+#endif
 				this_memory += l->ModelLOD[j].Length() + 1;
 				this_memory += l->SkinLOD[j].Length() + 1;
 			}
