@@ -114,9 +114,13 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 idClipModel::FreeTraceModel
 ===============
 */
-void idClipModel::FreeTraceModel( int traceModelIndex ) {
-	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex]->refCount <= 0 ) {
-		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model" );
+void idClipModel::FreeTraceModel( const int traceModelIndex ) {
+	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: traceModelIndex %i out of range (0..%i)", traceModelIndex, traceModelCache.Num() );
+		return;
+	}
+	if ( traceModelCache[traceModelIndex]->refCount <= 0 ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model (index=%i)", traceModelIndex );
 		return;
 	}
 	traceModelCache[traceModelIndex]->refCount--;
