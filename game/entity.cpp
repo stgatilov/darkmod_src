@@ -802,7 +802,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 {
 	lod_data_t *m_LOD = NULL;
 
-	int d = (int) (1000.0f * dict->GetFloat( "dist_check_period", "0" ));
+	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
@@ -814,11 +814,12 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		return 0;
 	}
 
+	// distance dependent LOD from this point on:
 	// allocate new memory
 	m_LOD = new lod_data_t;
 
 	// if interval not set, use twice per second
-	m_LOD->DistCheckInterval = d == 0 ? 500 : d;
+	m_LOD->DistCheckInterval = ((d == 0) ? 500 : d);
 
 	m_SkinLODCur = 0;
 	m_ModelLODCur = 0;
@@ -834,9 +835,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	}
 
 	idStr temp;
-	// distance dependent LOD from this point on:
 	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
-
 	m_LOD->DistLODSq[0] = 0;
 
 	// setup level 0 (aka "The one and only original")
