@@ -1638,6 +1638,10 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_droppedByAI); // grayman #1330
 
 	savefile->WriteInt(m_LODHandle);
+	savefile->WriteInt(m_DistCheckTimeStamp);
+	savefile->WriteInt(m_LODLevel);
+	savefile->WriteInt(m_ModelLODCur);
+	savefile->WriteInt(m_SkinLODCur);
 
 	// grayman #2341 - don't save previous voice and body shaders and indices,
 	// since they're irrelevant across saved games
@@ -1911,9 +1915,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_droppedByAI); // grayman #1330
 
-	unsigned int t;
-	savefile->ReadUnsignedInt(t);
-	m_LODHandle = t;
+	savefile->ReadUnsignedInt(m_LODHandle);
+	savefile->ReadInt(m_DistCheckTimeStamp);
+	savefile->ReadInt(m_LODLevel);
+	savefile->ReadInt(m_ModelLODCur);
+	savefile->ReadInt(m_SkinLODCur);
 
 	// grayman #2341 - restore previous voice and body shaders and indices
 
