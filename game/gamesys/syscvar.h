@@ -346,6 +346,10 @@ extern idCVar cv_lod_bias;
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
 
+/**
+* If != 0, use this ratio between FOV X and Y and ignore r_aspectRatio.
+*/
+extern idCVar	cv_r_fovRatio;
 
 /**
 * End DarkMod cvars
