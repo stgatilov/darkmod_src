@@ -158,7 +158,7 @@ Seed::~Seed
 */
 Seed::~Seed(void) {
 
-	// gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
+	//gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
 	ClearClasses();
 }
 /*
@@ -411,12 +411,14 @@ void Seed::ClearClasses( void )
 		// need to free this?
 		if (!m_Classes[i].pseudo && m_Classes[i].hModel)
 		{
+			// gameLocal.Printf("%s: Freeing class hModel\n", GetName());
 			renderModelManager->FreeModel( m_Classes[i].hModel );
 		}
 		m_Classes[i].hModel = NULL;
 		if (m_Classes[i].imgmap != 0)
 		{
 			gameLocal.m_ImageMapManager->UnregisterMap( m_Classes[i].imgmap );
+			m_Classes[i].imgmap = 0;
 		}
 		if (m_Classes[i].m_LODHandle)
 		{
@@ -573,9 +575,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		}
 
 		// restore LOD data handle
-		unsigned int t;
-		savefile->ReadUnsignedInt( t );
-		m_Classes[i].m_LODHandle = t;
+		savefile->ReadUnsignedInt( m_Classes[i].m_LODHandle );
 
 		savefile->ReadInt( m_Classes[i].maxEntities );
 		savefile->ReadInt( m_Classes[i].numEntities );
@@ -3333,6 +3333,10 @@ void Seed::CombineEntities( void )
 					// register us as new user (the class itself doesn't use the data, but it
 					// must be around so we can spawn entities based on it
 					PseudoClass.m_LODHandle = gameLocal.m_ModelGenerator->RegisterLODData( entityClass->m_LODHandle );
+				}
+				else
+				{
+					PseudoClass.m_LODHandle = 0;
 				}
 				PseudoClass.modelname = entityClass->modelname;
 				PseudoClass.spawnDist = entityClass->spawnDist;
