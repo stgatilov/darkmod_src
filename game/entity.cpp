@@ -8346,35 +8346,42 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 	// first see if the entity (the animation is running on) defines an entity
 	// via spawnarg: "pickup_" + "name_of_the_animation" (we get this as prefix)
 
-	const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
-	while( kv ) {
-		idEntity *target = gameLocal.FindEntity( kv->GetValue() );
-		if (!target) {
-			gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
-			// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
-			target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
-		}
-		// if we found an entity and it is not ourself:
-		if (target != NULL && target != this)
+	if (prefix && *prefix != 0x00)
+	{
+		const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
+		while( kv )
 		{
-			// check that it is closer than the closest match so far
-			idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
-			float distance = diff.LengthSqr();
-			if (distance < closest_distance && distance < max_dist_sqr) {
-				// closer and close enough
-				gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
-				closest_distance = distance;
-				closest = target;
+			idEntity *target = gameLocal.FindEntity( kv->GetValue() );
+			if (!target) {
+				gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
+				// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
+				target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
 			}
+			// if we found an entity and it is not ourself:
+			if (target != NULL && target != this)
+			{
+				// check that it is closer than the closest match so far
+				idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
+				float distance = diff.LengthSqr();
+				if (distance < closest_distance && distance < max_dist_sqr) {
+					// closer and close enough
+					gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+					closest_distance = distance;
+					closest = target;
+				}
+			}
+		// next spawnarg
+		kv = spawnArgs.MatchPrefix( prefix, kv );
 		}
-	// next spawnarg
-	kv = spawnArgs.MatchPrefix( prefix, kv );
 	}
 
 	if (closest == NULL) {
 		// couldn't find any usable entity from the the spawnargs
 		// so try to use the entity named in the animation
-		gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
+		if (prefix && *prefix != 0x00)
+		{
+			gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
+		}
 		closest = gameLocal.FindEntity( entitySelector );
 		if (closest) {
 			idVec3 diff = joint_origin - closest->GetPhysics()->GetOrigin();
@@ -8393,7 +8400,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 		}
 	}
 
-	gameLocal.Printf ( "   End of selecting closest entity.");
+//	gameLocal.Printf ( "   End of selecting closest entity.");
 
 	// now return the found entity or NULL
 	return closest;
