@@ -3305,6 +3305,12 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 		ratio_x = 16.0f;
 		ratio_y = 10.0f;
 		break;
+
+	case 3 :
+		// 5:4
+		ratio_x = 5.0f;
+		ratio_y = 4.0f;
+		break;
 	}
 
 	y = ratio_y / tan( fov_y / 360.0f * idMath::PI );
@@ -3463,13 +3469,28 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 		case 8:
 			width = 2560;
 			height = 1440;
+			break;
 		case 9:
 			width = 2560;
 			height = 1600;
+			break;
+		case 10:
+			width = 1280;
+			height = 1024;
+			break;
+		case 11:
+			width = 1800;
+			height = 1440;
+			break;
+		case 12:
+			width = 2560;
+			height = 2048;
+			break;
 		default:
 			break;
 		};
 
+		gameLocal.Printf("Widesreenmode %i, setting r_customWidth=%i, r_customHeight=%i\n", mode, width, height);
 		cvarSystem->SetCVarInteger("r_customWidth", width);
 		cvarSystem->SetCVarInteger("r_customHeight", height);
 	}
@@ -3619,14 +3640,23 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			switch (width)
 			{
 			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
-			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : 6); break;
+					   // 1280 x 800 => 1
+					   // 1280 x 720 => 6
+					   // 1280 x 1024 => 10
+			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : (height == 720 ? 6 : 10) ); break;
 			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
 			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
 			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
+					   // 1800 x 1440
+			case 1800: cv_tdm_widescreenmode.SetInteger(11); break;
 			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
-			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : 9); break;
+					   // 2560 x 1440 => 8
+					   // 2560 x 1600 => 9
+					   // 2560 x 2048 => 12
+			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : height == 1600 ? 9 : 12); break;
 			default: cv_tdm_widescreenmode.SetInteger(0); break;
 			}
+			gameLocal.Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
 		}
 	}
 	// greebo: the "log" command is used to write stuff to the console
