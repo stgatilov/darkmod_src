@@ -1432,7 +1432,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						AttName = AttName.Left( spcind );
 					}
 
-					gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+					// gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
 
 					idStr Spawnarg = "pickup_"; Spawnarg.Append( name );
 					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
