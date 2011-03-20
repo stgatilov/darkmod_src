@@ -1182,8 +1182,11 @@ void idEntity::StopLOD( const bool doTeam )
 	//BecomeInactive( TH_THINK );
 
 	// deregister our LOD struct
-	gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
-	m_LODHandle = 0;
+	if (m_LODHandle)
+	{
+		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
+		m_LODHandle = 0;
+	}
 
 	if (!doTeam)
 	{
@@ -2173,6 +2176,10 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 */
 bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 {
+	if (!m_LOD)
+	{
+		gameLocal.Error("SwitchLOD() with NULL called.\n");
+	}
 	// remember the current level
 	int oldLODLevel = m_LODLevel;
 	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
