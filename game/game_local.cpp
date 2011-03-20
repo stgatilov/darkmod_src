@@ -3296,6 +3296,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 
 	case 1 :
 		// 16:9
+	case 4 :
+		// TV 16:9
 		ratio_x = 16.0f;
 		ratio_y = 9.0f;
 		break;
@@ -3486,6 +3488,30 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 			width = 2560;
 			height = 2048;
 			break;
+		case 13:
+			width = 1360;
+			height = 768;
+			break;
+		case 14:
+			width = 1600;
+			height = 900;
+			break;
+		case 15:
+			width = 3280;
+			height = 2048;
+			break;
+		case 16:
+			width = 3360;
+			height = 2100;
+			break;
+		case 17:
+			width = 3840;
+			height = 2160;
+			break;
+		case 18:
+			width = 3840;
+			height = 2400;
+			break;
 		default:
 			break;
 		};
@@ -3640,20 +3666,30 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			switch (width)
 			{
 			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
-					   // 1280 x 800 => 1
-					   // 1280 x 720 => 6
-					   // 1280 x 1024 => 10
+						// 1280 x 800 => 1
+						// 1280 x 720 => 6
+						// 1280 x 1024 => 10
 			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : (height == 720 ? 6 : 10) ); break;
+			case 1360: cv_tdm_widescreenmode.SetInteger(13); break;
 			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
 			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
+						// 1600 x 900
+			case 1600: cv_tdm_widescreenmode.SetInteger(14); break;
 			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
-					   // 1800 x 1440
+						// 1800 x 1440
 			case 1800: cv_tdm_widescreenmode.SetInteger(11); break;
 			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
-					   // 2560 x 1440 => 8
-					   // 2560 x 1600 => 9
-					   // 2560 x 2048 => 12
+						// 2560 x 1440 => 8
+						// 2560 x 1600 => 9
+						// 2560 x 2048 => 12
 			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : height == 1600 ? 9 : 12); break;
+						// 3280 x 2048
+			case 3280: cv_tdm_widescreenmode.SetInteger(15); break;
+						// 3360 x 2100
+			case 3360: cv_tdm_widescreenmode.SetInteger(16); break;
+						// 3840 x 2160 => 17
+						// 3840 x 2400 => 18
+			case 3840: cv_tdm_widescreenmode.SetInteger( height == 2160 ? 17 : 18); break;
 			default: cv_tdm_widescreenmode.SetInteger(0); break;
 			}
 			gameLocal.Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
