@@ -2545,14 +2545,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "def", kv );
 	}
 
-	kv = dict->MatchPrefix( "pda_name", NULL );
-	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_PDA, kv->GetValue().c_str(), false );
-		}
-		kv = dict->MatchPrefix( "pda_name", kv );
-	}
-
 	kv = dict->MatchPrefix( "video", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
@@ -2637,8 +2629,6 @@ void idGameLocal::SpawnPlayer( int clientNum )
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
-
-	idPlayer* player = GetLocalPlayer(); // ??
 
 	mpGame.SpawnPlayer( clientNum );
 }
