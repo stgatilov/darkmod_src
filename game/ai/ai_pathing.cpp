@@ -48,7 +48,7 @@ const int 	MAX_AAS_WALL_EDGES			= 256;
 const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
 const int 	MAX_OBSTACLE_PATH			= 64;
-const int	REUSE_DOOR_DELAY			= 10000; // grayman #2345 - wait before using a door again
+const int	REUSE_DOOR_DELAY			= 8000; // grayman #2345 - wait before using a door again
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -565,6 +565,11 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 			if (p_binaryFrobMover->IsType(CFrobDoor::Type))
 			{
+				if (!selfAI->m_bCanOperateDoors) // grayman #2691
+				{
+					continue; // ignore this door
+				}
+
 				if (p_binaryFrobMover->IsOpen())
 				{
 					if (self->IsType(idAI::Type))

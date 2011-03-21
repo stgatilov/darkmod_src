@@ -21,6 +21,7 @@ namespace ai
 {
 
 #define QUEUE_TIMEOUT 10000		// milliseconds (grayman #2345 - max time to wait in a door queue)
+#define DOOR_TIMEOUT 20000		// milliseconds (grayman #2700 - max time to execute a move to mid pos or back pos)
 #define QUEUE_DISTANCE 150		// grayman #2345 - distance from door where incoming AI pause
 #define NEAR_DOOR_DISTANCE 72	// grayman #2345 - less than this and you're close to the door
 
@@ -39,10 +40,9 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 
 	_retryCount = 0;
-
 	_triedFitting = false; // grayman #2345 - useful if you're stuck behind a door
-
-	_leaveQueue = -1; // grayman #2345
+	_leaveQueue = -1;	// grayman #2345
+	_leaveDoor = -1;	// grayman #2700
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -98,6 +98,8 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_wasLocked = false;
 
+	_wasRunning = false; // grayman #2694
+
 	if (frobDoor->IsLocked())
 	{
 		// check if we have already tried the door
@@ -136,9 +138,10 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 {
+	idAI* owner = _owner.GetEntity();
+
 	// If you're using special door-handling entities, head for the back position.
 
-	idAI* owner = _owner.GetEntity();
 	if (_backPosEnt.IsValid())
 	{
 		if (_doorHandlingState != EStateMovingToBackPos)
@@ -215,12 +218,20 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 {
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
-
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s\r",owner->name.c_str());
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
 	{
+		return true;
+	}
+
+	// grayman #2700 - we get a certain amount of time to complete a move
+	// to the mid position or back position before leaving door handling
+
+	if ((_leaveDoor > 0) && (gameLocal.time >= _leaveDoor))
+	{
+		_leaveDoor = -1;
 		return true;
 	}
 
@@ -236,8 +247,23 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
+
 	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
-	bounds[0][2] += 16;
+
+	// grayman #2691 - except for AI whose bounding box height is less than maxStepHeight, otherwise applying the bump up
+	// causes the clipmodel to be "upside-down", which isn't good. In that case, give the bottom a bump up equal to half
+	// of the clipmodel's height so it at least gets a small bump.
+
+	float ht = owner->GetAAS()->GetSettings()->maxStepHeight;
+	if (bounds[0].z + ht < bounds[1].z)
+	{
+		bounds[0].z += ht;
+	}
+	else
+	{
+		bounds[0].z += (bounds[1].z - bounds[0].z)/2.0;
+	}
+	// bounds[0][2] += 16; // old way
 	float size = bounds[1][0];
 
 	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
@@ -247,6 +273,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	{
 		DrawDebugOutput(owner);
 	}
+
+	idEntity *tactileEntity = owner->GetTactileEntity();	// grayman #2692
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();	// grayman #2692
 
 	// Door is closed
 	if (!frobDoor->IsOpen())
@@ -308,7 +337,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{	
 							DoorInTheWay(owner, frobDoor);
 							_doorHandlingState = EStateMovingToBackPos;
-
 						}
 						else
 						{
@@ -394,18 +422,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
+				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
+					(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 				{
 					// reached front position
 					owner->StopMove(MOVE_STATUS_DONE);
 					owner->TurnToward(closedPos);
 					_waitEndTime = gameLocal.time + 750;
 					_doorHandlingState = EStateWaitBeforeOpen;
+					owner->AI_RUN = _wasRunning; // grayman #2694
 					break;
 				}
 				else if (owner->AI_MOVE_DONE)
 				{
 					owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+				}
+				else if (owner->AI_RUN && ((closedPos - ownerOrigin).LengthFast() < 100)) // grayman #2694
+				{
+					_wasRunning = true;
+					owner->AI_RUN = false; // stop running so you can zero in on _frontPos and not run around it in circles
 				}
 				break;
 			}
@@ -773,7 +808,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			}
 			
 			case EStateMovingToFrontPos:
-				owner->m_canResolveBlock = false;		// grayman #2345
+				owner->m_canResolveBlock = false; // grayman #2345
 
 				// check if the door was blocked or interrupted
 				if (frobDoor->IsBlocked() || 
@@ -799,7 +834,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					idVec3 currentPos = frobDoor->GetCurrentPos();
 					// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
 
-					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
+					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) ||  // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
+						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
 						// reached front position
 						owner->StopMove(MOVE_STATUS_DONE);
@@ -820,7 +856,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					PickWhere2Go(frobDoor);
 				}
 				break;
-
 
 			case EStateWaitBeforeOpen:
 				// check blocked or interrupted
@@ -1032,13 +1067,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 					}
 				}
-				else
+				else if (frobDoor->WasInterrupted() && !FitsThrough())
 				{
-					if (frobDoor->WasInterrupted() && !FitsThrough())
-					{
 					// end this, task, it will be reinitialized when needed
 					return true;
-					}
 				}
 				
 				// reached mid position
@@ -1096,9 +1128,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if (owner->AI_MOVE_DONE)
 				{
-					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION) || ((owner->GetTactileEntity() != NULL) && (closedPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 100)) // grayman #2345
+					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
+						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
-						if (!AllowedToClose(owner) || owner->AI_RUN) // grayman #2670
+						if (!AllowedToClose(owner) || owner->AI_RUN)  // grayman #2670
 						{
 							return true;
 						}
@@ -1139,15 +1172,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				
 			case EStateWaitBeforeClose:
-				if (!AllowedToClose(owner) || (!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) || owner->AI_RUN) // grayman #2670
+				if (!AllowedToClose(owner) ||
+					(!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) ||
+					 owner->AI_RUN) // grayman #2670
 				{
 					return true;
 				}
-
-//				if (!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating))
-//				{
-//					return true;
-//				}
 
 				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
@@ -1166,15 +1196,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateStartClose:
-				if (!AllowedToClose(owner) || (!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) || owner->AI_RUN) // grayman #2670
+				if (!AllowedToClose(owner) ||
+					(!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) ||
+					 owner->AI_RUN) // grayman #2670
 				{
 					return true;
 				}
-
-//				if (!_doorInTheWay && owner->AI_AlertIndex >= EInvestigating)
-//				{
-//					return true;
-//				}
 
 				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
 				{
@@ -1189,15 +1216,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 
 			case EStateClosingDoor:
-				if (!AllowedToClose(owner) || (owner->AI_AlertIndex >= EInvestigating) || owner->AI_RUN) // grayman #2670
+				if (!AllowedToClose(owner) ||
+					(owner->AI_AlertIndex >= EInvestigating) ||
+					 owner->AI_RUN) // grayman #2670
 				{
 					return true;
 				}
-
-//				if (owner->AI_AlertIndex >= EInvestigating)
-//				{
-//					return true;
-//				}
 
 				// check blocked or interrupted
 				if (frobDoor->IsBlocked() || 
@@ -1211,6 +1235,20 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			default:
 				break;
 		}
+	}
+
+	// grayman #2700 - query the door use timeout
+
+	if ((_doorHandlingState == EStateMovingToMidPos) || (_doorHandlingState == EStateMovingToBackPos))
+	{
+		if (_leaveDoor < 0)
+		{
+			_leaveDoor = gameLocal.time + DOOR_TIMEOUT; // grayman #2700 - set door use timeout
+		}
+	}
+	else
+	{
+		_leaveDoor = -1; // reset timeout
 	}
 
 	return false; // not finished yet
@@ -2034,7 +2072,6 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
 
 	}
-
 }
 
 void HandleDoorTask::Save(idSaveGame* savefile) const
@@ -2051,8 +2088,10 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_doorInTheWay);
 	savefile->WriteInt(_retryCount);
 	savefile->WriteInt(_leaveQueue);	// grayman #2345
+	savefile->WriteInt(_leaveDoor);		// grayman #2700
 	savefile->WriteBool(_triedFitting);	// grayman #2345
-	
+	savefile->WriteBool(_wasRunning);	// grayman #2694
+
 	_frontPosEnt.Save(savefile);
 	_backPosEnt.Save(savefile);
 }
@@ -2073,7 +2112,9 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_doorInTheWay);
 	savefile->ReadInt(_retryCount);
 	savefile->ReadInt(_leaveQueue);		// grayman #2345
+	savefile->ReadInt(_leaveDoor);		// grayman #2700
 	savefile->ReadBool(_triedFitting);	// grayman #2345
+	savefile->ReadBool(_wasRunning);	// grayman #2694
 
 	_frontPosEnt.Restore(savefile);
 	_backPosEnt.Restore(savefile);

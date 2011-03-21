@@ -4842,6 +4842,41 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 
 /*
 =====================
+idAI::CanPassThroughDoor - Is a doorway wide enough and tall enough for the AI to fit through? (grayman #2691) 
+=====================
+*/
+
+bool idAI::CanPassThroughDoor(CFrobDoor* frobDoor)
+{
+	idBounds door1Bounds = frobDoor->GetPhysics()->GetBounds();
+	idBounds myBounds = GetPhysics()->GetBounds();
+	idVec3 door1Size = door1Bounds.GetSize();
+	idVec3 mySize = myBounds.GetSize();
+	bool canPassDoor1 = (door1Size.z > mySize.z) && ((door1Size.x > mySize.x) || (door1Size.y > mySize.y));
+	if (canPassDoor1)
+	{
+		return true;
+	}
+
+	// The AI can't fit through the first door. Is this door part of a double door?
+	
+	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+	if (doubleDoor != NULL)
+	{
+		idBounds door2Bounds = doubleDoor->GetPhysics()->GetBounds();
+		idVec3 door2Size = door2Bounds.GetSize();
+		bool canPassDoors = (door1Size.z > mySize.z) && (door2Size.z > mySize.z) && (((door1Size.x + door2Size.x) > mySize.x) || ((door1Size.y + door2Size.y) > mySize.y));
+		if (canPassDoors)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+=====================
 idAI::DeadMove
 =====================
 */
