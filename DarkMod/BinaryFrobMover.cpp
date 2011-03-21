@@ -453,6 +453,24 @@ void CBinaryFrobMover::Lock(bool bMaster)
 	OnLock(bMaster);
 }
 
+void CBinaryFrobMover::TellRegisteredUsers()
+{
+	// grayman #1145 - remove this door's area number from each registered AI's forbidden area list
+
+	int numUsers = m_registeredAI.Num();
+
+	for (int i = 0 ; i < numUsers ; i++)
+	{
+		idAI* ai = m_registeredAI[i].GetEntity();
+		idAAS* aas = ai->GetAAS();
+		if (aas != NULL)
+		{
+			gameLocal.m_AreaManager.RemoveForbiddenArea(GetAASArea(aas),ai);
+		}
+	}
+	m_registeredAI.Clear(); // served its purpose, clear for next batch
+}
+
 void CBinaryFrobMover::Unlock(bool bMaster)
 {
 	if (!PreUnlock(bMaster)) {
@@ -469,20 +487,7 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 	// Fire the event for the subclasses
 	OnUnlock(bMaster);
 
-	// grayman #1145 - remove this door's area number from each registered AI's forbidden area list
-
-	int numUsers = m_registeredAI.Num();
-
-	for (int i = 0 ; i < numUsers ; i++)
-	{
-		idAI* ai = m_registeredAI[i].GetEntity();
-		idAAS* aas = ai->GetAAS();
-		if (aas != NULL)
-		{
-			gameLocal.m_AreaManager.RemoveForbiddenArea(GetAASArea(aas),ai);
-		}
-	}
-	m_registeredAI.Clear(); // served its purpose, clear for next batch
+	TellRegisteredUsers(); // grayman #1145 - remove this door's area number from each registered AI's forbidden area list
 }
 
 void CBinaryFrobMover::ToggleLock()
@@ -999,6 +1004,8 @@ void CBinaryFrobMover::OnStartClose(bool wasOpen, bool bMaster)
 
 void CBinaryFrobMover::OnOpenPositionReached()
 {
+	TellRegisteredUsers(); // grayman #1145
+
 	// trigger our targets when completely opened, if set to do so
 	if (spawnArgs.GetBool("trigger_when_opened", "0"))
 	{

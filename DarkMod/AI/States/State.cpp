@@ -2277,6 +2277,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		}
 	}
 
+	// grayman #2691 - if we don't fit through this door, don't use it
+
+	if (!owner->CanPassThroughDoor(frobDoor))
+	{
+		return;
+	}
+
 	if (cv_ai_door_show.GetBool()) 
 	{
 		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 16);
