@@ -553,7 +553,7 @@ const idStr& idGameLocal::GetMapFileName() const
 	return mapFileName;
 }
 
-void idGameLocal::CheckTDMVersion(idUserInterface* ui)
+void idGameLocal::CheckTDMVersion()
 {
 	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
@@ -3863,7 +3863,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "check_tdm_version")
 	{
-		CheckTDMVersion(gui);
+		CheckTDMVersion();
 	}
 	else if (cmd == "close_msg_box")
 	{

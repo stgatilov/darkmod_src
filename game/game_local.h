@@ -930,7 +930,7 @@ public:
 	void					AddSDKSignal(idEntity *oObject);
 
 	// Checks the TDM version
-	void					CheckTDMVersion(idUserInterface* ui);
+	void					CheckTDMVersion();
 
 	void					AddMainMenuMessage(const GuiMessage& message);
 	void					HandleGuiMessages(idUserInterface* ui);
