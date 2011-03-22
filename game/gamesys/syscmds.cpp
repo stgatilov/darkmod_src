@@ -90,7 +90,7 @@ void Cmd_ListMissions_f(const idCmdArgs& args)
 
 	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMissions(); ++i)
 	{
-		CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(i);
+		CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(i);
 
 		if (missionInfo == NULL) continue;
 
@@ -133,7 +133,7 @@ void Cmd_SetMissionCompleted_f(const idCmdArgs& args)
 		return;
 	}
 
-	CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(missionName);
+	CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(missionName);
 
 	if (missionInfo == NULL)
 	{

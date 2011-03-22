@@ -72,9 +72,9 @@ struct MissionScreenshot
 };
 typedef boost::shared_ptr<MissionScreenshot> MissionScreenshotPtr;
 
-struct DownloadableMission
+struct DownloadableMod
 {
-	int		id;				// ID of the mission in the online database
+	int		id;				// ID of the mission/mod in the online database
 	idStr	modName;		// usually the name of the pk4 (e.g. "heart")
 	idStr	title;			// the title or display name ("Heart of Lone Salvation")
 	idStr	author;			// author/s
@@ -101,17 +101,17 @@ struct DownloadableMission
 	// End Initially empty variables
 
 	// Default constructor
-	DownloadableMission() :
+	DownloadableMod() :
 		id(-1), // invalid ID
 		version(1),
 		isUpdate(false),
 		detailsLoaded(false)
 	{}
 
-	// Static sort compare functor, sorting by mission title
-	typedef DownloadableMission* DownloadableMissionPtr;
+	// Static sort compare functor, sorting by mod title
+	typedef DownloadableMod* DownloadableModPtr;
 
-	static int SortCompareTitle(const DownloadableMissionPtr* a, const DownloadableMissionPtr* b)
+	static int SortCompareTitle(const DownloadableModPtr* a, const DownloadableModPtr* b)
 	{
 		return idStr::Cmp((*a)->title, (*b)->title);
 	}
@@ -127,9 +127,9 @@ struct DownloadableMission
 			   screenshots[screenshotNum]->GetLocalFilename();
 	}
 };
-// Use raw pointers in the DownloadableMissionList
+// Use raw pointers in the DownloadableModList
 // to allow the use of the qsort algorithm as used in idStr::Sort()
-typedef idList<DownloadableMission*> DownloadableMissionList;
+typedef idList<DownloadableMod*> DownloadableModList;
 
 /**
  * greebo: A campaign defines a certain map sequence. In the simplest
@@ -145,19 +145,40 @@ struct MapSequenceElement
 };
 typedef idList<MapSequenceElement> MapSequence;
 
+
+/**
+ * greebo: The MissionManager class handles all the mod selection, 
+ * mission progress, PK4 download, unpacking, installation, etc.
+ *
+ * It's important to distinguish between the terms "mod" and "mission".
+ * A single mod (PK4) can contain more than one mission (e.g. in a campaign
+ * scenario).
+ *
+ * Each mission of a chosen mod can itself comprise one or more maps. 
+ * If a (future) mission incorporates loading zones there might be some
+ * map switching going on within the same mission.
+ *
+ * The simplest case is a single-mission mod with the mission consisting 
+ * of just a single map, like the early TDM missions "The Outpost" et al.
+ *
+ * Previously I've been using the term mission as synonym for the PK4
+ * that got downloaded from our mission db on the web, but this is no longer
+ * accurate. It's possible that some local variables or members still have
+ * "mission" in their name in spite of referring to a mod. Consider that WIP.
+ */
 class CMissionManager
 {
 private:
 	CMissionDBPtr _missionDB;
 
 	// A plain list of available fs_game names
-	idStringList _availableMissions;
+	idStringList _availableMods;
 
 	// A list of path => path associations for moving files around
 	typedef std::list< std::pair<fs::path, fs::path> > MoveList;
 
 	// The list of new mods
-	idStringList _newFoundMissions;
+	idStringList _newFoundMods;
 
 	// The map file which should be loaded next (e.g. "patently_dangerous")
 	idStr _curStartingMap;
@@ -166,7 +187,11 @@ private:
 	// The first mission has index 0
 	MapSequence _mapSequence;
 
-	DownloadableMissionList _downloadableMissions;
+	// The index into the _mapSequence list, defines the currently active mission
+	// This value is saved and restored
+	int _curMissionIndex;
+
+	DownloadableModList _downloadableMods;
 
 	// The ID of the "Downloading mission list from server" message
 	int _refreshMissionListDownloadId;
@@ -213,16 +238,16 @@ public:
 	int GetNumMissions();
 
 	// Returns the mission info by index (or NULL if out of bounds)
-	CMissionInfoPtr GetMissionInfo(int index);
+	CMissionInfoPtr GetModInfo(int index);
 
 	// returns the mission info by name (always non-NULL)
-	CMissionInfoPtr GetMissionInfo(const idStr& name);
+	CMissionInfoPtr GetModInfo(const idStr& name);
 
-	// Returns the info structure for the currently ongoing mod/mission (or NULL if none)
-	CMissionInfoPtr GetCurrentMissionInfo();
+	// Returns the info structure for the currently ongoing mod (or NULL if none)
+	CMissionInfoPtr GetCurrentModInfo();
 
 	// Returns the name of the currently installed mod/mission
-	idStr GetCurrentMissionName();
+	idStr GetCurrentModName();
 
 	// greebo: Returns the (file)name of the current mission (there might be multiple missions 
 	// in a campaign, this method returns the one that should be loaded next).
@@ -230,7 +255,7 @@ public:
 	const idStr& GetCurrentStartingMap() const;
 
 	// Returns TRUE if the currently installed mod is a campaign
-	bool CurrentModIsCampaign();
+	bool CurrentModIsCampaign() const;
 
 	void EraseModFolder(const idStr& name);
 
@@ -241,7 +266,7 @@ public:
 	void OnMissionStart();
 
 	// Clears the mission list and searches for mods to install, then calls GenerateMissionList()
-	void ReloadMissionList();
+	void ReloadModList();
 
 	// The number of newly available missions
 	int GetNumNewMissions();
@@ -264,16 +289,16 @@ public:
 
 	// --------- Downloadable Mission List Request --------
 
-	// Checks online for available missions, returns the download ID for progress checking
-	int StartReloadDownloadableMissions();
+	// Checks online for available mods, returns the download ID for progress checking
+	int StartReloadDownloadableMods();
 
-	// Returns true if the mission list download is currently in progress,
+	// Returns true if the mod list download is currently in progress,
 	// call ProcessReloadDownloadableMissionsRequest() to process it
-	bool IsDownloadableMissionsRequestInProgress();
+	bool IsDownloadableModsRequestInProgress();
 
-	// Processes the pending mission list download request. Returns the download status
+	// Processes the pending mod list download request. Returns the download status
 	// for reference (FAILED, SUCCESS, etc.)
-	RequestStatus ProcessReloadDownloadableMissionsRequest();
+	RequestStatus ProcessReloadDownloadableModsRequest();
 
 	// -------- Mission Details Request ----------
 
@@ -294,7 +319,7 @@ public:
 	CMissionManager::RequestStatus ProcessMissionScreenshotRequest();
 
 	// Accessor to the downloadble mission list
-	const DownloadableMissionList& GetDownloadableMissions() const;
+	const DownloadableModList& GetDownloadableMods() const;
 
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
@@ -314,40 +339,40 @@ private:
 	// Attempts to read the map sequence file for the current mod
 	void InitMapSequence();
 
-	void SearchForNewMissions();
+	void SearchForNewMods();
 
-	// Sub-routine of SearchForNewMissions() investigating the FM folder
+	// Sub-routine of SearchForNewMods() investigating the FM folder
 	// using the given extension (including dot ".pk4", ".zip")
-	MoveList SearchForNewMissions(const idStr& extension);
+	MoveList SearchForNewMods(const idStr& extension);
 
 	// Returns the path to the "darkmod" base
 	fs::path GetDarkmodPath();
 
 	// Finds all available missions
-	void GenerateMissionList();
+	void GenerateModList();
 
 	// Sorts all missions by display name
-	void SortMissionList();
+	void SortModList();
 
 	// Compare functor to sort mods by display name
-	static int MissionSortCompare(const int* a, const int* b);
+	static int ModSortCompare(const int* a, const int* b);
 
-	// Loads the mission list from the given XML
-	void LoadMissionListFromXml(const XmlDocumentPtr& doc);
+	// Loads the mod list from the given XML
+	void LoadModListFromXml(const XmlDocumentPtr& doc);
 
-	// Loads mission details from the given XML, storing the data in the mission with the given number
-	void LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int missionNum);
+	// Loads mod details from the given XML, storing the data in the mod with the given number
+	void LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNum);
 
 	// Request status according to the pending download
 	RequestStatus GetRequestStatusForDownloadId(int downloadId);
 
-	// Sorts the mission list
-	void SortDownloadableMissions();
+	// Sorts the mod list
+	void SortDownloadableMods();
 
 	// Replaces stuff like &#13;
-	idStr ReplaceXmlEntities(const idStr& input);
+	static idStr ReplaceXmlEntities(const idStr& input);
 
-	bool ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMission& mission, int screenshotNum);
+	bool ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum);
 };
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 

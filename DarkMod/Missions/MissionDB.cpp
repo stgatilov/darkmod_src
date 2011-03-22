@@ -121,7 +121,7 @@ void CMissionDB::Save()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Done saving mission info declarartions\r");
 }
 
-const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
+const CMissionInfoPtr& CMissionDB::GetModInfo(const idStr& name)
 {
 	MissionInfoMap::iterator i = _missionInfo.find(name.c_str());
 	
@@ -143,7 +143,7 @@ const CMissionInfoPtr& CMissionDB::GetMissionInfo(const idStr& name)
 	return result.first->second;
 }
 
-bool CMissionDB::MissionInfoExists(const idStr& name)
+bool CMissionDB::ModInfoExists(const idStr& name)
 {
 	return _missionInfo.find(name.c_str()) != _missionInfo.end();
 }

@@ -36,10 +36,10 @@ public:
 	// Returns the mission info structure for this fs_game
 	// Always returns non-NULL, if the name is not existing, 
 	// a new structure will be created
-	const CMissionInfoPtr& GetMissionInfo(const idStr& name);
+	const CMissionInfoPtr& GetModInfo(const idStr& name);
 
-	// Checks whether there is a record for the given mission name
-	bool MissionInfoExists(const idStr& name);
+	// Checks whether there is a record for the given mod name
+	bool ModInfoExists(const idStr& name);
 
 private:
 	void ReloadMissionInfoFile();

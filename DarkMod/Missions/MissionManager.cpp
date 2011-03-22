@@ -31,6 +31,7 @@ namespace
 
 CMissionManager::CMissionManager() :
 	_missionDB(new CMissionDB),
+	_curMissionIndex(0),
 	_refreshMissionListDownloadId(-1),
 	_missionDetailsDownloadId(-1),
 	_missionScreenshotDownloadId(-1)
@@ -39,13 +40,13 @@ CMissionManager::CMissionManager() :
 CMissionManager::~CMissionManager()
 {
 	// Clear contents and the list elements themselves
-	_downloadableMissions.DeleteContents(true);
+	_downloadableMods.DeleteContents(true);
 }
 
 void CMissionManager::Init()
 {
-	// (Re-)generate mission list on start
-	ReloadMissionList();
+	// (Re-)generate mod list on start
+	ReloadModList();
 
 	// greebo: Now that any new PK4 files have been copied/moved,
 	// reload the mission database.
@@ -57,12 +58,12 @@ void CMissionManager::Init()
 
 void CMissionManager::Save(idSaveGame* savefile) const
 {
-	
+	savefile->WriteInt(_curMissionIndex);
 }
 
 void CMissionManager::Restore(idRestoreGame* savefile)
 {
-
+	savefile->ReadInt(_curMissionIndex);
 }
 
 void CMissionManager::Shutdown()
@@ -73,28 +74,28 @@ void CMissionManager::Shutdown()
 // Returns the number of available missions
 int CMissionManager::GetNumMissions()
 {
-	return _availableMissions.Num();
+	return _availableMods.Num();
 }
 
-CMissionInfoPtr CMissionManager::GetMissionInfo(int index)
+CMissionInfoPtr CMissionManager::GetModInfo(int index)
 {
-	if (index < 0 || index >= _availableMissions.Num())
+	if (index < 0 || index >= _availableMods.Num())
 	{
 		return CMissionInfoPtr(); // out of bounds
 	}
 
 	// Pass the call to the getbyname method
-	return GetMissionInfo(_availableMissions[index]);
+	return GetModInfo(_availableMods[index]);
 }
 
-CMissionInfoPtr CMissionManager::GetMissionInfo(const idStr& name)
+CMissionInfoPtr CMissionManager::GetModInfo(const idStr& name)
 {
-	return _missionDB->GetMissionInfo(name);
+	return _missionDB->GetModInfo(name);
 }
 
 void CMissionManager::EraseModFolder(const idStr& name)
 {
-	CMissionInfoPtr info = GetMissionInfo(name);
+	CMissionInfoPtr info = GetModInfo(name);
 
 	if (info == NULL)
 	{
@@ -120,7 +121,7 @@ void CMissionManager::EraseModFolder(const idStr& name)
 
 void CMissionManager::OnMissionStart()
 {
-	CMissionInfoPtr info = GetCurrentMissionInfo();
+	CMissionInfoPtr info = GetCurrentModInfo();
 
 	if (info == NULL)
 	{
@@ -140,7 +141,7 @@ void CMissionManager::OnMissionStart()
 
 void CMissionManager::OnMissionComplete()
 {
-	CMissionInfoPtr info = GetCurrentMissionInfo();
+	CMissionInfoPtr info = GetCurrentModInfo();
 
 	if (info == NULL)
 	{
@@ -162,7 +163,7 @@ void CMissionManager::OnMissionComplete()
 	}
 }
 
-CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
+CMissionInfoPtr CMissionManager::GetCurrentModInfo()
 {
 	idStr gameBase = cvarSystem->GetCVarString("fs_game_base");
 
@@ -175,43 +176,43 @@ CMissionInfoPtr CMissionManager::GetCurrentMissionInfo()
 		return CMissionInfoPtr();
 	}
 
-	return GetMissionInfo(curMission);
+	return GetModInfo(curMission);
 }
 
-idStr CMissionManager::GetCurrentMissionName()
+idStr CMissionManager::GetCurrentModName()
 {
-	CMissionInfoPtr info = GetCurrentMissionInfo();
+	CMissionInfoPtr info = GetCurrentModInfo();
 
 	return (info != NULL) ? info->modName : "";
 }
 
 int CMissionManager::GetNumNewMissions()
 {
-	return _newFoundMissions.Num();
+	return _newFoundMods.Num();
 }
 
 idStr CMissionManager::GetNewFoundMissionsText()
 {
-	if (_newFoundMissions.Num() == 0)
+	if (_newFoundMods.Num() == 0)
 	{
 		return "";
 	}
 
 	idStr text;
 
-	for (int i = 0; i < _newFoundMissions.Num(); ++i)
+	for (int i = 0; i < _newFoundMods.Num(); ++i)
 	{
-		CMissionInfoPtr info = GetMissionInfo(_newFoundMissions[i]);
+		CMissionInfoPtr info = GetModInfo(_newFoundMods[i]);
 
 		if (info == NULL) continue;
 
 		text += (text.IsEmpty()) ? "" : "\n";
 		text += info->displayName;
 
-		if (i == 1 && _newFoundMissions.Num() > 3)
+		if (i == 1 && _newFoundMods.Num() > 3)
 		{
 			// Truncate the text
-			int rest = _newFoundMissions.Num() - (i + 1);
+			int rest = _newFoundMods.Num() - (i + 1);
 			text += va("\nAnd %d more mission%s.", rest, rest == 1 ? "" : "s");
 
 			break;
@@ -223,14 +224,14 @@ idStr CMissionManager::GetNewFoundMissionsText()
 
 void CMissionManager::ClearNewMissionList()
 {
-	_newFoundMissions.Clear();
+	_newFoundMods.Clear();
 }
 
-void CMissionManager::SearchForNewMissions()
+void CMissionManager::SearchForNewMods()
 {
 	// List all PK4s in the fms/ directory
-	MoveList moveList = SearchForNewMissions(".pk4");
-	MoveList zipMoveList = SearchForNewMissions(".zip");
+	MoveList moveList = SearchForNewMods(".pk4");
+	MoveList zipMoveList = SearchForNewMods(".zip");
 
 	// Merge the zips into the pk4 list
 	if (!zipMoveList.empty())
@@ -263,7 +264,7 @@ void CMissionManager::SearchForNewMissions()
 	}
 }
 
-CMissionManager::MoveList CMissionManager::SearchForNewMissions(const idStr& extension)
+CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extension)
 {
 	idStr fmPath = cv_tdm_fm_path.GetString();
 	idFileList* pk4files = fileSystem->ListFiles(fmPath, extension, false, true);
@@ -311,7 +312,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMissions(const idStr& ext
 		}
 
 		// Remember this for the user to display
-		_newFoundMissions.Append(modName);
+		_newFoundMods.Append(modName);
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
@@ -347,19 +348,19 @@ fs::path CMissionManager::GetDarkmodPath()
 	return fs::path(g_Global.GetDarkmodPath());
 }
 
-void CMissionManager::ReloadMissionList()
+void CMissionManager::ReloadModList()
 {
 	// Search for new mods (PK4s to be moved, etc.)
-	SearchForNewMissions();
+	SearchForNewMods();
 
 	// Build the mission list again
-	GenerateMissionList();
+	GenerateModList();
 }
 
-void CMissionManager::GenerateMissionList()
+void CMissionManager::GenerateModList()
 {
 	// Clear the list first
-	_availableMissions.Clear();
+	_availableMods.Clear();
 
 	// List all folders in the fms/ directory
 	idStr fmPath = cv_tdm_fm_path.GetString();
@@ -378,7 +379,7 @@ void CMissionManager::GenerateMissionList()
 		if (fileSystem->ReadFile(descFileName, NULL) != -1)
 		{
 			// File exists, add this as available mod
-			_availableMissions.Alloc() = fmDir;
+			_availableMods.Alloc() = fmDir;
 			continue;
 		}
 
@@ -406,7 +407,7 @@ void CMissionManager::GenerateMissionList()
 			{
 				// Hurrah, we've found the darkmod.txt file, extract the contents
 				// and attempt to save to folder
-				_availableMissions.Alloc() = fmDir;
+				_availableMods.Alloc() = fmDir;
 
 				fs::path darkmodPath = GetDarkmodPath();
 				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / fmDir.c_str();
@@ -434,44 +435,44 @@ void CMissionManager::GenerateMissionList()
 
 	fileSystem->FreeFileList(fmDirectories);
 
-	gameLocal.Printf("Found %d mods in the FM folder.\n", _availableMissions.Num());
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found %d mods in the FM folder.\n", _availableMissions.Num());
+	gameLocal.Printf("Found %d mods in the FM folder.\n", _availableMods.Num());
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found %d mods in the FM folder.\n", _availableMods.Num());
 
 	// Sort the mod list alphabetically
-	SortMissionList();
+	SortModList();
 }
 
 // Compare functor to sort missions by title
-int CMissionManager::MissionSortCompare(const int* a, const int* b)
+int CMissionManager::ModSortCompare(const int* a, const int* b)
 {
 	// Get the mission titles (fs_game stuff)
-	CMissionInfoPtr aInfo = gameLocal.m_MissionManager->GetMissionInfo(*a);
-	CMissionInfoPtr bInfo = gameLocal.m_MissionManager->GetMissionInfo(*b);
+	CMissionInfoPtr aInfo = gameLocal.m_MissionManager->GetModInfo(*a);
+	CMissionInfoPtr bInfo = gameLocal.m_MissionManager->GetModInfo(*b);
 
 	if (aInfo == NULL || bInfo == NULL) return 0;
 
 	return aInfo->displayName.Icmp(bInfo->displayName);
 }
 
-void CMissionManager::SortMissionList()
+void CMissionManager::SortModList()
 {
 	// greebo: idStrList has a specialised algorithm, preventing me
 	// from using a custom sort algorithm, hence this ugly thing here
 	idList<int> indexList;
 
-	indexList.SetNum(_availableMissions.Num());
-	for (int i = 0; i < _availableMissions.Num(); ++i)
+	indexList.SetNum(_availableMods.Num());
+	for (int i = 0; i < _availableMods.Num(); ++i)
 	{
 		indexList[i] = i;
 	}
 
-	indexList.Sort( CMissionManager::MissionSortCompare );
+	indexList.Sort( CMissionManager::ModSortCompare );
 
-	idStrList temp = _availableMissions;
+	idStrList temp = _availableMods;
 
 	for (int i = 0; i < indexList.Num(); ++i)
 	{
-		_availableMissions[i] = temp[indexList[i]];
+		_availableMods[i] = temp[indexList[i]];
 	}
 }
 
@@ -479,19 +480,19 @@ void CMissionManager::RefreshMetaDataForNewFoundMissions()
 {
 	// greebo: If we have new found missions, refresh the meta data of the corresponding MissionDB entries
 	// otherwise we end up with empty display names after downloading a mission we had on the HDD before
-	for (int i = 0; i < _newFoundMissions.Num(); ++i)
+	for (int i = 0; i < _newFoundMods.Num(); ++i)
 	{
-		CMissionInfoPtr info = GetMissionInfo(_newFoundMissions[i]);
+		CMissionInfoPtr info = GetModInfo(_newFoundMods[i]);
 
 		if (info != NULL) 
 		{
 			if (info->LoadMetaData())
 			{
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Successfully read meta data for newly found mission %s\r", _newFoundMissions[i].c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Successfully read meta data for newly found mod %s\r", _newFoundMods[i].c_str());
 			}
 			else
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not read meta data for newly found mission %s\r", _newFoundMissions[i].c_str());
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not read meta data for newly found mod %s\r", _newFoundMods[i].c_str());
 			}
 		}
 	}
@@ -568,7 +569,7 @@ void CMissionManager::InitStartingMap()
 {
 	_curStartingMap.Empty();
 
-	idStr curModName = GetCurrentMissionName();
+	idStr curModName = GetCurrentModName();
 
 	if (curModName.IsEmpty())
 	{
@@ -586,15 +587,16 @@ void CMissionManager::InitStartingMap()
 	}
 	else
 	{
-		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), GetCurrentMissionName().c_str());
+		gameLocal.Warning("No '%s' file for the current mod: %s", cv_tdm_fm_startingmap_file.GetString(), GetCurrentModName().c_str());
 	}
 }
 
 void CMissionManager::InitMapSequence()
 {
+	_curMissionIndex = 0;
 	_mapSequence.Clear();
 
-	idStr curModName = GetCurrentMissionName();
+	idStr curModName = GetCurrentModName();
 
 	if (curModName.IsEmpty())
 	{
@@ -677,16 +679,21 @@ void CMissionManager::InitMapSequence()
 	}
 	else
 	{
-		gameLocal.Printf("No '%s' file found for the current mod: %s\n", cv_tdm_fm_mapsequence_file.GetString(), GetCurrentMissionName().c_str());
+		gameLocal.Printf("No '%s' file found for the current mod: %s\n", cv_tdm_fm_mapsequence_file.GetString(), GetCurrentModName().c_str());
 	}
 }
 
 const idStr& CMissionManager::GetCurrentStartingMap() const
 {
+	if (CurrentModIsCampaign())
+	{
+		return _mapSequence[_curMissionIndex].mapNames[0];
+	}
+
 	return _curStartingMap;
 }
 
-bool CMissionManager::CurrentModIsCampaign()
+bool CMissionManager::CurrentModIsCampaign() const
 {
 	// A non-empty map sequence indicates we have a campaign
 	return _mapSequence.Num() > 0;
@@ -694,14 +701,14 @@ bool CMissionManager::CurrentModIsCampaign()
 
 CMissionManager::InstallResult CMissionManager::InstallMission(int index)
 {
-	if (index < 0 || index >= _availableMissions.Num())
+	if (index < 0 || index >= _availableMods.Num())
 	{
 		gameLocal.Warning("Index out of bounds in MissionManager::InstallMission().");
 		return INDEX_OUT_OF_BOUNDS; // out of bounds
 	}
 
 	// Pass the call to the getbyname method
-	return InstallMission(_availableMissions[index]);
+	return InstallMission(_availableMods[index]);
 }
 
 CMissionManager::InstallResult CMissionManager::InstallMission(const idStr& name)
@@ -710,7 +717,7 @@ CMissionManager::InstallResult CMissionManager::InstallMission(const idStr& name
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
-	CMissionInfoPtr info = GetMissionInfo(name); // result is always non-NULL
+	CMissionInfoPtr info = GetModInfo(name); // result is always non-NULL
 
 	const idStr& modDirName = info->modName;
 
@@ -841,10 +848,10 @@ void CMissionManager::UninstallMission()
 	}
 }
 
-int CMissionManager::StartReloadDownloadableMissions()
+int CMissionManager::StartReloadDownloadableMods()
 {
 	// Clear contents and the list elements themselves
-	_downloadableMissions.DeleteContents(true);
+	_downloadableMods.DeleteContents(true);
 
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
@@ -864,14 +871,14 @@ int CMissionManager::StartReloadDownloadableMissions()
 	return _refreshMissionListDownloadId;
 }
 
-bool CMissionManager::IsDownloadableMissionsRequestInProgress()
+bool CMissionManager::IsDownloadableModsRequestInProgress()
 {
 	return _refreshMissionListDownloadId != -1;
 }
 
-CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableMissionsRequest()
+CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsRequest()
 {
-	if (!IsDownloadableMissionsRequestInProgress()) 
+	if (!IsDownloadableModsRequestInProgress()) 
 	{
 		return NOT_IN_PROGRESS;
 	}
@@ -892,7 +899,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableMission
 			
 			if (result)
 			{
-				LoadMissionListFromXml(doc);
+				LoadModListFromXml(doc);
 			}
 			else
 			{
@@ -914,12 +921,12 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableMission
 int CMissionManager::StartDownloadingMissionDetails(int missionNum)
 {
 	// Index out of bounds?
-	if (missionNum < 0 || missionNum >= _downloadableMissions.Num()) return -1;
+	if (missionNum < 0 || missionNum >= _downloadableMods.Num()) return -1;
 
 	// HTTP requests allowed?
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
-	const DownloadableMission& mission = *_downloadableMissions[missionNum];
+	const DownloadableMod& mission = *_downloadableMods[missionNum];
 
 	idStr url = va("http://www.mindplaces.com/darkmod/missiondb/get_mission_details.php?id=%d", mission.id);
 
@@ -967,10 +974,10 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsReque
 				CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_missionDetailsDownloadId);
 				assert(download != NULL);
 
-				// Mission was stored as userdata in the download object
-				int missionNum = download->GetUserData().id;
+				// Mod number was stored as userdata in the download object
+				int modNum = download->GetUserData().id;
 
-				LoadMissionDetailsFromXml(doc, missionNum);
+				LoadModDetailsFromXml(doc, modNum);
 			}
 			else
 			{
@@ -1000,12 +1007,12 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	assert(_missionScreenshotDownloadId == -1); // ensure no download is in progress when this is called
 
 	// Index out of bounds?
-	if (missionIndex < 0 || missionIndex >= _downloadableMissions.Num()) return -1;
+	if (missionIndex < 0 || missionIndex >= _downloadableMods.Num()) return -1;
 
 	// HTTP requests allowed?
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
-	const DownloadableMission& mission = *_downloadableMissions[missionIndex];
+	const DownloadableMod& mission = *_downloadableMods[missionIndex];
 
 	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
 
@@ -1053,9 +1060,9 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 			int missionIndex = download->GetUserData().id;
 			int screenshotNum = download->GetUserData().id2;
 
-			assert(missionIndex >= 0 && missionIndex < _downloadableMissions.Num());
+			assert(missionIndex >= 0 && missionIndex < _downloadableMods.Num());
 
-			DownloadableMission& mission = *_downloadableMissions[missionIndex];
+			DownloadableMod& mission = *_downloadableMods[missionIndex];
 
 			assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
 
@@ -1108,7 +1115,7 @@ CMissionManager::RequestStatus CMissionManager::GetRequestStatusForDownloadId(in
 	};
 }
 
-void CMissionManager::LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int missionNum)
+void CMissionManager::LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNum)
 {
 	assert(doc != NULL);
 
@@ -1139,9 +1146,9 @@ void CMissionManager::LoadMissionDetailsFromXml(const XmlDocumentPtr& doc, int m
 
 	pugi::xpath_node node = doc->select_single_node("//tdm/mission");
 	
-	assert(missionNum >= 0 && missionNum < _downloadableMissions.Num());
+	assert(missionNum >= 0 && missionNum < _downloadableMods.Num());
 
-	DownloadableMission& mission = *_downloadableMissions[missionNum];
+	DownloadableMod& mission = *_downloadableMods[modNum];
 
 	mission.detailsLoaded = true;
 
@@ -1180,7 +1187,7 @@ idStr CMissionManager::ReplaceXmlEntities(const idStr& input)
 	return output;
 }
 
-void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
+void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 {
 	assert(doc != NULL);
 
@@ -1201,7 +1208,7 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 	{
 		pugi::xml_node node = i->node();
 
-		DownloadableMission mission;
+		DownloadableMod mission;
 
 		mission.title = node.attribute("title").value();
 
@@ -1225,9 +1232,9 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 		bool missionExists = false;
 
 		// Check if this mission is already downloaded
-		for (int j = 0; j < _availableMissions.Num(); ++j)
+		for (int j = 0; j < _availableMods.Num(); ++j)
 		{
-			if (idStr::Icmp(_availableMissions[j], mission.modName) == 0)
+			if (idStr::Icmp(_availableMods[j], mission.modName) == 0)
 			{
 				missionExists = true;
 				break;
@@ -1236,10 +1243,10 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 
 		if (missionExists)
 		{
-			// Check Mission version, there might be an update available
-			if (_missionDB->MissionInfoExists(mission.modName))
+			// Check mod version, there might be an update available
+			if (_missionDB->ModInfoExists(mission.modName))
 			{
-				CMissionInfoPtr missionInfo = _missionDB->GetMissionInfo(mission.modName);
+				CMissionInfoPtr missionInfo = _missionDB->GetModInfo(mission.modName);
 
 				idStr versionStr = missionInfo->GetKeyValue("downloaded_version", "1");
 				int existingVersion = atoi(versionStr.c_str());
@@ -1271,24 +1278,24 @@ void CMissionManager::LoadMissionListFromXml(const XmlDocumentPtr& doc)
 		if (mission.downloadLocations.Num() > 0)
 		{
 			// Copy-construct the local mission struct into the heap-allocated one
-			_downloadableMissions.Append(new DownloadableMission(mission));
+			_downloadableMods.Append(new DownloadableMod(mission));
 		}
 	}
 
-	SortDownloadableMissions();
+	SortDownloadableMods();
 }
 
-void CMissionManager::SortDownloadableMissions()
+void CMissionManager::SortDownloadableMods()
 {
-	_downloadableMissions.Sort(DownloadableMission::SortCompareTitle);
+	_downloadableMods.Sort(DownloadableMod::SortCompareTitle);
 }
 
-const DownloadableMissionList& CMissionManager::GetDownloadableMissions() const
+const DownloadableModList& CMissionManager::GetDownloadableMods() const
 {
-	return _downloadableMissions;
+	return _downloadableMods;
 }
 
-bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMission& mission, int screenshotNum)
+bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum)
 {
 	CImage image(tempFilename.file_string().c_str());
 	image.SetDefaultImageType(CImage::AUTO_DETECT);
@@ -1299,9 +1306,9 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 		return false;
 	}
 
-	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
+	assert(screenshotNum >= 0 && screenshotNum < mod.screenshots.Num());
 	
-	MissionScreenshot& screenshot = *mission.screenshots[screenshotNum];
+	MissionScreenshot& screenshot = *mod.screenshots[screenshotNum];
 
 	// Build the target path
 	fs::path targetPath = GetDarkmodPath();
@@ -1313,7 +1320,7 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 		fs::create_directories(targetPath);
 	}
 
-	targetPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum).c_str();
+	targetPath = GetDarkmodPath() / mod.GetLocalScreenshotPath(screenshotNum).c_str();
 	
 	// Save the file locally as JPEG
 	if (!image.SaveToFile(targetPath, CImage::JPG))
@@ -1324,7 +1331,7 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 	else
 	{
 		// Store the filename into the screenshot object, this indicates it's ready for use
-		screenshot.filename = mission.GetLocalScreenshotPath(screenshotNum);
+		screenshot.filename = mod.GetLocalScreenshotPath(screenshotNum);
 	}
 
 	return true;

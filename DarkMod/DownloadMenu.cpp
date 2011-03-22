@@ -43,10 +43,10 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		}
 		
 		// Do we have a pending mission list request?
-		if (gameLocal.m_MissionManager->IsDownloadableMissionsRequestInProgress())
+		if (gameLocal.m_MissionManager->IsDownloadableModsRequestInProgress())
 		{
 			CMissionManager::RequestStatus status = 
-				gameLocal.m_MissionManager->ProcessReloadDownloadableMissionsRequest();
+				gameLocal.m_MissionManager->ProcessReloadDownloadableModsRequest();
 			
 			switch (status)
 			{
@@ -186,7 +186,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		UpdateDownloadProgress(gui);
 
 		// Start refreshing the list, will be handled in mainmenu_heartbeat
-		gameLocal.m_MissionManager->StartReloadDownloadableMissions();
+		gameLocal.m_MissionManager->StartReloadDownloadableMods();
 	}
 	else if (cmd == "onDownloadableMissionSelected")
 	{
@@ -195,15 +195,15 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		int missionIndex = selectedMission + _availListTop;
 
 		// Update mission details
-		const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+		const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-		if (missionIndex > missions.Num()) return;
+		if (missionIndex > mods.Num()) return;
 
-		gui->SetStateString("av_mission_title", missions[missionIndex]->title);
-		gui->SetStateString("av_mission_author", missions[missionIndex]->author);
-		gui->SetStateString("av_mission_release_date", missions[missionIndex]->releaseDate);
-		gui->SetStateString("av_mission_version", va("%d", missions[missionIndex]->version));
-		gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex]->sizeMB));
+		gui->SetStateString("av_mission_title", mods[missionIndex]->title);
+		gui->SetStateString("av_mission_author", mods[missionIndex]->author);
+		gui->SetStateString("av_mission_release_date", mods[missionIndex]->releaseDate);
+		gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
+		gui->SetStateString("av_mission_size", va("%0.1f MB", mods[missionIndex]->sizeMB));
 
 		gui->SetStateBool("av_mission_details_visible", true);
 
@@ -304,11 +304,11 @@ void CDownloadMenu::UpdateScreenshotItemVisibility(idUserInterface* gui)
 	int missionIndex = selectedMission + _availListTop;
 
 	// Check if the screenshot is downloaded already
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-	assert(missionIndex >= 0 && missionIndex < missions.Num());
+	assert(missionIndex >= 0 && missionIndex < mods.Num());
 
-	int numScreens = missions[missionIndex]->screenshots.Num();
+	int numScreens = mods[missionIndex]->screenshots.Num();
 
 	gui->SetStateBool("av_no_screens_available", numScreens == 0);
 	gui->SetStateBool("av_mission_screenshot_prev_visible", numScreens > 1);
@@ -321,16 +321,16 @@ void CDownloadMenu::UpdateNextScreenshotData(idUserInterface* gui, int nextScree
 	int missionIndex = selectedMission + _availListTop;
 
 	// Check if the screenshot is downloaded already
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-	assert(missionIndex >= 0 && missionIndex < missions.Num());
+	assert(missionIndex >= 0 && missionIndex < mods.Num());
 
-	if (missions[missionIndex]->screenshots.Num() == 0)
+	if (mods[missionIndex]->screenshots.Num() == 0)
 	{
 		return; // no screenshots for this mission
 	}
 
-	MissionScreenshot& screenshotInfo = *missions[missionIndex]->screenshots[nextScreenshotNum];
+	MissionScreenshot& screenshotInfo = *mods[missionIndex]->screenshots[nextScreenshotNum];
 
 	// Update the current screenshot number
 	gui->SetStateInt("av_mission_cur_screenshot_num", nextScreenshotNum);
@@ -348,11 +348,11 @@ void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
 	int missionIndex = selectedMission + _availListTop;
 
 	// Check if the screenshot is downloaded already
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-	assert(missionIndex >= 0 && missionIndex < missions.Num());
+	assert(missionIndex >= 0 && missionIndex < mods.Num());
 
-	int numScreens = missions[missionIndex]->screenshots.Num();
+	int numScreens = mods[missionIndex]->screenshots.Num();
 
 	if (numScreens == 0)
 	{
@@ -369,7 +369,7 @@ void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
 
 	if (nextScreenNum != curScreenNum || curScreenNum == 0)
 	{
-		MissionScreenshot& screenshotInfo = *missions[missionIndex]->screenshots[nextScreenNum];
+		MissionScreenshot& screenshotInfo = *mods[missionIndex]->screenshots[nextScreenNum];
 
 		if (screenshotInfo.filename.IsEmpty())
 		{
@@ -393,23 +393,23 @@ void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
 void CDownloadMenu::StartDownload(idUserInterface* gui)
 {
 	// Add a new download for each selected mission
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
 	for (int i = 0; i < _selectedMissions.Num(); ++i)
 	{
 		int missionIndex = _selectedMissions[i];
 
-		if (missionIndex > missions.Num()) continue;
+		if (missionIndex > mods.Num()) continue;
 
-		const DownloadableMission& mission = *missions[missionIndex];
+		const DownloadableMod& mod = *mods[missionIndex];
 
 		// The filename is deduced from the mod name found on the website
 		idStr targetPath = g_Global.GetDarkmodPath().c_str();
 		targetPath += "/";
 		targetPath += cv_tdm_fm_path.GetString();
-		targetPath += mission.modName + ".pk4";
+		targetPath += mod.modName + ".pk4";
 
-		CDownloadPtr download(new CDownload(mission.downloadLocations, targetPath));
+		CDownloadPtr download(new CDownload(mod.downloadLocations, targetPath));
 
 		// Check for valid PK4 files after download
 		download->EnableValidPK4Check(true);
@@ -430,14 +430,14 @@ void CDownloadMenu::UpdateMissionDetails(idUserInterface* gui)
 	int selectedMission = gui->GetStateInt("av_mission_selected");
 	int missionIndex = selectedMission + _availListTop;
 
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-	if (missionIndex < 0 || missionIndex >= missions.Num())
+	if (missionIndex < 0 || missionIndex >= mods.Num())
 	{
 		return;
 	}
 
-	if (!missions[missionIndex]->detailsLoaded)
+	if (!mods[missionIndex]->detailsLoaded)
 	{
 		GuiMessage msg;
 		msg.type = GuiMessage::MSG_OK;
@@ -450,32 +450,32 @@ void CDownloadMenu::UpdateMissionDetails(idUserInterface* gui)
 		return;
 	}
 
-	gui->SetStateString("av_mission_title", missions[missionIndex]->title);
-	gui->SetStateString("av_mission_author", missions[missionIndex]->author);
-	gui->SetStateString("av_mission_release_date", missions[missionIndex]->releaseDate);
-	gui->SetStateString("av_mission_version", va("%d", missions[missionIndex]->version));
-	gui->SetStateString("av_mission_size", va("%0.1f MB", missions[missionIndex]->sizeMB));
+	gui->SetStateString("av_mission_title", mods[missionIndex]->title);
+	gui->SetStateString("av_mission_author", mods[missionIndex]->author);
+	gui->SetStateString("av_mission_release_date", mods[missionIndex]->releaseDate);
+	gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
+	gui->SetStateString("av_mission_size", va("%0.1f MB", mods[missionIndex]->sizeMB));
 
-	gui->SetStateString("av_mission_description", missions[missionIndex]->description);
+	gui->SetStateString("av_mission_description", mods[missionIndex]->description);
 }
 
 void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 {
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
-	gui->SetStateBool("av_no_download_available", missions.Num() == 0);
+	gui->SetStateBool("av_no_download_available", mods.Num() == 0);
 
 	bool downloadInProgress = gui->GetStateBool("mission_download_in_progress");
 
 	bool updateInList = false;
 	
-	int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");
+	int numModsPerPage = gui->GetStateInt("packagesPerPage", "5");
 	
-	for (int i = 0; i < numMissionsPerPage; ++i)
+	for (int i = 0; i < numModsPerPage; ++i)
 	{
 		// Apply page offset
 		int missionIndex = i + _availListTop;
-		bool missionExists = missionIndex < missions.Num();
+		bool missionExists = missionIndex < mods.Num();
 
 		bool missionSelected = _selectedMissions.FindIndex(missionIndex) != -1;
 		gui->SetStateBool(va("av_mission_avail_%d", i), missionExists && !missionSelected && !downloadInProgress);
@@ -483,9 +483,9 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (missionExists)
 		{
-			idStr title = missions[missionIndex]->title;
+			idStr title = mods[missionIndex]->title;
 
-			if (missions[missionIndex]->isUpdate)
+			if (mods[missionIndex]->isUpdate)
 			{
 				title += "*";
 				updateInList = true;
@@ -501,12 +501,12 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 	gui->SetStateBool("av_mission_update_in_list", updateInList);
 	gui->SetStateBool("av_mission_scroll_up_visible", _availListTop > 0);
-	gui->SetStateBool("av_mission_scroll_down_visible", _availListTop + numMissionsPerPage < missions.Num());
+	gui->SetStateBool("av_mission_scroll_down_visible", _availListTop + numModsPerPage < mods.Num());
 
-	int numSelectedMissionsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
+	int numSelectedModsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
 
 	// Missions in the download queue
-	for (int i = 0; i < numSelectedMissionsPerPage; ++i)
+	for (int i = 0; i < numSelectedModsPerPage; ++i)
 	{
 		// Apply page offset
 		int listIndex = i + _selectedListTop;
@@ -516,11 +516,11 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 		int missionIndex = listItemExists ? _selectedMissions[listIndex] : -1;
 
 		gui->SetStateBool(va("dl_mission_avail_%d", i), listItemExists);
-		gui->SetStateString(va("dl_mission_name_%d", i), missionIndex != -1 ? missions[missionIndex]->title : "");
+		gui->SetStateString(va("dl_mission_name_%d", i), missionIndex != -1 ? mods[missionIndex]->title : "");
 	}
 
 	gui->SetStateBool("dl_mission_scroll_up_visible", _selectedListTop > 0);
-	gui->SetStateBool("dl_mission_scroll_down_visible", _selectedListTop + numSelectedMissionsPerPage < _selectedMissions.Num());
+	gui->SetStateBool("dl_mission_scroll_down_visible", _selectedListTop + numSelectedModsPerPage < _selectedMissions.Num());
 
 	gui->SetStateInt("dl_mission_count", _selectedMissions.Num());
 	gui->SetStateBool("dl_button_available", _selectedMissions.Num() > 0 && !downloadInProgress);
@@ -603,12 +603,12 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 {
 	// greebo: Let the mission list be refreshed
 	// We need the information from darkmod.txt later down this road
-	gameLocal.m_MissionManager->ReloadMissionList();
+	gameLocal.m_MissionManager->ReloadModList();
 
 	int successfulDownloads = 0;
 	int failedDownloads = 0;
 
-	const DownloadableMissionList& missions = gameLocal.m_MissionManager->GetDownloadableMissions();
+	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
 	{
@@ -616,9 +616,9 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 
 		if (download == NULL) continue;
 
-		if (i->first > missions.Num()) continue;
+		if (i->first > mods.Num()) continue;
 
-		const DownloadableMission& mission = *missions[i->first];
+		const DownloadableMod& mod = *mods[i->first];
 
 		switch (download->GetStatus())
 		{
@@ -636,8 +636,8 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 				successfulDownloads++;
 
 				// Save the mission version into the MissionDB for later use
-				CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(mission.modName);
-				missionInfo->SetKeyValue("downloaded_version", idStr(mission.version).c_str());
+				CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
+				missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
 			}
 			break;
 		};
