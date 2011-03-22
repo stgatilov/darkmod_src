@@ -14,17 +14,17 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 
-// Handles mainmenu that displays list of downloadable missions
+// Handles mainmenu that displays list of downloadable mods/PK4 files
 class CDownloadMenu
 {
 private:
-	// The index of the first displayed mission
+	// The index of the first displayed mod
 	int _availListTop;
 	int _selectedListTop;
 
-	idList<int> _selectedMissions;
+	idList<int> _selectedMods;
 
-	// A mapping "selected mission id" => "download id"
+	// A mapping "selected mod id" => "download id"
 	typedef std::map<int, int> ActiveDownloads;
 	ActiveDownloads _downloads;
 
@@ -44,7 +44,7 @@ private:
 
 	void ShowDownloadResult(idUserInterface* gui);
 
-	void UpdateMissionDetails(idUserInterface* gui);
+	void UpdateModDetails(idUserInterface* gui);
 
 	void PerformScreenshotStep(idUserInterface* gui, int step);
 

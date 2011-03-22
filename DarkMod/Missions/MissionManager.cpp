@@ -32,9 +32,9 @@ namespace
 CMissionManager::CMissionManager() :
 	_missionDB(new CMissionDB),
 	_curMissionIndex(0),
-	_refreshMissionListDownloadId(-1),
-	_missionDetailsDownloadId(-1),
-	_missionScreenshotDownloadId(-1)
+	_refreshModListDownloadId(-1),
+	_modDetailsDownloadId(-1),
+	_modScreenshotDownloadId(-1)
 {}
 
 CMissionManager::~CMissionManager()
@@ -72,7 +72,7 @@ void CMissionManager::Shutdown()
 }
 
 // Returns the number of available missions
-int CMissionManager::GetNumMissions()
+int CMissionManager::GetNumMods()
 {
 	return _availableMods.Num();
 }
@@ -186,12 +186,12 @@ idStr CMissionManager::GetCurrentModName()
 	return (info != NULL) ? info->modName : "";
 }
 
-int CMissionManager::GetNumNewMissions()
+int CMissionManager::GetNumNewMods()
 {
 	return _newFoundMods.Num();
 }
 
-idStr CMissionManager::GetNewFoundMissionsText()
+idStr CMissionManager::GetNewFoundModsText()
 {
 	if (_newFoundMods.Num() == 0)
 	{
@@ -222,7 +222,7 @@ idStr CMissionManager::GetNewFoundMissionsText()
 	return text;
 }
 
-void CMissionManager::ClearNewMissionList()
+void CMissionManager::ClearNewModList()
 {
 	_newFoundMods.Clear();
 }
@@ -476,10 +476,10 @@ void CMissionManager::SortModList()
 	}
 }
 
-void CMissionManager::RefreshMetaDataForNewFoundMissions()
+void CMissionManager::RefreshMetaDataForNewFoundMods()
 {
-	// greebo: If we have new found missions, refresh the meta data of the corresponding MissionDB entries
-	// otherwise we end up with empty display names after downloading a mission we had on the HDD before
+	// greebo: If we have new found mods, refresh the meta data of the corresponding MissionDB entries
+	// otherwise we end up with empty display names after downloading a mod we had on the HDD before
 	for (int i = 0; i < _newFoundMods.Num(); ++i)
 	{
 		CMissionInfoPtr info = GetModInfo(_newFoundMods[i]);
@@ -699,7 +699,7 @@ bool CMissionManager::CurrentModIsCampaign() const
 	return _mapSequence.Num() > 0;
 }
 
-CMissionManager::InstallResult CMissionManager::InstallMission(int index)
+CMissionManager::InstallResult CMissionManager::InstallMod(int index)
 {
 	if (index < 0 || index >= _availableMods.Num())
 	{
@@ -708,10 +708,10 @@ CMissionManager::InstallResult CMissionManager::InstallMission(int index)
 	}
 
 	// Pass the call to the getbyname method
-	return InstallMission(_availableMods[index]);
+	return InstallMod(_availableMods[index]);
 }
 
-CMissionManager::InstallResult CMissionManager::InstallMission(const idStr& name)
+CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 {
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
@@ -825,7 +825,7 @@ CMissionManager::InstallResult CMissionManager::InstallMission(const idStr& name
 	return INSTALLED_OK;
 }
 
-void CMissionManager::UninstallMission()
+void CMissionManager::UninstallMod()
 {
 	// To uninstall the current FM, just clear the FM name in currentfm.txt	
 
@@ -866,14 +866,14 @@ int CMissionManager::StartReloadDownloadableMods()
 
 	CDownloadPtr download(new CDownload(missionListUrls, tempFilename.file_string().c_str()));
 
-	_refreshMissionListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+	_refreshModListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
 
-	return _refreshMissionListDownloadId;
+	return _refreshModListDownloadId;
 }
 
 bool CMissionManager::IsDownloadableModsRequestInProgress()
 {
-	return _refreshMissionListDownloadId != -1;
+	return _refreshModListDownloadId != -1;
 }
 
 CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsRequest()
@@ -883,7 +883,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 		return NOT_IN_PROGRESS;
 	}
 
-	RequestStatus status = GetRequestStatusForDownloadId(_refreshMissionListDownloadId);
+	RequestStatus status = GetRequestStatusForDownloadId(_refreshModListDownloadId);
 
 	// Clean up the result if the request is complete
 	if (status == FAILED || status == SUCCESSFUL)
@@ -911,51 +911,51 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 		DoRemoveFile(tempFilename);
 
 		// Clear the download
-		gameLocal.m_DownloadManager->RemoveDownload(_refreshMissionListDownloadId);
-		_refreshMissionListDownloadId = -1;
+		gameLocal.m_DownloadManager->RemoveDownload(_refreshModListDownloadId);
+		_refreshModListDownloadId = -1;
 	}
 
 	return status;
 }
 
-int CMissionManager::StartDownloadingMissionDetails(int missionNum)
+int CMissionManager::StartDownloadingModDetails(int modNum)
 {
 	// Index out of bounds?
-	if (missionNum < 0 || missionNum >= _downloadableMods.Num()) return -1;
+	if (modNum < 0 || modNum >= _downloadableMods.Num()) return -1;
 
 	// HTTP requests allowed?
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
-	const DownloadableMod& mission = *_downloadableMods[missionNum];
+	const DownloadableMod& mod = *_downloadableMods[modNum];
 
-	idStr url = va("http://www.mindplaces.com/darkmod/missiondb/get_mission_details.php?id=%d", mission.id);
+	idStr url = va("http://www.mindplaces.com/darkmod/missiondb/get_mission_details.php?id=%d", mod.id);
 
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
 
 	CDownloadPtr download(new CDownload(url, tempFilename.file_string().c_str()));
 
-	// Store the mission number in the download class
-	download->GetUserData().id = missionNum;
+	// Store the mod number in the download class
+	download->GetUserData().id = modNum;
 
-	_missionDetailsDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+	_modDetailsDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
 
-	return _missionDetailsDownloadId;
+	return _modDetailsDownloadId;
 }
 
-bool CMissionManager::IsMissionDetailsRequestInProgress()
+bool CMissionManager::IsModDetailsRequestInProgress()
 {
-	return _missionDetailsDownloadId != -1;
+	return _modDetailsDownloadId != -1;
 }
 
-CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsRequest()
+CMissionManager::RequestStatus CMissionManager::ProcessReloadModDetailsRequest()
 {
-	if (!IsMissionDetailsRequestInProgress()) 
+	if (!IsModDetailsRequestInProgress()) 
 	{
 		return NOT_IN_PROGRESS;
 	}
 
-	RequestStatus status = GetRequestStatusForDownloadId(_missionDetailsDownloadId);
+	RequestStatus status = GetRequestStatusForDownloadId(_modDetailsDownloadId);
 
 	// Clean up the result if the request is complete
 	if (status == FAILED || status == SUCCESSFUL)
@@ -971,7 +971,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsReque
 
 			if (result)
 			{
-				CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_missionDetailsDownloadId);
+				CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_modDetailsDownloadId);
 				assert(download != NULL);
 
 				// Mod number was stored as userdata in the download object
@@ -990,8 +990,8 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsReque
 		DoRemoveFile(tempFilename);
 
 		// Clear the download
-		gameLocal.m_DownloadManager->RemoveDownload(_missionDetailsDownloadId);
-		_missionDetailsDownloadId = -1;
+		gameLocal.m_DownloadManager->RemoveDownload(_modDetailsDownloadId);
+		_modDetailsDownloadId = -1;
 	}
 
 	return status;
@@ -999,12 +999,12 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadMissionDetailsReque
 
 bool CMissionManager::IsMissionScreenshotRequestInProgress()
 {
-	return _missionScreenshotDownloadId != -1;
+	return _modScreenshotDownloadId != -1;
 }
 
 int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int screenshotNum)
 {
-	assert(_missionScreenshotDownloadId == -1); // ensure no download is in progress when this is called
+	assert(_modScreenshotDownloadId == -1); // ensure no download is in progress when this is called
 
 	// Index out of bounds?
 	if (missionIndex < 0 || missionIndex >= _downloadableMods.Num()) return -1;
@@ -1030,9 +1030,9 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	download->GetUserData().id = missionIndex;
 	download->GetUserData().id2 = screenshotNum;
 
-	_missionScreenshotDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
+	_modScreenshotDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
 
-	return _missionScreenshotDownloadId;
+	return _modScreenshotDownloadId;
 }
 
 CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest()
@@ -1042,7 +1042,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 		return NOT_IN_PROGRESS;
 	}
 
-	RequestStatus status = GetRequestStatusForDownloadId(_missionScreenshotDownloadId);
+	RequestStatus status = GetRequestStatusForDownloadId(_modScreenshotDownloadId);
 
 	// Clean up the result if the request is complete
 	if (status == FAILED || status == SUCCESSFUL)
@@ -1053,7 +1053,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 
 		if (status == SUCCESSFUL)
 		{
-			CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_missionScreenshotDownloadId);
+			CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_modScreenshotDownloadId);
 			assert(download != NULL);
 
 			// Mission was stored as userdata in the download object
@@ -1082,8 +1082,8 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 		DoRemoveFile(tempFilename);
 
 		// Clear the download
-		gameLocal.m_DownloadManager->RemoveDownload(_missionScreenshotDownloadId);
-		_missionScreenshotDownloadId = -1;
+		gameLocal.m_DownloadManager->RemoveDownload(_modScreenshotDownloadId);
+		_modScreenshotDownloadId = -1;
 	}
 
 	return status;

@@ -86,9 +86,9 @@ void Cmd_RestartGuiCmd_UpdateObjectives_f(const idCmdArgs &args)
 
 void Cmd_ListMissions_f(const idCmdArgs& args)
 {
-	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMissions());
+	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMods());
 
-	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMissions(); ++i)
+	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMods(); ++i)
 	{
 		CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(i);
 

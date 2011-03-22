@@ -194,13 +194,13 @@ private:
 	DownloadableModList _downloadableMods;
 
 	// The ID of the "Downloading mission list from server" message
-	int _refreshMissionListDownloadId;
+	int _refreshModListDownloadId;
 
 	// The ID of the "get mission details" request
-	int _missionDetailsDownloadId;
+	int _modDetailsDownloadId;
 
 	// The ID of the screenshot download
-	int _missionScreenshotDownloadId;
+	int _modScreenshotDownloadId;
 
 public:
 	enum InstallResult
@@ -210,7 +210,7 @@ public:
 		COPY_FAILURE,
 	};
 
-	// Status of various requests managed by this class (download mission list, 
+	// Status of various requests managed by this class (download mod list, 
 	enum RequestStatus
 	{
 		NOT_IN_PROGRESS,
@@ -224,7 +224,7 @@ public:
 
 	~CMissionManager();
 
-	// This initialises the list of available missions
+	// This initialises the list of available mods
 	void Init();
 
 	// Save/Restore data
@@ -234,19 +234,19 @@ public:
 	// Should be called when the game is shutting down
 	void Shutdown();
 
-	// Returns the number of available missions
-	int GetNumMissions();
+	// Returns the number of available mods
+	int GetNumMods();
 
-	// Returns the mission info by index (or NULL if out of bounds)
+	// Returns the mod info by index (or NULL if out of bounds)
 	CMissionInfoPtr GetModInfo(int index);
 
-	// returns the mission info by name (always non-NULL)
+	// returns the mod info by name (always non-NULL)
 	CMissionInfoPtr GetModInfo(const idStr& name);
 
 	// Returns the info structure for the currently ongoing mod (or NULL if none)
 	CMissionInfoPtr GetCurrentModInfo();
 
-	// Returns the name of the currently installed mod/mission
+	// Returns the name of the currently installed mod
 	idStr GetCurrentModName();
 
 	// greebo: Returns the (file)name of the current mission (there might be multiple missions 
@@ -265,29 +265,29 @@ public:
 	// Called by gameLocal when the player start/loads a mission
 	void OnMissionStart();
 
-	// Clears the mission list and searches for mods to install, then calls GenerateMissionList()
+	// Clears the mod list and searches for PK4s to install, then calls GenerateModList()
 	void ReloadModList();
 
-	// The number of newly available missions
-	int GetNumNewMissions();
+	// The number of newly available mods
+	int GetNumNewMods();
 
-	idStr GetNewFoundMissionsText();
+	idStr GetNewFoundModsText();
 
-	void ClearNewMissionList();
+	void ClearNewModList();
 
-	// Reload darkmod.txt for newly downloaded/found missions, to update any outdated mission db entries
-	void RefreshMetaDataForNewFoundMissions();
+	// Reload darkmod.txt for newly downloaded/found PK4s, to update any outdated mission db entries
+	void RefreshMetaDataForNewFoundMods();
 
-	// Installs mission (by index)
-	InstallResult InstallMission(int index);
+	// Installs mod (by index)
+	InstallResult InstallMod(int index);
 
-	// Installs mission (by fs_game name)
-	InstallResult InstallMission(const idStr& name);
+	// Installs mod (by fs_game name)
+	InstallResult InstallMod(const idStr& name);
 
-	// Uninstalls the currently installed FM, basically clearing our currentfm.txt
-	void UninstallMission();
+	// Uninstalls the currently installed mod, basically clearing our currentfm.txt
+	void UninstallMod();
 
-	// --------- Downloadable Mission List Request --------
+	// --------- Downloadable Mod List Request --------
 
 	// Checks online for available mods, returns the download ID for progress checking
 	int StartReloadDownloadableMods();
@@ -300,18 +300,18 @@ public:
 	// for reference (FAILED, SUCCESS, etc.)
 	RequestStatus ProcessReloadDownloadableModsRequest();
 
-	// -------- Mission Details Request ----------
+	// -------- Mod Details Request ----------
 
-	// Starts a new request to download details of the given mission number
-	int StartDownloadingMissionDetails(int missionNum);
+	// Starts a new request to download details of the given mod number
+	int StartDownloadingModDetails(int modNum);
 
-	// Returns true if the mission details download is currently in progress,
-	// call ProcessReloadMissionDetailsRequest() to process it
-	bool IsMissionDetailsRequestInProgress();
+	// Returns true if the mod details download is currently in progress,
+	// call ProcessReloadModDetailsRequest() to process it
+	bool IsModDetailsRequestInProgress();
 
-	// Processes the pending mission details download request. Returns the status
+	// Processes the pending mod details download request. Returns the status
 	// for reference (FAILED, SUCCESS, etc.)
-	RequestStatus ProcessReloadMissionDetailsRequest();
+	RequestStatus ProcessReloadModDetailsRequest();
 
 	// -------- Screenshot Requests -----------
 	bool IsMissionScreenshotRequestInProgress();
@@ -348,10 +348,10 @@ private:
 	// Returns the path to the "darkmod" base
 	fs::path GetDarkmodPath();
 
-	// Finds all available missions
+	// Finds all available mods
 	void GenerateModList();
 
-	// Sorts all missions by display name
+	// Sorts all mods by display name
 	void SortModList();
 
 	// Compare functor to sort mods by display name

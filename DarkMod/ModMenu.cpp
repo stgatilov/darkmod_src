@@ -48,18 +48,18 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 	if (cmd == "refreshMissionList")
 	{
-		int numNewMissions = gameLocal.m_MissionManager->GetNumNewMissions();
+		int numNewMods = gameLocal.m_MissionManager->GetNumNewMods();
 
-		if (numNewMissions > 0)
+		if (numNewMods > 0)
 		{
 			// Update mission DB records
-			gameLocal.m_MissionManager->RefreshMetaDataForNewFoundMissions();
+			gameLocal.m_MissionManager->RefreshMetaDataForNewFoundMods();
 
 			gui->SetStateString("newFoundMissionsText", "New missions available");
-			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundMissionsText());
+			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundModsText());
 			gui->HandleNamedEvent("OnNewMissionsFound");
 
-			gameLocal.m_MissionManager->ClearNewMissionList();
+			gameLocal.m_MissionManager->ClearNewModList();
 		}
 
 		gameLocal.m_MissionManager->ReloadModList();
@@ -110,7 +110,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Scroll down a page
 		_modTop += gui->GetStateInt("modsPerPage", "10");
 
-		if (_modTop > gameLocal.m_MissionManager->GetNumMissions())
+		if (_modTop > gameLocal.m_MissionManager->GetNumMods())
 		{
 			_modTop = 0;
 		}
@@ -293,7 +293,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		int available = 0;
 
 		int missionIndex = _modTop + modIndex;
-		int numMissions = gameLocal.m_MissionManager->GetNumMissions();
+		int numMissions = gameLocal.m_MissionManager->GetNumMods();
 
 		CMissionInfoPtr info;
 
@@ -312,7 +312,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	}
 
 	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);
-	gui->SetStateBool("isModsScrollDownVisible", _modTop + modsPerPage < gameLocal.m_MissionManager->GetNumMissions());
+	gui->SetStateBool("isModsScrollDownVisible", _modTop + modsPerPage < gameLocal.m_MissionManager->GetNumMods());
 
 	// Update the currently installed mod
 	CMissionInfoPtr curModInfo = gameLocal.m_MissionManager->GetCurrentModInfo();
@@ -345,7 +345,7 @@ void CModMenu::InstallMission(const CMissionInfoPtr& mission, idUserInterface* g
 	assert(gui != NULL);
 
 	// Perform the installation
-	CMissionManager::InstallResult result = gameLocal.m_MissionManager->InstallMission(mission->modName);
+	CMissionManager::InstallResult result = gameLocal.m_MissionManager->InstallMod(mission->modName);
 
 	if (result != CMissionManager::INSTALLED_OK)
 	{
@@ -372,7 +372,7 @@ void CModMenu::InstallMission(const CMissionInfoPtr& mission, idUserInterface* g
 
 void CModMenu::UninstallMod(idUserInterface* gui)
 {
-	gameLocal.m_MissionManager->UninstallMission();
+	gameLocal.m_MissionManager->UninstallMod();
 
 	gui->HandleNamedEvent("OnModUninstallFinished");
 }
