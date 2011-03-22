@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef _MISSION_INFO_H_
-#define _MISSION_INFO_H_
+#ifndef _MOD_INFO_H_
+#define _MOD_INFO_H_
 
 #include "../../idlib/precompiled.h"
 #include <boost/shared_ptr.hpp>
@@ -19,8 +19,8 @@ typedef boost::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
 class CModInfo
 {
 private:
-	// The "internal" mission info declaration, 
-	// holding the persistent information about a mission (completion status, etc.)
+	// The "internal" mod info declaration, 
+	// holding the persistent information about a mod (completion status, etc.)
 	CModInfoDeclPtr _decl;
 
 	// TRUE if the underlying declaration has been altered and needs saving
@@ -31,7 +31,7 @@ private:
 	bool		_modFolderSizeComputed;
 
 public:
-	// Public Properties - these aren't stored in the mission info declaration
+	// Public Properties - these aren't stored in the mod info declaration
 	// but are constructed from the text files found in the fms/mod/ folders.
 
 	idStr modName;			// The mod name (fs_game)
@@ -58,31 +58,31 @@ public:
 
 	// Returns the size requirements of the fs_game folder
 	// Returns 0 if the mod has not been installed yet
-	std::size_t GetMissionFolderSize();
+	std::size_t GetModFolderSize();
 
 	// Returns the full OS path to the mod folder
-	idStr GetMissionFolderPath();
+	idStr GetModFolderPath();
 
-	void ClearMissionFolderSize();
+	void ClearModFolderSize();
 
 	// Fast check whether the readme.txt file exists
-	bool HasMissionNotes();
+	bool HasModNotes();
 
 	// Retrieves the readme.txt contents (is never cached, always read live from disk)
-	idStr GetMissionNotes();
+	idStr GetModNotes();
 
-	// Returns true if this mission has been completed
+	// Returns true if this mod has been completed
 	// Pass the difficulty level to check for a specific difficulty, or -1 (default) to check
-	// whether the mission has been completed on any difficulty level.
-	bool MissionCompleted(int difficultyLevel = -1);
+	// whether the mod has been completed on any difficulty level.
+	bool ModCompleted(int difficultyLevel = -1);
 
-	// Get the assembled mission completion string with difficulty information
-	idStr GetMissionCompletedString();
+	// Get the assembled mod completion string with difficulty information
+	idStr GetModCompletedString();
 
 	// Returns a human-readable format string (i.e. 1.33 GB)
-	idStr	GetMissionFolderSizeString();
+	idStr	GetModFolderSizeString();
 
-	// Returns a specific key value from the mission info declaration's dictionary
+	// Returns a specific key value from the mod info declaration's dictionary
 	idStr	GetKeyValue(const char* key, const char* defaultStr ="");
 
 	// Saves a key into the internal declaration dictionary
@@ -105,4 +105,4 @@ public:
 };
 typedef boost::shared_ptr<CModInfo> CModInfoPtr;
 
-#endif /* _MISSION_INFO_H_ */
+#endif /* _MOD_INFO_H_ */

@@ -79,7 +79,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		CModInfoPtr info = gameLocal.m_MissionManager->GetModInfo(modIndex);
 
 		// Load the readme.txt contents, if available
-		gui->SetStateString("ModNotesText", info != NULL ? info->GetMissionNotes() : "");
+		gui->SetStateString("ModNotesText", info != NULL ? info->GetModNotes() : "");
 	}
 	else if (cmd == "onMissionSelected")
 	{
@@ -199,21 +199,21 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 		
 		// Don't display the install button if the mod is already installed
 		gui->SetStateBool("installModButtonVisible", !missionIsCurrentlyInstalled);
-		gui->SetStateBool("hasModNoteButton", info->HasMissionNotes());
+		gui->SetStateBool("hasModNoteButton", info->HasModNotes());
 
 		// Set the mod size info
-		std::size_t missionSize = info->GetMissionFolderSize();
-		idStr missionSizeStr = info->GetMissionFolderSizeString();
+		std::size_t missionSize = info->GetModFolderSize();
+		idStr missionSizeStr = info->GetModFolderSizeString();
 		gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
 
 		gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
 
 		idStr eraseMissionText = va("You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
 			"\n\n%s\n\nNote that the downloaded mission PK4 in your darkmod/fms/ folder will not be "
-			"affected by this operation, you're still able to re-install the mission.", info->GetMissionFolderPath().c_str());
+			"affected by this operation, you're still able to re-install the mission.", info->GetModFolderPath().c_str());
 		gui->SetStateString("eraseMissionText", eraseMissionText);
 
-		gui->SetStateString("selectedModCompleted", info->GetMissionCompletedString());
+		gui->SetStateString("selectedModCompleted", info->GetModCompletedString());
 		gui->SetStateString("selectedModLastPlayDate", info->GetKeyValue("last_play_date", "-"));
 	}
 	else
@@ -308,7 +308,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString(guiDesc,	info != NULL ? info->description : "");
 		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
 		gui->SetStateString(guiImage,	info != NULL ? info->image : "");
-		gui->SetStateBool(guiCompleted,	info != NULL ? info->MissionCompleted() : false);
+		gui->SetStateBool(guiCompleted,	info != NULL ? info->ModCompleted() : false);
 	}
 
 	gui->SetStateBool("isModsScrollUpVisible", _modTop != 0);

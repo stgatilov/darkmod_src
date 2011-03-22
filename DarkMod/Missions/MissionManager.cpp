@@ -104,7 +104,7 @@ void CMissionManager::EraseModFolder(const idStr& name)
 	}
 
 	// Delete folder contents
-	fs::path missionPath = info->GetMissionFolderPath().c_str();
+	fs::path missionPath = info->GetModFolderPath().c_str();
 
 	if (fs::exists(missionPath))
 	{
@@ -116,7 +116,7 @@ void CMissionManager::EraseModFolder(const idStr& name)
 		return;
 	}
 
-	info->ClearMissionFolderSize();
+	info->ClearModFolderSize();
 }
 
 void CMissionManager::OnMissionStart()
