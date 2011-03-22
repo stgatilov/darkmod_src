@@ -3866,7 +3866,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
-	m_ModMenu->HandleCommands(menuCommand, gui);
+	m_ModMenu->HandleCommands(cmd, gui);
 	m_DownloadMenu->HandleCommands(cmd, gui);
 
 	/*if (cv_debug_mainmenu.GetBool())

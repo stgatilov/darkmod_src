@@ -32,13 +32,13 @@ public:
 	CModMenu();
 
 	// handles main menu commands
-	void HandleCommands(const char *menuCommand, idUserInterface *gui);
+	void HandleCommands(const idStr& cmd, idUserInterface* gui);
 
 	// updates the GUI variables
 	void UpdateGUI(idUserInterface* gui);
 
 	// displays the current briefing page
-	void DisplayBriefingPage(idUserInterface *gui);
+	void DisplayBriefingPage(idUserInterface* gui);
 
 private:
 
@@ -48,8 +48,8 @@ private:
 
 	void UpdateSelectedMod(idUserInterface* gui);
 
-	// Installs the given mission (doesn't accept NULL pointers);
-	void InstallMission(const CModInfoPtr& mission, idUserInterface* gui);
+	// Installs the given mod (doesn't accept NULL pointers);
+	void InstallMod(const CModInfoPtr& mod, idUserInterface* gui);
 
 	// Uninstalls the current FM
 	void UninstallMod(idUserInterface* gui);
