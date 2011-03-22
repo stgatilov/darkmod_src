@@ -1161,14 +1161,14 @@ void CMissionManager::LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNu
 
 	pugi::xpath_node node = doc->select_single_node("//tdm/mission");
 	
-	assert(missionNum >= 0 && missionNum < _downloadableMods.Num());
+	assert(modNum >= 0 && modNum < _downloadableMods.Num());
 
-	DownloadableMod& mission = *_downloadableMods[modNum];
+	DownloadableMod& mod = *_downloadableMods[modNum];
 
-	mission.detailsLoaded = true;
+	mod.detailsLoaded = true;
 
 	// Description
-	mission.description = ReplaceXmlEntities(node.node().child("description").child_value());
+	mod.description = ReplaceXmlEntities(node.node().child("description").child_value());
 
 	// Screenshots
 	pugi::xpath_node_set nodes = doc->select_nodes("//tdm/mission/screenshots//screenshot");
@@ -1180,16 +1180,16 @@ void CMissionManager::LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNu
 		MissionScreenshotPtr screenshot(new MissionScreenshot);
 		screenshot->serverRelativeUrl = node.attribute("path").value();
 
-		int screenshotNum = mission.screenshots.Append(screenshot);
+		int screenshotNum = mod.screenshots.Append(screenshot);
 
-		fs::path localPath = GetDarkmodPath() / mission.GetLocalScreenshotPath(screenshotNum).c_str();
+		fs::path localPath = GetDarkmodPath() / mod.GetLocalScreenshotPath(screenshotNum).c_str();
 
 		if (fs::exists(localPath))
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found existing local screenshot copy %s\r", localPath.file_string().c_str());
 
 			// File exists, store that in the screenshot filename
-			screenshot->filename = mission.GetLocalScreenshotPath(screenshotNum);
+			screenshot->filename = mod.GetLocalScreenshotPath(screenshotNum);
 		}
 	}
 }
