@@ -10,7 +10,7 @@
 #ifndef _MISSION_MANAGER_H_
 #define _MISSION_MANAGER_H_
 
-#include "MissionInfo.h"
+#include "ModInfo.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
 
@@ -238,13 +238,13 @@ public:
 	int GetNumMods();
 
 	// Returns the mod info by index (or NULL if out of bounds)
-	CMissionInfoPtr GetModInfo(int index);
+	CModInfoPtr GetModInfo(int index);
 
 	// returns the mod info by name (always non-NULL)
-	CMissionInfoPtr GetModInfo(const idStr& name);
+	CModInfoPtr GetModInfo(const idStr& name);
 
 	// Returns the info structure for the currently ongoing mod (or NULL if none)
-	CMissionInfoPtr GetCurrentModInfo();
+	CModInfoPtr GetCurrentModInfo();
 
 	// Returns the name of the currently installed mod
 	idStr GetCurrentModName();

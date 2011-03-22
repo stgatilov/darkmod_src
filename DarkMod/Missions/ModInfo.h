@@ -13,15 +13,15 @@
 #include "../../idlib/precompiled.h"
 #include <boost/shared_ptr.hpp>
 
-class CMissionInfoDecl;
-typedef boost::shared_ptr<CMissionInfoDecl> CMissionInfoDeclPtr;
+class CModInfoDecl;
+typedef boost::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
 
-class CMissionInfo
+class CModInfo
 {
 private:
 	// The "internal" mission info declaration, 
 	// holding the persistent information about a mission (completion status, etc.)
-	CMissionInfoDeclPtr _decl;
+	CModInfoDeclPtr _decl;
 
 	// TRUE if the underlying declaration has been altered and needs saving
 	bool _declDirty;
@@ -32,7 +32,7 @@ private:
 
 public:
 	// Public Properties - these aren't stored in the mission info declaration
-	// but are constructed from the text files found in the fms/mission/ folders.
+	// but are constructed from the text files found in the fms/mod/ folders.
 
 	idStr modName;			// The mod name (fs_game)
 	idStr displayName;		// The display name of the mission
@@ -46,7 +46,7 @@ public:
 	int requiredMajor;
 	int requiredMinor;
 
-	CMissionInfo(const idStr& modName_, const CMissionInfoDeclPtr& detailsDecl) :
+	CModInfo(const idStr& modName_, const CModInfoDeclPtr& detailsDecl) :
 		_decl(detailsDecl),
 		_declDirty(false),
 		_modFolderSize(0),
@@ -103,6 +103,6 @@ public:
 	// Moves articles from the front of the string to its back "The Alchemist" => "Alchemist, The"
 	static void MoveArticlesToBack(idStr& title);
 };
-typedef boost::shared_ptr<CMissionInfo> CMissionInfoPtr;
+typedef boost::shared_ptr<CModInfo> CModInfoPtr;
 
 #endif /* _MISSION_INFO_H_ */

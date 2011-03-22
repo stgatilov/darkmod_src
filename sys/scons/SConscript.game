@@ -176,8 +176,8 @@ Inventory/WeaponItem.cpp \
 Missions/Download.cpp \
 Missions/DownloadManager.cpp \
 Missions/MissionDB.cpp \
-Missions/MissionInfo.cpp \
-Missions/MissionInfoDecl.cpp \
+Missions/ModInfo.cpp \
+Missions/ModInfoDecl.cpp \
 Missions/MissionManager.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \

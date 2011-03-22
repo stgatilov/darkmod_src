@@ -77,25 +77,25 @@ int CMissionManager::GetNumMods()
 	return _availableMods.Num();
 }
 
-CMissionInfoPtr CMissionManager::GetModInfo(int index)
+CModInfoPtr CMissionManager::GetModInfo(int index)
 {
 	if (index < 0 || index >= _availableMods.Num())
 	{
-		return CMissionInfoPtr(); // out of bounds
+		return CModInfoPtr(); // out of bounds
 	}
 
 	// Pass the call to the getbyname method
 	return GetModInfo(_availableMods[index]);
 }
 
-CMissionInfoPtr CMissionManager::GetModInfo(const idStr& name)
+CModInfoPtr CMissionManager::GetModInfo(const idStr& name)
 {
 	return _missionDB->GetModInfo(name);
 }
 
 void CMissionManager::EraseModFolder(const idStr& name)
 {
-	CMissionInfoPtr info = GetModInfo(name);
+	CModInfoPtr info = GetModInfo(name);
 
 	if (info == NULL)
 	{
@@ -121,7 +121,7 @@ void CMissionManager::EraseModFolder(const idStr& name)
 
 void CMissionManager::OnMissionStart()
 {
-	CMissionInfoPtr info = GetCurrentModInfo();
+	CModInfoPtr info = GetCurrentModInfo();
 
 	if (info == NULL)
 	{
@@ -141,7 +141,7 @@ void CMissionManager::OnMissionStart()
 
 void CMissionManager::OnMissionComplete()
 {
-	CMissionInfoPtr info = GetCurrentModInfo();
+	CModInfoPtr info = GetCurrentModInfo();
 
 	if (info == NULL)
 	{
@@ -163,7 +163,7 @@ void CMissionManager::OnMissionComplete()
 	}
 }
 
-CMissionInfoPtr CMissionManager::GetCurrentModInfo()
+CModInfoPtr CMissionManager::GetCurrentModInfo()
 {
 	idStr gameBase = cvarSystem->GetCVarString("fs_game_base");
 
@@ -173,7 +173,7 @@ CMissionInfoPtr CMissionManager::GetCurrentModInfo()
 	if (curMission.IsEmpty() || curMission == "darkmod") 
 	{
 		// return NULL when no mission is installed or "darkmod"
-		return CMissionInfoPtr();
+		return CModInfoPtr();
 	}
 
 	return GetModInfo(curMission);
@@ -181,7 +181,7 @@ CMissionInfoPtr CMissionManager::GetCurrentModInfo()
 
 idStr CMissionManager::GetCurrentModName()
 {
-	CMissionInfoPtr info = GetCurrentModInfo();
+	CModInfoPtr info = GetCurrentModInfo();
 
 	return (info != NULL) ? info->modName : "";
 }
@@ -202,7 +202,7 @@ idStr CMissionManager::GetNewFoundModsText()
 
 	for (int i = 0; i < _newFoundMods.Num(); ++i)
 	{
-		CMissionInfoPtr info = GetModInfo(_newFoundMods[i]);
+		CModInfoPtr info = GetModInfo(_newFoundMods[i]);
 
 		if (info == NULL) continue;
 
@@ -446,8 +446,8 @@ void CMissionManager::GenerateModList()
 int CMissionManager::ModSortCompare(const int* a, const int* b)
 {
 	// Get the mission titles (fs_game stuff)
-	CMissionInfoPtr aInfo = gameLocal.m_MissionManager->GetModInfo(*a);
-	CMissionInfoPtr bInfo = gameLocal.m_MissionManager->GetModInfo(*b);
+	CModInfoPtr aInfo = gameLocal.m_MissionManager->GetModInfo(*a);
+	CModInfoPtr bInfo = gameLocal.m_MissionManager->GetModInfo(*b);
 
 	if (aInfo == NULL || bInfo == NULL) return 0;
 
@@ -482,7 +482,7 @@ void CMissionManager::RefreshMetaDataForNewFoundMods()
 	// otherwise we end up with empty display names after downloading a mod we had on the HDD before
 	for (int i = 0; i < _newFoundMods.Num(); ++i)
 	{
-		CMissionInfoPtr info = GetModInfo(_newFoundMods[i]);
+		CModInfoPtr info = GetModInfo(_newFoundMods[i]);
 
 		if (info != NULL) 
 		{
@@ -717,7 +717,7 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
-	CMissionInfoPtr info = GetModInfo(name); // result is always non-NULL
+	CModInfoPtr info = GetModInfo(name); // result is always non-NULL
 
 	const idStr& modDirName = info->modName;
 
@@ -1213,7 +1213,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		mission.title = node.attribute("title").value();
 
 		// Remove articles from mission titles
-		CMissionInfo::MoveArticlesToBack(mission.title);
+		CModInfo::MoveArticlesToBack(mission.title);
 
 		mission.id = node.attribute("id").as_int();
 		mission.sizeMB = node.attribute("size").as_float();
@@ -1246,7 +1246,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			// Check mod version, there might be an update available
 			if (_missionDB->ModInfoExists(mission.modName))
 			{
-				CMissionInfoPtr missionInfo = _missionDB->GetModInfo(mission.modName);
+				CModInfoPtr missionInfo = _missionDB->GetModInfo(mission.modName);
 
 				idStr versionStr = missionInfo->GetKeyValue("downloaded_version", "1");
 				int existingVersion = atoi(versionStr.c_str());

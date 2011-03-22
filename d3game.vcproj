@@ -2469,27 +2469,27 @@
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Missions\MissionInfo.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfo.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfoDecl.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfoDecl.h"
-						>
-					</File>
-					<File
 						RelativePath=".\DarkMod\Missions\MissionManager.cpp"
 						>
 					</File>
 					<File
 						RelativePath=".\DarkMod\Missions\MissionManager.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfo.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfo.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfoDecl.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfoDecl.h"
 						>
 					</File>
 				</Filter>

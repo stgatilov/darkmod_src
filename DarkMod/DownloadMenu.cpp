@@ -636,7 +636,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 				successfulDownloads++;
 
 				// Save the mission version into the MissionDB for later use
-				CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
+				CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
 				missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
 			}
 			break;
