@@ -149,6 +149,21 @@ void CMissionManager::OnMissionComplete()
 		return;
 	}
 
+	// Ensure that this was the last mission if in campaign mode, otherwise ignore this call
+	if (CurrentModIsCampaign())
+	{
+		if (_curMissionIndex == -1)
+		{
+			gameLocal.Error("Invalid mission index in OnMissionComplete()");
+		}
+
+		if (_curMissionIndex < _mapSequence.Num() - 1)
+		{
+			// This is not yet the last mission in the campaign, ignore this call
+			return;
+		}
+	}
+
 	// Mark the current difficulty level as completed
 	info->SetKeyValue(va("mission_completed_%d", gameLocal.m_DifficultyManager.GetDifficultyLevel()), "1");
 
