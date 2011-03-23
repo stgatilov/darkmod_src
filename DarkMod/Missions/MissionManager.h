@@ -257,6 +257,14 @@ public:
 	// Returns TRUE if the currently installed mod is a campaign
 	bool CurrentModIsCampaign() const;
 
+	// Returns TRUE if there is another mission available to play
+	bool NextMissionAvailable() const;
+
+	// greebo: Proceeds the current mission index to the next available one. 
+	// Returns TRUE if that was successful, FALSE if the current mod is  
+	// not a campaign or if there is no next mission available
+	bool ProceedToNextMission();
+
 	void EraseModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission

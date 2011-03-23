@@ -3711,7 +3711,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
-	else if (cmd == "close_success_screen")
+	else if (cmd == "onSuccessScreenContinueClicked")
 	{
 		// Clear the mission result flag
 		SetMissionResult(MISSION_NOTEVENSTARTED);
@@ -3719,6 +3719,20 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Set the boolean back to false for the next map start
 		gui->SetStateBool("SuccessScreenActive", false);
 		successScreenActive = false;
+
+		// Switch to the next mission if there is one
+		if (m_MissionManager->NextMissionAvailable())
+		{
+			m_MissionManager->ProceedToNextMission();
+
+			// Go to the next briefing / video
+			gui->HandleNamedEvent("SuccessProceedToNextMission");
+		}
+		else
+		{
+			// Switch back to the main menu
+			gui->HandleNamedEvent("SuccessGoBackToMainMenu");
+		}
 	}
 	else if (cmd == "setLPDifficulty")
 	{
