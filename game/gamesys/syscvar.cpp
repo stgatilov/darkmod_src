@@ -447,6 +447,11 @@ idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER
 
 idCVar cv_r_fovRatio( 				"r_fovRatio",			"0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Aspect ratio of view, if set to greater than 0, determines the ratio between FOV for x and y directly, and r_aspectRatio is ignored. The value should closely match r_customWidth / r_customHeight." );
 
+idCVar cv_gui_Width( 				"gui_Width",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen width. Default is 1.0 and stretches the GUI over the entire screen." );
+idCVar cv_gui_Height( 				"gui_Height",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen height. Default is 1.0 and stretches the GUI over the entire screen." );
+idCVar cv_gui_CenterX( 			"gui_CenterX",			"0.5",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Position of the center of the GUI as percentage of the whole screen width. Default is 0.5 (half of the screen width)." );
+idCVar cv_gui_CenterY( 			"gui_CenterY",			"0.5",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Position of the center of the GUI as percentage of the whole screen height. Default is 0.5 (half of the screen height)." );
+
 idCVar g_cinematic(					"g_cinematic",				"1",			CVAR_GAME | CVAR_BOOL, "skips updating entities that aren't marked 'cinematic' '1' during cinematics" );
 idCVar g_cinematicMaxSkipTime(		"g_cinematicMaxSkipTime",	"600",			CVAR_GAME | CVAR_FLOAT, "# of seconds to allow game to run when skipping cinematic.  prevents lock-up when cinematic doesn't end.", 0, 3600 );
 

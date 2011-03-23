@@ -351,6 +351,15 @@ extern idCVar cv_ai_ko_show;
 */
 extern idCVar	cv_r_fovRatio;
 
+/** Screen width * gui_Width = GUI width */
+extern idCVar	cv_gui_Width;
+/** Screen height * gui_Height = GUI height */
+extern idCVar	cv_gui_Height;
+/** Screen width * gui_CenterX = GUI center X */
+extern idCVar	cv_gui_CenterX;
+/** Screen height * gui_CenterY = GUI center Y */
+extern idCVar	cv_gui_CenterY;
+
 /**
 * End DarkMod cvars
 **/
