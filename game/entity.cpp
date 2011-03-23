@@ -10983,6 +10983,7 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 		return OVERLAYS_INVALID_HANDLE;
 	}
 
+
 	if(!uiManager->CheckGui(guiFile))
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
@@ -11009,6 +11010,9 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	gui->Activate(true, gameLocal.time);
 	// Let's set a good default value for whether or not the overlay is interactive.
 	m_overlays.setInteractive(handle, gui->IsInteractive());
+
+	// scale the GUI according to gui_Width/gui_Height/gui_CenterX/gui_CenterY
+	gameLocal.UpdateGUIScaling( gui );
 
 	return handle;
 }
