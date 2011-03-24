@@ -474,6 +474,9 @@ public:
 	// be kept in the GUI, but in this case I need it to be accessible when the player loads a new map via the console.)
 	bool					successScreenActive;
 
+	// Toggle to keep track whether the GUI state variables have been set up
+	bool					briefingVideoInfoLoaded;
+
 	bool					mainMenuExited;			// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 
 	// can be used to automatically effect every material in the world that references globalParms

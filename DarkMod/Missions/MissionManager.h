@@ -254,6 +254,10 @@ public:
 	// Example: "patently_dangerous", no file extension, no maps/ prefix.
 	const idStr& GetCurrentStartingMap() const;
 
+	// Returns the current mission index (0-based: first mission == 0)
+	// Will always return 0 for non-campaigns
+	int GetCurrentMissionIndex() const;
+
 	// Returns TRUE if the currently installed mod is a campaign
 	bool CurrentModIsCampaign() const;
 

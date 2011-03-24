@@ -221,11 +221,12 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal()
+idGameLocal::idGameLocal() :
+	successScreenActive(false),
+	briefingVideoInfoLoaded(false)
 {
 	m_HighestSRId = 0;
 	m_MissionResult = MISSION_NOTEVENSTARTED;
-	successScreenActive = false;
 
 	Clear();
 }
@@ -3744,6 +3745,25 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
+	}
+	else if (cmd == "prepareBriefingVideo")
+	{
+		// Check if we've set up the briefing video 
+		if (!briefingVideoInfoLoaded)
+		{
+			briefingVideoInfoLoaded = true;
+
+			// Tell the briefing video GUI to load all video materials into the state dict
+			gui->HandleNamedEvent("LoadVideoDefinitions");
+		}
+
+		// Check the video defs
+		int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+
+		idStr videoMaterials = gui->GetStateString(va("BriefingVideoMaterials%d", missionNum));
+		idStr videoSoundCmd = gui->GetStateString(va("BriefingVideoSoundCmd%d", missionNum));
+
+		// TODO
 	}
 	else if (cmd == "onSuccessScreenContinueClicked")
 	{

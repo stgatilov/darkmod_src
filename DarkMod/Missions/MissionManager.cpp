@@ -718,6 +718,16 @@ const idStr& CMissionManager::GetCurrentStartingMap() const
 	return _curStartingMap;
 }
 
+int CMissionManager::GetCurrentMissionIndex() const
+{
+	if (CurrentModIsCampaign())
+	{
+		return _curMissionIndex;
+	}
+
+	return 0; // single-mission
+}
+
 bool CMissionManager::ProceedToNextMission()
 {
 	if (NextMissionAvailable())
