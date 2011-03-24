@@ -1068,6 +1068,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_HandlingDoor;
 
 	/**
+	 * grayman #2706: is set true when the move prior to door handling is saved
+	 */
+	bool					m_RestoreMove;
+
+	/**
 	 * angua: is set true while the AI is handling an elevator.
 	 */
 	bool					m_HandlingElevator;

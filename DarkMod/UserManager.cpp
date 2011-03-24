@@ -100,6 +100,43 @@ int UserManager::GetIndex(idActor* actor) // grayman #2345
 	return (m_users.FindIndex(actorPtr));
 }
 
+// grayman #2345/#2706 - whoever's closest to the door now gets to be master,
+// so he has to be moved to the top of the user list. This cuts down on
+// confusion around doors.
+
+void UserManager::ResetMaster(CFrobDoor* frobDoor)
+{
+	int numUsers = GetNumUsers();
+	if (numUsers > 1)
+	{
+		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
+		idActor* closestUser = NULL;	// the user closest to the door
+		int masterIndex = 0;			// index of closest user
+		float minDistance = 100000;		// minimum distance of all users
+		for (int i = 0 ; i < numUsers ; i++)
+		{
+			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
+			if (user != NULL)
+			{
+				float distance = (user->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
+				if (distance < minDistance)
+				{
+					masterIndex = i;
+					closestUser = user;
+					minDistance = distance;
+				}
+			}
+		}
+
+		if (masterIndex > 0) // only rearrange the queue if someone other than the current master is closer
+		{
+			RemoveUser(closestUser);			// remove AI from current spot
+			InsertUserAtIndex(closestUser,0);	// and put him at the top
+		}
+	}
+}
+
+
 void UserManager::Save(idSaveGame* savefile) const
 {
 	int num = m_users.Num();

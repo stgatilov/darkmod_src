@@ -87,6 +87,12 @@ public:
 	{
 		return _initialised;
 	}
+
+	// grayman #2706 - can we abort this task? override in task instances
+	virtual bool CanAbort()
+	{
+		return true;
+	}
 };
 typedef boost::shared_ptr<Task> TaskPtr;
 

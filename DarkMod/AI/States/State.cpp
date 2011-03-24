@@ -2259,6 +2259,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	// grayman #2706 - can't handle doors if you're resolving a block
+
+	if (owner->movementSubsystem->IsResolvingBlock() || owner->movementSubsystem->IsWaiting())
+	{
+		return;
+	}
+
 	// grayman #2650 - can we handle doors?
 
 	if (!owner->m_bCanOperateDoors)
@@ -2312,7 +2319,12 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 
 			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
 			{
-				subsys->FinishTask();
+				// grayman #2706 - only quit this door if you're in the approaching states.
+				// otherwise, finish with this door before you move to another one.
+				if (task->CanAbort())
+				{
+					subsys->FinishTask();
+				}
 			}
 			else
 			{

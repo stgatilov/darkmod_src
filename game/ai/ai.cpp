@@ -932,6 +932,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
+	savefile->WriteBool(m_RestoreMove); // grayman #2706
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
@@ -1339,6 +1340,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
+	savefile->ReadBool(m_RestoreMove); // grayman #2706
 
 	int size;
 	savefile->ReadInt(size);
@@ -1839,6 +1841,7 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
+	m_RestoreMove = false; // grayman #2706
 
 	m_HandlingElevator = false;
 
@@ -10725,12 +10728,10 @@ void idAI::PopMove()
 	{
 		return; // nothing to pop from
 	}
-
-	// Get a reference of the last element
-	const idMoveState& saved = moveStack.back();
-
+	
+	const idMoveState& saved = moveStack.back(); // Get a reference of the last element
 	RestoreMove(saved);
-	moveStack.pop_back();
+	moveStack.pop_back(); // Remove the last element
 }
 
 void idAI::RestoreMove(const idMoveState& saved)

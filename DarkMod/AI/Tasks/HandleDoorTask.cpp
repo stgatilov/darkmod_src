@@ -89,9 +89,11 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// Let the owner save its move
 
-	if (!owner->GetEnemy()) // grayman #2690 - AI run toward where they saw you last. Don't save that location when handling doors.
+	owner->m_RestoreMove = false;	// grayman #2706 - whether we should restore a saved move when finished with the door
+	if (!owner->GetEnemy())			// grayman #2690 - AI run toward where they saw you last. Don't save that location when handling doors.
 	{
 		owner->PushMove();
+		owner->m_RestoreMove = true;
 	}
 
 	owner->m_HandlingDoor = true;
@@ -1237,7 +1239,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		}
 	}
 
-	// grayman #2700 - query the door use timeout
+	// grayman #2700 - set the door use timeout
 
 	if ((_doorHandlingState == EStateMovingToMidPos) || (_doorHandlingState == EStateMovingToBackPos))
 	{
@@ -1874,41 +1876,6 @@ idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
 	return bestController;
 }
 
-// grayman #2345 - whoever's closest to the door now gets to be master,
-// so he has to be moved to the top of the user list. This cuts down on
-// confusion around doors.
-
-void HandleDoorTask::ResetMaster(CFrobDoor* frobDoor)
-{
-	int numUsers = frobDoor->GetUserManager().GetNumUsers();
-	if (numUsers > 1)
-	{
-		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
-		idActor* closestUser = NULL;	// the user closest to the door
-		int masterIndex = 0;			// index of closest user
-		float minDistance = 100000;		// minimum distance of all users
-		for (int i = 0 ; i < numUsers ; i++)
-		{
-			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
-			if (user != NULL)
-			{
-				float distance = (user->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
-				if (distance < minDistance)
-				{
-					masterIndex = i;
-					closestUser = user;
-					minDistance = distance;
-				}
-			}
-		}
-
-		if (masterIndex > 0) // only rearrange the queue if someone other than the current master is closer
-		{
-			frobDoor->GetUserManager().RemoveUser(closestUser);				// remove AI from current spot
-			frobDoor->GetUserManager().InsertUserAtIndex(closestUser,0);	// and put him at the top
-		}
-	}
-}
 
 // grayman #2345 - when adding a door user, order the queue so that
 // users still moving toward the door are in
@@ -1959,7 +1926,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 	if (owner->m_HandlingDoor)
 	{
-		if (!owner->GetEnemy()) // grayman #2690 - AI run toward where they saw you last. Don't save that location when handling doors.
+		if (owner->m_RestoreMove) // grayman #2690/debug - AI run toward where they saw you last. Don't save that location when handling doors.
 		{
 			owner->PopMove();
 		}
@@ -1979,20 +1946,24 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		doorInfo.wasOpen = frobDoor->IsOpen();
 
 		frobDoor->GetUserManager().RemoveUser(owner);
-
-		ResetMaster(frobDoor); // grayman #2345 - redefine which AI is the master
+		frobDoor->GetUserManager().ResetMaster(frobDoor); // grayman #2345/#2706 - redefine which AI is the master
 
 		CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 		if (doubleDoor != NULL)
 		{
-			doubleDoor->GetUserManager().RemoveUser(owner); // grayman #2345 - need to do for this what we did for a single door
-			ResetMaster(doubleDoor); // grayman #2345 - redefine which AI is the master
+			doubleDoor->GetUserManager().RemoveUser(owner);		// grayman #2345 - need to do for this what we did for a single door
+			frobDoor->GetUserManager().ResetMaster(doubleDoor);	// grayman #2345/#2706 - redefine which AI is the master
 		}
 	}
 
 	memory.doorRelated.currentDoor = NULL;
 	_doorHandlingState = EStateNone;
 	owner->m_canResolveBlock = true; // grayman #2345
+}
+
+bool HandleDoorTask::CanAbort() // grayman #2706
+{
+	return (_doorHandlingState <= EStateMovingToSafePos);
 }
 
 void HandleDoorTask::DrawDebugOutput(idAI* owner)
@@ -2007,6 +1978,41 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 		(_backPos + idVec3(0, 0, 30)), 
 		0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
 
+	/*	grayman #2345/#2706
+
+	Show the door situation.
+
+	Format is:
+  
+		<DoorHandlingState> <DoorName> - <Position in door queue>/<# users in door queue>
+
+	For example:
+
+		EStateMovingToFrontPos Door4 - 2/3
+
+	means the AI is moving toward the front of the door and is currently in the second
+	slot in a door queue of 3 users on door Door4.
+	 */
+
+	idStr position = "";
+	if (owner->m_HandlingDoor)
+	{
+		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+		if (frobDoor != NULL)
+		{
+			idStr doorName = frobDoor->name;
+			int numUsers = frobDoor->GetUserManager().GetNumUsers();
+			int slot = frobDoor->GetUserManager().GetIndex(owner) + 1;
+			if (slot > 0)
+			{
+				position = " " + doorName + " - " + slot + "/" + numUsers;
+			}
+		}
+		else
+		{
+			position = " (ERROR: no door)";
+		}
+	}
 
 	idStr str;
 	switch (_doorHandlingState)
@@ -2051,6 +2057,8 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			str = "";
 			break;
 	}
+	str += position;
+
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
