@@ -3429,7 +3429,8 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 int idGameLocal::AccumulateVideoLength(const char* videosStr)
 {
 	std::vector<std::string> parts;
-	boost::algorithm::split(parts, std::string(videosStr), boost::algorithm::is_any_of(";"));
+	std::string temp(videosStr);
+	boost::algorithm::split(parts, temp, boost::algorithm::is_any_of(";"));
 
 	if (parts.empty())
 	{
