@@ -889,9 +889,15 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 
 int CBinaryFrobMover::GetAASArea(idAAS* aas)
 {
-	if (aas == NULL) return -1;
+	if (aas == NULL)
+	{
+		return -1;
+	}
 
-	if (GetPhysics() == NULL) return -1;
+	if (GetPhysics() == NULL)
+	{
+		return -1;
+	}
 
 	idClipModel *clipModel = GetPhysics()->GetClipModel();
 	if (clipModel == NULL)
@@ -1287,4 +1293,11 @@ void CBinaryFrobMover::RegisterAI(idAI* ai)
 	idEntityPtr<idAI> aiPtr;
 	aiPtr = ai;
 	m_registeredAI.Append(aiPtr);
+}
+
+// grayman #2691 - get the axis of rotation
+
+idVec3 CBinaryFrobMover::GetRotationAxis()
+{
+	return m_Rotate.ToRotation().GetVec();
 }
