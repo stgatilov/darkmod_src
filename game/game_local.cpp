@@ -47,6 +47,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
@@ -225,11 +226,11 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() :
 	successScreenActive(false),
-	briefingVideoInfoLoaded(false)
+	briefingVideoInfoLoaded(false),
+	curBriefingVideoPart(-1),
+	m_HighestSRId(0),
+	m_MissionResult(MISSION_NOTEVENSTARTED)
 {
-	m_HighestSRId = 0;
-	m_MissionResult = MISSION_NOTEVENSTARTED;
-
 	Clear();
 }
 
@@ -263,6 +264,7 @@ void idGameLocal::Clear( void )
 	m_MissionData.reset();
 
 	mainMenuExited = false;
+	briefingVideo.Clear();
 
 	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
@@ -3426,47 +3428,54 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	return mpGame.HandleGuiCommands( menuCommand );
 }
 
-int idGameLocal::AccumulateVideoLength(const char* videosStr)
+int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr)
 {
-	std::vector<std::string> parts;
-	std::string temp(videosStr);
-	boost::algorithm::split(parts, temp, boost::algorithm::is_any_of(";"));
+	briefingVideo.Clear();
 
-	if (parts.empty())
+	std::string videos = videosStr;
+	std::string lengths = lengthStr;
+
+	// Remove leading and trailing semicolons
+	boost::algorithm::trim_if(videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::trim_if(lengths, boost::algorithm::is_any_of(";"));
+
+	// Split strings into parts
+	std::vector<std::string> vidParts;
+	std::vector<std::string> lengthParts;
+
+	boost::algorithm::split(vidParts, videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::split(lengthParts, lengths, boost::algorithm::is_any_of(";"));
+
+	if (vidParts.size() != lengthParts.size())
 	{
-		return -1;
+		gameLocal.Warning("The video string array '%s' does not have the same number of elements as the length array '%s'!", videosStr, lengthStr);
+		return 0;
 	}
 
-	int length = 0;
-
-	// Iterate over each material and sum up the animation length
-	for (std::size_t i = 0; i < parts.size(); ++i)
+	if (vidParts.size() == 0)
 	{
-		if (parts[i].empty()) continue; // skip empty strings
-
-		const idMaterial* material = declManager->FindMaterial(parts[i].c_str());
-
-		if (material == NULL) 
-		{
-			return -1;
-		}
-
-		int numStages = material->GetNumStages();
-
-		for (int stage = 0; stage < numStages; ++stage)
-		{
-			const textureStage_t& texStage = material->GetStage(stage)->texture;
-
-			if (texStage.cinematic != NULL)
-			{
-				// Video information found, accumulate length
-				length += texStage.cinematic->AnimationLength();
-				break;
-			}
-		}
+		return 0;
 	}
 
-	return length;
+	int totalLength = 0;
+
+	for (std::size_t i = 0; i < vidParts.size(); ++i)
+	{
+		BriefingVideoPart& part = briefingVideo.Alloc();
+
+		part.material = vidParts[i].c_str();
+		part.lengthMsec = atoi(lengthParts[i].c_str());
+
+		if (part.lengthMsec <= 0)
+		{
+			gameLocal.Warning("The video length %s is invalid or not numeric, must be an integer > 0", lengthParts[i]);
+			part.lengthMsec = 0;
+		}
+
+		totalLength += part.lengthMsec;
+	}
+
+	return totalLength;
 }
 
 void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
@@ -3806,13 +3815,64 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
 
 		const char* videoMaterials = gui->GetStateString(va("BriefingVideoMaterials%d", missionNum));
+		const char* videoLengths = gui->GetStateString(va("BriefingVideoLengths%d", missionNum));
 		const char* videoSoundCmd = gui->GetStateString(va("BriefingVideoSoundCmd%d", missionNum));
 
 		// Calculate the total length of the video
-		int videoLengthMsec = AccumulateVideoLength(videoMaterials);
+		int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths);
 
 		gui->SetStateInt("BriefingVideoLength", videoLengthMsec);
 		gui->SetStateString("BriefingVideoSoundCmd", videoSoundCmd);
+		
+		// We start with the first part
+		curBriefingVideoPart = 0;
+	}
+	else if (cmd == "startBriefingVideo")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnBriefingVideoFinished");
+		}
+	}
+	else if (cmd == "briefingVideoHeartBeat")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("briefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= briefingVideo[curBriefingVideoPart].lengthMsec)
+			{
+				curBriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curBriefingVideoPart < briefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+					gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnBriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("briefingVideoTime", videoTime);	
+		}
 	}
 	else if (cmd == "onSuccessScreenContinueClicked")
 	{
