@@ -2278,7 +2278,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	if (owner->AI_AlertIndex < 3) // grayman #2670
 	{
 		int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
+		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 1000))
 		{
 			return;
 		}
