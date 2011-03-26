@@ -3727,6 +3727,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			HandleGuiMessages(gui);
 		}
 
+		// Make sure we have a valid mission number in the GUI, the first mission is always 1
+		int curMissionNum = gui->GetStateInt("CurrentMission");
+
+		if (curMissionNum <= 0)
+		{
+			gui->SetStateInt("CurrentMission", 1);
+		}
+
 		// Handle downloads in progress
 		m_DownloadManager->ProcessDownloads();
 
@@ -3887,6 +3895,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		if (m_MissionManager->NextMissionAvailable())
 		{
 			m_MissionManager->ProceedToNextMission();
+
+			// Store the new mission number into the GUI state
+			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+			gui->SetStateInt("CurrentMission", missionNum);
 
 			// Go to the next briefing / video
 			gui->HandleNamedEvent("SuccessProceedToNextMission");
