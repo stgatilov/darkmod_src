@@ -470,9 +470,10 @@ public:
 	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 
-	// greebo: Is set to TRUE if the success screen is currently active. (Usually these state variables should
-	// be kept in the GUI, but in this case I need it to be accessible when the player loads a new map via the console.)
-	bool					successScreenActive;
+	// greebo: Is set to TRUE if the post-mission screen (debriefing or success screen) is currently active. 
+	// (Usually these state variables should be kept in the GUI, but in this case I need it to be accessible 
+	// when the player loads a new map via the console.)
+	bool					postMissionScreenActive;
 
 	// Toggle to keep track whether the GUI state variables have been set up
 	bool					briefingVideoInfoLoaded;

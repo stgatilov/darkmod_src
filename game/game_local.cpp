@@ -225,7 +225,7 @@ idGameLocal::idGameLocal
 ============
 */
 idGameLocal::idGameLocal() :
-	successScreenActive(false),
+	postMissionScreenActive(false),
 	briefingVideoInfoLoaded(false),
 	curBriefingVideoPart(-1),
 	m_HighestSRId(0),
@@ -896,7 +896,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
 	}
 
-	savegame.WriteBool(successScreenActive);
+	savegame.WriteBool(postMissionScreenActive);
 
 	savegame.WriteInt( random.GetSeed() );
 	savegame.WriteObject( frameCommandThread );
@@ -1430,7 +1430,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// greebo: Reset the flag. When a map is loaded, the success screen is definitely not shown anymore.
 	// This is meant to catch cases where the player is reloading a map from the console without clicking
 	// the "Continue" button on the success GUI. I can't stop him, so I need to track this here.
-	successScreenActive = false;
+	postMissionScreenActive = false;
 
 	if (m_MissionData != NULL)
 	{
@@ -1951,7 +1951,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		savegame.ReadFloat( globalShaderParms[ i ] );
 	}
 
-	savegame.ReadBool(successScreenActive);
+	savegame.ReadBool(postMissionScreenActive);
 
 	savegame.ReadInt( i );
 	random.SetSeed( i );
@@ -3695,17 +3695,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			// Check if we should show the success screen (also check the member variable
 			// to catch cases where the player reloaded the map via the console)
-			if (!gui->GetStateBool("SuccessScreenActive") || !successScreenActive)
+			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
 			{
-				// Load the statistics into the GUI
-				m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
-			
-				// Show the success GUI
-				gui->HandleNamedEvent("ShowSuccessScreen");
+		 		// Show the post-mission GUI
+				gui->HandleNamedEvent("ShowPostMissionScreen");
 
 				// Avoid duplicate triggering
-				gui->SetStateBool("SuccessScreenActive", true);
-				successScreenActive = true;
+				gui->SetStateBool("PostMissionScreenActive", true);
+				postMissionScreenActive = true;
 			}
 			return;
 		}
@@ -3888,8 +3885,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		SetMissionResult(MISSION_NOTEVENSTARTED);
 
 		// Set the boolean back to false for the next map start
-		gui->SetStateBool("SuccessScreenActive", false);
-		successScreenActive = false;
+		gui->SetStateBool("PostMissionScreenActive", false);
+		postMissionScreenActive = false;
 
 		// Switch to the next mission if there is one
 		if (m_MissionManager->NextMissionAvailable())
