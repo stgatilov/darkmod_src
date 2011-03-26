@@ -386,4 +386,11 @@ ID_INLINE int idHashIndex::GenerateKey( const int n1, const int n2 ) const {
 	return ( ( n1 + n2 ) & hashMask );
 }
 
+// stgatilov: class for displaying hash + index arrays of idHashIndex
+//   in MSVC debug watch (look "autoexp.dat")
+struct _idHashIndex_showarray_helper {
+	int size;
+	int *ptr;
+};
+
 #endif /* !__HASHINDEX_H__ */
