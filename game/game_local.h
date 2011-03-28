@@ -485,10 +485,17 @@ public:
 		int		lengthMsec; // length in msecs
 	};
 
+	// The list of briefing videos for the current mission
 	idList<BriefingVideoPart>	briefingVideo;
 	
 	// Index into the above list
 	int							curBriefingVideoPart;
+
+	// The list of DE-briefing videos for the current mission
+	idList<BriefingVideoPart>	debriefingVideo;
+
+	// Index into the above list
+	int							curDebriefingVideoPart;
 
 	bool					mainMenuExited;			// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 
@@ -1079,11 +1086,12 @@ private:
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
 
-	// Splits the given string and stores the found video materials in the briefingVideo list.
+	// Splits the given string and stores the found video materials in the target list.
 	// Calculates the length of the ROQ videos as defined in the string (each material
 	// is separated by a semicolon) Returns the total length in milliseconds, or -1 on failure.
 	// The lengthStr corresponds to the videosStr, but contains the lengths of the clips
-	int						LoadVideosFromString(const char* videosStr, const char* lengthStr);
+	static int				LoadVideosFromString(const char* videosStr, const char* lengthStr, 
+												 idList<BriefingVideoPart>& targetList);
 
 	// Platform-specific implementation to change the D3's title and icon
 	void					ChangeWindowTitleAndIcon();

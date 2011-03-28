@@ -265,6 +265,7 @@ void idGameLocal::Clear( void )
 
 	mainMenuExited = false;
 	briefingVideo.Clear();
+	debriefingVideo.Clear();
 
 	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
@@ -3428,9 +3429,9 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	return mpGame.HandleGuiCommands( menuCommand );
 }
 
-int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr)
+int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr, idList<BriefingVideoPart>& targetList)
 {
-	briefingVideo.Clear();
+	targetList.Clear();
 
 	std::string videos = videosStr;
 	std::string lengths = lengthStr;
@@ -3461,7 +3462,7 @@ int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthS
 
 	for (std::size_t i = 0; i < vidParts.size(); ++i)
 	{
-		BriefingVideoPart& part = briefingVideo.Alloc();
+		BriefingVideoPart& part = targetList.Alloc();
 
 		part.material = vidParts[i].c_str();
 		part.lengthMsec = atoi(lengthParts[i].c_str());
@@ -3697,7 +3698,23 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// to catch cases where the player reloaded the map via the console)
 			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
 			{
-		 		// Show the post-mission GUI
+				// Check if this mission has a debriefing video
+				int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1; // GUI mission numbers are 1-based
+
+				const char* videoMaterials = gui->GetStateString(va("DebriefingVideoMaterials%d", missionNum));
+				const char* videoLengths = gui->GetStateString(va("DebriefingVideoLengths%d", missionNum));
+				const char* videoSoundCmd = gui->GetStateString(va("DebriefingVideoSoundCmd%d", missionNum));
+
+				// Calculate the total length of the video
+				int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, debriefingVideo);
+
+				gui->SetStateInt("DebriefingVideoLength", videoLengthMsec);
+				gui->SetStateString("DebriefingVideoSoundCmd", videoSoundCmd);
+				
+				// Let the GUI know whether we have a debriefing video
+				gui->SetStateBool("HasDebriefingVideo", debriefingVideo.Num() > 0);
+
+		 		// Show the post-mission GUI (might be a debriefing video or just the success screen)
 				gui->HandleNamedEvent("ShowPostMissionScreen");
 
 				// Avoid duplicate triggering
@@ -3805,7 +3822,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
-	else if (cmd == "prepareBriefingVideo")
+	else if (cmd == "loadVideoDefinitions")
 	{
 		// Check if we've set up the briefing video 
 		if (!briefingVideoInfoLoaded)
@@ -3814,7 +3831,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			// Tell the briefing video GUI to load all video materials into the state dict
 			gui->HandleNamedEvent("LoadVideoDefinitions");
+			gui->HandleNamedEvent("LoadDebriefingVideoDefinitions");
 		}
+	}
+	else if (cmd == "prepareBriefingVideo")
+	{
+		// Ensure we've set up the briefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
 
 		// Check the video defs
 		int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
@@ -3824,7 +3847,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		const char* videoSoundCmd = gui->GetStateString(va("BriefingVideoSoundCmd%d", missionNum));
 
 		// Calculate the total length of the video
-		int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths);
+		int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, briefingVideo);
 
 		gui->SetStateInt("BriefingVideoLength", videoLengthMsec);
 		gui->SetStateString("BriefingVideoSoundCmd", videoSoundCmd);
@@ -3877,6 +3900,61 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 
 			gui->SetStateInt("briefingVideoTime", videoTime);	
+		}
+	}
+	else if (cmd == "prepareDebriefingVideo")
+	{
+		// Ensure we've set up the debriefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
+		
+		// We start with the first part
+		curDebriefingVideoPart = 0;
+	}
+	else if (cmd == "startDebriefingVideo")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnDebriefingVideoFinished");
+		}
+	}
+	else if (cmd == "debriefingVideoHeartBeat")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("debriefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= debriefingVideo[curDebriefingVideoPart].lengthMsec)
+			{
+				curDebriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curDebriefingVideoPart < debriefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+					gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnDebriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("debriefingVideoTime", videoTime);	
 		}
 	}
 	else if (cmd == "onSuccessScreenContinueClicked")
