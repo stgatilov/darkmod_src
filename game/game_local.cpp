@@ -3469,7 +3469,7 @@ int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthS
 
 		if (part.lengthMsec <= 0)
 		{
-			gameLocal.Warning("The video length %s is invalid or not numeric, must be an integer > 0", lengthParts[i]);
+			gameLocal.Warning("The video length %s is invalid or not numeric, must be an integer > 0", lengthParts[i].c_str());
 			part.lengthMsec = 0;
 		}
 
