@@ -48,7 +48,7 @@ const int 	MAX_AAS_WALL_EDGES			= 256;
 const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
 const int 	MAX_OBSTACLE_PATH			= 64;
-const int	REUSE_DOOR_DELAY			= 1000; // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
+const int	REUSE_DOOR_DELAY			= 3000; // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -82,6 +82,56 @@ void pathNode_s::Init() {
 
 idBlockAlloc<pathNode_t, 128>	pathNodeAllocator;
 
+#if 0
+// grayman - for debugging path tree nodes
+void PrintNode(pathNode_t* node,int level,obstacle_t obstacles[])
+{
+	idStr pad = "";
+	for (int i = 0 ; i < level ; i++)
+	{
+		pad += "   ";
+	}
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s ------ node -----\r",pad.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dir = %d (0 = left & 1 = right?)\r",pad.c_str(),node->dir);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s pos = [%s] (parent's pos + parent's delta)\r",pad.c_str(),node->pos.ToString());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s delta = [%s] (?)\r",pad.c_str(),node->delta.ToString());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dist = %f (distance to seekPos)\r",pad.c_str(),sqrt(node->dist));
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %d (blocking obstacle index)\r",pad.c_str(),node->obstacle);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s edgeNum = %d (blocking edge num)\r",pad.c_str(),node->edgeNum);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s numNodes = %d (num nodes down from root)\r",pad.c_str(),node->numNodes);
+
+	if (node->obstacle != -1)
+	{
+		idEntity *e = obstacles[node->obstacle].entity;
+		if (e)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %s\r",pad.c_str(),e->name.c_str());
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = NULL\r",pad.c_str());
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle index = -1\r",pad.c_str());
+	}
+}
+
+void PrintNodes(pathNode_t* node,int level,obstacle_t obstacles[])
+{
+	PrintNode(node,level,obstacles);
+	if (node->children[0])
+	{
+		PrintNodes(node->children[0],level+1,obstacles);
+	}
+	if (node->children[1])
+	{
+		PrintNodes(node->children[1],level+1,obstacles);
+	}
+}
+#endif
 
 /*
 ============
@@ -269,11 +319,7 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 	// grayman #2345 - get AI version of yourself
 
 	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf());
-	idAI* selfAI = NULL;
-	if (self->IsType(idAI::Type))
-	{
-		selfAI = static_cast<idAI*>(self);
-	}
+	idAI* selfAI = static_cast<idAI*>(self);
 
 	// get bounds for the current movement delta
 	bounds[0] = startPos - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
@@ -304,19 +350,18 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 				// a door that you recently used if not alerted. This keeps you from going back and forth
 				// through the same door.
 
+				// grayman #2712 - removed alert check
+
 				idEntity* e = obstacles[i].entity;
 				if ((e != NULL) && e->IsType(CFrobDoor::Type))
 				{
 					if (blockingScale < blockingScaleDoor)
 					{
-						if (selfAI->AI_AlertIndex < 3) // grayman #2670
+						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
+						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
 						{
-							CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
-							int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-							if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
-							{
-								continue; // ignore this door
-							}
+							continue; // ignore this door
 						}
 						blockingDoorNum = i;
 						blockingScaleDoor = blockingScale;
@@ -553,6 +598,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 		// Get the box bounding the obstacle
 		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+		idBox boxClosed;			// grayman #2712
+		bool openDoorFound = false;	// grayman #2712
 
 		// grayman #2345 - To get AI to queue at an open door and not cause logjams, treat an open door
 		// as if it's closed. This could also apply to all binary frob movers, but since many of those
@@ -562,61 +609,30 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		if (p_binaryFrobMover != NULL)
 		{
 			// only "see" doors
+			// grayman #2712 - if you can operate doors, and the door is open, include a
+			// second box representing the closed door. The 'open' box provides an obstacle
+			// presence for pathfinding, and the 'closed' box alerts the AI that the door
+			// needs to be handled.
 
 			if (p_binaryFrobMover->IsType(CFrobDoor::Type))
 			{
-				if (!selfAI->m_bCanOperateDoors) // grayman #2691
+				if (selfAI->m_bCanOperateDoors) // grayman #2691 grayman debug 2
 				{
-					continue; // ignore this door
-				}
-
-				if (p_binaryFrobMover->IsOpen())
-				{
-					if (self->IsType(idAI::Type))
+					if (p_binaryFrobMover->IsOpen())
 					{
-						idAI *selfAI = static_cast<idAI*>(self);
 						if (!selfAI->m_HandlingDoor) // If we're already handling a door, don't include the closed door in the obstacle calculation
 						{
+							openDoorFound = true;
 							// grayman #720 - replace calculations with a capture of the closed box at spawn time
 
-							box.AddBox (p_binaryFrobMover->GetClosedBox());
+//							box.AddBox (p_binaryFrobMover->GetClosedBox());
+							boxClosed = p_binaryFrobMover->GetClosedBox(); // create a second box; don't add to open box
 						}
 					}
 				}
 			}
 		}
-/*
-		// grayman #2345 - original code that didn't work
 
-		if (p_binaryFrobMover != NULL)
-		{
-		// TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
-		// the current position to where it is winding up, so the AI knows to stay clear
-		//
-
-		// This isn't working due to rotation problem
-
-			// Get remaining movement
-			idVec3 deltaPosition;
-			idAngles deltaAngles;
-			idRotation rotation;
-			idBox moveBox;
-
-			p_binaryFrobMover->getRemainingMovement(deltaPosition, deltaAngles);
-
-			// Make translated version of self and add to bounds
-
-			moveBox = box.Translate (deltaPosition);
-			box.AddBox (moveBox);
-
-			rotation = deltaAngles.ToRotation();
-			rotation.SetOrigin (p_binaryFrobMover->GetPhysics()->GetOrigin());
-
-			// Now both rotate and translate
-			moveBox.TranslateSelf (deltaPosition);
-			box.AddBox (moveBox);
-		}
-*/
 		// project the box containing the obstacle onto the floor plane
 		int numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
 
@@ -640,6 +656,27 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		obstacle.winding.ExpandForAxialBox( expBounds );
 		obstacle.winding.GetBounds( obstacle.bounds );
 		obstacle.entity = obEnt;
+	
+		// grayman #2712 - treat a 'closed' door box as a separate item so the door's recognized
+		// later when the AI is told to handle it.
+
+		if (openDoorFound)
+		{
+			// project the box containing the obstacle onto the floor plane
+			int numVerts = boxClosed.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
+
+			// create a 2D winding for the obstacle;
+			obstacle_t& obstacle2 = obstacles[numObstacles++];
+			obstacle2.winding.Clear();
+			for ( int j = 0; j < numVerts; j++ ) {
+				obstacle2.winding.AddPoint( silVerts[j].ToVec2() );
+			}
+
+			// expand the 2D winding for collision with a 2D box
+			obstacle2.winding.ExpandForAxialBox( expBounds );
+			obstacle2.winding.GetBounds( obstacle.bounds );
+			obstacle2.entity = obEnt;
+		}
 	}
 
 	// grayman #2345 - if I encountered no actors on this pass, reset my m_pathRank to my rank
@@ -1023,7 +1060,6 @@ void PrunePathTree( pathNode_t *root, const idVec2 &seekPos ) {
 
 	node = root;
 	while( node ) {
-
 		node->dist = ( seekPos - node->pos ).LengthSqr();
 
 		if ( node->children[0] ) {
@@ -1078,7 +1114,6 @@ int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obst
 	numPathPoints = 1;
 
 	for ( nextNode = curNode = root; curNode != leafNode; curNode = nextNode ) {
-
 		for ( nextNode = leafNode; nextNode->parent != curNode; nextNode = nextNode->parent ) {
 
 			// can only take shortcuts when going from one object to another
@@ -1172,7 +1207,6 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 	node = root;
 
 	while( node ) {
-
 		pathToGoalExists |= ( node->dist < 0.1f );
 
 		if ( node->dist <= bestNode->dist ) {
@@ -1182,6 +1216,8 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 				if ( !optimizedPathCalculated ) {
 					bestNumPathPoints = OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 					bestPathLength = PathLength( optimizedPath, bestNumPathPoints, curDir.ToVec2() );
+					// grayman - A series of path points has been examined and the first one to head to is in
+					// optimizedPath[1]. But if bestNumPathPoints == 1 here, then optimizedPath[1] contains garbage. Does it matter?
 					seekPos.ToVec2() = optimizedPath[1];
 				}
 
@@ -1305,6 +1341,9 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	START_TIMING(owner->actorBuildPathTreeTimer);
 	// build a path tree
 	pathNode_t* root = BuildPathTree(physics, obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path ); // grayman #2345 - added 'physics'
+	
+//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
+	
 	STOP_TIMING(owner->actorBuildPathTreeTimer);
 
 	// draw the path tree
@@ -1316,6 +1355,7 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	START_TIMING(owner->actorPrunePathTreeTimer);
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 	STOP_TIMING(owner->actorPrunePathTreeTimer);
+//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
 
 	// find the optimal path
 	START_TIMING(owner->actorFindOptimalPathTimer);
