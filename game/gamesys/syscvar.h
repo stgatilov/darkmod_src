@@ -74,6 +74,7 @@ extern idCVar cv_ai_show_aasfuncobstacle_state;
 
 extern idCVar cv_interaction_vfp_type;
 extern idCVar cv_tdm_widescreenmode;
+extern idCVar cv_tdm_menu_music;
 
 extern idCVar cv_tdm_show_trainer_messages;
 
