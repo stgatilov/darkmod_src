@@ -330,6 +330,9 @@ public:
 	// TRUE when the AI is currently trying to resolve a block
 	bool resolvingMovementBlock;
 
+	// grayman #2712 - last door handled
+	idEntityPtr<CFrobDoor> lastDoorHandled;
+
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;
 	// This maps AAS area numbers to door info structures

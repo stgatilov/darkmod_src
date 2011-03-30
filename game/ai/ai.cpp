@@ -4779,32 +4779,42 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		}
 #endif
 	}
-	// We found a path around obstacles, but we should still check for the seekPosObstacle
-	else if (path.seekPosObstacle)
+	else
 	{
-/*		gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
-												  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
-												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);
- */
-
-		// greebo: Check if we have a frobdoor entity at our seek position
-		if (path.seekPosObstacle->IsType(CFrobDoor::Type)) 
+		// We found a path around obstacles
+		if (path.doorObstacle != NULL) // grayman #2712 - do we have to handle a door?
 		{
 			// We have a frobmover in our way, raise a signal to the current state
-			mind->GetState()->OnFrobDoorEncounter(static_cast<CFrobDoor*>(path.seekPosObstacle));
+			mind->GetState()->OnFrobDoorEncounter(path.doorObstacle);
 		}
 
-		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
-		// then we want to push the path.seekPosObstacle entity out of the way
-		AI_OBSTACLE_IN_PATH = true;
-
-		// check if we're past where the goalPos was pushed out of the obstacle
-		idVec3 dir = goalPos - origin;
-		dir.NormalizeFast();
-		float dist = (path.seekPos - origin) * dir;
-		if (dist < 1.0f)
+		// still check for the seekPosObstacle
+		if (path.seekPosObstacle)
 		{
-			obstacle = path.seekPosObstacle;
+	/*		gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
+													  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
+													  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);
+	 */
+
+			// greebo: Check if we have a frobdoor entity at our seek position
+			if (path.seekPosObstacle->IsType(CFrobDoor::Type)) 
+			{
+				// We have a frobmover in our way, raise a signal to the current state
+				mind->GetState()->OnFrobDoorEncounter(static_cast<CFrobDoor*>(path.seekPosObstacle));
+			}
+
+			// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
+			// then we want to push the path.seekPosObstacle entity out of the way
+			AI_OBSTACLE_IN_PATH = true;
+
+			// check if we're past where the goalPos was pushed out of the obstacle
+			idVec3 dir = goalPos - origin;
+			dir.NormalizeFast();
+			float dist = (path.seekPos - origin) * dir;
+			if (dist < 1.0f)
+			{
+				obstacle = path.seekPosObstacle;
+			}
 		}
 	}
 
@@ -4874,7 +4884,7 @@ bool idAI::CanPassThroughDoor(CFrobDoor* frobDoor)
 	// grayman #2691 - can't pass through doors that don't rotate on the z-axis
 
 	idVec3 rotationAxis = frobDoor->GetRotationAxis();
-	if (rotationAxis.z == 0)
+	if ((rotationAxis.z == 0) && ((rotationAxis.x != 0) || (rotationAxis.y != 0))) // grayman #2712 - handles sliding doors
 	{
 		return false;
 	}
