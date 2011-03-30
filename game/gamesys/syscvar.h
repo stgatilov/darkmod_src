@@ -172,6 +172,7 @@ extern idCVar cv_pm_climb_distance;
 extern idCVar cv_ai_search_show;
 
 extern idCVar cv_force_savegame_load;
+extern idCVar cv_savegame_compress;
 
 // angua: TDM toggle crouch
 extern idCVar cv_tdm_crouch_toggle;

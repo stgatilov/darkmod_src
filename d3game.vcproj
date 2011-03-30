@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
 	RootNamespace="Game"
@@ -2147,6 +2147,14 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\PVSToAASMapping.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RawVector.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RawVector.h"
 					>
 				</File>
 				<File

@@ -766,8 +766,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		f->ForceFlush();
 	}
 
-	savegame.WriteBuildNumber( BUILD_NUMBER );
-	savegame.WriteCodeRevision();
+	savegame.WriteHeader();
 
 	// go through all entities and threads and add them to the object list
 	for (i = 0; i < MAX_GENTITIES; i++)
@@ -1035,6 +1034,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
+
+	// save all accumulated cache to file
+	savegame.FinalizeCache();
 
 	// Send a message to the HUD
 	GetLocalPlayer()->SendHUDMessage("Game Saved");
@@ -1792,14 +1794,16 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	idRestoreGame savegame( saveGameFile );
 
-	savegame.ReadBuildNumber();
-	savegame.ReadCodeRevision();
+	savegame.ReadHeader();
 
 	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
 	{
 		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n.", savegame.GetCodeRevision());
 		return false;
 	}
+
+	// Read and initialize  cache from file
+	savegame.InitializeCache();
 
 	// Create the list of all objects in the game
 	savegame.CreateObjects();
