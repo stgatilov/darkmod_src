@@ -2273,6 +2273,15 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
+	// grayman #2716 - if the door is too high above or too far below, ignore it
+
+	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
+	float ownerZ = owner->GetPhysics()->GetOrigin().z;
+	if ((frobDoorBounds[0].z > (ownerZ + 70)) || (frobDoorBounds[1].z < (ownerZ - 30)))
+	{
+		return;
+	}
+
 	if (cv_ai_door_show.GetBool()) 
 	{
 		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 16);

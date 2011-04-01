@@ -616,7 +616,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 			if (p_binaryFrobMover->IsType(CFrobDoor::Type))
 			{
-				if (selfAI->m_bCanOperateDoors) // grayman #2691 grayman debug 2
+				if (selfAI->m_bCanOperateDoors) // grayman #2691
 				{
 					if (p_binaryFrobMover->IsOpen())
 					{
