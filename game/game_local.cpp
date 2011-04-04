@@ -26,6 +26,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Misc.h"
 #include "../DarkMod/Grabber.h"
 #include "../DarkMod/Relations.h"
+#include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/sndProp.h"
 #include "ai/aas_local.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
@@ -325,6 +326,8 @@ void idGameLocal::Clear( void )
 	sortPushers = false;
 	sortTeamMasters = false;
 	persistentLevelInfo.Clear();
+	persistentPlayerInventory.reset();
+
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
 	world = NULL;
@@ -543,6 +546,9 @@ void idGameLocal::Init( void ) {
 	// Initialise the light controller
 	m_LightController = CLightControllerPtr(new CLightController);
 	m_LightController->Init();
+
+	// greebo: Create the persistent inventory - will be handled by game state changing code
+	persistentPlayerInventory.reset(new CInventory);
 
 	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
@@ -891,6 +897,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( sortPushers );
 	savegame.WriteBool( sortTeamMasters );
 	savegame.WriteDict( &persistentLevelInfo );
+
+	persistentPlayerInventory->Save(&savegame);
 	
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
@@ -1951,6 +1959,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( sortPushers );
 	savegame.ReadBool( sortTeamMasters );
 	savegame.ReadDict( &persistentLevelInfo );
+
+	persistentPlayerInventory->Restore(&savegame);
 
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.ReadFloat( globalShaderParms[ i ] );

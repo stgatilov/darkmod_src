@@ -963,6 +963,8 @@ protected:
 	*/
 	void SetupInventory();
 
+	void AddPersistentInventoryItems();
+
 	// greebo: Methods used to manage the GUI layer for the in-game objectives
 	void CreateObjectivesGUI();
 	void DestroyObjectivesGUI();

@@ -62,15 +62,62 @@ int	CInventory::GetNumCategories() const
 	return m_Category.Num();
 }
 
-int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
+void CInventory::CopyTo(CInventory& targetInventory)
 {
-	int i;
+	// Iterate over all categories to copy stuff
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
 
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Copying item %s to inventory.\r", item->GetName().c_str());
+
+			// Add this item to the target inventory
+			targetInventory.PutItem(item, item->Category()->GetName());
+		}
+	}
+}
+
+void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory)
+{
+	// Cycle through all categories to add them
+	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = sourceInventory.GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			if (item->GetPersistentCount() <= 0)
+			{
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+					"Item %s is not marked as persistent, won't add to player inventory.\r",
+					item->GetName().c_str());
+
+				continue; // not marked as persistent
+			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+				"Adding persistent item %s to player inventory, quantity: %d.\r",
+				item->GetName().c_str(), item->GetPersistentCount());
+
+			// Add this item to our inventory
+			PutItem(item, item->Category()->GetName());
+		}
+	}
+}
+
+int CInventory::GetLoot(int& Gold, int& Jewelry, int& Goods)
+{
 	Gold = 0;
 	Jewelry = 0;
 	Goods = 0;
 
-	for(i = 0; i < m_Category.Num(); i++)
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
 		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 	}
@@ -250,7 +297,7 @@ CInventoryCategoryPtr CInventory::GetCategory(const idStr& categoryName, int* in
 	return CInventoryCategoryPtr(); // not found
 }
 
-CInventoryCategoryPtr CInventory::GetCategory(int index)
+CInventoryCategoryPtr CInventory::GetCategory(int index) const
 {
 	// return NULL for invalid indices
 	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : CInventoryCategoryPtr();

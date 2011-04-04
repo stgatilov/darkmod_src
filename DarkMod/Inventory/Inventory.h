@@ -102,7 +102,7 @@ public:
 	 *
 	 * @returns: NULL, if the category with the given index was not found.
 	 */
-	CInventoryCategoryPtr	GetCategory(int index);
+	CInventoryCategoryPtr	GetCategory(int index) const;
 
 	/**
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
@@ -130,12 +130,13 @@ public:
 	/**
 	 * Put an item in the inventory. Use the default group if none is specified.
 	 * The name, that is to be displayed on a GUI, must be set on the respective
-	 * entity.
+	 * entity. Non-existent categories will be created, provided the specified name
+	 * is not empty.
 	 *
 	 * greebo: This routine basically checks all the spawnargs, determines the 
-	 *         inventory category, the properties like "droppable" and such.
-	 *         If the according spawnarg is set, the entity is removed from the map.
-	 *         This can either mean "hide" or "delete", depending on the stackable property.
+	 * inventory category, the properties like "droppable" and such.
+	 * If the according spawnarg is set, the entity is removed from the map.
+	 * This can either mean "hide" or "delete", depending on the stackable property.
 	 */
 	CInventoryItemPtr		PutItem(idEntity *Item, idEntity *Owner);
 	void					PutItem(const CInventoryItemPtr& item, const idStr& category);
@@ -187,6 +188,20 @@ public:
 	 * greebo: Returns the number of categories in this inventory.
 	 */
 	int						GetNumCategories() const;
+
+	/**
+	 * greebo: Copies all inventory items from this inventory to the given targetInventory.
+	 * Items are copied by reference (they are handled via smart pointers), so no actual
+	 * item instances need to be copy-constructed. The categories in the target inventory
+	 * will be created on-demand during copying.
+	 */
+	void					CopyTo(CInventory& targetInventory);
+
+	/**
+	 * greebo: Copies all inventory items from the given sourceInventory that are marked
+	 * as persistent (i.e. have GetPersistentCount() > 0). No items are deleted from the source.
+	 */
+	void					CopyPersistentItemsFrom(const CInventory& sourceInventory);
 
 private:
 

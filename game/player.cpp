@@ -1377,8 +1377,19 @@ void idPlayer::SetupInventory()
 			}
 		}
 	}
+
+	// Carry over persistent items from the previous map
+	AddPersistentInventoryItems();
 }
 
+void idPlayer::AddPersistentInventoryItems()
+{
+	// Copy all persistent items into our own inventory
+	Inventory()->CopyPersistentItemsFrom(*gameLocal.persistentPlayerInventory);
+
+	// Finally clear the persistent inventory, it has run its course
+	gameLocal.persistentPlayerInventory->Clear();
+}
 
 /*
 ==============
@@ -11050,6 +11061,9 @@ void idPlayer::Event_Unpausegame()
 
 void idPlayer::Event_MissionSuccess()
 {
+	// Save current inventory into the persistent one
+	Inventory()->CopyTo(*gameLocal.persistentPlayerInventory);
+	
 	// Set the gamestate
 	gameLocal.SetMissionResult(MISSION_COMPLETE);
 	gameLocal.sessionCommand = "disconnect";
