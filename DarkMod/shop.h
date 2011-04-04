@@ -216,8 +216,9 @@ private:
 	// grayman - Provides max_ammo value
 	int GetMaxAmmo(const idStr& weaponName);
 
+	// Adds the gold from the previous mission
+	void AddGoldFromPreviousMission();
 };
-
 
 #endif	/* !__SHOP_H__ */
 

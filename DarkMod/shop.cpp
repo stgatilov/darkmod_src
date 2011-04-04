@@ -942,16 +942,20 @@ void CShop::DisplayShop(idUserInterface *gui)
 
 	// grayman (#2376) add "inv_map_start" items to the shop's list of starting items,
 	// then check for lockpick duplications.
-
 	AddMapItems(mapFile);
+
 	if (pickSetShop)
 	{
 		CheckPicks(itemsForSale);
 	}
+
 	if (pickSetStarting)
 	{
 		CheckPicks(startingItems);
 	}
+
+	// greebo: Update the amount of gold to spend based on the loot the player found earlier
+	AddGoldFromPreviousMission();
 
 	UpdateGUI(gui);
 }
@@ -996,7 +1000,8 @@ CShopItemPtr CShop::FindStartingItemByID(const char *id)
 	return FindByID(startingItems, id);
 }
 
-CShopItemPtr CShop::FindForSaleByID(const char *id) {
+CShopItemPtr CShop::FindForSaleByID(const char *id)
+{
 	return FindByID(itemsForSale, id);
 }
 
@@ -1045,6 +1050,7 @@ void CShop::BuyItem(int index)
 void CShop::DropUndropItem(int index)
 {
 	const CShopItemPtr& dropItem = startingItems[startingTop + index];
+
 	if (dropItem->GetDroppedCount() > 0)
 	{
 		dropItem->Undrop();
@@ -1071,9 +1077,6 @@ int CShop::GetGold()
 	return this->gold;
 };
 
-/**
- * Update the GUI variables. This will change when we get the real GUI.
- */
 void CShop::UpdateGUI(idUserInterface* gui)
 {
 	gui->SetStateInt("gold", gold);
@@ -1198,6 +1201,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 	gui->SetStateInt("boughtItem", -1);
 	gui->SetStateInt("soldItem", -1);
 	gui->SetStateInt("dropItem", -1);
-
 }
 
+void CShop::AddGoldFromPreviousMission()
+{
+	// TODO
+}
