@@ -198,6 +198,8 @@ class CRelations;
 typedef boost::shared_ptr<CRelations> CRelationsPtr;
 class CMissionData;
 typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
+class CampaignStats;
+typedef boost::shared_ptr<CampaignStats> CampaignStatsPtr;
 class CStimResponse;
 typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
 class CStim;
@@ -593,6 +595,9 @@ public:
 	**/
 	CMissionDataPtr			m_MissionData;
 	EMissionResult			m_MissionResult; // holds the global mission state
+
+	// Campaign statistics
+	CampaignStatsPtr		m_CampaignStats;
 
 	/**
 	* Pointer to global sound prop loader object

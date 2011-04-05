@@ -11064,6 +11064,8 @@ void idPlayer::Event_MissionSuccess()
 	// Clear the persistent inventory, it might have old data from the previous mission
 	gameLocal.persistentPlayerInventory->Clear();
 
+	// Save loot info
+
 	// Save current inventory into the persistent one
 	Inventory()->CopyTo(*gameLocal.persistentPlayerInventory);
 	

@@ -181,8 +181,7 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 CMissionData::CMissionData() :
 	m_MissionDataLoadedIntoGUI(false),
 	m_mapFile(NULL),
-	m_PlayerTeam(0),
-	m_TotalGamePlayTime(0)
+	m_PlayerTeam(0)
 {
 	Clear();
 
@@ -241,75 +240,47 @@ void CMissionData::Clear( void )
 	}
 }
 
-void CMissionData::Save( idSaveGame *savefile ) const
+void CMissionData::Save(idSaveGame* savefile) const
 {
 	savefile->WriteInt(m_PlayerTeam);
-	savefile->WriteUnsignedInt(m_TotalGamePlayTime);
-	savefile->WriteBool( m_bObjsNeedUpdate );
+	savefile->WriteBool(m_bObjsNeedUpdate);
 	
-	savefile->WriteInt( m_Objectives.Num() );
-	for( int i=0; i < m_Objectives.Num(); i++ )
-		m_Objectives[i].Save( savefile );
-
-	// Save mission stats
-	for( int j=0; j < MAX_AICOMP; j++ )
+	savefile->WriteInt(m_Objectives.Num());
+	for (int i = 0; i < m_Objectives.Num(); i++)
 	{
-		savefile->WriteInt( m_Stats.AIStats[j].Overall );
-		savefile->WriteInt( m_Stats.AIStats[j].WhileAirborne );
-		for( int k1=0; k1 < MAX_TEAMS; k1++ )
-			savefile->WriteInt( m_Stats.AIStats[j].ByTeam[k1] );
-		for( int k2=0; k2 < MAX_TYPES; k2++ )
-			savefile->WriteInt( m_Stats.AIStats[j].ByType[k2] );
-		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[0] );
-		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[1] );
+		m_Objectives[i].Save(savefile);
 	}
 
-	for( int l=0; l < MAX_ALERTLEVELS; l++ )
-	{
-		savefile->WriteInt( m_Stats.AIAlerts[l].Overall );
-		savefile->WriteInt( m_Stats.AIAlerts[l].WhileAirborne );
-		for( int m1=0; m1 < MAX_TEAMS; m1++ )
-			savefile->WriteInt( m_Stats.AIAlerts[l].ByTeam[m1] );
-		for( int m2=0; m2 < MAX_TYPES; m2++ )
-			savefile->WriteInt( m_Stats.AIAlerts[l].ByType[m2] );
-		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[0] );
-		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[1] );
-	}
+	m_Stats.Save(savefile);
 
-	savefile->WriteInt( m_Stats.DamageDealt );
-	savefile->WriteInt( m_Stats.DamageReceived );
-	savefile->WriteInt( m_Stats.PocketsPicked );
-	savefile->WriteInt( m_Stats.FoundLoot );
-	savefile->WriteInt( m_Stats.TotalLootInMission );
-
-	savefile->WriteString( m_SuccessLogicStr );
-	savefile->WriteString( m_FailureLogicStr );
+	savefile->WriteString(m_SuccessLogicStr);
+	savefile->WriteString(m_FailureLogicStr);
 }
 
-void CMissionData::Restore( idRestoreGame *savefile )
+void CMissionData::Restore(idRestoreGame* savefile)
 {
 	int num(0);
 
 	m_mapFile = NULL;
 
 	savefile->ReadInt(m_PlayerTeam);
-	savefile->ReadUnsignedInt(m_TotalGamePlayTime);
 	savefile->ReadBool( m_bObjsNeedUpdate );
 	
-	savefile->ReadInt( num );
-	m_Objectives.SetNum( num );
-	for( int i=0; i < num; i++ )
+	savefile->ReadInt(num);
+	m_Objectives.SetNum(num);
+	for (int i = 0; i < num; i++)
 	{
-		m_Objectives[i].Restore( savefile );
+		m_Objectives[i].Restore(savefile);
 	}
 
 	// Rebuild list of clocked components now that we've loaded objectives
 	m_ClockedComponents.Clear();
-	for( int ind = 0; ind < m_Objectives.Num(); ind++ )
+	for (int ind = 0; ind < m_Objectives.Num(); ind++)
 	{
-		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
+		for (int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++)
 		{
 			CObjectiveComponent& comp = m_Objectives[ind].m_Components[ind2];
+
 			if (comp.m_Type == COMP_CUSTOM_CLOCKED || comp.m_Type == COMP_DISTANCE || comp.m_Type == COMP_INFO_LOCATION)
 			{
 				m_ClockedComponents.Append( &comp );
@@ -317,39 +288,10 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		}
 	}
 
-	// Restore mission stats
-	for( int j=0; j < MAX_AICOMP; j++ )
-	{
-		savefile->ReadInt( m_Stats.AIStats[j].Overall );
-		savefile->ReadInt( m_Stats.AIStats[j].WhileAirborne );
-		for( int k1=0; k1 < MAX_TEAMS; k1++ )
-			savefile->ReadInt( m_Stats.AIStats[j].ByTeam[k1] );
-		for( int k2=0; k2 < MAX_TYPES; k2++ )
-			savefile->ReadInt( m_Stats.AIStats[j].ByType[k2] );
-		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[0] );
-		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[1] );
-	}
+	m_Stats.Restore(savefile);
 
-	for( int l=0; l < MAX_ALERTLEVELS; l++ )
-	{
-		savefile->ReadInt( m_Stats.AIAlerts[l].Overall );
-		savefile->ReadInt( m_Stats.AIAlerts[l].WhileAirborne );
-		for( int m1=0; m1 < MAX_TEAMS; m1++ )
-			savefile->ReadInt( m_Stats.AIAlerts[l].ByTeam[m1] );
-		for( int m2=0; m2 < MAX_TYPES; m2++ )
-			savefile->ReadInt( m_Stats.AIAlerts[l].ByType[m2] );
-		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[0] );
-		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[1] );
-	}	
-
-	savefile->ReadInt( m_Stats.DamageDealt );
-	savefile->ReadInt( m_Stats.DamageReceived );
-	savefile->ReadInt( m_Stats.PocketsPicked );
-	savefile->ReadInt( m_Stats.FoundLoot );
-	savefile->ReadInt( m_Stats.TotalLootInMission );
-
-	savefile->ReadString( m_SuccessLogicStr );
-	savefile->ReadString( m_FailureLogicStr );
+	savefile->ReadString(m_SuccessLogicStr);
+	savefile->ReadString(m_FailureLogicStr);
 
 	// re-parse the logic strings
 	ParseLogicStrs();
@@ -1001,10 +943,14 @@ void CMissionData::Event_MissionComplete()
 	// Fire the general mission end event
 	Event_MissionEnd();
 
-	// TODO: Read off which map to go to next, basically call endLevel
-
 	// greebo: Stop the gameplay timer, we've completed all objectives
-	m_TotalGamePlayTime = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
+	m_Stats.TotalGamePlayTime = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
+
+	// Copy our current mission statistics to the correct slot of the campaign statistics
+	int curMission = gameLocal.m_MissionManager->GetCurrentMissionIndex();
+
+	CampaignStats& campaignStats = *gameLocal.m_CampaignStats;
+	campaignStats[curMission] = m_Stats;
 	
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
@@ -2628,7 +2574,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr postfix("");
 
 	key = "                                            Time";
-	value = idStr(GamePlayTimer::TimeToStr(m_TotalGamePlayTime));
+	value = idStr(GamePlayTimer::TimeToStr(m_Stats.TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line

@@ -505,6 +505,7 @@ void idGameLocal::Init( void ) {
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 
 	m_MissionData = CMissionDataPtr(new CMissionData);
+	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
 	m_RelationsManager = CRelationsPtr(new CRelations);
 	m_ModMenu = CModMenuPtr(new CModMenu);
 	m_DownloadMenu = CDownloadMenuPtr(new CDownloadMenu);
@@ -672,6 +673,7 @@ void idGameLocal::Shutdown( void ) {
 	// greebo: De-allocate the missiondata singleton, this is not 
 	// done in MapShutdown() (needed for mission statistics)
 	m_MissionData.reset();
+	m_CampaignStats.reset();
 
 	// Destroy the conversation system
 	m_ConversationSystem.reset();
@@ -998,6 +1000,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_sndProp->Save(&savegame);
 	m_MissionData->Save(&savegame);
 	savegame.WriteInt(static_cast<int>(m_MissionResult));
+
+	m_CampaignStats->Save(&savegame);
 
 	savegame.WriteInt(m_HighestSRId);
 
@@ -1717,10 +1721,12 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
 	m_MissionData->Clear();
 
-	// Clear the persistent inventory if starting a new campaign
+	// Clear the persistent data if starting a new campaign
 	if (m_MissionManager->CurrentModIsCampaign() && m_MissionManager->GetCurrentMissionIndex() == 0)
 	{
-		gameLocal.persistentPlayerInventory->Clear();
+		persistentPlayerInventory->Clear();
+		persistentLevelInfo.Clear();
+		m_CampaignStats.reset(new CampaignStats);
 	}
 
 	Printf( "----------- Game Map Init ------------\n" );
@@ -2081,6 +2087,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	int missResult;
 	savegame.ReadInt(missResult);
 	m_MissionResult = static_cast<EMissionResult>(missResult);
+
+	m_CampaignStats->Restore(&savegame);
 
 	savegame.ReadInt(m_HighestSRId);
 

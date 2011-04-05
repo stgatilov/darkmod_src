@@ -22,25 +22,20 @@
 #include "../idlib/precompiled.h"
 #include "DarkModGlobals.h"
 #include <boost/shared_ptr.hpp>
-
-// Maximum array sizes:
-#define MAX_TEAMS 64
-#define MAX_TYPES 16
-#define MAX_AICOMP 16
-#define MAX_ALERTLEVELS 16
+#include "MissionStatistics.h"
 
 /**
-* Objective completion states
-**/
-typedef enum
+ * Objective completion states
+ * NOTE: STATE_INVALID may also be used for initially deactivating objectives, 
+ * then activating later by setting STATE_INCOMPLETE
+ **/
+enum EObjCompletionState
 {
 	STATE_INCOMPLETE,
 	STATE_COMPLETE,
 	STATE_INVALID, 
 	STATE_FAILED
-} EObjCompletionState;
-// NOTE: STATE_INVALID may also be used for initially deactivating objectives, 
-// then activating later by setting STATE_INCOMPLETE
+};
 
 #include "EMissionResult.h"
 
@@ -65,7 +60,7 @@ enum EMissionEventType
 /**
 * Objective component specification types
 **/
-typedef enum
+enum ESpecificationMethod
 {
 // The following apply to both AIs and items
 	SPEC_NONE,
@@ -80,7 +75,7 @@ typedef enum
 	SPEC_AI_TEAM,
 	SPEC_AI_INNOCENCE,
 	SPEC_COUNT					// Dummy entry should not be used for anything
-} ESpecificationMethod;
+};
 
 /**
 * Objective component action types
@@ -117,7 +112,7 @@ enum EComponentType
 };
 
 // TODO: move to game_local.h?
-typedef struct SObjEntParms_s
+struct SObjEntParms
 {
 	idStr	name;
 	idStr	group; // inventory group for items, e.g., loot group "gems"
@@ -126,23 +121,30 @@ typedef struct SObjEntParms_s
 
 	idVec3	origin;
 
-// AI data:
+	// AI data:
 	int		team;
 	int		type;
 	int		innocence;
 
-/**
-* Numerical value, filled by callbacks in some cases for things that are kept
-* track of externally (for example, number of inventory items, overall loot, etc)
-**/
+	/**
+	* Numerical value, filled by callbacks in some cases for things that are kept
+	* track of externally (for example, number of inventory items, overall loot, etc)
+	**/
 	int value; // should default to 1
 	int valueSuperGroup; // Just used to pass overall loot for now
 
 	bool bIsAI;
 	bool bWhileAirborne; // a must-have :)
 
-	SObjEntParms_s( void ) { Clear(); }
-	~SObjEntParms_s( void ) { Clear(); }
+	SObjEntParms()
+	{ 
+		Clear();
+	}
+
+	~SObjEntParms()
+	{ 
+		Clear();
+	}
 
 	/**
 	* Initialize the struct to default values
@@ -164,20 +166,20 @@ typedef struct SObjEntParms_s
 		bIsAI = false;
 		bWhileAirborne = false;
 	}
-} SObjEntParms;
+};
 
 /**
 * Structure for parsing boolean logic
 **/
-typedef struct SBoolParseNode_s
+struct SBoolParseNode
 {
 	int Ident;
 	bool bNotted; // set to true if this node is NOTed
 
-	idList< idList< SBoolParseNode_s > > Cols; // list of columns, each can contain a different number of rows
+	idList< idList< SBoolParseNode > > Cols; // list of columns, each can contain a different number of rows
 
 	// Link back to previous node this one branched off from
-	SBoolParseNode_s *PrevNode;
+	SBoolParseNode* PrevNode;
 
 	// matrix coordinates of this node within the matrix of the previous node
 	int PrevCol; 
@@ -185,9 +187,20 @@ typedef struct SBoolParseNode_s
 
 	// Functions:
 
-	SBoolParseNode_s( void ) { Clear(); }
-	~SBoolParseNode_s( void ) { Clear(); }
-	bool IsEmpty( void ) { return (Cols.Num() == 0 && Ident == -1); }
+	SBoolParseNode()
+	{ 
+		Clear();
+	}
+
+	~SBoolParseNode()
+	{
+		Clear();
+	}
+
+	bool IsEmpty() const
+	{ 
+		return (Cols.Num() == 0 && Ident == -1);
+	}
 
 	/**
 	* Clear the parse node
@@ -202,7 +215,7 @@ typedef struct SBoolParseNode_s
 		Cols.Clear();
 		PrevNode = NULL;
 	}
-} SBoolParseNode;
+};
 
 class CObjectiveComponent
 {
@@ -424,87 +437,6 @@ protected:
 	**/
 	SBoolParseNode m_SuccessLogic;
 	SBoolParseNode m_FailureLogic;
-};
-
-struct SStat
-{
-	int Overall;
-	int ByTeam[ MAX_TEAMS ];
-	int ByType[ MAX_TYPES ];
-	int ByInnocence[2];
-	int WhileAirborne;
-
-	SStat() 
-	{
-		Clear();
-	}
-
-	void Clear() 
-	{
-		Overall = 0;
-
-		for (int i = 0; i < MAX_TEAMS; i++)
-		{
-			ByTeam[i] = 0;
-		}
-
-		for (int i = 0; i < MAX_TYPES; i++)
-		{
-			ByType[i] = 0;
-		}
-
-		ByInnocence[0] = 0;
-		ByInnocence[1] = 0;
-		WhileAirborne = 0;
-	}
-};
-
-/**
-* Mission stats: Keep track of everything except for loot groups, which are tracked by the inventory
-**/
-struct SMissionStats
-{
-	// AI Stats:
-	SStat AIStats[ MAX_AICOMP ];
-	
-	SStat AIAlerts[ MAX_ALERTLEVELS ];
-
-	int DamageDealt;
-	int DamageReceived;
-	int HealthReceived;
-	int PocketsPicked;
-
-	// Item stats are handled by the inventory, not here, 
-	// Might need this for copying over to career stats though
-	int FoundLoot;
-
-	// greebo: This is the available amount of loot in the mission
-	int TotalLootInMission;
-
-	SMissionStats() 
-	{
-		Clear();
-	}
-
-	void Clear()
-	{
-		for (int i = 0; i < MAX_AICOMP; i++)
-		{
-			AIStats[i].Clear();
-		}
-
-		for (int i = 0; i < MAX_ALERTLEVELS; i++)
-		{
-			AIAlerts[i].Clear();
-		}
-
-		DamageDealt = 0;
-		DamageReceived = 0;
-		HealthReceived = 0;
-		PocketsPicked = 0;
-		FoundLoot = 0;
-		TotalLootInMission = 0;
-	}
 };
 
 /**
@@ -883,7 +815,6 @@ protected:
 	/**
 	* Object holding all mission stats relating to AI, damage to player and AI
 	* Loot stats are maintained by the inventory
-	* TODO: Also put in a persistent stats object 
 	**/
 	SMissionStats m_Stats;
 
@@ -915,10 +846,6 @@ protected:
 
 	// The team number of the player, needed for the statistics GUI
 	int			m_PlayerTeam;
-
-	// This gets read out right at "mission complete" time, is 0 before
-	unsigned int	m_TotalGamePlayTime;
-
 }; // CMissionData
 typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
 

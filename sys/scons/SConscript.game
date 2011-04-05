@@ -148,6 +148,7 @@ liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
 MissionData.cpp \
+MissionStatistics.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
