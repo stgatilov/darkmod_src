@@ -111,6 +111,45 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory)
 	}
 }
 
+void CInventory::SaveItemEntities(bool persistentOnly)
+{
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			if (persistentOnly && item->GetPersistentCount() <= 0)
+			{
+				continue; // skip non-persistent items
+			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Saving item entity of item %s.\r", item->GetName().c_str());
+
+			item->SaveItemEntityDict();
+		}
+	}
+}
+
+void CInventory::RestoreItemEntities(const idVec3& entPosition)
+{
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item entity of item %s.\r", item->GetName().c_str());
+
+			item->RestoreItemEntityFromDict(entPosition);
+		}
+	}
+}
+
 int CInventory::GetLoot(int& Gold, int& Jewelry, int& Goods)
 {
 	Gold = 0;
@@ -540,7 +579,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	return returnValue;
 }
 
-void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
+void CInventory::RemoveEntityFromMap(idEntity* ent, bool deleteEntity)
 {
 	if (ent == NULL) return;
 
@@ -555,7 +594,7 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
-	if (bDelete == true)
+	if (deleteEntity == true)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Deleting entity from game: %s...\r", ent->name.c_str());
 		ent->PostEventMS(&EV_Remove, 0);

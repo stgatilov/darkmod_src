@@ -18,7 +18,8 @@ class CInventoryCategory;
 class CInventoryItem
 {
 public:
-	typedef enum {
+	enum ItemType
+	{
 		IT_ITEM,			// Normal item, which is associated to an entity
 		IT_LOOT,			// this is a loot item
 		IT_LOOT_INFO,		// loot info item
@@ -26,15 +27,16 @@ public:
 		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
 							// we can have an empty space in the inventory.
 		IT_COUNT
-	} ItemType;
+	};
 
-	typedef enum {
+	enum LootType
+	{
 		LT_NONE,			// No lootobject
 		LT_JEWELS,
 		LT_GOLD,
 		LT_GOODS,
 		LT_COUNT		// dummy
-	} LootType;
+	};
 
 public:
 	CInventoryItem(idEntity *m_Owner);
@@ -53,6 +55,15 @@ public:
 
 	void					SetItemEntity(idEntity *ent) { m_Item = ent; };
 	idEntity*				GetItemEntity() { return m_Item.GetEntity(); }
+
+	// Stores the item entity's spawnargs locally - used before ending a mission to prepare an item/entity transfer
+	// Does nothing if the item entity is NULL
+	void					SaveItemEntityDict();
+
+	// Restores the item entity from the saved dictionary. Does nothing if the saved dictionary is empty.
+	// The position is needed to place the respawned entity somewhere valid
+	void					RestoreItemEntityFromDict(const idVec3& entPosition);
+
 	void					SetType(CInventoryItem::ItemType type) { m_Type = type; };
 	ItemType				GetType() { return m_Type; };
 
@@ -142,6 +153,12 @@ protected:
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
+
+	// greebo: Optional item dictionary. This is used to transfer inventory items between missions
+	// including their item entities. These entities will be saved at mission end and re-spawned at the 
+	// start of the next mission.
+	boost::shared_ptr<idDict> m_ItemDict;
+
 	idEntityPtr<idEntity>	m_BindMaster;
 	idStr					m_Name;
 	idStr					m_HudName;		// filename for the hud file if it has a custom hud

@@ -15,6 +15,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Item.h"
+#include "Inventory.h"
 #include <algorithm>
 
 CInventoryItem::CInventoryItem(idEntity *owner)
@@ -119,6 +120,14 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 {
 	m_Owner.Save(savefile);
 	m_Item.Save(savefile);
+
+	savefile->WriteBool(m_ItemDict != NULL);
+
+	if (m_ItemDict != NULL)
+	{
+		savefile->WriteDict(m_ItemDict.get());
+	}
+
 	m_BindMaster.Save(savefile);
 
 	savefile->WriteString(m_Name);
@@ -150,16 +159,29 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
 {
-	int tempInt;
-
 	m_Owner.Restore(savefile);
 	m_Item.Restore(savefile);
+
+	bool hasDict;
+	savefile->ReadBool(hasDict);
+	
+	if (hasDict)
+	{
+		m_ItemDict.reset(new idDict);
+		savefile->ReadDict(m_ItemDict.get());
+	}
+	else
+	{
+		m_ItemDict.reset();
+	}
+
 	m_BindMaster.Restore(savefile);
 
 	savefile->ReadString(m_Name);
 	savefile->ReadString(m_HudName);
 	savefile->ReadString(m_ItemId);
 
+	int tempInt;
 	savefile->ReadInt(tempInt);
 	m_Type = static_cast<ItemType>(tempInt);
 
@@ -219,6 +241,51 @@ void CInventoryItem::SetValue(int n)
 
 		NotifyItemChanged();
 	}
+}
+
+void CInventoryItem::SaveItemEntityDict()
+{
+	idEntity* ent = GetItemEntity();
+
+	if (ent == NULL)
+	{
+		return;
+	}
+
+	// We have a non-NULL item entity, save its spawnargs
+	m_ItemDict.reset(new idDict);
+
+	// Copy spawnargs over
+	*m_ItemDict = ent->spawnArgs;
+}
+
+void CInventoryItem::RestoreItemEntityFromDict(const idVec3& entPosition)
+{
+	if (!m_ItemDict)
+	{
+		return; // no saved spawnargs, do nothing
+	}
+
+	// We have an item dictionary, let's respawn our entity
+	idEntity* ent;
+	
+	if (!gameLocal.SpawnEntityDef(*m_ItemDict, &ent))
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Can't respawn inventory item entity '%s'!\r", m_ItemDict->GetString("name"));
+		gameLocal.Error("Can't respawn inventory item entity '%s'!", m_ItemDict->GetString("name"));
+	}
+
+	// Place the entity at the given position
+	ent->SetOrigin(entPosition);
+
+	// Hide the entity (don't delete it)
+	CInventory::RemoveEntityFromMap(ent, false);
+
+	// Set this as new item entity
+	SetItemEntity(ent);
+
+	// Finally, remove our saved spawnargs
+	m_ItemDict.reset();
 }
 
 void CInventoryItem::SetCount(int n)
