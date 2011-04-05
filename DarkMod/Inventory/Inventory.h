@@ -200,8 +200,9 @@ public:
 	/**
 	 * greebo: Copies all inventory items from the given sourceInventory that are marked
 	 * as persistent (i.e. have GetPersistentCount() > 0). No items are deleted from the source.
+	 * The given newOwner entity is set to the new owner for all the copied items.
 	 */
-	void					CopyPersistentItemsFrom(const CInventory& sourceInventory);
+	void					CopyPersistentItemsFrom(const CInventory& sourceInventory, idEntity* newOwner);
 
 	// Save the spawnargs of persistent items. This is needed for respawning them in the next mission
 	void					SaveItemEntities(bool persistentOnly = true);

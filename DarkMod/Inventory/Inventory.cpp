@@ -81,7 +81,7 @@ void CInventory::CopyTo(CInventory& targetInventory)
 	}
 }
 
-void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory)
+void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEntity* newOwner)
 {
 	// Cycle through all categories to add them
 	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
@@ -104,6 +104,8 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory)
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
 				"Adding persistent item %s to player inventory, quantity: %d.\r",
 				item->GetName().c_str(), item->GetPersistentCount());
+
+			item->SetOwner(newOwner);
 
 			// Add this item to our inventory
 			PutItem(item, item->Category()->GetName());

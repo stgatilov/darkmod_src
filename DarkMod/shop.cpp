@@ -315,17 +315,11 @@ bool CShop::GetNothingForSale()
 	return itemsForSale.Num() == 0;
 }
 
-/**
- * Combine the purchased list and the starting list
- */
 ShopItemList CShop::GetPlayerStartingEquipment()
 {
 	return startingItems;
 }
 
-/**
- * Handle Main Menu commands
- */
 void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player)
 {
 	if (idStr::Icmp(menuCommand, "shopLoad") == 0)
@@ -1205,5 +1199,8 @@ void CShop::UpdateGUI(idUserInterface* gui)
 
 void CShop::AddGoldFromPreviousMission()
 {
-	// TODO
+	int prevGold, prevJewelry, prevGoods;
+	int prevTotal = gameLocal.persistentPlayerInventory->GetLoot(prevGold, prevJewelry, prevGoods);
+
+	gold += prevTotal;
 }

@@ -1717,6 +1717,12 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
 	m_MissionData->Clear();
 
+	// Clear the persistent inventory if starting a new campaign
+	if (m_MissionManager->CurrentModIsCampaign() && m_MissionManager->GetCurrentMissionIndex() == 0)
+	{
+		gameLocal.persistentPlayerInventory->Clear();
+	}
+
 	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;

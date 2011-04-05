@@ -1385,7 +1385,7 @@ void idPlayer::SetupInventory()
 void idPlayer::AddPersistentInventoryItems()
 {
 	// Copy all persistent items into our own inventory
-	Inventory()->CopyPersistentItemsFrom(*gameLocal.persistentPlayerInventory);
+	Inventory()->CopyPersistentItemsFrom(*gameLocal.persistentPlayerInventory, this);
 
 	// We've changed maps, let's respawn our item entities where needed, put them to our own position
 	Inventory()->RestoreItemEntities(GetPhysics()->GetOrigin());
