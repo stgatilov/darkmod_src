@@ -1199,8 +1199,10 @@ void CShop::UpdateGUI(idUserInterface* gui)
 
 void CShop::AddGoldFromPreviousMission()
 {
-	int prevGold, prevJewelry, prevGoods;
-	int prevTotal = gameLocal.persistentPlayerInventory->GetLoot(prevGold, prevJewelry, prevGoods);
+	int prevMission = gameLocal.m_MissionManager->GetCurrentMissionIndex() - 1;
 
-	gold += prevTotal;
+	if (prevMission >= 0 && gameLocal.m_CampaignStats->Num() > prevMission)
+	{
+		gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot;	
+	}
 }

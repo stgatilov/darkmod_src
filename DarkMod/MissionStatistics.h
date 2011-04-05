@@ -94,6 +94,11 @@ public:
 		return _stats[index];
 	}
 
+	int Num() const
+	{
+		return _stats.Num();
+	}
+
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 
