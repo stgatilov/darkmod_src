@@ -45,6 +45,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Missions/DownloadManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
+#include "../DarkMod/StimResponse/StimType.h" // grayman #2721
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -6723,20 +6724,23 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			// grayman #2468 - handle AI with no separate head entities 
+			// grayman #2468 - handle AI with no separate head entities
 
 			idEntity *ent = srEntities[i];
 			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
 			if (!(ent->IsType(idAFAttachment::Type))) // is this an attached head?
 			{
-				// no separate head entity, so find the mouth
-
-				if (ent->IsType(idAI::Type))
+				if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
 				{
-					idAI* entAI = static_cast<idAI*>(ent);
+					// no separate head entity, so find the mouth
 
-					entitySpot = entAI->GetEyePosition();
-					entitySpot.z += entAI->m_MouthOffset.z;
+					if (ent->IsType(idAI::Type))
+					{
+						idAI* entAI = static_cast<idAI*>(ent);
+
+						entitySpot = entAI->GetEyePosition();
+						entitySpot.z += entAI->m_MouthOffset.z;
+					}
 				}
 			}
 
