@@ -40,6 +40,15 @@ public:
 		unsigned long				uncompressedSize;
 		unsigned long				crc32;
 
+		enum Method
+		{
+			STORED,
+			DEFLATED,
+		};
+
+		Method						compressionMethod;
+		int							compressionLevel;
+
 		std::vector<unsigned char>	extraField;
 		std::vector<char>			comment;
 		std::vector<unsigned char>	localExtraField;
