@@ -6728,9 +6728,10 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 
 			idEntity *ent = srEntities[i];
 			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
-			if (!(ent->IsType(idAFAttachment::Type))) // is this an attached head?
+
+			if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
 			{
-				if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
+				if (!ent->IsType(idAFAttachment::Type)) // is this an attached head?
 				{
 					// no separate head entity, so find the mouth
 

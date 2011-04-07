@@ -1292,6 +1292,7 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	path.startPosObstacle = NULL;
 	path.seekPosOutsideObstacles = seekPos;
 	path.seekPosObstacle = NULL;
+	path.doorObstacle = NULL;
 
 	if (aas == NULL) {
 		return true; // no AAS!
