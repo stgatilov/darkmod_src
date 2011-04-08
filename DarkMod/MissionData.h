@@ -644,8 +644,8 @@ public:
 	**/
 	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
 
-	int GetFoundLoot( void );
-	void ChangeFoundLoot( int amount );
+	int GetFoundLoot();
+	void ChangeFoundLoot(int lootType, int amount);
 
 	/**
 	 * greebo: This adds a given amount of loot to the total amount available in the mission.

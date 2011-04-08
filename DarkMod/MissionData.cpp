@@ -1821,12 +1821,12 @@ void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int Alert
 	MissionEvent( COMP_ALERT, &Parms1, &Parms2, bPlayerResponsible );
 }
 
-int CMissionData::GetFoundLoot( void )
+int CMissionData::GetFoundLoot()
 {
 	return m_Stats.FoundLoot;
 }
 
-void CMissionData::ChangeFoundLoot(int amount)
+void CMissionData::ChangeFoundLoot(int lootType, int amount)
 {
 	m_Stats.FoundLoot += amount;
 }

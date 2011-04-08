@@ -215,7 +215,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 
 		// If we have an anonymous loot item, we don't need to 
 		// store it in the inventory.
-		switch(lootType)
+		switch (lootType)
 		{
 			case CInventoryItem::LT_GOLD:
 				m_Gold += value;
@@ -246,7 +246,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 
 		// greebo: Update the total loot value in the objectives system BEFORE
 		// the InventoryCallback. Some comparisons rely on a valid total loot value.
-		gameLocal.m_MissionData->ChangeFoundLoot( value );
+		gameLocal.m_MissionData->ChangeFoundLoot(lootType, value);
 
 		// Objective Callback for loot on a specific entity:
 		// Pass the loot type name and the net loot value of that group

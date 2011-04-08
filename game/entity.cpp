@@ -10725,7 +10725,7 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 	if( rc != 0 )
 	{
 		gameLocal.m_MissionData->InventoryCallback( NULL, groupname, groupTotal, total, bGained );  
-		gameLocal.m_MissionData->ChangeFoundLoot( amount );
+		gameLocal.m_MissionData->ChangeFoundLoot(lootType, amount);
 	}
 
 	return rc;
