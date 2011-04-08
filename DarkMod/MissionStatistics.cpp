@@ -49,8 +49,13 @@ void SMissionStats::Clear()
 	DamageReceived = 0;
 	HealthReceived = 0;
 	PocketsPicked = 0;
-	FoundLoot = 0;
-	TotalLootInMission = 0;
+
+	for (int i = 0; i < LOOT_COUNT; ++i)
+	{
+		FoundLoot[i] = 0;
+		LootInMission[i] = 0;
+	}
+	
 	TotalGamePlayTime = 0;
 }
 
@@ -98,8 +103,13 @@ void SMissionStats::Save(idSaveGame* savefile) const
 	savefile->WriteInt(DamageDealt);
 	savefile->WriteInt(DamageReceived);
 	savefile->WriteInt(PocketsPicked);
-	savefile->WriteInt(FoundLoot);
-	savefile->WriteInt(TotalLootInMission);
+
+	for (int i = 0; i < LOOT_COUNT; ++i)
+	{
+		savefile->WriteInt(FoundLoot[i]);
+		savefile->WriteInt(LootInMission[i]);
+	}
+
 	savefile->WriteUnsignedInt(TotalGamePlayTime);
 }
 
@@ -147,9 +157,38 @@ void SMissionStats::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(DamageDealt);
 	savefile->ReadInt(DamageReceived);
 	savefile->ReadInt(PocketsPicked);
-	savefile->ReadInt(FoundLoot);
-	savefile->ReadInt(TotalLootInMission);
+
+	for (int i = 0; i < LOOT_COUNT; ++i)
+	{
+		savefile->ReadInt(FoundLoot[i]);
+		savefile->ReadInt(LootInMission[i]);
+	}
+
 	savefile->ReadUnsignedInt(TotalGamePlayTime);
+}
+
+int SMissionStats::GetFoundLootValue() const
+{
+	int sum = 0;
+
+	for (int i = LOOT_NONE+1; i < LOOT_COUNT; ++i)
+	{
+		sum += FoundLoot[i];
+	}
+
+	return sum;
+}
+
+int SMissionStats::GetTotalLootInMission() const
+{
+	int sum = 0;
+
+	for (int i = LOOT_NONE+1; i < LOOT_COUNT; ++i)
+	{
+		sum += LootInMission[i];
+	}
+
+	return sum;
 }
 
 void CampaignStats::Save(idSaveGame* savefile) const

@@ -1823,18 +1823,18 @@ void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int Alert
 
 int CMissionData::GetFoundLoot()
 {
-	return m_Stats.FoundLoot;
+	return m_Stats.GetFoundLootValue();
 }
 
-void CMissionData::ChangeFoundLoot(int lootType, int amount)
+void CMissionData::ChangeFoundLoot(LootType lootType, int amount)
 {
-	m_Stats.FoundLoot += amount;
+	m_Stats.FoundLoot[lootType] += amount;
 }
 
-void CMissionData::AddMissionLoot(int lootType, int amount)
+void CMissionData::AddMissionLoot(LootType lootType, int amount)
 {
-	// greebo: For now, we disregard the various loot types, just add to the sum
-	m_Stats.TotalLootInMission += amount;
+	// greebo: add to the individual sum
+	m_Stats.LootInMission[lootType] += amount;
 }
 
 // =============== Boolean Logic Parsing for Objective Failure/Success ==============
@@ -2598,7 +2598,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	key = "Loot Acquired";
-	value = idStr(m_Stats.FoundLoot) + " out of " + idStr(m_Stats.TotalLootInMission);
+	value = idStr(m_Stats.GetFoundLootValue()) + " out of " + idStr(m_Stats.GetTotalLootInMission());
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line

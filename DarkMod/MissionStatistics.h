@@ -53,13 +53,13 @@ struct SMissionStats
 
 	// Item stats are handled by the inventory, not here, 
 	// Might need this for copying over to career stats though
-	int FoundLoot;
+	int FoundLoot[LOOT_COUNT];
 
 	// greebo: This is the available amount of loot in the mission
-	int TotalLootInMission;
+	int LootInMission[LOOT_COUNT];
 
 	// This gets read out right at "mission complete" time, is 0 before
-	unsigned int	TotalGamePlayTime;
+	unsigned int TotalGamePlayTime;
 
 	SMissionStats() 
 	{
@@ -67,6 +67,12 @@ struct SMissionStats
 	}
 
 	void Clear();
+
+	// Returns the sum of all found loot types (gold+jewels+goods)
+	int GetFoundLootValue() const;
+
+	// Returns the total of all loot types in the mission (gold+jewels+goods)
+	int GetTotalLootInMission() const;
 
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);

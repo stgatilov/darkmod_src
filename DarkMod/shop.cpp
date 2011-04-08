@@ -1203,6 +1203,6 @@ void CShop::AddGoldFromPreviousMission()
 
 	if (prevMission >= 0 && gameLocal.m_CampaignStats->Num() > prevMission)
 	{
-		gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot;	
+		gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot[LOOT_GOLD];	
 	}
 }

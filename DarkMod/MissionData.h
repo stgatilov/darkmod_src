@@ -645,14 +645,14 @@ public:
 	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
 
 	int GetFoundLoot();
-	void ChangeFoundLoot(int lootType, int amount);
+	void ChangeFoundLoot(LootType lootType, int amount);
 
 	/**
 	 * greebo: This adds a given amount of loot to the total amount available in the mission.
 	 * The total loot value is interesting at the end of the mission where the player wants to
 	 * see how much loot he/she missed.
 	 */
-	void AddMissionLoot(int lootType, int amount);
+	void AddMissionLoot(LootType lootType, int amount);
 
 	/**
 	* Parse the objective data on an entity and add it to the objectives system
