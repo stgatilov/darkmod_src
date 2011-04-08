@@ -9,6 +9,8 @@
 #ifndef __DARKMOD_INVENTORYITEM_H__
 #define __DARKMOD_INVENTORYITEM_H__
 
+#include "LootType.h"
+
 /* FORWARD DECLS */
 class CInventoryCategory;
 
@@ -27,15 +29,6 @@ public:
 		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
 							// we can have an empty space in the inventory.
 		IT_COUNT
-	};
-
-	enum LootType
-	{
-		LT_NONE,			// No lootobject
-		LT_JEWELS,
-		LT_GOLD,
-		LT_GOODS,
-		LT_COUNT		// dummy
 	};
 
 public:

@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Game/DebugDLL"
+			OutputDirectory="../"
 			IntermediateDirectory="Game/DebugDLL"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -121,7 +121,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="ReleaseDLL"
+			OutputDirectory="../"
 			IntermediateDirectory="Game/ReleaseDLL"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -2434,6 +2434,10 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Inventory\Item.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\LootType.h"
 						>
 					</File>
 					<File

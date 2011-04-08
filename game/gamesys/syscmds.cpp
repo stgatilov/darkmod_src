@@ -2809,23 +2809,23 @@ void Cmd_ShowLoot_f(const idCmdArgs& args)
 
 		items++;
 
-		CInventoryItem::LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
+		LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
 		
 		idVec4 colour(colorWhite);
 
 		switch(lootType)
 		{
-			case CInventoryItem::LT_GOLD:
+			case LOOT_GOLD:
 				gold += value;
 				colour = idVec4(0.97f, 0.93f, 0.58f, 1);
 			break;
 
-			case CInventoryItem::LT_GOODS:
+			case LOOT_GOODS:
 				goods += value;
 				colour = idVec4(0.3f, 0.91f, 0.3f, 1);
 			break;
 
-			case CInventoryItem::LT_JEWELS:
+			case LOOT_JEWELS:
 				jewels += value;
 				colour = idVec4(0.96f, 0.2f, 0.2f, 1);
 			break;

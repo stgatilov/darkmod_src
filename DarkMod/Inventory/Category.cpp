@@ -221,15 +221,15 @@ int CInventoryCategory::GetLoot(int& gold, int& jewelry, int& goods)
 
 		switch (item->GetLootType())
 		{
-			case CInventoryItem::LT_JEWELS:
+			case LOOT_JEWELS:
 				jewelry += item->GetValue();
 			break;
 
-			case CInventoryItem::LT_GOLD:
+			case LOOT_GOLD:
 				gold += item->GetValue();
 			break;
 
-			case CInventoryItem::LT_GOODS:
+			case LOOT_GOODS:
 				goods += item->GetValue();
 			break;
 			
