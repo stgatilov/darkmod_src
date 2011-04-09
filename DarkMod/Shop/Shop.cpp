@@ -1052,8 +1052,22 @@ void CShop::AddGoldFromPreviousMission()
 {
 	int prevMission = gameLocal.m_MissionManager->GetCurrentMissionIndex() - 1;
 
-	if (prevMission >= 0 && gameLocal.m_CampaignStats->Num() > prevMission)
+	if (prevMission >= 0 && prevMission < gameLocal.m_CampaignStats->Num())
 	{
-		_gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot[LOOT_GOLD];	
+		const SMissionStats& stats = (*gameLocal.m_CampaignStats)[prevMission];
+
+		// First, check the difficulty-specific rulesets
+		int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
+		
+		if (!_diffLootRules[difficultyLevel].IsEmpty())
+		{
+			// Non-empty difficulty-specific setting, apply this one
+			_gold += _diffLootRules[difficultyLevel].ApplyToFoundLoot(stats.FoundLoot);	
+		}
+		else
+		{
+			// No difficulty-specific ruleset, apply the general one
+			_gold += _generalLootRules.ApplyToFoundLoot(stats.FoundLoot);
+		}
 	}
 }

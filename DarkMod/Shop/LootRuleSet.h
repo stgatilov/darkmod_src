@@ -35,6 +35,9 @@ struct LootRuleSet
 	// Gold loss by percent after conversion (defaults to 0 => no loss)
 	float	goldLossPercent;
 
+	// Minimum amount of gold available in the shop. At least this value is guaranteed to be returned by ApplyToFoundLoot
+	int		goldMin;
+
 	// Maximum amount of gold available in the shop. Enforced after conversion. (default is -1 => no cap)
 	int		goldCap;
 
@@ -61,6 +64,9 @@ struct LootRuleSet
 
 	// Load the ruleset from the spawnargs matching the given prefix
 	void LoadFromDict(const idDict& dict, const idStr& prefix);
+
+	// Apply this ruleset to the given amount of found loot. Returns the amount of resulting gold
+	int ApplyToFoundLoot(const int foundLoot[LOOT_COUNT]);
 };
 
 #endif
