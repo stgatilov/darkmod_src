@@ -52,7 +52,7 @@ void LootRuleSet::LoadFromDict(const idDict& dict, const idStr& prefix)
 	keepUnspentGold = dict.GetBool(prefix + "keep_unspent_gold", keepUnspentGold ? "1" : "0");
 }
 
-int LootRuleSet::ApplyToFoundLoot(const int foundLoot[LOOT_COUNT])
+int LootRuleSet::ApplyToFoundLoot(const int foundLoot[LOOT_COUNT], int shopStartingGold)
 {
 	int totalGold = 0;
 
@@ -70,7 +70,7 @@ int LootRuleSet::ApplyToFoundLoot(const int foundLoot[LOOT_COUNT])
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Gold after conversion: %d\r", totalGold);
 
 	// Percentile loss comes first
-	totalGold -= static_cast<int>(totalGold * goldLossPercent);
+	totalGold -= static_cast<int>(totalGold * goldLossPercent*0.01f);
 
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Gold after percentile loss: %d\r", totalGold);
 
@@ -78,6 +78,10 @@ int LootRuleSet::ApplyToFoundLoot(const int foundLoot[LOOT_COUNT])
 	totalGold -= goldLoss;
 
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Gold after absolute loss: %d\r", totalGold);
+
+	totalGold += shopStartingGold;
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Gold after adding shop starting budget: %d\r", totalGold);
 
 	if (goldCap != -1 && totalGold > goldCap)
 	{

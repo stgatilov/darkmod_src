@@ -65,8 +65,16 @@ struct LootRuleSet
 	// Load the ruleset from the spawnargs matching the given prefix
 	void LoadFromDict(const idDict& dict, const idStr& prefix);
 
-	// Apply this ruleset to the given amount of found loot. Returns the amount of resulting gold
-	int ApplyToFoundLoot(const int foundLoot[LOOT_COUNT]);
+	/** 
+	 * Apply this ruleset to the given amount of found loot and shop start budget.
+	 *
+	 * @foundLoot: The loot collected values.
+	 * @shopStartingGold: The amount of starting gold for the shop. This value
+	 * is added after applying the losses, but before the min/max caps are applied.
+	 *
+	 * Returns the amount of resulting gold, which is at least goldMin.
+	 */
+	int ApplyToFoundLoot(const int foundLoot[LOOT_COUNT], int shopStartingGold);
 };
 
 #endif

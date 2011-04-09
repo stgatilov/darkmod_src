@@ -1062,12 +1062,12 @@ void CShop::AddGoldFromPreviousMission()
 		if (!_diffLootRules[difficultyLevel].IsEmpty())
 		{
 			// Non-empty difficulty-specific setting, apply this one
-			_gold += _diffLootRules[difficultyLevel].ApplyToFoundLoot(stats.FoundLoot);	
+			_gold = _diffLootRules[difficultyLevel].ApplyToFoundLoot(stats.FoundLoot, _gold);
 		}
 		else
 		{
 			// No difficulty-specific ruleset, apply the general one
-			_gold += _generalLootRules.ApplyToFoundLoot(stats.FoundLoot);
+			_gold = _generalLootRules.ApplyToFoundLoot(stats.FoundLoot, _gold);
 		}
 	}
 }
