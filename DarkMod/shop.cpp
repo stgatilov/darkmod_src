@@ -196,51 +196,51 @@ void CShop::Init()
 
 void CShop::Clear()
 {
-	itemsForSale.Clear();
-	itemsPurchased.Clear();
-	startingItems.Clear();
-	itemDefs.Clear();
-	forSaleTop = 0;
-	purchasedTop = 0;
-	startingTop = 0;
-	skipShop = false;
-	pickSetShop = false;     // grayman (#2376) -
-	pickSetStarting = false; // Lockpick handling
-	gold = 0; // grayman - needs to be initialized
+	_itemsForSale.Clear();
+	_itemsPurchased.Clear();
+	_startingItems.Clear();
+	_itemDefs.Clear();
+	_forSaleTop = 0;
+	_purchasedTop = 0;
+	_startingTop = 0;
+	_skipShop = false;
+	_pickSetShop = false;     // grayman (#2376) -
+	_pickSetStarting = false; // Lockpick handling
+	_gold = 0; // grayman - needs to be initialized
 }
 
 void CShop::Save(idSaveGame *savefile) const
 {
-	savefile->WriteInt(itemDefs.Num());
-	for (int i = 0; i < itemDefs.Num(); ++i)
+	savefile->WriteInt(_itemDefs.Num());
+	for (int i = 0; i < _itemDefs.Num(); ++i)
 	{
-		itemDefs[i]->Save(savefile);
+		_itemDefs[i]->Save(savefile);
 	}
 
-	savefile->WriteInt(itemsForSale.Num());
-	for (int i = 0; i < itemsForSale.Num(); ++i)
+	savefile->WriteInt(_itemsForSale.Num());
+	for (int i = 0; i < _itemsForSale.Num(); ++i)
 	{
-		itemsForSale[i]->Save(savefile);
+		_itemsForSale[i]->Save(savefile);
 	}
 
-	savefile->WriteInt(itemsPurchased.Num());
-	for (int i = 0; i < itemsPurchased.Num(); ++i)
+	savefile->WriteInt(_itemsPurchased.Num());
+	for (int i = 0; i < _itemsPurchased.Num(); ++i)
 	{
-		itemsPurchased[i]->Save(savefile);
+		_itemsPurchased[i]->Save(savefile);
 	}
 
-	savefile->WriteInt(startingItems.Num());
-	for (int i = 0; i < startingItems.Num(); ++i)
+	savefile->WriteInt(_startingItems.Num());
+	for (int i = 0; i < _startingItems.Num(); ++i)
 	{
-		startingItems[i]->Save(savefile);
+		_startingItems[i]->Save(savefile);
 	}
 	
-	savefile->WriteInt(gold);
-	savefile->WriteInt(forSaleTop);
-	savefile->WriteInt(purchasedTop);
-	savefile->WriteInt(startingTop);
+	savefile->WriteInt(_gold);
+	savefile->WriteInt(_forSaleTop);
+	savefile->WriteInt(_purchasedTop);
+	savefile->WriteInt(_startingTop);
 
-	savefile->WriteBool(skipShop);
+	savefile->WriteBool(_skipShop);
 }
 
 void CShop::Restore(idRestoreGame *savefile)
@@ -248,76 +248,78 @@ void CShop::Restore(idRestoreGame *savefile)
 	int num;
 
 	savefile->ReadInt(num);
-	itemDefs.SetNum(num);
+	_itemDefs.SetNum(num);
 	for (int i = 0; i < num; ++i)
 	{
-		itemDefs[i] = CShopItemPtr(new CShopItem);
-		itemDefs[i]->Restore(savefile);
+		_itemDefs[i] = CShopItemPtr(new CShopItem);
+		_itemDefs[i]->Restore(savefile);
 	}
 
 	savefile->ReadInt(num);
-	itemsForSale.SetNum(num);
+	_itemsForSale.SetNum(num);
 	for (int i = 0; i < num; ++i)
 	{
-		itemsForSale[i] = CShopItemPtr(new CShopItem);
-		itemsForSale[i]->Restore(savefile);
+		_itemsForSale[i] = CShopItemPtr(new CShopItem);
+		_itemsForSale[i]->Restore(savefile);
 	}
 
 	savefile->ReadInt(num);
-	itemsPurchased.SetNum(num);
+	_itemsPurchased.SetNum(num);
 	for (int i = 0; i < num; ++i)
 	{
-		itemsPurchased[i] = CShopItemPtr(new CShopItem);
-		itemsPurchased[i]->Restore(savefile);
+		_itemsPurchased[i] = CShopItemPtr(new CShopItem);
+		_itemsPurchased[i]->Restore(savefile);
 	}
 
 	savefile->ReadInt(num);
-	startingItems.SetNum(num);
+	_startingItems.SetNum(num);
 	for (int i = 0; i < num; ++i)
 	{
-		startingItems[i] = CShopItemPtr(new CShopItem);
-		startingItems[i]->Restore(savefile);
+		_startingItems[i] = CShopItemPtr(new CShopItem);
+		_startingItems[i]->Restore(savefile);
 	}
 
-	savefile->ReadInt(gold);
-	savefile->ReadInt(forSaleTop);
-	savefile->ReadInt(purchasedTop);
-	savefile->ReadInt(startingTop);
+	savefile->ReadInt(_gold);
+	savefile->ReadInt(_forSaleTop);
+	savefile->ReadInt(_purchasedTop);
+	savefile->ReadInt(_startingTop);
 
-	savefile->ReadBool(skipShop);
+	savefile->ReadBool(_skipShop);
 }
 
-void CShop::AddItemForSale(const CShopItemPtr& shopItem) {
-	itemsForSale.Append(shopItem);
+void CShop::AddItemForSale(const CShopItemPtr& shopItem)
+{
+	_itemsForSale.Append(shopItem);
 };
 
-void CShop::AddStartingItem(const CShopItemPtr& shopItem) {
-	startingItems.Append(shopItem);
+void CShop::AddStartingItem(const CShopItemPtr& shopItem)
+{
+	_startingItems.Append(shopItem);
 };
 
 const ShopItemList& CShop::GetItemsForSale()
 {
-	return itemsForSale;
+	return _itemsForSale;
 }
 
 const ShopItemList& CShop::GetStartingItems()
 {
-	return startingItems;
+	return _startingItems;
 }
 
 const ShopItemList& CShop::GetPurchasedItems()
 {
-	return itemsPurchased;
+	return _itemsPurchased;
 }
 
 bool CShop::GetNothingForSale()
 {
-	return itemsForSale.Num() == 0;
+	return _itemsForSale.Num() == 0;
 }
 
 ShopItemList CShop::GetPlayerStartingEquipment()
 {
-	return startingItems;
+	return _startingItems;
 }
 
 void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player)
@@ -367,15 +369,15 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 
 		if (idStr::Icmp(listName, "forSale") == 0)
 		{
-			ScrollList(&forSaleTop, LIST_SIZE_FOR_SALE, itemsForSale);
+			_forSaleTop = ScrollList(_forSaleTop, LIST_SIZE_FOR_SALE, _itemsForSale);
 		} 
 		else if (idStr::Icmp(listName, "starting") == 0)
 		{
-			ScrollList(&startingTop, LIST_SIZE_STARTING, startingItems);
+			_startingTop = ScrollList(_startingTop, LIST_SIZE_STARTING, _startingItems);
 		} 
 		else if (idStr::Icmp(listName, "purchased") == 0)
 		{
-			ScrollList(&purchasedTop, LIST_SIZE_PURCHASED, itemsPurchased);
+			_purchasedTop = ScrollList(_purchasedTop, LIST_SIZE_PURCHASED, _itemsPurchased);
 		}
 
 		UpdateGUI(gui);
@@ -389,34 +391,36 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 
 void CShop::CopyPurchasedIntoStartingEquipment()
 {
-	for (int i = 0; i < itemsPurchased.Num(); i++)
+	for (int i = 0; i < _itemsPurchased.Num(); i++)
 	{
-		CShopItemPtr item = FindStartingItemByID(itemsPurchased[i]->GetID());
+		CShopItemPtr item = FindStartingItemByID(_itemsPurchased[i]->GetID());
 
 		if (item == NULL)
 		{
-			startingItems.Append(itemsPurchased[i]);
+			_startingItems.Append(_itemsPurchased[i]);
 		} 
 		else
 		{
 			// Starting item exists, just change the count
-			item->ChangeCount(itemsPurchased[i]->GetCount());
+			item->ChangeCount(_itemsPurchased[i]->GetCount());
 		}
 	}
 }
 
-void CShop::ScrollList(int* topItem, int maxItems, ShopItemList& list)
+int CShop::ScrollList(int topItem, int maxItems, ShopItemList& list)
 {
-	if (*topItem + maxItems < list.Num())
+	if (topItem + maxItems < list.Num())
 	{
-		*topItem += maxItems;
+		return topItem + maxItems;
 	}
-	else {
-		*topItem = 0;
+	else 
+	{
+		return 0;
 	}
 }
 
-void CShop::LoadFromInventory(idPlayer *player) {
+void CShop::LoadFromInventory(idPlayer *player)
+{
 	if (player == NULL)
 	{
 		return;
@@ -436,12 +440,12 @@ void CShop::LoadFromInventory(idPlayer *player) {
 				idEntity * itemEntity = it->GetItemEntity();
 				const char * name = itemEntity->spawnArgs.GetString("classname");
 
-				CShopItemPtr shopItem = FindByID(itemDefs, name);
+				CShopItemPtr shopItem = FindByID(_itemDefs, name);
 
 				if (shopItem != NULL)
 				{
 					CShopItemPtr item(new CShopItem(*shopItem, count, 0, true));
-					startingItems.Append(item);
+					_startingItems.Append(item);
 				}
 			}
 		}
@@ -456,11 +460,14 @@ void CShop::LoadFromDict(const idDict& dict)
 	if (dict.GetBool("shop_skip","0") || dict.GetBool(diffPrefix + "shop_skip","0"))
 	{
 		// if skip flag is set, skip the shop
-		skipShop = true;
+		_skipShop = true;
 
 		// No need to parse any further, the shop will be skipped anyway
 		return;
 	}
+
+	// Check for loot carry-over rules
+	LoadLootRules(dict);
 
 	// Check for an "all-difficulty" gold value
 	if (dict.FindKey("shop_gold_start") != NULL)
@@ -475,10 +482,10 @@ void CShop::LoadFromDict(const idDict& dict)
 	}
 
 	// items for sale
-	AddItems(dict, "shopItem", itemsForSale);
+	AddItems(dict, "shopItem", _itemsForSale);
 
 	// starting items (items that player already has
-	AddItems(dict, "startingItem", startingItems);
+	AddItems(dict, "startingItem", _startingItems);
 }
 
 void CShop::LoadFromMap(idMapFile* mapFile)
@@ -500,6 +507,11 @@ void CShop::LoadFromMap(idMapFile* mapFile)
 			LoadFromDict(mapEnt->epairs);
 		}
 	}
+}
+
+void CShop::LoadLootRules(const idDict& dict)
+{
+	// TODO
 }
 
 void CShop::LoadShopItemDefinitions()
@@ -541,7 +553,7 @@ void CShop::LoadShopItemDefinitions()
 				theItem->AddClassname(kv->GetValue());
 			}
 			
-			itemDefs.Append(theItem);
+			_itemDefs.Append(theItem);
 		}
 	}
 }
@@ -684,16 +696,16 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 
 			if (isShopList)
 			{
-				if (!pickSetShop && (itemName.Find("lockpick_set") >= 0))
+				if (!_pickSetShop && (itemName.Find("lockpick_set") >= 0))
 				{
-					pickSetShop = true;
+					_pickSetShop = true;
 				}
 			}
 			else
 			{
-				if (!pickSetStarting && (itemName.Find("lockpick_set") >= 0))
+				if (!_pickSetStarting && (itemName.Find("lockpick_set") >= 0))
 				{
-					pickSetStarting = true;
+					_pickSetStarting = true;
 				}
 			}
 
@@ -721,12 +733,12 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 				canDrop = mapDict.GetBool(itemPrefix + diffLevelStr + "_canDrop", "1");
 			}
 
-			CShopItemPtr found = FindByID(itemDefs, itemName);
+			CShopItemPtr found = FindByID(_itemDefs, itemName);
 
 			if (found == NULL)
 			{
 				// Try to prepend "atdm:" as prefix, maybe this works
-				found = FindByID(itemDefs, "atdm:" + itemName);
+				found = FindByID(_itemDefs, "atdm:" + itemName);
 			}
 
 			if (found != NULL) 
@@ -811,24 +823,24 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 				if (quantity > 0)
 				{
-					CShopItemPtr found = FindByID(itemDefs, itemName);
+					CShopItemPtr found = FindByID(_itemDefs, itemName);
 
 					if (found == NULL)
 					{
 						// Try again with "atdm:" prepended
-						found = FindByID(itemDefs, "atdm:" + itemName);
+						found = FindByID(_itemDefs, "atdm:" + itemName);
 					}
 
 					if (found != NULL)
 					{
-						// If this item is stackable, and already exists in the startingItems list,
+						// If this item is stackable, and already exists in the _startingItems list,
 						// bump up the quantity there instead of appending the item to the list.
 						// If the item is not stackable, and we already have it, ignore it.
 
 						bool appendMapItem = true;
-						for (int j = 0 ; j < startingItems.Num(); j++)
+						for (int j = 0 ; j < _startingItems.Num(); j++)
 						{
-							CShopItemPtr listItem = startingItems[j];
+							CShopItemPtr listItem = _startingItems[j];
 							if (idStr::Icmp(listItem->GetID(),itemName) == 0)
 							{
 								int oldQuantity = listItem->GetCount();
@@ -870,7 +882,7 @@ void CShop::AddMapItems(idMapFile* mapFile)
 							CShopItemPtr anItem(new CShopItem(*found, quantity, 0, false));
 							bool canDrop = mapEnt->epairs.GetBool("inv_droppable", "1");
 							anItem->SetCanDrop(canDrop);
-							startingItems.Append(anItem);
+							_startingItems.Append(anItem);
 						}
 					}
 					else
@@ -927,7 +939,7 @@ void CShop::DisplayShop(idUserInterface *gui)
 	// Load the shop items from the map entity/entities
 	LoadFromMap(mapFile);
 
-	if (skipShop)
+	if (_skipShop)
 	{
 		// Shop data says: skip da shoppe
 		gui->HandleNamedEvent("SkipShop");
@@ -938,14 +950,14 @@ void CShop::DisplayShop(idUserInterface *gui)
 	// then check for lockpick duplications.
 	AddMapItems(mapFile);
 
-	if (pickSetShop)
+	if (_pickSetShop)
 	{
-		CheckPicks(itemsForSale);
+		CheckPicks(_itemsForSale);
 	}
 
-	if (pickSetStarting)
+	if (_pickSetStarting)
 	{
-		CheckPicks(startingItems);
+		CheckPicks(_startingItems);
 	}
 
 	// greebo: Update the amount of gold to spend based on the loot the player found earlier
@@ -956,18 +968,18 @@ void CShop::DisplayShop(idUserInterface *gui)
 
 void CShop::SellItem(int index)
 {
-	CShopItemPtr boughtItem = itemsPurchased[purchasedTop + index];
+	CShopItemPtr boughtItem = _itemsPurchased[_purchasedTop + index];
 	CShopItemPtr forSaleItem = FindForSaleByID(boughtItem->GetID());
 	boughtItem->ChangeCount(-1);
 
 	// If last in the purchased items list, remove it from the list
 	if (boughtItem->GetCount() == 0)
 	{
-		itemsPurchased.RemoveIndex(purchasedTop + index);
+		_itemsPurchased.RemoveIndex(_purchasedTop + index);
 		// scroll so appropriate items visible
-		if ((purchasedTop >= itemsPurchased.Num()) || (purchasedTop % LIST_SIZE_PURCHASED != 0)) {
-			purchasedTop = itemsPurchased.Num() - LIST_SIZE_PURCHASED;
-			if (purchasedTop < 0) purchasedTop = 0;
+		if ((_purchasedTop >= _itemsPurchased.Num()) || (_purchasedTop % LIST_SIZE_PURCHASED != 0)) {
+			_purchasedTop = _itemsPurchased.Num() - LIST_SIZE_PURCHASED;
+			if (_purchasedTop < 0) _purchasedTop = 0;
 		}
 	}
 
@@ -978,25 +990,25 @@ void CShop::SellItem(int index)
 	{
 		forSaleItem = CShopItemPtr(new CShopItem(*boughtItem, 0, boughtItem->GetCost(), boughtItem->GetPersistent()));
 
-		itemsForSale.Append(forSaleItem);
+		_itemsForSale.Append(forSaleItem);
 	}
 
 	forSaleItem->ChangeCount(1);
-};
+}
 
 CShopItemPtr CShop::FindPurchasedByID(const char *id)
 {
-	return FindByID(itemsPurchased, id);
+	return FindByID(_itemsPurchased, id);
 }
 
 CShopItemPtr CShop::FindStartingItemByID(const char *id)
 {
-	return FindByID(startingItems, id);
+	return FindByID(_startingItems, id);
 }
 
 CShopItemPtr CShop::FindForSaleByID(const char *id)
 {
-	return FindByID(itemsForSale, id);
+	return FindByID(_itemsForSale, id);
 }
 
 CShopItemPtr CShop::FindByID(ShopItemList& items, const char *id)
@@ -1016,7 +1028,7 @@ CShopItemPtr CShop::FindByID(ShopItemList& items, const char *id)
 
 void CShop::BuyItem(int index)
 {
-	CShopItemPtr forSaleItem = itemsForSale[forSaleTop + index];
+	CShopItemPtr forSaleItem = _itemsForSale[_forSaleTop + index];
 	CShopItemPtr boughtItem = FindPurchasedByID(forSaleItem->GetID());
 
 	forSaleItem->ChangeCount(-1);
@@ -1029,21 +1041,21 @@ void CShop::BuyItem(int index)
 			*forSaleItem, 0, forSaleItem->GetCost(), forSaleItem->GetPersistent())
 		);
 
-		itemsPurchased.Append(boughtItem);
+		_itemsPurchased.Append(boughtItem);
 
 		// scroll so new item is visible in purchased list
-		if (itemsPurchased.Num() > purchasedTop + LIST_SIZE_PURCHASED)
+		if (_itemsPurchased.Num() > _purchasedTop + LIST_SIZE_PURCHASED)
 		{
-			purchasedTop = itemsPurchased.Num() - LIST_SIZE_PURCHASED;
+			_purchasedTop = _itemsPurchased.Num() - LIST_SIZE_PURCHASED;
 		}
 	}
 
 	boughtItem->ChangeCount(1);
-};
+}
 
 void CShop::DropUndropItem(int index)
 {
-	const CShopItemPtr& dropItem = startingItems[startingTop + index];
+	const CShopItemPtr& dropItem = _startingItems[_startingTop + index];
 
 	if (dropItem->GetDroppedCount() > 0)
 	{
@@ -1054,29 +1066,29 @@ void CShop::DropUndropItem(int index)
 		// Tels: Drop() will check if the item can be dropped
 		dropItem->Drop();
 	}
-};
+}
 
 void CShop::ChangeGold(int amount)
 {
-	this->gold += amount;
+	_gold += amount;
 }
 
 void CShop::SetGold(int gold)
 {
-	this->gold = gold;
+	_gold = gold;
 }
 
 int CShop::GetGold()
 {
-	return this->gold;
-};
+	return _gold;
+}
 
 void CShop::UpdateGUI(idUserInterface* gui)
 {
-	gui->SetStateInt("gold", gold);
-	gui->SetStateInt("forSaleMoreVisible", itemsForSale.Num() > LIST_SIZE_FOR_SALE);
-	gui->SetStateInt("purchasedMoreVisible", itemsPurchased.Num() > LIST_SIZE_PURCHASED);
-	gui->SetStateInt("startingMoreVisible", startingItems.Num() > LIST_SIZE_STARTING);
+	gui->SetStateInt("gold", _gold);
+	gui->SetStateInt("forSaleMoreVisible", _itemsForSale.Num() > LIST_SIZE_FOR_SALE);
+	gui->SetStateInt("purchasedMoreVisible", _itemsPurchased.Num() > LIST_SIZE_PURCHASED);
+	gui->SetStateInt("startingMoreVisible", _startingItems.Num() > LIST_SIZE_STARTING);
 
 	if (GetNothingForSale())
 	{
@@ -1104,14 +1116,14 @@ void CShop::UpdateGUI(idUserInterface* gui)
 
 			int available = 0;
 
-			if (forSaleTop + i < itemsForSale.Num())
+			if (_forSaleTop + i < _itemsForSale.Num())
 			{
-				const CShopItemPtr& item = itemsForSale[forSaleTop + i];
+				const CShopItemPtr& item = _itemsForSale[_forSaleTop + i];
 
 				name = item->GetName() + " (" + item->GetCount() + ")";
 				desc = item->GetName() + ": " + item->GetDescription();
 				image = item->GetImage();
-				available = item->GetCost() <= gold ? item->GetCount() : 0;
+				available = item->GetCost() <= _gold ? item->GetCount() : 0;
 				cost = idStr(item->GetCost()) + " GP ";
 			}
 
@@ -1137,9 +1149,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 
 		int available = 0;
 
-		if (purchasedTop + i < itemsPurchased.Num())
+		if (_purchasedTop + i < _itemsPurchased.Num())
 		{
-			const CShopItemPtr& item = itemsPurchased[purchasedTop + i];
+			const CShopItemPtr& item = _itemsPurchased[_purchasedTop + i];
 			name = item->GetName() + " (" + item->GetCount() + ")";
 			desc = item->GetName() + ": " + item->GetDescription();
 			image = item->GetImage();
@@ -1169,9 +1181,9 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		int available = 0;
 		bool dropVisible = false;
 
-		if (startingTop + i < startingItems.Num())
+		if (_startingTop + i < _startingItems.Num())
 		{
-			const CShopItemPtr& item = startingItems[startingTop + i];
+			const CShopItemPtr& item = _startingItems[_startingTop + i];
 			name = item->GetName() + " (" + item->GetCount() + ")";
 			desc = item->GetName() + ": " + item->GetDescription();
 			image = item->GetImage();
@@ -1203,6 +1215,6 @@ void CShop::AddGoldFromPreviousMission()
 
 	if (prevMission >= 0 && gameLocal.m_CampaignStats->Num() > prevMission)
 	{
-		gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot[LOOT_GOLD];	
+		_gold += (*gameLocal.m_CampaignStats)[prevMission].FoundLoot[LOOT_GOLD];	
 	}
 }

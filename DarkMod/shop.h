@@ -116,22 +116,24 @@ typedef idList<CShopItemPtr> ShopItemList;
 class CShop
 {
 private:
-	ShopItemList	itemDefs;
-	ShopItemList	itemsForSale;
-	ShopItemList	itemsPurchased;
-	ShopItemList	startingItems;
+	ShopItemList	_itemDefs;
+	ShopItemList	_itemsForSale;
+	ShopItemList	_itemsPurchased;
+	ShopItemList	_startingItems;
 
-	int				gold;
-	int				forSaleTop;
-	int				purchasedTop;
-	int				startingTop;
+	int				_gold;
+	int				_forSaleTop;
+	int				_purchasedTop;
+	int				_startingTop;
 
 	// True if the purchase menu should be skipped
-	bool			skipShop;
+	bool			_skipShop;
 	
 	// grayman (#2376) - Lockpick handling
-	bool			pickSetShop;
-	bool			pickSetStarting;
+	bool			_pickSetShop;
+	bool			_pickSetStarting;
+
+	//LootRules		lootRules;
 
 public:
 	void Init();
@@ -141,9 +143,6 @@ public:
 
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
-
-	// read from defs and map to initialze the shop
-	void LoadShopItemDefinitions();
 
 	// move the current inventory to the Starting Items list
 	void LoadFromInventory(idPlayer *player);
@@ -161,12 +160,6 @@ public:
 
 	// put item in the Starting Items list
 	void AddStartingItem(const CShopItemPtr& shopItem);
-
-	// grayman (#2376) - put inv_map_start entities in the Starting Items list
-	void AddMapItems(idMapFile* mapFile);
-
-	// grayman (#2376) - check for individual lockpicks
-	void CheckPicks(ShopItemList& list);
 
 	// initializes the 'list' based on the map
 	int AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& list);
@@ -197,13 +190,22 @@ public:
 	// initialize the shop
 	void DisplayShop(idUserInterface *gui);
 
-	// scroll a list to the next "page" of values
-	void ScrollList(int* topItem, int maxItems, ShopItemList& list);
-
 	// true if there are no items for sale
 	bool GetNothingForSale();
 
 private:
+	// read from defs and map to initialze the shop
+	void LoadShopItemDefinitions();
+
+	// grayman (#2376) - put inv_map_start entities in the Starting Items list
+	void AddMapItems(idMapFile* mapFile);
+
+	// grayman (#2376) - check for individual lockpicks
+	void CheckPicks(ShopItemList& list);
+
+	// scroll a list to the next "page" of values, returns the new top index
+	int ScrollList(int topItem, int maxItems, ShopItemList& list);
+
 	// Load all data from shop entities and worldspawn of the given map
 	void LoadFromMap(idMapFile* mapFile);
 
@@ -218,6 +220,9 @@ private:
 
 	// Adds the gold from the previous mission
 	void AddGoldFromPreviousMission();
+
+	// Load loot rules from the given map dict
+	void LoadLootRules(const idDict& dict);
 };
 
 #endif	/* !__SHOP_H__ */
