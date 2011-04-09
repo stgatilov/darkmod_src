@@ -8,6 +8,9 @@
  *
  ***************************************************************************/
 
+#ifndef TDM_LOOTRULESET_H
+#define TDM_LOOTRULESET_H
+
 #include "DifficultyManager.h"
 #include "Inventory/LootType.h"
 
@@ -75,3 +78,5 @@ struct LootRuleSet
 		return *this == LootRuleSet();
 	}
 };
+
+#endif
