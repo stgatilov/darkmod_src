@@ -37,6 +37,13 @@ void CShop::Clear()
 	_pickSetShop = false;     // grayman (#2376) -
 	_pickSetStarting = false; // Lockpick handling
 	_gold = 0; // grayman - needs to be initialized
+
+	_generalLootRules.Clear();
+
+	for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+	{
+		_diffLootRules[i].Clear();
+	}
 }
 
 void CShop::Save(idSaveGame *savefile) const
