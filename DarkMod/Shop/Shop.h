@@ -17,6 +17,7 @@
 #define LIST_SIZE_STARTING 7
 
 #include "ShopItem.h"
+#include "DifficultyManager.h"
 #include "LootRuleSet.h"
 
 // Represents the Shop
@@ -41,10 +42,10 @@ private:
 	bool			_pickSetStarting;
 
 	// The non-difficulty-specific loot rules, apply if not overridden by diff-specific ones
-	LootRuleSet		generalLootRules;
+	LootRuleSet		_generalLootRules;
 
 	// The difficulty-specific loot rules, will override generalLootRules
-	LootRuleSet		diffLootRules[DIFFICULTY_COUNT];
+	LootRuleSet		_diffLootRules[DIFFICULTY_COUNT];
 
 public:
 	void Init();

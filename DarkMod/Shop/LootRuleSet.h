@@ -11,7 +11,6 @@
 #ifndef TDM_LOOTRULESET_H
 #define TDM_LOOTRULESET_H
 
-#include "DifficultyManager.h"
 #include "Inventory/LootType.h"
 
 /**
@@ -47,28 +46,10 @@ struct LootRuleSet
 		Clear();
 	}
 
-	void Clear()
-	{
-		conversionRate[LOOT_NONE] = 0;
-		conversionRate[LOOT_GOLD] = 1;	// 1:1 exchange rates by default
-		conversionRate[LOOT_JEWELS] = 1;
-		conversionRate[LOOT_GOODS] = 1;
-
-		goldLoss = 0;
-		goldLossPercent = 0;
-		goldCap = -1;
-		keepUnspentGold = true;
-	}
+	void Clear();
 
 	// Equality operator, returns true if this class is the same as the other. Doesn't check LOOT_NONE conversion.
-	bool operator==(const LootRuleSet& other) const
-	{
-		return goldLoss == other.goldLoss && goldLossPercent == other.goldLossPercent &&
-			   goldCap == other.goldCap && keepUnspentGold == other.keepUnspentGold &&
-			   conversionRate[LOOT_GOLD] == other.conversionRate[LOOT_GOLD] &&
-			   conversionRate[LOOT_JEWELS] == other.conversionRate[LOOT_JEWELS] &&
-			   conversionRate[LOOT_GOODS] == other.conversionRate[LOOT_GOODS];
-	}
+	bool operator==(const LootRuleSet& other) const;
 
 	// Returns TRUE if this lootrule structure is at default values
 	// This is a comparably slow call, so don't use it excessively
@@ -77,6 +58,9 @@ struct LootRuleSet
 		// Compare this instance against a default-constructed one
 		return *this == LootRuleSet();
 	}
+
+	// Load the ruleset from the spawnargs matching the given prefix
+	void LoadFromDict(const idDict& dict, const idStr& prefix);
 };
 
 #endif

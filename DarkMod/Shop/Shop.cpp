@@ -341,7 +341,16 @@ void CShop::LoadFromMap(idMapFile* mapFile)
 
 void CShop::LoadLootRules(const idDict& dict)
 {
-	// TODO
+	// Check for general loot rules, without difficulty prefix
+	_generalLootRules.LoadFromDict(dict, "");
+
+	for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+	{
+		// greebo: Assemble the difficulty prefix (e.g. "diff_0_")
+		idStr diffPrefix = "diff_" + idStr(gameLocal.m_DifficultyManager.GetDifficultyLevel()) + "_";
+
+		_diffLootRules[i].LoadFromDict(dict, diffPrefix);
+	}
 }
 
 void CShop::LoadShopItemDefinitions()
