@@ -190,7 +190,7 @@ randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
 pugixml/pugixpath.cpp \
-shop.cpp \
+Shop/Shop.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
 StimResponse/Stim.cpp \

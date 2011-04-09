@@ -2202,14 +2202,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\shop.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\shop.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\sndProp.cpp"
 					>
 				</File>
@@ -2550,6 +2542,18 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\pugixml\pugixpath.cpp"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Shop"
+					>
+					<File
+						RelativePath=".\DarkMod\Shop\Shop.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\Shop.h"
 						>
 					</File>
 				</Filter>

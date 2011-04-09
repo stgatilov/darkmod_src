@@ -33,7 +33,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/MultiStateMover.h"
 #include "../DarkMod/func_shooter.h"
-#include "../DarkMod/shop.h"
+#include "../DarkMod/Shop/Shop.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
 #include "../DarkMod/DownloadMenu.h"
