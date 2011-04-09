@@ -2549,11 +2549,23 @@
 					Name="Shop"
 					>
 					<File
+						RelativePath=".\DarkMod\Shop\LootRuleSet.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Shop\Shop.cpp"
 						>
 					</File>
 					<File
 						RelativePath=".\DarkMod\Shop\Shop.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\ShopItem.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\ShopItem.h"
 						>
 					</File>
 				</Filter>

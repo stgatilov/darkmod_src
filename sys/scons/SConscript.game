@@ -191,6 +191,7 @@ ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
 pugixml/pugixpath.cpp \
 Shop/Shop.cpp \
+Shop/ShopItem.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
 StimResponse/Stim.cpp \
