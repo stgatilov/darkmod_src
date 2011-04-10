@@ -12,18 +12,18 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "MissionInfoDecl.h"
+#include "ModInfoDecl.h"
 
-const char* const CMissionInfoDecl::TYPE_NAME = "tdm_missioninfo";
+const char* const CModInfoDecl::TYPE_NAME = "tdm_missioninfo";
 
-bool CMissionInfoDecl::Parse(idLexer& src)
+bool CModInfoDecl::Parse(idLexer& src)
 {
 	idToken		key;
 	idToken		value;
 
 	if (!src.ReadToken(&key))
 	{
-		src.Warning("Unclosed mission info declaration.");
+		src.Warning("Unclosed mod info declaration.");
 		return false;
 	}
 
@@ -38,7 +38,7 @@ bool CMissionInfoDecl::Parse(idLexer& src)
 		// If there's an EOF, this is an error.
 		if (!src.ReadToken(&key))
 		{
-			src.Warning("Unclosed mission info declaration.");
+			src.Warning("Unclosed mod info declaration.");
 			return false;
 		}
 
@@ -77,7 +77,7 @@ bool CMissionInfoDecl::Parse(idLexer& src)
 	return true;
 }
 
-void CMissionInfoDecl::Update(const idStr& name)
+void CModInfoDecl::Update(const idStr& name)
 {
 	_bodyText = TYPE_NAME;
 	_bodyText += " " + name;
@@ -95,7 +95,7 @@ void CMissionInfoDecl::Update(const idStr& name)
 	_bodyText += "}\n\n";
 }
 
-void CMissionInfoDecl::SaveToFile(idFile* file)
+void CModInfoDecl::SaveToFile(idFile* file)
 {
 	file->Write(_bodyText.c_str(), _bodyText.Length());
 }

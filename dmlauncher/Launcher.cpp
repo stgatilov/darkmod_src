@@ -89,6 +89,11 @@ Launcher::Launcher(int argc, char* argv[]) :
 
 	TraceLog::WriteLine("Darkmod directory is " + _darkmodDir.file_string());
 
+	// Try to remove ../ and ./ references from darkmoddir
+	_darkmodDir = NormalisePath(_darkmodDir);
+
+	TraceLog::WriteLine("Darkmod directory after normalisation is " + _darkmodDir.file_string());
+
 	// Find the engine executable
 	if (!FindExecutable())
 	{
@@ -108,7 +113,7 @@ Launcher::Launcher(int argc, char* argv[]) :
 		if (possibleExecutable.string().find(ENGINE_EXECUTABLE) != std::string::npos)
 		{
 			// We've found an argument which might fit for an executable, check if it exists
-			if (fs::exists(possibleExecutable))
+			if (fs::exists(possibleExecutable) && ! fs::is_directory(possibleExecutable))
 			{
 				// Got it, use this as engine executable
 				TraceLog::WriteLine("Reading engine executable from command line arguments: " + possibleExecutable.file_string());
@@ -292,6 +297,51 @@ std::string Launcher::ReadFile(const fs::path& fileName)
 
 	return returnValue;
 }
+
+fs::path Launcher::NormalisePath(const fs::path& p)
+{
+	if (!p.has_root_path() || !p.is_complete()) 
+	{
+		return p;
+	}
+
+	fs::path result;
+
+	for (fs::path::iterator it = p.begin(); it != p.end(); ++it)
+	{
+		if (*it == "..")
+		{
+			// /a/b/.. is not necessarily /a if b is a symbolic link
+			if (fs::is_symlink(result))
+			{
+				result /= *it;
+			}
+			// /a/b/../.. is not /a/b/.. under most circumstances
+			// We can end up with ..s in our result because of symbolic links
+			else if (result.filename() == "..")
+			{
+				result /= *it;
+			}
+			// Otherwise it should be safe to resolve the parent
+			else
+			{
+				result = result.parent_path();
+			}
+		}
+		else if (*it == ".")
+		{
+			// Ignore
+		}
+		else
+		{
+			// Just cat other path entries
+			result /= *it;
+		}
+	}
+
+	return result;
+}
+
 
 bool Launcher::FindExecutable()
 {

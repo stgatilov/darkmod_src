@@ -840,6 +840,7 @@ idPhysics_Base::SetWater
 ================
 */
 void idPhysics_Base::SetWater( idPhysics_Liquid *e, const float m ) {
+/*
 	if (e != this->water)
 	{
 		if (NULL != e)
@@ -851,6 +852,7 @@ void idPhysics_Base::SetWater( idPhysics_Liquid *e, const float m ) {
 			gameLocal.Printf("Leaving water.\n");
 		}
 	}
+*/
 	this->water = e;
 	this->m_fWaterMurkiness = m;
 }

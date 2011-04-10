@@ -148,6 +148,7 @@ liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
 MissionData.cpp \
+MissionStatistics.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
@@ -176,8 +177,8 @@ Inventory/WeaponItem.cpp \
 Missions/Download.cpp \
 Missions/DownloadManager.cpp \
 Missions/MissionDB.cpp \
-Missions/MissionInfo.cpp \
-Missions/MissionInfoDecl.cpp \
+Missions/ModInfo.cpp \
+Missions/ModInfoDecl.cpp \
 Missions/MissionManager.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
@@ -189,7 +190,9 @@ randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
 pugixml/pugixpath.cpp \
-shop.cpp \
+Shop/LootRuleSet.cpp \
+Shop/Shop.cpp \
+Shop/ShopItem.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
 StimResponse/Stim.cpp \
@@ -279,6 +282,7 @@ ModelGenerator.cpp \
 ImageMapManager.cpp \
 LightController.cpp \
 StaticMulti.cpp \
+RawVector.cpp \
 sourcehook/sourcehook.cpp'
 
 darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)

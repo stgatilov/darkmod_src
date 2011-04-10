@@ -20,9 +20,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/game_local.h"
 
 #include "../MissionData.h"
-#include "../DarkMod/shop.h" // grayman (#2376)
+#include "../DarkMod/Shop/Shop.h" // grayman (#2376)
 
-static idStr sLootTypeName[CInventoryItem::LT_COUNT] = 
+static idStr sLootTypeName[LOOT_COUNT] = 
 {
 	"loot_none",
 	"loot_jewels",
@@ -62,15 +62,103 @@ int	CInventory::GetNumCategories() const
 	return m_Category.Num();
 }
 
-int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
+void CInventory::CopyTo(CInventory& targetInventory)
 {
-	int i;
+	// Iterate over all categories to copy stuff
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
 
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Copying item %s to inventory.\r", item->GetName().c_str());
+
+			// Add this item to the target inventory
+			targetInventory.PutItem(item, item->Category()->GetName());
+		}
+	}
+}
+
+void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEntity* newOwner)
+{
+	// Cycle through all categories to add them
+	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = sourceInventory.GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			if (item->GetPersistentCount() <= 0)
+			{
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+					"Item %s is not marked as persistent, won't add to player inventory.\r",
+					item->GetName().c_str());
+
+				continue; // not marked as persistent
+			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+				"Adding persistent item %s to player inventory, quantity: %d.\r",
+				item->GetName().c_str(), item->GetPersistentCount());
+
+			item->SetOwner(newOwner);
+
+			// Add this item to our inventory
+			PutItem(item, item->Category()->GetName());
+		}
+	}
+}
+
+void CInventory::SaveItemEntities(bool persistentOnly)
+{
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			if (persistentOnly && item->GetPersistentCount() <= 0)
+			{
+				continue; // skip non-persistent items
+			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Saving item entity of item %s.\r", item->GetName().c_str());
+
+			item->SaveItemEntityDict();
+		}
+	}
+}
+
+void CInventory::RestoreItemEntities(const idVec3& entPosition)
+{
+	for (int c = 0; c < GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item entity of item %s.\r", item->GetName().c_str());
+
+			item->RestoreItemEntityFromDict(entPosition);
+		}
+	}
+}
+
+int CInventory::GetLoot(int& Gold, int& Jewelry, int& Goods)
+{
 	Gold = 0;
 	Jewelry = 0;
 	Goods = 0;
 
-	for(i = 0; i < m_Category.Num(); i++)
+	for (int i = 0; i < m_Category.Num(); i++)
 	{
 		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 	}
@@ -110,7 +198,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 	int LGroupVal = 0;
 	int dummy1(0), dummy2(0), dummy3(0); // for calling GetLoot
 
-	CInventoryItem::LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
+	LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
 	int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
 
 	// grayman (#2376) - if anyone ever marks loot "inv_map_start" and it's a valid shop
@@ -121,27 +209,27 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 		value = -1;
 	}
 
-	if (lootType != CInventoryItem::LT_NONE && value > 0)
+	if (lootType != LOOT_NONE && value > 0)
 	{
 		idStr pickedUpMsg = idStr(value);
 
 		// If we have an anonymous loot item, we don't need to 
 		// store it in the inventory.
-		switch(lootType)
+		switch (lootType)
 		{
-			case CInventoryItem::LT_GOLD:
+			case LOOT_GOLD:
 				m_Gold += value;
 				LGroupVal = m_Gold;
 				pickedUpMsg += " in Gold";
 			break;
 
-			case CInventoryItem::LT_GOODS:
+			case LOOT_GOODS:
 				m_Goods += value;
 				LGroupVal = m_Goods;
 				pickedUpMsg += " in Goods";
 			break;
 
-			case CInventoryItem::LT_JEWELS:
+			case LOOT_JEWELS:
 				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
 				pickedUpMsg += " in Jewels";
@@ -158,7 +246,7 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 
 		// greebo: Update the total loot value in the objectives system BEFORE
 		// the InventoryCallback. Some comparisons rely on a valid total loot value.
-		gameLocal.m_MissionData->ChangeFoundLoot( value );
+		gameLocal.m_MissionData->ChangeFoundLoot(lootType, value);
 
 		// Objective Callback for loot on a specific entity:
 		// Pass the loot type name and the net loot value of that group
@@ -250,7 +338,7 @@ CInventoryCategoryPtr CInventory::GetCategory(const idStr& categoryName, int* in
 	return CInventoryCategoryPtr(); // not found
 }
 
-CInventoryCategoryPtr CInventory::GetCategory(int index)
+CInventoryCategoryPtr CInventory::GetCategory(int index) const
 {
 	// return NULL for invalid indices
 	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : CInventoryCategoryPtr();
@@ -493,7 +581,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	return returnValue;
 }
 
-void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
+void CInventory::RemoveEntityFromMap(idEntity* ent, bool deleteEntity)
 {
 	if (ent == NULL) return;
 
@@ -508,7 +596,7 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
-	if (bDelete == true)
+	if (deleteEntity == true)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Deleting entity from game: %s...\r", ent->name.c_str());
 		ent->PostEventMS(&EV_Remove, 0);

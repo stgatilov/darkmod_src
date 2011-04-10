@@ -993,6 +993,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	idStr					m_KoZone;
 	/**
+	* Alert state above which their KO Immunity changes (if any)
+	**/
+	int					m_KoAlertImmuneState;
+	/**
 	* Alert state above which their KO behavior changes (if any)
 	**/
 	int					m_KoAlertState;
@@ -1049,6 +1053,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	koState_t				m_koState;		// grayman #2604
 
 	/**
+	* Keep track of initial thinking frame count - important when a cinematic starts the mission
+	**/
+	int						m_earlyThinkCounter;	// grayman #2654
+
+	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
 	 */
 	bool					m_bCanOperateDoors;
@@ -1057,6 +1066,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * angua: is set true while the AI is handling the door.
 	 */
 	bool					m_HandlingDoor;
+
+	/**
+	 * grayman #2706: is set true when the move prior to door handling is saved
+	 */
+	bool					m_RestoreMove;
 
 	/**
 	 * angua: is set true while the AI is handling an elevator.
@@ -1259,6 +1273,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// the last time where the AI did its thinking (used for physics)
 	int						m_lastThinkTime;
+
+	// grayman #2691 - this checks if a doorway is large enough to fit through when the door is fully open
+	bool					CanPassThroughDoor(CFrobDoor* frobDoor);
 
 	virtual void			Hide( void );
 	virtual void			Show( void );

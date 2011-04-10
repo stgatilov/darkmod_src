@@ -764,7 +764,7 @@ idEntity::idEntity()
 	m_LightQuotientLastEvalTime = -1;
 
 	// by default no LOD to save memory and time
-	m_LOD = NULL;
+	m_LODHandle = 0;
 	m_DistCheckTimeStamp = 0;
 
 	// grayman #597 - for hiding arrows when nocked to the bow
@@ -798,11 +798,11 @@ Tels: Look at dist_think_interval, lod_1_distance etc. and fill the m_LOD
 	  is set, and should be between 0 and 1.0.
 ================
 */
-bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
+lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 {
-	m_LOD = NULL;
+	lod_data_t *m_LOD = NULL;
 
-	int d = (int) (1000.0f * dict->GetFloat( "dist_check_period", "0" ));
+	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
@@ -811,14 +811,15 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	if (d == 0 && fHideDistance < 0.1f)
 	{
 		// no LOD wanted
-		return false;
+		return 0;
 	}
 
+	// distance dependent LOD from this point on:
 	// allocate new memory
 	m_LOD = new lod_data_t;
 
 	// if interval not set, use twice per second
-	m_LOD->DistCheckInterval = d == 0 ? 500 : d;
+	m_LOD->DistCheckInterval = ((d == 0) ? 500 : d);
 
 	m_SkinLODCur = 0;
 	m_ModelLODCur = 0;
@@ -834,15 +835,35 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	}
 
 	idStr temp;
-	// distance dependent LOD from this point on:
 	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
-
 	m_LOD->DistLODSq[0] = 0;
+
+	// setup level 0 (aka "The one and only original")
+	m_LOD->ModelLOD[0] = dict->GetString( "model", "" );
+
+	// For func_statics where name == model, use "" so they can share the same LOD data
+	// even tho they all have different "models". (Their model spawnarg is never used.)
+	if ( IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == GetName())
+	{
+		m_LOD->ModelLOD[0] = "";
+	}
+
+	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
+	if ( renderEntity.customSkin )
+	{
+		m_LOD->SkinLOD[0] = renderEntity.customSkin->GetName(); 
+	}
+	else
+	{
+		m_LOD->SkinLOD[0] = "";
+	}
 
 	// start at 1, since 0 is "the original level" setup already above
 	for (int i = 1; i < LOD_LEVELS; i++)
 	{
-
+		// set to 0,0,0 as default in case someone tries to use it
+		m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		
 		if (i < LOD_LEVELS - 1)
 		{
 			// for i == LOD_LEVELS - 1, we use "hide_distance"
@@ -951,6 +972,13 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 		//gameLocal.Printf (" noshadowsLOD 0x%08x model %s skin %s\n", m_noshadowsLOD, m_ModelLOD[i].c_str(), m_SkinLOD[i].c_str() );
 		}
+		else
+		{
+			// initialize to empty in case someone tries to access them
+			m_LOD->SkinLOD[i] = "";
+			m_LOD->ModelLOD[i] = "";
+			m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		}
 	}
 
 	m_LOD->bDistCheckXYOnly = dict->GetBool( "dist_check_xy", "0" );
@@ -961,21 +989,13 @@ bool idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// old code, only using half the interval:
 	m_DistCheckTimeStamp = gameLocal.time - (int) (m_LOD->DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 
-	// setup level 0 (aka "The one and only original")
-	m_LOD->ModelLOD[0] = dict->GetString( "model" );
-	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
-	if ( renderEntity.customSkin )
-	{
-		m_LOD->SkinLOD[0] = renderEntity.customSkin->GetName(); 
-	}
-	else
-	{
-		m_LOD->SkinLOD[0] = "";
-	}
+	// register the data with the ModelGenerator and return the handle
+	lod_handle h = gameLocal.m_ModelGenerator->RegisterLODData( m_LOD );
 
-	//gameLocal.Printf (" LOD default model %s default skin %s\n", m_ModelLODCur.c_str(), m_SkinLODCur.c_str() );
+	// free memory
+	delete m_LOD;
 
-	return true;
+	return h;
 }
 
 /*
@@ -1135,11 +1155,13 @@ void idEntity::Spawn( void )
 	m_AbsenceStatus = false;
 
 	// parse LOD spawnargs
-	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
-		{
+	m_LODHandle = ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() );
+   
+	if (m_LODHandle)
+	{
 		// Have to start thinking if we're distance dependent
 		BecomeActive( TH_THINK );
-		}
+	}
 
 	// init most recent voice and body sound data for AI - grayman #2341
 	previousVoiceShader = NULL;	// shader for the most recent voice request
@@ -1158,7 +1180,13 @@ Tels: Disable LOD checks including all attachements
 void idEntity::StopLOD( const bool doTeam )
 {
 	//BecomeInactive( TH_THINK );
-	m_LOD->DistCheckInterval = 0; 
+
+	// deregister our LOD struct
+	if (m_LODHandle)
+	{
+		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
+		m_LODHandle = 0;
+	}
 
 	if (!doTeam)
 	{
@@ -1182,8 +1210,8 @@ void idEntity::StopLOD( const bool doTeam )
 		{
 			ent->StopLOD( false );
 		}
-	/* get next Team member */
-	NextEnt = NextEnt->GetNextTeamEntity();
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
 	}
 }
 
@@ -1376,10 +1404,9 @@ idEntity::~idEntity( void )
 	signals = NULL;
 
 	// free optional LOD data
-	if (m_LOD)
+	if (m_LODHandle)
 	{
-		delete m_LOD;
-		m_LOD = NULL;
+		StopLOD( false );
 	}
 
 	FreeModelDef();
@@ -1398,46 +1425,6 @@ idEntity::~idEntity( void )
 		delete m_FrobBox;
 
 	m_FrobPeers.Clear();
-}
-
-/*
-================
-idEntity::SaveLOD
-================
-*/
-void idEntity::SaveLOD( idSaveGame *savefile ) const
-{
-	/* Tels: Only write the LOD data if we are distance dependent */
-	if (m_LOD && m_DistCheckTimeStamp > 0)
-	{
-		// per-entity LOD data
-		savefile->WriteInt( m_DistCheckTimeStamp );
-		savefile->WriteInt( m_ModelLODCur );
-		savefile->WriteInt( m_SkinLODCur );
-		savefile->WriteInt( m_LODLevel );
-
-		// potential shared data
-		savefile->WriteInt( m_LOD->DistCheckInterval );
-		savefile->WriteBool( m_LOD->bDistCheckXYOnly );
-
-		savefile->WriteInt( m_LOD->noshadowsLOD );
-
-		for (int i = 0; i < LOD_LEVELS; i++)
-		{
-			savefile->WriteString( m_LOD->ModelLOD[i] );
-			savefile->WriteString( m_LOD->SkinLOD[i] );
-			savefile->WriteVec3( m_LOD->OffsetLOD[i] );
-			savefile->WriteFloat( m_LOD->DistLODSq[ i ] );
-		}
-		savefile->WriteFloat( m_LOD->fLODFadeOutRange );
-		savefile->WriteFloat( m_LOD->fLODFadeInRange );
-		savefile->WriteFloat( m_LOD->fLODNormalDistance );
-	}
-	else
-	{
-		// mark as LOD data NOT present
-		savefile->WriteInt( 0 );
-	}
 }
 
 void idEntity::AddObjectsToSaveGame(idSaveGame* savefile)
@@ -1653,7 +1640,11 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_droppedByAI); // grayman #1330
 
-	SaveLOD(savefile);
+	savefile->WriteInt(m_LODHandle);
+	savefile->WriteInt(m_DistCheckTimeStamp);
+	savefile->WriteInt(m_LODLevel);
+	savefile->WriteInt(m_ModelLODCur);
+	savefile->WriteInt(m_SkinLODCur);
 
 	// grayman #2341 - don't save previous voice and body shaders and indices,
 	// since they're irrelevant across saved games
@@ -1666,43 +1657,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 	// grayman #597
 
 	savefile->WriteInt(m_HideUntilTime); // arrow-hiding timer
-}
-
-void idEntity::RestoreLOD( idRestoreGame *savefile )
-{
-	if (m_LOD)
-	{
-		// free old data
-		delete m_LOD;
-	}
-	m_LOD = NULL;
-
-	savefile->ReadInt( m_DistCheckTimeStamp );
-
-	if ( m_DistCheckTimeStamp > 0)
-	{
-		/* Tels: Only read the LOD data if we are distance dependent */
-		savefile->ReadInt( m_ModelLODCur );
-		savefile->ReadInt( m_SkinLODCur );
-		savefile->ReadInt( m_LODLevel );
-
-		m_LOD = new lod_data_t;
-
-		savefile->ReadInt( m_LOD->DistCheckInterval );
-		savefile->ReadBool( m_LOD->bDistCheckXYOnly );
-
-		savefile->ReadInt( m_LOD->noshadowsLOD );
-		for (int i = 0; i < LOD_LEVELS; i++)
-		{
-			savefile->ReadString( m_LOD->ModelLOD[i] );
-			savefile->ReadString( m_LOD->SkinLOD[i] );
-			savefile->ReadVec3( m_LOD->OffsetLOD[i] );
-			savefile->ReadFloat( m_LOD->DistLODSq[ i ] );
-		}
-		savefile->ReadFloat( m_LOD->fLODFadeOutRange );
-		savefile->ReadFloat( m_LOD->fLODFadeInRange );
-		savefile->ReadFloat( m_LOD->fLODNormalDistance );
-	}
 }
 
 /*
@@ -1964,7 +1918,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_droppedByAI); // grayman #1330
 
-	RestoreLOD( savefile );
+	savefile->ReadUnsignedInt(m_LODHandle);
+	savefile->ReadInt(m_DistCheckTimeStamp);
+	savefile->ReadInt(m_LODLevel);
+	savefile->ReadInt(m_ModelLODCur);
+	savefile->ReadInt(m_SkinLODCur);
 
 	// grayman #2341 - restore previous voice and body shaders and indices
 
@@ -2218,6 +2176,10 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 */
 bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 {
+	if (!m_LOD)
+	{
+		gameLocal.Error("SwitchLOD() with NULL called.\n");
+	}
 	// remember the current level
 	int oldLODLevel = m_LODLevel;
 	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
@@ -2250,13 +2212,18 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 
 	if (m_LODLevel != oldLODLevel)
 	{
-//				gameLocal.Printf( "%s LOD level changed from %i to %i\n",
-//					GetName(), oldLODLevel, m_LODLevel );
+//				gameLocal.Printf( "%s LOD level changed from %i to %i\n", GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
 			{
 //				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
 //					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
-				SetModel( m_LOD->ModelLOD[m_LODLevel] );
+				// func_statics that have map geometry do not have a model, and their LOD data gets ""
+				// as model name so they can all share the same data. However, we must not use "" when
+				// setting a new model:
+				if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
+				{
+					SetModel( m_LOD->ModelLOD[m_LODLevel] );
+				}
 				m_ModelLODCur = m_LODLevel;
 				// Fix 1.04 blinking bug:
 				// if the old LOD level had an offset, we need to revert this.
@@ -2295,11 +2262,14 @@ idEntity::GetLODDistance
 
 Returns the distance that should be considered for LOD and hiding, depending on:
 
-* the distance of the origin to the given player origin
+* the distance of the entity origin to the given player origin
+  (TODO: this should be actualy the distance to the closest point of the entity,
+  to aovid that very long entities get hidden when you are far from their origin,
+  but close to their corner)
 * the lod-bias set in the menu
 * some minimum and maximum distances based on entity size/importance
 
-The returned value is the actual distance squared, and rounded down to an integer.
+The returned value is the (virtual) distance squared, and rounded down to an integer.
 ================
 */
 float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const
@@ -2327,7 +2297,10 @@ float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOri
 		minDist = m_LOD->fLODNormalDistance;
 	}
 	// if the entity is inside the "lod_normal_distance", simply ignore any LOD_BIAS < 1.0f
-	if (minDist > 0 && lod_bias < 1.0f && deltaSq < (minDist * minDist))
+	// Tels: For v1.05 use at least 1.0f for lod_bias, so that any distance the mapper sets
+	//       acts as the absolute minimum distance. Needs fixing later.
+	//if (minDist > 0 && lod_bias < 1.0f && deltaSq < (minDist * minDist))
+	if (lod_bias <= 1.0f)
 	{
 		deltaSq = idMath::Floor( deltaSq );
 	}
@@ -2355,21 +2328,26 @@ void idEntity::Think( void )
 		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
 
-	if (m_LOD)
+	if (m_LODHandle)
 	{
-		// If this entity has LOD, let it think about it:
+		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
 
-		// Distance dependence checks
-		if ( ( m_LOD->DistCheckInterval > 0) 
-		  && ( (gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval ) )
+		if (lod)
 		{
-			m_DistCheckTimeStamp = gameLocal.time;
+			// If this entity has LOD, let it think about it:
+
+			// Distance dependence checks
+			if ( ( lod->DistCheckInterval > 0) 
+				  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
+			{
+				m_DistCheckTimeStamp = gameLocal.time;
 
 //			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
 //					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
 
-			SwitchLOD( m_LOD, 
-				GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+			SwitchLOD( lod, 
+				GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+			}
 		}
 	}
 	Present();
@@ -8368,35 +8346,42 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 	// first see if the entity (the animation is running on) defines an entity
 	// via spawnarg: "pickup_" + "name_of_the_animation" (we get this as prefix)
 
-	const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
-	while( kv ) {
-		idEntity *target = gameLocal.FindEntity( kv->GetValue() );
-		if (!target) {
-			gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
-			// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
-			target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
-		}
-		// if we found an entity and it is not ourself:
-		if (target != NULL && target != this)
+	if (prefix && *prefix != 0x00)
+	{
+		const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
+		while( kv )
 		{
-			// check that it is closer than the closest match so far
-			idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
-			float distance = diff.LengthSqr();
-			if (distance < closest_distance && distance < max_dist_sqr) {
-				// closer and close enough
-				gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
-				closest_distance = distance;
-				closest = target;
+			idEntity *target = gameLocal.FindEntity( kv->GetValue() );
+			if (!target) {
+				gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
+				// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
+				target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
 			}
+			// if we found an entity and it is not ourself:
+			if (target != NULL && target != this)
+			{
+				// check that it is closer than the closest match so far
+				idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
+				float distance = diff.LengthSqr();
+				if (distance < closest_distance && distance < max_dist_sqr) {
+					// closer and close enough
+					gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+					closest_distance = distance;
+					closest = target;
+				}
+			}
+		// next spawnarg
+		kv = spawnArgs.MatchPrefix( prefix, kv );
 		}
-	// next spawnarg
-	kv = spawnArgs.MatchPrefix( prefix, kv );
 	}
 
 	if (closest == NULL) {
 		// couldn't find any usable entity from the the spawnargs
 		// so try to use the entity named in the animation
-		gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
+		if (prefix && *prefix != 0x00)
+		{
+			gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
+		}
 		closest = gameLocal.FindEntity( entitySelector );
 		if (closest) {
 			idVec3 diff = joint_origin - closest->GetPhysics()->GetOrigin();
@@ -8415,7 +8400,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 		}
 	}
 
-	gameLocal.Printf ( "   End of selecting closest entity.");
+//	gameLocal.Printf ( "   End of selecting closest entity.");
 
 	// now return the found entity or NULL
 	return closest;
@@ -9270,7 +9255,13 @@ void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
 	locationEntPtr = locationEnt;
 
 	// Ensure that objective locations don't add themselves twice or more times
-	assert(m_objLocations.FindIndex(locationEntPtr) == -1);
+	// Tels: The assert below triggers under Debug build when loading Heart, took
+	// it out since it will be ignored under Release builds anyway
+	//assert(m_objLocations.FindIndex(locationEntPtr) == -1);
+	if (m_objLocations.FindIndex(locationEntPtr) != -1)
+	{
+		return;
+	}
 
 	m_objLocations.Alloc() = locationEntPtr;
 }
@@ -10543,9 +10534,9 @@ void idEntity::Event_InitInventory(int callCount)
 	int lootType = spawnArgs.GetInt("inv_loot_type", "0");
 
 	// Check if the loot type is valid
-	if (lootType > CInventoryItem::LT_NONE && lootType < CInventoryItem::LT_COUNT && lootValue != 0) 
+	if (lootType > LOOT_NONE && lootType < LOOT_COUNT && lootValue != 0) 
 	{
-		gameLocal.m_MissionData->AddMissionLoot(lootType, lootValue);
+		gameLocal.m_MissionData->AddMissionLoot(static_cast<LootType>(lootType), lootValue);
 	}
 
 	// Check if this object should be put into the inventory of some entity
@@ -10581,17 +10572,17 @@ void idEntity::Event_GetLootAmount(int lootType)
 
 	switch (lootType)
 	{
-		case CInventoryItem::LT_GOLD:
+		case LOOT_GOLD:
 			idThread::ReturnInt(gold);
 			return;
 		break;
 
-		case CInventoryItem::LT_GOODS:
+		case LOOT_GOODS:
 			idThread::ReturnInt(goods);
 			return;
 		break;
 
-		case CInventoryItem::LT_JEWELS:
+		case LOOT_JEWELS:
 			idThread::ReturnInt(jewelry);
 			return;
 		break;
@@ -10698,25 +10689,25 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 
 	int gold, jewelry, goods;
 	int total = Inventory()->GetLoot(gold, jewelry, goods);
-	bool bGained = (amount >= 0);
+	bool gained = (amount >= 0);
 
 	switch(lootType)
 	{
-		case CInventoryItem::LT_GOLD:
+		case LOOT_GOLD:
 			gold += amount;
 			groupTotal = gold;
 			groupname = "loot_gold";
 			rc = gold;
 		break;
 
-		case CInventoryItem::LT_GOODS:
+		case LOOT_GOODS:
 			goods += amount;
 			groupTotal = goods;
 			groupname = "loot_goods";
 			rc = goods;
 		break;
 
-		case CInventoryItem::LT_JEWELS:
+		case LOOT_JEWELS:
 			jewelry += amount;
 			groupTotal = jewelry;
 			groupname = "loot_jewels";
@@ -10731,10 +10722,10 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 	// Set the new values
 	Inventory()->SetLoot(gold, jewelry, goods);
 
-	if( rc != 0 )
+	if (rc != 0)
 	{
-		gameLocal.m_MissionData->InventoryCallback( NULL, groupname, groupTotal, total, bGained );  
-		gameLocal.m_MissionData->ChangeFoundLoot( amount );
+		gameLocal.m_MissionData->InventoryCallback(NULL, groupname, groupTotal, total, gained);  
+		gameLocal.m_MissionData->ChangeFoundLoot(static_cast<LootType>(lootType), amount);
 	}
 
 	return rc;
@@ -10992,6 +10983,7 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 		return OVERLAYS_INVALID_HANDLE;
 	}
 
+
 	if(!uiManager->CheckGui(guiFile))
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
@@ -11018,6 +11010,9 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	gui->Activate(true, gameLocal.time);
 	// Let's set a good default value for whether or not the overlay is interactive.
 	m_overlays.setInteractive(handle, gui->IsInteractive());
+
+	// scale the GUI according to gui_Width/gui_Height/gui_CenterX/gui_CenterY
+	gameLocal.UpdateGUIScaling( gui );
 
 	return handle;
 }

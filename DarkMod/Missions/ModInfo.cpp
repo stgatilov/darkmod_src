@@ -12,13 +12,13 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "MissionInfo.h"
-#include "MissionInfoDecl.h"
+#include "ModInfo.h"
+#include "ModInfoDecl.h"
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
 
-std::size_t CMissionInfo::GetMissionFolderSize()
+std::size_t CModInfo::GetModFolderSize()
 {
 	if (_modFolderSizeComputed)
 	{
@@ -31,12 +31,12 @@ std::size_t CMissionInfo::GetMissionFolderSize()
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
-	fs::path missionPath = parentPath / modName.c_str();
+	fs::path modPath = parentPath / modName.c_str();
 
-	if (fs::exists(missionPath))
+	if (fs::exists(modPath))
 	{
 		// Iterate over all files in the mod folder
-		for (fs::recursive_directory_iterator i(missionPath); 
+		for (fs::recursive_directory_iterator i(modPath); 
 			i != fs::recursive_directory_iterator(); ++i)
 		{
 			if (fs::is_directory(i->path())) continue;
@@ -48,15 +48,15 @@ std::size_t CMissionInfo::GetMissionFolderSize()
 	return _modFolderSize;
 }
 
-void CMissionInfo::ClearMissionFolderSize()
+void CModInfo::ClearModFolderSize()
 {
 	_modFolderSize = 0;
 	_modFolderSizeComputed = false;
 }
 
-idStr CMissionInfo::GetMissionFolderSizeString()
+idStr CModInfo::GetModFolderSizeString()
 {
-	float size = static_cast<float>(GetMissionFolderSize());
+	float size = static_cast<float>(GetModFolderSize());
 
 	// TODO: i18n
 	idStr str;
@@ -81,7 +81,7 @@ idStr CMissionInfo::GetMissionFolderSizeString()
 	return str;
 }
 
-bool CMissionInfo::MissionCompleted(int difficultyLevel)
+bool CModInfo::ModCompleted(int difficultyLevel)
 {
 	bool anyCompleted = false;
 
@@ -101,7 +101,7 @@ bool CMissionInfo::MissionCompleted(int difficultyLevel)
 	return anyCompleted;
 }
 
-idStr CMissionInfo::GetMissionCompletedString()
+idStr CModInfo::GetModCompletedString()
 {
 	if (modName == "training_mission")
 	{
@@ -135,14 +135,14 @@ idStr CMissionInfo::GetMissionCompletedString()
 	}
 }
 
-idStr CMissionInfo::GetKeyValue(const char* key, const char* defaultStr)
+idStr CModInfo::GetKeyValue(const char* key, const char* defaultStr)
 {
 	if (_decl == NULL) return defaultStr;
 
 	return _decl->data.GetString(key, defaultStr);
 }
 
-void CMissionInfo::SetKeyValue(const char* key, const char* value)
+void CModInfo::SetKeyValue(const char* key, const char* value)
 {
 	if (_decl == NULL) return;
 
@@ -151,7 +151,7 @@ void CMissionInfo::SetKeyValue(const char* key, const char* value)
 	_decl->data.Set(key, value);
 }
 
-void CMissionInfo::RemoveKeyValue(const char* key)
+void CModInfo::RemoveKeyValue(const char* key)
 {
 	if (_decl == NULL) return;
 
@@ -160,7 +160,7 @@ void CMissionInfo::RemoveKeyValue(const char* key)
 	_decl->data.Delete(key);
 }
 
-void CMissionInfo::RemoveKeyValuesMatchingPrefix(const char* prefix)
+void CModInfo::RemoveKeyValuesMatchingPrefix(const char* prefix)
 {
 	if (_decl == NULL) return;
 
@@ -172,7 +172,7 @@ void CMissionInfo::RemoveKeyValuesMatchingPrefix(const char* prefix)
 	}
 }
 
-void CMissionInfo::SaveToFile(idFile* file)
+void CModInfo::SaveToFile(idFile* file)
 {
 	if (_decl == NULL) return;
 
@@ -180,17 +180,17 @@ void CMissionInfo::SaveToFile(idFile* file)
 	_decl->SaveToFile(file);
 }
 
-idStr CMissionInfo::GetMissionFolderPath()
+idStr CModInfo::GetModFolderPath()
 {
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
 
-	fs::path missionPath = parentPath / modName.c_str();
+	fs::path modPath = parentPath / modName.c_str();
 
-	return missionPath.file_string().c_str();
+	return modPath.file_string().c_str();
 }
 
-bool CMissionInfo::HasMissionNotes()
+bool CModInfo::HasModNotes()
 {
 	// Check for the readme.txt file
 	idStr notesFileName = cv_tdm_fm_path.GetString() + modName + "/" + cv_tdm_fm_notes_file.GetString();
@@ -198,7 +198,7 @@ bool CMissionInfo::HasMissionNotes()
 	return fileSystem->ReadFile(notesFileName, NULL) != -1;
 }
 
-idStr CMissionInfo::GetMissionNotes()
+idStr CModInfo::GetModNotes()
 {
 	// Check for the readme.txt file
 	idStr notesFileName = cv_tdm_fm_path.GetString() + modName + "/" + cv_tdm_fm_notes_file.GetString();
@@ -217,7 +217,7 @@ idStr CMissionInfo::GetMissionNotes()
 	return modNotes;
 }
 
-bool CMissionInfo::LoadMetaData()
+bool CModInfo::LoadMetaData()
 {
 	if (modName.IsEmpty()) 
 	{
@@ -318,7 +318,7 @@ bool CMissionInfo::LoadMetaData()
 	return true;
 }
 
-void CMissionInfo::MoveArticlesToBack(idStr& title)
+void CModInfo::MoveArticlesToBack(idStr& title)
 {
 	if (title.StripLeadingOnce("The "))
 	{

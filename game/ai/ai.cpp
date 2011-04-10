@@ -551,6 +551,7 @@ idAI::idAI()
 
 	m_bCanBeGassed = true;		// grayman #2468
 	m_koState = KO_NOT;			// grayman #2604
+	m_earlyThinkCounter = 5 + gameLocal.random.RandomInt(5);	// grayman #2654
 
 	m_bCanOperateDoors = false;
 
@@ -850,6 +851,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteMat3(m_FOVRot);
 	savefile->WriteString(m_KoZone);
 	savefile->WriteInt(m_KoAlertState);
+	savefile->WriteInt(m_KoAlertImmuneState);
 	savefile->WriteBool(m_bKoAlertImmune);
 	savefile->WriteFloat(m_KoDotVert);
 	savefile->WriteFloat(m_KoDotHoriz);
@@ -857,8 +859,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_KoAlertDotHoriz);
 	savefile->WriteMat3(m_KoRot);
 
-	savefile->WriteBool(m_bCanBeGassed);	// grayman #2468
-	savefile->WriteInt( m_koState );		// grayman #2604
+	savefile->WriteBool(m_bCanBeGassed);		// grayman #2468
+	savefile->WriteInt( m_koState );			// grayman #2604
+	savefile->WriteInt( m_earlyThinkCounter );	// grayman #2654
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -929,6 +932,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
+	savefile->WriteBool(m_RestoreMove); // grayman #2706
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
@@ -1246,6 +1250,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadMat3(m_FOVRot);
 	savefile->ReadString(m_KoZone);
 	savefile->ReadInt(m_KoAlertState);
+	savefile->ReadInt(m_KoAlertImmuneState);
 	savefile->ReadBool(m_bKoAlertImmune);
 	savefile->ReadFloat(m_KoDotVert);
 	savefile->ReadFloat(m_KoDotHoriz);
@@ -1256,6 +1261,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanBeGassed); // grayman #2468
 	savefile->ReadInt( i ); // grayman #2604
 	m_koState = static_cast<koState_t>( i );
+	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1334,6 +1340,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
+	savefile->ReadBool(m_RestoreMove); // grayman #2706
 
 	int size;
 	savefile->ReadInt(size);
@@ -1739,7 +1746,7 @@ void idAI::Spawn( void )
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 
 	physicsObj.SetMass( spawnArgs.GetFloat( "mass", "100" ) );
-	kickForce = 1.5*physicsObj.GetMass(); // grayman #2568 - equation arrived at empirically
+	kickForce = 2*physicsObj.GetMass(); // grayman #2568 - equation arrived at empirically
 
 	physicsObj.SetStepUpIncrease(spawnArgs.GetFloat("step_up_increase", "0"));
 
@@ -1834,6 +1841,7 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
+	m_RestoreMove = false; // grayman #2706
 
 	m_HandlingElevator = false;
 
@@ -2392,7 +2400,7 @@ void idAI::SetNextThinkFrame()
 	if (thinkFrame > 1)
 	{
 		// Let them think for the first few frames to initialize state and tasks
-		if (frameNum >= (5 + gameLocal.random.RandomInt(5)))
+		if (m_earlyThinkCounter <= 0) // grayman #2654 - keep a separate counter
 		{
 			// grayman #2414 - think more often if
 			//
@@ -2443,6 +2451,10 @@ void idAI::SetNextThinkFrame()
 			{
 				thinkDelta = (thinkFrame < TEMP_THINK_INTERLEAVE ? thinkFrame : TEMP_THINK_INTERLEAVE);
 			}
+		}
+		else
+		{
+			m_earlyThinkCounter--; // grayman #2654
 		}
 	}
 
@@ -2621,7 +2633,8 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 
 	// find all possible obstacles
 	clipBounds = physicsObj.GetAbsBounds();
-	clipBounds.TranslateSelf( dir * 32.0f );
+	clipBounds.TranslateSelf( dir * (clipBounds[1].x - clipBounds[0].x + clipBounds[1].y - clipBounds[0].y)/2); // grayman #2667
+//	clipBounds.TranslateSelf( dir * 32.0f ); // grayman #2667 - old way assumed a humanoid
 	clipBounds.ExpandSelf( 8.0f );
 	clipBounds.AddPoint( org );
 	clipmask = physicsObj.GetClipMask();
@@ -2896,7 +2909,21 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	}
 	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
 
-	return returnval;
+	// return returnval;
+	// grayman #2708 - if returnval is true, return, but if false, check whether the AAS area is above
+	// the AI's origin, as it might be if the AI is stuck in an AAS area next to a monster-clipped
+	// table top, where it will be at the plane of the table top. If that's the case, return 'true'
+	// to let the AI escape this type of AAS area. Normal pathfinding will never let him out.
+
+	if (returnval)
+	{
+		return true;
+	}
+
+	idVec3 myOrigin = GetPhysics()->GetOrigin();
+	idBounds areaBounds = aas->GetAreaBounds(areaNum);
+	path.moveGoal = goal;
+	return (myOrigin.z < areaBounds[0].z);
 }
 
 
@@ -3729,10 +3756,7 @@ idAI::MoveToPosition
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
-	if (movementSubsystem->IsPaused()) // grayman #2345
-	{
-		movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
-	}
+	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
 	// Check if we already reached the position
 	if ( ReachedPos( pos, move.moveCommand) ) {
@@ -3750,7 +3774,6 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 		GetUp();
 		return true;
 	}
-
 
 	idVec3 org = pos;
 	move.toAreaNum = 0;
@@ -4756,32 +4779,42 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		}
 #endif
 	}
-	// We found a path around obstacles, but we should still check for the seekPosObstacle
-	else if (path.seekPosObstacle)
+	else
 	{
-/*		gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
-												  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
-												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);
- */
-
-		// greebo: Check if we have a frobdoor entity at our seek position
-		if (path.seekPosObstacle->IsType(CFrobDoor::Type)) 
+		// We found a path around obstacles
+		if (path.doorObstacle != NULL) // grayman #2712 - do we have to handle a door?
 		{
 			// We have a frobmover in our way, raise a signal to the current state
-			mind->GetState()->OnFrobDoorEncounter(static_cast<CFrobDoor*>(path.seekPosObstacle));
+			mind->GetState()->OnFrobDoorEncounter(path.doorObstacle);
 		}
 
-		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
-		// then we want to push the path.seekPosObstacle entity out of the way
-		AI_OBSTACLE_IN_PATH = true;
-
-		// check if we're past where the goalPos was pushed out of the obstacle
-		idVec3 dir = goalPos - origin;
-		dir.NormalizeFast();
-		float dist = (path.seekPos - origin) * dir;
-		if (dist < 1.0f)
+		// still check for the seekPosObstacle
+		if (path.seekPosObstacle)
 		{
-			obstacle = path.seekPosObstacle;
+	/*		gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
+													  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
+													  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);
+	 */
+
+			// greebo: Check if we have a frobdoor entity at our seek position
+			if (path.seekPosObstacle->IsType(CFrobDoor::Type)) 
+			{
+				// We have a frobmover in our way, raise a signal to the current state
+				mind->GetState()->OnFrobDoorEncounter(static_cast<CFrobDoor*>(path.seekPosObstacle));
+			}
+
+			// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
+			// then we want to push the path.seekPosObstacle entity out of the way
+			AI_OBSTACLE_IN_PATH = true;
+
+			// check if we're past where the goalPos was pushed out of the obstacle
+			idVec3 dir = goalPos - origin;
+			dir.NormalizeFast();
+			float dist = (path.seekPos - origin) * dir;
+			if (dist < 1.0f)
+			{
+				obstacle = path.seekPosObstacle;
+			}
 		}
 	}
 
@@ -4831,6 +4864,56 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	}
 
 	move.obstacle = obstacle;
+}
+
+/*
+=====================
+idAI::CanPassThroughDoor - Is the AI allowed through this door? (grayman #2691) 
+=====================
+*/
+
+bool idAI::CanPassThroughDoor(CFrobDoor* frobDoor)
+{
+	// grayman #2691 - quick test for spawnarg that appears on many furniture doors
+
+	if (frobDoor->spawnArgs.GetBool("immune_to_target_setfrobable", "0"))
+	{
+		return false;
+	}
+
+	// grayman #2691 - can't pass through doors that don't rotate on the z-axis
+
+	idVec3 rotationAxis = frobDoor->GetRotationAxis();
+	if ((rotationAxis.z == 0) && ((rotationAxis.x != 0) || (rotationAxis.y != 0))) // grayman #2712 - handles sliding doors
+	{
+		return false;
+	}
+
+	idBounds door1Bounds = frobDoor->GetPhysics()->GetBounds();
+	idBounds myBounds = GetPhysics()->GetBounds();
+	idVec3 door1Size = door1Bounds.GetSize();
+	idVec3 mySize = myBounds.GetSize();
+	bool canPassDoor1 = (door1Size.x > mySize.x) || (door1Size.y > mySize.y);
+	if (canPassDoor1)
+	{
+		return true;
+	}
+
+	// The AI can't fit through the first door. Is this door part of a double door?
+	
+	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+	if (doubleDoor != NULL)
+	{
+		idBounds door2Bounds = doubleDoor->GetPhysics()->GetBounds();
+		idVec3 door2Size = door2Bounds.GetSize();
+		bool canPassDoors = ((door1Size.x + door2Size.x) > mySize.x) || ((door1Size.y + door2Size.y) > mySize.y);
+		if (canPassDoors)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /*
@@ -9575,9 +9658,9 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	float minDotVert = m_KoDotVert;
 	float minDotHoriz = m_KoDotHoriz;
 
-	// Check if the AI is above the alert threshold for KOing
+	// Check if the AI is above the alert threshold for Immunity
 	// Defined the name of the alert threshold in the AI def for generality
-	if (AI_AlertIndex >= m_KoAlertState)
+	if (AI_AlertIndex >= m_KoAlertImmuneState)
 	{
 		// abort KO if the AI is immune when alerted
 		if( m_bKoAlertImmune )
@@ -9649,7 +9732,7 @@ void idAI::KnockoutDebugDraw( void )
 	if( AI_AlertIndex >= m_KoAlertState)
 	{
 		// Do not display if immune
-		if( m_bKoAlertImmune )
+		if( m_bKoAlertImmune && AI_AlertIndex >= m_KoAlertImmuneState )
 			return;
 
 		// reduce the angle on alert, if needed
@@ -10665,17 +10748,14 @@ void idAI::PushMove()
 
 void idAI::PopMove()
 {
-	if (moveStack.empty()) {
+	if (moveStack.empty())
+	{
 		return; // nothing to pop from
 	}
-
-	// Get a reference of the last element
-	const idMoveState& saved = moveStack.back();
-
+	
+	const idMoveState& saved = moveStack.back(); // Get a reference of the last element
 	RestoreMove(saved);
-
-	// Remove the last element
-	moveStack.pop_back();
+	moveStack.pop_back(); // Remove the last element
 }
 
 void idAI::RestoreMove(const idMoveState& saved)
@@ -11017,9 +11097,9 @@ void idAI::CopyHeadKOInfo( void )
 		return;
 
 	// Change this if the list below changes:
-	const int numArgs = 13;
+	const int numArgs = 14;
 	const char *copyArgs[ numArgs ] = { "ko_immune", "ko_spot_offset", "ko_zone", 
-		"ko_alert_state", "ko_alert_immune",  "ko_angle_vert", "ko_angle_horiz",
+		"ko_alert_state", "ko_alert_immune", "ko_alert_immune_state",  "ko_angle_vert", "ko_angle_horiz",
 		"ko_angle_alert_vert", "ko_angle_alert_horiz", "ko_rotation", "fov",
 		"fov_vert", "fov_rotation"};
 
@@ -11042,6 +11122,7 @@ void idAI::ParseKnockoutInfo()
 	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
 	m_KoZone = spawnArgs.GetString("ko_zone");
 	m_KoAlertState = spawnArgs.GetInt("ko_alert_state");
+	m_KoAlertImmuneState = spawnArgs.GetInt("ko_alert_immune_state");
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
 	idAngles tempAngles = spawnArgs.GetAngles("ko_rotation");
 	m_KoRot = tempAngles.ToMat3();

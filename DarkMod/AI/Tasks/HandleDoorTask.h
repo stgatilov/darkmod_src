@@ -20,9 +20,11 @@ namespace ai
 // Define the name of this task
 #define TASK_HANDLE_DOOR "HandleDoor"
 
-#define HANDLE_DOOR_ACCURACY 8	// grayman #2345 - More accuracy when reaching position to work w/door.
+#define HANDLE_DOOR_ACCURACY -1	// grayman #2345 - More accuracy when reaching position to work w/door.
 								// '8' says to use a 16x16 bounding box to see if you've reached a goal
-								// position instead of the default 32x32.
+								// position instead of the default 32x32 ('-1').
+								// grayman #2706 - returned to default value of -1. Tighter than this
+								// might cause problems.
 
 class HandleDoorTask;
 typedef boost::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
@@ -58,8 +60,11 @@ private:
 	bool _wasLocked;
 	bool _doorInTheWay;
 	int _retryCount;
-	int _leaveQueue; // grayman #2345
-	bool _triedFitting; // grayman #2345
+	int _leaveQueue;		// grayman #2345
+	int _leaveDoor;			// grayman #2700
+	bool _triedFitting;		// grayman #2345
+	bool _wasRunning;		// grayman #2694
+	bool _canHandleDoor;	// grayman #2712
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -71,9 +76,11 @@ public:
 
 	virtual void OnFinish(idAI* owner);
 
+	virtual bool CanAbort(); // grayman #2706
+
 	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
 	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
-	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor); // grayman #2345
+	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away); // grayman #2345/#2712
 
 	void PickWhere2Go(CFrobDoor* door); // grayman #2345
 
@@ -111,7 +118,6 @@ private:
 	// If multiple controllers are available, the nearest one is chosen
 	idEntity* GetRemoteControlEntityForDoor();
 
-	void ResetMaster(CFrobDoor* frobDoor); // grayman #2345
 	void AddUser(idAI* owner, CFrobDoor* frobDoor); // grayman #2345
 
 };

@@ -97,6 +97,10 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 
 	entry = new trmCache_t;
 	entry->trm = trm;
+
+	// If density is 1 the volume has the same size as the mass (m = d*v). The calling code wants to know the volume,
+	// and with density equal to 1 it's allowed to use the mass value returned by idTraceModel::GetMassProperties().
+	// That's what's happening here.
 	entry->trm.GetMassProperties( 1.0f, entry->volume, entry->centerOfMass, entry->inertiaTensor );
 	entry->refCount = 1;
 
@@ -110,9 +114,13 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 idClipModel::FreeTraceModel
 ===============
 */
-void idClipModel::FreeTraceModel( int traceModelIndex ) {
-	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex]->refCount <= 0 ) {
-		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model" );
+void idClipModel::FreeTraceModel( const int traceModelIndex ) {
+	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: traceModelIndex %i out of range (0..%i)", traceModelIndex, traceModelCache.Num() );
+		return;
+	}
+	if ( traceModelCache[traceModelIndex]->refCount <= 0 ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model (index=%i)", traceModelIndex );
 		return;
 	}
 	traceModelCache[traceModelIndex]->refCount--;
@@ -374,7 +382,6 @@ void idClipModel::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 	savefile->WriteInt( traceModelIndex );
-	savefile->WriteInt( renderModelHandle );
 	savefile->WriteBool( clipLinks != NULL );
 	savefile->WriteInt( touchCount );
 }
@@ -408,11 +415,10 @@ void idClipModel::Restore( idRestoreGame *savefile ) {
 	if ( traceModelIndex >= 0 ) {
 		traceModelCache[traceModelIndex]->refCount++;
 	}
-	savefile->ReadInt( renderModelHandle );
 	savefile->ReadBool( linked );
 	savefile->ReadInt( touchCount );
 
-	// the render model will be set when the clip model is linked
+	// the render model will be set when the clip model is linked, so do not restore it
 	renderModelHandle = -1;
 	clipLinks = NULL;
 	touchCount = -1;

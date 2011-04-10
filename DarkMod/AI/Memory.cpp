@@ -125,6 +125,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
+	lastDoorHandled.Save(savefile); // grayman #2712
 
 	doorRelated.currentDoor.Save(savefile);
 
@@ -211,6 +212,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(fleeingDone);
 	savefile->ReadVec3(positionBeforeTakingCover);
 	savefile->ReadBool(resolvingMovementBlock);
+	lastDoorHandled.Restore(savefile); // grayman #2712
 
 	doorRelated.currentDoor.Restore(savefile);
 	// Clear the containers before restoring them

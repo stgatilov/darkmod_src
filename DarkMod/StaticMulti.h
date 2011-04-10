@@ -2,9 +2,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 4069 $
- * $Date: 2010-07-18 13:07:48 +0200 (Sun, 18 Jul 2010) $
- * $Author: tels $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -50,7 +50,7 @@ public:
 
 	void				Spawn( void );
 
-	void				SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
+	void				SetLODData( const idVec3 &origin, const unsigned int lodHandle, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clip);
 
 //	virtual void		Hide( void );
 //	virtual void		Show( void );
@@ -118,6 +118,7 @@ private:
 	float						m_fHideDistance;
 	bool						m_bDistCheckXYOnly;
 
+	lod_handle					m_LODHandle;		//!< to retrieve the LOD Data from the ModelGenerator
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */

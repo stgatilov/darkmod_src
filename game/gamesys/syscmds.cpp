@@ -26,7 +26,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/TimerManager.h"
 #include "../../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../../DarkMod/Missions/MissionManager.h"
-#include "../../DarkMod/Missions/MissionInfo.h"
+#include "../../DarkMod/Missions/ModInfo.h"
 
 #include "typeinfo.h"
 
@@ -86,11 +86,11 @@ void Cmd_RestartGuiCmd_UpdateObjectives_f(const idCmdArgs &args)
 
 void Cmd_ListMissions_f(const idCmdArgs& args)
 {
-	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMissions());
+	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMods());
 
-	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMissions(); ++i)
+	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMods(); ++i)
 	{
-		CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(i);
+		CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(i);
 
 		if (missionInfo == NULL) continue;
 
@@ -133,7 +133,7 @@ void Cmd_SetMissionCompleted_f(const idCmdArgs& args)
 		return;
 	}
 
-	CMissionInfoPtr missionInfo = gameLocal.m_MissionManager->GetMissionInfo(missionName);
+	CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(missionName);
 
 	if (missionInfo == NULL)
 	{
@@ -2809,23 +2809,23 @@ void Cmd_ShowLoot_f(const idCmdArgs& args)
 
 		items++;
 
-		CInventoryItem::LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
+		LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
 		
 		idVec4 colour(colorWhite);
 
 		switch(lootType)
 		{
-			case CInventoryItem::LT_GOLD:
+			case LOOT_GOLD:
 				gold += value;
 				colour = idVec4(0.97f, 0.93f, 0.58f, 1);
 			break;
 
-			case CInventoryItem::LT_GOODS:
+			case LOOT_GOODS:
 				goods += value;
 				colour = idVec4(0.3f, 0.91f, 0.3f, 1);
 			break;
 
-			case CInventoryItem::LT_JEWELS:
+			case LOOT_JEWELS:
 				jewels += value;
 				colour = idVec4(0.96f, 0.2f, 0.2f, 1);
 			break;

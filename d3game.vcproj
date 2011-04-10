@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Game/DebugDLL"
+			OutputDirectory="../"
 			IntermediateDirectory="Game/DebugDLL"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -121,7 +121,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="ReleaseDLL"
+			OutputDirectory="../"
 			IntermediateDirectory="Game/ReleaseDLL"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -2066,6 +2066,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\MissionStatistics.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\MissionStatistics.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\ModelGenerator.cpp"
 					>
 				</File>
@@ -2158,6 +2166,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\RawVector.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\RawVector.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\rdline.cpp"
 					>
 				</File>
@@ -2183,14 +2199,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\SEED.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\shop.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\shop.h"
 					>
 				</File>
 				<File
@@ -2421,6 +2429,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Inventory\LootType.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Inventory\WeaponItem.cpp"
 						>
 					</File>
@@ -2469,27 +2481,27 @@
 						>
 					</File>
 					<File
-						RelativePath=".\DarkMod\Missions\MissionInfo.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfo.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfoDecl.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Missions\MissionInfoDecl.h"
-						>
-					</File>
-					<File
 						RelativePath=".\DarkMod\Missions\MissionManager.cpp"
 						>
 					</File>
 					<File
 						RelativePath=".\DarkMod\Missions\MissionManager.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfo.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfo.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfoDecl.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Missions\ModInfoDecl.h"
 						>
 					</File>
 				</Filter>
@@ -2530,6 +2542,34 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\pugixml\pugixpath.cpp"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Shop"
+					>
+					<File
+						RelativePath=".\DarkMod\Shop\LootRuleSet.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\LootRuleSet.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\Shop.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\Shop.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\ShopItem.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Shop\ShopItem.h"
 						>
 					</File>
 				</Filter>

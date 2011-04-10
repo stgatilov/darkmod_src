@@ -82,8 +82,10 @@ public:
 	virtual void			FrobHeld(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
 	virtual void			FrobReleased(bool frobMaster, bool isFrobPeerAction = false, int holdTime = 0);
 
-	void					RegisterAI(idAI* ai); // grayman #1145
-		
+	void					RegisterAI(idAI* ai);	// grayman #1145
+	void					TellRegisteredUsers();	// grayman #1145
+	idVec3					GetRotationAxis();		// grayman #2691
+
 	/**
 	* This is the non-script version of GetOpen 
 	*/

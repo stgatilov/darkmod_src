@@ -172,6 +172,8 @@ class CRelations;
 typedef boost::shared_ptr<CRelations> CRelationsPtr;
 class CMissionData;
 typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
+class CampaignStats;
+typedef boost::shared_ptr<CampaignStats> CampaignStatsPtr;
 class CStimResponse;
 typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
 class CStim;
@@ -183,6 +185,8 @@ class CMissionManager;
 typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
 class CHttpConnection;
 typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
+class CInventory;
+typedef boost::shared_ptr<CInventory> CInventoryPtr;
 
 class CModelGenerator;
 typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
@@ -448,9 +452,35 @@ public:
 	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 
-	// greebo: Is set to TRUE if the success screen is currently active. (Usually these state variables should
-	// be kept in the GUI, but in this case I need it to be accessible when the player loads a new map via the console.)
-	bool					successScreenActive;
+	// The inventory class which keeps items safe between maps
+	CInventoryPtr			persistentPlayerInventory;
+
+	// greebo: Is set to TRUE if the post-mission screen (debriefing or success screen) is currently active. 
+	// (Usually these state variables should be kept in the GUI, but in this case I need it to be accessible 
+	// when the player loads a new map via the console.)
+	bool					postMissionScreenActive;
+
+	// Toggle to keep track whether the GUI state variables have been set up
+	bool					briefingVideoInfoLoaded;
+
+	// Hold information about a single video piece
+	struct BriefingVideoPart
+	{
+		idStr	material;	// name of the material
+		int		lengthMsec; // length in msecs
+	};
+
+	// The list of briefing videos for the current mission
+	idList<BriefingVideoPart>	briefingVideo;
+	
+	// Index into the above list
+	int							curBriefingVideoPart;
+
+	// The list of DE-briefing videos for the current mission
+	idList<BriefingVideoPart>	debriefingVideo;
+
+	// Index into the above list
+	int							curDebriefingVideoPart;
 
 	bool					mainMenuExited;			// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 
@@ -543,6 +573,9 @@ public:
 	**/
 	CMissionDataPtr			m_MissionData;
 	EMissionResult			m_MissionResult; // holds the global mission state
+
+	// Campaign statistics
+	CampaignStatsPtr		m_CampaignStats;
 
 	/**
 	* Pointer to global sound prop loader object
@@ -660,6 +693,10 @@ public:
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
+	/**
+	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
+    */
+	virtual void			UpdateGUIScaling( idUserInterface *gui );
 	virtual allowReply_t	ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] );
 	virtual void			ServerClientConnect( int clientNum, const char *guid );
 	virtual void			ServerClientBegin( int clientNum );
@@ -906,7 +943,7 @@ public:
 	void					AddSDKSignal(idEntity *oObject);
 
 	// Checks the TDM version
-	void					CheckTDMVersion(idUserInterface* ui);
+	void					CheckTDMVersion();
 
 	void					AddMainMenuMessage(const GuiMessage& message);
 	void					HandleGuiMessages(idUserInterface* ui);
@@ -1026,6 +1063,13 @@ private:
 
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
+
+	// Splits the given string and stores the found video materials in the target list.
+	// Calculates the length of the ROQ videos as defined in the string (each material
+	// is separated by a semicolon) Returns the total length in milliseconds, or -1 on failure.
+	// The lengthStr corresponds to the videosStr, but contains the lengths of the clips
+	static int				LoadVideosFromString(const char* videosStr, const char* lengthStr, 
+												 idList<BriefingVideoPart>& targetList);
 
 	// Platform-specific implementation to change the D3's title and icon
 	void					ChangeWindowTitleAndIcon();

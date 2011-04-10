@@ -158,7 +158,7 @@ Seed::~Seed
 */
 Seed::~Seed(void) {
 
-	// gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
+	//gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
 	ClearClasses();
 }
 /*
@@ -272,30 +272,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 			}
 		}
 
-		// save m_LOD data structure
-		if (m_Classes[i].m_LOD)
-		{
-			savefile->WriteBool( true );
-			const lod_data_t* lod = m_Classes[i].m_LOD;
-			savefile->WriteBool( lod->bDistCheckXYOnly );
-			savefile->WriteInt( lod->DistCheckInterval );
-			savefile->WriteInt( lod->noshadowsLOD );
-			savefile->WriteFloat( lod->fLODFadeOutRange );
-			savefile->WriteFloat( lod->fLODFadeInRange );
-			savefile->WriteFloat( lod->fLODNormalDistance );
-			for (int l = 0; l < LOD_LEVELS; l++)
-			{
-				savefile->WriteFloat( lod->DistLODSq[ l ] );
-				savefile->WriteString( lod->ModelLOD[ l ] );
-				savefile->WriteString( lod->SkinLOD[ l ] );
-				savefile->WriteVec3( lod->OffsetLOD[ l ] );
-			}	
-		}
-		else
-		{
-			savefile->WriteBool( false );
-		}
-
+		savefile->WriteInt( m_Classes[i].m_LODHandle );
 		savefile->WriteInt( m_Classes[i].maxEntities );
 		savefile->WriteInt( m_Classes[i].numEntities );
 		savefile->WriteInt( m_Classes[i].score );
@@ -434,17 +411,20 @@ void Seed::ClearClasses( void )
 		// need to free this?
 		if (!m_Classes[i].pseudo && m_Classes[i].hModel)
 		{
+			// gameLocal.Printf("%s: Freeing class hModel\n", GetName());
 			renderModelManager->FreeModel( m_Classes[i].hModel );
 		}
 		m_Classes[i].hModel = NULL;
 		if (m_Classes[i].imgmap != 0)
 		{
 			gameLocal.m_ImageMapManager->UnregisterMap( m_Classes[i].imgmap );
+			m_Classes[i].imgmap = 0;
 		}
-		if (m_Classes[i].m_LOD)
+		if (m_Classes[i].m_LODHandle)
 		{
-			delete m_Classes[i].m_LOD;
-			m_Classes[i].m_LOD = NULL;
+			gameLocal.m_ModelGenerator->UnregisterLODData( m_Classes[i].m_LODHandle );
+			// set to unused
+			m_Classes[i].m_LODHandle = 0;
 		}
 		if (m_Classes[i].spawnArgs)
 		{
@@ -594,32 +574,8 @@ void Seed::Restore( idRestoreGame *savefile ) {
 			}
 		}
 
-		// restore m_LOD data structure
-		bool haveLOD;
-		savefile->ReadBool(haveLOD);
-		if (haveLOD)
-		{
-			m_Classes[i].m_LOD = new lod_data_t;
-			lod_data_t *lod = m_Classes[i].m_LOD;
-
-			savefile->ReadBool( lod->bDistCheckXYOnly );
-			savefile->ReadInt( lod->DistCheckInterval );
-			savefile->ReadInt( lod->noshadowsLOD );
-			savefile->ReadFloat( lod->fLODFadeOutRange );
-			savefile->ReadFloat( lod->fLODFadeInRange );
-			savefile->ReadFloat( lod->fLODNormalDistance );
-			for (int l = 0; l < LOD_LEVELS; l++)
-			{
-				savefile->ReadFloat( lod->DistLODSq[ l ] );
-				savefile->ReadString( lod->ModelLOD[ l ] );
-				savefile->ReadString( lod->SkinLOD[ l ] );
-				savefile->ReadVec3( lod->OffsetLOD[ l ] );
-			}
-		}
-		else
-		{
-			m_Classes[i].m_LOD = NULL;
-		}
+		// restore LOD data handle
+		savefile->ReadUnsignedInt( m_Classes[i].m_LODHandle );
 
 		savefile->ReadInt( m_Classes[i].maxEntities );
 		savefile->ReadInt( m_Classes[i].numEntities );
@@ -846,7 +802,7 @@ void Seed::Spawn( void ) {
     modelAbsBounds.FromTransformedBounds( b, m_origin, axis );
 	m_iNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, m_iPVSAreas, sizeof( m_iPVSAreas ) / sizeof( m_iPVSAreas[0] ) );
 
-	gameLocal.Printf( "SEED %s: Randseed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
+//	gameLocal.Printf( "SEED %s: Randseed %i Size %0.2f %0.2f %0.2f Axis %s, PVS count %i.\n", GetName(), m_iSeed, size.x, size.y, size.z, angles.ToString(), m_iNumPVSAreas );
 
 /*
 	// how to get the current model (rough outline)
@@ -888,7 +844,7 @@ void Seed::Spawn( void ) {
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
 	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
-	gameLocal.Printf ("SEED %s: cull range = %0.2f.\n", GetName(), cullRange );
+//	gameLocal.Printf ("SEED %s: cull range = %0.2f.\n", GetName(), cullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
@@ -1495,12 +1451,12 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	float fMin = 1.0f;
 	if (SeedClass.size.x < 0.001f)
 	{
-		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
+//		gameLocal.Warning( "SEED %s: Size.x < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
 		SeedClass.size.x = fMin;
 	}
 	if (SeedClass.size.y < 0.001f)
 	{
-		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
+//		gameLocal.Warning( "SEED %s: Size.y < 0.001 for class, enforcing minimum size %0.2f.", GetName(), fMin );
 		SeedClass.size.y = fMin;
 	}
 
@@ -1529,34 +1485,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	}
 
 	// parse the spawnargs from this entity def for LOD data, and ignore any hide_probability:
-	float has_lod = ParseLODSpawnargs( dict, 1.0f );
-
-	if (has_lod)
-	{
-		// Store m_LOD at the class
-		SeedClass.m_LOD = new lod_data_t;
-
-		// TODO: later we should store this data f.i. at the ModelGenerator and share it. For now make a copy.
-		SeedClass.m_LOD->bDistCheckXYOnly = m_LOD->bDistCheckXYOnly;
-		SeedClass.m_LOD->DistCheckInterval = m_LOD->DistCheckInterval;
-		SeedClass.m_LOD->noshadowsLOD = m_LOD->noshadowsLOD;
-		SeedClass.m_LOD->fLODFadeOutRange = m_LOD->fLODFadeOutRange;
-		SeedClass.m_LOD->fLODFadeInRange = m_LOD->fLODFadeInRange;
-		SeedClass.m_LOD->fLODNormalDistance = m_LOD->fLODNormalDistance;
-
-		for (int l = 0; l < LOD_LEVELS; l++)
-		{
-			SeedClass.m_LOD->DistLODSq[ l ] = m_LOD->DistLODSq[ l ];
-			SeedClass.m_LOD->ModelLOD[ l ] = m_LOD->ModelLOD[ l ];
-			SeedClass.m_LOD->SkinLOD[ l ] = m_LOD->SkinLOD[ l ];
-			SeedClass.m_LOD->OffsetLOD[ l ] = m_LOD->OffsetLOD[ l ];
-		}
-	}
-	else
-	{
-		SeedClass.m_LOD = NULL;
-	}
-	m_LOD = NULL;				// prevent double free (and SEED doesn't have LOD)
+	SeedClass.m_LODHandle = ParseLODSpawnargs( dict, 1.0f );
 	SeedClass.materials.Clear();
 
 	// The default probability for all materials not matching anything in materials:
@@ -3298,7 +3227,12 @@ void Seed::CombineEntities( void )
 		ofs.angles = m_Entities[i].angles;
 
 		// compute the alpha value and the LOD level
-		ThinkAboutLOD( entityClass->m_LOD, GetLODDistance( entityClass->m_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+		m_LODLevel = 0;
+		if (entityClass->m_LODHandle)
+		{
+			const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
+			ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+		}
 		// 0 => default model, 1 => first stage etc
 		ofs.lod	   = m_LODLevel + 1;
 //		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
@@ -3315,7 +3249,10 @@ void Seed::CombineEntities( void )
 		// how many can we combine at most?
 		// use LOD 0 here for an worse-case estimate
 		unsigned int maxModelCount = gameLocal.m_ModelGenerator->GetMaxModelCount( tempModel );
-		gameLocal.Printf("SEED %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
+		if (m_iDebug)
+		{
+			gameLocal.Printf("SEED %s: Combining at most %u models for entity %i.\n", GetName(), maxModelCount, i );
+		}
 
 		// try to combine as much entities into this one
 		// O(N*N) performance, but only if we don't combine any entities, otherwise
@@ -3370,7 +3307,12 @@ void Seed::CombineEntities( void )
 			ofs.angles = m_Entities[j].angles;
 
 			// compute the alpha value and the LOD level
-			ThinkAboutLOD( entityClass->m_LOD, GetLODDistance( entityClass->m_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+			m_LODLevel = 0;
+			if (entityClass->m_LODHandle)
+			{
+				const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
+				ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+			}
 			// 0 => default model, 1 => level 0 etc.
 			ofs.lod		= m_LODLevel + 1;
 //			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
@@ -3386,30 +3328,15 @@ void Seed::CombineEntities( void )
 			if (merged == 0)
 			{
 				PseudoClass.pseudo = true;
-				if (entityClass->m_LOD)
-				{	
-					// Store m_LOD at the class
-					PseudoClass.m_LOD = new lod_data_t;
-
-					// TODO: later we should store this data f.i. at the ModelGenerator and share it. For now make a copy.
-					PseudoClass.m_LOD->bDistCheckXYOnly = entityClass->m_LOD->bDistCheckXYOnly;
-					PseudoClass.m_LOD->DistCheckInterval = entityClass->m_LOD->DistCheckInterval;
-					PseudoClass.m_LOD->noshadowsLOD = entityClass->m_LOD->noshadowsLOD;
-					PseudoClass.m_LOD->fLODFadeOutRange = entityClass->m_LOD->fLODFadeOutRange;
-					PseudoClass.m_LOD->fLODFadeInRange = entityClass->m_LOD->fLODFadeInRange;
-					PseudoClass.m_LOD->fLODNormalDistance = entityClass->m_LOD->fLODNormalDistance;
-
-					for (int l = 0; l < LOD_LEVELS; l++)
-					{
-						PseudoClass.m_LOD->DistLODSq[ l ] = entityClass->m_LOD->DistLODSq[ l ];
-						PseudoClass.m_LOD->ModelLOD[ l ] = entityClass->m_LOD->ModelLOD[ l ];
-						PseudoClass.m_LOD->SkinLOD[ l ] = entityClass->m_LOD->SkinLOD[ l ];
-						PseudoClass.m_LOD->OffsetLOD[ l ] = entityClass->m_LOD->OffsetLOD[ l ];
-					}	
+				if (entityClass->m_LODHandle)
+				{
+					// register us as new user (the class itself doesn't use the data, but it
+					// must be around so we can spawn entities based on it
+					PseudoClass.m_LODHandle = gameLocal.m_ModelGenerator->RegisterLODData( entityClass->m_LODHandle );
 				}
 				else
 				{
-					PseudoClass.m_LOD = NULL;
+					PseudoClass.m_LODHandle = 0;
 				}
 				PseudoClass.modelname = entityClass->modelname;
 				PseudoClass.spawnDist = entityClass->spawnDist;
@@ -3441,18 +3368,17 @@ void Seed::CombineEntities( void )
 				// TODO: put this into m_LOD as there it can be shared and doesn't need to be
 				//		 calculated anew every time:
 				PseudoClass.lowestLOD = entityClass->modelname;		// default for no LOD
-				if (entityClass->m_LOD)
+				if (entityClass->m_LODHandle)
 				{
-					lod_data_t* tmlod = entityClass->m_LOD;	// shortcut
+					const lod_data_t* tmlod = gameLocal.m_ModelGenerator->GetLODDataPtr( PseudoClass.m_LODHandle ); // shortcut
 				
 					// try to load all LOD models in LODs to see if they exist
 					for (int mi = 0; mi < LOD_LEVELS; mi++)
 					{
-						// load model, then combine away
 	//					gameLocal.Warning("SEED %s: Trying to load LOD model #%i %s for entity %i.", 
 	//							GetName(), mi, tmlod->ModelLOD[mi].c_str(), i);
 
-						idStr* mName = &(tmlod->ModelLOD[mi]);
+						const idStr* mName = &(tmlod->ModelLOD[mi]);
 						if (! mName->IsEmpty() )
 						{
 							idRenderModel* tModel = renderModelManager->FindModel( mName->c_str() );
@@ -3519,7 +3445,10 @@ void Seed::CombineEntities( void )
 				// mark as combined
 				m_Entities[todo].flags |= SEED_ENTITY_COMBINED;
 			}
-			gameLocal.Printf("SEED %s: Combined %i entities.\n", GetName(), sortedOffsets.Num() );
+			if (m_iDebug > 0)
+			{
+				gameLocal.Printf("SEED %s: Combined %i entities.\n", GetName(), sortedOffsets.Num() );
+			}
 			sortedOffsets.Clear();
 
 			// build the combined model
@@ -3725,7 +3654,7 @@ bool Seed::SpawnEntity( const int idx, const bool managed )
 					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
 					// Let the StaticMulti store the nec. data to create the combined rendermodel
-					sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
+					sment->SetLODData( ent->origin, lclass->m_LODHandle, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
 					
 					// Register the new staticmulti entity with ourselves, so we can later Restore() it properly
 					m_iNumStaticMulties ++;
@@ -3953,7 +3882,7 @@ void Seed::Think( void )
 					CStaticMulti *sment = static_cast<CStaticMulti*>( ent2 );
 
 					// Let the StaticMulti store the nec. data to create the combined rendermodel
-					sment->SetLODData( ent->origin, lclass->m_LOD, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
+					sment->SetLODData( ent->origin, lclass->m_LODHandle, lclass->lowestLOD, &lclass->offsets, lclass->materialName, lclass->hModel, lclass->clip );
 					
 					// enable thinking (mainly for debug draw)
 					sment->BecomeActive( TH_THINK | TH_PHYSICS );
@@ -4003,7 +3932,16 @@ void Seed::Think( void )
 		{
 			ent = &m_Entities[i];
 			lclass = &(m_Classes[ ent->classIdx ]);
-		    float deltaSq = GetLODDistance( lclass->m_LOD, playerPos, ent->origin, lclass->size, lodBias );
+		   	float deltaSq = 0;
+			if (lclass->m_LODHandle)
+			{
+				const lod_data_t* lod = gameLocal.m_ModelGenerator->GetLODDataPtr( lclass->m_LODHandle );
+		    	deltaSq = GetLODDistance( lod, playerPos, ent->origin, lclass->size, lodBias );
+			}
+			else
+			{
+		    	deltaSq = GetLODDistance( NULL, playerPos, ent->origin, lclass->size, lodBias );
+			}
 
 //			gameLocal.Printf( "SEED %s: In LOD check: Flags for entity %i: 0x%08x, spawndist %i, deltaSq %i.\n", GetName(), i, ent->flags, (int)lclass->spawnDist, (int)deltaSq );
 

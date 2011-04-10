@@ -117,6 +117,7 @@ idCVar cv_ai_show_aasfuncobstacle_state("tdm_ai_show_aasfuncobstacle_state",	"0"
 
 idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the new enhanced interaction are used. Set to 0 to use default interaction shader." );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );
+idCVar cv_tdm_menu_music("tdm_menu_music",	"1", CVAR_ARCHIVE | CVAR_BOOL, "Whether to play background music in the main menu (for internal use)." );
 
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
 
@@ -151,6 +152,7 @@ idCVar cv_debug_mainmenu(			"tdm_debug_mainmenu",      "0",            CVAR_BOOL
 idCVar cv_mainmenu_confirmquit(		"tdm_mainmenu_confirmquit",      "1", CVAR_ARCHIVE | CVAR_BOOL, "Set to 0 to disable the 'Quit Game' confirmation dialog when exiting the game." );
 
 idCVar cv_force_savegame_load(		"tdm_force_savegame_load", "0",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 1 to skip code revision check on savegame load." );
+idCVar cv_savegame_compress(		"tdm_savegame_compress", "1",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 0 to disable savegame file compression." );
 
 /**
 * Dark Mod player movement
@@ -444,7 +446,14 @@ idCVar ui_chat(						"ui_chat",					"0",			CVAR_GAME | CVAR_USERINFO | CVAR_BOOL
 // change anytime vars
 idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );
 
-idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10", 0, 2 );
+idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Aspect ratio of view, determines the ratio between FOV for x and y. Only used if r_fovRatio is 0:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n3 = 5:4\n16:9 TV", 0, 4 );
+
+idCVar cv_r_fovRatio( 				"r_fovRatio",			"0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Aspect ratio of view, if set to greater than 0, determines the ratio between FOV for x and y directly, and r_aspectRatio is ignored. The value should closely match r_customWidth / r_customHeight." );
+
+idCVar cv_gui_Width( 				"gui_Width",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen width. Default is 1.0 and stretches the GUI over the entire screen." );
+idCVar cv_gui_Height( 				"gui_Height",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen height. Default is 1.0 and stretches the GUI over the entire screen." );
+idCVar cv_gui_CenterX( 			"gui_CenterX",			"0.5",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Position of the center of the GUI as percentage of the whole screen width. Default is 0.5 (half of the screen width)." );
+idCVar cv_gui_CenterY( 			"gui_CenterY",			"0.5",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Position of the center of the GUI as percentage of the whole screen height. Default is 0.5 (half of the screen height)." );
 
 idCVar g_cinematic(					"g_cinematic",				"1",			CVAR_GAME | CVAR_BOOL, "skips updating entities that aren't marked 'cinematic' '1' during cinematics" );
 idCVar g_cinematicMaxSkipTime(		"g_cinematicMaxSkipTime",	"600",			CVAR_GAME | CVAR_FLOAT, "# of seconds to allow game to run when skipping cinematic.  prevents lock-up when cinematic doesn't end.", 0, 3600 );

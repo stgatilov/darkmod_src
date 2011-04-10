@@ -74,6 +74,7 @@ extern idCVar cv_ai_show_aasfuncobstacle_state;
 
 extern idCVar cv_interaction_vfp_type;
 extern idCVar cv_tdm_widescreenmode;
+extern idCVar cv_tdm_menu_music;
 
 extern idCVar cv_tdm_show_trainer_messages;
 
@@ -171,6 +172,7 @@ extern idCVar cv_pm_climb_distance;
 extern idCVar cv_ai_search_show;
 
 extern idCVar cv_force_savegame_load;
+extern idCVar cv_savegame_compress;
 
 // angua: TDM toggle crouch
 extern idCVar cv_tdm_crouch_toggle;
@@ -346,6 +348,19 @@ extern idCVar cv_lod_bias;
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
 
+/**
+* If != 0, use this ratio between FOV X and Y and ignore r_aspectRatio.
+*/
+extern idCVar	cv_r_fovRatio;
+
+/** Screen width * gui_Width = GUI width */
+extern idCVar	cv_gui_Width;
+/** Screen height * gui_Height = GUI height */
+extern idCVar	cv_gui_Height;
+/** Screen width * gui_CenterX = GUI center X */
+extern idCVar	cv_gui_CenterX;
+/** Screen height * gui_CenterY = GUI center Y */
+extern idCVar	cv_gui_CenterY;
 
 /**
 * End DarkMod cvars

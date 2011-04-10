@@ -1523,8 +1523,9 @@ void idTraceModel::GetMassProperties( const float density, float &mass, idVec3 &
 
 	VolumeIntegrals( integrals );
 
-	// if no volume
-	if ( integrals.T0 == 0.0f ) {
+	// if very small or no volume
+	if ( integrals.T0 < 0.1f ) // grayman #2283 - this was a comparison to 0.0f, which allows very small numbers to wreak havoc
+	{
 	  mass = 1.0f;
 	  centerOfMass.Zero();
 	  inertiaTensor.Identity();

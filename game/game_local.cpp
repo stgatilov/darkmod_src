@@ -26,13 +26,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Misc.h"
 #include "../DarkMod/Grabber.h"
 #include "../DarkMod/Relations.h"
+#include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/sndProp.h"
 #include "ai/aas_local.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/MultiStateMover.h"
 #include "../DarkMod/func_shooter.h"
-#include "../DarkMod/shop.h"
+#include "../DarkMod/Shop/Shop.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
 #include "../DarkMod/DownloadMenu.h"
@@ -43,9 +44,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Missions/DownloadManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
+#include "../DarkMod/StimResponse/StimType.h" // grayman #2721
 
 #include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include <iostream>
 
@@ -220,12 +225,13 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal()
+idGameLocal::idGameLocal() :
+	postMissionScreenActive(false),
+	briefingVideoInfoLoaded(false),
+	curBriefingVideoPart(-1),
+	m_HighestSRId(0),
+	m_MissionResult(MISSION_NOTEVENSTARTED)
 {
-	m_HighestSRId = 0;
-	m_MissionResult = MISSION_NOTEVENSTARTED;
-	successScreenActive = false;
-
 	Clear();
 }
 
@@ -259,6 +265,8 @@ void idGameLocal::Clear( void )
 	m_MissionData.reset();
 
 	mainMenuExited = false;
+	briefingVideo.Clear();
+	debriefingVideo.Clear();
 
 	m_Grabber = NULL;
 	m_DifficultyManager.Clear();
@@ -316,6 +324,8 @@ void idGameLocal::Clear( void )
 	sortPushers = false;
 	sortTeamMasters = false;
 	persistentLevelInfo.Clear();
+	persistentPlayerInventory.reset();
+
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
 	world = NULL;
@@ -493,6 +503,7 @@ void idGameLocal::Init( void ) {
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 
 	m_MissionData = CMissionDataPtr(new CMissionData);
+	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
 	m_RelationsManager = CRelationsPtr(new CRelations);
 	m_ModMenu = CModMenuPtr(new CModMenu);
 	m_DownloadMenu = CDownloadMenuPtr(new CDownloadMenu);
@@ -531,6 +542,9 @@ void idGameLocal::Init( void ) {
 	m_LightController = CLightControllerPtr(new CLightController);
 	m_LightController->Init();
 
+	// greebo: Create the persistent inventory - will be handled by game state changing code
+	persistentPlayerInventory.reset(new CInventory);
+
 	m_Shop = CShopPtr(new CShop);
 	m_Shop->Init();
 
@@ -546,7 +560,7 @@ const idStr& idGameLocal::GetMapFileName() const
 	return mapFileName;
 }
 
-void idGameLocal::CheckTDMVersion(idUserInterface* ui)
+void idGameLocal::CheckTDMVersion()
 {
 	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
@@ -652,6 +666,7 @@ void idGameLocal::Shutdown( void ) {
 	// greebo: De-allocate the missiondata singleton, this is not 
 	// done in MapShutdown() (needed for mission statistics)
 	m_MissionData.reset();
+	m_CampaignStats.reset();
 
 	// Destroy the conversation system
 	m_ConversationSystem.reset();
@@ -660,6 +675,8 @@ void idGameLocal::Shutdown( void ) {
 	m_MissionManager->Shutdown();
 	m_MissionManager = CMissionManagerPtr();
 
+	// Print ModelGenerator Statistics
+	m_ModelGenerator->Print();
 	// Destroy the model generator
 	m_ModelGenerator->Shutdown();
 	m_ModelGenerator = CModelGeneratorPtr();
@@ -750,8 +767,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		f->ForceFlush();
 	}
 
-	savegame.WriteBuildNumber( BUILD_NUMBER );
-	savegame.WriteCodeRevision();
+	savegame.WriteHeader();
 
 	// go through all entities and threads and add them to the object list
 	for (i = 0; i < MAX_GENTITIES; i++)
@@ -876,12 +892,14 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( sortPushers );
 	savegame.WriteBool( sortTeamMasters );
 	savegame.WriteDict( &persistentLevelInfo );
+
+	persistentPlayerInventory->Save(&savegame);
 	
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
 	}
 
-	savegame.WriteBool(successScreenActive);
+	savegame.WriteBool(postMissionScreenActive);
 
 	savegame.WriteInt( random.GetSeed() );
 	savegame.WriteObject( frameCommandThread );
@@ -970,6 +988,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	m_MissionData->Save(&savegame);
 	savegame.WriteInt(static_cast<int>(m_MissionResult));
 
+	m_CampaignStats->Save(&savegame);
+
 	savegame.WriteInt(m_HighestSRId);
 
 	savegame.WriteInt(m_Timer.Num());
@@ -1013,6 +1033,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
+
+	// save all accumulated cache to file
+	savegame.FinalizeCache();
 
 	// Send a message to the HUD
 	GetLocalPlayer()->SendHUDMessage("Game Saved");
@@ -1409,7 +1432,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// greebo: Reset the flag. When a map is loaded, the success screen is definitely not shown anymore.
 	// This is meant to catch cases where the player is reloading a map from the console without clicking
 	// the "Continue" button on the success GUI. I can't stop him, so I need to track this here.
-	successScreenActive = false;
+	postMissionScreenActive = false;
 
 	if (m_MissionData != NULL)
 	{
@@ -1685,6 +1708,14 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
 	m_MissionData->Clear();
 
+	// Clear the persistent data if starting a new campaign
+	if (m_MissionManager->CurrentModIsCampaign() && m_MissionManager->GetCurrentMissionIndex() == 0)
+	{
+		persistentPlayerInventory->Clear();
+		persistentLevelInfo.Clear();
+		m_CampaignStats.reset(new CampaignStats);
+	}
+
 	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
@@ -1770,14 +1801,16 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	idRestoreGame savegame( saveGameFile );
 
-	savegame.ReadBuildNumber();
-	savegame.ReadCodeRevision();
+	savegame.ReadHeader();
 
 	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
 	{
 		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n.", savegame.GetCodeRevision());
 		return false;
 	}
+
+	// Read and initialize  cache from file
+	savegame.InitializeCache();
 
 	// Create the list of all objects in the game
 	savegame.CreateObjects();
@@ -1926,11 +1959,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( sortTeamMasters );
 	savegame.ReadDict( &persistentLevelInfo );
 
+	persistentPlayerInventory->Restore(&savegame);
+
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.ReadFloat( globalShaderParms[ i ] );
 	}
 
-	savegame.ReadBool(successScreenActive);
+	savegame.ReadBool(postMissionScreenActive);
 
 	savegame.ReadInt( i );
 	random.SetSeed( i );
@@ -2026,6 +2061,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	int missResult;
 	savegame.ReadInt(missResult);
 	m_MissionResult = static_cast<EMissionResult>(missResult);
+
+	m_CampaignStats->Restore(&savegame);
 
 	savegame.ReadInt(m_HighestSRId);
 
@@ -2212,6 +2249,7 @@ void idGameLocal::MapShutdown( void ) {
 
 	if (m_ModelGenerator != NULL)
 	{
+		m_ModelGenerator->Print();
 		m_ModelGenerator->Clear();
 	}
 	if (m_ImageMapManager != NULL)
@@ -2515,14 +2553,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "def", kv );
 	}
 
-	kv = dict->MatchPrefix( "pda_name", NULL );
-	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_PDA, kv->GetValue().c_str(), false );
-		}
-		kv = dict->MatchPrefix( "pda_name", kv );
-	}
-
 	kv = dict->MatchPrefix( "video", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
@@ -2607,8 +2637,6 @@ void idGameLocal::SpawnPlayer( int clientNum )
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
-
-	idPlayer* player = GetLocalPlayer(); // ??
 
 	mpGame.SpawnPlayer( clientNum );
 }
@@ -3061,6 +3089,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 				if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
 					ent->GetPhysics()->UpdateTime( time );
+					if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+					{
+						static_cast<idAI*>(ent)->m_lastThinkTime = time;
+					}
 					continue;
 				}
 				timer_singlethink.Clear();
@@ -3080,6 +3112,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 					if ( g_cinematic.GetBool() && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
+						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+						{
+							static_cast<idAI*>(ent)->m_lastThinkTime = time;
+						}
 						continue;
 					}
 					ent->Think();
@@ -3230,7 +3266,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	float	y;
 	float	ratio_x;
 	float	ratio_y;
-	
+	float	ratio_fov;
+
 	if ( !sys->FPU_StackIsEmpty() ) {
 		Printf( sys->FPU_GetState() );
 		Error( "idGameLocal::CalcFov: FPU stack not empty" );
@@ -3248,27 +3285,46 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 		Error( "idGameLocal::CalcFov: bad result" );
 	}
 
-	switch( r_aspectRatio.GetInteger() ) {
-	default :
-	case 0 :
-		// 4:3
-		fov_x = base_fov;
-		return;
-		break;
+	// if r_fovRatio != 0, use it directly:
+	ratio_fov = cv_r_fovRatio.GetFloat();
 
-	case 1 :
-		// 16:9
-		ratio_x = 16.0f;
-		ratio_y = 9.0f;
-		break;
-
-	case 2 :
-		// 16:10
-		ratio_x = 16.0f;
-		ratio_y = 10.0f;
-		break;
+	if (ratio_fov > 0.01)
+	{
+			ratio_x = ratio_fov;
+			ratio_y = 1.0f;
+	}
+	else
+	{
+		// old code, use r_aspectRatio
+		switch( r_aspectRatio.GetInteger() ) {
+		default :
+		case 0 :
+			// 4:3
+			fov_x = base_fov;
+			return;
+			break;
+		case 1 :
+			// 16:9
+		case 4 :
+			// TV 16:9
+			ratio_x = 16.0f;
+			ratio_y = 9.0f;
+			break;
+		case 2 :
+			// 16:10
+			ratio_x = 16.0f;
+			ratio_y = 10.0f;
+			break;
+		case 3 :
+			// 5:4
+			ratio_x = 5.0f;
+			ratio_y = 4.0f;
+			break;
+		}
 	}
 
+//	Printf( "Using FOV ratio %0.3f:%0.0f\n", ratio_x, ratio_y );
+	
 	y = ratio_y / tan( fov_y / 360.0f * idMath::PI );
 	fov_x = atan2( ratio_x, y ) * 360.0f / idMath::PI;
 
@@ -3375,6 +3431,56 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	return mpGame.HandleGuiCommands( menuCommand );
 }
 
+int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr, idList<BriefingVideoPart>& targetList)
+{
+	targetList.Clear();
+
+	std::string videos = videosStr;
+	std::string lengths = lengthStr;
+
+	// Remove leading and trailing semicolons
+	boost::algorithm::trim_if(videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::trim_if(lengths, boost::algorithm::is_any_of(";"));
+
+	// Split strings into parts
+	std::vector<std::string> vidParts;
+	std::vector<std::string> lengthParts;
+
+	boost::algorithm::split(vidParts, videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::split(lengthParts, lengths, boost::algorithm::is_any_of(";"));
+
+	if (vidParts.size() != lengthParts.size())
+	{
+		gameLocal.Warning("The video string array '%s' does not have the same number of elements as the length array '%s'!", videosStr, lengthStr);
+		return 0;
+	}
+
+	if (vidParts.size() == 0)
+	{
+		return 0;
+	}
+
+	int totalLength = 0;
+
+	for (std::size_t i = 0; i < vidParts.size(); ++i)
+	{
+		BriefingVideoPart& part = targetList.Alloc();
+
+		part.material = vidParts[i].c_str();
+		part.lengthMsec = atoi(lengthParts[i].c_str());
+
+		if (part.lengthMsec <= 0)
+		{
+			gameLocal.Warning("The video length %s is invalid or not numeric, must be an integer > 0", lengthParts[i].c_str());
+			part.lengthMsec = 0;
+		}
+
+		totalLength += part.lengthMsec;
+	}
+
+	return totalLength;
+}
+
 void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 {
 	if (cvarSystem->GetCVarInteger("r_aspectRatio") > 0)
@@ -3425,13 +3531,52 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 		case 8:
 			width = 2560;
 			height = 1440;
+			break;
 		case 9:
 			width = 2560;
 			height = 1600;
+			break;
+		case 10:
+			width = 1280;
+			height = 1024;
+			break;
+		case 11:
+			width = 1800;
+			height = 1440;
+			break;
+		case 12:
+			width = 2560;
+			height = 2048;
+			break;
+		case 13:
+			width = 1360;
+			height = 768;
+			break;
+		case 14:
+			width = 1600;
+			height = 900;
+			break;
+		case 15:
+			width = 3280;
+			height = 2048;
+			break;
+		case 16:
+			width = 3360;
+			height = 2100;
+			break;
+		case 17:
+			width = 3840;
+			height = 2160;
+			break;
+		case 18:
+			width = 3840;
+			height = 2400;
+			break;
 		default:
 			break;
 		};
 
+		Printf("Widesreenmode %i, setting r_customWidth=%i, r_customHeight=%i\n", mode, width, height);
 		cvarSystem->SetCVarInteger("r_customWidth", width);
 		cvarSystem->SetCVarInteger("r_customHeight", height);
 	}
@@ -3488,6 +3633,37 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 
 /*
 ================
+idGameLocal::UpdateGUIScaling
+================
+*/
+void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
+{
+	float wobble = 1.0f;
+	// this could be turned into a warble-wobble effect f.i. for player poisoned etc.
+	//float wobble = random.RandomFloat() * 0.02 + 0.98;
+
+	float x_mul = cvarSystem->GetCVarFloat("gui_Width") * wobble;
+	if (x_mul < 0.1f) { x_mul = 0.1f; }
+	if (x_mul > 2.0f) { x_mul = 2.0f; }
+	float y_mul = cvarSystem->GetCVarFloat("gui_Height") * wobble;
+	if (y_mul < 0.1f) { y_mul = 0.1f; }
+	if (y_mul > 2.0f) { y_mul = 2.0f; }
+	float x_shift = cvarSystem->GetCVarFloat("gui_CenterX") * 640 * wobble;
+	float y_shift = cvarSystem->GetCVarFloat("gui_CenterY") * 480 * wobble;
+//	Printf("UpdateGUIScaling: width %0.2f height %0.2f centerX %0.02ff centerY %0.02f\n (%p)", x_mul, y_mul, x_shift, y_shift, gui);
+	gui->SetStateFloat("LEFT", x_shift - x_mul * 320);
+	gui->SetStateFloat("CENTERX", x_shift);
+	gui->SetStateFloat("TOP", y_shift - y_mul * 240);
+	gui->SetStateFloat("CENTERY", y_shift);
+	gui->SetStateFloat("WIDTH", x_mul);
+	gui->SetStateFloat("HEIGHT", y_mul);
+	// We have only one scaling factor to scale text, so use the average of X and Y
+	// This will have odd effects if W and H differ greatly, but is better than to not scale the text
+	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);
+}
+
+/*
+================
 idGameLocal::HandleMainMenuCommands
 ================
 */
@@ -3522,17 +3698,30 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			// Check if we should show the success screen (also check the member variable
 			// to catch cases where the player reloaded the map via the console)
-			if (!gui->GetStateBool("SuccessScreenActive") || !successScreenActive)
+			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
 			{
-				// Load the statistics into the GUI
-				m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
-			
-				// Show the success GUI
-				gui->HandleNamedEvent("ShowSuccessScreen");
+				// Check if this mission has a debriefing video
+				int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1; // GUI mission numbers are 1-based
+
+				const char* videoMaterials = gui->GetStateString(va("DebriefingVideoMaterials%d", missionNum));
+				const char* videoLengths = gui->GetStateString(va("DebriefingVideoLengths%d", missionNum));
+				const char* videoSoundCmd = gui->GetStateString(va("DebriefingVideoSoundCmd%d", missionNum));
+
+				// Calculate the total length of the video
+				int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, debriefingVideo);
+
+				gui->SetStateInt("DebriefingVideoLength", videoLengthMsec);
+				gui->SetStateString("DebriefingVideoSoundCmd", videoSoundCmd);
+				
+				// Let the GUI know whether we have a debriefing video
+				gui->SetStateBool("HasDebriefingVideo", debriefingVideo.Num() > 0);
+
+		 		// Show the post-mission GUI (might be a debriefing video or just the success screen)
+				gui->HandleNamedEvent("ShowPostMissionScreen");
 
 				// Avoid duplicate triggering
-				gui->SetStateBool("SuccessScreenActive", true);
-				successScreenActive = true;
+				gui->SetStateBool("PostMissionScreenActive", true);
+				postMissionScreenActive = true;
 			}
 			return;
 		}
@@ -3554,26 +3743,39 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			HandleGuiMessages(gui);
 		}
 
+		// Make sure we have a valid mission number in the GUI, the first mission is always 1
+		int curMissionNum = gui->GetStateInt("CurrentMission");
+
+		if (curMissionNum <= 0)
+		{
+			gui->SetStateInt("CurrentMission", 1);
+		}
+
 		// Handle downloads in progress
 		m_DownloadManager->ProcessDownloads();
 
 		// Propagate the video CVARs to the GUI
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
 		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
-	}
-	else if (cmd == "loadStatistics")
-	{
-		// Load the statistics into the GUI
-		m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
+		gui->SetStateBool("menu_bg_music", cv_tdm_menu_music.GetBool());
+
+		if (cv_tdm_menu_music.IsModified())
+		{
+			gui->HandleNamedEvent("OnMenuMusicSettingChanged");
+
+			cv_tdm_menu_music.ClearModified();
+		}
 	}
 	else if (cmd == "setVideoResWideScreen")
 	{
 		// Called when widescreen size selection changes
 		UpdateScreenResolutionFromGUI(gui);
+		UpdateGUIScaling(gui);
 	}
 	else if (cmd == "aspectRatioChanged")
 	{
 		UpdateScreenResolutionFromGUI(gui);
+		UpdateGUIScaling(gui);
 	}
 	else if (cmd == "loadCustomVideoResolution")
 	{
@@ -3586,15 +3788,35 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			switch (width)
 			{
 			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
-			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : 6); break;
+						// 1280 x 800 => 1
+						// 1280 x 720 => 6
+						// 1280 x 1024 => 10
+			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : (height == 720 ? 6 : 10) ); break;
+			case 1360: cv_tdm_widescreenmode.SetInteger(13); break;
 			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
 			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
+						// 1600 x 900
+			case 1600: cv_tdm_widescreenmode.SetInteger(14); break;
 			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
+						// 1800 x 1440
+			case 1800: cv_tdm_widescreenmode.SetInteger(11); break;
 			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
-			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : 9); break;
+						// 2560 x 1440 => 8
+						// 2560 x 1600 => 9
+						// 2560 x 2048 => 12
+			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : height == 1600 ? 9 : 12); break;
+						// 3280 x 2048
+			case 3280: cv_tdm_widescreenmode.SetInteger(15); break;
+						// 3360 x 2100
+			case 3360: cv_tdm_widescreenmode.SetInteger(16); break;
+						// 3840 x 2160 => 17
+						// 3840 x 2400 => 18
+			case 3840: cv_tdm_widescreenmode.SetInteger( height == 2160 ? 17 : 18); break;
 			default: cv_tdm_widescreenmode.SetInteger(0); break;
 			}
+			Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
 		}
+		UpdateGUIScaling(gui);
 	}
 	// greebo: the "log" command is used to write stuff to the console
 	else if (cmd == "log")
@@ -3610,14 +3832,167 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
-	else if (cmd == "close_success_screen")
+	else if (cmd == "loadVideoDefinitions")
+	{
+		// Check if we've set up the briefing video 
+		if (!briefingVideoInfoLoaded)
+		{
+			briefingVideoInfoLoaded = true;
+
+			// Tell the briefing video GUI to load all video materials into the state dict
+			gui->HandleNamedEvent("LoadVideoDefinitions");
+			gui->HandleNamedEvent("LoadDebriefingVideoDefinitions");
+		}
+	}
+	else if (cmd == "prepareBriefingVideo")
+	{
+		// Ensure we've set up the briefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
+
+		// Check the video defs
+		int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+
+		const char* videoMaterials = gui->GetStateString(va("BriefingVideoMaterials%d", missionNum));
+		const char* videoLengths = gui->GetStateString(va("BriefingVideoLengths%d", missionNum));
+		const char* videoSoundCmd = gui->GetStateString(va("BriefingVideoSoundCmd%d", missionNum));
+
+		// Calculate the total length of the video
+		int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, briefingVideo);
+
+		gui->SetStateInt("BriefingVideoLength", videoLengthMsec);
+		gui->SetStateString("BriefingVideoSoundCmd", videoSoundCmd);
+		
+		// We start with the first part
+		curBriefingVideoPart = 0;
+	}
+	else if (cmd == "startBriefingVideo")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnBriefingVideoFinished");
+		}
+	}
+	else if (cmd == "briefingVideoHeartBeat")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("briefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= briefingVideo[curBriefingVideoPart].lengthMsec)
+			{
+				curBriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curBriefingVideoPart < briefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+					gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnBriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("briefingVideoTime", videoTime);	
+		}
+	}
+	else if (cmd == "prepareDebriefingVideo")
+	{
+		// Ensure we've set up the debriefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
+		
+		// We start with the first part
+		curDebriefingVideoPart = 0;
+	}
+	else if (cmd == "startDebriefingVideo")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnDebriefingVideoFinished");
+		}
+	}
+	else if (cmd == "debriefingVideoHeartBeat")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("debriefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= debriefingVideo[curDebriefingVideoPart].lengthMsec)
+			{
+				curDebriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curDebriefingVideoPart < debriefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+					gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnDebriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("debriefingVideoTime", videoTime);	
+		}
+	}
+	else if (cmd == "onSuccessScreenContinueClicked")
 	{
 		// Clear the mission result flag
 		SetMissionResult(MISSION_NOTEVENSTARTED);
 
 		// Set the boolean back to false for the next map start
-		gui->SetStateBool("SuccessScreenActive", false);
-		successScreenActive = false;
+		gui->SetStateBool("PostMissionScreenActive", false);
+		postMissionScreenActive = false;
+
+		// Switch to the next mission if there is one
+		if (m_MissionManager->NextMissionAvailable())
+		{
+			m_MissionManager->ProceedToNextMission();
+
+			// Store the new mission number into the GUI state
+			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+			gui->SetStateInt("CurrentMission", missionNum);
+
+			// Go to the next briefing / video
+			gui->HandleNamedEvent("SuccessProceedToNextMission");
+		}
+		else
+		{
+			// Switch back to the main menu
+			gui->HandleNamedEvent("SuccessGoBackToMainMenu");
+		}
 	}
 	else if (cmd == "setLPDifficulty")
 	{
@@ -3749,18 +4124,24 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "mainmenu_init")
 	{
 		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+		UpdateGUIScaling(gui);
 	}
 	else if (cmd == "check_tdm_version")
 	{
-		CheckTDMVersion(gui);
+		CheckTDMVersion();
 	}
 	else if (cmd == "close_msg_box")
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
 	}
+	else if (cmd == "updateCookedMathData")		// Adding a way to update cooked data from menu - J.C.Denton
+	{
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
+	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
-	m_ModMenu->HandleCommands(menuCommand, gui);
+	m_ModMenu->HandleCommands(cmd, gui);
 	m_DownloadMenu->HandleCommands(cmd, gui);
 
 	/*if (cv_debug_mainmenu.GetBool())
@@ -5983,20 +6364,24 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			// grayman #2468 - handle AI with no separate head entities 
+			// grayman #2468 - handle AI with no separate head entities
 
 			idEntity *ent = srEntities[i];
 			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
-			if (!(ent->IsType(idAFAttachment::Type))) // is this an attached head?
+
+			if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
 			{
-				// no separate head entity, so find the mouth
-
-				if (ent->IsType(idAI::Type))
+				if (!ent->IsType(idAFAttachment::Type)) // is this an attached head?
 				{
-					idAI* entAI = static_cast<idAI*>(ent);
+					// no separate head entity, so find the mouth
 
-					entitySpot = entAI->GetEyePosition();
-					entitySpot.z += entAI->m_MouthOffset.z;
+					if (ent->IsType(idAI::Type))
+					{
+						idAI* entAI = static_cast<idAI*>(ent);
+
+						entitySpot = entAI->GetEyePosition();
+						entitySpot.z += entAI->m_MouthOffset.z;
+					}
 				}
 			}
 

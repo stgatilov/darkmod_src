@@ -60,6 +60,9 @@ private:
 	// Returns the path to Steam.exe if the engine executable we're using is running on Steam
 	// The member _engineExecutable must be set already when calling this method
 	fs::path FindSteamExecutable();
+
+	// Tries to remove as many ../ and ./ from the given path as possible. Only works for absolute input paths
+	static fs::path NormalisePath(const fs::path& p);
 };
 
 #endif /* _LAUNCHER_H_ */

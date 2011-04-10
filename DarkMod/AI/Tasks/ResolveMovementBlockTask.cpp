@@ -51,6 +51,7 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	if (_blockingEnt == NULL)
 	{
 		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.\r", owner->name.c_str());
+		owner->PushMove(); // grayman #2706 - save movement state, because it gets popped in OnFinish()
 		subsystem.FinishTask();
 	}
 
@@ -126,6 +127,7 @@ void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 	}
 
 	owner->MoveToPosition(dest, 5);
+	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 }
 
 void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsystem)
@@ -143,6 +145,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 
 		if (owner->movementSubsystem->AttemptToExtricate())
 		{
+			owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 			return;
 		}
 
@@ -166,7 +169,18 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 	}
 
 	// angua: move the bottom of the bounds up a bit, to avoid finding small objects on the ground that are "in the way"
-	bounds[0][2] += owner->GetAAS()->GetSettings()->maxStepHeight;
+	// grayman #2684 - except for AI whose bounding box height is less than maxStepHeight, otherwise applying the bump up
+	// causes the clipmodel to be "upside-down", which isn't good. In that case, give the bottom a bump up equal to half
+	// of the clipmodel's height so it at least gets a small bump.
+	float ht = owner->GetAAS()->GetSettings()->maxStepHeight;
+	if (bounds[0].z + ht < bounds[1].z)
+	{
+		bounds[0].z += ht;
+	}
+	else
+	{
+		bounds[0].z += (bounds[1].z - bounds[0].z)/2.0;
+	}
 
 	// Set all attachments to nonsolid, temporarily
 	owner->SaveAttachmentContents();
@@ -251,6 +265,7 @@ void ResolveMovementBlockTask::InitBlockingStatic(idAI* owner, Subsystem& subsys
 		owner->MoveToPosition(testPoint);
 		owner->RestoreAttachmentContents();
 	}
+	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 }
 
 bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
@@ -438,6 +453,7 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #23
 	if (owner->movementSubsystem->GetPrevTraveled() < 0.1)
 	{
 		owner->movementSubsystem->AttemptToExtricate();
+		owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 	}
 
 	return false;

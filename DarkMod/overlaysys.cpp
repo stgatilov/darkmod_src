@@ -122,7 +122,10 @@ void COverlaySys::drawOverlays()
 	{
 		gui = oNode->Owner()->m_gui;
 		if(gui)
+		{
+			gameLocal.UpdateGUIScaling(gui);
 			gui->Redraw(gameLocal.realClientTime);
+		}
 		oNode = oNode->NextNode();
 	}
 }

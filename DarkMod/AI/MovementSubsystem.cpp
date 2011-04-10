@@ -38,7 +38,7 @@ namespace ai
 #define HISTORY_SIZE 32
 #define HISTORY_BOUNDS_THRESHOLD 40	// units (grayman #2345 changed to 40 for quicker blocking recognition; was 10)
 #define BLOCK_TIME_OUT 400			// milliseconds (grayman #2345 changed to 400 for quicker blocking recognition; was 800)
-#define BLOCKED_TOO_LONG 800		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
+#define BLOCKED_TOO_LONG 600		// milliseconds (grayman #2345 - how long to stay blocked w/o moving, if you're not waiting for someone to pass by)
 #define MAX_PATH_CORNER_SEARCH_ITERATIONS 100
 #define PAUSE_TIME 3000				// milliseconds (grayman #2345 - how long to stay paused after treadmilling)
 
@@ -232,7 +232,7 @@ void MovementSubsystem::NextPath()
 	idPathCorner* path = memory.currentPath.GetEntity();
 
 	// The current path gets stored in lastPath (grayman #2345 - but only if it's a path_corner)
-	if (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)
+	if ((path == NULL) || (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)) // grayman #2683 - check for null
 	{
 		memory.lastPath = path;
 	}
@@ -559,13 +559,14 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 					_timeBlockStarted =  gameLocal.time - gameLocal.msec;
 				}
 			}
-/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
-				// Bounds are safe, back to green state
-				_state = ENotBlocked;
+				// grayman #2669 - go backwards after a small wait
+				if (gameLocal.time >= _lastTimeNotBlocked + _blockTimeOut*2)
+				{
+					_state = ENotBlocked; // Bounds are safe, back to green state
+				}
 			}
- */
 			break;
 		case EBlocked:
 			if (belowThreshold)
@@ -573,25 +574,19 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 				// grayman #2345 - blocked too long w/o moving?
 				if (gameLocal.time >= _timeBlockStarted + _blockTimeShouldEnd)
 				{
-					// Do something to extricate yourself. AttemptToExtricate() returns TRUE if
-					// it found somewhere to go.
-					if (!AttemptToExtricate())
-					{
-						_timePauseStarted =  gameLocal.time - gameLocal.msec;
-						_state = EPaused;
-						owner->PushMove();
-						owner->StopMove(MOVE_STATUS_WAITING);
-					}
+					// Do something to extricate yourself.
+					AttemptToExtricate();
 				}
 			}
-/*			grayman #2669 - don't go backwards
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
 			{
-				// grayman #2345 - go back to EPossiblyBlocked, instead of all the way back to ENotBlocked
-				_state = EPossiblyBlocked;
-				_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+				// grayman #2669 - go backwards after a small wait
+				if (gameLocal.time >= _timeBlockStarted + _blockTimeShouldEnd*2)
+				{
+					_state = EPossiblyBlocked;
+					_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+				}
 			}
- */
 			break;
 		case EResolvingBlock:
 			// nothing so far
@@ -599,8 +594,6 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		case EWaitingSolid:		// grayman #2345 - Waiting for passing AI and remaining solid
 			break;
 		case EWaitingNonSolid:	// grayman #2345 - Waiting for passing AI while non-solid
-			break;
-		case EPaused:			// grayman #2345 - stop treadmilling for a few seconds
 			break;
 		};
 	}
@@ -610,14 +603,6 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		if (IsWaiting())
 		{
 			// do nothing
-		}
-		else if (IsPaused()) // grayman #2345
-		{
-			if (gameLocal.time >= _timePauseStarted + _pauseTimeOut)
-			{
-				_state = ENotBlocked;
-				owner->PopMove(); // restore move state
-			}
 		}
 		else
 		{
@@ -661,6 +646,7 @@ void MovementSubsystem::SetWaiting(bool solid) // grayman #2345
 		if (frobDoor != NULL)
 		{
 			frobDoor->GetUserManager().RemoveUser(owner);
+			frobDoor->GetUserManager().ResetMaster(frobDoor); // grayman #2345/#2706 - redefine which AI is the master
 		}
 	}
 }
@@ -680,11 +666,6 @@ bool MovementSubsystem::IsWaitingNonSolid(void) // grayman #2345
 	return (_state == EWaitingNonSolid);
 }
 
-bool MovementSubsystem::IsPaused(void) // grayman #2345
-{
-	return (_state == EPaused);
-}
-
 bool MovementSubsystem::IsNotBlocked(void) // grayman #2345
 {
 	return (_state == ENotBlocked);
@@ -698,6 +679,24 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 	if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
 	{
 		return; // Already resolving
+	}
+
+	// grayman #2706 - if handling a door, the door handling task will disappear, so clean up first
+
+	if (owner->m_HandlingDoor)
+	{
+		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+		if (frobDoor)
+		{
+			frobDoor->GetUserManager().RemoveUser(owner);
+			frobDoor->GetUserManager().ResetMaster(frobDoor); // redefine which AI is the master door user
+		}
+		owner->m_HandlingDoor = false;
+		if (owner->m_RestoreMove) // AI run toward where they saw you last. Don't save that location when handling doors.
+		{
+			SetBlockedState(EResolvingBlock); // preset this so PopMove() calling RestoreMove() doesn't start handling another door 
+			owner->PopMove(); // flush the movement state saved when door handling began
+		}
 	}
 
 	// Push a resolution task
@@ -812,42 +811,6 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 		gameRenderWorld->DebugBox(colorWhite, idBox(_historyBounds), 3* gameLocal.msec);
 	}
 
-	/*	grayman #2345
-
-		Show the door situation along with movement state.
-
-		Format is:
-	  
-			<EBlockedState> <DoorName> - <Position in door queue>/<# users in door queue>
-
-		For example:
-
-			ENotBlocked Door4 - 2/3
-
-		means the AI is in movement state "ENotBlocked" and is currently in the second
-		slot in a door queue of 3 users on door Door4.
-	 */
-
-	idStr position = "";
-	if (owner->m_HandlingDoor)
-	{
-		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
-		if (frobDoor != NULL)
-		{
-			idStr doorName = frobDoor->name;
-			int numUsers = frobDoor->GetUserManager().GetNumUsers();
-			int slot = frobDoor->GetUserManager().GetIndex(owner) + 1;
-			if (slot > 0)
-			{
-				position = " " + doorName + " - " + slot + "/" + numUsers;
-			}
-		}
-		else
-		{
-			position = " (ERROR: no door)";
-		}
-	}
-
 	idStr str;
 	idVec4 colour;
 	switch (_state) 
@@ -876,12 +839,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			str = "EWaitingNonSolid";
 			colour = colorBlue;
 			break;
-		case EPaused: // grayman #2345
-			str = "EPaused";
-			colour = colorBlue;
-			break;
 	}
-	str += position;
 
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 

@@ -27,7 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/WeaponItem.h"
-#include "../DarkMod/shop.h"
+#include "../DarkMod/Shop/Shop.h"
 
 /*
 ===============================================================================
@@ -1377,8 +1377,19 @@ void idPlayer::SetupInventory()
 			}
 		}
 	}
+
+	// Carry over persistent items from the previous map
+	AddPersistentInventoryItems();
 }
 
+void idPlayer::AddPersistentInventoryItems()
+{
+	// Copy all persistent items into our own inventory
+	Inventory()->CopyPersistentItemsFrom(*gameLocal.persistentPlayerInventory, this);
+
+	// We've changed maps, let's respawn our item entities where needed, put them to our own position
+	Inventory()->RestoreItemEntities(GetPhysics()->GetOrigin());
+}
 
 /*
 ==============
@@ -11050,6 +11061,17 @@ void idPlayer::Event_Unpausegame()
 
 void idPlayer::Event_MissionSuccess()
 {
+	// Clear the persistent inventory, it might have old data from the previous mission
+	gameLocal.persistentPlayerInventory->Clear();
+
+	// Save loot info
+
+	// Save current inventory into the persistent one
+	Inventory()->CopyTo(*gameLocal.persistentPlayerInventory);
+	
+	// Save the item entities of all persistent items
+	gameLocal.persistentPlayerInventory->SaveItemEntities(true);
+	
 	// Set the gamestate
 	gameLocal.SetMissionResult(MISSION_COMPLETE);
 	gameLocal.sessionCommand = "disconnect";

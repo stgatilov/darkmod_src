@@ -2259,6 +2259,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	// grayman #2706 - can't handle doors if you're resolving a block
+
+	if (owner->movementSubsystem->IsResolvingBlock() || owner->movementSubsystem->IsWaiting())
+	{
+		return;
+	}
+
 	// grayman #2650 - can we handle doors?
 
 	if (!owner->m_bCanOperateDoors)
@@ -2266,15 +2273,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
-	// grayman #2345 - don't handle this door if we just finished handling it, unless alerted.
+	// grayman #2716 - if the door is too high above or too far below, ignore it
 
-	if (owner->AI_AlertIndex < 3) // grayman #2670
+	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
+	float ownerZ = owner->GetPhysics()->GetOrigin().z;
+	if ((frobDoorBounds[0].z > (ownerZ + 70)) || (frobDoorBounds[1].z < (ownerZ - 30)))
 	{
-		int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 10000))
-		{
-			return;
-		}
+		return;
 	}
 
 	if (cv_ai_door_show.GetBool()) 
@@ -2289,6 +2294,21 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	CFrobDoor* currentDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (currentDoor == NULL)
 	{
+		// grayman #2691 - if we don't fit through this new door, don't use it
+
+		if (!owner->CanPassThroughDoor(frobDoor))
+		{
+			return;
+		}
+
+		// grayman #2345 - don't handle this door if we just finished handling it, unless alerted.
+
+		int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 3000)) // grayman #2712 - delay time should match REUSE_DOOR_DELAY
+		{
+			return; // ignore this door
+		}
+
 		memory.doorRelated.currentDoor = frobDoor;
 		owner->movementSubsystem->PushTask(HandleDoorTask::CreateInstance());
 	}
@@ -2305,7 +2325,12 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 
 			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
 			{
-				subsys->FinishTask();
+				// grayman #2706 - only quit this door if you're in the approaching states.
+				// otherwise, finish with this door before you move to another one.
+				if (task->CanAbort())
+				{
+					subsys->FinishTask();
+				}
 			}
 			else
 			{
@@ -2315,11 +2340,8 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 				memory.doorRelated.currentDoor = NULL;
 			}
 		}
-		// this is our current door
-		else
+		else // this is our current door
 		{
-			// this is already our current door
-
 			const SubsystemPtr& subsys = owner->movementSubsystem;
 			TaskPtr task = subsys->GetCurrentTask();
 

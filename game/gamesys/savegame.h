@@ -19,6 +19,8 @@ Save game related helper classes.
 
 */
 
+#include "../../DarkMod/RawVector.h"
+
 #ifdef __linux__
 #include "renderer/model.h"
 #endif
@@ -51,23 +53,31 @@ public:
 	void					WriteObjectList( void );
 
 	void					Write( const void *buffer, int len );
+
 	void					WriteInt( const int value );
 	void					WriteUnsignedInt( const unsigned int value );
-	void					WriteJoint( const jointHandle_t value );
 	void					WriteShort( const short value );
-	void					WriteByte( const byte value );
-	void					WriteSignedChar( const signed char value );
+	void					WriteUnsignedShort( unsigned short value );
+	void					WriteChar( const char value );
+	void					WriteUnsignedChar( const unsigned char value );
 	void					WriteFloat( const float value );
 	void					WriteBool( const bool value );
 	void					WriteString( const char *string );
+
+	void					WriteJoint( const jointHandle_t value );
+	void					WriteByte( const byte value );
+	void					WriteSignedChar( const signed char value );
+
 	void					WriteVec2( const idVec2 &vec );
 	void					WriteVec3( const idVec3 &vec );
 	void					WriteVec4( const idVec4 &vec );
+	void					WriteVec5( const idVec5 &vec );
 	void					WriteVec6( const idVec6 &vec );
+	void					WriteMat3( const idMat3 &mat );
+
 	void					WriteWinding( const idWinding &winding );
 	void					WriteBox( const idBox &box );
 	void					WriteBounds( const idBounds &bounds );
-	void					WriteMat3( const idMat3 &mat );
 	void					WriteAngles( const idAngles &angles );
 	void					WriteObject( const idClass *obj );
 	void					WriteStaticObject( const idClass &obj );
@@ -91,15 +101,19 @@ public:
 	void					WriteClipModel( const class idClipModel *clipModel );
 	void					WriteSoundCommands( void );
 
-	void					WriteBuildNumber( const int value );
+	// Write all the data necessary to determine the save format
+	void					WriteHeader();
 
-	// Write the code revision to the file
-	void					WriteCodeRevision();
+	// Dump the contents of cache buffer to file
+	void					FinalizeCache();
 
 private:
 	idFile *				file;
 
 	idList<const idClass *>	objects;
+
+	bool					isCompressed;
+	CRawVector				cache;
 
 	void					CallSave_r( const idTypeInfo *cls, const idClass *obj );
 };
@@ -116,23 +130,31 @@ public:
 	void					Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 
 	void					Read( void *buffer, int len );
+
 	void					ReadInt( int &value );
 	void					ReadUnsignedInt( unsigned int &value );
-	void					ReadJoint( jointHandle_t &value );
 	void					ReadShort( short &value );
-	void					ReadByte( byte &value );
-	void					ReadSignedChar( signed char &value );
+	void					ReadUnsignedShort( unsigned short &value );
+	void					ReadChar( char &value );
+	void					ReadUnsignedChar( unsigned char &value );
 	void					ReadFloat( float &value );
 	void					ReadBool( bool &value );
 	void					ReadString( idStr &string );
+
+	void					ReadJoint( jointHandle_t &value );
+	void					ReadByte( byte &value );
+	void					ReadSignedChar( signed char &value );
+
 	void					ReadVec2( idVec2 &vec );
 	void					ReadVec3( idVec3 &vec );
 	void					ReadVec4( idVec4 &vec );
+	void					ReadVec5( idVec5 &vec );
 	void					ReadVec6( idVec6 &vec );
+	void					ReadMat3( idMat3 &mat );
+
 	void					ReadWinding( idWinding &winding );
 	void					ReadBounds( idBounds &bounds );
 	void					ReadBox( idBox &box );
-	void					ReadMat3( idMat3 &mat );
 	void					ReadAngles( idAngles &angles );
 	void					ReadObject( idClass *&obj );
 	void					ReadStaticObject( idClass &obj );
@@ -156,25 +178,26 @@ public:
 	void					ReadClipModel( idClipModel *&clipModel );
 	void					ReadSoundCommands( void );
 
-	void					ReadBuildNumber( void );
+	// Read all the data necessary to determine the save format
+	void					ReadHeader();
 
-	void					ReadCodeRevision();
+	// Read the contents of cache buffer before restoring
+	void					InitializeCache();
 
-	//						Used to retrieve the saved game buildNumber from within class Restore methods
-	int						GetBuildNumber( void );
-
-	// Retrieve the code revision number this savefile was written with
-	int						GetCodeRevision();
+	inline int				GetBuildNumber() { return buildNumber; }
+	inline int				GetCodeRevision() { return codeRevision; }
 
 private:
-	int						buildNumber;
-
-	// TDM SVN code revision
-	int						codeRevision;
-
 	idFile *				file;
 
+	int						buildNumber;
+	int						codeRevision;
+
 	idList<idClass *>		objects;
+
+	bool					isCompressed;
+	CRawVector				cache;
+	int						cachePointer;
 
 	void					CallRestore_r( const idTypeInfo *cls, idClass *obj );
 };

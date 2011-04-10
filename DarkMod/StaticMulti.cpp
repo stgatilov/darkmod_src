@@ -2,9 +2,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 4071 $
- * $Date: 2010-07-18 15:57:08 +0200 (Sun, 18 Jul 2010) $
- * $Author: tels $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -23,7 +23,7 @@ TODO: track skin changes on the different LOD stages
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: StaticMulti.cpp 4071 2010-07-18 13:57:08Z tels $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "StaticMulti.h"
 
@@ -54,7 +54,7 @@ CStaticMulti::CStaticMulti( void )
 {
 	active = false;
 	m_bNeedModelUpdates = true;
-	m_LOD = NULL;
+	m_LODHandle = 0;
 
 	m_Changes.Clear();
 	m_Offsets = NULL;
@@ -69,20 +69,22 @@ CStaticMulti::CStaticMulti( void )
 
 	m_iVisibleModels = 0;
 	m_iMaxChanges = 1;
-	
+	m_fHideDistance = 0.0f;	
 	m_DistCheckTimeStamp = 0;
 	m_DistCheckInterval = 0;
-	m_fHideDistance = 0.0f;
 	m_bDistCheckXYOnly = false;
 }
 
 CStaticMulti::~CStaticMulti()
 {
-	// no need to free these as they are just ptr to a copy
-	m_LOD = NULL;
+	if (m_LODHandle)
+	{
+		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
+		m_LODHandle = 0;
+	}
 
 	// make sure the render entity is freed before the model is freed
-	if ( modelDefHandle != -1 )
+	if (modelDefHandle != -1)
 	{
 		FreeModelDef();
 	}
@@ -147,24 +149,23 @@ void CStaticMulti::Spawn( void )
 CStaticMulti::SetLODData
 
 Store the data like our megamodel (the visible combined rendermodel including data how to
-assemble it), and the LOD stages (contain the distance for each LOD stage)
+assemble it), and the LOD stages (contains the distance for each LOD stage)
 ================
 */
-void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clipModel )
+void CStaticMulti::SetLODData( const idVec3 &origin, const unsigned int lodHandle, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clipModel )
 {
 	idClipModel *clip;
 	bool clipLoaded = false;
 	active = true;
 
-	/* ptr to the shared data structures */
-	m_LOD = LOD;
+	m_LODHandle = lodHandle;
 	m_Offsets = offsets;
 
 	m_MaterialName = materialName;
 
 #ifdef M_DEBUG
-	gameLocal.Printf("%s SetLODData: LOD %p, hModel %p, model %s, offsets %p (%i).\n",
-			GetName(), m_LOD, hModel, modelName.c_str(), m_Offsets, m_Offsets ? m_Offsets->Num() : -1 );
+	gameLocal.Printf("%s SetLODData: LOD %i, hModel %p, model %s, offsets %p (%i).\n",
+			GetName(), m_LODHandle, hModel, modelName.c_str(), m_Offsets, m_Offsets ? m_Offsets->Num() : -1 );
 #endif
 
 	m_iVisibleModels = m_Offsets->Num();
@@ -176,22 +177,28 @@ void CStaticMulti::SetLODData( const idVec3 &origin, lod_data_t *LOD, idStr mode
 	m_modelName = modelName;
 
 	// set this to false if we don't have LOD
-	if (!LOD)
+	if (m_LODHandle == 0)
 	{
 		m_bNeedModelUpdates = false;
 	}
-	else if (m_bNoshadows)
+	else
 	{
-		// if noshadows, turn off shadows for all LOD stages
-		m_LOD->noshadowsLOD = 0xFF;
-		// We need to go through all our offsets and set the NOSHADOW flag,
-		// because the ModelGenerator does not have access to the noshadowsLOD field
-		// and would otherwise needlessly try to use shadows:
-		model_ofs_t *op = m_Offsets->Ptr();
-		for (int i = 0; i < m_iVisibleModels; i++)
+		if (m_bNoshadows)
 		{
-			op[i].flags |= SEED_MODEL_NOSHADOW;
+			// if noshadows, turn off shadows for all LOD stages
+			// TODO:
+//			m_LOD->noshadowsLOD = 0xFF;
+
+			// We need to go through all our offsets and set the NOSHADOW flag,
+			// because the ModelGenerator does not have access to the noshadowsLOD field
+			// and would otherwise needlessly try to use shadows:
+			model_ofs_t *op = m_Offsets->Ptr();
+			for (int i = 0; i < m_iVisibleModels; i++)
+			{
+				op[i].flags |= SEED_MODEL_NOSHADOW;
+			}
 		}
+		gameLocal.m_ModelGenerator->RegisterLODData( m_LODHandle );
 	}
 
 	m_Changes.Clear();
@@ -336,9 +343,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	else
 	{
 		idStr m = m_modelName;
-		if (m_LOD)
+		if (m_LODHandle)
 		{
-			m = m_LOD->ModelLOD[0];
+			const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+			m = lod->ModelLOD[0];
 		}
 		const idRenderModel* hModel = NULL;
 		if (!m.IsEmpty())
@@ -361,9 +369,10 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 			continue;
 		}
 		idStr m = m_modelName;
-		if (m_LOD)
+		if (m_LODHandle)
 		{
-			m = m_LOD->ModelLOD[i];
+			const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+			m = lod->ModelLOD[i];
 		}
 		const idRenderModel* hModel = NULL;
 		if (!m.IsEmpty())
@@ -463,7 +472,7 @@ CStaticMulti::Think
 */
 void CStaticMulti::Think( void ) 
 {
-	lod_data_t* LOD;
+	lod_data_t* LOD = NULL;
 
 	// Distance dependence checks
 	if ( active && m_bNeedModelUpdates && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
@@ -496,16 +505,15 @@ void CStaticMulti::Think( void )
 
 		bool bDistCheckXYOnly = false;
 
-		if (!m_LOD)
+		if (m_LODHandle)
 		{
-			// TODO: fill this structure
-			LOD = NULL;
+			const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+			LOD = (lod_data_t*)lod;
+			bDistCheckXYOnly = lod->bDistCheckXYOnly ? true : false;
 		}
-		else
-		{
-			LOD = m_LOD;
-			bDistCheckXYOnly = LOD->bDistCheckXYOnly ? true : false;
-		}
+//		else {
+//			// TODO: fill this structure
+//		}
 
 #ifdef M_DEBUG_1
 		if (LOD)
@@ -540,7 +548,7 @@ void CStaticMulti::Think( void )
 			// divide by the user LOD bias setting (squared)
 			float dist = delta.LengthSqr() / lod_bias;
 
-			float fAlpha  = ThinkAboutLOD( LOD, dist );
+			float fAlpha  = ThinkAboutLOD( m_LODHandle == 0 ? NULL : LOD, dist );
 
 			if (fAlpha == 0)
 			{
@@ -558,7 +566,7 @@ void CStaticMulti::Think( void )
 				// TODO: compute flags for noclip
 				int flags = 0;
 				m_LODLevel ++;
-				if ( LOD && (LOD->noshadowsLOD & (1 << m_LODLevel)) )
+				if ( m_LODHandle && (LOD->noshadowsLOD & (1 << m_LODLevel)) )
 				{
 					flags += SEED_MODEL_NOSHADOW;
 				}
@@ -652,7 +660,6 @@ void CStaticMulti::Restore( idRestoreGame *savefile )
 	// These will be set by the SEED entity managing us
 	// no update until the data is there!
 	m_Offsets = NULL;
-	m_LOD = NULL;
 	m_hModel = NULL;
 
 	m_Changes.Clear();
