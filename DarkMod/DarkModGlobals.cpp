@@ -36,7 +36,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
-#include "renderpipe.h"
 #include "RevisionTracker.h"
 #include <boost/filesystem.hpp>
 
@@ -115,17 +114,15 @@ static const char *LCString[LC_COUNT+1] = {
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
 int g_PLID = 0;
-const char *DM_OSPathToRelativePath(const char *OSPath);
-const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath = "fs_devpath");
-const char *DM_BuildOSPath(const char *base, const char *game, const char *relativePath);
 void DM_Frame();
 //void DM_Printf(const char* fmt, ...);
 
 // Intercept declarations
-//SH_DECL_HOOK1(idFileSystem, OSPathToRelativePath, SH_NOATTRIB, 0, const char *, const char *);
-//SH_DECL_HOOK2(idFileSystem, RelativePathToOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *);
-SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *, const char *);
 SH_DECL_HOOK0_void(idCommon, Frame, SH_NOATTRIB, 0);
+
+// stgatilov: Intercepts output of CaptureRenderToFile
+int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath);
+SH_DECL_HOOK4(idFileSystem, WriteFile, SH_NOATTRIB, 0, int, const char *, const void *, int, const char *);
 
 // greebo: Intercept declaration for idCommon::VPrintf 
 //SH_DECL_HOOK0_void_vafmt(idCommon, Printf, SH_NOATTRIB, 0);
@@ -280,14 +277,11 @@ void CGlobal::Init()
 	PROFILE_HANDLE *pfh = NULL;
 
 #ifdef _WINDOWS_
-
-	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
-//	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
-//	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);
-
 //	SH_ADD_HOOK_STATICFUNC(idCommon, Printf, common, DM_Printf, 0);
-
 #endif
+
+	// stgatilov: used for intercepting lightgem render output
+	SH_ADD_HOOK_STATICFUNC(idFileSystem, WriteFile, fileSystem, DM_WriteFile, 0);
 
 	// Report the darkmod path for diagnostic purposes
 	LogString("Darkmod path is %s\r", GetDarkmodPath().c_str());
@@ -673,22 +667,24 @@ void DM_Printf(const char* fmt, ...)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
 }
 
-const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)
+int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath)
 {
-	char *pRet = NULL;
+	int iRet = 0;
 	META_RES Ret = MRES_IGNORED;
 
-#ifdef _WINDOWS
-	static char p[1024];
-	if(idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
+	// stgatilov: if it is lightgem render, save it to m_LightGemRenderBuffer
+	if (idStr::Cmp(relativePath, DARKMOD_LG_FILENAME) == 0)
 	{
-		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME);
-		Ret = MRES_SUPERCEDE;
-		pRet = p;
-	}
-#endif
+		// resize buffer if necessary
+		if (gameLocal.GetLightgemRenderBuffer().Num() != size)
+			gameLocal.GetLightgemRenderBuffer().SetNum(size);
 
-	RETURN_META_VALUE(Ret, pRet);
+		memcpy(&gameLocal.GetLightgemRenderBuffer()[0], buffer, size);
+		Ret = MRES_SUPERCEDE;
+		iRet = size;
+	}
+
+	RETURN_META_VALUE(Ret, iRet);
 }
 
 void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )

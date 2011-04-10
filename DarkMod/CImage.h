@@ -69,9 +69,9 @@ public:
 
 	/**
 	 * Load the image into memory and allow access to it, reading the image
-	 * data from a renderpipe.
+	 * data from memory buffer.
 	 */
-	bool LoadImage(CRenderPipe *FileHandle);
+	bool LoadImage(const idList<char> &imageBuffer);
 
 	/**
 	 * greebo: Saves the loaded image to the given path. Existing target files
