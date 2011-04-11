@@ -13,11 +13,11 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "shop.h"
-#include "../game/game_local.h"
-#include "MissionData.h"
-#include "Missions/MissionManager.h"
-#include "./Inventory/Inventory.h"
+#include "Shop.h"
+#include "../../game/game_local.h"
+#include "../MissionData.h"
+#include "../Missions/MissionManager.h"
+#include "../Inventory/Inventory.h"
 
 void CShop::Init()
 {
