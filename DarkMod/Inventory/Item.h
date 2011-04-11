@@ -69,7 +69,7 @@ public:
 	void					SetDroppable(bool bDroppable) { m_Droppable = bDroppable; };
 	bool					IsDroppable() { return m_Droppable; };
 
-	void					SetLootType(CInventoryItem::LootType t);
+	void					SetLootType(LootType t);
 	LootType				GetLootType() { return m_LootType; };
 
 	void					SetValue(int n);
