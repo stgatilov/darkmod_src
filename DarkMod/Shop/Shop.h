@@ -17,7 +17,7 @@
 #define LIST_SIZE_STARTING 7
 
 #include "ShopItem.h"
-#include "DifficultyManager.h"
+#include "../DifficultyManager.h"
 #include "LootRuleSet.h"
 
 // Represents the Shop

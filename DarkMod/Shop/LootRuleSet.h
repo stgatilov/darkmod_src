@@ -11,7 +11,7 @@
 #ifndef TDM_LOOTRULESET_H
 #define TDM_LOOTRULESET_H
 
-#include "Inventory/LootType.h"
+#include "../Inventory/LootType.h"
 
 /**
  * greebo: A structure defining loot carry-over rules for the shop.
