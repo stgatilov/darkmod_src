@@ -402,8 +402,6 @@ idCVar cv_voice_from_off_volume("tdm_voice_from_off_volume", "1.0",	CVAR_GAME | 
 
 idCVar cv_moveable_collision("tdm_show_moveable_collision",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1, shows the velocity at which the moveable collides and the volume of the resulting sound." );
 
-idCVar cv_darkradiant_rcfserver_enable("darkradiant_rcfserver_enable",	"0",	CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 the DarkRadiant RCF Server will be enabled during the next startup." );
-
 /**
 * DarkMod LOD system
 **/
