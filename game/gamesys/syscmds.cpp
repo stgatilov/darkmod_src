@@ -158,6 +158,21 @@ void Cmd_SetMissionCompleted_f(const idCmdArgs& args)
 	gameLocal.Printf("OK");
 }
 
+void Cmd_EndMission_f(const idCmdArgs& args)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	if (gameLocal.GetLocalPlayer() != NULL)
+	{
+		gameLocal.Printf("=== Triggering mission end ===\n");
+		gameLocal.GetLocalPlayer()->PostEventMS(&EV_TriggerMissionEnd, 0);
+	}
+}
+
 /*
 ==================
 Cmd_AttachmentOffset_f
@@ -3786,6 +3801,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 
 	cmdSystem->AddCommand( "tdm_list_missions", Cmd_ListMissions_f, CMD_FL_GAME, "Lists all available missions.");
 	cmdSystem->AddCommand( "tdm_set_mission_completed", Cmd_SetMissionCompleted_f, CMD_FL_GAME, "Sets or clears the 'completed' flag of a named mission.");
+
+	cmdSystem->AddCommand( "tdm_end_mission", Cmd_EndMission_f, CMD_FL_GAME, "Ends this mission and proceeds to the next.");
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
