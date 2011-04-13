@@ -1232,6 +1232,10 @@ private:
 
 	void					ClearActiveInventoryMap();
 
+	// Considers item limits as defined in atdm:campaign_info entities placed in the map
+	// All items exceeding the defined limits are removed from the player's inventory
+	void					EnforcePersistentInventoryItemLimits();
+
 	void					Event_GetButtons( void );
 	void					Event_GetMove( void );
 	void					Event_GetViewAngles( void );

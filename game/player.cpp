@@ -11049,6 +11049,11 @@ void idPlayer::SendInventoryPickedUpMessage(const idStr& text)
 	inventoryPickedUpMessages.Append(text);
 }
 
+void idPlayer::EnforcePersistentInventoryItemLimits()
+{
+	// TODO
+}
+
 void idPlayer::Event_Pausegame()
 {
 	gameLocal.PauseGame(true);
@@ -11064,7 +11069,8 @@ void idPlayer::Event_MissionSuccess()
 	// Clear the persistent inventory, it might have old data from the previous mission
 	gameLocal.persistentPlayerInventory->Clear();
 
-	// Save loot info
+	// Enfore item limits on mission end - drop everything exceeding the limits
+	EnforePersistentItemLimits();
 
 	// Save current inventory into the persistent one
 	Inventory()->CopyTo(*gameLocal.persistentPlayerInventory);
