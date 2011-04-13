@@ -560,6 +560,11 @@ const idStr& idGameLocal::GetMapFileName() const
 	return mapFileName;
 }
 
+void idGameLocal::AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName)
+{
+	// TODO
+}
+
 void idGameLocal::CheckTDMVersion()
 {
 	GuiMessage msg;
@@ -983,6 +988,14 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	//Save LightGem - J.C.Denton
 	m_lightGem.Save( savegame );
+
+	savegame.WriteInt(m_InterMissionTriggers.Num());
+	for (int i = 0; i < m_InterMissionTriggers.Num(); ++i)
+	{
+		savegame.WriteInt(m_InterMissionTriggers[i].missionNum);
+		savegame.WriteString(m_InterMissionTriggers[i].activatorName);
+		savegame.WriteString(m_InterMissionTriggers[i].targetName);
+	}
 
 	m_sndProp->Save(&savegame);
 	m_MissionData->Save(&savegame);
@@ -1714,6 +1727,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 		persistentPlayerInventory->Clear();
 		persistentLevelInfo.Clear();
 		m_CampaignStats.reset(new CampaignStats);
+		m_InterMissionTriggers.Clear();
 	}
 
 	Printf( "----------- Game Map Init ------------\n" );
@@ -1773,6 +1787,8 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	// We need an objectives update now that we've loaded the map
 	m_MissionData->ClearGUIState();
+
+	// TODO: Process inter-mission triggers
 
 	Printf( "--------------------------------------\n" );
 }
@@ -2054,6 +2070,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore LightGem				- J.C.Denton
 	m_lightGem.Restore( savegame );
+
+	savegame.ReadInt(num);
+	m_InterMissionTriggers.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		savegame.ReadInt(m_InterMissionTriggers[i].missionNum);
+		savegame.ReadString(m_InterMissionTriggers[i].activatorName);
+		savegame.ReadString(m_InterMissionTriggers[i].targetName);
+	}
 
 	m_sndProp->Restore(&savegame);
 	m_MissionData->Restore(&savegame);

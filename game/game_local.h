@@ -868,18 +868,13 @@ public:
 	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
 	 * to determine the lightvalue for the lightgem.
 	 */
-	float					CalcLightgem(idPlayer *);
+	float					CalcLightgem(idPlayer*);
 
 	ID_INLINE idList<char> &GetLightgemRenderBuffer(void)
 	{
 		return m_lightGem.GetLightgemRenderBuffer();
 	}
 
-	/**
-	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
-	 * determining the lightvalue for the given image.
-	 */
-	
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);
@@ -951,6 +946,15 @@ public:
 	// Tels: Return mapFileName as it is private
 	const idStr&			GetMapFileName() const;
 
+	/**
+	 * greebo: Register a trigger that is to be fired when the mission <missionNum> is loaded.
+	 * The activatorName is stored along with the name of the target to be triggered. When the target map
+	 * has been loaded and all entities have been spawned the game will try to resolve these names
+	 * and issue the activation event.
+	 * If the activator's name is empty, the local player will be used as activator.
+	 */
+	void					AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName);
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -1007,6 +1011,22 @@ private:
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	LightGem				m_lightGem;
 	
+	// A container for keeping the inter-mission trigger information
+	struct InterMissionTrigger
+	{
+		// The number of the mission this trigger applies to
+		int missionNum;
+
+		// The name of the entity that should be used as activator. Is resolved immediately after spawn time.
+		// If empty, the player will be used.
+		idStr	activatorName;
+
+		// The name of the target entity to be triggered. Is resolved immediately after spawn time.
+		idStr	targetName;
+	};
+
+	idList<InterMissionTrigger>	m_InterMissionTriggers;
+
 	idList<idEntity *>		m_SignalList;
 
 	void					Clear( void );

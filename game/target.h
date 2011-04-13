@@ -624,4 +624,17 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+/**
+ * greebo: This target eats incoming triggers and releases them when the next map loads.
+ */
+class CTarget_InterMissionTrigger : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_InterMissionTrigger );
+
+private:
+	void				Event_Activate(idEntity* activator);
+};
+
 #endif /* !__GAME_TARGET_H__ */
