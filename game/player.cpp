@@ -11070,7 +11070,7 @@ void idPlayer::Event_MissionSuccess()
 	gameLocal.persistentPlayerInventory->Clear();
 
 	// Enfore item limits on mission end - drop everything exceeding the limits
-	EnforePersistentItemLimits();
+	EnforcePersistentInventoryItemLimits();
 
 	// Save current inventory into the persistent one
 	Inventory()->CopyTo(*gameLocal.persistentPlayerInventory);
