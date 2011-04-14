@@ -10996,12 +10996,65 @@ void idPlayer::SendInventoryPickedUpMessage(const idStr& text)
 
 void idPlayer::EnforcePersistentInventoryItemLimits()
 {
+	idStr diffPrefix = va("diff_%d_", gameLocal.m_DifficultyManager.GetDifficultyLevel());
+
 	for (int i = 0; i < gameLocal.campaignInfoEntities.Num(); ++i)
 	{
 		idEntity* campaignInfo = gameLocal.campaignInfoEntities[i];
 		assert(campaignInfo != NULL);
 
-		// TODO: Enforce weapon limits
+		// Enforce weapon limits
+		CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+		idList<CInventoryWeaponItemPtr> itemsToRemove;
+
+		for (int w = 0; w < weaponCategory->GetNumItems(); ++w)
+		{
+			CInventoryWeaponItemPtr weaponItem =  boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
+
+			if (weaponItem->GetPersistentCount() <= 0)
+			{
+				continue; // not a persistent weapon
+			}
+
+			const idStr& weaponName = weaponItem->GetWeaponName();
+
+			// Get the active limit, check non-difficulty-specific ones first, defaults to no limit
+			int limit = campaignInfo->spawnArgs.GetInt("weapon_limit_" + weaponName, "-1");
+
+			// Let the difficulty-specific limit override the global one
+			limit = campaignInfo->spawnArgs.GetInt(diffPrefix + "weapon_limit_" + weaponName, va("%d", limit));
+
+			if (limit == -1)
+			{
+				continue; // no limit specified for this weapon
+			}
+
+			bool needsAmmo = !weaponItem->IsAllowedEmpty();
+
+			if (needsAmmo)
+			{
+				if (weaponItem->GetAmmo() > limit)
+				{
+					weaponItem->SetAmmo(limit);
+				}
+			}
+			else
+			{
+				// Weapons without ammonition
+				if (limit == 0)
+				{
+					// Limit set to 0, drop this weapon
+					itemsToRemove.Append(weaponItem);
+				}
+			}
+		}
+
+		// Remove all marked items from this category
+		for (int w = 0; w < itemsToRemove.Num(); ++w)
+		{
+			weaponCategory->RemoveItem(itemsToRemove[w]);
+		}
 
 		// TODO: Enforce regular inventory item limits
 	}

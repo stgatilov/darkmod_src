@@ -258,6 +258,9 @@ public:
 	// Will always return 0 for non-campaigns
 	int GetCurrentMissionIndex() const;
 
+	// Set the current mission index
+	void SetCurrentMissionIndex(int index);
+
 	// Returns TRUE if the currently installed mod is a campaign
 	bool CurrentModIsCampaign() const;
 

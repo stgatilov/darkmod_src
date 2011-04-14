@@ -101,6 +101,8 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 				continue; // not marked as persistent
 			}
 
+			// TODO: Handle weapons separately, otherwise we might end up with duplicate weapon items
+
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
 				"Adding persistent item %s to player inventory, quantity: %d.\r",
 				item->GetName().c_str(), item->GetPersistentCount());

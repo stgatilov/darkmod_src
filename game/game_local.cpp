@@ -4180,6 +4180,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Add the command to buffer, but no need to issue it immediately. 
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
 	}
+	else if (cmd == "onStartMissionClicked")
+	{
+		// First mission to be started, reset index
+		m_MissionManager->SetCurrentMissionIndex(0);
+		gui->SetStateInt("CurrentMission", 1);
+	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
 	m_ModMenu->HandleCommands(cmd, gui);

@@ -728,6 +728,11 @@ int CMissionManager::GetCurrentMissionIndex() const
 	return 0; // single-mission
 }
 
+void CMissionManager::SetCurrentMissionIndex(int index)
+{
+	_curMissionIndex = index;
+}
+
 bool CMissionManager::ProceedToNextMission()
 {
 	if (NextMissionAvailable())
