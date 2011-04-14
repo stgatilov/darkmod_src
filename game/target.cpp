@@ -1635,33 +1635,6 @@ void idTarget_RemoveWeapons::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idTarget_LevelTrigger
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_LevelTrigger )
-EVENT( EV_Activate,	idTarget_LevelTrigger::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_LevelTrigger::Event_Activate
-================
-*/
-void idTarget_LevelTrigger::Event_Activate( idEntity *activator ) {
-	for( int i = 0; i < gameLocal.numClients; i++ ) {
-		if ( gameLocal.entities[ i ] ) {
-			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-			player->SetLevelTrigger( spawnArgs.GetString( "levelName" ), spawnArgs.GetString( "triggerName" ) );
-		}
-	}
-}
-
-
-/*
-===============================================================================
-
 idTarget_FadeSoundClass
 
 ===============================================================================

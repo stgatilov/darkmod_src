@@ -458,20 +458,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_LevelTrigger
-
-===============================================================================
-*/
-class idTarget_LevelTrigger : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_LevelTrigger );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_FadeSoundClass
 
 ===============================================================================

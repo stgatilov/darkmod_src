@@ -75,7 +75,6 @@ const idEventDef EV_Player_GetPreviousWeapon( "getPreviousWeapon", NULL, 's' );
 const idEventDef EV_Player_SelectWeapon( "selectWeapon", "s" );
 const idEventDef EV_Player_GetWeaponEntity( "getWeaponEntity", NULL, 'e' );
 const idEventDef EV_Player_ExitTeleporter( "exitTeleporter" );
-const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon", NULL, 's' );
 
@@ -166,7 +165,6 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SelectWeapon,			idPlayer::Event_SelectWeapon )
 	EVENT( EV_Player_GetWeaponEntity,		idPlayer::Event_GetWeaponEntity )
 	EVENT( EV_Player_ExitTeleporter,		idPlayer::Event_ExitTeleporter )
-	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
 	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
@@ -954,12 +952,6 @@ void idPlayer::Spawn( void )
 
 	tipUp = false;
 
-	// See if any levelTriggers are pending. Trigger them now, if this is the case
-	if ( levelTriggers.Num() )
-	{
-		PostEventMS( &EV_Player_LevelTrigger, 0 );
-	}
-
 	// copy step volumes over from cvars
 	UpdateMoveVolumes();
 
@@ -1446,12 +1438,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	// idBoolFields don't need to be saved, just re-linked in Restore
 
-	savefile->WriteInt( levelTriggers.Num() );
-	for ( i = 0; i < levelTriggers.Num(); i++ ) {
-		savefile->WriteString( levelTriggers[i].levelName );
-		savefile->WriteString( levelTriggers[i].triggerName );
-	}
-
 	weapon.Save( savefile );
 
 	savefile->WriteUserInterface( hud, false );
@@ -1755,14 +1741,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	// Re-link idBoolFields to the scriptObject, values will be restored in scriptObject's restore
 	LinkScriptVariables();
-
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		idLevelTriggerInfo lti;
-		savefile->ReadString( lti.levelName );
-		savefile->ReadString( lti.triggerName );
-		levelTriggers.Append( lti );
-	}
 
 	weapon.Restore( savefile );
 
@@ -9023,39 +9001,6 @@ void idPlayer::UpdateWeaponEncumbrance()
 	if (weapon != NULL)
 	{
 		SetHinderance("weapon", weapon->GetMovementModifier(), 1.0f);
-	}
-}
-
-/*
-===============
-idPlayer::SetLevelTrigger
-===============
-*/
-void idPlayer::SetLevelTrigger( const char *levelName, const char *triggerName ) {
-	if ( levelName && *levelName && triggerName && *triggerName ) {
-		idLevelTriggerInfo lti;
-		lti.levelName = levelName;
-		lti.triggerName = triggerName;
-		levelTriggers.Append( lti );
-	}
-}
-
-/*
-===============
-idPlayer::Event_LevelTrigger
-===============
-*/
-void idPlayer::Event_LevelTrigger( void ) {
-	idStr mapName = gameLocal.GetMapName();
-	mapName.StripPath();
-	mapName.StripFileExtension();
-	for ( int i = levelTriggers.Num() - 1; i >= 0; i-- ) {
-		if ( idStr::Icmp( mapName, levelTriggers[i].levelName) == 0 ){
-			idEntity *ent = gameLocal.FindEntity( levelTriggers[i].triggerName );
-			if ( ent ) {
-				ent->PostEventMS( &EV_Activate, 1, this );
-			}
-		}
 	}
 }
 

@@ -78,11 +78,6 @@ const int SAVING_THROW_TIME = 5000;		// maximum one "saving throw" every five se
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
 
-struct idLevelTriggerInfo {
-	idStr levelName;
-	idStr triggerName;
-};
-
 // powerups - the "type" in item .def must match
 enum {
 	BERSERK = 0, 
@@ -309,11 +304,6 @@ public:
 	**/
 	idScriptBool			AI_CREEP;
 
-	// greebo: The levelTrigger were in the old idInventory structure. This contains
-	// all the leveltriggers (which can be used to trigger targets in an upcoming map)
-	// Sounds useful, that's why I moved it here.
-	idList<idLevelTriggerInfo> levelTriggers;
-
 	/**
 	* greebo: Helper class keeping track of which buttons are currently
 	*		  held down and which got released.
@@ -505,7 +495,6 @@ public:
 
 	void					SavePersistantInfo( void );
 	void					RestorePersistantInfo( void );
-	void					SetLevelTrigger( const char *levelName, const char *triggerName );
 
 	bool					UserInfoChanged( bool canModify );
 	idDict *				GetUserInfo( void );
@@ -1247,7 +1236,6 @@ private:
 	void					Event_SelectWeapon( const char *weaponName );
 	void					Event_GetWeaponEntity( void );
 	void					Event_ExitTeleporter( void );
-	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
 	void					Event_GetIdealWeapon( void );
 	void					Event_RopeRemovalCleanup( idEntity *RopeEnt );
