@@ -11051,7 +11051,15 @@ void idPlayer::SendInventoryPickedUpMessage(const idStr& text)
 
 void idPlayer::EnforcePersistentInventoryItemLimits()
 {
-	// TODO
+	for (int i = 0; i < gameLocal.campaignInfoEntities.Num(); ++i)
+	{
+		idEntity* campaignInfo = gameLocal.campaignInfoEntities[i];
+		assert(campaignInfo != NULL);
+
+		// TODO: Enforce weapon limits
+
+		// TODO: Enforce regular inventory item limits
+	}
 }
 
 void idPlayer::Event_Pausegame()

@@ -305,6 +305,8 @@ void idGameLocal::Clear( void )
 
 	m_lightGem.Clear();
 	m_DoLightgem = true;
+
+	m_InterMissionTriggers.Clear();
 	
 	serverInfo.Clear();
 	numClients = 0;
@@ -325,6 +327,7 @@ void idGameLocal::Clear( void )
 	sortTeamMasters = false;
 	persistentLevelInfo.Clear();
 	persistentPlayerInventory.reset();
+	campaignInfoEntities.Clear();
 
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
@@ -899,6 +902,12 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteDict( &persistentLevelInfo );
 
 	persistentPlayerInventory->Save(&savegame);
+
+	savegame.WriteInt(campaignInfoEntities.Num());
+	for (i = 0; i < campaignInfoEntities.Num(); ++i)
+	{
+		savegame.WriteObject(campaignInfoEntities[i]);
+	}
 	
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
@@ -1976,6 +1985,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadDict( &persistentLevelInfo );
 
 	persistentPlayerInventory->Restore(&savegame);
+
+	savegame.ReadInt(num);
+	campaignInfoEntities.SetNum(num);
+	for (i = 0; i < num; ++i)
+	{
+		savegame.ReadObject(reinterpret_cast<idClass*&>(campaignInfoEntities[i]));
+	}
 
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.ReadFloat( globalShaderParms[ i ] );
@@ -4811,6 +4827,13 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 			*ent = static_cast<idEntity *>(obj);
 		}
 
+		// Check for campaign info ents
+		if (idStr::Cmp(classname, "atdm:campaign_info") == 0)
+		{
+			assert(obj->IsType(idEntity::Type));
+			campaignInfoEntities.Append(static_cast<idEntity*>(obj));
+		}
+
 		return true;
 	}
 
@@ -4975,6 +4998,9 @@ void idGameLocal::SpawnMapEntities( void ) {
 	num = 1;
 	inhibit = 0;
 
+	// Clear out the campaign info cache
+	campaignInfoEntities.Clear();
+
 	for ( i = 1 ; i < numEntities ; i++ ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
@@ -4995,11 +5021,12 @@ void idGameLocal::SpawnMapEntities( void ) {
 		}
 #endif
 
-		if ( !InhibitEntitySpawn( args ) ) {
+		if (!InhibitEntitySpawn(args))
+		{
 			// precache any media specified in the map entity
-			CacheDictionaryMedia( &args );
+			CacheDictionaryMedia(&args);
 
-			SpawnEntityDef( args );
+			SpawnEntityDef(args);
 			num++;
 		} else {
 			inhibit++;

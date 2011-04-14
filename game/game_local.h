@@ -455,6 +455,9 @@ public:
 	// The inventory class which keeps items safe between maps
 	CInventoryPtr			persistentPlayerInventory;
 
+	// The list of campaign info entities in this map
+	idList<idEntity*>		campaignInfoEntities;
+
 	// greebo: Is set to TRUE if the post-mission screen (debriefing or success screen) is currently active. 
 	// (Usually these state variables should be kept in the GUI, but in this case I need it to be accessible 
 	// when the player loads a new map via the console.)
