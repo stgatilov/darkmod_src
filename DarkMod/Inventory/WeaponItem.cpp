@@ -139,7 +139,7 @@ int CInventoryWeaponItem::GetAmmo() const
 
 void CInventoryWeaponItem::SetAmmo(int newAmount)
 {
-	if (IsAllowedEmpty()) {
+	if (!NeedsAmmo()) {
 		// Don't set ammo of weapons that don't need any
 		return;
 	}
@@ -153,7 +153,7 @@ void CInventoryWeaponItem::SetAmmo(int newAmount)
 
 int CInventoryWeaponItem::HasAmmo()
 {
-	if (IsAllowedEmpty()) {
+	if (!NeedsAmmo()) {
 		// Always return 1 for non-ammo weapons
 		return 1;
 	}

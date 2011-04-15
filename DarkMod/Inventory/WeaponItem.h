@@ -68,6 +68,9 @@ public:
 	// Returns TRUE if this weapon doesn't need ammo and therefore can be selected 
 	bool IsAllowedEmpty() const;
 
+	// Convenience method
+	bool NeedsAmmo() const { return !IsAllowedEmpty(); };
+
 	// Returns TRUE if this weapon is toggleable
 	bool IsToggleable() const;
 

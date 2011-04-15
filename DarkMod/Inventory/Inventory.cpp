@@ -83,6 +83,9 @@ void CInventory::CopyTo(CInventory& targetInventory)
 
 void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEntity* newOwner)
 {
+	// Obtain the weapon category for this inventory
+	CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+
 	// Cycle through all categories to add them
 	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
 	{
@@ -101,16 +104,63 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 				continue; // not marked as persistent
 			}
 
-			// TODO: Handle weapons separately, otherwise we might end up with duplicate weapon items
+			// Is set to true if we should add this item. For weapon items with ammo this will be set to false to prevent double-additions
+			bool addItem = true;
 
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
-				"Adding persistent item %s to player inventory, quantity: %d.\r",
-				item->GetName().c_str(), item->GetPersistentCount());
+			// Handle weapons separately, otherwise we might end up with duplicate weapon items
+			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
 
-			item->SetOwner(newOwner);
+			if (weaponItem && weaponCategory)
+			{
+				// Weapon items need special consideration. For arrow-based weapons try to merge the ammo.
+				for (int w = 0; w < weaponCategory->GetNumItems(); ++w)
+				{
+					CInventoryWeaponItemPtr thisWeapon = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
 
-			// Add this item to our inventory
-			PutItem(item, item->Category()->GetName());
+					if (!thisWeapon) continue;
+
+					if (thisWeapon->GetWeaponName() == weaponItem->GetWeaponName())
+					{
+						// Prevent adding this item, we already have one
+						addItem = false;
+
+						// Found a matching weapon, does it use ammo?
+						if (thisWeapon->NeedsAmmo())
+						{
+							DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+								"Adding persistent ammo %d to player weapon %s.\r",
+								weaponItem->GetAmmo(), thisWeapon->GetWeaponName());
+
+							// Add the persistent ammo count to this item
+							thisWeapon->SetAmmo(thisWeapon->GetAmmo() + weaponItem->GetAmmo());
+						}
+						else
+						{
+							// Doesn't need ammo, it exists already, don't do anything	
+						}
+
+						break;
+					}
+				}
+			}
+
+			if (addItem)
+			{
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+					"Adding persistent item %s to player inventory, quantity: %d.\r",
+					item->GetName().c_str(), item->GetPersistentCount());
+
+				item->SetOwner(newOwner);
+
+				// Add this item to our inventory
+				PutItem(item, item->Category()->GetName());
+
+				// If we didn't have a weapon category at this point, we should be able to get one now
+				if (weaponItem && !weaponCategory)
+				{
+					weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+				}
+			}
 		}
 	}
 }

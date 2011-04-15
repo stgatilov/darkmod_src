@@ -15,15 +15,16 @@
 #define TDM_DUMMY_ITEM					"dummy"
 #define TDM_INVENTORY_DROPSCRIPT		"inventoryDrop"
 
- /* DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
+/* DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent
  * from it. It contains the inventory itself, the groups, items and cursors for
  * interaction with the inventory.
- * Each entity has exactly one inventory. An inventory is created when the entitie's
+ *
+ * Each entity has exactly one inventory. An inventory is created when the entity's
  * inventory is accessed for th first time and also one default group is added 
  * named "DEFAULT".
  *
- * Each item belongs to a group. If no group is specified, then it will be 
+ * Each item belongs to a group (category). If no group is specified, then it will be 
  * put in the default group. Each item also knows its owning entity and the
  * entity it references. When an entity is destroyed, it will also destroy
  * its item. Therefore you should never keep a pointer of an item in memory
@@ -32,7 +33,7 @@
  * the item itself).
  *
  * Categories and inventories are removed when they are empty. This happens
- * after inventoryDrop() in the idPlayer code.
+ * in ChangeInventoryItemCount() in the idPlayer code.
  *
  * Inventories are accessed via cursors. This way you can have multiple
  * cursors pointing to the same inventory with different tasks. You can
@@ -45,7 +46,6 @@
  * the interface and member variables with weapon-related stuff like ammo-handling.
  * For instance: The idWeapon class requests the active WeaponItem 
  * from the idPlayer class to check whether the active weapon is ready to fire.
- * 
  */
 
 /**
@@ -91,7 +91,7 @@ public:
 	void					RemoveCategory(const CInventoryCategoryPtr& category);
 
 	/**
-	 * GetCategory returns the pointer to the given group and it's index, 
+	 * GetCategory returns the pointer to the given group and its index, 
 	 * if the pointer is not NULL.
 	 */
 	CInventoryCategoryPtr	GetCategory(const idStr& categoryName, int* index = NULL);

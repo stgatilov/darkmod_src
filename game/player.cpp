@@ -2455,7 +2455,7 @@ void idPlayer::UpdateHudAmmo()
 	// If no weapon item there, or the first one is selected, switch off the HUD
 	bool weaponSelected = (curWeapon != NULL && curWeapon->GetWeaponIndex() > 0);
 
-	hud->SetStateBool("WeaponAmmoVisible", weaponSelected && !curWeapon->IsAllowedEmpty());
+	hud->SetStateBool("WeaponAmmoVisible", weaponSelected && curWeapon->NeedsAmmo());
 	
 	if (!weaponSelected) return; // done here
 
@@ -3401,7 +3401,7 @@ bool idPlayer::SelectWeapon( int num, bool force )
 		
 		if (item != NULL && item->GetWeaponIndex() == num)
 		{
-			if (item->GetAmmo() <= 0 && !item->IsAllowedEmpty())
+			if (item->GetAmmo() <= 0 && item->NeedsAmmo())
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
 				break;
@@ -11030,7 +11030,7 @@ void idPlayer::EnforcePersistentInventoryItemLimits()
 				continue; // no limit specified for this weapon
 			}
 
-			bool needsAmmo = !weaponItem->IsAllowedEmpty();
+			bool needsAmmo = weaponItem->NeedsAmmo();
 
 			if (needsAmmo)
 			{
