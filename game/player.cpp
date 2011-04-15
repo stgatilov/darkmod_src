@@ -1045,10 +1045,43 @@ CInventoryWeaponItemPtr idPlayer::GetWeaponItem(const idStr& weaponName)
 	return CInventoryWeaponItemPtr();
 }
 
-void idPlayer::AddWeaponsToInventory()
+void idPlayer::SortWeaponItems()
 {
 	// A local storage, to sort weapons by index
+	// This code is kind of cumbersome, the idList<>::Sort code is not really suitable for non-raw pointers
 	std::map<int, CInventoryWeaponItemPtr> weapons;
+
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Sorting weapon items.\r");
+
+	// Add it to the weapon category
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
+
+	for (int i = 0; i < weaponCategory->GetNumItems(); ++i)
+	{
+		CInventoryWeaponItemPtr item = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+
+		if (item == NULL) continue;
+
+		// Store the item in the map
+		weapons[item->GetWeaponIndex()] = item;
+	}
+
+	// Finally, add all found weapons to our inventory category, sorted by their index
+	for (std::map<int, CInventoryWeaponItemPtr>::const_iterator i = weapons.begin(); i != weapons.end(); ++i)
+	{
+		// Remove first, will be pushed to back
+		weaponCategory->RemoveItem(i->second);
+
+		// Add it to the weapon category
+		weaponCategory->PutItemBack(i->second);
+	}
+
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon items sorted, we have now %d items.\r", weaponCategory->GetNumItems());
+}
+
+void idPlayer::AddWeaponsToInventory()
+{
+	CInventoryCategoryPtr weaponCategory = m_WeaponCursor->GetCurrentCategory();
 
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("def_weapon"); kv != NULL; kv = spawnArgs.MatchPrefix("def_weapon", kv))
 	{
@@ -1079,20 +1112,13 @@ void idPlayer::AddWeaponsToInventory()
 			
 		item->SetWeaponIndex(weaponNum);
 
-		// Store into the map, to have it sorted by name
-		weapons[weaponNum] = item;
+		// Add it to the weapon category, will be sorted later on
+		weaponCategory->PutItemBack(item);
 	}
 
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Number of weapons found: %d\r", static_cast<int>(weapons.size()));
+	SortWeaponItems();
 
-	// Finally, add all found weapons to our inventory category, sorted by their index
-	for (std::map<int, CInventoryWeaponItemPtr>::const_iterator i = weapons.begin(); i != weapons.end(); ++i)
-	{
-		// Add it to the weapon category
-		m_WeaponCursor->GetCurrentCategory()->PutItemBack(i->second);
-	}
-
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons added: %d\r", m_WeaponCursor->GetCurrentCategory()->GetNumItems());
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons: %d\r", m_WeaponCursor->GetCurrentCategory()->GetNumItems());
 }
 
 void idPlayer::NextInventoryMap()
@@ -1378,6 +1404,9 @@ void idPlayer::AddPersistentInventoryItems()
 {
 	// Copy all persistent items into our own inventory
 	Inventory()->CopyPersistentItemsFrom(*gameLocal.persistentPlayerInventory, this);
+
+	// There might be new weapons coming in, sort the category again
+	SortWeaponItems();
 
 	// We've changed maps, let's respawn our item entities where needed, put them to our own position
 	Inventory()->RestoreItemEntities(GetPhysics()->GetOrigin());

@@ -960,9 +960,12 @@ protected:
 
 	/**
 	* greebo: Parses the spawnargs for any weapon definitions and adds them
-	*         to the inventory. Expects the weapon category to exist.
+	* to the inventory. Expects the weapon category to exist.
 	*/
 	void AddWeaponsToInventory();
+
+	// Sorts the weapon item category by weapon index
+	void SortWeaponItems();
 
 private:
 	jointHandle_t			hipJoint;
