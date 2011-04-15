@@ -129,14 +129,22 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 						{
 							DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
 								"Adding persistent ammo %d to player weapon %s.\r",
-								weaponItem->GetAmmo(), thisWeapon->GetWeaponName());
+								weaponItem->GetAmmo(), thisWeapon->GetWeaponName().c_str());
 
 							// Add the persistent ammo count to this item
 							thisWeapon->SetAmmo(thisWeapon->GetAmmo() + weaponItem->GetAmmo());
 						}
-						else
+						else 
 						{
-							// Doesn't need ammo, it exists already, don't do anything	
+							// Doesn't need ammo, check enabled state
+							if (weaponItem->IsEnabled() && !thisWeapon->IsEnabled())
+							{
+								DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+									"Enabling weapon item %s as the persistent inventory contains an enabled one.\r",
+									thisWeapon->GetWeaponName().c_str());
+
+								thisWeapon->SetEnabled(true);
+							}
 						}
 
 						break;
