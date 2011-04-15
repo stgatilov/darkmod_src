@@ -945,6 +945,16 @@ void CShop::UpdateGUI(idUserInterface* gui)
 		gui->SetStateString("gui::forSale0_desc", "");
 		gui->SetStateString("gui::forSale0_image", "");
 		gui->SetStateString("forSaleCost0_cost", "0");
+
+		// Clear out the rest of the GUI
+		for (int i = 1; i < LIST_SIZE_FOR_SALE; i++)
+		{
+			gui->SetStateString(va("forSaleCost%d_cost", i), "");
+			gui->SetStateInt(va("forSaleAvail%d", i), 0);
+			gui->SetStateString(va("forSale%d_name", i), "");
+			gui->SetStateString(va("forSale%d_desc", i), "");
+			gui->SetStateString(va("forSale%d_image", i), "");
+		}
 	}
 	else
 	{
