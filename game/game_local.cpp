@@ -565,7 +565,11 @@ const idStr& idGameLocal::GetMapFileName() const
 
 void idGameLocal::AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName)
 {
-	// TODO
+	InterMissionTrigger& trigger = m_InterMissionTriggers.Alloc();
+
+	trigger.missionNum = missionNum;
+	trigger.activatorName = activatorName;
+	trigger.targetName = targetName;
 }
 
 void idGameLocal::CheckTDMVersion()
