@@ -118,6 +118,9 @@ const idEventDef EV_Player_WasDamaged("wasDamaged", NULL, 'd');
 const idEventDef EV_Mission_Success("missionSuccess", NULL);
 const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", NULL);
 
+// Private event to process intermission triggers
+const idEventDef EV_ProcessInterMissionTriggers("_processInterMissionTriggers");
+
 const idEventDef EV_GetLocation("getLocation", NULL, 'e');
 
 // greebo: These events are handling the FOV.
@@ -230,6 +233,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetFrobbed,			idPlayer::Event_GetFrobbed )
 	EVENT( EV_Player_SetFrobOnlyUsedByInv,	idPlayer::Event_SetFrobOnlyUsedByInv )
 
+	EVENT( EV_ProcessInterMissionTriggers,	idPlayer::Event_ProcessInterMissionTriggers )
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
 END_CLASS
@@ -999,6 +1003,9 @@ void idPlayer::Spawn( void )
 
 	// Post an event to read the LG modifier from the worldspawn entity
 	PostEventMS(&EV_ReadLightgemModifierFromWorldspawn, 0);
+
+	// Process inter-mission triggers in the first service frame
+	PostEventMS(&EV_ProcessInterMissionTriggers, 0);
 
 	// Start the gameplay timer half a second after spawn
 	PostEventMS(&EV_Player_StartGamePlayTimer, 500);
@@ -11235,4 +11242,9 @@ void idPlayer::Event_GetFrobbed()
 void idPlayer::Event_SetFrobOnlyUsedByInv( bool value )
 {
 	m_bFrobOnlyUsedByInv = value;
+}
+
+void idPlayer::Event_ProcessInterMissionTriggers()
+{
+	gameLocal.ProcessInterMissionTriggers();
 }

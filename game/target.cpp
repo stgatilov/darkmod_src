@@ -2198,7 +2198,12 @@ void CTarget_InterMissionTrigger::Event_Activate(idEntity* activator)
 {
 	// greebo: Get the target mission number, defaults to the next mission number (which is current+2 to get the 1-based index, see comment below)
 	// We don't care if this is the last mission.
-	int missionNum = spawnArgs.GetInt("mission", va("%d", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 2));
+	int missionNum = spawnArgs.GetInt("mission");
+
+	if (missionNum == 0)
+	{
+		missionNum = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 2;
+	}
 
 	// The mission number is 0-based but the mapper can use 1-based indices for convenience => subtract 1 after reading the spawnarg.
 	missionNum--;
@@ -2209,7 +2214,12 @@ void CTarget_InterMissionTrigger::Event_Activate(idEntity* activator)
 	}
 	
 	// Get the name of the activating entity, can be overridden by the spawnarg, otherwise defaults to the activator passed in
-	idStr activatorName = spawnArgs.GetString("activator", activator != NULL ? activator->name.c_str() : "");
+	idStr activatorName = spawnArgs.GetString("activator");
+	
+	if (activatorName.IsEmpty() && activator != NULL)
+	{
+		activatorName = activator->name;
+	}
 
 	// Now register an inter-mission trigger for each target spawnarg we find on this entity
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("target"); kv != NULL; kv = spawnArgs.MatchPrefix("target", kv))

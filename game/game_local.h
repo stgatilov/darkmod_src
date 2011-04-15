@@ -958,6 +958,9 @@ public:
 	 */
 	void					AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName);
 
+	// For internal use, is public to be callable by the event system
+	void					ProcessInterMissionTriggers();
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

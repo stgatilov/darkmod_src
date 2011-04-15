@@ -1369,6 +1369,9 @@ private:
 	// enables "frob only ents used by active inventory item" mode
 	void					Event_SetFrobOnlyUsedByInv( bool Value );
 
+	// Call gameLocal.ProcessInterMissionTriggers
+	void					Event_ProcessInterMissionTriggers();
+
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
