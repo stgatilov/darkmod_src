@@ -689,7 +689,7 @@ void CShop::AddPersistentStartingEquipment()
 				continue;
 			}
 
-			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon);
+			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon, weaponItem->IsAllowedEmpty());
 
 			// Append the item to the list if it didn't contribute quantity to
 			// an existing list item.
@@ -777,10 +777,14 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 					if (found != NULL)
 					{
+						// We don't have much info about the weapon item at this point and FindEntityDefDict() is lagging
+						// so let's assume there is only a shortsword and blackjack as possible melee items for now
+						bool isMeleeWeapon = (itemName.Cmp("atdm:weapon_shortsword") == 0 || itemName.Cmp("atdm:weapon_blackjack") == 0);
+
 						// If this item is stackable, and already exists in the _startingItems list,
 						// bump up the quantity there instead of appending the item to the list.
 						// If the item is not stackable, and we already have it, ignore it.
-						bool itemMerged = MergeIntoStartingEquipment(itemName, quantity, isWeapon);
+						bool itemMerged = MergeIntoStartingEquipment(itemName, quantity, isWeapon, isMeleeWeapon);
 
 						// Append the item to the list if it didn't contribute quantity to
 						// an existing list item.
@@ -805,7 +809,7 @@ void CShop::AddMapItems(idMapFile* mapFile)
 	}
 }
 
-bool CShop::MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool isWeapon)
+bool CShop::MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool isWeapon, bool isMeleeWeapon)
 {
 	CShopItemPtr startingItem = FindStartingItemByID(itemName);
 
@@ -824,11 +828,20 @@ bool CShop::MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool
 
 	if (isWeapon)
 	{
-		int maxAmmo = GetMaxAmmo(itemName);
-
-		if (newQuantity > maxAmmo)
+		if (isMeleeWeapon)
 		{
-			newQuantity = maxAmmo;
+			// Don't stack anything for melee weapons, otherwise we end up with 2 shortswords
+			newQuantity = oldQuantity;
+		}
+		else
+		{
+			// Arrow-based weapons need ammo
+			int maxAmmo = GetMaxAmmo(itemName);
+
+			if (newQuantity > maxAmmo)
+			{
+				newQuantity = maxAmmo;
+			}
 		}
 
 		quantity = newQuantity - oldQuantity; // amount to give

@@ -117,7 +117,7 @@ private:
 
 	// greebo: Tries to merge the named shopitem (with the given quantity) into the existing starting equipment
 	// Returns TRUE if the quantity was merged into the list, FALSE if the item doesn't exist yet
-	bool MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool isWeapon);
+	bool MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool isWeapon, bool isMeleeWeapon);
 
 	// grayman (#2376) - check for individual lockpicks
 	void CheckPicks(ShopItemList& list);

@@ -1309,8 +1309,11 @@ void idPlayer::SetupInventory()
 						item->SetEnabled(shopItem->GetCount() > 0);
 					}
 
-					// Set the persistent flag and the ammo
-					item->SetPersistent(shopItem->GetPersistent());
+					// greebo: Don't set the persistent flag for weapons, they need to be persistent at all times
+					// The carry-over limits can be controlled via atdm:campaign_info objects
+					// item->SetPersistent(shopItem->GetPersistent());
+
+					// Set the ammo
 					item->SetAmmo(shopItem->GetCount());
 					break;
 				}
