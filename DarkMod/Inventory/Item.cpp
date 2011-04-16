@@ -288,6 +288,11 @@ void CInventoryItem::RestoreItemEntityFromDict(const idVec3& entPosition)
 	m_ItemDict.reset();
 }
 
+const idDict* CInventoryItem::GetSavedItemEntityDict() const
+{
+	return m_ItemDict ? m_ItemDict.get() : NULL;
+}
+
 void CInventoryItem::SetCount(int n)
 {
 	// Only positive values are allowed

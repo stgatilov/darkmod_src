@@ -114,6 +114,12 @@ public:
 
 	// Returns the name of the weapon entityDef
 	const idStr& GetWeaponDefName() const;
+
+	// Override CInventoryItem::SaveItemEntityDict(), as weapons don't have entities behind them but still need to have a dict
+	virtual void SaveItemEntityDict();
+
+	// Override CInventoryItem::RestoreItemEntityFromDict, don't do anything but clear the saved dict
+	virtual void RestoreItemEntityFromDict(const idVec3& entPosition);
 };
 typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 

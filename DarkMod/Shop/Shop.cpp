@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../MissionData.h"
 #include "../Missions/MissionManager.h"
 #include "../Inventory/Inventory.h"
+#include "../Inventory/WeaponItem.h"
 
 void CShop::Init()
 {
@@ -608,6 +609,103 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 	return itemsAdded;
 }
 
+void CShop::AddPersistentStartingEquipment()
+{
+	const CInventory& sourceInventory = *gameLocal.persistentPlayerInventory;
+
+	// Cycle through all categories to add them
+	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
+	{
+		const CInventoryCategoryPtr& category = sourceInventory.GetCategory(c);
+
+		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		{
+			const CInventoryItemPtr& item = category->GetItem(itemIdx);
+
+			if (item->GetPersistentCount() <= 0)
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING(
+					"Item %s is not marked as persistent, won't add to shop.\r",
+					item->GetName().c_str());
+
+				continue; // not marked as persistent
+			}
+
+			const idDict* itemDict = item->GetSavedItemEntityDict();
+
+			if (itemDict == NULL)
+			{
+				DM_LOG(LC_MAINMENU, LT_WARNING)LOGSTRING(
+					"Item %s is marked as persistent, but has no saved item dictionary.\r",
+					item->GetName().c_str());
+
+				continue;
+			}
+
+			idStr className = itemDict->GetString("classname");
+
+			// Try to look up the corresponding shop item definition for this item's classname
+			CShopItemPtr found = FindByID(_itemDefs, className);
+
+			if (found == NULL)
+			{
+				// Try again with "atdm:" prepended
+				found = FindByID(_itemDefs, "atdm:" + className);
+			}
+
+			if (found == NULL)
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING(
+					"Can't find shopitem definition for classname %s, skipping.\r", className.c_str());
+				continue;
+			}
+
+			// Check if this is a weapon
+			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+
+			bool isWeapon = (weaponItem != NULL);
+
+			int quantity = weaponItem->GetPersistentCount();
+
+			if (isWeapon)
+			{
+				// Use the ammonition for weapon items
+				if (weaponItem->NeedsAmmo())
+				{
+					quantity = weaponItem->GetAmmo();
+				}
+				else
+				{
+					// Non-ammo weapons need to be enabled to be added
+					quantity = weaponItem->IsEnabled() ? 1 : 0;
+				}
+			}
+
+			// Don't attempt to merge if we don't have anything to merge in the first place
+			if (quantity == 0)
+			{
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING(
+					"Persistent weapon doesn't have ammo, skipping.\r", className.c_str());
+				continue;
+			}
+
+			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon);
+
+			// Append the item to the list if it didn't contribute quantity to
+			// an existing list item.
+			if (!itemMerged)
+			{
+				CShopItemPtr anItem(new CShopItem(*found, quantity, 0, false));
+
+				bool canDrop = itemDict->GetBool("inv_droppable", "1");
+				anItem->SetCanDrop(canDrop);
+
+				_startingItems.Append(anItem);
+			}	
+		}
+	}
+}
+
 // grayman (#2376) Add map entities where inv_map_start = 1 to the shop's starting list
 
 void CShop::AddMapItems(idMapFile* mapFile)
@@ -682,52 +780,18 @@ void CShop::AddMapItems(idMapFile* mapFile)
 						// If this item is stackable, and already exists in the _startingItems list,
 						// bump up the quantity there instead of appending the item to the list.
 						// If the item is not stackable, and we already have it, ignore it.
-
-						bool appendMapItem = true;
-						for (int j = 0 ; j < _startingItems.Num(); j++)
-						{
-							CShopItemPtr listItem = _startingItems[j];
-							if (idStr::Icmp(listItem->GetID(),itemName) == 0)
-							{
-								int oldQuantity = listItem->GetCount();
-								int newQuantity = oldQuantity + quantity;
-								bool isStackable = listItem->GetStackable();
-
-								// Weapons have ammo limits. Even though you might have
-								// adjusted that already in the incoming item,
-								// you have to check again when it's added to
-								// the existing amount already in the starting items.
-
-								if (isWeapon)
-								{
-									if (newQuantity > max_ammo)
-									{
-										newQuantity = max_ammo;
-									}
-									quantity = newQuantity - oldQuantity; // amount to give
-								}
-								else if (!isStackable)
-								{
-									quantity = 0; // don't adjust item's quantity
-								}
-
-								if (quantity > 0)
-								{
-									listItem->ChangeCount(quantity); // add quantity to count
-								}
-								appendMapItem = false;
-								break;
-							}
-						}
+						bool itemMerged = MergeIntoStartingEquipment(itemName, quantity, isWeapon);
 
 						// Append the item to the list if it didn't contribute quantity to
 						// an existing list item.
 
-						if (appendMapItem)
+						if (!itemMerged)
 						{
 							CShopItemPtr anItem(new CShopItem(*found, quantity, 0, false));
+
 							bool canDrop = mapEnt->epairs.GetBool("inv_droppable", "1");
 							anItem->SetCanDrop(canDrop);
+
 							_startingItems.Append(anItem);
 						}
 					}
@@ -739,6 +803,47 @@ void CShop::AddMapItems(idMapFile* mapFile)
 			}
 		}
 	}
+}
+
+bool CShop::MergeIntoStartingEquipment(const idStr& itemName, int quantity, bool isWeapon)
+{
+	CShopItemPtr startingItem = FindStartingItemByID(itemName);
+
+	if (!startingItem) 
+	{
+		return false; // item not found
+	}
+
+	int oldQuantity = startingItem->GetCount();
+	int newQuantity = oldQuantity + quantity;
+
+	// Weapons have ammo limits. Even though you might have
+	// adjusted that already in the incoming item,
+	// you have to check again when it's added to
+	// the existing amount already in the starting items.
+
+	if (isWeapon)
+	{
+		int maxAmmo = GetMaxAmmo(itemName);
+
+		if (newQuantity > maxAmmo)
+		{
+			newQuantity = maxAmmo;
+		}
+
+		quantity = newQuantity - oldQuantity; // amount to give
+	}
+	else if (!startingItem->GetStackable())
+	{
+		quantity = 0; // don't adjust item's quantity
+	}
+
+	if (quantity > 0)
+	{
+		startingItem->ChangeCount(quantity); // add quantity to count
+	}
+
+	return true; // item found
 }
 
 // grayman (#2376) - Post processing to remove individual lockpicks when a lockpick_set
@@ -795,6 +900,9 @@ void CShop::DisplayShop(idUserInterface *gui)
 	// grayman (#2376) add "inv_map_start" items to the shop's list of starting items,
 	// then check for lockpick duplications.
 	AddMapItems(mapFile);
+
+	// Add items from previous missions (which are marked as persistent)
+	AddPersistentStartingEquipment();
 
 	if (_pickSetShop)
 	{

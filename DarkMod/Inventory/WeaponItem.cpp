@@ -213,3 +213,19 @@ const idStr& CInventoryWeaponItem::GetWeaponDefName() const
 {
 	return m_WeaponDefName;
 }
+
+void CInventoryWeaponItem::SaveItemEntityDict()
+{
+	// Don't call the base class, roll our own
+
+	m_ItemDict.reset(new idDict);
+
+	*m_ItemDict = *gameLocal.FindEntityDefDict(m_WeaponDefName);
+}
+
+void CInventoryWeaponItem::RestoreItemEntityFromDict(const idVec3& entPosition)
+{
+	// Don't call the base class, roll our own
+
+	m_ItemDict.reset();
+}
