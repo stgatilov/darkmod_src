@@ -1737,10 +1737,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// Clear the persistent data if starting a new campaign
 	if (m_MissionManager->CurrentModIsCampaign() && m_MissionManager->GetCurrentMissionIndex() == 0)
 	{
-		persistentPlayerInventory->Clear();
-		persistentLevelInfo.Clear();
-		m_CampaignStats.reset(new CampaignStats);
-		m_InterMissionTriggers.Clear();
+		ClearPersistentInfo();
 	}
 
 	Printf( "----------- Game Map Init ------------\n" );
@@ -4187,6 +4184,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// First mission to be started, reset index
 		m_MissionManager->SetCurrentMissionIndex(0);
 		gui->SetStateInt("CurrentMission", 1);
+
+		ClearPersistentInfo();
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
@@ -6948,6 +6947,14 @@ void idGameLocal::ChangeWindowTitleAndIcon()
 #ifdef WIN32
 	EnumWindows((WNDENUMPROC)ChangeD3WindowTitle, 0);
 #endif
+}
+
+void idGameLocal::ClearPersistentInfo()
+{
+	persistentPlayerInventory->Clear();
+	persistentLevelInfo.Clear();
+	m_CampaignStats.reset(new CampaignStats);
+	m_InterMissionTriggers.Clear();
 }
 
 void idGameLocal::ProcessInterMissionTriggers()

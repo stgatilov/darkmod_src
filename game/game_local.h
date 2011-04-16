@@ -961,6 +961,9 @@ public:
 	// For internal use, is public to be callable by the event system
 	void					ProcessInterMissionTriggers();
 
+	// Remove any persistent inventory items, clear inter-mission triggers, etc.
+	void					ClearPersistentInfo();
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
