@@ -470,7 +470,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// and this is an inv_map_start item, we won't put it into the
 	// inventory because the player already has it. 
 
-	ShopItemList startingItems = gameLocal.m_Shop->GetPlayerStartingEquipment();
+	const ShopItemList& startingItems = gameLocal.m_Shop->GetPlayerStartingEquipment();
 	bool gotFromShop = ((startingItems.Num() > 0) && (ent->spawnArgs.GetBool("inv_map_start", "0")));
 
 	// Check for loot items

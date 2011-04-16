@@ -82,7 +82,7 @@ public:
 	const ShopItemList& GetPurchasedItems();
 
 	// returns the combination of For Sale and Starting items
-	ShopItemList GetPlayerStartingEquipment();
+	const ShopItemList& GetPlayerStartingEquipment() const;
 
 	// adjust the lists
 	void SellItem(int index);

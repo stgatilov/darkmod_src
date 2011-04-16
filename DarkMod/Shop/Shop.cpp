@@ -155,7 +155,7 @@ bool CShop::GetNothingForSale()
 	return _itemsForSale.Num() == 0;
 }
 
-ShopItemList CShop::GetPlayerStartingEquipment()
+const ShopItemList& CShop::GetPlayerStartingEquipment() const
 {
 	return _startingItems;
 }
