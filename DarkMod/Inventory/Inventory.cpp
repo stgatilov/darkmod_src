@@ -30,9 +30,6 @@ static idStr sLootTypeName[LOOT_COUNT] =
 	"loot_goods"
 };
 
-CLASS_DECLARATION(idClass, CInventory)
-END_CLASS
-
 CInventory::CInventory() :
 	m_HighestCursorId(0),
 	m_LootItemCount(0),

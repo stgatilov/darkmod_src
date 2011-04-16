@@ -55,12 +55,9 @@
  * If an item is put into an inventory, without specifying the group, it will be put
  * in the default group which is always at index 0 and has the name DEFAULT.
  */
-class CInventory : 
-	public idClass
+class CInventory
 {
 public:
-	CLASS_PROTOTYPE(CInventory);
-
 	CInventory();
 	~CInventory();
 
