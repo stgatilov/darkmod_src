@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../StimResponse/StimResponseCollection.h"
 #include "../Missions/MissionManager.h"
 
+#include "CampaignStatistics.h"
 #include "ObjectiveLocation.h"
 
 /**

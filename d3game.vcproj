@@ -2561,6 +2561,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Objectives\CampaignStatistics.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\CampaignStatistics.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Objectives\EMissionResult.h"
 						>
 					</File>

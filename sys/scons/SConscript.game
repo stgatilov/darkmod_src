@@ -177,6 +177,7 @@ Missions/MissionDB.cpp \
 Missions/ModInfo.cpp \
 Missions/ModInfoDecl.cpp \
 Missions/MissionManager.cpp \
+Objectives/CampaignStatistics.cpp \
 Objectives/MissionData.cpp \
 Objectives/MissionStatistics.cpp \
 Objectives/Objective.cpp \
