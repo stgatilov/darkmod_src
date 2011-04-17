@@ -181,6 +181,7 @@ Objectives/MissionData.cpp \
 Objectives/MissionStatistics.cpp \
 Objectives/Objective.cpp \
 Objectives/ObjectiveComponent.cpp \
+Objectives/ObjectiveLocation.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
 randomizer/mersenne.cpp \

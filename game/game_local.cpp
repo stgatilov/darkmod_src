@@ -229,8 +229,8 @@ idGameLocal::idGameLocal() :
 	postMissionScreenActive(false),
 	briefingVideoInfoLoaded(false),
 	curBriefingVideoPart(-1),
-	m_HighestSRId(0),
-	m_MissionResult(MISSION_NOTEVENSTARTED)
+	m_MissionResult(MISSION_NOTEVENSTARTED),
+	m_HighestSRId(0)
 {
 	Clear();
 }

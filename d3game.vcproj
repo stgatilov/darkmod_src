@@ -2597,6 +2597,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveLocation.cpp"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Objectives\ObjectiveLocation.h"
 						>
 					</File>
