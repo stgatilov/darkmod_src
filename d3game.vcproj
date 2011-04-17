@@ -2557,6 +2557,10 @@
 					Name="Objectives"
 					>
 					<File
+						RelativePath=".\DarkMod\Objectives\BoolParseNode.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Objectives\EMissionResult.h"
 						>
 					</File>
@@ -2574,6 +2578,22 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Objectives\MissionStatistics.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\Objective.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveComponent.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveComponent.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveLocation.h"
 						>
 					</File>
 				</Filter>

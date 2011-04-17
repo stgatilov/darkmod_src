@@ -20,22 +20,13 @@
 #define MISSIONDATA_H
 
 #include "../idlib/precompiled.h"
+
+#include "Objective.h"
+#include "ObjectiveComponent.h"
+
 #include "../DarkModGlobals.h"
 #include <boost/shared_ptr.hpp>
 #include "MissionStatistics.h"
-
-/**
- * Objective completion states
- * NOTE: STATE_INVALID may also be used for initially deactivating objectives, 
- * then activating later by setting STATE_INCOMPLETE
- **/
-enum EObjCompletionState
-{
-	STATE_INCOMPLETE,
-	STATE_COMPLETE,
-	STATE_INVALID, 
-	STATE_FAILED
-};
 
 #include "EMissionResult.h"
 
@@ -55,60 +46,6 @@ enum EMissionEventType
 	EVENT_READABLE_CLOSED = 2,
 	EVENT_READABLE_PAGE_REACHED = 3,
 	EVENT_INVALID,
-};
-
-/**
-* Objective component specification types
-**/
-enum ESpecificationMethod
-{
-// The following apply to both AIs and items
-	SPEC_NONE,
-	SPEC_NAME,
-	SPEC_OVERALL,
-	SPEC_GROUP,			// for inventory items, info_location groups, etc
-	SPEC_CLASSNAME,		// soft/scripting classname
-	SPEC_SPAWNCLASS,	// hard / SDK classname
-
-// Specifically for AI:
-	SPEC_AI_TYPE,
-	SPEC_AI_TEAM,
-	SPEC_AI_INNOCENCE,
-	SPEC_COUNT					// Dummy entry should not be used for anything
-};
-
-/**
-* Objective component action types
-* TODO: Move to game_local.h so that it can be used in external calls
-* NOTE: Any change to these must be kept up to date in CompTypeNames hash, defined in MissionData.cpp
-**/
-enum EComponentType
-{
-// AI components - MUST BE KEPT TOGETHER IN THE ENUM because later these enums are used as an array index
-// COMP_KILL must be kept as the first one
-	COMP_KILL, // also includes non-living things being destroyed
-	COMP_KO,
-	COMP_AI_FIND_ITEM,
-	COMP_AI_FIND_BODY,
-	COMP_ALERT,
-// END AI components that must be kept together
-	COMP_DESTROY,		// Destroy an inanimate object
-	COMP_ITEM,			// Add inventory item or imaginary loot (find object X)
-	COMP_PICKPOCKET,	// Take inventory item from conscious AI
-	COMP_LOCATION,		// Item X is at location Y
-	COMP_CUSTOM_ASYNC,	// asynchronously updated custom objective (updated by mapper from script)
-
-// The following are special clocked components, updated in CMissionData::UpdateObjectives
-	COMP_CUSTOM_CLOCKED,
-	COMP_INFO_LOCATION, // like location, but uses existing info_location areas instead of an info_objectivelocation entity
-	COMP_DISTANCE,		// distance from origin of ent X to that of ent Y
-
-// Readable-related
-	COMP_READABLE_OPENED, // readable is opened by the player, since TDM 1.02
-	COMP_READABLE_CLOSED, // readable is closed (can be considered "has read") by the player, since TDM 1.02
-	COMP_READABLE_PAGE_REACHED, // readable is displaying a certain page, since TDM 1.02
-
-	COMP_COUNT			// Dummy entry to yield the number of valid types
 };
 
 // TODO: move to game_local.h?
@@ -166,277 +103,6 @@ struct SObjEntParms
 		bIsAI = false;
 		bWhileAirborne = false;
 	}
-};
-
-/**
-* Structure for parsing boolean logic
-**/
-struct SBoolParseNode
-{
-	int Ident;
-	bool bNotted; // set to true if this node is NOTed
-
-	idList< idList< SBoolParseNode > > Cols; // list of columns, each can contain a different number of rows
-
-	// Link back to previous node this one branched off from
-	SBoolParseNode* PrevNode;
-
-	// matrix coordinates of this node within the matrix of the previous node
-	int PrevCol; 
-	int PrevRow;
-
-	// Functions:
-
-	SBoolParseNode()
-	{ 
-		Clear();
-	}
-
-	~SBoolParseNode()
-	{
-		Clear();
-	}
-
-	bool IsEmpty() const
-	{ 
-		return (Cols.Num() == 0 && Ident == -1);
-	}
-
-	/**
-	* Clear the parse node
-	**/
-	void Clear( void )
-	{
-		Ident = -1;
-		PrevCol = -1;
-		PrevRow = -1;
-
-		bNotted = false;
-		Cols.Clear();
-		PrevNode = NULL;
-	}
-};
-
-class CObjectiveComponent
-{
-public:
-	friend class CMissionData;
-	friend class CObjective;
-
-	CObjectiveComponent( void );
-	virtual ~CObjectiveComponent( void );
-
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
-
-	/**
-	* Update the state of the objective component.  
-	* Returns true if the state has changed as of this call
-	**/
-	bool SetState( bool bState );
-
-public:
-	/**
-	* Index of this component in the form of [objective num, component num]
-	* NOTE: This index is that from the external scripting.
-	* So it starts at 1, not at zero.
-	**/
-	int m_Index[2]; 
-
-protected:
-
-/**
-* Set to true if the FM author has NOTted this component
-**/
-	bool m_bNotted;
-	
-	EComponentType m_Type;
-
-// This could be made more general into a list, but I can't think of any component
-// types that would require more than 2 items to match.  More complicated logic
-// can be constructed out of multiple components.
-	ESpecificationMethod m_SpecMethod[2];
-
-/**
-* Values of the specifier to match, e.g., if specmethod is group, specvalue is "beast"
-* Could be either an int or a string depending on spec type, so make room for both.
-**/
-	idStr m_SpecVal[2];
-
-	/**
-	* Current component state (true/false)
-	**/
-	bool		m_bState;
-
-	/**
-	* Current count of the number of times this event
-	* happened and the specifiers were matched.
-	* Some objective components use this, others rely on
-	* other counters, like overall stats or the inventory
-	**/
-	int			m_EventCount;
-
-	/**
-	* Set to true if this component is only satisfied when the player performs the action
-	**/
-	bool		m_bPlayerResponsibleOnly;
-
-	/**
-	* Whether the irreversible component has latched into a state
-	**/
-	bool		m_bLatched;
-
-	idStrList	m_Args;
-
-// Only used by clocked objectives:
-	int			m_ClockInterval; // milliseconds
-	
-	int			m_TimeStamp;
-
-	/**
-	* Whether the objective component latches after it changes once
-	* Default is reversible.
-	**/
-	bool m_bReversible;
-
-}; // CObjectiveComponent
-
-/**
-* Abstract class for storing objective data
-* This class contains all the objective components
-**/
-
-class CObjective
-{
-
-public:
-	friend class CObjectiveComponent;
-	friend class CMissionData;
-
-	CObjective();
-	virtual ~CObjective();
-
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
-
-	void Clear();
-
-	/**
-	* Evaluate the boolean relationships for objective failure and success
-	**/
-	bool CheckFailure();
-	bool CheckSuccess();
-
-	/**
-	* Parse m_SuccessLogicStr and m_FailureLogicStr into boolean evaluation
-	* matrices to be evaluated by CheckFailure and CheckSuccess.
-	* Returns false if the logic parse failed
-	*
-	* This should be run after CMissionData parsing sets those two strings
-	**/
-	bool ParseLogicStrs();
-
-public:
-	/** 
-	* Text description of the objective in the objectives GUI
-	**/
-	idStr m_text;
-
-	/** 
-	* Set to false if an objective is optional
-	**/
-	bool m_bMandatory;
-
-	/**
-	* Sets whether the objective is shown in the objectives screen
-	**/
-	bool m_bVisible;
-	
-	/**
-	* True if an objective is ongoing throughout the mission.
-	* Will not be checked off as complete until the mission is over
-	**/
-	bool m_bOngoing;
-
-	/**
-	* True if this objective applies to the current skill level. Otherwise
-	* the objective can be ignored.
-	**/
-	bool m_bApplies;
-
-protected:
-
-	/**
-	* Integer index of this objective in the array
-	**/
-	int	m_ObjNum;
-
-	/**
-	* Handle for the FM author to refer to this objective (Not Yet Implemented)
-	**/
-	int m_handle;
-
-	/**
-	* Completion state.  Either COMP_INCOMPLETE, COMP_COMPLETE, COMP_FAILED or COMP_INVALID
-	**/
-	EObjCompletionState	m_state;
-
-	/**
-	* Set to true if one of the components changed this frame.  Test resets it to false.
-	*/
-	bool m_bNeedsUpdate;
-
-	/**
-	* Whether the objective may change state again once it initially changes to FAILED or SUCCESSFUL
-	* Default is reversible.
-	**/
-	bool m_bReversible;
-
-	/**
-	* Set to true if the objective is irreversible and has latched into a state
-	**/
-	bool m_bLatched;
-
-	/**
-	* List of objective components (steal this, kill that, etc)
-	**/
-	idList<CObjectiveComponent> m_Components;
-
-	/**
-	* Other objectives that must be completed prior to the completion of this objective
-	**/
-	idList<int> m_EnablingObjs;
-
-	/**
-	 * greebo: These define the names of entities which should be triggered
-	 * as soon as the objective completes or fails.
-	 */
-	idStr m_CompletionTarget;
-	idStr m_FailureTarget;
-
-	/**
-	* String storing the script to call when this objective is completed
-	* (optional)
-	**/
-	idStr m_CompletionScript;
-
-	/**
-	* String storing the script to call when this objective is failed
-	* (optional)
-	**/
-	idStr m_FailureScript;
-	
-	/**
-	* Success and failure logic strings.  Used to reload the parse matrix on save/restore
-	**/
-	idStr m_SuccessLogicStr;
-	idStr m_FailureLogicStr;
-
-	/**
-	* Success and failure boolean parsing matrices
-	**/
-	SBoolParseNode m_SuccessLogic;
-	SBoolParseNode m_FailureLogic;
 };
 
 /**
@@ -502,41 +168,42 @@ public:
 	void UnlatchObjectiveComp( int ObjIndex, int CompIndex );
 
 
-/**
-* Set whether an objective shows up in the player's objectives screen
-**/
+	/**
+	* Set whether an objective shows up in the player's objectives screen
+	**/
 	void Event_SetObjVisible( int ObjIndex, bool bVal );
-// self explanatory
+	// self explanatory
 	void Event_SetObjMandatory( int ObjIndex, bool bVal );
 	void Event_SetObjOngoing( int ObjIndex, bool bVal );
-/**
-* Replace an objective's list of enabling components with a new one
-* Takes a string list of space-delimited ints and parses it in.
-**/
+	/**
+	* Replace an objective's list of enabling components with a new one
+	* Takes a string list of space-delimited ints and parses it in.
+	**/
 	void Event_SetObjEnabling( int ObjIndex, idStr StrIn );
 //	void Event_SetObjDifficulty( int ObjIndex, int value );
 
-/**
-* Getters for the mission stats.  Takes an objective component event type,
-* index for the category (for example, the index would be the team int if 
-* you are calling GetStatByTeam)
-* 
-* The AlertLevel must be specified if you are getting alert stats, but otherwise
-* is optional.
-**/
+	/**
+	* Getters for the mission stats.  Takes an objective component event type,
+	* index for the category (for example, the index would be the team int if 
+	* you are calling GetStatByTeam)
+	* 
+	* The AlertLevel must be specified if you are getting alert stats, but otherwise
+	* is optional.
+	**/
 	int GetStatByTeam( EComponentType CompType, int index, int AlertLevel = 0 );
 	int GetStatByType( EComponentType CompType, int index, int AlertLevel = 0 );
 	int GetStatByInnocence( EComponentType CompType, int index, int AlertLevel = 0 );
-/**
-* The following stat functions don't need an index var, since there is only one of them tracked
-**/
+
+	/**
+	* The following stat functions don't need an index var, since there is only one of them tracked
+	**/
 	int GetStatOverall( EComponentType CompType, int AlertLevel = 0 );
 	int GetStatAirborne( EComponentType CompType, int AlertLevel = 0);
 	int GetDamageDealt( void );
 	int GetDamageReceived( void );
 	int GetHealthReceived();
 
-// Callback functions:
+	// Callback functions:
 
 	/**
 	* Called by external callbacks when events occur that could effect objectives.
@@ -711,9 +378,8 @@ public:
 	 */
 	void UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDefName);
 
-	
+	// Events
 
-// Events
 	/**
 	* The following are called internally when an objective completes or fails
 	**/
@@ -848,47 +514,5 @@ protected:
 	int			m_PlayerTeam;
 }; // CMissionData
 typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
-
-// Helper entity for objective locations
-class CObjectiveLocation : public idEntity
-{
-public:
-	CLASS_PROTOTYPE( CObjectiveLocation );
-	
-	CObjectiveLocation();
-
-	~CObjectiveLocation();
-
-	void Think( void );
-	void Spawn( void );
-
-	// Called by ~idEntity to catch entity destructions
-	void OnEntityDestroyed(idEntity* ent);
-
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
-
-protected:
-	/**
-	* Clock interval [seconds]
-	**/
-	int m_Interval;
-
-	int m_TimeStamp;
-
-	/**
-	* List of entity names that intersected bounds in previous clock tick
-	**/
-	idList< idEntityPtr<idEntity> >	m_EntsInBounds;
-	/**
-	* Objective system: Location's objective group name for objective checks
-	**/
-	idStr		m_ObjectiveGroup;
-
-private:
-	idClipModel *		clipModel;
-
-
-}; // CObjectiveLocation
 
 #endif // MISSIONDATA_H

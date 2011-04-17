@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/declxdata.h"
 #include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/Objectives/ObjectiveLocation.h"
 #include "../DarkMod/Grabber.h"
 #include "../DarkMod/sndProp.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"

@@ -179,6 +179,7 @@ Missions/ModInfoDecl.cpp \
 Missions/MissionManager.cpp \
 Objectives/MissionData.cpp \
 Objectives/MissionStatistics.cpp \
+Objectives/ObjectiveComponent.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
 randomizer/mersenne.cpp \
