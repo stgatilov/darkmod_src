@@ -33,7 +33,7 @@ void SStat::Clear()
 	WhileAirborne = 0;
 }
 
-void SMissionStats::Clear()
+void MissionStatistics::Clear()
 {
 	for (int i = 0; i < MAX_AICOMP; i++)
 	{
@@ -57,9 +57,11 @@ void SMissionStats::Clear()
 	}
 	
 	TotalGamePlayTime = 0;
+
+	ObjectiveStates.Clear();
 }
 
-void SMissionStats::Save(idSaveGame* savefile) const
+void MissionStatistics::Save(idSaveGame* savefile) const
 {
 	// Save mission stats
 	for(int j = 0; j < MAX_AICOMP; j++)
@@ -111,9 +113,15 @@ void SMissionStats::Save(idSaveGame* savefile) const
 	}
 
 	savefile->WriteUnsignedInt(TotalGamePlayTime);
+
+	savefile->WriteInt(ObjectiveStates.Num());
+	for (int i = 0; i < ObjectiveStates.Num(); ++i)
+	{
+		savefile->WriteInt(ObjectiveStates[i]);
+	}
 }
 
-void SMissionStats::Restore(idRestoreGame* savefile)
+void MissionStatistics::Restore(idRestoreGame* savefile)
 {
 	// Restore mission stats
 	for (int j = 0; j < MAX_AICOMP; j++)
@@ -165,9 +173,44 @@ void SMissionStats::Restore(idRestoreGame* savefile)
 	}
 
 	savefile->ReadUnsignedInt(TotalGamePlayTime);
+
+	int num;
+	savefile->ReadInt(num);
+	ObjectiveStates.SetNum(num);
+	
+	for (int i = 0; i < ObjectiveStates.Num(); ++i)
+	{
+		int state;
+		savefile->ReadInt(state);
+
+		assert(state >= STATE_INCOMPLETE && state <= STATE_FAILED);
+
+		ObjectiveStates[i] = static_cast<EObjCompletionState>(state);
+	}
 }
 
-int SMissionStats::GetFoundLootValue() const
+EObjCompletionState MissionStatistics::GetObjectiveState(int objNum) const
+{
+	if (objNum < 0 || objNum >= ObjectiveStates.Num())
+	{
+		return STATE_INVALID;
+	}
+
+	return ObjectiveStates[objNum];
+}
+
+void MissionStatistics::SetObjectiveState(int objNum, EObjCompletionState state)
+{
+	// Resize to fit if necessary
+	if (objNum >= ObjectiveStates.Num())
+	{
+		ObjectiveStates.SetNum(objNum + 1);
+	}
+
+	ObjectiveStates[objNum] = state;
+}
+
+int MissionStatistics::GetFoundLootValue() const
 {
 	int sum = 0;
 
@@ -179,7 +222,7 @@ int SMissionStats::GetFoundLootValue() const
 	return sum;
 }
 
-int SMissionStats::GetTotalLootInMission() const
+int MissionStatistics::GetTotalLootInMission() const
 {
 	int sum = 0;
 
@@ -190,84 +233,3 @@ int SMissionStats::GetTotalLootInMission() const
 
 	return sum;
 }
-
-#if 0
-
-void ObjectiveHistory::SetMissionObjectiveState(int missionNum, int objNum, EObjCompletionState state)
-{
-	// Ensure the history has enough space
-	EnsureMissionSize(missionNum, objNum + 1);
-
-	_objHistory[missionNum][objNum] = state;
-}
-
-EObjCompletionState ObjectiveHistory::GetMissionObjectiveState(int missionNum, int objNum) const
-{
-	if (missionNum < 0 || missionNum >= _objHistory.Num()) return STATE_INVALID;
-
-	if (objNum < 0 || objNum >= _objHistory[missionNum].Num()) return STATE_INVALID;
-
-	return _objHistory[missionNum][objNum];
-}
-
-void ObjectiveHistory::Save(idSaveGame* savefile) const
-{
-	savefile->WriteInt(_objHistory.Num());
-
-	for (int m = 0; m < _objHistory.Num(); ++m)
-	{
-		const ObjectiveStates& states = _objHistory[m];
-
-		savefile->WriteInt(states.Num());
-
-		for (int i = 0; i < states.Num(); ++i)
-		{
-			savefile->WriteInt(states[i]);
-		}
-	}
-}
-
-void ObjectiveHistory::Restore(idRestoreGame* savefile)
-{
-	int num;
-	savefile->ReadInt(num);
-	_objHistory.SetNum(num);
-	
-	for (int m = 0; m < _objHistory.Num(); ++m)
-	{
-		const ObjectiveStates& states = _objHistory[m];
-
-		savefile->ReadInt(num);
-		states.SetNum(num);
-		
-		for (int i = 0; i < states.Num(); ++i)
-		{
-			int state;
-			savefile->WriteInt(state);
-
-			assert(state >= STATE_INCOMPLETE && state <= STATE_FAILED);
-
-			states[i] = static_cast<EObjCompletionState>(state);
-		}
-	}
-}
-
-void ObjectiveHistory::EnsureHistorySize(int size)
-{
-	if (_objHistory.Num() < size)
-	{
-		_objHistory.SetNum(size);
-	}
-}
-
-void ObjectiveHistory::EnsureMissionSize(int missionNum, int size)
-{
-	EnsureHistorySize(missionNum + 1);
-
-	if (_objHistory[missionNum].Num() < size)
-	{
-		_objHistory[missionNum].SetNum(size);
-	}
-}
-
-#endif

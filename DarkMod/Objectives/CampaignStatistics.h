@@ -22,18 +22,18 @@ class CampaignStats
 {
 private:
 	// The internal array of statistics
-	idList<SMissionStats> _stats;
+	idList<MissionStatistics> _stats;
 
 public:
 	// greebo: Use this operator to get access to the stats of the mission with the given index
 	// The internal list will automatically be resized to fit.
-	SMissionStats& operator[] (int index)
+	MissionStatistics& operator[] (int index)
 	{
 		EnsureSize(index + 1);
 		return _stats[index];
 	}
 
-	const SMissionStats& operator[] (int index) const
+	const MissionStatistics& operator[] (int index) const
 	{
 		return _stats[index];
 	}

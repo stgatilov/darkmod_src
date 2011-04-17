@@ -1193,7 +1193,7 @@ void CShop::AddGoldFromPreviousMission()
 
 	if (prevMission >= 0 && prevMission < gameLocal.m_CampaignStats->Num())
 	{
-		const SMissionStats& stats = (*gameLocal.m_CampaignStats)[prevMission];
+		const MissionStatistics& stats = (*gameLocal.m_CampaignStats)[prevMission];
 
 		// First, check the difficulty-specific rulesets
 		int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();

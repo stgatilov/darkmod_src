@@ -814,6 +814,12 @@ void CMissionData::Event_MissionComplete()
 	// greebo: Stop the gameplay timer, we've completed all objectives
 	m_Stats.TotalGamePlayTime = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
 
+	// Save the state of all objectives for possible later reference
+	for (int i = 0; i < m_Objectives.Num(); ++i)
+	{
+		m_Stats.SetObjectiveState(i, m_Objectives[i].m_state);
+	}
+
 	// Copy our current mission statistics to the correct slot of the campaign statistics
 	int curMission = gameLocal.m_MissionManager->GetCurrentMissionIndex();
 

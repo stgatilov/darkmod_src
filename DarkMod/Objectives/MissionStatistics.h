@@ -12,6 +12,7 @@
 
 #include "../idlib/precompiled.h"
 
+#include "Objective.h" // for objective state enum
 #include "../Inventory/Item.h" // for loot type enum
 
 // Maximum array sizes:
@@ -39,8 +40,9 @@ struct SStat
 /**
 * Mission stats: Keep track of everything except for loot groups, which are tracked by the inventory
 **/
-struct SMissionStats
+class MissionStatistics
 {
+public:
 	// AI Stats:
 	SStat AIStats[ MAX_AICOMP ];
 	
@@ -61,12 +63,24 @@ struct SMissionStats
 	// This gets read out right at "mission complete" time, is 0 before
 	unsigned int TotalGamePlayTime;
 
-	SMissionStats() 
+	// Use an array to store the objective states after mission complete
+	// We need the historic state data to handle conditional objectives.
+	// This list will be empty throughout the mission, and is filled on mission complete
+	idList<EObjCompletionState> ObjectiveStates;
+
+	MissionStatistics() 
 	{
 		Clear();
 	}
 
 	void Clear();
+
+	// Returns the state of the objective specified by the (0-based) index
+	// Will return INVALID if the objective index is out of bounds or no data is available
+	EObjCompletionState GetObjectiveState(int objNum) const;
+
+	// Store the objective state into the ObjectiveStates array
+	void SetObjectiveState(int objNum, EObjCompletionState state);
 
 	// Returns the sum of all found loot types (gold+jewels+goods)
 	int GetFoundLootValue() const;
@@ -77,36 +91,5 @@ struct SMissionStats
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 };
-
-#if 0
-/**
- * Objective history. Each mission stores the final
- * state of its objectives here.
- */
-class ObjectiveHistory
-{
-private:
-	// Each mission has an array of objective states
-	typedef idList<EObjCompletionState> ObjectiveStates;
-
-	// The internal array of ObjectiveStates, one for each mission
-	idList<ObjectiveStates> _objHistory;
-
-public:
-	// greebo: Store the state of the given objective for the given mission number
-	void SetMissionObjectiveState(int missionNum, int objNum, EObjCompletionState state);
-
-	// Returns the state of the requested objective of the requested mission. 
-	// If no such objective state or mission was stored, the state INVALID is returned.
-	EObjCompletionState GetMissionObjectiveState(int missionNum, int objNum) const;
-
-	void Save(idSaveGame* savefile) const;
-	void Restore(idRestoreGame* savefile);
-
-private:
-	void EnsureHistorySize(int size);
-	void EnsureMissionSize(int missionNum, int size);
-};
-#endif
 
 #endif /* MISSIONSTATISTICS_H */

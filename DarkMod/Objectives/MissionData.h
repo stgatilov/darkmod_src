@@ -482,7 +482,7 @@ protected:
 	* Object holding all mission stats relating to AI, damage to player and AI
 	* Loot stats are maintained by the inventory
 	**/
-	SMissionStats m_Stats;
+	MissionStatistics m_Stats;
 
 	/**
 	* Hash indices to store string->enum conversions for objective component type and
