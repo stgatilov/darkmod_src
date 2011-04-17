@@ -220,3 +220,84 @@ void CampaignStats::EnsureSize(int size)
 		_stats.SetNum(size);
 	}
 }
+
+#if 0
+
+void ObjectiveHistory::SetMissionObjectiveState(int missionNum, int objNum, EObjCompletionState state)
+{
+	// Ensure the history has enough space
+	EnsureMissionSize(missionNum, objNum + 1);
+
+	_objHistory[missionNum][objNum] = state;
+}
+
+EObjCompletionState ObjectiveHistory::GetMissionObjectiveState(int missionNum, int objNum) const
+{
+	if (missionNum < 0 || missionNum >= _objHistory.Num()) return STATE_INVALID;
+
+	if (objNum < 0 || objNum >= _objHistory[missionNum].Num()) return STATE_INVALID;
+
+	return _objHistory[missionNum][objNum];
+}
+
+void ObjectiveHistory::Save(idSaveGame* savefile) const
+{
+	savefile->WriteInt(_objHistory.Num());
+
+	for (int m = 0; m < _objHistory.Num(); ++m)
+	{
+		const ObjectiveStates& states = _objHistory[m];
+
+		savefile->WriteInt(states.Num());
+
+		for (int i = 0; i < states.Num(); ++i)
+		{
+			savefile->WriteInt(states[i]);
+		}
+	}
+}
+
+void ObjectiveHistory::Restore(idRestoreGame* savefile)
+{
+	int num;
+	savefile->ReadInt(num);
+	_objHistory.SetNum(num);
+	
+	for (int m = 0; m < _objHistory.Num(); ++m)
+	{
+		const ObjectiveStates& states = _objHistory[m];
+
+		savefile->ReadInt(num);
+		states.SetNum(num);
+		
+		for (int i = 0; i < states.Num(); ++i)
+		{
+			int state;
+			savefile->WriteInt(state);
+
+			assert(state >= STATE_INCOMPLETE && state <= STATE_FAILED);
+
+			states[i] = static_cast<EObjCompletionState>(state);
+		}
+	}
+}
+
+void ObjectiveHistory::EnsureHistorySize(int size)
+{
+	if (_objHistory.Num() < size)
+	{
+		_objHistory.SetNum(size);
+	}
+}
+
+void ObjectiveHistory::EnsureMissionSize(int missionNum, int size)
+{
+	EnsureHistorySize(missionNum + 1);
+
+	if (_objHistory[missionNum].Num() < size)
+	{
+		_objHistory[missionNum].SetNum(size);
+	}
+}
+
+#endif

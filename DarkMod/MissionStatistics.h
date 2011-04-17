@@ -114,4 +114,35 @@ private:
 	void EnsureSize(int size);
 };
 
+#if 0
+/**
+ * Objective history. Each mission stores the final
+ * state of its objectives here.
+ */
+class ObjectiveHistory
+{
+private:
+	// Each mission has an array of objective states
+	typedef idList<EObjCompletionState> ObjectiveStates;
+
+	// The internal array of ObjectiveStates, one for each mission
+	idList<ObjectiveStates> _objHistory;
+
+public:
+	// greebo: Store the state of the given objective for the given mission number
+	void SetMissionObjectiveState(int missionNum, int objNum, EObjCompletionState state);
+
+	// Returns the state of the requested objective of the requested mission. 
+	// If no such objective state or mission was stored, the state INVALID is returned.
+	EObjCompletionState GetMissionObjectiveState(int missionNum, int objNum) const;
+
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
+
+private:
+	void EnsureHistorySize(int size);
+	void EnsureMissionSize(int missionNum, int size);
+};
+#endif
+
 #endif /* MISSIONSTATISTICS_H */
