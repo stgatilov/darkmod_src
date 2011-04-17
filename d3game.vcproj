@@ -2058,22 +2058,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\MissionData.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\MissionData.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\MissionStatistics.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\MissionStatistics.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\ModelGenerator.cpp"
 					>
 				</File>
@@ -2566,6 +2550,30 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Shop\ShopItem.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Objectives"
+					>
+					<File
+						RelativePath=".\DarkMod\Objectives\EMissionResult.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\MissionData.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\MissionData.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\MissionStatistics.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\MissionStatistics.h"
 						>
 					</File>
 				</Filter>

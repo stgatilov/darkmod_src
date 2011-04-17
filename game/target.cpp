@@ -22,7 +22,7 @@ Invisible entities that affect other entities or the world when activated.
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
-#include "../DarkMod/MissionData.h"
+#include "../DarkMod/Objectives/MissionData.h"
 #include "../DarkMod/Missions/MissionManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"

@@ -33,7 +33,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 #include "../../DarkMod/AI/Conversation/ConversationSystem.h"
 #include "../../DarkMod/Relations.h"
-#include "../../DarkMod/MissionData.h"
+#include "../../DarkMod/Objectives/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../../DarkMod/AbsenceMarker.h"
 #include "../../DarkMod/BloodMarker.h"

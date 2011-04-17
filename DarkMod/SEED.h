@@ -35,7 +35,7 @@
 
 #include "../game/game_local.h"
 #include "StaticMulti.h"
-#include "MissionData.h"
+#include "Objectives/MissionData.h"
 #include "func_shooter.h"
 #include "../game/emitter.h"
 #include "../idlib/containers/list.h"

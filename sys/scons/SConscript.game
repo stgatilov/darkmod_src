@@ -147,8 +147,6 @@ Intersection.cpp \
 liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
-MissionData.cpp \
-MissionStatistics.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
@@ -179,6 +177,8 @@ Missions/MissionDB.cpp \
 Missions/ModInfo.cpp \
 Missions/ModInfoDecl.cpp \
 Missions/MissionManager.cpp \
+Objectives/MissionData.cpp \
+Objectives/MissionStatistics.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
 randomizer/mersenne.cpp \

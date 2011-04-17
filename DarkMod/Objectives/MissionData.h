@@ -20,7 +20,7 @@
 #define MISSIONDATA_H
 
 #include "../idlib/precompiled.h"
-#include "DarkModGlobals.h"
+#include "../DarkModGlobals.h"
 #include <boost/shared_ptr.hpp>
 #include "MissionStatistics.h"
 

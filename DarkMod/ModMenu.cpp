@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "ModMenu.h"
 #include "../DarkMod/Shop/Shop.h"
-#include "../DarkMod/MissionData.h"
+#include "../DarkMod/Objectives/MissionData.h"
 #include "../DarkMod/declxdata.h"
 #include "../DarkMod/ZipLoader/ZipLoader.h"
 #include "../DarkMod/Missions/MissionManager.h"

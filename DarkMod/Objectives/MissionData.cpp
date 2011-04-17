@@ -17,11 +17,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4996)
 
 #include "MissionData.h"
-#include "AI/Memory.h"
-#include "DifficultyManager.h"
-#include "../game/player.h"
-#include "StimResponse/StimResponseCollection.h"
-#include "Missions/MissionManager.h"
+#include "../AI/Memory.h"
+#include "../DifficultyManager.h"
+#include "../../game/player.h"
+#include "../StimResponse/StimResponseCollection.h"
+#include "../Missions/MissionManager.h"
 
 /**
 * Add new component type names here.  Must be in exact same order as EComponentType

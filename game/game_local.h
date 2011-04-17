@@ -149,7 +149,7 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
-#include "../DarkMod/EMissionResult.h"
+#include "../DarkMod/Objectives/EMissionResult.h"
 #include "../DarkMod/DifficultyManager.h"
 #include "../DarkMod/AI/AreaManager.h"
 #include "../DarkMod/GamePlayTimer.h"

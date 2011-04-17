@@ -21,12 +21,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#ifdef _WINDOWS_
-//#include "c:\compiled.h"
-#endif
-
 #include "DarkModGlobals.h"
-#include "MissionData.h"
 #include "Misc.h"
 #include "Profile.h"
 #include "sndPropLoader.h"

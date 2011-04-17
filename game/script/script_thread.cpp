@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/decltdm_matinfo.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/sndProp.h"
-#include "../../DarkMod/MissionData.h"
+#include "../../DarkMod/Objectives/MissionData.h"
 
 class CRelations;
 class CsndProp;

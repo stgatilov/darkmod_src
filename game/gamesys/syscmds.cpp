@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../ai/aas_local.h"
 #include "../../DarkMod/sndPropLoader.h"
 #include "../../DarkMod/Relations.h"
-#include "../../DarkMod/MissionData.h"
+#include "../../DarkMod/Objectives/MissionData.h"
 #include "../../DarkMod/Inventory/Inventory.h"
 #include "../../DarkMod/Inventory/Item.h"
 #include "../../DarkMod/TimerManager.h"

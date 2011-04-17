@@ -12,7 +12,7 @@
 
 #include "../idlib/precompiled.h"
 
-#include "Inventory/Item.h" // for loot type enum
+#include "../Inventory/Item.h" // for loot type enum
 
 // Maximum array sizes:
 #define MAX_TEAMS 64
