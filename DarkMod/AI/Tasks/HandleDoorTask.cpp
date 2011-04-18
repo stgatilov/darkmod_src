@@ -569,18 +569,32 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
 						(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
 					{
-						// if the door was locked before, lock it again
-						frobDoor->Lock(false);
+						frobDoor->Lock(false); // lock the door
 					}
 
-					if (doubleDoor != NULL && doubleDoor->IsOpen())
+					if (doubleDoor != NULL)
 					{
-						// the other part of the double door is still open
-						// we want to close this one too
-						ResetDoor(owner, doubleDoor);
-						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
-						_doorHandlingState = EStateMovingToBackPos;
-						break;
+						// If the other door is open, you need to close it.
+						//
+						// grayman #2732 - If it's closed, and needs to be locked, lock it.
+
+						if (doubleDoor->IsOpen())
+						{
+							// the other part of the double door is still open
+							// we want to close this one too
+							ResetDoor(owner, doubleDoor);
+							owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+							_doorHandlingState = EStateMovingToBackPos;
+							break;
+						}
+						else
+						{
+							if (owner->CanUnlock(doubleDoor) && AllowedToLock(owner) &&
+								(_wasLocked || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
+							{
+								doubleDoor->Lock(false); // lock the second door
+							}
+						}
 					}
 				}
 				// continue what we were doing before.
