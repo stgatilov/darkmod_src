@@ -481,6 +481,7 @@ void CGlobal::LoadINISettings(void *p)
 		CheckLogClass(ps, "LogClass_CONVERSATION", LC_CONVERSATION);
 		CheckLogClass(ps, "LogClass_MAINMENU", LC_MAINMENU);
 		CheckLogClass(ps, "LogClass_LOCKPICK", LC_LOCKPICK);
+		CheckLogClass(ps, "LogClass_AAS", LC_AAS); // grayman
 	}
 
 	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))

@@ -91,6 +91,7 @@ typedef enum {
 	LC_DIFFICULTY,		// anything difficulty-related
 	LC_CONVERSATION,	// conversation/dialogue stuff
 	LC_MAINMENU,		// main menu logging
+	LC_AAS,				// grayman - AAS area logging
 	LC_COUNT
 } LC_LogClass;
 
