@@ -2605,6 +2605,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveCondition.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Objectives\ObjectiveCondition.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\Objectives\ObjectiveLocation.cpp"
 						>
 					</File>

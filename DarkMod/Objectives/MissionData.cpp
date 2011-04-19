@@ -25,6 +25,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "CampaignStatistics.h"
 #include "ObjectiveLocation.h"
+#include "ObjectiveCondition.h"
 
 /**
 * Add in new specification types here.  Must be in exact same order as
@@ -1489,11 +1490,42 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	if( bLogicMod )
 		ParseLogicStrs();
 
+	// greebo: Parse spawnargs for conditional objectives
+	ParseObjectiveConditions(dict);
+
 	// check if any objectives were actually added, if not return -1
 	if( m_Objectives.Num() == ReturnVal )
 		ReturnVal = -1;
 
 	return ReturnVal;
+}
+
+void CMissionData::ParseObjectiveConditions(const idDict& dict)
+{
+	int index = 1;
+	
+	while (true)
+	{
+		DM_LOG(LC_OBJECTIVES, LT_INFO)LOGSTRING("Trying to parse objective condition with index %d.\r", index);
+
+		// Try to parse a condition from the given spawnargs
+		ObjectiveCondition cond(dict, index);
+
+		if (!cond.IsValid())
+		{
+			DM_LOG(LC_OBJECTIVES, LT_INFO)LOGSTRING("Condition with index %d failed to parse, stopping.\r", index);
+			break;
+		}
+
+		DM_LOG(LC_OBJECTIVES, LT_INFO)LOGSTRING("Objective condition with index %d successfully parsed.\r", index);
+
+		// We have a valid objective condition, apply it right away
+		cond.Apply(*this);
+
+		index++;
+	}
+
+	gameLocal.Printf("Applied %d objective conditions.", index - 1);
 }
 
 bool    CMissionData::MatchLocationObjectives( idEntity * entity )
@@ -1884,18 +1916,17 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 		}
 	}
 
+	// Finished parsing
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Reached EOF \r");
 
-// Finished parsing
-DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Reached EOF \r");
-
-if( level != 0 )
+	if( level != 0 )
 	{
 		gameLocal.Printf("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \n");
 		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \r");
 		goto Quit;
 	}
 
-if( bFollowingOperator )
+	if( bFollowingOperator )
 	{
 		gameLocal.Printf("[Objective Logic] ERROR: Expected identifier, found EOF \n");
 		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Expected identifier, found EOF \n");

@@ -330,6 +330,14 @@ public:
 	int AddObjsFromEnt( idEntity *ent );
 	int AddObjsFromDict(const idDict& dict);
 
+	/**
+	 * greebo: Parse conditional objective spawnargs allowing one objective
+	 * to depend on the objective state in a previous map. The conditions
+	 * are automatically evaluated and applied to the existing ones, so make sure
+	 * to call this after the objectives are parsed.
+	 */
+	void ParseObjectiveConditions(const idDict& dict);
+
     /**
      * Baal: This checks if the entity is referenced by any COMP_LOCATION component of any objective.
      * Called when a stackable item is dropped to set the m_bIsObjective flag that's used by 
