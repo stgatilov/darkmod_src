@@ -10,7 +10,9 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#include "MissionData.h"
 #include "ObjectiveCondition.h"
+#include "CampaignStatistics.h"
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
@@ -18,7 +20,7 @@ ObjectiveCondition::ObjectiveCondition() :
 	_type(INVALID_TYPE),
 	_value(-1),
 	_srcMission(-1),
-	_srcState(-1),
+	_srcState(STATE_INVALID),
 	_srcObj(-1),
 	_targetObj(-1)
 {}
@@ -30,13 +32,60 @@ ObjectiveCondition::ObjectiveCondition(const idDict& dict, int index)
 
 bool ObjectiveCondition::IsValid() const
 {
-	return _type != INVALID_TYPE && _value != -1 && _srcMission != -1 &&
-		   _srcState != -1 && _srcObj != -1 && _targetObj;
+	return _type != INVALID_TYPE && _value > -1 && _srcMission > -1 && _srcObj > -1 && _targetObj > -1;
 }
 
 bool ObjectiveCondition::Apply(CMissionData& missionData)
 {
-	// TODO
+	assert(IsValid()); // enforce validity in debug builds
+
+	// Get the state of the source objective in the source mission to see whether we can apply this
+	
+	if (_srcMission < gameLocal.m_CampaignStats->Num())
+	{
+		const MissionStatistics& stats = (*gameLocal.m_CampaignStats)[_srcMission];
+
+		EObjCompletionState state = stats.GetObjectiveState(_srcObj);
+
+		if (state != _srcState)
+		{
+			DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective state in mission %d is not matching the required one %d, cannot apply.\r", state, _srcObj);
+			return false; // not applicable
+		}
+	}
+	else
+	{
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("No mission data available for the given source mission %d.\r", _srcMission);
+		return false; // can't apply
+	}
+
+	// Source objective is matching, try to find target objective
+	if (_targetObj >= missionData.GetNumObjectives())
+	{
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Target objective not found in this mission: %d.\r", _targetObj);
+		return false; // can't apply
+	}
+
+	switch (_type)
+	{
+	case CHANGE_STATE:
+		// Attempt to set the completion state
+		DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective condition will set the state of objective %d to %d.\r", _targetObj, _value);
+		missionData.SetCompletionState(_targetObj, _value);
+		break;
+
+	case CHANGE_VISIBILITY:
+		// TODO
+		break;
+
+	case CHANGE_MANDATORY:
+		// TODO
+		break;
+
+	case INVALID_TYPE:
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Attempting to apply invalid objective condition.\r");
+		break;
+	};
 
 	return false;
 }
@@ -80,7 +129,18 @@ void ObjectiveCondition::ParseFromSpawnargs(const idDict& dict, int index)
 	// Parse the rest of the integer-based members
 	_value =		dict.GetInt(prefix + "value", "-1");
 	_srcMission =	dict.GetInt(prefix + "src_mission", "-1");
-	_srcState =		dict.GetInt(prefix + "src_state", "-1");
+
+	int srcState =	dict.GetInt(prefix + "src_state", "-1");
+
+	if (srcState >= STATE_INCOMPLETE && srcState <= STATE_FAILED)
+	{
+		_srcState = static_cast<EObjCompletionState>(srcState);
+	}
+	else
+	{
+		_srcState = STATE_INVALID;
+	}
+
 	_srcObj =		dict.GetInt(prefix + "src_obj", "-1");
 	_targetObj =	dict.GetInt(prefix + "target_obj", "-1");
 }

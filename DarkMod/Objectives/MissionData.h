@@ -125,6 +125,9 @@ public:
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );
 
+	// Returns the number of objectives
+	int GetNumObjectives() const { return m_Objectives.Num(); };
+
 	/**
 	* Update objectives if they need it
 	* Called each frame by idPlayer::Think, does nothing if no objectives need updating

@@ -12,6 +12,8 @@
 
 #include "../idlib/precompiled.h"
 
+#include "Objective.h"
+
 class CMissionData;
 
 class ObjectiveCondition
@@ -30,7 +32,7 @@ private:
 
 	int _value;
 	int _srcMission;
-	int _srcState;
+	EObjCompletionState _srcState;
 	int _srcObj;	
 	int _targetObj;
 
