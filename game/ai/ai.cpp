@@ -2816,7 +2816,7 @@ bool idAI::ReachedPosAABBCheck(const idVec3& pos) const
 	bnds.ExpandSelf(reachedpos_bbox_expansion);
 
 	// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
-	// that are a reported as reachable by PathToGoal.
+	// that are reported as reachable by PathToGoal.
 	bnds[0].z -= aas_reachability_z_tolerance;
 	bnds[1].z += aas_reachability_z_tolerance;
 
@@ -2894,7 +2894,8 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 
 	idBounds bounds = GetPhysics()->GetBounds();
 
-	if (height > bounds[1][2] + aas_reachability_z_tolerance) {
+	if (height > (bounds[1][2] + aas_reachability_z_tolerance))
+	{
 		goalAreaNum = 0;
 		return false;
 	}
@@ -6653,8 +6654,8 @@ bool idAI::CanBeHitByEntity(idActor* entity, ECombatType combatType)
 		if (dist < maxdist)
 		{
 			// within horizontal distance
-			if ((org.z + enemyBounds[1][2] + entity->melee_range) > org.z &&
-					(org.z + bounds[1][2]) > enemyOrg.z)
+			if (((enemyOrg.z + enemyBounds[1].z + entity->melee_range_vert) > org.z) && ((org.z + bounds[1].z) > enemyOrg.z)) // grayman #2655 - use enemy's origin, not your own, and use melee_range_vert
+//			if (((org.z + enemyBounds[1][2] + entity->melee_range) > org.z) && (org.z + bounds[1][2]) > enemyOrg.z) // grayman #2655 - old way
 			{
 				// within height
 				// don't bother with trace for this test
@@ -7481,7 +7482,7 @@ bool idAI::TestMelee( void ) const {
 	if (dist < maxdist)
 	{
 		// angua: within horizontal distance
-		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z &&
+		if ((org.z + bounds[1][2] + melee_range_vert) > enemyOrg.z &&	// grayman #2655 - use melee_range_vert
 				(enemyOrg.z + enemyBounds[1][2]) > org.z)
 		{
 			// within height
@@ -7549,8 +7550,8 @@ bool idAI::TestMeleeFuture( void ) const {
 	if (dist < maxdist)
 	{
 		// angua: within horizontal distance
-		if ((org.z + bounds[1][2] + melee_range) > enemyOrg.z &&
-			(enemyOrg.z + enemyBounds[1][2]) > org.z)
+		if ((org.z + bounds[1].z + melee_range_vert) > enemyOrg.z && // grayman #2655 - use melee_range_vert
+			(enemyOrg.z + enemyBounds[1].z) > org.z)
 		{
 			// within height
 			// check if there is something in between

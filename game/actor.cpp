@@ -600,6 +600,7 @@ idActor::idActor( void ) {
 
 	melee_range_unarmed = 0.0f;
 	melee_range			= 0.0f;
+	melee_range_vert	= 0.0f;	// grayman #2655
 	m_MeleePredictedAttTime				= 0.0f;
 	m_MeleePredictedAttTimeUnarmed		= 0.0f;
 	m_MeleeDamageMult					= 1.0f;
@@ -754,6 +755,16 @@ void idActor::Spawn( void )
 	
 	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
 	melee_range							= melee_range_unarmed;
+
+	// grayman #2655 - if "melee_range_vert" has a value, use that,
+	// otherwise set it to melee_range
+
+	melee_range_vert					= spawnArgs.GetFloat( "melee_range_vert","0");
+	if (melee_range_vert == 0)
+	{
+		melee_range_vert = melee_range;
+	}
+
 	m_MeleePredictedAttTimeUnarmed		= 0.001f * spawnArgs.GetFloat("melee_predicted_attack_time");
 	m_MeleePredictedAttTime				= m_MeleePredictedAttTimeUnarmed;
 	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
@@ -1105,6 +1116,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	m_MeleeStatus.Save( savefile );
 	savefile->WriteFloat( melee_range_unarmed );
 	savefile->WriteFloat( melee_range );
+	savefile->WriteFloat( melee_range_vert ); // grayman #2655
 	savefile->WriteFloat( m_MeleePredictedAttTimeUnarmed );
 	savefile->WriteFloat( m_MeleePredictedAttTime );
 	savefile->WriteFloat( m_MeleeDamageMult );
@@ -1300,6 +1312,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	m_MeleeStatus.Restore( savefile );
 	savefile->ReadFloat( melee_range_unarmed );
 	savefile->ReadFloat( melee_range );
+	savefile->ReadFloat( melee_range_vert ); // grayman #2655
 	savefile->ReadFloat( m_MeleePredictedAttTimeUnarmed );
 	savefile->ReadFloat( m_MeleePredictedAttTime );
 	savefile->ReadFloat( m_MeleeDamageMult );
