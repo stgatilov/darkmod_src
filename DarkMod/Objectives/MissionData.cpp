@@ -1210,38 +1210,38 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
 }
 
-void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
+void CMissionData::SetObjectiveVisibility(int objIndex, bool visible)
 {
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjVisible: Invalid objective index: %d\r", ObjIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjVisible: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
-	CObjective& obj = m_Objectives[ObjIndex];
+	CObjective& obj = m_Objectives[objIndex];
 
 	bool wasVisible = obj.m_bVisible;
 
 	// Set the new state
-	obj.m_bVisible = bVal;
+	obj.m_bVisible = visible;
 
 	// greebo: If we show a previously hidden objective, notify the player
 	// Only do this for applicable objectives
-	if (bVal && !wasVisible && obj.m_bApplies)
+	if (visible && !wasVisible && obj.m_bApplies)
 	{
 		Event_NewObjective(); 
 	}
 }
 
-void CMissionData::Event_SetObjMandatory( int ObjIndex, bool bVal )
+void CMissionData::SetObjectiveMandatory(int objIndex, bool mandatory)
 {
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjMandatory: Invalid objective index: %d\r", ObjIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjMandatory: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
-	m_Objectives[ObjIndex].m_bMandatory = bVal;
+	m_Objectives[objIndex].m_bMandatory = mandatory;
 }
 
 void CMissionData::Event_SetObjOngoing( int ObjIndex, bool bVal )

@@ -1800,10 +1800,12 @@ void CTarget_SetObjectiveVisibility::Event_Activate( idEntity *activator )
 	{
 		int objId = atoi(keyVal->GetValue().c_str());
 
-		if (objId > 0) {
-			gameLocal.m_MissionData->Event_SetObjVisible(objId - 1, bVisible);
+		if (objId > 0)
+		{
+			gameLocal.m_MissionData->SetObjectiveVisibility(objId - 1, bVisible);
 		}
-		else {
+		else
+		{
 			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
 			DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
 		}

@@ -10137,12 +10137,12 @@ void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
 
 void idPlayer::Event_SetObjectiveVisible( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->Event_SetObjVisible( ObjIndex, bVal );
+	gameLocal.m_MissionData->SetObjectiveVisibility(ObjIndex, bVal);
 }
 
 void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->Event_SetObjMandatory( ObjIndex, !bVal );
+	gameLocal.m_MissionData->SetObjectiveMandatory(ObjIndex, !bVal); // negate the incoming bool
 }
 
 void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )

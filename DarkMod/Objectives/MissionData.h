@@ -170,13 +170,18 @@ public:
 	**/
 	void UnlatchObjectiveComp( int ObjIndex, int CompIndex );
 
-
 	/**
 	* Set whether an objective shows up in the player's objectives screen
+	* The objective index is 0-based.
 	**/
-	void Event_SetObjVisible( int ObjIndex, bool bVal );
-	// self explanatory
-	void Event_SetObjMandatory( int ObjIndex, bool bVal );
+	void SetObjectiveVisibility(int objIndex, bool visible);
+
+	/**
+	* Set whether an objective is mandatory or not.
+	* The objective index is 0-based.
+	**/
+	void SetObjectiveMandatory(int objIndex, bool mandatory);
+
 	void Event_SetObjOngoing( int ObjIndex, bool bVal );
 	/**
 	* Replace an objective's list of enabling components with a new one

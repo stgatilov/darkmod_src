@@ -75,11 +75,13 @@ bool ObjectiveCondition::Apply(CMissionData& missionData)
 		break;
 
 	case CHANGE_VISIBILITY:
-		// TODO
+		DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective condition will set the visiblity of objective %d to %d\r", _targetObj, _value);
+		missionData.SetObjectiveVisibility(_targetObj, _value != 0);
 		break;
 
 	case CHANGE_MANDATORY:
-		// TODO
+		DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective condition will set the mandatory flag of objective %d to %d\r", _targetObj, _value);
+		missionData.SetObjectiveMandatory(_targetObj, _value != 0);
 		break;
 
 	case INVALID_TYPE:
