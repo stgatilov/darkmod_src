@@ -1087,7 +1087,7 @@ void CMissionData::SetComponentState( CObjectiveComponent *pComp, bool bState )
 	SetComponentState( pComp->m_Index[0]-1, pComp->m_Index[1]-1, bState );
 }
 
-void CMissionData::SetCompletionState( int ObjIndex, int State )
+void CMissionData::SetCompletionState( int ObjIndex, int State, bool fireEvents )
 {
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
@@ -1127,13 +1127,16 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 
 	obj.m_state = static_cast<EObjCompletionState>(State);
 
-	if( State == STATE_COMPLETE )
+	if (fireEvents)
 	{
-		Event_ObjectiveComplete( ObjIndex );
-	}
-	else if( State == STATE_FAILED )
-	{
-		Event_ObjectiveFailed( ObjIndex );
+		if( State == STATE_COMPLETE )
+		{
+			Event_ObjectiveComplete( ObjIndex );
+		}
+		else if( State == STATE_FAILED )
+		{
+			Event_ObjectiveFailed( ObjIndex );
+		}
 	}
 }
 
@@ -1210,7 +1213,7 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
 }
 
-void CMissionData::SetObjectiveVisibility(int objIndex, bool visible)
+void CMissionData::SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents)
 {
 	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
@@ -1227,7 +1230,7 @@ void CMissionData::SetObjectiveVisibility(int objIndex, bool visible)
 
 	// greebo: If we show a previously hidden objective, notify the player
 	// Only do this for applicable objectives
-	if (visible && !wasVisible && obj.m_bApplies)
+	if (fireEvents && visible && !wasVisible && obj.m_bApplies)
 	{
 		Event_NewObjective(); 
 	}

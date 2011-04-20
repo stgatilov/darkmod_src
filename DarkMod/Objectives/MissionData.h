@@ -137,8 +137,11 @@ public:
 	/**
 	* Set the completion state of an objective.  Called both externally and internally.
 	* NOTE: Uses the "internal" index number, so subtract the index by 1 if calling it with "user" index
+	* The fireEvents bool can be used to suppress sounds and GUI messages on objective
+	* state changes - this is necessary to be able to use this function during Main Menu display
+	* where no local player is spawed yet.
 	**/
-	void SetCompletionState( int ObjIndex, int State );
+	void SetCompletionState(int objIndex, int state, bool fireEvents = true);
 
 	/**
 	* Get completion state.  Uses "internal" index (starts at 0)
@@ -174,7 +177,7 @@ public:
 	* Set whether an objective shows up in the player's objectives screen
 	* The objective index is 0-based.
 	**/
-	void SetObjectiveVisibility(int objIndex, bool visible);
+	void SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents = true);
 
 	/**
 	* Set whether an objective is mandatory or not.

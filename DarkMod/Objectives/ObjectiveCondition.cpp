@@ -71,12 +71,14 @@ bool ObjectiveCondition::Apply(CMissionData& missionData)
 	case CHANGE_STATE:
 		// Attempt to set the completion state
 		DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective condition will set the state of objective %d to %d.\r", _targetObj, _value);
-		missionData.SetCompletionState(_targetObj, _value);
+
+		// Set completion state and suppress event firing, we might not have a player around to receive GUI events
+		missionData.SetCompletionState(_targetObj, _value, false);
 		break;
 
 	case CHANGE_VISIBILITY:
 		DM_LOG(LC_OBJECTIVES, LT_DEBUG)LOGSTRING("Objective condition will set the visiblity of objective %d to %d\r", _targetObj, _value);
-		missionData.SetObjectiveVisibility(_targetObj, _value != 0);
+		missionData.SetObjectiveVisibility(_targetObj, _value != 0, false); // don't fire events
 		break;
 
 	case CHANGE_MANDATORY:
