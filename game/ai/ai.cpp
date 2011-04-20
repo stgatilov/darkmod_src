@@ -2818,7 +2818,7 @@ bool idAI::ReachedPosAABBCheck(const idVec3& pos) const
 	// angua: expand the bounds a bit downwards, so that they can actually reach target positions 
 	// that are reported as reachable by PathToGoal.
 	bnds[0].z -= aas_reachability_z_tolerance;
-	bnds[1].z += aas_reachability_z_tolerance;
+	bnds[1].z += 0.4*aas_reachability_z_tolerance; // grayman #2717 - don't look so far up
 
 	return (bnds.ContainsPoint(pos));
 }
@@ -2886,7 +2886,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 		return false;
 	}
 
-	// Sanity check the returned area. If the position isn't within the AI's height + aas_reachability_z_tolerance
+	// Sanity check the returned area. If the position isn't within the AI's height + aas_reachability_z_tolerance/2
 	// reach, then report it as unreachable.
 	const idVec3& grav = physicsObj.GetGravityNormal();
 
@@ -2894,7 +2894,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 
 	idBounds bounds = GetPhysics()->GetBounds();
 
-	if (height > (bounds[1][2] + aas_reachability_z_tolerance))
+	if (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance)) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
 	{
 		goalAreaNum = 0;
 		return false;
