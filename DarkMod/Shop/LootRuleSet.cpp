@@ -25,13 +25,12 @@ void LootRuleSet::Clear()
 	goldLossPercent = 0;
 	goldMin = 0;
 	goldCap = -1;
-	keepUnspentGold = true;
 }
 
 bool LootRuleSet::operator==(const LootRuleSet& other) const
 {
 	return goldLoss == other.goldLoss && goldLossPercent == other.goldLossPercent &&
-		goldMin == other.goldMin && goldCap == other.goldCap && keepUnspentGold == other.keepUnspentGold &&
+		goldMin == other.goldMin && goldCap == other.goldCap && 
 		conversionRate[LOOT_GOLD] == other.conversionRate[LOOT_GOLD] &&
 		conversionRate[LOOT_JEWELS] == other.conversionRate[LOOT_JEWELS] &&
 		conversionRate[LOOT_GOODS] == other.conversionRate[LOOT_GOODS];
@@ -49,7 +48,6 @@ void LootRuleSet::LoadFromDict(const idDict& dict, const idStr& prefix)
 	goldLossPercent = dict.GetFloat(prefix + "gold_loss_percent", va("%f", goldLossPercent));
 	goldMin = dict.GetInt(prefix + "gold_min", va("%d", goldMin));
 	goldCap = dict.GetInt(prefix + "gold_cap", va("%d", goldCap));
-	keepUnspentGold = dict.GetBool(prefix + "keep_unspent_gold", keepUnspentGold ? "1" : "0");
 }
 
 int LootRuleSet::ApplyToFoundLoot(const int foundLoot[LOOT_COUNT], int shopStartingGold)

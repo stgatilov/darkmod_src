@@ -15,9 +15,8 @@
 
 /**
  * greebo: A structure defining loot carry-over rules for the shop.
- * On the one hand the mapper can define how much of the collected loot 
- * makes it into the shop and on the other hand the mapper can 
- * allow or disallow keeping the unspent gold after the shop.
+ * The mapper can define how much of the collected loot 
+ * makes it into the shop.
  *
  * A default-constructed LootRules set won't change the incoming loot values
  * everything is losslessly passed through with a 1:1 conversion, 
@@ -40,9 +39,6 @@ struct LootRuleSet
 
 	// Maximum amount of gold available in the shop. Enforced after conversion. (default is -1 => no cap)
 	int		goldCap;
-
-	// Whether the player is allowed to keep his unspent gold after the shop (defaults to true)
-	bool	keepUnspentGold;
 
 	LootRuleSet()
 	{
