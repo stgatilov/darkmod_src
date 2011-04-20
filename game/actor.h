@@ -365,6 +365,11 @@ public:
 	**/
 	int						m_pathRank;
 
+	/**
+	* grayman #2728 - next time this actor can be kicked by another actor
+	**/
+	int						m_nextKickTime;
+
 public:
 							idActor( void );
 	virtual					~idActor( void );

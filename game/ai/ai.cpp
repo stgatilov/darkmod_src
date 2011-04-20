@@ -862,7 +862,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanBeGassed);		// grayman #2468
 	savefile->WriteInt( m_koState );			// grayman #2604
 	savefile->WriteInt( m_earlyThinkCounter );	// grayman #2654
-
+	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
 	savefile->WriteFloat(thresh_3);
@@ -1262,7 +1262,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( i ); // grayman #2604
 	m_koState = static_cast<koState_t>( i );
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
-
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
 	savefile->ReadFloat(thresh_3);
@@ -9491,6 +9490,21 @@ void idAI::HadTactile( idActor *actor )
 	else
 	{
 		// TODO: FLAG BLOCKED BY FRIENDLY SO THE SCRIPT CAN DO SOMETHING ABOUT IT
+
+		// grayman #2728 - If blocked by an AI of small mass, kick it aside immediately. If you leave it to normal
+		// block resolution, the larger AI will appear to be momentarily stopped by the small AI,
+		// which is not what you'd expect to see.
+
+		float actorMass = actor->GetPhysics()->GetMass();
+		if ((actorMass <= 5.0) && (physicsObj.GetMass() > 5.0))
+		{
+			if (gameLocal.time >= actor->m_nextKickTime) // but only if not recently kicked
+			{
+				KickObstacles(viewAxis[0],1.25*kickForce*actorMass,actor);
+				actor->m_nextKickTime = gameLocal.time + 1000;	// need to wait before kicking again,
+																// otherwise kicks can build up over adjacent frames
+			}
+		}
 	}
 
 	// alert both AI if they bump into eachother

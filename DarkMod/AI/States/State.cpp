@@ -1405,29 +1405,43 @@ void State::OnMovementBlocked(idAI* owner)
 		idAI* master = owner;
 		idAI* slave = static_cast<idAI*>(ent);
 
-		// grayman #2345 - account for rank when determining who should resolve the block
+		// grayman #2728 - check mass; this overrides all other master/slave checks
 
-		if (slave->rank > master->rank)
+		float masterMass = master->GetPhysics()->GetMass();
+		if ((masterMass <= 5.0) || (slave->GetPhysics()->GetMass() <= 5.0))
 		{
-			// The master should have equal or higher rank
-			std::swap(master, slave);
+			if (masterMass <= 5.0)
+			{
+				// The master can't have small mass unless the slave does also
+				std::swap(master, slave);
+			}
 		}
-
-		if (!master->AI_FORWARD && slave->AI_FORWARD)
+		else
 		{
-			// Master is not moving, swap
-			std::swap(master, slave);
-		}
+			// grayman #2345 - account for rank when determining who should resolve the block
 
-		if (slave->AI_FORWARD && slave->AI_RUN && master->AI_FORWARD && !master->AI_RUN)
-		{
-			// One AI is running, this should be the master
-			std::swap(master, slave);
-		}
+			if (slave->rank > master->rank)
+			{
+				// The master should have equal or higher rank
+				std::swap(master, slave);
+			}
 
-		if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
-		{
-			std::swap(master, slave);
+			if (!master->AI_FORWARD && slave->AI_FORWARD)
+			{
+				// Master is not moving, swap
+				std::swap(master, slave);
+			}
+
+			if (slave->AI_FORWARD && slave->AI_RUN && master->AI_FORWARD && !master->AI_RUN)
+			{
+				// One AI is running, this should be the master
+				std::swap(master, slave);
+			}
+
+			if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
+			{
+				std::swap(master, slave);
+			}
 		}
 
 		// Tell the slave to get out of the way.

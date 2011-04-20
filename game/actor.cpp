@@ -902,7 +902,8 @@ void idActor::Spawn( void )
 	CREATE_TIMER(actorSubSampleWalkPathTimer, name, "SubSampleWalkPath");
 	CREATE_TIMER(actorWalkPathValidTimer, name, "WalkPathValid");
 
-	m_pathRank = rank; // grayman #2345 - rank for path-finding
+	m_pathRank = rank;	// grayman #2345 - rank for path-finding
+	m_nextKickTime = 0;	// grayman #2728
 }
 
 /*
@@ -1136,7 +1137,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMin );
 	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMax );
 	savefile->WriteInt( m_MeleeCurrentRepeatedPostParryDelay );
-	savefile->WriteInt( m_pathRank ); // grayman #2345
+	savefile->WriteInt( m_pathRank );		// grayman #2345
+	savefile->WriteInt( m_nextKickTime );	// grayman #2728
 
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
@@ -1330,7 +1332,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMin );
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMax );
 	savefile->ReadInt( m_MeleeCurrentRepeatedPostParryDelay );
-	savefile->ReadInt( m_pathRank ); // grayman #2345
+	savefile->ReadInt( m_pathRank );	// grayman #2345
+	savefile->ReadInt(m_nextKickTime);	// grayman #2728
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
