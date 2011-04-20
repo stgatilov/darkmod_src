@@ -10147,13 +10147,12 @@ void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
 
 void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->Event_SetObjOngoing( ObjIndex, bVal );
+	gameLocal.m_MissionData->SetObjectiveOngoing(ObjIndex, bVal);
 }
 
 void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 {
-	idStr StrArg = strIn;
-	gameLocal.m_MissionData->Event_SetObjEnabling( ObjIndex, StrArg );
+	gameLocal.m_MissionData->SetEnablingObjectives(ObjIndex, strIn);
 }
 
 void idPlayer::Event_GiveHealthPool( float amount ) {

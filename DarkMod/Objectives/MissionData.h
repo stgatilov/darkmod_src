@@ -182,13 +182,17 @@ public:
 	**/
 	void SetObjectiveMandatory(int objIndex, bool mandatory);
 
-	void Event_SetObjOngoing( int ObjIndex, bool bVal );
+	/**
+	* Set the ongoing flag of this objective.
+	* The objective index is 0-based.
+	**/
+	void SetObjectiveOngoing(int objIndex, bool ongoing);
+
 	/**
 	* Replace an objective's list of enabling components with a new one
 	* Takes a string list of space-delimited ints and parses it in.
 	**/
-	void Event_SetObjEnabling( int ObjIndex, idStr StrIn );
-//	void Event_SetObjDifficulty( int ObjIndex, int value );
+	void SetEnablingObjectives(int objIndex, const idStr& enablingStr);
 
 	/**
 	* Getters for the mission stats.  Takes an objective component event type,

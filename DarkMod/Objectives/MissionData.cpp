@@ -1214,7 +1214,7 @@ void CMissionData::SetObjectiveVisibility(int objIndex, bool visible)
 {
 	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjVisible: Invalid objective index: %d\r", objIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveVisibility: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
@@ -1237,50 +1237,50 @@ void CMissionData::SetObjectiveMandatory(int objIndex, bool mandatory)
 {
 	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjMandatory: Invalid objective index: %d\r", objIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveMandatory: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
 	m_Objectives[objIndex].m_bMandatory = mandatory;
 }
 
-void CMissionData::Event_SetObjOngoing( int ObjIndex, bool bVal )
+void CMissionData::SetObjectiveOngoing(int objIndex, bool ongoing)
 {
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjOngoing: Invalid objective index: %d\r", ObjIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveOngoing: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
-	m_Objectives[ObjIndex].m_bOngoing = bVal;
+	m_Objectives[objIndex].m_bOngoing = ongoing;
 }
 
-void CMissionData::Event_SetObjEnabling(int ObjIndex, idStr StrIn)
+void CMissionData::SetEnablingObjectives(int objIndex, const idStr& enablingStr)
 {
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	if (objIndex > m_Objectives.Num() || objIndex < 0)
 	{
-		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Event_SetObjEnabling: Invalid objective index: %d\r", ObjIndex);
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetEnablingObjectives: Invalid objective index: %d\r", objIndex);
 		return;
 	}
 
 	// parse in the int list of "enabling objectives"
 	idLexer src;
-	src.LoadMemory( StrIn.c_str(), StrIn.Length(), "" );
+	src.LoadMemory(enablingStr.c_str(), enablingStr.Length(), "");
 
 	idToken token;
-	idList<int> ObjList;
+	idList<int>& list = m_Objectives[objIndex].m_EnablingObjs;
 
-	while( src.ReadToken( &token ) )
+	list.Clear();
+
+	while (src.ReadToken(&token))
 	{
-		if( token.IsNumeric() )
+		if (token.IsNumeric())
 		{
-			ObjList.Append( token.GetIntValue() );
+			list.Append(token.GetIntValue());
 		}
 	}
 
 	src.FreeSource();
-
-	m_Objectives[ObjIndex].m_EnablingObjs = ObjList;
 }
 
 // Objective parsing:

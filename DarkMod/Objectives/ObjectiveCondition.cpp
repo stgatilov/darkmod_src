@@ -89,7 +89,7 @@ bool ObjectiveCondition::Apply(CMissionData& missionData)
 		break;
 	};
 
-	return false;
+	return true;
 }
 
 void ObjectiveCondition::ParseFromSpawnargs(const idDict& dict, int index)
