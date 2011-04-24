@@ -36,26 +36,6 @@ class CInventoryCursor;
 typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
 /**
-* SDK_SIGNALS are used to signal either from a script to the SDK code or
-* inside the SDK code itself. It can not signal from SDK to a script. In order
-* to do this, you can use the regular signal mechanism from id.
-*/
-#define SDK_SIGNAL			int
-typedef enum {
-	SIG_REMOVE,
-	SIG_CONTINUE,
-	SIG_COUNT
-} E_SDK_SIGNAL_STATE;
-
-typedef struct {
-	SDK_SIGNAL	m_Id;
-	bool		m_Signaled;
-	idEntity	*m_Object;
-	void		*m_Data;
-	E_SDK_SIGNAL_STATE	(*m_Fkt)(idEntity *oObject, void *pData);
-} SDKSignalInfo;
-
-/**
 * This struct defines one entity with an optional offset, count and
 * probability, to spawn it upon the death of another entity.
 */
@@ -1062,27 +1042,6 @@ public:
 	virtual void UnbindNotify( idEntity *ent );
 
 	/**
-	 * GetSignalId assignes a unique Id to be used in a signal function. To differentiate these
-	 * from the script signals I named them SDKSignal. These signal mechanism can be used for both.
-	 * So you can have a SDK function signaling, or a script. You can not signal a script, though, only
-	 * from a signal to SDK. To signal a script use the regular signal functions.
-	 */
-	SDK_SIGNAL			GetSDKSignalId(void);
-
-	/**
-	 * Adds a new signal funktion that can be triggered. The object pointer must always be set. 
-	 * The datapointer can be NULL and would contain a pointer to data that the signal function
-	 * may need. If the SIGNAL is 0 an error occured and the signal was not added to the list.
-	 */
-	SDK_SIGNAL		AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, void *pData), void *pData);
-	void			CheckSDKSignal(void);
-
-	/**
-	 * SDKSignal will trigger a signal that a script has finished.
-	 */
-	void SDKSignal(SDK_SIGNAL SDKSignalId, int bState);
-
-	/**
 	 * Return nonzero if this entity could potentially attack the given (target) entity at range,
 	 * or entities in general if target is NULL.
 	 */
@@ -1390,9 +1349,6 @@ protected:
 	bool						m_FrobActionLock;
 
 	CStimResponseCollection		*m_StimResponseColl;
-
-	SDK_SIGNAL					m_Signal;
-	idList<SDKSignalInfo *>		m_SignalList;
 
 	float						m_AbsenceNoticeability;
 	idBounds					m_StartBounds;

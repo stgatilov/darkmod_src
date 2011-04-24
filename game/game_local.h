@@ -934,12 +934,6 @@ public:
 	 */
 	CStimResponsePtr		FindStimResponse(int uniqueId);
 
-	/**
-	 * CheckSignal will call all entites registered for a signal actacvtion.
-	 */
-	void					CheckSDKSignals();
-	void					AddSDKSignal(idEntity *oObject);
-
 	// Checks the TDM version
 	void					CheckTDMVersion();
 
@@ -1035,8 +1029,6 @@ private:
 	};
 
 	idList<InterMissionTrigger>	m_InterMissionTriggers;
-
-	idList<idEntity *>		m_SignalList;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level

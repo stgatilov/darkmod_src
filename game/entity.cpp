@@ -219,8 +219,6 @@ const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
 // I don't think scripting supports optional argument, so I must do this
 const idEventDef EV_TDM_PropSound( "propSound", "s" );
 
-const idEventDef EV_TDM_SDKSignal( "SDKSignal", "dd" );
-
 // For detecting ranged enemies. Returns nonzero if this entity could
 // potentially attack the given entity (first parameter) at range.
 const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", "e", 'f' );
@@ -407,8 +405,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
-
-	EVENT( EV_TDM_SDKSignal,		idEntity::SDKSignal )
 
 	EVENT( EV_TDM_RangedThreatTo,	idEntity::Event_RangedThreatTo )
 
@@ -681,7 +677,6 @@ idEntity::idEntity()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
-	m_Signal = 0;
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
 
@@ -1540,8 +1535,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteString(m_MasterFrob);
 	savefile->WriteBool(m_FrobActionLock);
 
-	savefile->WriteInt(m_Signal);
-
 	savefile->WriteFloat(m_AbsenceNoticeability);
 	savefile->WriteBounds(m_StartBounds);
 	savefile->WriteBool(m_AbsenceStatus);
@@ -1556,9 +1549,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 		savefile->WriteObject(i->first);
 		savefile->WriteInt(i->second);
 	}
-
-	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
-	//idList<SDKSignalInfo *>	m_SignalList;
 
 	savefile->WriteBool( m_bIsMantleable );
 
@@ -1776,8 +1766,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadString(m_MasterFrob);
 	savefile->ReadBool(m_FrobActionLock);
-
-	savefile->ReadInt(m_Signal);
 
 	savefile->ReadFloat(m_AbsenceNoticeability);
 	savefile->ReadBounds(m_StartBounds);
@@ -10307,90 +10295,6 @@ bool idEntity::DestroyAbsenceMarker()
 float idEntity::GetAbsenceNoticeability()
 {
 	return m_AbsenceNoticeability;
-}
-
-
-/**
-* This is separate from m_bFrobbed due to peer frob highlighting,
-* to let an entity display the highlight when not frobbed.
-**/
-bool                    m_bFrobHighlightState;
-
-
-
-SDK_SIGNAL idEntity::GetSDKSignalId(void)
-{
-	SDK_SIGNAL rc = ++m_Signal;
-
-	if(rc == 0)
-		rc = ++m_Signal;
-
-	return rc;
-}
-
-SDK_SIGNAL idEntity::AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, void *pData), void *pData)
-{
-	SDK_SIGNAL rc  = 0;
-	SDKSignalInfo *s;
-
-	if(oFkt == NULL)
-		return rc;
-
-	s = new SDKSignalInfo;
-	s->m_Object = this;
-	s->m_Data = pData;
-	s->m_Signaled = false;
-	s->m_Fkt = oFkt;
-	s->m_Id = GetSDKSignalId();
-	m_SignalList.Append(s);
-	gameLocal.AddSDKSignal(this);
-
-	rc = s->m_Id;
-
-	return rc;
-}
-
-void idEntity::CheckSDKSignal(void)
-{
-	// Since we are modifying the loopvariable, we use a 'while' her instead of 'for'.
-	int n = m_SignalList.Num();
-	int i = 0;
-
-	while (i < n)
-	{
-		SDKSignalInfo* s = m_SignalList[i];
-
-		if (s->m_Signaled == true)
-		{
-			if(s->m_Fkt(s->m_Object, s->m_Data) == SIG_CONTINUE)
-			{
-				s->m_Signaled = false;
-			}
-			else
-			{
-				m_SignalList.Remove(s);
-				delete s;
-				i--;
-				n--;
-			}
-		}
-
-		i++;
-	}
-}
-
-void idEntity::SDKSignal(SDK_SIGNAL Id, int bState)
-{
-	int n = m_SignalList.Num();
-	for(int i = 0; i < n; i++)
-	{
-		SDKSignalInfo* s = m_SignalList[i];
-		if (s->m_Id == Id)
-		{
-			s->m_Signaled = bState;
-			break;
-		}
-	}
 }
 
 /*

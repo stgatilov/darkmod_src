@@ -3029,9 +3029,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
-	// Check for any activated signals, and trigger them.
-	CheckSDKSignals();
-
 	// Handle any mission downloads in progress
 	m_DownloadManager->ProcessDownloads();
 
@@ -6785,21 +6782,6 @@ idEntity *idGameLocal::PlayerTraceEntity( void )
 	
 Quit:
 	return returnEnt;
-}
-
-void idGameLocal::AddSDKSignal(idEntity *oObject)
-{
-	if(oObject != NULL)
-		m_SignalList.Append(oObject);
-}
-
-void idGameLocal::CheckSDKSignals()
-{
-	int n = m_SignalList.Num();
-	for(int i = 0; i < n; i++)
-	{
-		m_SignalList[i]->CheckSDKSignal();
-	}
 }
 
 void idGameLocal::PauseGame( bool bPauseState )
