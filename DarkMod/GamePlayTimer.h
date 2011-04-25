@@ -47,6 +47,11 @@ public:
 		SetEnabled(false);
 	}
 
+	bool IsEnabled() const
+	{
+		return _enabled;
+	}
+
 	void SetEnabled(bool enabled)
 	{
 		_enabled = enabled;

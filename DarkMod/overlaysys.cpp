@@ -124,7 +124,14 @@ void COverlaySys::drawOverlays()
 		if(gui)
 		{
 			gameLocal.UpdateGUIScaling(gui);
-			gui->Redraw(gameLocal.realClientTime);
+
+			int time = gameLocal.realClientTime;
+
+			// greebo: We have a special GUI that is updated before control is passed to this method 
+			// there is a time offset stored in that GUI, add that to the realClientTime.
+			time += gui->GetStateInt("GuiTimeOffset");
+
+			gui->Redraw(time);
 		}
 		oNode = oNode->NextNode();
 	}

@@ -113,6 +113,7 @@ extern const idEventDef EV_Heal;
 
 extern const idEventDef EV_ResponseAllow;
 
+extern const idEventDef EV_DestroyOverlay;
 
 // Think flags
 enum {

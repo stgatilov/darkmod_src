@@ -16,11 +16,13 @@ const int OVERLAYS_INVALID_HANDLE = 0;
 /**
 * These is the layer order of the overlay for the player GUI.
 */
-enum {
+enum
+{
 	LAYER_UNDERWATER = 0,	// Draw the underwater overlay first
 	LAYER_MAIN_HUD = 1,
 	LAYER_INVENTORY = 2,
 	LAYER_OBJECTIVES = 12,
+	LAYER_WAITUNTILREADY = 13,
 };
 
 struct SOverlay;

@@ -25,6 +25,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DarkmodAASHidingSpotFinder.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/Missions/MissionManager.h"
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/WeaponItem.h"
 #include "../DarkMod/Shop/Shop.h"
@@ -316,6 +317,9 @@ idPlayer::idPlayer() :
 
 	minRespawnTime			= 0;
 	maxRespawnTime			= 0;
+
+	m_WaitUntilReadyGuiHandle	= OVERLAYS_INVALID_HANDLE;
+	m_WaitUntilReadyGuiTime		= 0;
 
 	firstPersonViewOrigin	= vec3_zero;
 	firstPersonViewAxis		= mat3_identity;
@@ -1166,13 +1170,93 @@ void idPlayer::NextInventoryMap()
 	}
 }
 
+bool idPlayer::WaitUntilReady()
+{
+	if (IsReady() || !cv_player_waituntilready.GetBool())
+	{
+		ready = true;
+		return true;
+	}
+
+	// Create the overlay if necessary	
+	if (m_WaitUntilReadyGuiHandle == OVERLAYS_INVALID_HANDLE)
+	{
+		m_WaitUntilReadyGuiHandle = CreateOverlay(cv_tdm_waituntilready_gui_file.GetString(), LAYER_WAITUNTILREADY);
+
+		if (m_WaitUntilReadyGuiHandle == OVERLAYS_INVALID_HANDLE)
+		{
+			gameLocal.Warning("Cannot find wait-until-ready GUI %s", cv_tdm_waituntilready_gui_file.GetString());
+			ready = true;
+			return ready; // done
+		}
+	}
+
+	idUserInterface* gui = GetOverlay(m_WaitUntilReadyGuiHandle);
+
+	// Make sure we have a valid mission number in the GUI, the first mission is always 1
+	int missionNum = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1;
+	gui->SetStateInt("CurrentMission", missionNum);
+
+	// Remember button state of the previous frame
+	oldButtons = usercmd.buttons;
+
+	// grab out usercmd
+	usercmd_t oldCmd = usercmd;
+	usercmd = gameLocal.usercmds[ entityNumber ];
+	buttonMask &= usercmd.buttons;
+	usercmd.buttons &= ~buttonMask;
+
+	// Allow cursor movement in the GUI, even if it's hidden anyway
+	if (usercmd.mx != oldMouseX || usercmd.my != oldMouseY)
+	{
+		sysEvent_t ev = sys->GenerateMouseMoveEvent(usercmd.mx - oldMouseX, usercmd.my - oldMouseY);
+		gui->HandleEvent(&ev, m_WaitUntilReadyGuiTime);
+		oldMouseX = usercmd.mx;
+		oldMouseY = usercmd.my;
+	}
+
+	// Allow attack button actions to be propagated to the GUI
+	if ((oldButtons ^ usercmd.buttons) & BUTTON_ATTACK)
+	{
+		bool updateVisuals = false;
+
+		sysEvent_t ev = sys->GenerateMouseButtonEvent(1, ( usercmd.buttons & BUTTON_ATTACK ) != 0);
+		idStr cmd = gui->HandleEvent(&ev, m_WaitUntilReadyGuiTime, &updateVisuals);
+
+		if (cmd == "playerIsReady")
+		{
+			int delay = gui->GetStateInt("DestroyDelay");
+
+			PostEventMS(&EV_DestroyOverlay, delay,  m_WaitUntilReadyGuiHandle);
+
+			// We can safely disconnect the GUI handle now, it has been passed by value to the event system
+			m_WaitUntilReadyGuiHandle = OVERLAYS_INVALID_HANDLE;
+
+			// We're handing control over to the Overlay System, add the time offset to the GUI
+			gui->SetStateInt("GuiTimeOffset", m_WaitUntilReadyGuiTime);
+
+			// We're done here, the GUI will be doing it's stuff and be destroyed after the given delay
+			// In the meantime, the overlay system will issue a few Redraw() calls to the GUI using our time offset.
+			ready = true;
+		}
+	}
+
+	// Redraw the GUI
+	gui->Redraw(m_WaitUntilReadyGuiTime);
+
+	// Increase the "private" GUI time 
+	m_WaitUntilReadyGuiTime += gameLocal.msec;
+	
+	return ready;
+}
+
 void idPlayer::CreateObjectivesGUI()
 {
 	if (objectivesOverlay != -1) return;
 
 	objectivesOverlay = CreateOverlay(cv_tdm_obj_gui_file.GetString(), LAYER_OBJECTIVES);
 
-	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
+	idUserInterface* objGUI = GetOverlay(objectivesOverlay);
 	
 	if (objGUI == NULL)
 	{
@@ -1688,6 +1772,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(m_InventoryOverlay);
 
+	savefile->WriteInt(m_WaitUntilReadyGuiHandle);
+	savefile->WriteInt(m_WaitUntilReadyGuiTime);
+
 	savefile->WriteInt(objectivesOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
@@ -2021,6 +2108,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_CrouchIntent );
 
 	savefile->ReadInt(m_InventoryOverlay);
+
+	savefile->ReadInt(m_WaitUntilReadyGuiHandle);
+	savefile->ReadInt(m_WaitUntilReadyGuiTime);
 
 	savefile->ReadInt(objectivesOverlay);
 

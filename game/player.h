@@ -467,6 +467,9 @@ public:
 	// The currently active inventory map entity
 	idEntityPtr<idEntity>	m_ActiveInventoryMapEnt;
 
+	int						m_WaitUntilReadyGuiHandle;
+	int						m_WaitUntilReadyGuiTime;
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -928,7 +931,10 @@ public:
 	// Updates the in-game Objectives GUI, if visible (otherwise nothing happens)
 	void			UpdateObjectivesGUI();
 
-	void PrintDebugHUD(void);
+	void			PrintDebugHUD();
+
+	// Runs the "Click when ready" GUI, returns TRUE if the player is ready
+	bool			WaitUntilReady();
 
 	/**
 	* greebo: Sets the time between health "pulses" if the healthPool > 0

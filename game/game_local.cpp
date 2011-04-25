@@ -3032,123 +3032,119 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	// Handle any mission downloads in progress
 	m_DownloadManager->ProcessDownloads();
 
-	// Update the gameplay timer
-	m_GamePlayTimer.Update();
-
-	if ( !isMultiplayer && g_stopTime.GetBool() ) {
-		// clear any debug lines from a previous frame
-		gameRenderWorld->DebugClearLines( time + 1 );
+	if (framenum == 0 && player != NULL && !player->IsReady())
+	{
+		// greebo: This is the first game frame, handle the "click to start GUI"
+		if (m_GamePlayTimer.IsEnabled())
+		{
+			m_GamePlayTimer.Stop();
+		}
 
 		// set the user commands for this frame
-		memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
 
-		if ( player ) {
-			player->Think();
+		if (player->WaitUntilReady())
+		{
+			// Player got ready this frame, start timer
+			m_GamePlayTimer.Start();
 		}
 	}
-	else do
+	else
 	{
-		// update the game time
-		framenum++;
-		previousTime = time;
-		time += (int)(msec * g_timeModifier.GetFloat());
-		realClientTime = time;
+		// Update the gameplay timer
+		m_GamePlayTimer.Update();
+
+		if ( !isMultiplayer && g_stopTime.GetBool() ) {
+			// clear any debug lines from a previous frame
+			gameRenderWorld->DebugClearLines( time + 1 );
+
+			// set the user commands for this frame
+			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+
+			if ( player ) {
+				player->Think();
+			}
+		}
+		else do
+		{
+			// update the game time
+			framenum++;
+			previousTime = time;
+			time += (int)(msec * g_timeModifier.GetFloat());
+			realClientTime = time;
 
 #ifdef GAME_DLL
-		// allow changing SIMD usage on the fly
-		if ( com_forceGenericSIMD.IsModified() ) {
-			idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
-		}
+			// allow changing SIMD usage on the fly
+			if ( com_forceGenericSIMD.IsModified() ) {
+				idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
+			}
 #endif
 
-		// make sure the random number counter is used each frame so random events
-		// are influenced by the player's actions
-		random.RandomInt();
+			// make sure the random number counter is used each frame so random events
+			// are influenced by the player's actions
+			random.RandomInt();
 
-		if ( player ) {
-			// update the renderview so that any gui videos play from the right frame
-			view = player->GetRenderView();
-			if ( view ) {
-				gameRenderWorld->SetRenderView( view );
-			}
-		}
-
-		// clear any debug lines from a previous frame
-		gameRenderWorld->DebugClearLines( time );
-
-		// clear any debug polygons from a previous frame
-		gameRenderWorld->DebugClearPolygons( time );
-
-		// set the user commands for this frame
-		memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
-
-		// free old smoke particles
-		smokeParticles->FreeSmokes();
-
-		// process events on the server
-		ServerProcessEntityNetworkEventQueue();
-
-		// update our gravity vector if needed.
-		UpdateGravity();
-
-		// create a merged pvs for all players
-		SetupPlayerPVS();
-
-		idTimer lasTimer;
-		lasTimer.Clear();
-		lasTimer.Start();
-		// The Dark Mod
-		// 10/9/2005: SophisticatedZombie
-		// Update the Light Awareness System
-		LAS.updateLASState();
-		lasTimer.Stop();
-		DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
-
-		unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
-
-		// Tick the timers. Should be done before stim/response, just to be safe. :)
-		ProcessTimer(ticks);
-
-		// TDM: Work through the active stims/responses
-		ProcessStimResponse(ticks);
-
-		// TDM: Update objective system
-		m_MissionData->UpdateObjectives();
-
-		// sort the active entity list
-		SortActiveEntityList();
-
-		timer_think.Clear();
-		timer_think.Start();
-
-		// let entities think
-		if ( g_timeentities.GetFloat() ) {
-			num = 0;
-			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-				if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
-					ent->GetPhysics()->UpdateTime( time );
-					if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-					{
-						static_cast<idAI*>(ent)->m_lastThinkTime = time;
-					}
-					continue;
+			if ( player ) {
+				// update the renderview so that any gui videos play from the right frame
+				view = player->GetRenderView();
+				if ( view ) {
+					gameRenderWorld->SetRenderView( view );
 				}
-				timer_singlethink.Clear();
-				timer_singlethink.Start();
-				ent->Think();
-				timer_singlethink.Stop();
-				ms = timer_singlethink.Milliseconds();
-				if ( ms >= g_timeentities.GetFloat() ) {
-					Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
-					DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
-				}
-				num++;
 			}
-		} else {
-			if ( inCinematic ) {
+
+			// clear any debug lines from a previous frame
+			gameRenderWorld->DebugClearLines( time );
+
+			// clear any debug polygons from a previous frame
+			gameRenderWorld->DebugClearPolygons( time );
+
+			// set the user commands for this frame
+			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+
+			// free old smoke particles
+			smokeParticles->FreeSmokes();
+
+			// process events on the server
+			ServerProcessEntityNetworkEventQueue();
+
+			// update our gravity vector if needed.
+			UpdateGravity();
+
+			// create a merged pvs for all players
+			SetupPlayerPVS();
+
+			idTimer lasTimer;
+			lasTimer.Clear();
+			lasTimer.Start();
+			// The Dark Mod
+			// 10/9/2005: SophisticatedZombie
+			// Update the Light Awareness System
+			LAS.updateLASState();
+			lasTimer.Stop();
+			DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
+
+			unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
+
+			// Tick the timers. Should be done before stim/response, just to be safe. :)
+			ProcessTimer(ticks);
+
+			// TDM: Work through the active stims/responses
+			ProcessStimResponse(ticks);
+
+			// TDM: Update objective system
+			m_MissionData->UpdateObjectives();
+
+			// sort the active entity list
+			SortActiveEntityList();
+
+			timer_think.Clear();
+			timer_think.Start();
+
+			// let entities think
+			if ( g_timeentities.GetFloat() ) {
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					if ( g_cinematic.GetBool() && !ent->cinematic ) {
+					if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
 						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
 						{
@@ -3156,113 +3152,137 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 						}
 						continue;
 					}
+					timer_singlethink.Clear();
+					timer_singlethink.Start();
 					ent->Think();
+					timer_singlethink.Stop();
+					ms = timer_singlethink.Milliseconds();
+					if ( ms >= g_timeentities.GetFloat() ) {
+						Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+						DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+					}
 					num++;
 				}
 			} else {
-				num = 0;
-				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					ent->Think();
-					num++;
+				if ( inCinematic ) {
+					num = 0;
+					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+						if ( g_cinematic.GetBool() && !ent->cinematic ) {
+							ent->GetPhysics()->UpdateTime( time );
+							if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+							{
+								static_cast<idAI*>(ent)->m_lastThinkTime = time;
+							}
+							continue;
+						}
+						ent->Think();
+						num++;
+					}
+				} else {
+					num = 0;
+					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+						ent->Think();
+						num++;
+					}
 				}
 			}
-		}
 
-		// remove any entities that have stopped thinking
-		if ( numEntitiesToDeactivate ) {
-			idEntity *next_ent;
-			int c = 0;
-			for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-				next_ent = ent->activeNode.Next();
-				if ( !ent->thinkFlags ) {
-					ent->activeNode.Remove();
-					c++;
+			// remove any entities that have stopped thinking
+			if ( numEntitiesToDeactivate ) {
+				idEntity *next_ent;
+				int c = 0;
+				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
+					next_ent = ent->activeNode.Next();
+					if ( !ent->thinkFlags ) {
+						ent->activeNode.Remove();
+						c++;
+					}
+				}
+				//assert( numEntitiesToDeactivate == c );
+				numEntitiesToDeactivate = 0;
+			}
+
+			timer_think.Stop();
+		
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Thinking timer: %lfms\r", timer_think.Milliseconds());
+
+			timer_events.Clear();
+			timer_events.Start();
+
+			// service any pending events
+			idEvent::ServiceEvents();
+
+			timer_events.Stop();
+
+			// Process the active AI conversations
+			m_ConversationSystem->ProcessConversations();
+
+			// free the player pvs
+			FreePlayerPVS();
+
+			// do multiplayer related stuff
+			if ( isMultiplayer ) {
+				mpGame.Run();
+			}
+
+			if ( cv_music_volume.IsModified() ) {  //SnoopJeDi, fade that sound!
+				float music_vol = cv_music_volume.GetFloat();
+				for ( int i = 0; i < musicSpeakers.Num(); i++ ) {
+					idSound* ent = static_cast<idSound *>(entities[ musicSpeakers[ i ] ]);
+					// Printf( " Fading speaker %s (index %i) to %f\n", ent->name.c_str(), i, music_vol);
+					if (ent)
+						ent->Event_FadeSound( 0, music_vol, 0.5 );
+				}
+				cv_music_volume.ClearModified();
+			}
+
+			// display how long it took to calculate the current game frame
+			if ( g_frametime.GetBool() ) {
+				Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
+					time, timer_think.Milliseconds() + timer_events.Milliseconds(),
+					timer_think.Milliseconds(), timer_events.Milliseconds(), num );
+			}
+
+			// build the return value
+			ret.consistencyHash = 0;
+			ret.sessionCommand[0] = 0;
+
+			if ( !isMultiplayer && player ) {
+				ret.health = player->health;
+				ret.heartRate = player->heartRate;
+				ret.stamina = idMath::FtoiFast( player->stamina );
+				// combat is a 0-100 value based on lastHitTime and lastDmgTime
+				// each make up 50% of the time spread over 10 seconds
+				ret.combat = 0;
+				if ( player->lastDmgTime > 0 && time < player->lastDmgTime + 10000 ) {
+					ret.combat += int(50.0f * (float) ( time - player->lastDmgTime ) / 10000);
+				}
+				if ( player->lastHitTime > 0 && time < player->lastHitTime + 10000 ) {
+					ret.combat += int(50.0f * (float) ( time - player->lastHitTime ) / 10000);
 				}
 			}
-			//assert( numEntitiesToDeactivate == c );
-			numEntitiesToDeactivate = 0;
-		}
 
-		timer_think.Stop();
-	
-		//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Thinking timer: %lfms\r", timer_think.Milliseconds());
-
-		timer_events.Clear();
-		timer_events.Start();
-
-		// service any pending events
-		idEvent::ServiceEvents();
-
-		timer_events.Stop();
-
-		// Process the active AI conversations
-		m_ConversationSystem->ProcessConversations();
-
-		// free the player pvs
-		FreePlayerPVS();
-
-		// do multiplayer related stuff
-		if ( isMultiplayer ) {
-			mpGame.Run();
-		}
-
-		if ( cv_music_volume.IsModified() ) {  //SnoopJeDi, fade that sound!
-			float music_vol = cv_music_volume.GetFloat();
-			for ( int i = 0; i < musicSpeakers.Num(); i++ ) {
-				idSound* ent = static_cast<idSound *>(entities[ musicSpeakers[ i ] ]);
-				// Printf( " Fading speaker %s (index %i) to %f\n", ent->name.c_str(), i, music_vol);
-				if (ent)
-					ent->Event_FadeSound( 0, music_vol, 0.5 );
+			// see if a target_sessionCommand has forced a changelevel
+			if ( sessionCommand.Length() ) {
+				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
+				break;
 			}
-			cv_music_volume.ClearModified();
-		}
 
-		// display how long it took to calculate the current game frame
-		if ( g_frametime.GetBool() ) {
-			Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
-				time, timer_think.Milliseconds() + timer_events.Milliseconds(),
-				timer_think.Milliseconds(), timer_events.Milliseconds(), num );
-		}
-
-		// build the return value
-		ret.consistencyHash = 0;
-		ret.sessionCommand[0] = 0;
-
-		if ( !isMultiplayer && player ) {
-			ret.health = player->health;
-			ret.heartRate = player->heartRate;
-			ret.stamina = idMath::FtoiFast( player->stamina );
-			// combat is a 0-100 value based on lastHitTime and lastDmgTime
-			// each make up 50% of the time spread over 10 seconds
-			ret.combat = 0;
-			if ( player->lastDmgTime > 0 && time < player->lastDmgTime + 10000 ) {
-				ret.combat += int(50.0f * (float) ( time - player->lastDmgTime ) / 10000);
+			// make sure we don't loop forever when skipping a cinematic
+			if ( skipCinematic && ( time > cinematicMaxSkipTime ) ) {
+				Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
+				skipCinematic = false;
+				break;
 			}
-			if ( player->lastHitTime > 0 && time < player->lastHitTime + 10000 ) {
-				ret.combat += int(50.0f * (float) ( time - player->lastHitTime ) / 10000);
+
+			if (m_DoLightgem)
+			{
+				player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
+				m_DoLightgem = false;
 			}
-		}
 
-		// see if a target_sessionCommand has forced a changelevel
-		if ( sessionCommand.Length() ) {
-			strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
-			break;
-		}
-
-		// make sure we don't loop forever when skipping a cinematic
-		if ( skipCinematic && ( time > cinematicMaxSkipTime ) ) {
-			Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
-			skipCinematic = false;
-			break;
-		}
-
-		if (m_DoLightgem)
-		{
-			player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
-			m_DoLightgem = false;
-		}
-
-	} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
+		} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
+	}
 
 	ret.syncNextGameFrame = skipCinematic;
 	if ( skipCinematic ) {
