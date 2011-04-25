@@ -11218,7 +11218,7 @@ void idPlayer::Event_MissionSuccess()
 	PostEventMS(&EV_DisconnectFromMission, 0);
 
 	// Issue an automatic save at the end of this mission
-	idStr savegameName = gameLocal.m_MissionManager->GetCurrentModInfo()->displayName + " Final Save";
+	idStr savegameName = va("Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1);
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("savegame '%s'", savegameName.c_str()));
 }
 
