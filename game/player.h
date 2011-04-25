@@ -1349,6 +1349,9 @@ private:
 	// the Mission Success event is called.
 	void					Event_TriggerMissionEnd();
 
+	// Disconnects the player from the mission, this is the final action during gameplay
+	void					Event_DisconnectFromMission();
+
 	/** Returns to script the current idLocation of the player **/
 	void					Event_GetLocation();
 

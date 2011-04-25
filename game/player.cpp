@@ -118,6 +118,7 @@ const idEventDef EV_Player_WasDamaged("wasDamaged", NULL, 'd');
 
 const idEventDef EV_Mission_Success("missionSuccess", NULL);
 const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", NULL);
+const idEventDef EV_DisconnectFromMission("_disconnectFromMission", NULL);
 
 // Private event to process intermission triggers
 const idEventDef EV_ProcessInterMissionTriggers("_processInterMissionTriggers");
@@ -221,6 +222,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 	EVENT( EV_TriggerMissionEnd,			idPlayer::Event_TriggerMissionEnd )
+	EVENT( EV_DisconnectFromMission,		idPlayer::Event_DisconnectFromMission )
 
 	EVENT( EV_GetLocation,					idPlayer::Event_GetLocation )
 
@@ -11212,6 +11214,16 @@ void idPlayer::Event_MissionSuccess()
 	// Save the item entities of all persistent items
 	gameLocal.persistentPlayerInventory->SaveItemEntities(true);
 	
+	// Schedule the disconnect command, this needs to be done before issuing the save call
+	PostEventMS(&EV_DisconnectFromMission, 0);
+
+	// Issue an automatic save at the end of this mission
+	idStr savegameName = gameLocal.m_MissionManager->GetCurrentModInfo()->displayName + " Final Save";
+	cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("savegame '%s'", savegameName.c_str()));
+}
+
+void idPlayer::Event_DisconnectFromMission()
+{
 	// Set the gamestate
 	gameLocal.SetMissionResult(MISSION_COMPLETE);
 	gameLocal.sessionCommand = "disconnect";
