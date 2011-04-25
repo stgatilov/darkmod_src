@@ -1812,14 +1812,6 @@
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.cpp"
 					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ForcedIncludeFiles="c:\compiled.h"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.h"
