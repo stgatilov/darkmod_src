@@ -550,8 +550,6 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		}
 		else if (obEnt->IsType(idMoveable::Type)) 
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GetObstacles - found idMoveable %s\r",obEnt->name.c_str()); // grayman debug
-
 			// grayman #2740 - ignore movables attached to the AI
 
 			idEntity* bindMaster = obEnt->GetBindMaster();
@@ -572,7 +570,6 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				continue; // ignore this
 			}
 
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GetObstacles - found f_s %s\r",obEnt->name.c_str()); // grayman debug
 			// If we get here, this func_static is an obstacle. However, func_statics can
 			// have odd shapes, which means you could walk through an opening in one, or
 			// under one. If you're "inside" the bounding box of this func_static, ignore it.
@@ -1125,13 +1122,9 @@ int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obst
 	optimizedPath[0] = root->pos;
 	numPathPoints = 1;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath begin node loops\r"); // grayman debug
 	for ( nextNode = curNode = root; curNode != leafNode; curNode = nextNode ) {
 		for ( nextNode = leafNode; nextNode->parent != curNode; nextNode = nextNode->parent ) {
 
-			idEntity* ec = obstacles[curNode->obstacle].entity; // grayman debug
-			idEntity* en = obstacles[nextNode->obstacle].entity; // grayman debug
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath curNode->obstacle = %s, nextNode->obstacle = %s\r",ec ? ec->name.c_str() : "NULL",en ? en->name.c_str() : "NULL"); // grayman debug
 			// can only take shortcuts when going from one object to another
 			if ( nextNode->obstacle == curNode->obstacle ) {
 				continue;
@@ -1140,16 +1133,13 @@ int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obst
 			curPos = curNode->pos;
 			curDelta = nextNode->pos - curPos;
 			curLength = curDelta.Length();
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath curPos = [%s], curDelta = [%s], curLength = %f\r",curPos.ToString(),curDelta.ToString(),curLength); // grayman debug
 
 			// get bounds for the current movement delta
 			bounds[0] = curPos - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 			bounds[1] = curPos + idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 			bounds[FLOATSIGNBITNOTSET(curDelta.x)].x += curDelta.x;
 			bounds[FLOATSIGNBITNOTSET(curDelta.y)].y += curDelta.y;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath bounds[0] = [%s],bounds[1] = [%s]\r",bounds[0].ToString(),bounds[1].ToString()); // grayman debug
 
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath numObstacles = %d\r",numObstacles); // grayman debug
 			// test if the shortcut intersects with any obstacles
 			for ( i = 0; i < numObstacles; i++ ) {
 				if ( bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y ||
@@ -1169,7 +1159,6 @@ int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obst
 				break;
 			}
 		}
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("          OptimizePath optimizedPath[%d] = [%s]\r",numPathPoints,nextNode->pos.ToString()); // grayman debug
 
 		// store the next position along the optimized path
 		optimizedPath[numPathPoints++] = nextNode->pos;
@@ -1239,7 +1228,6 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 					// grayman - A series of path points has been examined and the first one to head to is in
 					// optimizedPath[1]. But if bestNumPathPoints == 1 here, then optimizedPath[1] contains garbage. Does it matter?
 					seekPos.ToVec2() = optimizedPath[1];
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     1 FindOptimalPath seekPos = [%s]\r",seekPos.ToString()); // grayman debug
 				}
 
 				numPathPoints = OptimizePath( root, node, obstacles, numObstacles, optimizedPath );
@@ -1250,7 +1238,6 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 					bestNumPathPoints = numPathPoints;
 					bestPathLength = pathLength;
 					seekPos.ToVec2() = optimizedPath[1];
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     2 FindOptimalPath seekPos = [%s]\r",seekPos.ToString()); // grayman debug
 				}
 				optimizedPathCalculated = true;
 
@@ -1279,12 +1266,10 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 		if (root->children[0] != NULL)
 		{
 			seekPos.ToVec2() = root->children[0]->pos;
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     3 FindOptimalPath seekPos = [%s]\r",seekPos.ToString()); // grayman debug
 		}
 	} else if ( !optimizedPathCalculated ) {
 		OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 		seekPos.ToVec2() = optimizedPath[1];
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     4 FindOptimalPath seekPos = [%s]\r",seekPos.ToString()); // grayman debug
 	}
 
 	if ( ai_showObstacleAvoidance.GetBool() ) {
@@ -1321,7 +1306,6 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	if (aas == NULL) {
 		return true; // no AAS!
 	}
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 1 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 	idBounds bounds;
 	bounds[1] = aas->GetSettings()->boundingBoxes[0][1];
@@ -1339,7 +1323,6 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	START_TIMING(owner->actorGetObstaclesTimer);
 	int numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds, path );
 	STOP_TIMING(owner->actorGetObstaclesTimer);
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 2 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 	START_TIMING(owner->actorGetPointOutsideObstaclesTimer);
 
@@ -1349,14 +1332,12 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	if ( insideObstacle != -1 ) {
 		path.startPosObstacle = obstacles[insideObstacle].entity;
 	}
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 3 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 	// get a goal position outside the obstacles
 	GetPointOutsideObstacles( obstacles, numObstacles, path.seekPosOutsideObstacles.ToVec2(), &insideObstacle, NULL );
 	if ( insideObstacle != -1 ) {
 		path.seekPosObstacle = obstacles[insideObstacle].entity;
 	}
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 4 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 	STOP_TIMING(owner->actorGetPointOutsideObstaclesTimer);
 
@@ -1370,7 +1351,6 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	START_TIMING(owner->actorBuildPathTreeTimer);
 	// build a path tree
 	pathNode_t* root = BuildPathTree(physics, obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path ); // grayman #2345 - added 'physics'
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 5 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 //	PrintNodes(root,0,obstacles); // grayman for debugging path trees
 	
@@ -1385,14 +1365,12 @@ bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, c
 	START_TIMING(owner->actorPrunePathTreeTimer);
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 	STOP_TIMING(owner->actorPrunePathTreeTimer);
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 6 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 //	PrintNodes(root,0,obstacles); // grayman for debugging path trees
 
 	// find the optimal path
 	START_TIMING(owner->actorFindOptimalPathTimer);
 	bool pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
 	STOP_TIMING(owner->actorFindOptimalPathTimer);
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::FindPathAroundObstacles 7 path.seekPos = [%s]\r",path.seekPos.ToString()); // grayman debug
 
 	// free the tree
 	FreePathTree_r( root );
