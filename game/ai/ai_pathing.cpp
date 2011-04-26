@@ -552,7 +552,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GetObstacles - found idMoveable %s\r",obEnt->name.c_str()); // grayman debug
 
-			// grayman debug - ignore movables attached to the AI
+			// grayman #2740 - ignore movables attached to the AI
 
 			idEntity* bindMaster = obEnt->GetBindMaster();
 			if (self == bindMaster)
