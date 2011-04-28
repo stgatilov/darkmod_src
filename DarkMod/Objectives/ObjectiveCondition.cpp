@@ -117,11 +117,11 @@ void ObjectiveCondition::ParseFromSpawnargs(const idDict& dict, int index)
 	{
 		_type = CHANGE_STATE;
 	}
-	else if (idStr::Cmp(type, "changevisibility") != 0)
+	else if (idStr::Cmp(type, "changevisibility") == 0)
 	{
 		_type = CHANGE_VISIBILITY;
 	}
-	else if (idStr::Cmp(type, "changemandatory") != 0)
+	else if (idStr::Cmp(type, "changemandatory") == 0)
 	{
 		_type = CHANGE_MANDATORY;
 	}
