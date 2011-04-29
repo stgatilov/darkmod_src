@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/Objectives/MissionData.h"
+#include "../../DarkMod/Missions/MissionManager.h"
 
 class CRelations;
 class CsndProp;
@@ -59,6 +60,10 @@ const idEventDef EV_Thread_SetPersistantArg( "setPersistantArg", "ss" );
 const idEventDef EV_Thread_GetPersistantString( "getPersistantString", "s", 's' );
 const idEventDef EV_Thread_GetPersistantFloat( "getPersistantFloat", "s", 'f' );
 const idEventDef EV_Thread_GetPersistantVector( "getPersistantVector", "s", 'v' );
+
+// Returns the number of the current mission (0-based)
+const idEventDef EV_Thread_GetCurrentMissionNum( "getCurrentMissionNum", NULL, 'f' );
+
 const idEventDef EV_Thread_AngToForward( "angToForward", "v", 'v' );
 const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
 const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
@@ -166,6 +171,9 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetPersistantString,	idThread::Event_GetPersistantString )
 	EVENT( EV_Thread_GetPersistantFloat,	idThread::Event_GetPersistantFloat )
 	EVENT( EV_Thread_GetPersistantVector,	idThread::Event_GetPersistantVector )
+
+	EVENT( EV_Thread_GetCurrentMissionNum,	idThread::Event_GetCurrentMissionNum )
+
 	EVENT( EV_Thread_AngToForward,			idThread::Event_AngToForward )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
@@ -1290,6 +1298,11 @@ void idThread::Event_GetPersistantVector( const char *key ) {
 
 	gameLocal.persistentLevelInfo.GetVector( key, "0 0 0", result );
 	ReturnVector( result );
+}
+
+void idThread::Event_GetCurrentMissionNum()
+{
+	ReturnFloat(gameLocal.m_MissionManager->GetCurrentMissionIndex());
 }
 
 /*

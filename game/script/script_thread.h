@@ -134,6 +134,9 @@ private:
 	void 						Event_GetPersistantString( const char *key );
 	void 						Event_GetPersistantFloat( const char *key );
 	void 						Event_GetPersistantVector( const char *key );
+
+	void						Event_GetCurrentMissionNum();
+
 	void						Event_AngToForward( idAngles &ang );
 	void						Event_AngToRight( idAngles &ang );
 	void						Event_AngToUp( idAngles &ang );
