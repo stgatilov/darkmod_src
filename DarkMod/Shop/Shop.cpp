@@ -661,12 +661,12 @@ void CShop::AddPersistentStartingEquipment()
 				continue;
 			}
 
+			int quantity = item->GetPersistentCount();
+
 			// Check if this is a weapon
 			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
 
 			bool isWeapon = (weaponItem != NULL);
-
-			int quantity = weaponItem->GetPersistentCount();
 
 			if (isWeapon)
 			{
@@ -690,7 +690,9 @@ void CShop::AddPersistentStartingEquipment()
 				continue;
 			}
 
-			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon, weaponItem->IsAllowedEmpty());
+			bool weaponIsAllowedEmpty = weaponItem ? weaponItem->IsAllowedEmpty() : false;
+
+			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon, weaponIsAllowedEmpty);
 
 			// Append the item to the list if it didn't contribute quantity to
 			// an existing list item.
