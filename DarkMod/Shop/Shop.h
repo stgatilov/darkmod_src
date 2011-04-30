@@ -99,6 +99,19 @@ public:
 
 	CShopItemPtr FindByID(ShopItemList& items, const char *id);
 
+	// Finds a shop item definition for the given classname. If the direct match cannot be found
+	// this routine tries another time with "atdm:" prepended
+	CShopItemPtr FindShopItemDefByClassName(const idStr& className);
+
+	/**
+	 * greebo: Calculates the quantity for the item that can be added to the shop.
+	 * Weapon items return their ammonition count for ranged weapons, or 1 for melee weapons.
+	 * Ordinary items just return their persistent inventory item count
+	 * This routine can be used to judge whether this item would be added to the shop, in combination
+	 * with the FindShopItemDefByClassName() routine.
+	 */
+	static int GetQuantityForItem(const CInventoryItemPtr& item);
+
 	// initialize the shop
 	void DisplayShop(idUserInterface *gui);
 

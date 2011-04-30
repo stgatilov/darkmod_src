@@ -646,13 +646,7 @@ void CShop::AddPersistentStartingEquipment()
 			idStr className = itemDict->GetString("classname");
 
 			// Try to look up the corresponding shop item definition for this item's classname
-			CShopItemPtr found = FindByID(_itemDefs, className);
-
-			if (found == NULL)
-			{
-				// Try again with "atdm:" prepended
-				found = FindByID(_itemDefs, "atdm:" + className);
-			}
+			CShopItemPtr found = FindShopItemDefByClassName(className);
 
 			if (found == NULL)
 			{
@@ -661,26 +655,7 @@ void CShop::AddPersistentStartingEquipment()
 				continue;
 			}
 
-			int quantity = item->GetPersistentCount();
-
-			// Check if this is a weapon
-			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
-
-			bool isWeapon = (weaponItem != NULL);
-
-			if (isWeapon)
-			{
-				// Use the ammonition for weapon items
-				if (weaponItem->NeedsAmmo())
-				{
-					quantity = weaponItem->GetAmmo();
-				}
-				else
-				{
-					// Non-ammo weapons need to be enabled to be added
-					quantity = weaponItem->IsEnabled() ? 1 : 0;
-				}
-			}
+			int quantity = GetQuantityForItem(item);
 
 			// Don't attempt to merge if we don't have anything to merge in the first place
 			if (quantity == 0)
@@ -690,6 +665,10 @@ void CShop::AddPersistentStartingEquipment()
 				continue;
 			}
 
+			// Check if this is a weapon
+			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+
+			bool isWeapon = (weaponItem != NULL);
 			bool weaponIsAllowedEmpty = weaponItem ? weaponItem->IsAllowedEmpty() : false;
 
 			bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon, weaponIsAllowedEmpty);
@@ -707,6 +686,51 @@ void CShop::AddPersistentStartingEquipment()
 			}	
 		}
 	}
+}
+
+int CShop::GetQuantityForItem(const CInventoryItemPtr& item)
+{
+	int quantity = item->GetPersistentCount();
+
+	// Check if this is a weapon
+	CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+
+	bool isWeapon = (weaponItem != NULL);
+
+	if (isWeapon)
+	{
+		// Use the ammonition for weapon items
+		if (weaponItem->NeedsAmmo())
+		{
+			quantity = weaponItem->GetAmmo();
+		}
+		else
+		{
+			// Non-ammo weapons need to be enabled to be added
+			quantity = weaponItem->IsEnabled() ? 1 : 0;
+		}
+	}
+
+	return quantity;
+}
+
+CShopItemPtr CShop::FindShopItemDefByClassName(const idStr& className)
+{
+	CShopItemPtr found = FindByID(_itemDefs, className);
+
+	if (found != NULL)
+	{
+		return found;
+	}
+
+	// Check if we should run another search
+	if (idStr::Cmpn(className.c_str(), "atdm:", 5) == 0)
+	{
+		return CShopItemPtr(); // atdm is already prepended, return empty
+	}
+
+	// Try again with "atdm:" prepended
+	return FindByID(_itemDefs, "atdm:" + className);
 }
 
 // grayman (#2376) Add map entities where inv_map_start = 1 to the shop's starting list

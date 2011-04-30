@@ -101,6 +101,22 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 				continue; // not marked as persistent
 			}
 
+			// Check if the shop handled that item already
+			const idDict* itemDict = item->GetSavedItemEntityDict();
+
+			if (itemDict != NULL)
+			{
+				CShopItemPtr shopItem = gameLocal.m_Shop->FindShopItemDefByClassName(itemDict->GetString("classname"));
+
+				if (shopItem != NULL && CShop::GetQuantityForItem(item) > 0)
+				{
+					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+						"Item %s would be handled by the shop, won't add that to player inventory.\r",
+						item->GetName().c_str());
+					continue;
+				}
+			}
+
 			// Is set to true if we should add this item. For weapon items with ammo this will be set to false to prevent double-additions
 			bool addItem = true;
 
