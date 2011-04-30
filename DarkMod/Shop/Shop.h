@@ -56,11 +56,8 @@ public:
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
 
-	// move the current inventory to the Starting Items list
-	void LoadFromInventory(idPlayer *player);
-
 	// handles main menu commands
-	void HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player);
+	void HandleCommands(const char *menuCommand, idUserInterface *gui);
 
 	// how much gold the player has left to spend
 	int GetGold();

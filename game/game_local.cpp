@@ -4206,7 +4206,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		ClearPersistentInfo();
 	}
 
-	m_Shop->HandleCommands(menuCommand, gui, GetLocalPlayer());
+	m_Shop->HandleCommands(menuCommand, gui);
 	m_ModMenu->HandleCommands(cmd, gui);
 	m_DownloadMenu->HandleCommands(cmd, gui);
 

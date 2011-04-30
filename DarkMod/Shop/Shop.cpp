@@ -161,7 +161,7 @@ const ShopItemList& CShop::GetPlayerStartingEquipment() const
 	return _startingItems;
 }
 
-void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player)
+void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
 	if (idStr::Icmp(menuCommand, "shopLoad") == 0)
 	{
@@ -170,9 +170,6 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlay
 
 		// get list of all items that can be sold
 		LoadShopItemDefinitions();
-
-		// load persistent items into Starting Items list
-		LoadFromInventory(player);
 
 		// init and update the shop GUI
 		DisplayShop(gui);
@@ -255,39 +252,6 @@ int CShop::ScrollList(int topItem, int maxItems, ShopItemList& list)
 	else 
 	{
 		return 0;
-	}
-}
-
-void CShop::LoadFromInventory(idPlayer *player)
-{
-	if (player == NULL)
-	{
-		return;
-	}
-
-	int count = 0;
-
-	for (int catNum = 0; catNum < player->Inventory()->GetNumCategories(); catNum++)
-	{
-		CInventoryCategoryPtr cat = player->Inventory()->GetCategory(catNum);
-
-		for (int itemNum = 0; itemNum < cat->GetNumItems(); itemNum++)
-		{
-			CInventoryItemPtr it = cat->GetItem(itemNum);
-			if ((count = it->GetPersistentCount()) > 0)
-			{
-				idEntity * itemEntity = it->GetItemEntity();
-				const char * name = itemEntity->spawnArgs.GetString("classname");
-
-				CShopItemPtr shopItem = FindByID(_itemDefs, name);
-
-				if (shopItem != NULL)
-				{
-					CShopItemPtr item(new CShopItem(*shopItem, count, 0, true));
-					_startingItems.Append(item);
-				}
-			}
-		}
 	}
 }
 
@@ -581,13 +545,7 @@ int CShop::AddItems(const idDict& mapDict, const idStr& itemKey, ShopItemList& l
 				canDrop = mapDict.GetBool(itemPrefix + diffLevelStr + "_canDrop", "1");
 			}
 
-			CShopItemPtr found = FindByID(_itemDefs, itemName);
-
-			if (found == NULL)
-			{
-				// Try to prepend "atdm:" as prefix, maybe this works
-				found = FindByID(_itemDefs, "atdm:" + itemName);
-			}
+			CShopItemPtr found = FindShopItemDefByClassName(itemName);
 
 			if (found != NULL) 
 			{
@@ -758,7 +716,7 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 			if (idStr::Icmp(mapEnt->epairs.GetString(diffString, "0"), "0") == 0)
 			{
-				idStr itemName = mapEnt->epairs.GetString("classname");
+				idStr className = mapEnt->epairs.GetString("classname");
 				int quantity;
 				bool isWeapon = false;	// is this an arrow?
 				int max_ammo = 1;	// in case this is a weapon
@@ -768,10 +726,10 @@ void CShop::AddMapItems(idMapFile* mapFile)
 				// map entities. If this is an atdm:ammo_* entity, change its ID (itemName)
 				// to the allowable atdm:weapon_* form.
 
-				if (itemName.Find("atdm:ammo_") >= 0)
+				if (className.Find("atdm:ammo_") >= 0)
 				{
 					isWeapon = true;
-					itemName.Replace( "atdm:ammo_", "atdm:weapon_" );
+					className.Replace( "atdm:ammo_", "atdm:weapon_" );
 
 					// An arrow's quantity is defined by "inv_ammo_amount" instead
 					// of "inv_count". Look for that.
@@ -783,7 +741,7 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 					if (quantity > 0)
 					{
-						max_ammo = GetMaxAmmo(itemName);
+						max_ammo = GetMaxAmmo(className);
 						quantity = (quantity > max_ammo) ? max_ammo : quantity;
 					}
 				}
@@ -794,24 +752,18 @@ void CShop::AddMapItems(idMapFile* mapFile)
 
 				if (quantity > 0)
 				{
-					CShopItemPtr found = FindByID(_itemDefs, itemName);
-
-					if (found == NULL)
-					{
-						// Try again with "atdm:" prepended
-						found = FindByID(_itemDefs, "atdm:" + itemName);
-					}
+					CShopItemPtr found = FindShopItemDefByClassName(className);
 
 					if (found != NULL)
 					{
 						// We don't have much info about the weapon item at this point and FindEntityDefDict() is lagging
 						// so let's assume there is only a shortsword and blackjack as possible melee items for now
-						bool isMeleeWeapon = (itemName.Cmp("atdm:weapon_shortsword") == 0 || itemName.Cmp("atdm:weapon_blackjack") == 0);
+						bool isMeleeWeapon = (className.Cmp("atdm:weapon_shortsword") == 0 || className.Cmp("atdm:weapon_blackjack") == 0);
 
 						// If this item is stackable, and already exists in the _startingItems list,
 						// bump up the quantity there instead of appending the item to the list.
 						// If the item is not stackable, and we already have it, ignore it.
-						bool itemMerged = MergeIntoStartingEquipment(itemName, quantity, isWeapon, isMeleeWeapon);
+						bool itemMerged = MergeIntoStartingEquipment(className, quantity, isWeapon, isMeleeWeapon);
 
 						// Append the item to the list if it didn't contribute quantity to
 						// an existing list item.
@@ -828,7 +780,7 @@ void CShop::AddMapItems(idMapFile* mapFile)
 					}
 					else
 					{
-						gameLocal.Warning("Map entity is not a valid shop item: %s", itemName.c_str());
+						gameLocal.Warning("Map entity is not a valid shop item: %s", className.c_str());
 					}
 				}
 			}
