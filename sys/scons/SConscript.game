@@ -144,6 +144,7 @@ Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
 Intersection.cpp \
+lightgem.cpp \
 liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
