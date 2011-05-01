@@ -582,6 +582,14 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Increase the stack count
 		existing->SetCount(existing->GetCount() + count);
 
+		// Persistent flags are latched - once a inv_persistent item is added to a stack, the whole stack
+		// snaps into persistent mode.
+		if (ent->spawnArgs.GetBool("inv_persistent") && !existing->IsPersistent())
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Marking stackable items as persistent after picking up one persistent item: %s\r", existing->GetName().c_str());
+			existing->SetPersistent(true);
+		}
+
 		// We added a stackable item that was already in the inventory
 		gameLocal.m_MissionData->InventoryCallback(
 			existing->GetItemEntity(), existing->GetName(), 

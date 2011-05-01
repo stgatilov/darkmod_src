@@ -105,6 +105,8 @@ public:
 	 *         Stackable persistent items will return the current stack count.
 	 */
 	int						GetPersistentCount();
+
+	bool					IsPersistent() const { return m_Persistent; };
 	void					SetPersistent(bool newValue);
 
 	/**
