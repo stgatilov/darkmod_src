@@ -11202,10 +11202,12 @@ void idPlayer::EnforcePersistentInventoryItemLimits()
 			limit = campaignInfo->spawnArgs.GetInt(diffPrefix + va("limit_%d", index), va("%d", limit));
 
 			// Item limit of -1 means: no limit
-			if (limit != -1)
+			if (limit == -1)
 			{
 				continue;
 			}
+
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Trying to enforce inventory item limit: %s => max %d\r", itemName.c_str(), limit);
 
 			CInventoryItemPtr item = Inventory()->GetItem(itemName);
 
@@ -11216,7 +11218,7 @@ void idPlayer::EnforcePersistentInventoryItemLimits()
 
 			if (item->IsPersistent() && item->GetCount() > limit)
 			{
-				ChangeInventoryItemCount(item->GetName(), item->Category()->GetName(), limit);
+				ChangeInventoryItemCount(item->GetName(), item->Category()->GetName(), limit - item->GetCount());
 			}
 		}
 	}
