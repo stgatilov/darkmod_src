@@ -11186,7 +11186,39 @@ void idPlayer::EnforcePersistentInventoryItemLimits()
 			weaponCategory->RemoveItem(itemsToRemove[w]);
 		}
 
-		// TODO: Enforce regular inventory item limits
+		// Enforce regular inventory item limits
+		for (const idKeyValue* kv = campaignInfo->spawnArgs.MatchPrefix("item_");
+			 kv != NULL; kv = campaignInfo->spawnArgs.MatchPrefix("item_", kv))
+		{
+			idStr indexStr = kv->GetKey();
+			indexStr.StripLeadingOnce("item_");
+
+			int index = atoi(indexStr.c_str());
+
+			const idStr& itemName = kv->GetValue();
+			int limit = campaignInfo->spawnArgs.GetInt(va("limit_%d", index), "-1");
+
+			// let difficulty-specific settings override this
+			limit = campaignInfo->spawnArgs.GetInt(diffPrefix + va("limit_%d", index), va("%d", limit));
+
+			// Item limit of -1 means: no limit
+			if (limit != -1)
+			{
+				continue;
+			}
+
+			CInventoryItemPtr item = Inventory()->GetItem(itemName);
+
+			if (!item)
+			{
+				continue; // no item with that name
+			}
+
+			if (item->IsPersistent() && item->GetCount() > limit)
+			{
+				ChangeInventoryItemCount(item->GetName(), item->Category()->GetName(), limit);
+			}
+		}
 	}
 }
 
