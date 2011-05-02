@@ -35,6 +35,11 @@ CImageMapManager::CImageMapManager( void ) {
 	m_lastError = "";
 }
 
+CImageMapManager::~CImageMapManager()
+{
+	Shutdown();
+}
+
 /*
 ===============
 CImageMapManager::Save

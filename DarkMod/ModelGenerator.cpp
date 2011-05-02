@@ -53,6 +53,12 @@ CModelGenerator::CModelGenerator( void ) {
 //	gameLocal.Printf("Size of LOD data struct: %i bytes\n", sizeof(lod_data_t));
 }
 
+CModelGenerator::~CModelGenerator()
+{
+	Print();
+	Shutdown();
+}
+
 /*
 ================
 CModelGenerator::SaveLOD

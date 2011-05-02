@@ -685,22 +685,16 @@ void idGameLocal::Shutdown( void ) {
 	m_ConversationSystem.reset();
 
 	// Destroy the mission manager
-	m_MissionManager->Shutdown();
-	m_MissionManager = CMissionManagerPtr();
+	m_MissionManager.reset();
 
-	// Print ModelGenerator Statistics
-	m_ModelGenerator->Print();
 	// Destroy the model generator
-	m_ModelGenerator->Shutdown();
-	m_ModelGenerator = CModelGeneratorPtr();
+	m_ModelGenerator.reset();
 
 	// Destroy the image map manager
-	m_ImageMapManager->Shutdown();
-	m_ImageMapManager = CImageMapManagerPtr();
+	m_ImageMapManager.reset();
 
 	// Destroy the light controller
-	m_LightController->Shutdown();
-	m_LightController = CLightControllerPtr();
+	m_LightController.reset();
 
 	// Clear http connection
 	m_HttpConnection.reset();

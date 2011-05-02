@@ -160,6 +160,8 @@ public:
 
 						CModelGenerator( void );
 
+						~CModelGenerator();
+
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
@@ -167,7 +169,6 @@ public:
 	* Called by gameLocal.
 	*/
 	void				Init ( void );
-	void				Shutdown ( void );
 	void				Clear ( void );
 
 	/** Given a rendermodel and a surface index, checks if that surface is two-sided,
@@ -240,6 +241,8 @@ public:
 	void					Print( void ) const;
 
 private:
+	// Called by the destructor
+	void					Shutdown();
 
 	void					SaveLOD( idSaveGame *savefile, const lod_data_t * m_LOD ) const;
 	void					RestoreLOD( idRestoreGame *savefile, lod_data_t * m_LOD );

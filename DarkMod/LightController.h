@@ -45,6 +45,8 @@ public:
 
 						CLightController( void );
 
+						~CLightController();
+
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
@@ -52,7 +54,6 @@ public:
 	* Called by gameLocal.
 	*/
 	void				Init ( void );
-	void				Shutdown ( void );
 	void				Clear ( void );
 
 	/**
@@ -79,6 +80,10 @@ public:
 	* Update the local ambient lights because the light has changed.
 	*/
 	void				LightChanged( const int entityNum );
+
+private:
+	// Called by the dtor
+	void				Shutdown();
 
 private:
 

@@ -41,6 +41,8 @@ CMissionManager::~CMissionManager()
 {
 	// Clear contents and the list elements themselves
 	_downloadableMods.DeleteContents(true);
+
+	Shutdown();
 }
 
 void CMissionManager::Init()

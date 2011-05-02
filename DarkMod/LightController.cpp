@@ -42,6 +42,11 @@ CLightController::CLightController( void ) {
 	m_bActive = true;
 }
 
+CLightController::~CLightController()
+{
+	Shutdown();
+}
+
 /*
 ===============
 CLightController::Init - will be called by game_local
@@ -53,7 +58,7 @@ void CLightController::Init ( void )
 
 /*
 ===============
-CLightController::Shutdown - will be called by game_local
+CLightController::Shutdown
 ===============
 */
 void CLightController::Shutdown ( void )
