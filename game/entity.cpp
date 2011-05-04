@@ -7573,7 +7573,9 @@ void CAttachInfo::Restore( idRestoreGame *savefile )
 idAnimatedEntity::idAnimatedEntity
 ================
 */
-idAnimatedEntity::idAnimatedEntity() {
+idAnimatedEntity::idAnimatedEntity() :
+	lastUpdateTime(-1)
+{
 	animator.SetEntity( this );
 	damageEffects = NULL;
 }
@@ -7617,6 +7619,8 @@ void idAnimatedEntity::Spawn( void )
 			m_animRates[i] = 1.0f;
 		}
 	}
+
+	lastUpdateTime = 0;
 }
 
 /*
@@ -7629,6 +7633,7 @@ archives object for save game file
 void idAnimatedEntity::Save( idSaveGame *savefile ) const 
 {
 	animator.Save( savefile );
+	savefile->WriteInt(lastUpdateTime);
 
 	// Wounds are very temporary, ignored at this time
 	//damageEffect_t			*damageEffects;
@@ -7644,6 +7649,7 @@ unarchives object from save game file
 void idAnimatedEntity::Restore( idRestoreGame *savefile ) 
 {
 	animator.Restore( savefile );
+	savefile->ReadInt(lastUpdateTime);
 
 	// check if the entity has an MD5 model
 	if ( animator.ModelHandle() )
@@ -7699,9 +7705,11 @@ void idAnimatedEntity::UpdateAnimation( void ) {
 		return;
 	}
 
-	// call any frame commands that have happened in the past frame
-	if ( !fl.hidden ) {
-		animator.ServiceAnims( gameLocal.previousTime, gameLocal.time );
+	// call any frame commands that have happened since the last update
+	if ( !fl.hidden )
+	{
+		animator.ServiceAnims( lastUpdateTime, gameLocal.time );
+		lastUpdateTime = gameLocal.time;
 	}
 
 	// if the model is animating then we have to update it

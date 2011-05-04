@@ -1784,6 +1784,9 @@ protected:
 	idAnimator				animator;
 	damageEffect_t *		damageEffects;
 
+	// The game time UpdateAnimation() has been called the last time
+	int						lastUpdateTime;
+
 private:
 	void					Event_GetJointHandle( const char *jointname );
 	void 					Event_ClearAllJoints( void );
