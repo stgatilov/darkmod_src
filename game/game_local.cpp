@@ -6433,7 +6433,6 @@ void idGameLocal::RemoveResponse(idEntity *e)
 int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
 {
 	int numResponses = 0;
-
 	for (int i = 0; i < numEntities; i++)
 	{
 		// ignore the original entity because an entity shouldn't respond 
@@ -6587,8 +6586,9 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			{
 				if (timer->Tick(ticks))
 				{
-					//gameLocal.Printf("Timer elapsed!\n");
+					//gameLocal.Printf("Stim timer elapsed! ProcessStimResponse - firing stim\n");
 					// Enable the stim when the timer has expired
+
 					stim->Enable();
 				}
 			}

@@ -226,6 +226,9 @@ public:
 	// position of alert causing stimulus
 	idVec3 alertPos;
 
+	// grayman #2603 - abort an ongoing light relight?
+	bool stopRelight;
+
 	// Type of alert (visual, tactile, audio)
 	EAlertClass alertClass;
 

@@ -46,6 +46,8 @@ const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
 const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
 const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
+const idEventDef AI_PerformRelight("performRelight"); // grayman #2603
+const idEventDef AI_DropTorch("dropTorch"); // grayman #2603
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -538,11 +540,14 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_LookAtPosition,					idAI::Event_LookAtPosition)
 	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
 	EVENT ( AI_GetAlertLevelOfOtherAI,			idAI::Event_GetAlertLevelOfOtherAI)
-	EVENT ( AI_KO_Knockout,						idAI::Event_KO_Knockout) // grayman #2468
+	EVENT ( AI_KO_Knockout,						idAI::Event_KO_Knockout)  // grayman #2468
 	EVENT ( AI_Gas_Knockout,					idAI::Event_Gas_Knockout) // grayman #2468
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
 	EVENT ( AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
 	EVENT ( AI_HasSeenEvidence,					idAI::Event_HasSeenEvidence)
+
+	EVENT ( AI_PerformRelight,					idAI::Event_PerformRelight)	// grayman #2603
+	EVENT ( AI_DropTorch,						idAI::Event_DropTorch)		// grayman #2603
 
 END_CLASS
 
@@ -3482,3 +3487,32 @@ void idAI::Event_HasSeenEvidence()
 {
 	idThread::ReturnInt(HasSeenEvidence());
 }
+
+void idAI::Event_PerformRelight() // grayman #2603
+{
+	m_performRelight = true;
+}
+
+void idAI::Event_DropTorch() // grayman #2603
+{
+	for (int i = 0 ; i < m_Attachments.Num() ; i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+		if( !ent || !m_Attachments[i].ent.IsValid() )
+		{
+			continue;
+		}
+
+		if (ent->name.Find("torch") >= 0)
+		{
+			DetachInd(i);
+			ent->m_droppedByAI = true; // grayman #1330
+			ent->GetPhysics()->Activate();
+			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
+			break;
+		}
+	}
+}
+
+
+

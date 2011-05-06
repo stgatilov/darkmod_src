@@ -136,6 +136,30 @@ public:
 	bool GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center);
 	bool GetLightCone(idVec3 &Origin, idVec3 &Target, idVec3 &Right, idVec3 &Up, idVec3 &Start, idVec3 &End);
 
+	/**
+	 * grayman #2603 - add a switch to the switch list
+	 */
+
+	void AddSwitch(idEntity* newSwitch);
+
+	/**
+	 * grayman #2603 - If there are switches, returns the closest one to the calling user
+	 */
+
+	idEntity* GetSwitch(idAI* user);
+
+	/**
+	 * grayman #2603 - Change the flag that says if this light is being relit.
+	 */
+
+	void SetBeingRelit(bool relighting);
+
+	/**
+	 * grayman #2603 - Is an AI in the process or relighting this light?
+	 */
+
+	bool IsBeingRelit();
+
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
@@ -148,6 +172,8 @@ private:
 	int				count;
 	int				triggercount;
 	idEntity *		lightParent;
+	bool			beingRelit;					// grayman #2603 - true if being relit
+	idList<idEntityPtr<idEntity>> switchList;	// grayman #2603 - list of my switches
 	idVec4			fadeFrom;
 	idVec4			fadeTo;
 	int				fadeStart;

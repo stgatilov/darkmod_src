@@ -33,6 +33,9 @@ public:
 
 	// Override the base class's ApplyImpulse method
 	virtual void			ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse);
+
+	// grayman #2603 - add self to target lights' switch lists
+	void					PostSpawn( void );
 };
 
 #endif /* FROBBUTTON_H */

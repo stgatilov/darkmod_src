@@ -16,6 +16,7 @@ namespace ai
 {
 
 #define STATE_SWITCH_ON_LIGHT "SwitchOnLight"
+#define RELIGHT_DELAY 10000 // in ms - grayman #2603 - delay processing of incoming "light off" stim
 
 class SwitchOnLightState :
 	public State
@@ -29,10 +30,19 @@ private:
 	// time to wait after starting anim before the light is switched on
 	int _waitEndTime;
 
-	// is set to true when the AI reached the position and has started the anim
-	bool _switchingOn;
+	idEntity* _goalEnt; // grayman #2603 - entity to walk toward when relighting a light
+	float _standOff;	// grayman #2603 - get this close to relight
+	float _oldTurnRate;	// grayman #2603 - hold old turn rate while turning suspiciously
 
-	bool _lightOn;
+	enum ERelightState	// grayman #2603
+	{
+		EStateStarting,
+		EStateApproaching,
+		EStateTurningToward,
+		EStateRelight,
+		EStatePause,
+		EStateFinal
+	} _relightState;
 
 public:
 	// Constructor using light source as input parameter
@@ -40,6 +50,8 @@ public:
 
 	// Get the name of this state
 	virtual const idStr& GetName() const;
+
+	virtual void Wrapup(idAI* owner, idLight* light, bool lightOn); // grayman #2603
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

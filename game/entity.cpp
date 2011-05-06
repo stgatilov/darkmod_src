@@ -695,7 +695,9 @@ idEntity::idEntity()
 	health			= 0;
 	maxHealth		= 0;
 
-	m_droppedByAI	= false; // grayman #1330
+	m_droppedByAI	= false;	// grayman #1330
+
+	m_relightAfter  = 0;		// grayman #2603
 
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
@@ -1629,7 +1631,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(m_LightQuotient);
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
 
-	savefile->WriteBool(m_droppedByAI); // grayman #1330
+	savefile->WriteBool(m_droppedByAI);		// grayman #1330
+	savefile->WriteInt(m_relightAfter);	// grayman #2603
 
 	savefile->WriteInt(m_LODHandle);
 	savefile->WriteInt(m_DistCheckTimeStamp);
@@ -1906,6 +1909,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
 
 	savefile->ReadBool(m_droppedByAI); // grayman #1330
+	savefile->ReadInt(m_relightAfter); // grayman #2603
 
 	savefile->ReadUnsignedInt(m_LODHandle);
 	savefile->ReadInt(m_DistCheckTimeStamp);
@@ -3005,7 +3009,9 @@ void idEntity::Show( void )
 				{
 					ent->Show();
 					if ( ent->IsType( idLight::Type ) )
+					{
 						static_cast<idLight *>( ent )->On();
+					}
 				}
 			}
 		}
@@ -9134,9 +9140,12 @@ void idEntity::TriggerResponse(idEntity* source, StimType type)
 	// Try to lookup the response for this item
 	CResponsePtr resp = GetStimResponseCollection()->GetResponseByType(type);
 
-	if (resp == NULL || resp->m_State != SS_ENABLED) return;
+	if (resp == NULL || resp->m_State != SS_ENABLED)
+	{
+		return;
+	}
 
-	// There is an enablede response defined
+	// There is an enabled response defined
 	// Check duration, disable if past duration
 	if (resp->m_Duration && (gameLocal.time - resp->m_EnabledTimeStamp) > resp->m_Duration)
 	{
@@ -9789,7 +9798,9 @@ void idEntity::Detach( const char *AttName )
 {
 	int ind = GetAttachmentIndex( AttName );
 	if (ind >= 0 && ind < m_Attachments.Num() )
+	{
 		DetachInd( ind );
+	}
 	else
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Detach called with invalid attachment name %s\r", AttName);
@@ -11887,3 +11898,4 @@ void idEntity::Event_ChangeEntityRelation(idEntity* entity, int relationChange)
 {
 	ChangeEntityRelation(entity, relationChange);
 }
+

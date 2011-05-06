@@ -58,6 +58,8 @@ static const int s_MAXACUITIES = 15;
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
 
+#define DELAY_TO_NEXT_TORCH_CHECK 2000; // grayman #2603
+
 typedef enum {
 	TALK_NEVER,
 	TALK_DEAD,
@@ -1058,6 +1060,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_earlyThinkCounter;	// grayman #2654
 
 	/**
+	* grayman #2603 - if TRUE, don't allow movement extrication
+	**/
+
+	bool					m_bCanExtricate;
+
+	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
 	 */
 	bool					m_bCanOperateDoors;
@@ -1073,9 +1081,25 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_RestoreMove;
 
 	/**
+	 * grayman #2603: is set true when a search needs to be set up after relighting a light
+	 */
+	bool					m_LatchedSearch;
+
+	/**
+	 * grayman #2603: list of doused lights seen recently
+	 */
+	idList<idEntityPtr<idEntity>>		m_RecentDousedLightsSeen;
+
+
+	/**
 	 * angua: is set true while the AI is handling an elevator.
 	 */
 	bool					m_HandlingElevator;
+
+	/**
+	 * grayman #2603: is set true while the AI is relighting a light.
+	 */
+	bool					m_RelightingLight;
 
 	/**
 	* Head center offset in head joint coordinates, relative to head joint
@@ -1145,6 +1169,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idEntity* m_tactileEntity;	// grayman #2345 - something we bumped into this frame, not necessarily an enemy
 	bool m_canResolveBlock;		// grayman #2345 - whether we can resolve a block if asked
 	bool m_leftQueue;			// grayman #2345 - if we timed out waiting in a door queue
+	bool m_performRelight;		// grayman #2603 - set to TRUE by a script function when it's time to relight a light
 
 	// The mind of this AI
 	ai::MindPtr mind;
@@ -1276,6 +1301,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// grayman #2691 - this checks if a doorway is large enough to fit through when the door is fully open
 	bool					CanPassThroughDoor(CFrobDoor* frobDoor);
+
+	// grayman #2603 - am I carrying a torch?
+	idEntity*				GetTorch();
 
 	virtual void			Hide( void );
 	virtual void			Show( void );
@@ -2085,6 +2113,12 @@ public:
 	void Event_GetNextIdleAnim();
 
 	void Event_HasSeenEvidence();
+
+	// grayman #2603 - relighting lights
+	void Event_PerformRelight();
+
+	// grayman #2603 - drop torch
+	void Event_DropTorch();
 
 
 #ifdef TIMING_BUILD

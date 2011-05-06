@@ -61,6 +61,8 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 
 	_originHistory.SetNum(HISTORY_SIZE);
 	_frameHistory.SetNum(HISTORY_SIZE); // grayman #2345
+
+
 }
 
 // Called regularly by the Mind to run the currently assigned routine.
@@ -402,6 +404,11 @@ void MovementSubsystem::ClearTasks()
 bool MovementSubsystem::AttemptToExtricate()
 {
 	idAI* owner = _owner.GetEntity();
+
+	if (!owner->m_bCanExtricate)
+	{
+		return false;
+	}
 
 	// Look around to see if there's somewhere you can go.
 

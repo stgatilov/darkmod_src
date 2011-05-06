@@ -41,6 +41,7 @@ Memory::Memory(idAI* owningAI) :
 	unconsciousPeopleHaveBeenFound(false),
 	deadPeopleHaveBeenFound(false),
 	alertPos(0,0,0),
+	stopRelight(false), // grayman #2603
 	alertClass(EAlertClassCount),
 	alertType(EAlertTypeCount),
 	alertRadius(-1),
@@ -98,6 +99,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
 	savefile->WriteVec3(alertPos);
+	savefile->WriteBool(stopRelight); // grayman #2603
 	savefile->WriteInt(static_cast<int>(alertClass));
 	savefile->WriteInt(static_cast<int>(alertType));
 	savefile->WriteFloat(alertRadius);
@@ -180,6 +182,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
 	savefile->ReadVec3(alertPos);
+	savefile->ReadBool(stopRelight); // grayman #2603
 
 	savefile->ReadInt(temp);
 	alertClass = static_cast<EAlertClass>(temp);

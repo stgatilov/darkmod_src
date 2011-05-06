@@ -208,6 +208,8 @@ idLight::idLight()
 	count				= 0;
 	triggercount		= 0;
 	lightParent			= NULL;
+	switchList.Clear();	// grayman #2603 - list of my switches
+	beingRelit			= false; // grayman #2603
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
 	fadeStart			= 0;
@@ -276,6 +278,13 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( count );
 	savefile->WriteInt( triggercount );
 	savefile->WriteObject( lightParent );
+	savefile->WriteBool(beingRelit);	// grayman #2603
+
+	savefile->WriteInt(switchList.Num());	// grayman #2603
+	for (int i = 0; i < switchList.Num(); i++)
+	{
+		switchList[i].Save(savefile);
+	}
 
 	savefile->WriteVec4( fadeFrom );
 	savefile->WriteVec4( fadeTo );
@@ -325,6 +334,17 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( count );
 	savefile->ReadInt( triggercount );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( lightParent ) );
+	savefile->ReadBool( beingRelit ); // grayman #2603
+	
+	// grayman #2603
+	switchList.Clear();
+	int num;
+	savefile->ReadInt(num);
+	switchList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		switchList[i].Restore(savefile);
+	}
 
 	savefile->ReadVec4( fadeFrom );
 	savefile->ReadVec4( fadeTo );
@@ -632,8 +652,6 @@ idLight::On
 ================
 */
 void idLight::On( void ) {
-	const char *skinName;
-	const idDeclSkin *skin;
 
 	currentLevel = levels;
 	// offset the start time of the shader to sync it to the game time
@@ -642,6 +660,31 @@ void idLight::On( void ) {
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 		soundWasPlaying = false;
 	}
+
+	const function_t* func = scriptObject.GetFunction("LightsOn");
+	if (func == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::On: 'LightsOn' not found in local space, checking for global.\r");
+		func = gameLocal.program.FindFunction("LightsOn");
+	}
+
+	if (func != NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::On: turning light on\r");
+		idThread *pThread = new idThread(func);
+		pThread->CallFunction(this,func, true);
+		pThread->DelayedStart(0);
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("idLight::On: 'LightsOn' not found!\r");
+	}
+
+//	grayman #2603 - let script change skins, plus set the vis stim.
+
+/*	const char *skinName;
+	const idDeclSkin *skin;
+
 	// Tels: set "skin_lit" if it is defined
 	spawnArgs.GetString( "skin_lit", "", &skinName );
 	skin = declManager->FindSkin( skinName );
@@ -650,7 +693,7 @@ void idLight::On( void ) {
 		// set the spawnarg to the current active skin
 		spawnArgs.Set( "skin", skinName );
 	}
-	
+ */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -661,8 +704,6 @@ idLight::Off
 ================
 */
 void idLight::Off( const bool stopSound ) {
-	const char *skinName;
-	const idDeclSkin *skin;
 
 	currentLevel = 0;
 
@@ -670,7 +711,31 @@ void idLight::Off( const bool stopSound ) {
 		StopSound( SND_CHANNEL_ANY, false );
 		soundWasPlaying = true;
 	}
-	// Tels: set "skin_unlit" if it is defined
+
+	const function_t* func = scriptObject.GetFunction("LightsOff");
+	if (func == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::Off: 'LightsOff' not found in local space, checking for global.\r");
+		func = gameLocal.program.FindFunction("LightsOff");
+	}
+
+	if (func != NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::Off: turning light off\r");
+		idThread *pThread = new idThread(func);
+		pThread->CallFunction(this,func,true);
+		pThread->DelayedStart(0);
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("idLight::Off: 'LightsOff' not found!\r");
+	}
+
+//	grayman #2603 - let script change skins, plus set the vis stim.
+
+/*	// Tels: set "skin_unlit" if it is defined
+	const char *skinName;
+	const idDeclSkin *skin;
 	spawnArgs.GetString( "skin_unlit", "", &skinName );
 	skin = declManager->FindSkin( skinName );
 	if (skin) {
@@ -678,7 +743,7 @@ void idLight::Off( const bool stopSound ) {
 		// set the spawnarg to the current active skin
 		spawnArgs.Set( "skin", skinName );
 	}
-	
+ */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -1137,6 +1202,7 @@ idLight::Event_SetSoundHandles
 ================
 */
 void idLight::Event_SetSoundHandles( void ) {
+
 	int i;
 	idEntity *targetEnt;
 
@@ -1602,3 +1668,54 @@ bool idLight::IsAmbient(void)
 
 	return false; 
 }
+
+// grayman #2603 - keep a list of switches for this light
+void idLight::AddSwitch(idEntity* newSwitch)
+{
+	idEntityPtr<idEntity> switchPtr;
+	switchPtr = newSwitch;
+	switchList.Append(switchPtr);
+}
+
+// grayman #2603 - If there are switches, return the closest one to the calling user
+idEntity* idLight::GetSwitch(idAI* user)
+{
+	if (switchList.Num() == 0) // quick check
+	{
+		return NULL;
+	}
+
+	idEntity* closestSwitch = NULL;
+	float shortestDistSqr = idMath::INFINITY;
+	idVec3 userOrg = user->GetPhysics()->GetOrigin();
+	for (int i = 0 ; i < switchList.Num() ; i++)
+	{
+		idEntity* e = switchList[i].GetEntity();
+		if (e)
+		{
+			float distSqr = (e->GetPhysics()->GetOrigin() - userOrg).LengthSqr();
+			if (distSqr < shortestDistSqr)
+			{
+				shortestDistSqr = distSqr;
+				closestSwitch = e;
+			}
+		}
+	}
+	return closestSwitch;
+}
+
+
+// grayman #2603 - Change the flag that says if this light is being relit.
+
+void idLight::SetBeingRelit(bool relighting)
+{
+	beingRelit = relighting;
+}
+
+// grayman #2603 - Is an AI in the process or relighting this light?
+
+bool idLight::IsBeingRelit()
+{
+	return beingRelit;
+}
+

@@ -30,10 +30,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../FrobDoor.h"
 #include "../../AbsenceMarker.h"
 
+#include "../../Grabber.h"
+#include "../Tasks/PlayAnimationTask.h"
+
 namespace ai
 {
-
-
 //----------------------------------------------------------------------------------------
 // The following strings define classes of person, these are used if AIUse is AIUSE_PERSON 
 
@@ -389,9 +390,9 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	// gameLocal.Printf("Visual stim for %s, visual acuity %0.2f\n", owner->GetName(), owner->GetAcuity("vis") );
 
-	// Don't respond to NULL entities or when dead/knocked out/blind and no enemy in sight
-	if (stimSource == NULL || 
-		owner->AI_KNOCKEDOUT || owner->AI_DEAD || owner->GetAcuity("vis") == 0)
+	// Don't respond to NULL entities or when dead/knocked out/blind
+	if ((stimSource == NULL) || 
+		owner->AI_KNOCKEDOUT || owner->AI_DEAD || (owner->GetAcuity("vis") == 0))
 	{
 		return;
 	}
@@ -399,11 +400,102 @@ void State::OnVisualStim(idEntity* stimSource)
 	// Get AI use of the stim
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
 
-	// Only respond if we can actually see it
-	if (aiUse == AIUSE_LIGHTSOURCE || aiUse == AIUSE_BROKEN_ITEM)
+	// grayman #2603
+
+	// First check the chance of seeing a particular AIUSE type. For AI that have zero chance
+	// of responding to particular visual stims, don't spend time determining if they can
+	// see it or need to respond to it.
+	//
+	// Also, it lets us quickly mark the stim 'ignore in the future'. In all AIUSE types,
+	// we don't mark stims 'ignore' until we get down into the response code. If we don't
+	// execute that code because the AI will never respond to the stim, we never get a
+	// chance to ignore future stims.
+
+	StimMarker aiUseType = EAIuse_Default; // marker for aiUse type
+	float chanceToNotice(0);
+
+	// These are ordered by most likely chance of encountering a stim type
+
+	if (aiUse == AIUSE_LIGHTSOURCE)
 	{
-		// Special case for lights, we know it is off if there is no light. Also we can notice it
+		aiUseType = EAIuse_Lightsource;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
+	}
+	else if (aiUse == AIUSE_PERSON)
+	{
+		aiUseType = EAIuse_Person;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
+	}
+	else if (aiUse == AIUSE_WEAPON)
+	{
+		aiUseType = EAIuse_Weapon;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
+	}
+	else if (aiUse == AIUSE_DOOR)
+	{
+		aiUseType = EAIuse_Door;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
+	}
+	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
+	{
+		aiUseType = EAIuse_Blood_Evidence;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
+	}
+	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
+	{
+		aiUseType = EAIuse_Missing_Item_Marker;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
+	}
+	else if (aiUse == AIUSE_BROKEN_ITEM)
+	{
+		aiUseType = EAIuse_Broken_Item;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBrokenItem");
+	}
+
+	// If chanceToNotice for this stim type is zero, ignore it in the future
+
+	if (chanceToNotice == 0.0)
+	{
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
+		return;
+	}
+
+	// chanceToNotice > 0, so randomly decide if there's a chance of responding
+
+	float chance(gameLocal.random.RandomFloat());
+	if (chance >= chanceToNotice)
+	{
+		return;
+	}
+
+	// Only respond if we can actually see it
+
+	if (aiUseType == EAIuse_Lightsource)
+	{
+		// grayman #2603 -  A light sends a stim to each entity w/in its radius that's not ignoring it,
+		// and it doesn't care about walls. Since AI don't care if a light is on, we can avoid the trace
+		// in CanSeeExt() if the light's off.
+
+		// Special case for a light. We know it's off if there's no light. Also we can notice it
 		// if we are not looking right at it.
+
+		if (stimSource->IsType(idLight::Type))
+		{
+			idLight* light = static_cast<idLight*>(stimSource);
+			if (light->GetLightLevel() > 0)
+			{
+				stimSource->IgnoreResponse(ST_VISUAL,owner);
+				return;
+			}
+		}
+
+		if (!owner->CanSeeExt(stimSource, false, false))
+		{
+			return;
+		}
+	}
+	else if (aiUseType == EAIuse_Broken_Item)
+	{
 		if (!owner->CanSeeExt(stimSource, false, false))
 		{
 			return;
@@ -415,73 +507,67 @@ void State::OnVisualStim(idEntity* stimSource)
 		return;
 	}
 
-	// Random chance
-	float chance(gameLocal.random.RandomFloat());
-	float chanceToNotice(0);
+	// Special check to see if this is a person we're seeing.
 		
-	if (aiUse == AIUSE_PERSON)
+	if (aiUseType == EAIuse_Person)
 	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
-		if (chance < chanceToNotice)
-		{
-			OnPersonEncounter(stimSource, owner);
-		}
+		OnPersonEncounter(stimSource, owner);
 		return;
 	}
 
-	// Not a person stim, ignore all other stims if enenemy != NULL
+	// Not a person stim, so ignore all other stims if we have an enemy.
+
 	if (owner->GetEnemy() != NULL)
 	{
 		return;
 	}
 
-	if (aiUse == AIUSE_WEAPON)
+	// Process non-person stim types
+
+	switch(aiUseType)
 	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeWeapon))
+	case EAIuse_Weapon:
+		if (ShouldProcessAlert(EAlertTypeWeapon))
 		{
-			OnVisualStimWeapon(stimSource, owner);
+			OnVisualStimWeapon(stimSource,owner);
 		}
-	}
-	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeBlood))
+		break;
+	case EAIuse_Blood_Evidence:
+		if (ShouldProcessAlert(EAlertTypeBlood))
 		{
-			OnVisualStimBlood(stimSource, owner);
+			OnVisualStimBlood(stimSource,owner);
 		}
-	}
-	else if (aiUse == AIUSE_LIGHTSOURCE)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeLightSource))
+		break;
+	case EAIuse_Lightsource:
+		if (ShouldProcessAlert(EAlertTypeLightSource))
 		{
-			OnVisualStimLightSource(stimSource, owner);
+			if (!owner->m_RelightingLight) // grayman #2603
+			{
+				OnVisualStimLightSource(stimSource,owner);
+			}
 		}
-	}
-	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeMissingItem))
+		break;
+	case EAIuse_Missing_Item_Marker:
+		if (ShouldProcessAlert(EAlertTypeMissingItem))
 		{
-			OnVisualStimMissingItem(stimSource, owner);
+			OnVisualStimMissingItem(stimSource,owner);
 		}
-	}
-	else if (aiUse == AIUSE_BROKEN_ITEM)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBrokenItem");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeBrokenItem))
+		break;
+	case EAIuse_Broken_Item:
+		if (ShouldProcessAlert(EAlertTypeBrokenItem))
 		{
-			OnVisualStimBrokenItem(stimSource, owner);
+			OnVisualStimBrokenItem(stimSource,owner);
 		}
-	}
-	else if (aiUse == AIUSE_DOOR)
-	{
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
-		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeDoor))
+		break;
+	case EAIuse_Door:
+		if (ShouldProcessAlert(EAlertTypeDoor))
 		{
-			OnVisualStimDoor(stimSource, owner);
+			OnVisualStimDoor(stimSource,owner);
 		}
+		break;
+	case EAIuse_Default:
+	default:
+		break;
 	}
 }
 
@@ -536,6 +622,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 
 	// TWO more piece of evidence of something out of place: A weapon is not a good thing
 	memory.countEvidenceOfIntruders += 2;
+	memory.stopRelight = true; // grayman #2603
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
@@ -568,7 +655,10 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 	bool ignoreStimulusFromNowOn = true;
 	
-	if (!stimSource->IsType(idActor::Type)) return; // No Actor, quit
+	if (!stimSource->IsType(idActor::Type))
+	{
+		return; // No Actor, quit
+	}
 
 	// Hard-cast the stimsource onto an actor 
 	idActor* other = static_cast<idActor*>(stimSource);	
@@ -631,7 +721,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			// Remember last time a friendly AI was seen
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
-			if (!other->IsType(idAI::Type)) return; // safeguard
+			if (!other->IsType(idAI::Type))
+			{
+				return; // safeguard
+			}
+
 			idAI* otherAI = static_cast<idAI*>(other);
 
 			Memory& otherMemory = otherAI->GetMemory();
@@ -1123,7 +1217,8 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 
 		// Three more piece of evidence of something out of place: A dead body is a REALLY bad thing
 		memory.countEvidenceOfIntruders += 3;
-		
+		memory.stopRelight = true; // grayman #2603
+	
 		// Determine what to say
 		idStr soundName;
 		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
@@ -1197,6 +1292,8 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	else 
 	{
 		memory.unconsciousPeopleHaveBeenFound = true;
+		memory.countEvidenceOfIntruders += 2; // grayman #2603
+		memory.stopRelight = true; // grayman #2603
 
 		// We've seen this object, don't respond to it again
 		person->IgnoreResponse(ST_VISUAL, owner);
@@ -1480,10 +1577,11 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	owner->commSubsystem->AddCommTask(
 		CommunicationTaskPtr(new SingleBarkTask("snd_foundBlood"))
 	);
-	gameLocal.Printf("Is that blood!\n");
+	gameLocal.Printf("Is that blood?\n");
 	
 	// One more piece of evidence of something out of place
 	memory.countEvidenceOfIntruders++;
+	memory.stopRelight = true; // grayman #2603
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
@@ -1491,7 +1589,6 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
 		memory.alertType = EAlertTypeBlood;
-
 		
 		// Do search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -1509,8 +1606,67 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	memory.alertedDueToCommunication = false;
 }
 
+/*
+================
+State::CheckTorch
+
+grayman #2603 - Check if torch has gone out
+================
+*/
+bool State::CheckTorch(idAI* owner, idLight* light)
+{
+	// If I'm carrying a torch, and it's out, toss it.
+
+	idEntity* torch = owner->GetTorch();
+
+	if (torch)
+	{
+		idLight* torchLight = NULL;
+		idList<idEntity *> children;
+		torch->GetTeamChildren(&children);
+		for (int i = 0 ; i < children.Num() ; i++)
+		{
+			if (children[i]->IsType(idLight::Type))
+			{
+				torchLight = static_cast<idLight*>(children[i]);
+				break;
+			}
+		}
+
+		// If my torch has gone out--regardless of whether or not it's what
+		// gave us the current stim--then I should toss it. Otherwise I
+		// might try to relight a doused torch with my doused torch.
+
+		if ((torchLight && (torchLight->GetLightLevel() == 0)) || (torchLight == light))
+		{
+			// At this point, I know my torch is out
+
+			if (owner->AI_AlertLevel < owner->thresh_5) // don't drop if in combat mode
+			{
+				// drop the torch
+
+				light->spawnArgs.Set("ShouldBeOn", "0");	// don't relight
+				torch->spawnArgs.Set("ShouldBeOn", "0");	// insurance
+				light->SetStimEnabled(ST_VISUAL,false);		// turn off visual stim; no one cares
+
+				idStr animName = "drop_torch";
+				if ((owner->GetNumMeleeWeapons() > 0) || (owner->GetNumRangedWeapons() > 0))
+				{
+					animName = "drop_torch_armed";
+				}
+				owner->actionSubsystem->PushTask(TaskPtr(new PlayAnimationTask(animName,4)));
+			}
+			return false; // My torch is out, so don't start a relight
+		}
+	}
+
+	return true; // I'm not carrying a torch, or I am and it's still on
+}
+
 void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 {
+	// grayman #2603 - a number of changes were made in this method
+
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	Memory& memory = owner->GetMemory();
@@ -1533,97 +1689,197 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		return;
 	}
 
+	//  If my torch is out, drop it under certain conditions.
+
+	if (!CheckTorch(owner,light))
+	{
+		return; // can't relight at this time
+	}
+
 	// What type of light is it?
+
 	idStr lightType = stimSource->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+
+	if ((lightType != AIUSE_LIGHTTYPE_TORCH) && (lightType != AIUSE_LIGHTTYPE_ELECTRIC))
+	{
+		// Can't handle this type of light, so exit this state and ignore the light.
+
+		light->IgnoreResponse(ST_VISUAL, owner);
+		return;
+	}
+
+	// Have we reached the end of a delay for relighting this light?
+
+	if (gameLocal.time < light->m_relightAfter)
+	{
+		return; // process later
+	}
+
+	// Is the player carrying this light?
+
+	CGrabber* grabber = gameLocal.m_Grabber;
+	if (grabber)
+	{
+		idEntity* heldEnt = grabber->GetSelected();
+		if (heldEnt)
+		{
+			idEntity* e = stimSource->GetBindMaster();
+			while (e != NULL) // not carried when e == NULL
+			{
+				if (heldEnt == e)
+				{
+					// Don't ignore this light, in case the player puts it down somewhere.
+					// But you can delay responding to it again for a while.
+
+					light->m_relightAfter = gameLocal.time + RELIGHT_DELAY;
+					return;
+				}
+				e = e->GetBindMaster();
+			}
+		}
+	}
+
+	// If we're already in the process of relighting a light, don't repond to this stim now.
+	// We'll see it again later.
+
+	if (owner->m_RelightingLight)
+	{
+		light->m_relightAfter = gameLocal.time + RELIGHT_DELAY; // wait awhile until anyone pays attention to it again
+		return;
+	}
+
+	// If this light is in the process of being relit, don't respond to this stim now.
+	// Someone else is relighting it. You can't ignore it, because if that attempt is aborted, you'll
+	// want to see the stim later.
+
+	if (light->IsBeingRelit())
+	{
+		light->m_relightAfter = gameLocal.time + RELIGHT_DELAY; // wait awhile until anyone pays attention to it again
+		return;
+	}
+
 	bool turnLightOn = false;
 
-	// Is it supposed to be on?
+	// Some light models (like wall torches) attach lights at
+	// spawn time. The shouldBeOn spawnarg might be set on the bindMaster model (or
+	// any of the parent bindMasters, in the case of candles in holders), and
+	// we have to check that if it's not set on the stim. If it's set on any
+	// bindMaster, it's also considered to be set on the stim (the light).
+
+	// The next section is about whether we should turn the light back on.
+	// If the light should be on, or if we've seen evidence, or if evidence
+	// of intruders has reached a minimum level, we want to turn the light on.
+
+	bool shouldBeOn = false;
 	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
 	{
-		// Vocalize that see something out of place because this light is supposed to be on
-		gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
-/*
-		// Vocalize that see something out of place
+		shouldBeOn = true;
+	}
+	else // need to check whether any of the parent bindMasters has 'shouldBeOn' set to 'true'
+	{
+		idEntity* bindMaster = stimSource->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we find 'shouldBeOn = true'
+		{
+			if (bindMaster->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
+			{
+				shouldBeOn = true;
+				break;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+	}
+
+	// if this is a flame and its bindmasters aren't vertical, ignore it
+
+	if (shouldBeOn && (lightType == AIUSE_LIGHTTYPE_TORCH))
+	{
+		idEntity* bindMaster = stimSource->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we find a nonvertical bindMaster
+		{
+			idAngles angles = bindMaster->GetPhysics()->GetAxis().ToAngles();
+			if ((fabs(angles.pitch) > 10) || (fabs(angles.roll) > 10)) // <= 10 degrees is considered vertical
+			{
+				light->m_relightAfter = gameLocal.time + RELIGHT_DELAY; // don't ignore it, but wait awhile until you pay attention to it again
+				return;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+	}
+
+	// Is it supposed to be on?
+	if (shouldBeOn)
+	{
+		// Vocalize that I see something out of place because this light is supposed to be on.
+		// But don't bark too often.
+
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
+			gameLocal.Printf("Hey, who turned off light %s?\n", stimSource->name.c_str());
 			idStr soundName((lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff");
 
 			memory.lastTimeVisualStimBark = gameLocal.time;
-			owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(soundName))
-			);
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(soundName)));
 		}
-*/
+
 		// One more piece of evidence of something out of place
-		memory.countEvidenceOfIntruders++;
-
-		// Set up search
-		if (owner->AI_AlertLevel < owner->thresh_4)
+		idEntityPtr<idEntity> stimSourcePtr;
+		stimSourcePtr = stimSource;
+		if (owner->m_RecentDousedLightsSeen.Find(stimSourcePtr) == NULL)
 		{
-			memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-			memory.alertClass = EAlertVisual;
-			memory.alertType = EAlertTypeLightSource;
+			// this light is NOT on my list of lights that recently contributed evidence
+
+			memory.countEvidenceOfIntruders++;
+			owner->m_RecentDousedLightsSeen.Append(stimSourcePtr);
 			
-			// Prepare search as if there is an enemy that has escaped
-			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-			memory.alertSearchExclusionVolume.Zero();
-				
-			owner->AI_VISALERT = false;
-		}
+			// Raise alert level if we already have some evidence of intruders
 
-		// Raise alert level if we already have some evidence of intruders
-		if (owner->AI_AlertLevel < owner->thresh_3 && 
-			(memory.enemiesHaveBeenSeen 
-				|| memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF))
-		{
-			owner->SetAlertLevel(owner->thresh_3 + (owner->thresh_4 - owner->thresh_3) * 0.2
-				* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF));
-
-			if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
+			if ((owner->AI_AlertLevel < owner->thresh_3) && 
+				(memory.enemiesHaveBeenSeen || (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)))
 			{
-				owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
+				owner->SetAlertLevel(owner->thresh_3 + (owner->thresh_4 - owner->thresh_3) * 0.2
+					* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF));
+
+				if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
+				{
+					owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
+				}
 			}
+		// Set up search
+
+			owner->m_LatchedSearch = true; // set up search after light is relit
 		}
 
-		// Do new reaction to stimulus after relighting
-		memory.stimulusLocationItselfShouldBeSearched = true;
-		memory.alertedDueToCommunication = false;
-	
 		// We will be turning the light on
 		turnLightOn = true;
 	}
-
-	// Check abilities to turn lights on
-	if (lightType == AIUSE_LIGHTTYPE_TORCH && !owner->spawnArgs.GetBool("canLightTorches"))
+	else if (owner->HasSeenEvidence() || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
 	{
-		// Can't light torches
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("For my safety, I should turn on light %s\r", stimSource->name.c_str());
+		turnLightOn = true;
+	}
+
+	// The next section is about whether we have the ability to turn lights back on.
+
+	if (((lightType == AIUSE_LIGHTTYPE_TORCH)    && !owner->spawnArgs.GetBool("canLightTorches")) ||
+		((lightType == AIUSE_LIGHTTYPE_ELECTRIC) && !owner->spawnArgs.GetBool("canOperateSwitchLights")))
+	{
+		// Can't light the light that's out
 		turnLightOn = false;
 		stimSource->IgnoreResponse(ST_VISUAL, owner);
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
 			memory.lastTimeVisualStimBark = gameLocal.time;
-			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask("snd_noRelightTorch"))
-			);
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_noRelightTorch")));
 		}
-
-	}
-	else if (!owner->spawnArgs.GetBool("canOperateSwitchLights"))
-	{
-		// Can't operate switchlights
-		turnLightOn = false;
-		stimSource->IgnoreResponse(ST_VISUAL, owner);
-	}
-	else if (owner->HasSeenEvidence() || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
-	{
-		//gameLocal.Printf("For my safety, I should turn on the light %s\n", stimSource->name.c_str());
-		turnLightOn = true;
 	}
 
 	// Turning the light on?
-	if (turnLightOn && owner->AI_AlertLevel < (owner->thresh_5 + owner->thresh_4) * 0.5)
+	if (turnLightOn && (owner->AI_AlertLevel < owner->thresh_5))
 	{
+		owner->m_RelightingLight = true;
+		memory.stopRelight = false;
+		light->SetBeingRelit(true); // this light is being relit
+		stimSource->IgnoreResponse(ST_VISUAL, owner); // ignore this stim while turning the light back on
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light)));
 	}
 }
@@ -1685,6 +1941,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	// One more piece of evidence of something out of place
 	memory.itemsHaveBeenStolen = true;
 	memory.countEvidenceOfIntruders++;
+	memory.stopRelight = true; // grayman #2603
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < alert)
@@ -1692,7 +1949,6 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
 		memory.alertType = EAlertTypeMissingItem;
-
 		
 		// Prepare search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;

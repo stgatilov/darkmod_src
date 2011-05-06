@@ -482,6 +482,10 @@ const idEventDef AI_SetReplacementAnim( "setReplacementAnim", "ss");
 const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", "s", 's');
 const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", "s");
 
+// grayman #2603 - deal with doused lights
+const idEventDef AI_PerformRelight("performRelight");
+const idEventDef AI_DropTorch("dropTorch");
+
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -2017,11 +2021,36 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	// otherwise just use the origin (for general entities).
 	// Perform a trace from the eye position to the target entity
 	// TracePoint will return FALSE, when the trace.result is >= 1
-	else if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == ent) 
+	else
 	{
-		// Trace succeeded or hit the target entity itself
-		return true;
+		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+			 gameLocal.GetTraceEntity(result) == ent) 
+		{
+			// Trace succeeded or hit the target entity itself
+			return true;
+		}
+		
+		// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
+		// however, it might be embedded in a candle and/or a candle holder.
+		// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
+		// that we can see the light source itself.
+
+		if (ent->IsType(idLight::Type))
+		{
+			idEntity* bindMaster = ent->GetBindMaster();
+			while (bindMaster != NULL) // exit when bindMaster == NULL or we can see one of them
+			{
+				const idVec3& bindMasterOrigin = bindMaster->GetPhysics()->GetOrigin();
+
+				if (!gameLocal.clip.TracePoint(result, eye, bindMasterOrigin, MASK_OPAQUE, this) || 
+					 gameLocal.GetTraceEntity(result) == bindMaster) 
+				{
+					// Trace succeeded or hit the target entity itself
+					return true;
+				}
+				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+			}
+		}
 	}
 
 	return false;

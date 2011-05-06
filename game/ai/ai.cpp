@@ -503,9 +503,10 @@ idAI::idAI()
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
-	m_tactileEntity		= NULL; // grayman #2345
-	m_canResolveBlock	= true;	// grayman #2345
+	m_tactileEntity		= NULL;  // grayman #2345
+	m_canResolveBlock	= true;	 // grayman #2345
 	m_leftQueue			= false; // grayman #2345
+	m_performRelight	= false; // grayman #2603
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -552,6 +553,7 @@ idAI::idAI()
 	m_bCanBeGassed = true;		// grayman #2468
 	m_koState = KO_NOT;			// grayman #2604
 	m_earlyThinkCounter = 5 + gameLocal.random.RandomInt(5);	// grayman #2654
+	m_bCanExtricate = true;		// grayman #2603
 
 	m_bCanOperateDoors = false;
 
@@ -780,6 +782,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
+	savefile->WriteBool(m_performRelight);		// grayman #2603
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -862,6 +865,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanBeGassed);		// grayman #2468
 	savefile->WriteInt( m_koState );			// grayman #2604
 	savefile->WriteInt( m_earlyThinkCounter );	// grayman #2654
+	savefile->WriteBool( m_bCanExtricate );		// grayman #2603
 	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -932,7 +936,16 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
-	savefile->WriteBool(m_RestoreMove); // grayman #2706
+	savefile->WriteBool(m_RelightingLight);	// grayman #2603
+	savefile->WriteBool(m_RestoreMove);		// grayman #2706
+	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
+
+	// grayman #2603
+	savefile->WriteInt( m_RecentDousedLightsSeen.Num() );
+	for( int i=0;i < m_RecentDousedLightsSeen.Num(); i++ )
+	{
+		m_RecentDousedLightsSeen[i].Save(savefile);
+	}
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
@@ -1163,6 +1176,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
 	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
 	savefile->ReadBool(m_leftQueue);		// grayman #2345
+	savefile->ReadBool(m_performRelight);	// grayman #2603
 
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
@@ -1262,6 +1276,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( i ); // grayman #2604
 	m_koState = static_cast<koState_t>( i );
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
+	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
 	savefile->ReadFloat(thresh_3);
@@ -1339,7 +1354,18 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
-	savefile->ReadBool(m_RestoreMove); // grayman #2706
+	savefile->ReadBool(m_RelightingLight);	// grayman #2603
+	savefile->ReadBool(m_RestoreMove);		// grayman #2706
+	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
+
+	// grayman #2603
+	m_RecentDousedLightsSeen.Clear();
+	savefile->ReadInt( num );
+	m_RecentDousedLightsSeen.SetNum( num );
+	for (int i = 0; i < num; i++)
+	{
+		m_RecentDousedLightsSeen[i].Restore(savefile);
+	}
 
 	int size;
 	savefile->ReadInt(size);
@@ -1840,9 +1866,12 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
-	m_RestoreMove = false; // grayman #2706
+	m_RestoreMove = false;				// grayman #2706
+	m_LatchedSearch = false;			// grayman #2603
+	m_RecentDousedLightsSeen.Clear();	// grayman #2603
 
 	m_HandlingElevator = false;
+	m_RelightingLight = false; // grayman #2603
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
@@ -2292,7 +2321,7 @@ void idAI::Think( void )
 		m_AlertedByActor = NULL;
 		m_tactileEntity = NULL; // grayman #2345
 
-		// clear pain flag so that we recieve any damage between now and the next time we run the script
+		// clear pain flag so that we receive any damage between now and the next time we run the script
 		AI_PAIN = false;
 		AI_SPECIAL_DAMAGE = 0;
 		AI_PUSHED = false;
@@ -4680,7 +4709,7 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 	{
 		// the pivot of the monster's model is around its origin, and not around the bounding
 		// box's origin, so we have to compensate for this when the model is offset so that
-		// the monster still appears to rotate around it's origin.
+		// the monster still appears to rotate around its origin.
 		idVec3 oldModelOrigin = modelOffset * oldaxis;
 		idVec3 modelOrigin = modelOffset * axis;	
 		
@@ -4918,6 +4947,29 @@ bool idAI::CanPassThroughDoor(CFrobDoor* frobDoor)
 
 /*
 =====================
+idAI::GetTorch - Is the AI carrying a torch? (grayman #2603) 
+=====================
+*/
+
+idEntity* idAI::GetTorch()
+{
+	for (int i = 0 ; i < m_Attachments.Num() ; i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+		if (!ent || !m_Attachments[i].ent.IsValid())
+			continue;
+
+		if (ent->name.Find("torch") >= 0)
+		{
+			return ent;
+		}
+	}
+	return NULL;
+}
+
+
+/*
+=====================
 idAI::DeadMove
 =====================
 */
@@ -4976,7 +5028,6 @@ void idAI::AnimMove()
 		{
 			idVec3 newDest;
 			CheckObstacleAvoidance( goalPos, newDest );
-
 			TurnToward(newDest);
 		} 
 		else // MOVE_WANDER || MOVE_VECTOR
@@ -6974,6 +7025,8 @@ bool idAI::SetEnemy(idActor* newEnemy)
 
 		GetMemory().lastTimeEnemySeen = gameLocal.time;
 
+		GetMemory().stopRelight = true; // grayman #2603
+
 		return true; // valid enemy
 	}
 	else
@@ -8656,7 +8709,6 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
 	AI_AlertLevel = newAlertLevel;
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::SetAlertLevel %s Set AI_AlertLevel = %.2f\r", name.c_str(), newAlertLevel);
 
 	if (AI_AlertLevel > m_maxAlertLevel)
 	{

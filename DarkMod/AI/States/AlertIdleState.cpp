@@ -44,13 +44,21 @@ void AlertIdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AlertIdleState initialised.\r");
 	assert(owner);
 
+	// grayman #2603 - clear recent alerts, which allows us to see new, lower-weighted, alerts
+	Memory& memory = owner->GetMemory();
+	memory.alertClass = EAlertNone;
+	memory.alertType = EAlertTypeNone;
+
 	_alertLevelDecreaseRate = 0.005f;
 
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
 	InitialiseMovement(owner);
 	InitialiseCommunication(owner);
