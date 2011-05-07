@@ -4308,7 +4308,7 @@ void idEntity::RemoveBinds( void ) {
 idEntity::RemoveBindsOnAlert
 
 tels: Remove bound children when their "unbindonalertindex" is greater or equal to the given
-alert.
+alert. This is no longer used.
 ================
 */
 void idEntity::RemoveBindsOnAlert( const int alertIndex ) {
@@ -4324,8 +4324,17 @@ void idEntity::RemoveBindsOnAlert( const int alertIndex ) {
 			if( ent->spawnArgs.GetInt( "unbindonalertindex", "6" ) >= alertIndex)
 			{
 				ent->Unbind();
+				// Tels:
+				if ( ent->spawnArgs.GetInt("_spawned_by_anim","0") == 1 )
+				{
+					// gameLocal.Printf("Removing entity %s spanwed by animation\n", ent->GetName() );
+					// this entity was spawned automatically by an animation, remove it
+					// from the game to prevent left-overs from alerted-during-animation guards
+					ent->PostEventMS( &EV_Remove, 0 );
+					// and make inactive in the meantime
+					ent->BecomeInactive(TH_PHYSICS|TH_THINK);
+				}
 			}
-
 			next = teamChain;
 		}
 	}
@@ -4351,6 +4360,16 @@ void idEntity::DetachOnAlert( const int alertIndex )
 			// Crispy: 9999 = "infinity"
 			if( alertIndex >= ent->spawnArgs.GetInt( "unbindonalertindex", "9999" ))
 			{
+				// Tels:
+				if ( ent->spawnArgs.GetInt("_spawned_by_anim","0") == 1 )
+				{
+					// gameLocal.Printf("Removing entity %s spanwed by animation\n", ent->GetName() );
+					// this entity was spawned automatically by an animation, remove it
+					// from the game to prevent left-overs from alerted-during-animation guards
+					ent->PostEventMS( &EV_Remove, 0 );
+					// and make inactive in the meantime
+					ent->BecomeInactive(TH_PHYSICS|TH_THINK);
+				}
 				DetachInd(ind);	
 			}
 		}

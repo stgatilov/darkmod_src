@@ -1407,6 +1407,13 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
 						// gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
 
+						// Tels: Fix for alerted guards dropping entities spawned during animations, 
+						// this is queried during alerted-drop (via unbindOnalertIndex), but not during animation
+						// drop or putdown (as we want an animation be able to create objects out of thin air and let
+						// a tdm_suicide script object take care of removing the object. An example is an AI eating an
+						// apple and dropping an apple core, which will vanish a minute later):
+						spawnedEntity->spawnArgs.Set("_spawned_by_anim", "1");
+
 						ent->Attach(spawnedEntity, AttPos, AttName);
 					}
 					break;
