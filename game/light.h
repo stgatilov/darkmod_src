@@ -173,7 +173,7 @@ private:
 	int				triggercount;
 	idEntity *		lightParent;
 	bool			beingRelit;					// grayman #2603 - true if being relit
-	idList<idEntityPtr<idEntity>> switchList;	// grayman #2603 - list of my switches
+	idList< idEntityPtr<idEntity> > switchList;	// grayman #2603 - list of my switches
 	idVec4			fadeFrom;
 	idVec4			fadeTo;
 	int				fadeStart;

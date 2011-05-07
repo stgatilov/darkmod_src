@@ -1088,7 +1088,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/**
 	 * grayman #2603: list of doused lights seen recently
 	 */
-	idList<idEntityPtr<idEntity>>		m_RecentDousedLightsSeen;
+	idList< idEntityPtr<idEntity> >		m_RecentDousedLightsSeen;
 
 
 	/**
