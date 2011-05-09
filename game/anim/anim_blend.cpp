@@ -662,7 +662,7 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		
 		fc.string->Append(va(" %s", token.c_str() ));
 	}
-	// tels:
+	// tels: spawn and attach a new entity
 	else if ( token == "attach" ) 
 	{
 		// first argument (class of entity to spawn)
@@ -1415,6 +1415,14 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						spawnedEntity->spawnArgs.Set("_spawned_by_anim", "1");
 
 						ent->Attach(spawnedEntity, AttPos, AttName);
+
+						// and another fix for entities spawned, but then either dropped or stuck to the AI forever:
+						float delay = spawnedEntity->spawnArgs.GetFloat("remove_delay", "0");
+						if (delay > 0)
+						{
+							// if remove_delay is set, remove that object after so many ms
+							spawnedEntity->PostEventMS( &EV_Remove, delay * 1000 );
+						}
 					}
 					break;
 				}
