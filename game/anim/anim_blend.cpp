@@ -1420,7 +1420,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						float delay = spawnedEntity->spawnArgs.GetFloat("remove_delay", "0");
 						if (delay > 0)
 						{
-							// if remove_delay is set, remove that object after so many ms
+							// if remove_delay is set, remove that object after "remove_delay" seconds (* 1000 to get ms)
 							spawnedEntity->PostEventMS( &EV_Remove, delay * 1000 );
 						}
 					}
