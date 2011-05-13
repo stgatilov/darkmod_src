@@ -22,6 +22,10 @@ namespace fs = boost::filesystem;
  */
 class Launcher
 {
+private:
+	// The path to this launcher
+	fs::path _dmLauncher;
+
 	// The path to the darkmod game base
 	fs::path _darkmodDir;
 

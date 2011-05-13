@@ -46,6 +46,39 @@ const std::string STEAM_ARGS = "-applaunch 9050 ";
 	#include <mach-o/dyld.h>
 
 	#define ENGINE_EXECUTABLE "Doom 3"
+
+// Platform-specific method to expand the ~ in a path with a full path
+// adjusted from http://developer.apple.com/library/mac/#qa/qa2007/qa1549.html
+
+#include <glob.h>
+
+std::string GetExpandedTildePath(const char* path)
+{
+	assert(path != NULL); // don't accept bogus input
+
+	std::string result = path;
+
+	// Check if the path starts with a tilde 
+	if (!result.empty() > 0 && result[0] == '~')
+	{
+		// Got a tilde at the front, replace that with the home folder using glob()
+		glob_t globbuf;
+
+		if (glob("~", GLOB_TILDE, NULL, &globbuf) == 0)
+		{
+			char** v = globbuf.gl_pathv; // list of matched pathnames
+	        
+			// Replace the tilde
+			result = result.substr(1);
+			result = v[0] + result;
+
+			globfree(&globbuf);
+		}
+	}
+
+	return result;
+}
+
 #else
 	#error 'Unsupported platform.'
 #endif
@@ -55,19 +88,19 @@ Launcher::Launcher(int argc, char* argv[]) :
 {
 #ifdef WIN32
 	// path to this exe
-	boost::filesystem::path dmlauncher(argv[0]);
+	_dmLauncher = argv[0];
 
-	if (!dmlauncher.has_branch_path())
+	if (!_dmLauncher.has_branch_path())
 	{
 		TraceLog::WriteLine("No path defined in argv[0], will prepend current directory.");
-		dmlauncher = boost::filesystem::initial_path() / dmlauncher;
+		_dmLauncher = boost::filesystem::initial_path() / _dmLauncher;
 	}
 
 #elif defined(__linux__)
 	char exepath[PATH_MAX] = {0};
 	std::size_t bytesRead = readlink("/proc/self/exe", exepath, sizeof(exepath));
 
-	boost::filesystem::path dmlauncher(exepath);
+	_dmLauncher = exepath;
 #elif defined (MACOS_X)
 	char exepath[4096];
 	uint32_t size = sizeof(exepath);
@@ -77,15 +110,15 @@ Launcher::Launcher(int argc, char* argv[]) :
 		TraceLog::WriteLine("Cannot read executable path, buffer too small.");
 	}
 	
-	boost::filesystem::path dmlauncher(exepath);
+	_dmLauncher = exepath;
 #else
 #error Unsupported Platform
 #endif
 	
-	TraceLog::WriteLine("Path to tdmlauncher is " + dmlauncher.file_string());
+	TraceLog::WriteLine("Path to tdmlauncher is " + _dmLauncher.file_string());
 
 	// path to the darkmod directory
-	_darkmodDir = dmlauncher.remove_leaf();
+	_darkmodDir = _dmLauncher.remove_leaf();
 
 	TraceLog::WriteLine("Darkmod directory is " + _darkmodDir.file_string());
 
@@ -113,7 +146,7 @@ Launcher::Launcher(int argc, char* argv[]) :
 		if (possibleExecutable.string().find(ENGINE_EXECUTABLE) != std::string::npos)
 		{
 			// We've found an argument which might fit for an executable, check if it exists
-			if (fs::exists(possibleExecutable) && ! fs::is_directory(possibleExecutable))
+			if (fs::exists(possibleExecutable) && !fs::is_directory(possibleExecutable))
 			{
 				// Got it, use this as engine executable
 				TraceLog::WriteLine("Reading engine executable from command line arguments: " + possibleExecutable.file_string());
@@ -349,7 +382,7 @@ bool Launcher::FindExecutable()
 	_engineExecutable = _darkmodDir;
 	_engineExecutable = _engineExecutable.remove_leaf().remove_leaf() / ENGINE_EXECUTABLE;
 
-	TraceLog::WriteLine("Trying default value for engine executable is " + _engineExecutable.file_string());
+	TraceLog::WriteLine("Trying default value for engine executable: " + _engineExecutable.file_string());
 	
 	if (fs::exists(_engineExecutable))
 	{
@@ -357,8 +390,11 @@ bool Launcher::FindExecutable()
 		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
 		return true;
 	}
+
+	// No executable found, start guessing...
 	
-#ifndef WIN32
+#ifdef __linux__
+
 	// Default value not found, in Linux, the engine is usually in /usr/local/games/doom3
 	_engineExecutable = "/usr/local/games/doom3/";
 	_engineExecutable /= ENGINE_EXECUTABLE;
@@ -371,6 +407,35 @@ bool Launcher::FindExecutable()
 		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
 		return true;
 	}
+
+#elif MACOS_X
+
+	// In OSX, try to find the executable relative to our parent directory
+	_engineExecutable = _darkmodDir;
+	_engineExecutable /= "../Doom 3.app/Contents/MacOS";
+	_engineExecutable /= ENGINE_EXECUTABLE;
+
+	TraceLog::WriteLine("Trying to find engine executable in " + _engineExecutable.file_string());
+
+	if (fs::exists(_engineExecutable))
+	{
+		// Found engine executable
+		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
+		return true;
+	}
+
+	// Still not found, try finding the engine below the user's Desktop folder
+	_engineExecutable = GetExpandedTildePath("~/Desktop/Doom 3/Doom3.app/Contents/MacOS/Doom 3");
+
+	TraceLog::WriteLine("Trying to find engine executable in " + _engineExecutable.file_string());
+
+	if (fs::exists(_engineExecutable))
+	{
+		// Found engine executable
+		TraceLog::WriteLine("Found engine executable in " + _engineExecutable.file_string());
+		return true;
+	}
+	
 #endif
 	
 	// not found!
