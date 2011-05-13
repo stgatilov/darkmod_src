@@ -165,23 +165,24 @@ idStr GetExpandedTildePath(const char* path)
 {
 	assert(path != NULL); // don't accept bogus input
 
-	glob_t globbuf;
-    idStr result;
+	idStr result = path;
 
-    if (glob(path, GLOB_TILDE, NULL, &globbuf) == 0) //success
-    {
-        char** v = globbuf.gl_pathv; // list of matched pathnames
-        
-		// //number of matched pathnames, gl_pathc == 1
-		// copy the expanded path into our return value
-		result = v[0];
-
-        globfree(&globbuf);
-    }
-	else
+	// Check if the path starts with a tilde 
+	if (result.CmpPrefix("~") == 0)
 	{
-		// Could not expand the path, return the input string
-		result = path;
+		// Got a tilde at the front, replace that with the home folder using glob()
+		glob_t globbuf;
+
+		if (glob("~", GLOB_TILDE, NULL, &globbuf) == 0)
+		{
+			char** v = globbuf.gl_pathv; // list of matched pathnames
+	        
+			// Replace the tilde
+			result.StripLeading('~');
+			result = v[0] + result;
+
+			globfree(&globbuf);
+		}
 	}
 
 	return result;
