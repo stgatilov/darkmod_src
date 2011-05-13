@@ -382,7 +382,10 @@ void CGlobal::LoadINISettings(void *p)
 	// will also be enabled as a marker in the logfile.
 	if(FindSection(pfh, "Debug", &ps) != static_cast<ULONG>(-1))
 	{
-		if(FindMap(ps, "LogFile", TRUE, &pm) != static_cast<ULONG>(-1))
+
+// Don't use the LogFile section for OSX, always log to the original path in ~/Library/Logs
+#ifndef MACOS_X
+		if (FindMap(ps, "LogFile", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if (idStr::Icmp(pm->Value, "") == 0)
 			{
@@ -416,6 +419,7 @@ void CGlobal::LoadINISettings(void *p)
 				}
 			}
 		}
+#endif
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found Debug section \r");
 
