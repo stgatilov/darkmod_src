@@ -31,10 +31,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include <unistd.h>
 #endif
 
-#ifdef MACOS_X
-#include <mach-o/dyld.h>
-#endif
-
 CModMenu::CModMenu() :
 	_modTop(0)
 {}
