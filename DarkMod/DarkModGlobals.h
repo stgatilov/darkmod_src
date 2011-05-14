@@ -173,6 +173,9 @@ public:
 	// Returns the darkmod path
 	static std::string GetDarkmodPath();
 
+	// Helper to retrieve the path to the game executable
+	static std::string GetEnginePath();
+
 	// Converts a string to a logclass (LC_COUNT) if nothing found.
 	static LC_LogClass GetLogClassForString(const char* str);
 
