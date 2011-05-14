@@ -524,7 +524,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), "queued ");
+			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? "queued " : "");
 			continue;
 		}
 	}
