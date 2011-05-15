@@ -283,17 +283,30 @@ void CMissionManager::SearchForNewMods()
 
 CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extension)
 {
-	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList* pk4files = fileSystem->ListFiles(fmPath, extension, false, true);
-
 	MoveList moveList;
 
 	fs::path darkmodPath = GetDarkmodPath();
 
+	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.file_string().c_str());
+
+	// greebo: Use boost::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
-	for (int i = 0; i < pk4files->GetNumFiles(); ++i)
+	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
-		fs::path pk4path = darkmodPath / pk4files->GetFile(i);
+		if (fs::is_directory(*i)) continue;
+
+		fs::path pk4path = *i;
+
+		// Check extension
+		idStr extLower = pk4path.extension().c_str();
+		extLower.ToLower();
+
+		if (extLower != extension)
+		{
+			continue;
+		}
 
 		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %s in FM root folder: %s\r", extension.c_str(), pk4path.file_string().c_str());
 
@@ -355,8 +368,6 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		moveList.push_back(MoveList::value_type(pk4path, targetPath));
 	}
 
-	fileSystem->FreeFileList(pk4files);
-
 	return moveList;
 }
 
@@ -380,37 +391,49 @@ void CMissionManager::GenerateModList()
 	_availableMods.Clear();
 
 	// List all folders in the fms/ directory
-	idStr fmPath = cv_tdm_fm_path.GetString();
-	idFileList* fmDirectories = fileSystem->ListFiles(fmPath, "/", false);
+	fs::path darkmodPath = GetDarkmodPath();
+	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
 
-	for (int i = 0; i < fmDirectories->GetNumFiles(); ++i)
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for mods in FM folder: %s\r", fmPath.file_string().c_str());
+
+	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
-		// The name of the FM directory below fms/
-		idStr fmDir = fmDirectories->GetFile(i);
+		fs::path modFolder = *i;
 
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for %s file in %s.\r", cv_tdm_fm_desc_file.GetString(), (fmPath + fmDir).c_str());
+		if (!fs::is_directory(modFolder)) continue; // skip non-folders
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for description file %s in %s.\r", cv_tdm_fm_desc_file.GetString(), modFolder.file_string().c_str());
+
+		// Take the folder name as mod name
+		idStr modName = modFolder.filename().c_str();
 
 		// Check for an uncompressed darkmod.txt file
-		idStr descFileName = fmPath + fmDir + "/" + cv_tdm_fm_desc_file.GetString();
-
-		if (fileSystem->ReadFile(descFileName, NULL) != -1)
+		fs::path descFileName = modFolder / cv_tdm_fm_desc_file.GetString();
+		
+		if (fs::exists(descFileName))
 		{
 			// File exists, add this as available mod
-			_availableMods.Alloc() = fmDir;
+			_availableMods.Alloc() = modName;
 			continue;
 		}
 
 		// no "darkmod.txt" file found, check in the PK4 files
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.file_string().c_str());
 
-		// Check for PK4s in that folder (and all subdirectories)
-		idFileList* pk4files = fileSystem->ListFilesTree(fmPath + fmDir, ".pk4", false);
-
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%d PK4 files found in %s.\r", pk4files->GetNumFiles(), (fmPath + fmDir).c_str());
-
-		for (int j = 0; j < pk4files->GetNumFiles(); ++j)
+		// Check for PK4s in that folder
+		for (fs::directory_iterator pk4Iter = fs::directory_iterator(modFolder); pk4Iter != fs::directory_iterator(); ++pk4Iter)
 		{
-			fs::path pk4path = GetDarkmodPath() / pk4files->GetFile(j);
+			fs::path pk4path = *pk4Iter;
+
+			idStr extension = pk4path.extension().c_str();
+			extension.ToLower();
+
+			if (extension != ".pk4")
+			{
+				continue;
+			}
+
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found PK4 file %s.\r", pk4path.file_string().c_str());
 
 			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
 
@@ -424,36 +447,30 @@ void CMissionManager::GenerateModList()
 			{
 				// Hurrah, we've found the darkmod.txt file, extract the contents
 				// and attempt to save to folder
-				_availableMods.Alloc() = fmDir;
+				_availableMods.Alloc() = modName;
 
-				fs::path darkmodPath = GetDarkmodPath();
-				fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString() / fmDir.c_str();
-				fs::path destPath = fmPath / cv_tdm_fm_desc_file.GetString();
+				fs::path destPath = modFolder / cv_tdm_fm_desc_file.GetString();
 
 				pk4file->ExtractFileTo(cv_tdm_fm_desc_file.GetString(), destPath.string().c_str());
 
 				// Check for the other meta-files as well
 				if (pk4file->ContainsFile(cv_tdm_fm_splashimage_file.GetString()))
 				{
-					destPath = fmPath / cv_tdm_fm_splashimage_file.GetString();
+					destPath = modFolder / cv_tdm_fm_splashimage_file.GetString();
 					pk4file->ExtractFileTo(cv_tdm_fm_splashimage_file.GetString(), destPath.string().c_str());
 				}
 
 				if (pk4file->ContainsFile(cv_tdm_fm_notes_file.GetString()))
 				{
-					destPath = fmPath / cv_tdm_fm_notes_file.GetString();
+					destPath = modFolder / cv_tdm_fm_notes_file.GetString();
 					pk4file->ExtractFileTo(cv_tdm_fm_notes_file.GetString(), destPath.string().c_str());
 				}
 			}
 		}
-
-		fileSystem->FreeFileList(pk4files);
 	}
 
-	fileSystem->FreeFileList(fmDirectories);
-
 	gameLocal.Printf("Found %d mods in the FM folder.\n", _availableMods.Num());
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found %d mods in the FM folder.\n", _availableMods.Num());
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found %d mods in the FM folder.\r", _availableMods.Num());
 
 	// Sort the mod list alphabetically
 	SortModList();
