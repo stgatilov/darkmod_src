@@ -132,6 +132,10 @@ Launcher::Launcher(int argc, char* argv[]) :
 	{
 		TraceLog::WriteLine("Could not find engine executable at default locations, will be searching command line arguments for a path to doom3 executable.");
 	}
+
+	_engineExecutable = NormalisePath(_engineExecutable);
+
+	TraceLog::WriteLine("Engine path after normalisation is " + _engineExecutable.file_string());
 	
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
