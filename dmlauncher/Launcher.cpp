@@ -558,6 +558,13 @@ bool Launcher::Launch()
 			// greebo: Sanitise the strings by trimming any whitespace from them
 			boost::algorithm::trim(parts[i]);
 
+			// If any of the arguments has a space in it, decorate the arg with double quotes
+			if (parts[i].find(' ') != std::string::npos)
+			{
+				parts[i].insert('"', parts[i].begin());
+				parts[i].insert('"', parts[i].end());
+			}
+
 			argv[i] = new char[parts[i].length() + 1];
 			strcpy(argv[i], parts[i].c_str());
 		}
