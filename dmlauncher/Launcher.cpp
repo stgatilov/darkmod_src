@@ -561,8 +561,8 @@ bool Launcher::Launch()
 			// If any of the arguments has a space in it, decorate the arg with double quotes
 			if (parts[i].find(' ') != std::string::npos)
 			{
-				parts[i].insert('"', parts[i].begin());
-				parts[i].insert('"', parts[i].end());
+				parts[i].insert(parts[i].begin(), '"');
+				parts[i].insert(parts[i].end(), '"');
 			}
 
 			argv[i] = new char[parts[i].length() + 1];
