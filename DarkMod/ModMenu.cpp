@@ -453,7 +453,7 @@ void CModMenu::RestartGame()
 #else
 	// start tdmlauncher
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Starting tdmlauncher %s with argument %s\r", commandLine.c_str(), engineArgument.c_str());
-	if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), "pause", NULL) == -1)
+	if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), additionalDelay.c_str(), NULL) == -1)
 	{
 		int errnum = errno;
 		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
