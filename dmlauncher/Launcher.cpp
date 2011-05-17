@@ -18,7 +18,7 @@ const std::string CURRENT_FM_FILE = "currentfm.txt";
 const std::string ARGS_FILE = "dmargs.txt";
 const std::string GAME_BASE_NAME = "darkmod";
 
-const std::string STEAM_ARGS = "-applaunch 9050 ";
+const std::string STEAM_ARGS = "-applaunch 9050";
 
 #ifdef WIN32
 	#include <windows.h>
@@ -139,9 +139,6 @@ Launcher::Launcher(int argc, char* argv[]) :
 	
 	fs::path argFileName(_darkmodDir / ARGS_FILE);
 
-	// Number of arguments to ignore (one is this executable itself, ignore it)
-	int numIgnoreArgs = 1;
-
 	// Inspect the arguments
 	for (int i = 1; i < argc; ++i)
 	{
@@ -156,7 +153,6 @@ Launcher::Launcher(int argc, char* argv[]) :
 				TraceLog::WriteLine("Reading engine executable from command line arguments: " + possibleExecutable.file_string());
 
 				_engineExecutable = possibleExecutable;
-				numIgnoreArgs++;
 				continue; // don't use this as argument file
 			}
 		}
@@ -175,8 +171,6 @@ Launcher::Launcher(int argc, char* argv[]) :
 			TraceLog::WriteLine("Using custom args file: " + optionalArgsFileName.file_string());
 
 			fs::copy_file(optionalArgsFileName, argFileName);
-
-			numIgnoreArgs++;
 		}
 
 		std::string delayStr = argv[i];
@@ -225,13 +219,20 @@ void Launcher::InitArguments()
 {
 	if (!_currentFM.empty())
 	{
-		_arguments = " +set fs_game_base " + GAME_BASE_NAME + " ";
-		_arguments.append(" +set fs_game " + _currentFM + " ");
+		AddArgument("+set");
+		AddArgument("fs_game_base");
+		AddArgument(GAME_BASE_NAME);
+
+		AddArgument("+set");
+		AddArgument("fs_game");
+		AddArgument(_currentFM);
 	}
 	else
 	{
 		// No current FM, pass darkmod as fs_game instead of fs_game_base
-		_arguments = " +set fs_game " + GAME_BASE_NAME + " ";
+		AddArgument("+set");
+		AddArgument("fs_game");
+		AddArgument(GAME_BASE_NAME);
 	}
 
 	// optional file that contains custom doom3 command line args
@@ -255,8 +256,13 @@ void Launcher::InitArguments()
 			// Ignore all lines starting with #
 			if (buffer[0] != '#')
 			{
-				_arguments.append(" ");
-				_arguments.append(buffer);
+				std::vector<std::string> parts;
+				boost::algorithm::split(parts, buffer, boost::algorithm::is_any_of(" \t"));
+				
+				for (std::size_t i = 0; i < parts.size(); ++i)
+				{
+					AddArgument(parts[i]);
+				}
 			}
 		}
 		while (buffer[0] == '#');
@@ -264,16 +270,12 @@ void Launcher::InitArguments()
 		fclose(argFile);
 	}
 
-	boost::algorithm::trim(_arguments);
-
 	// Check for a leading "+" sign
-	if (!_arguments.empty() && _arguments[0] != '+')
+	if (!_arguments.empty() && !boost::algorithm::starts_with(_arguments[0], "+"))
 	{
-		TraceLog::WriteLine("Adding a '+' sign to the front of raw argument string: " + _arguments);
-		_arguments = "+" + _arguments;
+		TraceLog::WriteLine("Adding a '+' sign to the front of raw argument string: " + _arguments[0]);
+		_arguments[0] = "+" + _arguments[0];
 	}
-
-	TraceLog::WriteLine("Full argument string is: " + _arguments);
 }
 
 void Launcher::InitCurrentFM()
@@ -477,19 +479,43 @@ bool Launcher::Launch()
 	fs::path doom3dir = doom3exe;
 	doom3dir = doom3dir.remove_leaf().remove_leaf();
 
+	// Check if we're running steam
 	fs::path steamExe(FindSteamExecutable());
-	if (!steamExe.empty()) {
+
+	if (!steamExe.empty())
+	{
 		TraceLog::WriteLine("Detected Steam version of D3; Steam executable found at " + steamExe.file_string());
+
 		doom3exe = steamExe;
-		_arguments = STEAM_ARGS + _arguments;
+
+		std::vector<std::string> parts;
+		boost::algorithm::split(parts, STEAM_ARGS, boost::algorithm::is_any_of(" \t"));
+
+		// Pre-pend the steam argument list
+		for (std::size_t i = 0; i < parts.size(); ++i)
+		{
+			AddArgument(parts[i], true);
+		}
 	}
 
-	TraceLog::WriteLine("Starting process " + doom3exe.file_string() + " " + _arguments);
+	// Debug output the argument string
+	TraceLog::WriteLine("Using the following argument vector:");
+
+	for (std::size_t i = 0; i < _arguments.size(); ++i)
+	{
+		TraceLog::WriteLine("#" + boost::lexical_cast<std::string>(i) + ": " + _arguments[i]);
+	}
+
+	// Assemble the argument string
+	std::string argStr = GetArgumentString();
+
+	TraceLog::WriteLine("Starting process " + doom3exe.file_string() + " " + argStr);
 	
 	::SetCurrentDirectory(doom3dir.file_string().c_str());
-	if (_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), _arguments.c_str(), NULL) == -1)
+
+	if (_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), argStr.c_str(), NULL) == -1)
 	{
-		TraceLog::WriteLine(std::string("Error when spawning D3 process: ") + strerror(errno));
+		TraceLog::WriteLine(std::string("Error spawning the D3 process: ") + strerror(errno));
 	}
 
 	return true;
@@ -527,8 +553,6 @@ bool Launcher::Launch()
 		Sleep(static_cast<int>(_additionalDelay));
 	}
 
-	std::cout << "Trying to launch " << _engineExecutable.file_string() << " " << _arguments.c_str() << std::endl;
-
 	// path to doom3.exe
 	fs::path doom3app(_engineExecutable);
 	fs::path doom3dir = doom3app;
@@ -540,37 +564,28 @@ bool Launcher::Launch()
 	if (child_pid == 0)
 	{
 		// Add the doom3 app path as first argument
-		_arguments = doom3app.file_string() + " " + _arguments;
+		AddArgument(doom3app.file_string(), true);
 
-		// Remove any double or triple whitespace
-		boost::algorithm::replace_all(_arguments, "   ", " ");
-		boost::algorithm::replace_all(_arguments, "  ", " ");
+		TraceLog::WriteLine("Using the following argument vector:");
 
-		// Split the argument string into parts
-		std::vector<std::string> parts;
-		boost::algorithm::split(parts, _arguments, boost::algorithm::is_any_of(" "));
+		for (std::size_t i = 0; i < _arguments.size(); ++i)
+		{
+			TraceLog::WriteLine("#" + boost::lexical_cast<std::string>(i) + ": " + _arguments[i]);
+		}
+
+		TraceLog::WriteLine("Trying to launch " + _engineExecutable.file_string() + " " + GetArgumentString());
 
 		// Instantiate the char* array needed for execvp (need one more for the trailing NULL)
-		char* argv[parts.size() + 1];
+		char* argv[_arguments.size() + 1];
 
-		for (std::size_t i = 0; i < parts.size(); ++i)
+		for (std::size_t i = 0; i < _arguments.size(); ++i)
 		{
-			// greebo: Sanitise the strings by trimming any whitespace from them
-			boost::algorithm::trim(parts[i]);
-
-			// If any of the arguments has a space in it, decorate the arg with double quotes
-			if (parts[i].find(' ') != std::string::npos)
-			{
-				parts[i].insert(parts[i].begin(), '"');
-				parts[i].insert(parts[i].end(), '"');
-			}
-
-			argv[i] = new char[parts[i].length() + 1];
-			strcpy(argv[i], parts[i].c_str());
+			argv[i] = new char[_arguments[i].length() + 1];
+			strcpy(argv[i], _arguments[i].c_str());
 		}
 
 		// The last argument points to NULL
-		argv[parts.size()] = NULL;
+		argv[_arguments.size()] = NULL;
 
 		int result = execvp(doom3app.file_string().c_str(), argv);
 
@@ -580,7 +595,7 @@ bool Launcher::Launch()
 		}
 
 		// Free the char* array again
-		for (std::size_t i = 0; i < parts.size(); ++i)
+		for (std::size_t i = 0; i < _arguments.size(); ++i)
 		{
 			delete[] argv[i];
 		}
@@ -593,3 +608,41 @@ bool Launcher::Launch()
 
 #endif
 
+void Launcher::AddArgument(const std::string& arg, bool insertAtFront)
+{
+	std::string argument = arg;
+
+	// Replace all tabs and newlines with spaces
+	boost::algorithm::replace_all(argument, "\t", " ");
+	boost::algorithm::replace_all(argument, "\n", " ");
+
+	// Trim head and tail
+	boost::algorithm::trim(argument);
+	
+	// Check if the string needs sanitising
+	if (argument.find(' ') != std::string::npos)
+	{
+		// Escape any double-quoates in the argument itself before surrounding it
+		boost::algorithm::replace_all(argument, "\"", "\\\"");
+
+		// surroung argument with double quotes
+		argument = "\"" + argument + "\"";
+	}
+
+	// Add the argument
+	_arguments.insert(insertAtFront ? _arguments.begin() : _arguments.end(), argument);
+}
+
+std::string Launcher::GetArgumentString()
+{
+	std::string argStr;
+
+	// The strings are already sanitised, just concatenate everything into one string
+	for (std::vector<std::string>::const_iterator i = _arguments.begin(); i != _arguments.end(); ++i)
+	{
+		argStr += !argStr.empty() ? " " : "";
+		argStr += *i;
+	}
+
+	return argStr;
+}
