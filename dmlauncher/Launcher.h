@@ -1,15 +1,15 @@
-#ifndef _LAUNCHER_H_
-#define _LAUNCHER_H_
-
-/***************************************************************************
+/*************************************************************************
  *
- * PROJECT: The Dark Mod
+ * PROJECT: The Dark Mod - Launcher
  * $Source$
  * $Revision$
  * $Date$
  * $Author$
  *
  *************************************************************************/
+
+#ifndef _LAUNCHER_H_
+#define _LAUNCHER_H_
 
 #include <string>
 #include <vector>
