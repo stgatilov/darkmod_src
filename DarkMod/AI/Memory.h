@@ -58,8 +58,8 @@ namespace ai
 #define AIUSE_LIGHTSWITCH_NAME_KEY	"switchName"
 
 //----------------------------------------------------------------------------------------
-// The following defines a key that should be non-0 if the device should be on
-#define AIUSE_SHOULDBEON_KEY		"shouldBeOn"
+// The following defines the response type when a light is off
+#define AIUSE_SHOULDBEON_LEVEL		"shouldBeOn" // grayman #2603
 
 
 // SZ: Minimum count evidence of intruders to turn on all lights encountered
@@ -71,7 +71,7 @@ namespace ai
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 
 // SZ: Someone hearing a distress call won't bother to shout that they are coming to their assistance unless
-// it is at least this far away. This is to simulate more natural human behaivior.
+// it is at least this far away. This is to simulate more natural human behavior.
 #define MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE 200
 
 // Considered cause radius around a tactile event
@@ -151,6 +151,9 @@ const char* const AlertStateNames[EAlertStateNum] =
 // The maximum time the AI is able to follow the enemy although it's invisible
 #define MAX_BLIND_CHASE_TIME 3000
 
+// grayman #2603 - how long to wait until barking again about a light that's out
+#define REBARK_DELAY 15000
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -188,6 +191,9 @@ public:
 
 	// The last time a visual stim made the AI bark
 	int lastTimeVisualStimBark;
+
+	// grayman #2603 - The next time a light stim can make the AI bark
+	int nextTimeLightStimBark;
 
 	/*!
 	* This variable indicates the number of out of place things that the
@@ -228,6 +234,9 @@ public:
 
 	// grayman #2603 - abort an ongoing light relight?
 	bool stopRelight;
+
+	// grayman #2603 - a light that's being relit
+	idEntityPtr<idLight> relightLight;
 
 	// Type of alert (visual, tactile, audio)
 	EAlertClass alertClass;

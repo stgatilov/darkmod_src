@@ -399,7 +399,7 @@ void CBinaryFrobMover::PostSpawn()
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
-	if(m_Open) 
+	if (m_Open) 
 	{
 		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
@@ -407,6 +407,22 @@ void CBinaryFrobMover::PostSpawn()
 	}
 
 	UpdateVisuals();
+
+	// grayman #2603 - Process targets. For those that are lights, add yourself
+	// to their switch list.
+
+	for (int i = 0 ; i < targets.Num() ; i++ )
+	{
+		idEntity* e = targets[i].GetEntity();
+		if (e)
+		{
+			if (e->IsType(idLight::Type))
+			{
+				idLight* light = static_cast<idLight*>(e);
+				light->AddSwitch(this);
+			}
+		}
+	}
 
 	// Check if we should auto-open, which could also happen right at the map start
 	if (IsAtClosedPosition())

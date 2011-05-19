@@ -166,6 +166,15 @@ private:
 		EAIuse_Door,
 		ENumMarkers, // invalid index
 	};
+
+	enum SBO_Level // grayman #2603 - "shouldBeOn" levels
+	{
+		ESBO_0,
+		ESBO_1,
+		ESBO_2,
+		ENumSBOLevels,
+	};
+
 };
 typedef boost::shared_ptr<State> StatePtr;
 

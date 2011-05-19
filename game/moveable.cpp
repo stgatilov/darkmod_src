@@ -729,7 +729,6 @@ void idMoveable::UpdateSlidingSounds()
 				// We did not really move, despite what the velocity says
 				StopSound(SND_CHANNEL_BODY3, false);
 				BecomeInactive(TH_THINK);
-
 				isPushed = false;
 			}
 			else

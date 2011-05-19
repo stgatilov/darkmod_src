@@ -3506,8 +3506,15 @@ void idAI::Event_DropTorch() // grayman #2603
 		if (ent->name.Find("torch") >= 0)
 		{
 			DetachInd(i);
+
+			// grayman #2603 - drop the torch a bit to get away from the AI's hand
+
+			idVec3 origin = ent->GetPhysics()->GetOrigin();
+			origin.z -= 20;
+			ent->GetPhysics()->SetOrigin( origin );
+
 			ent->m_droppedByAI = true; // grayman #1330
-			ent->GetPhysics()->Activate();
+//			ent->GetPhysics()->Activate();
 			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
 			break;
 		}

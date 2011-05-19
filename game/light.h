@@ -160,6 +160,54 @@ public:
 
 	bool IsBeingRelit();
 
+	/**
+	 * grayman #2603 - Set the chance that this light can be barked about negatively
+	 */
+
+	void SetChanceNegativeBark(float newChance);
+
+	/**
+	 * grayman #2603 - can an AI make a negative bark about this light (found off, or won't relight)
+	 */
+
+	bool NegativeBark(idAI* ai);
+
+	/**
+	 * grayman #2603 - Get when the light was turned off
+	 */
+
+	int GetWhenTurnedOff();
+
+	/**
+	 * grayman #2603 - Get when can this light be relit
+	 */
+
+	int GetRelightAfter();
+
+	/**
+	 * grayman #2603 - Set when can this light be relit
+	 */
+
+	void SetRelightAfter();
+
+	/*
+	 * grayman #2603 - Get when an AI can next emit a "light's out" or "won't relight" bark
+	 */
+
+	int GetNextTimeLightOutBark();
+
+	/*
+	 * grayman #2603 - Set when an AI can next emit a "light's out" or "won't relight" bark
+	 */
+
+	void SetNextTimeLightOutBark(int newNextTimeLightOutBark);
+
+	/*
+	 * grayman #2603 - Is a flame vertical?
+	 */
+
+	bool IsVertical(float degreesFromVertical);
+
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
@@ -174,6 +222,12 @@ private:
 	idEntity *		lightParent;
 	bool			beingRelit;					// grayman #2603 - true if being relit
 	idList< idEntityPtr<idEntity> > switchList;	// grayman #2603 - list of my switches
+	float			chanceNegativeBark;			// grayman #2603 - chance of negative barks ("light's out" and "won't relight")
+	int				whenTurnedOff;				// grayman #2603 - when this light was turned off
+	int				nextTimeLightOutBark;		// grayman #2603 - the next time an AI can bark about a light that's out, or a decision not to relight it
+	int				relightAfter;				// grayman #2603 - when a light can be relit
+	float			nextTimeVerticalCheck;		// grayman #2603 - the next time to check if a lit flame is vertical
+
 	idVec4			fadeFrom;
 	idVec4			fadeTo;
 	int				fadeStart;

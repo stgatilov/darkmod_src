@@ -189,6 +189,21 @@ void Mind::SwitchState(const StatePtr& state)
 
 void Mind::ClearStates()
 {
+	// grayman #2603 - before clearing the states, check if the AI was relighting
+	// a light. That light has to be marked as no longer being relit.
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+	if (owner->m_RelightingLight)
+	{
+		Memory& memory = owner->GetMemory();
+		idLight* light = memory.relightLight.GetEntity();
+		if (light)
+		{
+			light->SetBeingRelit(false); // this light is no longer being relit
+		}
+	}
+
 	_switchState = true;
 	_stateQueue.clear();
 }

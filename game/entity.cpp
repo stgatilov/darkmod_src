@@ -697,8 +697,6 @@ idEntity::idEntity()
 
 	m_droppedByAI	= false;	// grayman #1330
 
-	m_relightAfter  = 0;		// grayman #2603
-
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
@@ -1632,7 +1630,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_LightQuotientLastEvalTime);
 
 	savefile->WriteBool(m_droppedByAI);		// grayman #1330
-	savefile->WriteInt(m_relightAfter);	// grayman #2603
 
 	savefile->WriteInt(m_LODHandle);
 	savefile->WriteInt(m_DistCheckTimeStamp);
@@ -1909,7 +1906,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
 
 	savefile->ReadBool(m_droppedByAI); // grayman #1330
-	savefile->ReadInt(m_relightAfter); // grayman #2603
 
 	savefile->ReadUnsignedInt(m_LODHandle);
 	savefile->ReadInt(m_DistCheckTimeStamp);
@@ -2630,6 +2626,7 @@ void idEntity::BecomeActive( int flags )
 
 	int oldFlags = thinkFlags;
 	thinkFlags |= flags;
+
 	if ( thinkFlags ) {
 		if ( !IsActive() ) {
 			activeNode.AddToEnd( gameLocal.activeEntities );
@@ -3297,7 +3294,9 @@ void idEntity::Present(void)
 		return;
 
 	if( !m_bFrobable )
+	{
 		BecomeInactive( TH_UPDATEVISUALS );
+	}
 
 	// camera target for remote render views
 	if(cameraTarget && gameLocal.InPlayerPVS(this))
@@ -4305,43 +4304,6 @@ void idEntity::RemoveBinds( void ) {
 
 /*
 ================
-idEntity::RemoveBindsOnAlert
-
-tels: Remove bound children when their "unbindonalertindex" is greater or equal to the given
-alert. This is no longer used.
-================
-*/
-void idEntity::RemoveBindsOnAlert( const int alertIndex ) {
-	idEntity *ent;
-	idEntity *next;
-
-	for( ent = teamChain; ent != NULL; ent = next )
-	{
-		next = ent->teamChain;
-		// bound to us?
-		if ( ent->bindMaster == this )
-		{
-			if( ent->spawnArgs.GetInt( "unbindonalertindex", "6" ) >= alertIndex)
-			{
-				ent->Unbind();
-				// Tels:
-				if ( ent->spawnArgs.GetInt("_spawned_by_anim","0") == 1 )
-				{
-					// gameLocal.Printf("Removing entity %s spanwed by animation\n", ent->GetName() );
-					// this entity was spawned automatically by an animation, remove it
-					// from the game to prevent left-overs from alerted-during-animation guards
-					ent->PostEventMS( &EV_Remove, 0 );
-					// and make inactive in the meantime
-					ent->BecomeInactive(TH_PHYSICS|TH_THINK);
-				}
-			}
-			next = teamChain;
-		}
-	}
-}
-
-/*
-================
 idEntity::DetachOnAlert
 
 tels: Remove attached entities when the alert index reaches their "unbindonalertindex".
@@ -5298,7 +5260,51 @@ idEntity::ApplyImpulse
 ================
 */
 void idEntity::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) {
-	GetPhysics()->ApplyImpulse( id, point, impulse );
+
+	// grayman #2603 - disallow impulse on candles and candle holders when the candle is being relit
+
+	bool allowImpulse = true;
+
+	// In case the entity itself is a light (tdm_light_holder light)
+
+	if (IsType(idLight::Type))
+	{
+		if (static_cast<idLight*>(this)->IsBeingRelit())
+		{
+			allowImpulse = false; // relighting this light; no impulse
+		}
+	}
+	else if (IsType(idMoveable::Type))
+	{
+		// Are there any light entities on this team?
+
+		idList<idEntity *> children;
+		GetTeamChildren(&children);
+		for (int i = 0 ; i < children.Num() ; i++)
+		{
+			// Based on reading other uses of GetTeamChildren(), it's
+			// prudent to check for recursion back to the original entity.
+
+			idEntity* child = children[i];
+			if (this == child)
+			{
+				break;
+			}
+			if (child->IsType(idLight::Type))
+			{
+				if (static_cast<idLight*>(child)->IsBeingRelit())
+				{
+					allowImpulse = false; // relighting this light; no impulse
+					break;
+				}
+			}
+		}
+	}
+
+	if (allowImpulse)
+	{
+		GetPhysics()->ApplyImpulse( id, point, impulse );
+	}
 }
 
 /*
@@ -7578,6 +7584,7 @@ void CAttachInfo::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( channel );
 	savefile->WriteString( name );
 	savefile->WriteInt(savedContents);
+	savefile->WriteString(posName); // grayman #2603
 }
 
 /*
@@ -7591,6 +7598,7 @@ void CAttachInfo::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( channel );
 	savefile->ReadString( name );
 	savefile->ReadInt(savedContents);
+	savefile->ReadString(posName); // grayman #2603
 }
 
 /*
@@ -8148,6 +8156,7 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	attach.channel = animator.GetChannelForJoint( joint );
 	attach.ent = ent;
 	attach.name = AttName;
+	attach.posName = PosName; // grayman #2603
 
 	// Update name->m_Attachment index mapping
 	int index = m_Attachments.Num() - 1;
@@ -8221,6 +8230,8 @@ void idAnimatedEntity::ReAttachToCoords
 	ent->spawnArgs.Set( "joint", jointName.c_str() );
 	ent->spawnArgs.SetVector( "origin", offset );
 	ent->spawnArgs.SetAngles( "angles", angles );
+
+	attachment->posName = jointName; // grayman #2603
 
 Quit:
 	return;
@@ -9806,6 +9817,8 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 	attach.channel = 0; // overloaded in animated classes
 	attach.ent = ent;
 	attach.name = AttName;
+	idStr positionString = PosName;
+	attach.posName = positionString; // grayman #2603
 
 	// Update name->m_Attachment index mapping
 	int index = m_Attachments.Num() - 1;
@@ -10051,23 +10064,27 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 		return NULL;
 }
 
-/* Tels: Get the entity attached at the position given by the attachment position
-CAttachInfo *idEntity::GetAttachmentByPosition( const char *AttPos )
+// Tels: Get the entity attached at the position given by the attachment position
+// grayman #2603 - resurrected and spruced up for relight work
+idEntity* idEntity::GetAttachmentByPosition( idStr PosName )
 {
-
 	int num = m_Attachments.Num();
 
-	for (int ind = 0; ind < num; ind ++)
+	for (int i = 0 ; i < num ; i++)
 	{
-		if ((m_Attachments[ind].ent != NULL) && ())
+		if ((m_Attachments[i].ent.GetEntity() != NULL) && m_Attachments[i].ent.IsValid())
+		{
+			if (m_Attachments[i].posName == PosName)
 			{
-			m_Attachments[ind].ent;
+				return m_Attachments[i].ent.GetEntity();
 			}
+		}
 	}
+
 	// not found
 	return NULL;
 }
-*/
+
 
 idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 {

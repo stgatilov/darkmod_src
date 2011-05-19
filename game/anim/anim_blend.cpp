@@ -1315,6 +1315,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						idVec3 origin = detachedEntity->GetPhysics()->GetOrigin();
 						origin.z -= DROP_DOWN_ADJUSTMENT;
 						detachedEntity->GetPhysics()->SetOrigin( origin );
+						detachedEntity->m_droppedByAI = true; // grayman #1330
 					}
 					break;
 				}
@@ -1389,10 +1390,11 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					}
 
 					// check that there isn't already something attached:
-					idEntity* attEntity = ent->GetAttachment( AttPos.c_str() );
+					// idEntity* attEntity = ent->GetAttachment(AttPos.c_str()); // grayman #2603 - This was wrong. GetAttachment wants the Attach Name ('melee_weapon') not the position ('hand_l')
+					idEntity* attEntity = ent->GetAttachmentByPosition(AttPos.c_str()); // positions now stored in attach info
 					if (attEntity)
 					{
-						gameLocal.Warning("Already got an attachment at %s, skipping frame command.", AttPos.c_str());
+						gameLocal.Warning("Already have an attachment at %s, skipping frame command.", AttPos.c_str());
 					}
 					else
 					{

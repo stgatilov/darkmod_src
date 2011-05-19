@@ -196,6 +196,9 @@ public:
 
 	// An additional int to save contents (used to set attachments nonsolid temporarily)
 	int						savedContents;
+
+	// grayman #2603 - save the position name to help find out what's in an AI's hands later
+	idStr					posName;
 };
 
 /**
@@ -380,8 +383,6 @@ public:
 	int						m_LightQuotientLastEvalTime;
 
 	bool					m_droppedByAI;	// grayman #1330
-
-	int						m_relightAfter;	// grayman #2603
 
 	/**
 	* Tels: Contains handle to (sharable, constant) LOD data if != 0.
@@ -696,8 +697,10 @@ public:
 
 	void					SetHideUntilTime(int time);	// grayman #597
 	int						GetHideUntilTime(void);		// grayman #597
-
+	
 	void					DropTorch(); // grayman #2603
+
+	idEntity*				GetAttachmentByPosition(idStr AttPos); // grayman #2603
 
 	enum {
 		EVENT_STARTSOUNDSHADER,

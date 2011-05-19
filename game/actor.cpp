@@ -1037,6 +1037,7 @@ void idActor::SetupHead()
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
 		attach.ent = headEnt;
+		attach.posName = jointName; // grayman #2603
 
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );

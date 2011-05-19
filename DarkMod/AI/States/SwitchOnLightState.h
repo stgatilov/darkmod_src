@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_SWITCH_ON_LIGHT "SwitchOnLight"
-#define RELIGHT_DELAY 10000 // in ms - grayman #2603 - delay processing of incoming "light off" stim
 
 class SwitchOnLightState :
 	public State
@@ -51,7 +50,10 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
 
-	virtual void Wrapup(idAI* owner, idLight* light, bool lightOn); // grayman #2603
+	virtual void Wrapup(idAI* owner, idLight* light, bool ignore); // grayman #2603
+
+	virtual float GetMaxReach(idAI* owner, idEntity* torch, idStr lightType); // grayman #2603
+	virtual bool GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &target); // grayman #2603
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

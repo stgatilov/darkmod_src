@@ -58,8 +58,6 @@ static const int s_MAXACUITIES = 15;
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
 
-#define DELAY_TO_NEXT_TORCH_CHECK 2000; // grayman #2603
-
 typedef enum {
 	TALK_NEVER,
 	TALK_DEAD,
@@ -1086,10 +1084,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_LatchedSearch;
 
 	/**
-	 * grayman #2603: list of doused lights seen recently
+	 * grayman #2603: list of doused lights seen
 	 */
-	idList< idEntityPtr<idEntity> >		m_RecentDousedLightsSeen;
-
+	idList< idEntityPtr<idEntity> >		m_dousedLightsSeen;
 
 	/**
 	 * angua: is set true while the AI is handling an elevator.

@@ -941,10 +941,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
 
 	// grayman #2603
-	savefile->WriteInt( m_RecentDousedLightsSeen.Num() );
-	for( int i=0;i < m_RecentDousedLightsSeen.Num(); i++ )
+	savefile->WriteInt( m_dousedLightsSeen.Num() );
+	for (int i = 0 ; i < m_dousedLightsSeen.Num() ; i++ )
 	{
-		m_RecentDousedLightsSeen[i].Save(savefile);
+		m_dousedLightsSeen[i].Save(savefile);
 	}
 
 	int size = unlockableDoors.size();
@@ -1359,12 +1359,12 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
 
 	// grayman #2603
-	m_RecentDousedLightsSeen.Clear();
+	m_dousedLightsSeen.Clear();
 	savefile->ReadInt( num );
-	m_RecentDousedLightsSeen.SetNum( num );
+	m_dousedLightsSeen.SetNum( num );
 	for (int i = 0; i < num; i++)
 	{
-		m_RecentDousedLightsSeen[i].Restore(savefile);
+		m_dousedLightsSeen[i].Restore(savefile);
 	}
 
 	int size;
@@ -1868,7 +1868,7 @@ void idAI::Spawn( void )
 	m_HandlingDoor = false;
 	m_RestoreMove = false;				// grayman #2706
 	m_LatchedSearch = false;			// grayman #2603
-	m_RecentDousedLightsSeen.Clear();	// grayman #2603
+	m_dousedLightsSeen.Clear();	// grayman #2603
 
 	m_HandlingElevator = false;
 	m_RelightingLight = false; // grayman #2603
@@ -4953,18 +4953,24 @@ idAI::GetTorch - Is the AI carrying a torch? (grayman #2603)
 
 idEntity* idAI::GetTorch()
 {
-	for (int i = 0 ; i < m_Attachments.Num() ; i++)
+	idEntity* ent = GetAttachmentByPosition("hand_l");
+	if (ent && ent->spawnArgs.GetBool("is_torch","0"))
 	{
-		idEntity* ent = m_Attachments[i].ent.GetEntity();
-		if (!ent || !m_Attachments[i].ent.IsValid())
-			continue;
-
-		if (ent->name.Find("torch") >= 0)
-		{
-			return ent;
-		}
+		return ent; // found a torch
 	}
-	return NULL;
+
+	// Torches are carried in the left hand. If a torch for
+	// the right hand, plus accompanying animations, is ever
+	// created, uncomment the following section.
+/*
+	ent = GetAttachmentByPosition("hand_r");
+	if (ent && ent->spawnArgs.GetBool("is_torch","0"))
+	{
+		return ent; // found a torch
+	}
+ */
+
+	return NULL; // no luck
 }
 
 

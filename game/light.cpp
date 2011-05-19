@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/Grabber.h"
 
 /*
 ===============================================================================
@@ -208,8 +209,13 @@ idLight::idLight()
 	count				= 0;
 	triggercount		= 0;
 	lightParent			= NULL;
-	switchList.Clear();	// grayman #2603 - list of my switches
-	beingRelit			= false; // grayman #2603
+	switchList.Clear();				// grayman #2603 - list of my switches
+	beingRelit			= false;	// grayman #2603
+	chanceNegativeBark	= 1.0f;		// grayman #2603
+	whenTurnedOff		= 0;		// grayman #2603
+	nextTimeLightOutBark = 0;		// grayman #2603
+	relightAfter		= 0;		// grayman #2603
+
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
 	fadeStart			= 0;
@@ -278,7 +284,12 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( count );
 	savefile->WriteInt( triggercount );
 	savefile->WriteObject( lightParent );
-	savefile->WriteBool(beingRelit);	// grayman #2603
+	savefile->WriteBool(beingRelit);			// grayman #2603
+	savefile->WriteFloat(chanceNegativeBark);	// grayman #2603
+	savefile->WriteInt(whenTurnedOff);			// grayman #2603
+	savefile->WriteInt(nextTimeLightOutBark);	// grayman #2603
+	savefile->WriteInt(relightAfter);			// grayman #2603
+	savefile->WriteFloat(nextTimeVerticalCheck);	// grayman #2603
 
 	savefile->WriteInt(switchList.Num());	// grayman #2603
 	for (int i = 0; i < switchList.Num(); i++)
@@ -334,7 +345,12 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( count );
 	savefile->ReadInt( triggercount );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( lightParent ) );
-	savefile->ReadBool( beingRelit ); // grayman #2603
+	savefile->ReadBool( beingRelit );			// grayman #2603
+	savefile->ReadFloat( chanceNegativeBark );	// grayman #2603
+	savefile->ReadInt( whenTurnedOff );			// grayman #2603
+	savefile->ReadInt( nextTimeLightOutBark );	// grayman #2603
+	savefile->ReadInt( relightAfter );			// grayman #2603
+	savefile->ReadFloat(nextTimeVerticalCheck);	// grayman #2603
 	
 	// grayman #2603
 	switchList.Clear();
@@ -459,6 +475,18 @@ void idLight::Spawn( void )
 	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %08lX\r", pImage);
+	}
+
+	// grayman #2603 - set up flames for vertical check
+
+	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	if (lightType == AIUSE_LIGHTTYPE_TORCH)
+	{
+		nextTimeVerticalCheck = gameLocal.time + 3000 + gameLocal.random.RandomFloat()*3000; // randomize so checks are done at different times
+	}
+	else // non-flames
+	{
+		nextTimeVerticalCheck = idMath::INFINITY; // never
 	}
 
 	// Sophisiticated Zombie (DMH)
@@ -725,6 +753,7 @@ void idLight::Off( const bool stopSound ) {
 		idThread *pThread = new idThread(func);
 		pThread->CallFunction(this,func,true);
 		pThread->DelayedStart(0);
+		whenTurnedOff = gameLocal.time; // grayman #2603
 	}
 	else
 	{
@@ -977,6 +1006,32 @@ void idLight::Present( void ) {
 
 /*
 ================
+idLight::IsVertical
+*/
+
+bool idLight::IsVertical(float degreesFromVertical)
+{
+	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+
+	// Only makes sense for flames
+
+	if (lightType == AIUSE_LIGHTTYPE_TORCH)
+	{
+		const idVec3& gravityNormal = GetPhysics()->GetGravityNormal();
+		idMat3 axis = GetPhysics()->GetAxis();
+		idVec3 result(0,0,0);
+		axis.ProjectVector(-gravityNormal,result);
+		float verticality = result * (-gravityNormal);
+		if (verticality < idMath::Cos(DEG2RAD(degreesFromVertical))) // > 10 degrees from vertical
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+/*
+================
 idLight::Think
 ================
 */
@@ -1003,6 +1058,63 @@ void idLight::Think( void ) {
 			renderLight.shaderParms[ SHADERPARM_ALPHA ]		= color[ 3 ];
 			renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
 			SetLightLevel();
+		}
+	}
+
+	// grayman #2603 - every so often, check if a lit flame not being held by an AI is non-vertical (> 45 degrees from vertical). if so, douse it
+
+	if (gameLocal.time >= nextTimeVerticalCheck)
+	{
+		nextTimeVerticalCheck = gameLocal.time + 1000;
+
+		if (GetLightLevel() > 0) // is it on?
+		{
+			bool isVertical = IsVertical(45); // w/in 45 degrees of vertical?
+			if (!isVertical)
+			{
+				// is an AI holding this light?
+
+				bool isHeld = false;
+				idEntity* bindMaster = GetBindMaster();
+				while (bindMaster != NULL) // not held when bindMaster == NULL
+				{
+					if (bindMaster->IsType(idAI::Type))
+					{
+						isHeld = true;
+						break;
+					}
+					bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+				}
+
+				if (!isHeld)
+				{
+					// Is the player holdng this light?
+
+					CGrabber* grabber = gameLocal.m_Grabber;
+					if (grabber)
+					{
+						idEntity* heldEnt = grabber->GetSelected();
+						if (heldEnt)
+						{
+							bindMaster = GetBindMaster();
+							while (bindMaster != NULL) // not held when bindMaster == NULL
+							{
+								if (heldEnt == bindMaster)
+								{
+									isHeld = true;
+									break;
+								}
+								bindMaster = bindMaster->GetBindMaster();
+							}
+						}
+					}
+				}
+
+				if (!isHeld)
+				{
+					CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+				}
+			}
 		}
 	}
 
@@ -1718,4 +1830,74 @@ bool idLight::IsBeingRelit()
 {
 	return beingRelit;
 }
+
+// grayman #2603 - Set the chance that this light can be barked about negatively
+
+void idLight::SetChanceNegativeBark(float newChance)
+{
+	chanceNegativeBark = newChance;
+}
+
+// grayman #2603 - Time when this light was turned off
+
+int idLight::GetWhenTurnedOff()
+{
+	return whenTurnedOff;
+}
+
+ // grayman #2603 - when can this light be relit
+
+int idLight::GetRelightAfter()
+{
+	return relightAfter;
+}
+
+void idLight::SetRelightAfter()
+{
+	relightAfter = gameLocal.time + 15000;
+}
+
+ // grayman #2603 - Set when an AI can next emit a "light's out" or "won't relight" bark
+
+int idLight::GetNextTimeLightOutBark()
+{
+	return nextTimeLightOutBark;
+}
+
+void idLight::SetNextTimeLightOutBark(int newNextTimeLightOutBark)
+{
+	nextTimeLightOutBark = newNextTimeLightOutBark;
+}
+
+// grayman #2603 - can an AI make a negative bark about this light (found off, or won't relight)
+
+bool idLight::NegativeBark(idAI* ai)
+{
+	bool barking = false;
+	if ((gameLocal.time >= ai->GetMemory().nextTimeLightStimBark) && (gameLocal.time >= nextTimeLightOutBark))
+	{
+		if (gameLocal.random.RandomFloat() < chanceNegativeBark)
+		{
+			ai->GetMemory().lastTimeVisualStimBark = gameLocal.time;
+			ai->GetMemory().nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+			nextTimeLightOutBark = gameLocal.time + REBARK_DELAY + 5*gameLocal.random.RandomFloat();
+
+			// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
+			// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
+			// the number of such barks, which can get tiresome.
+
+			chanceNegativeBark -= 0.2f; // reduce next chance of a negative bark
+			if (chanceNegativeBark < 0.0f)
+			{
+				chanceNegativeBark = 0.0f;
+			}
+			barking = true;
+		}
+		SetRelightAfter(); // wait awhile until anyone tries to relight it again
+	}
+
+	return barking;
+}
+
+
 

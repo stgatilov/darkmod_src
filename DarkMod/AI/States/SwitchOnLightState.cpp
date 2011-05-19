@@ -27,6 +27,7 @@ namespace ai
 
 #define RELIGHT_HEIGHT_HIGH 65
 #define RELIGHT_HEIGHT_LOW  30
+#define RELIGHT_MAX_HEIGHT 100 // grayman #2603 - AI can't reach a light or switch higher than this
 
 SwitchOnLightState::SwitchOnLightState()
 {}
@@ -45,25 +46,148 @@ const idStr& SwitchOnLightState::GetName() const
 
 // grayman #2603 - Wrap up and end state
 
-void SwitchOnLightState::Wrapup(idAI* owner, idLight* light, bool lightOn)
+void SwitchOnLightState::Wrapup(idAI* owner, idLight* light, bool ignore)
 {
-	if (lightOn)
+	if (ignore)
 	{
-		light->IgnoreResponse(ST_VISUAL,owner); // ignore until the light changes state again, going off
-
-		// remove this light from the list of recently seen doused lights
-
-		idEntityPtr<idEntity> lightPtr;
-		lightPtr = light;
-		owner->m_RecentDousedLightsSeen.Remove(lightPtr);
+		light->IgnoreResponse(ST_VISUAL,owner); // ignore until the light changes state again
 	}
 	else
 	{
-		light->AllowResponse(ST_VISUAL,owner); // we'll need to catch it later if it goes off again
+		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
+
 	light->SetBeingRelit(false);
 	owner->m_RelightingLight = false;
 	owner->GetMind()->EndState();
+}
+
+// grayman #2603 - determine max forward reach for relighting method
+
+float SwitchOnLightState::GetMaxReach(idAI* owner, idEntity* torch, idStr lightType)
+{
+	float forward;
+
+	float reach = owner->GetArmReachLength();
+	if (lightType == AIUSE_LIGHTTYPE_ELECTRIC)
+	{
+		forward = reach;
+	}
+	else if (torch)
+	{
+		forward = reach + 10;
+	}
+	else // tinderbox
+	{
+		forward = reach/2;
+	}
+	return forward;
+}
+
+// grayman #2603 - a copy of HandleElevatorTask::MoveToButton() modified for our purposes
+
+bool SwitchOnLightState::GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &goal)
+{
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+	float size = idMath::Fabs(bounds[0][1]);
+	_standOff = 2*size; // offset larger than the owner's size
+
+	// This switch could be a button that translates horizontally or vertically,
+	// or a lever that rotates.
+
+	// Start with the assumption that it's a horizontally-translating button.
+	// That should cover the majority of cases.
+
+	idVec3 trans = mySwitch->spawnArgs.GetVector("translate", "0 0 0");
+	if (trans.z != 0) // vertical movement?
+	{
+		idVec3 switchSize = mySwitch->GetPhysics()->GetBounds().GetSize();
+		if (switchSize.y > switchSize.x)
+		{
+			trans = idVec3(1,0,0);
+		}
+		else
+		{
+			trans = idVec3(0,1,0);
+		}
+	}
+	else if (trans.LengthFast() == 0)
+	{
+		// rotating switch
+
+		idVec3 switchSize = mySwitch->GetPhysics()->GetBounds().GetSize();
+		if (switchSize.x > switchSize.y)
+		{
+			trans = idVec3(1,0,0);
+		}
+		else
+		{
+			trans = idVec3(0,1,0);
+		}
+	}
+	trans.NormalizeFast();
+
+	const idVec3& switchOrigin = mySwitch->GetPhysics()->GetOrigin();
+
+	goal = switchOrigin - _standOff * trans;
+
+	// Is there a path to the target?
+
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+	int areaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+	int goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
+	aasPath_t path;
+
+	if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // first attempt
+	{
+		// not reachable, try alternate target positions at the sides and behind the switch
+
+		trans *= -1;
+		goal = switchOrigin - _standOff * trans;
+		goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
+
+		if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // second attemp
+		{
+			const idVec3& gravity = owner->GetPhysics()->GetGravityNormal();
+			trans = trans.Cross(gravity);
+			goal = switchOrigin - _standOff * trans;
+			goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
+
+			if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // third attempt
+			{
+				trans *= -1;
+				goal = switchOrigin - _standOff * trans;
+				goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
+
+				if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // fourth attempt
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	// Find the floor at this point
+
+	idVec3 bottomPoint = goal;
+	bottomPoint.z -= 256;
+	trace_t result;
+	gameLocal.clip.TracePoint(result, goal, bottomPoint, MASK_OPAQUE, NULL); // trace down
+	float height = switchOrigin.z - result.endpos.z;
+
+	// adjust _standOff based on height of switch off the floor
+
+	if (height < RELIGHT_HEIGHT_LOW) // low
+	{
+		// Adjust standoff and set new goal. Assume path to goal is still good.
+
+		_standOff += 16; // farther from goal
+		goal = switchOrigin - _standOff * trans;
+	}
+
+	goal.z = result.endpos.z; // where we hit
+	goal.z++; // move up slightly
+	return true;
 }
 
 void SwitchOnLightState::Init(idAI* owner)
@@ -85,18 +209,30 @@ void SwitchOnLightState::Init(idAI* owner)
 	assert(owner);
 
 	idLight* light = _light.GetEntity();
+	assert(light);
 
 	// Make sure light is still off
 
-	if (light->GetLightLevel() > 0)
+	bool lightOn = (light->GetLightLevel() > 0);
+	bool ignoreLight;
+
+	if (lightOn)
 	{
-		Wrapup(owner,light,true);
+		ignoreLight = true;
+		Wrapup(owner,light,ignoreLight);
 		return;
 	}
 
 	_waitEndTime = 0;
+	bool pathToGoal = true; // whether there's a path to the switch or light
+	bool reachable = true;  // whether a light is too high to reach
 
-	// First determine if this light is controlled by a switch. After all entities were spawned
+	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	idVec3 goalOrigin;
+	idVec3 goalDirection;
+	idVec3 finalTargetPoint;
+
+	// Determine if this light is controlled by a switch. After all entities were spawned
 	// at map start, each AIUSE_LIGHTTYPE_ELECTRIC light stored all the switches targetting it.
 	// Checking for switches on torches is harmless, since they won't have any.
 	//
@@ -108,212 +244,187 @@ void SwitchOnLightState::Init(idAI* owner)
 	// moment, GetSwitch() should fall back to the next-closest switch, seeking one that's reachable.
 	
 	idEntity* mySwitch = light->GetSwitch(owner); // Are there switches? If so, use the closest one.
-	if (mySwitch)
+	if (mySwitch && mySwitch->IsType(CBinaryFrobMover::Type))
 	{
 		// There's a switch, so the AI should walk to the switch and frob it. That should
 		// be all that's needed to turn the light back on. The AI should do this even if
 		// he doesn't have a direct LOS to the switch.
 
 		_goalEnt = mySwitch;
-	}
-	else
-	{
-		// No switch, so approach the light.
+		goalOrigin = _goalEnt->GetPhysics()->GetOrigin();
 
+		// Find a spot to stand while activating it.
+
+		CBinaryFrobMover* switchMover = static_cast<CBinaryFrobMover*>(mySwitch);
+		pathToGoal = GetSwitchGoal(owner,switchMover,finalTargetPoint);
+	}
+	else // No switch, so approach the light
+	{
 		_goalEnt = light;
-	}
-
-	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
-	idVec3 goalOrigin = _goalEnt->GetPhysics()->GetOrigin();
-	idVec3 goalDirection;
-	if (mySwitch)
-	{
-		// Find the direction the switch translates, and project in the reverse
-		// direction to find a spot to stand while activating it.
-
-		if (mySwitch->IsType(CBinaryFrobMover::Type))
+		goalOrigin = _goalEnt->GetPhysics()->GetOrigin();
+		goalDirection = owner->GetPhysics()->GetOrigin() - goalOrigin;
+	
+		idVec3 size(16, 16, 82);
+		idAAS* aas = owner->GetAAS();
+		if (aas)
 		{
-			CBinaryFrobMover* switchMover = static_cast<CBinaryFrobMover*>(mySwitch);
-			idVec3 deltaPosition;
-			idAngles deltaAngles;
-			switchMover->GetRemainingMovement(deltaPosition,deltaAngles);
-			goalDirection = -deltaPosition;
+			size = aas->GetSettings()->boundingBoxes[0][1];
+		}
+
+		idVec2 projection = goalDirection.ToVec2();
+
+		// Am I carrying a torch? Useful when setting the standoff distance
+
+		idEntity* torch = owner->GetTorch();
+
+		// Move a bit from the goal origin towards the AI 
+		// and perform a trace down to detect the ground.
+
+		goalDirection.NormalizeFast();
+
+		// If the goal entity has a bounding box (i.e. a model with
+		// a built-in light, or a switch), use an average of its x/y sizes to add to
+		// how far away the AI should stand.
+
+		idEntity* bindMaster = _goalEnt->GetBindMaster();
+		_standOff = 0;
+		while (bindMaster != NULL)
+		{
+			idVec3 goalSize = bindMaster->GetPhysics()->GetBounds().GetSize();
+			float goalDist = (goalSize.x + goalSize.y)/4;
+			if (goalDist > _standOff)
+			{
+				_standOff = goalDist;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+
+		_standOff += 2*size.x;
+		float armReach = GetMaxReach(owner,torch,lightType); // grayman #2603
+		float standOffTemp = _standOff; // use this to establish reachability
+		if (standOffTemp < armReach) // can't try to get close to candles on tables
+		{
+			standOffTemp = armReach;
+		}
+
+		// Use standOffTemp to find the floor near the goal. In case this is a candle sitting
+		// on a table, you have to move out a reasonable distance to clear the table.
+
+		idVec3 startPoint = goalOrigin + goalDirection * standOffTemp;
+		idVec3 bottomPoint = startPoint;
+		bottomPoint.z -= RELIGHT_MAX_HEIGHT;
+		
+		idVec3 targetPoint = startPoint;
+		trace_t result;
+		if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
+		{
+			// Found the floor.
+
+			targetPoint.z = result.endpos.z + 1; // move the target point to the floor
+
+			//gameRenderWorld->DebugArrow(colorRed, startPoint, targetPoint, 2, 5000);
+
+			// Is there a path to the target point?
+
+			int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
+			int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
+			aasPath_t path;
+			if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint, owner))
+			{
+				// A path has been found. Now we adjust where we're going to stand based on
+				// the relight method.
+
+				// Abandon standOffTemp and use the original _standOff.
+
+				float ht = goalOrigin.z - targetPoint.z; // height of goal off the floor
+				if (lightType == AIUSE_LIGHTTYPE_TORCH)
+				{
+					_standOff -= 16; // start with this
+					if (ht > RELIGHT_HEIGHT_HIGH) // high
+					{
+						if (torch)
+						{
+							_standOff += 8;
+						}
+					}
+					else if (ht < RELIGHT_HEIGHT_LOW) // low
+					{
+						if (!torch)  // tinderbox
+						{
+							_standOff += 16;
+						}
+					}
+					else // medium
+					{
+						if (torch)
+						{
+							_standOff += 8;
+						}
+					}
+				}
+				else // electric light, no switch
+				{
+					if (ht < RELIGHT_HEIGHT_LOW) // low
+					{
+						_standOff += 8; // move farther away
+					}
+				}
+				finalTargetPoint = goalOrigin + goalDirection * _standOff; // use adjusted standoff
+				finalTargetPoint.z = targetPoint.z;
+			}
+			else
+			{
+				pathToGoal = false;
+			}
 		}
 		else
 		{
-			goalDirection = owner->GetPhysics()->GetOrigin() - goalOrigin;
+			reachable = false;
 		}
 	}
-	else
+
+	if (pathToGoal && reachable)
 	{
-		goalDirection = owner->GetPhysics()->GetOrigin() - goalOrigin;
-	}
-	
-	idVec3 size(16, 16, 82);
-	idAAS* aas = owner->GetAAS();
-	if (aas)
-	{
-		size = aas->GetSettings()->boundingBoxes[0][1];
-	}
+		owner->actionSubsystem->ClearTasks();
+		owner->movementSubsystem->ClearTasks();
+		owner->movementSubsystem->PushTask(TaskPtr(new MoveToPositionTask(finalTargetPoint,idMath::INFINITY,5)));
 
-	float maxHeight =  size.z + owner->GetArmReachLength() - 8;
-
-	idVec2 projection = goalDirection.ToVec2();
-
-	// Am I carrying a torch? Useful when setting the standoff distance
-
-	idEntity* torch = owner->GetTorch();
-
-	// Move a bit from the goal origin towards the AI 
-	// and perform a trace down to detect the ground.
-
-	goalDirection.NormalizeFast();
-
-	// If the goal entity has a bounding box (i.e. a model with
-	// a built-in light, or a switch), use an average of its x/y sizes to add to
-	// how far away the AI should stand.
-
-	idEntity* bindMaster = _goalEnt->GetBindMaster();
-	_standOff = 0;
-	while (bindMaster != NULL)
-	{
-		idVec3 goalSize = bindMaster->GetPhysics()->GetBounds().GetSize();
-		float goalDist = (goalSize.x + goalSize.y)/4;
-		if (goalDist > _standOff)
-		{
-			_standOff = goalDist;
-		}
-		bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
-	}
-
-	_standOff += 2*size.x;
-	float armReach = owner->GetArmReachLength();
-	float standOffTemp = _standOff; // use this to establish reachability
-	if (standOffTemp < armReach) // can't try to get close to candles on tables
-	{
-		standOffTemp = armReach;
-	}
-
-	// Use standOffTemp to find the floor near the goal. In case this is a candle sitting
-	// on a table, you have to move out a reasonable distance to clear the table.
-
-	idVec3 startPoint = goalOrigin + goalDirection * standOffTemp;
-	idVec3 bottomPoint = startPoint;
-	bottomPoint.z -= maxHeight;
-	
-	idVec3 targetPoint = startPoint;
-	trace_t result;
-	if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
-	{
-		// Found the floor.
-
-		targetPoint.z = result.endpos.z + 1; // move the target point to the floor
-
-		//gameRenderWorld->DebugArrow(colorRed, startPoint, targetPoint, 2, 5000);
-
-		// Is there a path to the target point?
-
-		int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
-		int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
-		aasPath_t path;
-		if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint, owner))
-		{
-			// A path has been found. Now we adjust where we're going to stand based on
-			// the relight method.
-
-			// You can stand closer to goals that are on the floor or high (presumably on a wall). Goals
-			// in the "medium" range are either switches on walls or candles on tables. You can't
-			// try to get close to medium-height candles, because the presence of a table can make pathfinding
-			// think you can't get to the candle. Medium-height switches on walls aren't a problem if you
-			// stand a bit farther off from them.
-
-			// Also adjust the standoff for flames based on whether you're using a torch or tinderbox.
-
-			// Abandon standOffTemp and use the original _standOff.
-
-			if (lightType == AIUSE_LIGHTTYPE_TORCH)
-			{
-				float ht = goalOrigin.z - targetPoint.z; // height of goal off the floor
-				if (ht > RELIGHT_HEIGHT_HIGH) // high
-				{
-					if (torch)
-					{
-						_standOff -= 8; // get closer to goal
-					}
-					else // tinderbox
-					{
-						_standOff -= 16; // get closer to goal
-					}
-				}
-				else if (ht < RELIGHT_HEIGHT_LOW) // low
-				{
-					if (torch == NULL)
-					{
-						_standOff -= 16; // get closer to goal
-					}
-					else // tinderbox
-					{
-					}
-				}
-				else // medium
-				{
-					if (torch)
-					{
-						_standOff -= 8; // get closer to goal
-					}
-					else // tinderbox
-					{
-						_standOff -= 16; // get closer to goal
-					}
-				}
-			}
-			idVec3 tp = goalOrigin + goalDirection * _standOff; // use adjusted standoff
-			tp.z = targetPoint.z;
-
-			owner->actionSubsystem->ClearTasks();
-			owner->movementSubsystem->ClearTasks();
-			owner->movementSubsystem->PushTask(TaskPtr(new MoveToPositionTask(tp,idMath::INFINITY,5)));
-
-			if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-			{
-				memory.lastTimeVisualStimBark = gameLocal.time;
-				owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_yesRelightTorch")));
-			}
-			
-			light->IgnoreResponse(ST_VISUAL, owner);
-			_waitEndTime = gameLocal.time + 1000; // allow time for move to begin
-			_relightState = EStateStarting;
-			return;
-		}
-
-		// No path to goal. Success depends on the angle of approach. I.e. a candle sitting on a table
-		// might only allow the AI to stand in certain places to light it. Try again later, when perhaps
-		// the angle of approach provides a more favorable outcome.
+		memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_yesRelightTorch")));
 		
-		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-		{
-			memory.lastTimeVisualStimBark = gameLocal.time;
-			idStr bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark)));
-		}
-		Wrapup(owner,light,false);
+		light->IgnoreResponse(ST_VISUAL, owner);
+		_waitEndTime = gameLocal.time + 1000; // allow time for move to begin
+		_relightState = EStateStarting;
 		return;
 	}
 
-	// Probably can't reach the light, too far above ground. This could also be from the trace
+	// The goal is unreachable, or there's no path to get to it.
+
+	// Re: No path to goal. Success depends on the angle of approach. I.e. a candle sitting on a table
+	// might only allow the AI to stand in certain places to light it. Try again later, when perhaps
+	// the angle of approach provides a more favorable outcome.
+
+	// Re: Unreachable. Probably can't reach the light; too far above ground. This could also be from the trace
 	// hitting a table a candle is sitting on. Try again later. Also, a wall torch halfway up stairs
 	// might allow for relighting when the AI is walking down the stairs, but not when he's walking up.
 
-	// TODO: Count the number of times a light is out of reach. If it reaches a threshold, always ignore it.
+	ignoreLight = false;
 
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
 	{
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		idStr bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark)));
+		// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
+		// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
+		// the number of such barks, which can get tiresome.
+
+		if (light->NegativeBark(owner))
+		{
+			idStr bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark)));
+		}
 	}
 	
-	Wrapup(owner,light,false);
+	Wrapup(owner,light,ignoreLight);
 }
 
 // Gets called each time the mind is thinking
@@ -334,29 +445,35 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 
+	bool lightOn = (light->GetLightLevel() > 0);
+	bool ignoreLight;
+
 	// check if something happened to abort the relight (i.e. dropped torch, higher alert)
 	if (owner->GetMemory().stopRelight)
 	{
-		Wrapup(owner,light,(light->GetLightLevel() > 0));
+		ignoreLight = lightOn;
+		Wrapup(owner,light,ignoreLight);
 		return;
 	}
 
 	owner->PerformVisualScan();	// Let the AI check its senses
 	if (owner->AI_AlertLevel >= owner->thresh_5) // finished if alert level is too high
 	{
-		light->m_relightAfter = gameLocal.time + RELIGHT_DELAY; // wait awhile until you pay attention to it again
-		Wrapup(owner,light,(light->GetLightLevel() > 0));
+		light->SetRelightAfter(); // wait awhile until you pay attention to it again
+		ignoreLight = false;
+		Wrapup(owner,light,ignoreLight);
 		return;
 	}
 
-	if (light->GetLightLevel() > 0) // If the light comes on before you relight it, act appropriately
+	if (lightOn) // If the light comes on before you relight it, act appropriately
 	{
 		switch (_relightState)
 		{
 			case EStateStarting:
 			case EStateApproaching:
 			case EStateTurningToward:
-				Wrapup(owner,light,true);
+				ignoreLight = lightOn;
+				Wrapup(owner,light,ignoreLight);
 				return;
 			case EStateRelight:
 			case EStatePause:
@@ -403,8 +520,7 @@ void SwitchOnLightState::Think(idAI* owner)
 				if (owner->AI_MOVE_DONE)
 				{
 					float lightHeight = goalOrigin.z - owner->GetPhysics()->GetOrigin().z;
-					float maxHeight =  size.z + owner->GetArmReachLength() - 8;
-					if ((delta <= 1.7 * owner->GetArmReachLength()) && (lightHeight <= maxHeight))
+					if ((delta <= 2 * owner->GetArmReachLength()) && (lightHeight <= RELIGHT_MAX_HEIGHT))
 					{
 						owner->TurnToward(goalOrigin);
 						_relightState = EStateTurningToward;
@@ -412,9 +528,21 @@ void SwitchOnLightState::Think(idAI* owner)
 					}
 					else // too far away
 					{
+						// Bark, but not too often
+
+						if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
+						{
+							if (light->NegativeBark(owner))
+							{
+								memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+								owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch")));
+							}
+						}
+
 						// TODO: Try moving closer?
-						light->m_relightAfter = gameLocal.time + RELIGHT_DELAY; // wait awhile until you pay attention to it again
-						Wrapup(owner,light,false);
+						light->SetRelightAfter(); // wait awhile until anyone pays attention to it again
+						ignoreLight = false;
+						Wrapup(owner,light,ignoreLight);
 						return;
 					}
 				}
@@ -476,25 +604,18 @@ void SwitchOnLightState::Think(idAI* owner)
 		case EStatePause:
 			if ((owner->AnimDone(ANIMCHANNEL_TORSO,4)) || (gameLocal.time >= _waitEndTime))
 			{
-				_waitEndTime = gameLocal.time + 3000; // pause before walking away
+				_waitEndTime = gameLocal.time + 1000; // pause before walking away
 				_relightState = EStateFinal;
-
-				// Slow turning because you're suspicious
-				_oldTurnRate = owner->GetTurnRate();
-				owner->SetTurnRate(45);
-				owner->movementSubsystem->PushTask(RandomTurningTask::CreateInstance());
-				owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 			}
 			break;
 		case EStateFinal:
 			if (gameLocal.time >= _waitEndTime)
 			{
-				owner->SetTurnRate(_oldTurnRate); // done being suspicious after relight
-
-				// Set up search if warranted
+				// Set up search if latched
 
 				if (owner->m_LatchedSearch)
 				{
+					owner->m_LatchedSearch = false;
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = light->GetPhysics()->GetOrigin();
@@ -514,8 +635,9 @@ void SwitchOnLightState::Think(idAI* owner)
 					}
 				}
 
-				Wrapup(owner,light,true);
-				light->AllowResponse(ST_VISUAL,owner);
+				ignoreLight = false;
+				light->SetChanceNegativeBark(1.0); // grayman #2603 - reset
+				Wrapup(owner,light,ignoreLight);
 				return;
 			}
 			break;
@@ -534,7 +656,6 @@ void SwitchOnLightState::StartSwitchOn(idAI* owner, idLight* light)
 	idStr legsAnimation = ""; // if empty, no need to deal with the legs
 	float lightHeight = _goalEnt->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
 	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
-	bool drawWeapon = false;
 
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
@@ -546,59 +667,32 @@ void SwitchOnLightState::StartSwitchOn(idAI* owner, idLight* light)
 
 		if (owner->GetTorch() != NULL)
 		{
-			if (lightHeight > RELIGHT_HEIGHT_HIGH) // high?
-			{
-				torsoAnimation = "Torso_Relight_Torch_High";
-			}
-			else if (lightHeight < RELIGHT_HEIGHT_LOW) // low?
-			{
-				torsoAnimation = "Torso_Relight_Torch_Low";
-				legsAnimation  = "Legs_Relight_Torch_Low";
-			}
-			else // medium
-			{
-				torsoAnimation = "Torso_Relight_Torch_Med";
-			}
+			torsoAnimation = "Torso_Relight_Torch";
 		}
 		else // use tinderbox (sheathes any drawn weapon, relights, then redraws weapon)
 		{
-			if (lightHeight > RELIGHT_HEIGHT_HIGH) // high?
-			{
-				torsoAnimation = "Torso_Relight_Tinderbox_High";
-			}
-			else if (lightHeight < RELIGHT_HEIGHT_LOW) // low?
-			{
-				torsoAnimation = "Torso_Relight_Tinderbox_Low";
-				legsAnimation  = "Legs_Relight_Tinderbox_Low";
-			}
-			else // medium
-			{
-				torsoAnimation = "Torso_Relight_Tinderbox_Med";
-			}
+			torsoAnimation = "Torso_Relight_Tinderbox";
 		}
 	}
 	else // electric
 	{
-		if (lightHeight > RELIGHT_HEIGHT_HIGH) // high?
-		{
-			torsoAnimation = "Torso_Relight_Electric_High"; // reach up toward the switch or light
-		}
-		else if (lightHeight < RELIGHT_HEIGHT_LOW) // low?
-		{
-			torsoAnimation = "Torso_Relight_Electric_Low"; // reach down toward the switch or light
-			legsAnimation  = "Legs_Relight_Electric_Low";
-		}
-		else // medium
-		{
-			torsoAnimation = "Torso_Relight_Electric_Med"; // reach out toward the switch or light
-		}
+		torsoAnimation = "Torso_Relight_Electric"; // reach up toward the switch or light
+	}
+	
+	if (lightHeight > RELIGHT_HEIGHT_HIGH) // high?
+	{
+		torsoAnimation.Append("_High"); // reach up toward the switch or light
+	}
+	else if (lightHeight < RELIGHT_HEIGHT_LOW) // low?
+	{
+		torsoAnimation.Append("_Low"); // reach down toward the switch or light
+	}
+	else // medium
+	{
+		torsoAnimation.Append("_Med"); // reach out toward the switch or light
 	}
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, torsoAnimation.c_str(), 4);
-	if (legsAnimation.Length() > 0)
-	{
-		owner->SetAnimState(ANIMCHANNEL_LEGS, legsAnimation.c_str(), 4);
-	}
 }
 
 void SwitchOnLightState::Save(idSaveGame* savefile) const
