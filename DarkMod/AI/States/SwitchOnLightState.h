@@ -31,7 +31,6 @@ private:
 
 	idEntity* _goalEnt; // grayman #2603 - entity to walk toward when relighting a light
 	float _standOff;	// grayman #2603 - get this close to relight
-	float _oldTurnRate;	// grayman #2603 - hold old turn rate while turning suspiciously
 
 	enum ERelightState	// grayman #2603
 	{

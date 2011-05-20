@@ -4552,7 +4552,7 @@ void idAI::Turn(const idVec3& pivotOffset) {
 		return;
 	}
 
-	// check if the animator has marker this anim as non-turning
+	// check if the animator has marked this anim as non-turning
 	if ( !legsAnim.Disabled() && !legsAnim.AnimDone( 0 ) ) {
 		animflags = legsAnim.GetAnimFlags();
 	} else {

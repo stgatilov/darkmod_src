@@ -421,11 +421,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	{
 		aiUseType = EAIuse_Lightsource;
 
-		// grayman debug - temporarily ignore what's defined in the AI, and use a CVAR.
-
-		chanceToNotice = cv_ai_chance_notice_light.GetFloat();
-		//chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight"); // grayman debug - uncomment when SH decides on a good default #,
-																			// then set that in the base human *.def file.
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
 	}
 	else if (aiUse == AIUSE_PERSON)
 	{

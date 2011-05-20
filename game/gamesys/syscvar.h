@@ -70,8 +70,6 @@ extern idCVar cv_ai_hiding_spot_max_light_quotient;
 extern idCVar cv_ai_max_hiding_spot_tests_per_frame;
 extern idCVar cv_ai_debug_anims;
 
-extern idCVar cv_ai_chance_notice_light; // grayman debug - delete after SH decides on a good default value
-
 extern idCVar cv_show_health;
 
 extern idCVar cv_ai_show_aasfuncobstacle_state;

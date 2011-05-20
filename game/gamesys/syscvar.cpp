@@ -82,8 +82,6 @@ idCVar cv_ai_acuity_L4	(			"tdm_ai_acuity_L4",			"1.3",			CVAR_GAME | CVAR_ARCHI
 idCVar cv_ai_acuity_L5	(			"tdm_ai_acuity_L5",			"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 5");
 idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is suspicious due to evidence. It is in addition to the other modifiers.");
 
-idCVar cv_ai_chance_notice_light (	"tdm_ai_chance_notice_light",	"0.7",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the chance (0.0 -> 1.0) that an ai will notice that a light has gone off"); // grayman debug - delete when SH decides what number to hardcode
-
 idCVar cv_sndprop_disable(			"tdm_sndprop_disable",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation will not be calculated." );
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
 idCVar cv_spr_show(					"tdm_showsprop",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines. The volume of the sound heard by the AI and the alert increase will be displayed." );
