@@ -30,7 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Tasks/PathLookatTask.h"
 #include "Tasks/PathInteractTask.h"
 #include "Tasks/MoveToPositionTask.h"
-
+#include "Tasks/FollowActorTask.h"
 
 namespace ai
 {
@@ -376,6 +376,21 @@ void MovementSubsystem::StartPathTask()
 	else if (classname == "path_interact")
 	{
 		tasks.push_back(PathInteractTaskPtr(new PathInteractTask(path)));
+	}
+	else if (classname == "path_follow_actor")
+	{
+		for (int i = 0; i < path->targets.Num(); i++)
+		{
+			idEntity* target = path->targets[i].GetEntity();
+			
+			if (target == NULL || !target->IsType(idActor::Type))
+			{
+				continue;
+			}
+
+			tasks.push_back(FollowActorTaskPtr(new FollowActorTask(static_cast<idActor*>(target))));
+			break;
+		}
 	}
 	else
 	{

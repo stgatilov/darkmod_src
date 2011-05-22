@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_PATROL_TASK_H__
-#define __AI_PATROL_TASK_H__
+#ifndef __AI_FOLLOW_ACTOR_TASK_H__
+#define __AI_FOLLOW_ACTOR_TASK_H__
 
 #include "Task.h"
 
@@ -16,15 +16,22 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATROL "Patrol"
+#define TASK_FOLLOW_ACTOR "FollowActor"
 
-class PatrolTask;
-typedef boost::shared_ptr<PatrolTask> PatrolTaskPtr;
+class FollowActorTask;
+typedef boost::shared_ptr<FollowActorTask> FollowActorTaskPtr;
 
-class PatrolTask :
+class FollowActorTask :
 	public Task
 {
+private:
+	idEntityPtr<idActor> _actor;
+
+	FollowActorTask();
+
 public:
+	FollowActorTask(idActor* actorToFollow);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
@@ -33,10 +40,14 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
+
 	// Creates a new Instance of this task
-	static PatrolTaskPtr CreateInstance();
+	static FollowActorTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_PATROL_TASK_H__ */
+#endif /* __AI_FOLLOW_ACTOR_TASK_H__ */

@@ -13,62 +13,46 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
-#include "PathCornerTask.h"
+#include "FollowActorTask.h"
 #include "../Library.h"
 
 namespace ai
 {
 
-PathCornerTask::PathCornerTask() :
-	PathTask(),
-	_moveInitiated(false),
-	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	_lastFrameNum(-1),
-	_usePathPrediction(false)
+FollowActorTask::FollowActorTask()
 {}
 
-PathCornerTask::PathCornerTask(idPathCorner* path) :
-	PathTask(path),
-	_moveInitiated(false),
-	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	_lastFrameNum(-1),
-	_usePathPrediction(false)
+FollowActorTask::FollowActorTask(idActor* actor)
 {
-	_path = path;
+	_actor = actor;
 }
 
 // Get the name of this task
-const idStr& PathCornerTask::GetName() const
+const idStr& FollowActorTask::GetName() const
 {
-	static idStr _name(TASK_PATH_CORNER);
+	static idStr _name(TASK_FOLLOW_ACTOR);
 	return _name;
 }
 
-void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
+void FollowActorTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
-	PathTask::Init(owner, subsystem);
+	Task::Init(owner, subsystem);
 
-	_lastPosition = owner->GetPhysics()->GetOrigin();
+	/*_lastPosition = owner->GetPhysics()->GetOrigin();
 	_lastFrameNum = gameLocal.framenum;
 
 	// Check the "run" spawnarg of this path entity
 	owner->AI_RUN = (_path.GetEntity()->spawnArgs.GetBool("run", "0"));
 
-	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();
-
-	// Allow path prediction only if the next path is an actual path corner and no accuracy is set on this one
-	if (_accuracy == -1 && nextPath != NULL && idStr::Icmp(nextPath->spawnArgs.GetString("classname"), "path_corner") == 0)
-	{
-		_usePathPrediction = true;
-	}
+	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();*/
 }
 
-bool PathCornerTask::Perform(Subsystem& subsystem)
+bool FollowActorTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("FollowActorTask performing.\r");
 
-	idPathCorner* path = _path.GetEntity();
+	/*idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
 
 	// This task may not be performed with empty entity pointers
@@ -175,7 +159,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 						// NextPath();
 
 						// Move is done, fall back to PatrolTask
-						DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathCornerTask ending prematurely.\r");
+						DM_LOG(LC_AI, LT_INFO)LOGSTRING("FollowActorTask ending prematurely.\r");
 
 						// End this task, let the next patrol/pathcorner task take up its work before
 						// the AI code is actually reaching its position and issuing StopMove
@@ -211,42 +195,36 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 		owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
 
 		_moveInitiated = true;
-	}
+	}*/
 
 	return false; // not finished yet
 }
 
 
 // Save/Restore methods
-void PathCornerTask::Save(idSaveGame* savefile) const
+void FollowActorTask::Save(idSaveGame* savefile) const
 {
-	PathTask::Save(savefile);
+	Task::Save(savefile);
 
-	savefile->WriteBool(_moveInitiated);
-	savefile->WriteVec3(_lastPosition);
-	savefile->WriteInt(_lastFrameNum);
-	savefile->WriteBool(_usePathPrediction);
+	_actor.Save(savefile);
 }
 
-void PathCornerTask::Restore(idRestoreGame* savefile)
+void FollowActorTask::Restore(idRestoreGame* savefile)
 {
-	PathTask::Restore(savefile);
+	Task::Restore(savefile);
 
-	savefile->ReadBool(_moveInitiated);
-	savefile->ReadVec3(_lastPosition);
-	savefile->ReadInt(_lastFrameNum);
-	savefile->ReadBool(_usePathPrediction);
+	_actor.Restore(savefile);
 }
 
-PathCornerTaskPtr PathCornerTask::CreateInstance()
+FollowActorTaskPtr FollowActorTask::CreateInstance()
 {
-	return PathCornerTaskPtr(new PathCornerTask);
+	return FollowActorTaskPtr(new FollowActorTask);
 }
 
 // Register this task with the TaskLibrary
-TaskLibrary::Registrar pathCornerTaskRegistrar(
-	TASK_PATH_CORNER, // Task Name
-	TaskLibrary::CreateInstanceFunc(&PathCornerTask::CreateInstance) // Instance creation callback
+TaskLibrary::Registrar followActorTaskRegistrar(
+	TASK_FOLLOW_ACTOR, // Task Name
+	TaskLibrary::CreateInstanceFunc(&FollowActorTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai

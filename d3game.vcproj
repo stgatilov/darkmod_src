@@ -1145,6 +1145,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\DarkMod\AI\Tasks\FollowActorTask.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\Tasks\FollowActorTask.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\AI\Tasks\GreetingBarkTask.cpp"
 						>
 					</File>
@@ -1318,14 +1326,6 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PathWaitTask.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\PatrolTask.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\PatrolTask.h"
 						>
 					</File>
 					<File

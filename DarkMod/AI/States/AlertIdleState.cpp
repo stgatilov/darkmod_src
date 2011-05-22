@@ -16,7 +16,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "AlertIdleState.h"
 #include "../Memory.h"
 #include "../Tasks/RandomHeadturnTask.h"
-#include "../Tasks/PatrolTask.h"
 #include "../Tasks/AnimalPatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"

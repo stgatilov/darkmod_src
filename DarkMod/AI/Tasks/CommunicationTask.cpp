@@ -13,7 +13,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
-#include "PatrolTask.h"
 #include "CommunicationTask.h"
 #include "../Library.h"
 
