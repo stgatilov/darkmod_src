@@ -40,21 +40,21 @@ void Mind::Think()
 	// Clear the recyclebin, it might hold a finished state from the last frame
 	_recycleBin = StatePtr();
 
+	// greebo: We do not check for NULL pointers in the owner at this point, 
+	// as this method is called by the owner itself, it _has_ to exist.
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
 	if (_stateQueue.empty())
 	{
 		// We start with the idle state
-		PushState(STATE_DEFAULT);
+		PushState(owner->backboneStates[ai::ERelaxed]);
 	}
 
 	// At this point, we MUST have a State
 	assert(_stateQueue.size() > 0);
 
 	const StatePtr& state = _stateQueue.front();
-
-	// greebo: We do not check for NULL pointers in the owner at this point, 
-	// as this method is called by the owner itself, it _has_ to exist.
-	idAI* owner = _owner.GetEntity();
-	assert(owner != NULL);
 
 	// Thinking
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Mind is thinking... %s\r", owner->name.c_str());

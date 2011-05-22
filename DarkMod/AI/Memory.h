@@ -118,7 +118,8 @@ enum EAlertType
 };
 
 // The alert index the AI is in
-enum EAlertState {
+enum EAlertState
+{
 	ERelaxed = 0,
 	EObservant,
 	ESuspicious,
@@ -162,9 +163,6 @@ class Memory
 public:
 	// The owning AI
 	idAI* owner;
-
-	// The alert state we're currently in
-	EAlertState	alertState;
 
 	// The path entity we're supposed to be heading to
 	idEntityPtr<idPathCorner> currentPath;

@@ -20,7 +20,6 @@ namespace ai
 
 Memory::Memory(idAI* owningAI) :
 	owner(owningAI),
-	alertState(ERelaxed),
 	lastAlertRiseTime(-1),
 	deadTimeAfterAlertRise(300),
 	lastPatrolChatTime(-1),
@@ -77,7 +76,6 @@ Memory::Memory(idAI* owningAI) :
 void Memory::Save(idSaveGame* savefile) const
 {
 	savefile->WriteObject(owner);
-	savefile->WriteInt(static_cast<int>(alertState));
 	currentPath.Save(savefile);
 	nextPath.Save(savefile);
 	lastPath.Save(savefile);
@@ -158,11 +156,6 @@ void Memory::Save(idSaveGame* savefile) const
 void Memory::Restore(idRestoreGame* savefile)
 {
 	savefile->ReadObject(reinterpret_cast<idClass*&>(owner));
-
-	int temp;
-	savefile->ReadInt(temp);
-	alertState = static_cast<EAlertState>(temp);
-
 	currentPath.Restore(savefile);
 	nextPath.Restore(savefile);
 	lastPath.Restore(savefile);
@@ -187,6 +180,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(alertPos);
 	savefile->ReadBool(stopRelight); // grayman #2603
 
+	int temp;
 	savefile->ReadInt(temp);
 	alertClass = static_cast<EAlertClass>(temp);
 
