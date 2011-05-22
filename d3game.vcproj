@@ -1994,6 +1994,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\IniFile.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\IniFile.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Intersection.cpp"
 					>
 				</File>
@@ -2043,10 +2051,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\MeleeWeapon.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\Misc.h"
 					>
 				</File>
 				<File
@@ -2111,14 +2115,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\PositionWithinRangeFinder.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\Profile.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\Profile.h"
 					>
 				</File>
 				<File

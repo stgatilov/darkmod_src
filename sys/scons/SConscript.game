@@ -144,6 +144,7 @@ Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
 Intersection.cpp \
+IniFile.cpp \
 lightgem.cpp \
 liquid.cpp \
 MaterialConverter.cpp \
@@ -154,7 +155,6 @@ MultiStateMoverButton.cpp \
 MultiStateMoverPosition.cpp \
 overlaysys.cpp \
 PositionWithinRangeFinder.cpp \
-Profile.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 rdline.cpp \

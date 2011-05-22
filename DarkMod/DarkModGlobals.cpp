@@ -22,8 +22,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "DarkModGlobals.h"
-#include "Misc.h"
-#include "Profile.h"
 #include "sndPropLoader.h"
 #include "sndProp.h"
 #include "Relations.h"
@@ -32,6 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
 #include "RevisionTracker.h"
+#include "IniFile.h"
 #include <boost/filesystem.hpp>
 
 #ifdef MACOS_X
@@ -68,7 +67,7 @@ const char* DARKMOD_LOGFILE = "/tmp/DarkMod.log";
 #elif MACOS_X
 const char* DARKMOD_LOGFILE = "~/Library/Logs/DarkMod.log";
 #else // Windows
-const char* DARKMOD_LOGFILE = "c:\\d3modlogger.log";
+const char* DARKMOD_LOGFILE = "DarkMod.temp.log";
 #endif
 
 static const char *LTString[LT_COUNT+1] = {
@@ -274,12 +273,6 @@ CGlobal::~CGlobal()
 
 void CGlobal::Init()
 {
-	PROFILE_HANDLE *pfh = NULL;
-
-#ifdef _WINDOWS_
-//	SH_ADD_HOOK_STATICFUNC(idCommon, Printf, common, DM_Printf, 0);
-#endif
-
 	// stgatilov: used for intercepting lightgem render output
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, WriteFile, fileSystem, DM_WriteFile, 0);
 
@@ -303,20 +296,23 @@ void CGlobal::Init()
 	
 #endif
 
-	const char* profilePath = iniPath.c_str();
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Trying to open %s\r", profilePath);
-	if((pfh = OpenProfile(profilePath, TRUE, FALSE)) == NULL)
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Trying to open %s\r", iniPath.c_str());
+
+	IniFilePtr darkmodIni = IniFile::ConstructFromFile(iniPath);
+
+	if (darkmodIni)
 	{
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("darkmod.ini not found at %s\r", profilePath);
+		LoadINISettings(darkmodIni);
+
+		if (darkmodIni->GetValue("Debug", "LogFileVersions") == "1")
+		{
+			FileVersionDump();
+		}
 	}
-
-	if(pfh != NULL)
-		LoadINISettings(pfh);
 	else
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open darkmod.ini\r");
-
-	CloseProfile(pfh);
-	FileVersionDump();
+	{
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open darkmod.ini: %s\r", iniPath.c_str());
+	}
 
 	// Map the surface types to strings
 	InitSurfaceHardness();
@@ -372,146 +368,130 @@ void CGlobal::LogString(const char *fmt, ...)
 	va_end(arg);
 }
 
-void CGlobal::LoadINISettings(void *p)
+void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 {
-	PROFILE_HANDLE *pfh = (PROFILE_HANDLE *)p;
-	PROFILE_SECTION *ps;
-	PROFILE_MAP *pm;
-	FILE *logfile;
-
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Loading INI settings\r");
 
 	// All logclasses are loaded from the INI file. Frame can be switched 
 	// on explicitly. If any of the other classes are enabled, then Frame 
 	// will also be enabled as a marker in the logfile.
-	if(FindSection(pfh, "Debug", &ps) != static_cast<ULONG>(-1))
-	{
 
 // Don't use the LogFile section for OSX, always log to the original path in ~/Library/Logs
 #ifndef MACOS_X
-		if (FindMap(ps, "LogFile", TRUE, &pm) != static_cast<ULONG>(-1))
+	std::string logFilePath = iniFile->GetValue("Debug", "LogFile");
+
+	if (logFilePath.empty())
+	{
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Logging disabled by darkmod.ini, closing logfile.\r");
+
+		// No logfile defined, quit logging
+		fclose(m_LogFile);
+		m_LogFile = NULL;
+	}
+	else
+	{
+		struct tm *t;
+		time_t timer;
+
+		timer = time(NULL);
+		t = localtime(&timer);
+
+		FILE* logfile = fopen(logFilePath.c_str(), "w+b");
+
+		if (logfile != NULL)
 		{
-			if (idStr::Icmp(pm->Value, "") == 0)
-			{
-				DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Logging disabled by darkmod.ini, closing logfile.\r");
+			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Switching logfile to %s.\r", logFilePath.c_str());
 
-				// No logfile defined, quit logging
+			if (m_LogFile != NULL)
+			{
 				fclose(m_LogFile);
-				m_LogFile = NULL;
+				m_LogFile = logfile;
 			}
-			else
-			{
-				struct tm *t;
-				time_t timer;
 
-				timer = time(NULL);
-				t = localtime(&timer);
-
-				if((logfile = fopen(pm->Value, "w+b")) != NULL)
-				{
-					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Switching logfile to [%s].\r", pm->Value);
-					if(m_LogFile != NULL)
-					{
-						fclose(m_LogFile);
-						m_LogFile = logfile;
-					}
-
-					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
-								t->tm_year+1900, t->tm_mon, t->tm_mday, 
-								t->tm_hour, t->tm_min, t->tm_sec);
-					DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
-				}
-			}
+			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
+						t->tm_year+1900, t->tm_mon, t->tm_mday, 
+						t->tm_hour, t->tm_min, t->tm_sec);
+			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
+			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d, code revision %d\r", 
+				GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
+				RevisionTracker::Instance().GetHighestRevision());
 		}
+	}
+
 #endif
 
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found Debug section \r");
-
-		if(FindMap(ps, "LogError", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_ERROR] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogError: %c\r", pm->Value[0]);
-		}
-
-		if(FindMap(ps, "LogBegin", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_BEGIN] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogBegin: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogEnd", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_END] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogEnd: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogDebug", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_DEBUG] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogDebug: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogWarning", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_WARNING] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogWarning: %c\r", pm->Value[0]);
-		}
-		if(FindMap(ps, "LogInfo", TRUE, &pm) != static_cast<ULONG>(-1))
-		{
-			if(pm->Value[0] == '1')
-				m_LogArray[LT_INFO] = true;
-
-			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %c\r", pm->Value[0]);
-		}
-
-		CheckLogClass(ps, "LogClass_FRAME", LC_FRAME);
-		CheckLogClass(ps, "LogClass_SYSTEM", LC_SYSTEM);
-		CheckLogClass(ps, "LogClass_MISC", LC_MISC);
-		CheckLogClass(ps, "LogClass_FROBBING", LC_FROBBING);
-		CheckLogClass(ps, "LogClass_AI", LC_AI);
-		CheckLogClass(ps, "LogClass_SOUND", LC_SOUND);
-		CheckLogClass(ps, "LogClass_FUNCTION", LC_FUNCTION);
-		CheckLogClass(ps, "LogClass_ENTITY", LC_ENTITY);
-		CheckLogClass(ps, "LogClass_INVENTORY", LC_INVENTORY);
-		CheckLogClass(ps, "LogClass_LIGHT", LC_LIGHT);
-		CheckLogClass(ps, "LogClass_WEAPON", LC_WEAPON);
-		CheckLogClass(ps, "LogClass_MATH", LC_MATH);
-		CheckLogClass(ps, "LogClass_MOVEMENT", LC_MOVEMENT);
-		CheckLogClass(ps, "LogClass_STIM_RESPONSE", LC_STIM_RESPONSE);
-		CheckLogClass(ps, "LogClass_OBJECTIVES", LC_OBJECTIVES);
-		CheckLogClass(ps, "LogClass_DIFFICULTY", LC_DIFFICULTY);
-		CheckLogClass(ps, "LogClass_CONVERSATION", LC_CONVERSATION);
-		CheckLogClass(ps, "LogClass_MAINMENU", LC_MAINMENU);
-		CheckLogClass(ps, "LogClass_LOCKPICK", LC_LOCKPICK);
-		CheckLogClass(ps, "LogClass_AAS", LC_AAS); // grayman
-	}
-
-	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))
+	if (iniFile->GetValue("Debug", "LogError") == "1")
 	{
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
+		m_LogArray[LT_ERROR] = true;
 	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogError: %d\r", m_LogArray[LT_ERROR]);
+
+	if (iniFile->GetValue("Debug", "LogBegin") == "1")
+	{
+		m_LogArray[LT_BEGIN] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogBegin: %d\r", m_LogArray[LT_BEGIN]);
+
+	if (iniFile->GetValue("Debug", "LogEnd") == "1")
+	{
+		m_LogArray[LT_END] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogEnd: %d\r", m_LogArray[LT_END]);
+
+	if (iniFile->GetValue("Debug", "LogDebug") == "1")
+	{
+		m_LogArray[LT_DEBUG] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogDebug: %d\r", m_LogArray[LT_DEBUG]);
+	
+	if (iniFile->GetValue("Debug", "LogWarning") == "1")
+	{
+		m_LogArray[LT_WARNING] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogWarning: %d\r", m_LogArray[LT_WARNING]);
+	
+	if (iniFile->GetValue("Debug", "LogInfo") == "1")
+	{
+		m_LogArray[LT_INFO] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %d\r", m_LogArray[LT_INFO]);
+	
+	CheckLogClass(iniFile, "LogClass_FRAME", LC_FRAME);
+	CheckLogClass(iniFile, "LogClass_SYSTEM", LC_SYSTEM);
+	CheckLogClass(iniFile, "LogClass_MISC", LC_MISC);
+	CheckLogClass(iniFile, "LogClass_FROBBING", LC_FROBBING);
+	CheckLogClass(iniFile, "LogClass_AI", LC_AI);
+	CheckLogClass(iniFile, "LogClass_SOUND", LC_SOUND);
+	CheckLogClass(iniFile, "LogClass_FUNCTION", LC_FUNCTION);
+	CheckLogClass(iniFile, "LogClass_ENTITY", LC_ENTITY);
+	CheckLogClass(iniFile, "LogClass_INVENTORY", LC_INVENTORY);
+	CheckLogClass(iniFile, "LogClass_LIGHT", LC_LIGHT);
+	CheckLogClass(iniFile, "LogClass_WEAPON", LC_WEAPON);
+	CheckLogClass(iniFile, "LogClass_MATH", LC_MATH);
+	CheckLogClass(iniFile, "LogClass_MOVEMENT", LC_MOVEMENT);
+	CheckLogClass(iniFile, "LogClass_STIM_RESPONSE", LC_STIM_RESPONSE);
+	CheckLogClass(iniFile, "LogClass_OBJECTIVES", LC_OBJECTIVES);
+	CheckLogClass(iniFile, "LogClass_DIFFICULTY", LC_DIFFICULTY);
+	CheckLogClass(iniFile, "LogClass_CONVERSATION", LC_CONVERSATION);
+	CheckLogClass(iniFile, "LogClass_MAINMENU", LC_MAINMENU);
+	CheckLogClass(iniFile, "LogClass_LOCKPICK", LC_LOCKPICK);
+	CheckLogClass(iniFile, "LogClass_AAS", LC_AAS); // grayman
 }
 
-void CGlobal::CheckLogClass(PROFILE_SECTION* ps, const char* key, LC_LogClass logClass)
+void CGlobal::CheckLogClass(const IniFilePtr& iniFile, const char* key, LC_LogClass logClass)
 {
-	PROFILE_MAP* pm = NULL;
-
-	if (FindMap(ps, key, TRUE, &pm) != static_cast<ULONG>(-1))
+	if (iniFile->GetValue("Debug", key) == "1")
 	{
-		if (pm->Value[0] == '1')
-		{
-			m_ClassArray[logClass] = true;
-		}
-
-		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("%s: %c\r", key, pm->Value[0]);
+		m_ClassArray[logClass] = true;
 	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("%s: %d\r", key, m_ClassArray[logClass]);
 }
 
 CLightMaterial *CGlobal::GetMaterial(idStr const &mn)

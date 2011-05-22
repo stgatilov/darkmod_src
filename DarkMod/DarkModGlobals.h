@@ -47,8 +47,10 @@ VersionCheckResult CompareVersion(int major, int minor, int toMajor, int toMinor
 Darkmod LAS
 */
 #include "../DarkMod/darkModLAS.h"
-#include "Profile.h"
 #include <boost/filesystem.hpp>
+
+class IniFile;
+typedef boost::shared_ptr<IniFile> IniFilePtr;
 
 typedef enum {
 	LT_INIT,
@@ -125,11 +127,13 @@ public:
 	CGlobal();
 	~CGlobal();
 
-	void Init(void);
+	void Init();
+
 	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogMat3(idStr const &Name, idMat3 const &Matrix);
 	void LogString(const char *Format, ...);
+
 	CLightMaterial *GetMaterial(idStr const &MaterialName);
 
 	/**
@@ -182,9 +186,9 @@ public:
 	static void ArgCompletion_LogClasses( const idCmdArgs &args, void(*callback)( const char *s ) );
 
 private:
-	void LoadINISettings(void *);
+	void LoadINISettings(const IniFilePtr& iniFile);
 
-	void CheckLogClass(PROFILE_SECTION* ps, const char* key, LC_LogClass logClass);
+	void CheckLogClass(const IniFilePtr& iniFile, const char* key, LC_LogClass logClass);
 
 	// Sets up the surface hardness mapping
 	void InitSurfaceHardness();

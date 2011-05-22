@@ -23,7 +23,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/darkModLAS.h"
 #include "../DarkMod/decltdm_matinfo.h"
 #include "../DarkMod/declxdata.h"
-#include "../DarkMod/Misc.h"
 #include "../DarkMod/Grabber.h"
 #include "../DarkMod/Relations.h"
 #include "../DarkMod/Inventory/Inventory.h"
