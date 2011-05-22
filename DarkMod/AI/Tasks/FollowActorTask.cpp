@@ -55,9 +55,14 @@ bool FollowActorTask::Perform(Subsystem& subsystem)
 
 	idActor* actor = _actor.GetEntity();
 
-	if (actor == NULL)
+	if (actor == NULL || actor->AI_DEAD)
 	{
 		return true; // no actor (anymore, or maybe we never had one)
+	}
+
+	if (actor->IsType(idAI::Type) && static_cast<idAI*>(actor)->AI_KNOCKEDOUT)
+	{
+		return true; // AI got knocked out
 	}
 
 	idAI* owner = _owner.GetEntity();
