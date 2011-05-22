@@ -30,6 +30,8 @@ private:
 	FollowActorTask();
 
 public:
+	// Construct this task by passing an actor to follow - it's safe to pass a NULL actor,
+	// the task will terminate after one thinking round in that case.
 	FollowActorTask(idActor* actorToFollow);
 
 	// Get the name of this task

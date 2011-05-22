@@ -379,6 +379,8 @@ void MovementSubsystem::StartPathTask()
 	}
 	else if (classname == "path_follow_actor")
 	{
+		idActor* actor = NULL;
+
 		for (int i = 0; i < path->targets.Num(); i++)
 		{
 			idEntity* target = path->targets[i].GetEntity();
@@ -388,9 +390,12 @@ void MovementSubsystem::StartPathTask()
 				continue;
 			}
 
-			tasks.push_back(FollowActorTaskPtr(new FollowActorTask(static_cast<idActor*>(target))));
+			actor = static_cast<idActor*>(target);
 			break;
 		}
+
+		// Add a new task, even if the actor is NULL - the task will deal with that
+		tasks.push_back(FollowActorTaskPtr(new FollowActorTask(actor)));
 	}
 	else
 	{
