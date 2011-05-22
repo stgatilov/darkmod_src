@@ -19,6 +19,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
+#define DISTANCE_FOLLOWER_REACHED						60
+#define DISTANCE_FOLLOWER_CATCHUP_DISTANCE				480
+#define DISTANCE_FOLLOWER_CLOSE_ENOUGH_TO_STOP_RUNNING	180
+
 FollowActorTask::FollowActorTask()
 {}
 
@@ -56,11 +60,42 @@ bool FollowActorTask::Perform(Subsystem& subsystem)
 		return true; // no actor (anymore, or maybe we never had one)
 	}
 
-	// TODO
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
 
+	// Classify how far the target actor is away from us
+	float distance = (actor->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthSqr();
+
+	if (distance < Square(DISTANCE_FOLLOWER_REACHED))
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->TurnToward(actor->GetEyePosition());
+	}
+	else 
+	{
+		if (!owner->MoveToPosition(actor->GetPhysics()->GetOrigin()))
+		{
+			// Can't reach the actor, stop moving
+			owner->StopMove(MOVE_STATUS_DONE);
+			owner->TurnToward(actor->GetEyePosition());
+
+			// Keep trying
+			return false;
+		}
+
+		if (distance > Square(DISTANCE_FOLLOWER_CATCHUP_DISTANCE))
+		{
+			owner->AI_RUN = true;
+		}
+		// We're below catch up distance, but keep running until we've reached about 180 units
+		else if (owner->AI_RUN && distance < Square(DISTANCE_FOLLOWER_CLOSE_ENOUGH_TO_STOP_RUNNING))
+		{
+			owner->AI_RUN = false;
+		}
+	}
+	
 	return false; // not finished yet
 }
-
 
 // Save/Restore methods
 void FollowActorTask::Save(idSaveGame* savefile) const

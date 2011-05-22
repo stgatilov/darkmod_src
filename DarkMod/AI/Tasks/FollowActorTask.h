@@ -25,6 +25,7 @@ class FollowActorTask :
 	public Task
 {
 private:
+	// The actor we're following
 	idEntityPtr<idActor> _actor;
 
 	FollowActorTask();
