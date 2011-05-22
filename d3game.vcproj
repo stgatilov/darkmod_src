@@ -1890,10 +1890,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\fdchar.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\force_grab.cpp"
 					>
 				</File>
@@ -2142,10 +2138,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\rdline.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\DarkMod\Relations.cpp"
 					>
 				</File>
@@ -2194,10 +2186,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DarkMod\Strip.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\game\ai\tdmAASFindEscape.cpp"
 					>
 				</File>
@@ -2211,10 +2199,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\TimerManager.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\ToUpper.cpp"
 					>
 				</File>
 				<File

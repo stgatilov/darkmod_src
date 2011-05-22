@@ -130,7 +130,6 @@ DifficultySettings.cpp \
 DownloadMenu.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
-fdchar.cpp \
 force_grab.cpp \
 func_shooter.cpp \
 FrobDoor.cpp \
@@ -157,15 +156,12 @@ overlaysys.cpp \
 PositionWithinRangeFinder.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
-rdline.cpp \
 PickableLock.cpp \
 Relations.cpp \
 RevisionTracker.cpp \
 sndProp.cpp \
 sndPropLoader.cpp \
 TimerManager.cpp \
-Strip.cpp \
-ToUpper.cpp \
 UserManager.cpp \
 Inventory/Category.cpp \
 Inventory/Cursor.cpp \
