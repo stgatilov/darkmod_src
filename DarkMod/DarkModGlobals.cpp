@@ -107,7 +107,7 @@ static const char *LCString[LC_COUNT+1] = {
 	"(empty)"
 };
 
-
+#define INI_DEBUG_SECTION "Debug"
 
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
@@ -298,13 +298,14 @@ void CGlobal::Init()
 
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Trying to open %s\r", iniPath.c_str());
 
+	// Load the INI file into memory
 	IniFilePtr darkmodIni = IniFile::ConstructFromFile(iniPath);
 
 	if (darkmodIni)
 	{
 		LoadINISettings(darkmodIni);
 
-		if (darkmodIni->GetValue("Debug", "LogFileVersions") == "1")
+		if (darkmodIni->GetValue(INI_DEBUG_SECTION, "LogFileVersions") == "1")
 		{
 			FileVersionDump();
 		}
@@ -378,7 +379,7 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 
 // Don't use the LogFile section for OSX, always log to the original path in ~/Library/Logs
 #ifndef MACOS_X
-	std::string logFilePath = iniFile->GetValue("Debug", "LogFile");
+	std::string logFilePath = iniFile->GetValue(INI_DEBUG_SECTION, "LogFile");
 
 	if (logFilePath.empty())
 	{
@@ -390,12 +391,6 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 	}
 	else
 	{
-		struct tm *t;
-		time_t timer;
-
-		timer = time(NULL);
-		t = localtime(&timer);
-
 		FILE* logfile = fopen(logFilePath.c_str(), "w+b");
 
 		if (logfile != NULL)
@@ -407,60 +402,28 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 				fclose(m_LogFile);
 				m_LogFile = logfile;
 			}
-
-			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
-						t->tm_year+1900, t->tm_mon, t->tm_mday, 
-						t->tm_hour, t->tm_min, t->tm_sec);
-			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
-			DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d, code revision %d\r", 
-				GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
-				RevisionTracker::Instance().GetHighestRevision());
 		}
 	}
 
 #endif
 
-	if (iniFile->GetValue("Debug", "LogError") == "1")
-	{
-		m_LogArray[LT_ERROR] = true;
-	}
+	time_t timer = time(NULL);
+	struct tm* t = localtime(&timer);
 
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogError: %d\r", m_LogArray[LT_ERROR]);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
+		t->tm_year+1900, t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
 
-	if (iniFile->GetValue("Debug", "LogBegin") == "1")
-	{
-		m_LogArray[LT_BEGIN] = true;
-	}
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
 
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogBegin: %d\r", m_LogArray[LT_BEGIN]);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d, code revision %d\r", 
+		GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, RevisionTracker::Instance().GetHighestRevision());
 
-	if (iniFile->GetValue("Debug", "LogEnd") == "1")
-	{
-		m_LogArray[LT_END] = true;
-	}
-
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogEnd: %d\r", m_LogArray[LT_END]);
-
-	if (iniFile->GetValue("Debug", "LogDebug") == "1")
-	{
-		m_LogArray[LT_DEBUG] = true;
-	}
-
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogDebug: %d\r", m_LogArray[LT_DEBUG]);
-	
-	if (iniFile->GetValue("Debug", "LogWarning") == "1")
-	{
-		m_LogArray[LT_WARNING] = true;
-	}
-
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogWarning: %d\r", m_LogArray[LT_WARNING]);
-	
-	if (iniFile->GetValue("Debug", "LogInfo") == "1")
-	{
-		m_LogArray[LT_INFO] = true;
-	}
-
-	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %d\r", m_LogArray[LT_INFO]);
+	CheckLogArray(iniFile, "LogBegin", LT_BEGIN);
+	CheckLogArray(iniFile, "LogEnd", LT_END);
+	CheckLogArray(iniFile, "LogInfo", LT_INFO);
+	CheckLogArray(iniFile, "LogDebug", LT_DEBUG);	
+	CheckLogArray(iniFile, "LogWarning", LT_WARNING);
+	CheckLogArray(iniFile, "LogError", LT_ERROR);
 	
 	CheckLogClass(iniFile, "LogClass_FRAME", LC_FRAME);
 	CheckLogClass(iniFile, "LogClass_SYSTEM", LC_SYSTEM);
@@ -484,9 +447,19 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 	CheckLogClass(iniFile, "LogClass_AAS", LC_AAS); // grayman
 }
 
+void CGlobal::CheckLogArray(const IniFilePtr& iniFile, const char* key, LT_LogType logType)
+{
+	if (iniFile->GetValue(INI_DEBUG_SECTION, key) == "1")
+	{
+		m_LogArray[logType] = true;
+	}
+
+	DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("%s: %d\r", key, m_LogArray[logType]);
+}
+
 void CGlobal::CheckLogClass(const IniFilePtr& iniFile, const char* key, LC_LogClass logClass)
 {
-	if (iniFile->GetValue("Debug", key) == "1")
+	if (iniFile->GetValue(INI_DEBUG_SECTION, key) == "1")
 	{
 		m_ClassArray[logClass] = true;
 	}

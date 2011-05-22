@@ -188,6 +188,7 @@ public:
 private:
 	void LoadINISettings(const IniFilePtr& iniFile);
 
+	void CheckLogArray(const IniFilePtr& iniFile, const char* key, LT_LogType logType);
 	void CheckLogClass(const IniFilePtr& iniFile, const char* key, LC_LogClass logClass);
 
 	// Sets up the surface hardness mapping
