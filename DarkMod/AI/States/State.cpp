@@ -420,7 +420,6 @@ void State::OnVisualStim(idEntity* stimSource)
 	if (aiUse == AIUSE_LIGHTSOURCE)
 	{
 		aiUseType = EAIuse_Lightsource;
-
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
 	}
 	else if (aiUse == AIUSE_PERSON)
@@ -465,9 +464,71 @@ void State::OnVisualStim(idEntity* stimSource)
 	// chanceToNotice > 0, so randomly decide if there's a chance of responding
 
 	float chance(gameLocal.random.RandomFloat());
-	if (chance >= chanceToNotice)
+	bool pass = true;
+
+	// grayman #2603 - special handling for light stims
+
+	idEntityPtr<idEntity> stimPtr;
+	stimPtr = stimSource;
+	if (aiUseType == EAIuse_Lightsource)
 	{
-		return;
+		// grayman If we ever begin to notice OFF lights that come ON in front
+		// of us, this check here is the first place to catch that. It should either
+		// branch off into a new way of handling OFF->ON lights, or mix handling them
+		// in with the ON->OFF lights handling.
+
+		// Ignore lights that are on.
+
+		idLight* light = static_cast<idLight*>(stimSource);
+		if ((light->GetLightLevel() > 0) && (!light->IsSmoking()))
+		{
+			stimSource->IgnoreResponse(ST_VISUAL,owner);
+			return;
+		}
+
+		// Before we check the odds of noticing this stim, see if it belongs
+		// to our doused torch. Noticing that should not be subject to
+		// the probability settings.
+
+		if (!CheckTorch(owner,light))
+		{
+			return;
+		}
+
+		// It might not yet be time to notice this stim. If this stim
+		// is on our list of delayed stims, see if its delay has expired.
+
+		int expired = owner->GetDelayedStimExpiration(stimPtr);
+		
+		if (expired > 0)
+		{
+			if (gameLocal.time >= expired)
+			{
+				if (chance > chanceToNotice)
+				{
+					owner->SetDelayedStimExpiration(stimPtr);
+					pass = false;
+				}
+			}
+			else // delay hasn't expired
+			{
+				pass = false;
+			}
+		}
+		else if (chance > chanceToNotice)
+		{
+			owner->SetDelayedStimExpiration(stimPtr); // delay the next check of this stim
+			pass = false;
+		}
+	}
+	else if (chance > chanceToNotice) // check all other stim chances
+	{
+		pass = false;
+	}
+
+	if (!pass)
+	{
+		return; // maybe next time
 	}
 
 	// Only respond if we can actually see it
@@ -478,50 +539,41 @@ void State::OnVisualStim(idEntity* stimSource)
 		// and it doesn't care about walls. Since AI don't care if a light is on, we can avoid the trace
 		// in CanSeeExt() if the light's off.
 
+		// We did a check above to see if the light's on. At this point, we know it's off.
+
 		// Special case for a light. We know it's off if there's no light. Also we can notice it
 		// if we are not looking right at it.
 
-		if (stimSource->IsType(idLight::Type))
+		// We can do a couple quick checks at this point:
+		//
+		// 1. If the AI is busy relighting a light, don't respond
+		// 2. If another AI is busy relighting this light, don't respond
+
+		// Doing these now saves us the trouble of determining if there's LOS, which involves a trace.
+
+		// A light that's off can lead to the AI trying to turn it back on.
+
+		// If we're already in the process of relighting a light, don't repond to this stim now.
+		// We'll see it again later.
+
+		idLight* light = static_cast<idLight*>(stimSource);
+		if (owner->m_RelightingLight)
 		{
-			// grayman If we ever begin to notice OFF lights that come ON in front
-			// of us, this check here is the first place to catch that. It should either
-			// branch off into a new way of handling OFF->ON lights, or mix handling them
-			// in with the ON->OFF lights handling.
-
-			// We can do a few quick checks at this point:
-			//
-			// 1. If the light is on, don't respond
-			// 2. If the AI is busy relighting a light, don't respond
-			// 3. If another AI is busy relighting this light, don't respond
-
-			// Doing these now saves us the trouble of determining if there's LOS, which involves a trace.
-
-			idLight* light = static_cast<idLight*>(stimSource);
-			if (light->GetLightLevel() > 0)
-			{
-				stimSource->IgnoreResponse(ST_VISUAL,owner);
-				return;
-			}
-
-			// grayman #2603 - A light that's off can lead to the AI trying to turn it back on.
-
-			// If we're already in the process of relighting a light, don't repond to this stim now.
-			// We'll see it again later.
-
-			if (owner->m_RelightingLight)
-			{
-				return;
-			}
-
-			// If this light is being relit, don't respond to this stim now.
-			// Someone else is relighting it. You can't ignore it, because if that attempt is aborted, you'll
-			// want to see the stim later.
-
-			if (light->IsBeingRelit())
-			{
-				return;
-			}
+			owner->SetDelayedStimExpiration(stimPtr); // delay your next check of this stim
+			return;
 		}
+
+		// If this light is being relit, don't respond to this stim now.
+		// Someone else is relighting it. You can't ignore it, because if that attempt is aborted, you'll
+		// want to see the stim later.
+
+		if (light->IsBeingRelit())
+		{
+			owner->SetDelayedStimExpiration(stimPtr); // delay your next check of this stim
+			return;
+		}
+
+		// Now do the LOS check.
 
 		if (!owner->CanSeeExt(stimSource, false, false))
 		{
@@ -577,7 +629,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			OnVisualStimLightSource(stimSource,owner);
 		}
-		else // grayman #2603
+		else // grayman #2603 - if alert weighting denies processing, at least check if the doused light is my torch
 		{
 			CheckTorch(owner,static_cast<idLight*>(stimSource));
 		}
@@ -1672,7 +1724,7 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 		// gave us the current stim--then I should toss it. Otherwise I
 		// might try to relight a doused torch with my doused torch.
 
-		if ((torchLight && (torchLight->GetLightLevel() == 0)) || (torchLight == light))
+		if ((torchLight && (torchLight->GetLightLevel() == 0)) || (torchLight == light) || (torchLight->IsSmoking()))
 		{
 			// At this point, I know my torch is out
 
@@ -1724,26 +1776,9 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		return;
 	}
 
-	// Is it on?
-	if (light->GetLightLevel() > 0)
-	{
-		// We've seen this light and it is on.
-		// Don't respond to it again until it changes state and clears
-		// its ignore list
-		stimSource->IgnoreResponse(ST_VISUAL, owner);
-		return;
-	}
-
 	// If I'm in combat mode, do nothing
 
 	if (owner->AI_AlertLevel >= owner->thresh_5)
-	{
-		return;
-	}
-
-	// If I'm already relighting a light, do nothing
-
-	if (owner->m_RelightingLight)
 	{
 		return;
 	}
@@ -1763,7 +1798,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	{
 		// Can't handle this type of light, so exit this state and ignore the light.
 
-		light->IgnoreResponse(ST_VISUAL, owner);
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
 		return;
 	}
 
@@ -1774,7 +1809,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		return; // process later
 	}
 
-	// Is the player carrying this light?
+	// Don't process a light the player is carrying
 
 	CGrabber* grabber = gameLocal.m_Grabber;
 	if (grabber)
@@ -1788,7 +1823,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				if (heldEnt == e)
 				{
 					// Don't ignore this light, in case the player puts it down somewhere.
-					// But you can delay responding to it again for a while.
+					// But all AI should delay responding to it again.
 
 					light->SetRelightAfter();
 					return;
@@ -1798,15 +1833,22 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		}
 	}
 
+	// The next section is about whether we should turn the light back on.
+
+	// if this is a flame and it's not vertical, ignore it
+
+	if (!light->IsVertical(10)) // w/in 10 degrees of vertical?
+	{
+		light->SetRelightAfter();	// don't ignore it, but all AI should wait a while before
+									// paying attention to it again, in case it rights itself
+		return;
+	}
+
 	// Some light models (like wall torches) attach lights at
 	// spawn time. The shouldBeOn spawnarg might be set on the bindMaster model (or
 	// any of the parent bindMasters, in the case of candles in holders), and
 	// we have to check that if it's not set on the stim. If it's set on any
 	// bindMaster, it's also considered to be set on the stim (the light).
-
-	// The next section is about whether we should turn the light back on.
-	// If the light should be on, or if we've seen evidence, or if evidence
-	// of intruders has reached a minimum level, we want to turn the light on.
 
 	SBO_Level shouldBeOn = static_cast<SBO_Level>(stimSource->spawnArgs.GetInt(AIUSE_SHOULDBEON_LEVEL,"0")); // grayman #2603
 
@@ -1826,27 +1868,25 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		}
 	}
 
-	// if this is a flame and it's not vertical, ignore it
-
-	if (!light->IsVertical(10)) // w/in 10 degrees of vertical?
-	{
-		light->SetRelightAfter(); // don't ignore it, but wait awhile until you pay attention to it again
-		return;
-	}
-
 	// If I'm only barking, and not relighting, I'm done.
 
 	if (shouldBeOn == ESBO_0)
 	{
 		// Vocalize that I see a light that's off. But don't bark too often.
 
-		if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
+		if (light->NegativeBark(owner))
 		{
-			if (light->NegativeBark(owner))
+			idStr bark;
+			if (gameLocal.random.RandomFloat() < 0.5)
 			{
-				idStr bark((lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff");
-				owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark)));
+				bark = "snd_noRelightTorch";
 			}
+			else
+			{
+				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+			}
+			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 		}
 		return;
 	}
@@ -1855,7 +1895,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 
 	// ESBO_0 lights don't raise an alert.
 	// ESBO_1 lights raise an alert if the light has been off for less than a defined time.
-	// ESBO_2 lights raise an alert regardless of how long the light's been off.
+	// ESBO_2 lights always raise an alert.
 
 	if ((shouldBeOn == ESBO_2) || ((shouldBeOn == ESBO_1) && (gameLocal.time < (light->GetWhenTurnedOff() + MIN_TIME_LIGHT_ALERT))))
 	{
@@ -1894,18 +1934,16 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
-		if (owner->spawnArgs.GetBool("canLightTorches"))
+		if (owner->spawnArgs.GetBool("canLightTorches") &&
+			(gameLocal.random.RandomFloat() < owner->spawnArgs.GetFloat("chanceLightTorches")))
 		{
 			if (owner->GetTorch() == NULL)
 			{
 				// No torch, so we drop back to the tinderbox method.
 				// If the AI is carrying something other than a weapon,
 				// disallow the tinderbox, because its animation can cause problems.
-				// Wielding a weapon in the right hand is okay, since the tinderbox animation causes
+				// Wielding a weapon, since the tinderbox animation causes
 				// the weapon to be sheathed and drawn again.
-
-				// TODO: A bow is carried in the left hand. Determine how to do the
-				// sheat/redraw bow animations. Currently they don't work with the tinderbox anim.
 
 				idEntity* inLeftHand = owner->GetAttachmentByPosition("hand_l");
 				if (inLeftHand)
@@ -1916,15 +1954,14 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				}
 				else
 				{
-					inLeftHand = owner->GetAttachmentByPosition("hand_l_bow"); // check the bow
-					if (inLeftHand)
-					{
-						// Bow in left hand? Can't use tinderbox atm.
+					// Bow in left hand? Can use tinderbox. The bow is the only thing
+					// attached at hand_l_bow because of the orientation involved.
 
-						turnLightOn = false;
-					}
-					else
+					inLeftHand = owner->GetAttachmentByPosition("hand_l_bow"); // check the bow
+					if (!inLeftHand)
 					{
+						// No bow. Anything in the right hand other than a melee weapon prevents using the tinderbox.
+
 						idEntity* inRightHand = owner->GetAttachmentByPosition("hand_r");
 						if (inRightHand && (idStr::Cmp(inRightHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
 						{
@@ -1936,22 +1973,16 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		}
 		else
 		{
-			stimSource->IgnoreResponse(ST_VISUAL,owner);
 			turnLightOn = false;
 		}
 	}
-	else if (lightType == AIUSE_LIGHTTYPE_ELECTRIC)
+	else // electric
 	{
-		turnLightOn = owner->spawnArgs.GetBool("canOperateSwitchLights");
-		if (!turnLightOn)
+		if (!owner->spawnArgs.GetBool("canOperateSwitchLights") ||
+			(gameLocal.random.RandomFloat() > owner->spawnArgs.GetFloat("chanceOperateSwitchLights")))
 		{
-			stimSource->IgnoreResponse(ST_VISUAL,owner);
+			turnLightOn = false;
 		}
-	}
-	else // some type we can't handle
-	{
-		stimSource->IgnoreResponse(ST_VISUAL,owner);
-		turnLightOn = false;
 	}
 
 	// Turning the light on?
@@ -1963,16 +1994,26 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		memory.stopRelight = false;
 		light->SetBeingRelit(true); // this light is being relit
 		stimSource->IgnoreResponse(ST_VISUAL,owner); // ignore this stim while turning the light back on
-		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light)));
+		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light))); // set out to relight
 	}
-	else // Can't light the light that's out
+	else // Can't relight
 	{
-		if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
+		idEntityPtr<idEntity> stimPtr;
+		stimPtr = stimSource;
+		owner->SetDelayedStimExpiration(stimPtr); // try again after a while
+		if (light->NegativeBark(owner))
 		{
-			if (light->NegativeBark(owner))
+			idStr bark;
+			if (gameLocal.random.RandomFloat() < 0.5)
 			{
-				owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch")));
+				bark = "snd_noRelightTorch";
 			}
+			else
+			{
+				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+			}
+			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 		}
 	}
 }

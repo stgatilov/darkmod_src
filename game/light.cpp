@@ -46,6 +46,7 @@ const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
 const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
 const idEventDef EV_Light_AddToLAS("addToLAS", NULL);
 const idEventDef EV_Light_FadeToLight( "fadeToLight", "vf" );
+const idEventDef EV_Smoking("smoking", "d");
 
 
 CLASS_DECLARATION( idEntity, idLight )
@@ -70,6 +71,7 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_AddToLAS,		idLight::Event_AddToLAS )
 	EVENT( EV_InPVS,				idLight::Event_InPVS )
 	EVENT( EV_Light_FadeToLight,	idLight::Event_FadeToLight )
+	EVENT( EV_Smoking,				idLight::Event_Smoking ) // grayman #2603
 END_CLASS
 
 
@@ -290,6 +292,8 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(nextTimeLightOutBark);	// grayman #2603
 	savefile->WriteInt(relightAfter);			// grayman #2603
 	savefile->WriteFloat(nextTimeVerticalCheck);	// grayman #2603
+	savefile->WriteBool(smoking);					// grayman #2603
+	savefile->WriteInt(whenToDouse);				// grayman #2603
 
 	savefile->WriteInt(switchList.Num());	// grayman #2603
 	for (int i = 0; i < switchList.Num(); i++)
@@ -351,6 +355,8 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( nextTimeLightOutBark );	// grayman #2603
 	savefile->ReadInt( relightAfter );			// grayman #2603
 	savefile->ReadFloat(nextTimeVerticalCheck);	// grayman #2603
+	savefile->ReadBool(smoking);				// grayman #2603
+	savefile->ReadInt(whenToDouse);				// grayman #2603
 	
 	// grayman #2603
 	switchList.Clear();
@@ -482,12 +488,23 @@ void idLight::Spawn( void )
 	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
-		nextTimeVerticalCheck = gameLocal.time + 3000 + gameLocal.random.RandomFloat()*3000; // randomize so checks are done at different times
+		if (!spawnArgs.GetBool("should_be_vert","0")) // don't check verticality if it doesn't matter
+		{
+			nextTimeVerticalCheck = idMath::INFINITY; // never
+		}
+		else
+		{
+			nextTimeVerticalCheck = gameLocal.time + 3000 + gameLocal.random.RandomFloat()*3000; // randomize so checks are done at different times
+		}
 	}
 	else // non-flames
 	{
 		nextTimeVerticalCheck = idMath::INFINITY; // never
 	}
+	
+	smoking = false;	// grayman #2603
+
+	whenToDouse = -1;	// grayman #2603
 
 	// Sophisiticated Zombie (DMH)
 	// Darkmod Light Awareness System: Also need to add light to LAS
@@ -1012,10 +1029,11 @@ idLight::IsVertical
 bool idLight::IsVertical(float degreesFromVertical)
 {
 	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	bool shouldBeVert = spawnArgs.GetBool("should_be_vert","0");
 
-	// Only makes sense for flames
+	// Only makes sense for flames with the "douse_horiz" spawnarg
 
-	if (lightType == AIUSE_LIGHTTYPE_TORCH)
+	if ((lightType == AIUSE_LIGHTTYPE_TORCH) && shouldBeVert)
 	{
 		const idVec3& gravityNormal = GetPhysics()->GetGravityNormal();
 		idMat3 axis = GetPhysics()->GetAxis();
@@ -1088,7 +1106,7 @@ void idLight::Think( void ) {
 
 				if (!isHeld)
 				{
-					// Is the player holdng this light?
+					// Is the player holding this light?
 
 					CGrabber* grabber = gameLocal.m_Grabber;
 					if (grabber)
@@ -1112,8 +1130,28 @@ void idLight::Think( void ) {
 
 				if (!isHeld)
 				{
-					CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+					if (whenToDouse == -1)
+					{
+						whenToDouse = gameLocal.time + 5000; // douse this later if still non-vertical
+						BecomeActive(TH_DOUSING); // set this so you can continue thinking after coming to rest and TH_PHYSICS shuts off
+					}
+					else if (gameLocal.time >= whenToDouse)
+					{
+						CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+						whenToDouse = -1; // reset
+						BecomeInactive(TH_DOUSING); // reset
+					}
 				}
+				else
+				{
+					whenToDouse = -1; // non-vertical, but it's being held, so turn off any latched non-vertical douse
+					BecomeInactive(TH_DOUSING); // reset
+				}
+			}
+			else
+			{
+				whenToDouse = -1; // vertical, so turn off any latched non-vertical douse
+				BecomeInactive(TH_DOUSING); // reset
 			}
 		}
 	}
@@ -1239,6 +1277,7 @@ idLight::Event_Hide
 */
 void idLight::Event_Hide( void ) {
 	Hide();
+	smoking = false; // grayman #2603
 	PresentModelDefChange();
 	Off();
 }
@@ -1893,11 +1932,19 @@ bool idLight::NegativeBark(idAI* ai)
 			}
 			barking = true;
 		}
-		SetRelightAfter(); // wait awhile until anyone tries to relight it again
 	}
 
 	return barking;
 }
 
+void idLight::Event_Smoking( int state ) // grayman #2603
+{
+	smoking = (state == 1);	// true: smoking, false: not smoking
+}
+
+bool idLight::IsSmoking() // grayman #2603
+{
+	return smoking;
+}
 
 

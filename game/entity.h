@@ -122,7 +122,8 @@ enum {
 	TH_PHYSICS				= 2,		// run physics each frame
 	TH_ANIMATE				= 4,		// update animation each frame
 	TH_UPDATEVISUALS		= 8,		// update renderEntity
-	TH_UPDATEPARTICLES		= 16
+	TH_UPDATEPARTICLES		= 16,
+	TH_DOUSING				= 32		// grayman #2603 - run think function to process latched dousing
 };
 
 // The impulse states a button can have

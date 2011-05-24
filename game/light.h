@@ -208,6 +208,12 @@ public:
 
 	bool IsVertical(float degreesFromVertical);
 
+	/*
+	 * grayman #2603 - flame is out and smoking?
+	 */
+
+	bool IsSmoking();
+
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
@@ -227,6 +233,8 @@ private:
 	int				nextTimeLightOutBark;		// grayman #2603 - the next time an AI can bark about a light that's out, or a decision not to relight it
 	int				relightAfter;				// grayman #2603 - when a light can be relit
 	float			nextTimeVerticalCheck;		// grayman #2603 - the next time to check if a lit flame is vertical
+	bool			smoking;					// grayman #2603 - the flame model has changed to a smoke partical model; considered "out"
+	int				whenToDouse;				// grayman #2603 - when a non-vertical flame can be doused
 
 	idVec4			fadeFrom;
 	idVec4			fadeTo;
@@ -280,6 +288,11 @@ private:
 	 */
 	void			Event_InPVS();
 
+	/**
+	 * grayman #2603
+	 */
+
+	void			Event_Smoking(int state);
 
 	/**
 	 * Texturename for the falloff image

@@ -701,7 +701,7 @@ bool MovementSubsystem::IsNotBlocked(void) // grayman #2345
 void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 {
 	idAI* owner = _owner.GetEntity();
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Asking %s to resolve a block by %s\r", owner->name.c_str(),blockingEnt->name.c_str());
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Asking %s to resolve a block by %s\r", owner->name.c_str(),blockingEnt->name.c_str());
 	
 	if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
 	{

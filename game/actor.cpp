@@ -482,11 +482,6 @@ const idEventDef AI_SetReplacementAnim( "setReplacementAnim", "ss");
 const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", "s", 's');
 const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", "s");
 
-// grayman #2603 - deal with doused lights
-const idEventDef AI_PerformRelight("performRelight");
-const idEventDef AI_DropTorch("dropTorch");
-
-
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
 	EVENT( AI_DisableEyeFocus,			idActor::Event_DisableEyeFocus )

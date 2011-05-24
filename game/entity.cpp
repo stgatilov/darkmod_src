@@ -2990,7 +2990,9 @@ void idEntity::Show( void )
 	{
 		fl.hidden = false;
 		if( m_FrobBox && m_bFrobable )
+		{
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
+		}
 		UpdateVisuals();
 
 		// show our bind-children
@@ -11934,4 +11936,6 @@ void idEntity::Event_ChangeEntityRelation(idEntity* entity, int relationChange)
 {
 	ChangeEntityRelation(entity, relationChange);
 }
+
+
 

@@ -213,7 +213,7 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	// Make sure light is still off
 
-	bool lightOn = (light->GetLightLevel() > 0);
+	bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
 	bool ignoreLight;
 
 	if (lightOn)
@@ -288,8 +288,10 @@ void SwitchOnLightState::Init(idAI* owner)
 
 		idEntity* bindMaster = _goalEnt->GetBindMaster();
 		_standOff = 0;
+		bool isMoveable = false;
 		while (bindMaster != NULL)
 		{
+			isMoveable |= bindMaster->IsType(idMoveable::Type); // is any of the bindMasters an idMoveable? (looking for candles) 
 			idVec3 goalSize = bindMaster->GetPhysics()->GetBounds().GetSize();
 			float goalDist = (goalSize.x + goalSize.y)/4;
 			if (goalDist > _standOff)
@@ -339,26 +341,30 @@ void SwitchOnLightState::Init(idAI* owner)
 				float ht = goalOrigin.z - targetPoint.z; // height of goal off the floor
 				if (lightType == AIUSE_LIGHTTYPE_TORCH)
 				{
-					_standOff -= 16; // start with this
+					_standOff -= 16; // start with this (move closer)
 					if (ht > RELIGHT_HEIGHT_HIGH) // high
 					{
 						if (torch)
 						{
-							_standOff += 8;
+							_standOff += 8; // move away
 						}
 					}
 					else if (ht < RELIGHT_HEIGHT_LOW) // low
 					{
+						if (isMoveable) // try to stay away from low moveables, which tend to get kicked
+						{
+							_standOff += 16; // move away
+						}
 						if (!torch)  // tinderbox
 						{
-							_standOff += 16;
+							_standOff += 16; // move away
 						}
 					}
 					else // medium
 					{
 						if (torch)
 						{
-							_standOff += 8;
+							_standOff += 8; // move away
 						}
 					}
 				}
@@ -366,7 +372,7 @@ void SwitchOnLightState::Init(idAI* owner)
 				{
 					if (ht < RELIGHT_HEIGHT_LOW) // low
 					{
-						_standOff += 8; // move farther away
+						_standOff += 8; // move away
 					}
 				}
 				finalTargetPoint = goalOrigin + goalDirection * _standOff; // use adjusted standoff
@@ -391,8 +397,18 @@ void SwitchOnLightState::Init(idAI* owner)
 
 		memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
 		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_yesRelightTorch")));
-		
+		idStr bark;
+		if (gameLocal.random.RandomFloat() < 0.5)
+		{
+			bark = "snd_yesRelightTorch";
+		}
+		else
+		{
+			bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+		}
+		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+
 		light->IgnoreResponse(ST_VISUAL, owner);
 		_waitEndTime = gameLocal.time + 1000; // allow time for move to begin
 		_relightState = EStateStarting;
@@ -411,17 +427,23 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	ignoreLight = false;
 
-	if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
-	{
-		// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
-		// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
-		// the number of such barks, which can get tiresome.
+	// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
+	// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
+	// the number of such barks, which can get tiresome.
 
-		if (light->NegativeBark(owner))
+	if (light->NegativeBark(owner))
+	{
+		idStr bark;
+		if (gameLocal.random.RandomFloat() < 0.5)
 		{
-			idStr bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark)));
+			bark = "snd_noRelightTorch";
 		}
+		else
+		{
+			bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+		}
+		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 	}
 	
 	Wrapup(owner,light,ignoreLight);
@@ -445,7 +467,7 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 
-	bool lightOn = (light->GetLightLevel() > 0);
+	bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
 	bool ignoreLight;
 
 	// check if something happened to abort the relight (i.e. dropped torch, higher alert)
@@ -459,7 +481,6 @@ void SwitchOnLightState::Think(idAI* owner)
 	owner->PerformVisualScan();	// Let the AI check its senses
 	if (owner->AI_AlertLevel >= owner->thresh_5) // finished if alert level is too high
 	{
-		light->SetRelightAfter(); // wait awhile until you pay attention to it again
 		ignoreLight = false;
 		Wrapup(owner,light,ignoreLight);
 		return;
@@ -472,7 +493,7 @@ void SwitchOnLightState::Think(idAI* owner)
 			case EStateStarting:
 			case EStateApproaching:
 			case EStateTurningToward:
-				ignoreLight = lightOn;
+				ignoreLight = true;
 				Wrapup(owner,light,ignoreLight);
 				return;
 			case EStateRelight:
@@ -530,17 +551,13 @@ void SwitchOnLightState::Think(idAI* owner)
 					{
 						// Bark, but not too often
 
-						if ((gameLocal.time >= memory.nextTimeLightStimBark) &&	(gameLocal.time >= light->GetNextTimeLightOutBark()))
+						if (light->NegativeBark(owner))
 						{
-							if (light->NegativeBark(owner))
-							{
-								memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
-								owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch")));
-							}
+							memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+							owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch")));
 						}
 
 						// TODO: Try moving closer?
-						light->SetRelightAfter(); // wait awhile until anyone pays attention to it again
 						ignoreLight = false;
 						Wrapup(owner,light,ignoreLight);
 						return;
@@ -551,6 +568,13 @@ void SwitchOnLightState::Think(idAI* owner)
 		case EStateTurningToward:
 			if (gameLocal.time >= _waitEndTime)
 			{
+				// A candle or torch could still be smoking at this point from having
+				// just been put out. When the smoke clears, it's okay to perform our relight.
+
+				if (light->IsSmoking())
+				{
+					break; // stay in this state until the smoke stops
+				}
 				StartSwitchOn(owner,light); // starts the relight animation
 				owner->m_performRelight = false; // animation sets this to TRUE at the relight frame
 				_relightState = EStateRelight;

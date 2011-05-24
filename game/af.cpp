@@ -559,7 +559,7 @@ void idAF::DeleteBodyExtern( idAFEntity_Base *ent, const char *bodyName )
 		{
 			if( jointMods[i].bodyName == bodyName )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %s from AF\r", bodyName );
+				//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %s from AF\r", bodyName );
 				jointMods.RemoveIndex(i);
 			}
 		}

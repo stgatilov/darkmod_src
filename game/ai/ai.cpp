@@ -721,6 +721,17 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( attack );
 
+	// grayman #2603 - delayed stim list
+
+	savefile->WriteInt(delayedStims.Num());
+	for (i = 0 ; i < delayedStims.Num() ; i++)
+	{
+		DelayedStim ds = delayedStims[i];
+
+		savefile->WriteInt(ds.nextTimeToConsider);
+		ds.stim.Save(savefile);
+	}
+
 	savefile->WriteInt( talk_state );
 	talkTarget.Save( savefile );
 
@@ -1103,6 +1114,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	activeProjectile.projEnt.Restore(savefile);
 
 	savefile->ReadString( attack );
+
+	// grayman #2603 - delayed stim list
+
+	savefile->ReadInt(num);
+	delayedStims.SetNum(num);
+	for (i = 0 ; i < num ; i++)
+	{
+		savefile->ReadInt(delayedStims[i].nextTimeToConsider);
+		delayedStims[i].stim.Restore(savefile);
+	}
 
 	savefile->ReadInt( i );
 	talk_state = static_cast<talkState_t>( i );
@@ -1813,6 +1834,8 @@ void idAI::Spawn( void )
 	SetAAS();
 
 	InitProjectileInfo();
+
+	delayedStims.Clear(); // grayman #2603
 
 	particles.Clear();
 	restartParticles = true;
@@ -9671,7 +9694,7 @@ void idAI::CheckTactile()
 
 	if (bumped)
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
 		HadTactile(static_cast<idActor*>(blockingEnt));
 	}
 }
@@ -10993,6 +11016,44 @@ const idStr& idAI::GetNextIdleAnim()
 void idAI::SetNextIdleAnim(const idStr& nextIdleAnim)
 {
 	m_NextIdleAnim = nextIdleAnim;
+}
+
+// grayman #2603 - delayed stim management
+
+void idAI::SetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
+{
+	for (int i = 0 ; i < delayedStims.Num() ; i++)
+	{
+		if (delayedStims[i].stim == stimPtr)
+		{
+			delayedStims[i].nextTimeToConsider = gameLocal.time + 15000;
+			return;
+		}
+	}
+
+	// stim not in list, so add it
+
+	AddDelayedStim(stimPtr);
+}
+
+int idAI::GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
+{
+	for (int i = 0 ; i < delayedStims.Num() ; i++)
+	{
+		if (delayedStims[i].stim == stimPtr)
+		{
+			return (delayedStims[i].nextTimeToConsider);
+		}
+	}
+	return -1;
+}
+
+void idAI::AddDelayedStim(idEntityPtr<idEntity> stimPtr)
+{
+	DelayedStim ds;
+	ds.nextTimeToConsider = gameLocal.time + 15000;
+	ds.stim = stimPtr;
+	delayedStims.Append(ds);
 }
 
 bool idAI::SwitchToConversationState(const idStr& conversationName)

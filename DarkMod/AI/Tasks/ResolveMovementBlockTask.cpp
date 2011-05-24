@@ -66,18 +66,18 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_blockingEnt->IsType(idAI::Type))
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
+		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingAI(owner, subsystem);
 	}
 	else if (_blockingEnt->IsType(idStaticEntity::Type))
 	{
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
+		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingStatic(owner, subsystem);
 	}
 	else
 	{
 		// Unknown entity type, exit task
-		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
+		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		subsystem.FinishTask(); 
 	}
 }

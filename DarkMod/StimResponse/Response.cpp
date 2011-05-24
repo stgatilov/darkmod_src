@@ -71,8 +71,6 @@ void CResponse::Restore(idRestoreGame *savefile)
 
 void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 {
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
-
 	// Perform the probability check
 	if (!CheckChance()) return;
 

@@ -47,7 +47,7 @@ const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
 const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
 const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
 const idEventDef AI_PerformRelight("performRelight"); // grayman #2603
-const idEventDef AI_DropTorch("dropTorch"); // grayman #2603
+const idEventDef AI_DropTorch("dropTorch");	// grayman #2603
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -3466,7 +3466,6 @@ void idAI::Event_EndState()
 	idThread::ReturnInt(static_cast<int>(mind->EndState()));
 }
 
-
 void idAI::Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck)
 {
 	mind->GetState()->OnBlindStim(stimSource, skipVisibilityCheck != 0);
@@ -3481,7 +3480,6 @@ void idAI::Event_GetNextIdleAnim()
 {
 	idThread::ReturnString(GetNextIdleAnim());
 }
-
 
 void idAI::Event_HasSeenEvidence()
 {
@@ -3503,18 +3501,17 @@ void idAI::Event_DropTorch() // grayman #2603
 			continue;
 		}
 
-		if (ent->name.Find("torch") >= 0)
+		if (ent->spawnArgs.GetBool("is_torch","0"))
 		{
 			DetachInd(i);
 
-			// grayman #2603 - drop the torch a bit to get away from the AI's hand
+			// drop the torch a bit to get away from the AI's hand
 
 			idVec3 origin = ent->GetPhysics()->GetOrigin();
 			origin.z -= 20;
 			ent->GetPhysics()->SetOrigin( origin );
 
 			ent->m_droppedByAI = true; // grayman #1330
-//			ent->GetPhysics()->Activate();
 			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
 			break;
 		}

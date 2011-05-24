@@ -413,10 +413,15 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 			// greebo: We don't use StartSound() here, we want to do the sound propagation call manually
 			StartSoundShader(sndShader, SND_CHANNEL_ANY, 0, false, NULL);
 
-			idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
+			// grayman #2603 - don't propagate a sound if this is a doused torch dropped by an AI
 
-			// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
-			PropSoundS( NULL, sndPropName, f );
+			if (!spawnArgs.GetBool("is_torch","0"))
+			{
+				idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
+
+				// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
+				PropSoundS( NULL, sndPropName, f );
+			}
 			
 			SetSoundVolume(0.0f);
 
