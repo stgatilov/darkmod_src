@@ -42,6 +42,8 @@ private:
 		EStateFinal
 	} _relightState;
 
+	bool CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos); // grayman #2603
+
 public:
 	// Constructor using light source as input parameter
 	SwitchOnLightState(idLight* light);
