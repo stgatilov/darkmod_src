@@ -7953,7 +7953,7 @@ void idPlayer::CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ) {
 	// Dram: Changed so that each axis has it's own fracsin. Now they move independantly of each other
 	scale = xyspeed + 40.0f;
 	fracsin1 = scale * sin( MS2SEC( gameLocal.time * 0.42 ) ) * 0.006f;
-	fracsin2 = scale * sin( MS2SEC( gameLocal.time * 1.63 ) ) * 0.008f;
+	fracsin2 = scale * sin( MS2SEC( gameLocal.time * 1.63 ) ) * 0.01f;
 	fracsin3 = scale * sin( MS2SEC( gameLocal.time * 2 ) ) * 0.01f;
 	angles.roll		+= fracsin1;
 	angles.yaw		+= fracsin2;

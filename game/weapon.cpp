@@ -1042,6 +1042,20 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	weaponOffsetTime = weaponDef->dict.GetFloat( "weaponOffsetTime", "400" );
 	weaponOffsetScale = weaponDef->dict.GetFloat( "weaponOffsetScale", "0.005" );
 
+	// Bow aimer related -- By Dram
+	const idKeyValue *AimerKeyVal = weaponDef->dict.MatchPrefix( "def_aimer", NULL );
+	idEntity *bow_aimer(NULL);
+	if ( AimerKeyVal && cv_bow_aimer.GetBool() ) {
+		idDict aimerArgs;
+		aimerArgs.Set( "classname", AimerKeyVal->GetValue().c_str() );
+		aimerArgs.Set( "dropToFloor", "0" );
+		gameLocal.SpawnEntityDef( aimerArgs, &bow_aimer );
+		if ( bow_aimer ) {
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Def_Attaching aimer entity %s to weapon entity %s.\r", bow_aimer->name.c_str(), name.c_str());
+			Attach( bow_aimer, NULL, NULL );
+		}
+	}
+	
 	// spawn any weapon attachments we might have
 	const idKeyValue *KeyVal = weaponDef->dict.MatchPrefix( "def_attach", NULL );
 	idEntity *ent(NULL);

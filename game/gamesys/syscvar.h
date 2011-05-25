@@ -321,6 +321,8 @@ extern idCVar cv_lp_randomize;
 extern idCVar cv_lp_pawlow;
 extern idCVar cv_lp_debug_hud;
 
+// Bow type
+extern idCVar cv_bow_aimer;
 // melee difficulty
 extern idCVar cv_melee_difficulty;
 
