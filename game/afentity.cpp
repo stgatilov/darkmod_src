@@ -1404,10 +1404,10 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 
 	if( !af.IsLoaded() ) return;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
+	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
 
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Entity origin: %s \r", orig.ToString() );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Entity origin: %s \r", orig.ToString() );
 	
 	EntClip = ent->GetPhysics()->GetClipModel();
 	axis = EntClip->GetAxis();
@@ -1429,7 +1429,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 		EntMass = 1.0f;
 	}
 	AFMass = GetAFPhysics()->GetMass();
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. AF mass: %f , Ent mass: %f \r", AFMass, EntMass );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. AF mass: %f , Ent mass: %f \r", AFMass, EntMass );
 
 	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
 	NewClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
@@ -1444,10 +1444,10 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 //	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: New Clip COM: %s \r", COMNew.ToString() );
 //	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Modified origin: %s \r", orig.ToString() );
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Linking clipmodel copy... \r" );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Linking clipmodel copy... \r" );
 	// FIXME: Do we really want to set id 0 here?  Won't this conflict?
 	NewClip->Link( gameLocal.clip, this, 0, orig, axis );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Clipmodel linked.\r");
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Clipmodel linked.\r");
 
 	// Add the mass in the AF Structure
 	density = idMath::Fabs( EntMass / MassOut );
@@ -1463,7 +1463,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 	body->SetWorldOrigin( orig );
 	body->SetWorldAxis( axis );
 	newBodID = GetAFPhysics()->AddBody( body );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added to physics_AF with id %d.\r", newBodID);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added to physics_AF with id %d.\r", newBodID);
 	
 	// ishtvan: Don't add the constraint while animating, wait until full ragdoll mode
 	if( af.IsActive() )
@@ -1472,7 +1472,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 		GetAFPhysics()->AddConstraint( cf );
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
 
 	// Now add body to AF object, for updating with idAF::ChangePos and the like
 	// We use AF_JOINTMOD_NONE since this new AF shouldn't actually stretch joints on the model when it moves
@@ -1507,7 +1507,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t join
 	if( af.IsActive() )
 		GetAFPhysics()->Activate();
 		
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
 }
 
 /*

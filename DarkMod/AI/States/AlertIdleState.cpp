@@ -45,8 +45,8 @@ void AlertIdleState::Init(idAI* owner)
 
 	// grayman #2603 - clear recent alerts, which allows us to see new, lower-weighted, alerts
 	Memory& memory = owner->GetMemory();
-	memory.alertClass = EAlertNone;
-	memory.alertType = EAlertTypeNone;
+//	memory.alertClass = EAlertNone; // grayman #2603 - moved further down, otherwise we don't hear the correct rampdown bark
+//	memory.alertType = EAlertTypeNone;
 
 	_alertLevelDecreaseRate = 0.005f;
 
@@ -61,6 +61,8 @@ void AlertIdleState::Init(idAI* owner)
 
 	InitialiseMovement(owner);
 	InitialiseCommunication(owner);
+	memory.alertClass = EAlertNone;
+	memory.alertType = EAlertTypeNone;
 
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));
@@ -92,9 +94,16 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
-	if (owner->m_lastAlertLevel >= owner->thresh_1 && owner->m_lastAlertLevel < owner->thresh_3)
+
+	if (!owner->m_RelightingLight && // grayman #2603 - No rampdown bark if relighting a light.
+		(owner->m_lastAlertLevel >= owner->thresh_1) &&
+		(owner->m_lastAlertLevel < owner->thresh_3))
 	{
-		if (memory.alertClass == EAlertVisual && memory.alertType != EAlertTypeMissingItem)
+		if (memory.alertClass == EAlertVisual_2) // grayman #2603
+		{
+			soundName = "snd_alertdown0sus";
+		}
+		else if ((memory.alertClass == EAlertVisual_1) && (memory.alertType != EAlertTypeMissingItem))
 		{
 			soundName = "snd_alertdown0s";
 		}

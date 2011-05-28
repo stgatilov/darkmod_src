@@ -795,6 +795,7 @@ public:
 	void					AddEntityToHash( const char *name, idEntity *ent );
 	bool					RemoveEntityFromHash( const char *name, idEntity *ent );
 	int						GetTargets( const idDict &args, idList< idEntityPtr<idEntity> > &list, const char *ref ) const;
+	int						GetRelights(const idDict &args,idList<idEntityPtr<idEntity>> &list,const char *ref) const; // grayman #2603
 
 							// returns the master entity of a trace.  for example, if the trace entity is the player's head, it will return the player.
 	idEntity *				GetTraceEntity( const trace_t &trace ) const;

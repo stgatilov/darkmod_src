@@ -190,33 +190,90 @@ bool SwitchOnLightState::GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, 
 	return true;
 }
 
-// grayman #2603 - check for custom relight position
+// grayman #2603 - check for relight positions
 
 bool SwitchOnLightState::CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos)
 {
+	// Does this light have a moveable holder? If so, we can't rely on relight_positions,
+	// since the light might have been moved.
+
+	idEntity* bindMaster = light->GetBindMaster();
+	while (bindMaster != NULL)
+	{
+		if (bindMaster->IsType(idMoveable::Type)) // is any of the bindMasters an idMoveable? (looking for candles)
+		{
+			return false; // can't rely on any relight_positions
+		}
+		bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+	}
+
+	// Look through the target list for relight_position entities.
+
 	idEntity* check4Position = light;
 	bool posFound = false;
-	while (check4Position != NULL)
+	idList<idVec3> positions;
+	positions.Clear();
+	while ((check4Position != NULL) && !posFound)
 	{
-		const idKeyValue* kv = check4Position->spawnArgs.MatchPrefix("relight_position");
-		if (kv != NULL)
+		for (int i = 0 ; i < check4Position->targets.Num() ; i++)
 		{
-			idStr posStr = kv->GetValue();
-			idEntity* relightPosition = gameLocal.FindEntity(posStr);
-			if (relightPosition)
+			idEntity* ent = check4Position->targets[i].GetEntity();
+
+			if (ent == NULL)
 			{
-				pos = relightPosition->GetPhysics()->GetOrigin();
-				int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
-				int targetAreaNum = owner->PointReachableAreaNum(pos, 1.0f);
-				aasPath_t path;
-				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, pos, owner))
-				{
-					posFound = true;
-					break;
-				}
+				continue;
+			}
+
+			const char *classname;
+			ent->spawnArgs.GetString("classname", NULL, &classname);
+			if (idStr::Cmp(classname, "atdm:relight_position") == 0)
+			{
+				pos = ent->GetPhysics()->GetOrigin();
+				positions.Append(pos);
+				posFound = true;
 			}
 		}
 		check4Position = check4Position->GetBindMaster(); // go up the hierarchy
+	}
+
+	if (posFound)
+	{
+		// Pick the relight position that's closest to the AI.
+
+		// grayman - This is a crazy way of sorting, but I couldn't
+		// get the compiler to like a sort on a list of idVec3 distances
+		// from the AI to the positions. Feel free to make this better.
+
+		int num = positions.Num();
+		idVec3 org = owner->GetPhysics()->GetOrigin();
+
+		idList<int> distances1,distances2;
+		distances1.SetNum(num);
+		distances2.SetNum(num);
+		for (int i = 0 ; i < num ; i++)
+		{
+			distances1[i] = distances2[i] = (int)(positions[i] - org).LengthSqr(); // integer squared distance from AI to relight position
+		}
+		distances1.Sort();
+		int areaNum = owner->PointReachableAreaNum(org, 1.0f);
+		for (int i = 0 ; i < num ; i++) // sorted index
+		{
+			for (int j = 0 ; j < num ; j++) // unsorted index
+			{
+				if (distances2[j] == distances1[i]) // is element j of the unsorted list equal to element i of the sorted list?
+				{
+					pos = positions[j]; // if so, use the unsorted index to retrieve the matching relight position
+					int targetAreaNum = owner->PointReachableAreaNum(pos, 1.0f);
+					aasPath_t path;
+					if (owner->PathToGoal(path, areaNum, org, targetAreaNum, pos, owner))
+					{
+						return true;
+					}
+					break; // try the next sorted element
+				}
+			}
+		}
+		posFound = false; // Couldn't find a path to any of the relight positions
 	}
 
 	return posFound;
@@ -436,19 +493,24 @@ void SwitchOnLightState::Init(idAI* owner)
 		owner->movementSubsystem->ClearTasks();
 		owner->movementSubsystem->PushTask(TaskPtr(new MoveToPositionTask(finalTargetPoint,idMath::INFINITY,5)));
 
-		memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		idStr bark;
-		if (gameLocal.random.RandomFloat() < 0.5)
+		// Don't allow barks if the Alert Level is 1 or higher.
+
+		if (owner->AI_AlertLevel < owner->thresh_1)
 		{
-			bark = "snd_yesRelightTorch";
+			memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			idStr bark;
+			if (gameLocal.random.RandomFloat() < 0.5)
+			{
+				bark = "snd_yesRelightTorch";
+			}
+			else
+			{
+				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
+			}
+			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 		}
-		else
-		{
-			bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
-		}
-		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 
 		light->IgnoreResponse(ST_VISUAL, owner);
 		_waitEndTime = gameLocal.time + 1000; // allow time for move to begin
@@ -684,7 +746,7 @@ void SwitchOnLightState::Think(idAI* owner)
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = light->GetPhysics()->GetOrigin();
-						memory.alertClass = EAlertVisual;
+						memory.alertClass = EAlertVisual_2;
 						memory.alertType = EAlertTypeLightSource;
 						
 						// Prepare search as if there is an enemy that has escaped
@@ -701,7 +763,7 @@ void SwitchOnLightState::Think(idAI* owner)
 				}
 
 				ignoreLight = false;
-				light->SetChanceNegativeBark(1.0); // grayman #2603 - reset
+				light->SetChanceNegativeBark(1.0); // reset
 				Wrapup(owner,light,ignoreLight);
 				return;
 			}

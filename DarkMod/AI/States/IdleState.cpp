@@ -60,8 +60,8 @@ void IdleState::Init(idAI* owner)
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
-	memory.alertClass = EAlertNone;
-	memory.alertType = EAlertTypeNone;
+//	memory.alertClass = EAlertNone; // grayman #2603 - moved further down, otherwise we don't hear the correct rampdown bark
+//	memory.alertType = EAlertTypeNone;
 
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
@@ -140,6 +140,8 @@ void IdleState::Init(idAI* owner)
 
 
 	InitialiseCommunication(owner);
+	memory.alertClass = EAlertNone;
+	memory.alertType = EAlertTypeNone;
 
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
@@ -156,6 +158,7 @@ void IdleState::Init(idAI* owner)
 			CommunicationTaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
 		);
 	}
+
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
 }
@@ -280,22 +283,25 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 
-	if (owner->m_maxAlertLevel >= owner->thresh_1)
+	if (!owner->m_RelightingLight && // grayman #2603 - No rampdown bark if relighting a light.
+		(owner->m_maxAlertLevel >= owner->thresh_1) &&
+		(owner->m_lastAlertLevel < owner->thresh_4))
 	{
-		if (owner->m_lastAlertLevel < owner->thresh_4)
+		if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{
-			if (memory.alertClass == EAlertVisual)
-			{
-				soundName = "snd_alertdown0s";
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				soundName = "snd_alertdown0h";
-			}
-			else
-			{
-				soundName = "snd_alertdown0";
-			}
+			soundName = "snd_alertdown0sus";
+		}
+		else if (memory.alertClass == EAlertVisual_1)
+		{
+			soundName = "snd_alertdown0s";
+		}
+		else if (memory.alertClass == EAlertAudio)
+		{
+			soundName = "snd_alertdown0h";
+		}
+		else
+		{
+			soundName = "snd_alertdown0";
 		}
 	}
 	return soundName;

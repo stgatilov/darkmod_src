@@ -1855,7 +1855,6 @@ public:
 
 	void					SetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr);
 	int						GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr);
-	void					AddDelayedStim(idEntityPtr<idEntity> stimPtr);
 	
 	//
 	// ai/ai_events.cpp

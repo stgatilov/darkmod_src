@@ -1596,18 +1596,18 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "headturn_duration_max",			"3",		headTurnSec);
 	m_headTurnMaxDuration = SEC2MS(headTurnSec);
 
-	alertTypeWeight[ai::EAlertTypeNone] = 0;
-	alertTypeWeight[ai::EAlertTypeSuspicious] = 5;
-	alertTypeWeight[ai::EAlertTypeEnemy] = 50;
-	alertTypeWeight[ai::EAlertTypeWeapon] = 35;
-	alertTypeWeight[ai::EAlertTypeDeadPerson] = 41;
-	alertTypeWeight[ai::EAlertTypeUnconsciousPerson] = 40;
-	alertTypeWeight[ai::EAlertTypeBlood] = 30;
-	alertTypeWeight[ai::EAlertTypeLightSource] = 10;
-	alertTypeWeight[ai::EAlertTypeMissingItem] = 25;
-	alertTypeWeight[ai::EAlertTypeBrokenItem] = 26;
-	alertTypeWeight[ai::EAlertTypeDoor] = 20;
-	alertTypeWeight[ai::EAlertTypeDamage] = 45;
+	alertTypeWeight[ai::EAlertTypeEnemy]				= 50;
+	alertTypeWeight[ai::EAlertTypeDamage]				= 45;
+	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
+	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
+	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
+	alertTypeWeight[ai::EAlertTypeBlood]				= 30;
+	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26;
+	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
+	alertTypeWeight[ai::EAlertTypeDoor]					= 20;
+	alertTypeWeight[ai::EAlertTypeLightSource]			= 10;
+	alertTypeWeight[ai::EAlertTypeSuspicious]			= 5;
+	alertTypeWeight[ai::EAlertTypeNone]					= 0;
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
 	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
@@ -4996,7 +4996,6 @@ idEntity* idAI::GetTorch()
 	return NULL; // no luck
 }
 
-
 /*
 =====================
 idAI::DeadMove
@@ -6015,6 +6014,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	RemoveAttachments();
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
+	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 
 	ClearEnemy();
 	AI_DEAD	= true;
@@ -9944,6 +9944,7 @@ void idAI::Knockout( idEntity* inflictor )
 	RemoveAttachments();
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
+	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 
 	ClearEnemy();
 
@@ -10598,7 +10599,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 
 int idAI::ContinueSearchForHidingSpots()
 {
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
 
 	// Get hiding spot search instance from handle
 	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
@@ -11033,7 +11034,10 @@ void idAI::SetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
 
 	// stim not in list, so add it
 
-	AddDelayedStim(stimPtr);
+	DelayedStim ds;
+	ds.nextTimeToConsider = gameLocal.time + 15000;
+	ds.stim = stimPtr;
+	delayedStims.Append(ds);
 }
 
 int idAI::GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
@@ -11046,14 +11050,6 @@ int idAI::GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
 		}
 	}
 	return -1;
-}
-
-void idAI::AddDelayedStim(idEntityPtr<idEntity> stimPtr)
-{
-	DelayedStim ds;
-	ds.nextTimeToConsider = gameLocal.time + 15000;
-	ds.stim = stimPtr;
-	delayedStims.Append(ds);
 }
 
 bool idAI::SwitchToConversationState(const idStr& conversationName)

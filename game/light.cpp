@@ -217,6 +217,7 @@ idLight::idLight()
 	whenTurnedOff		= 0;		// grayman #2603
 	nextTimeLightOutBark = 0;		// grayman #2603
 	relightAfter		= 0;		// grayman #2603
+	aiBarks.Clear();				// grayman #2603
 
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
@@ -307,6 +308,17 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( soundWasPlaying );
 
+	// grayman #2603 - ai bark counts
+
+	savefile->WriteInt(aiBarks.Num());
+	for (int i = 0 ; i < aiBarks.Num() ; i++)
+	{
+		AIBarks barks = aiBarks[i];
+
+		savefile->WriteInt(barks.count);
+		barks.ai.Save(savefile);
+	}
+
 	savefile->WriteFloat(m_MaxLightRadius);
 	savefile->WriteInt(LASAreaIndex);
 
@@ -373,6 +385,16 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeStart );
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( soundWasPlaying );
+
+	// grayman #2603 - ai bark counts
+
+	savefile->ReadInt(num);
+	aiBarks.SetNum(num);
+	for (int i = 0 ; i < num ; i++)
+	{
+		savefile->ReadInt(aiBarks[i].count);
+		aiBarks[i].ai.Restore(savefile);
+	}
 
 	savefile->ReadFloat(m_MaxLightRadius);
 	savefile->ReadInt(LASAreaIndex);
@@ -724,6 +746,9 @@ void idLight::On( void ) {
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("idLight::On: 'LightsOn' not found!\r");
 	}
+
+	aiBarks.Clear(); // grayman #2603 - let the AI comment again
+
 
 //	grayman #2603 - let script change skins, plus set the vis stim.
 
@@ -1912,7 +1937,35 @@ void idLight::SetNextTimeLightOutBark(int newNextTimeLightOutBark)
 
 bool idLight::NegativeBark(idAI* ai)
 {
+	idEntityPtr<idEntity> aiPtr;
+	aiPtr = ai;
+	int aiBarksIndex = -1; // index of this ai in the aiBarks list
 	bool barking = false;
+
+	// Don't allow barks if the Alert Level is above 1.
+
+	if (ai->AI_AlertLevel >= ai->thresh_1)
+	{
+		return false;
+	}
+
+	// Check the number of times this AI has negatively barked about this light.
+	// Once they reach a certain number, the barks are disallowed until the
+	// light is relit.
+
+	for (int i = 0 ; i < aiBarks.Num() ; i++)
+	{
+		if (aiBarks[i].ai == aiPtr)
+		{
+			aiBarksIndex = i; // note for use below
+			if (aiBarks[i].count > 1)
+			{
+				return false;
+			}
+			break;
+		}
+	}
+
 	if ((gameLocal.time >= ai->GetMemory().nextTimeLightStimBark) && (gameLocal.time >= nextTimeLightOutBark))
 	{
 		if (gameLocal.random.RandomFloat() < chanceNegativeBark)
@@ -1931,6 +1984,20 @@ bool idLight::NegativeBark(idAI* ai)
 				chanceNegativeBark = 0.0f;
 			}
 			barking = true;
+
+			// Bump the number of times this AI has negatively barked about this light.
+
+			if (aiBarksIndex >= 0)
+			{
+				aiBarks[aiBarksIndex].count++;
+			}
+			else // create a new entry for this AI
+			{
+				AIBarks barks;
+				barks.count = 1;
+				barks.ai = aiPtr;
+				aiBarks.Append(barks);
+			}
 		}
 	}
 

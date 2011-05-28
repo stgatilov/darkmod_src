@@ -144,6 +144,7 @@ void CombatState::Init(idAI* owner)
 	idActor* enemy = _enemy.GetEntity();
 
 	owner->StopMove(MOVE_STATUS_DONE);
+	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();

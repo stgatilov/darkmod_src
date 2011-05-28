@@ -531,7 +531,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 				hidingSpotRedundancyDistance
 			);
 			
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot added for PVS non-visible area %d, AAS area %d, quality, goal [%s]\r", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum,hidingSpot.goal.origin.ToString());
+			//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot added for PVS non-visible area %d, AAS area %d, quality, goal [%s]\r", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum,hidingSpot.goal.origin.ToString());
 		}
 
 		// This counts as a point tested

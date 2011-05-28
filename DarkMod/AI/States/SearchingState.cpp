@@ -84,7 +84,7 @@ void SearchingState::Init(idAI* owner)
 
 		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
 		{
-			if (memory.alertClass == EAlertVisual)
+			if (memory.alertClass == EAlertVisual_1)
 			{
 				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
@@ -229,6 +229,7 @@ void SearchingState::Think(idAI* owner)
 
 			// Stop moving, the algorithm will choose another spot the next round
 			owner->StopMove(MOVE_STATUS_DONE);
+			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 		}
 		else
 		{
@@ -273,6 +274,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
+	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes

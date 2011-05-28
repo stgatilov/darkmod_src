@@ -1083,8 +1083,11 @@ void idEntity::Spawn( void )
 	SetName(temp);
 	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
 
+	bool haveTargets = false; // grayman #2603
 	// if we have targets, wait until all entities are spawned to get them
-	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
+	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) )
+	{
+		haveTargets = true;
 		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
 			PostEventMS( &EV_FindTargets, 0 );
 		} else {
@@ -1092,6 +1095,9 @@ void idEntity::Spawn( void )
 			FindTargets();
 		}
 	}
+
+	// if we're attaching relight positions, they have to be added as targets,
+	// so we have to wait until all entities are spawned to do that
 
 	health = spawnArgs.GetInt( "health" );
 
@@ -1118,6 +1124,26 @@ void idEntity::Spawn( void )
 
 	//TDM: Parse and spawn and attach any attachments
 	ParseAttachments();
+
+	// grayman #2603 - if we spawned relight positions, add them to the target list
+
+	if (spawnArgs.MatchPrefix("relight_position"))
+	{
+		if (haveTargets)
+		{
+			if (gameLocal.GameState() != GAMESTATE_STARTUP)
+			{
+				// not during spawn, so it's ok to add targets from the relight positions now
+				FindRelights();
+			}
+		}
+		else
+		{
+			targets.Clear();
+			// it's ok to create targets from the relight positions now
+			FindRelights();
+		}
+	}
 
 	// auto-start a sound on the entity
 	if ( refSound.shader && !refSound.waitfortrigger ) {
@@ -6022,10 +6048,13 @@ have been spawned when the entity is created at map load time, we have to wait
 ===============
 */
 void idEntity::FindTargets( void ) {
-	int			i;
+	int i;
 
 	// targets can be a list of multiple names
 	gameLocal.GetTargets( spawnArgs, targets, "target" );
+
+	// grayman #2603 - add relight positions as targets
+	gameLocal.GetRelights(spawnArgs,targets,"relight_position");
 
 	// ensure that we don't target ourselves since that could cause an infinite loop when activating entities
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -6033,6 +6062,13 @@ void idEntity::FindTargets( void ) {
 			gameLocal.Error( "Entity '%s' is targeting itself", name.c_str() );
 		}
 	}
+}
+
+// grayman #2603 - convert relight_positions to targets
+
+void idEntity::FindRelights(void)
+{
+	gameLocal.GetRelights(spawnArgs,targets,"relight_position");
 }
 
 /*
@@ -11256,7 +11292,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 		idAFEntity_Base* otherAF = static_cast<idAFEntity_Base*>(other);
 		int bodID = otherAF->BodyForClipModelId( body );
 
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
+		//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
 
 		idAFBody* struckBody = otherAF->GetAFPhysics()->GetBody(bodID);
 
@@ -11419,7 +11455,6 @@ void idEntity::ParseAttachments( void )
 
 	for (int i = 0; i < args.Num(); i++)
 	{
-
 		gameLocal.SpawnEntityDef( args[i], &ent );
 
 		if ( ent != NULL)
@@ -11433,6 +11468,18 @@ void idEntity::ParseAttachments( void )
 			{
 				Attach( ent, NULL, args[i].GetString( "_attnamevalue") );
 				//gameLocal.Printf(" Attaching '%s' at pos 'Unknown'\n", AttNameValue.c_str() );
+			}
+
+			// grayman #2603 - generate a "target" spawnarg for later processing
+			// when attaching a relight position.
+
+			if (ent->name.Find("relight_position") >= 0)
+			{
+				idStr name = ent->name;		// start with full name
+				int index = name.Last('_');	// find '_nnn' entity number at the end
+				idStr suffix = name.Right(name.Length() - index);	// suffix = '_nnn'
+				idStr rpString = "relight_position" + suffix;		// add suffix to "relight_position"
+				spawnArgs.Set(rpString,name);	// add new spawnarg "relight_position_nnn" "<relight position name>"
 			}
 		}
 		else

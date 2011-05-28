@@ -4809,11 +4809,10 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	}
 
 	spawnArgs.GetString( "classname", NULL, &classname );
-
 	const idDeclEntityDef *def = FindEntityDef( classname, false );
 
 	if ( !def ) {
-		Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
+		Warning( "Unknown classname '%s'%s.\n", classname, error.c_str() );
 		return false;
 	}
 
@@ -5124,6 +5123,37 @@ int idGameLocal::GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >
 			if ( ent ) {
 				idEntityPtr<idEntity> &entityPtr = list.Alloc();
                 entityPtr = ent;
+			}
+		}
+	}
+
+	return list.Num();
+}
+
+/*
+================
+idGameLocal::GetRelights - grayman #2603 - retrieve relight entities and add them to the target list
+================
+*/
+int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> > &list, const char *ref ) const
+{
+	int i,num,refLength;
+	const idKeyValue *arg;
+	idEntity *ent;
+
+	refLength = strlen(ref);
+	num = args.GetNumKeyVals();
+	for (i = 0 ; i < num ; i++)
+	{
+		arg = args.GetKeyVal(i);
+		if (arg->GetKey().Icmpn(ref,refLength) == 0)
+		{
+			const idStr name = arg->GetValue();
+			ent = FindEntity(name);
+			if (ent)
+			{
+				idEntityPtr<idEntity> &entityPtr = list.Alloc();
+				entityPtr = ent;
 			}
 		}
 	}

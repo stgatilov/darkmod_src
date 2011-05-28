@@ -78,7 +78,7 @@ void ObservantState::Init(idAI* owner)
 
 		if (owner->AlertIndexIncreased() && memory.alertType != EAlertTypeMissingItem)
 		{
-			if (memory.alertClass == EAlertVisual)
+			if (memory.alertClass == EAlertVisual_1)
 			{
 				soundName = "snd_alert1s";
 			}

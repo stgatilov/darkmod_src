@@ -94,7 +94,8 @@ namespace ai
 enum EAlertClass 
 {
 	EAlertNone,
-	EAlertVisual,
+	EAlertVisual_1,
+	EAlertVisual_2, // grayman #2603
 	EAlertTactile,
 	EAlertAudio,
 	EAlertClassCount

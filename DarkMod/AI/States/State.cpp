@@ -141,7 +141,7 @@ void State::OnVisualAlert(idActor* enemy)
 
 	Memory& memory = owner->GetMemory();
 
-	memory.alertClass = EAlertVisual;
+	memory.alertClass = EAlertVisual_1;
 	memory.alertType = EAlertTypeSuspicious;
 	memory.alertPos = owner->GetVisDir();
 	memory.alertRadius = VISUAL_ALERT_RADIUS;
@@ -323,7 +323,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 
 	Memory& memory = owner->GetMemory();
 
-	memory.alertClass = EAlertVisual;
+	memory.alertClass = EAlertVisual_1;
 	memory.alertedDueToCommunication = false;
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 	memory.alertRadius = 200;
@@ -472,7 +472,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	stimPtr = stimSource;
 	if (aiUseType == EAIuse_Lightsource)
 	{
-		// grayman If we ever begin to notice OFF lights that come ON in front
+		// grayman - If we ever begin to notice OFF lights that come ON in front
 		// of us, this check here is the first place to catch that. It should either
 		// branch off into a new way of handling OFF->ON lights, or mix handling them
 		// in with the ON->OFF lights handling.
@@ -495,8 +495,12 @@ void State::OnVisualStim(idEntity* stimSource)
 			return;
 		}
 
-		// It might not yet be time to notice this stim. If this stim
-		// is on our list of delayed stims, see if its delay has expired.
+		// It might not yet be time to notice this stim. If it's on
+		// our list of delayed stims, see if its delay has expired.
+		// If it expired less than 20ms ago, the AI can respond to it
+		// only if he's walking toward it, not away from it. This keeps
+		// AI from walking past a doused light and then turning back to
+		// relight it, which looks odd.
 
 		int expired = owner->GetDelayedStimExpiration(stimPtr);
 		
@@ -508,6 +512,14 @@ void State::OnVisualStim(idEntity* stimSource)
 				{
 					owner->SetDelayedStimExpiration(stimPtr);
 					pass = false;
+				}
+				else if (gameLocal.time < expired + 1000) // recently expired?
+				{
+					if (!owner->CanSeeExt(stimSource,true,false)) // ahead of you?
+					{
+						owner->SetDelayedStimExpiration(stimPtr); // behind, so try again later
+						pass = false;
+					}
 				}
 			}
 			else // delay hasn't expired
@@ -718,7 +730,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	memory.alertClass = EAlertVisual;
+	memory.alertClass = EAlertVisual_2; // grayman #2603
 	memory.alertType = EAlertTypeWeapon;
 
 	// Do search as if there is an enemy that has escaped
@@ -797,7 +809,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				owner->AI_VISALERT = true;
 				
 				owner->SetAlertLevel(owner->thresh_5*2);
-				memory.alertClass = EAlertVisual;
+				memory.alertClass = EAlertVisual_1;
 				memory.alertType = EAlertTypeEnemy;
 				// An enemy should not be ignored in the future
 				ignoreStimulusFromNowOn = false;
@@ -828,6 +840,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					owner->SetAlertLevel(otherAlertLevel);
 
 					owner->StopMove(MOVE_STATUS_DONE);
+					owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 					
 					memory.alertPos = otherMemory.alertPos;
 					memory.alertClass = EAlertNone;
@@ -1336,7 +1349,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertClass = EAlertVisual;
+			memory.alertClass = EAlertVisual_1;
 			memory.alertType = EAlertTypeDeadPerson;
 			
 			// Do search as if there is an enemy that has escaped
@@ -1408,7 +1421,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertClass = EAlertVisual;
+			memory.alertClass = EAlertVisual_1;
 			memory.alertType = EAlertTypeUnconsciousPerson;
 			
 			// Do search as if there is an enemy that has escaped
@@ -1674,7 +1687,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual;
+		memory.alertClass = EAlertVisual_1;
 		memory.alertType = EAlertTypeBlood;
 		
 		// Do search as if there is an enemy that has escaped
@@ -1931,6 +1944,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	// The next section is about whether we have the ability to turn lights back on.
 
 	bool turnLightOn = true;
+	idEntity* inHand;
 
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
@@ -1945,9 +1959,10 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				// Wielding a weapon, since the tinderbox animation causes
 				// the weapon to be sheathed and drawn again.
 
-				idEntity* inLeftHand = owner->GetAttachmentByPosition("hand_l");
-				if (inLeftHand)
+				inHand = owner->GetAttachmentByPosition("hand_l");
+				if (inHand)
 				{
+					gameLocal.Printf("%s: holding %s in my left hand, so I can't use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 					// Something in the left hand, so can't use tinderbox
 
 					turnLightOn = false;
@@ -1957,16 +1972,21 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 					// Bow in left hand? Can use tinderbox. The bow is the only thing
 					// attached at hand_l_bow because of the orientation involved.
 
-					inLeftHand = owner->GetAttachmentByPosition("hand_l_bow"); // check the bow
-					if (!inLeftHand)
+					inHand = owner->GetAttachmentByPosition("hand_l_bow"); // check the bow
+					if (!inHand)
 					{
 						// No bow. Anything in the right hand other than a melee weapon prevents using the tinderbox.
 
-						idEntity* inRightHand = owner->GetAttachmentByPosition("hand_r");
-						if (inRightHand && (idStr::Cmp(inRightHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
+						inHand = owner->GetAttachmentByPosition("hand_r");
+						if (inHand && (idStr::Cmp(inHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
 						{
+							gameLocal.Printf("%s: holding %s in my right hand, so I can't use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 							turnLightOn = false;
 						}
+					}
+					else // grayman debug
+					{
+						gameLocal.Printf("%s: holding %s in my left hand, so I can use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 					}
 				}
 			}
@@ -1978,8 +1998,19 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	}
 	else // electric
 	{
-		if (!owner->spawnArgs.GetBool("canOperateSwitchLights") ||
-			(gameLocal.random.RandomFloat() > owner->spawnArgs.GetFloat("chanceOperateSwitchLights")))
+		if (owner->spawnArgs.GetBool("canOperateSwitchLights") &&
+			(gameLocal.random.RandomFloat() < owner->spawnArgs.GetFloat("chanceOperateSwitchLights")))
+		{
+			// Anything in the right hand other than a melee weapon prevents an electric relight.
+
+			inHand = owner->GetAttachmentByPosition("hand_r");
+			if (inHand && (idStr::Cmp(inHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
+			{
+				gameLocal.Printf("%s: holding %s in my right hand, so I can't relight an electric light\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
+				turnLightOn = false;
+			}
+		}
+		else
 		{
 			turnLightOn = false;
 		}
@@ -2081,7 +2112,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel < alert)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual;
+		memory.alertClass = EAlertVisual_1;
 		memory.alertType = EAlertTypeMissingItem;
 		
 		// Prepare search as if there is an enemy that has escaped
@@ -2110,6 +2141,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
 	owner->Event_LookAtEntity(stimSource, 1);
+	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 
 	// Speak a reaction
 	memory.lastTimeVisualStimBark = gameLocal.time;
@@ -2127,9 +2159,8 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual;
+		memory.alertClass = EAlertVisual_2; // grayman #2603
 		memory.alertType = EAlertTypeBrokenItem;
-
 		
 		// Prepare search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -2198,7 +2229,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual;
+		memory.alertClass = EAlertVisual_2; // grayman #2603
 		memory.alertType = EAlertTypeDoor;
 		
 		// Do search as if there is an enemy that has escaped
@@ -2629,6 +2660,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 			{
 				owner->SetAlertLevel(otherAlertLevel);
 				owner->StopMove(MOVE_STATUS_DONE);
+				memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 
 				Memory& otherMemory = static_cast<idAI*>(issuingEntity)->GetMemory();
 

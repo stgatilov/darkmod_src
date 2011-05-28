@@ -689,6 +689,8 @@ public:
 	virtual void			RemoveTarget(idEntity* target);
 	virtual void			AddTarget(idEntity* target);
 
+	// grayman #2603 - relight positions
+	void					FindRelights(void);
 
 	// misc
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );

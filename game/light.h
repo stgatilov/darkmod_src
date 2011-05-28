@@ -242,6 +242,25 @@ private:
 	int				fadeEnd;
 	bool			soundWasPlaying;
 
+	/**
+	 * grayman #2603 - Per-AI info for counting negative barks. This allows
+	 * lights to keep track of the number of negative barks it elicits from
+	 * passing AI. AI are only allowed 2 negative barks per light. The list
+	 * is cleared when the light is relit, allowing AI to once again make
+	 * negative barks.
+	 */
+	struct AIBarks
+	{
+		// The number of negative barks for this AI
+		int count;
+		
+		// The AI who made them
+		idEntityPtr<idEntity> ai;
+	};
+
+	idList<AIBarks> aiBarks; // grayman #2603
+
+
 private:
 	void			PresentLightDefChange( void );
 	void			PresentModelDefChange( void );

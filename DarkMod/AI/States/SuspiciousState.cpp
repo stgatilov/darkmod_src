@@ -78,6 +78,8 @@ void SuspiciousState::Init(idAI* owner)
 	{
 		owner->movementSubsystem->ClearTasks();
 		owner->StopMove(MOVE_STATUS_DONE);
+		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+
 		if (!owner->CheckFOV(memory.alertPos) && owner->GetMoveType() == MOVETYPE_ANIM)
 		{
 			// Search spot is not within FOV, turn towards the position
@@ -94,7 +96,7 @@ void SuspiciousState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if (memory.alertClass == EAlertVisual)
+		if (memory.alertClass == EAlertVisual_1)
 		{
 			bark = "snd_alert1s";
 		}
