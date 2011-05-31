@@ -1198,7 +1198,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
 	savefile->ReadBool(m_leftQueue);		// grayman #2345
 	savefile->ReadBool(m_performRelight);	// grayman #2603
-
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -10597,6 +10596,11 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	}
 }
 
+bool idAI::IsSearching() // grayman #2603
+{
+	return (AI_AlertLevel >= thresh_3);
+}
+
 int idAI::ContinueSearchForHidingSpots()
 {
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
@@ -10822,7 +10826,7 @@ bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
 		// this door should really be closed
 		return true;
 	}
-	if (AI_AlertLevel >= thresh_3)
+	if (IsSearching()) // grayman #2603
 	{
 		// don't close other doors while searching
 		return false;

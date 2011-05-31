@@ -76,9 +76,9 @@ void ObservantState::Init(idAI* owner)
 		// barking
 		idStr soundName("");
 
-		if (owner->AlertIndexIncreased() && memory.alertType != EAlertTypeMissingItem)
+		if (owner->AlertIndexIncreased() && (memory.alertType != EAlertTypeMissingItem))
 		{
-			if (memory.alertClass == EAlertVisual_1)
+			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2)) // grayman #2603
 			{
 				soundName = "snd_alert1s";
 			}

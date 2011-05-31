@@ -251,10 +251,15 @@ void IdleState::InitialiseMovement(idAI* owner)
 
 void IdleState::InitialiseCommunication(idAI* owner)
 {
-	// Push a single bark to the communication subsystem first, it fires only once
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
-	);
+	Memory& memory = owner->GetMemory(); // grayman #2603 - only allow rampdown barks if the AI was searching
+
+	if (memory.searchFlags & SRCH_WAS_SEARCHING)
+	{
+		memory.searchFlags = 0; // clear
+		// Push a single bark to the communication subsystem first, it fires only once
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner))));
+	}
 }
 
 
@@ -285,7 +290,7 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 
 	if (!owner->m_RelightingLight && // grayman #2603 - No rampdown bark if relighting a light.
 		(owner->m_maxAlertLevel >= owner->thresh_1) &&
-		(owner->m_lastAlertLevel < owner->thresh_4))
+		(owner->m_maxAlertLevel < owner->thresh_4))
 	{
 		if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{

@@ -160,8 +160,8 @@ void State::OnVisualAlert(idActor* enemy)
 	if (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 	{
 		// This is a new alert // SZ Dec 30, 2006
-		// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
-		if (owner->AI_AlertLevel >= owner->thresh_3)
+		// Note changed this from thresh_2 to thresh_3 to match thresh designer's intentions
+		if (owner->IsSearching()) // grayman #2603
 		{
 			// We are in searching mode or we are switching to it, handle this new incoming alert
 
@@ -829,28 +829,68 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 			Memory& otherMemory = otherAI->GetMemory();
 
-			if (otherAI->AI_AlertLevel >= otherAI->thresh_3 && owner->AI_AlertLevel < owner->thresh_3)
+			// angua: if the other AI is searching due to an alert, join in
+
+			float otherAlertLevel = otherAI->AI_AlertLevel * 0.7f;
+			
+			// grayman #2603 - only join if he's searching and I'm not, and I haven't been warned recently
+
+			if (otherAI->IsSearching() && !owner->IsSearching() && !(memory.searchFlags & SRCH_WARNED))
 			{
-				// angua: the other AI is searching due to an alert, join in
+				owner->SetAlertLevel(otherAlertLevel);
 
-				float otherAlertLevel = otherAI->AI_AlertLevel * 0.7f;
+				owner->StopMove(MOVE_STATUS_DONE);
+				owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 				
-				if (otherAlertLevel > owner->AI_AlertLevel)
+				memory.alertPos = otherMemory.alertPos;
+				memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
+				memory.alertType = otherMemory.alertType;
+//				memory.alertClass = EAlertNone;
+//				memory.alertType = EAlertTypeSuspicious;
+				
+				memory.alertRadius = otherMemory.alertRadius;
+				memory.alertSearchVolume = otherMemory.alertSearchVolume; 
+				memory.alertSearchExclusionVolume.Zero();
+
+				memory.alertedDueToCommunication = true;
+
+				// grayman #2603 - the other AI will bark at me
+
+				idStr soundName;
+				if (otherMemory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
 				{
-					owner->SetAlertLevel(otherAlertLevel);
+					gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
+				
+					// grayman #2603 - there's no need to send a message from the other AI to me,
+					// because I already know what's going on. Copy the "evidence of intruders"
+					// code from the message received code so that we do here everything we would
+					// normally do when such a message is received.
 
-					owner->StopMove(MOVE_STATUS_DONE);
-					owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
-					
-					memory.alertPos = otherMemory.alertPos;
-					memory.alertClass = EAlertNone;
-					memory.alertType = EAlertTypeSuspicious;
-					
-					memory.alertRadius = otherMemory.alertRadius;
-					memory.alertSearchVolume = otherMemory.alertSearchVolume; 
-					memory.alertSearchExclusionVolume.Zero();
+					// grayman #2603 - raise my evidence of intruders?
 
-					memory.alertedDueToCommunication = true;
+					int warningAmount = otherMemory.countEvidenceOfIntruders;
+				
+					if (memory.countEvidenceOfIntruders < warningAmount)
+					{
+						gameLocal.Printf("I've been warned about evidence of intruders.\n");
+						memory.countEvidenceOfIntruders = warningAmount;
+					}
+
+					soundName = "snd_warnSawEvidence";
+				}
+				else
+				{
+					gameLocal.Printf("I see a friend, I'm going to warn them I'm suspicious\n");
+					soundName = "snd_somethingSuspicious";
+				}
+
+				// The other AI will bark, but only if you haven't already been warned.
+
+				otherMemory.lastTimeVisualStimBark = gameLocal.time;
+				if (!(memory.searchFlags & SRCH_WARNED))
+				{
+					otherAI->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+					memory.searchFlags |= SRCH_WARNED; // grayman #2603 - you received a warning
 				}
 			}
 			else
@@ -866,10 +906,13 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				// Variables for the sound and the conveyed message
 				idStr soundName;
 				CommMessagePtr message; 
+
+				bool warningBark = false; // grayman #2603
+				Memory& otherMemory = otherAI->GetMind()->GetMemory(); // grayman #2603
 				
-				if (memory.enemiesHaveBeenSeen)
+				if ((memory.enemiesHaveBeenSeen) && !(otherMemory.searchFlags & SRCH_WARNED))
 				{
-					if (otherAI != NULL && !otherAI->GetMind()->GetMemory().enemiesHaveBeenSeen)
+					if (otherAI != NULL && !otherMemory.enemiesHaveBeenSeen)
 					{
 						gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
 						message = CommMessagePtr(new CommMessage(
@@ -879,11 +922,12 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							owner->GetPhysics()->GetOrigin()
 						));
 						soundName = "snd_warnSawEnemy";
+						warningBark = true; // grayman #2603
 					}
 				}
 				else if (memory.itemsHaveBeenStolen)
 				{
-					if (otherAI != NULL && !otherAI->GetMind()->GetMemory().itemsHaveBeenStolen)
+					if ((otherAI != NULL && !otherMemory.itemsHaveBeenStolen) && !(otherMemory.searchFlags & SRCH_WARNED))
 					{
 						gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
 						message = CommMessagePtr(new CommMessage(
@@ -893,11 +937,12 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							owner->GetPhysics()->GetOrigin()
 						));
 						soundName = "snd_warnMissingItem";
+						warningBark = true; // grayman #2603
 					}
 				}
 				else if (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
 				{
-					if (otherAI != NULL && otherAI->GetMind()->GetMemory().countEvidenceOfIntruders < memory.countEvidenceOfIntruders)
+					if ((otherMemory.countEvidenceOfIntruders < memory.countEvidenceOfIntruders) && !(otherMemory.searchFlags & SRCH_WARNED))
 					{
 						gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
 						message = CommMessagePtr(new CommMessage(
@@ -907,9 +952,10 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							owner->GetPhysics()->GetOrigin()
 						));
 						soundName = "snd_warnSawEvidence";
+						warningBark = true; // grayman #2603
 					}
 				}
-				else if (owner->AI_AlertIndex < EObservant && owner->greetingState != ECannotGreet)
+				else if ((owner->AI_AlertIndex < EObservant) && (owner->greetingState != ECannotGreet))
 				{
 					const idVec3& origin = owner->GetPhysics()->GetOrigin();
 					const idVec3& otherOrigin = otherAI->GetPhysics()->GetOrigin();
@@ -958,9 +1004,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					}
 				}
 
-				// Speak the chosen sound
-				if (!soundName.IsEmpty() && gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+				// Speak the chosen sound if the other hasn't already been warned
+
+				if (warningBark && !(otherMemory.searchFlags & SRCH_WARNED)) // grayman #2603
 				{
+					otherMemory.searchFlags |= SRCH_WARNED;  // they have now been warned
 					memory.lastTimeVisualStimBark = gameLocal.time;
 					owner->commSubsystem->AddCommTask(
 						CommunicationTaskPtr(new SingleBarkTask(soundName, message))
@@ -1928,8 +1976,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			if ((owner->AI_AlertLevel < owner->thresh_3) && 
 				(memory.enemiesHaveBeenSeen || (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)))
 			{
-				owner->SetAlertLevel(owner->thresh_3 + (owner->thresh_4 - owner->thresh_3) * 0.2
-					* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF));
+				owner->SetAlertLevel(owner->thresh_3 - 0.1 + (owner->thresh_4 - owner->thresh_3) * 0.2
+					* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)); // grayman #2603 - subtract a tenth
 
 				if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
 				{
@@ -2516,7 +2564,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// Set alert pos to the position we were ordered to search
 				memory.alertPos = directObjectLocation;
 				memory.chosenHidingSpot = directObjectLocation;
-
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 			}
 			break;
@@ -2553,6 +2600,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				{
 					gameLocal.Printf("I've been warned about evidence of intruders.\n");
 					memory.countEvidenceOfIntruders = warningAmount;
+					memory.searchFlags |= SRCH_WARNED; // grayman #2603
 
 					if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 					{
@@ -2568,6 +2616,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			{
 				gameLocal.Printf("I've been warned that items have been stolen.\n");
 				memory.itemsHaveBeenStolen = true;
+				memory.searchFlags |= SRCH_WARNED; // grayman #2603
 
 				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
@@ -2582,6 +2631,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			{
 				gameLocal.Printf("I've been warned that enemies have been seen.\n");
 				memory.enemiesHaveBeenSeen = true;
+				memory.searchFlags |= SRCH_WARNED; // grayman #2603
 				
 				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
@@ -2620,7 +2670,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	if (owner->IsFriend(issuingEntity))
 	{
 		// If not already searching something else
-		if (owner->AI_AlertLevel >= owner->thresh_3)
+		if (owner->IsSearching())
 		{
 			//gameLocal.Printf ("I'm too busy searching something else\n");
 			return;
@@ -2646,7 +2696,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 			}
 			
 			// If AI that called out has a higher alert num, raise ours
-			// to match theres due to urgency in their voice
+			// to match there's due to urgency in their voice
 			float otherAlertLevel = 0.0f;
 			
 			if (issuingEntity->IsType(idAI::Type))

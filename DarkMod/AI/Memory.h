@@ -55,14 +55,15 @@ namespace ai
 //----------------------------------------------------------------------------------------
 // The following key is used to identify the name of the switch entity used to turn on
 // a AIUSE_LIGHTTYPE_ELECTRIC light.
+// grayman #2603 - not in use; switches are found at map start
 #define AIUSE_LIGHTSWITCH_NAME_KEY	"switchName"
 
 //----------------------------------------------------------------------------------------
 // The following defines the response type when a light is off
 #define AIUSE_SHOULDBEON_LEVEL		"shouldBeOn" // grayman #2603
 
-
 // SZ: Minimum count evidence of intruders to turn on all lights encountered
+// grayman #2603 - this is no longer used
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS 5
 // angua: The AI starts searching after encountering a switched off light 
 // only if it is already suspicious
@@ -89,7 +90,7 @@ namespace ai
 
 // Area searched around last sighting after losing an enemy
 #define LOST_ENEMY_ALERT_RADIUS 200.0
-#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 200.0)
+#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
 
 enum EAlertClass 
 {
@@ -156,6 +157,10 @@ const char* const AlertStateNames[EAlertStateNum] =
 // grayman #2603 - how long to wait until barking again about a light that's out
 #define REBARK_DELAY 15000
 
+// grayman #2603 - search flags
+#define SRCH_WAS_SEARCHING	1	// set when searching occurred while alert
+#define SRCH_WARNED			2	// set when warned by another searching AI
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -193,6 +198,9 @@ public:
 
 	// grayman #2603 - The next time a light stim can make the AI bark
 	int nextTimeLightStimBark;
+
+	// grayman #2603 - flags relevant to searching
+	int searchFlags;		
 
 	/*!
 	* This variable indicates the number of out of place things that the

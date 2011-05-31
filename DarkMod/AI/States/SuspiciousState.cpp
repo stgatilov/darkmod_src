@@ -96,7 +96,7 @@ void SuspiciousState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if (memory.alertClass == EAlertVisual_1)
+		if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2)) // grayman #2603
 		{
 			bark = "snd_alert1s";
 		}

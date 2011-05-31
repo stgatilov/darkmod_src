@@ -55,8 +55,6 @@ void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool SingleBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SingleBarkTask performing.\r");
-
 	if (gameLocal.time < _barkStartTime)
 	{
 		return false; // waiting for start delay to pass
@@ -69,8 +67,6 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 		return (gameLocal.time >= _endTime);
 	}
 	
-	// No end time set yet, emit our bark
-
 	if (_soundName.IsEmpty())
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("SingleBarkTask has empty soundname, ending task.\r");
@@ -81,8 +77,11 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	// No end time set yet, emit our bark
+
 	// grayman #2169 - no barks while underwater
 
+	_barkLength = 0;
 	if (!owner->MouthIsUnderwater())
 	{
 		// Push the message and play the sound
@@ -92,16 +91,12 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 		}
 
 		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
-	
+		
 		// Sanity check the returned length
 		if (_barkLength == 0)
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Received 0 sound length when playing %s.\r", _soundName.c_str());
 		}
-	}
-	else
-	{
-		_barkLength = 0;
 	}
 
 	_barkStartTime = gameLocal.time;

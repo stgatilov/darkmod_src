@@ -96,8 +96,10 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 	idStr soundName("");
 
 	if (!owner->m_RelightingLight && // grayman #2603 - No rampdown bark if relighting a light.
-		(owner->m_lastAlertLevel >= owner->thresh_1) &&
-		(owner->m_lastAlertLevel < owner->thresh_3))
+		(owner->m_maxAlertLevel >= owner->thresh_1) && // grayman #2603 - m_lastAlertLevel can be uninitialized here, so it's not a good thing to check
+		(owner->m_maxAlertLevel < owner->thresh_4))
+//		(owner->m_lastAlertLevel >= owner->thresh_1) &&
+//		(owner->m_lastAlertLevel < owner->thresh_3))
 	{
 		if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{

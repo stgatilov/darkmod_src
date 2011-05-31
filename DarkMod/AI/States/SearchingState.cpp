@@ -82,13 +82,13 @@ void SearchingState::Init(idAI* owner)
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
 
-		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
+		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 		{
-			if (memory.alertClass == EAlertVisual_1)
+			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2)) // grayman #2603
 			{
 				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
-					bark = "snd_alert3cs";
+					bark = "snd_alert3sc";
 				}
 				else
 				{
@@ -138,6 +138,8 @@ void SearchingState::Init(idAI* owner)
 		// Let the AI update their weapons (make them solid)
 		owner->UpdateAttachmentContents(true);
 	}
+
+	memory.searchFlags |= SRCH_WAS_SEARCHING; // grayman #2603
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
@@ -401,7 +403,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			// Get location
 			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
 			memory.currentSearchSpot = memory.chosenHidingSpot;
-			
+
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING(
 				"First spot chosen is index %d of %d spots.\r", 
 				memory.firstChosenHidingSpotIndex, numSpots

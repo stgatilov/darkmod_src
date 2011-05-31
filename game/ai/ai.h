@@ -1319,6 +1319,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// grayman #2603 - am I carrying a torch?
 	idEntity*				GetTorch();
 
+	bool					IsSearching(); // grayman #2603
+
 	virtual void			Hide( void );
 	virtual void			Show( void );
 	virtual bool			CanBecomeSolid();

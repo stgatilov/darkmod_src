@@ -26,7 +26,8 @@ Memory::Memory(idAI* owningAI) :
 	lastTimeFriendlyAISeen(-1000),
 	lastTimeEnemySeen(-1),
 	lastTimeVisualStimBark(-1),
-	nextTimeLightStimBark(-1), // grayman #2603
+	nextTimeLightStimBark(-1),	// grayman #2603
+	searchFlags(0),				// grayman #2603
 	countEvidenceOfIntruders(0),
 	nextHeadTurnCheckTime(0),
 	currentlyHeadTurning(false),
@@ -129,6 +130,7 @@ void Memory::Save(idSaveGame* savefile) const
 	lastDoorHandled.Save(savefile); // grayman #2712
 	relightLight.Save(savefile);	// grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
+	savefile->WriteInt(searchFlags);			// grayman #2603
 
 	doorRelated.currentDoor.Save(savefile);
 
@@ -215,6 +217,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	lastDoorHandled.Restore(savefile);	// grayman #2712
 	relightLight.Restore(savefile);		// grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
+	savefile->ReadInt(searchFlags);				// grayman #2603
 
 	doorRelated.currentDoor.Restore(savefile);
 	// Clear the containers before restoring them
