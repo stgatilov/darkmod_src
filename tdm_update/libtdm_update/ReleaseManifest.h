@@ -11,13 +11,13 @@
 
 #include <list>
 #include <fstream>
-#include <boost/spirit.hpp>
+#include <boost/spirit/include/classic.hpp>
 #include <boost/bind.hpp>
 
 #include "PackageInstructions.h"
 #include "SvnClient.h"
 
-namespace bs = boost::spirit;
+namespace bs = boost::spirit::classic;
 
 namespace tdm
 {

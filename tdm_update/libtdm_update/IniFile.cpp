@@ -19,10 +19,10 @@
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/spirit.hpp>
+#include <boost/spirit/include/classic.hpp>
 #include <boost/bind.hpp>
 
-namespace bs = boost::spirit;
+namespace bs = boost::spirit::classic;
 
 namespace tdm
 {

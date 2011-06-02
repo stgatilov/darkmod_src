@@ -13,11 +13,11 @@
 #include <list>
 #include <fstream>
 #include <boost/filesystem.hpp>
-#include <boost/spirit.hpp>
+#include <boost/spirit/include/classic.hpp>
 #include <boost/bind.hpp>
 #include <boost/regex.hpp>
 
-namespace bs = boost::spirit;
+namespace bs = boost::spirit::classic;
 
 namespace tdm
 {
