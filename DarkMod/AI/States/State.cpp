@@ -33,6 +33,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../Grabber.h"
 #include "../Tasks/PlayAnimationTask.h"
 
+#include "ConversationState.h" // grayman #2603
+
+
 namespace ai
 {
 //----------------------------------------------------------------------------------------
@@ -484,6 +487,15 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			stimSource->IgnoreResponse(ST_VISUAL,owner);
 			return;
+		}
+
+		// grayman #2603 - Let's see if the AI is involved in a conversation.
+		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
+		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(owner->GetMind()->GetState());
+
+		if (convState != NULL)
+		{
+			return; // we're in a conversation, so delay processing the rest of the relight
 		}
 
 		// Before we check the odds of noticing this stim, see if it belongs
