@@ -410,10 +410,11 @@ void SwitchOnLightState::Init(idAI* owner)
 		// Use standOffTemp to find the floor near the goal. In case this is a candle sitting
 		// on a table, you have to move out a reasonable distance to clear the table.
 
+		goalDirection.z = 0; // grayman #2603 - ignore vertical component
 		idVec3 startPoint = goalOrigin + goalDirection * standOffTemp;
 		idVec3 bottomPoint = startPoint;
 		bottomPoint.z -= RELIGHT_MAX_HEIGHT;
-		
+
 		idVec3 targetPoint = startPoint;
 		trace_t result;
 		if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
