@@ -1044,15 +1044,23 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// Bow aimer related -- By Dram
 	const idKeyValue *AimerKeyVal = weaponDef->dict.MatchPrefix( "def_aimer", NULL );
-	idEntity *bow_aimer(NULL);
-	if ( AimerKeyVal && cv_bow_aimer.GetBool() ) {
+	idEntity *bow_aimer( NULL );
+	if ( AimerKeyVal ) // grayman - always attach the aimer
+	{
 		idDict aimerArgs;
 		aimerArgs.Set( "classname", AimerKeyVal->GetValue().c_str() );
 		aimerArgs.Set( "dropToFloor", "0" );
 		gameLocal.SpawnEntityDef( aimerArgs, &bow_aimer );
-		if ( bow_aimer ) {
-			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Def_Attaching aimer entity %s to weapon entity %s.\r", bow_aimer->name.c_str(), name.c_str());
+		if ( bow_aimer )
+		{
 			Attach( bow_aimer, NULL, NULL );
+		}
+
+		// show it or hide it initially based on the menu setting
+
+		if ( !cv_bow_aimer.GetBool() )
+		{
+			bow_aimer->Hide();
 		}
 	}
 	
@@ -1573,8 +1581,10 @@ void idWeapon::BeginAttack( void )
 		return;
 	}
 
-	if ( !WEAPON_ATTACK ) {
-		if ( sndHum ) {
+	if ( !WEAPON_ATTACK )
+	{
+		if ( sndHum )
+		{
 			StopSound( SND_CHANNEL_BODY, false );
 		}
 
@@ -1585,7 +1595,25 @@ void idWeapon::BeginAttack( void )
 			for (int i = 0; i < m_Attachments.Num() ; i++)
 			{
 				idEntity *e = m_Attachments[i].ent.GetEntity();
-				if (e->IsHidden())
+
+				// grayman - If this is the bow aimer, and the player is using it, show it.
+				// If the player isn't using it, hide it.
+
+				if ( idStr::Cmp( e->spawnArgs.GetString("classname"), "atdm:attachment_aimer" ) == 0 )
+				{
+					if ( cv_bow_aimer.GetBool() )
+					{
+						if ( e->IsHidden() )
+						{
+							e->Show();
+						}
+					}
+					else if ( !e->IsHidden() )
+					{
+						e->Hide();
+					}
+				}
+				else if ( e->IsHidden() ) // attachments other than the bow aimer
 				{
 					e->Show();
 				}
