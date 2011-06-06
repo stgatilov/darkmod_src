@@ -948,6 +948,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
 	savefile->WriteBool(m_RelightingLight);	// grayman #2603
+	savefile->WriteBool(m_DroppingTorch);	// grayman #2603
 	savefile->WriteBool(m_RestoreMove);		// grayman #2706
 	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
 
@@ -1375,6 +1376,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
 	savefile->ReadBool(m_RelightingLight);	// grayman #2603
+	savefile->ReadBool(m_DroppingTorch);	// grayman #2603
 	savefile->ReadBool(m_RestoreMove);		// grayman #2706
 	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
 
@@ -1893,7 +1895,8 @@ void idAI::Spawn( void )
 	m_dousedLightsSeen.Clear();	// grayman #2603
 
 	m_HandlingElevator = false;
-	m_RelightingLight = false; // grayman #2603
+	m_RelightingLight = false;	// grayman #2603
+	m_DroppingTorch = false;	// grayman #2603
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
