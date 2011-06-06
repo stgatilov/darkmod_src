@@ -1116,6 +1116,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_RelightingLight;
 
 	/**
+	 * grayman #2603: is set true while the AI is dropping a torch.
+	 */
+	bool					m_DroppingTorch;
+
+	/**
 	* Head center offset in head joint coordinates, relative to head joint
 	* When this offset is added to the head joint, we should be at the head center
 	**/

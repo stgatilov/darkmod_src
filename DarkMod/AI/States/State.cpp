@@ -653,10 +653,6 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			OnVisualStimLightSource(stimSource,owner);
 		}
-		else // grayman #2603 - if alert weighting denies processing, at least check if the doused light is my torch
-		{
-			CheckTorch(owner,static_cast<idLight*>(stimSource));
-		}
 		break;
 	case EAIuse_Missing_Item_Marker:
 		if (ShouldProcessAlert(EAlertTypeMissingItem))
@@ -1775,6 +1771,11 @@ grayman #2603 - Check if torch has gone out
 */
 bool State::CheckTorch(idAI* owner, idLight* light)
 {
+	if (owner->m_DroppingTorch) // currently dropping my torch?
+	{
+		return false; // can't relight at the moment
+	}
+
 	// If I'm carrying a torch, and it's out, toss it.
 
 	idEntity* torch = owner->GetTorch();
@@ -1797,36 +1798,44 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 		// gave us the current stim--then I should toss it. Otherwise I
 		// might try to relight a doused torch with my doused torch.
 
-		if ((torchLight && (torchLight->GetLightLevel() == 0)) || (torchLight == light) || (torchLight->IsSmoking()))
+		if (torchLight)
 		{
-			// At this point, I know my torch is out
-
-			if (owner->AI_AlertLevel < owner->thresh_5) // don't drop if in combat mode
+			if ((torchLight->GetLightLevel() == 0) || (torchLight == light) || (torchLight->IsSmoking()))
 			{
-				// drop the torch (torch is detached by a frame command in the animation)
+				// At this point, I know my torch is out
 
-				light->spawnArgs.Set("shouldBeOn", "0");	// don't relight
-				torch->spawnArgs.Set("shouldBeOn", "0");	// insurance
-				light->SetStimEnabled(ST_VISUAL,false);		// turn off visual stim; no one cares
-
-				// use one animation if alert level is 4, another if not
-
-				idStr animName = "drop_torch";
-				if (owner->AI_AlertLevel >= owner->thresh_4)
+				if (owner->AI_AlertLevel < owner->thresh_5) // don't drop if in combat mode
 				{
-					animName = "drop_torch_armed";
+					// drop the torch (torch is detached by a frame command in the animation)
+
+					torchLight->spawnArgs.Set("shouldBeOn", "0");	// don't relight
+					torch->spawnArgs.Set("shouldBeOn", "0");		// insurance
+					torchLight->SetStimEnabled(ST_VISUAL,false);	// turn off visual stim; no one cares
+
+					// use one animation if alert level is 4, another if not
+
+					idStr animName = "drop_torch";
+					if (owner->AI_AlertLevel >= owner->thresh_4)
+					{
+						animName = "drop_torch_armed";
+					}
+					owner->actionSubsystem->PushTask(TaskPtr(new PlayAnimationTask(animName,4)));
+					owner->m_DroppingTorch = true;
 				}
-				owner->actionSubsystem->PushTask(TaskPtr(new PlayAnimationTask(animName,4)));
+
+				// If you're in the middle of lighting a light, stop
+
+				if (owner->m_RelightingLight)
+				{
+					owner->GetMemory().stopRelight = true;
+				}
+
+				return false; // My torch is out, so don't start a relight
 			}
-
-			// If you're in the middle of lighting a light, stop
-
-			if (owner->m_RelightingLight)
-			{
-				owner->GetMemory().stopRelight = true;
-			}
-
-			return false; // My torch is out, so don't start a relight
+		}
+		else
+		{
+			return false; // couldn't find the light of my torch
 		}
 	}
 
@@ -1854,13 +1863,6 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel >= owner->thresh_5)
 	{
 		return;
-	}
-
-	//  If my torch is out, drop it under certain conditions.
-
-	if (!CheckTorch(owner,light))
-	{
-		return; // can't relight at this time
 	}
 
 	// What type of light is it?
