@@ -89,6 +89,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // if the number of entities is higher than this, we no longer spawn entities
 #define SPAWN_LIMIT (MAX_GENTITIES - 100)
 
+// what we consider solid when flooring entities
+#define CONTENTS_SOLIDFLOOR 	CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP
+
 const idEventDef EV_CullAll( "cullAll", "" );
 
 /*
@@ -301,6 +304,7 @@ void Seed::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( m_Classes[i].solid );
 		savefile->WriteInt( m_Classes[i].falloff );
 		savefile->WriteBool( m_Classes[i].floor );
+		savefile->WriteBool( m_Classes[i].floating );
 		savefile->WriteBool( m_Classes[i].stack );
 		savefile->WriteBool( m_Classes[i].noinhibit );
 		savefile->WriteVec3( m_Classes[i].size );
@@ -604,6 +608,7 @@ void Seed::Restore( idRestoreGame *savefile ) {
 		savefile->ReadBool( m_Classes[i].solid );
 		savefile->ReadInt( m_Classes[i].falloff );
 		savefile->ReadBool( m_Classes[i].floor );
+		savefile->ReadBool( m_Classes[i].floating );
 		savefile->ReadBool( m_Classes[i].stack );
 		savefile->ReadBool( m_Classes[i].noinhibit );
 		savefile->ReadVec3( m_Classes[i].size );
@@ -1197,6 +1202,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 
 	// these are ignored for pseudo classes (e.g. watch_breathren):
 	SeedClass.floor = ent->spawnArgs.GetBool( "seed_floor", spawnArgs.GetString( "floor", "0") );
+	SeedClass.floating = ent->spawnArgs.GetBool( "seed_floating", spawnArgs.GetString( "floating", "0") );
 	SeedClass.stack = ent->spawnArgs.GetBool( "seed_stack", "1" );
 	SeedClass.noinhibit = ent->spawnArgs.GetBool( "seed_noinhibit", "0" );
 
@@ -1810,10 +1816,16 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 	{
 		idEntity *ent;
 		idDict args;
-		idVec3 origin = GetPhysics()->GetOrigin();
 
-		// move to origin of ourselfs
+		idVec3 my_size = renderEntity.bounds.GetSize();
+		idVec3 origin = m_origin;
+
+		// move the origin of the template to "our top - 1 unit" to allow proper flooring
+		// regardless on where our origin is
+		origin.z += (my_size.z / 2) - 1;
 		args.SetVector("origin", origin);
+
+		gameLocal.Printf("SEED %s: my origin: %s template origin %s\n", GetName(), m_origin.ToString(), origin.ToString() );
 
 		// classname and model
 		args.Set("classname", entityClass);
@@ -1824,8 +1836,10 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 
 		// want it floored
 		args.Set("seed_floor", "1");
+		// but don't want it floating?
+		args.Set("seed_floating", spawnArgs.GetString( "floating", "0") );
 
-		// but if it is a moveable, don't floor it
+		// but if it is a moveable, don't let D3 floor it
 		args.Set("floor", "0");
 
 		// set previously defined (possible random) skin
@@ -2015,6 +2029,7 @@ void Seed::Prepare( void )
 	sa.Append("_density");
 	sa.Append("_falloff");
 	sa.Append("_floor");
+	sa.Append("_floating");
 	sa.Append("_map");
 	sa.Append("_map_invert");
 	sa.Append("_max_entities");		// can also be set as "template_count"
@@ -2519,17 +2534,16 @@ void Seed::PrepareEntities( void )
 				if (m_Classes[i].materials.Num() > 0)
 				{
 					// end of the trace (downwards the length from entity class position to bottom of SEED)
-					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z;
+					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z / 2;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
 					trace_t trTest;
 					idVec3 traceStart = SeedEntity.origin;
 
-					//gameLocal.Printf ("SEED %s: TracePoint start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f\n",
-					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z );
-					gameLocal.clip.TracePoint( trTest, traceStart, traceEnd, 
-							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
+//					gameLocal.Printf ("SEED %s: TracePoint start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f\n",
+//							GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z );
+					gameLocal.clip.TracePoint( trTest, traceStart, traceEnd, CONTENTS_SOLIDFLOOR, this );
 
 					// Didn't hit anything?
 					if ( trTest.fraction < 1.0f )
@@ -2606,6 +2620,14 @@ void Seed::PrepareEntities( void )
 					else
 					{
 						// didn't hit anything, floating in air?
+						if (! m_Classes[i].floating)
+						{
+							// if not floating, skip
+#ifdef M_DEBUG					
+							gameLocal.Printf ("SEED %s: No floaters allowed, skipping.\n", GetName() );
+#endif
+							continue;
+						}
 					}
 
 				} // end of per-material probability
@@ -2624,7 +2646,7 @@ void Seed::PrepareEntities( void )
 					//gameLocal.Printf( "SEED %s: Flooring entity #%i.\n", GetName(), j );
 
 					// end of the trace (downwards the length from entity class position to bottom of SEED)
-					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z;
+					idVec3 traceEnd = SeedEntity.origin; traceEnd.z = m_origin.z - size.z / 2;
 					// TODO: adjust for different "down" directions
 					//vTest *= GetGravityNormal();
 
@@ -2639,14 +2661,13 @@ void Seed::PrepareEntities( void )
 
 					idVec3 traceStart = SeedEntity.origin;
 
-					//gameLocal.Printf ("SEED %s: TraceBounds start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
-					//		GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
-					//	   	class_bounds.ToString()	); 
-					gameLocal.clip.TraceBounds( trTest, traceStart, traceEnd, class_bounds, 
-							CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP, this );
+//					gameLocal.Printf ("SEED %s: TraceBounds start %0.2f %0.2f %0.2f end %0.2f %0.2f %0.2f bounds %s\n",
+//							GetName(), traceStart.x, traceStart.y, traceStart.z, traceEnd.x, traceEnd.y, traceEnd.z,
+//						   	class_bounds.ToString()	); 
+					gameLocal.clip.TraceBounds( trTest, traceStart, traceEnd, class_bounds, CONTENTS_SOLIDFLOOR, this );
 
 					// hit something?
-					if ( trTest.fraction != 1.0f )
+					if ( trTest.fraction < 1.0f )
 					{
 						//gameLocal.Printf ("SEED %s: Hit something at %0.2f (%0.2f %0.2f %0.2f)\n",
 						//	GetName(), trTest.fraction, trTest.endpos.x, trTest.endpos.y, trTest.endpos.z ); 
@@ -2670,6 +2691,19 @@ void Seed::PrepareEntities( void )
 						gameLocal.Printf ("SEED %s: Hit nothing at %0.2f (%0.2f %0.2f %0.2f)\n",
 							GetName(), trTest.fraction, SeedEntity.origin.x, SeedEntity.origin.y, SeedEntity.origin.z );
 #endif
+						if (! m_Classes[i].floating)
+						{
+							// if not floating, skip
+#ifdef M_DEBUG
+							gameLocal.Printf ("SEED %s: No floaters allowed, skipping.\n", GetName() );
+#endif
+							continue;
+						}
+						// if floaters are allowed, place the entity at the bottom of the SEED
+						// +1.0f to put the origin inside the SEED box (otherwise it would be touching and thus
+						// be "not inside":
+						SeedEntity.origin.z = traceEnd.z + 1.0f;
+//						gameLocal.Printf ("SEED %s: Setting z=%0.2f.\n", GetName(), SeedEntity.origin.z );
 					}
 				}
 				else

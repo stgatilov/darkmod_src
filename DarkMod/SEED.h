@@ -113,6 +113,7 @@ struct seed_class_t {
 	bool					floor;			//!< if true, the entities will be floored (on by default, use
 											//!< "seed_floor" "0" to disable, then entities will be positioned
 											//!< at "z" where the are in the editor
+	bool					floating;		//!< if true, entities that hit the bottom of the SEED will float, if false, they will be removed
 	bool					stack;			//!< if true, the entities can stack on top of each other
 	bool					noinhibit;		//!< if true, the entities of this class will not be inhibited
 	bool					nocombine;		//!< if true, the entities of this class will never be combined into megamodels
