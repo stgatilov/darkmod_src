@@ -623,4 +623,20 @@ private:
 	void				Event_Activate(idEntity* activator);
 };
 
+/*
+===============================================================================
+
+Tels: set the team of its targets.
+
+===============================================================================
+*/
+
+class CTarget_SetTeam : public idTarget {
+public:
+	CLASS_PROTOTYPE( CTarget_SetTeam );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
 #endif /* !__GAME_TARGET_H__ */

@@ -11839,6 +11839,7 @@ void idEntity::Event_GetTeam()
 
 void idEntity::Event_SetTeam(int newTeam)
 {
+	gameLocal.Printf("%s: Changing to team %i.\n", GetName(), newTeam);
 	// greebo: No validity checking so far - todo?
 	team = newTeam;
 }

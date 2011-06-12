@@ -2233,3 +2233,32 @@ void CTarget_InterMissionTrigger::Event_Activate(idEntity* activator)
 		gameLocal.AddInterMissionTrigger(missionNum, activatorName, targetName);
 	}
 }
+
+/* ************************************** Target setTeam ********************************* */
+
+// Tels: Can be targetted from a trigger and changes the team of all of its targets to the
+// 		 team according to the spawnarg "team". Will also cause the affected actors to re-
+//		 evaluate their targets (so if they "see" someone, they might consider them an
+//		 enemy, or friend now):
+
+CLASS_DECLARATION( idEntity, CTarget_SetTeam )
+	EVENT( EV_Activate,	CTarget_SetTeam::Event_Activate )
+END_CLASS
+
+void CTarget_SetTeam::Event_Activate(idEntity* activator)
+{
+	float newTeam = spawnArgs.GetFloat("team", 0);
+
+	// for all targets
+	int t = targets.Num();
+	for( int i = 0; i < t; i++ )
+	{
+		idEntity *ent = targets[ i ].GetEntity();
+		if ( ent )
+		//if ( ent &&  ent->IsType(idActor::Type) )
+		{
+		//	idActor* actor = static_cast<idActor*>(ent);
+			ent->Event_SetTeam( newTeam );
+		}
+	}
+}	
