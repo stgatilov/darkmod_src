@@ -1214,10 +1214,15 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList, hardIgnoreList); 
 
 			// Extract the updater to a temporary filename
-			zipFile->ExtractFileTo(_executable.string(), destPath / ("_" + _executable.string()));
+			fs::path tempUpdater = destPath / ("_" + _executable.string());
+
+			zipFile->ExtractFileTo(_executable.string(), tempUpdater);
+
+			// Set the executable bit on the temporary updater
+			File::MarkAsExecutable(tempUpdater);
 
 			// Prepare the update batch file
-			PrepareUpdateBatchFile(destPath / ("_" + _executable.string()));
+			PrepareUpdateBatchFile(tempUpdater);
 		}
 		else
 		{
@@ -1235,17 +1240,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 			if (extension == ".linux" || extension == ".macosx")
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, "Marking extracted file as executable: " + i->file_string());
-				
-				struct stat mask;
-				stat(i->file_string().c_str(), &mask);
-
-				mask.st_mode |= S_IXUSR|S_IXGRP|S_IXOTH;
-
-				if (chmod(i->file_string().c_str(), mask.st_mode) == -1)
-				{
-					TraceLog::Error("Could not mark extracted file as executable: " + i->file_string());
-				}
+				File::MarkAsExecutable(*i);
 			}
 		}
 #endif
@@ -1298,8 +1293,11 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	updater = GetTargetPath() / updater;
 
 	batch << "#!/bin/bash" << std::endl;
+	batch << "echo \"Upgrading TDM Updater executable...\"" << std::endl;
+	batch << "cd " << GetTargetPath().file_string() << std::endl; 
 	batch << "sleep 2s" << std::endl;
 	batch << "mv -f " << tempUpdater.file_string() << " " << updater.file_string() << std::endl;
+	batch << "chmod +x " << updater.file_string() << std::endl;
 	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
 	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
 
@@ -1310,15 +1308,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 
 #ifndef WIN32
 	// Mark the shell script as executable in *nix
-	struct stat mask;
-	stat(_updateBatchFile.file_string().c_str(), &mask);
-
-	mask.st_mode |= S_IXUSR|S_IXGRP|S_IXOTH;
-
-	if (chmod(_updateBatchFile.file_string().c_str(), mask.st_mode) == -1)
-	{
-		TraceLog::Error("Could not mark extracted file as executable: " + _updateBatchFile.file_string());
-	}
+	File::MarkAsExecutable(_updateBatchFile);
 #endif
 }
 

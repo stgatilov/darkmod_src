@@ -129,6 +129,9 @@ public:
 			return false;
 		}
 	}
+
+	// Marks the given file as executable (for all groups) - does nothing in Win32
+	static void MarkAsExecutable(const fs::path& path);
 };
 
 }
