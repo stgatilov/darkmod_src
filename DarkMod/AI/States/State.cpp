@@ -2024,7 +2024,6 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				inHand = owner->GetAttachmentByPosition("hand_l");
 				if (inHand)
 				{
-					gameLocal.Printf("%s: holding %s in my left hand, so I can't use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 					// Something in the left hand, so can't use tinderbox
 
 					turnLightOn = false;
@@ -2042,13 +2041,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 						inHand = owner->GetAttachmentByPosition("hand_r");
 						if (inHand && (idStr::Cmp(inHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
 						{
-							gameLocal.Printf("%s: holding %s in my right hand, so I can't use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 							turnLightOn = false;
 						}
-					}
-					else // grayman debug
-					{
-						gameLocal.Printf("%s: holding %s in my left hand, so I can use my tinderbox\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 					}
 				}
 			}
@@ -2068,7 +2062,6 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			inHand = owner->GetAttachmentByPosition("hand_r");
 			if (inHand && (idStr::Cmp(inHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) != 0))
 			{
-				gameLocal.Printf("%s: holding %s in my right hand, so I can't relight an electric light\n",owner->name.c_str(),inHand->name.c_str()); // grayman debug
 				turnLightOn = false;
 			}
 		}
