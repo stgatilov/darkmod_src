@@ -524,7 +524,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? "queued " : "");
+			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? common->GetLanguageDict()->GetString( "#str_02180" ) : "");	// "queued"
 			continue;
 		}
 	}
@@ -582,7 +582,7 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), "queued ");
+			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02180" ));	// "queued "
 			continue;
 		}
 		
@@ -593,10 +593,10 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 		switch (download->GetStatus())
 		{
 		case CDownload::NOT_STARTED_YET:
-			gui->SetStateString(va("dl_mission_progress_%d", i), "queued ");
+			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02180" ));	// "queued "
 			break;
 		case CDownload::FAILED:
-			gui->SetStateString(va("dl_mission_progress_%d", i), "failed ");
+			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02181" ));	// "failed "
 			break;
 		case CDownload::IN_PROGRESS:
 			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.0f%s", download->GetProgressFraction()*100, "% "));
