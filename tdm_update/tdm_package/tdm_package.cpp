@@ -202,6 +202,28 @@ int main(int argc, char* argv[])
 
 			TraceLog::WriteLine(LOG_STANDARD, "Done.");
 		}
+		else if (options.IsSet("check-repository"))
+		{
+			if (options.Get("darkmoddir").empty())
+			{
+				options.PrintHelp();
+				return EXIT_SUCCESS;
+			}
+
+			Packager packager(options);
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.LoadManifest();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			packager.CheckRepository();
+
+			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
+
+			TraceLog::WriteLine(LOG_STANDARD, "Done.");
+		}
 		else if (options.IsSet("create-crc-info"))
 		{
 			if (options.Get("basedir").empty())

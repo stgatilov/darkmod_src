@@ -489,6 +489,7 @@ void Packager::CheckRepository()
 	{
 		if (!fs::exists(darkmodPath / i->sourceFile))
 		{
+			TraceLog::WriteLine(LOG_STANDARD, (boost::format("Could not find file %s in your darkmod path: ") % i->sourceFile.file_string()).str());
 			missingFiles++;
 		}
 	}

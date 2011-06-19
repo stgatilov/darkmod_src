@@ -22,6 +22,7 @@ Import( 'GLOBALS' )
 Import( GLOBALS )
 
 libtdm_update_string = ' \
+	File.cpp \
 	IniFile.cpp \
 	SvnClient.cpp \
 	SvnClientImpl.cpp \

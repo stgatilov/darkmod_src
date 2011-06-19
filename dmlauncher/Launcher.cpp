@@ -502,9 +502,9 @@ bool Launcher::Launch()
 		boost::algorithm::split(parts, STEAM_ARGS, boost::algorithm::is_any_of(" \t"));
 
 		// Pre-pend the steam argument list
-		for (std::size_t i = 0; i < parts.size(); ++i)
+		for (std::vector<std::string>::reverse_iterator i = parts.rbegin(); i != parts.rend(); ++i)
 		{
-			AddArgument(parts[i], true);
+			AddArgument(*i, true);
 		}
 	}
 
