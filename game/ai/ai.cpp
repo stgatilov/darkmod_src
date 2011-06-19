@@ -6100,6 +6100,15 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 
 	idActor::Damage(inflictor, attacker, dir, damageDefName, damageScale, location, collision);
 
+	// grayman #2478 - allowed idActor::Damage if dead, for physics reasons.
+	// Nothing beyond here is needed for AI that were dead when idAI::Damage()
+	// was called.
+
+	if (preHitHealth <= 0)
+	{
+		return;
+	}
+
 	if (inflictor != NULL && inflictor->IsType(idProjectile::Type))
 	{
 		int damageTaken = preHitHealth - health;
@@ -8546,7 +8555,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
 	if (m_bIgnoreAlerts) return;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI Hear Sound called\r");
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::HearSound: %s - AI Hear Sound called\r",name.c_str());
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
@@ -8626,10 +8635,12 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
 		}
 
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::HearSound: AI %s HEARD a sound\r",name.c_str());
 
-		if( cv_ai_debug.GetBool() )
-			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
+		if ( cv_ai_debug.GetBool() )
+		{
+			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str());
+		}
 	}
 }
 

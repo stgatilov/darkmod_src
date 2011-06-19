@@ -3070,6 +3070,13 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		return;
 	}
 
+	// grayman #2478 - why take more damage if you're already dead?
+
+	if (health <= 0)
+	{
+		return;
+	}
+
 	if ( !inflictor ) {
 		inflictor = gameLocal.world;
 	}

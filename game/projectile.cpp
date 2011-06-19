@@ -30,6 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 200.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 400.0f;
+static const float CHECK_TOUCH_DELAY			= 0.5f; // grayman #2478 - how often to check for touching entities
 
 const idEventDef EV_Explode( "<explode>", NULL );
 const idEventDef EV_Fizzle( "<fizzle>", NULL );
@@ -38,6 +39,8 @@ const idEventDef EV_GetProjectileState( "getProjectileState", NULL, 'd' );
 // greebo: The launch method (takes 3 vectors as arguments)
 const idEventDef EV_Launch("launch", "vvv");
 const idEventDef EV_ActivateProjectile("<activateProjectile>", NULL);
+const idEventDef EV_TDM_Mine_ClearPlayerImmobilization("EV_TDM_Mine_ClearPlayerImmobilization", "e"); // grayman #2478 - allows player to handle weapons again
+const idEventDef EV_Mine_Replace("<mine_Replace>", NULL); // grayman #2478
 
 CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Explode,				idProjectile::Event_Explode )
@@ -47,6 +50,9 @@ CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_GetProjectileState,	idProjectile::Event_GetProjectileState )
 	EVENT( EV_Launch,				idProjectile::Event_Launch )
 	EVENT( EV_ActivateProjectile,	idProjectile::Event_ActivateProjectile )
+	EVENT( EV_TDM_Mine_ClearPlayerImmobilization, idProjectile::Event_ClearPlayerImmobilization ) // grayman #2478
+	EVENT( EV_TDM_Lock_OnLockPicked, idProjectile::Event_Lock_OnLockPicked ) // grayman #2478
+	EVENT( EV_Mine_Replace,	idProjectile::Event_Mine_Replace ) // grayman #2478
 END_CLASS
 
 /*
@@ -73,11 +79,9 @@ idProjectile::idProjectile( void ) {
 	// note: for net_instanthit projectiles, we will force this back to false at spawn time
 
 	fl.networkSync		= true;
-
-
-
 	netSyncPhysics		= false;
-
+	m_Lock				= NULL;  // grayman #2478
+	isMine				= false; // grayman #2478
 }
 
 /*
@@ -114,6 +118,13 @@ void idProjectile::Spawn( void ) {
 	SetPhysics( &physicsObj );
 }
 
+void idProjectile::AddObjectsToSaveGame(idSaveGame* savefile) // grayman #2478
+{
+	idEntity::AddObjectsToSaveGame(savefile);
+
+	savefile->AddObject(m_Lock);
+}
+
 /*
 ================
 idProjectile::Save
@@ -146,6 +157,7 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
+	savefile->WriteBool(isMine); // grayman #2478
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
@@ -180,6 +192,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
+	savefile->ReadBool(isMine); // grayman #2478
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
@@ -262,11 +275,8 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 
 
 	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
-
 		netSyncPhysics = true;
-
 	}
-
 }
 
 /*
@@ -277,6 +287,7 @@ idProjectile::~idProjectile
 idProjectile::~idProjectile() {
 	StopSound( SND_CHANNEL_ANY, false );
 	FreeLightDef();
+	delete m_Lock; // grayman #2478
 }
 
 /*
@@ -416,8 +427,10 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	{
 		axis = angles.ToMat3();
 	}
-
 	physicsObj.SetAxis( axis );
+
+	// grayman #2478 - is this a mine?
+	isMine =  spawnArgs.GetBool("is_mine","0");
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
 
@@ -480,16 +493,111 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 }
 
 /*
+=========================
+idProjectile::IsMine - grayman #2478
+=========================
+*/
+
+bool idProjectile::IsMine()
+{
+	return isMine;
+}
+
+/*
+=========================
+idProjectile::AngleAdjust - grayman #2478
+=========================
+*/
+
+float idProjectile::AngleAdjust(float angle)
+{
+	// Adjust a mine's pitch and roll angles so that it wants to
+	// return to the vertical. A larger adjustment occurs when
+	// the given angle is near +- 90 degrees. A smaller adjustment
+	// occurs when the angle is near zero or near +- 180 degrees.
+	// This keeps mines from flipping over if they land upside-down,
+	// but allows them to correct when in flight. The amount of
+	// adjustment varies between 0 and 5 degrees.
+
+	float factor = 5.0f/90.0f;
+	float adjust = 0;
+
+	if (abs(angle) >= 10) // small adjustments are not interesting
+	{
+		if (angle < -90)
+		{
+			adjust = factor*angle + 10;
+		}
+		else if (angle < 90)
+		{
+			adjust = -factor*angle;
+		}
+		else
+		{
+			adjust = factor*angle - 10;
+		}
+	}
+
+	return adjust;
+}
+
+/*
 ================
 idProjectile::Think
 ================
 */
+
 void idProjectile::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
 		if ( thrust && ( gameLocal.time < thrust_end ) ) {
 			// evaluate force
 			thruster.SetForce( GetPhysics()->GetAxis()[ 0 ] * thrust );
 			thruster.Evaluate( gameLocal.time );
+		}
+	}
+
+	if ( IsMine() )
+	{
+		// grayman #2478 - if this is a mine in flight, adjust its pitch and
+		// roll slightly so it has a better chance of landing rightside-up.
+
+		if ( !IsAtRest() && !(thinkFlags & TH_ARMED) )
+		{
+			idAngles ang = GetPhysics()->GetAxis().ToAngles();
+			ang.pitch += AngleAdjust(ang.pitch);
+			ang.roll += AngleAdjust(ang.roll);
+			SetAngles(ang);
+		}
+
+		if ( thinkFlags & TH_ARMED ) // grayman #2478 - if armed, this is a ticking mine
+		{
+			// Any AI around? For AI who manage to avoid a collision with the mine, catch them here if they're close enough and moving/rotating.
+
+			idEntity* entityList[ MAX_GENTITIES ];
+			idVec3 org = GetPhysics()->GetOrigin();
+			idBounds bounds = GetPhysics()->GetAbsBounds();
+			float closeEnough = Square(23);
+
+			// get all entities touching the bounds
+
+			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+
+			for ( int i = 0 ; i < numListedEntities ; i++ )
+			{
+				idEntity* ent = entityList[ i ];
+				if ( ent && ent->IsType(idAI::Type) )
+				{
+					idAI* entAI = static_cast<idAI*>(ent);
+					if ( entAI->AI_FORWARD || (entAI->GetPhysics()->GetAngularVelocity().LengthSqr() > 0) )
+					{
+						if ( (entAI->GetPhysics()->GetOrigin() - org).LengthSqr() <= closeEnough )
+						{
+							MineExplode( entAI->entityNumber );
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -557,7 +665,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	idStr		SurfTypeName;
 
 	if ( state == INACTIVE ) {
-		// projectile not active yet, return FALSE
+		// projectile not active, return FALSE
 		return false;
 	}
 
@@ -611,8 +719,14 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	dir.Normalize();
 
 	// projectiles can apply an additional impulse next to the rigid body physics impulse
-	if ( spawnArgs.GetFloat( "push", "0", push ) && push > 0.0f ) {
-		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * dir );
+	if ( spawnArgs.GetFloat( "push", "0", push ) && ( push > 0.0f ) )
+	{
+		idVec3 pushDir = dir;
+		if ( IsMine() ) // grayman #2478 - if this is a mine, push up
+		{
+			pushDir = idVec3( 0,0,1 );
+		}
+		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * pushDir );
 	}
 
 	// MP: projectiles open doors
@@ -695,10 +809,22 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 }
 
 /*
+=================================
+idProjectile::DefaultDamageEffect - grayman #2478
+=================================
+*/
+
+void idProjectile::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName )
+{
+	AddDefaultDamageEffect( collision, velocity );
+}
+
+/*
 =================
 idProjectile::DefaultDamageEffect
 =================
 */
+
 void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity ) {
 	const char *decal, *sound;
 	idStr typeName;
@@ -838,8 +964,36 @@ void idProjectile::Fizzle( void ) {
 /**
 * greebo: This event is being scheduled by the Launch() method, if a "delay" is set on the projectileDef
 */
-void idProjectile::Event_ActivateProjectile() {
+void idProjectile::Event_ActivateProjectile()
+{
 	state = LAUNCHED;
+
+	// grayman #2478 - arm it if it's a mine
+	
+	if ( IsMine() )
+	{
+		// The mine is now armed, so loop the armed sound.
+
+		StartSound( "snd_mine_armed", SND_CHANNEL_BODY, 0, true, NULL );
+
+		// Make it frobable. It won't highlight, though, for any inventory
+		// item other than a lockpick, so that the player doesn't get the
+		// impression that he can frob it.
+
+		SetFrobable( true );
+		m_FrobDistance = cv_frob_distance_default.GetInteger();
+
+		// Make it locked and pickable.
+
+		// Set up our PickableLock instance
+
+		m_Lock = static_cast<PickableLock*>( PickableLock::CreateInstance() );
+		m_Lock->InitFromSpawnargs( spawnArgs ); // Load the spawnargs for the lock
+		m_Lock->SetOwner( this );
+		m_Lock->SetLocked( true );
+
+		BecomeActive( TH_ARMED ); // guarantee continued thinking
+	}
 }
 
 /*
@@ -847,6 +1001,7 @@ void idProjectile::Event_ActivateProjectile() {
 idProjectile::Event_RadiusDamage
 ================
 */
+
 void idProjectile::Event_RadiusDamage( idEntity *ignore ) {
 	const char *splash_damage = spawnArgs.GetString( "def_splash_damage" );
 	if ( splash_damage[0] != '\0' ) {
@@ -978,6 +1133,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	physicsObj.PutToRest();
 
 	state = EXPLODED;
+	BecomeInactive( TH_ARMED ); // grayman #2478 - disable armed thinking
 
 	if ( gameLocal.isClient ) {
 		return;
@@ -991,22 +1147,15 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
 		idEntity *e = gameLocal.entities[ collision.c.entityNum ];
 
-
-
 		if( e->IsType( idAFEntity_Base::Type ) ) {
 
 //			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
 
 			this->BindToJoint( e, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), true );
-
 		}
-
 		else {
-
 			Bind( gameLocal.entities[collision.c.entityNum], true );
-
 		}
-
 	}
 
 	// splash damage
@@ -1168,6 +1317,27 @@ void idProjectile::Event_Explode( void ) {
 
 /*
 ================
+idProjectile::MineExplode - grayman #2478
+================
+*/
+void idProjectile::MineExplode( int entityNumber ) // entityNumber belongs to the entity that stepped on you
+{
+	if ( state == LAUNCHED ) // only explode if you're armed and haven't already blown up
+	{
+		trace_t collision;
+		memset( &collision, 0, sizeof( collision ) );
+		collision.endAxis = GetPhysics()->GetAxis();
+		collision.endpos = GetPhysics()->GetOrigin();
+		collision.c.point = collision.endpos;
+		collision.c.normal.Set( 0, 0, 1 );
+		collision.c.entityNum = entityNumber;
+		AddDefaultDamageEffect( collision, collision.c.normal );
+		Collide( collision, idVec3(0,0,0) );
+	}
+}
+
+/*
+================
 idProjectile::Event_Fizzle
 ================
 */
@@ -1193,7 +1363,6 @@ void idProjectile::Event_Touch( idEntity *other, trace_t *trace )
 
 	if ( other != owner.GetEntity() ) {
 		trace_t collision;
-
 		memset( &collision, 0, sizeof( collision ) );
 		collision.endAxis = GetPhysics()->GetAxis();
 		collision.endpos = GetPhysics()->GetOrigin();
@@ -1509,6 +1678,178 @@ Quit:
 }
 
 /*
+=========================
+idProjectile::CanBeUsedBy - grayman #2478
+=========================
+*/
+
+bool idProjectile::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+{
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	assert(item->Category() != NULL);
+
+	// FIXME: Move this to idEntity to some sort of "usable_by_inv_category" list?
+	const idStr& categoryName = item->Category()->GetName();
+	if (categoryName == "Lockpicks")
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			return false;
+		}
+
+		// Lockpicks behave similar to keys
+		return (isFrobUse) ? IsLocked() : true;
+	}
+
+	return false;
+}
+
+/*
+===================
+idProjectile::UseBy - grayman #2478
+===================
+*/
+
+bool idProjectile::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+{
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	assert(item->Category() != NULL);
+
+	// Retrieve the entity behind that item and reject NULL entities
+	idEntity* itemEntity = item->GetItemEntity();
+	if (itemEntity == NULL)
+	{
+		return false;
+	}
+
+	// Get the name of this inventory category
+	const idStr& categoryName = item->Category()->GetName();
+
+	if (categoryName == "Lockpicks")
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
+			return false;
+		}
+
+		// Lockpicks are different, we need to look at the button state
+		// First we check if this item is a lockpick. It has to be of the toolclass lockpick
+		// and the type must be set.
+		idStr str = itemEntity->spawnArgs.GetString( "lockpick_type", "" );
+
+		if (str.Length() == 1)
+		{
+			// greebo: Check if the item owner is a player, and if yes, 
+			// update the immobilization flags.
+			idEntity* itemOwner = item->GetOwner();
+
+			if (itemOwner->IsType(idPlayer::Type))
+			{
+				idPlayer* playerOwner = static_cast<idPlayer*>(itemOwner);
+				playerOwner->SetImmobilization("Lockpicking", EIM_ATTACK);
+
+				// Schedule an event 1/3 sec. from now, to enable weapons again after this time
+				CancelEvents(&EV_TDM_Mine_ClearPlayerImmobilization);
+				PostEventMS(&EV_TDM_Mine_ClearPlayerImmobilization, 300, playerOwner);
+			}
+
+			// Pass the call to the lockpick routine
+			return m_Lock->ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
+		}
+		else
+		{
+			gameLocal.Warning("Wrong 'type' spawnarg for lockpicking on item %s, must be a single character.", itemEntity->name.c_str());
+			return false;
+		}
+	}
+
+	return false;
+}
+
+/*
+======================
+idProjectile::IsLocked - grayman #2478
+======================
+*/
+
+bool idProjectile::IsLocked()
+{
+	return m_Lock->IsLocked();
+}
+
+/*
+=============================================
+idProjectile::Event_ClearPlayerImmobilization - grayman #2478
+=============================================
+*/
+
+void idProjectile::Event_ClearPlayerImmobilization(idEntity* player)
+{
+	if (!player->IsType(idPlayer::Type))
+	{
+		return;
+	}
+
+	// Release the immobilization imposed on the player by Lockpicking
+	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
+}
+
+/*
+=====================================
+idProjectile::Event_Lock_OnLockPicked - grayman #2478
+=====================================
+*/
+
+void idProjectile::Event_Lock_OnLockPicked()
+{
+	// "Lock is picked" signal
+
+	m_Lock->SetLocked(false);
+	state = INACTIVE; // disarm the mine
+	BecomeInactive( TH_ARMED ); // disable armed thinking
+	StartSound( "snd_mine_disarmed", SND_CHANNEL_BODY, 0, true, NULL );
+	SetFrobable(false); // can't frob this until after the disarm sound is finished
+	PostEventSec( &EV_Mine_Replace, 1.0f );
+}
+
+/*
+================================
+idProjectile::Event_Mine_Replace - grayman #2478
+================================
+*/
+
+void idProjectile::Event_Mine_Replace()
+{
+	// Change the projectile into a mine entity the player can put back into inventory.
+
+	const char* resultName = spawnArgs.GetString("def_disarmed");
+
+	const idDict *resultDef = gameLocal.FindEntityDefDict( resultName, false );
+	if ( resultDef )
+	{
+		idEntity *newMine;
+		gameLocal.SpawnEntityDef( *resultDef, &newMine, false );
+		newMine->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() );
+		newMine->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
+		newMine->BecomeInactive( TH_PHYSICS ); // turn off physics so the new mine doesn't sink through the floor
+
+		SetFrobable(false);
+		PostEventMS( &EV_Remove, 1 ); // Remove the projectile, which has been replaced
+	}
+}
+
+/*
 ===============================================================================
 
 	idGuidedProjectile
@@ -1573,6 +1914,8 @@ void idGuidedProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( unGuided );
 	savefile->WriteFloat( burstDist );
 	savefile->WriteFloat( burstVelocity );
+	// The lock class is saved by the idSaveGame class on close, no need to handle it here
+	savefile->WriteObject(m_Lock); // grayman #2478
 }
 
 /*
@@ -1593,6 +1936,8 @@ void idGuidedProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( unGuided );
 	savefile->ReadFloat( burstDist );
 	savefile->ReadFloat( burstVelocity );
+	// The lock class is restored by the idRestoreGame, don't handle it here
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock)); // grayman #2478
 }
 
 
@@ -2080,3 +2425,5 @@ idDebris::Event_Fizzle
 void idDebris::Event_Fizzle( void ) {
 	Fizzle();
 }
+
+

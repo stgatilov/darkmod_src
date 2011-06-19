@@ -234,10 +234,10 @@ void PickableLock::OnLockpickPinSuccess()
 		// Move the handle back to its original position
 		m_Owner->ProcessEvent(&EV_TDM_Lock_StatusUpdate);
 
-		// And unlock the door after a small delay
+		// And unlock the entity after a small delay
 		m_Owner->PostEventMS(&EV_TDM_Lock_OnLockPicked, 150);
 
-		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", m_Owner->name.c_str());
+		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Entity [%s] successfully picked!\r", m_Owner->name.c_str());
 	}
 	else
 	{
@@ -254,7 +254,7 @@ void PickableLock::OnLockpickPinSuccess()
 		// Fall back to LOCKED state after the sound
 		PropPickSound("snd_lockpick_pin_success", LOCKED);
 
-		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", m_Owner->name.c_str());
+		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Entity [%s] successfully picked!\r", m_Owner->name.c_str());
 	}
 }
 

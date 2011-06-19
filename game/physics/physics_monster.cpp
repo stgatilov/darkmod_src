@@ -80,11 +80,30 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 		groundEnt->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
 
 		// greebo: Don't push entities that already have a velocity towards the ground.
-		if ( groundPhysics && info.invMass != 0.0f ) {
-			// greebo: Apply a force to the entity below the player
-			//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
-			groundPhysics->AddForce(0, current.origin, gravityNormal);
-			groundPhysics->Activate();
+		if ( groundPhysics && info.invMass != 0.0f )
+		{
+			// grayman #2478 - is this a mine? if so, blow it up now instead of waiting
+			// for the Collide() code to blow it up. Waiting allows the physics engine
+			// to sink the mine into the floor before it blows. If the mine is not
+			// armed yet, nothing happens, but at least the mine isn't pushed into the floor.
+
+			if ( groundEnt->IsType(idProjectile::Type) && static_cast<idProjectile*>(groundEnt)->IsMine() )
+			{
+				static_cast<idProjectile*>(groundEnt)->MineExplode( self->entityNumber );
+			}
+			else
+			{
+				// greebo: Apply a force to the entity below the player
+				//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
+
+				// grayman TODO: When an AI steps on something and applies this force, it's
+				// possible that physics will cause the thing to fall through the floor.
+				// gameLocal.clip.Motion() might have a problem with something sitting flat
+				// on a world brush.
+
+				groundPhysics->AddForce(0, current.origin, gravityNormal);
+				groundPhysics->Activate();
+			}
 		}
 	}
 }

@@ -240,7 +240,7 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 		if( !inWater ) this->SetWater(NULL, 0.0f);
 	} else 
 #endif
-	next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
+		next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
 
 	current.i.orientation.TransposeSelf();
 	next.i.orientation.TransposeSelf();
@@ -283,8 +283,8 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	current.i.angularMomentum.Zero();
 	ApplyImpulse(0, point, impulse);
 
-	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum before friction:", current.i.linearMomentum);
-	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum before friction:", current.i.linearMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
 
 	// Calculate the friction using this state
 	//ContactFriction(current.lastTimeStep);
@@ -293,8 +293,8 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	//current.i.linearMomentum *= 1.0f;
 	//current.i.angularMomentum *= 1.0f;
 
-	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
-	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
 
 	// The list of all the touching entities
 	idList<contactInfo_t> touching;
@@ -521,6 +521,7 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 #ifdef MOD_WATERPHYSICS
 	pos = next.i.position;
 #endif
+
 	if ( gameLocal.clip.Motion( collision, current.i.position, next.i.position, rotation, clipModel, current.i.orientation, clipMask, self ) ) {
 
 		// set the next state to the state at the moment of impact
@@ -535,7 +536,8 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 	// Check for water collision
 	// ideally we could do this check in one step but if a body moves quickly in shallow water
 	// they will occasionally clip through a solid entity (ie. fall through the floor)
-	if ( gameLocal.clip.Motion( waterCollision, current.i.position, pos, rotation, clipModel, current.i.orientation, MASK_WATER, self ) ) {
+	if ( gameLocal.clip.Motion( waterCollision, current.i.position, pos, rotation, clipModel, current.i.orientation, MASK_WATER, self ) )
+	{
 		idEntity *ent = gameLocal.entities[waterCollision.c.entityNum];
 
 		// make sure the object didn't collide with something before hitting the water (we don't splash for that case)
@@ -1335,7 +1337,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idVec3 oldOrigin, masterOrigin;
 	idMat3 oldAxis, masterAxis;
 	float timeStep;
-	bool collided, cameToRest = false;
+	bool collided = false;
+	bool cameToRest = false;
 
 	// greebo: For now, we aren't blocked
 	isBlocked = false;
@@ -1574,7 +1577,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		gameRenderWorld->DrawText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
-	return true;
+	return true; // grayman #2478
 }
 
 /*

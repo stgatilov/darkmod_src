@@ -7825,6 +7825,7 @@ idPhysics_AF::ApplyImpulse
 ================
 */
 void idPhysics_AF::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
+
 	if ( id < 0 || id >= bodies.Num() ) {
 		return;
 	}

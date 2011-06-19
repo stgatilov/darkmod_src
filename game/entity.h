@@ -123,7 +123,8 @@ enum {
 	TH_ANIMATE				= 4,		// update animation each frame
 	TH_UPDATEVISUALS		= 8,		// update renderEntity
 	TH_UPDATEPARTICLES		= 16,
-	TH_DOUSING				= 32		// grayman #2603 - run think function to process latched dousing
+	TH_DOUSING				= 32,		// grayman #2603 - run think function to process latched dousing
+	TH_ARMED				= 64		// grayman #2478 - run think function when mine is armed
 };
 
 // The impulse states a button can have
@@ -1592,6 +1593,7 @@ public:			// Events should be public, so they can be used from other places as w
 	*/
 	void 					Event_noShadows( bool noShadow );
 
+	void					Event_CheckMine(); // grayman #2478
 
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 

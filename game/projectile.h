@@ -13,6 +13,10 @@
 #ifndef __GAME_PROJECTILE_H__
 #define __GAME_PROJECTILE_H__
 
+#include "../DarkMod/PickableLock.h"
+#include "../DarkMod/Inventory/Item.h"
+#include "../DarkMod/Inventory/Category.h"
+
 /**
 * SFinalProjData: Structure storing the final projectile data at impact
 * Passed on to CProjectileResult object
@@ -117,6 +121,9 @@ public :
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	void					MineExplode( int entityNumber ); // grayman #2478
+	bool					IsMine(); // grayman #2478
+	void					Event_ActivateProjectile();
 
 protected:
 	idEntityPtr<idEntity>	owner;
@@ -157,6 +164,10 @@ protected:
 	} projectileState_t;
 	
 	projectileState_t		state;
+	
+	PickableLock*			m_Lock; // grayman #2478 - A lock implementation for this mover
+
+	bool					isMine; // grayman #2478 - true if this is a mine
 
 protected:
 	/**
@@ -171,13 +182,22 @@ private:
 
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
 
+	void					AddObjectsToSaveGame(idSaveGame* savefile); // grayman #2478
+	bool					CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse); // grayman #2478
+	bool					UseBy(EImpulseState impulseState, const CInventoryItemPtr& item); // grayman #2478
+	bool					IsLocked(); // grayman #2478
+	void					Event_ClearPlayerImmobilization(idEntity* player); // grayman #2478
+
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );
 	void					Event_RadiusDamage( idEntity *ignore );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 	void					Event_GetProjectileState( void );
-	void					Event_ActivateProjectile();
 	void					Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity );
+	void					Event_Lock_OnLockPicked();	// grayman #2478
+	void					Event_Mine_Replace();		// grayman #2478
+	float					AngleAdjust(float angle);	// grayman #2478
+	void					AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ); // grayman #2478
 };
 
 class idGuidedProjectile : public idProjectile {
