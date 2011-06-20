@@ -293,19 +293,19 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 			case LOOT_GOLD:
 				m_Gold += value;
 				LGroupVal = m_Gold;
-				pickedUpMsg += " in Gold";
+				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07320");	// " in Gold"
 			break;
 
 			case LOOT_GOODS:
 				m_Goods += value;
 				LGroupVal = m_Goods;
-				pickedUpMsg += " in Goods";
+				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07321");	// " in Goods"
 			break;
 
 			case LOOT_JEWELS:
 				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
-				pickedUpMsg += " in Jewels";
+				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07322");	// " in Jewels"
 			break;
 			
 			default: break;

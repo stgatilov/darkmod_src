@@ -1058,7 +1058,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.FinalizeCache();
 
 	// Send a message to the HUD
-	GetLocalPlayer()->SendHUDMessage("Game Saved");
+	GetLocalPlayer()->SendHUDMessage("#str_02916");	// "Game Saved"
 }
 
 /*
