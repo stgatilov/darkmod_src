@@ -720,7 +720,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
 		// greebo: Notify the player
-		player->SendHUDMessage("Objective complete");
+		player->SendHUDMessage( common->GetLanguageDict()->GetString( "#str_02453" ) ); // "Objective complete"
 
 		player->UpdateObjectivesGUI();
 	}
@@ -764,7 +764,7 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	if (obj.m_bVisible)
 	{
 		player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
-		player->SendHUDMessage("Objective failed");
+		player->SendHUDMessage( common->GetLanguageDict()->GetString( "#str_02454" ) ); // "Objective failed"
 
 		player->UpdateObjectivesGUI();
 	}
@@ -799,7 +799,7 @@ void CMissionData::Event_NewObjective()
 	player->StartSound("snd_new_objective", SND_CHANNEL_ANY, 0, false, NULL);
 
 	// greebo: notify the player
-	player->SendHUDMessage("New Objective");
+	player->SendHUDMessage( common->GetLanguageDict()->GetString( "#str_02455" ) ); // "New Objective"
 
 	player->UpdateObjectivesGUI();
 }
@@ -836,7 +836,7 @@ void CMissionData::Event_MissionComplete()
 
 		// This sound is played by the success.gui
 		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
-		player->SendHUDMessage("Mission Complete");
+		player->SendHUDMessage( common->GetLanguageDict()->GetString( "#str_02456" ) ); // "Mission Complete"
 		player->PostEventMS(&EV_TriggerMissionEnd, 100);
 
 		player->UpdateObjectivesGUI();
