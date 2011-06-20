@@ -54,11 +54,11 @@ public:
 	// unique identifier for this item
 	const idStr& GetID() const;
 
-	// name of the item (for display)
-	const idStr& GetName() const;
+	// name of the item (for display), possible translated
+	const idStr GetName() const;
 
-	// description of the item (for display)
-	const idStr& GetDescription() const;
+	// description of the item (for display), possible translated
+	const idStr GetDescription() const;
 
 	// Get the list of classnames of entities to spawn for this shop item
 	const idStringList& GetClassnames() const;

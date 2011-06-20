@@ -59,12 +59,14 @@ const idStr& CShopItem::GetID() const {
 	return this->id;
 }
 
-const idStr& CShopItem::GetName() const {
-	return this->name;
+const idStr CShopItem::GetName() const {
+	// Tels: If nec., translate the name
+	return common->GetLanguageDict()->GetString( this->name );
 }
 
-const idStr& CShopItem::GetDescription() const {
-	return this->description;
+const idStr CShopItem::GetDescription() const {
+	// Tels: If nec., translate the description
+	return common->GetLanguageDict()->GetString( this->description );
 }
 
 const idStringList& CShopItem::GetClassnames() const
