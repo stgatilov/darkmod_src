@@ -11178,7 +11178,7 @@ void idPlayer::SendHUDMessage(const idStr& text)
 		return;
 	}
 
-	hudMessages.Append(text);
+	hudMessages.Append( common->GetLanguageDict()->GetString( text ) );
 }
 
 void idPlayer::SendInventoryPickedUpMessage(const idStr& text)
