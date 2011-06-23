@@ -79,7 +79,7 @@ public:
 	/**
 	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryCategoryPtr	CreateCategory(const idStr& categoryName, int* index = NULL);
+	CInventoryCategoryPtr	CreateCategory(const idStr& categoryName, const idStr& categoryNameDisplay = NULL, int* index = NULL);
 
 	/**
 	 * greebo: Removes the category from this inventory. Will NOT check whether the
@@ -136,7 +136,8 @@ public:
 	 * This can either mean "hide" or "delete", depending on the stackable property.
 	 */
 	CInventoryItemPtr		PutItem(idEntity *Item, idEntity *Owner);
-	void					PutItem(const CInventoryItemPtr& item, const idStr& category);
+	// Tels: categoryDisplay is used in case we need to create the category first
+	void					PutItem(const CInventoryItemPtr& item, const idStr& category, const idStr& categoryHUDName = NULL);
 
 	/**
 	 * greebo: This replaces the inventory item (represented by oldItem) with the
@@ -159,11 +160,13 @@ public:
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
-	 * them are searched, otherwise only the given group.
+	 * them are searched, otherwise only the given group. If bCreateCategoryis true, the
+	 * category will be created if it doesn't already exist. In this case categoryDisplayName is
+	 * also passed along.
 	 */
-	CInventoryItemPtr		GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItemPtr		GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false, const idStr& categoryHUDName = NULL);
 
-	CInventoryItemPtr		GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
+	CInventoryItemPtr		GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false, const idStr& categoryHUDName = NULL);
 
 	// Get the first item in the inventory, by type
 	CInventoryItemPtr		GetItemByType(CInventoryItem::ItemType type);

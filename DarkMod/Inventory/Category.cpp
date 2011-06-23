@@ -19,11 +19,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory.h"
 
 // Constructor
-CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name) :
+CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name, const idStr& hudname) :
 	m_Inventory(inventory),
 	m_Name(name)
 {
 	m_Owner = (inventory != NULL) ? inventory->GetOwner() : NULL;
+	// Tels: If not given, just use name
+	m_HUDName = (hudname) ? hudname : name;
+//	gameLocal.Printf("Creating category %s (%s)\n", m_Name.c_str(), m_HUDName.c_str());
 }
 
 // Destructor
@@ -41,6 +44,7 @@ void CInventoryCategory::Save(idSaveGame *savefile) const
 {
 	m_Owner.Save(savefile);
 	savefile->WriteString(m_Name.c_str());
+	savefile->WriteString(m_HUDName.c_str());
 
 	savefile->WriteInt(m_Item.Num());
 	for (int i = 0; i < m_Item.Num(); i++)
@@ -55,6 +59,7 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 {
 	m_Owner.Restore(savefile);
 	savefile->ReadString(m_Name);
+	savefile->ReadString(m_HUDName);
 
 	int num;
 	savefile->ReadInt(num);
