@@ -1013,13 +1013,17 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent, const bool gotFromShop
 
 			if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 			{
-				idStr msg = ent->spawnArgs.GetString("inv_name");
+				// Tels: For some reason "inv_name" here is "Fire Arrow", even tho this string never appears anywhere
+				// 	 when running f.i. in "German". So use weaponItem->GetName(), which is correctly "#str_02435":
+				// idStr msg = ent->spawnArgs.GetString("inv_name");
+				idStr msg = common->GetLanguageDict()->GetString( weaponItem->GetName() ); 
 
 				if (amount > 1)
 				{
 					msg += " x" + idStr(amount);
 				}
 
+//				gameLocal.Warning ("Sending msg '%s' to NotifyOwnerAboutPickup (from ammo %s, weapon %s)\n", msg.c_str(), ent->GetName(), weaponItem->GetName().c_str() );
 				NotifyOwnerAboutPickup(msg, weaponItem);
 			}
 			

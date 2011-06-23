@@ -2682,7 +2682,7 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon )
 	if (!weaponSelected) return; // done here
 
 	// Set the icon and name strings
-	hud->SetStateString("WeaponName", curWeapon->GetName().c_str());
+	hud->SetStateString("WeaponName", common->GetLanguageDict()->GetString( curWeapon->GetName().c_str() ));
 	hud->SetStateString("WeaponIcon", curWeapon->GetIcon().c_str());
 	
 	hud->HandleNamedEvent("OnWeaponChange");
@@ -4106,11 +4106,11 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 
 	if( body->health > 0 )
 	{
-		iconName = body->spawnArgs.GetString("shouldered_name", "Body");
+		iconName = body->spawnArgs.GetString("shouldered_name", "#str_02410" ); 	// Body
 	}
 	else
 	{
-		iconName = body->spawnArgs.GetString("shouldered_name_dead", "Corpse");
+		iconName = body->spawnArgs.GetString("shouldered_name_dead", "#str_02409" );	// Corpse
 	}
 
 	// Send the name to the inventory HUD
@@ -4322,7 +4322,8 @@ void idPlayer::UpdateLocation( void ) {
 	if ( hud ) {
 		idLocationEntity *locationEntity = gameLocal.LocationForPoint( GetEyePosition() );
 		if ( locationEntity ) {
-			hud->SetStateString( "location", locationEntity->GetLocation() );
+			// Tels: Make it possible that location names like "#str_01234" are automatically translated to "Kitchen"
+			hud->SetStateString( "location", common->GetLanguageDict()->GetString( locationEntity->GetLocation() ) );
 		} else {
 			hud->SetStateString( "location", common->GetLanguageDict()->GetString( "#str_02911" ) );
 		}
@@ -6656,8 +6657,8 @@ void idPlayer::UpdateInventoryHUD()
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 1);
 
 				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", curItem->Category()->GetName().c_str());
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", curItem->GetName());
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->GetLanguageDict()->GetString( curItem->Category()->GetName() ) );
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", common->GetLanguageDict()->GetString( curItem->GetName() ));
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
 			}
