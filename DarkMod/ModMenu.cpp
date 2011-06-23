@@ -133,7 +133,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		if (info == NULL) return; // sanity check
 
 		// Issue the named command to the GUI
-		gui->SetStateString("modInstallProgressText", "Installing Mission Package\n\n" + info->displayName);
+		gui->SetStateString("modInstallProgressText", common->GetLanguageDict()->GetString( "#str_02504" ) + info->displayName); // "Installing Mission Package\n\n"
 	}
 	else if (cmd == "installSelectedMission")
 	{
