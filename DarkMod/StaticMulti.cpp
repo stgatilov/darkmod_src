@@ -77,6 +77,9 @@ CStaticMulti::CStaticMulti( void )
 
 CStaticMulti::~CStaticMulti()
 {
+#ifdef M_DEBUG
+	gameLocal.Printf("~%s\n", GetName());
+#endif
 	if (m_LODHandle)
 	{
 		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
@@ -139,7 +142,7 @@ void CStaticMulti::Spawn( void )
 		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
 		m_fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
 #ifdef M_DEBUG
-		gameLocal.Printf("%s: hide_distance %0.0f", m_fHideDistance);
+		gameLocal.Printf("%s: hide_distance %0.2f\n", GetName(),m_fHideDistance);
 #endif
 	}
 }
