@@ -73,7 +73,7 @@ void CInventory::CopyTo(CInventory& targetInventory)
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Copying item %s to inventory.\r", item->GetName().c_str());
 
 			// Add this item to the target inventory
-			targetInventory.PutItem(item, item->Category()->GetName(), item->Category()->GetHUDName());
+			targetInventory.PutItem(item, item->Category()->GetName());
 		}
 	}
 }
@@ -174,7 +174,7 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 				item->SetOwner(newOwner);
 
 				// Add this item to our inventory
-				PutItem(item, item->Category()->GetName(), item->Category()->GetHUDName());
+				PutItem(item, item->Category()->GetName());
 
 				// If we didn't have a weapon category at this point, we should be able to get one now
 				if (weaponItem && !weaponCategory)
@@ -362,7 +362,7 @@ void CInventory::SetOwner(idEntity *owner)
 	}
 }
 
-CInventoryCategoryPtr CInventory::CreateCategory(const idStr& categoryName, const idStr& categoryNameDisplay, int* index)
+CInventoryCategoryPtr CInventory::CreateCategory(const idStr& categoryName, int* index)
 {
 	if (categoryName.IsEmpty()) return CInventoryCategoryPtr(); // empty category name
 
@@ -372,7 +372,7 @@ CInventoryCategoryPtr CInventory::CreateCategory(const idStr& categoryName, cons
 	if (rc != NULL) return rc; // Category already exists
 
 	// Try to allocate a new category with a link back to <this> Inventory
-	rc = CInventoryCategoryPtr(new CInventoryCategory(this, categoryName, categoryNameDisplay));
+	rc = CInventoryCategoryPtr(new CInventoryCategory(this, categoryName));
 	
 	// Add the new Category to our list
 	int i = m_Category.AddUnique(rc);
@@ -537,7 +537,6 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// Not a loot or ammo item, determine name and category to check for existing item of same name/category
 	idStr name = ent->spawnArgs.GetString("inv_name", "");
 	idStr category = ent->spawnArgs.GetString("inv_category", "");
-	idStr category_display = ent->spawnArgs.GetString("inv_category_display", category);
 
 	if (name.IsEmpty() || category.IsEmpty())
 	{
@@ -547,7 +546,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	}
 
 	// Check for existing items (create the category if necessary (hence the TRUE))
-	CInventoryItemPtr existing = GetItem(name, category, true, category_display);
+	CInventoryItemPtr existing = GetItem(name, category, true);
 
 	if (existing != NULL)
 	{
@@ -632,9 +631,9 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 		if (item != NULL)
 		{
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s (%s)...\r", name.c_str(), category.c_str(), category_display.c_str());
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
 			// Put the item into its category
-			PutItem(item, category, category_display);
+			PutItem(item, category);
 
 			// We added a new inventory item
 			gameLocal.m_MissionData->InventoryCallback(
@@ -685,7 +684,7 @@ void CInventory::RemoveEntityFromMap(idEntity* ent, bool deleteEntity)
 	}
 }
 
-void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryName, const idStr& categoryDisplayName)
+void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryName)
 {
 	if (item == NULL) return;
 	
@@ -705,7 +704,7 @@ void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryNam
 		// If not found, create it
 		if (category == NULL)
 		{
-			category = CreateCategory(categoryName, categoryDisplayName);
+			category = CreateCategory(categoryName);
 		}
 	}
 
@@ -777,7 +776,7 @@ void CInventory::RemoveItem(const CInventoryItemPtr& item)
 	item->Category()->RemoveItem(item);
 }
 
-CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory, const idStr& categoryDisplayName)
+CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)
 {
 	// Do we have a specific category to search in?
 	if (!categoryName.IsEmpty())
@@ -788,7 +787,7 @@ CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryNa
 		if (category == NULL && createCategory)
 		{
 			// Special case, the caller requested to create this category if not found
-			category = CreateCategory(categoryName, categoryDisplayName);
+			category = CreateCategory(categoryName);
 		}
 
 		// Let the category search for the item, may return NULL
@@ -810,7 +809,7 @@ CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryNa
 	return CInventoryItemPtr(); // nothing found
 }
 
-CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& categoryName, bool createCategory, const idStr& categoryDisplayName)
+CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& categoryName, bool createCategory)
 {
 	// Do we have a specific category to search in?
 	if (!categoryName.IsEmpty())
@@ -821,7 +820,7 @@ CInventoryItemPtr CInventory::GetItemById(const idStr& id, const idStr& category
 		if (category == NULL && createCategory)
 		{
 			// Special case, the caller requested to create this category if not found
-			category = CreateCategory(categoryName, categoryDisplayName);
+			category = CreateCategory(categoryName);
 		}
 
 		// Let the category search for the item, may return NULL

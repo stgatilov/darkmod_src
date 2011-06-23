@@ -1334,7 +1334,7 @@ void idPlayer::SetupInventory()
 	// We create a cursor and a category for the weapons, which is then locked
 	// to this category, so we can only cycle within that one group.
 	m_WeaponCursor = inv->CreateCursor();
-	inv->CreateCategory(TDM_PLAYER_WEAPON_CATEGORY, idStr("#str_02411"), &idx);	// #str_0411 => "Weapons"
+	inv->CreateCategory(TDM_PLAYER_WEAPON_CATEGORY, &idx);
 	m_WeaponCursor->SetCurrentCategory(idx);
 	m_WeaponCursor->SetCategoryLock(true);
 
@@ -1357,7 +1357,7 @@ void idPlayer::SetupInventory()
 
 	// greebo: Create the cursor for map/floorplan inventory items.
 	m_MapCursor = inv->CreateCursor();
-	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, idStr("#str_02390"), &idx);	// #str_02390 => "Maps"
+	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, &idx);
 	m_MapCursor->SetCurrentCategory(idx);
 	m_MapCursor->SetCategoryLock(true);
 	m_MapCursor->SetWrapAround(true);
@@ -6656,7 +6656,7 @@ void idPlayer::UpdateInventoryHUD()
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 1);
 
 				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->GetLanguageDict()->GetString( curItem->Category()->GetHUDName() ) );
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->GetLanguageDict()->GetString( curItem->Category()->GetName() ) );
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", common->GetLanguageDict()->GetString( curItem->GetName() ));
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
