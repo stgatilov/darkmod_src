@@ -221,7 +221,7 @@ bool Mind::SetTarget()
 	// Done if we already have a target
 	if (owner->GetEnemy() != NULL)
 	{
-		//DEBUG_PRINT ("Target already assigned, using that one");
+		// gameLocal.Printf ("%s: Target already assigned, using that one.", owner->GetName() );
 		return true;
 	}
 
