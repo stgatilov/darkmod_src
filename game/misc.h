@@ -773,6 +773,43 @@ public:
 	void				Event_Activate( idEntity *activator );
 };
 
+/*
+===============================================================================
+
+  CVine
+
+===============================================================================
+*/
+
+class tdmVine: public idStaticEntity
+{
+public:
+	CLASS_PROTOTYPE( tdmVine);
+	// Constructor
+	tdmVine();
+
+	// Needed on game save/load
+	void	Save( idSaveGame *savefile ) const;
+	void	Restore( idRestoreGame *savefile );
+
+	// Gets called when this entity is actually being spawned
+	void	Spawn();
+
+private:
+	bool	_watered;	// true if a vine piece was watered during this watering event
+	tdmVine* _prime;	// initial, or prime, vine piece
+	idList< idEntityPtr<tdmVine> >_descendants;	// a list of all descendants (kept by prime only)
+
+protected:
+	void	Event_SetPrime( tdmVine* newPrime );
+	void	Event_GetPrime();
+	void	Event_AddDescendant( tdmVine* descendant );
+	void	Event_ClearWatered();
+	void	Event_SetWatered();
+	void	Event_CanWater();
+	void	Event_ScaleVine(float factor);
+};
+
 
 #endif /* !__GAME_MISC_H__ */
 

@@ -1456,8 +1456,10 @@ void idPhysics_Player::LadderMove( void )
 	gameLocal.clip.Translation( SurfTrace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
 
 	// if there is a climbable surface in front of the player, stick to it
-	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
-		&& (SurfTrace.c.material->IsLadder()) )
+
+	idEntity* testEnt = gameLocal.entities[SurfTrace.c.entityNum]; // grayman #2787
+	if ( ( SurfTrace.fraction != 1.0f ) &&
+		( ( SurfTrace.c.material && SurfTrace.c.material->IsLadder() ) || ( testEnt && testEnt->IsType( tdmVine::Type ) ) ) ) // grayman #2787
 	{
 		m_vClimbPoint = SurfTrace.endpos + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
 		AttachVel = 10 * (m_vClimbPoint - current.origin);
@@ -1467,7 +1469,7 @@ void idPhysics_Player::LadderMove( void )
 
 		// Update sounds and movement speed caps for the surface if we change surfaces
 		idStr surfName = g_Global.GetSurfName(SurfTrace.c.material);
-		
+
 		if (surfName != m_ClimbSurfName)
 		{
 			idStr LookUpName, TempStr;
@@ -2094,11 +2096,11 @@ void idPhysics_Player::CheckClimbable( void )
 		}
 
 		// if a climbable surface
-		if ( 
-			trace.c.material 
-			&& (trace.c.material->IsLadder())
-			&& 	gameLocal.time > m_NextAttachTime
-			) 
+		// grayman #2787 - add a test for a climbable vine.
+
+		bool isVine = ( testEnt && testEnt->IsType( tdmVine::Type ) );
+		if ( ( ( trace.c.material && ( trace.c.material->IsLadder() ) ) || isVine )
+			&& 	( gameLocal.time > m_NextAttachTime ) )
 		{
 			idVec3 vStickPoint = trace.endpos;
 			// check a step height higher
@@ -2112,7 +2114,11 @@ void idPhysics_Player::CheckClimbable( void )
 			if ( trace.fraction < 1.0f ) 
 			{
 				// if it also is a ladder surface
-				if ( trace.c.material && trace.c.material->IsLadder() )
+				// grayman #2787 - add a test for a climbable vine
+
+				idEntity* testEntHigher = gameLocal.entities[trace.c.entityNum]; // grayman #2787
+				bool isVineHigher = ( testEntHigher && testEntHigher->IsType( tdmVine::Type ) );
+				if ( ( trace.c.material && trace.c.material->IsLadder() ) || isVineHigher ) // grayman #2787
 				{
 					m_vClimbNormal = trace.c.normal;
 					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];

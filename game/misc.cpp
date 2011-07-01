@@ -3300,3 +3300,127 @@ void idPortalSky::Event_Activate( idEntity *activator ) {
 	gameLocal.SetPortalSkyEnt( this );
 }
 
+
+/*
+===============================================================================
+
+  tdmVine - climbable vine piece (grayman #2787)
+
+===============================================================================
+*/
+
+const idEventDef EV_Vine_SetPrime( "setPrime", "e", 0 );
+const idEventDef EV_Vine_GetPrime( "getPrime", NULL, 'e' );
+const idEventDef EV_Vine_AddDescendant( "addDescendant", "e", 0 );
+const idEventDef EV_Vine_CanWater( "canWater", NULL, 'f' );
+const idEventDef EV_Vine_SetWatered( "setWatered", NULL, 0 );
+const idEventDef EV_Vine_ClearWatered( "clearWatered", NULL, 0 );
+const idEventDef EV_Vine_ScaleVine( "scaleVine", "f", 0 );
+
+CLASS_DECLARATION( idStaticEntity, tdmVine )
+	EVENT( EV_Vine_SetPrime, 		tdmVine::Event_SetPrime)
+	EVENT( EV_Vine_GetPrime, 		tdmVine::Event_GetPrime)
+	EVENT( EV_Vine_AddDescendant, 	tdmVine::Event_AddDescendant)
+	EVENT( EV_Vine_CanWater, 		tdmVine::Event_CanWater)
+	EVENT( EV_Vine_SetWatered, 		tdmVine::Event_SetWatered)
+	EVENT( EV_Vine_ClearWatered, 	tdmVine::Event_ClearWatered )
+	EVENT( EV_Vine_ScaleVine,		tdmVine::Event_ScaleVine )
+END_CLASS
+
+tdmVine::tdmVine( void )
+{
+	_watered = false;
+	_prime = NULL;
+	_descendants.Clear();
+}
+
+void tdmVine::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteBool( _watered );
+	savefile->WriteObject( _prime );
+	savefile->WriteInt( _descendants.Num() );
+	for ( int i = 0 ; i < _descendants.Num() ; i++)
+	{
+		_descendants[i].Save( savefile );
+	}
+}
+
+void tdmVine::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadBool( _watered );
+	savefile->ReadObject( reinterpret_cast<idClass*&>( _prime ) );
+	int num;
+	savefile->ReadInt( num );
+	_descendants.SetNum( num );
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		_descendants[i].Restore( savefile );
+	}
+}
+
+void tdmVine::Spawn()
+{
+}
+
+void tdmVine::Event_SetPrime( tdmVine* newPrime )
+{
+	_prime = newPrime;
+}
+
+void tdmVine::Event_GetPrime()
+{
+	idThread::ReturnEntity( _prime );
+}
+
+void tdmVine::Event_AddDescendant( tdmVine* descendant )
+{
+	idEntityPtr< tdmVine > tdmVinePtr;
+	tdmVinePtr = descendant;
+	_descendants.Append( tdmVinePtr );
+}
+
+void tdmVine::Event_ClearWatered()
+{
+	_watered = false;
+}
+
+void tdmVine::Event_SetWatered()
+{
+	_watered = true;
+}
+
+void tdmVine::Event_CanWater()
+{
+	// For a given vine family, only allow two pieces to be
+	// watered by a water stim. Otherwise, growth can be
+	// rampant as the stim falls through the family.
+
+	float canWater = 1;
+	int wateredCount = 0;
+	if ( _watered ) // the prime vine should check itself first
+	{
+		wateredCount++;
+	}
+	for ( int i = 0 ; i < _descendants.Num() ; i++ )
+	{
+		idEntityPtr< tdmVine > tdmVinePtr = _descendants[i];
+		tdmVine* vine = tdmVinePtr.GetEntity();
+		if ( vine && vine->_watered )
+		{
+			if ( ++wateredCount >= 2 )
+			{
+				canWater = 0;
+				break;
+			}
+		}
+	}
+	idThread::ReturnFloat( canWater );
+}
+
+void tdmVine::Event_ScaleVine(float factor)
+{
+	idMat3 axis = GetPhysics()->GetAxis();
+	axis *= factor;
+	GetPhysics()->SetAxis( axis );
+	UpdateVisuals();
+}

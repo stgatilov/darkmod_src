@@ -30,7 +30,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 200.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 400.0f;
-static const float CHECK_TOUCH_DELAY			= 0.5f; // grayman #2478 - how often to check for touching entities
 
 const idEventDef EV_Explode( "<explode>", NULL );
 const idEventDef EV_Fizzle( "<fizzle>", NULL );

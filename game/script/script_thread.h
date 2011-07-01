@@ -224,6 +224,8 @@ private:
 
 	// The script interface for raising mission events, like readable callbacks
 	void						Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument);
+	
+	void						Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine ); // grayman #2787
 
 public:							
 								CLASS_PROTOTYPE( idThread );

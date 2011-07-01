@@ -82,6 +82,8 @@ protected:
 	void Event_GetIncidenceAngle( void );
 
 	void Event_GetActualStruckEnt( void ); // grayman #837
+
+	void Event_IsVineFriendly( void ); // grayman #2787 
 };
 
 #endif
