@@ -17,22 +17,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #define IL_IMAGE_NONE ((ILuint)-1)
 
 CImage::CImage() :
-	m_ImageBufferLength(0L),
-	m_ImageBuffer(NULL),
 	m_ImageId(IL_IMAGE_NONE),
-	m_Loaded(false),
-	m_defaultImageType(IL_TGA),
 	m_Width(0),
 	m_Height(0),
 	m_Bpp(0)
 {}
 
 CImage::CImage(const idStr& name) :
-	m_ImageBufferLength(0L),
-	m_ImageBuffer(NULL),
 	m_ImageId(IL_IMAGE_NONE),
-	m_Loaded(false),
-	m_defaultImageType(IL_TGA),
 	m_Name(name),
 	m_Width(0),
 	m_Height(0),
@@ -41,199 +33,163 @@ CImage::CImage(const idStr& name) :
 
 CImage::~CImage(void)
 {
-	Unload(true);
+	Unload();
 }
 
-void CImage::SetDefaultImageType(CImage::Type type)
+ILenum CImage::GetILTypeForImageFormat(Format format)
 {
-	m_defaultImageType = GetILTypeForImageType(type);
-}
-
-ILenum CImage::GetILTypeForImageType(Type type)
-{
-	switch (type)
+	switch (format)
 	{
 	case AUTO_DETECT:	return IL_TYPE_UNKNOWN;
 	case TGA:			return IL_TGA;
 	case PNG:			return IL_PNG;
 	case JPG:			return IL_JPG;
 	case GIF:			return IL_GIF;
+	case BMP:			return IL_BMP;
 	default:			return IL_TYPE_UNKNOWN;
 	};
 }
 
-void CImage::Unload(bool FreeMemory)
+CImage::Format CImage::GetFormatFromString(const char *format) {
+	if (idStr::Icmp(format, "tga") == 0) return TGA;
+	if (idStr::Icmp(format, "png") == 0) return PNG;
+	if (idStr::Icmp(format, "jpg") == 0) return JPG;
+	if (idStr::Icmp(format, "gif") == 0) return GIF;
+	if (idStr::Icmp(format, "bmp") == 0) return BMP;
+	//return unkonwn format as default
+	return AUTO_DETECT;
+}
+
+void CImage::Unload()
 {
-	m_Loaded = false;
-	if(FreeMemory == true)
-	{
-		if(m_ImageBuffer != NULL)
-			delete [] m_ImageBuffer;
-
-		m_ImageBuffer = NULL;
-	}
-
-	if(m_ImageId != IL_IMAGE_NONE)
+	if(m_ImageId != IL_IMAGE_NONE) {
 		ilDeleteImages(1, &m_ImageId);
-
-	m_ImageId = IL_IMAGE_NONE;
+		m_ImageId = IL_IMAGE_NONE;
+	}
+	m_Width = m_Height = m_Bpp = 0;
 }
 
-bool CImage::LoadImage(const idList<char> &imageBuffer)
-{
-	bool rc = false;
+bool CImage::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int imageLength) {
+	// generate new DevIL image
+	ilGenImages(1, &m_ImageId);
+	ilBindImage(m_ImageId);
 
-	if (imageBuffer.Num())
-		Unload(false);
-
-	if(m_Loaded == false)
+	// try to load DevIL image from lump
+	if (ilLoadL(GetILTypeForImageFormat(AUTO_DETECT), imageBuffer, imageLength) == IL_FALSE)
 	{
-		if(imageBuffer.Num())
-		{
-			// resize m_Image if necessary
-			size_t BufLen = imageBuffer.Num();
-			if(BufLen != m_ImageBufferLength || m_ImageBuffer == NULL)
-			{
-				Unload(true);
-				m_ImageBufferLength = BufLen;
-				if((m_ImageBuffer = new unsigned char[m_ImageBufferLength]) == NULL)
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
-					goto Quit;
-				}
-			}
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderbuffer [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_ImageBufferLength, m_ImageBuffer);
-
-			// copy buffer data to image buffer
-			memcpy(m_ImageBuffer, &imageBuffer[0], m_ImageBufferLength);
-			InitImageInfo();
-		}
-	}
-
-Quit:
-	if(m_Loaded == false && m_ImageBuffer != NULL)
-	{
-		delete [] m_ImageBuffer;
-		m_ImageBuffer = NULL;
-	}
-
-	return rc;
-}
-
-bool CImage::LoadImageFromVfs(const char* filename)
-{
-	bool rc = false;
-	idFile *fl = NULL;
-
-	if (filename != NULL)
-	{
-		Unload(true);
-		m_Name = filename;
-	}
-
-	if (m_Loaded == false)
-	{
-		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
-		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
-			goto Quit;
-		}
-
-		m_ImageBufferLength = fl->Length();
-		if((m_ImageBuffer = new unsigned char[m_ImageBufferLength]) == NULL)
-		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
-			goto Quit;
-		}
-		fl->Read(m_ImageBuffer, m_ImageBufferLength);
-		fileSystem->CloseFile(fl);
-
-		InitImageInfo();
-
-		rc = true;
-//		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_ImageBufferLength);
-	}
-
-Quit:
-	if(m_Loaded == false && m_ImageBuffer != NULL)
-	{
-		delete [] m_ImageBuffer;
-		m_ImageBuffer = NULL;
-	}
-
-	return rc;
-}
-
-bool CImage::LoadImageFromFile(const fs::path& path)
-{
-	if (!fs::exists(path))
-	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", path.file_string().c_str());
+		// loading failed: print log message and free DevIL image
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not load image (name = %s): error message %s.\r", m_Name.c_str(), ilGetString(ilGetError()));
+		Unload();
 		return false;
 	}
 
-	m_Name = path.file_string().c_str();
+	// get image parameters
+	m_Width = ilGetInteger(IL_IMAGE_WIDTH);
+	m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
+	m_Bpp = ilGetInteger(IL_IMAGE_BPP);
 
-	if (!m_Loaded)
+	return true;
+}
+
+bool CImage::SaveDevILToFile(const char *filename, Format format) const {
+	// check DevIL image for existence
+	if (m_ImageId == IL_IMAGE_NONE)
 	{
-		// Load the image into memory
-		unsigned long length = static_cast<unsigned long>(fs::file_size(path));
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image before loading data (%s).\r", filename);
+		return false;
+	}
+	// bind DevIL image
+	ilBindImage(m_ImageId);
 
-		if (length != m_ImageBufferLength)
-		{
-			// Free the old buffer first
-			Unload(true);
+	// set overwrite option
+	ilEnable(IL_FILE_OVERWRITE);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Saving image to path: %s, type %d.\r", filename, format);
 
-			m_ImageBufferLength = length;
-
-			// Re-allocate to match buffer size
-			m_ImageBuffer = new unsigned char[m_ImageBufferLength];
-
-			if (m_ImageBuffer == NULL)
-			{
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_ImageBufferLength, m_Name.c_str());
-				return false;
-			}
-		}
-
-		// Read into buffer
-		FILE* fh = fopen(path.file_string().c_str(), "rb");
-
-		fread(m_ImageBuffer, 1, m_ImageBufferLength, fh);
-
-		fclose(fh);
-
-		InitImageInfo();
+	// try to save DevIL image to file
+	idStr filenameClone(filename);
+	if (!ilSave(GetILTypeForImageFormat(format), const_cast<char *>(filenameClone.c_str())))
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not save image to path %s (type %d): error message %s.\r", filename, format, ilGetString(ilGetError()));
+		return false;
 	}
 
 	return true;
 }
 
-void CImage::InitImageInfo()
+
+bool CImage::LoadImageFromMemory(const unsigned char *imageBuffer, unsigned int imageLength, const char *name)
 {
-	ilGenImages(1, &m_ImageId);
-	ilBindImage(m_ImageId);
+	//unload previous image
+	Unload();
+	if (!imageBuffer)
+		return false;
 
-	if (ilLoadL(m_defaultImageType, m_ImageBuffer, m_ImageBufferLength) == IL_FALSE)
-	{
-		ILenum error = ilGetError();
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error %i while loading image [%s]\r", (int)error, m_Name.c_str());
-		// Tels: Couldn't load image from memory buffer, free memory
-		m_Loaded = false;
-		return;
-	}
+	//set name to user-specified string
+	m_Name = name;
 
-	// else: loading success
-	m_Loaded = true;
-
-	m_Width = ilGetInteger(IL_IMAGE_WIDTH);
-	m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
-	m_Bpp = ilGetInteger(IL_IMAGE_BPP);
+	//load DevIL
+	return LoadDevILFromLump(imageBuffer, imageLength);
 }
 
-unsigned long CImage::GetDataLength()
+bool CImage::LoadImageFromVfs(const char* filename)
 {
-	if (m_Loaded && m_ImageBuffer != NULL)
+	//unload previous image
+	Unload();
+	if (!filename)
+		return false;
+
+	//set name to vfs filename
+	m_Name = filename;
+
+	//try to open file
+	idFile *file = fileSystem->OpenFileRead(m_Name);
+	if (file == NULL)
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
+		return false;
+	}
+
+	//read the whole file to buffer
+	idList<unsigned char> fileData;
+	fileData.Resize(file->Length());
+	file->Read(&fileData[0], fileData.Num());
+	//close file
+	fileSystem->CloseFile(file);
+
+	//load DevIL
+	return LoadDevILFromLump(&fileData[0], fileData.Num());
+}
+
+bool CImage::LoadImageFromFile(const fs::path& path)
+{
+	//unload previous image
+	Unload();
+
+	//set name to boost filename
+	m_Name = path.file_string().c_str();
+
+	//try to open file
+	FILE* file = NULL;
+	if (!fs::exists(path) || !(file = fopen(path.file_string().c_str(), "rb")))
+	{
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
+		return false;
+	}
+
+	//read the whole file to buffer
+	idList<unsigned char> fileData;
+	fileData.Resize(fs::file_size(path));
+	fread(&fileData[0], 1, fileData.Num(), file);
+	//close file
+	fclose(file);
+
+	//load DevIL
+	return LoadDevILFromLump(&fileData[0], fileData.Num());
+}
+
+unsigned int CImage::GetDataLength() const
+{
+	if (m_ImageId != IL_IMAGE_NONE)
 	{
 		ilBindImage(m_ImageId);
 		return static_cast<unsigned long>(ilGetInteger(IL_IMAGE_SIZE_OF_DATA));
@@ -242,51 +198,23 @@ unsigned long CImage::GetDataLength()
 	return 0;
 }
 
-unsigned char* CImage::GetImageData()
+const unsigned char* CImage::GetImageData() const
 {
-	if (m_Loaded && m_ImageBuffer != NULL)
+	if (m_ImageId != IL_IMAGE_NONE)
 	{
 		ilBindImage(m_ImageId);
-		return static_cast<unsigned char*>(ilGetData());
+		return static_cast<const unsigned char*>(ilGetData());
 	}
 
 	return NULL;
 }
 
-bool CImage::SaveToFile(const fs::path& path, Type type)
+bool CImage::SaveImageToFile(const fs::path& path, Format format) const
 {
-	if (!m_Loaded)
-	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image before loading data (%s).\r", path.file_string().c_str());
-		return false;
-	}
-	else if (m_Loaded && m_ImageId == (ILuint)-1 && m_ImageBuffer != NULL)
-	{
-		// Ensure buffer is bound to devIL
-		ilBindImage(m_ImageId);
-		ilLoadL(m_defaultImageType, m_ImageBuffer, m_ImageBufferLength);
-	}
+	return SaveDevILToFile(path.file_string().c_str(), format);
+}
 
-	// Overwrite option
-	ilEnable(IL_FILE_OVERWRITE);
-
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Saving image to path: %s, type %d.\r", path.file_string().c_str(), type);
-
-	// devIL wants to have a non-const char* pointer, wtf?
-	char filename[1024];
-
-	if (path.file_string().size() > sizeof(filename))
-	{
-		return false;
-	}
-
-	strcpy(filename, path.file_string().c_str());
-
-	if (!ilSave(GetILTypeForImageType(type), filename))
-	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not save image to path %s (type %d): error message %s.\r", path.file_string().c_str(), type, ilGetString(ilGetError()));
-		return false;
-	}
-
-	return true;
+bool CImage::SaveImageToVfs(const char* filename, Format format) const
+{
+	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename), format);
 }

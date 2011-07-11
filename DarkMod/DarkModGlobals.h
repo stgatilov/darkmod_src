@@ -104,8 +104,8 @@ class CLightMaterial {
 public:
 	CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName);
 
-	unsigned char *GetFallOffTexture(int &Width, int &Height, int &Bpp);
-	unsigned char *GetImage(int &Width, int &Height, int &Bpp);
+	const unsigned char *GetFallOffTexture(int &Width, int &Height, int &Bpp);
+	const unsigned char *GetImage(int &Width, int &Height, int &Bpp);
 
    	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );

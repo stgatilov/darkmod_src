@@ -1681,8 +1681,8 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 {
 	float fColVal(0), fImgVal(0);
 	int fw(0), fh(0), iw(0), ih(0), i(0), fbpp(0), ibpp(0);
-	unsigned char *img = NULL;
-	unsigned char *fot = NULL;
+	const unsigned char *img = NULL;
+	const unsigned char *fot = NULL;
 
 	if(m_LightMaterial == NULL)
 	{

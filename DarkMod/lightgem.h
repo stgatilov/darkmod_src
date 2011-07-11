@@ -49,10 +49,10 @@ private:
 	idEntityPtr<idEntity>	m_LightgemSurface;
 
 	// stgatilov: The buffer for captured lightgem image
-	idList<char>			m_LightgemRenderBuffer;
+	idList<unsigned char>	m_LightgemRenderBuffer;
 
 public:
-	ID_INLINE idList<char> &	GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
+	ID_INLINE idList<unsigned char> &GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
 	
 	//---------------------------------
 	// Construction/Destruction

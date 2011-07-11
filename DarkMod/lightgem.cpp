@@ -397,8 +397,8 @@ void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 
-	im->LoadImage(m_LightgemRenderBuffer);
-	unsigned char *buffer = im->GetImageData();
+	im->LoadImageFromMemory(&m_LightgemRenderBuffer[0], m_LightgemRenderBuffer.Num(), DARKMOD_LG_FILENAME);
+	const unsigned char *buffer = im->GetImageData();
 
 	// This is just an errorhandling to inform the player that something is wrong.
 	// The lightgem will simply blink if the renderbuffer doesn't work.

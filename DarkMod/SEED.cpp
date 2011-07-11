@@ -1367,7 +1367,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 						   	spawnArgs.GetString( "map_ofs",				// and if that isn't set either, try SEED::map_scale
 						   	"0" ) ) ) );								// finally fallback to 0
 
-		unsigned char *imgData = gameLocal.m_ImageMapManager->GetMapData( SeedClass.imgmap );
+		const unsigned char *imgData = gameLocal.m_ImageMapManager->GetMapData( SeedClass.imgmap );
 		if (!imgData)
 		{
 			gameLocal.Error("SEED %s: Can't access image data from %s, maybe the image file is corrupt?\n", 

@@ -1378,7 +1378,6 @@ const DownloadableModList& CMissionManager::GetDownloadableMods() const
 bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum)
 {
 	CImage image(tempFilename.file_string().c_str());
-	image.SetDefaultImageType(CImage::AUTO_DETECT);
 
 	if (!image.LoadImageFromFile(tempFilename))
 	{
@@ -1403,7 +1402,7 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 	targetPath = GetDarkmodPath() / mod.GetLocalScreenshotPath(screenshotNum).c_str();
 	
 	// Save the file locally as JPEG
-	if (!image.SaveToFile(targetPath, CImage::JPG))
+	if (!image.SaveImageToFile(targetPath, CImage::JPG))
 	{
 		gameLocal.Printf("Could not save image to %s\n", targetPath.file_string().c_str());
 		return false;

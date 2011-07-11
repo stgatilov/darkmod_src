@@ -874,7 +874,7 @@ public:
 	 */
 	float					CalcLightgem(idPlayer*);
 
-	ID_INLINE idList<char> &GetLightgemRenderBuffer(void)
+	ID_INLINE idList<unsigned char> &GetLightgemRenderBuffer(void)
 	{
 		return m_lightGem.GetLightgemRenderBuffer();
 	}

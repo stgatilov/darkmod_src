@@ -112,7 +112,7 @@ void CImageMapManager::Clear( void ) {
 	{
 		if (m_imageMaps[i].img)
 		{
-			m_imageMaps[i].img->Unload(true);
+			m_imageMaps[i].img->Unload();
 			delete m_imageMaps[i].img;
 			m_imageMaps[i].img = NULL;
 			m_imageMaps[i].users = 0;
@@ -231,7 +231,7 @@ int CImageMapManager::GetImageMap( idStr name ) {
 * If the map was previously freed, or never loaded, loads the map again. Returns
 * NULL in case the map cannot be loaded (file not found).
 */
-unsigned char* CImageMapManager::GetMapData( const unsigned int id )
+const unsigned char* CImageMapManager::GetMapData( const unsigned int id )
 {
 	CImage*	img = GetImage( id );
 
@@ -339,7 +339,7 @@ unsigned int CImageMapManager::GetMapDataAt( const unsigned int id, const float 
 		m_lastError = "X or Y out of range.";
 		return 0;
 	}
-    unsigned char *imgData = img->GetImageData();
+    const unsigned char *imgData = img->GetImageData();
 
 	if (imgData)
 	{
@@ -386,7 +386,7 @@ void CImageMapManager::FreeUnusedMaps( void ) {
 	{
 		if (m_imageMaps[i].users == 0 && m_imageMaps[i].img)
 		{
-			m_imageMaps[i].img->Unload(true);
+			m_imageMaps[i].img->Unload();
 			delete m_imageMaps[i].img;
 			m_imageMaps[i].img = NULL;
 		}
@@ -424,9 +424,7 @@ bool CImageMapManager::LoadImage( imagemap_t* map ) {
 		return false;
 	}
 
-	map->img->SetDefaultImageType(CImage::AUTO_DETECT);
 	map->img->LoadImageFromVfs( map->name );
-	map->img->InitImageInfo();
 
 	if (map->img->m_Bpp != 1)
 	{
@@ -435,7 +433,7 @@ bool CImageMapManager::LoadImage( imagemap_t* map ) {
 	}
 
 	map->density = 0.0f;
-	unsigned char* imgData = map->img->GetImageData();
+	const unsigned char* imgData = map->img->GetImageData();
 	if (!imgData)
 	{
 		return false;

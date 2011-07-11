@@ -65,7 +65,7 @@ public:
 	* Given the id of a formerly loaded map, returns a ptr to the given raw image data.
 	* If the map was previously freed, or never loaded, returns NULL.
 	*/
-	unsigned char*		GetMapData( const unsigned int id );
+	const unsigned char*GetMapData( const unsigned int id );
 
 	/**
 	* Returns the width in pixels of the image map. Returns 0 in case of error.

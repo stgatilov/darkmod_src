@@ -573,9 +573,9 @@ void CLightMaterial::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_MapIndex);
 }
 
-unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &Bpp)
+const unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &Bpp)
 {
-	unsigned char *rc = NULL;
+	const unsigned char *rc = NULL;
 	CImage *im;
 
 	if(m_FallOffIndex != -1)
@@ -593,9 +593,9 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &B
 	return(rc);
 }
 
-unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
+const unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 {
-	unsigned char *rc = NULL;
+	const unsigned char *rc = NULL;
 	CImage *im;
 
 	if(m_MapIndex != -1)
@@ -625,24 +625,85 @@ void DM_Printf(const char* fmt, ...)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
 }
 
+static const char TDM_SCREENSHOT_FILTER[] = "*screenshots[/\\]shot[0-9][0-9][0-9][0-9][0-9].*";
+void Screenshot_AppendFileListForExtension(idStrList &list, const char *directory, const char *extension) {
+	idFileList *ptr = fileSystem->ListFiles(directory, extension, false, true);
+	list.Append(ptr->GetList());
+	fileSystem->FreeFileList(ptr);
+}
+void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
+	static int index = -1;
+	// on first access: find the first free screenshot index
+	if (index < 0) {
+		//get directory path
+		idStr directory = filename;
+		directory.StripFilename();
+		//get sorted list of all files in this directory
+		idStrList allFiles;
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "png");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "bmp");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "jpg");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "tga");
+		idStrListSortPaths(allFiles);
+		//iterate through files from end to start, search for the last screenshot file
+		index = 1;
+		for (int i = allFiles.Num()-1; i>=0; i--)
+			if (allFiles[i].Filter(TDM_SCREENSHOT_FILTER, false)) {
+				idStr strIndex, fileOnly;
+				fileOnly = allFiles[i];
+				fileOnly.StripPath();
+				fileOnly.Mid(4, 5, strIndex);
+				sscanf(strIndex.c_str(), "%d", &index);
+				index++;
+				break;
+			}
+	}
+
+	//process filename (set index and extension)
+	char fileOnly[256];
+	idStr::snPrintf(fileOnly, 256, "shot%05d.%s", index, extension);
+	filename.StripFilename();
+	filename.AppendPath(fileOnly);
+	//increase screenshot index
+	index++;
+}
+
 int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath)
 {
-	int iRet = 0;
-	META_RES Ret = MRES_IGNORED;
-
 	// stgatilov: if it is lightgem render, save it to m_LightGemRenderBuffer
 	if (idStr::Cmp(relativePath, DARKMOD_LG_FILENAME) == 0)
 	{
 		// resize buffer if necessary
 		if (gameLocal.GetLightgemRenderBuffer().Num() != size)
 			gameLocal.GetLightgemRenderBuffer().SetNum(size);
-
+		// copy image to buffer
 		memcpy(&gameLocal.GetLightgemRenderBuffer()[0], buffer, size);
-		Ret = MRES_SUPERCEDE;
-		iRet = size;
+		
+		RETURN_META_VALUE(MRES_SUPERCEDE, size);
 	}
 
-	RETURN_META_VALUE(Ret, iRet);
+	//stgatilov: intercept screenshot saving
+	if (idStr::Filter(TDM_SCREENSHOT_FILTER, relativePath, false)) {
+		// load screenshot file buffer into image
+		CImage image;
+		image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)size, "TDM_screenshot");
+		// find the preferred image format
+		idStr extension = cv_screenshot_format.GetString();
+		CImage::Format format = CImage::GetFormatFromString(extension.c_str());
+		if (format == CImage::AUTO_DETECT) {
+			DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Unknown screenshot extension %s, falling back to default.", extension.c_str());
+			format = CImage::TGA;
+			extension = "tga";
+		}
+		// change extension and index of screenshot file
+		idStr changedPath(relativePath);
+		Screenshot_ChangeFilename(changedPath, extension.c_str());
+		// try to save image in other format
+		if (image.SaveImageToVfs(changedPath, format))
+			RETURN_META_VALUE(MRES_SUPERCEDE, size);
+	}
+
+	RETURN_META_VALUE(MRES_IGNORED, 0);
 }
 
 void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )
