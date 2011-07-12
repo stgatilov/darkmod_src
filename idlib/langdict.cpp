@@ -260,7 +260,7 @@ idLangDict::GetNextId
 int idLangDict::GetNextId( void ) const {
 	int c = args.Num();
 
-	//Let and external user supply the base id for this dictionary
+	// Let an external user supply the base id for this dictionary
 	int id = baseID;
 
 	if ( c == 0 ) {
