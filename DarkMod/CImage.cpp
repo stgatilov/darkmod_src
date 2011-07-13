@@ -211,10 +211,20 @@ const unsigned char* CImage::GetImageData() const
 
 bool CImage::SaveImageToFile(const fs::path& path, Format format) const
 {
+	if (fs::is_directory(path)) {
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image: file [%s] is directory\r", path.file_string().c_str());
+		return false;
+	}
+	//create directories if necessary
+	fs::create_directories(path.branch_path());
+	//write image file
 	return SaveDevILToFile(path.file_string().c_str(), format);
 }
 
 bool CImage::SaveImageToVfs(const char* filename, Format format) const
 {
+	//create directories if necessary
+	fileSystem->CloseFile(fileSystem->OpenFileWrite(filename));
+	//write image file
 	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename), format);
 }
