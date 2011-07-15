@@ -2276,7 +2276,8 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 				{
 					const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
 						diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
-					gui->SetStateString(va("diff%dName",diffLevel), diffName);
+					// Tels: Make sure we translate the name for the GUI
+					gui->SetStateString(va("diff%dName",diffLevel), common->GetLanguageDict()->GetString( diffName) );
 				}
 
 				gui->SetStateBool("SkipShop", worldspawnDict.GetBool("shop_skip", "0"));
