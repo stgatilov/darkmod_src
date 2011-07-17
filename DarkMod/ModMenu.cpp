@@ -201,10 +201,11 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 		gui->SetStateString("selectedModSize", missionSize > 0 ? missionSizeStr : "-");
 
 		gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
-
-		idStr eraseMissionText = va("You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
-			"\n\n%s\n\nNote that the downloaded mission PK4 in your darkmod/fms/ folder will not be "
-			"affected by this operation, you're still able to re-install the mission.", info->GetModFolderPath().c_str());
+		
+		// 07208: "You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
+		// 07209: "Note that the downloaded mission PK4 in your darkmod/fms/ folder will not be affected by this operation, you're still able to re-install the mission."
+		idStr eraseMissionText = va( idStr( common->GetLanguageDict()->GetString( "#str_07208" ) ) + "\n\n%s\n\n" +
+					     common->GetLanguageDict()->GetString( "#str_07209" ), info->GetModFolderPath().c_str() );
 		gui->SetStateString("eraseMissionText", eraseMissionText);
 
 		gui->SetStateString("selectedModCompleted", info->GetModCompletedString());
@@ -312,7 +313,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	CModInfoPtr curModInfo = gameLocal.m_MissionManager->GetCurrentModInfo();
 
 	gui->SetStateBool("hasCurrentMod", curModInfo != NULL);
-	gui->SetStateString("currentModName", curModInfo != NULL ? curModInfo->displayName : "<No Mission Installed>");
+	gui->SetStateString("currentModName", curModInfo != NULL ? curModInfo->displayName : idStr( common->GetLanguageDict()->GetString( "#str_02189" ))); // <No Mission Installed>
 	gui->SetStateString("currentModDesc", curModInfo != NULL ? curModInfo->description : "");	
 }
 
@@ -322,8 +323,9 @@ bool CModMenu::PerformVersionCheck(const CModInfoPtr& mission, idUserInterface* 
 	if (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, mission->requiredMajor, mission->requiredMinor) == OLDER)
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
-			va("Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running %s v%d.%02d. Please run the tdm_update application to update your installation.",
-			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+			// "Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running v%d.%02d. Please run the tdm_update application to update your installation.",
+			va( common->GetLanguageDict()->GetString( "#str_07210" ),
+			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 
 		gui->HandleNamedEvent("OnRequiredVersionCheckFail");
 
