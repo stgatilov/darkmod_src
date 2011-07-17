@@ -59,7 +59,7 @@ const int	FOCUS_TIME = 300;
 const int	FOCUS_GUI_TIME = 500;
 
 #define TDM_PLAYER_WEAPON_CATEGORY			"Weapons"
-#define TDM_PLAYER_MAPS_CATEGORY			"Maps"
+#define TDM_PLAYER_MAPS_CATEGORY			"#str_02390"
 
 #define ARROW_WEAPON_INDEX_BEGIN 3		// grayman #597 - weapons at or above this index are arrows
 
