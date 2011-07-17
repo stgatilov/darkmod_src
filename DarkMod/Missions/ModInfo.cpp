@@ -105,7 +105,7 @@ idStr CModInfo::GetModCompletedString()
 {
 	if (modName == "training_mission")
 	{
-		return "Not completable";
+		return common->GetLanguageDict()->GetString( "#str_02511" );	// Not completable
 	}
 
 	idStr diffStr;
@@ -127,11 +127,11 @@ idStr CModInfo::GetModCompletedString()
 
 	if (anyCompleted)
 	{
-		return va("Yes (%s)", diffStr.c_str());
+		return va( common->GetLanguageDict()->GetString( "#str_02513" ), diffStr.c_str());	// "Yes (%s)"
 	}
 	else
 	{
-		return "Not yet";
+		return common->GetLanguageDict()->GetString( "#str_02512" );	// Not yet
 	}
 }
 
