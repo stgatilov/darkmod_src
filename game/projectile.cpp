@@ -1693,7 +1693,7 @@ bool idProjectile::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobU
 
 	// FIXME: Move this to idEntity to some sort of "usable_by_inv_category" list?
 	const idStr& categoryName = item->Category()->GetName();
-	if (categoryName == common->GetLanguageDict()->GetString( "#str_02389" ))		// Lockpicks
+	if (categoryName == "#str_02389" )				// Lockpicks
 	{
 		if (!m_Lock->IsPickable())
 		{
@@ -1733,7 +1733,7 @@ bool idProjectile::UseBy(EImpulseState impulseState, const CInventoryItemPtr& it
 	// Get the name of this inventory category
 	const idStr& categoryName = item->Category()->GetName();
 
-	if (categoryName == common->GetLanguageDict()->GetString( "#str_02389" ))		// Lockpicks
+	if (categoryName == "#str_02389" )				// Lockpicks
 	{
 		if (!m_Lock->IsPickable())
 		{

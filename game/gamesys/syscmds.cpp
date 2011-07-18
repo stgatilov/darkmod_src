@@ -299,8 +299,7 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 	if( args.Argc() == 2)
 	{
 		idStr itemName = args.Argv(1);
-
-		player->SelectInventoryItem( common->GetLanguageDict()->GetString(itemName) );
+		player->SelectInventoryItem( itemName );
 	}
 	else if (args.Argc() == 1)
 	{
@@ -344,7 +343,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		idStr itemName = args.Argv(1);
 
 		// Try to lookup the item in the inventory
-		CInventoryItemPtr item = inventory->GetItem( common->GetLanguageDict()->GetString(itemName) );
+		CInventoryItemPtr item = inventory->GetItem( itemName );
 
 		if (item != NULL)
 		{
@@ -408,7 +407,7 @@ void Cmd_InventoryCycleGroup_f( const idCmdArgs &args )
 		idStr categoryName = args.Argv(1);
 
 		// Pass the call to the specialised method
-		player->CycleInventoryGroup( common->GetLanguageDict()->GetString(categoryName) );
+		player->CycleInventoryGroup( categoryName );
 	}
 }
 
