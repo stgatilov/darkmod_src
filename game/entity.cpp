@@ -784,21 +784,35 @@ idEntity::FixupLocalizedStrings
 */
 void idEntity::FixupLocalizedStrings()
 {
-	// Tels: Removed, because if we convert "#str_12345" to "Maps" at spawn time, then
-	// later a compare "#str_12345" to "Maps" will fail.
-    return;
-
-	// TODO: Transform here things like "inv_category" "Maps" back to "#str_1234" so that custom
+	// Tels: Transform here things like "inv_category" "Maps" back to "#str_02390" so that custom
 	// entities in FMs with hard-coded english inventory categories or names still work even with
 	// the new translation code.
-
-//	for ( int i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
-//		const idKeyValue *kv = spawnArgs.GetKeyVal( i );
-//		if ( idStr::Cmpn( kv->GetValue(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 )
-//			{
-//			spawnArgs.Set( kv->GetKey(), common->GetLanguageDict()->GetString( kv->GetValue() ) );
-//			}
-//	}
+    idStr categoryName = spawnArgs.GetString( "inv_category", "");
+	if (categoryName == "Maps")
+		{
+		gameLocal.Printf("%s: Fixing inv_category from Maps to #str_02390.\n", GetName() );
+        spawnArgs.Set( "inv_category", "#str_02390");
+		}
+	else if (categoryName == "Keys")
+		{
+		gameLocal.Printf("%s: Fixing inv_category from Keys to #str_02392.\n", GetName() );
+        spawnArgs.Set( "inv_category", "#str_02392");
+		}
+	else if (categoryName == "Lockpicks")
+		{
+		gameLocal.Printf("%s: Fixing inv_category from Lockpicks to #str_02389.\n", GetName() );
+        spawnArgs.Set( "inv_category", "#str_02389");
+		}
+	else if (categoryName == "Readables")
+		{
+		gameLocal.Printf("%s: Fixing inv_category from Readables to #str_02391.\n", GetName() );
+        spawnArgs.Set( "inv_category", "#str_02391");
+		}
+	else if (categoryName == "Potions")
+		{
+		gameLocal.Printf("%s: Fixing inv_category from Potions to #str_02393.\n", GetName() );
+        spawnArgs.Set( "inv_category", "#str_02393");
+		}
 }
 
 /*
