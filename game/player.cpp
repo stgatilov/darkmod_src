@@ -3165,10 +3165,6 @@ bool idPlayer::GivePowerUp( int powerup, int time ) {
 			ServerSendEvent( EVENT_POWERUP, &msg, false, -1 );
 		}
 
-		/*if ( powerup != MEGAHEALTH ) {
-			inventory.GivePowerUp( this, powerup, time );
-		}*/
-
 		const idDeclEntityDef *def = NULL;
 
 		switch( powerup ) {
