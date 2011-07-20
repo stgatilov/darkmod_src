@@ -635,20 +635,29 @@ void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
 	static int index = -1;
 	// on first access: find the first free screenshot index
 	if (index < 0) {
+		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
 		//get directory path
 		idStr directory = filename;
 		directory.StripFilename();
+		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", filename.c_str());
+
 		//get sorted list of all files in this directory
 		idStrList allFiles;
 		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "png");
 		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "bmp");
 		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "jpg");
 		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "tga");
+		for (int i = 0; i<allFiles.Num(); i++)
+			DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
 		idStrListSortPaths(allFiles);
+		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("-----------\r");
+		for (int i = 0; i<allFiles.Num(); i++)
+			DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
 		//iterate through files from end to start, search for the last screenshot file
 		index = 1;
 		for (int i = allFiles.Num()-1; i>=0; i--)
 			if (allFiles[i].Filter(TDM_SCREENSHOT_FILTER, false)) {
+				DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
 				idStr strIndex, fileOnly;
 				fileOnly = allFiles[i];
 				fileOnly.StripPath();
@@ -691,7 +700,7 @@ int DM_WriteFile(const char *relativePath, const void *buffer, int size, const c
 		idStr extension = cv_screenshot_format.GetString();
 		CImage::Format format = CImage::GetFormatFromString(extension.c_str());
 		if (format == CImage::AUTO_DETECT) {
-			DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Unknown screenshot extension %s, falling back to default.", extension.c_str());
+			DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Unknown screenshot extension %s, falling back to default.\r", extension.c_str());
 			format = CImage::TGA;
 			extension = "tga";
 		}
