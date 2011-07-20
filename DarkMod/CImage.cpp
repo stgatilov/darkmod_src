@@ -151,7 +151,7 @@ bool CImage::LoadImageFromVfs(const char* filename)
 
 	//read the whole file to buffer
 	idList<unsigned char> fileData;
-	fileData.Resize(file->Length());
+	fileData.SetNum(file->Length());
 	file->Read(&fileData[0], fileData.Num());
 	//close file
 	fileSystem->CloseFile(file);
@@ -178,7 +178,7 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 
 	//read the whole file to buffer
 	idList<unsigned char> fileData;
-	fileData.Resize(fs::file_size(path));
+	fileData.SetNum(fs::file_size(path));
 	fread(&fileData[0], 1, fileData.Num(), file);
 	//close file
 	fclose(file);
