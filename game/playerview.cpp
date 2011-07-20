@@ -568,16 +568,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
 
-		/*if ( player->PowerUpActive(BERSERK) ) {
-		int berserkTime = player->inventory.powerupEndTime[ BERSERK ] - gameLocal.time;
-		if ( berserkTime > 0 ) {
-		// start fading if within 10 seconds of going away
-		alpha = (berserkTime < 10000) ? (float)berserkTime / 10000 : 1.0f;
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, alpha );
-		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, berserkMaterial );
-		}
-		}*/
-
 	}
 
 	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg) - added by Dram
