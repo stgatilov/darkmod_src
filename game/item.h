@@ -95,22 +95,6 @@ private:
 	void					Event_RespawnFx( void );
 };
 
-class idItemPowerup : public idItem {
-public:
-	CLASS_PROTOTYPE( idItemPowerup );
-
-							idItemPowerup();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn();
-	virtual bool			GiveToPlayer( idPlayer *player );
-
-private:
-	int						time;
-	int						type;
-};
 
 class idMoveableItem : public idItem {
 public:
