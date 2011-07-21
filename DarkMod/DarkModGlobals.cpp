@@ -643,10 +643,10 @@ void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
 
 		//get sorted list of all files in this directory
 		idStrList allFiles;
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "png");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "bmp");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "jpg");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), "tga");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".png");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".bmp");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".jpg");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".tga");
 		for (int i = 0; i<allFiles.Num(); i++)
 			DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
 		idStrListSortPaths(allFiles);
