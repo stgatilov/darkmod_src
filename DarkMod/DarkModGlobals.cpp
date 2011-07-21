@@ -639,7 +639,7 @@ void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
 		//get directory path
 		idStr directory = filename;
 		directory.StripFilename();
-		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", filename.c_str());
+		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", directory.c_str());
 
 		//get sorted list of all files in this directory
 		idStrList allFiles;
