@@ -1198,7 +1198,24 @@ void idEntity::Spawn( void )
 	// to someone's inventory, the event takes care of that. This must happen
 	// after the entity has fully spawned (including subclasses), otherwise
 	// the clipmodel and things like that are not initialised (>> crash).
-	PostEventMS(&EV_InitInventory, 0, 0);
+
+	// grayman #2820 - don't queue EV_InitInventory if it's going to
+	// end up doing nothing. Queuing this for every entity causes a ton
+	// of event posting during frame 0 that can overrun the event queue limit
+	// in large maps w/lots of entities.
+
+	int lootValue = spawnArgs.GetInt( "inv_loot_value", "0" );
+	int lootType = spawnArgs.GetInt( "inv_loot_type", "0" );
+	bool belongsInInventory = spawnArgs.GetBool( "inv_map_start", "0" );
+
+	// Only post EV_InitInventory if this is loot OR it belongs in someone's inventory.
+	// If extra work is added to EV_InitInventory, then that must be accounted for here, to make sure it has
+	// a chance of getting done.
+
+	if ( belongsInInventory || ( ( lootType > LOOT_NONE ) && ( lootType < LOOT_COUNT ) && ( lootValue != 0 ) ) )
+	{
+		PostEventMS( &EV_InitInventory, 0, 0 );
+	}
 
 	// grayman #2478 - If this is a mine or flashmine, it can be armed
 	// at spawn time. Post an event to replace the mine with its
@@ -10657,14 +10674,31 @@ void idEntity::Event_GetCurInvIcon()
 
 void idEntity::Event_InitInventory(int callCount)
 {
-	// greebo: Check if this entity represents loot - if yes, update the total mission loot count
-	int lootValue = spawnArgs.GetInt("inv_loot_value", "0");
-	int lootType = spawnArgs.GetInt("inv_loot_type", "0");
+	// grayman #2820 - At the time of this writing, this routine checks
+	// for loot AND belonging in someone's inventory. If anything else is
+	// added here, the pre-check in ai.cpp that wraps around "PostEventMS( &EV_InitInventory, 0, 0 )"
+	// must account for that. The pre-check is needed to prevent unnecessary
+	// event posting that leads to doing nothing here. (I.e. the entity isn't
+	// loot, and it doesn't belong in someone's inventory.)
 
-	// Check if the loot type is valid
-	if (lootType > LOOT_NONE && lootType < LOOT_COUNT && lootValue != 0) 
+	// greebo: Check if this entity represents loot - if yes, update the total mission loot count
+
+	// grayman #2820 - It probably never happens, but if loot is placed in the player's
+	// inventory at map start, it could get double-counted here if the player hasn't
+	// spawned yet and this routine has to call itself below. 'callCount' tracks how many
+	// times an attempt has been made, so we'll wrap the loot check in a callCount check
+	// to make sure it doesn't get done more than once.
+
+	if ( callCount == 0 )
 	{
-		gameLocal.m_MissionData->AddMissionLoot(static_cast<LootType>(lootType), lootValue);
+		int lootValue = spawnArgs.GetInt("inv_loot_value", "0");
+		int lootType = spawnArgs.GetInt("inv_loot_type", "0");
+
+		// Check if the loot type is valid
+		if (lootType > LOOT_NONE && lootType < LOOT_COUNT && lootValue != 0) 
+		{
+			gameLocal.m_MissionData->AddMissionLoot(static_cast<LootType>(lootType), lootValue);
+		}
 	}
 
 	// Check if this object should be put into the inventory of some entity
