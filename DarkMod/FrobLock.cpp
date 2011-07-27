@@ -181,15 +181,15 @@ bool CFrobLock::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 
 	assert(item->Category() != NULL);
 
-	const idStr& name = item->Category()->GetName();
+	const idStr& categoryName = item->Category()->GetName();
 
-	if (name == "#str_02392" ) 			// Keys
+	if (categoryName == "#str_02392" ) 			// Keys
 	{
 		// Keys can always be used on doors
 		// Exception: for "frob use" this only applies when the mover is locked
 		return (isFrobUse) ? IsLocked() : true;
 	}
-	else if (name == "#str_02389" ) 		// Lockpicks
+	else if (categoryName == "#str_02389" ) 		// Lockpicks
 	{
 		if (!m_Lock->IsPickable())
 		{
@@ -222,9 +222,9 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	if (itemEntity == NULL) return false;
 
 	// Get the name of this inventory category
-	const idStr& itemName = item->Category()->GetName();
-	
-	if (name == "#str_02392" && impulseState == EPressed ) 			// Keys
+	const idStr& categoryName = item->Category()->GetName();
+
+	if (categoryName == "#str_02392" && impulseState == EPressed ) 			// Keys
 	{
 		// Keys can be used on button PRESS event, let's see if the key matches
 		if (m_UsedByName.FindIndex(itemEntity->name) != -1)
@@ -239,7 +239,7 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			return false;
 		}
 	}
-	else if (name == "#str_02389" ) 					// Lockpicks
+	else if (categoryName == "#str_02389" ) 					// Lockpicks
 	{
 		if (!m_Lock->IsPickable())
 		{
