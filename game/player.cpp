@@ -6651,9 +6651,14 @@ void idPlayer::UpdateInventoryHUD()
 				SetGuiInt(m_InventoryOverlay, "Inventory_GroupVisible", 1);
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 1);
 
+				idStr itemName = common->GetLanguageDict()->GetString( curItem->GetName() );
+
+				// Tels: translated names can have two lines, so tell the GUI about it
+				SetGuiInt(m_InventoryOverlay, "Inventory_ItemNameMultiline", itemName.Find( '\n' ) != -1 ? 1 : 0 );
+
 				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->GetLanguageDict()->GetString( curItem->Category()->GetName() ) );
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", common->GetLanguageDict()->GetString( curItem->GetName() ));
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", itemName );
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
 			}
