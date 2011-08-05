@@ -216,12 +216,23 @@ void CI18N::SetLanguage( const char* lang ) {
 
 	// set sysvar tdm_lang
 	cv_tdm_lang.SetString( lang );
-	// set sysvar sys_lang (if possible)
-	cvarSystem->SetCVarString( "sys_lang", lang );
+
+	// For some reason, "english", "german", "french" and "spanish" share
+	// the same font, but "polish" and "russian" get their own font. But
+	// since "polish" is actually a copy of the normal western font, use
+	// "english" instead to trick D3 into loading the correct font. The
+	// dictionary below will be polish, regardless.
+	idStr newLang = idStr(lang);
+	if (newLang == "polish")
+	{
+		newLang = "english";
+	}
+	// set sysvar sys_lang (if not possible, D3 will revert to english)
+	cvarSystem->SetCVarString( "sys_lang", newLang.c_str() );
 
 	// If sys_lang differs from lang, the language was not supported, so
 	// we will load it ourselves.
-	if ( idStr( cvarSystem->GetCVarString( "sys_lang" ) ) != idStr(lang) )
+	if ( newLang != cvarSystem->GetCVarString( "sys_lang" ) )
 	{
 		idLib::common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
 	}
