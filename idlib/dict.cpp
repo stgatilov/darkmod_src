@@ -667,6 +667,16 @@ void idDict::ShowMemoryUsage_f( const idCmdArgs &args ) {
 
 /*
 ================
+idDict::PrintMemory
+================
+*/
+void idDict::PrintMemory( void ) const {
+	idLib::common->Printf( "%d KB in %d keys, %d KB in %d values.\n", 
+		globalKeys.Size() >> 10, globalKeys.Num(), globalValues.Size() >> 10, globalValues.Num() );
+}
+
+/*
+================
 idDictStringSortCmp
 ================
 */

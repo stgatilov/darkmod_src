@@ -136,6 +136,7 @@ public:
 	static void			Shutdown( void );
 
 	static void			ShowMemoryUsage_f( const idCmdArgs &args );
+	void				PrintMemory( void ) const;
 	static void			ListKeys_f( const idCmdArgs &args );
 	static void			ListValues_f( const idCmdArgs &args );
 

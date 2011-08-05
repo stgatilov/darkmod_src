@@ -130,7 +130,7 @@ void idLangDict::Save( const char *fileName ) {
 idLangDict::GetString
 ============
 */
-const char *idLangDict::GetString( const char *str ) const {
+const char *idLangDict::GetString( const char *str, bool dowarn ) const {
 
 	if ( str == NULL || str[0] == '\0' ) {
 		return "";
@@ -147,7 +147,10 @@ const char *idLangDict::GetString( const char *str ) const {
 		}
 	}
 
-	idLib::common->Warning( "Unknown string id %s", str );
+	if (dowarn)
+	{
+		idLib::common->Warning( "Unknown string id %s", str );
+	}
 	return str;
 }
 
@@ -291,4 +294,15 @@ int idLangDict::GetHashKey( const char *str ) const {
 		hashKey = hashKey * 10 + str[0] - '0';
 	}
 	return hashKey;
+}
+
+/*
+============
+idLangDict::Print
+============
+*/
+void idLangDict::Print( void ) const {
+	int c = args.Num();
+	gameLocal.Printf("idLangDict: %li KB in %i entries.\n", static_cast<long>(args.Size() + hash.Size()) >> 10l, c);
+	//hash.Print();
 }

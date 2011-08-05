@@ -37,8 +37,12 @@ public:
 	void					Save( const char *fileName );
 
 	const char *			AddString( const char *str );
-	const char *			GetString( const char *str ) const;
+	const char *			GetString( const char *str, bool dowarn = true ) const;
 
+	/**
+	* Tels: Print some statistics about memory usage.
+	*/
+	void				Print( void ) const;
 							// adds the value and key as passed (doesn't generate a "#str_xxxxx" key or ensure the key/value pair is unique)
 	void					AddKeyVal( const char *key, const char *val );
 
