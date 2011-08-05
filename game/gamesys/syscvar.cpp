@@ -123,6 +123,13 @@ idCVar cv_tdm_menu_music("tdm_menu_music",	"1", CVAR_ARCHIVE | CVAR_BOOL, "Wheth
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
 
 idCVar cv_tdm_default_relations_def( "tdm_default_relations_def", "atdm:team_relations_default", CVAR_GAME | CVAR_ARCHIVE, "The name of the entityDef holding the TDM default team relationships." );
+
+/**
+* DarkMod GUI CVARs
+**/
+// Tels: can be removed when D3 is open source and we can access sys_lang properly
+idCVar cv_tdm_lang("tdm_lang",	"english",	CVAR_GUI | CVAR_ARCHIVE, "The current used language. Possible values are 'english', 'german', 'russian' etc." );
+
 idCVar cv_tdm_fm_path( "tdm_fm_path", "fms/", CVAR_GUI, "(internal) The path where the fan mission packages are stored.");
 idCVar cv_tdm_fm_desc_file( "tdm_fm_desc_file", "darkmod.txt", CVAR_GUI, "(internal) The description file name of FM packages.");
 idCVar cv_tdm_fm_notes_file( "tdm_fm_notes_file", "readme.txt", CVAR_GUI, "(internal) The readme file name of FM packages.");
@@ -133,6 +140,9 @@ idCVar cv_tdm_fm_splashimage_file( "tdm_fm_splashimage_file", "install_splash.tg
 idCVar cv_tdm_fm_sync_config_files("tdm_fm_sync_config_files", "1", CVAR_BOOL | CVAR_ARCHIVE, "If true (1) the FM loader will sync DoomConfig.cfg files from the darkmod folder to the FM directory and back.");
 idCVar cv_tdm_fm_restart_delay("tdm_fm_restart_delay",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "If non-zero, this is the timespan in milliseconds to wait between D3 restarts (to let the previous D3 process fully release all resources)." );
 
+/**
+* DarkMod HTTP related CVARs
+**/
 idCVar cv_tdm_proxy("tdm_proxy", "", CVAR_ARCHIVE, "The proxy to use when connecting to the internet, format: hostname:port" );
 idCVar cv_tdm_proxy_user("tdm_proxy_user", "", CVAR_ARCHIVE, "The proxy user to use when connecting to the internet via proxy." );
 idCVar cv_tdm_proxy_pass("tdm_proxy_pass", "", CVAR_ARCHIVE, "The proxy password to use when connecting to the internet via proxy." );

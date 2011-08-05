@@ -2006,6 +2006,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\I18N.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\I18N.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\LightController.cpp"
 					>
 				</File>

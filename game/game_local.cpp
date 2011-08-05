@@ -293,6 +293,10 @@ void idGameLocal::Clear( void )
 	{
 		m_LightController->Clear();
 	}
+	if (m_I18N)
+	{
+		m_I18N->Clear();
+	}
 
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Clear();
@@ -521,7 +525,6 @@ void idGameLocal::Init( void ) {
 	m_walkSpeed = pm_walkspeed.GetFloat();
 
 	const char *szLang = cvarSystem->GetCVarString( "sys_lang" );
-	
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "an" ), font_an );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "bank" ), font_bank );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
@@ -544,6 +547,12 @@ void idGameLocal::Init( void ) {
 	// Initialise the light controller
 	m_LightController = CLightControllerPtr(new CLightController);
 	m_LightController->Init();
+
+	// Initialise the I18N (internationalization) code
+	m_I18N = CI18NPtr(new CI18N);
+	m_I18N->Init();
+	const idStr *tdm_lang = m_I18N->GetCurrentLanguage();
+	Printf("Current language: %s\n", tdm_lang->c_str() );
 
 	// greebo: Create the persistent inventory - will be handled by game state changing code
 	persistentPlayerInventory.reset(new CInventory);
@@ -699,6 +708,9 @@ void idGameLocal::Shutdown( void ) {
 	// Destroy the light controller
 	m_LightController.reset();
 
+	// Destroy the I18N system
+	m_I18N.reset();
+
 	// Clear http connection
 	m_HttpConnection.reset();
 	m_GuiMessages.Clear();
@@ -830,6 +842,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save whatever the light controller needs
 	m_LightController->Save(&savegame);
+
+	// Save whatever the I18N needs
+	m_I18N->Save(&savegame);
 
 	m_DifficultyManager.Save(&savegame);
 
@@ -1605,7 +1620,7 @@ bool idGameLocal::NextMap( void ) {
 	int					i;
 
 	if ( !g_mapCycle.GetString()[0] ) {
-		Printf( common->GetLanguageDict()->GetString( "#str_04294" ) );
+		Printf( m_I18N->Translate( "#str_04294" ) );
 		return false;
 	}
 	if ( fileSystem->ReadFile( g_mapCycle.GetString(), NULL, NULL ) < 0 ) {
@@ -1860,6 +1875,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_ModelGenerator->Restore(&savegame);
 	m_ImageMapManager->Restore(&savegame);
 	m_LightController->Restore(&savegame);
+	m_I18N->Restore(&savegame);
 
 	m_DifficultyManager.Restore(&savegame);
 
@@ -2298,6 +2314,10 @@ void idGameLocal::MapShutdown( void ) {
 	if (m_LightController != NULL)
 	{
 		m_LightController->Clear();
+	}
+	if (m_I18N != NULL)
+	{
+		m_I18N->Clear();
 	}
 
 	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
@@ -4201,6 +4221,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("CurrentMission", 1);
 
 		ClearPersistentInfo();
+	}
+	else if (cmd == "languageChanged")
+	{
+		idStr tdm_lang = cv_tdm_lang.GetString();
+		Printf("GUI: Language changed to %s.\n", tdm_lang.c_str() );
+		// get the new language and store it, will also reload the GUI
+		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
 
 	m_Shop->HandleCommands(menuCommand, gui);

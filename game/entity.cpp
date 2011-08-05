@@ -788,31 +788,16 @@ void idEntity::FixupLocalizedStrings()
 	// entities in FMs with hard-coded english inventory categories or names still work even with
 	// the new translation code.
     idStr categoryName = spawnArgs.GetString( "inv_category", "");
-	if (categoryName == "Maps")
+	if (!categoryName.IsEmpty())
+	{
+		idStr strTemplate = gameLocal.m_I18N->TemplateFromEnglish( categoryName );
+		// "Maps" resulted in "#str_02390"?
+		if (categoryName != strTemplate)
 		{
-		gameLocal.Printf("%s: Fixing inv_category from Maps to #str_02390.\n", GetName() );
-        spawnArgs.Set( "inv_category", "#str_02390");
+			gameLocal.Printf("%s: Fixing inv_category from %s to %s.\n", GetName(), categoryName.c_str(), strTemplate.c_str() );
+    	    spawnArgs.Set( "inv_category", strTemplate );
 		}
-	else if (categoryName == "Keys")
-		{
-		gameLocal.Printf("%s: Fixing inv_category from Keys to #str_02392.\n", GetName() );
-        spawnArgs.Set( "inv_category", "#str_02392");
-		}
-	else if (categoryName == "Lockpicks")
-		{
-		gameLocal.Printf("%s: Fixing inv_category from Lockpicks to #str_02389.\n", GetName() );
-        spawnArgs.Set( "inv_category", "#str_02389");
-		}
-	else if (categoryName == "Readables")
-		{
-		gameLocal.Printf("%s: Fixing inv_category from Readables to #str_02391.\n", GetName() );
-        spawnArgs.Set( "inv_category", "#str_02391");
-		}
-	else if (categoryName == "Potions")
-		{
-		gameLocal.Printf("%s: Fixing inv_category from Potions to #str_02393.\n", GetName() );
-        spawnArgs.Set( "inv_category", "#str_02393");
-		}
+	}
 }
 
 /*
@@ -1050,6 +1035,11 @@ void idEntity::Spawn( void )
 		entityDefNumber = def->Index();
 	}
 
+	// every object will have a unique name
+	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
+	SetName(temp);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
+
 	FixupLocalizedStrings();
 
 	// parse static models the same way the editor display does
@@ -1110,11 +1100,6 @@ void idEntity::Spawn( void )
 		}
 	}
 #endif
-
-	// every object will have a unique name
-	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
-	SetName(temp);
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
 
 	bool haveTargets = false; // grayman #2603
 	// if we have targets, wait until all entities are spawned to get them
