@@ -532,6 +532,12 @@ void idGameLocal::Init( void ) {
 	// Initialize the LightGem - J.C.Denton
 	m_lightGem.Initialize();
 
+	// Initialise the I18N (internationalization) code (before the Mission Manager!)
+	m_I18N = CI18NPtr(new CI18N);
+	m_I18N->Init();
+	const idStr *tdm_lang = m_I18N->GetCurrentLanguage();
+	Printf("Current language: %s\n", tdm_lang->c_str() );
+
 	// Initialise the mission manager
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
 	m_MissionManager->Init();
@@ -547,12 +553,6 @@ void idGameLocal::Init( void ) {
 	// Initialise the light controller
 	m_LightController = CLightControllerPtr(new CLightController);
 	m_LightController->Init();
-
-	// Initialise the I18N (internationalization) code
-	m_I18N = CI18NPtr(new CI18N);
-	m_I18N->Init();
-	const idStr *tdm_lang = m_I18N->GetCurrentLanguage();
-	Printf("Current language: %s\n", tdm_lang->c_str() );
 
 	// greebo: Create the persistent inventory - will be handled by game state changing code
 	persistentPlayerInventory.reset(new CInventory);
