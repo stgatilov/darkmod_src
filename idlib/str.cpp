@@ -554,6 +554,22 @@ void idStr::StripLeading( const char c ) {
 
 /*
 ============
+idStr::StripLeadingWhitespace
+============
+*/
+void idStr::StripLeadingWhitespace( void ) {
+	// Tels: first count how many chars to remove, then move the data only once
+	int remove = 0;
+	// cast to unsigned char to prevent stripping off high-ASCII characters
+	while( (unsigned char)data[ remove ] <= ' ' ) {
+		remove ++;
+	}
+	len -= remove;
+	// +1 to copy the 0x00 at the end
+	memmove( &data[ 0 ], &data[ remove ], len + 1 );
+}
+/*
+============
 idStr::StripLeading
 ============
 */
