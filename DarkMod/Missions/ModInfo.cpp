@@ -261,40 +261,25 @@ bool CModInfo::LoadMetaData()
 	if (titlePos >= 0)
 	{
 		displayName = idStr(modFileContent, titlePos, (descPos != -1) ? descPos : len);
-		displayName.StripLeadingOnce("Title:");
-		displayName.StripLeading(" ");
-		displayName.StripLeading("\t");
-		displayName.StripTrailingWhitespace();
-
-		// Remove articles from mission titles
-		MoveArticlesToBack(displayName);
+		Strip("Title:", displayName);
 	}
 
 	if (descPos >= 0)
 	{
 		description = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
-		description.StripLeadingOnce("Description:");
-		description.StripLeading(" ");
-		description.StripLeading("\t");
-		description.StripTrailingWhitespace();
+		Strip("Description:", description);
 	}
 
 	if (authorPos >= 0)
 	{
 		author = idStr(modFileContent, authorPos, (versionPos != -1) ? versionPos : len);
-		author.StripLeadingOnce("Author:");
-		author.StripLeading(" ");
-		author.StripLeading("\t");
-		author.StripTrailingWhitespace();
+		Strip("Author:", author);
 	}
 
 	if (versionPos >= 0)
 	{
 		requiredVersionStr = idStr(modFileContent, versionPos, len);
-		requiredVersionStr.StripLeadingOnce("Required TDM Version:");
-		requiredVersionStr.StripLeading(" ");
-		requiredVersionStr.StripLeading("\t");
-		requiredVersionStr.StripTrailingWhitespace();
+		Strip("Required TDM Version:", requiredVersionStr);
 
 		// Parse version
 		int dotPos = requiredVersionStr.Find('.');
@@ -318,18 +303,8 @@ bool CModInfo::LoadMetaData()
 	return true;
 }
 
-void CModInfo::MoveArticlesToBack(idStr& title)
-{
-	if (title.StripLeadingOnce("The "))
-	{
-		title += ", The";
-	}
-	else if (title.StripLeadingOnce("A "))
-	{
-		title += ", A";
-	}
-	else if (title.StripLeadingOnce("An "))
-	{
-		title += ", An";
-	}
+void CModInfo::Strip( const char *fieldname, idStr &input) {
+	input.StripLeadingOnce(fieldname);
+	input.StripLeadingWhitespace();
+	input.StripTrailingWhitespace();
 }

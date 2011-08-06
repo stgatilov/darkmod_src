@@ -38,19 +38,35 @@ CI18N::CI18N
 */
 CI18N::CI18N ( void ) {
 	// some default values, the object becomes only fully usable after Init(), tho:
-	m_ReverseDict = new idDict;
 	m_SystemDict = common->GetLanguageDict();
 	m_lang = cvarSystem->GetCVarString( "tdm_lang" );
 
 	// build the reverse dictionary for TemplateFromEnglish
-
 	// TODO: Do this by looking them up in lang/english.lang?
 	// inventory categories
-	m_ReverseDict->Set( "Lockpicks",	"#str_02389" );
-	m_ReverseDict->Set( "Maps", 		"#str_02390" );
-	m_ReverseDict->Set( "Readables",	"#str_02391" );
-	m_ReverseDict->Set( "Keys",			"#str_02392" );
-	m_ReverseDict->Set( "Potions",		"#str_02393" );
+	m_ReverseDict.Set( "Lockpicks",	"#str_02389" );
+	m_ReverseDict.Set( "Maps", 		"#str_02390" );
+	m_ReverseDict.Set( "Readables",	"#str_02391" );
+	m_ReverseDict.Set( "Keys",		"#str_02392" );
+	m_ReverseDict.Set( "Potions",	"#str_02393" );
+
+	// The article prefixes, with the suffix to use instead
+	m_ArticlesDict.Set( "A ",	", A" );	// English, Portuguese
+	m_ArticlesDict.Set( "An ",	", An" );
+	m_ArticlesDict.Set( "Der ",	", Der" );	// German
+	m_ArticlesDict.Set( "Die ",	", Die" );	// German
+	m_ArticlesDict.Set( "Das ",	", Das" );	// German
+	m_ArticlesDict.Set( "De ",	", De" );	// Dutch, Danish
+	m_ArticlesDict.Set( "El ",	", El" );	// Spanish
+	m_ArticlesDict.Set( "Het ",	", Het" );	// Dutch
+	m_ArticlesDict.Set( "Il ",	", Il" );	// Italian
+	m_ArticlesDict.Set( "La ",	", La" );	// French, Italian
+	m_ArticlesDict.Set( "Las ",	", Las" );	// Spanish
+	m_ArticlesDict.Set( "Le ",	", Le" );	// French
+	m_ArticlesDict.Set( "Les ",	", Les" );	// French
+	m_ArticlesDict.Set( "Los ",	", Los" );	// Spanish
+	m_ArticlesDict.Set( "Os ",	", Os" );	// Portuguese
+	m_ArticlesDict.Set( "The ",	", The" );	// English
 }
 
 CI18N::~CI18N()
@@ -112,8 +128,8 @@ CI18N::Shutdown
 void CI18N::Shutdown( void ) {
 	idLib::common->Printf( "I18N: Shutdown.\n" );
 	m_lang = "";
-	if (m_ReverseDict) { delete m_ReverseDict; }
-	m_ReverseDict = NULL;
+	m_ReverseDict.Clear();
+	m_ArticlesDict.Clear();
 	m_SystemDict = NULL;
 }
 
@@ -129,11 +145,10 @@ void CI18N::Print( void ) const {
 		idLib::common->Printf(" System " );
   		m_SystemDict->Print();
 	}
-	if (m_ReverseDict)
-	{
-		idLib::common->Printf(" Reverse dict     : " );
-		m_ReverseDict->PrintMemory( );
-	}
+	idLib::common->Printf(" Reverse dict     : " );
+	m_ReverseDict.PrintMemory();
+	idLib::common->Printf(" Articles dict    : " );
+	m_ArticlesDict.PrintMemory();
 }
 
 /*
@@ -160,10 +175,6 @@ CI18N::Translate
 */
 const char* CI18N::Translate( const idStr &in ) {
 
-	if (in.c_str() == NULL )
-	{
-		return "";
-	}
 	return Translate( in.c_str() );
 }
 
@@ -176,11 +187,7 @@ const char* CI18N::TemplateFromEnglish( const char* in ) {
 #ifdef M_DEBUG
 //	idLib::common->Printf( "I18N::TemplateFromEnglish(%s)", in );
 #endif
-	if (m_ReverseDict)
-	{
-		return m_ReverseDict->GetString( in, in );
-	}
-	return in;
+	return m_ReverseDict.GetString( in, in );
 }
 
 /*
@@ -237,39 +244,32 @@ void CI18N::SetLanguage( const char* lang ) {
 		idLib::common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
 	}
 
-	// Always forcefully reload the language
-	idStr file = "strings/"; file += m_lang + ".lang";
-	if ( fileSystem->FindFile( file ) != FIND_NO )
+	// to get around the const preventing changing the system dictionary
+	idLangDict *m_forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
+
+	if (m_forcedDict != NULL)
 	{
-		// can load the language (we expect this, actually), so do it sneakily behind the scenes
-		idLangDict *m_forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
-		if (m_forcedDict != NULL)
+		// Always forcefully reload the language
+		idStr file = "strings/"; file += m_lang + ".lang";
+		if ( fileSystem->FindFile( file ) != FIND_NO )
 		{
-			// force reload it
+			// can load the language (we expect this, actually), so do sneakily force reload it
 			m_forcedDict->Load( file, true );
 		}
 		else
 		{
-			idLib::common->Printf("I18N: System dictionary is NULL!\n" );
+			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
 		}
-	}
-	else
-	{
-		idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
-	}
 
-	idLangDict *FMDict = new idLangDict;
-	file = "strings/fm/"; file += m_lang + ".lang";
-	if ( !FMDict->Load( file, false ) )
-	{
-		idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
-	}
-	else
-	{
-		// else fold the newly loaded strings into the system dict
-		idLangDict *m_forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
-		if (m_forcedDict != NULL)
+		idLangDict *FMDict = new idLangDict;
+		file = "strings/fm/"; file += m_lang + ".lang";
+		if ( !FMDict->Load( file, false ) )
 		{
+			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
+		}
+		else
+		{
+			// else fold the newly loaded strings into the system dict
 			int num = FMDict->GetNumKeyVals( );
 			const idLangKeyValue*  kv;
 			for (int i = 0; i < num; i++)
@@ -284,6 +284,41 @@ void CI18N::SetLanguage( const char* lang ) {
 				}
 			}
 		}
+
+		// With FM strings it can happen that one translation is missing or incomplete,
+		// so fall back to the english version by folding these in, too:
+
+		file = "strings/fm/english.lang";
+		if ( !FMDict->Load( file, true ) )
+		{
+			idLib::common->Printf("I18N: '%s' not found, skipping it.\n", file.c_str() );
+		}
+		else
+		{
+			// else fold the newly loaded strings into the system dict unless they exist already
+			int num = FMDict->GetNumKeyVals( );
+			const idLangKeyValue*  kv;
+			for (int i = 0; i < num; i++)
+			{	
+				kv = FMDict->GetKeyVal( i );
+				if (kv != NULL)
+				{
+					const char *oldEntry = m_forcedDict->GetString( kv->key.c_str(), false);
+					// if equal, the entry was not found
+					if (oldEntry == kv->key.c_str())
+					{
+#ifdef M_DEBUG
+						idLib::common->Printf("I18N: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
+#endif
+						m_forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		idLib::common->Printf("I18N: System dictionary is NULL!\n" );
 	}
 
 	// finally reload the GUI so it appears in the new language
@@ -292,5 +327,35 @@ void CI18N::SetLanguage( const char* lang ) {
 	// TODO: switch to the Video Settings page, so the user is not confused
 	// gui::settingspage" SETTINGS_PAGE_VIDEO
 	// resetTime "SettingsPageSelect" 0;
+}
+
+/*
+===============
+CI18N::MoveArticlesToBack
+
+Changes "A little House" to "Little House, A", supporting multiple languages
+like English, German, French etc.
+===============
+*/
+void CI18N::MoveArticlesToBack(idStr& title)
+{
+	// find index of first " "
+	int spaceIdx = title.Find(' ');
+	// no space, nothing to do
+	if (spaceIdx == -1)
+	{
+		return;
+	}
+
+	idStr Prefix = title.Left( spaceIdx + 1 );
+
+	// see if we have Prefix in the dictionary
+	const char* suffix = m_ArticlesDict.GetString( Prefix.c_str(), NULL );
+	if (suffix != NULL)
+	{
+		// found, remove prefix and append suffix
+		title.StripLeadingOnce( Prefix.c_str() );
+		title += suffix;
+	}
 }
 

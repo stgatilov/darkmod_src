@@ -30,6 +30,11 @@ private:
 	std::size_t _modFolderSize;
 	bool		_modFolderSizeComputed;
 
+	/**
+	* Turn "Title:   Some  " into "Some". Example: Strip("Title:", displayName);
+	*/
+	void		Strip(const char* fieldname, idStr &field);
+
 public:
 	// Public Properties - these aren't stored in the mod info declaration
 	// but are constructed from the text files found in the fms/mod/ folders.
@@ -100,8 +105,6 @@ public:
 	// Load stuff from darkmod.txt, returns FALSE if the file couldn't be read
 	bool	LoadMetaData();
 
-	// Moves articles from the front of the string to its back "The Alchemist" => "Alchemist, The"
-	static void MoveArticlesToBack(idStr& title);
 };
 typedef boost::shared_ptr<CModInfo> CModInfoPtr;
 

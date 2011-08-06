@@ -76,6 +76,12 @@ public:
 	*/
 	const char*			TemplateFromEnglish( const char* in);
 
+	/**
+	* Changes the given string from "A little House" to "Little House, A",
+	* supporting multiple languages like English, German, French etc.
+	*/
+	void				MoveArticlesToBack(idStr& title);
+
 private:
 	// Called at the end of the game
 	void				Shutdown();
@@ -87,7 +93,9 @@ private:
 	// e.g. when we need an unsupported language, or add FM specific strings.
 	const idLangDict	*m_SystemDict;
 	// reverse dictionary for TemplateFromEnglish
-	idDict				*m_ReverseDict;
+	idDict				m_ReverseDict;
+	// dictionary to map "A ..." to "..., A" for MoveArticlesToBack()
+	idDict				m_ArticlesDict;
 };
 
 #endif /* !__DARKMOD_I18N_H__ */
