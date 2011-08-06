@@ -589,7 +589,7 @@ void idEvent::Shutdown( void ) {
 	
 	eventDataAllocator.Shutdown();
 
-	// say it is now shutdown
+	// say it is now shut down
 	initialized = false;
 }
 
