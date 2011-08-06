@@ -26,25 +26,6 @@
 ===============================================================================
 */
 
-// these library functions should not be used for cross platform compatibility
-// TDM: Removed by Crispy. We *want* to use standard library functions, thanks very much.
-/*#define strcmp			idStr::Cmp		// use_idStr_Cmp
-#define strncmp			use_idStr_Cmpn
-#define StrCmpN			use_idStr_Cmpn
-#define strcmpi			use_idStr_Icmp
-#define StrCmpI			use_idStr_Icmp
-#define stricmp			idStr::Icmp		// use_idStr_Icmp
-#define _stricmp		use_idStr_Icmp
-#define strcasecmp		use_idStr_Icmp
-#define strnicmp		use_idStr_Icmpn
-#define _strnicmp		use_idStr_Icmpn
-#define _memicmp		use_idStr_Icmpn
-#define StrCmpNI		use_idStr_Icmpn
-#define snprintf		use_idStr_snPrintf
-#define _snprintf		use_idStr_snPrintf
-#define vsnprintf		use_idStr_vsnPrintf
-#define _vsnprintf		use_idStr_vsnPrintf*/
-
 class idVec4;
 
 #ifndef FILE_HASH_SIZE
@@ -76,7 +57,7 @@ const int C_COLOR_BLACK				= '9';
 #define S_COLOR_GRAY				"^8"
 #define S_COLOR_BLACK				"^9"
 
-// make idStr a multiple of 16 bytes long
+// make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
 const int STR_ALLOC_BASE			= 20;
 const int STR_ALLOC_GRAN			= 32;
@@ -185,7 +166,7 @@ public:
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
 	// Tels: Count how often c occurs between start and end
 	int					Count( const char c, int start = 0, int end = -1 ) const;
-	// Tels: Given a list like "abcX def" (where X = ',' but can be changed), returns one part of it randomly.
+	// Tels: Given a list like "abcXdef" (where X = ',' but can be changed), returns one part of it randomly.
 	// If given an optional random value between 0.0 < x <= 1.0, then this will be used instead of gameLocal.random.RandomFloat()
 	idStr				RandomPart( const char c = ',', const float rand = -1.0f) const;
 	bool				Filter( const char *filter, bool casesensitive ) const;
