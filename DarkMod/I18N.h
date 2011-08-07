@@ -67,7 +67,7 @@ public:
 	/**
 	* Set a new laguage (example: "english").
 	*/
-	void				SetLanguage( const char* lang );
+	void				SetLanguage( const char* lang, bool firstTime = false );
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template

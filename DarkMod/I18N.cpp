@@ -16,8 +16,6 @@
 
   This class is a singleton and initiated/destroyed from gameLocal.
 
-  TODO: register here the fonts so that switching f.i. to russian works
-
 ===============================================================================
 */
 
@@ -83,8 +81,8 @@ CI18N::Init
 ===============
 */
 void CI18N::Init ( void ) {
-	// force a reloading (to force other languages in D3), so the GUI looks correct
-	SetLanguage( cvarSystem->GetCVarString( "tdm_lang" ) );
+	// Create the correct system dictionary
+	SetLanguage( cvarSystem->GetCVarString( "tdm_lang" ), true );
 }
 
 /*
@@ -209,7 +207,7 @@ Change the language. Does not check the language here, as to not restrict
 ourselves to a limited support of languages.
 ===============
 */
-void CI18N::SetLanguage( const char* lang ) {
+void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	if (lang == NULL)
 	{
 		return;
@@ -219,6 +217,7 @@ void CI18N::SetLanguage( const char* lang ) {
 #endif
 
 	// store the new setting
+	idStr oldLang = m_lang;
 	m_lang = lang;
 
 	m_SystemDict = common->GetLanguageDict();
@@ -323,12 +322,37 @@ void CI18N::SetLanguage( const char* lang ) {
 		idLib::common->Printf("I18N: System dictionary is NULL!\n" );
 	}
 
+	idUserInterface *gui = NULL;
+	if ( !firstTime && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
+	{
+		// Restarting the game does not really work, the fonts are still broken
+		// (for some reason) and if the user was in a game, this would destroy his session.
+	    // this does not reload the fonts, either: cmdSystem->BufferCommandText( CMD_EXEC_NOW, "ReloadImages" );
+
+		// So instead just pop-up a message box:
+		gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+
+		gui->SetStateBool("MsgBoxVisible", true);
+
+		gui->SetStateString("MsgBoxTitle", Translate("#str_02206") );	// Language changed
+		gui->SetStateString("MsgBoxText", Translate("#str_02207") );	// You might need to manually restart the game to see the right characters.
+
+		gui->SetStateBool("MsgBoxLeftButtonVisible", false);
+		gui->SetStateBool("MsgBoxRightButtonVisible", false);
+		gui->SetStateBool("MsgBoxMiddleButtonVisible", true);
+		gui->SetStateString("MsgBoxMiddleButtonText", Translate("#str_04339"));
+
+		gui->SetStateString("MsgBoxMiddleButtonCmd", "close_msg_box");
+	}
+
 	// finally reload the GUI so it appears in the new language
 	uiManager->Reload( true );		// true => reload all
 
 	// and switch back to the General Settings page
-	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
-	uiManager->ListGuis();
+	if (gui == NULL)
+	{
+		idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+	}
 	if (gui)
 	{
 		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
@@ -339,24 +363,6 @@ void CI18N::SetLanguage( const char* lang ) {
 	{
 		gameLocal.Warning("Cannot find guis/mainmenu.gui");
 	}
-
-	// Registering fonts here does not help to display Russian (or English
-	// after starting with Russian, so we need to find a way to restart the game)
-
-	/*
-	// Register here the fonts so that switching f.i. to russian works
-	const char* szLang = m_lang == "russian" ? "russian" : "english";
-
-	fontInfoEx_t font_carleton;
-	fontInfoEx_t font_carleton_bold;
-	fontInfoEx_t font_carleton_glow;
-	renderSystem->RegisterFont( va( "fonts/%s/carleton", szLang ), font_carleton );
-	renderSystem->RegisterFont( va( "fonts/%s/carleton_bold", szLang ), font_carleton_bold );
-	renderSystem->RegisterFont( va( "fonts/%s/carleton_glow", szLang ), font_carleton_glow );
-	//renderSystem->RegisterFont( va( "fonts/%s/an", szLang ), font_an );
-	//renderSystem->RegisterFont( va( "fonts/%s/bank", szLang ), font_bank );
-	//renderSystem->RegisterFont( va( "fonts/%s/micro", szLang ), font_micro );
-	*/
 }
 
 /*
