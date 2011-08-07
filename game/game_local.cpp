@@ -111,10 +111,6 @@ const char *idGameLocal::m_NewSurfaceTypes[ MAX_SURFACE_TYPES * 2 + 1] = {
 	"straw", "armor_leath", "armor_chain", "armor_plate", "climbable", "paper","hardwood"
 };
 
-fontInfoEx_t font_an;
-fontInfoEx_t font_bank;
-fontInfoEx_t font_micro;
-
 void PrintMessage( int x, int y, const char *szMessage, idVec4 colour, fontInfoEx_t &font )
 {
       renderSystem->SetColor( colour );
@@ -523,11 +519,6 @@ void idGameLocal::Init( void ) {
 	//FIX: pm_walkspeed keeps getting reset whenever a map loads.
 	// Copy the old value here and set it when the map starts up.
 	m_walkSpeed = pm_walkspeed.GetFloat();
-
-	const char *szLang = cvarSystem->GetCVarString( "sys_lang" );
-	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "an" ), font_an );
-	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "bank" ), font_bank );
-	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
 
 	// Initialize the LightGem - J.C.Denton
 	m_lightGem.Initialize();

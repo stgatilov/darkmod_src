@@ -535,10 +535,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 			player->DrawHUD( hud );
 		}
 
-		//PrintMessage( 100, 20, strText, idVec4( 1, 1, 1, 1 ), font_an );
-		//PrintMessage( 100, 120, strText, idVec4( 1, 1, 1, 1 ), font_bank );
-		//PrintMessage( 100, 140, strText, idVec4( 1, 1, 1, 1 ), font_micro );
-
 		// armor impulse feedback
 		float	armorPulse = ( gameLocal.time - player->lastArmorPulse ) / 250.0f;
 

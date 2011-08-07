@@ -340,7 +340,23 @@ void CI18N::SetLanguage( const char* lang ) {
 		gameLocal.Warning("Cannot find guis/mainmenu.gui");
 	}
 
-	// TODO: register here the fonts so that switching f.i. to russian works
+	// Registering fonts here does not help to display Russian (or English
+	// after starting with Russian, so we need to find a way to restart the game)
+
+	/*
+	// Register here the fonts so that switching f.i. to russian works
+	const char* szLang = m_lang == "russian" ? "russian" : "english";
+
+	fontInfoEx_t font_carleton;
+	fontInfoEx_t font_carleton_bold;
+	fontInfoEx_t font_carleton_glow;
+	renderSystem->RegisterFont( va( "fonts/%s/carleton", szLang ), font_carleton );
+	renderSystem->RegisterFont( va( "fonts/%s/carleton_bold", szLang ), font_carleton_bold );
+	renderSystem->RegisterFont( va( "fonts/%s/carleton_glow", szLang ), font_carleton_glow );
+	//renderSystem->RegisterFont( va( "fonts/%s/an", szLang ), font_an );
+	//renderSystem->RegisterFont( va( "fonts/%s/bank", szLang ), font_bank );
+	//renderSystem->RegisterFont( va( "fonts/%s/micro", szLang ), font_micro );
+	*/
 }
 
 /*
