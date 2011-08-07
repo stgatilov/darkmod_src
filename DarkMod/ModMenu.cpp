@@ -441,7 +441,7 @@ void CModMenu::RestartGame()
 	// always use at least 100ms on linux/macos, or the old process might still run while the 
 	// new process is already starting up:
 	restartDelay += 100;
-#else
+#endif
 
 	if (restartDelay > 0)
 	{
