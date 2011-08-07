@@ -35,7 +35,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/func_shooter.h"
 #include "../DarkMod/Shop/Shop.h"
 #include "../DarkMod/EscapePointManager.h"
-#include "../DarkMod/ModMenu.h"
 #include "../DarkMod/DownloadMenu.h"
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/AI/Conversation/ConversationSystem.h"
@@ -3670,23 +3669,23 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
 		ui->SetStateBool("MsgBoxRightButtonVisible", false);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
-		ui->SetStateString("MsgBoxMiddleButtonText", "OK");
+		ui->SetStateString("MsgBoxMiddleButtonText", m_I18N->Translate("#str_04339"));	// OK
 		break;
 	case GuiMessage::MSG_OK_CANCEL:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", "OK");
-		ui->SetStateString("MsgBoxRightButtonText", "Cancel");
+		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_07203"));	// Cancel
 		break;
 	case GuiMessage::MSG_YES_NO:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", "Yes");
-		ui->SetStateString("MsgBoxRightButtonText", "No");
+		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_02501"));	// Yes
+		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_02502"));	// No
 		break;
 	};
 

@@ -156,6 +156,7 @@ void gameError( const char *fmt, ... );
 #include "../DarkMod/ModelGenerator.h"
 #include "../DarkMod/ImageMapManager.h"
 #include "../DarkMod/LightController.h"
+#include "../DarkMod/ModMenu.h"
 #include "../DarkMod/I18N.h"
 
 #include <boost/shared_ptr.hpp>
@@ -189,6 +190,9 @@ typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 class CInventory;
 typedef boost::shared_ptr<CInventory> CInventoryPtr;
 
+class CModMenu;
+typedef boost::shared_ptr<CModMenu> CModMenuPtr;
+
 class CModelGenerator;
 typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
 class CImageMapManager;
@@ -204,8 +208,6 @@ namespace ai {
 	typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
 } // namespace
 
-class CModMenu;
-typedef boost::shared_ptr<CModMenu> CModMenuPtr;
 class CDownloadMenu;
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 class CDownloadManager;
