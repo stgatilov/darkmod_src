@@ -2,9 +2,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 4831 $
- * $Date: 2011-05-02 19:22:30 +0200 (Mon, 02 May 2011) $
- * $Author: tels $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -16,13 +16,15 @@
 
   This class is a singleton and initiated/destroyed from gameLocal.
 
+  TODO: register here the fonts so that switching f.i. to russian works
+
 ===============================================================================
 */
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: I18N.cpp 4831 2011-08-04 20:22:30Z tels $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "I18N.h"
 
@@ -324,9 +326,21 @@ void CI18N::SetLanguage( const char* lang ) {
 	// finally reload the GUI so it appears in the new language
 	uiManager->Reload( true );		// true => reload all
 
-	// TODO: switch to the Video Settings page, so the user is not confused
-	// gui::settingspage" SETTINGS_PAGE_VIDEO
-	// resetTime "SettingsPageSelect" 0;
+	// and switch back to the General Settings page
+	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+	uiManager->ListGuis();
+	if (gui)
+	{
+		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
+		// it will land in the Video Settings page
+		gui->SetStateInt("reload", 1);
+	}
+	else
+	{
+		gameLocal.Warning("Cannot find guis/mainmenu.gui");
+	}
+
+	// TODO: register here the fonts so that switching f.i. to russian works
 }
 
 /*
