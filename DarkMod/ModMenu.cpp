@@ -436,10 +436,16 @@ void CModMenu::RestartGame()
 
 	// greebo: Optional delay between restarts to fix sound system release issues in some Linux systems
 	idStr additionalDelay = "";
-	if (cv_tdm_fm_restart_delay.GetInteger() > 0)
+	int restartDelay = cv_tdm_fm_restart_delay.GetInteger();
+#ifndef _WINDOWS_
+	// always use at least 100ms on linux/macos, or the old process might still run while the 
+	// new process is already starting up:
+	restartDelay += 100;
+#else
+
+	if (restartDelay > 0)
 	{
-		additionalDelay = " --delay=";
-		additionalDelay += cv_tdm_fm_restart_delay.GetString();
+		additionalDelay = va(" --delay=%i", restartDelay);
 	}
 
 #ifdef _WINDOWS
@@ -461,9 +467,9 @@ void CModMenu::RestartGame()
 	{
 		int errnum = errno;
 		gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
+		_exit(EXIT_FAILURE);
 	}
 
-	_exit(EXIT_FAILURE);
 #endif
 
 	// Issue the quit command to the game
