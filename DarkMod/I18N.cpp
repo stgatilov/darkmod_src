@@ -255,6 +255,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 		idLib::common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
 	}
 
+#ifndef _WINDOWS
 	// to get around the const preventing changing the system dictionary
 	idLangDict *forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
 
@@ -332,6 +333,10 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		idLib::common->Printf("I18N: System dictionary is NULL!\n" );
 	}
+#else
+		idLib::common->Printf("I18N: System dictionary modifying on Windows is not yet supported.\n" );
+
+#endif
 
 	idUserInterface *gui = NULL;
 	if ( !firstTime && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
