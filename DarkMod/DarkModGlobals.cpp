@@ -279,7 +279,7 @@ void CGlobal::Init()
 	// Report the darkmod path for diagnostic purposes
 	LogString("Darkmod path is %s\r", GetDarkmodPath().c_str());
 
-#ifdef _WINDOWS_
+#ifdef _WINDOWS
 
 	std::string iniPath = GetDarkmodPath();
 	iniPath += "\\darkmod.ini";

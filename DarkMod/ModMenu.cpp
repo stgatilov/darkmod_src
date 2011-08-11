@@ -437,7 +437,7 @@ void CModMenu::RestartGame()
 	// greebo: Optional delay between restarts to fix sound system release issues in some Linux systems
 	idStr additionalDelay = "";
 	int restartDelay = cv_tdm_fm_restart_delay.GetInteger();
-#ifndef _WINDOWS_
+#ifndef _WINDOWS
 	// always use at least 100ms on linux/macos, or the old process might still run while the 
 	// new process is already starting up:
 	restartDelay += 100;
