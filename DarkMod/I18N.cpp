@@ -130,6 +130,14 @@ void CI18N::Shutdown( void ) {
 	m_lang = "";
 	m_ReverseDict.Clear();
 	m_ArticlesDict.Clear();
+	// Clear the system dictionary from here, as we loaded the strings from here, too,
+	// and if we leave them in, D3 will crash because the "game" tries deallocated memory
+	// from the "dll" pool:
+	idLangDict *forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
+	if (forcedDict != NULL)
+	{
+		forcedDict->Clear();
+	}
 	m_SystemDict = NULL;
 }
 
@@ -248,32 +256,25 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	}
 
 	// to get around the const preventing changing the system dictionary
-	idLangDict *m_forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
+	idLangDict *forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
 
-	if (m_forcedDict != NULL)
+	if (forcedDict != NULL)
 	{
-		// Always forcefully reload the language, unless it was loaded already
-		if (oldSysLang != newLang)
+		// Always forcefully reload the language, so all strings in it are allocated from the "dll" side
+		idStr file = "strings/"; file += m_lang + ".lang";
+		idLib::common->Printf("I18N: Reloading '%s'.\n", file.c_str() );
+		if ( fileSystem->FindFile( file ) != FIND_NO )
 		{
-			idStr file = "strings/"; file += m_lang + ".lang";
-			idLib::common->Printf("I18N: Reloading '%s'.\n", file.c_str() );
-			if ( fileSystem->FindFile( file ) != FIND_NO )
-			{
-				// can load the language (we expect this, actually), so do sneakily force reload it
-				m_forcedDict->Load( file, true );
-			}
-			else
-			{
-				idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
-			}
+			// can load the language (we expect this, actually), so do sneakily force reload it
+			forcedDict->Load( file, true );
 		}
 		else
 		{
-			idLib::common->Printf("I18N: Skipping reloading of %s dict.\n", m_lang.c_str() );
+			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
 		}
 
 		idLangDict *FMDict = new idLangDict;
-		idStr file = "strings/fm/"; file += m_lang + ".lang";
+		file = "strings/fm/"; file += m_lang + ".lang";
 		if ( !FMDict->Load( file, false ) )
 		{
 			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
@@ -291,7 +292,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 #ifdef M_DEBUG
 					idLib::common->Printf("I18N: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
-					m_forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+					forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
 				}
 			}
 		}
@@ -314,14 +315,14 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 				kv = FMDict->GetKeyVal( i );
 				if (kv != NULL)
 				{
-					const char *oldEntry = m_forcedDict->GetString( kv->key.c_str(), false);
+					const char *oldEntry = forcedDict->GetString( kv->key.c_str(), false);
 					// if equal, the entry was not found
 					if (oldEntry == kv->key.c_str())
 					{
 #ifdef M_DEBUG
 						idLib::common->Printf("I18N: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
-						m_forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+						forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
 					}
 				}
 			}
