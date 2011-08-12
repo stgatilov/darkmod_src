@@ -42,6 +42,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // TDM uses entity shaderparm 11 to control frob highlight state
 #define FROB_SHADERPARM 11
 
+// constant to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
+#define NOLOD -100000
+
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", NULL );
 const idEventDef EV_FindTargets( "<findTargets>", NULL );
@@ -832,6 +835,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	if (d == 0 && fHideDistance < 0.1f)
 	{
 		// no LOD wanted
+	    m_DistCheckTimeStamp = NOLOD;
 		return 0;
 	}
 
@@ -1246,35 +1250,101 @@ void idEntity::Spawn( void )
 
 /*
 ================
+idEntity::DisableLOD
+
+Tels: temp. disable LOD checks by setting the next check timestamp to negative.
+================
+*/
+void idEntity::DisableLOD( const bool doTeam )
+{
+	// negate check interval
+	if (m_LODHandle && m_DistCheckTimeStamp > NOLOD)
+	{
+//		gameLocal.Printf( "%s: Temporarily disabling LOD.\n", GetName() );
+		m_DistCheckTimeStamp = NOLOD;
+	}
+
+	if (!doTeam) { return; }
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+	idEntity* bindM = GetBindMaster();
+	if ( bindM ) { NextEnt = bindM; }
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity *ent = static_cast<idEntity*>( NextEnt );
+		if (ent)
+		{
+			ent->DisableLOD( false );
+		}
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
+/*
+================
+idEntity::EnableLOD
+
+Tels: Enable LOD checks again (after DisableLOD) by setting the check interval to positive.
+================
+*/
+void idEntity::EnableLOD( const bool doTeam )
+{
+	// negate check interval
+	if (m_LODHandle && m_DistCheckTimeStamp <= NOLOD)
+	{
+//		gameLocal.Printf( "%s: Enabling LOD again.\n", GetName() );
+		m_DistCheckTimeStamp = gameLocal.time;
+	}
+
+	if (!doTeam) { return; }
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+	idEntity* bindM = GetBindMaster();
+	if ( bindM ) { NextEnt = bindM; }
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity *ent = static_cast<idEntity*>( NextEnt );
+		if (ent)
+		{
+			ent->EnableLOD( false );
+		}
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
+/*
+================
 idEntity::StopLOD
 
-Tels: Disable LOD checks including all attachements
+Tels: Permanently disable LOD checks, if doTeam is true, including on all of our attachements
 ================
 */
 void idEntity::StopLOD( const bool doTeam )
 {
 	//BecomeInactive( TH_THINK );
-
 	// deregister our LOD struct
 	if (m_LODHandle)
 	{
+		// gameLocal.Printf( "%s: Stopping LOD.\n", GetName() );
 		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
 		m_LODHandle = 0;
 	}
 
-	if (!doTeam)
-	{
-		return;
-	}
+	if (!doTeam) { return; }
 
 	/* also all the bound entities in our team */
 	idEntity* NextEnt = this;
 
 	idEntity* bindM = GetBindMaster();
-	if ( bindM )
-		{
-		NextEnt = bindM;	
-		}
+	if ( bindM ) { NextEnt = bindM;	}
 
 	while ( NextEnt != NULL )
 	{
@@ -2352,12 +2422,21 @@ The returned value is the (virtual) distance squared, and rounded down to an int
 float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const
 {
 	idVec3 delta = playerOrigin - entOrigin;
+	// enforce an absolute minimum of 500 units for entities w/o LOD
+	float minDist = 0.0f;
 
-	if( m_LOD && m_LOD->bDistCheckXYOnly )
+	if( m_LOD && m_LOD->bDistCheckXYOnly)
 	{
 		// todo: allow passing in a different gravityNormal
 		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
 		delta -= (vGravNorm * delta) * vGravNorm;
+	}
+
+	// let the mapper override it
+	if ( m_LOD && m_LOD->fLODNormalDistance > 0)
+	{
+	//		gameLocal.Printf ("%s: Using %0.2f lod_normal_distance, delta %0.2f.\n", GetName(), m_LOD->fLODNormalDistance, deltaSq);
+			minDist = m_LOD->fLODNormalDistance;
 	}
 
 	// multiply with the user LOD bias setting, and return the result:
@@ -2365,14 +2444,6 @@ float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOri
 	assert(lod_bias > 0.01f);
 	float deltaSq = delta.LengthSqr();
 
-	// enforce an absolute minimum of 500 units for entities w/o LOD
-	float minDist = 0.0f;
-	// but let the mapper override it
-	if (m_LOD && m_LOD->fLODNormalDistance > 0)
-	{
-//		gameLocal.Printf ("%s: Using %0.2f lod_normal_distance, delta %0.2f.\n", GetName(), m_LOD->fLODNormalDistance, deltaSq);
-		minDist = m_LOD->fLODNormalDistance;
-	}
 	// if the entity is inside the "lod_normal_distance", simply ignore any LOD_BIAS < 1.0f
 	// Tels: For v1.05 use at least 1.0f for lod_bias, so that any distance the mapper sets
 	//       acts as the absolute minimum distance. Needs fixing later.
@@ -2405,7 +2476,7 @@ void idEntity::Think( void )
 		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
 
-	if (m_LODHandle)
+	if (m_LODHandle && m_DistCheckTimeStamp > NOLOD)
 	{
 		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
 
@@ -2414,7 +2485,7 @@ void idEntity::Think( void )
 			// If this entity has LOD, let it think about it:
 
 			// Distance dependence checks
-			if ( ( lod->DistCheckInterval > 0) 
+			if ( ( lod->DistCheckInterval > 0)
 				  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
 			{
 				m_DistCheckTimeStamp = gameLocal.time;
@@ -11484,7 +11555,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 
 /* tels: Parses "def_attach" spawnargs and builds a list of idDicts that
  * contain the spawnargs to spawn the attachments, which is done in
- * SpawnAttachments() later. This is a two-phase process to allow other
+ * ParseAttachments() later. This is a two-phase process to allow other
  * code (e.g. SEED) to just parse the attachments without spawning them.
  */
 void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from )

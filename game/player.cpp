@@ -9881,14 +9881,14 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 
 			// Replace the entity to be dropped with the newly spawned one.
 			ent = spawnedEntity;
-        }
+	        }
             
-        // If the item is referenced by any objective with a item-location component set the flag
-        // so it will be considered by location entities.
-        if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
-        {
-            ent->m_bIsObjective = true;
-        }
+	        // If the item is referenced by any objective with a item-location component set the flag
+	        // so it will be considered by location entities.
+	        if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
+	        {
+	            ent->m_bIsObjective = true;
+	        }
 
 		grabber->PutInHands( ent, dropPoint, dropAxis );
 		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
@@ -9899,6 +9899,9 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 		{
 			grabber->Update( this, false );
 		}
+
+		// Tels: #2826: re-enable LOD again, in case the entity was in the inventory (like a shoulderable body)
+		ent->EnableLOD( true );
 	}
 
 	return rc;
