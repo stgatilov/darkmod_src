@@ -787,15 +787,22 @@ void idEntity::FixupLocalizedStrings()
 	// Tels: Transform here things like "inv_category" "Maps" back to "#str_02390" so that custom
 	// entities in FMs with hard-coded english inventory categories or names still work even with
 	// the new translation code.
-    idStr categoryName = spawnArgs.GetString( "inv_category", "");
-	if (!categoryName.IsEmpty())
+
+	int c = 2;
+	const char* todo[2] = { "inv_category", "inv_name" };
+
+	for (int i = 0; i < c; i++)
 	{
-		idStr strTemplate = gameLocal.m_I18N->TemplateFromEnglish( categoryName );
-		// "Maps" resulted in "#str_02390"?
-		if (categoryName != strTemplate)
+	    idStr spName = spawnArgs.GetString( todo[i], "");
+		if (!spName.IsEmpty())
 		{
-			gameLocal.Printf("%s: Fixing inv_category from %s to %s.\n", GetName(), categoryName.c_str(), strTemplate.c_str() );
-    	    spawnArgs.Set( "inv_category", strTemplate );
+			idStr strTemplate = gameLocal.m_I18N->TemplateFromEnglish( spName );
+			// "Maps" resulted in "#str_02390"?
+			if (spName != strTemplate)
+			{
+				gameLocal.Printf("%s: Fixing %s from %s to %s.\n", GetName(), todo[i], spName.c_str(), strTemplate.c_str() );
+    		    spawnArgs.Set( todo[i], strTemplate );
+			}
 		}
 	}
 }
