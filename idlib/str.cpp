@@ -659,6 +659,9 @@ void idStr::Replace( const char *old, const char *nw ) {
 	int		oldLen, newLen, i, j, count;
 	idStr	oldString( data );
 
+	assert(old);
+	assert(nw);
+
 	oldLen = strlen( old );
 	newLen = strlen( nw );
 

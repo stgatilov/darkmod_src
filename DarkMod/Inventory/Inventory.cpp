@@ -259,7 +259,9 @@ void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInvento
 	idPlayer* player = static_cast<idPlayer*>(m_Owner.GetEntity());
 
 	// Prepend the "acquired" text
-	idStr pickedUpMsg = idStr( gameLocal.m_I18N->Translate( "#str_07215" ) ) + pickedUpStr;	// Acquired: 
+	idStr pickedUpMsg = gameLocal.m_I18N->Translate( "#str_07215" ) + pickedUpStr;	// Acquired: 
+	// and remove any newlines from the message
+	pickedUpMsg.Replace("\n","");
 
 	// Now actually send the message
 	player->SendInventoryPickedUpMessage(pickedUpMsg);
