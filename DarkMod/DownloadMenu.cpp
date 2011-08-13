@@ -134,8 +134,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = common->GetLanguageDict()->GetString( "#str_02138" ); // "Mission Screenshot Download Failed"
-					msg.message = common->GetLanguageDict()->GetString( "#str_02139" ); // "Failed to download the screenshot file."
+					msg.title = gameLocal.m_I18N->Translate( "#str_02138" ); // "Mission Screenshot Download Failed"
+					msg.message = gameLocal.m_I18N->Translate( "#str_02139" ); // "Failed to download the screenshot file."
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 
@@ -172,8 +172,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			GuiMessage msg;
 			msg.type = GuiMessage::MSG_OK;
 			msg.okCmd = "close_msg_box";
-			msg.title = common->GetLanguageDict()->GetString( "#str_02140" ); // "Unable to contact Mission Archive"
-			msg.message = common->GetLanguageDict()->GetString( "#str_02141" ); // "HTTP Requests have been disabled,\n cannot check for available missions."
+			msg.title = gameLocal.m_I18N->Translate( "#str_02140" ); // "Unable to contact Mission Archive"
+			msg.message = gameLocal.m_I18N->Translate( "#str_02141" ); // "HTTP Requests have been disabled,\n cannot check for available missions."
 
 			gameLocal.AddMainMenuMessage(msg);
 
@@ -443,8 +443,8 @@ void CDownloadMenu::UpdateModDetails(idUserInterface* gui)
 		GuiMessage msg;
 		msg.type = GuiMessage::MSG_OK;
 		msg.okCmd = "close_msg_box";
-		msg.title = common->GetLanguageDict()->GetString( "#str_02003" ); // "Code Logic Error"
-		msg.message = common->GetLanguageDict()->GetString( "#str_02004" ); // "No mission details loaded."
+		msg.title = gameLocal.m_I18N->Translate( "#str_02003" ); // "Code Logic Error"
+		msg.message = gameLocal.m_I18N->Translate( "#str_02004" ); // "No mission details loaded."
 
 		gameLocal.AddMainMenuMessage(msg);
 
@@ -524,7 +524,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? common->GetLanguageDict()->GetString( "#str_02180" ) : "");	// "queued"
+			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? gameLocal.m_I18N->Translate( "#str_02180" ) : "");	// "queued"
 			continue;
 		}
 	}
@@ -582,7 +582,7 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02180" ));	// "queued "
+			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02180" ));	// "queued "
 			continue;
 		}
 		
@@ -593,13 +593,13 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 		switch (download->GetStatus())
 		{
 		case CDownload::NOT_STARTED_YET:
-			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02180" ));	// "queued "
+			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02180" ));	// "queued "
 			break;
 		case CDownload::FAILED:
-			gui->SetStateString(va("dl_mission_progress_%d", i), common->GetLanguageDict()->GetString( "#str_02181" ));	// "failed "
+			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02181" ));	// "failed "
 			break;
 		case CDownload::IN_PROGRESS:
-			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.0f%s", download->GetProgressFraction()*100, "% "));
+			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.1f%s", download->GetProgressFraction()*100, "% "));
 			break;
 		case CDownload::SUCCESS:
 			gui->SetStateString(va("dl_mission_progress_%d", i), "100% ");
@@ -674,24 +674,24 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
 	msg.okCmd = "close_msg_box;onDownloadCompleteConfirm";
-	msg.title = common->GetLanguageDict()->GetString( "#str_02142" ); // "Mission Download Result"
+	msg.title = gameLocal.m_I18N->Translate( "#str_02142" ); // "Mission Download Result"
 	msg.message = "";
 
 	if (successfulDownloads > 0)
 	{
-		msg.message += va( common->GetLanguageDict()->GetString( "#str_02143" ), // "%d %s successfully downloaded. You'll find the %s in the 'New Mission' page."
+		msg.message += va( gameLocal.m_I18N->Translate( "#str_02143" ), // "%d %s successfully downloaded. You'll find the %s in the 'New Mission' page."
 			successfulDownloads, 
 			// mission, missions
-			GetPlural(successfulDownloads, common->GetLanguageDict()->GetString( "#str_02144" ), common->GetLanguageDict()->GetString( "#str_02145" ) ), 
-			GetPlural(successfulDownloads, common->GetLanguageDict()->GetString( "#str_02144" ), common->GetLanguageDict()->GetString( "#str_02145" ) ) ); 
+			GetPlural(successfulDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ), 
+			GetPlural(successfulDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ) ); 
 	}
 	
 	if (failedDownloads > 0)
 	{
-		msg.message += va( common->GetLanguageDict()->GetString( "#str_02146" ), // "\n%d %s couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
+		msg.message += va( gameLocal.m_I18N->Translate( "#str_02146" ), // "\n%d %s couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
 			failedDownloads, 
 			// mission, missions
-			GetPlural(failedDownloads, common->GetLanguageDict()->GetString( "#str_02144" ), common->GetLanguageDict()->GetString( "#str_02145" ) ) ); 
+			GetPlural(failedDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ) ); 
 	}
 
 	gameLocal.AddMainMenuMessage(msg);

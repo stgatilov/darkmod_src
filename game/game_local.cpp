@@ -614,28 +614,28 @@ void idGameLocal::CheckTDMVersion()
 		int major = node.node().attribute("major").as_int();
 		int minor = node.node().attribute("minor").as_int();
 
-		msg.title = va( common->GetLanguageDict()->GetString( "#str_02132" ), major, minor );
+		msg.title = va( m_I18N->Translate( "#str_02132" ), major, minor );
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
 		{
 		case EQUAL:
 			// "Your version %d.%02d is up to date."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( m_I18N->Translate( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case OLDER:
 			// "Your version %d.%02d needs updating."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( m_I18N->Translate( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case NEWER:
 			// "Your version %d.%02d is newer than the most recently published one."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( m_I18N->Translate( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		};
 	}
 	else
 	{
-		msg.title = common->GetLanguageDict()->GetString( "#str_02135" );	// "Version Check Failed"
-		msg.message = common->GetLanguageDict()->GetString( "#str_02136" );	// "Couldn't find current version tag."
+		msg.title = m_I18N->Translate( "#str_02135" );	// "Version Check Failed"
+		msg.message = m_I18N->Translate( "#str_02136" );	// "Couldn't find current version tag."
 
 	}
 

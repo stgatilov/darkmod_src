@@ -105,7 +105,7 @@ idStr CModInfo::GetModCompletedString()
 {
 	if (modName == "training_mission")
 	{
-		return common->GetLanguageDict()->GetString( "#str_02511" );	// Not completable
+		return gameLocal.m_I18N->Translate( "#str_02511" );	// Not completable
 	}
 
 	idStr diffStr;
@@ -127,11 +127,11 @@ idStr CModInfo::GetModCompletedString()
 
 	if (anyCompleted)
 	{
-		return va( common->GetLanguageDict()->GetString( "#str_02513" ), diffStr.c_str());	// "Yes (%s)"
+		return va( gameLocal.m_I18N->Translate( "#str_02513" ), diffStr.c_str());	// "Yes (%s)"
 	}
 	else
 	{
-		return common->GetLanguageDict()->GetString( "#str_02512" );	// Not yet
+		return gameLocal.m_I18N->Translate( "#str_02512" );	// Not yet
 	}
 }
 

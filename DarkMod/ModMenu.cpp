@@ -133,7 +133,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		if (info == NULL) return; // sanity check
 
 		// Issue the named command to the GUI
-		gui->SetStateString("modInstallProgressText", common->GetLanguageDict()->GetString( "#str_02504" ) + info->displayName); // "Installing Mission Package\n\n"
+		gui->SetStateString("modInstallProgressText", gameLocal.m_I18N->Translate( "#str_02504" ) + info->displayName); // "Installing Mission Package\n\n"
 	}
 	else if (cmd == "installSelectedMission")
 	{
@@ -204,8 +204,8 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 		
 		// 07208: "You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
 		// 07209: "Note that the downloaded mission PK4 in your darkmod/fms/ folder will not be affected by this operation, you're still able to re-install the mission."
-		idStr eraseMissionText = va( idStr( common->GetLanguageDict()->GetString( "#str_07208" ) ) + "\n\n%s\n\n" +
-					     common->GetLanguageDict()->GetString( "#str_07209" ), info->GetModFolderPath().c_str() );
+		idStr eraseMissionText = va( idStr( gameLocal.m_I18N->Translate( "#str_07208" ) ) + "\n\n%s\n\n" +
+					     gameLocal.m_I18N->Translate( "#str_07209" ), info->GetModFolderPath().c_str() );
 		gui->SetStateString("eraseMissionText", eraseMissionText);
 
 		gui->SetStateString("selectedModCompleted", info->GetModCompletedString());
@@ -326,7 +326,7 @@ bool CModMenu::PerformVersionCheck(const CModInfoPtr& mission, idUserInterface* 
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
 			// "Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running v%d.%02d. Please run the tdm_update application to update your installation.",
-			va( common->GetLanguageDict()->GetString( "#str_07210" ),
+			va( gameLocal.m_I18N->Translate( "#str_07210" ),
 			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 
 		gui->HandleNamedEvent("OnRequiredVersionCheckFail");
