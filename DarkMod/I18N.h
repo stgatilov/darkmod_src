@@ -82,6 +82,12 @@ public:
 	*/
 	void				MoveArticlesToBack(idStr& title);
 
+	/** 
+	* To Intercepts calls to common->GetLanguageDict():
+	*/
+	const idLangDict*	GetLanguageDict(void) const;
+
+
 private:
 	// Called at the end of the game
 	void				Shutdown();
@@ -89,9 +95,9 @@ private:
 	// current language
 	idStr				m_lang;
 
-	// A ptr to the system dictionary. We manipulate this directly if nec.,
-	// e.g. when we need an unsupported language, or add FM specific strings.
-	const idLangDict	*m_SystemDict;
+	// A dictionary consisting of the current language + the current FM dict.
+	idLangDict			m_Dict;
+
 	// reverse dictionary for TemplateFromEnglish
 	idDict				m_ReverseDict;
 	// dictionary to map "A ..." to "..., A" for MoveArticlesToBack()

@@ -25,11 +25,18 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "I18N.h"
+#include "sourcehook/sourcehook.h"
 
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 // uncomment to have each Translate() call printed
 //#define T_DEBUG 1
+
+extern SourceHook::ISourceHook *g_SHPtr;
+extern int g_PLID;
+
+// Declare the detour hook: HOOK0: zero parameters, return value const idLangDict*
+SH_DECL_HOOK0(idCommon, GetLanguageDict, SH_NOATTRIB, 0, const idLangDict*);
 
 /*
 ===============
@@ -38,8 +45,9 @@ CI18N::CI18N
 */
 CI18N::CI18N ( void ) {
 	// some default values, the object becomes only fully usable after Init(), tho:
-	m_SystemDict = common->GetLanguageDict();
 	m_lang = cvarSystem->GetCVarString( "tdm_lang" );
+
+	m_Dict.Clear();
 
 	// build the reverse dictionary for TemplateFromEnglish
 	// TODO: Do this by looking them up in lang/english.lang?
@@ -71,6 +79,7 @@ CI18N::CI18N ( void ) {
 
 CI18N::~CI18N()
 {
+	SH_REMOVE_HOOK_MEMFUNC(idCommon, GetLanguageDict, common, this, &CI18N::GetLanguageDict, false);
 	Print();
 	Shutdown();
 }
@@ -81,10 +90,24 @@ CI18N::Init
 ===============
 */
 void CI18N::Init ( void ) {
-	// Create the correct system dictionary
+	// Create the correct dictionary
 	SetLanguage( cvarSystem->GetCVarString( "tdm_lang" ), true );
+
+	// false => pre hook
+	SH_ADD_HOOK_MEMFUNC(idCommon, GetLanguageDict, common, this, &CI18N::GetLanguageDict, false);
 }
 
+/*
+===============
+CI18N::DM_GetLanguageDict
+
+Returns the language dict, so that D3 can use it instead of the system dict. Should
+not be called directly.
+===============
+*/
+const idLangDict* CI18N::GetLanguageDict ( void ) const {
+	RETURN_META_VALUE(MRES_OVERRIDE, &m_Dict);
+}
 /*
 ===============
 CI18N::Save
@@ -101,7 +124,7 @@ CI18N::Restore
 */
 void CI18N::Restore( idRestoreGame *savefile ) {
 #ifdef M_DEBUG
-	idLib::common->Printf( "I18N::Restore()\n" );
+	common->Printf( "I18N::Restore()\n" );
 #endif
 	// We do nothing here, as the dictionary should not change when
 	// you load a save game.
@@ -114,7 +137,7 @@ CI18N::Clear
 */
 void CI18N::Clear( void ) {
 #ifdef M_DEBUG
-	idLib::common->Printf( "I18N::Clear()\n" );
+	common->Printf( "I18N::Clear()\n" );
 #endif
 	// Do not clear the dictionary, even tho we are outside a map,
 	// because it might be used for changing menu or HUD strings:
@@ -126,19 +149,11 @@ CI18N::Shutdown
 ===============
 */
 void CI18N::Shutdown( void ) {
-	idLib::common->Printf( "I18N: Shutdown.\n" );
+	common->Printf( "I18N: Shutdown.\n" );
 	m_lang = "";
 	m_ReverseDict.Clear();
 	m_ArticlesDict.Clear();
-	// Clear the system dictionary from here, as we loaded the strings from here, too,
-	// and if we leave them in, D3 will crash because the "game" tries deallocated memory
-	// from the "dll" pool:
-	idLangDict *forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
-	if (forcedDict != NULL)
-	{
-		forcedDict->Clear();
-	}
-	m_SystemDict = NULL;
+	m_Dict.Clear();
 }
 
 /*
@@ -147,15 +162,12 @@ CI18N::Print
 ===============
 */
 void CI18N::Print( void ) const {
-	idLib::common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
-	if (m_SystemDict)
-	{
-		idLib::common->Printf(" System " );
-  		m_SystemDict->Print();
-	}
-	idLib::common->Printf(" Reverse dict     : " );
+	common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
+	common->Printf(" Main " );
+	m_Dict.Print();
+	common->Printf(" Reverse dict   : " );
 	m_ReverseDict.PrintMemory();
-	idLib::common->Printf(" Articles dict    : " );
+	common->Printf(" Articles dict  : " );
 	m_ArticlesDict.PrintMemory();
 }
 
@@ -165,15 +177,10 @@ CI18N::Translate
 ===============
 */
 const char* CI18N::Translate( const char* in ) {
-
 #ifdef T_DEBUG
-	idLib::common->Printf("I18N: Translating '%s'.\n", in == NULL ? "(NULL)" : in);
+	gameLocal.Printf("I18N: Translating '%s'.\n", in == NULL ? "(NULL)" : in);
 #endif
-	if (m_SystemDict)
-	{
-		return m_SystemDict->GetString( in );		// if not found here, do warn
-	}
-	return in;
+	return m_Dict.GetString( in );				// if not found here, do warn
 }
 
 /*
@@ -182,8 +189,10 @@ CI18N::Translate
 ===============
 */
 const char* CI18N::Translate( const idStr &in ) {
-
-	return Translate( in.c_str() );
+#ifdef T_DEBUG
+	gameLocal.Printf("I18N: Translating '%s'.\n", in == NULL ? "(NULL)" : in.c_str());
+#endif
+	return m_Dict.GetString( in.c_str() );			// if not found here, do warn
 }
 
 /*
@@ -193,7 +202,7 @@ CI18N::TemplateFromEnglish
 */
 const char* CI18N::TemplateFromEnglish( const char* in ) {
 #ifdef M_DEBUG
-//	idLib::common->Printf( "I18N::TemplateFromEnglish(%s)", in );
+//	common->Printf( "I18N::TemplateFromEnglish(%s)", in );
 #endif
 	return m_ReverseDict.GetString( in, in );
 }
@@ -221,14 +230,11 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 		return;
 	}
 #ifdef M_DEBUG
-	idLib::common->Printf("I18N: SetLanguage: '%s'.\n", lang);
+	common->Printf("I18N: SetLanguage: '%s'.\n", lang);
 #endif
 
 	// store the new setting
-	idStr oldLang = m_lang;
-	m_lang = lang;
-
-	m_SystemDict = common->GetLanguageDict();
+	idStr oldLang = m_lang; m_lang = lang;
 
 	// set sysvar tdm_lang
 	cv_tdm_lang.SetString( lang );
@@ -243,8 +249,6 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		newLang = "english";
 	}
-	idStr oldSysLang = cvarSystem->GetCVarString( "sys_lang" );
-	
 	// set sysvar sys_lang (if not possible, D3 will revert to english)
 	cvarSystem->SetCVarString( "sys_lang", newLang.c_str() );
 
@@ -252,102 +256,76 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	// we will load it ourselves.
 	if ( newLang != cvarSystem->GetCVarString( "sys_lang" ) )
 	{
-		idLib::common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
+		common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
 	}
 
-#ifndef _WINDOWS
-	// to get around the const preventing changing the system dictionary
-	idLangDict *forcedDict = const_cast<idLangDict*> (common->GetLanguageDict());
+	// build our combined dictionary, first the TDM base dict
+	idStr file = "strings/"; file += m_lang + ".lang";
+	m_Dict.Load( file, true );				// true => clear before load
 
-	if (forcedDict != NULL)
+	idLangDict *FMDict = new idLangDict;
+	file = "strings/fm/"; file += m_lang + ".lang";
+	if ( !FMDict->Load( file, false ) )
 	{
-		// Always forcefully reload the language, so all strings in it are allocated from the "dll" side
-		idStr file = "strings/"; file += m_lang + ".lang";
-		idLib::common->Printf("I18N: Reloading '%s'.\n", file.c_str() );
-		if ( fileSystem->FindFile( file ) != FIND_NO )
-		{
-			// can load the language (we expect this, actually), so do sneakily force reload it
-			forcedDict->Load( file, true );
-		}
-		else
-		{
-			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
-		}
-
-		idLangDict *FMDict = new idLangDict;
-		file = "strings/fm/"; file += m_lang + ".lang";
-		if ( !FMDict->Load( file, false ) )
-		{
-			idLib::common->Printf("I18N: '%s' not found.\n", file.c_str() );
-		}
-		else
-		{
-			// else fold the newly loaded strings into the system dict
-			int num = FMDict->GetNumKeyVals( );
-			const idLangKeyValue*  kv;
-			for (int i = 0; i < num; i++)
-			{	
-				kv = FMDict->GetKeyVal( i );
-				if (kv != NULL)
-				{
-#ifdef M_DEBUG
-					idLib::common->Printf("I18N: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
-#endif
-					forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
-				}
-			}
-		}
-
-		// With FM strings it can happen that one translation is missing or incomplete,
-		// so fall back to the english version by folding these in, too:
-
-		file = "strings/fm/english.lang";
-		if ( !FMDict->Load( file, true ) )
-		{
-			idLib::common->Printf("I18N: '%s' not found, skipping it.\n", file.c_str() );
-		}
-		else
-		{
-			// else fold the newly loaded strings into the system dict unless they exist already
-			int num = FMDict->GetNumKeyVals( );
-			const idLangKeyValue*  kv;
-			for (int i = 0; i < num; i++)
-			{	
-				kv = FMDict->GetKeyVal( i );
-				if (kv != NULL)
-				{
-					const char *oldEntry = forcedDict->GetString( kv->key.c_str(), false);
-					// if equal, the entry was not found
-					if (oldEntry == kv->key.c_str())
-					{
-#ifdef M_DEBUG
-						idLib::common->Printf("I18N: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
-#endif
-						forcedDict->AddKeyVal( kv->key.c_str(), kv->value.c_str() );
-					}
-				}
-			}
-		}
+		common->Printf("I18N: '%s' not found.\n", file.c_str() );
 	}
 	else
 	{
-		idLib::common->Printf("I18N: System dictionary is NULL!\n" );
-	}
-#else
-		idLib::common->Printf("I18N: System dictionary modifying on Windows is not yet supported.\n" );
-
+		// else fold the newly loaded strings into the system dict
+		int num = FMDict->GetNumKeyVals( );
+		const idLangKeyValue*  kv;
+		for (int i = 0; i < num; i++)
+		{	
+			kv = FMDict->GetKeyVal( i );
+			if (kv != NULL)
+			{
+#ifdef M_DEBUG
+				common->Printf("I18N: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
+				m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+			}
+		}
+	}
 
-	idUserInterface *gui = NULL;
-	if ( !firstTime && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
+	// With FM strings it can happen that one translation is missing or incomplete,
+	// so fall back to the english version by folding these in, too:
+
+	file = "strings/fm/english.lang";
+	if ( !FMDict->Load( file, true ) )
+	{
+		common->Printf("I18N: '%s' not found, skipping it.\n", file.c_str() );
+	}
+	else
+	{
+		// else fold the newly loaded strings into the system dict unless they exist already
+		int num = FMDict->GetNumKeyVals( );
+		const idLangKeyValue*  kv;
+		for (int i = 0; i < num; i++)
+		{	
+			kv = FMDict->GetKeyVal( i );
+			if (kv != NULL)
+			{
+				const char *oldEntry = m_Dict.GetString( kv->key.c_str(), false);
+				// if equal, the entry was not found
+				if (oldEntry == kv->key.c_str())
+				{
+#ifdef M_DEBUG
+					common->Printf("I18N: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
+#endif
+					m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+				}
+			}
+		}
+	}
+
+	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+	if ( gui && (!firstTime) && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
 	{
 		// Restarting the game does not really work, the fonts are still broken
 		// (for some reason) and if the user was in a game, this would destroy his session.
 	    // this does not reload the fonts, either: cmdSystem->BufferCommandText( CMD_EXEC_NOW, "ReloadImages" );
 
 		// So instead just pop-up a message box:
-		gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
-
 		gui->SetStateBool("MsgBoxVisible", true);
 
 		gui->SetStateString("MsgBoxTitle", Translate("#str_02206") );	// Language changed
@@ -365,14 +343,11 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	uiManager->Reload( true );		// true => reload all
 
 	// and switch back to the General Settings page
-	if (gui == NULL)
-	{
-		idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
-	}
 	if (gui)
 	{
 		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
 		// it will land in the Video Settings page
+		gameLocal.Printf("Setting reload");
 		gui->SetStateInt("reload", 1);
 	}
 	else
@@ -394,10 +369,7 @@ void CI18N::MoveArticlesToBack(idStr& title)
 	// find index of first " "
 	int spaceIdx = title.Find(' ');
 	// no space, nothing to do
-	if (spaceIdx == -1)
-	{
-		return;
-	}
+	if (spaceIdx == -1) { return; }
 
 	idStr Prefix = title.Left( spaceIdx + 1 );
 
