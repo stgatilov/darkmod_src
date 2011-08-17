@@ -71,8 +71,8 @@ public:
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template
-	* string that iwould result back in "Maps" under English. Can be used to
-	* fix hard-coded strings.
+	* string that would result back in "Maps" under English. Can be used to
+	* make translation work even for hard-coded English strings.
 	*/
 	const char*			TemplateFromEnglish( const char* in);
 

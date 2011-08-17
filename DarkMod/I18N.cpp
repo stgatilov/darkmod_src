@@ -58,6 +58,18 @@ CI18N::CI18N ( void ) {
 	m_ReverseDict.Set( "Keys",		"#str_02392" );
 	m_ReverseDict.Set( "Potions",	"#str_02393" );
 
+	// inventory item names used in keybindings
+	m_ReverseDict.Set( "Mine",			"#str_02202" );
+	m_ReverseDict.Set( "Lantern",		"#str_02395" );
+	m_ReverseDict.Set( "Spyglass",		"#str_02396" );
+	m_ReverseDict.Set( "Compass",		"#str_02397" );
+	m_ReverseDict.Set( "Health Potion",	"#str_02398" );
+	m_ReverseDict.Set( "Breath Potion",	"#str_02399" );
+	m_ReverseDict.Set( "Holy Water",	"#str_02400" );
+	m_ReverseDict.Set( "Flashbomb",		"#str_02438" );
+	m_ReverseDict.Set( "Flashmine",		"#str_02439" );
+	m_ReverseDict.Set( "Explosive Mine","#str_02440" );
+	
 	// The article prefixes, with the suffix to use instead
 	m_ArticlesDict.Set( "A ",	", A" );	// English, Portuguese
 	m_ArticlesDict.Set( "An ",	", An" );	// English
@@ -198,6 +210,10 @@ const char* CI18N::Translate( const idStr &in ) {
 /*
 ===============
 CI18N::TemplateFromEnglish
+
+If the string is not a template, but an English string, returns a template
+like "#str_01234" from the input. Works only for a limited number of strings
+that appear in the reverse dict.
 ===============
 */
 const char* CI18N::TemplateFromEnglish( const char* in ) {

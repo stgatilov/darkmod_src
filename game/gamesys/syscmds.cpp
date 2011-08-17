@@ -298,7 +298,8 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 
 	if( args.Argc() == 2)
 	{
-		idStr itemName = args.Argv(1);
+		// support either "#str_02395" or "Lantern" as input
+		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
 		player->SelectInventoryItem( itemName );
 	}
 	else if (args.Argc() == 1)
@@ -340,7 +341,8 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 
 	if( args.Argc() == 2)
 	{
-		idStr itemName = args.Argv(1);
+		// support either "#str_02395" or "Lantern" as input
+		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
 
 		// Try to lookup the item in the inventory
 		CInventoryItemPtr item = inventory->GetItem( itemName );
@@ -404,7 +406,8 @@ void Cmd_InventoryCycleGroup_f( const idCmdArgs &args )
 
 	if( args.Argc() == 2)
 	{
-		idStr categoryName = args.Argv(1);
+		// support either "#str_02391" or "Readables" as input
+		idStr categoryName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
 
 		// Pass the call to the specialised method
 		player->CycleInventoryGroup( categoryName );
