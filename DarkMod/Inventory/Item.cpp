@@ -59,6 +59,8 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 
 	// Read the spawnargs into the member variables
 	m_Name = itemEntity->spawnArgs.GetString("inv_name", "");
+	// Tels: Replace "\n" with \x0a, otherwise multiline names set inside DR do not work
+	m_Name.Replace( "\\n", "\n" );
 	m_Value	= itemEntity->spawnArgs.GetInt("inv_loot_value", "-1");
 	m_Stackable	= itemEntity->spawnArgs.GetBool("inv_stackable", "0");
 	m_UseOnFrob = itemEntity->spawnArgs.GetBool("inv_use_on_frob", "0");

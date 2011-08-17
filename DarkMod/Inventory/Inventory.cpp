@@ -539,6 +539,9 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// Not a loot or ammo item, determine name and category to check for existing item of same name/category
 	idStr name = ent->spawnArgs.GetString("inv_name", "");
 	idStr category = ent->spawnArgs.GetString("inv_category", "");
+	// Tels: Replace "\n" with \x0a, otherwise multiline spawnargs set inside DR do not work
+	name.Replace( "\\n", "\n" );
+	category.Replace( "\\n", "\n" );
 
 	if (name.IsEmpty() || category.IsEmpty())
 	{
