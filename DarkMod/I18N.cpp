@@ -46,6 +46,7 @@ CI18N::CI18N
 CI18N::CI18N ( void ) {
 	// some default values, the object becomes only fully usable after Init(), tho:
 	m_lang = cvarSystem->GetCVarString( "tdm_lang" );
+	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	m_Dict.Clear();
 
@@ -175,6 +176,7 @@ CI18N::Print
 */
 void CI18N::Print( void ) const {
 	common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
+	common->Printf("I18N: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
 	common->Printf(" Main " );
 	m_Dict.Print();
 	common->Printf(" Reverse dict   : " );
@@ -254,6 +256,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 
 	// set sysvar tdm_lang
 	cv_tdm_lang.SetString( lang );
+	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	// For some reason, "english", "german", "french" and "spanish" share
 	// the same font, but "polish" and "russian" get their own font. But
@@ -382,6 +385,12 @@ like English, German, French etc.
 */
 void CI18N::MoveArticlesToBack(idStr& title)
 {
+	// Do not move articles if the language is italian or polish:
+	if ( !m_bMoveArticles )
+	{
+		return;
+	}
+
 	// find index of first " "
 	int spaceIdx = title.Find(' ');
 	// no space, nothing to do

@@ -94,6 +94,8 @@ private:
 
 	// current language
 	idStr				m_lang;
+	// depending on current language, move articles to back of Fm name for display?
+	bool				m_bMoveArticles;
 
 	// A dictionary consisting of the current language + the current FM dict.
 	idLangDict			m_Dict;
