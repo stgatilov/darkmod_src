@@ -2360,57 +2360,59 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr sightingBust("");
 	idStr sightingBust2("");
 	idStr sightingScore("");
+	idStr space(" ");
+
 	// The listdef item (name + _) prefix
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
 	idStr divider(": ");
 	idStr postfix("");
 
-	key = "                                            Time";
+	key = gameLocal.m_I18N->Translate( "#str_02208" );	// Time
 	value = idStr(GamePlayTimer::TimeToStr(m_Stats.TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	key = "Damage Dealt"; 
-	value = idStr(m_Stats.DamageDealt) + " and received: " + idStr(m_Stats.DamageReceived);
+	key = gameLocal.m_I18N->Translate( "#str_02209" );	// Damage Dealt
+	value = idStr(m_Stats.DamageDealt) + space + gameLocal.m_I18N->Translate( "#str_02210" ) + divider + idStr(m_Stats.DamageReceived);	// and received
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	/*key = "Damage Received"; 
 	value = idStr(m_Stats.DamageReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
-	key = "Health Restored"; 
+	key = gameLocal.m_I18N->Translate( "#str_02211" );	// Health Restored
 	value = idStr(m_Stats.HealthReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	key = "Pockets Picked"; 
+	key = gameLocal.m_I18N->Translate( "#str_02212" );	// Pockets Picked 
 	value = idStr(m_Stats.PocketsPicked);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = "Loot Acquired";
-	value = idStr(m_Stats.GetFoundLootValue()) + " out of " + idStr(m_Stats.GetTotalLootInMission());
+	key = gameLocal.m_I18N->Translate( "#str_02213" );	// Loot Acquired
+	value = idStr(m_Stats.GetFoundLootValue()) + gameLocal.m_I18N->Translate( "#str_02214" ) + m_Stats.GetTotalLootInMission();
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+	gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line
 
-	key = "Killed by the Player";
+	key = gameLocal.m_I18N->Translate( "#str_02215" );	// Killed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KILL].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = "KOed by the Player";
+	key = gameLocal.m_I18N->Translate( "#str_02216" );	// KOed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KO].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = "Bodies found";
+	key = gameLocal.m_I18N->Translate( "#str_02217" );	// Bodies found
 	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	gui->SetStateString(prefix + idStr(index++), "Alerts"); 
+	gui->SetStateString(prefix + idStr(index++), gameLocal.m_I18N->Translate( "#str_02218" ) ); 	// Alerts:
 	
 	float stealthScore = 0;
 
@@ -2426,29 +2428,28 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	if ( m_Stats.AIAlerts[5].Overall > 0 )
 	{
-		sightingBust = "You were seen";
-		sightingBust2 = "Seen + 20 :";
+		sightingBust = gameLocal.m_I18N->Translate( "#str_02219" );	// You were seen
+		sightingBust2 = gameLocal.m_I18N->Translate( "#str_02220" ) + idStr(" + 20:");
 		stealthScore += 20;
 		sightingScore = "20";
 	}
 	else
 	{
-		sightingBust = "You were not seen";
-		sightingBust2 = "Not seen :";
+		sightingBust = gameLocal.m_I18N->Translate( "#str_02221" );	// You were not seen
+		sightingBust2 = gameLocal.m_I18N->Translate( "#str_02222" );	// Not seen:
 		sightingScore = "0";
 	}
 		
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Suspicious, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + sightingBust;
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + gameLocal.m_I18N->Translate("#str_02223") + ", " +			// Suspicious
+		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + gameLocal.m_I18N->Translate("#str_02224") + ", " + sightingBust;	// Searches
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	key = "Stealth Score";
+	key = gameLocal.m_I18N->Translate( "#str_02225" );	// Stealth Score
 	value = idStr(stealthScore);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	// index = 15;  // Starting 2nd column at the top, actually the left-hand column
-	
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
-	key = "Difficulty Level";
+	key = gameLocal.m_I18N->Translate( "#str_02226" );	// Difficulty Level
 	value = gameLocal.m_DifficultyManager.GetDifficultyName(difficultyLevel);
 	gui->SetStateString(prefix + idStr(index), key + divider + value + postfix);
 	
@@ -2464,73 +2465,72 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	index = 30;  // Reset the index to 30 to start .gui lines for "Stealth Score Details" sub-page, starting from gui::listStatistics_item_30.
 	
-	key = "Stealth Score Details (all alerts x severity)";
+	key = gameLocal.m_I18N->Translate( "#str_02227" );		// Stealth Score Details (all alerts * severity)
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
-	key = "                                   0";
+	// these are right aligned
+	key = idStr("0");
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "                                   " + idStr(m_Stats.AIAlerts[2].Overall);  
+	key = idStr(m_Stats.AIAlerts[2].Overall);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 		
-	key = "                                   " + idStr(m_Stats.AIAlerts[3].Overall * 2);  
+	key = idStr(m_Stats.AIAlerts[3].Overall * 2);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "                                   " + idStr(m_Stats.AIAlerts[4].Overall * 3);  
+	key = idStr(m_Stats.AIAlerts[4].Overall * 3);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "                                  +" + sightingScore;  
+	key = idStr("+") + sightingScore;  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "                                   " + idStr(stealthScore);  
+	key = idStr(stealthScore);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
-	value = "Key to Alert Levels:";
+	value = gameLocal.m_I18N->Translate( "#str_02228" );	// Key to Alert Levels:
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = "  1. Suspicious-1. AI mumbles, continuing on.";
+	value = idStr("  1. ") + gameLocal.m_I18N->Translate( "#str_02229" );	// Suspicious-1. AI mumbles, continuing on.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = "  2. Suspicious-2. AI mumbles, stops and looks.";
+	value = idStr("  2. ") + gameLocal.m_I18N->Translate( "#str_02230" );	// Suspicious-2. AI mumbles, stops and looks.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = "  3. Search-1. AI searches.";
+	value = idStr("  3. ") + gameLocal.m_I18N->Translate( "#str_02231" );	// Search-1. AI searches.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 
-	value = "  4. Search-2. AI searches, runs, draws sword.";
+	value = idStr("  4. ") + gameLocal.m_I18N->Translate( "#str_02232" );	// Search-2. AI searches, runs, draws sword.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = "  5. Sighting. AI sees you, attacks if can.";
+	value = idStr("  5. ") + gameLocal.m_I18N->Translate( "#str_02233" );	// Sighting. AI sees you, attacks if can.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
-
-	// index = 45;  //  Starting 2nd column at the top, actually the left-hand column
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
-	
-	key = "Alert 1. " + idStr(m_Stats.AIAlerts[1].Overall) + " x 0 :";   
+
+	idStr alert = idStr( gameLocal.m_I18N->Translate( "#str_02234" ) );	// Alert
+	key = alert + " 1." + space + idStr(m_Stats.AIAlerts[1].Overall) + " * 0:";   
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 2. " + idStr(m_Stats.AIAlerts[2].Overall) + " x 1 :";
+	key = alert + " 2." + space + idStr(m_Stats.AIAlerts[2].Overall) + " * 1:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 3. " + idStr(m_Stats.AIAlerts[3].Overall) + " x 2 :";
+	key = alert + " 3." + space + idStr(m_Stats.AIAlerts[3].Overall) + " * 2:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 
-	key = "Alert 4. " + idStr(m_Stats.AIAlerts[4].Overall) + " x 3 :";
+	key = alert + " 4." + space + idStr(m_Stats.AIAlerts[4].Overall) + " * 3:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Alert 5. " + sightingBust2;
+	key = alert + " 5." + space + sightingBust2;
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = "Stealth Score Total";
+	key = gameLocal.m_I18N->Translate( "#str_02235" );			// Stealth Score Total
 	gui->SetStateString(prefix + idStr(index++), key + divider + postfix);
-
 	
 	//key = "Alerts";
 	//value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Minor, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
