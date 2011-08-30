@@ -2192,8 +2192,8 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		// Get a shortcut to the target objective
 		CObjective& obj = m_Objectives[index];
 
-		// Set the text
-		ui->SetStateString(prefix + "_text", obj.m_text);
+		// Set the text (in translated form if the original is "#str_xxxxx")
+		ui->SetStateString(prefix + "_text", gameLocal.m_I18N->Translate( obj.m_text ));
 
 		// Set the state, this requires some logic
 		EObjCompletionState state = obj.m_state;
