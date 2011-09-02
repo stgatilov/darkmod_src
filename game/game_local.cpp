@@ -270,6 +270,8 @@ void idGameLocal::Clear( void )
 	m_DownloadMenu.reset();
 	m_DownloadManager.reset();
 	m_Shop.reset();
+	m_GUICommandStack.Clear();
+	m_GUICommandArgs = 0;
 
 	m_guiError.Clear();
 
@@ -1059,6 +1061,14 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// write out pending events
 	idEvent::Save( &savegame );
+
+	// Tels: Save the GUI command stack
+	savegame.WriteInt( m_GUICommandArgs );
+	int cmds = m_GUICommandStack.Num();
+	savegame.WriteInt( cmds );
+	for( i = 0; i < cmds; i++ ) {
+		savegame.WriteString( m_GUICommandStack[i] );
+	}
 
 	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
@@ -2156,6 +2166,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// Read out pending events
 	idEvent::Restore( &savegame );
 
+	// Tels: Restore the GUI command stack
+	int cmds; 
+	savegame.ReadInt( m_GUICommandArgs );
+	savegame.ReadInt( cmds );
+	m_GUICommandStack.Clear();
+	m_GUICommandStack.SetNum( cmds );
+	for( i = 0; i < cmds; i++ ) {
+		savegame.ReadString( m_GUICommandStack[i] );
+	}
 	savegame.RestoreObjects();
 
 	mpGame.Reset();
@@ -3734,27 +3753,121 @@ idGameLocal::HandleMainMenuCommands
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
-	// When this is set to TRUE, the next command will be dumped to the console
-	static bool logNextCommand = false;
+	/* Tels: This routine here is called for every "command" in the menu GUI. Unfortunately,
+	   		 the interpretation of what is a command works a bit strange (as almost everything
+			 else does in idTech4 :)
+		
+		In the following examples, there is usually another call to this routine with ";"
+		as the "menuCommand param. But sometimes it does not appear, depending on whoknows.
 
-	idStr cmd(menuCommand);
+		The following will cause this routine called twice (!), once with "mainmenu_heartbeat"
+		and once with ";" as command (if you add ";" before the last double quote, it will
+		still be called only twice):
 
-	// Watch out for objectives GUI-related commands
-	m_MissionData->HandleMainMenuCommands(cmd, gui);
+	   		set "cmd" "mainmenu_heartbeat";
 
-	if (logNextCommand)
+		This will call it twice (or three times counting ";") with "mycommand" "myarg" and ";":
+
+			set "cmd" "mycommand 'test'";
+
+		This calls it tree times (!) (four times counting ";"), with "set", "notime" and "1",
+		respectively:
+
+			set "notime" "log"
+
+		This calls it only once (!) (two times counting ";"), with "play":
+
+			Set "play mymusic";
+
+	   The old code simply watched for certain words, and then issued the command. It was not
+	   able to distinguish between commands and arguments (see set "notime" "1" above).
+
+	   This routine now watches for the first command, ignoring any stray ";". If it sees
+	   a command, it deduces the number of following arguments, and then collects them until
+	   it has all of them, warning if there is a ";" coming unexpectedly.
+
+	   Once all arguments are collected, the command is finally handled, or silently ignored.
+	*/
+	if (!menuCommand || menuCommand[0] == 0x00)
 	{
-		// We should log that command
-		if (cv_debug_mainmenu.GetBool())
+		// silently ignore
+		Warning("Seen NULL MainMenu cmd.");
+		return;
+	}
+
+	int numArgs = m_GUICommandStack.Num();
+	if (numArgs == 0)
+	{
+		if ( menuCommand[0] == ';' && menuCommand[1] == 0x0 )
 		{
-			Printf("MainMenu: %s\n", cmd.c_str());
+			// ignore stray ";"
+			return;
 		}
 
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("%s\r", cmd.c_str());
+		// have not seen anything?
+		idStr c = idStr( menuCommand );
+		m_GUICommandStack.Append( c );
 
-		logNextCommand = false;
+		// set the number of wanted args, default is none
+		m_GUICommandArgs = 0;
+		// "log" takes one argument
+		if ( c == "log") { m_GUICommandArgs = 1; }
+
+		// we do not handle this, but need to ignore it nevertheless
+		// set "noTime" "1"
+		if ( c == "set") { m_GUICommandArgs = 2; }
+
+//		if ( c != "log" && c != "mainmenu_heartbeat")
+//		{
+//			Printf("Seen command '%s' (takes %i args)\n", menuCommand, m_GUICommandArgs );
+//		}
 	}
-	else if (cmd == "mainmenu_heartbeat")
+	else
+	{
+		// append the current argument to the stack (but not if it is ";")
+		if ( menuCommand[0] != ';' || menuCommand[1] != 0x0 )
+		{
+			idStr c = idStr( menuCommand );
+			m_GUICommandStack.Append( c );
+//			Printf("  Seen argument '%s' for '%s'\n", menuCommand, m_GUICommandStack[0].c_str() );
+		}
+		else
+		{
+			// seen a ";" even tho we have not yet as many arguments as we wanted?
+			if (numArgs - 1 < m_GUICommandArgs)
+			{
+				Warning("MainMenu command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
+				// make it so that we handle the command below
+				// TODO: Should we ignore it instead?
+				numArgs = m_GUICommandArgs;
+			}
+		}
+	}
+
+	// Printf(" have %i vs wanted %i\n", numArgs, m_GUICommandArgs);
+	// do we have already as much arguments as we want?
+	if (numArgs < m_GUICommandArgs)
+	{
+		// no, wait for the next argument
+		return;
+	}
+
+	// the command
+	idStr cmd =	m_GUICommandStack[0];
+
+	// seen the command and its arguments, now handle it
+/*	if (cmd != "mainmenu_heartbeat" && cmd != "log")
+	{
+		// debug output, but ignore the frequent ones
+		Printf("MainMenu cmd: %s (%i args)\n", cmd.c_str(), numArgs);
+	}
+*/
+
+	// Watch out for objectives GUI-related commands
+	// TODO: Handle here commands with arguments, too.
+	m_MissionData->HandleMainMenuCommands(cmd, gui);
+
+	if (cmd == "mainmenu_heartbeat")
 	{
 		// greebo: Stop the timer, this is already done in HandleESC, but just to make sure...
 		m_GamePlayTimer.Stop();
@@ -3788,7 +3901,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("PostMissionScreenActive", true);
 				postMissionScreenActive = true;
 			}
-			return;
+			goto Quit;	// needed to handle the command stack
 		}
 
 		// Check if any errors are in the queue
@@ -3886,8 +3999,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	// greebo: the "log" command is used to write stuff to the console
 	else if (cmd == "log")
 	{
-		// The next string will be logged
-		logNextCommand = true;
+		// We should log the given argument
+		if (cv_debug_mainmenu.GetBool())
+		{
+			Printf("MainMenu: %s\n", m_GUICommandStack[1].c_str() );
+		}
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("%s\r", m_GUICommandStack[1].c_str() );
 	}	
 	else if (cmd == "close") 
 	{
@@ -4242,6 +4360,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Mainmenu GUI State %s = %s\r", key.c_str(), value.c_str());
 		}
 	}*/
+
+Quit:
+	// tels: We handled (or ignored) this command, so clear the command stack
+	m_GUICommandStack.Clear();
+	m_GUICommandArgs = 0;
 }
 
 /*

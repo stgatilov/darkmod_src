@@ -1039,6 +1039,14 @@ private:
 		idStr	targetName;
 	};
 
+	// Tels: For each part in a GUI command in 'set "cmd" "command arg1 arg2;" the game will
+	//		 call HandleMainMenuCommand(), sometimes with a final call with the ";".
+	//		 This list here keeps all these parts so we can execute the command
+	//		 and have all the arguments, too.
+	idList<idStr>				m_GUICommandStack;
+	// how many arguments do we expect for the current command (m_GUICommandStack[0]):
+	int							m_GUICommandArgs;
+
 	idList<InterMissionTrigger>	m_InterMissionTriggers;
 
 	void					Clear( void );
