@@ -4327,7 +4327,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
 
-	m_Shop->HandleCommands(menuCommand, gui);
+	// TODO: handle here commands with arguments, too
+	m_Shop->HandleCommands(cmd, gui);
 	m_ModMenu->HandleCommands(cmd, gui);
 	m_DownloadMenu->HandleCommands(cmd, gui);
 
