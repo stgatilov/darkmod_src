@@ -695,6 +695,21 @@ void idStr::Replace( const char *old, const char *nw ) {
 
 /*
 ============
+idStr::Replace
+============
+*/
+void idStr::Replace( const char old, const char nw ) {
+	// cannot replace 0x00 or swap 0xXX to 0x00
+	assert(old);
+	assert(nw);
+
+	for( int i = 0; i < len; i++ ) {
+		if (data[i] == old) { data[i] = nw; }
+	}
+}
+
+/*
+============
 idStr::Mid
 ============
 */

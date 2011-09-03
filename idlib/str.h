@@ -189,6 +189,7 @@ public:
 	void				StripTrailingWhitespace( void );				// strip trailing white space characters (c <= 0x20)
 	idStr &				StripQuotes( void );							// strip quotes around string
 	void				Replace( const char *old, const char *nw );
+	void				Replace( const char old, const char nw );		// faster version of Repace() if you want to swap only one char
 
 	// file name methods
 	int					FileNameHash( void ) const;						// hash key for the filename (skips extension)
