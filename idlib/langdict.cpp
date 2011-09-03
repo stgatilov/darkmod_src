@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -51,7 +52,7 @@ void idLangDict::Clear( void ) {
 idLangDict::Load
 ============
 */
-bool idLangDict::Load( const char *fileName, bool clear /* _D3XP */ ) {
+bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const char fix_0xff ) {
 	
 	if ( clear ) {
 		Clear();
@@ -83,6 +84,11 @@ bool idLangDict::Load( const char *fileName, bool clear /* _D3XP */ ) {
 			idLangKeyValue kv;
 			kv.key = tok;
 			kv.value = tok2;
+			if (fix_0xff != 0x00) {
+				// tels: fix #2812, character 0xFF ("я" in russian) is not rendered in the GUI
+				// so replace it with 0xb6 (182) as the font contains the character there:
+				kv.value.Replace( '\xFF', fix_0xff );
+			}
 			assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
 		}
@@ -130,7 +136,7 @@ void idLangDict::Save( const char *fileName ) {
 idLangDict::GetString
 ============
 */
-const char *idLangDict::GetString( const char *str, bool dowarn ) const {
+const char *idLangDict::GetString( const char *str, const bool dowarn ) const {
 
 	if ( str == NULL || str[0] == '\0' ) {
 		return "";
@@ -198,7 +204,7 @@ int idLangDict::GetNumKeyVals( void ) const {
 idLangDict::GetKeyVal
 ============
 */
-const idLangKeyValue * idLangDict::GetKeyVal( int i ) const {
+const idLangKeyValue * idLangDict::GetKeyVal( const int i ) const {
 	return &args[i];
 }
 
