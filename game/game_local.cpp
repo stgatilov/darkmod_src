@@ -358,8 +358,6 @@ void idGameLocal::Clear( void )
 	camera = NULL;
 	aasList.Clear();
 	aasNames.Clear();
-	lastAIAlertEntity = NULL;
-	lastAIAlertTime = 0;
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
 	playerPVS.h = (unsigned int)-1;
@@ -987,9 +985,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteMaterial( globalMaterial );
 
-	lastAIAlertEntity.Save( &savegame );
-	savegame.WriteInt( lastAIAlertTime );
-
 	savegame.WriteDict( &spawnArgs );
 
 	savegame.WriteInt( playerPVS.i );
@@ -1406,9 +1401,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	testmodel		= NULL;
 	testFx			= NULL;
 
-	lastAIAlertEntity = NULL;
-	lastAIAlertTime = 0;
-	
 	previousTime	= 0;
 	time			= 0;
 	framenum		= 0;
@@ -2079,9 +2071,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadObject( reinterpret_cast<idClass *&>( camera ) );
 
 	savegame.ReadMaterial( globalMaterial );
-
-	lastAIAlertEntity.Restore( &savegame );
-	savegame.ReadInt( lastAIAlertTime );
 
 	savegame.ReadDict( &spawnArgs );
 
@@ -5519,32 +5508,6 @@ bool idGameLocal::RequirementMet( idEntity *activator, const idStr &requires, in
 	}
 
 	return true;
-}
-
-/*
-============
-idGameLocal::AlertAI
-============
-*/
-void idGameLocal::AlertAI( idEntity *ent ) {
-	if ( ent && ent->IsType( idActor::Type ) ) {
-		// alert them for the next frame
-		lastAIAlertTime = time + msec;
-		lastAIAlertEntity = static_cast<idActor *>( ent );
-	}
-}
-
-/*
-============
-idGameLocal::GetAlertEntity
-============
-*/
-idActor *idGameLocal::GetAlertEntity( void ) {
-	if ( lastAIAlertTime >= time ) {
-		return lastAIAlertEntity.GetEntity();
-	}
-
-	return NULL;
 }
 
 /*

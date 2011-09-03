@@ -41,7 +41,6 @@ const idEventDef AI_FindEnemy( "findEnemy", "d", 'e' );
 const idEventDef AI_FindEnemyAI( "findEnemyAI", "d", 'e' );
 const idEventDef AI_FindEnemyInCombatNodes( "findEnemyInCombatNodes", NULL, 'e' );
 const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntity", "E", 'e' );
-const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 // greebo: TDM Event: Try to find a visible AI of the given team
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
 const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
@@ -377,7 +376,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
 	EVENT( AI_ProcessBlindStim,					idAI::Event_ProcessBlindStim )
 	EVENT( AI_ProcessVisualStim,				idAI::Event_ProcessVisualStim )
-	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
 	EVENT( AI_MuzzleFlash,						idAI::Event_MuzzleFlash )
@@ -754,42 +752,6 @@ void idAI::Event_ClosestReachableEnemyOfEntity( idEntity *team_mate ) {
 
 	idThread::ReturnEntity( bestEnt );
 }
-
-/*
-=====================
-idAI::Event_HeardSound
-=====================
-*/
-void idAI::Event_HeardSound( int ignore_team ) {
-
-	// check if we heard any sounds in the last frame
-
-	idActor	*actor = gameLocal.GetAlertEntity();
-
-	if ( actor && ( !ignore_team || ( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) && gameLocal.InPlayerPVS( this ) ) {
-
-		idVec3 pos = actor->GetPhysics()->GetOrigin();
-
-		idVec3 org = physicsObj.GetOrigin();
-
-		float dist = ( pos - org ).LengthSqr();
-
-		if ( dist < Square( AI_HEARING_RANGE ) ) {
-
-			idThread::ReturnEntity( actor );
-
-			return;
-
-		}
-
-	}
-
-
-
-	idThread::ReturnEntity( NULL );
-
-}
-
 
 /*
 =====================

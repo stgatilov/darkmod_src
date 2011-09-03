@@ -6009,11 +6009,6 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// end our looping ambient sound
 	StopSound( SND_CHANNEL_AMBIENT, false );
 
-	/* greebo: This is not needed anymore, I reckon.
-	if ( attacker && attacker->IsType( idActor::Type ) ) {
-		gameLocal.AlertAI( ( idActor * )attacker );
-	}*/
-
 	// activate targets
 	ActivateTargets( attacker );
 
@@ -6933,20 +6928,6 @@ void idAI::UpdateEnemyPosition()
 		{
 			// Enemy can't be seen (obscured or hidden in darkness)
 			gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
-		}
-
-		// check if we heard any sounds in the last frame
-		if (enemyEnt == gameLocal.GetAlertEntity())
-		{
-			float dist = (enemyEnt->GetPhysics()->GetOrigin() - org).LengthSqr();
-
-			if (dist < Square(AI_HEARING_RANGE))
-			{
-				// Enemy within hearing distance, update position
-				// greebo: TODO: This also updates lastVisibleReachableEnemyPos, is this ok?
-				enemyDetectable= true;
-
-			}
 		}
 	}
 
