@@ -3759,17 +3759,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			set "cmd" "mycommand 'test'";
 
-		This calls it tree times (!) (four times counting ";"), with "set", "notime" and "1",
-		respectively:
-
-			set "notime" "log"
-
 		This calls it only once (!) (two times counting ";"), with "play":
 
 			Set "play mymusic";
 
 	   The old code simply watched for certain words, and then issued the command. It was not
-	   able to distinguish between commands and arguments (see set "notime" "1" above).
+	   able to distinguish between commands and arguments.
 
 	   This routine now watches for the first command, ignoring any stray ";". If it sees
 	   a command, it deduces the number of following arguments, and then collects them until
@@ -3785,6 +3780,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 
 	int numArgs = m_GUICommandStack.Num();
+
 	if (numArgs == 0)
 	{
 		if ( menuCommand[0] == ';' && menuCommand[1] == 0x0 )
@@ -3794,17 +3790,19 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 
 		// have not seen anything?
-		idStr c = idStr( menuCommand );
-		m_GUICommandStack.Append( c );
+		idStr cmd = menuCommand;
+		m_GUICommandStack.Append(cmd);
 
 		// set the number of wanted args, default is none
 		m_GUICommandArgs = 0;
-		// "log" takes one argument
-		if ( c == "log") { m_GUICommandArgs = 1; }
 
-		// we do not handle this, but need to ignore it nevertheless
-		// set "noTime" "1"
-		if ( c == "set") { m_GUICommandArgs = 2; }
+		// "log" takes one argument
+		if ( cmd == "log") { m_GUICommandArgs = 1; }
+
+		// we do not handle this, but need to ignore it nevertheless 
+		// greebo: Such a command will not make it here unless somebody does: 
+		// set "cmd" "set 'notime' '1'" which doesn't make sense
+		//if ( c == "set") { m_GUICommandArgs = 2; }
 
 //		if ( c != "log" && c != "mainmenu_heartbeat")
 //		{
@@ -3816,8 +3814,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// append the current argument to the stack (but not if it is ";")
 		if ( menuCommand[0] != ';' || menuCommand[1] != 0x0 )
 		{
-			idStr c = idStr( menuCommand );
-			m_GUICommandStack.Append( c );
+			m_GUICommandStack.Alloc() = menuCommand;
 //			Printf("  Seen argument '%s' for '%s'\n", menuCommand, m_GUICommandStack[0].c_str() );
 		}
 		else
@@ -3842,7 +3839,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 
 	// the command
-	idStr cmd =	m_GUICommandStack[0];
+	const idStr& cmd = m_GUICommandStack[0];
 
 	// seen the command and its arguments, now handle it
 /*	if (cmd != "mainmenu_heartbeat" && cmd != "log")
@@ -3890,7 +3887,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("PostMissionScreenActive", true);
 				postMissionScreenActive = true;
 			}
-			goto Quit;	// needed to handle the command stack
+			
+			// tels: We handled this command, so clear the command stack
+			m_GUICommandStack.Clear();
+			m_GUICommandArgs = 0;
+			return;
 		}
 
 		// Check if any errors are in the queue
@@ -4351,7 +4352,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 	}*/
 
-Quit:
 	// tels: We handled (or ignored) this command, so clear the command stack
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
