@@ -21,6 +21,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DownloadManager.h"
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 namespace
 {
@@ -941,11 +943,23 @@ int CMissionManager::StartReloadDownloadableMods()
 
 	if (gameLocal.m_HttpConnection == NULL) return -1;
 
-	// TODO: Move this list to some config file or CVAR
+	// Split the CVAR into parts
+	std::string list = cv_tdm_mission_list_urls.GetString();
+
+	std::vector<std::string> urls;
+	boost::algorithm::split(urls, list, boost::algorithm::is_any_of(";"));
+
+	if (urls.empty())
+	{
+		return -1;
+	}
+
 	idStringList missionListUrls;
 
-	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/available_missions.xml";
-	missionListUrls.Alloc() = "http://www.mindplaces.com/darkmod/missiondb/get_available_missions.php";
+	for (std::size_t i = 0; i < urls.size(); ++i)
+	{
+		missionListUrls.Alloc() = urls[i].c_str();
+	}
 
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_LIST_FILENAME;
@@ -1014,7 +1028,7 @@ int CMissionManager::StartDownloadingModDetails(int modNum)
 
 	const DownloadableMod& mod = *_downloadableMods[modNum];
 
-	idStr url = va("http://www.mindplaces.com/darkmod/missiondb/get_mission_details.php?id=%d", mod.id);
+	idStr url = va(cv_tdm_mission_details_url.GetString(), mod.id);
 
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
@@ -1102,7 +1116,7 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 
 	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
 
-	idStr url = va("http://www.mindplaces.com/%s", mission.screenshots[screenshotNum]->serverRelativeUrl.c_str());
+	idStr url = va(cv_tdm_mission_screenshot_url.GetString(), mission.screenshots[screenshotNum]->serverRelativeUrl.c_str());
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Downloading screenshot from %s\r", url.c_str());
 

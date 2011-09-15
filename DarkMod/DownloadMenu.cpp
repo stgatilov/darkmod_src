@@ -187,7 +187,10 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		UpdateDownloadProgress(gui);
 
 		// Start refreshing the list, will be handled in mainmenu_heartbeat
-		gameLocal.m_MissionManager->StartReloadDownloadableMods();
+		if (gameLocal.m_MissionManager->StartReloadDownloadableMods() == -1)
+		{
+			gameLocal.Error("No URLs specified to download the mission list XML.");
+		}
 	}
 	else if (cmd == "onDownloadableMissionSelected")
 	{
