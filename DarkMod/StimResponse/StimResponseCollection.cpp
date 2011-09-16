@@ -65,6 +65,15 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 
 CStimPtr CStimResponseCollection::CreateStim(idEntity* p_owner, StimType type)
 {
+	// grayman #2862 - don't create a visual stim for a door that's not marked shouldBeClosed
+
+	if (( type == ST_VISUAL ) &&
+		( idStr::Cmp( p_owner->spawnArgs.GetString("AIUse"), AIUSE_DOOR ) == 0 ) &&
+		( !p_owner->spawnArgs.GetBool("shouldBeClosed","0" ) ) )
+	{
+		return CStimPtr(); // null result
+	}
+
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Stim with ID: %d\r", gameLocal.m_HighestSRId);
@@ -108,7 +117,10 @@ CStimPtr CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadi
 	{
 		// Create either type specific descended class, or the default base class
 		stim = CreateStim(Owner, (StimType) Type);
-		m_Stims.Append(stim);
+		if ( stim != NULL ) // grayman #2862
+		{
+			m_Stims.Append(stim);
+		}
 	}
 
 	if (stim != NULL)
@@ -352,9 +364,13 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner,
 	}
 
 
-	if(sr_class == 'S')
+	if (sr_class == 'S')
 	{
 		stim = CreateStim(owner, typeOfStim);
+		if ( stim == NULL ) // grayman #2862
+		{
+			goto Quit; // nasty goto!!
+		}
 		sr = stim;
 	}
 	else if (sr_class == 'R')

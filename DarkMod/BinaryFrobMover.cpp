@@ -1317,3 +1317,11 @@ idVec3 CBinaryFrobMover::GetRotationAxis()
 {
 	return m_Rotate.ToRotation().GetVec();
 }
+
+// grayman #2861 - get the closed origin
+
+idVec3 CBinaryFrobMover::GetClosedOrigin()
+{
+	return m_ClosedOrigin;
+}
+

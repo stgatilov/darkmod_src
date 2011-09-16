@@ -508,6 +508,18 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateOpeningDoor:
 				// we have already started opening the door, but it is closed
+
+				// grayman #2862 - it's possible that we JUST opened the door and
+				// it hasn't yet registered that it's not closed. So wait a short
+				// while before deciding that it's still closed.
+
+				if ( gameLocal.time < _waitEndTime )
+				{
+					break;
+				}
+
+				// the door isn't changing state, so it must truly be closed
+
 				if (doubleDoor != NULL && doubleDoor->IsOpen())
 				{
 					// the other part of the double door is already open
@@ -562,41 +574,47 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateClosingDoor:
 				// we have moved through the door and closed it
-				if (numUsers < 2)
+
+				// grayman #2862 - locking the door doesn't care how many users remain on the queue
+
+/*				if (numUsers > 1)
 				{
-					// If the door should ALWAYS be locked or it was locked before => lock it
-					// but only if the owner is able to unlock it in the first place
-					if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
-						(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
+					return true;
+				}
+ */
+				// If the door should ALWAYS be locked or it was locked before => lock it
+				// but only if the owner is able to unlock it in the first place
+				if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
+					(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
+				{
+					frobDoor->Lock(false); // lock the door
+				}
+
+				if (doubleDoor != NULL)
+				{
+					// If the other door is open, you need to close it.
+					//
+					// grayman #2732 - If it's closed, and needs to be locked, lock it.
+
+					if (doubleDoor->IsOpen())
 					{
-						frobDoor->Lock(false); // lock the door
+						// the other part of the double door is still open
+						// we want to close this one too
+						ResetDoor(owner, doubleDoor);
+						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+						_doorHandlingState = EStateMovingToBackPos;
+						break;
 					}
-
-					if (doubleDoor != NULL)
+					else
 					{
-						// If the other door is open, you need to close it.
-						//
-						// grayman #2732 - If it's closed, and needs to be locked, lock it.
-
-						if (doubleDoor->IsOpen())
+						if (owner->CanUnlock(doubleDoor) && AllowedToLock(owner) &&
+							(_wasLocked || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
 						{
-							// the other part of the double door is still open
-							// we want to close this one too
-							ResetDoor(owner, doubleDoor);
-							owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
-							_doorHandlingState = EStateMovingToBackPos;
-							break;
-						}
-						else
-						{
-							if (owner->CanUnlock(doubleDoor) && AllowedToLock(owner) &&
-								(_wasLocked || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
-							{
-								doubleDoor->Lock(false); // lock the second door
-							}
+							doubleDoor->Lock(false); // lock the second door
 						}
 					}
 				}
+
 				// continue what we were doing before.
 				return true;
 				break;
@@ -1104,7 +1122,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							owner->TurnToward(closedPos);
 							if (masterUser == owner)
 							{
-								_doorHandlingState = EStateOpeningDoor;
 								if (!OpenDoor())
 								{
 									return true;
@@ -1159,7 +1176,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->TurnToward(closedPos);
 						if (masterUser == owner)
 						{
-							_doorHandlingState = EStateOpeningDoor;
 							if (!OpenDoor())
 							{
 								return true;
@@ -1704,6 +1720,7 @@ bool HandleDoorTask::OpenDoor()
 	owner->StopMove(MOVE_STATUS_DONE);
 	frobDoor->Open(true);
 	_doorHandlingState = EStateOpeningDoor;
+	_waitEndTime = gameLocal.time + 1000; // grayman #2862 - a short wait to allow the door to begin opening
 
 	return true;
 }
@@ -1945,6 +1962,7 @@ idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
 
 void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 {
+	idVec3 v = newUser->GetPhysics()->GetOrigin() - frobDoor->GetPhysics()->GetOrigin();
 	int numUsers = frobDoor->GetUserManager().GetNumUsers();
 	if (numUsers > 0)
 	{

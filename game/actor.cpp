@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Objectives/MissionData.h"
 #include "../DarkMod/TimerManager.h"
 #include "../DarkMod/MeleeWeapon.h"
+#include "../DarkMod/AbsenceMarker.h"
 
 // #include "logmgr.h"
 /***********************************************************************
@@ -1955,7 +1956,21 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	}*/
 
 	// The entity's origin
-	const idVec3& entityOrigin = ent->GetPhysics()->GetOrigin();
+
+	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
+
+	idVec3 origin;
+	if ( ent->IsType(CBinaryFrobMover::Type) )
+	{
+		CBinaryFrobMover* door = static_cast<CBinaryFrobMover*>(ent);
+		origin = door->GetClosedOrigin();
+	}
+	else
+	{
+		origin = ent->GetPhysics()->GetOrigin();
+	}
+
+	const idVec3& entityOrigin = origin;
 
 	// Check the field of view if specified
 	if (useFov && !CheckFOV(entityOrigin))
@@ -2045,6 +2060,27 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 					return true;
 				}
 				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+			}
+		}
+		else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
+		{
+			// We're trying to see an absence marker and can't. Check for the case where the missing item
+			// was replaced by another item. For example, a lootable painting replaced by an empty frame.
+			// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
+
+			CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
+			const idDict& refSpawnargs = marker->GetRefSpawnargs();
+			idStr replacedByClass = refSpawnargs.GetString("replace");
+			if ( !replacedByClass.IsEmpty() )
+			{
+				idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
+				if ( entHit != NULL )
+				{
+					if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
+					{
+						return true; // we hit the replacement item, which means a successful trace
+					}
+				}
 			}
 		}
 	}
