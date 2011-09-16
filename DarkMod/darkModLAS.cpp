@@ -232,6 +232,51 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 
 //----------------------------------------------------------------------------
 
+// grayman #2853 - generalize tracing from a light source to a location
+
+bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
+{
+	trace_t trace;
+
+	bool results = false; // didn't complete the path
+
+	while ( true )
+	{
+		gameLocal.clip.TracePoint( trace, from, to, CONTENTS_OPAQUE, ignore );
+		if ( cv_las_showtraces.GetBool() )
+		{
+			gameRenderWorld->DebugArrow(
+					trace.fraction == 1 ? colorGreen : colorRed, 
+					trace.fraction == 1 ? to : trace.endpos, 
+					from, 1, 1000);
+		}
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
+		if ( trace.fraction == 1.0f )
+		{
+			results = true; // completed the path
+			break;
+		}
+
+		// End the trace if the entity hit casts shadows
+
+		idEntity* entHit = gameLocal.entities[trace.c.entityNum];
+
+		if ( !entHit->spawnArgs.GetBool( "noshadows", "0" ) )
+		{
+			break;
+		}
+
+		// Continue the trace from the struck point
+
+		from = trace.endpos;
+		ignore = entHit; // this time, ignore the entity we struck
+	}
+
+	return results;
+}
+
+//----------------------------------------------------------------------------
+
 void darkModLAS::accumulateEffectOfLightsInArea 
 ( 
 	float& inout_totalIllumination,
@@ -242,10 +287,9 @@ void darkModLAS::accumulateEffectOfLightsInArea
 	bool b_useShadows
 )
 {
-	/*!
+	/*
 	* Note most of this code is adopted from SparHawk's lightgem alpha code
 	*/
-
 
 	// Set up target segement: Origin and Delta
 	idVec3 vTargetSeg[LSG_COUNT];
@@ -264,6 +308,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 	{
 		// Get the light to be tested
 		darkModLightRecord_t* p_LASLight = p_cursor->Owner();
+
 		if (p_LASLight == NULL)
 		{
 			// Log error
@@ -280,14 +325,24 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			p_LASLight->p_idLight->name.c_str()
 		);
 
+		// grayman #2853 - If the light's OFF, ignore it
+
+		idLight* light = p_LASLight->p_idLight;
+		if ( light->GetLightLevel() == 0 )
+		{
+			// Iterate to next light in area
+			p_cursor = p_cursor->NextNode();
+			continue;
+		}
+
 		/*!
 		// What follows in the rest of this method is mostly Sparkhawk's lightgem code
 		*/
+
 		idVec3 vLightCone[ELC_COUNT];
 		idVec3 vLight;
 		EIntersection inter;
 		idVec3 vResult[2];
-
 
 		if(p_LASLight->p_idLight->IsPointlight())
 		{
@@ -309,9 +364,10 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			// Centerlight means that the center of the ellipsoid is not the same as the origin. It has to
 			// be adjusted because if it casts shadows we have to trace to it, and in this case the light
 			// might be inside geometry and would be reported as not being visible even though it casts
-			// a visible light outside the geometry it is embedded. If it is not a centerlight and has
+			// a visible light outside the geometry it is embedded in. If it is not a centerlight and has
 			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
 			// be blocked by the geometry.
+
 			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineEllipsoid returned %u\r", inter);
 		}
@@ -327,13 +383,15 @@ void darkModLAS::accumulateEffectOfLightsInArea
 		bool b_excludeLight = false;
 		float testDistance = 0.0f;
 		
-		// The line intersection can only return three states. Either the line is passing
-		// through the lightcone in which case we will get two intersection points, the line
-		// is not passing through which means that the test line is fully outside, or the line
-		// is touching the cone in exactly one point. The last case is not really helpfull in
+		// The line intersection can only return four states. Either the line is entirely inside
+		// the light cone (inter = INTERSECT_NONE), it's passing through the lightcone (inter = INTERSECT_FULL), the line
+		// is not passing through which means that the test line is fully outside (inter = INTERSECT_OUTSIDE), or the line
+		// is touching the cone in exactly one point (inter = INTERSECT_PARTIAL). The last case is not really helpful in
 		// our case and doesn't make a difference for the gameplay so we simply ignore it and
-		// consider only cases where the testline is at least partially inside the cone.
-		if (inter != INTERSECT_FULL) 
+		// consider only cases where the testline is at least partially inside the cone, which is when
+		// inter is INTERSECT_NONE or INTERSECT_FULL.
+
+		if ( ( inter == INTERSECT_PARTIAL ) || ( inter == INTERSECT_OUTSIDE) ) // grayman #2853 - exclude the two uninteresting cases
 		{
 			b_excludeLight = true;
 		}
@@ -345,18 +403,42 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			testPosNoZ.z = p_LASLight->lastWorldPos.z;
 			testDistance = (p_LASLight->lastWorldPos - testPosNoZ).Length();
 
-			// Fast and cheap test to see if the player could be in the area of the light.
+			// Fast and cheap test to see if the item could be in the area of the light.
 			// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
 			if (testDistance > p_LASLight->p_idLight->m_MaxLightRadius)
 			{
 				b_excludeLight = true;
-				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s]: exluded due to max light radius\r", p_LASLight->p_idLight->name.c_str());
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s]: excluded due to max light radius\r", p_LASLight->p_idLight->name.c_str());
 			}
 			else if (b_useShadows && p_LASLight->p_idLight->CastsShadow()) 
 			{
+
+				// grayman #2853 - If the trace hits something before completing, that thing has to be checked to see if
+				// it casts shadows. If it doesn't, then it has to be ignored and the trace must be run again from the struck
+				// point to the end. This has to be done iteratively, since there might be several non-shadow-casting entities
+				// in the way. For example, a candleflame in a candle in a chandelier, and the latter two are marked with 'noshadows'.
+				// Light holders must also be taken into account, since the holder entity in DR can be marked 'noshadows', which
+				// also applies to the candle holding the flame.
+
+				idVec3 p1 = testPoint1;
+				idVec3 p2 = p_LASLight->lastWorldPos;
+
+				bool lightReaches = traceLightPath( p1, p2, p_ignoredEntity );
+				if ( !lightReaches )
+				{
+					p1 = testPoint2;
+					lightReaches = traceLightPath( p1, p2, p_ignoredEntity );
+				}
+				
+				b_excludeLight = !lightReaches;
+
+				// end of new code
+
+				/* old code
+
 				trace_t trace;
 				gameLocal.clip.TracePoint(trace, testPoint1, p_LASLight->lastWorldPos, CONTENTS_OPAQUE, p_ignoredEntity);
-				if (cv_las_showtraces.GetBool())
+				if ( cv_las_showtraces.GetBool() )
 				{
 					gameRenderWorld->DebugArrow(
 							trace.fraction == 1 ? colorGreen : colorRed, 
@@ -364,7 +446,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 							p_LASLight->lastWorldPos, 1, 1000);
 				}
 				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
-				if(trace.fraction < 1.0f)
+				if ( trace.fraction < 1.0f )
 				{
 					gameLocal.clip.TracePoint (trace, testPoint2, p_LASLight->lastWorldPos, CONTENTS_OPAQUE, p_ignoredEntity);
 					if (cv_las_showtraces.GetBool())
@@ -375,12 +457,13 @@ void darkModLAS::accumulateEffectOfLightsInArea
 							p_LASLight->lastWorldPos, 1, 1000);
 					}
 					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
-					if(trace.fraction < 1.0f)
+					if ( trace.fraction < 1.0f )
 					{
 						DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s]: test point is in a shadow of the light\r", p_LASLight->p_idLight->name.c_str());
 						b_excludeLight = true;
 					}
 				}
+				*/
 			}
 		} 
 
@@ -898,10 +981,8 @@ float darkModLAS::queryLightingAlongLine
 		numPVSTestAreas
 	);
 
-
-
 	// Check all the lights in the PVS areas and factor them in
-	for (int pvsTestResultIndex = 0; pvsTestResultIndex < numPVSTestAreas; pvsTestResultIndex ++)
+	for ( int pvsTestResultIndex = 0 ; pvsTestResultIndex < numPVSTestAreas ; pvsTestResultIndex++ )
 	{
 		// Add the effect of lights in this visible area to the effect at the
 		// point

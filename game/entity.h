@@ -713,8 +713,6 @@ public:
 	void					SetHideUntilTime(int time);	// grayman #597
 	int						GetHideUntilTime(void);		// grayman #597
 	
-	void					DropTorch(); // grayman #2603
-
 	idEntity*				GetAttachmentByPosition(idStr AttPos); // grayman #2603
 
 	enum {

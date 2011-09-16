@@ -39,6 +39,8 @@ bool CAbsenceMarker::initAbsenceReference(idEntity* owner, idBounds& startBounds
 	referenced_entityName = owner->name;
 	referenced_entityDefName = owner->GetEntityDefName();
 
+	GetPhysics()->SetClipBox( owner->GetPhysics()->GetBounds(), 1.0f ); // grayman #2853 - set marker's bounds to missing item's bounds
+
 	// Fill with spawnargs of referenced entity
 	referenced_spawnArgs = owner->spawnArgs;
 

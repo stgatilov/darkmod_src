@@ -82,6 +82,7 @@ protected:
    */ 
    bool moveLightBetweenAreas (darkModLightRecord_t* p_light, int oldAreaNum, int newAreaNum );
 
+   bool traceLightPath( idVec3 to, idVec3 from, idEntity* ignore ); // grayman #2853
 
    /*!
    * This method is used to add up all the light intensities contributed from
