@@ -109,6 +109,9 @@ public:
 	 */
 	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
 
+	void					SetLastUsedBy(idEntity* ent);	// grayman #2859
+	idEntity*				GetLastUsedBy();				// grayman #2859
+
 protected:
 
 	// Returns the handle nearest to the given position

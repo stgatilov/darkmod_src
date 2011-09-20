@@ -9590,6 +9590,18 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 		// Pass the use call
 		if (highlightedEntity->UseBy(impulseState, item))
 		{
+			// grayman #2859 - if this is a door, and item is a key, register that the player used the door
+
+			if ( highlightedEntity->IsType(CFrobDoor::Type) )
+			{
+				const idStr& itemName = item->Category()->GetName();
+				if (itemName == "#str_02392" ) // Keys
+				{
+					CFrobDoor* door = static_cast<CFrobDoor*>(highlightedEntity);
+					door->SetLastUsedBy(this);
+				}
+			}
+
 			// Item could be used, return TRUE, we're done
 			return true;
 		}

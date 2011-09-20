@@ -240,7 +240,7 @@ protected:
 	 * what the state was beforehand. The boolean tells which state the mover
 	 * is heading towards.
 	 */
-	virtual void OnMoveStart(bool open);
+	virtual void OnMoveStart(bool opening);
 
 	/**
 	 * greebo: Is called before the mover is told to open. Based on the return
@@ -522,6 +522,12 @@ protected:
 	**/
 
 	idList< idEntityPtr<idAI> >	m_registeredAI;
+
+	/**
+	* grayman #2859 - the last AI or player to open or close this door
+	**/
+
+	idEntityPtr<idEntity>		m_lastUsedBy;
 };
 
 #endif /* !BINARYFROBMOVER */

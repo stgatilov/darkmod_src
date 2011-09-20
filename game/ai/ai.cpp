@@ -4412,7 +4412,7 @@ bool idAI::CanSeeExt( idEntity *ent, const bool useFOV, const bool useLighting )
 The Dark Mod
 idAI::CanSeePositionExt
 
-This metohd can ignore lighting conditions and/or field of vision.
+This method can ignore lighting conditions and/or field of vision.
 =====================
 */
 bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
@@ -4490,6 +4490,42 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 	}
 
 	return canSee;
+}
+
+// grayman #2859 - Can the AI see a point belonging to a target (not necessarily its origin)?
+
+bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target )
+{
+	// Check FOV
+
+	if ( !CheckFOV( point ) )
+	{
+		return false;
+	}
+
+	// Check visibility
+
+	trace_t result;
+	idVec3 eye(GetEyePosition()); // eye position of the AI
+
+	// Trace from eye to point, ignoring self
+
+	gameLocal.clip.TracePoint(result, eye, point, MASK_OPAQUE, this);
+	if ( result.fraction < 1.0 )
+	{
+		if ( gameLocal.GetTraceEntity(result) != target )
+		{
+			return false;
+		}
+	}
+
+	// Check lighting
+
+	idVec3 topPoint = point - (physicsObj.GetGravityNormal() * 32.0);
+	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
+	idVec3 ownOrigin = physicsObj.GetOrigin();
+
+	return ( ( ( point - ownOrigin).LengthFast() ) < maxDistanceToObserve );
 }
 
 /*
@@ -9468,7 +9504,7 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		idVec3 observeFrom = GetEyePosition();
 		idVec3 midPoint = p_entity->GetPhysics()->GetAbsBounds().GetCenter();
 
-		if ((observeFrom - midPoint).LengthSqr() > maxDistanceToObserve*maxDistanceToObserve)
+		if ( (observeFrom - midPoint).LengthSqr() > maxDistanceToObserve*maxDistanceToObserve )
 		{
 			// Draw debug graphic?
 			if (cv_ai_visdist_show.GetFloat() > 1.0f)

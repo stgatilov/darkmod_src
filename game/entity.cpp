@@ -9072,6 +9072,12 @@ void idEntity::FrobAction(bool frobMaster, bool isFrobPeerAction)
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
 	}
 
+	if ( IsType(CFrobDoor::Type) ) // grayman #2859
+	{
+		CFrobDoor* door = static_cast<CFrobDoor*>(this);
+		door->SetLastUsedBy(gameLocal.GetLocalPlayer());
+	}
+
 	// Play the (optional) acquire sound (greebo: What's this? Isn't this the wrong place here?)
 	StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 

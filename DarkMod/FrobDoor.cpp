@@ -640,6 +640,8 @@ void CFrobDoor::Event_Lock_StatusUpdate()
 
 void CFrobDoor::Event_Lock_OnLockPicked()
 {
+	SetLastUsedBy(gameLocal.GetLocalPlayer());
+
 	// "Lock is picked" signal, unlock in master mode
 	Unlock(true);
 }
@@ -1073,4 +1075,17 @@ void CFrobDoor::Event_ClearPlayerImmobilization(idEntity* player)
 
 	// Release the immobilization imposed on the player by Lockpicking
 	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
+}
+
+
+// grayman #2859
+
+void CFrobDoor::SetLastUsedBy(idEntity* ent)
+{
+	m_lastUsedBy = ent;
+}
+
+idEntity* CFrobDoor::GetLastUsedBy()
+{
+	return m_lastUsedBy.GetEntity();
 }
