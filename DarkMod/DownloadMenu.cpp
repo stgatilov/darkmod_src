@@ -58,8 +58,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = "Unable to contact Mission Archive";
-					msg.message = "Cannot connect to server.";
+					msg.title = gameLocal.m_I18N->Translate( "#str_02140" );	// Unable to contact Mission Archive
+					msg.message = gameLocal.m_I18N->Translate( "#str_02007" );	// Cannot connect to server.
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 
@@ -96,8 +96,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = "Mission Details Download Failed";
-					msg.message = "Failed to download the details XML file.";
+					msg.title = gameLocal.m_I18N->Translate( "#str_02008" );	// Mission Details Download Failed
+					msg.message = gameLocal.m_I18N->Translate( "#str_02009" );	// Failed to download the details XML file.
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 

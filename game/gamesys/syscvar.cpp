@@ -150,6 +150,7 @@ idCVar cv_tdm_allow_http_access("tdm_allow_http_access",		"1",			CVAR_GAME | CVA
 idCVar cv_tdm_mission_list_urls("tdm_mission_list_urls",	"http://www.thedarkmod.com/missiondb/get_available_missions.php;http://www.thedarkmod.com/missiondb/available_missions.xml", CVAR_GAME, "The URLs to check for the mission list XML." );
 idCVar cv_tdm_mission_details_url("tdm_mission_details_url", "http://www.thedarkmod.com/missiondb/get_mission_details.php?id=%d", CVAR_GAME, "The URLs to check for the mission details XML." );
 idCVar cv_tdm_mission_screenshot_url("tdm_mission_screenshot_url", "http://www.thedarkmod.com/%s", CVAR_GAME, "The URL template to download the mission screenshots." );
+idCVar cv_tdm_version_check_url("tdm_version_check_url", "http://bloodgate.com/mirrors/tdm/pub/tdm_version.xml", CVAR_GAME, "The URL to check for the current TDM version." );
 
 
 idCVar cv_debug_aastype(			"tdm_debug_aastype",		"aas32",		CVAR_GAME | CVAR_ARCHIVE, "Sets the AAS type used for visualisation with impulse 27");

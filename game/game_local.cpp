@@ -581,25 +581,26 @@ void idGameLocal::CheckTDMVersion()
 	{
 		Printf("HTTP requests disabled, skipping TDM version check.\n");
 
-		msg.title = "Version Check Failed";
-		msg.message = va("HTTP Requests have been disabled,\n cannot check for updates.");
+		msg.title = m_I18N->Translate( "#str_02136" );
+		msg.message = m_I18N->Translate( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
 
 		AddMainMenuMessage(msg);
 		return;
 	}
 
-	Printf("Checking http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml...\n");
-	CHttpRequestPtr req = m_HttpConnection->CreateRequest("http://www.bloodgate.com/mirrors/tdm/pub/tdm_version.xml");
+	idStr url = cv_tdm_version_check_url.GetString();		// http://bloodgate.com/mirrors/tdm/pub/tdm_version.xml
+	Printf("Checking %s\n", url.c_str() );
+	CHttpRequestPtr req = m_HttpConnection->CreateRequest( url.c_str() );
 
 	req->Perform();
 
 	// Check Request Status
 	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		Printf("Connection Error.\n");
+		Printf("%s.\n", m_I18N->Translate( "#str_2002") );	// Connection Error
 
-		msg.title = "Version Check Failed";
-		msg.message = va("Cannot connect to server.");
+		msg.title = m_I18N->Translate( "#str_02136" );		// Version Check Failed
+		msg.message = m_I18N->Translate( "#str_02132" );	// Cannot connect to server.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -614,7 +615,7 @@ void idGameLocal::CheckTDMVersion()
 		int major = node.node().attribute("major").as_int();
 		int minor = node.node().attribute("minor").as_int();
 
-		msg.title = va( m_I18N->Translate( "#str_02132" ), major, minor );
+		msg.title = va( m_I18N->Translate( "#str_02132" ), major, minor );	// Most recent version is: 
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
 		{
@@ -634,8 +635,8 @@ void idGameLocal::CheckTDMVersion()
 	}
 	else
 	{
-		msg.title = m_I18N->Translate( "#str_02135" );	// "Version Check Failed"
-		msg.message = m_I18N->Translate( "#str_02136" );	// "Couldn't find current version tag."
+		msg.title = m_I18N->Translate( "#str_02136" );	// "Version Check Failed"
+		msg.message = m_I18N->Translate( "#str_02137" );	// "Couldn't find current version tag."
 
 	}
 
@@ -3785,7 +3786,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		if ( menuCommand[0] == ';' && menuCommand[1] == 0x0 )
 		{
-			// ignore stray ";"
+			// ignore stray any ";"
 			return;
 		}
 
@@ -3798,11 +3799,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// "log" takes one argument
 		if ( cmd == "log") { m_GUICommandArgs = 1; }
-
-		// we do not handle this, but need to ignore it nevertheless 
-		// greebo: Such a command will not make it here unless somebody does: 
-		// set "cmd" "set 'notime' '1'" which doesn't make sense
-		//if ( c == "set") { m_GUICommandArgs = 2; }
 
 //		if ( c != "log" && c != "mainmenu_heartbeat")
 //		{
@@ -4327,6 +4323,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// get the new language and store it, will also reload the GUI
 		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
+
 
 	// TODO: handle here commands with arguments, too
 	m_Shop->HandleCommands(cmd, gui);
