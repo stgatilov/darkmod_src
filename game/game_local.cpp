@@ -3804,10 +3804,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// these two take 3 arguments each
 		if ( cmd == "initchoice" || cmd == "stepchoice") { m_GUICommandArgs = 3; }
 
-//		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
-//		{
+		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
+		{
 //			Printf("Seen command '%s' ('%s'), takes %i args.\n", menuCommand, cmd.c_str(), m_GUICommandArgs );
-//		}
+		}
 	}
 	else
 	{
@@ -3822,10 +3822,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// seen a ";" even tho we have not yet as many arguments as we wanted?
 			if (numArgs - 1 < m_GUICommandArgs)
 			{
-				Warning("MainMenu command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
-				// make it so that we handle the command below
-				// TODO: Should we ignore it instead?
+				//Warning("MainMenu command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
+				Warning("Seen stray ';' - command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
+				// Ignore any stray ";" as they can be injected anywhere :(
 				numArgs = m_GUICommandArgs;
+				return;
 			}
 		}
 	}
@@ -4343,10 +4344,16 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		std::string values  = m_GUICommandStack[3].c_str();
 
 		// figure out the current setting
-		idCVar * cvar = cvarSystem->Find( cvarName.c_str() );
-		if (!cvar)
+		idCVar *cvar = NULL;
+
+		// special case: use this gui variable
+		if (cvarName.Left(5) != "gui::")
 		{
-			Error("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+			cvar = cvarSystem->Find( cvarName.c_str() );
+			if (!cvar)
+			{
+				Error("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+			}
 		}
 		// split the choices into a listt
 		std::vector<std::string> choiceParts;
@@ -4366,7 +4373,15 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		else
 		{
 			// read out the current setting (this also works with boolean CVARs, as these are simply "0", "1")
-			idStr curValue = cvar->GetString();
+			idStr curValue;
+			if (cvar)
+			{
+				curValue = cvar->GetString();
+			}
+			else
+			{
+				curValue = gui->GetStateString( cvarName.Right( cvarName.Length() -5 ).c_str(), "0" );
+			}
 
 			// Figure out the index of the selected choice/value pair by looking at all the values
 			int iSelected = -1;
@@ -4398,12 +4413,22 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 						iSelected = 0;
 					}
 					// set the new value
-					Printf("Setting %s to %s (index: %i, label %s)\n", cvarName.c_str(), valuesParts[ iSelected ].c_str(), iSelected, choiceParts[iSelected].c_str());
-					cvar->SetString( valuesParts[ iSelected ].c_str() );
+					Printf("Setting %s to %s (index: %i)\n", cvarName.c_str(), valuesParts[ iSelected ].c_str(), iSelected);
+					if (cvar)
+					{
+						cvar->SetString( valuesParts[ iSelected ].c_str() );
+					}
 				}
+				// Printf( "Setting %s to %s\n", GUIVar.c_str(), choiceParts[iSelected].c_str() );
+				if (!cvar)
+				{
+					cvarName = cvarName.Right( cvarName.Length() -5 );		// remove "gui::" prefix
+				}
+				// store the value in "gui::cvarname", so the GUI can access it (important f.i. for the bloom slider visibility)
+				// Printf( "Setting %s to %s\n", cvarName.c_str(), valuesParts[iSelected].c_str() );
+				gui->SetStateString( cvarName.c_str(), valuesParts[iSelected].c_str() );
 				// and set it as text label
 				idStr GUIVar = cvarName + "_text";		// f.i.: tdm_menu_music_text
-				// Printf( "Setting %s to %s\n", GUIVar.c_str(), choiceParts[iSelected].c_str() );
 				gui->SetStateString( GUIVar.c_str(), choiceParts[iSelected].c_str() );
 			}
 		}
