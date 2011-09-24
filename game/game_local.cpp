@@ -4398,12 +4398,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 						iSelected = 0;
 					}
 					// set the new value
-					// Printf("Setting new value: %s (index: %i)\n", valuesParts[ iSelected ].c_str(), iSelected);
+					Printf("Setting %s to %s (index: %i, label %s)\n", cvarName.c_str(), valuesParts[ iSelected ].c_str(), iSelected, choiceParts[iSelected].c_str());
 					cvar->SetString( valuesParts[ iSelected ].c_str() );
 				}
 				// and set it as text label
 				idStr GUIVar = cvarName + "_text";		// f.i.: tdm_menu_music_text
-				Printf( "Setting %s to %s\n", GUIVar.c_str(), valuesParts[iSelected].c_str() );
+				// Printf( "Setting %s to %s\n", GUIVar.c_str(), choiceParts[iSelected].c_str() );
 				gui->SetStateString( GUIVar.c_str(), choiceParts[iSelected].c_str() );
 			}
 		}
