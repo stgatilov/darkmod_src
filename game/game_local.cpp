@@ -3792,17 +3792,19 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// have not seen anything?
 		idStr cmd = menuCommand;
+		// commands can appear in any case (like "notime", "noTime" etc)
+		cmd.ToLower();
 		m_GUICommandStack.Append(cmd);
 
 		// set the number of wanted args, default is none
 		m_GUICommandArgs = 0;
 
-		// "log" takes one argument
-		if ( cmd == "log") { m_GUICommandArgs = 1; }
+		// "log" and "notime" take one argument
+		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
 
-//		if ( c != "log" && c != "mainmenu_heartbeat")
+//		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
 //		{
-//			Printf("Seen command '%s' (takes %i args)\n", menuCommand, m_GUICommandArgs );
+//			Printf("Seen command '%s' ('%s'), takes %i args.\n", menuCommand, cmd.c_str(), m_GUICommandArgs );
 //		}
 	}
 	else
@@ -3930,18 +3932,18 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			cv_tdm_menu_music.ClearModified();
 		}
 	}
-	else if (cmd == "setVideoResWideScreen")
+	else if (cmd == "setvideoreswidescreen")
 	{
 		// Called when widescreen size selection changes
 		UpdateScreenResolutionFromGUI(gui);
 		UpdateGUIScaling(gui);
 	}
-	else if (cmd == "aspectRatioChanged")
+	else if (cmd == "aspectratiochanged")
 	{
 		UpdateScreenResolutionFromGUI(gui);
 		UpdateGUIScaling(gui);
 	}
-	else if (cmd == "loadCustomVideoResolution")
+	else if (cmd == "loadcustomvideoresolution")
 	{
 		if (cvarSystem->GetCVarInteger("r_mode") == -1)
 		{
@@ -4001,7 +4003,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
 	}
-	else if (cmd == "loadVideoDefinitions")
+	else if (cmd == "loadvideodefinitions")
 	{
 		// Check if we've set up the briefing video 
 		if (!briefingVideoInfoLoaded)
@@ -4013,7 +4015,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("LoadDebriefingVideoDefinitions");
 		}
 	}
-	else if (cmd == "prepareBriefingVideo")
+	else if (cmd == "preparebriefingvideo")
 	{
 		// Ensure we've set up the briefing video (should already be done in "loadVideoDefinitions")
 		assert(briefingVideoInfoLoaded);
@@ -4034,7 +4036,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// We start with the first part
 		curBriefingVideoPart = 0;
 	}
-	else if (cmd == "startBriefingVideo")
+	else if (cmd == "startbriefingvideo")
 	{
 		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
 		{
@@ -4049,7 +4051,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("OnBriefingVideoFinished");
 		}
 	}
-	else if (cmd == "briefingVideoHeartBeat")
+	else if (cmd == "briefingvideoheartbeat")
 	{
 		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
 		{
@@ -4081,7 +4083,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->SetStateInt("briefingVideoTime", videoTime);	
 		}
 	}
-	else if (cmd == "prepareDebriefingVideo")
+	else if (cmd == "preparedebriefingvideo")
 	{
 		// Ensure we've set up the debriefing video (should already be done in "loadVideoDefinitions")
 		assert(briefingVideoInfoLoaded);
@@ -4089,7 +4091,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// We start with the first part
 		curDebriefingVideoPart = 0;
 	}
-	else if (cmd == "startDebriefingVideo")
+	else if (cmd == "startdebriefingvideo")
 	{
 		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
 		{
@@ -4104,7 +4106,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("OnDebriefingVideoFinished");
 		}
 	}
-	else if (cmd == "debriefingVideoHeartBeat")
+	else if (cmd == "debriefingvideoheartbeat")
 	{
 		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
 		{
@@ -4136,7 +4138,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->SetStateInt("debriefingVideoTime", videoTime);	
 		}
 	}
-	else if (cmd == "onSuccessScreenContinueClicked")
+	else if (cmd == "onsuccessscreencontinueclicked")
 	{
 		// Clear the mission result flag
 		SetMissionResult(MISSION_NOTEVENSTARTED);
@@ -4163,7 +4165,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("SuccessGoBackToMainMenu");
 		}
 	}
-	else if (cmd == "setLPDifficulty")
+	else if (cmd == "setlpdifficulty")
 	{
 		// Lockpicking difficulty setting changed, update CVARs
 		int setting = gui->GetStateInt("lp_difficulty", "-1");
@@ -4194,7 +4196,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gameLocal.Warning("Unknown value for lockpicking difficulty encountered!");
 		};
 	}
-	else if (cmd == "loadLPDifficulty")
+	else if (cmd == "loadlpdifficulty")
 	{
 		// The GUI requests to update the lp_difficulty state string
 		int setting = 0;
@@ -4225,7 +4227,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		gui->SetStateInt("lp_difficulty", setting);
 	}
-	else if (cmd == "updateMeleeDifficulty")
+	else if (cmd == "updatemeleedifficulty")
 	{
 		// Melee difficulty setting changed, update CVARs
 		int setting = gui->GetStateInt("melee_difficulty", "-1");
@@ -4256,7 +4258,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Trigger an update for the auto-parry option when melee difficulty changes
 		gui->HandleNamedEvent("UpdateAutoParryOption");
 	}
-	else if (cmd == "loadMeleeDifficulty")
+	else if (cmd == "loadmeleedifficulty")
 	{
 		// The GUI requests to update the melee_difficulty state string
 		int setting = 0;
@@ -4303,12 +4305,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
 	}
-	else if (cmd == "updateCookedMathData")		// Adding a way to update cooked data from menu - J.C.Denton
+	else if (cmd == "updatecookedmathdata")		// Adding a way to update cooked data from menu - J.C.Denton
 	{
 		// Add the command to buffer, but no need to issue it immediately. 
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
 	}
-	else if (cmd == "onStartMissionClicked")
+	else if (cmd == "onstartmissionclicked")
 	{
 		// First mission to be started, reset index
 		m_MissionManager->SetCurrentMissionIndex(0);
@@ -4316,7 +4318,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		ClearPersistentInfo();
 	}
-	else if (cmd == "languageChanged")
+	else if (cmd == "languagechanged")
 	{
 		idStr tdm_lang = cv_tdm_lang.GetString();
 		Printf("GUI: Language changed to %s.\n", tdm_lang.c_str() );
@@ -4324,11 +4326,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
 
-
-	// TODO: handle here commands with arguments, too
-	m_Shop->HandleCommands(cmd, gui);
-	m_ModMenu->HandleCommands(cmd, gui);
-	m_DownloadMenu->HandleCommands(cmd, gui);
+	// TODO: handle here (lowercase) commands with arguments, too
+	m_Shop->HandleCommands( menuCommand, gui);
+	m_ModMenu->HandleCommands( menuCommand, gui);
+	m_DownloadMenu->HandleCommands( menuCommand, gui);
 
 	/*if (cv_debug_mainmenu.GetBool())
 	{
