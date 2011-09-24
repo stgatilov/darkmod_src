@@ -3802,7 +3802,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// "log" and "notime" take one argument
 		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
 		// these two take 3 arguments each
-		if ( cmd == "initchoice" || cmd == "advancechoice") { m_GUICommandArgs = 3; }
+		if ( cmd == "initchoice" || cmd == "stepchoice") { m_GUICommandArgs = 3; }
 
 //		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
 //		{
@@ -4328,7 +4328,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
 	// tels: #2796 build our own "choicedef" as integer/boolean option.
-	else if (cmd == "initchoice" || cmd == "advancechoice")
+	else if (cmd == "initchoice" || cmd == "stepchoice")
 	{
 		// DEBUG
 //		Printf("GUI: %s\n", cmd.c_str());
@@ -4389,7 +4389,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			else
 			{
 				// should we advance the setting?
-				if (cmd == "advancechoice")
+				if (cmd == "stepchoice")
 				{
 					iSelected ++;
 					if ( (unsigned int)iSelected >= valuesParts.size())
