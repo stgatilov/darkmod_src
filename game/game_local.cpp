@@ -3801,6 +3801,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// "log" and "notime" take one argument
 		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
+		// these two take 3 arguments each
+		if ( cmd == "initchoice" || cmd == "advancechoice") { m_GUICommandArgs = 3; }
 
 //		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
 //		{
@@ -4325,6 +4327,91 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// get the new language and store it, will also reload the GUI
 		gameLocal.m_I18N->SetLanguage( tdm_lang.c_str() );
 	}
+	// tels: #2796 build our own "choicedef" as integer/boolean option.
+	else if (cmd == "initchoice" || cmd == "advancechoice")
+	{
+		// DEBUG
+//		Printf("GUI: %s\n", cmd.c_str());
+//		for (int i = 0; i < numArgs; i++)
+//		{
+//			Printf( "'%s' ", m_GUICommandStack[i+1].c_str() );
+//		}
+
+		// arguments are: cvar-name choices values
+		idStr cvarName = m_GUICommandStack[1];
+		std::string choices = gameLocal.m_I18N->Translate( m_GUICommandStack[2] );
+		std::string values  = m_GUICommandStack[3].c_str();
+
+		// figure out the current setting
+		idCVar * cvar = cvarSystem->Find( cvarName.c_str() );
+		if (!cvar)
+		{
+			Error("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+		}
+		// split the choices into a listt
+		std::vector<std::string> choiceParts;
+		std::vector<std::string> valuesParts;
+		boost::algorithm::split(choiceParts, choices, boost::algorithm::is_any_of(";"));
+		boost::algorithm::split(valuesParts, values, boost::algorithm::is_any_of(";"));
+
+		if (choiceParts.size() != valuesParts.size())
+		{
+			gameLocal.Warning("The choices string array '%s' does not have the same number of elements as the values array '%s' for %s!", 
+					choices.c_str(), values.c_str(), cvarName.c_str() ); //gameLocal.m_I18N->Translate( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
+		}
+		else if (choiceParts.size() <= 0)
+		{
+			gameLocal.Warning("The choices and values string arrays are empty for %s.", cvarName.c_str());
+		}
+		else
+		{
+			// read out the current setting (this also works with boolean CVARs, as these are simply "0", "1")
+			idStr curValue = cvar->GetString();
+
+			// Figure out the index of the selected choice/value pair by looking at all the values
+			int iSelected = -1;
+			for (unsigned int i = 0; i < valuesParts.size(); i++)
+			{
+				if (curValue == idStr( valuesParts[i].c_str() ))
+				{
+					// found it
+					iSelected = i;
+					i = valuesParts.size();
+					break;
+				}
+			}
+
+			// Printf("Current value: %s (index: %i)\n", curValue.c_str(), iSelected);
+			if (iSelected < 0)
+			{
+				gameLocal.Warning("The current value for %s (%s) is not in the list of valid choices '%s'.", cvarName.c_str(), curValue.c_str(), values.c_str());
+			}
+			else
+			{
+				// should we advance the setting?
+				if (cmd == "advancechoice")
+				{
+					iSelected ++;
+					if ( (unsigned int)iSelected >= valuesParts.size())
+					{
+						// wrap around
+						iSelected = 0;
+					}
+					// set the new value
+					// Printf("Setting new value: %s (index: %i)\n", valuesParts[ iSelected ].c_str(), iSelected);
+					cvar->SetString( valuesParts[ iSelected ].c_str() );
+				}
+				// and set it as text label
+				idStr GUIVar = cvarName + "_text";		// f.i.: tdm_menu_music_text
+				Printf( "Setting %s to %s\n", GUIVar.c_str(), valuesParts[iSelected].c_str() );
+				gui->SetStateString( GUIVar.c_str(), choiceParts[iSelected].c_str() );
+			}
+		}
+	}
+//	else
+//	{
+//		Warning("Unknown main menu command '%s'.\n", cmd.c_str());
+//	}
 
 	// TODO: handle here (lowercase) commands with arguments, too
 	m_Shop->HandleCommands( menuCommand, gui);
