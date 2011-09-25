@@ -3748,7 +3748,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			 else does in idTech4 :)
 		
 		In the following examples, there is usually another call to this routine with ";"
-		as the "menuCommand param. But sometimes it does not appear, depending on whoknows.
+		as the "menuCommand" param. But sometimes it does not appear, depending on whoknows.
 
 		The following will cause this routine called twice (!), once with "mainmenu_heartbeat"
 		and once with ";" as command (if you add ";" before the last double quote, it will
@@ -3764,14 +3764,24 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			Set "play mymusic";
 
-	   The old code simply watched for certain words, and then issued the command. It was not
-	   able to distinguish between commands and arguments.
+		This calls it twice (three times counting ";"), with "notime" and then "1":
 
-	   This routine now watches for the first command, ignoring any stray ";". If it sees
-	   a command, it deduces the number of following arguments, and then collects them until
-	   it has all of them, warning if there is a ";" coming unexpectedly.
+			Set "noTime" "1";
 
-	   Once all arguments are collected, the command is finally handled, or silently ignored.
+		Note that the command buffer has only a certain, unknown length, and if too many
+		commands are issued in the same timeframe (onTime X..), then the buffer will overflow,
+		and certain commands might get cut-off. Usually this means that you see a ";" instead
+		of an expected argument, or that commands run together like "initChoicelog". When this
+		happens, the GUI must be adjusted to issue less commands (or issue them later).
+
+		The old code simply watched for certain words, and then issued the command. It was not
+		able to distinguish between commands and arguments.
+
+		This routine now watches for the first command, ignoring any stray ";". If it sees
+		a command, it deduces the number of following arguments, and then collects them until
+		it has all of them, warning if there is a ";" coming unexpectedly.
+
+		Once all arguments are collected, the command is finally handled, or silently ignored.
 	*/
 	if (!menuCommand || menuCommand[0] == 0x00)
 	{
@@ -4312,6 +4322,16 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		// Add the command to buffer, but no need to issue it immediately. 
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
+	}
+	else if (cmd == "resetbrightness")
+	{
+		idCVar * cvar = cvarSystem->Find( "r_brightness" );
+		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_brightness.");
+	}
+	else if (cmd == "resetgamma")
+	{
+		idCVar * cvar = cvarSystem->Find( "r_gamma" );
+		cvar ? cvar->SetFloat( 1.2f ) :	Warning("Cannot find CVAR r_gamma.");
 	}
 	else if (cmd == "onstartmissionclicked")
 	{
