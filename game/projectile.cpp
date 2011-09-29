@@ -761,6 +761,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	ignore = NULL;
 
+	bool damageInflicted = false; // grayman #2794 - whether damage was inflicted below
+
 	// if the hit entity takes damage
 	if ( ent->fl.takedamage ) 
 	{
@@ -786,19 +788,38 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			}
 		}
 
-		if ( damageDefName[0] != '\0' ) {
+		if ( damageDefName[0] != '\0' )
+		{
+			// grayman #2794 - if no damage is being inflicted, then there's no need for a damage effect
+
+			const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+			if ( !damageDef )
+			{
+				gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
+			}
+
+			int	damage = damageDef->GetInt( "damage" );
+			damageInflicted = ( damage > 0 );
+
 			ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			ignore = ent;
 		}
 	}
 
-	// if the projectile causes a damage effect
-	if ( spawnArgs.GetBool( "impact_damage_effect" ) ) {
-		// if the hit entity has a special damage effect
-		if ( ent->spawnArgs.GetBool( "bleed" ) ) {
-			ent->AddDamageEffect( collision, velocity, damageDefName );
-		} else {
-			AddDefaultDamageEffect( collision, velocity );
+	if ( damageInflicted ) // grayman #2794
+	{
+		// if the projectile causes a damage effect
+		if ( spawnArgs.GetBool( "impact_damage_effect" ) )
+		{
+			// if the hit entity has a special damage effect
+			if ( ent->spawnArgs.GetBool( "bleed" ) )
+			{
+				ent->AddDamageEffect( collision, velocity, damageDefName );
+			}
+			else
+			{
+				AddDefaultDamageEffect( collision, velocity );
+			}
 		}
 	}
 
