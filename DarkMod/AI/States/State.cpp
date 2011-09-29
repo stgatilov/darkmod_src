@@ -2385,7 +2385,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	// grayman #2866 - Handle sliding doors.
 
-	idList<idEntityPtr<idEntity>> list;
+	idList< idEntityPtr<idEntity> > list;
 	if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
 	{
 		memory.frontPos = list[0];

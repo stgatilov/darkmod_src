@@ -74,7 +74,7 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 			idEntityPtr<idEntity> frontPos;
 			idEntityPtr<idEntity> backPos;
 
-			idList<idEntityPtr<idEntity>> list;
+			idList< idEntityPtr<idEntity> > list;
 
 			if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
 			{

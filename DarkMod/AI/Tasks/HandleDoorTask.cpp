@@ -1837,7 +1837,7 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 
 	// check for custom door handling positions
 
-	idList<idEntityPtr<idEntity>> list;
+	idList< idEntityPtr<idEntity> > list;
 	if ( frobDoor->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
 	{
 		_frontPosEnt = list[0];
