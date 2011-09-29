@@ -111,6 +111,9 @@ public:
 
 	void					SetLastUsedBy(idEntity* ent);	// grayman #2859
 	idEntity*				GetLastUsedBy();				// grayman #2859
+	void					SetAlerted(bool alerted);		// grayman #2866
+	bool					GetAlerted();					// grayman #2866
+	bool					GetDoorHandlingEntities(idAI* owner, idList< idEntityPtr<idEntity> > &list); // grayman #2866
 
 protected:
 

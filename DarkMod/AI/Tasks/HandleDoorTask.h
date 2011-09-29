@@ -65,6 +65,7 @@ private:
 	bool _triedFitting;		// grayman #2345
 	bool _wasRunning;		// grayman #2694
 	bool _canHandleDoor;	// grayman #2712
+	bool _doorShouldBeClosed; // grayman #2866
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

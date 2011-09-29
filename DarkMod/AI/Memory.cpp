@@ -153,6 +153,17 @@ void Memory::Save(idSaveGame* savefile) const
 		savefile->WriteInt(i->second.lastGreetingTime);
 		savefile->WriteInt(i->second.lastConsiderTime);
 	}
+
+	// grayman #2866 - start of changes
+	closeMe.Save(savefile);
+	frontPos.Save(savefile);
+	backPos.Save(savefile);
+	savefile->WriteBool(closeSuspiciousDoor);
+	savefile->WriteBool(doorSwingsToward);
+	savefile->WriteBool(closeFromAwayPos);
+	savefile->WriteBool(susDoorSameAsCurrentDoor);
+	savefile->WriteFloat(savedAlertLevelDecreaseRate);
+	// end of #2866 changes
 }
 
 void Memory::Restore(idRestoreGame* savefile)
@@ -267,6 +278,17 @@ void Memory::Restore(idRestoreGame* savefile)
 		savefile->ReadInt(result.first->second.lastGreetingTime);
 		savefile->ReadInt(result.first->second.lastConsiderTime);
 	}
+
+	// grayman #2866 - start of changes
+	closeMe.Restore(savefile);
+	frontPos.Restore(savefile);
+	backPos.Restore(savefile);
+	savefile->ReadBool(closeSuspiciousDoor);
+	savefile->ReadBool(doorSwingsToward);
+	savefile->ReadBool(closeFromAwayPos);
+	savefile->ReadBool(susDoorSameAsCurrentDoor);
+	savefile->ReadFloat(savedAlertLevelDecreaseRate);
+	// end of #2866 changes
 }
 
 DoorInfo& Memory::GetDoorInfo(CFrobDoor* door)

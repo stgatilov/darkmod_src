@@ -524,10 +524,16 @@ protected:
 	idList< idEntityPtr<idAI> >	m_registeredAI;
 
 	/**
-	* grayman #2859 - the last AI or player to open or close this door
+	* grayman #2859 - the last AI to open or close this door, otherwise NULL
 	**/
 
 	idEntityPtr<idEntity>		m_lastUsedBy;
+
+	/**
+	* grayman #2866 - has this door alerted an AI?
+	**/
+
+	bool						m_alerted;
 };
 
 #endif /* !BINARYFROBMOVER */

@@ -91,6 +91,28 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		// Door is open, and the AI can fit through, so continue with door-handling
 	}
 
+	// grayman #2866 - Is this a suspicious door, and is it time to close it?
+
+	CFrobDoor* closeMe = memory.closeMe.GetEntity();
+
+	_doorShouldBeClosed = false;
+	if ( memory.closeSuspiciousDoor )
+	{
+		if ( closeMe == frobDoor )
+		{
+			// grayman #2866 - If this door is one we're closing because it's
+			// supposed to be closed, there can't be anyone already in the door queue.
+			// The assumption is that whoever's already in the queue will close the door.
+
+			if ( frobDoor->GetUserManager().GetNumUsers() > 0 )
+			{
+				subsystem.FinishTask(); // quit the task
+				return;
+			}
+			_doorShouldBeClosed = true;
+		}
+	}
+
 	// Let the owner save its move
 
 	owner->m_RestoreMove = false;	// grayman #2706 - whether we should restore a saved move when finished with the door
@@ -125,11 +147,9 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 
-//	frobDoor->GetUserManager().AddUser(owner); // grayman #2345 - old way
 	AddUser(owner,frobDoor); // grayman #2345 - order the queue if needed
 	if (doubleDoor != NULL)
 	{
-//		doubleDoor->GetUserManager().AddUser(owner); // grayman #2345 - old way
 		AddUser(owner,doubleDoor); // grayman #2345 - order the queue if needed
 	}
 
@@ -137,7 +157,14 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	GetDoorHandlingPositions(owner, frobDoor);
 
-	_doorHandlingState = EStateNone;
+	if ( _doorShouldBeClosed ) // grayman #2866
+	{
+		_doorHandlingState = EStateMovingToBackPos;
+	}
+	else
+	{
+		_doorHandlingState = EStateNone;
+	}
 }
 
 // grayman #2345 - adjust goal positions based on what's happening around the door.
@@ -159,13 +186,18 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	{
 		// walk to the mid position
 	}
+	else if ( owner->AI_AlertIndex >= EInvestigating ) // grayman #2866 - when approaching to investigate a door, walk to mid, not to back
+	{
+		// walk to the mid position
+	}
 	else if (numUsers < 2)
 	{
-		if (AllowedToClose(owner) && (_doorInTheWay || owner->ShouldCloseDoor(door)))
+		if (AllowedToClose(owner) && (_doorInTheWay || owner->ShouldCloseDoor(door) || _doorShouldBeClosed )) // grayman #2866
 		{
 			useMid = false; // use _backPos
 		}
 	}
+
 /*		// grayman #2712 - heading for the back position looks odd when the AI in
 		// front of you are walking away.
 	else // you're not alone
@@ -277,15 +309,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	idEntity *tactileEntity = owner->GetTactileEntity();	// grayman #2692
 	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();	// grayman #2692
 
-	// Door is closed
 	if (!frobDoor->IsOpen())
 	{
+		// Door is closed
+
 		if (!_canHandleDoor) // grayman #2712
 		{
 			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			// add AAS area number of the door to forbidden areas
 			AddToForbiddenAreas(owner, frobDoor);
 			return true;
+		}
+
+		// grayman #2866 - If we're handling a door that's supposed
+		// to be closed, and we were going to close it, and we find
+		// it closed, we're done.
+
+		if ( _doorShouldBeClosed )
+		{
+			return true; // ends the task
 		}
 
 		switch (_doorHandlingState)
@@ -626,12 +668,15 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	// Door is open
 	else
 	{
-		if (!_canHandleDoor && !FitsThrough()) // grayman #2712
+		if ( !_doorShouldBeClosed ) // grayman #2866
 		{
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			// add AAS area number of the door to forbidden areas
-			AddToForbiddenAreas(owner, frobDoor);
-			return true;
+			if (!_canHandleDoor && !FitsThrough()) // grayman #2712
+			{
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+				// add AAS area number of the door to forbidden areas
+				AddToForbiddenAreas(owner, frobDoor);
+				return true;
+			}
 		}
 
 		switch (_doorHandlingState)
@@ -1161,6 +1206,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateMovingToBackPos:
 
 				// check blocked
+
 				if (frobDoor->IsBlocked() || 
 					(frobDoor->WasInterrupted() && 
 					frobDoor->WasStoppedDueToBlock()))
@@ -1173,23 +1219,34 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 
 						// we are blocking the door
-						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(closedPos);
-						if (masterUser == owner)
+
+						if ( !_doorShouldBeClosed ) // grayman #2866
 						{
-							if (!OpenDoor())
+							owner->StopMove(MOVE_STATUS_DONE);
+							owner->TurnToward(closedPos);
+							if (masterUser == owner)
 							{
-								return true;
+								if (!OpenDoor())
+								{
+									return true;
+								}
 							}
+						}
+						else
+						{
+							owner->StopMove(MOVE_STATUS_DONE);
 						}
 					}
 				}
 				else
 				{
-					if (frobDoor->WasInterrupted() && !FitsThrough())
+					if ( !_doorShouldBeClosed ) // grayman #2866
 					{
-						// end this task, it will be reinitialized when needed
-						return true;
+						if (frobDoor->WasInterrupted() && !FitsThrough())
+						{
+							// end this task, it will be reinitialized when needed
+							return true;
+						}
 					}
 				}
 
@@ -1206,7 +1263,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						bool closeDoor = false;
 						if (numUsers < 2)
 						{
-							if (_doorInTheWay || owner->ShouldCloseDoor(frobDoor))
+							if (_doorInTheWay || owner->ShouldCloseDoor(frobDoor) || _doorShouldBeClosed ) // grayman #2866
 							{
 								idEntity* controller = GetRemoteControlEntityForDoor();
 
@@ -1225,6 +1282,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								closeDoor = true;
 							}
 						}
+
 						if (!closeDoor)
 						{
 							return true;
@@ -1266,6 +1324,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateStartClose:
+
 				if (!AllowedToClose(owner) ||
 					(!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) ||
 					 owner->AI_RUN) // grayman #2670
@@ -1279,7 +1338,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					frobDoor->Close(true);
 					_doorHandlingState = EStateClosingDoor;
 				}
-				else if (numUsers > 1 && !_doorInTheWay)
+				else if ( ( numUsers > 1 ) && !_doorInTheWay)
 				{
 					return true;
 				}
@@ -1734,27 +1793,43 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = frobDoor->GetOpenDir();
 
-	//calculate where to stand when the door swings away from us
+	// calculate where to stand when the door swings away from us
 	idVec3 awayPos = GetAwayPos(owner, frobDoor);
 	// calculate where to stand when the door swings towards us
 	idVec3 towardPos =  GetTowardPos(owner, frobDoor);
 
-	// check if the door swings towards or away from us
-	if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-	{
-		// Door opens towards us
+	Memory& memory = owner->GetMemory();
 
-		_frontPos = towardPos;
-		_backPos = awayPos;
-		_midPos = GetMidPos(owner, frobDoor, false); // grayman #2345
+	if ( _doorShouldBeClosed ) // grayman #2866 - suspicious door
+	{
+		if ( memory.closeFromAwayPos )
+		{
+			_backPos = awayPos;
+		}
+		else
+		{
+			_backPos = towardPos;
+		}
 	}
-	else
+	else // normal door
 	{
-		// Door opens away from us
+		// check if the door swings towards or away from us
+		if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
+		{
+			// Door opens towards us
 
-		_frontPos = awayPos;
-		_backPos = towardPos;
-		_midPos = GetMidPos(owner, frobDoor, true); // grayman #2345
+			_frontPos = towardPos;
+			_backPos = awayPos;
+			_midPos = GetMidPos(owner, frobDoor, false); // grayman #2345
+		}
+		else
+		{
+			// Door opens away from us
+
+			_frontPos = awayPos;
+			_backPos = towardPos;
+			_midPos = GetMidPos(owner, frobDoor, true); // grayman #2345
+		}
 	}
 
 	_frontPosEnt = NULL;
@@ -1762,43 +1837,34 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 
 	// check for custom door handling positions
 
-	for (const idKeyValue* kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = frobDoor->spawnArgs.MatchPrefix("door_handle_position", kv))
+	idList<idEntityPtr<idEntity>> list;
+	if ( frobDoor->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
 	{
-		idStr posStr = kv->GetValue();
-		idEntity* doorHandlingPosition = gameLocal.FindEntity(posStr);
-
-		if (doorHandlingPosition)
+		_frontPosEnt = list[0];
+		_backPosEnt = list[1];
+		if ( _doorShouldBeClosed ) // this is a suspicious door that needs closing
 		{
-			const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
-
-			idVec3 dir = closedPos - frobDoorOrg;
-			dir.z = 0;
-
-			idVec3 doorNormal = dir.Cross(gameLocal.GetGravity());
-
-			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
-			idVec3 posDir = posOrg - frobDoorOrg;
-			posDir.z = 0;
-
-			float posTest = doorNormal * posDir;
-
-			idVec3 ownerDir = owner->GetPhysics()->GetOrigin() - frobDoorOrg;
-			ownerDir.z = 0;
-
-			float ownerTest = doorNormal * ownerDir;
-
-			if (posTest * ownerTest > 0)
+			if ( _backPosEnt.GetEntity() != NULL )
 			{
-				// found door handling position in front of the door
-				_frontPos = posOrg;
-				_frontPosEnt = doorHandlingPosition;
+				if ( !memory.closeFromAwayPos )
+				{
+					_backPosEnt = _frontPosEnt;
+				}
+
+				_backPos = _backPosEnt.GetEntity()->GetPhysics()->GetOrigin();
 			}
-			else
+		}
+		else // this is a normal door
+		{
+			if ( _frontPosEnt.GetEntity() != NULL )
 			{
-				// found door handling position behind the door
-				_backPos = posOrg;
-				_midPos = posOrg; // grayman #2345
-				_backPosEnt = doorHandlingPosition;
+				_frontPos = _frontPosEnt.GetEntity()->GetPhysics()->GetOrigin();
+			}
+
+			if ( _backPosEnt.GetEntity() != NULL )
+			{
+				_backPos = _backPosEnt.GetEntity()->GetPhysics()->GetOrigin();
+				_midPos = _backPos;
 			}
 		}
 	}
@@ -1845,16 +1911,29 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 			normalOffset.NormalizeFast();
 			normalOffset *= 1.5f * size;
 
-			_frontPos = frobDoorOrg + parallelOffset - normalOffset;
+			if ( _doorShouldBeClosed ) // grayman #2866
+			{
+				_backPos = frobDoorOrg + parallelOffset - normalOffset;
+			}
+			else
+			{
+				_frontPos = frobDoorOrg + parallelOffset - normalOffset;
+			}
 		}
 		
-		owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+		if ( _doorShouldBeClosed ) // grayman #2866
+		{
+			owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+		}
+		else
+		{
+			owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+		}
 	}
 	else
 	{
 		//Door opens away from us
 		PickWhere2Go(frobDoor); // grayman #2712
-//		owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 	}
 }
 
@@ -2037,13 +2116,31 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	}
 
 	memory.doorRelated.currentDoor = NULL;
+
+	if ( memory.closeSuspiciousDoor ) // grayman #2866
+	{
+		memory.closeMe = NULL;
+		memory.closeSuspiciousDoor = false;
+		_doorShouldBeClosed = false;
+		frobDoor->SetAlerted(false);
+		idAngles doorRotation = frobDoor->spawnArgs.GetAngles("rotate","0 90 0");
+		float angleAdjustment = 90;
+		if ( doorRotation.yaw != 0)
+		{
+			angleAdjustment = doorRotation.yaw;
+		}
+		owner->TurnToward(owner->GetCurrentYaw() - angleAdjustment); // turn away from the door
+		owner->SetAlertLevel( ( owner->thresh_1 + owner->thresh_2 ) / 2.0f); // alert level is just below thresh_2 at this point, so this drops it down halfway to thresh_1
+	}
+
+	_leaveDoor = -1; // reset timeout for leaving the door
 	_doorHandlingState = EStateNone;
 	owner->m_canResolveBlock = true; // grayman #2345
 }
 
 bool HandleDoorTask::CanAbort() // grayman #2706
 {
-	return (_doorHandlingState <= EStateMovingToSafePos);
+	return ( _doorHandlingState <= EStateMovingToSafePos );
 }
 
 void HandleDoorTask::DrawDebugOutput(idAI* owner)
@@ -2185,6 +2282,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_triedFitting);		// grayman #2345
 	savefile->WriteBool(_wasRunning);		// grayman #2694
 	savefile->WriteBool(_canHandleDoor);	// grayman #2712
+	savefile->WriteBool(_doorShouldBeClosed); // grayman #2866
 
 	_frontPosEnt.Save(savefile);
 	_backPosEnt.Save(savefile);
@@ -2210,6 +2308,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_triedFitting);	// grayman #2345
 	savefile->ReadBool(_wasRunning);	// grayman #2694
 	savefile->ReadBool(_canHandleDoor);	// grayman #2712
+	savefile->ReadBool(_doorShouldBeClosed); // grayman #2866
 
 	_frontPosEnt.Restore(savefile);
 	_backPosEnt.Restore(savefile);

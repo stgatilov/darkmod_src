@@ -4525,7 +4525,7 @@ bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target )
 	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
 	idVec3 ownOrigin = physicsObj.GetOrigin();
 
-	return ( ( ( point - ownOrigin).LengthFast() ) < maxDistanceToObserve );
+	return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
 }
 
 /*

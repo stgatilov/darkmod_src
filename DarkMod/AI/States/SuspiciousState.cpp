@@ -36,9 +36,75 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
+
+		// grayman #2866 - If there's a nearby door that was suspicious, close it now
+
+		// If returning to what we were doing before takes us through
+		// the door, don't close it here. It will get closed when we're on the other
+		// side and close it normally.
+
+		// If it doesn't take us through the door, then close it here.
+
+		// To find out if our path takes us through this door,
+		// compare which side of the door we were on when we first saw
+		// the door with which side we're on now.
+
+		Memory& memory = owner->GetMemory();
+		CFrobDoor* door = memory.closeMe.GetEntity();
+		if ( door != NULL )
+		{
+			memory.closeFromAwayPos = false; // close from the side the door swings toward
+			if ( memory.susDoorSameAsCurrentDoor )
+			{
+				if ( memory.doorSwingsToward )
+				{
+					memory.closeFromAwayPos = true; // close from the side the door swings away from
+				}
+			}
+			else
+			{
+				if ( !memory.doorSwingsToward )
+				{
+					memory.closeFromAwayPos = true; // close from the side the door swings away from
+				}
+			}
+
+			// grayman #2866 - check for custom door handling positions
+
+			idEntityPtr<idEntity> frontPos;
+			idEntityPtr<idEntity> backPos;
+
+			idList<idEntityPtr<idEntity>> list;
+
+			if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
+			{
+				frontPos = list[0];
+				backPos = list[1];
+				memory.closeFromAwayPos = false;
+				if ( memory.backPos == backPos ) // on same side of door that we were when we spotted the suspicious door?
+				{
+					if ( memory.susDoorSameAsCurrentDoor )
+					{
+						memory.closeFromAwayPos = true; // grayman #2866
+					}
+				}
+				else // on different side of door than when we spotted the suspicious door
+				{
+					if ( !memory.susDoorSameAsCurrentDoor )
+					{
+						memory.closeFromAwayPos = true;
+					}
+				}
+			}
+
+			memory.closeSuspiciousDoor = true; // grayman #2866
+			OnFrobDoorEncounter(door); // set up the door handling task, so you can close the door
+		}
+
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 2)
+
+	if (owner->AI_AlertIndex > 2)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[EInvestigating]);

@@ -40,7 +40,8 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 		owner->GetMind()->EndState();
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 1)
+	
+	if (owner->AI_AlertIndex > 1)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[ESuspicious]);
@@ -60,13 +61,25 @@ void ObservantState::Init(idAI* owner)
 	assert(owner);
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
+
+	// Shortcut reference
+	Memory& memory = owner->GetMemory();
 
 	float alertTime = owner->atime1 + owner->atime1_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
 	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / alertTime;
 
-	// Shortcut reference
-	Memory& memory = owner->GetMemory();
+	// grayman #2866 - zero alert decrease rate if handling a door or elevator
+
+	memory.savedAlertLevelDecreaseRate = _alertLevelDecreaseRate; // save for restoration later
+
+	if ((owner->m_HandlingDoor) || (owner->m_HandlingElevator))
+	{
+		_alertLevelDecreaseRate = 0;
+	}
 
 	// Stop playing idle animation
 	owner->actionSubsystem->ClearTasks();
@@ -125,8 +138,22 @@ void ObservantState::Think(idAI* owner)
 {
 	UpdateAlertLevel();
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 	
+	// grayman #2866 - zero alert decrease rate if handling a door or elevator
+
+	if ((owner->m_HandlingDoor) || (owner->m_HandlingElevator))
+	{
+		_alertLevelDecreaseRate = 0;
+	}
+	else
+	{
+		_alertLevelDecreaseRate = owner->GetMemory().savedAlertLevelDecreaseRate;
+	}
+
 	if (owner->GetMoveType() != MOVETYPE_SLEEP)
 	{
 		// Let the AI check its senses

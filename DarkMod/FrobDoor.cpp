@@ -359,6 +359,9 @@ void CFrobDoor::OnClosedPositionReached()
 
 	// Update the sound propagation values
 	UpdateSoundLoss();
+
+	// grayman #2866 - clear who used it last
+	SetLastUsedBy( NULL );
 }
 
 bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
@@ -640,8 +643,6 @@ void CFrobDoor::Event_Lock_StatusUpdate()
 
 void CFrobDoor::Event_Lock_OnLockPicked()
 {
-	SetLastUsedBy(gameLocal.GetLocalPlayer());
-
 	// "Lock is picked" signal, unlock in master mode
 	Unlock(true);
 }
@@ -1088,4 +1089,73 @@ void CFrobDoor::SetLastUsedBy(idEntity* ent)
 idEntity* CFrobDoor::GetLastUsedBy()
 {
 	return m_lastUsedBy.GetEntity();
+}
+
+// grayman #2866
+
+void CFrobDoor::SetAlerted(bool alerted)
+{
+	m_alerted = alerted;
+}
+
+bool CFrobDoor::GetAlerted()
+{
+	return m_alerted;
+}
+
+// grayman #2866 - GetDoorHandlingEntities() finds the door handling entities when a door uses them.
+
+bool CFrobDoor::GetDoorHandlingEntities( idAI* owner, idList< idEntityPtr<idEntity> > &list )
+{
+	idEntity* frontEnt = NULL;
+	idEntity* backEnt = NULL;
+	bool positionsFound = false;
+	list.Clear();
+
+	idVec3 frobDoorOrg = GetPhysics()->GetOrigin();
+	idVec3 ownerOrg = owner->GetPhysics()->GetOrigin();
+	idVec3 gravity = gameLocal.GetGravity();
+	const idVec3& closedPos = frobDoorOrg + GetClosedPos();
+
+	idVec3 dir = closedPos - frobDoorOrg;
+	dir.z = 0;
+	idVec3 ownerDir = ownerOrg - frobDoorOrg;
+	ownerDir.z = 0;
+	idVec3 doorNormal = dir.Cross(gravity);
+	float ownerTest = doorNormal * ownerDir;
+
+	// check for custom door handling positions
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = spawnArgs.MatchPrefix("door_handle_position", kv))
+	{
+		idStr posStr = kv->GetValue();
+		idEntity* doorHandlingPosition = gameLocal.FindEntity(posStr);
+
+		if ( doorHandlingPosition )
+		{
+			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
+			idVec3 posDir = posOrg - frobDoorOrg;
+			posDir.z = 0;
+			float posTest = doorNormal * posDir;
+
+			if (posTest * ownerTest > 0)
+			{
+				frontEnt = doorHandlingPosition; // door handling position in front of the door
+			}
+			else
+			{
+				backEnt = doorHandlingPosition; // door handling position on the far side of the door
+			}
+			positionsFound = true;
+		}
+	}
+
+	if ( positionsFound )
+	{
+		idEntityPtr<idEntity> &entityPtr1 = list.Alloc();
+		entityPtr1 = frontEnt;
+		idEntityPtr<idEntity> &entityPtr2 = list.Alloc();
+		entityPtr2 = backEnt;
+	}
+
+	return positionsFound;
 }

@@ -606,11 +606,24 @@ void State::OnVisualStim(idEntity* stimSource)
 	}
 	else if (aiUseType == EAIuse_Door)
 	{
-		// grayman #2859 - check visibility of door's center instead of its origin
+		// grayman #2866 - in the interest of reducing stim processing for closed doors,
+		// add a check here to see if the door is closed. Otherwise, a closed door will
+		// ping every AI w/in its radius (500) but the AI won't shut it down until it
+		// can see the door. A guard not patrolling will receive endless pings unless
+		// we shut it down here.
 
-		idVec3 origin = stimSource->GetPhysics()->GetAbsBounds().GetCenter();
+		CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
+		if ( !door->IsOpen() )
+		{
+			stimSource->IgnoreResponse(ST_VISUAL, owner);
+			return;
+		}
 
-		if ( !owner->CanSeeTargetPoint( origin, stimSource ) )
+		// grayman #2866 - check visibility of door's center when it's closed instead of its origin
+
+		idVec3 targetPoint = door->GetClosedBox().GetCenter();
+
+		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource ) )
 		{
 			return;
 		}
@@ -853,8 +866,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			float otherAlertLevel = otherAI->AI_AlertLevel * 0.7f;
 			
 			// grayman #2603 - only join if he's searching and I'm not, and I haven't been warned recently
+			// grayman #2866 - don't join if he's searching a suspicious door. Joining causes congestion.
 
-			if (otherAI->IsSearching() && !owner->IsSearching() && !(memory.searchFlags & SRCH_WARNED))
+			if ( otherAI->IsSearching() && !owner->IsSearching() && !( memory.searchFlags & SRCH_WARNED ) && ( otherMemory.alertType != EAlertTypeDoor ) )
 			{
 				owner->SetAlertLevel(otherAlertLevel);
 
@@ -2263,29 +2277,30 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 		gameLocal.m_AreaManager.RemoveForbiddenArea(doorInfo.areaNum, owner);
 	}
 
-	// We've seen this object, don't respond to it again
-	// Will get cleared if door changes state again
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
-
 	// Is it supposed to be closed?
 	if (!stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
 	{
 		// door is not supposed to be closed, ignore
+		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
 		return;
 	}
 
-	// Is it open?
-	if (!door->IsOpen())
+	// grayman #2866 - Delay dealing with this door until my alert level comes down.
+
+	if ( owner->AI_AlertIndex >= 2 )
 	{
-		// ignore closed doors
 		return;
 	}
 
-	// grayman #2859 - Check who last used the door. If lastUsedBy is NULL, become suspicious
+	// grayman #2859 - Check who last used the door.
 
 	idEntity* lastUsedBy = door->GetLastUsedBy();
 	if ( lastUsedBy == owner )
 	{
+		// Owner handled the door last, so he's probably handling it now,
+		// since stims arrive when the door is opened. Do nothing.
+
+		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
 		return; // owner opened the door, so all is well
 	}
 
@@ -2296,24 +2311,98 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	if ( ( lastUsedBy != NULL ) && owner->IsFriend( lastUsedBy ) && owner->CanSeeExt( lastUsedBy, false, false ) )
 	{
+		// A friend handled the door last, and since I can still see him
+		// he's probably handling the door now, since stims arrive when
+		// the door is opened. Do nothing.
+
+		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
 		return; // a friend I can see opened the door, so all is well
 	}
+
+	// grayman #2866 - Is someone else dealing with this suspicious door?
+
+	if ( door->GetAlerted() )
+	{
+		// The door has already alerted someone, who is probably now searching.
+		// Don't handle the door yourself; the searching AI will close it when done.
+		// Since someone's already searching around the door, don't get involved.
+
+		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
+		return;
+	}
+
+	// grayman #2866 - Delay dealing with this door if I'm already dealing with another suspicious door
+
+	CFrobDoor* closeMe = memory.closeMe.GetEntity();
+	if ( closeMe != NULL )
+	{
+		return;
+	}
+
+	// grayman #2866 - Delay dealing with this door if I'm too far into handling a non-suspicious door.
+	
+	memory.susDoorSameAsCurrentDoor = false;
+	const SubsystemPtr& subsys = owner->movementSubsystem;
+	TaskPtr task = subsys->GetCurrentTask();
+	if ( boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL )
+	{
+		CFrobDoor* currentDoor = memory.doorRelated.currentDoor.GetEntity();
+		if ( !task->CanAbort() )
+		{
+			return;
+		}
+
+		// Abort the current door so I can handle the suspicious door.
+
+		if ( currentDoor != NULL ) // shouldn't be NULL
+		{
+			memory.susDoorSameAsCurrentDoor = ( currentDoor == door );
+			subsys->FinishTask();
+		}
+	}
+
+	// grayman #2866 - NOW I can ignore future stims and process this one.
+	
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// Vocalize that I see something out of place
 
 	memory.lastTimeVisualStimBark = gameLocal.time;
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_foundOpenDoor"))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundOpenDoor")));
 	gameLocal.Printf("%s: That door (%s) isn't supposed to be open!\n",owner->name.c_str(),door->name.c_str());
 	
+	// This is a door that's supposed to be closed.
+	// Search for a while. Remember the door so you can close it later. 
+
+	memory.closeMe = door;
+	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
+
+	// grayman #2866 - Check if the door swings toward or away from us. We'll use this
+	// to determine whether we have to walk through the door before finally
+	// closing it.
+
+	memory.doorSwingsToward = (door->GetOpenDir() * (owner->GetPhysics()->GetOrigin() - door->GetPhysics()->GetOrigin()) > 0);
+
+	// grayman #2866 - Handle sliding doors.
+
+	idList<idEntityPtr<idEntity>> list;
+	if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
+	{
+		memory.frontPos = list[0];
+		memory.backPos = list[1];
+	}
+
+	door->SetAlerted(true); // flag that keeps other AI from joining in the search
+
+	// Raise alert level
+
 	// One more piece of evidence of something out of place
 	memory.countEvidenceOfIntruders++;
 
-	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+	if ( owner->AI_AlertLevel < owner->thresh_4 - 0.1f )
 	{
-		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
+//		memory.alertPos = stimSource->GetPhysics()->GetOrigin(); // grayman #2866 - old way, which doesn't work well with sliding doors
 		memory.alertClass = EAlertVisual_2; // grayman #2603
 		memory.alertType = EAlertTypeDoor;
 		
@@ -2326,8 +2415,9 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
-				
+
 	// Do new reaction to stimulus
+
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.alertedDueToCommunication = false;
 }
@@ -2891,6 +2981,5 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 		owner->movementSubsystem->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 	}
 }
-
 
 } // namespace ai
