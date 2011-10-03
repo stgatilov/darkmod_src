@@ -9903,9 +9903,8 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 		return;
 	}
 
-	gui->SetStateString( key, src->spawnArgs.GetString( spawnArg, "" ) );
+	gui->SetStateString( key, gameLocal.m_I18N->Translate( src->spawnArgs.GetString( spawnArg, "" ) ) );
 	gui->StateChanged( gameLocal.time );
-
 }
 
 void idEntity::CallGui(int handle, const char *namedEvent)
