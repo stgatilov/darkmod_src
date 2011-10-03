@@ -112,7 +112,7 @@ void CI18N::Init ( void ) {
 
 /*
 ===============
-CI18N::DM_GetLanguageDict
+CI18N::GetLanguageDict
 
 Returns the language dict, so that D3 can use it instead of the system dict. Should
 not be called directly.
