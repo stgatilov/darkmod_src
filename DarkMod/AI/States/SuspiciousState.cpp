@@ -49,10 +49,18 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 		// compare which side of the door we were on when we first saw
 		// the door with which side we're on now.
 
+		// If, before we put ourselves on the door queue to handle it, we find that
+		// others are on the queue, then we don't need to close the door.
+
 		Memory& memory = owner->GetMemory();
 		CFrobDoor* door = memory.closeMe.GetEntity();
 		if ( door != NULL )
 		{
+			if ( door->GetUserManager().GetNumUsers() > 0 )
+			{
+				return false; // others are queued up to use the door, so quit
+			}
+
 			memory.closeFromAwayPos = false; // close from the side the door swings toward
 			if ( memory.susDoorSameAsCurrentDoor )
 			{

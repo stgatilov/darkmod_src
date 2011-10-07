@@ -20,6 +20,8 @@ public:
 	// Adds user to the list, sorted by alert level
 	void AddUser(idActor*);
 
+	void AppendUser(idActor* actor); // grayman #1327 - append to the list, don't care about alert level
+
 	void RemoveUser(idActor*);
 
 	idActor* GetMasterUser();

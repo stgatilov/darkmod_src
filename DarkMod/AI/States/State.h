@@ -89,6 +89,7 @@ public:
 	// greebo: These get called by the above OnVisualStim() method. 
 	// The passed <stimSource> pointer is guaranteed to be non-NULL.
 	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner); // grayman #1327
 	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
@@ -164,6 +165,7 @@ private:
 		EAIuse_Missing_Item_Marker,
 		EAIuse_Broken_Item,
 		EAIuse_Door,
+		EAIuse_Suspicious, // grayman #1327
 		ENumMarkers, // invalid index
 	};
 

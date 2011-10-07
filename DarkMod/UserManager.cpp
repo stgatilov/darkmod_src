@@ -52,6 +52,25 @@ void UserManager::AddUser(idActor* actor)
 	}
 }
 
+// grayman #1327 - need to add a user w/o caring what the alert levels are
+
+void UserManager::AppendUser(idActor* actor)
+{
+	idEntityPtr<idActor> actorPtr;
+	actorPtr = actor;
+
+	int index(m_users.FindIndex(actorPtr));
+	if ( index < 0 )
+	{
+		// Actor is not in users list yet
+
+		if (actor->IsType(idAI::Type))
+		{
+			m_users.Append(actorPtr); // Append at the end of the list
+		}
+	}
+}
+
 void UserManager::RemoveUser(idActor* actor)
 {
 	idEntityPtr<idActor> actorPtr;

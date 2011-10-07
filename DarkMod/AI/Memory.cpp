@@ -70,7 +70,8 @@ Memory::Memory(idAI* owningAI) :
 	hidingSpotInvestigationInProgress(false),
 	fleeingDone(true),
 	positionBeforeTakingCover(0,0,0),
-	resolvingMovementBlock(false)
+	resolvingMovementBlock(false),
+	closeSuspiciousDoor(false) // grayman #1327
 {}
 
 // Save/Restore routines

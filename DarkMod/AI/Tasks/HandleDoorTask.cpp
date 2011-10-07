@@ -175,6 +175,7 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	bool useMid = true;
 
 	// If you're the only AI on the queue, close the door behind you if you're supposed to.
+	// grayman #1327 - but only if no one (other than you) is searching around the door
 
 	int numUsers = door->GetUserManager().GetNumUsers();
 
@@ -197,39 +198,6 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 			useMid = false; // use _backPos
 		}
 	}
-
-/*		// grayman #2712 - heading for the back position looks odd when the AI in
-		// front of you are walking away.
-	else // you're not alone
-	{
-		// Are there AI on the door queue who are waiting in
-		// front of you? If so, head for the back position and not the mid position,
-		// so there's less bumping when you exit the door.
-
-		idVec3 myOrg = owner->GetPhysics()->GetOrigin();
-		idVec3 myDir = owner->viewAxis.ToAngles().ToForward();
-
-		for (int i = 1 ; i < numUsers ; i++) // ignore 0, which is yourself
-		{
-			idActor* actor = door->GetUserManager().GetUserAtIndex(i);
-			if (actor->IsType(idAI::Type))
-			{
-				idAI* actorAI = static_cast<idAI*>(actor);
-				if (actorAI->GetMoveStatus() == MOVE_STATUS_WAITING)
-				{
-					idVec3 actorDir = actorAI->viewAxis.ToAngles().ToForward();
-					if ((actorDir * myDir) < 0)
-					{
-						// you and the actor are facing in different directions
-
-						useMid = false; // use _backPos
-						break;
-					}
-				}
-			}
-		}
-	}
- */
 
 	if (useMid)
 	{
@@ -274,6 +242,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
 	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
+	const idVec3& centerPos = frobDoor->GetClosedBox().GetCenter(); // grayman #1327
 
 	// if our current door is part of a double door, this is the other part.
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
@@ -415,10 +384,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						if (dist <= NEAR_DOOR_DISTANCE) // grayman #2345 - too close to door when you're not the master?
 						{
-							idVec3 dir2AI = owner->GetPhysics()->GetOrigin() - closedPos;
+							idVec3 dir2AI = owner->GetPhysics()->GetOrigin() - centerPos; // grayman #1327
 							dir2AI.z = 0;
 							dir2AI.NormalizeFast();
-							_safePos = closedPos + NEAR_DOOR_DISTANCE*dir2AI; // move to a safe spot
+							_safePos = centerPos + 1.5*NEAR_DOOR_DISTANCE*dir2AI; // grayman #1327 - extend safe spot distance
 
 							if (!owner->MoveToPosition(_safePos,HANDLE_DOOR_ACCURACY))
 							{
@@ -444,7 +413,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
-					owner->TurnToward(closedPos);
+					owner->TurnToward(centerPos); // grayman #1327
 					if (queuePos > 0)
 					{
 						_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
@@ -859,7 +828,32 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				float dist = dir.LengthFast();
 				if (dist <= QUEUE_DISTANCE)
 				{
-					if (masterUser == owner)
+					// grayman #1327 - don't move forward if someone other than me is searching near the door
+
+					bool canMove2Door = ( masterUser == owner );
+					if ( canMove2Door )
+					{
+						idEntity* searchingEnt = frobDoor->GetSearching();
+						if ( searchingEnt )
+						{
+							if ( searchingEnt->IsType(idAI::Type) )
+							{
+								idAI* searchingAI = static_cast<idAI*>(searchingEnt);
+								if ( searchingAI != owner )
+								{
+									idVec3 dirSearching = frobDoorOrg - searchingAI->GetPhysics()->GetOrigin();
+									dirSearching.z = 0;
+									float distSearching = dirSearching.LengthFast() - 32;
+									if ( distSearching <= dist )
+									{
+										canMove2Door = false;
+									}
+								}
+							}
+						}
+					}
+
+					if ( canMove2Door )
 					{
 						if (!_canHandleDoor) // grayman #2712
 						{
@@ -883,6 +877,20 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							_doorHandlingState = EStateMovingToFrontPos;
 						}
 					}
+					else if (dist <= NEAR_DOOR_DISTANCE) // grayman #1327 - too close to door when you're not the master
+														 // or if you are the master but someone's searching around the door?
+					{
+						idVec3 dir2AI = owner->GetPhysics()->GetOrigin() - centerPos; // grayman #1327
+						dir2AI.z = 0;
+						dir2AI.NormalizeFast();
+						_safePos = centerPos + 1.5*NEAR_DOOR_DISTANCE*dir2AI;
+
+						if (!owner->MoveToPosition(_safePos,HANDLE_DOOR_ACCURACY))
+						{
+							// TODO: position not reachable, need a better one
+						}
+						_doorHandlingState = EStateMovingToSafePos;
+					}
 					else if (owner->GetMoveStatus() != MOVE_STATUS_WAITING)
 					{
 						owner->StopMove(MOVE_STATUS_WAITING);
@@ -900,14 +908,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			
 				break;
 			}
-
 			
 			case EStateMovingToSafePos: // grayman #2345
 			{
 				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
-					owner->TurnToward(closedPos);
+					owner->TurnToward(centerPos); // grayman #1327
 					if (queuePos > 0)
 					{
 						_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
@@ -1995,6 +2002,17 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 		owner->PostEventMS(&AI_ReEvaluateArea, owner->doorRetryTime, areaNum);
 		frobDoor->RegisterAI(owner); // grayman #1145 - this AI is interested in this door
+
+		// grayman #1327 - terminate a hiding spot search if one is going on. The AI
+		// tried to get through this door to get to a spot, but since he can't reach
+		// it, he should get another spot.
+
+		Memory& memory = owner->GetMemory();
+		if ( memory.hidingSpotInvestigationInProgress )
+		{
+			memory.hidingSpotInvestigationInProgress = false;
+			memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		}
 	}
 }
 
@@ -2033,6 +2051,37 @@ idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
 	return bestController;
 }
 
+// grayman - for debugging door queues
+
+#if 0
+void PrintDoorQ(CFrobDoor* frobDoor)
+{
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     %s's door queue ...\r", frobDoor->name.c_str());
+	int n = frobDoor->GetUserManager().GetNumUsers();
+	if ( n == 0 )
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     is EMPTY\r");
+		return;
+	}
+
+	idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
+	for ( int j = 0 ; j < n ; j++ )
+	{
+		idActor* u = frobDoor->GetUserManager().GetUserAtIndex(j);
+		if ( u != NULL )
+		{
+			idVec3 dir = u->GetPhysics()->GetOrigin() - doorOrigin;
+			dir.z = 0;
+			float dist = dir.LengthFast();
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     %s at %f\r", u->name.c_str(),dist);
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     NULL\r");
+		}
+	}
+}
+#endif
 
 // grayman #2345 - when adding a door user, order the queue so that
 // users still moving toward the door are in
@@ -2044,7 +2093,6 @@ idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
 
 void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 {
-	idVec3 v = newUser->GetPhysics()->GetOrigin() - frobDoor->GetPhysics()->GetOrigin();
 	int numUsers = frobDoor->GetUserManager().GetNumUsers();
 	if (numUsers > 0)
 	{
@@ -2055,18 +2103,26 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 														// the queue, RemoveUser() does nothing.
 
 		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
-		float newUserDistance = (newUser->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
-		for (int i = 0 ; i < numUsers ; i++)
+		idVec3 dir = newUser->GetPhysics()->GetOrigin() - doorOrigin;
+		dir.z = 0;
+		float newUserDistanceSqr = dir.LengthSqr();
+		float qSqr = Square(QUEUE_DISTANCE);
+		for ( int i = 0 ; i < numUsers ; i++ )
 		{
 			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
-			if (user != NULL)
+			if ( user != NULL )
 			{
-				float userDistance = (user->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
-				if (userDistance > QUEUE_DISTANCE) // only cut in front of users not yet standing
+				idVec3 userDir = user->GetPhysics()->GetOrigin() - doorOrigin;
+				userDir.z = 0;
+				float userDistanceSqr = userDir.LengthSqr();
+				if ( userDistanceSqr > qSqr ) // only cut in front of users not yet standing
 				{
-					if (newUserDistance < userDistance) // cut in front of a user farther away
+					if ( newUserDistanceSqr < userDistanceSqr ) // cut in front of a user farther away
 					{
 						frobDoor->GetUserManager().InsertUserAtIndex(newUser,i);
+						
+						// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
+
 						return;
 					}
 				}
@@ -2074,7 +2130,9 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 		}
 	}
 
-	frobDoor->GetUserManager().AddUser(newUser);
+	frobDoor->GetUserManager().AppendUser(newUser);
+
+	// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
 }
 
 void HandleDoorTask::OnFinish(idAI* owner)
@@ -2105,6 +2163,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 		frobDoor->GetUserManager().RemoveUser(owner);
 		frobDoor->GetUserManager().ResetMaster(frobDoor); // grayman #2345/#2706 - redefine which AI is the master
+		// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
 
 		CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 		if (doubleDoor != NULL)
@@ -2122,7 +2181,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		memory.closeMe = NULL;
 		memory.closeSuspiciousDoor = false;
 		_doorShouldBeClosed = false;
-		frobDoor->SetAlerted(false);
+		frobDoor->SetSearching(NULL);
 		idAngles doorRotation = frobDoor->spawnArgs.GetAngles("rotate","0 90 0");
 		float angleAdjustment = 90;
 		if ( doorRotation.yaw != 0)

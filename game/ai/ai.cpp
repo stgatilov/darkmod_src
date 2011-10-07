@@ -1602,6 +1602,7 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
 	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
 	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
+	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 34; // grayman #1327
 	alertTypeWeight[ai::EAlertTypeBlood]				= 30;
 	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26;
 	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
@@ -5768,11 +5769,8 @@ void idAI::PlayFootStepSound()
 	localSound = ""; // grayman #2787
 	if (material != NULL) 
 	{
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("AI %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
 		g_Global.GetSurfName(material, localSound);
 		localSound = "snd_footstep_" + localSound;
-
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() ); 
 //		sound = spawnArgs.GetString( localSound.c_str() ); // grayman #2787
 	}
 
@@ -8576,7 +8574,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
 	if (m_bIgnoreAlerts) return;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::HearSound: %s - AI Hear Sound called\r",name.c_str());
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
@@ -8655,8 +8652,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
 				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
 		}
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::HearSound: AI %s HEARD a sound\r",name.c_str());
 
 		if ( cv_ai_debug.GetBool() )
 		{

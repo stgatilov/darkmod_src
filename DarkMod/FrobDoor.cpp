@@ -1091,16 +1091,16 @@ idEntity* CFrobDoor::GetLastUsedBy()
 	return m_lastUsedBy.GetEntity();
 }
 
-// grayman #2866
+// grayman #1327
 
-void CFrobDoor::SetAlerted(bool alerted)
+void CFrobDoor::SetSearching(idEntity* ent)
 {
-	m_alerted = alerted;
+	m_searching = ent;
 }
 
-bool CFrobDoor::GetAlerted()
+idEntity* CFrobDoor::GetSearching()
 {
-	return m_alerted;
+	return m_searching.GetEntity();
 }
 
 // grayman #2866 - GetDoorHandlingEntities() finds the door handling entities when a door uses them.

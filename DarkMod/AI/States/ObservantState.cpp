@@ -37,6 +37,19 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex < 1)
 	{
 		// Alert index is too low for this state, fall back
+
+		// grayman #1327 - if you were searching a suspicious
+		// door, let it go, in case you haven't already
+
+		Memory& memory = owner->GetMemory();
+		CFrobDoor* door = memory.closeMe.GetEntity();
+		if ( door )
+		{
+			memory.closeMe = NULL;
+			memory.closeSuspiciousDoor = false;
+			door->SetSearching(NULL);
+		}
+
 		owner->GetMind()->EndState();
 		return false;
 	}

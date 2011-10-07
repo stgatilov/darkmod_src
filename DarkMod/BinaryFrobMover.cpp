@@ -79,7 +79,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_closedBox.Clear();	// grayman #2345
 	m_registeredAI.Clear();	// grayman #1145
 	m_lastUsedBy = NULL;	// grayman #2859
-	m_alerted = false;		// grayman #2866 - has this door alerted an AI?
+	m_searching = NULL;		// grayman #1327 - someone searching around this door
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
@@ -156,7 +156,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	}
 
 	m_lastUsedBy.Save(savefile); // grayman #2859
-	savefile->WriteBool(m_alerted); // grayman #2866
+	m_searching.Save(savefile);	 // grayman #1327
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -214,7 +214,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	}
 
 	m_lastUsedBy.Restore(savefile); // grayman #2859
-	savefile->ReadBool(m_alerted);  // grayman #2866
+	m_searching.Restore(savefile);  // grayman #1327
 }
 
 void CBinaryFrobMover::Spawn()
@@ -931,11 +931,11 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 
 	const idBounds& bounds = clipModel->GetAbsBounds();
 
-	idVec3 center = GetPhysics()->GetOrigin() + m_ClosedPos * 0.5;
+	idVec3 center = GetClosedBox().GetCenter(); // grayman #2877 - new way
+//	idVec3 center = GetPhysics()->GetOrigin() + m_ClosedPos * 0.5; // grayman #2877 - old way
 	center.z = bounds[0].z + 1;
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
-
 	idAASLocal* aasLocal = dynamic_cast<idAASLocal*> (aas);
 
 	if (aasLocal)

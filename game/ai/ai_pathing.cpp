@@ -335,12 +335,16 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 		if ( i == skipObstacle ) {
 			continue;
 		}
+
 		if ( bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y ||
-				bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y ) {
+				bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y )
+		{
 			continue;
 		}
-		if ( obstacles[i].winding.RayIntersection( startPos, delta, scale1, scale2, edgeNums ) ) {
-			if ( scale1 < blockingScale && scale1 * dist > -0.01f && scale2 * dist > 0.01f ) {
+		if ( obstacles[i].winding.RayIntersection( startPos, delta, scale1, scale2, edgeNums ) )
+		{
+			if ( scale1 < blockingScale && scale1 * dist > -0.01f && scale2 * dist > 0.01f )
+			{
 				blockingScale = scale1;
 				blockingObstacle = i;
 				blockingEdgeNum = edgeNums[0];
@@ -711,6 +715,16 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		if (!GetFirstBlockingObstacle(physics, obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
 									  blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
 		{
+			// grayman #1327 - return the door even if blockingScale (determined in GetFirstBlockingObstacle() )
+			// was > 1. This allows AI to see doors sooner, and helps reduce the number of instances where
+			// they don't see the door at all.
+
+			if ( blockingDoorNum >= 0 )
+			{
+				idEntity* door = obstacles[blockingDoorNum].entity; // we already know this is a valid door
+				pathInfo.doorObstacle = static_cast<CFrobDoor*>(door);
+			}
+
 			// No first obstacle found
 			return 0;
 		}
@@ -718,32 +732,15 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		// grayman #2345 - rather than test to see if the first blocking obstacle
 		// is a door, test to see if ANY is a door. If so, mark the first one.
 
-#if 0
-	// old code
-		if (blockingObstacle != -1 && obstacles[blockingObstacle].entity != NULL && 
-			obstacles[blockingObstacle].entity->IsType(CFrobDoor::Type))
-		{
-			// greebo: We have a frobmover as first blocking obstacle
-			pathInfo.doorObstacle = static_cast<CFrobDoor*>(obstacles[blockingObstacle].entity);
-		}
-	}
-	else if (obstacles[startObstacleNum].entity->IsType(CFrobDoor::Type))
-	{
-		pathInfo.doorObstacle = static_cast<CFrobDoor*>(obstacles[startObstacleNum].entity);
-	}
-	// end old code
-#else
-	// new code
-		if (blockingDoorNum >= 0)
+		if ( blockingDoorNum >= 0 )
 		{
 			idEntity* door = obstacles[blockingDoorNum].entity; // we already know this is a valid door
 			pathInfo.doorObstacle = static_cast<CFrobDoor*>(door);
 		}
 	}
-	// end new code
-#endif
 
 	// create obstacles for AAS walls
+
 	if ( aas != NULL )
 	{
 		float halfBoundsSize = ( expBounds[ 1 ].x - expBounds[ 0 ].x ) * 0.5f;
@@ -989,6 +986,7 @@ pathNode_t *BuildPathTree( const idPhysics *physics, const obstacle_t *obstacles
 		// if an obstacle is blocking the path
 
 		int blockingDoorNum = -1; // grayman #2345 - will hold the index to the first blocking door
+
 		if ( GetFirstBlockingObstacle(physics, obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
 		{
 			if ( path.firstObstacle == NULL ) {

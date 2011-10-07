@@ -530,10 +530,10 @@ protected:
 	idEntityPtr<idEntity>		m_lastUsedBy;
 
 	/**
-	* grayman #2866 - has this door alerted an AI?
+	* grayman #1327 - an AI that's searching around the door
 	**/
 
-	bool						m_alerted;
+	idEntityPtr<idEntity>		m_searching;
 };
 
 #endif /* !BINARYFROBMOVER */

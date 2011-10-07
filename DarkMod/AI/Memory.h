@@ -42,6 +42,7 @@ namespace ai
 #define AIUSE_STEAMBOT			"AIUSE_STEAMBOT"	// steambots
 #define AIUSE_UNDEAD			"AIUSE_UNDEAD"		// An undead creature
 #define AIUSE_WEAPON			"AIUSE_WEAPON"
+#define AIUSE_SUSPICIOUS		"AIUSE_SUSPICIOUS"	// grayman #1327
 
 //----------------------------------------------------------------------------------------
 // The following key and values are used for identifying types of lights
@@ -116,6 +117,7 @@ enum EAlertType
 	EAlertTypeBrokenItem,
 	EAlertTypeDoor,
 	EAlertTypeDamage,
+	EAlertTypeSuspiciousItem, // grayman #1327
 	EAlertTypeCount
 };
 
@@ -158,8 +160,13 @@ const char* const AlertStateNames[EAlertStateNum] =
 #define REBARK_DELAY 15000
 
 // grayman #2603 - search flags
-#define SRCH_WAS_SEARCHING	1	// set when searching occurred while alert
-#define SRCH_WARNED			2	// set when warned by another searching AI
+// grayman #1327 - broke single warning flag into specific warning flags
+#define SRCH_WAS_SEARCHING			1	// set when searching occurred while alert
+#define SRCH_WARNED_ENEMY			2	// set when warned by another AI that an enemy was seen
+#define SRCH_WARNED_CORPSE			4	// set when warned by another AI that someone died
+#define SRCH_WARNED_MISSING_ITEM	8	// set when warned by another AI that something was stolen
+#define SRCH_WARNED_EVIDENCE		16	// set when warned by another AI that evidence is mounting
+#define SRCH_WARNED ( SRCH_WARNED_ENEMY | SRCH_WARNED_CORPSE | SRCH_WARNED_MISSING_ITEM | SRCH_WARNED_EVIDENCE )
 
 /**
  * greebo: This class acts as container for all kinds of state variables.

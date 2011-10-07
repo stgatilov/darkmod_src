@@ -167,11 +167,12 @@ struct CommMessage
 		GetOutOfTheWayOrder_CommType,
 
 		/**
-		 * greebo: These three were defined the script, but not here >> added.
+		 * greebo: These three were defined in the script, but not here >> added.
 		 */
 		ConveyWarning_EvidenceOfIntruders_CommType,
 		ConveyWarning_ItemsHaveBeenStolen_CommType,
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
+		ConveyWarning_CorpseHasBeenSeen_CommType, // grayman #1327
 
 		NumCommTypes, // invalid type
 	};
