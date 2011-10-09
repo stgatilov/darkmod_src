@@ -2225,7 +2225,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 		m_MissionDataLoadedIntoGUI = true;
 	}
-	else if (cmd == "loadStatistics")
+	else if (cmd == "loadstatistics")
 	{
 		// Load the statistics into the GUI
 		UpdateStatisticsGUI(gui, "listStatistics");
@@ -2322,7 +2322,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// Set the objectives state flag back to dirty
 		ClearGUIState();
 	}
-	else if (cmd == "diffSelect")
+	else if (cmd == "diffselect")
 	{
 		// change the difficulty (skill) level to selected value
 		gameLocal.m_DifficultyManager.SetDifficultyLevel(gui->GetStateInt("diffSelect", "0"));

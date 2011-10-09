@@ -160,7 +160,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			};
 		}
 	}
-	else if (cmd == "refreshAvailableMissionList")
+	else if (cmd == "refreshavailablemissionlist")
 	{
 		if (!cv_tdm_allow_http_access.GetBool() || gameLocal.m_HttpConnection == NULL)
 		{
@@ -192,7 +192,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			gameLocal.Error("No URLs specified to download the mission list XML.");
 		}
 	}
-	else if (cmd == "onDownloadableMissionSelected")
+	else if (cmd == "ondownloadablemissionselected")
 	{
 		int selectedMission = gui->GetStateInt("av_mission_selected");
 
@@ -213,7 +213,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		gui->HandleNamedEvent("UpdateAvailableMissionColours");
 	}
-	else if (cmd == "onSelectMissionForDownload")
+	else if (cmd == "onselectmissionfordownload")
 	{
 		int selectedMission = gui->GetStateInt("av_mission_selected");
 		int missionIndex = selectedMission + _availListTop;
@@ -225,7 +225,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onDeselectMissionForDownload")
+	else if (cmd == "ondeselectmissionfordownload")
 	{
 		int selectedItem = gui->GetStateInt("dl_mission_selected");
 		int index = selectedItem + _selectedListTop;
@@ -237,7 +237,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		UpdateGUI(gui);
 		UpdateDownloadProgress(gui);
 	}
-	else if (cmd == "onDownloadableMissionScrollUp")
+	else if (cmd == "ondownloadablemissionscrollup")
 	{
 		int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");
 		_availListTop -= numMissionsPerPage;
@@ -246,14 +246,14 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onDownloadableMissionScrollDown")
+	else if (cmd == "ondownloadablemissionscrolldown")
 	{
 		int numMissionsPerPage = gui->GetStateInt("packagesPerPage", "5");
 		_availListTop += numMissionsPerPage;
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onSelectedMissionScrollUp")
+	else if (cmd == "onselectedmissionscrollup")
 	{
 		int itemsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
 		_selectedListTop -= itemsPerPage;
@@ -262,14 +262,14 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onSelectedMissionScrollDown")
+	else if (cmd == "onselectedmissionscrolldown")
 	{
 		int itemsPerPage = gui->GetStateInt("selectedPackagesPerPage", "5");
 		_selectedListTop += itemsPerPage;
 
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onDownloadableMissionShowDetails")
+	else if (cmd == "ondownloadablemissionshowdetails")
 	{
 		int selectedMission = gui->GetStateInt("av_mission_selected");
 		int missionIndex = selectedMission + _availListTop;
@@ -279,23 +279,23 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		gui->HandleNamedEvent("onDownloadableMissionDetailsLoaded");
 	}
-	else if (cmd == "onStartDownload")
+	else if (cmd == "onstartdownload")
 	{
 		StartDownload(gui);
 		UpdateDownloadProgress(gui); // do this first
 		UpdateGUI(gui);
 	}
-	else if (cmd == "onDownloadCompleteConfirm")
+	else if (cmd == "ondownloadcompleteconfirm")
 	{
 		// Let the GUI request another refresh of downloadable missions (with delay)
 		gui->HandleNamedEvent("QueueDownloadableMissionListRefresh");
 	}
-	else if (cmd == "onGetNextScreenshotForAvailableMission")
+	else if (cmd == "ongetnextscreenshotforavailablemission")
 	{
 		PerformScreenshotStep(gui, +1);
 		UpdateScreenshotItemVisibility(gui);
 	}
-	else if (cmd == "onGetPrevScreenshotForAvailableMission")
+	else if (cmd == "ongetprevscreenshotforavailablemission")
 	{
 		PerformScreenshotStep(gui, -1);
 		UpdateScreenshotItemVisibility(gui);
