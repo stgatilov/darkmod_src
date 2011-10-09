@@ -49,7 +49,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			// Update mission DB records
 			gameLocal.m_MissionManager->RefreshMetaDataForNewFoundMods();
 
-			gui->SetStateString("newFoundMissionsText", "New missions available");
+			gui->SetStateString("newFoundMissionsText", gameLocal.m_I18N->Translate( "#str_02143" ) ); // New missions available
 			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundModsText());
 			gui->HandleNamedEvent("OnNewMissionsFound");
 

@@ -682,19 +682,17 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 
 	if (successfulDownloads > 0)
 	{
-		msg.message += va( gameLocal.m_I18N->Translate( "#str_02143" ), // "%d %s successfully downloaded. You'll find the %s in the 'New Mission' page."
-			successfulDownloads, 
-			// mission, missions
-			GetPlural(successfulDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ), 
-			GetPlural(successfulDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ) ); 
+		msg.message += va( 
+			// "%d mission/missions successfully downloaded. You'll find it/them in the 'New Mission' page."
+			GetPlural(successfulDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ),
+			successfulDownloads ); 
 	}
 	
 	if (failedDownloads > 0)
 	{
-		msg.message += va( gameLocal.m_I18N->Translate( "#str_02146" ), // "\n%d %s couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
-			failedDownloads, 
-			// mission, missions
-			GetPlural(failedDownloads, gameLocal.m_I18N->Translate( "#str_02144" ), gameLocal.m_I18N->Translate( "#str_02145" ) ) ); 
+		// "\n%d mission(s) couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
+		msg.message += va( gameLocal.m_I18N->Translate( "#str_02146" ),
+			failedDownloads ); 
 	}
 
 	gameLocal.AddMainMenuMessage(msg);
