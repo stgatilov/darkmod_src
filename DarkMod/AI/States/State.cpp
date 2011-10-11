@@ -25,6 +25,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "BlindedState.h"
 #include "SwitchOnLightState.h"
 #include "FailedKnockoutState.h"
+#include "ExamineRopeState.h" // grayman #2872
 
 #include "../../BinaryFrobMover.h"
 #include "../../FrobDoor.h"
@@ -460,6 +461,11 @@ void State::OnVisualStim(idEntity* stimSource)
 		aiUseType = EAIuse_Suspicious;
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeSuspiciousItem");
 	}
+	else if (aiUse == AIUSE_ROPE) // grayman #2872
+	{
+		aiUseType = EAIuse_Rope;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeRope","0.0");
+	}
 
 	// If chanceToNotice for this stim type is zero, ignore it in the future
 
@@ -562,6 +568,8 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	// Only respond if we can actually see it
 
+	idVec3 ropeStimSource = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY); // grayman #2872
+
 	if (aiUseType == EAIuse_Lightsource)
 	{
 		// grayman #2603 -  A light sends a stim to each entity w/in its radius that's not ignoring it,
@@ -584,9 +592,10 @@ void State::OnVisualStim(idEntity* stimSource)
 
 		// If we're already in the process of relighting a light, don't repond to this stim now.
 		// We'll see it again later.
+		// grayman #2872 - if we're examining a rope, don't respond to this stim now.
 
 		idLight* light = static_cast<idLight*>(stimSource);
-		if (owner->m_RelightingLight)
+		if ( owner->m_RelightingLight || owner->m_ExaminingRope )
 		{
 			owner->SetDelayedStimExpiration(stimPtr); // delay your next check of this stim
 			return;
@@ -640,6 +649,42 @@ void State::OnVisualStim(idEntity* stimSource)
 			return;
 		}
 	}
+	else if (aiUseType == EAIuse_Rope) // grayman #2872
+	{
+		// Check if the stimSource is attached to a stuck rope arrow or a broken flinder
+
+		idEntity* bindMaster = stimSource->GetBindMaster();
+		if ( bindMaster != NULL )
+		{
+			idEntity* rope = bindMaster->FindMatchingTeamEntity( idAFEntity_Generic::Type );
+			if ( rope != NULL )
+			{
+				// stimSource is a stuck rope arrow, so we have to check visibility of a spot somewhere along the rope
+
+				ropeStimSource = owner->CanSeeRope( stimSource );
+				if ( ropeStimSource == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+				{
+					return; // can't see the rope
+				}
+			}
+			else
+			{
+				aiUseType = EAIuse_Suspicious; // change to suspicious flinder
+				if ( !owner->CanSee(stimSource, true) )
+				{
+					return; // can't see the flinder
+				}
+			}
+		}
+		else
+		{
+			aiUseType = EAIuse_Suspicious; // change to suspicious flinder
+			if ( !owner->CanSee(stimSource, true) )
+			{
+				return; // can't see the flinder
+			}
+		}
+	}
 	else if (!owner->CanSee(stimSource, true))
 	{
 		//DEBUG_PRINT ("I can't see the " + aiUse);
@@ -675,6 +720,12 @@ void State::OnVisualStim(idEntity* stimSource)
 		if (ShouldProcessAlert(EAlertTypeSuspiciousItem))
 		{
 			OnVisualStimSuspicious(stimSource,owner);
+		}
+		break;
+	case EAIuse_Rope: // grayman #2872
+		if (ShouldProcessAlert(EAlertTypeRope))
+		{
+			OnVisualStimRope(stimSource,owner,ropeStimSource);
 		}
 		break;
 	case EAIuse_Blood_Evidence:
@@ -765,6 +816,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	// TWO more piece of evidence of something out of place: A weapon is not a good thing
 	memory.countEvidenceOfIntruders += 2;
 	memory.stopRelight = true; // grayman #2603
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
@@ -827,6 +879,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	// One more piece of evidence of something out of place.
 	memory.countEvidenceOfIntruders++;
 	memory.stopRelight = true;
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
@@ -849,6 +902,51 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.investigateStimulusLocationClosely = true; // deep investigation
 	memory.alertedDueToCommunication = false;
+}
+
+// grayman #2872 - modified copy of OnVisualStimSuspicious()
+
+void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource )
+{
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
+
+	// We've seen this object, don't respond to it again
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
+
+	// Vocalize that see something out of place
+	gameLocal.Printf("Hmm, that isn't right!\n");
+	if (owner->AI_AlertLevel < owner->thresh_5 &&
+		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask("snd_foundSuspiciousItem"))
+		);
+	}
+
+	// One more piece of evidence of something out of place.
+	memory.countEvidenceOfIntruders++;
+	memory.stopRelight = true;
+
+	// Raise alert level
+	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+	{
+		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
+	}
+	
+	idEntity* bindMaster = stimSource->GetBindMaster();
+	if ( bindMaster != NULL )
+	{
+		owner->m_ExaminingRope = true;
+		owner->m_LatchedSearch = true; // set up search after rope is examined
+		memory.stopExaminingRope = false;
+		idEntity* rope = bindMaster->FindMatchingTeamEntity( idAFEntity_Generic::Type );
+		idAFEntity_Generic* ropeAF = static_cast<idAFEntity_Generic*>(rope);
+		owner->GetMind()->SwitchState(StatePtr(new ExamineRopeState(ropeAF,ropeStimSource))); // go examine the rope
+	}
 }
 
 void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
@@ -947,6 +1045,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 				owner->StopMove(MOVE_STATUS_DONE);
 				owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
+				owner->GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 				memory.alertPos = otherMemory.alertPos;
 				memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
@@ -1496,7 +1595,8 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 		// Three more piece of evidence of something out of place: A dead body is a REALLY bad thing
 		memory.countEvidenceOfIntruders += 3;
 		memory.stopRelight = true; // grayman #2603
-	
+		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+
 		// Determine what to say
 		idStr soundName;
 		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
@@ -1572,6 +1672,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		memory.unconsciousPeopleHaveBeenFound = true;
 		memory.countEvidenceOfIntruders += 2; // grayman #2603
 		memory.stopRelight = true; // grayman #2603
+		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 		// We've seen this object, don't respond to it again
 		person->IgnoreResponse(ST_VISUAL, owner);
@@ -1860,6 +1961,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	// One more piece of evidence of something out of place
 	memory.countEvidenceOfIntruders++;
 	memory.stopRelight = true; // grayman #2603
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
@@ -2284,6 +2386,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	memory.itemsHaveBeenStolen = true;
 	memory.countEvidenceOfIntruders++;
 	memory.stopRelight = true; // grayman #2603
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < alert)
@@ -2319,6 +2422,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
 	owner->Event_LookAtEntity(stimSource, 1);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Speak a reaction
 	memory.lastTimeVisualStimBark = gameLocal.time;
@@ -2962,6 +3066,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				owner->SetAlertLevel(otherAlertLevel);
 				owner->StopMove(MOVE_STATUS_DONE);
 				memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+				memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 				Memory& otherMemory = static_cast<idAI*>(issuingEntity)->GetMemory();
 

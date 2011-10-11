@@ -100,6 +100,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.countEvidenceOfIntruders++;
 		memory.alertedDueToCommunication = false;
 		memory.stopRelight = true; // grayman #2603
+		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 		// Alert the AI
 		owner->AlertAI("tact", owner->thresh_5*2);

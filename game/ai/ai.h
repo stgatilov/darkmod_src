@@ -1116,6 +1116,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_RelightingLight;
 
 	/**
+	 * grayman #2872: is set to true while the AI is examining a rope
+	 */
+	bool					m_ExaminingRope;
+
+	/**
 	 * grayman #2603: is set true while the AI is dropping a torch.
 	 */
 	bool					m_DroppingTorch;
@@ -1491,7 +1496,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 
-	bool					CanSeeTargetPoint( idVec3 point, idEntity* target ); // grayman #2859
+	bool					CanSeeTargetPoint( idVec3 point, idEntity* target ) const; // grayman #2859
+
+	idVec3					CanSeeRope( idEntity *ent ) const; // grayman #2872
 
 	// angua: if the focusTime > gameLocal.time, the AI is currently looking at a specified entity or location
 	ID_INLINE int			GetFocusTime()

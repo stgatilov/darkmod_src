@@ -52,6 +52,7 @@ void TakeCoverState::Init(idAI* owner)
 	// wait there for some time and then emerge to have a look.
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
 	owner->movementSubsystem->ClearTasks();
 	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(500)));
 	owner->movementSubsystem->QueueTask(MoveToCoverTask::CreateInstance());

@@ -47,6 +47,7 @@ void BlindedState::Init(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - abort a rope examination
 
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 

@@ -37,6 +37,7 @@ void DeadState::Init(idAI* owner)
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
+	owner->GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Clear all the subsystems, this might cause animstate changes
 	owner->movementSubsystem->ClearTasks();

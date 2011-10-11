@@ -1181,6 +1181,9 @@ public:
 
 	void					ClearStimIgnoreList(StimType type);
 
+	bool					CheckResponseIgnore(StimType type, idEntity* fromEntity); // grayman #2872
+
+
 	/**
 	 * This triggers a stand-alone response (without an actual Stim) on this entity.
 	 *

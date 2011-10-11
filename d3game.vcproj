@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
 	RootNamespace="Game"
@@ -78,7 +78,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
 				AdditionalDependencies="dbghelp.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib libjpeg.lib libpng.lib"
-				OutputFile="../gamex86.dll"
+				OutputFile="../../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="DebugDLL;lib;win32/lib;win32/devil/lib;win32/libjpeg/lib;win32/libpng/lib"
@@ -186,7 +186,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
 				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib DevIL.lib ZipLoader.lib libcurl.lib WS2_32.lib libjpeg.lib libpng.lib"
-				OutputFile="../gamex86.dll"
+				OutputFile="../../gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="releasedll;lib;win32/lib;win32/devil/lib;win32/libjpeg/lib;win32/libpng/lib"
@@ -1982,6 +1982,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\I18N.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\I18N.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\ImageMapManager.cpp"
 					>
 				</File>
@@ -2003,14 +2011,6 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\Intersection.h"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\I18N.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DarkMod\I18N.h"
 					>
 				</File>
 				<File
@@ -2783,6 +2783,14 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\DarkMod\AI\States\ExamineRopeState.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\DarkMod\AI\States\ExamineRopeState.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

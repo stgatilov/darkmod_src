@@ -95,7 +95,8 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 
-	if (!owner->m_RelightingLight && // grayman #2603 - No rampdown bark if relighting a light.
+	if (!owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
+		!owner->m_ExaminingRope &&		// grayman #2872 - No rampdown bark if examining a rope.
 		(owner->m_maxAlertLevel >= owner->thresh_1) && // grayman #2603 - m_lastAlertLevel can be uninitialized here, so it's not a good thing to check
 		(owner->m_maxAlertLevel < owner->thresh_4))
 //		(owner->m_lastAlertLevel >= owner->thresh_1) &&

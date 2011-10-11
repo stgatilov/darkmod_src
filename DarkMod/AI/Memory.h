@@ -43,6 +43,7 @@ namespace ai
 #define AIUSE_UNDEAD			"AIUSE_UNDEAD"		// An undead creature
 #define AIUSE_WEAPON			"AIUSE_WEAPON"
 #define AIUSE_SUSPICIOUS		"AIUSE_SUSPICIOUS"	// grayman #1327
+#define AIUSE_ROPE				"AIUSE_ROPE"		// grayman #2872
 
 //----------------------------------------------------------------------------------------
 // The following key and values are used for identifying types of lights
@@ -117,7 +118,8 @@ enum EAlertType
 	EAlertTypeBrokenItem,
 	EAlertTypeDoor,
 	EAlertTypeDamage,
-	EAlertTypeSuspiciousItem, // grayman #1327
+	EAlertTypeSuspiciousItem,	// grayman #1327
+	EAlertTypeRope,				// grayman #2872
 	EAlertTypeCount
 };
 
@@ -248,6 +250,9 @@ public:
 
 	// grayman #2603 - abort an ongoing light relight?
 	bool stopRelight;
+
+	// grayman #2872 - abort a rope examination?
+	bool stopExaminingRope;
 
 	// grayman #2603 - a light that's being relit
 	idEntityPtr<idLight> relightLight;

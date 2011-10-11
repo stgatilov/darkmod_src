@@ -48,6 +48,8 @@ void FleeState::Init(idAI* owner)
 	// The movement subsystem should wait half a second before starting to run
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+
 	if (owner->GetEnemy())
 	{
 		owner->FaceEnemy();

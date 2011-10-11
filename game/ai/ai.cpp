@@ -44,6 +44,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/EscapePointManager.h"
 #include "../../DarkMod/PositionWithinRangeFinder.h"
 #include "../../DarkMod/TimerManager.h"
+#include "../../DarkMod/ProjectileResult.h" // grayman #2872
 
 // For handling the opening of doors and other binary Frob movers
 #include "../../DarkMod/BinaryFrobMover.h"
@@ -948,6 +949,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
 	savefile->WriteBool(m_RelightingLight);	// grayman #2603
+	savefile->WriteBool(m_ExaminingRope);	// grayman #2872
 	savefile->WriteBool(m_DroppingTorch);	// grayman #2603
 	savefile->WriteBool(m_RestoreMove);		// grayman #2706
 	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
@@ -1376,6 +1378,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
 	savefile->ReadBool(m_RelightingLight);	// grayman #2603
+	savefile->ReadBool(m_ExaminingRope);	// grayman #2872
 	savefile->ReadBool(m_DroppingTorch);	// grayman #2603
 	savefile->ReadBool(m_RestoreMove);		// grayman #2706
 	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
@@ -1602,7 +1605,8 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
 	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
 	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
-	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 34; // grayman #1327
+	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872
+	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327
 	alertTypeWeight[ai::EAlertTypeBlood]				= 30;
 	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26;
 	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
@@ -1897,6 +1901,7 @@ void idAI::Spawn( void )
 
 	m_HandlingElevator = false;
 	m_RelightingLight = false;	// grayman #2603
+	m_ExaminingRope = false;	// grayman #2872
 	m_DroppingTorch = false;	// grayman #2603
 
 	// =============== Set up KOing and FOV ==============
@@ -4408,6 +4413,102 @@ bool idAI::CanSeeExt( idEntity *ent, const bool useFOV, const bool useLighting )
 	return cansee;
 }
 
+// grayman #2859 - Can the AI see a point belonging to a target (not necessarily its origin)?
+
+bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target ) const
+{
+	// Check FOV
+
+	if ( !CheckFOV( point ) )
+	{
+		return false;
+	}
+
+	// Check visibility
+
+	trace_t result;
+	idVec3 eye(GetEyePosition()); // eye position of the AI
+
+	// Trace from eye to point, ignoring self
+
+	gameLocal.clip.TracePoint(result, eye, point, MASK_OPAQUE, this);
+	if ( result.fraction < 1.0 )
+	{
+		if ( gameLocal.GetTraceEntity(result) != target )
+		{
+			return false;
+		}
+	}
+
+	// Check lighting
+
+	idVec3 topPoint = point - (physicsObj.GetGravityNormal() * 32.0);
+	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
+	idVec3 ownOrigin = physicsObj.GetOrigin();
+
+	return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
+}
+
+/*
+=====================
+The Dark Mod
+idAI::CanSeeRope
+
+grayman #2872 - This method takes lighting conditions and field of vision under consideration.
+=====================
+*/
+idVec3 idAI::CanSeeRope( idEntity *ent ) const
+{
+	// Find a point on the rope at the same elevation as the AI's eyes
+
+	// ent is the projectile_result for the rope arrow. It's bound to the stuck rope arrow,
+	// which also has the rope bound to it.
+
+	idEntity* bindMaster = ent->GetBindMaster();
+	if ( bindMaster != NULL )
+	{
+		idEntity* rope = bindMaster->FindMatchingTeamEntity( idAFEntity_Generic::Type );
+
+		if ( rope != NULL )
+		{
+			idAFEntity_Generic* ropeAF = static_cast<idAFEntity_Generic*>(rope);
+			const idDeclModelDef *modelDef = rope->GetAnimator()->ModelDef();
+			idList<jointHandle_t> jointList;
+			idStr jointNames = rope->spawnArgs.GetString("rope_joints"); // names of joints defined in the model file
+			modelDef->GetJointList(jointNames,jointList);
+
+			// Randomly select a joint, and randomly select a point along the
+			// rope segmentbetween that joint and its lower neighbor
+
+			int joint1Index = gameLocal.random.RandomInt( jointList.Num() - 1 );
+			int joint2Index = joint1Index + 1;
+
+			// safety net in case the joint names are corrupt
+
+			if ( ( jointList[joint1Index] == INVALID_JOINT ) || ( jointList[joint2Index] == INVALID_JOINT ) )
+			{
+				return idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // failure
+			}
+
+			idMat3 axis;
+			idVec3 joint1Org;
+			ropeAF->GetJointWorldTransform( jointList[joint1Index], gameLocal.time, joint1Org, axis );
+			idVec3 joint2Org;
+			ropeAF->GetJointWorldTransform( jointList[joint2Index], gameLocal.time, joint2Org, axis );
+			float offset = gameLocal.random.RandomFloat();
+			idVec3 spot = joint1Org + ( joint2Org - joint1Org ) * offset;
+			if ( CanSeeTargetPoint( spot, rope ) )
+			{
+				return spot;
+			}
+		}
+	}
+
+	// Return result
+//	return CanSeeTargetPoint( point, ent ); // grayman #2872 - this has to move inside the part search loop above, exiting true at the first segment we can see
+	return idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+}
+
 /*
 =====================
 The Dark Mod
@@ -4491,42 +4592,6 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 	}
 
 	return canSee;
-}
-
-// grayman #2859 - Can the AI see a point belonging to a target (not necessarily its origin)?
-
-bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target )
-{
-	// Check FOV
-
-	if ( !CheckFOV( point ) )
-	{
-		return false;
-	}
-
-	// Check visibility
-
-	trace_t result;
-	idVec3 eye(GetEyePosition()); // eye position of the AI
-
-	// Trace from eye to point, ignoring self
-
-	gameLocal.clip.TracePoint(result, eye, point, MASK_OPAQUE, this);
-	if ( result.fraction < 1.0 )
-	{
-		if ( gameLocal.GetTraceEntity(result) != target )
-		{
-			return false;
-		}
-	}
-
-	// Check lighting
-
-	idVec3 topPoint = point - (physicsObj.GetGravityNormal() * 32.0);
-	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
-	idVec3 ownOrigin = physicsObj.GetOrigin();
-
-	return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
 }
 
 /*
@@ -6050,6 +6115,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
+	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
 
 	ClearEnemy();
 	AI_DEAD	= true;
@@ -7082,9 +7148,10 @@ bool idAI::SetEnemy(idActor* newEnemy)
 			lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 		}
 
-		GetMemory().lastTimeEnemySeen = gameLocal.time;
-
-		GetMemory().stopRelight = true; // grayman #2603
+		ai::Memory& memory = GetMemory();
+		memory.lastTimeEnemySeen = gameLocal.time;
+		memory.stopRelight = true; // grayman #2603
+		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
 
 		return true; // valid enemy
 	}
@@ -9147,7 +9214,6 @@ float idAI::GetCalibratedLightgemValue() const
 
 void idAI::TactileAlert(idEntity* tactEnt, float amount)
 {
-
 	if (AI_DEAD || AI_KNOCKEDOUT || m_bIgnoreAlerts)
 	{
 		return;
@@ -9155,6 +9221,35 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if (tactEnt == NULL || CheckTactileIgnore(tactEnt))
 	{
+		return;
+	}
+
+	// grayman #2872 - have we encountered a dangling rope from a rope arrow?
+
+	if ( tactEnt->IsType(idAFEntity_Generic::Type) )
+	{
+		if ( idStr::FindText( tactEnt->name, "env_rope" ) >= 0 )
+		{
+			// Find the bindMaster for this rope, then see if there's a CProjectileResult bound to it.
+
+			idEntity* bindMaster = tactEnt->GetBindMaster();
+			if ( bindMaster != NULL )
+			{
+				idEntity* stimSource = bindMaster->FindMatchingTeamEntity( CProjectileResult::Type );
+				if ( stimSource != NULL )
+				{
+					if ( !stimSource->CheckResponseIgnore(ST_VISUAL,this) )	// only react if you haven't encountered this rope before,
+																			// either by bumping it or receiving its stim
+					{
+						if ( mind->GetState()->ShouldProcessAlert(ai::EAlertTypeRope) )
+						{
+							mind->GetState()->OnVisualStimRope(stimSource,this,GetEyePosition());
+						}
+					}
+				}
+			}
+		}
+
 		return;
 	}
 
@@ -9974,6 +10069,7 @@ void idAI::Knockout( idEntity* inflictor )
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
+	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
 
 	ClearEnemy();
 

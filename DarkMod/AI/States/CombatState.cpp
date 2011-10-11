@@ -145,6 +145,7 @@ void CombatState::Init(idAI* owner)
 
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();

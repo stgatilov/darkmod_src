@@ -232,6 +232,7 @@ void SearchingState::Think(idAI* owner)
 			// Stop moving, the algorithm will choose another spot the next round
 			owner->StopMove(MOVE_STATUS_DONE);
 			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+			memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 		}
 		else
 		{
@@ -277,6 +278,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes

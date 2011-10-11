@@ -90,6 +90,7 @@ public:
 	// The passed <stimSource> pointer is guaranteed to be non-NULL.
 	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner); // grayman #1327
+	virtual void OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource ); // grayman #2872
 	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
@@ -165,8 +166,9 @@ private:
 		EAIuse_Missing_Item_Marker,
 		EAIuse_Broken_Item,
 		EAIuse_Door,
-		EAIuse_Suspicious, // grayman #1327
-		ENumMarkers, // invalid index
+		EAIuse_Suspicious,	// grayman #1327
+		EAIuse_Rope,		// grayman #2872
+		ENumMarkers,		// invalid index
 	};
 
 	enum SBO_Level // grayman #2603 - "shouldBeOn" levels

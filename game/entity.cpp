@@ -9349,6 +9349,20 @@ void idEntity::IgnoreResponse(StimType type, idEntity* fromEntity)
 	}
 }
 
+// grayman #2872
+
+bool idEntity::CheckResponseIgnore(StimType type, idEntity* fromEntity)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		return ( stim->CheckResponseIgnore(fromEntity) );
+	}
+	return true;
+}
+
+
 void idEntity::SetStimEnabled(StimType type, bool enabled)
 {
 	CStimPtr stim = m_StimResponseColl->GetStimByType(type);

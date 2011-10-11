@@ -3475,6 +3475,7 @@ void idAI::Event_DropTorch() // grayman #2603
 
 			ent->m_droppedByAI = true; // grayman #1330
 			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
+			GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
 			m_DroppingTorch = false;
 			break;
 		}
