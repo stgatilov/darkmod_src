@@ -9230,20 +9230,37 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		if ( idStr::FindText( tactEnt->name, "env_rope" ) >= 0 )
 		{
-			// Find the bindMaster for this rope, then see if there's a CProjectileResult bound to it.
+			// Ignore the rope if you have an enemy.
 
-			idEntity* bindMaster = tactEnt->GetBindMaster();
-			if ( bindMaster != NULL )
+			if ( GetEnemy() == NULL )
 			{
-				idEntity* stimSource = bindMaster->FindMatchingTeamEntity( CProjectileResult::Type );
-				if ( stimSource != NULL )
+				// Find the bindMaster for this rope, then see if there's a CProjectileResult bound to it.
+
+				idEntity* bindMaster = tactEnt->GetBindMaster();
+				if ( bindMaster != NULL )
 				{
-					if ( !stimSource->CheckResponseIgnore(ST_VISUAL,this) )	// only react if you haven't encountered this rope before,
-																			// either by bumping it or receiving its stim
+					idEntity* stimSource = bindMaster->FindMatchingTeamEntity( CProjectileResult::Type );
+					if ( stimSource != NULL )
 					{
-						if ( mind->GetState()->ShouldProcessAlert(ai::EAlertTypeRope) )
+						if ( !stimSource->CheckResponseIgnore(ST_VISUAL,this) )	// only react if you haven't encountered this rope before,
+																				// either by bumping it or receiving its stim
 						{
-							mind->GetState()->OnVisualStimRope(stimSource,this,GetEyePosition());
+							// What's the chance of noticing this rope? If it's zero, you're to ignore the rope.
+							// If it's greater than zero, and even if it's less than 1.0, you walked into the
+							// rope, so we expect you to notice it.
+
+							float chanceToNotice = spawnArgs.GetFloat("chanceNoticeRope","0.0");
+							if ( chanceToNotice > 0.0 )
+							{
+								if ( mind->GetState()->ShouldProcessAlert(ai::EAlertTypeRope) )
+								{
+									mind->GetState()->OnVisualStimRope(stimSource,this,GetEyePosition());
+								}
+							}
+							else // This rope stim should stop sending me stims
+							{
+								stimSource->IgnoreResponse(ST_VISUAL, this);
+							}
 						}
 					}
 				}
