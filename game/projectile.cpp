@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/ProjectileResult.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h" // grayman #2885
 
 /*
 ===============================================================================
@@ -1283,6 +1284,13 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	CancelEvents( &EV_Explode );
 	PostEventMS( &EV_Remove, removeTime );
+
+	// grayman #2885 - turn off any visual stims this projectile is generating
+	
+	if ( GetStimResponseCollection()->HasStim() )
+	{
+		GetStimResponseCollection()->RemoveStim( ST_VISUAL );
+	}
 }
 
 /*

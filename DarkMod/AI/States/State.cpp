@@ -35,6 +35,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/PlayAnimationTask.h"
 
 #include "ConversationState.h" // grayman #2603
+#include "../../DarkMod/ProjectileResult.h" // grayman #2872
 
 
 namespace ai
@@ -441,6 +442,16 @@ void State::OnVisualStim(idEntity* stimSource)
 		aiUseType = EAIuse_Door;
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
 	}
+	else if (aiUse == AIUSE_SUSPICIOUS) // grayman #1327
+	{
+		aiUseType = EAIuse_Suspicious;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeSuspiciousItem");
+	}
+	else if (aiUse == AIUSE_ROPE) // grayman #2872
+	{
+		aiUseType = EAIuse_Rope;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeRope","0.0");
+	}
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
 	{
 		aiUseType = EAIuse_Blood_Evidence;
@@ -456,15 +467,10 @@ void State::OnVisualStim(idEntity* stimSource)
 		aiUseType = EAIuse_Broken_Item;
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBrokenItem");
 	}
-	else if (aiUse == AIUSE_SUSPICIOUS) // grayman #1327
+	else // grayman #2885 - no AIUse spawnarg, so we don't know what it is
 	{
-		aiUseType = EAIuse_Suspicious;
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeSuspiciousItem");
-	}
-	else if (aiUse == AIUSE_ROPE) // grayman #2872
-	{
-		aiUseType = EAIuse_Rope;
-		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeRope","0.0");
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
+		return;
 	}
 
 	// If chanceToNotice for this stim type is zero, ignore it in the future
