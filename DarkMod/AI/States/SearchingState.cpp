@@ -213,7 +213,9 @@ void SearchingState::Think(idAI* owner)
 			memory.currentSearchSpot = memory.alertPos + randomOffset;
 
 			// Choose to investigate spots closely on a random basis
-			memory.investigateStimulusLocationClosely = (gameLocal.random.RandomFloat() < 0.3f);
+			// grayman #2801 - and only if you weren't hit by a projectile
+
+			memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeDamage ) );
 
 			owner->actionSubsystem->PushTask(
 				TaskPtr(InvestigateSpotTask::CreateInstance())

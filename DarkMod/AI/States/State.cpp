@@ -37,7 +37,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ConversationState.h" // grayman #2603
 #include "../../DarkMod/ProjectileResult.h" // grayman #2872
 
-
 namespace ai
 {
 //----------------------------------------------------------------------------------------
@@ -251,7 +250,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 		// Set the alert level right below combat threshold
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 
-		// The owner will start to search, setup the parameters
+		// The owner will start to search, set up the parameters
 		Memory& memory = owner->GetMemory();
 
 		memory.alertClass = EAlertTactile;
@@ -280,9 +279,11 @@ void State::OnAudioAlert()
 	}
 
 	Memory& memory = owner->GetMemory();
-
 	memory.alertClass = EAlertAudio;
-	memory.alertType = EAlertTypeSuspicious;
+	if ( ShouldProcessAlert( EAlertTypeSuspicious ) ) // grayman #2801 - don't change the alert type if the current alert type has more weight
+	{
+		memory.alertType = EAlertTypeSuspicious;
+	}
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
 
@@ -1744,31 +1745,43 @@ void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bo
 
 void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int damageTaken)
 {
-	if (damageTaken > 0)
-	{
-		// Only consider the "no damage" case, as Pain() is already taking care of alerting us
-		return;
-	}
-
 	idAI* owner = _owner.GetEntity();
-	if (owner == NULL) return;
-
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AI %s has been hit by non-damaging projectile.\r", owner->name.c_str());
-
-	if (!ShouldProcessAlert(EAlertTypeWeapon))
+	if ( owner == NULL )
 	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Ignoring non-damaging projectile hit.\r");
 		return;
 	}
 
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to non-damaging projectile.\r", owner->name.c_str());
+	// grayman #2801 - When the projectile_result from an arrow isn't allowed
+	// to stick around (leading to the AI barking about something suspicious),
+	// this is where we have to alert the AI, regardless of whether he was
+	// damaged or not.
+
+	EAlertType alertType;
+	if ( damageTaken > 0 )
+	{
+		alertType = EAlertTypeDamage;
+//		return;
+	}
+	else
+	{
+		alertType = EAlertTypeWeapon;
+	}
+
+	if ( !ShouldProcessAlert( alertType ) )
+	{
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Ignoring projectile hit.\r");
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to projectile.\r", owner->name.c_str());
 	
-	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
+	if ( owner->AI_AlertLevel < ( owner->thresh_5 - 0.1f ) )
 	{
 		Memory& memory = owner->GetMemory();
 
 		// greebo: Set the alert position not directly to the attacker's origin, but let the AI 
 		// search in the right direction
+
 		const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
 
 		idVec3 attackerDir(0,0,0);
@@ -1780,10 +1793,11 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			distance = attackerDir.NormalizeFast();
 		}
 
-		// Start searching halfways between us the attacker
-		memory.alertPos = owner->GetPhysics()->GetOrigin() + attackerDir * distance * 0.5f;
+		// Start searching halfway between us and the attacker
+
+		memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
 		memory.alertClass = EAlertTactile;
-		memory.alertType = EAlertTypeWeapon;
+		memory.alertType = alertType;
 		
 		// Do search as if there is an enemy that has escaped
 		memory.alertRadius = TACTILE_ALERT_RADIUS;
