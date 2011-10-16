@@ -121,6 +121,7 @@ not be called directly.
 const idLangDict* CI18N::GetLanguageDict ( void ) const {
 	RETURN_META_VALUE(MRES_OVERRIDE, &m_Dict);
 }
+
 /*
 ===============
 CI18N::Save
@@ -347,6 +348,8 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 		// So instead just pop-up a message box:
 		gui->SetStateBool("MsgBoxVisible", true);
 
+		// TODO: Switching to Russian will show these strings in Russian, but the font is not yet there
+		//		 So translate these before loading the new dictionary, and the display them?
 		gui->SetStateString("MsgBoxTitle", Translate("#str_02206") );	// Language changed
 		gui->SetStateString("MsgBoxText", Translate("#str_02207") );	// You might need to manually restart the game to see the right characters.
 
