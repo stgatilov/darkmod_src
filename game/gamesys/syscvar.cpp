@@ -152,10 +152,14 @@ idCVar cv_tdm_mission_details_url("tdm_mission_details_url", "http://www.thedark
 idCVar cv_tdm_mission_screenshot_url("tdm_mission_screenshot_url", "http://www.thedarkmod.com/%s", CVAR_GAME, "The URL template to download the mission screenshots." );
 idCVar cv_tdm_version_check_url("tdm_version_check_url", "http://bloodgate.com/mirrors/tdm/pub/tdm_version.xml", CVAR_GAME, "The URL to check for the current TDM version." );
 
+/**
+* DarkMod DEBUG related CVARs
+**/
+idCVar cv_tdm_http_base_url( "tdm_http_base_url", "", CVAR_GAME, "If set, this URL will be used instead of the actual download URL when downloading FMs. Useful for testing downloading FMs from temp. servers." );
 
-idCVar cv_debug_aastype(			"tdm_debug_aastype",		"aas32",		CVAR_GAME | CVAR_ARCHIVE, "Sets the AAS type used for visualisation with impulse 27");
+idCVar cv_debug_aastype( "tdm_debug_aastype", "aas32", CVAR_GAME | CVAR_ARCHIVE, "Sets the AAS type used for visualisation with impulse 27");
 
-idCVar cv_las_showtraces(			"tdm_las_showtraces",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), traces from light origin to testpoints used for visibility testiung are drawn." );
+idCVar cv_las_showtraces( "tdm_las_showtraces", "0", CVAR_GAME | CVAR_BOOL, "If true (nonzero), traces from light origin to testpoints used for visibility testiung are drawn." );
 
 idCVar cv_show_gameplay_time(		"tdm_show_gameplaytime",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), the gameplay time is shown in the player HUD." );
 

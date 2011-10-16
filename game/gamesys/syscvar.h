@@ -100,6 +100,7 @@ extern idCVar cv_tdm_mission_list_urls;
 extern idCVar cv_tdm_mission_details_url;
 extern idCVar cv_tdm_mission_screenshot_url;
 extern idCVar cv_tdm_version_check_url;
+extern idCVar cv_tdm_http_base_url;
 
 extern idCVar cv_debug_aastype;
 
