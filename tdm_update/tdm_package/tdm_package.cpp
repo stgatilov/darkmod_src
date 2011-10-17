@@ -250,6 +250,10 @@ int main(int argc, char* argv[])
 
 			TraceLog::WriteLine(LOG_STANDARD, "Done.");
 		}
+		else
+		{
+			options.PrintHelp();
+		}
 	}
 	catch (std::runtime_error& ex)
 	{
