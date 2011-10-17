@@ -20,6 +20,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <svn_version.h>
 
 #include <map>
 
@@ -31,7 +32,8 @@ int main(int argc, char* argv[])
 	// Start logging
 	RegisterLogWriters();
 
-	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.02 (c) 2010 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
+	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.03 (c) 2010 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
+	TraceLog::WriteLine(LOG_STANDARD, "Linked against libsvn " + std::string(SVN_VER_NUM));
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// Parse the command line
