@@ -12,10 +12,22 @@
 namespace tdm
 {
 
-const char* const LIBTDM_UPDATE_VERSION = "0.56";
+const char* const LIBTDM_UPDATE_VERSION = "0.57";
+
+const char* const LIBTDM_UPDATE_PLATFORM = 
+#ifdef WIN32
+"Win32"
+#elif defined(__linux__)
+"Linux"
+#elif defined(MACOS_X)
+"MacOSX"
+#else
+"Unknown"
+#endif
+;
 
 const char* const TDM_MIRRORS_FILE = "tdm_mirrors.txt";
-const char* const TDM_MIRRORS_SERVER = "http://bloodgate.com/mirrors/tdm/pub/pk4/";
+const char* const TDM_MIRRORS_SERVER = "http://www.thedarkmod.com/update/";
 
 // The file containing the version information of the most up-to-date package
 const char* const TDM_CRC_INFO_FILE = "crc_info.txt";

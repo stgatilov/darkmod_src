@@ -398,7 +398,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		// Update header title in this step
 		_subTitle.SetWindowText(CString("Updating Mirrors and checking installation"));
 
-		_statusText.SetWindowText(CString("Downloading mirror information from bloodgate.com..."));
+		_statusText.SetWindowText(CString("Downloading mirror information from thedarkmod.com..."));
 		_step1Text.SetWindowText(CString("Downloading mirror information..."));
 		_step1State.SetWindowText(CString("--"));
 		_progressMain.SetPos(0);

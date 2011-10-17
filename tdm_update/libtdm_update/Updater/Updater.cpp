@@ -91,7 +91,7 @@ void Updater::UpdateMirrors()
 	std::string mirrorsUrl = TDM_MIRRORS_SERVER;
 	mirrorsUrl += TDM_MIRRORS_FILE;
 
-	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from bloodgate.com...");
+	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from thedarkmod.com...");
 
 	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
 

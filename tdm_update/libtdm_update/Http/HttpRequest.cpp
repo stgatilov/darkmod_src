@@ -21,6 +21,7 @@
 #endif
 
 #include <curl/curl.h>
+#include <boost/format.hpp>
 
 namespace tdm
 {
@@ -68,7 +69,8 @@ void HttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_WRITEDATA, this);
 
 	// Set agent
-	std::string agent = "The Dark Mod Updater / libtdm_update v" + std::string(LIBTDM_UPDATE_VERSION);
+	std::string agent = (boost::format("The Dark Mod Updater / libtdm_update v%s/%s") % 
+		LIBTDM_UPDATE_VERSION % LIBTDM_UPDATE_PLATFORM).str();
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
 	// Get the proxy from the HttpConnection class

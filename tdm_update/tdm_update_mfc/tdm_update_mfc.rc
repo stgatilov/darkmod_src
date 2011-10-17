@@ -146,7 +146,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "Save",IDOK,221,168,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,275,168,50,14
-    CONTROL         "Don't search for new mirrors on bloodgate.com (--keep-mirrors)",IDC_KEEP_MIRRORS,
+    CONTROL         "Don't search for new mirrors on thedarkmod.com (--keep-mirrors)",IDC_KEEP_MIRRORS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,23,307,12
     CONTROL         "Prevent TDM Update from updating itself (--noselfupdate)",IDC_NOSELFUPDATE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,41,307,12
