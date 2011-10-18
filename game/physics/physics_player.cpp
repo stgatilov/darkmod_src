@@ -1458,10 +1458,27 @@ void idPhysics_Player::LadderMove( void )
 	// if there is a climbable surface in front of the player, stick to it
 
 	idEntity* testEnt = gameLocal.entities[SurfTrace.c.entityNum]; // grayman #2787
+	bool isVine = ( testEnt && testEnt->IsType( tdmVine::Type ) ); // grayman #2787
 	if ( ( SurfTrace.fraction != 1.0f ) &&
-		( ( SurfTrace.c.material && SurfTrace.c.material->IsLadder() ) || ( testEnt && testEnt->IsType( tdmVine::Type ) ) ) ) // grayman #2787
+		( ( SurfTrace.c.material && SurfTrace.c.material->IsLadder() ) || isVine ) ) // grayman #2787
 	{
-		m_vClimbPoint = SurfTrace.endpos + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
+		// grayman #2787 - smooth out the end position if you struck a climbable vine piece.
+		// This fixes the choppy sideways movement on a vine.
+
+		idVec3 endPoint = SurfTrace.endpos;
+		idVec3 p = endPoint;
+		if ( isVine )
+		{
+			idVec3 vineOrigin = testEnt->GetPhysics()->GetOrigin();
+			idVec3 vinePeak = vineOrigin + 3.875 * ClimbNormXY; // 3.875 is the distance from the vine origin to its peak
+			float c = ( vinePeak - start ) * ClimbNormXY;
+			float e = -ClimbNormXY * ClimbNormXY;
+			idVec3 size = GetBounds().GetSize();
+			p = start - ( c/e - size.x/2 )*ClimbNormXY;
+		}
+
+		m_vClimbPoint = p + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
+//		m_vClimbPoint = endPoint + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
 		AttachVel = 10 * (m_vClimbPoint - current.origin);
 
 		// Now that we have a valid point, don't need to use the initial one
@@ -2058,10 +2075,11 @@ void idPhysics_Player::CheckClimbable( void )
 	if ( trace.fraction < 1.0f ) 
 	{
 		idEntity* testEnt = gameLocal.entities[trace.c.entityNum];
-		
-// DarkMod: Check if we're looking at a rope and airborne
-// TODO: Check the class type instead of the stringname, make new rope class
-		if( testEnt && testEnt->m_bIsClimbableRope )
+	
+		// DarkMod: Check if we're looking at a rope and airborne
+		// TODO: Check the class type instead of the stringname, make new rope class
+
+		if ( testEnt && testEnt->m_bIsClimbableRope )
 		{
 			m_RopeEntTouched = static_cast<idAFEntity_Base *>(testEnt);
 
@@ -2121,11 +2139,16 @@ void idPhysics_Player::CheckClimbable( void )
 				if ( ( trace.c.material && trace.c.material->IsLadder() ) || isVineHigher ) // grayman #2787
 				{
 					m_vClimbNormal = trace.c.normal;
-					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
+					if ( isVineHigher ) // grayman #2787 - if climbing a vine, flatten out the normal
+					{
+						idVec3 vineNormal = testEntHigher->GetPhysics()->GetAxis().ToAngles().ToForward();
+						m_vClimbNormal = vineNormal;
+					}
+					m_ClimbingOnEnt = testEntHigher;
 					
 					// Initial climbing attachment
 					// FIX: Used to get stuck hovering in some cases, now there's an initial phase
-					if( !m_bOnClimb )
+					if ( !m_bOnClimb )
 					{
 						m_bClimbInitialPhase = true;
 						m_vClimbPoint = vStickPoint;
