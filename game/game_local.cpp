@@ -3773,6 +3773,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		and certain commands might get cut-off. Usually this means that you see a ";" instead
 		of an expected argument, or that commands run together like "initChoicelog". When this
 		happens, the GUI must be adjusted to issue less commands (or issue them later).
+		To work around this issue, we call ExecuteCommandBuffer( void ) whenever we see an
+		initChoice command, in the hopes that the buffer won't overflow until the next one.
 
 		The old code simply watched for certain words, and then issued the command. It was not
 		able to distinguish between commands and arguments.
@@ -4478,10 +4480,15 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 //		Warning("Unknown main menu command '%s'.\n", cmd.c_str());
 //	}
 
-	// TODO: handle here (lowercase) commands with arguments, too
-	m_Shop->HandleCommands( menuCommand, gui);
-	m_ModMenu->HandleCommands( menuCommand, gui);
-	m_DownloadMenu->HandleCommands( menuCommand, gui);
+	// TODO: These routines might want to handle arguments to commands, too, so
+	//		 add support for this here. E.g. instead of passing ("SomeCommand", gui), pass
+	//		 (m_GUICommandStack, gui) to them:
+	if (cmd != "log")
+	{
+		m_Shop->HandleCommands( menuCommand, gui);
+		m_ModMenu->HandleCommands( menuCommand, gui);
+		m_DownloadMenu->HandleCommands( cmd, gui);		// expects commands in lowercase
+	}
 
 	/*if (cv_debug_mainmenu.GetBool())
 	{
