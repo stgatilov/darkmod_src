@@ -4394,7 +4394,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			cvar = cvarSystem->Find( cvarName.c_str() );
 			if (!cvar)
 			{
-				Error("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+				// ignore, the GUI command buffer was probably just overrun
+				Warning("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+				m_GUICommandStack.Clear();
+				m_GUICommandArgs = 0;
+				return;
 			}
 		}
 		// split the choices into a listt
