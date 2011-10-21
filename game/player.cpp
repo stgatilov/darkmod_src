@@ -11320,8 +11320,8 @@ void idPlayer::Event_MissionSuccess()
 	PostEventMS(&EV_DisconnectFromMission, 0);
 
 	// Issue an automatic save at the end of this mission
-	idStr savegameName = va("Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1);
-	cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("savegame '%s'", savegameName.c_str()));
+	// greebo: Don't do this immediately, the player PVS must be freed before saving!
+	gameLocal.m_TriggerFinalSave = true;
 }
 
 void idPlayer::Event_DisconnectFromMission()
