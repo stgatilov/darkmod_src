@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 1246 $
- * $Date: 2007-07-29 19:04:18 +0200 (So, 29 Jul 2007) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: tdmAASFindEscape.cpp 1246 2007-08-27 17:04:18Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "tdmAASFindEscape.h"
 

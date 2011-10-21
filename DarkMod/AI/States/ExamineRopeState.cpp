@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 4876 $
- * $Date: 2011-06-04 16:52:35 -0400 (Sat, 04 Jun 2011) $
- * $Author: grayman $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: ExamineRopeState.cpp 4876 2011-06-04 20:52:35Z grayman $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "ExamineRopeState.h"
 //#include "../Memory.h"
