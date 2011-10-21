@@ -2411,7 +2411,7 @@ bool idAI::ThinkingIsAllowed()
 	if (frameNum < m_nextThinkFrame)
 	{
 		// Ragdolls think every frame to avoid physics weirdness.
-		if (health <= 0)
+		if ( ( health <= 0 ) || IsKnockedOut() ) // grayman #2840 - you're also a ragdoll if you're KO'ed
 		{
 			return true;
 		}
