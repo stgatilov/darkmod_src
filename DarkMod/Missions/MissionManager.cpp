@@ -1359,6 +1359,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			}
 		}
 
+		// Mission download links
 		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
 		for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
@@ -1368,11 +1369,21 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			// Only accept English downloadlinks
 			if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
 
-			mission.downloadLocations.Append(locNode.attribute("url").value());
+			mission.missionUrls.Append(locNode.attribute("url").value());
+		}
+
+		// Localisation packs
+		pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
+
+		for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
+		{
+			pugi::xml_node locNode = loc->node();
+
+			mission.l10nPackUrls.Append(locNode.attribute("url").value());
 		}
 
 		// Only add missions with valid locations
-		if (mission.downloadLocations.Num() > 0)
+		if (mission.missionUrls.Num() > 0)
 		{
 			// Copy-construct the local mission struct into the heap-allocated one
 			_downloadableMods.Append(new DownloadableMod(mission));

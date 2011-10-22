@@ -84,8 +84,11 @@ struct DownloadableMod
 	int		version;		// version number, initial release carries version 1
 	bool	isUpdate;		// whether this mission is an update of one already installed
 
+	// The list of mission download URLs
+	idStringList missionUrls;
+
 	// The list of HTTP download URLs
-	idStringList downloadLocations;
+	idStringList l10nPackUrls;
 
 	// Begin Initially empty variables, need to be filled per request by the mission manager
 

@@ -411,17 +411,37 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		idStr targetPath = g_Global.GetDarkmodPath().c_str();
 		targetPath += "/";
 		targetPath += cv_tdm_fm_path.GetString();
-		targetPath += mod.modName + ".pk4";
 
-		CDownloadPtr download(new CDownload(mod.downloadLocations, targetPath));
+		// Final path to the FM file
+		idStr missionPath = targetPath + mod.modName + ".pk4";
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the mission PK4 to %s.\r", missionPath.c_str());
 
 		// Check for valid PK4 files after download
-		download->EnableValidPK4Check(true);
+		CDownloadPtr download(new CDownload(mod.missionUrls, missionPath, true));
 
 		int id = gameLocal.m_DownloadManager->AddDownload(download);
+		int l10nId = -1;
 
-		// Store this ID
-		_downloads[missionIndex] = id;
+		// Check if there is a Localisation pack available
+		if (mod.l10nPackUrls.Num() > 0)
+		{
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("There are l10n pack URLs listed for this FM.\r");
+
+			idStr l10nPackPath = targetPath + mod.modName + "_l10n.pk4";
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the l10n pack to %s.\r", l10nPackPath.c_str());
+
+			CDownloadPtr l10nDownload(new CDownload(mod.l10nPackUrls, l10nPackPath, true));
+
+			l10nId = gameLocal.m_DownloadManager->AddDownload(l10nDownload);
+
+			// Relate these two downloads, so that they might be handled as pair
+			download->SetRelatedDownloadId(l10nId);
+		}
+
+		// Store these IDs for later reference
+		_downloads[missionIndex] = MissionDownload(id, l10nId);
 	}
 
 	// Let the download manager start its downloads
@@ -553,11 +573,17 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 	// Don't use DownloadManager::DownloadInProgress(), as there might be different kind of downloads in progress
 	for (ActiveDownloads::const_iterator it = _downloads.begin(); it != _downloads.end(); ++it)
 	{
-		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(it->second);
+		int missionDownloadId = it->second.missionDownloadId;
+		int l10nPackDownloadId = it->second.l10nPackDownloadId;
 
-		if (download == NULL) continue;
+		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(missionDownloadId);
 
-		if (download->GetStatus() == CDownload::IN_PROGRESS)
+		CDownloadPtr l10nDownload = l10nPackDownloadId != -1 ? gameLocal.m_DownloadManager->GetDownload(missionDownloadId) : CDownloadPtr();
+
+		if (!download && !l10nDownload) continue;
+
+		if (download->GetStatus() == CDownload::IN_PROGRESS || 
+			(l10nDownload && l10nDownload->GetStatus() == CDownload::IN_PROGRESS))
 		{
 			downloadsInProgress = true;
 			break;
@@ -580,34 +606,12 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 			continue;
 		}
 
-		// Find the download ID
-		ActiveDownloads::const_iterator it = _downloads.find(modIndex);
+		// Update the progress string
+		idStr progressStr = GetMissionDownloadProgressString(modIndex);
 
-		if (it == _downloads.end())
-		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02180" ));	// "queued "
-			continue;
-		}
-		
-		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(it->second);
+		if (progressStr.IsEmpty()) continue;
 
-		if (download == NULL) continue;
-
-		switch (download->GetStatus())
-		{
-		case CDownload::NOT_STARTED_YET:
-			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02180" ));	// "queued "
-			break;
-		case CDownload::FAILED:
-			gui->SetStateString(va("dl_mission_progress_%d", i), gameLocal.m_I18N->Translate( "#str_02181" ));	// "failed "
-			break;
-		case CDownload::IN_PROGRESS:
-			gui->SetStateString(va("dl_mission_progress_%d", i), va("%0.1f%s", download->GetProgressFraction()*100, "% "));
-			break;
-		case CDownload::SUCCESS:
-			gui->SetStateString(va("dl_mission_progress_%d", i), "100% ");
-			break;
-		};
+		gui->SetStateString(va("dl_mission_progress_%d", i), progressStr);
 	}
 
 	// Update the "in progress" state flag 
@@ -627,6 +631,52 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 	}
 }
 
+idStr CDownloadMenu::GetMissionDownloadProgressString(int modIndex)
+{
+	ActiveDownloads::const_iterator it = _downloads.find(modIndex);
+
+	if (it == _downloads.end())
+	{
+		return gameLocal.m_I18N->Translate( "#str_02180" );
+	}
+
+	CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(it->second.missionDownloadId);
+	CDownloadPtr l10nDownload;
+	
+	if (it->second.l10nPackDownloadId != -1)
+	{
+		l10nDownload = gameLocal.m_DownloadManager->GetDownload(it->second.l10nPackDownloadId);
+	}
+
+	if (!download && !l10nDownload) return idStr();
+
+	switch (download->GetStatus())
+	{
+	case CDownload::NOT_STARTED_YET:
+		return gameLocal.m_I18N->Translate( "#str_02180" );	// "queued "
+	case CDownload::FAILED:
+		return gameLocal.m_I18N->Translate( "#str_02181" );	// "failed "
+	case CDownload::IN_PROGRESS:
+	{
+		double totalFraction = download->GetProgressFraction(); 
+
+		if (l10nDownload)
+		{
+			// We assume the L10n pack to consume 3% of the whole download 
+			// which is probably an overestimation, but who cares exactly
+			totalFraction *= 0.97f;
+			totalFraction += 0.03f * l10nDownload->GetProgressFraction();
+		}
+
+		return va("%0.1f%s", totalFraction*100, "% ");
+	}
+	case CDownload::SUCCESS:
+		return "100% ";
+	default:
+		return "??";
+	};
+}
+
 void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 {
 	// greebo: Let the mod list be refreshed
@@ -640,7 +690,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
 	{
-		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(i->second);
+		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(i->second.missionDownloadId);
 
 		if (download == NULL) continue;
 
@@ -661,7 +711,34 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 			break;
 		case CDownload::SUCCESS:
 			{
-				successfulDownloads++;
+				// In case of success, check l10n download status
+				if (i->second.l10nPackDownloadId != -1)
+				{
+					CDownloadPtr l10nDownload = gameLocal.m_DownloadManager->GetDownload(i->second.l10nPackDownloadId);
+
+					CDownload::DownloadStatus l10nStatus = l10nDownload->GetStatus();
+
+					if (l10nStatus == CDownload::NOT_STARTED_YET || l10nStatus == CDownload::IN_PROGRESS)
+					{
+						gameLocal.Warning("Localisation pack download not started or still in progress?");
+					}
+					else if (l10nStatus == CDownload::FAILED)
+					{
+						gameLocal.Warning("Failed to download localisation pack!");
+
+						// Turn this download into a failed one
+						failedDownloads++;
+					}
+					else if (l10nStatus == CDownload::SUCCESS)
+					{
+						// both successfully downloaded
+						successfulDownloads++;
+					}
+				}
+				else // regular download without l10n
+				{
+					successfulDownloads++;
+				}
 
 				// Save the mission version into the MissionDB for later use
 				CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
@@ -700,7 +777,12 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	// Remove all downloads
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
 	{
-		gameLocal.m_DownloadManager->RemoveDownload(i->second);
+		gameLocal.m_DownloadManager->RemoveDownload(i->second.missionDownloadId);
+
+		if (i->second.l10nPackDownloadId != -1)
+		{
+			gameLocal.m_DownloadManager->RemoveDownload(i->second.l10nPackDownloadId);
+		}
 	}
 
 	_downloads.clear();

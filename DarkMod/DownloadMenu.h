@@ -24,8 +24,28 @@ private:
 
 	idList<int> _selectedMods;
 
-	// A mapping "selected mod id" => "download id"
-	typedef std::map<int, int> ActiveDownloads;
+	/**
+	 * greebo: Since mission l10n packs are stored separately, a mission
+	 * transfer can consist of several downloads.
+	 */
+	struct MissionDownload
+	{
+		int missionDownloadId;	// Download ID of the actual mission pack
+		int l10nPackDownloadId;	// Download ID of the L10n Pack, is -1 by default
+
+		MissionDownload() :
+			missionDownloadId(-1),
+			l10nPackDownloadId(-1)
+		{}
+
+		MissionDownload(int missionDownloadId_, int l10nPackDownloadId_ = -1) :
+			missionDownloadId(missionDownloadId_),
+			l10nPackDownloadId(l10nPackDownloadId_)
+		{}
+	};
+
+	// A mapping "selected mod id" => download info
+	typedef std::map<int, MissionDownload> ActiveDownloads;
 	ActiveDownloads _downloads;
 
 public:
@@ -50,6 +70,8 @@ private:
 
 	void UpdateNextScreenshotData(idUserInterface* gui, int nextScreenshotNum);
 	void UpdateScreenshotItemVisibility(idUserInterface* gui);
+
+	idStr GetMissionDownloadProgressString(int modIndex);
 };
 typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 

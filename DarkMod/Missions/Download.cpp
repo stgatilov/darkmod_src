@@ -19,21 +19,23 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include <boost/bind.hpp>
 
-CDownload::CDownload(const idStr& url, const idStr& destFilename) :
+CDownload::CDownload(const idStr& url, const idStr& destFilename, bool enablePK4check) :
 	_curUrl(0),
 	_destFilename(destFilename),
 	_status(NOT_STARTED_YET),
-	_pk4CheckEnabled(false)
+	_pk4CheckEnabled(enablePK4check),
+	_relatedDownload(-1)
 {
 	_urls.Append(url);
 }
 
-CDownload::CDownload(const idStringList& urls, const idStr& destFilename) :
+CDownload::CDownload(const idStringList& urls, const idStr& destFilename, bool enablePK4check) :
 	_urls(urls),
 	_curUrl(0),
 	_destFilename(destFilename),
 	_status(NOT_STARTED_YET),
-	_pk4CheckEnabled(false)
+	_pk4CheckEnabled(enablePK4check),
+	_relatedDownload(-1)
 {}
 
 CDownload::~CDownload()
@@ -104,6 +106,16 @@ void CDownload::EnableValidPK4Check(bool enable)
 	_pk4CheckEnabled = enable;
 }
 
+int CDownload::GetRelatedDownloadId()
+{
+	return _relatedDownload;
+}
+
+void CDownload::SetRelatedDownloadId(int relatedDownloadId)
+{
+	_relatedDownload = relatedDownloadId;
+}
+
 void CDownload::Perform()
 {
 	while (_curUrl < _urls.Num())
@@ -158,7 +170,7 @@ void CDownload::Perform()
 			// Download error
 			if (_request->GetStatus() == CHttpRequest::ABORTED)
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from %s aborted.\r", _urls[_curUrl].c_str());
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download aborted.\r");
 			}
 			else
 			{

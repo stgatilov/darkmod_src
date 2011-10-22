@@ -82,7 +82,25 @@ void CDownloadManager::ProcessDownloads()
 	{
 		if (i->second->GetStatus() == CDownload::NOT_STARTED_YET)
 		{
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting download: %i", i->first);
+
 			i->second->Start();
+
+			// Check if this download has a related one, if yes, launch both at once
+			int relatedId = i->second->GetRelatedDownloadId();
+
+			if (relatedId != -1)
+			{
+				CDownloadPtr related = GetDownload(relatedId);
+
+				if (related)
+				{
+					DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting related download: %i", relatedId);
+
+					related->Start();
+				}
+			}
+
 			return;
 		}
 	}
