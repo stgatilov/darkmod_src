@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Http/HttpConnection.h"
 #include "../DarkMod/Http/HttpRequest.h"
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
 namespace
@@ -321,7 +322,13 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 			continue; // failed to open zip file
 		}
 
-		if (!pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
+		// Check if this is a l10n pack, if yes we need to move it to the same mod folder
+		bool isL10nPack = boost::algorithm::iends_with(pk4path.stem(), "_l10n");
+
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("This is a localisation pack: %s\r", isL10nPack ? "yes" : "no");
+
+		// Ordinary missions PK4s require a proper description file in it
+		if (!isL10nPack && !pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 		{
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Ignoring PK4 file, no 'darkmod.txt' found inside archive: %s\r", pk4path.file_string().c_str());
 			continue; // no darkmod.txt
@@ -335,6 +342,12 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 
 		if (modName.IsEmpty()) continue; // error?
 
+		// l10n packs get moved in the same mod folder as the mission itself
+		if (isL10nPack)
+		{
+			modName.StripTrailingOnce("_l10n");
+		}
+
 		// Clean modName string from any weird characters
 		for (int i = 0; i < modName.Length(); ++i)
 		{
@@ -344,7 +357,10 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		}
 
 		// Remember this for the user to display
-		_newFoundMods.Append(modName);
+		if (!isL10nPack)
+		{
+			_newFoundMods.Append(modName);
+		}
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
 		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
@@ -364,7 +380,16 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		}
 
 		// Move the PK4 to that folder
-		fs::path targetPath = modFolder / (modName + ".pk4").c_str();
+		fs::path targetPath = modFolder;
+		
+		if (isL10nPack)
+		{
+			targetPath /= (modName + "_l10n.pk4").c_str();
+		}
+		else
+		{
+			targetPath /= (modName + ".pk4").c_str();
+		}
 
 		// Remember to move this file as soon as we're done here
 		moveList.push_back(MoveList::value_type(pk4path, targetPath));
@@ -445,7 +470,10 @@ void CMissionManager::GenerateModList()
 				continue; // failed to open zip file
 			}
 
-			if (pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
+			// Check if this is a localisation pack, don't extract files from those
+			bool isL10nPack = boost::algorithm::iends_with(pk4path.stem(), "_l10n");
+
+			if (!isL10nPack && pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
 				// Hurrah, we've found the darkmod.txt file, extract the contents
 				// and attempt to save to folder

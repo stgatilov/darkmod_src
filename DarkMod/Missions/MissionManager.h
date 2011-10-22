@@ -87,7 +87,7 @@ struct DownloadableMod
 	// The list of mission download URLs
 	idStringList missionUrls;
 
-	// The list of HTTP download URLs
+	// The list of Localisation pack download URLs
 	idStringList l10nPackUrls;
 
 	// Begin Initially empty variables, need to be filled per request by the mission manager
