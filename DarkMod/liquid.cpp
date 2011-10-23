@@ -80,7 +80,7 @@ idLiquid::~idLiquid()
 	// Traverse all spawned entities and remove ourselves as water if necessary
 	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
 	{
-		if (ent->GetPhysics()->GetWater() == &physicsObj)
+		if (ent->GetPhysics() != NULL && ent->GetPhysics()->GetWater() == &physicsObj)
 		{
 			ent->GetPhysics()->SetWater(NULL, 0.0f);
 		}
