@@ -591,7 +591,7 @@ void idGameLocal::CheckTDMVersion()
 		return;
 	}
 
-	idStr url = cv_tdm_version_check_url.GetString();		// http://bloodgate.com/mirrors/tdm/pub/tdm_version.xml
+	idStr url = cv_tdm_version_check_url.GetString();
 	Printf("Checking %s\n", url.c_str() );
 	CHttpRequestPtr req = m_HttpConnection->CreateRequest( url.c_str() );
 
