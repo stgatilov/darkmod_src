@@ -206,6 +206,9 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		gui->SetStateString("av_mission_title", mods[missionIndex]->title);
 		gui->SetStateString("av_mission_author", mods[missionIndex]->author);
 		gui->SetStateString("av_mission_release_date", mods[missionIndex]->releaseDate);
+		gui->SetStateString("av_mission_type", mods[missionIndex]->type == DownloadableMod::Multi ? 
+			gameLocal.m_I18N->Translate("#str_04353") : // Campaign
+			gameLocal.m_I18N->Translate("#str_04352")); // Single Mission
 		gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
 		gui->SetStateString("av_mission_size", va("%0.1f MB", mods[missionIndex]->sizeMB));
 

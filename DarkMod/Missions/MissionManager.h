@@ -74,11 +74,18 @@ typedef boost::shared_ptr<MissionScreenshot> MissionScreenshotPtr;
 
 struct DownloadableMod
 {
+	enum Type
+	{
+		Single,				// single mission
+		Multi,				// multi-mission or campaign
+	};
+
 	int		id;				// ID of the mission/mod in the online database
 	idStr	modName;		// usually the name of the pk4 (e.g. "heart")
 	idStr	title;			// the title or display name ("Heart of Lone Salvation")
 	idStr	author;			// author/s
 	float	sizeMB;			// size in MB
+	Type	type;
 	idStr	releaseDate;	// date of release in ISO format (2010-12-30)
 	idStr	language;		// the language ("english")
 	int		version;		// version number, initial release carries version 1
@@ -106,6 +113,7 @@ struct DownloadableMod
 	// Default constructor
 	DownloadableMod() :
 		id(-1), // invalid ID
+		type(Single),
 		version(1),
 		isUpdate(false),
 		detailsLoaded(false)

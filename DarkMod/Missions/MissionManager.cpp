@@ -1344,6 +1344,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		mission.sizeMB = node.attribute("size").as_float();
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();
+		mission.type = idStr::Icmp(node.attribute("type").value(), "multi") == 0 ? DownloadableMod::Multi : DownloadableMod::Single;
 		mission.modName = node.attribute("internalName").value();
 		mission.version = node.attribute("version").as_int();
 		mission.isUpdate = false;
