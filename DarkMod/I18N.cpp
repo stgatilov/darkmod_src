@@ -369,12 +369,24 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
 		// it will land in the Video Settings page
-		gameLocal.Printf("Setting reload");
+		gameLocal.Printf("Setting reload\n");
 		gui->SetStateInt("reload", 1);
 	}
 	else
 	{
 		gameLocal.Warning("Cannot find guis/mainmenu.gui");
+	}
+
+	// Cycle through all active entities and call "onLanguageChanged" on them
+	// some scriptobjects may implement this function to react on language switching
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		idThread* thread = ent->CallScriptFunctionArgs("onLanguageChanged", true, 0, "e", ent);
+
+		if (thread != NULL)
+		{
+			thread->Execute();
+		}
 	}
 }
 
