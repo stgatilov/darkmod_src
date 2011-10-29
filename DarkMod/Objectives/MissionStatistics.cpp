@@ -59,6 +59,9 @@ void MissionStatistics::Clear()
 	TotalGamePlayTime = 0;
 
 	ObjectiveStates.Clear();
+
+	totalTimePlayerSeen = 0;	// grayman #2887
+	numberTimesPlayerSeen = 0;	// grayman #2887
 }
 
 void MissionStatistics::Save(idSaveGame* savefile) const
@@ -113,6 +116,8 @@ void MissionStatistics::Save(idSaveGame* savefile) const
 	}
 
 	savefile->WriteUnsignedInt(TotalGamePlayTime);
+	savefile->WriteInt(numberTimesPlayerSeen);	// grayman #2887
+	savefile->WriteInt(totalTimePlayerSeen);	// grayman #2887
 
 	savefile->WriteInt(ObjectiveStates.Num());
 	for (int i = 0; i < ObjectiveStates.Num(); ++i)
@@ -173,6 +178,8 @@ void MissionStatistics::Restore(idRestoreGame* savefile)
 	}
 
 	savefile->ReadUnsignedInt(TotalGamePlayTime);
+	savefile->ReadInt(numberTimesPlayerSeen);	// grayman #2887
+	savefile->ReadInt(totalTimePlayerSeen);		// grayman #2887
 
 	int num;
 	savefile->ReadInt(num);

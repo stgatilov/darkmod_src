@@ -68,6 +68,10 @@ public:
 	// This list will be empty throughout the mission, and is filled on mission complete
 	idList<EObjCompletionState> ObjectiveStates;
 
+	// grayman #2887 - for tracking how often and for how long the player was seen
+	int numberTimesPlayerSeen;
+	int totalTimePlayerSeen;
+
 	MissionStatistics() 
 	{
 		Clear();

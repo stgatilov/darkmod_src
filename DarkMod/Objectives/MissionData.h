@@ -336,6 +336,9 @@ public:
 	 */
 	void AddMissionLoot(LootType lootType, int amount);
 
+	void IncrementPlayerSeen(); // grayman #2887
+	void Add2TimePlayerSeen( int amount ); // grayman #2887
+
 	/**
 	* Parse the objective data on an entity and add it to the objectives system
 	* Called by CTarget_AddObjectives

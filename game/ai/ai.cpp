@@ -456,6 +456,11 @@ idAI::idAI()
 
 	wakeOnFlashlight	= false;
 	lastUpdateEnemyPositionTime = -1;
+
+	// grayman #2887 - for keeping track of the total time this AI saw the player
+	lastTimePlayerSeen = -1;
+	lastTimePlayerLost = -1;
+
 	memset( &worldMuzzleFlash, 0, sizeof ( worldMuzzleFlash ) );
 	worldMuzzleFlashHandle = -1;
 
@@ -782,6 +787,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( enemyReachable );
 	savefile->WriteBool( wakeOnFlashlight );
 	savefile->WriteInt(lastUpdateEnemyPositionTime);
+
+	savefile->WriteInt(lastTimePlayerSeen);		// grayman #2887
+	savefile->WriteInt(lastTimePlayerLost);		// grayman #2887
 
 	savefile->WriteAngles( eyeMin );
 	savefile->WriteAngles( eyeMax );
@@ -1188,6 +1196,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( enemyReachable );
 	savefile->ReadBool( wakeOnFlashlight );
 	savefile->ReadInt(lastUpdateEnemyPositionTime);
+	savefile->ReadInt(lastTimePlayerSeen);	// grayman #2887
+	savefile->ReadInt(lastTimePlayerLost);	// grayman #2887
 
 	savefile->ReadAngles( eyeMin );
 	savefile->ReadAngles( eyeMax );
@@ -6521,6 +6531,27 @@ void idAI::ClearEnemy( void ) {
 		StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	}
 
+	// grayman #2887 - log the amount of time you saw the player.
+	// This is normally taken care of in UpdateEnemyPosition(), but we need
+	// to check here in case the AI is killed or KO'ed and doesn't
+	// use the normal logging code there.
+
+	if ( AI_ENEMY_VISIBLE )
+	{
+		if ( ( enemy.GetEntity() != NULL ) && ( enemy.GetEntity()->IsType(idPlayer::Type) ) )
+		{
+			if ( lastTimePlayerLost < 0 ) // = -1 if the player was never seen or seen but not lost at this point
+			{
+				lastTimePlayerLost = gameLocal.time;
+				if ( lastTimePlayerSeen > 0 )
+				{
+					gameLocal.m_MissionData->Add2TimePlayerSeen(lastTimePlayerLost - lastTimePlayerSeen);
+				}
+				lastTimePlayerSeen = -1;
+			}
+		}
+	}
+
 	enemyNode.Remove();
 	enemy				= NULL;
 	AI_ENEMY_IN_FOV		= false;
@@ -7024,10 +7055,54 @@ void idAI::UpdateEnemyPosition()
 
 	else	// enemy is not visible
 	{
+		// Enemy can't be seen (obscured or hidden in darkness)
 		if (cv_ai_show_enemy_visibility.GetBool())
 		{
-			// Enemy can't be seen (obscured or hidden in darkness)
 			gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+		}
+	}
+
+	// grayman #2887 - track enemy visibility for statistics
+
+	if ( enemyEnt->IsType(idPlayer::Type) )
+	{
+		if ( AI_ENEMY_VISIBLE )
+		{
+			if ( ( lastTimePlayerSeen < 0 ) && ( lastTimePlayerLost < 0 ) )
+			{
+				// new sighting
+				gameLocal.m_MissionData->IncrementPlayerSeen();
+				lastTimePlayerSeen = gameLocal.time;
+			}
+			else if ( lastTimePlayerLost > 0 )
+			{
+				if ( ( gameLocal.time - lastTimePlayerLost ) > 6000 )
+				{
+					// new sighting
+					gameLocal.m_MissionData->IncrementPlayerSeen();
+					lastTimePlayerSeen = gameLocal.time;
+					lastTimePlayerLost = -1;
+				}
+				else // continuation of previous sighting
+				{
+					lastTimePlayerSeen = lastTimePlayerLost;
+					lastTimePlayerLost = -1;
+				}
+			}
+		}
+		else // not visible
+		{
+			// log the amount of time you saw the player
+
+			if ( lastTimePlayerLost < 0 )
+			{
+				lastTimePlayerLost = gameLocal.time;
+				if ( lastTimePlayerSeen > 0 )
+				{
+					gameLocal.m_MissionData->Add2TimePlayerSeen(lastTimePlayerLost - lastTimePlayerSeen);
+				}
+				lastTimePlayerSeen = -1;
+			}
 		}
 	}
 
@@ -7115,6 +7190,7 @@ bool idAI::SetEnemy(idActor* newEnemy)
 	{
 		// Update the enemy pointer 
 		enemy = newEnemy;
+
 		enemyNode.AddToEnd(newEnemy->enemyList);
 
 		// Check if the new enemy is dead

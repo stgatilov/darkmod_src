@@ -869,7 +869,28 @@ void CMissionData::Event_MissionFailed( void )
 
 void CMissionData::Event_MissionEnd()
 {
-	// Nothing yet
+	// grayman #2887 - make a final check if any AI have the player in sight.
+	// Wrap up calculation of how long a player has been seen.
+
+	for ( int i = 0 ; i < gameLocal.num_entities ; i++ )
+	{
+		idEntity* ent = gameLocal.entities[i];
+		if ( !ent )
+		{
+			continue;
+		}
+		if ( ent->IsType(idAI::Type) )
+		{
+			idAI* ai = static_cast<idAI*>(ent);
+			if ( ai->GetEnemy() != NULL )
+			{
+				if ( ( ai->lastTimePlayerSeen > 0 ) && ( ai->lastTimePlayerSeen > ai->lastTimePlayerLost ) )
+				{
+					/*gameLocal.m_MissionData->*/Add2TimePlayerSeen(gameLocal.time - ai->lastTimePlayerSeen);
+				}
+			}
+		}
+	}
 }
 
 // ============================== Stats =================================
@@ -1707,6 +1728,18 @@ void CMissionData::AddMissionLoot(LootType lootType, int amount)
 	m_Stats.LootInMission[lootType] += amount;
 }
 
+// grayman #2887
+
+void CMissionData::IncrementPlayerSeen()
+{
+	m_Stats.numberTimesPlayerSeen++;
+}
+
+void CMissionData::Add2TimePlayerSeen( int amount )
+{
+	m_Stats.totalTimePlayerSeen += amount;
+}
+
 /**
 * Parse the boolean logic strings into matrices.
 * Returns false if there was an error in the parsing.
@@ -2358,7 +2391,6 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr key("");
 	idStr value("");
 	idStr sightingBust("");
-	idStr sightingBust2("");
 	idStr sightingScore("");
 	idStr space(" ");
 
@@ -2426,20 +2458,37 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
 	}
 	
-	if ( m_Stats.AIAlerts[5].Overall > 0 )
+	// grayman #2887 - new way of dealing with number of times the player's been seen
+
+	int timeSeen = m_Stats.totalTimePlayerSeen;	// the amount of time the player was seen
+	int busted = m_Stats.numberTimesPlayerSeen;	// how many times AI saw the player
+
+	int secondsSeen = timeSeen/1000; // drop fractional seconds
+	int hoursSeen = secondsSeen/(60*60);
+	int minutesSeen = (secondsSeen - hoursSeen*60*60) / 60;
+	secondsSeen = secondsSeen - hoursSeen*60*60 - minutesSeen*60;
+
+	if ( busted > 0 )
 	{
-		sightingBust = gameLocal.m_I18N->Translate( "#str_02219" );	// You were seen
-		sightingBust2 = gameLocal.m_I18N->Translate( "#str_02220" ) + idStr(" + 20:");
-		stealthScore += 20;
-		sightingScore = "20";
+		int add2Score = 5*busted; // alertLevel = 5
+		stealthScore += add2Score;
+		sightingScore = idStr(add2Score);
+		idStr times;
+		if ( busted == 1 )
+		{
+			sightingBust = va( gameLocal.m_I18N->Translate( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
+		}
+		else
+		{
+			sightingBust = va( gameLocal.m_I18N->Translate( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
+		}
 	}
 	else
 	{
-		sightingBust = gameLocal.m_I18N->Translate( "#str_02221" );	// You were not seen
-		sightingBust2 = gameLocal.m_I18N->Translate( "#str_02222" );	// Not seen:
+		sightingBust = gameLocal.m_I18N->Translate( "#str_02221" );	// 0 Sightings.
 		sightingScore = "0";
 	}
-		
+
 	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + gameLocal.m_I18N->Translate("#str_02223") + ", " +			// Suspicious
 		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + gameLocal.m_I18N->Translate("#str_02224") + ", " + sightingBust;	// Searches
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
@@ -2483,7 +2532,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = idStr(m_Stats.AIAlerts[4].Overall * 3);  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = idStr("+") + sightingScore;  
+	key = sightingScore;  
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = idStr(stealthScore);  
@@ -2526,7 +2575,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = alert + " 4." + space + idStr(m_Stats.AIAlerts[4].Overall) + " * 3:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = alert + " 5." + space + sightingBust2;
+	key = alert + " 5." + space + idStr(busted) + " * 5:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	key = gameLocal.m_I18N->Translate( "#str_02235" );			// Stealth Score Total

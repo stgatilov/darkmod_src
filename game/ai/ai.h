@@ -790,6 +790,11 @@ public: // greebo: Made these public
 	bool					wakeOnFlashlight;
 	int						lastUpdateEnemyPositionTime;
 
+	// grayman #2887 - next 2 are used to determine amount of "busted" time
+
+	int						lastTimePlayerSeen;
+	int						lastTimePlayerLost;
+
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;

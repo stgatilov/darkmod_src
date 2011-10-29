@@ -2141,8 +2141,7 @@ void idPhysics_Player::CheckClimbable( void )
 					m_vClimbNormal = trace.c.normal;
 					if ( isVineHigher ) // grayman #2787 - if climbing a vine, flatten out the normal
 					{
-						idVec3 vineNormal = testEntHigher->GetPhysics()->GetAxis().ToAngles().ToForward();
-						m_vClimbNormal = vineNormal;
+						m_vClimbNormal = testEntHigher->GetPhysics()->GetAxis().ToAngles().ToForward();
 					}
 					m_ClimbingOnEnt = testEntHigher;
 					
