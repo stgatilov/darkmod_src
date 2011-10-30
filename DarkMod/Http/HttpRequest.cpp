@@ -67,6 +67,15 @@ void CHttpRequest::InitRequest()
 	// Set agent
 	idStr agent = "The Dark Mod Agent/";
 	agent += va("%d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+
+#ifdef WIN32
+	agent += " Win32";
+#elif defined(__linux__)
+	agent += " Linux";
+#elif defined(MACOS_X)
+	agent += " MacOSX";
+#endif
+
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
 	// Get the proxy from the HttpConnection class
