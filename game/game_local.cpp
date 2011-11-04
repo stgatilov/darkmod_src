@@ -4396,37 +4396,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Have the gui enable/disable auto parry
 		gui->HandleNamedEvent("UpdateAutoParryOption");
 	}
-	else if (cmd == "loadlpdifficulty")
-	{
-		// The GUI requests to update the lp_difficulty state string
-		int setting = 0;
-
-		if (cv_lp_auto_pick.GetBool())
-		{
-			setting = 4; // automatic
-		}
-		else // auto-pick is false
-		{
-			if (cv_lp_pick_timeout.GetInteger() >= 750)
-			{
-				setting = 0; // Trainer
-			}
-			else if (cv_lp_pick_timeout.GetInteger() >= 500)
-			{
-				setting = 1; // Average
-			}
-			else if (cv_lp_pick_timeout.GetInteger() >= 400)
-			{
-				setting = 2; // Hard
-			}
-			else // if (cv_lp_pick_timeout.GetInteger() >= 300)
-			{
-				setting = 3; // Expert
-			}
-		}
-
-		gui->SetStateInt("lp_difficulty", setting);
-	} 
 	else if (cmd == "updatemeleedifficulty")
 	{
 		// Melee difficulty setting changed, update CVARs
@@ -4458,47 +4427,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Trigger an update for the auto-parry option when melee difficulty changes
 		gui->HandleNamedEvent("UpdateAutoParryOption");
 	}
-	else if (cmd == "loadmeleedifficulty")
-	{
-		// The GUI requests to update the melee_difficulty state string
-		int setting = 0;
-
-		idStr diffString = cv_melee_difficulty.GetString();
-		bool bForbidAuto = cv_melee_forbid_auto_parry.GetBool();
-
-		if ( diffString == "normal" )
-		{
-			setting = 0; // Normal
-		}
-		else if( diffString == "hard" )
-		{
-			setting = 1; // Hard
-		}
-		else if( diffString == "expert" && !bForbidAuto )
-		{
-			setting = 2; // Expert
-		}
-		else if( diffString == "expert" && bForbidAuto )
-		{
-			setting = 3; // Master
-		}
-		else
-		{
-			setting = 0; // Normal by default
-		}
-
-		gui->SetStateInt("melee_difficulty", setting);
-
-		// Have the gui enable/disable auto parry
-		gui->HandleNamedEvent("UpdateAutoParryOption");
-	} 
 	else if (cmd == "mainmenu_init")
 	{
 		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 		UpdateGUIScaling(gui);
 		gui->SetStateString( "tdm_lang", m_I18N->GetCurrentLanguage()->c_str() );
 		idStr gui_lang = "lang_"; gui_lang += m_I18N->GetCurrentLanguage()->c_str();
-//		Printf ("Setting %s to 1.\n", gui_lang.c_str() );
 		gui->SetStateInt( gui_lang, 1 );
 	}
 	else if (cmd == "check_tdm_version")
