@@ -88,6 +88,8 @@ CI18N::CI18N ( void ) {
 	m_ArticlesDict.Set( "Los ",	", Los" );	// Spanish
 	m_ArticlesDict.Set( "Os ",	", Os" );	// Portuguese
 	m_ArticlesDict.Set( "The ",	", The" );	// English
+
+	m_Remap.Empty();						// by default, no remaps
 }
 
 CI18N::~CI18N()
@@ -184,6 +186,7 @@ void CI18N::Print( void ) const {
 	m_ReverseDict.PrintMemory();
 	common->Printf(" Articles dict  : " );
 	m_ArticlesDict.PrintMemory();
+	common->Printf(" Remapped chars : %i\n", m_Remap.Length() / 2 );
 }
 
 /*
@@ -237,6 +240,71 @@ const idStr* CI18N::GetCurrentLanguage( void ) const {
 
 /*
 ===============
+CI18N::LoadCharacterMapping
+
+Loads the character remap table, defaulting to "default.map" if "LANGUAGE.map"
+is not found. This is used to fix bug #2812.
+===============
+*/
+int CI18N::LoadCharacterMapping( idStr& lang ) {
+
+	m_Remap.Empty();		// clear the old mapping
+
+	const char *buffer = NULL;
+	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
+
+	idStr file = "strings/"; file += lang + ".map";
+	int len = idLib::fileSystem->ReadFile( file, (void**)&buffer );
+
+	// does not exist
+	if (len <= 0)
+	{
+		file = "strings/default.map";
+		len = idLib::fileSystem->ReadFile( file, (void**)&buffer );
+	}
+	if (len <= 0)
+	{
+		common->Warning("Cannot find character remapping for language %s.", lang.c_str() );
+		return 0;
+	}
+	
+	src.LoadMemory( buffer, strlen( buffer ), file );
+	if ( !src.IsLoaded() ) {
+		common->Warning("Cannot load character remapping %s.", file.c_str() );
+		return 0;
+	}
+
+	idToken tok, tok2;
+	// format:
+	/*
+	{
+		"ff"	"b2"			// remap character 0xff to 0xb2
+	}
+	*/
+	int i = 0;
+	src.ExpectTokenString( "{" );
+	while ( src.ReadToken( &tok ) ) {
+		if ( tok == "}" ) {
+			break;
+		}
+		if ( src.ReadToken( &tok2 ) ) {
+			if ( tok2 == "}" ) {
+				common->Warning("Expected a byte, but got } while parsing %s", file.c_str() );
+				break;
+			}
+			// add the two numbers
+			//	common->Warning("got '%s' '%s'\n", tok.c_str(), tok2.c_str() );
+			m_Remap.Append( (char) tok.GetIntValue() );
+			m_Remap.Append( (char) tok2.GetIntValue() );
+//			common->Printf("Mapping %i (0x%02x) to %i (0x%02x)\n", tok.GetIntValue(), tok.GetIntValue(), tok2.GetIntValue(), tok2.GetIntValue() );
+		}
+	}
+
+	return m_Remap.Length() / 2;
+}
+
+/*
+===============
 CI18N::SetLanguage
 
 Change the language. Does not check the language here, as to not restrict
@@ -259,12 +327,16 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	cv_tdm_lang.SetString( lang );
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
+	idStr newLang = idStr(lang);
+
+	// If we need to remap some characters upon loading one of these languages:
+	LoadCharacterMapping(newLang);
+
 	// For some reason, "english", "german", "french" and "spanish" share
 	// the same font, but "polish" and "russian" get their own font. But
 	// since "polish" is actually a copy of the normal western font, use
 	// "english" instead to trick D3 into loading the correct font. The
 	// dictionary below will be polish, regardless.
-	idStr newLang = idStr(lang);
 	if (newLang == "polish")
 	{
 		newLang = "english";
@@ -281,11 +353,11 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 
 	// build our combined dictionary, first the TDM base dict
 	idStr file = "strings/"; file += m_lang + ".lang";
-	m_Dict.Load( file, true );				// true => clear before load
+	m_Dict.Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() );				// true => clear before load
 
 	idLangDict *FMDict = new idLangDict;
 	file = "strings/fm/"; file += m_lang + ".lang";
-	if ( !FMDict->Load( file, false ) )
+	if ( !FMDict->Load( file, false, m_Remap.Length() / 2, m_Remap.c_str() ) )
 	{
 		common->Printf("I18N: '%s' not found.\n", file.c_str() );
 	}
@@ -311,7 +383,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	// so fall back to the english version by folding these in, too:
 
 	file = "strings/fm/english.lang";
-	if ( !FMDict->Load( file, true ) )
+	if ( !FMDict->Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() ) )
 	{
 		common->Printf("I18N: '%s' not found, skipping it.\n", file.c_str() );
 	}

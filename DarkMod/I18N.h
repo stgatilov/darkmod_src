@@ -65,6 +65,13 @@ public:
 	void				Print( void ) const;
 
 	/**
+	* Load a new character mapping based on the new language. Returns the
+	* number of characters that should be remapped upon dictionary and
+	* readable load time.
+	*/
+	int				LoadCharacterMapping( idStr& lang );
+
+	/**
 	* Set a new laguage (example: "english").
 	*/
 	void				SetLanguage( const char* lang, bool firstTime = false );
@@ -104,6 +111,10 @@ private:
 	idDict				m_ReverseDict;
 	// dictionary to map "A ..." to "..., A" for MoveArticlesToBack()
 	idDict				m_ArticlesDict;
+
+	// A table remapping between characters. The string contains two bytes
+	// for each remapped character, Length()/2 is the count.
+	idStr				m_Remap;
 };
 
 #endif /* !__DARKMOD_I18N_H__ */

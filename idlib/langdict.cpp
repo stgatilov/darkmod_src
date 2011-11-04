@@ -52,7 +52,7 @@ void idLangDict::Clear( void ) {
 idLangDict::Load
 ============
 */
-bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const char fix_0xff ) {
+bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const unsigned int remapcount, const char *remap ) {
 	
 	if ( clear ) {
 		Clear();
@@ -84,10 +84,15 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 			idLangKeyValue kv;
 			kv.key = tok;
 			kv.value = tok2;
-			if (fix_0xff != 0x00) {
-				// tels: fix #2812, character 0xFF ("я" in russian) is not rendered in the GUI
-				// so replace it with 0xb6 (182) as the font contains the character there:
-				kv.value.Replace( '\xFF', fix_0xff );
+			if (NULL != remap && remapcount > 0)
+			{
+				// Tels: fix #2812, some characters like 0xFF ("я" in russian) are not rendered
+				// in the GUI, so replace them (as the font contains the characters elsewhere).
+				// If we were given a replacement table, use it to exchange the characters:
+				for (int i = 0; i < remapcount; i ++)
+				{
+					kv.value.Replace( remap[i*2], remap[i*2+1] );
+				}
 			}
 			assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
