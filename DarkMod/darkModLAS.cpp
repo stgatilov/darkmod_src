@@ -257,6 +257,13 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
 			break;
 		}
 
+		 // grayman #2902 - prevent infinite loops where we get stuck inside the intersection of 2 entities
+
+		if ( trace.fraction < VECTOR_EPSILON )
+		{
+			break;
+		}
+
 		// End the trace if the entity hit casts shadows
 
 		idEntity* entHit = gameLocal.entities[trace.c.entityNum];
