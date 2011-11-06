@@ -2,9 +2,9 @@
  *
  * PROJECT: The Dark Mod - Launcher
  * $Source$
- * $Revision: 4852 $
- * $Date: 2011-05-17 08:04:03 +0200 (Di, 17 Mai 2011) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  *************************************************************************/
 
