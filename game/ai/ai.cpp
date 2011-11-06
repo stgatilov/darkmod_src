@@ -8771,6 +8771,8 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
 
+		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be leftover from a previous sound this frame
+
 		if (propParms->maker->IsType(idActor::Type))
 		{
 			m_AlertedByActor = static_cast<idActor *>(propParms->maker);

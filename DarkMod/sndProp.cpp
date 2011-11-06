@@ -439,6 +439,14 @@ void CsndProp::Propagate
 
 	// clear the old populated areas list
 	m_PopAreasInd.Clear();
+	
+	// grayman #2907 - Initialize the timestamp in Populated Areas. This
+	// becomes important if more than one sound propagates in the same frame.
+
+	for ( int k = 0 ; k < m_numAreas ; k++ )
+	{
+		m_PopAreas[k].addedTime = 0;
+	}
 
 	// initialize the comparison team mask
 	compMask.m_field = 0;
