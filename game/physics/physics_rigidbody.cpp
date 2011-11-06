@@ -1207,7 +1207,20 @@ void idPhysics_RigidBody::Rest( void )
 	current.i.linearMomentum.Zero();
 	current.i.angularMomentum.Zero();
 	self->BecomeInactive( TH_PHYSICS );
-	self->m_SetInMotionByActor = NULL;
+
+	// grayman #2908 - if this is a mine, we can't NULL m_SetInMotionByActor
+	// because we need that if the mine ever kills someone
+
+	if ( self->IsType(idProjectile::Type) )
+	{
+		idProjectile* proj = static_cast<idProjectile*>(self);
+		if ( !proj->IsMine() )
+		{
+			self->m_SetInMotionByActor = NULL;
+		}
+	}
+
+//	self->m_SetInMotionByActor = NULL;
 	self->m_droppedByAI = false; // grayman #1330
 }
 

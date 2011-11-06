@@ -100,6 +100,7 @@ public :
 	virtual void			FreeLightDef( void );
 
 	idEntity *				GetOwner( void ) const;
+	void					SetReplaced(); // grayman #2908
 
 	virtual void			Think( void );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
@@ -165,9 +166,9 @@ protected:
 	
 	projectileState_t		state;
 	
-	PickableLock*			m_Lock; // grayman #2478 - A lock implementation for this mover
-
-	bool					isMine; // grayman #2478 - true if this is a mine
+	PickableLock*			m_Lock;		// grayman #2478 - A lock implementation for this mover
+	bool					isMine;		// grayman #2478 - true if this is a mine
+	bool					replaced;	// grayman #2908 - true if this is a projectile mine that replaced a map author-placed armed mine
 
 protected:
 	/**

@@ -6178,16 +6178,33 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// drop items
 	DropOnRagdoll();
 
-	if ( attacker && (attacker == gameLocal.GetLocalPlayer()) && inflictor)
+	if ( attacker && (attacker == gameLocal.GetLocalPlayer()) && inflictor )
 	{
 		bPlayerResponsible = true;
 	}
-	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	else if ( attacker && attacker->m_SetInMotionByActor.GetEntity() )
 	{
-		bPlayerResponsible = (attacker != gameLocal.world &&
-			attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer());
+		bPlayerResponsible = ( ( attacker != gameLocal.world ) &&
+			( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() ) );
 	}
 
+	// grayman #2908 - we need to know if the AI stepped on a player-tossed mine.
+	// So that we don't interfere with existing situations, check specifically
+	// for the mine. The previous two checked to determine player responsibility
+	// say the player is NOT responsible, when the inflictor is a mine.
+
+	if ( !bPlayerResponsible )
+	{
+		if ( inflictor && inflictor->IsType(idProjectile::Type) )
+		{
+			idProjectile* proj = static_cast<idProjectile*>(inflictor);
+			if ( proj->IsMine() )
+			{
+				bPlayerResponsible = ( inflictor->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+			}
+		}
+	}
+	
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, attacker, bPlayerResponsible );
 	// Mark the body as last moved by the player

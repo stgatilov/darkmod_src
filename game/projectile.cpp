@@ -82,6 +82,7 @@ idProjectile::idProjectile( void ) {
 	netSyncPhysics		= false;
 	m_Lock				= NULL;  // grayman #2478
 	isMine				= false; // grayman #2478
+	replaced			= false; // grayman #2908
 }
 
 /*
@@ -157,7 +158,8 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
-	savefile->WriteBool(isMine); // grayman #2478
+	savefile->WriteBool(isMine);	// grayman #2478
+	savefile->WriteBool(replaced);	// grayman #2908
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
@@ -192,7 +194,8 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
-	savefile->ReadBool(isMine); // grayman #2478
+	savefile->ReadBool(isMine);		// grayman #2478
+	savefile->ReadBool(replaced);	// grayman #2908
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
@@ -215,6 +218,16 @@ idProjectile::GetOwner
 */
 idEntity *idProjectile::GetOwner( void ) const {
 	return owner.GetEntity();
+}
+
+/*
+================
+idProjectile::SetReplaced
+================
+*/
+void idProjectile::SetReplaced() // grayman #2908
+{
+	this->replaced = true;
 }
 
 /*
@@ -994,6 +1007,12 @@ void idProjectile::Event_ActivateProjectile()
 	if ( IsMine() )
 	{
 		// The mine is now armed, so loop the armed sound.
+
+		// grayman #2908 - determine if this mine was set by the map author or thrown by the player
+		if ( !replaced )
+		{
+			m_SetInMotionByActor = gameLocal.GetLocalPlayer();
+		}
 
 		StartSound( "snd_mine_armed", SND_CHANNEL_BODY, 0, true, NULL );
 
