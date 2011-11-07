@@ -123,7 +123,8 @@ public :
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 	void					MineExplode( int entityNumber ); // grayman #2478
-	bool					IsMine(); // grayman #2478
+	bool					IsMine();	// grayman #2478
+	bool					IsArmed();	// grayman #2906
 	void					Event_ActivateProjectile();
 
 protected:
