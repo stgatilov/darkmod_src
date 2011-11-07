@@ -3253,6 +3253,7 @@ void idEntity::Event_CheckMine()
 		projPhysics->SetAngularVelocity( vec3_origin );
 		projPhysics->PutToRest();
 		projectile->UpdateVisuals();
+		projectile->SetReplaced(); // grayman #2908 - note that this mine replaced an author-placed armed mine 
 
 		SetFrobable(false);
 		PostEventMS( &EV_Remove, 1 ); // Remove the mine, which has been replaced

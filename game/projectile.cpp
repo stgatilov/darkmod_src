@@ -82,6 +82,7 @@ idProjectile::idProjectile( void ) {
 	netSyncPhysics		= false;
 	m_Lock				= NULL;  // grayman #2478
 	isMine				= false; // grayman #2478
+	replaced			= false; // grayman #2908
 }
 
 /*
@@ -157,7 +158,8 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
-	savefile->WriteBool(isMine); // grayman #2478
+	savefile->WriteBool(isMine);	// grayman #2478
+	savefile->WriteBool(replaced);	// grayman #2908
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
@@ -192,7 +194,8 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
-	savefile->ReadBool(isMine); // grayman #2478
+	savefile->ReadBool(isMine);		// grayman #2478
+	savefile->ReadBool(replaced);	// grayman #2908
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
@@ -215,6 +218,16 @@ idProjectile::GetOwner
 */
 idEntity *idProjectile::GetOwner( void ) const {
 	return owner.GetEntity();
+}
+
+/*
+================
+idProjectile::SetReplaced
+================
+*/
+void idProjectile::SetReplaced() // grayman #2908
+{
+	this->replaced = true;
 }
 
 /*
@@ -501,6 +514,17 @@ idProjectile::IsMine - grayman #2478
 bool idProjectile::IsMine()
 {
 	return isMine;
+}
+
+/*
+=========================
+idProjectile::IsArmed - grayman #2906
+=========================
+*/
+
+bool idProjectile::IsArmed()
+{
+	return ( state == LAUNCHED );
 }
 
 /*
@@ -802,7 +826,25 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			int	damage = damageDef->GetInt( "damage" );
 			damageInflicted = ( damage > 0 );
 
-			ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
+			// grayman #2906 - check for the special case of hitting a mine.
+			// If a mine is unarmed, it won't take damage or explode.
+
+			if ( damageInflicted )
+			{
+				if ( ent->IsType(idProjectile::Type) )
+				{
+					idProjectile *proj = static_cast<idProjectile*>(ent);
+					if ( proj->IsMine() && !proj->IsArmed() ) // is mine armed?
+					{
+						damageInflicted = false;
+					}
+				}
+			}
+
+			if ( damageInflicted ) // grayman #2906 - only run the damage code if there's damage
+			{
+				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
+			}
 			ignore = ent;
 		}
 	}
@@ -831,7 +873,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 /*
 =================================
-idProjectile::DefaultDamageEffect - grayman #2478
+idProjectile::AddDamageEffect - grayman #2478
 =================================
 */
 
@@ -994,6 +1036,12 @@ void idProjectile::Event_ActivateProjectile()
 	if ( IsMine() )
 	{
 		// The mine is now armed, so loop the armed sound.
+
+		// grayman #2908 - determine if this mine was set by the map author or thrown by the player
+		if ( !replaced )
+		{
+			m_SetInMotionByActor = gameLocal.GetLocalPlayer();
+		}
 
 		StartSound( "snd_mine_armed", SND_CHANNEL_BODY, 0, true, NULL );
 
