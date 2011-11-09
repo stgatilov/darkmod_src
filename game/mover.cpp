@@ -3114,6 +3114,8 @@ void idRotater::SetRotationFromSpawnargs(bool forward)
 		float speed = spawnArgs.GetFloat("speed", "100");
 		bool x_axis = spawnArgs.GetBool("x_axis", "0");
 		bool y_axis = spawnArgs.GetBool("y_axis", "0");
+		bool z_axis = !x_axis && !y_axis;
+		bool applyDirectionFix = spawnArgs.GetBool("apply_direction_fix", "0");
 
 		// Invert the speed if the direction boolean is false
 		if (!forward) 
@@ -3121,19 +3123,45 @@ void idRotater::SetRotationFromSpawnargs(bool forward)
 			speed *= -1;
 		}
 
-		// set the axis of rotation
-		if (x_axis) {
+		if (applyDirectionFix)
+		{
+			idAngles curAngles = physicsObj.GetAxis().ToAngles().Normalize360();
+			idAngles spawnAngles = spawnArgs.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1").ToAngles().Normalize360();
+
+			// greebo: Euler angles are ambiguous - it might happen that a positive speed value
+			// applied to "roll" means something different than it would have meant at spawn time
+			// To yield the same orientation with a different set of angles one usually has 
+			// to employ two 180 degree rotations - check this. If anybody has a more elegant way of checking that, let me know!
+			if (x_axis && fabs(spawnAngles[1] - curAngles[1]) == 180 && fabs(spawnAngles[0] - curAngles[0]) == 180)
+			{
+				speed *= -1;
+			}
+			else if (y_axis && fabs(spawnAngles[1] - curAngles[1]) == 180 && fabs(spawnAngles[2] - curAngles[2]) == 180)
+			{
+				speed *= -1;
+			}
+			else if (z_axis && fabs(spawnAngles[0] - curAngles[0]) == 180 && fabs(spawnAngles[2] - curAngles[2]) == 180)
+			{
+				speed *= -1;
+			}
+		}
+		
+		// Set the axis of rotation
+		if (x_axis) // roll
+		{
 			delta[2] = speed;
 		}
-		else if (y_axis) {
+		else if (y_axis) // pitch
+		{
 			delta[0] = speed;
 		}
-		else {
+		else // z_axis == yaw
+		{
 			delta[1] = speed;
 		}
 	}
 
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles().Normalize360(), delta, ang_zero );
 }
 
 void idRotater::SetDirection(bool forward)
