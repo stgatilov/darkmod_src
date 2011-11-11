@@ -98,6 +98,8 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
 		memory.countEvidenceOfIntruders++;
+		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
+		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.alertedDueToCommunication = false;
 		memory.stopRelight = true; // grayman #2603
 		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope

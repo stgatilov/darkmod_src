@@ -42,6 +42,17 @@ Memory::Memory(idAI* owningAI) :
 	unconsciousPeopleHaveBeenFound(false),
 	deadPeopleHaveBeenFound(false),
 	alertPos(0,0,0),
+
+	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
+	posEnemySeen(0,0,0),
+	posCorpseFound(0,0,0),
+	posMissingItem(0,0,0),
+	posEvidenceIntruders(0,0,0),
+	timeEnemySeen(0),
+	timeCorpseFound(0),
+	timeMissingItem(0),
+	timeEvidenceIntruders(0),
+
 	stopRelight(false), // grayman #2603
 	stopExaminingRope(false), // grayman #2872
 	alertClass(EAlertClassCount),
@@ -101,8 +112,19 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
 	savefile->WriteVec3(alertPos);
-	savefile->WriteBool(stopRelight); // grayman #2603
-	savefile->WriteBool(stopExaminingRope); // grayman #2872
+	
+	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
+	savefile->WriteVec3(posEnemySeen);
+	savefile->WriteVec3(posCorpseFound);
+	savefile->WriteVec3(posMissingItem);
+	savefile->WriteVec3(posEvidenceIntruders);
+	savefile->WriteInt(timeEnemySeen);
+	savefile->WriteInt(timeCorpseFound);
+	savefile->WriteInt(timeMissingItem);
+	savefile->WriteInt(timeEvidenceIntruders);
+
+	savefile->WriteBool(stopRelight);			// grayman #2603
+	savefile->WriteBool(stopExaminingRope);		// grayman #2872
 	savefile->WriteInt(static_cast<int>(alertClass));
 	savefile->WriteInt(static_cast<int>(alertType));
 	savefile->WriteFloat(alertRadius);
@@ -194,7 +216,18 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
 	savefile->ReadVec3(alertPos);
-	savefile->ReadBool(stopRelight); // grayman #2603
+
+	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
+	savefile->ReadVec3(posEnemySeen);
+	savefile->ReadVec3(posCorpseFound);
+	savefile->ReadVec3(posMissingItem);
+	savefile->ReadVec3(posEvidenceIntruders);
+	savefile->ReadInt(timeEnemySeen);
+	savefile->ReadInt(timeCorpseFound);
+	savefile->ReadInt(timeMissingItem);
+	savefile->ReadInt(timeEvidenceIntruders);
+
+	savefile->ReadBool(stopRelight);	// grayman #2603
 	savefile->ReadBool(stopExaminingRope); // grayman #2872
 
 	int temp;
