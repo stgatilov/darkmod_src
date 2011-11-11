@@ -210,7 +210,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			gameLocal.m_I18N->Translate("#str_04353") : // Campaign
 			gameLocal.m_I18N->Translate("#str_04352")); // Single Mission
 		gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
-		gui->SetStateString("av_mission_size", va("%0.1f MB", mods[missionIndex]->sizeMB));
+		gui->SetStateString("av_mission_size", va("%0.1f %s", mods[missionIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02015" )));	// MB
 
 		gui->SetStateBool("av_mission_details_visible", true);
 
@@ -481,7 +481,7 @@ void CDownloadMenu::UpdateModDetails(idUserInterface* gui)
 	gui->SetStateString("av_mission_author", mods[modIndex]->author);
 	gui->SetStateString("av_mission_release_date", mods[modIndex]->releaseDate);
 	gui->SetStateString("av_mission_version", va("%d", mods[modIndex]->version));
-	gui->SetStateString("av_mission_size", va("%0.1f MB", mods[modIndex]->sizeMB));
+	gui->SetStateString("av_mission_size", va("%0.1f %s", mods[modIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02015" )));	// MB
 
 	gui->SetStateString("av_mission_description", mods[modIndex]->description);
 }

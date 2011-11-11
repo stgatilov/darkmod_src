@@ -63,19 +63,19 @@ idStr CModInfo::GetModFolderSizeString()
 
 	if (size < 1024)
 	{
-		str = va("%0.2f Bytes", size);
+		str = va("%0.2f %s", size, gameLocal.m_I18N->Translate( "#str_02010" ));	// Bytes
 	}
 	else if (size < 1024*1024)
 	{
-		str = va("%0.0f kB", size/1024.0f);
+		str = va("%0.0f %s", size/1024.0f, gameLocal.m_I18N->Translate( "#str_02014" ));	// kB
 	}
 	else if (size < 1024.0f*1024.0f*1024.0f)
 	{
-		str = va("%0.0f MB", size/(1024.0f*1024.0f));
+		str = va("%0.0f %s", size/(1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02015" ));	// MB
 	}
 	else if (size < 1024.0f*1024.0f*1024.0f*1024.0f)
 	{
-		str = va("%0.2f GB", size/(1024.0f*1024.0f*1024.0f));
+		str = va("%0.2f %s", size/(1024.0f*1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02016" ));	// GB
 	}
 
 	return str;
