@@ -326,6 +326,8 @@ bool Mind::PerformCombatCheck()
 		idActor* enemy = owner->GetEnemy();
 
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
+		memory.posEnemySeen = owner->GetPhysics()->GetOrigin();	// grayman #2903
+		memory.timeEnemySeen = gameLocal.time;	// grayman #2903
 		
 		return true; // entered combat mode
 	}
