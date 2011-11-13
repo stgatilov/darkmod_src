@@ -252,9 +252,10 @@ void CModMenu::DisplayBriefingPage(idUserInterface* gui)
 		// load up page text
 		idStr page = va("page%d_body", _briefingPage);
 
-		gameLocal.Printf("DisplayBriefingPage: current page is %d", _briefingPage);
+		gameLocal.Printf("DisplayBriefingPage: current page is %d\n", _briefingPage);
 
-		briefing = xd->m_data.GetString(page);
+		// Tels: Translate it properly
+		briefing = gameLocal.m_I18N->Translate( xd->m_data.GetString(page) );
 
 		// set scroll button visibility
 		scrollDown = numPages > _briefingPage;
