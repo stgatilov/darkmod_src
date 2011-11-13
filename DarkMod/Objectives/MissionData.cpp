@@ -1549,7 +1549,7 @@ void CMissionData::ParseObjectiveConditions(const idDict& dict)
 		index++;
 	}
 
-	gameLocal.Printf("Applied %d objective conditions.", index - 1);
+	gameLocal.Printf("Applied %d objective conditions.\n", index - 1);
 }
 
 bool    CMissionData::MatchLocationObjectives( idEntity * entity )
