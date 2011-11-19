@@ -6251,7 +6251,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 
 void idAI::DropBlood(idEntity *inflictor)
 {
-	if (inflictor)
+	if ( inflictor && spawnArgs.GetBool("bleed","0") ) // grayman #2931
 	{
 		idStr damageDefName = inflictor->spawnArgs.RandomPrefix("def_damage", gameLocal.random);
 
