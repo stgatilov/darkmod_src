@@ -10026,7 +10026,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	// Check if the AI is above the alert threshold for Immunity
 	// Defined the name of the alert threshold in the AI def for generality
 
-/*	grayman debug - follow these rules to determine immunity:
+/*	grayman #2930 - follow these rules to determine immunity:
 
 	1. Civilians can be knocked out at any time, from any angle, at any alert level.
 	2. If the AI's alert level is at least m_KoAlertImmuneState, and
@@ -10041,47 +10041,31 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
     6. Finally, check the KO angles and determine if the blow has landed in the right place.
  */
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow: %s \r", name.c_str()); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     alert index = %d\r",(int) AI_AlertIndex); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     COMBAT_MELEE is %s\r",GetAttackFlag(COMBAT_MELEE) ? "TRUE" : "FALSE"); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     COMBAT_RANGED is %s\r",GetAttackFlag(COMBAT_RANGED) ? "TRUE" : "FALSE"); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     minDotVert  = %f\r",minDotVert); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     minDotHoriz = %f\r",minDotHoriz); // grayman debug
-
 	bool immune2KO = false;
 	if ( spawnArgs.GetBool("is_civilian", "0") )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     civilian - rule #1\r"); // grayman debug
 		// Rule #1
 	}
 	// everyone else is a combatant
 	else if ( AI_AlertIndex >= m_KoAlertImmuneState )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     alert index (%d) >= alert immune state (%d)\r",(int) AI_AlertIndex,m_KoAlertImmuneState); // grayman debug
 		// is the AI immune at high alert levels?
 		if ( m_bKoAlertImmune )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_bKoAlertImmune is TRUE - immune rule 2\r"); // grayman debug
 			immune2KO = true; // Rule #2
 		}
 		else
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_bKoAlertImmune is FALSE\r"); // grayman debug
 			// At high alert levels, use different values
 			minDotVert = m_KoAlertDotVert;
 			minDotHoriz = m_KoAlertDotHoriz;
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Alert Reset 2:  minDotVert = %f\r",minDotVert); // grayman debug
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Alert Reset 2: minDotHoriz = %f\r",minDotHoriz); // grayman debug
 		}
 	}
 	// alert level isn't high enough for carte-blanche immunity, so check other factors
 	else if ( GetAttackFlag(COMBAT_MELEE) || GetAttackFlag(COMBAT_RANGED) )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     COMBAT_MELEE is %s, COMBAT_RANGED is %s\r",GetAttackFlag(COMBAT_MELEE) ? "TRUE" : "FALSE",GetAttackFlag(COMBAT_RANGED) ? "TRUE" : "FALSE"); // grayman debug
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     armed and weapon is drawn or available\r"); // grayman debug
 		if ( m_KoAlertImmuneState == 4 ) // wearing helmet?
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     immune rule 4\r"); // grayman debug
 			immune2KO = true; // Rule #4
 		}
 		else // Rule #5
@@ -10091,37 +10075,29 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 			idVec3 aiForward = viewAxis.ToAngles().ToForward();
 			if ( dir * aiForward < 0.0f )
 			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     immune rule 5 -  hit from the front\r"); // grayman debug
 				immune2KO = true; // attacked from the front
 			}
 			else
 			{
 				// Rule #5 -  // attacked from behind, so not immune
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     not immune rule 5 - hit from behind\r"); // grayman debug..
 				
 				// treat a drawn weapon or an unarmed AI that can fight as a highly alerted state for KO purposes
 				minDotVert = m_KoAlertDotVert;
 				minDotHoriz = m_KoAlertDotHoriz;
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Alert Reset 5:  minDotVert = %f\r",minDotVert); // grayman debug
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Alert Reset 5: minDotHoriz = %f\r",minDotHoriz); // grayman debug
 			}
 		}
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     not immune rule 3\r"); // grayman debug
 		// Rule #3 - sheathed weapon or no weapon; not immune
 	}
 
 	if ( immune2KO )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     immune to KO\r"); // grayman debug
 		// Signal the failed KO to the current state
 		GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
 		return false; // AI is immune, so no KO this time
 	}
-
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     passed all KO immunity, still a KO candidate\r"); // grayman debug
 
 	idVec3 KOSpot;
 	idMat3 headAxis;
@@ -10143,10 +10119,6 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
 	float dotVert = idMath::Fabs( lenDeltaH / lenDelta );
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      minDotVert = %f\r",minDotVert); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     minDotHoriz = %f\r",minDotHoriz); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("        dotHoriz = %f\r",dotHoriz); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("         dotVert = %f\r",dotVert); // grayman debug
 	// if hit was within the cone
 	if ( ( dotHoriz >= minDotHoriz ) && ( dotVert >= minDotVert) )
 	{
@@ -10157,7 +10129,6 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 		return true;
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     failure in the end - rule 6\r"); // grayman debug
 	// Rule #6 - blow wasn't in the right place
 
 	// Signal the failed KO to the current state
@@ -10920,7 +10891,6 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	// greebo: Remember the initial alert position
 	ai::Memory& memory = GetMemory();
 	memory.alertSearchCenter = memory.alertPos;
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("----- StartSearchForHidingSpotsWithExclusionArea - %s records the original alertPos at (%s)\r", name.c_str(),memory.alertPos.ToString()); // grayman debug
 
 	// Get aas
 	if (aas != NULL)
@@ -11618,20 +11588,12 @@ void idAI::ParseKnockoutInfo()
 	m_bKoAlertImmune = spawnArgs.GetBool("ko_alert_immune");
 	idAngles tempAngles = spawnArgs.GetAngles("ko_rotation");
 	m_KoRot = tempAngles.ToMat3();
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::ParseKnockoutInfo: %s \r", name.c_str()); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_bCanBeKnockedOut = %s\r", m_bCanBeKnockedOut ? "TRUE" : "FALSE"); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_KoAlertImmuneState = %d\r", m_KoAlertImmuneState); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_bKoAlertImmune = %d\r", m_bKoAlertImmune); // grayman debug
 
 	float tempAng;
 	tempAng = spawnArgs.GetFloat("ko_angle_vert", "360");
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("       ko_angle_vert = %f\r", tempAng); // grayman debug
 	m_KoDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
 	tempAng = spawnArgs.GetFloat("ko_angle_horiz", "360");
 	m_KoDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      ko_angle_horiz = %f\r", tempAng); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("         m_KoDotVert = %f\r", m_KoDotVert); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("        m_KoDotHoriz = %f\r", m_KoDotHoriz); // grayman debug
 
 	// Only set the alert angles if the spawnargs exist
 	const char *tempc1, *tempc2;
@@ -11640,7 +11602,6 @@ void idAI::ParseKnockoutInfo()
 	if( tempc1[0] != '\0' )
 	{
 		tempAng = atof( tempc1 );
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      ko_angle_alert_vert = %f\r", tempAng); // grayman debug
 		m_KoAlertDotVert = (float)cos( DEG2RAD( tempAng * 0.5f ) );
 	}
 	else
@@ -11648,14 +11609,11 @@ void idAI::ParseKnockoutInfo()
 	if( tempc2[0] != '\0' )
 	{
 		tempAng = atof( tempc2 );
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      ko_angle_alert_horiz = %f\r", tempAng); // grayman debug
 		m_KoAlertDotHoriz = (float)cos( DEG2RAD( tempAng * 0.5f ) );
 	}
 	else
 		m_KoAlertDotHoriz = m_KoDotHoriz;
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      m_KoAlertDotVert = %f\r", m_KoAlertDotVert); // grayman debug
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     m_KoAlertDotHoriz = %f\r", m_KoAlertDotHoriz); // grayman debug
 	// ishtvan: Also set the FOV again, as this may be copied from the head
 	// TODO: This was done once already in idActor, do we still need it there or can we remove FOV from idActor?
 	float fovDegHoriz, fovDegVert;	
