@@ -1341,6 +1341,18 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	}
 }
 
+// grayman #2934
+
+void idProjectile::AttackAction(idPlayer* player)
+{
+	if ( m_Lock != NULL )
+	{
+		m_Lock->AttackAction(player);
+	}
+}
+
+
+
 /*
 ================
 idProjectile::GetVelocity
