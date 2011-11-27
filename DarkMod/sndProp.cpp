@@ -336,7 +336,14 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 		m_sndAreas[i].portalDists = new CMatRUT<float>;
 
 		// Copy the values
-		*m_sndAreas[i].portalDists = *(in->m_sndAreas[i].portalDists);
+		if (in->m_sndAreas[i].portalDists->size() > 0)
+		{
+			*m_sndAreas[i].portalDists = *(in->m_sndAreas[i].portalDists);
+		}
+		else
+		{
+			m_sndAreas[i].portalDists->Clear();
+		}
 	}
 
 

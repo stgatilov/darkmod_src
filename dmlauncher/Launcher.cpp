@@ -230,13 +230,14 @@ void Launcher::InitArguments()
 {
 	if (!_currentFM.empty())
 	{
-		AddArgument("+set");
-		AddArgument("fs_game_base");
-		AddArgument(GAME_BASE_NAME);
-
+		// greebo: issue #2904 suggests the argument order is important, put fs_game first
 		AddArgument("+set");
 		AddArgument("fs_game");
 		AddArgument(_currentFM);
+
+		AddArgument("+set");
+		AddArgument("fs_game_base");
+		AddArgument(GAME_BASE_NAME);
 	}
 	else
 	{
