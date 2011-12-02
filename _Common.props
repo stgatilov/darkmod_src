@@ -3,8 +3,8 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>Common Project Properties</_PropertySheetDisplayName>
-    <OutDir>..\build\$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir>..\build\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\build\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\build\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
