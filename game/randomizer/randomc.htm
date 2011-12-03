@@ -1,0 +1,270 @@
+<html>
+<head>
+<meta http-equiv="Content-Language" content="en">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>Uniform random number generators</title>
+<style><!--
+body{font-family:verdana,arial,sans-serif;background-color:#CCFFCC;color:#000000;}
+a,p{font-family:verdana,arial,sans-serif}
+a:link{color:#0000CC; text-decoration:underline}
+a:visited{color:#990099; text-decoration:underline}
+a:active,a:hover{color:#6666FF; text-decoration:underline}
+h1{text-align:Center;font-size:150%;font-weight:700;}
+h2{text-align:Left;font-size:130%;font-weight:600;padding-top:1em}
+pre  {font-family: 'courier new',courier; color:#000000; background-color:#FFFFCC; 
+      border: 1px solid black; padding:0.5em }
+dt   {font-weight:bold;}
+dd   {font-weight:normal; padding-bottom:1em}
+li   {padding-bottom:1em}
+@media print {body{font-family:arial,sans-serif;background-color:#FFFFFF;color:#000000}}
+@media print {a,a:link,a:visited {text-decoration:none}}
+--></style>
+</head>
+
+<body>
+
+<h1>Uniform random number generators</h1>
+
+<p align="center">by Agner Fog</p>
+<p><a href="randomc.zip">randomc.zip</a> contains a C++ class library of uniform random number generators of good
+quality.</p>
+<p>The random number generators found in standard libraries are often of a poor
+quality, insufficient for large Monte Carlo calculations. This C++
+implementation provides
+random number generators of a much better quality: Better randomness, higher
+resolution, and longer cycle lengths.</p>
+<p>The same random number generators are available as libraries coded in assembly language
+for higher speed. These libraries can be linked into projects coded in other
+programming languages under Windows, Linux, BSD, etc. The library files are
+available in the
+archive <a href="randoma.zip">randoma.zip</a>.</p>
+<p>Non-uniform random number generators are provided in <a href="stocc.zip">stocc.zip</a>.</p>
+<h2>File list</h2>
+<p>The archive <a href="randomc.zip">randomc.zip</a> contains the following
+files:</p>
+<dl>
+  <dt>randomc.htm</dt>
+  <dd>This file. Instructions.</dd>
+  <dt>randomc.h</dt>
+  <dd>C++ header file containing class definitions.<br>
+    You must <code>#include</code> this in all C++ files that use this library.</dd>
+  <dt>mersenne.cpp</dt>
+  <dd>Random number generator of type Mersenne twister.</dd>
+  <dt>ranrotb.cpp</dt>
+  <dd>Random number generator of type RANROT-B.</dd>
+  <dt>ranrotw.cpp</dt>
+  <dd>Random number generator of type RANROT-W.</dd>
+  <dt>mother.cpp</dt>
+  <dd>Random number generator of type Mother-of-all (multiply with carry).</dd>
+  <dt>rancombi.cpp</dt>
+  <dd>Template class for combining any two of these random number generators.</dd>
+  <dt>ex-ran.cpp</dt>
+  <dd>Example showing how to use these random number generators.</dd>
+</dl>
+<h2>Quality of randomness</h2>
+<p>All these random number generators provide excellent randomness and extremely
+long cycle lengths.</p>
+<p>For all but the most demanding applications it doesn't matter
+which of the random number generators you use. The Mersenne twister is the one
+that is best understood theoretically. For this reason it is recommended by
+leading experts. The RANROT generators have a more chaotic behavior which is
+difficult to analyze theoretically, and hence maybe also more random in the
+sense that it has no mathematical regularity that might interfere with the
+structure of your application. The Mother-of-all generator has the highest
+bifurcation of these generators.</p>
+<p>For the most demanding scientific applications you may combine any two of these
+generators.</p>
+<h2>Technical quality</h2>
+<p>The technical qualities of these generators are compared in the table below.
+If you want to simulate very low probabilities with high accuracy then it is
+recommended to use a generator with a high resolution. If speed is important then
+use a generator that uses a low number of clock cycles. The amount of data cache
+used influences execution speed if the total amount of data handled by the
+critical part of your program exceeds the size of the level-1 cache in your
+microprocessor. A low cache use means faster
+execution. The same applies to the code cache use if the critical part of your
+program uses more than the available cache size.</p>
+<table border="1" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td width="12%" rowspan="2">
+      <p align="center">Generator type</td>
+    <td width="12%" rowspan="2" align="center">coding language</td>
+    <td width="12%" rowspan="2" align="center">resolution<br>
+      bits</td>
+    <td width="76%" colspan="4">
+      <p align="center">time consumption, clock cycles</td>
+    <td width="13%" rowspan="2" align="center">data cache use, bytes</td>
+    <td width="13%" rowspan="2" align="center">code cache use, bytes</td>
+  </tr>
+  <tr>
+    <td width="12%" align="center">bits</td>
+    <td width="13%" align="center">integer</td>
+    <td width="13%" align="center">float</td>
+    <td width="13%" align="center">hi.res.<BR>
+      float</td>
+  </tr>
+  <tr>
+    <td width="12%">RANROT B</td>
+    <td width="12%" align="center">C++</td>
+    <td width="12%" align="center">32</td>
+    <td width="12%" align="center">&nbsp;</td>
+    <td width="13%" align="center">282</td>
+    <td width="13%" align="center">96</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">164</td>
+    <td width="13%" align="center">350</td>
+  </tr>
+  <tr>
+    <td width="12%">RANROT W</td>
+    <td width="12%" align="center">C++</td>
+    <td width="12%" align="center">52 or 63</td>
+    <td width="12%" align="center">61</td>
+    <td width="13%" align="center">306</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">118</td>
+    <td width="13%" align="center">164</td>
+    <td width="13%" align="center">400</td>
+  </tr>
+  <tr>
+    <td width="12%">RANROT W</td>
+    <td width="12%" align="center">ASM</td>
+    <td width="12%" align="center">63</td>
+    <td width="12%" align="center">22</td>
+    <td width="13%" align="center">67</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">77</td>
+    <td width="13%" align="center">160</td>
+    <td width="13%" align="center">200</td>
+  </tr>
+  <tr>
+    <td width="12%">Mother-of-all</td>
+    <td width="12%" align="center">C++</td>
+    <td width="12%" align="center">32</td>
+    <td width="12%" align="center">&nbsp;</td>
+    <td width="13%" align="center">306</td>
+    <td width="13%" align="center">189</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">48</td>
+    <td width="13%" align="center">220</td>
+  </tr>
+  <tr>
+    <td width="12%">Mother-of-all</td>
+    <td width="12%" align="center">ASM</td>
+    <td width="12%" align="center">32</td>
+    <td width="12%" align="center">74</td>
+    <td width="13%" align="center">96</td>
+    <td width="13%" align="center">146</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">48</td>
+    <td width="13%" align="center">170</td>
+  </tr>
+  <tr>
+    <td width="12%">Mersenne Twister</td>
+    <td width="12%" align="center">C++</td>
+    <td width="12%" align="center">32</td>
+    <td width="12%" align="center">38</td>
+    <td width="13%" align="center">258</td>
+    <td width="13%" align="center">91</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">1476</td>
+    <td width="13%" align="center">450</td>
+  </tr>
+  <tr>
+    <td width="12%">Mersenne Twister</td>
+    <td width="12%" align="center">ASM</td>
+    <td width="12%" align="center">32 - 63</td>
+    <td width="12%" align="center">24</td>
+    <td width="13%" align="center">44</td>
+    <td width="13%" align="center">65</td>
+    <td width="13%" align="center">81</td>
+    <td width="13%" align="center">1472</td>
+    <td width="13%" align="center">600</td>
+  </tr>
+  <tr>
+    <td width="12%">Combined<br>
+      RANROT-W+<br>
+      Mother-off-all</td>
+    <td width="12%" align="center">ASM</td>
+    <td width="12%" align="center">63</td>
+    <td width="12%" align="center">89</td>
+    <td width="13%" align="center">134</td>
+    <td width="13%" align="center">&nbsp;</td>
+    <td width="13%" align="center">130</td>
+    <td width="13%" align="center">224</td>
+    <td width="13%" align="center">300</td>
+  </tr>
+</table>
+
+<p>The number of clock cycles are approximate values for a Pentium 4 microprocessor under optimal caching conditions. A count of 100 clock cycles
+means that you can generate 10 million random numbers per second on a 1 GHz
+computer.</p>
+
+<h2>Instructions</h2>
+
+<p>Choose which one of the random number generators mentioned above you want to
+use.</p>
+
+<p>Write&nbsp; <code>#include &quot;randomc.h&quot;</code>&nbsp; in any C++ file
+that uses one of these random number generators.</p>
+<p>Add the appropriate cpp file to your project, either as an <code>#include</code>
+or as a separate module.</p>
+<p>Make an instance (object) of the appropriate class. It needs an integer seed
+as initializer.</p>
+<p>The seed can be any integer, positive, negative or zero. Repeating the
+calculations with the same seed will produce the same sequence of random
+numbers. A different seed will give different random numbers. You may use the
+time in seconds or milliseconds as seed.</p>
+<p>You don't need more than one instance of the random number generator unless
+you have multiple threads. If, for
+any reason, you want more than one instance then make sure they don't have the
+same seed. You may, for example, add 1 to the seed for each new instance.</p>
+<p>The file ex-ran.cpp contains an example of how to do. Try it!</p>
+
+<h2>Portability</h2>
+<p>The C++ class library is supposed to work with all C++ compilers and all
+operating systems. It has been tested on several different systems.</p>
+<p>There are, however, a few system differences that you need to be aware of:</p>
+<ol>
+  <li>Floating point representation. Most systems store floating point
+    numbers according to the IEEE-754 standard with 64 bits or 80 bits storage. The fast conversion to floating point relies on this standard
+    format. A slightly less efficient method is used when floating point numbers
+    are not stored in a recognized format.</li>
+  <li>Long double precision. The Mother-of-all generator and the RANROT-W generator
+    require long double precision (80 bits storage). Not all microprocessors and
+    compilers support this precision. A standard PC running Windows or Linux
+    supports the long double precision when the program is compiled with a
+    Borland or Gnu compiler. The Microsoft C++ compiler (Visual C++) does not support long
+    double precision. The Mother-of-all generator coded in C++ will not work
+    without long double precision. The RANROT-W generator will work, but with
+    lower resolution and a different random number sequence. The RANROT-W
+    generator coded in assembly does not require long double precision.</li>
+  <li>Rotate function. The RANROT-B and RANROT-W generators use a rotate
+    function <code>_lrotl()</code>. Some compilers have this as a
+    built-in function. For other compilers you need to define it. A code for
+    this function is given in the files ranrotb.cpp and ranrotw.cpp. If your
+    compiler has the built-in function then remove or comment out this function.</li>
+</ol>
+<h2>Theory</h2>
+<p>The theory of the Mersenne twister is given in the article:<br>
+M. Matsumoto &amp; T. Nishimura: <i>&quot;Mersenne Twister: A 623-Dimensionally
+Equidistributed Uniform Pseudo-Random Number Generator&quot;.</i> ACM
+Transactions on Modeling and Computer Simulation, vol. 8, no. 1, 1998, pp. 3-30.
+See also <A href="http://www.math.sci.hiroshima-u.ac.jp/~m-mat/eindex.html">http://www.math.sci.hiroshima-u.ac.jp/~m-mat/eindex.html</A>.</p>
+<p>The theory of Mother-of-All generators is given in George Marsaglia's DIEHARD
+package, see <a href="http://stat.fsu.edu/~geo/diehard.html">stat.fsu.edu/~geo/diehard.html</a>
+or <a href="http://www.cs.hku.hk/internet/randomCD.html">www.cs.hku.hk/internet/randomCD.html</a>.</p>
+<p>The theory of RANROT generators is given at <a href="http://www.agner.org/random/theory/">www.agner.org/random/theory/</a>.</p>
+
+<h2>Copyright and licence</h2>
+<P>© 2002-2005 by Agner Fog.
+<a href="licence.htm">General public license statement</a>.
+</P>
+
+<p>&nbsp;</p>
+<p align="center"><a href="http://www.agner.org/random/">Back to random number
+generators page</a>.</p>
+
+</body>
+
+</html>
