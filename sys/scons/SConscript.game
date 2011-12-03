@@ -80,20 +80,12 @@ game_string = ' \
 	physics/Physics_StaticMulti.cpp \
 	physics/Push.cpp'
 
-if ( local_d3xp ):
-	game_string += ' \
-	Grabber.cpp \
-	physics/Force_Grab.cpp'
-	game_list = scons_utils.BuildList( 'd3xp', game_string )
-else:
-	game_list = scons_utils.BuildList( 'game', game_string )
+game_list = scons_utils.BuildList( 'game', game_string )
 
 for i in range( len( game_list ) ):
 	game_list[ i ] = '../../' + game_list[ i ]
 
 local_env = g_game_env.Clone()
-if ( local_d3xp ):
-	local_env.Append( CPPDEFINES = [ '_D3XP', 'CTF' ] )
 
 if ( local_demo == 1 ):
 	local_env.Append( CPPDEFINES = [ 'ID_DEMO_BUILD' ] )
