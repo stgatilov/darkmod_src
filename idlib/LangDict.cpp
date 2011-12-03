@@ -1,34 +1,20 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 5019 $
+ * $Date: 2011-11-04 18:16:10 +0100 (Fr, 04 Nov 2011) $
+ * $Author: tels $
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "precompiled.h"
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Id: langdict.cpp 5019 2011-11-04 17:16:10Z tels $", init_version);
 
 /*
 ============
@@ -66,7 +52,7 @@ void idLangDict::Clear( void ) {
 idLangDict::Load
 ============
 */
-bool idLangDict::Load( const char *fileName, bool clear /* _D3XP */ ) {
+bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const unsigned int remapcount, const char *remap ) {
 	
 	if ( clear ) {
 		Clear();
@@ -98,6 +84,16 @@ bool idLangDict::Load( const char *fileName, bool clear /* _D3XP */ ) {
 			idLangKeyValue kv;
 			kv.key = tok;
 			kv.value = tok2;
+			if (NULL != remap && remapcount > 0)
+			{
+				// Tels: fix #2812, some characters like 0xFF ("я" in russian) are not rendered
+				// in the GUI, so replace them (as the font contains the characters elsewhere).
+				// If we were given a replacement table, use it to exchange the characters:
+				for (int i = 0; i < remapcount; i ++)
+				{
+					kv.value.Replace( remap[i*2], remap[i*2+1] );
+				}
+			}
 			assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
 		}
@@ -145,7 +141,7 @@ void idLangDict::Save( const char *fileName ) {
 idLangDict::GetString
 ============
 */
-const char *idLangDict::GetString( const char *str ) const {
+const char *idLangDict::GetString( const char *str, const bool dowarn ) const {
 
 	if ( str == NULL || str[0] == '\0' ) {
 		return "";
@@ -162,7 +158,10 @@ const char *idLangDict::GetString( const char *str ) const {
 		}
 	}
 
-	idLib::common->Warning( "Unknown string id %s", str );
+	if (dowarn)
+	{
+		idLib::common->Warning( "Unknown string id %s", str );
+	}
 	return str;
 }
 
@@ -210,7 +209,7 @@ int idLangDict::GetNumKeyVals( void ) const {
 idLangDict::GetKeyVal
 ============
 */
-const idLangKeyValue * idLangDict::GetKeyVal( int i ) const {
+const idLangKeyValue * idLangDict::GetKeyVal( const int i ) const {
 	return &args[i];
 }
 
@@ -275,7 +274,7 @@ idLangDict::GetNextId
 int idLangDict::GetNextId( void ) const {
 	int c = args.Num();
 
-	//Let and external user supply the base id for this dictionary
+	// Let an external user supply the base id for this dictionary
 	int id = baseID;
 
 	if ( c == 0 ) {
@@ -306,4 +305,15 @@ int idLangDict::GetHashKey( const char *str ) const {
 		hashKey = hashKey * 10 + str[0] - '0';
 	}
 	return hashKey;
+}
+
+/*
+============
+idLangDict::Print
+============
+*/
+void idLangDict::Print( void ) const {
+	int c = args.Num();
+	gameLocal.Printf("idLangDict: %li KB in %i entries.\n", static_cast<long>(args.Size() + hash.Size()) >> 10l, c);
+	//hash.Print();
 }

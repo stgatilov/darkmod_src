@@ -1,33 +1,19 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1435 $
+ * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
+ * $Author: greebo $
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Id: heap.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #ifndef USE_LIBC_MALLOC
 	#define USE_LIBC_MALLOC		0
@@ -243,13 +229,16 @@ void idHeap::AllocDefragBlock( void ) {
 	if ( defragBlock ) {
 		return;
 	}
-	while( 1 ) {
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	while( true ) {
 		defragBlock = malloc( size );
 		if ( defragBlock ) {
 			break;
 		}
 		size >>= 1;
 	}
+#pragma warning( pop )
 	idLib::common->Printf( "Allocated a %i mb defrag block\n", size / (1024*1024) );
 }
 
@@ -1366,7 +1355,7 @@ typedef enum {
 void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sortCallStack, int numFrames ) {
 	int numBlocks, totalSize, r, j;
 	debugMemory_t *b;
-	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted, *nextSorted;
+	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted = NULL, *nextSorted = NULL;
 	idStr module, funcName;
 	FILE *f;
 

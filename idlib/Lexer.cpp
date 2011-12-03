@@ -1,34 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 2485 $
+ * $Date: 2008-06-14 12:52:09 +0200 (Sa, 14 Jun 2008) $
+ * $Author: tels $
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "precompiled.h"
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Id: lexer.cpp 2485 2008-06-14 10:52:09Z tels $", init_version);
+
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 #define PUNCTABLE
 
 //longer punctuations first
@@ -337,10 +325,6 @@ int idLexer::ReadWhiteSpace( void ) {
 				if ( !*idLexer::script_p ) {
 					return 0;
 				}
-				idLexer::script_p++;
-				if ( !*idLexer::script_p ) {
-					return 0;
-				}
 				continue;
 			}
 		}
@@ -638,16 +622,22 @@ int idLexer::ReadNumber( idToken *token ) {
 			c = *(++idLexer::script_p);
 		}
 		if( c == 'e' && dot == 0) {
+
 			//We have scientific notation without a decimal point
+
 			dot++;
+
 		}
+
 		// if a floating point number
 		if ( dot == 1 ) {
 			token->subtype = TT_DECIMAL | TT_FLOAT;
 			// check for floating point exponent
 			if ( c == 'e' ) {
 				//Append the e so that GetFloatValue code works
+
 				token->AppendDirty( c );
+
 				c = *(++idLexer::script_p);
 				if ( c == '-' ) {
 					token->AppendDirty( c );
@@ -774,7 +764,7 @@ idLexer::ReadPunctuation
 */
 int idLexer::ReadPunctuation( idToken *token ) {
 	int l, n, i;
-	char *p;
+	const char *p;
 	const punctuation_t *punc;
 
 #ifdef PUNCTABLE
@@ -1190,34 +1180,58 @@ int idLexer::ReadTokenOnLine( idToken *token ) {
 }
 
 /*
+
 ================
+
 idLexer::ReadRestOfLine
+
 ================
+
 */
+
 const char*	idLexer::ReadRestOfLine(idStr& out) {
+
 	while(1) {
 
+
 		if(*idLexer::script_p == '\n') {
+
 			idLexer::line++;
+
 			break;
+
 		}
+
 
 		if(!*idLexer::script_p) {
+
 			break;
+
 		}
 
+
 		if(*idLexer::script_p <= ' ') {
+
 			out += " ";
+
 		} else {
+
 			out += *idLexer::script_p;
+
 		}
+
 		idLexer::script_p++;
+
 
 	}
 
+
 	out.Strip(' ');
+
 	return out.c_str();
+
 }
+
 
 /*
 ================
@@ -1297,14 +1311,18 @@ float idLexer::ParseFloat( bool *errorFlag ) {
 idLexer::Parse1DMatrix
 ================
 */
-int idLexer::Parse1DMatrix( int x, float *m ) {
+int idLexer::Parse1DMatrix( int x, float *m, bool bIntsOnly ) {
 	int i;
 
 	if ( !idLexer::ExpectTokenString( "(" ) ) {
 		return false;
 	}
-
 	for ( i = 0; i < x; i++ ) {
+		if(bIntsOnly)
+		{
+			m[i] = idLexer::ParseInt();
+			continue;
+		}
 		m[i] = idLexer::ParseFloat();
 	}
 
@@ -1312,6 +1330,42 @@ int idLexer::Parse1DMatrix( int x, float *m ) {
 		return false;
 	}
 	return true;
+}
+
+/*
+================
+idLexer::Parse1DMatrix
+
+Overloaded to write an integer matrix instead of float.
+
+Added by Ishtvan @ The Dark Mod
+================
+*/
+int idLexer::Parse1DMatrix( int x, int *m )
+{
+	bool returnval;
+	int i;
+	float *mTemp;
+	if ((mTemp = new float[x]) == NULL)
+	{
+		Error( "Out of memory allocating for float to int conversion" );
+		returnval = false;
+		goto Quit;
+	}
+	if (!Parse1DMatrix( x, mTemp, true ))
+	{
+		returnval = false;
+		goto Quit;
+	}
+	for (i=0; i<x; i++)
+	{
+		m[i] = (int) mTemp[i];
+	}
+	returnval = true;
+Quit:
+	if(mTemp)
+		delete[] mTemp;
+	return returnval;
 }
 
 /*
@@ -1795,3 +1849,4 @@ bool idLexer::HadError( void ) const {
 	return hadError;
 }
 
+#pragma warning( pop )
