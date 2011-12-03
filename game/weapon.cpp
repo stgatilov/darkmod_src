@@ -1,35 +1,23 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/Inventory/WeaponItem.h"
 
 /***********************************************************************
 
@@ -67,6 +55,8 @@ const idEventDef EV_Weapon_AutoReload( "autoReload", NULL, 'f' );
 const idEventDef EV_Weapon_NetReload( "netReload" );
 const idEventDef EV_Weapon_IsInvisible( "isInvisible", NULL, 'f' );
 const idEventDef EV_Weapon_NetEndReload( "netEndReload" );
+const idEventDef EV_Weapon_ShowAttachment( "showAttachment", "sd" );
+const idEventDef EV_Weapon_ShowAttachmentInd( "showAttachmentInd", "dd" );
 
 //
 // class def
@@ -88,12 +78,16 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Weapon_TotalAmmoCount,			idWeapon::Event_TotalAmmoCount )
 	EVENT( EV_Weapon_ClipSize,					idWeapon::Event_ClipSize )
 	EVENT( AI_PlayAnim,							idWeapon::Event_PlayAnim )
+	EVENT( AI_PauseAnim,						idWeapon::Event_PauseAnim )
+	EVENT( AI_AnimIsPaused,						idWeapon::Event_AnimIsPaused )
 	EVENT( AI_PlayCycle,						idWeapon::Event_PlayCycle )
 	EVENT( AI_SetBlendFrames,					idWeapon::Event_SetBlendFrames )
 	EVENT( AI_GetBlendFrames,					idWeapon::Event_GetBlendFrames )
 	EVENT( AI_AnimDone,							idWeapon::Event_AnimDone )
 	EVENT( EV_Weapon_Next,						idWeapon::Event_Next )
 	EVENT( EV_SetSkin,							idWeapon::Event_SetSkin )
+	EVENT( EV_Weapon_ShowAttachment,			idWeapon::ShowAttachment )
+	EVENT( EV_Weapon_ShowAttachmentInd,			idWeapon::ShowAttachmentInd )
 	EVENT( EV_Weapon_Flashlight,				idWeapon::Event_Flashlight )
 	EVENT( EV_Light_GetLightParm,				idWeapon::Event_GetLightParm )
 	EVENT( EV_Light_SetLightParm,				idWeapon::Event_SetLightParm )
@@ -155,7 +149,16 @@ idWeapon::idWeapon() {
 idWeapon::~idWeapon()
 ================
 */
-idWeapon::~idWeapon() {
+idWeapon::~idWeapon() 
+{
+	// destroy weapon attachments
+	for( int i=0; i<m_Attachments.Num(); i++ )
+	{
+		idEntity *ent = m_Attachments[i].ent.GetEntity();
+		if( ent )
+			ent->Event_Remove();
+	}
+
 	Clear();
 	delete worldModel.GetEntity();
 }
@@ -304,7 +307,6 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( flashTime );
 
 	savefile->WriteBool( lightOn );
-	savefile->WriteBool( silent_fire );
 
 	savefile->WriteInt( kick_endtime );
 	savefile->WriteInt( muzzle_kick_time );
@@ -312,7 +314,6 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteAngles( muzzle_kick_angles );
 	savefile->WriteVec3( muzzle_kick_offset );
 
-	savefile->WriteInt( ammoType );
 	savefile->WriteInt( ammoRequired );
 	savefile->WriteInt( clipSize );
 	savefile->WriteInt( ammoClip );
@@ -368,6 +369,11 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( allowDrop );
 	savefile->WriteObject( projectileEnt );
 
+	savefile->WriteInt(m_Attachments.Num());
+	for (int i = 0; i < m_Attachments.Num(); i++) 
+	{
+		m_Attachments[i].Save(savefile);
+	}
 }
 
 /*
@@ -387,6 +393,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	// Re-link script fields
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_BLOCK.LinkTo(		scriptObject, "WEAPON_BLOCK" );
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
@@ -424,12 +431,12 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	weaponDef = gameLocal.FindEntityDef( objectname );
 	meleeDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_melee" ), false );
 
-	const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
+	/*const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
 	if ( projectileDef ) {
 		projectileDict = projectileDef->dict;
 	} else {
 		projectileDict.Clear();
-	}
+	}*/
 
 	const idDeclEntityDef *brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
 	if ( brassDef ) {
@@ -457,7 +464,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( flashTime );
 
 	savefile->ReadBool( lightOn );
-	savefile->ReadBool( silent_fire );
 
 	savefile->ReadInt( kick_endtime );
 	savefile->ReadInt( muzzle_kick_time );
@@ -465,7 +471,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadAngles( muzzle_kick_angles );
 	savefile->ReadVec3( muzzle_kick_offset );
 
-	savefile->ReadInt( (int &)ammoType );
 	savefile->ReadInt( ammoRequired );
 	savefile->ReadInt( clipSize );
 	savefile->ReadInt( ammoClip );
@@ -521,6 +526,14 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( allowDrop );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( projectileEnt ) );
+
+	int num;
+	savefile->ReadInt(num);
+	m_Attachments.SetNum(num);
+	for (int i = 0; i < num; i++) 
+	{
+		m_Attachments[i].Restore(savefile);
+	}
 }
 
 /***********************************************************************
@@ -541,6 +554,7 @@ void idWeapon::Clear( void ) {
 	scriptObject.Free();
 
 	WEAPON_ATTACK.Unlink();
+	WEAPON_BLOCK.Unlink();
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
@@ -601,9 +615,17 @@ void idWeapon::Clear( void ) {
 
 	// clear out the sounds from our spawnargs since we'll copy them from the weapon def
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "snd_" );
-	while( kv ) {
+	while( kv ) 
+	{
 		spawnArgs.Delete( kv->GetKey() );
 		kv = spawnArgs.MatchPrefix( "snd_" );
+	}
+	// And the propagated sounds:
+	kv = spawnArgs.MatchPrefix( "sprS_" );
+	while( kv ) 
+	{
+		spawnArgs.Delete( kv->GetKey() );
+		kv = spawnArgs.MatchPrefix( "sprS_" );
 	}
 
 	hideTime		= 300;
@@ -640,7 +662,6 @@ void idWeapon::Clear( void ) {
 	animBlendFrames	= 0;
 	animDoneTime	= 0;
 
-	projectileDict.Clear();
 	meleeDef		= NULL;
 	meleeDefName	= "";
 	meleeDistance	= 0.0f;
@@ -648,9 +669,7 @@ void idWeapon::Clear( void ) {
 
 	flashTime		= 250;
 	lightOn			= false;
-	silent_fire		= false;
 
-	ammoType		= 0;
 	ammoRequired	= 0;
 	ammoClip		= 0;
 	clipSize		= 0;
@@ -701,6 +720,25 @@ void idWeapon::Clear( void ) {
 	projectileEnt		= NULL;
 
 	isFiring			= false;
+
+	// TDM: destroy previous weapon attachments
+	for( int i=0; i<m_Attachments.Num(); i++ )
+	{
+		idEntity *ent = m_Attachments[i].ent.GetEntity();
+		if( ent )
+			ent->Event_Remove();
+	}
+
+	m_Attachments.Clear();
+
+	m_animRates.Clear();
+
+	// clear attack flags on the player
+	if( owner )
+	{
+		owner->SetAttackFlag(COMBAT_MELEE, false);
+		owner->SetAttackFlag(COMBAT_RANGED, false);
+	}
 }
 
 /*
@@ -759,10 +797,9 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	const char *objectType;
 	const char *vmodel;
 	const char *guiName;
-	const char *projectileName;
 	const char *brassDefName;
 	const char *smokeName;
-	int			ammoAvail;
+	int			ammoAvail = 0;
 
 	Clear();
 
@@ -774,13 +811,20 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	weaponDef			= gameLocal.FindEntityDef( objectname );
 
-	ammoType			= GetAmmoNumForName( weaponDef->dict.GetString( "ammoType" ) );
-	ammoRequired		= weaponDef->dict.GetInt( "ammoRequired" );
+	ammoRequired		= weaponDef->dict.GetInt( "ammo_required" );
+	
+	idStr ammoDefName = weaponDef->dict.GetString("def_ammo");
+
+	if (ammoDefName.IsEmpty() && weaponDef->dict.GetBool("ammo_required"))
+	{
+		gameLocal.Error("No 'ammo' spawnarg defined for weapon %s", objectname);
+	}
+
+	
 	clipSize			= weaponDef->dict.GetInt( "clipSize" );
 	lowAmmo				= weaponDef->dict.GetInt( "lowAmmo" );
 
 	icon				= weaponDef->dict.GetString( "icon" );
-	silent_fire			= weaponDef->dict.GetBool( "silent_fire" );
 	powerAmmo			= weaponDef->dict.GetBool( "powerAmmo" );
 
 	muzzle_kick_time	= SEC2MS( weaponDef->dict.GetFloat( "muzzle_kick_time" ) );
@@ -830,9 +874,17 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// copy the sounds from the weapon view model def into out spawnargs
 	const idKeyValue *kv = weaponDef->dict.MatchPrefix( "snd_" );
-	while( kv ) {
+	while( kv ) 
+	{
 		spawnArgs.Set( kv->GetKey(), kv->GetValue() );
 		kv = weaponDef->dict.MatchPrefix( "snd_", kv );
+	}
+	// And the propagated sounds
+	kv = weaponDef->dict.MatchPrefix( "sprS_" );
+	while( kv ) 
+	{
+		spawnArgs.Set( kv->GetKey(), kv->GetValue() );
+		kv = weaponDef->dict.MatchPrefix( "sprS_", kv );
 	}
 
 	// find some joints in the model for locating effects
@@ -842,10 +894,27 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	guiLightJointView = animator.GetJointHandle( "guiLight" );
 	ventLightJointView = animator.GetJointHandle( "ventLight" );
 
-	// get the projectile
-	projectileDict.Clear();
+	// ishtvan: Cache the anim rates here to adjust weapon anim speeds
+	int anims = animator.NumAnims();
+	m_animRates.Clear();
+	m_animRates.AssureSize(anims);
+	for (int i=0; i<anims; i++) 
+	{
+		const idAnim *anim = animator.GetAnim(i);
+		if (anim != NULL) 
+		{
+			idStr spawnargname = "anim_rate_";
+			spawnargname += anim->Name();
+			m_animRates[i] = weaponDef->dict.GetFloat(spawnargname, "1");
+		} else 
+		{
+			m_animRates[i] = 1.0f;
+		}
+	}
 
-	projectileName = weaponDef->dict.GetString( "def_projectile" );
+	// get the projectile
+	// greebo: Disabled, the projectile def is loaded on demand
+	/*projectileName = weaponDef->dict.GetString( "def_projectile" );
 	if ( projectileName[0] != '\0' ) {
 		const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( projectileName, false );
 		if ( !projectileDef ) {
@@ -859,7 +928,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 				projectileDict = projectileDef->dict;
 			}
 		}
-	}
+	}*/
 
 	// set up muzzleflash render light
 	const idMaterial*flashShader;
@@ -944,15 +1013,14 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 		}
 	}
 
-	if ( ( ammoType < 0 ) || ( ammoType >= AMMO_NUMTYPES ) ) {
-		gameLocal.Warning( "Unknown ammotype in object '%s'", objectname );
-	}
-
 	ammoClip = ammoinclip;
 	if ( ( ammoClip < 0 ) || ( ammoClip > clipSize ) ) {
 		// first time using this weapon so have it fully loaded to start
 		ammoClip = clipSize;
-		ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
+		if (weaponItem != NULL) {
+			ammoAvail = weaponItem->HasAmmo();
+		}
 		if ( ammoClip > ammoAvail ) {
 			ammoClip = ammoAvail;
 		}
@@ -974,6 +1042,79 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	weaponOffsetTime = weaponDef->dict.GetFloat( "weaponOffsetTime", "400" );
 	weaponOffsetScale = weaponDef->dict.GetFloat( "weaponOffsetScale", "0.005" );
 
+	// Bow aimer related -- By Dram
+	const idKeyValue *AimerKeyVal = weaponDef->dict.MatchPrefix( "def_aimer", NULL );
+	idEntity *bow_aimer( NULL );
+	if ( AimerKeyVal ) // grayman - always attach the aimer
+	{
+		idDict aimerArgs;
+		aimerArgs.Set( "classname", AimerKeyVal->GetValue().c_str() );
+		aimerArgs.Set( "dropToFloor", "0" );
+		gameLocal.SpawnEntityDef( aimerArgs, &bow_aimer );
+		if ( bow_aimer )
+		{
+			Attach( bow_aimer, NULL, NULL );
+		}
+
+		// show it or hide it initially based on the menu setting
+
+		if ( !cv_bow_aimer.GetBool() )
+		{
+			bow_aimer->Hide();
+		}
+	}
+	
+	// spawn any weapon attachments we might have
+	const idKeyValue *KeyVal = weaponDef->dict.MatchPrefix( "def_attach", NULL );
+	idEntity *ent(NULL);
+
+	while ( KeyVal ) 
+	{
+		idDict args2;
+
+		args2.Set( "classname", KeyVal->GetValue().c_str() );
+
+		// don't let them drop to the floor
+		args2.Set( "dropToFloor", "0" );
+		
+		gameLocal.SpawnEntityDef( args2, &ent );
+		if ( !ent ) 
+		{
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", KeyVal->GetValue().c_str(), name.c_str() );
+		} else 
+		{
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Def_Attaching entity %s to weapon entity %s.\r", ent->name.c_str(), name.c_str());
+			
+			// check for attachment position spawnarg
+			idStr Suffix = KeyVal->GetKey();
+			Suffix.StripLeading( "def_attach" );
+			idStr PosKey = "pos_attach" + Suffix;
+			// String name of the attachment for later accessing
+			idStr AttName = "name_attach" + Suffix;
+
+			if( weaponDef->dict.FindKey(PosKey.c_str()) )
+				Attach( ent, weaponDef->dict.GetString(PosKey.c_str()), 
+						weaponDef->dict.GetString(AttName.c_str()) );
+			else
+				Attach( ent, NULL, weaponDef->dict.GetString(AttName.c_str()) );
+			if (IsRanged()) // grayman #597 - hide arrows for one second & play an 'equip' sound
+			{
+				ent->Hide();
+				ent->SetHideUntilTime(gameLocal.time + 1000);
+
+				// Play an arrow-equipping sound
+
+				if (arrow2Arrow)
+				{
+					const char *shader = "arrow_equip";
+					const idSoundShader *sndEquip = declManager->FindSound(shader);
+					StartSoundShader(sndEquip,SND_CHANNEL_BODY,0,false,NULL);
+				}
+			}
+		}
+		KeyVal = weaponDef->dict.MatchPrefix( "def_attach", KeyVal );
+	}
+
 	if ( !weaponDef->dict.GetString( "weapon_scriptobject", NULL, &objectType ) ) {
 		gameLocal.Error( "No 'weapon_scriptobject' set on '%s'.", objectname );
 	}
@@ -984,6 +1125,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	}
 
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_BLOCK.LinkTo(		scriptObject, "WEAPON_BLOCK" );
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
@@ -1006,6 +1148,16 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// make sure we have the correct skin
 	UpdateSkin();
+
+	// update attack flags on the player
+	if(weaponDef->dict.GetBool("is_weapon_melee"))
+	{
+		owner->SetAttackFlag(COMBAT_MELEE, true);
+	}
+	else if(weaponDef->dict.GetBool("is_weapon_ranged"))
+	{
+		owner->SetAttackFlag(COMBAT_RANGED, true);
+	}
 }
 
 /***********************************************************************
@@ -1265,6 +1417,17 @@ void idWeapon::PutAway( void ) {
 
 /*
 ================
+idWeapon::SetArrow2Arrow
+================
+*/
+void idWeapon::SetArrow2Arrow(  bool state ) // grayman #597
+{
+	arrow2Arrow = state;
+}
+
+
+/*
+================
 idWeapon::Reload
 NOTE: this is only for impulse-triggered reload, auto reload is scripted
 ================
@@ -1324,6 +1487,12 @@ void idWeapon::HideWeapon( void ) {
 		worldModel.GetEntity()->Hide();
 	}
 	muzzleFlashEnd = 0;
+
+	// hide attachments:
+	for(int i=0; i<m_Attachments.Num(); i++)
+	{
+		m_Attachments[i].ent.GetEntity()->Hide();
+	}
 }
 
 /*
@@ -1338,6 +1507,19 @@ void idWeapon::ShowWeapon( void ) {
 	}
 	if ( lightOn ) {
 		MuzzleFlashLight();
+	}
+
+	// show attachments
+
+	// grayman #597 - don't show attachments if they're hidden and there's a hide timeout
+
+	for (int i = 0; i < m_Attachments.Num() ; i++)
+	{
+		idEntity *e = m_Attachments[i].ent.GetEntity();
+		if ((gameLocal.time >= e->GetHideUntilTime()) && e->IsHidden())
+		{
+			e->Show();
+		}
 	}
 }
 
@@ -1389,7 +1571,8 @@ void idWeapon::OwnerDied( void ) {
 idWeapon::BeginAttack
 ================
 */
-void idWeapon::BeginAttack( void ) {	
+void idWeapon::BeginAttack( void ) 
+{	
 	if ( status != WP_OUTOFAMMO ) {
 		lastAttack = gameLocal.time;
 	}
@@ -1398,11 +1581,46 @@ void idWeapon::BeginAttack( void ) {
 		return;
 	}
 
-	if ( !WEAPON_ATTACK ) {
-		if ( sndHum ) {
+	if ( !WEAPON_ATTACK )
+	{
+		if ( sndHum )
+		{
 			StopSound( SND_CHANNEL_BODY, false );
 		}
+
+		// grayman #597 - show hidden arrows the first time through
+
+		if (IsRanged())
+		{
+			for (int i = 0; i < m_Attachments.Num() ; i++)
+			{
+				idEntity *e = m_Attachments[i].ent.GetEntity();
+
+				// grayman - If this is the bow aimer, and the player is using it, show it.
+				// If the player isn't using it, hide it.
+
+				if ( idStr::Cmp( e->spawnArgs.GetString("classname"), "atdm:attachment_aimer" ) == 0 )
+				{
+					if ( cv_bow_aimer.GetBool() )
+					{
+						if ( e->IsHidden() )
+						{
+							e->Show();
+						}
+					}
+					else if ( !e->IsHidden() )
+					{
+						e->Hide();
+					}
+				}
+				else if ( e->IsHidden() ) // attachments other than the bow aimer
+				{
+					e->Show();
+				}
+			}
+		}
 	}
+
 	WEAPON_ATTACK = true;
 }
 
@@ -1411,15 +1629,55 @@ void idWeapon::BeginAttack( void ) {
 idWeapon::EndAttack
 ================
 */
-void idWeapon::EndAttack( void ) {
-	if ( !WEAPON_ATTACK.IsLinked() ) {
+void idWeapon::EndAttack( void ) 
+{
+	if ( !WEAPON_ATTACK.IsLinked() )
 		return;
-	}
 	if ( WEAPON_ATTACK ) {
 		WEAPON_ATTACK = false;
 		if ( sndHum ) {
 			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 		}
+	}
+}
+
+/*
+================
+idWeapon::BeginBlock
+================
+*/
+void idWeapon::BeginBlock( void ) 
+{	
+	lastBlock = gameLocal.time;
+
+	if ( !isLinked )
+		return;
+
+	if ( !WEAPON_BLOCK ) 
+	{
+		if ( sndHum ) 
+		{
+			StopSound( SND_CHANNEL_BODY, false );
+		}
+	}
+	WEAPON_BLOCK = true;
+}
+
+/*
+================
+idWeapon::EndBlock
+================
+*/
+void idWeapon::EndBlock( void ) 
+{
+	if ( !WEAPON_BLOCK.IsLinked() ) 
+		return;
+
+	if ( WEAPON_BLOCK ) 
+	{
+		WEAPON_BLOCK = false;
+		if ( sndHum )
+			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 	}
 }
 
@@ -1456,7 +1714,9 @@ idWeapon::ShowCrosshair
 ================
 */
 bool idWeapon::ShowCrosshair( void ) const {
-	return !( state == idStr( WP_RISING ) || state == idStr( WP_LOWERING ) || state == idStr( WP_HOLSTERED ) );
+//	return !( state == idStr( WP_RISING ) || state == idStr( WP_LOWERING ) || state == idStr( WP_HOLSTERED ) );
+	// Never show the crosshair in TDM.
+	return false;
 }
 
 /*
@@ -1860,7 +2120,8 @@ void idWeapon::AlertMonsters( void ) {
 idWeapon::PresentWeapon
 ================
 */
-void idWeapon::PresentWeapon( bool showViewModel ) {
+void idWeapon::PresentWeapon( bool showViewModel ) 
+{
 	playerViewOrigin = owner->firstPersonViewOrigin;
 	playerViewAxis = owner->firstPersonViewAxis;
 
@@ -1892,6 +2153,10 @@ void idWeapon::PresentWeapon( bool showViewModel ) {
 	// set the physics position and orientation
 	GetPhysics()->SetOrigin( viewWeaponOrigin );
 	GetPhysics()->SetAxis( viewWeaponAxis );
+
+	// TDM/Ishtvan : Call RunPhysics to update bound entity positions
+	RunPhysics();
+
 	UpdateVisuals();
 
 	// update the weapon script
@@ -2008,6 +2273,7 @@ void idWeapon::EnterCinematic( void ) {
 		thread->Execute();
 
 		WEAPON_ATTACK		= false;
+		WEAPON_BLOCK		= false;
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
@@ -2017,6 +2283,7 @@ void idWeapon::EnterCinematic( void ) {
 	}
 
 	disabled = true;
+	arrow2Arrow = false; // grayman #597 - for arrow switching
 
 	LowerWeapon();
 }
@@ -2090,7 +2357,7 @@ void idWeapon::GetWeaponTimeOffsets( float *time, float *scale ) {
 ================
 idWeapon::GetAmmoNumForName
 ================
-*/
+
 ammo_t idWeapon::GetAmmoNumForName( const char *ammoname ) {
 	int num;
 	const idDict *ammoDict;
@@ -2115,14 +2382,14 @@ ammo_t idWeapon::GetAmmoNumForName( const char *ammoname ) {
 	}
 
 	return ( ammo_t )num;
-}
+}*/
 
 /*
 ================
 idWeapon::GetAmmoNameForNum
 ================
 */
-const char *idWeapon::GetAmmoNameForNum( ammo_t ammonum ) {
+const char *idWeapon::GetAmmoNameForNum( int ammonum ) {
 	int i;
 	int num;
 	const idDict *ammoDict;
@@ -2152,7 +2419,7 @@ const char *idWeapon::GetAmmoNameForNum( ammo_t ammonum ) {
 idWeapon::GetAmmoPickupNameForNum
 ================
 */
-const char *idWeapon::GetAmmoPickupNameForNum( ammo_t ammonum ) {
+const char *idWeapon::GetAmmoPickupNameForNum( int ammonum ) {
 	int i;
 	int num;
 	const idDict *ammoDict;
@@ -2184,8 +2451,8 @@ idWeapon::AmmoAvailable
 ================
 */
 int idWeapon::AmmoAvailable( void ) const {
-	if ( owner ) {
-		return owner->inventory.HasAmmo( ammoType, ammoRequired );
+	if (owner && owner->GetCurrentWeaponItem()) {
+		return owner->GetCurrentWeaponItem()->HasAmmo();
 	} else {
 		return 0;
 	}
@@ -2207,15 +2474,6 @@ idWeapon::ResetAmmoClip
 */
 void idWeapon::ResetAmmoClip( void ) {
 	ammoClip = -1;
-}
-
-/*
-================
-idWeapon::GetAmmoType
-================
-*/
-ammo_t idWeapon::GetAmmoType( void ) const {
-	return ammoType;
 }
 
 /*
@@ -2325,7 +2583,15 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
+}
+
+/*
+idWeapon::IsRanged
+*/
+bool idWeapon::IsRanged() {
+	// greebo: Check the weapon dictionary, whether a projectile def is declared
+	return (weaponDef != NULL && weaponDef->dict.FindKey("def_projectile") != NULL);
 }
 
 /***********************************************************************
@@ -2463,7 +2729,7 @@ void idWeapon::Event_UseAmmo( int amount ) {
 		return;
 	}
 
-	owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+	owner->GetCurrentWeaponItem()->UseAmmo(( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	if ( clipSize && ammoRequired ) {
 		ammoClip -= powerAmmo ? amount : ( amount * ammoRequired );
 		if ( ammoClip < 0 ) {
@@ -2489,7 +2755,7 @@ void idWeapon::Event_AddToClip( int amount ) {
 		ammoClip = clipSize;
 	}
 
-	ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	ammoAvail = owner->GetCurrentWeaponItem()->HasAmmo();
 	if ( ammoClip > ammoAvail ) {
 		ammoClip = ammoAvail;
 	}
@@ -2511,7 +2777,8 @@ idWeapon::Event_AmmoAvailable
 ===============
 */
 void idWeapon::Event_AmmoAvailable( void ) {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	CInventoryWeaponItemPtr currentWeapon = owner->GetCurrentWeaponItem();
+	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->HasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2521,7 +2788,8 @@ idWeapon::Event_TotalAmmoCount
 ===============
 */
 void idWeapon::Event_TotalAmmoCount( void ) {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, 1 );
+	CInventoryWeaponItemPtr currentWeapon = owner->GetCurrentWeaponItem();
+	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->HasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2582,19 +2850,43 @@ void idWeapon::Event_PlayAnim( int channel, const char *animname ) {
 	
 	anim = animator.GetAnim( animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.Warning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
 		animDoneTime = 0;
 	} else {
-		if ( !( owner && owner->GetInfluenceLevel() ) ) {
-			Show();
+
+		// grayman #597 - if this is a raise or lower animation, and we're
+		// switching from one arrow to another, skip the animation.
+
+		idStr raiseString = "raise";
+		idStr lowerString = "lower";
+		bool raiseOrLower = ((raiseString.Cmp(animname) == 0) || (lowerString.Cmp(animname) == 0));
+		if (arrow2Arrow && raiseOrLower)
+		{
+			animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
+			animDoneTime = 0;
+			if (lowerString.Cmp(animname) == 0)
+			{
+				status = WP_HOLSTERED;	// do this right away, otherwise it takes 12 frames to have it done elsewhere
+										// and you see a gap in the bow animation
+			}
 		}
-		animator.PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
-		animDoneTime = animator.CurrentAnim( channel )->GetEndTime();
-		if ( worldModel.GetEntity() ) {
-			anim = worldModel.GetEntity()->GetAnimator()->GetAnim( animname );
-			if ( anim ) {
-				worldModel.GetEntity()->GetAnimator()->PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+		else
+		{
+			if ( !( owner && owner->GetInfluenceLevel() ) ) {
+				Show();
+			}
+			animator.PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+			animDoneTime = animator.CurrentAnim( channel )->GetEndTime();
+			if ( worldModel.GetEntity() ) {
+				anim = worldModel.GetEntity()->GetAnimator()->GetAnim( animname );
+				if ( anim ) {
+					worldModel.GetEntity()->GetAnimator()->PlayAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
+				}
 			}
 		}
 	}
@@ -2612,7 +2904,11 @@ void idWeapon::Event_PlayCycle( int channel, const char *animname ) {
 
 	anim = animator.GetAnim( animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.Warning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
 		animDoneTime = 0;
 	} else {
@@ -2632,13 +2928,44 @@ void idWeapon::Event_PlayCycle( int channel, const char *animname ) {
 
 /*
 ===============
+idWeapon::Event_PauseAnim
+===============
+*/
+void idWeapon::Event_PauseAnim( int channel, bool bPause )
+{
+	animator.CurrentAnim( channel )->Pause( bPause );
+}
+
+/*
+===============
+idWeapon::Event_AnimIsPaused
+===============
+*/
+void idWeapon::Event_AnimIsPaused( int channel )
+{
+	idThread::ReturnInt( animator.CurrentAnim( channel )->IsPaused() );
+}
+
+/*
+===============
 idWeapon::Event_AnimDone
 ===============
 */
-void idWeapon::Event_AnimDone( int channel, int blendFrames ) {
-	if ( animDoneTime - FRAME2MS( blendFrames ) <= gameLocal.time ) {
+void idWeapon::Event_AnimDone( int channel, int blendFrames ) 
+{
+// ishtvan: rewrote this to be more like what happens in idActor/idAnimState
+	int DoneTime = animator.CurrentAnim( channel )->GetEndTime();
+
+	if (DoneTime < 0)
+	{
+		// playing a cycle or paused
+		idThread::ReturnInt( false );
+	}
+	else if ( DoneTime - FRAME2MS( blendFrames ) <= gameLocal.time ) 
+	{
 		idThread::ReturnInt( true );
-	} else {
+	} else 
+	{
 		idThread::ReturnInt( false );
 	}
 }
@@ -2648,7 +2975,9 @@ void idWeapon::Event_AnimDone( int channel, int blendFrames ) {
 idWeapon::Event_SetBlendFrames
 ===============
 */
-void idWeapon::Event_SetBlendFrames( int channel, int blendFrames ) {
+void idWeapon::Event_SetBlendFrames( int channel, int blendFrames ) 
+{
+	// ishtvan: this is a problem with animrate??
 	animBlendFrames = blendFrames;
 }
 
@@ -2769,17 +3098,42 @@ void idWeapon::Event_SetLightParms( float parm0, float parm1, float parm2, float
 idWeapon::Event_CreateProjectile
 ================
 */
-void idWeapon::Event_CreateProjectile( void ) {
-	if ( !gameLocal.isClient ) {
+void idWeapon::Event_CreateProjectile()
+{
+	if ( !gameLocal.isClient )
+	{
 		projectileEnt = NULL;
-		gameLocal.SpawnEntityDef( projectileDict, &projectileEnt, false );
-		if ( projectileEnt ) {
-			projectileEnt->SetOrigin( GetPhysics()->GetOrigin() );
-			projectileEnt->Bind( owner, false );
-			projectileEnt->Hide();
+
+		// Try to get the weapon inventory item
+		CInventoryWeaponItemPtr weaponItem = owner->GetWeaponItem(weaponDef->dict.GetString("inv_weapon_name"));
+
+		if (weaponItem == NULL)
+		{
+			idThread::ReturnEntity( NULL );
+			return;
 		}
+
+		// Retrieve the currently active projectile def name from the inventory item
+		const idStr& projectileDefName = weaponItem->GetProjectileDefName();		
+
+		const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef(projectileDefName);
+
+		if (projectileDef != NULL)
+		{
+			gameLocal.SpawnEntityDef( projectileDef->dict, &projectileEnt, false );
+
+			if ( projectileEnt )
+			{
+				projectileEnt->SetOrigin( GetPhysics()->GetOrigin() );
+				projectileEnt->Bind( owner, false );
+				projectileEnt->Hide();
+			}
+		}
+
 		idThread::ReturnEntity( projectileEnt );
-	} else {
+	}
+	else
+	{
 		idThread::ReturnEntity( NULL );
 	}
 }
@@ -2796,7 +3150,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	idVec3			dir;
 	float			ang;
 	float			spin;
-	float			distance;
 	trace_t			tr;
 	idVec3			start;
 	idVec3			muzzle_pos;
@@ -2806,44 +3159,47 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		return;
 	}
 
-	if ( !projectileDict.GetNumKeyVals() ) {
+	/*if ( !projectileDict.GetNumKeyVals() ) {
 		const char *classname = weaponDef->dict.GetString( "classname" );
 		gameLocal.Warning( "No projectile defined on '%s'", classname );
+		return;
+	}*/
+	CInventoryWeaponItemPtr weaponItem = owner->GetWeaponItem(weaponDef->dict.GetString("inv_weapon_name"));
+	if (weaponItem == NULL) return;
+
+	// Retrieve the currently active projectile def name from the inventory item
+	const idStr& projectileDefName = weaponItem->GetProjectileDefName();
+
+	if (projectileDefName.IsEmpty())
+	{
+		gameLocal.Warning("No projectile entityDef defined on '%s'", name.c_str());
+		return;
+	}
+
+	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef(projectileDefName);
+	
+	if (projectileDef == NULL)
+	{
+		gameLocal.Warning("Projectile entityDef %s not found.", projectileDefName.c_str());
 		return;
 	}
 
 	// avoid all ammo considerations on an MP client
 	if ( !gameLocal.isClient ) {
 
+		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
+
 		// check if we're out of ammo or the clip is empty
-		int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		int ammoAvail = weaponItem->HasAmmo();
 		if ( !ammoAvail || ( ( clipSize != 0 ) && ( ammoClip <= 0 ) ) ) {
 			return;
 		}
 
-		// if this is a power ammo weapon ( currently only the bfg ) then make sure 
-		// we only fire as much power as available in each clip
-		if ( powerAmmo ) {
-			// power comes in as a float from zero to max
-			// if we use this on more than the bfg will need to define the max
-			// in the .def as opposed to just in the script so proper calcs
-			// can be done here. 
-			dmgPower = ( int )dmgPower + 1;
-			if ( dmgPower > ammoClip ) {
-				dmgPower = ammoClip;
-			}
-		}
+		weaponItem->UseAmmo(ammoRequired);
 
-		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
 		if ( clipSize && ammoRequired ) {
-			ammoClip -= powerAmmo ? dmgPower : 1;
+			ammoClip -= powerAmmo ? (int) dmgPower : 1;
 		}
-
-	}
-
-	if ( !silent_fire ) {
-		// wake up nearby monsters
-		gameLocal.AlertAI( owner );
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -2857,7 +3213,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// calculate the muzzle position
-	if ( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) ) {
+	if ( barrelJointView != INVALID_JOINT && projectileDef->dict.GetBool( "launchFromBarrel" ) ) {
 		// there is an explicit joint for the muzzle
 		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
 	} else {
@@ -2878,17 +3234,18 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( projectileDict.GetBool( "net_instanthit" ) ) {
+		if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
 				ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
 				spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-				dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+				//dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+				dir = muzzleAxis[ 0 ]; // Dram: Make the weapon shoot directly from the barrel bone. Found by Ishtvan
 				dir.Normalize();
 				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
 				if ( tr.fraction < 1.0f ) {
-					idProjectile::ClientPredictionCollide( this, projectileDict, tr, vec3_origin, true );
+					idProjectile::ClientPredictionCollide( this, projectileDef->dict, tr, vec3_origin, true );
 				}
 			}
 		}
@@ -2903,8 +3260,18 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		for( i = 0; i < num_projectiles; i++ ) {
 			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
 			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+			//dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+			dir = muzzleAxis[ 0 ]; // Dram: Make the weapon shoot directly from the barrel bone. Found by Ishtvan
+
+			if (projectileDef->dict.GetBool("fire_along_playerview", "0"))
+			{
+				// greebo: Fire the projectile along the playerview direction
+				dir = playerViewAxis.ToAngles().ToForward();
+			}
+
 			dir.Normalize();
+
+			//gameRenderWorld->DebugArrow(colorWhite, muzzleOrigin, muzzleOrigin + dir*100, 1, 15000);
 
 			if ( projectileEnt ) {
 				ent = projectileEnt;
@@ -2912,7 +3279,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				ent->Unbind();
 				projectileEnt = NULL;
 			} else {
-				gameLocal.SpawnEntityDef( projectileDict, &ent, false );
+				gameLocal.SpawnEntityDef( projectileDef->dict, &ent, false );
 			}
 
 			if ( !ent || !ent->IsType( idProjectile::Type ) ) {
@@ -2920,7 +3287,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 			}
 
-			if ( projectileDict.GetBool( "net_instanthit" ) ) {
+			if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
@@ -2930,19 +3297,30 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
 
-			// make sure the projectile starts inside the bounding box of the owner
+			// make sure the projectile start point does not clip with anything
 			if ( i == 0 ) {
 				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-				if ( ( ownerBounds - projBounds).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) ) {
-					start = muzzle_pos + distance * playerViewAxis[0];
-				} else {
-					start = ownerBounds.GetCenter();
+				start = ownerBounds.GetCenter();
+				/* stgatilov: translate to viewpoint first, then to muzzle point.
+				 Otherwise shot while leaning over the corner would lag. Picture:
+				  XXXX M		C - center of player's bbox
+				  XXXX |		V - player's view origin
+				  XXXX |		M - muzzle position
+				  C----V
+				*/
+				idClipModel *clm = proj->GetPhysics()->GetClipModel();
+				if (!gameLocal.clip.Translation( tr, start, playerViewOrigin, clm, clm->GetAxis(), MASK_SHOT_RENDERMODEL, owner )) {
+					gameLocal.clip.Translation( tr, playerViewOrigin, muzzle_pos, clm, clm->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
 				}
-				gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
 				muzzle_pos = tr.endpos;
+				
 			}
 
 			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
+
+			// TDM: Update responsible actor for the projectile, so it can be tracked for alerts
+			proj->m_SetInMotionByActor = owner;
+			proj->m_MovedByActor = owner;
 		}
 
 		// toss the brass
@@ -2977,9 +3355,12 @@ void idWeapon::Event_Melee( void ) {
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
-		if ( tr.fraction < 1.0f ) {
-			ent = gameLocal.GetTraceEntity( tr );
-		} else {
+		if ( tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum] ) 
+		{
+			//ent = gameLocal.GetTraceEntity( tr );
+			ent = gameLocal.entities[ tr.c.entityNum ];
+		} else 
+		{
 			ent = NULL;
 		}
 
@@ -2991,7 +3372,8 @@ void idWeapon::Event_Melee( void ) {
 		}
 
 		bool hit = false;
-		const char *hitSound = meleeDef->dict.GetString( "snd_miss" );
+		idStr hitSound = meleeDef->dict.GetString( "snd_miss" );
+		idStr sndName = "snd_miss";
 
 		if ( ent ) {
 
@@ -3009,7 +3391,6 @@ void idWeapon::Event_Melee( void ) {
 			if ( gameLocal.isMultiplayer
 				&& weaponDef && weaponDef->dict.GetBool( "stealing" )
 				&& ent->IsType( idPlayer::Type )
-				&& !owner->PowerUpActive( BERSERK )
 				&& ( gameLocal.gameType != GAME_TDM || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer * >( ent )->team ) )
 				) {
 				owner->StealWeapon( static_cast< idPlayer * >( ent ) );
@@ -3019,7 +3400,15 @@ void idWeapon::Event_Melee( void ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
-				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), tr.c.id );
+
+				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr );
+
+				// apply a LARGE tactile alert to AI
+				if( ent->IsType(idAI::Type) )
+				{
+					static_cast<idAI *>(ent)->TactileAlert( GetOwner(), 100 );
+				}
+
 				hit = true;
 			}
 
@@ -3027,23 +3416,30 @@ void idWeapon::Event_Melee( void ) {
 
 				if ( ent->spawnArgs.GetBool( "bleed" ) ) {
 
-					hitSound = meleeDef->dict.GetString( owner->PowerUpActive( BERSERK ) ? "snd_hit_berserk" : "snd_hit" );
+					hitSound = meleeDef->dict.GetString( "snd_hit" );
+					sndName = "snd_hit";
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
-				} else {
+				} else 
+				{
 
+					idStr materialType;
 					int type = tr.c.material->GetSurfaceType();
-					if ( type == SURFTYPE_NONE ) {
-						type = GetDefaultSurfaceType();
-					}
 
-					const char *materialType = gameLocal.sufaceTypeNames[ type ];
+					if ( type == SURFTYPE_NONE ) 
+						materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+					else
+						g_Global.GetSurfName( tr.c.material, materialType );
 
 					// start impact sound based on material type
-					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType ) );
-					if ( *hitSound == '\0' ) {
+					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType.c_str() ) );
+					sndName = va( "snd_%s", materialType.c_str() );
+
+					if ( hitSound.IsEmpty() ) 
+					{
 						hitSound = meleeDef->dict.GetString( "snd_metal" );
+						sndName = "snd_metal";
 					}
 
 					if ( gameLocal.time > nextStrikeFx ) {
@@ -3056,6 +3452,7 @@ void idWeapon::Event_Melee( void ) {
 						nextStrikeFx = gameLocal.time + 200;
 					} else {
 						hitSound = "";
+						sndName = "";
 					}
 
 					strikeSmokeStartTime = gameLocal.time;
@@ -3065,9 +3462,16 @@ void idWeapon::Event_Melee( void ) {
 			}
 		}
 
-		if ( *hitSound != '\0' ) {
-			const idSoundShader *snd = declManager->FindSound( hitSound );
+		if ( !hitSound.IsEmpty() ) 
+		{
+			const idSoundShader *snd = declManager->FindSound( hitSound.c_str() );
 			StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
+			
+			// Propagate the sound to AI, must find global sound first because it's on a different dict
+			sndName.StripLeading("snd_");
+			sndName = meleeDef->dict.GetString( va("sprS_%s", sndName.c_str()) );
+			if( !sndName.IsEmpty() )
+				PropSoundDirect( sndName.c_str(), false, false );
 		}
 
 		idThread::ReturnInt( hit );
@@ -3150,11 +3554,8 @@ idWeapon::Event_IsInvisible
 ===============
 */
 void idWeapon::Event_IsInvisible( void ) {
-	if ( !owner ) {
-		idThread::ReturnFloat( 0 );
-		return;
-	}
-	idThread::ReturnFloat( owner->PowerUpActive( INVISIBILITY ) ? 1 : 0 );
+	// greebo: No invisibility in TDM currently
+	idThread::ReturnFloat( 0 );
 }
 
 /*
@@ -3165,3 +3566,29 @@ idWeapon::ClientPredictionThink
 void idWeapon::ClientPredictionThink( void ) {
 	UpdateAnimation();	
 }
+
+/*
+================
+idWeapon::Attach
+================
+*/
+void idWeapon::Attach( idEntity *ent, const char *PosName, const char *AttName ) 
+{
+	idAnimatedEntity::Attach( ent, PosName, AttName );
+
+	// set up the same rendering conditions as the weapon viewmodel
+	ent->GetRenderEntity()->allowSurfaceInViewID = owner->entityNumber+1;
+	ent->GetRenderEntity()->weaponDepthHack = true;
+}
+
+/*
+================
+idWeapon::GetAttachingTransform
+================
+*/
+void idWeapon::GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis )
+{
+	GetGlobalJointTransform( true, jointHandle, offset, axis );
+}
+
+

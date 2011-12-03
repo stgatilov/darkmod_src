@@ -1,33 +1,50 @@
-/*
-===========================================================================
+/***************************************************************************
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+#include "game.h"
+
+#ifdef __linux__
+#include "framework/usercmdgen.h"
+#endif
+
+#pragma warning(disable : 4996)
+/**
+*	Message pragma so we can show file and line info in comments easily
+*	Same principle as the one below but simpler to implement and use.
+*   Been using it for about 8 or 9 years not sure where I found it
+*	but I did have a subscription to windows developer journal so maybe thats where.
+*	Usage: #pragma Message( "your message goes here")
+*	
+*	Submitted by Thelvyn
+*
+* Here since I cannot include the globals file here.
+*/
+#ifndef MacroStr2
+#define MacroStr(x)   #x
+#define MacroStr2(x)  MacroStr(x)
+#define Message(desc) message(__FILE__ "(" MacroStr2(__LINE__) ") :" #desc)
+#endif
+
+
+/**
+ * Global function to keep track of the files and it's version.
+ */
+bool FileVersionList(const char *str, bool state);
+
+// enables water physics
+#define MOD_WATERPHYSICS
 
 /*
 ===============================================================================
@@ -55,11 +72,20 @@ If you have questions concerning this license or the applicable additional terms
 #define protected	public
 #endif
 
+class idLight;			// J.C.Denton: Required for the declaration of FindMainAmbientLight
+
+class idRenderWorld;
 extern idRenderWorld *				gameRenderWorld;
+
+class idSoundWorld;
 extern idSoundWorld *				gameSoundWorld;
+/**
+* place to store the sound world pointer when we temporarily set it to NULL
+**/
+extern idSoundWorld *			gameSoundWorldBuf;
 
 // the "gameversion" client command will print this plus compile date
-#define	GAME_VERSION		"baseDOOM-1"
+#define	GAME_VERSION		"The Dark Mod"
 
 // classes used by idGameLocal
 class idEntity;
@@ -79,7 +105,7 @@ class idEditEntities;
 class idLocationEntity;
 
 #define	MAX_CLIENTS				32
-#define	GENTITYNUM_BITS			12
+#define	GENTITYNUM_BITS			13
 #define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
 #define	ENTITYNUM_NONE			(MAX_GENTITIES-1)
 #define	ENTITYNUM_WORLD			(MAX_GENTITIES-2)
@@ -89,26 +115,91 @@ class idLocationEntity;
 
 void gameError( const char *fmt, ... );
 
-#include "gamesys/Event.h"
-#include "gamesys/Class.h"
-#include "gamesys/SysCvar.h"
-#include "gamesys/SysCmds.h"
-#include "gamesys/SaveGame.h"
-#include "gamesys/DebugGraph.h"
+#include "gamesys/event.h"
+#include "gamesys/class.h"
+#include "gamesys/syscvar.h"
+#include "gamesys/syscmds.h"
+#include "gamesys/savegame.h"
+#include "gamesys/debuggraph.h"
 
-#include "script/Script_Program.h"
+#include "script/script_program.h"
 
-#include "anim/Anim.h"
+#include "anim/anim.h"
 
-#include "ai/AAS.h"
+#include "ai/aas.h"
 
-#include "physics/Clip.h"
-#include "physics/Push.h"
+#include "physics/clip.h"
+#include "physics/push.h"
 
-#include "Pvs.h"
-#include "MultiplayerGame.h"
+#include "pvs.h"
+#include "multiplayergame.h"
+
+#include "../DarkMod/Objectives/EMissionResult.h"
+#include "../DarkMod/DifficultyManager.h"
+#include "../DarkMod/AI/AreaManager.h"
+#include "../DarkMod/GamePlayTimer.h"
+#include "../DarkMod/ModelGenerator.h"
+#include "../DarkMod/ImageMapManager.h"
+#include "../DarkMod/LightController.h"
+#include "../DarkMod/ModMenu.h"
+#include "../DarkMod/I18N.h"
+
+#include <boost/shared_ptr.hpp>
+
+#ifdef __linux__
+#include "renderer/renderworld.h"
+#endif
 
 //============================================================================
+
+class CLightMaterial;
+class CsndPropLoader;
+class CsndProp;
+class CRelations;
+typedef boost::shared_ptr<CRelations> CRelationsPtr;
+class CMissionData;
+typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
+class CampaignStats;
+typedef boost::shared_ptr<CampaignStats> CampaignStatsPtr;
+class CStimResponse;
+typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
+class CStim;
+typedef boost::shared_ptr<CStim> CStimPtr;
+class CStimResponseTimer;
+class CGrabber;
+class CEscapePointManager;
+class CMissionManager;
+typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
+class CHttpConnection;
+typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
+class CInventory;
+typedef boost::shared_ptr<CInventory> CInventoryPtr;
+
+class CModMenu;
+typedef boost::shared_ptr<CModMenu> CModMenuPtr;
+
+class CModelGenerator;
+typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
+class CImageMapManager;
+typedef boost::shared_ptr<CImageMapManager> CImageMapManagerPtr;
+class CLightController;
+typedef boost::shared_ptr<CLightController> CLightControllerPtr;
+class CI18N;
+typedef boost::shared_ptr<CI18N> CI18NPtr;
+
+// Forward declare the Conversation System
+namespace ai { 
+	class ConversationSystem;
+	typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
+} // namespace
+
+class CDownloadMenu;
+typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
+class CDownloadManager;
+typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
+
+class CShop;
+typedef boost::shared_ptr<CShop> CShopPtr;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -174,13 +265,93 @@ typedef enum {
 	GAMESTATE_NOMAP,				// no map loaded
 	GAMESTATE_STARTUP,				// inside InitFromNewMap().  spawning map entities.
 	GAMESTATE_ACTIVE,				// normal gameplay
+	GAMESTATE_COMPLETED,			// greebo: Active during "Mission Complete" (TDM)
 	GAMESTATE_SHUTDOWN				// inside MapShutdown().  clearing memory.
 } gameState_t;
+
+// Message type for user interaction in the main menu
+struct GuiMessage
+{
+	idStr title;
+	idStr message;
+	
+	enum Type
+	{
+		MSG_OK,
+		MSG_YES_NO,
+		MSG_OK_CANCEL,
+	};
+
+	Type type;
+
+	idStr positiveCmd;	// which "cmd" to execute on OK / Yes
+	idStr negativeCmd;	// which "cmd" to execute on Cancel / No
+	idStr okCmd;		// which "cmd" to execute on OK (only for MSG_OK)
+};
 
 typedef struct {
 	idEntity	*ent;
 	int			dist;
 } spawnSpot_t;
+
+/**
+* Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
+* Therefore they are global.
+* See sound prop doc file for definitions of these flags.
+**/
+
+typedef struct SSprFlagBits_s
+{
+	// team alert flags
+	unsigned int friendly : 1;
+	unsigned int neutral : 1;
+	unsigned int enemy : 1;
+	unsigned int same : 1;
+
+	// propagation flags
+	unsigned int omni_dir : 1; // omnidirectional
+	unsigned int unique_loc : 1; // sound comes from a unique location
+	unsigned int urgent : 1; // urgent (AI tries to respond ASAP)
+	unsigned int global_vol : 1; // sound has same volume over whole map
+	unsigned int check_touched : 1; // for non-AI, check who last touched the entity
+} SSprFlagBits;
+
+typedef union USprFlags_s
+{
+	unsigned int m_field;
+	SSprFlagBits m_bits;
+} USprFlags;
+
+/**
+* Sound propagation parameters: needed for function arguments
+**/
+
+struct SSprParms
+{
+	USprFlags flags;
+
+	idStr		name; // sound name
+	float		propVol; // propagated volume
+
+	// Apparent direction of the sound, determined by the path point on the portal
+	idVec3		direction; 
+	// actual origin of the sound, used for some localization simulation
+	idVec3		origin; 
+	float		duration; // duration
+	int			frequency; // int representing the octave of the sound
+	float		bandwidth; // sound bandwidth
+
+	float		loudness; // this is set by AI hearing response
+	float		alertFactor;	// angua: alert increase is scaled by this factor
+	float		alertMax;	// angua: alert increase can not become higher than this
+
+	bool		bSameArea; // true if the sound came from same portal area
+	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path
+	int			floods; // number of portals the sound travelled thru before it hit the AI
+
+	idEntity*	maker;		// it turns out the AI needs to know who made the sound to avoid bugs in some cases
+	idAI*		makerAI;	// a shorthand of the above. If this is non NULL the <maker> entity is an AI.
+};
 
 //============================================================================
 
@@ -223,6 +394,7 @@ public:
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
 	idEntityPtr<type> &		operator=( type *ent );
+	bool					operator==(const idEntityPtr<type>& other) const;
 
 	// synchronize entity pointers over the network
 	int						GetSpawnId( void ) const { return spawnId; }
@@ -237,7 +409,13 @@ private:
 	int						spawnId;
 };
 
+// Note: Because lightgem.h uses idEntityPr, the file should be included here or 
+// idEntityPtr Definition should be moved to lightgem.h. - J.C.Denton
+
+#include "../DarkMod/lightgem.h"
 //============================================================================
+
+class idDeclEntityDef;
 
 class idGameLocal : public idGame {
 public:
@@ -248,16 +426,56 @@ public:
 	idDict					persistentPlayerInfo[MAX_CLIENTS];
 	idEntity *				entities[MAX_GENTITIES];// index to entities
 	int						spawnIds[MAX_GENTITIES];// for use in idEntityPtr
+
+	// greebo: For use in Stim/Response system (gets invalidated each frame)
+	idEntity*				srEntities[MAX_GENTITIES]; 
+
 	int						firstFreeIndex;			// first free index in the entities array
 	int						num_entities;			// current number <= MAX_GENTITIES
 	idHashIndex				entityHash;				// hash table to quickly find entities by name
 	idWorldspawn *			world;					// world entity
 	idLinkList<idEntity>	spawnedEntities;		// all spawned entities
 	idLinkList<idEntity>	activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
+	idLinkList<idAI>		spawnedAI;				// greebo: all spawned AI
 	int						numEntitiesToDeactivate;// number of entities that became inactive in current frame
 	bool					sortPushers;			// true if active lists needs to be reordered to place pushers at the front
 	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
+
+	// The inventory class which keeps items safe between maps
+	CInventoryPtr			persistentPlayerInventory;
+
+	// The list of campaign info entities in this map
+	idList<idEntity*>		campaignInfoEntities;
+
+	// greebo: Is set to TRUE if the post-mission screen (debriefing or success screen) is currently active. 
+	// (Usually these state variables should be kept in the GUI, but in this case I need it to be accessible 
+	// when the player loads a new map via the console.)
+	bool					postMissionScreenActive;
+
+	// Toggle to keep track whether the GUI state variables have been set up
+	bool					briefingVideoInfoLoaded;
+
+	// Hold information about a single video piece
+	struct BriefingVideoPart
+	{
+		idStr	material;	// name of the material
+		int		lengthMsec; // length in msecs
+	};
+
+	// The list of briefing videos for the current mission
+	idList<BriefingVideoPart>	briefingVideo;
+	
+	// Index into the above list
+	int							curBriefingVideoPart;
+
+	// The list of DE-briefing videos for the current mission
+	idList<BriefingVideoPart>	debriefingVideo;
+
+	// Index into the above list
+	int							curDebriefingVideoPart;
+
+	bool					mainMenuExited;			// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 
 	// can be used to automatically effect every material in the world that references globalParms
 	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];	
@@ -281,6 +499,120 @@ public:
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
 
+	// Darkmod's grabber to help with object manipulation
+	CGrabber*				m_Grabber;
+
+	// The object handling the difficulty settings
+	difficulty::DifficultyManager	m_DifficultyManager;
+
+	// The manager for handling AI => Area mappings (needed for AI to remember locked doors, for instance)
+	ai::AreaManager			m_AreaManager;
+
+	// The manager class for all map conversations
+	ai::ConversationSystemPtr	m_ConversationSystem;
+
+	/**
+	 * greebo: The fan-mission-handling class. Also contains GUI handling code.
+	 */
+	CModMenuPtr				m_ModMenu;
+
+	// The download menu handler
+	CDownloadMenuPtr		m_DownloadMenu;
+
+	// The download manager
+	CDownloadManagerPtr		m_DownloadManager;
+
+	/**
+	 * greebo: The mission manager instance, for manipulating mission PK4s and saving play info.
+	 */
+	CMissionManagerPtr		m_MissionManager;
+
+	/**
+	 * tels: The model generator instance, for manipulating/generating models on the fly.
+	 */
+	CModelGeneratorPtr		m_ModelGenerator;
+
+	/**
+	 * tels: The image mapmanager instance, for loading/sharing image maps for the SEED system.
+	 */
+	CImageMapManagerPtr		m_ImageMapManager;
+
+	/**
+	 * tels: The light controller instance, used to control local ambient lights.
+	 */
+	CLightControllerPtr		m_LightController;
+
+	/**
+	 * tels: The I18N object (for translation etc.)
+	 */
+	CI18NPtr				m_I18N;
+
+	/**
+	 * greebo: The class handling the main menu's shop GUI.
+	 */
+	CShopPtr				m_Shop;
+
+	/**
+	 * This list is some sort of queue of error messages collected by 
+	 * gameLocal.Error(). The messages here will be sent 
+	 * to the main menu GUI once it is displayed again after the error.
+	 */
+	mutable idStr			m_guiError;
+
+	mutable idList<GuiMessage>	m_GuiMessages;
+
+	/**
+	* Pointer to global AI Relations object
+	**/
+	CRelationsPtr			m_RelationsManager;
+
+	/**
+	* Pointer to global Mission Data object (objectives & stats)
+	**/
+	CMissionDataPtr			m_MissionData;
+	EMissionResult			m_MissionResult; // holds the global mission state
+
+	// Campaign statistics
+	CampaignStatsPtr		m_CampaignStats;
+
+	/**
+	* Pointer to global sound prop loader object
+	**/
+	CsndPropLoader *		m_sndPropLoader;
+
+	/**
+	* Pointer to global sound prop gameplay object
+	**/
+	CsndProp *				m_sndProp;
+
+	/**
+	 * greebo: The escape point manager which is keeping track
+	 *         of all the tdmPathFlee entities.
+	 */
+	CEscapePointManager*	m_EscapePointManager;
+
+	/**
+	 * greebo: This timer keeps track of the actual gameplay time.
+	 */
+	GamePlayTimer m_GamePlayTimer;
+
+	// The singleton connection object
+	CHttpConnectionPtr		m_HttpConnection;
+	
+	/**
+	* Temporary storage of the walkspeed.  This is a workaround
+	*	because the walkspeed keeps getting reset.
+	**/
+	float					m_walkSpeed;
+
+	// The highest used unique stim/response id
+	int						m_HighestSRId;
+
+	idList<CStimResponseTimer *> m_Timer;			// generic timer used for other purposes than stims.
+	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
+	idList< idEntityPtr<idEntity> >		m_StimEntity;			// all entities that currently have a stim regardless of it's state
+	idList< idEntityPtr<idEntity> >		m_RespEntity;			// all entities that currently have a response regardless of it's state
+
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
 	int						cinematicMaxSkipTime;	// time to end cinematic when skipping.  there's a possibility of an infinite loop if the map isn't set up right.
@@ -291,6 +623,7 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
+	int						m_Interleave;			// How often should the lightgem calculation be skipped?
 	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
@@ -309,13 +642,30 @@ public:
 	int						entityDefBits;			// bits required to store an entity def number
 
 	static const char *		sufaceTypeNames[ MAX_SURFACE_TYPES ];	// text names for surface types
+	/**
+	* DarkMod: text names for new surface types
+	**/
+	static const char *		m_NewSurfaceTypes[ MAX_SURFACE_TYPES*2 + 1];
 
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	idEntityPtr<idEntity>	portalSkyEnt;
+	bool					portalSkyActive;
+
+	void					SetPortalSkyEnt( idEntity *ent );
+	bool					IsPortalSkyAcive();
+
+	// tels: a list of all speaker entities with s_music set, these are affected by s_vol_music:
+	idList<int>				musicSpeakers;
+
+	// A flag set by the player to fire a "final save" which must occur at the end of this frame
+	bool						m_TriggerFinalSave;
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
+							~idGameLocal();
 
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
@@ -334,11 +684,21 @@ public:
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
+
+	/**
+	* TDM: Pause/Unpause game
+	**/
+	virtual void			PauseGame( bool bPauseState );
 	virtual bool			Draw( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
+	virtual bool			InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step = false );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
+	/**
+	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
+    */
+	virtual void			UpdateGUIScaling( idUserInterface *gui );
 	virtual allowReply_t	ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] );
 	virtual void			ServerClientConnect( int clientNum, const char *guid );
 	virtual void			ServerClientBegin( int clientNum );
@@ -371,13 +731,14 @@ public:
 	void					LocalMapRestart( void );
 	void					MapRestart( void );
 	static void				MapRestart_f( const idCmdArgs &args );
-	bool					NextMap( void );	// returns wether serverinfo settings have been modified
+	bool					NextMap( void );	// returns whether serverinfo settings have been modified
 	static void				NextMap_f( const idCmdArgs &args );
 
 	idMapFile *				GetLevelMap( void );
 	const char *			GetMapName( void ) const;
 
 	int						NumAAS( void ) const;
+	int						GetAASId( idAAS* aas ) const; // greebo: Returns the ID for the given pointer (-1 for invalid pointers)
 	idAAS *					GetAAS( int num ) const;
 	idAAS *					GetAAS( const char *name ) const;
 	void					SetAASAreaState( const idBounds &bounds, const int areaContents, bool closed );
@@ -385,9 +746,23 @@ public:
 	void					RemoveAASObstacle( const aasHandle_t handle );
 	void					RemoveAllAASObstacles( void );
 
+	// greebo: Initialises the EAS (routing system for elevators)
+	void					SetupEAS();
+
 	bool					CheatsOk( bool requirePlayer = true );
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
+
+	/**
+	 * greebo: Prepares the running map for mission end. Does nothing if the current gamestate
+	 *         is lower than GAMESTATE_ACTIVE. Removes all entities of certain types from the
+	 *         world and sets all moveables to rest.
+	 */
+	void					PrepareForMissionEnd();
+
+	void					 SetMissionResult(EMissionResult result);
+	ID_INLINE EMissionResult GetMissionResult() const;
+
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
 	int						GetSpawnId( const idEntity *ent ) const;
@@ -400,11 +775,10 @@ public:
 
 	bool					RequirementMet( idEntity *activator, const idStr &requires, int removeItem );
 
-	void					AlertAI( idEntity *ent );
-	idActor *				GetAlertEntity( void );
-
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
+
+	pvsHandle_t				GetPlayerPVS()			{ return playerPVS; };
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -413,7 +787,8 @@ public:
 
 	void					AddEntityToHash( const char *name, idEntity *ent );
 	bool					RemoveEntityFromHash( const char *name, idEntity *ent );
-	int						GetTargets( const idDict &args, idList< idEntityPtr<idEntity> > &list, const char *ref ) const;
+	int						GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >& list, const char *ref ) const;
+	int						GetRelights(const idDict &args, idList<idEntityPtr<idEntity> >& list, const char *ref) const; // grayman #2603
 
 							// returns the master entity of a trace.  for example, if the trace entity is the player's head, it will return the player.
 	idEntity *				GetTraceEntity( const trace_t &trace ) const;
@@ -423,6 +798,13 @@ public:
 	idEntity *				FindEntity( const char *name ) const;
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
 	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
+
+	/**
+	* Get the entity that the player is looking at
+	* Currently called by console commands, does a long trace so should not be
+	* called every frame.
+	**/
+	idEntity *				PlayerTraceEntity( void );
 
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
@@ -451,6 +833,12 @@ public:
 
 	void					SpreadLocations();
 	idLocationEntity *		LocationForPoint( const idVec3 &point );	// May return NULL
+	/**
+	* LocationForArea returns a pointer to the location entity for the given area number
+	* Returns NULL if the area number is out of bounds, or if locations haven't sprad yet
+	**/
+	idLocationEntity *		LocationForArea( const int areaNum ); 
+
 	idEntity *				SelectInitialSpawnPoint( idPlayer *player );
 
 	void					SetPortalState( qhandle_t portal, int blockingBits );
@@ -467,9 +855,107 @@ public:
 
 	bool					NeedRestart();
 
+	/**
+	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
+	 * textures are only loaded when the light is spawned and requests the texture.
+	 */
+	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
+
+	/**
+	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
+	 * to determine the lightvalue for the lightgem.
+	 */
+	float					CalcLightgem(idPlayer*);
+
+	ID_INLINE idList<unsigned char> &GetLightgemRenderBuffer(void)
+	{
+		return m_lightGem.GetLightgemRenderBuffer();
+	}
+
+	bool					AddStim(idEntity *);
+	void					RemoveStim(idEntity *);
+	bool					AddResponse(idEntity *);
+	void					RemoveResponse(idEntity *);
+	
+	/************************************************************************/
+	/* J.C.Denton:	Finds the main ambient light and creates a new one if	*/
+	/*				the main ambient is not found							*/
+	/************************************************************************/
+	idLight *				FindMainAmbientLight( bool a_bCreateNewIfNotFound = false );  
+
+	/** 
+	 * greebo: Links the given entity into the list of Stim entities, such that
+	 * it gets considered each frame as potential stim emitter.
+	 */
+	void					LinkStimEntity(idEntity* ent);
+
+	/**
+	 * greebo: Removes the given entity from the global list of stimming entities.
+	 * Although it might have active stims, it is no longer considered each frame.
+	 */
+	void					UnlinkStimEntity(idEntity* ent);
+
+	/**
+	 * Checks whether the entity <e> is in the given list named <list>. 
+	 * @returns: the list index or -1 if the entity is not in the list.
+	 */
+	int						CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *);
+
+	/**
+	* Fires off all the enabled responses to this stim of the entities in the given entites list.
+	* If the trigger is coming from a timer, <Timer> is set to true.
+	* 
+	* @return The number of responses triggered
+	*
+	*/
+	int						DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin);
+
+	/**
+	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.
+	 */
+	void					ProcessTimer(unsigned long ticks);
+
+	/**
+	 * ProcessStimResponse will check whether stims are in reach of a response and if so activate them.
+	 */
+	void					ProcessStimResponse(unsigned long ticks);
+
+	/**
+	 * greebo: Traverses the entities and tries to find the Stim/Response with the given ID.
+	 * This is expensive, so don't call this during map runtime, only in between maps.
+	 *
+	 * @returns: the pointer to the class, or NULL if the uniqueId couldn't be found.
+	 */
+	CStimResponsePtr		FindStimResponse(int uniqueId);
+
+	// Checks the TDM version
+	void					CheckTDMVersion();
+
+	void					AddMainMenuMessage(const GuiMessage& message);
+	void					HandleGuiMessages(idUserInterface* ui);
+
+	// Tels: Return mapFileName as it is private
+	const idStr&			GetMapFileName() const;
+
+	/**
+	 * greebo: Register a trigger that is to be fired when the mission <missionNum> is loaded.
+	 * The activatorName is stored along with the name of the target to be triggered. When the target map
+	 * has been loaded and all entities have been spawned the game will try to resolve these names
+	 * and issue the activation event.
+	 * If the activator's name is empty, the local player will be used as activator.
+	 */
+	void					AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName);
+
+	// For internal use, is public to be callable by the event system
+	void					ProcessInterMissionTriggers();
+
+	// Remove any persistent inventory items, clear inter-mission triggers, etc.
+	void					ClearPersistentInfo();
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
+	idStr					m_strMainAmbientLightName;	// The name of main ambient light, default is: "ambient_world". - J.C.Denton
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
 	bool					mapCycleLoaded;
@@ -484,9 +970,6 @@ private:
 
 	idList<idAAS *>			aasList;				// area system
 	idStrList				aasNames;
-
-	idEntityPtr<idActor>	lastAIAlertEntity;
-	int						lastAIAlertTime;
 
 	idDict					spawnArgs;				// spawn args used during entity spawning  FIXME: shouldn't be necessary anymore
 
@@ -518,6 +1001,33 @@ private:
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
+	LightGem				m_lightGem;
+	
+	// A container for keeping the inter-mission trigger information
+	struct InterMissionTrigger
+	{
+		// The number of the mission this trigger applies to
+		int missionNum;
+
+		// The name of the entity that should be used as activator. Is resolved immediately after spawn time.
+		// If empty, the player will be used.
+		idStr	activatorName;
+
+		// The name of the target entity to be triggered. Is resolved immediately after spawn time.
+		idStr	targetName;
+	};
+
+	idList<InterMissionTrigger>	m_InterMissionTriggers;
+
+	// Tels: For each part in a GUI command in 'set "cmd" "command arg1 arg2;" the game will
+	//		 call HandleMainMenuCommand(), sometimes with a final call with the ";".
+	//		 This list here keeps all these parts so we can execute the command
+	//		 and have all the arguments, too.
+	idList<idStr>				m_GUICommandStack;
+	// how many arguments do we expect for the current command (m_GUICommandStack[0]):
+	int							m_GUICommandArgs;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
@@ -561,7 +1071,6 @@ private:
 
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
-
 	void					SelectTimeGroup( int timeGroup );
 	int						GetTimeGroupTime( int timeGroup );
 	void					GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
@@ -571,6 +1080,19 @@ private:
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 
 	void					GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
+
+	// Sets the video CVARs according to the settings in the given GUI
+	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
+
+	// Splits the given string and stores the found video materials in the target list.
+	// Calculates the length of the ROQ videos as defined in the string (each material
+	// is separated by a semicolon) Returns the total length in milliseconds, or -1 on failure.
+	// The lengthStr corresponds to the videosStr, but contains the lengths of the clips
+	static int				LoadVideosFromString(const char* videosStr, const char* lengthStr, 
+												 idList<BriefingVideoPart>& targetList);
+
+	// Platform-specific implementation to change the D3's title and icon
+	void					ChangeWindowTitleAndIcon();
 };
 
 //============================================================================
@@ -603,6 +1125,12 @@ ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
 	}
 	return *this;
+}
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::operator==(const idEntityPtr<type>& other) const
+{
+	return spawnId == other.spawnId;
 }
 
 template< class type >
@@ -650,7 +1178,7 @@ public:
 
 //
 // these defines work for all startsounds from all entity types
-// make sure to change script/doom_defs.script if you add any channels, or change their order
+// make sure to change script/tdm_defs.script if you add any channels, or change their order
 //
 typedef enum {
 	SND_CHANNEL_ANY = SCHANNEL_ANY,
@@ -662,11 +1190,12 @@ typedef enum {
 	SND_CHANNEL_WEAPON,
 	SND_CHANNEL_ITEM,
 	SND_CHANNEL_HEART,
-	SND_CHANNEL_PDA,
+	SND_CHANNEL_UNUSED,
 	SND_CHANNEL_DEMONIC,
-	SND_CHANNEL_RADIO,
+	SND_CHANNEL_UNUSED_2,
 
 	// internal use only.  not exposed to script or framecommands.
+	// tels: Have now been exposed to script and framecommands. Why were they internal only?
 	SND_CHANNEL_AMBIENT,
 	SND_CHANNEL_DAMAGE
 } gameSoundChannel_t;
@@ -690,54 +1219,69 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 
 //============================================================================
 
-#include "physics/Force.h"
-#include "physics/Force_Constant.h"
-#include "physics/Force_Drag.h"
-#include "physics/Force_Field.h"
-#include "physics/Force_Spring.h"
-#include "physics/Physics.h"
-#include "physics/Physics_Static.h"
-#include "physics/Physics_StaticMulti.h"
-#include "physics/Physics_Base.h"
-#include "physics/Physics_Actor.h"
-#include "physics/Physics_Monster.h"
-#include "physics/Physics_Player.h"
-#include "physics/Physics_Parametric.h"
-#include "physics/Physics_RigidBody.h"
-#include "physics/Physics_AF.h"
+#include "physics/force.h"
+#include "physics/force_constant.h"
+#include "physics/force_drag.h"
+#include "physics/force_field.h"
+#include "physics/force_spring.h"
+#include "physics/physics.h"
+#include "physics/physics_static.h"
+#include "physics/physics_staticmulti.h"
+#include "physics/physics_base.h"
+#include "physics/physics_actor.h"
+#include "physics/physics_monster.h"
+#include "physics/physics_player.h"
+#include "physics/physics_parametric.h"
+#include "physics/physics_rigidbody.h"
+#include "physics/physics_af.h"
+#include "physics/physics_liquid.h"
 
-#include "SmokeParticles.h"
+#include "smokeparticles.h"
 
-#include "Entity.h"
-#include "GameEdit.h"
-#include "AF.h"
-#include "IK.h"
-#include "AFEntity.h"
-#include "Misc.h"
-#include "Actor.h"
-#include "Projectile.h"
-#include "Weapon.h"
-#include "Light.h"
-#include "WorldSpawn.h"
-#include "Item.h"
-#include "PlayerView.h"
-#include "PlayerIcon.h"
-#include "Player.h"
-#include "Mover.h"
-#include "Camera.h"
-#include "Moveable.h"
-#include "Target.h"
-#include "Trigger.h"
-#include "Sound.h"
-#include "Fx.h"
-#include "SecurityCamera.h"
-#include "BrittleFracture.h"
+#include "entity.h"
+#include "gameedit.h"
+#include "af.h"
+#include "ik.h"
+#include "afentity.h"
+#include "misc.h"
+#include "actor.h"
+#include "projectile.h"
+#include "weapon.h"
+#include "light.h"
+#include "worldspawn.h"
+#include "item.h"
+#include "playerview.h"
+#include "playericon.h"
+#include "player.h"
+#include "mover.h"
+#include "camera.h"
+#include "moveable.h"
+#include "target.h"
+#include "trigger.h"
+#include "sound.h"
+#include "fx.h"
+#include "securitycamera.h"
+#include "brittlefracture.h"
+#include "../DarkMod/liquid.h"
 
-#include "ai/AI.h"
-#include "anim/Anim_Testmodel.h"
+#include "ai/ai.h"
+#include "anim/anim_testmodel.h"
 
-#include "script/Script_Compiler.h"
-#include "script/Script_Interpreter.h"
-#include "script/Script_Thread.h"
+#include "script/script_compiler.h"
+#include "script/script_interpreter.h"
+#include "script/script_thread.h"
+
+const float	RB_VELOCITY_MAX				= 16000;
+const int	RB_VELOCITY_TOTAL_BITS		= 16;
+const int	RB_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_VELOCITY_MAX ) ) + 1;
+const int	RB_VELOCITY_MANTISSA_BITS	= RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS;
+const float	RB_MOMENTUM_MAX				= 1e20f;
+const int	RB_MOMENTUM_TOTAL_BITS		= 16;
+const int	RB_MOMENTUM_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_MOMENTUM_MAX ) ) + 1;
+const int	RB_MOMENTUM_MANTISSA_BITS	= RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS;
+const float	RB_FORCE_MAX				= 1e20f;
+const int	RB_FORCE_TOTAL_BITS			= 16;
+const int	RB_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( RB_FORCE_MAX ) ) + 1;
+const int	RB_FORCE_MANTISSA_BITS		= RB_FORCE_TOTAL_BITS - 1 - RB_FORCE_EXPONENT_BITS;
 
 #endif	/* !__GAME_LOCAL_H__ */

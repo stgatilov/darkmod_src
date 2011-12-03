@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_ACTOR_H__
 #define __PHYSICS_ACTOR_H__
@@ -40,6 +24,15 @@ If you have questions concerning this license or the applicable additional terms
 
 ===================================================================================
 */
+
+#ifdef MOD_WATERPHYSICS
+typedef enum {					// MOD_WATERPHYSICS
+	WATERLEVEL_NONE,			// MOD_WATERPHYSICS
+	WATERLEVEL_FEET,			// MOD_WATERPHYSICS
+	WATERLEVEL_WAIST,			// MOD_WATERPHYSICS
+	WATERLEVEL_HEAD				// MOD_WATERPHYSICS
+} waterLevel_t;					// MOD_WATERPHYSICS
+#endif // MOD_WATERPHYSICS
 
 class idPhysics_Actor : public idPhysics_Base {
 
@@ -58,6 +51,14 @@ public:
 	idEntity *				GetGroundEntity( void ) const;
 							// align the clip model with the gravity direction
 	void					SetClipModelAxis( void );
+
+#ifdef MOD_WATERPHYSICS
+	virtual waterLevel_t	GetWaterLevel( void ) const; 	// MOD_WATERPHYSICS
+	virtual int				GetWaterType( void ) const; 	// MOD_WATERPHYSICS
+
+	// greebo: returns the time we (last) submersed into water (above HEAD)
+	int						GetSubmerseTime() const;
+#endif
 
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
@@ -94,6 +95,18 @@ public:	// common physics interface
 	bool					EvaluateContacts( void );
 
 protected:
+#ifdef MOD_WATERPHYSICS
+	virtual void		SetWaterLevel( bool updateWaterLevelChanged );		// MOD_WATERPHYSICS
+	waterLevel_t		waterLevel;					// MOD_WATERPHYSICS
+	waterLevel_t		previousWaterLevel;			// greebo: The water level of the previous frame
+	int					waterType;					// MOD_WATERPHYSICS
+	int					submerseFrame;				// greebo: The frame in which we submersed (above WATERLEVEL_HEAD)
+	int					submerseTime;				// greebo: The time we submersed (above WATERLEVEL_HEAD)
+
+	// greebo: This is TRUE if the water level has changed since the last physics evaluation (frame)
+	bool				waterLevelChanged;
+#endif
+
 	idClipModel *			clipModel;			// clip model used for collision detection
 	idMat3					clipModelAxis;		// axis of clip model aligned with gravity direction
 

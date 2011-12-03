@@ -1,32 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 #ifndef __ANIM_H__
 #define __ANIM_H__
+
+#ifdef __linux__
+#include "framework/declmanager.h"
+#endif
 
 //
 // animation channels
@@ -145,7 +134,63 @@ typedef enum {
 	FC_ENABLE_LEG_IK,
 	FC_DISABLE_LEG_IK,
 	FC_RECORDDEMO,
-	FC_AVIGAME
+	FC_AVIGAME,
+
+/**
+* DarkMod:
+* FC_SETRATE sets the anim rate, used for speeding up/slowing down walking
+* and crouchwalking animations to get correct footstep sounds.
+**/
+	FC_SETRATE,
+/**
+* Move an attachment to a different position
+**/
+	FC_REATTACH,
+/**
+* Tels: Spawn an item (the item contains where to attach it)
+**/
+	FC_ATTACH,
+/**
+* Tels: Detach and destroy the named attachement
+**/
+	FC_DESTROY,
+/**
+* Tels: Detach and drop the named attachement
+**/
+	FC_DROP,
+/**
+* Tels: Detach and put down the named attachement (e.g. restore origin and angles to "before pickup")
+**/
+	FC_PUTDOWN,
+/**
+* Tels: Pickup an object (either the direct entity name, or the AIUSE class)
+**/
+	FC_PICKUP,
+/**
+* Tels: Activate the attached entity at the named joint
+**/
+	FC_ACTIVATE_AT_JOINT,
+/**
+* Tels: Activate the entity (either direct name or AIUSE class)
+**/
+	FC_ACTIVATE_NEAR,
+/**
+* Pause the animation at its current frame, wait for unpause from somewhere else
+**/
+	FC_PAUSE,
+/**
+* Holds a melee attack at a given point in the animation
+* (e.g., at the back swing in attacks, at the parry position in parries)
+* Similar to pause but also updates actor's melee status
+**/
+	FC_MELEE_HOLD,
+	FC_MELEE_ATTACK_START,
+	FC_MELEE_ATTACK_STOP,
+	FC_MELEE_PARRY_START,
+	FC_MELEE_PARRY_STOP,
+	FC_SET_ATTACK_FLAG,   // greebo: enables a certain attack type
+	FC_CLEAR_ATTACK_FLAG, // greebo: disables a certain attack type
+	FC_CREATEMISSILE_FROM_DEF,	// greebo: create a specific projectile def for ranged attack
 } frameCommandType_t;
 
 typedef struct {
@@ -170,6 +215,7 @@ typedef struct {
 	bool					random_cycle_start			: 1;
 	bool					ai_no_turn					: 1;
 	bool					anim_turn					: 1;
+	bool					no_random_headturning		: 1;
 } animFlags_t;
 
 
@@ -261,6 +307,11 @@ public:
 	void					GetOrigin( idVec3 &offset, int currentTime, int cyclecount ) const;
 	void					GetOriginRotation( idQuat &rotation, int time, int cyclecount ) const;
 	void					GetBounds( idBounds &bounds, int currentTime, int cyclecount ) const;
+
+	/**
+	* DarkMod: Set the framerate to something different from what's in the file.
+	**/
+	void					SetFrameRate( int frRate );
 };
 
 /*
@@ -300,7 +351,7 @@ public:
 	bool						GetOriginRotation( idQuat &rotation, int animNum, int currentTime, int cyclecount ) const;
 	bool						GetBounds( idBounds &bounds, int animNum, int time, int cyclecount ) const;
 	const char					*AddFrameCommand( const class idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def );
-	void						CallFrameCommands( idEntity *ent, int from, int to ) const;
+	void						CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *caller );
 	bool						HasFrameCommands( void ) const;
 
 								// returns first frame (zero based) that command occurs.  returns -1 if not found.
@@ -394,14 +445,28 @@ private:
 	short						animNum;
 	bool						allowMove;
 	bool						allowFrameCommands;
+	/**
+	* TDM: This animation is paused at the current frame
+	**/
+	bool						m_bPaused;
+	/**
+	* endtime and cycle before we paused
+	* The following are used for proper re-entry when unpausing
+	**/
+	int							m_PausedEndtime;
+	short						m_PausedCycle;
+	/**
+	* Time at which we paused
+	**/
+	int							m_PausedTime;
 
 	friend class				idAnimator;
 
 	void						Reset( const idDeclModelDef *_modelDef );
 	void						CallFrameCommands( idEntity *ent, int fromtime, int totime ) const;
-	void						SetFrame( const idDeclModelDef *modelDef, int animnum, int frame, int currenttime, int blendtime );
-	void						CycleAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
-	void						PlayAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
+	void						SetFrame( const idDeclModelDef *modelDef, int animnum, int frame, int currenttime, int blendtime, const idEntity *ent );
+	void						CycleAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime, const idEntity *ent );
+	void						PlayAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime, const idEntity *ent );
 	bool						BlendAnim( int currentTime, int channel, int numJoints, idJointQuat *blendFrame, float &blendWeight, bool removeOrigin, bool overrideBlend, bool printInfo ) const;
 	void						BlendOrigin( int currentTime, idVec3 &blendPos, float &blendWeight, bool removeOriginOffset ) const;
 	void						BlendDelta( int fromtime, int totime, idVec3 &blendDelta, float &blendWeight ) const;
@@ -426,6 +491,9 @@ public:
 	void						SetCycleCount( int count );
 	void						SetPlaybackRate( int currentTime, float newRate );
 	float						GetPlaybackRate( void ) const;
+	// Ishtvan test: Making this public
+	/** TDM: UpdatePlaybackRate sets the playback rate to the one given by animnum in ent->m_animRates */
+	void						UpdatePlaybackRate(int animnum, const idEntity *ent);
 	void						SetStartTime( int startTime );
 	int							GetStartTime( void ) const;
 	int							GetEndTime( void ) const;
@@ -438,6 +506,11 @@ public:
 	void						AllowFrameCommands( bool allow );
 	const idAnim				*Anim( void ) const;
 	int							AnimNum( void ) const;
+	/**
+	* Pause (true) or unpause (false) the animation at the current frame
+	**/
+	void						Pause( bool bPause );
+	bool						IsPaused( void );
 };
 
 /*
@@ -451,7 +524,8 @@ public:
 typedef enum {
 	AF_JOINTMOD_AXIS,
 	AF_JOINTMOD_ORIGIN,
-	AF_JOINTMOD_BOTH
+	AF_JOINTMOD_BOTH,
+	AF_JOINTMOD_NONE // Added for TDM
 } AFJointModType_t;
 
 class idAFPoseJointMod {

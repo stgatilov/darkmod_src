@@ -1,5 +1,12 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
@@ -28,7 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __GAME_MISC_H__
 #define __GAME_MISC_H__
-
 
 /*
 ===============================================================================
@@ -134,12 +140,29 @@ public:
 
 	static void			DrawDebugInfo( void );
 
-	static idPathCorner *RandomPath( const idEntity *source, const idEntity *ignore );
+	static idPathCorner *RandomPath( const idEntity *source, const idEntity *ignore, idAI* owner );
 
 private:
 	void				Event_RandomPath( void );
 };
 
+/*
+===============================================================================
+
+  Path entities for AI to flee to.
+
+===============================================================================
+*/
+class tdmPathFlee : public idEntity {
+public:
+	CLASS_PROTOTYPE( tdmPathFlee );
+
+	virtual ~tdmPathFlee();
+
+	void				Spawn( void );
+
+	static void		DrawDebugInfo( void );
+};
 
 /*
 ===============================================================================
@@ -261,8 +284,8 @@ class idAnimated : public idAFEntity_Gibbable {
 public:
 	CLASS_PROTOTYPE( idAnimated );
 
-							idAnimated();
-							~idAnimated();
+	idAnimated();
+	virtual ~idAnimated();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -336,35 +359,6 @@ private:
 /*
 ===============================================================================
 
-idFuncEmitter
-
-===============================================================================
-*/
-
-class idFuncEmitter : public idStaticEntity {
-public:
-	CLASS_PROTOTYPE( idFuncEmitter );
-
-						idFuncEmitter( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-	void				Spawn( void );
-	void				Event_Activate( idEntity *activator );
-
-	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
-
-private:
-	bool				hidden;
-
-};
-
-
-/*
-===============================================================================
-
 idFuncSmoke
 
 ===============================================================================
@@ -388,28 +382,6 @@ private:
 	int						smokeTime;
 	const idDeclParticle *	smoke;
 	bool					restart;
-};
-
-
-/*
-===============================================================================
-
-idFuncSplat
-
-===============================================================================
-*/
-
-class idFuncSplat : public idFuncEmitter {
-public:
-	CLASS_PROTOTYPE( idFuncSplat );
-
-	idFuncSplat( void );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-	void				Event_Splat();
 };
 
 
@@ -450,9 +422,28 @@ class idLocationEntity : public idEntity {
 public:
 	CLASS_PROTOTYPE( idLocationEntity );
 
+	idLocationEntity( void );
+
 	void				Spawn( void );
 
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
 	const char *		GetLocation( void ) const;
+
+public:
+	/**
+	* Soundprop: Loss multiplier for atmospheric attenuation
+	**/
+	float				m_SndLossMult;
+	/**
+	* Soundprop: Volume offset for sounds originating in location
+	**/
+	float				m_SndVolMod;
+	/**
+	* Objective system: Location's objective group name for objective checks
+	**/
+	idStr				m_ObjectiveGroup;
 
 private:
 };
@@ -463,7 +454,31 @@ public:
 
 	void				Spawn( void );
 
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+	qhandle_t			GetPortalHandle( void ) const;
+	// Returns a factor (0..1.0) that says how  much light the portal lets through
+	float				GetLightLoss( void ) const;
+	void				Event_GetPortalHandle( void );	
+
 private:
+
+	/**
+	* Soundprop: Volume loss for sounds traveling through this portal, in
+	* addition to a potential door on this portal.
+	**/
+	float				m_SoundLoss;
+
+	/**
+	* Tels: Lightprop: Volume loss for sounds traveling through this portal
+	**/
+	float				m_LightLoss;
+
+	/**
+	* Tels: Handle of the portal this entity touches.
+	**/
+	qhandle_t			m_Portal;
 };
 
 class idVacuumSeparatorEntity : public idEntity {
@@ -539,6 +554,7 @@ private:
 ===============================================================================
 */
 
+#ifndef MOD_WATERPHYSICS
 class idRenderModelLiquid;
 
 class idLiquid : public idEntity {
@@ -556,7 +572,7 @@ private:
 
 	idRenderModelLiquid *model;
 };
-
+#endif
 
 /*
 ===============================================================================
@@ -639,10 +655,26 @@ public:
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
+	void				Think( void );
 
 private:
 	qhandle_t			portal;
 	bool				state;
+
+	/**
+	* Set to true if the portal state depends on distance from player
+	**/
+	bool				m_bDistDependent;
+	
+	/**
+	* Timestamp and interval between checks, in milliseconds
+	**/
+	int					m_TimeStamp;
+	int					m_Interval;
+	/**
+	* Distance at which the portal shuts off, if it is distance dependent
+	**/
+	float				m_Distance;
 
 	void				Event_Activate( idEntity *activator );
 };
@@ -691,36 +723,14 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
+	// greebo: Public function to set the state directly
+	// Note: Passing TRUE means that the AAS area is DISABLED
+	void				SetAASState(bool newState);
+
 private:
 	bool				state;
 
 	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-idFuncRadioChatter
-
-===============================================================================
-*/
-
-class idFuncRadioChatter : public idEntity {
-public:
-	CLASS_PROTOTYPE( idFuncRadioChatter );
-
-						idFuncRadioChatter();
-
-	void				Spawn( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-private:
-	float				time;
-	void				Event_Activate( idEntity *activator );
-	void				Event_ResetRadioHud( idEntity *activator );
 };
 
 
@@ -762,4 +772,66 @@ private:
 	idList<idVec3>		lastTargetPos;
 };
 
+/*
+===============================================================================
+
+idPortalSky
+
+===============================================================================
+*/
+
+class idPortalSky : public idEntity {
+
+public:
+
+	CLASS_PROTOTYPE( idPortalSky );
+
+	idPortalSky();
+
+	virtual ~idPortalSky();
+
+	void				Spawn( void );
+	void				Event_PostSpawn();
+	void				Event_Activate( idEntity *activator );
+};
+
+/*
+===============================================================================
+
+  CVine
+
+===============================================================================
+*/
+
+class tdmVine: public idStaticEntity
+{
+public:
+	CLASS_PROTOTYPE( tdmVine);
+	// Constructor
+	tdmVine();
+
+	// Needed on game save/load
+	void	Save( idSaveGame *savefile ) const;
+	void	Restore( idRestoreGame *savefile );
+
+	// Gets called when this entity is actually being spawned
+	void	Spawn();
+
+private:
+	bool	_watered;	// true if a vine piece was watered during this watering event
+	tdmVine* _prime;	// initial, or prime, vine piece
+	idList< idEntityPtr<tdmVine> >_descendants;	// a list of all descendants (kept by prime only)
+
+protected:
+	void	Event_SetPrime( tdmVine* newPrime );
+	void	Event_GetPrime();
+	void	Event_AddDescendant( tdmVine* descendant );
+	void	Event_ClearWatered();
+	void	Event_SetWatered();
+	void	Event_CanWater();
+	void	Event_ScaleVine(float factor);
+};
+
+
 #endif /* !__GAME_MISC_H__ */
+

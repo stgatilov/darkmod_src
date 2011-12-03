@@ -1,33 +1,75 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_PROJECTILE_H__
 #define __GAME_PROJECTILE_H__
+
+#include "../DarkMod/PickableLock.h"
+#include "../DarkMod/Inventory/Item.h"
+#include "../DarkMod/Inventory/Category.h"
+
+/**
+* SFinalProjData: Structure storing the final projectile data at impact
+* Passed on to CProjectileResult object
+**/
+typedef struct SFinalProjData_s
+{
+	/**
+	 * greebo: The entity which fired the projectile
+	 */
+	idEntityPtr<idEntity> Owner;
+
+	/**
+	* Final world position of the origin of the projectile on impact
+	**/
+	idVec3	FinalOrigin;
+
+	/**
+	* Final orientation of the projectile on impact
+	**/
+	idMat3	FinalAxis;
+
+	/**
+	* Final linear velocity of the projectile just before impact
+	**/
+	idVec3	LinVelocity;
+
+	/**
+	* Final angular velocity of the projectile just before impact
+	**/
+	idVec3	AngVelocity;
+
+	/**
+	* Direction vector for the axis of the arrow.  Needed for pushing it in.
+	**/
+	idVec3	AxialDir;
+
+	/**
+	* Max Angle of incidence when projectile hits surface
+	* (Calculated in CProjectileResult::Init )
+	**/
+	float IncidenceAngle;
+
+	/**
+	* Mass of the projectile (might be useful)
+	**/
+	float mass;
+
+	/**
+	* Name of the surface that was struck
+	**/
+	idStr	SurfaceType;
+
+} SFinalProjData;
 
 /*
 ===============================================================================
@@ -38,6 +80,8 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 extern const idEventDef EV_Explode;
+// greebo: Exposed projectile launch method to scripts
+extern const idEventDef EV_Launch;
 
 class idProjectile : public idEntity {
 public :
@@ -56,6 +100,7 @@ public :
 	virtual void			FreeLightDef( void );
 
 	idEntity *				GetOwner( void ) const;
+	void					SetReplaced(); // grayman #2908
 
 	virtual void			Think( void );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
@@ -77,6 +122,11 @@ public :
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	void					MineExplode( int entityNumber ); // grayman #2478
+	bool					IsMine();	// grayman #2478
+	bool					IsArmed();	// grayman #2906
+	void					AttackAction(idPlayer* player); // grayman #2934
+	void					Event_ActivateProjectile();
 
 protected:
 	idEntityPtr<idEntity>	owner;
@@ -112,21 +162,45 @@ protected:
 		CREATED = 1,
 		LAUNCHED = 2,
 		FIZZLED = 3,
-		EXPLODED = 4
+		EXPLODED = 4,
+		INACTIVE = 5	// greebo: this applies to mines that haven't become active yet
 	} projectileState_t;
 	
 	projectileState_t		state;
+	
+	PickableLock*			m_Lock;		// grayman #2478 - A lock implementation for this mover
+	bool					isMine;		// grayman #2478 - true if this is a mine
+	bool					replaced;	// grayman #2908 - true if this is a projectile mine that replaced a map author-placed armed mine
+
+protected:
+	/**
+	* Determine whether the projectile "activates" based on the surface type argument
+	* This checks a space-delimited spawnarg list of activating materials and
+	* returns true if the struck material activates this projectile
+	**/
+	bool TestActivated( const char *typeName );
 
 private:
 	bool					netSyncPhysics;
 
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
 
+	void					AddObjectsToSaveGame(idSaveGame* savefile); // grayman #2478
+	bool					CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse); // grayman #2478
+	bool					UseBy(EImpulseState impulseState, const CInventoryItemPtr& item); // grayman #2478
+	bool					IsLocked(); // grayman #2478
+	void					Event_ClearPlayerImmobilization(idEntity* player); // grayman #2478
+
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );
 	void					Event_RadiusDamage( idEntity *ignore );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 	void					Event_GetProjectileState( void );
+	void					Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity );
+	void					Event_Lock_OnLockPicked();	// grayman #2478
+	void					Event_Mine_Replace();		// grayman #2478
+	float					AngleAdjust(float angle);	// grayman #2478
+	void					AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ); // grayman #2478
 };
 
 class idGuidedProjectile : public idProjectile {
@@ -161,68 +235,6 @@ private:
 	float					burstVelocity;
 };
 
-class idSoulCubeMissile : public idGuidedProjectile {
-public:
-	CLASS_PROTOTYPE ( idSoulCubeMissile );
-	~idSoulCubeMissile();
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float power = 1.0f, const float dmgPower = 1.0f );
-
-protected:
-	virtual void			GetSeekPos( idVec3 &out );
-	void					ReturnToOwner( void );
-	void					KillTarget( const idVec3 &dir );
-
-private:
-	idVec3					startingVelocity;
-	idVec3					endingVelocity;
-	float					accelTime;
-	int						launchTime;
-	bool					killPhase;
-	bool					returnPhase;
-	idVec3					destOrg;
-	idVec3					orbitOrg;
-	int						orbitTime;
-	int						smokeKillTime;
-	const idDeclParticle *	smokeKill;
-};
-
-struct beamTarget_t {
-	idEntityPtr<idEntity>	target;
-	renderEntity_t			renderEntity;
-	qhandle_t				modelDefHandle;
-};
-
-class idBFGProjectile : public idProjectile {
-public :
-	CLASS_PROTOTYPE( idBFGProjectile );
-
-							idBFGProjectile();
-							~idBFGProjectile();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
-	virtual void			Explode( const trace_t &collision, idEntity *ignore );
-
-private:
-	idList<beamTarget_t>	beamTargets;
-	renderEntity_t			secondModel;
-	qhandle_t				secondModelDefHandle;
-	int						nextDamageTime;
-	idStr					damageFreq;
-
-	void					FreeBeams();
-	void					Event_RemoveBeams();
-	void					ApplyDamage();
-};
 
 /*
 ===============================================================================
@@ -260,7 +272,6 @@ private:
 	const idDeclParticle *	smokeFly;
 	int						smokeFlyTime;
 	const idSoundShader *	sndBounce;
-
 
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );

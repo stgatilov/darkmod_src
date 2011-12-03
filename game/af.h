@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_AF_H__
 #define __GAME_AF_H__
@@ -38,8 +22,13 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+/* FORWRD DECLS */
+class idDeclAF_Body;
+class idDeclAF_Constraint;
+
 typedef struct jointConversion_s {
 	int						bodyId;				// id of the body
+	idStr					bodyName;			// TDM: String name of body.  Only used on add/remove for performance
 	jointHandle_t			jointHandle;		// handle of joint this body modifies
 	AFJointModType_t		jointMod;			// modify joint axis, origin or both
 	idVec3					jointBodyOrigin;	// origin of body relative to joint
@@ -55,7 +44,7 @@ typedef struct afTouch_s {
 class idAF {
 public:
 							idAF( void );
-							~idAF( void );
+	virtual ~idAF( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -84,12 +73,33 @@ public:
 	void					ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	void					AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 	int						BodyForClipModelId( int id ) const;
+	/**
+	* Find the joint associated with the given body
+	**/
+	jointHandle_t			JointForBody( int body );
+	int						BodyForJoint( jointHandle_t joint );
 
 	void					SaveState( idDict &args ) const;
 	void					LoadState( const idDict &args );
 
 	void					AddBindConstraints( void );
 	void					RemoveBindConstraints( void );
+
+	/**
+	* TDM: Allows adding a body not in the AF file, bodyNew.  Must be referenced to an existing body in the AF file, bodyExist.
+	* Also needs the entity for which we are doing this.
+	**/
+	void AddBodyExtern
+		( idAFEntity_Base *ent, idAFBody *bodyNew, 
+		  idAFBody *bodyExist, AFJointModType_t mod,
+		  jointHandle_t joint = INVALID_JOINT );
+
+	/**
+	* TDM: Delete an externally added body
+	* NOTE: Must remove the body on the AFPhysics object BEFORE calling this.
+	* Because this also refreshes the jointMod bodyID's based on the physics object.
+	**/
+	void DeleteBodyExtern( idAFEntity_Base *ent, const char *bodyName );
 
 protected:
 	idStr					name;				// name of the loaded .af file

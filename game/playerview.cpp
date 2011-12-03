@@ -1,43 +1,47 @@
-/*
-===========================================================================
+/***************************************************************************
+*
+* PROJECT: The Dark Mod
+* $Revision$
+* $Date$
+* $Author$
+*
+***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+
+#include "../DarkMod/sourcehook/sourcehook.h"
+
+extern SourceHook::ISourceHook *g_SHPtr;
+extern int g_PLID;
+
+SH_DECL_HOOK2_void( idCmdSystem, BufferCommandText, SH_NOATTRIB, 0, cmdExecution_t, const char * );
+
+static int MakePowerOfTwo( int num ) {
+	int		pot;
+
+	for (pot = 1 ; pot < num ; pot<<=1) {}
+
+	return pot;
+}
 
 const int IMPULSE_DELAY = 150;
+
 /*
 ==============
 idPlayerView::idPlayerView
 ==============
 */
-idPlayerView::idPlayerView() {
+idPlayerView::idPlayerView() :
+m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Denton
+{
 	memset( screenBlobs, 0, sizeof( screenBlobs ) );
 	memset( &view, 0, sizeof( view ) );
 	player = NULL;
@@ -47,9 +51,8 @@ idPlayerView::idPlayerView() {
 	berserkMaterial = declManager->FindMaterial( "textures/decals/berserk" );
 	irGogglesMaterial = declManager->FindMaterial( "textures/decals/irblend" );
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
-	bfgMaterial = declManager->FindMaterial( "textures/decals/bfgvision" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
-	bfgVision = false;
+
 	dvFinishTime = 0;
 	kickFinishTime = 0;
 	kickAngles.Zero();
@@ -61,7 +64,23 @@ idPlayerView::idPlayerView() {
 	fadeColor.Zero();
 	shakeAng.Zero();
 
+	/*
+	fxManager = NULL;
+
+	if ( !fxManager ) {
+	fxManager = new FullscreenFXManager;
+	fxManager->Initialize( this );
+	}
+	*/
+
 	ClearEffects();
+
+	// greebo: Set the bool to the inverse of the CVAR, so that the code triggers 
+	// an update in the first frame
+	//cur_amb_method = !cv_ambient_method.GetBool();
+	// JC: Just set the flag so that we know that the update is needed.
+	cv_ambient_method.SetModified();
+	cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
 }
 
 /*
@@ -93,14 +112,12 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 	savefile->WriteMaterial( dvMaterial );
 	savefile->WriteInt( kickFinishTime );
 	savefile->WriteAngles( kickAngles );
-	savefile->WriteBool( bfgVision );
 
 	savefile->WriteMaterial( tunnelMaterial );
 	savefile->WriteMaterial( armorMaterial );
 	savefile->WriteMaterial( berserkMaterial );
 	savefile->WriteMaterial( irGogglesMaterial );
 	savefile->WriteMaterial( bloodSprayMaterial );
-	savefile->WriteMaterial( bfgMaterial );
 	savefile->WriteFloat( lastDamageTime );
 
 	savefile->WriteVec4( fadeColor );
@@ -113,6 +130,9 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( player );
 	savefile->WriteRenderView( view );
+
+	// Save games are not going to work after this change - JC Denton
+	// 	savefile->WriteBool(cur_amb_method);
 }
 
 /*
@@ -144,14 +164,12 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 	savefile->ReadMaterial( dvMaterial );
 	savefile->ReadInt( kickFinishTime );
 	savefile->ReadAngles( kickAngles );			
-	savefile->ReadBool( bfgVision );
 
 	savefile->ReadMaterial( tunnelMaterial );
 	savefile->ReadMaterial( armorMaterial );
 	savefile->ReadMaterial( berserkMaterial );
 	savefile->ReadMaterial( irGogglesMaterial );
 	savefile->ReadMaterial( bloodSprayMaterial );
-	savefile->ReadMaterial( bfgMaterial );
 	savefile->ReadFloat( lastDamageTime );
 
 	savefile->ReadVec4( fadeColor );
@@ -164,6 +182,12 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( player ) );
 	savefile->ReadRenderView( view );
+
+	// Save games are not going to work after this change - JC Denton
+	// 	savefile->ReadBool(cur_amb_method);
+
+	// Re-Initialize the PostProcess Manager.	- JC Denton
+	this->m_postProcessManager.Initialize();
 }
 
 /*
@@ -191,7 +215,6 @@ void idPlayerView::ClearEffects() {
 	}
 
 	fadeTime = 0;
-	bfgVision = false;
 }
 
 /*
@@ -232,7 +255,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 		if ( dvFinishTime < gameLocal.time ) {
 			dvFinishTime = gameLocal.time;
 		}
-		dvFinishTime += g_dvTime.GetFloat() * dvTime;
+		dvFinishTime += static_cast<int>(g_dvTime.GetFloat() * dvTime);
 		// don't let it add up too much in god mode
 		if ( dvFinishTime > gameLocal.time + 5000 ) {
 			dvFinishTime = gameLocal.time + 5000;
@@ -244,7 +267,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	//
 	float	kickTime = damageDef->GetFloat( "kick_time" );
 	if ( kickTime ) {
-		kickFinishTime = gameLocal.time + g_kickTime.GetFloat() * kickTime;
+		kickFinishTime = gameLocal.time + static_cast<int>(g_kickTime.GetFloat() * kickTime);
 
 		// forward / back kick will pitch view
 		kickAngles[0] = localKickDir[0];
@@ -271,7 +294,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	if ( blobTime ) {
 		screenBlob_t	*blob = GetScreenBlob();
 		blob->startFadeTime = gameLocal.time;
-		blob->finishTime = gameLocal.time + blobTime * g_blobTime.GetFloat();
+		blob->finishTime = gameLocal.time + static_cast<int>(blobTime * g_blobTime.GetFloat());
 
 		const char *materialName = damageDef->GetString( "mtr_blob" );
 		blob->material = declManager->FindMaterial( materialName );
@@ -279,7 +302,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 		blob->x += ( gameLocal.random.RandomInt()&63 ) - 32;
 		blob->y = damageDef->GetFloat( "blob_y" );
 		blob->y += ( gameLocal.random.RandomInt()&63 ) - 32;
-		
+
 		float scale = ( 256 + ( ( gameLocal.random.RandomInt()&63 ) - 32 ) ) / 256.0f;
 		blob->w = damageDef->GetFloat( "blob_width" ) * g_blobSize.GetFloat() * scale;
 		blob->h = damageDef->GetFloat( "blob_height" ) * g_blobSize.GetFloat() * scale;
@@ -305,9 +328,9 @@ but having it localized here lets the material be pre-looked up etc.
 ==================
 */
 void idPlayerView::AddBloodSpray( float duration ) {
-/*
+	/*
 	if ( duration <= 0 || bloodSprayMaterial == NULL || g_skipViewEffects.GetBool() ) {
-		return;
+	return;
 	}
 	// visit this for chainsaw
 	screenBlob_t *blob = GetScreenBlob();
@@ -325,22 +348,22 @@ void idPlayerView::AddBloodSpray( float duration ) {
 	float s2 = 1.0f;
 	float t2 = 1.0f;
 	if ( blob->driftAmount < 0.6 ) {
-		s1 = 1.0f;
-		s2 = 0.0f;
+	s1 = 1.0f;
+	s2 = 0.0f;
 	} else if ( blob->driftAmount < 0.75 ) {
-		t1 = 1.0f;
-		t2 = 0.0f;
+	t1 = 1.0f;
+	t2 = 0.0f;
 	} else if ( blob->driftAmount < 0.85 ) {
-		s1 = 1.0f;
-		s2 = 0.0f;
-		t1 = 1.0f;
-		t2 = 0.0f;
+	s1 = 1.0f;
+	s2 = 0.0f;
+	t1 = 1.0f;
+	t2 = 0.0f;
 	}
 	blob->s1 = s1;
 	blob->t1 = t1;
 	blob->s2 = s2;
 	blob->t2 = t2;
-*/
+	*/
 }
 
 /*
@@ -359,7 +382,7 @@ void idPlayerView::WeaponFireFeedback( const idDict *weaponDef ) {
 		idAngles angles;
 		weaponDef->GetAngles( "recoilAngles", "5 0 0", angles );
 		kickAngles = angles;
-		int	finish = gameLocal.time + g_kickTime.GetFloat() * recoilTime;
+		int	finish = gameLocal.time + static_cast<int>(g_kickTime.GetFloat() * recoilTime);
 		kickFinishTime = finish;
 	}	
 
@@ -398,7 +421,7 @@ idMat3 idPlayerView::ShakeAxis() const {
 ===================
 idPlayerView::AngleOffset
 
-  kickVector, a world space direction that the attack should 
+kickVector, a world space direction that the attack should 
 ===================
 */
 idAngles idPlayerView::AngleOffset() const {
@@ -427,7 +450,7 @@ idAngles idPlayerView::AngleOffset() const {
 idPlayerView::SingleView
 ==================
 */
-void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) {
+void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, bool drawHUD ) {
 
 	// normal rendering
 	if ( !view ) {
@@ -435,19 +458,54 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 	}
 
 	// place the sound origin for the player
-	gameSoundWorld->PlaceListener( view->vieworg, view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
-
-	// if the objective system is up, don't do normal drawing
-	if ( player->objectiveSystemOpen ) {
-		player->objectiveSystem->Redraw( gameLocal.time );
-		return;
-	}
+	// TODO: Support overriding the location area so that reverb settings can be applied for listening thru doors?
+	gameSoundWorld->PlaceListener( player->GetListenerLoc(), view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
 
 	// hack the shake in at the very last moment, so it can't cause any consistency problems
 	renderView_t	hackedView = *view;
 	hackedView.viewaxis = hackedView.viewaxis * ShakeAxis();
 
+	//gameRenderWorld->RenderScene( &hackedView );
+
+	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool() ) {
+
+		renderView_t	portalView = hackedView;
+
+		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+		portalView.viewaxis = portalView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
+
+		// setup global fixup projection vars
+		if ( 1 ) {
+			int vidWidth, vidHeight;
+			idVec2 shiftScale;
+
+			renderSystem->GetGLSettings( vidWidth, vidHeight );
+
+			float pot;
+			int	 w = vidWidth;
+			pot = MakePowerOfTwo( w );
+			shiftScale.x = (float)w / pot;
+
+			int	 h = vidHeight;
+			pot = MakePowerOfTwo( h );
+			shiftScale.y = (float)h / pot;
+
+			hackedView.shaderParms[6] = shiftScale.x;
+			hackedView.shaderParms[7] = shiftScale.y;
+		}
+
+		gameRenderWorld->RenderScene( &portalView );
+		renderSystem->CaptureRenderToImage( "_currentRender" );
+
+		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+	}
+
+	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
 	gameRenderWorld->RenderScene( &hackedView );
+	// process the frame
+
+	//	fxManager->Process( &hackedView );
+
 
 	if ( player->spectating ) {
 		return;
@@ -460,7 +518,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 			if ( blob->finishTime <= gameLocal.time ) {
 				continue;
 			}
-			
+
 			blob->y += blob->driftAmount;
 
 			float	fade = (float)( blob->finishTime - gameLocal.time ) / ( blob->finishTime - blob->startFadeTime );
@@ -472,7 +530,10 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 				renderSystem->DrawStretchPic( blob->x, blob->y, blob->w, blob->h,blob->s1, blob->t1, blob->s2, blob->t2, blob->material );
 			}
 		}
-		player->DrawHUD( hud );
+		if (drawHUD)
+		{
+			player->DrawHUD( hud );
+		}
 
 		// armor impulse feedback
 		float	armorPulse = ( gameLocal.time - player->lastArmorPulse ) / 250.0f;
@@ -503,21 +564,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
 
-		if ( player->PowerUpActive(BERSERK) ) {
-			int berserkTime = player->inventory.powerupEndTime[ BERSERK ] - gameLocal.time;
-			if ( berserkTime > 0 ) {
-				// start fading if within 10 seconds of going away
-				alpha = (berserkTime < 10000) ? (float)berserkTime / 10000 : 1.0f;
-				renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, alpha );
-				renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, berserkMaterial );
-			}
-		}
+	}
 
-		if ( bfgVision ) {
+	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg) - added by Dram
+	if ( g_rotoscope.GetBool() ) {
+		const idMaterial *mtr = declManager->FindMaterial( "textures/postprocess/rotoedge", false );
+		if ( !mtr ) {
+			common->Printf( "Rotoscope material not found.\n" );
+		} else {
+			renderSystem->CaptureRenderToImage( "_currentRender" );
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, bfgMaterial );
+			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr );
 		}
-		
 	}
 
 	// test a single material drawn over everything
@@ -549,26 +607,36 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	if ( scale > 0.5f ) {
 		scale = 0.5f;
 	}
-	float shift = scale * sin( sqrtf( offset ) * g_dvFrequency.GetFloat() ); 
+	float shift = scale * sin( sqrt( (float)offset ) * g_dvFrequency.GetFloat() );
 	shift = fabs( shift );
 
 	// if double vision, render to a texture
-	renderSystem->CropRenderSize( 512, 256, true );
-	SingleView( hud, view );
+	renderSystem->CropRenderSize( SCREEN_WIDTH, SCREEN_HEIGHT, true );
+
+	// greebo: Draw the single view, but skip the HUD, this is done later
+	SingleView( hud, view, false ); 
+
 	renderSystem->CaptureRenderToImage( "_scratch" );
 	renderSystem->UnCrop();
 
 	// carry red tint if in berserk mode
 	idVec4 color(1, 1, 1, 1);
-	if ( gameLocal.time < player->inventory.powerupEndTime[ BERSERK ] ) {
-		color.y = 0;
-		color.z = 0;
-	}
+	/*if ( gameLocal.time < player->inventory.powerupEndTime[ BERSERK ] ) {
+	color.y = 0;
+	color.z = 0;
+	}*/
 
 	renderSystem->SetColor4( color.x, color.y, color.z, 1.0f );
-	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, shift, 1, 1, 0, dvMaterial );
+	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, shift, 1-shift, 1, 0, dvMaterial );
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
-	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, 0, dvMaterial );
+	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, shift, dvMaterial );
+
+	// Do not post-process the HUD - JC Denton
+	// Bloom related - added by Dram
+	// 	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+	// 	{
+	// 		player->DrawHUD(hud);
+	// 	}
 }
 
 /*
@@ -680,14 +748,15 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 	if ( player->GetInfluenceMaterial() ) {
 		SingleView( hud, view );
 		renderSystem->CaptureRenderToImage( "_currentRender" );
+
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
 	} else if ( player->GetInfluenceEntity() == NULL ) {
 		SingleView( hud, view );
 		return;
 	} else {
-		int offset =  25 + sinf( gameLocal.time );
-		DoubleVision( hud, view, pct * offset );
+		int offset =  static_cast<int>(25 + sin(static_cast<float>(gameLocal.time)));
+		DoubleVision( hud, view, static_cast<int>(pct * offset) );
 	}
 }
 
@@ -696,27 +765,365 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 idPlayerView::RenderPlayerView
 ===================
 */
-void idPlayerView::RenderPlayerView( idUserInterface *hud ) {
+void idPlayerView::RenderPlayerView( idUserInterface *hud )
+{
 	const renderView_t *view = player->GetRenderView();
 
-	if ( g_skipViewEffects.GetBool() ) {
+	if(g_skipViewEffects.GetBool())
+	{
 		SingleView( hud, view );
 	} else {
-		if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
-			InfluenceVision( hud, view );
+
+		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
+		InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
-			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
-		} else if ( player->PowerUpActive( BERSERK ) ) {
-			BerserkVision( hud, view );
-		} else {
-			SingleView( hud, view );
+		DoubleVision( hud, view, dvFinishTime - gameLocal.time );
+		} else {*/
+
+		// greebo: For underwater effects, use the Doom3 Doubleview
+		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+		{
+			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
 		}
+		else
+		{
+			// Do not postprocess the HUD
+			// 			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+			// 			{
+			// 				SingleView( hud, view );
+			// 			}
+			// 			else
+			{
+				SingleView( hud, view, false );
+			}
+		}
+		//}
+
+		// Bloom related - J.C.Denton
+		/* Update  post-process */
+		this->m_postProcessManager.Update();
+
 		ScreenFade();
 	}
 
-	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
+	player->DrawHUD(hud);
+
+
+	// TDM Ambient Method checking. By Dram
+	// Modified by JC Denton
+	if ( cv_ambient_method.IsModified() ) // If the ambient method option has changed
+	{
+		UpdateAmbientLight();
+	}
+}
+
+void idPlayerView::UpdateAmbientLight()
+{
+	// Finds a light with name set as ambient_world, or turns the ambient light with greatest radius into main ambient.
+	idLight* pAmbientLight = gameLocal.FindMainAmbientLight(true);
+
+	if (pAmbientLight != NULL) // If the light exists
+	{
+		if ( 0 == cv_ambient_method.GetInteger() ) // If the Ambient Light method is used
+		{
+			gameLocal.globalShaderParms[5] = 0;										// Make sure we set this flag to 0 so that materials know which pass is to be enabled.
+			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
+			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
+			gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
+
+			pAmbientLight->On(); // Turn on ambient light
+		}
+		else // If the Texture Brightness method is used
+		{
+
+			gameLocal.globalShaderParms[5] = Min( 2, Max (1, cv_ambient_method.GetInteger() ) );
+			idVec3 ambient_color = pAmbientLight->spawnArgs.GetVector( "_color" );				 // Get the ambient color from the spawn arguments
+			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
+			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
+			gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
+
+			pAmbientLight->Off(); // Turn off ambient light
+
+		}
+	}
+	else // The ambient light does not exist
+	{
+		gameLocal.Printf( "Note: The main ambient light could not be determined\n"); // Show in console of light not existing in map
+	}
+	cv_ambient_method.ClearModified();
+	// Clean this up later since not needed. JC Denton
+	// 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
+}
+
+
+/*
+===================
+idPlayerView::dnPostProcessManager Class Definitions - JC Denton
+===================
+*/
+
+idPlayerView::dnPostProcessManager::dnPostProcessManager():
+m_imageCurrentRender				( "_currentRender"			),
+m_imageBloom						( "_bloomImage"				),
+m_imageCookedMath					( "_cookedMath"				),
+
+m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPassOptimized" )		),
+m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
+m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
+//m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
+m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOptimized" )	),
+
+m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
+m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		)
+{
+
+	m_iScreenHeight = m_iScreenWidth = 0;
+	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
+	m_nFramesToUpdateCookedData = 0;
+
+	// Initialize once this object is created.	
+	this->Initialize();
+
+	SH_ADD_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
+
+}
+
+ idPlayerView::dnPostProcessManager::~dnPostProcessManager()
+ {
+ 	// Remove Source Hook before closing. 
+	 SH_REMOVE_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
+ }
+
+ void idPlayerView::dnPostProcessManager::Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText )
+ {
+	 // Using idStr::FindText to make sure that we account for trailing white spaces. However, even an invalid command 
+	 // e.g. like "reloadImagesADEAW" would update the cooked data, but that should not be a problem.
+	 if( NULL != a_pcText && 
+		( 0 == idStr::FindText( a_pcText, "reloadimages", false ) || 0 == idStr::FindText(a_pcText, "vid_restart", false ) || 0 == idStr::FindText(a_pcText, "image_anisotropy", false ) )
+		 )
+	 {
+	 
+		 m_nFramesToUpdateCookedData = 1;
+		 if( r_postprocess.GetBool() )
+			gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData  );
+		 else
+			 gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_postprocess is enabled.\n", m_nFramesToUpdateCookedData  );
+	 }
+
+	 RETURN_META(MRES_IGNORED );
+ }
+
+void idPlayerView::dnPostProcessManager::Initialize()
+{
+	m_bForceUpdateOnCookedData = true;
+	r_postprocess_bloomKernelSize.SetModified(); // This will print message in console about bloom kernel size. 
+}
+
+void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
+{
+
+	if( m_nFramesToUpdateCookedData > 0 )
+	{
+		m_nFramesToUpdateCookedData --;
+		m_bForceUpdateOnCookedData = true;
+		return;
+	}
+
+	if (	m_bForceUpdateOnCookedData || 
+			r_postprocess_colorCurveBias.IsModified() || r_postprocess_brightPassOffset.IsModified()	|| 
+			r_postprocess_brightPassThreshold.IsModified() || r_postprocess_sceneExposure.IsModified()	||
+			r_postprocess_sceneGamma.IsModified() || r_postprocess_colorCorrection.IsModified()			||
+			r_postprocess_colorCorrectBias.IsModified()
+		)
+	{
+
+		if( m_bForceUpdateOnCookedData )
+			gameLocal.Printf( "Forcing an update on cooked math data.\n" );
+
+		gameLocal.Printf( "Cooking math data please wait...\n" );
+
+		//------------------------------------------------------------------------
+		// Crop backbuffer image to the size of our cooked math image
+		//------------------------------------------------------------------------
+		renderSystem->CropRenderSize(256, 1, true);
+		//------------------------------------------------------------------------
+
+		//------------------------------------------------------------------------
+		// Cook math Pass 1 
+		//------------------------------------------------------------------------
+		renderSystem->SetColor4( r_postprocess_colorCurveBias.GetFloat(), r_postprocess_sceneGamma.GetFloat(), r_postprocess_sceneExposure.GetFloat(), 1.0f );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
+		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+
+		//------------------------------------------------------------------------
+		// Cook math Pass 2 
+		//------------------------------------------------------------------------
+		float fColorCurveBias = Max ( Min ( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
+ 		renderSystem->SetColor4( r_postprocess_brightPassThreshold.GetFloat(), r_postprocess_brightPassOffset.GetFloat(), r_postprocess_colorCorrection.GetFloat(), fColorCurveBias );
+ 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
+ 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
+
+		//------------------------------------------------------------------------
+		renderSystem->UnCrop();
+		//------------------------------------------------------------------------
+		r_postprocess_colorCurveBias.ClearModified(); 
+		r_postprocess_brightPassOffset.ClearModified();
+		r_postprocess_brightPassThreshold.ClearModified();
+		r_postprocess_sceneExposure.ClearModified();
+		r_postprocess_sceneGamma.ClearModified();
+		r_postprocess_colorCorrection.ClearModified();
+		r_postprocess_colorCorrectBias.ClearModified();
+
+		m_bForceUpdateOnCookedData = false;
+
+		gameLocal.Printf( "Cooking complete.\n" );
+
+		//gameLocal.Printf( "Screen size: %d, %d Power of 2 Size: %d, %d", m_iScreenWidth, m_iScreenHeight, m_iScreenWidthPowOf2, m_iScreenHeightPowOf2 );
+	}
+}
+
+
+void idPlayerView::dnPostProcessManager::Update( void )
+{
+	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
+
+	if( r_postprocess_bloomKernelSize.IsModified() )
+	{
+		gameLocal.Printf(" Bloom Kernel size is set to: %s \n", fBloomImageDownScale == 2.0f ? "Large": "Small" );
+		r_postprocess_bloomKernelSize.ClearModified();
+	}
+
+	// Check the interaction.vfp settings
+	if( cv_interaction_vfp_type.IsModified() )
+	{
+		this->UpdateInteractionShader();
+		cv_interaction_vfp_type.ClearModified();
+	}
+
+	const int iPostProcessType = r_postprocess.GetInteger();
+
+	if ( iPostProcessType != 0 ) 
+	{
+		this->UpdateBackBufferParameters();
+
+		// Note to self1: CropRenderSize if not used before CaptureRenderToImage, then image caputured is of screen's size(non power of two) 
+		// Note to self2: CropRenderSize when used with dimensions greater than backbuffer res, automatically crops screen to res <= backbuffer res.
+
+		renderSystem->CaptureRenderToImage( m_imageCurrentRender );
+
+		this->UpdateCookedData();
+
+		const float fBloomIntensity = r_postprocess_bloomIntensity.GetFloat();
+		
+		if( fBloomIntensity > 0.0f )
+		{
+			//-------------------------------------------------
+			// Apply the bright-pass filter to acquire bloom image
+			//-------------------------------------------------
+			renderSystem->CropRenderSize(m_iScreenWidthPowOf2/fBloomImageDownScale, m_iScreenHeightPowOf2/fBloomImageDownScale, true);
+
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
+			renderSystem->CaptureRenderToImage( m_imageBloom );
+
+			//-------------------------------------------------
+			// Apply Gaussian Smoothing to create bloom
+			//-------------------------------------------------
+
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidthPowOf2, 1.0f, 1.0f, 1.0f );			 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
+			renderSystem->CaptureRenderToImage( m_imageBloom );
+			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeightPowOf2, 1.0f, 1.0f, 1.0f );		 
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
+
+			renderSystem->CaptureRenderToImage( m_imageBloom );
+			renderSystem->UnCrop();
+			//---------------------
+
+		}
+
+		//-------------------------------------------------
+		// Calculate and Render Final Image
+		//-------------------------------------------------
+		float fDesaturation = Max ( Min ( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
+		renderSystem->SetColor4( fBloomIntensity, fDesaturation, 1.0f, 1.0f );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
+		//-------------------------------------------------
+
+		this->RenderDebugTextures();
+	}
+}
+
+void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
+{
+	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
+	if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
+	{
+		m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
+
+		// This should probably fix the ATI issue...
+		renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
+
+		//assert( iScreenWidth != 0 && iScreenHeight != 0 );
+
+		while( m_iScreenWidthPowOf2 < m_iScreenWidth ) {
+			m_iScreenWidthPowOf2 <<= 1;
+		}
+		while( m_iScreenHeightPowOf2 < m_iScreenHeight ) {
+			m_iScreenHeightPowOf2 <<= 1;
+		}
+		m_fShiftScale_x = m_iScreenWidth  / (float)m_iScreenWidthPowOf2;
+		m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
+	}
+}
+
+void idPlayerView::dnPostProcessManager::RenderDebugTextures()
+{
+	const int iDebugTexture = r_postprocess_debugMode.GetInteger();
+
+	if( 0 < iDebugTexture && 4 > iDebugTexture ) 
+	{
+		struct {
+			dnImageWrapper *m_pImage;
+			float m_fShiftScaleX, m_fShiftScaleY;
+		} 
+		const arrStretchedImages[3] = { 
+				{&m_imageCurrentRender,	m_fShiftScale_x, m_fShiftScale_y },
+				{&m_imageBloom,			m_fShiftScale_x, m_fShiftScale_y },
+				{&m_imageCookedMath,	1.0f, 1.0f},
+		};
+		
+		int i = iDebugTexture - 1;
+
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
-	}	
+ 			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 
+				arrStretchedImages[i].m_fShiftScaleY, arrStretchedImages[i].m_fShiftScaleX, 0, 
+				*arrStretchedImages[i].m_pImage );
+	}
+}
+
+// Moved Greebo's method from gameLocal to here. - J.C.Denton
+// The CVar is rendering related and from now on, would work when g_stoptime is set to 0
+
+void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
+{
+	// Check the CVARs
+	switch (cv_interaction_vfp_type.GetInteger())
+	{
+	case 0: // Doom 3's default interaction shader
+		gameLocal.Printf("Using default interaction.vfp\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
+		break;
+
+	case 1: // JC Denton's enhanced interaction
+		gameLocal.Printf("Using TDM's enhanced interaction\n");
+		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
+		break;
+
+	default:
+		gameLocal.Warning("Unknown interaction type setting found, reverting to enhanced standard.");
+		cv_interaction_vfp_type.SetInteger(0);
+		this->UpdateInteractionShader();
+	};
 }
 

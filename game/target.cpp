@@ -1,30 +1,15 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 
 Invisible entities that affect other entities or the world when activated.
@@ -34,7 +19,13 @@ Invisible entities that affect other entities or the world when activated.
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/Missions/MissionManager.h"
+#include "../DarkMod/AI/Conversation/ConversationSystem.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -334,7 +325,7 @@ void idTarget_SetShaderParm::Event_Activate( idEntity *activator ) {
 				}
 			}
 			if (spawnArgs.GetBool("toggle") && (value == 0 || value == 1)) {
-				int val = value;
+				int val = static_cast<int>(value);
 				val ^= 1;
 				value = val;
 				spawnArgs.SetFloat(va("shaderParm%d", parmnum), value);
@@ -631,42 +622,6 @@ void idTarget_Give::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveEmail )
-EVENT( EV_Activate,				idTarget_GiveEmail::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Spawn
-================
-*/
-void idTarget_GiveEmail::Spawn( void ) {
-}
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveEmail::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	const idDeclPDA *pda = player->GetPDA();
-	if ( pda ) {
-		player->GiveEmail( spawnArgs.GetString( "email" ) );
-	} else {
-		player->ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_PDANeeded" ), true );
-	}
-}
-
-
-/*
-===============================================================================
-
 idTarget_SetModel
 
 ===============================================================================
@@ -873,7 +828,7 @@ idTarget_SetInfluence::Event_Flash
 */
 void idTarget_SetInfluence::Event_Flash( float flash, int out ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->playerView.Fade( idVec4( 1, 1, 1, 1 ), flash );
+	player->playerView.Fade( idVec4( 1, 1, 1, 1 ), static_cast<int>(flash) );
 	const idSoundShader *shader = NULL;
 	if ( !out && flashInSound.Length() ){
 		shader = declManager->FindSound( flashInSound );
@@ -893,7 +848,7 @@ idTarget_SetInfluence::Event_ClearFlash
 */
 void idTarget_SetInfluence::Event_ClearFlash( float flash ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->playerView.Fade( vec4_zero , flash );		
+	player->playerView.Fade( vec4_zero , static_cast<int>(flash) );
 }
 /*
 ================
@@ -904,7 +859,7 @@ void idTarget_SetInfluence::Event_GatherEntities() {
 	int i, listedEntities;
 	idEntity *entityList[ MAX_GENTITIES ];
 
-	bool demonicOnly = spawnArgs.GetBool( "effect_demonic" );
+//	bool demonicOnly = spawnArgs.GetBool( "effect_demonic" );
 	bool lights = spawnArgs.GetBool( "effect_lights" );
 	bool sounds = spawnArgs.GetBool( "effect_sounds" );
 	bool guis = spawnArgs.GetBool( "effect_guis" );
@@ -1155,7 +1110,7 @@ void idTarget_SetInfluence::Event_RestoreInfluence() {
 	}
 
 	if ( switchToCamera ) {
-		switchToCamera->PostEventMS( &EV_Activate, 0.0f, this );
+		switchToCamera->PostEventMS( &EV_Activate, 0, this );
 	}
 
 	for ( i = 0; i < genericList.Num(); i++ ) {
@@ -1314,9 +1269,9 @@ void idTarget_SetFov::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( setting );
 	fovSetting.SetDuration( setting );
 	savefile->ReadFloat( setting );
-	fovSetting.SetStartValue( setting );
+	fovSetting.SetStartValue( static_cast<int>(setting) );
 	savefile->ReadFloat( setting );
-	fovSetting.SetEndValue( setting );
+	fovSetting.SetEndValue( static_cast<int>(setting) );
 
 	fovSetting.GetCurrentValue( gameLocal.time );
 }
@@ -1331,7 +1286,7 @@ void idTarget_SetFov::Event_Activate( idEntity *activator ) {
 	cinematic = true;
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	fovSetting.Init( gameLocal.time, SEC2MS( spawnArgs.GetFloat( "time" ) ), player ? player->DefaultFov() : g_fov.GetFloat(), spawnArgs.GetFloat( "fov" ) );
+	fovSetting.Init( gameLocal.time, SEC2MS( spawnArgs.GetFloat( "time" ) ), static_cast<int>(player ? player->DefaultFov() : g_fov.GetFloat()), static_cast<int>(spawnArgs.GetFloat( "fov" )) );
 	BecomeActive( TH_THINK );
 }
 
@@ -1353,70 +1308,26 @@ void idTarget_SetFov::Think( void ) {
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_SetPrimaryObjective )
-	EVENT( EV_Activate,	idTarget_SetPrimaryObjective::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_SetPrimaryObjective::Event_Activate
-================
-*/
-void idTarget_SetPrimaryObjective::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player && player->objectiveSystem ) {
-		player->objectiveSystem->SetStateString( "missionobjective", spawnArgs.GetString( "text", common->GetLanguageDict()->GetString( "#str_04253" ) ) );
-	}
-}
-
-/*
-===============================================================================
-
-idTarget_LockDoor
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_LockDoor )
-	EVENT( EV_Activate,	idTarget_LockDoor::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_LockDoor::Event_Activate
-================
-*/
-void idTarget_LockDoor::Event_Activate( idEntity *activator ) {
-	int i;
-	idEntity *ent;
-	int lock;
-
-	lock = spawnArgs.GetInt( "locked", "1" );
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent && ent->IsType( idDoor::Type ) ) {
-			if ( static_cast<idDoor *>( ent )->IsLocked() ) {
-				static_cast<idDoor *>( ent )->Lock( 0 );
-			} else {
-				static_cast<idDoor *>( ent )->Lock( lock );
-			}
-		}
-	}
-}
-
 /*
 ===============================================================================
 
 idTarget_CallObjectFunction
+
+Tels:
+
+If "pass_self" is true, the first argument of the called object function is the
+triggered entity. This is useful for teleportTo(target), for instance.
+
+If "pass_activator" is true, the first argument of the called object function
+is the entity that caused the trigger.
+This is useful for atdm:voice, for instance.
+
+If "pass_self" and "pass_activator" are true, then the order of arguments 
+is first "target", then as second argument "activator".
+
+Note that the method you want to call needs to have exactly the number
+of arguments, e.g. zero (pass_self and pass_activator false), 1 (pass_self
+or pass_activator true) or two (both are true).
 
 ===============================================================================
 */
@@ -1437,7 +1348,22 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 	const char			*funcName;
 	idThread			*thread;
 
-	funcName = spawnArgs.GetString( "call" );
+	funcName  = spawnArgs.GetString( "call" );
+	// we delay each post by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
+	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+	float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
+	float delay			= spawnArgs.GetFloat ( "delay", "0");
+	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+	bool pass_activator	= spawnArgs.GetBool  ( "pass_activator", "0");
+
+	// avoid a negative delay
+	if (wait < 0) { wait = 0; }
+	if (delay < 0) { delay = 0; }
+	// wait_add can be negative, we will later make sure that wait is never negative
+	//
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Calling object function %s on %i targets.\r", name.c_str(), funcName, targets.Num() );
+
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( ent && ent->scriptObject.HasObject() ) {
@@ -1445,18 +1371,190 @@ void idTarget_CallObjectFunction::Event_Activate( idEntity *activator ) {
 			if ( !func ) {
 				gameLocal.Error( "Function '%s' not found on entity '%s' for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
-			if ( func->type->NumParameters() != 1 ) {
+			int numParams = 1;
+			if (pass_self) { numParams ++; }
+			if (pass_activator) { numParams ++; }
+
+			if ( func->type->NumParameters() != numParams ) {
 				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
 			if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
 				gameLocal.Error( "Function '%s' on entity '%s' is the wrong type for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
 			}
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Starting call for target #%i\r", i);
 			// create a thread and call the function
 			thread = new idThread();
-			thread->CallFunction( ent, func, true );
-			thread->Start();
+			if (numParams == 1) {
+				thread->CallFunction( ent, func, true );
+			} else if (numParams == 2) {
+				if (pass_self) {
+					thread->CallFunctionArgs( func, true, "ee", ent, this );
+				} else {
+					thread->CallFunctionArgs( func, true, "ee", ent, activator );
+				}
+			} else { // if (numParams == 3) {
+				thread->CallFunctionArgs( func, true, "eee", ent, this, activator );
+			}
+			thread->DelayedStart( delay );
+
+			delay += wait;
+			wait += wait_add;
+			wait *= wait_mul;
+			// avoid a negative delay
+			if (wait < 0) { wait = 0; }
+		}
+		else
+		{
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity or no script object on target #%i.\r", i );
 		}
 	}
+}
+
+/*
+===============================================================================
+
+Tels idTarget_PostScriptEvent
+
+This locks up the named event and then posts it with the specified "delay"
+for each target. The delay is increased for each target as specified with
+the "wait" spawnarg.
+
+If "pass_self" is true, the first argument of the posted event is the
+triggered entity. This is useful for target->teleportTo(triggeredEntity).
+
+If "pass_activator" is true, the first argument of the posted event is the
+entity that activated the trigger. This is useful for target->AddItemToInv(activator).
+
+If "propagate_to_team" is true, then the event will be posted to all members
+of the team that the target is a member of. Useful for posting events
+to entites that have other entities bound to them like holders with lights.
+
+In case the named event cannot be found, this tries to call the script
+object function on each target entity, provided the entity in question
+has a script object (if not, a warning is issued) and the method
+there exists (if not, an error is thrown).
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTarget, idTarget_PostScriptEvent )
+	EVENT( EV_Activate,	idTarget_PostScriptEvent::Event_Activate )
+END_CLASS
+
+void idTarget_PostScriptEvent::TryPostOrCall( idEntity *ent, idEntity *activator, const idEventDef *ev, const char* funcName, const bool pass_self, const bool pass_activator, const float delay)
+{
+	const function_t	*func;
+
+	if (ev) {
+		if (pass_self) {
+			ent->PostEventSec( ev, delay, this );
+		}
+		else if (pass_activator && !pass_self) {
+			ent->PostEventSec( ev, delay, activator );
+		} else {
+			// both pass_self and pass_activator
+			ent->PostEventSec( ev, delay, this, activator );
+		}
+	} else {
+		// try the script object function
+		if ( ent->scriptObject.HasObject() ) {
+			func = ent->scriptObject.GetFunction( funcName );
+			if ( !func ) {
+				gameLocal.Error( "Function '%s' not found on entity '%s' for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+			int numParams = 1;
+			if (pass_self || pass_activator) { numParams = 2; }
+			if (pass_self && pass_activator) { numParams = 3; }
+
+			if ( func->type->NumParameters() != numParams ) {
+				gameLocal.Error( "Function '%s' on entity '%s' has the wrong number of parameters for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+
+			if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
+				gameLocal.Error( "Function '%s' on entity '%s' is the wrong type for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+			}
+
+			// create a thread and call the function
+			idThread *thread = new idThread();
+			if (numParams == 1) {
+				thread->CallFunction( ent, func, true );
+			} else if (numParams == 2) {
+				thread->CallFunctionArgs( func, true, "ee", ent, this );
+			} else {
+				thread->CallFunctionArgs( func, true, "eee", ent, this, activator );
+			}
+			thread->DelayedStart( delay );
+		}
+		else
+		{
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No script object on target %s.\r", ent->name.c_str() );
+		}
+	}
+}
+
+/*
+================
+idTarget_PostScriptEvent::Event_Activate
+================
+*/
+
+void idTarget_PostScriptEvent::Event_Activate( idEntity *activator ) {
+	int					i;
+	idEntity			*ent;
+	idEntity			*NextEnt;
+
+	// we delay each post by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
+	float wait			= spawnArgs.GetFloat ( "wait", "0");
+	float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+	float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
+	float delay			= spawnArgs.GetFloat ( "delay", "0");
+	const char* evName	= spawnArgs.GetString( "event" );
+	bool pass_self		= spawnArgs.GetBool  ( "pass_self", "0");
+	bool pass_activator	= spawnArgs.GetBool  ( "pass_activator", "0");
+	bool do_team		= spawnArgs.GetBool  ( "propagate_to_team", "0");
+
+	// avoid a negative delay
+	if (wait < 0) { wait = 0; }
+	if (delay < 0) { delay = 0; }
+	// wait_add can be negative, we will later make sure that wait is never negative
+
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("%s: Posting event %s on %i targets (team: %i, pass_self: %i).\r", name.c_str(), evName, targets.Num(), do_team, pass_self );
+	const idEventDef *ev = idEventDef::FindEvent( evName );
+
+	if ( !ev ) {
+		gameLocal.Error( "Unknown event '%s' on entity '%s'", evName, name.c_str() );
+	}
+
+	for( i = 0; i < targets.Num(); i++ ) {
+		ent = targets[ i ].GetEntity();
+
+		if (!ent) { continue; }
+
+		// DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Posting event on target #%i.\r", i);
+		if (do_team) {
+			NextEnt = ent;
+			idEntity* bind_master = ent->GetBindMaster();
+			if (bind_master) {
+				NextEnt = bind_master;
+			}
+    
+			while ( NextEnt != NULL ) {	
+				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING(" Posting event on team member %s of target #%i.\r", NextEnt->GetName(), i);
+				TryPostOrCall( NextEnt, activator, ev, evName, pass_self, pass_activator, delay);
+				/* get next Team member */
+				NextEnt = NextEnt->GetNextTeamEntity();
+			}
+
+		} else {
+			// we should post only to the target directly
+			TryPostOrCall( ent, activator, ev, evName, pass_self, pass_activator, delay);
+		}
+
+		delay += wait;
+		wait += wait_add;
+		wait *= wait_mul;
+		// avoid a negative delay
+		if (wait < 0) { wait = 0; }
+	}	// end for all targets
 }
 
 
@@ -1505,132 +1603,6 @@ void idTarget_EnableLevelWeapons::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idTarget_Tip
-
-===============================================================================
-*/
-
-const idEventDef EV_TipOff( "<TipOff>" );
-extern const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
-
-CLASS_DECLARATION( idTarget, idTarget_Tip )
-	EVENT( EV_Activate,		idTarget_Tip::Event_Activate )
-	EVENT( EV_TipOff,		idTarget_Tip::Event_TipOff )
-	EVENT( EV_GetPlayerPos,	idTarget_Tip::Event_GetPlayerPos )
-END_CLASS
-
-
-/*
-================
-idTarget_Tip::idTarget_Tip
-================
-*/
-idTarget_Tip::idTarget_Tip( void ) {
-	playerPos.Zero();
-}
-
-/*
-================
-idTarget_Tip::Spawn
-================
-*/
-void idTarget_Tip::Spawn( void ) {
-}
-
-/*
-================
-idTarget_Tip::Save
-================
-*/
-void idTarget_Tip::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( playerPos );
-}
-
-/*
-================
-idTarget_Tip::Restore
-================
-*/
-void idTarget_Tip::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( playerPos );
-}
-
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
-void idTarget_Tip::Event_GetPlayerPos( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		playerPos = player->GetPhysics()->GetOrigin();
-		PostEventMS( &EV_TipOff, 100 );
-	}
-}
-
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
-void idTarget_Tip::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		if ( player->IsTipVisible() ) {
-			PostEventSec( &EV_Activate, 5.1f, activator );
-			return;
-		}
-		player->ShowTip( spawnArgs.GetString( "text_title" ), spawnArgs.GetString( "text_tip" ), false );
-		PostEventMS( &EV_GetPlayerPos, 2000 );
-	}
-}
-
-/*
-================
-idTarget_Tip::Event_TipOff
-================
-*/
-void idTarget_Tip::Event_TipOff( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		idVec3 v = player->GetPhysics()->GetOrigin() - playerPos;
-		if ( v.Length() > 96.0f ) {
-			player->HideTip();
-		} else {
-			PostEventMS( &EV_TipOff, 100 );
-		}
-	}
-}
-
-
-/*
-===============================================================================
-
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveSecurity )
-EVENT( EV_Activate,	idTarget_GiveSecurity::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveSecurity::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
-	}
-}
-
-
-/*
-===============================================================================
-
 idTarget_RemoveWeapons
 
 ===============================================================================
@@ -1659,63 +1631,6 @@ void idTarget_RemoveWeapons::Event_Activate( idEntity *activator ) {
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_LevelTrigger
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_LevelTrigger )
-EVENT( EV_Activate,	idTarget_LevelTrigger::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_LevelTrigger::Event_Activate
-================
-*/
-void idTarget_LevelTrigger::Event_Activate( idEntity *activator ) {
-	for( int i = 0; i < gameLocal.numClients; i++ ) {
-		if ( gameLocal.entities[ i ] ) {
-			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-			player->SetLevelTrigger( spawnArgs.GetString( "levelName" ), spawnArgs.GetString( "triggerName" ) );
-		}
-	}
-}
-
-
-/*
-===============================================================================
-
-idTarget_EnableStamina
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_EnableStamina )
-EVENT( EV_Activate,	idTarget_EnableStamina::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_EnableStamina::Event_Activate
-================
-*/
-void idTarget_EnableStamina::Event_Activate( idEntity *activator ) {
-	for( int i = 0; i < gameLocal.numClients; i++ ) {
-		if ( gameLocal.entities[ i ] ) {
-			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-			if ( spawnArgs.GetBool( "enable" ) ) {
-				pm_stamina.SetFloat( player->spawnArgs.GetFloat( "pm_stamina" ) );
-			} else {
-				pm_stamina.SetFloat( 0.0f );
-			}
-		}
-	}
-}
 
 /*
 ===============================================================================
@@ -1758,8 +1673,592 @@ idTarget_FadeSoundClass::Event_RestoreVolume
 void idTarget_FadeSoundClass::Event_RestoreVolume() {
 	float fadeTime = spawnArgs.GetFloat( "fadeTime" );
 	float fadeDB = spawnArgs.GetFloat( "fadeDB" );
-	int fadeClass = spawnArgs.GetInt( "fadeClass" );
+//	int fadeClass = spawnArgs.GetInt( "fadeClass" );
 	// restore volume
 	gameSoundWorld->FadeSoundClasses( 0, fadeDB, fadeTime );
 }
 
+/*
+===============================================================================
+
+CTarget_AddObjectives
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_AddObjectives )
+	EVENT( EV_Activate,	CTarget_AddObjectives::Event_Activate )
+END_CLASS
+
+void CTarget_AddObjectives::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+		PostEventMS( &EV_Activate, 0, this );
+}
+
+void CTarget_AddObjectives::Event_Activate( idEntity *activator )
+{
+	int SetVal(-1);
+
+	if( gameLocal.m_MissionData )
+	{
+		SetVal = gameLocal.m_MissionData->AddObjsFromEnt( this );
+	}
+
+	// greebo: If the entity is not the world entity, notify the player
+	if (spawnArgs.GetBool("wait_for_trigger") && activator != gameLocal.world)
+	{
+		gameLocal.m_MissionData->Event_NewObjective();
+	}
+
+	spawnArgs.Set( "obj_num_offset", va("%d", SetVal) );
+}
+
+/*
+===============================================================================
+
+CTarget_SetObjectiveState
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetObjectiveState )
+	EVENT( EV_Activate,	CTarget_SetObjectiveState::Event_Activate )
+END_CLASS
+
+void CTarget_SetObjectiveState::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+	{
+		// Immediately fire the activate event, as we 
+		// don't need to wait for a trigger event
+		PostEventMS(&EV_Activate, 0, this);
+	}
+}
+
+void CTarget_SetObjectiveState::Event_Activate( idEntity *activator )
+{
+	// greebo: Get the state we should set the objectives to
+	int state = spawnArgs.GetInt("obj_state", "0");
+
+	// Find all values that match the given prefix
+	const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id");
+	
+	// greebo: Cycle through all matching spawnargs
+	while (keyVal != NULL) {
+		int objId = atoi(keyVal->GetValue().c_str());
+
+		if (objId > 0) {
+			// "Unlock" the objective first, if desired
+			if (spawnArgs.GetBool("unlatch_irreversible_objectives", "1"))
+			{
+				gameLocal.m_MissionData->UnlatchObjective(objId-1);
+			}
+
+			// Now set the completion state
+			gameLocal.m_MissionData->SetCompletionState(objId-1, state);
+		}
+		else {
+			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+		}
+
+		// greebo: Lookup the next matching spawnarg
+		keyVal = spawnArgs.MatchPrefix("obj_id", keyVal);
+	}
+}
+
+/*
+===============================================================================
+
+CTarget_SetObjectiveVisibility
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetObjectiveVisibility )
+	EVENT( EV_Activate,	CTarget_SetObjectiveVisibility::Event_Activate )
+END_CLASS
+
+void CTarget_SetObjectiveVisibility::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+	{
+		// Immediately fire the activate event, as we 
+		// don't need to wait for a trigger event
+		PostEventMS(&EV_Activate, 0, this);
+	}
+}
+
+void CTarget_SetObjectiveVisibility::Event_Activate( idEntity *activator )
+{
+	// Get the visibility we should set the objectives to
+	bool bVisible = spawnArgs.GetBool("obj_visibility", "0");
+
+	// Find all values that match the given prefix
+	const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id");
+	
+	// Cycle through all matching spawnargs
+	for (const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id"); keyVal != NULL; 
+		 keyVal = spawnArgs.MatchPrefix("obj_id", keyVal)) 
+	{
+		int objId = atoi(keyVal->GetValue().c_str());
+
+		if (objId > 0)
+		{
+			gameLocal.m_MissionData->SetObjectiveVisibility(objId - 1, bVisible);
+		}
+		else
+		{
+			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+			DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+		}
+	}
+}
+
+/*
+===============================================================================
+
+CTarget_SetObjectiveComponentState
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetObjectiveComponentState )
+	EVENT( EV_Activate,	CTarget_SetObjectiveComponentState::Event_Activate )
+END_CLASS
+
+void CTarget_SetObjectiveComponentState::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+	{
+		// Immediately fire the activate event, as we 
+		// don't need to wait for a trigger event
+		PostEventMS(&EV_Activate, 0, this);
+	}
+}
+
+void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
+{
+	// Get the state we should set the objectives to
+	bool state = spawnArgs.GetBool("comp_state", "0");
+
+	// Find all values that match the given prefix
+	const idKeyValue* keyVal = spawnArgs.MatchPrefix("comp_id");
+	
+	// Cycle through all matching spawnargs
+	while (keyVal != NULL) 
+	{
+		idStr StringID = keyVal->GetValue();
+		idStr objIDStr(StringID), compIDStr(StringID);
+		
+		objIDStr.StripTrailing(",");
+		compIDStr.StripLeading(",");
+		
+		int objId = atoi( objIDStr.c_str() );
+		int compId = atoi( compIDStr.c_str() );
+
+		if (objId > 0 && compId > 0)
+			gameLocal.m_MissionData->SetComponentState_Ext(objId, compId, state);
+		else
+			gameLocal.Warning("Invalid objective component ID %s on CTarget_SetObjectiveState %s\n", StringID.c_str(), name.c_str());
+
+		// Lookup the next matching spawnarg
+		keyVal = spawnArgs.MatchPrefix("comp_id", keyVal);
+	}
+}
+
+/*
+===============================================================================
+
+CTarget_StartConversation
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_StartConversation )
+	EVENT( EV_Activate,	CTarget_StartConversation::Event_Activate )
+END_CLASS
+
+void CTarget_StartConversation::Spawn( void )
+{
+	if (spawnArgs.FindKey("conversation") == NULL) 
+	{
+		gameLocal.Warning("Target %s has no 'conversation' spawnarg set!", name.c_str());
+		return;
+	}
+}
+
+void CTarget_StartConversation::Event_Activate( idEntity *activator )
+{
+	idStr conversationName = spawnArgs.GetString("conversation");
+
+	if (conversationName.IsEmpty()) 
+	{
+		gameLocal.Printf("Target %s has no 'conversation' spawnarg set!\n", name.c_str());
+		return;
+	}
+
+	// Try to find the conversation
+	int convIndex = gameLocal.m_ConversationSystem->GetConversationIndex(conversationName);
+
+	if (convIndex == -1)
+	{
+		gameLocal.Printf("Target %s references non-existent conversation %s!\n", name.c_str(), conversationName.c_str());
+		return;
+	}
+
+	// Pass the torch to the conversationsystem to do the rest
+	gameLocal.m_ConversationSystem->StartConversation(convIndex);
+}
+
+/*
+===============================================================================
+
+CTarget_SetFrobable
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetFrobable )
+	EVENT( EV_Activate,	CTarget_SetFrobable::Event_Activate )
+END_CLASS
+
+CTarget_SetFrobable::CTarget_SetFrobable( void )
+{
+	m_bCurFrobState = false;
+	m_EntsSetUnfrobable.Clear();
+}
+
+void CTarget_SetFrobable::Spawn( void )
+{
+	spawnArgs.GetBool( "start_frobable", "0", m_bCurFrobState );
+
+	// Set the contents to a useless trigger so that the collision model will be loaded
+	// FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
+	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
+	// Disable the clipmodel for now, only enable when needed
+	GetPhysics()->DisableClip();
+
+	// If we don't start frobable, activate once and set everything to not frobable
+	// This saves the mapper the time of manually setting everything inside not frobable to start out with
+	if( !m_bCurFrobState )
+	{
+		m_bCurFrobState = true;
+		PostEventMS( &EV_Activate, 0, this );
+	}
+}
+
+void CTarget_SetFrobable::Event_Activate( idEntity *activator )
+{
+	idEntity *Ents[MAX_GENTITIES];
+	bool bOnList(false);
+
+	// Contents mask:
+	int cm = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_BODY | CONTENTS_FROBABLE;
+
+	// bounding box test to get entities inside
+	GetPhysics()->EnableClip();
+	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents, MAX_GENTITIES);
+	GetPhysics()->DisableClip();
+
+	// toggle frobability
+	m_bCurFrobState = !m_bCurFrobState;
+	
+	for (int i = 0; i < numEnts; i++)
+	{
+		idEntity* ent = Ents[i];
+
+		// Don't set self or the world, or the player frobable
+		if (ent == NULL || ent == this || 
+			ent == gameLocal.world || ent == gameLocal.GetLocalPlayer())
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("immune_to_target_setfrobable", "0")) 
+		{
+			continue; // greebo: per-entity exclusion
+		}
+
+		if( m_bCurFrobState )
+		{
+			// Before setting something frobable, check if it is on the
+			// list of things we set un-frobable earlier
+			bOnList = false;
+
+			for( int k=0; k < m_EntsSetUnfrobable.Num(); k++ )
+			{
+				if( m_EntsSetUnfrobable[k] == ent->name )
+				{
+					bOnList = true;
+					break;
+				}
+			}
+
+			if( bOnList )
+				ent->SetFrobable( m_bCurFrobState );
+		}
+		else 
+		{	
+			// setting unfrobable
+			if( ent->m_bFrobable )
+			{
+				m_EntsSetUnfrobable.AddUnique( ent->name );
+				ent->SetFrobable( m_bCurFrobState );
+			}
+		}
+
+// Uncomment for debugging
+
+		idStr frobnofrob = "not frobable.";
+		if( m_bCurFrobState )
+			frobnofrob = "frobable.";
+
+		DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_SetFrobable: Set entity %s to frob state: %s\r", Ents[i]->name.c_str(), frobnofrob.c_str() );
+
+	}
+}
+
+void CTarget_SetFrobable::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteBool( m_bCurFrobState );
+
+	savefile->WriteInt( m_EntsSetUnfrobable.Num() );
+	for( int i=0;i < m_EntsSetUnfrobable.Num(); i++ )
+		savefile->WriteString( m_EntsSetUnfrobable[i] );
+}
+
+void CTarget_SetFrobable::Restore( idRestoreGame *savefile )
+{
+	int num;
+
+	savefile->ReadBool( m_bCurFrobState );
+
+	m_EntsSetUnfrobable.Clear();
+	savefile->ReadInt( num );
+	m_EntsSetUnfrobable.SetNum( num );
+	for( int i=0;i < num; i++ )
+		savefile->ReadString( m_EntsSetUnfrobable[i] );
+}
+
+/*
+================
+CTarget_CallScriptFunction
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_CallScriptFunction )
+	EVENT( EV_Activate,	CTarget_CallScriptFunction::Event_Activate )
+END_CLASS
+
+void CTarget_CallScriptFunction::Event_Activate( idEntity *activator )
+{
+	// Get the function name
+	idStr funcName = spawnArgs.GetString("call");
+	if (funcName.IsEmpty())
+	{
+		gameLocal.Warning("Target %s has no script function to call!", name.c_str());
+		return;
+	}
+
+	// Get the function
+	const function_t* scriptFunction = gameLocal.program.FindFunction(funcName);
+	if (scriptFunction == NULL)
+	{
+		// script function not found!
+		gameLocal.Warning("Target %s specifies non-existent script function!", funcName.c_str());
+		return;
+	}
+
+	bool forEach = spawnArgs.GetBool("foreach","0");
+	
+	if (forEach)
+	{
+		// we delay each call by: delay +  (wait + (wait_add * numberOfTarget)) * numberOfTarget
+		float wait			= spawnArgs.GetFloat ( "wait", "0");
+		float wait_add		= spawnArgs.GetFloat ( "wait_add", "0");
+		float wait_mul		= spawnArgs.GetFloat ( "wait_mul", "0");
+		float delay			= spawnArgs.GetFloat ( "delay", "0");
+
+		// avoid a negative delay
+		if (wait < 0) { wait = 0; }
+		if (delay < 0) { delay = 0; }
+		// wait_add can be negative, we will later make sure that wait is never negative
+
+		for(int i = 0; i < targets.Num(); i++ )
+		{
+			idEntity* ent = targets[ i ].GetEntity();
+			if (!ent)
+			{
+				DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("No entity for script call on target #%i.\r", i );
+				continue;
+			}
+
+			// each call in its own thread so they can run in parallel
+			idThread* thread = new idThread();
+			// Call "Foo(target, activator, triggred_entity);"
+			thread->CallFunctionArgs( scriptFunction, true, "eee", ent, activator, this );
+			// and finally start the new thread after "delay" ms:
+			thread->DelayedStart(delay);
+
+			delay += wait;
+			wait += wait_add;
+			wait *= wait_mul;
+			// avoid a negative delay
+			if (wait < 0) { wait = 0; }
+		}
+	}
+	else
+	{
+		idThread* thread = new idThread(scriptFunction);
+		thread->DelayedStart(0);
+	}
+}
+
+/*
+================
+CTarget_ChangeLockState
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_ChangeLockState )
+	EVENT( EV_Activate,	CTarget_ChangeLockState::Event_Activate )
+END_CLASS
+
+void CTarget_ChangeLockState::Event_Activate(idEntity *activator)
+{
+	// Find all targetted frobmovers
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL) continue;
+
+		if (ent->IsType(CBinaryFrobMover::Type))
+		{
+			CBinaryFrobMover* frobMover = static_cast<CBinaryFrobMover*>(ent);
+
+			if (spawnArgs.GetBool("toggle", "0"))
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Toggling lock state of entity %s\r", ent->name.c_str());
+				frobMover->ToggleLock();
+			}
+			else if (spawnArgs.GetBool("unlock", "1"))
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Unlocking entity %s\r", ent->name.c_str());
+				frobMover->Unlock();
+			}
+			else
+			{
+				DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeLockState: Locking entity %s\r", ent->name.c_str());
+				frobMover->Lock();
+			}
+		}
+	}
+}
+
+/*
+================
+CTarget_ChangeTarget
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_ChangeTarget )
+	EVENT( EV_Activate,	CTarget_ChangeTarget::Event_Activate )
+END_CLASS
+
+void CTarget_ChangeTarget::Event_Activate(idEntity *activator)
+{
+	// Get the targetted entities
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL) continue;
+
+		// Let's check if we should remove a target
+		idEntity* removeEnt = gameLocal.FindEntity(spawnArgs.GetString("remove"));
+
+		if (removeEnt != NULL)
+		{
+			DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeTarget: Removing target %s from %s\r", removeEnt->name.c_str(), ent->name.c_str());
+			ent->RemoveTarget(removeEnt);
+		}
+
+		// Let's check if we should add a target (happens after the removal)
+		idEntity* addEnt = gameLocal.FindEntity(spawnArgs.GetString("add"));
+
+		if (addEnt != NULL)
+		{
+			DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_ChangeTarget: Adding target %s to %s\r", addEnt->name.c_str(), ent->name.c_str());
+			ent->AddTarget(addEnt);
+		}
+	}
+}
+
+CLASS_DECLARATION( idTarget, CTarget_InterMissionTrigger )
+	EVENT( EV_Activate,	CTarget_InterMissionTrigger::Event_Activate )
+END_CLASS
+
+void CTarget_InterMissionTrigger::Event_Activate(idEntity* activator)
+{
+	// greebo: Get the target mission number, defaults to the next mission number (which is current+2 to get the 1-based index, see comment below)
+	// We don't care if this is the last mission.
+	int missionNum = spawnArgs.GetInt("mission");
+
+	if (missionNum == 0)
+	{
+		missionNum = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 2;
+	}
+
+	// The mission number is 0-based but the mapper can use 1-based indices for convenience => subtract 1 after reading the spawnarg.
+	missionNum--;
+
+	if (missionNum < 0)
+	{
+		return;
+	}
+	
+	// Get the name of the activating entity, can be overridden by the spawnarg, otherwise defaults to the activator passed in
+	idStr activatorName = spawnArgs.GetString("activator");
+	
+	if (activatorName.IsEmpty() && activator != NULL)
+	{
+		activatorName = activator->name;
+	}
+
+	// Now register an inter-mission trigger for each target spawnarg we find on this entity
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("target"); kv != NULL; kv = spawnArgs.MatchPrefix("target", kv))
+	{
+		const idStr& targetName = kv->GetValue();
+
+		DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Registering Inter-Mission trigger for mission %d, from %s to %s\r", missionNum, activatorName.c_str(), targetName.c_str());
+
+		gameLocal.AddInterMissionTrigger(missionNum, activatorName, targetName);
+	}
+}
+
+/* ************************************** Target setTeam ********************************* */
+
+// Tels: Can be targetted from a trigger and changes the team of all of its targets to the
+// 		 team according to the spawnarg "team". Will also cause the affected actors to re-
+//		 evaluate their targets (so if they "see" someone, they might consider them an
+//		 enemy, or friend now):
+
+CLASS_DECLARATION( idEntity, CTarget_SetTeam )
+	EVENT( EV_Activate,	CTarget_SetTeam::Event_Activate )
+END_CLASS
+
+void CTarget_SetTeam::Event_Activate(idEntity* activator)
+{
+	float newTeam = spawnArgs.GetFloat("team", 0);
+
+	// for all targets
+	int t = targets.Num();
+	for( int i = 0; i < t; i++ )
+	{
+		idEntity *ent = targets[ i ].GetEntity();
+		if ( ent )
+		//if ( ent &&  ent->IsType(idActor::Type) )
+		{
+		//	idActor* actor = static_cast<idActor*>(ent);
+			ent->Event_SetTeam( newTeam );
+		}
+	}
+}	

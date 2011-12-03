@@ -1,37 +1,24 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __AAS_LOCAL_H__
 #define __AAS_LOCAL_H__
 
-#include "AAS.h"
-#include "../Pvs.h"
+#include "aas.h"
+#include "../pvs.h"
+#include "../../DarkMod/AI/EAS/EAS.h"
+#include <map>
 
+class CFrobDoor;
 
 class idRoutingCache {
 	friend class idAASLocal;
@@ -83,12 +70,20 @@ private:
 };
 
 
-class idAASLocal : public idAAS {
+class CMultiStateMover;
+namespace eas { class tdmEAS; }
+
+class idAASLocal : 
+	public idAAS
+{
+	friend class eas::tdmEAS; // TDM's EAS is our friend
+
 public:
 								idAASLocal( void );
 	virtual						~idAASLocal( void );
 	virtual bool				Init( const idStr &mapName, unsigned int mapFileCRC );
 	virtual void				Shutdown( void );
+
 	virtual void				Stats( void ) const;
 	virtual void				Test( const idVec3 &origin );
 	virtual const idAASSettings *GetSettings( void ) const;
@@ -109,19 +104,78 @@ public:
 	virtual aasHandle_t			AddObstacle( const idBounds &bounds );
 	virtual void				RemoveObstacle( const aasHandle_t handle );
 	virtual void				RemoveAllObstacles( void );
-	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags ) const;
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach ) const;
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const;
-	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
+	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, CFrobDoor** firstDoor, idActor* actor ) const;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor );
+	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor) const;
 	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const;
 	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
-	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
+	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin );
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
-	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback, unsigned short maxTravelCost=0 ) const;
+	virtual bool				FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+
+	// Added for DarkMod by SophisticatedZombie(DMH)
+	virtual idBounds			GetAreaBounds (int areaNum) const;
+	virtual int					GetNumAreas() const;
+	virtual idReachability*		GetAreaFirstReachability(int areaNum) const;
+
+	virtual void				SetAreaTravelFlag( int index, int flag );
+
+	virtual void				RemoveAreaTravelFlag( int index, int flag );
+
+	// angua: this returns the cluster number of this area
+	virtual int					GetClusterNum(int areaNum);
+
+	virtual void				ReferenceDoor(CFrobDoor* door, int areaNum);
+	virtual void				DeReferenceDoor(CFrobDoor* door, int areaNum);
+
+	CFrobDoor*					GetDoor(int areaNum) const;
+
+	/*!
+	* See base class for interface definition
+	*/
+	virtual bool BuildReachabilityImpactList
+	(
+		TReachabilityTrackingList& inout_reachabilityList,
+		idBounds impactBounds
+	) const ;
+
+	/*!
+	* See base class for interface definition
+	*/
+	virtual bool TestIfBarrierIsolatesReachability
+	(
+		idReachability* p_reachability,
+		int areaIndex,
+		idBounds barrierBounds
+	) const;
+
+	/**
+	 * greebo: Adds the given elevator to this AAS class. This will add
+	 * additional routing possibilities for AI between clusters.
+	 */
+	virtual void AddElevator(CMultiStateMover* mover);
+
+	/**
+	 * greebo: Assembles the elevator routing information.
+	 */
+	virtual void CompileEAS();
+
+	// Accessor function for the EAS
+	virtual eas::tdmEAS* GetEAS() { return elevatorSystem; }
+
+	// Save/Restore routines
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 
 private:
 	idAASFile *					file;
 	idStr						name;
+
+	typedef std::map<int, CFrobDoor*> DoorMap;
+	DoorMap _doors;
+
 
 private:	// routing data
 	idRoutingCache ***			areaCacheIndex;			// for each area in each cluster the travel times to all other areas in the cluster
@@ -137,6 +191,9 @@ private:	// routing data
 	mutable idRoutingCache *	cacheListEnd;			// end of list with cache sorted from oldest to newest
 	mutable int					totalCacheMemory;		// total cache memory used
 	idList<idRoutingObstacle *>	obstacleList;			// list with obstacles
+
+	// greebo: This is TDM's EAS "Elevator Awareness System" :)
+	eas::tdmEAS*				elevatorSystem;
 
 private:	// routing
 	bool						SetupRouting( void );
@@ -159,19 +216,26 @@ private:	// routing
 	void						UpdatePortalRoutingCache( idRoutingCache *portalCache ) const;
 	idRoutingCache *			GetPortalRoutingCache( int clusterNum, int areaNum, int travelFlags ) const;
 	void						RemoveRoutingCacheUsingArea( int areaNum );
+
+public:
 	void						DisableArea( int areaNum );
 	void						EnableArea( int areaNum );
+
+private:
 	bool						SetAreaState_r( int nodeNum, const idBounds &bounds, const int areaContents, bool disabled );
 	void						GetBoundsAreas_r( int nodeNum, const idBounds &bounds, idList<int> &areas ) const;
 	void						SetObstacleState( const idRoutingObstacle *obstacle, bool enable );
 
+	// returns an area within that cluster (SLOW!), returns -1 if none found
+	int							GetAreaInCluster(int clusterNum);
+
 private:	// pathing
 	bool						EdgeSplitPoint( idVec3 &split, int edgeNum, const idPlane &plane ) const;
 	bool						FloorEdgeSplitPoint( idVec3 &split, int areaNum, const idPlane &splitPlane, const idPlane &frontPlane, bool closest ) const;
-	idVec3						SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum ) const;
+	idVec3						SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum, idActor* actor );
 	idVec3						SubSampleFlyPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum ) const;
 
-private:	// debug
+public:	// debug
 	const idBounds &			DefaultSearchBounds( void ) const;
 	void						DrawCone( const idVec3 &origin, const idVec3 &dir, float radius, const idVec4 &color ) const;
 	void						DrawArea( int areaNum ) const;
@@ -180,10 +244,12 @@ private:	// debug
 	void						DrawReachability( const idReachability *reach ) const;
 	void						ShowArea( const idVec3 &origin ) const;
 	void						ShowWallEdges( const idVec3 &origin ) const;
-	void						ShowHideArea( const idVec3 &origin, int targerAreaNum ) const;
-	bool						PullPlayer( const idVec3 &origin, int toAreaNum ) const;
-	void						RandomPullPlayer( const idVec3 &origin ) const;
+	void						ShowHideArea( const idVec3 &origin, int targerAreaNum );
+	bool						PullPlayer( const idVec3 &origin, int toAreaNum );
+	void						RandomPullPlayer( const idVec3 &origin );
 	void						ShowPushIntoArea( const idVec3 &origin ) const;
+	void						DrawAreas( const idVec3& playerOrigin );
+	void						DrawEASRoute( const idVec3& playerOrigin, int goalArea );
 };
 
 #endif /* !__AAS_LOCAL_H__ */

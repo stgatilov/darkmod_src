@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics, idPhysics_Base )
 END_CLASS
@@ -41,6 +27,11 @@ idPhysics_Base::idPhysics_Base
 */
 idPhysics_Base::idPhysics_Base( void ) {
 	self = NULL;
+#ifdef MOD_WATERPHYSICS
+	water = NULL;	// MOD_WATERPHYSICS
+	m_fWaterMurkiness = 0.0f;
+#endif		// MOD_WATERPHYSICS
+
 	clipMask = 0;
 	SetGravity( gameLocal.GetGravity() );
 	ClearContacts();
@@ -256,6 +247,12 @@ idPhysics_Base::ApplyImpulse
 ================
 */
 void idPhysics_Base::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
+}
+
+// greebo: The default implementation of PropagateImpulse just applies the impulse
+bool idPhysics_Base::PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) {
+	ApplyImpulse(id, point, impulse);
+	return false;
 }
 
 /*
@@ -835,3 +832,104 @@ idPhysics_Base::ReadFromSnapshot
 */
 void idPhysics_Base::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+================
+idPhysics_Base::SetWater
+================
+*/
+void idPhysics_Base::SetWater( idPhysics_Liquid *e, const float m ) {
+/*
+	if (e != this->water)
+	{
+		if (NULL != e)
+		{
+			gameLocal.Printf("Entered water with murkiness %f.\n", m );
+		}
+		else
+		{
+			gameLocal.Printf("Leaving water.\n");
+		}
+	}
+*/
+	this->water = e;
+	this->m_fWaterMurkiness = m;
+}
+
+/*
+================
+idPhysics_Base::GetWater
+================
+*/
+idPhysics_Liquid *idPhysics_Base::GetWater()
+{
+	return this->water;
+}
+
+/*
+================
+idPhysics_Base::GetWaterMurkiness
+================
+*/
+float idPhysics_Base::GetWaterMurkiness() const
+{
+	return this->m_fWaterMurkiness;
+}
+
+/*
+================
+idPhysics_Base::SetWaterLevelf
+
+	Returns 1.0f if the object is in a liquid, 0.0f otherwise.
+
+	If the object's not in a liquid it double checks to make sure it's really not.
+	Normally we only set this->water when an object collides with a water material but
+	what happens if an object spawns inside a liquid or something?  Nothing, it'll just sit
+	there.  This function sets the water level for an object that's already inside the water.
+
+	This was most noticeable when I had monsters walking into the water and of course, they'd 
+	sink to the bottom.  After I'd kill them they'd die normally and not float.  After adding
+	this function they float after they're killed.
+
+================
+*/
+float idPhysics_Base::SetWaterLevelf() {
+	if( this->water == NULL ) {
+		idEntity *e[2];
+		trace_t result;
+		idBounds bounds = this->GetBounds();
+
+		bounds += this->GetOrigin();
+
+		// trace for a water contact
+		// Tels: TODO This additional trace might be expensive because it is done every frame
+		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e,2) ) {
+			if( e[0]->GetPhysics()->IsType(idPhysics_Liquid::Type) ) {
+				SetWater( static_cast<idPhysics_Liquid *>(e[0]->GetPhysics()), e[0]->spawnArgs.GetFloat("murkiness", "0") );
+				return 1.0f;
+			}
+		}
+
+		this->m_fWaterMurkiness = 0.0f;
+		return 0.0f;
+	}
+	else
+		return 1.0f;
+}
+
+/*
+================
+idPhysics_Base::GetWaterLevelf
+
+	The water level for this object, 0.0f if not in the water, 1.0f if in water
+================
+*/
+float idPhysics_Base::GetWaterLevelf() const {
+	if( this->water == NULL )
+		return 0.0f;
+	else
+		return 1.0f;
+}
+
+#endif		// MOD_WATERPHYSICS

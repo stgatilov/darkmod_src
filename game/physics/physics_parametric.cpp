@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Parametric )
 END_CLASS
@@ -428,7 +414,7 @@ idPhysics_Parametric::GetSplineAcceleration
 ================
 */
 int idPhysics_Parametric::GetSplineAcceleration( void ) const {
-	return current.splineInterpolate.GetAcceleration();
+	return static_cast<int>(current.splineInterpolate.GetAcceleration());
 }
 
 /*
@@ -437,7 +423,7 @@ idPhysics_Parametric::GetSplineDeceleration
 ================
 */
 int idPhysics_Parametric::GetSplineDeceleration( void ) const {
-	return current.splineInterpolate.GetDeceleration();
+	return static_cast<int>(current.splineInterpolate.GetDeceleration());
 }
 
 /*
@@ -458,6 +444,10 @@ void idPhysics_Parametric::GetLocalOrigin( idVec3 &curOrigin ) const {
 	curOrigin = current.localOrigin;
 }
 
+const idVec3& idPhysics_Parametric::GetLocalOrigin() const {
+	return current.localOrigin;
+}
+
 /*
 ================
 idPhysics_Parametric::GetLocalAngles
@@ -466,6 +456,37 @@ idPhysics_Parametric::GetLocalAngles
 void idPhysics_Parametric::GetLocalAngles( idAngles &curAngles ) const {
 	curAngles = current.localAngles;
 }
+
+const idAngles& idPhysics_Parametric::GetLocalAngles() const
+{
+	return current.localAngles;
+}
+
+void idPhysics_Parametric::	SetLocalAngles(idAngles curAngles)
+{
+	current.localAngles = curAngles;
+
+	current.angularExtrapolation.SetStartValue( current.localAngles );
+	current.angularInterpolation.SetStartValue( current.localAngles );
+
+	current.localAngles = current.angularExtrapolation.GetCurrentValue( current.time );
+	if ( hasMaster && isOrientated ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
+		self->GetMasterPosition( masterOrigin, masterAxis );
+		current.axis = current.localAngles.ToMat3() * masterAxis;
+		current.angles = current.axis.ToAngles();
+	}
+	else {
+		current.axis = current.localAngles.ToMat3();
+		current.angles = current.localAngles;
+	}
+	if ( clipModel ) {
+		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	}
+	Activate();
+}
+
 
 /*
 ================
@@ -739,14 +760,14 @@ idPhysics_Parametric::SetOrigin
 ================
 */
 void idPhysics_Parametric::SetOrigin( const idVec3 &newOrigin, int id ) {
-	idVec3 masterOrigin;
-	idMat3 masterAxis;
 
 	current.linearExtrapolation.SetStartValue( newOrigin );
 	current.linearInterpolation.SetStartValue( newOrigin );
 
 	current.localOrigin = current.linearExtrapolation.GetCurrentValue( current.time );
 	if ( hasMaster ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
 		self->GetMasterPosition( masterOrigin, masterAxis );
 		current.origin = masterOrigin + current.localOrigin * masterAxis;
 	}
@@ -759,34 +780,35 @@ void idPhysics_Parametric::SetOrigin( const idVec3 &newOrigin, int id ) {
 	Activate();
 }
 
+void idPhysics_Parametric::SetLocalOrigin( const idVec3 &newOrigin) {
+	current.localOrigin = newOrigin;
+	if ( hasMaster ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
+		self->GetMasterPosition( masterOrigin, masterAxis );
+		current.origin = masterOrigin + current.localOrigin * masterAxis;
+	}
+	else {
+		current.origin = current.localOrigin;
+	}
+	if ( clipModel ) {
+		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	}
+
+	current.linearExtrapolation.SetStartValue( current.localOrigin );
+	current.linearInterpolation.SetStartValue( current.localOrigin );
+
+	Activate();
+}
+
+
 /*
 ================
 idPhysics_Parametric::SetAxis
 ================
 */
 void idPhysics_Parametric::SetAxis( const idMat3 &newAxis, int id ) {
-	idVec3 masterOrigin;
-	idMat3 masterAxis;
-
-	current.localAngles = newAxis.ToAngles();
-
-	current.angularExtrapolation.SetStartValue( current.localAngles );
-	current.angularInterpolation.SetStartValue( current.localAngles );
-
-	current.localAngles = current.angularExtrapolation.GetCurrentValue( current.time );
-	if ( hasMaster && isOrientated ) {
-		self->GetMasterPosition( masterOrigin, masterAxis );
-		current.axis = current.localAngles.ToMat3() * masterAxis;
-		current.angles = current.axis.ToAngles();
-	}
-	else {
-		current.axis = current.localAngles.ToMat3();
-		current.angles = current.localAngles;
-	}
-	if ( clipModel ) {
-		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
-	}
-	Activate();
+	SetLocalAngles(newAxis.ToAngles());
 }
 
 /*
@@ -1001,14 +1023,14 @@ idPhysics_Parametric::GetLinearEndTime
 int idPhysics_Parametric::GetLinearEndTime( void ) const {
 	if ( current.spline != NULL ) {
 		if ( current.spline->GetBoundaryType() != idCurve_Spline<idVec3>::BT_CLOSED ) {
-			return current.spline->GetTime( current.spline->GetNumValues() - 1 );
+			return static_cast<int>(current.spline->GetTime( current.spline->GetNumValues() - 1 ));
 		} else {
 			return 0;
 		}
 	} else if ( current.linearInterpolation.GetDuration() != 0 ) {
-		return current.linearInterpolation.GetEndTime();
+		return static_cast<int>(current.linearInterpolation.GetEndTime());
 	} else {
-		return current.linearExtrapolation.GetEndTime();
+		return static_cast<int>(current.linearExtrapolation.GetEndTime());
 	}
 }
 
@@ -1019,9 +1041,9 @@ idPhysics_Parametric::GetAngularEndTime
 */
 int idPhysics_Parametric::GetAngularEndTime( void ) const {
 	if ( current.angularInterpolation.GetDuration() != 0 ) {
-		return current.angularInterpolation.GetEndTime();
+		return static_cast<int>(current.angularInterpolation.GetEndTime());
 	} else {
-		return current.angularExtrapolation.GetEndTime();
+		return static_cast<int>(current.angularExtrapolation.GetEndTime());
 	}
 }
 

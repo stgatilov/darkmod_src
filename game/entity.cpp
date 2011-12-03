@@ -1,35 +1,35 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#pragma warning(disable : 4533 4800)
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/declxdata.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/Objectives/ObjectiveLocation.h"
+#include "../DarkMod/Grabber.h"
+#include "../DarkMod/sndProp.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/Inventory/Inventory.h"
+#include "../DarkMod/Inventory/Cursor.h"
+#include "../DarkMod/AbsenceMarker.h"
+#include "../DarkMod/Objectives/MissionData.h"
 
 /*
 ===============================================================================
@@ -39,20 +39,33 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+// TDM uses entity shaderparm 11 to control frob highlight state
+#define FROB_SHADERPARM 11
+
+// constant to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
+#define NOLOD -100000
+
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", NULL );
 const idEventDef EV_FindTargets( "<findTargets>", NULL );
 const idEventDef EV_Touch( "<touch>", "et" );
 const idEventDef EV_GetName( "getName", NULL, 's' );
 const idEventDef EV_SetName( "setName", "s" );
+const idEventDef EV_IsType ( "isType", "s" , 'd' );
 const idEventDef EV_Activate( "activate", "e" );
 const idEventDef EV_ActivateTargets( "activateTargets", "e" );
+const idEventDef EV_AddTarget( "addTarget", "e" );
+const idEventDef EV_RemoveTarget( "removeTarget", "e" );
 const idEventDef EV_NumTargets( "numTargets", NULL, 'f' );
 const idEventDef EV_GetTarget( "getTarget", "f", 'e' );
 const idEventDef EV_RandomTarget( "randomTarget", "s", 'e' );
 const idEventDef EV_Bind( "bind", "e" );
 const idEventDef EV_BindPosition( "bindPosition", "e" );
 const idEventDef EV_BindToJoint( "bindToJoint", "esf" );
+const idEventDef EV_BindToBody( "bindToBody", "edd" );
+const idEventDef EV_GetBindMaster( "getBindMaster", NULL, 'e' );
+const idEventDef EV_NumBindChildren( "numBindChildren", NULL, 'd' );
+const idEventDef EV_GetBindChild( "getBindChild", "d", 'e' );
 const idEventDef EV_Unbind( "unbind", NULL );
 const idEventDef EV_RemoveBinds( "removeBinds" );
 const idEventDef EV_SpawnBind( "<spawnbind>", NULL );
@@ -69,6 +82,12 @@ const idEventDef EV_GetLinearVelocity( "getLinearVelocity", NULL, 'v' );
 const idEventDef EV_SetLinearVelocity( "setLinearVelocity", "v" );
 const idEventDef EV_GetAngularVelocity( "getAngularVelocity", NULL, 'v' );
 const idEventDef EV_SetAngularVelocity( "setAngularVelocity", "v" );
+// greebo: Accessor events for the clipmask/contents flags
+const idEventDef EV_SetContents( "setContents", "f" );
+const idEventDef EV_GetContents( "getContents", NULL, 'f' );
+const idEventDef EV_SetClipMask( "setClipMask", "d" );
+const idEventDef EV_GetClipMask( "getClipMask", NULL, 'd' );
+
 const idEventDef EV_GetSize( "getSize", NULL, 'v' );
 const idEventDef EV_SetSize( "setSize", "vv" );
 const idEventDef EV_GetMins( "getMins", NULL, 'v' );
@@ -88,8 +107,7 @@ const idEventDef EV_StartSoundShader( "startSoundShader", "sd", 'f' );
 const idEventDef EV_StartSound( "startSound", "sdd", 'f' );
 const idEventDef EV_StopSound( "stopSound", "dd" );
 const idEventDef EV_FadeSound( "fadeSound", "dff" );
-const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
-const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
+const idEventDef EV_SetSoundVolume( "setSoundVolume", "f" );
 const idEventDef EV_GetNextKey( "getNextKey", "ss", 's' );
 const idEventDef EV_SetKey( "setKey", "ss" );
 const idEventDef EV_GetKey( "getKey", "s", 's' );
@@ -97,6 +115,7 @@ const idEventDef EV_GetIntKey( "getIntKey", "s", 'f' );
 const idEventDef EV_GetFloatKey( "getFloatKey", "s", 'f' );
 const idEventDef EV_GetVectorKey( "getVectorKey", "s", 'v' );
 const idEventDef EV_GetEntityKey( "getEntityKey", "s", 'e' );
+const idEventDef EV_RemoveKey( "removeKey", "s" );
 const idEventDef EV_RestorePosition( "restorePosition" );
 const idEventDef EV_UpdateCameraTarget( "<updateCameraTarget>", NULL );
 const idEventDef EV_DistanceTo( "distanceTo", "E", 'f' );
@@ -104,22 +123,172 @@ const idEventDef EV_DistanceToPoint( "distanceToPoint", "v", 'f' );
 const idEventDef EV_StartFx( "startFx", "s" );
 const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
+const idEventDef EV_CallGlobalFunction( "callGlobalFunction", "sE" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
+// greebo: Extinguishes all lights (i.e. the <self> entity plus all bound lights)
+const idEventDef EV_ExtinguishLights("extinguishLights", NULL);
+
+const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
+// greebo: Script event definition for dealing damage
+const idEventDef EV_Damage("damage", "EEvsf");
+// greebo: Script event definition for healing 
+// Takes the name of the healing entity and the healing scale, returns an integer
+const idEventDef EV_Heal("heal", "sf", 'd');
+
+// tels: Teleport the entity to the position/orientation of the given entity
+const idEventDef EV_TeleportTo("teleportTo", "e");
+
+// ishtvan: Get/setd droppable on entity and associated inventory item
+const idEventDef EV_IsDroppable( "isDroppable", NULL, 'd' );
+const idEventDef EV_SetDroppable( "setDroppable", "d" );
+
+// tels: set noShadow on this entity to the given argument (true/false)
+const idEventDef EV_NoShadows( "noShadows", "d" );
+
+// tels: Find all lights in the player PVS, then returns their sum.
+const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
+
+const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", NULL, 'v');	// grayman #2787
+const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", NULL, 'v');	// grayman #2787
+
+//===============================================================
+//                   TDM GUI interface
+//===============================================================
+const idEventDef EV_SetGui( "setGui", "ds" );
+const idEventDef EV_GetGui( "getGui", "d", 's' );
+const idEventDef EV_SetGuiString( "setGuiString", "dss" );
+const idEventDef EV_GetGuiString( "getGuiString", "ds", 's' );
+const idEventDef EV_SetGuiFloat( "setGuiFloat", "dsf" );
+const idEventDef EV_GetGuiFloat( "getGuiFloat", "ds", 'f' );
+const idEventDef EV_SetGuiInt( "setGuiInt", "dsd" );
+const idEventDef EV_GetGuiInt( "getGuiInt", "ds", 'f' );
+const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", "dses" );
+const idEventDef EV_CallGui( "callGui", "ds" );
+const idEventDef EV_CreateOverlay( "createOverlay", "sd", 'd' );
+const idEventDef EV_DestroyOverlay( "destroyOverlay", "d" );
+const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
+
+
+//===============================================================
+//                   TDM Inventory
+//===============================================================
+const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
+const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+const idEventDef EV_AddInvItem("addInvItem", "e");					// Adds an entity to the inventory
+const idEventDef EV_AddItemToInv("addItemToInv", "e");					// Adds this entity to the inventory of the given entity (reversed AddInvItem)
+const idEventDef EV_ReplaceInvItem("replaceInvItem", "eE", 'd');	// olditem, newitem -> 1 if succeeded
+const idEventDef EV_GetNextInvItem("getNextInvItem", "", 'e');		// switches to the next inventory item
+const idEventDef EV_GetPrevInvItem("getPrevInvItem", "", 'e');		// switches to the previous inventory item
+const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
+const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
+const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss");					// Changes the inventory icon of the given item.
+
+const idEventDef EV_SetCurInvCategory("setCurInvCategory", "s", 'd');	// category name -> 1 = success
+const idEventDef EV_SetCurInvItem("setCurInvItem", "s", 'e');				// itemname -> entity
+const idEventDef EV_GetCurInvCategory("getCurInvCategory", NULL, 's');
+const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", NULL, 'e');
+const idEventDef EV_GetCurInvItemName("getCurInvItemName", NULL, 's');
+const idEventDef EV_GetCurInvItemId("getCurInvItemId", NULL, 's');
+const idEventDef EV_GetCurInvIcon("getCurInvIcon", NULL, 's');
+
+// greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
+const idEventDef EV_InitInventory("initInventory", "d");
+
+// grayman #2478 - event which runs after spawn time to see if a mine is armed
+const idEventDef EV_CheckMine("checkMine");
+
+// The Dark Mod Stim/Response interface functions for scripting
+// Normally I don't like names, which are "the other way around"
+// but I think in this case it would be ok, because the interface
+// for stims and responses are pretty much the same.
+const idEventDef EV_StimAdd( "StimAdd", "df" );
+const idEventDef EV_StimRemove( "StimRemove", "d" );
+const idEventDef EV_StimEnable( "StimEnable", "dd" );
+const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", "d" );
+const idEventDef EV_ResponseEnable( "ResponseEnable", "dd" );
+const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
+const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
+const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
+const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
+const idEventDef EV_ResponseSetAction( "ResponseSetAction", "ds" );
+const idEventDef EV_ResponseTrigger( "ResponseTrigger", "ed" );
+const idEventDef EV_GetResponseEntity( "GetResponseEntity", NULL, 'e' );
+
+// StimType, Hours, minutes, seconds, miliseconds(?)
+const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
+const idEventDef EV_TimerStop( "StopTimer", "d" );
+const idEventDef EV_TimerStart( "StartTimer", "d" );
+const idEventDef EV_TimerRestart( "RestartTimer", "d" );
+const idEventDef EV_TimerReset( "ResetTimer", "d" );
+const idEventDef EV_TimerSetState( "SetTimerState", "dd" );
+
+// soundprop event: Propagate sound directly from scripting
+const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
+// I don't think scripting supports optional argument, so I must do this
+const idEventDef EV_TDM_PropSound( "propSound", "s" );
+
+// For detecting ranged enemies. Returns nonzero if this entity could
+// potentially attack the given entity (first parameter) at range.
+const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", "e", 'f' );
+
+
+#ifdef MOD_WATERPHYSICS
+
+const idEventDef EV_GetMass( "getMass", "d" , 'f' );
+
+const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
+
+#endif      // MOD_WATERPHYSICS
+
+const idEventDef EV_CopyBind( "copyBind", "e" );
+const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
+const idEventDef EV_SetFrobable( "setFrobable", "d" );
+const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
+const idEventDef EV_Frob("frob", NULL, 'd');
+const idEventDef EV_FrobHilight("frobHilight", "d" );
+
+// greebo: Script event to check whether this entity can see a target entity
+const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
+
+const idEventDef EV_CanBeUsedBy("canBeUsedBy", "e", 'd');
+
+const idEventDef EV_CheckAbsence("checkAbsence");
+
+// greebo: TDM: Team accessor script events
+const idEventDef EV_GetTeam("getTeam", NULL, 'd');
+const idEventDef EV_SetTeam("setTeam", "d");
+
+const idEventDef EV_IsEnemy( "isEnemy", "E", 'd' );
+const idEventDef EV_IsFriend( "isFriend", "E", 'd' );
+const idEventDef EV_IsNeutral( "isNeutral", "E", 'd' );
+
+const idEventDef EV_SetEntityRelation( "setEntityRelation", "Ed");
+const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", "Ed");
+
 ABSTRACT_DECLARATION( idClass, idEntity )
+	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
+
 	EVENT( EV_GetName,				idEntity::Event_GetName )
 	EVENT( EV_SetName,				idEntity::Event_SetName )
+	EVENT (EV_IsType,				idEntity::Event_IsType )
 	EVENT( EV_FindTargets,			idEntity::Event_FindTargets )
 	EVENT( EV_ActivateTargets,		idEntity::Event_ActivateTargets )
+	EVENT( EV_AddTarget,			idEntity::Event_AddTarget)
+	EVENT( EV_RemoveTarget,			idEntity::Event_RemoveTarget)
 	EVENT( EV_NumTargets,			idEntity::Event_NumTargets )
 	EVENT( EV_GetTarget,			idEntity::Event_GetTarget )
 	EVENT( EV_RandomTarget,			idEntity::Event_RandomTarget )
 	EVENT( EV_BindToJoint,			idEntity::Event_BindToJoint )
+	EVENT( EV_BindToBody,			idEntity::Event_BindToBody )
 	EVENT( EV_RemoveBinds,			idEntity::Event_RemoveBinds )
 	EVENT( EV_Bind,					idEntity::Event_Bind )
 	EVENT( EV_BindPosition,			idEntity::Event_BindPosition )
 	EVENT( EV_Unbind,				idEntity::Event_Unbind )
 	EVENT( EV_SpawnBind,			idEntity::Event_SpawnBind )
+	EVENT( EV_GetBindMaster,		idEntity::Event_GetBindMaster )
+	EVENT( EV_NumBindChildren,		idEntity::Event_NumBindChildren )
+	EVENT( EV_GetBindChild,			idEntity::Event_GetBindChild )
 	EVENT( EV_SetOwner,				idEntity::Event_SetOwner )
 	EVENT( EV_SetModel,				idEntity::Event_SetModel )
 	EVENT( EV_SetSkin,				idEntity::Event_SetSkin )
@@ -136,6 +305,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StartSound,			idEntity::Event_StartSound )
 	EVENT( EV_StopSound,			idEntity::Event_StopSound )
 	EVENT( EV_FadeSound,			idEntity::Event_FadeSound )
+	EVENT( EV_SetSoundVolume,		idEntity::Event_SetSoundVolume )
 	EVENT( EV_GetWorldOrigin,		idEntity::Event_GetWorldOrigin )
 	EVENT( EV_SetWorldOrigin,		idEntity::Event_SetWorldOrigin )
 	EVENT( EV_GetOrigin,			idEntity::Event_GetOrigin )
@@ -146,13 +316,17 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetLinearVelocity,	idEntity::Event_SetLinearVelocity )
 	EVENT( EV_GetAngularVelocity,	idEntity::Event_GetAngularVelocity )
 	EVENT( EV_SetAngularVelocity,	idEntity::Event_SetAngularVelocity )
+
+	EVENT( EV_SetContents,			idEntity::Event_SetContents )
+	EVENT( EV_GetContents,			idEntity::Event_GetContents )
+	EVENT( EV_SetClipMask,			idEntity::Event_SetClipMask )
+	EVENT( EV_GetClipMask,			idEntity::Event_GetClipMask )
+
 	EVENT( EV_GetSize,				idEntity::Event_GetSize )
 	EVENT( EV_SetSize,				idEntity::Event_SetSize )
 	EVENT( EV_GetMins,				idEntity::Event_GetMins)
 	EVENT( EV_GetMaxs,				idEntity::Event_GetMaxs )
 	EVENT( EV_Touches,				idEntity::Event_Touches )
-	EVENT( EV_SetGuiParm, 			idEntity::Event_SetGuiParm )
-	EVENT( EV_SetGuiFloat, 			idEntity::Event_SetGuiFloat )
 	EVENT( EV_GetNextKey,			idEntity::Event_GetNextKey )
 	EVENT( EV_SetKey,				idEntity::Event_SetKey )
 	EVENT( EV_GetKey,				idEntity::Event_GetKey )
@@ -160,6 +334,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetFloatKey,			idEntity::Event_GetFloatKey )
 	EVENT( EV_GetVectorKey,			idEntity::Event_GetVectorKey )
 	EVENT( EV_GetEntityKey,			idEntity::Event_GetEntityKey )
+	EVENT( EV_RemoveKey,			idEntity::Event_RemoveKey )
 	EVENT( EV_RestorePosition,		idEntity::Event_RestorePosition )
 	EVENT( EV_UpdateCameraTarget,	idEntity::Event_UpdateCameraTarget )
 	EVENT( EV_DistanceTo,			idEntity::Event_DistanceTo )
@@ -169,7 +344,114 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_Wait,			idEntity::Event_Wait )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
+	EVENT( EV_CallGlobalFunction,	idEntity::Event_CallGlobalFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
+
+	EVENT( EV_ExtinguishLights,		idEntity::Event_ExtinguishLights )
+
+	EVENT( EV_InPVS,				idEntity::Event_InPVS )
+	EVENT( EV_Damage,				idEntity::Event_Damage )
+	EVENT( EV_Heal,					idEntity::Event_Heal )
+	EVENT( EV_TeleportTo,			idEntity::Event_TeleportTo )
+	EVENT( EV_IsDroppable,			idEntity::Event_IsDroppable )
+	EVENT( EV_SetDroppable,			idEntity::Event_SetDroppable )
+	EVENT( EV_GetLightInPVS,		idEntity::Event_GetLightInPVS )
+
+	EVENT( EV_SetGui,				idEntity::Event_SetGui )
+	EVENT( EV_GetGui,				idEntity::Event_GetGui )
+	EVENT( EV_SetGuiString,			idEntity::Event_SetGuiString )
+	EVENT( EV_GetGuiString,			idEntity::Event_GetGuiString )
+	EVENT( EV_SetGuiFloat,			idEntity::Event_SetGuiFloat )
+	EVENT( EV_GetGuiFloat,			idEntity::Event_GetGuiFloat )
+	EVENT( EV_SetGuiInt,			idEntity::Event_SetGuiInt )
+	EVENT( EV_GetGuiInt,			idEntity::Event_GetGuiInt )
+	EVENT( EV_SetGuiStringFromKey,	idEntity::Event_SetGuiStringFromKey )
+	EVENT( EV_CallGui,				idEntity::Event_CallGui )
+	EVENT( EV_CreateOverlay,		idEntity::Event_CreateOverlay )
+	EVENT( EV_DestroyOverlay,		idEntity::Event_DestroyOverlay )
+
+	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
+
+	EVENT( EV_GetLootAmount,		idEntity::Event_GetLootAmount )
+	EVENT( EV_ChangeLootAmount,		idEntity::Event_ChangeLootAmount )
+	EVENT( EV_AddInvItem,			idEntity::Event_AddInvItem )
+	EVENT( EV_AddItemToInv,			idEntity::Event_AddItemToInv )
+	EVENT( EV_ReplaceInvItem,		idEntity::Event_ReplaceInvItem )
+	EVENT( EV_GetNextInvItem,		idEntity::Event_GetNextInvItem )
+	EVENT( EV_GetPrevInvItem,		idEntity::Event_GetPrevInvItem )
+	EVENT( EV_SetCurInvCategory,	idEntity::Event_SetCurInvCategory )
+	EVENT( EV_SetCurInvItem,		idEntity::Event_SetCurInvItem )
+	EVENT( EV_GetCurInvCategory,	idEntity::Event_GetCurInvCategory )
+	EVENT( EV_GetCurInvItemEntity,	idEntity::Event_GetCurInvItemEntity )
+	EVENT( EV_GetCurInvItemName,	idEntity::Event_GetCurInvItemName )
+	EVENT( EV_GetCurInvItemId,		idEntity::Event_GetCurInvItemId )
+	EVENT( EV_GetCurInvIcon,		idEntity::Event_GetCurInvIcon )
+	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
+	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
+	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
+	EVENT( EV_InitInventory,		idEntity::Event_InitInventory )
+
+	EVENT( EV_StimAdd,				idEntity::Event_StimAdd)
+	EVENT( EV_StimRemove,			idEntity::Event_StimRemove)
+	EVENT( EV_StimEnable,			idEntity::Event_StimEnable)
+	EVENT( EV_StimClearIgnoreList,	idEntity::Event_StimClearIgnoreList)
+	EVENT( EV_ResponseEnable,		idEntity::Event_ResponseEnable)
+	EVENT( EV_ResponseAdd,			idEntity::Event_ResponseAdd)
+	EVENT( EV_ResponseRemove,		idEntity::Event_ResponseRemove)
+	EVENT( EV_ResponseIgnore,		idEntity::Event_ResponseIgnore)
+	EVENT( EV_ResponseAllow,		idEntity::Event_ResponseAllow)
+	EVENT( EV_ResponseSetAction,	idEntity::Event_ResponseSetAction)
+	EVENT( EV_ResponseTrigger,		idEntity::Event_ResponseTrigger)
+	EVENT( EV_GetResponseEntity,	idEntity::Event_GetResponseEntity)
+
+	EVENT( EV_TimerCreate,			idEntity::Event_TimerCreate )
+	EVENT( EV_TimerStop,			idEntity::Event_TimerStop )
+	EVENT( EV_TimerStart,			idEntity::Event_TimerStart )
+	EVENT( EV_TimerRestart,			idEntity::Event_TimerRestart )
+	EVENT( EV_TimerReset,			idEntity::Event_TimerReset )
+	EVENT( EV_TimerSetState,		idEntity::Event_TimerSetState )
+
+	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
+	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
+
+	EVENT( EV_TDM_RangedThreatTo,	idEntity::Event_RangedThreatTo )
+
+#ifdef MOD_WATERPHYSICS
+
+	EVENT( EV_GetMass,              idEntity::Event_GetMass )
+
+	EVENT( EV_IsInLiquid,           idEntity::Event_IsInLiquid )
+
+#endif		// MOD_WATERPHYSICS
+
+	EVENT( EV_CopyBind,				idEntity::Event_CopyBind )
+	EVENT( EV_IsFrobable,			idEntity::Event_IsFrobable )
+	EVENT( EV_SetFrobable,			idEntity::Event_SetFrobable )
+	EVENT( EV_IsHilighted,			idEntity::Event_IsHilighted )
+	EVENT( EV_Frob,					idEntity::Event_Frob )
+	EVENT( EV_FrobHilight,			idEntity::Event_FrobHilight )
+	EVENT( EV_CanSeeEntity,			idEntity::Event_CanSeeEntity )
+	EVENT( EV_CanBeUsedBy,			idEntity::Event_CanBeUsedBy )
+
+	EVENT( EV_CheckAbsence,			idEntity::Event_CheckAbsence )
+	
+	EVENT (EV_GetTeam,				idEntity::Event_GetTeam )
+	EVENT (EV_SetTeam,				idEntity::Event_SetTeam )
+
+	EVENT(EV_IsEnemy,				idEntity::Event_IsEnemy )
+	EVENT(EV_IsFriend,				idEntity::Event_IsFriend )
+	EVENT(EV_IsNeutral,				idEntity::Event_IsNeutral )
+
+	EVENT(EV_SetEntityRelation,		idEntity::Event_SetEntityRelation )
+	EVENT(EV_ChangeEntityRelation,	idEntity::Event_ChangeEntityRelation )
+
+	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
+
+	EVENT( EV_CheckMine,			idEntity::Event_CheckMine ) // grayman #2478
+
+	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
+	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )	// grayman #2478
+
 END_CLASS
 
 /*
@@ -223,10 +505,21 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 
 	modelDef = NULL;
 	if ( temp[0] != '\0' ) {
-		modelDef = static_cast<const idDeclModelDef *>( declManager->FindType( DECL_MODELDEF, temp, false ) );
-		if ( modelDef ) {
-			renderEntity->hModel = modelDef->ModelHandle();
+		if ( !strstr( temp, "." ) ) {
+
+			// FIXME: temp hack to replace obsolete ips particles with prt particles
+			if ( !strstr( temp, ".ips" ) ) {
+				idStr str = temp;
+				str.Replace( ".ips", ".prt" );
+				modelDef = static_cast<const idDeclModelDef *>( declManager->FindType( DECL_MODELDEF, str, false ) );
+			} else {
+				modelDef = static_cast<const idDeclModelDef *>( declManager->FindType( DECL_MODELDEF, temp, false ) );
+			}
+			if ( modelDef ) {
+				renderEntity->hModel = modelDef->ModelHandle();
+			}
 		}
+
 		if ( !renderEntity->hModel ) {
 			renderEntity->hModel = renderModelManager->FindModel( temp );
 		}
@@ -237,7 +530,16 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 		renderEntity->bounds.Zero();
 	}
 
-	temp = args->GetString( "skin" );
+	idStr rskin = args->GetString( "random_skin", "" );
+	if ( !rskin.IsEmpty() ) {
+		// found list, select a random skin
+		temp = rskin.RandomPart().c_str();
+	}
+	else {
+		// else just use the "skin" spawnarg
+		temp = args->GetString( "skin" );
+	}
+
 	if ( temp[0] != '\0' ) {
 		renderEntity->customSkin = declManager->FindSkin( temp );
 	} else if ( modelDef ) {
@@ -276,7 +578,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	renderEntity->shaderParms[ 8 ]					= args->GetFloat( "shaderParm8", "0" );
 	renderEntity->shaderParms[ 9 ]					= args->GetFloat( "shaderParm9", "0" );
 	renderEntity->shaderParms[ 10 ]					= args->GetFloat( "shaderParm10", "0" );
-	renderEntity->shaderParms[ 11 ]					= args->GetFloat( "shaderParm11", "0" );
+	renderEntity->shaderParms[ 11 ]	= args->GetFloat( "shaderParm11", "0" );
 
 	// check noDynamicInteractions flag
 	renderEntity->noDynamicInteractions = args->GetBool( "noDynamicInteractions" );
@@ -348,6 +650,8 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 	}
 }
 
+// ----------------------------------------------------------------
+
 /*
 ===============
 idEntity::UpdateChangeableSpawnArgs
@@ -382,7 +686,9 @@ void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
 idEntity::idEntity
 ================
 */
-idEntity::idEntity() {
+idEntity::idEntity()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
@@ -400,6 +706,13 @@ idEntity::idEntity() {
 	renderView		= NULL;
 	cameraTarget	= NULL;
 	health			= 0;
+	maxHealth		= 0;
+
+	m_droppedByAI	= false;	// grayman #1330
+
+	m_preHideContents		= -1; // greebo: initialise this to invalid values
+	m_preHideClipMask		= -1;
+	m_CustomContents		= -1;
 
 	physics			= NULL;
 	bindMaster		= NULL;
@@ -419,7 +732,52 @@ idEntity::idEntity() {
 	modelDefHandle	= -1;
 	memset( &refSound, 0, sizeof( refSound ) );
 
+	memset( &m_renderTrigger, 0, sizeof( m_renderTrigger ) );
+	m_renderTrigger.axis.Identity();
+	m_renderTriggerHandle = -1;
+	m_renderWaitingThread = 0;
+
 	mpGUIState = -1;
+
+	m_SetInMotionByActor = NULL;
+	m_MovedByActor = NULL;
+	m_bFrobable = false;
+	m_bFrobSimple = false;
+	m_FrobDistance = 0;
+	m_FrobBias = 1.0f;
+	m_FrobBox = NULL;
+	m_FrobActionScript = "";
+	m_bFrobbed = false;
+	m_bFrobHighlightState = false;
+	m_FrobChangeTime = 0;
+	m_FrobActionLock = false;
+	m_bAttachedAlertControlsSolidity = false;
+	m_bIsObjective = false;
+	m_bIsClimbableRope = false;
+	m_bIsMantleable = false;
+	m_bIsBroken = false;
+
+	// We give all the entities a Stim/Response collection so that we wont have to worry
+	// about the pointer being available all the time. The memory footprint of that 
+	// object is rather small, so this doesn't really hurt that 
+	// much and makes the code easier to control.
+	m_StimResponseColl = new CStimResponseCollection;
+
+	// Since we have a function to return inventories/etc, and many entities won't
+	// have anything to do with inventories, I figure I'd better wait until
+	// absolutely necessary to create these.
+	m_Inventory			= CInventoryPtr();
+	m_InventoryCursor	= CInventoryCursorPtr();
+
+	m_LightQuotient = 0;
+	m_LightQuotientLastEvalTime = -1;
+
+	// by default no LOD to save memory and time
+	m_LODHandle = 0;
+	m_DistCheckTimeStamp = 0;
+
+	// grayman #597 - for hiding arrows when nocked to the bow
+	m_HideUntilTime = 0;
 }
 
 /*
@@ -427,13 +785,242 @@ idEntity::idEntity() {
 idEntity::FixupLocalizedStrings
 ================
 */
-void idEntity::FixupLocalizedStrings() {
-	for ( int i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
-		const idKeyValue *kv = spawnArgs.GetKeyVal( i );
-		if ( idStr::Cmpn( kv->GetValue(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ){
-			spawnArgs.Set( kv->GetKey(), common->GetLanguageDict()->GetString( kv->GetValue() ) );
+void idEntity::FixupLocalizedStrings()
+{
+	// Tels: Transform here things like "inv_category" "Maps" back to "#str_02390" so that custom
+	// entities in FMs with hard-coded english inventory categories or names still work even with
+	// the new translation code.
+
+	int c = 2;
+	const char* todo[2] = { "inv_category", "inv_name" };
+
+	for (int i = 0; i < c; i++)
+	{
+	    idStr spName = spawnArgs.GetString( todo[i], "");
+		if (!spName.IsEmpty())
+		{
+			idStr strTemplate = gameLocal.m_I18N->TemplateFromEnglish( spName );
+			// "Maps" resulted in "#str_02390"?
+			if (spName != strTemplate)
+			{
+				gameLocal.Printf("%s: Fixing %s from %s to %s.\n", GetName(), todo[i], spName.c_str(), strTemplate.c_str() );
+    		    spawnArgs.Set( todo[i], strTemplate );
+			}
 		}
 	}
+}
+
+/*
+================
+idEntity::ParseLODSpawnargs
+
+Tels: Look at dist_think_interval, lod_1_distance etc. and fill the m_LOD
+	  data. The passed in dict is usually just this->spawnArgs, but can also
+	  be from a completely different entity def so we can parse the spawnargs
+	  without having to actually have the entity spawned. The fRandom
+	  value is used to selectively hide some entities when hide_probability
+	  is set, and should be between 0 and 1.0.
+================
+*/
+lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
+{
+	lod_data_t *m_LOD = NULL;
+
+	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
+
+	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
+
+	m_DistCheckTimeStamp = 0;
+	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
+	if (d == 0 && fHideDistance < 0.1f)
+	{
+		// no LOD wanted
+	    m_DistCheckTimeStamp = NOLOD;
+		return 0;
+	}
+
+	// distance dependent LOD from this point on:
+	// allocate new memory
+	m_LOD = new lod_data_t;
+
+	// if interval not set, use twice per second
+	m_LOD->DistCheckInterval = ((d == 0) ? 500 : d);
+
+	m_SkinLODCur = 0;
+	m_ModelLODCur = 0;
+	m_LODLevel = 0;
+
+	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+
+	// if > 0, if the entity is closer than this, lod_bias will be at minimum 1.0
+	m_LOD->fLODNormalDistance = dict->GetFloat( "lod_normal_distance", "500" );
+	if (m_LOD->fLODNormalDistance < 0.0f)
+	{
+		m_LOD->fLODNormalDistance = 0.0f;
+	}
+
+	idStr temp;
+	m_LOD->OffsetLOD[0] = idVec3(0,0,0);			// assume there is no custom per-LOD model offset
+	m_LOD->DistLODSq[0] = 0;
+
+	// setup level 0 (aka "The one and only original")
+	m_LOD->ModelLOD[0] = dict->GetString( "model", "" );
+
+	// For func_statics where name == model, use "" so they can share the same LOD data
+	// even tho they all have different "models". (Their model spawnarg is never used.)
+	if ( IsType( idStaticEntity::Type ) && m_LOD->ModelLOD[0] == GetName())
+	{
+		m_LOD->ModelLOD[0] = "";
+	}
+
+	// use whatever was set as skin, that can differ from spawnArgs.GetString("skin") due to random_skin:
+	if ( renderEntity.customSkin )
+	{
+		m_LOD->SkinLOD[0] = renderEntity.customSkin->GetName(); 
+	}
+	else
+	{
+		m_LOD->SkinLOD[0] = "";
+	}
+
+	// start at 1, since 0 is "the original level" setup already above
+	for (int i = 1; i < LOD_LEVELS; i++)
+	{
+		// set to 0,0,0 as default in case someone tries to use it
+		m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		
+		if (i < LOD_LEVELS - 1)
+		{
+			// for i == LOD_LEVELS - 1, we use "hide_distance"
+			sprintf(temp, "lod_%i_distance", i);
+			m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
+		}
+
+		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
+	   	// entity gets really hidden.
+		if (fHideDistance > 1.0f && m_LOD->DistLODSq[i] > fHideDistance)
+		{
+			m_LOD->DistLODSq[i] = fHideDistance - 1.0f;
+		}
+
+		if (i == LOD_LEVELS - 1)
+		{
+			// last distance is named differently so you don't need to know how many levels the code supports:
+			m_LOD->DistLODSq[i] = fHideDistance;
+
+			// compute a random number and check it against the hide probability spawnarg
+			// do this only once at setup time, so the setting is stable during runtime
+			float fHideProbability = dict->GetFloat( "lod_hide_probability", "1.0" );
+			if (fRandom > fHideProbability)
+			{
+				// disable hiding
+				m_LOD->DistLODSq[i] = -1.0f;		// disable
+				continue;
+			}
+
+			// do we have a lod_fadeout_range?
+			m_LOD->fLODFadeOutRange = dict->GetFloat( "lod_fadeout_range", "0.0" );
+
+			if (m_LOD->fLODFadeOutRange < 0)
+			{
+				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_LOD->fLODFadeOutRange);
+				m_LOD->fLODFadeOutRange = 0.0f;
+			}
+			else
+			{
+				// square for easier comparisation with deltaSq
+				m_LOD->fLODFadeOutRange *= m_LOD->fLODFadeOutRange;
+			}
+
+			// do we have a lod_fadein_range?
+			m_LOD->fLODFadeInRange = dict->GetFloat( "lod_fadein_range", "0.0" );
+
+			if (m_LOD->fLODFadeInRange < 0)
+			{
+				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_LOD->fLODFadeInRange);
+				m_LOD->fLODFadeInRange = 0.0f;
+			}
+			else if (m_LOD->fLODFadeInRange > 0 && m_LOD->fLODFadeInRange > m_LOD->DistLODSq[1])
+			{
+				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.\n", GetName(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
+				m_LOD->fLODFadeOutRange = 0.0f;
+			}
+			else
+			{
+				// square for easier comparisation with deltaSq
+				m_LOD->fLODFadeInRange *= m_LOD->fLODFadeInRange;
+			}
+
+			//gameLocal.Printf (" %s: lod_fadeout_range %0.2f lod_fadein_range %0.2f.\n", GetName(), m_LOD->fLODFadeOutRange, m_LOD->fLODFadeInRange);
+		}
+
+//		gameLocal.Printf (" %s: init LOD %i m_LOD->DistLODSq=%f\n", GetName(), i, m_LOD->DistLODSq[i]); 
+
+		if (i > 0 && m_LOD->DistLODSq[i] > 0 && (m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i]) < m_LOD->DistLODSq[i-1])
+		{
+			gameLocal.Warning (" %s: LOD %i m_DistLODSq %f < LOD %i m_DistLODSq=%f (this will not work!)\n",
+				GetName(), i, m_LOD->DistLODSq[i] * m_LOD->DistLODSq[i], i-1, m_LOD->DistLODSq[i-1]); 
+		}
+		// -1 should stay -1 to signal "don't use this level"
+		if (m_LOD->DistLODSq[i] > 0)
+		{
+			m_LOD->DistLODSq[i] *= m_LOD->DistLODSq[i];
+
+			// the last level is "hide", so we don't need a model, skin, offset or noshadows there
+			if (i < LOD_LEVELS - 1)
+			{
+				// not the last level
+				sprintf(temp, "model_lod_%i", i);
+				m_LOD->ModelLOD[i] = dict->GetString( temp );
+				if (m_LOD->ModelLOD[i].Length() == 0) { m_LOD->ModelLOD[i] = m_LOD->ModelLOD[0]; }
+
+				sprintf(temp, "skin_lod_%i", i);
+				m_LOD->SkinLOD[i] = dict->GetString( temp );
+				if (m_LOD->SkinLOD[i].Length() == 0) { m_LOD->SkinLOD[i] = m_LOD->SkinLOD[0]; }
+
+				// set the right bit for noshadows
+				sprintf(temp, "noshadows_lod_%i", i );
+									  // 1, 2, 4, 8, 16 etc
+				m_LOD->noshadowsLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
+
+//				// set the right bit for "standin". "standins" are models that always rotate in
+//				// XY to face the player, but unlike particles, don't tilt with the view
+//				sprintf(temp, "standin_lod_%i", i );
+//									  // 1, 2, 4, 8, 16 etc
+//				m_LOD->standinLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
+
+				// setup the manual offset for this LOD stage (needed to align some models)
+				sprintf(temp, "offset_lod_%i", i);
+				m_LOD->OffsetLOD[i] = dict->GetVector( temp, "0,0,0" );
+			}
+		// else hiding needs no offset
+
+		//gameLocal.Printf (" noshadowsLOD 0x%08x model %s skin %s\n", m_noshadowsLOD, m_ModelLOD[i].c_str(), m_SkinLOD[i].c_str() );
+		}
+		else
+		{
+			// initialize to empty in case someone tries to access them
+			m_LOD->SkinLOD[i] = "";
+			m_LOD->ModelLOD[i] = "";
+			m_LOD->OffsetLOD[i] = idVec3(0,0,0);
+		}
+	}
+
+	m_LOD->bDistCheckXYOnly = dict->GetBool( "dist_check_xy", "0" );
+
+	// add some phase diversity to the checks so that they don't all run in one frame
+	// make sure they all run on the first frame though, by initializing m_TimeStamp to
+	// be at least one interval early.
+	// old code, only using half the interval:
+	m_DistCheckTimeStamp = gameLocal.time - (int) (m_LOD->DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
+
+	// register the data with the ModelGenerator and return the handle
+	lod_handle h = gameLocal.m_ModelGenerator->RegisterLODData( m_LOD );
+
+	// free memory
+	delete m_LOD;
+
+	return h;
 }
 
 /*
@@ -441,7 +1028,8 @@ void idEntity::FixupLocalizedStrings() {
 idEntity::Spawn
 ================
 */
-void idEntity::Spawn( void ) {
+void idEntity::Spawn( void )
+{
 	int					i;
 	const char			*temp;
 	idVec3				origin;
@@ -457,6 +1045,11 @@ void idEntity::Spawn( void ) {
 	if ( def ) {
 		entityDefNumber = def->Index();
 	}
+
+	// every object will have a unique name
+	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
+	SetName(temp);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
 
 	FixupLocalizedStrings();
 
@@ -487,6 +1080,13 @@ void idEntity::Spawn( void ) {
 
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
 		UpdateGuiParms( renderEntity.gui[ i ], &spawnArgs );
+
+		// Add the (potentially NULL) GUI as an external GUI to our overlaysys,
+		// so that the script functions to interact with GUIs can interact with it.
+		if ( m_overlays.createOverlay( 0, OVERLAYS_MIN_HANDLE + i ) >= OVERLAYS_MIN_HANDLE )
+			m_overlays.setGui( OVERLAYS_MIN_HANDLE + i, renderEntity.gui[ i ] );
+		else
+			gameLocal.Warning( "Unable to create overlay for renderentity GUI: %d\n", OVERLAYS_MIN_HANDLE + i );
 	}
 
 	fl.solidForTeam = spawnArgs.GetBool( "solidForTeam", "0" );
@@ -512,12 +1112,11 @@ void idEntity::Spawn( void ) {
 	}
 #endif
 
-	// every object will have a unique name
-	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber ) );
-	SetName( temp );
-
+	bool haveTargets = false; // grayman #2603
 	// if we have targets, wait until all entities are spawned to get them
-	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
+	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) )
+	{
+		haveTargets = true;
 		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
 			PostEventMS( &EV_FindTargets, 0 );
 		} else {
@@ -526,20 +1125,53 @@ void idEntity::Spawn( void ) {
 		}
 	}
 
+	// if we're attaching relight positions, they have to be added as targets,
+	// so we have to wait until all entities are spawned to do that
+
 	health = spawnArgs.GetInt( "health" );
 
 	InitDefaultPhysics( origin, axis );
 
+	// TDM: Set custom contents, and store it so it doesn't get overwritten
+	m_CustomContents = spawnArgs.GetInt("clipmodel_contents","-1");
+	if( m_CustomContents != -1 )
+		GetPhysics()->SetContents( m_CustomContents );
+
 	SetOrigin( origin );
 	SetAxis( axis );
 
-	temp = spawnArgs.GetString( "model" );
-	if ( temp && *temp ) {
-		SetModel( temp );
+	// load visual model and broken model 
+	LoadModels();
+
+	if ( spawnArgs.GetString( "bind", "", &temp ) ) 
+	{
+		PostEventMS( &EV_SpawnBind, 0 );
 	}
 
-	if ( spawnArgs.GetString( "bind", "", &temp ) ) {
-		PostEventMS( &EV_SpawnBind, 0 );
+	//TDM: Parse list of pre-defined attachment positions from spawnargs
+	ParseAttachPositions();
+
+	//TDM: Parse and spawn and attach any attachments
+	ParseAttachments();
+
+	// grayman #2603 - if we spawned relight positions, add them to the target list
+
+	if (spawnArgs.MatchPrefix("relight_position"))
+	{
+		if (haveTargets)
+		{
+			if (gameLocal.GameState() != GAMESTATE_STARTUP)
+			{
+				// not during spawn, so it's ok to add targets from the relight positions now
+				FindRelights();
+			}
+		}
+		else
+		{
+			targets.Clear();
+			// it's ok to create targets from the relight positions now
+			FindRelights();
+		}
 	}
 
 	// auto-start a sound on the entity
@@ -555,6 +1187,291 @@ void idEntity::Spawn( void ) {
 
 		ConstructScriptObject();
 	}
+
+	m_StimResponseColl->InitFromSpawnargs(spawnArgs, this);
+
+	// greebo: Post the inventory check event. If this entity should be added
+	// to someone's inventory, the event takes care of that. This must happen
+	// after the entity has fully spawned (including subclasses), otherwise
+	// the clipmodel and things like that are not initialised (>> crash).
+
+	// grayman #2820 - don't queue EV_InitInventory if it's going to
+	// end up doing nothing. Queuing this for every entity causes a ton
+	// of event posting during frame 0 that can overrun the event queue limit
+	// in large maps w/lots of entities.
+
+	int lootValue = spawnArgs.GetInt( "inv_loot_value", "0" );
+	int lootType = spawnArgs.GetInt( "inv_loot_type", "0" );
+	bool belongsInInventory = spawnArgs.GetBool( "inv_map_start", "0" );
+
+	// Only post EV_InitInventory if this is loot OR it belongs in someone's inventory.
+	// If extra work is added to EV_InitInventory, then that must be accounted for here, to make sure it has
+	// a chance of getting done.
+
+	if ( belongsInInventory || ( ( lootType > LOOT_NONE ) && ( lootType < LOOT_COUNT ) && ( lootValue != 0 ) ) )
+	{
+		PostEventMS( &EV_InitInventory, 0, 0 );
+	}
+
+	// grayman #2478 - If this is a mine or flashmine, it can be armed
+	// at spawn time. Post an event to replace the mine with its
+	// projectile counterpart, which handles arming/disarming. Wait a
+	// bit before replacing so the mine has time to settle.
+
+	if ( idStr::Cmp(spawnArgs.GetString("toolclass"), "mine") == 0 )
+	{
+		PostEventSec(&EV_CheckMine, 1.0f);
+	}
+
+	LoadTDMSettings();
+
+	if (m_AbsenceNoticeability > 0)
+	{
+		PostEventMS(&EV_CheckAbsence, gameLocal.random.RandomFloat() * 5000);
+	}
+	m_StartBounds = GetPhysics()->GetAbsBounds();
+	m_AbsenceStatus = false;
+
+	// parse LOD spawnargs
+	m_LODHandle = ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() );
+   
+	if (m_LODHandle)
+	{
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+	}
+
+	// init most recent voice and body sound data for AI - grayman #2341
+	previousVoiceShader = NULL;	// shader for the most recent voice request
+	previousVoiceIndex = 0;		// index of most recent voice sound requested (1->N, where there are N sounds)
+	previousBodyShader = NULL;	// shader for the most recent body sound request
+	previousBodyIndex = 0;		// index of most recent body sound requested (1->N, where there are N sounds)
+}
+
+/*
+================
+idEntity::DisableLOD
+
+Tels: temp. disable LOD checks by setting the next check timestamp to negative.
+================
+*/
+void idEntity::DisableLOD( const bool doTeam )
+{
+	// negate check interval
+	if (m_LODHandle && m_DistCheckTimeStamp > NOLOD)
+	{
+//		gameLocal.Printf( "%s: Temporarily disabling LOD.\n", GetName() );
+		m_DistCheckTimeStamp = NOLOD;
+	}
+
+	if (!doTeam) { return; }
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+	idEntity* bindM = GetBindMaster();
+	if ( bindM ) { NextEnt = bindM; }
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity *ent = static_cast<idEntity*>( NextEnt );
+		if (ent)
+		{
+			ent->DisableLOD( false );
+		}
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
+/*
+================
+idEntity::EnableLOD
+
+Tels: Enable LOD checks again (after DisableLOD) by setting the check interval to positive.
+================
+*/
+void idEntity::EnableLOD( const bool doTeam )
+{
+	// negate check interval
+	if (m_LODHandle && m_DistCheckTimeStamp <= NOLOD)
+	{
+//		gameLocal.Printf( "%s: Enabling LOD again.\n", GetName() );
+		m_DistCheckTimeStamp = gameLocal.time;
+	}
+
+	if (!doTeam) { return; }
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+	idEntity* bindM = GetBindMaster();
+	if ( bindM ) { NextEnt = bindM; }
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity *ent = static_cast<idEntity*>( NextEnt );
+		if (ent)
+		{
+			ent->EnableLOD( false );
+		}
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
+/*
+================
+idEntity::StopLOD
+
+Tels: Permanently disable LOD checks, if doTeam is true, including on all of our attachements
+================
+*/
+void idEntity::StopLOD( const bool doTeam )
+{
+	//BecomeInactive( TH_THINK );
+	// deregister our LOD struct
+	if (m_LODHandle)
+	{
+		// gameLocal.Printf( "%s: Stopping LOD.\n", GetName() );
+		gameLocal.m_ModelGenerator->UnregisterLODData( m_LODHandle );
+		m_LODHandle = 0;
+	}
+
+	if (!doTeam) { return; }
+
+	/* also all the bound entities in our team */
+	idEntity* NextEnt = this;
+
+	idEntity* bindM = GetBindMaster();
+	if ( bindM ) { NextEnt = bindM;	}
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity *ent = static_cast<idEntity*>( NextEnt );
+		if (ent)
+		{
+			ent->StopLOD( false );
+		}
+		/* get next Team member */
+		NextEnt = NextEnt->GetNextTeamEntity();
+	}
+}
+
+/*
+================
+idEntity::LoadModels
+================
+*/
+// tels: this routine loads all the visual and collision models
+void idEntity::LoadModels()
+{
+	idStr model;
+	// we only use a brokenModel if we can find one automatically
+	bool needBroken = false;
+
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading models for entity %d (%s)\r", entityNumber, name.c_str() ); 
+
+	// load the normal visual model
+	spawnArgs.GetString( "model", "", model );
+
+	if ( !model.IsEmpty() ) {
+		SetModel( model );
+	}
+
+	// was a brokenModel requested?
+	spawnArgs.GetString( "broken", "", brokenModel );
+
+	// see if we need to create a broken model name
+	if ( !brokenModel.IsEmpty() )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Need broken model '%s' for entity %d (%s)\r", brokenModel.c_str(), entityNumber, name.c_str() );
+		// spawnarg "broken" was set, so we need the broken model
+		needBroken = true;
+	}
+	// only check for an auto-broken model if the entity could be damaged 
+	else if ( health || spawnArgs.FindKey( "max_force" ) )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Looking for broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
+
+		int pos = model.Find(".");
+
+		if ( pos < 0 )
+		{
+			pos = model.Length();
+		}
+
+		if ( pos > 0 )
+		{
+			model.Left( pos, brokenModel );
+		}
+
+		brokenModel += "_broken";
+
+		if ( pos > 0 )
+		{
+			brokenModel += &model[ pos ];
+		}
+	}
+
+	// greebo: Only try to cache the model if it actually exists -> otherwise tons of false warnings get emitted
+	bool brokenModelFileExists = (fileSystem->FindFile(brokenModel) != FIND_NO);
+
+	if (brokenModelFileExists)
+	{
+		// check brokenModel to exist, and make sure the brokenModel gets cached
+		if ( !renderModelManager->CheckModel( brokenModel ) )
+		{
+			if ( needBroken ) {
+				gameLocal.Error( "Broken model '%s' not loadable for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+			} 
+			else {
+				// couldn't find automatically generated "model_broken.lwo", so don't use brokenModel at all
+				brokenModel = "";
+			}
+		}
+	}
+	else
+	{
+		// Broken model file does not exist
+		if ( needBroken ) {
+			gameLocal.Error( "Broken model '%s' required for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+		} 
+		// set brokenModel to empty, so we later don't try to use it
+		brokenModel = "";
+	}
+
+	// can we be damaged?
+	if ( health || spawnArgs.FindKey( "max_force" ) || !brokenModel.IsEmpty() )
+	{
+		fl.takedamage = true;
+	}
+
+	if ( brokenModelFileExists && !brokenModel.IsEmpty() )
+	{
+		if ( model.IsEmpty() )
+		{
+			gameLocal.Error( "Breakable entity (broken model %s) without a model set on entity #%d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+		}
+
+		// make sure the collision model for the brokenModel gets cached
+        idClipModel::CheckModel( brokenModel );
+
+		// since we can be damaged, setup some physics
+/*
+* Ishtvan: Commented out, this is handled separately and this call can interfere with other places contents are set
+*
+		GetPhysics()->SetContents( !spawnArgs.GetBool( "solid" ) ? 0 : CONTENTS_SOLID );
+	    // SR CONTENTS_RESONSE FIX
+		if( m_StimResponseColl->HasResponse() ) {
+			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+		}
+**/
+
+	} // end of loading of broken model(s) and their CM
+
+
 }
 
 /*
@@ -562,7 +1479,34 @@ void idEntity::Spawn( void ) {
 idEntity::~idEntity
 ================
 */
-idEntity::~idEntity( void ) {
+idEntity::~idEntity( void )
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
+
+	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
+	if (gameLocal.m_Grabber->GetEquipped() == this)
+	{
+		if ( spawnArgs.GetBool("shoulderable") )
+		{
+			gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
+			gameLocal.m_Grabber->UnShoulderBody(this);
+		}
+		gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
+		gameLocal.m_Grabber->Forget(this);
+	}
+
+	// Let each objective entity we're currently in know about our destruction
+	for (int i = 0; i < m_objLocations.Num(); ++i)
+	{
+		CObjectiveLocation* locationEnt = m_objLocations[i].GetEntity();
+
+		if (locationEnt == NULL) continue; // probably already deleted
+
+		locationEnt->OnEntityDestroyed(this);
+	}
+
+	gameLocal.RemoveResponse(this);
+	gameLocal.RemoveStim(this);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
@@ -603,10 +1547,33 @@ idEntity::~idEntity( void ) {
 	delete signals;
 	signals = NULL;
 
+	// free optional LOD data
+	if (m_LODHandle)
+	{
+		StopLOD( false );
+	}
+
 	FreeModelDef();
 	FreeSoundEmitter( false );
 
+	if ( m_renderTriggerHandle != -1 ) {
+		gameRenderWorld->FreeEntityDef( m_renderTriggerHandle );
+	}
+
 	gameLocal.UnregisterEntity( this );
+	gameLocal.RemoveStim(this);
+	gameLocal.RemoveResponse(this);
+	delete m_StimResponseColl;
+
+	if( m_FrobBox )
+		delete m_FrobBox;
+
+	m_FrobPeers.Clear();
+}
+
+void idEntity::AddObjectsToSaveGame(idSaveGame* savefile)
+{
+	// empty default implementation
 }
 
 /*
@@ -614,7 +1581,8 @@ idEntity::~idEntity( void ) {
 idEntity::Save
 ================
 */
-void idEntity::Save( idSaveGame *savefile ) const {
+void idEntity::Save( idSaveGame *savefile ) const
+{
 	int i, j;
 
 	savefile->WriteInt( entityNumber );
@@ -636,6 +1604,11 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject( cameraTarget );
 
 	savefile->WriteInt( health );
+	savefile->WriteInt( maxHealth );
+
+	savefile->WriteInt( m_preHideContents );
+	savefile->WriteInt( m_preHideClipMask );
+	savefile->WriteInt( m_CustomContents );
 
 	savefile->WriteInt( targets.Num() );
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -643,12 +1616,104 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	}
 
 	entityFlags_s flags = fl;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
+
+	savefile->WriteInt(m_UsedByName.Num());
+	for (i = 0; i < m_UsedByName.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByName[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByInvName.Num());
+	for (i = 0; i < m_UsedByInvName.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByInvName[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByCategory.Num());
+	for (i = 0; i < m_UsedByCategory.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByCategory[i].c_str());
+	}
+	savefile->WriteInt(m_UsedByClassname.Num());
+	for (i = 0; i < m_UsedByClassname.Num(); i++)
+	{
+		savefile->WriteString(m_UsedByClassname[i].c_str());
+	}
+
+	savefile->WriteBool(m_bAttachedAlertControlsSolidity);
+	savefile->WriteBool(m_bIsObjective);
+
+	savefile->WriteInt(m_objLocations.Num());
+	for (i = 0; i < m_objLocations.Num(); ++i)
+	{
+		m_objLocations[i].Save(savefile);
+	}
+
+	savefile->WriteBool(m_bFrobable);
+	savefile->WriteBool(m_bFrobSimple);
+	savefile->WriteInt(m_FrobDistance);
+	savefile->WriteFloat(m_FrobBias);
+	savefile->WriteClipModel(m_FrobBox);
+
+	savefile->WriteBool(m_bIsClimbableRope);
+
+	savefile->WriteInt(m_animRates.Num());
+	for (i = 0; i < m_animRates.Num(); i++)
+	{
+		savefile->WriteFloat(m_animRates[i]);
+	}
+
+	m_SetInMotionByActor.Save(savefile);
+	m_MovedByActor.Save(savefile);
+
+	savefile->WriteBool(m_bFrobbed);
+	savefile->WriteBool(m_bFrobHighlightState);
+	savefile->WriteInt(m_FrobChangeTime);
+
+	savefile->WriteString(m_FrobActionScript);
+
+	savefile->WriteInt(m_FrobPeers.Num());
+	for (i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		savefile->WriteString(m_FrobPeers[i]);
+	}
+
+	savefile->WriteString(m_MasterFrob);
+	savefile->WriteBool(m_FrobActionLock);
+
+	savefile->WriteFloat(m_AbsenceNoticeability);
+	savefile->WriteBounds(m_StartBounds);
+	savefile->WriteBool(m_AbsenceStatus);
+	
+	m_AbsenceMarker.Save(savefile);
+
+	savefile->WriteInt(team);
+
+	savefile->WriteInt(m_EntityRelations.size());
+	for (EntityRelationsMap::const_iterator i = m_EntityRelations.begin(); i != m_EntityRelations.end(); ++i)
+	{
+		savefile->WriteObject(i->first);
+		savefile->WriteInt(i->second);
+	}
+
+	savefile->WriteBool( m_bIsMantleable );
+
+	savefile->WriteBool( m_bIsBroken );
+	savefile->WriteString( brokenModel );
+
+	m_StimResponseColl->Save(savefile);
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
+
+	savefile->WriteRenderEntity( m_renderTrigger );
+	savefile->WriteInt( m_renderTriggerHandle );
+	savefile->WriteInt( m_renderWaitingThread );
+
+	m_overlays.Save( savefile );
 
 	savefile->WriteObject( bindMaster );
 	savefile->WriteJoint( bindJoint );
@@ -677,6 +1742,64 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteInt( mpGUIState );
+
+	savefile->WriteBool(m_Inventory != NULL);
+	if (m_Inventory != NULL) {
+		m_Inventory->Save(savefile);
+	}
+
+	savefile->WriteBool(m_InventoryCursor != NULL);
+	if (m_InventoryCursor != NULL) {
+		// Save the ID of the cursor
+		savefile->WriteInt(m_InventoryCursor->GetId());
+	}
+
+	savefile->WriteInt( m_Attachments.Num() );
+	for( int i=0; i < m_Attachments.Num(); i++ )
+		m_Attachments[i].Save( savefile );
+
+	savefile->WriteInt( m_AttNameMap.size() );
+	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
+         k != m_AttNameMap.end(); ++k )
+    {
+        savefile->WriteString( k->first.c_str() );
+        savefile->WriteInt( k->second );
+    }
+
+	savefile->WriteInt( m_AttachPositions.Num() );
+	for ( i = 0; i < m_AttachPositions.Num(); i++ ) 
+	{
+		m_AttachPositions[i].Save( savefile );
+	}
+
+	m_userManager.Save(savefile);
+
+	savefile->WriteFloat(m_LightQuotient);
+	savefile->WriteInt(m_LightQuotientLastEvalTime);
+
+	savefile->WriteBool(m_droppedByAI);		// grayman #1330
+
+	savefile->WriteInt(m_LODHandle);
+	savefile->WriteInt(m_DistCheckTimeStamp);
+	savefile->WriteInt(m_LODLevel);
+	savefile->WriteInt(m_ModelLODCur);
+	savefile->WriteInt(m_SkinLODCur);
+
+	// grayman #2341 - don't save previous voice and body shaders and indices,
+	// since they're irrelevant across saved games
+
+	savefile->WriteSoundShader(NULL);	// previousVoiceShader
+	savefile->WriteInt(0);				// previousVoiceIndex
+	savefile->WriteSoundShader(NULL);	// previousBodyShader
+	savefile->WriteInt(0);				// previousBodyIndex
+
+	// grayman #597
+
+	savefile->WriteInt(m_HideUntilTime); // arrow-hiding timer
+
+	// grayman #2787
+	savefile->WriteVec3( m_VinePlantLoc );
+	savefile->WriteVec3( m_VinePlantNormal );
 }
 
 /*
@@ -684,7 +1807,8 @@ void idEntity::Save( idSaveGame *savefile ) const {
 idEntity::Restore
 ================
 */
-void idEntity::Restore( idRestoreGame *savefile ) {
+void idEntity::Restore( idRestoreGame *savefile )
+{
 	int			i, j;
 	int			num;
 	idStr		funcname;
@@ -710,6 +1834,11 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) );
 
 	savefile->ReadInt( health );
+	savefile->ReadInt( maxHealth );
+
+	savefile->ReadInt( m_preHideContents );
+	savefile->ReadInt( m_preHideClipMask );
+	savefile->ReadInt( m_CustomContents );
 
 	targets.Clear();
 	savefile->ReadInt( num );
@@ -720,10 +1849,122 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
+
+	savefile->ReadInt(num);
+	m_UsedByName.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByName[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByInvName.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByInvName[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByCategory.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByCategory[i]);
+	}
+	savefile->ReadInt(num);
+	m_UsedByClassname.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedByClassname[i]);
+	}
+
+	savefile->ReadBool(m_bAttachedAlertControlsSolidity);
+	savefile->ReadBool(m_bIsObjective);
+
+	savefile->ReadInt(num);
+	m_objLocations.SetNum(num);
+	for (i = 0; i < num; ++i)
+	{
+		m_objLocations[i].Restore(savefile);
+	}
+
+	savefile->ReadBool(m_bFrobable);
+	savefile->ReadBool(m_bFrobSimple);
+	savefile->ReadInt(m_FrobDistance);
+	savefile->ReadFloat(m_FrobBias);
+	savefile->ReadClipModel(m_FrobBox);
+
+	savefile->ReadBool(m_bIsClimbableRope);
+
+	savefile->ReadInt(num);
+	m_animRates.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadFloat(m_animRates[i]);
+	}
+
+	m_SetInMotionByActor.Restore(savefile);
+	m_MovedByActor.Restore(savefile);
+
+	savefile->ReadBool(m_bFrobbed);
+	savefile->ReadBool(m_bFrobHighlightState);
+	savefile->ReadInt(m_FrobChangeTime);
+
+	savefile->ReadString(m_FrobActionScript);
+
+	savefile->ReadInt(num);
+	m_FrobPeers.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_FrobPeers[i]);
+	}
+
+	savefile->ReadString(m_MasterFrob);
+	savefile->ReadBool(m_FrobActionLock);
+
+	savefile->ReadFloat(m_AbsenceNoticeability);
+	savefile->ReadBounds(m_StartBounds);
+	savefile->ReadBool(m_AbsenceStatus);
 	
+	m_AbsenceMarker.Restore(savefile);
+
+	savefile->ReadInt(team);
+
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; ++i)
+	{
+		idEntity* entity;
+		savefile->ReadObject(reinterpret_cast<idClass*&>(entity));
+
+		int relation;
+		savefile->ReadInt(relation);
+
+		m_EntityRelations[entity] = relation;
+	}
+
+
+	savefile->ReadBool(m_bIsMantleable);
+
+	savefile->ReadBool( m_bIsBroken );
+	savefile->ReadString( brokenModel );
+
+	m_StimResponseColl->Restore(savefile);
+
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
+
+	savefile->ReadRenderEntity( m_renderTrigger );
+	savefile->ReadInt( m_renderTriggerHandle );
+	savefile->ReadInt( m_renderWaitingThread );
+
+	m_overlays.Restore( savefile );
+	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
+		// Add the (potentially NULL) GUI as an external GUI to our overlaysys,
+		// so that the script functions to interact with GUIs can interact with it.
+		// If the overlay isn't external, then the entity inheriting us must have
+		// messed with the overlays, and doesn't want us to set it. If it IS
+		// external, then they'll be resetting it anyways, so no harm done.
+		if ( m_overlays.isExternal( OVERLAYS_MIN_HANDLE + i ) )
+			m_overlays.setGui( OVERLAYS_MIN_HANDLE + i, renderEntity.gui[ i ] );
+	}
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( bindMaster ) );
 	savefile->ReadJoint( bindJoint );
@@ -759,10 +2000,114 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( mpGUIState );
 
+	bool hasInventory;
+	savefile->ReadBool(hasInventory);
+	if (hasInventory) {
+		Inventory()->Restore(savefile);
+	}
+
+	bool hasInventoryCursor;
+	savefile->ReadBool(hasInventoryCursor);
+	if (hasInventoryCursor) {
+		// Get the ID of the cursor
+		int cursorId;
+		savefile->ReadInt(cursorId);
+		m_InventoryCursor = Inventory()->GetCursor(cursorId);
+	}
+
+	m_Attachments.Clear();
+	savefile->ReadInt( num );
+	m_Attachments.SetNum( num );
+	for( int i=0; i < num; i++ )
+		m_Attachments[i].Restore( savefile );
+
+	m_AttNameMap.clear();
+	savefile->ReadInt( num );
+    for ( int i = 0; i < num; i++ )
+    {
+        idStr tempStr;
+        savefile->ReadString(tempStr);
+
+        int tempIndex;
+        savefile->ReadInt(tempIndex);
+
+        m_AttNameMap.insert(AttNameMap::value_type(tempStr.c_str(), tempIndex));
+    }
+
+	m_AttachPositions.Clear();
+	savefile->ReadInt( num );
+	for ( i = 0; i < num; i++ ) 
+	{
+		SAttachPosition &attachPos = m_AttachPositions.Alloc();
+		attachPos.Restore( savefile );
+	}
+
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
 	}
+
+	// restore must retrieve m_renderTriggerHandle from the renderer
+	if ( m_renderTriggerHandle != -1 ) {
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
+	}
+
+	m_userManager.Restore(savefile);
+
+	savefile->ReadFloat(m_LightQuotient);
+	savefile->ReadInt(m_LightQuotientLastEvalTime);
+
+	savefile->ReadBool(m_droppedByAI); // grayman #1330
+
+	savefile->ReadUnsignedInt(m_LODHandle);
+	savefile->ReadInt(m_DistCheckTimeStamp);
+	savefile->ReadInt(m_LODLevel);
+	savefile->ReadInt(m_ModelLODCur);
+	savefile->ReadInt(m_SkinLODCur);
+
+	// grayman #2341 - restore previous voice and body shaders and indices
+
+	savefile->ReadSoundShader((const idSoundShader *&)previousVoiceShader);
+	savefile->ReadInt(previousVoiceIndex);
+	savefile->ReadSoundShader((const idSoundShader *&)previousBodyShader);
+	savefile->ReadInt(previousBodyIndex);
+
+	// grayman #597
+
+	savefile->ReadInt(m_HideUntilTime); // arrow-hiding timer
+
+	// grayman #2787
+
+	savefile->ReadVec3( m_VinePlantLoc );
+	savefile->ReadVec3( m_VinePlantNormal );
+
+
+	// Tels #2417: after Restore call RestoreScriptObject() of the scriptObject so the
+	// script object can restore f.i. sounds:
+
+	const function_t *func = scriptObject.GetFunction( "RestoreScriptObject" );
+	if (func)
+	{
+		idThread *thread = idThread::CurrentThread();
+		if (!thread)
+		{
+			gameLocal.Printf("No running thread for RestoreScriptObject(), creating new one.\n");
+			thread = new idThread();
+			thread->SetThreadName( name.c_str() );
+		}
+		// gameLocal.Warning( "Will call function '%s' in '%s'", "RestoreScriptObject", scriptObject.GetTypeName() );
+		if ( func->type->NumParameters() != 1 ) {
+			gameLocal.Warning( "Function 'RestoreScriptObject' has the wrong number of parameters");
+		}
+		thread->CallFunction( this, func, true );
+		thread->DelayedStart( 0 );
+	}
+/*	else
+	{
+		gameLocal.Warning("No RestoreScriptObject() function in script object for %s", GetName() );
+	}
+*/
+	// done with calling "Restore()" on the script object
 }
 
 /*
@@ -770,7 +2115,8 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 idEntity::GetEntityDefName
 ================
 */
-const char * idEntity::GetEntityDefName( void ) const {
+const char * idEntity::GetEntityDefName( void ) const
+{
 	if ( entityDefNumber < 0 ) {
 		return "*unknown*";
 	}
@@ -782,7 +2128,8 @@ const char * idEntity::GetEntityDefName( void ) const {
 idEntity::SetName
 ================
 */
-void idEntity::SetName( const char *newname ) {
+void idEntity::SetName( const char *newname )
+{
 	if ( name.Length() ) {
 		gameLocal.RemoveEntityFromHash( name.c_str(), this );
 		gameLocal.program.SetEntity( name, NULL );
@@ -810,17 +2157,347 @@ const char * idEntity::GetName( void ) const {
 
 /***********************************************************************
 
-	Thinking
+ Thinking about LOD
 	
+ We pass a ptr to the current data, so that the SEED can let the spawned
+ entities think while still keeping their LOD data only once per class.
+
+ This routine will only modify:
+  * m_LODLevel
+  * m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+
+ It will also return the new alpha value for this entity, where 0.0f means
+ hidden and alpha > 0 means visible.
+
+ The caller is responsible for calling SetAlpha() and Hide/Show on the
+ proper entity (e.g. the entity thet the m_LOD is for) as well as
+ switching the model and skin.
+
 ***********************************************************************/
+float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
+{
+	// have no LOD
+	if (NULL == m_LOD)
+	{
+		// fully visible
+		return 1.0f;
+	}
+
+	bool bWithinDist = false;
+
+	// by default fully visible
+	float fAlpha = 1.0f;
+
+//	gameLocal.Warning("%s: ThinkAboutLOD called with m_LOD %p deltaSq %0.2f", GetName(), m_LOD, deltaSq);
+
+	// Tels: check in which LOD level we are 
+	for (int i = 0; i < LOD_LEVELS; i++)
+	{
+//		gameLocal.Printf ("%s considering LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
+
+		// skip this level (but not the first)
+		if (m_LOD->DistLODSq[i] <= 0 && i > 0)
+		{
+//			gameLocal.Printf ("%s skipping LOD %i (distance %f)\n", GetName(), i, m_LOD->DistLODSq[i] );
+			continue;
+		}
+
+		// find the next usable level
+		int nextLevel = i + 1;
+		while (nextLevel < LOD_LEVELS && m_LOD->DistLODSq[nextLevel] <= 0 )
+		{
+			nextLevel++;
+		}
+
+//		gameLocal.Printf ("%s ThinkAboutLOD deltaSq = %0.2f (this=%0.2f, nextLevel=%i, next=%0.2f, i=%i)\n", GetName(), deltaSq, m_LOD->DistLODSq[i],
+//					nextLevel, nextLevel < LOD_LEVELS ? m_LOD->DistLODSq[nextLevel] : -1, i );
+
+		// found a usable next level, or the last level is -1 (means no hide)
+		if (nextLevel < LOD_LEVELS)
+		{
+			bWithinDist = ((deltaSq > m_LOD->DistLODSq[i]) && (deltaSq <= m_LOD->DistLODSq[nextLevel]));
+		}
+		else
+		{
+		   	if (m_LOD->DistLODSq[ LOD_LEVELS - 1] < 0)
+			{
+//				gameLocal.Printf ("%s no next level (last level is -1)\n", GetName() );
+				bWithinDist = (deltaSq > m_LOD->DistLODSq[ i ]);
+			}
+			else
+			{
+				if (i < LOD_LEVELS - 1)
+				{
+					bWithinDist = (deltaSq < m_LOD->DistLODSq[ LOD_LEVELS - 1]);
+				}
+				else
+				{
+					// only hide if hiding isn't disabled
+					// last usable level goes to infinity
+					bWithinDist = m_LOD->DistLODSq[i] > 0 && (deltaSq > m_LOD->DistLODSq[i]);
+				}
+
+				// compute the alpha value of still inside the fade range
+				if (bWithinDist)
+				{
+					if (m_LOD->fLODFadeOutRange > 0)
+					{
+//						gameLocal.Printf ("%s outside hide_distance %0.2f (%0.2f) with fade %0.2f\n", GetName(), m_LOD->DistLODSq[i], deltaSq, m_LOD->fLODFadeOutRange);
+						if (deltaSq > (m_LOD->DistLODSq[i] + m_LOD->fLODFadeOutRange))
+						{
+							fAlpha = 0.0f;
+						}
+						else
+						{
+							fAlpha = 1.0f - ( (deltaSq - m_LOD->DistLODSq[i]) / m_LOD->fLODFadeOutRange );
+						}
+						// set the timestamp so we think the next frame again to get a smooth blend:
+						m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+					}
+					else
+					{
+						// just hide if outside
+						fAlpha = 0.0f;
+					}
+					m_LODLevel = i;
+	
+//					gameLocal.Printf (" %s returning LOD level %i, fAlpha = %0.2f", GetName(), i, fAlpha);
+
+					// early out, we found the right level and switched
+					return fAlpha;
+				}
+			}
+		}
+
+//		gameLocal.Printf (" %s passed LOD %i distance check %f (%f), inside?: %i (old level %i, prel. alpha %0.2f)\n",
+//				GetName(), i, m_LOD->DistLODSq[i], deltaSq, bWithinDist, m_LODLevel, fAlpha);
+
+		// do this even if we are already in the same level 
+		// && m_LODLevel != i)
+		if ( bWithinDist )
+		{
+			m_LODLevel = i;
+
+			// LOD level number i
+			// TODO: Hiding a LOD entity temp. completely would fail,
+			//		 as the LOD levels < LAST_LOD_LEVEL would show it again.
+
+			if (i == 0 && m_LOD->fLODFadeInRange > 0)
+			{
+				// do we need to hide the entity, or fade it?
+				if (deltaSq < (m_LOD->DistLODSq[0] - m_LOD->fLODFadeInRange))
+				{
+					fAlpha = 0.0f;	// hide
+				}
+				else
+				{
+					fAlpha = (deltaSq - (m_LOD->DistLODSq[0] - m_LOD->fLODFadeInRange)) / m_LOD->fLODFadeOutRange;
+	//				gameLocal.Printf ("%s fading in to %0.2f\n", GetName(), fAlpha);
+				}
+				// set the timestamp so we think the next frame again to get a smooth blend:
+				m_DistCheckTimeStamp = gameLocal.time - m_LOD->DistCheckInterval - 0.1;
+			}
+			else
+			{
+				// visible in all other levels
+				fAlpha = 1.0f;	// show
+			}
+
+//			gameLocal.Printf (" %s returning LOD level %i, fAlpha = %0.2f (step 2)", GetName(), i, fAlpha);
+
+			// We found the right level and will switch to it
+			return fAlpha;
+		}
+
+	// end for all LOD levels
+	}
+
+//	gameLocal.Warning("%s: ThinkAboutLOD fall out of lod levels, using fAlpha = 1.0f", GetName() );
+
+	return fAlpha;
+}
+
+/* Tels:
+   
+   Call ThinkAboutLOD, then do the nec. things like calling Hide()/Show(), SetAlpha() etc.
+*/
+bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
+{
+	if (!m_LOD)
+	{
+		gameLocal.Error("SwitchLOD() with NULL called.\n");
+	}
+	// remember the current level
+	int oldLODLevel = m_LODLevel;
+	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
+
+//		 gameLocal.Printf("%s: Got fAlpha %0.2f\n", GetName(), fAlpha);
+
+	if (fAlpha < 0.0001f)
+	{
+	   	if (!fl.hidden)
+		{
+//					gameLocal.Printf( "%s Hiding\n", GetName() );
+			Hide();
+		}
+	}
+	else
+	{
+		if (fl.hidden)
+		{
+//			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
+			Show();
+			SetAlpha( fAlpha, true );
+		}
+		// Only set the alpha if we are actually fading, but skip if it is 1.0f
+		else if (renderEntity.shaderParms[ SHADERPARM_ALPHA ] != fAlpha)
+		{
+//			gameLocal.Printf("%s: Setting alpha %0.2f\n", GetName(), fAlpha);
+			SetAlpha( fAlpha, true );
+		}
+	}
+
+	if (m_LODLevel != oldLODLevel)
+	{
+//				gameLocal.Printf( "%s LOD level changed from %i to %i\n", GetName(), oldLODLevel, m_LODLevel );
+		if (m_ModelLODCur != m_LODLevel)
+			{
+//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
+//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
+				// func_statics that have map geometry do not have a model, and their LOD data gets ""
+				// as model name so they can all share the same data. However, we must not use "" when
+				// setting a new model:
+				if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
+				{
+					SetModel( m_LOD->ModelLOD[m_LODLevel] );
+				}
+				m_ModelLODCur = m_LODLevel;
+				// Fix 1.04 blinking bug:
+				// if the old LOD level had an offset, we need to revert this.
+				// and if the new one has an offset, we need to add it:
+				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+				{
+					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+				}
+			}
+
+		if ( m_SkinLODCur != m_LODLevel)
+		{
+			const idDeclSkin *skinD = declManager->FindSkin( m_LOD->SkinLOD[m_LODLevel] );
+			if (skinD)
+			{
+				SetSkin( skinD );
+			}
+			m_SkinLODCur = m_LODLevel;
+		}
+		// level 0 is the default
+		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << (m_LODLevel + 1))) > 0 ? 1 : 0;
+
+		// switched LOD
+		return true;
+	}
+
+	// no switch done
+	return false;
+}
+
+/*
+================
+idEntity::GetLODDistance
+
+Returns the distance that should be considered for LOD and hiding, depending on:
+
+* the distance of the entity origin to the given player origin
+  (TODO: this should be actualy the distance to the closest point of the entity,
+  to aovid that very long entities get hidden when you are far from their origin,
+  but close to their corner)
+* the lod-bias set in the menu
+* some minimum and maximum distances based on entity size/importance
+
+The returned value is the (virtual) distance squared, and rounded down to an integer.
+================
+*/
+float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const
+{
+	idVec3 delta = playerOrigin - entOrigin;
+	// enforce an absolute minimum of 500 units for entities w/o LOD
+	float minDist = 0.0f;
+
+	if( m_LOD && m_LOD->bDistCheckXYOnly)
+	{
+		// todo: allow passing in a different gravityNormal
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		delta -= (vGravNorm * delta) * vGravNorm;
+	}
+
+	// let the mapper override it
+	if ( m_LOD && m_LOD->fLODNormalDistance > 0)
+	{
+	//		gameLocal.Printf ("%s: Using %0.2f lod_normal_distance, delta %0.2f.\n", GetName(), m_LOD->fLODNormalDistance, deltaSq);
+			minDist = m_LOD->fLODNormalDistance;
+	}
+
+	// multiply with the user LOD bias setting, and return the result:
+	// floor the value to avoid inaccurancies leading to toggling when the player stands still:
+	assert(lod_bias > 0.01f);
+	float deltaSq = delta.LengthSqr();
+
+	// if the entity is inside the "lod_normal_distance", simply ignore any LOD_BIAS < 1.0f
+	// Tels: For v1.05 use at least 1.0f for lod_bias, so that any distance the mapper sets
+	//       acts as the absolute minimum distance. Needs fixing later.
+	//if (minDist > 0 && lod_bias < 1.0f && deltaSq < (minDist * minDist))
+	if (lod_bias <= 1.0f)
+	{
+		deltaSq = idMath::Floor( deltaSq );
+	}
+	else
+	{
+		deltaSq = idMath::Floor( deltaSq / (lod_bias * lod_bias) );
+	}
+
+	// TODO: enforce minimum/maximum distances based on entity size/importance
+	return deltaSq;
+}
 
 /*
 ================
 idEntity::Think
 ================
 */
-void idEntity::Think( void ) {
+void idEntity::Think( void )
+{
 	RunPhysics();
+	if ( (thinkFlags & TH_PHYSICS) && m_FrobBox ) 
+	{
+		// update trigger position
+		// TODO: Tels: What about hidden entities, these would use (0,0,0) as origin here?
+		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+	}
+
+	if (m_LODHandle && m_DistCheckTimeStamp > NOLOD)
+	{
+		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+
+		if (lod)
+		{
+			// If this entity has LOD, let it think about it:
+
+			// Distance dependence checks
+			if ( ( lod->DistCheckInterval > 0)
+				  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
+			{
+				m_DistCheckTimeStamp = gameLocal.time;
+
+//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
+//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
+
+			SwitchLOD( lod, 
+				GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
+			}
+		}
+	}
 	Present();
 }
 
@@ -832,8 +2509,9 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::DoDormantTests( void ) {
-
+bool idEntity::DoDormantTests( void )
+{
+	if (cv_ai_opt_forceopt.GetBool()) return true; // Everything always dormant!
 	if ( fl.neverDormant ) {
 		return false;
 	}
@@ -851,7 +2529,10 @@ bool idEntity::DoDormantTests( void ) {
 	} else {
 		// the monster area is topologically connected to a player, but if
 		// the monster hasn't been woken up before, do the more precise PVS check
-		if ( !fl.hasAwakened ) {
+		// TDM: Never wake up permanently; always do PVS check.
+		//      (This may cause bugs. I did this for AI optimisation testing.)
+		//	--Crispy
+		if ( true || !fl.hasAwakened ) {
 			if ( !gameLocal.InPlayerPVS( this ) ) {
 				return true;		// stay dormant
 			}
@@ -860,10 +2541,11 @@ bool idEntity::DoDormantTests( void ) {
 		// wake up
 		dormantStart = 0;
 		fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+		
 		return false;
 	}
 
-	return false;
+//	return false;
 }
 
 /*
@@ -874,7 +2556,8 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::CheckDormant( void ) {
+bool idEntity::CheckDormant( void )
+{
 	bool dormant;
 	
 	dormant = DoDormantTests();
@@ -911,6 +2594,169 @@ void idEntity::DormantEnd( void ) {
 
 /*
 ================
+idEntity::IsBroken
+================
+*/
+bool idEntity::IsBroken( void ) const {
+	return m_bIsBroken;
+}
+
+
+/*
+================
+idEntity::SpawnFlinder spawns zero, one or more flinder objects as
+described by one FlinderSpawn struct. The activator is the entity
+that caused this entity to break up.
+
+@return: -1 for error, or the number of entities spawned
+
+*/
+int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
+{
+	int spawned = 0;
+	
+	for (int i = 0; i < fs.m_Count; i++)
+	{
+		// probability 0.6 => spawn in only 60% of all cases
+		if (fs.m_Probability < 1.0 &&
+			gameLocal.random.RandomFloat() >= fs.m_Probability)
+		{
+			continue;
+		}
+
+		const idDict *p_entityDef = gameLocal.FindEntityDefDict( fs.m_Entity.c_str(), false );
+	    if( p_entityDef )
+		{
+			idEntity *flinder;
+			gameLocal.SpawnEntityDef( *p_entityDef, &flinder, false );
+			idPhysics *physics;
+			idVec3 TumbleVec(vec3_zero);
+
+			if ( !flinder )
+			{
+				gameLocal.Error( "Failed to spawn flinder entity %s", fs.m_Entity.c_str() );
+				return -1;
+	        }
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Spawned entity %s\r", flinder->GetName() ); 
+
+			physics = flinder->GetPhysics();
+
+			// move the entity to the origin (plus offset) and orientation of the original
+			physics->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
+			physics->SetAxis( GetPhysics()->GetAxis() );
+			// give the flinders the same speed as the original entity (in case it breaks
+			// up while on the move
+			// tels FIXME: We would need to count how many flinders were spawned then distribute
+			//			   the impulse from the activator in equal parts to each of them.
+			// tels FIXME: Currently these are zero when an arrow hits a bottle.
+
+			// for now add a small random speed so the object moves
+			// tels FIXME: Doesn't work. Because the flinder is inside the still solid
+			//				entity?
+			TumbleVec[0] += (gameLocal.random.RandomFloat() * 20) - 10;
+			TumbleVec[1] += (gameLocal.random.RandomFloat() * 20) - 10;
+			TumbleVec[2] += (gameLocal.random.RandomFloat() * 20) - 10;
+
+			physics->SetLinearVelocity( 
+				GetPhysics()->GetLinearVelocity() 
+				+ activator->GetPhysics()->GetLinearVelocity()
+				+ TumbleVec
+				);
+			physics->SetAngularVelocity(
+				GetPhysics()->GetAngularVelocity() 
+				+ activator->GetPhysics()->GetAngularVelocity()
+				+ TumbleVec
+				);
+
+			/*
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Activator is: %s\r", activator->GetName() );
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Set linear velocity to %f %f %f:\r", 
+				physics->GetLinearVelocity().x,  
+				physics->GetLinearVelocity().y,  
+				physics->GetLinearVelocity().z ); 
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Set angular velocity to %f %f %f:\r", 
+				physics->GetAngularVelocity().x,  
+				physics->GetAngularVelocity().y,  
+				physics->GetAngularVelocity().z ); 
+			*/
+
+			if( activator->IsType(idActor::Type) )
+			{
+				idActor *actor = static_cast<idActor *>(activator);
+				flinder->m_SetInMotionByActor = actor;
+				flinder->m_MovedByActor = actor;
+			}
+
+			// activate the flinder, so it falls realistically down
+			flinder->BecomeActive(TH_PHYSICS|TH_THINK);
+			// FIXME if this entity has a skin, set the same skin on the flinder
+			// FIXME add a small random impulse outwards from entity origin
+			spawned++;
+		}
+	} // end for m_Count
+
+	return spawned;
+}
+
+/*
+================
+idEntity::BecomeBroken
+================
+*/
+void idEntity::BecomeBroken( idEntity *activator )
+{
+	if (m_bIsBroken)
+	{
+		// we are already broken, so do nothing
+		return;
+	}
+
+	m_bIsBroken = true;
+
+	// switch to the brokenModel if it was defined
+	if ( brokenModel.Length() )
+	{
+		SetModel( brokenModel );
+
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Breaking entity %s (solid: %i)\r", name.c_str(), spawnArgs.GetBool( "solid" ) ); 
+		if ( spawnArgs.GetBool( "solid" ) )
+		{
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
+
+			idClipModel* clipmodel = new idClipModel( brokenModel );
+
+			if (clipmodel && clipmodel->IsTraceModel() && GetPhysics())
+			{
+				GetPhysics()->SetClipModel( clipmodel, 1.0f );
+			}
+		}
+	} 
+	else if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
+		SetModel( "" );
+		GetPhysics()->SetContents( 0 );
+	}
+
+	// tels: if a break_up_script is defined, run it:
+	idStr str;
+	if (this->spawnArgs.GetString("break_up_script", "", str))
+	{
+		// Call the script
+        	idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", this);
+		if (thread != NULL)
+		{
+			// Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
+
+	// tels: if we have flinders to spawn on break, do so now
+	Flinderize( activator );
+}
+
+/*
+================
 idEntity::IsActive
 ================
 */
@@ -923,7 +2769,8 @@ bool idEntity::IsActive( void ) const {
 idEntity::BecomeActive
 ================
 */
-void idEntity::BecomeActive( int flags ) {
+void idEntity::BecomeActive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// enable the team master if this entity is part of a physics team
 		if ( teamMaster && teamMaster != this ) {
@@ -938,6 +2785,7 @@ void idEntity::BecomeActive( int flags ) {
 
 	int oldFlags = thinkFlags;
 	thinkFlags |= flags;
+
 	if ( thinkFlags ) {
 		if ( !IsActive() ) {
 			activeNode.AddToEnd( gameLocal.activeEntities );
@@ -953,7 +2801,8 @@ void idEntity::BecomeActive( int flags ) {
 idEntity::BecomeInactive
 ================
 */
-void idEntity::BecomeInactive( int flags ) {
+void idEntity::BecomeInactive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// may only disable physics on a team master if no team members are running physics or bound to a joints
 		if ( teamMaster == this ) {
@@ -995,13 +2844,18 @@ void idEntity::BecomeInactive( int flags ) {
 idEntity::SetShaderParm
 ================
 */
-void idEntity::SetShaderParm( int parmnum, float value ) {
+void idEntity::SetShaderParm( int parmnum, float value )
+{
 	if ( ( parmnum < 0 ) || ( parmnum >= MAX_ENTITY_SHADER_PARMS ) ) {
 		gameLocal.Warning( "shader parm index (%d) out of range", parmnum );
 		return;
 	}
 
 	renderEntity.shaderParms[ parmnum ] = value;
+	// tels: TODO: UpdateVisuals does stuff like updating the Model Transform,
+	// calling updating the MD5 animation, clear the PVS areas, calling updateSound()
+	// etc. All these things might be unnec. for just modifying a shaderParm, see if
+	// we can optimize this.
 	UpdateVisuals();
 }
 
@@ -1010,10 +2864,11 @@ void idEntity::SetShaderParm( int parmnum, float value ) {
 idEntity::SetColor
 ================
 */
-void idEntity::SetColor( float red, float green, float blue ) {
+void idEntity::SetColor( const float red, const float green, const float blue ) {
 	renderEntity.shaderParms[ SHADERPARM_RED ]		= red;
 	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= green;
 	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= blue;
+	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
 	UpdateVisuals();
 }
 
@@ -1024,6 +2879,7 @@ idEntity::SetColor
 */
 void idEntity::SetColor( const idVec3 &color ) {
 	SetColor( color[ 0 ], color[ 1 ], color[ 2 ] );
+	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
 	UpdateVisuals();
 }
 
@@ -1048,6 +2904,59 @@ void idEntity::SetColor( const idVec4 &color ) {
 	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= color[ 1 ];
 	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= color[ 2 ];
 	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
+	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::SetAlpha
+
+Tels: Just set the alpha value. Note: Due to the D3 engine not being
+	  able to render faces transparently with correct lighting (you
+	  either get 100% opaque with correct light, or 50% transparent
+	  with correct light, or X% transparent with incorrect light),
+	  this doesn't actually work unless you have a material
+	  shader that takes the alpha value into account.
+================
+*/
+void idEntity::SetAlpha( const float alpha ) {
+	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= alpha;
+	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::SetAlpha
+
+Tels: Set alpha including on our children
+================
+*/
+void idEntity::SetAlpha( const float alpha, const bool bound ) {
+
+	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= alpha;
+
+	if (!bound)
+	{
+	    // tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
+		UpdateVisuals();
+		return;
+	}
+
+	// show our bind-children
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+	{
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) 
+		{
+			ent->SetAlpha( alpha );
+		}
+	}
+	// tels: TODO: See note in idEntity::SetShaderParm about optimizing this.
 	UpdateVisuals();
 }
 
@@ -1083,13 +2992,21 @@ void idEntity::SetModel( const char *modelname ) {
 
 	FreeModelDef();
 
-	renderEntity.hModel = renderModelManager->FindModel( modelname );
+	// FIXME: temp hack to replace obsolete ips particles with prt particles
+	if ( strstr( modelname, ".ips" ) != NULL ) {
+		idStr str = modelname;
+		str.Replace( ".ips", ".prt" );
+		renderEntity.hModel = renderModelManager->FindModel( str );
+	} else {
+		renderEntity.hModel = renderModelManager->FindModel( modelname );
+	}
 
 	if ( renderEntity.hModel ) {
 		renderEntity.hModel->Reset();
 	}
 
 	renderEntity.callback = NULL;
+
 	renderEntity.numJoints = 0;
 	renderEntity.joints = NULL;
 	if ( renderEntity.hModel ) {
@@ -1151,14 +3068,71 @@ bool idEntity::IsHidden( void ) const {
 
 /*
 ================
+idEntity::SetHideUntilTime
+================
+*/
+void idEntity::SetHideUntilTime(int time) // grayman #597
+{
+	m_HideUntilTime = time;
+}
+
+/*
+================
+idEntity::GetHideUntilTime
+================
+*/
+int idEntity::GetHideUntilTime() // grayman #597
+{
+	return m_HideUntilTime;
+}
+
+/*
+================
 idEntity::Hide
 ================
 */
-void idEntity::Hide( void ) {
-	if ( !IsHidden() ) {
+void idEntity::Hide( void ) 
+{
+	if ( !IsHidden() ) 
+	{
 		fl.hidden = true;
+
+		idPhysics* p = GetPhysics();
+
+		m_preHideContents = p->GetContents();
+		m_preHideClipMask = p->GetClipMask();
+
+		if( m_FrobBox )
+			m_FrobBox->SetContents(0);
+
 		FreeModelDef();
 		UpdateVisuals();
+
+		// If we are hiding a currently frobbed entity,
+		// set the frob pointers to NULL to avoid stale pointers
+		idPlayer* player = gameLocal.GetLocalPlayer();
+	
+		if (player != NULL)
+		{
+			if (player->m_FrobEntity.GetEntity() == this)
+			{
+				player->m_FrobEntity = NULL;
+			}
+		}
+
+		// hide our bind-children
+		for (idEntity* ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity()) 
+		{
+			if (ent->GetBindMaster() == this) 
+			{
+				ent->Hide();
+
+				if (ent->IsType(idLight::Type))
+				{
+					static_cast<idLight*>(ent)->Off();
+				}
+			}
+		}
 	}
 }
 
@@ -1167,11 +3141,147 @@ void idEntity::Hide( void ) {
 idEntity::Show
 ================
 */
-void idEntity::Show( void ) {
-	if ( IsHidden() ) {
-		fl.hidden = false;
-		UpdateVisuals();
+void idEntity::Show( void ) 
+{
+	// greebo: If the pre-hide clipmask is still uninitialised on Show(), the entity 
+	// has not been hidden before. Set this to something valid (i.e. the current clipmask)
+	if ( m_preHideClipMask == -1)
+	{
+		m_preHideClipMask = GetPhysics()->GetClipMask();
 	}
+
+	if ( m_preHideContents == -1)
+	{
+		m_preHideContents = GetPhysics()->GetContents();
+	}
+
+	if ( IsHidden() ) 
+	{
+		fl.hidden = false;
+		if( m_FrobBox && m_bFrobable )
+		{
+			m_FrobBox->SetContents( CONTENTS_FROBABLE );
+		}
+		UpdateVisuals();
+
+		// show our bind-children
+		idEntity *ent;
+		idEntity *next;
+
+		for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+		{
+			next = ent->GetNextTeamEntity();
+			if ( ent->GetBindMaster() == this ) 
+			{
+				if (gameLocal.time >= ent->GetHideUntilTime()) // grayman #597 - one second needs to pass before showing
+				{
+					ent->Show();
+					if ( ent->IsType( idLight::Type ) )
+					{
+						static_cast<idLight *>( ent )->On();
+					}
+				}
+			}
+		}
+	}
+}
+
+float idEntity::GetLightQuotient()
+{
+	if (m_LightQuotientLastEvalTime < gameLocal.time)
+	{
+		idPhysics* physics = GetPhysics();
+
+		// Get the bounds and move it upwards a tiny bit
+		idBounds bounds = physics->GetAbsBounds() + physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
+
+		// A single point doesn't work with ellipse intersection
+		bounds.ExpandSelf(0.1f); 
+
+		// Update the cache
+		m_LightQuotientLastEvalTime = gameLocal.time;
+		m_LightQuotient = LAS.queryLightingAlongLine(bounds[0], bounds[1], this, true);
+	}
+
+	// Return the cached result
+	return m_LightQuotient;
+}
+
+/*
+================
+idEntity::Event_noShadows
+
+tels: Turn shadows from this entity on or off.
+================
+*/
+void idEntity::Event_noShadows( bool noShadow ) 
+{
+	renderEntity.noShadow = ( noShadow ? 1 : 0 );
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::Event_CheckMine
+
+grayman #2478: Replace an armed mine with its projectile counterpart
+================
+*/
+void idEntity::Event_CheckMine()
+{
+	if ( !spawnArgs.GetBool( "armed", "0" ) )
+	{
+		return; // not armed, nothing to do
+	}
+
+	const char* replaceWith = spawnArgs.GetString( "def_armed" ); // get replacement entity def
+
+	const idDict *resultDef = gameLocal.FindEntityDefDict( replaceWith, false );
+	if ( resultDef )
+	{
+		idEntity *newMine;
+		gameLocal.SpawnEntityDef( *resultDef, &newMine, false );
+		idProjectile* projectile = static_cast<idProjectile*>(newMine);
+		projectile->Launch( GetPhysics()->GetOrigin(), idVec3( 0,0,1 ), vec3_origin );
+
+		// Undo the launch parameters to keep the mine from flying away.
+
+		idPhysics* projPhysics = projectile->GetPhysics();
+		projPhysics->SetOrigin( GetPhysics()->GetOrigin() );
+		projPhysics->SetAxis( GetPhysics()->GetAxis() );
+		projPhysics->SetLinearVelocity( vec3_origin );
+		projPhysics->SetAngularVelocity( vec3_origin );
+		projPhysics->PutToRest();
+		projectile->UpdateVisuals();
+		projectile->SetReplaced(); // grayman #2908 - note that this mine replaced an author-placed armed mine 
+
+		SetFrobable(false);
+		PostEventMS( &EV_Remove, 1 ); // Remove the mine, which has been replaced
+	}
+}
+
+/*
+================
+idEntity::Event_GetVinePlantLoc
+
+grayman #2787: Return the planting location resulting from a trace
+================
+*/
+void idEntity::Event_GetVinePlantLoc()
+{
+	idThread::ReturnVector( m_VinePlantLoc );
+}
+
+/*
+================
+idEntity::Event_GetVinePlantNormal
+
+grayman #2787: Return the planting location surface normal resulting from a trace
+================
+*/
+void idEntity::Event_GetVinePlantNormal()
+{
+	idThread::ReturnVector( m_VinePlantNormal );
 }
 
 /*
@@ -1202,7 +3312,8 @@ void idEntity::UpdateModel( void ) {
 
 	// check if the entity has an MD5 model
 	idAnimator *animator = GetAnimator();
-	if ( animator && animator->ModelHandle() ) {
+	if(animator && animator->ModelHandle())
+	{
 		// set the callback to update the joints
 		renderEntity.callback = idEntity::ModelCallback;
 	}
@@ -1380,27 +3491,55 @@ idEntity::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
-void idEntity::Present( void ) {
+void idEntity::Present(void)
+{
+/*
+	if( m_bFrobable )
+	{
+*/
+/*
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderEntity: %08lX\r", renderEntity);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderModel: %08lX\r", renderEntity.hModel);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("CustomShader: %08lX\r", renderEntity.customShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
 
-	if ( !gameLocal.isNewFrame ) {
+		for(int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++)
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Shaderparam[%u]: %f\r", i, renderEntity.shaderParms[i]);
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ForceUpdate: %u\r", renderEntity.forceUpdate);
+
+		renderEntity.customShader = gameLocal.GetGlobalMaterial();
+	}
+*/
+
+	if(!gameLocal.isNewFrame )
 		return;
+
+	if( m_bFrobable )
+	{
+		UpdateFrobState();
+		UpdateFrobDisplay();
 	}
 
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if(!(thinkFlags & TH_UPDATEVISUALS))
 		return;
+
+	if( !m_bFrobable )
+	{
+		BecomeInactive( TH_UPDATEVISUALS );
 	}
-	BecomeInactive( TH_UPDATEVISUALS );
 
 	// camera target for remote render views
-	if ( cameraTarget && gameLocal.InPlayerPVS( this ) ) {
+	if(cameraTarget && gameLocal.InPlayerPVS(this))
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
-	}
 
 	// if set to invisible, skip
-	if ( !renderEntity.hModel || IsHidden() ) {
+	if(!renderEntity.hModel || IsHidden())
 		return;
-	}
 
 	// add to refresh list
 	if ( modelDefHandle == -1 ) {
@@ -1408,6 +3547,8 @@ void idEntity::Present( void ) {
 	} else {
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
+
+	PresentRenderTrigger();
 }
 
 /*
@@ -1433,7 +3574,8 @@ int idEntity::GetModelDefHandle( void ) {
 idEntity::UpdateRenderEntity
 ================
 */
-bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -1453,10 +3595,12 @@ idEntity::ModelCallback
 	NOTE: may not change the game state whatsoever!
 ================
 */
-bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
 	idEntity *ent;
 
 	ent = gameLocal.entities[ renderEntity->entityNum ];
+
 	if ( !ent ) {
 		gameLocal.Error( "idEntity::ModelCallback: callback with NULL game entity" );
 	}
@@ -1505,6 +3649,19 @@ renderView_t *idEntity::GetRenderView( void ) {
 	return renderView;
 }
 
+void idEntity::Activate(idEntity* activator)
+{
+	// Fire the TRIGGER response
+	TriggerResponse(activator, ST_TRIGGER);
+
+	if (RespondsTo(EV_Activate) || HasSignal(SIG_TRIGGER))
+	{
+		Signal(SIG_TRIGGER);
+		ProcessEvent(&EV_Activate, activator);
+		TriggerGuis();
+	}
+}
+
 /***********************************************************************
 
   Sound
@@ -1527,32 +3684,37 @@ bool idEntity::CanPlayChatterSounds( void ) const {
 idEntity::StartSound
 ================
 */
-bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) {
+bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod) 
+{
 	const idSoundShader *shader;
 	const char *sound;
 
-	if ( length ) {
+	if ( length ) 
 		*length = 0;
-	}
 
 	// we should ALWAYS be playing sounds from the def.
 	// hardcoded sounds MUST be avoided at all times because they won't get precached.
 	assert( idStr::Icmpn( soundName, "snd_", 4 ) == 0 );
 
-	if ( !spawnArgs.GetString( soundName, "", &sound ) ) {
+	if ( !spawnArgs.GetString( soundName, "", &sound ) ) 
 		return false;
-	}
 
-	if ( sound[0] == '\0' ) {
+	// ignore empty spawnargs
+	if ( sound[0] == '\0' ) 
 		return false;
-	}
 
-	if ( !gameLocal.isNewFrame ) {
+	if ( !gameLocal.isNewFrame ) 
+	{
 		// don't play the sound, but don't report an error
 		return true;
 	}
+	
+	// DarkMod sound propagation:
+	PropSoundDirect(soundName, true, false, propVolMod);
 
+	// play the audible sound
 	shader = declManager->FindSound( sound );
+
 	return StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
 }
 
@@ -1561,7 +3723,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 idEntity::StartSoundShader
 ================
 */
-bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) {
+bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length) {
 	float diversity;
 	int len;
 
@@ -1589,9 +3751,37 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	}
 
 	// set a random value for diversity unless one was parsed from the entity
-	if ( refSound.diversity < 0.0f ) {
+
+	if ( refSound.diversity < 0.0f )
+	{
 		diversity = gameLocal.random.RandomFloat();
-	} else {
+
+		// grayman #2341 - adjust diversity based on previous sound request,
+		//				   to eliminate consecutive sounds. This
+		//				   is necessary because sometimes the engine plays the
+		//				   wrong sound when the 'no_dup' flag is set.
+
+		int n = shader->GetNumSounds();
+		if (n > 1) // duplication is expected when there's only 1 sound choice
+		{
+			if (channel == SND_CHANNEL_VOICE)
+			{
+				if ((shader == previousVoiceShader) && (previousVoiceIndex == static_cast<int>(diversity * n) + 1))
+				{
+					diversity = (static_cast<float> (previousVoiceIndex % n))/(static_cast<float> (n)) + 0.01; // add 0.01 to move off the boundary
+				}
+			}
+			else if (channel == SND_CHANNEL_BODY)
+			{
+				if ((shader == previousBodyShader) && (previousBodyIndex == static_cast<int>(diversity * n) + 1))
+				{
+					diversity = (static_cast<float> (previousBodyIndex % n))/(static_cast<float> (n)) + 0.01; // add 0.01 to move off the boundary
+				}
+			}
+		}
+	}
+	else
+	{
 		diversity = refSound.diversity;
 	}
 
@@ -1599,10 +3789,28 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	if ( !refSound.referenceSound ) {
 		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter();
 	}
-
+			
 	UpdateSound();
 
 	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
+
+	// grayman #2341 - It's rare for the engine to not play the sound, but it can happen. If this happens, don't
+	// register this sound as the previous sound played. Stick with the one before that.
+
+	if (len > 0)
+	{
+		if (channel == SND_CHANNEL_VOICE)
+		{
+			previousVoiceShader = (idSoundShader*)shader;	// shader for the most recent voice request
+			previousVoiceIndex  = static_cast<int>(diversity * shader->GetNumSounds()) + 1;	// index of most recent sound requested (1->N, where there are N sounds)
+		}
+		else if (channel == SND_CHANNEL_BODY)
+		{
+			previousBodyShader = (idSoundShader*)shader;	// shader for the most recent body request
+			previousBodyIndex  = static_cast<int>(diversity * shader->GetNumSounds()) + 1;	// index of most recent sound requested (1->N, where there are N sounds)
+		}
+	}
+
 	if ( length ) {
 		*length = len;
 	}
@@ -1699,6 +3907,219 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 	}
 }
 
+/*
+================
+idEntity::PropSoundS
+================
+*/
+
+// note: the format for kv pair is: <global sound name>:volMod,durMod
+// the last two values should be optional, so <global sound name>:volMod,
+// and <global sound name>,durMod also work.
+
+void idEntity::PropSoundS( const char *localName, const char *globalName, float VolModIn )
+{
+	if (cv_sndprop_disable.GetBool())
+	{
+		return;
+	}
+
+	int start, end = -1, len;
+	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
+	float volMod(0.0), durMod(1.0);
+	idStr gName(globalName);
+
+	// if there is no local name, skip all the loading of local flags
+	// and parms.
+	if( localName == NULL )
+	{
+		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, false );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Propagating global sound %s without checking local sound\r", globalName);
+		// note: if we are doing the global only, gName remains set to globalName
+		goto Quit;
+	}
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Found local sound %s, parsing local sound modifiers\r", localName);
+
+	// parse the volMod and durMod if they are tacked on to the globalName
+	len = gName.Length();
+
+	// parse volMod, when durMod may or may not be present
+	if( (start = gName.Find(':')) != -1 )
+	{
+		bHasColon = true;
+		start++;
+		end = gName.Find(',');
+
+		if( end == -1 )
+			end = gName.Length();
+
+		idStr tempstr = gName.Mid(start, (end - start));
+		
+		if( !tempstr.IsNumeric() || start >= end )
+		{
+			gameLocal.Warning( "[Soundprop] Bad volume multiplier for sound %s on entity %s.", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Bad volume multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+		}
+		else
+		{
+			volMod = atof( tempstr.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local volume modifier %f \r", volMod);
+		}
+	}
+
+	// parse durMod
+	if( (start = gName.Find(',')) != -1 )
+	{
+		bHasComma = true;
+		start++;
+		end = gName.Length();
+
+		idStr tempstr = gName.Mid(start, (end - start));
+		if( !tempstr.IsNumeric() || start >= end )
+		{
+			gameLocal.Warning( "[Soundprop] Bad duration multiplier for sound %s on entity %s.", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Bad duration multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+		}
+		else
+		{
+			durMod = atof( tempstr.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local duration modifier %f \r", durMod);
+		}
+	}
+
+	// TODO: Get the extra flags, freqmod and bandwidthmod from another key/value pair
+	// we will need locName for this.
+	
+	// strip the durmod and volmod off of the global name
+	if( bHasColon )
+		end = gName.Find(':');
+	else if( bHasComma && !bHasColon )
+		end = gName.Find(',');
+	else if( !bHasComma && !bHasColon )
+		end = gName.Length();
+
+	gName = gName.Mid(0, end);
+
+	bFoundSnd = gameLocal.m_sndProp->CheckSound( gName.c_str(), false );
+
+Quit:
+	if( bFoundSnd )
+	{
+		// add the input volume modifier
+		volMod += VolModIn;
+
+		gameLocal.m_sndProp->Propagate( volMod, durMod, gName, 
+										GetPhysics()->GetOrigin(), 
+										this ); 
+	}
+
+	return;
+}
+
+/*
+================
+idEntity::PropSoundE
+================
+*/
+
+void idEntity::PropSoundE( const char *localName, const char *globalName, float VolModIn )
+{
+	bool bFoundSnd(false);
+	float volMod(0.0);
+	idStr gName(globalName), locName(localName), tempstr;
+
+	if( localName == NULL )
+	{
+		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, true );
+		// if we are doing the global only, gName remains set to globalName
+		goto Quit;
+	}
+
+	// do the parsing of the local vars that modify the Env. sound
+
+	// strip gName of all modifiers at the end
+
+	// add the input volume modifier
+	volMod += VolModIn;
+
+Quit:
+	
+	if( bFoundSnd )
+	{
+		//TODO : Call soundprop to add env. sound to list
+		// have not written this sndprop functionality yet!
+	}
+	else
+	{
+		// log error, did not find sound in sound def file
+	}
+	return;
+}
+
+/*
+================
+idEntity::PropSoundDirect
+================
+*/
+
+void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn )
+{
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
+	
+	// Cut off the "snd_" prefix from the incoming sound name
+	idStr sprName = sndName;
+
+	sprName.StripLeading("snd_");
+
+	// Check if we have spr* definitions on the local spawnargs
+	idStr sprNameSG;
+	idStr sprNameEG;
+	bool bIsSusp = spawnArgs.GetString( ("sprS_" + sprName) , "", sprNameSG );
+	bool bIsEnv =  spawnArgs.GetString( ("sprE_" + sprName) , "", sprNameEG );
+
+	if (bForceLocal && 
+		( !(idStr::Icmpn( sndName, "snd_", 4 ) == 0) || ( !bIsSusp && !bIsEnv ) ) )  
+	{
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
+		// gameLocal.Warning("[PropSound] Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)", sndName );
+		return;
+	}
+
+	if (bIsSusp)
+	{
+		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
+		// exit here, because we don't want to allow playing both
+		// env. sound AND susp. sound for the same sound and entity
+		return;
+	}
+	else if (bIsEnv)
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
+		PropSoundE( sprName.c_str(), sprNameEG.c_str(), VolModIn );
+		return;
+	}
+	
+	// no environmental or suspicious sound 
+	// play the unmodified, global sound directly
+	sprNameSG = sndName;
+	sprNameEG = sndName;
+	
+	// play the global sound directly.
+	if ( bAssumeEnv )
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
+		PropSoundE( NULL, sprNameEG.c_str(), VolModIn );
+		return;
+	}
+	else
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
+		PropSoundS( NULL, sprNameSG.c_str(), VolModIn );
+	}
+}
+
 /***********************************************************************
 
   entity binding
@@ -1710,7 +4131,8 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 idEntity::PreBind
 ================
 */
-void idEntity::PreBind( void ) {
+void idEntity::PreBind( void )
+{
 }
 
 /*
@@ -1718,7 +4140,8 @@ void idEntity::PreBind( void ) {
 idEntity::PostBind
 ================
 */
-void idEntity::PostBind( void ) {
+void idEntity::PostBind( void )
+{
 }
 
 /*
@@ -1726,7 +4149,8 @@ void idEntity::PostBind( void ) {
 idEntity::PreUnbind
 ================
 */
-void idEntity::PreUnbind( void ) {
+void idEntity::PreUnbind( void )
+{
 }
 
 /*
@@ -1734,7 +4158,8 @@ void idEntity::PreUnbind( void ) {
 idEntity::PostUnbind
 ================
 */
-void idEntity::PostUnbind( void ) {
+void idEntity::PostUnbind( void )
+{
 }
 
 /*
@@ -1742,8 +4167,8 @@ void idEntity::PostUnbind( void ) {
 idEntity::InitBind
 ================
 */
-bool idEntity::InitBind( idEntity *master ) {
-
+bool idEntity::InitBind( idEntity *master )
+{
 	if ( master == this ) {
 		gameLocal.Error( "Tried to bind an object to itself." );
 		return false;
@@ -1755,14 +4180,23 @@ bool idEntity::InitBind( idEntity *master ) {
 	}
 
 	// unbind myself from my master
-	Unbind();
+	// angua: only do this if the entity is already bound to something
+	// and the new master is different from the old one
+	if (bindMaster != NULL && master != bindMaster)
+	{
+		Unbind();
+	}
 
 	// add any bind constraints to an articulated figure
 	if ( master && IsType( idAFEntity_Base::Type ) ) {
 		static_cast<idAFEntity_Base *>(this)->AddBindConstraints();
 	}
 
-	if ( !master || master == gameLocal.world ) {
+// TDM: Removed the inability to bind something to the world
+// Might have to put it back in if something unforseen happens later because of this
+//	if ( !master || master == gameLocal.world ) 
+	if ( !master ) 
+	{
 		// this can happen in scripts, so safely exit out.
 		return false;
 	}
@@ -1775,8 +4209,8 @@ bool idEntity::InitBind( idEntity *master ) {
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( void ) {
-
+void idEntity::FinishBind( void )
+{
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
 
@@ -1792,6 +4226,9 @@ void idEntity::FinishBind( void ) {
 
 	// make sure the team master is active so that physics get run
 	teamMaster->BecomeActive( TH_PHYSICS );
+	
+	// Notify bindmaster of this binding
+	bindMaster->BindNotify( this );
 }
 
 /*
@@ -1801,11 +4238,27 @@ idEntity::Bind
   bind relative to the visual position of the master
 ================
 */
-void idEntity::Bind( idEntity *master, bool orientated ) {
-
-	if ( !InitBind( master ) ) {
+void idEntity::Bind( idEntity *master, bool orientated )
+{
+	if ( !InitBind( master ) )
 		return;
+
+	// ishtvan: 30/1/2010 : Check for ragdoll adding on idAFAttachment masters when just bind is called
+	// (previously only done when bindToJoint or bindToBody was called)
+	if	( 
+		master->IsType( idAFAttachment::Type )
+		&& !IsType( idAnimatedEntity::Type )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		idAFAttachment *masterAFAtt = static_cast<idAFAttachment *>(master);
+		idEntity *masterBody = masterAFAtt->GetBody();
+		if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, masterAFAtt->GetAttachJoint() );
 	}
+
 
 	PreBind();
 
@@ -1830,17 +4283,38 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 	jointHandle_t	jointnum;
 	idAnimator		*masterAnimator;
 
-	if ( !InitBind( master ) ) {
-		return;
-	}
-
 	masterAnimator = master->GetAnimator();
-	if ( !masterAnimator ) {
+	if ( !masterAnimator ) 
+	{
 		gameLocal.Warning( "idEntity::BindToJoint: entity '%s' cannot support skeletal models.", master->GetName() );
 		return;
 	}
 
 	jointnum = masterAnimator->GetJointHandle( jointname );
+
+	if ( !InitBind( master ) )
+		return;
+
+	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
+		&& !IsType( idAnimatedEntity::Type )
+		&& ( jointnum != INVALID_JOINT )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, jointnum );
+		}
+	}
+
 	if ( jointnum == INVALID_JOINT ) {
 		gameLocal.Warning( "idEntity::BindToJoint: joint '%s' not found on entity '%s'.", jointname, master->GetName() );
 	}
@@ -1864,10 +4338,29 @@ idEntity::BindToJoint
   bind relative to a joint of the md5 model used by the master
 ================
 */
-void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated ) {
-
-	if ( !InitBind( master ) ) {
+void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated ) 
+{
+	if ( !InitBind( master ) )
 		return;
+
+		// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
+		&& !IsType( idAnimatedEntity::Type )
+		&& ( jointnum != INVALID_JOINT )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByJoint( this, jointnum );
+		}
 	}
 
 	PreBind();
@@ -1889,15 +4382,32 @@ idEntity::BindToBody
   bind relative to a collision model used by the physics of the master
 ================
 */
-void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated ) {
-
-	if ( !InitBind( master ) ) {
+void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated ) 
+{
+	if ( !InitBind( master ) )
 		return;
+
+	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		(master->IsType( idAFEntity_Base::Type ) || master->IsType( idAFAttachment::Type ))
+		&& !IsType( idAnimatedEntity::Type )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		if( master->IsType( idAFEntity_Base::Type ) )
+			static_cast<idAFEntity_Base *>(master)->AddEntByBody( this, bodyId );
+		else if( master->IsType( idAFAttachment::Type ) )
+		{
+			idEntity *masterBody = static_cast<idAFAttachment *>(master)->GetBody();
+			if( masterBody && masterBody->IsType( idAFEntity_Base::Type ) )
+				static_cast<idAFEntity_Base *>(masterBody)->AddEntByBody( this, bodyId );
+		}
 	}
 
-	if ( bodyId < 0 ) {
+	if ( bodyId < 0 )
 		gameLocal.Warning( "idEntity::BindToBody: body '%d' not found.", bodyId );
-	}
 
 	PreBind();
 
@@ -1930,6 +4440,9 @@ void idEntity::Unbind( void ) {
 	if ( !bindMaster ) {
 		return;
 	}
+
+	// TDM: Notify bindmaster of unbinding
+	bindMaster->UnbindNotify( this );
 
 	if ( !teamMaster ) {
 		// Teammaster already has been freed
@@ -2012,10 +4525,50 @@ void idEntity::RemoveBinds( void ) {
 
 	for( ent = teamChain; ent != NULL; ent = next ) {
 		next = ent->teamChain;
+		// bound to us?
 		if ( ent->bindMaster == this ) {
 			ent->Unbind();
-			ent->PostEventMS( &EV_Remove, 0 );
+
+			if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+				ent->PostEventMS( &EV_Remove, 0 );
+			}
 			next = teamChain;
+		}
+	}
+}
+
+/*
+================
+idEntity::DetachOnAlert
+
+tels: Remove attached entities when the alert index reaches their "unbindonalertindex".
+The attached entities will be removed from the attached list and are also unbound.
+================
+*/
+void idEntity::DetachOnAlert( const int alertIndex )
+{
+	idEntity *ent = NULL;
+
+	for ( int ind = 0; ind < m_Attachments.Num(); ind ++)
+	{
+		ent = m_Attachments[ind].ent.GetEntity();
+		if( ent && m_Attachments[ind].ent.IsValid() )
+		{
+			// Crispy: 9999 = "infinity"
+			if( alertIndex >= ent->spawnArgs.GetInt( "unbindonalertindex", "9999" ))
+			{
+				// Tels:
+				if ( ent->spawnArgs.GetInt("_spawned_by_anim","0") == 1 )
+				{
+					// gameLocal.Printf("Removing entity %s spanwed by animation\n", ent->GetName() );
+					// this entity was spawned automatically by an animation, remove it
+					// from the game to prevent left-overs from alerted-during-animation guards
+					ent->PostEventMS( &EV_Remove, 0 );
+					// and make inactive in the meantime
+					ent->BecomeInactive(TH_PHYSICS|TH_THINK);
+				}
+				DetachInd(ind);	
+			}
 		}
 	}
 }
@@ -2223,18 +4776,31 @@ bool idEntity::GetMasterPosition( idVec3 &masterOrigin, idMat3 &masterAxis ) con
 	idMat3		localAxis;
 	idAnimator	*masterAnimator;
 
-	if ( bindMaster ) {
+	if ( bindMaster ) 
+	{
 		// if bound to a joint of an animated model
-		if ( bindJoint != INVALID_JOINT ) {
+		if ( bindJoint != INVALID_JOINT ) 
+		{
 			masterAnimator = bindMaster->GetAnimator();
-			if ( !masterAnimator ) {
+			if ( !masterAnimator ) 
+			{
 				masterOrigin = vec3_origin;
 				masterAxis = mat3_identity;
 				return false;
-			} else {
-				masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
-				masterAxis *= bindMaster->renderEntity.axis;
-				masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
+			} else 
+			{
+				// Use GetGlobalJointTransform for things bound to weapons
+				// This takes into account the view bob, weapon bob and other factors
+				if( bindMaster->IsType(idWeapon::Type) )
+				{
+					static_cast<idWeapon *>(bindMaster)->GetGlobalJointTransform( true, bindJoint, masterOrigin, masterAxis );
+				}
+				else
+				{
+					masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
+					masterAxis *= bindMaster->renderEntity.axis;
+					masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
+				}
 			}
 		} else if ( bindBody >= 0 && bindMaster->GetPhysics() ) {
 			masterOrigin = bindMaster->GetPhysics()->GetOrigin( bindBody );
@@ -2347,6 +4913,40 @@ void idEntity::JoinTeam( idEntity *teammember ) {
 	gameLocal.sortTeamMasters = true;
 }
 
+idEntity* idEntity::FindMatchingTeamEntity(const idTypeInfo& type, idEntity* lastMatch)
+{
+	idEntity* part;
+
+	if (lastMatch != NULL)
+	{
+		for (part = teamChain; part != NULL; part = part->teamChain)
+		{
+			if (part == lastMatch) 
+			{
+				// We've found our previous match, increase the pointer and break;
+				part = part->teamChain;
+				break;
+			}
+		}
+	}
+	else
+	{
+		// No last match specified, set the pointer to the start
+		part = teamChain;
+	}
+
+	for (/* no initialisation */; part != NULL; part = part->teamChain)
+	{
+		if (part->IsType(type))
+		{
+			// Found a suitable one, return it
+			return part;
+		}
+	}
+
+	return NULL;
+}
+
 /*
 ================
 idEntity::QuitTeam
@@ -2406,9 +5006,12 @@ void idEntity::QuitTeam( void ) {
 idEntity::InitDefaultPhysics
 ================
 */
-void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
+void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
+{
 	const char *temp;
 	idClipModel *clipModel = NULL;
+
+	DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity [%s] test for clipmodel\r", name.c_str());
 
 	// check if a clipmodel key/value pair is set
 	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
@@ -2417,22 +5020,29 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 		}
 	}
 
-	if ( !spawnArgs.GetBool( "noclipmodel", "0" ) ) {
-
+	if(!spawnArgs.GetBool( "noclipmodel", "0" ))
+	{
 		// check if mins/maxs or size key/value pairs are set
-		if ( !clipModel ) {
+		if ( !clipModel )
+		{
 			idVec3 size;
 			idBounds bounds;
 			bool setClipModel = false;
 
 			if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
-				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) ) {
+				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
+			{
 				setClipModel = true;
-				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] ) {
+				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
+				{
 					gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
 				}
-			} else if ( spawnArgs.GetVector( "size", NULL, size ) ) {
-				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) ) {
+			} 
+			else
+			if ( spawnArgs.GetVector( "size", NULL, size ) )
+			{
+				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
+				{
 					gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
 				}
 				bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
@@ -2465,6 +5075,9 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 			}
 		}
 	}
+	else {
+		DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity [%s] does not contain a clipmodel\r", name.c_str());
+	}
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );
@@ -2472,6 +5085,58 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 	defaultPhysicsObj.SetAxis( axis );
 
 	physics = &defaultPhysicsObj;
+
+	// create a frob box separate from the collision box for easier frobbing
+	bool bUseFrobBox(false);
+	idBounds bounds, FrobBounds;
+	idTraceModel FrobTrm;
+	int numSides(0);
+	
+
+	// First check if frobbox_mins and frobbox_maxs are set
+	if ( spawnArgs.GetVector( "frobbox_mins", NULL, FrobBounds[0] ) &&
+				spawnArgs.GetVector( "frobbox_maxs", NULL, FrobBounds[1] ) )
+	{
+		if ( FrobBounds[0][0] > FrobBounds[1][0] || FrobBounds[0][1] >FrobBounds[1][1] || FrobBounds[0][2] > FrobBounds[1][2] )
+		{
+			gameLocal.Error( "Invalid frob box bounds '%s'-'%s' on entity '%s'", FrobBounds[0].ToString(), FrobBounds[1].ToString(), name.c_str() );
+		}
+		bUseFrobBox = true;
+	} 
+	else 
+	{
+		float tsize;
+		spawnArgs.GetFloat( "frobbox_size", "0.0", tsize );
+		if( tsize != 0.0f )
+		{
+			FrobBounds.Zero();
+			FrobBounds.ExpandSelf( tsize );
+			bUseFrobBox = true;
+		}
+	}
+
+	// greebo: Allow the no_frob_box spawnarg to override the settings
+	if (spawnArgs.GetBool("no_frob_box", "0"))
+	{
+		bUseFrobBox = false;
+	}
+
+	if( bUseFrobBox )
+	{
+		if ( spawnArgs.GetInt( "frobbox_cylinder", "0", numSides ) && numSides > 0 ) 
+			FrobTrm.SetupCylinder( FrobBounds, numSides < 3 ? 3 : numSides );
+		else if ( spawnArgs.GetInt( "frobbox_cone", "0", numSides ) && numSides > 0 )
+			FrobTrm.SetupCone( FrobBounds, numSides < 3 ? 3 : numSides );
+		else
+			FrobTrm.SetupBox( FrobBounds );
+
+		// Initialize frob bounds based on previous spawnarg setup
+		m_FrobBox = new idClipModel( FrobTrm );
+		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+		// don't set contents of frob box here, wait for frobbing initialization
+	}
+	else
+		m_FrobBox = NULL;
 }
 
 /*
@@ -2523,7 +5188,7 @@ idEntity::RunPhysics
 */
 bool idEntity::RunPhysics( void ) {
 	int			i, reachedTime, startTime, endTime;
-	idEntity *	part, *blockedPart, *blockingEntity;
+	idEntity *	part, *blockedPart, *blockingEntity(NULL);
 	trace_t		results;
 	bool		moved;
 
@@ -2541,7 +5206,16 @@ bool idEntity::RunPhysics( void ) {
 		return false;
 	}
 
-	startTime = gameLocal.previousTime;
+	// angua: since the AI are not thinking every frame, we need to rescale 
+	// their velocities with the corrected time length to prevent them from dying.
+	if (IsType(idAI::Type))
+	{
+		startTime = static_cast<idAI*>(this)->m_lastThinkTime;
+	}
+	else
+	{
+		startTime = gameLocal.previousTime;
+	}
 	endTime = gameLocal.time;
 
 	gameLocal.push.InitSavingPushedEntityPositions();
@@ -2560,11 +5234,10 @@ bool idEntity::RunPhysics( void ) {
 	// move the whole team
 	for ( part = this; part != NULL; part = part->teamChain ) {
 
-		if ( part->physics ) {
-
+		if ( part->physics )
+		{
 			// run physics
 			moved = part->physics->Evaluate( endTime - startTime, endTime );
-
 			// check if the object is blocked
 			blockingEntity = part->physics->GetBlockingEntity();
 			if ( blockingEntity ) {
@@ -2587,10 +5260,12 @@ bool idEntity::RunPhysics( void ) {
 
 	// enable the whole team for collision detection
 	for ( part = this; part != NULL; part = part->teamChain ) {
-		if ( part->physics ) {
-			if ( !part->fl.solidForTeam ) {
+		if ( part->physics ) 
+		{
+// Ish: I think Id screwed up here, but am not positive
+			// if ( !part->fl.solidForTeam ) {
 				part->physics->EnableClip();
-			}
+			// }
 		}
 	}
 
@@ -2600,7 +5275,6 @@ bool idEntity::RunPhysics( void ) {
 		for ( part = this; part != blockedPart; part = part->teamChain ) {
 
 			if ( part->physics ) {
-
 				// restore the physics state
 				part->physics->RestoreState();
 
@@ -2612,6 +5286,34 @@ bool idEntity::RunPhysics( void ) {
 			if ( part->physics ) {
 				// update the physics time without moving
 				part->physics->UpdateTime( endTime );
+			}
+		}
+
+		// greebo: Apply the "reactio" to the team master
+		if (physics->IsType(idPhysics_RigidBody::Type))
+		{
+			idPhysics_RigidBody* rigidBodyPhysics = static_cast<idPhysics_RigidBody*>(physics);
+
+			// Calculate the movement (proportional to kinetic energy)
+			float movement = rigidBodyPhysics->GetLinearVelocity().LengthSqr() + 
+				              rigidBodyPhysics->GetAngularVelocity().LengthSqr();
+
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Movement is %f\r", movement);
+
+			if (movement < 10.0f)
+			{
+				DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Putting %s to rest, velocity was %f\r", name.c_str(), physics->GetLinearVelocity().LengthFast());
+				physics->PutToRest();
+			}
+			else
+			{
+				// Create a dummy impulse vector, it gets overwritten by the CollisionImpulse method anyway
+				idVec3 impulse(0,0,0);
+				rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), impulse);
+
+				// greebo: Apply some damping due to the collision with a slave
+				rigidBodyPhysics->State().i.linearMomentum *= 0.95f;
+				rigidBodyPhysics->State().i.angularMomentum *= 0.99f;
 			}
 		}
 
@@ -2773,11 +5475,10 @@ bool idEntity::GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) {
 idEntity::Collide
 ================
 */
+
 bool idEntity::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	// this entity collides with collision.c.entityNum
 	return false;
 }
-
 /*
 ================
 idEntity::GetImpactInfo
@@ -2793,7 +5494,51 @@ idEntity::ApplyImpulse
 ================
 */
 void idEntity::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) {
-	GetPhysics()->ApplyImpulse( id, point, impulse );
+
+	// grayman #2603 - disallow impulse on candles and candle holders when the candle is being relit
+
+	bool allowImpulse = true;
+
+	// In case the entity itself is a light (tdm_light_holder light)
+
+	if (IsType(idLight::Type))
+	{
+		if (static_cast<idLight*>(this)->IsBeingRelit())
+		{
+			allowImpulse = false; // relighting this light; no impulse
+		}
+	}
+	else if (IsType(idMoveable::Type))
+	{
+		// Are there any light entities on this team?
+
+		idList<idEntity *> children;
+		GetTeamChildren(&children);
+		for (int i = 0 ; i < children.Num() ; i++)
+		{
+			// Based on reading other uses of GetTeamChildren(), it's
+			// prudent to check for recursion back to the original entity.
+
+			idEntity* child = children[i];
+			if (this == child)
+			{
+				break;
+			}
+			if (child->IsType(idLight::Type))
+			{
+				if (static_cast<idLight*>(child)->IsBeingRelit())
+				{
+					allowImpulse = false; // relighting this light; no impulse
+					break;
+				}
+			}
+		}
+	}
+
+	if (allowImpulse)
+	{
+		GetPhysics()->ApplyImpulse( id, point, impulse );
+	}
 }
 
 /*
@@ -2942,7 +5687,7 @@ bool idEntity::CanDamage( const idVec3 &origin, idVec3 &damagePoint ) const {
 ================
 idEntity::DamageFeedback
 
-callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
+callback function for when another entity recieved damage from this entity.  damage can be adjusted and returned to the caller.
 ================
 */
 void idEntity::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) {
@@ -2967,7 +5712,9 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 ============
 */
 void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
+					  const char *damageDefName, const float damageScale, 
+					  const int location, trace_t *tr ) 
+{
 	if ( !fl.takedamage ) {
 		return;
 	}
@@ -3010,17 +5757,21 @@ idEntity::AddDamageEffect
 ================
 */
 void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
-	const char *sound, *decal, *key;
+	const char *decal, *key;
+	idStr surfName;
 
 	const idDeclEntityDef *def = gameLocal.FindEntityDef( damageDefName, false );
 	if ( def == NULL ) {
 		return;
 	}
 
-	const char *materialType = gameLocal.sufaceTypeNames[ collision.c.material->GetSurfaceType() ];
+	g_Global.GetSurfName( collision.c.material, surfName );
 
 	// start impact sound based on material type
-	key = va( "snd_%s", materialType );
+	key = va( "snd_%s", surfName.c_str() );
+	
+	// ishtvan: No need to play the sound here anymore, right?
+/* 
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -3028,10 +5779,11 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 	if ( *sound != '\0' ) {
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
+*/
 
 	if ( g_decals.GetBool() ) {
 		// place a wound overlay on the model
-		key = va( "mtr_wound_%s", materialType );
+		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
 		if ( *decal == '\0' ) {
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
@@ -3095,13 +5847,13 @@ Can be overridden by subclasses when a thread doesn't need to be allocated.
 ================
 */
 idThread *idEntity::ConstructScriptObject( void ) {
-	idThread *thread;
+	idThread		*thread;
 	const function_t *constructor;
 
 	// init the script object's data
 	scriptObject.ClearObject();
 
-	// call script object's constructor
+	// call script object's constructor (usually "init()")
 	constructor = scriptObject.GetConstructor();
 	if ( constructor ) {
 		// start a thread that will initialize after Spawn is done being called
@@ -3275,11 +6027,20 @@ void idEntity::Signal( signalNum_t signalnum ) {
 	}
 
 	// clear out the signal list so that we don't get into an infinite loop
-	signals->signal[ signalnum ].Clear();
+	// TDM: Removed this, signal should stay after triggering by default
+	// signals->signal[ signalnum ].Clear();
 
 	for( i = 0; i < num; i++ ) {
 		thread = idThread::GetThread( sigs[ i ].threadnum );
-		if ( thread ) {
+		if ( thread ) 
+		{
+			thread->CallFunction( this, sigs[ i ].function, true );
+			thread->Execute();
+		}
+		// TDM: Create a new thread if the thread that added the signal is not still around
+		else
+		{
+			thread = new idThread(sigs[i].function);
 			thread->CallFunction( this, sigs[ i ].function, true );
 			thread->Execute();
 		}
@@ -3424,20 +6185,6 @@ bool idEntity::HandleGuiCommands( idEntity *entityGui, const char *cmds ) {
 				continue;
 			}
 
-			if ( !token.Icmp( "turkeyscore" ) ) {
-				if ( src.ReadToken( &token2 ) && entityGui->renderEntity.gui[0] ) {
-					int score = entityGui->renderEntity.gui[0]->State().GetInt( "score" );
-					score += atoi( token2 );
-					entityGui->renderEntity.gui[0]->SetStateInt( "score", score );
-					if ( gameLocal.GetLocalPlayer() && score >= 25000 && !gameLocal.GetLocalPlayer()->inventory.turkeyScore ) {
-						gameLocal.GetLocalPlayer()->GiveEmail( "highScore" );
-						gameLocal.GetLocalPlayer()->inventory.turkeyScore = true;
-					}
-				}
-				continue;
-			}
-
-
 			// handy for debugging GUI stuff
 			if ( !token.Icmp( "print" ) ) {
 				idStr msg;
@@ -3507,10 +6254,13 @@ have been spawned when the entity is created at map load time, we have to wait
 ===============
 */
 void idEntity::FindTargets( void ) {
-	int			i;
+	int i;
 
 	// targets can be a list of multiple names
 	gameLocal.GetTargets( spawnArgs, targets, "target" );
+
+	// grayman #2603 - add relight positions as targets
+	gameLocal.GetRelights(spawnArgs,targets,"relight_position");
 
 	// ensure that we don't target ourselves since that could cause an infinite loop when activating entities
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -3518,6 +6268,13 @@ void idEntity::FindTargets( void ) {
 			gameLocal.Error( "Entity '%s' is targeting itself", name.c_str() );
 		}
 	}
+}
+
+// grayman #2603 - convert relight_positions to targets
+
+void idEntity::FindRelights(void)
+{
+	gameLocal.GetRelights(spawnArgs,targets,"relight_position");
 }
 
 /*
@@ -3542,25 +6299,43 @@ idEntity::ActivateTargets
 "activator" should be set to the entity that initiated the firing.
 ==============================
 */
-void idEntity::ActivateTargets( idEntity *activator ) const {
-	idEntity	*ent;
-	int			i, j;
-	
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( !ent ) {
-			continue;
-		}
-		if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {
-			ent->Signal( SIG_TRIGGER );
-			ent->ProcessEvent( &EV_Activate, activator );
-		} 		
-		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
-			if ( ent->renderEntity.gui[ j ] ) {
-				ent->renderEntity.gui[ j ]->Trigger( gameLocal.time );
+void idEntity::ActivateTargets( idEntity *activator ) const
+{
+	for (int i = 0; i < targets.Num(); i++ )
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL) continue;
+
+		// Call the virtual function
+		ent->Activate(activator);
+		 		
+		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++)
+		{
+			if ( ent->renderEntity.gui[j] ) {
+				ent->renderEntity.gui[j]->Trigger(gameLocal.time);
 			}
 		}
 	}
+}
+
+void idEntity::RemoveTarget(idEntity* target)
+{
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		if (targets[i].GetEntity() == target)
+		{
+			targets.RemoveIndex(i);
+			return;
+		}
+	}
+}
+
+void idEntity::AddTarget(idEntity* target)
+{
+	idEntityPtr<idEntity> ptr;
+	ptr = target;
+	targets.AddUnique(ptr);
 }
 
 /***********************************************************************
@@ -3575,8 +6350,27 @@ idEntity::Teleport
 ================
 */
 void idEntity::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
-	GetPhysics()->SetOrigin( origin );
-	GetPhysics()->SetAxis( angles.ToMat3() );
+
+	if (destination == NULL)
+	{
+		GetPhysics()->SetOrigin( origin );
+		GetPhysics()->SetAxis( angles.ToMat3() );
+	}
+	else
+	{
+		// tels: copy origin and angles from the destination, but
+		//		 use potential "teleport_offset" and "teleport_random_offset" spawnargs
+		idVec3 offset = spawnArgs.GetVector( "teleport_offset", "0 0 0" );
+		idVec3 rand_offset = spawnArgs.GetVector( "teleport_random_offset", "0 0 0" );
+
+		// replace "3 0 0" with a value of "-1.5 .. 1.5, 0, 0"
+		rand_offset.x = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.x) - idMath::Fabs(rand_offset.x) / 2;
+		rand_offset.y = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.y) - idMath::Fabs(rand_offset.y) / 2;
+		rand_offset.z = gameLocal.random.RandomFloat() * idMath::Fabs(rand_offset.z) - idMath::Fabs(rand_offset.z) / 2;
+
+		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() + offset + rand_offset );
+		GetPhysics()->SetAxis( destination->GetPhysics()->GetAxis() );
+	}
 
 	UpdateVisuals();
 }
@@ -3716,6 +6510,32 @@ void idEntity::Event_SetName( const char *newname ) {
 }
 
 /*
+================
+idEntity::Event_IsType
+================
+*/
+void idEntity::Event_IsType( const char *pstr_typeName ) 
+{
+	idTypeInfo* p_namedType = GetClass (pstr_typeName);
+	if (p_namedType == NULL)
+	{
+		idThread::ReturnInt (0);
+	}
+	else
+	{
+		if (IsType (*p_namedType))
+		{
+			idThread::ReturnInt (1);
+		}
+		else
+		{
+			idThread::ReturnInt (0);
+		}
+	}
+}
+
+
+/*
 ===============
 idEntity::Event_FindTargets
 ===============
@@ -3735,6 +6555,19 @@ event to delay activating targets.
 void idEntity::Event_ActivateTargets( idEntity *activator ) {
 	ActivateTargets( activator );
 }
+
+
+void idEntity::Event_AddTarget(idEntity* target)
+{
+	AddTarget(target);
+}
+
+
+void idEntity::Event_RemoveTarget(idEntity* target)
+{
+	RemoveTarget(target);
+}
+
 
 /*
 ================
@@ -3813,6 +6646,16 @@ void idEntity::Event_BindToJoint( idEntity *master, const char *jointname, float
 
 /*
 ================
+idEntity::Event_BindToBody
+================
+*/
+void idEntity::Event_BindToBody(idEntity *master, int bodyId, bool orientated) {
+	BindToBody( master, bodyId, orientated );
+}
+
+
+/*
+================
 idEntity::Event_RemoveBinds
 ================
 */
@@ -3852,7 +6695,8 @@ void idEntity::Event_Unbind( void ) {
 idEntity::Event_SpawnBind
 ================
 */
-void idEntity::Event_SpawnBind( void ) {
+void idEntity::Event_SpawnBind( void ) 
+{
 	idEntity		*parent;
 	const char		*bind, *joint, *bindanim;
 	jointHandle_t	bindJoint;
@@ -3862,28 +6706,33 @@ void idEntity::Event_SpawnBind( void ) {
 	int				animNum;
 	idAnimator		*parentAnimator;
 	
-	if ( spawnArgs.GetString( "bind", "", &bind ) ) {
-		if ( idStr::Icmp( bind, "worldspawn" ) == 0 ) {
-			//FIXME: Completely unneccessary since the worldspawn is called "world"
-			parent = gameLocal.world;
-		} else {
-			parent = gameLocal.FindEntity( bind );
-		}
+	if ( spawnArgs.GetString( "bind", "", &bind ) ) 
+	{
+		parent = gameLocal.FindEntity( bind );
+
 		bindOrientated = spawnArgs.GetBool( "bindOrientated", "1" );
-		if ( parent ) {
+		if ( parent ) 
+		{
+			if (spawnArgs.GetBool("is_attachment"))
+			{
+				parent->Attach(this);
+			}
+
 			// bind to a joint of the skeletal model of the parent
-			if ( spawnArgs.GetString( "bindToJoint", "", &joint ) && *joint ) {
+			if ( spawnArgs.GetString( "bindToJoint", "", &joint ) && *joint ) 
+			{
 				parentAnimator = parent->GetAnimator();
-				if ( !parentAnimator ) {
+				if ( !parentAnimator )
 					gameLocal.Error( "Cannot bind to joint '%s' on '%s'.  Entity does not support skeletal models.", joint, name.c_str() );
-				}
+
 				bindJoint = parentAnimator->GetJointHandle( joint );
-				if ( bindJoint == INVALID_JOINT ) {
+				if ( bindJoint == INVALID_JOINT )
 					gameLocal.Error( "Joint '%s' not found for bind on '%s'", joint, name.c_str() );
-				}
 
 				// bind it relative to a specific anim
-				if ( ( parent->spawnArgs.GetString( "bindanim", "", &bindanim ) || parent->spawnArgs.GetString( "anim", "", &bindanim ) ) && *bindanim ) {
+				if ( ( parent->spawnArgs.GetString( "bindanim", "", &bindanim ) 
+						|| parent->spawnArgs.GetString( "anim", "", &bindanim ) ) && *bindanim ) 
+				{
 					animNum = parentAnimator->GetAnim( bindanim );
 					if ( !animNum ) {
 						gameLocal.Error( "Anim '%s' not found for bind on '%s'", bindanim, name.c_str() );
@@ -3902,18 +6751,16 @@ void idEntity::Event_SpawnBind( void ) {
 					gameEdit->ANIM_CreateAnimFrame( parentAnimator->ModelHandle(), anim->MD5Anim( 0 ), parent->renderEntity.numJoints, frame, 0, parentAnimator->ModelDef()->GetVisualOffset(), parentAnimator->RemoveOrigin() );
 					BindToJoint( parent, joint, bindOrientated );
 					parentAnimator->ForceUpdate();
-				} else {
+				} 
+				else
 					BindToJoint( parent, joint, bindOrientated );
-				}
 			}
 			// bind to a body of the physics object of the parent
-			else if ( spawnArgs.GetInt( "bindToBody", "0", id ) ) {
+			else if ( spawnArgs.GetInt( "bindToBody", "0", id ) )
 				BindToBody( parent, id, bindOrientated );
-			}
-			// bind to the parent
-			else {
+			// no joint specified, bind to the parent
+			else
 				Bind( parent, bindOrientated );
-			}
 		}
 	}
 }
@@ -4089,6 +6936,17 @@ void idEntity::Event_FadeSound( int channel, float to, float over ) {
 
 /*
 ================
+idEntity::Event_SetSoundVolume
+
+tels:
+================
+*/
+void idEntity::Event_SetSoundVolume( float volume ) {
+	refSound.parms.volume = volume;
+}
+
+/*
+================
 idEntity::Event_GetWorldOrigin
 ================
 */
@@ -4237,37 +7095,6 @@ void idEntity::Event_Touches( idEntity *ent ) {
 
 /*
 ================
-idEntity::Event_SetGuiParm
-================
-*/
-void idEntity::Event_SetGuiParm( const char *key, const char *val ) {
-	for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		if ( renderEntity.gui[ i ] ) {
-			if ( idStr::Icmpn( key, "gui_", 4 ) == 0 ) {
-				spawnArgs.Set( key, val );
-			}
-			renderEntity.gui[ i ]->SetStateString( key, val );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
-		}
-	}
-}
-
-/*
-================
-idEntity::Event_SetGuiParm
-================
-*/
-void idEntity::Event_SetGuiFloat( const char *key, float f ) {
-	for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		if ( renderEntity.gui[ i ] ) {
-			renderEntity.gui[ i ]->SetStateString( key, va( "%f", f ) );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
-		}
-	}
-}
-
-/*
-================
 idEntity::Event_GetNextKey
 ================
 */
@@ -4368,6 +7195,15 @@ void idEntity::Event_GetEntityKey( const char *key ) {
 	}
 
 	idThread::ReturnEntity( ent );
+}
+
+/*
+================
+idEntity::Event_RemoveKey
+================
+*/
+void idEntity::Event_RemoveKey( const char *key ) {
+	spawnArgs.Delete( key );
 }
 
 /*
@@ -4549,6 +7385,37 @@ void idEntity::Event_CallFunction( const char *funcname ) {
 }
 
 /*
+=====================
+idEntity::Event_CallGlobalFunction
+=====================
+*/
+void idEntity::Event_CallGlobalFunction( const char *funcname, idEntity *ent ) {
+	const function_t *func;
+	idThread *thread;
+
+	thread = idThread::CurrentThread();
+	if ( !thread ) {
+		gameLocal.Error( "Event 'callGlobalFunction' called from outside thread" );
+	}
+
+    func = gameLocal.program.FindFunction( funcname );
+	if ( !func ) {
+		gameLocal.Error( "Unknown global function '%s'", funcname );
+	}
+
+	if ( func->type->NumParameters() != 1 ) {
+		gameLocal.Error( "Function '%s' has the wrong number of parameters for 'callGlobalFunction'", funcname );
+	}
+    /*
+	if ( !scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
+		gameLocal.Error( "Function '%s' is the wrong type for 'callGlobalFunction'", funcname );
+	} */
+
+	// function args will be invalid after this call
+	thread->CallFunction( ent, func, false );
+}
+
+/*
 ================
 idEntity::Event_SetNeverDormant
 ================
@@ -4556,6 +7423,83 @@ idEntity::Event_SetNeverDormant
 void idEntity::Event_SetNeverDormant( int enable ) {
 	fl.neverDormant	= ( enable != 0 );
 	dormantStart = 0;
+}
+
+#ifdef MOD_WATERPHYSICS
+
+/*
+
+================
+
+idEntity::Event_GetMass		MOD_WATERPHYSICS
+
+================
+
+*/
+
+void idEntity::Event_GetMass( int id ) {
+
+	idThread::ReturnFloat(physics->GetMass(id));
+
+}
+
+
+
+/*
+
+================
+
+idEntity::Event_IsInLiquid	MOD_WATERPHYSICS
+
+================
+
+*/
+
+void idEntity::Event_IsInLiquid( void ) {
+
+	idThread::ReturnInt(physics->GetWater() != NULL);
+
+}
+
+#endif		// MOD_WATERPHYSICS
+
+
+/*
+================
+idEntity::Event_CopyBind
+================
+*/
+
+void idEntity::Event_CopyBind( idEntity* other ) 
+{
+	if (other == NULL) return;
+
+	idEntity *master = other->GetBindMaster();
+
+	jointHandle_t joint = other->GetBindJoint();
+
+	int body = other->GetBindBody();
+	if( joint != INVALID_JOINT )
+	{
+		// joint is specified so bind to that joint
+		BindToJoint( master, joint, true );
+	}
+	else if( body >= 0 )
+	{ 
+		// body is specified so bind to it
+		BindToBody( master, body, true );
+	}
+	else
+	{
+		// no joint and no body specified, so bind to master
+		Bind( master, true );
+
+		// greebo: If the bind master is static, set the solid for team flag
+		if (master && master->GetPhysics()->IsType(idPhysics_Static::Type))
+		{
+			fl.solidForTeam = true;
+		}
+	}
 }
 
 /***********************************************************************
@@ -4746,16 +7690,16 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 		outMsg.WriteBits( 0, idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
 	}
 
-	if ( excludeClient != -1 ) {
-		networkSystem->ServerSendReliableMessageExcluding( excludeClient, outMsg );
-	} else {
-		networkSystem->ServerSendReliableMessage( -1, outMsg );
-	}
+		if ( excludeClient != -1 ) {
+			networkSystem->ServerSendReliableMessageExcluding( excludeClient, outMsg );
+		} else {
+			networkSystem->ServerSendReliableMessage( -1, outMsg );
+		}
 
-	if ( saveEvent ) {
-		gameLocal.SaveEntityNetworkEvent( this, eventId, msg );
+		if ( saveEvent ) {
+			gameLocal.SaveEntityNetworkEvent( this, eventId, msg );
+		}
 	}
-}
 
 /*
 ================
@@ -4844,14 +7788,14 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return false;
 		}
 	}
-	return false;
+//	return false;
 }
 
 /*
 ===============================================================================
 
   idAnimatedEntity
-
+	
 ===============================================================================
 */
 
@@ -4875,10 +7819,40 @@ END_CLASS
 
 /*
 ================
+CAttachInfo::Save
+================
+*/
+void CAttachInfo::Save( idSaveGame *savefile ) const
+{
+	ent.Save( savefile );
+	savefile->WriteInt( channel );
+	savefile->WriteString( name );
+	savefile->WriteInt(savedContents);
+	savefile->WriteString(posName); // grayman #2603
+}
+
+/*
+================
+CAttachInfo::Restore
+================
+*/
+void CAttachInfo::Restore( idRestoreGame *savefile )
+{
+	ent.Restore( savefile );
+	savefile->ReadInt( channel );
+	savefile->ReadString( name );
+	savefile->ReadInt(savedContents);
+	savefile->ReadString(posName); // grayman #2603
+}
+
+/*
+================
 idAnimatedEntity::idAnimatedEntity
 ================
 */
-idAnimatedEntity::idAnimatedEntity() {
+idAnimatedEntity::idAnimatedEntity() :
+	lastUpdateTime(-1)
+{
 	animator.SetEntity( this );
 	damageEffects = NULL;
 }
@@ -4898,14 +7872,45 @@ idAnimatedEntity::~idAnimatedEntity() {
 }
 
 /*
+===============
+idAnimatedEntity::Spawn
+===============
+*/
+void idAnimatedEntity::Spawn( void )
+{
+	// Cache animation rates
+	CacheAnimRates();
+	int anims = animator.NumAnims();
+	m_animRates.Clear();
+	m_animRates.AssureSize(anims);
+	for (int i=0; i<anims; i++) 
+	{
+		const idAnim *anim = animator.GetAnim(i);
+		if (anim != NULL) 
+		{
+			idStr spawnargname = "anim_rate_";
+			spawnargname += anim->Name();
+			m_animRates[i] = spawnArgs.GetFloat(spawnargname, "1");
+		} else 
+		{
+			m_animRates[i] = 1.0f;
+		}
+	}
+
+	lastUpdateTime = 0;
+}
+
+/*
 ================
 idAnimatedEntity::Save
 
 archives object for save game file
 ================
 */
-void idAnimatedEntity::Save( idSaveGame *savefile ) const {
+void idAnimatedEntity::Save( idSaveGame *savefile ) const 
+{
 	animator.Save( savefile );
+	savefile->WriteInt(lastUpdateTime);
 
 	// Wounds are very temporary, ignored at this time
 	//damageEffect_t			*damageEffects;
@@ -4918,13 +7923,17 @@ idAnimatedEntity::Restore
 unarchives object from save game file
 ================
 */
-void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
+void idAnimatedEntity::Restore( idRestoreGame *savefile ) 
+{
 	animator.Restore( savefile );
+	savefile->ReadInt(lastUpdateTime);
 
 	// check if the entity has an MD5 model
-	if ( animator.ModelHandle() ) {
+	if ( animator.ModelHandle() )
+	{
 		// set the callback to update the joints
 		renderEntity.callback = idEntity::ModelCallback;
+
 		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 		animator.GetBounds( gameLocal.time, renderEntity.bounds );
 		if ( modelDefHandle != -1 ) {
@@ -4973,9 +7982,11 @@ void idAnimatedEntity::UpdateAnimation( void ) {
 		return;
 	}
 
-	// call any frame commands that have happened in the past frame
-	if ( !fl.hidden ) {
-		animator.ServiceAnims( gameLocal.previousTime, gameLocal.time );
+	// call any frame commands that have happened since the last update
+	if ( !fl.hidden )
+	{
+		animator.ServiceAnims( lastUpdateTime, gameLocal.time );
+		lastUpdateTime = gameLocal.time;
 	}
 
 	// if the model is animating then we have to update it
@@ -5026,6 +8037,7 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 
 	// set the callback to update the joints
 	renderEntity.callback = idEntity::ModelCallback;
+
 	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
 
@@ -5147,11 +8159,18 @@ int	idAnimatedEntity::GetDefaultSurfaceType( void ) const {
 idAnimatedEntity::AddLocalDamageEffect
 ==============
 */
-void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localOrigin, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial ) {
-	const char *sound, *splat, *decal, *bleed, *key;
+void idAnimatedEntity::AddLocalDamageEffect
+	( 
+		jointHandle_t jointNum, const idVec3 &localOrigin, 
+		const idVec3 &localNormal, const idVec3 &localDir, 
+		const idDeclEntityDef *def, const idMaterial *collisionMaterial 
+	) 
+{
+	const char *splat, *decal, *bleed, *key;
 	damageEffect_t	*de;
 	idVec3 origin, dir;
 	idMat3 axis;
+	idStr surfName;
 
 	axis = renderEntity.joints[jointNum].ToMat3() * renderEntity.axis;
 	origin = renderEntity.origin + renderEntity.joints[jointNum].ToVec3() * renderEntity.axis;
@@ -5159,15 +8178,19 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	origin = origin + localOrigin * axis;
 	dir = localDir * axis;
 
-	int type = collisionMaterial->GetSurfaceType();
-	if ( type == SURFTYPE_NONE ) {
-		type = GetDefaultSurfaceType();
+	if ( !collisionMaterial || collisionMaterial->GetSurfaceType() == SURFTYPE_NONE )
+	{
+		surfName = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+	}
+	else
+	{
+		g_Global.GetSurfName( collisionMaterial, surfName );
 	}
 
-	const char *materialType = gameLocal.sufaceTypeNames[ type ];
-
 	// start impact sound based on material type
-	key = va( "snd_%s", materialType );
+	key = va( "snd_%s", surfName.c_str() );
+	// ishtvan: Shouldn't need to play the sound here anymore, right?
+/*
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -5175,9 +8198,10 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	if ( *sound != '\0' ) {
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
+*/
 
 	// blood splats are thrown onto nearby surfaces
-	key = va( "mtr_splat_%s", materialType );
+	key = va( "mtr_splat_%s", surfName.c_str() );
 	splat = spawnArgs.RandomPrefix( key, gameLocal.random );
 	if ( *splat == '\0' ) {
 		splat = def->dict.RandomPrefix( key, gameLocal.random );
@@ -5189,7 +8213,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	// can't see wounds on the player model in single player mode
 	if ( !( IsType( idPlayer::Type ) && !gameLocal.isMultiplayer ) ) {
 		// place a wound overlay on the model
-		key = va( "mtr_wound_%s", materialType );
+		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
 		if ( *decal == '\0' ) {
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
@@ -5200,7 +8224,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	}
 
 	// a blood spurting wound is added
-	key = va( "smoke_wound_%s", materialType );
+	key = va( "smoke_wound_%s", surfName.c_str() );
 	bleed = spawnArgs.GetString( key );
 	if ( *bleed == '\0' ) {
 		bleed = def->dict.GetString( key );
@@ -5214,6 +8238,12 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		de->localOrigin = localOrigin;
 		de->localNormal = localNormal;
 		de->type = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, bleed ) );
+
+		key = va( "smoke_chance_%s", surfName.c_str() );
+		float chance;
+		chance = def->dict.GetFloat( va("smoke_chance_%s", surfName.c_str()), "1.0" );
+		if( gameLocal.random.RandomFloat() > chance )
+			de->type = NULL;
 		de->time = gameLocal.time;
 	}
 }
@@ -5287,7 +8317,370 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
+}
+
+/*
+================
+idAnimatedEntity::Attach
+================
+*/
+void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
+{
+	idVec3			origin;
+	idMat3			axis;
+	jointHandle_t	joint;
+	idStr			jointName;
+	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
+	idVec3			originOffset, originSubOffset(vec3_zero);
+	idStr			nm;
+	idStr			ClassName;
+	SAttachPosition *pos;
+
+// New position system:
+	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
+	{
+		joint = pos->joint;
+
+		originOffset = pos->originOffset;
+		angleOffset = pos->angleOffset;
+
+		// entity-specific offsets to a given position
+		// entity-specific offsets to a given position
+		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+	}
+// Old system, will be phased out
+	else
+	{
+		jointName = ent->spawnArgs.GetString( "joint" );
+		joint = animator.GetJointHandle( jointName );
+		if ( joint == INVALID_JOINT ) 
+		{
+			jointName = ent->spawnArgs.GetString("bindToJoint");
+			joint = animator.GetJointHandle( jointName );
+			if ( joint == INVALID_JOINT )
+			{
+				gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+			}
+		}
+
+		// Sparhawk's classname-specific offset system
+		// Will be phased out in favor of attachment positions
+		spawnArgs.GetString("classname", "", ClassName);
+		sprintf(nm, "angles_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
+			angleOffset = ent->spawnArgs.GetAngles( "angles" );
+
+		sprintf(nm, "origin_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
+		{
+			originOffset = ent->spawnArgs.GetVector( "origin" );
+		}
+	}
+
+	GetAttachingTransform( joint, origin, axis );
+	idMat3 rotate = angleOffset.ToMat3();
+	idMat3 newAxis = rotate * axis;
+	
+	// Use the local joint axis instead of the overall AI axis
+	if (!ent->spawnArgs.GetBool("is_attachment"))
+	{
+		// angua: don't set origin and axis for attachments added in the map
+		// rather than spawned dynamically, this would lead to the entity 
+		// floating around through half of the map
+		ent->SetOrigin( origin + originOffset * axis + originSubOffset * newAxis );
+		ent->SetAxis( angleSubOffset.ToMat3() * newAxis );
+	}
+
+	ent->BindToJoint( this, joint, true );
+	ent->cinematic = cinematic;
+
+	CAttachInfo	&attach = m_Attachments.Alloc();
+	attach.channel = animator.GetChannelForJoint( joint );
+	attach.ent = ent;
+	attach.name = AttName;
+	attach.posName = PosName; // grayman #2603
+
+	// Update name->m_Attachment index mapping
+	int index = m_Attachments.Num() - 1;
+	if( AttName != NULL )
+		m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
+}
+
+/*
+================
+idAnimatedEntity::GetAttachingTransform
+================
+*/
+void idAnimatedEntity::GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis )
+{
+	GetJointWorldTransform( jointHandle, gameLocal.time, offset, axis );
+}
+
+/*
+========================
+idAnimatedEntity::ReAttachToCoords
+========================
+*/
+void idAnimatedEntity::ReAttachToCoords
+	( const char *AttName, idStr jointName, 
+		const idVec3 offset, const idAngles angles  ) 
+{
+	idEntity		*ent( NULL );
+	idVec3			origin;
+	idMat3			axis, rotate, newAxis;
+	jointHandle_t	joint;
+	CAttachInfo		*attachment( NULL );
+
+	attachment = GetAttachInfo( AttName );
+	if( attachment )
+		ent = attachment->ent.GetEntity();
+
+	if( !attachment  || !attachment->ent.IsValid() || !ent )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	joint = animator.GetJointHandle( jointName );
+	if ( joint == INVALID_JOINT )
+	{
+		// TODO: log error
+		gameLocal.Warning( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+		goto Quit;
+	}
+
+	attachment->channel = animator.GetChannelForJoint( joint );
+	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+
+	rotate = angles.ToMat3();
+	newAxis = rotate * axis;
+
+	ent->Unbind(); 
+
+	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
+	// Hence, re-assign the attachment entity pointer (the index itself is ok)
+	attachment->ent = ent;
+
+	ent->SetAxis( newAxis );
+	// Use the local joint axis instead of the overall AI axis
+	ent->SetOrigin( origin + offset * axis );
+
+	ent->BindToJoint( this, joint, true );
+	ent->cinematic = cinematic;
+
+	// set the spawnargs for later retrieval as well
+	ent->spawnArgs.Set( "joint", jointName.c_str() );
+	ent->spawnArgs.SetVector( "origin", offset );
+	ent->spawnArgs.SetAngles( "angles", angles );
+
+	attachment->posName = jointName; // grayman #2603
+
+Quit:
+	return;
+}
+
+/*
+===============
+idAnimatedEntity::CacheAnimRates
+===============
+*/
+void idAnimatedEntity::CacheAnimRates( void )
+{
+	// Cache animation rates
+	int anims = animator.NumAnims();
+	m_animRates.Clear();
+	m_animRates.AssureSize(anims);
+	for (int i=0; i<anims; i++) 
+	{
+		const idAnim *anim = animator.GetAnim(i);
+		if (anim != NULL) 
+		{
+			idStr spawnargname = "anim_rate_";
+			spawnargname += anim->Name();
+			m_animRates[i] = spawnArgs.GetFloat(spawnargname, "1");
+		} else 
+		{
+			m_animRates[i] = 1.0f;
+		}
+	}
+}
+
+/*
+================
+idAnimatedEntity::GetJointWorldPos
+
+Returns the position of the joint (by joint name) in worldspace
+================
+*/
+idVec3 idAnimatedEntity::GetJointWorldPos( const char *jointname ) {
+	idVec3 offset;
+	idMat3 axis;
+
+	jointHandle_t jointnum = animator.GetJointHandle( jointname );
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, offset, axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
+
+	return offset;
+}
+
+/*
+================
+idAnimatedEntity::GetEntityFromClassClosestToJoint
+
+tels: Returns the entity that is nearest to the given joint, selected from all entities
+that have a spawnarg "AIUse" matching AIUseType. max_dist_sqr = max_dist * max_dist
+================
+*/
+idEntity* idAnimatedEntity::GetEntityFromClassClosestToJoint( const idVec3 joint_origin, const char* AIUseType, const float max_dist_sqr )
+{
+	idEntity* closest = NULL;
+	float closest_distance = idMath::INFINITY;
+
+	idStr aiuse = AIUseType;
+	aiuse = aiuse.Left(6);
+
+	// if the selector is not "AIUSE_...", skip this step
+	if (aiuse != "AIUSE_") {
+		return NULL;
+	}
+
+	// for all entities
+    for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+        if ( ent == NULL ) { continue; }
+
+		// does it have the proper AIUse spawnarg?
+		if (idStr::Cmp(ent->spawnArgs.GetString("AIUse"), AIUseType) != 0)
+		{
+			continue;
+		}
+		
+		//gameLocal.Warning ( "  Looking at entity for AIUse spawnarg %s", tempkv->GetValue().c_str() );
+
+		// has the proper AIUse type, so compute distance	
+		//gameLocal.Printf("Has %s\n", AIUseType);
+
+		const idVec3& deb = ent->GetPhysics()->GetOrigin();
+		idVec3 diff = joint_origin - deb;
+
+		// gameLocal.Printf("Distance: %f %f %f - %f %f %f = %f %f %f\n", joint_origin.x, joint_origin.y, joint_origin.z, deb.x, deb.y, deb.z, diff.x, diff.y, diff.z);
+
+		float distance = diff.LengthSqr();
+
+		//gameLocal.Printf(" Distance %f < closest %f ? < max_dist_sqr %f ?.\n", distance, closest_distance, max_dist_sqr);
+
+		if (distance < closest_distance && distance < max_dist_sqr)
+		{
+			// use this one
+			//gameLocal.Printf(" Distance %f < closest %f and < max_dist_sqr %f, so will use this entity.\n", distance, closest_distance, max_dist_sqr);
+			closest_distance = distance;
+			closest = ent;
+		}
+
+		// try ent
+	}
+
+	return closest;
+}
+
+/*
+================
+idAnimatedEntity::GetEntityClosestToJoint
+
+tels: Returns the entity that is nearest to the given joint. The entitySelector is either
+an entity name (like "atdm_moveable_food_apple_2" or an entity AIUSE type like "AIUSE_FOOD".
+
+First the code looks at the idAnimatedEntity itself for spawnargs matching the given prefix,
+each entity mentioned in this spawnarg is used as the entitySelector first.
+If after this round no entity could be found, we fall back to entitySelector and try again.
+================
+*/
+idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const char* entitySelector, const char* prefix, const float max_dist ) {
+	idEntity* closest = NULL;
+	float closest_distance = 1000000.0f;
+	idVec3 joint_origin;
+	idMat3 joint_axis;
+	const float max_dist_sqr = max_dist * max_dist;
+	SAttachPosition *pos;
+
+	jointHandle_t jointnum = INVALID_JOINT;
+	
+// New position system:
+	if( (pos = GetAttachPosition(posName)) != NULL) {
+		jointnum = pos->joint;
+	}
+	if (jointnum < 0) {
+		gameLocal.Warning( "GetEntityClosestToJoint: Cannot find joint from attach pos %s", posName );
+		return NULL;
+	}
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, joint_origin, joint_axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
+
+	// first see if the entity (the animation is running on) defines an entity
+	// via spawnarg: "pickup_" + "name_of_the_animation" (we get this as prefix)
+
+	if (prefix && *prefix != 0x00)
+	{
+		const idKeyValue *kv = spawnArgs.MatchPrefix( prefix, NULL );
+		while( kv )
+		{
+			idEntity *target = gameLocal.FindEntity( kv->GetValue() );
+			if (!target) {
+				gameLocal.Warning ( " Can't find entity by name %s, so looking for AIUSE instead.", kv->GetValue().c_str() );
+				// haven't found an entity, maybe it is something like "AIUSE_FOOD"?
+				target = GetEntityFromClassClosestToJoint( joint_origin, kv->GetValue().c_str(), max_dist_sqr );
+			}
+			// if we found an entity and it is not ourself:
+			if (target != NULL && target != this)
+			{
+				// check that it is closer than the closest match so far
+				idVec3 diff = joint_origin - target->GetPhysics()->GetOrigin();
+				float distance = diff.LengthSqr();
+				if (distance < closest_distance && distance < max_dist_sqr) {
+					// closer and close enough
+					gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+					closest_distance = distance;
+					closest = target;
+				}
+			}
+		// next spawnarg
+		kv = spawnArgs.MatchPrefix( prefix, kv );
+		}
+	}
+
+	if (closest == NULL) {
+		// couldn't find any usable entity from the the spawnargs
+		// so try to use the entity named in the animation
+		if (prefix && *prefix != 0x00)
+		{
+			gameLocal.Warning ( " Didn't find an entity from the %s spawnargs, trying %s directly.", prefix, entitySelector );
+		}
+		closest = gameLocal.FindEntity( entitySelector );
+		if (closest) {
+			idVec3 diff = joint_origin - closest->GetPhysics()->GetOrigin();
+			float distance = diff.LengthSqr();
+			if (distance > max_dist_sqr) {
+				// cannot use this one, too far
+				gameLocal.Warning ( "   Direct entity %s too far away. (%f > %f).", entitySelector, distance, max_dist_sqr );
+				closest = NULL;
+			}
+		}
+		// could not be found either or was too far away?
+		if (closest == NULL) {
+			// maybe it is a generic AIUSE class, try to find a suitable entity
+			gameLocal.Warning ( "   Can't find entity by name %s, so looking for AIUSE class.", entitySelector );
+			closest = GetEntityFromClassClosestToJoint( joint_origin, entitySelector, max_dist_sqr );
+		}
+	}
+
+//	gameLocal.Printf ( "   End of selecting closest entity.");
+
+	// now return the found entity or NULL
+	return closest;
 }
 
 /*
@@ -5298,10 +8691,9 @@ looks up the number of the specified joint.  returns INVALID_JOINT if the joint 
 ================
 */
 void idAnimatedEntity::Event_GetJointHandle( const char *jointname ) {
-	jointHandle_t joint;
 
-	joint = animator.GetJointHandle( jointname );
-	idThread::ReturnInt( joint );
+	jointHandle_t jointnum = animator.GetJointHandle( jointname );
+	idThread::ReturnInt( jointnum );
 }
 
 /*
@@ -5388,3 +8780,3451 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idVec3 vec( ang[ 0 ], ang[ 1 ], ang[ 2 ] );
 	idThread::ReturnVector( vec );
 }
+
+/*
+===============================================================================
+
+  End of idAnimatedEntity
+	
+===============================================================================
+*/
+
+void idEntity::Flinderize( idEntity *activator )
+{
+	// Create a new struct
+	FlinderSpawn fs;
+	// count of entities that were actually spawned
+	int spawned = 0;
+
+	// tels: go through all the def_flinder spawnargs and call SpawnFlinder() for each
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_flinder", NULL );
+	while( kv )
+	{
+		idStr temp = kv->GetValue();
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_flinder %s:\r", temp.c_str() );
+		if( !temp.IsEmpty() )
+		{
+			// fill in the name and some defaults
+			fs.m_Entity = temp;
+			fs.m_Offset.Zero();
+			fs.m_Count = 0;
+			fs.m_Probability = 1.0;
+
+			// check if we have spawnargs like count, offset or probability:
+			idStr index;
+			idStr spawnarg = kv->GetKey();
+			// strlen("def_flinder") == 11 
+			if (spawnarg.Length() > 11)
+			{
+				index = spawnarg.Right( spawnarg.Length() - 11 );
+			}
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Index is %s:\r", index.c_str() );
+			spawnArgs.GetVector("flinder_offset"      + index,    "", fs.m_Offset);
+			spawnArgs.GetInt   ("flinder_count"       + index,   "1", fs.m_Count);
+			spawnArgs.GetFloat ("flinder_probability" + index, "1.0", fs.m_Probability);
+
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Offset is %f,%f,%f:\r", fs.m_Offset.x, fs.m_Offset.y, fs.m_Offset.z );
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Count is %i:\r", fs.m_Count );
+			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Probability is %f:\r", fs.m_Probability );
+			// evaluate what we found and spawn the individual pieces
+			spawned += SpawnFlinder( fs, activator );
+
+		}
+		kv = spawnArgs.MatchPrefix( "def_flinder", kv );
+	} // while MatchPrefix ("def_flinder")
+
+	// if we spawned flinders, but have no broken model, remove this entity
+	if ( spawned > 0 && !brokenModel.Length() )
+	{
+		Hide();
+		// remove us in 0.01 seconds
+		PostEventMS( &EV_Remove, 10 );
+		// and make inactive in the meantime
+		BecomeInactive(TH_PHYSICS|TH_THINK);
+	}
+}
+
+void idEntity::LoadTDMSettings(void)
+{
+	idStr str;
+
+	// If an item has the frobable flag set to true we will use the 
+	// the default value. If the frobdistance is set in the item
+	// it will override the defaultsetting. If none of that is set
+	// the frobdistance will be set to 0 meaning no frobbing on that item.
+	// If the frobsetting is alread initialized we can skip this.
+	if(m_FrobDistance == 0)
+	{
+		spawnArgs.GetBool("frobable", "0", m_bFrobable);
+		spawnArgs.GetBool("frob_simple", "0", m_bFrobSimple);
+		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+		spawnArgs.GetFloat("frob_bias", "1.0", m_FrobBias);
+
+		if( m_FrobDistance <= 0  )
+			m_FrobDistance = cv_frob_distance_default.GetInteger();
+
+		if( m_bFrobable && m_FrobBox )
+			m_FrobBox->SetContents(CONTENTS_FROBABLE);
+	}
+
+	// update the max frobdistance if necessary
+	if( m_FrobDistance > g_Global.m_MaxFrobDistance )
+		g_Global.m_MaxFrobDistance = m_FrobDistance;
+
+	// Override the frob action script to apply custom events to 
+	// specific entities.
+	if(spawnArgs.GetString("frob_action_script", "", str))
+		m_FrobActionScript = str;
+
+	// Check if this entity is associated to a master frob entity.
+	str = spawnArgs.GetString("frob_master");
+
+	// Disallow "self" to be added as same name
+	if (!str.IsEmpty() && str != name)
+	{
+		m_MasterFrob = str;
+	}
+
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "frob_peer", NULL );
+	// Fill the list of frob peers
+	while( kv )
+	{
+		idStr temp = kv->GetValue();
+		if( !temp.IsEmpty() )
+			m_FrobPeers.AddUnique(temp);
+		kv = spawnArgs.MatchPrefix( "frob_peer", kv );
+	}
+
+	// Check if this entity can be used by others.
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))
+	{
+		// argh, backwards compatibility, must keep old used_by format for used_by_name
+		// explicitly ignore stuff with other prefixes
+		idStr kn = kv->GetKey();
+		if( !kn.IcmpPrefix("used_by_inv_name") || !kn.IcmpPrefix("used_by_category") || !kn.IcmpPrefix("used_by_classname") )
+			continue;
+
+		// Add each entity name to the list
+		m_UsedByName.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_inv_name"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_inv_name", kv))
+	{
+		m_UsedByInvName.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_category"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_category", kv))
+	{
+		m_UsedByCategory.AddUnique(kv->GetValue());
+	}
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by_classname"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by_classname", kv))
+	{
+		m_UsedByClassname.AddUnique(kv->GetValue());
+	}
+
+	m_AbsenceNoticeability = spawnArgs.GetFloat("absence_noticeability", "0");
+
+	team = spawnArgs.GetInt("team", "-1");
+
+	m_bAttachedAlertControlsSolidity = spawnArgs.GetBool("on_attach_alert_become_solid");
+
+	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
+
+	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
+
+	m_bIsMantleable = spawnArgs.GetBool( "is_mantleable", "1" );
+
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
+}
+
+void idEntity::UpdateFrobState()
+{
+	// hidden objects are skipped
+	if (IsHidden()) 
+	{
+		return;
+	}
+
+	// greebo: Allow the grabbed entity to stay highlighted
+	if (cv_dragged_item_highlight.GetBool() && gameLocal.m_Grabber->GetSelected() == this)
+	{
+		SetFrobHighlightState(true);
+		return;
+	}
+
+	if( !m_bFrobbed )	
+	{
+		// The m_bFrobbed variable is FALSE, hence the player is not looking at this entity
+		// or any of its peers. Check if we need to change our state.
+		if (m_bFrobHighlightState)
+		{
+			// stop highlight
+			SetFrobHighlightState(false);
+		}
+
+		// Done, we're not frobbed, frobhighlight state is cleared
+		return;
+	}
+
+	// The player is looking at this entity, clear m_bFrobbed for the next frame
+	m_bFrobbed = false;
+
+	// Change the highlight state to TRUE
+	SetFrobHighlightState(true);
+}
+
+void idEntity::SetFrobHighlightState(bool newState)
+{
+	if (m_bFrobHighlightState == newState) return; // Avoid unnecessary work
+
+	// The incoming state is differing from our current one, save the timestamp
+	m_FrobChangeTime = gameLocal.time;
+
+	// Update the boolean, the UpdateFrobDisplay() routine will pick it up
+	m_bFrobHighlightState = newState;
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s] is highlighted\r", name.c_str());
+}
+
+void idEntity::UpdateFrobDisplay()
+{
+	// FIX: If we have just been set not frobable, go instantly to un-frobbed hilight state
+	if (!m_bFrobable)
+	{
+		m_FrobChangeTime = gameLocal.time;
+		SetShaderParm(FROB_SHADERPARM, 0.0f);
+		return;
+	}
+
+	float param = renderEntity.shaderParms[ FROB_SHADERPARM ];
+	
+	if ( (param == 0 && !m_bFrobHighlightState) || (param >= 1.0f && m_bFrobHighlightState) )
+	{
+		// Nothing to do
+		return;
+	}
+
+	float timePassed = static_cast<float>(gameLocal.time - m_FrobChangeTime);
+	
+	if( m_bFrobHighlightState )
+	{
+		param += timePassed / cv_frob_fadetime.GetFloat();
+	}
+	else
+	{
+		param -= timePassed / cv_frob_fadetime.GetFloat();
+	}
+
+	m_FrobChangeTime = gameLocal.time;
+
+	// clamp between 0 and 1
+	param = idMath::ClampFloat(0.0, 1.0f, param);
+
+	SetShaderParm(FROB_SHADERPARM, param);
+}
+
+void idEntity::FrobAction(bool frobMaster, bool isFrobPeerAction)
+{
+	if (m_FrobActionLock) return; // prevent double-entering this function
+
+	if (IsHidden()) return; // don't do frobactions on hidden entities
+
+	m_FrobActionLock = true;
+
+	// greebo: If we have a frob master, just redirect the call and skip everything else
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL)
+	{
+		master->FrobAction(frobMaster, isFrobPeerAction);
+
+		m_FrobActionLock = false;
+		return;
+	}
+
+	// Propagate frobactions to all peers to get them triggered as well.
+	if (!isFrobPeerAction)
+	{
+		for (int i = 0; i < m_FrobPeers.Num(); i++)
+		{
+			idEntity* ent = gameLocal.FindEntity(m_FrobPeers[i]);
+
+			if (ent != NULL && ent != this)
+			{
+				// Propagate the frob action, but inhibit calls to frob_masters
+				ent->FrobAction(false, true);
+			}
+		}
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), frobMaster);
+
+	// Call the frob action script, if available
+	if (m_FrobActionScript.Length() > 0)
+	{
+		idThread* thread = CallScriptFunctionArgs(m_FrobActionScript, true, 0, "e", this);
+
+		if (thread != NULL)
+		{
+			// greebo: Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
+	}
+	else
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
+	}
+
+	// Play the (optional) acquire sound (greebo: What's this? Isn't this the wrong place here?)
+	StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
+
+	m_FrobActionLock = false;
+}
+
+void idEntity::AttackAction(idPlayer* player)
+{
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) 
+	{
+		master->AttackAction(player);
+	}
+}
+
+bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+{
+	if (item == NULL) return false;
+
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+	if( master != NULL )
+		return  master->CanBeUsedBy(item, isFrobUse);
+
+	// No frob master set
+	// Check entity name (if exists), inv_name, inv_category, and classname
+	bool bMatchName( false ), bMatchInvName( false );
+	bool bMatchCategory( false ), bMatchClassname( false );
+
+	idEntity* ent = item->GetItemEntity();
+	if( ent != NULL )
+	{
+		bMatchName = ( m_UsedByName.FindIndex(ent->name) != -1 );
+		bMatchClassname = ( m_UsedByClassname.FindIndex(ent->GetEntityDefName()) != -1 );
+	}
+	if( bMatchName || bMatchClassname )
+		return true;
+
+	bMatchInvName = ( m_UsedByInvName.FindIndex(item->GetName()) != -1 );
+	bMatchCategory = ( m_UsedByCategory.FindIndex(item->Category()->GetName()) != -1 );
+	
+	return (bMatchInvName || bMatchCategory);
+}
+
+bool idEntity::CanBeUsedBy(idEntity* entity, const bool isFrobUse) 
+{
+	if (entity == NULL) return false;
+
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL) 
+		return master->CanBeUsedBy(entity, isFrobUse);
+
+	// No frob master set
+	// Check entity name, inv_name, inv_category, and classname
+	bool bMatchName( false ), bMatchInvName( false );
+	bool bMatchCategory( false ), bMatchClassname( false );
+
+	bMatchName = ( m_UsedByName.FindIndex(entity->name) != -1 );
+	bMatchClassname = ( m_UsedByClassname.FindIndex(entity->GetEntityDefName()) != -1 );
+	
+	if( bMatchName || bMatchClassname )
+		return true;
+
+	// Tels: TODO: Try here also English names instead of "#str_12345"
+//	gameLocal.Printf("canUsedBy name %s category %s\n", 
+//				entity->spawnArgs.GetString("inv_name"),
+//				entity->spawnArgs.GetString("inv_category") );
+
+	// This may be called when the entity is not in the inventory, so have to read from spawnargs
+	bMatchInvName = ( m_UsedByInvName.FindIndex(entity->spawnArgs.GetString("inv_name")) != -1 );
+	bMatchCategory = ( m_UsedByCategory.FindIndex(entity->spawnArgs.GetString("inv_category")) != -1 );
+
+	return (bMatchInvName || bMatchCategory);
+}
+
+bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+{
+	// Redirect the call to the master if we have one
+	idEntity* master = GetFrobMaster();
+
+	if (master != NULL)
+		return master->UseBy(impulseState, item);
+
+	// no master, continue...
+	// Ishtvan: Call used_by script.  First check for scripts with the specific name/inv_name/classname/category/
+	// only call the most-specific script
+	idStrList suffixes;
+	idEntity *ent = item->GetItemEntity();
+	if( ent != NULL )
+	{
+		suffixes.Append( ent->name );
+		suffixes.Append( ent->GetEntityDefName() );
+	}
+	// inv_name comes before classname
+	suffixes.Insert( item->GetName(), 1 );
+	suffixes.Append( item->Category()->GetName() );
+
+	idThread* thread = NULL;
+	bool bFoundKey = false;
+	for( int i=0; i < suffixes.Num(); i++ )
+	{
+		idStr scriptName = "used_action_script_" + suffixes[i];
+		const idKeyValue *kv = spawnArgs.FindKey( scriptName.c_str() );
+		if( kv != NULL && kv->GetValue().Length() > 0 )
+		{
+			idThread* thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+			bFoundKey = true;
+			break;
+		}
+	}
+	
+	// if we didn't find a specific suffix, use "used_action_script" by itself
+	if( !bFoundKey )
+	{
+		const idKeyValue *kv = spawnArgs.FindKey( "used_action_script" );
+		if( kv != NULL && kv->GetValue().Length() > 0 )
+		{
+			idThread* thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+		}
+	}
+
+	if (thread != NULL)
+	{
+		// greebo: Run the thread at once, the script result might be needed below.
+		thread->Execute();
+		return true;
+	}
+
+	return false;
+}
+
+void idEntity::SetFrobbed( bool val )
+{
+	if (m_bFrobbed == val) return; // avoid loopbacks and unnecessary work
+
+	m_bFrobbed = val;
+
+	// resolve the peer names into entities
+	for (int i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		if (m_FrobPeers[i].Length() == 0) continue;
+
+		idEntity* ent = gameLocal.FindEntity(m_FrobPeers[i]);
+
+		// don't call it on self, would get stuck in a loop
+		if (ent != NULL && ent != this)
+		{
+			ent->SetFrobbed(m_bFrobbed);
+		}
+	}
+}
+
+bool idEntity::IsFrobbed( void )
+{
+	return m_bFrobbed;
+}
+
+void idEntity::SetFrobable( bool bVal )
+{
+	// greebo: This is to avoid infinite loops
+	if (m_bFrobable == bVal) return; 
+
+	m_bFrobable = bVal;
+
+	// If this entity is currently being hilighted, make sure to un-frob it
+	if( !bVal )
+	{
+		SetFrobbed(false);
+		SetFrobHighlightState(false);
+		if( m_FrobBox )
+			m_FrobBox->SetContents(0);
+	}
+	else
+	{
+		if( m_FrobBox )
+			m_FrobBox->SetContents(CONTENTS_FROBABLE);
+	}
+
+	UpdateFrobState();
+	UpdateFrobDisplay();
+
+	// Make sure Present gets called when we make something frobable
+	BecomeActive( TH_UPDATEVISUALS );
+
+	// greebo: Also update all frob peers
+	for (int i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		idEntity* peer = gameLocal.FindEntity(m_FrobPeers[i]);
+		if (peer == NULL) continue;
+
+		peer->SetFrobable(bVal);
+	}
+}
+
+void idEntity::Event_StimAdd(int stimType, float radius)
+{
+	AddStim(static_cast<StimType>(stimType), radius);
+}
+
+void idEntity::Event_StimRemove(int stimType)
+{
+	RemoveStim(static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_StimEnable(int stimType, int enabled)
+{
+	SetStimEnabled(static_cast<StimType>(stimType), enabled != 0);
+}
+
+void idEntity::Event_StimClearIgnoreList(int stimType)
+{
+	ClearStimIgnoreList(static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseEnable(int stimType, int enabled)
+{
+	SetResponseEnabled(static_cast<StimType>(stimType), enabled != 0);
+}
+
+void idEntity::Event_ResponseAdd(int stimType)
+{
+	AddResponse(static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseTrigger(idEntity* source, int stimType)
+{
+	TriggerResponse(source, static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseRemove(int stimType)
+{
+	RemoveResponse(static_cast<StimType>(stimType));
+}
+
+void idEntity::Event_ResponseIgnore(int stimType, idEntity *e)
+{
+	IgnoreResponse(static_cast<StimType>(stimType), e);
+}
+
+void idEntity::Event_ResponseAllow(int stimType, idEntity *e)
+{
+	AllowResponse(static_cast<StimType>(stimType), e);
+}
+
+void idEntity::Event_ResponseSetAction(int stimType, const char* action)
+{
+	CResponsePtr resp = m_StimResponseColl->GetResponseByType(static_cast<StimType>(stimType));
+
+	if (resp != NULL)
+	{
+		resp->SetResponseAction(action);
+	}
+}
+
+void idEntity::AllowResponse(StimType type, idEntity* fromEntity)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->RemoveResponseIgnore(fromEntity);
+	}
+}
+
+void idEntity::IgnoreResponse(StimType type, idEntity* fromEntity)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->AddResponseIgnore(fromEntity);
+	}
+}
+
+// grayman #2872
+
+bool idEntity::CheckResponseIgnore(StimType type, idEntity* fromEntity)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		return ( stim->CheckResponseIgnore(fromEntity) );
+	}
+	return true;
+}
+
+
+void idEntity::SetStimEnabled(StimType type, bool enabled)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->SetEnabled(enabled);
+	}
+}
+
+void idEntity::SetResponseEnabled(StimType type, bool enabled)
+{
+	CResponsePtr response = m_StimResponseColl->GetResponseByType(type);
+
+	if (response != NULL)
+	{
+		response->SetEnabled(enabled);
+	}
+}
+
+void idEntity::ClearStimIgnoreList(StimType type)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
+
+	if (stim != NULL)
+	{
+		stim->ClearResponseIgnoreList();
+	}
+}
+
+void idEntity::RemoveStim(StimType type)
+{
+	if (m_StimResponseColl->RemoveStim(type) == 0)
+	{
+		gameLocal.RemoveStim(this);
+	}
+}
+
+void idEntity::RemoveResponse(StimType type)
+{
+	if (m_StimResponseColl->RemoveResponse(type) == 0)
+	{
+		gameLocal.RemoveResponse(this);
+	}
+}
+
+CStimPtr idEntity::AddStim(StimType type, float radius, bool removable, bool isDefault)
+{
+	CStimPtr stim = m_StimResponseColl->AddStim(this, type, radius, removable, isDefault);
+
+	gameLocal.AddStim(this);
+
+	return stim;
+}
+
+CResponsePtr idEntity::AddResponse(StimType type, bool removable, bool isDefault)
+{
+	CResponsePtr response = m_StimResponseColl->AddResponse(this, type, removable, isDefault);
+
+	gameLocal.AddResponse(this);
+
+	return response;
+}
+
+void idEntity::TriggerResponse(idEntity* source, StimType type)
+{
+	// Try to lookup the response for this item
+	CResponsePtr resp = GetStimResponseCollection()->GetResponseByType(type);
+
+	if (resp == NULL || resp->m_State != SS_ENABLED)
+	{
+		return;
+	}
+
+	// There is an enabled response defined
+	// Check duration, disable if past duration
+	if (resp->m_Duration && (gameLocal.time - resp->m_EnabledTimeStamp) > resp->m_Duration)
+	{
+		resp->Disable();
+	}
+	else 
+	{
+		// Fire the response and pass the originating entity and no stim object
+		// no stim means that this is no "real" stim just a temporary or virtual one
+		resp->TriggerResponse(source);
+	}
+}
+
+
+/**	Called when m_renderTrigger is rendered.
+ *	It will resume the m_renderWaitingThread.
+ */
+bool idEntity::WaitForRenderTriggered( renderEntity_s* renderEntity, const renderView_s* view )
+{
+	// NOTE: We must avoid changing the game state from within this function.
+	// However, we'll add an event to resume the suspended thread.
+
+	idEntity* ent = gameLocal.entities[ renderEntity->entityNum ];
+	if ( !ent )
+		gameLocal.Error( "idEntity::WaitForRenderTriggered: callback with NULL game entity" );
+
+	renderEntity->callback = NULL;
+
+	if ( ent->m_renderWaitingThread )
+	{
+		// Fortunately, this doesn't execute the script immediately, so
+		// I think it's safe to call from here.
+		idThread::ObjectMoveDone( ent->m_renderWaitingThread, ent );
+		ent->m_renderWaitingThread = 0;
+	}
+
+	return false;
+}
+
+/**	Called to update m_renderTrigger after the render entity is modified.
+ *	Only updates the render trigger if a thread is waiting for it.
+ */
+void idEntity::PresentRenderTrigger()
+{
+	if ( !m_renderWaitingThread )
+	{
+		goto Quit;
+	}
+
+	// Update the renderTrigger to match renderEntity's bounding box.
+	// In order to ensure that other code can easily add to the bounding
+	// box, we're going to pre-rotate the bounding box, and keep the axis
+	// unrotated.
+	m_renderTrigger.origin = renderEntity.origin;
+	m_renderTrigger.bounds = renderEntity.bounds * renderEntity.axis;
+	// I haven't yet figured out where renderEntity.entityNum is set...
+	// but it looks like we have to manually set it for m_renderTrigger.
+	m_renderTrigger.entityNum = entityNumber;
+
+	// Update the renderTrigger in the render world.
+	if ( m_renderTriggerHandle == -1 )
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
+	else
+		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
+
+	Quit:
+	return;
+}
+
+/*
+================
+idEntity::Inventory
+
+This returns the inventory object of this entity. If this entity doesn't
+have one, it creates the inventory.
+================
+*/
+const CInventoryPtr& idEntity::Inventory()
+{
+	if (m_Inventory == NULL )
+	{
+		m_Inventory = CInventoryPtr(new CInventory());
+		m_Inventory->SetOwner(this);
+	}
+
+	return m_Inventory;
+}
+
+/*
+================
+idEntity::InventoryCursor
+
+This returns the inventory cursor object of this entity. If this entity
+doesn't have one, it creates the inventory cursor.
+
+The cursor is intended for arbitrary use, and need not point to this
+entity's inventory.
+================
+*/
+const CInventoryCursorPtr& idEntity::InventoryCursor()
+{
+	if (m_InventoryCursor == NULL)
+	{
+		m_InventoryCursor = Inventory()->CreateCursor();
+	}
+
+	return m_InventoryCursor;
+}
+
+void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
+{
+	idEntityPtr<CObjectiveLocation> locationEntPtr;
+	locationEntPtr = locationEnt;
+
+	// Ensure that objective locations don't add themselves twice or more times
+	// Tels: The assert below triggers under Debug build when loading Heart, took
+	// it out since it will be ignored under Release builds anyway
+	//assert(m_objLocations.FindIndex(locationEntPtr) == -1);
+	if (m_objLocations.FindIndex(locationEntPtr) != -1)
+	{
+		return;
+	}
+
+	m_objLocations.Alloc() = locationEntPtr;
+}
+
+void idEntity::OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt)
+{
+	idEntityPtr<CObjectiveLocation> locationEntPtr;
+	locationEntPtr = locationEnt;
+
+	// Ensure that only registered location ents are removed
+	assert(m_objLocations.FindIndex(locationEntPtr) != -1);
+
+	m_objLocations.Remove(locationEntPtr);
+}
+
+void idEntity::Event_PropSound( const char *sndName )
+{
+	PropSoundDirect( sndName, false, false, 0.0f );
+}
+
+void idEntity::Event_PropSoundMod( const char *sndName, float VolModIn )
+{
+	PropSoundDirect( sndName, false, false, VolModIn );
+}
+
+/*
+================
+idEntity::Event_InPVS
+
+Returns non-zero if this entity is in the player's PVS, zero otherwise.
+================
+*/
+void idEntity::Event_InPVS()
+{
+	idThread::ReturnFloat( gameLocal.InPlayerPVS( this ) );
+}
+
+/*
+================
+idEntity::Event_WaitForRender
+
+Called by sys.waitForRender(ent) to find out if it can wait for this entity to render.
+================
+*/
+void idEntity::Event_WaitForRender()
+{
+	if ( !m_renderWaitingThread )
+	{
+		// Give the renderTrigger an invisible model to prevent a black cube from showing up.
+		if ( !m_renderTrigger.hModel )
+			m_renderTrigger.hModel = renderModelManager->FindModel( cv_empty_model.GetString() );
+		if ( !m_renderTrigger.hModel )
+			gameLocal.Error( "Unable to load model: %s\n", cv_empty_model.GetString() );
+
+		m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
+		m_renderWaitingThread = idThread::CurrentThreadNum();
+
+		// Make sure Present() gets called.
+		BecomeActive( TH_UPDATEVISUALS );
+
+		idThread::ReturnInt( true );
+	} else {
+		idThread::ReturnInt( false );
+	}
+}
+
+/*
+================
+idEntity::Event_SetGui
+
+Changes the GUI file that's loaded by an overlay. Overlays 1, 2 and 3 are
+reserved for the entity GUIs, and special code is implemented to change them.
+A changed GUI does not see gui_parm spawn args. (for one thing, if there's a
+script changing GUIs, then the script could easily send spawnargs to the GUI
+if it wanted to.)
+================
+*/
+void idEntity::Event_SetGui( int handle, const char *guiFile ) {
+	if ( !uiManager->CheckGui(guiFile) ) {
+		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+		goto Quit;
+	}
+
+	if ( !m_overlays.exists( handle ) ) {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		goto Quit;
+	}
+
+	// Entity GUIs are handled differently from regular ones.
+	if ( handle >= 1 && handle <= MAX_RENDERENTITY_GUI ) {
+
+		assert( m_overlays.isExternal( handle ) );
+
+		if ( renderEntity.gui[ handle-1 ] && renderEntity.gui[ handle-1 ]->IsUniqued() ) {
+
+			// We're dealing with an existing unique GUI.
+			// We need to read a new GUI into it.
+
+			// Clear the state.
+			const idDict &state = renderEntity.gui[ handle-1 ]->State();
+			const idKeyValue *kv;
+			while ( ( kv = state.MatchPrefix( "" ) ) != NULL )
+				renderEntity.gui[ handle-1 ]->DeleteStateVar( kv->GetKey() );
+
+			renderEntity.gui[ handle-1 ]->InitFromFile( guiFile );
+
+		} else {
+
+			// We're either dealing with a non-existant GUI, or a non-unique one.
+			// It's safe to just set the render entity to point to a new GUI without
+			// bothering to deallocate the previous GUI.
+			renderEntity.gui[ handle-1 ] = uiManager->FindGui( guiFile, true, true );
+			m_overlays.setGui( handle, renderEntity.gui[ handle - 1 ] );
+			assert( renderEntity.gui[ handle-1 ] );
+
+		}
+
+	} else if ( !m_overlays.isExternal( handle ) ) {
+
+		bool result = m_overlays.setGui( handle, guiFile );
+		assert( result );
+
+	} else {
+		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
+	}
+
+	Quit:
+	return;
+}
+
+/*
+================
+idEntity::Event_GetGui
+
+Returns the file loaded by a specific GUI.
+================
+*/
+void idEntity::Event_GetGui( int handle ) {
+	idUserInterface *gui = m_overlays.getGui( handle );
+	if ( gui )
+		idThread::ReturnString( gui->Name() );
+	else
+		idThread::ReturnString( "" );
+}
+
+void idEntity::SetGuiString(int handle, const char *key, const char *val)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(gui == NULL)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		if(!gui->IsUniqued())
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		gui->SetStateString(key, val);
+		gui->StateChanged(gameLocal.time);
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Non-existant GUI handle: %d\r", handle);
+	}
+
+Quit:
+	return;
+}
+
+/*
+================
+idEntity::Event_SetGuiString
+
+Sets a parameter for a GUI. (note that the GUI needs to be unique)
+================
+*/
+void idEntity::Event_SetGuiString(int handle, const char *key, const char *val)
+{
+	SetGuiString(handle, key, val);
+}
+
+const char *idEntity::GetGuiString(int handle, const char *key)
+{
+	const char *retStr = NULL;
+
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(gui)
+			retStr = gui->GetStateString(key);
+		else
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+
+	return retStr;
+}
+
+void idEntity::Event_GetGuiString(int handle, const char *key)
+{
+	const char *retStr = GetGuiString(handle, key);
+
+	if(retStr == NULL)
+		retStr = "";
+
+	idThread::ReturnString(retStr);
+}
+
+void idEntity::SetGuiFloat( int handle, const char *key, float f)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(gui == NULL)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		if(!gui->IsUniqued())
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		gui->SetStateFloat(key, f);
+		gui->StateChanged(gameLocal.time);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+Quit:
+	return;
+}
+
+void idEntity::Event_SetGuiFloat(int handle, const char *key, float f)
+{
+	SetGuiFloat(handle, key, f);
+}
+
+float idEntity::GetGuiFloat(int handle, const char *key)
+{
+	float retVal = 0;
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if (gui)
+			retVal = gui->GetStateFloat(key);
+		else
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+	return retVal;
+}
+
+void idEntity::Event_GetGuiFloat(int handle, const char *key)
+{
+	idThread::ReturnFloat(GetGuiFloat(handle, key));
+}
+
+void idEntity::SetGuiInt( int handle, const char *key, int n)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(gui == NULL)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		if(!gui->IsUniqued())
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+
+		gui->SetStateInt(key, n);
+		gui->StateChanged(gameLocal.time);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+Quit:
+	return;
+}
+
+void idEntity::Event_SetGuiInt(int handle, const char *key, int n)
+{
+	SetGuiInt(handle, key, n);
+}
+
+int idEntity::GetGuiInt(int handle, const char *key)
+{
+	int retVal = 0;
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if (gui)
+			retVal = gui->GetStateInt(key);
+		else
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+	return retVal;
+}
+
+void idEntity::Event_GetGuiInt(int handle, const char *key)
+{
+	idThread::ReturnInt(GetGuiInt(handle, key));
+}
+
+/*
+================
+idEntity::Event_SetGuiStringFromKey
+
+This is a kludge. It's hopefully temporary, but probably not. Anyway, it's
+used by readables to bypass the 127 char limit on string variables in scripts.
+================
+*/
+void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg )
+{
+	if(!src)
+	{
+		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
+		return;
+	}
+
+	if(!m_overlays.exists(handle))
+	{
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		return;
+	}
+
+	idUserInterface *gui = m_overlays.getGui( handle );
+	if(!gui)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		return;
+	}
+
+	if(!gui->IsUniqued())
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Non-existant GUI handle: %d\r", handle);
+		return;
+	}
+
+	gui->SetStateString( key, gameLocal.m_I18N->Translate( src->spawnArgs.GetString( spawnArg, "" ) ) );
+	gui->StateChanged( gameLocal.time );
+}
+
+void idEntity::CallGui(int handle, const char *namedEvent)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if(gui == NULL)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, namedEvent);
+			return;
+		}
+
+		if(!gui->IsUniqued())
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, namedEvent);
+			return;
+		}
+
+		gui->HandleNamedEvent( namedEvent );
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d [%s]\r", handle, namedEvent);
+	}
+
+}
+
+/*
+================
+idEntity::Event_CallGui
+
+Calls a named event in a GUI. (note that the GUI needs to be unique)
+================
+*/
+void idEntity::Event_CallGui(int handle, const char *namedEvent)
+{
+	CallGui(handle, namedEvent);
+}
+
+/*
+================
+idEntity::Event_LoadExternalData
+
+Used to load an external xdata declaration into this
+object's spawn args. The prefix will be prepended to
+the names of all keys in the declaration.
+================
+*/
+void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix )
+{
+	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, xdFile, false ) );
+	if ( xd != NULL ) {
+		const idDict *data = &(xd->m_data);
+		const idKeyValue *kv;
+
+		int i = data->GetNumKeyVals();
+		while ( i-- ) {
+			kv = data->GetKeyVal(i);
+			spawnArgs.Set( prefix + kv->GetKey(), kv->GetValue() );
+		}
+
+		idThread::ReturnInt( 1 );
+	} 
+	else
+	{
+		gameLocal.Warning("Non-existant xdata declaration: %s\n", xdFile);
+		idThread::ReturnInt( 0 );
+	}
+}
+
+/*
+================
+idEntity::Event_GetInventory
+
+Returns the entity containing us.
+================
+*/
+void idEntity::Event_GetInventory()
+{
+/*	CInventoryItem* item = InventoryItem();
+	if ( item != NULL ) {
+		CInventory* inv = item->Inventory();
+		if ( inv != NULL ) {
+			idThread::ReturnEntity( inv->m_owner.GetEntity() );
+		} else {
+			idThread::ReturnEntity( NULL );
+		}
+	}
+*/
+}
+
+idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int delay, const char *fmt, ...)
+{
+	idThread *pThread = NULL;
+	va_list argptr;
+
+	const function_t *pScriptFkt = scriptObject.GetFunction(fkt);
+	if(pScriptFkt == NULL)
+	{
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global namespace.\r", fkt);
+		pScriptFkt = gameLocal.program.FindFunction(fkt);
+	}
+
+	if(pScriptFkt)
+	{
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction '%s'\r", fkt);
+		pThread = new idThread(pScriptFkt);
+		va_start(argptr, fmt);
+		pThread->CallFunctionArgsVN(pScriptFkt, ClearStack, fmt, argptr);
+		va_end(argptr);
+		pThread->DelayedStart(delay);
+	}
+	else
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Scriptfunction not found! [%s]\r", fkt);
+
+	return pThread;
+}
+
+void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName ) 
+{
+	idVec3			origin;
+	idMat3			axis;
+	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
+	idVec3			originOffset, originSubOffset(vec3_zero);
+	SAttachPosition *pos;
+
+// New position system:
+	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
+	{
+		originOffset = pos->originOffset;
+		angleOffset = pos->angleOffset;
+
+		// entity-specific offsets to a given position
+		originSubOffset = ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleSubOffset = ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+	}
+// The following is the old system and will be phased out
+	else
+	{
+		//gameLocal.Warning("%s is attaching %s using the deprecated attachment system.\n", name.c_str(), ent->name.c_str());
+		angleOffset = ent->spawnArgs.GetAngles( "angles" );
+		originOffset = ent->spawnArgs.GetVector( "origin" );
+	}
+
+	origin = GetPhysics()->GetOrigin();
+	axis = GetPhysics()->GetAxis();
+
+	idMat3 rotate = angleOffset.ToMat3();
+	idMat3 newAxis = rotate * axis;
+	ent->SetOrigin( origin + originOffset * axis + originSubOffset * newAxis );
+	ent->SetAxis( angleSubOffset.ToMat3() * newAxis );
+	ent->Bind( this, true );
+	ent->cinematic = cinematic;
+
+	CAttachInfo	&attach = m_Attachments.Alloc();
+	attach.channel = 0; // overloaded in animated classes
+	attach.ent = ent;
+	attach.name = AttName;
+	idStr positionString = PosName;
+	attach.posName = positionString; // grayman #2603
+
+	// Update name->m_Attachment index mapping
+	int index = m_Attachments.Num() - 1;
+	if( AttName != NULL )
+		m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
+}
+
+void idEntity::Detach( const char *AttName )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind >= 0 && ind < m_Attachments.Num() )
+	{
+		DetachInd( ind );
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Detach called with invalid attachment name %s\r", AttName);
+	}
+}
+
+void idEntity::DetachInd( int ind )
+{
+	idEntity *ent = NULL;
+
+	// DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Detach called for index %d\r", ind);
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	// DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Detach: Ent %s unbound\r", ent->name.c_str());
+	ent->Unbind();
+	// We don't want to remove it from the list, otherwise mapping of name to index gets screwed up
+	m_Attachments[ind].ent = NULL;
+
+	// remove from name->index mapping
+	m_AttNameMap.erase( m_Attachments[ind].name.c_str() );
+
+Quit:
+	return;
+}
+
+void idEntity::ReAttachToCoords
+	( const char *AttName, idVec3 offset, idAngles angles  ) 
+{
+	idEntity		*ent( NULL );
+	idVec3			origin;
+	idMat3			axis, rotate, newAxis;
+	CAttachInfo		*attachment( NULL );
+
+	attachment = GetAttachInfo( AttName );
+	if( attachment )
+		ent = attachment->ent.GetEntity();
+
+	if( !attachment  || !attachment->ent.IsValid() || !ent )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	axis = GetPhysics()->GetAxis();
+	origin = GetPhysics()->GetOrigin();
+	rotate = angles.ToMat3();
+	newAxis = rotate * axis;
+
+	ent->Unbind(); 
+
+	// greebo: Note that Unbind() will invalidate the entity pointer in the attachment list
+	// Hence, re-assign the attachment entity pointer (the index itself is ok)
+	attachment->ent = ent;
+
+	ent->SetAxis( newAxis );
+	ent->SetOrigin( origin + offset * axis );
+
+	ent->Bind( this, true );
+	ent->cinematic = cinematic;
+
+	// set the spawnargs for later retrieval as well
+	ent->spawnArgs.Set( "joint", "" );
+	ent->spawnArgs.SetVector( "origin", offset );
+	ent->spawnArgs.SetAngles( "angles", angles );
+
+Quit:
+	return;
+}
+
+void idEntity::ReAttachToPos
+	( const char *AttName, const char *PosName  ) 
+{
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttachToPos called with attachment name %s, positiong %s, on entity %s\r", AttName, PosName, name.c_str());
+
+	int ind = GetAttachmentIndex( AttName );
+	if (ind == -1 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return;
+	}
+
+	idEntity* ent = GetAttachment( ind );
+
+	if( !ent )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
+		return;
+	}
+
+	// Hack: Detaching leaves a null entry in the array to preserve indices
+	// To leverage existing Attach function, we detach and then re-insert
+	// into this place in the array.
+
+	DetachInd( ind );
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttaching...\r");
+	Attach( ent, PosName, AttName );
+
+	int indEnd = m_Attachments.Num();
+
+	// greebo: Decrease the end index by 1 before passing it to operator[]
+	indEnd--;
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("End index is %d\r", indEnd);
+
+	// Copy the attachment info from the end of the list over the previous index
+	m_Attachments[ind] = m_Attachments[indEnd];
+	
+	// remove the newly created end entry (is a duplicate now)
+	m_Attachments.RemoveIndex( indEnd );
+
+	// Fix the name mapping to map back to the original index
+	m_AttNameMap.erase( AttName );
+	m_AttNameMap.insert(AttNameMap::value_type(AttName, ind));
+}
+
+void idEntity::ShowAttachment( const char *AttName, bool bShow )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind >= 0 )
+	{
+		ShowAttachmentInd( ind, bShow );
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ShowAttachment called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+	}
+}
+
+void idEntity::ShowAttachmentInd( int ind, bool bShow )
+{
+	idEntity *ent( NULL );
+
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		goto Quit;
+	}
+
+	if( bShow )
+		ent->Show();
+	else
+		ent->Hide();
+
+Quit:
+	return;
+}
+
+int idEntity::GetAttachmentIndex( const char *AttName )
+{
+	AttNameMap::iterator k;
+	k = m_AttNameMap.find(AttName);
+	if (k != m_AttNameMap.end() && k->second < m_Attachments.Num() )
+	{
+		return k->second;
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt to access invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return -1;
+	}
+}
+
+idEntity *idEntity::GetAttachment( const char *AttName )
+{
+	/* tels: use GetAttachmentIndex() to bypass GetAttachInfo() */
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+		return m_Attachments[ind].ent.GetEntity();
+	else
+		return NULL;
+
+	/*CAttachInfo *AttInfo = GetAttachInfo( AttName );
+
+	if( AttInfo )
+		return AttInfo->ent.GetEntity();
+	else
+		return NULL;*/
+}
+
+idEntity *idEntity::GetAttachment( int ind )
+{
+	idEntity *ent = NULL;
+
+	if( ind < 0 || ind >= m_Attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_Attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		ent = NULL;
+		goto Quit;
+	}
+
+Quit:
+	return ent;
+}
+
+CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
+{
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+		return &m_Attachments[ind];
+	else
+		return NULL;
+}
+
+// Tels: Get the entity attached at the position given by the attachment position
+// grayman #2603 - resurrected and spruced up for relight work
+idEntity* idEntity::GetAttachmentByPosition( idStr PosName )
+{
+	int num = m_Attachments.Num();
+
+	for (int i = 0 ; i < num ; i++)
+	{
+		if ((m_Attachments[i].ent.GetEntity() != NULL) && m_Attachments[i].ent.IsValid())
+		{
+			if (m_Attachments[i].posName == PosName)
+			{
+				return m_Attachments[i].ent.GetEntity();
+			}
+		}
+	}
+
+	// not found
+	return NULL;
+}
+
+
+idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
+{
+	/* tels: Look directly at this entity for the attachment */
+	int ind = GetAttachmentIndex(AttName);
+	if( ind >= 0 )
+	{
+		/* we found it */
+		//gameLocal.Printf(" Found entity %s at index %i\n", m_Attachments[ind].ent.GetEntity()->name.c_str(), ind);
+		return m_Attachments[ind].ent.GetEntity();
+	}
+
+	/* tels: not found, look at entities bound to this entity */
+	idEntity* NextEnt = this;
+
+	if ( bindMaster )
+		{
+		NextEnt = bindMaster;	
+		}
+
+	while ( NextEnt != NULL )
+	{
+		//gameLocal.Printf(" Looking at entity %s\n", NextEnt->name.c_str());
+		idEntity* AttEnt = NextEnt->GetAttachment( AttName );
+		if (AttEnt)
+		{
+			/* we found it */
+			//gameLocal.Printf(" Found entity %s at entity %s.\n", 
+			//	AttEnt->name.c_str(), NextEnt->name.c_str());
+			return AttEnt;
+		}
+	/* not found yet, get next Team member */
+	NextEnt = NextEnt->GetNextTeamEntity();
+	}
+
+	/* not found at all */
+	return NULL;
+}
+
+void idEntity::BindNotify( idEntity *ent )
+{
+}
+
+void idEntity::UnbindNotify( idEntity *ent )
+{
+	// greebo: Activate physics on "Unbind" of any slaves
+	physics->Activate();
+}
+
+void idEntity::Event_TimerCreate(int stimType, int Hour, int Minute, int Seconds, int Millisecond)
+{
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Create Timer: Stimtype %d, Hour: %d, Minute: %d, Seconds: %d, Milliseconds: %d\r",
+		stimType, Hour, Minute, Seconds, Millisecond);
+
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+
+	CStimResponseTimer* timer = stim->AddTimerToGame();
+	timer->SetTimer(Hour, Minute, Seconds, Millisecond);
+}
+
+void idEntity::Event_TimerStop(int stimType)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StopTimer: Stimtype %d\r", stimType);
+	if (timer != NULL)
+	{
+		timer->Stop();
+	}
+}
+
+void idEntity::Event_TimerStart(int stimType)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StartTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
+	{
+		timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
+	}
+}
+
+void idEntity::Event_TimerRestart(int stimType)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("RestartTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
+	{
+		timer->Restart(static_cast<unsigned long>(sys->GetClockTicks()));
+	}
+}
+
+void idEntity::Event_TimerReset(int stimType)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("ResetTimer: Stimtype %d \r", stimType);
+
+	if (timer != NULL)
+	{
+		timer->Reset();
+	}
+}
+
+void idEntity::Event_TimerSetState(int stimType, int state)
+{
+	CStimPtr stim = m_StimResponseColl->GetStimByType(static_cast<StimType>(stimType));
+
+	CStimResponseTimer* timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("SetTimerState: Stimtype-%d State: %d\r", stimType, state);
+
+	if (timer != NULL)
+	{
+		timer->SetState(static_cast<CStimResponseTimer::TimerState>(state));
+	}
+}
+
+void idEntity::Event_SetFrobable(bool bVal)
+{
+	SetFrobable( bVal );
+}
+
+void idEntity::Event_IsFrobable( void )
+{
+	idThread::ReturnInt( (int) m_bFrobable );
+}
+
+void idEntity::Event_Frob()
+{
+	idPlayer* player = static_cast<idPlayer*>(gameLocal.entities[gameLocal.localClientNum]);
+	if (player != NULL)
+	{
+		// Let the player frob this entity.
+		player->PerformFrob(EPressed, this);
+	}
+}
+
+void idEntity::Event_IsHilighted( void )
+{
+	int retVal = 0;
+	if ( m_bFrobHighlightState )
+		retVal++;
+	if ( m_bFrobbed )
+		retVal++;
+	idThread::ReturnInt( retVal );
+}
+
+
+void idEntity::Event_FrobHilight( bool bVal )
+{
+	SetFrobHighlightState( bVal );
+}
+
+void idEntity::Event_CheckAbsence()
+{
+	if (m_AbsenceNoticeability > 0)
+	{
+		idBounds currentBounds = GetPhysics()->GetAbsBounds();
+		float tolerance = spawnArgs.GetFloat("absence_bounds_tolerance", "0");
+
+		currentBounds.ExpandSelf(tolerance);
+
+		idEntity* location(NULL);
+		bool isAbsent(true);
+		int locationsCount(0);
+
+		for (const idKeyValue* kv = spawnArgs.MatchPrefix("absence_location"); kv != NULL; kv = spawnArgs.MatchPrefix("absence_location", kv))
+		{
+			locationsCount++;
+			location = gameLocal.FindEntity(kv->GetValue());
+			if (location != NULL)
+			{
+				isAbsent = !currentBounds.IntersectsBounds(location->GetPhysics()->GetAbsBounds());
+			}
+			if (!isAbsent)
+			{
+				break;
+			}
+		}
+		
+		if (locationsCount == 0)
+		{
+			isAbsent = !currentBounds.IntersectsBounds(m_StartBounds);
+		}
+
+		if (isAbsent && !m_AbsenceStatus)
+		{
+			// was there before, is absent now
+			SpawnAbsenceMarker();
+		}
+		else if (!isAbsent && m_AbsenceStatus)
+		{
+			// was absent, is back
+			DestroyAbsenceMarker();
+		}
+
+		// set absence status
+		m_AbsenceStatus = isAbsent;
+
+		PostEventMS(&EV_CheckAbsence, 5000);
+	}
+}
+
+void idEntity::Event_CanBeUsedBy( idEntity *itemEnt )
+{
+	idThread::ReturnInt( CanBeUsedBy( itemEnt, true ) );
+}
+
+
+bool idEntity::SpawnAbsenceMarker()
+{
+	idStr absenceMarkerDefName = spawnArgs.GetString("def_absence_marker", "atdm:absence_marker");
+	const idDict* markerDef = gameLocal.FindEntityDefDict(absenceMarkerDefName, false);
+
+	if (markerDef == NULL)
+	{
+		gameLocal.Error( "Failed to find definition of absence marker entity " );
+		return false;
+	}
+
+	idEntity* ent;
+	gameLocal.SpawnEntityDef(*markerDef, &ent, false);
+
+	if (!ent || !ent->IsType(CAbsenceMarker::Type)) 
+	{
+		gameLocal.Error( "Failed to spawn absence marker entity" );
+		return false;
+	}
+
+	CAbsenceMarker* absenceMarker = static_cast<CAbsenceMarker*>(ent);
+	m_AbsenceMarker = absenceMarker;
+
+	// absenceMarker->Init();
+	if (!absenceMarker->initAbsenceReference (this, m_StartBounds))
+	{
+		gameLocal.Error( "Failed to initialize absence reference in absence marker entity" );
+		return false;
+	}
+
+	// Success
+	return true;
+}
+
+bool idEntity::DestroyAbsenceMarker()
+{
+	idEntity* absenceMarker = m_AbsenceMarker.GetEntity();
+	if (absenceMarker != NULL)
+	{
+		absenceMarker->PostEventMS(&EV_Remove, 0);
+		m_AbsenceMarker = NULL;
+	}
+	return true;
+}
+
+float idEntity::GetAbsenceNoticeability()
+{
+	return m_AbsenceNoticeability;
+}
+
+/*
+================
+idEntity::Event_RangedThreatTo
+================
+*/
+void idEntity::Event_RangedThreatTo(idEntity* target)
+{
+	// This needs to be virtual, but I don't think events themselves
+	// can be virtual; so this just wraps a virtual method.
+	float result = this->RangedThreatTo(target);
+	idThread::ReturnFloat(result);
+}
+
+/*
+================
+idEntity::RangedThreatTo
+
+Return nonzero if this entity could potentially
+attack the given (target) entity at range, or
+entities in general if target is NULL.
+For example, for the player this should return 1
+if the player has a bow equipped and 0 otherwise.
+================
+*/
+float idEntity::RangedThreatTo(idEntity* target)
+{
+	// Most entities are not capable of attacking at range
+	return 0;
+}
+
+void idEntity::GetTeamChildren( idList<idEntity *> *list )
+{
+// ishtvan: TODO: I think this is WRONG and can go up and across the team hierarchy when called on bind children
+// It only works as advertised when called on bindmasters
+	idEntity *NextEnt = NULL;
+	
+	list->Clear();
+	for( NextEnt = GetNextTeamEntity(); NextEnt != NULL; NextEnt = NextEnt->GetNextTeamEntity() )
+	{
+		if( NextEnt != this )
+			list->Append( NextEnt );
+	}
+}
+
+void idEntity::Event_GetBindMaster( void )
+{
+	idThread::ReturnEntity( GetBindMaster() );
+}
+
+void idEntity::Event_NumBindChildren( void )
+{
+	idList<idEntity *> ChildList;
+	GetTeamChildren( &ChildList );
+
+	idThread::ReturnInt( ChildList.Num() );
+}
+
+void idEntity::Event_GetBindChild( int ind )
+{
+	idEntity *pReturnVal( NULL );
+
+	idList<idEntity *> ChildList;
+	GetTeamChildren( &ChildList );
+
+	if( (ChildList.Num() - 1) >= ind )
+		pReturnVal = ChildList[ ind ];
+
+	idThread::ReturnEntity( pReturnVal );
+}
+
+void idEntity::Event_GetNextInvItem()
+{
+	NextPrevInventoryItem(1);
+	
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+
+	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
+}
+
+void idEntity::Event_GetPrevInvItem()
+{
+	NextPrevInventoryItem(-1);
+	
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+
+	idThread::ReturnEntity( (item != NULL) ? item->GetItemEntity() : NULL );
+}
+
+void idEntity::Event_SetCurInvCategory(const char* categoryName)
+{
+	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+
+	InventoryCursor()->SetCurrentCategory(categoryName);
+
+	OnInventorySelectionChanged(prev);
+
+	idThread::ReturnInt( InventoryCursor()->GetCurrentCategory()->GetName() == categoryName );
+}
+
+void idEntity::Event_SetCurInvItem(const char* itemName)
+{
+	CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+
+	InventoryCursor()->SetCurrentItem(itemName);
+
+	OnInventorySelectionChanged(prev);
+
+	idThread::ReturnInt( InventoryCursor()->GetCurrentItem()->GetName() == itemName );
+}
+
+void idEntity::Event_GetCurInvCategory()
+{
+	idThread::ReturnString( InventoryCursor()->GetCurrentCategory()->GetName() );
+}
+
+void idEntity::Event_GetCurInvItemEntity()
+{
+	idThread::ReturnEntity( InventoryCursor()->GetCurrentItem()->GetItemEntity() );
+}
+
+void idEntity::Event_GetCurInvItemName()
+{
+	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
+}
+
+void idEntity::Event_GetCurInvItemId()
+{
+	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetItemId() );
+}
+
+void idEntity::Event_GetCurInvIcon()
+{
+	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetIcon() );
+}
+
+void idEntity::Event_InitInventory(int callCount)
+{
+	// grayman #2820 - At the time of this writing, this routine checks
+	// for loot AND belonging in someone's inventory. If anything else is
+	// added here, the pre-check in ai.cpp that wraps around "PostEventMS( &EV_InitInventory, 0, 0 )"
+	// must account for that. The pre-check is needed to prevent unnecessary
+	// event posting that leads to doing nothing here. (I.e. the entity isn't
+	// loot, and it doesn't belong in someone's inventory.)
+
+	// greebo: Check if this entity represents loot - if yes, update the total mission loot count
+
+	// grayman #2820 - It probably never happens, but if loot is placed in the player's
+	// inventory at map start, it could get double-counted here if the player hasn't
+	// spawned yet and this routine has to call itself below. 'callCount' tracks how many
+	// times an attempt has been made, so we'll wrap the loot check in a callCount check
+	// to make sure it doesn't get done more than once.
+
+	if ( callCount == 0 )
+	{
+		int lootValue = spawnArgs.GetInt("inv_loot_value", "0");
+		int lootType = spawnArgs.GetInt("inv_loot_type", "0");
+
+		// Check if the loot type is valid
+		if (lootType > LOOT_NONE && lootType < LOOT_COUNT && lootValue != 0) 
+		{
+			gameLocal.m_MissionData->AddMissionLoot(static_cast<LootType>(lootType), lootValue);
+		}
+	}
+
+	// Check if this object should be put into the inventory of some entity
+	// when the object spawns. Default is no.
+	if (spawnArgs.GetBool("inv_map_start", "0"))
+	{
+		// Get the name of the target entity, defaults to PLAYER1
+		idStr target = spawnArgs.GetString("inv_target", "player1");
+
+		idEntity* targetEnt = gameLocal.FindEntity(target.c_str());
+		if (targetEnt != NULL)
+		{
+			// Put the item into the target entity's inventory
+			targetEnt->Inventory()->PutItem(this, targetEnt);
+		}
+		else 
+		{
+			// Target entity not found (not spawned yet?) Postpone this event
+			// Check how often we've been called to avoid infinite postponing
+			if (callCount < 20)
+			{
+				// Try again in 250 ms.
+				PostEventMS(&EV_InitInventory, 250, callCount+1);
+			}
+		}
+	}
+}
+
+void idEntity::Event_GetLootAmount(int lootType)
+{
+	int gold, jewelry, goods;
+	int total = Inventory()->GetLoot(gold, jewelry, goods);
+
+	switch (lootType)
+	{
+		case LOOT_GOLD:
+			idThread::ReturnInt(gold);
+			return;
+		break;
+
+		case LOOT_GOODS:
+			idThread::ReturnInt(goods);
+			return;
+		break;
+
+		case LOOT_JEWELS:
+			idThread::ReturnInt(jewelry);
+			return;
+		break;
+
+		default:
+			idThread::ReturnInt(total);
+			return;
+		break;
+	}
+
+	idThread::ReturnInt(0);
+}
+
+void idEntity::Event_ChangeLootAmount(int lootType, int amount)
+{
+	idThread::ReturnInt( ChangeLootAmount(lootType, amount) );
+}
+
+void idEntity::Event_AddInvItem(idEntity* ent)
+{
+	if (ent == NULL || ent->spawnArgs.FindKey("inv_name") == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", ent->name.c_str(), name.c_str());
+		return;
+	}
+
+	AddToInventory(ent);
+}
+
+void idEntity::Event_AddItemToInv(idEntity* ent)
+{
+	// no target, ignore
+	if (ent == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s to inventory of NULL target", GetName() );
+		return;
+	}
+
+	if (spawnArgs.FindKey("inv_name") == NULL)
+	{
+		gameLocal.Warning("Cannot add entity %s without 'inv_name' spawnarg to inventory of %s", GetName(), ent->name.c_str() );
+		return;
+	}
+
+	gameLocal.Printf("Adding entity %s to inventory of %s.\n", GetName(), ent->name.c_str() );
+	ent->AddToInventory(this);
+}
+
+CInventoryItemPtr idEntity::AddToInventory(idEntity *ent)
+{
+	// Sanity check
+	if (ent == NULL) return CInventoryItemPtr();
+
+	// Check if we have an inventory item.
+	idStr invName;
+	if (!ent->spawnArgs.GetString("inv_name", "", invName))
+	{
+		return CInventoryItemPtr(); // not an inventory item
+	}
+
+	// Get (create) the InventoryCursor of this Entity.
+	const CInventoryCursorPtr& crsr = InventoryCursor();
+
+	// Add the new item to the Inventory (with <this> as owner)
+	CInventoryItemPtr item = crsr->Inventory()->PutItem(ent, this);
+	
+	if (item == NULL)
+	{
+		// not an inventory item
+		gameLocal.Warning("Couldn't add entity %s to inventory of %s", ent->name.c_str(), name.c_str());
+		return item;
+	}
+
+	// Play the (optional) acquire sound
+	idStr soundName = ent->spawnArgs.GetString("snd_acquire", "");
+	if (! soundName.IsEmpty())
+	{
+		StartSoundShader(declManager->FindSound(soundName), SCHANNEL_ANY, 0, false, NULL);
+	}
+
+	return item;
+}
+
+bool idEntity::ReplaceInventoryItem(idEntity* oldItem, idEntity* newItem)
+{
+	bool result = Inventory()->ReplaceItem(oldItem, newItem);
+
+	// Fire the general "item changed" event
+	OnInventoryItemChanged();
+
+	return result;
+}
+
+void idEntity::Event_ReplaceInvItem(idEntity* oldItem, idEntity* newItem)
+{
+	idThread::ReturnInt(ReplaceInventoryItem(oldItem, newItem) ? 1 : 0);
+}
+
+int idEntity::ChangeLootAmount(int lootType, int amount)
+{
+	int groupTotal = 0;
+	int rc = 0;
+	idStr groupname;
+
+	int gold, jewelry, goods;
+	int total = Inventory()->GetLoot(gold, jewelry, goods);
+	bool gained = (amount >= 0);
+
+	switch(lootType)
+	{
+		case LOOT_GOLD:
+			gold += amount;
+			groupTotal = gold;
+			groupname = "loot_gold";
+			rc = gold;
+		break;
+
+		case LOOT_GOODS:
+			goods += amount;
+			groupTotal = goods;
+			groupname = "loot_goods";
+			rc = goods;
+		break;
+
+		case LOOT_JEWELS:
+			jewelry += amount;
+			groupTotal = jewelry;
+			groupname = "loot_jewels";
+			rc = jewelry;
+		break;
+
+		default:
+			rc = 0;
+		break;
+	}
+
+	// Set the new values
+	Inventory()->SetLoot(gold, jewelry, goods);
+
+	if (rc != 0)
+	{
+		gameLocal.m_MissionData->InventoryCallback(NULL, groupname, groupTotal, total, gained);  
+		gameLocal.m_MissionData->ChangeFoundLoot(static_cast<LootType>(lootType), amount);
+	}
+
+	return rc;
+}
+
+void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value)
+{
+	CInventoryItemPtr item = Inventory()->GetItem(invName, invCategory);
+	if (item != NULL) 
+	{
+		// Item found, set the value
+		item->SetLightgemModifier(value);
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change lightgem modifier, item %s not found\r", invName);
+	}
+}
+
+void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory, const char* icon)
+{
+	CInventoryItemPtr item = Inventory()->GetItem(invName, invCategory); 
+
+	if (item != NULL) 
+	{
+		// Item found, set the icon
+		item->SetIcon(icon);
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change inventory icon, item %s not found\r", invName);
+	}
+}
+
+void idEntity::NextPrevInventoryItem(int direction)
+{
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+	if (prev != NULL && prev->GetName() == TDM_DUMMY_ITEM && IsType(idPlayer::Type))
+	{
+		// If current item is dummy then try to restore cursor to the last real item
+		CInventoryItemPtr lastItemRestored = Inventory()->GetItem(static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear);
+		if (lastItemRestored != NULL)
+		{
+			cursor->SetCurrentItem(lastItemRestored);
+		}
+		static_cast<idPlayer*>(this)->m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
+	}
+	// If the current item has not changed yet, move to the prev/next item
+	if (cursor->GetCurrentItem() == prev)
+	{
+		// direction parameter specifies whether next of previous item is chosen
+		if (direction > 0) cursor->GetNextItem();
+		if (direction < 0) cursor->GetPrevItem();
+	}
+
+	// Call the selection changed event
+	OnInventorySelectionChanged(prev);
+}
+
+void idEntity::NextPrevInventoryGroup(int direction)
+{
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+
+	// direction parameter specifies whether next of previous item is chosen
+	if (direction > 0) cursor->GetNextCategory();
+	if (direction < 0) cursor->GetPrevCategory();
+	
+	OnInventorySelectionChanged(prev);
+}
+
+void idEntity::CycleInventoryGroup(const idStr& groupName)
+{
+	const CInventoryCursorPtr& cursor = InventoryCursor();
+	
+	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
+
+	assert(cursor->GetCurrentCategory() != NULL);
+
+	CInventoryItemPtr prev = cursor->GetCurrentItem();
+
+	if (cursor->GetCurrentCategory()->GetName() == groupName)
+	{
+		// We are already in the specified group
+		CInventoryItemPtr next = cursor->GetNextItem();
+
+		if (next->Category()->GetName() != groupName)
+		{
+			// We've changed groups, this means that the cursor has wrapAround set to false
+			// Set the cursor back to the first item
+			cursor->SetCurrentCategory(groupName);
+		}
+	}
+	else
+	{
+		// Not in the desired group yet, set the cursor to the first item in that group
+		cursor->SetCurrentCategory(groupName);
+	}
+
+	OnInventorySelectionChanged(prev);
+}
+
+void idEntity::OnInventoryItemChanged()
+{
+	// Nothing here, can be overriden by subclasses
+}
+
+void idEntity::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
+{
+	// Nothing here, can be overriden by subclasses
+}
+
+void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) 
+{
+	const CInventoryPtr& inventory = Inventory();
+	bool bIsLoot( false );
+
+	CInventoryCategoryPtr category = inventory->GetCategory(invCategory);
+	if (category == NULL) 
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, inventory category %s not found\r", invCategory);
+		return;
+	}
+
+	CInventoryItemPtr item = category->GetItem(invName);
+	if (item == NULL) 
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, item name %s not found\r", invName);
+		return;
+	}
+
+	// Change the counter by amount (explicitly allow negative values)
+	item->SetCount(item->GetCount() + amount);
+
+	// We consider items "dropped" if the amount is negative
+	bool dropped = (amount < 0);
+
+	// Assume item does not have an overall value since it's not loot
+	gameLocal.m_MissionData->InventoryCallback
+	( 
+		item->GetItemEntity(), 
+		item->GetName(), 
+		item->GetValue(), 
+		1, 
+		!dropped 
+	);
+
+	if (item->GetCount() <= 0) 
+	{
+		// Stackable item count reached zero, remove item from category
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty item from category.\r");
+		
+		category->RemoveItem(item);
+
+		// Advance the cursor (after removal, otherwise we stick to an invalid id)
+		InventoryCursor()->GetNextItem();
+
+		// Call the selection changed event, passing the removed item as previously selected item
+		OnInventorySelectionChanged(item);
+	}
+	
+	// Check for empty categories after the item has been removed
+	if (category->IsEmpty()) 
+	{
+		// Remove empty category from inventory
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
+		
+		inventory->RemoveCategory(category);
+		
+		// Switch the cursor to the next category (after removal)
+		InventoryCursor()->GetNextCategory();
+
+		// There shouldn't be a need to call OnInventorySelectionChanged(), as this
+		// has already been done by the code above.
+	}
+}
+
+void idEntity::AddFrobPeer(const idStr& frobPeerName)
+{
+	m_FrobPeers.AddUnique(frobPeerName);
+}
+
+void idEntity::AddFrobPeer(idEntity* peer)
+{
+	if (peer != NULL)
+	{
+		AddFrobPeer(peer->name);
+	}
+}
+
+void idEntity::RemoveFrobPeer(const idStr& frobPeerName)
+{
+	m_FrobPeers.Remove(frobPeerName);
+}
+
+void idEntity::RemoveFrobPeer(idEntity* peer)
+{
+	if (peer != NULL)
+	{
+		RemoveFrobPeer(peer->name);
+	}
+}
+
+idEntity* idEntity::GetFrobMaster()
+{
+	if (m_MasterFrob.IsEmpty()) return NULL;
+
+	idEntity* master = gameLocal.FindEntity(m_MasterFrob);
+	
+	if (master == NULL)
+	{
+		// master doesn't exist anymore
+		m_MasterFrob.Clear();
+		return NULL;
+	}
+
+	return master;
+}
+
+void idEntity::Event_DestroyOverlay(int handle)
+{
+	DestroyOverlay(handle);
+}
+
+void idEntity::DestroyOverlay(int handle)
+{
+	if ( handle != OVERLAYS_MIN_HANDLE ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui )
+			gui->Activate( false, gameLocal.time );
+		m_overlays.destroyOverlay( handle );
+	} else {
+		gameLocal.Warning( "Cannot destroy HUD.\n" );
+	}
+}
+
+void idEntity::Event_CreateOverlay( const char *guiFile, int layer )
+{
+	idThread::ReturnInt(CreateOverlay(guiFile, layer));
+}
+
+int idEntity::CreateOverlay(const char *guiFile, int layer)
+{
+	int handle = OVERLAYS_INVALID_HANDLE;
+
+	if(guiFile == NULL || guiFile[0] == 0)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
+		return OVERLAYS_INVALID_HANDLE;
+	}
+
+
+	if(!uiManager->CheckGui(guiFile))
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
+		return OVERLAYS_INVALID_HANDLE;
+	}
+	handle = m_overlays.createOverlay( layer );
+	if(handle == OVERLAYS_INVALID_HANDLE)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
+		return OVERLAYS_INVALID_HANDLE;
+	}
+
+	m_overlays.setGui(handle, guiFile);
+	idUserInterface *gui = m_overlays.getGui(handle);
+	if(gui == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
+		// free handle, or we would leak
+		m_overlays.destroyOverlay(handle);
+		return OVERLAYS_INVALID_HANDLE;
+	}
+
+	gui->SetStateInt("handle", handle);
+	gui->Activate(true, gameLocal.time);
+	// Let's set a good default value for whether or not the overlay is interactive.
+	m_overlays.setInteractive(handle, gui->IsInteractive());
+
+	// scale the GUI according to gui_Width/gui_Height/gui_CenterX/gui_CenterY
+	gameLocal.UpdateGUIScaling( gui );
+
+	return handle;
+}
+
+idUserInterface* idEntity::GetOverlay(int handle)
+{
+	return m_overlays.getGui(handle);
+}
+
+/**
+* If this entity (or any entity that it is attached to) has mantling disabled,
+* then this returns false. Otherwise, returns true.
+**/
+bool idEntity::IsMantleable()
+{
+	bool returnVal = true;
+	idEntity* ent=this;
+	while (ent!=NULL)
+	{
+		if (!ent->m_bIsMantleable)
+		{
+			returnVal = false;
+			break;
+		}
+		ent = ent->GetBindMaster();
+	}
+	return returnVal;
+}
+
+int idEntity::heal(const char* healDefName, float healScale) {
+	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName );
+	if ( !healDef ) {
+		gameLocal.Error( "Unknown healDef '%s'\n", healDefName );
+	}
+
+	int	healAmount = static_cast<int>(healDef->GetInt( "heal_amount" ) * healScale);
+	int healInterval = healDef->GetInt("heal_interval", "0");
+	int healStepAmount = healDef->GetInt("heal_step_amount", "5");
+	float healIntervalFactor = healDef->GetInt("heal_interval_factor", "1");
+	bool isAir = idStr(healDef->GetString("heal_type", "")) == "air";
+
+	// Check if the entity can be healed in the first place
+	if ( healAmount == 0 || (!isAir && health >= spawnArgs.GetInt("health")) ) {
+		return 0;
+	}
+	
+	// Check for air potions
+	if (isAir) {
+		if (!IsType(idActor::Type)) { 
+			// Don't apply air healing to non-actors
+			return 0;
+		}
+		
+		// Try to cast this entity onto idAI or idPlayer
+		idAI* ai = dynamic_cast<idAI*>(this);
+		idPlayer* player = dynamic_cast<idPlayer*>(this);
+
+		if (ai != NULL) {
+			// This entity is an AI
+			ai->setAirTicks(ai->getAirTicks() + healAmount);
+			return 1;
+		}
+		else if (player != NULL) {
+			// This entity is a player
+			player->setAirTicks(player->getAirTicks() + healAmount);
+			return 1;
+		}
+
+		return 0;
+	}
+	// Is this "instant" healing?
+	else if (healInterval == 0) {
+		// Yes, heal the entity
+		health += healAmount;
+
+		// It may be possible that negative healAmounts are applied and the entity dies
+		if ( health <= 0 ) {
+			if ( health < -999 ) {
+				health = -999;
+			}
+
+			Killed( gameLocal.world, gameLocal.world, abs(healAmount), GetLocalCoordinates(GetPhysics()->GetOrigin()), 0);
+		}
+		return 1;
+	}
+	// Is this a gradual healing def? This would only apply to idPlayer
+	else if (healInterval > 0 && healStepAmount != 0 && IsType(idPlayer::Type))
+	{
+		idPlayer* player = dynamic_cast<idPlayer*>(this);
+		
+		if (player != NULL) {
+			player->GiveHealthPool(healAmount);
+			// Set the parameters of the health pool
+			player->setHealthPoolTimeInterval(healInterval, healIntervalFactor, healStepAmount);
+		}
+		return 1;
+	}
+	else {
+		// Nothing suitable found in the def arguments, return 0
+		return 0;
+	}
+}
+
+// Deals damage to this entity, documentation: see header
+void idEntity::Event_Damage( idEntity *inflictor, idEntity *attacker, 
+								 const idVec3 &dir, const char *damageDefName, 
+								 const float damageScale )
+{
+	// Pass the call to the regular member method of this class
+	Damage(inflictor, attacker, dir, damageDefName, damageScale, 0, NULL);
+}
+
+void idEntity::Event_Heal( const char *healDefName, const float healScale )
+{
+	// Pass the call to the idEntity::heal method
+	idThread::ReturnInt(heal(healDefName, healScale));
+}
+
+// tels:
+void idEntity::Event_TeleportTo(idEntity* target)
+{
+	Teleport( vec3_origin, idAngles( 0.0f, 0.0f, 0.0f ), target );
+}
+
+void idEntity::Event_IsDroppable( void )
+{
+	idThread::ReturnInt( spawnArgs.GetBool("inv_droppable") );
+}
+
+void idEntity::Event_SetDroppable( bool Droppable )
+{
+	spawnArgs.SetBool( "inv_droppable", Droppable );
+	// update the item in the player's inventory, if there is one
+	if( spawnArgs.FindKey("inv_name") != NULL )
+	{
+		idStr itemName = spawnArgs.GetString("inv_name");
+		CInventoryItemPtr item = gameLocal.GetLocalPlayer()->Inventory()->GetItem( itemName );
+		if( item != NULL )
+			item->SetDroppable( Droppable );
+	}
+}
+
+// tels:
+// lightFalloff == 0   - none
+// lightFalloff == 0.5 - sqrt(linear)
+// lightFalloff == 1   - liniear with distance (falls off already too fast)
+// lightFalloff == 2   - squared with distance
+// lightDistScale is a scaling factor to divide the distance. Sensible values are around 1..2
+void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightDistScale )
+{
+	idVec3 sum(0,0,0);
+	idVec3 local_light;
+	idVec3 local_light_radius;
+	idVec3 origin;
+	// divide dist by this factor, so 1 as light in 500 units stays, is half in 1000 etc
+	float dist_scaling = 5000 * lightDistScale;
+
+	// If this is a player, use the eye location to match what the script does
+	// with $player1.GetLocation()
+	const idPlayer* player = gameLocal.GetLocalPlayer();
+	
+	if (player == this)
+	{
+		origin = player->GetEyePosition();
+	}
+	else
+	{
+		origin = GetPhysics()->GetOrigin();
+	}
+	int areaNum = gameRenderWorld->PointInArea( origin );
+
+	// Find all light entities, then check if they are in the same area as the player:
+	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
+	{
+		if ( !ent || !ent->IsType( idLight::Type ) ) {
+			continue;
+		}
+
+		idLight* light = static_cast<idLight*>( ent );
+
+		// this makes it add all lights in the PVS, which is not good, albeit it makes leaning a bit better
+		//if ( gameLocal.InPlayerPVS( light ) ) {
+
+		// light is in the same area?
+		idVec3 light_origin = light->GetLightOrigin();
+		if ( areaNum == gameRenderWorld->PointInArea( light_origin ) ) {
+			light->GetColor( local_light );
+			// multiple the light color by the radius to get a fake "light energy":
+			light->GetRadius( local_light_radius );
+			// fireplace: 180+180+120/3 => 160 / 800 => 0.2
+			// candle:    130+130+120/3 => 123 / 800 => 0.15
+			// firearrow:  10+ 10+ 10/3 =>  10 / 800 => 0.0125
+			//gameLocal.Printf (" Adding light %s color %s radius %s\n", light->GetName(), local_light.ToString(),  local_light_radius.ToString() );
+			local_light *= (float)
+				(local_light_radius.x + 
+				 local_light_radius.y + 
+				 local_light_radius.z) / 2400;
+			// dimish light with distance?
+			if (lightFalloff > 0)
+			{
+				// compute distance
+				idVec3 dist3 = light_origin - origin;
+				// == 1
+				float dist;
+				if (lightFalloff < 1)
+				{
+					dist = idMath::Sqrt( dist3.Length() );	// square root of dist
+				}
+				else if (lightFalloff > 1)
+					{
+						// squared
+						dist = dist3.LengthSqr();
+					}
+					else
+					{
+						// linear
+						dist = dist3.Length();
+					}
+				// divide by dist
+				//gameLocal.Warning(" dist %0.2f, falloff %0.0f\n", dist, lightFalloff );
+				dist /= dist_scaling;
+				//gameLocal.Warning(" dist is now %0.2f\n", dist );
+				//gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+				local_light /= dist;
+				//gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+			}
+			sum += local_light;
+		}
+    }
+	idThread::ReturnVector( sum );
+}
+
+bool idEntity::canSeeEntity(idEntity* target, int useLighting) {
+	// The target point is the origin of the other entity.
+	idVec3 toPos = target->GetPhysics()->GetOrigin();
+
+	trace_t	tr;
+	// Perform a trace from the own origin to the target entity's origin
+	gameLocal.clip.TracePoint( tr, GetPhysics()->GetOrigin(), toPos, MASK_OPAQUE, this );
+
+	if (tr.fraction >= 1.0f || gameLocal.GetTraceEntity(tr) == target) {
+		// Trace test passed, entity is visible
+
+		if (useLighting) {
+			idBounds entityBounds = target->GetPhysics()->GetAbsBounds();
+			entityBounds.ExpandSelf (0.1f); // A single point doesn't work with ellipse intersection
+
+			idVec3 bottomPoint = entityBounds[0];
+			idVec3 topPoint = entityBounds[1];
+
+			float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, this, true);
+
+			// Return TRUE if the lighting exceeds the threshold.
+			return (lightQuotient >= VISIBILTIY_LIGHTING_THRESHOLD);
+		}
+
+		// No lighting to consider, return true
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void idEntity::Event_CanSeeEntity(idEntity* target, int useLighting)
+{
+	idThread::ReturnInt(canSeeEntity(target, useLighting) ? 1 : 0);
+}
+
+void idEntity::ProcCollisionStims( idEntity *other, int body )
+{
+	if (!other)
+	{
+		return;
+	}
+
+	if (other->IsType(idAFEntity_Base::Type) && body >= 0)
+	{
+		idAFEntity_Base* otherAF = static_cast<idAFEntity_Base*>(other);
+		int bodID = otherAF->BodyForClipModelId( body );
+
+		//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
+
+		idAFBody* struckBody = otherAF->GetAFPhysics()->GetBody(bodID);
+
+		idEntity* reroute = struckBody->GetRerouteEnt();
+
+		if (reroute)
+		{
+			other = reroute;
+		}
+	}
+
+	assert(other->GetStimResponseCollection() != NULL); // always non-NULL by design
+
+	if (other->GetStimResponseCollection()->HasResponse())
+	{
+		CStimResponseCollection* thisColl = GetStimResponseCollection();
+
+		// check each stim to see if it's a collision stim
+		int numStims = thisColl->GetNumStims();
+
+		for (int i = 0; i < numStims; ++i)
+		{
+			const CStimPtr& stim = thisColl->GetStim(i);
+			
+			if (stim->m_bCollisionBased)
+			{
+				stim->m_bCollisionFired = true;
+				stim->m_CollisionEnts.Append(other);
+			}
+		}
+	}
+}
+
+/* tels: Parses "def_attach" spawnargs and builds a list of idDicts that
+ * contain the spawnargs to spawn the attachments, which is done in
+ * ParseAttachments() later. This is a two-phase process to allow other
+ * code (e.g. SEED) to just parse the attachments without spawning them.
+ */
+void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from )
+{
+	const idKeyValue *kv = from->MatchPrefix( "def_attach", NULL );
+	while ( kv )
+	{
+		idDict args;
+
+		// Read the classname of the attachment
+		
+		// Don't process keyvalues equal to "-" (empty attachment).
+		if (kv->GetValue() != "-")
+		{
+			args.Set( "classname", kv->GetValue().c_str() );
+
+			// make items non-touchable so the player can't take them out of the character's hands
+			args.Set( "no_touch", "1" );
+
+			// don't let them drop to the floor
+			args.Set( "dropToFloor", "0" );
+
+			// check for attachment position spawnarg
+			idStr Suffix = kv->GetKey();
+			Suffix.StripLeading( "def_attach" );
+			idStr PosKey = "pos_attach" + Suffix;
+			// String name of the attachment for later accessing
+			idStr AttName = "name_attach" + Suffix;
+			idStr AttNameValue = from->GetString(AttName);
+			if (! AttNameValue)
+			{
+				// fall back to the position if no name was defined
+				AttNameValue = from->GetString(PosKey);
+			}
+
+			// store for later query
+			args.Set("_poskey", PosKey);
+			args.Set("_attnamevalue", AttNameValue );
+
+			// tels: parse all "set .." spawnargs
+			const idKeyValue *kv_set = from->MatchPrefix( "set ", NULL );
+			while ( kv_set )
+			{
+				// "set FOO on BAR" "0.5 0.5 0"
+				// means set "_color" "0.5 0.5 0" on the entity attached to the attachment point
+				// named "BAR" (defined with "name_attach" "BAR" on the original entity)
+
+				// Get the value
+				// example: "0.5 0.5 0"
+				idStr SpawnargValue(kv_set->GetValue());
+
+				// "set FOO on BAR"
+				idStr SetAttName(kv_set->GetKey());
+				// "set FOO on BAR" => "FOO on BAR"
+				SetAttName = SetAttName.Right( kv_set->GetKey().Length() - 4 );
+
+				// "FOO on BAR"
+				idStr SpawnargName(SetAttName);
+
+				// find position of first ' '	
+				int PosSpace = SetAttName.Find( ' ', 0, -1);
+
+				if (PosSpace == -1)
+				{
+					gameLocal.Warning( "%s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
+						GetName(), kv_set->GetKey().c_str(), kv_set->GetValue().c_str() );
+					//kv_set = from->MatchPrefix( "set ", kv_set );
+					//continue;		
+					// pretend "set _color" "0.1 0.2 0.3" means "set _color on BAR" where BAR is the
+					// current attachement. So it applies to all of them.
+					// SpawnargName is already right
+					SetAttName = AttNameValue;
+				}
+				else
+				{
+					// "FOO on BAR" => "FOO"
+					SpawnargName = SpawnargName.Left( PosSpace );
+					// "FOO on BAR" => "BAR"
+					SetAttName = SetAttName.Right( SetAttName.Length() - (PosSpace + 4) );
+				}
+
+				// gameLocal.Printf("SetAttName '%s'\n", SetAttName.c_str());
+				// gameLocal.Printf("AttNameValue '%s'\n", AttNameValue.c_str());
+				// gameLocal.Printf("SpawnargName '%s'\n", SpawnargName.c_str());
+
+				// does this spawnarg apply to the newly spawned entity?
+				if (SetAttName == AttNameValue)
+				{
+					// it matches, so this spawnarg must be applied directly to this entity
+					//gameLocal.Printf("Match: Setting '%s' to '%s'\n", SpawnargName.c_str(), SpawnargValue.c_str() );
+					args.Set( SpawnargName, SpawnargValue );
+				}
+				else
+				{
+					// pass along the original "set ..." spawnarg, it might apply to an
+					// def_attached entity of the newly spawned one
+					//gameLocal.Printf("No match: Passing along '%s' ('%s')\n", kv_set->GetKey().c_str(), SpawnargValue.c_str() );
+					args.Set( kv_set->GetKey(), SpawnargValue );
+				}
+
+				kv_set = from->MatchPrefix( "set ", kv_set );
+				// end while ( kv_set )
+			}
+
+			argsList->Append (args );
+		}
+
+		kv = from->MatchPrefix( "def_attach", kv );
+	}
+}
+
+/* tels: Parses "def_attach" spawnargs and spawns and attaches all entities 
+ * that are mentioned there. Before each entity is spawned, spawnargs of the
+ * format "set XYZ on ABC" are parsed and either applied to the newly spawned
+ * entity, so it can pass them along to its own def_attachments, or converted
+ * to a real spawnarg and applied to the entity before spawn. */
+void idEntity::ParseAttachments( void )
+{
+	idEntity *ent			= NULL;			// each spawned entity
+	const idKeyValue *kv	= NULL;
+	idList<idDict>			args;
+   
+	ParseAttachmentSpawnargs( &args, &spawnArgs );
+
+	for (int i = 0; i < args.Num(); i++)
+	{
+		gameLocal.SpawnEntityDef( args[i], &ent );
+
+		if ( ent != NULL)
+		{
+			if( args[i].FindKey( "_poskey" ))
+			{
+				Attach( ent, spawnArgs.GetString( args[i].GetString( "_poskey" ) ), args[i].GetString( "_attnamevalue") );
+				//gameLocal.Printf(" Attaching '%s' at pos '%s'\n", AttNameValue.c_str(), spawnArgs.GetString( args[i].GetString("poskey") ) );
+			}
+			else
+			{
+				Attach( ent, NULL, args[i].GetString( "_attnamevalue") );
+				//gameLocal.Printf(" Attaching '%s' at pos 'Unknown'\n", AttNameValue.c_str() );
+			}
+
+			// grayman #2603 - generate a "target" spawnarg for later processing
+			// when attaching a relight position.
+
+			if (ent->name.Find("relight_position") >= 0)
+			{
+				idStr name = ent->name;		// start with full name
+				int index = name.Last('_');	// find '_nnn' entity number at the end
+				idStr suffix = name.Right(name.Length() - index);	// suffix = '_nnn'
+				idStr rpString = "relight_position" + suffix;		// add suffix to "relight_position"
+				spawnArgs.Set(rpString,name);	// add new spawnarg "relight_position_nnn" "<relight position name>"
+			}
+		}
+		else
+		{
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", args[i].GetString("name"), name.c_str() );
+		}
+	}
+
+	// after we have spawned all our attachments, we can parse the "add_link" spawnargs:
+	kv = spawnArgs.MatchPrefix( "add_link", NULL );
+	while ( kv )
+	{
+		// get the "source to target" value
+		idStr Link = kv->GetValue();
+
+		// "SOURCE to TARGET"
+		// find position of first " to "	
+		int PosSpace = Link.Find( ' ', 0, -1);
+		if (PosSpace == -1)
+			{
+			gameLocal.Warning( "Invalid spawnarg add_link '%s' on entity '%s'",
+					  kv->GetValue().c_str(), name.c_str() );
+			kv = spawnArgs.MatchPrefix( "add_link", kv );
+			continue;		
+			}
+
+		// "SOURCE to TARGET" => "SOURCE"
+		idStr Source = Link.Left( PosSpace );
+		// "SOURCE to TARGET" => "TARGET"
+		idStr Target = Link.Right( Link.Length() - (PosSpace + 4) );
+
+		// gameLocal.Printf("Match: add_link '%s' to '%s'\n", Source.c_str(), Target.c_str() );
+
+		// If the source contains ":attached:name", split it into the base entity
+		// and the attachment name:
+		idEntity *source_ent = this;
+		PosSpace = Source.Find( ":attached:", 0, -1);
+		if (PosSpace != -1)
+		{
+			// "test:attached:flame" => "test"
+			// ":attached:flame" => ""
+			idStr Source_Entity = Source.Left( PosSpace );
+			// "test:attached:flame" => "flame"
+			idStr Source_Att = Source.Right( Source.Length() - (PosSpace + 10) );
+
+			if (Source_Entity.Length() > 0)
+			{
+				// "Name:attached:flame" => entity name, so use "Name"
+				gameLocal.Printf(" Link source: '%s'\n", Source_Entity.c_str() );
+				
+				Source = Source_Entity;
+				source_ent = gameLocal.FindEntity( Source );
+				if (!source_ent)
+					{
+					gameLocal.Warning( "Cannot find entity '%s'.", Source.c_str() );
+					}
+			}
+			// else: ":attached:flame" => no entity name, so use ourself
+
+			// now find the attached entity
+			source_ent = source_ent->GetAttachmentFromTeam( Source_Att.c_str() );
+			if (!source_ent)
+			{
+				gameLocal.Warning( "Cannot find source attachment '%s' on entity '%s'.",
+					Source_Att.c_str(), Source.c_str() );
+			}
+			else
+			{
+				//gameLocal.Printf(" Link source entity (GetAttachmentFromTeam): '%s'\n", source_ent->name.c_str() );
+			}
+		}
+		else
+		{
+			// source is just an entity name
+			source_ent = gameLocal.FindEntity( Source );
+			//if (source_ent)
+			//		gameLocal.Printf(" Link source entity (Entity): '%s'\n", source_ent->name.c_str() );
+		}
+
+		// If the target contains ":attached:name", split it into the base entity
+		// and the attachment name:
+		idEntity *target_ent = this;
+		PosSpace = Target.Find( ":attached:", 0, -1);
+		if (PosSpace != -1)
+		{
+			// "test:attached:flame" => "test"
+			idStr Target_Entity = Target.Left( PosSpace );
+			// "test:attached:flame" => "flame"
+			idStr Target_Att = Target.Right( Target.Length() - (PosSpace + 10) );
+
+			if (Target_Entity.Length() > 0)
+			{
+				// "Name:attached:flame" => entity name, so use "Name"
+				gameLocal.Printf(" Link target: '%s'\n", Target_Entity.c_str() );
+				
+				Target = Target_Entity;
+				target_ent = gameLocal.FindEntity( Target );
+				if (!target_ent)
+					{
+					gameLocal.Warning( "Cannot find entity '%s'.", Target.c_str() );
+					}
+			}
+			// else: ":attached:flame" => no entity name, so use ourself
+
+			// now find the attached entity by the attachment pos name:
+			idEntity *target_ent_att = target_ent->GetAttachmentFromTeam( Target_Att.c_str() );
+			if (!target_ent_att)
+			{
+				gameLocal.Warning( "Cannot find target attachment '%s' on entity '%s'.",
+					Target_Att.c_str(), target_ent->name.c_str() );
+			}
+			else
+			{
+				//gameLocal.Printf(" Link target entity (GetAttachmentFromTeam): '%s'\n", target_ent->name.c_str() );
+			}
+			target_ent = target_ent_att;
+		}
+		else
+		{
+			// target is just an entity name
+			target_ent = gameLocal.FindEntity( Target );
+			//if (target_ent)
+			//	gameLocal.Printf(" Link target entity (Entity): '%s'\n", target_ent->name.c_str() );
+		}
+
+		// now that we have entities for source and target, add the link
+		if ( source_ent && target_ent )
+		{
+			//gameLocal.Printf(" add_link from '%s' to '%s'\n", source_ent->name.c_str(), target_ent->name.c_str() );
+			source_ent->AddTarget( target_ent );
+		}
+		else
+		{
+			// tels: TODO: post an event for later adding
+			if ( !target_ent )
+				gameLocal.Warning( "Cannot find target entity '%s' for add_link.", Target.c_str() );
+			if ( !source_ent )
+				gameLocal.Warning( "Cannot find source entity '%s' for add_link.", Source.c_str() );
+		}
+
+		// do we have another one?
+		kv = spawnArgs.MatchPrefix( "add_link", kv );
+	}
+}
+
+/*
+================
+idEntity::ParseAttachPositions
+================
+*/
+void idEntity::ParseAttachPositions( void )
+{
+	SAttachPosition		pos;
+	SAttachPosition		*pPos;
+	idStr				prefix, keyname, jointname;
+	const idKeyValue	*kv(NULL);
+
+	m_AttachPositions.Clear();
+
+	// Read off basic attachment positions 
+	// (intended to be on base class for a skeleton type, e.g., humanoid)
+	while( ( kv = spawnArgs.MatchPrefix("attach_pos_name_", kv) ) != NULL )
+	{
+		keyname = kv->GetKey();
+		keyname.StripLeading("attach_pos_name_");
+
+		pos.name = kv->GetValue().c_str();
+		
+		// If entity has joints, find the joint handle for the joint name
+		if( GetAnimator() )
+		{
+			jointname = spawnArgs.GetString( ("attach_pos_joint_" + keyname).c_str() );
+			pos.joint = GetAnimator()->GetJointHandle( jointname );
+			if ( pos.joint == INVALID_JOINT ) 
+			{
+				// TODO: Turn this into a warning and attach relative to entity origin instead?
+				gameLocal.Error( "Joint '%s' not found for attachment position '%s' on entity '%s'", jointname.c_str(), pos.name.c_str(), name.c_str() );
+			}
+		}
+		else
+			pos.joint = INVALID_JOINT;
+
+		pos.originOffset = spawnArgs.GetVector( ("attach_pos_origin_" + keyname).c_str() );
+		pos.angleOffset = spawnArgs.GetAngles( ("attach_pos_angles_" + keyname).c_str() );
+
+		m_AttachPositions.Append( pos );
+	}
+
+	kv = NULL;
+	// Read off actor-specific offsets to this position and apply them
+	while( (kv = spawnArgs.MatchPrefix("attach_posmod_name_", kv)) != NULL )
+	{
+		keyname = kv->GetKey();
+		keyname.StripLeading("attach_posmod_name_");
+
+		// Try to find the position
+		pPos = GetAttachPosition( kv->GetValue().c_str() );
+		// If we find the position by name, apply the offsets
+		if( pPos != NULL )
+		{
+			idVec3 trans = spawnArgs.GetVector( ("attach_posmod_origin_" + keyname).c_str() );
+			idAngles ang = spawnArgs.GetAngles( ("attach_posmod_angles_" + keyname).c_str() );
+
+			pPos->originOffset += trans;
+			// TODO: Prove mathematically that adding the angles is the same as converting
+			// the angles to rotation matrices and multiplying them??
+			// stgatilov: It is wrong. As soon as anyone starts using this spawnarg the proper meaning
+			// of this line should be worked out.
+			gameLocal.Error( "Using spawn attach_posmod_* with uncertain meaning: report to coders.");
+			pPos->angleOffset += ang;
+		}
+	}
+}
+
+/*
+================
+idEntity::GetAttachPosition
+================
+*/
+SAttachPosition *idEntity::GetAttachPosition( const char *AttachName )
+{
+	idStr AttName = AttachName;
+	SAttachPosition *returnVal = NULL;
+
+// TODO: Probably not worth doing a hash for this short list, linear search OK?
+	for( int i=0; i < m_AttachPositions.Num(); i++ )
+	{
+		if( AttName == m_AttachPositions[i].name )
+		{
+			returnVal = &m_AttachPositions[i];
+			break;
+		}
+	}
+
+	return returnVal;
+}
+
+void idEntity::SaveAttachmentContents()
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL) continue;
+
+		m_Attachments[i].savedContents = (ent != NULL) ? ent->GetPhysics()->GetContents() : -1;
+	}
+}
+
+// Sets all attachment contents to the given value
+void idEntity::SetAttachmentContents(int newContents)
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL) continue;
+
+		ent->GetPhysics()->SetContents(newContents);
+	}
+}
+
+// Restores all CONTENTS values, previously saved with SaveAttachmentContents()
+void idEntity::RestoreAttachmentContents()
+{
+	for (int i = 0; i < m_Attachments.Num(); ++i)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL) continue;
+
+		int savedContents = m_Attachments[i].savedContents;
+
+		if (savedContents != -1)
+		{
+			ent->GetPhysics()->SetContents(savedContents);
+		}
+	}
+}
+
+/*
+=====================
+SAttachPosition::Save
+=====================
+*/
+void SAttachPosition::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteString( name );
+	savefile->WriteInt( (int) joint );
+	savefile->WriteAngles( angleOffset );
+	savefile->WriteVec3( originOffset );
+}
+
+/*
+=====================
+SAttachPosition::Restore
+=====================
+*/
+void SAttachPosition::Restore( idRestoreGame *savefile )
+{
+	int jointInt;
+	savefile->ReadString( name );
+	savefile->ReadInt( jointInt );
+	joint = (jointHandle_t) jointInt;
+	savefile->ReadAngles( angleOffset );
+	savefile->ReadVec3( originOffset );
+}
+
+void idEntity::Event_SetContents(const int contents)
+{
+	GetPhysics()->SetContents(contents);
+}
+
+void idEntity::Event_GetContents()
+{
+	idThread::ReturnInt(GetPhysics()->GetContents());
+}
+
+void idEntity::Event_SetClipMask(const int clipMask)
+{
+	GetPhysics()->SetClipMask(clipMask);
+}
+
+void idEntity::Event_GetClipMask()
+{
+	idThread::ReturnInt(GetPhysics()->GetClipMask());
+}
+
+void idEntity::Event_ExtinguishLights()
+{
+	// greebo: First, check if we ourselves are a light
+	if (IsType(idLight::Type)) 
+	{
+		// Call the script function to extinguish this light
+		CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+	}
+
+	// Now go through the teamChain and check for lights
+	for (idEntity* ent = teamChain; ent != NULL; ent = ent->teamChain)
+	{
+		if (ent->IsType(idLight::Type))
+		{
+			ent->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", ent);
+		}
+	}
+}
+
+void idEntity::Event_GetResponseEntity()
+{
+	idThread::ReturnEntity(GetResponseEntity());
+}
+
+void idEntity::Event_GetTeam()
+{
+	idThread::ReturnInt(team);
+}
+
+void idEntity::Event_SetTeam(int newTeam)
+{
+	gameLocal.Printf("%s: Changing to team %i.\n", GetName(), newTeam);
+	// greebo: No validity checking so far - todo?
+	team = newTeam;
+}
+
+void idEntity::SetEntityRelation(idEntity* entity, int relation)
+{
+	m_EntityRelations[entity] = relation;
+}
+
+	// angua: this changes the current relation to an actor by adding the new amount
+void idEntity::ChangeEntityRelation(idEntity* entity, int relationChange)
+{
+	assert(entity);
+	if (entity == NULL)
+	{
+		return;
+	}
+
+	EntityRelationsMap::iterator found = m_EntityRelations.find(entity);
+
+	if (found == m_EntityRelations.end())
+	{
+		// Sanity-check, some entities like worldspawn have team == -1
+		if (entity->team == -1) return;
+
+		// not yet set, load default from relations manager
+		int defaultrel = gameLocal.m_RelationsManager->GetRelNum(team, entity->team);
+
+		std::pair<EntityRelationsMap::iterator, bool> result = m_EntityRelations.insert(
+			EntityRelationsMap::value_type(entity, defaultrel)
+		);
+
+		// set iterator to newly inserted element
+		found = result.first;
+	}
+
+	found->second += relationChange;
+}
+
+bool idEntity::IsFriend(const idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return false;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second > 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsFriend(team, other->team);
+	}
+}
+
+bool idEntity::IsNeutral(const idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return true;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second == 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
+	}
+}
+
+bool idEntity::IsEnemy(const idEntity *other )
+{
+	if (other == NULL)
+	{
+		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
+		return false;
+	}
+	else if (other->team == -1)
+	{
+		// entities with team -1 (not set) are neutral
+		return false;
+	}
+	else if (other->fl.notarget)
+	{
+		return false;
+	}
+	else
+	{
+		// angua: look up entity specific relation
+		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+		if (found != m_EntityRelations.end())
+		{
+			return (found->second < 0);
+		}
+
+		// angua: no specific relation found, fall back to standard team relations
+		return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
+	}
+}
+
+void idEntity::Event_IsEnemy( idEntity *ent )
+{
+	idThread::ReturnInt(static_cast<int>(IsEnemy(ent)));
+}
+
+void idEntity::Event_IsFriend( idEntity *ent )
+{
+	idThread::ReturnInt(IsFriend(ent));
+}
+
+void idEntity::Event_IsNeutral( idEntity *ent )
+{
+	idThread::ReturnInt(IsNeutral(ent));
+}
+
+
+void idEntity::Event_SetEntityRelation(idEntity* entity, int relation)
+{
+	SetEntityRelation(entity,relation);
+}
+
+void idEntity::Event_ChangeEntityRelation(idEntity* entity, int relationChange)
+{
+	ChangeEntityRelation(entity, relationChange);
+}
+
+
+

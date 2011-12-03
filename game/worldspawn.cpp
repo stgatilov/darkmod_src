@@ -1,5 +1,11 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
@@ -35,7 +41,9 @@ Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
 
 /*
 ================
@@ -65,10 +73,12 @@ void idWorldspawn::Spawn( void ) {
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
 
+	// Commented out by Dram. TDM does not use stamina
+	/*
 	// disable stamina on hell levels
 	if ( spawnArgs.GetBool( "no_stamina" ) ) {
 		pm_stamina.SetFloat( 0.0f );
-	}
+	}*/
 
 	// load script
 	scriptname = gameLocal.GetMapName();
@@ -96,6 +106,9 @@ void idWorldspawn::Spawn( void ) {
 		thread->DelayedStart( 0 );
 		kv = spawnArgs.MatchPrefix( "call", kv );
 	}
+
+	// activate worldspawn's targets when it spawns
+	PostEventMS( &EV_ActivateTargets, 0, this );
 }
 
 /*
@@ -116,10 +129,11 @@ void idWorldspawn::Restore( idRestoreGame *savefile ) {
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
 
-	// disable stamina on hell levels
+	// Commented out by Dram. TDM does not use stamina
+	/*// disable stamina on hell levels
 	if ( spawnArgs.GetBool( "no_stamina" ) ) {
 		pm_stamina.SetFloat( 0.0f );
-	}
+	}*/
 }
 
 /*

@@ -1,36 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
+#include "game_local.h"
+#include "emitter.h"
 
 /*
 ===============================================================================
@@ -82,6 +68,7 @@ void idCursor3D::Present( void ) {
 
 	const idVec3 &origin = GetPhysics()->GetOrigin();
 	const idMat3 &axis = GetPhysics()->GetAxis();
+
 	gameRenderWorld->DebugArrow( colorYellow, origin + axis[1] * -5.0f + axis[2] * 5.0f, origin, 2 );
 	gameRenderWorld->DebugArrow( colorRed, origin, draggedPosition, 2 );
 }
@@ -170,7 +157,7 @@ void idDragEntity::Update( idPlayer *player ) {
 	trace_t trace;
 	idEntity *newEnt;
 	idAngles angles;
-	jointHandle_t newJoint;
+	jointHandle_t newJoint(INVALID_JOINT);
 	idStr newBodyName;
 
 	player->GetViewPos( viewPoint, viewAxis );
@@ -186,6 +173,8 @@ void idDragEntity::Update( idPlayer *player ) {
 				newEnt = gameLocal.entities[ trace.c.entityNum ];
 				if ( newEnt ) {
 
+					// Ish: We sometimes want to select things that are bound
+					/*
 					if ( newEnt->GetBindMaster() ) {
 						if ( newEnt->GetBindJoint() ) {
 							trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
@@ -194,6 +183,7 @@ void idDragEntity::Update( idPlayer *player ) {
 						}
 						newEnt = newEnt->GetBindMaster();
 					}
+					*/
 
 					if ( newEnt->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base *>(newEnt)->IsActiveAF() ) {
 						idAFEntity_Base *af = static_cast<idAFEntity_Base *>(newEnt);
@@ -1067,7 +1057,8 @@ int idGameEdit::MapGetUniqueMatchingKeyVals( const char *key, const char *list[]
 idGameEdit::MapAddEntity
 ================
 */
-void idGameEdit::MapAddEntity( const idDict *dict ) const {
+void idGameEdit::MapAddEntity( const idDict *dict ) const
+{
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	if ( mapFile ) {
 		idMapEntity *ent = new idMapEntity();

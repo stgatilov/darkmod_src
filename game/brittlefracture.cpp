@@ -1,40 +1,33 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
+#include "game_local.h"
+#include "../DarkMod/sndProp.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+
+const idEventDef EV_UpdateSoundLoss( "updateSoundLoss", NULL );
+const idEventDef EV_DampenSound( "dampenSound", "d" );
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )
 	EVENT( EV_Touch, idBrittleFracture::Event_Touch )
+	EVENT( EV_UpdateSoundLoss, idBrittleFracture::UpdateSoundLoss )
+	EVENT( EV_DampenSound, idBrittleFracture::Event_DampenSound )
 END_CLASS
 
 const int SHARD_ALIVE_TIME	= 5000;
@@ -69,6 +62,9 @@ idBrittleFracture::idBrittleFracture( void ) {
 	changed = false;
 
 	fl.networkSync = true;
+
+	m_AreaPortal = 0;
+	m_bSoundDamped = false;
 }
 
 /*
@@ -99,9 +95,12 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( health );
 	entityFlags_s flags = fl;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
-	
+
+
 	// setttings
 	savefile->WriteMaterial( material );
 	savefile->WriteMaterial( decalMaterial );
@@ -152,6 +151,9 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( shards[i]->atEdge );
 		savefile->WriteStaticObject( shards[i]->physicsObj );
 	}
+
+	savefile->WriteInt( m_AreaPortal );
+	savefile->WriteBool( m_bSoundDamped );
 }
 
 /*
@@ -171,7 +173,6 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( health );
 	savefile->Read( &fl, sizeof( fl ) );
-	LittleBitField( &fl, sizeof( fl ) );
 
 	// setttings
 	savefile->ReadMaterial( material );
@@ -239,6 +240,11 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 			shards[i]->clipModel = shards[i]->physicsObj.GetClipModel();
 		}
 	}
+
+	savefile->ReadInt( m_AreaPortal );
+	savefile->ReadBool( m_bSoundDamped );
+
+	UpdateSoundLoss();
 }
 
 /*
@@ -286,6 +292,12 @@ void idBrittleFracture::Spawn( void ) {
 	renderEntity.noShadow = true;
 	renderEntity.noSelfShadow = true;
 	renderEntity.noDynamicInteractions = false;
+
+	// Dark Mod: see if we are on a visportal
+	m_AreaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
+
+	//schedule updating the sound loss for after soundprop gameplay has initialized
+	PostEventMS( &EV_UpdateSoundLoss, 0 );
 }
 
 /*
@@ -311,14 +323,24 @@ idBrittleFracture::RemoveShard
 ================
 */
 void idBrittleFracture::RemoveShard( int index ) {
-	int i;
+//	int i; // grayman - commented to stop compiler complaint
 
 	delete shards[index];
-	shards.RemoveIndex( index );
-	physicsObj.RemoveIndex( index );
+	shards.RemoveIndex( index, false );	// Tels: false => don't bother to keep shards sorted
+	physicsObj.RemoveIndex( index, false );
 
-	for ( i = index; i < shards.Num(); i++ ) {
+	// Tels: When we used RemoveIndex(), that might have moved some shards
+	// after index, so we needed to set the correct ID back to the climodel
+	// again. Now the RemoveIndex(index,false) routine will *only* move the
+	// last index back to "index", so this is the only (if it exists) shard
+	// that got moved, so we only need to update it's clipModel ID:
+	/*for ( i = index; i < shards.Num(); i++ ) {
 		shards[i]->clipModel->SetId( i );
+	}*/
+	// [0,1,2,3,4,5] (remove index == 2) => [ 0,1,5,3,4 ]
+	if (index < shards.Num())
+	{
+		shards[index]->clipModel->SetId( index );
 	}
 }
 
@@ -529,10 +551,17 @@ bool idBrittleFracture::ModelCallback( renderEntity_s *renderEntity, const rende
 idBrittleFracture::Present
 ================
 */
-void idBrittleFracture::Present() {
+void idBrittleFracture::Present() 
+{
+	if( m_bFrobable )
+	{
+		UpdateFrobState();
+		UpdateFrobDisplay();
+	}
 
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) 
+	{
 		return;
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
@@ -853,8 +882,12 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 		ServerSendEvent( EVENT_SHATTER, &msg, true, -1 );
 	}
 
-	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) {
-		StartSound( "snd_shatter", SND_CHANNEL_ANY, 0, false, NULL );
+	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) 
+	{
+		if( m_bSoundDamped )
+			StartSound( "snd_shatter_damped", SND_CHANNEL_ANY, 0, false, NULL );
+		else
+			StartSound( "snd_shatter", SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
 	if ( !IsBroken() ) {
@@ -966,7 +999,19 @@ idBrittleFracture::Break
 */
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
-	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_TRIGGER );
+	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+	
+	// ishtvan: overwrite with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
+
+	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
+	
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
+	UpdateSoundLoss();
 }
 
 /*
@@ -983,11 +1028,21 @@ bool idBrittleFracture::IsBroken( void ) const {
 idBrittleFracture::Killed
 ================
 */
-void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
 	if ( !disableFracture ) {
 		ActivateTargets( this );
 		Break();
 	}
+
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );	
 }
 
 /*
@@ -1111,6 +1166,14 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	}
 
 	physicsObj.SetContents( material->GetContentFlags() );
+	// ishtvan: overwrite with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 	SetPhysics( &physicsObj );
 }
 
@@ -1237,6 +1300,16 @@ void idBrittleFracture::Event_Touch( idEntity *other, trace_t *trace ) {
 
 /*
 ================
+idBrittleFracture::Event_DampenSound
+================
+*/
+void idBrittleFracture::Event_DampenSound( bool bDampen ) 
+{
+	m_bSoundDamped = bDampen;
+}
+
+/*
+================
 idBrittleFracture::ClientPredictionThink
 ================
 */
@@ -1282,5 +1355,29 @@ bool idBrittleFracture::ClientReceiveEvent( int event, int time, const idBitMsg 
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }
+
+/*
+================
+idBrittleFracture::UpdateSoundLoss (Dark Mod )
+================
+*/
+void idBrittleFracture::UpdateSoundLoss( void )
+{
+	float SetVal(0.0f);
+
+	if ( !m_AreaPortal )
+		goto Quit;
+
+	if( IsBroken() )
+		SetVal = spawnArgs.GetFloat( "loss_broken", "0.0");
+	else
+		SetVal = spawnArgs.GetFloat( "loss_unbroken", "15.0");
+
+	gameLocal.m_sndProp->SetPortalLoss( m_AreaPortal, SetVal );
+
+Quit:
+	return;
+}
+		

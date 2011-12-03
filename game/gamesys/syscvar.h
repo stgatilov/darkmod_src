@@ -1,33 +1,383 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
+
+#ifdef __linux__
+#include "framework/cvarsystem.h"
+#endif
+
+/**
+* DarkMod cvars - See text description in syscvar.cpp for descriptions
+**/
+extern idCVar cv_player_spawnclass;
+extern idCVar cv_player_waituntilready;
+
+extern idCVar cv_default_mission_info_file;
+
+extern idCVar cv_ai_sndvol;
+extern idCVar cv_ai_bark_show;
+extern idCVar cv_ai_bumpobject_impulse;
+extern idCVar cv_ai_sight_prob;
+extern idCVar cv_ai_sight_mag;
+extern idCVar cv_ai_sightmaxdist;
+extern idCVar cv_ai_sightmindist;
+extern idCVar cv_ai_tactalert;
+extern idCVar cv_ai_task_show;
+extern idCVar cv_ai_alertlevel_show;
+extern idCVar cv_ai_dest_show;
+extern idCVar cv_ai_goalpos_show;
+extern idCVar cv_ai_aasarea_show;
+extern idCVar cv_ai_debug_blocked;
+extern idCVar cv_ai_door_show;
+extern idCVar cv_ai_elevator_show;
+extern idCVar cv_ai_debug;
+extern idCVar cv_ai_sight_thresh;
+extern idCVar cv_ai_sight_scale;
+extern idCVar cv_ai_show_enemy_visibility;
+extern idCVar cv_ai_show_conversationstate;
+extern idCVar cv_ai_acuity_L3;
+extern idCVar cv_ai_acuity_L4;
+extern idCVar cv_ai_acuity_L5;
+extern idCVar cv_ai_acuity_susp;
+extern idCVar cv_ai_visdist_show;
+extern idCVar cv_ai_opt_disable;
+extern idCVar cv_ai_opt_noanims;
+extern idCVar cv_ai_opt_novisualscan;
+extern idCVar cv_ai_opt_forceopt;
+extern idCVar cv_ai_opt_nothink;
+extern idCVar cv_ai_opt_interleavethinkmindist;
+extern idCVar cv_ai_opt_interleavethinkmaxdist;
+extern idCVar cv_ai_opt_interleavethinkskippvscheck;
+extern idCVar cv_ai_opt_interleavethinkframes;
+extern idCVar cv_ai_opt_update_enemypos_interleave;
+extern idCVar cv_ai_opt_nomind;
+extern idCVar cv_ai_opt_novisualstim;
+extern idCVar cv_ai_opt_nolipsync;
+extern idCVar cv_ai_opt_nopresent;
+extern idCVar cv_ai_opt_noobstacleavoidance;
+extern idCVar cv_ai_hiding_spot_max_light_quotient;
+extern idCVar cv_ai_max_hiding_spot_tests_per_frame;
+extern idCVar cv_ai_debug_anims;
+
+extern idCVar cv_show_health;
+
+extern idCVar cv_ai_show_aasfuncobstacle_state;
+
+extern idCVar cv_interaction_vfp_type;
+extern idCVar cv_tdm_widescreenmode;
+extern idCVar cv_tdm_menu_music;
+
+extern idCVar cv_tdm_show_trainer_messages;
+
+extern idCVar cv_tdm_default_relations_def;
+extern idCVar cv_tdm_lang;
+extern idCVar cv_tdm_fm_path;
+extern idCVar cv_tdm_fm_desc_file;
+extern idCVar cv_tdm_fm_current_file;
+extern idCVar cv_tdm_fm_notes_file;
+extern idCVar cv_tdm_fm_startingmap_file;
+extern idCVar cv_tdm_fm_mapsequence_file;
+extern idCVar cv_tdm_fm_splashimage_file;
+extern idCVar cv_tdm_fm_sync_config_files;
+extern idCVar cv_tdm_fm_restart_delay;
+
+extern idCVar cv_tdm_proxy;
+extern idCVar cv_tdm_proxy_user;
+extern idCVar cv_tdm_proxy_pass;
+extern idCVar cv_tdm_allow_http_access;
+extern idCVar cv_tdm_mission_list_urls;
+extern idCVar cv_tdm_mission_details_url;
+extern idCVar cv_tdm_mission_screenshot_url;
+extern idCVar cv_tdm_version_check_url;
+extern idCVar cv_tdm_http_base_url;
+
+extern idCVar cv_debug_aastype;
+
+extern idCVar cv_las_showtraces;
+extern idCVar cv_show_gameplay_time;
+
+extern idCVar cv_tdm_difficulty;
+
+extern idCVar cv_sr_disable;
+extern idCVar cv_sr_show;
+
+extern idCVar cv_sndprop_disable;
+extern idCVar cv_spr_debug;
+extern idCVar cv_spr_show;
+extern idCVar cv_spr_radius_show;
+extern idCVar cv_ko_show;
+extern idCVar cv_ai_animstate_show;
+
+extern idCVar cv_debug_mainmenu;
+extern idCVar cv_mainmenu_confirmquit;
+
+extern idCVar cv_pm_runmod;
+extern idCVar cv_pm_run_backmod;
+extern idCVar cv_pm_crouchmod;
+extern idCVar cv_pm_max_swimspeed_mod;
+extern idCVar cv_pm_creepmod;
+extern idCVar cv_pm_pushmod;
+extern idCVar cv_pm_push_maximpulse;
+extern idCVar cv_pm_push_start_delay;
+extern idCVar cv_pm_push_accel_time;
+extern idCVar cv_pm_push_heavy_threshold;
+extern idCVar cv_pm_push_max_mass;
+
+
+/**
+* TDM CVARs for controlling jumping
+*/
+extern idCVar cv_tdm_walk_jump_vel;
+extern idCVar cv_tdm_run_jump_vel;
+extern idCVar cv_tdm_crouch_jump_vel;
+extern idCVar cv_tdm_min_vel_jump;
+extern idCVar cv_tdm_fwd_jump_vel;
+extern idCVar cv_tdm_backwards_jump_modifier;
+extern idCVar cv_tdm_jump_relaxation_time;
+
+extern idCVar cv_tdm_footfalls_movetype_specific;
+
+extern idCVar cv_pm_weightmod;
+
+extern idCVar cv_pm_mantle_height;
+extern idCVar cv_pm_mantle_reach;
+extern idCVar cv_pm_mantle_minflatness;
+extern idCVar cv_pm_mantle_jump_hold_trigger;
+extern idCVar cv_pm_mantle_min_velocity_for_damage;
+extern idCVar cv_pm_mantle_damage_per_velocity_over_minimum;
+extern idCVar cv_pm_mantle_hang_msecs;
+extern idCVar cv_pm_mantle_pull_msecs;
+extern idCVar cv_pm_mantle_shift_hands_msecs;
+extern idCVar cv_pm_mantle_push_msecs;
+
+extern idCVar cv_pm_rope_snd_rep_dist;
+extern idCVar cv_pm_rope_velocity_letgo;
+extern idCVar cv_pm_rope_swing_impulse;
+extern idCVar cv_pm_rope_swing_reptime;
+extern idCVar cv_pm_rope_swing_kickdist;
+extern idCVar cv_pm_water_downwards_velocity;
+extern idCVar cv_pm_water_z_friction;
+extern idCVar cv_pm_show_waterlevel;
+extern idCVar cv_pm_climb_distance;
+
+/**
+* This cvar controls if ai hiding spot search debug graphics are drawn
+* If it is 0, then the graphics are not drawn.  If it is >= 1.0 then it
+* is the number of milliseconds for which each graphic should persist.
+* For example 3000.0 would mean 3 seconds
+*/
+extern idCVar cv_ai_search_show;
+
+extern idCVar cv_force_savegame_load;
+extern idCVar cv_savegame_compress;
+
+extern idCVar cv_screenshot_format;
+
+// angua: TDM toggle crouch
+extern idCVar cv_tdm_crouch_toggle;
+extern idCVar cv_tdm_crouch_toggle_hold_time;
+extern idCVar cv_tdm_reattach_delay;
+
+
+/**
+* TDM Leaning vars:
+**/
+extern idCVar cv_pm_lean_angle;
+extern idCVar cv_pm_lean_time;
+extern idCVar cv_pm_lean_height;
+extern idCVar cv_pm_lean_stretch;
+extern idCVar cv_pm_lean_forward_angle;
+extern idCVar cv_pm_lean_forward_time;
+extern idCVar cv_pm_lean_forward_height;
+extern idCVar cv_pm_lean_forward_stretch;
+extern idCVar cv_pm_lean_to_valid_increments;
+extern idCVar cv_pm_lean_door_increments;
+extern idCVar cv_pm_lean_door_max;
+extern idCVar cv_pm_lean_door_bounds_exp;
+extern idCVar cv_pm_lean_toggle;
+
+extern idCVar cv_frob_distance_default;
+extern idCVar cv_frob_width;
+extern idCVar cv_frob_debug_bounds;
+extern idCVar cv_frob_fadetime;
+extern idCVar cv_frob_weapon_selects_weapon;
+extern idCVar cv_frob_debug_hud;
+
+extern idCVar cv_weapon_next_on_empty;
+
+// physics
+extern idCVar cv_collision_damage_scale_vert;
+extern idCVar cv_collision_damage_scale_horiz;
+extern idCVar cv_drag_limit_force;
+extern idCVar cv_drag_force_max;
+extern idCVar cv_drag_stuck_dist;
+extern idCVar cv_drag_damping;
+extern idCVar cv_drag_damping_AF;
+extern idCVar cv_drag_AF_ground_timer;
+extern idCVar cv_drag_AF_free;
+extern idCVar cv_drag_jump_masslimit;
+extern idCVar cv_drag_encumber_minmass;
+extern idCVar cv_drag_encumber_minmass;
+extern idCVar cv_drag_encumber_maxmass;
+extern idCVar cv_drag_encumber_max;
+extern idCVar cv_dragged_item_highlight;
+extern idCVar cv_drag_debug;
+extern idCVar cv_melee_debug;
+extern idCVar cv_melee_state_debug;
+extern idCVar cv_melee_mouse_thresh;
+extern idCVar cv_melee_mouse_decision_time;
+extern idCVar cv_melee_mouse_dead_time;
+extern idCVar cv_melee_mouse_slowview;
+extern idCVar cv_melee_invert_attack;
+extern idCVar cv_melee_invert_parry;
+extern idCVar cv_melee_auto_parry;
+extern idCVar cv_melee_forbid_auto_parry;
+extern idCVar cv_melee_max_particles;
+extern idCVar cv_phys_show_momentum;
+
+extern idCVar cv_throw_min;
+extern idCVar cv_throw_max;
+extern idCVar cv_throw_time;
+extern idCVar cv_throw_max_vel;
+
+extern idCVar cv_bounce_sound_max_vel;
+extern idCVar cv_bounce_sound_min_vel;
+
+extern idCVar cv_reverse_grab_control;
+
+extern idCVar cv_tdm_rope_pull_force_factor;
+
+extern idCVar cv_tdm_obj_gui_file;
+extern idCVar cv_tdm_waituntilready_gui_file;
+
+extern idCVar cv_tdm_hud_opacity;
+extern idCVar cv_tdm_hud_hide_lightgem;
+extern idCVar cv_tdm_underwater_blur;
+
+extern idCVar cv_tdm_inv_loot_item_def;
+extern idCVar cv_tdm_inv_gui_file;
+extern idCVar cv_tdm_inv_hud_pickupmessages;
+extern idCVar cv_tdm_inv_loot_sound;
+extern idCVar cv_tdm_inv_use_on_frob;
+extern idCVar cv_tdm_inv_use_visual_feedback;
+
+extern idCVar cv_tdm_door_control;
+extern idCVar cv_tdm_door_control_sensitivity;
+
+extern idCVar cv_pm_stepvol_walk;
+extern idCVar cv_pm_stepvol_run;
+extern idCVar cv_pm_stepvol_creep;
+extern idCVar cv_pm_stepvol_crouch_walk;
+extern idCVar cv_pm_stepvol_crouch_creep;
+extern idCVar cv_pm_stepvol_crouch_run;
+extern idCVar cv_pm_min_stepsound_interval;
+
+// Lightgem
+extern idCVar cv_lg_distance;
+extern idCVar cv_lg_xoffs;
+extern idCVar cv_lg_yoffs;
+extern idCVar cv_lg_zoffs;
+extern idCVar cv_lg_oxoffs;
+extern idCVar cv_lg_oyoffs;
+extern idCVar cv_lg_ozoffs;
+extern idCVar cv_lg_fov;
+extern idCVar cv_lg_interleave;
+extern idCVar cv_lg_hud;
+extern idCVar cv_lg_weak;
+extern idCVar cv_lg_player;
+extern idCVar cv_lg_renderpasses;
+extern idCVar cv_lg_debug;
+extern idCVar cv_lg_model;
+extern idCVar cv_lg_adjust;
+extern idCVar cv_lg_split;
+extern idCVar cv_lg_path;
+extern idCVar cv_lg_crouch_modifier;
+extern idCVar cv_lg_image_width;
+extern idCVar cv_lg_screen_width;
+extern idCVar cv_lg_screen_height;
+extern idCVar cv_lg_velocity_mod_min_velocity;
+extern idCVar cv_lg_velocity_mod_max_velocity;
+extern idCVar cv_lg_velocity_mod_amount;
+
+extern idCVar cv_lg_fade_delay;						// Added by  J.C.Denton
+
+extern idCVar cv_empty_model;
+
+extern idCVar cv_tdm_s_doorDistanceAdd;
+extern idCVar cv_tdm_gui_smallFontLimit;
+extern idCVar cv_tdm_gui_mediumFontLimit;
+extern idCVar cv_tdm_s_maxSoundsPerShader;
+
+// Lockpicking
+extern idCVar cv_lp_pin_base_count;
+extern idCVar cv_lp_sample_delay;
+extern idCVar cv_lp_pick_timeout;
+extern idCVar cv_lp_max_pick_attempts;
+extern idCVar cv_lp_auto_pick;
+extern idCVar cv_lp_randomize;
+extern idCVar cv_lp_pawlow;
+extern idCVar cv_lp_debug_hud;
+
+// Bow type
+extern idCVar cv_bow_aimer;
+// melee difficulty
+extern idCVar cv_melee_difficulty;
+
+extern idCVar cv_door_auto_open_on_unlock;
+
+extern idCVar cv_dm_distance;
+
+// Ambient light method CVar
+extern idCVar cv_ambient_method;
+
+// Volume of music speakers
+extern idCVar cv_music_volume;
+
+// Tels: Volume of the "player voice" speaker
+extern idCVar cv_voice_player_volume;
+// Tels: Volume of the "speaker-from-off voice" speaker
+extern idCVar cv_voice_from_off_volume;
+
+// angua: Velocity and sound volume of collisions
+extern idCVar cv_moveable_collision;
+
+// Tels: LOD system: multiplier for the LOD distance to be used
+extern idCVar cv_lod_bias;
+
+/**
+* CVars added for Darkmod knockout and field of vision changes
+*/
+extern idCVar cv_ai_fov_show;
+extern idCVar cv_ai_ko_show;
+
+/**
+* If != 0, use this ratio between FOV X and Y and ignore r_aspectRatio.
+*/
+extern idCVar	cv_r_fovRatio;
+
+/** Screen width * gui_Width = GUI width */
+extern idCVar	cv_gui_Width;
+/** Screen height * gui_Height = GUI height */
+extern idCVar	cv_gui_Height;
+/** Screen width * gui_CenterX = GUI center X */
+extern idCVar	cv_gui_CenterX;
+/** Screen height * gui_CenterY = GUI center Y */
+extern idCVar	cv_gui_CenterY;
+
+/**
+* End DarkMod cvars
+**/
 
 extern idCVar	developer;
 
@@ -84,6 +434,8 @@ extern idCVar	g_showEnemies;
 extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
 
+extern idCVar	g_timeModifier;
+
 extern idCVar	ai_debugScript;
 extern idCVar	ai_debugMove;
 extern idCVar	ai_debugTrajectory;
@@ -116,6 +468,10 @@ extern idCVar	g_vehicleSuspensionDown;
 extern idCVar	g_vehicleSuspensionKCompress;
 extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
+
+extern idCVar	g_enablePortalSky;
+
+
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -160,18 +516,19 @@ extern idCVar	rb_showActive;
 
 extern idCVar	pm_jumpheight;
 extern idCVar	pm_stepsize;
-extern idCVar	pm_crouchspeed;
+//extern idCVar	pm_crouchspeed;
 extern idCVar	pm_walkspeed;
-extern idCVar	pm_runspeed;
+//extern idCVar	pm_runspeed;
 extern idCVar	pm_noclipspeed;
 extern idCVar	pm_spectatespeed;
 extern idCVar	pm_spectatebbox;
 extern idCVar	pm_usecylinder;
 extern idCVar	pm_minviewpitch;
 extern idCVar	pm_maxviewpitch;
-extern idCVar	pm_stamina;
-extern idCVar	pm_staminathreshold;
-extern idCVar	pm_staminarate;
+// Commented out by Dram. Not needed as TDM does not use stamina
+//extern idCVar	pm_stamina;
+//extern idCVar	pm_staminathreshold;
+//extern idCVar	pm_staminarate;
 extern idCVar	pm_crouchheight;
 extern idCVar	pm_crouchviewheight;
 extern idCVar	pm_normalheight;
@@ -215,7 +572,10 @@ extern idCVar	g_testParticle;
 extern idCVar	g_testParticleName;
 
 extern idCVar	g_testPostProcess;
+extern idCVar	g_rotoscope;
 
+extern idCVar	g_testModelHead;
+extern idCVar	g_testModelHeadJoint;
 extern idCVar	g_testModelRotate;
 extern idCVar	g_testModelAnimate;
 extern idCVar	g_testModelBlend;
@@ -246,10 +606,39 @@ extern idCVar	si_map;
 extern idCVar	si_spectators;
 
 extern idCVar	net_clientSelfSmoothing;
+
 extern idCVar	net_clientLagOMeter;
+
 
 extern const char *si_gameTypeArgs[];
 
+
 extern const char *ui_skinArgs[];
+
+
+#ifdef MOD_WATERPHYSICS
+
+extern idCVar af_useBodyDensityBuoyancy;			// MOD_WATERPHYSICS
+
+extern idCVar af_useFixedDensityBuoyancy;			// MOD_WATERPHYSICS
+
+extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
+
+#endif
+
+// HDR related - J.C.Denton
+
+extern idCVar r_postprocess;				
+extern idCVar r_postprocess_brightPassThreshold;
+extern idCVar r_postprocess_brightPassOffset;	
+extern idCVar r_postprocess_colorCurveBias;
+extern idCVar r_postprocess_colorCorrection;
+extern idCVar r_postprocess_colorCorrectBias;
+extern idCVar r_postprocess_sceneExposure;
+extern idCVar r_postprocess_sceneGamma;
+extern idCVar r_postprocess_debugMode;
+extern idCVar r_postprocess_bloomKernelSize;
+extern idCVar r_postprocess_bloomIntensity;
+extern idCVar r_postprocess_desaturation;
 
 #endif /* !__SYS_CVAR_H__ */

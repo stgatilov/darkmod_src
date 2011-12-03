@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_MOVEABLE_H__
 #define __GAME_MOVEABLE_H__
@@ -45,7 +29,7 @@ public:
 	CLASS_PROTOTYPE( idMoveable );
 
 							idMoveable( void );
-							~idMoveable( void );
+							virtual ~idMoveable( void );
 
 	void					Spawn( void );
 
@@ -64,12 +48,27 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	// Update the "pushed" state of this entity
+	virtual void			SetIsPushed(bool isPushed, const idVec3& pushDirection);
+
+	// Returns true if the entity is pushed by something or someone
+	virtual bool			IsPushed();
+
 protected:
 	idPhysics_RigidBody		physicsObj;				// physics object
-	idStr					brokenModel;			// model set when health drops down to or below zero
 	idStr					damage;					// if > 0 apply damage to hit entities
 	idStr					fxCollide;				// fx system to start when collides with something
 	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
+
+	/**
+	* TDM Collision scripts
+	**/
+	idStr					m_scriptCollide;		// script function to call when collides with something
+	int						m_nextCollideScriptTime;// next time it is ok to call collision script
+	int						m_collideScriptCounter;	// how often to call the collision script
+													// 0 => never, -1 => always, +X => X times
+	float					m_minScriptVelocity;	// minimum velocity before calling collide script
+
 	float					minDamageVelocity;		// minimum velocity before moveable applies damage
 	float					maxDamageVelocity;		// velocity at which the maximum damage is applied
 	idCurve_Spline<idVec3> *initialSpline;			// initial spline path the moveable follows
@@ -81,10 +80,24 @@ protected:
 	int						nextDamageTime;			// next time the movable can hurt the player
 	int						nextSoundTime;			// next time the moveable can make a sound
 
+	// greebo: Stores the last collision info to avoid constant playing of the collision sound when stuck
+	trace_t					lastCollision;
+
+	bool					isPushed;				// true if the entity is pushed by something/someone
+	bool					wasPushedLastFrame;		// true if the entity was pushed the last frame
+	idVec3					pushDirection;			// the direction the moveable is pushed in
+	idVec3					lastPushOrigin;			// the old origin during pushing to compare whether we have actually moved somewhere
+
 	const idMaterial *		GetRenderModelMaterial( void ) const;
 	void					BecomeNonSolid( void );
 	void					InitInitialSpline( int startTime );
 	bool					FollowInitialSplinePath( void );
+
+	// greebo: Returns the soundprop name for the given material (e.g. "sprS_bounce_small_hard_on_soft")
+	idStr					GetSoundPropNameForMaterial(const idStr& materialName);
+
+	// greebo: Updates the sliding sounds according to the "pushed" state
+	void					UpdateSlidingSounds();
 
 	void					Event_Activate( idEntity *activator );
 	void					Event_BecomeNonSolid( void );
@@ -144,7 +157,7 @@ public:
 	CLASS_PROTOTYPE( idExplodingBarrel );
 
 							idExplodingBarrel();
-							~idExplodingBarrel();
+							virtual ~idExplodingBarrel();
 
 	void					Spawn( void );
 
@@ -153,7 +166,8 @@ public:
 
 	virtual void			Think( void );
 	virtual void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-								const char *damageDefName, const float damageScale, const int location );
+								const char *damageDefName,const float damageScale,
+								const int location, trace_t *tr = NULL );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;

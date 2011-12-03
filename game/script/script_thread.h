@@ -1,36 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SCRIPT_THREAD_H__
 #define __SCRIPT_THREAD_H__
 
 extern const idEventDef EV_Thread_Execute;
 extern const idEventDef EV_Thread_SetCallback;
+extern const idEventDef EV_Thread_SetRenderCallback;
 extern const idEventDef EV_Thread_TerminateThread;
 extern const idEventDef EV_Thread_Pause;
 extern const idEventDef EV_Thread_Wait;
@@ -59,6 +44,8 @@ extern const idEventDef EV_Thread_AngToRight;
 extern const idEventDef EV_Thread_AngToUp;
 extern const idEventDef EV_Thread_Sine;
 extern const idEventDef EV_Thread_Cosine;
+extern const idEventDef EV_Thread_Log;
+extern const idEventDef EV_Thread_Pow;
 extern const idEventDef EV_Thread_Normalize;
 extern const idEventDef EV_Thread_VecLength;
 extern const idEventDef EV_Thread_VecDotProduct;
@@ -73,6 +60,17 @@ extern const idEventDef EV_Thread_FadeIn;
 extern const idEventDef EV_Thread_FadeOut;
 extern const idEventDef EV_Thread_FadeTo;
 extern const idEventDef EV_Thread_Restart;
+
+extern const idEventDef EV_AI_GetRelationSys;
+extern const idEventDef EV_AI_SetRelation;
+extern const idEventDef EV_AI_OffsetRelation;
+
+extern const idEventDef EV_PointInLiquid;
+
+extern const idEventDef EV_TDM_SetPortSoundLoss;
+extern const idEventDef EV_TDM_GetPortSoundLoss;
+
+extern const idEventDef EV_HandleMissionEvent;
 
 class idThread : public idClass {
 private:
@@ -113,6 +111,7 @@ private:
 	void						Event_WaitFrame( void );
 	void						Event_WaitFor( idEntity *ent );
 	void						Event_WaitForThread( int num );
+	void						Event_WaitForRender( idEntity *ent );
 	void						Event_Print( const char *text );
 	void						Event_PrintLn( const char *text );
 	void						Event_Say( const char *text );
@@ -135,11 +134,16 @@ private:
 	void 						Event_GetPersistantString( const char *key );
 	void 						Event_GetPersistantFloat( const char *key );
 	void 						Event_GetPersistantVector( const char *key );
+
+	void						Event_GetCurrentMissionNum();
+
 	void						Event_AngToForward( idAngles &ang );
 	void						Event_AngToRight( idAngles &ang );
 	void						Event_AngToUp( idAngles &ang );
-	void						Event_GetSine( float angle );
-	void						Event_GetCosine( float angle );
+	void						Event_GetSine( const float angle );
+	void						Event_GetCosine( const float angle );
+	void						Event_GetLog( const float x );
+	void						Event_GetPow( const float x, const float y );
 	void						Event_GetSquareRoot( float theSquare );
 	void						Event_VecNormalize( idVec3 &vec );
 	void						Event_VecLength( idVec3 &vec );
@@ -184,6 +188,45 @@ private:
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
 
+	/**
+	* greebo: Tests if a point is in a liquid.
+	*
+	* @ignoreEntity: This excludes an entity from the clip test.
+	* @returns: returns TRUE to the calling thread if the point is in a liquid
+	*/
+	void						Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity );
+
+	// Emits the string to the session command variable in gameLocal.
+	void						Event_SessionCommand(const char* cmd);
+
+	// For test purposes only.
+	void						Event_DebugTDM_MatInfo( const char *mat );
+
+	/**
+	* The following events are a frontend for the AI relationship
+	* manager (stored in game_local).
+	* See CRelations definition for descriptions of functions called
+	**/
+	void						Event_GetRelation( int team1, int team2 );
+	void						Event_SetRelation( int team1, int team2, int val );
+	void						Event_OffsetRelation( int team1, int team2, int offset );
+
+	/**
+	* TDM Soundprop Events:
+	* Set or get the acoustical loss for a portal with a given handle.
+	* Handle must be greater than zero and less than the number of portals in the map.
+	**/
+	void						Event_SetPortSoundLoss( int handle, float value );
+	void						Event_GetPortSoundLoss( int handle );
+	
+	// The scriptevent counterpart of DM_LOG
+	void						Event_LogString(int logClass, int logType, const char* output);
+
+	// The script interface for raising mission events, like readable callbacks
+	void						Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument);
+	
+	void						Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine ); // grayman #2787
+
 public:							
 								CLASS_PROTOTYPE( idThread );
 								
@@ -210,7 +253,10 @@ public:
 	void						WaitFrame( void );
 								
 								// NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
-	void						CallFunction( const function_t	*func, bool clearStack );
+	void						CallFunction(const function_t	*func, bool clearStack );
+
+	bool						CallFunctionArgs(const function_t *func, bool clearStack, const char *fmt, ...);
+	bool						CallFunctionArgsVN(const function_t *func, bool clearStack, const char *fmt, va_list args);
 
 								// NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
 	void						CallFunction( idEntity *obj, const function_t *func, bool clearStack );
@@ -249,7 +295,9 @@ public:
 	const char					*GetThreadName( void );
 
 	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+
 	void						Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+
 								
 	static idThread				*CurrentThread( void );
 	static int					CurrentThreadNum( void );

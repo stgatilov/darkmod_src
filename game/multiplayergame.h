@@ -1,5 +1,11 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
@@ -28,6 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
+
+#ifdef __linux__
+#include "ui/listgui.h"
+#endif
 
 /*
 ===============================================================================

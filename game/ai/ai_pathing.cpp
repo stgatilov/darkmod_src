@@ -1,35 +1,26 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
+
+#include "../../DarkMod/BinaryFrobMover.h"
+#include "../../DarkMod/FrobDoor.h"
+#include "../../DarkMod/TimerManager.h"
+#include "../../DarkMod/AI/Memory.h"
 
 /*
 ===============================================================================
@@ -49,13 +40,15 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-const float MAX_OBSTACLE_RADIUS			= 256.0f;
+const float MAX_OBSTACLE_RADIUS			= 128.0f;
+const float OBSTACLE_HEIGHT_EXPANSION	= 10.0f;
 const float PUSH_OUTSIDE_OBSTACLES		= 0.5f;
 const float CLIP_BOUNDS_EPSILON			= 10.0f;
 const int 	MAX_AAS_WALL_EDGES			= 256;
 const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
 const int 	MAX_OBSTACLE_PATH			= 64;
+const int	REUSE_DOOR_DELAY			= 3000; // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -89,6 +82,56 @@ void pathNode_s::Init() {
 
 idBlockAlloc<pathNode_t, 128>	pathNodeAllocator;
 
+#if 0
+// grayman - for debugging path tree nodes
+void PrintNode(pathNode_t* node,int level,obstacle_t obstacles[])
+{
+	idStr pad = "";
+	for (int i = 0 ; i < level ; i++)
+	{
+		pad += "   ";
+	}
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s ------ node -----\r",pad.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dir = %d (0 = left & 1 = right?)\r",pad.c_str(),node->dir);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s pos = [%s] (parent's pos + parent's delta)\r",pad.c_str(),node->pos.ToString());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s delta = [%s] (?)\r",pad.c_str(),node->delta.ToString());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dist = %f (distance to seekPos)\r",pad.c_str(),sqrt(node->dist));
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %d (blocking obstacle index)\r",pad.c_str(),node->obstacle);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s edgeNum = %d (blocking edge num)\r",pad.c_str(),node->edgeNum);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s numNodes = %d (num nodes down from root)\r",pad.c_str(),node->numNodes);
+
+	if (node->obstacle != -1)
+	{
+		idEntity *e = obstacles[node->obstacle].entity;
+		if (e)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %s\r",pad.c_str(),e->name.c_str());
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = NULL\r",pad.c_str());
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle index = -1\r",pad.c_str());
+	}
+}
+
+void PrintNodes(pathNode_t* node,int level,obstacle_t obstacles[])
+{
+	PrintNode(node,level,obstacles);
+	if (node->children[0])
+	{
+		PrintNodes(node->children[0],level+1,obstacles);
+	}
+	if (node->children[1])
+	{
+		PrintNodes(node->children[1],level+1,obstacles);
+	}
+}
+#endif
 
 /*
 ============
@@ -151,7 +194,7 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 	int i, j, k, n, bestObstacle, bestEdgeNum, queueStart, queueEnd, edgeNums[2];
 	float d, bestd, scale[2];
 	idVec3 plane, bestPlane;
-	idVec2 newPoint, dir, bestPoint;
+	idVec2 newPoint, dir, bestPoint(0, 0);
 	int *queue;
 	bool *obstacleVisited;
 	idWinding2D w1, w2;
@@ -268,10 +311,15 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 GetFirstBlockingObstacle
 ============
 */
-bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum ) {
+bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstacles, int numObstacles, int skipObstacle, const idVec2 &startPos, const idVec2 &delta, float &blockingScale, int &blockingObstacle, int &blockingEdgeNum, int &blockingDoorNum ) { // grayman #2345
 	int i, edgeNums[2];
 	float dist, scale1, scale2;
 	idVec2 bounds[2];
+
+	// grayman #2345 - get AI version of yourself
+
+	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf());
+	idAI* selfAI = static_cast<idAI*>(self);
 
 	// get bounds for the current movement delta
 	bounds[0] = startPos - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
@@ -281,20 +329,48 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 
 	// test for obstacles blocking the path
 	blockingScale = idMath::INFINITY;
+	float blockingScaleDoor = idMath::INFINITY; // grayman #2345
 	dist = delta.Length();
 	for ( i = 0; i < numObstacles; i++ ) {
 		if ( i == skipObstacle ) {
 			continue;
 		}
+
 		if ( bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y ||
-				bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y ) {
+				bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y )
+		{
 			continue;
 		}
-		if ( obstacles[i].winding.RayIntersection( startPos, delta, scale1, scale2, edgeNums ) ) {
-			if ( scale1 < blockingScale && scale1 * dist > -0.01f && scale2 * dist > 0.01f ) {
+		if ( obstacles[i].winding.RayIntersection( startPos, delta, scale1, scale2, edgeNums ) )
+		{
+			if ( scale1 < blockingScale && scale1 * dist > -0.01f && scale2 * dist > 0.01f )
+			{
 				blockingScale = scale1;
 				blockingObstacle = i;
 				blockingEdgeNum = edgeNums[0];
+				
+				// grayman #2345 - Return the index number of the closest blocking door,
+				// regardless of whether the door is the closest blocking obstacle. Ignore
+				// a door that you recently used if not alerted. This keeps you from going back and forth
+				// through the same door.
+
+				// grayman #2712 - removed alert check
+
+				idEntity* e = obstacles[i].entity;
+				if ((e != NULL) && e->IsType(CFrobDoor::Type))
+				{
+					if (blockingScale < blockingScaleDoor)
+					{
+						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
+						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
+						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
+						{
+							continue; // ignore this door
+						}
+						blockingDoorNum = i;
+						blockingScaleDoor = blockingScale;
+					}
+				}
 			}
 		}
 	}
@@ -306,22 +382,28 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 GetObstacles
 ============
 */
-int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, idBounds &clipBounds ) {
-	int i, j, numListedClipModels, numObstacles, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
-	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
-	float stepHeight, headHeight, blockingScale, min, max;
-	idVec3 seekDelta, silVerts[32], start, end, nextStart, nextEnd;
-	idVec2 expBounds[2], edgeDir, edgeNormal, nextEdgeDir, nextEdgeNormal, lastEdgeNormal;
+int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, 
+				  const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, 
+				  idBounds &clipBounds, obstaclePath_t& pathInfo ) 
+{
+	int clipMask;
+	float stepHeight, headHeight, min, max;
+	idVec3 silVerts[32];
 	idVec2 obDelta;
-	idPhysics *obPhys;
-	idBox box;
-	idEntity *obEnt;
-	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
+		
+	/** TDM: SZ: This variable tracks if the obstacle is a binary mover or not
+	 * If NULL its not, if non NULL it is, and the pointer is a cast to it
+	 * as a binary mover
+	 */
+	// So far, we don't have a door
+	pathInfo.doorObstacle = NULL;
 
-	numObstacles = 0;
+	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
+	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf()); 
+	int team = self->team;
 
-	seekDelta = seekPos - startPos;
+	idVec3 seekDelta = seekPos - startPos;
+	idVec2 expBounds[2];
 	expBounds[0] = physics->GetBounds()[0].ToVec2() - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 	expBounds[1] = physics->GetBounds()[1].ToVec2() + idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 
@@ -331,68 +413,255 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	// clip bounds for the obstacle search space
 	clipBounds[0] = clipBounds[1] = startPos;
 	clipBounds.AddPoint( seekPos );
-	clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
+
+	const idBounds& bounds = physics->GetBounds();
+
+	idVec3 dir = seekDelta;
+	dir.z = 0;
+	dir.NormalizeFast();
+	idVec3 center = 0.5 * (startPos + seekPos);
+
+	idVec3 normal = dir.Cross(gameLocal.GetGravity());
+	normal.NormalizeFast();
+	clipBounds.AddPoint( center +  MAX_OBSTACLE_RADIUS * normal);
+	clipBounds.AddPoint( center -  MAX_OBSTACLE_RADIUS * normal);
+
+	clipBounds.AddPoint(seekPos + 2 * bounds[1][0] * dir);
+	clipBounds.AddPoint(startPos - 2 * bounds[1][0] * dir);
+
+	clipBounds[0][2] -= bounds[0][2] + OBSTACLE_HEIGHT_EXPANSION;
+	clipBounds[1][2] += bounds[1][2] + OBSTACLE_HEIGHT_EXPANSION;
+
+	clipBounds.ExpandSelf(CLIP_BOUNDS_EPSILON);
+
+	// clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
 	clipMask = physics->GetClipMask();
 
+	if ( ai_showObstacleAvoidance.GetBool() ) {
+		gameRenderWorld->DebugBox(colorBlue, idBox(clipBounds), gameLocal.msec);
+	}
+
 	// find all obstacles touching the clip bounds
-	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
+	static idClipModel* clipModelList[ MAX_GENTITIES ];
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
 
-	for ( i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) {
-		clipModel = clipModelList[i];
-		obEnt = clipModel->GetEntity();
+	int numObstacles = 0; // no obstacles so far
 
+	CBinaryFrobMover* p_binaryFrobMover; // grayman #2345
+
+	idAI* selfAI = NULL; // grayman #2345 - for locating a func_static you're bumping into
+	if (self->IsType(idAI::Type))
+	{
+		selfAI = static_cast<idAI*>(self);
+	}
+
+	bool actorFound = false; // grayman #2345 - whether an actor was found on this pass
+
+	for ( int i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) 
+	{
+		p_binaryFrobMover = NULL; // grayman #2345
+		idClipModel* clipModel = clipModelList[i];
+		idEntity* obEnt = clipModel->GetEntity();
+
+		// greebo: Immediately ignore self
+		if (obEnt == self)
+		{
+			continue;
+		}
+
+		/*
+		* SZ: Oct 9, 2006: Not all binary frob movers have trace models as clip models
+		* so I am commenting this out.
+		*/
+		/*
 		if ( !clipModel->IsTraceModel() ) {
 			continue;
 		}
+		*/
 
-		if ( obEnt->IsType( idActor::Type ) ) {
-			obPhys = obEnt->GetPhysics();
+		if (obEnt->IsType(idActor::Type))
+		{
+			idActor* obEntActor = static_cast<idActor*>(obEnt); // grayman #2345
+			actorFound = true; // grayman #2345
+			idPhysics* obPhys = obEnt->GetPhysics();
+
 			// ignore myself, my enemy, and dead bodies
-			if ( ( obPhys == physics ) || ( obEnt == ignore ) || ( obEnt->health <= 0 ) ) {
+			// TDM: Also ignore ALL enemies
+			// grayman #2728 - also ignore small AI
+			if	((obPhys == physics) || (obEnt == ignore) || (obEnt->health <= 0) || self->IsEnemy(obEnt) || (obPhys->GetMass() <= 5.0))
+			{
 				continue;
 			}
-			// if the actor is moving
-			idVec3 v1 = obPhys->GetLinearVelocity();
-			if ( v1.LengthSqr() > Square( 10.0f ) ) {
-				idVec3 v2 = physics->GetLinearVelocity();
-				if ( v2.LengthSqr() > Square( 10.0f ) ) {
-					// if moving in about the same direction
-					if ( v1 * v2 > 0.0f ) {
-						continue;
-					}
+
+			/* grayman #2345
+
+			Use m_pathRank to determine who will walk around the other. At init time, m_pathRank
+			is set to rank. A higher m_pathRank will not walk around a lower m_pathRank. A lower
+			m_pathRank will walk around a higher m_pathRank. If m_pathRanks are equal at first
+			encounter, self's m_pathRank will be bumped up. Whoever sights the other first gets
+			to have a higher m_pathRank. m_pathRank = 1000 for a non-moving actor, so others
+			will walk around him. m_pathRank is reset to rank when an AI begins moving again.
+			
+			*/
+
+			bool sameDirection = false;		// self and actor traveling in roughly the same direction?
+			bool actorSameFaster = false;	// actor is traveling at the same speed or faster than you
+			const idVec3& actorVel = obPhys->GetLinearVelocity();
+			float actorSpeedSqr = actorVel.LengthSqr();
+			idVec3 myVel = physics->GetLinearVelocity();
+			float mySpeedSqr = myVel.LengthSqr();
+			// moving in about the same direction?
+			if (actorVel * myVel > 0.0f)
+			{
+				sameDirection = true;
+			}
+
+			// actor's speed is faster or equal to self?
+			if (actorSpeedSqr >= mySpeedSqr)
+			{
+				actorSameFaster = true;
+			}
+
+			if (self->m_pathRank > obEntActor->m_pathRank)
+			{
+				if (actorSameFaster)
+				{
+					continue;
+				}
+				else if (!sameDirection)
+				{
+					continue;
 				}
 			}
-		} else if ( obEnt->IsType( idMoveable::Type ) ) {
-			// moveables are considered obstacles
-		} else {
+			else if (self->m_pathRank == obEntActor->m_pathRank)
+			{
+				self->m_pathRank++; // increase mine and ignore the other actor
+				continue; // ignore
+			}
+
+			// Self's path rank is lower than the actor's. If the actor is moving in the same
+			// direction and is traveling at the same speed or faster, ignore them.
+
+			else if (sameDirection && actorSameFaster)
+			{
+				continue; // ignore
+			}
+		} 
+		// SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too
+		else if (obEnt->IsType(CBinaryFrobMover::Type))
+		{
+			p_binaryFrobMover = static_cast<CBinaryFrobMover*>(obEnt); // grayman #2345
+		}
+		else if (obEnt->IsType(idMoveable::Type)) 
+		{
+			// grayman #2740 - ignore movables attached to the AI
+
+			idEntity* bindMaster = obEnt->GetBindMaster();
+			if (self == bindMaster)
+			{
+				continue; // ignore
+			}
+
+			// all other moveables are considered obstacles
+		} 
+
+		// grayman #2345 - in general, ignore func_statics. but if you're bumping into one, consider it an obstacle
+
+		else if (obEnt->IsType(idStaticEntity::Type))
+		{
+			if (selfAI && (obEnt != selfAI->GetTactileEntity()))
+			{
+				continue; // ignore this
+			}
+
+			// If we get here, this func_static is an obstacle. However, func_statics can
+			// have odd shapes, which means you could walk through an opening in one, or
+			// under one. If you're "inside" the bounding box of this func_static, ignore it.
+
+			idPhysics* obPhys = obEnt->GetPhysics();
+			idBounds obBounds = obPhys->GetAbsBounds();
+			idVec3 origin = physics->GetOrigin();
+			if (obBounds.ContainsPoint(origin))
+			{
+				continue; // ignore this
+			}
+		}
+		else
+		{
 			// ignore everything else
+
+			// TDM: SZ Oct 9, 2006: Comment this continue out, and the AI will path around func_statics
+			// and the like, even without monster-clip brushes around them.  
+			// However, the CPU load is higher and the weapon an AI is carrying
+			// is an obstacle (bad).
+
 			continue;
 		}
-
+		
 		// check if we can step over the object
 		clipModel->GetAbsBounds().AxisProjection( -physics->GetGravityNormal(), min, max );
 		if ( max < stepHeight || min > headHeight ) {
 			// can step over this one
-			continue;
+			// angua: do not step over other actors
+			if (!obEnt->IsType(idActor::Type))
+			{
+				continue;
+			}
 		}
 
-		// project a box containing the obstacle onto the floor plane
-		box = idBox( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
-		numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
+		// Get the box bounding the obstacle
+		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+		idBox boxClosed;			// grayman #2712
+		bool openDoorFound = false;	// grayman #2712
+
+		// grayman #2345 - To get AI to queue at an open door and not cause logjams, treat an open door
+		// as if it's closed. This could also apply to all binary frob movers, but since many of those
+		// are simple wall switches, and should be ignored, we'll limit this code to doors. The door-handling
+		// task sorts out whether the door is actually open or closed.
+
+		if (p_binaryFrobMover != NULL)
+		{
+			// only "see" doors
+			// grayman #2712 - if you can operate doors, and the door is open, include a
+			// second box representing the closed door. The 'open' box provides an obstacle
+			// presence for pathfinding, and the 'closed' box alerts the AI that the door
+			// needs to be handled.
+
+			if (p_binaryFrobMover->IsType(CFrobDoor::Type))
+			{
+				if (selfAI->m_bCanOperateDoors) // grayman #2691
+				{
+					if (p_binaryFrobMover->IsOpen())
+					{
+						if (!selfAI->m_HandlingDoor) // If we're already handling a door, don't include the closed door in the obstacle calculation
+						{
+							openDoorFound = true;
+							// grayman #720 - replace calculations with a capture of the closed box at spawn time
+
+//							box.AddBox (p_binaryFrobMover->GetClosedBox());
+							boxClosed = p_binaryFrobMover->GetClosedBox(); // create a second box; don't add to open box
+						}
+					}
+				}
+			}
+		}
+
+		// project the box containing the obstacle onto the floor plane
+		int numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
 
 		// create a 2D winding for the obstacle;
-		obstacle_t &obstacle = obstacles[numObstacles++];
+		obstacle_t& obstacle = obstacles[numObstacles++];
 		obstacle.winding.Clear();
-		for ( j = 0; j < numVerts; j++ ) {
+		for ( int j = 0; j < numVerts; j++ ) {
 			obstacle.winding.AddPoint( silVerts[j].ToVec2() );
 		}
 
 		if ( ai_showObstacleAvoidance.GetBool() ) {
-			for ( j = 0; j < numVerts; j++ ) {
+			for ( int j = 0; j < numVerts; j++ ) {
 				silVerts[j].z = startPos.z;
 			}
-			for ( j = 0; j < numVerts; j++ ) {
-				gameRenderWorld->DebugArrow( colorWhite, silVerts[j], silVerts[(j+1)%numVerts], 4 );
+			for ( int j = 0; j < numVerts; j++ ) {
+				gameRenderWorld->DebugArrow( colorWhite, silVerts[j], silVerts[(j+1)%numVerts], 4 ,gameLocal.msec);
 			}
 		}
 
@@ -400,6 +669,34 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		obstacle.winding.ExpandForAxialBox( expBounds );
 		obstacle.winding.GetBounds( obstacle.bounds );
 		obstacle.entity = obEnt;
+	
+		// grayman #2712 - treat a 'closed' door box as a separate item so the door's recognized
+		// later when the AI is told to handle it.
+
+		if (openDoorFound)
+		{
+			// project the box containing the obstacle onto the floor plane
+			int numVerts = boxClosed.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
+
+			// create a 2D winding for the obstacle;
+			obstacle_t& obstacle2 = obstacles[numObstacles++];
+			obstacle2.winding.Clear();
+			for ( int j = 0; j < numVerts; j++ ) {
+				obstacle2.winding.AddPoint( silVerts[j].ToVec2() );
+			}
+
+			// expand the 2D winding for collision with a 2D box
+			obstacle2.winding.ExpandForAxialBox( expBounds );
+			obstacle2.winding.GetBounds( obstacle.bounds );
+			obstacle2.entity = obEnt;
+		}
+	}
+
+	// grayman #2345 - if I encountered no actors on this pass, reset my m_pathRank to my rank
+
+	if (!actorFound)
+	{
+		self->m_pathRank = self->rank;
 	}
 
 	// if there are no dynamic obstacles the path should be through valid AAS space
@@ -407,45 +704,110 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		return 0;
 	}
 
+	int blockingObstacle;	// will hold the index to the first blocking obstacle
+	int blockingEdgeNum;	// will hold the edge number of the winding which intersects the path
+	int blockingDoorNum = -1;	// grayman #2345 - will hold the index to the first blocking door
+	float blockingScale;
 	// if the current path doesn't intersect any dynamic obstacles the path should be through valid AAS space
-	if ( PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2() ) == -1 ) {
-		if ( !GetFirstBlockingObstacle( obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), blockingScale, blockingObstacle, blockingEdgeNum ) ) {
+	int startObstacleNum = PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2());
+	if (startObstacleNum == -1 )
+	{
+		if (!GetFirstBlockingObstacle(physics, obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
+									  blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
+		{
+			// grayman #1327 - return the door even if blockingScale (determined in GetFirstBlockingObstacle() )
+			// was > 1. This allows AI to see doors sooner, and helps reduce the number of instances where
+			// they don't see the door at all.
+
+			if ( blockingDoorNum >= 0 )
+			{
+				idEntity* door = obstacles[blockingDoorNum].entity; // we already know this is a valid door
+				pathInfo.doorObstacle = static_cast<CFrobDoor*>(door);
+			}
+
+			// No first obstacle found
 			return 0;
+		}
+
+		// grayman #2345 - rather than test to see if the first blocking obstacle
+		// is a door, test to see if ANY is a door. If so, mark the first one.
+
+		if ( blockingDoorNum >= 0 )
+		{
+			idEntity* door = obstacles[blockingDoorNum].entity; // we already know this is a valid door
+			pathInfo.doorObstacle = static_cast<CFrobDoor*>(door);
 		}
 	}
 
 	// create obstacles for AAS walls
-	if ( aas ) {
+
+	if ( aas != NULL )
+	{
 		float halfBoundsSize = ( expBounds[ 1 ].x - expBounds[ 0 ].x ) * 0.5f;
 
-		numWallEdges = aas->GetWallEdges( areaNum, clipBounds, TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES );
-		aas->SortWallEdges( wallEdges, numWallEdges );
+		int wallEdges[MAX_AAS_WALL_EDGES];
+		START_TIMING(self->actorGetWallEdgesTimer);
+		int numWallEdges = aas->GetWallEdges( areaNum, clipBounds, TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES );
+		STOP_TIMING(self->actorGetWallEdgesTimer);
 
-		lastVerts[0] = lastVerts[1] = 0;
-		lastEdgeNormal.Zero();
-		nextVerts[0] = nextVerts[1] = 0;
-		for ( i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ ) {
+		START_TIMING(self->actorSortWallEdgesTimer);
+		aas->SortWallEdges( wallEdges, numWallEdges );
+		STOP_TIMING(self->actorSortWallEdgesTimer);
+
+		int lastVerts[2] = {0,0};
+		int nextVerts[2] = {0,0};
+		idVec2 lastEdgeNormal(0,0);		
+		int verts[2]; // will hold edge vertex indices
+		idVec2 edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0);
+		idVec3 start, end, nextStart, nextEnd;
+
+		for ( int i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ )
+		{
             aas->GetEdge( wallEdges[i], start, end );
 			aas->GetEdgeVertexNumbers( wallEdges[i], verts );
-			edgeDir = end.ToVec2() - start.ToVec2();
+
+			// Get the edge direction 
+			idVec2 edgeDir(end.ToVec2() - start.ToVec2());
 			edgeDir.Normalize();
+
+			// Get the direction perpendicular to this edge
 			edgeNormal.x = edgeDir.y;
 			edgeNormal.y = -edgeDir.x;
-			if ( i < numWallEdges-1 ) {
+
+			// Do we have a next edge?
+			if ( i < numWallEdges-1 )
+			{
+				// Get the next edge direction plus normal
 				aas->GetEdge( wallEdges[i+1], nextStart, nextEnd );
 				aas->GetEdgeVertexNumbers( wallEdges[i+1], nextVerts );
+
 				nextEdgeDir = nextEnd.ToVec2() - nextStart.ToVec2();
 				nextEdgeDir.Normalize();
+
 				nextEdgeNormal.x = nextEdgeDir.y;
 				nextEdgeNormal.y = -nextEdgeDir.x;
 			}
 
-			obstacle_t &obstacle = obstacles[numObstacles++];
+			// greebo: Check if caching the AAS obstacle representations can save some CPU time.
+			// AAS areas never change during map runtime, so why calculate them each time?
+			// 15/06/2008: Did some profiling, the section below is harmless, it's the 
+			// aas->GetWallEdges and aas->SortWallEdges() calls above which are expensive.
+
+			// grayman: If they're expensive, can't they also be done once and cached? An AAS
+			// area doesn't change over time.
+
+			// Start to fill the values in the new obstacle structure
+			obstacle_t& obstacle = obstacles[numObstacles++];
+
 			obstacle.winding.Clear();
+
+			// greebo: Populate the winding, this will form a trapezoid
+			// with the edge as one side. The longer side will be a bit away from the wall sticking into the room.
 			obstacle.winding.AddPoint( end.ToVec2() );
 			obstacle.winding.AddPoint( start.ToVec2() );
 			obstacle.winding.AddPoint( start.ToVec2() - edgeDir - edgeNormal * halfBoundsSize );
 			obstacle.winding.AddPoint( end.ToVec2() + edgeDir - edgeNormal * halfBoundsSize );
+
 			if ( lastVerts[1] == verts[0] ) {
 				obstacle.winding[2] -= lastEdgeNormal * halfBoundsSize;
 			} else {
@@ -459,21 +821,22 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			obstacle.winding.GetBounds( obstacle.bounds );
 			obstacle.entity = NULL;
 
-			memcpy( lastVerts, verts, sizeof( lastVerts ) );
+			lastVerts[0] = verts[0];
+			lastVerts[1] = verts[1];
 			lastEdgeNormal = edgeNormal;
 		}
 	}
 
 	// show obstacles
 	if ( ai_showObstacleAvoidance.GetBool() ) {
-		for ( i = 0; i < numObstacles; i++ ) {
+		for ( int i = 0; i < numObstacles; i++ ) {
 			obstacle_t &obstacle = obstacles[i];
-			for ( j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
+			for ( int j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
 				silVerts[j].ToVec2() = obstacle.winding[j];
 				silVerts[j].z = startPos.z;
 			}
-			for ( j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
-				gameRenderWorld->DebugArrow( colorGreen, silVerts[j], silVerts[(j+1)%obstacle.winding.GetNumPoints()], 4 );
+			for ( int j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
+				gameRenderWorld->DebugArrow( colorGreen, silVerts[j], silVerts[(j+1)%obstacle.winding.GetNumPoints()], 4, gameLocal.msec );
 			}
 		}
 	}
@@ -589,7 +952,8 @@ bool GetPathNodeDelta( pathNode_t *node, const obstacle_t *obstacles, const idVe
 BuildPathTree
 ============
 */
-pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const idBounds &clipBounds, const idVec2 &startPos, const idVec2 &seekPos, obstaclePath_t &path ) {
+pathNode_t *BuildPathTree( const idPhysics *physics, const obstacle_t *obstacles, int numObstacles, const idBounds &clipBounds, const idVec2 &startPos, const idVec2 &seekPos, obstaclePath_t &path ) // grayman #2345 - added 'physics'
+{
 	int blockingEdgeNum, blockingObstacle, obstaclePoints, bestNumNodes = MAX_OBSTACLE_PATH;
 	float blockingScale;
 	pathNode_t *root, *node, *child;
@@ -620,8 +984,11 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 		}
 
 		// if an obstacle is blocking the path
-		if ( GetFirstBlockingObstacle( obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum ) ) {
 
+		int blockingDoorNum = -1; // grayman #2345 - will hold the index to the first blocking door
+
+		if ( GetFirstBlockingObstacle(physics, obstacles, numObstacles, node->obstacle, node->pos, node->delta, blockingScale, blockingObstacle, blockingEdgeNum, blockingDoorNum)) // grayman #2345
+		{
 			if ( path.firstObstacle == NULL ) {
 				path.firstObstacle = obstacles[blockingObstacle].entity;
 			}
@@ -700,7 +1067,6 @@ void PrunePathTree( pathNode_t *root, const idVec2 &seekPos ) {
 
 	node = root;
 	while( node ) {
-
 		node->dist = ( seekPos - node->pos ).LengthSqr();
 
 		if ( node->children[0] ) {
@@ -755,7 +1121,6 @@ int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obst
 	numPathPoints = 1;
 
 	for ( nextNode = curNode = root; curNode != leafNode; curNode = nextNode ) {
-
 		for ( nextNode = leafNode; nextNode->parent != curNode; nextNode = nextNode->parent ) {
 
 			// can only take shortcuts when going from one object to another
@@ -847,8 +1212,8 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 	bestPathLength = idMath::INFINITY;
 
 	node = root;
-	while( node ) {
 
+	while( node ) {
 		pathToGoalExists |= ( node->dist < 0.1f );
 
 		if ( node->dist <= bestNode->dist ) {
@@ -858,6 +1223,8 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 				if ( !optimizedPathCalculated ) {
 					bestNumPathPoints = OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 					bestPathLength = PathLength( optimizedPath, bestNumPathPoints, curDir.ToVec2() );
+					// grayman - A series of path points has been examined and the first one to head to is in
+					// optimizedPath[1]. But if bestNumPathPoints == 1 here, then optimizedPath[1] contains garbage. Does it matter?
 					seekPos.ToVec2() = optimizedPath[1];
 				}
 
@@ -894,7 +1261,10 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 	}
 
 	if ( !pathToGoalExists ) {
-		seekPos.ToVec2() = root->children[0]->pos;
+		if (root->children[0] != NULL)
+		{
+			seekPos.ToVec2() = root->children[0]->pos;
+		}
 	} else if ( !optimizedPathCalculated ) {
 		OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 		seekPos.ToVec2() = optimizedPath[1];
@@ -907,7 +1277,7 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 		for ( i = 0; i < numPathPoints-1; i++ ) {
 			start.ToVec2() = optimizedPath[i];
 			end.ToVec2() = optimizedPath[i+1];
-			gameRenderWorld->DebugArrow( colorCyan, start, end, 1 );
+			gameRenderWorld->DebugArrow( colorCyan, start, end, 1, gameLocal.msec);
 		}
 	}
 
@@ -921,37 +1291,41 @@ idAI::FindPathAroundObstacles
   Finds a path around dynamic obstacles using a path tree with clockwise and counter clockwise edge walks.
 ============
 */
-bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path ) {
-	int numObstacles, areaNum, insideObstacle;
-	obstacle_t obstacles[MAX_OBSTACLES];
-	idBounds clipBounds;
-	idBounds bounds;
-	pathNode_t *root;
-	bool pathToGoalExists;
-
+bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner ) {
+	// Initialise the path structure with reasonable defaults
 	path.seekPos = seekPos;
 	path.firstObstacle = NULL;
 	path.startPosOutsideObstacles = startPos;
 	path.startPosObstacle = NULL;
 	path.seekPosOutsideObstacles = seekPos;
 	path.seekPosObstacle = NULL;
+	path.doorObstacle = NULL;
 
-	if ( !aas ) {
-		return true;
+	if (aas == NULL) {
+		return true; // no AAS!
 	}
 
+	idBounds bounds;
 	bounds[1] = aas->GetSettings()->boundingBoxes[0][1];
 	bounds[0] = -bounds[1];
 	bounds[1].z = 32.0f;
 
 	// get the AAS area number and a valid point inside that area
-	areaNum = aas->PointReachableAreaNum( path.startPosOutsideObstacles, bounds, (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
+	int areaNum = aas->PointReachableAreaNum( path.startPosOutsideObstacles, bounds, (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
 	aas->PushPointIntoAreaNum( areaNum, path.startPosOutsideObstacles );
 
 	// get all the nearby obstacles
-	numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds );
+	static obstacle_t obstacles[MAX_OBSTACLES];
+	idBounds clipBounds;
+
+	START_TIMING(owner->actorGetObstaclesTimer);
+	int numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds, path );
+	STOP_TIMING(owner->actorGetObstaclesTimer);
+
+	START_TIMING(owner->actorGetPointOutsideObstaclesTimer);
 
 	// get a source position outside the obstacles
+	int insideObstacle;
 	GetPointOutsideObstacles( obstacles, numObstacles, path.startPosOutsideObstacles.ToVec2(), &insideObstacle, NULL );
 	if ( insideObstacle != -1 ) {
 		path.startPosObstacle = obstacles[insideObstacle].entity;
@@ -963,6 +1337,8 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 		path.seekPosObstacle = obstacles[insideObstacle].entity;
 	}
 
+	STOP_TIMING(owner->actorGetPointOutsideObstaclesTimer);
+
 	// if start and destination are pushed to the same point, we don't have a path around the obstacle
 	if ( ( path.seekPosOutsideObstacles.ToVec2() - path.startPosOutsideObstacles.ToVec2() ).LengthSqr() < Square( 1.0f ) ) {
 		if ( ( seekPos.ToVec2() - startPos.ToVec2() ).LengthSqr() > Square( 2.0f ) ) {
@@ -970,8 +1346,13 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 		}
 	}
 
+	START_TIMING(owner->actorBuildPathTreeTimer);
 	// build a path tree
-	root = BuildPathTree( obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path );
+	pathNode_t* root = BuildPathTree(physics, obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path ); // grayman #2345 - added 'physics'
+
+//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
+	
+	STOP_TIMING(owner->actorBuildPathTreeTimer);
 
 	// draw the path tree
 	if ( ai_showObstacleAvoidance.GetBool() ) {
@@ -979,10 +1360,15 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	}
 
 	// prune the tree
+	START_TIMING(owner->actorPrunePathTreeTimer);
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
+	STOP_TIMING(owner->actorPrunePathTreeTimer);
+//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
 
 	// find the optimal path
-	pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	START_TIMING(owner->actorFindOptimalPathTimer);
+	bool pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	STOP_TIMING(owner->actorFindOptimalPathTimer);
 
 	// free the tree
 	FreePathTree_r( root );

@@ -1,5 +1,11 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
@@ -45,9 +51,6 @@ typedef enum {
 	WP_RISING,
 	WP_LOWERING
 } weaponStatus_t;
-
-typedef int ammo_t;
-static const int AMMO_NUMTYPES = 16;
 
 class idPlayer;
 
@@ -104,6 +107,8 @@ public:
 	void					OwnerDied( void );
 	void					BeginAttack( void );
 	void					EndAttack( void );
+	void					BeginBlock( void );
+	void					EndBlock( void );
 	bool					IsReady( void ) const;
 	bool					IsReloading( void ) const;
 	bool					IsHolstered( void ) const;
@@ -111,6 +116,7 @@ public:
 	idEntity *				DropItem( const idVec3 &velocity, int activateDelay, int removeDelay, bool died );
 	bool					CanDrop( void ) const;
 	void					WeaponStolen( void );
+	void					SetArrow2Arrow( bool state); // grayman #597
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -129,10 +135,8 @@ public:
 	bool					BloodSplat( float size );
 
 	// Ammo
-	static ammo_t			GetAmmoNumForName( const char *ammoname );
-	static const char		*GetAmmoNameForNum( ammo_t ammonum );
-	static const char		*GetAmmoPickupNameForNum( ammo_t ammonum );
-	ammo_t					GetAmmoType( void ) const;
+	static const char		*GetAmmoNameForNum( int ammonum );
+	static const char		*GetAmmoPickupNameForNum( int ammonum );
 	int						AmmoAvailable( void ) const;
 	int						AmmoInClip( void ) const;
 	void					ResetAmmoClip( void );
@@ -143,6 +147,12 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	/**
+	* TDM: Attach an entity to the weapon's AF.  Different than plain entity attachment
+	* Does not use position name for now
+	**/
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
+
 	enum {
 		EVENT_RELOAD = idEntity::EVENT_MAXEVENTS,
 		EVENT_ENDRELOAD,
@@ -152,10 +162,25 @@ public:
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 	virtual void			ClientPredictionThink( void );
+	
+	/**
+	* TDM: Return true if this is a ranged weapon
+	**/
+	bool					IsRanged();
+
+protected:
+	/**
+	* Used internally by the Attach methods.
+	* Offset and axis are filled with the correct offset and axis
+	* for attaching to a particular joint.
+	* Overloaded to call GetJointGlobalTransform on idWeapon entities.
+	**/
+	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
 
 private:
 	// script control
 	idScriptBool			WEAPON_ATTACK;
+	idScriptBool			WEAPON_BLOCK;
 	idScriptBool			WEAPON_RELOAD;
 	idScriptBool			WEAPON_NETRELOAD;
 	idScriptBool			WEAPON_NETENDRELOAD;
@@ -167,6 +192,10 @@ private:
 	idStr					state;
 	idStr					idealState;
 	int						animBlendFrames;
+	/**
+	* TDM: animDoneTime no longer used, but keep it around
+	* for compatibility with future patches/engines
+	**/
 	int						animDoneTime;
 	bool					isLinked;
 
@@ -208,7 +237,9 @@ private:
 	// do not have to be copied across the DLL boundary when entities are spawned
 	const idDeclEntityDef *	weaponDef;
 	const idDeclEntityDef *	meleeDef;
-	idDict					projectileDict;
+
+	// greebo: This is not needed anymore - the projectile dictionary is requested when it's actually needed
+	//idDict					projectileDict;
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;
@@ -230,8 +261,9 @@ private:
 	int						muzzleFlashEnd;
 	int						flashTime;
 	bool					lightOn;
-	bool					silent_fire;
 	bool					allowDrop;
+
+	int						hideUntilTime; // grayman #597 - keep hidden until timer expires (for arrow spawning)
 
 	// effects
 	bool					hasBloodSplat;
@@ -244,7 +276,6 @@ private:
 	idVec3					muzzle_kick_offset;
 
 	// ammo management
-	ammo_t					ammoType;
 	int						ammoRequired;		// amount of ammo to use each shot.  0 means weapon doesn't need ammo.
 	int						clipSize;			// 0 means no reload
 	int						ammoClip;
@@ -285,7 +316,8 @@ private:
 	bool					nozzleFx;			// does this use nozzle effects ( parm5 at rest, parm6 firing )
 										// this also assumes a nozzle light atm
 	int						nozzleFxFade;		// time it takes to fade between the effects
-	int						lastAttack;			// last time an attack occured
+	int						lastAttack;			// last time an attack occurred
+	int						lastBlock;			// last time a block occurred
 	renderLight_t			nozzleGlow;			// nozzle light
 	int						nozzleGlowHandle;	// handle for nozzle light
 
@@ -299,6 +331,9 @@ private:
 	float					weaponAngleOffsetMax;
 	float					weaponOffsetTime;
 	float					weaponOffsetScale;
+
+	// weapon switching
+	bool					arrow2Arrow;		// grayman #597
 
 	// flashlight
 	void					AlertMonsters( void );
@@ -328,12 +363,21 @@ private:
 	void					Event_TotalAmmoCount( void );
 	void					Event_ClipSize( void );
 	void					Event_PlayAnim( int channel, const char *animname );
+	void					Event_PauseAnim( int channel, bool bPause );
+	void					Event_AnimIsPaused( int channel );
 	void					Event_PlayCycle( int channel, const char *animname );
 	void					Event_AnimDone( int channel, int blendFrames );
 	void					Event_SetBlendFrames( int channel, int blendFrames );
 	void					Event_GetBlendFrames( int channel );
 	void					Event_Next( void );
 	void					Event_SetSkin( const char *skinname );
+/**
+* TDM: Show or hide the weapon attachments
+* The first argument is an index to the attachments list, starting at 1
+* Second argument is set to true if it should be shown, false for hiding.
+**/
+	void					Event_ShowAttachment( int id, bool bShow );
+
 	void					Event_Flashlight( int enable );
 	void					Event_GetLightParm( int parmnum );
 	void					Event_SetLightParm( int parmnum, float value );

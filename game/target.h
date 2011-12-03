@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_TARGET_H__
 #define __GAME_TARGET_H__
@@ -279,24 +263,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-class idTarget_GiveEmail : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveEmail );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_SetModel
 
 ===============================================================================
@@ -400,38 +366,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-class idTarget_SetPrimaryObjective : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_SetPrimaryObjective );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_LockDoor
-
-===============================================================================
-*/
-
-class idTarget_LockDoor: public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_LockDoor );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_CallObjectFunction
 
 ===============================================================================
@@ -445,6 +379,22 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+/*
+===============================================================================
+
+Tels: idTarget_PostScriptEvent
+
+===============================================================================
+*/
+
+class idTarget_PostScriptEvent : public idTarget {
+public:
+	CLASS_PROTOTYPE( idTarget_PostScriptEvent );
+
+private:
+	void	Event_Activate( idEntity *activator );
+	void	TryPostOrCall( idEntity *ent, idEntity *activator, const idEventDef *ev, const char* funcName, const bool pass_self, const bool pass_activator, const float delay);
+};
 
 /*
 ===============================================================================
@@ -493,21 +443,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-class idTarget_GiveSecurity : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveSecurity );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
 idTarget_RemoveWeapons
 
 ===============================================================================
@@ -519,34 +454,6 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
-
-/*
-===============================================================================
-
-idTarget_LevelTrigger
-
-===============================================================================
-*/
-class idTarget_LevelTrigger : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_LevelTrigger );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_EnableStamina
-
-===============================================================================
-*/
-class idTarget_EnableStamina : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_EnableStamina );
-private:
-	void				Event_Activate( idEntity *activator );
-};
 
 /*
 ===============================================================================
@@ -563,5 +470,173 @@ private:
 	void				Event_RestoreVolume();
 };
 
+/**
+* CTarget_AddObjectives
+* Helper entity for the objectives system.  When triggered, adds the
+* objectives on it into the objectives system.
+*
+* It sets the spawnargs "obj_num_offset" on itself for the numerical offset
+* of the first objective it added, used for later addressing that objective.
+**/
+class CTarget_AddObjectives : public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_AddObjectives );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+ * greebo: Target for altering the state of certain objectives.
+ */
+class CTarget_SetObjectiveState : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveState );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+* Target for hiding or showing certain objectives.
+**/
+class CTarget_SetObjectiveVisibility : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveVisibility );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+* Target for setting the state of an objective component
+**/
+class CTarget_SetObjectiveComponentState : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveComponentState );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+ * greebo: Target for triggerig conversations.
+ */
+class CTarget_StartConversation : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_StartConversation );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+* CTarget_SetFrobable
+* Sets all items inside frobable or not when triggered
+**/
+class CTarget_SetFrobable : public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetFrobable );
+
+						CTarget_SetFrobable( void );
+	
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+private:
+	/**
+	* Current frob state, whether stuff inside has been set frobable or not
+	**/
+	bool				m_bCurFrobState;
+
+	/**
+	* List of the names of entities previously set unfrobable
+	* This list is maintained to avoid accidentally setting anything frobable
+	* that was not frobable before it went in the brush
+	* Only ents that get added to this list will become frobable.
+	**/
+	idStrList			m_EntsSetUnfrobable;
+};
+
+/**
+ * greebo: This target calls a specific script function (with no arguments).
+ */
+class CTarget_CallScriptFunction : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_CallScriptFunction );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
+/**
+ * greebo: This target locks or unlocks a specific frobmover.
+ */
+class CTarget_ChangeLockState : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_ChangeLockState );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
+/**
+ * greebo: This target changes the targets of existing entities.
+ */
+class CTarget_ChangeTarget : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_ChangeTarget );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
+/**
+ * greebo: This target eats incoming triggers and releases them when the next map loads.
+ */
+class CTarget_InterMissionTrigger : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_InterMissionTrigger );
+
+private:
+	void				Event_Activate(idEntity* activator);
+};
+
+/*
+===============================================================================
+
+Tels: set the team of its targets.
+
+===============================================================================
+*/
+
+class CTarget_SetTeam : public idTarget {
+public:
+	CLASS_PROTOTYPE( CTarget_SetTeam );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
 
 #endif /* !__GAME_TARGET_H__ */

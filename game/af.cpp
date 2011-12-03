@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
 
 
 /*
@@ -177,7 +163,11 @@ bool idAF::UpdateAnimation( void ) {
 		bodyAxis = physicsObj.GetAxis( jointMods[i].bodyId );
 		axis = jointMods[i].jointBodyAxis.Transpose() * ( bodyAxis * renderAxis.Transpose() );
 		origin = ( bodyOrigin - jointMods[i].jointBodyOrigin * axis - renderOrigin ) * renderAxis.Transpose();
-		animator->SetAFPoseJointMod( jointMods[i].jointHandle, jointMods[i].jointMod, axis, origin );
+		
+		// TDM: Do not add AF jointmod if it has AF_JOINTMOD_NONE
+		// This is used for added bodies that we don't want to stretch the mesh
+		if( jointMods[i].jointMod != AF_JOINTMOD_NONE )
+			animator->SetAFPoseJointMod( jointMods[i].jointHandle, jointMods[i].jointMod, axis, origin );
 	}
 	animator->FinishAFPose( modifiedAnim, GetBounds().Expand( POSE_BOUNDS_EXPANSION ), gameLocal.time );
 	animator->SetAFPoseBlendWeight( 1.0f );
@@ -290,7 +280,8 @@ void idAF::ChangePose( idEntity *ent, int time ) {
 	idAnimator *animatorPtr;
 	renderEntity_t *renderEntity;
 
-	if ( !IsLoaded() || !ent ) {
+//	if ( !IsLoaded() || !ent ) {
+	if ( !IsLoaded() || !ent || IsActive() ) {
 		return;
 	}
 
@@ -350,6 +341,10 @@ int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
 	for ( i = 0; i < jointMods.Num(); i++ ) {
 		body = physicsObj.GetBody( jointMods[i].bodyId );
 
+		// ishtvan: don't test bodies with their clipmodels disabled
+		if( !body->GetClipMask() )
+			continue;
+
 		for ( j = 0; j < numClipModels; j++ ) {
 			cm = clipModels[j];
 
@@ -365,7 +360,8 @@ int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
 				continue;
 			}
 
-			if ( gameLocal.clip.ContentsModel( body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), -1, cm->Handle(), cm->GetOrigin(), cm->GetAxis() ) ) {
+			// ishtvan: Apply the body clipmask
+			if ( gameLocal.clip.ContentsModel( body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), body->GetClipMask(), cm->Handle(), cm->GetOrigin(), cm->GetAxis() ) ) {
 				touchList[ numTouching ].touchedByBody = body;
 				touchList[ numTouching ].touchedClipModel = cm;
 				touchList[ numTouching ].touchedEnt  = cm->GetEntity();
@@ -394,6 +390,40 @@ int idAF::BodyForClipModelId( int id ) const {
 			return 0;
 		}
 	}
+}
+
+/*
+================
+idAF::JointForBody
+================
+*/
+jointHandle_t idAF::JointForBody( int body )
+{
+	/* tels: if no jointBody[i] == body, this
+		 will return -1 */
+	jointHandle_t joint = (jointHandle_t)-1;
+	for( int i=0; i < jointBody.Num(); i++ )
+	{
+		if( jointBody[i] == body )
+		{
+			joint = (jointHandle_t) i;
+			break;
+		}
+	}
+	return joint;
+}
+		
+/*
+================
+idAF::BodyForJoint
+================
+*/
+int	idAF::BodyForJoint( jointHandle_t joint )
+{
+		if ( joint < jointBody.Num() ) 
+			return jointBody[ joint ];
+		else
+			return 0;
 }
 
 /*
@@ -461,10 +491,86 @@ void idAF::AddBody( idAFBody *body, const idJointMat *joints, const char *jointN
 	index = jointMods.Num();
 	jointMods.SetNum( index + 1, false );
 	jointMods[index].bodyId = physicsObj.GetBodyId( body );
+	jointMods[index].bodyName = body->GetName();
 	jointMods[index].jointHandle = handle;
 	jointMods[index].jointMod = mod;
 	jointMods[index].jointBodyOrigin = ( body->GetWorldOrigin() - origin ) * axis.Transpose();
 	jointMods[index].jointBodyAxis = body->GetWorldAxis() * axis.Transpose();
+}
+
+void idAF::AddBodyExtern
+( 
+	idAFEntity_Base *ent, idAFBody *bodyNew, 
+	idAFBody *bodyExist, AFJointModType_t mod, 
+	jointHandle_t joint 
+)
+{
+	int indexNew(0), indexExist(-1), matchID(0);
+	jointHandle_t tempJoint = INVALID_JOINT;
+
+	idVec3 origin;
+	idMat3 axis;
+
+	// if we are not given a joint, copy it from the existing body
+	if( joint != INVALID_JOINT )
+	{
+		tempJoint = joint;
+		assert( tempJoint < animator->NumJoints() );
+	}
+	else
+	{
+		matchID = physicsObj.GetBodyId( bodyExist );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAF::AddBodyExtern: Existing body name is %s, id is %d\r", bodyExist->GetName().c_str(), matchID);
+		for( int i = 0; i < jointMods.Num(); i++ )
+		{
+			if( jointMods[i].bodyId == matchID )
+			{
+				tempJoint = jointMods[i].jointHandle;
+				if ( tempJoint == INVALID_JOINT ) 
+				{
+					gameLocal.Error( "idAF for entity '%s' at (%s) modifies unknown joint %d", self->name.c_str(), self->GetPhysics()->GetOrigin().ToString(0), (int) tempJoint );
+				}
+				assert( tempJoint < animator->NumJoints() );
+				break;
+			}
+		}
+	}
+
+	if( tempJoint != INVALID_JOINT )
+	{
+		ent->GetJointWorldTransform( tempJoint, gameLocal.time, origin, axis );
+
+		indexNew = jointMods.Num();
+		jointMods.SetNum( indexNew + 1, false );
+		jointMods[indexNew].bodyId = physicsObj.GetBodyId( bodyNew );
+		jointMods[indexNew].bodyName = bodyNew->GetName();
+		jointMods[indexNew].jointHandle = tempJoint;
+		jointMods[indexNew].jointMod = mod;
+		jointMods[indexNew].jointBodyOrigin = ( bodyNew->GetWorldOrigin() - origin ) * axis.Transpose();
+		jointMods[indexNew].jointBodyAxis = bodyNew->GetWorldAxis() * axis.Transpose();
+	}
+}
+
+void idAF::DeleteBodyExtern( idAFEntity_Base *ent, const char *bodyName )
+{
+	if( ent )
+	{
+		for( int i = jointMods.Num() - 1; i >= 0; i-- ) 
+		{
+			if( jointMods[i].bodyName == bodyName )
+			{
+				//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %s from AF\r", bodyName );
+				jointMods.RemoveIndex(i);
+			}
+		}
+	}
+
+	// Refresh the bodyIDs in the list, since they will have changed
+	// When AF physics condenses the list when removing a body in the middle
+	for( int i = jointMods.Num() - 1; i >= 0; i-- ) 
+	{
+		jointMods[i].bodyId = ent->GetAFPhysics()->GetBodyId( jointMods[i].bodyName );
+	}
 }
 
 /*
@@ -573,7 +679,8 @@ bool idAF::LoadBody( const idDeclAF_Body *fb, const idJointMat *joints ) {
 	if ( fb->linearFriction != -1.0f ) {
 		body->SetFriction( fb->linearFriction, fb->angularFriction, fb->contactFriction );
 	}
-	body->SetClipMask( fb->clipMask );
+	// TDM FIX: Remove MOVEABLE_CLIP flag that the parser seems to add in by default
+	body->SetClipMask( fb->clipMask & ~CONTENTS_MOVEABLECLIP );
 	body->SetSelfCollision( fb->selfCollision );
 
 	if ( fb->jointName == "origin" ) {
@@ -621,7 +728,7 @@ idAF::LoadConstraint
 bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 	idAFBody *body1, *body2;
 	idAngles angles;
-	idMat3 axis;	
+	idMat3 axis;
 
 	body1 = physicsObj.GetBody( fc->body1 );
 	body2 = physicsObj.GetBody( fc->body2 );
@@ -765,6 +872,7 @@ bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 			c->SetLimit( fc->minLength, fc->maxLength );
 			break;
 		}
+		default: break;
 	}
 	return true;
 }
@@ -922,13 +1030,29 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 		}
 	}
 
+#ifdef MOD_WATERPHYSICS
+	// load how the body will be floated in liquid
+	bool isFixedDensity;
+	if( ent->spawnArgs.GetBool( "fixedDensityBuoyancy", "1", isFixedDensity ) )
+		physicsObj.SetFixedDensityBuoyancy( isFixedDensity );
+
+// load liquid density from file
+	float liquidDensity;
+	if( ent->spawnArgs.GetFloat( "liquidDensity", "", liquidDensity ) )
+		physicsObj.SetLiquidDensity( liquidDensity );
+#endif		// MOD_WATERPHYSICS
+
 	physicsObj.SetMass( file->totalMass );
 	physicsObj.SetChanged();
+	physicsObj.BuildTrees();
 
 	// disable the articulated figure for collision detection until activated
 	physicsObj.DisableClip();
 
 	isLoaded = true;
+
+	physicsObj.SetNumOrigBodies( physicsObj.GetNumBodies() );
+	physicsObj.SetNumOrigConstraints( physicsObj.GetNumConstraints() );
 
 	return true;
 }

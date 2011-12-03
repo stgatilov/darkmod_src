@@ -1,36 +1,23 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -84,11 +71,19 @@ void idMultiModelAF::SetModelForId( int id, const idStr &modelName ) {
 idMultiModelAF::Present
 ================
 */
-void idMultiModelAF::Present( void ) {
+void idMultiModelAF::Present( void ) 
+{
 	int i;
 
+	if( m_bFrobable )
+	{
+		UpdateFrobState();
+		UpdateFrobDisplay();
+	}
+
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) 
+	{
 		return;
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
@@ -121,6 +116,26 @@ idMultiModelAF::Think
 void idMultiModelAF::Think( void ) {
 	RunPhysics();
 	Present();
+}
+
+/*
+======================
+idMultiModelAF::ParseAttachments
+======================
+*/
+void idMultiModelAF::ParseAttachments( void )
+{
+	return;
+}
+
+/*
+======================
+idMultiModelAF::ParseAttachmentsAF
+======================
+*/
+void idMultiModelAF::ParseAttachmentsAF( void )
+{
+	idEntity::ParseAttachments();
 }
 
 
@@ -231,6 +246,8 @@ void idChain::Spawn( void ) {
 	SetPhysics( &physicsObj );
 
 	BuildChain( "link", origin, linkLength, linkWidth, density, numLinks, !drop );
+
+	ParseAttachmentsAF();
 }
 
 /*
@@ -283,7 +300,8 @@ void idAFAttachment::Spawn( void ) {
 idAFAttachment::SetBody
 =====================
 */
-void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_t attachJoint ) {
+void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_t attachJoint ) 
+{
 	bool bleed;
 
 	body = bodyEnt;
@@ -293,6 +311,26 @@ void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_
 
 	bleed = body->spawnArgs.GetBool( "bleed" );
 	spawnArgs.SetBool( "bleed", bleed );
+
+	// greebo: Add the body as frob peer
+	m_FrobPeers.AddUnique(bodyEnt->name);
+
+	// ishtvan: Go through our bind children and copy the actor body info over to them
+	// might end up doing a few extra calls if GetTeamChildren is broken like we think,
+	// but that's okay, add extra check of direct bindmaster to prevent infinite recursion
+	idList<idEntity *> children;
+	GetTeamChildren( &children );
+	for( int i=0; i < children.Num(); i++ )
+	{
+		if( !children[i]->IsType(idAFAttachment::Type) )
+			continue;
+		if( !children[i]->IsBoundTo( this ) )
+			continue;
+		else
+		{
+			CopyBodyTo( static_cast<idAFAttachment *>(children[i]) );
+		}
+	}
 }
 
 /*
@@ -313,6 +351,145 @@ idAFAttachment::GetBody
 */
 idEntity *idAFAttachment::GetBody( void ) const {
 	return body;
+}
+
+/*
+=====================
+idAFAttachment::GetAttachJoint
+=====================
+*/
+jointHandle_t idAFAttachment::GetAttachJoint( void ) const
+{
+	return attachJoint;
+}
+
+/**
+* Return true if we can mantle this attachment, false otherwise.
+**/
+bool idAFAttachment::IsMantleable()
+{
+	return (!body || body->IsMantleable()) && idEntity::IsMantleable();
+}
+
+/**
+* idAFAttachment::BindNotify
+**/
+void idAFAttachment::BindNotify( idEntity *ent )
+{
+	// copy information over to a bound idAfAttachment
+	if( ent->IsType(idAFAttachment::Type) )
+	{
+		CopyBodyTo( static_cast<idAFAttachment *>(ent) );
+	}
+}
+
+void idAFAttachment::UnbindNotify( idEntity *ent )
+{
+	idEntity::UnbindNotify( ent );
+	// remove ent from AF if it was dynamically added as an AF body
+	if( body && body->IsType(idAFEntity_Base::Type) )
+		static_cast<idAFEntity_Base *>(body)->RemoveAddedEnt( ent );
+}
+
+void idAFAttachment::PostUnbind( void )
+{
+	// no longer bound to an actor
+	body = NULL;
+	attachJoint = INVALID_JOINT;
+}
+
+void idAFAttachment::DropOnRagdoll( void )
+{
+	// some stuff copied from idAI::DropOnRagdoll
+	idEntity *ent = NULL;
+	int mask(0);
+
+	// Drop TDM attachments
+	for( int i=0; i<m_Attachments.Num(); i++ )
+	{
+		ent = m_Attachments[i].ent.GetEntity();
+		if( !ent || !m_Attachments[i].ent.IsValid() )
+			continue;
+		
+		// greebo: Check if we should set some attachments to nonsolid
+		// this applies for instance to the builder guard's pauldrons which
+		// cause twitching and self-collisions when going down
+		if (ent->spawnArgs.GetBool( "drop_set_nonsolid" ))
+		{
+			int curContents = ent->GetPhysics()->GetContents();
+
+			// ishtvan: Also clear the CONTENTS_CORPSE flag (maybe this was a typo in original code?)
+			ent->GetPhysics()->SetContents(curContents & ~(CONTENTS_SOLID|CONTENTS_CORPSE));
+
+			// also have to iterate thru stuff attached to this attachment
+			// ishtvan: left this commentd out because I'm not sure if GetTeamChildren is bugged or not
+			// don't want to accidentally set all attachments to the AI to nonsolid
+			/*
+			idList<idEntity *> AttChildren;
+			ent->GetTeamChildren( &AttChildren );
+			gameLocal.Printf("TEST: drop_set_nonsolid, Num team children = %d", AttChildren.Num() );
+			for( int i=0; i < AttChildren.Num(); i++ )
+			{
+				idPhysics *pChildPhys = AttChildren[i]->GetPhysics();
+				if( pChildPhys == NULL )
+					continue;
+
+				int childContents = pChildPhys->GetContents();
+				pChildPhys->SetContents( childContents & ~(CONTENTS_SOLID|CONTENTS_CORPSE) );
+			}
+			*/
+		}
+
+		bool bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
+		
+		if( !bDrop ) {
+			continue;
+		}
+
+		bool bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
+		bool bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
+		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
+		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
+
+		// Proceed with droppage
+		DetachInd( i );
+
+		if( bSetSolid )
+			mask = CONTENTS_SOLID;
+		if( bSetCorpse )
+			mask = mask | CONTENTS_CORPSE;
+
+		if( mask )
+			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | mask );
+
+		if( bSetFrob )
+			ent->m_bFrobable = true;
+
+		// greebo: Check if we should extinguish the attachment, like torches
+		if ( bExtinguish )
+		{
+			// Get the delay in milliseconds
+			int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
+			if (delay < 0) {
+				delay = 0;
+			}
+
+			// Schedule the extinguish event
+			ent->PostEventMS(&EV_ExtinguishLights, delay);
+		}
+
+		ent->GetPhysics()->Activate();
+		ent->m_droppedByAI = true; // grayman #1330
+	}
+}
+
+void idAFAttachment::CopyBodyTo( idAFAttachment *other )
+{
+	if( body )
+	{
+		idStr modelName = other->spawnArgs.GetString("model","");
+		other->SetBody( body, modelName.c_str(), attachJoint );
+	}
 }
 
 /*
@@ -349,8 +526,23 @@ void idAFAttachment::Restore( idRestoreGame *savefile ) {
 idAFAttachment::Hide
 ================
 */
-void idAFAttachment::Hide( void ) {
+void idAFAttachment::Hide( void ) 
+{
 	idEntity::Hide();
+
+	// ishtvan: Should hide any bind children of the head (copied from idActor)
+	idEntity *ent;
+	idEntity *next;
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			ent->Hide();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->Off();
+			}
+		}
+	}
+
 	UnlinkCombat();
 }
 
@@ -359,8 +551,23 @@ void idAFAttachment::Hide( void ) {
 idAFAttachment::Show
 ================
 */
-void idAFAttachment::Show( void ) {
+void idAFAttachment::Show( void ) 
+{
 	idEntity::Show();
+
+	// ishtvan: Should show any bind children of the head (copied from idActor)
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			ent->Show();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->On();
+			}
+		}
+	}
 	LinkCombat();
 }
 
@@ -372,10 +579,25 @@ Pass damage to body at the bindjoint
 ============
 */
 void idAFAttachment::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-	const char *damageDefName, const float damageScale, const int location ) {
-	
-	if ( body ) {
-		body->Damage( inflictor, attacker, dir, damageDefName, damageScale, attachJoint );
+	const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
+{
+	trace_t *pTrace = NULL;
+
+	if( tr )
+	{
+		trace_t TraceCopy = *tr;
+
+		//TDM Fix: Propagate the trace.
+		// Also, some things like KO check the endpoint of the trace rather than the "location" for the joint hit
+		// So change this in the trace to the attach joint on the body we're attached to.
+		TraceCopy.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( attachJoint );
+		pTrace = &TraceCopy;
+	}
+
+	if ( body ) 
+	{
+		body->Damage( inflictor, attacker, dir, damageDefName, damageScale, attachJoint, pTrace );
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AF Attachment %s passed along damage to actor %s at attachjoint %d \r", name.c_str(), body->name.c_str(), (int) attachJoint );
 	}
 }
 
@@ -466,6 +688,12 @@ void idAFAttachment::SetCombatModel( void ) {
 	} else {
 		combatModel = new idClipModel( modelDefHandle );
 	}
+
+	if (m_StimResponseColl->HasResponse())
+	{
+		combatModel->SetContents( combatModel->GetContents() | CONTENTS_RESPONSE );
+	}
+
 	combatModel->SetOwner( body );
 }
 
@@ -504,6 +732,10 @@ void idAFAttachment::UnlinkCombat( void ) {
 	}
 }
 
+idEntity* idAFAttachment::GetResponseEntity()
+{
+	return body;
+}
 
 /*
 ===============================================================================
@@ -514,9 +746,22 @@ void idAFAttachment::UnlinkCombat( void ) {
 */
 
 const idEventDef EV_SetConstraintPosition( "SetConstraintPosition", "sv" );
+const idEventDef EV_GetLinearVelocityB( "getLinearVelocityB", "d", 'v' );
+const idEventDef EV_GetAngularVelocityB( "getAngularVelocityB", "d", 'v' );
+const idEventDef EV_SetLinearVelocityB( "setLinearVelocityB", "vd" );
+const idEventDef EV_SetAngularVelocityB( "setAngularVelocityB", "vd" );
+const idEventDef EV_GetNumBodies( "getNumBodies", NULL, 'd' );
+const idEventDef EV_RestoreAddedEnts( "restoreAddedEnts", NULL );
 
 CLASS_DECLARATION( idAnimatedEntity, idAFEntity_Base )
 	EVENT( EV_SetConstraintPosition,	idAFEntity_Base::Event_SetConstraintPosition )
+	EVENT( EV_GetLinearVelocityB,		idAFEntity_Base::Event_GetLinearVelocityB )
+	EVENT( EV_GetAngularVelocityB,		idAFEntity_Base::Event_GetAngularVelocityB )
+	EVENT( EV_SetLinearVelocityB,		idAFEntity_Base::Event_SetLinearVelocityB )
+	EVENT( EV_SetAngularVelocityB,		idAFEntity_Base::Event_SetAngularVelocityB )
+	EVENT( EV_GetNumBodies,				idAFEntity_Base::Event_GetNumBodies )
+	EVENT( EV_RestoreAddedEnts,			idAFEntity_Base::RestoreAddedEnts )
+
 END_CLASS
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
@@ -527,12 +772,19 @@ static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
 idAFEntity_Base::idAFEntity_Base
 ================
 */
-idAFEntity_Base::idAFEntity_Base( void ) {
+idAFEntity_Base::idAFEntity_Base( void ) 
+{
 	combatModel = NULL;
 	combatModelContents = 0;
 	nextSoundTime = 0;
 	spawnOrigin.Zero();
 	spawnAxis.Identity();
+	m_bGroundWhenDragged = false;
+	m_GroundBodyMinNum = 0;
+	m_bDragAFDamping = false;
+	m_bCollideWithTeam = true;
+	m_bAFPushMoveables = false;
+	m_AddedEnts.Clear();
 }
 
 /*
@@ -540,9 +792,12 @@ idAFEntity_Base::idAFEntity_Base( void ) {
 idAFEntity_Base::~idAFEntity_Base
 ================
 */
-idAFEntity_Base::~idAFEntity_Base( void ) {
+idAFEntity_Base::~idAFEntity_Base( void ) 
+{
 	delete combatModel;
 	combatModel = NULL;
+	m_GroundBodyList.Clear();
+	m_AddedEnts.Clear();
 }
 
 /*
@@ -550,12 +805,40 @@ idAFEntity_Base::~idAFEntity_Base( void ) {
 idAFEntity_Base::Save
 ================
 */
-void idAFEntity_Base::Save( idSaveGame *savefile ) const {
+void idAFEntity_Base::Save( idSaveGame *savefile ) const 
+{
 	savefile->WriteInt( combatModelContents );
 	savefile->WriteClipModel( combatModel );
 	savefile->WriteVec3( spawnOrigin );
 	savefile->WriteMat3( spawnAxis );
 	savefile->WriteInt( nextSoundTime );
+
+	savefile->WriteBool( m_bGroundWhenDragged );
+	savefile->WriteInt( m_GroundBodyList.Num() );
+	for( int i = 0; i < m_GroundBodyList.Num(); i++ )
+		savefile->WriteInt( m_GroundBodyList[i] );
+	savefile->WriteInt( m_GroundBodyMinNum );
+	savefile->WriteBool( m_bDragAFDamping );
+	savefile->WriteBool( m_bCollideWithTeam );
+	savefile->WriteBool( m_bAFPushMoveables );
+
+	savefile->WriteInt( m_AddedEnts.Num() );
+	for( int j = 0; j < m_AddedEnts.Num(); j++ )
+	{
+		m_AddedEnts[j].ent.Save( savefile );
+		savefile->WriteString( m_AddedEnts[j].bodyName );
+		savefile->WriteString( m_AddedEnts[j].AddedToBody );
+		savefile->WriteInt( m_AddedEnts[j].entContents );
+		savefile->WriteInt( m_AddedEnts[j].entClipMask );
+		// Check the body contents and clipmask just before saving, instead of putting in
+		// the variables bodyContents and bodyClipMask. These are only used on restoring. 
+		// go to hell, const correctness!
+		idAFEntity_Base *thisNoConst = const_cast<idAFEntity_Base *>(this);
+		idAFBody *body = thisNoConst->GetAFPhysics()->GetBody( m_AddedEnts[j].bodyName.c_str() );
+		savefile->WriteInt( body->GetClipModel()->GetContents() );
+		savefile->WriteInt( body->GetClipMask() );
+	}
+
 	af.Save( savefile );
 }
 
@@ -564,7 +847,8 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const {
 idAFEntity_Base::Restore
 ================
 */
-void idAFEntity_Base::Restore( idRestoreGame *savefile ) {
+void idAFEntity_Base::Restore( idRestoreGame *savefile ) 
+{
 	savefile->ReadInt( combatModelContents );
 	savefile->ReadClipModel( combatModel );
 	savefile->ReadVec3( spawnOrigin );
@@ -572,7 +856,42 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( nextSoundTime );
 	LinkCombat();
 
+	savefile->ReadBool( m_bGroundWhenDragged );
+
+	int GroundBodyListNum;
+	savefile->ReadInt( GroundBodyListNum );
+	m_GroundBodyList.SetNum( GroundBodyListNum );
+	for( int i = 0; i < GroundBodyListNum; i++ )
+		savefile->ReadInt( m_GroundBodyList[i] );
+
+	savefile->ReadInt( m_GroundBodyMinNum );
+	savefile->ReadBool( m_bDragAFDamping );
+	savefile->ReadBool( m_bCollideWithTeam );
+	savefile->ReadBool( m_bAFPushMoveables );
+
+	int AddedEntsNum;
+	savefile->ReadInt( AddedEntsNum );
+	m_AddedEnts.SetNum( AddedEntsNum );
+	for( int j = 0; j < AddedEntsNum; j++ )
+	{
+		m_AddedEnts[j].ent.Restore( savefile );
+		savefile->ReadString( m_AddedEnts[j].bodyName );
+		savefile->ReadString( m_AddedEnts[j].AddedToBody );
+		savefile->ReadInt( m_AddedEnts[j].entContents );
+		savefile->ReadInt( m_AddedEnts[j].entClipMask );
+		savefile->ReadInt( m_AddedEnts[j].bodyContents );
+		savefile->ReadInt( m_AddedEnts[j].bodyClipMask );
+	}
+
 	af.Restore( savefile );
+	if( m_bAFPushMoveables )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
+
+	// Schedule any added entities for re-adding when they have spawned
+	PostEventMS( &EV_RestoreAddedEnts, 0 );
 }
 
 /*
@@ -580,10 +899,16 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile ) {
 idAFEntity_Base::Spawn
 ================
 */
-void idAFEntity_Base::Spawn( void ) {
+void idAFEntity_Base::Spawn( void ) 
+{
 	spawnOrigin = GetPhysics()->GetOrigin();
 	spawnAxis = GetPhysics()->GetAxis();
 	nextSoundTime = 0;
+	m_bGroundWhenDragged = spawnArgs.GetBool( "ground_when_dragged", "0" );
+	m_GroundBodyMinNum = spawnArgs.GetInt( "ground_min_number", "0" );
+	m_bDragAFDamping = spawnArgs.GetBool( "drag_af_damping", "0" );
+	m_bCollideWithTeam = spawnArgs.GetBool( "af_collide_with_team", "1" ); // true by default
+	m_bAFPushMoveables = spawnArgs.GetBool( "af_push_moveables", "0" );
 }
 
 /*
@@ -591,7 +916,8 @@ void idAFEntity_Base::Spawn( void ) {
 idAFEntity_Base::LoadAF
 ================
 */
-bool idAFEntity_Base::LoadAF( void ) {
+bool idAFEntity_Base::LoadAF( void ) 
+{
 	idStr fileName;
 
 	if ( !spawnArgs.GetString( "articulatedFigure", "*unknown*", fileName ) ) {
@@ -614,6 +940,14 @@ bool idAFEntity_Base::LoadAF( void ) {
 	animator.CreateFrame( gameLocal.time, true );
 	UpdateVisuals();
 
+	SetUpGroundingVars();
+
+	if( m_bAFPushMoveables )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
+
 	return true;
 }
 
@@ -622,12 +956,57 @@ bool idAFEntity_Base::LoadAF( void ) {
 idAFEntity_Base::Think
 ================
 */
-void idAFEntity_Base::Think( void ) {
-	RunPhysics();
-	UpdateAnimation();
-	if ( thinkFlags & TH_UPDATEVISUALS ) {
+void idAFEntity_Base::Think( void ) 
+{
+	if( !IsHidden() )
+	{
+		RunPhysics();
+		UpdateAnimation();
+	}
+	if ( thinkFlags & TH_UPDATEVISUALS ) 
+	{
 		Present();
 		LinkCombat();
+	}
+
+// TDM: Anim/AF physics mods, generalized behavior that originally was just on AI
+
+	// Update the AF bodies for the anim if we are set to do that
+	if ( m_bAFPushMoveables && af.IsLoaded()
+		&& !IsType(idAI::Type) && !IsHidden()
+		&& animator.FrameHasChanged( gameLocal.time ) ) 
+	{
+		af.ChangePose( this, gameLocal.time );
+
+		// copied from idAI::PushWithAF
+		afTouch_t touchList[ MAX_GENTITIES ];
+		idEntity *pushed_ents[ MAX_GENTITIES ];
+		idEntity *ent;
+		idVec3 vel( vec3_origin );
+		int num_pushed(0), i, j;
+
+		int num = af.EntitiesTouchingAF( touchList );
+		for( i = 0; i < num; i++ ) 
+		{
+			// skip projectiles
+			if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) )
+				continue;
+
+			// make sure we havent pushed this entity already.  this avoids causing double damage
+			for( j = 0; j < num_pushed; j++ ) 
+			{
+				if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
+					break;
+			}
+			if ( j >= num_pushed ) 
+			{
+				ent = touchList[ i ].touchedEnt;
+				pushed_ents[num_pushed++] = ent;
+				vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
+				vel.Normalize();
+				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
+			}
+		}
 	}
 }
 
@@ -749,7 +1128,20 @@ idAFEntity_Base::Collide
 bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	float v, f;
 
-	if ( af.IsActive() ) {
+	idEntity *e = gameLocal.entities[collision.c.entityNum];
+
+	if(e)
+	{
+		ProcCollisionStims( e, collision.c.id );
+		if( e->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(e);
+			alertee->TactileAlert( this );
+		}
+	}
+
+	if ( af.IsActive() ) 
+	{
 		v = -( velocity * collision.c.normal );
 		if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
 			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
@@ -820,8 +1212,9 @@ idClipModel *idAFEntity_Base::GetCombatModel( void ) const {
 idAFEntity_Base::SetCombatContents
 ================
 */
-void idAFEntity_Base::SetCombatContents( bool enable ) {
+bool idAFEntity_Base::SetCombatContents( bool enable ) {
 	assert( combatModel );
+	bool oldIsEnabled = (combatModel->GetContents() != 0);
 	if ( enable && combatModelContents ) {
 		assert( !combatModel->GetContents() );
 		combatModel->SetContents( combatModelContents );
@@ -831,6 +1224,7 @@ void idAFEntity_Base::SetCombatContents( bool enable ) {
 		combatModelContents = combatModel->GetContents();
 		combatModel->SetContents( 0 );
 	}
+	return oldIsEnabled;
 }
 
 /*
@@ -932,6 +1326,443 @@ idAFEntity_Base::Event_SetConstraintPosition
 */
 void idAFEntity_Base::Event_SetConstraintPosition( const char *name, const idVec3 &pos ) {
 	af.SetConstraintPosition( name, pos );
+}
+
+void idAFEntity_Base::Event_SetLinearVelocityB( idVec3 &NewVelocity, int id )
+{
+	GetPhysics()->SetLinearVelocity( NewVelocity, id );
+}
+
+void idAFEntity_Base::Event_SetAngularVelocityB( idVec3 &NewVelocity, int id )
+{
+	GetPhysics()->SetAngularVelocity( NewVelocity, id );
+}
+
+void idAFEntity_Base::Event_GetLinearVelocityB( int id )
+{
+	idThread::ReturnVector( GetPhysics()->GetLinearVelocity( id ) );
+}
+
+void idAFEntity_Base::Event_GetAngularVelocityB( int id )
+{
+	idThread::ReturnVector( GetPhysics()->GetAngularVelocity( id ) );
+}
+
+void idAFEntity_Base::Event_GetNumBodies( void )
+{
+	idThread::ReturnInt( static_cast<idPhysics_AF *>( GetPhysics() )->GetNumBodies() );
+}
+
+void idAFEntity_Base::SetUpGroundingVars( void )
+{
+	if( m_bGroundWhenDragged && af.IsLoaded() )
+	{
+		idLexer	src;
+		idToken	token;
+		idStr tempStr = spawnArgs.GetString( "ground_critical_bodies", "" );
+		
+		m_GroundBodyList.Clear();
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing critical ground bodies list %s\r", tempStr.c_str());
+		if( tempStr.Length() )
+		{
+			src.LoadMemory( tempStr.c_str(), tempStr.Length(), "" );
+			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+			
+			while( src.ReadToken( &token ) )
+				m_GroundBodyList.Append( GetAFPhysics()->GetBodyId(token.c_str()) );
+			
+			src.FreeSource();
+		}
+	}
+}
+
+bool idAFEntity_Base::CollidesWithTeam( void )
+{
+	return m_bCollideWithTeam;
+}
+
+void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t joint )
+{
+	int bodID(0);
+	
+	if( af.IsLoaded() )
+	{
+		bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( joint ) );
+		AddEntByBody( ent, bodID, joint );
+	}
+}
+
+void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID, jointHandle_t joint )
+{
+	float EntMass(0.0), AFMass(0.0), MassOut(0.0), density(0.0);
+	idVec3 COM(vec3_zero), orig(vec3_zero);
+	idMat3 inertiaTensor, axis;
+	idClipModel *EntClip(NULL), *NewClip(NULL);
+	int newBodID(0);
+	SAddedEnt Entry;
+	idStr AddName;
+
+	if( !af.IsLoaded() ) return;
+
+	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
+
+
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Entity origin: %s \r", orig.ToString() );
+	
+	EntClip = ent->GetPhysics()->GetClipModel();
+	axis = EntClip->GetAxis();
+	orig = EntClip->GetOrigin();
+
+	NewClip = new idClipModel(EntClip);
+
+	// Propagate CONTENTS_CORPSE from AF to new clipmodel
+	if( GetAFPhysics()->GetContents() & CONTENTS_CORPSE )
+		NewClip->SetContents( (NewClip->GetContents() & (~CONTENTS_SOLID)) | CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
+	
+	// EntMass = ent->GetPhysics()->GetMass();
+	// FIX: Large masses aren't working, the AFs are not quite that flexible that you can put on a huge mass
+	// Or it could be the occasional small negative elements in the inertia tensor.
+	// In any case for now, we set the masses to 1 so they only collide, don't pull on the AF
+	EntMass = 1.0f;
+	if ( EntMass <= 0.0f || FLOAT_IS_NAN( EntMass ) ) 
+	{
+		EntMass = 1.0f;
+	}
+	AFMass = GetAFPhysics()->GetMass();
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. AF mass: %f , Ent mass: %f \r", AFMass, EntMass );
+
+	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
+	NewClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
+
+	// AF bodies want to have their origin at the center of mass
+	NewClip->TranslateOrigin( -COM );
+	orig += COM * axis;
+
+	// DEBUG:
+//	idVec3 COMNew;
+//	NewClip->GetMassProperties( 1.0f, MassOut, COMNew, inertiaTensor );
+//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: New Clip COM: %s \r", COMNew.ToString() );
+//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Modified origin: %s \r", orig.ToString() );
+
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Linking clipmodel copy... \r" );
+	// FIXME: Do we really want to set id 0 here?  Won't this conflict?
+	NewClip->Link( gameLocal.clip, this, 0, orig, axis );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Clipmodel linked.\r");
+
+	// Add the mass in the AF Structure
+	density = idMath::Fabs( EntMass / MassOut );
+	GetAFPhysics()->SetMass( AFMass + EntMass );
+	
+	AddName = ent->name + idStr(gameLocal.time);
+
+	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodID);
+	idAFBody *body = new idAFBody( AddName, NewClip, density );
+	body->SetClipMask( bodyExist->GetClipMask() );
+	body->SetSelfCollision( false );
+	body->SetRerouteEnt( ent );
+	body->SetWorldOrigin( orig );
+	body->SetWorldAxis( axis );
+	newBodID = GetAFPhysics()->AddBody( body );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added to physics_AF with id %d.\r", newBodID);
+	
+	// ishtvan: Don't add the constraint while animating, wait until full ragdoll mode
+	if( af.IsActive() )
+	{
+		idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
+		GetAFPhysics()->AddConstraint( cf );
+	}
+
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
+
+	// Now add body to AF object, for updating with idAF::ChangePos and the like
+	// We use AF_JOINTMOD_NONE since this new AF shouldn't actually stretch joints on the model when it moves
+	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_NONE, joint );
+
+	// Add to list
+	Entry.ent = ent;
+	Entry.AddedToBody = bodyExist->GetName();
+	Entry.bodyName = AddName;
+	Entry.bodyContents = body->GetClipModel()->GetContents();
+	Entry.bodyClipMask = body->GetClipMask();
+	Entry.entContents = EntClip->GetContents();
+	Entry.entClipMask = ent->GetPhysics()->GetClipMask();
+
+	m_AddedEnts.Append( Entry );
+
+	// Disable the entity's clipmodel
+	// leave CONTENTS_RESPONSE and CONTENTS_FROBABLE alone
+	int SetContents = 0;
+	if( (EntClip->GetContents() & CONTENTS_RESPONSE) != 0 )
+		SetContents = CONTENTS_RESPONSE;
+	
+	if( (EntClip->GetContents() & CONTENTS_FROBABLE) != 0
+		// Temporary fix: CONTENTS_FROBABLE is not currently set on all frobables
+		|| ent->m_bFrobable )
+		SetContents = SetContents | CONTENTS_FROBABLE;
+
+	EntClip->SetContents( SetContents );
+	ent->GetPhysics()->SetClipMask( 0 );
+
+	// Make sure the AF activates as soon as this is done
+	if( af.IsActive() )
+		GetAFPhysics()->Activate();
+		
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
+}
+
+/*
+================
+idAFEntity_Base::RemoveAddedEnt
+================
+*/
+void idAFEntity_Base::RemoveAddedEnt( idEntity *ent )
+{
+	bool bRemoved = false;
+	idStr bodyName;
+
+	for( int i=m_AddedEnts.Num() - 1; i >= 0; i-- )
+	{
+		if(ent && (m_AddedEnts[i].ent.GetEntity() == ent))
+		{
+			bodyName = m_AddedEnts[i].bodyName;
+			GetAFPhysics()->DeleteBody( bodyName.c_str() );
+			af.DeleteBodyExtern( this, bodyName.c_str() );
+			
+			ent->GetPhysics()->SetContents( m_AddedEnts[i].entContents );
+			ent->GetPhysics()->SetClipMask( m_AddedEnts[i].entClipMask );
+			m_AddedEnts.RemoveIndex(i);
+			// Added ent AF bodies have a mass of 1 for now
+			// GetAFPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
+			GetAFPhysics()->SetMass( GetPhysics()->GetMass() - 1.0f );
+
+			bRemoved = true;
+		}
+	}
+
+	if( bRemoved && IsActiveAF() )
+		ActivatePhysics( this );
+}
+
+jointHandle_t idAFEntity_Base::JointForBody( int body )
+{
+	return af.JointForBody( body );
+}
+	
+int	idAFEntity_Base::BodyForJoint( jointHandle_t joint )
+{
+	return af.BodyForJoint( joint );
+}
+
+idAFBody *idAFEntity_Base::AFBodyForEnt( idEntity *ent )
+{
+	idAFBody *returnBody = NULL;
+	for( int i=0; i < m_AddedEnts.Num(); i++ )
+	{
+		if( m_AddedEnts[i].ent.GetEntity() == ent )
+		{
+			idStr bodyName = m_AddedEnts[i].bodyName;
+			returnBody = GetAFPhysics()->GetBody( bodyName.c_str() );
+			break;
+		}
+	}
+
+	return returnBody;
+}
+
+void idAFEntity_Base::RestoreAddedEnts( void )
+{
+	// This must be called after all entities are loaded
+	int TempContents, TempClipMask, bodyID;
+	idEntity *ent;
+	idList<SAddedEnt>	OldAdded;
+	idStr temp;
+	
+	OldAdded = m_AddedEnts;
+	m_AddedEnts.Clear();
+
+	for(int i=0; i<OldAdded.Num(); i++)
+	{
+		// First, we reset all the original clipmodel contents because AddEntByBody will read it and store it
+		TempContents = OldAdded[i].entContents;
+		TempClipMask = OldAdded[i].entClipMask;
+		ent = OldAdded[i].ent.GetEntity();
+		ent->GetPhysics()->SetContents( TempContents );
+		ent->GetPhysics()->SetClipMask( TempClipMask );
+
+		bodyID = GetAFPhysics()->GetBodyId( OldAdded[i].AddedToBody );
+
+		// Add the body again
+		AddEntByBody( ent, bodyID );
+
+		// restore the saved contents and clipmask of the AF body just added
+		idAFBody *body = AFBodyForEnt( ent );
+		if( body )
+		{
+			TempContents = OldAdded[i].bodyContents;
+			TempClipMask = OldAdded[i].bodyClipMask;
+			body->GetClipModel()->SetContents( TempContents );
+			body->SetClipMask( TempClipMask );
+		}
+	}
+}
+
+void idAFEntity_Base::UpdateAddedEntConstraints( void )
+{
+	for( int i=0; i < m_AddedEnts.Num(); i++ )
+	{
+		idStr AddName = m_AddedEnts[i].bodyName;
+		idAFBody *body = GetAFPhysics()->GetBody( AddName.c_str() );
+		idAFBody *bodyExist = GetAFPhysics()->GetBody( m_AddedEnts[i].AddedToBody );
+
+		// get the AF bodies in their most recent position (just before ragdoll start)
+		af.ChangePose( this, gameLocal.time );
+		// add a constraint for the current position
+		idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
+		GetAFPhysics()->AddConstraint( cf );
+	}
+}
+
+void idAFEntity_Base::UnbindNotify( idEntity *ent )
+{
+	idEntity::UnbindNotify( ent );
+	// remove ent from AF if it was dynamically added as an AF body
+	RemoveAddedEnt( ent );
+}
+
+void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr )
+{
+	idEntity *reroute = NULL;
+	idAFBody *StruckBody = NULL;
+	int bodID;
+	
+	if( tr )
+	{
+		bodID = BodyForClipModelId( tr->c.id );
+		StruckBody = GetAFPhysics()->GetBody( bodID );
+		
+		if( StruckBody != NULL )
+			reroute = StruckBody->GetRerouteEnt();
+	}
+	
+	// check for reroute entity on the AF body and damage this instead
+	if( reroute != NULL )
+		reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+	else
+		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+}
+
+/*
+======================
+idAFEntity_Base::ParseAttachments
+======================
+*/
+void idAFEntity_Base::ParseAttachments( void )
+{
+	return;
+}
+
+/*
+======================
+idAFEntity_Base::ParseAttachmentsAF
+======================
+*/
+void idAFEntity_Base::ParseAttachmentsAF( void )
+{
+	// FIX: Preserve initial frame facing when posing the AF prior to attaching
+	// otherwise relationships between new AF bodies and AF bodies they're attached to
+	// get screwed up (since attached entities are attached when the AFEntity is still facing 0,0,0)
+	idMat3 tempAxis = renderEntity.axis;
+	idMat3 tempAxis2 = GetPhysics()->GetAxis();
+	renderEntity.axis = mat3_identity;
+	SetAxis(mat3_identity);
+
+	af.SetupPose(this, gameLocal.time);
+	idEntity::ParseAttachments();
+
+	renderEntity.axis = tempAxis;
+	SetAxis(tempAxis2);
+}
+
+void idAFEntity_Base::ReAttachToPos
+	( const char *AttName, const char *PosName  )
+{
+	int ind = GetAttachmentIndex( AttName );
+	if (ind == -1 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return;
+	}
+
+	idEntity* ent = GetAttachment( ind );
+
+	if( !ent )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
+		return;
+	}
+ 
+	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
+	idAFBody *body = NULL;
+	int bodyContents = 0, bodyClipMask = 0;
+	bool bStoredAFBodyInfo = false;
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
+	idEntity::ReAttachToPos( AttName, PosName );
+
+	// copy over the old AF body contents
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
+}
+
+void idAFEntity_Base::ReAttachToCoords
+	( const char *AttName, idStr jointName, 
+		idVec3 offset, idAngles angles  )
+{
+	idEntity *ent(NULL);
+	CAttachInfo *attachment = GetAttachInfo( AttName );
+
+	if( !attachment )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		return;
+	}
+	
+	ent = attachment->ent.GetEntity();
+	if( !attachment->ent.IsValid() || !ent )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", name.c_str());
+		return;
+	}
+
+	// retain the AF body contents (don't want to accidentally re-enable them if clip disabled)
+	idAFBody *body = NULL;
+	int bodyContents = 0, bodyClipMask = 0;
+	bool bStoredAFBodyInfo = false;
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL )
+	{
+		bodyContents = body->GetClipModel()->GetContents();
+		bodyClipMask = body->GetClipMask();
+		bStoredAFBodyInfo = true;
+	}
+
+	idAnimatedEntity::ReAttachToCoords( AttName, jointName, offset, angles );
+
+	// copy over the old AF body contents
+	if( (body = static_cast<idAFEntity_Base *>(this)->AFBodyForEnt( ent )) != NULL
+		&& bStoredAFBodyInfo )
+	{
+		body->GetClipModel()->SetContents( bodyContents );
+		body->SetClipMask( bodyClipMask );
+	}
 }
 
 /*
@@ -1082,11 +1913,15 @@ void idAFEntity_Gibbable::Present( void ) {
 idAFEntity_Gibbable::Damage
 ================
 */
-void idAFEntity_Gibbable::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location ) {
-	if ( !fl.takedamage ) {
+void idAFEntity_Gibbable::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
+{
+	idAFEntity_Base::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );	
+	
+	if ( !fl.takedamage ) 
+	{
 		return;
 	}
-	idAFEntity_Base::Damage( inflictor, attacker, dir, damageDefName, damageScale, location );
+	
 	if ( health < -20 && spawnArgs.GetBool( "gib" ) ) {
 		Gib( dir, damageDefName );
 	}
@@ -1248,7 +2083,8 @@ idAFEntity_Generic::Think
 void idAFEntity_Generic::Think( void ) {
 	idAFEntity_Base::Think();
 
-	if ( keepRunningPhysics ) {
+	if ( keepRunningPhysics && !IsHidden() ) 
+	{
 		BecomeActive( TH_PHYSICS );
 	}
 }
@@ -1266,6 +2102,8 @@ void idAFEntity_Generic::Spawn( void ) {
 	SetCombatModel();
 
 	SetPhysics( af.GetPhysics() );
+
+	ParseAttachmentsAF();
 
 	af.GetPhysics()->PutToRest();
 	if ( !spawnArgs.GetBool( "nodrop", "0" ) ) {
@@ -1305,6 +2143,10 @@ void idAFEntity_Generic::Event_Activate( idEntity *activator ) {
 	} else {
 		PostEventSec( &EV_SetAngularVelocity, delay, init_avelocity );
 	}
+
+	// greebo: Reactivate the animation flag, just in case
+	// This hopefully helps rope arrows to not stick out straight in the air
+	BecomeActive(TH_ANIMATE);
 }
 
 
@@ -1347,14 +2189,16 @@ idAFEntity_WithAttachedHead::~idAFEntity_WithAttachedHead() {
 idAFEntity_WithAttachedHead::Spawn
 ================
 */
-void idAFEntity_WithAttachedHead::Spawn( void ) {
-	SetupHead();
-
+void idAFEntity_WithAttachedHead::Spawn( void ) 
+{
 	LoadAF();
 
 	SetCombatModel();
 
 	SetPhysics( af.GetPhysics() );
+
+	SetupHead();
+	ParseAttachmentsAF();
 
 	af.GetPhysics()->PutToRest();
 	if ( !spawnArgs.GetBool( "nodrop", "0" ) ) {
@@ -1395,33 +2239,78 @@ void idAFEntity_WithAttachedHead::Restore( idRestoreGame *savefile ) {
 idAFEntity_WithAttachedHead::SetupHead
 ================
 */
-void idAFEntity_WithAttachedHead::SetupHead( void ) {
-	idAFAttachment		*headEnt;
-	idStr				jointName;
-	const char			*headModel;
-	jointHandle_t		joint;
-	idVec3				origin;
-	idMat3				axis;
+void idAFEntity_WithAttachedHead::SetupHead()
+{
+	idStr headModelDefName = spawnArgs.GetString( "def_head", "" );
 
-	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
-		jointName = spawnArgs.GetString( "head_joint" );
-		joint = animator.GetJointHandle( jointName );
+	idVec3 modelOffset = spawnArgs.GetVector("offsetModel", "0 0 0");
+	idVec3 HeadModelOffset = spawnArgs.GetVector("offsetHeadModel", "0 0 0");
+
+	if ( !headModelDefName.IsEmpty() ) 
+	{
+		// We look if the head model is defined as a key to have a specific offset.
+		// If that is not the case, then we use the default value, if it exists, 
+		// otherwise there is no offset at all.
+		if (spawnArgs.FindKey(headModelDefName) != NULL)
+		{
+			HeadModelOffset = spawnArgs.GetVector(headModelDefName, "0 0 0");
+		}
+
+		idStr jointName = spawnArgs.GetString( "head_joint" );
+		jointHandle_t joint = animator.GetJointHandle( jointName.c_str() );
 		if ( joint == INVALID_JOINT ) {
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
 
-		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, NULL ) );
+		// Setup the default spawnargs for all heads
+		idDict args;
+
+		const idDeclEntityDef* def = gameLocal.FindEntityDef(headModelDefName, false);
+
+		if (def == NULL)
+		{
+			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
+
+			// Try to fallback on the default head entityDef
+			def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
+		}
+
+		if (def != NULL)
+		{
+			// Make a copy of the default spawnargs
+			args = def->dict;
+		}
+		else
+		{
+			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
+		}
+
+		// Spawn the head entity
+		idEntity* ent = gameLocal.SpawnEntityType(idAFAttachment::Type, &args);
+		idAFAttachment* headEnt = static_cast<idAFAttachment*>(ent);
+
+		// Retrieve the actual model from the head entityDef
+		idStr headModel = args.GetString("model");
+		if (headModel.IsEmpty())
+		{
+			gameLocal.Warning("No 'model' spawnarg on head entityDef: %s", headModelDefName.c_str());
+		}
+
 		headEnt->SetName( va( "%s_head", name.c_str() ) );
 		headEnt->SetBody( this, headModel, joint );
 		headEnt->SetCombatModel();
 		head = headEnt;
 
+		idVec3				origin;
+		idMat3				axis;
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
+		origin = renderEntity.origin + ( origin + modelOffset + HeadModelOffset ) * renderEntity.axis;
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
 		headEnt->BindToJoint( this, joint, true );
+
+		// greebo: Setup the frob-peer relationship between head and body
+		m_FrobPeers.AddUnique(headEnt->name);
 	}
 }
 
@@ -1610,6 +2499,8 @@ void idAFEntity_Vehicle::Spawn( void ) {
 	SetCombatModel();
 
 	SetPhysics( af.GetPhysics() );
+
+	ParseAttachmentsAF();
 
 	fl.takedamage = true;
 
@@ -2314,6 +3205,8 @@ void idAFEntity_SteamPipe::Spawn( void ) {
 
 	SetPhysics( af.GetPhysics() );
 
+	ParseAttachmentsAF();
+
 	fl.takedamage = true;
 
 	steamBodyName = spawnArgs.GetString( "steamBody", "" );
@@ -2391,123 +3284,6 @@ void idAFEntity_SteamPipe::Think( void ) {
 	}
 
 	idAFEntity_Base::Think();
-}
-
-
-/*
-===============================================================================
-
-  idAFEntity_ClawFourFingers
-
-===============================================================================
-*/
-
-const idEventDef EV_SetFingerAngle( "setFingerAngle", "f" );
-const idEventDef EV_StopFingers( "stopFingers" );
-
-CLASS_DECLARATION( idAFEntity_Base, idAFEntity_ClawFourFingers )
-	EVENT( EV_SetFingerAngle,		idAFEntity_ClawFourFingers::Event_SetFingerAngle )
-	EVENT( EV_StopFingers,			idAFEntity_ClawFourFingers::Event_StopFingers )
-END_CLASS
-
-static const char *clawConstraintNames[] = {
-	"claw1", "claw2", "claw3", "claw4"
-};
-
-/*
-================
-idAFEntity_ClawFourFingers::idAFEntity_ClawFourFingers
-================
-*/
-idAFEntity_ClawFourFingers::idAFEntity_ClawFourFingers( void ) {
-	fingers[0]	= NULL;
-	fingers[1]	= NULL;
-	fingers[2]	= NULL;
-	fingers[3]	= NULL;
-}
-
-/*
-================
-idAFEntity_ClawFourFingers::Save
-================
-*/
-void idAFEntity_ClawFourFingers::Save( idSaveGame *savefile ) const {
-	int i;
-
-	for ( i = 0; i < 4; i++ ) {
-		fingers[i]->Save( savefile );
-	}
-}
-
-/*
-================
-idAFEntity_ClawFourFingers::Restore
-================
-*/
-void idAFEntity_ClawFourFingers::Restore( idRestoreGame *savefile ) {
-	int i;
-
-	for ( i = 0; i < 4; i++ ) {
-		fingers[i] = static_cast<idAFConstraint_Hinge *>(af.GetPhysics()->GetConstraint( clawConstraintNames[i] ));
-		fingers[i]->Restore( savefile );
-	}
-
-	SetCombatModel();
-	LinkCombat();
-}
-
-/*
-================
-idAFEntity_ClawFourFingers::Spawn
-================
-*/
-void idAFEntity_ClawFourFingers::Spawn( void ) {
-	int i;
-
-	LoadAF();
-
-	SetCombatModel();
-
-	af.GetPhysics()->LockWorldConstraints( true );
-	af.GetPhysics()->SetForcePushable( true );
-	SetPhysics( af.GetPhysics() );
-
-	fl.takedamage = true;
-
-	for ( i = 0; i < 4; i++ ) {
-		fingers[i] = static_cast<idAFConstraint_Hinge *>(af.GetPhysics()->GetConstraint( clawConstraintNames[i] ));
-		if ( !fingers[i] ) {
-			gameLocal.Error( "idClaw_FourFingers '%s': can't find claw constraint '%s'", name.c_str(), clawConstraintNames[i] );
-		}
-	}
-}
-
-/*
-================
-idAFEntity_ClawFourFingers::Event_SetFingerAngle
-================
-*/
-void idAFEntity_ClawFourFingers::Event_SetFingerAngle( float angle ) {
-	int i;
-
-	for ( i = 0; i < 4; i++ ) {
-		fingers[i]->SetSteerAngle( angle );
-		fingers[i]->SetSteerSpeed( 0.5f );
-	}
-	af.GetPhysics()->Activate();
-}
-
-/*
-================
-idAFEntity_ClawFourFingers::Event_StopFingers
-================
-*/
-void idAFEntity_ClawFourFingers::Event_StopFingers( void ) {
-	int i;
-
-	for ( i = 0; i < 4; i++ ) {
-		fingers[i]->SetSteerAngle( fingers[i]->GetAngle() );
-	}
 }
 
 
@@ -2676,26 +3452,26 @@ idGameEdit::AF_CreateMesh
 ================
 */
 idRenderModel *idGameEdit::AF_CreateMesh( const idDict &args, idVec3 &meshOrigin, idMat3 &meshAxis, bool &poseIsSet ) {
-	int i, jointNum;
-	const idDeclAF *af;
-	const idDeclAF_Body *fb;
+	int i(0), jointNum(0);
+	const idDeclAF *af(NULL);
+	const idDeclAF_Body *fb(NULL);
 	renderEntity_t ent;
-	idVec3 origin, *bodyOrigin, *newBodyOrigin, *modifiedOrigin;
-	idMat3 axis, *bodyAxis, *newBodyAxis, *modifiedAxis;
-	declAFJointMod_t *jointMod;
+	idVec3 origin, *bodyOrigin(NULL), *newBodyOrigin(NULL), *modifiedOrigin(NULL);
+	idMat3 axis, *bodyAxis(NULL), *newBodyAxis(NULL), *modifiedAxis(NULL);
+	declAFJointMod_t *jointMod(NULL);
 	idAngles angles;
-	const idDict *defArgs;
-	const idKeyValue *arg;
+	const idDict *defArgs(NULL);
+	const idKeyValue *arg(NULL);
 	idStr name;
 	jointTransformData_t data;
-	const char *classname, *afName, *modelName;
-	idRenderModel *md5;
-	const idDeclModelDef *modelDef;
-	const idMD5Anim *MD5anim;
-	const idMD5Joint *MD5joint;
-	const idMD5Joint *MD5joints;
+	const char *classname(NULL), *afName(NULL), *modelName(NULL);
+	idRenderModel *md5(NULL);
+	const idDeclModelDef *modelDef(NULL);
+	const idMD5Anim *MD5anim(NULL);
+	const idMD5Joint *MD5joint(NULL);
+	const idMD5Joint *MD5joints(NULL);
 	int numMD5joints;
-	idJointMat *originalJoints;
+	idJointMat *originalJoints(NULL);
 	int parentNum;
 
 	poseIsSet = false;

@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 /*
 ================
@@ -43,6 +29,12 @@ idInterpreter::idInterpreter() {
 	memset( localstack, 0, sizeof( localstack ) );
 	memset( callStack, 0, sizeof( callStack ) );
 	Reset();
+#ifdef PROFILE_SCRIPT
+	while (functionTimers.size() > 0)
+	{
+		functionTimers.pop();
+	}
+#endif
 }
 
 /*
@@ -156,6 +148,20 @@ idInterpreter::Reset
 ================
 */
 void idInterpreter::Reset( void ) {
+#ifdef PROFILE_SCRIPT
+	// Clear out any function timers
+	while (functionTimers.size() > 0)
+	{
+		idTimer& topMost = functionTimers.top();
+		if (topMost.Running())
+		{
+			topMost.Stop();
+		}
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Resetting script stack, Timer: %lf\n", functionTimers.top().Milliseconds());
+		functionTimers.pop();
+	}
+#endif
+
 	callStackDepth = 0;
 	localstackUsed = 0;
 	localstackBase = 0;
@@ -425,7 +431,7 @@ idInterpreter::Error
 Aborts the currently executing function
 ============
 */
-void idInterpreter::Error( char *fmt, ... ) const {
+void idInterpreter::Error( const char *fmt, ... ) const {
 	va_list argptr;
 	char	text[ 1024 ];
 
@@ -450,7 +456,7 @@ idInterpreter::Warning
 Prints file and line number information with warning.
 ============
 */
-void idInterpreter::Warning( char *fmt, ... ) const {
+void idInterpreter::Warning( const char *fmt, ... ) const {
 	va_list argptr;
 	char	text[ 1024 ];
 
@@ -954,6 +960,16 @@ bool idInterpreter::Execute( void ) {
 		instructionPointer--;
 	}
 
+#ifdef PROFILE_SCRIPT
+	if (debug && functionTimers.size() == 0) {
+		// Create a new function timer, as we don't appear to have one
+		functionTimers.push(idTimer());
+	}
+	if (debug) {
+		functionTimers.top().Start();
+	}
+#endif
+
 	runaway = 5000000;
 
 	doneProcessing = false;
@@ -969,7 +985,31 @@ bool idInterpreter::Execute( void ) {
 
 		switch( st->op ) {
 		case OP_RETURN:
+
+#ifdef PROFILE_SCRIPT
+			if (debug && functionTimers.size() > 0)
+			{
+				// greebo: End the current timer, before adding a new one
+				functionTimers.top().Stop();
+
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Spent %lf msec in function %s.", functionTimers.top().Milliseconds(), currentFunction->Name());
+
+				// Remove the stopped timer
+				functionTimers.pop();
+			}
+#endif
+			// Actually leave the function
 			LeaveFunction( st->a );
+
+#ifdef PROFILE_SCRIPT
+			// greebo: Maybe we have a timer of a previous function?
+			if (debug && functionTimers.size() > 0)
+			{
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Restarting timer of previous function: %s", currentFunction->Name());
+				// Start the timer of the previous thread
+				functionTimers.top().Start();
+			}
+#endif
 			break;
 
 		case OP_THREAD:
@@ -1000,10 +1040,32 @@ bool idInterpreter::Execute( void ) {
 			break;
 
 		case OP_CALL:
+
+#ifdef PROFILE_SCRIPT
+			if (debug && functionTimers.size() > 0)
+			{
+				// End the current timer, before leaving the current one
+				functionTimers.top().Stop();
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
+			}
+#endif
 			EnterFunction( st->a->value.functionPtr, false );
+#ifdef PROFILE_SCRIPT
+			if (debug) {
+				// Add and start a new timer
+				functionTimers.push(idTimer());
+
+				functionTimers.top().Clear();
+				functionTimers.top().Start();
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Starting new timer on entering function %s.", currentFunction->Name());
+			}
+#endif
 			break;
 
 		case OP_EVENTCALL:
+#ifdef PROFILE_SCRIPT
+			//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Calling script event.");
+#endif
 			CallEvent( st->a->value.functionPtr, st->b->value.argSize );
 			break;
 
@@ -1012,8 +1074,35 @@ bool idInterpreter::Execute( void ) {
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
 				func = obj->GetTypeDef()->GetFunction( st->b->value.virtualFunction );
+
+#ifdef PROFILE_SCRIPT
+				if (debug && functionTimers.size() > 0)
+				{
+					// End the current timer, before leaving the current one
+					functionTimers.top().Stop();
+					//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
+				}
+#endif
 				EnterFunction( func, false );
+#ifdef PROFILE_SCRIPT
+				if (debug) {
+					// Add and start a new timer
+					functionTimers.push(idTimer());
+
+					functionTimers.top().Clear();
+					functionTimers.top().Start();
+					//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Starting new timer on entering function %s.", currentFunction->Name());
+				}
+#endif
 			} else {
+				int entNum = *var_a.entityNumberPtr;
+				idEntity *ent = GetEntity(entNum);
+				if (ent) {
+					Warning("Tried to call function on entity %s, but entity has no script object", ent->name.c_str());
+				} else {
+					Warning("Tried to call function on non-existent entity (#%d)", entNum);
+				}
+
 				// return a 'safe' value
 				gameLocal.program.ReturnVector( vec3_zero );
 				gameLocal.program.ReturnString( "" );
@@ -1831,5 +1920,99 @@ bool idInterpreter::Execute( void ) {
 		}
 	}
 
+#ifdef PROFILE_SCRIPT
+	if (debug && functionTimers.size() > 0) {
+		functionTimers.top().Stop();
+	}
+#endif
+
 	return threadDying;
 }
+
+bool idInterpreter::EnterFunctionVarArg(const function_t *func, bool clearStack, const char *fmt, ...)
+{
+	bool rc = false;
+	va_list argptr;
+
+	va_start(argptr, fmt);
+	rc = EnterFunctionVarArgVN(func, clearStack, fmt, argptr);
+	va_end(argptr);
+
+	return rc;
+}
+
+bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStack, const char *fmt, va_list args)
+{
+	bool rc = false;
+	char c;
+	int i;
+	float f;
+	idEntity *e;
+	idVec3 *v;
+
+	if(func == NULL)
+		goto Quit;
+
+	if(clearStack)
+		Reset();
+
+	while((c = *fmt) != 0)
+	{
+		switch(c)
+		{
+			case 'e':
+				e = va_arg(args, idEntity *);
+				// SZ: Allow pushing of null entity pointers (entity ID 0)
+				if (e != NULL)
+				{
+					Push(e->entityNumber + 1);
+				}
+				else
+				{
+					Push (0);
+				}
+			break;
+
+			case 'v':
+				v = va_arg(args, idVec3 *);
+				Push(*reinterpret_cast<int *>(&v->x));
+				Push(*reinterpret_cast<int *>(&v->y));
+				Push(*reinterpret_cast<int *>(&v->z));
+			break;
+
+			case 's':
+				PushString(va_arg(args, char *));
+			break;
+
+			case 'f':
+				f = va_arg(args, double);
+				// i = static_cast<int>(f);
+				i = *( (int*) &f);
+				Push(i);
+			break;
+
+			case 'd':
+				i = va_arg(args, int);
+				Push(i);
+			break;
+
+			case 'b':
+				i = va_arg(args, int);
+				Push(i);
+			break;
+
+			default:		// Unknown argument, so we clear the stack and exit
+				Reset();
+				goto Quit;
+		}
+		fmt++;
+	}
+
+	EnterFunction(func, false);
+
+	rc = true;
+
+Quit:
+	return rc;
+}
+

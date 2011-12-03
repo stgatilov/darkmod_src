@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
 
 #define MAX_BOUNDS_AREAS	16
 
@@ -860,20 +846,20 @@ idPVS::Shutdown
 */
 void idPVS::Shutdown( void ) {
 	if ( connectedAreas ) {
-		delete connectedAreas;
+		delete[] connectedAreas;
 		connectedAreas = NULL;
 	}
 	if ( areaQueue ) {
-		delete areaQueue;
+		delete[] areaQueue;
 		areaQueue = NULL;
 	}
 	if ( areaPVS ) {
-		delete areaPVS;
+		delete[] areaPVS;
 		areaPVS = NULL;
 	}
 	if ( currentPVS ) {
 		for ( int i = 0; i < MAX_CURRENT_PVS; i++ ) {
-			delete currentPVS[i].pvs;
+			delete[] currentPVS[i].pvs;
 			currentPVS[i].pvs = NULL;
 		}
 	}
@@ -1108,6 +1094,13 @@ pvsHandle_t idPVS::AllocCurrentPVS( unsigned int h ) const {
 		if ( currentPVS[i].handle.i == -1 ) {
 			currentPVS[i].handle.i = i;
 			currentPVS[i].handle.h = h;
+/*
+			// angua: debug output, shows allocated PVS numbers in front of the player
+			idVec3 viewPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() + idVec3(0,0,50+6*i)
+				+ gameLocal.GetLocalPlayer()->viewAngles.ToForward() * 30;
+			idStr maxPVS(i);
+			gameRenderWorld->DrawText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  gameLocal.msec);
+*/
 			return currentPVS[i].handle;
 		}
 	}
@@ -1126,8 +1119,10 @@ idPVS::FreeCurrentPVS
 */
 void idPVS::FreeCurrentPVS( pvsHandle_t handle ) const {
 	if ( handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h ) {
-		gameLocal.Error( "idPVS::FreeCurrentPVS: invalid handle" );
+		gameLocal.Warning( "idPVS::FreeCurrentPVS: invalid handle" );
+		return;
 	}
+
 	currentPVS[handle.i].handle.i = -1;
 }
 
@@ -1420,3 +1415,35 @@ void idPVS::ReadPVS( const pvsHandle_t handle, const idBitMsg &msg ) {
 
 #endif
 
+
+/*
+================
+idPVS::CheckAreasForPortalSky
+================
+*/
+bool idPVS::CheckAreasForPortalSky( const pvsHandle_t handle, const idVec3 &origin ) {
+	int j, sourceArea;
+
+	if ( handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h ) {
+		return false;
+	}
+
+	sourceArea = gameRenderWorld->PointInArea( origin );
+
+	if ( sourceArea == -1 ) {
+		return false;
+	}
+
+	for ( j = 0; j < numAreas; j++ ) {
+
+		if ( !( currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)) ) ) {
+			continue;
+		}
+
+		if ( gameRenderWorld->CheckAreaForPortalSky( j ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}

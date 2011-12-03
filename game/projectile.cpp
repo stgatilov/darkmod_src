@@ -1,35 +1,24 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
  
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/ProjectileResult.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h" // grayman #2885
 
 /*
 ===============================================================================
@@ -40,7 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 
-static const int BFG_DAMAGE_FREQUENCY			= 333;
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 200.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 400.0f;
 
@@ -48,6 +36,11 @@ const idEventDef EV_Explode( "<explode>", NULL );
 const idEventDef EV_Fizzle( "<fizzle>", NULL );
 const idEventDef EV_RadiusDamage( "<radiusdmg>", "e" );
 const idEventDef EV_GetProjectileState( "getProjectileState", NULL, 'd' );
+// greebo: The launch method (takes 3 vectors as arguments)
+const idEventDef EV_Launch("launch", "vvv");
+const idEventDef EV_ActivateProjectile("<activateProjectile>", NULL);
+const idEventDef EV_TDM_Mine_ClearPlayerImmobilization("EV_TDM_Mine_ClearPlayerImmobilization", "e"); // grayman #2478 - allows player to handle weapons again
+const idEventDef EV_Mine_Replace("<mine_Replace>", NULL); // grayman #2478
 
 CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Explode,				idProjectile::Event_Explode )
@@ -55,6 +48,11 @@ CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Touch,				idProjectile::Event_Touch )
 	EVENT( EV_RadiusDamage,			idProjectile::Event_RadiusDamage )
 	EVENT( EV_GetProjectileState,	idProjectile::Event_GetProjectileState )
+	EVENT( EV_Launch,				idProjectile::Event_Launch )
+	EVENT( EV_ActivateProjectile,	idProjectile::Event_ActivateProjectile )
+	EVENT( EV_TDM_Mine_ClearPlayerImmobilization, idProjectile::Event_ClearPlayerImmobilization ) // grayman #2478
+	EVENT( EV_TDM_Lock_OnLockPicked, idProjectile::Event_Lock_OnLockPicked ) // grayman #2478
+	EVENT( EV_Mine_Replace,	idProjectile::Event_Mine_Replace ) // grayman #2478
 END_CLASS
 
 /*
@@ -74,15 +72,17 @@ idProjectile::idProjectile( void ) {
 	lightStartTime		= 0;
 	lightEndTime		= 0;
 	lightColor			= vec3_zero;
-	state				= SPAWNED;
 	damagePower			= 1.0f;
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	memset( &renderLight, 0, sizeof( renderLight ) );
 
 	// note: for net_instanthit projectiles, we will force this back to false at spawn time
-	fl.networkSync		= true;
 
+	fl.networkSync		= true;
 	netSyncPhysics		= false;
+	m_Lock				= NULL;  // grayman #2478
+	isMine				= false; // grayman #2478
+	replaced			= false; // grayman #2908
 }
 
 /*
@@ -92,11 +92,38 @@ idProjectile::Spawn
 */
 void idProjectile::Spawn( void ) {
 	physicsObj.SetSelf( this );
-	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
+
+	if (!GetPhysics()->GetClipModel()->IsTraceModel())
+	{
+		// greebo: Clipmodel is not a trace model, try to construct it from the collision mesh
+		idTraceModel traceModel;
+
+		if ( !collisionModelManager->TrmFromModel( spawnArgs.GetString("model"), traceModel ) )
+		{
+			gameLocal.Error( "idProjectile '%s': cannot load tracemodel from %s", name.c_str(), spawnArgs.GetString("model") );
+			return;
+		}
+
+		// Construct a new clipmodel from that loaded tracemodel
+		physicsObj.SetClipModel(new idClipModel(traceModel), 1);
+	}
+	else
+	{
+		// Use the existing clipmodel, it's good enough
+		physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
+	}
+	
 	physicsObj.SetContents( 0 );
 	physicsObj.SetClipMask( 0 );
 	physicsObj.PutToRest();
 	SetPhysics( &physicsObj );
+}
+
+void idProjectile::AddObjectsToSaveGame(idSaveGame* savefile) // grayman #2478
+{
+	idEntity::AddObjectsToSaveGame(savefile);
+
+	savefile->AddObject(m_Lock);
 }
 
 /*
@@ -109,8 +136,11 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	owner.Save( savefile );
 
 	projectileFlags_s flags = projectileFlags;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
+
 
 	savefile->WriteFloat( thrust );
 	savefile->WriteInt( thrust_end );
@@ -128,6 +158,8 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
+	savefile->WriteBool(isMine);	// grayman #2478
+	savefile->WriteBool(replaced);	// grayman #2908
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
@@ -145,6 +177,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->Read( &projectileFlags, sizeof( projectileFlags ) );
 	LittleBitField( &projectileFlags, sizeof( projectileFlags ) );
 
+
 	savefile->ReadFloat( thrust );
 	savefile->ReadInt( thrust_end );
 
@@ -161,6 +194,8 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
+	savefile->ReadBool(isMine);		// grayman #2478
+	savefile->ReadBool(replaced);	// grayman #2908
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
@@ -183,6 +218,16 @@ idProjectile::GetOwner
 */
 idEntity *idProjectile::GetOwner( void ) const {
 	return owner.GetEntity();
+}
+
+/*
+================
+idProjectile::SetReplaced
+================
+*/
+void idProjectile::SetReplaced() // grayman #2908
+{
+	this->replaced = true;
 }
 
 /*
@@ -215,7 +260,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 
 	memset( &renderLight, 0, sizeof( renderLight ) );
 	shaderName = spawnArgs.GetString( "mtr_light_shader" );
-	if ( *(const char *)shaderName ) {
+	if ( *(const char*)shaderName ) {
 		renderLight.shader = declManager->FindMaterial( shaderName, false );
 		renderLight.pointLight = true;
 		renderLight.lightRadius[0] =
@@ -226,6 +271,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 		renderLight.shaderParms[1] = light_color[1];
 		renderLight.shaderParms[2] = light_color[2];
 		renderLight.shaderParms[3] = 1.0f;
+		renderLight.noShadows = spawnArgs.GetBool("light_noshadows", "0");
 	}
 
 	spawnArgs.GetVector( "light_offset", "0 0 0", lightOffset );
@@ -240,6 +286,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 
 	state = CREATED;
 
+
 	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
 		netSyncPhysics = true;
 	}
@@ -253,6 +300,7 @@ idProjectile::~idProjectile
 idProjectile::~idProjectile() {
 	StopSound( SND_CHANNEL_ANY, false );
 	FreeLightDef();
+	delete m_Lock; // grayman #2478
 }
 
 /*
@@ -284,6 +332,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	float			bounce;
 	float			mass;
 	float			speed;
+	float			delay;
 	float			gravity;
 	idVec3			gravVec;
 	idVec3			tmp;
@@ -316,8 +365,15 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	contact_friction	= spawnArgs.GetFloat( "contact_friction" );
 	bounce				= spawnArgs.GetFloat( "bounce" );
 	mass				= spawnArgs.GetFloat( "mass" );
-	gravity				= spawnArgs.GetFloat( "gravity" );
+					
+	// greebo: Fall back to default gravity if the spawnarg is missing completely (still allows "0" gravity being set)
+	if (!spawnArgs.GetFloat("gravity", "0", gravity))
+	{
+		gravity = gameLocal.GetGravity().Length();
+	}
+
 	fuse				= spawnArgs.GetFloat( "fuse" );
+	delay				= spawnArgs.GetFloat( "delay" );
 
 	projectileFlags.detonate_on_world	= spawnArgs.GetBool( "detonate_on_world" );
 	projectileFlags.detonate_on_actor	= spawnArgs.GetBool( "detonate_on_actor" );
@@ -355,7 +411,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 		contents |= CONTENTS_TRIGGER;
 	}
 	if ( !spawnArgs.GetBool( "no_contents" ) ) {
-		contents |= CONTENTS_PROJECTILE;
+		contents |= CONTENTS_PROJECTILE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP;
 		clipMask |= CONTENTS_PROJECTILE;
 	}
 
@@ -377,7 +433,17 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	physicsObj.SetLinearVelocity( axis[ 2 ] * speed + pushVelocity );
 	physicsObj.SetAngularVelocity( angular_velocity.ToAngularVelocity() * axis );
 	physicsObj.SetOrigin( start );
+
+	// greebo: Allow overriding of the projectile orientation via "angles" spawnarg
+	idAngles angles;
+	if (spawnArgs.GetAngles("angles", "0 0 0", angles))
+	{
+		axis = angles.ToMat3();
+	}
 	physicsObj.SetAxis( axis );
+
+	// grayman #2478 - is this a mine?
+	isMine =  spawnArgs.GetBool("is_mine","0");
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
 
@@ -392,13 +458,25 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 				fuse = 0.0f;
 			}
 			PostEventSec( &EV_Explode, fuse );
-		} else {
+		} 
+		// greebo: Added this to allow for mines
+		else if ( spawnArgs.GetBool( "no_fizzle" ) ) {
+			if ( fuse < 0.0f ) {
+				fuse = 0.0f;
+			}
+		}
+		else {
 			fuse -= timeSinceFire;
 			if ( fuse < 0.0f ) {
 				fuse = 0.0f;
 			}
 			PostEventSec( &EV_Fizzle, fuse );
 		}
+	}
+
+	if (delay > 0.0f) {
+		// Activate this projectile in <delay> seconds
+		PostEventSec( &EV_ActivateProjectile, delay);
 	}
 
 	if ( projectileFlags.isTracer ) {
@@ -423,7 +501,68 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	UpdateVisuals();
 
-	state = LAUNCHED;
+	// Set this to inactive if there is a delay set
+	state = (delay > 0) ? INACTIVE : LAUNCHED;
+}
+
+/*
+=========================
+idProjectile::IsMine - grayman #2478
+=========================
+*/
+
+bool idProjectile::IsMine()
+{
+	return isMine;
+}
+
+/*
+=========================
+idProjectile::IsArmed - grayman #2906
+=========================
+*/
+
+bool idProjectile::IsArmed()
+{
+	return ( state == LAUNCHED );
+}
+
+/*
+=========================
+idProjectile::AngleAdjust - grayman #2478
+=========================
+*/
+
+float idProjectile::AngleAdjust(float angle)
+{
+	// Adjust a mine's pitch and roll angles so that it wants to
+	// return to the vertical. A larger adjustment occurs when
+	// the given angle is near +- 90 degrees. A smaller adjustment
+	// occurs when the angle is near zero or near +- 180 degrees.
+	// This keeps mines from flipping over if they land upside-down,
+	// but allows them to correct when in flight. The amount of
+	// adjustment varies between 0 and 5 degrees.
+
+	float factor = 5.0f/90.0f;
+	float adjust = 0;
+
+	if (abs(angle) >= 10) // small adjustments are not interesting
+	{
+		if (angle < -90)
+		{
+			adjust = factor*angle + 10;
+		}
+		else if (angle < 90)
+		{
+			adjust = -factor*angle;
+		}
+		else
+		{
+			adjust = factor*angle - 10;
+		}
+	}
+
+	return adjust;
 }
 
 /*
@@ -431,8 +570,8 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 idProjectile::Think
 ================
 */
-void idProjectile::Think( void ) {
 
+void idProjectile::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
 		if ( thrust && ( gameLocal.time < thrust_end ) ) {
 			// evaluate force
@@ -440,6 +579,64 @@ void idProjectile::Think( void ) {
 			thruster.Evaluate( gameLocal.time );
 		}
 	}
+
+	if ( IsMine() )
+	{
+		// grayman #2478 - if this is a mine in flight, adjust its pitch and
+		// roll slightly so it has a better chance of landing rightside-up.
+
+		if ( !IsAtRest() && !(thinkFlags & TH_ARMED) )
+		{
+			idAngles ang = GetPhysics()->GetAxis().ToAngles();
+			ang.pitch += AngleAdjust(ang.pitch);
+			ang.roll += AngleAdjust(ang.roll);
+			SetAngles(ang);
+		}
+
+		if ( thinkFlags & TH_ARMED ) // grayman #2478 - if armed, this is a ticking mine
+		{
+			// Any AI around? For AI who manage to avoid a collision with the mine, catch them here if they're close enough and moving/rotating.
+
+			idEntity* entityList[ MAX_GENTITIES ];
+			idVec3 org = GetPhysics()->GetOrigin();
+			idBounds bounds = GetPhysics()->GetAbsBounds();
+			float closeEnough = Square(23);
+
+			// get all entities touching the bounds
+
+			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+
+			for ( int i = 0 ; i < numListedEntities ; i++ )
+			{
+				idEntity* ent = entityList[ i ];
+				if ( ent && ent->IsType(idAI::Type) )
+				{
+					idAI* entAI = static_cast<idAI*>(ent);
+					if ( entAI->AI_FORWARD || (entAI->GetPhysics()->GetAngularVelocity().LengthSqr() > 0) )
+					{
+						if ( (entAI->GetPhysics()->GetOrigin() - org).LengthSqr() <= closeEnough )
+						{
+							MineExplode( entAI->entityNumber );
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/*idStr stateStr;
+	switch (state)
+	{
+	case SPAWNED: stateStr = "SPAWNED"; break;
+	case CREATED: stateStr = "CREATED"; break;
+	case LAUNCHED: stateStr = "LAUNCHED"; break;
+	case FIZZLED: stateStr = "FIZZLED"; break;
+	case EXPLODED: stateStr = "EXPLODED"; break;
+	case INACTIVE: stateStr = "INACTIVE"; break;
+	};
+
+	gameRenderWorld->DrawText(stateStr, physicsObj.GetOrigin(), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAxis);*/
 
 	// run physics
 	RunPhysics();
@@ -489,6 +686,12 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	idVec3		dir;
 	float		push;
 	float		damageScale;
+	idStr		SurfTypeName;
+
+	if ( state == INACTIVE ) {
+		// projectile not active, return FALSE
+		return false;
+	}
 
 	if ( state == EXPLODED || state == FIZZLED ) {
 		return true;
@@ -512,6 +715,18 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	// get the entity the projectile collided with
 	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	if ( ent )
+	{
+		ProcCollisionStims( ent, collision.c.id );
+
+		if( ent->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(ent);
+			alertee->TactileAlert( this );
+		}
+	}
+
 	if ( ent == owner.GetEntity() ) {
 		assert( 0 );
 		return true;
@@ -528,14 +743,21 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	dir.Normalize();
 
 	// projectiles can apply an additional impulse next to the rigid body physics impulse
-	if ( spawnArgs.GetFloat( "push", "0", push ) && push > 0.0f ) {
-		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * dir );
+	if ( spawnArgs.GetFloat( "push", "0", push ) && ( push > 0.0f ) )
+	{
+		idVec3 pushDir = dir;
+		if ( IsMine() ) // grayman #2478 - if this is a mine, push up
+		{
+			pushDir = idVec3( 0,0,1 );
+		}
+		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * pushDir );
 	}
 
 	// MP: projectiles open doors
-	if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
-		ent->ProcessEvent( &EV_Activate , this );
-	}
+	// tels: TODO 2010-06-11 need another way to find out if entity is a door (low priority, we don't have MP in TDM yet)
+	//if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
+	//	ent->ProcessEvent( &EV_Activate , this );
+	//}
 
 	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
 		if ( !projectileFlags.detonate_on_actor ) {
@@ -564,13 +786,22 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	ignore = NULL;
 
+	bool damageInflicted = false; // grayman #2794 - whether damage was inflicted below
+
 	// if the hit entity takes damage
-	if ( ent->fl.takedamage ) {
+	if ( ent->fl.takedamage ) 
+	{
 		if ( damagePower ) {
 			damageScale = damagePower;
 		} else {
 			damageScale = 1.0f;
 		}
+
+		// scale the damage by the surface type multiplier, if any
+		g_Global.GetSurfName( collision.c.material, SurfTypeName );
+		SurfTypeName = "damage_mult_" + SurfTypeName;
+
+		damageScale *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
 
 		// if the projectile owner is a player
 		if ( owner.GetEntity() && owner.GetEntity()->IsType( idPlayer::Type ) ) {
@@ -582,19 +813,56 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			}
 		}
 
-		if ( damageDefName[0] != '\0' ) {
-			ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) );
+		if ( damageDefName[0] != '\0' )
+		{
+			// grayman #2794 - if no damage is being inflicted, then there's no need for a damage effect
+
+			const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+			if ( !damageDef )
+			{
+				gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
+			}
+
+			int	damage = damageDef->GetInt( "damage" );
+			damageInflicted = ( damage > 0 );
+
+			// grayman #2906 - check for the special case of hitting a mine.
+			// If a mine is unarmed, it won't take damage or explode.
+
+			if ( damageInflicted )
+			{
+				if ( ent->IsType(idProjectile::Type) )
+				{
+					idProjectile *proj = static_cast<idProjectile*>(ent);
+					if ( proj->IsMine() && !proj->IsArmed() ) // is mine armed?
+					{
+						damageInflicted = false;
+					}
+				}
+			}
+
+			if ( damageInflicted ) // grayman #2906 - only run the damage code if there's damage
+			{
+				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
+			}
 			ignore = ent;
 		}
 	}
 
-	// if the projectile causes a damage effect
-	if ( spawnArgs.GetBool( "impact_damage_effect" ) ) {
-		// if the hit entity has a special damage effect
-		if ( ent->spawnArgs.GetBool( "bleed" ) ) {
-			ent->AddDamageEffect( collision, velocity, damageDefName );
-		} else {
-			AddDefaultDamageEffect( collision, velocity );
+	if ( damageInflicted ) // grayman #2794
+	{
+		// if the projectile causes a damage effect
+		if ( spawnArgs.GetBool( "impact_damage_effect" ) )
+		{
+			// if the hit entity has a special damage effect
+			if ( ent->spawnArgs.GetBool( "bleed" ) )
+			{
+				ent->AddDamageEffect( collision, velocity, damageDefName );
+			}
+			else
+			{
+				AddDefaultDamageEffect( collision, velocity );
+			}
 		}
 	}
 
@@ -604,25 +872,37 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 }
 
 /*
+=================================
+idProjectile::AddDamageEffect - grayman #2478
+=================================
+*/
+
+void idProjectile::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName )
+{
+	AddDefaultDamageEffect( collision, velocity );
+}
+
+/*
 =================
 idProjectile::DefaultDamageEffect
 =================
 */
+
 void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity ) {
-	const char *decal, *sound, *typeName;
-	surfTypes_t materialType;
+	const char *decal, *sound;
+	idStr typeName;
 
-	if ( collision.c.material != NULL ) {
-		materialType = collision.c.material->GetSurfaceType();
-	} else {
-		materialType = SURFTYPE_METAL;
+	if ( collision.c.material != NULL ) 
+	{
+		g_Global.GetSurfName( collision.c.material, typeName );
+	} 
+	else 
+	{
+		typeName = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
 	}
-
-	// get material type name
-	typeName = gameLocal.sufaceTypeNames[ materialType ];
-
+	
 	// play impact sound
-	sound = projectileDef.GetString( va( "snd_%s", typeName ) );
+	sound = projectileDef.GetString( va( "snd_%s", typeName.c_str() ) );
 	if ( *sound == '\0' ) {
 		sound = projectileDef.GetString( "snd_metal" );
 	}
@@ -634,7 +914,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	}
 
 	// project decal
-	decal = projectileDef.GetString( va( "mtr_detonate_%s", typeName ) );
+	decal = projectileDef.GetString( va( "mtr_detonate_%s", typeName.c_str() ) );
 	if ( *decal == '\0' ) {
 		decal = projectileDef.GetString( "mtr_detonate" );
 	}
@@ -653,6 +933,7 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
 
 	if ( gameLocal.isServer && fl.networkSync ) {
+
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 		int			excludeClient;
@@ -706,7 +987,7 @@ idProjectile::Fizzle
 */
 void idProjectile::Fizzle( void ) {
 
-	if ( state == EXPLODED || state == FIZZLED ) {
+	if ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) {
 		return;
 	}
 
@@ -743,11 +1024,53 @@ void idProjectile::Fizzle( void ) {
 	PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
 }
 
+/**
+* greebo: This event is being scheduled by the Launch() method, if a "delay" is set on the projectileDef
+*/
+void idProjectile::Event_ActivateProjectile()
+{
+	state = LAUNCHED;
+
+	// grayman #2478 - arm it if it's a mine
+	
+	if ( IsMine() )
+	{
+		// The mine is now armed, so loop the armed sound.
+
+		// grayman #2908 - determine if this mine was set by the map author or thrown by the player
+		if ( !replaced )
+		{
+			m_SetInMotionByActor = gameLocal.GetLocalPlayer();
+		}
+
+		StartSound( "snd_mine_armed", SND_CHANNEL_BODY, 0, true, NULL );
+
+		// Make it frobable. It won't highlight, though, for any inventory
+		// item other than a lockpick, so that the player doesn't get the
+		// impression that he can frob it.
+
+		SetFrobable( true );
+		m_FrobDistance = cv_frob_distance_default.GetInteger();
+
+		// Make it locked and pickable.
+
+		// Set up our PickableLock instance
+
+		m_Lock = static_cast<PickableLock*>( PickableLock::CreateInstance() );
+		m_Lock->InitFromSpawnargs( spawnArgs ); // Load the spawnargs for the lock
+		m_Lock->SetOwner( this );
+		m_Lock->SetLocked( true );
+
+		BecomeActive( TH_ARMED ); // guarantee continued thinking
+	}
+}
+
 /*
 ================
 idProjectile::Event_RadiusDamage
 ================
 */
+
 void idProjectile::Event_RadiusDamage( idEntity *ignore ) {
 	const char *splash_damage = spawnArgs.GetString( "def_splash_damage" );
 	if ( splash_damage[0] != '\0' ) {
@@ -757,7 +1080,7 @@ void idProjectile::Event_RadiusDamage( idEntity *ignore ) {
 
 /*
 ================
-idProjectile::Event_RadiusDamage
+idProjectile::Event_GetProjectileState
 ================
 */
 void idProjectile::Event_GetProjectileState( void ) {
@@ -771,16 +1094,26 @@ idProjectile::Explode
 */
 void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	const char *fxname, *light_shader, *sndExplode;
+	idStr		SurfTypeName;
 	float		light_fadetime;
-	idVec3		normal;
+	idVec3		normal, tempVel, tempAngVel;
 	int			removeTime;
+	bool		bActivated;
 
-	if ( state == EXPLODED || state == FIZZLED ) {
+	if ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) {
 		return;
 	}
 
 	// stop sound
 	StopSound( SND_CHANNEL_BODY2, false );
+	StopSound( SND_CHANNEL_BODY, false );
+
+	// DarkMod: Check material list to see if it's activated
+	g_Global.GetSurfName( collision.c.material, SurfTypeName );
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s \r", SurfTypeName.c_str() );
+
+	bActivated = TestActivated( SurfTypeName.c_str() );
+// TODO: Add spawnarg option to only play explode sound and explode light on activate
 
 	// play explode sound
 	switch ( ( int ) damagePower ) {
@@ -853,28 +1186,45 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		renderLight.shaderParms[SHADERPARM_BLUE] = lightColor.z;
 		renderLight.shaderParms[SHADERPARM_ALPHA] = 1.0f;
 		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+		renderLight.noShadows = spawnArgs.GetBool("explode_light_noshadows", "0");
 		light_fadetime = spawnArgs.GetFloat( "explode_light_fadetime", "0.5" );
 		lightStartTime = gameLocal.time;
 		lightEndTime = gameLocal.time + SEC2MS( light_fadetime );
 		BecomeActive( TH_THINK );
 	}
 
+	// store the last known velocity and angular velocity for later use
+	tempVel = GetPhysics()->GetLinearVelocity();
+	tempAngVel = GetPhysics()->GetAngularVelocity();
+
 	fl.takedamage = false;
 	physicsObj.SetContents( 0 );
 	physicsObj.PutToRest();
 
 	state = EXPLODED;
+	BecomeInactive( TH_ARMED ); // grayman #2478 - disable armed thinking
 
 	if ( gameLocal.isClient ) {
 		return;
 	}
 
-	// alert the ai
-	gameLocal.AlertAI( owner.GetEntity() );
-
+	//
 	// bind the projectile to the impact entity if necesary
+	// NOW: with special handling for the bind to AFEntity case.
+	// Lloyd: Fixed binding objects to bodies: this doesn't work for animated objects, 
+	//		need to bind to joints instead
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
-		Bind( gameLocal.entities[collision.c.entityNum], true );
+		idEntity *e = gameLocal.entities[ collision.c.entityNum ];
+
+		if( e->IsType( idAFEntity_Base::Type ) ) {
+
+//			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
+
+			this->BindToJoint( e, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), true );
+		}
+		else {
+			Bind( gameLocal.entities[collision.c.entityNum], true );
+		}
 	}
 
 	// splash damage
@@ -882,7 +1232,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		float delay = spawnArgs.GetFloat( "delay_splash" );
 		if ( delay ) {
 			if ( removeTime < delay * 1000 ) {
-				removeTime = ( delay + 0.10 ) * 1000;
+				removeTime = static_cast<int>( delay + 0.10f ) * 1000;
 			}
 			PostEventSec( &EV_RadiusDamage, delay, ignore );
 		} else {
@@ -937,9 +1287,71 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		}
 	}
 
+	// DarkMod: Spawn projectile result entity
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Checking projectile result:\r" );
+	if( spawnArgs.GetBool( "has_result", "0" ) )
+	{
+		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Has_result set to true\r" );
+		const char* resultName = spawnArgs.GetString("def_result");
+
+		const idDict *resultDef = gameLocal.FindEntityDefDict( resultName, false );
+		if( resultDef )
+		{
+			idEntity *ent2;
+
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Result object found for projectile %s\r", name.c_str());
+
+			gameLocal.SpawnEntityDef( *resultDef, &ent2, false );
+			if ( !ent2 || !ent2->IsType( CProjectileResult::Type ) ) 
+			{
+				DM_LOG(LC_WEAPON, LT_ERROR)LOGSTRING("Projectile %s has a non projectile result entity in projectile_result.\r", name.c_str());
+				gameLocal.Error( "'projectile_result' is not a CProjectileResult" );
+			}
+
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Spawned projectile result\r" );
+
+			CProjectileResult *result = static_cast<CProjectileResult *>( ent2 );
+
+			// Populate the data object to pass to the projectile result object
+			SFinalProjData DataIn;
+			
+			DataIn.Owner = owner.GetEntity();
+			DataIn.FinalOrigin = collision.endpos;
+			DataIn.FinalAxis = GetPhysics()->GetAxis();
+			DataIn.LinVelocity = tempVel;
+			DataIn.AngVelocity = tempAngVel;
+			// rotate the axial direction by the axis to get world direction vector
+			DataIn.AxialDir = DataIn.FinalAxis * spawnArgs.GetVector( "axial_dir", "0 0 1" );
+			DataIn.mass = GetPhysics()->GetMass();
+			DataIn.SurfaceType = SurfTypeName;
+
+			// Set up the projectile result with the last known results of the projectile
+			result->Init( &DataIn, collision, this, bActivated );
+		}
+	}
+
 	CancelEvents( &EV_Explode );
 	PostEventMS( &EV_Remove, removeTime );
+
+	// grayman #2885 - turn off any visual stims this projectile is generating
+	
+	if ( GetStimResponseCollection()->HasStim() )
+	{
+		GetStimResponseCollection()->RemoveStim( ST_VISUAL );
+	}
 }
+
+// grayman #2934
+
+void idProjectile::AttackAction(idPlayer* player)
+{
+	if ( m_Lock != NULL )
+	{
+		m_Lock->AttackAction(player);
+	}
+}
+
+
 
 /*
 ================
@@ -967,6 +1379,15 @@ idVec3 idProjectile::GetGravity( const idDict *projectile ) {
 
 /*
 ================
+idProjectile::Event_Launch
+================
+*/
+void idProjectile::Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity ) {
+	Launch(origin, direction, velocity);
+}
+
+/*
+================
 idProjectile::Event_Explode
 ================
 */
@@ -984,6 +1405,27 @@ void idProjectile::Event_Explode( void ) {
 
 /*
 ================
+idProjectile::MineExplode - grayman #2478
+================
+*/
+void idProjectile::MineExplode( int entityNumber ) // entityNumber belongs to the entity that stepped on you
+{
+	if ( state == LAUNCHED ) // only explode if you're armed and haven't already blown up
+	{
+		trace_t collision;
+		memset( &collision, 0, sizeof( collision ) );
+		collision.endAxis = GetPhysics()->GetAxis();
+		collision.endpos = GetPhysics()->GetOrigin();
+		collision.c.point = collision.endpos;
+		collision.c.normal.Set( 0, 0, 1 );
+		collision.c.entityNum = entityNumber;
+		AddDefaultDamageEffect( collision, collision.c.normal );
+		Collide( collision, idVec3(0,0,0) );
+	}
+}
+
+/*
+================
 idProjectile::Event_Fizzle
 ================
 */
@@ -996,7 +1438,12 @@ void idProjectile::Event_Fizzle( void ) {
 idProjectile::Event_Touch
 ================
 */
-void idProjectile::Event_Touch( idEntity *other, trace_t *trace ) {
+void idProjectile::Event_Touch( idEntity *other, trace_t *trace )
+{
+	if ( state == INACTIVE ) {
+		// greebo: projectile not active yet, return FALSE
+		return;
+	}
 
 	if ( IsHidden() ) {
 		return;
@@ -1004,7 +1451,6 @@ void idProjectile::Event_Touch( idEntity *other, trace_t *trace ) {
 
 	if ( other != owner.GetEntity() ) {
 		trace_t collision;
-
 		memset( &collision, 0, sizeof( collision ) );
 		collision.endAxis = GetPhysics()->GetAxis();
 		collision.endpos = GetPhysics()->GetOrigin();
@@ -1034,16 +1480,21 @@ bool idProjectile::ClientPredictionCollide( idEntity *soundEnt, const idDict &pr
 		return false;
 	}
 
+	// At this point it's for sure that the projectile is colliding with an entity, check the type
+
 	// don't do anything if hitting a noclip player
 	if ( ent->IsType( idPlayer::Type ) && static_cast<idPlayer *>( ent )->noclip ) {
 		return false;
 	}
 
+	// Are we hitting an actor?
 	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
+		// Yes, check if we should detonate on actors
 		if ( !projectileDef.GetBool( "detonate_on_actor" ) ) {
 			return false;
 		}
 	} else {
+		// Not an actor, check if we should detonate on something else
 		if ( !projectileDef.GetBool( "detonate_on_world" ) ) {
 			return false;
 		}
@@ -1079,24 +1530,43 @@ idProjectile::WriteToSnapshot
 */
 void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( owner.GetSpawnId(), 32 );
+
 	msg.WriteBits( state, 3 );
+
 	msg.WriteBits( fl.hidden, 1 );
+
 	if ( netSyncPhysics ) {
+
 		msg.WriteBits( 1, 1 );
+
 		physicsObj.WriteToSnapshot( msg );
+
 	} else {
+
 		msg.WriteBits( 0, 1 );
+
 		const idVec3 &origin	= physicsObj.GetOrigin();
+
 		const idVec3 &velocity	= physicsObj.GetLinearVelocity();
 
+
+
 		msg.WriteFloat( origin.x );
+
 		msg.WriteFloat( origin.y );
+
 		msg.WriteFloat( origin.z );
 
+
+
 		msg.WriteDeltaFloat( 0.0f, velocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );		
+
 	}
+
 }
 
 /*
@@ -1147,40 +1617,75 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 				state = SPAWNED;
 				break;
 			}
+			case INACTIVE: {
+				state = INACTIVE;
+				break;
+			}
 		}
 	}
 
 	if ( msg.ReadBits( 1 ) ) {
+
 		physicsObj.ReadFromSnapshot( msg );
+
 	} else {
+
 		idVec3 origin;
+
 		idVec3 velocity;
+
 		idVec3 tmp;
+
 		idMat3 axis;
 
+
+
 		origin.x = msg.ReadFloat();
+
 		origin.y = msg.ReadFloat();
+
 		origin.z = msg.ReadFloat();
 
+
+
 		velocity.x = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		velocity.y = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		velocity.z = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 
+
+
 		physicsObj.SetOrigin( origin );
+
 		physicsObj.SetLinearVelocity( velocity );
 
+
+
 		// align z-axis of model with the direction
+
 		velocity.NormalizeFast();
+
 		axis = velocity.ToMat3();
+
 		tmp = axis[2];
+
 		axis[2] = axis[0];
+
 		axis[0] = -tmp;
+
 		physicsObj.SetAxis( axis );
+
 	}
 
+
+
 	if ( msg.HasChanged() ) {
+
 		UpdateVisuals();
+
 	}
+
 }
 
 /*
@@ -1211,7 +1716,225 @@ bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg 
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
+//	return false;
+}
+
+/*
+================
+idProjectile::TestActivated
+DarkMod Addition
+================
+*/
+
+bool idProjectile::TestActivated( const char *typeName ) 
+{
+	bool		bReturnVal(false), bAssumeActive(false);
+	idStr		MaterialsList;
+
+	if( !spawnArgs.GetBool( "assume_active", "0" ) )
+	{
+		if( !spawnArgs.GetString( "active_surfaces", "", MaterialsList )
+			|| !typeName )
+		{
+			// return false if the surfaces list is blank
+			goto Quit;
+		}
+	}
+	else
+	{
+		bAssumeActive = true;
+
+		if( !spawnArgs.GetString( "dud_surfaces", "", MaterialsList )
+			|| !typeName )
+		{
+			// return true if the surfaces list is blank and we assume active
+			bReturnVal = true;
+			goto Quit;
+		}
+	}
+
+	// pad front and back with spaces for unique name searching
+	MaterialsList.Insert(' ', 0 );
+	MaterialsList.Append(' ');
+
+	bReturnVal = ( MaterialsList.Find( va(" %s ", typeName) ) != -1 );
+	// this XOR should cover both cases, assumed active and found dud, assumed dud found active
+	bReturnVal ^= bAssumeActive;
+
+Quit:
+	return bReturnVal;
+}
+
+/*
+=========================
+idProjectile::CanBeUsedBy - grayman #2478
+=========================
+*/
+
+bool idProjectile::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+{
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	assert(item->Category() != NULL);
+
+	// FIXME: Move this to idEntity to some sort of "usable_by_inv_category" list?
+	const idStr& categoryName = item->Category()->GetName();
+	if (categoryName == "#str_02389" )				// Lockpicks
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			return false;
+		}
+
+		// Lockpicks behave similar to keys
+		return (isFrobUse) ? IsLocked() : true;
+	}
+
 	return false;
+}
+
+/*
+===================
+idProjectile::UseBy - grayman #2478
+===================
+*/
+
+bool idProjectile::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+{
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	assert(item->Category() != NULL);
+
+	// Retrieve the entity behind that item and reject NULL entities
+	idEntity* itemEntity = item->GetItemEntity();
+	if (itemEntity == NULL)
+	{
+		return false;
+	}
+
+	// Get the name of this inventory category
+	const idStr& categoryName = item->Category()->GetName();
+
+	if (categoryName == "#str_02389" )				// Lockpicks
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
+			return false;
+		}
+
+		// Lockpicks are different, we need to look at the button state
+		// First we check if this item is a lockpick. It has to be of the toolclass lockpick
+		// and the type must be set.
+		idStr str = itemEntity->spawnArgs.GetString( "lockpick_type", "" );
+
+		if (str.Length() == 1)
+		{
+			// greebo: Check if the item owner is a player, and if yes, 
+			// update the immobilization flags.
+			idEntity* itemOwner = item->GetOwner();
+
+			if (itemOwner->IsType(idPlayer::Type))
+			{
+				idPlayer* playerOwner = static_cast<idPlayer*>(itemOwner);
+				playerOwner->SetImmobilization("Lockpicking", EIM_ATTACK);
+
+				// Schedule an event 1/3 sec. from now, to enable weapons again after this time
+				CancelEvents(&EV_TDM_Mine_ClearPlayerImmobilization);
+				PostEventMS(&EV_TDM_Mine_ClearPlayerImmobilization, 300, playerOwner);
+			}
+
+			// Pass the call to the lockpick routine
+			return m_Lock->ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
+		}
+		else
+		{
+			gameLocal.Warning("Wrong 'type' spawnarg for lockpicking on item %s, must be a single character.", itemEntity->name.c_str());
+			return false;
+		}
+	}
+
+	return false;
+}
+
+/*
+======================
+idProjectile::IsLocked - grayman #2478
+======================
+*/
+
+bool idProjectile::IsLocked()
+{
+	return m_Lock->IsLocked();
+}
+
+/*
+=============================================
+idProjectile::Event_ClearPlayerImmobilization - grayman #2478
+=============================================
+*/
+
+void idProjectile::Event_ClearPlayerImmobilization(idEntity* player)
+{
+	if (!player->IsType(idPlayer::Type))
+	{
+		return;
+	}
+
+	// Release the immobilization imposed on the player by Lockpicking
+	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
+}
+
+/*
+=====================================
+idProjectile::Event_Lock_OnLockPicked - grayman #2478
+=====================================
+*/
+
+void idProjectile::Event_Lock_OnLockPicked()
+{
+	// "Lock is picked" signal
+
+	m_Lock->SetLocked(false);
+	state = INACTIVE; // disarm the mine
+	BecomeInactive( TH_ARMED ); // disable armed thinking
+	StartSound( "snd_mine_disarmed", SND_CHANNEL_BODY, 0, true, NULL );
+	SetFrobable(false); // can't frob this until after the disarm sound is finished
+	PostEventSec( &EV_Mine_Replace, 1.0f );
+}
+
+/*
+================================
+idProjectile::Event_Mine_Replace - grayman #2478
+================================
+*/
+
+void idProjectile::Event_Mine_Replace()
+{
+	// Change the projectile into a mine entity the player can put back into inventory.
+
+	const char* resultName = spawnArgs.GetString("def_disarmed");
+
+	const idDict *resultDef = gameLocal.FindEntityDefDict( resultName, false );
+	if ( resultDef )
+	{
+		idEntity *newMine;
+		gameLocal.SpawnEntityDef( *resultDef, &newMine, false );
+		newMine->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() );
+		newMine->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
+		newMine->BecomeInactive( TH_PHYSICS ); // turn off physics so the new mine doesn't sink through the floor
+
+		SetFrobable(false);
+		PostEventMS( &EV_Remove, 1 ); // Remove the projectile, which has been replaced
+	}
 }
 
 /*
@@ -1279,6 +2002,8 @@ void idGuidedProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( unGuided );
 	savefile->WriteFloat( burstDist );
 	savefile->WriteFloat( burstVelocity );
+	// The lock class is saved by the idSaveGame class on close, no need to handle it here
+	savefile->WriteObject(m_Lock); // grayman #2478
 }
 
 /*
@@ -1299,6 +2024,8 @@ void idGuidedProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( unGuided );
 	savefile->ReadFloat( burstDist );
 	savefile->ReadFloat( burstVelocity );
+	// The lock class is restored by the idRestoreGame, don't handle it here
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock)); // grayman #2478
 }
 
 
@@ -1434,611 +2161,6 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 	burstDist = spawnArgs.GetFloat( "burstDist", "64" );
 	burstVelocity = spawnArgs.GetFloat( "burstVelocity", "1.25" );
 	UpdateVisuals();
-}
-
-
-/*
-===============================================================================
-
-idSoulCubeMissile
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idGuidedProjectile, idSoulCubeMissile )
-END_CLASS
-
-/*
-================
-idSoulCubeMissile::Spawn( void )
-================
-*/
-void idSoulCubeMissile::Spawn( void ) {
-	startingVelocity.Zero();
-	endingVelocity.Zero();
-	accelTime = 0.0f;
-	launchTime = 0;
-	killPhase = false;
-	returnPhase = false;
-	smokeKillTime = 0;
-	smokeKill = NULL;
-}
-
-/*
-=================
-idSoulCubeMissile::~idSoulCubeMissile
-=================
-*/
-idSoulCubeMissile::~idSoulCubeMissile() {
-}
-
-/*
-================
-idSoulCubeMissile::Save
-================
-*/
-void idSoulCubeMissile::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( startingVelocity );
-	savefile->WriteVec3( endingVelocity );
-	savefile->WriteFloat( accelTime );
-	savefile->WriteInt( launchTime );
-	savefile->WriteBool( killPhase );
-	savefile->WriteBool( returnPhase );
-	savefile->WriteVec3( destOrg);
-	savefile->WriteInt( orbitTime );
-	savefile->WriteVec3( orbitOrg );
-	savefile->WriteInt( smokeKillTime );
-	savefile->WriteParticle( smokeKill );
-}
-
-/*
-================
-idSoulCubeMissile::Restore
-================
-*/
-void idSoulCubeMissile::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( startingVelocity );
-	savefile->ReadVec3( endingVelocity );
-	savefile->ReadFloat( accelTime );
-	savefile->ReadInt( launchTime );
-	savefile->ReadBool( killPhase );
-	savefile->ReadBool( returnPhase );
-	savefile->ReadVec3( destOrg);
-	savefile->ReadInt( orbitTime );
-	savefile->ReadVec3( orbitOrg );
-	savefile->ReadInt( smokeKillTime );
-	savefile->ReadParticle( smokeKill );
-}
-
-/*
-================
-idSoulCubeMissile::KillTarget
-================
-*/
-void idSoulCubeMissile::KillTarget( const idVec3 &dir ) {
-	idEntity	*ownerEnt;
-	const char	*smokeName;
-	idActor		*act;
-
-	ReturnToOwner();
-	if ( enemy.GetEntity() && enemy.GetEntity()->IsType( idActor::Type ) ) {
-		act = static_cast<idActor*>( enemy.GetEntity() );
-		killPhase = true;
-		orbitOrg = act->GetPhysics()->GetAbsBounds().GetCenter();
-		orbitTime = gameLocal.time;
-		smokeKillTime = 0;
-		smokeName = spawnArgs.GetString( "smoke_kill" );
-		if ( *smokeName != '\0' ) {
-			smokeKill = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-			smokeKillTime = gameLocal.time;
-		}
-		ownerEnt = owner.GetEntity();
-		if ( ( act->health > 0 ) && ownerEnt && ownerEnt->IsType( idPlayer::Type ) && ( ownerEnt->health > 0 ) && !act->spawnArgs.GetBool( "boss" ) ) {
-			static_cast<idPlayer *>( ownerEnt )->GiveHealthPool( act->health );
-		}
-		act->Damage( this, owner.GetEntity(), dir,  spawnArgs.GetString( "def_damage" ), 1.0f, INVALID_JOINT );
-		act->GetAFPhysics()->SetTimeScale( 0.25 );
-		StartSound( "snd_explode", SND_CHANNEL_BODY, 0, false, NULL );
-	}
-}
-
-/*
-================
-idSoulCubeMissile::Think
-================
-*/
-void idSoulCubeMissile::Think( void ) {
-	float		pct;
-	idVec3		seekPos;
-	idEntity	*ownerEnt;
-
-	if ( state == LAUNCHED ) {
-		if ( killPhase ) {
-			// orbit the mob, cascading down
-			if ( gameLocal.time < orbitTime + 1500 ) {
-				if ( !gameLocal.smokeParticles->EmitSmoke( smokeKill, smokeKillTime, gameLocal.random.CRandomFloat(), orbitOrg, mat3_identity ) ) {
-					smokeKillTime = gameLocal.time;
-				}
-			} 
-		} else  {
-			if ( accelTime && gameLocal.time < launchTime + accelTime * 1000 ) {
-				pct = ( gameLocal.time - launchTime ) / ( accelTime * 1000 );
-				speed = ( startingVelocity + ( startingVelocity + endingVelocity ) * pct ).Length();
-			} 
-		} 
-		idGuidedProjectile::Think();
-		GetSeekPos( seekPos );
-		if ( ( seekPos - physicsObj.GetOrigin() ).Length() < 32.0f ) {
-			if ( returnPhase ) {
-				StopSound( SND_CHANNEL_ANY, false );
-				StartSound( "snd_return", SND_CHANNEL_BODY2, 0, false, NULL );
-				Hide();
-				PostEventSec( &EV_Remove, 2.0f );
-
-				ownerEnt = owner.GetEntity();
-				if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-					static_cast<idPlayer *>( ownerEnt )->SetSoulCubeProjectile( NULL );
-				}
-
-				state = FIZZLED;
-			} else if ( !killPhase ){
-				KillTarget( physicsObj.GetAxis()[0] );
-			}
-		}
-	}
-}
-
-/*
-================
-idSoulCubeMissile::GetSeekPos
-================
-*/
-void idSoulCubeMissile::GetSeekPos( idVec3 &out ) {
-	if ( returnPhase && owner.GetEntity() && owner.GetEntity()->IsType( idActor::Type ) ) {
-		idActor *act = static_cast<idActor*>( owner.GetEntity() );
-		out = act->GetEyePosition();
-		return;
-	}
-	if ( destOrg != vec3_zero ) {
-		out = destOrg;
-		return;
-	} 
-	idGuidedProjectile::GetSeekPos( out );
-}
-
-
-/*
-================
-idSoulCubeMissile::Event_ReturnToOwner
-================
-*/
-void idSoulCubeMissile::ReturnToOwner() {
-	speed *= 0.65f;
-	killPhase = false;
-	returnPhase = true;
-	smokeFlyTime = 0;
-}
-
-
-/*
-=================
-idSoulCubeMissile::Launch
-=================
-*/
-void idSoulCubeMissile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float launchPower, float dmgPower ) {
-	idVec3		newStart;
-	idVec3		offs;
-	idEntity	*ownerEnt;
-
-	// push it out a little
-	newStart = start + dir * spawnArgs.GetFloat( "launchDist" );
-	offs = spawnArgs.GetVector( "launchOffset", "0 0 -4" );
-	newStart += offs;
-	idGuidedProjectile::Launch( newStart, dir, pushVelocity, timeSinceFire, launchPower, dmgPower );
-	if ( enemy.GetEntity() == NULL || !enemy.GetEntity()->IsType( idActor::Type ) ) {
-		destOrg = start + dir * 256.0f;
-	} else {
-		destOrg.Zero();
-	}
-	physicsObj.SetClipMask( 0 ); // never collide.. think routine will decide when to detonate
-	startingVelocity = spawnArgs.GetVector( "startingVelocity", "15 0 0" );
-	endingVelocity = spawnArgs.GetVector( "endingVelocity", "1500 0 0" );
-	accelTime = spawnArgs.GetFloat( "accelTime", "5" );
-	physicsObj.SetLinearVelocity( startingVelocity.Length() * physicsObj.GetAxis()[2] );
-	launchTime = gameLocal.time;
-	killPhase = false;
-	UpdateVisuals();
-	
-	ownerEnt = owner.GetEntity();
-	if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-		static_cast<idPlayer *>( ownerEnt )->SetSoulCubeProjectile( this );
-	}
-
-}
-
-
-/*
-===============================================================================
-
-idBFGProjectile
-
-===============================================================================
-*/
-const idEventDef EV_RemoveBeams( "<removeBeams>", NULL );
-
-CLASS_DECLARATION( idProjectile, idBFGProjectile )
-	EVENT( EV_RemoveBeams,		idBFGProjectile::Event_RemoveBeams )
-END_CLASS
-
-
-/*
-=================
-idBFGProjectile::idBFGProjectile
-=================
-*/
-idBFGProjectile::idBFGProjectile() {
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	nextDamageTime = 0;
-}
-
-/*
-=================
-idBFGProjectile::~idBFGProjectile
-=================
-*/
-idBFGProjectile::~idBFGProjectile() {
-	FreeBeams();
-
-	if ( secondModelDefHandle >= 0 ) {
-		gameRenderWorld->FreeEntityDef( secondModelDefHandle );
-		secondModelDefHandle = -1;
-	}
-}
-
-/*
-================
-idBFGProjectile::Spawn
-================
-*/
-void idBFGProjectile::Spawn( void ) {
-	beamTargets.Clear();
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	const char *temp = spawnArgs.GetString( "model_two" );
-	if ( temp && *temp ) {
-		secondModel.hModel = renderModelManager->FindModel( temp );
-		secondModel.bounds = secondModel.hModel->Bounds( &secondModel );
-		secondModel.shaderParms[ SHADERPARM_RED ] =
-		secondModel.shaderParms[ SHADERPARM_GREEN ] =
-		secondModel.shaderParms[ SHADERPARM_BLUE ] =
-		secondModel.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		secondModel.noSelfShadow = true;
-		secondModel.noShadow = true;
-	}
-	nextDamageTime = 0;
-	damageFreq = NULL;
-}
-
-/*
-================
-idBFGProjectile::Save
-================
-*/
-void idBFGProjectile::Save( idSaveGame *savefile ) const {
-	int i;
-
-	savefile->WriteInt( beamTargets.Num() );
-	for ( i = 0; i < beamTargets.Num(); i++ ) {
-		beamTargets[i].target.Save( savefile );
-		savefile->WriteRenderEntity( beamTargets[i].renderEntity );
-		savefile->WriteInt( beamTargets[i].modelDefHandle );
-	}
-
-	savefile->WriteRenderEntity( secondModel );
-	savefile->WriteInt( secondModelDefHandle );
-	savefile->WriteInt( nextDamageTime );
-	savefile->WriteString( damageFreq );
-}
-
-/*
-================
-idBFGProjectile::Restore
-================
-*/
-void idBFGProjectile::Restore( idRestoreGame *savefile ) {
-	int i, num;
-
-	savefile->ReadInt( num );
-	beamTargets.SetNum( num );
-	for ( i = 0; i < num; i++ ) {
-		beamTargets[i].target.Restore( savefile );
-		savefile->ReadRenderEntity( beamTargets[i].renderEntity );
-		savefile->ReadInt( beamTargets[i].modelDefHandle );
-
-		if ( beamTargets[i].modelDefHandle >= 0 ) {
-			beamTargets[i].modelDefHandle = gameRenderWorld->AddEntityDef( &beamTargets[i].renderEntity );
-		}
-	}
-
-	savefile->ReadRenderEntity( secondModel );
-	savefile->ReadInt( secondModelDefHandle );
-	savefile->ReadInt( nextDamageTime );
-	savefile->ReadString( damageFreq );
-
-	if ( secondModelDefHandle >= 0 ) {
-		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
-	}
-}
-
-/*
-=================
-idBFGProjectile::FreeBeams
-=================
-*/
-void idBFGProjectile::FreeBeams() {
-	for ( int i = 0; i < beamTargets.Num(); i++ ) {
-		if ( beamTargets[i].modelDefHandle >= 0 ) {
-			gameRenderWorld->FreeEntityDef( beamTargets[i].modelDefHandle );
-			beamTargets[i].modelDefHandle = -1;
-		}
-	}
-
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		player->playerView.EnableBFGVision( false );
-	}
-}
-
-/*
-================
-idBFGProjectile::Think
-================
-*/
-void idBFGProjectile::Think( void ) {
-	if ( state == LAUNCHED ) {
-
-		// update beam targets
-		for ( int i = 0; i < beamTargets.Num(); i++ ) {
-			if ( beamTargets[i].target.GetEntity() == NULL ) {
-				continue;
-			}
-			idPlayer *player = ( beamTargets[i].target.GetEntity()->IsType( idPlayer::Type ) ) ? static_cast<idPlayer*>( beamTargets[i].target.GetEntity() ) : NULL;
-			idVec3 org = beamTargets[i].target.GetEntity()->GetPhysics()->GetAbsBounds().GetCenter();
-			beamTargets[i].renderEntity.origin = GetPhysics()->GetOrigin();
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_X ] = org.x;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Y ] = org.y;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Z ] = org.z;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] = 
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] = 
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] = 
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-			if ( gameLocal.time > nextDamageTime ) {
-				bool bfgVision = true;
-				if ( damageFreq && *(const char *)damageFreq && beamTargets[i].target.GetEntity() && beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), org ) ) {
-					org = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-					org.Normalize();
-					beamTargets[i].target.GetEntity()->Damage( this, owner.GetEntity(), org, damageFreq, ( damagePower ) ? damagePower : 1.0f, INVALID_JOINT );
-				} else {
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] = 
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] = 
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] = 
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 0.0f;
-					bfgVision = false;
-				}
-				if ( player ) {
-					player->playerView.EnableBFGVision( bfgVision );
-				}
-				nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
-			}
-			gameRenderWorld->UpdateEntityDef( beamTargets[i].modelDefHandle, &beamTargets[i].renderEntity );
-		}
-
-		if ( secondModelDefHandle >= 0 ) {
-			secondModel.origin = GetPhysics()->GetOrigin();
-			gameRenderWorld->UpdateEntityDef( secondModelDefHandle, &secondModel );
-		}
-
-		idAngles ang;
-
-		ang.pitch = ( gameLocal.time & 4095 ) * 360.0f / -4096.0f;
-		ang.yaw = ang.pitch;
-		ang.roll = 0.0f;
-		SetAngles( ang );
-
-		ang.pitch = ( gameLocal.time & 2047 ) * 360.0f / -2048.0f;
-		ang.yaw = ang.pitch;
-		ang.roll = 0.0f;
-		secondModel.axis = ang.ToMat3();
-
-		UpdateVisuals();
-	}
-
-	idProjectile::Think();
-}
-
-/*
-=================
-idBFGProjectile::Launch
-=================
-*/
-void idBFGProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float power, const float dmgPower ) {
-	idProjectile::Launch( start, dir, pushVelocity, 0.0f, power, dmgPower );
-
-	// dmgPower * radius is the target acquisition area
-	// acquisition should make sure that monsters are not dormant 
-	// which will cut down on hitting monsters not actively fighting
-	// but saves on the traces making sure they are visible
-	// damage is not applied until the projectile explodes
-
-	idEntity *	ent;
-	idEntity *	entityList[ MAX_GENTITIES ];
-	int			numListedEntities;
-	idBounds	bounds;
-	idVec3		damagePoint;
-
-	float radius;
-	spawnArgs.GetFloat( "damageRadius", "512", radius );
-	bounds = idBounds( GetPhysics()->GetOrigin() ).Expand( radius );
-
-	float beamWidth = spawnArgs.GetFloat( "beam_WidthFly" );
-	const char *skin = spawnArgs.GetString( "skin_beam" );
-
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	const char *temp = spawnArgs.GetString( "model_two" );
-	if ( temp && *temp ) {
-		secondModel.hModel = renderModelManager->FindModel( temp );
-		secondModel.bounds = secondModel.hModel->Bounds( &secondModel );
-		secondModel.shaderParms[ SHADERPARM_RED ] =
-		secondModel.shaderParms[ SHADERPARM_GREEN ] =
-		secondModel.shaderParms[ SHADERPARM_BLUE ] =
-		secondModel.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		secondModel.noSelfShadow = true;
-		secondModel.noShadow = true;
-		secondModel.origin = GetPhysics()->GetOrigin();
-		secondModel.axis = GetPhysics()->GetAxis();
-		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
-	}
-
-	idVec3 delta( 15.0f, 15.0f, 15.0f );
-	//physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
-
-	// get all entities touching the bounds
-	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, entityList, MAX_GENTITIES );
-	for ( int e = 0; e < numListedEntities; e++ ) {
-		ent = entityList[ e ];
-		assert( ent );
-
-		if ( ent == this || ent == owner.GetEntity() || ent->IsHidden() || !ent->IsActive() || !ent->fl.takedamage || ent->health <= 0 || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		if ( !ent->CanDamage( GetPhysics()->GetOrigin(), damagePoint ) ) {
-			continue;
-		}
-
-		if ( ent->IsType( idPlayer::Type ) ) {
-			idPlayer *player = static_cast<idPlayer*>( ent );
-			player->playerView.EnableBFGVision( true );
-		}
-
-		beamTarget_t bt;
-		memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
-		bt.renderEntity.origin = GetPhysics()->GetOrigin();
-		bt.renderEntity.axis = GetPhysics()->GetAxis();
-		bt.renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = beamWidth;
-		bt.renderEntity.shaderParms[ SHADERPARM_RED ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
-		bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
-		bt.renderEntity.callback = NULL;
-		bt.renderEntity.numJoints = 0;
-		bt.renderEntity.joints = NULL;
-		bt.renderEntity.bounds.Clear();
-		bt.renderEntity.customSkin = declManager->FindSkin( skin );
-		bt.target = ent;
-		bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
-		beamTargets.Append( bt );
-	}
-	if ( numListedEntities ) {
-		StartSound( "snd_beam", SND_CHANNEL_BODY2, 0, false, NULL );
-	}
-	damageFreq = spawnArgs.GetString( "def_damageFreq" );
-	nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
-	UpdateVisuals();
-}
-
-/*
-================
-idProjectile::Event_RemoveBeams
-================
-*/
-void idBFGProjectile::Event_RemoveBeams() {
-	FreeBeams();
-	UpdateVisuals();
-}
-
-/*
-================
-idProjectile::Explode
-================
-*/
-void idBFGProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
-	int			i;
-	idVec3		dmgPoint;
-	idVec3		dir;
-	float		beamWidth;
-	float		damageScale;
-	const char *damage;
-	idPlayer *	player;
-	idEntity *	ownerEnt;
-
-	ownerEnt = owner.GetEntity();
-	if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-		player = static_cast< idPlayer * >( ownerEnt );
-	} else {
-		player = NULL;
-	}
-
-	beamWidth = spawnArgs.GetFloat( "beam_WidthExplode" );
-	damage = spawnArgs.GetString( "def_damage" );
-
-	for ( i = 0; i < beamTargets.Num(); i++ ) {
-		if ( ( beamTargets[i].target.GetEntity() == NULL ) || ( ownerEnt == NULL ) ) {
-			continue;
-		}
-
-		if ( !beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), dmgPoint ) ) {
-			continue;
-		}
-
-		beamTargets[i].renderEntity.shaderParms[SHADERPARM_BEAM_WIDTH] = beamWidth;
-
-		// if the hit entity takes damage
-		if ( damagePower ) {
-			damageScale = damagePower;
-		} else {
-			damageScale = 1.0f;
-		}
-
-		// if the projectile owner is a player
-		if ( player ) {
-			// if the projectile hit an actor
-			if ( beamTargets[i].target.GetEntity()->IsType( idActor::Type ) ) {
-				player->SetLastHitTime( gameLocal.time );
-				player->AddProjectileHits( 1 );
-				damageScale *= player->PowerUpModifier( PROJECTILE_DAMAGE );
-			}
-		}
-
-		if ( damage[0] && ( beamTargets[i].target.GetEntity()->entityNumber > gameLocal.numClients - 1 ) ) {
-			dir = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			dir.Normalize();
-			beamTargets[i].target.GetEntity()->Damage( this, ownerEnt, dir, damage, damageScale, ( collision.c.id < 0 ) ? CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) : INVALID_JOINT );
-		}
-	}
-
-	if ( secondModelDefHandle >= 0 ) {
-		gameRenderWorld->FreeEntityDef( secondModelDefHandle );
-		secondModelDefHandle = -1;
-	}
-
-	if ( ignore == NULL ) {
-		projectileFlags.noSplashDamage = true;
-	}
-
-	if ( !gameLocal.isClient ) {
-		if ( ignore != NULL ) {
-			PostEventMS( &EV_RemoveBeams, 750 );
-		} else {
-			PostEventMS( &EV_RemoveBeams, 0 );
-		}
-	}
-
-	return idProjectile::Explode( collision, ignore );
 }
 
 
@@ -2391,3 +2513,5 @@ idDebris::Event_Fizzle
 void idDebris::Event_Fizzle( void ) {
 	Fizzle();
 }
+
+

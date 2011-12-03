@@ -1,30 +1,15 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_STATICMULTI_H__
 #define __PHYSICS_STATICMULTI_H__
@@ -76,6 +61,7 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
+	bool					PropagateImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
 	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
@@ -88,6 +74,9 @@ public:	// common physics interface
 
 	void					SetOrigin( const idVec3 &newOrigin, int id = -1 );
 	void					SetAxis( const idMat3 &newAxis, int id = -1 );
+
+	// Tels: Scale the clipmodel with the id "id"
+	void					Scale( const idVec3 &scale, int id = -1 );
 
 	void					Translate( const idVec3 &translation, int id = -1 );
 	void					Rotate( const idRotation &rotation, int id = -1 );
@@ -118,6 +107,7 @@ public:	// common physics interface
 	bool					EvaluateContacts( void );
 	int						GetNumContacts( void ) const;
 	const contactInfo_t &	GetContact( int num ) const;
+	bool					HasNonStaticContacts();
 	void					ClearContacts( void );
 	void					AddContactEntity( idEntity *e );
 	void					RemoveContactEntity( idEntity *e );
@@ -141,10 +131,18 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+#ifdef MOD_WATERPHYSICS
+	// gets/sets the water
+	// just some functions to avoid making this class abstract.  Water has no effect on a static object
+	// so it sort of makes sense these functions do nothing.
+	virtual idPhysics_Liquid	*GetWater() { return NULL; } // MOD_WATERPHYSICS
+	virtual void				SetWater( idPhysics_Liquid *e, const float murkiness ) {} // MOD_WATERPHYSICS
+#endif
+
 protected:
 	idEntity *				self;					// entity using this physics object
 	idList<staticPState_t>	current;				// physics state
-	idList<idClipModel *>	clipModels;				// collision model
+	idList<idClipModel *>	clipModels;				// collision model(s)
 
 	// master
 	bool					hasMaster;

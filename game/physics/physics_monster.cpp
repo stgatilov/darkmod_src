@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Monster )
 END_CLASS
@@ -62,9 +48,20 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 
 	groundEntityPtr = gameLocal.entities[ groundTrace.c.entityNum ];
 
-	if ( ( groundTrace.c.normal * -gravityNormal ) < minFloorCosine ) {
-		state.onGround = false;
-		return;
+	if ( ( groundTrace.c.normal * -gravityNormal ) < minFloorCosine )
+	{
+		// grayman #2356 - assumed to be sliding down an incline > 45 degrees, but could also
+		// be sitting on an angled piece of a func_static, so check current origin.z against
+		// previous origin.z to see if you're really sliding. This prevents excessive buildup
+		// of gravity-induced vertical velocity, which leads to death once you get free and
+		// fall to the ground, where Crashland() thinks you fell from a great height.
+
+		idVec3 prevMove = static_cast<idAI*>(self)->movementSubsystem->GetLastMove();
+		if (prevMove.z < 0) // are you truly falling?
+		{
+			state.onGround = false;
+			return;
+		}
 	}
 
 	state.onGround = true;
@@ -72,12 +69,41 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 	// let the entity know about the collision
 	self->Collide( groundTrace, state.velocity );
 
-	// apply impact to a non world floor entity
-	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEntityPtr.GetEntity() ) {
+	idEntity* groundEnt = groundEntityPtr.GetEntity();
+
+	// greebo: Apply force/impulse to entities below the clipmodel
+	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEnt != NULL )
+	{
+		idPhysics* groundPhysics = groundEnt->GetPhysics();
+
 		impactInfo_t info;
-		groundEntityPtr.GetEntity()->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
-		if ( info.invMass != 0.0f ) {
-			groundEntityPtr.GetEntity()->ApplyImpulse( self, 0, groundTrace.c.point, state.velocity  / ( info.invMass * 10.0f ) );
+		groundEnt->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
+
+		// greebo: Don't push entities that already have a velocity towards the ground.
+		if ( groundPhysics && info.invMass != 0.0f )
+		{
+			// grayman #2478 - is this a mine? if so, blow it up now instead of waiting
+			// for the Collide() code to blow it up. Waiting allows the physics engine
+			// to sink the mine into the floor before it blows. If the mine is not
+			// armed yet, nothing happens, but at least the mine isn't pushed into the floor.
+
+			if ( groundEnt->IsType(idProjectile::Type) && static_cast<idProjectile*>(groundEnt)->IsMine() )
+			{
+				static_cast<idProjectile*>(groundEnt)->MineExplode( self->entityNumber );
+			}
+			else
+			{
+				// greebo: Apply a force to the entity below the player
+				//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
+
+				// grayman TODO: When an AI steps on something and applies this force, it's
+				// possible that physics will cause the thing to fall through the floor.
+				// gameLocal.clip.Motion() might have a problem with something sitting flat
+				// on a world brush.
+
+				groundPhysics->AddForce(0, current.origin, gravityNormal);
+				groundPhysics->Activate();
+			}
 		}
 	}
 }
@@ -96,6 +122,7 @@ monsterMoveResult_t idPhysics_Monster::SlideMove( idVec3 &start, idVec3 &velocit
 	move = delta;
 	for( i = 0; i < 3; i++ ) {
 		gameLocal.clip.Translation( tr, start, start + move, clipModel, clipModel->GetAxis(), clipMask, self );
+		//gameRenderWorld->DebugArrow(colorWhite, start, tr.endpos, 2, 5000);
 
 		start = tr.endpos;
 
@@ -176,6 +203,7 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	// try to step up
 	up = start - gravityNormal * maxStepHeight;
 	gameLocal.clip.Translation( tr, start, up, clipModel, clipModel->GetAxis(), clipMask, self );
+	//gameRenderWorld->DebugArrow(colorRed, start, up, 2, 5000);
 	if ( tr.fraction == 0.0f ) {
 		start = noStepPos;
 		velocity = noStepVel;
@@ -195,16 +223,35 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	// step down again
 	down = stepPos + gravityNormal * maxStepHeight;
 	gameLocal.clip.Translation( tr, stepPos, down, clipModel, clipModel->GetAxis(), clipMask, self );
-	stepPos = tr.endpos;
+	//gameRenderWorld->DebugArrow(colorGreen, stepPos, down, 2, 5000);
+	//gameRenderWorld->DebugArrow(colorBlue, tr.c.point, tr.c.point + 5 * tr.c.normal, 2, 5000);
 
-	// if the move is further without stepping up, or the slope is too steap, don't step up
+	float projection = tr.c.normal * -gravityNormal;
+
+	// greebo: We have collided with a steep slope in front of us
+	if (projection < minFloorCosine && projection > 0.06f)
+	{
+		// greebo: Set the endposition a bit more upwards than necessary to prevent gravity from pulling us down immediately again
+		stepPos = tr.endpos - gravityNormal * stepUpIncrease;
+	}
+	else
+	{
+		// No slope, just use the step position
+		stepPos = tr.endpos;
+	}
+
+	// if the move is further without stepping up, or the slope is too steep, don't step up
 	nostepdist = ( noStepPos - start ).LengthSqr();
 	stepdist = ( stepPos - start ).LengthSqr();
-	if ( ( nostepdist >= stepdist ) || ( ( tr.c.normal * -gravityNormal ) < minFloorCosine ) ) {
+	
+	// Use the position that brought us the largest forward movement
+	if (nostepdist >= stepdist) 
+	{
 		start = noStepPos;
 		velocity = noStepVel;
 		return MM_SLIDING;
 	}
+	
 
 	start = stepPos;
 	velocity = stepVel;
@@ -255,6 +302,7 @@ idPhysics_Monster::idPhysics_Monster( void ) {
 	
 	delta.Zero();
 	maxStepHeight = 18.0f;
+	stepUpIncrease = 10.0f;
 	minFloorCosine = 0.7f;
 	moveResult = MM_OK;
 	forceDeltaMove = false;
@@ -303,6 +351,7 @@ void idPhysics_Monster::Save( idSaveGame *savefile ) const {
 	idPhysics_Monster_SavePState( savefile, saved );
 
 	savefile->WriteFloat( maxStepHeight );
+	savefile->WriteFloat(stepUpIncrease);
 	savefile->WriteFloat( minFloorCosine );
 	savefile->WriteVec3( delta );
 
@@ -326,6 +375,7 @@ void idPhysics_Monster::Restore( idRestoreGame *savefile ) {
 	idPhysics_Monster_RestorePState( savefile, saved );
 
 	savefile->ReadFloat( maxStepHeight );
+	savefile->ReadFloat(stepUpIncrease);
 	savefile->ReadFloat( minFloorCosine );
 	savefile->ReadVec3( delta );
 
@@ -366,6 +416,10 @@ idPhysics_Monster::GetMaxStepHeight
 */
 float idPhysics_Monster::GetMaxStepHeight( void ) const {
 	return maxStepHeight;
+}
+
+void idPhysics_Monster::SetStepUpIncrease(float incr) {
+	stepUpIncrease = incr;
 }
 
 /*
@@ -446,9 +500,21 @@ idPhysics_Monster::Evaluate
 ================
 */
 bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
+
+	if (timeStepMSec == 0)
+	{
+		// angua: time step can be zero when the AI comes back from being dormant
+		return false;
+	}
+
 	idVec3 masterOrigin, oldOrigin;
 	idMat3 masterAxis;
 	float timeStep;
+
+#ifdef MOD_WATERPHYSICS
+	waterLevel = WATERLEVEL_NONE;		// MOD_WATERPHYSICS
+	waterType = 0;						// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	timeStep = MS2SEC( timeStepMSec );
 
@@ -479,6 +545,11 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	current.velocity -= current.pushVelocity;
 
 	clipModel->Unlink();
+
+#ifdef MOD_WATERPHYSICS
+	// check water level / type
+	SetWaterLevel(true);		// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	// check if on the ground
 	idPhysics_Monster::CheckGround( current );

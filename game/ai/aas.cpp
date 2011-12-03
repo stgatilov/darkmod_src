@@ -1,35 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "AAS_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "aas_local.h"
+
 
 /*
 ============
@@ -53,7 +40,9 @@ idAAS::~idAAS( void ) {
 idAASLocal::idAASLocal
 ============
 */
-idAASLocal::idAASLocal( void ) {
+idAASLocal::idAASLocal( void )
+{
+	elevatorSystem = new eas::tdmEAS(this);
 	file = NULL;
 }
 
@@ -64,6 +53,11 @@ idAASLocal::~idAASLocal
 */
 idAASLocal::~idAASLocal( void ) {
 	Shutdown();
+
+	if (elevatorSystem != NULL)
+	{
+		delete elevatorSystem;
+	}
 }
 
 /*
@@ -72,6 +66,9 @@ idAASLocal::Init
 ============
 */
 bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
+	// Clear the elevator system before reloading
+	elevatorSystem->Clear();
+
 	if ( file && mapName.Icmp( file->GetName() ) == 0 && mapFileCRC == file->GetCRC() ) {
 		common->Printf( "Keeping %s\n", file->GetName() );
 		RemoveAllObstacles();
@@ -84,6 +81,8 @@ bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
 			common->DWarning( "Couldn't load AAS file: '%s'", mapName.c_str() );
 			return false;
 		}
+		mapName.ExtractFileExtension(name);
+
 		SetupRouting();
 	}
 	return true;
@@ -96,12 +95,96 @@ idAASLocal::Shutdown
 */
 void idAASLocal::Shutdown( void ) {
 	if ( file ) {
+		elevatorSystem->Clear();
 		ShutdownRouting();
 		RemoveAllObstacles();
 		AASFileManager->FreeAAS( file );
 		file = NULL;
 	}
 }
+
+/*
+============
+idAASLocal::TestIfBarrierIsolatesReachability
+============
+*/
+bool idAASLocal::TestIfBarrierIsolatesReachability
+(
+	idReachability* p_reachability,
+	int areaIndex,
+	idBounds barrierBounds
+) const
+{
+	/*
+	* Test params
+	*/
+	if ( p_reachability == NULL)
+	{
+		return false;
+	}
+
+	// Test the paths from the reachability to all other reachabilities leaving
+	// the area.  If a reachability has no path to another reachability that does not 
+	// intersect the barrier, then return true. Also if there are no other reachbilities
+	// return true.  Otherwise return false;
+
+	// Iterate the other reachabilities
+	bool b_hadPath = false;
+	bool b_foundClearPath = false;
+	idReachability* p_reach2 = GetAreaFirstReachability(areaIndex);
+
+	while (p_reach2 != NULL)
+	{
+		if (p_reach2 != p_reachability)
+		{
+			b_hadPath = true;
+
+			// Test if path between the reachabilities is blocked by the barrier bounds
+			if (barrierBounds.LineIntersection (p_reachability->start, p_reach2->start))
+			{
+				// Blocked
+				return true;
+			}
+			/*
+				// Its not blocked
+				b_foundClearPath = true;
+			}
+			*/
+
+		} // Not same reachability
+
+		// Is it blocked?
+		if (b_foundClearPath)
+		{
+			// End iteration early if we already found a clear path
+			p_reach2 = NULL;
+		}
+		else
+		{
+			p_reach2 = p_reach2->next;
+		}
+	
+	} // Next other reachability on same area
+
+	return false;
+
+	/*
+
+	// Return result of test
+	if ( (b_hadPath) && (!b_foundClearPath) )
+	{
+		// Its isolated by the bounds given
+		return true;
+	}
+	else
+	{
+		// Its not isolated by the bounds given
+		return false;
+	}
+	*/
+
+}
+
 
 /*
 ============
@@ -272,4 +355,161 @@ void idAASLocal::GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const {
 	const int *v = file->GetEdge( abs(edgeNum) ).vertexNum;
 	start = file->GetVertex( v[INTSIGNBITSET(edgeNum)] );
 	end = file->GetVertex( v[INTSIGNBITNOTSET(edgeNum)] );
+}
+
+
+/*
+**********************************************************8
+Added for Darkmod by SophisticatedZombie
+**********************************************************8
+*/
+
+
+/*
+============
+idAASLocal::GetAreaBounds
+============
+*/
+idBounds idAASLocal::GetAreaBounds( int areaNum ) const {
+	if ( !file ) 
+	{
+		idBounds emptyBounds;
+		return emptyBounds;
+	}
+	return file->AreaBounds(areaNum);
+}
+
+/*
+============
+idAASLocal::GetNumAreas
+============
+*/
+int	idAASLocal::GetNumAreas() const
+{
+	if (!file)
+	{
+		return -1;
+	}
+	else
+	{
+		return file->GetNumAreas();
+	}
+
+}
+
+/*
+============
+idAASLocal::GetAreaFirstReachability
+============
+*/
+
+idReachability* idAASLocal::GetAreaFirstReachability(int areaNum) const
+{
+	if ( !file ) 
+	{
+		return NULL;
+	}
+	aasArea_t area = file->GetArea (areaNum);
+	return area.reach;
+	
+}
+
+void idAASLocal::SetAreaTravelFlag( int index, int flag )
+{
+	if (file != NULL)
+	{
+		file->SetAreaTravelFlag(index, flag);
+	}
+}
+
+void idAASLocal::RemoveAreaTravelFlag( int index, int flag )
+{
+	if (file != NULL)
+	{
+		file->RemoveAreaTravelFlag(index, flag);
+	}
+}
+
+int idAASLocal::GetClusterNum(int areaNum)
+{
+	return file->GetArea( areaNum ).cluster;
+}
+
+void idAASLocal::ReferenceDoor(CFrobDoor* door, int areaNum)
+{
+	_doors[areaNum] = door;
+}
+
+void idAASLocal::DeReferenceDoor(CFrobDoor* door, int areaNum)
+{
+	DoorMap::iterator found = _doors.find(areaNum);
+
+	if (found != _doors.end())
+	{
+		_doors.erase(found);
+	}
+}
+
+CFrobDoor* idAASLocal::GetDoor(int areaNum) const
+{
+	DoorMap::const_iterator found = _doors.find(areaNum);
+	if (found != _doors.end())
+	{
+		return found->second;
+	}
+	return NULL;
+}
+
+void idAASLocal::Save(idSaveGame* savefile) const
+{
+	elevatorSystem->Save(savefile);
+}
+
+void idAASLocal::Restore(idRestoreGame* savefile)
+{
+	elevatorSystem->Restore(savefile);
+}
+
+/*
+============
+idAASLocal::BuildReachbilityImpactList
+============
+*/
+
+bool idAASLocal::BuildReachabilityImpactList
+(
+	TReachabilityTrackingList& inout_reachabilityList,
+	idBounds impactBounds
+) const
+{
+
+	// Start with empty list
+	inout_reachabilityList.Clear();
+
+	// For each area
+	int numAreas = GetNumAreas();
+	for (int areaIndex = 0; areaIndex < numAreas; areaIndex ++)
+	{
+		// Test this area's reachabilties
+		idReachability* p_reach = GetAreaFirstReachability (areaIndex);
+
+		while (p_reach != NULL)
+		{
+			// If this reachability is isolated by the impact bounds, then ad it to the list
+			if (TestIfBarrierIsolatesReachability (p_reach, areaIndex, impactBounds))
+			{
+				inout_reachabilityList.Append (p_reach);
+			}
+
+			// Next reachability
+			p_reach = p_reach->next;
+		
+		} // Reachability intersects given bounds
+
+
+	} // Next area
+
+	// Done
+	return true;
+
 }

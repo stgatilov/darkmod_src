@@ -1,39 +1,36 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
+#include "../../DarkMod/DarkModGlobals.h"
+#include "../../DarkMod/MeleeWeapon.h"
+#include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
 };
+
+// how many units to displace to-be-dropped entity down to avoid collision with hand
+#define DROP_DOWN_ADJUSTMENT	20.0f
+// max distance between joint and object we pickup, anything farther is ignored
+#define MAX_PICKUP_DIST			40.0f
+// max distance between joint and object we try to activate, anything farther is ignored
+#define MAX_ACTIVATE_DIST		50.0f
 
 /***********************************************************************
 
@@ -542,7 +539,34 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_CREATEMISSILE;
 		fc.string = new idStr( token );
-	} else if ( token == "launch_missile" ) {
+	}
+	else if (token == "create_missile_from_def" )
+	{
+		// Read def name
+		if (!src.ReadTokenOnLine(&token))
+		{
+			return "Unexpected end of line";
+		}
+
+		idStr projectileDefName = token;
+
+		assert(projectileDefName.Length() > 0);
+
+		// Read joint name
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+
+		if ( !modelDef->FindJoint( token ) ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+
+		fc.type = FC_CREATEMISSILE_FROM_DEF;
+
+		// Connect the projectile def and joint name with a pipe and store that
+		fc.string = new idStr(projectileDefName + "|" + token);
+	}
+	else if ( token == "launch_missile" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -611,7 +635,233 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		if( src.ReadTokenOnLine( &token ) ) {
 			fc.string = new idStr( token );
 		}
-	} else {
+	} else if (token == "setRate" )
+	{
+		if( !src.ReadTokenOnLine( &token ) ) 
+		{
+			DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("ANIMRATE: Did not find rate, exiting\r");
+			return "Unexpected end of line";
+		}
+
+		fc.type = FC_SETRATE;
+		fc.string = new idStr( token );
+	} 
+	else if ( token == "reattach" ) 
+	{
+		// first argument (name of attachment to reattach)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_REATTACH;
+		fc.string = new idStr( token );
+
+		// second argument (attach position)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+		
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
+	// tels: spawn and attach a new entity
+	else if ( token == "attach" ) 
+	{
+		// first argument (class of entity to spawn)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_ATTACH;
+		fc.string = new idStr( token );
+
+		// second argument (attach name, optional)
+		if( src.ReadTokenOnLine( &token ) )
+		{
+			fc.string->Append(va(" %s", token.c_str() ));
+		}
+		// third argument (attach position, optional)
+		if( src.ReadTokenOnLine( &token ) )
+		{
+			fc.string->Append(va(" %s", token.c_str() ));
+		}
+
+	}
+	// tels:
+	else if ( token == "destroy" ) 
+	{
+		// first argument (attachment name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_DESTROY;
+		fc.string = new idStr( token );
+	}
+	// tels: detach entity, put a bit down and let it fall
+	else if ( token == "drop" ) 
+	{
+		// first argument (attachment name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_DROP;
+		fc.string = new idStr( token );
+	}
+	// tels: detach entity and set or restore it's position
+	else if ( token == "putdown" ) 
+	{
+		// first argument (attachment name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_PUTDOWN;
+		fc.string = new idStr( token );
+	}
+	// tels:
+	else if ( token == "pickup" ) 
+	{
+		// first argument (either entity name, or AIUSE class)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_PICKUP;
+		fc.string = new idStr( token );
+
+		// second argument (attach name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+
+		// third argument (attach position)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
+	// tels:
+	else if ( token == "activate_at_joint" ) 
+	{
+		// first argument (joint name)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_ACTIVATE_AT_JOINT;
+		fc.string = new idStr( token );
+	}
+	// tels:
+	else if ( token == "activate_near" ) 
+	{
+		// first argument (either entity name, or AIUSE class)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_ACTIVATE_NEAR;
+		fc.string = new idStr( token );
+
+		// second argument (joint name for distance check)
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
+	else if ( token == "pause" ) 
+	{
+		fc.type = FC_PAUSE;
+	}
+	// Melee Combat Frame commands
+	else if ( token == "melee_hold" )
+	{
+		// like FC_PAUSE but also sets melee vars on actor
+		fc.type = FC_MELEE_HOLD;
+	}
+	else if ( token == "melee_attack_start" )
+	{
+		// first argument: name of the weapon attachment
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_ATTACK_START;
+		fc.string = new idStr( token );
+
+		// second argument: name of the attack to start
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
+	else if ( token == "melee_attack_stop" )
+	{
+		// not sure if this will have an argument, but say it will for now
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_ATTACK_STOP;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "melee_parry_start" )
+	{
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_PARRY_START;
+		fc.string = new idStr( token );
+
+		// second argument: name of the parry to start
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.string->Append(va(" %s", token.c_str() ));
+	}
+	else if ( token == "melee_parry_stop" )
+	{
+		// not sure if this will have an argument, but say it will for now
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		fc.type = FC_MELEE_PARRY_STOP;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "set_combat_flag" ) 
+	{
+		fc.type = FC_SET_ATTACK_FLAG;
+
+		// greebo: Parse attack flag argument
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		if (token == "melee") 
+		{
+			fc.index = COMBAT_MELEE;
+		}
+		else if (token == "ranged") 
+		{
+			fc.index = COMBAT_RANGED;
+		}
+		else 
+		{
+			return "Unknown attack flag in framecommand.";
+		}
+	}
+	else if ( token == "clear_combat_flag" ) 
+	{
+		fc.type = FC_CLEAR_ATTACK_FLAG;
+
+		// greebo: Parse attack flag argument
+		if( !src.ReadTokenOnLine( &token ) )
+			return "Unexpected end of line";
+
+		if (token == "melee") 
+		{
+			fc.index = COMBAT_MELEE;
+		}
+		else if (token == "ranged") 
+		{
+			fc.index = COMBAT_RANGED;
+		}
+		else 
+		{
+			return "Unknown attack flag in framecommand.";
+		}
+	}
+	else 
+	{
 		return va( "Unknown command '%s'", token.c_str() );
 	}
 
@@ -657,7 +907,8 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 idAnim::CallFrameCommands
 =====================
 */
-void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
+void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *caller ) 
+{
 	int index;
 	int end;
 	int frame;
@@ -676,6 +927,13 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 		end = index + frameLookup[ frame ].num;
 		while( index < end ) {
 			const frameCommand_t &command = frameCommands[ index++ ];
+
+			if (cv_ai_debug_anims.GetBool() && ent != gameLocal.GetLocalPlayer())
+			{
+				gameLocal.Printf("Frame: %d - executing frame command %d (%s)\n", gameLocal.framenum, command.type, ent->name.c_str());
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - executing frame command %d (%s)\r", gameLocal.framenum, command.type, ent->name.c_str());
+			}
+
 			switch( command.type ) {
 				case FC_SCRIPTFUNCTION: {
 					gameLocal.CallFrameCommand( ent, command.function );
@@ -701,24 +959,47 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					}
 					break;
 				}
-				case FC_SOUND_VOICE: {
-					if ( !command.soundShader ) {
-						if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE, 0, false, NULL ) ) {
+				case FC_SOUND_VOICE:
+				{
+					if (command.soundShader == NULL)
+					{
+						// greebo: Use the communication subsystem for AI (issue #2483)
+						if (ent->IsType(idAI::Type))
+						{
+							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+							);
+						}
+						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE, 0, false, NULL ) ) {
 							gameLocal.Warning( "Framecommand 'sound_voice' on entity '%s', anim '%s', frame %d: Could not find sound '%s'",
 								ent->name.c_str(), FullName(), frame + 1, command.string->c_str() );
 						}
-					} else {
+					}
+					else
+					{
 						ent->StartSoundShader( command.soundShader, SND_CHANNEL_VOICE, 0, false, NULL );
 					}
 					break;
 				}
-				case FC_SOUND_VOICE2: {
-					if ( !command.soundShader ) {
-						if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE2, 0, false, NULL ) ) {
+				case FC_SOUND_VOICE2:
+				{
+					if (command.soundShader == NULL)
+					{
+						// greebo: Use the communication subsystem for AI (issue #2483)
+						if (ent->IsType(idAI::Type))
+						{
+							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+							);
+						}
+						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE2, 0, false, NULL ) )
+						{
 							gameLocal.Warning( "Framecommand 'sound_voice2' on entity '%s', anim '%s', frame %d: Could not find sound '%s'",
 								ent->name.c_str(), FullName(), frame + 1, command.string->c_str() );
 						}
-					} else {
+					}
+					else 
+					{
 						ent->StartSoundShader( command.soundShader, SND_CHANNEL_VOICE2, 0, false, NULL );
 					}
 					break;
@@ -852,6 +1133,19 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					ent->ProcessEvent( &AI_CreateMissile, command.string->c_str() );
 					break;
 				}
+				case FC_CREATEMISSILE_FROM_DEF:
+				{
+					// Split the def name and the joint name again
+					int pipePos = command.string->Find('|');
+
+					assert(pipePos != -1);
+
+					idStr defName = command.string->Left(pipePos);
+					idStr jointName = command.string->Mid(pipePos+1, command.string->Length() - pipePos - 1);
+
+					ent->ProcessEvent(&AI_CreateMissileFromDef, defName.c_str(), jointName.c_str());
+					break;
+				}
 				case FC_LAUNCHMISSILE: {
 					ent->ProcessEvent( &AI_AttackMissile, command.string->c_str() );
 					break;
@@ -924,7 +1218,8 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					}
 					break;
 				}
-				case FC_AVIGAME: {
+				case FC_AVIGAME: 
+				{
 					if ( command.string ) {
 						cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "aviGame %s", command.string->c_str() ) );
 					} else {
@@ -932,6 +1227,426 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					}
 					break;
 				}
+
+				case FC_SETRATE:
+				{
+					float newRate = atof( command.string->c_str() );
+					
+					for( int ind = 0; ind < numAnims; ind++ )
+					{
+						// debug for SetRate debugging
+						//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("SETFRAMERATE: Setting frame rate: %d, on entity %s, channel %d\r", newRate, ent->name.c_str(), ind );
+						// const_cast<idMD5Anim *>(anims[ ind ])->SetFrameRate( newRate );
+						// Test out this method.  Hope it doesn't effect all anims on the channel.
+						caller->SetPlaybackRate( gameLocal.time, newRate );
+					}
+					break;
+				}
+
+				case FC_REATTACH:
+				{
+					int spcind = command.string->Find(" ");
+					idStr AttName = command.string->Left( spcind ).c_str();
+					idStr AttPos = command.string->Mid( spcind+1, command.string->Length() );
+
+					ent->ReAttachToPos( AttName, AttPos );
+					break;
+				}
+				// tels: detach and destroy an attachment
+				case FC_DESTROY:
+				{
+					// get the attachment
+					idEntity* attEntity = ent->GetAttachment( command.string->c_str() );
+					if (attEntity)
+					{
+						ent->Detach( command.string->c_str() );
+						// and now remove it from the game world
+						// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
+						attEntity->PostEventMS( &EV_Remove, 0 );
+					}
+					else
+					{
+						gameLocal.Warning ( "Cannot find attachment '%s' to destroy in animation.\n", command.string->c_str() );
+					}
+					break;
+				}
+				// tels: drop an attachement
+				case FC_DROP:
+				{
+					idEntity* detachedEntity = ent->GetAttachment( command.string->c_str() );
+
+					if (!detachedEntity)
+					{
+						gameLocal.Printf(" Couldn't find attachment position by name %s\n", command.string->c_str());
+
+						// couldn't find the attached entity by attachment name, so try all attachments:
+
+						// Tels: That does not work, as it doesn't save the joint info
+						// New position system:
+/*						CAttachInfo	*info;
+						SAttachPosition *pos;
+
+						if( (info = ent->GetAttachInfo( command.string->c_str() )) != NULL)
+						{
+							gameLocal.Printf(" Found attachment position %s\n", info->name.c_str() );
+							detachedEntity = info->ent.GetEntity();
+							if( !info->ent.IsValid() || !detachedEntity )
+					        {
+								DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Invalid attached entity at position %s on entity %s\r", info->name.c_str(), name.c_str());
+								detachedEntity = NULL;
+						 	}
+						}
+					    if( (pos = ent->GetAttachPosition( command.string->c_str() )) != NULL)
+					    {
+							gameLocal.Printf(" Found attachment position %s\n", pos->name.c_str() );
+							//detachedEntity = ent->GetAttachment( pos.name );
+							//detachedEntity = pos->ent;
+						}
+						*/
+					}
+
+					// avoid the entity clipping into the hand by teleporting it down half a unit
+					if (detachedEntity)
+					{
+						// only detach and unbind it if we have an entity
+						ent->Detach( command.string->c_str() );
+
+						idVec3 origin = detachedEntity->GetPhysics()->GetOrigin();
+						origin.z -= DROP_DOWN_ADJUSTMENT;
+						detachedEntity->GetPhysics()->SetOrigin( origin );
+						detachedEntity->m_droppedByAI = true; // grayman #1330
+					}
+					break;
+				}
+				// tels: put down an attachement, works like drop, but restores origin and angles
+				case FC_PUTDOWN:
+				{
+					idEntity* detachedEntity = ent->GetAttachment( command.string->c_str() );
+
+					// detach and unbind it
+					ent->Detach( command.string->c_str() );
+
+					// now restore origin and angles
+					idVec3 origin;
+					idAngles angles;
+					const idKeyValue *tempkv = ent->spawnArgs.FindKey( "putdown_origin" );
+					if( tempkv )
+					{
+						// if the entity itself specifies where it should be put down, use this
+						//gameLocal.Printf(" Using putdown_origin\n");
+						origin = detachedEntity->spawnArgs.GetVector( "putdown_origin", "0 0 0" );
+						detachedEntity->GetPhysics()->SetOrigin( origin );
+					}
+					else
+					{
+						// if not set on entity, restore pre-pickup values
+						//gameLocal.Printf(" Using pre_pickup_origin\n");
+						origin = detachedEntity->spawnArgs.GetVector( "pre_pickup_origin", "0 0 0" );
+					}
+					tempkv = ent->spawnArgs.FindKey( "putdown_angles" );
+					if( tempkv )
+					{
+						// if the entity itself specifies how it should be put down, use this
+						//gameLocal.Printf(" Using putdown_angles\n");
+						angles = idAngles( detachedEntity->spawnArgs.GetVector( "putdown_angles", "0 0 0" ) );
+					}
+					else
+					{
+						// if not set on entity, restore pre-pickup values
+						//gameLocal.Printf(" Using pre_pickup_angles\n");
+						angles = idAngles( detachedEntity->spawnArgs.GetVector( "pre_pickup_angles", "0 0 0" ) );
+					}
+					// gameLocal.Printf("Restoring origin %f %f %f and angles %f %f %f on putdown", origin.x, origin.y, origin.z, angles[0], angles[1], angles[2] ); 
+					detachedEntity->GetPhysics()->SetOrigin( origin );
+					detachedEntity->SetAngles( angles );
+					break;
+				}
+				// tels: spawn an entity and attach it
+				case FC_ATTACH:
+				{
+					// possible formats:
+					// "atdm:foo_bar"
+					// "atdm:foo_bar book"
+					// "atdm:foo_bar book hip_left"
+
+					idStr EntClass = "";
+					// use these as defaults
+					idStr AttName = "";
+					idStr AttPos = "";
+
+					int spcind = command.string->Find(' ');
+					if (spcind > 0)
+					{
+						// format of AttName is afterwards either "book" or "book hip_left"
+						EntClass = command.string->Left( spcind );
+						AttName = command.string->Mid( spcind+1, command.string->Length() );
+						spcind = AttName.Find(' ');
+						if (spcind > 0)
+						{
+							AttPos = AttName.Mid( spcind+1, AttName.Length() );
+							AttName = AttName.Left( spcind );
+						}
+					}
+
+					// check that there isn't already something attached:
+					// idEntity* attEntity = ent->GetAttachment(AttPos.c_str()); // grayman #2603 - This was wrong. GetAttachment wants the Attach Name ('melee_weapon') not the position ('hand_l')
+					idEntity* attEntity = ent->GetAttachmentByPosition(AttPos.c_str()); // positions now stored in attach info
+					if (attEntity)
+					{
+						gameLocal.Warning("Already have an attachment at %s, skipping frame command.", AttPos.c_str());
+					}
+					else
+					{
+						// spawn the entity
+						idEntity* spawnedEntity;
+						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
+
+						if (!entityDef)
+						{
+							gameLocal.Error("Cannot spawn %s - no such entityDef", EntClass.c_str() );
+						}
+						gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
+						// gameLocal.Printf("Attaching '%s' (%s) as '%s' to '%s'\n", EntClass.c_str(), spawnedEntity->GetName(), AttName.c_str(), AttPos.c_str() );
+
+						// Tels: Fix for alerted guards dropping entities spawned during animations, 
+						// this is queried during alerted-drop (via unbindOnalertIndex), but not during animation
+						// drop or putdown (as we want an animation be able to create objects out of thin air and let
+						// a tdm_suicide script object take care of removing the object. An example is an AI eating an
+						// apple and dropping an apple core, which will vanish a minute later):
+						spawnedEntity->spawnArgs.Set("_spawned_by_anim", "1");
+
+						ent->Attach(spawnedEntity, AttPos, AttName);
+
+						// and another fix for entities spawned, but then either dropped or stuck to the AI forever:
+						float delay = spawnedEntity->spawnArgs.GetFloat("remove_delay", "0");
+						if (delay > 0)
+						{
+							// if remove_delay is set, remove that object after "remove_delay" seconds (* 1000 to get ms)
+							spawnedEntity->PostEventMS( &EV_Remove, delay * 1000 );
+						}
+					}
+					break;
+				}
+				// tels: pick up an entity from the world
+				case FC_PICKUP:
+				{
+					// possible formats:
+					// "atdm_some_book book hand_r"
+					// "AIUSE_EAT food hand_l"
+					// "AIUSE_DRINK drink hand_l"
+
+					int spcind = command.string->Find(" ");
+					// format of AttName is afterwards "food hand_r"
+					idStr EntityName = command.string->Left( spcind );
+					idStr AttName = command.string->Mid( spcind+1, command.string->Length() );
+
+					idStr AttPos;
+					spcind = AttName.Find(" ");
+					if (spcind > 0)
+					{
+						AttPos = AttName.Mid( spcind+1, AttName.Length() );
+						AttName = AttName.Left( spcind );
+					}
+
+					// gameLocal.Warning ( "Picking up '%s' as '%s' to '%s'", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+
+					idStr Spawnarg = "pickup_"; Spawnarg.Append( name );
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						AttPos.c_str(), EntityName.c_str(), Spawnarg.c_str(), MAX_PICKUP_DIST );
+
+					// did we find an entity to pickup?
+					if (attTarget)
+					{
+						// TODO: check that this entity is not attached to something/someone else
+
+						// gameLocal.Warning ( "Found entity %s", attTarget->name.c_str() );
+
+						// gameLocal.Printf ( "Attaching '%s' as '%s' to '%s' (in pickup)\n", EntityName.c_str(), AttName.c_str(), AttPos.c_str());
+						// first get the origin and rotation of the entity
+						idVec3 origin = attTarget->GetPhysics()->GetOrigin();
+						idAngles ang = attTarget->GetPhysics()->GetAxis().ToAngles();
+						// now store them in temp. spawnargs
+						attTarget->spawnArgs.SetVector( "pre_pickup_origin", origin );
+						attTarget->spawnArgs.SetVector( "pre_pickup_angles", idVec3( ang[0], ang[1], ang[2] ) );
+						// gameLocal.Warning ( "Saving origin %f %f %f and angles %f %f %f for %s", origin.x, origin.y, origin.z, ang[0], ang[1], ang[2], AttName.c_str() );
+						// and now attach it
+						ent->Attach( attTarget, AttPos, AttName );
+					}
+					else
+					{
+						// no entity found, abort animation?
+						gameLocal.Warning( " Could not find entity '%s' to attach", EntityName.c_str() );
+					}
+					break;
+				}
+				// tels: activate the entity attached at the given joint
+				case FC_ACTIVATE_AT_JOINT:
+				{
+					// possible formats:
+					// "hand_r"
+
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						// invalid spawnarg name and entity name to disable these features (just get closest attached entity)
+						command.string->c_str(), "", "", 0.1f );
+
+					// did we find an entity to pickup?
+					// TODO: check that this entity is attached to ourselves
+					if (attTarget)
+					{
+						// TODO: check that this entity is not attached to something/someone else
+						gameLocal.Warning ( "%s is activating %s.", name.c_str(), attTarget->GetName() );
+						attTarget->Activate( ent );
+					}
+					else
+					{
+						gameLocal.Warning ( "%s has no entity at joint %s to activate.", name.c_str(), command.string->c_str());
+					}
+					break;
+				}
+				// tels: activate the given entity near the given joint
+				case FC_ACTIVATE_NEAR:
+				{
+					// possible formats:
+					// "atdm_some_entity hand_r"
+					// "AIUSE_EAT hand_l"
+
+					int spcind = command.string->Find(" ");
+					idStr EntityName = command.string->Left( spcind );
+					idStr AttPos = command.string->Mid( spcind+1, command.string->Length() );
+
+					idStr Spawnarg = "activate_"; Spawnarg.Append( name );
+					// ent is idEntity, but also an idAnimatedEntity (whoever came up with that distinction?)
+					idAnimatedEntity* animEnt = (idAnimatedEntity *)ent;
+					idEntity* attTarget = animEnt->GetEntityClosestToJoint(
+						AttPos.c_str(), EntityName.c_str(), Spawnarg.c_str(), MAX_ACTIVATE_DIST );
+
+					// did we find an entity to activate?
+					if (attTarget)
+					{
+						// gameLocal.Warning ( "Found entity %s", attTarget->name.c_str() );
+						gameLocal.Warning ( "%s is activating %s near joint %s.", name.c_str(), EntityName.c_str(), AttPos.c_str());
+						attTarget->Activate( ent );
+					}
+					break;
+				}
+				case FC_PAUSE:
+				{
+					caller->Pause( true );
+					break;
+				}
+				case FC_MELEE_HOLD:
+				{
+					caller->Pause( true );
+
+					idActor *ActOwner;
+					if( ent->IsType(idWeapon::Type) )
+						ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+					else if( ent->IsType(idActor::Type) )
+						ActOwner = static_cast<idActor *>(ent);
+					else
+						ActOwner = NULL;
+
+					// Update the associated actor's melee status
+					if( ActOwner )
+						ActOwner->Event_MeleeActionHeld();
+
+					break;
+				}
+				case FC_MELEE_ATTACK_START:
+				{
+					const char *WeapName, *AttName;
+					int spcind = command.string->Find(" ");
+					WeapName = command.string->Left( spcind ).c_str();
+					AttName = command.string->Mid( spcind+1, command.string->Length() );
+					
+					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						idActor *ActOwner;
+						if( ent->IsType(idWeapon::Type) )
+							ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+						else if( ent->IsType(idActor::Type) )
+							ActOwner = static_cast<idActor *>(ent);
+						else
+							ActOwner = NULL;
+						
+						static_cast<CMeleeWeapon *>(AttEnt)->ActivateAttack
+							( ActOwner, AttName );
+					}
+
+					break;
+				}
+				case FC_MELEE_ATTACK_STOP:
+				{	
+					idEntity *AttEnt = ent->GetAttachment( command.string->c_str() );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						CMeleeWeapon *WeapEnt = static_cast<CMeleeWeapon *>(AttEnt);
+						if( WeapEnt->GetOwner() )
+						{
+							CMeleeStatus *pStatus = &WeapEnt->GetOwner()->m_MeleeStatus;
+							// if attack hasn't hit yet, this was a miss
+							if( pStatus->m_ActionResult == MELEERESULT_IN_PROGRESS )
+							{
+								pStatus->m_ActionResult = MELEERESULT_AT_MISSED;
+								pStatus->m_ActionPhase = MELEEPHASE_RECOVERING;
+							}
+						}
+						WeapEnt->DeactivateAttack();
+					}
+
+					break;
+				}
+				case FC_MELEE_PARRY_START:
+				{
+					const char *WeapName, *ParName;
+					int spcind = command.string->Find(" ");
+					WeapName = command.string->Left( spcind ).c_str();
+					ParName = command.string->Mid( spcind+1, command.string->Length() );
+					
+					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						idActor *ActOwner;
+						if( ent->IsType(idWeapon::Type) )
+							ActOwner = static_cast<idWeapon *>(ent)->GetOwner();
+						else if( ent->IsType(idActor::Type) )
+							ActOwner = static_cast<idActor *>(ent);
+						else
+							ActOwner = NULL;
+						
+						static_cast<CMeleeWeapon *>(AttEnt)->ActivateParry
+							( ActOwner, ParName );
+					}
+
+					break;
+				}
+				case FC_MELEE_PARRY_STOP:
+				{
+					idEntity *AttEnt = ent->GetAttachment( command.string->c_str() );
+					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
+					{
+						static_cast<CMeleeWeapon *>(AttEnt)->DeactivateParry();
+					}
+
+					break;
+				}
+				case FC_SET_ATTACK_FLAG:
+					if (ent->IsType(idActor::Type))
+					{
+						static_cast<idActor*>(ent)->SetAttackFlag(static_cast<ECombatType>(command.index), true);
+					}
+					break;
+				case FC_CLEAR_ATTACK_FLAG:
+					if (ent->IsType(idActor::Type))
+					{
+						static_cast<idActor*>(ent)->SetAttackFlag(static_cast<ECombatType>(command.index), false);
+					}
+					break;
 			}
 		}
 	}
@@ -1045,6 +1760,10 @@ void idAnimBlend::Save( idSaveGame *savefile ) const {
 	savefile->WriteShort( animNum );
 	savefile->WriteBool( allowMove );
 	savefile->WriteBool( allowFrameCommands );
+	savefile->WriteBool( m_bPaused );
+	savefile->WriteInt( m_PausedTime );
+	savefile->WriteInt( m_PausedEndtime );
+	savefile->WriteShort( m_PausedCycle );
 }
 
 /*
@@ -1083,6 +1802,10 @@ void idAnimBlend::Restore( idRestoreGame *savefile, const idDeclModelDef *modelD
 	}
 	savefile->ReadBool( allowMove );
 	savefile->ReadBool( allowFrameCommands );
+	savefile->ReadBool( m_bPaused );
+	savefile->ReadInt( m_PausedTime );
+	savefile->ReadInt( m_PausedEndtime );
+	savefile->ReadShort( m_PausedCycle );
 }
 
 /*
@@ -1090,7 +1813,9 @@ void idAnimBlend::Restore( idRestoreGame *savefile, const idDeclModelDef *modelD
 idAnimBlend::Reset
 =====================
 */
-void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) {
+void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) 
+{
+
 	modelDef	= _modelDef;
 	cycle		= 1;
 	starttime	= 0;
@@ -1100,6 +1825,11 @@ void idAnimBlend::Reset( const idDeclModelDef *_modelDef ) {
 	frame		= 0;
 	allowMove	= true;
 	allowFrameCommands = true;
+	m_bPaused	= false;
+	m_PausedEndtime = 0;
+	m_PausedCycle = 1;
+	m_PausedTime = 0;
+
 	animNum		= 0;
 
 	memset( animWeights, 0, sizeof( animWeights ) );
@@ -1249,10 +1979,22 @@ bool idAnimBlend::SetSyncedAnimWeight( int num, float weight ) {
 
 /*
 =====================
+idAnimBlend::UpdatePlaybackRate
+=====================
+*/
+void idAnimBlend::UpdatePlaybackRate(int _animNum, const idEntity* ent) {
+	if (ent != NULL && _animNum >= 0 && animNum < ent->m_animRates.Num()) {
+		// this->rate = ent->m_animRates[_animNum];
+		SetPlaybackRate( gameLocal.time, ent->m_animRates[_animNum] );
+	}
+}
+
+/*
+=====================
 idAnimBlend::SetFrame
 =====================
 */
-void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _frame, int currentTime, int blendTime ) {
+void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _frame, int currentTime, int blendTime, const idEntity *ent ) {
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1262,6 +2004,8 @@ void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _f
 	if ( !_anim ) {
 		return;
 	}
+	
+	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1295,7 +2039,8 @@ void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _f
 idAnimBlend::CycleAnim
 =====================
 */
-void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime ) {
+void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity* ent ) 
+{
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1318,10 +2063,13 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 	cycle				= -1;
 	if ( _anim->GetAnimFlags().random_cycle_start ) {
 		// start the animation at a random time so that characters don't walk in sync
-		starttime = currentTime - gameLocal.random.RandomFloat() * _anim->Length();
+		starttime = (int)(currentTime - gameLocal.random.RandomFloat() * _anim->Length());
 	} else {
 		starttime = currentTime;
 	}
+
+	// ishtvan: Moved this TDM call here to fix bugs
+	UpdatePlaybackRate(_animNum, ent);
 
 	// set up blend
 	blendEndValue		= 1.0f;
@@ -1335,7 +2083,8 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 idAnimBlend::PlayAnim
 =====================
 */
-void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime ) {
+void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity *ent ) 
+{
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1357,6 +2106,9 @@ void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int cu
 	endtime				= starttime + _anim->Length();
 	cycle				= 1;
 	animWeights[ 0 ]	= 1.0f;
+
+	// ishtvan: Moved this TDM call here to fix bugs
+	UpdatePlaybackRate(_animNum, ent);
 
 	// set up blend
 	blendEndValue		= 1.0f;
@@ -1383,7 +2135,11 @@ void idAnimBlend::Clear( int currentTime, int clearTime ) {
 idAnimBlend::IsDone
 =====================
 */
-bool idAnimBlend::IsDone( int currentTime ) const {
+bool idAnimBlend::IsDone( int currentTime ) const 
+{
+	if( m_bPaused )
+		return false;
+
 	if ( !frame && ( endtime > 0 ) && ( currentTime >= endtime ) ) {
 		return true;
 	}
@@ -1400,26 +2156,25 @@ bool idAnimBlend::IsDone( int currentTime ) const {
 idAnimBlend::FrameHasChanged
 =====================
 */
-bool idAnimBlend::FrameHasChanged( int currentTime ) const {
+bool idAnimBlend::FrameHasChanged( int currentTime ) const 
+{
 	// if we don't have an anim, no change
-	if ( !animNum ) {
+	if ( !animNum )
 		return false;
-	}
 
 	// if anim is done playing, no change
-	if ( ( endtime > 0 ) && ( currentTime > endtime ) ) {
+	if ( ( endtime > 0 ) && ( currentTime > endtime ) )
 		return false;
-	}
 
 	// if our blend weight changes, we need to update
-	if ( ( currentTime < ( blendStartTime + blendDuration ) && ( blendStartValue != blendEndValue ) ) ) {
+	if ( ( currentTime < ( blendStartTime + blendDuration ) 
+			&& ( blendStartValue != blendEndValue ) ) )
 		return true;
-	}
 
 	// if we're a single frame anim and this isn't the frame we started on, we don't need to update
-	if ( ( frame || ( NumFrames() == 1 ) ) && ( currentTime != starttime ) ) {
+	// Or if we are paused at a single frame?
+	if ( ( frame || ( NumFrames() == 1 ) /* || m_bPaused */ ) && ( currentTime != starttime ) )
 		return false;
-	}
 
 	return true;
 }
@@ -1456,16 +2211,17 @@ void idAnimBlend::SetCycleCount( int count ) {
 			if ( rate == 1.0f ) {
 				endtime	= starttime - timeOffset + anim->Length();
 			} else if ( rate != 0.0f ) {
-				endtime	= starttime - timeOffset + anim->Length() / rate;
+				endtime	= (int)(starttime - timeOffset + anim->Length() / rate);
 			} else {
 				endtime = -1;
 			}
 		} else {
+
 			// most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
 			if ( rate == 1.0f ) {
 				endtime	= starttime - timeOffset + anim->Length() * cycle;
 			} else if ( rate != 0.0f ) {
-				endtime	= starttime - timeOffset + ( anim->Length() * cycle ) / rate;
+				endtime	= (int)(starttime - timeOffset + ( anim->Length() * cycle ) / rate);
 			} else {
 				endtime = -1;
 			}
@@ -1486,10 +2242,13 @@ void idAnimBlend::SetPlaybackRate( int currentTime, float newRate ) {
 	}
 
 	animTime = AnimTime( currentTime );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("SetPlayBackRate (Anim %s): animTime = %d, newRate = %f \r", AnimFullName(), animTime, newRate );
 	if ( newRate == 1.0f ) {
 		timeOffset = animTime - ( currentTime - starttime );
-	} else {
-		timeOffset = animTime - ( currentTime - starttime ) * newRate;
+	} else 
+	{
+		timeOffset = (int)(animTime - ( currentTime - starttime ) * newRate);
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("SetPlayBackRate (Anim %s): currentTime = %d, starttime = %d, calc timeOffset = %d \r", AnimFullName(), currentTime, starttime, timeOffset );
 	}
 
 	rate = newRate;
@@ -1580,6 +2339,62 @@ void idAnimBlend::AllowFrameCommands( bool allow ) {
 	allowFrameCommands = allow;
 }
 
+/*
+=====================
+idAnimBlend::Pause
+=====================
+*/
+void idAnimBlend::Pause( bool bPause )
+{
+	// going from unpaused to paused
+	if( bPause && !m_bPaused )
+	{
+		m_PausedEndtime = endtime;
+		m_PausedCycle = cycle;
+		m_PausedTime = gameLocal.time;
+
+/* Uncomment for debugging
+		gameLocal.Printf("Animation was paused, startime %d, endtime %d, cycle %d, time remaining: %d\r", 
+			starttime, endtime, (int) cycle, (endtime - starttime) );
+*/
+
+		endtime				= -1;
+		cycle				= 1;
+	}
+	// going from paused to unpaused
+	else if( !bPause && m_bPaused )
+	{
+		// how long were we paused for
+		int deltaT = gameLocal.time - m_PausedTime;
+
+		// advance one frame in the animation from where we left off
+		// equivalent to setting the start time 1 frame back
+		deltaT = deltaT - FRAME2MS(1)/rate;
+
+		starttime += deltaT;
+		if( m_PausedEndtime > 0 )
+			endtime = m_PausedEndtime + deltaT;
+		cycle = m_PausedCycle;
+
+/* Uncomment for debugging
+		gameLocal.Printf("Animation was unpaused after time %d, startime %d, endtime %d, cycle %d, time remaining: %d\r", 
+			deltaT, starttime, endtime, (int) cycle, (endtime - starttime) );
+*/
+	}
+	
+	m_bPaused = bPause;	
+}
+
+/*
+=====================
+idAnimBlend::IsPaused
+=====================
+*/
+bool idAnimBlend::IsPaused( void )
+{
+	return m_bPaused;
+}
+
 
 /*
 =====================
@@ -1609,26 +2424,34 @@ int idAnimBlend::AnimNum( void ) const {
 idAnimBlend::AnimTime
 =====================
 */
-int idAnimBlend::AnimTime( int currentTime ) const {
+int idAnimBlend::AnimTime( int currentTime ) const 
+{
 	int time;
 	int length;
 	const idAnim *anim = Anim();
 
-	if ( anim ) {
-		if ( frame ) {
+	if ( anim ) 
+	{
+		if ( frame )
+		{
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime (anim %s): Frame was already set to %d\r", AnimFullName(), frame );
 			return FRAME2MS( frame - 1 );
 		}
 
 		// most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
 		if ( rate == 1.0f ) {
 			time = currentTime - starttime + timeOffset;
-		} else {
+		} else 
+		{
 			time = static_cast<int>( ( currentTime - starttime ) * rate ) + timeOffset;
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s has adjusted rate %f\r", AnimFullName(), rate );
+			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: currentTime: %d , starttime: %d, timeOffset: %d, calc. time: %d\r",currentTime, starttime, timeOffset );
 		}
 
 		// given enough time, we can easily wrap time around in our frame calculations, so
 		// keep cycling animations' time within the length of the anim.
 		length = anim->Length();
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s has length %d \r", AnimFullName(), length );
 		if ( ( cycle < 0 ) && ( length > 0 ) ) {
 			time %= length;
 
@@ -1638,6 +2461,7 @@ int idAnimBlend::AnimTime( int currentTime ) const {
 				time += length;
 			}
 		}
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("AnimTime: Anim %s, final time =%d \r", AnimFullName(), time );
 		return time;
 	} else {
 		return 0;
@@ -1649,23 +2473,34 @@ int idAnimBlend::AnimTime( int currentTime ) const {
 idAnimBlend::GetFrameNumber
 =====================
 */
-int idAnimBlend::GetFrameNumber( int currentTime ) const {
+int idAnimBlend::GetFrameNumber( int currentTime ) const 
+{
 	const idMD5Anim	*md5anim;
 	frameBlend_t	frameinfo;
 	int				animTime;
 
+	// ishtvan: uncomment for debugging
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Anim %s called GetFrameNumber \r",AnimFullName() );
+
 	const idAnim *anim = Anim();
-	if ( !anim ) {
+	if ( !anim )
+	{
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: No anim found, returning 1\r" );
 		return 1;
 	}
 
-	if ( frame ) {
+	if ( frame )
+	{
+		// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: Frame was set to %d, returning it\r", frame );
 		return frame;
 	}
 
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: Frame was not set, calculating it...\r" );
 	md5anim = anim->MD5Anim( 0 );
 	animTime = AnimTime( currentTime );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: AnimTime returned %d ms\r", animTime );
 	md5anim->ConvertTimeToFrame( animTime, cycle, frameinfo );
+	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("GetFrameNumber: ConvertTimeToFrame returned frame %d\r", frameinfo.frame1 + 1 );
 
 	return frameinfo.frame1 + 1;
 }
@@ -1682,14 +2517,19 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 	int				fromFrameTime;
 	int				toFrameTime;
 
-	if ( !allowFrameCommands || !ent || frame || ( ( endtime > 0 ) && ( fromtime > endtime ) ) ) {
+	// ishtvan: don't play frame commands if paused
+	if 
+		( 
+			!allowFrameCommands || !ent || 
+			frame || ( ( endtime > 0 ) && ( fromtime > endtime )
+			|| m_bPaused )
+		)
 		return;
-	}
 
 	const idAnim *anim = Anim();
-	if ( !anim || !anim->HasFrameCommands() ) {
+
+	if ( !anim || !anim->HasFrameCommands() )
 		return;
-	}
 
 	if ( totime <= starttime ) {
 		// don't play until next frame or we'll play commands twice.
@@ -1709,9 +2549,9 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 
 	if ( fromFrameTime <= 0 ) {
 		// make sure first frame is called
-		anim->CallFrameCommands( ent, -1, frame2.frame1 );
+		const_cast<idAnim *>(anim)->CallFrameCommands( ent, -1, frame2.frame1, const_cast<idAnimBlend *>(this) );
 	} else {
-		anim->CallFrameCommands( ent, frame1.frame1, frame2.frame1 );
+		const_cast<idAnim *>(anim)->CallFrameCommands( ent, frame1.frame1, frame2.frame1, const_cast<idAnimBlend *>(this) );
 	}
 }
 
@@ -1727,33 +2567,36 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 	const idMD5Anim	*md5anim;
 	idJointQuat		*ptr;
 	frameBlend_t	frametime;
+	memset( &frametime, 0, sizeof(frameBlend_t) );
 	idJointQuat		*jointFrame;
 	idJointQuat		*mixFrame;
 	int				numAnims;
 	int				time;
 
 	const idAnim *anim = Anim();
-	if ( !anim ) {
+	if ( !anim )
 		return false;
-	}
+
+	if( m_bPaused )
+		currentTime = m_PausedTime;
 
 	float weight = GetWeight( currentTime );
-	if ( blendWeight > 0.0f ) {
-		if ( ( endtime >= 0 ) && ( currentTime >= endtime ) ) {
+	if ( blendWeight > 0.0f ) 
+	{
+		if ( ( endtime >= 0 ) && ( currentTime >= endtime ) )
 			return false;
-		}
-		if ( !weight ) {
+		if ( !weight ) 
 			return false;
-		}
-		if ( overrideBlend ) {
+		if ( overrideBlend )
 			blendWeight = 1.0f - weight;
-		}
 	}
 
-	if ( ( channel == ANIMCHANNEL_ALL ) && !blendWeight ) {
+	if ( ( channel == ANIMCHANNEL_ALL ) && !blendWeight ) 
+	{
 		// we don't need a temporary buffer, so just store it directly in the blend frame
 		jointFrame = blendFrame;
-	} else {
+	} else 
+	{
 		// allocate a temporary buffer to copy the joints from
 		jointFrame = ( idJointQuat * )_alloca16( numJoints * sizeof( *jointFrame ) );
 	}
@@ -1761,24 +2604,27 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 	time = AnimTime( currentTime );
 
 	numAnims = anim->NumAnims();
-	if ( numAnims == 1 ) {
+	if ( numAnims == 1 ) 
+	{
 		md5anim = anim->MD5Anim( 0 );
-		if ( frame ) {
+		if ( frame ) 
+		{
 			md5anim->GetSingleFrame( frame - 1, jointFrame, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
-		} else {
+		} else 
+		{
 			md5anim->ConvertTimeToFrame( time, cycle, frametime );
 			md5anim->GetInterpolatedFrame( frametime, jointFrame, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
 		}
-	} else {
+	} else 
+	{
 		//
 		// need to mix the multipoint anim together first
 		//
 		// allocate a temporary buffer to copy the joints to
 		mixFrame = ( idJointQuat * )_alloca16( numJoints * sizeof( *jointFrame ) );
 
-		if ( !frame ) {
+		if ( !frame )
 			anim->MD5Anim( 0 )->ConvertTimeToFrame( time, cycle, frametime );
-		}
 
 		ptr = jointFrame;
 		mixWeight = 0.0f;
@@ -1787,9 +2633,11 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 				mixWeight += animWeights[ i ];
 				lerp = animWeights[ i ] / mixWeight;
 				md5anim = anim->MD5Anim( i );
-				if ( frame ) {
+				if ( frame ) 
+				{
 					md5anim->GetSingleFrame( frame - 1, ptr, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
-				} else {
+				} else 
+				{
 					md5anim->GetInterpolatedFrame( frametime, ptr, modelDef->GetChannelJoints( channel ), modelDef->NumJointsOnChannel( channel ) );
 				}
 
@@ -2396,7 +3244,7 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 	alias = realname;
 
 	for( i = 0; i < anims.Num(); i++ ) {
-		if ( !strcmp( anims[ i ]->FullName(), realname ) ) {
+		if ( !strcmp( anims[ i ]->FullName(), realname.c_str() ) ) {
 			break;
 		}
 	}
@@ -2498,6 +3346,8 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 				flags.ai_no_turn = true;
 			} else if ( token == "anim_turn" ) {
 				flags.anim_turn = true;
+			} else if ( token == "no_random_headturning" ) {
+				flags.no_random_headturning = true;
 			} else if ( token == "frame" ) {
 				// create a frame command
 				int			framenum;
@@ -2719,7 +3569,12 @@ bool idDeclModelDef::Parse( const char *text, const int textLength ) {
 			}
 
 			for( i = ANIMCHANNEL_ALL + 1; i < ANIM_NumAnimChannels; i++ ) {
-				if ( !idStr::Icmp( channelNames[ i ], token2 ) ) {
+#if MACOS_X || __linux__
+				if ( !strcasecmp( channelNames[ i ], token2.c_str() ) )
+#else
+				if ( !stricmp( channelNames[ i ], token2.c_str() ) )
+#endif
+				{
 					break;
 				}
 			}
@@ -2759,7 +3614,7 @@ bool idDeclModelDef::Parse( const char *text, const int textLength ) {
 			}
 			channelJoints[ channel ].SetNum( num );
 		} else {
-			src.Warning( "unknown token '%s'", token.c_str() );
+			src.Warning( "unknown token '%s' on line %i in '%s'", token.c_str(), token.line, src.GetFileName() );
 			MakeDefault();
 			return false;
 		}
@@ -3089,14 +3944,14 @@ void idAnimator::Save( idSaveGame *savefile ) const {
 	for ( i = 0; i < AFPoseJoints.Num(); i++ ) {
 		savefile->WriteInt( AFPoseJoints[i] );
 	}
-	
+
 	savefile->WriteInt( AFPoseJointMods.Num() );
 	for ( i = 0; i < AFPoseJointMods.Num(); i++ ) {
 		savefile->WriteInt( (int&)AFPoseJointMods[i].mod );
 		savefile->WriteMat3( AFPoseJointMods[i].axis );
 		savefile->WriteVec3( AFPoseJointMods[i].origin );
 	}
-	
+
 	savefile->WriteInt( AFPoseJointFrame.Num() );
 	for ( i = 0; i < AFPoseJointFrame.Num(); i++ ) {
 		savefile->WriteFloat( AFPoseJointFrame[i].q.x );
@@ -3105,7 +3960,7 @@ void idAnimator::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( AFPoseJointFrame[i].q.w );
 		savefile->WriteVec3( AFPoseJointFrame[i].t );
 	}
-	
+
 	savefile->WriteBounds( AFPoseBounds );
 	savefile->WriteInt( AFPoseTime );
 
@@ -3152,7 +4007,7 @@ void idAnimator::Restore( idRestoreGame *savefile ) {
 			savefile->ReadFloat( data[j] );
 		}
 	}
-	
+
 	savefile->ReadInt( lastTransformTime );
 	savefile->ReadBool( stoppedAnimatingUpdate );
 	savefile->ReadBool( forceUpdate );
@@ -3166,7 +4021,7 @@ void idAnimator::Restore( idRestoreGame *savefile ) {
 	for ( i = 0; i < AFPoseJoints.Num(); i++ ) {
 		savefile->ReadInt( AFPoseJoints[i] );
 	}
-	
+
 	savefile->ReadInt( num );
 	AFPoseJointMods.SetGranularity( 1 );
 	AFPoseJointMods.SetNum( num );
@@ -3175,7 +4030,7 @@ void idAnimator::Restore( idRestoreGame *savefile ) {
 		savefile->ReadMat3( AFPoseJointMods[i].axis );
 		savefile->ReadVec3( AFPoseJointMods[i].origin );
 	}
-	
+
 	savefile->ReadInt( num );
 	AFPoseJointFrame.SetGranularity( 1 );
 	AFPoseJointFrame.SetNum( num );
@@ -3186,7 +4041,7 @@ void idAnimator::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( AFPoseJointFrame[i].q.w );
 		savefile->ReadVec3( AFPoseJointFrame[i].t );
 	}
-	
+
 	savefile->ReadBounds( AFPoseBounds );
 	savefile->ReadInt( AFPoseTime );
 
@@ -3480,7 +4335,7 @@ void idAnimator::SetFrame( int channelNum, int animNum, int frame, int currentTi
 	}
 
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].SetFrame( modelDef, animNum, frame, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].SetFrame( modelDef, animNum, frame, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -3501,7 +4356,7 @@ void idAnimator::CycleAnim( int channelNum, int animNum, int currentTime, int bl
 	}
 	
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].CycleAnim( modelDef, animNum, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].CycleAnim( modelDef, animNum, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -3522,7 +4377,7 @@ void idAnimator::PlayAnim( int channelNum, int animNum, int currentTime, int ble
 	}
 	
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -3952,6 +4807,7 @@ void idAnimator::FinishAFPose( int animNum, const idBounds &bounds, const int ti
 				joints[0].SetTranslation( AFPoseJointMods[0].origin );
 				break;
 			}
+			default: break;
 		}
 		j = 1;
 	} else {
@@ -3987,6 +4843,7 @@ void idAnimator::FinishAFPose( int animNum, const idBounds &bounds, const int ti
 				joints[i].SetTranslation( AFPoseJointMods[jointMod].origin );
 				break;
 			}
+			default: break;
 		}
 	}
 
@@ -4197,6 +5054,9 @@ bool idAnimator::CreateFrame( int currentTime, bool force ) {
 			return false;
 		}
 	}
+	
+	// Optional optimisation: Skip animations for dormant entities
+	if (cv_ai_opt_noanims.GetBool() && entity->CheckDormant()) return false;
 
 	lastTransformTime = currentTime;
 	stoppedAnimatingUpdate = false;

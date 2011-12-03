@@ -1,35 +1,35 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
+#include "../../DarkMod/Relations.h"
+#include "../../DarkMod/DarkModGlobals.h"
+#include "../../DarkMod/DarkmodAASHidingSpotFinder.h"
+#include "../../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../../DarkMod/AbsenceMarker.h"
+#include "../../DarkMod/AI/Memory.h"
+#include "../../DarkMod/AI/States/State.h"
+
+#include <vector>
+#include <string>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
+class CRelations;
 
 /***********************************************************************
 
@@ -41,11 +41,18 @@ const idEventDef AI_FindEnemy( "findEnemy", "d", 'e' );
 const idEventDef AI_FindEnemyAI( "findEnemyAI", "d", 'e' );
 const idEventDef AI_FindEnemyInCombatNodes( "findEnemyInCombatNodes", NULL, 'e' );
 const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntity", "E", 'e' );
-const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
+// greebo: TDM Event: Try to find a visible AI of the given team
+const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
+const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
+const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
+const idEventDef AI_PerformRelight("performRelight"); // grayman #2603
+const idEventDef AI_DropTorch("dropTorch");	// grayman #2603
+
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
 const idEventDef AI_MuzzleFlash( "muzzleFlash", "s" );
 const idEventDef AI_CreateMissile( "createMissile", "s", 'e' );
+const idEventDef AI_CreateMissileFromDef( "createMissileFromDef", "ss", 'e' ); // arg1 = def name, arg2 = joint name
 const idEventDef AI_AttackMissile( "attackMissile", "s", 'e' );
 const idEventDef AI_FireMissileAtTarget( "fireMissileAtTarget", "ss", 'e' );
 const idEventDef AI_LaunchMissile( "launchMissile", "vv", 'e' );
@@ -60,8 +67,6 @@ const idEventDef AI_CanBecomeSolid( "canBecomeSolid", NULL, 'f' );
 const idEventDef AI_BecomeSolid( "becomeSolid" );
 const idEventDef AI_BecomeRagdoll( "becomeRagdoll", NULL, 'd' );
 const idEventDef AI_StopRagdoll( "stopRagdoll" );
-const idEventDef AI_SetHealth( "setHealth", "f" );
-const idEventDef AI_GetHealth( "getHealth", NULL, 'f' );
 const idEventDef AI_AllowDamage( "allowDamage" );
 const idEventDef AI_IgnoreDamage( "ignoreDamage" );
 const idEventDef AI_GetCurrentYaw( "getCurrentYaw", NULL, 'f' );
@@ -71,9 +76,12 @@ const idEventDef AI_TurnToEntity( "turnToEntity", "E" );
 const idEventDef AI_MoveStatus( "moveStatus", NULL, 'd' );
 const idEventDef AI_StopMove( "stopMove" );
 const idEventDef AI_MoveToCover( "moveToCover" );
+const idEventDef AI_MoveToCoverFrom( "moveToCoverFrom", "E" );
 const idEventDef AI_MoveToEnemy( "moveToEnemy" );
 const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight" );
 const idEventDef AI_MoveOutOfRange( "moveOutOfRange", "ef" );
+// greebo: Flee from an entity
+const idEventDef AI_Flee( "flee", "edd", 'd' );
 const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", "es" );
 const idEventDef AI_Wander( "wander" );
 const idEventDef AI_MoveToEntity( "moveToEntity", "e" );
@@ -88,6 +96,9 @@ const idEventDef AI_WaitMove( "waitMove" );
 const idEventDef AI_GetJumpVelocity( "getJumpVelocity", "vff", 'v' );
 const idEventDef AI_EntityInAttackCone( "entityInAttackCone", "E", 'd' );
 const idEventDef AI_CanSeeEntity( "canSee", "E", 'd' );
+const idEventDef AI_CanSeeEntityExt( "canSeeExt", "Edd", 'd' );
+const idEventDef AI_CanSeePositionExt( "canSeePositionExt", "vdd", 'd' );
+const idEventDef AI_IsEntityHidden( "isEntityHidden", "Ed", 'd' );
 const idEventDef AI_SetTalkTarget( "setTalkTarget", "E" );
 const idEventDef AI_GetTalkTarget( "getTalkTarget", NULL, 'e' );
 const idEventDef AI_SetTalkState( "setTalkState", "d" );
@@ -160,19 +171,216 @@ const idEventDef AI_CanReachPosition( "canReachPosition", "v", 'd' );
 const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
+const idEventDef AI_ReEvaluateArea("reEvaluateArea", "d");
 
+// TDM
+const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
+
+const idEventDef AI_PushState("pushState", "s");
+const idEventDef AI_SwitchState("switchState", "s");
+const idEventDef AI_EndState("endState", NULL, 'd');
+
+// DarkMod AI Relations Events
+const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
+const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
+const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
+const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
+
+// Alert events
+const idEventDef AI_SetAlertLevel( "setAlertLevel", "f" );
+const idEventDef AI_Alert( "alert", "sf" );
+const idEventDef AI_VisScan( "visScan", NULL, 'e' );
+const idEventDef AI_GetSndDir( "getSndDir", NULL, 'v' );
+const idEventDef AI_GetVisDir( "getVisDir", NULL, 'v' );
+const idEventDef AI_GetTactEnt( "getTactEnt", NULL, 'e');
+const idEventDef AI_SetAcuity( "setAcuity", "sf" );
+const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
+const idEventDef AI_GetAudThresh( "getAudThresh", NULL, 'f' );
+const idEventDef AI_SetAudThresh( "setAudThresh", "f" );
+const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
+const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "fff" );
+const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
+const idEventDef AI_FoundBody( "foundBody", "e" );
+
+/*!
+* A look at event that just looks at a position in space
+*
+* @param lookAtWorldPosition The position in space to look at
+*
+* @param durationInSeconds The duration to look in seconds
+*/
+const idEventDef AI_LookAtPosition ("lookAtPosition", "vf");
+
+/*!
+* A look at event that just looks at a set of angles relative
+* to the current body facing of the AI
+*
+* @param yawAngleClockwise Negative angles are to the left of the AIs body
+*	and positive angles are to the right.
+*
+* @param pitchAngleUp Negative values are down and positive values are up
+*	where down and up are defined by the body axis.
+*
+* @param rollAngle This is currently unused and does nothing
+*
+* @param durationInSeconds The duration to look in seconds
+*
+*/
+const idEventDef AI_LookAtAngles ("lookAtAngles", "ffff");
+
+
+/*!
+* script callable: spawnThrowableProjectile
+*
+* @param projectileName The name of the projectile to spawn
+*	(as seen in a .def file) Must be descended from idProjectile
+*
+* @param pstr_attachJointName The name of the joint on the model
+*	to which the particle should be attached for throwing. If this
+*	is NULL or the empty string, then it is attached to the model center.
+*
+* @returns a pointer to a projectile entity that can be 
+*   thrown by the AI. You can use AI_LaunchMissle (e* = launchMissle(v,v) )
+*   to throw the stone.
+*
+*/
+const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 'e');
+
+// DarkMod Hiding spot detection Events
+/*!
+* This event finds hiding spots in the bounds given by two vectors.
+*
+* The first paramter is a vector which gives the location of the
+* eye from which hiding is desired.
+*
+* The second vector gives the minimums in each dimension for the
+* search space.  
+*
+* The third and fourth vectors give the min and max bounds within which spots should be tested
+*
+* The fifth parameter gives the bit flags of the types of hiding spots
+* for which the search should look.
+*
+* The sixth parameter indicates an entity that should be ignored in
+* the visual occlusion checks.  This is usually the searcher itself but
+* can be NULL.
+*
+* This method will only start the search, if it returns 1, you should call
+* continueSearchForHidingSpots every frame to do more processing until that function
+* returns 0.
+*
+* The return value is a 0 for failure, 1 for success.
+*/
+const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", "vvvdE", 'd');
+
+// Documentation see idAI::StartSearchForHidingSpotsWithExclusionArea
+const idEventDef AI_StartSearchForHidingSpotsWithExclusionArea ("startSearchForHidingSpotsWithExclusionArea", "vvvvvdE", 'd');
+
+/*
+* This method continues searching for hiding spots. It will only find so many before
+* returning so as not to cause long delays.  Detected spots are added to the currently
+* building hiding spot list.
+*
+* The return value is 0 if the end of the search was reached, or 1 if there
+* is more processing to do (call this method again next AI frame)
+*
+*/
+const idEventDef AI_ContinueSearchForHidingSpots ("continueSearchForHidingSpots", NULL, 'd');
+
+/*!
+* This should be called when the script is done with the hiding spot 
+* search to free up memory.
+*/
+const idEventDef AI_CloseHidingSpotSearch ("closeHidingSpotSearch", "");
+
+/*!
+* This re-sorts an existing search based on a new search center and radius.
+*
+* @param newCenter The new center of the search
+* 
+* @param newRadius The new radius of the search. Points outside the original
+*	search will not be added.
+*
+*/
+const idEventDef AI_ResortHidingSpotSearch ("resortHidingSpotSearch", "vv");
+
+/*!
+* This event returns the number of hiding spots by the current
+* hiding spot query. If there is no current query, this returns -1
+*/
+const idEventDef AI_GetNumHidingSpots ("getNumHidingSpots", "", 'd');
+
+/*!
+* This event returns the Nth hiding spot location. 
+* Param is 0 based hiding spot index
+*/
+const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", "d", 'v');
+
+/*!
+* This event returns the Nth hiding spot type. 
+* Param is 0 based hiding spot index
+*/
+const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
+
+/*!
+* This event splits off half of the hiding spot list of another entity
+* and sets our hiding spot list to the "taken" points.
+*
+* As such, it is useful for getting hiding spots from a seraching AI that this
+* AI is trying to assist.
+*
+* @param p_otherEntity The other entity who's hiding spots we are taking
+* 
+* @return The number of points in the list gotten
+*/
+const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitiesHidingSpotList", "e", 'd');
+
+/*!
+* This event gets the alert number of another AI (AI_AlertLevel variable value)
+*
+* @param p_otherEntity The other AI entity who's alert number is being querried
+*
+* @return The alert number of the other AI, 0.0 if its not an AI or is NULL
+*/
+const idEventDef AI_GetAlertLevelOfOtherAI ("getAlertLevelOfOtherAI", "e", 'f');
+
+/*!
+* This event is used to get a position that the AI can move to observe a 
+* given position.  It is useful for looking at hiding spots that can't be reached,
+* and performing other investigation functions.
+*/
+const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v');
+
+/**
+* These events handle a knockout of the AI (takes the attacker as argument)
+**/
+const idEventDef AI_KO_Knockout( "KO_Knockout", "E" ); // grayman #2468
+const idEventDef AI_Gas_Knockout( "Gas_Knockout", "E" ); // grayman #2468
+
+const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
+
+const idEventDef AI_HasSeenEvidence( "hasSeenEvidence", NULL, 'd' );
+
+/*
+* This is the AI event table class for a generic NPC actor.
+*
+*/
 CLASS_DECLARATION( idActor, idAI )
+	EVENT( EV_PostSpawn,						idAI::Event_PostSpawn )
 	EVENT( EV_Activate,							idAI::Event_Activate )
 	EVENT( EV_Touch,							idAI::Event_Touch )
 	EVENT( AI_FindEnemy,						idAI::Event_FindEnemy )
 	EVENT( AI_FindEnemyAI,						idAI::Event_FindEnemyAI )
 	EVENT( AI_FindEnemyInCombatNodes,			idAI::Event_FindEnemyInCombatNodes )
 	EVENT( AI_ClosestReachableEnemyOfEntity,	idAI::Event_ClosestReachableEnemyOfEntity )
-	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
+	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
+	EVENT( AI_ProcessBlindStim,					idAI::Event_ProcessBlindStim )
+	EVENT( AI_ProcessVisualStim,				idAI::Event_ProcessVisualStim )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
 	EVENT( AI_MuzzleFlash,						idAI::Event_MuzzleFlash )
 	EVENT( AI_CreateMissile,					idAI::Event_CreateMissile )
+	EVENT( AI_CreateMissileFromDef,				idAI::Event_CreateMissileFromDef )
 	EVENT( AI_AttackMissile,					idAI::Event_AttackMissile )
 	EVENT( AI_FireMissileAtTarget,				idAI::Event_FireMissileAtTarget )
 	EVENT( AI_LaunchMissile,					idAI::Event_LaunchMissile )
@@ -188,8 +396,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_BecomeNonSolid,					idAI::Event_BecomeNonSolid )
 	EVENT( AI_BecomeRagdoll,					idAI::Event_BecomeRagdoll )
 	EVENT( AI_StopRagdoll,						idAI::Event_StopRagdoll )
-	EVENT( AI_SetHealth,						idAI::Event_SetHealth )
-	EVENT( AI_GetHealth,						idAI::Event_GetHealth )
 	EVENT( AI_AllowDamage,						idAI::Event_AllowDamage )
 	EVENT( AI_IgnoreDamage,						idAI::Event_IgnoreDamage )
 	EVENT( AI_GetCurrentYaw,					idAI::Event_GetCurrentYaw )
@@ -199,9 +405,11 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_MoveStatus,						idAI::Event_MoveStatus )
 	EVENT( AI_StopMove,							idAI::Event_StopMove )
 	EVENT( AI_MoveToCover,						idAI::Event_MoveToCover )
+	EVENT( AI_MoveToCoverFrom,					idAI::Event_MoveToCoverFrom )
 	EVENT( AI_MoveToEnemy,						idAI::Event_MoveToEnemy )
 	EVENT( AI_MoveToEnemyHeight,				idAI::Event_MoveToEnemyHeight )
 	EVENT( AI_MoveOutOfRange,					idAI::Event_MoveOutOfRange )
+	EVENT( AI_Flee,								idAI::Event_Flee )
 	EVENT( AI_MoveToAttackPosition,				idAI::Event_MoveToAttackPosition )
 	EVENT( AI_Wander,							idAI::Event_Wander )
 	EVENT( AI_MoveToEntity,						idAI::Event_MoveToEntity )
@@ -217,6 +425,9 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetJumpVelocity,					idAI::Event_GetJumpVelocity )
 	EVENT( AI_EntityInAttackCone,				idAI::Event_EntityInAttackCone )
 	EVENT( AI_CanSeeEntity,						idAI::Event_CanSeeEntity )
+	EVENT( AI_CanSeeEntityExt,					idAI::Event_CanSeeEntityExt )
+	EVENT( AI_CanSeePositionExt,				idAI::Event_CanSeePositionExt )
+	EVENT( AI_IsEntityHidden,					idAI::Event_IsEntityHidden )
 	EVENT( AI_SetTalkTarget,					idAI::Event_SetTalkTarget )
 	EVENT( AI_GetTalkTarget,					idAI::Event_GetTalkTarget )
 	EVENT( AI_SetTalkState,						idAI::Event_SetTalkState )
@@ -290,7 +501,73 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
+	EVENT( AI_ReEvaluateArea,					idAI::Event_ReEvaluateArea )
+
+	
+	// greebo: State manipulation interface
+	EVENT(  AI_PushState,						idAI::Event_PushState )
+	EVENT(  AI_SwitchState,						idAI::Event_SwitchState )
+	EVENT(  AI_EndState,						idAI::Event_EndState )
+
+	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
+	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
+	EVENT( AI_SetAlertLevel,					idAI::Event_SetAlertLevel )
+	EVENT( AI_Alert,							idAI::Event_Alert )
+	EVENT( AI_GetSndDir,						idAI::Event_GetSndDir )
+	EVENT( AI_GetVisDir,						idAI::Event_GetVisDir )
+	EVENT( AI_GetTactEnt,						idAI::Event_GetTactEnt )
+	EVENT( AI_SetAcuity,						idAI::Event_SetAcuity )
+	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
+	EVENT( AI_GetAudThresh,						idAI::Event_GetAudThresh )
+	EVENT( AI_SetAudThresh,						idAI::Event_SetAudThresh )
+	EVENT( AI_VisScan,							idAI::Event_VisScan )
+	EVENT( AI_GetAlertActor,					idAI::Event_GetAlertActor )
+	EVENT( AI_SetAlertGracePeriod,				idAI::Event_SetAlertGracePeriod )
+	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
+	EVENT( AI_FoundBody,						idAI::Event_FoundBody )
+	EVENT ( AI_StartSearchForHidingSpots,		idAI::Event_StartSearchForHidingSpots )
+	EVENT ( AI_StartSearchForHidingSpotsWithExclusionArea,		idAI::Event_StartSearchForHidingSpotsWithExclusionArea )
+	EVENT ( AI_ContinueSearchForHidingSpots,	idAI::Event_ContinueSearchForHidingSpots )
+	EVENT ( AI_CloseHidingSpotSearch,			idAI::Event_CloseHidingSpotSearch )
+	EVENT ( AI_ResortHidingSpotSearch,			idAI::Event_ResortHidingSpots )
+	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
+	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
+	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
+	EVENT ( AI_GetSomeOfOtherEntitiesHidingSpotList, idAI::Event_GetSomeOfOtherEntitiesHidingSpotList)
+	EVENT ( AI_GetObservationPosition,			idAI::Event_GetObservationPosition)
+	EVENT ( AI_LookAtPosition,					idAI::Event_LookAtPosition)
+	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
+	EVENT ( AI_GetAlertLevelOfOtherAI,			idAI::Event_GetAlertLevelOfOtherAI)
+	EVENT ( AI_KO_Knockout,						idAI::Event_KO_Knockout)  // grayman #2468
+	EVENT ( AI_Gas_Knockout,					idAI::Event_Gas_Knockout) // grayman #2468
+	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
+	EVENT ( AI_GetNextIdleAnim,					idAI::Event_GetNextIdleAnim)
+	EVENT ( AI_HasSeenEvidence,					idAI::Event_HasSeenEvidence)
+
+	EVENT ( AI_PerformRelight,					idAI::Event_PerformRelight)	// grayman #2603
+	EVENT ( AI_DropTorch,						idAI::Event_DropTorch)		// grayman #2603
+
 END_CLASS
+
+void idAI::Event_PostSpawn() 
+{
+	// Parse the list of doors that can be unlocked by this AI
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("can_unlock"); kv != NULL; kv = spawnArgs.MatchPrefix("can_unlock", kv))
+	{
+		idEntity* door = gameLocal.FindEntity(kv->GetValue());
+		if (door != NULL)
+		{
+			if (door->IsType(CBinaryFrobMover::Type))
+			{
+				unlockableDoors.insert(static_cast<CBinaryFrobMover*>(door));
+			}
+			else
+			{
+				gameLocal.Warning("Invalid door name %s on AI %s", kv->GetValue().c_str(), name.c_str());
+			}
+		}
+	}
+}
 
 /*
 =====================
@@ -304,13 +581,28 @@ void idAI::Event_Activate( idEntity *activator ) {
 /*
 =====================
 idAI::Event_Touch
+
+DarkMod: Modified to issue a tactile alert.
+
+Note: Event_Touch checks ReactionTo, which checks our DarkMod Relations
+So it will only go off if the AI is bumped by an enemy that moves toward it.
+
+AI bumping by inanimate objects is handled separately in idMoveable::Collide.
 =====================
 */
-void idAI::Event_Touch( idEntity *other, trace_t *trace ) {
-	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) {
+
+void idAI::Event_Touch( idEntity *other, trace_t *trace ) 
+{
+	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
+	{
 		Activate( other );
 	}
 	AI_PUSHED = true;
+
+	if( other && other->IsType(idActor::Type) )
+	{
+		HadTactile( static_cast<idActor *>(other) );
+	}
 }
 
 /*
@@ -318,7 +610,8 @@ void idAI::Event_Touch( idEntity *other, trace_t *trace ) {
 idAI::Event_FindEnemy
 =====================
 */
-void idAI::Event_FindEnemy( int useFOV ) {
+void idAI::Event_FindEnemy( int useFOV ) 
+{
 	int			i;
 	idEntity	*ent;
 	idActor		*actor;
@@ -332,6 +625,7 @@ void idAI::Event_FindEnemy( int useFOV ) {
 			}
 
 			actor = static_cast<idActor *>( ent );
+
 			if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
 				continue;
 			}
@@ -352,42 +646,18 @@ idAI::Event_FindEnemyAI
 =====================
 */
 void idAI::Event_FindEnemyAI( int useFOV ) {
-	idEntity	*ent;
-	idActor		*actor;
-	idActor		*bestEnemy;
-	float		bestDist;
-	float		dist;
-	idVec3		delta;
-	pvsHandle_t pvs;
+	idThread::ReturnEntity(FindEnemyAI(useFOV==1));
+}
 
-	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
-
-	bestDist = idMath::INFINITY;
-	bestEnemy = NULL;
-	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		actor = static_cast<idActor *>( ent );
-		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
-			continue;
-		}
-
-		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
-			continue;
-		}
-
-		delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
-		dist = delta.LengthSqr();
-		if ( ( dist < bestDist ) && CanSee( actor, useFOV != 0 ) ) {
-			bestDist = dist;
-			bestEnemy = actor;
-		}
-	}
-
-	gameLocal.pvs.FreeCurrentPVS( pvs );
-	idThread::ReturnEntity( bestEnemy );
+/*
+=====================
+idAI::Event_FindFriendlyAI
+=====================
+*/
+void idAI::Event_FindFriendlyAI(int requiredTeam)
+{
+	
+	idThread::ReturnEntity(FindFriendlyAI(requiredTeam));
 }
 
 /*
@@ -473,7 +743,7 @@ void idAI::Event_ClosestReachableEnemyOfEntity( idEntity *team_mate ) {
 		if ( distSquared < bestDistSquared ) {
 			const idVec3 &enemyPos = ent->GetPhysics()->GetOrigin();
 			enemyAreaNum = PointReachableAreaNum( enemyPos );
-			if ( ( areaNum != 0 ) && PathToGoal( path, areaNum, origin, enemyAreaNum, enemyPos ) ) {
+			if ( ( areaNum != 0 ) && PathToGoal( path, areaNum, origin, enemyAreaNum, enemyPos, this ) ) {
 				bestEnt = ent;
 				bestDistSquared = distSquared;
 			}
@@ -481,27 +751,6 @@ void idAI::Event_ClosestReachableEnemyOfEntity( idEntity *team_mate ) {
 	}
 
 	idThread::ReturnEntity( bestEnt );
-}
-
-/*
-=====================
-idAI::Event_HeardSound
-=====================
-*/
-void idAI::Event_HeardSound( int ignore_team ) {
-	// check if we heard any sounds in the last frame
-	idActor	*actor = gameLocal.GetAlertEntity();
-	if ( actor && ( !ignore_team || ( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) && gameLocal.InPlayerPVS( this ) ) {
-		idVec3 pos = actor->GetPhysics()->GetOrigin();
-		idVec3 org = physicsObj.GetOrigin();
-		float dist = ( pos - org ).LengthSqr();
-		if ( dist < Square( AI_HEARING_RANGE ) ) {
-			idThread::ReturnEntity( actor );
-			return;
-		}
-	}
-
-	idThread::ReturnEntity( NULL );
 }
 
 /*
@@ -533,7 +782,8 @@ void idAI::Event_ClearEnemy( void ) {
 idAI::Event_MuzzleFlash
 =====================
 */
-void idAI::Event_MuzzleFlash( const char *jointname ) {
+void idAI::Event_MuzzleFlash( const char *jointname ) 
+{
 	idVec3	muzzle;
 	idMat3	axis;
 
@@ -543,28 +793,119 @@ void idAI::Event_MuzzleFlash( const char *jointname ) {
 
 /*
 =====================
+idAI::Event_SpawnThrowableProjectile
+=====================
+*/
+void idAI::Event_SpawnThrowableProjectile(const char* projectileName, const char* jointName)
+{
+	// Remove the currently active projectile if necessary
+	RemoveProjectile();
+	
+	// Load definition from movable.def
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(projectileName);
+
+	if (!projectileDef)
+	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", projectileName);
+		idThread::ReturnEntity(NULL);
+	}
+
+	// Create the projectile
+	idVec3 projectileDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
+	idVec3 projectileOrigin = physicsObj.GetOrigin();
+
+	// Spawn a new active projectile from the given dictionary (will throw gameLocal.Error on failure)
+	CreateProjectileFromDict(projectileOrigin, projectileDir, projectileDef);
+
+	// Ensure that the clip model
+	EnsureActiveProjectileInfo();
+
+	// Bind to joint
+	if (jointName == NULL || jointName[0] == NULL)
+	{
+		// No valid joint name
+		activeProjectile.projEnt.GetEntity()->Bind(this, true);
+	}	
+	else
+	{
+		activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointName, true);
+	}
+
+	// Return to script thread
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
+}
+
+/*
+=====================
 idAI::Event_CreateMissile
 =====================
 */
-void idAI::Event_CreateMissile( const char *jointname ) {
+void idAI::Event_CreateMissile( const char *jointname )
+{
+	if (projectileInfo.Num() == 0)
+	{
+		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
+		idThread::ReturnEntity( NULL );
+
+		return;
+	}
+
 	idVec3 muzzle;
 	idMat3 axis;
+	GetMuzzle(jointname, muzzle, axis);
 
-	if ( !projectileDef ) {
-		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
-		return idThread::ReturnEntity( NULL );
-	}
+	// Create a new random projectile
+	CreateProjectile(muzzle, viewAxis[0] * physicsObj.GetGravityAxis());
 
-	GetMuzzle( jointname, muzzle, axis );
-	CreateProjectile( muzzle, viewAxis[ 0 ] * physicsObj.GetGravityAxis() );
-	if ( projectile.GetEntity() ) {
-		if ( !jointname || !jointname[ 0 ] ) {
-			projectile.GetEntity()->Bind( this, true );
-		} else {
-			projectile.GetEntity()->BindToJoint( this, jointname, true );
+	if (activeProjectile.projEnt.GetEntity())
+	{
+		if (!jointname || !jointname[ 0 ])
+		{
+			activeProjectile.projEnt.GetEntity()->Bind(this, true);
+		}
+		else
+		{
+			activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointname, true);
 		}
 	}
-	idThread::ReturnEntity( projectile.GetEntity() );
+
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
+}
+
+void idAI::Event_CreateMissileFromDef(const char* defName, const char *jointname)
+{
+	// Remove any other projectile if we have one
+	RemoveProjectile();
+
+	// Load definition from movable.def
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(defName);
+
+	if (!projectileDef)
+	{
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", defName);
+		idThread::ReturnEntity(NULL);
+	}
+
+	idVec3 muzzle;
+	idMat3 axis;
+	GetMuzzle(jointname, muzzle, axis);
+
+	// Create a new named projectile
+	CreateProjectileFromDict(muzzle, viewAxis[0] * physicsObj.GetGravityAxis(), projectileDef);
+
+	if (activeProjectile.projEnt.GetEntity())
+	{
+		if (!jointname || !jointname[ 0 ])
+		{
+			activeProjectile.projEnt.GetEntity()->Bind(this, true);
+		}
+		else
+		{
+			activeProjectile.projEnt.GetEntity()->BindToJoint(this, jointname, true);
+		}
+	}
+
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
 }
 
 /*
@@ -602,52 +943,60 @@ void idAI::Event_FireMissileAtTarget( const char *jointname, const char *targetn
 idAI::Event_LaunchMissile
 =====================
 */
-void idAI::Event_LaunchMissile( const idVec3 &org, const idAngles &ang ) {
-	idVec3		start;
-	trace_t		tr;
-	idBounds	projBounds;
-	const idClipModel *projClip;
-	idMat3		axis;
-	float		distance;
-
-	if ( !projectileDef ) {
-		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
-		idThread::ReturnEntity( NULL );
+void idAI::Event_LaunchMissile(const idVec3& org, const idAngles& ang)
+{
+	if (projectileInfo.Num() == 0)
+	{
+		gameLocal.Warning("%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName());
+		idThread::ReturnEntity(NULL);
 		return;
 	}
 
-	axis = ang.ToMat3();
-	if ( !projectile.GetEntity() ) {
-		CreateProjectile( org, axis[ 0 ] );
-	}
+	idMat3 axis = ang.ToMat3();
+
+	// Ensure we have a projectile (does nothing if active projectile is non-NULL)
+	CreateProjectile(org, axis[0]);
 
 	// make sure the projectile starts inside the monster bounding box
 	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = projectile.GetEntity()->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate( projClip->GetAxis() );
+
+	const idClipModel* projClip = activeProjectile.projEnt.GetEntity()->GetPhysics()->GetClipModel();
+	idBounds projBounds = projClip->GetBounds().Rotate(projClip->GetAxis());
+
+	idVec3	start;
+	float	distance;
 
 	// check if the owner bounds is bigger than the projectile bounds
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
-		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
-		if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) ) {
+		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) )
+	{
+		if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) )
+		{
 			start = org + distance * viewAxis[ 0 ];
-		} else {
+		} 
+		else
+		{
 			start = ownerBounds.GetCenter();
 		}
-	} else {
+	}
+	else
+	{
 		// projectile bounds bigger than the owner bounds, so just start it from the center
 		start = ownerBounds.GetCenter();
 	}
 
+	trace_t tr;
 	gameLocal.clip.Translation( tr, start, org, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this );
 
 	// launch the projectile
-	idThread::ReturnEntity( projectile.GetEntity() );
-	projectile.GetEntity()->Launch( tr.endpos, axis[ 0 ], vec3_origin );
-	projectile = NULL;
+	idThread::ReturnEntity(activeProjectile.projEnt.GetEntity());
 
-	TriggerWeaponEffects( tr.endpos );
+	// greebo: Launch and free our projectile slot to get ready for the next round
+	activeProjectile.projEnt.GetEntity()->Launch( tr.endpos, axis[ 0 ], vec3_origin );
+	activeProjectile.projEnt = NULL;
+
+	TriggerWeaponEffects(tr.endpos);
 
 	lastAttackTime = gameLocal.time;
 }
@@ -704,7 +1053,7 @@ idAI::Event_RandomPath
 void idAI::Event_RandomPath( void ) {
 	idPathCorner *path;
 
-	path = idPathCorner::RandomPath( this, NULL );
+	path = idPathCorner::RandomPath( this, NULL, NULL );
 	idThread::ReturnEntity( path );
 }
 
@@ -770,33 +1119,7 @@ idAI::Event_CanBecomeSolid
 =====================
 */
 void idAI::Event_CanBecomeSolid( void ) {
-	int			i;
-	int			num;
-	idEntity *	hit;
-	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
-
-	num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
-	for ( i = 0; i < num; i++ ) {
-		cm = clipModels[ i ];
-
-		// don't check render entities
-		if ( cm->IsRenderModel() ) {
-			continue;
-		}
-
-		hit = cm->GetEntity();
-		if ( ( hit == this ) || !hit->fl.takedamage ) {
-			continue;
-		}
-
-		if ( physicsObj.ClipContents( cm ) ) {
-			idThread::ReturnFloat( false );
-			return;
-		}
-	}
-
-	idThread::ReturnFloat( true );
+	idThread::ReturnFloat( CanBecomeSolid() );
 }
 
 /*
@@ -813,6 +1136,11 @@ void idAI::Event_BecomeSolid( void ) {
 	} else {
 		physicsObj.SetContents( CONTENTS_BODY );
 	}
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 	physicsObj.GetClipModel()->Link( gameLocal.clip );
 	fl.takedamage = !spawnArgs.GetBool( "noDamage" );
 }
@@ -850,30 +1178,6 @@ void idAI::Event_StopRagdoll( void ) {
 
 	// set back the monster physics
 	SetPhysics( &physicsObj );
-}
-
-/*
-=====================
-idAI::Event_SetHealth
-=====================
-*/
-void idAI::Event_SetHealth( float newHealth ) {
-	health = newHealth;
-	fl.takedamage = true;
-	if ( health > 0 ) {
-		AI_DEAD = false;
-	} else {
-		AI_DEAD = true;
-	}
-}
-
-/*
-=====================
-idAI::Event_GetHealth
-=====================
-*/
-void idAI::Event_GetHealth( void ) {
-	idThread::ReturnFloat( health );
 }
 
 /*
@@ -957,9 +1261,36 @@ idAI::Event_MoveToCover
 */
 void idAI::Event_MoveToCover( void ) {
 	idActor *enemyEnt = enemy.GetEntity();
+	if (!enemyEnt) common->Printf("Warning: Entity is null\n");
 
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	if ( !enemyEnt || !MoveToCover( enemyEnt, lastVisibleEnemyPos ) ) {
+		return;
+	}
+}
+
+/*
+=====================
+idAI::Event_MoveToCoverFrom
+=====================
+*/
+void idAI::Event_MoveToCoverFrom( idEntity* enemyEnt ) {
+	if (!enemyEnt) enemyEnt = enemy.GetEntity();
+	if (!enemyEnt) { common->Printf("Warning: Entity is null\n"); return; }
+	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
+
+	// Hide from the eye position of the enemy, if the enemy is an actor;
+	// otherwise we have to make do with its origin plus an offset.
+	idVec3 hideFrom;
+	if (dynamic_cast <idActor*>(enemyEnt)) {
+		hideFrom = static_cast<idActor*> (enemyEnt)->GetEyePosition();
+	} else {
+		hideFrom = enemyEnt->GetPhysics()->GetOrigin();
+		hideFrom.z += 96.0f; // about 6 feet
+	}
+	
+	if (!MoveToCover( enemyEnt, hideFrom )) {
+		// failed
 		return;
 	}
 }
@@ -994,6 +1325,31 @@ idAI::Event_MoveOutOfRange
 void idAI::Event_MoveOutOfRange( idEntity *entity, float range ) {
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	MoveOutOfRange( entity, range );
+}
+
+/*
+=====================
+idAI::Event_Flee
+=====================
+*/
+void idAI::Event_Flee(idEntity *entityToFleeFrom, int algorithm, int distanceOption) {
+	StopMove(MOVE_STATUS_DEST_NOT_FOUND);
+	idThread::ReturnInt(Flee(entityToFleeFrom, algorithm, distanceOption));
+}
+
+/*
+=====================
+idAI::Event_GetObservationPosition
+by SophisticatedZobmie for The Dark Mod
+This is an adaptation of the find attack position
+query that is within MoveToAttackPosition
+=====================
+*/
+void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
+{
+	idVec3 observeFromPos = GetObservationPosition(pointToObserve, visualAcuityZeroToOne);
+	idThread::ReturnVector (observeFromPos);
+	return;
 }
 
 /*
@@ -1244,34 +1600,7 @@ idAI::Event_EntityInAttackCone
 =====================
 */
 void idAI::Event_EntityInAttackCone( idEntity *ent ) {
-	float	attack_cone;
-	idVec3	delta;
-	float	yaw;
-	float	relYaw;
-	
-	if ( !ent ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	delta = ent->GetPhysics()->GetOrigin() - GetEyePosition();
-
-	// get our gravity normal
-	const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-
-	// infinite vertical vision, so project it onto our orientation plane
-	delta -= gravityDir * ( gravityDir * delta );
-
-	delta.Normalize();
-	yaw = delta.ToYaw();
-
-	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
-	relYaw = idMath::AngleNormalize180( ideal_yaw - yaw );
-	if ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) ) {
-		idThread::ReturnInt( true );
-	} else {
-		idThread::ReturnInt( false );
-	}
+	idThread::ReturnInt( EntityInAttackCone(ent) );
 }
 
 /*
@@ -1285,9 +1614,73 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 		return;
 	}
 
-	bool cansee = CanSee( ent, false );
+	// Test if it is occluded, and use field of vision in the check (true as second parameter)
+	bool cansee = CanSee( ent, true );
+	
 	idThread::ReturnInt( cansee );
 }
+
+/*
+=====================
+idAI::Event_CanSeeEntityExt
+=====================
+*/
+void idAI::Event_CanSeeEntityExt( idEntity *ent, const int bool_useFOV, const int bool_useLighting )
+{
+
+	if ( !ent ) 
+	{
+		idThread::ReturnInt( false );
+		return;
+	}
+
+	// Test if it is visible                                                                                              
+	bool cansee = CanSeeExt( ent, (bool_useFOV != 0), (bool_useLighting != 0) );                                          
+
+	// Return result
+	idThread::ReturnInt( cansee );
+}
+
+/*
+=====================
+idAI::Event_IsEntityHidden
+
+Tels: Returns true if the entity is in the FOV, not occluded and lit up according to the threshold.
+=====================
+*/
+void idAI::Event_IsEntityHidden( idEntity *ent, const float sightThreshold )
+{
+
+	if ( !ent ) 
+	{
+		idThread::ReturnInt( false );
+		return;
+	}
+
+	// Test if it is occluded, and use field of vision in the check (true as second parameter)
+	bool cansee = idActor::CanSee( ent, true );
+
+	// Also consider lighting and visual acuity of AI
+	if (cansee)
+	{
+		cansee = !IsEntityHiddenByDarkness(ent, sightThreshold);
+	}
+
+	// Return result
+	idThread::ReturnInt( cansee );
+}
+
+/*
+=====================
+idAI::Event_CanSeePositionExt
+=====================
+*/
+void idAI::Event_CanSeePositionExt( const idVec3& position, int bool_useFOV, int bool_useLighting ) 
+{
+	bool cansee = CanSeePositionExt( position, (bool_useFOV != 0), (bool_useLighting != 0) );
+	idThread::ReturnInt( cansee );
+}
+
 
 /*
 =====================
@@ -1501,13 +1894,12 @@ void idAI::Event_CanHitEnemyFromAnim( const char *animname ) {
 	axis = local_dir.ToMat3();
 	fromPos = physicsObj.GetOrigin() + missileLaunchOffset[ anim ] * axis;
 
-	if ( projectileClipModel == NULL ) {
-		CreateProjectileClipModel();
-	}
-
+	// Ensure we have a valid clipmodel
+	ProjectileInfo& info = EnsureActiveProjectileInfo();
+	
 	// check if the owner bounds is bigger than the projectile bounds
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	const idBounds &projBounds = projectileClipModel->GetBounds();
+	const idBounds& ownerBounds = physicsObj.GetAbsBounds();
+	const idBounds& projBounds = info.clipModel->GetBounds();
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
 		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
@@ -1521,7 +1913,7 @@ void idAI::Event_CanHitEnemyFromAnim( const char *animname ) {
 		start = ownerBounds.GetCenter();
 	}
 
-	gameLocal.clip.Translation( tr, start, fromPos, projectileClipModel, mat3_identity, MASK_SHOT_RENDERMODEL, this );
+	gameLocal.clip.Translation( tr, start, fromPos, info.clipModel, mat3_identity, MASK_SHOT_RENDERMODEL, this );
 	fromPos = tr.endpos;
 
 	if ( GetAimDir( fromPos, enemy.GetEntity(), this, dir ) ) {
@@ -1566,13 +1958,12 @@ void idAI::Event_CanHitEnemyFromJoint( const char *jointname ) {
 	animator.GetJointTransform( joint, gameLocal.time, muzzle, axis );
 	muzzle = org + ( muzzle + modelOffset ) * viewAxis * physicsObj.GetGravityAxis();
 
-	if ( projectileClipModel == NULL ) {
-		CreateProjectileClipModel();
-	}
+	// Ensure the current projectile clipmodel is valid
+	ProjectileInfo& curProjInfo = EnsureActiveProjectileInfo();
 
 	// check if the owner bounds is bigger than the projectile bounds
 	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	const idBounds &projBounds = projectileClipModel->GetBounds();
+	const idBounds &projBounds = curProjInfo.clipModel->GetBounds();
 	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
 		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
 		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
@@ -1586,10 +1977,10 @@ void idAI::Event_CanHitEnemyFromJoint( const char *jointname ) {
 		start = ownerBounds.GetCenter();
 	}
 
-	gameLocal.clip.Translation( tr, start, muzzle, projectileClipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
+	gameLocal.clip.Translation( tr, start, muzzle, curProjInfo.clipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
 	muzzle = tr.endpos;
 
-	gameLocal.clip.Translation( tr, muzzle, toPos, projectileClipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
+	gameLocal.clip.Translation( tr, muzzle, toPos, curProjInfo.clipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
 	if ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == enemyEnt ) ) {
 		lastHitCheckResult = true;
 	} else {
@@ -1698,7 +2089,11 @@ void idAI::Event_TestAnimMoveTowardEnemy( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+		
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -1729,7 +2124,11 @@ void idAI::Event_TestAnimMove( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -1787,7 +2186,11 @@ void idAI::Event_TestAnimAttack( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -1945,16 +2348,7 @@ idAI::Event_SetMoveTypes
 =====================
 */
 void idAI::Event_SetMoveType( int moveType ) {
-	if ( ( moveType < 0 ) || ( moveType >= NUM_MOVETYPES ) ) {
-		gameLocal.Error( "Invalid movetype %d", moveType );
-	}
-
-	move.moveType = static_cast<moveType_t>( moveType );
-	if ( move.moveType == MOVETYPE_FLY ) {
-		travelFlags = TFL_WALK|TFL_AIR|TFL_FLY;
-	} else {
-		travelFlags = TFL_WALK|TFL_AIR;
-	}
+	SetMoveType(moveType);
 }
 
 /*
@@ -1972,66 +2366,8 @@ idAI::Event_RestoreMove
 =====================
 */
 void idAI::Event_RestoreMove( void ) {
-	idVec3 goalPos;
-	idVec3 dest;
-
-	switch( savedMove.moveCommand ) {
-	case MOVE_NONE :
-		StopMove( savedMove.moveStatus );
-		break;
-
-	case MOVE_FACE_ENEMY :
-		FaceEnemy();
-		break;
-
-	case MOVE_FACE_ENTITY :
-		FaceEntity( savedMove.goalEntity.GetEntity() );
-		break;
-
-	case MOVE_TO_ENEMY :
-		MoveToEnemy();
-		break;
-
-	case MOVE_TO_ENEMYHEIGHT :
-		MoveToEnemyHeight();
-		break;
-
-	case MOVE_TO_ENTITY :
-		MoveToEntity( savedMove.goalEntity.GetEntity() );
-		break;
-
-	case MOVE_OUT_OF_RANGE :
-		MoveOutOfRange( savedMove.goalEntity.GetEntity(), savedMove.range );
-		break;
-
-	case MOVE_TO_ATTACK_POSITION :
-		MoveToAttackPosition( savedMove.goalEntity.GetEntity(), savedMove.anim );
-		break;
-
-	case MOVE_TO_COVER :
-		MoveToCover( savedMove.goalEntity.GetEntity(), lastVisibleEnemyPos );
-		break;
-
-	case MOVE_TO_POSITION :
-		MoveToPosition( savedMove.moveDest );
-		break;
-
-	case MOVE_TO_POSITION_DIRECT :
-		DirectMoveToPosition( savedMove.moveDest );
-		break;
-
-	case MOVE_SLIDE_TO_POSITION :
-		SlideToPosition( savedMove.moveDest, savedMove.duration );
-		break;
-
-	case MOVE_WANDER :
-		WanderAround();
-		break;
-	}
-
-	if ( GetMovePos( goalPos ) ) {
-		CheckObstacleAvoidance( goalPos, dest );
-	}
+	// greebo: Call the local helper function with the previously stored <savedMove> as argument
+	RestoreMove(savedMove);
 }
 
 /*
@@ -2096,7 +2432,7 @@ idAI::Event_EnableAFPush
 =====================
 */
 void idAI::Event_EnableAFPush( void ) {
-	af_push_moveables = true;
+	m_bAFPushMoveables = true;
 }
 
 /*
@@ -2105,7 +2441,7 @@ idAI::Event_DisableAFPush
 =====================
 */
 void idAI::Event_DisableAFPush( void ) {
-	af_push_moveables = false;
+	m_bAFPushMoveables = false;
 }
 
 /*
@@ -2272,6 +2608,61 @@ void idAI::Event_TravelDistanceBetweenEntities( idEntity *source, idEntity *dest
 
 /*
 =====================
+idAI::Event_LookAtPosition
+=====================
+*/
+void idAI::Event_LookAtPosition (const idVec3& lookAtWorldPosition, float duration)
+{
+	// angua: AI must not look at infinity
+	// this rips their upper body off and leads to really low frame rates
+	if (lookAtWorldPosition.x != idMath::INFINITY)
+	{
+		if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+		{
+			focusEntity	= NULL;
+			currentFocusPos = lookAtWorldPosition;
+			alignHeadTime = gameLocal.time;
+			forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
+			blink_time = 0;
+		}
+
+		focusTime = gameLocal.time + SEC2MS( duration );
+	}
+}
+
+
+void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, float rollAngle, float durationInSeconds)
+{
+	// Get current physical angles
+	idAngles physicalAngles(0.0f, current_yaw, 0.0f);
+
+	// Now rotate it by the given angles
+	idAngles lookAngles = idAngles(pitchAngleUp, yawAngleClockwise, rollAngle);
+
+	lookAngles += physicalAngles;
+	lookAngles.Normalize180();
+
+	// Determine the look at world position
+	idVec3 lookAtPositionDelta = lookAngles.ToForward() * 15.0;
+	idVec3 lookAtWorldPosition = GetEyePosition() + lookAtPositionDelta;
+
+	//gameRenderWorld->DebugArrow (idVec4(1.0,0.0,0.0,1.0), GetEyePosition(), lookAtWorldPosition, 1, 5000);
+
+	// Update focus position
+	if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+	{
+		focusEntity	= NULL;
+		currentFocusPos = lookAtWorldPosition;
+		alignHeadTime = gameLocal.time;
+		forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
+		blink_time = 0;
+	}
+
+	focusTime = gameLocal.time + SEC2MS( durationInSeconds );
+}
+
+/*
+=====================
 idAI::Event_LookAtEntity
 =====================
 */
@@ -2335,7 +2726,7 @@ void idAI::Event_ThrowMoveable( void ) {
 	}
 	if ( moveable ) {
 		moveable->Unbind();
-		moveable->PostEventMS( &EV_SetOwner, 200, NULL );
+		moveable->PostEventMS( &EV_SetOwner, 200, 0 );
 	}
 }
 
@@ -2356,7 +2747,7 @@ void idAI::Event_ThrowAF( void ) {
 	}
 	if ( af ) {
 		af->Unbind();
-		af->PostEventMS( &EV_SetOwner, 200, NULL );
+		af->PostEventMS( &EV_SetOwner, 200, 0 );
 	}
 }
 
@@ -2431,7 +2822,11 @@ void idAI::Event_LocateEnemy( void ) {
 	}
 
 	enemyEnt->GetAASLocation( aas, lastReachableEnemyPos, areaNum );
-	SetEnemyPosition();
+
+	// SZ: Why is this in here if we are unsure of where the enemy is. We have to update it first
+	// Update was already after SetEnemyPosition so I'm just commenting out SetEnemyPosition (which
+	// is called form in UpdateEnemyPosition if we can see them)
+	//SetEnemyPosition();
 	UpdateEnemyPosition();
 }
 
@@ -2582,7 +2977,7 @@ void idAI::Event_CanReachPosition( const idVec3 &pos ) {
 
 	toAreaNum = PointReachableAreaNum( pos );
 	areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-	if ( !toAreaNum || !PathToGoal( path, areaNum, physicsObj.GetOrigin(), toAreaNum, pos ) ) {
+	if ( !toAreaNum || !PathToGoal( path, areaNum, physicsObj.GetOrigin(), toAreaNum, pos, this ) ) {
 		idThread::ReturnInt( false );
 	} else {
 		idThread::ReturnInt( true );
@@ -2626,7 +3021,7 @@ void idAI::Event_CanReachEntity( idEntity *ent ) {
 
 	const idVec3 &org = physicsObj.GetOrigin();
 	areaNum	= PointReachableAreaNum( org );
-	if ( !toAreaNum || !PathToGoal( path, areaNum, org, toAreaNum, pos ) ) {
+	if ( !toAreaNum || !PathToGoal( path, areaNum, org, toAreaNum, pos, this ) ) {
 		idThread::ReturnInt( false );
 	} else {
 		idThread::ReturnInt( true );
@@ -2639,41 +3034,7 @@ idAI::Event_CanReachEnemy
 ================
 */
 void idAI::Event_CanReachEnemy( void ) {
-	aasPath_t	path;
-	int			toAreaNum;
-	int			areaNum;
-	idVec3		pos;
-	idActor		*enemyEnt;
-
-	enemyEnt = enemy.GetEntity();
-	if ( !enemyEnt ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	if ( move.moveType != MOVETYPE_FLY ) {
-		if ( enemyEnt->OnLadder() ) {
-			idThread::ReturnInt( false );
-			return;
-		}
-		enemyEnt->GetAASLocation( aas, pos, toAreaNum );
-	}  else {
-		pos = enemyEnt->GetPhysics()->GetOrigin();
-		toAreaNum = PointReachableAreaNum( pos );
-	}
-
-	if ( !toAreaNum ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
-	if ( !PathToGoal( path, areaNum, org, toAreaNum, pos ) ) {
-		idThread::ReturnInt( false );
-	} else {
-		idThread::ReturnInt( true );
-	}
+	idThread::ReturnInt(CanReachEnemy());
 }
 
 /*
@@ -2685,23 +3046,441 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 	int		toAreaNum;
 	idVec3	pos;
 
-	if ( move.moveType != MOVETYPE_FLY ) {
-		if ( !ent->GetFloorPos( 64.0f, pos ) ) {
+	if ( move.moveType != MOVETYPE_FLY )
+	{
+		if ( !ent->GetFloorPos( 64.0f, pos ) )
+		{
 			// NOTE: not a good way to return 'false'
-			return idThread::ReturnVector( vec3_zero );
+			idThread::ReturnVector( vec3_zero );
+			return;
 		}
-		if ( ent->IsType( idActor::Type ) && static_cast<idActor *>( ent )->OnLadder() ) {
+
+		if ( ent->IsType( idActor::Type ) && static_cast<idActor *>( ent )->OnLadder() )
+		{
 			// NOTE: not a good way to return 'false'
-			return idThread::ReturnVector( vec3_zero );
+			idThread::ReturnVector( vec3_zero );
+			return;
 		}
-	} else {
+	}
+	else
+	{
 		pos = ent->GetPhysics()->GetOrigin();
 	}
 
-	if ( aas ) {
+	if ( aas )
+	{
 		toAreaNum = PointReachableAreaNum( pos );
 		aas->PushPointIntoAreaNum( toAreaNum, pos );
 	}
 
 	idThread::ReturnVector( pos );
 }
+
+
+void idAI::Event_ReEvaluateArea(int areanum)
+{
+	ReEvaluateArea(areanum);
+}
+
+/**
+* DarkMod: Begin Team Relationship Events.  See the definitions on CRelations
+* for descriptions of the Relations functions that are called.
+**/
+
+void idAI::Event_GetRelationEnt( idEntity *ent )
+{
+	idActor *actor;
+
+	if ( !ent->IsType( idActor::Type ) ) 
+	{
+		// inanimate objects are neutral to everyone
+		idThread::ReturnInt( 0 );
+	}
+
+	actor = static_cast<idActor *>( ent );
+	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team, actor->team ) );
+}
+
+void idAI::Event_GetAcuity( const char *type )
+{
+	idThread::ReturnFloat( GetAcuity( type ) );
+}
+
+void idAI::Event_SetAcuity( const char *type, float val )
+{
+	SetAcuity( type, val );
+}
+
+void idAI::Event_GetAudThresh( void )
+{
+	idThread::ReturnFloat( m_AudThreshold );
+}
+
+void idAI::Event_SetAudThresh( float val )
+{
+	m_AudThreshold = val;
+}
+
+void idAI::Event_SetAlertLevel( float newAlertLevel)
+{
+	SetAlertLevel(newAlertLevel);
+}
+
+void idAI::Event_Alert( const char *type, float amount )
+{
+	AlertAI( type, amount );
+}
+
+void idAI::Event_GetSndDir( void )
+{
+	idThread::ReturnVector( m_SoundDir );
+}
+
+void idAI::Event_GetVisDir( void )
+{
+	idThread::ReturnVector( m_LastSight );
+}
+
+void idAI::Event_GetTactEnt( void )
+{
+	idEntity *ent = GetTactEnt();
+
+	if(!ent)
+		idThread::ReturnEntity( NULL );		
+	else
+	idThread::ReturnEntity( ent );
+}
+
+
+void idAI::Event_VisScan( void )
+{
+	// assume we are checking over one frame
+	float time(1.0f/60.0f);
+
+	PerformVisualScan(time);
+	
+	idThread::ReturnEntity(GetEnemy());
+}
+
+void idAI::Event_ClosestReachableEnemy( void ) 
+{
+	Event_ClosestReachableEnemyOfEntity( static_cast<idEntity *>(this) );
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::destroyCurrentHidingSpotSearch()
+{
+	// Check to see if there is one
+	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
+	{
+		// Dereference current search
+		CHidingSpotSearchCollection::Instance().dereference(m_HidingSpotSearchHandle);
+		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search dereferenced\r");
+	}
+
+	// No hiding spots
+	m_hidingSpots.clear();
+
+	// greebo: Clear the initial alert position
+	if (mind != NULL)
+	{
+		mind->GetMemory().alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+	}
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_StartSearchForHidingSpots
+(
+	const idVec3& hideFromLocation,
+	const idVec3& minBounds, 
+	const idVec3& maxBounds, 
+	int hidingSpotTypesAllowed, 
+	idEntity* p_ignoreEntity
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Event_StartSearchForHidingSpots called.\r");
+
+	// Destroy any current search
+	destroyCurrentHidingSpotSearch();
+
+	// Make caller's search bounds
+	idBounds searchBounds (minBounds, maxBounds);
+	idBounds searchExclusionBounds;
+	searchExclusionBounds.Clear(); // no exclusion bounds
+
+	// greebo: Remember the initial alert position
+	GetMemory().alertSearchCenter = hideFromLocation;
+
+	// SZ: Must use same AAS that LAS used during setup
+
+	// Get aas
+	if (aas != NULL)
+	{
+		// Allocate object that handles the search
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Making finder\r");
+		bool b_searchCompleted = false;
+		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
+		(
+			hideFromLocation, 
+			aas, 
+			HIDING_OBJECT_HEIGHT,
+			searchBounds,
+			searchExclusionBounds,
+			hidingSpotTypesAllowed,
+			p_ignoreEntity,
+			gameLocal.framenum,
+			b_searchCompleted
+		);
+
+		// Wait at least one frame for other AIs to indicate they want to share
+		// this search. Return result indicating search is not done yet.
+		idThread::ReturnInt(1);
+
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\r");
+	
+		// Search is done since there is no search
+		idThread::ReturnInt(0);
+	}
+
+
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_StartSearchForHidingSpotsWithExclusionArea
+(
+	const idVec3& hideFromLocation,
+	const idVec3& minBounds, 
+	const idVec3& maxBounds, 
+	const idVec3& exclusionMinBounds, 
+	const idVec3& exclusionMaxBounds, 
+	int hidingSpotTypesAllowed, 
+	idEntity* p_ignoreEntity
+)
+{
+	idThread::ReturnInt(StartSearchForHidingSpotsWithExclusionArea(
+		hideFromLocation, minBounds, maxBounds, exclusionMinBounds, 
+		exclusionMaxBounds, hidingSpotTypesAllowed, p_ignoreEntity
+	));
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_ContinueSearchForHidingSpots()
+{
+	idThread::ReturnInt(ContinueSearchForHidingSpots());
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_CloseHidingSpotSearch ()
+{
+    // Destroy current hiding spot search
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Closing hiding spot search\r");
+	destroyCurrentHidingSpotSearch();
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_ResortHidingSpots
+(
+	const idVec3& searchCenter,
+	const idVec3& searchRadius
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Resorting hiding spots for new search center\r");
+	m_hidingSpots.sortForNewCenter
+	(
+		searchCenter,
+		searchRadius.Length()
+	);
+
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_GetNumHidingSpots ()
+{
+
+
+	// Get the number of hiding spots
+	int numSpots = m_hidingSpots.getNumSpots();
+
+	// Return count
+	idThread::ReturnInt (numSpots);
+}
+
+/*------------------------------------------------------------------------------*/
+
+void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
+{
+	idThread::ReturnVector(GetNthHidingSpotLocation(hidingSpotIndex));
+}
+
+/*------------------------------------------------------------------------------*/
+
+void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
+{
+	int outTypeFlags = 0;
+
+	int numSpots = m_hidingSpots.getNumSpots();
+
+	// In bounds?
+	if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
+	{
+		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpot(hidingSpotIndex);
+		if (p_spot == NULL)
+		{
+			outTypeFlags = 0;
+		}
+		else
+		{
+			outTypeFlags = p_spot->hidingSpotTypes;
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
+	}
+
+	// Return the type
+	idThread::ReturnInt (outTypeFlags);
+}
+
+//-----------------------------------------------------------------------------------------
+
+void idAI::Event_GetAlertLevelOfOtherAI (idEntity* p_otherEntity)
+{
+	// Test parameters
+	if (p_otherEntity == NULL) 
+	{
+		idThread::ReturnFloat (0.0);
+		return;
+	}
+
+	// The other entity must be an AI
+	idAI* p_otherAI = dynamic_cast<idAI*>(p_otherEntity);
+	if (p_otherAI == NULL)
+	{
+		// Not an AI
+		idThread::ReturnFloat (0.0);
+		return;
+	}
+
+	// Return the other AI's alert num
+	idThread::ReturnFloat (p_otherAI->AI_AlertLevel);
+}
+
+/*---------------------------------------------------------------------------------*/
+
+void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch)
+{
+	idThread::ReturnInt(GetSomeOfOtherEntitiesHidingSpotList(p_ownerOfSearch));
+}
+
+//--------------------------------------------------------------------------------
+
+void idAI::Event_GetAlertActor( void )
+{
+	idThread::ReturnEntity( m_AlertedByActor.GetEntity() );
+}
+
+//--------------------------------------------------------------------------------
+
+void idAI::Event_SetAlertGracePeriod( float frac, float duration, int count )
+{
+	// set the parameters
+	m_AlertGraceActor = m_AlertedByActor.GetEntity();
+	m_AlertGraceStart = gameLocal.time;
+	m_AlertGraceTime = SEC2MS( duration );
+	m_AlertGraceThresh = m_AlertLevelThisFrame * frac;
+	m_AlertGraceCountLimit = count;
+	m_AlertGraceCount = 0;
+}
+
+void idAI::Event_FoundBody( idEntity *body )
+{
+	FoundBody( body );
+}
+
+void idAI::Event_PushState(const char* state)
+{
+	mind->PushState(state);
+}
+
+void idAI::Event_SwitchState(const char* state)
+{
+	mind->SwitchState(state);
+}
+
+void idAI::Event_EndState()
+{
+	idThread::ReturnInt(static_cast<int>(mind->EndState()));
+}
+
+void idAI::Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck)
+{
+	mind->GetState()->OnBlindStim(stimSource, skipVisibilityCheck != 0);
+}
+
+void idAI::Event_ProcessVisualStim(idEntity* stimSource)
+{
+	mind->GetState()->OnVisualStim(stimSource);
+}
+
+void idAI::Event_GetNextIdleAnim()
+{
+	idThread::ReturnString(GetNextIdleAnim());
+}
+
+void idAI::Event_HasSeenEvidence()
+{
+	idThread::ReturnInt(HasSeenEvidence());
+}
+
+void idAI::Event_PerformRelight() // grayman #2603
+{
+	m_performRelight = true;
+}
+
+void idAI::Event_DropTorch() // grayman #2603
+{
+	for (int i = 0 ; i < m_Attachments.Num() ; i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+		if( !ent || !m_Attachments[i].ent.IsValid() )
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("is_torch","0"))
+		{
+			DetachInd(i);
+
+			// drop the torch a bit to get away from the AI's hand
+
+			idVec3 origin = ent->GetPhysics()->GetOrigin();
+			origin.z -= 20;
+			ent->GetPhysics()->SetOrigin( origin );
+
+			ent->m_droppedByAI = true; // grayman #1330
+			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
+			GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
+			m_DroppingTorch = false;
+			break;
+		}
+	}
+}
+
+
+

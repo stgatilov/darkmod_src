@@ -1,36 +1,31 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+/**
+* TDM: There is absolutely no reason to use this class any more!!!
+* All inventory and frob functionality has been moved to idEntity
+**/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
+#pragma warning(disable : 4996)
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/AbsenceMarker.h"
 
 /*
 ===============================================================================
@@ -61,7 +56,10 @@ END_CLASS
 idItem::idItem
 ================
 */
-idItem::idItem() {
+idItem::idItem()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	spin = false;
 	inView = false;
 	inViewTime = 0;
@@ -72,6 +70,13 @@ idItem::idItem() {
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
+
+	m_FrobActionScript = "frob_item";
+
+	noticeabilityIfAbsent = 0.0;
+	b_orgOriginSet = false;
+	
+
 }
 
 /*
@@ -104,6 +109,8 @@ void idItem::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( inViewTime );
 	savefile->WriteInt( lastCycle );
 	savefile->WriteInt( lastRenderViewTime );
+	savefile->WriteFloat (noticeabilityIfAbsent);
+	absenceEntityPtr.Save (savefile);
 }
 
 /*
@@ -124,6 +131,8 @@ void idItem::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( inViewTime );
 	savefile->ReadInt( lastCycle );
 	savefile->ReadInt( lastRenderViewTime );
+	savefile->ReadFloat (noticeabilityIfAbsent);
+	absenceEntityPtr.Restore (savefile);
 
 	itemShellHandle = -1;
 }
@@ -133,75 +142,92 @@ void idItem::Restore( idRestoreGame *savefile ) {
 idItem::UpdateRenderEntity
 ================
 */
-bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
+bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	bool bRc = true;
 
-	if ( lastRenderViewTime == renderView->time ) {
-		return false;
-	}
+	if(pulse)
+	{
+		if(lastRenderViewTime == renderView->time)
+			return false;
 
-	lastRenderViewTime = renderView->time;
+		lastRenderViewTime = renderView->time;
 
-	// check for glow highlighting if near the center of the view
-	idVec3 dir = renderEntity->origin - renderView->vieworg;
-	dir.Normalize();
-	float d = dir * renderView->viewaxis[0];
+		// check for glow highlighting if near the center of the view
+		idVec3 dir = renderEntity->origin - renderView->vieworg;
+		dir.Normalize();
+		float d = dir * renderView->viewaxis[0];
 
-	// two second pulse cycle
-	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
+		// two second pulse cycle
+		float cycle = ( renderView->time - inViewTime ) / 2000.0f;
 
-	if ( d > 0.94f ) {
-		if ( !inView ) {
-			inView = true;
-			if ( cycle > lastCycle ) {
-				// restart at the beginning
-				inViewTime = renderView->time;
-				cycle = 0.0f;
+		if(d > 0.94f)
+		{
+			if(!inView)
+			{
+				inView = true;
+				if(cycle > lastCycle)
+				{
+					// restart at the beginning
+					inViewTime = renderView->time;
+					cycle = 0.0f;
+				}
 			}
 		}
-	} else {
-		if ( inView ) {
-			inView = false;
-			lastCycle = ceil( cycle );
+		else
+		{
+			if(inView)
+			{
+				inView = false;
+				lastCycle = static_cast<int>(ceil(cycle));
+			}
 		}
-	}
 
-	// fade down after the last pulse finishes 
-	if ( !inView && cycle > lastCycle ) {
-		renderEntity->shaderParms[4] = 0.0f;
-	} else {
-		// pulse up in 1/4 second
-		cycle -= (int)cycle;
-		if ( cycle < 0.1f ) {
-			renderEntity->shaderParms[4] = cycle * 10.0f;
-		} else if ( cycle < 0.2f ) {
-			renderEntity->shaderParms[4] = 1.0f;
-		} else if ( cycle < 0.3f ) {
-			renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
-		} else {
-			// stay off between pulses
+		if(!inView && cycle > lastCycle)
+		{
 			renderEntity->shaderParms[4] = 0.0f;
+		}
+		else
+		{
+			// pulse up in 1/4 second
+			cycle -= (int)cycle;
+			if ( cycle < 0.1f ) {
+				renderEntity->shaderParms[4] = cycle * 10.0f;
+			} else if ( cycle < 0.2f ) {
+				renderEntity->shaderParms[4] = 1.0f;
+			} else if ( cycle < 0.3f ) {
+				renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
+			} else {
+				// stay off between pulses
+				renderEntity->shaderParms[4] = 0.0f;
+			}
 		}
 	}
 
 	// update every single time this is in view
-	return true;
+	return bRc;
 }
+
+
 
 /*
 ================
 idItem::ModelCallback
 ================
 */
-bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView ) {
-	const idItem *ent;
+bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView )
+{
+	idItem *ent;
 
 	// this may be triggered by a model trace or other non-view related source
-	if ( !renderView ) {
+	if ( !renderView )
+	{
 		return false;
 	}
 
 	ent = static_cast<idItem *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if ( !ent ) {
+	if(!ent)
+	{
 		gameLocal.Error( "idItem::ModelCallback: callback with NULL game entity" );
 	}
 
@@ -213,9 +239,12 @@ bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *re
 idItem::Think
 ================
 */
-void idItem::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		if ( spin ) {
+void idItem::Think( void )
+{
+	if ( thinkFlags & TH_THINK )
+	{
+		if(spin)
+		{
 			idAngles	ang;
 			idVec3		org;
 
@@ -239,10 +268,12 @@ void idItem::Think( void ) {
 idItem::Present
 ================
 */
-void idItem::Present( void ) {
+void idItem::Present( void )
+{
 	idEntity::Present();
 
-	if ( !fl.hidden && pulse ) {
+	if(!fl.hidden && pulse)
+	{
 		// also add a highlight shell model
 		renderEntity_t	shell;
 
@@ -251,14 +282,17 @@ void idItem::Present( void ) {
 		// we will mess with shader parms when the item is in view
 		// to give the "item pulse" effect
 		shell.callback = idItem::ModelCallback;
+
 		shell.entityNum = entityNumber;
 		shell.customShader = shellMaterial;
-		if ( itemShellHandle == -1 ) {
+		if ( itemShellHandle == -1 )
+		{
 			itemShellHandle = gameRenderWorld->AddEntityDef( &shell );
-		} else {
+		}
+		else
+		{
 			gameRenderWorld->UpdateEntityDef( itemShellHandle, &shell );
 		}
-
 	}
 }
 
@@ -267,12 +301,14 @@ void idItem::Present( void ) {
 idItem::Spawn
 ================
 */
-void idItem::Spawn( void ) {
+void idItem::Spawn( void )
+{
 	idStr		giveTo;
 	idEntity *	ent;
 	float		tsize;
 
-	if ( spawnArgs.GetBool( "dropToFloor" ) ) {
+	if ( spawnArgs.GetBool( "dropToFloor" ) )
+	{
 		PostEventMS( &EV_DropToFloor, 0 );
 	}
 
@@ -281,23 +317,31 @@ void idItem::Spawn( void ) {
 		GetPhysics()->GetClipModel()->Link( gameLocal.clip );
 	}
 
-	if ( spawnArgs.GetBool( "start_off" ) ) {
+	if ( spawnArgs.GetBool( "start_off" ) )
+	{
 		GetPhysics()->SetContents( 0 );
 		Hide();
-	} else {
+	} else
+	{
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	giveTo = spawnArgs.GetString( "owner" );
-	if ( giveTo.Length() ) {
+	if ( giveTo.Length() )
+	{
 		ent = gameLocal.FindEntity( giveTo );
-		if ( !ent ) {
+		if ( !ent )
+		{
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
-		PostEventMS( &EV_Touch, 0, ent, NULL );
+		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
-	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
+	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer )
+	{
 		spin = true;
 		BecomeActive( TH_THINK );
 	}
@@ -306,6 +350,10 @@ void idItem::Spawn( void ) {
 	//temp hack for tim
 	pulse = false;
 	orgOrigin = GetPhysics()->GetOrigin();
+	b_orgOriginSet = true;
+
+	noticeabilityIfAbsent = spawnArgs.GetFloat("noticeabilityIfAbsent");
+
 
 	canPickUp = !( spawnArgs.GetBool( "triggerFirst" ) || spawnArgs.GetBool( "no_touch" ) );
 
@@ -313,6 +361,9 @@ void idItem::Spawn( void ) {
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	// What team owns it?
+	spawnArgs.GetInt ("ownerTeam", "0", ownerTeam);
 }
 
 /*
@@ -320,13 +371,15 @@ void idItem::Spawn( void ) {
 idItem::GetAttributes
 ================
 */
-void idItem::GetAttributes( idDict &attributes ) {
+void idItem::GetAttributes( idDict &attributes )
+{
 	int					i;
 	const idKeyValue	*arg;
 
-	for( i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
+	int num = spawnArgs.GetNumKeyVals();
+	for( i = 0; i < num; i++ ) {
 		arg = spawnArgs.GetKeyVal( i );
-		if ( arg->GetKey().Left( 4 ) == "inv_" ) {
+		if ( arg->GetKey().Cmpn( "inv_", 4 ) ) {
 			attributes.Set( arg->GetKey().Right( arg->GetKey().Length() - 4 ), arg->GetValue() );
 		}
 	}
@@ -337,16 +390,131 @@ void idItem::GetAttributes( idDict &attributes ) {
 idItem::GiveToPlayer
 ================
 */
-bool idItem::GiveToPlayer( idPlayer *player ) {
-	if ( player == NULL ) {
+bool idItem::GiveToPlayer( idPlayer *player )
+{
+	if ( player == NULL )
+	{
 		return false;
 	}
 
-	if ( spawnArgs.GetBool( "inv_carry" ) ) {
-		return player->GiveInventoryItem( &spawnArgs );
-	} 
+	// greebo: Inventory Items are not handled here. InvItems should be added to the inventory
+	// by calling AddToInventory().
 	
-	return player->GiveItem( this );
+	/*if ( spawnArgs.GetBool( "inv_carry" ) )
+	{
+		return player->GiveInventoryItem( &spawnArgs );
+	}*/ 
+	
+	return false;//player->GiveItem( this );
+}
+
+
+/*
+================
+TDM: Darkmod spawns an absence marker entity
+================
+
+bool idItem::spawnAbsenceMarkerEntity()
+{
+	const char* pstr_markerDefName = "atdm:absence_marker";
+	const idDict *p_markerDef = gameLocal.FindEntityDefDict( pstr_markerDefName, false );
+	if( p_markerDef )
+	{
+		idEntity *ent2;
+		gameLocal.SpawnEntityDef( *p_markerDef, &ent2, false );
+
+		if ( !ent2 || !ent2->IsType( AbsenceMarker::Type ) ) 
+		{
+			gameLocal.Error( "Failed to spawn absence marker entity" );
+			return false;
+		}
+
+		AbsenceMarker* p_absenceMarker = static_cast<AbsenceMarker*>( ent2 );
+
+		// The absence marker has been created
+		absenceEntityPtr = p_absenceMarker;
+
+		// Initialize it
+		idEntityPtr<idEntity> thisPtr;
+		thisPtr = ((idEntity*) this);
+		idMat3 orgOrientation;
+		orgOrientation.Identity();
+
+		p_absenceMarker->Init();
+		if (!p_absenceMarker->initAbsenceReference (thisPtr, orgOrigin, orgOrientation))
+		{
+			gameLocal.Error( "Failed to initialize absence reference in absence marker entity" );
+			return false;
+		}
+	}
+	else
+	{
+			gameLocal.Error( "Failed to find definition of absence marker entity " );
+			return false;
+	}
+
+	// Success
+	return true;
+
+}
+*/
+/*
+================
+TDM: Darkmod destroys an absence marker entity
+================
+
+void idItem::destroyAbsenceMarkerEntity()
+{
+	if (absenceEntityPtr.IsValid())
+	{
+		AbsenceMarker* p_absenceMarker = static_cast<AbsenceMarker*>( absenceEntityPtr.GetEntity() );
+		delete p_absenceMarker;
+		absenceEntityPtr = NULL;
+	}
+}
+*/
+/*
+================
+TDM: Darkmod checks if origin changed to create absence marker entity
+idItem::UpdateVisuals
+================
+*/
+void idItem::UpdateVisuals()
+{
+	// Call base class version
+	idEntity::UpdateVisuals();
+
+	// If we have not already spawned our absence entity and we are interested in spawning
+	// one if the item moves
+	if 
+	(
+		(noticeabilityIfAbsent > 0.0) && 
+		(!absenceEntityPtr.IsValid())
+	)
+		if 
+		(
+			( (b_orgOriginSet) && (GetPhysics()->GetOrigin() != orgOrigin) ) ||
+			( IsHidden() )
+		)
+	{
+		// Spawn an absence entity
+		// spawnAbsenceMarkerEntity();
+
+	}
+	// End has been moved, should be noticed, no absence marker spawned yet
+	else if
+	(
+		(noticeabilityIfAbsent > 0.0) &&
+		(absenceEntityPtr.IsValid()) &&
+		(b_orgOriginSet) &&
+		((GetPhysics()->GetOrigin() -orgOrigin).LengthFast() < 256.0)
+	) // End should be noticed, absence marker spawned, it was put back
+	{
+		// Destroy the absence marker entity
+		// destroyAbsenceMarkerEntity();
+	}
+
+
 }
 
 /*
@@ -354,13 +522,15 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 idItem::Pickup
 ================
 */
-bool idItem::Pickup( idPlayer *player ) {
-	
-	if ( !GiveToPlayer( player ) ) {
+bool idItem::Pickup( idPlayer *player )
+{
+	if ( !GiveToPlayer( player ) )
+	{
 		return false;
 	}
 
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer )
+	{
 		ServerSendEvent( EVENT_PICKUP, NULL, false, -1 );
 	}
 
@@ -377,10 +547,14 @@ bool idItem::Pickup( idPlayer *player ) {
 	Hide();
 
 	// add the highlight shell
-	if ( itemShellHandle != -1 ) {
+	if ( itemShellHandle != -1 )
+	{
 		gameRenderWorld->FreeEntityDef( itemShellHandle );
 		itemShellHandle = -1;
 	}
+
+	// Spawn an absence marker entity
+	// spawnAbsenceMarkerEntity();
 
 	float respawn = spawnArgs.GetFloat( "respawn" );
 	bool dropped = spawnArgs.GetBool( "dropped" );
@@ -478,7 +652,7 @@ bool idItem::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }
 
 /*
@@ -504,6 +678,7 @@ idItem::Event_Touch
 ================
 */
 void idItem::Event_Touch( idEntity *other, trace_t *trace ) {
+	// only allow touches from the player
 	if ( !other->IsType( idPlayer::Type ) ) {
 		return;
 	}
@@ -546,6 +721,10 @@ void idItem::Event_Respawn( void ) {
 	inViewTime = -1000;
 	lastCycle = -1;
 	GetPhysics()->SetContents( CONTENTS_TRIGGER );
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
 	SetOrigin( orgOrigin );
 	StartSound( "snd_respawn", SND_CHANNEL_ITEM, 0, false, NULL );
 	CancelEvents( &EV_RespawnItem ); // don't double respawn
@@ -564,284 +743,6 @@ void idItem::Event_RespawnFx( void ) {
 	if ( sfx && *sfx ) {
 		idEntityFx::StartFx( sfx, NULL, NULL, this, true );
 	}
-}
-
-/*
-===============================================================================
-
-  idItemPowerup
-
-===============================================================================
-*/
-
-/*
-===============
-idItemPowerup
-===============
-*/
-
-CLASS_DECLARATION( idItem, idItemPowerup )
-END_CLASS
-
-/*
-================
-idItemPowerup::idItemPowerup
-================
-*/
-idItemPowerup::idItemPowerup() {
-	time = 0;
-	type = 0;
-}
-
-/*
-================
-idItemPowerup::Save
-================
-*/
-void idItemPowerup::Save( idSaveGame *savefile ) const {
-	savefile->WriteInt( time );
-	savefile->WriteInt( type );
-}
-
-/*
-================
-idItemPowerup::Restore
-================
-*/
-void idItemPowerup::Restore( idRestoreGame *savefile ) {
-	savefile->ReadInt( time );
-	savefile->ReadInt( type );
-}
-
-/*
-================
-idItemPowerup::Spawn
-================
-*/
-void idItemPowerup::Spawn( void ) {
-	time = spawnArgs.GetInt( "time", "30" );
-	type = spawnArgs.GetInt( "type", "0" );
-}
-
-/*
-================
-idItemPowerup::GiveToPlayer
-================
-*/
-bool idItemPowerup::GiveToPlayer( idPlayer *player ) {
-	if ( player->spectating ) {
-		return false;
-	}
-	player->GivePowerUp( type, time * 1000 );
-	return true;
-}
-
-/*
-===============================================================================
-
-  idObjective
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idItem, idObjective )
-	EVENT( EV_Activate,			idObjective::Event_Trigger )
-	EVENT( EV_HideObjective,	idObjective::Event_HideObjective )
-	EVENT( EV_GetPlayerPos,		idObjective::Event_GetPlayerPos )
-	EVENT( EV_CamShot,			idObjective::Event_CamShot )
-END_CLASS
-
-/*
-================
-idObjective::idObjective
-================
-*/
-idObjective::idObjective() {
-	playerPos.Zero();
-}
-
-/*
-================
-idObjective::Save
-================
-*/
-void idObjective::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( playerPos );
-}
-
-/*
-================
-idObjective::Restore
-================
-*/
-void idObjective::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( playerPos );
-	PostEventMS( &EV_CamShot, 250 );
-}
-
-/*
-================
-idObjective::Spawn
-================
-*/
-void idObjective::Spawn( void ) {
-	Hide();
-	PostEventMS( &EV_CamShot, 250 );
-}
-
-/*
-================
-idObjective::Event_Screenshot
-================
-*/
-void idObjective::Event_CamShot( ) {
-	const char *camName;
-	idStr shotName = gameLocal.GetMapName();
-	shotName.StripFileExtension();
-	shotName += "/";
-	shotName += spawnArgs.GetString( "screenshot" );
-	shotName.SetFileExtension( ".tga" );
-	if ( spawnArgs.GetString( "camShot", "", &camName ) ) {
-		idEntity *ent = gameLocal.FindEntity( camName );
-		if ( ent && ent->cameraTarget ) {
-			const renderView_t *view = ent->cameraTarget->GetRenderView();
-			renderView_t fullView = *view;
-			fullView.width = SCREEN_WIDTH;
-			fullView.height = SCREEN_HEIGHT;
-			// draw a view to a texture
-			renderSystem->CropRenderSize( 256, 256, true );
-			gameRenderWorld->RenderScene( &fullView );
-			renderSystem->CaptureRenderToFile( shotName );
-			renderSystem->UnCrop();
-		}
-	}
-}
-
-/*
-================
-idObjective::Event_Trigger
-================
-*/
-void idObjective::Event_Trigger( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-
-		//Pickup( player );
-
-		if ( spawnArgs.GetString( "inv_objective", NULL ) ) {
-	 		if ( player && player->hud ) {
-				idStr shotName = gameLocal.GetMapName();
-				shotName.StripFileExtension();
-				shotName += "/";
-				shotName += spawnArgs.GetString( "screenshot" );
-				shotName.SetFileExtension( ".tga" );
-				player->hud->SetStateString( "screenshot", shotName );
-				player->hud->SetStateString( "objective", "1" );
-				player->hud->SetStateString( "objectivetext", spawnArgs.GetString( "objectivetext" ) );
-				player->hud->SetStateString( "objectivetitle", spawnArgs.GetString( "objectivetitle" ) );
-				player->GiveObjective( spawnArgs.GetString( "objectivetitle" ), spawnArgs.GetString( "objectivetext" ), shotName );
-
-				// a tad slow but keeps from having to update all objectives in all maps with a name ptr
-				for( int i = 0; i < gameLocal.num_entities; i++ ) {
-					if ( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType( idObjectiveComplete::Type ) ) {
-						if ( idStr::Icmp( spawnArgs.GetString( "objectivetitle" ), gameLocal.entities[ i ]->spawnArgs.GetString( "objectivetitle" ) ) == 0 ){
-							gameLocal.entities[ i ]->spawnArgs.SetBool( "objEnabled", true );
-							break;
-						}
-					}
-				}
-
-				PostEventMS( &EV_GetPlayerPos, 2000 );
-			}
-		}
-	}
-}
-
-/*
-================
-idObjective::Event_GetPlayerPos
-================
-*/
-void idObjective::Event_GetPlayerPos() {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		playerPos = player->GetPhysics()->GetOrigin();
-		PostEventMS( &EV_HideObjective, 100, player );
-	}
-}
-
-/*
-================
-idObjective::Event_HideObjective
-================
-*/
-void idObjective::Event_HideObjective(idEntity *e) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		idVec3 v = player->GetPhysics()->GetOrigin() - playerPos;
-		if ( v.Length() > 64.0f ) {
-			player->HideObjective();
-			PostEventMS( &EV_Remove, 0 );
-		} else {
-			PostEventMS( &EV_HideObjective, 100, player );
-		}
-	}
-}
-
-/*
-===============================================================================
-
-  idVideoCDItem
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idItem, idVideoCDItem )
-END_CLASS
-
-/*
-================
-idVideoCDItem::Spawn
-================
-*/
-void idVideoCDItem::Spawn( void ) {
-}
-
-/*
-================
-idVideoCDItem::GiveToPlayer
-================
-*/
-bool idVideoCDItem::GiveToPlayer( idPlayer *player ) {
-	idStr str = spawnArgs.GetString( "video" );
-	if ( player && str.Length() ) {
-		player->GiveVideo( str, &spawnArgs );
-	}
-	return true;
-}
-
-/*
-===============================================================================
-
-  idPDAItem
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idItem, idPDAItem )
-END_CLASS
-
-/*
-================
-idPDAItem::GiveToPlayer
-================
-*/
-bool idPDAItem::GiveToPlayer(idPlayer *player) {
-	const char *str = spawnArgs.GetString( "pda_name" );
-	if ( player ) {
-		player->GivePDA( str, &spawnArgs );
-	}
-	return true;
 }
 
 /*
@@ -913,17 +814,44 @@ void idMoveableItem::Restore( idRestoreGame *savefile ) {
 idMoveableItem::Spawn
 ================
 */
-void idMoveableItem::Spawn( void ) {
+void idMoveableItem::Spawn( void ) 
+{
 	idTraceModel trm;
-	float density, friction, bouncyness, tsize;
+	float density, friction, air_friction_linear, air_friction_angular, bouncyness, tsize;
 	idStr clipModelName;
-	idBounds bounds;
+	idBounds bounds, FrobBounds;
+	idTraceModel FrobTrm;
+	int numSides(0);
 
-	// create a trigger for item pickup
-	spawnArgs.GetFloat( "triggersize", "16.0", tsize );
-	trigger = new idClipModel( idTraceModel( idBounds( vec3_origin ).Expand( tsize ) ) );
+	// create a frob box separate from the collision box for easier frobbing
+	// First check if frobbox_mins and frobbox_maxs are set
+	if ( spawnArgs.GetVector( "frobbox_mins", NULL, FrobBounds[0] ) &&
+				spawnArgs.GetVector( "frobbox_maxs", NULL, FrobBounds[1] ) )
+	{
+		if ( FrobBounds[0][0] > FrobBounds[1][0] || FrobBounds[0][1] >FrobBounds[1][1] || FrobBounds[0][2] > FrobBounds[1][2] )
+		{
+			gameLocal.Error( "Invalid frob box bounds '%s'-'%s' on entity '%s'", FrobBounds[0].ToString(), FrobBounds[1].ToString(), name.c_str() );
+		}
+	} 
+	else 
+	{
+		spawnArgs.GetFloat( "frobbox_size", "10.0", tsize );
+		FrobBounds.Zero();
+		FrobBounds.ExpandSelf( tsize );
+	}
+
+	if ( spawnArgs.GetInt( "frobbox_cylinder", "0", numSides ) && numSides > 0 ) {
+		FrobTrm.SetupCylinder( FrobBounds, numSides < 3 ? 3 : numSides );
+	} else if ( spawnArgs.GetInt( "frobbox_cone", "0", numSides ) && numSides > 0 ) {
+		FrobTrm.SetupCone( FrobBounds, numSides < 3 ? 3 : numSides );
+	} else {
+		FrobTrm.SetupBox( FrobBounds );
+	}
+
+	// Initialize frob bounds based on previous spawnarg setup
+	trigger = new idClipModel( FrobTrm );
 	trigger->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
-	trigger->SetContents( CONTENTS_TRIGGER );
+	trigger->SetContents( CONTENTS_FROBABLE );
 
 	// check if a clip model is set
 	spawnArgs.GetString( "clipmodel", "", clipModelName );
@@ -945,10 +873,17 @@ void idMoveableItem::Spawn( void ) {
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
 	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
-	spawnArgs.GetFloat( "friction", "0.05", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
 	spawnArgs.GetFloat( "bouncyness", "0.6", bouncyness );
 	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
+
+	spawnArgs.GetFloat( "friction", "0.05", friction );
+	// reverse compatibility, new contact_friction key replaces friction only if present
+	if( spawnArgs.FindKey("contact_friction") )
+	{
+		spawnArgs.GetFloat( "contact_friction", "0.05", friction );
+	}
+	spawnArgs.GetFloat( "linear_friction", "0.6", air_friction_linear );
+	spawnArgs.GetFloat( "angular_friction", "0.6", air_friction_angular );
 
 	// setup the physics
 	physicsObj.SetSelf( this );
@@ -956,10 +891,20 @@ void idMoveableItem::Spawn( void ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
 	physicsObj.SetBouncyness( bouncyness );
-	physicsObj.SetFriction( 0.6f, 0.6f, friction );
+	physicsObj.SetFriction( air_friction_linear, air_friction_angular, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
 	physicsObj.SetContents( CONTENTS_RENDERMODEL );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP );
+
+	// greebo: Allow the entityDef to override the clipmodel contents
+	if( spawnArgs.FindKey( "clipmodel_contents" ) )
+	{
+		physicsObj.SetContents( spawnArgs.GetInt("clipmodel_contents") );
+	}
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	SetPhysics( &physicsObj );
 
 	smoke = NULL;
@@ -1038,11 +983,15 @@ idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin,
 		if ( activateDelay ) {
 			item->PostEventMS( &EV_Activate, activateDelay, item );
 		}
-		if ( !removeDelay ) {
-			removeDelay = 5 * 60 * 1000;
-		}
-		// always remove a dropped item after 5 minutes in case it dropped to an unreachable location
-		item->PostEventMS( &EV_Remove, removeDelay );
+
+/**
+* TDM: Do not automatically remove dropped items 
+* (Original Id code automatically removed it after 5 minutes)
+**/
+		if ( removeDelay ) 
+		{
+			item->PostEventMS( &EV_Remove, removeDelay );
+		}	
 	}
 	return item;
 }
@@ -1178,177 +1127,18 @@ void idMoveableItem::Event_Gib( const char *damageDefName ) {
 	Gib( idVec3( 0, 0, 1 ), damageDefName );
 }
 
-/*
-===============================================================================
-
-  idMoveablePDAItem
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idMoveableItem, idMoveablePDAItem )
-END_CLASS
-
-/*
-================
-idMoveablePDAItem::GiveToPlayer
-================
-*/
-bool idMoveablePDAItem::GiveToPlayer(idPlayer *player) {
-	const char *str = spawnArgs.GetString( "pda_name" );
-	if ( player ) {
-		player->GivePDA( str, &spawnArgs );
-	}
-	return true;
+void idMoveableItem::Hide( void )
+{
+	idEntity::Hide();
+	physicsObj.SetContents( 0 );
+	trigger->SetContents( 0 );
 }
 
-/*
-===============================================================================
+void idMoveableItem::Show( void )
+{
+	idEntity::Show();
+	physicsObj.SetContents( m_preHideContents );
 
-  idItemRemover
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idEntity, idItemRemover )
-	EVENT( EV_Activate,		idItemRemover::Event_Trigger )
-END_CLASS
-
-/*
-================
-idItemRemover::Spawn
-================
-*/
-void idItemRemover::Spawn( void ) {
+	trigger->SetContents( CONTENTS_FROBABLE );
 }
 
-/*
-================
-idItemRemover::RemoveItem
-================
-*/
-void idItemRemover::RemoveItem( idPlayer *player ) {
-	const char *remove;
-	
-	remove = spawnArgs.GetString( "remove" );
-	player->RemoveInventoryItem( remove );
-}
-
-/*
-================
-idItemRemover::Event_Trigger
-================
-*/
-void idItemRemover::Event_Trigger( idEntity *activator ) {
-	if ( activator->IsType( idPlayer::Type ) ) {
-		RemoveItem( static_cast<idPlayer *>(activator) );
-	}
-}
-
-/*
-===============================================================================
-
-  idObjectiveComplete
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idItemRemover, idObjectiveComplete )
-	EVENT( EV_Activate,			idObjectiveComplete::Event_Trigger )
-	EVENT( EV_HideObjective,	idObjectiveComplete::Event_HideObjective )
-	EVENT( EV_GetPlayerPos,		idObjectiveComplete::Event_GetPlayerPos )
-END_CLASS
-
-/*
-================
-idObjectiveComplete::idObjectiveComplete
-================
-*/
-idObjectiveComplete::idObjectiveComplete() {
-	playerPos.Zero();
-}
-
-/*
-================
-idObjectiveComplete::Save
-================
-*/
-void idObjectiveComplete::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( playerPos );
-}
-
-/*
-================
-idObjectiveComplete::Restore
-================
-*/
-void idObjectiveComplete::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( playerPos );
-}
-
-/*
-================
-idObjectiveComplete::Spawn
-================
-*/
-void idObjectiveComplete::Spawn( void ) {
-	spawnArgs.SetBool( "objEnabled", false );
-	Hide();
-}
-
-/*
-================
-idObjectiveComplete::Event_Trigger
-================
-*/
-void idObjectiveComplete::Event_Trigger( idEntity *activator ) {
-	if ( !spawnArgs.GetBool( "objEnabled" ) ) {
-		return;
-	}
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		RemoveItem( player );
-
-		if ( spawnArgs.GetString( "inv_objective", NULL ) ) {
-	 		if ( player->hud ) {
-				player->hud->SetStateString( "objective", "2" );
-				player->hud->SetStateString( "objectivetext", spawnArgs.GetString( "objectivetext" ) );
-				player->hud->SetStateString( "objectivetitle", spawnArgs.GetString( "objectivetitle" ) );
-				player->CompleteObjective( spawnArgs.GetString( "objectivetitle" ) );
-				PostEventMS( &EV_GetPlayerPos, 2000 );
-			}
-		}
-	}
-}
-
-/*
-================
-idObjectiveComplete::Event_GetPlayerPos
-================
-*/
-void idObjectiveComplete::Event_GetPlayerPos() {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		playerPos = player->GetPhysics()->GetOrigin();
-		PostEventMS( &EV_HideObjective, 100, player );
-	}
-}
-
-/*
-================
-idObjectiveComplete::Event_HideObjective
-================
-*/
-void idObjectiveComplete::Event_HideObjective( idEntity *e ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		idVec3 v = player->GetPhysics()->GetOrigin();
-		v -= playerPos;
-		if ( v.Length() > 64.0f ) {
-			player->hud->HandleNamedEvent( "closeObjective" );
-			PostEventMS( &EV_Remove, 0 );
-		} else {
-			PostEventMS( &EV_HideObjective, 100, player );
-		}
-	}
-}

@@ -1,35 +1,25 @@
-/*
-===========================================================================
+/***************************************************************************
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/Grabber.h"
 
 /*
 ===============================================================================
@@ -50,6 +40,15 @@ const idEventDef EV_Light_Off( "Off", NULL );
 const idEventDef EV_Light_FadeOut( "fadeOutLight", "f" );
 const idEventDef EV_Light_FadeIn( "fadeInLight", "f" );
 
+// TDM Additions:
+const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", NULL, 'v' );
+const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
+const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
+const idEventDef EV_Light_AddToLAS("addToLAS", NULL);
+const idEventDef EV_Light_FadeToLight( "fadeToLight", "vf" );
+const idEventDef EV_Smoking("smoking", "d");
+
+
 CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_SetShader,		idLight::Event_SetShader )
 	EVENT( EV_Light_GetLightParm,	idLight::Event_GetLightParm )
@@ -65,6 +64,14 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_PostSpawn,			idLight::Event_SetSoundHandles )
 	EVENT( EV_Light_FadeOut,		idLight::Event_FadeOut )
 	EVENT( EV_Light_FadeIn,			idLight::Event_FadeIn )
+
+	EVENT( EV_Light_SetLightOrigin, idLight::Event_SetLightOrigin )
+	EVENT( EV_Light_GetLightOrigin, idLight::Event_GetLightOrigin )
+	EVENT( EV_Light_GetLightLevel,	idLight::Event_GetLightLevel )
+	EVENT( EV_Light_AddToLAS,		idLight::Event_AddToLAS )
+	EVENT( EV_InPVS,				idLight::Event_InPVS )
+	EVENT( EV_Light_FadeToLight,	idLight::Event_FadeToLight )
+	EVENT( EV_Smoking,				idLight::Event_Smoking ) // grayman #2603
 END_CLASS
 
 
@@ -189,7 +196,10 @@ void idLight::UpdateChangeableSpawnArgs( const idDict *source ) {
 idLight::idLight
 ================
 */
-idLight::idLight() {
+idLight::idLight()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
+
 	memset( &renderLight, 0, sizeof( renderLight ) );
 	localLightOrigin	= vec3_zero;
 	localLightAxis		= mat3_identity;
@@ -201,11 +211,27 @@ idLight::idLight() {
 	count				= 0;
 	triggercount		= 0;
 	lightParent			= NULL;
+	switchList.Clear();				// grayman #2603 - list of my switches
+	beingRelit			= false;	// grayman #2603
+	chanceNegativeBark	= 1.0f;		// grayman #2603
+	whenTurnedOff		= 0;		// grayman #2603
+	nextTimeLightOutBark = 0;		// grayman #2603
+	relightAfter		= 0;		// grayman #2603
+	aiBarks.Clear();				// grayman #2603
+
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
 	fadeStart			= 0;
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
+	m_MaxLightRadius	= 0.0f;
+	m_LightMaterial		= NULL;
+
+	/*!
+	Darkmod LAS
+	*/
+	LASAreaIndex = -1;
+
 }
 
 /*
@@ -213,9 +239,28 @@ idLight::idLight() {
 idLight::~idLight
 ================
 */
-idLight::~idLight() {
+idLight::~idLight()
+{
 	if ( lightDefHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( lightDefHandle );
+	}
+
+	/*!
+	* Darkmod LAS
+	*/
+	// Remove light from LAS
+	if (LASAreaIndex != -1)
+	{
+		LAS.removeLight(this);
+	}
+
+	/*!
+	Darkmod player lighting
+	*/
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player != NULL)
+	{
+		player->RemoveLight(this);
 	}
 }
 
@@ -234,7 +279,6 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( localLightOrigin );
 	savefile->WriteMat3( localLightAxis );
 
-	savefile->WriteString( brokenModel );
 	savefile->WriteInt( levels );
 	savefile->WriteInt( currentLevel );
 
@@ -243,12 +287,42 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( count );
 	savefile->WriteInt( triggercount );
 	savefile->WriteObject( lightParent );
+	savefile->WriteBool(beingRelit);			// grayman #2603
+	savefile->WriteFloat(chanceNegativeBark);	// grayman #2603
+	savefile->WriteInt(whenTurnedOff);			// grayman #2603
+	savefile->WriteInt(nextTimeLightOutBark);	// grayman #2603
+	savefile->WriteInt(relightAfter);			// grayman #2603
+	savefile->WriteFloat(nextTimeVerticalCheck);	// grayman #2603
+	savefile->WriteBool(smoking);					// grayman #2603
+	savefile->WriteInt(whenToDouse);				// grayman #2603
+
+	savefile->WriteInt(switchList.Num());	// grayman #2603
+	for (int i = 0; i < switchList.Num(); i++)
+	{
+		switchList[i].Save(savefile);
+	}
 
 	savefile->WriteVec4( fadeFrom );
 	savefile->WriteVec4( fadeTo );
 	savefile->WriteInt( fadeStart );
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( soundWasPlaying );
+
+	// grayman #2603 - ai bark counts
+
+	savefile->WriteInt(aiBarks.Num());
+	for (int i = 0 ; i < aiBarks.Num() ; i++)
+	{
+		AIBarks barks = aiBarks[i];
+
+		savefile->WriteInt(barks.count);
+		barks.ai.Save(savefile);
+	}
+
+	savefile->WriteFloat(m_MaxLightRadius);
+	savefile->WriteInt(LASAreaIndex);
+
+	// Don't save m_LightMaterial
 }
 
 /*
@@ -279,7 +353,6 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( localLightOrigin );
 	savefile->ReadMat3( localLightAxis );
 
-	savefile->ReadString( brokenModel );
 	savefile->ReadInt( levels );
 	savefile->ReadInt( currentLevel );
 
@@ -288,6 +361,24 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( count );
 	savefile->ReadInt( triggercount );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( lightParent ) );
+	savefile->ReadBool( beingRelit );			// grayman #2603
+	savefile->ReadFloat( chanceNegativeBark );	// grayman #2603
+	savefile->ReadInt( whenTurnedOff );			// grayman #2603
+	savefile->ReadInt( nextTimeLightOutBark );	// grayman #2603
+	savefile->ReadInt( relightAfter );			// grayman #2603
+	savefile->ReadFloat(nextTimeVerticalCheck);	// grayman #2603
+	savefile->ReadBool(smoking);				// grayman #2603
+	savefile->ReadInt(whenToDouse);				// grayman #2603
+	
+	// grayman #2603
+	switchList.Clear();
+	int num;
+	savefile->ReadInt(num);
+	switchList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		switchList[i].Restore(savefile);
+	}
 
 	savefile->ReadVec4( fadeFrom );
 	savefile->ReadVec4( fadeTo );
@@ -295,9 +386,28 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( soundWasPlaying );
 
+	// grayman #2603 - ai bark counts
+
+	savefile->ReadInt(num);
+	aiBarks.SetNum(num);
+	for (int i = 0 ; i < num ; i++)
+	{
+		savefile->ReadInt(aiBarks[i].count);
+		aiBarks[i].ai.Restore(savefile);
+	}
+
+	savefile->ReadFloat(m_MaxLightRadius);
+	savefile->ReadInt(LASAreaIndex);
+
 	lightDefHandle = -1;
 
 	SetLightLevel();
+
+	m_MaterialName = NULL;
+	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
+
+	// Re-acquire light material, now that the material name is known
+	m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
 }
 
 /*
@@ -305,9 +415,9 @@ void idLight::Restore( idRestoreGame *savefile ) {
 idLight::Spawn
 ================
 */
-void idLight::Spawn( void ) {
+void idLight::Spawn( void )
+{
 	bool start_off;
-	bool needBroken;
 	const char *demonic_shader;
 
 	// do the parsing the same way dmap and the editor do
@@ -357,7 +467,6 @@ void idLight::Spawn( void ) {
 	}
 
 	health = spawnArgs.GetInt( "health", "0" );
-	spawnArgs.GetString( "broken", "", brokenModel );
 	spawnArgs.GetBool( "break", "0", breakOnTrigger );
 	spawnArgs.GetInt( "count", "1", count );
 
@@ -368,53 +477,79 @@ void idLight::Spawn( void ) {
 	fadeStart			= 0;
 	fadeEnd				= 0;
 
-	// if we have a health make light breakable
-	if ( health ) {
-		idStr model = spawnArgs.GetString( "model" );		// get the visual model
-		if ( !model.Length() ) {
-			gameLocal.Error( "Breakable light without a model set on entity #%d(%s)", entityNumber, name.c_str() );
-		}
-
-		fl.takedamage	= true;
-
-		// see if we need to create a broken model name
-		needBroken = true;
-		if ( model.Length() && !brokenModel.Length() ) {
-			int	pos;
-
-			needBroken = false;
-		
-			pos = model.Find( "." );
-			if ( pos < 0 ) {
-				pos = model.Length();
-			}
-			if ( pos > 0 ) {
-				model.Left( pos, brokenModel );
-			}
-			brokenModel += "_broken";
-			if ( pos > 0 ) {
-				brokenModel += &model[ pos ];
-			}
-		}
-	
-		// make sure the model gets cached
-		if ( !renderModelManager->CheckModel( brokenModel ) ) {
-			if ( needBroken ) {
-				gameLocal.Error( "Model '%s' not found for entity %d(%s)", brokenModel.c_str(), entityNumber, name.c_str() );
-			} else {
-				brokenModel = "";
-			}
-		}
-
-		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
-	
-		// make sure the collision model gets cached
-		idClipModel::CheckModel( brokenModel );
-	}
+	// load visual and collision models
+	LoadModels();
 
 	PostEventMS( &EV_PostSpawn, 0 );
 
 	UpdateVisuals();
+
+	if(renderLight.pointLight == true)
+		m_MaxLightRadius = renderLight.lightRadius.Length();
+	else
+	{
+		idVec3 pos = GetPhysics()->GetOrigin();
+		idVec3 max = renderLight.target + renderLight.right + renderLight.up;
+		m_MaxLightRadius = max.Length();
+	}
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
+
+	m_MaterialName = NULL;
+	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
+	if(m_MaterialName != NULL)
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %s\r", m_MaterialName);
+
+	idImage *pImage;
+	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %08lX\r", pImage);
+	}
+
+	// grayman #2603 - set up flames for vertical check
+
+	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	if (lightType == AIUSE_LIGHTTYPE_TORCH)
+	{
+		if (!spawnArgs.GetBool("should_be_vert","0")) // don't check verticality if it doesn't matter
+		{
+			nextTimeVerticalCheck = idMath::INFINITY; // never
+		}
+		else
+		{
+			nextTimeVerticalCheck = gameLocal.time + 3000 + gameLocal.random.RandomFloat()*3000; // randomize so checks are done at different times
+		}
+	}
+	else // non-flames
+	{
+		nextTimeVerticalCheck = idMath::INFINITY; // never
+	}
+	
+	smoking = false;	// grayman #2603
+
+	whenToDouse = -1;	// grayman #2603
+
+	// Sophisiticated Zombie (DMH)
+	// Darkmod Light Awareness System: Also need to add light to LAS
+
+	PostEventMS(&EV_Light_AddToLAS, 40);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
+		this, name.c_str(),
+		renderLight.noShadows,
+		renderLight.noSpecular,
+		renderLight.pointLight,
+		renderLight.parallel);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
+
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Origin", GetPhysics()->GetOrigin());
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Radius", renderLight.lightRadius);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Center", renderLight.lightCenter);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Target", renderLight.target);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Right", renderLight.right);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Up", renderLight.up);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Start", renderLight.start);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "End", renderLight.end);
 }
 
 /*
@@ -437,6 +572,18 @@ void idLight::SetLightLevel( void ) {
 	PresentLightDefChange();
 	PresentModelDefChange();
 }
+
+/*
+================
+tels: idLight::GetLightOrigin returns the origin of the light in the world. This
+is different from the physics origin, since the light can be offset.
+================
+void idLight::GetLightOrigin( idVec3 &out ) const {
+	out[0] = renderLight.origin[0];
+	out[1] = renderLight.origin[1];
+	out[2] = renderLight.origin[2];
+}
+*/
 
 /*
 ================
@@ -466,7 +613,11 @@ void idLight::GetColor( idVec4 &out ) const {
 idLight::SetColor
 ================
 */
-void idLight::SetColor( float red, float green, float blue ) {
+void idLight::SetColor( const float red, const float green, const float blue )
+{
+	// Tels: If the light is currently fading, stop this:
+	fadeEnd = 0;
+	BecomeInactive( TH_THINK );
 	baseColor.Set( red, green, blue );
 	SetLightLevel();
 }
@@ -477,6 +628,9 @@ idLight::SetColor
 ================
 */
 void idLight::SetColor( const idVec4 &color ) {
+	// Tels: If the light is currently fading, stop this:
+	fadeEnd = 0;
+	BecomeInactive( TH_THINK );
 	baseColor = color.ToVec3();
 	renderLight.shaderParms[ SHADERPARM_ALPHA ]		= color[ 3 ];
 	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
@@ -531,7 +685,7 @@ void idLight::SetLightParms( float parm0, float parm1, float parm2, float parm3 
 idLight::SetRadiusXYZ
 ================
 */
-void idLight::SetRadiusXYZ( float x, float y, float z ) {
+void idLight::SetRadiusXYZ( const float x, const float y, const float z ) {
 	renderLight.lightRadius[0] = x;
 	renderLight.lightRadius[1] = y;
 	renderLight.lightRadius[2] = z;
@@ -543,9 +697,20 @@ void idLight::SetRadiusXYZ( float x, float y, float z ) {
 idLight::SetRadius
 ================
 */
-void idLight::SetRadius( float radius ) {
+void idLight::SetRadius( const float radius ) {
 	renderLight.lightRadius[0] = renderLight.lightRadius[1] = renderLight.lightRadius[2] = radius;
 	PresentLightDefChange();
+}
+
+/*
+ * ================
+ * Tels: idLight:GetRadius
+ * ================
+ * */
+void idLight::GetRadius( idVec3 &out ) const {
+    out.x = renderLight.lightRadius[0];
+    out.y = renderLight.lightRadius[1];
+    out.z = renderLight.lightRadius[2];
 }
 
 /*
@@ -554,6 +719,7 @@ idLight::On
 ================
 */
 void idLight::On( void ) {
+
 	currentLevel = levels;
 	// offset the start time of the shader to sync it to the game time
 	renderLight.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
@@ -561,6 +727,43 @@ void idLight::On( void ) {
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 		soundWasPlaying = false;
 	}
+
+	const function_t* func = scriptObject.GetFunction("LightsOn");
+	if (func == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::On: 'LightsOn' not found in local space, checking for global.\r");
+		func = gameLocal.program.FindFunction("LightsOn");
+	}
+
+	if (func != NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::On: turning light on\r");
+		idThread *pThread = new idThread(func);
+		pThread->CallFunction(this,func, true);
+		pThread->DelayedStart(0);
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("idLight::On: 'LightsOn' not found!\r");
+	}
+
+	aiBarks.Clear(); // grayman #2603 - let the AI comment again
+
+
+//	grayman #2603 - let script change skins, plus set the vis stim.
+
+/*	const char *skinName;
+	const idDeclSkin *skin;
+
+	// Tels: set "skin_lit" if it is defined
+	spawnArgs.GetString( "skin_lit", "", &skinName );
+	skin = declManager->FindSkin( skinName );
+	if (skin) {
+		SetSkin( skin );
+		// set the spawnarg to the current active skin
+		spawnArgs.Set( "skin", skinName );
+	}
+ */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -570,13 +773,48 @@ void idLight::On( void ) {
 idLight::Off
 ================
 */
-void idLight::Off( void ) {
+void idLight::Off( const bool stopSound ) {
+
 	currentLevel = 0;
-	// kill any sound it was making
-	if ( refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
+
+	if ( stopSound && refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
 		StopSound( SND_CHANNEL_ANY, false );
 		soundWasPlaying = true;
 	}
+
+	const function_t* func = scriptObject.GetFunction("LightsOff");
+	if (func == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::Off: 'LightsOff' not found in local space, checking for global.\r");
+		func = gameLocal.program.FindFunction("LightsOff");
+	}
+
+	if (func != NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("idLight::Off: turning light off\r");
+		idThread *pThread = new idThread(func);
+		pThread->CallFunction(this,func,true);
+		pThread->DelayedStart(0);
+		whenTurnedOff = gameLocal.time; // grayman #2603
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("idLight::Off: 'LightsOff' not found!\r");
+	}
+
+//	grayman #2603 - let script change skins, plus set the vis stim.
+
+/*	// Tels: set "skin_unlit" if it is defined
+	const char *skinName;
+	const idDeclSkin *skin;
+	spawnArgs.GetString( "skin_unlit", "", &skinName );
+	skin = declManager->FindSkin( skinName );
+	if (skin) {
+		SetSkin( skin );
+		// set the spawnarg to the current active skin
+		spawnArgs.Set( "skin", skinName );
+	}
+ */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -588,6 +826,26 @@ idLight::Fade
 */
 void idLight::Fade( const idVec4 &to, float fadeTime ) {
 	GetColor( fadeFrom );
+	// Tels: we already have the same color we should become, so we can skip this
+	if (fadeFrom == to)
+		{
+		return;
+		}
+	// Tels: If the fade time is shorter than 1/60 (e.g. one frame), just set the color directly
+	if (fadeTime < 0.0167f)
+		{
+		if (to == colorBlack)
+		{
+			// The fade does not happen (time too short), so Off() would not be called so do it now (#2440)
+			// avoid the sound stopping, because this might be snd_extinguished
+			Off( false );
+		}
+		else
+		{
+			SetColor(to);
+		}
+		return;
+		}
 	fadeTo = to;
 	fadeStart = gameLocal.time;
 	fadeEnd = gameLocal.time + SEC2MS( fadeTime );
@@ -600,7 +858,17 @@ idLight::FadeOut
 ================
 */
 void idLight::FadeOut( float time ) {
-	Fade( colorBlack, time );
+	if (baseColor.x == 0 && baseColor.y == 0 && baseColor.z == 0)
+	{
+		// The fade would not happen, so Off() would not be called, so do it now (#2440)
+		// avoid the sound stopping, because this might be snd_extinguished
+		Off( false );
+	}
+	else
+	{
+		// Tels: Think() will call Off() once the fade is done, since we use colorBlack as fade target
+		Fade( colorBlack, time );
+	}
 }
 
 /*
@@ -613,7 +881,24 @@ void idLight::FadeIn( float time ) {
 	idVec4 color4;
 
 	currentLevel = levels;
+	// restore the original light color
 	spawnArgs.GetVector( "_color", "1 1 1", color );
+	color4.Set( color.x, color.y, color.z, 1.0f );
+	Fade( color4, time );
+}
+
+/*
+================
+idLight::FadeTo
+================
+*/
+void idLight::FadeTo( idVec3 color, float time ) {
+
+	idVec4 color4;
+
+	// tels: TODO: this step sets the intensity of the light to the maximum,
+	//		 do we really want this?
+	currentLevel = levels;
 	color4.Set( color.x, color.y, color.z, 1.0f );
 	Fade( color4, time );
 }
@@ -627,6 +912,11 @@ void idLight::Killed( idEntity *inflictor, idEntity *attacker, int damage, const
 	BecomeBroken( attacker );
 }
 
+int idLight::GetLightLevel() const
+{
+	return currentLevel;
+}
+
 /*
 ================
 idLight::BecomeBroken
@@ -635,19 +925,7 @@ idLight::BecomeBroken
 void idLight::BecomeBroken( idEntity *activator ) {
 	const char *damageDefName;
 
-	fl.takedamage = false;
-
-	if ( brokenModel.Length() ) {
-		SetModel( brokenModel );
-
-		if ( !spawnArgs.GetBool( "nonsolid" ) ) {
-			GetPhysics()->SetClipModel( new idClipModel( brokenModel.c_str() ), 1.0f );
-			GetPhysics()->SetContents( CONTENTS_SOLID );
-		}
-	} else if ( spawnArgs.GetBool( "hideModelOnBreak" ) ) {
-		SetModel( "" );
-		GetPhysics()->SetContents( 0 );
-	}
+	idEntity::BecomeBroken ( activator );
 
 	if ( gameLocal.isServer ) {
 
@@ -660,7 +938,7 @@ void idLight::BecomeBroken( idEntity *activator ) {
 
 	}
 
-		ActivateTargets( activator );
+	ActivateTargets( activator );
 
 	// offset the start time of the shader to sync it to the game time
 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
@@ -694,7 +972,15 @@ void idLight::BecomeBroken( idEntity *activator ) {
 idLight::PresentLightDefChange
 ================
 */
-void idLight::PresentLightDefChange( void ) {
+void idLight::PresentLightDefChange( void )
+{
+/*
+DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s] Radius ( %0.3f / %0.3f / %03f )\r", this, name.c_str(),
+		renderLight.lightRadius[0],		// x
+		renderLight.lightRadius[1],		// y
+		renderLight.lightRadius[2]);	// z
+*/
+
 	// let the renderer apply it to the world
 	if ( ( lightDefHandle != -1 ) ) {
 		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
@@ -733,6 +1019,10 @@ void idLight::Present( void ) {
 		return;
 	}
 
+	// Clear the bounds, so idLight::PresentRenderTrigger() has a way to know
+	// if idEntity::PresentRenderTrigger() added anything.
+	m_renderTrigger.bounds.Clear();
+
 	// add the model
 	idEntity::Present();
 
@@ -753,6 +1043,34 @@ void idLight::Present( void ) {
 	// update the renderLight and renderEntity to render the light and flare
 	PresentLightDefChange();
 	PresentModelDefChange();
+	PresentRenderTrigger();
+}
+
+/*
+================
+idLight::IsVertical
+*/
+
+bool idLight::IsVertical(float degreesFromVertical)
+{
+	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	bool shouldBeVert = spawnArgs.GetBool("should_be_vert","0");
+
+	// Only makes sense for flames with the "douse_horiz" spawnarg
+
+	if ((lightType == AIUSE_LIGHTTYPE_TORCH) && shouldBeVert)
+	{
+		const idVec3& gravityNormal = GetPhysics()->GetGravityNormal();
+		idMat3 axis = GetPhysics()->GetAxis();
+		idVec3 result(0,0,0);
+		axis.ProjectVector(-gravityNormal,result);
+		float verticality = result * (-gravityNormal);
+		if (verticality < idMath::Cos(DEG2RAD(degreesFromVertical))) // > 10 degrees from vertical
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 /*
@@ -770,9 +1088,96 @@ void idLight::Think( void ) {
 			} else {
 				color = fadeTo;
 				fadeEnd = 0;
+				// Tels: Fix issues like 2440: FadeOff() does not switch the light to the off state
+				if (color[0] == 0 && color[1] == 0 && color[2] == 0)
+				{
+					// avoid the sound stopping, because this might be snd_extinguished
+					Off( false );
+				}
 				BecomeInactive( TH_THINK );
 			}
-			SetColor( color );
+			// don't call SetColor(), as it stops the fade, instead inline the second part of it:
+			baseColor = color.ToVec3();
+			renderLight.shaderParms[ SHADERPARM_ALPHA ]		= color[ 3 ];
+			renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
+			SetLightLevel();
+		}
+	}
+
+	// grayman #2603 - every so often, check if a lit flame not being held by an AI is non-vertical (> 45 degrees from vertical). if so, douse it
+
+	if (gameLocal.time >= nextTimeVerticalCheck)
+	{
+		nextTimeVerticalCheck = gameLocal.time + 1000;
+
+		if (GetLightLevel() > 0) // is it on?
+		{
+			bool isVertical = IsVertical(45); // w/in 45 degrees of vertical?
+			if (!isVertical)
+			{
+				// is an AI holding this light?
+
+				bool isHeld = false;
+				idEntity* bindMaster = GetBindMaster();
+				while (bindMaster != NULL) // not held when bindMaster == NULL
+				{
+					if (bindMaster->IsType(idAI::Type))
+					{
+						isHeld = true;
+						break;
+					}
+					bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+				}
+
+				if (!isHeld)
+				{
+					// Is the player holding this light?
+
+					CGrabber* grabber = gameLocal.m_Grabber;
+					if (grabber)
+					{
+						idEntity* heldEnt = grabber->GetSelected();
+						if (heldEnt)
+						{
+							bindMaster = GetBindMaster();
+							while (bindMaster != NULL) // not held when bindMaster == NULL
+							{
+								if (heldEnt == bindMaster)
+								{
+									isHeld = true;
+									break;
+								}
+								bindMaster = bindMaster->GetBindMaster();
+							}
+						}
+					}
+				}
+
+				if (!isHeld)
+				{
+					if (whenToDouse == -1)
+					{
+						whenToDouse = gameLocal.time + 5000; // douse this later if still non-vertical
+						BecomeActive(TH_DOUSING); // set this so you can continue thinking after coming to rest and TH_PHYSICS shuts off
+					}
+					else if (gameLocal.time >= whenToDouse)
+					{
+						CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+						whenToDouse = -1; // reset
+						BecomeInactive(TH_DOUSING); // reset
+					}
+				}
+				else
+				{
+					whenToDouse = -1; // non-vertical, but it's being held, so turn off any latched non-vertical douse
+					BecomeInactive(TH_DOUSING); // reset
+				}
+			}
+			else
+			{
+				whenToDouse = -1; // vertical, so turn off any latched non-vertical douse
+				BecomeInactive(TH_DOUSING); // reset
+			}
 		}
 	}
 
@@ -897,6 +1302,7 @@ idLight::Event_Hide
 */
 void idLight::Event_Hide( void ) {
 	Hide();
+	smoking = false; // grayman #2603
 	PresentModelDefChange();
 	Off();
 }
@@ -972,6 +1378,7 @@ idLight::Event_SetSoundHandles
 ================
 */
 void idLight::Event_SetSoundHandles( void ) {
+
 	int i;
 	idEntity *targetEnt;
 
@@ -1013,6 +1420,15 @@ idLight::Event_FadeIn
 */
 void idLight::Event_FadeIn( float time ) {
 	FadeIn( time );
+}
+
+/*
+================
+idLight::Event_FadeToLight
+================
+*/
+void idLight::Event_FadeToLight( idVec3 &color, float time ) {
+	FadeTo( color, time );
 }
 
 /*
@@ -1141,5 +1557,461 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }
+
+
+/**	Returns a bounding box surrounding the light.
+ */
+idBounds idLight::GetBounds()
+{
+	// NOTE: I need to add caching.
+
+	idBounds b;
+
+	if ( renderLight.pointLight )
+	{
+		b = idBounds( -renderLight.lightRadius, renderLight.lightRadius );
+	} else {
+		gameLocal.Warning("idLight::GetBounds() not correctly implemented for projected lights.");
+		// Fake a set of bounds. This might work ok for squarish spotlights with no start/stop specified.
+		// FIXME: These bounds are incorrect.
+		b.Zero();
+		b.AddPoint( renderLight.target );
+		b.AddPoint( renderLight.target + renderLight.up + renderLight.right );
+		b.AddPoint( renderLight.target + renderLight.up - renderLight.right );
+		b.AddPoint( renderLight.target - renderLight.up + renderLight.right );
+		b.AddPoint( renderLight.target - renderLight.up - renderLight.right );
+	}
+
+	return b;
+}
+
+
+/**	Called to update m_renderTrigger after the render entity is modified.
+ *	Only updates the render trigger if a thread is waiting for it.
+ */
+void idLight::PresentRenderTrigger()
+{
+	if ( !m_renderWaitingThread ) {
+		goto Quit;
+	}
+
+	// Have the bounds been set yet?
+	if ( m_renderTrigger.bounds.IsCleared() )
+	{
+		// No.
+
+		// Pre-rotate our bounds and give them to m_renderTrigger.
+		m_renderTrigger.origin = renderLight.origin;
+		m_renderTrigger.bounds = GetBounds() * renderLight.axis;
+
+	} else {
+		// Yes.
+
+		// Convert our light's bounds to be relative to m_renderTrigger,
+		// and add them to what already exists.
+		m_renderTrigger.bounds += GetBounds() * renderLight.axis + ( renderLight.origin - m_renderTrigger.origin );
+	}
+
+	// I haven't yet figured out where renderEntity.entityNum is set...
+	m_renderTrigger.entityNum = entityNumber;
+
+	// Update the renderTrigger in the render world.
+	if ( m_renderTriggerHandle == -1 )
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
+	else
+		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
+
+	Quit:
+	return;
+}
+
+
+int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
+{
+	int rc = 0;
+	float w2, h2;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Calculating texture index: x/y: %f/%f w/h: %u/%u\r", x, y, w, h);
+
+	w2 = ((float)w)/2.0;
+	h2 = ((float)h)/2.0;
+
+	if(renderLight.pointLight)
+	{
+		// The lighttextures are spread out over the range of the axis. The z axis
+		// can be ignored for this and we assume that the x/y is already properly
+		// calculated.
+		x = w2 - (w2/renderLight.lightRadius.x) * x;
+		y = h2 - (h2/renderLight.lightRadius.y) * y;
+	}
+	else
+	{
+		// TODO: Just for now until the projected lights are implemented to not cause any crash.
+		// x = right
+		// y = up
+//#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+//#pragma message(DARKMOD_NOTE "For projected lights this is likely not enough. As long as the light will")
+//#pragma message(DARKMOD_NOTE "be straight up or down it should work, but if the cone is angled it might")
+//#pragma message(DARKMOD_NOTE "give wrong results. greebo: See DarkRadiant code for starters.")
+//#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+		x = w2 - (w2/renderLight.right.x) * x;
+		y = h2 - (h2/renderLight.up.y) * y;
+	}
+
+	if(y > h)
+		y = h;
+	if(x > w)
+		x = w;
+
+	if(x < 0)
+		x = 0;
+	if(y < 0)
+		y = 0;
+
+	rc = ((int)y * (w*bpp)) + ((int)x*bpp);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Index result: %u   x/y: %f/%f\r", rc, x, y);
+
+	return rc;
+}
+
+
+float idLight::GetDistanceColor(float fDistance, float fx, float fy)
+{
+	float fColVal(0), fImgVal(0);
+	int fw(0), fh(0), iw(0), ih(0), i(0), fbpp(0), ibpp(0);
+	const unsigned char *img = NULL;
+	const unsigned char *fot = NULL;
+
+	if(m_LightMaterial == NULL)
+	{
+		if((m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Material found for [%s]\r", name.c_str());
+			fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
+			img = m_LightMaterial->GetImage(iw, ih, ibpp);
+		}
+	}
+	else
+	{
+		fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
+		img = m_LightMaterial->GetImage(iw, ih, ibpp);
+	}
+
+	fColVal = (baseColor.x * DARKMOD_LG_RED + baseColor.y * DARKMOD_LG_GREEN + baseColor.z * DARKMOD_LG_BLUE);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
+		baseColor.x, baseColor.x * DARKMOD_LG_RED,
+		baseColor.y, baseColor.y * DARKMOD_LG_GREEN,
+		baseColor.z, baseColor.z * DARKMOD_LG_BLUE,
+		fColVal);
+
+	// If we have neither falloff texture nor a projection image, we do a 
+	// simple linear falloff
+	if(fot == NULL && img == NULL)
+	{
+		// TODO: Light falloff calculation
+//#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
+//#pragma message(DARKMOD_NOTE "The lightfalloff should be calculated for ellipsoids instead of spheres")
+//#pragma message(DARKMOD_NOTE "when no textures are defined. The current code will give wrong results")
+//#pragma message(DARKMOD_NOTE "when a light is defined as an ellipsoid.")
+//#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
+		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
+		fImgVal = 1;
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("No textures defined using distance: [%f]\r", fDistance);
+	}
+	else
+	{
+		// If we have a falloff texture ...
+		if(fot != NULL)
+		{
+			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), fw, fh, fbpp);
+			fColVal = fColVal * (fot[i] * DARKMOD_LG_SCALE);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * DARKMOD_LG_SCALE));
+		}
+		else
+			fColVal = 1;
+
+		// ... or a projection image.
+		if(img != NULL)
+		{
+			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), iw, ih, ibpp);
+			fImgVal = img[i] * DARKMOD_LG_SCALE;
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * DARKMOD_LG_SCALE));
+		}
+		else
+			fImgVal = 1;
+	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
+
+	return (fColVal*fImgVal);
+}
+
+bool idLight::CastsShadow(void)
+{
+	if(m_LightMaterial == NULL)
+		m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
+
+	if(m_LightMaterial != NULL)
+	{
+		if(m_LightMaterial->m_AmbientLight == true)
+			return false;
+	}
+
+	return !renderLight.noShadows; 
+}
+
+bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Target, idVec3 &Right, idVec3 &Up, idVec3 &Start, idVec3 &End)
+{
+	bool rc = false;
+
+	Origin = GetPhysics()->GetOrigin();
+	Target = renderLight.target;
+	Right = renderLight.right;
+	Up = renderLight.up;
+
+	Start = renderLight.start;
+	End = renderLight.end;
+
+	return rc;
+}
+
+bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center)
+{
+	bool rc = false;
+
+	Origin = GetPhysics()->GetOrigin();
+	Axis = renderLight.lightRadius;
+	Center = renderLight.lightCenter;
+
+	return rc;
+}
+
+void idLight::Event_SetLightOrigin( idVec3 &pos )
+{
+	localLightOrigin = pos;
+	BecomeActive( TH_UPDATEVISUALS );
+}
+
+void idLight::Event_GetLightOrigin( void )
+{
+	idThread::ReturnVector( localLightOrigin );
+}
+
+void idLight::Event_GetLightLevel ( void )
+{
+	idThread::ReturnFloat( currentLevel );
+}
+
+void idLight::Event_AddToLAS()
+{
+	LAS.addLight(this);
+
+	// Also register this light with the local player
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player != NULL)
+	{
+		player->AddLight(this);
+	}
+}
+
+/**	Returns 1 if the light is in PVS.
+ *	Doesn't take into account vis-area optimizations for shadowcasting lights.
+ */
+void idLight::Event_InPVS()
+// NOTE: Current extremely inefficent.
+// Caching needs to be done.
+{
+	int localNumPVSAreas, localPVSAreas[32];
+	idBounds modelAbsBounds;
+
+	m_renderTrigger.bounds = GetBounds(); // currently too innefficient but I'll worry about caching later
+	m_renderTrigger.origin = renderLight.origin;
+	m_renderTrigger.axis = renderLight.axis;
+
+	modelAbsBounds.FromTransformedBounds( m_renderTrigger.bounds, m_renderTrigger.origin, m_renderTrigger.axis );
+	localNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+
+	idThread::ReturnFloat( gameLocal.pvs.InCurrentPVS( gameLocal.GetPlayerPVS(), localPVSAreas, localNumPVSAreas ) );
+}
+
+// Returns true if this is an ambient light. - J.C.Denton
+bool idLight::IsAmbient(void)
+{
+	if( renderLight.shader )
+		return renderLight.shader->IsAmbientLight();
+
+	return false; 
+}
+
+// grayman #2603 - keep a list of switches for this light
+void idLight::AddSwitch(idEntity* newSwitch)
+{
+	idEntityPtr<idEntity> switchPtr;
+	switchPtr = newSwitch;
+	switchList.Append(switchPtr);
+}
+
+// grayman #2603 - If there are switches, return the closest one to the calling user
+idEntity* idLight::GetSwitch(idAI* user)
+{
+	if (switchList.Num() == 0) // quick check
+	{
+		return NULL;
+	}
+
+	idEntity* closestSwitch = NULL;
+	float shortestDistSqr = idMath::INFINITY;
+	idVec3 userOrg = user->GetPhysics()->GetOrigin();
+	for (int i = 0 ; i < switchList.Num() ; i++)
+	{
+		idEntity* e = switchList[i].GetEntity();
+		if (e)
+		{
+			float distSqr = (e->GetPhysics()->GetOrigin() - userOrg).LengthSqr();
+			if (distSqr < shortestDistSqr)
+			{
+				shortestDistSqr = distSqr;
+				closestSwitch = e;
+			}
+		}
+	}
+	return closestSwitch;
+}
+
+
+// grayman #2603 - Change the flag that says if this light is being relit.
+
+void idLight::SetBeingRelit(bool relighting)
+{
+	beingRelit = relighting;
+}
+
+// grayman #2603 - Is an AI in the process or relighting this light?
+
+bool idLight::IsBeingRelit()
+{
+	return beingRelit;
+}
+
+// grayman #2603 - Set the chance that this light can be barked about negatively
+
+void idLight::SetChanceNegativeBark(float newChance)
+{
+	chanceNegativeBark = newChance;
+}
+
+// grayman #2603 - Time when this light was turned off
+
+int idLight::GetWhenTurnedOff()
+{
+	return whenTurnedOff;
+}
+
+ // grayman #2603 - when can this light be relit
+
+int idLight::GetRelightAfter()
+{
+	return relightAfter;
+}
+
+void idLight::SetRelightAfter()
+{
+	relightAfter = gameLocal.time + 15000;
+}
+
+ // grayman #2603 - Set when an AI can next emit a "light's out" or "won't relight" bark
+
+int idLight::GetNextTimeLightOutBark()
+{
+	return nextTimeLightOutBark;
+}
+
+void idLight::SetNextTimeLightOutBark(int newNextTimeLightOutBark)
+{
+	nextTimeLightOutBark = newNextTimeLightOutBark;
+}
+
+// grayman #2603 - can an AI make a negative bark about this light (found off, or won't relight)
+
+bool idLight::NegativeBark(idAI* ai)
+{
+	idEntityPtr<idEntity> aiPtr;
+	aiPtr = ai;
+	int aiBarksIndex = -1; // index of this ai in the aiBarks list
+	bool barking = false;
+
+	// Don't allow barks if the Alert Level is above 1.
+
+	if (ai->AI_AlertLevel >= ai->thresh_1)
+	{
+		return false;
+	}
+
+	// Check the number of times this AI has negatively barked about this light.
+	// Once they reach a certain number, the barks are disallowed until the
+	// light is relit.
+
+	for (int i = 0 ; i < aiBarks.Num() ; i++)
+	{
+		if (aiBarks[i].ai == aiPtr)
+		{
+			aiBarksIndex = i; // note for use below
+			if (aiBarks[i].count > 1)
+			{
+				return false;
+			}
+			break;
+		}
+	}
+
+	if ((gameLocal.time >= ai->GetMemory().nextTimeLightStimBark) && (gameLocal.time >= nextTimeLightOutBark))
+	{
+		if (gameLocal.random.RandomFloat() < chanceNegativeBark)
+		{
+			ai->GetMemory().lastTimeVisualStimBark = gameLocal.time;
+			ai->GetMemory().nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
+			nextTimeLightOutBark = gameLocal.time + REBARK_DELAY + 5*gameLocal.random.RandomFloat();
+
+			// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
+			// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
+			// the number of such barks, which can get tiresome.
+
+			chanceNegativeBark -= 0.2f; // reduce next chance of a negative bark
+			if (chanceNegativeBark < 0.0f)
+			{
+				chanceNegativeBark = 0.0f;
+			}
+			barking = true;
+
+			// Bump the number of times this AI has negatively barked about this light.
+
+			if (aiBarksIndex >= 0)
+			{
+				aiBarks[aiBarksIndex].count++;
+			}
+			else // create a new entry for this AI
+			{
+				AIBarks barks;
+				barks.count = 1;
+				barks.ai = aiPtr;
+				aiBarks.Append(barks);
+			}
+		}
+	}
+
+	return barking;
+}
+
+void idLight::Event_Smoking( int state ) // grayman #2603
+{
+	smoking = (state == 1);	// true: smoking, false: not smoking
+}
+
+bool idLight::IsSmoking() // grayman #2603
+{
+	return smoking;
+}
+
+

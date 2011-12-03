@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_RIGIDBODY_H__
 #define __PHYSICS_RIGIDBODY_H__
@@ -39,11 +23,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===================================================================================
 */
-
-extern const float	RB_VELOCITY_MAX;
-extern const int	RB_VELOCITY_TOTAL_BITS;
-extern const int	RB_VELOCITY_EXPONENT_BITS;
-extern const int	RB_VELOCITY_MANTISSA_BITS;
 
 typedef struct rididBodyIState_s {
 	idVec3					position;					// position of trace model
@@ -60,6 +39,7 @@ typedef struct rigidBodyPState_s {
 	idVec6					pushVelocity;				// push velocity
 	idVec3					externalForce;				// external force relative to center of mass
 	idVec3					externalTorque;				// external torque relative to center of mass
+	idVec3					externalForcePoint;			// point where the externalForce is being applied at
 	rigidBodyIState_t		i;							// state used for integration
 } rigidBodyPState_t;
 
@@ -106,6 +86,14 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
+	
+	/**
+	 * greebo: This is similar to ApplyImpulse, although this distributes the impulse
+	 *         on all entities in contact with this one in *this* very frame. If 
+	 *         no entities are in contact, all the impulse gets applied to this one.
+	 */
+	bool					PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse);
+
 	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
@@ -131,9 +119,22 @@ public:	// common physics interface
 	const idVec3 &			GetLinearVelocity( int id = 0 ) const;
 	const idVec3 &			GetAngularVelocity( int id = 0 ) const;
 
+    // tels: force and torque that make entitiy "break down" when exceeded
+	void					SetMaxForce( const idVec3 &newMaxForce );
+	void					SetMaxTorque( const idVec3 &newMaxTorque );
+
+	const idVec3 &			GetMaxForce( void ) const;
+	const idVec3 &			GetMaxTorque( void ) const;
+
 	void					ClipTranslation( trace_t &results, const idVec3 &translation, const idClipModel *model ) const;
 	void					ClipRotation( trace_t &results, const idRotation &rotation, const idClipModel *model ) const;
 	int						ClipContents( const idClipModel *model ) const;
+
+	/**
+	 * greebo: Override empty default implementation of idPhysics_Base::GetBlockingEntity().
+	 */
+	virtual const trace_t*	GetBlockingInfo( void ) const;
+	virtual idEntity *		GetBlockingEntity( void ) const;
 
 	void					DisableClip( void );
 	void					EnableClip( void );
@@ -152,45 +153,85 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+public:
+	/**
+	 * greebo: "Accessor" method to the internal state. This is a bit hacky, I admit.
+	 */
+	rigidBodyPState_t&		State() { return current; }
+
 private:
 	// state of the rigid body
 	rigidBodyPState_t		current;
 	rigidBodyPState_t		saved;
 
 	// rigid body properties
-	float					linearFriction;				// translational friction
-	float					angularFriction;			// rotational friction
-	float					contactFriction;			// friction with contact surfaces
-	float					bouncyness;					// bouncyness
-	idClipModel *			clipModel;					// clip model used for collision detection
+	float					linearFriction;			// translational friction
+	float					angularFriction;		// rotational friction
+	float					contactFriction;		// friction with contact surfaces
+	float					bouncyness;				// bouncyness
+#ifdef MOD_WATERPHYSICS
+	float					volume;					// MOD_WATERPHYSICS object volume 
+#endif		// MOD_WATERPHYSICS
+	idClipModel *			clipModel;				// clip model used for collision detection
+
+	// tels: if the applied impulse/torque exceeds these values, the entity breaks down
+	idVec3					maxForce;				// spawnarg "max_force"
+	idVec3					maxTorque;				// spawnarg "max_torque"
 
 	// derived properties
-	float					mass;						// mass of body
-	float					inverseMass;				// 1 / mass
-	idVec3					centerOfMass;				// center of mass of trace model
-	idMat3					inertiaTensor;				// mass distribution
-	idMat3					inverseInertiaTensor;		// inverse inertia tensor
+	float					mass;					// mass of body
+	float					inverseMass;			// 1 / mass
+	idVec3					centerOfMass;			// center of mass of trace model
+	idMat3					inertiaTensor;			// mass distribution
+	idMat3					inverseInertiaTensor;	// inverse inertia tensor
 
-	idODE *					integrator;					// integrator
-	bool					dropToFloor;				// true if dropping to the floor and putting to rest
-	bool					testSolid;					// true if testing for solid when dropping to the floor
-	bool					noImpact;					// if true do not activate when another object collides
-	bool					noContact;					// if true do not determine contacts and no contact friction
+	idODE *					integrator;				// integrator
+	bool					dropToFloor;			// true if dropping to the floor and putting to rest
+	bool					testSolid;				// true if testing for solid when dropping to the floor
+	bool					noImpact;				// if true do not activate when another object collides
+	bool					noContact;				// if true do not determine contacts and no contact friction
 
 	// master
 	bool					hasMaster;
 	bool					isOrientated;
 
+	/**
+	 * greebo: This saved the collision information when this object is in "bind slave mode".
+	 */
+	trace_t					collisionTrace;
+	bool					isBlocked;
+
+	bool					propagateImpulseLock;
+
+#ifdef MOD_WATERPHYSICS
+	// buoyancy
+	int					noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
+#endif
+
 private:
 	friend void				RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives );
 	void					Integrate( const float deltaTime, rigidBodyPState_t &next );
 	bool					CheckForCollisions( const float deltaTime, rigidBodyPState_t &next, trace_t &collision );
+public:
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
+private:
 	void					ContactFriction( float deltaTime );
 	void					DropToFloorAndRest( void );
+#ifdef MOD_WATERPHYSICS
+	bool					TestIfAtRest( void );
+#else 		// MOD_WATERPHYSICS
 	bool					TestIfAtRest( void ) const;
+#endif 		// MOD_WATERPHYSICS
 	void					Rest( void );
 	void					DebugDraw( void );
+
+#ifdef MOD_WATERPHYSICS
+	// Buoyancy stuff
+	// Approximates the center of mass of the submerged portion of the rigid body.
+	virtual bool			GetBuoyancy( const idVec3 &pos, const idMat3 &rotation, idVec3 &bCenter, float &percent ) const;	// MOD_WATERPHYSICS
+	// Returns rough a percentage of which percent of the body is in water.
+	virtual float			GetSubmergedPercent( const idVec3 &pos, const idMat3 &rotation ) const;	// MOD_WATERPHYSICS
+#endif
 };
 
 #endif /* !__PHYSICS_RIGIDBODY_H__ */

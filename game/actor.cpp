@@ -1,8 +1,16 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
 
@@ -29,9 +37,16 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/TimerManager.h"
+#include "../DarkMod/MeleeWeapon.h"
+#include "../DarkMod/AbsenceMarker.h"
 
+// #include "logmgr.h"
 /***********************************************************************
 
 	idAnimState
@@ -155,6 +170,12 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 		gameLocal.Error( "Can't find function '%s' in object '%s'", statename, self->scriptObject.GetTypeName() );
 	}
 
+	if (cv_ai_debug_anims.GetBool() && self != gameLocal.GetLocalPlayer())
+	{
+		gameLocal.Printf("Frame %d: New animstate %s (%s)\n", gameLocal.framenum, statename, self->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame %d: New animstate %s (%s)\r", gameLocal.framenum, statename, self->name.c_str());
+	}
+
 	state = statename;
 	disabled = false;
 	animBlendFrames = blendFrames;
@@ -169,6 +190,17 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 	if ( ai_debugScript.GetInteger() == self->entityNumber ) {
 		gameLocal.Printf( "%d: %s: Animstate: %s\n", gameLocal.time, self->name.c_str(), state.c_str() );
 	}
+}
+
+/*
+=====================
+idAnimState::SetFrame
+=====================
+*/
+
+void idAnimState::SetFrame( int anim, int frame )
+{
+	animator->SetFrame( channel, anim, frame, gameLocal.time, 0 );
 }
 
 /*
@@ -203,6 +235,16 @@ void idAnimState::CycleAnim( int anim ) {
 		animator->CycleAnim( channel, anim, gameLocal.time, FRAME2MS( animBlendFrames ) );
 	}
 	animBlendFrames = 0;
+}
+
+void idAnimState::PauseAnim( int channel, bool bPause)
+{
+	animator->CurrentAnim( channel )->Pause( bPause );
+}
+
+bool idAnimState::AnimIsPaused( int channel )
+{
+	return animator->CurrentAnim( channel )->IsPaused();
 }
 
 /*
@@ -267,6 +309,11 @@ animFlags_t idAnimState::GetAnimFlags( void ) const {
 	return flags;
 }
 
+idAnimator*	idAnimState::GetAnimator()
+{
+	return animator;
+}
+
 /*
 =====================
 idAnimState::Enable
@@ -314,11 +361,56 @@ bool idAnimState::UpdateState( void ) {
 	return true;
 }
 
+
+/*
+=====================
+idAnimState::FinishAction
+=====================
+*/
+void idAnimState::FinishAction(const idStr& actionname)
+{
+	if ( waitState == actionname ) {
+		SetWaitState( "" );
+	}
+}
+
+/*
+=====================
+idAnimState::SetWaitState
+=====================
+*/
+void idAnimState::SetWaitState( const char *_waitstate )
+{
+	waitState = _waitstate;
+}
+
+/*
+=====================
+idAnimState::WaitState
+=====================
+*/
+const char *idAnimState::WaitState( void ) const 
+{
+	if ( waitState.Length() ) {
+		return waitState;
+	} else {
+		return NULL;
+	}
+}
+
+
+	
+
+
 /***********************************************************************
 
 	idActor
 
 ***********************************************************************/
+
+const char *idActor::MeleeTypeNames[ NUM_MELEE_TYPES ] = {
+	"Over", "LR", "RL", "Thrust", "General", "General"
+};
 
 const idEventDef AI_EnableEyeFocus( "enableEyeFocus" );
 const idEventDef AI_DisableEyeFocus( "disableEyeFocus" );
@@ -330,19 +422,26 @@ const idEventDef EV_DisableWalkIK( "DisableWalkIK" );
 const idEventDef EV_EnableLegIK( "EnableLegIK", "d" );
 const idEventDef EV_DisableLegIK( "DisableLegIK", "d" );
 const idEventDef AI_StopAnim( "stopAnim", "dd" );
+// NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
+// by idWeapon (maybe due to limited polymorphism in scripting?)
 const idEventDef AI_PlayAnim( "playAnim", "ds", 'd' );
+const idEventDef AI_PauseAnim( "pauseAnim", "dd" );
+const idEventDef AI_AnimIsPaused( "animIsPaused", "d", 'd' );
 const idEventDef AI_PlayCycle( "playCycle", "ds", 'd' );
 const idEventDef AI_IdleAnim( "idleAnim", "ds", 'd' );
 const idEventDef AI_SetSyncedAnimWeight( "setSyncedAnimWeight", "ddf" );
+const idEventDef AI_SyncAnimChannels("syncAnimChannels", "ddf");
 const idEventDef AI_SetBlendFrames( "setBlendFrames", "dd" );
 const idEventDef AI_GetBlendFrames( "getBlendFrames", "d", 'd' );
 const idEventDef AI_AnimState( "animState", "dsd" );
 const idEventDef AI_GetAnimState( "getAnimState", "d", 's' );
 const idEventDef AI_InAnimState( "inAnimState", "ds", 'd' );
 const idEventDef AI_FinishAction( "finishAction", "s" );
+const idEventDef AI_FinishChannelAction( "finishChannelAction", "ds" );
 const idEventDef AI_AnimDone( "animDone", "dd", 'd' );
 const idEventDef AI_OverrideAnim( "overrideAnim", "d" );
 const idEventDef AI_EnableAnim( "enableAnim", "dd" );
+const idEventDef AI_DisableAnimchannel( "disableAnimchannel", "d" );
 const idEventDef AI_PreventPain( "preventPain", "f" );
 const idEventDef AI_DisablePain( "disablePain" );
 const idEventDef AI_EnablePain( "enablePain" );
@@ -360,6 +459,51 @@ const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
+const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
+
+// greebo: Moved these from ai_events.cpp to here
+const idEventDef AI_SetHealth( "setHealth", "f" );
+const idEventDef AI_GetHealth( "getHealth", NULL, 'f' );
+
+// Attachment Related Events:
+const idEventDef AI_Attach( "attach", "es" );
+const idEventDef AI_AttachToPos( "attachToPos", "ess" );
+const idEventDef AI_ReAttachToPos( "reAttachToPos", "ss" );
+const idEventDef AI_ReAttachToCoords( "reAttachToCoords", "ssvv" );
+const idEventDef AI_DropAttachment( "dropAttachment", "s" );
+const idEventDef AI_ShowAttachment( "showAttachment", "sd" );
+const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", "d" );
+const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", "dd" );
+const idEventDef AI_GetAttachment( "getAttachment", "s", 'e' );
+const idEventDef AI_GetAttachmentInd( "getAttachmentInd", "d", 'e' );
+const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
+// Weapon attachment related events
+const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
+const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
+
+// Getting/setting attack flags
+const idEventDef AI_GetAttackFlag( "getAttackFlag", "d", 'd' );
+const idEventDef AI_SetAttackFlag( "setAttackFlag", "dd" );
+
+// melee combat events
+const idEventDef AI_MeleeAttackStarted( "meleeAttackStarted", "d" );
+const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
+const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
+const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
+const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
+const idEventDef AI_GetMeleeActionState( "getMeleeActState", NULL, 'd' );
+const idEventDef AI_GetMeleeActionPhase( "getMeleeActPhase", NULL, 'd' );
+const idEventDef AI_GetMeleeActionType( "getMeleeActType", NULL, 'd' );
+const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", NULL, 'd' );
+const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
+const idEventDef AI_GetMeleeLastHitByType( "getMeleeLastHitByType", NULL, 'd' );
+const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
+const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
+
+// greebo: anim replacement script events
+const idEventDef AI_SetReplacementAnim( "setReplacementAnim", "ss");
+const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", "s", 's');
+const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", "s");
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -378,18 +522,23 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetAnimPrefix,			idActor::Event_SetAnimPrefix )
 	EVENT( AI_StopAnim,					idActor::Event_StopAnim )
 	EVENT( AI_PlayAnim,					idActor::Event_PlayAnim )
+	EVENT( AI_PauseAnim,				idActor::Event_PauseAnim )
+	EVENT( AI_AnimIsPaused,				idActor::Event_AnimIsPaused )
 	EVENT( AI_PlayCycle,				idActor::Event_PlayCycle )
 	EVENT( AI_IdleAnim,					idActor::Event_IdleAnim )
 	EVENT( AI_SetSyncedAnimWeight,		idActor::Event_SetSyncedAnimWeight )
+	EVENT( AI_SyncAnimChannels,			idActor::Event_SyncAnimChannels)
 	EVENT( AI_SetBlendFrames,			idActor::Event_SetBlendFrames )
 	EVENT( AI_GetBlendFrames,			idActor::Event_GetBlendFrames )
 	EVENT( AI_AnimState,				idActor::Event_AnimState )
 	EVENT( AI_GetAnimState,				idActor::Event_GetAnimState )
 	EVENT( AI_InAnimState,				idActor::Event_InAnimState )
 	EVENT( AI_FinishAction,				idActor::Event_FinishAction )
+	EVENT( AI_FinishChannelAction,		idActor::Event_FinishChannelAction )
 	EVENT( AI_AnimDone,					idActor::Event_AnimDone )
 	EVENT( AI_OverrideAnim,				idActor::Event_OverrideAnim )
 	EVENT( AI_EnableAnim,				idActor::Event_EnableAnim )
+	EVENT( AI_DisableAnimchannel,		idActor::Event_DisableAnimchannel )
 	EVENT( AI_HasAnim,					idActor::Event_HasAnim )
 	EVENT( AI_CheckAnim,				idActor::Event_CheckAnim )
 	EVENT( AI_ChooseAnim,				idActor::Event_ChooseAnim )
@@ -398,11 +547,49 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_HasEnemies,				idActor::Event_HasEnemies )
 	EVENT( AI_NextEnemy,				idActor::Event_NextEnemy )
 	EVENT( AI_ClosestEnemyToPoint,		idActor::Event_ClosestEnemyToPoint )
+	EVENT( AI_MeleeAttackStarted,		idActor::Event_MeleeAttackStarted )
+	EVENT( AI_MeleeParryStarted,		idActor::Event_MeleeParryStarted )
+	EVENT( AI_MeleeActionHeld,			idActor::Event_MeleeActionHeld )
+	EVENT( AI_MeleeActionReleased,		idActor::Event_MeleeActionReleased )
+	EVENT( AI_MeleeActionFinished,		idActor::Event_MeleeActionFinished )
+	EVENT( AI_GetMeleeActionState,		idActor::Event_GetMeleeActionState )
+	EVENT( AI_GetMeleeActionPhase,		idActor::Event_GetMeleeActionPhase )
+	EVENT( AI_GetMeleeActionType,		idActor::Event_GetMeleeActionType )
+	EVENT( AI_GetMeleeLastActTime,		idActor::Event_GetMeleeLastActTime )
+	EVENT( AI_GetMeleeResult,			idActor::Event_GetMeleeResult )
+	EVENT( AI_GetMeleeLastHitByType,	idActor::Event_GetMeleeLastHitByType )
+	EVENT( AI_MeleeBestParry,			idActor::Event_MeleeBestParry )
+	EVENT( AI_MeleeNameForNum,			idActor::Event_MeleeNameForNum )
 	EVENT( EV_StopSound,				idActor::Event_StopSound )
 	EVENT( AI_SetNextState,				idActor::Event_SetNextState )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
+	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
+	EVENT( AI_SetHealth,				idActor::Event_SetHealth )
+	EVENT( AI_GetHealth,				idActor::Event_GetHealth )
+	
+	EVENT ( AI_Attach,					idActor::Event_Attach )
+	EVENT ( AI_AttachToPos,				idActor::Event_AttachToPos )
+	EVENT ( AI_ReAttachToPos,			idActor::ReAttachToPos )
+	EVENT ( AI_ReAttachToCoords,		idActor::ReAttachToCoords )
+	EVENT ( AI_DropAttachment,			idActor::Detach )
+	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
+	EVENT ( AI_DropAttachmentInd,		idActor::DetachInd )
+	EVENT ( AI_ShowAttachmentInd,		idActor::ShowAttachmentInd )
+	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
+	EVENT ( AI_GetAttachmentInd,		idActor::Event_GetAttachmentInd )
+	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
+	EVENT ( AI_GetNumRangedWeapons,		idActor::Event_GetNumRangedWeapons )
+	EVENT ( AI_GetNumMeleeWeapons,		idActor::Event_GetNumMeleeWeapons )
+
+	EVENT ( AI_SetReplacementAnim,		idActor::Event_SetReplacementAnim )
+	EVENT ( AI_LookupReplacementAnim,	idActor::Event_LookupReplacementAnim )
+	EVENT ( AI_RemoveReplacementAnim,	idActor::Event_RemoveReplacementAnim )
+
+	EVENT ( AI_GetAttackFlag,			idActor::Event_GetAttackFlag )
+	EVENT ( AI_SetAttackFlag,			idActor::Event_SetAttackFlag )
+	
 END_CLASS
 
 /*
@@ -418,13 +605,57 @@ idActor::idActor( void ) {
 	use_combat_bbox		= false;
 	head				= NULL;
 
-	team				= 0;
+	m_AItype			= 0;
+	m_Innocent			= false;
 	rank				= 0;
-	fovDot				= 0.0f;
+
+	greetingState		= ECannotGreet;
+
+	m_fovDotHoriz		= 0.0f;
+	m_fovDotVert		= 0.0f;
+	m_SneakAttackMult	= 1.0f;
+	m_SneakAttackThresh	= idMath::INFINITY;
 	eyeOffset.Zero();
 	pain_debounce_time	= 0;
 	pain_delay			= 0;
 	pain_threshold		= 0;
+
+	melee_range_unarmed = 0.0f;
+	melee_range			= 0.0f;
+	melee_range_vert	= 0.0f;	// grayman #2655
+	m_MeleePredictedAttTime				= 0.0f;
+	m_MeleePredictedAttTimeUnarmed		= 0.0f;
+	m_MeleeDamageMult					= 1.0f;
+	m_MeleeHoldTimeMin					= 0;
+	m_MeleeHoldTimeMax					= 0;
+	m_MeleeCurrentHoldTime				= 0;
+	m_MeleeAttackRecoveryMin			= 0;
+	m_MeleeAttackRecoveryMax			= 0;
+	m_MeleeCurrentAttackRecovery		= 0;
+	m_MeleeAttackLongRecoveryMin		= 0;
+	m_MeleeAttackLongRecoveryMax		= 0;
+	m_MeleeCurrentAttackLongRecovery	= 0;
+	m_MeleeParryRecoveryMin				= 0;
+	m_MeleeParryRecoveryMax				= 0;
+	m_MeleeCurrentParryRecovery			= 0;
+	m_MeleeRiposteRecoveryMin			= 0;
+	m_MeleeRiposteRecoveryMax			= 0;
+	m_MeleeCurrentRiposteRecovery		= 0;
+	m_MeleePreParryDelayMin				= 0;
+	m_MeleePreParryDelayMax				= 0;
+	m_MeleeCurrentPreParryDelay			= 0;
+	m_MeleeRepeatedPreParryDelayMin		= 0;
+	m_MeleeRepeatedPreParryDelayMax		= 0;
+	m_MeleeCurrentRepeatedPreParryDelay	= 0;
+	m_MeleeNumRepAttacks				= 0;
+	m_MeleeRepAttackTime				= 0;
+	m_MeleePostParryDelayMin			= 0;
+	m_MeleePostParryDelayMax			= 0;
+	m_MeleeCurrentPostParryDelay		= 0;
+	m_MeleeRepeatedPostParryDelayMin	= 0;
+	m_MeleeRepeatedPostParryDelayMax	= 0;
+	m_MeleeCurrentRepeatedPostParryDelay	= 0;
+
 
 	state				= NULL;
 	idealState			= NULL;
@@ -442,17 +673,29 @@ idActor::idActor( void ) {
 
 	waitState			= "";
 	
-	blink_anim			= NULL;
+	blink_anim			= 0;
 	blink_time			= 0;
 	blink_min			= 0;
 	blink_max			= 0;
 
 	finalBoss			= false;
 
-	attachments.SetGranularity( 1 );
+	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
+
+	INIT_TIMER_HANDLE(actorGetObstaclesTimer);
+	INIT_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer);
+	INIT_TIMER_HANDLE(actorGetWallEdgesTimer);
+	INIT_TIMER_HANDLE(actorSortWallEdgesTimer);
+	INIT_TIMER_HANDLE(actorBuildPathTreeTimer);
+	INIT_TIMER_HANDLE(actorPrunePathTreeTimer);
+	INIT_TIMER_HANDLE(actorFindOptimalPathTimer);
+	INIT_TIMER_HANDLE(actorRouteToGoalTimer);
+	INIT_TIMER_HANDLE(actorSubSampleWalkPathTimer);
+	INIT_TIMER_HANDLE(actorWalkPathValidTimer);
+
 }
 
 /*
@@ -478,10 +721,10 @@ idActor::~idActor( void ) {
 	}
 
 	// remove any attached entities
-	for( i = 0; i < attachments.Num(); i++ ) {
-		ent = attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_Attachments.Num(); i++ ) {
+		ent = m_Attachments[ i ].ent.GetEntity();
 		if ( ent ) {
-			ent->PostEventMS( &EV_Remove, 0 );
+			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
 	}
 
@@ -493,31 +736,82 @@ idActor::~idActor( void ) {
 idActor::Spawn
 =====================
 */
-void idActor::Spawn( void ) {
-	idEntity		*ent;
+void idActor::Spawn( void ) 
+{
 	idStr			jointName;
-	float			fovDegrees;
+	float			fovDegHoriz, fovDegVert;
 	copyJoints_t	copyJoint;
+	const idKeyValue *kv = NULL;
 
 	animPrefix	= "";
 	state		= NULL;
 	idealState	= NULL;
 
+	spawnArgs.GetFloat( "collision_damage_threshold_hard", "25", m_damage_thresh_hard ); // greebo: dealing 50+ hit points is considered "hard"
+	spawnArgs.GetFloat( "collision_damage_threshold_min", "5", m_damage_thresh_min ); // falling ~12 ft, g = 1066
+
+	spawnArgs.GetFloat( "collision_delta_scale",  "1.0", m_delta_scale );
 	spawnArgs.GetInt( "rank", "0", rank );
-	spawnArgs.GetInt( "team", "0", team );
-	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
+	spawnArgs.GetInt( "type", "0", m_AItype );
+	spawnArgs.GetBool( "innocent", "0", m_Innocent );
+	spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset);
 
 	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
 
 	viewAxis = GetPhysics()->GetAxis();
 
-	spawnArgs.GetFloat( "fov", "90", fovDegrees );
-	SetFOV( fovDegrees );
+	spawnArgs.GetFloat( "fov", "150", fovDegHoriz );
+	// If fov_vert is -1, it will be set the same as horizontal
+	spawnArgs.GetFloat( "fov_vert", "-1", fovDegVert );
+	SetFOV( fovDegHoriz, fovDegVert );
 
 	pain_debounce_time	= 0;
 
 	pain_delay		= SEC2MS( spawnArgs.GetFloat( "pain_delay" ) );
 	pain_threshold	= spawnArgs.GetInt( "pain_threshold" );
+
+	// load melee settings based on AI skill level + player difficulty
+	LoadMeleeSet();
+	// adjust health based on multiplier that may be in melee set
+	health += spawnArgs.GetFloat("health_offset", "0.0");
+	
+	melee_range_unarmed					= spawnArgs.GetFloat( "melee_range","64");
+	melee_range							= melee_range_unarmed;
+
+	// grayman #2655 - if "melee_range_vert" has a value, use that,
+	// otherwise set it to melee_range
+
+	melee_range_vert					= spawnArgs.GetFloat( "melee_range_vert","0");
+	if (melee_range_vert == 0)
+	{
+		melee_range_vert = melee_range;
+	}
+
+	m_MeleePredictedAttTimeUnarmed		= 0.001f * spawnArgs.GetFloat("melee_predicted_attack_time");
+	m_MeleePredictedAttTime				= m_MeleePredictedAttTimeUnarmed;
+	m_MeleeDamageMult					= spawnArgs.GetFloat("melee_damage_mod","1.0f");
+	m_MeleeHoldTimeMin					= spawnArgs.GetInt("melee_hold_time_min");
+	m_MeleeHoldTimeMax					= spawnArgs.GetInt("melee_hold_time_max");
+	m_MeleeParryHoldMax					= spawnArgs.GetInt("melee_parry_hold_max");
+	m_MeleeParryHoldMin					= spawnArgs.GetInt("melee_parry_hold_min");
+	m_MeleeAttackRecoveryMin			= spawnArgs.GetInt("melee_attack_recovery_min");
+	m_MeleeAttackRecoveryMax			= spawnArgs.GetInt("melee_attack_recovery_max");
+	m_MeleeAttackLongRecoveryMin		= spawnArgs.GetInt("melee_attack_long_recovery_min");
+	m_MeleeAttackLongRecoveryMax		= spawnArgs.GetInt("melee_attack_long_recovery_max");
+	m_MeleeParryRecoveryMin				= spawnArgs.GetInt("melee_parry_recovery_min");
+	m_MeleeParryRecoveryMax				= spawnArgs.GetInt("melee_parry_recovery_max");
+	m_MeleeRiposteRecoveryMin			= spawnArgs.GetInt("melee_riposte_recovery_min");
+	m_MeleeRiposteRecoveryMax			= spawnArgs.GetInt("melee_riposte_recovery_max");
+	m_MeleePreParryDelayMin				= spawnArgs.GetInt("melee_pre_parry_delay_min");
+	m_MeleePreParryDelayMax				= spawnArgs.GetInt("melee_pre_parry_delay_max");
+	m_MeleeRepeatedPreParryDelayMin		= spawnArgs.GetInt("melee_repeated_pre_parry_delay_min");
+	m_MeleeRepeatedPreParryDelayMax		= spawnArgs.GetInt("melee_repeated_pre_parry_delay_max");	
+	m_MeleePostParryDelayMin			= spawnArgs.GetInt("melee_post_parry_delay_min");
+	m_MeleePostParryDelayMax			= spawnArgs.GetInt("melee_post_parry_delay_max");
+	m_MeleeRepeatedPostParryDelayMin	= spawnArgs.GetInt("melee_repeated_post_parry_delay_min");
+	m_MeleeRepeatedPostParryDelayMax	= spawnArgs.GetInt("melee_repeated_post_parry_delay_max");
+	m_MeleeNumRepAttacks				= spawnArgs.GetInt("melee_num_rep_attacks");
+	m_MeleeRepAttackTime				= spawnArgs.GetInt("melee_rep_attack_time");
 
 	LoadAF();
 
@@ -528,29 +822,8 @@ void idActor::Spawn( void ) {
 	animator.ClearAllAnims( gameLocal.time, 0 );
 	animator.SetFrame( ANIMCHANNEL_ALL, animator.GetAnim( IK_ANIM ), 0, 0, 0 );
 
-	// spawn any attachments we might have
-	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
-	while ( kv ) {
-		idDict args;
-
-		args.Set( "classname", kv->GetValue().c_str() );
-
-		// make items non-touchable so the player can't take them out of the character's hands
-		args.Set( "no_touch", "1" );
-
-		// don't let them drop to the floor
-		args.Set( "dropToFloor", "0" );
-		
-		gameLocal.SpawnEntityDef( args, &ent );
-		if ( !ent ) {
-			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
-		} else {
-			Attach( ent );
-		}
-		kv = spawnArgs.MatchPrefix( "def_attach", kv );
-	}
-
 	SetupDamageGroups();
+	ParseAttachmentsAF();
 	SetupHead();
 
 	// clear the bind anim
@@ -597,6 +870,8 @@ void idActor::Spawn( void ) {
 		}
 	}
 
+	greetingState = spawnArgs.GetBool("canGreet", "0") ? ENotGreetingAnybody : ECannotGreet;
+
 	// set up blinking
 	blink_anim = headAnimator->GetAnim( "blink" );
 	blink_time = 0;	// it's ok to blink right away
@@ -619,10 +894,49 @@ void idActor::Spawn( void ) {
 			gameLocal.Warning( "idAnimated '%s' at (%s): cannot find joint '%s' for sound playback", name.c_str(), GetPhysics()->GetOrigin().ToString(0), jointName.c_str() );
 		}
 	}
-
+	
 	finalBoss = spawnArgs.GetBool( "finalBoss" );
 
+	canUseElevators = spawnArgs.GetBool("canOperateElevators", "0");
+
+	// greebo: Set up the melee flags for AI without weapons
+	if (spawnArgs.GetBool("unarmed_melee"))
+	{
+		SetAttackFlag(COMBAT_MELEE, true);
+		// add the general unarmed attack to possible melee attacks list
+		// this will be overridden if they get a weapon attached
+		// TODO: Add this back in if the weapon is later detached?
+		m_MeleeStatus.m_attacks.Append(MELEETYPE_UNBLOCKABLE);
+	}
+
+	if (spawnArgs.GetBool("unarmed_ranged"))
+	{
+		SetAttackFlag(COMBAT_RANGED, true);
+	}
+
+	lowHealthThreshold = spawnArgs.GetInt("low_health_threshold", "-1");
+	lowHealthScript = spawnArgs.GetString("low_health_script");
+
+	LoadVocalSet();
+
+	// Load replacement animations from our own spawnargs
+	LoadReplacementAnims(spawnArgs);
+
 	FinishSetup();
+
+	CREATE_TIMER(actorGetObstaclesTimer, name, "GetObstacles");
+	CREATE_TIMER(actorGetPointOutsideObstaclesTimer, name, "GetPointOutsideObstacles");
+	CREATE_TIMER(actorGetWallEdgesTimer, name, "GetWallEdges");
+	CREATE_TIMER(actorSortWallEdgesTimer, name, "SortWallEdges");
+	CREATE_TIMER(actorBuildPathTreeTimer, name, "BuildPathTree");
+	CREATE_TIMER(actorPrunePathTreeTimer, name, "PrunePathTree");
+	CREATE_TIMER(actorFindOptimalPathTimer, name, "FindOptimalPath");
+	CREATE_TIMER(actorRouteToGoalTimer, name, "RouteToGoal");
+	CREATE_TIMER(actorSubSampleWalkPathTimer, name, "SubSampleWalkPath");
+	CREATE_TIMER(actorWalkPathValidTimer, name, "WalkPathValid");
+
+	m_pathRank = rank;	// grayman #2345 - rank for path-finding
+	m_nextKickTime = 0;	// grayman #2728
 }
 
 /*
@@ -650,59 +964,105 @@ void idActor::FinishSetup( void ) {
 idActor::SetupHead
 ================
 */
-void idActor::SetupHead( void ) {
-	idAFAttachment		*headEnt;
-	idStr				jointName;
-	const char			*headModel;
-	jointHandle_t		joint;
-	jointHandle_t		damageJoint;
-	int					i;
-	const idKeyValue	*sndKV;
-
-	if ( gameLocal.isClient ) {
+void idActor::SetupHead()
+{
+	if(gameLocal.isClient)
 		return;
-	}
 
-	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
-		jointName = spawnArgs.GetString( "head_joint" );
-		joint = animator.GetJointHandle( jointName );
+	idStr headModelDefName = spawnArgs.GetString( "def_head", "" );
+
+	if (!headModelDefName.IsEmpty())
+	{
+		// We look if the head model is defined as a key to have a specific offset.
+		// If that is not the case, then we use the default value, if it exists, 
+		// otherwise there is no offset at all.
+		mHeadModelOffset = spawnArgs.GetVector(headModelDefName, "0 0 0");
+
+		// greebo: Regardless what happens, the offsetHeadModel vector always gets added to the offset
+		mHeadModelOffset += spawnArgs.GetVector("offsetHeadModel", "0 0 0");
+
+		idStr jointName = spawnArgs.GetString( "head_joint" );
+		jointHandle_t joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) {
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
 
-		// set the damage joint to be part of the head damage group
-		damageJoint = joint;
-		for( i = 0; i < damageGroups.Num(); i++ ) {
+		// set the damage joint to be part of the head damage group (if possible)
+		jointHandle_t damageJoint = joint;
+
+		for (int i = 0; i < damageGroups.Num(); i++ )
+		{
 			if ( damageGroups[ i ] == "head" ) {
 				damageJoint = static_cast<jointHandle_t>( i );
 				break;
 			}
 		}
 
-		// copy any sounds in case we have frame commands on the head
-		idDict	args;
-		sndKV = spawnArgs.MatchPrefix( "snd_", NULL );
-		while( sndKV ) {
-			args.Set( sndKV->GetKey(), sndKV->GetValue() );
-			sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
+		// Setup the default spawnargs for all heads
+		idDict args;
+
+		const idDeclEntityDef* def = gameLocal.FindEntityDef(headModelDefName, false);
+
+		if (def == NULL)
+		{
+			gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
+
+			// Try to fallback on the default head entityDef
+			def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
 		}
 
-		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args ) );
-		headEnt->SetName( va( "%s_head", name.c_str() ) );
+		if (def != NULL)
+		{
+			// Make a copy of the default spawnargs
+			args = def->dict;
+		}
+		else
+		{
+			gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
+		}		
+		
+		// Copy any sounds in case we have frame commands on the head
+		for (const idKeyValue* kv = spawnArgs.MatchPrefix("snd_", NULL); kv != NULL; kv = spawnArgs.MatchPrefix("snd_", kv)) 
+		{
+			args.Set(kv->GetKey(), kv->GetValue());
+		}
+
+		// Spawn the head entity
+		idEntity* ent = gameLocal.SpawnEntityType(idAFAttachment::Type, &args);
+		idAFAttachment* headEnt = static_cast<idAFAttachment*>(ent);
+		headEnt->SetName( name + "_head" );
+
+		// Retrieve the actual model from the head entityDef
+		idStr headModel = args.GetString("model");
+		if (headModel.IsEmpty())
+		{
+			gameLocal.Warning("No 'model' spawnarg on head entityDef: %s", headModelDefName.c_str());
+		}
 		headEnt->SetBody( this, headModel, damageJoint );
+		headEnt->SetCombatModel();
+
+		// Store the head locally
 		head = headEnt;
 
-		idVec3		origin;
-		idMat3		axis;
-		idAttachInfo &attach = attachments.Alloc();
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("SETBODY: Actor %s : damage joint %d for attached head is part of damage group %s\r", name.c_str(), (int) damageJoint, GetDamageGroup( damageJoint ) );
+
+		// Add the head as attachment
+		idVec3 origin;
+		idMat3 axis;
+		CAttachInfo& attach = m_Attachments.Alloc();
+
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + ( origin + modelOffset ) * renderEntity.axis;
+		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
 		attach.ent = headEnt;
+		attach.posName = jointName; // grayman #2603
+
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
 		headEnt->BindToJoint( this, joint, true );
+
+		// greebo: Setup the frob-peer relationship between head and body
+		m_FrobPeers.AddUnique(headEnt->name);
 	}
 }
 
@@ -763,8 +1123,9 @@ void idActor::Save( idSaveGame *savefile ) const {
 	idActor *ent;
 	int i;
 
-	savefile->WriteInt( team );
 	savefile->WriteInt( rank );
+	savefile->WriteInt( m_AItype );
+	savefile->WriteBool( m_Innocent );
 	savefile->WriteMat3( viewAxis );
 
 	savefile->WriteInt( enemyList.Num() );
@@ -772,9 +1133,53 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject( ent );
 	}
 
-	savefile->WriteFloat( fovDot );
+	savefile->WriteInt(static_cast<int>(greetingState));
+
+	// melee stuff
+	m_MeleeStatus.Save( savefile );
+	savefile->WriteFloat( melee_range_unarmed );
+	savefile->WriteFloat( melee_range );
+	savefile->WriteFloat( melee_range_vert ); // grayman #2655
+	savefile->WriteFloat( m_MeleePredictedAttTimeUnarmed );
+	savefile->WriteFloat( m_MeleePredictedAttTime );
+	savefile->WriteFloat( m_MeleeDamageMult );
+	savefile->WriteInt( m_MeleeHoldTimeMin );
+	savefile->WriteInt( m_MeleeHoldTimeMax );
+	savefile->WriteInt( m_MeleeCurrentHoldTime );
+	savefile->WriteInt( m_MeleeAttackRecoveryMin );
+	savefile->WriteInt( m_MeleeAttackRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentAttackRecovery );
+	savefile->WriteInt( m_MeleeAttackLongRecoveryMin );
+	savefile->WriteInt( m_MeleeAttackLongRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentAttackLongRecovery );
+	savefile->WriteInt( m_MeleeParryRecoveryMin );
+	savefile->WriteInt( m_MeleeParryRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentParryRecovery );
+	savefile->WriteInt( m_MeleeRiposteRecoveryMin );
+	savefile->WriteInt( m_MeleeRiposteRecoveryMax );
+	savefile->WriteInt( m_MeleeCurrentRiposteRecovery );
+	savefile->WriteInt( m_MeleePreParryDelayMin );
+	savefile->WriteInt( m_MeleePreParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentPreParryDelay );
+	savefile->WriteInt( m_MeleeRepeatedPreParryDelayMin );
+	savefile->WriteInt( m_MeleeRepeatedPreParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentRepeatedPreParryDelay );
+	savefile->WriteInt( m_MeleeNumRepAttacks );
+	savefile->WriteInt( m_MeleeRepAttackTime );
+	savefile->WriteInt( m_MeleePostParryDelayMin );
+	savefile->WriteInt( m_MeleePostParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentPostParryDelay );
+	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMin );
+	savefile->WriteInt( m_MeleeRepeatedPostParryDelayMax );
+	savefile->WriteInt( m_MeleeCurrentRepeatedPostParryDelay );
+	savefile->WriteInt( m_pathRank );		// grayman #2345
+	savefile->WriteInt( m_nextKickTime );	// grayman #2728
+
+	savefile->WriteFloat( m_fovDotHoriz );
+	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
 	savefile->WriteVec3( modelOffset );
+	savefile->WriteVec3(mHeadModelOffset);
 	savefile->WriteAngles( deltaViewAngles );
 
 	savefile->WriteInt( pain_debounce_time );
@@ -790,6 +1195,12 @@ void idActor::Save( idSaveGame *savefile ) const {
 	for( i = 0; i < damageScale.Num(); i++ ) {
 		savefile->WriteFloat( damageScale[ i ] );
 	}
+
+	savefile->WriteInt(lowHealthThreshold);
+	savefile->WriteString(lowHealthScript);
+
+	savefile->WriteFloat( m_SneakAttackThresh );
+	savefile->WriteFloat( m_SneakAttackMult );
 
 	savefile->WriteBool( use_combat_bbox );
 	head.Save( savefile );
@@ -829,13 +1240,12 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( painTime );
 
-	savefile->WriteInt( attachments.Num() );
-	for ( i = 0; i < attachments.Num(); i++ ) {
-		attachments[i].ent.Save( savefile );
-		savefile->WriteInt( attachments[i].channel );
-	}
+	savefile->WriteBool(canUseElevators);
 
 	savefile->WriteBool( finalBoss );
+	savefile->WriteFloat( m_damage_thresh_hard );
+	savefile->WriteFloat( m_delta_scale );
+	savefile->WriteFloat( m_damage_thresh_min );
 
 	idToken token;
 
@@ -863,7 +1273,33 @@ void idActor::Save( idSaveGame *savefile ) const {
 	} else {
 		savefile->WriteString( "" );
 	}
+	
+	savefile->WriteFloat(m_stepvol_walk);
+	savefile->WriteFloat(m_stepvol_run);
+	savefile->WriteFloat(m_stepvol_creep);
 
+	savefile->WriteFloat(m_stepvol_crouch_walk);
+	savefile->WriteFloat(m_stepvol_crouch_creep);
+	savefile->WriteFloat(m_stepvol_crouch_run);
+
+	savefile->WriteDict(&m_replacementAnims);
+
+	savefile->WriteInt(static_cast<int>(m_AttackFlags.size()));
+	for (std::set<int>::const_iterator i = 	m_AttackFlags.begin(); i != m_AttackFlags.end(); ++i)
+	{
+		savefile->WriteInt(static_cast<int>(*i));
+	}
+
+	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorSortWallEdgesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
+	SAVE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
+	SAVE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
+	SAVE_TIMER_HANDLE(actorRouteToGoalTimer, savefile);
+	SAVE_TIMER_HANDLE(actorSubSampleWalkPathTimer, savefile);
+	SAVE_TIMER_HANDLE(actorWalkPathValidTimer, savefile);
 }
 
 /*
@@ -877,8 +1313,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	int i, num;
 	idActor *ent;
 
-	savefile->ReadInt( team );
 	savefile->ReadInt( rank );
+	savefile->ReadInt( m_AItype );
+	savefile->ReadBool( m_Innocent );
 	savefile->ReadMat3( viewAxis );
 
 	savefile->ReadInt( num );
@@ -890,9 +1327,55 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
-	savefile->ReadFloat( fovDot );
+	savefile->ReadInt(i);
+	assert(i >= ECannotGreet && i < ENumAIGreetingStates);
+	greetingState = static_cast<GreetingState>(i);
+
+	// melee stuff
+	m_MeleeStatus.Restore( savefile );
+	savefile->ReadFloat( melee_range_unarmed );
+	savefile->ReadFloat( melee_range );
+	savefile->ReadFloat( melee_range_vert ); // grayman #2655
+	savefile->ReadFloat( m_MeleePredictedAttTimeUnarmed );
+	savefile->ReadFloat( m_MeleePredictedAttTime );
+	savefile->ReadFloat( m_MeleeDamageMult );
+	savefile->ReadInt( m_MeleeHoldTimeMin );
+	savefile->ReadInt( m_MeleeHoldTimeMax );
+	savefile->ReadInt( m_MeleeCurrentHoldTime );
+	savefile->ReadInt( m_MeleeAttackRecoveryMin );
+	savefile->ReadInt( m_MeleeAttackRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentAttackRecovery );
+	savefile->ReadInt( m_MeleeAttackLongRecoveryMin );
+	savefile->ReadInt( m_MeleeAttackLongRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentAttackLongRecovery );
+	savefile->ReadInt( m_MeleeParryRecoveryMin );
+	savefile->ReadInt( m_MeleeParryRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentParryRecovery );
+	savefile->ReadInt( m_MeleeRiposteRecoveryMin );
+	savefile->ReadInt( m_MeleeRiposteRecoveryMax );
+	savefile->ReadInt( m_MeleeCurrentRiposteRecovery );
+	savefile->ReadInt( m_MeleePreParryDelayMin );
+	savefile->ReadInt( m_MeleePreParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentPreParryDelay );
+	savefile->ReadInt( m_MeleeRepeatedPreParryDelayMin );
+	savefile->ReadInt( m_MeleeRepeatedPreParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentRepeatedPreParryDelay );
+	savefile->ReadInt( m_MeleeNumRepAttacks );
+	savefile->ReadInt( m_MeleeRepAttackTime );
+	savefile->ReadInt( m_MeleePostParryDelayMin );
+	savefile->ReadInt( m_MeleePostParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentPostParryDelay );
+	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMin );
+	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMax );
+	savefile->ReadInt( m_MeleeCurrentRepeatedPostParryDelay );
+	savefile->ReadInt( m_pathRank );	// grayman #2345
+	savefile->ReadInt(m_nextKickTime);	// grayman #2728
+
+	savefile->ReadFloat( m_fovDotHoriz );
+	savefile->ReadFloat( m_fovDotVert );
 	savefile->ReadVec3( eyeOffset );
 	savefile->ReadVec3( modelOffset );
+	savefile->ReadVec3(mHeadModelOffset);
 	savefile->ReadAngles( deltaViewAngles );
 
 	savefile->ReadInt( pain_debounce_time );
@@ -911,6 +1394,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	for( i = 0; i < num; i++ ) {
 		savefile->ReadFloat( damageScale[ i ] );
 	}
+
+	savefile->ReadInt(lowHealthThreshold);
+	savefile->ReadString(lowHealthScript);
+
+	savefile->ReadFloat( m_SneakAttackThresh );
+	savefile->ReadFloat( m_SneakAttackMult );
 
 	savefile->ReadBool( use_combat_bbox );
 	head.Restore( savefile );
@@ -951,15 +1440,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( allowEyeFocus );
 
 	savefile->ReadInt( painTime );
-
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		idAttachInfo &attach = attachments.Alloc();
-		attach.ent.Restore( savefile );
-		savefile->ReadInt( attach.channel );
-	}
+	savefile->ReadBool(canUseElevators);
 
 	savefile->ReadBool( finalBoss );
+	savefile->ReadFloat( m_damage_thresh_hard );
+	savefile->ReadFloat( m_delta_scale );
+	savefile->ReadFloat( m_damage_thresh_min );
 
 	idStr statename;
 
@@ -972,6 +1458,38 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	if ( statename.Length() > 0 ) {
 		idealState = GetScriptFunction( statename );
 	}
+	
+	savefile->ReadFloat(m_stepvol_walk);
+	savefile->ReadFloat(m_stepvol_run);
+	savefile->ReadFloat(m_stepvol_creep);
+
+	savefile->ReadFloat(m_stepvol_crouch_walk);
+	savefile->ReadFloat(m_stepvol_crouch_creep);
+	savefile->ReadFloat(m_stepvol_crouch_run);
+
+	savefile->ReadDict(&m_replacementAnims);
+
+	m_AttackFlags.clear();
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; i++)
+	{
+		int temp;
+		savefile->ReadInt(temp);
+		assert(static_cast<ECombatType>(temp) >= COMBAT_NONE && static_cast<ECombatType>(temp) <= COMBAT_RANGED);
+		m_AttackFlags.insert(temp);
+	}
+
+	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorSortWallEdgesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorRouteToGoalTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorSubSampleWalkPathTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorWalkPathValidTimer, savefile);
+
 }
 
 /*
@@ -979,23 +1497,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 idActor::Hide
 ================
 */
-void idActor::Hide( void ) {
-	idEntity *ent;
-	idEntity *next;
-
+void idActor::Hide( void ) 
+{
 	idAFEntity_Base::Hide();
-	if ( head.GetEntity() ) {
+	if ( head.GetEntity() ) 
+	{
 		head.GetEntity()->Hide();
-	}
-
-	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
-		next = ent->GetNextTeamEntity();
-		if ( ent->GetBindMaster() == this ) {
-			ent->Hide();
-			if ( ent->IsType( idLight::Type ) ) {
-				static_cast<idLight *>( ent )->Off();
-			}
-		}
 	}
 	UnlinkCombat();
 }
@@ -1005,23 +1512,13 @@ void idActor::Hide( void ) {
 idActor::Show
 ================
 */
-void idActor::Show( void ) {
-	idEntity *ent;
-	idEntity *next;
-
+void idActor::Show( void ) 
+{
 	idAFEntity_Base::Show();
 	if ( head.GetEntity() ) {
 		head.GetEntity()->Show();
 	}
-	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
-		next = ent->GetNextTeamEntity();
-		if ( ent->GetBindMaster() == this ) {
-			ent->Show();
-			if ( ent->IsType( idLight::Type ) ) {
-				static_cast<idLight *>( ent )->On();
-			}
-		}
-	}
+
 	LinkCombat();
 }
 
@@ -1060,14 +1557,27 @@ void idActor::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float siz
 idActor::LoadAF
 ================
 */
-bool idActor::LoadAF( void ) {
+bool idActor::LoadAF( void ) 
+{
+	bool bReturnVal = false;
 	idStr fileName;
 
-	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) || !fileName.Length() ) {
-		return false;
+	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) || !fileName.Length() ) 
+	{
+		goto Quit;
 	}
 	af.SetAnimator( GetAnimator() );
-	return af.Load( this, fileName );
+	bReturnVal =  af.Load( this, fileName );
+	SetUpGroundingVars();
+
+	if( m_bAFPushMoveables )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
+
+Quit:
+	return bReturnVal;
 }
 
 /*
@@ -1160,7 +1670,7 @@ void idActor::CheckBlink( void ) {
 	}
 
 	// set the next blink time
-	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomFloat() * ( blink_max - blink_min );
+	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomInt( blink_max - blink_min );
 }
 
 /*
@@ -1367,8 +1877,15 @@ void idActor::UpdateScript( void ) {
 idActor::setFov
 =====================
 */
-void idActor::SetFOV( float fov ) {
-	fovDot = (float)cos( DEG2RAD( fov * 0.5f ) );
+void idActor::SetFOV( float fovHoriz, float fovVert ) 
+{
+	m_fovDotHoriz = (float) cos( DEG2RAD( fovHoriz * 0.5f ) );
+
+	// if fovVert not specified (default val of -1), make same as horizontal
+	if( fovVert == -1 )
+		m_fovDotVert = m_fovDotHoriz;
+	else
+		m_fovDotVert = (float) cos( DEG2RAD( fovVert * 0.5f) );
 }
 
 /*
@@ -1422,8 +1939,11 @@ void idActor::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 idActor::CheckFOV
 =====================
 */
-bool idActor::CheckFOV( const idVec3 &pos ) const {
-	if ( fovDot == 1.0f ) {
+bool idActor::CheckFOV( const idVec3 &pos ) const 
+{
+	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idActor::CheckFOV was called\r");
+
+	if ( m_fovDotHoriz == 1.0f ) {
 		return true;
 	}
 
@@ -1441,7 +1961,7 @@ bool idActor::CheckFOV( const idVec3 &pos ) const {
 	delta.Normalize();
 	dot = viewAxis[ 0 ] * delta;
 
-	return ( dot >= fovDot );
+	return ( dot >= m_fovDotHoriz );
 }
 
 /*
@@ -1449,30 +1969,142 @@ bool idActor::CheckFOV( const idVec3 &pos ) const {
 idActor::CanSee
 =====================
 */
-bool idActor::CanSee( idEntity *ent, bool useFov ) const {
-	trace_t		tr;
-	idVec3		eye;
-	idVec3		toPos;
+bool idActor::CanSee( idEntity *ent, bool useFov ) const
+{
+	// TDM: We need to be able to see lights that are off and hence hidden
+	/*if ( ent->IsHidden() ) 
+	{
+		return false;
+	}*/
 
-	if ( ent->IsHidden() ) {
+	// The entity's origin
+
+	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
+
+	idVec3 origin;
+	if ( ent->IsType(CBinaryFrobMover::Type) )
+	{
+		CBinaryFrobMover* door = static_cast<CBinaryFrobMover*>(ent);
+		origin = door->GetClosedOrigin();
+	}
+	else
+	{
+		origin = ent->GetPhysics()->GetOrigin();
+	}
+
+	const idVec3& entityOrigin = origin;
+
+	// Check the field of view if specified
+	if (useFov && !CheckFOV(entityOrigin))
+	{
+		// FOV check failed
 		return false;
 	}
 
-	if ( ent->IsType( idActor::Type ) ) {
-		toPos = ( ( idActor * )ent )->GetEyePosition();
-	} else {
-		toPos = ent->GetPhysics()->GetOrigin();
+	// This will hold the results of the traces
+	trace_t result;
+
+	// eye position of the AI
+	idVec3 eye(GetEyePosition());
+
+	// angua: If the target entity is an idActor,
+	// use its eyeposition, the origin and the shoulders
+	if (ent->IsType(idActor::Type)) 
+	{
+		idActor* actor = static_cast<idActor*>(ent);
+		idVec3 entityEyePos = actor->GetEyePosition();
+
+		if (!gameLocal.clip.TracePoint(result, eye, entityEyePos, MASK_OPAQUE, this) || 
+			 gameLocal.GetTraceEntity(result) == actor) 
+		{
+			// Eye to eye trace succeeded
+			// gameRenderWorld->DebugArrow(colorGreen,eye, entityEyePos, 1, 32);
+			return true;
+		}
+		else if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+			 gameLocal.GetTraceEntity(result) == actor) 
+		{
+			// Eye to origin trace succeeded
+			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin, 1, 32);
+			return true;
+		}
+		else  
+		{
+			idVec3 origin;
+			idMat3 viewaxis;
+			actor->GetViewPos(origin, viewaxis);
+
+			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+			idVec3 dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
+			
+			float dist = 8;
+
+			if (!gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
+				|| gameLocal.GetTraceEntity(result) == actor
+				|| !gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
+				|| gameLocal.GetTraceEntity(result) == actor)
+			{
+				// Eye to shoulders traces succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, 1, 32);
+				// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, 1, 32);	
+				return true;
+			}
+		}
 	}
+	// otherwise just use the origin (for general entities).
+	// Perform a trace from the eye position to the target entity
+	// TracePoint will return FALSE, when the trace.result is >= 1
+	else
+	{
+		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+			 gameLocal.GetTraceEntity(result) == ent) 
+		{
+			// Trace succeeded or hit the target entity itself
+			return true;
+		}
+		
+		// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
+		// however, it might be embedded in a candle and/or a candle holder.
+		// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
+		// that we can see the light source itself.
 
-	if ( useFov && !CheckFOV( toPos ) ) {
-		return false;
-	}
+		if (ent->IsType(idLight::Type))
+		{
+			idEntity* bindMaster = ent->GetBindMaster();
+			while (bindMaster != NULL) // exit when bindMaster == NULL or we can see one of them
+			{
+				const idVec3& bindMasterOrigin = bindMaster->GetPhysics()->GetOrigin();
 
-	eye = GetEyePosition();
+				if (!gameLocal.clip.TracePoint(result, eye, bindMasterOrigin, MASK_OPAQUE, this) || 
+					 gameLocal.GetTraceEntity(result) == bindMaster) 
+				{
+					// Trace succeeded or hit the target entity itself
+					return true;
+				}
+				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+			}
+		}
+		else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
+		{
+			// We're trying to see an absence marker and can't. Check for the case where the missing item
+			// was replaced by another item. For example, a lootable painting replaced by an empty frame.
+			// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
 
-	gameLocal.clip.TracePoint( tr, eye, toPos, MASK_OPAQUE, this );
-	if ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == ent ) ) {
-		return true;
+			CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
+			const idDict& refSpawnargs = marker->GetRefSpawnargs();
+			idStr replacedByClass = refSpawnargs.GetString("replace");
+			if ( !replacedByClass.IsEmpty() )
+			{
+				idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
+				if ( entHit != NULL )
+				{
+					if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
+					{
+						return true; // we hit the replacement item, which means a successful trace
+					}
+				}
+			}
+		}
 	}
 
 	return false;
@@ -1586,7 +2218,7 @@ idActor::UnlinkCombat
 void idActor::UnlinkCombat( void ) {
 	idAFAttachment *headEnt;
 
-	if ( combatModel ) {
+	if ( combatModel != NULL ) {
 		combatModel->Unlink();
 	}
 	headEnt = head.GetEntity();
@@ -1616,7 +2248,13 @@ bool idActor::StartRagdoll( void ) {
 	}
 
 	// disable the monster bounding box
-	GetPhysics()->DisableClip();
+	if (spawnArgs.GetBool("nonsolid_on_ragdoll", "1"))
+	{
+		GetPhysics()->DisableClip();
+	}
+
+	// ishtvan: Establish AF constraints for any AF bodies of bound entities
+	UpdateAddedEntConstraints();
 
 	// start using the AF
 	af.StartFromCurrentPose( spawnArgs.GetInt( "velocityTime", "0" ) );
@@ -1689,15 +2327,16 @@ bool idActor::UpdateAnimationControllers( void ) {
 idActor::RemoveAttachments
 ================
 */
-void idActor::RemoveAttachments( void ) {
+void idActor::RemoveAttachments( void ) 
+{
 	int i;
 	idEntity *ent;
 
 	// remove any attached entities
-	for( i = 0; i < attachments.Num(); i++ ) {
-		ent = attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_Attachments.Num(); i++ ) {
+		ent = m_Attachments[ i ].ent.GetEntity();
 		if ( ent && ent->spawnArgs.GetBool( "remove" ) ) {
-			ent->PostEventMS( &EV_Remove, 0 );
+			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
 	}
 }
@@ -1707,34 +2346,91 @@ void idActor::RemoveAttachments( void ) {
 idActor::Attach
 ================
 */
-void idActor::Attach( idEntity *ent ) {
-	idVec3			origin;
-	idMat3			axis;
-	jointHandle_t	joint;
-	idStr			jointName;
-	idAttachInfo	&attach = attachments.Alloc();
-	idAngles		angleOffset;
-	idVec3			originOffset;
+void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
+{
+	idAnimatedEntity::Attach( ent, PosName, AttName );
 
-	jointName = ent->spawnArgs.GetString( "joint" );
-	joint = animator.GetJointHandle( jointName );
-	if ( joint == INVALID_JOINT ) {
-		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+	// If the ent we're attaching is an AFAttachment, call SetBody to set up damage propagation, physics propagation, etc.
+	// NOTE: We read ent->GetBindJoint here, assuming the bind went okay.
+	if( ent->IsType(idAFAttachment::Type) )
+	{
+		// TODO: Is this line correct?  Won't know until we test.
+		idStr modelName = ent->spawnArgs.GetString("model","");
+		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), ent->GetBindJoint() );
 	}
 
-	angleOffset = ent->spawnArgs.GetAngles( "angles" );
-	originOffset = ent->spawnArgs.GetVector( "origin" );
+	// check various spawnargs for special behaviors on attaching (not frobable, contents corpse, etc)
+	if( ent->spawnArgs.GetBool("on_attach_contents_corpse") )
+	{
+		// clear solid contents, set corpse contents
+		int oldContents = ent->GetPhysics()->GetContents();
+		ent->GetPhysics()->SetContents( (oldContents & ~CONTENTS_SOLID) | CONTENTS_CORPSE );
+	}
+	if( ent->spawnArgs.GetBool("on_attach_nonsolid") )
+	{
+		// clear solid and corpse contents
+		int oldContents = ent->GetPhysics()->GetContents();
+		ent->GetPhysics()->SetContents( (oldContents & ~CONTENTS_SOLID) & ~CONTENTS_CORPSE );
+	}
+	if( ent->spawnArgs.GetBool("on_attach_not_frobable") )
+		ent->SetFrobable(false);
 
-	attach.channel = animator.GetChannelForJoint( joint );
-	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-	attach.ent = ent;
 
-	ent->SetOrigin( origin + originOffset * renderEntity.axis );
-	idMat3 rotate = angleOffset.ToMat3();
-	idMat3 newAxis = rotate * axis;
-	ent->SetAxis( newAxis );
-	ent->BindToJoint( this, joint, true );
-	ent->cinematic = cinematic;
+	if( ent->IsType(CMeleeWeapon::Type) )
+	{
+		static_cast<CMeleeWeapon *>(ent)->AttachedToActor( this );
+	}
+}
+
+/*
+================
+idActor::BindNotify
+================
+*/
+void idActor::BindNotify( idEntity *ent )
+{
+	idAFEntity_Base::BindNotify(ent);
+
+	// Override our animations based on the bound entity's replace_anim_* spawnargs
+	LoadReplacementAnims(ent->spawnArgs);
+}
+
+/*
+================
+idActor::UnbindNotify
+================
+*/
+void idActor::UnbindNotify( idEntity *ent )
+{
+	idAFEntity_Base::UnbindNotify(ent);
+
+	// Remove animation overrides
+	const idKeyValue *KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", NULL );
+	while ( KeyVal )
+	{
+		idStr key = KeyVal->GetKey();
+		key.StripLeadingOnce("replace_anim_");
+
+		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue().c_str()) == 0 )
+		{
+			// This animation override is present, so remove it
+			//gameLocal.Warning( "idActor: Removing replacement animation %s", KeyVal->GetValue().c_str() );
+			m_replacementAnims.Delete( key );
+		}
+
+		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
+	}
+
+	// angua: remove from attachments
+	for (int i = 0; i < m_Attachments.Num(); i++)
+	{
+		idEntity* attachment = m_Attachments[i].ent.GetEntity();
+
+		if (attachment != NULL && attachment->name == ent->name)
+		{
+			m_Attachments[i].ent = NULL;
+		}
+	}
 }
 
 /*
@@ -1743,10 +2439,18 @@ idActor::Teleport
 ================
 */
 void idActor::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
-	GetPhysics()->SetOrigin( origin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-	GetPhysics()->SetLinearVelocity( vec3_origin );
 
-	viewAxis = angles.ToMat3();
+	GetPhysics()->SetLinearVelocity( vec3_origin );
+	if (destination == NULL)
+	{
+		GetPhysics()->SetOrigin( origin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		viewAxis = angles.ToMat3();
+	}
+	else
+	{
+		GetPhysics()->SetOrigin( destination->GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		viewAxis = destination->GetPhysics()->GetAxis();
+	}
 
 	UpdateVisuals();
 
@@ -1842,11 +2546,82 @@ idActor *idActor::EnemyWithMostHealth() {
 
 /*
 ================
+idActor::ClosestAttackingEnemy
+================
+*/
+idActor *idActor::ClosestAttackingEnemy( bool bUseFOV )
+{
+	idActor		*ent(NULL);
+	idActor		*bestEnt(NULL);
+	float		bestDistSquared(idMath::INFINITY);
+	float		distSquared(0.0f);
+	idVec3		delta;
+
+	for( ent = enemyList.Next(); ent != NULL; ent = ent->enemyNode.Next() ) 
+	{
+		if ( ent->fl.hidden )
+			continue;
+
+		CMeleeStatus *pStatus = &ent->m_MeleeStatus;
+		// TODO: Differentiate between phases of the action state, holding attack, etc?
+		if ( !(pStatus->m_ActionState == MELEEACTION_ATTACK) )
+			continue;
+
+		idVec3 entOrigin = ent->GetPhysics()->GetOrigin();
+		delta = entOrigin - GetPhysics()->GetOrigin();
+		distSquared = delta.LengthSqr();
+
+		// check FOV, using idActor version which only checks horizontal angle
+		if( bUseFOV && !idActor::CheckFOV( entOrigin) )
+		{
+			continue;
+		}
+
+		if ( distSquared < bestDistSquared ) 
+		{
+			bestEnt = ent;
+			bestDistSquared = distSquared;
+		}
+	}
+
+	return bestEnt;
+}
+
+/*
+================
+idActor::GetBestParry
+================
+*/
+EMeleeType idActor::GetBestParry( void )
+{
+	idActor *AttEnemy;
+	EMeleeType ParryType;
+
+	if( m_MeleeStatus.m_bCanParryAll )
+		ParryType = MELEETYPE_BLOCKALL;
+	else if( (AttEnemy = ClosestAttackingEnemy( true )) != NULL
+			&& AttEnemy->m_MeleeStatus.m_ActionType != MELEETYPE_UNBLOCKABLE )
+	{
+		ParryType = AttEnemy->m_MeleeStatus.m_ActionType;
+	}
+	else
+		ParryType = MELEETYPE_RL;
+
+	return ParryType;
+}
+
+/*
+================
 idActor::OnLadder
 ================
 */
 bool idActor::OnLadder( void ) const {
 	return false;
+}
+
+CMultiStateMover* idActor::OnElevator(bool mustBeMoving) const
+{
+	return NULL;
 }
 
 /*
@@ -1889,9 +2664,10 @@ idActor::SetAnimState
 void idActor::SetAnimState( int channel, const char *statename, int blendFrames ) {
 	const function_t *func;
 
+	// greebo: Try to lookup the script function of this animstate
 	func = scriptObject.GetFunction( statename );
 	if ( !func ) {
-		assert( 0 );
+//		assert( 0 ); // greebo: don't just crash, a missing script function can happen...
 		gameLocal.Error( "Can't find function '%s' in object '%s'", statename, scriptObject.GetTypeName() );
 	}
 
@@ -1993,6 +2769,33 @@ const char *idActor::WaitState( void ) const {
 	}
 }
 
+
+const char *idActor::WaitState( int channel ) const 
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			return headAnim.WaitState();
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			return torsoAnim.WaitState();			
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			return legsAnim.WaitState();
+			break;
+
+		default:
+			gameLocal.Error( "idActor::WaitState: Unknown anim group" );
+			break;
+	}
+
+	return NULL;
+}
+
+
+
 /*
 =====================
 idActor::SetWaitState
@@ -2000,6 +2803,29 @@ idActor::SetWaitState
 */
 void idActor::SetWaitState( const char *_waitstate ) {
 	waitState = _waitstate;
+}
+
+void idActor::SetWaitState(int channel, const char *_waitstate)
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			headAnim.SetWaitState(_waitstate);
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			torsoAnim.SetWaitState(_waitstate);
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			legsAnim.SetWaitState(_waitstate);
+			break;
+
+		default:
+			gameLocal.Error( "idActor::SetWaitState: Unknown anim group" );
+			break;
+	}
+
 }
 
 /*
@@ -2032,17 +2858,137 @@ int idActor::GetAnim( int channel, const char *animname ) {
 		animatorPtr = &animator;
 	}
 
-	if ( animPrefix.Length() ) {
+	if ( animPrefix.Length() )
+	{
 		temp = va( "%s_%s", animPrefix.c_str(), animname );
-		anim = animatorPtr->GetAnim( temp );
-		if ( anim ) {
+
+		const char* replacement = LookupReplacementAnim( temp );
+
+		if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer() && idStr::Cmp(replacement, temp) != 0)
+		{
+			gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
+		}
+
+		anim = animatorPtr->GetAnim( replacement );
+		if (!anim) anim = animatorPtr->GetAnim( temp );
+		if (anim) {
 			return anim;
 		}
 	}
 
-	anim = animatorPtr->GetAnim( animname );
+	const char* replacement = LookupReplacementAnim( animname );
+
+	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer() && idStr::Cmp(replacement, animname) != 0)
+	{
+		gameLocal.Printf("Frame: %d - replacing %s with %s\n", gameLocal.framenum, animname, replacement);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - replacing %s with %s\r", gameLocal.framenum, animname, replacement);
+	}
+
+	anim = animatorPtr->GetAnim( replacement );
+	if (!anim) anim = animatorPtr->GetAnim( animname );
 
 	return anim;
+}
+
+idAnimator*	idActor::GetAnimatorForChannel(int channel)
+{
+	switch (channel) 
+	{
+		case ANIMCHANNEL_HEAD :
+			if (head.GetEntity() == NULL)
+			{
+				return headAnim.GetAnimator();
+			}
+			return head.GetEntity()->GetAnimator();
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			return torsoAnim.GetAnimator();
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			return legsAnim.GetAnimator();
+			break;
+
+		default:
+			gameLocal.Error("GetAnimatorForChannel: Unknown anim group");
+			break;
+	};
+
+	return NULL;
+}
+
+/*
+=====================
+idActor::LookupReplacementAnim
+(TDM)
+=====================
+*/
+const char* idActor::LookupReplacementAnim( const char *animname )
+{
+	// Recursively lookup the animation to find its replacement animation
+	const char* replacement = animname;
+	int tries = 0; // Infinite loop prevention counter
+
+	while ( m_replacementAnims.FindKey( replacement ) )
+	{
+		replacement = m_replacementAnims.GetString( replacement );
+		
+		// Avoid infinite loops
+		tries++;
+		if (tries > 500)
+		{
+			gameLocal.Warning("Infinite loop detected in replacements for animation '%s' applied to actor '%s'\n",
+				animname, this->name.c_str());
+			break;
+		}
+	}
+
+	return replacement;
+}
+
+void idActor::LoadReplacementAnims(const idDict& spawnArgs)
+{
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("replace_anim_", NULL);
+		 kv != NULL; kv = spawnArgs.MatchPrefix("replace_anim_", kv))
+	{
+		idStr key = kv->GetKey();
+		key.StripLeadingOnce("replace_anim_");
+
+		SetReplacementAnim(key, kv->GetValue());
+	}
+}
+
+void idActor::SetReplacementAnim(const idStr& animToReplace, const idStr& replacementAnim)
+{
+	m_replacementAnims.Set(animToReplace, replacementAnim);
+}
+
+void idActor::RemoveReplacementAnim(const idStr& replacedAnim)
+{
+	m_replacementAnims.Delete(replacedAnim);
+}
+
+void idActor::StopAnim(int channel, int frames) 
+{
+	switch( channel ) {
+	case ANIMCHANNEL_HEAD :
+		headAnim.StopAnim( frames );
+		break;
+
+	case ANIMCHANNEL_TORSO :
+		torsoAnim.StopAnim( frames );
+		break;
+
+	case ANIMCHANNEL_LEGS :
+		legsAnim.StopAnim( frames );
+		break;
+
+	default:
+		gameLocal.Error( "Unknown anim group" );
+		break;
+	}
 }
 
 /*
@@ -2146,6 +3092,8 @@ dir			direction of the attack for knockback in global space
 point		point at which the damage is being inflicted, used for headshots
 damage		amount of damage being inflicted
 
+collision	trace info for the collision that caused the damage.  Defaults to NULL.
+
 inflictor, attacker, dir, and point can be NULL for environmental effects
 
 Bleeding wounds and surface overlays are applied in the collision code that
@@ -2153,8 +3101,37 @@ calls Damage()
 ============
 */
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
+					  const char *damageDefName, const float damageScale, const int location,
+					  trace_t *collision ) 
+{
+	if (collision != NULL)
+	{
+		int bodID = BodyForClipModelId( collision->c.id );
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Fun is trying to call getBody with bodyID %d\r", bodID );
+		idAFBody* StruckBody = GetAFPhysics()->GetBody( bodID );
+		
+		if( StruckBody != NULL )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Struck body %s\r",StruckBody->GetName().c_str());
+			idEntity* reroute = StruckBody->GetRerouteEnt();
+			if (reroute != NULL) 
+			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Rerouting damage from the AF of entity %s to bound entity %s\r",name.c_str(), reroute->name.c_str());
+				// TODO: Technically location is wrong here, it's a joint that's not on the reroute entity (not sure if it will matter)
+				reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, collision );
+				return;
+			}
+		}
+	}
+
 	if ( !fl.takedamage ) {
+		return;
+	}
+
+	// grayman #2478 - why take more damage if you're already dead?
+
+	if (health <= 0)
+	{
 		return;
 	}
 
@@ -2165,36 +3142,89 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		attacker = gameLocal.world;
 	}
 
-	if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
-		return;
-	}
-
-	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+	// Try to find the damage entityDef
+	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
-	int	damage = damageDef->GetInt( "damage" ) * damageScale;
+	// Get the damage amount
+	int damage = static_cast<int>(damageDef->GetInt( "damage" ) * damageScale);
+
 	damage = GetDamageForLocation( damage, location );
+
+	// apply stealth damage multiplier - only active for derived AI class
+	damage *= StealthDamageMult();
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
-	if ( damage > 0 ) {
+
+	// DarkMod: check for KO damage type and knockout AI if appropriate
+	bool bKO = damageDef->GetBool( "knockout" );
+	bool bKOPowerBlow = damageDef->GetBool( "knockout_power" );
+	
+	if( (bKO || bKOPowerBlow) && collision )
+	{
+		if( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
+		{
+			// For now, first KO blow does no health damage
+			damage = 0;
+		}
+	}
+
+	if ( damage > 0 )
+	{
+		// Apply the damage
 		health -= damage;
-		if ( health <= 0 ) {
-			if ( health < -999 ) {
+
+		if (lowHealthThreshold != -1 && health <= lowHealthThreshold)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s's fell below health threshold %d, firing script %s\r", name.c_str(), lowHealthThreshold, lowHealthScript.c_str());
+
+			if (!lowHealthScript.IsEmpty())
+			{
+				CallScriptFunctionArgs(lowHealthScript, true, 0, "e", this);
+			}
+		}
+
+		if ( health <= 0 ) 
+		{
+			if ( health < -999 ) 
+			{
 				health = -999;
 			}
 			Killed( inflictor, attacker, damage, dir, location );
-			if ( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) {
+			if ( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) 
+			{
 				Gib( dir, damageDefName );
 			}
-		} else {
-			Pain( inflictor, attacker, damage, dir, location );
+		} 
+		else
+		{
+			Pain( inflictor, attacker, damage, dir, location, damageDef );
+
+			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
+			if ( damageDef->GetBool( "no_air" ) ) 
+			{
+				StopSound( SND_CHANNEL_VOICE, false );
+				SetSoundVolume(-10); // grayman #1488 - less volume underwater
+				StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
+			}
 		}
-	} else {
+	}
+	// Ishtvan: Try commenting this out, it doesn't make sense to ignore nonzero "push" in the DmgDef just
+	// because the attack happens to hit armor and do no damage...
+	// Cleary Id was trying to fix something here, but I'm not sure what
+/*
+	else 
+	{
+		// Ishtvan: THIS IS WHAT'S CAUSING PLATE ARMOR HITS NOT TO MOVE AI... WHY DID ID DO THIS?
+
 		// don't accumulate knockback
-		if ( af.IsLoaded() ) {
+		if ( af.IsLoaded() ) 
+		{
 			// clear impacts
 			af.Rest();
 
@@ -2202,6 +3232,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			BecomeActive( TH_PHYSICS );
 		}
 	}
+*/
 }
 
 /*
@@ -2218,8 +3249,8 @@ void idActor::ClearPain( void ) {
 idActor::Pain
 =====================
 */
-bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	if ( af.IsLoaded() ) {
+bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef ) {
+	if ( af.IsLoaded() && !IsKnockedOut() ) {
 		// clear impacts
 		af.Rest();
 
@@ -2234,14 +3265,26 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	// don't play pain sounds more than necessary
 	pain_debounce_time = gameLocal.time + pain_delay;
 
-	if ( health > 75  ) {
-		StartSound( "snd_pain_small", SND_CHANNEL_VOICE, 0, false, NULL );
-	} else if ( health > 50 ) {
-		StartSound( "snd_pain_medium", SND_CHANNEL_VOICE, 0, false, NULL );
-	} else if ( health > 25 ) {
-		StartSound( "snd_pain_large", SND_CHANNEL_VOICE, 0, false, NULL );
-	} else {
-		StartSound( "snd_pain_huge", SND_CHANNEL_VOICE, 0, false, NULL );
+	if (damageDef != NULL && damageDef->FindKey("snd_damage") != NULL)
+	{
+		// The damage def defines a special damage sound, use that one
+		// Copy it into our own spawnargs for use with StartSound() routine
+		spawnArgs.Set("snd_damage_internal___", damageDef->GetString("snd_damage"));
+
+		StartSound( "snd_damage_internal___", SND_CHANNEL_VOICE, 0, false, NULL );
+	}
+	else
+	{
+		// Ordinary health-based pain sound
+		if ( health > 75  ) {
+			StartSound( "snd_pain_small", SND_CHANNEL_VOICE, 0, false, NULL );
+		} else if ( health > 50 ) {
+			StartSound( "snd_pain_medium", SND_CHANNEL_VOICE, 0, false, NULL );
+		} else if ( health > 25 ) {
+			StartSound( "snd_pain_large", SND_CHANNEL_VOICE, 0, false, NULL );
+		} else {
+			StartSound( "snd_pain_huge", SND_CHANNEL_VOICE, 0, false, NULL );
+		}
 	}
 
 	if ( !allowPain || ( gameLocal.time < painTime ) ) {
@@ -2294,6 +3337,16 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	}
 
 	return true;
+}
+
+void idActor::SetIsPushing(bool isPushing)
+{
+	// do nothing, is handled by the subclasses
+}
+
+bool idActor::IsPushing()
+{
+	return false;
 }
 
 /*
@@ -2383,6 +3436,89 @@ const char *idActor::GetDamageGroup( int location ) {
 	return damageGroups[ location ];
 }
 
+/*
+=====================
+idActor::PlayFootStepSound
+=====================
+*/
+void idActor::PlayFootStepSound( void ) 
+{
+	// empty, override this in the subclasses
+}
+
+void idActor::LinkScriptVariables()
+{
+	// Link the script variables to our script object
+	AI_DEAD.LinkTo(scriptObject, "AI_DEAD");
+}
+
+bool idActor::ReEvaluateArea(int areaNum)
+{
+	// Default implementation for actors: return positive
+	return true;
+}
+
+void idActor::LoadVocalSet()
+{
+	// Try to look up the entityDef
+	idStr vocalSet = spawnArgs.GetString("def_vocal_set");
+
+	if (vocalSet.IsEmpty()) return; // nothing to do
+
+	const idDeclEntityDef* def = gameLocal.FindEntityDef(vocalSet, false);
+
+	if (def == NULL)
+	{
+		gameLocal.Warning("Could not find def_vocal_set %s!", vocalSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_vocal_set %s!", vocalSet.c_str());
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s", vocalSet.c_str(), name.c_str());
+
+	int i = 0;
+
+	// Copy all snd_* spawnargs over to this entity
+	for (const idKeyValue* kv = def->dict.MatchPrefix("snd_"); kv != NULL; kv = def->dict.MatchPrefix("snd_", kv), i++)
+	{
+		spawnArgs.Set(kv->GetKey(), kv->GetValue());
+	}
+	
+	// Copy all sound prop "spr*" spawnargs over to this entity
+	for (const idKeyValue* kv = def->dict.MatchPrefix("spr"); kv != NULL; kv = def->dict.MatchPrefix("spr", kv), i++)
+	{
+		spawnArgs.Set(kv->GetKey(), kv->GetValue());
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s", i, name.c_str());
+}
+
+void idActor::LoadMeleeSet()
+{
+	idStr MeleeSet = spawnArgs.GetString("def_melee_set");
+	if (MeleeSet.IsEmpty()) return; // nothing to do
+
+	// tack on difficulty string
+	// if we do it this way, def will not be precached, but that's okay for just some numbers?
+	MeleeSet += va("_%s", cv_melee_difficulty.GetString());
+
+	const idDeclEntityDef* def = gameLocal.FindEntityDef(MeleeSet, false);
+
+	if (def == NULL)
+	{
+		gameLocal.Warning("Could not find def_melee_set %s!", MeleeSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_melee_set %s!", MeleeSet.c_str());
+		return;
+	}
+
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying melee set %s to actor %s", MeleeSet.c_str(), name.c_str());
+
+	// Copy ALL spawnargs from melee set over to this entity
+	spawnArgs.Copy( def->dict );
+
+	// re-cache the anim rates in case they changed
+	CacheAnimRates();
+}
 
 /***********************************************************************
 
@@ -2395,35 +3531,9 @@ const char *idActor::GetDamageGroup( int location ) {
 idActor::Event_EnableEyeFocus
 =====================
 */
-void idActor::PlayFootStepSound( void ) {
-	const char *sound = NULL;
-	const idMaterial *material;
-
-	if ( !GetPhysics()->HasGroundContacts() ) {
-		return;
-	}
-
-	// start footstep sound based on material type
-	material = GetPhysics()->GetContact( 0 ).material;
-	if ( material != NULL ) {
-		sound = spawnArgs.GetString( va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] ) );
-	}
-	if ( *sound == '\0' ) {
-		sound = spawnArgs.GetString( "snd_footstep" );
-	}
-	if ( *sound != '\0' ) {
-		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-	}
-}
-
-/*
-=====================
-idActor::Event_EnableEyeFocus
-=====================
-*/
 void idActor::Event_EnableEyeFocus( void ) {
 	allowEyeFocus = true;
-	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomFloat() * ( blink_max - blink_min );
+	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomInt( blink_max - blink_min );
 }
 
 /*
@@ -2542,23 +3652,7 @@ idActor::Event_StopAnim
 ===============
 */
 void idActor::Event_StopAnim( int channel, int frames ) {
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
-		headAnim.StopAnim( frames );
-		break;
-
-	case ANIMCHANNEL_TORSO :
-		torsoAnim.StopAnim( frames );
-		break;
-
-	case ANIMCHANNEL_LEGS :
-		legsAnim.StopAnim( frames );
-		break;
-
-	default:
-		gameLocal.Error( "Unknown anim group" );
-		break;
-	}
+	StopAnim(channel, frames);
 }
 
 /*
@@ -2570,14 +3664,24 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 	animFlags_t	flags;
 	idEntity *headEnt;
 	int	anim;
+
+	if (cv_ai_debug_anims.GetBool() && this != gameLocal.GetLocalPlayer())
+	{
+		gameLocal.Printf("Frame: %d - playing anim %s (%s)\n", gameLocal.framenum, animname, name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - playing anim %s (%s)\r", gameLocal.framenum, animname, name.c_str());
+	}
 	
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
+		
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			//gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
+#endif
+
 		idThread::ReturnInt( 0 );
 		return;
 	}
@@ -2652,11 +3756,15 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 	
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
+		
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -2717,6 +3825,26 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 
 /*
 ===============
+idActor::Event_PauseAnim
+===============
+*/
+void idActor::Event_PauseAnim( int channel, bool bPause )
+{
+	animator.CurrentAnim( channel )->Pause( bPause );
+}
+
+/*
+===============
+idActor::Event_AnimIsPaused
+===============
+*/
+void idActor::Event_AnimIsPaused( int channel )
+{
+	idThread::ReturnInt( animator.CurrentAnim( channel )->IsPaused() );
+}
+
+/*
+===============
 idActor::Event_IdleAnim
 ===============
 */
@@ -2725,11 +3853,14 @@ void idActor::Event_IdleAnim( int channel, const char *animname ) {
 	
 	anim = GetAnim( channel, animname );	
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
+#endif
 
 		switch( channel ) {
 		case ANIMCHANNEL_HEAD :
@@ -2871,6 +4002,11 @@ void idActor::Event_SetSyncedAnimWeight( int channel, int anim, float weight ) {
 	}
 }
 
+void idActor::Event_SyncAnimChannels(int fromChannel, int toChannel, float blendFrames)
+{
+	SyncAnimChannels(fromChannel, toChannel, static_cast<int>(blendFrames));
+}
+
 /*
 ===============
 idActor::Event_OverrideAnim
@@ -2923,6 +4059,32 @@ void idActor::Event_EnableAnim( int channel, int blendFrames ) {
 
 	case ANIMCHANNEL_LEGS :
 		legsAnim.Enable( blendFrames );
+		break;
+
+	default:
+		gameLocal.Error( "Unknown anim group" );
+		break;
+	}
+}
+
+
+/*
+===============
+idActor::Event_DisableAnimchannel
+===============
+*/
+void idActor::Event_DisableAnimchannel( int channel ) {
+	switch( channel ) {
+	case ANIMCHANNEL_HEAD :
+		headAnim.Disable();
+		break;
+
+	case ANIMCHANNEL_TORSO :
+		torsoAnim.Disable();
+		break;
+
+	case ANIMCHANNEL_LEGS :
+		legsAnim.Disable();
 		break;
 
 	default:
@@ -3028,33 +4190,58 @@ void idActor::Event_FinishAction( const char *actionname ) {
 	}
 }
 
+void idActor::Event_FinishChannelAction( int channel, const char *actionname)
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			headAnim.FinishAction( actionname);
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			torsoAnim.FinishAction( actionname);
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			legsAnim.FinishAction( actionname );
+			break;
+
+		default:
+			gameLocal.Error( "Unknown anim group" );
+	}
+}
+
+bool idActor::AnimDone( int channel, int blendFrames ) const
+{
+	bool result = false;
+
+	switch( channel ) {
+		case ANIMCHANNEL_HEAD :
+			result = headAnim.AnimDone( blendFrames );
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			result = torsoAnim.AnimDone( blendFrames );
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			result = legsAnim.AnimDone( blendFrames );
+			break;
+
+		default:
+			gameLocal.Error( "Unknown anim group" );
+	}
+
+	return result;
+}
+
 /*
 ===============
 idActor::Event_AnimDone
 ===============
 */
 void idActor::Event_AnimDone( int channel, int blendFrames ) {
-	bool result;
-
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
-		result = headAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	case ANIMCHANNEL_TORSO :
-		result = torsoAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	case ANIMCHANNEL_LEGS :
-		result = legsAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	default:
-		gameLocal.Error( "Unknown anim group" );
-	}
+	idThread::ReturnInt(AnimDone(channel, blendFrames));
 }
 
 /*
@@ -3063,7 +4250,7 @@ idActor::Event_HasAnim
 ================
 */
 void idActor::Event_HasAnim( int channel, const char *animname ) {
-	if ( GetAnim( channel, animname ) != NULL ) {
+	if ( GetAnim( channel, animname ) ) {
 		idThread::ReturnFloat( 1.0f );
 	} else {
 		idThread::ReturnFloat( 0.0f );
@@ -3212,6 +4399,32 @@ void idActor::Event_ClosestEnemyToPoint( const idVec3 &pos ) {
 
 /*
 ================
+idActor::Event_MeleeBestParry
+================
+*/
+void idActor::Event_MeleeBestParry()
+{
+	idThread::ReturnInt( GetBestParry() );
+}
+
+/*
+================
+idActor::Event_MeleeNameForNum
+================
+*/
+void idActor::Event_MeleeNameForNum( int num )
+{
+	if( num >= 0 && num < NUM_MELEE_TYPES )
+		idThread::ReturnString( MeleeTypeNames[num] );
+	else
+	{
+		gameLocal.Warning("Actor %s attempted to look up bad melee type number %d", name.c_str(), num );
+		idThread::ReturnString( "" );
+	}
+}
+
+/*
+================
 idActor::Event_StopSound
 ================
 */
@@ -3270,4 +4483,515 @@ idActor::Event_GetHead
 */
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
+}
+
+/*
+=====================
+idActor::Event_GetEyePos
+=====================
+*/
+void idActor::Event_GetEyePos( void )
+{
+	idThread::ReturnVector( GetEyePosition() );
+}
+
+/*
+=====================
+idActor::Event_SetHealth
+=====================
+*/
+void idActor::Event_SetHealth( float newHealth ) {
+	health = static_cast<int>(newHealth);
+	fl.takedamage = true;
+	if ( health > 0 ) {
+		AI_DEAD = false;
+	} else {
+		AI_DEAD = true;
+	}
+}
+
+/*
+=====================
+idActor::Event_GetHealth
+=====================
+*/
+void idActor::Event_GetHealth( void ) {
+	idThread::ReturnFloat( health );
+}
+
+/*
+=====================
+idActor::Event_Attach
+=====================
+*/
+void idActor::Event_Attach( idEntity *ent, const char *AttName )
+{
+	Attach( ent, NULL, AttName );
+}
+
+/*
+=====================
+idActor::Event_AttachToPos
+=====================
+*/
+void idActor::Event_AttachToPos( idEntity *ent, const char *PosName, const char *AttName )
+{
+	Attach( ent, PosName, AttName );
+}
+
+/*
+=====================
+idActor::Event_GetAttachment
+=====================
+*/
+void idActor::Event_GetAttachment( const char *AttName )
+{
+	idEntity *ent = GetAttachment( AttName );
+	idThread::ReturnEntity( ent );
+}
+
+/*
+=====================
+idActor::Event_GetAttachmentInd
+=====================
+*/
+void idActor::Event_GetAttachmentInd( int ind )
+{
+	idEntity *ent = GetAttachment( ind );
+	idThread::ReturnEntity( ent );
+}
+
+/*
+=====================
+idActor::Event_GetNumAttachments
+=====================
+*/
+void idActor::Event_GetNumAttachments( void )
+{
+	idThread::ReturnInt( m_Attachments.Num() );
+}
+
+/*
+=====================
+idActor::Event_GetNumMeleeWeapons
+=====================
+*/
+void idActor::Event_GetNumMeleeWeapons()
+{
+	idThread::ReturnInt(GetNumMeleeWeapons());
+}
+
+/*
+=====================
+idActor::Event_GetNumRangedWeapons
+=====================
+*/
+void idActor::Event_GetNumRangedWeapons()
+{
+	idThread::ReturnInt(GetNumRangedWeapons());
+}
+
+int idActor::GetNumMeleeWeapons()
+{
+	int numMeleeWeapons(0);
+
+	// greebo: Always return 1 if this type of actor doesn't need weapons to fight
+	if (spawnArgs.GetBool("unarmed_melee", "0")) {
+		return 1;
+	}
+
+	for (int i = 0; i < m_Attachments.Num(); i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_Attachments[i].ent.IsValid())
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("is_weapon_melee"))
+		{
+			numMeleeWeapons++;
+		}
+	}
+
+	return numMeleeWeapons;
+}
+
+int idActor::GetNumRangedWeapons()
+{
+	int numRangedWeapons(0);
+	
+	if (spawnArgs.GetBool("unarmed_ranged", "0")) {
+		return 1;
+	}
+
+	for (int i = 0; i < m_Attachments.Num(); i++)
+	{
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_Attachments[i].ent.IsValid())
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("is_weapon_ranged"))
+		{
+			numRangedWeapons++;
+		}
+	}
+
+	return numRangedWeapons;
+}
+
+bool idActor::GetAttackFlag(ECombatType type) const
+{
+	return m_AttackFlags.find(static_cast<int>(type)) != m_AttackFlags.end();
+}
+
+void idActor::SetAttackFlag(ECombatType type, bool enabled)
+{
+	if (enabled)
+	{
+		m_AttackFlags.insert(type);
+	}
+	else
+	{
+		m_AttackFlags.erase(type);
+	}
+}
+
+/****************************************************************************************
+	=====================
+	idActor::CrashLand
+	handle collision(Falling) damage to AI/Players
+	Added by Richard Day
+	=====================
+****************************************************************************************/
+CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
+{
+	CrashLandResult result;
+	result.damageDealt = 0;
+	result.hasLanded = false;
+
+	if (GetPhysics() == NULL) return result;
+
+	idPhysics& physics = *GetPhysics(); // shortcut
+	
+	// no falling damage if touching a nodamage surface
+	// We do this here since the sound wont be played otherwise
+	// as we do no damage if this is true.
+	for( int i = 0; i < physics.GetNumContacts(); i++ )
+	{
+		const contactInfo_t &contact = physics.GetContact( i );
+		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
+		{
+			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
+			result.hasLanded = true;
+			return result;
+		}
+	}
+
+	const idVec3& vGravNorm = physics.GetGravityNormal();
+	const idVec3& curVelocity = physics.GetLinearVelocity();
+
+	// The current speed parallel to gravity
+	idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
+
+	// Get the vdelta (how much the velocity has changed in this frame)
+	idVec3 deltaVec = (savedVelocity - curVelocity);
+
+	// greebo: Get the vertical portion of the velocity 
+	idVec3 deltaVecVert = (deltaVec * vGravNorm) * vGravNorm;
+	// Get the horizontal portion by subtracting the vertical one from the velocity
+	idVec3 deltaVecHoriz = deltaVec - deltaVecVert;
+
+	float deltaHoriz = deltaVecHoriz.LengthSqr();
+	float deltaVert = deltaVec.LengthSqr() - deltaHoriz;
+
+	// conversion factor to 10s of MJ/kg, horizontal and vertical weighted differently
+	double delta = cv_collision_damage_scale_vert.GetFloat() * deltaVert;
+	delta += cv_collision_damage_scale_horiz.GetFloat() * deltaHoriz;
+
+	// damage scale per actor
+	delta *= m_delta_scale;
+
+	// greebo: Check if we are still using actor physics, we might already be in ragdoll mode
+	if (physics.IsType(idPhysics_Actor::Type))
+	{
+		waterLevel_t waterLevel = static_cast<idPhysics_Actor&>(physics).GetWaterLevel();
+
+		// reduce falling damage if there is standing water
+		switch (waterLevel)
+		{
+			case WATERLEVEL_NONE:
+				break;
+			case WATERLEVEL_FEET:	delta *= 0.8f;	// -20% for shallow water
+				break; 
+			case WATERLEVEL_WAIST:	delta *= 0.5f;	// -50% for medium water
+				break; 
+			case WATERLEVEL_HEAD:	delta *= 0.25f;	// -75% for deep water
+				break;
+			default: 
+				break;
+		};
+	}
+
+	// We've been moving downwards with a certain velocity, set the flag 
+	if (curGravVelocity.LengthFast() < 1 && deltaVecVert*vGravNorm > 100)
+	{
+		result.hasLanded = true;
+	}
+
+	if (delta < 390000)
+	{
+		// Below this threshold, nothing happens
+		return result;
+	}
+
+	// greebo: Now calibrate the damage using the sixth power of the velocity (=square^3)
+	// The damage has a linear relationship to the sixth power of vdelta
+	delta = delta*delta*delta;
+	int damage = static_cast<int>(1.4E-16 * delta - 3);
+
+	// gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+
+	// Check if the damage is above our threshold, ignore otherwise
+	if (damage >= m_damage_thresh_min)
+	{
+		//gameRenderWorld->DrawText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
+
+		//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
+		gameLocal.Printf("Damage dealt: %d\n", damage);
+
+		pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
+
+		// Update our return value
+		result.damageDealt = damage;
+
+		if (damage > m_damage_thresh_hard)
+		{
+			// greebo: the damage_fall_hard entityDef has a damage value of 1, which is scaled by the calculated damage integer
+			StartSound("snd_damage_land_hard", SND_CHANNEL_VOICE, 0, false, NULL);
+			Damage(NULL, NULL, vGravNorm, "damage_fall_hard", damage, 0);
+		}
+		else
+		{
+			// We are below the "hard" threshold, just deal the "soft" damage
+			StartSound("snd_damage_land_soft", SND_CHANNEL_VOICE, 0, false, NULL);
+			Damage(NULL, NULL, vGravNorm, "damage_fall_soft", damage, 0);
+		}
+	}
+
+	return result;
+}
+
+void idActor::Event_MeleeAttackStarted( int num )
+{
+	m_MeleeStatus.m_ActionResult = MELEERESULT_IN_PROGRESS;
+	m_MeleeStatus.m_ActionState = MELEEACTION_ATTACK;
+	m_MeleeStatus.m_ActionType = (EMeleeType) num;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+
+	// randomize minimum times to events after this one
+	// TODO: Rewrite this so we only set the times we need according to the result?
+	float fRand = gameLocal.random.RandomFloat();
+	m_MeleeCurrentHoldTime = m_MeleeHoldTimeMin + fRand*(m_MeleeHoldTimeMax - m_MeleeHoldTimeMin);
+	m_MeleeCurrentAttackRecovery = m_MeleeAttackRecoveryMin + fRand*(m_MeleeAttackRecoveryMax - m_MeleeAttackRecoveryMin);
+	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
+	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
+}
+
+void idActor::Event_MeleeParryStarted( int num )
+{
+	m_MeleeStatus.m_ActionResult = MELEERESULT_IN_PROGRESS;
+	m_MeleeStatus.m_ActionState = MELEEACTION_PARRY;
+	m_MeleeStatus.m_ActionType = (EMeleeType) num;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+
+	// randomize minimum times to events after this one
+	// TODO: Rewrite this so we only set what we need based on result?
+	float fRand = gameLocal.random.RandomFloat();
+	m_MeleeCurrentParryHold = m_MeleeParryHoldMin + fRand*(m_MeleeParryHoldMax - m_MeleeParryHoldMin);
+	m_MeleeCurrentAttackLongRecovery = m_MeleeAttackLongRecoveryMin + fRand*(m_MeleeAttackLongRecoveryMax - m_MeleeAttackLongRecoveryMin);
+	m_MeleeCurrentParryRecovery = m_MeleeParryRecoveryMin + fRand*(m_MeleeParryRecoveryMax - m_MeleeParryRecoveryMin);
+	m_MeleeCurrentRiposteRecovery = m_MeleeRiposteRecoveryMin + fRand*(m_MeleeRiposteRecoveryMax - m_MeleeRiposteRecoveryMin);
+	m_MeleeCurrentPreParryDelay = m_MeleePreParryDelayMin + fRand*(m_MeleePreParryDelayMax - m_MeleePreParryDelayMin);
+	m_MeleeCurrentRepeatedPreParryDelay = m_MeleeRepeatedPreParryDelayMin + fRand*(m_MeleeRepeatedPreParryDelayMax - m_MeleeRepeatedPreParryDelayMin);
+	m_MeleeCurrentPostParryDelay = m_MeleePostParryDelayMin + fRand*(m_MeleePostParryDelayMax - m_MeleePostParryDelayMin);
+	m_MeleeCurrentRepeatedPostParryDelay = m_MeleeRepeatedPostParryDelayMin + fRand*(m_MeleeRepeatedPostParryDelayMax - m_MeleeRepeatedPostParryDelayMin);
+}
+
+void idActor::Event_MeleeActionHeld()
+{
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_HOLDING;
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+}
+
+void idActor::Event_MeleeActionReleased()
+{
+	// attacks go to executing phase, parries jump straight to recovering
+	// CMeleeWeapon handles toggling attacks from executing to recovering
+	if( m_MeleeStatus.m_ActionState == MELEEACTION_ATTACK )
+		m_MeleeStatus.m_ActionPhase = MELEEPHASE_EXECUTING;
+	else
+		m_MeleeStatus.m_ActionPhase = MELEEPHASE_RECOVERING;
+
+
+	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
+}
+
+void idActor::Event_MeleeActionFinished()
+{
+	m_MeleeStatus.m_ActionState = MELEEACTION_READY;
+	m_MeleeStatus.m_ActionPhase = MELEEPHASE_PREPARING;
+	m_MeleeStatus.m_LastActTime = gameLocal.time;
+}
+
+void idActor::Event_GetMeleeActionState()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionState );
+}
+
+void idActor::Event_GetMeleeActionPhase()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionPhase );
+}
+
+void idActor::Event_GetMeleeActionType()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionType );
+}
+
+void idActor::Event_GetMeleeLastActTime()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_LastActTime );
+}
+
+void idActor::Event_GetMeleeResult()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_ActionResult );
+}
+
+void idActor::Event_GetMeleeLastHitByType()
+{
+	idThread::ReturnInt( m_MeleeStatus.m_LastHitByType );
+}
+
+void idActor::Event_SetReplacementAnim(const char* animToReplace, const char* replacementAnim)
+{
+	SetReplacementAnim(animToReplace, replacementAnim);
+}
+
+void idActor::Event_RemoveReplacementAnim(const char* animName)
+{
+	RemoveReplacementAnim(animName);
+}
+
+void idActor::Event_LookupReplacementAnim(const char* animName)
+{
+	idThread::ReturnString(LookupReplacementAnim(animName));
+}
+
+void idActor::Event_GetAttackFlag(int combatType)
+{
+	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
+	{
+		idThread::ReturnInt(0);
+	}
+
+	idThread::ReturnInt(GetAttackFlag(static_cast<ECombatType>(combatType)) ? 1 : 0);
+}
+
+void idActor::Event_SetAttackFlag(int combatType, int enabled)
+{
+	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
+	{
+		// do nothing
+		gameLocal.Warning("Script is trying to set invalid combatType %d", combatType);
+		return;
+	}
+
+	SetAttackFlag(static_cast<ECombatType>(combatType), enabled == 1);
+}
+
+// ========== CMeleeStatus implementation =========
+CMeleeStatus::CMeleeStatus( void )
+{
+	m_ActionState	= MELEEACTION_READY;
+	m_ActionPhase	= MELEEPHASE_PREPARING;
+	m_ActionType	= MELEETYPE_OVER;
+
+	m_PhaseChangeTime	= 0;
+	m_LastActTime		= 0;
+
+	m_ActionResult	= MELEERESULT_IN_PROGRESS;
+
+	m_bWasHit		= false; // NYI
+	m_LastHitByType = MELEETYPE_UNBLOCKABLE;
+
+	m_bCanParry		= false;
+	m_bCanParryAll	= false;
+	m_attacks.Clear();
+}
+
+CMeleeStatus::~CMeleeStatus( void )
+{
+	m_attacks.Clear();
+}
+
+void CMeleeStatus::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteInt( m_ActionState );
+	savefile->WriteInt( m_ActionPhase );
+	savefile->WriteInt( m_ActionType );
+	savefile->WriteInt( m_PhaseChangeTime );
+	savefile->WriteInt( m_LastActTime );
+	savefile->WriteInt( m_ActionResult );
+
+	savefile->WriteBool( m_bWasHit );
+	savefile->WriteInt( m_LastHitByType );
+
+	savefile->WriteBool( m_bCanParry );
+	savefile->WriteBool( m_bCanParryAll );
+
+	int num = m_attacks.Num();
+	savefile->WriteInt( num );
+	for( int i =0; i < num; i++ )
+	{
+		savefile->WriteInt( m_attacks[i] );
+	}
+}
+
+void CMeleeStatus::Restore( idRestoreGame *savefile )
+{
+	int i = 0;
+	savefile->ReadInt( i );
+	m_ActionState = (EMeleeActState) i; 
+	savefile->ReadInt( i );
+	m_ActionPhase = (EMeleeActPhase) i;
+	savefile->ReadInt( i );
+	m_ActionType = (EMeleeType) i;
+	savefile->ReadInt( m_PhaseChangeTime );
+	savefile->ReadInt( m_LastActTime );
+	savefile->ReadInt( i );
+	m_ActionResult = (EMeleeResult) i;
+
+	savefile->ReadBool( m_bWasHit );
+	savefile->ReadInt( i );
+	m_LastHitByType = (EMeleeType) i;
+
+	savefile->ReadBool( m_bCanParry );
+	savefile->ReadBool( m_bCanParryAll );
+
+	int num;
+	savefile->ReadInt( num );
+	m_attacks.SetNum( num );
+	for( int j =0; j < num; j++ )
+	{
+		savefile->ReadInt( i );
+		m_attacks[j] = (EMeleeType) i;
+	}
 }

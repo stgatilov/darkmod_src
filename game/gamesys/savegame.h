@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SAVEGAME_H__
 #define __SAVEGAME_H__
@@ -35,7 +19,28 @@ Save game related helper classes.
 
 */
 
+#include "../../DarkMod/RawVector.h"
+
+#ifdef __linux__
+#include "renderer/model.h"
+#endif
+
 const int INITIAL_RELEASE_BUILD_NUMBER = 1262;
+
+class idDeclSkin;
+class idDeclParticle;
+class idDeclFX;
+class idSoundShader;
+class idUserInterface;
+typedef struct renderEntity_s renderEntity_t;
+typedef struct renderLight_s renderLight_t;
+struct refSound_t;
+typedef struct renderView_s renderView_t;
+class usercmd_t;
+struct contactInfo_t;
+typedef struct trace_s trace_t;
+class idTraceModel;
+class idClipModel;
 
 class idSaveGame {
 public:
@@ -48,21 +53,31 @@ public:
 	void					WriteObjectList( void );
 
 	void					Write( const void *buffer, int len );
+
 	void					WriteInt( const int value );
-	void					WriteJoint( const jointHandle_t value );
+	void					WriteUnsignedInt( const unsigned int value );
 	void					WriteShort( const short value );
-	void					WriteByte( const byte value );
-	void					WriteSignedChar( const signed char value );
+	void					WriteUnsignedShort( unsigned short value );
+	void					WriteChar( const char value );
+	void					WriteUnsignedChar( const unsigned char value );
 	void					WriteFloat( const float value );
 	void					WriteBool( const bool value );
 	void					WriteString( const char *string );
+
+	void					WriteJoint( const jointHandle_t value );
+	void					WriteByte( const byte value );
+	void					WriteSignedChar( const signed char value );
+
 	void					WriteVec2( const idVec2 &vec );
 	void					WriteVec3( const idVec3 &vec );
 	void					WriteVec4( const idVec4 &vec );
+	void					WriteVec5( const idVec5 &vec );
 	void					WriteVec6( const idVec6 &vec );
-	void					WriteWinding( const idWinding &winding );
-	void					WriteBounds( const idBounds &bounds );
 	void					WriteMat3( const idMat3 &mat );
+
+	void					WriteWinding( const idWinding &winding );
+	void					WriteBox( const idBox &box );
+	void					WriteBounds( const idBounds &bounds );
 	void					WriteAngles( const idAngles &angles );
 	void					WriteObject( const idClass *obj );
 	void					WriteStaticObject( const idClass &obj );
@@ -86,12 +101,19 @@ public:
 	void					WriteClipModel( const class idClipModel *clipModel );
 	void					WriteSoundCommands( void );
 
-	void					WriteBuildNumber( const int value );
+	// Write all the data necessary to determine the save format
+	void					WriteHeader();
+
+	// Dump the contents of cache buffer to file
+	void					FinalizeCache();
 
 private:
 	idFile *				file;
 
 	idList<const idClass *>	objects;
+
+	bool					isCompressed;
+	CRawVector				cache;
 
 	void					CallSave_r( const idTypeInfo *cls, const idClass *obj );
 };
@@ -108,21 +130,31 @@ public:
 	void					Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 
 	void					Read( void *buffer, int len );
+
 	void					ReadInt( int &value );
-	void					ReadJoint( jointHandle_t &value );
+	void					ReadUnsignedInt( unsigned int &value );
 	void					ReadShort( short &value );
-	void					ReadByte( byte &value );
-	void					ReadSignedChar( signed char &value );
+	void					ReadUnsignedShort( unsigned short &value );
+	void					ReadChar( char &value );
+	void					ReadUnsignedChar( unsigned char &value );
 	void					ReadFloat( float &value );
 	void					ReadBool( bool &value );
 	void					ReadString( idStr &string );
+
+	void					ReadJoint( jointHandle_t &value );
+	void					ReadByte( byte &value );
+	void					ReadSignedChar( signed char &value );
+
 	void					ReadVec2( idVec2 &vec );
 	void					ReadVec3( idVec3 &vec );
 	void					ReadVec4( idVec4 &vec );
+	void					ReadVec5( idVec5 &vec );
 	void					ReadVec6( idVec6 &vec );
+	void					ReadMat3( idMat3 &mat );
+
 	void					ReadWinding( idWinding &winding );
 	void					ReadBounds( idBounds &bounds );
-	void					ReadMat3( idMat3 &mat );
+	void					ReadBox( idBox &box );
 	void					ReadAngles( idAngles &angles );
 	void					ReadObject( idClass *&obj );
 	void					ReadStaticObject( idClass &obj );
@@ -146,17 +178,26 @@ public:
 	void					ReadClipModel( idClipModel *&clipModel );
 	void					ReadSoundCommands( void );
 
-	void					ReadBuildNumber( void );
+	// Read all the data necessary to determine the save format
+	void					ReadHeader();
 
-	//						Used to retrieve the saved game buildNumber from within class Restore methods
-	int						GetBuildNumber( void );
+	// Read the contents of cache buffer before restoring
+	void					InitializeCache();
+
+	inline int				GetBuildNumber() { return buildNumber; }
+	inline int				GetCodeRevision() { return codeRevision; }
 
 private:
-	int						buildNumber;
-
 	idFile *				file;
 
+	int						buildNumber;
+	int						codeRevision;
+
 	idList<idClass *>		objects;
+
+	bool					isCompressed;
+	CRawVector				cache;
+	int						cachePointer;
 
 	void					CallRestore_r( const idTypeInfo *cls, idClass *obj );
 };

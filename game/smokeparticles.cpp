@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
 
 static const char *smokeParticle_SnapshotName = "_SmokeParticle_Snapshot_";
 
@@ -183,7 +169,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 		return false;
 	}
 
-	idRandom steppingRandom( 0xffff * diversity );
+	idRandom steppingRandom( static_cast<int>(0xffff * diversity) );
 
 	// for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
 	for ( int stageNum = 0; stageNum < smoke->stages.Num(); stageNum++ ) {
@@ -203,10 +189,10 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 
 		// see how many particles we should emit this tic
 		// FIXME: 			smoke.privateStartTime += stage->timeOffset;
-		int		finalParticleTime = stage->cycleMsec * stage->spawnBunching;
+		int		finalParticleTime = static_cast<int>(stage->spawnBunching * stage->cycleMsec);
 		int		deltaMsec = gameLocal.time - systemStartTime;
 
-		int		nowCount, prevCount;
+		int		nowCount = 0, prevCount;
 		if ( finalParticleTime == 0 ) {
 			// if spawnBunching is 0, they will all come out at once
 			if ( gameLocal.time == systemStartTime ) {
@@ -216,11 +202,11 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 				prevCount = stage->totalParticles;
 			}
 		} else {
-			nowCount = floor( ( (float)deltaMsec / finalParticleTime ) * stage->totalParticles );
+			nowCount = static_cast<int>(floor( ( (float)deltaMsec / finalParticleTime ) * stage->totalParticles ));
 			if ( nowCount >= stage->totalParticles ) {
 				nowCount = stage->totalParticles-1;
 			}
-			prevCount = floor( ((float)( deltaMsec - USERCMD_MSEC ) / finalParticleTime) * stage->totalParticles );
+			prevCount = static_cast<int>(floor( ((float)( deltaMsec - USERCMD_MSEC ) / finalParticleTime) * stage->totalParticles ));
 			if ( prevCount < -1 ) {
 				prevCount = -1;
 			}
@@ -237,7 +223,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 		}
 
 		// find an activeSmokeStage that matches this
-		activeSmokeStage_t	*active;
+		activeSmokeStage_t	*active(NULL);
 		int i;
 		for ( i = 0 ; i < activeStages.Num() ; i++ ) {
 			active = &activeStages[i];

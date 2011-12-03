@@ -1,38 +1,33 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
+#include "../../DarkMod/decltdm_matinfo.h"
+#include "../../DarkMod/Relations.h"
+#include "../../DarkMod/sndProp.h"
+#include "../../DarkMod/Objectives/MissionData.h"
+#include "../../DarkMod/Missions/MissionManager.h"
+
+class CRelations;
+class CsndProp;
 
 const idEventDef EV_Thread_Execute( "<execute>", NULL );
 const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
+const idEventDef EV_Thread_SetRenderCallback( "<script_setrendercallback>", NULL );
 																	
 // script callable events
 const idEventDef EV_Thread_TerminateThread( "terminate", "d" );
@@ -41,6 +36,7 @@ const idEventDef EV_Thread_Wait( "wait", "f" );
 const idEventDef EV_Thread_WaitFrame( "waitFrame" );
 const idEventDef EV_Thread_WaitFor( "waitFor", "e" );
 const idEventDef EV_Thread_WaitForThread( "waitForThread", "d" );
+const idEventDef EV_Thread_WaitForRender( "waitForRender", "e" );
 const idEventDef EV_Thread_Print( "print", "s" );
 const idEventDef EV_Thread_PrintLn( "println", "s" );
 const idEventDef EV_Thread_Say( "say", "s" );
@@ -64,11 +60,17 @@ const idEventDef EV_Thread_SetPersistantArg( "setPersistantArg", "ss" );
 const idEventDef EV_Thread_GetPersistantString( "getPersistantString", "s", 's' );
 const idEventDef EV_Thread_GetPersistantFloat( "getPersistantFloat", "s", 'f' );
 const idEventDef EV_Thread_GetPersistantVector( "getPersistantVector", "s", 'v' );
+
+// Returns the number of the current mission (0-based)
+const idEventDef EV_Thread_GetCurrentMissionNum( "getCurrentMissionNum", NULL, 'f' );
+
 const idEventDef EV_Thread_AngToForward( "angToForward", "v", 'v' );
 const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
 const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
 const idEventDef EV_Thread_Sine( "sin", "f", 'f' );
 const idEventDef EV_Thread_Cosine( "cos", "f", 'f' );
+const idEventDef EV_Thread_Log( "log", "f", 'f' );
+const idEventDef EV_Thread_Pow( "pow", "ff", 'f' );
 const idEventDef EV_Thread_SquareRoot( "sqrt", "f", 'f' );
 const idEventDef EV_Thread_Normalize( "vecNormalize", "v", 'v' );
 const idEventDef EV_Thread_VecLength( "vecLength", "v", 'f' );
@@ -111,6 +113,34 @@ const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
 const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
 const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
 
+//AI relationship manager events
+const idEventDef EV_AI_GetRelationSys( "getRelation", "dd", 'd' );
+const idEventDef EV_AI_SetRelation( "setRelation", "ddd" );
+const idEventDef EV_AI_OffsetRelation( "offsetRelation", "ddd" );
+
+// Dark Mod soundprop events
+const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", "df" );
+const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
+
+// greebo: General water test function, tests if a point is in a liquid
+const idEventDef EV_PointInLiquid( "pointInLiquid", "ve", 'f' );
+
+const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
+
+// greebo: Writes the string to the Darkmod.log file using DM_LOG
+const idEventDef EV_LogString("logString", "dds");
+
+// Propagates the string to the sessioncommand variable in gameLocal
+const idEventDef EV_SessionCommand("sessionCommand", "s");
+
+// Generic interface for passing on mission events from scripts to the SDK
+// First argument is the entity which has triggered this event (e.g. a readable)
+// Second argument is a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event
+// Third argument is an optional string parameter
+const idEventDef EV_HandleMissionEvent("handleMissionEvent", "eds");
+
+const idEventDef EV_Thread_CanPlant( "canPlant", "vvEe", 'f' );  // grayman #2787
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -119,6 +149,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_WaitFrame,				idThread::Event_WaitFrame )
 	EVENT( EV_Thread_WaitFor,				idThread::Event_WaitFor )
 	EVENT( EV_Thread_WaitForThread,			idThread::Event_WaitForThread )
+	EVENT( EV_Thread_WaitForRender,			idThread::Event_WaitForRender )
 	EVENT( EV_Thread_Print,					idThread::Event_Print )
 	EVENT( EV_Thread_PrintLn,				idThread::Event_PrintLn )
 	EVENT( EV_Thread_Say,					idThread::Event_Say )
@@ -142,11 +173,16 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetPersistantString,	idThread::Event_GetPersistantString )
 	EVENT( EV_Thread_GetPersistantFloat,	idThread::Event_GetPersistantFloat )
 	EVENT( EV_Thread_GetPersistantVector,	idThread::Event_GetPersistantVector )
+
+	EVENT( EV_Thread_GetCurrentMissionNum,	idThread::Event_GetCurrentMissionNum )
+
 	EVENT( EV_Thread_AngToForward,			idThread::Event_AngToForward )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
 	EVENT( EV_Thread_Sine,					idThread::Event_GetSine )
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
+	EVENT( EV_Thread_Log,				idThread::Event_GetLog )
+	EVENT( EV_Thread_Pow,				idThread::Event_GetPow )
 	EVENT( EV_Thread_SquareRoot,			idThread::Event_GetSquareRoot )
 	EVENT( EV_Thread_Normalize,				idThread::Event_VecNormalize )
 	EVENT( EV_Thread_VecLength,				idThread::Event_VecLength )
@@ -190,12 +226,32 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugBounds,			idThread::Event_DebugBounds )
 	EVENT( EV_Thread_DrawText,				idThread::Event_DrawText )
 	EVENT( EV_Thread_InfluenceActive,		idThread::Event_InfluenceActive )
-END_CLASS
+
+	EVENT( EV_AI_GetRelationSys,			idThread::Event_GetRelation )
+	EVENT( EV_AI_SetRelation,				idThread::Event_SetRelation )
+	EVENT( EV_AI_OffsetRelation,			idThread::Event_OffsetRelation )
+	EVENT( EV_TDM_SetPortSoundLoss,			idThread::Event_SetPortSoundLoss )
+	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
+	
+	EVENT( EV_PointInLiquid,				idThread::Event_PointInLiquid )
+
+	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
+	
+	EVENT( EV_LogString,					idThread::Event_LogString )
+	EVENT( EV_SessionCommand,				idThread::Event_SessionCommand )
+
+	EVENT( EV_HandleMissionEvent,			idThread::Event_HandleMissionEvent )
+
+	EVENT( EV_Thread_CanPlant,	 			idThread::Event_CanPlant )	// grayman #2787
+
+	END_CLASS
 
 idThread			*idThread::currentThread = NULL;
 int					idThread::threadIndex = 0;
 idList<idThread *>	idThread::threadList;
 trace_t				idThread::trace;
+
+#define VINE_TRACE_CONTENTS 1281 // grayman #2787 - CONTENTS_CORPSE|CONTENTS_BODY|CONTENTS_SOLID
 
 /*
 ================
@@ -993,6 +1049,24 @@ void idThread::Event_WaitForThread( int num ) {
 
 /*
 ================
+idThread::Event_WaitForRender
+
+Waits for an entity to render before resuming.
+================
+*/
+void idThread::Event_WaitForRender( idEntity* ent )
+{
+	if ( ent && ent->RespondsTo( EV_Thread_SetRenderCallback ) ) {
+		ent->ProcessEvent( &EV_Thread_SetRenderCallback );
+		if ( gameLocal.program.GetReturnedInteger() ) {
+			Pause();
+			waitingFor = ent->entityNumber;
+		}
+	}
+}
+
+/*
+================
 idThread::Event_Print
 ================
 */
@@ -1034,9 +1108,7 @@ idThread::Event_Trigger
 */
 void idThread::Event_Trigger( idEntity *ent ) {
 	if ( ent ) {
-		ent->Signal( SIG_TRIGGER );
-		ent->ProcessEvent( &EV_Activate, gameLocal.GetLocalPlayer() );
-		ent->TriggerGuis();
+		ent->Activate(NULL);
 	}
 }
 
@@ -1234,6 +1306,11 @@ void idThread::Event_GetPersistantVector( const char *key ) {
 	ReturnVector( result );
 }
 
+void idThread::Event_GetCurrentMissionNum()
+{
+	ReturnFloat(gameLocal.m_MissionManager->GetCurrentMissionIndex());
+}
+
 /*
 ================
 idThread::Event_AngToForward
@@ -1272,7 +1349,7 @@ void idThread::Event_AngToUp( idAngles &ang ) {
 idThread::Event_GetSine
 ================
 */
-void idThread::Event_GetSine( float angle ) {
+void idThread::Event_GetSine( const float angle ) {
 	ReturnFloat( idMath::Sin( DEG2RAD( angle ) ) );
 }
 
@@ -1281,8 +1358,26 @@ void idThread::Event_GetSine( float angle ) {
 idThread::Event_GetCosine
 ================
 */
-void idThread::Event_GetCosine( float angle ) {
+void idThread::Event_GetCosine( const float angle ) {
 	ReturnFloat( idMath::Cos( DEG2RAD( angle ) ) );
+}
+
+/*
+================
+Tels: idThread::Event_GetLog
+================
+*/
+void idThread::Event_GetLog( const float x ) {
+	ReturnFloat( idMath::Log( x ) );
+}
+
+/*
+================
+Tels: idThread::Event_GetPow
+================
+*/
+void idThread::Event_GetPow( const float x, const float y ) {
+	ReturnFloat( idMath::Pow( x, y ) );
 }
 
 /*
@@ -1841,3 +1936,147 @@ void idThread::Event_InfluenceActive( void ) {
 		idThread::ReturnInt( false );
 	}
 }
+
+/**
+* DarkMod: The following script events are a frontend for
+* the global AI relationship manager (stored in game_local)
+**/
+void	idThread::Event_GetRelation( int team1, int team2 )
+{
+	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team1, team2 ) );
+}
+
+void	idThread::Event_SetRelation( int team1, int team2, int val )
+{
+	gameLocal.m_RelationsManager->SetRel( team1, team2, val );
+}
+
+void	idThread::Event_OffsetRelation( int team1, int team2, int offset )
+{
+	gameLocal.m_RelationsManager->ChangeRel( team1, team2, offset );
+}
+
+void	idThread::Event_SetPortSoundLoss( int handle, float value )
+{
+	gameLocal.m_sndProp->SetPortalLoss( handle, value );
+}
+
+void	idThread::Event_GetPortSoundLoss( int handle )
+{
+	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalLoss( handle ) );
+}
+
+void idThread::Event_LogString(int logClass, int logType, const char* output) 
+{
+	DM_LOG(static_cast<LC_LogClass>(logClass), static_cast<LT_LogType>(logType))LOGSTRING(const_cast<char*>(output));
+}
+
+/*
+================
+idThread::CallFunctionArgs
+
+NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
+================
+*/
+bool idThread::CallFunctionArgs(const function_t *func, bool clearStack, const char *fmt, ...)
+{
+	bool rc = false;
+	va_list argptr;
+
+	ClearWaitFor();
+
+	va_start(argptr, fmt);
+	rc = interpreter.EnterFunctionVarArgVN(func, clearStack, fmt, argptr);
+	va_end(argptr);
+
+	return rc;
+}
+
+bool idThread::CallFunctionArgsVN(const function_t *func, bool clearStack, const char *fmt, va_list args)
+{
+	bool rc = false;
+
+	ClearWaitFor();
+
+	rc = interpreter.EnterFunctionVarArgVN(func, clearStack, fmt, args);
+
+	return rc;
+}
+
+void idThread::Event_DebugTDM_MatInfo( const char *mat )
+{
+	const tdmDeclTDM_MatInfo *tdmat = static_cast< const tdmDeclTDM_MatInfo* >( declManager->FindType( DECL_TDM_MATINFO, mat, false ) );
+	if ( tdmat != NULL ) {
+		gameLocal.Printf( "Information for tdm material declaration: %s\n", mat );
+		gameLocal.Printf( "surfacetype: %s\n", tdmat->surfaceType.c_str() );
+	} else {
+		gameLocal.Warning( "Non-existant tdm material declaration: %s", mat );
+	}
+}
+
+void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity ) {
+	// Check if the point is in water
+	int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, ignoreEntity );
+	ReturnFloat( (contents & MASK_WATER) ? 1 : 0);
+}
+
+void idThread::Event_SessionCommand(const char* cmd)
+{
+	gameLocal.sessionCommand = cmd;
+}
+
+void idThread::Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument)
+{
+	// Safety check the enum
+	if (eventType < EVENT_NOTHING || eventType >= EVENT_INVALID)
+	{
+		gameLocal.Warning("Invalid mission event type passed by %s to handleMissionEvent(): %d", entity->name.c_str(), eventType);
+		return;
+	}
+
+	// Pass on the call
+	gameLocal.m_MissionData->HandleMissionEvent(entity, static_cast<EMissionEventType>(eventType), argument);
+}
+
+// grayman #2787
+
+void idThread::Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine )
+{
+	float vineFriendly = 0; // assume the vine can't grow
+	trace_t result;
+	if ( gameLocal.clip.TracePoint( result, traceStart, traceEnd, VINE_TRACE_CONTENTS, ignore ) )
+	{
+		int contents = gameLocal.clip.Contents( result.endpos, NULL, mat3_identity, -1, ignore );
+		if ( !( contents & MASK_WATER ) ) // grow if not in water
+		{
+			if ( abs( result.c.normal.z ) < 0.866 ) // grow if not on a flat surface
+			{
+				idEntity* struckEnt = gameLocal.entities[result.c.entityNum];
+				if ( struckEnt )
+				{
+					if ( ( struckEnt == gameLocal.world ) || struckEnt->IsType( idStaticEntity::Type ) )
+					{
+						// Either we hit a world brush, or a func_static. We can grow on both types.
+
+						const idMaterial* material = result.c.material;
+						if ( material )
+						{
+							idStr description = material->GetDescription();
+							if ( idStr::FindText(description,"vine_friendly") >= 0 )
+							{
+								// We can plant here, so save planting data on the vine entity
+
+								vine->m_VinePlantLoc = result.endpos;
+								vine->m_VinePlantNormal = result.c.normal;
+								vineFriendly = 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	idThread::ReturnFloat( vineFriendly );
+}
+

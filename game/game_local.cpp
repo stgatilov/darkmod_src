@@ -1,35 +1,66 @@
-/*
-===========================================================================
+/***************************************************************************
+ * For VIM users, do not remove: vim:ts=4:sw=4:cindent
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+#pragma warning(disable : 4127 4996 4805 4800)
+
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/darkModLAS.h"
+#include "../DarkMod/decltdm_matinfo.h"
+#include "../DarkMod/declxdata.h"
+#include "../DarkMod/Grabber.h"
+#include "../DarkMod/Relations.h"
+#include "../DarkMod/Inventory/Inventory.h"
+#include "../DarkMod/sndProp.h"
+#include "ai/aas_local.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/Objectives/CampaignStatistics.h"
+#include "../DarkMod/MultiStateMover.h"
+#include "../DarkMod/func_shooter.h"
+#include "../DarkMod/Shop/Shop.h"
+#include "../DarkMod/EscapePointManager.h"
+#include "../DarkMod/DownloadMenu.h"
+#include "../DarkMod/TimerManager.h"
+#include "../DarkMod/AI/Conversation/ConversationSystem.h"
+#include "../DarkMod/RevisionTracker.h"
+#include "../DarkMod/Missions/MissionManager.h"
+#include "../DarkMod/Missions/DownloadManager.h"
+#include "../DarkMod/Http/HttpConnection.h"
+#include "../DarkMod/Http/HttpRequest.h"
+#include "../DarkMod/StimResponse/StimType.h" // grayman #2721
+
+#include "IL/il.h"
+#include "../DarkMod/randomizer/randomc.h"
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
+#include <iostream>
+
+CGlobal g_Global;
+TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
+
+extern CMissionData		g_MissionData;
+extern CsndPropLoader	g_SoundPropLoader;
+extern CsndProp			g_SoundProp;
+
+#define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
 
@@ -54,6 +85,7 @@ idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL|CVAR_SYSTEM,
 
 idRenderWorld *				gameRenderWorld = NULL;		// all drawing is done to this world
 idSoundWorld *				gameSoundWorld = NULL;		// all audio goes to this world
+idSoundWorld *				gameSoundWorldBuf = NULL;
 
 static gameExport_t			gameExport;
 
@@ -68,6 +100,32 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
+
+/* This list isn't actually used by the code, it's here just for reference. The code
+   accepts any first word in the description as the surface type name: */
+// grayman - #1421/1422 - added "hardwood"
+const char *idGameLocal::m_NewSurfaceTypes[ MAX_SURFACE_TYPES * 2 + 1] = {
+	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
+	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "slate",
+	"straw", "armor_leath", "armor_chain", "armor_plate", "climbable", "paper","hardwood"
+};
+
+void PrintMessage( int x, int y, const char *szMessage, idVec4 colour, fontInfoEx_t &font )
+{
+      renderSystem->SetColor( colour );
+
+      for( const char *p = szMessage; *p; p++ )
+      {
+            glyphInfo_t &glyph = font.fontInfoSmall.glyphs[int(*p)];
+
+            renderSystem->DrawStretchPic( x, y - glyph.top,
+                  glyph.imageWidth, glyph.imageHeight,
+                  glyph.s, glyph.t, glyph.s2, glyph.t2,
+                  glyph.glyph );
+
+            x += glyph.xSkip;
+      }
+}
 
 /*
 ===========
@@ -102,6 +160,14 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 		AASFileManager				= import->AASFileManager;
 		collisionModelManager		= import->collisionModelManager;
 	}
+	else {
+		// Wrong game version, throw a meaningful error rather than leaving
+		// stuff initialised and getting segfaults.
+		std::cerr << "FATAL: Incorrect game version: required " 
+			<< GAME_API_VERSION << ", got " << import->version << "\n"
+			<< "Ensure the correct Doom 3 patches are installed." << std::endl;
+		abort();
+	}
 
 	// set interface pointers used by idLib
 	idLib::sys					= sys;
@@ -113,6 +179,9 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 	gameExport.version = GAME_API_VERSION;
 	gameExport.game = game;
 	gameExport.gameEdit = gameEdit;
+
+	// Initialize logging and all the global stuff for darkmod
+	g_Global.Init();
 
 	return &gameExport;
 }
@@ -151,8 +220,23 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal() {
+idGameLocal::idGameLocal() :
+	postMissionScreenActive(false),
+	briefingVideoInfoLoaded(false),
+	curBriefingVideoPart(-1),
+	m_MissionResult(MISSION_NOTEVENSTARTED),
+	m_HighestSRId(0)
+{
 	Clear();
+}
+
+/*
+===========
+idGameLocal::~idGameLocal
+============
+*/
+idGameLocal::~idGameLocal() 
+{
 }
 
 /*
@@ -160,9 +244,74 @@ idGameLocal::idGameLocal() {
 idGameLocal::Clear
 ============
 */
-void idGameLocal::Clear( void ) {
+void idGameLocal::Clear( void )
+{
 	int i;
 
+	m_HighestSRId = 0;
+	m_StimTimer.Clear();
+	m_Timer.Clear();
+	m_StimEntity.Clear();
+	m_RespEntity.Clear();
+
+	m_sndPropLoader = &g_SoundPropLoader;
+	m_sndProp = &g_SoundProp;
+	m_RelationsManager = CRelationsPtr();
+	m_MissionData.reset();
+
+	mainMenuExited = false;
+	briefingVideo.Clear();
+	debriefingVideo.Clear();
+
+	m_Grabber = NULL;
+	m_DifficultyManager.Clear();
+
+	m_ModMenu.reset();
+	m_DownloadMenu.reset();
+	m_DownloadManager.reset();
+	m_Shop.reset();
+
+	m_TriggerFinalSave = false;
+
+	m_GUICommandStack.Clear();
+	m_GUICommandArgs = 0;
+
+	m_guiError.Clear();
+
+	m_AreaManager.Clear();
+	m_ConversationSystem.reset();
+
+	if (m_ModelGenerator)
+	{
+		m_ModelGenerator->Clear();
+	}
+	if (m_ImageMapManager)
+	{
+		m_ImageMapManager->Clear();
+	}
+	if (m_LightController)
+	{
+		m_LightController->Clear();
+	}
+	if (m_I18N)
+	{
+		m_I18N->Clear();
+	}
+
+#ifdef TIMING_BUILD
+	debugtools::TimerManager::Instance().Clear();
+#endif
+
+	m_EscapePointManager = CEscapePointManager::Instance();
+	m_EscapePointManager->Clear();
+
+	m_Interleave = 0;
+
+	m_lightGem.Clear();
+	m_DoLightgem = true;
+
+	m_InterMissionTriggers.Clear();
+	
 	serverInfo.Clear();
 	numClients = 0;
 	for ( i = 0; i < MAX_CLIENTS; i++ ) {
@@ -176,10 +325,14 @@ void idGameLocal::Clear( void ) {
 	num_entities = 0;
 	spawnedEntities.Clear();
 	activeEntities.Clear();
+	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
 	sortPushers = false;
 	sortTeamMasters = false;
 	persistentLevelInfo.Clear();
+	persistentPlayerInventory.reset();
+	campaignInfoEntities.Clear();
+
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
 	world = NULL;
@@ -208,8 +361,6 @@ void idGameLocal::Clear( void ) {
 	camera = NULL;
 	aasList.Clear();
 	aasNames.Clear();
-	lastAIAlertEntity = NULL;
-	lastAIAlertTime = 0;
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
 	playerPVS.h = (unsigned int)-1;
@@ -239,8 +390,15 @@ void idGameLocal::Clear( void ) {
 
 	eventQueue.Init();
 	savedEventQueue.Init();
-
 	memset( lagometer, 0, sizeof( lagometer ) );
+
+	portalSkyEnt			= NULL;
+	portalSkyActive			= false;
+	//	ResetSlowTimeVars();
+
+	m_GamePlayTimer.Clear();
+
+	musicSpeakers.Clear();
 }
 
 /*
@@ -259,6 +417,11 @@ void idGameLocal::Init( void ) {
 	TestGameAPI();
 
 #else
+	// Attempt to change the D3 window title and icon
+	ChangeWindowTitleAndIcon();
+
+	// Initialize the image library, so we can use it later on.
+	ilInit();
 
 	// initialize idLib
 	idLib::Init();
@@ -272,19 +435,28 @@ void idGameLocal::Init( void ) {
 #endif
 
 	Printf( "--------- Initializing Game ----------\n" );
-	Printf( "gamename: %s\n", GAME_VERSION );
-	Printf( "gamedate: %s\n", __DATE__ );
-
+	Printf( "%s %d.%02d, code revision %d\n", 
+		GAME_VERSION, 
+		TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
+		RevisionTracker::Instance().GetHighestRevision() 
+	);
+	Printf( "Build date: %s\n", __DATE__ );
+	
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
+	// TDM specific DECLs
+	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
+	declManager->RegisterDeclType( "tdm_matinfo",		DECL_TDM_MATINFO,	idDeclAllocator<tdmDeclTDM_MatInfo> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
 	declManager->RegisterDeclFolder( "fx",				".fx",				DECL_FX );
 	declManager->RegisterDeclFolder( "particles",		".prt",				DECL_PARTICLE );
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
-	declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
+	// TDM specific DECLs
+	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
+	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
 
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
@@ -296,6 +468,16 @@ void idGameLocal::Init( void ) {
 
 	InitConsoleCommands();
 
+	// greebo: Let the proxy CVARs overwrite the closed source counter-part
+	cvarSystem->SetCVarInteger("s_doorDistanceAdd", cv_tdm_s_doorDistanceAdd.GetInteger());
+	cvarSystem->SetCVarFloat("gui_mediumFontLimit", cv_tdm_gui_mediumFontLimit.GetFloat());
+	cvarSystem->SetCVarFloat("gui_smallFontLimit", cv_tdm_gui_smallFontLimit.GetFloat());
+
+	if (cv_tdm_s_maxSoundsPerShader.GetInteger() != -1)
+	{
+		cvarSystem->SetCVarInteger("s_maxSoundsPerShader", cv_tdm_s_maxSoundsPerShader.GetInteger());
+	}
+	
 	// load default scripts
 	program.Startup( SCRIPT_DEFAULT );
 	
@@ -321,6 +503,152 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+	Printf( "Parsing material files\n" );
+
+	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
+
+	m_MissionData = CMissionDataPtr(new CMissionData);
+	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
+	m_RelationsManager = CRelationsPtr(new CRelations);
+	m_ModMenu = CModMenuPtr(new CModMenu);
+	m_DownloadMenu = CDownloadMenuPtr(new CDownloadMenu);
+	m_DownloadManager = CDownloadManagerPtr(new CDownloadManager);
+	m_ConversationSystem = ai::ConversationSystemPtr(new ai::ConversationSystem);
+	
+	// load the soundprop globals from the def file
+	m_sndPropLoader->GlobalsFromDef();
+
+	//FIX: pm_walkspeed keeps getting reset whenever a map loads.
+	// Copy the old value here and set it when the map starts up.
+	m_walkSpeed = pm_walkspeed.GetFloat();
+
+	// Initialize the LightGem - J.C.Denton
+	m_lightGem.Initialize();
+
+	// Initialise the I18N (internationalization) code (before the Mission Manager!)
+	m_I18N = CI18NPtr(new CI18N);
+	m_I18N->Init();
+	const idStr *tdm_lang = m_I18N->GetCurrentLanguage();
+	Printf("Current language: %s\n", tdm_lang->c_str() );
+
+	// Initialise the mission manager
+	m_MissionManager = CMissionManagerPtr(new CMissionManager);
+	m_MissionManager->Init();
+
+	// Initialise the model generator
+	m_ModelGenerator = CModelGeneratorPtr(new CModelGenerator);
+	m_ModelGenerator->Init();
+
+	// Initialise the image map manager
+	m_ImageMapManager = CImageMapManagerPtr(new CImageMapManager);
+	m_ImageMapManager->Init();
+
+	// Initialise the light controller
+	m_LightController = CLightControllerPtr(new CLightController);
+	m_LightController->Init();
+
+	// greebo: Create the persistent inventory - will be handled by game state changing code
+	persistentPlayerInventory.reset(new CInventory);
+
+	m_Shop = CShopPtr(new CShop);
+	m_Shop->Init();
+
+	// Construct a new http connection object
+	if (cv_tdm_allow_http_access.GetBool())
+	{
+		m_HttpConnection = CHttpConnectionPtr(new CHttpConnection);
+	}
+}
+
+const idStr& idGameLocal::GetMapFileName() const
+{
+	return mapFileName;
+}
+
+void idGameLocal::AddInterMissionTrigger(int missionNum, const idStr& activatorName, const idStr& targetName)
+{
+	InterMissionTrigger& trigger = m_InterMissionTriggers.Alloc();
+
+	trigger.missionNum = missionNum;
+	trigger.activatorName = activatorName;
+	trigger.targetName = targetName;
+}
+
+void idGameLocal::CheckTDMVersion()
+{
+	GuiMessage msg;
+	msg.type = GuiMessage::MSG_OK;
+	msg.okCmd = "close_msg_box";
+
+	if (m_HttpConnection == NULL) 
+	{
+		Printf("HTTP requests disabled, skipping TDM version check.\n");
+
+		msg.title = m_I18N->Translate( "#str_02136" );
+		msg.message = m_I18N->Translate( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
+
+		AddMainMenuMessage(msg);
+		return;
+	}
+
+	idStr url = cv_tdm_version_check_url.GetString();
+	Printf("Checking %s\n", url.c_str() );
+	CHttpRequestPtr req = m_HttpConnection->CreateRequest( url.c_str() );
+
+	req->Perform();
+
+	// Check Request Status
+	if (req->GetStatus() != CHttpRequest::OK)
+	{
+		Printf("%s.\n", m_I18N->Translate( "#str_2002") );	// Connection Error
+
+		msg.title = m_I18N->Translate( "#str_02136" );		// Version Check Failed
+		msg.message = m_I18N->Translate( "#str_02132" );	// Cannot connect to server.
+
+		AddMainMenuMessage(msg);
+		return;
+	}
+
+	XmlDocumentPtr doc = req->GetResultXml();
+
+	pugi::xpath_node node = doc->select_single_node("//tdm/currentVersion");
+
+	if (node)
+	{
+		int major = node.node().attribute("major").as_int();
+		int minor = node.node().attribute("minor").as_int();
+
+		msg.title = va( m_I18N->Translate( "#str_02132" ), major, minor );	// Most recent version is: 
+
+		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
+		{
+		case EQUAL:
+			// "Your version %d.%02d is up to date."
+			msg.message = va( m_I18N->Translate( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		case OLDER:
+			// "Your version %d.%02d needs updating."
+			msg.message = va( m_I18N->Translate( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		case NEWER:
+			// "Your version %d.%02d is newer than the most recently published one."
+			msg.message = va( m_I18N->Translate( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			break;
+		};
+	}
+	else
+	{
+		msg.title = m_I18N->Translate( "#str_02136" );	// "Version Check Failed"
+		msg.message = m_I18N->Translate( "#str_02137" );	// "Couldn't find current version tag."
+
+	}
+
+	AddMainMenuMessage(msg);
+}
+
+void idGameLocal::AddMainMenuMessage(const GuiMessage& message)
+{
+	m_GuiMessages.Append(message);
 }
 
 /*
@@ -331,16 +659,55 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
-
 	if ( !common ) {
 		return;
 	}
 
-	Printf( "------------ Game Shutdown -----------\n" );
+	if (cv_tdm_fm_sync_config_files.GetBool())
+	{
+		// greebo: Check if we have a game base. If yes, write the current configuration back to the
+		// "darkmod" game base folder, to preserve any settings made while an FM is installed.
+		idStr fs_game_base(cvarSystem->GetCVarString("fs_game_base"));
 
+		if (!fs_game_base.IsEmpty())
+		{
+			common->WriteConfigToFile("../" + fs_game_base + "/DoomConfig.cfg");
+		}
+	}
+
+	Printf( "------------ Game Shutdown -----------\n" );
+	
+	m_lightGem.Deinitialize();
 	mpGame.Shutdown();
 
 	MapShutdown();
+
+	// greebo: De-allocate the missiondata singleton, this is not 
+	// done in MapShutdown() (needed for mission statistics)
+	m_MissionData.reset();
+	m_CampaignStats.reset();
+
+	// Destroy the conversation system
+	m_ConversationSystem.reset();
+
+	// Destroy the mission manager
+	m_MissionManager.reset();
+
+	// Destroy the model generator
+	m_ModelGenerator.reset();
+
+	// Destroy the image map manager
+	m_ImageMapManager.reset();
+
+	// Destroy the light controller
+	m_LightController.reset();
+
+	// Destroy the I18N system
+	m_I18N.reset();
+
+	// Clear http connection
+	m_HttpConnection.reset();
+	m_GuiMessages.Clear();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
@@ -407,8 +774,6 @@ the session may have written some data to the file already
 */
 void idGameLocal::SaveGame( idFile *f ) {
 	int i;
-	idEntity *ent;
-	idEntity *link;
 
 	idSaveGame savegame( f );
 
@@ -418,19 +783,26 @@ void idGameLocal::SaveGame( idFile *f ) {
 		f->ForceFlush();
 	}
 
-	savegame.WriteBuildNumber( BUILD_NUMBER );
+	savegame.WriteHeader();
 
 	// go through all entities and threads and add them to the object list
-	for( i = 0; i < MAX_GENTITIES; i++ ) {
-		ent = entities[i];
+	for (i = 0; i < MAX_GENTITIES; i++)
+	{
+		idEntity* ent = entities[i];
 
-		if ( ent ) {
-			if ( ent->GetTeamMaster() && ent->GetTeamMaster() != ent ) {
-				continue;
-			}
-			for ( link = ent; link != NULL; link = link->GetNextTeamEntity() ) {
-				savegame.AddObject( link );
-			}
+		if (ent == NULL) continue;
+
+		// greebo: Give all entities a chance to register sub-objects (to resolve issue #2502)
+		ent->AddObjectsToSaveGame(&savegame);
+
+		if (ent->GetTeamMaster() && ent->GetTeamMaster() != ent)
+		{
+			continue; // skip bindslaves, these are added by the team master
+		}
+
+		for (idEntity* link = ent; link != NULL; link = link->GetNextTeamEntity())
+		{
+			savegame.AddObject( link );
 		}
 	}
 
@@ -441,10 +813,55 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.AddObject( threads[i] );
 	}
 
+	// DarkMod: Add darkmod specific objects here:
+
+	savegame.AddObject( m_Grabber );
+
 	// write out complete object list
 	savegame.WriteObjectList();
 
 	program.Save( &savegame );
+
+	// Save the global hiding spot search collection
+	CHidingSpotSearchCollection::Instance().Save(&savegame);
+
+	// Save our grabber pointer
+	savegame.WriteObject(m_Grabber);
+
+	// Save whatever the model generator needs
+	m_ModelGenerator->Save(&savegame);
+
+	// Save whatever the image map manager needs
+	m_ImageMapManager->Save(&savegame);
+
+	// Save whatever the light controller needs
+	m_LightController->Save(&savegame);
+
+	// Save whatever the I18N needs
+	m_I18N->Save(&savegame);
+
+	m_DifficultyManager.Save(&savegame);
+
+	for ( i = 0; i < NumAAS(); i++)
+	{
+		idAAS* aas = GetAAS(i);
+		if (aas != NULL)
+		{
+			aas->Save(&savegame);
+		}
+	}
+
+	m_GamePlayTimer.Save(&savegame);
+	m_AreaManager.Save(&savegame);
+	m_ConversationSystem->Save(&savegame);
+	m_RelationsManager->Save(&savegame);
+	m_Shop->Save(&savegame);
+	LAS.Save(&savegame);
+	m_MissionManager->Save(&savegame);
+
+#ifdef TIMING_BUILD
+	debugtools::TimerManager::Instance().Save(&savegame);
+#endif
 
 	savegame.WriteInt( g_skill.GetInteger() );
 
@@ -470,13 +887,24 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteObject( world );
 
 	savegame.WriteInt( spawnedEntities.Num() );
-	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		savegame.WriteObject( ent );
 	}
 
 	savegame.WriteInt( activeEntities.Num() );
-	for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+	for (idEntity* ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 		savegame.WriteObject( ent );
+	}
+
+	// tels: save the list of music speakers
+	savegame.WriteInt( musicSpeakers.Num() );
+	for( i = 0; i < musicSpeakers.Num(); i++ ) {
+		savegame.WriteInt( musicSpeakers[ i ] );
+	}
+
+	savegame.WriteInt(spawnedAI.Num());
+	for (idAI* ai = spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next()) {
+		savegame.WriteObject(ai);
 	}
 
 	savegame.WriteInt( numEntitiesToDeactivate );
@@ -484,9 +912,19 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( sortTeamMasters );
 	savegame.WriteDict( &persistentLevelInfo );
 
+	persistentPlayerInventory->Save(&savegame);
+
+	savegame.WriteInt(campaignInfoEntities.Num());
+	for (i = 0; i < campaignInfoEntities.Num(); ++i)
+	{
+		savegame.WriteObject(campaignInfoEntities[i]);
+	}
+	
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
 	}
+
+	savegame.WriteBool(postMissionScreenActive);
 
 	savegame.WriteInt( random.GetSeed() );
 	savegame.WriteObject( frameCommandThread );
@@ -529,6 +967,12 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( isNewFrame );
 	savegame.WriteFloat( clientSmoothing );
 
+	portalSkyEnt.Save( &savegame );
+
+	savegame.WriteBool( portalSkyActive );
+
+
+
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
 
@@ -545,9 +989,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteMaterial( globalMaterial );
 
-	lastAIAlertEntity.Save( &savegame );
-	savegame.WriteInt( lastAIAlertTime );
-
 	savegame.WriteDict( &spawnArgs );
 
 	savegame.WriteInt( playerPVS.i );
@@ -562,6 +1003,54 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
 
+	//Save LightGem - J.C.Denton
+	m_lightGem.Save( savegame );
+
+	savegame.WriteInt(m_InterMissionTriggers.Num());
+	for (int i = 0; i < m_InterMissionTriggers.Num(); ++i)
+	{
+		savegame.WriteInt(m_InterMissionTriggers[i].missionNum);
+		savegame.WriteString(m_InterMissionTriggers[i].activatorName);
+		savegame.WriteString(m_InterMissionTriggers[i].targetName);
+	}
+
+	m_sndProp->Save(&savegame);
+	m_MissionData->Save(&savegame);
+	savegame.WriteInt(static_cast<int>(m_MissionResult));
+
+	m_CampaignStats->Save(&savegame);
+
+	savegame.WriteInt(m_HighestSRId);
+
+	savegame.WriteInt(m_Timer.Num());
+	for (int i = 0; i < m_Timer.Num(); i++)
+	{
+		m_Timer[i]->Save(&savegame);
+	}
+
+	savegame.WriteInt(m_StimTimer.Num());
+	for (int i = 0; i < m_StimTimer.Num(); i++)
+	{
+		savegame.WriteInt(m_StimTimer[i]->GetUniqueId());
+	}
+
+	savegame.WriteInt(m_StimEntity.Num());
+	for (int i = 0; i < m_StimEntity.Num(); i++)
+	{
+		m_StimEntity[i].Save(&savegame);
+	}
+
+	savegame.WriteInt(m_RespEntity.Num());
+	for (int i = 0; i < m_RespEntity.Num(); i++)
+	{
+		m_RespEntity[i].Save(&savegame);
+	}
+
+	m_EscapePointManager->Save(&savegame);
+
+	// greebo: Save the maximum frob distance
+	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -572,7 +1061,22 @@ void idGameLocal::SaveGame( idFile *f ) {
 	// write out pending events
 	idEvent::Save( &savegame );
 
+	// Tels: Save the GUI command stack
+	savegame.WriteInt( m_GUICommandArgs );
+	int cmds = m_GUICommandStack.Num();
+	savegame.WriteInt( cmds );
+	for( i = 0; i < cmds; i++ ) {
+		savegame.WriteString( m_GUICommandStack[i] );
+	}
+
+	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
+
+	// save all accumulated cache to file
+	savegame.FinalizeCache();
+
+	// Send a message to the HUD
+	GetLocalPlayer()->SendHUDMessage("#str_02916");	// "Game Saved"
 }
 
 /*
@@ -699,6 +1203,9 @@ void idGameLocal::Error( const char *fmt, ... ) const {
 	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
 
+	// Send this error message to the GUI queue
+	m_guiError = text;
+
 	thread = idThread::CurrentThread();
 	if ( thread ) {
 		thread->Error( "%s", text );
@@ -747,7 +1254,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		idGameLocal::userInfo[ clientNum ] = userInfo;
 
 		// server sanity
-		if ( canModify ) {
+		if ( canModify  ) {
 
 			// don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
 			if ( idStr::IsNumeric( this->userInfo[ clientNum ].GetString( "ui_name" ) ) ) {
@@ -772,7 +1279,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		}
 
 		if ( entities[ clientNum ] && entities[ clientNum ]->IsType( idPlayer::Type ) ) {
-			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged( canModify );
+			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged(canModify);
 		}
 
 		if ( !isClient ) {
@@ -783,6 +1290,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 
 	if ( modifiedInfo ) {
 		assert( canModify );
+
 		newInfo = idGameLocal::userInfo[ clientNum ];
 		return &newInfo;
 	}
@@ -837,6 +1345,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// clear the sound system
 	gameSoundWorld->ClearAllSoundEmitters();
 
+	musicSpeakers.Clear();			// Tels: Clear the list even on reload to account for dynamic changes
+	cv_music_volume.SetModified();	// SnoopJeDi: we want to fade on level start
+
 	InitAsyncNetwork();
 
 	if ( !sameMap || ( mapFile && mapFile->NeedsReload() ) ) {
@@ -850,6 +1361,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 			mapFile = NULL;
 			Error( "Couldn't load %s", mapName );
 		}
+		tdmDeclTDM_MatInfo::precacheMap( mapFile );
 	}
 	mapFileName = mapFile->GetName();
 
@@ -866,6 +1378,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	
 	spawnedEntities.Clear();
 	activeEntities.Clear();
+	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
 	sortTeamMasters = false;
 	sortPushers = false;
@@ -883,21 +1396,26 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	firstFreeIndex	= MAX_CLIENTS;
 
 	// reset the random number generator.
-	random.SetSeed( isMultiplayer ? randseed : 0 );
+	// Tels: use a random seed for single-player, too, otherwise map content can't be random
+	//random.SetSeed( isMultiplayer ? randseed : 0 );
+	random.SetSeed( randseed );
 
 	camera			= NULL;
 	world			= NULL;
 	testmodel		= NULL;
 	testFx			= NULL;
 
-	lastAIAlertEntity = NULL;
-	lastAIAlertTime = 0;
-	
 	previousTime	= 0;
 	time			= 0;
 	framenum		= 0;
 	sessionCommand = "";
 	nextGibTime		= 0;
+
+	portalSkyEnt			= NULL;
+
+	portalSkyActive			= false;
+
+
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
@@ -917,6 +1435,11 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	clip.Init();
 	pvs.Init();
+
+
+	// this will always fail for now, have not yet written the map compile
+	m_sndPropLoader->CompileMap( mapFile );
+
 	playerPVS.i = -1;
 	playerConnectedAreas.i = -1;
 
@@ -924,6 +1447,12 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	for( i = 0; i < aasNames.Num(); i++ ) {
 		aasList[ i ]->Init( idStr( mapFileName ).SetFileExtension( aasNames[ i ] ).c_str(), mapFile->GetGeometryCRC() );
 	}
+
+	/*!
+	* The Dark Mod LAS: Init the Light Awareness System
+	* This must occur AFTER the AAS list is loaded
+	*/
+	LAS.initialize();
 
 	// clear the smoke particle free list
 	smokeParticles->Init();
@@ -934,6 +1463,19 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	if ( !sameMap ) {
 		mapFile->RemovePrimitiveData();
 	}
+
+	// greebo: Reset the flag. When a map is loaded, the success screen is definitely not shown anymore.
+	// This is meant to catch cases where the player is reloading a map from the console without clicking
+	// the "Continue" button on the success GUI. I can't stop him, so I need to track this here.
+	postMissionScreenActive = false;
+
+	if (m_MissionData != NULL)
+	{
+		m_MissionData->ClearGUIState();
+	}
+
+	m_strMainAmbientLightName = "ambient_world"; // Default name for main ambient light. J.C.Denton.
+
 }
 
 /*
@@ -967,6 +1509,11 @@ void idGameLocal::LocalMapRestart( ) {
 		gameSoundWorld->ClearAllSoundEmitters();
 	}
 
+	/*!
+	* The Dark Mod LAS: Init the LAS
+	*/
+	LAS.initialize();
+
 	// the spawnCount is reset to zero temporarily to spawn the map entities with the same spawnId
 	// if we don't do that, network clients are confused and don't show any map entities
 	latchSpawnCount = spawnCount;
@@ -992,6 +1539,7 @@ void idGameLocal::LocalMapRestart( ) {
 	}
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1068,7 +1616,7 @@ bool idGameLocal::NextMap( void ) {
 	int					i;
 
 	if ( !g_mapCycle.GetString()[0] ) {
-		Printf( common->GetLanguageDict()->GetString( "#str_04294" ) );
+		Printf( m_I18N->Translate( "#str_04294" ) );
 		return false;
 	}
 	if ( fileSystem->ReadFile( g_mapCycle.GetString(), NULL, NULL ) < 0 ) {
@@ -1124,6 +1672,7 @@ void idGameLocal::NextMap_f( const idCmdArgs &args ) {
 /*
 ===================
 idGameLocal::MapPopulate
+Dark Mod: Sound prop initialization added
 ===================
 */
 void idGameLocal::MapPopulate( void ) {
@@ -1131,6 +1680,7 @@ void idGameLocal::MapPopulate( void ) {
 	if ( isMultiplayer ) {
 		cvarSystem->SetCVarBool( "r_skipSpecular", false );
 	}
+
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
 
@@ -1138,11 +1688,22 @@ void idGameLocal::MapPopulate( void ) {
 	SpreadLocations();
 
 	// prepare the list of randomized initial spawn spots
-	RandomizeInitialSpawns();
+	RandomizeInitialSpawns( );
 
 	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
 	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
 	mapSpawnCount = MAX_CLIENTS + spawnCount - 1;
+
+	// read in the soundprop data for various locations
+	m_sndPropLoader->FillLocationData();
+
+	// Transfer sound prop data from loader to gameplay object
+	m_sndProp->SetupFromLoader( m_sndPropLoader );
+
+	m_sndPropLoader->Shutdown();
+	
+	// Initialise the escape point manager after all the entities have been spawned.
+	m_EscapePointManager->InitAAS();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
@@ -1166,6 +1727,28 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 		MapShutdown();
 	}
 
+	idStr mapNameStr = mapName;
+	mapNameStr.StripLeadingOnce("maps/");
+	mapNameStr.StripFileExtension();
+
+	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
+
+	if (loadingGUI != NULL)
+	{
+		// Use our own randomizer, the gameLocal.random one is not yet initialised
+		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
+	}
+	
+	// greebo: Clear the mission data, it might have been filled during the objectives screen display
+	m_MissionData->Clear();
+
+	// Clear the persistent data if starting a new campaign
+	if (m_MissionManager->CurrentModIsCampaign() && m_MissionManager->GetCurrentMissionIndex() == 0)
+	{
+		ClearPersistentInfo();
+	}
+
 	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
@@ -1175,9 +1758,38 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	LoadMap( mapName, randseed );
 
+	// Instantiate our grabber entity
+	m_Grabber = static_cast<CGrabber*>(CGrabber::Type.CreateInstance());
+
+	// greebo: Initialize the Difficulty Manager, before any entities are spawned
+	m_DifficultyManager.Init(mapFile);
+	m_ConversationSystem->Init(mapFile);
+
+	// Immediately apply the CVAR difficulty settings
+	m_DifficultyManager.ApplyCVARDifficultySettings();
+	
 	InitScriptForMap();
 
+	// Initialize the AI relationships
+	// greebo: Do this before spawning the rest of the map entities to give them a chance
+	// to override the default settings found on the entityDef
+	const idDict* defaultRelationsDict = FindEntityDefDict(cv_tdm_default_relations_def.GetString());
+
+	if (defaultRelationsDict != NULL)
+	{
+		m_RelationsManager->SetFromArgs(*defaultRelationsDict);
+	}
+
 	MapPopulate();
+
+	// ishtvan: Set the player variable on the grabber
+	//m_Grabber->SetPlayer( GetLocalPlayer() ); // greebo: GetLocalPlayer() returns NULL, moved to idPlayer::Spawn()
+
+	// greebo: Add the elevator reachabilities to the AAS
+	SetupEAS();
+
+	// Then, apply the worldspawn settings
+	m_RelationsManager->SetFromArgs( world->spawnArgs );
 
 	mpGame.Reset();
 
@@ -1187,6 +1799,13 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	animationLib.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
+
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
+
+	// We need an objectives update now that we've loaded the map
+	m_MissionData->ClearGUIState();
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1215,7 +1834,16 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	idRestoreGame savegame( saveGameFile );
 
-	savegame.ReadBuildNumber();
+	savegame.ReadHeader();
+
+	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
+	{
+		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n.", savegame.GetCodeRevision());
+		return false;
+	}
+
+	// Read and initialize  cache from file
+	savegame.InitializeCache();
 
 	// Create the list of all objects in the game
 	savegame.CreateObjects();
@@ -1234,11 +1862,51 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// load the map needed for this savegame
 	LoadMap( mapName, 0 );
 
+	// Restore the global hiding spot search collection
+	CHidingSpotSearchCollection::Instance().Restore(&savegame);
+
+	// Restore our grabber pointer
+	savegame.ReadObject( reinterpret_cast<idClass*&>(m_Grabber) );
+
+	m_ModelGenerator->Restore(&savegame);
+	m_ImageMapManager->Restore(&savegame);
+	m_LightController->Restore(&savegame);
+	m_I18N->Restore(&savegame);
+
+	m_DifficultyManager.Restore(&savegame);
+
+	for ( i = 0; i < NumAAS(); i++)
+	{
+		idAAS* aas = GetAAS(i);
+		if (aas != NULL)
+		{
+			aas->Restore(&savegame);
+		}
+	}
+
+	m_GamePlayTimer.Restore(&savegame);
+	m_GamePlayTimer.SetEnabled(false);
+	m_AreaManager.Restore(&savegame);
+	m_ConversationSystem->Restore(&savegame);
+	m_RelationsManager->Restore(&savegame);
+	m_Shop->Restore(&savegame);
+	LAS.Restore(&savegame);
+	m_MissionManager->Restore(&savegame);
+
+#ifdef TIMING_BUILD
+	debugtools::TimerManager::Instance().Restore(&savegame);
+#endif
+
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );
 
 	// precache the player
-	FindEntityDef( "player_doommarine", false );
+	FindEntityDef( cv_player_spawnclass.GetString(), false );
+
+	// precache the empty model (used by idEntity::m_renderTrigger)
+	renderModelManager->FindModel( cv_empty_model.GetString() );
+
+	m_lightGem.SpawnLightGemEntity( mapFile );
 
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
@@ -1298,14 +1966,47 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		}
 	}
 
+	// tels: restore the list of music speakers
+	savegame.ReadInt( num );
+	musicSpeakers.Clear();
+	for( i = 0; i < num; i++ ) {
+		int id;
+		savegame.ReadInt( id );
+		musicSpeakers.Append( id );
+	}
+
+	savegame.ReadInt( num );
+	for( i = 0; i < num; i++ )
+	{
+		idAI* ai(NULL);
+		savegame.ReadObject(reinterpret_cast<idClass *&>(ai));
+		assert(ai != NULL);
+
+		if (ai != NULL)
+		{
+			ai->aiNode.AddToEnd(spawnedAI);
+		}
+	}
+
 	savegame.ReadInt( numEntitiesToDeactivate );
 	savegame.ReadBool( sortPushers );
 	savegame.ReadBool( sortTeamMasters );
 	savegame.ReadDict( &persistentLevelInfo );
 
+	persistentPlayerInventory->Restore(&savegame);
+
+	savegame.ReadInt(num);
+	campaignInfoEntities.SetNum(num);
+	for (i = 0; i < num; ++i)
+	{
+		savegame.ReadObject(reinterpret_cast<idClass*&>(campaignInfoEntities[i]));
+	}
+
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.ReadFloat( globalShaderParms[ i ] );
 	}
+
+	savegame.ReadBool(postMissionScreenActive);
 
 	savegame.ReadInt( i );
 	random.SetSeed( i );
@@ -1350,6 +2051,12 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( isNewFrame );
 	savegame.ReadFloat( clientSmoothing );
 
+	portalSkyEnt.Restore( &savegame );
+
+	savegame.ReadBool( portalSkyActive );
+
+
+
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
 
@@ -1369,9 +2076,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadMaterial( globalMaterial );
 
-	lastAIAlertEntity.Restore( &savegame );
-	savegame.ReadInt( lastAIAlertTime );
-
 	savegame.ReadDict( &spawnArgs );
 
 	savegame.ReadInt( playerPVS.i );
@@ -1386,6 +2090,65 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( influenceActive );
 	savegame.ReadInt( nextGibTime );
 
+	// Restore LightGem				- J.C.Denton
+	m_lightGem.Restore( savegame );
+
+	savegame.ReadInt(num);
+	m_InterMissionTriggers.SetNum(num);
+	for (int i = 0; i < num; ++i)
+	{
+		savegame.ReadInt(m_InterMissionTriggers[i].missionNum);
+		savegame.ReadString(m_InterMissionTriggers[i].activatorName);
+		savegame.ReadString(m_InterMissionTriggers[i].targetName);
+	}
+
+	m_sndProp->Restore(&savegame);
+	m_MissionData->Restore(&savegame);
+
+	int missResult;
+	savegame.ReadInt(missResult);
+	m_MissionResult = static_cast<EMissionResult>(missResult);
+
+	m_CampaignStats->Restore(&savegame);
+
+	savegame.ReadInt(m_HighestSRId);
+
+	savegame.ReadInt(num);
+	m_Timer.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_Timer[i] = new CStimResponseTimer;
+		m_Timer[i]->Restore(&savegame);
+	}
+
+	// The list to take all the values, they will be restored later on
+	idList<int> tempStimTimerIdList;
+	savegame.ReadInt(num);
+	tempStimTimerIdList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savegame.ReadInt(tempStimTimerIdList[i]);
+	}
+
+	savegame.ReadInt(num);
+	m_StimEntity.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_StimEntity[i].Restore(&savegame);
+	}
+
+	savegame.ReadInt(num);
+	m_RespEntity.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_RespEntity[i].Restore(&savegame);
+	}
+
+	m_EscapePointManager->Restore(&savegame);
+
+	// greebo: Restore the maximum frob distance
+	savegame.ReadFloat(g_Global.m_MaxFrobDistance);
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -1396,6 +2159,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// Read out pending events
 	idEvent::Restore( &savegame );
 
+	// Tels: Restore the GUI command stack
+	int cmds; 
+	savegame.ReadInt( m_GUICommandArgs );
+	savegame.ReadInt( cmds );
+	m_GUICommandStack.Clear();
+	m_GUICommandStack.SetNum( cmds );
+	for( i = 0; i < cmds; i++ ) {
+		savegame.ReadString( m_GUICommandStack[i] );
+	}
 	savegame.RestoreObjects();
 
 	mpGame.Reset();
@@ -1407,7 +2179,26 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	gamestate = GAMESTATE_ACTIVE;
 
+	//FIX: Set the walkspeed back to the stored value.
+	pm_walkspeed.SetFloat( m_walkSpeed );
+
+	// Restore the physics pointer in the grabber.
+	gameLocal.m_Grabber->SetPhysicsFromDragEntity();
+
+	// Restore the CStim* pointers in the m_StimTimer list
+	m_StimTimer.SetNum(tempStimTimerIdList.Num());
+	for (int i = 0; i < tempStimTimerIdList.Num(); i++)
+	{
+		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]).get());
+	}
+
+	// Let the mission database know that we start playing
+	m_MissionManager->OnMissionStart();
+
 	Printf( "--------------------------------------\n" );
+
+	// Restart the timer
+	m_GamePlayTimer.Start();
 
 	return true;
 }
@@ -1474,6 +2265,12 @@ void idGameLocal::MapShutdown( void ) {
 		inCinematic = false;
 	}
 
+	// Run the grabber->clear() method before the entities get deleted from the map
+	if (m_Grabber != NULL)
+	{
+		m_Grabber->Clear();
+	}
+	
 	MapClear( true );
 
 	// reset the script to the state it was before the map was started
@@ -1483,7 +2280,50 @@ void idGameLocal::MapShutdown( void ) {
 		smokeParticles->Shutdown();
 	}
 
+	/*!
+	* The Dark Mod LAS: shut down the LAS
+	*/
+	LAS.shutDown();
+
 	pvs.Shutdown();
+
+	// Remove the grabber entity itself (note that it's safe to pass NULL pointers to delete)
+	delete m_Grabber;
+	m_Grabber = NULL;
+
+	m_sndProp->Clear();
+	if (m_RelationsManager != NULL)
+	{
+		m_RelationsManager->Clear();
+	}
+	if (m_ConversationSystem != NULL)
+	{
+		m_ConversationSystem->Clear();
+	}
+
+	m_DifficultyManager.Clear();
+
+	if (m_ModelGenerator != NULL)
+	{
+		m_ModelGenerator->Print();
+		m_ModelGenerator->Clear();
+	}
+	if (m_ImageMapManager != NULL)
+	{
+		m_ImageMapManager->Clear();
+	}
+	
+	if (m_LightController != NULL)
+	{
+		m_LightController->Clear();
+	}
+	if (m_I18N != NULL)
+	{
+		m_I18N->Clear();
+	}
+
+	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
+	// m_Shop->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
@@ -1496,6 +2336,9 @@ void idGameLocal::MapShutdown( void ) {
 	gameSoundWorld = NULL;
 
 	gamestate = GAMESTATE_NOMAP;
+
+	// Save the current walkspeed
+	m_walkSpeed = pm_walkspeed.GetFloat();
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1535,14 +2378,11 @@ void idGameLocal::DumpOggSounds( void ) {
 				// if not voice over or combat chatter
 				if (	soundName.Find( "/vo/", false ) == -1 &&
 						soundName.Find( "/combat_chatter/", false ) == -1 &&
-						soundName.Find( "/bfgcarnage/", false ) == -1 &&
-						soundName.Find( "/enpro/", false ) == - 1 &&
-						soundName.Find( "/soulcube/energize_01.wav", false ) == -1 ) {
+						soundName.Find( "/enpro/", false ) == - 1 ) {
 					// don't OGG weapon sounds
 					if (	soundName.Find( "weapon", false ) != -1 ||
 							soundName.Find( "gun", false ) != -1 ||
 							soundName.Find( "bullet", false ) != -1 ||
-							soundName.Find( "bfg", false ) != -1 ||
 							soundName.Find( "plasma", false ) != -1 ) {
 						weaponSounds.AddUnique( soundName );
 						continue;
@@ -1661,6 +2501,8 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 				renderModelManager->FindModel( kv->GetValue() );
 				// precache .cm files only
 				collisionModelManager->LoadModel( kv->GetValue(), true );
+				// load any tdm_matinfo decls for materials referenced by the model
+				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( kv->GetValue() ) );
 			}
 		}
 		kv = dict->MatchPrefix( "model", kv );
@@ -1702,12 +2544,14 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->FindKey( "texture" );
 	if ( kv && kv->GetValue().Length() ) {
 		declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+		declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 	}
 
 	kv = dict->MatchPrefix( "mtr", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
 			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+			declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "mtr", kv );
 	}
@@ -1769,14 +2613,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "def", kv );
 	}
 
-	kv = dict->MatchPrefix( "pda_name", NULL );
-	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_PDA, kv->GetValue().c_str(), false );
-		}
-		kv = dict->MatchPrefix( "pda_name", kv );
-	}
-
 	kv = dict->MatchPrefix( "video", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
@@ -1791,6 +2627,14 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 			declManager->FindType( DECL_AUDIO, kv->GetValue().c_str(), false );
 		}
 		kv = dict->MatchPrefix( "audio", kv );
+	}
+
+	kv = dict->MatchPrefix( "xdata", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->FindType( DECL_XDATA, kv->GetValue().c_str(), false );
+		}
+		kv = dict->MatchPrefix( "xdata", kv );
 	}
 }
 
@@ -1821,17 +2665,27 @@ void idGameLocal::InitScriptForMap( void ) {
 idGameLocal::SpawnPlayer
 ============
 */
-void idGameLocal::SpawnPlayer( int clientNum ) {
-	idEntity	*ent;
-	idDict		args;
-
+void idGameLocal::SpawnPlayer( int clientNum )
+{
 	// they can connect
 	Printf( "SpawnPlayer: %i\n", clientNum );
 
+	idStr playerClass = isMultiplayer ? "player_tdm_thief_mp" : cv_player_spawnclass.GetString();
+
+	// greebo: Allow worldspawn to specify a different player classname
+	if (!isMultiplayer && world != NULL && world->spawnArgs.FindKey("player_classname") != NULL)
+	{
+		playerClass = world->spawnArgs.GetString("player_classname", cv_player_spawnclass.GetString());
+	}
+
+	idDict		args;
 	args.SetInt( "spawn_entnum", clientNum );
 	args.Set( "name", va( "player%d", clientNum + 1 ) );
-	args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_doommarine" );
-	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] ) {
+	args.Set( "classname", playerClass );
+
+	idEntity	*ent;
+	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] )
+	{
 		Error( "Failed to spawn player as '%s'", args.GetString( "classname" ) );
 	}
 
@@ -1999,6 +2853,25 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			pvs.FreeCurrentPVS( otherPVS );
 			playerConnectedAreas = newPVS;
 		}
+
+
+		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
+
+		if ( portalSkyEnt.GetEntity() ) {
+			idEntity *skyEnt = portalSkyEnt.GetEntity();
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
+			pvs.FreeCurrentPVS( playerPVS );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerPVS = newPVS;
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
+			pvs.FreeCurrentPVS( playerConnectedAreas );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerConnectedAreas = newPVS;
+		}
 	}
 }
 
@@ -2156,12 +3029,16 @@ idGameLocal::RunFrame
 */
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idEntity *	ent;
-	int			num;
+	int			num(-1);
 	float		ms;
 	idTimer		timer_think, timer_events, timer_singlethink;
 	gameReturn_t ret;
 	idPlayer	*player;
 	const renderView_t *view;
+	int curframe = framenum;
+
+	g_Global.m_Frame = curframe;
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
 
 #ifdef _DEBUG
 	if ( isMultiplayer ) {
@@ -2171,178 +3048,269 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
-	if ( !isMultiplayer && g_stopTime.GetBool() ) {
-		// clear any debug lines from a previous frame
-		gameRenderWorld->DebugClearLines( time + 1 );
+	// Handle any mission downloads in progress
+	m_DownloadManager->ProcessDownloads();
+
+	if (framenum == 0 && player != NULL && !player->IsReady())
+	{
+		// greebo: This is the first game frame, handle the "click to start GUI"
+		if (m_GamePlayTimer.IsEnabled())
+		{
+			m_GamePlayTimer.Stop();
+		}
 
 		// set the user commands for this frame
-		memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
 
-		if ( player ) {
-			player->Think();
+		if (player->WaitUntilReady())
+		{
+			// Player got ready this frame, start timer
+			m_GamePlayTimer.Start();
 		}
-	} else do {
-		// update the game time
-		framenum++;
-		previousTime = time;
-		time += msec;
-		realClientTime = time;
+	}
+	else
+	{
+		// Update the gameplay timer
+		m_GamePlayTimer.Update();
+
+		if ( !isMultiplayer && g_stopTime.GetBool() ) {
+			// clear any debug lines from a previous frame
+			gameRenderWorld->DebugClearLines( time + 1 );
+
+			// set the user commands for this frame
+			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+
+			if ( player ) {
+				player->Think();
+			}
+		}
+		else do
+		{
+			// update the game time
+			framenum++;
+			previousTime = time;
+			time += (int)(msec * g_timeModifier.GetFloat());
+			realClientTime = time;
 
 #ifdef GAME_DLL
-		// allow changing SIMD usage on the fly
-		if ( com_forceGenericSIMD.IsModified() ) {
-			idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
-		}
+			// allow changing SIMD usage on the fly
+			if ( com_forceGenericSIMD.IsModified() ) {
+				idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
+			}
 #endif
 
-		// make sure the random number counter is used each frame so random events
-		// are influenced by the player's actions
-		random.RandomInt();
+			// make sure the random number counter is used each frame so random events
+			// are influenced by the player's actions
+			random.RandomInt();
 
-		if ( player ) {
-			// update the renderview so that any gui videos play from the right frame
-			view = player->GetRenderView();
-			if ( view ) {
-				gameRenderWorld->SetRenderView( view );
-			}
-		}
-
-		// clear any debug lines from a previous frame
-		gameRenderWorld->DebugClearLines( time );
-
-		// clear any debug polygons from a previous frame
-		gameRenderWorld->DebugClearPolygons( time );
-
-		// set the user commands for this frame
-		memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
-
-		// free old smoke particles
-		smokeParticles->FreeSmokes();
-
-		// process events on the server
-		ServerProcessEntityNetworkEventQueue();
-
-		// update our gravity vector if needed.
-		UpdateGravity();
-
-		// create a merged pvs for all players
-		SetupPlayerPVS();
-
-		// sort the active entity list
-		SortActiveEntityList();
-
-		timer_think.Clear();
-		timer_think.Start();
-
-		// let entities think
-		if ( g_timeentities.GetFloat() ) {
-			num = 0;
-			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-				if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
-					ent->GetPhysics()->UpdateTime( time );
-					continue;
+			if ( player ) {
+				// update the renderview so that any gui videos play from the right frame
+				view = player->GetRenderView();
+				if ( view ) {
+					gameRenderWorld->SetRenderView( view );
 				}
-				timer_singlethink.Clear();
-				timer_singlethink.Start();
-				ent->Think();
-				timer_singlethink.Stop();
-				ms = timer_singlethink.Milliseconds();
-				if ( ms >= g_timeentities.GetFloat() ) {
-					Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
-				}
-				num++;
 			}
-		} else {
-			if ( inCinematic ) {
+
+			// clear any debug lines from a previous frame
+			gameRenderWorld->DebugClearLines( time );
+
+			// clear any debug polygons from a previous frame
+			gameRenderWorld->DebugClearPolygons( time );
+
+			// set the user commands for this frame
+			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+
+			// free old smoke particles
+			smokeParticles->FreeSmokes();
+
+			// process events on the server
+			ServerProcessEntityNetworkEventQueue();
+
+			// update our gravity vector if needed.
+			UpdateGravity();
+
+			// create a merged pvs for all players
+			SetupPlayerPVS();
+
+			idTimer lasTimer;
+			lasTimer.Clear();
+			lasTimer.Start();
+			// The Dark Mod
+			// 10/9/2005: SophisticatedZombie
+			// Update the Light Awareness System
+			LAS.updateLASState();
+			lasTimer.Stop();
+			DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
+
+			unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
+
+			// Tick the timers. Should be done before stim/response, just to be safe. :)
+			ProcessTimer(ticks);
+
+			// TDM: Work through the active stims/responses
+			ProcessStimResponse(ticks);
+
+			// TDM: Update objective system
+			m_MissionData->UpdateObjectives();
+
+			// sort the active entity list
+			SortActiveEntityList();
+
+			timer_think.Clear();
+			timer_think.Start();
+
+			// let entities think
+			if ( g_timeentities.GetFloat() ) {
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					if ( g_cinematic.GetBool() && !ent->cinematic ) {
+					if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
+						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+						{
+							static_cast<idAI*>(ent)->m_lastThinkTime = time;
+						}
 						continue;
 					}
+					timer_singlethink.Clear();
+					timer_singlethink.Start();
 					ent->Think();
+					timer_singlethink.Stop();
+					ms = timer_singlethink.Milliseconds();
+					if ( ms >= g_timeentities.GetFloat() ) {
+						Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+						DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+					}
 					num++;
 				}
 			} else {
-				num = 0;
-				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					ent->Think();
-					num++;
+				if ( inCinematic ) {
+					num = 0;
+					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+						if ( g_cinematic.GetBool() && !ent->cinematic ) {
+							ent->GetPhysics()->UpdateTime( time );
+							if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+							{
+								static_cast<idAI*>(ent)->m_lastThinkTime = time;
+							}
+							continue;
+						}
+						ent->Think();
+						num++;
+					}
+				} else {
+					num = 0;
+					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+						ent->Think();
+						num++;
+					}
 				}
 			}
-		}
 
-		// remove any entities that have stopped thinking
-		if ( numEntitiesToDeactivate ) {
-			idEntity *next_ent;
-			int c = 0;
-			for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-				next_ent = ent->activeNode.Next();
-				if ( !ent->thinkFlags ) {
-					ent->activeNode.Remove();
-					c++;
+			// remove any entities that have stopped thinking
+			if ( numEntitiesToDeactivate ) {
+				idEntity *next_ent;
+				int c = 0;
+				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
+					next_ent = ent->activeNode.Next();
+					if ( !ent->thinkFlags ) {
+						ent->activeNode.Remove();
+						c++;
+					}
+				}
+				//assert( numEntitiesToDeactivate == c );
+				numEntitiesToDeactivate = 0;
+			}
+
+			timer_think.Stop();
+		
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Thinking timer: %lfms\r", timer_think.Milliseconds());
+
+			timer_events.Clear();
+			timer_events.Start();
+
+			// service any pending events
+			idEvent::ServiceEvents();
+
+			timer_events.Stop();
+
+			// Process the active AI conversations
+			m_ConversationSystem->ProcessConversations();
+
+			// free the player pvs
+			FreePlayerPVS();
+
+			// do multiplayer related stuff
+			if ( isMultiplayer ) {
+				mpGame.Run();
+			}
+
+			if ( cv_music_volume.IsModified() ) {  //SnoopJeDi, fade that sound!
+				float music_vol = cv_music_volume.GetFloat();
+				for ( int i = 0; i < musicSpeakers.Num(); i++ ) {
+					idSound* ent = static_cast<idSound *>(entities[ musicSpeakers[ i ] ]);
+					// Printf( " Fading speaker %s (index %i) to %f\n", ent->name.c_str(), i, music_vol);
+					if (ent)
+						ent->Event_FadeSound( 0, music_vol, 0.5 );
+				}
+				cv_music_volume.ClearModified();
+			}
+
+			// display how long it took to calculate the current game frame
+			if ( g_frametime.GetBool() ) {
+				Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
+					time, timer_think.Milliseconds() + timer_events.Milliseconds(),
+					timer_think.Milliseconds(), timer_events.Milliseconds(), num );
+			}
+
+			// build the return value
+			ret.consistencyHash = 0;
+			ret.sessionCommand[0] = 0;
+
+			if ( !isMultiplayer && player ) {
+				ret.health = player->health;
+				ret.heartRate = player->heartRate;
+				ret.stamina = idMath::FtoiFast( player->stamina );
+				// combat is a 0-100 value based on lastHitTime and lastDmgTime
+				// each make up 50% of the time spread over 10 seconds
+				ret.combat = 0;
+				if ( player->lastDmgTime > 0 && time < player->lastDmgTime + 10000 ) {
+					ret.combat += int(50.0f * (float) ( time - player->lastDmgTime ) / 10000);
+				}
+				if ( player->lastHitTime > 0 && time < player->lastHitTime + 10000 ) {
+					ret.combat += int(50.0f * (float) ( time - player->lastHitTime ) / 10000);
 				}
 			}
-			//assert( numEntitiesToDeactivate == c );
-			numEntitiesToDeactivate = 0;
-		}
 
-		timer_think.Stop();
-		timer_events.Clear();
-		timer_events.Start();
+			// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
+			if (m_TriggerFinalSave)
+			{
+				m_TriggerFinalSave = false;
 
-		// service any pending events
-		idEvent::ServiceEvents();
-
-		timer_events.Stop();
-
-		// free the player pvs
-		FreePlayerPVS();
-
-		// do multiplayer related stuff
-		if ( isMultiplayer ) {
-			mpGame.Run();
-		}
-
-		// display how long it took to calculate the current game frame
-		if ( g_frametime.GetBool() ) {
-			Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
-				time, timer_think.Milliseconds() + timer_events.Milliseconds(),
-				timer_think.Milliseconds(), timer_events.Milliseconds(), num );
-		}
-
-		// build the return value
-		ret.consistencyHash = 0;
-		ret.sessionCommand[0] = 0;
-
-		if ( !isMultiplayer && player ) {
-			ret.health = player->health;
-			ret.heartRate = player->heartRate;
-			ret.stamina = idMath::FtoiFast( player->stamina );
-			// combat is a 0-100 value based on lastHitTime and lastDmgTime
-			// each make up 50% of the time spread over 10 seconds
-			ret.combat = 0;
-			if ( player->lastDmgTime > 0 && time < player->lastDmgTime + 10000 ) {
-				ret.combat += 50.0f * (float) ( time - player->lastDmgTime ) / 10000;
+				idStr savegameName = va("Mission %d Final Save", m_MissionManager->GetCurrentMissionIndex() + 1);
+				cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("savegame '%s'", savegameName.c_str()));
 			}
-			if ( player->lastHitTime > 0 && time < player->lastHitTime + 10000 ) {
-				ret.combat += 50.0f * (float) ( time - player->lastHitTime ) / 10000;
+
+			// see if a target_sessionCommand has forced a changelevel
+			if ( sessionCommand.Length() ) {
+				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
+				break;
 			}
-		}
 
-		// see if a target_sessionCommand has forced a changelevel
-		if ( sessionCommand.Length() ) {
-			strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
-			break;
-		}
+			// make sure we don't loop forever when skipping a cinematic
+			if ( skipCinematic && ( time > cinematicMaxSkipTime ) ) {
+				Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
+				skipCinematic = false;
+				break;
+			}
 
-		// make sure we don't loop forever when skipping a cinematic
-		if ( skipCinematic && ( time > cinematicMaxSkipTime ) ) {
-			Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
-			skipCinematic = false;
-			break;
-		}
-	} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
+			if (m_DoLightgem)
+			{
+				player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
+				m_DoLightgem = false;
+			}
+
+		} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
+	}
 
 	ret.syncNextGameFrame = skipCinematic;
 	if ( skipCinematic ) {
@@ -2353,6 +3321,12 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	// show any debug info for this frame
 	RunDebugInfo();
 	D_DrawDebugLines();
+
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %d - %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
+		time, timer_think.Milliseconds() + timer_events.Milliseconds(),
+		timer_think.Milliseconds(), timer_events.Milliseconds(), num );
+
+	g_Global.m_Frame = 0;
 
 	return ret;
 }
@@ -2378,7 +3352,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	float	y;
 	float	ratio_x;
 	float	ratio_y;
-	
+	float	ratio_fov;
+
 	if ( !sys->FPU_StackIsEmpty() ) {
 		Printf( sys->FPU_GetState() );
 		Error( "idGameLocal::CalcFov: FPU stack not empty" );
@@ -2396,27 +3371,46 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 		Error( "idGameLocal::CalcFov: bad result" );
 	}
 
-	switch( r_aspectRatio.GetInteger() ) {
-	default :
-	case 0 :
-		// 4:3
-		fov_x = base_fov;
-		return;
-		break;
+	// if r_fovRatio != 0, use it directly:
+	ratio_fov = cv_r_fovRatio.GetFloat();
 
-	case 1 :
-		// 16:9
-		ratio_x = 16.0f;
-		ratio_y = 9.0f;
-		break;
-
-	case 2 :
-		// 16:10
-		ratio_x = 16.0f;
-		ratio_y = 10.0f;
-		break;
+	if (ratio_fov > 0.01)
+	{
+			ratio_x = ratio_fov;
+			ratio_y = 1.0f;
+	}
+	else
+	{
+		// old code, use r_aspectRatio
+		switch( r_aspectRatio.GetInteger() ) {
+		default :
+		case 0 :
+			// 4:3
+			fov_x = base_fov;
+			return;
+			break;
+		case 1 :
+			// 16:9
+		case 4 :
+			// TV 16:9
+			ratio_x = 16.0f;
+			ratio_y = 9.0f;
+			break;
+		case 2 :
+			// 16:10
+			ratio_x = 16.0f;
+			ratio_y = 10.0f;
+			break;
+		case 3 :
+			// 5:4
+			ratio_x = 5.0f;
+			ratio_y = 4.0f;
+			break;
+		}
 	}
 
+//	Printf( "Using FOV ratio %0.3f:%0.0f\n", ratio_x, ratio_y );
+	
 	y = ratio_y / tan( fov_y / 360.0f * idMath::PI );
 	fov_x = atan2( ratio_x, y ) * 360.0f / idMath::PI;
 
@@ -2441,7 +3435,8 @@ idGameLocal::Draw
 makes rendering and sound system calls
 ================
 */
-bool idGameLocal::Draw( int clientNum ) {
+bool idGameLocal::Draw( int clientNum )
+{
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2453,8 +3448,15 @@ bool idGameLocal::Draw( int clientNum ) {
 	}
 
 	// render the scene
-	player->playerView.RenderPlayerView( player->hud );
+	player->playerView.RenderPlayerView(player->hud);
 
+	// Make the rendershot appear on the hud
+	if (cv_lg_hud.GetInteger() != 0)
+	{
+		player->ProcessLightgem(true);
+	}
+
+	m_DoLightgem = true;
 	return true;
 }
 
@@ -2464,14 +3466,25 @@ idGameLocal::HandleESC
 ================
 */
 escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
+
 	if ( isMultiplayer ) {
 		*gui = StartMenu();
 		// we may set the gui back to NULL to hide it
 		return ESC_GUI;
 	}
+
+	// If we're in the process of ending the mission, ignore all ESC keys.
+	if (GameState() == GAMESTATE_COMPLETED) {
+		return ESC_IGNORE;
+	}
+
+	// greebo: Hitting the ESC key means that the main menu is about to be entered => stop the timer
+	m_GamePlayTimer.Stop();
+
 	idPlayer *player = GetLocalPlayer();
 	if ( player ) {
 		if ( player->HandleESC() ) {
+			m_GamePlayTimer.SetEnabled(true);
 			return ESC_IGNORE;
 		} else {
 			return ESC_MAIN;
@@ -2504,12 +3517,1026 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	return mpGame.HandleGuiCommands( menuCommand );
 }
 
+int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr, idList<BriefingVideoPart>& targetList)
+{
+	targetList.Clear();
+
+	std::string videos = videosStr;
+	std::string lengths = lengthStr;
+
+	// Remove leading and trailing semicolons
+	boost::algorithm::trim_if(videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::trim_if(lengths, boost::algorithm::is_any_of(";"));
+
+	// Split strings into parts
+	std::vector<std::string> vidParts;
+	std::vector<std::string> lengthParts;
+
+	boost::algorithm::split(vidParts, videos, boost::algorithm::is_any_of(";"));
+	boost::algorithm::split(lengthParts, lengths, boost::algorithm::is_any_of(";"));
+
+	if (vidParts.size() != lengthParts.size())
+	{
+		gameLocal.Warning("The video string array '%s' does not have the same number of elements as the length array '%s'!", videosStr, lengthStr);
+		return 0;
+	}
+
+	if (vidParts.size() == 0)
+	{
+		return 0;
+	}
+
+	int totalLength = 0;
+
+	for (std::size_t i = 0; i < vidParts.size(); ++i)
+	{
+		BriefingVideoPart& part = targetList.Alloc();
+
+		part.material = vidParts[i].c_str();
+		part.lengthMsec = atoi(lengthParts[i].c_str());
+
+		if (part.lengthMsec <= 0)
+		{
+			gameLocal.Warning("The video length %s is invalid or not numeric, must be an integer > 0", lengthParts[i].c_str());
+			part.lengthMsec = 0;
+		}
+
+		totalLength += part.lengthMsec;
+	}
+
+	return totalLength;
+}
+
+void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
+{
+	if (cvarSystem->GetCVarInteger("r_aspectRatio") > 0)
+	{
+		// Wide-screen resolution selected in the GUI, set the mode to "custom"
+		cvarSystem->SetCVarInteger("r_mode", -1);
+
+		// Set the custom height and width
+		int mode = cv_tdm_widescreenmode.GetInteger();
+
+		int width = 1024;
+		int height = 600;
+
+		switch (mode)
+		{
+		case 0:
+			width = 1024;
+			height = 600;
+			break;
+		case 1:
+			width = 1280;
+			height = 800;
+			break;
+		case 2:
+			width = 1440;
+			height = 900;
+			break;
+		case 3:
+			width = 1680;
+			height = 1050;
+			break;
+		case 4:
+			width = 1920;
+			height = 1200;
+			break;
+		case 5:
+			width = 1366;
+			height = 768;
+			break;
+		case 6:
+			width = 1280;
+			height = 720;
+			break;
+		case 7:
+			width = 1920;
+			height = 1080;
+			break;
+		case 8:
+			width = 2560;
+			height = 1440;
+			break;
+		case 9:
+			width = 2560;
+			height = 1600;
+			break;
+		case 10:
+			width = 1280;
+			height = 1024;
+			break;
+		case 11:
+			width = 1800;
+			height = 1440;
+			break;
+		case 12:
+			width = 2560;
+			height = 2048;
+			break;
+		case 13:
+			width = 1360;
+			height = 768;
+			break;
+		case 14:
+			width = 1600;
+			height = 900;
+			break;
+		case 15:
+			width = 3280;
+			height = 2048;
+			break;
+		case 16:
+			width = 3360;
+			height = 2100;
+			break;
+		case 17:
+			width = 3840;
+			height = 2160;
+			break;
+		case 18:
+			width = 3840;
+			height = 2400;
+			break;
+		default:
+			break;
+		};
+
+		Printf("Widesreenmode %i, setting r_customWidth=%i, r_customHeight=%i\n", mode, width, height);
+		cvarSystem->SetCVarInteger("r_customWidth", width);
+		cvarSystem->SetCVarInteger("r_customHeight", height);
+	}
+	else
+	{
+		// Not widescreen, set r_mode to something reasonable (1024x768)
+		cvarSystem->SetCVarInteger("r_mode", 5);
+	}
+}
+
+void idGameLocal::HandleGuiMessages(idUserInterface* ui)
+{
+	if (m_GuiMessages.Num() == 0) return;
+
+	const GuiMessage& msg = m_GuiMessages[0];
+
+	ui->SetStateBool("MsgBoxVisible", true);
+
+	ui->SetStateString("MsgBoxTitle", msg.title);
+	ui->SetStateString("MsgBoxText", msg.message);
+
+	switch (msg.type)
+	{
+	case GuiMessage::MSG_OK:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
+		ui->SetStateBool("MsgBoxRightButtonVisible", false);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
+		ui->SetStateString("MsgBoxMiddleButtonText", m_I18N->Translate("#str_04339"));	// OK
+		break;
+	case GuiMessage::MSG_OK_CANCEL:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
+		ui->SetStateBool("MsgBoxRightButtonVisible", true);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
+
+		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_07203"));	// Cancel
+		break;
+	case GuiMessage::MSG_YES_NO:
+		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
+		ui->SetStateBool("MsgBoxRightButtonVisible", true);
+		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
+
+		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_02501"));	// Yes
+		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_02502"));	// No
+		break;
+	};
+
+	ui->SetStateString("MsgBoxRightButtonCmd", msg.negativeCmd);
+	ui->SetStateString("MsgBoxLeftButtonCmd", msg.positiveCmd);
+	ui->SetStateString("MsgBoxMiddleButtonCmd", msg.okCmd);
+
+	m_GuiMessages.RemoveIndex(0);
+}
+
+/*
+================
+idGameLocal::UpdateGUIScaling
+================
+*/
+void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
+{
+	float wobble = 1.0f;
+	// this could be turned into a warble-wobble effect f.i. for player poisoned etc.
+	//float wobble = random.RandomFloat() * 0.02 + 0.98;
+
+	float x_mul = cvarSystem->GetCVarFloat("gui_Width") * wobble;
+	if (x_mul < 0.1f) { x_mul = 0.1f; }
+	if (x_mul > 2.0f) { x_mul = 2.0f; }
+	float y_mul = cvarSystem->GetCVarFloat("gui_Height") * wobble;
+	if (y_mul < 0.1f) { y_mul = 0.1f; }
+	if (y_mul > 2.0f) { y_mul = 2.0f; }
+	float x_shift = cvarSystem->GetCVarFloat("gui_CenterX") * 640 * wobble;
+	float y_shift = cvarSystem->GetCVarFloat("gui_CenterY") * 480 * wobble;
+//	Printf("UpdateGUIScaling: width %0.2f height %0.2f centerX %0.02ff centerY %0.02f\n (%p)", x_mul, y_mul, x_shift, y_shift, gui);
+	gui->SetStateFloat("LEFT", x_shift - x_mul * 320);
+	gui->SetStateFloat("CENTERX", x_shift);
+	gui->SetStateFloat("TOP", y_shift - y_mul * 240);
+	gui->SetStateFloat("CENTERY", y_shift);
+	gui->SetStateFloat("WIDTH", x_mul);
+	gui->SetStateFloat("HEIGHT", y_mul);
+	// We have only one scaling factor to scale text, so use the average of X and Y
+	// This will have odd effects if W and H differ greatly, but is better than to not scale the text
+	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);
+}
+
+/*
+================
+idGameLocal::initChoice
+
+Init a GUI or CVAR variable (including GUI text) from a list of choices and values.
+================
+*/
+bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step)
+{
+	idStr cvarName = varName;
+	std::string choices = gameLocal.m_I18N->Translate( inChoices );
+	std::string values  = inValues;
+
+	// figure out the current setting
+	idCVar *cvar = NULL;
+
+	// special case: use this gui variable
+	if (cvarName.Left(5) != "gui::")
+	{
+		cvar = cvarSystem->Find( cvarName.c_str() );
+		if (!cvar)
+		{
+			// ignore, the GUI command buffer was probably just overrun
+			Warning("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
+			return false;
+		}
+	}
+	// split the choices into a listt
+	std::vector<std::string> choiceParts;
+	std::vector<std::string> valuesParts;
+	boost::algorithm::split(choiceParts, choices, boost::algorithm::is_any_of(";"));
+	boost::algorithm::split(valuesParts, values, boost::algorithm::is_any_of(";"));
+
+	if (choiceParts.size() != valuesParts.size())
+	{
+		gameLocal.Warning("The choices string array '%s' does not have the same number of elements as the values array '%s' for %s!", 
+				choices.c_str(), values.c_str(), cvarName.c_str() ); //gameLocal.m_I18N->Translate( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
+		return false;
+	}
+	if (choiceParts.size() <= 0)
+	{
+		gameLocal.Warning("The choices and values string arrays are empty for %s.", cvarName.c_str());
+		return false;
+	}
+
+	// read out the current setting (this also works with boolean CVARs, as these are simply "0", "1")
+	idStr curValue;
+	if (cvar)
+	{
+		curValue = cvar->GetString();
+	}
+	else
+	{
+		curValue = gui->GetStateString( cvarName.Right( cvarName.Length() -5 ).c_str(), "0" );
+	}
+
+	// Figure out the index of the selected choice/value pair by looking at all the values
+	int iSelected = -1;
+	for (unsigned int i = 0; i < valuesParts.size(); i++)
+	{
+		if (curValue == idStr( valuesParts[i].c_str() ))
+		{
+			// found it
+			iSelected = i;
+			i = valuesParts.size();
+			break;
+		}
+	}
+
+	// Printf("Current value: %s (index: %i)\n", curValue.c_str(), iSelected);
+	if (iSelected < 0)
+	{
+		gameLocal.Warning("The current value for %s (%s) is not in the list of valid choices '%s'.", cvarName.c_str(), curValue.c_str(), values.c_str());
+		return false;
+	}
+
+	// should we advance the setting?
+	if ( step )
+	{
+		iSelected ++;
+		if ( (unsigned int)iSelected >= valuesParts.size())
+		{
+			// wrap around
+			iSelected = 0;
+		}
+		// set the new value
+		Printf("Setting %s to %s (index: %i)\n", cvarName.c_str(), valuesParts[ iSelected ].c_str(), iSelected);
+		if (cvar)
+		{
+			cvar->SetString( valuesParts[ iSelected ].c_str() );
+		}
+	}
+
+	// Printf( "Setting %s to %s\n", GUIVar.c_str(), choiceParts[iSelected].c_str() );
+	if (!cvar)
+	{
+		cvarName = cvarName.Right( cvarName.Length() -5 );		// remove "gui::" prefix
+	}
+	// store the value in "gui::cvarname", so the GUI can access it (important f.i. for the bloom slider visibility)
+	// Printf( "Setting %s to %s\n", cvarName.c_str(), valuesParts[iSelected].c_str() );
+	gui->SetStateString( cvarName.c_str(), valuesParts[iSelected].c_str() );
+	// and set it as text label
+	idStr GUIVar = cvarName + "_text";		// f.i.: tdm_menu_music_text
+	gui->SetStateString( GUIVar.c_str(), choiceParts[iSelected].c_str() );
+
+	return true;
+}
+
 /*
 ================
 idGameLocal::HandleMainMenuCommands
 ================
 */
-void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) { }
+void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
+{
+	/* Tels: This routine here is called for every "command" in the menu GUI. Unfortunately,
+	   		 the interpretation of what is a command works a bit strange (as almost everything
+			 else does in idTech4 :)
+		
+		In the following examples, there is usually another call to this routine with ";"
+		as the "menuCommand" param. But sometimes it does not appear, depending on whoknows.
+
+		The following will cause this routine called twice (!), once with "mainmenu_heartbeat"
+		and once with ";" as command (if you add ";" before the last double quote, it will
+		still be called only twice):
+
+	   		set "cmd" "mainmenu_heartbeat";
+
+		This will call it twice (or three times counting ";") with "mycommand" "myarg" and ";":
+
+			set "cmd" "mycommand 'test'";
+
+		This calls it only once (!) (two times counting ";"), with "play":
+
+			Set "play mymusic";
+
+		This calls it twice (three times counting ";"), with "notime" and then "1":
+
+			Set "noTime" "1";
+
+		Note that the command buffer has only a certain, unknown length, and if too many
+		commands are issued in the same timeframe (onTime X..), then the buffer will overflow,
+		and certain commands might get cut-off. Usually this means that you see a ";" instead
+		of an expected argument, or that commands run together like "initChoicelog". When this
+		happens, the GUI must be adjusted to issue less commands (or issue them later).
+		To work around this issue, we call ExecuteCommandBuffer( void ) whenever we see an
+		initChoice command, in the hopes that the buffer won't overflow until the next one.
+
+		The old code simply watched for certain words, and then issued the command. It was not
+		able to distinguish between commands and arguments.
+
+		This routine now watches for the first command, ignoring any stray ";". If it sees
+		a command, it deduces the number of following arguments, and then collects them until
+		it has all of them, warning if there is a ";" coming unexpectedly.
+
+		Once all arguments are collected, the command is finally handled, or silently ignored.
+	*/
+	if (!menuCommand || menuCommand[0] == 0x00)
+	{
+		// silently ignore
+		Warning("Seen NULL MainMenu cmd.");
+		return;
+	}
+
+	int numArgs = m_GUICommandStack.Num();
+
+	if (numArgs == 0)
+	{
+		if ( menuCommand[0] == ';' && menuCommand[1] == 0x0 )
+		{
+			// ignore stray any ";"
+			return;
+		}
+
+		// have not seen anything?
+		idStr cmd = menuCommand;
+		// commands can appear in any case (like "notime", "noTime" etc)
+		cmd.ToLower();
+		m_GUICommandStack.Append(cmd);
+
+		// set the number of wanted args, default is none
+		m_GUICommandArgs = 0;
+
+		// "log" and "notime" take one argument
+		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
+		// these two take 3 arguments each
+		if ( cmd == "initchoice" || cmd == "stepchoice") { m_GUICommandArgs = 3; }
+		// this takes one argument
+		if ( cmd == "setlang") { m_GUICommandArgs = 1; }
+
+		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
+		{
+//			Printf("Seen command '%s' ('%s'), takes %i args.\n", menuCommand, cmd.c_str(), m_GUICommandArgs );
+		}
+	}
+	else
+	{
+		// append the current argument to the stack (but not if it is ";")
+		if ( menuCommand[0] != ';' || menuCommand[1] != 0x0 )
+		{
+			m_GUICommandStack.Alloc() = menuCommand;
+//			Printf("  Seen argument '%s' for '%s'\n", menuCommand, m_GUICommandStack[0].c_str() );
+		}
+		else
+		{
+			// seen a ";" even tho we have not yet as many arguments as we wanted?
+			if (numArgs - 1 < m_GUICommandArgs)
+			{
+				//Warning("MainMenu command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
+				Warning("Seen stray ';' - command %s takes %i arguments, but has only %i (last arg %s).\n", m_GUICommandStack[0].c_str(), m_GUICommandArgs, numArgs - 1, menuCommand);
+				// Ignore any stray ";" as they can be injected anywhere :(
+				numArgs = m_GUICommandArgs;
+				return;
+			}
+		}
+	}
+
+	// Printf(" have %i vs wanted %i\n", numArgs, m_GUICommandArgs);
+	// do we have already as much arguments as we want?
+	if (numArgs < m_GUICommandArgs)
+	{
+		// no, wait for the next argument
+		return;
+	}
+
+	// the command
+	const idStr& cmd = m_GUICommandStack[0];
+
+	// seen the command and its arguments, now handle it
+/*	if (cmd != "mainmenu_heartbeat" && cmd != "log")
+	{
+		// debug output, but ignore the frequent ones
+		Printf("MainMenu cmd: %s (%i args)\n", cmd.c_str(), numArgs);
+	}
+*/
+
+	// Watch out for objectives GUI-related commands
+	// TODO: Handle here commands with arguments, too.
+	m_MissionData->HandleMainMenuCommands(cmd, gui);
+
+	if (cmd == "mainmenu_heartbeat")
+	{
+		// greebo: Stop the timer, this is already done in HandleESC, but just to make sure...
+		m_GamePlayTimer.Stop();
+
+		if (GetMissionResult() == MISSION_COMPLETE)
+		{
+			// Check if we should show the success screen (also check the member variable
+			// to catch cases where the player reloaded the map via the console)
+			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
+			{
+				// Check if this mission has a debriefing video
+				int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1; // GUI mission numbers are 1-based
+
+				const char* videoMaterials = gui->GetStateString(va("DebriefingVideoMaterials%d", missionNum));
+				const char* videoLengths = gui->GetStateString(va("DebriefingVideoLengths%d", missionNum));
+				const char* videoSoundCmd = gui->GetStateString(va("DebriefingVideoSoundCmd%d", missionNum));
+
+				// Calculate the total length of the video
+				int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, debriefingVideo);
+
+				gui->SetStateInt("DebriefingVideoLength", videoLengthMsec);
+				gui->SetStateString("DebriefingVideoSoundCmd", videoSoundCmd);
+				
+				// Let the GUI know whether we have a debriefing video
+				gui->SetStateBool("HasDebriefingVideo", debriefingVideo.Num() > 0);
+
+		 		// Show the post-mission GUI (might be a debriefing video or just the success screen)
+				gui->HandleNamedEvent("ShowPostMissionScreen");
+
+				// Avoid duplicate triggering
+				gui->SetStateBool("PostMissionScreenActive", true);
+				postMissionScreenActive = true;
+			}
+			
+			// tels: We handled this command, so clear the command stack
+			m_GUICommandStack.Clear();
+			m_GUICommandArgs = 0;
+			return;
+		}
+
+		// Check if any errors are in the queue
+		if (!m_guiError.IsEmpty())
+		{
+			// Send the error to the GUI
+			gui->SetStateString("gameErrorMsg", m_guiError);
+			gui->HandleNamedEvent("OnGameError");
+
+			// Clear the string again
+			m_guiError.Empty();
+		}
+
+		// Check messages
+		if (m_GuiMessages.Num() > 0)
+		{
+			HandleGuiMessages(gui);
+		}
+
+		// Make sure we have a valid mission number in the GUI, the first mission is always 1
+		int curMissionNum = gui->GetStateInt("CurrentMission");
+
+		if (curMissionNum <= 0)
+		{
+			gui->SetStateInt("CurrentMission", 1);
+		}
+
+		// Handle downloads in progress
+		m_DownloadManager->ProcessDownloads();
+
+		// Propagate the video CVARs to the GUI
+		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
+		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
+		gui->SetStateBool("menu_bg_music", cv_tdm_menu_music.GetBool());
+
+		if (cv_tdm_menu_music.IsModified())
+		{
+			gui->HandleNamedEvent("OnMenuMusicSettingChanged");
+
+			cv_tdm_menu_music.ClearModified();
+		}
+	}
+	else if (cmd == "setvideoreswidescreen")
+	{
+		// Called when widescreen size selection changes
+		UpdateScreenResolutionFromGUI(gui);
+		UpdateGUIScaling(gui);
+	}
+	else if (cmd == "aspectratiochanged")
+	{
+		UpdateScreenResolutionFromGUI(gui);
+		UpdateGUIScaling(gui);
+	}
+	else if (cmd == "loadcustomvideoresolution")
+	{
+		if (cvarSystem->GetCVarInteger("r_mode") == -1)
+		{
+			// Just set the state variable based on width
+			int width = cvarSystem->GetCVarInteger("r_customWidth");
+			int height = cvarSystem->GetCVarInteger("r_customHeight");
+
+			switch (width)
+			{
+			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
+						// 1280 x 800 => 1
+						// 1280 x 720 => 6
+						// 1280 x 1024 => 10
+			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : (height == 720 ? 6 : 10) ); break;
+			case 1360: cv_tdm_widescreenmode.SetInteger(13); break;
+			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
+			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
+						// 1600 x 900
+			case 1600: cv_tdm_widescreenmode.SetInteger(14); break;
+			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
+						// 1800 x 1440
+			case 1800: cv_tdm_widescreenmode.SetInteger(11); break;
+			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
+						// 2560 x 1440 => 8
+						// 2560 x 1600 => 9
+						// 2560 x 2048 => 12
+			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : height == 1600 ? 9 : 12); break;
+						// 3280 x 2048
+			case 3280: cv_tdm_widescreenmode.SetInteger(15); break;
+						// 3360 x 2100
+			case 3360: cv_tdm_widescreenmode.SetInteger(16); break;
+						// 3840 x 2160 => 17
+						// 3840 x 2400 => 18
+			case 3840: cv_tdm_widescreenmode.SetInteger( height == 2160 ? 17 : 18); break;
+			default: cv_tdm_widescreenmode.SetInteger(0); break;
+			}
+			Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
+		}
+		UpdateGUIScaling(gui);
+	}
+	// greebo: the "log" command is used to write stuff to the console
+	else if (cmd == "log")
+	{
+		// We should log the given argument
+		if (cv_debug_mainmenu.GetBool())
+		{
+			Printf("MainMenu: %s\n", m_GUICommandStack[1].c_str() );
+		}
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("%s\r", m_GUICommandStack[1].c_str() );
+	}	
+	else if (cmd == "close") 
+	{
+		// Solarsplace: fix for #2424:
+		mainMenuExited = true;
+
+		// Start the timer again, we're closing the menu
+		m_GamePlayTimer.Start();
+	}
+	else if (cmd == "loadvideodefinitions")
+	{
+		// Check if we've set up the briefing video 
+		if (!briefingVideoInfoLoaded)
+		{
+			briefingVideoInfoLoaded = true;
+
+			// Tell the briefing video GUI to load all video materials into the state dict
+			gui->HandleNamedEvent("LoadVideoDefinitions");
+			gui->HandleNamedEvent("LoadDebriefingVideoDefinitions");
+		}
+	}
+	else if (cmd == "preparebriefingvideo")
+	{
+		// Ensure we've set up the briefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
+
+		// Check the video defs
+		int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+
+		const char* videoMaterials = gui->GetStateString(va("BriefingVideoMaterials%d", missionNum));
+		const char* videoLengths = gui->GetStateString(va("BriefingVideoLengths%d", missionNum));
+		const char* videoSoundCmd = gui->GetStateString(va("BriefingVideoSoundCmd%d", missionNum));
+
+		// Calculate the total length of the video
+		int videoLengthMsec = LoadVideosFromString(videoMaterials, videoLengths, briefingVideo);
+
+		gui->SetStateInt("BriefingVideoLength", videoLengthMsec);
+		gui->SetStateString("BriefingVideoSoundCmd", videoSoundCmd);
+		
+		// We start with the first part
+		curBriefingVideoPart = 0;
+	}
+	else if (cmd == "startbriefingvideo")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnBriefingVideoFinished");
+		}
+	}
+	else if (cmd == "briefingvideoheartbeat")
+	{
+		if (curBriefingVideoPart >= 0 && curBriefingVideoPart < briefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("briefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= briefingVideo[curBriefingVideoPart].lengthMsec)
+			{
+				curBriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curBriefingVideoPart < briefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("BriefingVideoMaterial", briefingVideo[curBriefingVideoPart].material);
+					gui->HandleNamedEvent("OnBriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnBriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("briefingVideoTime", videoTime);	
+		}
+	}
+	else if (cmd == "preparedebriefingvideo")
+	{
+		// Ensure we've set up the debriefing video (should already be done in "loadVideoDefinitions")
+		assert(briefingVideoInfoLoaded);
+		
+		// We start with the first part
+		curDebriefingVideoPart = 0;
+	}
+	else if (cmd == "startdebriefingvideo")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+
+			// Let the video windowDef reset its cinematics
+			gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+		}
+		else
+		{
+			// No video
+			gui->HandleNamedEvent("OnDebriefingVideoFinished");
+		}
+	}
+	else if (cmd == "debriefingvideoheartbeat")
+	{
+		if (curDebriefingVideoPart >= 0 && curDebriefingVideoPart < debriefingVideo.Num())
+		{
+			int videoTime = gui->GetStateInt("debriefingVideoTime");
+
+			videoTime += 16;
+
+			if (videoTime >= debriefingVideo[curDebriefingVideoPart].lengthMsec)
+			{
+				curDebriefingVideoPart++;
+
+				// Briefing video part time exceeded
+				if (curDebriefingVideoPart < debriefingVideo.Num())
+				{
+					// Switch to the next
+					gui->SetStateString("DebriefingVideoMaterial", debriefingVideo[curDebriefingVideoPart].material);
+					gui->HandleNamedEvent("OnDebriefingVideoPartChanged");
+
+					// Each part starts at 0 again
+					videoTime = 0;
+				}
+				else
+				{
+					// We're done with the video
+					gui->HandleNamedEvent("OnDebriefingVideoFinished");
+				}
+			}
+
+			gui->SetStateInt("debriefingVideoTime", videoTime);	
+		}
+	}
+	else if (cmd == "onsuccessscreencontinueclicked")
+	{
+		// Clear the mission result flag
+		SetMissionResult(MISSION_NOTEVENSTARTED);
+
+		// Set the boolean back to false for the next map start
+		gui->SetStateBool("PostMissionScreenActive", false);
+		postMissionScreenActive = false;
+
+		// Switch to the next mission if there is one
+		if (m_MissionManager->NextMissionAvailable())
+		{
+			m_MissionManager->ProceedToNextMission();
+
+			// Store the new mission number into the GUI state
+			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
+			gui->SetStateInt("CurrentMission", missionNum);
+
+			// Go to the next briefing / video
+			gui->HandleNamedEvent("SuccessProceedToNextMission");
+		}
+		else
+		{
+			// Switch back to the main menu
+			gui->HandleNamedEvent("SuccessGoBackToMainMenu");
+		}
+	}
+	else if (cmd == "setlpdifficulty")
+	{
+		// Lockpicking difficulty setting changed, update CVARs
+		int setting = gui->GetStateInt("lp_difficulty", "-1");
+		
+		switch (setting)
+		{
+		case 0: // Trainer
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(750);
+			break;
+		case 1: // Average
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(500);
+			break;
+		case 2: // Hard
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(400);
+			break;
+		case 3: // Expert
+			cv_lp_auto_pick.SetBool(false);
+			cv_lp_pick_timeout.SetInteger(300);
+			break;
+		case 4: // Automatic
+			cv_lp_auto_pick.SetBool(true);
+			cv_lp_pick_timeout.SetInteger(500); // auto-LP is using average timeout
+			break;
+		default:
+			gameLocal.Warning("Unknown value for lockpicking difficulty encountered!");
+		};
+	}
+	// load various game play settings, and update the GUI strings in one go
+	else if (cmd == "loadsettings")
+	{
+		int setting = 0;
+		if (cv_lp_auto_pick.GetBool())
+		{
+			setting = 4; // automatic
+		}
+		else // auto-pick is false
+		{
+			if (cv_lp_pick_timeout.GetInteger() >= 750)
+			{
+				setting = 0; // Trainer
+			}
+			else if (cv_lp_pick_timeout.GetInteger() >= 500)
+			{
+				setting = 1; // Average
+			}
+			else if (cv_lp_pick_timeout.GetInteger() >= 400)
+			{
+				setting = 2; // Hard
+			}
+			else // if (cv_lp_pick_timeout.GetInteger() >= 300)
+			{
+				setting = 3; // Expert (default)
+			}
+		}
+		gui->SetStateInt("lp_difficulty", setting);
+
+		idStr diffString = cv_melee_difficulty.GetString();
+		bool bForbidAuto = cv_melee_forbid_auto_parry.GetBool();
+
+		if( diffString == "hard" )
+		{
+			setting = 1; // Hard
+		}
+		else if( diffString == "expert" && !bForbidAuto )
+		{
+			setting = 2; // Expert
+		}
+		else if( diffString == "expert" && bForbidAuto )
+		{
+			setting = 3; // Master
+		}
+		else
+		{
+			setting = 0; // Normal by default
+		}
+		gui->SetStateInt("melee_difficulty", setting);
+
+		// init various GUI variables
+		InitGUIChoice( gui, "gui::lp_difficulty",			"#str_07318", "0;1;2;3;4" );
+		InitGUIChoice( gui, "gui::melee_difficulty",		"#str_07319", "0;1;2;3" );
+		InitGUIChoice( gui, "tdm_door_auto_open_on_unlock",	"#str_04221", "0;1" );
+		InitGUIChoice( gui, "tdm_inv_use_on_frob",			"#str_07300", "0;1" );
+		InitGUIChoice( gui, "tdm_inv_hud_pickupmessages",	"#str_04221", "0;1" );
+		InitGUIChoice( gui, "tdm_inv_use_visual_feedback",	"#str_07300", "0;1" );
+		InitGUIChoice( gui, "tdm_dragged_item_highlight",	"#str_07300", "0;1" );
+		InitGUIChoice( gui, "tdm_hud_hide_lightgem", 		"#str_04221", "0;1" );
+
+		// Have the gui enable/disable auto parry
+		gui->HandleNamedEvent("UpdateAutoParryOption");
+	}
+	else if (cmd == "updatemeleedifficulty")
+	{
+		// Melee difficulty setting changed, update CVARs
+		int setting = gui->GetStateInt("melee_difficulty", "-1");
+		
+		switch (setting)
+		{
+		case 0: // Normal
+			cv_melee_difficulty.SetString("normal");
+			cv_melee_forbid_auto_parry.SetBool(false);
+			break;
+		case 1: // Hard
+			cv_melee_difficulty.SetString("hard");
+			cv_melee_forbid_auto_parry.SetBool(false);
+			break;
+		case 2: // Expert
+			cv_melee_difficulty.SetString("expert");
+			cv_melee_forbid_auto_parry.SetBool(false);
+			break;
+		case 3: // Master, same as expert but forces manual parry to be enabled
+			cv_melee_difficulty.SetString("expert");
+			cv_melee_auto_parry.SetBool(false);
+			cv_melee_forbid_auto_parry.SetBool(true);
+			break;
+		default:
+			gameLocal.Warning("Unknown value for melee difficulty encountered!");
+		};
+
+		// Trigger an update for the auto-parry option when melee difficulty changes
+		gui->HandleNamedEvent("UpdateAutoParryOption");
+	}
+	else if (cmd == "mainmenu_init")
+	{
+		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
+		UpdateGUIScaling(gui);
+		gui->SetStateString( "tdm_lang", m_I18N->GetCurrentLanguage()->c_str() );
+		idStr gui_lang = "lang_"; gui_lang += m_I18N->GetCurrentLanguage()->c_str();
+		gui->SetStateInt( gui_lang, 1 );
+	}
+	else if (cmd == "check_tdm_version")
+	{
+		CheckTDMVersion();
+	}
+	else if (cmd == "close_msg_box")
+	{
+		gui->SetStateBool("MsgBoxVisible", false);
+	}
+	else if (cmd == "updatecookedmathdata")		// Adding a way to update cooked data from menu - J.C.Denton
+	{
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
+	}
+	else if (cmd == "resetbrightness")
+	{
+		idCVar * cvar = cvarSystem->Find( "r_brightness" );
+		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_brightness.");
+	}
+	else if (cmd == "resetgamma")
+	{
+		idCVar * cvar = cvarSystem->Find( "r_gamma" );
+		cvar ? cvar->SetFloat( 1.2f ) :	Warning("Cannot find CVAR r_gamma.");
+	}
+	else if (cmd == "onstartmissionclicked")
+	{
+		// First mission to be started, reset index
+		m_MissionManager->SetCurrentMissionIndex(0);
+		gui->SetStateInt("CurrentMission", 1);
+
+		ClearPersistentInfo();
+	}
+	else if (cmd == "setlang")
+	{
+		const idStr *oldLang = m_I18N->GetCurrentLanguage();
+		idStr newLang = m_GUICommandStack[1];
+
+		// reset lang_oldname and enable lang_newname
+		idStr gui_lang = "lang_"; gui_lang += newLang;
+//		Printf ("Setting %s to 1.\n", gui_lang.c_str() );
+		gui->SetStateInt( gui_lang, 1 );
+		gui_lang = "lang_"; gui_lang += oldLang->c_str();
+//		Printf ("Setting %s to 0.\n", gui_lang.c_str() );
+		gui->SetStateInt( gui_lang, 0 );
+
+		// do this after the step above, or oldLang will be incorrect:
+		Printf("GUI: Language changed to %s.\n", newLang.c_str() );
+		// set the new language and store it, will also reload the GUI
+		gameLocal.m_I18N->SetLanguage( newLang.c_str() );
+
+		// store it, so the GUI can access it
+		gui->SetStateString( "tdm_lang", m_I18N->GetCurrentLanguage()->c_str() );
+	}
+	// tels: #2796 build our own "choicedef" as integer/boolean option.
+	else if (cmd == "initchoice" || cmd == "stepchoice")
+	{
+		// DEBUG
+//		Printf("GUI: %s\n", cmd.c_str());
+//		for (int i = 0; i < numArgs; i++)
+//		{
+//			Printf( "'%s' ", m_GUICommandStack[i+1].c_str() );
+//		}
+		// arguments are: cvar-name choices values
+		InitGUIChoice( gui, m_GUICommandStack[1].c_str(), m_GUICommandStack[2].c_str(), m_GUICommandStack[3].c_str(), cmd == "stepchoice" ? true : false );
+	}
+//	else
+//	{
+//		Warning("Unknown main menu command '%s'.\n", cmd.c_str());
+//	}
+
+	// TODO: These routines might want to handle arguments to commands, too, so
+	//		 add support for this here. E.g. instead of passing ("SomeCommand", gui), pass
+	//		 (m_GUICommandStack, gui) to them:
+	if (cmd != "log")
+	{
+		m_Shop->HandleCommands( menuCommand, gui);
+		m_ModMenu->HandleCommands( menuCommand, gui);
+		m_DownloadMenu->HandleCommands( cmd, gui);		// expects commands in lowercase
+	}
+
+	/*if (cv_debug_mainmenu.GetBool())
+	{
+		const idDict& state = gui->State();
+		
+		for (int i = 0; i < state.GetNumKeyVals(); ++i)
+		{
+			const idKeyValue* kv = state.GetKeyVal(i);
+
+			const idStr key = kv->GetKey();
+			const idStr value = kv->GetValue();
+
+			// Force the log file to write its stuff
+			g_Global.m_ClassArray[LC_MISC] = true;
+			g_Global.m_LogArray[LT_INFO] = true;
+
+			DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Mainmenu GUI State %s = %s\r", key.c_str(), value.c_str());
+		}
+	}*/
+
+	// tels: We handled (or ignored) this command, so clear the command stack
+	m_GUICommandStack.Clear();
+	m_GUICommandArgs = 0;
+}
 
 /*
 ================
@@ -2689,6 +4716,12 @@ void idGameLocal::RunDebugInfo( void ) {
 			if ( viewTextBounds.IntersectsBounds( entBounds ) ) {
 				gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
 				gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DrawText( 
+					va( "%d / %d", ent->GetPhysics()->GetContents(), ent->GetPhysics()->GetClipMask() ), 
+					entBounds.GetCenter() - up, 0.1f, 
+					colorWhite, 
+					axis, 1 
+				);
 			}
 		}
 	}
@@ -2715,6 +4748,25 @@ void idGameLocal::RunDebugInfo( void ) {
 
 	if ( g_showTriggers.GetBool() ) {
 		idTrigger::DrawDebugInfo();
+	}
+
+	if ( cv_show_health.GetBool() ) {
+		idMat3		axis = player->viewAngles.ToMat3();
+		idBounds	viewBounds( origin );
+		viewBounds.ExpandSelf( 512.0f );
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			// don't draw the worldspawn or "dead" entities
+			if ( ent == world || !ent->health) {
+				continue;
+			}
+
+			// skip if the entity is very far away
+			if ( !viewBounds.IntersectsBounds( ent->GetPhysics()->GetAbsBounds() ) ) {
+				continue;
+			}
+			
+			gameRenderWorld->DrawText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
+		}
 	}
 
 	if ( ai_showCombatNodes.GetBool() ) {
@@ -2762,13 +4814,13 @@ void idGameLocal::RunDebugInfo( void ) {
 	}
 
 	if ( ai_showObstacleAvoidance.GetInteger() == 2 ) {
-		idAAS *aas = GetAAS( 0 );
+		idAAS *aas = GetAAS("aas32");
 		if ( aas ) {
 			idVec3 seekPos;
 			obstaclePath_t path;
 
 			seekPos = player->GetPhysics()->GetOrigin() + player->viewAxis[0] * 200.0f;
-			idAI::FindPathAroundObstacles( player->GetPhysics(), aas, NULL, player->GetPhysics()->GetOrigin(), seekPos, path );
+			idAI::FindPathAroundObstacles( player->GetPhysics(), aas, NULL, player->GetPhysics()->GetOrigin(), seekPos, path, player );
 		}
 	}
 
@@ -2783,6 +4835,17 @@ idGameLocal::NumAAS
 */
 int	idGameLocal::NumAAS( void ) const {
 	return aasList.Num();
+}
+
+/*
+==================
+idGameLocal::GetAASId (TDM)
+==================
+*/
+int	idGameLocal::GetAASId( idAAS* aas ) const
+{
+	// Do a reverse lookup in the aasList array
+	return aasList.FindIndex(aas);
 }
 
 /*
@@ -2881,6 +4944,38 @@ void idGameLocal::RemoveAllAASObstacles( void ) {
 	}
 }
 
+void idGameLocal::SetupEAS()
+{
+	// Cycle through the entities and find all elevators
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (!ent->IsType(CMultiStateMover::Type))
+		{
+			continue;
+		}
+
+		// Get all position entities of that mover
+		CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
+
+		for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
+		{
+			idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
+			if (aas == NULL) continue;
+
+			aas->AddElevator(mover);
+		}
+	}
+
+	// All elevators registered, compile the routing information
+	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
+	{
+		idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
+		if (aas == NULL) continue;
+
+		aas->CompileEAS();
+	}
+}
+
 /*
 ==================
 idGameLocal::CheatsOk
@@ -2934,6 +5029,8 @@ void idGameLocal::RegisterEntity( idEntity *ent ) {
 	spawnIds[ spawn_entnum ] = spawnCount++;
 	ent->entityNumber = spawn_entnum;
 	ent->spawnNode.AddToEnd( spawnedEntities );
+
+	// this will also have the effect of spawnArgs.Clear() at the same time:
 	ent->spawnArgs.TransferKeyValues( spawnArgs );
 
 	if ( spawn_entnum >= num_entities ) {
@@ -3027,15 +5124,18 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	}
 
 	spawnArgs.GetString( "classname", NULL, &classname );
-
 	const idDeclEntityDef *def = FindEntityDef( classname, false );
 
 	if ( !def ) {
-		Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
+		Warning( "Unknown classname '%s'%s.\n", classname, error.c_str() );
 		return false;
 	}
 
-	spawnArgs.SetDefaults( &def->dict );
+	// Tels: SetDefaults(), but without the "editor_" spawnargs
+	spawnArgs.SetDefaults( &def->dict, idStr("editor_") );
+
+	// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
+	m_DifficultyManager.ApplyDifficultySettings(spawnArgs);
 
 	// check if we should spawn a class object
 	spawnArgs.GetString( "spawnclass", NULL, &spawn );
@@ -3057,6 +5157,13 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 
 		if ( ent && obj->IsType( idEntity::Type ) ) {
 			*ent = static_cast<idEntity *>(obj);
+		}
+
+		// Check for campaign info ents
+		if (idStr::Cmp(classname, "atdm:campaign_info") == 0)
+		{
+			assert(obj->IsType(idEntity::Type));
+			campaignInfoEntities.Append(static_cast<idEntity*>(obj));
 		}
 
 		return true;
@@ -3114,6 +5221,7 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	
 	bool result = false;
 
+	/* greebo: Disabled vanilla D3 stuff, will be handled by our DifficultyManager 
 	if ( isMultiplayer ) {
 		spawnArgs.GetBool( "not_multiplayer", "0", result );
 	} else if ( g_skill.GetInteger() == 0 ) {
@@ -3134,12 +5242,10 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	}
 #endif
 
-	if ( gameLocal.isMultiplayer ) {
-		name = spawnArgs.GetString( "classname" );
-		if ( idStr::Icmp( name, "weapon_bfg" ) == 0 || idStr::Icmp( name, "weapon_soulcube" ) == 0 ) {
-			result = true;
-		}
-	}
+	}*/
+
+	// Consult the difficulty manager, whether this entity should be prevented from being spawned.
+	result = m_DifficultyManager.InhibitEntitySpawn(spawnArgs);
 
 	return result;
 }
@@ -3174,6 +5280,25 @@ gameState_t	idGameLocal::GameState( void ) const {
 	return gamestate;
 }
 
+void idGameLocal::PrepareForMissionEnd()
+{
+	// Raise the gamestate to "Completed"
+	gamestate = GAMESTATE_COMPLETED;
+
+	// Remove mission triggers now that we're done here
+	for (int i = 0; i < m_InterMissionTriggers.Num(); )
+	{
+		if (m_InterMissionTriggers[i].missionNum == m_MissionManager->GetCurrentMissionIndex())
+		{
+			m_InterMissionTriggers.RemoveIndex(i);
+		}
+		else
+		{
+			++i;
+		}
+	}
+}
+
 /*
 ==============
 idGameLocal::SpawnMapEntities
@@ -3198,6 +5323,10 @@ void idGameLocal::SpawnMapEntities( void ) {
 
 	SetSkill( g_skill.GetInteger() );
 
+	// Add the lightgem to the map before anything else happened
+	// so it will be included as if it were a regular map entity.
+	m_lightGem.SpawnLightGemEntity( mapFile );
+
 	numEntities = mapFile->GetNumEntities();
 	if ( numEntities == 0 ) {
 		Error( "...no entities" );
@@ -3215,22 +5344,45 @@ void idGameLocal::SpawnMapEntities( void ) {
 	num = 1;
 	inhibit = 0;
 
+	// Clear out the campaign info cache
+	campaignInfoEntities.Clear();
+
 	for ( i = 1 ; i < numEntities ; i++ ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
-		if ( !InhibitEntitySpawn( args ) ) {
-			// precache any media specified in the map entity
-			CacheDictionaryMedia( &args );
+#ifdef LOGBUILD
+		// Tels: This might need a lot of time, even when the logging is disabled, so make
+		//		 sure we execute this loop only if we need to log:
+		if(g_Global.m_ClassArray[LC_ENTITY] == true && g_Global.m_LogArray[LT_DEBUG] == true)
+		{
+			int n = args.GetNumKeyVals();
+			for(int x = 0; x < n; x++)
+			{
+				const idKeyValue *p = args.GetKeyVal(x);
+				const idStr k = p->GetKey();
+				const idStr v = p->GetValue();
+				DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			}
+		}
+#endif
 
-			SpawnEntityDef( args );
+		if (!InhibitEntitySpawn(args))
+		{
+			// precache any media specified in the map entity
+			CacheDictionaryMedia(&args);
+
+			SpawnEntityDef(args);
 			num++;
 		} else {
 			inhibit++;
 		}
 	}
 
+	m_lightGem.InitializeLightGemEntity();
+
 	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
 /*
@@ -3286,6 +5438,37 @@ int idGameLocal::GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >
 			if ( ent ) {
 				idEntityPtr<idEntity> &entityPtr = list.Alloc();
                 entityPtr = ent;
+			}
+		}
+	}
+
+	return list.Num();
+}
+
+/*
+================
+idGameLocal::GetRelights - grayman #2603 - retrieve relight entities and add them to the target list
+================
+*/
+int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> > &list, const char *ref ) const
+{
+	int i,num,refLength;
+	const idKeyValue *arg;
+	idEntity *ent;
+
+	refLength = strlen(ref);
+	num = args.GetNumKeyVals();
+	for (i = 0 ; i < num ; i++)
+	{
+		arg = args.GetKeyVal(i);
+		if (arg->GetKey().Icmpn(ref,refLength) == 0)
+		{
+			const idStr name = arg->GetValue();
+			ent = FindEntity(name);
+			if (ent)
+			{
+				idEntityPtr<idEntity> &entityPtr = list.Alloc();
+				entityPtr = ent;
 			}
 		}
 	}
@@ -3494,10 +5677,10 @@ bool idGameLocal::RequirementMet( idEntity *activator, const idStr &requires, in
 	if ( requires.Length() ) {
 		if ( activator->IsType( idPlayer::Type ) ) {
 			idPlayer *player = static_cast<idPlayer *>(activator);
-			idDict *item = player->FindInventoryItem( requires );
+			idDict *item = NULL;//player->FindInventoryItem( requires );
 			if ( item ) {
 				if ( removeItem ) {
-					player->RemoveInventoryItem( item );
+					//player->RemoveInventoryItem( item );
 				}
 				return true;
 			} else {
@@ -3507,32 +5690,6 @@ bool idGameLocal::RequirementMet( idEntity *activator, const idStr &requires, in
 	}
 
 	return true;
-}
-
-/*
-============
-idGameLocal::AlertAI
-============
-*/
-void idGameLocal::AlertAI( idEntity *ent ) {
-	if ( ent && ent->IsType( idActor::Type ) ) {
-		// alert them for the next frame
-		lastAIAlertTime = time + msec;
-		lastAIAlertEntity = static_cast<idActor *>( ent );
-	}
-}
-
-/*
-============
-idGameLocal::GetAlertEntity
-============
-*/
-idActor *idGameLocal::GetAlertEntity( void ) {
-	if ( lastAIAlertTime >= time ) {
-		return lastAIAlertEntity.GetEntity();
-	}
-
-	return NULL;
 }
 
 /*
@@ -3566,7 +5723,6 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	}
 
 	bounds = idBounds( origin ).Expand( radius );
-
 	// get all entities touching the bounds
 	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
 
@@ -4192,7 +6348,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 				
 				dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
 				if ( dist < spawnSpots[ i ].dist ) {
-					spawnSpots[ i ].dist = dist;
+					spawnSpots[ i ].dist = int(dist);
 				}
 			}
 		}
@@ -4273,11 +6429,41 @@ void idGameLocal::ThrottleUserInfo( void ) {
 }
 
 /*
+
+=================
+
+idPlayer::SetPortalSkyEnt
+
+=================
+
+*/
+
+void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
+	portalSkyEnt = ent;
+}
+
+
+
+/*
+=================
+idPlayer::IsPortalSkyAcive
+=================
+*/
+bool idGameLocal::IsPortalSkyAcive() {
+	return portalSkyActive;
+}
+
+
+
+/*
 ===========
 idGameLocal::SelectTimeGroup
 ============
 */
+
 void idGameLocal::SelectTimeGroup( int timeGroup ) { }
+
+
 
 /*
 ===========
@@ -4287,6 +6473,8 @@ idGameLocal::GetTimeGroupTime
 int idGameLocal::GetTimeGroupTime( int timeGroup ) {
 	return gameLocal.time;
 }
+
+
 
 /*
 ===========
@@ -4304,7 +6492,6 @@ idGameLocal::NeedRestart
 ============
 */
 bool idGameLocal::NeedRestart() {
-
 	idDict		newInfo;
 	const idKeyValue *keyval, *keyval2;
 
@@ -4316,6 +6503,7 @@ bool idGameLocal::NeedRestart() {
 		if ( !keyval2 ) {
 			return true;
 		}
+
 		// a select set of si_ changes will cause a full restart of the server
 		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
 			return true;
@@ -4324,45 +6512,787 @@ bool idGameLocal::NeedRestart() {
 	return false;
 }
 
+
+
 /*
 ================
 idGameLocal::GetClientStats
 ================
 */
+
 void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
+
 	mpGame.PlayerStats( clientNum, data, len );
 }
 
-
-/*
-================
-idGameLocal::SwitchTeam
-================
-*/
-void idGameLocal::SwitchTeam( int clientNum, int team ) {
-
+void idGameLocal::SwitchTeam( int clientNum, int team )
+{
 	idPlayer *   player;
-	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
 
+	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
 	if ( !player )
 		return;
-
 	int oldTeam = player->team;
 
 	// Put in spectator mode
 	if ( team == -1 ) {
 		static_cast< idPlayer * >( entities[ clientNum ] )->Spectate( true );
 	}
+
 	// Switch to a team
 	else {
 		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
 	}
 }
 
-/*
-===============
-idGameLocal::GetMapLoadingGUI
-===============
-*/
-void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) { }
+void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
+{
+}
 
+void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
+{
+	idToken token;
+	idLexer src;
+	idStr Material, FallOff, Map, *add;
+	int level;		// Nestinglevel for brackets
+	bool bAmbient;
+	CLightMaterial *mat;
+
+	if(pFN == NULL || ml == NULL)
+		goto Quit;
+
+	src.LoadFile(pFN);
+
+	level = 0;
+	add = NULL;
+	bAmbient = false;
+
+	while(1)
+	{
+		if(!src.ReadToken(&token))
+			goto Quit;
+
+//		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Token: [%s]\r", token.c_str());
+
+		if(token == "table")
+		{
+			src.SkipBracedSection(true);
+			continue;
+		}
+
+		if(token == "lights")
+		{
+			Material = token;
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				Material += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Material: [%s]\r", token.c_str());
+			}
+
+			continue;
+		}
+		else if(level == 1 && token == "ambientLight")
+		{
+			bAmbient = true;
+			continue;
+		}
+		else if(token == "{")
+		{
+			level++;
+			if(level == 1)
+				bAmbient = false;
+
+			continue;
+		}
+		else if(token == "}")
+		{
+			level--;
+			if(level == 0)
+			{
+				if(FallOff.Length()  == 0 && Map.Length() == 0)
+					continue;
+
+				mat = new CLightMaterial(Material, FallOff, Map);
+				mat->m_AmbientLight = bAmbient;
+				ml->Append(mat);
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
+			}
+			continue;
+		}
+		else if(token == "map")
+		{
+			Map = "";
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+					Map += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Map: [%s]\r", token.c_str());
+			}
+			continue;
+		}
+		else if(token == "lightFalloffImage")
+		{
+			FallOff = "";
+
+			while(1)
+			{
+				if(!src.ReadToken(&token))
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Invalid material file structure on line %u\r", src.GetLineNum());
+					goto Quit;
+				}
+
+				// Ignore makeintensity tag
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+				{
+					do
+					{
+						if(token == ")")
+							break;
+
+						FallOff += token;
+//						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FallOff: [%s]\r", token.c_str());
+					}
+					while(src.ReadTokenOnLine(&token) == true);
+					break;
+				}
+			}
+			continue;
+		}
+	}
+
+Quit:
+	return;
+}
+
+int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)
+{
+	// Construct an idEntityPtr with the given entity
+	idEntityPtr<idEntity> entPtr;
+	entPtr = e;
+
+	return list.FindIndex(entPtr);
+}
+
+void idGameLocal::LinkStimEntity(idEntity* ent)
+{
+	if (ent != NULL && ent->GetStimResponseCollection()->HasStim())
+	{
+		AddStim(ent);
+	}
+}
+
+void idGameLocal::UnlinkStimEntity(idEntity* ent)
+{
+	RemoveStim(ent);
+}
+
+bool idGameLocal::AddStim(idEntity *e)
+{
+	bool rc = true;
+
+	if (CheckStimResponse(m_StimEntity, e) == -1)
+	{
+		idEntityPtr<idEntity> entPtr;
+		entPtr = e;
+		m_StimEntity.Append(entPtr);
+	}
+
+	return rc;
+}
+
+void idGameLocal::RemoveStim(idEntity *e)
+{
+	int i = CheckStimResponse(m_StimEntity, e);
+
+	if (i != -1)
+	{
+		m_StimEntity.RemoveIndex(i);
+	}
+}
+
+bool idGameLocal::AddResponse(idEntity *e)
+{
+	bool rc = true;
+
+	if(CheckStimResponse(m_RespEntity, e) == -1)
+	{
+		idEntityPtr<idEntity> entPtr;
+		entPtr = e;
+		m_RespEntity.Append(entPtr);
+	}
+
+	return rc;
+}
+
+
+void idGameLocal::RemoveResponse(idEntity *e)
+{
+	int i = CheckStimResponse(m_RespEntity, e);
+
+	if (i != -1)
+	{
+		m_RespEntity.RemoveIndex(i);
+	}
+}
+
+int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
+{
+	int numResponses = 0;
+	for (int i = 0; i < numEntities; i++)
+	{
+		// ignore the original entity because an entity shouldn't respond 
+		// to its own stims.
+		if (srEntities[i] == originator || srEntities[i]->GetResponseEntity() == originator)
+			continue;
+
+		// Check if the radius is really fitting. EntitiesTouchingBounds is using a rectangular volume
+		// greebo: Be sure to use this check only if "use bounds" is set to false
+		if (!stim->m_bCollisionBased && !stim->m_bUseEntBounds)
+		{
+			// take the square radius, is faster
+			float radiusSqr = stim->GetRadius();
+			radiusSqr *= radiusSqr; 
+
+			// grayman #2468 - handle AI with no separate head entities
+
+			idEntity *ent = srEntities[i];
+			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
+
+			if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
+			{
+				if (!ent->IsType(idAFAttachment::Type)) // is this an attached head?
+				{
+					// no separate head entity, so find the mouth
+
+					if (ent->IsType(idAI::Type))
+					{
+						idAI* entAI = static_cast<idAI*>(ent);
+
+						entitySpot = entAI->GetEyePosition();
+						entitySpot.z += entAI->m_MouthOffset.z;
+					}
+				}
+			}
+
+			if ((entitySpot - stimOrigin).LengthSqr() > radiusSqr)
+			{
+				// Too far away
+				continue;
+			}
+		}
+
+		// Check for a shooter entity, these don't need to have a response
+		if (srEntities[i]->IsType(tdmFuncShooter::Type))
+		{
+			static_cast<tdmFuncShooter*>(srEntities[i])->stimulate(static_cast<StimType>(stim->m_StimTypeId));
+		}
+
+		CResponsePtr response = srEntities[i]->GetStimResponseCollection()->GetResponseByType(stim->m_StimTypeId);
+
+		if (response != NULL)
+		{
+			if (response->m_State == SS_ENABLED && stim->CheckResponseIgnore(srEntities[i]) == false)
+			{
+				// Check duration, disable if past duration
+				if (response->m_Duration && (gameLocal.time - response->m_EnabledTimeStamp) > response->m_Duration )
+				{
+					response->Disable();
+					continue;
+				}
+
+				if (cv_sr_show.GetInteger() > 0)
+				{
+					// Show successful S/R
+					gameRenderWorld->DebugArrow(colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
+				}
+
+				// Fire the response and pass the originating entity plus the stim object itself
+				// The stim object can be queried for values like magnitude, falloff and such.
+				response->TriggerResponse(originator, stim);
+				numResponses++;
+			}
+		}
+	}
+
+	// Return number of responses triggered
+	return numResponses;
+}
+
+void idGameLocal::ProcessTimer(unsigned long ticks)
+{
+	int i, n;
+	CStimResponseTimer *t;
+
+	n = m_Timer.Num();
+	for(i = 0; i < n; i++)
+	{
+		t = m_Timer[i];
+
+		// We just let the timers tick. Querying them must be done by the respective owner,
+		// because we can not know from where it was called, and it doesn't make sense
+		// to use a callback, because the timer user still has to wait until it is expired.
+		// So the owner has to check it from time to time anyway.
+		if(t->GetState() == CStimResponseTimer::SRTS_RUNNING)
+		{
+			t = m_Timer[i];
+			t->Tick(ticks);
+		}
+	}
+}
+
+CStimResponsePtr idGameLocal::FindStimResponse(int uniqueId)
+{
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (ent->GetStimResponseCollection() != NULL)
+		{
+			CStimResponsePtr candidate = ent->GetStimResponseCollection()->FindStimResponse(uniqueId);
+
+			if (candidate != NULL)
+			{
+				// We found the stim/response, return it
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StimResponse with Id %d found.\r", uniqueId);
+				return candidate;
+			}
+		}
+	}
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Warning: StimResponse with Id %d NOT found.\r", uniqueId);
+
+	// Search did not produce any results
+	return CStimResponsePtr();
+}
+
+void idGameLocal::ProcessStimResponse(unsigned long ticks)
+{
+	if (cv_sr_disable.GetBool())
+	{
+		return; // S/R disabled, skip this
+	}
+
+	idTimer srTimer;
+	srTimer.Clear();
+	srTimer.Start();
+
+	// Check the timed stims first.
+	for (int i = 0; i < m_StimTimer.Num(); i++)
+	{
+		CStim* stim = m_StimTimer[i];
+
+		if (stim == NULL) continue;
+
+		// Only advance the timer if the stim can be fired in the first place
+		if (stim->m_MaxFireCount > 0 || stim->m_MaxFireCount == -1)
+		{
+			// Advance the timer
+			CStimResponseTimer* timer = stim->GetTimer();
+
+			if (timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
+			{
+				if (timer->Tick(ticks))
+				{
+					//gameLocal.Printf("Stim timer elapsed! ProcessStimResponse - firing stim\n");
+					// Enable the stim when the timer has expired
+
+					stim->Enable();
+				}
+			}
+		}
+	}
+
+	int n;
+	idBounds bounds;
+
+	// Now check the rest of the stims.
+	for (int i = 0; i < m_StimEntity.Num(); i++)
+	{
+		idEntity* entity = m_StimEntity[i].GetEntity();
+
+		if (entity == NULL) continue;
+
+		// greebo: Get the S/R collection, this is always non-NULL
+		CStimResponseCollection* srColl = entity->GetStimResponseCollection();
+		assert(srColl != NULL);
+
+		idVec3 origin(entity->GetPhysics()->GetOrigin());
+
+		int numStims = srColl->GetNumStims();
+
+		// Traverse through all the stims on this entity
+		for (int stimIdx = 0; stimIdx < numStims; ++stimIdx)
+		{
+			const CStimPtr& stim = srColl->GetStim(stimIdx);
+
+			if (stim->m_MaxFireCount == 0)
+				// Maximum number of firings reached, do not process this stim
+				continue;
+
+			if (stim->m_State != SS_ENABLED)
+				continue; // Stim is not enabled
+
+			if (stim->m_bCollisionBased && !stim->m_bCollisionFired)
+				continue; // Collision-based stim that did not fire with ::Collide this frame
+
+			// Check the interleaving timer and don't eval stim if it's not up yet
+			if (gameLocal.time - stim->m_TimeInterleaveStamp < stim->m_TimeInterleave)
+				continue;
+
+			// If stim has a finite duration, check if it expired. If so, disable the stim.
+			if (stim->m_Duration != 0 && (gameLocal.time - stim->m_EnabledTimeStamp) > stim->m_Duration )
+			{
+				stim->Disable();
+				continue;
+			}
+
+			// Initial checks passed, decrease the fire count
+			if (stim->m_MaxFireCount > 0)
+			{
+				stim->m_MaxFireCount--;
+			}
+
+			// Check if a stim velocity has been specified
+			if (stim->m_Velocity != idVec3(0,0,0)) {
+				// The velocity mutliplied by the time gives the translation
+				// Updates the location of this stim relative to the time it last fired.
+				origin += stim->m_Velocity * (gameLocal.time - stim->m_EnabledTimeStamp)/1000;
+			}
+
+			// Save the current timestamp into the stim, so that we know when it was last fired
+			stim->m_TimeInterleaveStamp = gameLocal.time;
+
+			// greebo: Check if the stim passes the "chance" test
+			// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
+			// from being re-evaluated in the very next frame in case it failed the test.
+			if (!stim->CheckChance())
+			{
+				continue;
+			}
+
+			// If stim is not disabled
+			if (stim->m_State == SS_DISABLED)
+				continue;
+
+			float radius = stim->GetRadius();
+
+			if (radius != 0.0 || stim->m_bCollisionBased ||
+				stim->m_bUseEntBounds || stim->m_Bounds.GetVolume() > 0)
+			{
+				int numResponses = 0;
+
+				// Check if we have fixed bounds to work with (sr_bounds_mins & maxs set)
+				if (stim->m_Bounds.GetVolume() > 0) {
+					bounds = idBounds(stim->m_Bounds[0] + origin, stim->m_Bounds[1] + origin);
+				}
+				else {
+					// No bounds set, check for radius and useBounds
+
+					// Find entities in the radius of the stim
+					if (stim->m_bUseEntBounds )
+					{
+						bounds = entity->GetPhysics()->GetAbsBounds();
+					}
+					else
+					{
+						bounds = idBounds(origin);
+					}
+
+					bounds.ExpandSelf(radius);
+				}
+
+				// Collision-based stims
+				if (stim->m_bCollisionBased)
+				{
+					n = stim->m_CollisionEnts.Num();
+
+					for (int n2 = 0; n2 < n; n2++)
+					{
+						srEntities[n2] = stim->m_CollisionEnts[n2];
+					}
+
+					// clear the collision vars for the next frame
+					stim->m_bCollisionFired = false;
+					stim->m_CollisionEnts.Clear();
+				}
+				else 
+				{
+					// Radius based stims
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
+					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
+				}
+				
+				if (n > 0)
+				{
+					if (cv_sr_show.GetInteger() > 1)
+					{
+						for (int n2 = 0; n2 < n; ++n2)
+						{
+							// Show failed S/R
+							gameRenderWorld->DebugArrow(colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
+						}
+					}
+
+					// Do responses for entities within the radius of the stim
+					numResponses = DoResponseAction(stim, n, entity, origin);
+				}
+
+				// The stim has fired, let it do any post-firing activity it may have
+				stim->PostFired(numResponses);
+			}
+		}
+	}
+
+	srTimer.Stop();
+	DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Processing S/R took %lf\r", srTimer.Milliseconds());
+}
+
+/*
+===================
+Dark Mod:
+idGameLocal::LocationForArea
+===================
+*/
+idLocationEntity *idGameLocal::LocationForArea( const int areaNum ) 
+{
+	idLocationEntity *pReturnval( NULL );
+	
+	if ( !locationEntities || areaNum < 0 || areaNum >= gameRenderWorld->NumAreas() ) 
+	{
+		pReturnval = NULL;
+		goto Quit;
+	}
+
+	pReturnval = locationEntities[ areaNum ];
+
+Quit:
+	return pReturnval;
+}
+
+/*
+===================
+Dark Mod:
+idGameLocal::PlayerTraceEntity
+===================
+*/
+idEntity *idGameLocal::PlayerTraceEntity( void )
+{
+	idVec3		start, end;
+	idEntity	*returnEnt = NULL;
+	idPlayer	*player = NULL;
+	trace_t		trace;
+	int			cm = 0;
+
+	player = gameLocal.GetLocalPlayer();
+	if( ! player )
+		goto Quit;
+
+	start = player->GetEyePosition();
+	// do a trace 512 doom units ahead
+	end = start + 512.0f * (player->viewAngles.ToForward());
+
+	cm = CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_TRIGGER;
+	gameLocal.clip.TracePoint( trace, start, end, cm, player );
+	if( trace.fraction < 1.0f )
+	{
+		returnEnt = gameLocal.entities[ trace.c.entityNum ];
+		// don't return the world
+		if( returnEnt == gameLocal.world )
+			returnEnt = NULL;
+	}
+	
+Quit:
+	return returnEnt;
+}
+
+void idGameLocal::PauseGame( bool bPauseState )
+{
+	if( bPauseState )
+	{
+		gameSoundWorldBuf = soundSystem->GetPlayingSoundWorld();
+		gameSoundWorldBuf->Pause();
+		soundSystem->SetPlayingSoundWorld( NULL );
+	
+		g_stopTime.SetBool( true );
+	}
+	else
+	{
+		soundSystem->SetPlayingSoundWorld( gameSoundWorldBuf );
+		soundSystem->GetPlayingSoundWorld()->UnPause();
+		
+		g_stopTime.SetBool( false );
+	}
+}
+
+void idGameLocal::SetMissionResult(EMissionResult result)
+{
+	m_MissionResult = result;
+}
+
+EMissionResult idGameLocal::GetMissionResult() const 
+{
+	return m_MissionResult;
+}
+
+float idGameLocal::CalcLightgem( idPlayer *a_pPlayer )
+{
+	return m_lightGem.Calculate( a_pPlayer );
+}
+/*
+===================
+Dark Mod:
+idGameLocal::FindMainAmbientLight
+Author: J.C.Denton 
+Usage:	Finds main ambient light by the name "ambient_world". 
+		If it can't be found, finds ambient light with largest radius and rename it to ambient_world before returning pointer to it. 
+===================
+*/
+
+idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= false */ )
+{
+	int hash, i;
+	idEntity *pEntMainAmbientLight = NULL;
+
+	hash = entityHash.GenerateKey( m_strMainAmbientLightName, true );
+	for ( i = entityHash.First( hash ); i != -1; i = entityHash.Next( i ) ) {
+		if ( entities[i] && entities[i]->name.Icmp( m_strMainAmbientLightName ) == 0 ) {
+			pEntMainAmbientLight =  entities[i];
+			break;
+		}
+	}
+
+	if ( NULL != pEntMainAmbientLight && pEntMainAmbientLight->IsType(idLight::Type) )
+		return static_cast<idLight *>( pEntMainAmbientLight );
+	else if( !a_bCreateNewIfNotFound ) 
+		return NULL;
+
+	gameLocal.Printf( "Ambient light by name of 'ambient_world' not found, attempting to create a new one. \n"); 
+
+	idLight *pLightEntMainAmbient = NULL;
+	float fMaxRadius = 0.0f;
+	int j=1;
+	for (int i = 0; i < MAX_GENTITIES; i++)
+	{
+		// Find the ambient light with greatest radius.
+		if( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
+		{
+			idVec3 vec3LightRadius; 
+			idLight *pLight =  static_cast<idLight *>( entities[i] );
+// 			gameLocal.Printf( "Light found %i \n", j++ ); 
+
+			if (!pLight->IsAmbient())
+				continue;
+
+			pLight->GetRadius( vec3LightRadius );
+
+			float fRadius = vec3LightRadius.Length();
+			//gameLocal.Printf( "The Light is ambient, max radius: %f current radius: %f  \n", fMaxRadius, fRadius ); 
+
+			if( fRadius > fMaxRadius )
+			{
+				fMaxRadius = fRadius;
+				pLightEntMainAmbient = pLight;
+			}
+		}
+	}
+
+	if( pLightEntMainAmbient )
+	{
+		m_strMainAmbientLightName = pLightEntMainAmbient->GetName();
+		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
+	}
+
+	return pLightEntMainAmbient;
+
+}
+
+#ifdef WIN32
+namespace
+{
+	// greebo: This little snippet is changing the window title to something more appropriate.
+	BOOL CALLBACK ChangeD3WindowTitle(HWND hwnd,LPARAM lParam)
+	{
+		// Find the window of our process
+		DWORD procId;
+		if (GetWindowThreadProcessId(hwnd, &procId) && procId == GetCurrentProcessId())
+		{
+			if (!GetWindow(hwnd, GW_OWNER))
+			{
+				char title[256];
+				GetWindowText(hwnd, title, 255);
+				
+				if (std::string(title) == "DOOM 3")
+				{
+					std::string newTitle = va("%s %d.%02d", GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+					SetWindowText(hwnd, newTitle.c_str());
+
+					fs::path darkmodPath = g_Global.GetDarkmodPath();
+					darkmodPath /= "darkmod.ico";
+
+					HICON hIcon = (HICON)LoadImage(NULL, darkmodPath.file_string().c_str(), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+
+					if (hIcon)
+					{
+						SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+					}
+
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+}
+#endif
+
+void idGameLocal::ChangeWindowTitleAndIcon()
+{
+#ifdef WIN32
+	EnumWindows((WNDENUMPROC)ChangeD3WindowTitle, 0);
+#endif
+}
+
+void idGameLocal::ClearPersistentInfo()
+{
+	persistentPlayerInventory->Clear();
+	persistentLevelInfo.Clear();
+	m_CampaignStats.reset(new CampaignStats);
+	m_InterMissionTriggers.Clear();
+}
+
+void idGameLocal::ProcessInterMissionTriggers()
+{
+	for (int i = 0; i < m_InterMissionTriggers.Num(); ++i)
+	{
+		const InterMissionTrigger& trigger = m_InterMissionTriggers[i];
+
+		if (trigger.missionNum == m_MissionManager->GetCurrentMissionIndex())
+		{
+			idEntity* target = FindEntity(trigger.targetName);
+			idEntity* activator = !trigger.activatorName.IsEmpty() ? FindEntity(trigger.activatorName) : GetLocalPlayer();
+
+			if (target != NULL)
+			{
+				target->Activate(activator);
+			}
+			else
+			{
+				gameLocal.Warning("Cannot find intermission trigger target entity %s", trigger.targetName.c_str());
+			}
+
+			// Don't remove the triggers yet, we might need them again when restarting the map
+		}
+	}
+}

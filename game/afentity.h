@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_AFENTITY_H__
 #define __GAME_AFENTITY_H__
@@ -47,10 +31,23 @@ public:
 	CLASS_PROTOTYPE( idMultiModelAF );
 
 	void					Spawn( void );
-							~idMultiModelAF( void );
+	virtual ~idMultiModelAF( void );
 
 	virtual void			Think( void );
 	virtual void			Present( void );
+
+protected:
+	/**
+	* Parsing attachments happens at a different time in the spawn routine for
+	* idAFEntities.  To accomplish this, the function is overloaded to do
+	* nothing and a new function is called at the proper time.
+	**/
+	virtual void			ParseAttachments( void );
+
+	/**
+	* Same as idEntity::ParseAttachments, but called at a different point in spawn routine
+	**/
+	virtual void			ParseAttachmentsAF( void );
 
 protected:
 	idPhysics_AF			physicsObj;
@@ -107,6 +104,10 @@ public:
 	void					SetBody( idEntity *bodyEnt, const char *headModel, jointHandle_t attachJoint );
 	void					ClearBody( void );
 	idEntity *				GetBody( void ) const;
+	// ishtvan: Added this
+	jointHandle_t			GetAttachJoint( void ) const;
+
+	bool					IsMantleable( void );
 
 	virtual void			Think( void );
 
@@ -119,7 +120,9 @@ public:
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 
-	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+									const char *damageDefName, const float damageScale,
+									const int location, trace_t *tr = NULL );
 	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
 
 	void					SetCombatModel( void );
@@ -127,11 +130,40 @@ public:
 	virtual void			LinkCombat( void );
 	virtual void			UnlinkCombat( void );
 
+	/**
+	 * greebo: Virtual override of idEntity::GetResponseEntity(). This is used
+	 * to relay stims to the "body" entity.
+	 */
+	virtual idEntity* GetResponseEntity();
+
+	/**
+	* Overload bind notify so that when another idAFAttachment is
+	* bound to us, we copy over our data on the actor we're bound to
+	**/
+	virtual void BindNotify( idEntity *ent );
+
+	/**
+	* Also overload UnbindNotify to update the clipmodel physics on the AF we're attacehd to
+	**/
+	virtual void			UnbindNotify( idEntity *ent );
+
+	/** Also overload PostUnBind to clear the body information **/
+	virtual void PostUnbind( void );
+
+	/** Use this to set up stuff attached to AI's heads when they go ragdoll **/
+	virtual void DropOnRagdoll( void );
+
 protected:
 	idEntity *				body;
 	idClipModel *			combatModel;	// render model for hit detection of head
 	int						idleAnim;
 	jointHandle_t			attachJoint;
+
+protected:
+	/**
+	* Copy idActor bindmaster information to another idAFAttachment
+	**/
+	void	CopyBodyTo( idAFAttachment *other );
 };
 
 
@@ -143,7 +175,28 @@ idAFEntity_Base
 ===============================================================================
 */
 
-class idAFEntity_Base : public idAnimatedEntity {
+/**
+* TDM: Used for dynamically adding ents with clipmodels to the AF
+**/
+typedef struct SAddedEnt_s
+{
+	idEntityPtr<idEntity> ent; // associated entity
+
+	// Must store string name because body ID's get reassigned when any are deleted
+	idStr bodyName;
+	// don't need to store constraint since they are deleted along with body
+
+	idStr AddedToBody; // original body we added on to
+
+	int entContents; // original entity clipmodel contents
+	int entClipMask; // original entity clipmask
+	int bodyContents; // AF body contents (for saving/restoring)
+	int bodyClipMask; // AF body clipmask (for saving/restoring)
+} SAddedEnt;
+
+
+class idAFEntity_Base : public idAnimatedEntity 
+{
 public:
 	CLASS_PROTOTYPE( idAFEntity_Base );
 
@@ -169,10 +222,15 @@ public:
 	const char *			GetAFName( void ) const { return af.GetName(); }
 	idPhysics_AF *			GetAFPhysics( void ) { return af.GetPhysics(); }
 
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+									const char *damageDefName, const float damageScale,
+									const int location, trace_t *tr = NULL );
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
-							// contents of combatModel can be set to 0 or re-enabled (mp)
-	void					SetCombatContents( bool enable );
+
+	// set contents of combatModel to 0 (if false) or restore proper contents (if true)
+	// returns the contents state before call (false = were disabled, true = were enabled)
+	bool					SetCombatContents( bool enable );
 	virtual void			LinkCombat( void );
 	virtual void			UnlinkCombat( void );
 
@@ -184,9 +242,77 @@ public:
 	void					AddBindConstraints( void );
 	void					RemoveBindConstraints( void );
 
+	/**
+	* Called when the given ent is about to be unbound/detached
+	* Updates m_AddedEnts if this ent's clipmodel was added to the AF
+	**/
+	virtual void			UnbindNotify( idEntity *ent );
+
+	/**
+	* Overloaded idAnimatedEntity::ReAttach methods to take into account AF body clipmask and contents
+	**/
+	virtual void			ReAttachToCoords( const char *AttName, idStr jointName, idVec3 offset, idAngles angles );
+	virtual void			ReAttachToPos( const char *AttName, const char *PosName  );
+
+	/**
+	* TDM: Adds the clipmodel of the given entity to the AF structure
+	* Called during the binding process
+	* AddEntByBody is called by BindToBody, AddEntByJoint called by BindToJoint
+	* AddEntByBody takes an option joint argument to control the positin of the body with a joint
+	* If this is not specified, joint information is copied from the AF body we bind to
+	**/
+	void					AddEntByBody( idEntity *ent, int bodyID, jointHandle_t joint = INVALID_JOINT );
+	void					AddEntByJoint( idEntity *ent, jointHandle_t joint );
+
+	/**
+	* TDM: Remove a dynamically added ent from the AF of this AFEntity
+	* Called by UnBindNotify
+	**/
+	void					RemoveAddedEnt( idEntity *ent );
+
+	/**
+	* TDM: Get an AF body ID for a given joint, and vice versa
+	**/
+	jointHandle_t			JointForBody( int body );
+	int						BodyForJoint( jointHandle_t joint );
+
+	/**
+	* TDM: Get AF body for the given added entity
+	* returns NULL if added ent could not be found
+	**/
+	idAFBody *				AFBodyForEnt( idEntity *ent );
+
 	virtual void			ShowEditingDialog( void );
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );
+
+	/**
+	* Return whether this entity should collide with its team when bound to a team
+	**/
+	bool					CollidesWithTeam( void );
+
+public:
+	/**
+	* This AF should not be able to be picked up off the ground completely when dragged
+	**/
+	bool					m_bGroundWhenDragged;
+
+	/**
+	* List of integer Id's of "critical" bodies to check for touching the ground
+	* when seeing if the AF is being lifted off the ground
+	**/
+	idList<int>				m_GroundBodyList;
+
+	/**
+	* Number of "critical" bodies that must be kept on the ground at all times
+	* If the number is below this, dragging the AF up will not be allowed
+	**/
+	int						m_GroundBodyMinNum;
+
+	/**
+	* If set to true, this will use the "af" damping when being grabbed instead of the default damping
+	**/
+	bool					m_bDragAFDamping;
 
 protected:
 	idAF					af;				// articulated figure
@@ -196,7 +322,75 @@ protected:
 	idMat3					spawnAxis;		// rotation axis used when spawned
 	int						nextSoundTime;	// next time this can make a sound
 
+	/**
+	* List of ents that have been dynamically added to the AF via binding
+	**/
+	idList<SAddedEnt>		m_AddedEnts;
+
+	/**
+	* Set to true if this entity should collide with team members when bound to them
+	**/
+	bool					m_bCollideWithTeam;
+
+	/**
+	* Set to true if this animated AF should activate the AF body collision models
+	*	and move them around to collide with the world when animating.
+	* NOTE: This MUST be set on AI in order for animation-based tactile alert
+	*		to work properly.
+	**/
+	bool					m_bAFPushMoveables;
+
+protected:
+	/**
+	* Set up grounding vars, which apply when the AF might not be able to be 
+	* lifted completely off the ground by the player
+	**/
+	void					SetUpGroundingVars( void );
+
 	void					Event_SetConstraintPosition( const char *name, const idVec3 &pos );
+
+	/**
+	* GetNumBodies returns the number of bodies in the AF.
+	* If the AF physics pointer is NULL, it returns 0.
+	**/
+	void					Event_GetNumBodies( void );
+
+	/**
+	* Parsing attachments happens at a different time in the spawn routine for
+	* idAFEntities.  To accomplish this, the function is overloaded to do
+	* nothing and a new function is called at the proper time.
+	**/
+	virtual void			ParseAttachments( void );
+
+	/**
+	* Same as idEntity::ParseAttachments, but called at a different point in spawn routine
+	**/
+	virtual void			ParseAttachmentsAF( void );
+
+	/**
+	* Restore attached entities that have been added to the AF after a save
+	**/
+	virtual void			RestoreAddedEnts( void );
+
+	/**
+	* Updates added ent constraints when going ragdoll, to resolve issue of ents bound to joints that can animate and move without the AF body moving
+	**/
+	virtual void			UpdateAddedEntConstraints( void );
+
+	/**
+	* Set the linear and angular velocities of a particular body given by ID argument
+	* If the ID is invalid, no velocity is set.
+	**/
+	void					Event_SetLinearVelocityB( idVec3 &NewVelocity, int id );
+	void					Event_SetAngularVelocityB( idVec3 &NewVelocity, int id );
+
+	/**
+	* Get the linear and angular velocities of a particular body given by int ID.  
+	* If the body ID is invalid, returns (0,0,0)
+	**/
+	void					Event_GetLinearVelocityB( int id );
+	void					Event_GetAngularVelocityB( int id );
+
 };
 
 /*
@@ -215,13 +409,14 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_Gibbable );
 
 							idAFEntity_Gibbable( void );
-							~idAFEntity_Gibbable( void );
+	virtual ~idAFEntity_Gibbable( void );
 
 	void					Spawn( void );
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 	virtual void			Present( void );
-	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
+									const float damageScale, const int location, trace_t *tr = NULL );
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
 protected:
@@ -248,7 +443,7 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_Generic );
 
 							idAFEntity_Generic( void );
-							~idAFEntity_Generic( void );
+	virtual ~idAFEntity_Generic( void );
 
 	void					Spawn( void );
 
@@ -278,7 +473,7 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_WithAttachedHead );
 
 							idAFEntity_WithAttachedHead();
-							~idAFEntity_WithAttachedHead();
+	virtual ~idAFEntity_WithAttachedHead();
 
 	void					Spawn( void );
 
@@ -350,7 +545,7 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_VehicleSimple );
 
 							idAFEntity_VehicleSimple( void );
-							~idAFEntity_VehicleSimple( void );
+	virtual ~idAFEntity_VehicleSimple( void );
 
 	void					Spawn( void );
 	virtual void			Think( void );
@@ -426,7 +621,7 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_SteamPipe );
 
 							idAFEntity_SteamPipe( void );
-							~idAFEntity_SteamPipe( void );
+	virtual ~idAFEntity_SteamPipe( void );
 
 	void					Spawn( void );
 	void					Save( idSaveGame *savefile ) const;
@@ -445,30 +640,5 @@ private:
 	void					InitSteamRenderEntity( void );
 };
 
-
-/*
-===============================================================================
-
-idAFEntity_ClawFourFingers
-
-===============================================================================
-*/
-
-class idAFEntity_ClawFourFingers : public idAFEntity_Base {
-public:
-	CLASS_PROTOTYPE( idAFEntity_ClawFourFingers );
-
-							idAFEntity_ClawFourFingers( void );
-
-	void					Spawn( void );
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-private:
-	idAFConstraint_Hinge *	fingers[4];
-
-	void					Event_SetFingerAngle( float angle );
-	void					Event_StopFingers( void );
-};
 
 #endif /* !__GAME_AFENTITY_H__ */

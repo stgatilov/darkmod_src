@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 
   SecurityCamera.cpp
@@ -36,7 +20,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 
 /***********************************************************************
@@ -141,7 +128,7 @@ void idSecurityCamera::Spawn( void ) {
 	}
 
 	negativeSweep = ( sweepAngle < 0 ) ? true : false;
-	sweepAngle = abs( sweepAngle );
+	sweepAngle = fabs( sweepAngle );
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
@@ -173,6 +160,10 @@ void idSecurityCamera::Spawn( void ) {
 	}
 
 	GetPhysics()->SetContents( CONTENTS_SOLID );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 	GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	// setup the physics
 	UpdateChangeableSpawnArgs( NULL );
@@ -461,9 +452,9 @@ void idSecurityCamera::Event_ContinueSweep( void ) {
 	int speed;
 
 	sweepStart = f;
-	speed = MS2SEC( SweepSpeed() );
+	speed = static_cast<int>(MS2SEC( SweepSpeed() ));
 	sweepEnd = sweepStart + speed;
-   	PostEventMS( &EV_SecurityCam_Pause, speed * (1.0 - pct));
+   	PostEventMS( &EV_SecurityCam_Pause, static_cast<int>(speed * (1.0f - pct)));
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(SCANNING);
 	sweeping = true;
@@ -561,7 +552,14 @@ idSecurityCamera::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
-void idSecurityCamera::Present( void ) {
+void idSecurityCamera::Present( void ) 
+{
+	if( m_FrobDistance )
+	{
+		UpdateFrobState();
+		UpdateFrobDisplay();
+	}
+
 	// don't present to the renderer if the entity hasn't changed
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;

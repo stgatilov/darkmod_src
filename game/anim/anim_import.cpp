@@ -1,35 +1,19 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 #include "../../MayaImport/maya_main.h"
 
 /***********************************************************************
@@ -112,12 +96,38 @@ bool idModelExport::CheckMayaInstall( void ) {
 	lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Alias|Wavefront\\Maya", &hKey );
 	RegCloseKey( hKey );
 
-	if ( lres != ERROR_SUCCESS ) {
-		return false;
+	if ( lres == ERROR_SUCCESS ) {
+		return true;
 	}
-	return true;
+
+	// greebo: Could not find "Alias|WaveFront" Maya key, check for AutoDesk
+	lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Autodesk\\Maya", &hKey );
+	RegCloseKey( hKey );
+
+	if ( lres == ERROR_SUCCESS ) {
+		return true;
+	}
+
+	gameLocal.Warning("Maya key not found in registry, continuing...\n");
+
+	return true; // greebo: both keys failed, let the game continue anyways
 #endif
 }
+
+#ifdef WIN32
+
+#define FORMAT_BUFSIZE 2048
+
+// Helper method to retrieve the error when DLL load failed.
+const char* FormatGetLastError() {
+	static char buf[FORMAT_BUFSIZE];
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+			buf, 
+			FORMAT_BUFSIZE, NULL);
+	return buf;
+}
+#endif
 
 /*
 =====================
@@ -135,7 +145,19 @@ void idModelExport::LoadMayaDll( void ) {
 		return;
 	}
 	importDLL = sys->DLL_Load( dllPath );
+
 	if ( !importDLL ) {
+#ifdef WIN32
+		// greebo: Do another attempt in Win32 to get a better error message
+		idStr win32DllPath(dllPath);
+		win32DllPath.Replace("/", "\\");
+
+		HMODULE dll = LoadLibrary(win32DllPath);
+
+		if (dll == 0) {
+			gameLocal.Warning("Could not load MayaImport DLL: %s ", FormatGetLastError());
+		}
+#endif
 		return;
 	}
 
@@ -173,9 +195,8 @@ version number has changed.
 =====================
 */
 bool idModelExport::ConvertMayaToMD5( void ) {
-	ID_TIME_T		
-		sourceTime;
-	ID_TIME_T		destTime;
+	unsigned	sourceTime;
+	unsigned	destTime;
 	int			version;
 	idToken		cmdLine;
 	idStr		path;
@@ -194,6 +215,7 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 	// get the source file's time
 	if ( fileSystem->ReadFile( src, NULL, &sourceTime ) < 0 ) {
 		// source file doesn't exist
+		gameLocal.Warning("Source file doesn't exist: %s", src.c_str());
 		return true;
 	}
 
@@ -425,10 +447,13 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 
 	lex.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
+	// Save the command's filename
+	const char* currentFileName = parser.GetFileName();
+
 	while( 1 ) {
 
 		if ( !parser.ReadToken( &command ) ) {
-			parser.Error( "Unexpoected end-of-file" );
+			parser.Error( "Unexpected end-of-file" );
 			break;
 		}
 
@@ -486,7 +511,7 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 			}
 			lex.FreeSource();
 		} else {
-			parser.Error( "Unknown token: %s", command.c_str() );
+			parser.Error( "Unknown token: '%s' on line %i, file '%s'", command.c_str(), command.line, currentFileName );
 			parser.SkipBracedSection( false );
 			break;
 		}

@@ -1,33 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_H__
 #define __GAME_H__
+
+#if defined(__linux__) || defined(MACOS_X)
+#include "idlib/lib.h"
+#include "sound/sound.h"
+#endif
 
 /*
 ===============================================================================
@@ -38,9 +27,9 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // default scripts
-#define SCRIPT_DEFAULTDEFS			"script/doom_defs.script"
-#define SCRIPT_DEFAULT				"script/doom_main.script"
-#define SCRIPT_DEFAULTFUNC			"doom_main"
+#define SCRIPT_DEFAULTDEFS			"script/tdm_defs.script"
+#define SCRIPT_DEFAULT				"script/tdm_main.script"
+#define SCRIPT_DEFAULTFUNC			"tdm_main"
 
 typedef struct {
 	char		sessionCommand[MAX_STRING_CHARS];	// "map", "disconnect", "victory", etc
@@ -68,6 +57,11 @@ typedef enum {
 
 #define TIME_GROUP1		0
 #define TIME_GROUP2		1
+
+class idRenderWorld;
+class idSoundWorld;
+class usercmd_t;
+class idUserInterface;
 
 class idGame {
 public:
@@ -203,7 +197,10 @@ extern idGame *					game;
 ===============================================================================
 */
 
-typedef struct {
+class idSoundEmitter;
+class idSoundShader;
+
+struct refSound_t {
 	idSoundEmitter *			referenceSound;	// this is the interface to the sound system, created
 												// with idSoundWorld::AllocSoundEmitter() when needed
 	idVec3						origin;
@@ -214,7 +211,7 @@ typedef struct {
 												// samples in a multi-sample list from the shader are used
 	bool						waitfortrigger;	// don't start it at spawn time
 	soundShaderParms_t			parms;			// override volume, flags, etc
-} refSound_t;
+};
 
 enum {
 	TEST_PARTICLE_MODEL = 0,
@@ -226,6 +223,9 @@ enum {
 
 class idEntity;
 class idMD5Anim;
+typedef struct renderLight_s renderLight_t;
+typedef struct renderEntity_s renderEntity_t;
+class idRenderModel;
 
 // FIXME: this interface needs to be reworked but it properly separates code for the time being
 class idGameEdit {
@@ -319,6 +319,16 @@ extern idGameEdit *				gameEdit;
 */
 
 const int GAME_API_VERSION		= 8;
+
+class idCmdSystem;
+class idNetworkSystem;
+class idRenderSystem;
+class idSoundSystem;
+class idRenderModelManager;
+class idUserInterfaceManager;
+class idDeclManager;
+class idAASFileManager;
+class idCollisionModelManager;
 
 typedef struct {
 

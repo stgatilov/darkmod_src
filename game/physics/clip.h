@@ -1,33 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __CLIP_H__
 #define __CLIP_H__
+
+#ifdef __linux__
+#include "cm/collisionmodel.h"
+#endif
 
 /*
 ===============================================================================
@@ -74,7 +62,13 @@ public:
 	void					Link( idClip &clp, idEntity *ent, int newId, const idVec3 &newOrigin, const idMat3 &newAxis, int renderModelHandle = -1 );
 	void					Unlink( void );						// unlink from sectors
 	void					SetPosition( const idVec3 &newOrigin, const idMat3 &newAxis );	// unlinks the clip model
+	/**
+	* Translates the origin of the clip model relative to the clipmodel itself
+	* Unlinks the clip model
+	**/
+	void					TranslateOrigin( const idVec3 &translation );
 	void					Translate( const idVec3 &translation );							// unlinks the clip model
+	void					Scale( const idVec3 &scale );								// unlinks the clip model
 	void					Rotate( const idRotation &rotation );							// unlinks the clip model
 	void					Enable( void );						// enable for clipping
 	void					Disable( void );					// keep linked but disable for clipping
@@ -130,7 +124,7 @@ private:
 	void					Link_r( struct clipSector_s *node );
 
 	static int				AllocTraceModel( const idTraceModel &trm );
-	static void				FreeTraceModel( int traceModelIndex );
+	static void				FreeTraceModel( const int traceModelIndex );
 	static idTraceModel *	GetCachedTraceModel( int traceModelIndex );
 	static int				GetTraceModelHashKey( const idTraceModel &trm );
 };
@@ -145,6 +139,18 @@ ID_INLINE void idClipModel::Rotate( const idRotation &rotation ) {
 	Unlink();
 	origin *= rotation;
 	axis *= rotation.ToMat3();
+}
+
+ID_INLINE void idClipModel::Scale( const idVec3 &scale ) {
+	if( IsTraceModel() )
+	{
+		// copy & scale the tracemodel
+		// Tels: Is the copy nec.?
+		idTraceModel trm = *(idClipModel::GetCachedTraceModel( traceModelIndex ));
+		trm.Scale( scale );
+		
+		LoadModel( trm );
+	}
 }
 
 ID_INLINE void idClipModel::Enable( void ) {

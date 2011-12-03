@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 =============================================================================
 
@@ -51,7 +35,9 @@ move around it to view it from different angles.
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idAnimatedEntity, idTestModel )
 	EVENT( EV_FootstepLeft,			idTestModel::Event_Footstep )
@@ -100,12 +86,10 @@ idTestModel::Spawn
 void idTestModel::Spawn( void ) {
 	idVec3				size;
 	idBounds			bounds;
-	const char			*headModel;
 	jointHandle_t		joint;
 	idStr				jointName;
 	idVec3				origin, modelOffset;
 	idMat3				axis;
-	const idKeyValue	*kv;
 	copyJoints_t		copyJoint;
 
 	if ( renderEntity.hModel && renderEntity.hModel->IsDefaultModel() && !animator.ModelDef() ) {
@@ -135,24 +119,69 @@ void idTestModel::Spawn( void ) {
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
 	// add the head model if it has one
-	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
+	idStr headModelDefName = spawnArgs.GetString( "def_head" );
+
+	if ( !headModelDefName.IsEmpty() )
+	{
 		jointName = spawnArgs.GetString( "head_joint" );
+
+		if (jointName.IsEmpty())
+		{
+			// greebo: Second chance, use the CVAR, if no head_joint defined
+			g_testModelHeadJoint.GetString();
+		}
+
+		if (jointName.IsEmpty())
+		{
+			jointName = "Spine2"; // fall back to hardcoded
+		}
+
 		joint = animator.GetJointHandle( jointName );
-		if ( joint == INVALID_JOINT ) {
+		if ( joint == INVALID_JOINT )
+		{
 			gameLocal.Warning( "Joint '%s' not found for 'head_joint'", jointName.c_str() );
-		} else {
-			// copy any sounds in case we have frame commands on the head
-			idDict				args;
-			const idKeyValue	*sndKV = spawnArgs.MatchPrefix( "snd_", NULL );
-			while( sndKV ) {
-				args.Set( sndKV->GetKey(), sndKV->GetValue() );
-				sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
+		}
+		else
+		{
+			idDict args;
+
+			const idDeclEntityDef* def = gameLocal.FindEntityDef(headModelDefName, false);
+
+			if (def == NULL)
+			{
+				gameLocal.Warning("Could not find head entityDef %s!", headModelDefName.c_str());
+
+				// Try to fallback on the default head entityDef
+				def = gameLocal.FindEntityDef(TDM_HEAD_ENTITYDEF, false);
+			}
+
+			if (def != NULL)
+			{
+				// Make a copy of the default spawnargs
+				args = def->dict;
+			}
+			else
+			{
+				gameLocal.Warning("Could not find head entityDef %s or %s!", headModelDefName.c_str(), TDM_HEAD_ENTITYDEF);
+			}
+			
+			// Copy any sounds in case we have frame commands on the head
+			for (const idKeyValue* kv = spawnArgs.MatchPrefix("snd_", NULL); kv != NULL; kv = spawnArgs.MatchPrefix("snd_", kv)) 
+			{
+				args.Set(kv->GetKey(), kv->GetValue());
 			}
 
 			head = gameLocal.SpawnEntityType( idAnimatedEntity::Type, &args );
 			animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset ) * GetPhysics()->GetAxis();
+
+			// Retrieve the actual model from the head entityDef
+			idStr headModel = args.GetString("model");
+			if (headModel.IsEmpty())
+			{
+				gameLocal.Warning("No 'model' spawnarg on head entityDef: %s", headModelDefName.c_str());
+			}
+
 			head.GetEntity()->SetModel( headModel );
 			head.GetEntity()->SetOrigin( origin );
 			head.GetEntity()->SetAxis( GetPhysics()->GetAxis() );
@@ -161,7 +190,8 @@ void idTestModel::Spawn( void ) {
 			headAnimator = head.GetEntity()->GetAnimator();
 
 			// set up the list of joints to copy to the head
-			for( kv = spawnArgs.MatchPrefix( "copy_joint", NULL ); kv != NULL; kv = spawnArgs.MatchPrefix( "copy_joint", kv ) ) {
+			for(const idKeyValue* kv = spawnArgs.MatchPrefix( "copy_joint", NULL ); kv != NULL; kv = spawnArgs.MatchPrefix( "copy_joint", kv ) )
+			{
 				jointName = kv->GetKey();
 
 				if ( jointName.StripLeadingOnce( "copy_joint_world " ) ) {
@@ -786,6 +816,7 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 
 	dict.Set( "origin", offset.ToString() );
 	dict.Set( "angle", va( "%f", player->viewAngles.yaw + 180.0f ) );
+	dict.Set( "def_head", g_testModelHead.GetString());
 	gameLocal.testmodel = ( idTestModel * )gameLocal.SpawnEntityType( idTestModel::Type, &dict );
 	gameLocal.testmodel->renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 }

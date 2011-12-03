@@ -1,30 +1,15 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_BASE_H__
 #define __PHYSICS_BASE_H__
@@ -52,7 +37,10 @@ public:
 
 public:	// common physics interface
 
-	void					SetSelf( idEntity *e );
+	virtual void			SetSelf( idEntity *e );
+#ifdef MOD_WATERPHYSICS
+	idEntity				*GetSelf() { return self; } // MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -76,6 +64,8 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
+	bool					PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse );
+
 	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
@@ -141,6 +131,14 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+#ifdef MOD_WATERPHYSICS
+	idPhysics_Liquid *		GetWater();												// MOD_WATERPHYSICS
+	float					GetWaterMurkiness() const;								// TDM Tels
+	void					SetWater( idPhysics_Liquid *e, const float murkiness );	// MOD_WATERPHYSICS
+	float					SetWaterLevelf();										// MOD_WATERPHYSICS
+	float					GetWaterLevelf() const;									// MOD_WATERPHYSICS
+#endif	// MOD_WATERPHYSICS
+
 protected:
 	idEntity *				self;					// entity using this physics object
 	int						clipMask;				// contents the physics object collides with
@@ -148,6 +146,13 @@ protected:
 	idVec3					gravityNormal;			// normalized direction of gravity
 	idList<contactInfo_t>	contacts;				// contacts with other physics objects
 	idList<contactEntity_t>	contactEntities;		// entities touching this physics object
+
+#ifdef MOD_WATERPHYSICS
+// the water object the object is in, we use this to check density/viscosity
+	idPhysics_Liquid		*water;					// MOD_WATERPHYSICS
+// TDM Tels: The murkiness of this water, 0 => clear as crystal, 1 => opaque
+	float					m_fWaterMurkiness;
+#endif
 
 protected:
 							// add ground contacts for the clip model

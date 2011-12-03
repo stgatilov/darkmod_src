@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
@@ -111,6 +97,10 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 
 	entry = new trmCache_t;
 	entry->trm = trm;
+
+	// If density is 1 the volume has the same size as the mass (m = d*v). The calling code wants to know the volume,
+	// and with density equal to 1 it's allowed to use the mass value returned by idTraceModel::GetMassProperties().
+	// That's what's happening here.
 	entry->trm.GetMassProperties( 1.0f, entry->volume, entry->centerOfMass, entry->inertiaTensor );
 	entry->refCount = 1;
 
@@ -124,9 +114,13 @@ int idClipModel::AllocTraceModel( const idTraceModel &trm ) {
 idClipModel::FreeTraceModel
 ===============
 */
-void idClipModel::FreeTraceModel( int traceModelIndex ) {
-	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex]->refCount <= 0 ) {
-		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model" );
+void idClipModel::FreeTraceModel( const int traceModelIndex ) {
+	if ( traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: traceModelIndex %i out of range (0..%i)", traceModelIndex, traceModelCache.Num() );
+		return;
+	}
+	if ( traceModelCache[traceModelIndex]->refCount <= 0 ) {
+		gameLocal.Warning( "idClipModel::FreeTraceModel: tried to free uncached trace model (index=%i)", traceModelIndex );
 		return;
 	}
 	traceModelCache[traceModelIndex]->refCount--;
@@ -388,7 +382,6 @@ void idClipModel::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 	savefile->WriteInt( traceModelIndex );
-	savefile->WriteInt( renderModelHandle );
 	savefile->WriteBool( clipLinks != NULL );
 	savefile->WriteInt( touchCount );
 }
@@ -422,11 +415,10 @@ void idClipModel::Restore( idRestoreGame *savefile ) {
 	if ( traceModelIndex >= 0 ) {
 		traceModelCache[traceModelIndex]->refCount++;
 	}
-	savefile->ReadInt( renderModelHandle );
 	savefile->ReadBool( linked );
 	savefile->ReadInt( touchCount );
 
-	// the render model will be set when the clip model is linked
+	// the render model will be set when the clip model is linked, so do not restore it
 	renderModelHandle = -1;
 	clipLinks = NULL;
 	touchCount = -1;
@@ -786,7 +778,7 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 		}
 
 		if ( parms.count >= parms.maxCount ) {
-			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count" );
+			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count (%i) reached", parms.maxCount );
 			return;
 		}
 
@@ -845,7 +837,7 @@ int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idE
 		}
 		if ( j >= entCount ) {
 			if ( entCount >= maxCount ) {
-				gameLocal.Warning( "idClip::EntitiesTouchingBounds: max count" );
+				gameLocal.Warning( "idClip::EntitiesTouchingBounds: max count (%i) reached.", maxCount );
 				return entCount;
 			}
 			entityList[entCount] = clipModelList[i]->entity;
@@ -963,7 +955,7 @@ idClip::TestHugeTranslation
 */
 ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, const idVec3 &start, const idVec3 &end, const idMat3 &trmAxis ) {
 	if ( mdl != NULL && ( end - start ).LengthSqr() > Square( CM_MAX_TRACE_DIST ) ) {
-		assert( 0 );
+//		assert( 0 );
 
 		results.fraction = 0.0f;
 		results.endpos = start;
@@ -1579,6 +1571,7 @@ bool idClip::GetModelContactFeature( const contactInfo_t &contact, const idClipM
 				collisionModelManager->GetModelPolygon( handle, contact.modelFeature, winding );
 				break;
 			}
+			default: break;
 		}
 	}
 
@@ -1663,4 +1656,16 @@ bool idClip::DrawModelContactFeature( const contactInfo_t &contact, const idClip
 	gameRenderWorld->DrawText( contact.material->GetName(), winding.GetCenter() - 4.0f * axis[2], 0.1f, colorWhite, axis, 1, 5000 );
 
 	return true;
+}
+
+void idClipModel::TranslateOrigin( const idVec3 &translation )
+{
+	if( IsTraceModel() )
+	{
+		// Copy the tracemodel
+		idTraceModel trm = *(idClipModel::GetCachedTraceModel( traceModelIndex ));
+		trm.Translate( translation );
+		
+		LoadModel( trm );
+	}
 }

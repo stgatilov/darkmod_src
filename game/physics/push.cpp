@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 
 /*
@@ -309,7 +295,9 @@ idPush::ClipTranslationalPush
 ============
 */
 float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const int flags,
-										const idVec3 &newOrigin, const idVec3 &translation ) {
+										const idVec3 &newOrigin, const idVec3 &translation, 
+										float ImpulseMod ) 
+{
 	int i, j, numListedEntities;
 	idEntity *curPusher, *ent, *entityList[ MAX_GENTITIES ];
 	float fraction;
@@ -711,9 +699,8 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 	idVec3 rotationPoint;
 	idRotation newRotation;
 	float checkAngle;
-	idPhysics *physics;
 
-	physics = check->GetPhysics();
+	idPhysics* physics = check->GetPhysics();
 
 #ifdef ROTATIONAL_PUSH_DEBUG
 	bool startsolid = false;
@@ -777,6 +764,19 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 #endif
 			return PUSH_NO;
 		}
+
+		// greebo: At this point, the pushes knows that the check entity is in the way
+		// Normally, the pusher tries to rotate the entity to see if the entity itself 
+		// is colliding with anything else, but for players, we want to (optionally) skip that.
+		if ((flags & PUSHFL_NOPLAYER) && check->IsType(idPlayer::Type)) 
+		{
+			// We are colliding with a player and are not allowed to push it, return BLOCKED
+			results.c.normal = -results.c.normal;
+			results.c.dist = -results.c.dist;
+
+			return PUSH_BLOCKED;
+		}
+
 		// get point to rotate bbox around back to axial
 		rotationPoint = results.c.point;
 		// angle along which the entity will be pushed
@@ -800,9 +800,11 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 	SaveEntityPosition( check );
 
 	newRotation.Set( rotation.GetOrigin(), rotation.GetVec(), checkAngle );
+#ifndef __linux__
 	// NOTE:	this code prevents msvc 6.0 & 7.0 from screwing up the above code in
 	//			release builds moving less floats than it should
 	static float shit = checkAngle;
+#endif
 
 	newRotation.RotatePoint( rotationPoint );
 
@@ -868,9 +870,8 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 	trace_t		trace;
 	idVec3		checkMove;
 	idVec3		oldOrigin;
-	idPhysics	*physics;
 
-	physics = check->GetPhysics();
+	idPhysics* physics = check->GetPhysics();
 
 #ifdef TRANSLATIONAL_PUSH_DEBUG
 	bool startsolid = false;
@@ -918,6 +919,20 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 		if ( results.fraction >= 1.0f ) {
 			return PUSH_NO;
 		}
+
+		
+		// greebo: At this point, the pushes knows that the check entity is in the way
+		// Normally, the pusher tries to rotate the entity to see if the entity itself 
+		// is colliding with anything else, but for players, we want to (optionally) skip that.
+		if ((flags & PUSHFL_NOPLAYER) && check->IsType(idPlayer::Type)) 
+		{
+			// We are colliding with a player and are not allowed to push it, return BLOCKED
+			results.c.normal = -results.c.normal;
+			results.c.dist = -results.c.dist;
+
+			return PUSH_BLOCKED;
+		}
+
 		// vector along which the entity is pushed
 		checkMove = move * (1.0f - results.fraction);
 		// move the entity colliding with all other entities except the pusher itself
@@ -1040,7 +1055,9 @@ idPush::ClipTranslationalPush
 ============
 */
 float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const int flags,
-										const idVec3 &newOrigin, const idVec3 &translation ) {
+										const idVec3 &newOrigin, const idVec3 &translation, 
+										float ImpulseMod ) 
+{
 	int			i, listedEntities, res;
 	idEntity	*check, *entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
@@ -1059,7 +1076,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	results.endAxis = clipModel->GetAxis();
 	memset( &results.c, 0, sizeof( results.c ) );
 
-	if ( translation == vec3_origin ) {
+	if ( translation == vec3_origin ) 
+	{
 		return totalMass;
 	}
 
@@ -1070,7 +1088,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 
 	// get bounds for the whole movement
 	bounds = clipModel->GetBounds();
-	if ( bounds[0].x >= bounds[1].x ) {
+	if ( bounds[0].x >= bounds[1].x ) 
+	{
 		return totalMass;
 	}
 	pushBounds.FromBoundsTranslation( bounds, clipModel->GetOrigin(), clipModel->GetAxis(), translation );
@@ -1085,25 +1104,30 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	// discard entities we cannot or should not push
 	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
 
-	if ( flags & PUSHFL_CLIP ) {
+	if ( flags & PUSHFL_CLIP ) 
+	{
 
 		// can only clip movement of a trace model
 		assert( clipModel->IsTraceModel() );
 
 		// disable to be pushed entities for collision detection
-		for ( i = 0; i < listedEntities; i++ ) {
+		for ( i = 0; i < listedEntities; i++ ) 
+		{
 			entityList[i]->GetPhysics()->DisableClip();
 		}
 
 		gameLocal.clip.Translation( results, clipModel->GetOrigin(), clipModel->GetOrigin() + translation, clipModel, clipModel->GetAxis(), pusher->GetPhysics()->GetClipMask(), NULL );
 
 		// enable to be pushed entities for collision detection
-		for ( i = 0; i < listedEntities; i++ ) {
+		for ( i = 0; i < listedEntities; i++ ) 
+		{
 			entityList[i]->GetPhysics()->EnableClip();
 		}
 
-		if ( results.fraction == 0.0f ) {
-			if ( wasEnabled ) {
+		if ( results.fraction == 0.0f ) 
+		{
+			if ( wasEnabled ) 
+			{
 				clipModel->Enable();
 			}
 			return totalMass;
@@ -1113,7 +1137,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		clipOrigin = results.endpos;
 
 	}
-	else {
+	else 
+	{
 
 		clipMove = translation;
 		clipOrigin = newOrigin;
@@ -1126,7 +1151,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	oldOrigin = clipModel->GetOrigin();
 
 	// try to push the entities
-	for ( i = 0; i < listedEntities; i++ ) {
+	for ( i = 0; i < listedEntities; i++ ) 
+	{
 
 		check = entityList[ i ];
 
@@ -1141,7 +1167,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		physics->EnableClip();
 
 		// if the entity is pushed
-		if ( res == PUSH_OK ) {
+		if ( res == PUSH_OK ) 
+		{
 			// set the pusher in the translated position
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), newOrigin, clipModel->GetAxis() );
 			// the entity might be pushed off the ground
@@ -1150,9 +1177,11 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), oldOrigin, clipModel->GetAxis() );
 
 			// wake up this object
-			if ( flags & PUSHFL_APPLYIMPULSE ) {
-				impulse = physics->GetMass() * dir;
-			} else {
+			if ( flags & PUSHFL_APPLYIMPULSE ) 
+			{
+				impulse = ImpulseMod * physics->GetMass() * dir;
+			} else 
+			{
 				impulse.Zero();
 			}
 			check->ApplyImpulse( clipModel->GetEntity(), clipModel->GetId(), clipModel->GetOrigin(), impulse );
@@ -1162,31 +1191,37 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		}
 
 		// if the entity is not blocking
-		if ( res != PUSH_BLOCKED ) {
+		if ( res != PUSH_BLOCKED ) 
+		{
 			continue;
 		}
 
 		// if the blocking entity is a projectile
-		if ( check->IsType( idProjectile::Type ) ) {
+		if ( check->IsType( idProjectile::Type ) ) 
+		{
 			check->ProcessEvent( &EV_Explode );
 			continue;
 		}
 
 		// if blocking entities should be crushed
-		if ( flags & PUSHFL_CRUSH ) {
+		if ( flags & PUSHFL_CRUSH ) 
+		{
 			check->Damage( clipModel->GetEntity(), clipModel->GetEntity(), vec3_origin, "damage_crush", 1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE( pushResults.c.id ) );
 			continue;
 		}
 
 		// if the entity is an active articulated figure and gibs
-		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
-			if ( static_cast<idAFEntity_Base *>(check)->IsActiveAF() ) {
+		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) 
+		{
+			if ( static_cast<idAFEntity_Base *>(check)->IsActiveAF() ) 
+			{
 				check->ProcessEvent( &EV_Gib, "damage_Gib" );
 			}
 		}
 
 		// if the entity is a moveable item and gibs
-		if ( check->IsType( idMoveableItem::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
+		if ( check->IsType( idMoveableItem::Type ) && check->spawnArgs.GetBool( "gib" ) ) 
+		{
 			check->ProcessEvent( &EV_Gib, "damage_Gib" );
 		}
 
@@ -1198,14 +1233,16 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		results.c.entityNum = check->entityNumber;
 		results.c.id = 0;
 
-		if ( !wasEnabled ) {
+		if ( !wasEnabled ) 
+		{
 			clipModel->Disable();
 		}
 
 		return totalMass;
 	}
 
-	if ( !wasEnabled ) {
+	if ( !wasEnabled ) 
+	{
 		clipModel->Disable();
 	}
 
@@ -1222,7 +1259,8 @@ idPush::ClipRotationalPush
 float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int flags,
 									const idMat3 &newAxis, const idRotation &rotation ) {
 	int			i, listedEntities, res;
-	idEntity	*check, *entityList[ MAX_GENTITIES ];
+	idEntity	*check;
+	static idEntity* entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
 	idRotation	clipRotation;
 	idMat3		clipAxis, oldAxis;

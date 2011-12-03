@@ -1,35 +1,23 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "game_local.h"
+#include "../DarkMod/Objectives/MissionData.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -55,6 +43,7 @@ END_CLASS
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
+static const float SLIDING_VELOCITY_THRESHOLD	= 5.0f;
 
 /*
 ================
@@ -62,17 +51,34 @@ idMoveable::idMoveable
 ================
 */
 idMoveable::idMoveable( void ) {
-	minDamageVelocity	= 100.0f;
-	maxDamageVelocity	= 200.0f;
-	nextCollideFxTime	= 0;
-	nextDamageTime		= 0;
-	nextSoundTime		= 0;
-	initialSpline		= NULL;
-	initialSplineDir	= vec3_zero;
-	explode				= false;
-	unbindOnDeath		= false;
-	allowStep			= false;
-	canDamage			= false;
+	minDamageVelocity		= 100.0f;
+	maxDamageVelocity		= 200.0f;
+	nextCollideFxTime		= 0;
+	nextDamageTime			= 0;
+	nextSoundTime			= 0;
+	m_nextCollideScriptTime	= 0;
+	// 0 => never, -1 => always, positive number X => X times
+	m_collideScriptCounter	= 0;
+	m_minScriptVelocity		= 0.0f;
+	initialSpline			= NULL;
+	initialSplineDir		= vec3_zero;
+	explode					= false;
+	unbindOnDeath			= false;
+	allowStep				= false;
+	canDamage				= false;
+
+	// greebo: A fraction of -1 is considered to be an invalid trace here
+	memset(&lastCollision, 0, sizeof(lastCollision));
+	lastCollision.fraction = -1;
+
+	isPushed = false;
+	wasPushedLastFrame = false;
+	pushDirection = vec3_zero;
+	lastPushOrigin = vec3_zero;
+
+	// by default no LOD
+	m_LODHandle = 0;
+	m_DistCheckTimeStamp = 0;
 }
 
 /*
@@ -92,9 +98,10 @@ idMoveable::Spawn
 */
 void idMoveable::Spawn( void ) {
 	idTraceModel trm;
-	float density, friction, bouncyness, mass;
+	float density, friction, bouncyness, mass, air_friction_linear, air_friction_angular;
 	int clipShrink;
 	idStr clipModelName;
+	idVec3 maxForce, maxTorque;
 
 	// check if a clip model is set
 	spawnArgs.GetString( "clipmodel", "", clipModelName );
@@ -102,31 +109,58 @@ void idMoveable::Spawn( void ) {
 		clipModelName = spawnArgs.GetString( "model" );		// use the visual model
 	}
 
-	if ( !collisionModelManager->TrmFromModel( clipModelName, trm ) ) {
-		gameLocal.Error( "idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str() );
-		return;
-	}
+	// tels: support "model" "" with "noclipmodel" "0" - do not attempt to load
+	// the clipmodel from the non-existing model name in this case:
+	if (clipModelName.Length()) {
+		if ( !collisionModelManager->TrmFromModel( clipModelName, trm ) ) {
+			gameLocal.Error( "idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str() );
+			return;
+		}
 
-	// if the model should be shrinked
-	clipShrink = spawnArgs.GetInt( "clipshrink" );
-	if ( clipShrink != 0 ) {
-		trm.Shrink( clipShrink * CM_CLIP_EPSILON );
+		// angua: check if the cm is valid
+		if (idMath::Fabs(trm.bounds[0].x) == idMath::INFINITY)
+		{
+			gameLocal.Error( "idMoveable '%s': invalid collision model %s", name.c_str(), clipModelName.c_str() );
+		}
+
+		// if the model should be shrunk
+		clipShrink = spawnArgs.GetInt( "clipshrink" );
+		if ( clipShrink != 0 ) {
+			trm.Shrink( clipShrink * CM_CLIP_EPSILON );
+		}
 	}
 
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
 	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
-	spawnArgs.GetFloat( "friction", "0.05", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
 	spawnArgs.GetFloat( "bouncyness", "0.6", bouncyness );
 	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
 	explode = spawnArgs.GetBool( "explode" );
 	unbindOnDeath = spawnArgs.GetBool( "unbindondeath" );
 
+	spawnArgs.GetFloat( "friction", "0.05", friction );
+	// reverse compatibility, new contact_friction key replaces friction only if present
+	if( spawnArgs.FindKey("contact_friction") )
+	{
+		spawnArgs.GetFloat( "contact_friction", "0.05", friction );
+	}
+	spawnArgs.GetFloat( "linear_friction", "0.6", air_friction_linear );
+	spawnArgs.GetFloat( "angular_friction", "0.6", air_friction_angular );
+
 	fxCollide = spawnArgs.GetString( "fx_collide" );
 	nextCollideFxTime = 0;
 
-	fl.takedamage = true;
+	// tels:
+	m_scriptCollide = spawnArgs.GetString( "script_collide" );
+	m_nextCollideScriptTime = 0;
+	m_collideScriptCounter = spawnArgs.GetInt( "collide_script_counter", "1" );
+	// override the default of 1 with 0 if no script is defined
+	if (m_scriptCollide == "")
+	{
+		m_collideScriptCounter = 0;
+	}
+	m_minScriptVelocity = spawnArgs.GetFloat( "min_script_velocity", "5.0" ); 
+
 	damage = spawnArgs.GetString( "def_damage", "" );
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
 	minDamageVelocity = spawnArgs.GetFloat( "minDamageVelocity", "100" );
@@ -135,13 +169,9 @@ void idMoveable::Spawn( void ) {
 	nextSoundTime = 0;
 
 	health = spawnArgs.GetInt( "health", "0" );
-	spawnArgs.GetString( "broken", "", brokenModel );
 
-	if ( health ) {
-		if ( brokenModel != "" && !renderModelManager->CheckModel( brokenModel ) ) {
-			gameLocal.Error( "idMoveable '%s' at (%s): cannot load broken model '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), brokenModel.c_str() );
-		}
-	}
+	// tels: load a visual model, as well as an optional brokenModel
+	LoadModels();
 
 	// setup the physics
 	physicsObj.SetSelf( this );
@@ -150,9 +180,22 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
 	physicsObj.SetBouncyness( bouncyness );
-	physicsObj.SetFriction( 0.6f, 0.6f, friction );
+	physicsObj.SetFriction( air_friction_linear, air_friction_angular, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
-	physicsObj.SetContents( CONTENTS_SOLID );
+
+	int contents = CONTENTS_SOLID | CONTENTS_OPAQUE;
+	// ishtvan: overwrite with custom contents, if present
+	if( m_CustomContents != -1 )
+		contents = m_CustomContents;
+
+	// greebo: Set the frobable contents flag if the spawnarg says so
+	if (spawnArgs.GetBool("frobable", "0"))
+	{
+		contents |= CONTENTS_FROBABLE;
+	}
+	
+	physicsObj.SetContents( contents );
+
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
 
@@ -160,23 +203,57 @@ void idMoveable::Spawn( void ) {
 		physicsObj.SetMass( mass );
 	}
 
+	// tels
+	if ( spawnArgs.GetVector( "max_force", "", maxForce ) ) {
+		physicsObj.SetMaxForce( maxForce );
+	}
+	if ( spawnArgs.GetVector( "max_torque", "", maxTorque ) ) {
+		physicsObj.SetMaxTorque( maxTorque );
+	}
+	
 	if ( spawnArgs.GetBool( "nodrop" ) ) {
 		physicsObj.PutToRest();
 	} else {
 		physicsObj.DropToFloor();
 	}
 
-	if ( spawnArgs.GetBool( "noimpact" ) || spawnArgs.GetBool( "notPushable" ) ) {
+	if ( spawnArgs.GetBool( "noimpact" ) || spawnArgs.GetBool( "notpushable" ) ) {
 		physicsObj.DisableImpact();
 	}
 
-	if ( spawnArgs.GetBool( "nonsolid" ) ) {
+	if (!spawnArgs.GetBool( "solid" ) ) {
 		BecomeNonSolid();
 	}
 
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+	{
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+	}
+
+	m_preHideContents = physicsObj.GetContents();
+	m_preHideClipMask = physicsObj.GetClipMask();
+
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
-	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
+	// parse LOD spawnargs
+	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
+		{
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+		}
+
+	// grayman #2820 - don't queue EV_SetOwnerFromSpawnArgs if it's going to
+	// end up doing nothing. Queuing this for every moveable causes a lot
+	// of event posting during frame 0. If extra work is added to
+	// EV_SetOwnerFromSpawnArgs, then that must be accounted for here, to
+	// make sure it has a chance of getting done.
+
+	idStr owner;
+	if ( spawnArgs.GetString( "owner", "", owner ) )
+	{
+		PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
+	}
 }
 
 /*
@@ -188,6 +265,10 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( brokenModel );
 	savefile->WriteString( damage );
+	savefile->WriteString( m_scriptCollide );
+	savefile->WriteInt( m_collideScriptCounter );
+	savefile->WriteInt( m_nextCollideScriptTime );
+	savefile->WriteFloat( m_minScriptVelocity );
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
 	savefile->WriteFloat( minDamageVelocity );
@@ -198,10 +279,16 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( canDamage );
 	savefile->WriteInt( nextDamageTime );
 	savefile->WriteInt( nextSoundTime );
-	savefile->WriteInt( initialSpline != NULL ? initialSpline->GetTime( 0 ) : -1 );
+	savefile->WriteInt( initialSpline != NULL ? (int)initialSpline->GetTime( 0 ) : -1 );
 	savefile->WriteVec3( initialSplineDir );
 
 	savefile->WriteStaticObject( physicsObj );
+
+	savefile->WriteTrace(lastCollision);
+	savefile->WriteBool(isPushed);
+	savefile->WriteBool(wasPushedLastFrame);
+	savefile->WriteVec3(pushDirection);
+	savefile->WriteVec3(lastPushOrigin);
 }
 
 /*
@@ -214,6 +301,10 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadString( brokenModel );
 	savefile->ReadString( damage );
+	savefile->ReadString( m_scriptCollide );
+	savefile->ReadInt( m_collideScriptCounter );
+	savefile->ReadInt( m_nextCollideScriptTime );
+	savefile->ReadFloat( m_minScriptVelocity );
 	savefile->ReadString( fxCollide );
 	savefile->ReadInt( nextCollideFxTime );
 	savefile->ReadFloat( minDamageVelocity );
@@ -235,6 +326,12 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
+
+	savefile->ReadTrace(lastCollision);
+	savefile->ReadBool(isPushed);
+	savefile->ReadBool(wasPushedLastFrame);
+	savefile->ReadVec3(pushDirection);
+	savefile->ReadVec3(lastPushOrigin);
 }
 
 /*
@@ -252,11 +349,10 @@ void idMoveable::Hide( void ) {
 idMoveable::Show
 ================
 */
-void idMoveable::Show( void ) {
+void idMoveable::Show( void ) 
+{
 	idEntity::Show();
-	if ( !spawnArgs.GetBool( "nonsolid" ) ) {
-		physicsObj.SetContents( CONTENTS_SOLID );
-	}
+	physicsObj.SetContents( m_preHideContents );
 }
 
 /*
@@ -264,30 +360,146 @@ void idMoveable::Show( void ) {
 idMoveable::Collide
 =================
 */
-bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	float v, f;
-	idVec3 dir;
-	idEntity *ent;
 
-	v = -( velocity * collision.c.normal );
-	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
-		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-		if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
-			// don't set the volume unless there is a bounce sound as it overrides the entire channel
-			// which causes footsteps on ai's to not honor their shader parms
-			SetSoundVolume( f );
+bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) 
+{
+	// greebo: Check whether we are colliding with the nearly exact same point again
+	bool sameCollisionAgain = (lastCollision.fraction != -1 && lastCollision.c.point.Compare(collision.c.point, 0.05f));
+
+	// greebo: Save the collision info for the next call
+	lastCollision = collision;
+
+	float v = -( velocity * collision.c.normal );
+
+	if ( !sameCollisionAgain )
+	{
+		float bounceSoundMinVelocity = cv_bounce_sound_min_vel.GetFloat();
+		float bounceSoundMaxVelocity = cv_bounce_sound_max_vel.GetFloat();
+
+ 		if ( v > bounceSoundMinVelocity && gameLocal.time > nextSoundTime )
+		{ 
+			const idMaterial *material = collision.c.material;
+
+			idStr sndNameLocal;
+			idStr surfaceName; // "tile", "glass", etc.
+
+			if (material != NULL)
+			{
+				surfaceName = g_Global.GetSurfName(material);
+
+				// Prepend the snd_bounce_ prefix to check for a surface-specific sound
+				idStr sndNameWithSurface = "snd_bounce_" + surfaceName;
+
+				if (spawnArgs.FindKey(sndNameWithSurface) != NULL)
+				{
+					sndNameLocal = sndNameWithSurface;
+				}
+				else
+				{
+					sndNameLocal = "snd_bounce";
+				}
+			}
+
+			const char* sound = spawnArgs.GetString(sndNameLocal);
+			const idSoundShader* sndShader = declManager->FindSound(sound);
+
+			//f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+
+			// angua: modify the volume set in the def instead of setting a fixed value. 
+			// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
+			float f = v > bounceSoundMaxVelocity ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
+
+			float volume = sndShader->GetParms()->volume + f;
+
+			if (cv_moveable_collision.GetBool())
+			{
+				gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+				gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+				gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
+			}
+
+			SetSoundVolume(volume);
+
+			// greebo: We don't use StartSound() here, we want to do the sound propagation call manually
+			StartSoundShader(sndShader, SND_CHANNEL_ANY, 0, false, NULL);
+
+			// grayman #2603 - don't propagate a sound if this is a doused torch dropped by an AI
+
+			if (!spawnArgs.GetBool("is_torch","0"))
+			{
+				idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
+
+				// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
+				PropSoundS( NULL, sndPropName, f );
+			}
+			
+			SetSoundVolume(0.0f);
+
+			nextSoundTime = gameLocal.time + 500;
 		}
-		nextSoundTime = gameLocal.time + 500;
+
+		// tels:
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter=%i and v=%f and time=%f > m_nextCollideScriptTime=%f.\r",
+				name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
+ 		if ( m_collideScriptCounter != 0 && v > m_minScriptVelocity && gameLocal.time > m_nextCollideScriptTime ) 
+		{ 
+	 		if ( m_collideScriptCounter > 0)
+			{
+			// if positive, decrement it, so -1 stays as it is (for 0, we never come here)
+	 		m_collideScriptCounter --;
+			}
+
+			// call the script
+			const function_t* pScriptFun = scriptObject.GetFunction( m_scriptCollide.c_str() );
+			if (pScriptFun == NULL)
+    		{
+				// Local function not found, check in global namespace
+				pScriptFun = gameLocal.program.FindFunction( m_scriptCollide.c_str() );
+		    }
+			if (pScriptFun != NULL)
+			{
+				DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s calling script_collide %s.\r",
+					name.c_str(), m_scriptCollide.c_str());
+				idThread *pThread = new idThread( pScriptFun );
+				pThread->CallFunctionArgs( pScriptFun, true, "e", this );
+				pThread->DelayedStart( 0 );
+			}
+			else
+			{
+				// script function not found!
+				DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("Moveable %s could not find script_collide %s.\r",
+					name.c_str(), m_scriptCollide.c_str());
+	 			m_collideScriptCounter = 0;
+			}
+
+			m_nextCollideScriptTime = gameLocal.time + 300;
+		}
+
 	}
 
-	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
-		ent = gameLocal.entities[ collision.c.entityNum ];
-		if ( ent && v > minDamageVelocity ) {
-			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
-			dir = velocity;
+	idEntity* ent = gameLocal.entities[ collision.c.entityNum ];
+
+	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) 
+	{
+		if ( ent && v > minDamageVelocity ) 
+		{
+			float f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			idVec3 dir = velocity;
 			dir.NormalizeFast();
-			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
+			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
 			nextDamageTime = gameLocal.time + 1000;
+		}
+	}
+
+	// Darkmod: Collision stims and a tactile alert if it collides with an AI
+	if ( ent )
+	{
+		ProcCollisionStims( ent, collision.c.id );
+
+		if( ent->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(ent);
+			alertee->TactileAlert( this );
 		}
 	}
 
@@ -299,19 +511,29 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	return false;
 }
 
+idStr idMoveable::GetSoundPropNameForMaterial(const idStr& materialName)
+{
+	// Object type defaults to "medium" and "hard"
+	return idStr("bounce_") + spawnArgs.GetString("spr_object_size", "medium") + 
+		"_" + spawnArgs.GetString("spr_object_hardness", "hard") + 
+		"_on_" + g_Global.GetSurfaceHardness(materialName);
+}
+
 /*
 ============
 idMoveable::Killed
 ============
 */
-void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
 	if ( unbindOnDeath ) {
 		Unbind();
 	}
 
-	if ( brokenModel != "" ) {
-		SetModel( brokenModel );
-	}
+	// tels: call base class method to switch to broken model
+	idEntity::BecomeBroken( inflictor );
 
 	if ( explode ) {
 		if ( brokenModel == "" ) {
@@ -326,6 +548,13 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 	ActivateTargets( this );
 
 	fl.takedamage = false;
+
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );
 }
 
 /*
@@ -346,6 +575,10 @@ void idMoveable::BecomeNonSolid( void ) {
 	// set CONTENTS_RENDERMODEL so bullets still collide with the moveable
 	physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
+	
+	// SR CONTENTS_RESPONSE FIX:
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 }
 
 /*
@@ -415,11 +648,15 @@ idMoveable::Think
 */
 void idMoveable::Think( void ) {
 	if ( thinkFlags & TH_THINK ) {
-		if ( !FollowInitialSplinePath() ) {
+		if ( !FollowInitialSplinePath() && !isPushed && !m_LODHandle) {
 			BecomeInactive( TH_THINK );
 		}
 	}
+
+	// will also handle LOD thinking
 	idEntity::Think();
+
+	UpdateSlidingSounds();
 }
 
 /*
@@ -458,6 +695,80 @@ void idMoveable::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 }
 
+void idMoveable::SetIsPushed(bool isNowPushed, const idVec3& pushDirection)
+{
+	isPushed = isNowPushed;
+	this->pushDirection = pushDirection;
+	lastPushOrigin = GetPhysics()->GetOrigin();
+
+	// Update our think flags to allow UpdateMoveables to be called. 
+	if (isPushed)
+	{
+		BecomeActive(TH_THINK);
+	}
+}
+
+bool idMoveable::IsPushed()
+{
+	return isPushed;
+}
+
+void idMoveable::UpdateSlidingSounds()
+{
+	if (isPushed)
+	{
+		const idVec3& curVelocity = GetPhysics()->GetLinearVelocity();
+		const idVec3& gravityNorm = GetPhysics()->GetGravityNormal();
+
+		idVec3 xyVelocity = curVelocity - (curVelocity * gravityNorm) * gravityNorm;
+
+		// Only consider the xyspeed if the velocity is in pointing in the same direction as we're being pushed
+		float xySpeed = (idMath::Fabs(xyVelocity * pushDirection) > 0.2f) ? xyVelocity.NormalizeFast() : 0;
+
+		//gameRenderWorld->DrawText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetAbsBounds().GetCenter(), GetPhysics()->GetAbsBounds().GetCenter() + xyVelocity, 1, gameLocal.msec );
+
+		if (wasPushedLastFrame && xySpeed <= SLIDING_VELOCITY_THRESHOLD)
+		{
+			// We are still being pushed, but we are not fast enough
+			StopSound(SND_CHANNEL_BODY3, false);
+			BecomeInactive(TH_THINK);
+
+			isPushed = false;
+			wasPushedLastFrame = false;
+		}
+		else if (!wasPushedLastFrame && xySpeed > SLIDING_VELOCITY_THRESHOLD)
+		{
+			if (lastPushOrigin.Compare(GetPhysics()->GetOrigin(), 0.05f))
+			{
+				// We did not really move, despite what the velocity says
+				StopSound(SND_CHANNEL_BODY3, false);
+				BecomeInactive(TH_THINK);
+				isPushed = false;
+			}
+			else
+			{
+				// We just got into pushed state and are fast enough
+				StartSound("snd_sliding", SND_CHANNEL_BODY3, 0, false, NULL);
+
+				// Update the state flag for the next round
+				wasPushedLastFrame = true;
+			}
+		}
+
+		lastPushOrigin = GetPhysics()->GetOrigin();
+	}
+	else if (wasPushedLastFrame)
+	{
+		// We are not pushed anymore
+		StopSound(SND_CHANNEL_BODY3, false);
+		BecomeInactive(TH_THINK);
+
+		// Update the state flag for the next round
+		wasPushedLastFrame = false;
+	}
+}
+
 /*
 ================
 idMoveable::Event_BecomeNonSolid
@@ -478,7 +789,7 @@ void idMoveable::Event_Activate( idEntity *activator ) {
 
 	Show();
 
-	if ( !spawnArgs.GetInt( "notPushable" ) ) {
+	if ( !spawnArgs.GetInt( "notpushable" ) ) {
         physicsObj.EnableImpact();
 	}
 
@@ -509,10 +820,17 @@ void idMoveable::Event_Activate( idEntity *activator ) {
 idMoveable::Event_SetOwnerFromSpawnArgs
 ================
 */
-void idMoveable::Event_SetOwnerFromSpawnArgs( void ) {
-	idStr owner;
+void idMoveable::Event_SetOwnerFromSpawnArgs( void )
+{
+	// grayman #2820 - At the time of this writing, this routine ONLY checks
+	// whether this moveable has its 'owner' spawnarg set. If anything else is
+	// added here, the pre-check in moveable.cpp that wraps around "PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 )"
+	// must account for that. That pre-check is needed to prevent unnecessary
+	// event posting that leads to doing nothing here. (I.e. the moveable has no owner.)
 
-	if ( spawnArgs.GetString( "owner", "", owner ) ) {
+	idStr owner;
+	if ( spawnArgs.GetString( "owner", "", owner ) )
+	{
 		ProcessEvent( &EV_SetOwner, gameLocal.FindEntity( owner ) );
 	}
 }
@@ -1063,7 +1381,8 @@ idExplodingBarrel::Damage
 ================
 */
 void idExplodingBarrel::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
+					  const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
+{
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
@@ -1072,7 +1391,7 @@ void idExplodingBarrel::Damage( idEntity *inflictor, idEntity *attacker, const i
 	if ( damageDef->FindKey( "radius" ) && GetPhysics()->GetContents() != 0 && GetBindMaster() == NULL ) {
 		PostEventMS( &EV_Explode, 400 );
 	} else {
-		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location );
+		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
 	}
 }
 
@@ -1131,6 +1450,12 @@ void idExplodingBarrel::Event_Respawn() {
 	physicsObj.SetOrigin( spawnOrigin );
 	physicsObj.SetAxis( spawnAxis );
 	physicsObj.SetContents( CONTENTS_SOLID );
+	// override with custom contents if present
+	if( m_CustomContents != -1 )
+		physicsObj.SetContents( m_CustomContents );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	physicsObj.DropToFloor();
 	state = NORMAL;
 	Show();
@@ -1189,5 +1514,5 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg 
 			return idBarrel::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }

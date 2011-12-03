@@ -1,35 +1,23 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "AAS_local.h"
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
+#include "aas_local.h"
+#include "../../DarkMod/TimerManager.h"
+
 
 #define SUBSAMPLE_WALK_PATH		1
 #define SUBSAMPLE_FLY_PATH		0
@@ -136,7 +124,10 @@ idAASLocal::WalkPathValid
   returns true if one can walk in a straight line between origin and goalOrigin
 ============
 */
-bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const {
+bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor ) const {
+	
+	START_SCOPED_TIMING(actor->actorWalkPathValidTimer, scopedWalkPathValidTimer);
+
 	int curAreaNum, lastAreaNum, lastAreas[4], lastAreaIndex;
 	idPlane pathPlane, frontPlane, farPlane;
 	idReachability *reach;
@@ -225,7 +216,13 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 			if ( dir.LengthSqr() > Square( 0.2f ) ) {
 				continue;
 			}
-
+/*
+			// angua: area is forbidden (e.g. locked door)
+			if (actor != NULL && gameLocal.m_AreaManager.AreaIsForbidden(reach->toAreaNum, actor))
+			{
+				continue;
+			}
+*/
 			break;
 		}
 
@@ -249,7 +246,10 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 idAASLocal::SubSampleWalkPath
 ============
 */
-idVec3 idAASLocal::SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum ) const {
+idVec3 idAASLocal::SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum, idActor* actor ) {
+	
+	START_SCOPED_TIMING(actor->actorSubSampleWalkPathTimer, scopedSubSampleWalkPathTimer);
+
 	int i, numSamples, curAreaNum;
 	idVec3 dir, point, nextPoint, endPos;
 
@@ -262,7 +262,7 @@ idVec3 idAASLocal::SubSampleWalkPath( int areaNum, const idVec3 &origin, const i
 		if ( (point - nextPoint).LengthSqr() > Square( maxWalkPathDistance ) ) {
 			return point;
 		}
-		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, nextPoint, travelFlags, endPos, curAreaNum ) ) {
+		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, nextPoint, travelFlags, endPos, curAreaNum, actor ) ) {
 			return point;
 		}
 		point = nextPoint;
@@ -278,30 +278,35 @@ idAASLocal::WalkPathToGoal
   FIXME: don't stop optimizing on first failure ?
 ============
 */
-bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const {
-	int i, travelTime, curAreaNum, lastAreas[4], lastAreaIndex, endAreaNum;
-	idReachability *reach;
-	idVec3 endPos;
-
+bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) {
+	// Set the default values
 	path.type = PATHTYPE_WALK;
 	path.moveGoal = origin;
 	path.moveAreaNum = areaNum;
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
+	path.elevatorRoute = eas::RouteInfoPtr();
+	path.firstDoor = NULL;
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;
 		return true;
 	}
 
-	lastAreas[0] = lastAreas[1] = lastAreas[2] = lastAreas[3] = areaNum;
-	lastAreaIndex = 0;
+	CFrobDoor* door = NULL;
 
-	curAreaNum = areaNum;
+	int lastAreas[4] = { areaNum, areaNum, areaNum, areaNum };
+	int lastAreaIndex = 0;
 
-	for ( i = 0; i < maxWalkPathIterations; i++ ) {
+	int curAreaNum = areaNum;
+	idReachability* reach(NULL);
+	idVec3 endPos;
+	int travelTime, endAreaNum;
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach ) ) {
+	for ( int i = 0; i < maxWalkPathIterations; i++ )
+	{
+
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &door, actor ) ) {
 			break;
 		}
 
@@ -309,19 +314,24 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 			return false;
 		}
 
+		if (door != NULL && path.firstDoor == NULL)
+		{
+			path.firstDoor = door;
+		}
+
 		// no need to check through the first area
 		if ( areaNum != curAreaNum ) {
 			// only optimize a limited distance ahead
 			if ( (reach->start - origin).LengthSqr() > Square( maxWalkPathDistance ) ) {
 #if SUBSAMPLE_WALK_PATH
-				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum );
+				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum, actor );
 #endif
 				return true;
 			}
 
-			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->start, travelFlags, endPos, endAreaNum ) ) {
+			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->start, travelFlags, endPos, endAreaNum, actor ) ) {
 #if SUBSAMPLE_WALK_PATH
-				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum );
+				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum, actor );
 #endif
 				return true;
 			}
@@ -334,7 +344,7 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 			break;
 		}
 
-		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->end, travelFlags, endPos, endAreaNum ) ) {
+		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->end, travelFlags, endPos, endAreaNum, actor ) ) {
 			return true;
 		}
 
@@ -342,9 +352,9 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 		path.moveAreaNum = reach->toAreaNum;
 
 		if ( reach->toAreaNum == goalAreaNum ) {
-			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, goalOrigin, travelFlags, endPos, endAreaNum ) ) {
+			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, goalOrigin, travelFlags, endPos, endAreaNum, actor ) ) {
 #if SUBSAMPLE_WALK_PATH
-				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, goalOrigin, travelFlags, path.moveAreaNum );
+				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, goalOrigin, travelFlags, path.moveAreaNum, actor );
 #endif
 				return true;
 			}
@@ -366,6 +376,12 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	}
 
 	if ( !reach ) {
+		// No standard reachability, check if the actor can use elevators
+		if (actor != NULL && actor->CanUseElevators())
+		{
+			return elevatorSystem->FindRouteToGoal(path, areaNum, origin, goalAreaNum, goalOrigin, travelFlags, actor);
+		}
+
 		return false;
 	}
 
@@ -456,7 +472,7 @@ idAASLocal::FlyPathToGoal
 */
 bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const {
 	int i, travelTime, curAreaNum, lastAreas[4], lastAreaIndex, endAreaNum;
-	idReachability *reach;
+	idReachability *reach(NULL);
 	idVec3 endPos;
 
 	path.type = PATHTYPE_WALK;
@@ -464,6 +480,8 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 	path.moveAreaNum = areaNum;
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
+	path.elevatorRoute = eas::RouteInfoPtr();
+	path.firstDoor = NULL;
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;
@@ -477,7 +495,7 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 
 	for ( i = 0; i < maxFlyPathIterations; i++ ) {
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach ) ) {
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &path.firstDoor, NULL ) ) {
 			break;
 		}
 
@@ -554,7 +572,8 @@ typedef struct wallEdge_s {
 idAASLocal::SortWallEdges
 ============
 */
-void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
+void idAASLocal::SortWallEdges( int *edges, int numEdges ) const 
+{
 	int i, j, k, numSequences;
 	wallEdge_t **sequenceFirst, **sequenceLast, *wallEdges, *wallEdge;
 
@@ -569,8 +588,8 @@ void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
 		sequenceFirst[i] = &wallEdges[i];
 		sequenceLast[i] = &wallEdges[i];
 	}
-	numSequences = numEdges;
 
+	numSequences = numEdges;
 	for ( i = 0; i < numSequences; i++ ) {
 		for ( j = i+1; j < numSequences; j++ ) {
 			if ( sequenceFirst[i]->verts[0] == sequenceLast[j]->verts[1] ) {
@@ -606,59 +625,58 @@ void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
 idAASLocal::GetWallEdges
 ============
 */
-int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const {
-	int i, j, k, l, face1Num, face2Num, edge1Num, edge2Num, numEdges, absEdge1Num;
-	int *areaQueue, curArea, queueStart, queueEnd;
-	byte *areasVisited;
-	const aasArea_t *area;
-	const aasFace_t *face1, *face2;
-	idReachability *reach;
-
-	if ( !file ) {
+int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const 
+{
+	if ( !file ) 
+	{
 		return 0;
 	}
 
-	numEdges = 0;
+	int numEdges = 0;
+	int numAreas = file->GetNumAreas();
 
-	areasVisited = (byte *) _alloca16( file->GetNumAreas() );
-	memset( areasVisited, 0, file->GetNumAreas() * sizeof( byte ) );
-	areaQueue = (int *) _alloca16( file->GetNumAreas() * sizeof( int ) );
+	byte *areasVisited = (byte *) _alloca16( numAreas);
+	memset( areasVisited, 0, numAreas * sizeof( byte ) );
+	int *areaQueue = (int *) _alloca16( numAreas * sizeof( int ) );
 
-	queueStart = -1;
-	queueEnd = 0;
+	int queueStart = -1;
+	int queueEnd = 0;
 	areaQueue[0] = areaNum;
 	areasVisited[areaNum] = true;
 
-	for ( curArea = areaNum; queueStart < queueEnd; curArea = areaQueue[++queueStart] ) {
+	idReachability *reach;
 
-		area = &file->GetArea( curArea );
+	for (int curArea = areaNum; queueStart < queueEnd; curArea = areaQueue[++queueStart] ) {
 
-		for ( i = 0; i < area->numFaces; i++ ) {
-			face1Num = file->GetFaceIndex( area->firstFace + i );
-			face1 = &file->GetFace( abs(face1Num) );
+		const aasArea_t *area = &file->GetArea( curArea );
+
+		for (int i = 0; i < area->numFaces; i++) {
+			int face1Num = file->GetFaceIndex(area->firstFace + i);
+			const aasFace_t *face1 = &file->GetFace( abs(face1Num) );
 
 			if ( !(face1->flags & FACE_FLOOR ) ) {
 				continue;
 			}
 
-			for ( j = 0; j < face1->numEdges; j++ ) {
-				edge1Num = file->GetEdgeIndex( face1->firstEdge + j );
-				absEdge1Num = abs( edge1Num );
+			for (int j = 0; j < face1->numEdges; j++ ) {
+				int edge1Num = file->GetEdgeIndex(face1->firstEdge + j);
+				int absEdge1Num = abs( edge1Num );
 
 				// test if the edge is shared by another floor face of this area
-				for ( k = 0; k < area->numFaces; k++ ) {
+				int k;
+				for (k = 0; k < area->numFaces; k++ ) {
 					if ( k == i ) {
 						continue;
 					}
-					face2Num = file->GetFaceIndex( area->firstFace + k );
-					face2 = &file->GetFace( abs(face2Num) );
+					int face2Num = file->GetFaceIndex( area->firstFace + k );
+					const aasFace_t  *face2 = &file->GetFace( abs(face2Num) );
 
 					if ( !(face2->flags & FACE_FLOOR ) ) {
 						continue;
 					}
-
-					for ( l = 0; l < face2->numEdges; l++ ) {
-						edge2Num = abs( file->GetEdgeIndex( face2->firstEdge + l ) );
+					int l;
+					for (l = 0; l < face2->numEdges; l++ ) {
+						int edge2Num = abs( file->GetEdgeIndex( face2->firstEdge + l ) );
 						if ( edge2Num == absEdge1Num ) {
 							break;
 						}
@@ -672,7 +690,7 @@ int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFla
 				}
 
 				// test if the edge is used by a reachability
-				for ( reach = area->reach; reach; reach = reach->next ) {
+				for (reach = area->reach; reach; reach = reach->next ) {
 					if ( reach->travelType & travelFlags ) {
 						if ( reach->edgeNum == absEdge1Num ) {
 							break;

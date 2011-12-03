@@ -1,40 +1,38 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
+#include "../DarkMod/Grabber.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS
 
+#ifdef MOD_WATERPHYSICS
+const int STOP_SPEED            = 10;
+// if linearVelocity < WATER_STOP_LINEAR && angularVelocity < WATER_STOP_ANGULAR then set the RB to rest
+// and we need  this->noMoveTime + NO_MOVE_TIME < gameLocal.getTime()
+const idVec3 WATER_STOP_LINEAR(10.0f,10.0f,10.0f);
+const idVec3 WATER_STOP_ANGULAR(500000.0f,500000.0f,500000.0f);
+const int NO_MOVE_TIME          = 200;
+static const float MAX_GRABBER_EXT_VELOCITY		= 120.0f;
+static const float MAX_GRABBER_EXT_ANGVEL		= 5.0f;
+#else
 const float STOP_SPEED		= 10.0f;
+#endif
 
 
 #undef RB_TIMINGS
@@ -69,9 +67,130 @@ void RigidBodyDerivatives( const float t, const void *clientData, const float *s
 	// derivatives
 	d->linearVelocity = p->inverseMass * s->linearMomentum;
 	d->angularMatrix = SkewSymmetric( angularVelocity ) * s->orientation;
+
+#ifdef MOD_WATERPHYSICS
+    // underwater we have a higher friction
+    if( p->GetWaterLevelf() == 0.0f  ) {
+        d->force = - p->linearFriction * s->linearMomentum + p->current.externalForce;
+        d->torque = - p->angularFriction * s->angularMomentum + p->current.externalTorque;
+    } else {
+        // don't let water friction go less than 25% of the water viscosity
+        float percent = Max(0.25f,p->GetSubmergedPercent(s->position,s->orientation.Transpose()));
+
+        d->force = (-p->linearFriction * p->water->GetViscosity() * percent) * s->linearMomentum + p->current.externalForce;
+        d->torque = (-p->angularFriction * p->water->GetViscosity()) * s->angularMomentum + p->current.externalTorque;
+    }
+#else
 	d->force = - p->linearFriction * s->linearMomentum + p->current.externalForce;
 	d->torque = - p->angularFriction * s->angularMomentum + p->current.externalTorque;
+#endif
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+================
+idPhysics_RigidBody::GetSubmergedPercent
+
+  Approximates the percentage of the body that is submerged
+================
+*/
+float idPhysics_RigidBody::GetSubmergedPercent( const idVec3 &pos, const idMat3 &rotation ) const
+{
+  idVec3 depth,bottom(pos);
+  idBounds bounds = this->GetBounds();
+  float height,d;
+
+  if( this->water == NULL )
+    return 0.0f;
+
+  // offset and rotate the bounding box
+  bounds += -centerOfMass;
+  bounds *= rotation;
+
+  // gets the position of the object relative to the surface of the water
+  height = fabs(bounds[1] * gravityNormal * 2);
+
+  // calculates the depth of the bottom of the object
+  bottom += (height * 0.5f) * gravityNormal;
+  depth = this->water->GetDepth(bottom);
+  d = fabs(depth * gravityNormal);
+
+  if( d > height ) {
+    // the body is totally submerged
+    return 1.0f;
+  }
+  else if( d <= 0 ) {
+    return 0.0f;
+  }
+  else {
+    // the body is partly submerged
+    return d / height;
+  }
+}
+
+/*
+================
+idPhysics_RigidBody::GetBuoyancy
+
+  Gets buoyancy information for this RB
+================
+*/
+bool idPhysics_RigidBody::GetBuoyancy( const idVec3 &pos, const idMat3 &rotation, idVec3 &bCenter, float &percent ) const
+{
+  // pos - position of the RB
+  // rotation - axis for the RB
+  // bCenter - after the function is called this is an approximation for the center of buoyancy
+  // percent - rough percentage of the body that is under water
+  //        used to calculate the volume of the submersed object (volume * percent) to give
+  //        the body somewhat realistic bobbing.
+  //
+  // return true if the body is in water, false otherwise
+
+  idVec3 tbCenter(pos);
+  idBounds bounds = this->GetBounds();
+  idTraceModel tm = *this->GetClipModel()->GetTraceModel();
+  int i,count;
+
+  percent = this->GetSubmergedPercent(pos,rotation);
+  bCenter = pos;
+
+  if( percent == 1.0f ) {
+    // the body is totally submerged
+    return true;
+  }
+  else {
+    // the body is partly submerged (or not in the water)
+    //
+    // We do a rough approximation for center of buoyancy.
+    // Normally this is done by calculating the volume of the submersed part of the body
+    // so the center of buoyancy is the center of mass of the submersed volume.  This is
+    // probably a slow computation so what I do is take an average of the submersed
+    // vertices of the trace model.
+    //
+    // I was suprized when this first worked but you can use rb_showBuoyancy to see
+    // what the approximation looks like.
+
+    // set up clip model for approximation of center of buoyancy
+    tm.Translate( -centerOfMass );
+    tm.Rotate( rotation );
+    tm.Translate( pos );
+
+    // calculate which vertices are under water
+    for( i = 0, count = 1; i < tm.numVerts; i++ ) {
+      if( gameLocal.clip.Contents( tm.verts[ i ], NULL, this->GetAxis(), MASK_WATER, NULL ) ) {
+        tbCenter += tm.verts[ i ];
+        count += 1;
+      }
+    }
+
+    if( count == 1 )
+      bCenter = pos;
+    else
+      bCenter = tbCenter / count;
+    return (count != 1);
+  }
+}
+#endif // MOD_WATERPHYSICS
 
 /*
 ================
@@ -91,8 +210,37 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 	integrator->Evaluate( (float *) &current.i, (float *) &next.i, 0, deltaTime );
 	next.i.orientation.OrthoNormalizeSelf();
 
-	// apply gravity
-	next.i.linearMomentum += deltaTime * gravityVector * mass;
+#ifdef MOD_WATERPHYSICS
+	// apply a water gravity if the body is in water
+	if( this->SetWaterLevelf() != 0.0f ) {
+		idVec3 bCenter;
+		idVec3 bForce(gravityVector),rForce(-gravityVector);
+		float bMass,fraction,liquidMass;
+		bool inWater;
+
+		inWater = this->GetBuoyancy(next.i.position,next.i.orientation.Transpose(),bCenter,fraction);
+
+		// calculate water mass
+		liquidMass = this->volume * this->water->GetDensity() * fraction;
+		// don't let liquid mass get too high
+		liquidMass = Min( liquidMass, 3 * this->mass );
+
+		bMass = this->mass - liquidMass;
+
+		// calculate buoyancy force
+		bForce *= deltaTime * bMass;
+		rForce *= deltaTime * liquidMass;
+
+		// apply water force
+		// basically here we do a ::ApplyImpulse() but we apply it to next, not current
+		next.i.linearMomentum += bForce;
+		next.i.angularMomentum += (bCenter - next.i.position).Cross(rForce);
+
+		// take the body out of water if it's not in water.
+		if( !inWater ) this->SetWater(NULL, 0.0f);
+	} else 
+#endif
+		next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
 
 	current.i.orientation.TransposeSelf();
 	next.i.orientation.TransposeSelf();
@@ -103,6 +251,127 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 	next.atRest = current.atRest;
 }
 
+bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse)
+{
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
+
+	if (propagateImpulseLock || impulse.LengthSqr() < 1e-5)
+	{
+		// greebo: Don't process incoming small impulses, quit at once.
+		return false;
+	}
+
+	// Don't accept other propagations during processing
+	propagateImpulseLock = true;
+
+	// greebo: Check all entities touching this physics object
+	EvaluateContacts();
+
+	/**
+	 * greebo: The incoming impulse goes through 3 stages:
+	 * 
+	 * 1) The contact friction of this object reduces the impulse
+	 * 2) The reduced impulse is distributed among the contact entities
+	 * 3) The remaining impulse is applied to self.
+	 */
+	
+	// Save the current state
+	rigidBodyPState_t savedState = current;
+
+	// Apply the impulse to the current state, as if the object was resting
+	current.i.linearMomentum.Zero();
+	current.i.angularMomentum.Zero();
+	ApplyImpulse(0, point, impulse);
+
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum before friction:", current.i.linearMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
+
+	// Calculate the friction using this state
+	//ContactFriction(current.lastTimeStep);
+
+	// greebo: Disabled contact friction for now
+	//current.i.linearMomentum *= 1.0f;
+	//current.i.angularMomentum *= 1.0f;
+
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
+//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
+
+	// The list of all the touching entities
+	idList<contactInfo_t> touching;
+
+	// greebo: FIXME: A possible optimisation would be to store the contact indices instead of copying the entire struct
+	
+	//gameRenderWorld->DebugArrow(colorGreen, point, point + impulseN*10, 1, 5000);
+
+	// greebo: Check for any contact normals that are suitable for this impulse direction
+	//         Contact normals with angles larger than pi/2 are discarded.
+	for (int i = 0; i < contacts.Num(); i++)
+	{
+		if (contacts[i].entityNum == ENTITYNUM_WORLD)
+			continue;
+
+		idEntity* contactEntity = gameLocal.entities[contacts[i].entityNum];
+
+		//gameRenderWorld->DebugArrow(colorBlue, contacts[i].point, contacts[i].point + contacts[i].normal*20, 1, 5000);
+		
+		if (contactEntity == NULL)
+			continue;
+
+		if ((impulse * -contacts[i].normal) < 0.0f)
+		{
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Entity %s is not in push direction.\r", contactEntity->name.c_str());
+			continue;
+		}
+		
+		// Add the contact info to the list, it is significant
+		touching.Append(contacts[i]);
+	}
+
+	int numTouching = touching.Num();
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Contacts with this entity %s without world = %d\r", self->name.c_str(), numTouching);
+
+	if (numTouching > 0)
+	{
+		// Distribute the impulse evenly across the touching entities
+		idVec3 impulseFraction(current.i.linearMomentum / touching.Num());
+		float impulseFractionLen(impulseFraction.LengthFast());
+
+		// Now apply the impulse to the touching entities
+		for (int i = 0; i < numTouching; i++)
+		{
+			idEntity* pushed = gameLocal.entities[touching[i].entityNum];
+
+			if (pushed == NULL)
+				continue;
+
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Propagating impulse to entity %s\r", pushed->name.c_str());
+			//gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
+
+			pushed->GetPhysics()->PropagateImpulse(id, touching[i].point, -touching[i].normal * impulseFractionLen);
+
+			// Substract this propagated impulse from the remaining one
+			current.i.linearMomentum -= impulseFraction;
+		}
+	}
+
+	// Save the remaining impulse before reverting the physics state
+	idVec3 remainingImpulse(current.i.linearMomentum);
+
+	// Revert the state to as it was before
+	current = savedState;
+
+	// Apply the remaining impulse to this object
+	ApplyImpulse(0, point, remainingImpulse);
+
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after applyImpulse:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after applyImpulse:", current.i.angularMomentum);
+
+	propagateImpulseLock = false;
+
+	// Return TRUE if we pushed any neighbours, FALSE if this was a single pushed object
+	return (numTouching > 0);
+}
+
 /*
 ================
 idPhysics_RigidBody::CollisionImpulse
@@ -111,7 +380,8 @@ idPhysics_RigidBody::CollisionImpulse
   The current state should be set to the moment of impact.
 ================
 */
-bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &impulse ) {
+bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &impulse ) 
+{
 	idVec3 r, linearVelocity, angularVelocity, velocity;
 	idMat3 inverseWorldInertiaTensor;
 	float impulseNumerator, impulseDenominator, vel;
@@ -121,6 +391,34 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	// get info from other entity involved
 	ent = gameLocal.entities[collision.c.entityNum];
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
+
+	// Check if we are grabbed by the grabber, and set collision var if so
+	if ( self == gameLocal.m_Grabber->GetSelected() )
+	{
+		// greebo: Don't collide grabbed entities with its own bindslaves
+		if ( (ent->GetBindMaster() == NULL || self != ent->GetBindMaster())
+			&& ent != gameLocal.GetLocalPlayer() )
+		{
+			gameLocal.m_Grabber->m_bIsColliding = true;
+			gameLocal.m_Grabber->m_CollNorms.AddUnique( collision.c.normal );
+		}
+	}
+
+	// Update moved by and set in motion by actor
+	if( self->m_SetInMotionByActor.GetEntity() != NULL )
+	{
+		ent->m_SetInMotionByActor = self->m_SetInMotionByActor.GetEntity();
+		ent->m_MovedByActor = self->m_MovedByActor.GetEntity();
+	}
+	// Note: Actors should not overwrite the moved by other actors when they are hit with something
+	// So only overwrite if MovedByActor is NULL
+	if( ent->IsType(idActor::Type) 
+		&& self->m_SetInMotionByActor.GetEntity() == NULL
+		&& !(static_cast<idActor *>(ent)->IsKnockedOut() || ent->health < 0) )
+	{
+		self->m_SetInMotionByActor = (idActor *) ent;
+		self->m_MovedByActor = (idActor *) ent;
+	}
 
 	// collision point relative to the body center of mass
 	r = collision.c.point - ( current.i.position + centerOfMass * current.i.orientation );
@@ -147,9 +445,38 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	}
 	impulse = (impulseNumerator / impulseDenominator) * collision.c.normal;
 
+//#define DEBUG_COLLISIONS
+#ifdef DEBUG_COLLISIONS
+	idVec3 velocityN(GetLinearVelocity());
+	velocityN.NormalizeFast();
+
+	idVec3 velocityA(GetAngularVelocity());
+	velocityA.NormalizeFast();
+
+	idVec3 impulseN(impulse);
+	impulseN.NormalizeFast();
+
+	idVec3 impulseA(r.Cross(impulse));
+	impulseA.NormalizeFast();
+
+	idVec3 origin = current.i.position + centerOfMass * current.i.orientation;
+
+	gameRenderWorld->DebugArrow(colorRed, origin, origin + velocityN*10, 1, 15);
+	gameRenderWorld->DebugArrow(colorBlue, origin, origin + velocityA*10, 1, 15);
+
+	gameRenderWorld->DebugArrow(colorMagenta, idVec3(1,0,0) + origin + velocityN*10, origin + velocityN*10 + impulseN*10, 1, 15);
+	gameRenderWorld->DebugArrow(colorGreen, idVec3(1,0,0) + origin + velocityA*10, origin + velocityA*10 + impulseA*10, 1, 15);
+
+	gameRenderWorld->DebugArrow(colorMdGrey, collision.c.point, collision.c.point + collision.c.normal*10, 1, 15);
+	//gameRenderWorld->DrawTextA(ent->name.c_str(), collision.c.point, 1, colorMdGrey, current.i.orientation, 1, 500);
+
+#endif
+
 	// update linear and angular momentum with impulse
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += r.Cross(impulse);
+
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
 
 	// if no movement at all don't blow up
 	if ( collision.fraction < 0.0001f ) {
@@ -173,6 +500,10 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 //#define TEST_COLLISION_DETECTION
 	idMat3 axis;
 	idRotation rotation;
+#ifdef MOD_WATERPHYSICS
+	idVec3 pos;
+	trace_t waterCollision;
+#endif
 	bool collided = false;
 
 #ifdef TEST_COLLISION_DETECTION
@@ -187,7 +518,12 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 	rotation.SetOrigin( current.i.position );
 
 	// if there was a collision
+#ifdef MOD_WATERPHYSICS
+	pos = next.i.position;
+#endif
+
 	if ( gameLocal.clip.Motion( collision, current.i.position, next.i.position, rotation, clipModel, current.i.orientation, clipMask, self ) ) {
+
 		// set the next state to the state at the moment of impact
 		next.i.position = collision.endpos;
 		next.i.orientation = collision.endAxis;
@@ -195,6 +531,46 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 		next.i.angularMomentum = current.i.angularMomentum;
 		collided = true;
 	}
+
+#ifdef MOD_WATERPHYSICS
+	// Check for water collision
+	// ideally we could do this check in one step but if a body moves quickly in shallow water
+	// they will occasionally clip through a solid entity (ie. fall through the floor)
+	if ( gameLocal.clip.Motion( waterCollision, current.i.position, pos, rotation, clipModel, current.i.orientation, MASK_WATER, self ) )
+	{
+		idEntity *ent = gameLocal.entities[waterCollision.c.entityNum];
+
+		// make sure the object didn't collide with something before hitting the water (we don't splash for that case)
+		if( !collided || waterCollision.fraction < collision.fraction ) {
+
+			// if the object collides with something with a physics_liquid
+			if( ent->GetPhysics()->IsType( idPhysics_Liquid::Type ) ) {
+				idPhysics_Liquid *liquid = static_cast<idPhysics_Liquid *>(ent->GetPhysics());
+				impactInfo_t info;
+
+				self->GetImpactInfo(ent,waterCollision.c.id,waterCollision.c.point,&info);
+
+				// apply water splash friction
+				if( this->water == NULL ) {
+					idVec3 impulse = -info.velocity * this->volume * liquid->GetDensity() * 0.25f;
+					impulse = (impulse * gravityNormal) * gravityNormal;
+
+					if( next.i.linearMomentum.LengthSqr() < impulse.LengthSqr() ) {
+						// cancel falling, maintain sideways movement (lateral?)
+						next.i.linearMomentum -= (next.i.linearMomentum * gravityNormal) * gravityNormal;
+					}
+					else {
+						next.i.angularMomentum += ( waterCollision.c.point - ( next.i.position + centerOfMass * next.i.orientation ) ).Cross( impulse );
+						next.i.linearMomentum += impulse * 0.5f;
+					}
+				}
+
+				this->SetWater(liquid, ent->spawnArgs.GetFloat("murkiness", "0"));
+				this->water->Splash(this->self,this->volume,info,waterCollision);
+			}
+		}
+	}
+#endif
 
 #ifdef TEST_COLLISION_DETECTION
 	if ( gameLocal.clip.Contents( next.i.position, clipModel, next.i.orientation, clipMask, self ) ) {
@@ -271,7 +647,11 @@ idPhysics_RigidBody::TestIfAtRest
   Does not catch all cases where the body is at rest but is generally good enough.
 ================
 */
+#ifdef MOD_WATERPHYSICS
+bool idPhysics_RigidBody::TestIfAtRest( void ) {
+#else
 bool idPhysics_RigidBody::TestIfAtRest( void ) const {
+#endif	
 	int i;
 	float gv;
 	idVec3 v, av, normal, point;
@@ -281,6 +661,23 @@ bool idPhysics_RigidBody::TestIfAtRest( void ) const {
 	if ( current.atRest >= 0 ) {
 		return true;
 	}
+#ifdef MOD_WATERPHYSICS
+    // do some special checks if the body is in water
+    if( this->water != NULL ) {
+        if( this->current.i.linearMomentum.LengthSqr() < WATER_STOP_LINEAR.LengthSqr() &&
+            this->current.i.angularMomentum.LengthSqr() < WATER_STOP_ANGULAR.LengthSqr() ) {
+
+            if( this->noMoveTime == 0 ) {
+                this->noMoveTime = gameLocal.GetTime();
+            } else if( this->noMoveTime+NO_MOVE_TIME < gameLocal.GetTime() ) {
+                this->noMoveTime = 0;
+                return true;
+            }
+        } else {
+            this->noMoveTime = 0;
+        }
+    }
+#endif
 
 	// need at least 3 contact points to come to rest
 	if ( contacts.Num() < 3 ) {
@@ -410,7 +807,21 @@ void idPhysics_RigidBody::DebugDraw( void ) {
 	}
 
 	if ( rb_showMass.GetBool() ) {
-		gameRenderWorld->DrawText( va( "\n%1.2f", mass ), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+#ifdef MOD_WATERPHYSICS
+        if( this->water != NULL )  {
+            idVec3 pos;
+            float  percent, liquidMass;
+
+            pos = this->current.i.position + this->centerOfMass*this->current.i.orientation;
+            percent = this->GetSubmergedPercent(pos,this->current.i.orientation.Transpose());
+
+            liquidMass = this->mass - ( this->volume * this->water->GetDensity() * percent );
+
+            gameRenderWorld->DrawText( va( "\n%1.2f", liquidMass), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+        }
+        else
+#endif
+            gameRenderWorld->DrawText( va( "\n%1.2f", mass ), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 	}
 
 	if ( rb_showInertia.GetBool() ) {
@@ -425,6 +836,20 @@ void idPhysics_RigidBody::DebugDraw( void ) {
 	if ( rb_showVelocity.GetBool() ) {
 		DrawVelocity( clipModel->GetId(), 0.1f, 4.0f );
 	}
+
+#ifdef MOD_WATERPHYSICS
+    if( rb_showBuoyancy.GetBool() && this->water != NULL ) {
+        idVec3 pos;
+        idVec3 bCenter;
+        float  percent;
+
+        pos = this->current.i.position + this->centerOfMass*this->current.i.orientation;
+        this->GetBuoyancy(pos,this->current.i.orientation.Transpose(),bCenter,percent);
+
+        gameRenderWorld->DebugArrow(colorGreen,pos,bCenter,1);
+        gameRenderWorld->DrawText( va( "%1.2f",percent), pos, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+    }
+#endif
 }
 
 /*
@@ -458,6 +883,10 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	centerOfMass.Zero();
 	inertiaTensor.Identity();
 	inverseInertiaTensor.Identity();
+#ifdef MOD_WATERPHYSICS
+	this->water = NULL;
+	this->m_fWaterMurkiness = 0.0f;
+#endif
 
 	// use the least expensive euler integrator
 	integrator = new idODE_Euler( sizeof(rigidBodyIState_t) / sizeof(float), RigidBodyDerivatives, this );
@@ -469,9 +898,21 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	hasMaster = false;
 	isOrientated = false;
 
+#ifdef MOD_WATERPHYSICS
+	this->noMoveTime = 0;
+#endif
 #ifdef RB_TIMINGS
 	lastTimerReset = 0;
 #endif
+
+	isBlocked = false;
+	propagateImpulseLock = false;
+
+	memset(&collisionTrace, 0, sizeof(collisionTrace));
+
+	// tels
+	maxForce.Zero();
+	maxTorque.Zero();
 }
 
 /*
@@ -497,7 +938,7 @@ void idPhysics_RigidBody_SavePState( idSaveGame *savefile, const rigidBodyPState
 	savefile->WriteFloat( state.lastTimeStep );
 	savefile->WriteVec3( state.localOrigin );
 	savefile->WriteMat3( state.localAxis );
-	savefile->WriteVec6( state.pushVelocity );
+	savefile->Write( &state.pushVelocity, sizeof( state.pushVelocity ) );
 	savefile->WriteVec3( state.externalForce );
 	savefile->WriteVec3( state.externalTorque );
 
@@ -517,7 +958,7 @@ void idPhysics_RigidBody_RestorePState( idRestoreGame *savefile, rigidBodyPState
 	savefile->ReadFloat( state.lastTimeStep );
 	savefile->ReadVec3( state.localOrigin );
 	savefile->ReadMat3( state.localAxis );
-	savefile->ReadVec6( state.pushVelocity );
+	savefile->Read( &state.pushVelocity, sizeof( state.pushVelocity ) );
 	savefile->ReadVec3( state.externalForce );
 	savefile->ReadVec3( state.externalTorque );
 
@@ -544,6 +985,9 @@ void idPhysics_RigidBody::Save( idSaveGame *savefile ) const {
 	savefile->WriteClipModel( clipModel );
 
 	savefile->WriteFloat( mass );
+#ifdef MOD_WATERPHYSICS
+    savefile->WriteFloat( volume );
+#endif
 	savefile->WriteFloat( inverseMass );
 	savefile->WriteVec3( centerOfMass );
 	savefile->WriteMat3( inertiaTensor );
@@ -556,6 +1000,15 @@ void idPhysics_RigidBody::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( hasMaster );
 	savefile->WriteBool( isOrientated );
+
+	savefile->WriteBool(isBlocked);
+	// greebo: Note this is not saved (yet). Uncomment this after release 1.00
+	//savefile->WriteBool(propagateImpulseLock);
+	savefile->WriteTrace(collisionTrace);
+
+	// tels
+	savefile->WriteVec3( maxForce );
+	savefile->WriteVec3( maxTorque );
 }
 
 /*
@@ -575,6 +1028,9 @@ void idPhysics_RigidBody::Restore( idRestoreGame *savefile ) {
 	savefile->ReadClipModel( clipModel );
 
 	savefile->ReadFloat( mass );
+#ifdef MOD_WATERPHYSICS
+    savefile->ReadFloat( volume );
+#endif
 	savefile->ReadFloat( inverseMass );
 	savefile->ReadVec3( centerOfMass );
 	savefile->ReadMat3( inertiaTensor );
@@ -587,6 +1043,15 @@ void idPhysics_RigidBody::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( hasMaster );
 	savefile->ReadBool( isOrientated );
+
+	savefile->ReadBool(isBlocked);
+	// greebo: Note this is not saved (yet). Uncomment this after release 1.00
+	//savefile->ReadBool(propagateImpulseLock);
+	savefile->ReadTrace(collisionTrace);
+
+	// tels
+	savefile->ReadVec3( maxForce );
+	savefile->ReadVec3( maxTorque );
 }
 
 /*
@@ -616,12 +1081,16 @@ void idPhysics_RigidBody::SetClipModel( idClipModel *model, const float density,
 
 	// check whether or not the clip model has valid mass properties
 	if ( mass <= 0.0f || FLOAT_IS_NAN( mass ) ) {
-		gameLocal.Warning( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
 							self->name.c_str(), self->GetType()->classname );
 		mass = 1.0f;
 		centerOfMass.Zero();
 		inertiaTensor.Identity();
 	}
+
+#ifdef MOD_WATERPHYSICS
+	this->volume = mass / density;
+#endif
 
 	// check whether or not the inertia tensor is balanced
 	minIndex = Min3Index( inertiaTensor[0][0], inertiaTensor[1][1], inertiaTensor[2][2] );
@@ -683,7 +1152,20 @@ idPhysics_RigidBody::GetMass
 ================
 */
 float idPhysics_RigidBody::GetMass( int id ) const {
-	return mass;
+#ifdef MOD_WATERPHYSICS
+    if( this->water != NULL ) {
+        idVec3 pos;
+        float  percent,bMass;
+
+        pos = this->current.i.position + this->centerOfMass*this->current.i.orientation;
+        percent = this->GetSubmergedPercent(pos,this->current.i.orientation);
+        bMass = mass - (this->volume * this->water->GetDensity() * percent);
+
+        return bMass;
+    }
+    else
+#endif
+        return mass;
 }
 
 /*
@@ -692,7 +1174,7 @@ idPhysics_RigidBody::SetFriction
 ================
 */
 void idPhysics_RigidBody::SetFriction( const float linear, const float angular, const float contact ) {
-	if (	linear < 0.0f || linear > 1.0f ||
+	if (	linear < 0.0f ||
 			angular < 0.0f || angular > 1.0f ||
 			contact < 0.0f || contact > 1.0f ) {
 		return;
@@ -719,11 +1201,27 @@ void idPhysics_RigidBody::SetBouncyness( const float b ) {
 idPhysics_RigidBody::Rest
 ================
 */
-void idPhysics_RigidBody::Rest( void ) {
+void idPhysics_RigidBody::Rest( void ) 
+{
 	current.atRest = gameLocal.time;
 	current.i.linearMomentum.Zero();
 	current.i.angularMomentum.Zero();
 	self->BecomeInactive( TH_PHYSICS );
+
+	// grayman #2908 - if this is a mine, we can't NULL m_SetInMotionByActor
+	// because we need that if the mine ever kills someone
+
+	if ( self->IsType(idProjectile::Type) )
+	{
+		idProjectile* proj = static_cast<idProjectile*>(self);
+		if ( !proj->IsMine() )
+		{
+			self->m_SetInMotionByActor = NULL;
+		}
+	}
+
+//	self->m_SetInMotionByActor = NULL;
+	self->m_droppedByAI = false; // grayman #1330
 }
 
 /*
@@ -790,6 +1288,7 @@ idPhysics_RigidBody::SetContents
 ================
 */
 void idPhysics_RigidBody::SetContents( int contents, int id ) {
+	assert(clipModel != NULL);
 	clipModel->SetContents( contents );
 }
 
@@ -799,6 +1298,7 @@ idPhysics_RigidBody::GetContents
 ================
 */
 int idPhysics_RigidBody::GetContents( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetContents();
 }
 
@@ -808,6 +1308,7 @@ idPhysics_RigidBody::GetBounds
 ================
 */
 const idBounds &idPhysics_RigidBody::GetBounds( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetBounds();
 }
 
@@ -817,7 +1318,18 @@ idPhysics_RigidBody::GetAbsBounds
 ================
 */
 const idBounds &idPhysics_RigidBody::GetAbsBounds( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetAbsBounds();
+}
+
+const trace_t*	idPhysics_RigidBody::GetBlockingInfo() const
+{
+	return isBlocked ? &collisionTrace : NULL;
+}
+
+idEntity* idPhysics_RigidBody::GetBlockingEntity() const
+{
+	return isBlocked ? gameLocal.entities[collisionTrace.c.entityNum] : NULL;
 }
 
 /*
@@ -834,11 +1346,15 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idAngles angles;
 	trace_t collision;
 	idVec3 impulse;
-	idEntity *ent;
+	idEntity *ent(NULL);
 	idVec3 oldOrigin, masterOrigin;
 	idMat3 oldAxis, masterAxis;
 	float timeStep;
-	bool collided, cameToRest = false;
+	bool collided = false;
+	bool cameToRest = false;
+
+	// greebo: For now, we aren't blocked
+	isBlocked = false;
 
 	timeStep = MS2SEC( timeStepMSec );
 	current.lastTimeStep = timeStep;
@@ -847,18 +1363,41 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		oldOrigin = current.i.position;
 		oldAxis = current.i.orientation;
 		self->GetMasterPosition( masterOrigin, masterAxis );
+
 		current.i.position = masterOrigin + current.localOrigin * masterAxis;
-		if ( isOrientated ) {
-			current.i.orientation = current.localAxis * masterAxis;
+		current.i.orientation = (isOrientated) ? current.localAxis * masterAxis : current.localAxis;
+
+		// greebo: Only check for collisions for "solid" bind slaves and if the master is non-AF
+		// Ishtvan: Do not block an AF attachment that is itself attached to an AF.  
+		// This causes problems with AF evaluation.
+		// TODO: Use advanced AF binding code to add AF body for entity in this case, as if it were bound directly to AF
+		if ( 
+				(clipModel->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) 
+				&& !self->GetBindMaster()->IsType(idAnimatedEntity::Type)
+				&& !(
+						self->GetBindMaster()->IsType(idAFAttachment::Type) 
+						&& static_cast<idAFAttachment *>(self->GetBindMaster())->GetBody()
+					)
+			)
+		{
+			// For non-AF masters we check for collisions
+			gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
+
+			if (collisionTrace.fraction < 1.0f )
+			{
+				clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
+				current.i.position = oldOrigin;
+				current.i.orientation = oldAxis;
+				isBlocked = true;
+				return false;
+			}
 		}
-		else {
-			current.i.orientation = current.localAxis;
-		}
+
 		clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
 		current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
 		current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
 		current.externalForce.Zero();
-		current.externalTorque.Zero();
+		current.externalTorque.Zero();		
 
 		return ( current.i.position != oldOrigin || current.i.orientation != oldAxis );
 	}
@@ -870,7 +1409,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 
 	// if putting the body to rest
-	if ( dropToFloor ) {
+	if (dropToFloor && !self->m_droppedByAI) // grayman #1330 - only go straight to the floor if an AI didn't drop it
+	{
 		DropToFloorAndRest();
 		current.externalForce.Zero();
 		current.externalTorque.Zero();
@@ -888,7 +1428,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	clipModel->Unlink();
 
 	next = current;
-
+	
 	// calculate next position and orientation
 	Integrate( timeStep, next );
 
@@ -931,7 +1471,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 #endif
 
 		// check if the body has come to rest
-		if ( TestIfAtRest() ) {
+		if ( current.externalForce.LengthSqr() == 0.0f && TestIfAtRest() ) {
 			// put to rest
 			Rest();
 			cameToRest = true;
@@ -951,6 +1491,56 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		if ( ent && ( !cameToRest || !ent->IsAtRest() ) ) {
 			// apply impact to other entity
 			ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
+
+			if (ent->m_SetInMotionByActor.GetEntity() == NULL)
+			{
+				ent->m_SetInMotionByActor = self->m_SetInMotionByActor;
+				ent->m_MovedByActor = self->m_MovedByActor;
+			}
+		}
+
+		// greebo: Are we stuck? We still have to consider gravity and external forces
+		if (collision.fraction <= 0.001f)
+		{
+			// Get the mass center in world coordinates
+			idVec3 massCenter(current.i.position + centerOfMass * current.i.orientation);
+
+			// Calculate the lever arms
+			idVec3 arm1(current.externalForcePoint - massCenter);
+			idVec3 arm2(current.externalForcePoint - collision.c.point);
+			idVec3 arm1N(arm1);
+
+			//gameRenderWorld->DebugArrow(colorCyan, massCenter, massCenter + arm1, 1, 20);
+			//gameRenderWorld->DebugArrow(colorMagenta, collision.c.point, collision.c.point + arm2, 1, 20);
+
+			float l1 = arm1N.NormalizeFast();
+			float l2 = arm1N * arm2;
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Arm 1: %f, Arm2: %f\r", l1, l2);
+
+			if (arm2.LengthFast() > l1)
+			{
+				// Apply the linear momentum caused by the external force
+				current.i.linearMomentum -= current.externalForce*2;
+				current.i.angularMomentum += (current.externalForcePoint - collision.c.point).Cross(current.externalForce);
+			}
+			else if (fabs(l1) > 0.01f)
+			{
+				float armRatio = l2/l1;
+				float forceFactor = 4*armRatio*(armRatio - 1);
+
+				forceFactor *= 15;
+				idVec3 leverForceLinear = current.externalForce * forceFactor;
+
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("forceFactor: %f\r", forceFactor);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Current impulse", current.i.linearMomentum);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("External Force", current.externalForce);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("External Force Modified", current.externalForce*forceFactor);
+				//gameRenderWorld->DebugArrow(colorMdGrey, massCenter, massCenter + leverForceLinear, 1, 20);
+
+				// Apply the linear momentum caused by the lever force
+				current.i.linearMomentum += leverForceLinear;
+				current.i.angularMomentum += (current.externalForcePoint - collision.c.point).Cross(current.externalForce);
+			}
 		}
 	}
 
@@ -961,6 +1551,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	current.lastTimeStep = timeStep;
 	current.externalForce.Zero();
+	current.externalForcePoint.Zero();
 	current.externalTorque.Zero();
 
 	if ( IsOutsideWorld() ) {
@@ -994,7 +1585,12 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 #endif
 
-	return true;
+	if (cv_phys_show_momentum.GetBool()) 
+	{
+		gameRenderWorld->DrawText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+
+	return true; // grayman #2478
 }
 
 /*
@@ -1039,9 +1635,38 @@ idPhysics_RigidBody::ApplyImpulse
 ================
 */
 void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
-	if ( noImpact ) {
+	if ( noImpact )
+	{
 		return;
 	}
+
+	// tels: check that the impulse does not exceed the max values
+	// FIXME: the comparisation here is just a dummy
+	if ((maxForce.x > 0) && 
+	    ((fabs(impulse.x) > maxForce.x) || 
+		 (fabs(impulse.y) > maxForce.y) || 
+		 (fabs(impulse.z) > maxForce.z)) ) 
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("impulse (%f %f %f) > maxForce (%f %f %f) for entity %s\r\r", 
+			impulse.x, impulse.y, impulse.z,
+			maxForce.x, maxForce.y, maxForce.z,
+			self->name.c_str()
+			);
+		// FIXME: self needs to be replaced by whatever entity generated the impulse
+		self->Killed( gameLocal.world, gameLocal.world, 0, self->GetLocalCoordinates(GetOrigin()), 0);
+		return;
+	}
+
+	// greebo: Check if we have a master - if yes, propagate the impulse to it
+	if ( hasMaster )
+	{
+		idEntity* master = self->GetBindMaster();
+
+		assert(master != NULL); // Bind master must not be null
+
+		master->GetPhysics()->ApplyImpulse(id, point, impulse);
+	}
+
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( impulse );
 	Activate();
@@ -1056,6 +1681,7 @@ void idPhysics_RigidBody::AddForce( const int id, const idVec3 &point, const idV
 	if ( noImpact ) {
 		return;
 	}
+	current.externalForcePoint = point;
 	current.externalForce += force;
 	current.externalTorque += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( force );
 	Activate();
@@ -1232,7 +1858,7 @@ idPhysics_RigidBody::SetAngularVelocity
 ================
 */
 void idPhysics_RigidBody::SetAngularVelocity( const idVec3 &newAngularVelocity, int id ) {
-	current.i.angularMomentum = newAngularVelocity * inertiaTensor;
+	current.i.angularMomentum = newAngularVelocity * current.i.orientation.Transpose() * inertiaTensor * current.i.orientation;
 	Activate();
 }
 
@@ -1259,6 +1885,42 @@ const idVec3 &idPhysics_RigidBody::GetAngularVelocity( int id ) const {
 	inverseWorldInertiaTensor = current.i.orientation.Transpose() * inverseInertiaTensor * current.i.orientation;
 	curAngularVelocity = inverseWorldInertiaTensor * current.i.angularMomentum;
 	return curAngularVelocity;
+}
+
+/*
+================
+idPhysics_RigidBody::SetMaxForce
+================
+*/
+void idPhysics_RigidBody::SetMaxForce( const idVec3 &newMaxForce ) {
+	maxForce = newMaxForce;
+}
+
+/*
+================
+idPhysics_RigidBody::SetMaxTorque
+================
+*/
+void idPhysics_RigidBody::SetMaxTorque( const idVec3 &newMaxTorque ) {
+	maxTorque = newMaxTorque;
+}
+
+/*
+================
+idPhysics_RigidBody::GetMaxForce
+================
+*/
+const idVec3 &idPhysics_RigidBody::GetMaxForce( void ) const {
+	return maxForce;
+}
+
+/*
+================
+idPhysics_RigidBody::GetMaxTorque
+================
+*/
+const idVec3 &idPhysics_RigidBody::GetMaxTorque( void ) const {
+	return maxTorque;
 }
 
 /*
@@ -1437,19 +2099,6 @@ void idPhysics_RigidBody::SetMaster( idEntity *master, const bool orientated ) {
 		}
 	}
 }
-
-const float	RB_VELOCITY_MAX				= 16000;
-const int	RB_VELOCITY_TOTAL_BITS		= 16;
-const int	RB_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_VELOCITY_MAX ) ) + 1;
-const int	RB_VELOCITY_MANTISSA_BITS	= RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS;
-const float	RB_MOMENTUM_MAX				= 1e20f;
-const int	RB_MOMENTUM_TOTAL_BITS		= 16;
-const int	RB_MOMENTUM_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_MOMENTUM_MAX ) ) + 1;
-const int	RB_MOMENTUM_MANTISSA_BITS	= RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS;
-const float	RB_FORCE_MAX				= 1e20f;
-const int	RB_FORCE_TOTAL_BITS			= 16;
-const int	RB_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( RB_FORCE_MAX ) ) + 1;
-const int	RB_FORCE_MANTISSA_BITS		= RB_FORCE_TOTAL_BITS - 1 - RB_FORCE_EXPONENT_BITS;
 
 /*
 ================

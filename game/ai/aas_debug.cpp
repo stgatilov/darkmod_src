@@ -1,36 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "AAS_local.h"
-#include "../Game_local.h"		// for cvars and debug drawing
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "aas_local.h"
+#include "../game_local.h"		// for cvars and debug drawing
 
 
 /*
@@ -64,16 +50,24 @@ void idAASLocal::DrawCone( const idVec3 &origin, const idVec3 &dir, float radius
 idAASLocal::DrawReachability
 ============
 */
-void idAASLocal::DrawReachability( const idReachability *reach ) const {
-	gameRenderWorld->DebugArrow( colorCyan, reach->start, reach->end, 2 );
+void idAASLocal::DrawReachability( const idReachability *reach ) const 
+{
+	idVec4 reachColor = colorCyan;
+	if (reach->travelType & TFL_DOOR)
+	{
+		reachColor = colorRed;
+	}
+	gameRenderWorld->DebugArrow( reachColor, reach->start, reach->end, 1, 10000 );
+
+	gameRenderWorld->DebugArrow( colorLtGrey, AreaCenter(reach->fromAreaNum), AreaCenter(reach->toAreaNum), 1, 10000);
 
 	if ( gameLocal.GetLocalPlayer() ) {
-		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis );
+		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 10000 );
 	}
 
 	switch( reach->travelType ) {
 		case TFL_WALK: {
-			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
+//			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
 			break;
 		}
 		default: {
@@ -197,7 +191,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 		int travelTime;
 		idReachability *reach;
 		
-		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach );
+		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach, NULL, NULL );
 		gameLocal.Printf( "\rtt = %4d", travelTime );
 		if ( reach ) {
 			gameLocal.Printf( " to area %4d", reach->toAreaNum );
@@ -210,6 +204,10 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 		gameLocal.Printf( "area %d: ", areaNum );
 		if ( area->flags & AREA_LEDGE ) {
 			gameLocal.Printf( "AREA_LEDGE " );
+		}
+		if (area->flags & AREA_DOOR)
+		{
+			gameLocal.Printf( "AREA_DOOR " );
 		}
 		if ( area->flags & AREA_REACHABLE_WALK ) {
 			gameLocal.Printf( "AREA_REACHABLE_WALK " );
@@ -241,7 +239,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 idAASLocal::ShowWalkPath
 ============
 */
-void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
+void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
 	idVec3 org, areaCenter;
@@ -258,7 +256,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL, NULL ) ) {
 			break;
 		}
 
@@ -266,7 +264,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 			break;
 		}
 
-		gameRenderWorld->DebugArrow( colorGreen, org, reach->start, 2 );
+		gameRenderWorld->DebugArrow( colorGreen, org, reach->start, 1, 10000 );
 		DrawReachability( reach );
 
 		if ( reach->toAreaNum == goalAreaNum ) {
@@ -277,8 +275,8 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 		org = reach->end;
 	}
 
-	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR ) ) {
-		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 2 );
+	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR, NULL ) ) {
+		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 1, 10000 );
 	}
 }
 
@@ -304,7 +302,7 @@ void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach, NULL, NULL ) ) {
 			break;
 		}
 
@@ -357,7 +355,7 @@ void idAASLocal::ShowWallEdges( const idVec3 &origin ) const {
 idAASLocal::ShowHideArea
 ============
 */
-void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
+void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) {
 	int areaNum, numObstacles;
 	idVec3 target;
 	aasGoal_t goal;
@@ -372,7 +370,7 @@ void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
 
 	DrawCone( target, idVec3(0,0,1), 16.0f, colorYellow );
 
-	idAASFindCover findCover( target );
+	idAASFindCover findCover( NULL, NULL, target );
 	if ( FindNearestGoal( goal, areaNum, origin, target, TFL_WALK|TFL_AIR, obstacles, numObstacles, findCover ) ) {
 		DrawArea( goal.areaNum );
 		ShowWalkPath( origin, goal.areaNum, goal.origin );
@@ -385,7 +383,7 @@ void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
 idAASLocal::PullPlayer
 ============
 */
-bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
+bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) {
 	int areaNum;
 	idVec3 areaCenter, dir, vel;
 	idAngles delta;
@@ -411,7 +409,7 @@ bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
 	if ( player->GetPhysics()->GetAbsBounds().Expand( 8 ).ContainsPoint( areaCenter ) ) {
 		return false;
 	}
-	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR ) ) {
+	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR, NULL ) ) {
 		dir = path.moveGoal - origin;
 		dir[2] *= 0.5f;
 		dir.Normalize();
@@ -436,12 +434,12 @@ bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
 idAASLocal::RandomPullPlayer
 ============
 */
-void idAASLocal::RandomPullPlayer( const idVec3 &origin ) const {
+void idAASLocal::RandomPullPlayer( const idVec3 &origin ) {
 	int rnd, i, n;
 
 	if ( !PullPlayer( origin, aas_pullPlayer.GetInteger() ) ) {
 
-		rnd = gameLocal.random.RandomFloat() * file->GetNumAreas();
+		rnd = gameLocal.random.RandomInt(file->GetNumAreas());
 
 		for ( i = 0; i < file->GetNumAreas(); i++ ) {
 			n = (rnd + i) % file->GetNumAreas();
@@ -505,4 +503,60 @@ void idAASLocal::Test( const idVec3 &origin ) {
 	if ( aas_showPushIntoArea.GetBool() ) {
 		ShowPushIntoArea( origin );
 	}
+}
+
+void idAASLocal::DrawAreas(const idVec3& playerOrigin)
+{
+	if (file == NULL) return;
+
+	// Get a colour for each cluster
+	idList<idVec4> colours;
+	for (int c = 0; c < file->GetNumClusters(); c++)
+	{
+		colours.Alloc() = idVec4(gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, 1);
+	}
+
+	idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+	
+	idList<int> clusterNums;
+
+	for (int i = 0; i < file->GetNumAreas(); i++)
+	{
+		idBounds areaBounds = GetAreaBounds(i);
+		idVec3 areaCenter = AreaCenter(i);
+
+		int clusterNum = file->GetArea(i).cluster;
+		clusterNums.AddUnique(clusterNum);
+
+		idVec4 colour = (clusterNum <= 0) ? colorWhite : colours[clusterNum];
+
+		// angua: only draw areas near the player, no need to see them at the other end of the map
+		if ((areaCenter - playerOrigin).LengthFast() < 300)
+		{
+			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, colour, playerViewMatrix, 1, 1000);
+			gameRenderWorld->DebugBox(colour, idBox(areaBounds), 1000);
+		}
+	}
+
+	for (int i = 0; i < clusterNums.Num(); i++)
+	{
+		int area = GetAreaInCluster(clusterNums[i]);
+		if (area <= 0) continue;
+
+		idVec3 origin = file->GetArea(area).center;
+		if ((origin - playerOrigin).LengthFast() < 1000)
+		{
+			gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 1000);
+		}
+	}
+}
+
+void idAASLocal::DrawEASRoute( const idVec3& playerOrigin, int goalArea )
+{
+	idVec3 origin = playerOrigin;
+	int areaNum = PointReachableAreaNum( origin, DefaultSearchBounds(), (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
+
+	PushPointIntoAreaNum( areaNum, origin );
+
+	elevatorSystem->DrawRoute(areaNum, goalArea);
 }

@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Actor )
 END_CLASS
@@ -48,6 +34,14 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	masterYaw = 0.0f;
 	masterDeltaYaw = 0.0f;
 	groundEntityPtr = NULL;
+
+#ifdef MOD_WATERPHYSICS
+	waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
+	waterType = 0;					// MOD_WATERPHYSICS
+	waterLevelChanged = true;
+	submerseFrame = 0;
+	submerseTime = -1;
+#endif		// MOD_WATERPHYSICS
 }
 
 /*
@@ -79,6 +73,15 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( masterYaw );
 	savefile->WriteFloat( masterDeltaYaw );
 
+#ifdef MOD_WATERPHYSICS
+	savefile->WriteInt( (int)waterLevel );	// MOD_WATERPHYSICS
+	savefile->WriteInt((int)previousWaterLevel);
+	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
+	savefile->WriteBool(waterLevelChanged);
+	savefile->WriteInt(submerseFrame);
+	savefile->WriteInt(submerseTime);
+#endif 		// MOD_WATERPHYSICS
+
 	groundEntityPtr.Save( savefile );
 }
 
@@ -98,6 +101,15 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( masterEntity ) );
 	savefile->ReadFloat( masterYaw );
 	savefile->ReadFloat( masterDeltaYaw );
+
+#ifdef MOD_WATERPHYSICS
+	savefile->ReadInt( (int &)waterLevel );		// MOD_WATERPHYSICS
+	savefile->ReadInt( (int &)previousWaterLevel );
+	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
+	savefile->ReadBool(waterLevelChanged);
+	savefile->ReadInt(submerseFrame);
+	savefile->ReadInt(submerseTime);
+#endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Restore( savefile );
 }
@@ -380,3 +392,93 @@ bool idPhysics_Actor::EvaluateContacts( void ) {
 
 	return ( contacts.Num() != 0 );
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+=============
+idPhysics_Actor::SetWaterLevel
+=============
+*/
+void idPhysics_Actor::SetWaterLevel( bool updateWaterLevelChanged ) {
+	//
+	// get waterlevel, accounting for ducking
+	//
+	// Remember the current water level
+	previousWaterLevel = waterLevel;
+
+	waterLevel = WATERLEVEL_NONE;
+	waterType = 0;
+
+	const idVec3& origin = this->GetOrigin();
+	const idBounds& bounds = clipModel->GetBounds();
+
+	// check at feet level
+	idVec3 point = origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
+	int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+	if ( contents & MASK_WATER ) {
+		// sets water entity
+		this->SetWaterLevelf();
+
+		waterType = contents;
+		waterLevel = WATERLEVEL_FEET;
+
+		// check at waist level
+		point = origin - ( bounds[1][2] - bounds[0][2] ) * 0.5f * gravityNormal;
+		contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+		if ( contents & MASK_WATER ) {
+
+			waterLevel = WATERLEVEL_WAIST;
+
+			// check at head level
+			// point = origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
+
+			// greebo: Changed the check for head level to test the eyeheight. This is enough
+			// for letting AI drown or for the player to "feel" underwater.
+			point = static_cast<idActor*>(self)->GetEyePosition();
+
+			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+			if ( contents & MASK_WATER ) {
+				waterLevel = WATERLEVEL_HEAD;
+			}
+		}
+	}
+	else
+		this->SetWater(NULL, 0.0f);
+
+	if (updateWaterLevelChanged)
+	{
+		// Set the changed flag
+		waterLevelChanged = (previousWaterLevel != waterLevel);
+
+		if (waterLevel == WATERLEVEL_HEAD && waterLevelChanged)
+		{
+			submerseFrame = gameLocal.framenum;
+			submerseTime = gameLocal.time;
+		}
+	}
+}
+
+/*
+================
+idPhysics_Actor::GetWaterLevel
+================
+*/
+waterLevel_t idPhysics_Actor::GetWaterLevel( void ) const {
+	return waterLevel;
+}
+
+/*
+================
+idPhysics_Actor::GetWaterType
+================
+*/
+int idPhysics_Actor::GetWaterType( void ) const {
+	return waterType;
+}
+
+int idPhysics_Actor::GetSubmerseTime() const
+{
+	return submerseTime;
+}
+
+#endif	// MOD_WATERPHYSICS

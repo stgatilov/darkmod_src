@@ -1,30 +1,15 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_AF_H__
 #define __PHYSICS_AF_H__
@@ -688,9 +673,16 @@ public:
 	void					SetDensity( float density, const idMat3 &inertiaScale = mat3_identity );
 	float					GetInverseMass( void ) const { return invMass; }
 	idMat3					GetInverseWorldInertia( void ) const { return current->worldAxis.Transpose() * inverseInertiaTensor * current->worldAxis; }
-
 	void					SetFrictionDirection( const idVec3 &dir );
 	bool					GetFrictionDirection( idVec3 &dir ) const;
+
+#ifdef MOD_WATERPHYSICS
+	float					GetVolume( void ) const { return volume; }
+	// returns the depth of the object in the water
+	// 0.0f if out of water
+	float					GetWaterLevel() const;	// MOD_WATERPHYSICS
+	float					SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal, bool fixedDensityBuoyancy ); 	// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS`
 
 	void					SetContactMotorDirection( const idVec3 &dir );
 	bool					GetContactMotorDirection( idVec3 &dir ) const;
@@ -703,6 +695,12 @@ public:
 	void					InverseWorldSpatialInertiaMultiply( idVecX &dst, const float *v ) const;
 	idVec6 &				GetResponseForce( int index ) { return reinterpret_cast<idVec6 &>(response[ index * 8 ]); }
 
+	/**
+	* Get or set the entity that stims and damage are routed to
+	**/
+	void					SetRerouteEnt( idEntity *ent );
+	idEntity *				GetRerouteEnt( void );
+
 	void					Save( idSaveGame *saveFile );
 	void					Restore( idRestoreGame *saveFile );
 
@@ -712,6 +710,11 @@ private:
 	idAFBody *				parent;						// parent of this body
 	idList<idAFBody *>		children;					// children of this body
 	idClipModel *			clipModel;					// model used for collision detection
+	/**
+	* Entity to reroute damage and stims to, used when dynamically adding ents to an AF
+	* Defaults to NULL
+	**/
+	idEntityPtr<idEntity>	m_RerouteEnt;
 	idAFConstraint *		primaryConstraint;			// primary constraint (this->constraint->body1 = this)
 	idList<idAFConstraint *>constraints;				// all constraints attached to this body
 	idAFTree *				tree;						// tree structure this body is part of
@@ -719,6 +722,9 @@ private:
 	float					angularFriction;			// rotational friction
 	float					contactFriction;			// friction with contact surfaces
 	float					bouncyness;					// bounce
+#ifdef MOD_WATERPHYSICS
+	float					volume;						// volume of body MOD_WATERPHYSICS
+#endif 	// MOD_WATERPHYSICS
 	int						clipMask;					// contents this body collides with
 	idVec3					frictionDir;				// specifies a single direction of friction in body space
 	idVec3					contactMotorDir;			// contact motor direction
@@ -728,6 +734,12 @@ private:
 							// derived properties
 	float					mass;						// mass of body
 	float					invMass;					// inverse mass
+#ifdef MOD_WATERPHYSICS
+	float					liquidMass;					// mass of object in a liquid MOD_WATERPHYSICS
+	float					invLiquidMass;				// inverse liquid mass MOD_WATERPHYSICS
+	float					waterLevel;					// percent of body in water MOD_WATERPHYSICS
+	float					m_fWaterMurkiness;			// Tels: murkiness of the water body this entity is in
+#endif 	// MOD_WATERPHYSICS
 	idVec3					centerOfMass;				// center of mass of body
 	idMat3					inertiaTensor;				// inertia tensor
 	idMat3					inverseInertiaTensor;		// inverse inertia tensor
@@ -888,6 +900,28 @@ public:
 	void					SetForcePushable( const bool enable ) { forcePushable = enable; }
 							// update the clip model positions
 	void					UpdateClipModels( void );
+	/**
+* DarkMod:
+* Returns the origin of the AF body nearest to the given point
+* 
+* If int pointer body is non-NULL, the body Id of the nearest body is written
+*	to this pointer.  Will be set to -1 if no body was found.
+**/
+idVec3					NearestBodyOrig( idVec3 point, int *bodyID = NULL );
+	/**
+* Returns true if the specified body is in contact with the ground
+* (Called by the rope climbing code)
+**/
+bool					HasGroundContacts( int id );
+#ifdef MOD_WATERPHYSICS
+	// buoyancy stuff
+	void					SetLiquidDensity( float density ); // MOD_WATERPHYSICS
+	float					GetLiquidDensity() const; 		// MOD_WATERPHYSICS
+	// this will reset liquidDensity so be careful when using it
+	void					SetFixedDensityBuoyancy( bool fixed ); // MOD_WATERPHYSICS
+	bool					GetFixedDensityBuoyancy() const; // MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
+
 
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
@@ -954,6 +988,19 @@ public:	// common physics interface
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+	/**
+	* TDM: Had to make this public so we could call it earlier than intended
+	**/
+	void					BuildTrees( void );
+
+	/**
+	* Get/Set the number of original bodies or constraints
+	* These are constraints that are added by this entity's AF only, not ones that are attached later
+	**/
+	int						GetNumOrigBodies( void ) { return m_NumOrigBodies; };
+	void					SetNumOrigBodies( int num ) { m_NumOrigBodies = num; };
+	int						GetNumOrigConstraints( void ) { return m_NumOrigConstraints; };
+	void					SetNumOrigConstraints( int num ) { m_NumOrigConstraints = num; };
 
 private:
 							// articulated figure
@@ -967,6 +1014,18 @@ private:
 	idList<int>				contactBodies;					// body id for each contact
 	idList<AFCollision_t>	collisions;						// collisions
 	bool					changedAF;						// true when the articulated figure just changed
+
+	/**
+	* TDM: Number of _original_ bodies from the loaded AF file
+	* We need this to implement a hack where added bodies aren't saved/loaded,
+	* because they will be added again from scratch on restore.
+	* We must do this because Id chose to re-load the AFs instead of restore them
+	**/
+	int						m_NumOrigBodies;
+	/**
+	* Number of original constraints loaded from this entity's AF file
+	**/
+	int						m_NumOrigConstraints;
 
 							// properties
 	float					linearFriction;					// default translational friction
@@ -1012,12 +1071,17 @@ private:
 							// physics state
 	AFPState_t				current;
 	AFPState_t				saved;
+#ifdef MOD_WATERPHYSICS
+// treats liquid Density as THE density for each body when the AF is in liquid.
+// otherwise liquidDensity is just a gravity scalar for the AF in any liquid.
+	bool					fixedDensityBuoyancy;		// MOD_WATERPHYSICS
+	float					liquidDensity;				// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver
 
 private:
-	void					BuildTrees( void );
 	bool					IsClosedLoop( const idAFBody *body1, const idAFBody *body2 ) const;
 	void					PrimaryFactor( void );
 	void					EvaluateBodies( float timeStep );

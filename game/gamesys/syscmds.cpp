@@ -1,37 +1,418 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
+
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "TypeInfo.h"
+#include "../game_local.h"
+#include "../ai/aas_local.h"
+#include "../../DarkMod/sndPropLoader.h"
+#include "../../DarkMod/Relations.h"
+#include "../../DarkMod/Objectives/MissionData.h"
+#include "../../DarkMod/Inventory/Inventory.h"
+#include "../../DarkMod/Inventory/Item.h"
+#include "../../DarkMod/TimerManager.h"
+#include "../../DarkMod/AI/Conversation/ConversationSystem.h"
+#include "../../DarkMod/Missions/MissionManager.h"
+#include "../../DarkMod/Missions/ModInfo.h"
+
+#include "typeinfo.h"
+
+/*
+==================
+Cmd_TestSndIO_f
+==================
+*/
+void Cmd_TestSndIO_f( const idCmdArgs &args ) 
+{
+	idStr inFN;
+
+	if ( args.Argc() < 2 ) {
+		gameLocal.Printf( "usage: dm_spr_testIO <file name without extension>\n" );
+		goto Quit;
+	}
+	inFN = args.Args();
+
+	if ( inFN.Length() == 0 ) 
+	{
+		goto Quit;
+	}
+	
+//	New file IO not yet implemented
+//	gameLocal.Printf( "Testing sound prop. IO for file %s\n", inFN.c_str() );
+	gameLocal.Printf( "New soundprop file IO not yet implemented\n");
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_PrintAIRelations_f
+==================
+*/
+void Cmd_PrintAIRelations_f( const idCmdArgs &args ) 
+{
+	gameLocal.m_RelationsManager->DebugPrintMat();
+	return;
+}
+
+/**
+ * greebo: This is a helper command, used by the restart.gui
+ */
+void Cmd_RestartGuiCmd_UpdateObjectives_f(const idCmdArgs &args) 
+{
+	idUserInterface* gui = uiManager->FindGui("guis/restart.gui", false, true, true);
+
+	if (gui == NULL) 
+	{
+		gameLocal.Warning("Could not find restart.gui");
+		return;
+	}
+	
+	gameLocal.m_MissionData->UpdateGUIState(gui);
+}
+
+void Cmd_ListMissions_f(const idCmdArgs& args)
+{
+	gameLocal.Printf("%d missions registered:\n", gameLocal.m_MissionManager->GetNumMods());
+
+	for (int i = 0; i < gameLocal.m_MissionManager->GetNumMods(); ++i)
+	{
+		CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(i);
+
+		if (missionInfo == NULL) continue;
+
+		gameLocal.Printf("%02d: %s = %s\n", i, missionInfo->modName.c_str(), missionInfo->displayName.c_str());
+	}
+}
+
+void Cmd_SetMissionCompleted_f(const idCmdArgs& args)
+{
+	if (args.Argc() < 2)
+	{
+		gameLocal.Printf("Usage: tdm_set_mission_completed <missionName> [-c]\n");
+		gameLocal.Printf("The -c argument is optional, can be used to clear the 'completed' flag, such that the mission isn't listed as completed in the mission menu.\n\n");
+		gameLocal.Printf("Example: 'tdm_set_mission_completed heart'\n");
+		return;
+	}
+
+	bool clearFlag = false;
+	idStr missionName;
+
+	for (int i = 1; i < args.Argc(); ++i)
+	{
+		idStr arg = args.Argv(i);
+
+		if (arg == "-") 
+		{
+			if (++i < args.Argc() && idStr::Cmp(args.Argv(i), "c") == 0)
+			{
+				clearFlag = true;
+			}
+		}
+		else
+		{
+			missionName = arg;
+		}
+	}
+
+	if (missionName.IsEmpty())
+	{
+		return;
+	}
+
+	CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(missionName);
+
+	if (missionInfo == NULL)
+	{
+		gameLocal.Printf("Mission %s not found.\n", missionName.c_str());
+		return;
+	}
+
+	if (clearFlag)
+	{
+		// Remove completed flags
+		missionInfo->RemoveKeyValuesMatchingPrefix("mission_completed_");
+	}
+	else
+	{
+		// Mark mission as completed on all difficulties
+		for (int i = 0; i < DIFFICULTY_COUNT; ++i)
+		{
+			missionInfo->SetKeyValue(va("mission_completed_%d", i), "1");
+		}
+	}
+
+	gameLocal.Printf("OK");
+}
+
+void Cmd_EndMission_f(const idCmdArgs& args)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	if (gameLocal.GetLocalPlayer() != NULL)
+	{
+		gameLocal.Printf("=== Triggering mission end ===\n");
+		gameLocal.GetLocalPlayer()->PostEventMS(&EV_TriggerMissionEnd, 0);
+	}
+}
+
+/*
+==================
+Cmd_AttachmentOffset_f
+==================
+*/
+void Cmd_AttachmentOffset_f( const idCmdArgs &args )
+{
+	idVec3 offset(vec3_zero);
+	
+	if( args.Argc() != 6 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_offset <attachment name> <attachment position> <x> <y> <z>\n" );
+		return;
+	}
+
+	idEntity* lookedAt = gameLocal.PlayerTraceEntity();
+	if (lookedAt == NULL || !(lookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_offset must be called when looking at an AI\n" );
+		return;
+	}
+
+	idActor* actor = static_cast<idActor*>(lookedAt);
+
+	idStr attName = args.Argv(1);
+	idStr attPosName = args.Argv(2);
+
+	int attIndex = actor->GetAttachmentIndex(attName);
+
+	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
+	if (pos == NULL)
+	{
+		gameLocal.Printf( "tdm_attach_offset could not find position attPosName %s\n", attPosName.c_str() );
+		return;
+	}
+
+	idStr joint = actor->GetAnimator()->GetJointName(pos->joint);
+
+	// overwrite the attachment with our new attachment
+	offset.x = atof(args.Argv( 3 ));
+	offset.y = atof(args.Argv( 4 ));
+	offset.z = atof(args.Argv( 5 ));
+
+	actor->ReAttachToCoords( attName, joint, offset, pos->angleOffset );
+}
+
+/*
+==================
+Cmd_AttachmentRot_f
+==================
+*/
+void Cmd_AttachmentRot_f( const idCmdArgs &args )
+{
+	idVec3 offset(vec3_zero);
+	
+	if( args.Argc() != 6 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_rot <attachment name> <attachment position> <pitch> <yaw> <roll>\n" );
+		return;
+	}
+
+	idEntity* lookedAt = gameLocal.PlayerTraceEntity();
+	if (lookedAt == NULL || !(lookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_rot must be called when looking at an AI\n" );
+		return;
+	}
+
+	idActor* actor = static_cast<idActor*>(lookedAt);
+
+	idStr attName = args.Argv(1);
+	idStr attPosName = args.Argv(2);
+
+	int attIndex = actor->GetAttachmentIndex(attName);
+
+	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
+	if (pos == NULL)
+	{
+		gameLocal.Printf( "tdm_attach_rot could not find position attPosName %s\n", attPosName.c_str() );
+		return;
+	}
+
+	idStr joint = actor->GetAnimator()->GetJointName(pos->joint);
+	
+	// overwrite the attachment rotation with our new one
+	idAngles	angles;
+	angles.pitch = atof(args.Argv( 3 ));
+	angles.yaw = atof(args.Argv( 4 ));
+	angles.roll = atof(args.Argv( 5 ));
+
+	actor->ReAttachToCoords( attName, joint, pos->originOffset, angles );
+}
+
+/*
+==================
+Cmd_InventoryHotkey_f
+==================
+*/
+void Cmd_InventoryHotkey_f( const idCmdArgs &args )
+{
+	if ( 0 > args.Argc() || args.Argc() > 2 ) {
+		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
+		return;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		return;
+	}
+
+	if( player->GetImmobilization() & EIM_ITEM_SELECT )
+		return;
+
+	CInventoryCursorPtr cursor = player->InventoryCursor();
+	CInventory* inventory = cursor->Inventory();
+	
+	if (inventory == NULL)
+	{
+		gameLocal.Printf( "%s: Could not find player inventory.\n", args.Argv(0) );
+		return;
+	}
+
+	if( args.Argc() == 2)
+	{
+		// support either "#str_02395" or "Lantern" as input
+		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+		player->SelectInventoryItem( itemName );
+	}
+	else if (args.Argc() == 1)
+	{
+		// greebo: Clear the item if no argument is set
+		player->SelectInventoryItem("");
+	}
+}
+
+/*
+==================
+Cmd_InventoryUse_f
+==================
+*/
+void Cmd_InventoryUse_f( const idCmdArgs &args )
+{
+	if ( 0 > args.Argc() || args.Argc() > 2 ) {
+		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
+		return;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		return;
+	}
+
+	if( player->GetImmobilization() & EIM_ITEM_USE )
+		return;
+
+	CInventoryCursorPtr cursor = player->InventoryCursor();
+	CInventory* inventory = cursor->Inventory();
+	
+	if (inventory == NULL)
+	{
+		gameLocal.Printf( "%s: Could not find player inventory.\n", args.Argv(0) );
+		return;
+	}
+
+	if( args.Argc() == 2)
+	{
+		// support either "#str_02395" or "Lantern" as input
+		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+
+		// Try to lookup the item in the inventory
+		CInventoryItemPtr item = inventory->GetItem( itemName );
+
+		if (item != NULL)
+		{
+			// Item found, set the cursor to it
+			player->UseInventoryItem(EPressed, item, 0, false); // false => no frob action
+		}
+		else
+		{
+			gameLocal.Printf( "%s: Can't find item in player inventory: %s (%s)\n", args.Argv(0), args.Argv(1), gameLocal.m_I18N->Translate(itemName) );
+		}
+	}
+}
+
+/*
+==================
+Cmd_InventoryCycleMaps_f
+==================
+*/
+void Cmd_InventoryCycleMaps_f( const idCmdArgs &args )
+{
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		return;
+	}
+
+	if( (player->GetImmobilization() & EIM_ITEM_SELECT) || (player->GetImmobilization() & EIM_ITEM_USE) )
+		return;
+
+	// Pass the call to the specialised method
+	player->NextInventoryMap();
+}
+
+/*
+==================
+Cmd_InventoryCycleGroup_f
+==================
+*/
+void Cmd_InventoryCycleGroup_f( const idCmdArgs &args )
+{
+	if ( 0 > args.Argc() || args.Argc() > 2 )
+	{
+		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
+		return;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL )
+	{
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		return;
+	}
+
+	if( (player->GetImmobilization() & EIM_ITEM_SELECT) || (player->GetImmobilization() & EIM_ITEM_USE) )
+	{
+		return;
+	}
+
+	if( args.Argc() == 2)
+	{
+		// support either "#str_02391" or "Readables" as input
+		idStr categoryName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+
+		// Pass the call to the specialised method
+		player->CycleInventoryGroup( categoryName );
+	}
+}
 
 /*
 ==================
@@ -308,32 +689,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 	}
 
 	if ( give_all || idStr::Icmp( name, "health" ) == 0 )	{
-		player->health = player->inventory.maxHealth;
-		if ( !give_all ) {
-			return;
-		}
-	}
-
-	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
-		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1;
-		player->CacheWeapons();
-
-		if ( !give_all ) {
-			return;
-		}
-	}
-
-	if ( give_all || idStr::Icmp( name, "ammo" ) == 0 ) {
-		for ( i = 0 ; i < AMMO_NUMTYPES; i++ ) {
-			player->inventory.ammo[ i ] = player->inventory.MaxAmmoForAmmoClass( player, idWeapon::GetAmmoNameForNum( ( ammo_t )i ) );
-		}
-		if ( !give_all ) {
-			return;
-		}
-	}
-
-	if ( give_all || idStr::Icmp( name, "armor" ) == 0 ) {
-		player->inventory.armor = player->inventory.maxarmor;
+		player->health = player->maxHealth;
 		if ( !give_all ) {
 			return;
 		}
@@ -346,16 +702,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 
 	if ( idStr::Icmp( name, "invis" ) == 0 ) {
 		player->GivePowerUp( INVISIBILITY, SEC2MS( 30.0f ) );
-		return;
-	}
-
-	if ( idStr::Icmp( name, "pda" ) == 0 ) {
-		player->GivePDA( args.Argv(2), NULL );
-		return;
-	}
-
-	if ( idStr::Icmp( name, "video" ) == 0 ) {
-		player->GiveVideo( args.Argv(2), NULL );
 		return;
 	}
 
@@ -395,7 +741,6 @@ argv(0) god
 ==================
 */
 void Cmd_God_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -405,13 +750,12 @@ void Cmd_God_f( const idCmdArgs &args ) {
 
 	if ( player->godmode ) {
 		player->godmode = false;
-		msg = "godmode OFF\n";
+		gameLocal.Printf( "godmode OFF\n" );
 	} else {
 		player->godmode = true;
-		msg = "godmode ON\n";
+		gameLocal.Printf( "godmode ON\n" );
 	}
 
-	gameLocal.Printf( "%s", msg );
 }
 
 /*
@@ -424,7 +768,6 @@ argv(0) notarget
 ==================
 */
 void Cmd_Notarget_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -434,13 +777,12 @@ void Cmd_Notarget_f( const idCmdArgs &args ) {
 
 	if ( player->fl.notarget ) {
 		player->fl.notarget = false;
-		msg = "notarget OFF\n";
+		gameLocal.Printf( "notarget OFF\n" );
 	} else {
 		player->fl.notarget = true;
-		msg = "notarget ON\n";
+		gameLocal.Printf( "notarget ON\n" );
 	}
 
-	gameLocal.Printf( "%s", msg );
 }
 
 /*
@@ -451,7 +793,6 @@ argv(0) noclip
 ==================
 */
 void Cmd_Noclip_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -460,13 +801,12 @@ void Cmd_Noclip_f( const idCmdArgs &args ) {
 	}
 
 	if ( player->noclip ) {
-		msg = "noclip OFF\n";
+		player->noclip = false;
+		gameLocal.Printf( "noclip OFF\n" );
 	} else {
-		msg = "noclip ON\n";
+		player->noclip = true;
+		gameLocal.Printf( "noclip ON\n" );
 	}
-	player->noclip = !player->noclip;
-
-	gameLocal.Printf( "%s", msg );
 }
 
 /*
@@ -867,7 +1207,7 @@ Cmd_TestLight_f
 void Cmd_TestLight_f( const idCmdArgs &args ) {
 	int			i;
 	idStr		filename;
-	const char *key, *value, *name;
+	const char *key, *value, *name(NULL);
 	idPlayer *	player;
 	idDict		dict;
 
@@ -924,7 +1264,7 @@ Cmd_TestPointLight_f
 ===================
 */
 void Cmd_TestPointLight_f( const idCmdArgs &args ) {
-	const char *key, *value, *name;
+	const char *key, *value, *name(NULL);
 	int			i;
 	idPlayer	*player;
 	idDict		dict;
@@ -1132,7 +1472,7 @@ static void Cmd_AddDebugLine_f( const idCmdArgs &args ) {
 	debugLines[i].end.x = Cmd_GetFloatArg( args, argNum );
 	debugLines[i].end.y = Cmd_GetFloatArg( args, argNum );
 	debugLines[i].end.z = Cmd_GetFloatArg( args, argNum );
-	debugLines[i].color = Cmd_GetFloatArg( args, argNum );
+	debugLines[i].color = static_cast<int>(Cmd_GetFloatArg( args, argNum ));
 }
 
 /*
@@ -1207,9 +1547,10 @@ PrintFloat
 ==================
 */
 static void PrintFloat( float f ) {
-	char buf[128], i;
+	char buf[128];
+	int i;
 
-	for ( i = sprintf( buf, "%3.2f", f ); i < 7; i++ ) {
+	for (i = sprintf( buf, "%3.2f", f ); i < 7; i++) {
 		buf[i] = ' ';
 	}
 	buf[i] = '\0';
@@ -1442,6 +1783,26 @@ static void Cmd_ListAnims_f( const idCmdArgs &args ) {
 	}
 }
 
+// greebo: Reload the xdata declarations by forcing the declaration manager to perform a reload
+static void Cmd_ReloadXData_f( const idCmdArgs &args )
+{
+	// Reload the declarations, this triggers a re-parse of all xdata files (and all other files on that matter)
+	declManager->Reload(true);
+	// greebo: This is called twice on purpose. For some reason, the first reload doesn't reload the xdata files.
+	declManager->Reload(true);
+
+	// Now cycle through all active entities and call "refreshReadables" on them
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		idThread* thread = ent->CallScriptFunctionArgs("reloadXData", true, 0, "e", ent);
+
+		if (thread != NULL)
+		{
+			thread->Execute();
+		}
+	}
+}
+
 /*
 ==================
 Cmd_AASStats_f
@@ -1496,9 +1857,9 @@ static void Cmd_TestDamage_f( const idCmdArgs &args ) {
 
 	// give the player full health before and after
 	// running the damage
-	player->health = player->inventory.maxHealth;
+	player->health = player->maxHealth;
 	player->Damage( NULL, NULL, dir, damageDefName, 1.0f, INVALID_JOINT );
-	player->health = player->inventory.maxHealth;
+	player->health = player->maxHealth;
 }
 
 /*
@@ -1580,7 +1941,7 @@ static void Cmd_SaveSelected_f( const idCmdArgs &args ) {
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char *name;
+	const char *name(NULL);
 
 	player = gameLocal.GetLocalPlayer();
 	if ( !player || !gameLocal.CheatsOk() ) {
@@ -1609,9 +1970,8 @@ static void Cmd_SaveSelected_f( const idCmdArgs &args ) {
 		mapFile->AddEntity( mapEnt );
 		for ( i = 0; i < 9999; i++ ) {
 			name = va( "%s_%d", s->GetEntityDefName(), i );
-			if ( !gameLocal.FindEntity( name ) ) {
+			if ( !mapFile->FindEntity( name ) )
 				break;
-			}
 		}
 		s->name = name;
 		mapEnt->epairs.Set( "classname", s->GetEntityDefName() );
@@ -1663,7 +2023,7 @@ static void Cmd_SaveMoveables_f( const idCmdArgs &args ) {
 	idMapEntity *mapEnt;
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	idStr mapName;
-	const char *name;
+	const char *name(NULL);
 
 	if ( !gameLocal.CheatsOk() ) {
 		return;
@@ -1717,9 +2077,8 @@ static void Cmd_SaveMoveables_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", m->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			m->name = name;
 			mapEnt->epairs.Set( "classname", m->GetEntityDefName() );
@@ -1746,7 +2105,7 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs &args ) {
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char *name;
+	const char *name(NULL);
 
 	if ( !gameLocal.CheatsOk() ) {
 		return;
@@ -1771,9 +2130,12 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs &args ) {
 			continue;
 		}
 
+		// Ish: Not sure why they did this
+		/*
 		if ( af->IsBound() ) {
 			continue;
 		}
+		*/
 
 		if ( !af->IsAtRest() ) {
 			gameLocal.Warning( "the articulated figure for entity %s is not at rest", gameLocal.entities[ e ]->name.c_str() );
@@ -1790,9 +2152,8 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", af->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			af->name = name;
 			mapEnt->epairs.Set( "classname", af->GetEntityDefName() );
@@ -1863,7 +2224,7 @@ static void Cmd_SaveLights_f( const idCmdArgs &args ) {
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char *name;
+	const char *name(NULL);
 
 	if ( !gameLocal.CheatsOk() ) {
 		return;
@@ -1895,9 +2256,8 @@ static void Cmd_SaveLights_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", light->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			light->name = name;
 			mapEnt->epairs.Set( "classname", light->GetEntityDefName() );
@@ -2280,8 +2640,1049 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 	if ( idStr::Cmpn( id, STRTABLE_ID, STRTABLE_ID_LENGTH ) != 0 ) {
 		id = STRTABLE_ID + id;
 	}
-	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );	
+	gameLocal.mpGame.AddChatLine( gameLocal.m_I18N->Translate( id ), "<nothing>", "<nothing>", "<nothing>" );	
 }
+
+void Cmd_SetClipMask(const idCmdArgs& args)
+{
+	if (args.Argc() != 3)
+	{
+		common->Printf( "usage: setClipMask <entity> <clipMask>\n" );
+		return;
+	}
+
+	idStr targetEntity = args.Argv(1);
+	int clipMask = atoi(args.Argv(2));
+
+	idEntity* ent = gameLocal.FindEntity(targetEntity.c_str());
+
+	if (ent != NULL && ent->GetPhysics() != NULL)
+	{
+		ent->GetPhysics()->SetClipMask(clipMask);
+		common->Printf("Clipmask of entity %s set to %d\n", ent->name.c_str(), clipMask);
+	}
+}
+
+void Cmd_SetClipContents(const idCmdArgs& args)
+{
+	if (args.Argc() != 3)
+	{
+		common->Printf( "usage: setClipContents <entity> <contents>\n" );
+		return;
+	}
+
+	idStr targetEntity = args.Argv(1);
+	int contents = atoi(args.Argv(2));
+
+	idEntity* ent = gameLocal.FindEntity(targetEntity.c_str());
+
+	if (ent != NULL && ent->GetPhysics() != NULL)
+	{
+		ent->GetPhysics()->SetContents(contents);
+		common->Printf("Contents of entity %s set to %d\n", ent->name.c_str(), contents);
+	}
+}
+
+void Cmd_ShowWalkPath_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		common->Printf( "usage: aas_showWalkPath <areaNum>\n" );
+		return;
+	}
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if ( !player ) {
+		return;
+	}
+
+	idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+	if (aas != NULL)
+	{
+		aas->ShowWalkPath(player->GetPhysics()->GetOrigin(), atoi(args.Argv(1)), aas->AreaCenter(atoi(args.Argv(1))));
+	}
+}
+
+void Cmd_ShowReachabilities_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		common->Printf( "usage: aas_showReachabilities <areaNum>\n" );
+		return;
+	}
+
+	idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+	if (aas != NULL)
+	{
+		idReachability* reach = aas->GetAreaFirstReachability(atoi(args.Argv(1)));
+
+		while (reach != NULL)
+		{
+			aas->DrawReachability(reach);		
+			reach = reach->next;
+		}
+	}
+}
+
+void Cmd_ShowAASStats_f(const idCmdArgs& args)
+{
+	for (int i = 0; i < gameLocal.NumAAS(); i++)
+	{
+		idAAS* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS(i));
+		if (aas != NULL)
+		{
+			aas->Stats();
+		}
+	}
+}
+
+void Cmd_ShowEASRoute_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		common->Printf( "usage: eas_showRoute <targetAreaNum>\n" );
+		return;
+	}
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL) 
+	{
+		common->Printf( "no player found\n" );
+		return;
+	}
+
+	idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+	if (aas != NULL)
+	{
+		int areaNum = atoi(args.Argv(1));
+
+		aas->DrawEASRoute(player->GetPhysics()->GetOrigin(), areaNum);
+	}
+}
+
+void Cmd_StartConversation_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		gameLocal.Printf("Usage: tdm_start_conversation <conversationName>. Use tdm_list_conversations to get a list of names.\n" );
+		return;
+	}
+
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	int idx = gameLocal.m_ConversationSystem->GetConversationIndex(args.Argv(1));
+	if (idx != -1)
+	{
+		gameLocal.m_ConversationSystem->StartConversation(idx);
+	}
+	else
+	{
+		gameLocal.Printf("No conversation with name: %s\n", args.Argv(1));
+	}
+}
+
+void Cmd_ListConversations_f(const idCmdArgs& args)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	for (int i = 0; i < gameLocal.m_ConversationSystem->GetNumConversations(); i++)
+	{
+		ai::ConversationPtr conversation = gameLocal.m_ConversationSystem->GetConversation(i);
+		
+		if (conversation == NULL) continue;
+
+		gameLocal.Printf("%d: %s (%d commands)\n", i, conversation->GetName().c_str(), conversation->GetNumCommands());
+	}
+}
+
+void Cmd_ShowLoot_f(const idCmdArgs& args)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	int items = 0;
+	int gold = 0;
+	int jewels = 0;
+	int goods = 0;
+
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (ent == NULL) continue;
+
+		int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
+
+		if (value <= 0) continue; // no loot item
+
+		items++;
+
+		LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
+		
+		idVec4 colour(colorWhite);
+
+		switch(lootType)
+		{
+			case LOOT_GOLD:
+				gold += value;
+				colour = idVec4(0.97f, 0.93f, 0.58f, 1);
+			break;
+
+			case LOOT_GOODS:
+				goods += value;
+				colour = idVec4(0.3f, 0.91f, 0.3f, 1);
+			break;
+
+			case LOOT_JEWELS:
+				jewels += value;
+				colour = idVec4(0.96f, 0.2f, 0.2f, 1);
+			break;
+			
+			default: break;
+		} 
+		
+		gameRenderWorld->DebugBox(colour, idBox(ent->GetPhysics()->GetAbsBounds()), 5000);
+	}
+
+	gameLocal.Printf("Highlighing loot items for 5 seconds...\n");
+	gameLocal.Printf("Loot items remaining: %d\n", items);
+	gameLocal.Printf("Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods);
+}
+
+void Cmd_ActivateLog_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		gameLocal.Printf("Usage: tdm_activatelogclass <logclass>. Use the TAB to get auto-complete logclasses.\n" );
+		return;
+	}
+
+	LC_LogClass logclassIndex = CGlobal::GetLogClassForString(args.Argv(1));
+	
+	if (logclassIndex != LC_COUNT)
+	{
+		// Log class found
+		g_Global.m_ClassArray[logclassIndex] = true;
+
+		// activate all types too
+		g_Global.m_LogArray[LT_WARNING] = true;
+		g_Global.m_LogArray[LT_ERROR] = true;
+		g_Global.m_LogArray[LT_INFO] = true;
+		g_Global.m_LogArray[LT_DEBUG] = true;
+
+		gameLocal.Printf("Logclass %d activated.", static_cast<int>(logclassIndex));
+	}
+}
+
+void Cmd_DeactivateLog_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		gameLocal.Printf("Usage: tdm_deactivatelogclass <logclass>. Use the TAB to get auto-complete logclasses.\n" );
+		return;
+	}
+
+	LC_LogClass logclassIndex = CGlobal::GetLogClassForString(args.Argv(1));
+	
+	if (logclassIndex != LC_COUNT)
+	{
+		// Log class found
+		g_Global.m_ClassArray[logclassIndex] = false;
+
+		// activate all types too
+		g_Global.m_LogArray[LT_WARNING] = true;
+		g_Global.m_LogArray[LT_ERROR] = true;
+		g_Global.m_LogArray[LT_INFO] = true;
+		g_Global.m_LogArray[LT_DEBUG] = true;
+
+		gameLocal.Printf("Logclass %d deactivated.", static_cast<int>(logclassIndex));
+	}
+}
+
+//-------------------------------------------------------------
+// Do not account for centerScale or Scroll for now.
+typedef struct _ImageInfo{
+	idStr m_strImageName;
+	idStr m_strUVScale;
+
+	_ImageInfo() :
+		m_strImageName(),
+		m_strUVScale("1, 1")
+	{
+	}
+}ImageInfo_s;
+
+enum eVertexBlendType {
+	eVertexBlendType_None,
+	eVertexBlendType_VertexColored,
+	eVertexBlendType_InvVertexColored
+};
+//------------------------------------------------------------------
+typedef std::multimap< eVertexBlendType, ImageInfo_s > ImageInfoMap;
+//------------------------------------------------------------------
+
+//-------------------------------------------------------------
+// GetValidStageTextureName
+//
+// Description: Obtains a valid texture name with trailing white spaces and curly brackets (if found any) removed.
+//				A check for valid number of opening and closing brackets performed.
+//-------------------------------------------------------------
+bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureName )
+{
+	int iOffset, nBrackets;
+	a_strStageTextureName.Empty();
+
+	std::vector< idStr > arrStrInvalidTokens;
+	
+	arrStrInvalidTokens.push_back( "bumpmap" );
+	arrStrInvalidTokens.push_back( "diffusemap" );
+	arrStrInvalidTokens.push_back( "specularmap" );
+	arrStrInvalidTokens.push_back( "map" );
+
+// 	gameLocal.Printf("Entering loop. \n" );
+
+	idToken tknParsedLine;
+	int i=0;
+	for( nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
+	{
+		while(a_lexSource.ReadToken( &tknParsedLine )) 
+		{
+			if ( tknParsedLine.linesCrossed ) {
+// 				gameLocal.Printf("End of the line reached. \n" );
+				break;
+			}
+			if ( a_strStageTextureName.Length() ) {
+				a_strStageTextureName += " ";
+			}
+			bool bIsValidToken = true;
+			for( std::vector<idStr>::iterator iter = arrStrInvalidTokens.begin() ; arrStrInvalidTokens.end() != iter; iter ++ )
+			{
+				if( 0 != tknParsedLine.Icmp( *iter ) )
+					continue;
+
+				bIsValidToken = false;
+// 				gameLocal.Printf("Invalid token found. \n" );
+				break;
+			}
+			if( bIsValidToken )
+			{
+				a_strStageTextureName += tknParsedLine;
+// 				gameLocal.Printf("constructing \"%s\" with a valid token. \n", a_strStageTextureName.c_str() );
+			}
+			else
+			{
+// 				gameLocal.Printf("%s is an invalid token. \n", tknParsedLine.c_str() );
+				break;
+			}
+		}
+
+		a_strStageTextureName.Strip('\n');
+		a_strStageTextureName.Strip('\t');
+		a_strStageTextureName.Strip('\r');
+		a_strStageTextureName.Strip(' ');
+
+		// Make sure that we have equal number of opening bracket and closing brackets.
+		for(iOffset = 0, nBrackets = 0; 0 <= (iOffset = a_strStageTextureName.Find( '(', iOffset )); nBrackets ++, iOffset ++ );
+		for(iOffset = 0; 0 <= (iOffset = a_strStageTextureName.Find( ')', iOffset )); nBrackets --, iOffset ++ );
+
+		if ( 0 == nBrackets )
+		{
+			// We have gone one token ahead than needed in the lexer so offset it back again.
+// 			gameLocal.Printf("Unreading token %s. \n", tknParsedLine.c_str() );
+			a_lexSource.UnreadToken( &tknParsedLine );
+
+			a_strStageTextureName.Strip('}');
+			a_strStageTextureName.Strip('{');
+			if( a_strStageTextureName.Length() <= 0 )
+				return false;
+
+			gameLocal.Printf(" Found valid expression: %s \n ", a_strStageTextureName.c_str() );
+			return true;
+		}
+
+		// Append the first token of the newly read line.
+		a_strStageTextureName += tknParsedLine;
+	}
+
+	return false;
+}
+
+//-------------------------------------------------------------
+// GetMaterialStageInfo
+//
+// Description: For a given material stage (any one of "diffusemap", "bumpmap" & specular map ) finds out number of 
+//				textures (pathnames) being used along with their UV scales. 
+//-------------------------------------------------------------
+void GetMaterialStageInfo ( const char* a_strMatStageName, idLexer &a_lexSource, ImageInfoMap & a_arrMatStageInfo )
+{
+	a_lexSource.Reset();
+// 	gameLocal.Printf( "Looking for valid %s stage information (w/o blend). \n", a_strMatStageName );
+	while ( 1 == a_lexSource.SkipUntilString( a_strMatStageName ) )
+	{
+		ImageInfo_s currentImageInfo ;
+
+		if( true == GetValidStageExpression( a_lexSource, currentImageInfo.m_strImageName ) )
+		{
+// 			gameLocal.Printf( "Found valid %s stage information (w/o blend). \n", a_strMatStageName );
+			a_arrMatStageInfo.insert( ImageInfoMap::value_type( eVertexBlendType_None, currentImageInfo ) );
+		}
+	}
+// 	if( a_arrMatStageInfo.size() == 0 )
+// 		gameLocal.Printf( "Could not find valid %s stage information w/o blend. \n", a_strMatStageName);
+
+	a_lexSource.Reset();
+
+// 	gameLocal.Printf( "Looking for %s stage information with blend. \n", a_strMatStageName );
+	while ( 1 == a_lexSource.SkipUntilString( "blend" ) )
+	{
+		idToken tknMatStage;
+		if( 1 == a_lexSource.ReadToken( &tknMatStage ) && 0 == tknMatStage.Icmp(a_strMatStageName) )
+		{
+			idToken tknMap;
+			if( 0 != a_lexSource.ReadToken( &tknMap ) && 0 == tknMap.Icmp("map") )
+			{
+				ImageInfo_s currentImageInfo;
+				eVertexBlendType vertBlendType = eVertexBlendType_None;
+
+				if( true == GetValidStageExpression( a_lexSource, currentImageInfo.m_strImageName ) )
+				{
+					bool bIsScaleFound = false;
+					while( "}" != tknMatStage )
+					{
+						if( !a_lexSource.ReadToken( &tknMatStage ) )
+						{
+							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. \n");
+							break;
+						}
+						// Not using expectTokenString anymore since "Map" is treated as different token than "map". 
+						// So doing a manual non-case sensitive checks instead.
+						if( !bIsScaleFound && 0 == tknMatStage.Icmp("scale") )
+						{
+							idStr strScale;
+							if( true == GetValidStageExpression( a_lexSource, strScale ) )
+								currentImageInfo.m_strUVScale = strScale;
+
+							gameLocal.Printf(" Scale: %s \n ", strScale.c_str() );
+							bIsScaleFound = true;
+						}
+
+						if( eVertexBlendType_None == vertBlendType )  
+						{
+							if( 0 == tknMatStage.Icmp("vertexColor") )
+							{
+								gameLocal.Printf(" The stage is vertex-colored \n " );
+								vertBlendType = eVertexBlendType_VertexColored;
+							}
+							else if( 0 == tknMatStage.Icmp("inverseVertexColor") )
+							{
+								gameLocal.Printf(" The stage is inverse vertex-colored \n " );
+								vertBlendType = eVertexBlendType_InvVertexColored;
+							}
+						}
+						else if( bIsScaleFound )
+							break;
+
+					}
+					a_arrMatStageInfo.insert( ImageInfoMap::value_type( vertBlendType, currentImageInfo ) );
+	
+				}
+			}
+		}
+
+	}
+}
+
+
+//-------------------------------------------------------------
+// FindBlockContainingWords
+//
+// Description: Inside a specified material shader block, finds the character offsets for start & end of the block 
+//				that contains the words (specified by vector of strings) in their exact order.
+//	Return value: True if the block is found.
+//-------------------------------------------------------------
+
+bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSearchWords, unsigned int & a_uiStartOffset, unsigned int & a_uiEndOffset,
+								const char a_cBlockStart = '{', const char a_cBlockEnd = '}' )
+{
+	int	uiSearchIndex;
+	unsigned int uiSearchOffset = 0;
+	unsigned int iTextLength = idStr::Length(a_text);
+	bool bAreAllWordsFound = false;
+
+	for(std::vector<idStr>::iterator iter = a_arrSearchWords.begin(); ; )
+	{
+
+		uiSearchIndex = idStr::FindText( a_text, (*iter).c_str(), false, uiSearchOffset );
+		//  		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
+
+		if( uiSearchIndex < 0 )
+		{
+			//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
+			return false;
+		}
+
+		bAreAllWordsFound = true;
+
+		// Make sure that, this is not the first word we have found.
+		if( a_arrSearchWords.begin() != iter )
+		{
+			if( uiSearchIndex != uiSearchOffset )
+			{
+				//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
+
+				//Start the search from the first word again, since all of the search words are important.
+				bAreAllWordsFound = false;
+				iter = a_arrSearchWords.begin();
+				continue;
+			}
+		}
+
+		// Increment the iterator.
+		iter ++;
+
+		if( a_arrSearchWords.end() == iter )
+			break;
+
+		//Read white spaces and adjust the search offset accordingly for the next search.
+		for( uiSearchOffset = uiSearchIndex + (*(iter-1)).Length(); uiSearchOffset < iTextLength; uiSearchOffset++ )
+		{
+			if( ' ' == a_text[ uiSearchOffset ] || '\t' == a_text[ uiSearchOffset ] || '\r' == a_text[ uiSearchOffset ] )
+				continue;
+
+			break;
+		}
+	}
+
+	if( bAreAllWordsFound )
+	{
+		// 		gameLocal.Printf( " Total %d word(s) found \n", a_arrSearchWords.size() );
+
+		if( a_arrSearchWords.size() == 1 )
+		{
+			uiSearchOffset = uiSearchIndex;
+		}
+
+		// Start tracking offsets to the opening and closing of the block from the last search-Index.
+		bool bIsStartOffsetFound	= false;
+		bool bIsEndOffsetFound		= false;
+		for( a_uiStartOffset = a_uiEndOffset = uiSearchOffset ; a_uiStartOffset > 0 &&  a_uiEndOffset < iTextLength ; )
+		{
+			if( a_cBlockStart == a_text[ a_uiStartOffset ] )
+				bIsStartOffsetFound = true;
+			else
+				a_uiStartOffset --;
+
+			if( a_cBlockEnd == a_text[ a_uiEndOffset ] )
+				bIsEndOffsetFound = true;
+			else
+				a_uiEndOffset ++;
+
+			if( bIsStartOffsetFound && bIsEndOffsetFound )
+			{
+				// Adjust end offset by one extra character to make sure that we account the closing block.
+				a_uiEndOffset ++;
+				//  				idStr myBlock( a_text, a_uiStartOffset, a_uiEndOffset );
+				//  				gameLocal.Printf( "Found block from %d to %d, search offset is %d\n", a_uiStartOffset, a_uiEndOffset, uiSearchOffset );
+				//  				gameLocal.Printf( "%s \n", myBlock.c_str() );
+				return true;
+			}
+		}
+		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
+	}
+
+	// 	if( !bAreAllWordsFound )
+	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
+	return false;
+}
+
+void CreateNewAmbientBlock( const ImageInfoMap& a_arrDiffusemapInfo, const ImageInfoMap& a_arrBumpmapInfo, const ImageInfoMap& a_arrSpecularmapInfo, std::vector<char>& a_arrCharNewAmbientBlock )
+{
+	static const char newAmbientBlock[] = {	
+		"\n	{							\n"
+		"		if (global5 == 1)		\n"
+		"		blend add				\n"
+		"		map				%s		\n"
+		"		scale			%s		\n"
+		"		red				global2	\n"
+		"		green			global3	\n"
+		"		blue			global4	\n"
+		"	}							\n"
+		"	{							\n"
+		"		if (global5 == 2)		\n"
+		"		blend add				\n"
+		"		program	ambientEnvironment.vfp	\n"
+		"		vertexParm		0		%s, %s		// UV Scales for Diffuse and Bump	\n"
+		"		vertexParm		1		%s, 1, 1	// (X,Y) UV Scale for specular		\n"
+		"		vertexParm		2		global2, global3, global4, 1	\n"
+		"																\n"
+		"		fragmentMap		0		cubeMap env/gen1				\n"
+		"		fragmentMap		1		%s			// Bump				\n"
+		"		fragmentMap		2		%s			// Diffuse			\n"
+		"		fragmentMap		3		%s			// Specular			\n"
+		"	}"
+	};
+
+	static const char newAmbientBlockVertColorBlended[] = {	
+		"\n	{							\n"
+		"		if (global5 == 1)		\n"
+		"		blend add				\n"
+		"		map				%s		\n"
+		"		scale			%s		\n"
+		"		red				global2	\n"
+		"		green			global3	\n"
+		"		blue			global4	\n"
+		"		vertexColor				\n"
+		"	}							\n"
+		"	{							\n"
+		"		if (global5 == 1)		\n"
+		"		blend add				\n"
+		"		map				%s		\n"
+		"		scale			%s		\n"
+		"		red				global2	\n"
+		"		green			global3	\n"
+		"		blue			global4	\n"
+		"		inverseVertexColor		\n"
+		"	}							\n"
+		"	{							\n"
+		"		if (global5 == 2)		\n"
+		"		blend add				\n"
+		"		program	ambientEnvVertexBlend.vfp	\n"
+		"		vertexParm		0		%s, %s		// UV Scales for Diffuse1 and Bump1	resp.	\n"
+		"		vertexParm		1		%s, %s		// UV Scale for specular1 and Diffuse2 resp.\n"
+		"		vertexParm		2		%s, %s		// UV Scale for Bump2 and specular2 resp.	\n"
+		"		vertexParm		3		global2, global3, global4, 1	\n"
+		"		//----------- VertexColored -------------------			\n"
+		"		fragmentMap		0		cubeMap env/gen1				\n"
+		"		fragmentMap		1		%s			// Bump1			\n"
+		"		fragmentMap		2		%s			// Diffuse1			\n"
+		"		fragmentMap		3		%s			// Specular1		\n"
+		"		//----------- InverseVertexColored ------------			\n"
+		"		fragmentMap		4		%s			// Bump2			\n"
+		"		fragmentMap		5		%s			// Diffuse2			\n"
+		"		fragmentMap		6		%s			// Specular2		\n"
+		"	}"
+	};
+
+
+
+	ImageInfoMap::const_iterator itrDiffusemapInfoVertexColored		= a_arrDiffusemapInfo.find( eVertexBlendType_VertexColored );
+	ImageInfoMap::const_iterator itrBumpmapInfoVertexColored		= a_arrBumpmapInfo.find( eVertexBlendType_VertexColored );
+	ImageInfoMap::const_iterator itrSpecularmapInfoVertexColored	= a_arrSpecularmapInfo.find( eVertexBlendType_VertexColored );
+
+	ImageInfoMap::const_iterator itrDiffusemapInfoInvVertexColored	= a_arrDiffusemapInfo.find( eVertexBlendType_InvVertexColored );
+	ImageInfoMap::const_iterator itrBumpmapInfoInvVertexColored		= a_arrBumpmapInfo.find( eVertexBlendType_InvVertexColored );
+	ImageInfoMap::const_iterator itrSpecularmapInfoInvVertexColored	= a_arrSpecularmapInfo.find( eVertexBlendType_InvVertexColored );
+
+	bool bIsVertexColorBlended = ( ( a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored || a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored || 
+		a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored )	&&
+		(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored || a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored || 
+		a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ) );
+
+	ImageInfoMap::const_iterator itrDiffusemapInfo	= a_arrDiffusemapInfo.find( eVertexBlendType_None );
+	ImageInfoMap::const_iterator itrBumpmapInfo		= a_arrBumpmapInfo.find( eVertexBlendType_None );
+	ImageInfoMap::const_iterator itrSpecularmapInfo	= a_arrSpecularmapInfo.find( eVertexBlendType_None );
+
+
+	if ( bIsVertexColorBlended )
+	{
+		gameLocal.Printf("This material is vertex-color blended. \n");
+	
+		// Find out normal maps for vertex blending.
+
+		// Handle cases where vertexColor is not used for bumpmaps
+		if ( a_arrBumpmapInfo.end() == itrBumpmapInfoVertexColored )
+			itrBumpmapInfoVertexColored = itrBumpmapInfo;
+
+		if ( a_arrBumpmapInfo.end() == itrBumpmapInfoInvVertexColored )
+		{
+			ImageInfoMap::const_iterator itrBumpmapInfo2 = itrBumpmapInfo;
+			if( a_arrBumpmapInfo.end() != itrBumpmapInfo2 )
+			{
+				// Try and see if there's a second bumpmap with no vertex-color blend.
+				++itrBumpmapInfo2;
+				itrBumpmapInfoInvVertexColored =  a_arrBumpmapInfo.end() != itrBumpmapInfo2 ? ( eVertexBlendType_None == (*itrBumpmapInfo2).first ? itrBumpmapInfo2 : itrBumpmapInfo ) : itrBumpmapInfo;  
+			}
+		}
+		unsigned int uiBlockSize =	idStr::Length( newAmbientBlockVertColorBlended ) + 1 + 
+			//------------------ For vertexColor ----------------
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored	? (*itrDiffusemapInfoVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored	? (*itrDiffusemapInfoVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		) * 2	+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored		? (*itrBumpmapInfoVertexColored).second.m_strImageName.Length()		: idStr::Length("_flat")	) 		+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored		? (*itrBumpmapInfoVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored	? (*itrSpecularmapInfoVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored	? (*itrSpecularmapInfoVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		)		+ 
+			//------------------ For inverseVertexColor ---------
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored		? (*itrDiffusemapInfoInvVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored		? (*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		) * 2	+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored		? (*itrBumpmapInfoInvVertexColored).second.m_strImageName.Length()		: idStr::Length("_flat")	) 		+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored		? (*itrBumpmapInfoInvVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored	? (*itrSpecularmapInfoInvVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored	? (*itrSpecularmapInfoInvVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		);
+
+
+		a_arrCharNewAmbientBlock.resize( uiBlockSize, 0 );
+
+		idStr::snPrintf( &a_arrCharNewAmbientBlock[0], uiBlockSize, newAmbientBlockVertColorBlended, 
+			//------------------ For vertexColor ----------------
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strImageName.c_str()				: "_black", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strUVScale.c_str()				: "1, 1", 
+			//------------------ For inverseVertexColor ---------
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.c_str()		: "1, 1", 
+			//---------------------------------------------------
+
+			//------------------ For vertexColor ----------------
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strUVScale.c_str()			: "1, 1", 
+			a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored ?			(*itrBumpmapInfoVertexColored).second.m_strUVScale.c_str()				: "1, 1", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored ?	(*itrSpecularmapInfoVertexColored).second.m_strUVScale.c_str()			: "1, 1", 
+			//------------------ For inverseVertexColor ---------
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.c_str()	: "1, 1", 
+			a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored ?			(*itrBumpmapInfoInvVertexColored).second.m_strUVScale.c_str()		: "1, 1", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ?	(*itrSpecularmapInfoInvVertexColored).second.m_strUVScale.c_str()	: "1, 1", 
+			//---------------------------------------------------
+
+			//------------------ For vertexColor ----------------
+			a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored ?			(*itrBumpmapInfoVertexColored).second.m_strImageName.c_str()			: "_flat", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strImageName.c_str()			: "_black", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored ?	(*itrSpecularmapInfoVertexColored).second.m_strImageName.c_str()		: "_black",
+			//------------------ For inverseVertexColor ---------
+			a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored ?			(*itrBumpmapInfoInvVertexColored).second.m_strImageName.c_str()			: "_flat", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ?	(*itrSpecularmapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black"
+			//---------------------------------------------------
+			);
+	}
+	else
+	{
+		gameLocal.Printf("This material is vertex-color blended. \n");
+		unsigned int uiBlockSize =	idStr::Length( newAmbientBlock ) + 1 + 
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfo		? (*itrDiffusemapInfo).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
+			(a_arrDiffusemapInfo.end() != itrDiffusemapInfo		? (*itrDiffusemapInfo).second.m_strUVScale.Length()		: idStr::Length("1, 1")		) * 2	+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfo		? (*itrBumpmapInfo).second.m_strImageName.Length()		: idStr::Length("_flat")	)		+ 
+			(	a_arrBumpmapInfo.end() != itrBumpmapInfo		? (*itrBumpmapInfo).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfo	? (*itrSpecularmapInfo).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
+			(a_arrSpecularmapInfo.end() != itrSpecularmapInfo	? (*itrSpecularmapInfo).second.m_strUVScale.Length()	: idStr::Length("1, 1")		); 
+
+		a_arrCharNewAmbientBlock.resize( uiBlockSize, 0 );
+
+		idStr::snPrintf( &a_arrCharNewAmbientBlock[0], uiBlockSize, newAmbientBlock, 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strImageName.c_str()		: "_black", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strUVScale.c_str()		: "1, 1", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strUVScale.c_str()		: "1, 1", 
+			a_arrBumpmapInfo.end() != itrBumpmapInfo ?			(*itrBumpmapInfo).second.m_strUVScale.c_str()			: "1, 1", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfo ?	(*itrSpecularmapInfo).second.m_strUVScale.c_str()		: "1, 1", 
+			a_arrBumpmapInfo.end() != itrBumpmapInfo ?			(*itrBumpmapInfo).second.m_strImageName.c_str()			: "_flat", 
+			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strImageName.c_str()		: "_black", 
+			a_arrSpecularmapInfo.end() != itrSpecularmapInfo ?	(*itrSpecularmapInfo).second.m_strImageName.c_str()		: "_black"
+			);
+	}
+
+}
+
+void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
+{
+
+	if( args.Argc() < 3 )
+	{
+		gameLocal.Printf( "Usage: tdm_batchConvertMaterials <StartIndex> <nMaterials> [forceUpdateAll] \n" );
+		return;
+	}
+
+	bool bForceUpdateAllMaterials = false;
+	if( args.Argc() > 3 )
+	{
+		 bForceUpdateAllMaterials = (0 == idStr::Icmp( args.Argv(3), "forceupdateall" ));
+	}
+		
+	const unsigned int uiStartIndex			= atoi(args.Argv(1));
+	const unsigned int uiMaterialsToProcess	= atoi(args.Argv(2));
+
+	const unsigned long uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
+
+	gameLocal.Printf("Parsing %d materials, this may take few minutes...\n", uiTotalMats );
+
+	unsigned long ulMaterialsProcessed = 0;
+	unsigned long i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
+	const unsigned uiMaxMaterialsToProcess = i + uiMaterialsToProcess;
+	for ( ; i < uiTotalMats && i < uiMaxMaterialsToProcess; i++ )
+	{
+
+		idMaterial *mat = const_cast<idMaterial *>(declManager->MaterialByIndex( i ));
+
+		// for testing
+		//idMaterial *mat = const_cast<idMaterial *>(declManager->FindMaterial( "textures/base_wall/xiantex3_dark_burn" ));
+	
+		if( NULL == mat )
+			continue;
+
+		gameLocal.Printf("Material %s loaded. \n", mat->GetName() );
+
+		std::vector< char > charBuffer; 
+
+		ImageInfoMap arrDiffusemapInfo;	
+		ImageInfoMap arrBumpMapInfo;	
+		ImageInfoMap arrSpecularmapInfo;	
+
+		charBuffer.resize(  mat->GetTextLength() + 1, 0 );
+		mat->GetText( &charBuffer[0] );
+
+		idLexer lexSource( &charBuffer[0], charBuffer.size(), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+
+		gameLocal.Printf("Finding out shader stages... \n" );
+
+		bool bAreBumpmapsExtracted		=false;
+		bool bAreDiffusemapsExtracted	=false;
+		bool bAreSpecularmapsExtracted	=false;
+		for ( int j=0; j < mat->GetNumStages(); j++ )
+		{
+			const shaderStage_t *pShaderStage = mat->GetStage(j);
+
+			if( NULL == pShaderStage )
+			{
+// 				mat->Invalidate();
+// 				mat->FreeData();			
+				continue;
+			}
+
+			//GetMaterialStageInfo extracts all the stages in material of given type so don't loop again for multiple similar stages. 
+			if ( bAreBumpmapsExtracted && bAreDiffusemapsExtracted && bAreSpecularmapsExtracted	)
+				break;
+
+
+			switch( pShaderStage->lighting )
+			{
+			case SL_BUMP:
+				if( bAreBumpmapsExtracted )
+					continue;
+
+				gameLocal.Printf("Bumpmap stage found, extracting bumpmap information... \n" );
+				GetMaterialStageInfo( "bumpmap", lexSource, arrBumpMapInfo );
+				bAreBumpmapsExtracted = true;
+				break;
+			case SL_DIFFUSE:
+				if( bAreDiffusemapsExtracted )
+					continue;
+
+				gameLocal.Printf("Diffusemap stage found, extracting diffusemap information... \n" );
+				GetMaterialStageInfo( "diffusemap", lexSource, arrDiffusemapInfo );
+				bAreDiffusemapsExtracted = true;
+				break;
+			case SL_SPECULAR:
+				if( bAreSpecularmapsExtracted )
+					continue;
+
+				gameLocal.Printf("Specularmap stage found, extracting specularmap information... \n" );
+				GetMaterialStageInfo( "specularmap", lexSource, arrSpecularmapInfo );
+				bAreSpecularmapsExtracted = true;
+				break;
+			default:
+				continue;
+			}
+		}
+		gameLocal.Printf("Done. \n" );
+// 		break; // remove me!!!
+
+		if( arrBumpMapInfo.size() == 0 && arrDiffusemapInfo.size() == 0 && arrSpecularmapInfo.size() == 0 )
+		{
+// 			mat->Invalidate();
+// 			mat->FreeData();		
+			continue;
+		}
+		unsigned int uiBlockStartOffset, uiBlockEndOffset;
+		std::vector< idStr >arrSearchWords;
+		bool bIsAmbientBlockFound = false;
+
+		// Note that, the spaces in the string:"if (global5 == 1)" and an externally modified material may not match. 
+		// So avoid changing new ambient lighting blocks by hand, at least "if (global5 == 1)" part.
+		arrSearchWords.clear();
+		arrSearchWords.push_back("if (global5 == 1)");
+		bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+		
+		gameLocal.Printf( "ForceUpdate is: %s\n", bForceUpdateAllMaterials? "true": "false" );
+		if( bIsAmbientBlockFound )
+		{
+			gameLocal.Printf( "Found new ambient block\n" );
+
+			gameLocal.Printf( "Removing new ambient block\n" );
+			charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+
+			// Try the search again with global5 == 1 in case the material is vertex color blended.
+			bool bIsSecondAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+
+			if( bIsSecondAmbientBlockFound )
+				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+
+			arrSearchWords.clear();
+			arrSearchWords.push_back("if (global5 == 2)");
+			bIsAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+			if( bIsAmbientBlockFound  )
+				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+		}
+
+		//Some materials may have old ambient block along with the new one. So remove it if found.
+		{
+			bool bIsOldAmbientBlockFound;
+			arrSearchWords.clear();
+			arrSearchWords.push_back("red");
+			arrSearchWords.push_back("global2");
+			bIsOldAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+			if( bIsOldAmbientBlockFound  )
+			{
+				gameLocal.Printf( "Found old ambient block\n" );
+				gameLocal.Printf( "Removing old ambient block\n" );
+				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+				bIsAmbientBlockFound = true;
+			}
+
+			// Try the search again, in case the material is vertex color blended and there is second inverse-vertex-colored ambient block.
+			bIsOldAmbientBlockFound = FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiBlockStartOffset, uiBlockEndOffset );
+
+			if( bIsOldAmbientBlockFound  )
+				charBuffer.erase( charBuffer.begin() + uiBlockStartOffset, charBuffer.begin() + uiBlockEndOffset );
+
+			// If we couldn't find old ambient block and we have new ambient block in place, 
+			// then we can safely skip this material.
+			else if( !bForceUpdateAllMaterials && bIsAmbientBlockFound )
+				continue;
+		}
+
+		
+		unsigned int uiOffset = 0;
+
+		if( bIsAmbientBlockFound )
+		{
+			//Remove the old comment.
+			unsigned int uiCommentStart, uiCommentEnd;
+			arrSearchWords.clear();
+			
+			arrSearchWords.push_back("TDM");
+			arrSearchWords.push_back("Ambient");
+			arrSearchWords.push_back("Method");
+			arrSearchWords.push_back("Related");
+			if ( FindBlockContainingWords( &charBuffer[0], arrSearchWords, uiCommentStart, uiCommentEnd, '\n', '\n' ) )
+			{
+				charBuffer.erase( charBuffer.begin() + uiCommentStart, charBuffer.begin() + uiCommentEnd );
+				gameLocal.Printf( " Ambient method related comment found and removed. \n" );
+			}
+		}
+		//------------------------------------
+		int i;
+		unsigned int uiEndoftheBlock = 0;
+		for( i= charBuffer.size() - 1; i > 0; i-- )
+		{
+			if( '}' == charBuffer[i] )
+			{
+				uiEndoftheBlock = i--;
+				// Find additional white spaces and new line characters before end of the block.
+				while( '\n' == charBuffer[i] || ' ' == charBuffer[i] || '\t' == charBuffer[i] || '\r' == charBuffer[i] ) 
+				{
+					if(0 >= i)
+						break;
+
+					i--;
+				}
+				// Remove white spaces and new line characters that are found before end of the block.
+				if( unsigned(i + 1) <= uiEndoftheBlock - 1 )
+				{
+					charBuffer.erase( charBuffer.begin() + i + 1 , charBuffer.begin() + uiEndoftheBlock - 1 );
+					gameLocal.Printf( "%d trailing white spaces found at end of the block and are removed. %d, %d, %c \n", uiEndoftheBlock - i - 1, uiEndoftheBlock, i + 1, charBuffer[i+2] );
+					// Update end of the block's position.
+					uiEndoftheBlock = i + 2;
+				}
+				else
+				{
+					gameLocal.Printf( "No trailing white spaces found at end of the block. %c\n", charBuffer[i] );
+				}
+				break;
+			}
+		}
+
+		idStr strMatTextWithNewBlock( &charBuffer[0] );
+
+		if( i > 1 )
+		{
+			strMatTextWithNewBlock.Insert( "\n\n	// TDM Ambient Method Related ", uiEndoftheBlock - 1 );
+			uiOffset = uiEndoftheBlock - 1 + idStr::Length(  "\n\n	// TDM Ambient Method Related " );
+			//strMatTextWithNewBlock.Insert( '\n', uiOffset );
+		}
+		else
+		{
+			gameLocal.Warning( "Could not determine end of the material block. Skipping this material.\n" );
+			// 				mat->Invalidate();
+			// 				mat->FreeData();
+			continue;
+		}
+
+
+		gameLocal.Printf( "Processing Material %s \n", mat->GetName() );
+
+		std::vector<char> arrCharNewAmbientBlock;
+
+		CreateNewAmbientBlock( arrDiffusemapInfo, arrBumpMapInfo, arrSpecularmapInfo, arrCharNewAmbientBlock );
+
+		strMatTextWithNewBlock.Insert( &arrCharNewAmbientBlock[0], uiOffset );
+
+		ulMaterialsProcessed ++;
+	
+		// Update the material text and save to the file.
+		mat->SetText( strMatTextWithNewBlock.c_str() );
+
+		if( !mat->Parse( strMatTextWithNewBlock.c_str(), strMatTextWithNewBlock.Length() ) )
+		{
+		  gameLocal.Warning( "Material %s had error in the newly inserted text %s. \n Aborting.\n", mat->GetName(), &arrCharNewAmbientBlock[0] );
+		  break;
+		}
+		mat->ReplaceSourceFileText();
+		mat->Invalidate();
+		mat->FreeData();
+	}
+	gameLocal.Printf(" %d Materials processed and changed in total.\n", ulMaterialsProcessed );
+}
+
+
+void Cmd_updateCookedMathData_f( const idCmdArgs& args )
+{
+	r_postprocess_colorCurveBias.SetModified();
+}
+
+#ifdef TIMING_BUILD
+void Cmd_ListTimers_f(const idCmdArgs& args) 
+{
+	PRINT_TIMERS;
+}
+
+void Cmd_WriteTimerCSV_f(const idCmdArgs& args) 
+{
+	if (args.Argc() == 2) // Only separator
+	{
+		debugtools::TimerManager::Instance().DumpTimerResults(args.Argv(1));
+		return;
+	}
+
+	if (args.Argc() == 3) // separator + comma
+	{
+		debugtools::TimerManager::Instance().DumpTimerResults(args.Argv(1), args.Argv(2));
+		return;
+	}
+
+	// No arguments, call default
+	debugtools::TimerManager::Instance().DumpTimerResults();
+}
+
+void Cmd_ResetTimers_f(const idCmdArgs& args)
+{
+	debugtools::TimerManager::Instance().ResetTimers();
+}
+#endif // TIMING_BUILD 
 
 /*
 =================
@@ -2348,6 +3749,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "prevFrame",				idTestModel::TestModelPrevFrame_f,	CMD_FL_GAME|CMD_FL_CHEAT,	"shows previous animation frame on test model" );
 	cmdSystem->AddCommand( "testBlend",				idTestModel::TestBlend_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"tests animation blending" );
 	cmdSystem->AddCommand( "reloadScript",			Cmd_ReloadScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"reloads scripts" );
+
+	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_RENDERER,	"Updates lookup textures" );
+
 	cmdSystem->AddCommand( "script",				Cmd_Script_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"executes a line of script" );
 	cmdSystem->AddCommand( "listCollisionModels",	Cmd_ListCollisionModels_f,	CMD_FL_GAME,				"lists collision models" );
 	cmdSystem->AddCommand( "collisionModelInfo",	Cmd_CollisionModelInfo_f,	CMD_FL_GAME,				"shows collision model info" );
@@ -2367,6 +3771,40 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "saveParticles",			Cmd_SaveParticles_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"saves all lights to the .map file" );
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
+
+	cmdSystem->AddCommand( "tdm_spr_testIO",		Cmd_TestSndIO_f,			CMD_FL_GAME,				"test soundprop file IO (needs a .spr file)" );
+	cmdSystem->AddCommand( "tdm_ai_rel_print",		Cmd_PrintAIRelations_f,		CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
+
+	cmdSystem->AddCommand( "tdm_attach_offset",		Cmd_AttachmentOffset_f,		CMD_FL_GAME,				"Set the vector offset (x y z) for an attachment on an AI you are looking at.  Usage: tdm_attach_offset <attachment index> <x> <y> <z>" );
+	cmdSystem->AddCommand( "tdm_attach_rot",		Cmd_AttachmentRot_f,		CMD_FL_GAME,				"Set the rotation (pitch yaw roll) for an attachment on an AI you are looking at.  Usage: tdm_attach_rot <atachment index> <pitch> <yaw> <roll>  (NOTE: Rotation is applied before translation, angles are relative to the joint orientation)" );
+
+	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
+	cmdSystem->AddCommand( "inventory_use",			Cmd_InventoryUse_f,			CMD_FL_GAME,				"Usage: inventory_use [item]\nUses an item in the currently available inventory without selectign it. If 'item' is omitted, it will use the currently selected item." );
+	cmdSystem->AddCommand( "inventory_cycle_maps",	Cmd_InventoryCycleMaps_f,	CMD_FL_GAME,				"Usage: Bind a key to this command to cycle through the inventory maps." );
+	cmdSystem->AddCommand( "inventory_cycle_group",	Cmd_InventoryCycleGroup_f,	CMD_FL_GAME,				"Usage: Bind a key to this command to cycle through the specified inventory group." );
+
+	cmdSystem->AddCommand( "reloadXData",			Cmd_ReloadXData_f,			CMD_FL_GAME,				"Reloads the xdata declarations and refreshes all readables." );
+
+	cmdSystem->AddCommand( "aas_showWalkPath",		Cmd_ShowWalkPath_f,			CMD_FL_GAME,				"Shows the walk path from the player to the given area number (AAS32)." );
+	cmdSystem->AddCommand( "aas_showReachabilities",Cmd_ShowReachabilities_f,			CMD_FL_GAME,				"Shows the reachabilities for the given area number (AAS32)." );
+	cmdSystem->AddCommand( "aas_showStats",			Cmd_ShowAASStats_f,			CMD_FL_GAME,				"Shows the AAS statistics." );
+	cmdSystem->AddCommand( "eas_showRoute",			Cmd_ShowEASRoute_f,			CMD_FL_GAME,				"Shows the EAS route to the goal area." );
+
+	cmdSystem->AddCommand( "tdm_start_conversation",	Cmd_StartConversation_f,	CMD_FL_GAME,			"Starts the conversation with the given name." );
+	cmdSystem->AddCommand( "tdm_list_conversations",	Cmd_ListConversations_f,	CMD_FL_GAME,			"List all available conversations by name." );
+
+	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f,	CMD_FL_GAME|CMD_FL_CHEAT,			"Highlight all loot items in the map." );
+
+	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
+	cmdSystem->AddCommand( "tdm_deactivatelogclass",	Cmd_DeactivateLog_f,		CMD_FL_GAME,	"De-activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
+	cmdSystem->AddCommand( "tdm_batchConvertMaterials",	Cmd_BatchConvertMaterials_f,	CMD_FL_GAME,	"Converts specified number of materials to support new ambient lighting" );
+
+	cmdSystem->AddCommand( "tdm_restart_gui_update_objectives", Cmd_RestartGuiCmd_UpdateObjectives_f, CMD_FL_GAME, "Don't use. Reserved for internal use to dispatch restart GUI commands to the local game instance.");
+
+	cmdSystem->AddCommand( "tdm_list_missions", Cmd_ListMissions_f, CMD_FL_GAME, "Lists all available missions.");
+	cmdSystem->AddCommand( "tdm_set_mission_completed", Cmd_SetMissionCompleted_f, CMD_FL_GAME, "Sets or clears the 'completed' flag of a named mission.");
+
+	cmdSystem->AddCommand( "tdm_end_mission", Cmd_EndMission_f, CMD_FL_GAME, "Ends this mission and proceeds to the next.");
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
@@ -2390,9 +3828,18 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "serverNextMap",			idGameLocal::NextMap_f,		CMD_FL_GAME,				"change to the next map" );
 #endif
 
+	// greebo: Added commands to alter the clipmask/contents of entities.
+	cmdSystem->AddCommand( "setClipMask",			Cmd_SetClipMask,			CMD_FL_GAME,				"Set the clipmask of the target entity, usage: 'setClipMask crate01 1313'", idGameLocal::ArgCompletion_EntityName);
+	cmdSystem->AddCommand( "setClipContents",		Cmd_SetClipContents,		CMD_FL_GAME,				"Set the contents flags of the target entity, usage: 'setClipContents crate01 1313'", idGameLocal::ArgCompletion_EntityName);
+
 	// localization help commands
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );
 	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id." );
+#ifdef TIMING_BUILD
+	cmdSystem->AddCommand( "listTimers",			Cmd_ListTimers_f,			CMD_FL_GAME,				"Shows total run time and max time of timers (TIMING_BUILD only)." );
+	cmdSystem->AddCommand( "writeTimerCSV",			Cmd_WriteTimerCSV_f,		CMD_FL_GAME,				"Writes the timer data to a csv file (usage: writeTimerCSV <separator> <commaChar>). The default separator is ';', the default comma is '.'");
+	cmdSystem->AddCommand( "resetTimers",			Cmd_ResetTimers_f,			CMD_FL_GAME,				"Resets the timer data so far.");
+#endif
 }
 
 /*

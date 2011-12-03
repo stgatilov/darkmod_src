@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 sys_event.cpp
 
@@ -35,9 +19,12 @@ Event are used for scheduling tasks and for linking script commands.
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
 
-#define MAX_EVENTSPERFRAME			4096
+#include "event.h"
+#include "../game_local.h"
+
+#define MAX_EVENTSPERFRAME			8192
 //#define CREATE_EVENT_CODE
 
 /***********************************************************************
@@ -602,7 +589,7 @@ void idEvent::Shutdown( void ) {
 	
 	eventDataAllocator.Shutdown();
 
-	// say it is now shutdown
+	// say it is now shut down
 	initialized = false;
 }
 
@@ -613,7 +600,8 @@ idEvent::Save
 */
 void idEvent::Save( idSaveGame *savefile ) {
 	char *str;
-	int i, size;
+	int i;
+	size_t size;
 	idEvent	*event;
 	byte *dataPtr;
 	bool validTrace;
@@ -677,7 +665,7 @@ idEvent::Restore
 */
 void idEvent::Restore( idRestoreGame *savefile ) {
 	char    *str;
-	int		num, argsize, i, j, size;
+	int		num, i, j, size, argsize = 0;
 	idStr	name;
 	byte *dataPtr;
 	idEvent	*event;
@@ -714,7 +702,7 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 
 		// read the args
 		savefile->ReadInt( argsize );
-		if ( argsize != event->eventdef->GetArgSize() ) {
+		if ( argsize != (int)event->eventdef->GetArgSize() ) {
 			savefile->Error( "idEvent::Restore: arg size (%d) doesn't match saved arg size(%d) on event '%s'", event->eventdef->GetArgSize(), argsize, event->eventdef->GetName() );
 		}
 		if ( argsize ) {
@@ -756,7 +744,7 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 						break;
 				}
 			}
-			assert( size == event->eventdef->GetArgSize() );
+			assert( size == (int)event->eventdef->GetArgSize() );
 		} else {
 			event->data = NULL;
 		}

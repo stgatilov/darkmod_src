@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_H__
 #define __PHYSICS_H__
@@ -55,7 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 	Entities update their visual position and orientation from the physics
 	using GetOrigin() and GetAxis(). Direct origin and axis changes of
 	entities should go through the physics. In other words the physics origin
-	and axis are updated first and the entity updates it's visual position
+	and axis are updated first and the entity updates its visual position
 	from the physics.
 
 ===============================================================================
@@ -64,6 +48,12 @@ If you have questions concerning this license or the applicable additional terms
 #define CONTACT_EPSILON			0.25f				// maximum contact seperation distance
 
 class idEntity;
+#ifdef MOD_WATERPHYSICS
+
+class idPhysics_Liquid; // MOD_WATERPHYSICS
+
+#endif
+
 
 typedef struct impactInfo_s {
 	float						invMass;			// inverse mass
@@ -88,6 +78,7 @@ public:
 public:	// common physics interface
 								// set pointer to entity using physics
 	virtual void				SetSelf( idEntity *e ) = 0;
+	virtual idEntity *			GetSelf( void ) { return NULL; }
 								// clip models
 	virtual void				SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true ) = 0;
 	virtual void				SetClipBox( const idBounds &bounds, float density );
@@ -114,6 +105,12 @@ public:	// common physics interface
 								// collision interaction between different physics objects
 	virtual void				GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const = 0;
 	virtual void				ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) = 0;
+
+	// greebo: Applies the impulse to this entity and lets it propagate to other contacts 
+	// (not supported by all entities, works good in rigid body physics)
+	// returns true if the impulse has been applied to any neighbours
+	virtual bool				PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) = 0;
+
 	virtual void				AddForce( const int id, const idVec3 &point, const idVec3 &force ) = 0;
 	virtual void				Activate( void ) = 0;
 	virtual void				PutToRest( void ) = 0;
@@ -178,6 +175,17 @@ public:	// common physics interface
 								// networking
 	virtual void				WriteToSnapshot( idBitMsgDelta &msg ) const = 0;
 	virtual void				ReadFromSnapshot( const idBitMsgDelta &msg ) = 0;
+
+#ifdef MOD_WATERPHYSICS
+
+	// gets/sets the water
+
+	virtual idPhysics_Liquid	*GetWater() = 0; // MOD_WATERPHYSICS
+
+	virtual void				SetWater( idPhysics_Liquid *e, const float murkiness) = 0; // MOD_WATERPHYSICS
+
+#endif
+
 };
 
 #endif /* !__PHYSICS_H__ */

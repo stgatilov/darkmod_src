@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics, idPhysics_StaticMulti )
 END_CLASS
@@ -409,6 +395,10 @@ idPhysics_StaticMulti::ApplyImpulse
 void idPhysics_StaticMulti::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
 }
 
+bool idPhysics_StaticMulti::PropagateImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
+	return false;
+}
+
 /*
 ================
 idPhysics_StaticMulti::AddForce
@@ -564,6 +554,30 @@ void idPhysics_StaticMulti::Translate( const idVec3 &translation, int id ) {
 			current[i].origin += translation;
 
 			if ( clipModels[i] ) {
+				clipModels[i]->Link( gameLocal.clip, self, i, current[i].origin, current[i].axis );
+			}
+		}
+	}
+}
+
+/*
+================
+Tels: idPhysics_StaticMulti::Scale
+================
+*/
+void idPhysics_StaticMulti::Scale( const idVec3 &scale, int id ) {
+	int i;
+
+	if ( id >= 0 && id < clipModels.Num() ) {
+		if ( clipModels[id] ) {
+			clipModels[id]->Scale( scale );
+			// Tels: nec.?
+			clipModels[id]->Link( gameLocal.clip, self, id, current[id].origin, current[id].axis );
+		}
+	} else if ( id == -1 ) {
+		for ( i = 0; i < clipModels.Num(); i++ ) {
+			if ( clipModels[i] ) {
+				clipModels[i]->Scale( scale );
 				clipModels[i]->Link( gameLocal.clip, self, i, current[i].origin, current[i].axis );
 			}
 		}
@@ -840,6 +854,10 @@ const contactInfo_t &idPhysics_StaticMulti::GetContact( int num ) const {
 	static contactInfo_t info;
 	memset( &info, 0, sizeof( info ) );
 	return info;
+}
+
+bool idPhysics_StaticMulti::HasNonStaticContacts() {
+	return false;
 }
 
 /*

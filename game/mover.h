@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_MOVER_H__
 #define __GAME_MOVER_H__
@@ -62,6 +46,14 @@ public:
 	virtual void			Show( void );
 
 	void					SetPortalState( bool open );
+
+	bool					IsBlocked( void );
+
+	ID_INLINE idPhysics_Parametric*	GetMoverPhysics()
+	{
+		return &physicsObj;
+	}
+
 
 protected:
 	typedef enum {
@@ -116,9 +108,14 @@ protected:
 
 	void					Event_OpenPortal( void );
 	void					Event_ClosePortal( void );
+	virtual void			OpenPortal();
+	virtual void			ClosePortal();
 	void					Event_PartBlocked( idEntity *blockingEntity );
+	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 
 	void					MoveToPos( const idVec3 &pos);
+	void					MoveToLocalPos( const idVec3 &pos );
+
 	void					UpdateMoveSound( moveStage_t stage );
 	void					UpdateRotationSound( moveStage_t stage );
 	void					SetGuiStates( const char *state );
@@ -129,9 +126,20 @@ protected:
 	virtual void			DoneRotating( void );
 	virtual void			BeginMove( idThread *thread = NULL );
 	virtual void			BeginRotation( idThread *thread, bool stopwhendone );
+
+	/**
+	 * greebo: Calculates the fraction of the move_time (the time it takes to complete the whole
+	 *         movement) based on the current state. For standard-movers, this does nothing (returns 1),
+	 *         but subclasses might do more complicated things based on the current rotation state,
+	 *         like BinaryFrobMovers do.
+	 *
+	 * Note: This is an internal function used by BeginRotation() only
+	 */
+	virtual float			GetMoveTimeFraction();
+
 	moveState_t				move;
 
-private:
+protected:
 	rotationState_t			rot;
 
 	int						move_thread;
@@ -157,6 +165,7 @@ private:
 	void					VectorForDir( float dir, idVec3 &vec );
 	idCurve_Spline<idVec3> *GetSpline( idEntity *splineEntity ) const;
 
+public:
 	void					Event_SetCallback( void );	
 	void					Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity );
 	void					Event_StopMoving( void );
@@ -210,60 +219,6 @@ struct floorInfo_s {
 	idStr					door;
 	int						floor;
 };
-
-class idElevator : public idMover {
-public:
-	CLASS_PROTOTYPE( idElevator );
-
-							idElevator( void );
-
-	void					Spawn();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
-	void					Event_GotoFloor( int floor );
-	floorInfo_s *			GetFloorInfo( int floor );
-
-protected:
-	virtual void			DoneMoving( void );
-	virtual void			BeginMove( idThread *thread = NULL );
-	void					SpawnTrigger( const idVec3 &pos );
-	void					GetLocalTriggerPosition();
-	void					Event_Touch( idEntity *other, trace_t *trace );
-
-private:
-	typedef enum {
-		INIT,
-		IDLE,
-		WAITING_ON_DOORS
-	} elevatorState_t;
-
-	elevatorState_t			state;
-	idList<floorInfo_s>		floorInfo;
-	int						currentFloor;
-	int						pendingFloor;
-	int						lastFloor;
-	bool					controlsDisabled;
-	float					returnTime;
-	int						returnFloor;
-	int						lastTouchTime;
-
-	class idDoor *			GetDoor( const char *name );
-	void					Think( void );
-	void					OpenInnerDoor( void );
-	void					OpenFloorDoor( int floor );
-	void					CloseAllDoors( void );
-	void					DisableAllDoors( void );
-	void					EnableProperDoors( void );
-
-	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
-	void					Event_Activate( idEntity *activator );
-	void					Event_PostFloorArrival();
-
-};
-
 
 /*
 ===============================================================================
@@ -367,73 +322,6 @@ protected:
 	static void				GetMovedir( float dir, idVec3 &movedir );
 };
 
-class idDoor : public idMover_Binary {
-public:
-	CLASS_PROTOTYPE( idDoor );
-
-							idDoor( void );
-							~idDoor( void );
-
-	void					Spawn( void );
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	virtual void			Think( void );
-	virtual void			PreBind( void );
-	virtual void			PostBind( void );
-	virtual void			Hide( void );
-	virtual void			Show( void );
-
-	bool					IsOpen( void );
-	bool					IsNoTouch( void );
-	int						IsLocked( void );
-	void					Lock( int f );
-	void					Use( idEntity *other, idEntity *activator );
-	void					Close( void );
-	void					Open( void );
-	void					SetCompanion( idDoor *door );
-
-private:
-	float					triggersize;
-	bool					crusher;
-	bool					noTouch;
-	bool					aas_area_closed;
-	idStr					buddyStr;
-	idClipModel *			trigger;
-	idClipModel *			sndTrigger;
-	int						nextSndTriggerTime;
-	idVec3					localTriggerOrigin;
-	idMat3					localTriggerAxis;
-	idStr					requires;
-	int						removeItem;
-	idStr					syncLock;
-	int						normalAxisIndex;		// door faces X or Y for spectator teleports
-	idDoor *				companionDoor;
-
-	void					SetAASAreaState( bool closed );
-
-	void					GetLocalTriggerPosition( const idClipModel *trigger );
-	void					CalcTriggerBounds( float size, idBounds &bounds );
-
-	void					Event_Reached_BinaryMover( void );
-	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
-	void					Event_PartBlocked( idEntity *blockingEntity );
-	void					Event_Touch( idEntity *other, trace_t *trace );
-	void					Event_Activate( idEntity *activator );
-	void					Event_StartOpen( void );
-	void					Event_SpawnDoorTrigger( void );
-	void					Event_SpawnSoundTrigger( void );
-	void					Event_Close( void );
-	void					Event_Open( void );
-	void					Event_Lock( int f );
-	void					Event_IsOpen( void );
-	void					Event_Locked( void );
-	void					Event_SpectatorTouch( idEntity *other, trace_t *trace );
-	void					Event_OpenPortal( void );
-	void					Event_ClosePortal( void );
-};
-
 class idPlat : public idMover_Binary {
 public:
 	CLASS_PROTOTYPE( idPlat );
@@ -507,8 +395,18 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	// greebo: Allows callers to invert the rotation direction
+	void					SetDirection(bool forward);
+
 private:
+	// Reads the rotation axis and speed from the spawnargs and starts/stops to rotate
+	void					SetRotationFromSpawnargs(bool forward);
+
 	idEntityPtr<idEntity>	activatedBy;
+
+	// If true, the next activation will let the mover rotate in forward direction
+	// this is only used when "invert_on_trigger" is set to "1"
+	bool					nextTriggerDirectionIsForward;
 
 	void					Event_Activate( idEntity *activator );
 };
