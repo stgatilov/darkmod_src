@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../BinaryFrobMover.h"
 #include "../FrobDoor.h"
 #include "../TimerManager.h"
-#include "../AI/Memory.h"
+#include "../ai/Memory.h"
 
 /*
 ===============================================================================

@@ -14,9 +14,9 @@
 #define __AI_H__
 
 #include "../Relations.h"
-#include "../AI/Mind.h"
-#include "../AI/CommunicationSubsystem.h"
-#include "../AI/MovementSubsystem.h"
+#include "../ai/Mind.h"
+#include "../ai/CommunicationSubsystem.h"
+#include "../ai/MovementSubsystem.h"
 #include "../HidingSpotSearchCollection.h"
 #include "../darkmodHidingSpotTree.h"
 #include "MoveState.h"

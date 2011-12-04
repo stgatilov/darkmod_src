@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 #include "Objectives/MissionData.h"
 #include "Missions/MissionManager.h"
-#include "AI/Conversation/ConversationSystem.h"
+#include "ai/Conversation/ConversationSystem.h"
 #include "StimResponse/StimResponseCollection.h"
 
 /*

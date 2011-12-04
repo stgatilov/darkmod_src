@@ -136,7 +136,7 @@ void gameError( const char *fmt, ... );
 
 #include "Objectives/EMissionResult.h"
 #include "DifficultyManager.h"
-#include "AI/AreaManager.h"
+#include "ai/AreaManager.h"
 #include "GamePlayTimer.h"
 #include "ModelGenerator.h"
 #include "ImageMapManager.h"

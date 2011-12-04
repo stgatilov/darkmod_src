@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game_local.h"
 #include "../DarkModGlobals.h"
 #include "../MeleeWeapon.h"
-#include "../AI/Tasks/SingleBarkTask.h"
+#include "../ai/Tasks/SingleBarkTask.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"

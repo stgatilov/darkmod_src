@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4996)
 
 #include "MissionData.h"
-#include "../AI/Memory.h"
+#include "../ai/Memory.h"
 #include "../DifficultyManager.h"
 #include "../../game/player.h"
 #include "../StimResponse/StimResponseCollection.h"

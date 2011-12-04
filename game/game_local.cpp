@@ -37,7 +37,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "EscapePointManager.h"
 #include "DownloadMenu.h"
 #include "TimerManager.h"
-#include "AI/Conversation/ConversationSystem.h"
+#include "ai/Conversation/ConversationSystem.h"
 #include "RevisionTracker.h"
 #include "Missions/MissionManager.h"
 #include "Missions/DownloadManager.h"

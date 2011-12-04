@@ -15,7 +15,7 @@
 #define __GAME_ACTOR_H__
 
 #include "MultiStateMoverPosition.h"
-#include "AI/EAS/RouteInfo.h"
+#include "ai/EAS/RouteInfo.h"
 #include <set>
 
 // greebo: Keep the values in scripts/tdm_defs.script in sync with these
