@@ -16,7 +16,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
-#include "../../DarkMod/DarkModGlobals.h"
+#include "../DarkModGlobals.h"
 
 bool idAnimManager::forceExport = false;
 

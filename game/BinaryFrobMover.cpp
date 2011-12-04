@@ -1286,7 +1286,7 @@ void CBinaryFrobMover::FrobHeld(bool frobMaster, bool isFrobPeerAction, int hold
 		m_bFineControlStarting = false;
 	}
 
-	float dx = player->usercmd.mx - m_mousePosition.x;
+	//float dx = player->usercmd.mx - m_mousePosition.x;
 	float dy = player->usercmd.my - m_mousePosition.y;
 	m_mousePosition.x = player->usercmd.mx;
 	m_mousePosition.y = player->usercmd.my;

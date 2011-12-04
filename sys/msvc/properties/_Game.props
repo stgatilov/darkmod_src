@@ -7,9 +7,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>__DOOM__;GAME_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <AdditionalIncludeDirectories>$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)gamex86.dll</OutputFile>

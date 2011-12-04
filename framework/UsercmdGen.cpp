@@ -65,7 +65,7 @@ bool usercmd_t::operator==( const usercmd_t &rhs ) const {
 
 const int KEY_MOVESPEED	= 127;
 
-typedef enum {
+/*typedef enum {
 	UB_NONE,
 
 	UB_UP,
@@ -161,11 +161,11 @@ typedef enum {
 	UB_IMPULSE63,
 
 	UB_MAX_BUTTONS
-} usercmdButton_t;
+} usercmdButton_t;*/
 
 typedef struct {
 	const char *string;
-	usercmdButton_t	button;
+	UserCmdButton	button;
 } userCmdString_t;
 
 userCmdString_t	userCmdStrings[] = {
@@ -705,7 +705,7 @@ void idUsercmdGenLocal::CmdButtons( void ) {
 
 	// figure button bits
 	for (i = 0 ; i <= 7 ; i++) {
-		if ( ButtonState( (usercmdButton_t)( UB_BUTTON0 + i ) ) ) {
+		if ( ButtonState( (UserCmdButton)( UB_BUTTON0 + i ) ) ) {
 			cmd.buttons |= 1 << i;
 		}
 	}

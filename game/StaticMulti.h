@@ -13,9 +13,9 @@
 #ifndef __DAKRMOD_STATICMULTI_H__
 #define __DARKMOD_STATICMULTI_H__
 
-#include "../game/misc.h"
-#include "../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../DarkMod/ModelGenerator.h"
+#include "misc.h"
+#include "StimResponse/StimResponseCollection.h"
+#include "ModelGenerator.h"
 
 /*
 ===============================================================================

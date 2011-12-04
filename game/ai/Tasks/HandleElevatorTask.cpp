@@ -59,7 +59,7 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	eas::ElevatorStationInfoPtr stationInfo = 
 		owner->GetAAS()->GetEAS()->GetElevatorStationInfo(node->elevatorStation);
 
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
 	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
 
@@ -99,7 +99,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleElevatorTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	// Grab the first RouteNode
 	const eas::RouteNodePtr& node = *_routeInfo.routeNodes.begin();
@@ -445,7 +445,7 @@ bool HandleElevatorTask::IsElevatorStationReachable(CMultiStateMoverPosition* po
 
 void HandleElevatorTask::OnFinish(idAI* owner)
 {
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	owner->m_HandlingElevator = false;
 

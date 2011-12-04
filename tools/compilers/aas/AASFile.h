@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __AASFILE_H__
 #define __AASFILE_H__
@@ -56,6 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 #define TFL_SPECIAL					BIT(12)		// special
 #define TFL_WATER					BIT(21)		// travel through water
 #define TFL_AIR						BIT(22)		// travel through air
+#define TFL_DOOR					BIT(23)		// travel through a not-open door
 
 // face flags
 #define FACE_SOLID					BIT(0)		// solid at the other side
@@ -73,6 +58,7 @@ If you have questions concerning this license or the applicable additional terms
 #define AREA_CROUCH					BIT(5)		// AI cannot walk but can only crouch in this area
 #define AREA_REACHABLE_WALK			BIT(6)		// area is reachable by walking or swimming
 #define AREA_REACHABLE_FLY			BIT(7)		// area is reachable by flying
+#define AREA_DOOR					BIT(8)		// area contains one ore more doors
 
 // area contents flags
 #define AREACONTENTS_SOLID			BIT(0)		// solid, not a valid area
@@ -313,6 +299,8 @@ public:
 
 	void						SetPortalMaxTravelTime( int index, int time ) { portals[index].maxAreaTravelTime = time; }
 	void						SetAreaTravelFlag( int index, int flag ) { areas[index].travelFlags |= flag; }
+	void						SetAreaFlag( int index, int flag ) { areas[index].flags |= flag; }
+	void						RemoveAreaFlag( int index, int flag ) { areas[index].flags &= ~flag; }
 	void						RemoveAreaTravelFlag( int index, int flag ) { areas[index].travelFlags &= ~flag; }
 
 	virtual idVec3				EdgeCenter( int edgeNum ) const = 0;

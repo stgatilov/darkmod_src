@@ -19,17 +19,17 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4533 4800)
 
 #include "game_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/declxdata.h"
-#include "../DarkMod/Objectives/MissionData.h"
-#include "../DarkMod/Objectives/ObjectiveLocation.h"
-#include "../DarkMod/Grabber.h"
-#include "../DarkMod/sndProp.h"
-#include "../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../DarkMod/Inventory/Inventory.h"
-#include "../DarkMod/Inventory/Cursor.h"
-#include "../DarkMod/AbsenceMarker.h"
-#include "../DarkMod/Objectives/MissionData.h"
+#include "DarkModGlobals.h"
+#include "declxdata.h"
+#include "Objectives/MissionData.h"
+#include "Objectives/ObjectiveLocation.h"
+#include "Grabber.h"
+#include "sndProp.h"
+#include "StimResponse/StimResponseCollection.h"
+#include "Inventory/Inventory.h"
+#include "Inventory/Cursor.h"
+#include "AbsenceMarker.h"
+#include "Objectives/MissionData.h"
 
 /*
 ===============================================================================
@@ -533,7 +533,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	idStr rskin = args->GetString( "random_skin", "" );
 	if ( !rskin.IsEmpty() ) {
 		// found list, select a random skin
-		temp = rskin.RandomPart().c_str();
+		temp = rskin.RandomPart(gameLocal.random.RandomFloat()).c_str();
 	}
 	else {
 		// else just use the "skin" spawnarg

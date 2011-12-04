@@ -46,7 +46,7 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 	
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 	idActor* enemy = owner->GetEnemy();
 
 	if (enemy == NULL)

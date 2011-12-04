@@ -441,9 +441,6 @@
     <ClCompile Include="game\gamesys\typeinfo.cpp">
       <Filter>GameSys</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\callbacks.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
     <ClCompile Include="game\gamesys\class.cpp">
       <Filter>GameSys</Filter>
     </ClCompile>

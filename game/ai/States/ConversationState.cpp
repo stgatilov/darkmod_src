@@ -141,7 +141,7 @@ void ConversationState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void ConversationState::Think(idAI* owner)
 {
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	UpdateAlertLevel();
 
@@ -737,7 +737,7 @@ void ConversationState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	if (!stimSource->IsType(idActor::Type)) return; // No Actor, quit
 

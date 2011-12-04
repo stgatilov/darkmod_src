@@ -16,7 +16,7 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "aas_local.h"
-#include "../../DarkMod/TimerManager.h"
+#include "../TimerManager.h"
 
 
 #define SUBSAMPLE_WALK_PATH		1

@@ -267,8 +267,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	// bounds[0][2] += 16; // old way
 	float size = bounds[1][0];
 
-	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
-	idEntity* backPosEntity = _backPosEnt.GetEntity();
+	//idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+	//idEntity* backPosEntity = _backPosEnt.GetEntity();
 
 	if (cv_ai_door_show.GetBool()) 
 	{
@@ -1504,7 +1504,7 @@ idVec3 HandleDoorTask::GetAwayPos(idAI* owner, CFrobDoor* frobDoor)
 	dir.z = 0;
 	idVec3 dirNorm = dir;
 	dirNorm.NormalizeFast();
-	float dist = dir.LengthFast();
+	//float dist = dir.LengthFast();
 
 	idVec3 openDirNorm = openDir;
 	openDirNorm.z = 0;
@@ -1568,7 +1568,7 @@ idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
 	// calculate where to stand when the door swings towards us
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = frobDoor->GetOpenDir();
-	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
+	//const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
 	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
 
 	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();

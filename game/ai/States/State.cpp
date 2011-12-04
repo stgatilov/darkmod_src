@@ -3147,8 +3147,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 {
 	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
-	idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
-	idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
+	//idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
+	//idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
 	idVec3 directObjectLocation = message.m_directObjectLocation;
 
 	idAI* owner = _owner.GetEntity();

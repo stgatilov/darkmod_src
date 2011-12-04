@@ -13,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 #ifndef USE_LIBC_MALLOC
 	#define USE_LIBC_MALLOC		0

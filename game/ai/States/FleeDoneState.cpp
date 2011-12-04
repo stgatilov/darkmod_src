@@ -43,7 +43,7 @@ void FleeDoneState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	// greebo: At this point we should be at a presumably safe place, 
 	// start looking for allies
@@ -115,7 +115,7 @@ void FleeDoneState::Think(idAI* owner)
 			owner->SetTurnRate(_oldTurnRate);
 
 			owner->TurnToward(friendlyAI->GetPhysics()->GetOrigin());
-			float distanceToFriend = (friendlyAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+			//float distanceToFriend = (friendlyAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 
 			// Cry for help
 			// Create a new help message

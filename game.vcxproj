@@ -299,7 +299,6 @@
     <ClCompile Include="game\func_shooter.cpp" />
     <ClCompile Include="game\fx.cpp" />
     <ClCompile Include="game\gameedit.cpp" />
-    <ClCompile Include="game\gamesys\callbacks.cpp" />
     <ClCompile Include="game\gamesys\class.cpp" />
     <ClCompile Include="game\gamesys\debuggraph.cpp" />
     <ClCompile Include="game\gamesys\event.cpp" />

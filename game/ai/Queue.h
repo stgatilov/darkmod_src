@@ -10,10 +10,11 @@
 #ifndef __STATEQUEUE_H__
 #define __STATEQUEUE_H__
 
+#include "../DarkModGlobals.h"
+
 #include <list>
 #include <sstream>
 
-#include "../DarkModGlobals.h"
 #include "Library.h"
 
 namespace ai 

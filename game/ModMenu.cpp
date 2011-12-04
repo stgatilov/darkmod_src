@@ -18,11 +18,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include <boost/filesystem.hpp>
 
 #include "ModMenu.h"
-#include "../DarkMod/Shop/Shop.h"
-#include "../DarkMod/Objectives/MissionData.h"
-#include "../DarkMod/declxdata.h"
-#include "../DarkMod/ZipLoader/ZipLoader.h"
-#include "../DarkMod/Missions/MissionManager.h"
+#include "Shop/Shop.h"
+#include "Objectives/MissionData.h"
+#include "declxdata.h"
+#include "ZipLoader/ZipLoader.h"
+#include "Missions/MissionManager.h"
 
 #ifdef _WINDOWS
 #include <process.h>

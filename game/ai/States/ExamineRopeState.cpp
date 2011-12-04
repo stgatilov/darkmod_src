@@ -50,7 +50,7 @@ void ExamineRopeState::Wrapup(idAI* owner)
 
 void ExamineRopeState::Init(idAI* owner)
 {
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	State::Init(owner);
 

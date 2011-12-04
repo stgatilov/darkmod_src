@@ -101,7 +101,7 @@ bool WanderInLocationTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMemory();
+	//Memory& memory = owner->GetMemory();
 
 	if (owner->AI_MOVE_DONE)
 	{

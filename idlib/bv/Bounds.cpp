@@ -13,7 +13,7 @@
 #include "../precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 idBounds bounds_zero( vec3_zero, vec3_zero );
 

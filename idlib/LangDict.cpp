@@ -14,7 +14,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 /*
 ============
@@ -89,7 +89,7 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 				// Tels: fix #2812, some characters like 0xFF ("я" in russian) are not rendered
 				// in the GUI, so replace them (as the font contains the characters elsewhere).
 				// If we were given a replacement table, use it to exchange the characters:
-				for (int i = 0; i < remapcount; i ++)
+				for (unsigned int i = 0; i < remapcount; i ++)
 				{
 					kv.value.Replace( remap[i*2], remap[i*2+1] );
 				}
@@ -314,6 +314,6 @@ idLangDict::Print
 */
 void idLangDict::Print( void ) const {
 	int c = args.Num();
-	gameLocal.Printf("idLangDict: %li KB in %i entries.\n", static_cast<long>(args.Size() + hash.Size()) >> 10l, c);
+	idLib::common->Printf("idLangDict: %li KB in %i entries.\n", static_cast<long>(args.Size() + hash.Size()) >> 10l, c);
 	//hash.Print();
 }

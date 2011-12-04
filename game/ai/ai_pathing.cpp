@@ -400,7 +400,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
 	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf()); 
-	int team = self->team;
+	//int team = self->team;
 
 	idVec3 seekDelta = seekPos - startPos;
 	idVec2 expBounds[2];

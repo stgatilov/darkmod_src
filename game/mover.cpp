@@ -16,9 +16,9 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/Objectives/MissionData.h"
-#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "DarkModGlobals.h"
+#include "Objectives/MissionData.h"
+#include "StimResponse/StimResponseCollection.h"
 
 // a mover will update any gui entities in its target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent

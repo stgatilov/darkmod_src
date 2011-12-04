@@ -22,10 +22,10 @@ Various utility objects and functions.
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
-#include "../DarkMod/sndProp.h"
-#include "../DarkMod/EscapePointManager.h"
-#include "../DarkMod/Objectives/MissionData.h"
-#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "sndProp.h"
+#include "EscapePointManager.h"
+#include "Objectives/MissionData.h"
+#include "StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================

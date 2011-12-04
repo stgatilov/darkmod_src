@@ -18,10 +18,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "aas_local.h"
 #include "../game_local.h"		// for print and error
 
-#include "../../DarkMod/DarkModGlobals.h"
-#include "../../DarkMod/MultiStateMover.h"
-#include "../../DarkMod/MultiStateMoverPosition.h"
-#include "../../DarkMod/TimerManager.h"
+#include "../DarkModGlobals.h"
+#include "../MultiStateMover.h"
+#include "../MultiStateMoverPosition.h"
+#include "../TimerManager.h"
 
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2

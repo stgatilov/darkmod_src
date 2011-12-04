@@ -14,7 +14,7 @@
 #include "../precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 #include "Simd_Generic.h"
 #include "Simd_MMX.h"

@@ -14,7 +14,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 #if !defined( ID_REDIRECT_NEWDELETE ) && !defined( MACOS_X )
 	#define USE_STRING_DATA_ALLOCATOR
@@ -163,7 +163,7 @@ void idStr::operator=( const char *text ) {
 	len = l;
 }
 
-idStr idStr::RandomPart( const char c, const float rand ) const {
+idStr idStr::RandomPart( const float rand, const char c ) const {
 	idStr part;
 
 	// check for list and if found, use random part
@@ -172,12 +172,8 @@ idStr idStr::RandomPart( const char c, const float rand ) const {
 		// if we have X commata, we have X+1 pieces, so select one at random
 		seps ++;
 		//gameLocal.Printf("Found random list with %i parts.\n", seps);
-		float r = rand;
-		if (r < 0.0f || r > 1.0f)
-		{
-			r = gameLocal.random.RandomFloat();
-		}
-		int idx = (int) (r * (float)seps);
+		
+		int idx = (int) (rand * (float)seps);
 		//gameLocal.Printf("random part #%i\n", idx);
 		// split string into pieces, and select idx
 		int i = 0; int d = 0;

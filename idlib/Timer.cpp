@@ -13,7 +13,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+
 
 double idTimer::base = -1.0;
 
@@ -136,14 +136,14 @@ void idTimerReport::PrintReport() {
 	assert( timers.Num() == names.Num() );
 	idLib::common->Printf( "Timing Report for %s\n", reportName.c_str() );
 	idLib::common->Printf( "-------------------------------\n" );
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Timing Report for %s\n", reportName.c_str());
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("-------------------------------\n");
+	//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Timing Report for %s\n", reportName.c_str());
+	//DM_LOG(LC_AI, LT_INFO)LOGSTRING("-------------------------------\n");
 	float total = 0.0f;
 	for ( int i = 0; i < names.Num(); i++ ) {
 		idLib::common->Printf( "%s consumed %5.2f seconds\n", names[i].c_str(), timers[i]->Milliseconds() * 0.001f );
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s consumed %5.2f seconds\n", names[i].c_str(), timers[i]->Milliseconds() * 0.001f);
+		//DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s consumed %5.2f seconds\n", names[i].c_str(), timers[i]->Milliseconds() * 0.001f);
 		total += timers[i]->Milliseconds();
 	}
 	idLib::common->Printf( "Total time for report %s was %5.2f\n\n", reportName.c_str(), total * 0.001f );
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Total time for report %s was %5.2f\n\n", reportName.c_str(), total * 0.001f);
+	//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Total time for report %s was %5.2f\n\n", reportName.c_str(), total * 0.001f);
 }

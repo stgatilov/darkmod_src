@@ -79,7 +79,10 @@ typedef enum {
 	DECL_MODELEXPORT,
 	DECL_MAPDEF,
 
-	// new decl types can be added here
+	// TDM specific DECLs
+	DECL_XDATA, 				// External data, for scripts
+	DECL_TDM_MATINFO,			// Material information local to TDM.
+	DECL_TDM_MISSIONINFO, 			// Mission information
 
 	DECL_MAX_TYPES			= 32
 } declType_t;

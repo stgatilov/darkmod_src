@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATERIAL_H__
 #define __MATERIAL_H__
@@ -286,6 +270,9 @@ typedef enum {
 	CONTENTS_AAS_SOLID			= BIT(13),	// solid for AAS
 	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
 	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
+	CONTENTS_FROBABLE			= BIT(16),	// TDM: Used for CMs that are only for frobbing
+	CONTENTS_RESPONSE			= BIT(17),  // TDM: Used for stim/response optimization.
+	CONTENTS_MELEEWEAP			= BIT(18),  // TDM: Used for melee weapons and shields
 
 	// contents used by utils
 	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
@@ -376,6 +363,10 @@ public:
 						// which can be used to make a simplified shadow hull for a complex object set
 						// as noShadow
 	bool				IsDrawn( void ) const { return ( numStages > 0 || entityGui != 0 || gui != NULL ); }
+
+						// Tels: Added for TDM v1.03
+	bool				IsSlick( void ) const { return ((surfaceFlags & SURF_SLICK) != 0); };
+	bool				IsLadder( void ) const { return ((surfaceFlags & SURF_LADDER) != 0); };
 
 						// returns true if the material will draw any non light interaction stages
 	bool				HasAmbient( void ) const { return ( numAmbientStages > 0 ); }

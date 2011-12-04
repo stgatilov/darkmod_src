@@ -439,7 +439,7 @@ void MeleeCombatTask::StartParry(idAI* owner)
 	else
 		ParType = AttType; // match the attack
 
-	const char *suffix = idActor::MeleeTypeNames[ParType];
+	//const char *suffix = idActor::MeleeTypeNames[ParType];
 
 	// update the melee status
 	owner->Event_MeleeParryStarted( ParType );
