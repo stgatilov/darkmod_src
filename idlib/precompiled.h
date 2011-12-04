@@ -167,9 +167,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 // game
 #include "../game/game.h"
 
-// Darkmod globals
-#include "../game/DarkModGlobals.h"
-
 //-----------------------------------------------------
 
 #ifndef _D3SDK

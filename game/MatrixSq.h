@@ -18,6 +18,7 @@
 #ifndef MATRIXSQ_H
 #define MATRIXSQ_H
 
+#include "DarkModGlobals.h"
 #include <boost/numeric/ublas/matrix.hpp>
 
 template <class Type>

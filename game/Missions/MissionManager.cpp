@@ -19,8 +19,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Inventory/Inventory.h"
 
 #include "DownloadManager.h"
-#include "../DarkMod/Http/HttpConnection.h"
-#include "../DarkMod/Http/HttpRequest.h"
+#include "../Http/HttpConnection.h"
+#include "../Http/HttpRequest.h"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/classification.hpp>

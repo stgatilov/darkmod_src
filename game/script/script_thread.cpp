@@ -16,11 +16,11 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
-#include "../../DarkMod/decltdm_matinfo.h"
-#include "../../DarkMod/Relations.h"
-#include "../../DarkMod/sndProp.h"
-#include "../../DarkMod/Objectives/MissionData.h"
-#include "../../DarkMod/Missions/MissionManager.h"
+#include "../decltdm_matinfo.h"
+#include "../Relations.h"
+#include "../sndProp.h"
+#include "../Objectives/MissionData.h"
+#include "../Missions/MissionManager.h"
 
 class CRelations;
 class CsndProp;

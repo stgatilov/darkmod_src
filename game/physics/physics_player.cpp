@@ -17,10 +17,10 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../game_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/Grabber.h"
-#include "../DarkMod/BinaryFrobMover.h"
-#include "../DarkMod/FrobDoor.h"
+#include "../DarkModGlobals.h"
+#include "../Grabber.h"
+#include "../BinaryFrobMover.h"
+#include "../FrobDoor.h"
 #include "force_push.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )

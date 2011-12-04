@@ -12,7 +12,7 @@
 
 #include "Memory.h"
 #include "States/State.h"
-#include "Queue.h"
+#include "./Queue.h"
 
 namespace ai
 {
