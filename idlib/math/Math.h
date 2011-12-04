@@ -1,35 +1,29 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_MATH_H__
 #define __MATH_MATH_H__
 
+#include <cmath>
+
+#ifdef __linux__
+#include "sys/sys_public.h"
+#include <cassert>
+#endif
+
 #ifdef MACOS_X
+// greebo: Include this for ID_INLINE
+#include "sys/sys_public.h"
+
 // for square root estimate instruction
 #include <ppc_intrinsics.h>
 // for FLT_MIN
@@ -90,6 +84,8 @@ If you have questions concerning this license or the applicable additional terms
 #define IEEE_DBLE_EXPONENT_BIAS	0
 #define IEEE_DBLE_SIGN_BIT		79
 
+template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
+template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 template<class T> ID_INLINE int	MaxIndex( T x, T y ) { return  ( x > y ) ? 0 : 1; }
 template<class T> ID_INLINE int	MinIndex( T x, T y ) { return ( x < y ) ? 0 : 1; }
 
@@ -166,8 +162,8 @@ public:
 	static int					ILog2( float f );			// integral base-2 logarithm of the floating point value
 	static int					ILog2( int i );				// integral base-2 logarithm of the integer value
 
-	static int					BitsForFloat( float f );	// minumum number of bits required to represent ceil( f )
-	static int					BitsForInteger( int i );	// minumum number of bits required to represent i
+	static int					BitsForFloat( float f );	// minimum number of bits required to represent ceil( f )
+	static int					BitsForInteger( int i );	// minimum number of bits required to represent i
 	static int					MaskForFloatSign( float f );// returns 0x00000000 if x >= 0.0f and returns 0xFFFFFFFF if x <= -0.0f
 	static int					MaskForIntegerSign( int i );// returns 0x00000000 if x >= 0 and returns 0xFFFFFFFF if x < 0
 	static int					FloorPowerOfTwo( int x );	// round x down to the nearest power of 2

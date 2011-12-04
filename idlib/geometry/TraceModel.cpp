@@ -1,35 +1,21 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "TraceModel.h"
+static bool init_version = FileVersionList("$Id$", init_version);
+
+#include "tracemodel.h"
 
 
 /*
@@ -1033,6 +1019,77 @@ void idTraceModel::Translate( const idVec3 &translation ) {
 idTraceModel::Rotate
 ============
 */
+void idTraceModel::Rotate( const idMat3 &rotation, bool isRotationOrthogonal ) {
+	int i, j, edgeNum;
+
+	idMat3 normalRotation = rotation;
+	if (!isRotationOrthogonal) {
+		bool nonSingular = normalRotation.InverseSelf();
+		nonSingular;	//eliminates "never used" warning in release
+		assert(nonSingular);
+		normalRotation.TransposeSelf();
+	}
+
+	for ( i = 0; i < numVerts; i++ ) {
+		verts[i] *= rotation;
+	}
+
+	bounds.Clear();
+	for ( i = 0; i < numPolys; i++ ) {
+		polys[i].normal *= normalRotation;
+		if (!isRotationOrthogonal)
+			polys[i].normal.Normalize();
+		polys[i].bounds.Clear();
+		edgeNum = 0;
+		for ( j = 0; j < polys[i].numEdges; j++ ) {
+			edgeNum = polys[i].edges[j];
+			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
+		}
+		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
+		bounds += polys[i].bounds;
+	}
+
+	GenerateEdgeNormals();
+}
+
+/*
+============
+idTraceModel::Scale
+============
+*/
+void idTraceModel::Scale( const idVec3 &scale ) {
+	int i, j, edgeNum, d;
+	const float *scalePtr = scale.ToFloatPtr();
+	for ( d = 0; d < 3; d++ )
+		assert(scalePtr[d] != 0.0f);
+
+	for ( i = 0; i < numVerts; i++ ) {
+		for ( d = 0; d < 3; d++ )
+			verts[i].ToFloatPtr()[d] *= scalePtr[d];
+	}
+
+	bounds.Clear();
+	for ( i = 0; i < numPolys; i++ ) {
+		for ( d = 0; d < 3; d++ )
+			polys[i].normal.ToFloatPtr()[d] /= scalePtr[d];
+		polys[i].normal.Normalize();
+		polys[i].bounds.Clear();
+		edgeNum = 0;
+		for ( j = 0; j < polys[i].numEdges; j++ ) {
+			edgeNum = polys[i].edges[j];
+			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
+		}
+		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
+		bounds += polys[i].bounds;
+	}
+
+	GenerateEdgeNormals();
+}
+
+/* Old code, commented out tels 2011-01-13
+============
+idTraceModel::Rotate
+============
 void idTraceModel::Rotate( const idMat3 &rotation ) {
 	int i, j, edgeNum;
 
@@ -1055,6 +1112,7 @@ void idTraceModel::Rotate( const idMat3 &rotation ) {
 
 	GenerateEdgeNormals();
 }
+*/
 
 /*
 ============
@@ -1465,12 +1523,13 @@ void idTraceModel::GetMassProperties( const float density, float &mass, idVec3 &
 
 	VolumeIntegrals( integrals );
 
-	// if no volume
-	if ( integrals.T0 == 0.0f ) {
-		mass = 1.0f;
-		centerOfMass.Zero();
-		inertiaTensor.Identity();
-		return;
+	// if very small or no volume
+	if ( integrals.T0 < 0.1f ) // grayman #2283 - this was a comparison to 0.0f, which allows very small numbers to wreak havoc
+	{
+	  mass = 1.0f;
+	  centerOfMass.Zero();
+	  inertiaTensor.Identity();
+	  return;
 	}
 
 	// mass of model

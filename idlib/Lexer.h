@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __LEXER_H__
 #define __LEXER_H__
@@ -129,11 +113,77 @@ typedef enum {
 // punctuation
 typedef struct punctuation_s
 {
-	char *p;						// punctuation character(s)
+	const char *p;						// punctuation character(s)
 	int n;							// punctuation id
 } punctuation_t;
 
-
+/// A lexer created by ID software.
+/** This is a lexer for C-like languages. Whitespace and C-style comments are
+ *  ignored. The input line is broken up into tokens which consist of string
+ *  literals, numeric literals, identifiers and operators.
+ *  
+ *  String literals are of the form "blah blah blah" or 'c', just like in C.
+ *  Double-quoted strings can be of any length, but single-quoted strings are
+ *  expected to contain a single character. (escape sequences are considered
+ *  to form a single character, so '\n' is a valid string literal) The same
+ *  escape characters as C are allowed. Adjacent (ignoring whitespace) string
+ *  literals are considered to represent one long string literal who's
+ *  contents is the concatenation of the smaller strings. For example,
+ *  "foo" "bar" is equivelant to "foobar", and will be returned as a single
+ *  token.
+ *  Lexer flags relavent to string literals:
+ *  LEXFL_NOSTRINGCONCAT: Adjacent string literals aren't considered to form
+ *    one long string. Instead, each string is considered its own token.
+ *    This will cause "foo" "bar" to be treated as two tokens instead of one.
+ *  LEXFL_ALLOWBACKSLASHSTRINGCONCAT: Backslashes may be used to concatenate
+ *    string literals. (whitespace is ignored) For example "foo" \ "bar" is
+ *    equivelant to "foobar". If LEXFL_NOSTRINGCONCAT is also turned on, then
+ *    "foo" "bar" is treated as two tokens, but "foo" \ "bar" is treated as
+ *    one.
+ *  LEXFL_ALLOWMULTICHARLITERALS: Single-quoted string literals such as 'x'
+ *    may to contain multiple characters. So 'blah' is considered a valid
+ *    string literal. 'foo' 'bar' is equivelant to 'foobar' unless
+ *    LEXFL_NOSTRINGCONCAT is turned on. LEXFL_ALLOWBACKSLASHSTRINGCONCAT
+ *    does not have an effect on single-quoted string literals.
+ *  LEXFL_NOSTRINGESCAPECHARS: Escape characters aren't allowed in strings.
+ *    Instead, backslashes are treated as the contents of the string.
+ *    For example, "\\" would be a string of two characters, not one.
+ *    Because of this, '\n' would no longer be a valid string literal,
+ *    unless LEXFL_ALLOWMULTICHARLITERALS is turned on.
+ *  
+ *  I haven't learned much about numeric literals. As such, this section is a
+ *  stub.
+ *  Lexer flags relavent to numeric literals:
+ *  LEXFL_ALLOWIPADDRESSES: allow ip addresses to be parsed as numbers
+ *  LEXFL_ALLOWFLOATEXCEPTIONS: allow float exceptions like 1.#INF or 1.#IND to be parsed
+ *  
+ *  Identifiers (names) are the same as in C. They may contain letters,
+ *  numbers and underscores, but may not start with numbers.
+ *  Lexer flags relavent to identifiers:
+ *  LEXFL_ALLOWPATHNAMES: Identifiers are also allowed to have slashes,
+ *  backslashes, colons and periods in them.
+ *  LEXFL_ALLOWNUMBERNAMES: An identifier may start with a numeric literal.
+ *  LEXFL_ONLYSTRINGS: Tokens are only returned as strings and identifiers.
+ *  Identifiers may contain dashes in them. I beleive this flag is buggy,
+ *  since it looks like +blah is considered a single token, but blah+ is
+ *  considered two.
+ *  
+ *  Generic lexer flags:
+ *  LEXFL_NOERRORS: Errors are disabled.
+ *  LEXFL_NOWARNINGS: Warnings are disabled.
+ *  LEXFL_NOFATALERRORS: Errors are converted to warnings. This flag is
+ *    redundant if LEXFL_NOERRORS is turned on. Even if LEXFL_NOWARNINGS is
+ *    turned on, warnings that were converted from errors will not be ignored.
+ *  
+ *  Lexer flags that are used by the parser instead of the lexer:
+ *  LEXFL_NODOLLARPRECOMPILE: don't use the $ sign for precompilation
+ *  LEXFL_NOBASEINCLUDES: don't include files embraced with < >
+ *  
+ *  Other notes: UnreadToken() appears to be incompatible with many other
+ *    functions, such as the Check or Peek functions. You should Either use
+ *    UnreadToken() or the Peek/Check functions but not both.
+ *
+ */
 class idLexer {
 
 	friend class idParser;
@@ -182,7 +232,7 @@ public:
 	void			UnreadToken( const idToken *token );
 					// read a token only if on the same line
 	int				ReadTokenOnLine( idToken *token );
-		
+
 					//Returns the rest of the current line
 	const char*		ReadRestOfLine(idStr& out);
 
@@ -193,8 +243,15 @@ public:
 					// read a floating point number.  If errorFlag is NULL, a non-numeric token will
 					// issue an Error().  If it isn't NULL, it will issue a Warning() and set *errorFlag = true
 	float			ParseFloat( bool *errorFlag = NULL );
-					// parse matrices with floats
-	int				Parse1DMatrix( int x, float *m );
+					/**
+					* Parse a 1d float matrix of length x and store it in m.  
+					* If bIntsOnly is TRUE, a non-integer token will issue an Error().
+					**/
+	int				Parse1DMatrix( int x, float *m, bool bIntsOnly = false );
+					/**
+					* Parse 1d integer matrix by overloading parse1DMatrix
+					**/
+	int				Parse1DMatrix( int x, int *m );
 	int				Parse2DMatrix( int y, int x, float *m );
 	int				Parse3DMatrix( int z, int y, int x, float *m );
 					// parse a braced section into a string
@@ -228,13 +285,16 @@ public:
 					// get offset in script
 	const int		GetFileOffset( void );
 					// get file time
-	const ID_TIME_T	GetFileTime( void );
+	const ID_TIME_T GetFileTime( void );
 					// returns the current line number
 	const int		GetLineNum( void );
 					// print an error message
 	void			Error( const char *str, ... ) id_attribute((format(printf,2,3)));
+
 					// print a warning message
+
 	void			Warning( const char *str, ... ) id_attribute((format(printf,2,3)));
+
 					// returns true if Error() was called with LEXFL_NOFATALERRORS or LEXFL_NOERRORS set
 	bool			HadError( void ) const;
 
@@ -251,7 +311,7 @@ private:
 	const char *	lastScript_p;			// script pointer before reading token
 	const char *	whiteSpaceStart_p;		// start of last white space
 	const char *	whiteSpaceEnd_p;		// end of last white space
-	ID_TIME_T			fileTime;				// file time
+	unsigned int	fileTime;				// file time
 	int				length;					// length of the script in bytes
 	int				line;					// current line in script
 	int				lastline;				// line before reading token

@@ -1,33 +1,22 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __STR_H__
 #define __STR_H__
+
+#ifdef __linux__
+#include <cassert>
+#endif
 
 /*
 ===============================================================================
@@ -36,41 +25,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-
-// these library functions should not be used for cross platform compatibility
-#define strcmp			idStr::Cmp		// use_idStr_Cmp
-#define strncmp			use_idStr_Cmpn
-
-#if defined( StrCmpN )
-#undef StrCmpN
-#endif
-#define StrCmpN			use_idStr_Cmpn
-
-#if defined( strcmpi )
-#undef strcmpi
-#endif
-#define strcmpi			use_idStr_Icmp
-
-#if defined( StrCmpI )
-#undef StrCmpI
-#endif
-#define StrCmpI			use_idStr_Icmp
-
-#if defined( StrCmpNI )
-#undef StrCmpNI
-#endif
-#define StrCmpNI		use_idStr_Icmpn
-
-#define stricmp			idStr::Icmp		// use_idStr_Icmp
-#define _stricmp		use_idStr_Icmp
-#define strcasecmp		use_idStr_Icmp
-#define strnicmp		use_idStr_Icmpn
-#define _strnicmp		use_idStr_Icmpn
-#define _memicmp		use_idStr_Icmpn
-#define snprintf		use_idStr_snPrintf
-#define _snprintf		use_idStr_snPrintf
-#define vsnprintf		use_idStr_vsnPrintf
-#define _vsnprintf		use_idStr_vsnPrintf
 
 class idVec4;
 
@@ -103,7 +57,7 @@ const int C_COLOR_BLACK				= '9';
 #define S_COLOR_GRAY				"^8"
 #define S_COLOR_BLACK				"^9"
 
-// make idStr a multiple of 16 bytes long
+// make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
 const int STR_ALLOC_BASE			= 20;
 const int STR_ALLOC_GRAN			= 32;
@@ -207,8 +161,14 @@ public:
 	void				CapLength( int );
 	void				Fill( const char ch, int newlen );
 
+	// returns -1 if not found otherwise the index of the char
 	int					Find( const char c, int start = 0, int end = -1 ) const;
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
+	// Tels: Count how often c occurs between start and end
+	int					Count( const char c, int start = 0, int end = -1 ) const;
+	// Tels: Given a list like "abcXdef" (where X = ',' but can be changed), returns one part of it randomly.
+	// If given an optional random value between 0.0 < x <= 1.0, then this will be used instead of gameLocal.random.RandomFloat()
+	idStr				RandomPart( const char c = ',', const float rand = -1.0f) const;
 	bool				Filter( const char *filter, bool casesensitive ) const;
 	int					Last( const char c ) const;						// return the index to the last occurance of 'c', returns -1 if not found
 	const char *		Left( int len, idStr &result ) const;			// store the leftmost 'len' characters in the result
@@ -220,14 +180,16 @@ public:
 	void				StripLeading( const char c );					// strip char from front as many times as the char occurs
 	void				StripLeading( const char *string );				// strip string from front as many times as the string occurs
 	bool				StripLeadingOnce( const char *string );			// strip string from front just once if it occurs
+	void				StripLeadingWhitespace( void );					// tels: strip leading white space characters (c <= 0x20)
 	void				StripTrailing( const char c );					// strip char from end as many times as the char occurs
 	void				StripTrailing( const char *string );			// strip string from end as many times as the string occurs
 	bool				StripTrailingOnce( const char *string );		// strip string from end just once if it occurs
 	void				Strip( const char c );							// strip char from front and end as many times as the char occurs
 	void				Strip( const char *string );					// strip string from front and end as many times as the string occurs
-	void				StripTrailingWhitespace( void );				// strip trailing white space characters
+	void				StripTrailingWhitespace( void );				// strip trailing white space characters (c <= 0x20)
 	idStr &				StripQuotes( void );							// strip quotes around string
 	void				Replace( const char *old, const char *nw );
+	void				Replace( const char old, const char nw );		// faster version of Repace() if you want to swap only one char
 
 	// file name methods
 	int					FileNameHash( void ) const;						// hash key for the filename (skips extension)
@@ -267,7 +229,9 @@ public:
 	static void			Copynz( char *dest, const char *src, int destsize );
 	static int			snPrintf( char *dest, int size, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	static int			vsnPrintf( char *dest, int size, const char *fmt, va_list argptr );
+	// returns -1 if not found otherwise the index of the char
 	static int			FindChar( const char *str, const char c, int start = 0, int end = -1 );
+	static int			CountChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			FindText( const char *str, const char *text, bool casesensitive = true, int start = 0, int end = -1 );
 	static bool			Filter( const char *filter, const char *name, bool casesensitive );
 	static void			StripMediaName( const char *name, idStr &mediaName );
@@ -869,6 +833,13 @@ ID_INLINE void idStr::Fill( const char ch, int newlen ) {
 	len = newlen;
 	memset( data, ch, len );
 	data[ len ] = 0;
+}
+
+ID_INLINE int idStr::Count( const char c, int start, int end ) const {
+	if ( end == -1 ) {
+		end = len;
+	}
+	return idStr::CountChar( data, c, start, end );
 }
 
 ID_INLINE int idStr::Find( const char c, int start, int end ) const {

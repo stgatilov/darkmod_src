@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __BV_BOUNDS_H__
 #define __BV_BOUNDS_H__
@@ -64,8 +48,18 @@ public:
 
 	idVec3			GetCenter( void ) const;						// returns center of bounds
 	float			GetRadius( void ) const;						// returns the radius relative to the bounds origin
+																	// greebo: Note that this does NOT return 0.0 for a
+																	// idBounds object with b[0] == b[1] as one might suspect.
+																	// I don't know what the intention for this code is, so I'll leave it.
+																	// Use GetVolume() instead.
 	float			GetRadius( const idVec3 &center ) const;		// returns the radius relative to the given center
 	float			GetVolume( void ) const;						// returns the volume of the bounds
+
+	/**
+	* Tels: Get the size of the bounds, that is b1 - b0
+	*/
+	idVec3			GetSize( void ) const;
+
 	bool			IsCleared( void ) const;						// returns true if bounds are inside out
 
 	bool			AddPoint( const idVec3 &v );					// add the point, returns true if the bounds expanded
@@ -101,6 +95,8 @@ public:
 
 	void			ToPoints( idVec3 points[8] ) const;
 	idSphere		ToSphere( void ) const;
+
+	const char *		ToString( const int precision = 2 ) const;
 
 	void			AxisProjection( const idVec3 &dir, float &min, float &max ) const;
 	void			AxisProjection( const idVec3 &origin, const idMat3 &axis, const idVec3 &dir, float &min, float &max ) const;
@@ -218,7 +214,14 @@ ID_INLINE float idBounds::GetVolume( void ) const {
 	}
 	return ( ( b[1][0] - b[0][0] ) * ( b[1][1] - b[0][1] ) * ( b[1][2] - b[0][2] ) );
 }
-
+	
+/**
+* Tels: Get the size of the bounds, that is b1 - b0
+*/
+ID_INLINE idVec3 idBounds::GetSize( void ) const {
+	return idVec3( b[1][0] - b[0][0], b[1][1] - b[0][1], b[1][2] - b[0][2] );
+}
+	
 ID_INLINE bool idBounds::IsCleared( void ) const {
 	return b[0][0] > b[1][0];
 }
@@ -283,34 +286,64 @@ ID_INLINE bool idBounds::AddBounds( const idBounds &a ) {
 
 ID_INLINE idBounds idBounds::Intersect( const idBounds &a ) const {
 	idBounds n;
-	n.b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
-	n.b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
-	n.b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
-	n.b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
-	n.b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
-	n.b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
+
+	// grayman #2734 - Check for intersecting first. Note that if there's
+	// no intersection, a bounds with zero min/max points is returned, so
+	// if that matters, you should check for that at the spot where this
+	// is called.
+
+	n.Zero();
+	if (IntersectsBounds(a))
+	{
+		n.b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
+		n.b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
+		n.b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
+		n.b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
+		n.b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
+		n.b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
+	}
 	return n;
 }
 
 ID_INLINE idBounds &idBounds::IntersectSelf( const idBounds &a ) {
-	if ( a.b[0][0] > b[0][0] ) {
-		b[0][0] = a.b[0][0];
+
+	// grayman #2734 - Check for intersecting first. Note that if there's
+	// no intersection, "this" bounds' max point is set to the min point, so
+	// if that matters, you should check for that at the spot where this
+	// is called. As of this writing, IntersectSelf() isn't used anywhere.
+
+	if (IntersectsBounds(a))
+	{
+		if ( a.b[0][0] > b[0][0] )
+		{
+			b[0][0] = a.b[0][0];
+		}
+		if ( a.b[0][1] > b[0][1] )
+		{
+			b[0][1] = a.b[0][1];
+		}
+		if ( a.b[0][2] > b[0][2] )
+		{
+			b[0][2] = a.b[0][2];
+		}
+		if ( a.b[1][0] < b[1][0] )
+		{
+			b[1][0] = a.b[1][0];
+		}
+		if ( a.b[1][1] < b[1][1] )
+		{
+			b[1][1] = a.b[1][1];
+		}
+		if ( a.b[1][2] < b[1][2] )
+		{
+			b[1][2] = a.b[1][2];
+		}
 	}
-	if ( a.b[0][1] > b[0][1] ) {
-		b[0][1] = a.b[0][1];
+	else
+	{
+		b[1] = b[0]; // no intersection, so collapse the bounds
 	}
-	if ( a.b[0][2] > b[0][2] ) {
-		b[0][2] = a.b[0][2];
-	}
-	if ( a.b[1][0] < b[1][0] ) {
-		b[1][0] = a.b[1][0];
-	}
-	if ( a.b[1][1] < b[1][1] ) {
-		b[1][1] = a.b[1][1];
-	}
-	if ( a.b[1][2] < b[1][2] ) {
-		b[1][2] = a.b[1][2];
-	}
+
 	return *this;
 }
 

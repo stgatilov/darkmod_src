@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_VECTOR_H__
 #define __MATH_VECTOR_H__
@@ -339,6 +323,8 @@ public:
 	idVec3 &		operator/=( const idVec3 &a );
 	idVec3 &		operator/=( const float a );
 	idVec3 &		operator*=( const float a );
+	idVec3 &		MulCW( const idVec3 &a );									// multiply on vector component-wise
+	idVec3 &		DivCW( const idVec3 &a );									// divide on vector component-wise
 
 	friend idVec3	operator*( const float a, const idVec3 b );
 
@@ -389,7 +375,12 @@ public:
 extern idVec3 vec3_origin;
 #define vec3_zero vec3_origin
 
-ID_INLINE idVec3::idVec3( void ) {
+// Default constructor
+ID_INLINE idVec3::idVec3( void ):
+	x(0.0f), // OrbWeaver: let's not leave stuff uninitialised
+	y(0.0f),
+	z(0.0f)
+{
 }
 
 ID_INLINE idVec3::idVec3( const float x, const float y, const float z ) {
@@ -489,6 +480,22 @@ ID_INLINE idVec3 &idVec3::operator*=( const float a ) {
 	x *= a;
 	y *= a;
 	z *= a;
+
+	return *this;
+}
+
+ID_INLINE idVec3 &idVec3::MulCW( const idVec3 &a ) {
+	x *= a.x;
+	y *= a.y;
+	z *= a.z;
+
+	return *this;
+}
+
+ID_INLINE idVec3 &idVec3::DivCW( const idVec3 &a ) {
+	x /= a.x;
+	y /= a.y;
+	z /= a.z;
 
 	return *this;
 }
@@ -1928,6 +1935,7 @@ public:
 
 					idPolar3( void );
 					explicit idPolar3( const float radius, const float theta, const float phi );
+					explicit idPolar3( const idVec3 vec3 );
 
 	void 			Set( const float radius, const float theta, const float phi );
 
@@ -1947,6 +1955,13 @@ ID_INLINE idPolar3::idPolar3( const float radius, const float theta, const float
 	this->radius = radius;
 	this->theta = theta;
 	this->phi = phi;
+}
+
+ID_INLINE idPolar3::idPolar3( const idVec3 vec3 ) {
+	assert( vec3.x > 0 );
+	this->radius = vec3.x;
+	this->theta = vec3.y;
+	this->phi = vec3.z;
 }
 	
 ID_INLINE void idPolar3::Set( const float radius, const float theta, const float phi ) {

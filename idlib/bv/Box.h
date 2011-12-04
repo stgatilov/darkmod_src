@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __BV_BOX_H__
 #define __BV_BOX_H__
@@ -75,7 +59,8 @@ public:
 	idBox			Translate( const idVec3 &translation ) const;	// return translated box
 	idBox &			TranslateSelf( const idVec3 &translation );		// translate this box
 	idBox			Rotate( const idMat3 &rotation ) const;			// return rotated box
-	idBox &			RotateSelf( const idMat3 &rotation );			// rotate this box
+	idBox &			RotateSelf( const idMat3 &rotation );			// rotate this box around the origin
+	idBox &			RotateSelfAroundCenter( const idMat3 &rotation );	// rotate this box around the center of the box
 
 	float			PlaneDistance( const idPlane &plane ) const;
 	int				PlaneSide( const idPlane &plane, const float epsilon = ON_EPSILON ) const;
@@ -105,6 +90,14 @@ public:
 					// calculates the silhouette of the box
 	int				GetProjectionSilhouetteVerts( const idVec3 &projectionOrigin, idVec3 silVerts[6] ) const;
 	int				GetParallelProjectionSilhouetteVerts( const idVec3 &projectionDir, idVec3 silVerts[6] ) const;
+
+	// angua: fills in the 8 corner vertices of the box
+	// verts must be an array of 8 idVec3s.
+	void			GetVerts(idVec3* verts) const;
+
+	// Tels: added
+	const char *		ToString( const int precision = 2 ) const;
+
 
 private:
 	idVec3			center;
@@ -260,6 +253,11 @@ ID_INLINE idBox &idBox::RotateSelf( const idMat3 &rotation ) {
 	return *this;
 }
 
+ID_INLINE idBox &idBox::RotateSelfAroundCenter( const idMat3 &rotation ) {
+	axis *= rotation;
+	return *this;
+}
+
 ID_INLINE bool idBox::ContainsPoint( const idVec3 &p ) const {
 	idVec3 lp = p - center;
 	if ( idMath::Fabs( lp * axis[0] ) > extents[0] ||
@@ -292,6 +290,18 @@ ID_INLINE void idBox::AxisProjection( const idMat3 &ax, idBounds &bounds ) const
 		bounds[0][i] = d1 - d2;
 		bounds[1][i] = d1 + d2;
 	}
+}
+
+ID_INLINE void idBox::GetVerts(idVec3* verts) const
+{
+	verts[0] = center + idVec3(extents.x, -extents.y, -extents.z) * axis;
+	verts[1] = center + idVec3(extents.x, extents.y, -extents.z) * axis;
+	verts[2] = center + idVec3(-extents.x, extents.y, -extents.z) * axis;
+	verts[3] = center + idVec3(-extents.x, -extents.y, -extents.z) * axis;
+	verts[4] = center + idVec3(extents.x, -extents.y, extents.z) * axis;
+	verts[5] = center + idVec3(extents.x, extents.y, extents.z) * axis;
+	verts[6] = center + idVec3(-extents.x, extents.y, extents.z) * axis;
+	verts[7] = center + idVec3(-extents.x, -extents.y, extents.z) * axis;
 }
 
 #endif /* !__BV_BOX_H__ */

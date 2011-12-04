@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_PLANE_H__
 #define __MATH_PLANE_H__
@@ -111,7 +95,7 @@ public:
 	float			Distance( const idVec3 &v ) const;
 	int				Side( const idVec3 &v, const float epsilon = 0.0f ) const;
 
-	bool			LineIntersection( const idVec3 &start, const idVec3 &end ) const;
+	bool			LineIntersection( const idVec3 &start, const idVec3 &end, float *Fraction = NULL ) const;
 					// intersection point is start + dir * scale
 	bool			RayIntersection( const idVec3 &start, const idVec3 &dir, float &scale ) const;
 	bool			PlaneIntersection( const idPlane &plane, idVec3 &start, idVec3 &dir ) const;
@@ -124,6 +108,7 @@ public:
 	float *			ToFloatPtr( void );
 	const char *	ToString( int precision = 2 ) const;
 
+	void			GetPlaneParams(float &a, float &b, float &c, float &d) const;
 private:
 	float			a;
 	float			b;
@@ -150,6 +135,15 @@ ID_INLINE idPlane::idPlane( const idVec3 &normal, const float dist ) {
 	this->c = normal.z;
 	this->d = -dist;
 }
+
+ID_INLINE void idPlane::GetPlaneParams(float &fa, float &fb, float &fc, float &fd) const
+{
+	fa = a;
+	fb = b;
+	fc = c;
+	fd = d;
+}
+
 
 ID_INLINE float idPlane::operator[]( int index ) const {
 	return ( &a )[ index ];
@@ -338,10 +332,18 @@ ID_INLINE int idPlane::Side( const idVec3 &v, const float epsilon ) const {
 	}
 }
 
-ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end ) const {
+ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end, float *fract ) const{
 	float d1, d2, fraction;
 
-	d1 = Normal() * start + d;
+	// This code is a copy of the lineintersection code from Id. Because of a bug
+	// Because of a bug in the calcualtion it doesn't always correctly report the intersection. Until 
+	// it is confirmed that it can be fixed in the plane.h file, without braking any existing code that
+	// might rely on the current behaviour I keep this code here as a copy.
+	// Update: According to a mail from Brian (id) he says that the code is correct and is based on
+	// a slightly different assumption. I don't think so, because the exact same code doesn't work in 
+	// some cases while my fix does, so I keep my version instead.
+	// d1 = Normal() * start + d;
+	d1 = -(Normal() * start + d);
 	d2 = Normal() * end + d;
 	if ( d1 == d2 ) {
 		return false;
@@ -353,6 +355,9 @@ ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end
 		return false;
 	}
 	fraction = ( d1 / ( d1 - d2 ) );
+	if(fract != NULL)
+		*fract = fraction;
+
 	return ( fraction >= 0.0f && fraction <= 1.0f );
 }
 

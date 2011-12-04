@@ -1,33 +1,22 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_MATRIX_H__
 #define __MATH_MATRIX_H__
+
+#ifdef __linux__
+#include "sys/sys_public.h"
+#include <cassert>
+#endif
 
 /*
 ===============================================================================
@@ -295,8 +284,14 @@ ID_INLINE idMat2 idMat2::Inverse( void ) const {
 	idMat2 invMat;
 
 	invMat = *this;
+
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -304,8 +299,14 @@ ID_INLINE idMat2 idMat2::InverseFast( void ) const {
 	idMat2 invMat;
 
 	invMat = *this;
+
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -403,6 +404,8 @@ public:
 
 	friend void		TransposeMultiply( const idMat3 &inv, const idMat3 &b, idMat3 &dst );
 	friend idMat3	SkewSymmetric( idVec3 const &src );
+
+	void			GetMat3Params(idVec3 &a, idVec3 &b, idVec3 &c) const { a = mat[0]; b = mat[1], c = mat[2]; };
 
 private:
 	idVec3			mat[ 3 ];
@@ -700,8 +703,14 @@ ID_INLINE idMat3 idMat3::Inverse( void ) const {
 	idMat3 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -709,8 +718,14 @@ ID_INLINE idMat3 idMat3::InverseFast( void ) const {
 	idMat3 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1108,8 +1123,14 @@ ID_INLINE idMat4 idMat4::Inverse( void ) const {
 	idMat4 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1117,8 +1138,14 @@ ID_INLINE idMat4 idMat4::InverseFast( void ) const {
 	idMat4 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1413,8 +1440,14 @@ ID_INLINE idMat5 idMat5::Inverse( void ) const {
 	idMat5 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1422,8 +1455,14 @@ ID_INLINE idMat5 idMat5::InverseFast( void ) const {
 	idMat5 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1740,8 +1779,14 @@ ID_INLINE idMat6 idMat6::Inverse( void ) const {
 	idMat6 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1749,8 +1794,14 @@ ID_INLINE idMat6 idMat6::InverseFast( void ) const {
 	idMat6 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -2379,7 +2430,7 @@ ID_INLINE void idMatX::Clamp( float min, float max ) {
 	}
 }
 
-ID_INLINE idMatX &idMatX::SwapRows( int r1, int r2 ) {
+inline idMatX &idMatX::SwapRows( int r1, int r2 ) {
 	float *ptr;
 
 	ptr = (float *) _alloca16( numColumns * sizeof( float ) );
@@ -2584,8 +2635,14 @@ ID_INLINE idMatX idMatX::Inverse( void ) const {
 
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -2620,8 +2677,14 @@ ID_INLINE idMatX idMatX::InverseFast( void ) const {
 
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
+
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -2649,7 +2712,7 @@ ID_INLINE bool idMatX::InverseFastSelf( void ) {
 		default:
 			return InverseSelfGeneric();
 	}
-	return false;
+//	return false;
 }
 
 ID_INLINE idVecX idMatX::Multiply( const idVecX &vec ) const {

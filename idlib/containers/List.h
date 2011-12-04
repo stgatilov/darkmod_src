@@ -1,33 +1,22 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __LIST_H__
 #define __LIST_H__
+
+#ifdef __linux__
+#include <cassert>
+#endif
 
 /*
 ===============================================================================
@@ -124,7 +113,8 @@ public:
 	type *			Find( type const & obj ) const;						// find pointer to the given element
 	int				FindNull( void ) const;								// find the index for the first NULL pointer in the list
 	int				IndexOf( const type *obj ) const;					// returns the index for the pointer to an element in the list
-	bool			RemoveIndex( int index );							// remove the element at the given index
+	bool			RemoveIndex( const int index );						// remove the element at the given index and keep items sorted
+	bool			RemoveIndex( const int index, bool keepSorted );	// Tels: remove the element at the given index, keep sorted only if wanted
 	bool			Remove( const type & obj );							// remove the element
 	void			Sort( cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			SortSubSection( int startIndex, int endIndex, cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
@@ -585,7 +575,7 @@ ID_INLINE type &idList<type>::operator[]( int index ) {
 ================
 idList<type>::Ptr
 
-Returns a pointer to the begining of the array.  Useful for iterating through the list in loops.
+Returns a pointer to the beginning of the array.  Useful for iterating through the list in loops.
 
 Note: may return NULL if the list is empty.
 
@@ -640,6 +630,13 @@ idList<type>::Append
 Increases the size of the list by one element and copies the supplied data into it.
 
 Returns the index of the new element.
+
+greebo: Important: Don't do this: spotList.Append( spotList[randomLocation] )!
+
+Don't call idList::Append() or idList::Alloc() with a reference to a current 
+list element. The operator[] will return a reference to the memory BEFORE a
+possible Resize() call, which will relocate the entire list. The reference
+to the "old" memory location will be invalid and crashes are ahead.
 ================
 */
 template< class type >
@@ -716,7 +713,10 @@ Returns the size of the new combined list
 */
 template< class type >
 ID_INLINE int idList<type>::Append( const idList<type> &other ) {
-	if ( !list ) {
+
+	// Tels: Old code, with quadratic (O(N*N) performance, it would call Resize
+	// 	 every so often, which is a O(N) copy operation.
+/*	if ( !list ) {
 		if ( granularity == 0 ) {	// this is a hack to fix our memset classes
 			granularity = 16;
 		}
@@ -729,6 +729,22 @@ ID_INLINE int idList<type>::Append( const idList<type> &other ) {
 	}
 
 	return Num();
+*/
+
+	// Tels 2010-07-21: new code, resize only once, then copy data over O(N)
+	if ( granularity == 0 ) {	// this is a hack to fix our memset classes
+		granularity = 16;
+	}
+	int n = other.Num();
+	int newsize = size + granularity + n;
+	Resize( newsize - newsize % granularity );
+
+	for (int i = 0; i < n; i++) {
+		// simply copy data over
+		list[num + i] = other[i];
+	}
+	num += n;
+	return num;
 }
 
 /*
@@ -867,6 +883,48 @@ ID_INLINE bool idList<type>::RemoveIndex( int index ) {
 
 /*
 ================
+idList<type>::RemoveIndex
+
+Removes the element at the specified index and if keepSorted is true, moves all data following the element down to
+fill in the gap. If keepSorted is false, just fills the gap with the last element in the list (if any).
+The number of elements in the list is reduced by one.  Returns false if the index is outside the bounds of the list.
+Note that the element is not destroyed, so any memory used by it may not be freed until the destruction of the list.
+================
+*/
+template< class type >
+ID_INLINE bool idList<type>::RemoveIndex( const int index, const bool keepSorted ) {
+
+	assert( list != NULL );
+	assert( index >= 0 );
+	assert( index < num );
+
+	if ( ( index < 0 ) || ( index >= num ) ) {
+		return false;
+	}
+
+	num--;
+	if (keepSorted)
+	{
+		//gameLocal.Printf("Moving %i list entries (index = %i)\n", num - index, index );
+		for( int i = index; i < num; i++ ) {
+			list[ i ] = list[ i + 1 ];
+		}
+	}
+	else
+	{
+		// [1,2,3,4] (remove 2, num was 4, is now 3, index = 1) => (num = 2), [1,4,3]
+		// if index == num, we removed the last element, so nothing to do
+		if ( index < num )
+		{
+			list[ index ] = list[ num ];
+		}
+	}
+
+	return true;
+}
+
+/*
+================
 idList<type>::Remove
 
 Removes the element if it is found within the list and moves all data following the element down to fill in the gap.
@@ -946,5 +1004,7 @@ ID_INLINE void idList<type>::Swap( idList<type> &other ) {
 	idSwap( granularity, other.granularity );
 	idSwap( list, other.list );
 }
+
+typedef idList<idStr> idStringList;
 
 #endif /* !__LIST_H__ */

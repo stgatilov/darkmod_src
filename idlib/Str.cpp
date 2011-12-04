@@ -1,33 +1,20 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #include "precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #if !defined( ID_REDIRECT_NEWDELETE ) && !defined( MACOS_X )
 	#define USE_STRING_DATA_ALLOCATOR
@@ -174,6 +161,90 @@ void idStr::operator=( const char *text ) {
 	EnsureAlloced( l + 1, false );
 	strcpy( data, text );
 	len = l;
+}
+
+idStr idStr::RandomPart( const char c, const float rand ) const {
+	idStr part;
+
+	// check for list and if found, use random part
+	int seps = Count(c);
+	if (seps > 0) {
+		// if we have X commata, we have X+1 pieces, so select one at random
+		seps ++;
+		//gameLocal.Printf("Found random list with %i parts.\n", seps);
+		float r = rand;
+		if (r < 0.0f || r > 1.0f)
+		{
+			r = gameLocal.random.RandomFloat();
+		}
+		int idx = (int) (r * (float)seps);
+		//gameLocal.Printf("random part #%i\n", idx);
+		// split string into pieces, and select idx
+		int i = 0; int d = 0;
+		int start = 0; int end = len;
+		while (d < len) {
+			if (data[d] == c) {
+					i++;
+			}
+			if (i == idx) {
+				// found start, find end
+				start = d;
+				if (i > 0)
+				{
+					// on first part, start at 0, other parts skip "c"
+					start ++;
+				}
+				end = start;
+				while (end < len && data[end] != c)
+				{
+					end++;
+				}
+				break;
+			}
+			d++;
+		}
+		//gameLocal.Printf("Cutting %s between %i and %i.\n", data, start, end);
+		part = Mid(start, end - start);
+		// left-over separator 
+		part.Strip(c);
+		// and spaces
+		part.Strip(' ');
+		if (part == "''") {
+			// default
+			part = "";
+		}
+		//gameLocal.Printf("Result: '%s'.\n", part.c_str() );
+	// end for random
+	}
+	else {
+		// copy
+		part.Append( data );
+	}
+	
+	return part;
+}
+
+/*
+============
+idStr::CountChar
+
+returns count of c between start and end
+============
+*/
+int idStr::CountChar( const char *str, const char c, int start, int end ) {
+	int i;
+	int count = 0;
+
+	if ( end == -1 ) {
+		end = strlen( str ) - 1;
+	}
+
+	for ( i = start; i <= end; i++ ) {
+		if ( str[i] == c ) {
+			count++;
+		}
+	}
+	return count;
 }
 
 /*
@@ -467,12 +538,36 @@ idStr::StripLeading
 ============
 */
 void idStr::StripLeading( const char c ) {
-	while( data[ 0 ] == c ) {
-		memmove( &data[ 0 ], &data[ 1 ], len );
-		len--;
+	// Tels: The string is zero-terminated, so exit if trying to remove zeros
+	if (c == 0x00) {
+		return;
 	}
+	// Tels: first count how many chars to remove, then move only once
+	int remove = 0;
+	while( data[ remove ] == c ) {
+		remove ++;
+	}
+	len -= remove;
+	// +1 to copy the 0x00 at the end
+	memmove( &data[ 0 ], &data[ remove ], len + 1 );
 }
 
+/*
+============
+idStr::StripLeadingWhitespace
+============
+*/
+void idStr::StripLeadingWhitespace( void ) {
+	// Tels: first count how many chars to remove, then move the data only once
+	int remove = 0;
+	// cast to unsigned char to prevent stripping off high-ASCII characters
+	while( (unsigned char)data[ remove ] <= ' ' ) {
+		remove ++;
+	}
+	len -= remove;
+	// +1 to copy the 0x00 at the end
+	memmove( &data[ 0 ], &data[ remove ], len + 1 );
+}
 /*
 ============
 idStr::StripLeading
@@ -564,6 +659,9 @@ void idStr::Replace( const char *old, const char *nw ) {
 	int		oldLen, newLen, i, j, count;
 	idStr	oldString( data );
 
+	assert(old);
+	assert(nw);
+
 	oldLen = strlen( old );
 	newLen = strlen( nw );
 
@@ -592,6 +690,21 @@ void idStr::Replace( const char *old, const char *nw ) {
 		}
 		data[j] = 0;
 		len = strlen( data );
+	}
+}
+
+/*
+============
+idStr::Replace
+============
+*/
+void idStr::Replace( const char old, const char nw ) {
+	// cannot replace 0x00 or swap 0xXX to 0x00
+	assert(old);
+	assert(nw);
+
+	for( int i = 0; i < len; i++ ) {
+		if (data[i] == old) { data[i] = nw; }
 	}
 }
 

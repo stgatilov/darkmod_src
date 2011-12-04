@@ -1,33 +1,20 @@
-/*
-===========================================================================
+// vim:ts=4:sw=4:cindent
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+// Copyright (C) 2010 The Dark Mod Team
 
 #include "../precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Simd_Generic.h"
 #include "Simd_MMX.h"
@@ -36,7 +23,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
 #include "Simd_AltiVec.h"
-
 
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
@@ -65,6 +51,113 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	idSIMDProcessor *newProcessor;
 
 	cpuid = idLib::sys->GetProcessorId();
+
+	/*
+	* Tels: Bug #2413: Under Linux, cpuid_t is 0, so use inline assembly to get
+	*       the correct flags:
+	*/
+#ifdef __linux__
+	int cores = 0;
+	dword a,c,d, result;
+
+	/* Check for AMD or Intel first */
+	__asm__ __volatile__ (
+		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
+		"	movl	$0, %%eax;"			// CPUID with EAX = 0
+		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
+		"	movl	%%ebx, %%eax;"		// EAX => EBX
+		"	popl	%%ebx;"				// Restore EBX
+		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
+      		:							// no inputs
+		: );							// clobbers no additional registers (except EAX, ECX and EDX)
+
+	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
+
+	result = CPUID_GENERIC;
+	// "AuthenticAMD"
+	if (( 0x68747541l == a ) && ( 0x444d4163l == c ) && ( 0x69746e65l == d ) )
+	{
+		result = CPUID_AMD;
+	}
+	else
+		// "GenuineIntel"
+		if (( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) )
+		{
+		result = CPUID_INTEL;
+		}
+	
+	__asm__ __volatile__ (
+		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
+		"	movl	$1, %%eax;"			// CPUID with EAX = 1
+		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
+		"	movl	%%ebx, %%eax;"		// Put EBX value into EAX (so we can return it)
+		"	popl	%%ebx;"				// Restore ebx
+		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
+      		:							// no inputs
+		: );							// clobbers no extra registers beside the outputs
+
+	// This can only be checked on AMD CPUs
+	if ( (result & CPUID_AMD) && (d & 0x10000000l) )		// >> 31 does not work here
+	{
+		result += CPUID_3DNOW;
+	}
+	// The calculation how many physical/logical CPUs the machine has is rather
+	// convuluted and differes between AMD and Intel, so we don't attempt it, we
+	// only check bits 16..23 of EBX to see if it is > 1:
+	cores = (a >> 16) & 0xFF;
+	// Only on Intel we can have Hyper-Threading
+	if ( (result & CPUID_INTEL) && ((d >> 28) & 0x1) && cores > 1 )
+	{
+		result += CPUID_HTT;
+	}
+
+	// These tests are the same for AMD and Intel
+	if ((d >> 23) & 0x1)
+	{
+		result += CPUID_MMX;
+	}
+	if ((d >> 25) & 0x1)
+	{
+		result += CPUID_SSE;
+	}
+	if ((d >> 26) & 0x1)
+	{
+		result += CPUID_SSE2;
+	}
+	if ((d >> 15) & 0x1)
+	{
+		result += CPUID_CMOV;
+	}
+	if (c & 0x1)
+	{
+		result += CPUID_SSE3;
+	}
+
+	//idLib::common->Printf( "cpuid result is %i (c = %i d = %i)\n", result, c, d);
+	cpuid = (cpuid_t)result;
+#endif
+
+	// Print what we found to console
+	idLib::common->Printf( "Found %s CPU%s, features:%s%s%s%s%s%s\n",
+			// Vendor
+			cpuid & CPUID_AMD ? "AMD" : 
+			cpuid & CPUID_INTEL ? "Intel" : 
+			cpuid & CPUID_GENERIC ? "Generic" : 
+			"Unsupported",
+			// Hyper-Threading?
+			cpuid & CPUID_HTT ? " with Hyper-Threading enabled" : "",
+
+			// the calculation how many physical/logical CPUs the machine has is rather
+			// convuluted and differes between AMD and Intel, so we don't attempt it:
+//			cores,
+//		   	cores > 1 ? "cores" : "core",
+			// Flags
+			cpuid & CPUID_MMX ? " MMX" : "",
+			cpuid & CPUID_SSE ? " SSE" : "",
+			cpuid & CPUID_SSE2 ? " SSE2" : "",
+			cpuid & CPUID_SSE3 ? " SSE3" : "",
+			cpuid & CPUID_3DNOW ? " 3DNow!" : "",
+			cpuid & CPUID_CMOV ? " CMOV" : "" );
 
 	if ( forceGeneric ) {
 
@@ -96,8 +189,8 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 
 	if ( newProcessor != SIMDProcessor ) {
 		SIMDProcessor = newProcessor;
-		idLib::common->Printf( "%s using %s for SIMD processing\n", module, SIMDProcessor->GetName() );
 	}
+	idLib::common->Printf( "%s using %s for SIMD processing.\n", module, SIMDProcessor->GetName() );
 
 	if ( cpuid & CPUID_FTZ ) {
 		idLib::sys->FPU_SetFTZ( true );

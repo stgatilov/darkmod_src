@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_INTERPOLATE_H__
 #define __MATH_INTERPOLATE_H__
@@ -42,6 +26,7 @@ class idInterpolate {
 public:
 						idInterpolate();
 
+	// Start a transition, this automatically sets the idInterpolate to "enabled"
 	void				Init( const float startTime, const float duration, const type &startValue, const type &endValue );
 	void				SetStartTime( float time ) { this->startTime = time; }
 	void				SetDuration( float duration ) { this->duration = duration; }
@@ -57,7 +42,12 @@ public:
 	const type &		GetStartValue( void ) const { return startValue; }
 	const type &		GetEndValue( void ) const { return endValue; }
 
+	// greebo: Returns TRUE if this interpolation is active.
+	inline bool		Enabled() const { return enabled; };
+	void				SetEnabled(bool isEnabled) { enabled = isEnabled; };
+
 private:
+	bool				enabled;
 	float				startTime;
 	float				duration;
 	type				startValue;
@@ -72,7 +62,9 @@ idInterpolate::idInterpolate
 ====================
 */
 template< class type >
-ID_INLINE idInterpolate<type>::idInterpolate() {
+ID_INLINE idInterpolate<type>::idInterpolate() :
+	enabled(true)
+{
 	currentTime = startTime = duration = 0;
 	memset( &currentValue, 0, sizeof( currentValue ) );
 	startValue = endValue = currentValue;
@@ -91,6 +83,7 @@ ID_INLINE void idInterpolate<type>::Init( const float startTime, const float dur
 	this->endValue = endValue;
 	this->currentTime = startTime - 1;
 	this->currentValue = startValue;
+	this->enabled = true;
 }
 
 /*
@@ -110,12 +103,11 @@ ID_INLINE type idInterpolate<type>::GetCurrentValue( float time ) const {
 		} else if ( deltaTime >= duration ) {
 			currentValue = endValue;
 		} else {
-			currentValue = startValue + ( endValue - startValue ) * ( (float) deltaTime / duration );
+			currentValue = static_cast<type>(startValue + ( endValue - startValue ) * ( (float) deltaTime / duration ));
 		}
 	}
 	return currentValue;
 }
-
 
 /*
 ==============================================================================================

@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MATH_ANGLES_H__
 #define __MATH_ANGLES_H__
@@ -33,6 +17,11 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 
 	Euler angles
+
+TDM NOTE:
+idAngles uses the "yaw, pitch, roll" convention, in which the yaw rotation occurs
+first, then pitch occurs relative to the yawed axes, and finally roll
+occurs relative to the yawed and pitched axes.  Also known as the "zyx" convention.
 
 ===============================================================================
 */
@@ -102,7 +91,10 @@ public:
 
 extern idAngles ang_zero;
 
-ID_INLINE idAngles::idAngles( void ) {
+// Default constructor
+ID_INLINE idAngles::idAngles( void )
+: pitch(0), yaw(0), roll(0)
+{
 }
 
 ID_INLINE idAngles::idAngles( float pitch, float yaw, float roll ) {

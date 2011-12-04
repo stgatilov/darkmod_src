@@ -1,30 +1,14 @@
-/*
-===========================================================================
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
-
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __LINKLIST_H__
 #define __LINKLIST_H__
@@ -57,6 +41,12 @@ public:
 
 	void				Remove( void );
 
+	// Added by SophisticatedZombie for DarkMod
+	// This method removes a node from the list and updates the head pointer of
+	// every node in the list to prevent the list form becoming circular when the head
+	// is removed.
+	void				RemoveHeadsafe( void );
+
 	type *				Next( void ) const;
 	type *				Prev( void ) const;
 
@@ -66,6 +56,8 @@ public:
 	idLinkList *		ListHead( void ) const;
 	idLinkList *		NextNode( void ) const;
 	idLinkList *		PrevNode( void ) const;
+	idLinkList *		NextNodeCircular( void ) const;
+	idLinkList *		PrevNodeCircular( void ) const;
 
 private:
 	idLinkList *		head;
@@ -179,6 +171,41 @@ void idLinkList<type>::Remove( void ) {
 	next = this;
 	prev = this;
 	head = this;
+}
+
+/*
+================
+idLinkList<type>::RemoveHeadsafe
+
+Removes node from list and updates
+the list's head pointer if this was the head
+================
+*/
+template< class type >
+void idLinkList<type>::RemoveHeadsafe( void ) {
+
+	// If this is the head, must walk list and tell all our little buddies
+	// that we are no longer the head, and that the next node now is.
+	if (head == this)
+	{
+		idLinkList<type>* p_cursor = next;
+
+		while ((p_cursor != NULL) && (p_cursor != this))
+		{
+			p_cursor->head = next;
+			p_cursor = p_cursor->next;
+		}
+	}
+
+	// Now back to ID's original code
+	prev->next = next;
+	next->prev = prev;
+
+	next = this;
+	prev = this;
+	head = this;
+
+
 }
 
 /*
@@ -313,6 +340,30 @@ idLinkList<type> *idLinkList<type>::PrevNode( void ) const {
 	if ( prev == head ) {
 		return NULL;
 	}
+	return prev;
+}
+
+/*
+================
+idLinkList<type>::NextNodeCircular
+
+Returns the next node in the list, possibly returning the head.
+================
+*/
+template< class type >
+idLinkList<type> *idLinkList<type>::NextNodeCircular( void ) const {
+	return next;
+}
+
+/*
+================
+idLinkList<type>::PrevNodeCircular
+
+Returns the previous node in the list, possibly returning the head.
+================
+*/
+template< class type >
+idLinkList<type> *idLinkList<type>::PrevNodeCircular( void ) const {
 	return prev;
 }
 
