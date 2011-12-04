@@ -784,8 +784,11 @@ namespace pugi
 			m_eos = storage + capacity;
 		}
 		
-		std::copy(begin, end, m_end);
-		m_end += count;
+		if (m_end != NULL)
+		{
+			std::copy(begin, end, m_end);
+			m_end += count;
+		}
 	}
 
 	void xpath_node_set::truncate(iterator it)
