@@ -1,22 +1,35 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision: 2461 $
- * $Date: 2008-06-08 15:30:47 +0200 (So, 08 Jun 2008) $
- * $Author: greebo $
- *
- ***************************************************************************/
+/*
+===========================================================================
 
-// Copyright (C) 2004 Id Software, Inc.
-//
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: mapfile.cpp 2461 2008-06-08 13:30:47Z greebo $", init_version);
 
-#pragma warning( push )
-#pragma warning( disable : 4127 )
 /*
 ===============
 FloatCRC
@@ -124,8 +137,8 @@ idMapPatch *idMapPatch::Parse( idLexer &src, const idVec3 &origin, bool patchDef
 		}
 	}
 
-	idMapPatch *patch = new idMapPatch( static_cast<int>(info[0]), static_cast<int>(info[1]) );
-	patch->SetSize( static_cast<int>(info[0]), static_cast<int>(info[1]) );
+	idMapPatch *patch = new idMapPatch( info[0], info[1] );
+	patch->SetSize( info[0], info[1] );
 	if ( version < 2.0f ) {
 		patch->SetMaterial( "textures/" + token );
 	} else {
@@ -133,8 +146,8 @@ idMapPatch *idMapPatch::Parse( idLexer &src, const idVec3 &origin, bool patchDef
 	}
 
 	if ( patchDef3 ) {
-		patch->SetHorzSubdivisions( static_cast<int>(info[2]) );
-		patch->SetVertSubdivisions( static_cast<int>(info[3]) );
+		patch->SetHorzSubdivisions( info[2] );
+		patch->SetVertSubdivisions( info[3] );
 		patch->SetExplicitlySubdivided( true );
 	}
 
@@ -952,5 +965,3 @@ bool idMapFile::NeedsReload() {
 	}
 	return true;
 }
-
-#pragma warning( pop )

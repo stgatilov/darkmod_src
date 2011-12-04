@@ -1,20 +1,33 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision: 4934 $
- * $Date: 2011-08-05 18:48:35 +0200 (Fr, 05 Aug 2011) $
- * $Author: tels $
- *
- ***************************************************************************/
+/*
+===========================================================================
 
-// Copyright (C) 2004 Id Software, Inc.
-//
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 #include "precompiled.h"
 #pragma hdrstop
-
-static bool init_version = FileVersionList("$Id: dict.cpp 4934 2011-08-05 16:48:35Z tels $", init_version);
-
 
 idStrPool		idDict::globalKeys;
 idStrPool		idDict::globalValues;
@@ -171,35 +184,6 @@ void idDict::SetDefaults( const idDict *dict ) {
 	n = dict->args.Num();
 	for( i = 0; i < n; i++ ) {
 		def = &dict->args[i];
-		kv = FindKey( def->GetKey() );
-		if ( !kv ) {
-			newkv.key = globalKeys.CopyString( def->key );
-			newkv.value = globalValues.CopyString( def->value );
-			argHash.Add( argHash.GenerateKey( newkv.GetKey(), false ), args.Append( newkv ) );
-		}
-	}
-}
-
-/*
-================
-idDict::SetDefaults
-
-Tels: Like SetDefaults(), but skips all entries starting with skip:
-================
-*/
-void idDict::SetDefaults( const idDict *dict, const idStr &skip ) {
-	int i, n, l;
-	const idKeyValue *kv, *def;
-	idKeyValue newkv;
-
-	n = dict->args.Num();
-	l = skip.Length();
-	for( i = 0; i < n; i++ ) {
-		def = &dict->args[i];
-		if (def->GetKey().Icmpn(skip, l) == 0)
-		{
-			continue;
-		}
 		kv = FindKey( def->GetKey() );
 		if ( !kv ) {
 			newkv.key = globalKeys.CopyString( def->key );
@@ -491,7 +475,7 @@ int idDict::FindKeyIndex( const char *key ) const {
 
 	if ( key == NULL || key[0] == '\0' ) {
 		idLib::common->DWarning( "idDict::FindKeyIndex: empty key" );
-		return 0;
+		return NULL;
 	}
 
 	int hash = argHash.GenerateKey( key, false );
@@ -587,7 +571,7 @@ idDict::WriteToFileHandle
 void idDict::WriteToFileHandle( idFile *f ) const {
 	int c = LittleLong( args.Num() );
 	f->Write( &c, sizeof( c ) );
-	for ( int i = 0; i < args.Num(); i++ ) {        // don't loop on the swapped count use the original
+	for ( int i = 0; i < args.Num(); i++ ) {	// don't loop on the swapped count use the original
 		WriteString( args[i].GetKey().c_str(), f );
 		WriteString( args[i].GetValue().c_str(), f );
 	}
@@ -663,16 +647,6 @@ idDict::ShowMemoryUsage_f
 void idDict::ShowMemoryUsage_f( const idCmdArgs &args ) {
 	idLib::common->Printf( "%5d KB in %d keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
 	idLib::common->Printf( "%5d KB in %d values\n", globalValues.Size() >> 10, globalValues.Num() );
-}
-
-/*
-================
-idDict::PrintMemory
-================
-*/
-void idDict::PrintMemory( void ) const {
-	idLib::common->Printf( "%d KB in %d keys, %d KB in %d values.\n", 
-		globalKeys.Size() >> 10, globalKeys.Num(), globalValues.Size() >> 10, globalValues.Num() );
 }
 
 /*

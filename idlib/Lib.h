@@ -1,17 +1,35 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision: 1435 $
- * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
- *
- ***************************************************************************/
+/*
+===========================================================================
 
-// Copyright (C) 2004 Id Software, Inc.
-//
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
+
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).  
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 #ifndef __LIB_H__
 #define __LIB_H__
+
+
 /*
 ===============================================================================
 
@@ -28,8 +46,6 @@
 
 ===============================================================================
 */
-
-#include <cstring>
 
 class idLib {
 public:
@@ -75,14 +91,6 @@ class idVec4;
 #ifndef BIT
 #define BIT( num )				( 1 << ( num ) )
 #endif
-
-/* Bit operations */
-#define BITCHK(flag,bit) (((flag)&(bit))==(bit)) /* if all the bits are set */
-#define BITANY(flag,bit) ((flag)&(bit)) /* if any bit is set */
-#define BITSET(flag,bit) flag|=(bit)
-#define BITCLR(flag,bit) flag&=(~(bit))
-#define BITFLIP(flag,bit) if (BIT( (flag),(bit) )) BITCLR( (flag),(bit) ); else BITSET( (flag),(bit) )
-
 
 #define	MAX_STRING_CHARS		1024		// max length of a string
 
@@ -146,6 +154,9 @@ public:
 	idException( const char *text = "" ) { strcpy( error, text ); }
 };
 
+// move from Math.h to keep gcc happy
+template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
+template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 
 /*
 ===============================================================================
@@ -156,81 +167,78 @@ public:
 */
 
 // memory management and arrays
-#include "heap.h"
-#include "containers/list.h"
+#include "Heap.h"
+#include "containers/List.h"
 
 // math
-#include "math/simd.h"
-#include "math/math.h"
-#include "math/random.h"
-#include "math/complex.h"
-#include "math/vector.h"
-#include "math/matrix.h"
-#include "math/angles.h"
-#include "math/quat.h"
-#include "math/rotation.h"
-#include "math/plane.h"
-#include "math/pluecker.h"
-#include "math/polynomial.h"
-#include "math/extrapolate.h"
-#include "math/interpolate.h"
-#include "math/curve.h"
-#include "math/ode.h"
-#include "math/lcp.h"
+#include "math/Simd.h"
+#include "math/Math.h"
+#include "math/Random.h"
+#include "math/Complex.h"
+#include "math/Vector.h"
+#include "math/Matrix.h"
+#include "math/Angles.h"
+#include "math/Quat.h"
+#include "math/Rotation.h"
+#include "math/Plane.h"
+#include "math/Pluecker.h"
+#include "math/Polynomial.h"
+#include "math/Extrapolate.h"
+#include "math/Interpolate.h"
+#include "math/Curve.h"
+#include "math/Ode.h"
+#include "math/Lcp.h"
 
 // bounding volumes
-#include "bv/sphere.h"
-#include "bv/bounds.h"
-#include "bv/box.h"
-#include "bv/frustum.h"
+#include "bv/Sphere.h"
+#include "bv/Bounds.h"
+#include "bv/Box.h"
+#include "bv/Frustum.h"
 
 // geometry
-#include "geometry/drawvert.h"
-#include "geometry/jointtransform.h"
-#include "geometry/winding.h"
-#include "geometry/winding2d.h"
-#include "geometry/surface.h"
-#include "geometry/surface_patch.h"
-#include "geometry/surface_polytope.h"
-#include "geometry/surface_sweptspline.h"
-#include "geometry/tracemodel.h"
+#include "geometry/DrawVert.h"
+#include "geometry/JointTransform.h"
+#include "geometry/Winding.h"
+#include "geometry/Winding2D.h"
+#include "geometry/Surface.h"
+#include "geometry/Surface_Patch.h"
+#include "geometry/Surface_Polytope.h"
+#include "geometry/Surface_SweptSpline.h"
+#include "geometry/TraceModel.h"
 
 // text manipulation
-#include "str.h"
-#include "token.h"
-#include "lexer.h"
-#include "parser.h"
-#include "base64.h"
-#include "cmdargs.h"
+#include "Str.h"
+#include "Token.h"
+#include "Lexer.h"
+#include "Parser.h"
+#include "Base64.h"
+#include "CmdArgs.h"
 
 // containers
-#include "containers/btree.h"
-#include "containers/binsearch.h"
-#include "containers/hashindex.h"
-#include "containers/hashtable.h"
-#include "containers/staticlist.h"
-#include "containers/linklist.h"
-#include "containers/hierarchy.h"
-#include "containers/queue.h"
-#include "containers/stack.h"
-#include "containers/strlist.h"
-#include "containers/strpool.h"
-#include "containers/vectorset.h"
-#include "containers/planeset.h"
+#include "containers/BTree.h"
+#include "containers/BinSearch.h"
+#include "containers/HashIndex.h"
+#include "containers/HashTable.h"
+#include "containers/StaticList.h"
+#include "containers/LinkList.h"
+#include "containers/Hierarchy.h"
+#include "containers/Queue.h"
+#include "containers/Stack.h"
+#include "containers/StrList.h"
+#include "containers/StrPool.h"
+#include "containers/VectorSet.h"
+#include "containers/PlaneSet.h"
 
 // hashing
-#include "hashing/crc8.h"
-#include "hashing/crc16.h"
-#include "hashing/crc32.h"
-#include "hashing/honeyman.h"
-#include "hashing/md4.h"
-#include "hashing/md5.h"
+#include "hashing/CRC32.h"
+#include "hashing/MD4.h"
+#include "hashing/MD5.h"
 
 // misc
-#include "dict.h"
-#include "langdict.h"
-#include "bitmsg.h"
-#include "mapfile.h"
-#include "timer.h"
+#include "Dict.h"
+#include "LangDict.h"
+#include "BitMsg.h"
+#include "MapFile.h"
+#include "Timer.h"
 
 #endif	/* !__LIB_H__ */
