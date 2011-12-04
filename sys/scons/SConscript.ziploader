@@ -1,0 +1,57 @@
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision$
+#* $Date$
+#* $Author$
+#*
+#* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
+#* Revision 1.2  2004/11/28 19:23:11  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+ziploader_string = ' \
+	zlib/adler32.c \
+	zlib/compress.c \
+	zlib/crc32.c \
+	zlib/deflate.c \
+	zlib/gzclose.c \
+	zlib/gzlib.c \
+	zlib/gzread.c \
+	zlib/gzwrite.c \
+	zlib/infback.c \
+	zlib/inffast.c \
+	zlib/inflate.c \
+	zlib/inftrees.c \
+	zlib/trees.c \
+	zlib/uncompr.c \
+	zlib/zutil.c \
+	minizip/ioapi.c \
+	minizip/mztools.c \
+	minizip/unzip.c \
+	minizip/zip.c'
+
+ziploader_list = scons_utils.BuildList( '', ziploader_string )
+
+for i in range( len( ziploader_list ) ):
+	ziploader_list[ i ] = '../../lib/' + ziploader_list[ i ]
+
+local_env = g_env.Clone()
+
+ret_list = []
+
+for f in ziploader_list:
+	ret_list += local_env.SharedObject( source = f )
+
+Return( 'ret_list' )
