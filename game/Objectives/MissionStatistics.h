@@ -13,7 +13,7 @@
 #include "../idlib/precompiled.h"
 
 #include "Objective.h" // for objective state enum
-#include "../Inventory/Item.h" // for loot type enum
+#include "../Inventory/LootType.h" // for loot type enum
 
 // Maximum array sizes:
 #define MAX_TEAMS 64

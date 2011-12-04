@@ -320,7 +320,7 @@
     <ClCompile Include="game\Inventory\Category.cpp" />
     <ClCompile Include="game\Inventory\Cursor.cpp" />
     <ClCompile Include="game\Inventory\Inventory.cpp" />
-    <ClCompile Include="game\Inventory\Item.cpp" />
+    <ClCompile Include="game\Inventory\InventoryItem.cpp" />
     <ClCompile Include="game\Inventory\WeaponItem.cpp" />
     <ClCompile Include="game\item.cpp" />
     <ClCompile Include="game\light.cpp" />
@@ -382,7 +382,6 @@
     <ClCompile Include="game\pugixml\pugixpath.cpp" />
     <ClCompile Include="game\pvs.cpp" />
     <ClCompile Include="game\PVSToAASMapping.cpp" />
-    <ClCompile Include="game\randomizer\ex-ran.cpp" />
     <ClCompile Include="game\randomizer\mersenne.cpp" />
     <ClCompile Include="game\randomizer\mother.cpp" />
     <ClCompile Include="game\randomizer\ranrotb.cpp" />
@@ -571,7 +570,7 @@
     <ClInclude Include="game\Inventory\Category.h" />
     <ClInclude Include="game\Inventory\Cursor.h" />
     <ClInclude Include="game\Inventory\Inventory.h" />
-    <ClInclude Include="game\Inventory\Item.h" />
+    <ClInclude Include="game\Inventory\InventoryItem.h" />
     <ClInclude Include="game\Inventory\LootType.h" />
     <ClInclude Include="game\Inventory\WeaponItem.h" />
     <ClInclude Include="game\item.h" />

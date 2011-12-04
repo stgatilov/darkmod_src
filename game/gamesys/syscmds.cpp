@@ -22,7 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Relations.h"
 #include "../Objectives/MissionData.h"
 #include "../Inventory/Inventory.h"
-#include "../Inventory/Item.h"
+#include "../Inventory/InventoryItem.h"
 #include "../TimerManager.h"
 #include "../AI/Conversation/ConversationSystem.h"
 #include "../Missions/MissionManager.h"

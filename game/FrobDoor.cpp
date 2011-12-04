@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/game_local.h"
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
-#include "Inventory/Item.h"
+#include "Inventory/InventoryItem.h"
 #include "Inventory/Category.h"
 #include "FrobDoor.h"
 #include "FrobDoorHandle.h"

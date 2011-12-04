@@ -81,6 +81,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma warning(disable : 4996)				// unsafe string operations
 
 #include <malloc.h>							// no malloc.h on mac or unix
+#include <winsock2.h>						// greebo: Include this before windows.h
 #include <windows.h>						// for qgl.h
 #undef FindText								// stupid namespace poluting Microsoft monkeys
 

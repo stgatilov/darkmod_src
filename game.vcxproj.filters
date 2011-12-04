@@ -456,9 +456,6 @@
     <ClCompile Include="game\Inventory\Inventory.cpp">
       <Filter>Inventory</Filter>
     </ClCompile>
-    <ClCompile Include="game\Inventory\Item.cpp">
-      <Filter>Inventory</Filter>
-    </ClCompile>
     <ClCompile Include="game\Inventory\WeaponItem.cpp">
       <Filter>Inventory</Filter>
     </ClCompile>
@@ -526,9 +523,6 @@
       <Filter>randomizer</Filter>
     </ClCompile>
     <ClCompile Include="game\randomizer\userintf.cpp">
-      <Filter>randomizer</Filter>
-    </ClCompile>
-    <ClCompile Include="game\randomizer\ex-ran.cpp">
       <Filter>randomizer</Filter>
     </ClCompile>
     <ClCompile Include="game\randomizer\mersenne.cpp">
@@ -629,6 +623,9 @@
     </ClCompile>
     <ClCompile Include="game\script\script_compiler.cpp">
       <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\InventoryItem.cpp">
+      <Filter>Inventory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1030,9 +1027,6 @@
     <ClInclude Include="game\Inventory\Inventory.h">
       <Filter>Inventory</Filter>
     </ClInclude>
-    <ClInclude Include="game\Inventory\Item.h">
-      <Filter>Inventory</Filter>
-    </ClInclude>
     <ClInclude Include="game\Inventory\LootType.h">
       <Filter>Inventory</Filter>
     </ClInclude>
@@ -1233,6 +1227,9 @@
     </ClInclude>
     <ClInclude Include="game\script\script_compiler.h">
       <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\InventoryItem.h">
+      <Filter>Inventory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

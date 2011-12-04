@@ -1699,7 +1699,7 @@ void Seed::ComputeEntityCount( void )
 		fDensity *= LODBIAS();
 	}
 
-	fDensity = std::max( fDensity, 0.00001f);		// at minimum 0.00001f
+	fDensity = Max( fDensity, 0.00001f);		// at minimum 0.00001f
 
 	idBounds bounds = renderEntity.bounds;
 	idVec3 size = bounds.GetSize();
@@ -1749,7 +1749,7 @@ void Seed::ComputeEntityCount( void )
 		if (max_entities > 0)
 		{
 			// max entities is set on the SEED, so use the score to calculate the entities for each class
-			newNum = std::max( 1, (max_entities * m_Classes[i].score) / iScoreSum );	// at least one from each class
+			newNum = Max( 1, (max_entities * m_Classes[i].score) / iScoreSum );	// at least one from each class
 		}
 		else
 		{

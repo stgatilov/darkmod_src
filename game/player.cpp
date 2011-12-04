@@ -18,17 +18,17 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "ai/aas_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/Grabber.h"
-#include "../DarkMod/Intersection.h"
-#include "../DarkMod/Relations.h"
-#include "../DarkMod/DarkmodAASHidingSpotFinder.h"
-#include "../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../DarkMod/Objectives/MissionData.h"
-#include "../DarkMod/Missions/MissionManager.h"
-#include "../DarkMod/Inventory/Inventory.h"
-#include "../DarkMod/Inventory/WeaponItem.h"
-#include "../DarkMod/Shop/Shop.h"
+#include "DarkModGlobals.h"
+#include "Grabber.h"
+#include "Intersection.h"
+#include "Relations.h"
+#include "DarkmodAASHidingSpotFinder.h"
+#include "StimResponse/StimResponseCollection.h"
+#include "Objectives/MissionData.h"
+#include "Missions/MissionManager.h"
+#include "Inventory/Inventory.h"
+#include "Inventory/WeaponItem.h"
+#include "Shop/Shop.h"
 
 /*
 ===============================================================================

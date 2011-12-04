@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/game_local.h"
 #include "DarkModGlobals.h"
 #include "FrobLock.h"
-#include "Inventory/Item.h"
+#include "Inventory/InventoryItem.h"
 #include "Inventory/Category.h"
 
 const idEventDef EV_TDM_FrobLock_TriggerTargets("EV_TDM_FrobLock_TriggerTargets", NULL); // triggers general targets

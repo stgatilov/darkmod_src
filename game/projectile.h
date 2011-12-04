@@ -14,7 +14,7 @@
 #define __GAME_PROJECTILE_H__
 
 #include "PickableLock.h"
-#include "Inventory/Item.h"
+#include "Inventory/InventoryItem.h"
 #include "Inventory/Category.h"
 
 /**

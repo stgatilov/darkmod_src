@@ -9,7 +9,7 @@
 #ifndef __DARKMOD_INVENTORYWEAPONITEM_H__
 #define __DARKMOD_INVENTORYWEAPONITEM_H__
 
-#include "Item.h"
+#include "InventoryItem.h"
 
 /**
  * WeaponInventoryItem is an item that belongs to a group. This item represents
