@@ -308,7 +308,8 @@ elif ( BUILD == 'release' ):
 	# -finline-functions: implicit at -O3
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-Winline', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+	# greebo: Took out -Winline, this is spamming real hard
+	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
 else:
@@ -336,6 +337,12 @@ if ( ID_MCHECK == '1' ):
 # create the build environements
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 scons_utils.SetupUtils( g_base_env )
+
+g_base_env.Append(CPPPATH = '#/include')
+g_base_env.Append(CPPPATH = '#/include/zlib')
+g_base_env.Append(CPPPATH = '#/include/minizip')
+g_base_env.Append(CPPPATH = '#/include/devil')
+g_base_env.Append(CPPPATH = '#/')
 
 g_env = g_base_env.Clone()
 

@@ -14,7 +14,7 @@
 #define __MATH_MATRIX_H__
 
 #ifdef __linux__
-#include "sys/sys_public.h"
+#include "../../sys/sys_public.h"
 #include <cassert>
 #endif
 

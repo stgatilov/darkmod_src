@@ -14,7 +14,7 @@
 #define __ANIM_H__
 
 #ifdef __linux__
-#include "framework/declmanager.h"
+#include "../../framework/DeclManager.h"
 #endif
 
 //

@@ -16,7 +16,7 @@
 #include "game.h"
 
 #ifdef __linux__
-#include "framework/usercmdgen.h"
+#include "../framework/UsercmdGen.h"
 #endif
 
 #pragma warning(disable : 4996)

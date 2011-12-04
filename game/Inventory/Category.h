@@ -9,7 +9,7 @@
 #ifndef __DARKMOD_INVENTORYCATEGORY_H__
 #define __DARKMOD_INVENTORYCATEGORY_H__
 
-#include "Item.h"
+#include "InventoryItem.h"
 
 /**
  * InventoryCategory is just a container for items that are currently held by an entity.

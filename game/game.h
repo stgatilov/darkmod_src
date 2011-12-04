@@ -14,8 +14,8 @@
 #define __GAME_H__
 
 #if defined(__linux__) || defined(MACOS_X)
-#include "idlib/lib.h"
-#include "sound/sound.h"
+#include "../idlib/Lib.h"
+#include "../sound/sound.h"
 #endif
 
 /*
