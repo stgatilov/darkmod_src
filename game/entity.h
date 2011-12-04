@@ -15,10 +15,10 @@
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
-#include "../DarkMod/StimResponse/StimType.h"
-#include "../DarkMod/overlaySys.h"
-#include "../DarkMod/UserManager.h"
-#include "../DarkMod/ModelGenerator.h"
+#include "StimResponse/StimType.h"
+#include "overlaySys.h"
+#include "UserManager.h"
+#include "ModelGenerator.h"
 
 class CStimResponseCollection;
 class CStim;

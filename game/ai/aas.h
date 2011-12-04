@@ -15,7 +15,7 @@
 
 // Need linked list
 #include "../../idlib/containers/list.h"
-#include "../../DarkMod/AI/EAS/RouteInfo.h"
+#include "EAS/RouteInfo.h"
 
 class CFrobDoor;
 

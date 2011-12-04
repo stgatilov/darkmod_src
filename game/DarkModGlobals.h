@@ -25,8 +25,8 @@
 #define DARKMODGLOBALS_H
 
 #include <stdio.h>
-#include "../game/game_local.h"
-#include "../DarkMod/CImage.h"
+#include "game_local.h"
+#include "CImage.h"
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR 1
@@ -46,7 +46,7 @@ VersionCheckResult CompareVersion(int major, int minor, int toMajor, int toMinor
 /*!
 Darkmod LAS
 */
-#include "../DarkMod/darkModLAS.h"
+#include "darkModLAS.h"
 #include <boost/filesystem.hpp>
 
 class IniFile;

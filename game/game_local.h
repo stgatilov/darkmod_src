@@ -134,15 +134,15 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
-#include "../DarkMod/Objectives/EMissionResult.h"
-#include "../DarkMod/DifficultyManager.h"
-#include "../DarkMod/AI/AreaManager.h"
-#include "../DarkMod/GamePlayTimer.h"
-#include "../DarkMod/ModelGenerator.h"
-#include "../DarkMod/ImageMapManager.h"
-#include "../DarkMod/LightController.h"
-#include "../DarkMod/ModMenu.h"
-#include "../DarkMod/I18N.h"
+#include "Objectives/EMissionResult.h"
+#include "DifficultyManager.h"
+#include "AI/AreaManager.h"
+#include "GamePlayTimer.h"
+#include "ModelGenerator.h"
+#include "ImageMapManager.h"
+#include "LightController.h"
+#include "ModMenu.h"
+#include "I18N.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -412,7 +412,7 @@ private:
 // Note: Because lightgem.h uses idEntityPr, the file should be included here or 
 // idEntityPtr Definition should be moved to lightgem.h. - J.C.Denton
 
-#include "../DarkMod/lightgem.h"
+#include "lightgem.h"
 //============================================================================
 
 class idDeclEntityDef;
@@ -1262,7 +1262,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "fx.h"
 #include "securitycamera.h"
 #include "brittlefracture.h"
-#include "../DarkMod/liquid.h"
+#include "liquid.h"
 
 #include "ai/ai.h"
 #include "anim/anim_testmodel.h"

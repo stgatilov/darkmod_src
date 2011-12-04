@@ -9,6 +9,11 @@
 #ifndef _STIMTYPE_H_
 #define _STIMTYPE_H_
 
+// greebo: RichEdit.h defines the same symbol
+#ifdef ST_DEFAULT
+#undef ST_DEFAULT
+#endif
+
 // If default stims are to be added here, the static array in the StimResponse.cpp file
 // also must be updated. USER and UNDEFINED are not to be added though, as
 // they have special meanings.

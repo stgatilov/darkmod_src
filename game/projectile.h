@@ -13,9 +13,9 @@
 #ifndef __GAME_PROJECTILE_H__
 #define __GAME_PROJECTILE_H__
 
-#include "../DarkMod/PickableLock.h"
-#include "../DarkMod/Inventory/Item.h"
-#include "../DarkMod/Inventory/Category.h"
+#include "PickableLock.h"
+#include "Inventory/Item.h"
+#include "Inventory/Category.h"
 
 /**
 * SFinalProjData: Structure storing the final projectile data at impact

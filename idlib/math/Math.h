@@ -14,6 +14,7 @@
 #define __MATH_MATH_H__
 
 #include <cmath>
+#include <limits> // before FLT_EPSILON is #undefined
 
 #ifdef __linux__
 #include "sys/sys_public.h"

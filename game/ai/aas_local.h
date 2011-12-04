@@ -15,7 +15,7 @@
 
 #include "aas.h"
 #include "../pvs.h"
-#include "../../DarkMod/AI/EAS/EAS.h"
+#include "EAS/EAS.h"
 #include <map>
 
 class CFrobDoor;

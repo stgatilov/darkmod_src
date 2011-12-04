@@ -35,7 +35,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Tasks/PlayAnimationTask.h"
 
 #include "ConversationState.h" // grayman #2603
-#include "../../DarkMod/ProjectileResult.h" // grayman #2872
+#include "../../ProjectileResult.h" // grayman #2872
 
 namespace ai
 {

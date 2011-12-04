@@ -14,8 +14,8 @@
 #include "../game/pvs.h"
 #include "../game/game_local.h"
 #include "../game/entity.h"
-#include "../DarkMod/PVSToAASMapping.h"
-#include "../DarkMod/darkmodHidingSpotTree.h"
+#include "PVSToAASMapping.h"
+#include "darkmodHidingSpotTree.h"
 
 /*!
 * This defines hiding spot characteristics as bit flags

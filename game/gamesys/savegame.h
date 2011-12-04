@@ -19,7 +19,7 @@ Save game related helper classes.
 
 */
 
-#include "../../DarkMod/RawVector.h"
+#include "../RawVector.h"
 
 #ifdef __linux__
 #include "renderer/model.h"

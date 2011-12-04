@@ -13,12 +13,12 @@
 #ifndef __AI_H__
 #define __AI_H__
 
-#include "../../DarkMod/Relations.h"
-#include "../../DarkMod/AI/Mind.h"
-#include "../../DarkMod/AI/CommunicationSubsystem.h"
-#include "../../DarkMod/AI/MovementSubsystem.h"
-#include "../../DarkMod/HidingSpotSearchCollection.h"
-#include "../../DarkMod/darkmodHidingSpotTree.h"
+#include "../Relations.h"
+#include "../AI/Mind.h"
+#include "../AI/CommunicationSubsystem.h"
+#include "../AI/MovementSubsystem.h"
+#include "../HidingSpotSearchCollection.h"
+#include "../darkmodHidingSpotTree.h"
 #include "MoveState.h"
 
 #include <list>

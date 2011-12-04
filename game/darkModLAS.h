@@ -11,11 +11,11 @@
 
 //class darkModLAS;
 
-// DarkMod globals (needed for ../game/Light.h)
-#include "../DarkMod/DarkModGlobals.h"
+// DarkMod globals (needed for Light.h)
+#include "DarkModGlobals.h"
 
 // idLight 
-#include "../game/light.h"
+#include "light.h"
 
 // The PVS to AAS mapping table
 #include "PVSToAASMapping.h"

@@ -14,7 +14,7 @@
 #define __DARKMOD_IMAGEMAPMANAGER_H__
 
 // to get CImage
-#include "../DarkMod/CImage.h"
+#include "CImage.h"
 
 /*
 ===============================================================================

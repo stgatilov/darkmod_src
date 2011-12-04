@@ -13,7 +13,7 @@
 #ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
 
-#include "../DarkMod/ButtonStateTracker.h"
+#include "ButtonStateTracker.h"
 class CInventoryItem;
 typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
 

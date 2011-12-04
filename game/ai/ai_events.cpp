@@ -16,13 +16,13 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
-#include "../../DarkMod/Relations.h"
-#include "../../DarkMod/DarkModGlobals.h"
-#include "../../DarkMod/DarkmodAASHidingSpotFinder.h"
-#include "../../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../../DarkMod/AbsenceMarker.h"
-#include "../../DarkMod/AI/Memory.h"
-#include "../../DarkMod/AI/States/State.h"
+#include "../Relations.h"
+#include "../DarkModGlobals.h"
+#include "../DarkmodAASHidingSpotFinder.h"
+#include "../StimResponse/StimResponseCollection.h"
+#include "../AbsenceMarker.h"
+#include "Memory.h"
+#include "States/State.h"
 
 #include <vector>
 #include <string>
