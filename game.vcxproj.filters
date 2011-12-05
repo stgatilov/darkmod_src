@@ -4,9 +4,6 @@
     <Filter Include="AI">
       <UniqueIdentifier>{108fbdc3-00d4-4eba-8472-d04fcb45c4a1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Animation">
-      <UniqueIdentifier>{eef65ba0-7f1f-4501-9165-b8edf57f63ac}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GameSys">
       <UniqueIdentifier>{e082d659-8d8e-49f5-ba1c-c12c9bb124d6}</UniqueIdentifier>
     </Filter>
@@ -58,56 +55,11 @@
     <Filter Include="ZipLoader">
       <UniqueIdentifier>{725808e1-e9e4-4915-b000-538e57816d78}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Anim">
+      <UniqueIdentifier>{a614826b-3fce-443f-a6e9-f7b14c71125e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="game\ai\aas_pathing.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\aas_routing.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\ai.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\ai_events.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\ai_pathing.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\AreaManager.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\CommunicationSubsystem.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\DoorInfo.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\Memory.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\Mind.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\MovementSubsystem.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\MoveState.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\Subsystem.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\tdmAASFindEscape.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\aas.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
-    <ClCompile Include="game\ai\aas_debug.cpp">
-      <Filter>AI</Filter>
-    </ClCompile>
     <ClCompile Include="game\ai\Tasks\ChaseEnemyTask.cpp">
       <Filter>AI\Tasks</Filter>
     </ClCompile>
@@ -324,39 +276,6 @@
     <ClCompile Include="game\ai\Conversation\Conversation.cpp">
       <Filter>AI\Conversation</Filter>
     </ClCompile>
-    <ClCompile Include="game\anim\anim_import.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="game\anim\anim_testmodel.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="game\anim\anim.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="game\anim\anim_blend.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\debuggraph.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\event.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\savegame.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\syscmds.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\syscvar.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\typeinfo.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\class.cpp">
-      <Filter>GameSys</Filter>
-    </ClCompile>
     <ClCompile Include="game\Http\HttpRequest.cpp">
       <Filter>Http</Filter>
     </ClCompile>
@@ -468,75 +387,6 @@
     <ClCompile Include="game\Objectives\CampaignStatistics.cpp">
       <Filter>Objectives</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\force_drag.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\force_field.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\force_push.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\force_spring.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_actor.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_af.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_base.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_liquid.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_monster.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_parametric.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_player.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_rigidbody.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_static.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\physics_staticmulti.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\push.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\clip.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\force.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\physics\force_constant.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\script\script_interpreter.cpp">
-      <Filter>Script</Filter>
-    </ClCompile>
-    <ClCompile Include="game\script\script_program.cpp">
-      <Filter>Script</Filter>
-    </ClCompile>
-    <ClCompile Include="game\script\script_thread.cpp">
-      <Filter>Script</Filter>
-    </ClCompile>
-    <ClCompile Include="game\script\script_compiler.cpp">
-      <Filter>Script</Filter>
-    </ClCompile>
     <ClCompile Include="game\Inventory\InventoryItem.cpp">
       <Filter>Inventory</Filter>
     </ClCompile>
@@ -627,50 +477,158 @@
     <ClCompile Include="game\RawVector.cpp" />
     <ClCompile Include="game\Relations.cpp" />
     <ClCompile Include="game\RevisionTracker.cpp" />
+    <ClCompile Include="game\ai\AAS_debug.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS_pathing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS_routing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI_events.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI_pathing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AreaManager.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\CommunicationSubsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\DoorInfo.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Memory.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Mind.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\MovementSubsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\MoveState.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Subsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\tdmAASFindEscape.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Blend.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Import.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Testmodel.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Event.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SaveGame.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SysCmds.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SysCvar.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\TypeInfo.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Class.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\DebugGraph.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Constant.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Drag.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Field.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Push.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Spring.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Actor.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_AF.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Base.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Liquid.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Monster.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Parametric.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Player.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_RigidBody.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Static.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_StaticMulti.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Push.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Clip.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Interpreter.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Program.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Thread.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Compiler.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="game\ai\ai.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\AreaManager.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\CommunicationSubsystem.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\DoorInfo.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\Library.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\Memory.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\Mind.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\MovementSubsystem.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\MoveState.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\Queue.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\Subsystem.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\tdmAASFindEscape.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\aas.h">
-      <Filter>AI</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai\aas_local.h">
-      <Filter>AI</Filter>
-    </ClInclude>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
       <Filter>AI\Tasks</Filter>
     </ClInclude>
@@ -896,36 +854,6 @@
     <ClInclude Include="game\ai\Conversation\Conversation.h">
       <Filter>AI\Conversation</Filter>
     </ClInclude>
-    <ClInclude Include="game\anim\anim_testmodel.h">
-      <Filter>Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="game\anim\anim.h">
-      <Filter>Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\debuggraph.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\event.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\nogametypeinfo.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\savegame.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\syscmds.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\syscvar.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\typeinfo.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\class.h">
-      <Filter>GameSys</Filter>
-    </ClInclude>
     <ClInclude Include="game\Http\HttpConnection.h">
       <Filter>Http</Filter>
     </ClInclude>
@@ -1070,75 +998,6 @@
     <ClInclude Include="game\Objectives\EMissionResult.h">
       <Filter>Objectives</Filter>
     </ClInclude>
-    <ClInclude Include="game\physics\force_constant.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\force_drag.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\force_field.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\force_push.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\force_spring.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_actor.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_af.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_base.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_liquid.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_monster.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_parametric.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_player.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_rigidbody.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_static.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\physics_staticmulti.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\push.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\clip.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\physics\force.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\script\script_interpreter.h">
-      <Filter>Script</Filter>
-    </ClInclude>
-    <ClInclude Include="game\script\script_program.h">
-      <Filter>Script</Filter>
-    </ClInclude>
-    <ClInclude Include="game\script\script_thread.h">
-      <Filter>Script</Filter>
-    </ClInclude>
-    <ClInclude Include="game\script\script_compiler.h">
-      <Filter>Script</Filter>
-    </ClInclude>
     <ClInclude Include="game\Inventory\InventoryItem.h">
       <Filter>Inventory</Filter>
     </ClInclude>
@@ -1231,6 +1090,147 @@
     <ClInclude Include="game\PVSToAASMapping.h" />
     <ClInclude Include="game\RawVector.h" />
     <ClInclude Include="game\Relations.h" />
+    <ClInclude Include="game\ai\AAS_local.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AI.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AreaManager.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\CommunicationSubsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\DoorInfo.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Library.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Memory.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Mind.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\MovementSubsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\MoveState.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Queue.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Subsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\tdmAASFindEscape.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AAS.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\anim\Anim_Testmodel.h">
+      <Filter>Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="game\anim\Anim.h">
+      <Filter>Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Event.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\NoGameTypeInfo.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SaveGame.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SysCmds.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SysCvar.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\TypeInfo.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Class.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\DebugGraph.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Constant.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Drag.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Field.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Push.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Spring.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Actor.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_AF.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Base.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Liquid.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Monster.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Parametric.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Player.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_RigidBody.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Static.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_StaticMulti.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Push.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Clip.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Interpreter.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Program.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Thread.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Compiler.h">
+      <Filter>Script</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />
