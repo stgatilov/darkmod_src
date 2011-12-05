@@ -12,7 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "game_local.h"
+#include "Game_local.h"
 #include "force_grab.h"
 #include "Grabber.h"
 

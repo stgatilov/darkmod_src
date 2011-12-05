@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "game_local.h"
+#include "Game_local.h"
 #include "emitter.h"
 
 /*

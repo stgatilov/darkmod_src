@@ -19,7 +19,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game_local.h"
+#include "../Game_local.h"
 
 #ifdef ID_DEBUG_MEMORY
 #include "GameTypeInfo.h"				// Make sure this is up to date!

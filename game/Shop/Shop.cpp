@@ -14,7 +14,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Shop.h"
-#include "../../game/game_local.h"
+#include "Game_local.h"
 #include "../Objectives/MissionData.h"
 #include "../Objectives/CampaignStatistics.h"
 #include "../Missions/MissionManager.h"

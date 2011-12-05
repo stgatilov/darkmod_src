@@ -16,7 +16,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game_local.h"
+#include "../Game_local.h"
 #include "../ai/aas_local.h"
 #include "../sndPropLoader.h"
 #include "../Relations.h"

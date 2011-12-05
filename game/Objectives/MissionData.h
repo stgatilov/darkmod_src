@@ -48,7 +48,7 @@ enum EMissionEventType
 	EVENT_INVALID,
 };
 
-// TODO: move to game_local.h?
+// TODO: move to Game_local.h?
 struct SObjEntParms
 {
 	idStr	name;

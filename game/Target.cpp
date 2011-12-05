@@ -21,7 +21,7 @@ Invisible entities that affect other entities or the world when activated.
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "game_local.h"
+#include "Game_local.h"
 #include "Objectives/MissionData.h"
 #include "Missions/MissionManager.h"
 #include "ai/Conversation/ConversationSystem.h"

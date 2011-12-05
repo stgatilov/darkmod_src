@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game_local.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, idForce_Field )
 END_CLASS

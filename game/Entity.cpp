@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4533 4800)
 
-#include "game_local.h"
+#include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "declxdata.h"
 #include "Objectives/MissionData.h"

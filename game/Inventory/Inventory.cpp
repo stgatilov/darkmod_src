@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory.h"
 #include "WeaponItem.h"
 
-#include "../game/game_local.h"
+#include "Game_local.h"
 
 #include "../Objectives/MissionData.h"
 #include "../Shop/Shop.h" // grayman (#2376)

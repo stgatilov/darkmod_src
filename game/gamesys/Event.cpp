@@ -22,7 +22,7 @@ Event are used for scheduling tasks and for linking script commands.
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "event.h"
-#include "../game_local.h"
+#include "../Game_local.h"
 
 #define MAX_EVENTSPERFRAME			8192
 //#define CREATE_EVENT_CODE

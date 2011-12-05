@@ -10,7 +10,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../game/game_local.h"
+#include "Game_local.h"
 #include "MaterialConverter.h"
 
 MaterialConversionStatusReport::MaterialConversionStatusReport()

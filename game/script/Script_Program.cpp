@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game_local.h"
+#include "../Game_local.h"
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );

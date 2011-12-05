@@ -10,7 +10,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../game/game_local.h"
+#include "Game_local.h"
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "MissionData.h"
 #include "../ai/Memory.h"
 #include "../DifficultyManager.h"
-#include "../../game/player.h"
+#include "../Player.h"
 #include "../StimResponse/StimResponseCollection.h"
 #include "../Missions/MissionManager.h"
 

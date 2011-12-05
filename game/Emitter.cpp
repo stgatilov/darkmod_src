@@ -21,7 +21,7 @@ func_emitters - have one or more particle models
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-//#include "game_local.h"
+//#include "Game_local.h"
 #include "emitter.h"
 
 const idEventDef EV_EmitterAddModel( "emitterAddModel", "sv" );

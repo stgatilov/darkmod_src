@@ -16,7 +16,7 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
-#include "../game_local.h"
+#include "../Game_local.h"
 #include "../DarkModGlobals.h"
 #include "../Grabber.h"
 #include "../BinaryFrobMover.h"

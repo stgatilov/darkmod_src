@@ -33,7 +33,7 @@
 
   ============================================================================= */
 
-#include "../game/game_local.h"
+#include "Game_local.h"
 #include "StaticMulti.h"
 #include "Objectives/MissionData.h"
 #include "func_shooter.h"

@@ -16,7 +16,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "game_local.h"
+#include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "StimResponse/StimResponseCollection.h"
 #include "Grabber.h"
