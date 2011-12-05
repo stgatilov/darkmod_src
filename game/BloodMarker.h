@@ -12,8 +12,7 @@
 
 #pragma hdrstop
 
-// Includes
-#include "../game/entity.h"
+#include "Entity.h"
 
 class CBloodMarker : public idEntity
 {

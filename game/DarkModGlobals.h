@@ -25,7 +25,7 @@
 #define DARKMODGLOBALS_H
 
 #include <stdio.h>
-#include "game_local.h"
+#include "Game_local.h"
 #include "CImage.h"
 
 // greebo: Defines the darkmod release version

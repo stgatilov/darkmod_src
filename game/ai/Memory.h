@@ -16,7 +16,7 @@
 #include "../BinaryFrobMover.h"
 #include "../FrobDoor.h"
 #include "DoorInfo.h"
-#include "../../game/ai/ai.h"
+#include "../../game/ai/AI.h"
 
 namespace ai
 {

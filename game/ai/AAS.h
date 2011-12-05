@@ -14,13 +14,13 @@
 #define __AAS_H__
 
 // Need linked list
-#include "../../idlib/containers/list.h"
+#include "../../idlib/containers/List.h"
 #include "EAS/RouteInfo.h"
 
 class CFrobDoor;
 
 #ifdef __linux__
-#include "tools/compilers/aas/aasfile.h"
+#include "tools/compilers/aas/AASFile.h"
 #endif
 
 /*

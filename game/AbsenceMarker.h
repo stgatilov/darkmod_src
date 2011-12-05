@@ -12,9 +12,7 @@
 
 #pragma hdrstop
 
-// Includes
-#include "../game/entity.h"
-
+#include "Entity.h"
 
 /**
 * The purpose of this entity subclass is to act as a marker for other entities that have
@@ -25,7 +23,7 @@
 * react to the absence.
 *
 * @author SophisticatedZombie
-* @project The Dark Mode
+* @project The Dark Mod
 * @copyright 2006 The Dark Mod team
 *
 */

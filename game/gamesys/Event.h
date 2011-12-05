@@ -21,7 +21,7 @@ Event are used for scheduling tasks and for linking script commands.
 #include <cassert>
 #endif
 
-#include "../../idlib/lib.h"
+#include "../../idlib/Lib.h"
 #include <cstring>
 
 #define D_EVENT_MAXARGS				8			// if changed, enable the CREATE_EVENT_CODE define in Event.cpp to generate switch statement for idClass::ProcessEventArgPtr.

@@ -14,7 +14,7 @@
 #pragma hdrstop
 
 #include "AIVehicle.h"
-#include "../game/game_local.h"
+#include "Game_local.h"
 #include "DarkModGlobals.h"
 
 //===============================================================================

@@ -16,7 +16,7 @@
 #define __GAME_ENTITY_H__
 
 #include "StimResponse/StimType.h"
-#include "overlaySys.h"
+#include "OverlaySys.h"
 #include "UserManager.h"
 #include "ModelGenerator.h"
 

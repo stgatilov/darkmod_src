@@ -10,10 +10,10 @@
 #pragma once
 
 // Required includes
-#include "../game/ai/aas.h"
-#include "../game/pvs.h"
-#include "../game/game_local.h"
-#include "../game/entity.h"
+#include "../game/ai/AAS.h"
+#include "../game/Pvs.h"
+#include "../game/Game_local.h"
+#include "../game/Entity.h"
 #include "PVSToAASMapping.h"
 #include "darkmodHidingSpotTree.h"
 

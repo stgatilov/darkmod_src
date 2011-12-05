@@ -15,11 +15,11 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game/game_local.h"
-#include "../game/ai/aas_local.h"
+#include "Game_local.h"
+#include "ai/AAS_local.h"
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
-#include "sndProp.h"
+#include "SndProp.h"
 #include "StimResponse/StimResponse.h"
 
 //===============================================================================

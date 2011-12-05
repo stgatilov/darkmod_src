@@ -14,7 +14,7 @@
 #define	__MULTIPLAYERGAME_H__
 
 #ifdef __linux__
-#include "ui/listgui.h"
+#include "../ui/ListGUI.h"
 #endif
 
 /*

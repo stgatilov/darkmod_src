@@ -10,8 +10,8 @@
 #ifndef __MELEEWEAPON_H__
 #define __MELEEWEAPON_H__
 
-#include "../game/entity.h"
-#include "../game/actor.h"
+#include "Entity.h"
+#include "Actor.h"
 
 class idPlayer;
 

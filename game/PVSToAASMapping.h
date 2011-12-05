@@ -9,10 +9,7 @@
 
 #pragma once
 
-// DarkMod globals (needed for ../game/Light.h)
-#include "../game/light.h"
-
-//#include "../darkmod/darkmodglobals.h"
+#include "../game/Light.h"
 
 //------------------------------------------------------
 

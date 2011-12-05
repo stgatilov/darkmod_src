@@ -13,7 +13,7 @@
 #ifndef __HEAP_H__
 #define __HEAP_H__
 
-#include "math/math.h" // OrbWeaver: Max() macro
+#include "math/Math.h" // OrbWeaver: Max() macro
 
 #include <cstdlib>
 

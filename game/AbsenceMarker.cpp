@@ -8,8 +8,9 @@
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
-#include "../game/game_local.h"
 #pragma hdrstop
+
+#include "Game_local.h"
 #include "AbsenceMarker.h"
 
 CLASS_DECLARATION( idEntity, CAbsenceMarker )

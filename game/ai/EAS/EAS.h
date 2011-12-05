@@ -12,7 +12,7 @@
 
 #include "../../../idlib/precompiled.h"
 #include "../../MultiStateMover.h"
-#include "../../../game/ai/aas_local.h"
+#include "../../../game/ai/AAS_local.h"
 #include <set>
 #include <vector>
 #include <list>

@@ -14,7 +14,7 @@
 #define __CLIP_H__
 
 #ifdef __linux__
-#include "cm/collisionmodel.h"
+#include "cm/CollisionModel.h"
 #endif
 
 /*

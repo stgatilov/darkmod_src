@@ -13,7 +13,7 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include "RouteNode.h"
-#include "../../../game/game_local.h"
+#include "../../Game_local.h"
 
 namespace eas {
 

@@ -15,7 +15,7 @@
 #include "DarkModGlobals.h"
 
 // idLight 
-#include "light.h"
+#include "Light.h"
 
 // The PVS to AAS mapping table
 #include "PVSToAASMapping.h"

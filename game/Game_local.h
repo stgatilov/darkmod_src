@@ -13,7 +13,7 @@
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
 
-#include "game.h"
+#include "Game.h"
 
 #ifdef __linux__
 #include "../framework/UsercmdGen.h"
@@ -115,24 +115,24 @@ class idLocationEntity;
 
 void gameError( const char *fmt, ... );
 
-#include "gamesys/event.h"
-#include "gamesys/class.h"
-#include "gamesys/syscvar.h"
-#include "gamesys/syscmds.h"
-#include "gamesys/savegame.h"
-#include "gamesys/debuggraph.h"
+#include "gamesys/Event.h"
+#include "gamesys/Class.h"
+#include "gamesys/SysCvar.h"
+#include "gamesys/SysCmds.h"
+#include "gamesys/SaveGame.h"
+#include "gamesys/DebugGraph.h"
 
-#include "script/script_program.h"
+#include "script/Script_Program.h"
 
-#include "anim/anim.h"
+#include "anim/Anim.h"
 
-#include "ai/aas.h"
+#include "ai/AAS.h"
 
-#include "physics/clip.h"
-#include "physics/push.h"
+#include "physics/Clip.h"
+#include "physics/Push.h"
 
-#include "pvs.h"
-#include "multiplayergame.h"
+#include "Pvs.h"
+#include "MultiplayerGame.h"
 
 #include "Objectives/EMissionResult.h"
 #include "DifficultyManager.h"
@@ -147,7 +147,7 @@ void gameError( const char *fmt, ... );
 #include <boost/shared_ptr.hpp>
 
 #ifdef __linux__
-#include "renderer/renderworld.h"
+#include "../renderer/RenderWorld.h"
 #endif
 
 //============================================================================
@@ -412,7 +412,7 @@ private:
 // Note: Because lightgem.h uses idEntityPr, the file should be included here or 
 // idEntityPtr Definition should be moved to lightgem.h. - J.C.Denton
 
-#include "lightgem.h"
+#include "LightGem.h"
 //============================================================================
 
 class idDeclEntityDef;
@@ -1219,57 +1219,57 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 
 //============================================================================
 
-#include "physics/force.h"
-#include "physics/force_constant.h"
-#include "physics/force_drag.h"
-#include "physics/force_field.h"
-#include "physics/force_spring.h"
-#include "physics/physics.h"
-#include "physics/physics_static.h"
-#include "physics/physics_staticmulti.h"
-#include "physics/physics_base.h"
-#include "physics/physics_actor.h"
-#include "physics/physics_monster.h"
-#include "physics/physics_player.h"
-#include "physics/physics_parametric.h"
-#include "physics/physics_rigidbody.h"
-#include "physics/physics_af.h"
-#include "physics/physics_liquid.h"
+#include "physics/Force.h"
+#include "physics/Force_Constant.h"
+#include "physics/Force_Drag.h"
+#include "physics/Force_Field.h"
+#include "physics/Force_Spring.h"
+#include "physics/Physics.h"
+#include "physics/Physics_Static.h"
+#include "physics/Physics_StaticMulti.h"
+#include "physics/Physics_Base.h"
+#include "physics/Physics_Actor.h"
+#include "physics/Physics_Monster.h"
+#include "physics/Physics_Player.h"
+#include "physics/Physics_Parametric.h"
+#include "physics/Physics_RigidBody.h"
+#include "physics/Physics_AF.h"
+#include "physics/Physics_Liquid.h"
 
-#include "smokeparticles.h"
+#include "SmokeParticles.h"
 
-#include "entity.h"
-#include "gameedit.h"
-#include "af.h"
-#include "ik.h"
-#include "afentity.h"
-#include "misc.h"
-#include "actor.h"
-#include "projectile.h"
-#include "weapon.h"
-#include "light.h"
-#include "worldspawn.h"
-#include "item.h"
-#include "playerview.h"
-#include "playericon.h"
-#include "player.h"
-#include "mover.h"
-#include "camera.h"
-#include "moveable.h"
-#include "target.h"
-#include "trigger.h"
-#include "sound.h"
-#include "fx.h"
-#include "securitycamera.h"
-#include "brittlefracture.h"
-#include "liquid.h"
+#include "Entity.h"
+#include "GameEdit.h"
+#include "AF.h"
+#include "IK.h"
+#include "AFEntity.h"
+#include "Misc.h"
+#include "Actor.h"
+#include "Projectile.h"
+#include "Weapon.h"
+#include "Light.h"
+#include "WorldSpawn.h"
+#include "Item.h"
+#include "PlayerView.h"
+#include "PlayerIcon.h"
+#include "Player.h"
+#include "Mover.h"
+#include "Camera.h"
+#include "Moveable.h"
+#include "Target.h"
+#include "Trigger.h"
+#include "Sound.h"
+#include "FX.h"
+#include "SecurityCamera.h"
+#include "BrittleFracture.h"
+#include "Liquid.h"
 
-#include "ai/ai.h"
-#include "anim/anim_testmodel.h"
+#include "ai/AI.h"
+#include "anim/Anim_Testmodel.h"
 
-#include "script/script_compiler.h"
-#include "script/script_interpreter.h"
-#include "script/script_thread.h"
+#include "script/Script_Compiler.h"
+#include "script/Script_Interpreter.h"
+#include "script/Script_Thread.h"
 
 const float	RB_VELOCITY_MAX				= 16000;
 const int	RB_VELOCITY_TOTAL_BITS		= 16;
