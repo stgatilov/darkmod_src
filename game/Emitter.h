@@ -14,7 +14,7 @@
 #ifndef __GAME_TDM_EMITTER_H__
 #define __GAME_TDM_EMITTER_H__
 
-#include "misc.h"
+#include "Misc.h"
 
 /*
 ===============================================================================

@@ -10,8 +10,8 @@
 #ifndef __GRABBER_H__
 #define __GRABBER_H__
 
-#include "../game/entity.h"
-#include "force_grab.h"
+#include "Entity.h"
+#include "Force_Grab.h"
 
 class idPlayer;
 

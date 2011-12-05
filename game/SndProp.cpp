@@ -29,12 +29,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 
-#include "sndPropLoader.h"
-#include "sndProp.h"
+#include "SndPropLoader.h"
+#include "SndProp.h"
 #include "MatrixSq.h"
 #include "DarkModGlobals.h"
 #include "Relations.h"
-#include "../game/ai/ai.h"
+#include "ai/AI.h"
 
 // NOTES:
 // ALL LOSSES ARE POSITIVE (ie, loss of +10dB subtracts 10dB from vol)

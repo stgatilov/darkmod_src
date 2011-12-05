@@ -10,7 +10,7 @@
 #ifndef _AGITATED_SEARCHING_STATE_LANTERN_BOT_H_
 #define _AGITATED_SEARCHING_STATE_LANTERN_BOT_H_
 
-#include "../../../game/ai/ai.h"
+#include "../AI.h"
 #include "AgitatedSearchingState.h"
 
 namespace ai

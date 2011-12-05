@@ -10,7 +10,7 @@
 #ifndef __tdmAASFindEscape_H__
 #define __tdmAASFindEscape_H__
 
-#include "aas.h"
+#include "AAS.h"
 
 /**
  * greebo: This evaluator is designed to find escape routes

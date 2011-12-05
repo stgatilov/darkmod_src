@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #ifdef ID_DEBUG_MEMORY
 #include "GameTypeInfo.h"				// Make sure this is up to date!
 #else
-#include "nogametypeinfo.h"
+#include "NoGameTypeInfo.h"
 #endif
 
 // disabled because it's adds about 64MB to state dumps and takes a really long time

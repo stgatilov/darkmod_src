@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Game_local.h"
 #include "../RevisionTracker.h"
 
-#include "typeinfo.h"
+#include "TypeInfo.h"
 
 #include "zlib.h"
 

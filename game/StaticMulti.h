@@ -13,7 +13,7 @@
 #ifndef __DAKRMOD_STATICMULTI_H__
 #define __DARKMOD_STATICMULTI_H__
 
-#include "misc.h"
+#include "Misc.h"
 #include "StimResponse/StimResponseCollection.h"
 #include "ModelGenerator.h"
 

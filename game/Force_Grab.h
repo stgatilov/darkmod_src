@@ -10,7 +10,7 @@
 #ifndef __FORCE_GRAB_H__
 #define __FORCE_GRAB_H__
 
-#include "../game/physics/force.h"
+#include "physics/Force.h"
 
 /*
 ===============================================================================

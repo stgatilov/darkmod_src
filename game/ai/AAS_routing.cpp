@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "aas_local.h"
+#include "AAS_local.h"
 #include "../Game_local.h"		// for print and error
 
 #include "../DarkModGlobals.h"

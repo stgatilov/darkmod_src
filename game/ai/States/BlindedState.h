@@ -10,7 +10,7 @@
 #ifndef __AI_BLINDED_STATE_H__
 #define __AI_BLINDED_STATE_H__
 
-#include "../../../game/ai/ai.h"
+#include "../AI.h"
 #include "State.h"
 
 namespace ai

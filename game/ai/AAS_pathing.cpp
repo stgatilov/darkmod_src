@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
-#include "aas_local.h"
+#include "AAS_local.h"
 #include "../TimerManager.h"
 
 

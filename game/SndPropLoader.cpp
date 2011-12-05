@@ -29,9 +29,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 
-#include "sndPropLoader.h"
+#include "SndPropLoader.h"
 #include "MatrixSq.h"
-#include "../game/misc.h"
+#include "Misc.h"
 
 class idLocationEntity;
 

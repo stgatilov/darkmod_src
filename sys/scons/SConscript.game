@@ -38,7 +38,7 @@ game_string = ' \
 	Camera.cpp \
 	Entity.cpp \
 	Emitter.cpp \
-	Fx.cpp \
+	FX.cpp \
 	Game_local.cpp \
 	Game_network.cpp \
 	GameEdit.cpp \
@@ -131,8 +131,8 @@ DifficultySettings.cpp \
 DownloadMenu.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
-force_grab.cpp \
-func_shooter.cpp \
+Force_Grab.cpp \
+Func_Shooter.cpp \
 FrobDoor.cpp \
 FrobButton.cpp \
 FrobDoorHandle.cpp \
@@ -145,29 +145,29 @@ HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
 Intersection.cpp \
 IniFile.cpp \
-lightgem.cpp \
-liquid.cpp \
+LightGem.cpp \
+Liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
 MultiStateMoverPosition.cpp \
-overlaysys.cpp \
+OverlaySys.cpp \
 PositionWithinRangeFinder.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 PickableLock.cpp \
 Relations.cpp \
 RevisionTracker.cpp \
-sndProp.cpp \
-sndPropLoader.cpp \
+SndProp.cpp \
+SndPropLoader.cpp \
 TimerManager.cpp \
 UserManager.cpp \
 Inventory/Category.cpp \
 Inventory/Cursor.cpp \
 Inventory/Inventory.cpp \
-Inventory/Item.cpp \
+Inventory/InventoryItem.cpp \
 Inventory/WeaponItem.cpp \
 Missions/Download.cpp \
 Missions/DownloadManager.cpp \

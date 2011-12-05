@@ -21,7 +21,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../Grabber.h"
 #include "../BinaryFrobMover.h"
 #include "../FrobDoor.h"
-#include "force_push.h"
+#include "Force_Push.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS

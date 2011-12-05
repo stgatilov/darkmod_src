@@ -12,7 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "force_push.h"
+#include "Force_Push.h"
 #include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, CForcePush )

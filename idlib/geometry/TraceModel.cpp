@@ -15,7 +15,7 @@
 
 
 
-#include "tracemodel.h"
+#include "TraceModel.h"
 
 
 /*

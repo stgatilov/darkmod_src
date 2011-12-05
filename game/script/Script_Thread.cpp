@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Game_local.h"
 #include "../decltdm_matinfo.h"
 #include "../Relations.h"
-#include "../sndProp.h"
+#include "../SndProp.h"
 #include "../Objectives/MissionData.h"
 #include "../Missions/MissionManager.h"
 

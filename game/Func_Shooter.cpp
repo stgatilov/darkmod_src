@@ -11,7 +11,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "func_shooter.h"
+#include "Func_Shooter.h"
 #include "StimResponse/StimResponseCollection.h"
 
 // Script event interface

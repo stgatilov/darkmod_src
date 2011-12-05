@@ -14,8 +14,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "PVSToAASMapping.h"
 #include "DarkModGlobals.h"
-#include "pvs.h"
-#include "../renderer/renderworld.h"
+#include "Pvs.h"
+#include "../renderer/RenderWorld.h"
 #include "Intersection.h"
 
 //----------------------------------------------------------------------------

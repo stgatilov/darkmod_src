@@ -13,7 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Memory.h"
-#include "../../game/ai/ai.h"
+#include "AI.h"
 
 namespace ai
 {

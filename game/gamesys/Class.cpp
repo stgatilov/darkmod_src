@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Game_local.h"
 #include "../Grabber.h"
 
-#include "typeinfo.h"
+#include "TypeInfo.h"
 
 
 /***********************************************************************

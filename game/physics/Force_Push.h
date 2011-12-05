@@ -9,7 +9,7 @@
 #ifndef __FORCE_PUSH_H__
 #define __FORCE_PUSH_H__
 
-#include "force.h"
+#include "Force.h"
 #include <boost/shared_ptr.hpp>
 
 /**

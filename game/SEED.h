@@ -36,9 +36,9 @@
 #include "Game_local.h"
 #include "StaticMulti.h"
 #include "Objectives/MissionData.h"
-#include "func_shooter.h"
-#include "../game/emitter.h"
-#include "../idlib/containers/list.h"
+#include "Func_Shooter.h"
+#include "Emitter.h"
+#include "../idlib/containers/List.h"
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
 /** List of debug materials to use for the SEED megamodels */

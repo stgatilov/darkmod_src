@@ -22,11 +22,11 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "DarkModGlobals.h"
-#include "sndPropLoader.h"
-#include "sndProp.h"
+#include "SndPropLoader.h"
+#include "SndProp.h"
 #include "Relations.h"
 #include "ModMenu.h"
-#include "../game/ai/ai.h"
+#include "ai/AI.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
 #include "RevisionTracker.h"

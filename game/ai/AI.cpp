@@ -40,7 +40,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkModGlobals.h"
 #include "../MultiStateMover.h"
 #include "../MeleeWeapon.h"
-#include "../sndProp.h"
+#include "../SndProp.h"
 #include "../EscapePointManager.h"
 #include "../PositionWithinRangeFinder.h"
 #include "../TimerManager.h"

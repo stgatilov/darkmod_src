@@ -14,7 +14,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 
-#include "overlaySys.h"
+#include "OverlaySys.h"
 
 // I'm keeping these functions seperate from the overlaysys code,
 // in case I end up needing to implement recycling.

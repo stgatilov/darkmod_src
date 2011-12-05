@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Objectives/MissionData.h"
 #include "Objectives/ObjectiveLocation.h"
 #include "Grabber.h"
-#include "sndProp.h"
+#include "SndProp.h"
 #include "StimResponse/StimResponseCollection.h"
 #include "Inventory/Inventory.h"
 #include "Inventory/Cursor.h"

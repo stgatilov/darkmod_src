@@ -13,7 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
-#include "force_grab.h"
+#include "Force_Grab.h"
 #include "Grabber.h"
 
 class CDarkModPlayer;

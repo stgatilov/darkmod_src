@@ -22,7 +22,7 @@ Various utility objects and functions.
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
-#include "sndProp.h"
+#include "SndProp.h"
 #include "EscapePointManager.h"
 #include "Objectives/MissionData.h"
 #include "StimResponse/StimResponseCollection.h"

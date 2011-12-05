@@ -23,12 +23,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Inventory/Category.h"
 #include "FrobDoor.h"
 #include "FrobDoorHandle.h"
-#include "../tools/compilers/aas/aasfile.h"
-#include "sndProp.h"
+#include "../tools/compilers/aas/AASFile.h"
+#include "SndProp.h"
 #include "StimResponse/StimResponseTimer.h"
 #include "StimResponse/StimResponse.h"
 
-#include "../game/ai/aas.h"
+#include "../game/ai/AAS.h"
 
 //===============================================================================
 //CFrobDoor
