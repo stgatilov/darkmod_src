@@ -10,7 +10,7 @@
 #ifndef TDM_OBJECTIVE_COMPONENT_H
 #define TDM_OBJECTIVE_COMPONENT_H
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 
 /**
 * Objective component action types

@@ -7,7 +7,7 @@
  *
  ***************************************************************************/
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4533 4800)

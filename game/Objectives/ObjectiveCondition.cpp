@@ -7,7 +7,7 @@
  *
  ***************************************************************************/
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 #pragma hdrstop
 
 #include "MissionData.h"

@@ -19,7 +19,7 @@
 #ifndef MISSIONDATA_H
 #define MISSIONDATA_H
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 
 #include "Objective.h"
 #include "ObjectiveComponent.h"

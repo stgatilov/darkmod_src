@@ -10,7 +10,7 @@
 #ifndef TDM_CAMPAIGN_STATISTICS_H
 #define TDM_CAMPAIGN_STATISTICS_H
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 
 #include "MissionStatistics.h"
 

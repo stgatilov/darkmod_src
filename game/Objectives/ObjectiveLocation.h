@@ -10,7 +10,7 @@
 #ifndef TDM_OBJECTIVE_LOCATION_H
 #define TDM_OBJECTIVE_LOCATION_H
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 
 // Helper entity for objective locations
 class CObjectiveLocation : public idEntity

@@ -12,11 +12,11 @@
 #ifndef __AI_MEMORY_H__
 #define __AI_MEMORY_H__
 
-#include "../idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
 #include "../BinaryFrobMover.h"
 #include "../FrobDoor.h"
 #include "DoorInfo.h"
-#include "../../game/ai/AI.h"
+#include "AI.h"
 
 namespace ai
 {

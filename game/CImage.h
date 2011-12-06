@@ -11,8 +11,8 @@
 #define DARKMODCIMAGE_H
 
 #if defined(__linux__) || defined(MACOS_X)
-#include "idlib/Lib.h"
-#include "sound/sound.h"
+#include "../idlib/Lib.h"
+#include "../sound/sound.h"
 #endif
 
 #include <boost/filesystem.hpp>
