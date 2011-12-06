@@ -158,7 +158,6 @@
 		3A5377C7148E81C3006DC4CE /* PVSToAASMapping.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */; };
 		3A5377C8148E81C3006DC4CE /* PVSToAASMapping.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */; };
 		3A5377C9148E81C3006DC4CE /* _lrotl.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377AB148E81C3006DC4CE /* _lrotl.h */; };
-		3A5377CA148E81C3006DC4CE /* ex-ran.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377AC148E81C3006DC4CE /* ex-ran.cpp */; };
 		3A5377CB148E81C3006DC4CE /* mersenne.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377AE148E81C3006DC4CE /* mersenne.cpp */; };
 		3A5377CC148E81C3006DC4CE /* mother.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377AF148E81C3006DC4CE /* mother.cpp */; };
 		3A5377CD148E81C3006DC4CE /* rancombi.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377B0148E81C3006DC4CE /* rancombi.h */; };
@@ -415,8 +414,6 @@
 		81225ADF0912C42F005D34B9 /* Camera.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A580912C42F005D34B9 /* Camera.h */; };
 		81225AE00912C42F005D34B9 /* Entity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A590912C42F005D34B9 /* Entity.cpp */; };
 		81225AE10912C42F005D34B9 /* Entity.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A5A0912C42F005D34B9 /* Entity.h */; };
-		81225AE20912C42F005D34B9 /* Fx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A5B0912C42F005D34B9 /* Fx.cpp */; };
-		81225AE30912C42F005D34B9 /* Fx.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A5C0912C42F005D34B9 /* Fx.h */; };
 		81225AE40912C42F005D34B9 /* Game.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A5E0912C42F005D34B9 /* Game.h */; };
 		81225AE50912C42F005D34B9 /* Game_local.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A5F0912C42F005D34B9 /* Game_local.cpp */; };
 		81225AE60912C42F005D34B9 /* Game_local.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A600912C42F005D34B9 /* Game_local.h */; };
@@ -694,7 +691,6 @@
 		3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PVSToAASMapping.cpp; path = ../../game/PVSToAASMapping.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PVSToAASMapping.h; path = ../../game/PVSToAASMapping.h; sourceTree = SOURCE_ROOT; };
 		3A5377AB148E81C3006DC4CE /* _lrotl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _lrotl.h; sourceTree = "<group>"; };
-		3A5377AC148E81C3006DC4CE /* ex-ran.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "ex-ran.cpp"; sourceTree = "<group>"; };
 		3A5377AD148E81C3006DC4CE /* licence.htm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = licence.htm; sourceTree = "<group>"; };
 		3A5377AE148E81C3006DC4CE /* mersenne.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mersenne.cpp; sourceTree = "<group>"; };
 		3A5377AF148E81C3006DC4CE /* mother.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mother.cpp; sourceTree = "<group>"; };
@@ -953,8 +949,6 @@
 		81225A580912C42F005D34B9 /* Camera.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Camera.h; path = ../../game/Camera.h; sourceTree = SOURCE_ROOT; };
 		81225A590912C42F005D34B9 /* Entity.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Entity.cpp; path = ../../game/Entity.cpp; sourceTree = SOURCE_ROOT; };
 		81225A5A0912C42F005D34B9 /* Entity.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Entity.h; path = ../../game/Entity.h; sourceTree = SOURCE_ROOT; };
-		81225A5B0912C42F005D34B9 /* Fx.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Fx.cpp; path = ../../game/Fx.cpp; sourceTree = SOURCE_ROOT; };
-		81225A5C0912C42F005D34B9 /* Fx.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Fx.h; path = ../../game/Fx.h; sourceTree = SOURCE_ROOT; };
 		81225A5D0912C42F005D34B9 /* Game.def */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = Game.def; path = ../../game/Game.def; sourceTree = SOURCE_ROOT; };
 		81225A5E0912C42F005D34B9 /* Game.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Game.h; path = ../../game/Game.h; sourceTree = SOURCE_ROOT; };
 		81225A5F0912C42F005D34B9 /* Game_local.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Game_local.cpp; path = ../../game/Game_local.cpp; sourceTree = SOURCE_ROOT; };
@@ -1083,84 +1077,30 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				3A5377D8148E81D7006DC4CE /* SEED.cpp */,
-				3A5377D9148E81D7006DC4CE /* SEED.h */,
-				3A5377DA148E81D7006DC4CE /* Shop */,
-				3A5377E1148E81D7006DC4CE /* SndProp.cpp */,
-				3A5377E2148E81D7006DC4CE /* SndProp.h */,
-				3A5377E3148E81D7006DC4CE /* SndPropLoader.cpp */,
-				3A5377E4148E81D7006DC4CE /* SndPropLoader.h */,
-				3A5377E5148E81D7006DC4CE /* sourcehook */,
-				3A5377F1148E81D7006DC4CE /* StaticMulti.cpp */,
-				3A5377F2148E81D7006DC4CE /* StaticMulti.h */,
-				3A5377F3148E81D7006DC4CE /* StimResponse */,
-				3A537801148E81D7006DC4CE /* TimerManager.cpp */,
-				3A537802148E81D7006DC4CE /* TimerManager.h */,
-				3A537803148E81D7006DC4CE /* UserManager.cpp */,
-				3A537804148E81D7006DC4CE /* UserManager.h */,
-				3A537805148E81D7006DC4CE /* ZipLoader */,
-				3A53779C148E81C3006DC4CE /* PickableLock.cpp */,
-				3A53779D148E81C3006DC4CE /* PickableLock.h */,
-				3A53779E148E81C3006DC4CE /* PlayerIcon.h */,
-				3A53779F148E81C3006DC4CE /* PositionWithinRangeFinder.cpp */,
-				3A5377A0148E81C3006DC4CE /* PositionWithinRangeFinder.h */,
-				3A5377A1148E81C3006DC4CE /* ProjectileResult.cpp */,
-				3A5377A2148E81C3006DC4CE /* ProjectileResult.h */,
-				3A5377A3148E81C3006DC4CE /* pugixml */,
-				3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */,
-				3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */,
-				3A5377AA148E81C3006DC4CE /* randomizer */,
-				3A5377B6148E81C3006DC4CE /* RawVector.cpp */,
-				3A5377B7148E81C3006DC4CE /* RawVector.h */,
-				3A5377B8148E81C3006DC4CE /* Relations.cpp */,
-				3A5377B9148E81C3006DC4CE /* Relations.h */,
-				3A5377BA148E81C3006DC4CE /* RevisionTracker.cpp */,
-				3A5377BB148E81C3006DC4CE /* RevisionTracker.h */,
-				3A537798148E81A1006DC4CE /* OverlaySys.cpp */,
-				3A537799148E81A1006DC4CE /* OverlaySys.h */,
-				3A537732148E8193006DC4CE /* ImageMapManager.cpp */,
-				3A537733148E8193006DC4CE /* ImageMapManager.h */,
-				3A537734148E8193006DC4CE /* IniFile.cpp */,
-				3A537735148E8193006DC4CE /* IniFile.h */,
-				3A537736148E8193006DC4CE /* Intersection.cpp */,
-				3A537737148E8193006DC4CE /* Intersection.h */,
-				3A537738148E8193006DC4CE /* Inventory */,
-				3A537744148E8193006DC4CE /* LightController.cpp */,
-				3A537745148E8193006DC4CE /* LightController.h */,
-				3A537746148E8193006DC4CE /* LightGem.cpp */,
-				3A537747148E8193006DC4CE /* LightGem.h */,
-				3A537748148E8193006DC4CE /* Liquid.cpp */,
-				3A537749148E8193006DC4CE /* Liquid.h */,
-				3A53774A148E8193006DC4CE /* MaterialConverter.cpp */,
-				3A53774B148E8193006DC4CE /* MaterialConverter.h */,
-				3A53774C148E8193006DC4CE /* MatrixSq.h */,
-				3A53774D148E8193006DC4CE /* MeleeWeapon.cpp */,
-				3A53774E148E8193006DC4CE /* MeleeWeapon.h */,
-				3A53774F148E8193006DC4CE /* Missions */,
-				3A53775C148E8193006DC4CE /* ModelGenerator.cpp */,
-				3A53775D148E8193006DC4CE /* ModelGenerator.h */,
-				3A53775E148E8193006DC4CE /* ModMenu.cpp */,
-				3A53775F148E8193006DC4CE /* ModMenu.h */,
-				3A537760148E8193006DC4CE /* MultiStateMover.cpp */,
-				3A537761148E8193006DC4CE /* MultiStateMover.h */,
-				3A537762148E8193006DC4CE /* MultiStateMoverButton.cpp */,
-				3A537763148E8193006DC4CE /* MultiStateMoverButton.h */,
-				3A537764148E8193006DC4CE /* MultiStateMoverPosition.cpp */,
-				3A537765148E8193006DC4CE /* MultiStateMoverPosition.h */,
-				3A53771D148E817F006DC4CE /* Grabber.cpp */,
-				3A53771E148E817F006DC4CE /* Grabber.h */,
-				3A53771F148E817F006DC4CE /* HidingSpotSearchCollection.cpp */,
-				3A537720148E817F006DC4CE /* HidingSpotSearchCollection.h */,
-				3A537721148E817F006DC4CE /* Http */,
-				3A537726148E817F006DC4CE /* I18N.cpp */,
-				3A537727148E817F006DC4CE /* I18N.h */,
-				3A53771B148E816A006DC4CE /* GamePlayTimer.h */,
+				3A5376A7148E8114006DC4CE /* AbsenceMarker.cpp */,
+				3A5376A8148E8114006DC4CE /* AbsenceMarker.h */,
+				81225A3C0912C42F005D34B9 /* Actor.cpp */,
+				81225A3D0912C42F005D34B9 /* Actor.h */,
+				81225A3E0912C42F005D34B9 /* AF.cpp */,
+				81225A3F0912C42F005D34B9 /* AF.h */,
+				81225A400912C42F005D34B9 /* AFEntity.cpp */,
+				81225A410912C42F005D34B9 /* AFEntity.h */,
+				81225A420912C42F005D34B9 /* ai */,
+				3A5376AB148E8121006DC4CE /* AIComm_Message.cpp */,
+				3A5376AC148E8121006DC4CE /* AIComm_Message.h */,
+				3A5376AD148E8121006DC4CE /* AIVehicle.cpp */,
+				3A5376AE148E8121006DC4CE /* AIVehicle.h */,
+				81225A4E0912C42F005D34B9 /* anim */,
 				3A5376B3148E813B006DC4CE /* BinaryFrobMover.cpp */,
 				3A5376B4148E813B006DC4CE /* BinaryFrobMover.h */,
 				3A5376B5148E813B006DC4CE /* BloodMarker.cpp */,
 				3A5376B6148E813B006DC4CE /* BloodMarker.h */,
+				81225A550912C42F005D34B9 /* BrittleFracture.cpp */,
+				81225A560912C42F005D34B9 /* BrittleFracture.h */,
 				3A5376B7148E813B006DC4CE /* ButtonStateTracker.cpp */,
 				3A5376B8148E813B006DC4CE /* ButtonStateTracker.h */,
+				81225A570912C42F005D34B9 /* Camera.cpp */,
+				81225A580912C42F005D34B9 /* Camera.h */,
 				3A5376B9148E813B006DC4CE /* CImage.cpp */,
 				3A5376BA148E813B006DC4CE /* CImage.h */,
 				3A5376BB148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp */,
@@ -1183,6 +1123,8 @@
 				3A5376CC148E813B006DC4CE /* DownloadMenu.h */,
 				3A5376CD148E813B006DC4CE /* Emitter.cpp */,
 				3A5376CE148E813B006DC4CE /* Emitter.h */,
+				81225A590912C42F005D34B9 /* Entity.cpp */,
+				81225A5A0912C42F005D34B9 /* Entity.h */,
 				3A5376CF148E813B006DC4CE /* EscapePointEvaluator.cpp */,
 				3A5376D0148E813B006DC4CE /* EscapePointEvaluator.h */,
 				3A5376D1148E813B006DC4CE /* EscapePointManager.cpp */,
@@ -1207,30 +1149,6 @@
 				3A5376E4148E813B006DC4CE /* Func_Shooter.h */,
 				3A5376E5148E813B006DC4CE /* FX.cpp */,
 				3A5376E6148E813B006DC4CE /* FX.h */,
-				3A5376AB148E8121006DC4CE /* AIComm_Message.cpp */,
-				3A5376AC148E8121006DC4CE /* AIComm_Message.h */,
-				3A5376AD148E8121006DC4CE /* AIVehicle.cpp */,
-				3A5376AE148E8121006DC4CE /* AIVehicle.h */,
-				3A5376A7148E8114006DC4CE /* AbsenceMarker.cpp */,
-				3A5376A8148E8114006DC4CE /* AbsenceMarker.h */,
-				3A537684148E80D7006DC4CE /* Objectives */,
-				81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */,
-				81225A3C0912C42F005D34B9 /* Actor.cpp */,
-				81225A3D0912C42F005D34B9 /* Actor.h */,
-				81225A3E0912C42F005D34B9 /* AF.cpp */,
-				81225A3F0912C42F005D34B9 /* AF.h */,
-				81225A400912C42F005D34B9 /* AFEntity.cpp */,
-				81225A410912C42F005D34B9 /* AFEntity.h */,
-				81225A420912C42F005D34B9 /* ai */,
-				81225A4E0912C42F005D34B9 /* anim */,
-				81225A550912C42F005D34B9 /* BrittleFracture.cpp */,
-				81225A560912C42F005D34B9 /* BrittleFracture.h */,
-				81225A570912C42F005D34B9 /* Camera.cpp */,
-				81225A580912C42F005D34B9 /* Camera.h */,
-				81225A590912C42F005D34B9 /* Entity.cpp */,
-				81225A5A0912C42F005D34B9 /* Entity.h */,
-				81225A5B0912C42F005D34B9 /* Fx.cpp */,
-				81225A5C0912C42F005D34B9 /* Fx.h */,
 				81225A5D0912C42F005D34B9 /* Game.def */,
 				81225A5E0912C42F005D34B9 /* Game.h */,
 				81225A5F0912C42F005D34B9 /* Game_local.cpp */,
@@ -1238,45 +1156,119 @@
 				81225A610912C42F005D34B9 /* Game_network.cpp */,
 				81225A620912C42F005D34B9 /* GameEdit.cpp */,
 				81225A630912C42F005D34B9 /* GameEdit.h */,
+				3A53771B148E816A006DC4CE /* GamePlayTimer.h */,
 				81225A640912C42F005D34B9 /* gamesys */,
+				3A53771D148E817F006DC4CE /* Grabber.cpp */,
+				3A53771E148E817F006DC4CE /* Grabber.h */,
+				3A53771F148E817F006DC4CE /* HidingSpotSearchCollection.cpp */,
+				3A537720148E817F006DC4CE /* HidingSpotSearchCollection.h */,
+				3A537721148E817F006DC4CE /* Http */,
+				3A537726148E817F006DC4CE /* I18N.cpp */,
+				3A537727148E817F006DC4CE /* I18N.h */,
 				81225A740912C42F005D34B9 /* IK.cpp */,
 				81225A750912C42F005D34B9 /* IK.h */,
+				3A537732148E8193006DC4CE /* ImageMapManager.cpp */,
+				3A537733148E8193006DC4CE /* ImageMapManager.h */,
+				3A537734148E8193006DC4CE /* IniFile.cpp */,
+				3A537735148E8193006DC4CE /* IniFile.h */,
+				3A537736148E8193006DC4CE /* Intersection.cpp */,
+				3A537737148E8193006DC4CE /* Intersection.h */,
+				3A537738148E8193006DC4CE /* Inventory */,
 				81225A760912C42F005D34B9 /* Item.cpp */,
 				81225A770912C42F005D34B9 /* Item.h */,
 				81225A780912C42F005D34B9 /* Light.cpp */,
 				81225A790912C42F005D34B9 /* Light.h */,
+				3A537744148E8193006DC4CE /* LightController.cpp */,
+				3A537745148E8193006DC4CE /* LightController.h */,
+				3A537746148E8193006DC4CE /* LightGem.cpp */,
+				3A537747148E8193006DC4CE /* LightGem.h */,
+				3A537748148E8193006DC4CE /* Liquid.cpp */,
+				3A537749148E8193006DC4CE /* Liquid.h */,
+				3A53774A148E8193006DC4CE /* MaterialConverter.cpp */,
+				3A53774B148E8193006DC4CE /* MaterialConverter.h */,
+				3A53774C148E8193006DC4CE /* MatrixSq.h */,
+				3A53774D148E8193006DC4CE /* MeleeWeapon.cpp */,
+				3A53774E148E8193006DC4CE /* MeleeWeapon.h */,
 				81225A7A0912C42F005D34B9 /* Misc.cpp */,
 				81225A7B0912C42F005D34B9 /* Misc.h */,
+				3A53774F148E8193006DC4CE /* Missions */,
+				3A53775C148E8193006DC4CE /* ModelGenerator.cpp */,
+				3A53775D148E8193006DC4CE /* ModelGenerator.h */,
+				3A53775E148E8193006DC4CE /* ModMenu.cpp */,
+				3A53775F148E8193006DC4CE /* ModMenu.h */,
 				81225A7C0912C42F005D34B9 /* Moveable.cpp */,
 				81225A7D0912C42F005D34B9 /* Moveable.h */,
 				81225A7E0912C42F005D34B9 /* Mover.cpp */,
 				81225A7F0912C42F005D34B9 /* Mover.h */,
 				81225A800912C42F005D34B9 /* MultiplayerGame.cpp */,
 				81225A810912C42F005D34B9 /* MultiplayerGame.h */,
+				3A537760148E8193006DC4CE /* MultiStateMover.cpp */,
+				3A537761148E8193006DC4CE /* MultiStateMover.h */,
+				3A537762148E8193006DC4CE /* MultiStateMoverButton.cpp */,
+				3A537763148E8193006DC4CE /* MultiStateMoverButton.h */,
+				3A537764148E8193006DC4CE /* MultiStateMoverPosition.cpp */,
+				3A537765148E8193006DC4CE /* MultiStateMoverPosition.h */,
+				3A537684148E80D7006DC4CE /* Objectives */,
+				3A537798148E81A1006DC4CE /* OverlaySys.cpp */,
+				3A537799148E81A1006DC4CE /* OverlaySys.h */,
 				81225A820912C42F005D34B9 /* physics */,
+				3A53779C148E81C3006DC4CE /* PickableLock.cpp */,
+				3A53779D148E81C3006DC4CE /* PickableLock.h */,
 				81225AA50912C42F005D34B9 /* Player.cpp */,
 				81225AA60912C42F005D34B9 /* Player.h */,
+				81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */,
+				3A53779E148E81C3006DC4CE /* PlayerIcon.h */,
 				81225AA70912C42F005D34B9 /* PlayerView.cpp */,
 				81225AA80912C42F005D34B9 /* PlayerView.h */,
+				3A53779F148E81C3006DC4CE /* PositionWithinRangeFinder.cpp */,
+				3A5377A0148E81C3006DC4CE /* PositionWithinRangeFinder.h */,
 				81225AA90912C42F005D34B9 /* Projectile.cpp */,
 				81225AAA0912C42F005D34B9 /* Projectile.h */,
+				3A5377A1148E81C3006DC4CE /* ProjectileResult.cpp */,
+				3A5377A2148E81C3006DC4CE /* ProjectileResult.h */,
+				3A5377A3148E81C3006DC4CE /* pugixml */,
 				81225AAB0912C42F005D34B9 /* Pvs.cpp */,
 				81225AAC0912C42F005D34B9 /* Pvs.h */,
+				3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */,
+				3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */,
+				3A5377AA148E81C3006DC4CE /* randomizer */,
+				3A5377B6148E81C3006DC4CE /* RawVector.cpp */,
+				3A5377B7148E81C3006DC4CE /* RawVector.h */,
+				3A5377B8148E81C3006DC4CE /* Relations.cpp */,
+				3A5377B9148E81C3006DC4CE /* Relations.h */,
+				3A5377BA148E81C3006DC4CE /* RevisionTracker.cpp */,
+				3A5377BB148E81C3006DC4CE /* RevisionTracker.h */,
 				81225AAD0912C42F005D34B9 /* script */,
 				81225AB60912C42F005D34B9 /* SecurityCamera.cpp */,
 				81225AB70912C42F005D34B9 /* SecurityCamera.h */,
+				3A5377D8148E81D7006DC4CE /* SEED.cpp */,
+				3A5377D9148E81D7006DC4CE /* SEED.h */,
+				3A5377DA148E81D7006DC4CE /* Shop */,
 				81225AB80912C42F005D34B9 /* SmokeParticles.cpp */,
 				81225AB90912C42F005D34B9 /* SmokeParticles.h */,
+				3A5377E1148E81D7006DC4CE /* SndProp.cpp */,
+				3A5377E2148E81D7006DC4CE /* SndProp.h */,
+				3A5377E3148E81D7006DC4CE /* SndPropLoader.cpp */,
+				3A5377E4148E81D7006DC4CE /* SndPropLoader.h */,
 				81225ABA0912C42F005D34B9 /* Sound.cpp */,
 				81225ABB0912C42F005D34B9 /* Sound.h */,
+				3A5377E5148E81D7006DC4CE /* sourcehook */,
+				3A5377F1148E81D7006DC4CE /* StaticMulti.cpp */,
+				3A5377F2148E81D7006DC4CE /* StaticMulti.h */,
+				3A5377F3148E81D7006DC4CE /* StimResponse */,
 				81225ABC0912C42F005D34B9 /* Target.cpp */,
 				81225ABD0912C42F005D34B9 /* Target.h */,
+				3A537801148E81D7006DC4CE /* TimerManager.cpp */,
+				3A537802148E81D7006DC4CE /* TimerManager.h */,
 				81225ABE0912C42F005D34B9 /* Trigger.cpp */,
 				81225ABF0912C42F005D34B9 /* Trigger.h */,
+				3A537803148E81D7006DC4CE /* UserManager.cpp */,
+				3A537804148E81D7006DC4CE /* UserManager.h */,
 				81225AC00912C42F005D34B9 /* Weapon.cpp */,
 				81225AC10912C42F005D34B9 /* Weapon.h */,
 				81225AC20912C42F005D34B9 /* WorldSpawn.cpp */,
 				81225AC30912C42F005D34B9 /* WorldSpawn.h */,
+				3A537805148E81D7006DC4CE /* ZipLoader */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -1379,7 +1371,6 @@
 			isa = PBXGroup;
 			children = (
 				3A5377AB148E81C3006DC4CE /* _lrotl.h */,
-				3A5377AC148E81C3006DC4CE /* ex-ran.cpp */,
 				3A5377AD148E81C3006DC4CE /* licence.htm */,
 				3A5377AE148E81C3006DC4CE /* mersenne.cpp */,
 				3A5377AF148E81C3006DC4CE /* mother.cpp */,
@@ -1799,7 +1790,6 @@
 				81225ADD0912C42F005D34B9 /* BrittleFracture.h in Headers */,
 				81225ADF0912C42F005D34B9 /* Camera.h in Headers */,
 				81225AE10912C42F005D34B9 /* Entity.h in Headers */,
-				81225AE30912C42F005D34B9 /* Fx.h in Headers */,
 				81225AE40912C42F005D34B9 /* Game.h in Headers */,
 				81225AE60912C42F005D34B9 /* Game_local.h in Headers */,
 				81225AE90912C42F005D34B9 /* GameEdit.h in Headers */,
@@ -2145,7 +2135,6 @@
 				81225ADC0912C42F005D34B9 /* BrittleFracture.cpp in Sources */,
 				81225ADE0912C42F005D34B9 /* Camera.cpp in Sources */,
 				81225AE00912C42F005D34B9 /* Entity.cpp in Sources */,
-				81225AE20912C42F005D34B9 /* Fx.cpp in Sources */,
 				81225AE50912C42F005D34B9 /* Game_local.cpp in Sources */,
 				81225AE70912C42F005D34B9 /* Game_network.cpp in Sources */,
 				81225AE80912C42F005D34B9 /* GameEdit.cpp in Sources */,
@@ -2267,7 +2256,6 @@
 				3A5377C4148E81C3006DC4CE /* pugixml.cpp in Sources */,
 				3A5377C6148E81C3006DC4CE /* pugixpath.cpp in Sources */,
 				3A5377C7148E81C3006DC4CE /* PVSToAASMapping.cpp in Sources */,
-				3A5377CA148E81C3006DC4CE /* ex-ran.cpp in Sources */,
 				3A5377CB148E81C3006DC4CE /* mersenne.cpp in Sources */,
 				3A5377CC148E81C3006DC4CE /* mother.cpp in Sources */,
 				3A5377CF148E81C3006DC4CE /* ranrotb.cpp in Sources */,
@@ -2410,6 +2398,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INSTALL_PATH = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/lib/\"";
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				MAIN_CPP_DEFINES = _DEBUG;
@@ -2419,6 +2408,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = game;
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -2442,6 +2432,7 @@
 					GAME_DLL,
 					__WITH_PB__,
 				);
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/lib/\"";
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
@@ -2457,6 +2448,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = game;
 				SYMROOT = build;
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
 				ZERO_LINK = NO;
 			};
 			name = Release;
