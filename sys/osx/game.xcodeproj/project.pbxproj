@@ -384,6 +384,8 @@
 		3A537985148E81F1006DC4CE /* tdmAASFindEscape.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5378DE148E81F1006DC4CE /* tdmAASFindEscape.h */; };
 		3A537988148E8200006DC4CE /* Force_Push.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537986148E8200006DC4CE /* Force_Push.cpp */; };
 		3A537989148E8200006DC4CE /* Force_Push.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537987148E8200006DC4CE /* Force_Push.h */; };
+		3A537A58148E9F62006DC4CE /* Physics_Liquid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */; };
+		3A537A59148E9F62006DC4CE /* Physics_Liquid.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537A57148E9F62006DC4CE /* Physics_Liquid.h */; };
 		81225A3A0912C3DB005D34B9 /* libidlib_pic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 81225A210912C3A4005D34B9 /* libidlib_pic.a */; };
 		81225AC40912C42F005D34B9 /* PlayerIcon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */; };
 		81225AC50912C42F005D34B9 /* Actor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3C0912C42F005D34B9 /* Actor.cpp */; };
@@ -919,6 +921,8 @@
 		3A5378DE148E81F1006DC4CE /* tdmAASFindEscape.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tdmAASFindEscape.h; sourceTree = "<group>"; };
 		3A537986148E8200006DC4CE /* Force_Push.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Force_Push.cpp; sourceTree = "<group>"; };
 		3A537987148E8200006DC4CE /* Force_Push.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Force_Push.h; sourceTree = "<group>"; };
+		3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Physics_Liquid.cpp; sourceTree = "<group>"; };
+		3A537A57148E9F62006DC4CE /* Physics_Liquid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Physics_Liquid.h; sourceTree = "<group>"; };
 		81225A1B0912C3A4005D34B9 /* idlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = idlib.xcodeproj; sourceTree = "<group>"; };
 		81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = PlayerIcon.cpp; path = ../../game/PlayerIcon.cpp; sourceTree = SOURCE_ROOT; };
 		81225A3C0912C42F005D34B9 /* Actor.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Actor.cpp; path = ../../game/Actor.cpp; sourceTree = SOURCE_ROOT; };
@@ -1715,6 +1719,8 @@
 		81225A820912C42F005D34B9 /* physics */ = {
 			isa = PBXGroup;
 			children = (
+				3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */,
+				3A537A57148E9F62006DC4CE /* Physics_Liquid.h */,
 				3A537986148E8200006DC4CE /* Force_Push.cpp */,
 				3A537987148E8200006DC4CE /* Force_Push.h */,
 				81225A830912C42F005D34B9 /* Clip.cpp */,
@@ -2038,6 +2044,7 @@
 				3A537983148E81F1006DC4CE /* WanderInLocationTask.h in Headers */,
 				3A537985148E81F1006DC4CE /* tdmAASFindEscape.h in Headers */,
 				3A537989148E8200006DC4CE /* Force_Push.h in Headers */,
+				3A537A59148E9F62006DC4CE /* Physics_Liquid.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2363,6 +2370,7 @@
 				3A537982148E81F1006DC4CE /* WanderInLocationTask.cpp in Sources */,
 				3A537984148E81F1006DC4CE /* tdmAASFindEscape.cpp in Sources */,
 				3A537988148E8200006DC4CE /* Force_Push.cpp in Sources */,
+				3A537A58148E9F62006DC4CE /* Physics_Liquid.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2398,7 +2406,10 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INSTALL_PATH = /usr/local/lib;
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/lib/\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../macosx/boost/lib/\"",
+					"\"$(SRCROOT)/../../macosx/libcurl/\"",
+				);
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				MAIN_CPP_DEFINES = _DEBUG;
@@ -2406,7 +2417,14 @@
 					"$(OTHER_CFLAGS)",
 					"-fpermissive",
 				);
+				OTHER_LDFLAGS = (
+					"-lboost_filesystem",
+					"-lboost_thread",
+					"-lboost_system",
+					"-lcurl",
+				);
 				PREBINDING = NO;
+				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
 				ZERO_LINK = YES;
@@ -2432,7 +2450,10 @@
 					GAME_DLL,
 					__WITH_PB__,
 				);
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/lib/\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../macosx/boost/lib/\"",
+					"\"$(SRCROOT)/../../macosx/libcurl/\"",
+				);
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
@@ -2445,7 +2466,14 @@
 					"$(OTHER_CFLAGS)",
 					"-fpermissive",
 				);
+				OTHER_LDFLAGS = (
+					"-lboost_filesystem",
+					"-lboost_thread",
+					"-lboost_system",
+					"-lcurl",
+				);
 				PREBINDING = NO;
+				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
