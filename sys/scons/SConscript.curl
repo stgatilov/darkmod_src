@@ -27,15 +27,17 @@ class idBuildCurl( scons_utils.idSetupBase ):
 			os.system( 'cd curl ; mv ./lib/.libs/libcurl.a ./lib/.libs/libcurl-release.a' )
 		return 0
 
-build = idBuildCurl()
-if ( local_curl == 1 ):
-	build.debug = 1
-	target_name = '#curl/lib/.libs/libcurl-debug.a'
-else:
-	build.debug = 0
-	target_name = '#curl/lib/.libs/libcurl-release.a'
+#build = idBuildCurl()
+#if ( local_curl == 1 ):
+#	build.debug = 1
+#	target_name = '#curl/lib/.libs/libcurl-debug.a'
+#else:
+#	build.debug = 0
+#	target_name = '#curl/lib/.libs/libcurl-release.a'
 
-g_env.Command( target_name, None, Action( build.Compile ) )
+target_name = '#linux/libcurl/libcurl.a'
+
+#g_env.Command( target_name, None, Action( build.Compile ) )
 
 curl_libs = [ target_name, '/usr/lib/libz.a' ]
 Return( 'curl_libs' )
