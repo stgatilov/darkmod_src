@@ -980,13 +980,13 @@ void CGrabber::Event_CheckClipList( void )
 		if( !ListEnt )
 		{
 			// not sure how this is happening, but fix it
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Removing NULL entity from cliplist\r" );
+			//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Removing NULL entity from cliplist\r" );
 			keep = false;
 		}
 		// We keep an entity if it is the one we're dragging 
 		else if( GetSelected() == ListEnt || (ListEnt->GetBindMaster() && GetSelected() == ListEnt->GetBindMaster()) ) 
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist as it is currently selected\r", ListEnt->name.c_str() );
+			//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist as it is currently selected\r", ListEnt->name.c_str() );
 			keep = true;
 		}
 		else 
@@ -997,7 +997,7 @@ void CGrabber::Event_CheckClipList( void )
 			if( m_player.GetEntity() 
 				&& (EntClip = ListEnt->GetPhysics()->GetClipModel()) != NULL )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Testing entity %s for player clipping\r", ListEnt->name.c_str() );
+				//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Testing entity %s for player clipping\r", ListEnt->name.c_str() );
 				PlayerClip = m_player.GetEntity()->GetPhysics()->GetClipModel();
 				idVec3 PlayerOrigin = PlayerClip->GetOrigin();
 				
@@ -1013,11 +1013,11 @@ void CGrabber::Event_CheckClipList( void )
 				if( tr.fraction < 1.0 )
 				{
 					keep = true;
-					DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist since it is still clipping player\r", ListEnt->name.c_str() );
+					//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist since it is still clipping player\r", ListEnt->name.c_str() );
 				}
 				else
 				{
-					DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Entity %s removed from cliplist since it is not selected or clipping player\r", ListEnt->name.c_str() );
+					//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Entity %s removed from cliplist since it is not selected or clipping player\r", ListEnt->name.c_str() );
 				}
 
 			}
