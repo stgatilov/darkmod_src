@@ -246,6 +246,13 @@
 			remoteGlobalIDString = D2AAC0630554660B00DB518D;
 			remoteInfo = game;
 		};
+		3A1768DA149354D60077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A1768D3149354D60077AB23 /* devil.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A17681B149350DE0077AB23 /* liblibdevil.a.a */;
+			remoteInfo = devil;
+		};
 		8122597F0912BF1D005D34B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 812259790912BF1D005D34B9 /* idlib.xcodeproj */;
@@ -312,6 +319,7 @@
 		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -724,6 +732,7 @@
 		29B97314FDCFA39411CA2CEA /* Doom3 */ = {
 			isa = PBXGroup;
 			children = (
+				3A1768D3149354D60077AB23 /* devil.xcodeproj */,
 				25DD882E0B31F5F00079B759 /* d3xp.xcodeproj */,
 				812256420912BC26005D34B9 /* Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -762,6 +771,14 @@
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3A1768D4149354D60077AB23 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3A1768DB149354D60077AB23 /* liblibdevil.a.a */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		812256420912BC26005D34B9 /* Sources */ = {
@@ -1360,6 +1377,10 @@
 					ProjectRef = 25DD882E0B31F5F00079B759 /* d3xp.xcodeproj */;
 				},
 				{
+					ProductGroup = 3A1768D4149354D60077AB23 /* Products */;
+					ProjectRef = 3A1768D3149354D60077AB23 /* devil.xcodeproj */;
+				},
+				{
 					ProductGroup = 81225B850912C731005D34B9 /* Products */;
 					ProjectRef = 81225B840912C731005D34B9 /* game.xcodeproj */;
 				},
@@ -1385,6 +1406,13 @@
 			fileType = "compiled.mach-o.dylib";
 			path = game.dylib;
 			remoteRef = 25DD88360B31F5F00079B759 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3A1768DB149354D60077AB23 /* liblibdevil.a.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = liblibdevil.a.a;
+			remoteRef = 3A1768DA149354D60077AB23 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		812259800912BF1D005D34B9 /* libidlib_pic.a */ = {
