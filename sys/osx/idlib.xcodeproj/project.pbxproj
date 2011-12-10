@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A1767C7149346E90077AB23 /* Frustum_gcc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A1767C6149346E90077AB23 /* Frustum_gcc.cpp */; };
 		81C857480912AD020095BC33 /* BitMsg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C857470912AD020095BC33 /* BitMsg.cpp */; };
 		81C857C90912AD0D0095BC33 /* Base64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C8574A0912AD0D0095BC33 /* Base64.cpp */; };
 		81C857CA0912AD0D0095BC33 /* Base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 81C8574B0912AD0D0095BC33 /* Base64.h */; };
@@ -246,6 +247,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3A1767C6149346E90077AB23 /* Frustum_gcc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Frustum_gcc.cpp; sourceTree = "<group>"; };
 		81C857470912AD020095BC33 /* BitMsg.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = BitMsg.cpp; path = ../../idlib/BitMsg.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574A0912AD0D0095BC33 /* Base64.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Base64.cpp; path = ../../idlib/Base64.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574B0912AD0D0095BC33 /* Base64.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Base64.h; path = ../../idlib/Base64.h; sourceTree = SOURCE_ROOT; };
@@ -449,6 +451,7 @@
 		81C8574D0912AD0D0095BC33 /* bv */ = {
 			isa = PBXGroup;
 			children = (
+				3A1767C6149346E90077AB23 /* Frustum_gcc.cpp */,
 				81C8574E0912AD0D0095BC33 /* Bounds.cpp */,
 				81C8574F0912AD0D0095BC33 /* Bounds.h */,
 				81C857500912AD0D0095BC33 /* Box.cpp */,
@@ -775,7 +778,6 @@
 			};
 			buildConfigurationList = 81C857270912ACE80095BC33 /* Build configuration list for PBXProject "idlib" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -848,6 +850,7 @@
 				81C858BF0912AD510095BC33 /* Str.cpp in Sources */,
 				81C858C10912AD510095BC33 /* Timer.cpp in Sources */,
 				81C858C30912AD510095BC33 /* Token.cpp in Sources */,
+				3A1767C7149346E90077AB23 /* Frustum_gcc.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
