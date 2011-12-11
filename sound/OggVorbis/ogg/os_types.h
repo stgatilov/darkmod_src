@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: #ifdef jail to whip a few platforms into the UNIX ideal.
- last mod: $Id: os_types.h,v 1.14 2003/09/02 05:09:14 xiphmont Exp $
+ last mod: $Id$
 
  ********************************************************************/
 #ifndef _OS_TYPES_H

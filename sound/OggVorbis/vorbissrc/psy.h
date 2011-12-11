@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: random psychoacoustics (not including preecho)
- last mod: $Id: psy.h,v 1.32 2002/07/13 06:12:47 xiphmont Exp $
+ last mod: $Id$
 
  ********************************************************************/
 

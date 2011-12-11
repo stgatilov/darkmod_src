@@ -78,7 +78,7 @@
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* @(#) $Id: unzip.c,v 1.2 1999/09/07 20:51:25 zoid Exp $ */
+/* @(#) $Id$ */
 
 #ifndef _ZCONF_H
 #define _ZCONF_H
@@ -2242,7 +2242,7 @@ extern int unzGetGlobalComment (unzFile file, char *szComment, uLong uSizeBuf)
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* @(#) $Id: unzip.c,v 1.2 1999/09/07 20:51:25 zoid Exp $ */
+/* @(#) $Id$ */
 
 #ifdef DYNAMIC_CRC_TABLE
 
@@ -4076,7 +4076,7 @@ uLong adler32(uLong adler, const Byte *buf, uInt len)
     return (s2 << 16) | s1;
 }
 
-/* @(#) $Id: unzip.c,v 1.2 1999/09/07 20:51:25 zoid Exp $ */
+/* @(#) $Id$ */
 
 /* infblock.h -- header to use infblock.c
  * Copyright (C) 1995-1998 Mark Adler

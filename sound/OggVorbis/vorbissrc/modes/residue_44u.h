@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: toplevel residue templates for 32/44.1/48kHz uncoupled
- last mod: $Id: residue_44u.h,v 1.3 2002/07/11 06:41:04 xiphmont Exp $
+ last mod: $Id$
 
  ********************************************************************/
 
