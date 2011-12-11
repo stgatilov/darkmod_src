@@ -7,9 +7,6 @@
  * $Author$
  *
  ***************************************************************************/
-// Copyright (C) 2004 Id Software, Inc.
-//
-
 #ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
 

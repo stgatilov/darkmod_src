@@ -8,9 +8,6 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2004 Id Software, Inc.
-//
-
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 

@@ -9,9 +9,6 @@
  *
  ***************************************************************************/
 
-// Copyright (C) 2004 Id Software, Inc.
-//
-
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
