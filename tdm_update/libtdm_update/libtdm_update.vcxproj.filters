@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Http">
+      <UniqueIdentifier>{5c8a1119-fea7-417c-9b44-66d5ab9df59c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Zip">
+      <UniqueIdentifier>{847ab4fe-ace0-4cb9-83d5-b57df7b99fc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Updater">
+      <UniqueIdentifier>{a265ae68-6dfc-4cc5-a9eb-13f5a52ac0b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packager">
+      <UniqueIdentifier>{9ffd21da-5f63-47c3-9f90-89781d64e5d8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Http\Download.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Http\DownloadManager.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Http\HttpConnection.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Http\HttpRequest.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Http\MirrorDownload.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Zip\Zip.cpp">
+      <Filter>Zip</Filter>
+    </ClCompile>
+    <ClCompile Include="Updater\UpdateController.cpp">
+      <Filter>Updater</Filter>
+    </ClCompile>
+    <ClCompile Include="Updater\Updater.cpp">
+      <Filter>Updater</Filter>
+    </ClCompile>
+    <ClCompile Include="Packager\Packager.cpp">
+      <Filter>Packager</Filter>
+    </ClCompile>
+    <ClCompile Include="File.cpp" />
+    <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="SvnClient.cpp" />
+    <ClCompile Include="SvnClientImpl.cpp" />
+    <ClCompile Include="TraceLog.cpp" />
+    <ClCompile Include="Util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Http\Download.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Http\DownloadManager.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Http\HttpConnection.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Http\HttpRequest.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Http\MirrorDownload.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Http\MirrorList.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Zip\Zip.h">
+      <Filter>Zip</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\DifferentialUpdateInfo.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\ProgressHandler.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\UpdateController.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\Updater.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\UpdaterOptions.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\UpdateStep.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater\UpdateView.h">
+      <Filter>Updater</Filter>
+    </ClInclude>
+    <ClInclude Include="Packager\Packager.h">
+      <Filter>Packager</Filter>
+    </ClInclude>
+    <ClInclude Include="Packager\PackagerOptions.h">
+      <Filter>Packager</Filter>
+    </ClInclude>
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="CRC.h" />
+    <ClInclude Include="ExceptionSafeThread.h" />
+    <ClInclude Include="File.h" />
+    <ClInclude Include="IniFile.h" />
+    <ClInclude Include="PackageInstructions.h" />
+    <ClInclude Include="Pk4Mappings.h" />
+    <ClInclude Include="ProgramOptions.h" />
+    <ClInclude Include="ReleaseFileset.h" />
+    <ClInclude Include="ReleaseManifest.h" />
+    <ClInclude Include="ReleaseVersions.h" />
+    <ClInclude Include="SvnClient.h" />
+    <ClInclude Include="SvnClientImpl.h" />
+    <ClInclude Include="TraceLog.h" />
+    <ClInclude Include="UpdatePackage.h" />
+    <ClInclude Include="UpdatePackageInfo.h" />
+    <ClInclude Include="Util.h" />
+  </ItemGroup>
+</Project>

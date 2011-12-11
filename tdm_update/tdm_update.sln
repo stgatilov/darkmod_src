@@ -1,21 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update", "tdm_update.vcproj", "{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update", "tdm_update.vcxproj", "{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtdm_update", "libtdm_update\libtdm_update.vcproj", "{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtdm_update", "libtdm_update\libtdm_update.vcxproj", "{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_package", "tdm_package\tdm_package.vcproj", "{A181019F-4348-4574-B88C-DEAAA2B5CB7D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_package", "tdm_package\tdm_package.vcxproj", "{A181019F-4348-4574-B88C-DEAAA2B5CB7D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update_mfc", "tdm_update_mfc\tdm_update_mfc.vcproj", "{D1A70E0F-90AF-443F-B512-8A25E99FE568}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update_mfc", "tdm_update_mfc\tdm_update_mfc.vcxproj", "{D1A70E0F-90AF-443F-B512-8A25E99FE568}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
