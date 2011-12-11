@@ -27,6 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // -*- mode: objc -*-
+//#define __DARWIN_UNIX03 0	// greebo: We need the struct __darwin_mcontext to contain fs, no underscores
 #import "../../idlib/precompiled.h"
 #import "DOOMController.h"
 
@@ -43,7 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 #import "macosx_sys.h"
 
 #import <fenv.h>
-#import <ucontext.h>
+#import <sys/ucontext.h>
 #import <mach/thread_status.h>
 
 #define	MAX_KEYS		256
@@ -607,9 +608,14 @@ void Sys_FPE_handler( int signum, siginfo_t *info, void *context ) {
 	ppc_float_state_t *fs;
 	ppc_thread_state_t *ss;
 
-	fs = &( (struct ucontext *)context )->uc_mcontext->fs;
-	ss = &( (struct ucontext *)context )->uc_mcontext->ss;
-
+#if __DARWIN_UNIX03 // greebo: DARWIN_UNIX03 means all struct members have leading double underscores
+	fs = &( (_STRUCT_UCONTEXT *)context )->uc_mcontext->__fs;
+	ss = &( (_STRUCT_UCONTEXT *)context )->uc_mcontext->__ss;
+#else
+	fs = &( (_STRUCT_UCONTEXT *)context )->uc_mcontext->fs;
+	ss = &( (_STRUCT_UCONTEXT *)context )->uc_mcontext->ss;
+#endif
+	
 	Sys_Printf( "FPE at 0x%x:\n", info->si_addr );
 
 	ret = fetestexcept( FE_ALL_EXCEPT );
@@ -632,8 +638,13 @@ void Sys_FPE_handler( int signum, siginfo_t *info, void *context ) {
 	// clear the exception flags
 	feclearexcept( FE_ALL_EXCEPT );
 	// re-arm
+#if __DARWIN_UNIX03 // greebo: DARWIN_UNIX03 means all struct members have leading double underscores
+	fs->__fpscr &= exception_mask;
+	ss->__srr0 += 4;
+#else
 	fs->fpscr &= exception_mask;
 	ss->srr0 += 4;
+#endif
 #endif
 }
 

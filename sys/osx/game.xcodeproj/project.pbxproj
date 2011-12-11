@@ -2570,6 +2570,7 @@
 		81225A250912C3A4005D34B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -2610,6 +2611,7 @@
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -2617,10 +2619,7 @@
 		81225A260912C3A4005D34B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					i386,
-				);
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -2661,6 +2660,7 @@
 				PRODUCT_NAME = game;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = NO;
 			};
 			name = Release;

@@ -321,6 +321,7 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
 		3A176D3214936ACC0077AB23 /* libdevil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdevil.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libdevil.a; sourceTree = "<absolute>"; };
+		3A176DDB1494CAA00077AB23 /* libidlib_pic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libidlib_pic.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libidlib_pic.a; sourceTree = "<absolute>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -736,6 +737,7 @@
 				812259890912BF38005D34B9 /* oggVorbis.xcodeproj */,
 				81225B840912C731005D34B9 /* game.xcodeproj */,
 				3A176D3214936ACC0077AB23 /* libdevil.a */,
+				3A176DDB1494CAA00077AB23 /* libidlib_pic.a */,
 			);
 			name = Doom3;
 			sourceTree = "<group>";
@@ -1847,7 +1849,7 @@
 				);
 				SDKROOT = macosx10.5;
 				USER_HEADER_SEARCH_PATHS = "";
-				VALID_ARCHS = i386;
+				VALID_ARCHS = "i386 ppc";
 			};
 			name = Debug;
 		};
@@ -1878,7 +1880,7 @@
 				);
 				SDKROOT = macosx10.5;
 				USER_HEADER_SEARCH_PATHS = /Users/Shared/darkmod_src/include/;
-				VALID_ARCHS = i386;
+				VALID_ARCHS = "ppc i386";
 			};
 			name = Release;
 		};
