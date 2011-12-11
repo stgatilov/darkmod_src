@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A1769821493571B0077AB23 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A1769811493571B0077AB23 /* libdevil.a */; };
 		812258110912BC79005D34B9 /* snd_efxfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122565F0912BC78005D34B9 /* snd_efxfile.cpp */; };
 		812258120912BC79005D34B9 /* GEWindowWrapper_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */; };
 		812258130912BC79005D34B9 /* edit_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256630912BC79005D34B9 /* edit_stub.cpp */; };
@@ -253,6 +254,13 @@
 			remoteGlobalIDString = 3A17681B149350DE0077AB23 /* liblibdevil.a.a */;
 			remoteInfo = devil;
 		};
+		3A176967149355C20077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A1768D3149354D60077AB23 /* devil.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A17681A149350DE0077AB23 /* devil */;
+			remoteInfo = devil;
+		};
 		8122597F0912BF1D005D34B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 812259790912BF1D005D34B9 /* idlib.xcodeproj */;
@@ -320,6 +328,8 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
+		3A176969149356020077AB23 /* liblibdevil.a.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibdevil.a.a; path = "/Users/Shared/darkmod_src/sys/osx/build/devil.build/Release/devil.build/Objects-normal/i386/liblibdevil.a.a"; sourceTree = "<absolute>"; };
+		3A1769811493571B0077AB23 /* libdevil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdevil.a; path = "/Users/Shared/darkmod_src/sys/osx/build/devil.build/Release/devil.build/Objects-normal/i386/libdevil.a"; sourceTree = "<absolute>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -689,6 +699,7 @@
 				812259B10912BFDC005D34B9 /* IOKit.framework in Frameworks */,
 				812259B30912BFDC005D34B9 /* OpenGL.framework in Frameworks */,
 				812259B70912C056005D34B9 /* CoreAudio.framework in Frameworks */,
+				3A1769821493571B0077AB23 /* libdevil.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -742,6 +753,8 @@
 				812259790912BF1D005D34B9 /* idlib.xcodeproj */,
 				812259890912BF38005D34B9 /* oggVorbis.xcodeproj */,
 				81225B840912C731005D34B9 /* game.xcodeproj */,
+				3A176969149356020077AB23 /* liblibdevil.a.a */,
+				3A1769811493571B0077AB23 /* libdevil.a */,
 			);
 			name = Doom3;
 			sourceTree = "<group>";
@@ -1340,6 +1353,7 @@
 				812259840912BF2B005D34B9 /* PBXTargetDependency */,
 				812259910912BF43005D34B9 /* PBXTargetDependency */,
 				81225B8D0912C73C005D34B9 /* PBXTargetDependency */,
+				3A176968149355C20077AB23 /* PBXTargetDependency */,
 			);
 			name = "Doom 3";
 			productInstallPath = "$(HOME)/Applications";
@@ -1695,6 +1709,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3A176968149355C20077AB23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = devil;
+			targetProxy = 3A176967149355C20077AB23 /* PBXContainerItemProxy */;
+		};
 		812259840912BF2B005D34B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = idlib_nopic;
@@ -1774,7 +1793,10 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/libcurl\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../macosx/libcurl\"",
+					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
+				);
 				OTHER_LDFLAGS = (
 					"-weak_framework",
 					OpenAL,
@@ -1803,7 +1825,10 @@
 					"ID_ENABLE_CURL=1",
 				);
 				INFOPLIST_FILE = Info.plist;
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../macosx/libcurl\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../macosx/libcurl\"",
+					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
+				);
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",

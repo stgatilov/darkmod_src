@@ -66,7 +66,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3A17681B149350DE0077AB23 /* liblibdevil.a.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblibdevil.a.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A17681B149350DE0077AB23 /* libdevil.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdevil.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A1768E1149354EB0077AB23 /* altivec_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = altivec_common.c; path = ../../lib/devil/altivec_common.c; sourceTree = SOURCE_ROOT; };
 		3A1768E2149354EB0077AB23 /* altivec_typeconversion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = altivec_typeconversion.c; path = ../../lib/devil/altivec_typeconversion.c; sourceTree = SOURCE_ROOT; };
 		3A1768E3149354EB0077AB23 /* il_alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = il_alloc.c; path = ../../lib/devil/il_alloc.c; sourceTree = SOURCE_ROOT; };
@@ -202,7 +202,7 @@
 		3A17681C149350DE0077AB23 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3A17681B149350DE0077AB23 /* liblibdevil.a.a */,
+				3A17681B149350DE0077AB23 /* libdevil.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -234,7 +234,7 @@
 			);
 			name = devil;
 			productName = libdevil.a;
-			productReference = 3A17681B149350DE0077AB23 /* liblibdevil.a.a */;
+			productReference = 3A17681B149350DE0077AB23 /* libdevil.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -347,7 +347,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INSTALL_PATH = /usr/local/lib;
 				PREBINDING = NO;
-				PRODUCT_NAME = libdevil.a;
+				PRODUCT_NAME = devil;
 			};
 			name = Debug;
 		};
@@ -365,7 +365,7 @@
 				HEADER_SEARCH_PATHS = "";
 				INSTALL_PATH = /usr/local/lib;
 				PREBINDING = NO;
-				PRODUCT_NAME = libdevil.a;
+				PRODUCT_NAME = devil;
 				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg/\" \"$(SRCROOT)/../../include/libpng/\" \"$(SRCROOT)/../../include/devil/\" \"$(SRCROOT)/../../include/devil/IL/\"";
 				ZERO_LINK = NO;
