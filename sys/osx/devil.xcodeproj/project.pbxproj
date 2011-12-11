@@ -65,6 +65,37 @@
 		3A176950149354EB0077AB23 /* il_xpm.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A176918149354EB0077AB23 /* il_xpm.c */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3A176D6714936F6C0077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A176B561493626B0077AB23 /* libjpeg.a */;
+			remoteInfo = jpeg;
+		};
+		3A176D6D14936F720077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A176D6914936F720077AB23 /* png.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A176C98149365AD0077AB23 /* libpng.a */;
+			remoteInfo = png;
+		};
+		3A176D7114936F7C0077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A176D6914936F720077AB23 /* png.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A176C97149365AD0077AB23 /* png */;
+			remoteInfo = png;
+		};
+		3A176D7314936F7E0077AB23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A176B551493626B0077AB23 /* jpeg */;
+			remoteInfo = jpeg;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		3A17681B149350DE0077AB23 /* libdevil.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdevil.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A1768E1149354EB0077AB23 /* altivec_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = altivec_common.c; path = ../../lib/devil/altivec_common.c; sourceTree = SOURCE_ROOT; };
@@ -123,6 +154,8 @@
 		3A176916149354EB0077AB23 /* il_utility.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = il_utility.c; path = ../../lib/devil/il_utility.c; sourceTree = SOURCE_ROOT; };
 		3A176917149354EB0077AB23 /* il_wal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = il_wal.c; path = ../../lib/devil/il_wal.c; sourceTree = SOURCE_ROOT; };
 		3A176918149354EB0077AB23 /* il_xpm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = il_xpm.c; path = ../../lib/devil/il_xpm.c; sourceTree = SOURCE_ROOT; };
+		3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = jpeg.xcodeproj; sourceTree = "<group>"; };
+		3A176D6914936F720077AB23 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = png.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +172,8 @@
 		3A176801149350650077AB23 = {
 			isa = PBXGroup;
 			children = (
+				3A176D6914936F720077AB23 /* png.xcodeproj */,
+				3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */,
 				3A1768E1149354EB0077AB23 /* altivec_common.c */,
 				3A1768E2149354EB0077AB23 /* altivec_typeconversion.c */,
 				3A1768E3149354EB0077AB23 /* il_alloc.c */,
@@ -207,6 +242,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		3A176D6414936F6C0077AB23 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3A176D6814936F6C0077AB23 /* libjpeg.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3A176D6A14936F720077AB23 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3A176D6E14936F720077AB23 /* libpng.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -231,6 +282,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				3A176D7214936F7C0077AB23 /* PBXTargetDependency */,
+				3A176D7414936F7E0077AB23 /* PBXTargetDependency */,
 			);
 			name = devil;
 			productName = libdevil.a;
@@ -248,12 +301,39 @@
 			mainGroup = 3A176801149350650077AB23;
 			productRefGroup = 3A17681C149350DE0077AB23 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 3A176D6414936F6C0077AB23 /* Products */;
+					ProjectRef = 3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */;
+				},
+				{
+					ProductGroup = 3A176D6A14936F720077AB23 /* Products */;
+					ProjectRef = 3A176D6914936F720077AB23 /* png.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				3A17681A149350DE0077AB23 /* devil */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		3A176D6814936F6C0077AB23 /* libjpeg.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libjpeg.a;
+			remoteRef = 3A176D6714936F6C0077AB23 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3A176D6E14936F720077AB23 /* libpng.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libpng.a;
+			remoteRef = 3A176D6D14936F720077AB23 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3A176818149350DE0077AB23 /* Sources */ = {
@@ -320,6 +400,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3A176D7214936F7C0077AB23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = png;
+			targetProxy = 3A176D7114936F7C0077AB23 /* PBXContainerItemProxy */;
+		};
+		3A176D7414936F7E0077AB23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = jpeg;
+			targetProxy = 3A176D7314936F7E0077AB23 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3A176804149350650077AB23 /* Debug */ = {
