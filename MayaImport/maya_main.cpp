@@ -29,8 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Maya5.0/maya.h"
-//#include "Maya6.0/maya.h"			// must also change include directory in project from "MayaImport\Maya4.5\include" to "MayaImport\Maya6.0\include" (requires MSDev 7.1)
+//#include "Maya5.0/maya.h"
+#include <iostream>
+#include "Maya6.0/maya.h"			// must also change include directory in project from "MayaImport\Maya4.5\include" to "MayaImport\Maya6.0\include" (requires MSDev 7.1)
 #include "exporter.h"
 #include "maya_main.h"
 
@@ -198,17 +199,20 @@ bool OSPathToRelativePath( const char *osPath, idStr &qpath, const char *game ) 
 	// Ase files from max may have the form of:
 	// "//Purgatory/purgatory/doom/base/models/mapobjects/bitch/hologirl.tga"
 	// which won't match any of our drive letter based search paths
-	base = (char *)strstr( osPath, BASE_GAMEDIR );
+	base = (char*)strstr( osPath, BASE_GAMEDIR );
 
 	// _D3XP added mod support
 	if ( base == NULL && strlen(game) > 0 ) {
 
-		base = s = (char *)strstr( osPath, game );
+		base = s = (char*)strstr( osPath, game );
 
-		while( s = strstr( s, game ) ) {
-			s += strlen( game );
-			if ( s[0] == '/' || s[0] == '\\' ) {
-				base = s;
+		if (s != NULL)
+		{
+			while( s = strstr( s, game ) ) {
+				s += strlen( game );
+				if ( s[0] == '/' || s[0] == '\\' ) {
+					base = s;
+				}
 			}
 		}
 	} 
@@ -3086,12 +3090,12 @@ Maya_ConvertModel
 const char *Maya_ConvertModel( const char *ospath, const char *commandline ) {
 	
 	errorMessage = "Ok";
- 
+
 	try {
 		idExportOptions options( commandline, ospath );
-		idMayaExport	exportM( options );
+		idMayaExport	exporter( options );
 
-		exportM.ConvertModel();
+		exporter.ConvertModel();
 	}
 	
 	catch( idException &exception ) {
@@ -3147,3 +3151,9 @@ bool dllEntry( int version, idCommon *common, idSys *sys ) {
 const exporterDLLEntry_t	ValidateEntry = &dllEntry;
 const exporterInterface_t	ValidateConvert = &Maya_ConvertModel;
 const exporterShutdown_t	ValidateShutdown = &Maya_Shutdown;
+
+// greebo: FileVersionList needed by Darkmod-sourced files
+bool FileVersionList(const char *str, bool state)
+{
+	return true;
+}
