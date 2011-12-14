@@ -299,31 +299,18 @@ local_env = g_game_env.Clone()
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
-if g_os == 'MacOSX':
-	local_env.Append(LIBS = [
-		File('#/macosx/libcurl/libcurl.a'),
+# Link the runtime statically, link statically against libjpeg.a and libpng.a
+# the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
+local_env.Append( LINKFLAGS = [ '-lrt', '-ljpeg', '-lpng' ] )
 
-		File('#/macosx/libpng/libpng12.a'),
-		File('#/macosx/libjpeg/libjpeg.a'),
-		File('#/macosx/boost/lib/libboost_filesystem.a'),
-		File('#/macosx/boost/lib/libboost_system.a'),
-		File('#/macosx/boost/lib/libboost_thread.a')
-	])
-else:
-	# Linux
+local_env.Append(LIBS = [
+	File('#/linux/libcurl/libcurl.a'),
+	File('#/linux/boost/lib/libboost_filesystem.a'),
+	File('#/linux/boost/lib/libboost_system.a'),
+	File('#/linux/boost/lib/libboost_thread.a')
+])
 
-	# Link the runtime statically, link statically against libjpeg.a and libpng.a
-	# the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
-	local_env.Append( LINKFLAGS = [ '-lrt', '-ljpeg', '-lpng' ] )
-
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a'),
-		File('#/linux/boost/lib/libboost_thread.a')
-	])
-
-# greebo: Use custom compiled devIL in Linux and Mac OS X
+# greebo: Use custom compiled devIL in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
 
 full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list
