@@ -47,6 +47,7 @@ const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
 const idEventDef EV_Light_AddToLAS("addToLAS", NULL);
 const idEventDef EV_Light_FadeToLight( "fadeToLight", "vf" );
 const idEventDef EV_Smoking("smoking", "d");
+const idEventDef EV_SetStartedOff("setStartedOff", NULL); // grayman #2905
 
 
 CLASS_DECLARATION( idEntity, idLight )
@@ -71,7 +72,8 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_AddToLAS,		idLight::Event_AddToLAS )
 	EVENT( EV_InPVS,				idLight::Event_InPVS )
 	EVENT( EV_Light_FadeToLight,	idLight::Event_FadeToLight )
-	EVENT( EV_Smoking,				idLight::Event_Smoking ) // grayman #2603
+	EVENT( EV_Smoking,				idLight::Event_Smoking )		// grayman #2603
+	EVENT( EV_SetStartedOff,		idLight::Event_SetStartedOff )	// grayman #2905
 END_CLASS
 
 
@@ -295,6 +297,7 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(nextTimeVerticalCheck);	// grayman #2603
 	savefile->WriteBool(smoking);					// grayman #2603
 	savefile->WriteInt(whenToDouse);				// grayman #2603
+	savefile->WriteBool(startedOff);				// grayman #2905
 
 	savefile->WriteInt(switchList.Num());	// grayman #2603
 	for (int i = 0; i < switchList.Num(); i++)
@@ -369,6 +372,7 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(nextTimeVerticalCheck);	// grayman #2603
 	savefile->ReadBool(smoking);				// grayman #2603
 	savefile->ReadInt(whenToDouse);				// grayman #2603
+	savefile->ReadBool(startedOff);				// grayman #2905
 	
 	// grayman #2603
 	switchList.Clear();
@@ -417,7 +421,6 @@ idLight::Spawn
 */
 void idLight::Spawn( void )
 {
-	bool start_off;
 	const char *demonic_shader;
 
 	// do the parsing the same way dmap and the editor do
@@ -461,8 +464,11 @@ void idLight::Spawn( void )
 		renderLight.prelightModel = renderModelManager->CheckModel( va( "_prelight_%s", name.c_str() ) );
 	}
 
-	spawnArgs.GetBool( "start_off", "0", start_off );
-	if ( start_off ) {
+	// grayman #2905 - remember if the light started off (startedOff), because it's important during relighting attempts
+
+	spawnArgs.GetBool( "start_off", "0", startedOff );
+	if ( startedOff )
+	{
 		Off();
 	}
 
@@ -766,6 +772,33 @@ void idLight::On( void ) {
  */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
+
+	// grayman #2905 - if the light started off, and it's a shouldBeOn > 0 light,
+	// clear startedOff, because once the light comes back on, it should no longer be ignored.
+	// Lights marked shouldBeOn = 0 can continue to be ignored.
+
+	if ( startedOff )
+	{
+		int shouldBeOn = spawnArgs.GetInt("shouldBeOn","0");
+		if ( shouldBeOn > 0 )
+		{
+			startedOff = false;
+		}
+		else // check shouldBeOn values on bindmasters, if any
+		{
+			idEntity* bindMaster = GetBindMaster();
+			while ( bindMaster != NULL )
+			{
+				shouldBeOn = bindMaster->spawnArgs.GetInt("shouldBeOn","0");
+				if ( shouldBeOn > 0 )
+				{
+					startedOff = false;
+					break;
+				}
+				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+			}
+		}
+	}
 }
 
 /*
@@ -2013,5 +2046,16 @@ bool idLight::IsSmoking() // grayman #2603
 {
 	return smoking;
 }
+
+void idLight::Event_SetStartedOff() // grayman #2905 - the light was out at spawn time
+{
+	startedOff = true;
+}
+
+bool idLight::GetStartedOff() // grayman #2905 - was the light out at spawn time?
+{
+	return startedOff;
+}
+
 
 

@@ -519,6 +519,19 @@ void State::OnVisualStim(idEntity* stimSource)
 			return;
 		}
 
+		// grayman #2905 - AI shouldn't relight or bark about lights that were spawned off
+		// at map start. Once the light is turned on, then off again, AI can once again
+		// bark and relight.
+
+		if ( light->GetStartedOff() )
+		{
+			// the light was spawned off and hasn't been turned back on yet
+			// OR it's been turned back on, but is a shouldBeOn = 0 light
+
+			stimSource->IgnoreResponse(ST_VISUAL,owner);
+			return;
+		}
+
 		// grayman #2603 - Let's see if the AI is involved in a conversation.
 		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
 		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(owner->GetMind()->GetState());
@@ -1110,7 +1123,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					 ( otherMemory.posEnemySeen != memory.posEnemySeen ) ) // do we know about the same enemy?
 				{
 					// warn about seeing an enemy
-					gameLocal.Printf("%s found a friend, who is warning about seeing an enemy\n",owner->name.c_str());
+					//gameLocal.Printf("%s found a friend, who is warning about seeing an enemy\n",owner->name.c_str());
 					soundName = "snd_warnSawEnemy";
 					memory.enemiesHaveBeenSeen = true;
 					memory.posEnemySeen = otherMemory.posEnemySeen;
@@ -1120,7 +1133,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 						  ( otherMemory.posCorpseFound == memory.posCorpseFound ) ) // do we know about the same corpse?
 				{
 					// warn about finding a corpse
-					gameLocal.Printf("%s found a friend, who is warning about finding a corpse\n",owner->name.c_str());
+					//gameLocal.Printf("%s found a friend, who is warning about finding a corpse\n",owner->name.c_str());
 					soundName = "snd_warnFoundCorpse";
 					memory.deadPeopleHaveBeenFound = true;
 					memory.posCorpseFound = otherMemory.posCorpseFound;
@@ -1131,7 +1144,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 						  ( memory.timeMissingItem != otherMemory.timeMissingItem ) ) // is my missing item alert different than the other's
 				{
 					// warn about a missing item
-					gameLocal.Printf("%s found a friend, who is warning about something being stolen\n",owner->name.c_str());
+					//gameLocal.Printf("%s found a friend, who is warning about something being stolen\n",owner->name.c_str());
 					soundName = "snd_warnMissingItem";
 					memory.itemsHaveBeenStolen = true;
 					memory.posMissingItem = otherMemory.posMissingItem;
@@ -1141,7 +1154,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				else if ( memory.timeEvidenceIntruders != otherMemory.timeEvidenceIntruders ) // is my evidence alert different than the other's
 				{
 					// warn about intruders
-					gameLocal.Printf("%s found a friend, who is warning about evidence of intruders\n",owner->name.c_str());
+					//gameLocal.Printf("%s found a friend, who is warning about evidence of intruders\n",owner->name.c_str());
 					soundName = "snd_warnSawEvidence";
 
 					memory.posEvidenceIntruders = otherMemory.posEvidenceIntruders;

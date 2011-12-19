@@ -151,6 +151,7 @@ const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
 
 const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", NULL, 'v');	// grayman #2787
 const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", NULL, 'v');	// grayman #2787
+const idEventDef EV_IsLight("isLight", NULL, 'd'); // grayman #2905
 
 //===============================================================
 //                   TDM GUI interface
@@ -451,6 +452,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
 	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )	// grayman #2478
+	EVENT( EV_IsLight,				idEntity::Event_IsLight )				// grayman #2905
 
 END_CLASS
 
@@ -12224,6 +12226,13 @@ void idEntity::Event_SetEntityRelation(idEntity* entity, int relation)
 void idEntity::Event_ChangeEntityRelation(idEntity* entity, int relationChange)
 {
 	ChangeEntityRelation(entity, relationChange);
+}
+
+// grayman #2905
+
+void idEntity::Event_IsLight()
+{
+	idThread::ReturnInt(static_cast<int>(IsType(idLight::Type)));
 }
 
 
