@@ -464,11 +464,12 @@ void idLight::Spawn( void )
 		renderLight.prelightModel = renderModelManager->CheckModel( va( "_prelight_%s", name.c_str() ) );
 	}
 
-	// grayman #2905 - remember if the light started off (startedOff), because it's important during relighting attempts
+	// grayman #2905 - remember if the light started off because it's important during relighting attempts
 
-	spawnArgs.GetBool( "start_off", "0", startedOff );
-	if ( startedOff )
+	bool startOff = spawnArgs.GetBool( "start_off", "0" );
+	if ( startOff )
 	{
+		Event_SetStartedOff();
 		Off();
 	}
 
@@ -754,8 +755,7 @@ void idLight::On( void ) {
 	}
 
 	aiBarks.Clear(); // grayman #2603 - let the AI comment again
-
-
+	
 //	grayman #2603 - let script change skins, plus set the vis stim.
 
 /*	const char *skinName;
@@ -772,33 +772,6 @@ void idLight::On( void ) {
  */	
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
-
-	// grayman #2905 - if the light started off, and it's a shouldBeOn > 0 light,
-	// clear startedOff, because once the light comes back on, it should no longer be ignored.
-	// Lights marked shouldBeOn = 0 can continue to be ignored.
-
-	if ( startedOff )
-	{
-		int shouldBeOn = spawnArgs.GetInt("shouldBeOn","0");
-		if ( shouldBeOn > 0 )
-		{
-			startedOff = false;
-		}
-		else // check shouldBeOn values on bindmasters, if any
-		{
-			idEntity* bindMaster = GetBindMaster();
-			while ( bindMaster != NULL )
-			{
-				shouldBeOn = bindMaster->spawnArgs.GetInt("shouldBeOn","0");
-				if ( shouldBeOn > 0 )
-				{
-					startedOff = false;
-					break;
-				}
-				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
-			}
-		}
-	}
 }
 
 /*
@@ -2049,7 +2022,29 @@ bool idLight::IsSmoking() // grayman #2603
 
 void idLight::Event_SetStartedOff() // grayman #2905 - the light was out at spawn time
 {
-	startedOff = true;
+	// Set startedOff to TRUE if this light and all of any bindmasters have shouldBeOn values == 0.
+
+	startedOff = true; // default assumes shouldBeOn == 0
+
+	int shouldBeOn = spawnArgs.GetInt("shouldBeOn","0");
+	if ( shouldBeOn > 0 )
+	{
+		startedOff = false;
+	}
+	else // check for bindmasters
+	{
+		idEntity* bindMaster = GetBindMaster();
+		while ( bindMaster != NULL )
+		{
+			shouldBeOn = bindMaster->spawnArgs.GetInt("shouldBeOn","0");
+			if ( shouldBeOn > 0 )
+			{
+				startedOff = false;
+				break;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+	}
 }
 
 bool idLight::GetStartedOff() // grayman #2905 - was the light out at spawn time?
