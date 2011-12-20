@@ -660,7 +660,10 @@ public:
 	idList<int>				musicSpeakers;
 
 	// A flag set by the player to fire a "final save" which must occur at the end of this frame
-	bool						m_TriggerFinalSave;
+	bool					m_TriggerFinalSave;
+
+	// grayman #2933 - store the start position selected during the mission briefing, if any
+	const char *			m_StartPosition;
 
 	// ---------------------- Public idGame Interface -------------------
 

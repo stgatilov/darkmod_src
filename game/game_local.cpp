@@ -273,6 +273,8 @@ void idGameLocal::Clear( void )
 
 	m_TriggerFinalSave = false;
 
+	m_StartPosition = ""; // grayman #2933
+
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
 
@@ -6309,10 +6311,28 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	float			dist;
 	bool			alone;
 
-	if ( !isMultiplayer || !spawnSpots.Num() ) {
-		spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
-		if ( !spot.ent ) {
-			Error( "No info_player_start on map.\n" );
+	if ( !isMultiplayer || !spawnSpots.Num() )
+	{
+		// grayman #2933 - Did the player specify
+		// a starting point in the briefing?
+
+		bool foundSpot = false;
+		if ( m_StartPosition != "" )
+		{
+			spot.ent = FindEntity( m_StartPosition );
+			if ( spot.ent != NULL )
+			{
+				foundSpot = true;
+			}
+		}
+		
+		if ( !foundSpot )
+		{
+			spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
+			if ( !spot.ent )
+			{
+				Error( "No info_player_start on map.\n" );
+			}
 		}
 		return spot.ent;
 	}
