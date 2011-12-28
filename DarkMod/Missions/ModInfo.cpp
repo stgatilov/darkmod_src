@@ -58,24 +58,22 @@ idStr CModInfo::GetModFolderSizeString()
 {
 	float size = static_cast<float>(GetModFolderSize());
 
-	// TODO: i18n
 	idStr str;
-
 	if (size < 1024)
 	{
-		str = va("%0.2f %s", size, gameLocal.m_I18N->Translate( "#str_02010" ));	// Bytes
+		str = va("%0.2f %s", size, gameLocal.m_I18N->Translate( "#str_02050" ));	// Bytes
 	}
 	else if (size < 1024*1024)
 	{
-		str = va("%0.0f %s", size/1024.0f, gameLocal.m_I18N->Translate( "#str_02014" ));	// kB
+		str = va("%0.0f %s", size/1024.0f, gameLocal.m_I18N->Translate( "#str_02054" ));	// kB
 	}
 	else if (size < 1024.0f*1024.0f*1024.0f)
 	{
-		str = va("%0.0f %s", size/(1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02015" ));	// MB
+		str = va("%0.0f %s", size/(1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02055" ));	// MB
 	}
 	else if (size < 1024.0f*1024.0f*1024.0f*1024.0f)
 	{
-		str = va("%0.2f %s", size/(1024.0f*1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02016" ));	// GB
+		str = va("%0.2f %s", size/(1024.0f*1024.0f*1024.0f), gameLocal.m_I18N->Translate( "#str_02056" ));	// GB
 	}
 
 	return str;

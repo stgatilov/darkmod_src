@@ -134,7 +134,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = gameLocal.m_I18N->Translate( "#str_02138" ); // "Mission Screenshot Download Failed"
+					msg.title = gameLocal.m_I18N->Translate( "#str_02002" ); // "Connection Error"
 					msg.message = gameLocal.m_I18N->Translate( "#str_02139" ); // "Failed to download the screenshot file."
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
@@ -210,7 +210,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			gameLocal.m_I18N->Translate("#str_04353") : // Campaign
 			gameLocal.m_I18N->Translate("#str_04352")); // Single Mission
 		gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
-		gui->SetStateString("av_mission_size", va("%0.1f %s", mods[missionIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02015" )));	// MB
+		gui->SetStateString("av_mission_size", va("%0.1f %s", mods[missionIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02055" )));	// MB
 
 		gui->SetStateBool("av_mission_details_visible", true);
 
@@ -481,7 +481,7 @@ void CDownloadMenu::UpdateModDetails(idUserInterface* gui)
 	gui->SetStateString("av_mission_author", mods[modIndex]->author);
 	gui->SetStateString("av_mission_release_date", mods[modIndex]->releaseDate);
 	gui->SetStateString("av_mission_version", va("%d", mods[modIndex]->version));
-	gui->SetStateString("av_mission_size", va("%0.1f %s", mods[modIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02015" )));	// MB
+	gui->SetStateString("av_mission_size", va("%0.1f %s", mods[modIndex]->sizeMB, gameLocal.m_I18N->Translate( "#str_02055" )));	// MB
 
 	gui->SetStateString("av_mission_description", mods[modIndex]->description);
 }
