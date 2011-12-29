@@ -1215,6 +1215,7 @@ public:
 	void					Event_SetEntityRelation (idEntity* entity, int relation);
 	void					Event_ChangeEntityRelation(idEntity* entity, int relationChange);
 
+	void					Event_IsLight(); // grayman #2905
 
 	int						team;
 
