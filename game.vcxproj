@@ -1,0 +1,700 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug with inlines and memory log|Win32">
+      <Configuration>Debug with inlines and memory log</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug with inlines|Win32">
+      <Configuration>Debug with inlines</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dedicated Debug with inlines|Win32">
+      <Configuration>Dedicated Debug with inlines</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dedicated Debug|Win32">
+      <Configuration>Dedicated Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dedicated Release|Win32">
+      <Configuration>Dedicated Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>Game</ProjectName>
+    <ProjectGuid>{49BEC5C6-B964-417A-851E-808886B57430}</ProjectGuid>
+    <RootNamespace>Game</RootNamespace>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccProvider>
+    </SccProvider>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_WithMemoryLog.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
+    <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEvent />
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PreBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="game\AbsenceMarker.cpp" />
+    <ClCompile Include="game\Actor.cpp" />
+    <ClCompile Include="game\AF.cpp" />
+    <ClCompile Include="game\AFEntity.cpp" />
+    <ClCompile Include="game\AIComm_Message.cpp" />
+    <ClCompile Include="game\AIVehicle.cpp" />
+    <ClCompile Include="game\ai\AAS.cpp" />
+    <ClCompile Include="game\ai\AAS_debug.cpp" />
+    <ClCompile Include="game\ai\AAS_pathing.cpp" />
+    <ClCompile Include="game\ai\AAS_routing.cpp" />
+    <ClCompile Include="game\ai\AI.cpp" />
+    <ClCompile Include="game\ai\AI_events.cpp" />
+    <ClCompile Include="game\ai\AI_pathing.cpp" />
+    <ClCompile Include="game\ai\AreaManager.cpp" />
+    <ClCompile Include="game\ai\CommunicationSubsystem.cpp" />
+    <ClCompile Include="game\ai\Conversation\Conversation.cpp" />
+    <ClCompile Include="game\ai\Conversation\ConversationCommand.cpp" />
+    <ClCompile Include="game\ai\Conversation\ConversationSystem.cpp" />
+    <ClCompile Include="game\ai\DoorInfo.cpp" />
+    <ClCompile Include="game\ai\EAS\EAS.cpp" />
+    <ClCompile Include="game\ai\EAS\RouteInfo.cpp" />
+    <ClCompile Include="game\ai\EAS\RouteNode.cpp" />
+    <ClCompile Include="game\ai\Memory.cpp" />
+    <ClCompile Include="game\ai\Mind.cpp" />
+    <ClCompile Include="game\ai\MovementSubsystem.cpp" />
+    <ClCompile Include="game\ai\MoveState.cpp" />
+    <ClCompile Include="game\ai\States\AgitatedSearchingState.cpp" />
+    <ClCompile Include="game\ai\States\AgitatedSearchingStateLanternBot.cpp" />
+    <ClCompile Include="game\ai\States\AlertIdleState.cpp" />
+    <ClCompile Include="game\ai\States\BlindedState.cpp" />
+    <ClCompile Include="game\ai\States\CombatState.cpp" />
+    <ClCompile Include="game\ai\States\ConversationState.cpp" />
+    <ClCompile Include="game\ai\States\DeadState.cpp" />
+    <ClCompile Include="game\ai\States\EmergeFromCoverState.cpp" />
+    <ClCompile Include="game\ai\States\ExamineRopeState.cpp" />
+    <ClCompile Include="game\ai\States\FailedKnockoutState.cpp" />
+    <ClCompile Include="game\ai\States\FleeDoneState.cpp" />
+    <ClCompile Include="game\ai\States\FleeState.cpp" />
+    <ClCompile Include="game\ai\States\IdleSleepState.cpp" />
+    <ClCompile Include="game\ai\States\IdleState.cpp" />
+    <ClCompile Include="game\ai\States\KnockedOutState.cpp" />
+    <ClCompile Include="game\ai\States\LostTrackOfEnemyState.cpp" />
+    <ClCompile Include="game\ai\States\ObservantState.cpp" />
+    <ClCompile Include="game\ai\States\PainState.cpp" />
+    <ClCompile Include="game\ai\States\SearchingState.cpp" />
+    <ClCompile Include="game\ai\States\State.cpp" />
+    <ClCompile Include="game\ai\States\StayInCoverState.cpp" />
+    <ClCompile Include="game\ai\States\SuspiciousState.cpp" />
+    <ClCompile Include="game\ai\States\SwitchOnLightState.cpp" />
+    <ClCompile Include="game\ai\States\TakeCoverState.cpp" />
+    <ClCompile Include="game\ai\States\UnreachableTargetState.cpp" />
+    <ClCompile Include="game\ai\Subsystem.cpp" />
+    <ClCompile Include="game\ai\Tasks\AnimalPatrolTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\ChaseEnemyRangedTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\ChaseEnemyTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\CombatTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\CommunicationTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\CommWaitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\FleeTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\FollowActorTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\GreetingBarkTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\HandleDoorTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\HandleElevatorTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\IdleAnimationTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\InteractionTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\InvestigateSpotTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\MeleeCombatTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\MoveToCoverTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\MoveToPositionTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathAnimTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathCornerTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathCycleAnimTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathHideTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathInteractTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathLookatTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathShowTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathSitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathSleepTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathTurnTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathWaitForTriggerTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathWaitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PlayAnimationTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\RandomHeadturnTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\RandomTurningTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\RangedCombatTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\RepeatedBarkTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\ResolveMovementBlockTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\ScriptTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\SingleBarkTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\ThrowObjectTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\WaitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\WanderInLocationTask.cpp" />
+    <ClCompile Include="game\ai\tdmAASFindEscape.cpp" />
+    <ClCompile Include="game\anim\Anim.cpp" />
+    <ClCompile Include="game\anim\Anim_Blend.cpp" />
+    <ClCompile Include="game\anim\Anim_Import.cpp" />
+    <ClCompile Include="game\anim\Anim_Testmodel.cpp" />
+    <ClCompile Include="game\BinaryFrobMover.cpp" />
+    <ClCompile Include="game\BloodMarker.cpp" />
+    <ClCompile Include="game\BrittleFracture.cpp" />
+    <ClCompile Include="game\ButtonStateTracker.cpp" />
+    <ClCompile Include="game\Camera.cpp" />
+    <ClCompile Include="game\CImage.cpp" />
+    <ClCompile Include="game\DarkmodAASHidingSpotFinder.cpp" />
+    <ClCompile Include="game\DarkModGlobals.cpp" />
+    <ClCompile Include="game\darkmodHidingSpotTree.cpp" />
+    <ClCompile Include="game\darkModLAS.cpp" />
+    <ClCompile Include="game\decltdm_matinfo.cpp" />
+    <ClCompile Include="game\declxdata.cpp" />
+    <ClCompile Include="game\DifficultyManager.cpp" />
+    <ClCompile Include="game\DifficultySettings.cpp" />
+    <ClCompile Include="game\DownloadMenu.cpp" />
+    <ClCompile Include="game\Emitter.cpp" />
+    <ClCompile Include="game\Entity.cpp" />
+    <ClCompile Include="game\EscapePointEvaluator.cpp" />
+    <ClCompile Include="game\EscapePointManager.cpp" />
+    <ClCompile Include="game\Force_Grab.cpp" />
+    <ClCompile Include="game\FrobButton.cpp" />
+    <ClCompile Include="game\FrobDoor.cpp" />
+    <ClCompile Include="game\FrobDoorHandle.cpp" />
+    <ClCompile Include="game\FrobHandle.cpp" />
+    <ClCompile Include="game\FrobLever.cpp" />
+    <ClCompile Include="game\FrobLock.cpp" />
+    <ClCompile Include="game\FrobLockHandle.cpp" />
+    <ClCompile Include="game\Func_Shooter.cpp" />
+    <ClCompile Include="game\FX.cpp" />
+    <ClCompile Include="game\GameEdit.cpp" />
+    <ClCompile Include="game\gamesys\Class.cpp" />
+    <ClCompile Include="game\gamesys\DebugGraph.cpp" />
+    <ClCompile Include="game\gamesys\Event.cpp" />
+    <ClCompile Include="game\gamesys\SaveGame.cpp" />
+    <ClCompile Include="game\gamesys\SysCmds.cpp" />
+    <ClCompile Include="game\gamesys\SysCvar.cpp" />
+    <ClCompile Include="game\gamesys\TypeInfo.cpp" />
+    <ClCompile Include="game\Game_local.cpp" />
+    <ClCompile Include="game\Game_network.cpp" />
+    <ClCompile Include="game\Grabber.cpp" />
+    <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
+    <ClCompile Include="game\Http\HttpConnection.cpp" />
+    <ClCompile Include="game\Http\HttpRequest.cpp" />
+    <ClCompile Include="game\I18N.cpp" />
+    <ClCompile Include="game\IK.cpp" />
+    <ClCompile Include="game\ImageMapManager.cpp" />
+    <ClCompile Include="game\IniFile.cpp" />
+    <ClCompile Include="game\Intersection.cpp" />
+    <ClCompile Include="game\Inventory\Category.cpp" />
+    <ClCompile Include="game\Inventory\Cursor.cpp" />
+    <ClCompile Include="game\Inventory\Inventory.cpp" />
+    <ClCompile Include="game\Inventory\InventoryItem.cpp" />
+    <ClCompile Include="game\Inventory\WeaponItem.cpp" />
+    <ClCompile Include="game\Item.cpp" />
+    <ClCompile Include="game\Light.cpp" />
+    <ClCompile Include="game\LightController.cpp" />
+    <ClCompile Include="game\LightGem.cpp" />
+    <ClCompile Include="game\Liquid.cpp" />
+    <ClCompile Include="game\MaterialConverter.cpp" />
+    <ClCompile Include="game\MeleeWeapon.cpp" />
+    <ClCompile Include="game\Misc.cpp" />
+    <ClCompile Include="game\Missions\Download.cpp" />
+    <ClCompile Include="game\Missions\DownloadManager.cpp" />
+    <ClCompile Include="game\Missions\MissionDB.cpp" />
+    <ClCompile Include="game\Missions\MissionManager.cpp" />
+    <ClCompile Include="game\Missions\ModInfo.cpp" />
+    <ClCompile Include="game\Missions\ModInfoDecl.cpp" />
+    <ClCompile Include="game\ModelGenerator.cpp" />
+    <ClCompile Include="game\ModMenu.cpp" />
+    <ClCompile Include="game\Moveable.cpp" />
+    <ClCompile Include="game\Mover.cpp" />
+    <ClCompile Include="game\MultiplayerGame.cpp" />
+    <ClCompile Include="game\MultiStateMover.cpp" />
+    <ClCompile Include="game\MultiStateMoverButton.cpp" />
+    <ClCompile Include="game\MultiStateMoverPosition.cpp" />
+    <ClCompile Include="game\Objectives\CampaignStatistics.cpp" />
+    <ClCompile Include="game\Objectives\MissionData.cpp" />
+    <ClCompile Include="game\Objectives\MissionStatistics.cpp" />
+    <ClCompile Include="game\Objectives\Objective.cpp" />
+    <ClCompile Include="game\Objectives\ObjectiveComponent.cpp" />
+    <ClCompile Include="game\Objectives\ObjectiveCondition.cpp" />
+    <ClCompile Include="game\Objectives\ObjectiveLocation.cpp" />
+    <ClCompile Include="game\OverlaySys.cpp" />
+    <ClCompile Include="game\physics\Clip.cpp" />
+    <ClCompile Include="game\physics\Force.cpp" />
+    <ClCompile Include="game\physics\Force_Constant.cpp" />
+    <ClCompile Include="game\physics\Force_Drag.cpp" />
+    <ClCompile Include="game\physics\Force_Field.cpp" />
+    <ClCompile Include="game\physics\Force_Push.cpp" />
+    <ClCompile Include="game\physics\Force_Spring.cpp" />
+    <ClCompile Include="game\physics\Physics.cpp" />
+    <ClCompile Include="game\physics\Physics_Actor.cpp" />
+    <ClCompile Include="game\physics\Physics_AF.cpp" />
+    <ClCompile Include="game\physics\Physics_Base.cpp" />
+    <ClCompile Include="game\physics\Physics_Liquid.cpp" />
+    <ClCompile Include="game\physics\Physics_Monster.cpp" />
+    <ClCompile Include="game\physics\Physics_Parametric.cpp" />
+    <ClCompile Include="game\physics\Physics_Player.cpp" />
+    <ClCompile Include="game\physics\Physics_RigidBody.cpp" />
+    <ClCompile Include="game\physics\Physics_Static.cpp" />
+    <ClCompile Include="game\physics\Physics_StaticMulti.cpp" />
+    <ClCompile Include="game\physics\Push.cpp" />
+    <ClCompile Include="game\PickableLock.cpp" />
+    <ClCompile Include="game\Player.cpp" />
+    <ClCompile Include="game\PlayerIcon.cpp" />
+    <ClCompile Include="game\PlayerView.cpp" />
+    <ClCompile Include="game\PositionWithinRangeFinder.cpp" />
+    <ClCompile Include="game\Projectile.cpp" />
+    <ClCompile Include="game\ProjectileResult.cpp" />
+    <ClCompile Include="game\pugixml\pugixml.cpp" />
+    <ClCompile Include="game\pugixml\pugixpath.cpp" />
+    <ClCompile Include="game\Pvs.cpp" />
+    <ClCompile Include="game\PVSToAASMapping.cpp" />
+    <ClCompile Include="game\randomizer\mersenne.cpp" />
+    <ClCompile Include="game\randomizer\mother.cpp" />
+    <ClCompile Include="game\randomizer\ranrotb.cpp" />
+    <ClCompile Include="game\randomizer\ranrotw.cpp" />
+    <ClCompile Include="game\randomizer\userintf.cpp" />
+    <ClCompile Include="game\RawVector.cpp" />
+    <ClCompile Include="game\Relations.cpp" />
+    <ClCompile Include="game\RevisionTracker.cpp" />
+    <ClCompile Include="game\script\Script_Compiler.cpp" />
+    <ClCompile Include="game\script\Script_Interpreter.cpp" />
+    <ClCompile Include="game\script\Script_Program.cpp" />
+    <ClCompile Include="game\script\Script_Thread.cpp" />
+    <ClCompile Include="game\SecurityCamera.cpp" />
+    <ClCompile Include="game\SEED.cpp" />
+    <ClCompile Include="game\Shop\LootRuleSet.cpp" />
+    <ClCompile Include="game\Shop\Shop.cpp" />
+    <ClCompile Include="game\Shop\ShopItem.cpp" />
+    <ClCompile Include="game\SmokeParticles.cpp" />
+    <ClCompile Include="game\SndProp.cpp" />
+    <ClCompile Include="game\SndPropLoader.cpp" />
+    <ClCompile Include="game\Sound.cpp" />
+    <ClCompile Include="game\sourcehook\sourcehook.cpp" />
+    <ClCompile Include="game\StaticMulti.cpp" />
+    <ClCompile Include="game\StimResponse\Response.cpp" />
+    <ClCompile Include="game\StimResponse\ResponseEffect.cpp" />
+    <ClCompile Include="game\StimResponse\Stim.cpp" />
+    <ClCompile Include="game\StimResponse\StimResponse.cpp" />
+    <ClCompile Include="game\StimResponse\StimResponseCollection.cpp" />
+    <ClCompile Include="game\StimResponse\StimResponseTimer.cpp" />
+    <ClCompile Include="game\Target.cpp" />
+    <ClCompile Include="game\TimerManager.cpp" />
+    <ClCompile Include="game\Trigger.cpp" />
+    <ClCompile Include="game\UserManager.cpp" />
+    <ClCompile Include="game\Weapon.cpp" />
+    <ClCompile Include="game\WorldSpawn.cpp" />
+    <ClCompile Include="game\ZipLoader\ZipLoader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="game\AbsenceMarker.h" />
+    <ClInclude Include="game\Actor.h" />
+    <ClInclude Include="game\AF.h" />
+    <ClInclude Include="game\AFEntity.h" />
+    <ClInclude Include="game\AIComm_Message.h" />
+    <ClInclude Include="game\AIVehicle.h" />
+    <ClInclude Include="game\ai\AAS.h" />
+    <ClInclude Include="game\ai\AAS_local.h" />
+    <ClInclude Include="game\ai\AI.h" />
+    <ClInclude Include="game\ai\AreaManager.h" />
+    <ClInclude Include="game\ai\CommunicationSubsystem.h" />
+    <ClInclude Include="game\ai\Conversation\Conversation.h" />
+    <ClInclude Include="game\ai\Conversation\ConversationCommand.h" />
+    <ClInclude Include="game\ai\Conversation\ConversationSystem.h" />
+    <ClInclude Include="game\ai\DoorInfo.h" />
+    <ClInclude Include="game\ai\EAS\ClusterInfo.h" />
+    <ClInclude Include="game\ai\EAS\EAS.h" />
+    <ClInclude Include="game\ai\EAS\ElevatorStationInfo.h" />
+    <ClInclude Include="game\ai\EAS\RouteInfo.h" />
+    <ClInclude Include="game\ai\EAS\RouteNode.h" />
+    <ClInclude Include="game\ai\Library.h" />
+    <ClInclude Include="game\ai\Memory.h" />
+    <ClInclude Include="game\ai\Mind.h" />
+    <ClInclude Include="game\ai\MovementSubsystem.h" />
+    <ClInclude Include="game\ai\MoveState.h" />
+    <ClInclude Include="game\ai\Queue.h" />
+    <ClInclude Include="game\ai\States\AgitatedSearchingState.h" />
+    <ClInclude Include="game\ai\States\AgitatedSearchingStateLanternBot.h" />
+    <ClInclude Include="game\ai\States\AlertIdleState.h" />
+    <ClInclude Include="game\ai\States\BlindedState.h" />
+    <ClInclude Include="game\ai\States\CombatState.h" />
+    <ClInclude Include="game\ai\States\ConversationState.h" />
+    <ClInclude Include="game\ai\States\DeadState.h" />
+    <ClInclude Include="game\ai\States\EmergeFromCoverState.h" />
+    <ClInclude Include="game\ai\States\ExamineRopeState.h" />
+    <ClInclude Include="game\ai\States\FailedKnockoutState.h" />
+    <ClInclude Include="game\ai\States\FleeDoneState.h" />
+    <ClInclude Include="game\ai\States\FleeState.h" />
+    <ClInclude Include="game\ai\States\IdleSleepState.h" />
+    <ClInclude Include="game\ai\States\IdleState.h" />
+    <ClInclude Include="game\ai\States\KnockedOutState.h" />
+    <ClInclude Include="game\ai\States\LostTrackOfEnemyState.h" />
+    <ClInclude Include="game\ai\States\ObservantState.h" />
+    <ClInclude Include="game\ai\States\PainState.h" />
+    <ClInclude Include="game\ai\States\SearchingState.h" />
+    <ClInclude Include="game\ai\States\State.h" />
+    <ClInclude Include="game\ai\States\StayInCoverState.h" />
+    <ClInclude Include="game\ai\States\SuspiciousState.h" />
+    <ClInclude Include="game\ai\States\SwitchOnLightState.h" />
+    <ClInclude Include="game\ai\States\TakeCoverState.h" />
+    <ClInclude Include="game\ai\States\UnreachableTargetState.h" />
+    <ClInclude Include="game\ai\Subsystem.h" />
+    <ClInclude Include="game\ai\Tasks\AnimalPatrolTask.h" />
+    <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h" />
+    <ClInclude Include="game\ai\Tasks\ChaseEnemyTask.h" />
+    <ClInclude Include="game\ai\Tasks\CombatTask.h" />
+    <ClInclude Include="game\ai\Tasks\CommunicationTask.h" />
+    <ClInclude Include="game\ai\Tasks\CommWaitTask.h" />
+    <ClInclude Include="game\ai\Tasks\FleeTask.h" />
+    <ClInclude Include="game\ai\Tasks\FollowActorTask.h" />
+    <ClInclude Include="game\ai\Tasks\GreetingBarkTask.h" />
+    <ClInclude Include="game\ai\Tasks\HandleDoorTask.h" />
+    <ClInclude Include="game\ai\Tasks\HandleElevatorTask.h" />
+    <ClInclude Include="game\ai\Tasks\IdleAnimationTask.h" />
+    <ClInclude Include="game\ai\Tasks\InteractionTask.h" />
+    <ClInclude Include="game\ai\Tasks\InvestigateSpotTask.h" />
+    <ClInclude Include="game\ai\Tasks\MeleeCombatTask.h" />
+    <ClInclude Include="game\ai\Tasks\MoveToCoverTask.h" />
+    <ClInclude Include="game\ai\Tasks\MoveToPositionTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathAnimTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathCornerTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathCycleAnimTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathHideTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathInteractTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathLookatTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathShowTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathSitTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathSleepTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathTurnTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathWaitForTriggerTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathWaitTask.h" />
+    <ClInclude Include="game\ai\Tasks\PlayAnimationTask.h" />
+    <ClInclude Include="game\ai\Tasks\RandomHeadturnTask.h" />
+    <ClInclude Include="game\ai\Tasks\RandomTurningTask.h" />
+    <ClInclude Include="game\ai\Tasks\RangedCombatTask.h" />
+    <ClInclude Include="game\ai\Tasks\RepeatedBarkTask.h" />
+    <ClInclude Include="game\ai\Tasks\ResolveMovementBlockTask.h" />
+    <ClInclude Include="game\ai\Tasks\ScriptTask.h" />
+    <ClInclude Include="game\ai\Tasks\SingleBarkTask.h" />
+    <ClInclude Include="game\ai\Tasks\Task.h" />
+    <ClInclude Include="game\ai\Tasks\ThrowObjectTask.h" />
+    <ClInclude Include="game\ai\Tasks\WaitTask.h" />
+    <ClInclude Include="game\ai\Tasks\WanderInLocationTask.h" />
+    <ClInclude Include="game\ai\tdmAASFindEscape.h" />
+    <ClInclude Include="game\anim\Anim.h" />
+    <ClInclude Include="game\anim\Anim_Testmodel.h" />
+    <ClInclude Include="game\BinaryFrobMover.h" />
+    <ClInclude Include="game\BloodMarker.h" />
+    <ClInclude Include="game\BrittleFracture.h" />
+    <ClInclude Include="game\ButtonStateTracker.h" />
+    <ClInclude Include="game\Camera.h" />
+    <ClInclude Include="game\CImage.h" />
+    <ClInclude Include="game\DarkmodAASHidingSpotFinder.h" />
+    <ClInclude Include="game\DarkModGlobals.h" />
+    <ClInclude Include="game\darkmodHidingSpotTree.h" />
+    <ClInclude Include="game\darkModLAS.h" />
+    <ClInclude Include="game\decltdm_matinfo.h" />
+    <ClInclude Include="game\declxdata.h" />
+    <ClInclude Include="game\DifficultyManager.h" />
+    <ClInclude Include="game\DifficultySettings.h" />
+    <ClInclude Include="game\DownloadMenu.h" />
+    <ClInclude Include="game\Emitter.h" />
+    <ClInclude Include="game\Entity.h" />
+    <ClInclude Include="game\EscapePointEvaluator.h" />
+    <ClInclude Include="game\EscapePointManager.h" />
+    <ClInclude Include="game\Force_Grab.h" />
+    <ClInclude Include="game\FrobButton.h" />
+    <ClInclude Include="game\FrobDoor.h" />
+    <ClInclude Include="game\FrobDoorHandle.h" />
+    <ClInclude Include="game\FrobHandle.h" />
+    <ClInclude Include="game\FrobLever.h" />
+    <ClInclude Include="game\FrobLock.h" />
+    <ClInclude Include="game\FrobLockHandle.h" />
+    <ClInclude Include="game\Func_Shooter.h" />
+    <ClInclude Include="game\FX.h" />
+    <ClInclude Include="game\Game.h" />
+    <ClInclude Include="game\GameEdit.h" />
+    <ClInclude Include="game\GamePlayTimer.h" />
+    <ClInclude Include="game\gamesys\Class.h" />
+    <ClInclude Include="game\gamesys\DebugGraph.h" />
+    <ClInclude Include="game\gamesys\Event.h" />
+    <ClInclude Include="game\gamesys\NoGameTypeInfo.h" />
+    <ClInclude Include="game\gamesys\SaveGame.h" />
+    <ClInclude Include="game\gamesys\SysCmds.h" />
+    <ClInclude Include="game\gamesys\SysCvar.h" />
+    <ClInclude Include="game\gamesys\TypeInfo.h" />
+    <ClInclude Include="game\Game_local.h" />
+    <ClInclude Include="game\Grabber.h" />
+    <ClInclude Include="game\HidingSpotSearchCollection.h" />
+    <ClInclude Include="game\Http\HttpConnection.h" />
+    <ClInclude Include="game\Http\HttpRequest.h" />
+    <ClInclude Include="game\I18N.h" />
+    <ClInclude Include="game\IK.h" />
+    <ClInclude Include="game\ImageMapManager.h" />
+    <ClInclude Include="game\IniFile.h" />
+    <ClInclude Include="game\Intersection.h" />
+    <ClInclude Include="game\Inventory\Category.h" />
+    <ClInclude Include="game\Inventory\Cursor.h" />
+    <ClInclude Include="game\Inventory\Inventory.h" />
+    <ClInclude Include="game\Inventory\InventoryItem.h" />
+    <ClInclude Include="game\Inventory\LootType.h" />
+    <ClInclude Include="game\Inventory\WeaponItem.h" />
+    <ClInclude Include="game\Item.h" />
+    <ClInclude Include="game\Light.h" />
+    <ClInclude Include="game\LightController.h" />
+    <ClInclude Include="game\LightGem.h" />
+    <ClInclude Include="game\Liquid.h" />
+    <ClInclude Include="game\MaterialConverter.h" />
+    <ClInclude Include="game\MatrixSq.h" />
+    <ClInclude Include="game\MeleeWeapon.h" />
+    <ClInclude Include="game\Misc.h" />
+    <ClInclude Include="game\Missions\Download.h" />
+    <ClInclude Include="game\Missions\DownloadManager.h" />
+    <ClInclude Include="game\Missions\MissionDB.h" />
+    <ClInclude Include="game\Missions\MissionManager.h" />
+    <ClInclude Include="game\Missions\ModInfo.h" />
+    <ClInclude Include="game\Missions\ModInfoDecl.h" />
+    <ClInclude Include="game\ModelGenerator.h" />
+    <ClInclude Include="game\ModMenu.h" />
+    <ClInclude Include="game\Moveable.h" />
+    <ClInclude Include="game\Mover.h" />
+    <ClInclude Include="game\MultiplayerGame.h" />
+    <ClInclude Include="game\MultiStateMover.h" />
+    <ClInclude Include="game\MultiStateMoverButton.h" />
+    <ClInclude Include="game\MultiStateMoverPosition.h" />
+    <ClInclude Include="game\Objectives\BoolParseNode.h" />
+    <ClInclude Include="game\Objectives\CampaignStatistics.h" />
+    <ClInclude Include="game\Objectives\EMissionResult.h" />
+    <ClInclude Include="game\Objectives\MissionData.h" />
+    <ClInclude Include="game\Objectives\MissionStatistics.h" />
+    <ClInclude Include="game\Objectives\Objective.h" />
+    <ClInclude Include="game\Objectives\ObjectiveComponent.h" />
+    <ClInclude Include="game\Objectives\ObjectiveCondition.h" />
+    <ClInclude Include="game\Objectives\ObjectiveLocation.h" />
+    <ClInclude Include="game\OverlaySys.h" />
+    <ClInclude Include="game\physics\Clip.h" />
+    <ClInclude Include="game\physics\Force.h" />
+    <ClInclude Include="game\physics\Force_Constant.h" />
+    <ClInclude Include="game\physics\Force_Drag.h" />
+    <ClInclude Include="game\physics\Force_Field.h" />
+    <ClInclude Include="game\physics\Force_Push.h" />
+    <ClInclude Include="game\physics\Force_Spring.h" />
+    <ClInclude Include="game\physics\Physics.h" />
+    <ClInclude Include="game\physics\Physics_Actor.h" />
+    <ClInclude Include="game\physics\Physics_AF.h" />
+    <ClInclude Include="game\physics\Physics_Base.h" />
+    <ClInclude Include="game\physics\Physics_Liquid.h" />
+    <ClInclude Include="game\physics\Physics_Monster.h" />
+    <ClInclude Include="game\physics\Physics_Parametric.h" />
+    <ClInclude Include="game\physics\Physics_Player.h" />
+    <ClInclude Include="game\physics\Physics_RigidBody.h" />
+    <ClInclude Include="game\physics\Physics_Static.h" />
+    <ClInclude Include="game\physics\Physics_StaticMulti.h" />
+    <ClInclude Include="game\physics\Push.h" />
+    <ClInclude Include="game\PickableLock.h" />
+    <ClInclude Include="game\Player.h" />
+    <ClInclude Include="game\PlayerIcon.h" />
+    <ClInclude Include="game\PlayerView.h" />
+    <ClInclude Include="game\PositionWithinRangeFinder.h" />
+    <ClInclude Include="game\Projectile.h" />
+    <ClInclude Include="game\ProjectileResult.h" />
+    <ClInclude Include="game\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="game\pugixml\pugixml.hpp" />
+    <ClInclude Include="game\Pvs.h" />
+    <ClInclude Include="game\PVSToAASMapping.h" />
+    <ClInclude Include="game\randomizer\rancombi.h" />
+    <ClInclude Include="game\randomizer\randomc.h" />
+    <ClInclude Include="game\randomizer\_lrotl.h" />
+    <ClInclude Include="game\RawVector.h" />
+    <ClInclude Include="game\Relations.h" />
+    <ClInclude Include="game\RevisionTracker.h" />
+    <ClInclude Include="game\script\Script_Compiler.h" />
+    <ClInclude Include="game\script\Script_Interpreter.h" />
+    <ClInclude Include="game\script\Script_Program.h" />
+    <ClInclude Include="game\script\Script_Thread.h" />
+    <ClInclude Include="game\SecurityCamera.h" />
+    <ClInclude Include="game\SEED.h" />
+    <ClInclude Include="game\Shop\LootRuleSet.h" />
+    <ClInclude Include="game\Shop\Shop.h" />
+    <ClInclude Include="game\Shop\ShopItem.h" />
+    <ClInclude Include="game\SmokeParticles.h" />
+    <ClInclude Include="game\SndProp.h" />
+    <ClInclude Include="game\SndPropLoader.h" />
+    <ClInclude Include="game\Sound.h" />
+    <ClInclude Include="game\sourcehook\FastDelegate.h" />
+    <ClInclude Include="game\sourcehook\sh_list.h" />
+    <ClInclude Include="game\sourcehook\sh_memfuncinfo.h" />
+    <ClInclude Include="game\sourcehook\sh_memory.h" />
+    <ClInclude Include="game\sourcehook\sh_stack.h" />
+    <ClInclude Include="game\sourcehook\sh_string.h" />
+    <ClInclude Include="game\sourcehook\sh_tinyhash.h" />
+    <ClInclude Include="game\sourcehook\sh_vector.h" />
+    <ClInclude Include="game\sourcehook\sourcehook.h" />
+    <ClInclude Include="game\sourcehook\sourcehook_impl.h" />
+    <ClInclude Include="game\StaticMulti.h" />
+    <ClInclude Include="game\StimResponse\Response.h" />
+    <ClInclude Include="game\StimResponse\ResponseEffect.h" />
+    <ClInclude Include="game\StimResponse\Stim.h" />
+    <ClInclude Include="game\StimResponse\StimResponse.h" />
+    <ClInclude Include="game\StimResponse\StimResponseCollection.h" />
+    <ClInclude Include="game\StimResponse\StimResponseTimer.h" />
+    <ClInclude Include="game\StimResponse\StimType.h" />
+    <ClInclude Include="game\Target.h" />
+    <ClInclude Include="game\TimerManager.h" />
+    <ClInclude Include="game\Trigger.h" />
+    <ClInclude Include="game\UserManager.h" />
+    <ClInclude Include="game\Weapon.h" />
+    <ClInclude Include="game\WorldSpawn.h" />
+    <ClInclude Include="game\ZipLoader\ZipLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="idlib.vcxproj">
+      <Project>{49bec5c6-b964-417a-851e-808886b57400}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="typeinfo.vcxproj">
+      <Project>{6ea6406f-3e65-47d9-8246-d6660a81606f}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="game\game.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

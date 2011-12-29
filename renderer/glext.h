@@ -1,14 +1,3 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
-
-// Copyright (C) 2004 Id Software, Inc.
-//
 #ifndef __glext_h_
 #define __glext_h_
 
@@ -5928,4 +5917,3 @@ typedef void (APIENTRY * PFNGLDEPTHBOUNDSEXTPROC) (GLclampd zmin, GLclampd zmax)
 #endif
 
 #endif
-

@@ -3,7 +3,7 @@
 # TTimo <ttimo@idsoftware.com>
 # http://scons.sourceforge.net
 
-import sys, os, time, commands, re, pickle, StringIO, commands, pdb, zipfile, string
+import sys, os, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, string
 import SCons
 
 sys.path.append( 'sys/scons' )
@@ -15,15 +15,13 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'MACOSX_TARGET_ARCH']
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT' ]
 
 # global build mode ------------------------------
 
 g_sdk = not os.path.exists( 'sys/scons/SConscript.core' )
 
 # ------------------------------------------------
-
-EnsureSConsVersion( 0, 98 )
 
 # help -------------------------------------------
 
@@ -52,8 +50,6 @@ BUILD (default debug)
 	debug-all: no optimisations, debugging symbols
 	debug: -O -g
 	release: all optimisations, including CPU target etc.
-	profile: gcc only: compile with "-pg" to build a profiling build for use with gprof
-		 (consider using oprofile instead of gprof, tho)
 
 BUILD_ROOT (default 'build')
 	change the build root directory
@@ -69,6 +65,9 @@ BASEFLAGS (default '')
 
 NOCONF (default 0, not saved)
 	ignore site configuration and use defaults + command line only
+	
+SILENT ( default 0, saved )
+	hide the compiler output, unless error
 """
 
 if ( not g_sdk ):
@@ -125,16 +124,17 @@ SDK (default 0, not saved)
 
 NOCURL (default 0)
 	set to 1 to disable usage of libcurl and http/ftp downloads feature
-
-MACOSX_TARGET_ARCH (default 'i386')
-	The target architecture when building in Mac OS X.
-	valid values: 'ppc' or 'i386'. 
-
 """
 
 Help( help_string )
 
 # end help ---------------------------------------
+
+# sanity -----------------------------------------
+
+EnsureSConsVersion( 0, 96 )
+
+# end sanity -------------------------------------
 
 # system detection -------------------------------
 
@@ -149,11 +149,7 @@ else:
 		cpu = 'ppc'
 	else:
 		cpu = 'cpu'
-
-if sys.platform == 'darwin':
-	g_os = 'MacOSX'
-else:
-	g_os = 'Linux'
+g_os = 'Linux'
 
 # end system detection ---------------------------
 
@@ -182,7 +178,7 @@ NOCONF = '0'
 NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
-MACOSX_TARGET_ARCH = 'i386'
+SILENT = '0'
 
 # end default settings ---------------------------
 
@@ -246,7 +242,6 @@ if ( g_sdk or SDK != '0' ):
 g_build = BUILD_ROOT + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
-Decider('MD5-timestamp')
 
 if ( GL_HARDLINK != '0' ):
 	g_build += '-hardlink'
@@ -264,7 +259,7 @@ LINK = CXX
 # common flags
 # BASE + CORE + OPT for engine
 # BASE + GAME + OPT for game
-# _noopt versions of the environments are built without the OPT
+# _noopt versions of the environements are built without the OPT
 
 BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
@@ -281,45 +276,23 @@ BASECPPFLAGS.append( BASEFLAGS )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
-
-# Don't throw warnings for unknown pragmas (used by VC++)
-BASECPPFLAGS.append('-Wno-unknown-pragmas')
-BASECPPFLAGS.append('-Wno-non-virtual-dtor')
-
+BASECPPFLAGS.append( '-Wno-unknown-pragmas' )
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )
-
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
+# gcc 4.0
+BASECPPFLAGS.append( '-fpermissive' )
 
-if ( g_os == 'Linux' or g_os == 'MacOSX' ):
+if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
-	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
+	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
-#	BASELINKFLAGS.append( '-Wl,-z,defs' )
 
-	if g_os == 'Linux':
-		# help 64 bit machines to find the compatibility 32bit libraries
-		BASELINKFLAGS.append( '-L/lib32' )
-		BASELINKFLAGS.append( '-L/usr/lib32' )
-		BASELINKFLAGS.append( '-L/usr/lib32/gcc/i486-linux-gnu/4.2/' )
-	
-		# Add the __linux__ define
-		BASECPPFLAGS.append('-D__linux__')
-	else:
-		# Mac OS X
-		BASECPPFLAGS.append('-DMACOS_X')
-
-		if MACOSX_TARGET_ARCH == 'i386':
-			# Perform an Intel build
-			BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
-			BASELINKFLAGS.append(['-arch', 'i386'])
-		elif MACOSX_TARGET_ARCH == 'ppc':
-			# Perform a PowerPC build
-			BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
-			BASELINKFLAGS.append(['-arch', 'ppc'])
+if ( g_sdk or SDK != '0' ):
+	BASECPPFLAGS.append( '-D_D3SDK' )
 
 if ( BUILD == 'debug-all' ):
 	OPTCPPFLAGS = [ '-g', '-D_DEBUG' ]
@@ -329,31 +302,14 @@ elif ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
-elif ( BUILD == 'profile' ):
-	print 'Building a profile build.'
-	OPTCPPFLAGS = [ '-pg', '-O3', '-ffast-math', '-fno-unsafe-math-optimizations' ]
-
-	if g_os == 'Linux':
-		OPTCPPFLAGS.append( ['-march=pentium3'] )
-
-	if ( ID_MCHECK == '0' ):
-		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
 	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
-	#   on x86 have to set it explicitly
+	#   on x86 have to set it explicitely
 	# -finline-functions: implicit at -O3
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-
-	# Flags applicable to both Linux and MacOSX
-	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
-	
-	# greebo: Add the NDEBUG define to void-ify the assert() expressions
-	OPTCPPFLAGS.append( ['-DNDEBUG'] )
-
-	if g_os == 'Linux':
-		OPTCPPFLAGS.append( ['-march=pentium3'] )
-
+	# greebo: Took out -Winline, this is spamming real hard
+	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
 else:
@@ -388,12 +344,6 @@ g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/include/devil')
 g_base_env.Append(CPPPATH = '#/')
 
-# greebo: Help finding the openGL headers in OS X, for Leopard I had these in X11's include folder 
-if g_os == 'MacOSX':
-	g_base_env.Append(CPPPATH = '/Developer/SDKs/MacOSX10.6.sdk/usr/X11/include/')
-
-g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
-
 g_env = g_base_env.Clone()
 
 g_env['CPPFLAGS'] += OPTCPPFLAGS
@@ -404,7 +354,6 @@ g_env_noopt = g_base_env.Clone()
 g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
 
 g_game_env = g_base_env.Clone()
-
 g_game_env['CPPFLAGS'] += OPTCPPFLAGS
 g_game_env['CPPFLAGS'] += GAMECPPFLAGS
 
@@ -415,8 +364,11 @@ g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 
 if ( int(JOBS) > 1 ):
 	print 'Using buffered process output'
-	scons_utils.SetupBufferedOutput( g_env )
-	scons_utils.SetupBufferedOutput( g_game_env )
+	silent = False
+	if ( SILENT == '1' ):
+		silent = True
+	scons_utils.SetupBufferedOutput( g_env, silent )
+	scons_utils.SetupBufferedOutput( g_game_env, silent )
 
 # mark the globals
 
@@ -466,9 +418,9 @@ if ( TARGET_CORE == '1' ):
 		local_dedicated = 0
 		Export( 'GLOBALS ' + GLOBALS )
 		
-		BuildDir( g_build + '/core/glimp', '.', duplicate = 1 )
+		VariantDir( g_build + '/core/glimp', '.', duplicate = 1 )
 		SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
-		BuildDir( g_build + '/core', '.', duplicate = 0 )
+		VariantDir( g_build + '/core', '.', duplicate = 0 )
 		idlib_objects = SConscript( g_build + '/core/sys/scons/SConscript.idlib' )
 		Export( 'GLOBALS ' + GLOBALS ) # update idlib_objects
 		doom = SConscript( g_build + '/core/sys/scons/SConscript.core' )
@@ -479,16 +431,16 @@ if ( TARGET_CORE == '1' ):
 		local_dedicated = 1
 		Export( 'GLOBALS ' + GLOBALS )
 		
-		BuildDir( g_build + '/dedicated/glimp', '.', duplicate = 1 )
+		VariantDir( g_build + '/dedicated/glimp', '.', duplicate = 1 )
 		SConscript( g_build + '/dedicated/glimp/sys/scons/SConscript.gl' )
-		BuildDir( g_build + '/dedicated', '.', duplicate = 0 )
+		VariantDir( g_build + '/dedicated', '.', duplicate = 0 )
 		idlib_objects = SConscript( g_build + '/dedicated/sys/scons/SConscript.idlib' )
 		Export( 'GLOBALS ' + GLOBALS )
 		doomded = SConscript( g_build + '/dedicated/sys/scons/SConscript.core' )
 
 		InstallAs( '#doomded.' + cpu, doomded )
 
-if ( TARGET_GAME == '1'):
+if ( TARGET_GAME == '1' ):
 	local_gamedll = 1
 	local_demo = 0
 	local_dedicated = 0
@@ -500,42 +452,25 @@ if ( TARGET_GAME == '1'):
 		# clear the build directory to be safe
 		g_env.PreBuildSDK( [ g_build + '/game' ] )
 		dupe = 1
-
-	BuildDir( g_build + '/game', '.', duplicate = dupe )
-	
-	if g_os == 'MacOSX':
-		game_binary_name = '#game%s-base.dylib' % MACOSX_TARGET_ARCH
-	else:
-		# Linux
-		game_binary_name = '#game%s-base.so' % cpu
-
+	VariantDir( g_build + '/game', '.', duplicate = dupe )
 	idlib_objects = SConscript( g_build + '/game/sys/scons/SConscript.idlib' )
-	
-	Export( 'GLOBALS ' + GLOBALS )
-	game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
-
-	game_base = InstallAs( game_binary_name, game )
-
-	# Game PAK name
-	if ( BUILD_GAMEPAK == '1' ):
-		if g_os == 'MacOSX':
-			game_pak = '#tdm_game03.pk4'
-		else:
-			game_pak = '#tdm_game02.pk4'
-
-		Command( game_pak, [ game_base, game ], Action( g_env.BuildGamePak ) )
-
-	# End TARGET_GAME
+	if ( TARGET_GAME == '1' ):
+		Export( 'GLOBALS ' + GLOBALS )
+		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
+		game_base = InstallAs( '#game%s-base.so' % cpu, game )
+		if ( BUILD_GAMEPAK == '1' ):
+			Command( '#game01-base.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
+	# NOTE: no D3XP atm. add a TARGET_MONO_D3XP
 	local_gamedll = 0
 	local_dedicated = 0
 	local_demo = 0
 	local_idlibpic = 0
 	Export( 'GLOBALS ' + GLOBALS )
-	BuildDir( g_build + '/mono/glimp', '.', duplicate = 1 )
+	VariantDir( g_build + '/mono/glimp', '.', duplicate = 1 )
 	SConscript( g_build + '/mono/glimp/sys/scons/SConscript.gl' )
-	BuildDir( g_build + '/mono', '.', duplicate = 0 )
+	VariantDir( g_build + '/mono', '.', duplicate = 0 )
 	idlib_objects = SConscript( g_build + '/mono/sys/scons/SConscript.idlib' )
 	game_objects = SConscript( g_build + '/mono/sys/scons/SConscript.game' )
 	Export( 'GLOBALS ' + GLOBALS )
@@ -543,6 +478,7 @@ if ( TARGET_MONO == '1' ):
 	InstallAs( '#doom-mon.' + cpu, doom_mono )
 
 if ( TARGET_DEMO == '1' ):
+	# NOTE: no D3XP atm. add a TARGET_DEMO_D3XP
 	local_demo = 1
 	local_dedicated = 0
 	local_gamedll = 1
@@ -550,9 +486,9 @@ if ( TARGET_DEMO == '1' ):
 	local_curl = 0
 	curl_lib = []
 	Export( 'GLOBALS ' + GLOBALS )
-	BuildDir( g_build + '/demo/glimp', '.', duplicate = 1 )
+	VariantDir( g_build + '/demo/glimp', '.', duplicate = 1 )
 	SConscript( g_build + '/demo/glimp/sys/scons/SConscript.gl' )
-	BuildDir( g_build + '/demo', '.', duplicate = 0 )
+	VariantDir( g_build + '/demo', '.', duplicate = 0 )
 	idlib_objects = SConscript( g_build + '/demo/sys/scons/SConscript.idlib' )
 	Export( 'GLOBALS ' + GLOBALS )
 	doom_demo = SConscript( g_build + '/demo/sys/scons/SConscript.core' )
@@ -561,7 +497,7 @@ if ( TARGET_DEMO == '1' ):
 	
 	local_idlibpic = 1
 	Export( 'GLOBALS ' + GLOBALS )
-	BuildDir( g_build + '/demo/game', '.', duplicate = 0 )
+	VariantDir( g_build + '/demo/game', '.', duplicate = 0 )
 	idlib_objects = SConscript( g_build + '/demo/game/sys/scons/SConscript.idlib' )
 	Export( 'GLOBALS ' + GLOBALS )
 	game_demo = SConscript( g_build + '/demo/game/sys/scons/SConscript.game' )
@@ -570,6 +506,10 @@ if ( TARGET_DEMO == '1' ):
 
 if ( SETUP != '0' ):
 	brandelf = Program( 'brandelf', 'sys/linux/setup/brandelf.c' )
+	if ( TARGET_CORE == '1' and TARGET_GAME == '1' ):
+		setup = Command( 'setup', [ brandelf, doom, doomded, game, d3xp ], Action( g_env.BuildSetup ) )
+	else:
+		print 'Skipping main setup: TARGET_CORE == 0 or TARGET_GAME == 0'
 	if ( TARGET_DEMO == '1' ):
 		setup_demo = Command( 'setup-demo', [ brandelf, doom_demo, game_demo ], Action( g_env.BuildSetup ) )
 		# if building two setups, make sure JOBS doesn't parallelize them
@@ -582,6 +522,6 @@ if ( SETUP != '0' ):
 
 if ( SDK != '0' ):
 	setup_sdk = Command( 'sdk', [ ], Action( g_env.BuildSDK ) )
-	g_env.Depends( setup_sdk, [ game ] )
+	g_env.Depends( setup_sdk, [ game, d3xp ] )
 
 # end targets ------------------------------------

@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}</ProjectGuid>
+    <RootNamespace>libtdm_update</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/Build/lib/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/Build/$(ProjectName)/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/Build/lib/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/Build/$(ProjectName)/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;USE_LIBSVN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;USE_LIBSVN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Http\Download.cpp" />
+    <ClCompile Include="Http\DownloadManager.cpp" />
+    <ClCompile Include="Http\HttpConnection.cpp" />
+    <ClCompile Include="Http\HttpRequest.cpp" />
+    <ClCompile Include="Http\MirrorDownload.cpp" />
+    <ClCompile Include="Zip\Zip.cpp" />
+    <ClCompile Include="Updater\UpdateController.cpp" />
+    <ClCompile Include="Updater\Updater.cpp" />
+    <ClCompile Include="Packager\Packager.cpp" />
+    <ClCompile Include="File.cpp" />
+    <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="SvnClient.cpp" />
+    <ClCompile Include="SvnClientImpl.cpp" />
+    <ClCompile Include="TraceLog.cpp" />
+    <ClCompile Include="Util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Http\Download.h" />
+    <ClInclude Include="Http\DownloadManager.h" />
+    <ClInclude Include="Http\HttpConnection.h" />
+    <ClInclude Include="Http\HttpRequest.h" />
+    <ClInclude Include="Http\MirrorDownload.h" />
+    <ClInclude Include="Http\MirrorList.h" />
+    <ClInclude Include="Zip\Zip.h" />
+    <ClInclude Include="Updater\DifferentialUpdateInfo.h" />
+    <ClInclude Include="Updater\ProgressHandler.h" />
+    <ClInclude Include="Updater\UpdateController.h" />
+    <ClInclude Include="Updater\Updater.h" />
+    <ClInclude Include="Updater\UpdaterOptions.h" />
+    <ClInclude Include="Updater\UpdateStep.h" />
+    <ClInclude Include="Updater\UpdateView.h" />
+    <ClInclude Include="Packager\Packager.h" />
+    <ClInclude Include="Packager\PackagerOptions.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="CRC.h" />
+    <ClInclude Include="ExceptionSafeThread.h" />
+    <ClInclude Include="File.h" />
+    <ClInclude Include="IniFile.h" />
+    <ClInclude Include="PackageInstructions.h" />
+    <ClInclude Include="Pk4Mappings.h" />
+    <ClInclude Include="ProgramOptions.h" />
+    <ClInclude Include="ReleaseFileset.h" />
+    <ClInclude Include="ReleaseManifest.h" />
+    <ClInclude Include="ReleaseVersions.h" />
+    <ClInclude Include="SvnClient.h" />
+    <ClInclude Include="SvnClientImpl.h" />
+    <ClInclude Include="TraceLog.h" />
+    <ClInclude Include="UpdatePackage.h" />
+    <ClInclude Include="UpdatePackageInfo.h" />
+    <ClInclude Include="Util.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,29 +1,10 @@
 # -*- mode: python -*-
-# coding=utf-8
-
-#***************************************************************************
-#*
-#* PROJECT: The Dark Mod
-#* $Source$
-#* $Revision$
-#* $Date$
-#* $Author$
-#*
-#* $Log$
-#* Revision 1.3  2005/11/11 22:50:09  sparhawk
-#* SDK 1.3 Merge
-#*
-#* Revision 1.2  2004/11/28 19:23:10  sparhawk
-#* Added header and Id Copyright.
-#*
-#*
-#***************************************************************************
-
-import sys, os, string, time, commands, re, pickle, StringIO, commands, pdb, zipfile, tempfile
+import sys, os, string, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, tempfile
 import SCons
 
 # need an Environment and a matching buffered_spawn API .. encapsulate
 class idBuffering:
+	silent = False
 
 	def buffered_spawn( self, sh, escape, cmd, args, env ):
 		stderr = StringIO.StringIO()
@@ -41,8 +22,9 @@ class idBuffering:
 			print 'OSError ignored on command: %s' % command_string
 			retval = 0
 		print command_string
-		sys.stdout.write( stdout.getvalue() )
-		sys.stderr.write( stderr.getvalue() )
+		if ( retval != 0 or not self.silent ):
+			sys.stdout.write( stdout.getvalue() )
+			sys.stderr.write( stderr.getvalue() )
 		return retval		
 
 class idSetupBase:
@@ -140,6 +122,7 @@ def checkLDD( target, source, env ):
 	if ( have_undef ):
 		print output
 		print "ERROR: undefined symbols"
+		os.system('rm %s' % target[0])
 		sys.exit(1)
 
 def SharedLibrarySafe( env, target, source ):
@@ -158,31 +141,19 @@ class idGamePaks( idSetupBase ):
 	def BuildGamePak( self, target = None, source = None, env = None ):
 		# NOTE: ew should have done with zipfile module
 		temp_dir = tempfile.mkdtemp( prefix = 'gamepak' )
-
-		if sys.platform == 'darwin':
-			# Mac OS X has OS number 1
-			os_id = '1'
-			target_game_file_name = 'game.dylib'
-		else:
-			# Linux has OS number 2
-			os_id = '2'
-			target_game_file_name = 'gamex86.so'
-
-		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, target_game_file_name ) ) )
-		# Removed by Crispy: don't strip the .so; debugging symbols are useful
-		#self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, target_game_file_name ) )
-
-		self.SimpleCommand( 'echo %s > %s' % ( os_id, os.path.join( temp_dir, 'binary.conf' ) ) )
-
-		self.SimpleCommand( 'cd %s ; zip %s %s binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ), target_game_file_name ) )
+		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, 'gamex86.so' ) ) )
+		self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, 'gamex86.so' ) )
+		self.SimpleCommand( 'echo 2 > %s' % ( os.path.join( temp_dir, 'binary.conf' ) ) )
+		self.SimpleCommand( 'cd %s ; zip %s gamex86.so binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ) ) )
 		self.SimpleCommand( 'rm -r %s' % temp_dir )
 		return None
 
 # --------------------------------------------------------------------
 
 # get a clean error output when running multiple jobs
-def SetupBufferedOutput( env ):
+def SetupBufferedOutput( env, silent ):
 	buf = idBuffering()
+	buf.silent = silent
 	buf.env = env
 	env['SPAWN'] = buf.buffered_spawn
 

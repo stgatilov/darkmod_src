@@ -1,22 +1,24 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Revision$
- * $Date$
- * $Author$
- *
- ***************************************************************************/
-
-// Copyright (C) 2004 Id Software, Inc.
-//
+/*****************************************************************************
+                    The Dark Mod GPL Source Code
+ 
+ This file is part of the The Dark Mod Source Code, originally based 
+ on the Doom 3 GPL Source Code as published in 2011.
+ 
+ The Dark Mod Source Code is free software: you can redistribute it 
+ and/or modify it under the terms of the GNU General Public License as 
+ published by the Free Software Foundation, either version 3 of the License, 
+ or (at your option) any later version. For details, see LICENSE.TXT.
+ 
+ Project: The Dark Mod (http://www.thedarkmod.com/)
+ 
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
+ 
+******************************************************************************/
 
 #ifndef __SOUND__
 #define __SOUND__
-
-#ifdef __linux__
-#include "framework/declmanager.h"
-#include "renderer/cinematic.h"
-#endif
 
 /*
 ===============================================================================
@@ -46,14 +48,14 @@ static const int	SSF_NO_FLICKER =		BIT(8);	// always return 1.0 for volume queri
 static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice in a row
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
-struct soundShaderParms_t {
+typedef struct {
 	float					minDistance;
 	float					maxDistance;
 	float					volume;					// in dB, unfortunately.  Negative values get quieter
 	float					shakes;
 	int						soundShaderFlags;		// SSF_* bit flags
 	int						soundClass;				// for global fading of sounds
-};
+} soundShaderParms_t;
 
 
 const int		SOUND_MAX_LIST_WAVS		= 32;
@@ -183,8 +185,6 @@ option existing simultaniously with a live game.
 ===============================================================================
 */
 
-class idDemoFile;
-
 class idSoundWorld {
 public:
 	virtual					~idSoundWorld( void ) {}
@@ -270,8 +270,6 @@ typedef struct {
 	int						current44kHzTime;
 } soundDecoderInfo_t;
 
-class idRenderWorld;
-struct MemInfo_t;
 
 class idSoundSystem {
 public:

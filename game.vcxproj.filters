@@ -1,0 +1,1238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="AI">
+      <UniqueIdentifier>{108fbdc3-00d4-4eba-8472-d04fcb45c4a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameSys">
+      <UniqueIdentifier>{e082d659-8d8e-49f5-ba1c-c12c9bb124d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Physics">
+      <UniqueIdentifier>{5c609656-a903-420e-9f5a-95dc0091f307}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Script">
+      <UniqueIdentifier>{bf06073d-3e0f-4e0a-9acf-43c6e35a9af7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Tasks">
+      <UniqueIdentifier>{6dddfc49-4250-4d4d-8afc-d680ac207aaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\States">
+      <UniqueIdentifier>{676b45b0-bae1-40ec-8817-7cd24459a7e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\EAS">
+      <UniqueIdentifier>{196735aa-adbe-4993-b5a2-4cefa0c636d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Conversation">
+      <UniqueIdentifier>{ad7de883-accf-42d3-900d-77cd24ee0486}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Http">
+      <UniqueIdentifier>{794c4ee6-8dcb-48dc-9cd6-d55662e55374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inventory">
+      <UniqueIdentifier>{1a59af1a-408f-40aa-8f50-e5694e59fd05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Missions">
+      <UniqueIdentifier>{20350817-ee98-43f0-ba78-54231c8a55ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objectives">
+      <UniqueIdentifier>{96bec94a-1e7a-43e5-a9b9-df4a2ae4f76c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{8d28a139-1856-4077-a734-36bbbb7b4cb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="randomizer">
+      <UniqueIdentifier>{6c33ed16-7d0d-497b-ae02-75d700056200}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shop">
+      <UniqueIdentifier>{690e9078-025b-40a2-80b0-78b02000b24b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sourcehook">
+      <UniqueIdentifier>{d93297dd-dff7-49a7-8b6f-605020816b18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="StimResponse">
+      <UniqueIdentifier>{c90266c6-9d15-4d7f-90fc-ef4110afd506}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ZipLoader">
+      <UniqueIdentifier>{725808e1-e9e4-4915-b000-538e57816d78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Anim">
+      <UniqueIdentifier>{a614826b-3fce-443f-a6e9-f7b14c71125e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="game\ai\Tasks\ChaseEnemyTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\CombatTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\CommunicationTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\CommWaitTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\FleeTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\FollowActorTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\GreetingBarkTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\HandleDoorTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\HandleElevatorTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\IdleAnimationTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\InteractionTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\InvestigateSpotTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\MeleeCombatTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\MoveToCoverTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\MoveToPositionTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathAnimTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathCornerTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathCycleAnimTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathHideTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathInteractTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathLookatTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathShowTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathSitTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathSleepTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathTurnTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathWaitForTriggerTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathWaitTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PlayAnimationTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\RandomHeadturnTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\RandomTurningTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\RangedCombatTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\RepeatedBarkTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\ResolveMovementBlockTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\ScriptTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\SingleBarkTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\ThrowObjectTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\WaitTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\WanderInLocationTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\AnimalPatrolTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\ChaseEnemyRangedTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\AlertIdleState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\BlindedState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\CombatState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\ConversationState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\DeadState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\EmergeFromCoverState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\ExamineRopeState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\FailedKnockoutState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\FleeDoneState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\FleeState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\IdleSleepState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\IdleState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\KnockedOutState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\LostTrackOfEnemyState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\ObservantState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\PainState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\SearchingState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\State.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\StayInCoverState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\SuspiciousState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\SwitchOnLightState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\TakeCoverState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\UnreachableTargetState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\AgitatedSearchingState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\AgitatedSearchingStateLanternBot.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\EAS\EAS.cpp">
+      <Filter>AI\EAS</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\EAS\RouteInfo.cpp">
+      <Filter>AI\EAS</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\EAS\RouteNode.cpp">
+      <Filter>AI\EAS</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Conversation\ConversationCommand.cpp">
+      <Filter>AI\Conversation</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Conversation\ConversationSystem.cpp">
+      <Filter>AI\Conversation</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Conversation\Conversation.cpp">
+      <Filter>AI\Conversation</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Http\HttpRequest.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Http\HttpConnection.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\Cursor.cpp">
+      <Filter>Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\Inventory.cpp">
+      <Filter>Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\WeaponItem.cpp">
+      <Filter>Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\Category.cpp">
+      <Filter>Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\MissionManager.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\ModInfo.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\ModInfoDecl.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\Download.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\DownloadManager.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Missions\MissionDB.cpp">
+      <Filter>Missions</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ZipLoader\ZipLoader.cpp">
+      <Filter>ZipLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\Stim.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\StimResponse.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\StimResponseCollection.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\StimResponseTimer.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\Response.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StimResponse\ResponseEffect.cpp">
+      <Filter>StimResponse</Filter>
+    </ClCompile>
+    <ClCompile Include="game\sourcehook\sourcehook.cpp">
+      <Filter>sourcehook</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Shop\Shop.cpp">
+      <Filter>Shop</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Shop\ShopItem.cpp">
+      <Filter>Shop</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Shop\LootRuleSet.cpp">
+      <Filter>Shop</Filter>
+    </ClCompile>
+    <ClCompile Include="game\randomizer\mother.cpp">
+      <Filter>randomizer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\randomizer\ranrotb.cpp">
+      <Filter>randomizer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\randomizer\ranrotw.cpp">
+      <Filter>randomizer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\randomizer\userintf.cpp">
+      <Filter>randomizer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\randomizer\mersenne.cpp">
+      <Filter>randomizer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\pugixml\pugixpath.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="game\pugixml\pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\MissionData.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\MissionStatistics.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\Objective.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\ObjectiveComponent.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\ObjectiveCondition.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\ObjectiveLocation.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Objectives\CampaignStatistics.cpp">
+      <Filter>Objectives</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Inventory\InventoryItem.cpp">
+      <Filter>Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="game\SecurityCamera.cpp" />
+    <ClCompile Include="game\SEED.cpp" />
+    <ClCompile Include="game\SmokeParticles.cpp" />
+    <ClCompile Include="game\SndProp.cpp" />
+    <ClCompile Include="game\SndPropLoader.cpp" />
+    <ClCompile Include="game\Sound.cpp" />
+    <ClCompile Include="game\StaticMulti.cpp" />
+    <ClCompile Include="game\Target.cpp" />
+    <ClCompile Include="game\TimerManager.cpp" />
+    <ClCompile Include="game\Trigger.cpp" />
+    <ClCompile Include="game\UserManager.cpp" />
+    <ClCompile Include="game\Weapon.cpp" />
+    <ClCompile Include="game\WorldSpawn.cpp" />
+    <ClCompile Include="game\AbsenceMarker.cpp" />
+    <ClCompile Include="game\Actor.cpp" />
+    <ClCompile Include="game\AF.cpp" />
+    <ClCompile Include="game\AFEntity.cpp" />
+    <ClCompile Include="game\AIComm_Message.cpp" />
+    <ClCompile Include="game\AIVehicle.cpp" />
+    <ClCompile Include="game\BinaryFrobMover.cpp" />
+    <ClCompile Include="game\BloodMarker.cpp" />
+    <ClCompile Include="game\BrittleFracture.cpp" />
+    <ClCompile Include="game\ButtonStateTracker.cpp" />
+    <ClCompile Include="game\Camera.cpp" />
+    <ClCompile Include="game\CImage.cpp" />
+    <ClCompile Include="game\DarkmodAASHidingSpotFinder.cpp" />
+    <ClCompile Include="game\DarkModGlobals.cpp" />
+    <ClCompile Include="game\darkmodHidingSpotTree.cpp" />
+    <ClCompile Include="game\darkModLAS.cpp" />
+    <ClCompile Include="game\decltdm_matinfo.cpp" />
+    <ClCompile Include="game\declxdata.cpp" />
+    <ClCompile Include="game\DifficultyManager.cpp" />
+    <ClCompile Include="game\DifficultySettings.cpp" />
+    <ClCompile Include="game\DownloadMenu.cpp" />
+    <ClCompile Include="game\Emitter.cpp" />
+    <ClCompile Include="game\Entity.cpp" />
+    <ClCompile Include="game\EscapePointEvaluator.cpp" />
+    <ClCompile Include="game\EscapePointManager.cpp" />
+    <ClCompile Include="game\Force_Grab.cpp" />
+    <ClCompile Include="game\FrobButton.cpp" />
+    <ClCompile Include="game\FrobDoor.cpp" />
+    <ClCompile Include="game\FrobDoorHandle.cpp" />
+    <ClCompile Include="game\FrobHandle.cpp" />
+    <ClCompile Include="game\FrobLever.cpp" />
+    <ClCompile Include="game\FrobLock.cpp" />
+    <ClCompile Include="game\FrobLockHandle.cpp" />
+    <ClCompile Include="game\Func_Shooter.cpp" />
+    <ClCompile Include="game\FX.cpp" />
+    <ClCompile Include="game\Game_local.cpp" />
+    <ClCompile Include="game\Game_network.cpp" />
+    <ClCompile Include="game\GameEdit.cpp" />
+    <ClCompile Include="game\Grabber.cpp" />
+    <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
+    <ClCompile Include="game\I18N.cpp" />
+    <ClCompile Include="game\IK.cpp" />
+    <ClCompile Include="game\ImageMapManager.cpp" />
+    <ClCompile Include="game\IniFile.cpp" />
+    <ClCompile Include="game\Intersection.cpp" />
+    <ClCompile Include="game\Item.cpp" />
+    <ClCompile Include="game\Light.cpp" />
+    <ClCompile Include="game\LightController.cpp" />
+    <ClCompile Include="game\LightGem.cpp" />
+    <ClCompile Include="game\Liquid.cpp" />
+    <ClCompile Include="game\MaterialConverter.cpp" />
+    <ClCompile Include="game\MeleeWeapon.cpp" />
+    <ClCompile Include="game\Misc.cpp" />
+    <ClCompile Include="game\ModelGenerator.cpp" />
+    <ClCompile Include="game\ModMenu.cpp" />
+    <ClCompile Include="game\Moveable.cpp" />
+    <ClCompile Include="game\Mover.cpp" />
+    <ClCompile Include="game\MultiplayerGame.cpp" />
+    <ClCompile Include="game\MultiStateMover.cpp" />
+    <ClCompile Include="game\MultiStateMoverButton.cpp" />
+    <ClCompile Include="game\MultiStateMoverPosition.cpp" />
+    <ClCompile Include="game\OverlaySys.cpp" />
+    <ClCompile Include="game\PickableLock.cpp" />
+    <ClCompile Include="game\Player.cpp" />
+    <ClCompile Include="game\PlayerIcon.cpp" />
+    <ClCompile Include="game\PlayerView.cpp" />
+    <ClCompile Include="game\PositionWithinRangeFinder.cpp" />
+    <ClCompile Include="game\Projectile.cpp" />
+    <ClCompile Include="game\ProjectileResult.cpp" />
+    <ClCompile Include="game\Pvs.cpp" />
+    <ClCompile Include="game\PVSToAASMapping.cpp" />
+    <ClCompile Include="game\RawVector.cpp" />
+    <ClCompile Include="game\Relations.cpp" />
+    <ClCompile Include="game\RevisionTracker.cpp" />
+    <ClCompile Include="game\ai\AAS_debug.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS_pathing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS_routing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI_events.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AI_pathing.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AreaManager.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\CommunicationSubsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\DoorInfo.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Memory.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Mind.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\MovementSubsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\MoveState.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Subsystem.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\tdmAASFindEscape.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\AAS.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Blend.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Import.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim_Testmodel.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\anim\Anim.cpp">
+      <Filter>Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Event.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SaveGame.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SysCmds.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\SysCvar.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\TypeInfo.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Class.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\DebugGraph.cpp">
+      <Filter>GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Constant.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Drag.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Field.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Push.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Force_Spring.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Actor.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_AF.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Base.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Liquid.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Monster.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Parametric.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Player.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_RigidBody.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_Static.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Physics_StaticMulti.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Push.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\physics\Clip.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Interpreter.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Program.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Thread.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+    <ClCompile Include="game\script\Script_Compiler.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\ChaseEnemyTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\CombatTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\CommunicationTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\CommWaitTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\FleeTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\FollowActorTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\GreetingBarkTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\HandleDoorTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\HandleElevatorTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\IdleAnimationTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\InteractionTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\InvestigateSpotTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\MeleeCombatTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\MoveToCoverTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\MoveToPositionTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathAnimTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathCornerTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathCycleAnimTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathHideTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathInteractTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathLookatTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathShowTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathSitTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathSleepTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathTurnTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathWaitForTriggerTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathWaitTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PlayAnimationTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\RandomHeadturnTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\RandomTurningTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\RangedCombatTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\RepeatedBarkTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\ResolveMovementBlockTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\ScriptTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\SingleBarkTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\Task.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\ThrowObjectTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\WaitTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\WanderInLocationTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\AnimalPatrolTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\AlertIdleState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\BlindedState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\CombatState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\ConversationState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\DeadState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\EmergeFromCoverState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\ExamineRopeState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\FailedKnockoutState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\FleeDoneState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\FleeState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\IdleSleepState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\IdleState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\KnockedOutState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\LostTrackOfEnemyState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\ObservantState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\PainState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\SearchingState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\State.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\StayInCoverState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\SuspiciousState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\SwitchOnLightState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\TakeCoverState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\UnreachableTargetState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\AgitatedSearchingState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\AgitatedSearchingStateLanternBot.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\EAS\EAS.h">
+      <Filter>AI\EAS</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\EAS\ElevatorStationInfo.h">
+      <Filter>AI\EAS</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\EAS\RouteInfo.h">
+      <Filter>AI\EAS</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\EAS\RouteNode.h">
+      <Filter>AI\EAS</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\EAS\ClusterInfo.h">
+      <Filter>AI\EAS</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Conversation\ConversationCommand.h">
+      <Filter>AI\Conversation</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Conversation\ConversationSystem.h">
+      <Filter>AI\Conversation</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Conversation\Conversation.h">
+      <Filter>AI\Conversation</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Http\HttpConnection.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Http\HttpRequest.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\Cursor.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\Inventory.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\LootType.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\WeaponItem.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\Category.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\MissionDB.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\MissionManager.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\ModInfo.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\ModInfoDecl.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\Download.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Missions\DownloadManager.h">
+      <Filter>Missions</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ZipLoader\ZipLoader.h">
+      <Filter>ZipLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\Stim.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\StimResponse.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\StimResponseCollection.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\StimResponseTimer.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\StimType.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\Response.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StimResponse\ResponseEffect.h">
+      <Filter>StimResponse</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_memory.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_stack.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_string.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_tinyhash.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_vector.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sourcehook.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sourcehook_impl.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\FastDelegate.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_list.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\sourcehook\sh_memfuncinfo.h">
+      <Filter>sourcehook</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Shop\Shop.h">
+      <Filter>Shop</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Shop\ShopItem.h">
+      <Filter>Shop</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Shop\LootRuleSet.h">
+      <Filter>Shop</Filter>
+    </ClInclude>
+    <ClInclude Include="game\randomizer\rancombi.h">
+      <Filter>randomizer</Filter>
+    </ClInclude>
+    <ClInclude Include="game\randomizer\randomc.h">
+      <Filter>randomizer</Filter>
+    </ClInclude>
+    <ClInclude Include="game\randomizer\_lrotl.h">
+      <Filter>randomizer</Filter>
+    </ClInclude>
+    <ClInclude Include="game\pugixml\pugixml.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="game\pugixml\pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\MissionData.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\MissionStatistics.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\Objective.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\ObjectiveComponent.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\ObjectiveCondition.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\ObjectiveLocation.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\BoolParseNode.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\CampaignStatistics.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Objectives\EMissionResult.h">
+      <Filter>Objectives</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Inventory\InventoryItem.h">
+      <Filter>Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="game\RevisionTracker.h" />
+    <ClInclude Include="game\SecurityCamera.h" />
+    <ClInclude Include="game\SEED.h" />
+    <ClInclude Include="game\SmokeParticles.h" />
+    <ClInclude Include="game\SndProp.h" />
+    <ClInclude Include="game\SndPropLoader.h" />
+    <ClInclude Include="game\Sound.h" />
+    <ClInclude Include="game\StaticMulti.h" />
+    <ClInclude Include="game\Target.h" />
+    <ClInclude Include="game\TimerManager.h" />
+    <ClInclude Include="game\Trigger.h" />
+    <ClInclude Include="game\UserManager.h" />
+    <ClInclude Include="game\Weapon.h" />
+    <ClInclude Include="game\WorldSpawn.h" />
+    <ClInclude Include="game\AbsenceMarker.h" />
+    <ClInclude Include="game\Actor.h" />
+    <ClInclude Include="game\AF.h" />
+    <ClInclude Include="game\AFEntity.h" />
+    <ClInclude Include="game\AIComm_Message.h" />
+    <ClInclude Include="game\AIVehicle.h" />
+    <ClInclude Include="game\BinaryFrobMover.h" />
+    <ClInclude Include="game\BloodMarker.h" />
+    <ClInclude Include="game\BrittleFracture.h" />
+    <ClInclude Include="game\ButtonStateTracker.h" />
+    <ClInclude Include="game\Camera.h" />
+    <ClInclude Include="game\CImage.h" />
+    <ClInclude Include="game\DarkmodAASHidingSpotFinder.h" />
+    <ClInclude Include="game\DarkModGlobals.h" />
+    <ClInclude Include="game\darkmodHidingSpotTree.h" />
+    <ClInclude Include="game\darkModLAS.h" />
+    <ClInclude Include="game\decltdm_matinfo.h" />
+    <ClInclude Include="game\declxdata.h" />
+    <ClInclude Include="game\DifficultyManager.h" />
+    <ClInclude Include="game\DifficultySettings.h" />
+    <ClInclude Include="game\DownloadMenu.h" />
+    <ClInclude Include="game\Emitter.h" />
+    <ClInclude Include="game\Entity.h" />
+    <ClInclude Include="game\EscapePointEvaluator.h" />
+    <ClInclude Include="game\EscapePointManager.h" />
+    <ClInclude Include="game\Force_Grab.h" />
+    <ClInclude Include="game\FrobButton.h" />
+    <ClInclude Include="game\FrobDoor.h" />
+    <ClInclude Include="game\FrobDoorHandle.h" />
+    <ClInclude Include="game\FrobHandle.h" />
+    <ClInclude Include="game\FrobLever.h" />
+    <ClInclude Include="game\FrobLock.h" />
+    <ClInclude Include="game\FrobLockHandle.h" />
+    <ClInclude Include="game\Func_Shooter.h" />
+    <ClInclude Include="game\FX.h" />
+    <ClInclude Include="game\Game.h" />
+    <ClInclude Include="game\Game_local.h" />
+    <ClInclude Include="game\GameEdit.h" />
+    <ClInclude Include="game\GamePlayTimer.h" />
+    <ClInclude Include="game\Grabber.h" />
+    <ClInclude Include="game\HidingSpotSearchCollection.h" />
+    <ClInclude Include="game\I18N.h" />
+    <ClInclude Include="game\IK.h" />
+    <ClInclude Include="game\ImageMapManager.h" />
+    <ClInclude Include="game\IniFile.h" />
+    <ClInclude Include="game\Intersection.h" />
+    <ClInclude Include="game\Item.h" />
+    <ClInclude Include="game\Light.h" />
+    <ClInclude Include="game\LightController.h" />
+    <ClInclude Include="game\LightGem.h" />
+    <ClInclude Include="game\Liquid.h" />
+    <ClInclude Include="game\MaterialConverter.h" />
+    <ClInclude Include="game\MatrixSq.h" />
+    <ClInclude Include="game\MeleeWeapon.h" />
+    <ClInclude Include="game\Misc.h" />
+    <ClInclude Include="game\ModelGenerator.h" />
+    <ClInclude Include="game\ModMenu.h" />
+    <ClInclude Include="game\Moveable.h" />
+    <ClInclude Include="game\Mover.h" />
+    <ClInclude Include="game\MultiplayerGame.h" />
+    <ClInclude Include="game\MultiStateMover.h" />
+    <ClInclude Include="game\MultiStateMoverButton.h" />
+    <ClInclude Include="game\MultiStateMoverPosition.h" />
+    <ClInclude Include="game\OverlaySys.h" />
+    <ClInclude Include="game\PickableLock.h" />
+    <ClInclude Include="game\Player.h" />
+    <ClInclude Include="game\PlayerIcon.h" />
+    <ClInclude Include="game\PlayerView.h" />
+    <ClInclude Include="game\PositionWithinRangeFinder.h" />
+    <ClInclude Include="game\Projectile.h" />
+    <ClInclude Include="game\ProjectileResult.h" />
+    <ClInclude Include="game\Pvs.h" />
+    <ClInclude Include="game\PVSToAASMapping.h" />
+    <ClInclude Include="game\RawVector.h" />
+    <ClInclude Include="game\Relations.h" />
+    <ClInclude Include="game\ai\AAS_local.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AI.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AreaManager.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\CommunicationSubsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\DoorInfo.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Library.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Memory.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Mind.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\MovementSubsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\MoveState.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Queue.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Subsystem.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\tdmAASFindEscape.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\AAS.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="game\anim\Anim_Testmodel.h">
+      <Filter>Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="game\anim\Anim.h">
+      <Filter>Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Event.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\NoGameTypeInfo.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SaveGame.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SysCmds.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\SysCvar.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\TypeInfo.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Class.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\DebugGraph.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Constant.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Drag.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Field.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Push.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Force_Spring.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Actor.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_AF.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Base.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Liquid.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Monster.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Parametric.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Player.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_RigidBody.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_Static.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Physics_StaticMulti.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Push.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\physics\Clip.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Interpreter.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Program.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Thread.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Compiler.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="game\game.def" />
+  </ItemGroup>
+</Project>

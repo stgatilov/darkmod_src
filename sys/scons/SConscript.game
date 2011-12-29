@@ -5,23 +5,24 @@
 # TTimo <ttimo@idsoftware.com>
 # http://scons.sourceforge.net
 
-#***************************************************************************
-#*
-#* PROJECT: The Dark Mod
-#* $Source$
-#* $Revision$
-#* $Date$
-#* $Author$
-#*
-#* $Log$
-#* Revision 1.3  2005/11/11 22:50:09  sparhawk
-#* SDK 1.3 Merge
-#*
-#* Revision 1.2  2004/11/28 19:23:11  sparhawk
-#* Added header and Id Copyright.
-#*
-#*
-#***************************************************************************
+#*****************************************************************************
+#                    The Dark Mod GPL Source Code
+# 
+# This file is part of the The Dark Mod Source Code, originally based 
+# on the Doom 3 GPL Source Code as published in 2011.
+# 
+# The Dark Mod Source Code is free software: you can redistribute it 
+# and/or modify it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation, either version 3 of the License, 
+# or (at your option) any later version. For details, see LICENSE.TXT.
+# 
+# Project: The Dark Mod (http://www.thedarkmod.com/)
+# 
+# $Revision$ (Revision of last commit) 
+# $Date$ (Date of last commit)
+# $Author$ (Author of last commit)
+# 
+#*****************************************************************************
 
 import sys, os
 import scons_utils
@@ -31,79 +32,80 @@ Import( GLOBALS )
 
 # Master list of source files to compile
 game_string = ' \
-	af.cpp \
-	afentity.cpp \
-	actor.cpp \
-	camera.cpp \
-	entity.cpp \
-	emitter.cpp \
-	brittlefracture.cpp \
-	fx.cpp \
-	gameedit.cpp \
-	game_local.cpp \
-	game_network.cpp \
-	item.cpp \
-	ik.cpp \
-	light.cpp \
-	misc.cpp \
-	mover.cpp \
-	moveable.cpp \
-	multiplayergame.cpp \
-	player.cpp \
-	playericon.cpp \
-	playerview.cpp \
-	projectile.cpp \
-	pvs.cpp \
-	securitycamera.cpp \
-	smokeparticles.cpp \
-	sound.cpp \
-	target.cpp \
-	trigger.cpp \
-	weapon.cpp \
-	worldspawn.cpp \
-	ai/aas.cpp \
-	ai/aas_debug.cpp \
-	ai/aas_pathing.cpp \
-	ai/aas_routing.cpp \
-	ai/ai.cpp \
-	ai/ai_events.cpp \
-	ai/ai_pathing.cpp \
+	Actor.cpp \
+	AF.cpp \
+	AFEntity.cpp \
+	BrittleFracture.cpp \
+	Camera.cpp \
+	Entity.cpp \
+	Emitter.cpp \
+	FX.cpp \
+	Game_local.cpp \
+	Game_network.cpp \
+	GameEdit.cpp \
+	IK.cpp \
+	Item.cpp \
+	Light.cpp \
+	Misc.cpp \
+	Moveable.cpp \
+	Mover.cpp \
+	MultiplayerGame.cpp \
+	Player.cpp \
+	PlayerIcon.cpp \
+	PlayerView.cpp \
+	Projectile.cpp \
+	Pvs.cpp \
+	SecurityCamera.cpp \
+	SmokeParticles.cpp \
+	Sound.cpp \
+	Target.cpp \
+	Trigger.cpp \
+	Weapon.cpp \
+	WorldSpawn.cpp \
+	ai/AAS.cpp \
+	ai/AAS_debug.cpp \
+	ai/AAS_pathing.cpp \
+	ai/AAS_routing.cpp \
+	ai/AI.cpp \
+	ai/AI_events.cpp \
+	ai/AI_pathing.cpp \
 	ai/MoveState.cpp \
 	ai/tdmAASFindEscape.cpp \
-	gamesys/debuggraph.cpp \
-	gamesys/class.cpp \
-	gamesys/event.cpp \
-	gamesys/savegame.cpp \
-	gamesys/syscmds.cpp \
-	gamesys/syscvar.cpp \
-	gamesys/typeinfo.cpp \
-	anim/anim.cpp \
-	anim/anim_blend.cpp \
-	anim/anim_import.cpp \
-	anim/anim_testmodel.cpp \
-	script/script_compiler.cpp \
-	script/script_interpreter.cpp \
-	script/script_program.cpp \
-	script/script_thread.cpp \
-	physics/clip.cpp \
-	physics/force.cpp \
-	physics/force_constant.cpp \
-	physics/force_drag.cpp \
-	physics/force_push.cpp \
-	physics/force_field.cpp \
-	physics/force_spring.cpp \
-	physics/physics.cpp \
-	physics/physics_af.cpp \
-	physics/physics_actor.cpp \
-	physics/physics_base.cpp \
-	physics/physics_monster.cpp \
-	physics/physics_liquid.cpp \
-	physics/physics_parametric.cpp \
-	physics/physics_player.cpp \
-	physics/physics_rigidbody.cpp \
-	physics/physics_static.cpp \
-	physics/physics_staticmulti.cpp \
-	physics/push.cpp'
+	anim/Anim.cpp \
+	anim/Anim_Blend.cpp \
+	anim/Anim_Import.cpp \
+	anim/Anim_Testmodel.cpp \
+	gamesys/Class.cpp \
+	gamesys/DebugGraph.cpp \
+	gamesys/Event.cpp \
+	gamesys/SaveGame.cpp \
+	gamesys/SysCmds.cpp \
+	gamesys/SysCvar.cpp \
+	gamesys/TypeInfo.cpp \
+	physics/Clip.cpp \
+	physics/Force.cpp \
+	physics/Force_Constant.cpp \
+	physics/Force_Drag.cpp \
+	physics/Force_Field.cpp \
+	physics/Force_Push.cpp \
+	physics/Force_Spring.cpp \
+	physics/Physics.cpp \
+	physics/Physics_Actor.cpp \
+	physics/Physics_AF.cpp \
+	physics/Physics_Base.cpp \
+	physics/Physics_Liquid.cpp \
+	physics/Physics_Monster.cpp \
+	physics/Physics_Parametric.cpp \
+	physics/Physics_Player.cpp \
+	physics/Physics_RigidBody.cpp \
+	physics/Physics_Static.cpp \
+	physics/Physics_StaticMulti.cpp \
+	physics/Push.cpp \
+	script/Script_Compiler.cpp \
+	script/Script_Interpreter.cpp \
+	script/Script_Program.cpp \
+	script/Script_Thread.cpp'
+
 
 game_list = scons_utils.BuildList( 'game', game_string )
 
@@ -130,8 +132,8 @@ DifficultySettings.cpp \
 DownloadMenu.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
-force_grab.cpp \
-func_shooter.cpp \
+Force_Grab.cpp \
+Func_Shooter.cpp \
 FrobDoor.cpp \
 FrobButton.cpp \
 FrobDoorHandle.cpp \
@@ -144,29 +146,29 @@ HidingSpotSearchCollection.cpp \
 AbsenceMarker.cpp \
 Intersection.cpp \
 IniFile.cpp \
-lightgem.cpp \
-liquid.cpp \
+LightGem.cpp \
+Liquid.cpp \
 MaterialConverter.cpp \
 MeleeWeapon.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
 MultiStateMoverButton.cpp \
 MultiStateMoverPosition.cpp \
-overlaysys.cpp \
+OverlaySys.cpp \
 PositionWithinRangeFinder.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 PickableLock.cpp \
 Relations.cpp \
 RevisionTracker.cpp \
-sndProp.cpp \
-sndPropLoader.cpp \
+SndProp.cpp \
+SndPropLoader.cpp \
 TimerManager.cpp \
 UserManager.cpp \
 Inventory/Category.cpp \
 Inventory/Cursor.cpp \
 Inventory/Inventory.cpp \
-Inventory/Item.cpp \
+Inventory/InventoryItem.cpp \
 Inventory/WeaponItem.cpp \
 Missions/Download.cpp \
 Missions/DownloadManager.cpp \
@@ -200,85 +202,85 @@ StimResponse/Stim.cpp \
 StimResponse/StimResponse.cpp \
 StimResponse/StimResponseCollection.cpp \
 StimResponse/StimResponseTimer.cpp \
-AI/AreaManager.cpp \
-AI/CommunicationSubsystem.cpp \
-AI/DoorInfo.cpp \
-AI/Mind.cpp \
-AI/Memory.cpp \
-AI/MovementSubsystem.cpp \
-AI/Subsystem.cpp \
-AI/Conversation/ConversationSystem.cpp \
-AI/Conversation/Conversation.cpp \
-AI/Conversation/ConversationCommand.cpp \
-AI/EAS/EAS.cpp \
-AI/EAS/RouteInfo.cpp \
-AI/EAS/RouteNode.cpp \
-AI/States/AgitatedSearchingState.cpp \
-AI/States/AlertIdleState.cpp \
-AI/States/BlindedState.cpp \
-AI/States/CombatState.cpp \
-AI/States/AgitatedSearchingStateLanternBot.cpp \
-AI/States/ConversationState.cpp \
-AI/States/DeadState.cpp \
-AI/States/EmergeFromCoverState.cpp \
-AI/States/FailedKnockoutState.cpp \
-AI/States/FleeState.cpp \
-AI/States/FleeDoneState.cpp \
-AI/States/IdleSleepState.cpp \
-AI/States/IdleState.cpp \
-AI/States/KnockedOutState.cpp \
-AI/States/LostTrackOfEnemyState.cpp \
-AI/States/ObservantState.cpp \
-AI/States/PainState.cpp \
-AI/States/SearchingState.cpp \
-AI/States/State.cpp \
-AI/States/StayInCoverState.cpp \
-AI/States/SuspiciousState.cpp \
-AI/States/SwitchOnLightState.cpp \
-AI/States/ExamineRopeState.cpp \
-AI/States/TakeCoverState.cpp \
-AI/States/UnreachableTargetState.cpp \
-AI/Tasks/ChaseEnemyRangedTask.cpp \
-AI/Tasks/ChaseEnemyTask.cpp \
-AI/Tasks/CombatTask.cpp \
-AI/Tasks/CommunicationTask.cpp \
-AI/Tasks/CommWaitTask.cpp \
-AI/Tasks/FleeTask.cpp \
-AI/Tasks/FollowActorTask.cpp \
-AI/Tasks/GreetingBarkTask.cpp \
-AI/Tasks/HandleDoorTask.cpp \
-AI/Tasks/HandleElevatorTask.cpp \
-AI/Tasks/IdleAnimationTask.cpp \
-AI/Tasks/InteractionTask.cpp \
-AI/Tasks/InvestigateSpotTask.cpp \
-AI/Tasks/MeleeCombatTask.cpp \
-AI/Tasks/MoveToCoverTask.cpp \
-AI/Tasks/MoveToPositionTask.cpp \
-AI/Tasks/PathAnimTask.cpp \
-AI/Tasks/PathCornerTask.cpp \
-AI/Tasks/PathCycleAnimTask.cpp \
-AI/Tasks/PathHideTask.cpp \
-AI/Tasks/PathInteractTask.cpp \
-AI/Tasks/PathLookatTask.cpp \
-AI/Tasks/PathShowTask.cpp \
-AI/Tasks/PathSitTask.cpp \
-AI/Tasks/PathSleepTask.cpp \
-AI/Tasks/PathTask.cpp \
-AI/Tasks/PathTurnTask.cpp \
-AI/Tasks/PathWaitForTriggerTask.cpp \
-AI/Tasks/PathWaitTask.cpp \
-AI/Tasks/PlayAnimationTask.cpp \
-AI/Tasks/AnimalPatrolTask.cpp \
-AI/Tasks/RandomHeadturnTask.cpp \
-AI/Tasks/RandomTurningTask.cpp \
-AI/Tasks/RangedCombatTask.cpp \
-AI/Tasks/RepeatedBarkTask.cpp \
-AI/Tasks/ResolveMovementBlockTask.cpp \
-AI/Tasks/SingleBarkTask.cpp \
-AI/Tasks/ScriptTask.cpp \
-AI/Tasks/ThrowObjectTask.cpp \
-AI/Tasks/WaitTask.cpp \
-AI/Tasks/WanderInLocationTask.cpp \
+ai/AreaManager.cpp \
+ai/CommunicationSubsystem.cpp \
+ai/DoorInfo.cpp \
+ai/Mind.cpp \
+ai/Memory.cpp \
+ai/MovementSubsystem.cpp \
+ai/Subsystem.cpp \
+ai/Conversation/ConversationSystem.cpp \
+ai/Conversation/Conversation.cpp \
+ai/Conversation/ConversationCommand.cpp \
+ai/EAS/EAS.cpp \
+ai/EAS/RouteInfo.cpp \
+ai/EAS/RouteNode.cpp \
+ai/States/AgitatedSearchingState.cpp \
+ai/States/AlertIdleState.cpp \
+ai/States/BlindedState.cpp \
+ai/States/CombatState.cpp \
+ai/States/AgitatedSearchingStateLanternBot.cpp \
+ai/States/ConversationState.cpp \
+ai/States/DeadState.cpp \
+ai/States/EmergeFromCoverState.cpp \
+ai/States/FailedKnockoutState.cpp \
+ai/States/FleeState.cpp \
+ai/States/FleeDoneState.cpp \
+ai/States/IdleSleepState.cpp \
+ai/States/IdleState.cpp \
+ai/States/KnockedOutState.cpp \
+ai/States/LostTrackOfEnemyState.cpp \
+ai/States/ObservantState.cpp \
+ai/States/PainState.cpp \
+ai/States/SearchingState.cpp \
+ai/States/State.cpp \
+ai/States/StayInCoverState.cpp \
+ai/States/SuspiciousState.cpp \
+ai/States/SwitchOnLightState.cpp \
+ai/States/ExamineRopeState.cpp \
+ai/States/TakeCoverState.cpp \
+ai/States/UnreachableTargetState.cpp \
+ai/Tasks/ChaseEnemyRangedTask.cpp \
+ai/Tasks/ChaseEnemyTask.cpp \
+ai/Tasks/CombatTask.cpp \
+ai/Tasks/CommunicationTask.cpp \
+ai/Tasks/CommWaitTask.cpp \
+ai/Tasks/FleeTask.cpp \
+ai/Tasks/FollowActorTask.cpp \
+ai/Tasks/GreetingBarkTask.cpp \
+ai/Tasks/HandleDoorTask.cpp \
+ai/Tasks/HandleElevatorTask.cpp \
+ai/Tasks/IdleAnimationTask.cpp \
+ai/Tasks/InteractionTask.cpp \
+ai/Tasks/InvestigateSpotTask.cpp \
+ai/Tasks/MeleeCombatTask.cpp \
+ai/Tasks/MoveToCoverTask.cpp \
+ai/Tasks/MoveToPositionTask.cpp \
+ai/Tasks/PathAnimTask.cpp \
+ai/Tasks/PathCornerTask.cpp \
+ai/Tasks/PathCycleAnimTask.cpp \
+ai/Tasks/PathHideTask.cpp \
+ai/Tasks/PathInteractTask.cpp \
+ai/Tasks/PathLookatTask.cpp \
+ai/Tasks/PathShowTask.cpp \
+ai/Tasks/PathSitTask.cpp \
+ai/Tasks/PathSleepTask.cpp \
+ai/Tasks/PathTask.cpp \
+ai/Tasks/PathTurnTask.cpp \
+ai/Tasks/PathWaitForTriggerTask.cpp \
+ai/Tasks/PathWaitTask.cpp \
+ai/Tasks/PlayAnimationTask.cpp \
+ai/Tasks/AnimalPatrolTask.cpp \
+ai/Tasks/RandomHeadturnTask.cpp \
+ai/Tasks/RandomTurningTask.cpp \
+ai/Tasks/RangedCombatTask.cpp \
+ai/Tasks/RepeatedBarkTask.cpp \
+ai/Tasks/ResolveMovementBlockTask.cpp \
+ai/Tasks/SingleBarkTask.cpp \
+ai/Tasks/ScriptTask.cpp \
+ai/Tasks/ThrowObjectTask.cpp \
+ai/Tasks/WaitTask.cpp \
+ai/Tasks/WanderInLocationTask.cpp \
 SEED.cpp \
 ModelGenerator.cpp \
 ImageMapManager.cpp \
@@ -288,7 +290,7 @@ RawVector.cpp \
 I18N.cpp \
 sourcehook/sourcehook.cpp'
 
-darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
+darkModList = scons_utils.BuildList('../../game/', darkModSrc)
 
 ziploader_list = SConscript( '../../sys/scons/SConscript.ziploader' )
 
@@ -297,31 +299,18 @@ local_env = g_game_env.Clone()
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 
-if g_os == 'MacOSX':
-	local_env.Append(LIBS = [
-		File('#/macosx/libcurl/libcurl.a'),
+# Link the runtime statically, link statically against libjpeg.a and libpng.a
+# the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
+local_env.Append( LINKFLAGS = [ '-lrt', '-ljpeg', '-lpng' ] )
 
-		File('#/macosx/libpng/libpng12.a'),
-		File('#/macosx/libjpeg/libjpeg.a'),
-		File('#/macosx/boost/lib/libboost_filesystem.a'),
-		File('#/macosx/boost/lib/libboost_system.a'),
-		File('#/macosx/boost/lib/libboost_thread.a')
-	])
-else:
-	# Linux
+local_env.Append(LIBS = [
+	File('#/linux/libcurl/libcurl.a'),
+	File('#/linux/boost/lib/libboost_filesystem.a'),
+	File('#/linux/boost/lib/libboost_system.a'),
+	File('#/linux/boost/lib/libboost_thread.a')
+])
 
-	# Link the runtime statically, link statically against libjpeg.a and libpng.a
-	# the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
-	local_env.Append( LINKFLAGS = [ '-lrt', '-ljpeg', '-lpng' ] )
-
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a'),
-		File('#/linux/boost/lib/libboost_thread.a')
-	])
-
-# greebo: Use custom compiled devIL in Linux and Mac OS X
+# greebo: Use custom compiled devIL in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
 
 full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list
