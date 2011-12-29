@@ -33,7 +33,7 @@ starting point.
 Compiling on win32:
 -------------------
 
-A project file for Microsoft Visual Studio 2010 is provided in neo\doom.sln
+A project file for Microsoft Visual Studio 2010 is provided in doom.sln
 We expect the solution file is compatible with the Express releases
 
 You will need the Microsoft DirectX SDK installed as well.
@@ -49,7 +49,7 @@ Issue the scons command in the neo/ folder.
 Compiling on MacOS X:
 ---------------------------
 
-XCode 3.2 project is under neo/sys/osx/
+XCode 3.2 project is under sys/osx/
 
 Back End Rendering of Stencil Shadows:
 --------------------------------------
