@@ -18,21 +18,21 @@
 LANGUAGE 9, 1
 #pragma code_page(1252)
 #endif
-#include "Common.rc"
-#include "Radiant.rc"
-#include "AFEditor.rc"
-#include "SoundEditor.rc"
-#include "ParticleEditor.rc"
-#include "DeclEditor.rc"
+//#include "Common.rc"
+//#include "Radiant.rc"
+//#include "AFEditor.rc"
+//#include "SoundEditor.rc"
+//#include "ParticleEditor.rc"
+//#include "DeclEditor.rc"
 
-#include "ScriptEditor.rc"
+//#include "ScriptEditor.rc"
 
-#include "GuiEd.rc"
-#include "Debugger.rc"
-#include "MaterialEditor.rc"
-#include "PropTree.rc"
-#include "afxres.rc"                             // Standard components
-#include "afxprint.rc"                   // printing/print preview resources
+//#include "GuiEd.rc"
+//#include "Debugger.rc"
+//#include "MaterialEditor.rc"
+//#include "PropTree.rc"
+//#include "afxres.rc"                             // Standard components
+//#include "afxprint.rc"                   // printing/print preview resources
 #endif
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -104,7 +104,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON                    "res\\doom.ico"
+IDI_ICON1               ICON                    "res\\darkmod.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

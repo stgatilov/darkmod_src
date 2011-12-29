@@ -2017,6 +2017,9 @@
     <None Include="tools\comafx\riched20.tlh">
       <Filter>Tools\ComAfx</Filter>
     </None>
+    <None Include="sys\win32\rc\res\darkmod.ico">
+      <Filter>Sys\RC\res</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="sys\win32\rc\AFEditor.rc">

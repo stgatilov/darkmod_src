@@ -2332,6 +2332,7 @@
     <None Include="sys\win32\rc\res\BMP0002.BMP" />
     <None Include="sys\win32\rc\res\cchsb.bmp" />
     <None Include="sys\win32\rc\res\ccrgb.bmp" />
+    <None Include="sys\win32\rc\res\darkmod.ico" />
     <None Include="sys\win32\rc\res\dbg_back.bmp" />
     <None Include="sys\win32\rc\res\dbg_breakpoint.ico" />
     <None Include="sys\win32\rc\res\dbg_current.ico" />
