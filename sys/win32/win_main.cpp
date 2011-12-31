@@ -39,6 +39,12 @@
 #include "rc/CreateResourceIDs.h"
 #include "../../renderer/tr_local.h"
 
+#include <string>
+#include <vector>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
@@ -641,6 +647,40 @@ DLL Loading
 ========================================================================
 */
 
+namespace 
+{
+	// Removes .\ and ..\ from the given path, converts forward slashes to backward slashes
+	idStr NormalisePath(const idStr& input)
+	{
+		std::vector<std::string> parts;
+		std::vector<std::string> resultParts;
+
+		boost::algorithm::split(parts, std::string(input.c_str()), boost::algorithm::is_any_of("\\/"));
+
+		for (std::size_t i = 0; i < parts.size(); ++i)
+		{
+			if (parts[i] == "..")
+			{
+				if (!resultParts.empty())
+				{
+					resultParts.pop_back();
+				}
+			}
+			else if (parts[i] == ".")
+			{
+				// Ignore
+			}
+			else
+			{
+				// Just cat other path entries
+				resultParts.push_back(parts[i]);
+			}
+		}
+
+		return idStr(boost::algorithm::join(resultParts, "\\").c_str());
+	}
+}
+
 /*
 =====================
 Sys_DLL_Load
@@ -653,8 +693,12 @@ int Sys_DLL_Load( const char *dllName ) {
 		// since we can't have LoadLibrary load only from the specified path, check it did the right thing
 		char loadedPath[ MAX_OSPATH ];
 		GetModuleFileName( libHandle, loadedPath, sizeof( loadedPath ) - 1 );
-		if ( idStr::IcmpPath( dllName, loadedPath ) ) {
-			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllName, loadedPath );
+
+		// greebo: Make sure to normalise the path before checking, there might be ".." in them
+		idStr dllPath = NormalisePath(dllName);
+
+		if ( idStr::IcmpPath( dllPath, loadedPath ) ) {
+			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllPath, loadedPath );
 			Sys_DLL_Unload( (int)libHandle );
 			return 0;
 		}
