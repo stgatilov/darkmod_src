@@ -21,6 +21,7 @@
 #pragma hdrstop
 
 #include "../renderer/Image.h"
+#include <iostream>
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
@@ -166,6 +167,9 @@ private:
 	void						UnloadGameDLL( void );
 	void						PrintLoadingMessage( const char *msg );
 	void						FilterLangList( idStrList* list, idStr lang );
+
+	// greebo: used to initialise the fs_game/fs_game_base parameters
+	void						InitGameArguments();
 
 	bool						com_fullyInitialized;
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
@@ -822,6 +826,97 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 				com_numConsoleLines++;
 			}
 			com_consoleLines[ com_numConsoleLines-1 ].AppendArg( argv[ i ] );
+		}
+	}
+}
+
+namespace
+{
+	// Local helper, reading the text contents of the given file 
+	idStr ReadTextFile_Local(const idStr& fileName)
+	{
+		idStr returnValue;
+
+		FILE* file = fopen(fileName.c_str(), "r");
+
+		if (file != NULL)
+		{
+			fseek(file, 0, SEEK_END);
+			std::size_t len = ftell(file);
+			fseek(file, 0, SEEK_SET);
+
+			char* buf = reinterpret_cast<char*>(malloc(len+1));
+
+			std::size_t bytesRead = fread(buf, 1, len, file);
+
+			if (bytesRead != len)
+			{
+				std::cerr << "Warning: bytes read mismatches file length?" << std::endl;
+			}
+
+			buf[len] = 0;
+
+			returnValue = buf;
+			free(buf);
+
+			fclose(file);
+		}
+
+		return returnValue;
+	}
+}
+
+void idCommonLocal::InitGameArguments()
+{
+	bool fsGameDefined = false;
+	bool fsGameBaseDefined = false;
+	bool fsBasePathDefined = false;
+
+	idStr basePath = Sys_DefaultBasePath(); // might be overridden by the arguments below
+	idStr fsGameBase = "darkmod";
+
+	// Search the command line arguments for certain override parameters
+	for (int line = 0; line < com_numConsoleLines; ++line)
+	{
+		const idCmdArgs& args = com_consoleLines[line];
+
+		for (int arg = 0; arg < args.Argc(); ++arg)
+		{
+			fsGameDefined |= idStr::Cmp(args.Argv(arg), "fs_game") == 0;
+
+			if (idStr::Cmp(args.Argv(arg), "fs_game_base") == 0)
+			{
+				fsGameBaseDefined = true;
+				fsGameBase = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
+			}
+			
+			if (idStr::Cmp(args.Argv(arg), "fs_basepath") == 0)
+			{
+				fsBasePathDefined = true;
+				basePath = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
+			}
+		}
+	}
+
+	// Construct the darkmod path - use fs_game_base, if specified
+	idStr darkmodPath = basePath;
+	darkmodPath.AppendPath(fsGameBase);
+	
+	if (!fsGameDefined && !fsGameBaseDefined)
+	{
+		// no fs_game defined, try to load the currentfm.txt from darkmod
+		idStr currentModFile = darkmodPath;
+		currentModFile.AppendPath("currentfm.txt");
+
+		idStr mod = ReadTextFile_Local(currentModFile);
+
+		if (!mod.IsEmpty())
+		{
+			// Set the fs_game CVAR to the value found in the .txt file
+			cvarSystem->SetCVarString("fs_game", mod.c_str());
+
+			// Set the fs_game_base parameter too
+			cvarSystem->SetCVarString("fs_game_base", fsGameBase);
 		}
 	}
 }
@@ -2911,7 +3006,12 @@ void idCommonLocal::Shutdown( void ) {
 idCommonLocal::InitGame
 =================
 */
-void idCommonLocal::InitGame( void ) {
+void idCommonLocal::InitGame( void )
+{
+	// greebo: Check if we have fs_game and/or fs_game_base defined, if not fall back to default values
+	// Do this before initialising the filesystem
+	InitGameArguments();
+
 	// initialize the file system
 	fileSystem->Init();
 
