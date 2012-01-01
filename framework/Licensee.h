@@ -25,9 +25,13 @@
 ===============================================================================
 */
 
-#define GAME_NAME						"DOOM 3"		// appears on window titles and errors
+#define GAME_NAME						"The Dark Mod"		// appears on window titles and errors
 
-#define ENGINE_VERSION					"DOOM 1.3.1"	// printed in console
+// greebo: Defines the darkmod release version
+#define TDM_VERSION_MAJOR 1
+#define TDM_VERSION_MINOR 8
+
+#define ENGINE_VERSION					"Doom 1.3.1"	// printed in console
 
 // paths
 #define	CD_BASEDIR						"Doom"

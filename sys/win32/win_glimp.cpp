@@ -596,10 +596,12 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 		}
 	}
 
+	idStr title = va( "%s %d.%02d", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+
 	win32.hWnd = CreateWindowEx (
 		 exstyle, 
 		 WIN32_WINDOW_CLASS_NAME,
-		 GAME_NAME,
+		 title.c_str(),
 		 stylebits,
 		 x, y, w, h,
 		 NULL,

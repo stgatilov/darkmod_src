@@ -1100,9 +1100,6 @@ private:
 	// The lengthStr corresponds to the videosStr, but contains the lengths of the clips
 	static int				LoadVideosFromString(const char* videosStr, const char* lengthStr, 
 												 idList<BriefingVideoPart>& targetList);
-
-	// Platform-specific implementation to change the D3's title and icon
-	void					ChangeWindowTitleAndIcon();
 };
 
 //============================================================================

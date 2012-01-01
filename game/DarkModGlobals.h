@@ -37,10 +37,7 @@
 #include <stdio.h>
 #include "Game_local.h"
 #include "CImage.h"
-
-// greebo: Defines the darkmod release version
-#define TDM_VERSION_MAJOR 1
-#define TDM_VERSION_MINOR 7
+#include "../framework/Licensee.h"
 
 enum VersionCheckResult
 {
