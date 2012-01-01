@@ -2247,7 +2247,19 @@ void idFileSystemLocal::Startup( void ) {
 	// fs_game override
 	if ( fs_game.GetString()[0] &&
 		 idStr::Icmp( fs_game.GetString(), BASE_GAMEDIR ) &&
-		 idStr::Icmp( fs_game.GetString(), fs_game_base.GetString() ) ) {
+		 idStr::Icmp( fs_game.GetString(), fs_game_base.GetString() ) )
+	{
+		// greebo: In between fs_game and fs_game_base, there is the mission folder, which is fms/<missionName>/
+		// fs_game still overrides that one, but the the mission folder should still override fs_game_base
+		if (fs_game_base.GetString()[0])
+		{
+			idStr baseFmPath = fs_game_base.GetString();
+			baseFmPath.AppendPath("fms");
+			baseFmPath.AppendPath(fs_game.GetString());
+
+			SetupGameDirectories(baseFmPath);
+		}
+
 		SetupGameDirectories( fs_game.GetString() );
 	}
 
