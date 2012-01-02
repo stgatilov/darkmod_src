@@ -109,6 +109,14 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleElevatorTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
+
+	// grayman #2948 - leave elevator handling if KO'ed or dead
+
+	if ( owner->AI_KNOCKEDOUT || owner->AI_DEAD )
+	{
+		return true;
+	}
+	
 	//Memory& memory = owner->GetMemory();
 
 	// Grab the first RouteNode

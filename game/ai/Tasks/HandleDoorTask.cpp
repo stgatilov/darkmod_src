@@ -236,6 +236,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	// grayman #2948 - leave door handling if KO'ed or dead
+
+	if ( owner->AI_KNOCKEDOUT || owner->AI_DEAD )
+	{
+		return true;
+	}
+	
 	// grayman #2700 - we get a certain amount of time to complete a move
 	// to the mid position or back position before leaving door handling
 
