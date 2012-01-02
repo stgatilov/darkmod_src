@@ -3021,7 +3021,8 @@ void idCommonLocal::InitGame( void )
 	// force r_fullscreen 0 if running a tool
 	CheckToolMode();
 
-	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath" ) );
+	// greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
+	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_modSavepath" ) );
 	bool sysDetect = ( file == NULL );
 	if ( file ) {
 		fileSystem->CloseFile( file );
