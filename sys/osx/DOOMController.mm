@@ -41,6 +41,7 @@
 #define	MAX_KEYS		256
 
 static idStr			savepath;
+static idStr			modSavepath; // greebo: Added for TDM mission handling
 
 extern	bool	key_overstrikeMode;
 
@@ -425,6 +426,17 @@ const char *Sys_DefaultSavePath(void) {
 	sprintf( savepath, "%s/Library/Application Support/Doom 3", [NSHomeDirectory() cString] );
 #endif
 	return savepath.c_str();
+}
+
+/*
+ ==============
+ Sys_ModSavePath
+ ==============
+*/
+const char* Sys_ModSavePath()
+{
+	sprintf( modSavepath, "%s/%s/%s", Sys_DefaultSavePath(), cvarSystem->GetCVarString("fs_game_base"), "fms" );
+	return modSavepath.c_str();
 }
 
 /*

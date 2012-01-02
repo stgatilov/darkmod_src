@@ -416,6 +416,11 @@ private:
 	static idCVar			fs_caseSensitiveOS;
 	static idCVar			fs_searchAddons;
 
+	// greebo: For regular TDM missions, all savegames/screenshots/etc. should be written to darkmod/fms/<fs_game>/... 
+	// instead of creating a folder in fs_basePath. So, use "fs_modSavePath" as argument to filesystem->OpenFileWrite()
+	// The value of modSavePath is something like C:\Games\Doom3\darkmod\fms\ in Win32, or ~/.doom3/darkmod/fms/ in Linux.
+	static idCVar			fs_modSavePath;
+
 	backgroundDownload_t *	backgroundDownloads;
 	backgroundDownload_t	defaultBackgroundDownload;
 	xthreadInfo				backgroundThread;
@@ -486,6 +491,9 @@ idCVar	idFileSystemLocal::fs_caseSensitiveOS( "fs_caseSensitiveOS", "0", CVAR_SY
 idCVar	idFileSystemLocal::fs_caseSensitiveOS( "fs_caseSensitiveOS", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
 #endif
 idCVar	idFileSystemLocal::fs_searchAddons( "fs_searchAddons", "0", CVAR_SYSTEM | CVAR_BOOL, "search all addon pk4s ( disables addon functionality )" );
+
+// greebo: Custom savepath in darkmod/fms/
+idCVar	idFileSystemLocal::fs_modSavePath( "fs_modSavePath", "", CVAR_SYSTEM | CVAR_INIT, "This is where all screenshots and savegames will be written to." );
 
 idFileSystemLocal	fileSystemLocal;
 idFileSystem *		fileSystem = &fileSystemLocal;
@@ -2253,13 +2261,13 @@ void idFileSystemLocal::Startup( void ) {
 		// fs_game still overrides that one, but the the mission folder should still override fs_game_base
 		if (fs_game_base.GetString()[0])
 		{
-			idStr baseFmPath = fs_game_base.GetString();
-			baseFmPath.AppendPath("fms");
-			baseFmPath.AppendPath(fs_game.GetString());
+			idStr fmPath = fs_game_base.GetString();
+			fmPath.AppendPath("fms");
+			fmPath.AppendPath(fs_game.GetString());
 
-			SetupGameDirectories(baseFmPath);
+			SetupGameDirectories(fmPath);
 		}
-
+		
 		SetupGameDirectories( fs_game.GetString() );
 	}
 
@@ -2854,6 +2862,9 @@ void idFileSystemLocal::Init( void ) {
 	common->StartupVariable( "fs_restrict", false );
 	common->StartupVariable( "fs_searchAddons", false );
 
+	// greebo: even the mod save path can be overriden by command line arguments
+	common->StartupVariable( "fs_modSavePath", false );
+
 #if !ID_ALLOW_D3XP
 	if ( fs_game.GetString()[0] && !idStr::Icmp( fs_game.GetString(), "d3xp" ) ) {
 		 fs_game.SetString( NULL );
@@ -2879,6 +2890,13 @@ void idFileSystemLocal::Init( void ) {
 #else
 		fs_devpath.SetString( fs_savepath.GetString() );
 #endif
+	}
+
+	// greebo: By default, set the mod save path to <fs_game_base>/fms/.
+	// The exact location depends on the platform we're on
+	if ( fs_modSavePath.GetString()[0] == '\0' )
+	{
+		fs_modSavePath.SetString(Sys_ModSavePath());
 	}
 
 	// try to start up normally

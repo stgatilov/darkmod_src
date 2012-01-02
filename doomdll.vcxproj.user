@@ -13,7 +13,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommand>$(OutDir)DOOM3.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>+set fs_basepath c:\games\doom3 +set fs_game darkmod</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>+set fs_basepath c:\games\doom3</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
     <LocalDebuggerCommand>$(OutDir)DOOM3.exe</LocalDebuggerCommand>

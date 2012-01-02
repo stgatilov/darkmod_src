@@ -34,6 +34,7 @@
 
 static idStr	basepath;
 static idStr	savepath;
+static idStr	modSavepath; // greebo: Added for TDM mission handling
 
 /*
 ===========
@@ -115,6 +116,18 @@ const char *Sys_DefaultSavePath(void) {
 #endif
 	return savepath.c_str();
 }
+
+/*
+ ==============
+ Sys_ModSavePath
+ ==============
+ */
+const char* Sys_ModSavePath()
+{
+	sprintf( modSavepath, "%s/%s/%s", Sys_DefaultSavePath(), cvarSystem->GetCVarString("fs_game_base"), "fms" );
+	return modSavepath.c_str();
+}
+
 /*
 ==============
 Sys_EXEPath

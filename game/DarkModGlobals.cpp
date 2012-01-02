@@ -848,6 +848,34 @@ void CGlobal::InitSurfaceHardness()
 
 std::string CGlobal::GetDarkmodPath()
 {
+	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
+
+	if (modBaseName.IsEmpty())
+	{
+		// Fall back to fs_game if no game_base is set
+		modBaseName = cvarSystem->GetCVarString("fs_game");
+
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
+
+		if (modBaseName.IsEmpty())
+		{
+			modBaseName = "darkmod"; // last resort: hardcoded
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
+		}
+	}
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Base path is %s\r", cvarSystem->GetCVarString("fs_basePath"));
+
+	// basepath = something like c:\games\doom3, fs_game_base is usually darkmod
+	std::string darkmodPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basePath"), cvarSystem->GetCVarString("fs_game_base"), "");
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
+
+	return darkmodPath;
+#if 0
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
 	parentPath = parentPath.remove_leaf().remove_leaf();
@@ -879,6 +907,7 @@ std::string CGlobal::GetDarkmodPath()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
 
 	return darkmodPath.file_string();
+#endif
 }
 
 std::string CGlobal::GetEnginePath()
