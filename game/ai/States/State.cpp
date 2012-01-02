@@ -81,6 +81,7 @@ const int MIN_TIME_BETWEEN_GREETING_CHECKS = 20000; // msecs
 const float CHANCE_FOR_GREETING = 0.3f; // 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000; // ms - grayman #2603
 const int REMARK_DISTANCE = 200; // grayman #2903 - no greeting or warning if farther apart than this
+const int MIN_DIST_TO_LOWLIGHT_DOOR = 300; // grayman #2959 - AI must be closer than this to "see" a low-light door
 
 //----------------------------------------------------------------------------------------
 // grayman #2903 - no warning if the sender is farther than this horizontally from the alert spot (one per alert type)
@@ -675,9 +676,42 @@ void State::OnVisualStim(idEntity* stimSource)
 
 		idVec3 targetPoint = door->GetClosedBox().GetCenter();
 
-		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource ) )
+		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, true ) ) // 'true' = consider illumination
 		{
-			return;
+
+			// grayman #2959 - if owner is handling this door, he should recognize
+			// that it's open and shouldn't be, regardless of illumination. He's about
+			// to use it, after all. This is similar to bumping into a hanging rope
+			// in low illumination.
+
+			if ( owner->m_HandlingDoor )
+			{
+				CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+				if ( ( frobDoor == NULL ) || ( frobDoor != stimSource ) )
+				{
+					return; // handling a door, but not the one that stimmed the owner
+				}
+
+				// We're on the queue of the door that stimmed us.
+				// In dim light, we can't "see" the door until we're close to it.
+
+				if ( (owner->GetPhysics()->GetOrigin() - targetPoint).LengthFast() > MIN_DIST_TO_LOWLIGHT_DOOR )
+				{
+					return; // handling the door that stimmed us, but we're not close enough yet
+				}
+
+				// Repeat the CanSee, but w/o the lighting check this time.
+				// We need LOS before we can "see" the suspicious door.
+
+				if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, false ) ) // 'false' = don't consider illumination
+				{
+					return; // handling the door that stimmed us, but we have no LOS yet
+				}
+			}
+			else
+			{
+				return; // not handling a door
+			}
 		}
 	}
 	else if (aiUseType == EAIuse_Broken_Item)
@@ -2633,39 +2667,28 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	// grayman #2859 - Check who last used the door.
 
+	// grayman #2959 - the door is suspicious if:
+	// - lastUsedBy is NULL (no one's ever used it, or the player used it last)
+	// - lastUsedBy is friendly but not in sight
+	
 	idEntity* lastUsedBy = door->GetLastUsedBy();
-	if ( lastUsedBy == owner )
+	if ( lastUsedBy != NULL )
 	{
-		// Owner handled the door last, so he's probably handling it now,
-		// since stims arrive when the door is opened. Do nothing.
+		// grayman #1327 - Was the door last used by a friend we can see?
+		// If so, we assume they're the one who opened the door, so it's
+		// not suspicious. CanSeeExt( lastUsedBy, false, false )
+		// doesn't care about FOV (lastUsedBy can be behind owner) and we
+		// don't care how bright it is.
 
-		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
-		return; // owner opened the door, so all is well
-	}
+		if ( owner->IsFriend( lastUsedBy ) && owner->CanSeeExt( lastUsedBy, false, false ) )
+		{
+			// A friend handled the door last, and since I can still see him
+			// he's probably handling the door now, since stims arrive when
+			// the door is opened. Do nothing.
 
-	// grayman #2859 - owner didn't open the door, so find out if whoever
-	// did is friendly and in sight. CanSeeExt( lastUsedBy, false, false )
-	// doesn't care about FOV (lastUsedBy can be behind owner) and we don't care
-	// how bright it is.
-
-	if ( ( lastUsedBy != NULL ) && owner->IsFriend( lastUsedBy ) && owner->CanSeeExt( lastUsedBy, false, false ) )
-	{
-		// A friend handled the door last, and since I can still see him
-		// he's probably handling the door now, since stims arrive when
-		// the door is opened. Do nothing.
-
-		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
-		return; // a friend I can see opened the door, so all is well
-	}
-
-	// grayman #1327 - as a last resort, in case we can't see an AI when
-	// it's handling the door, ask the door if anyone's handling it atm. If so,
-	// we'll assume they're friendly, and ignore the stim.
-
-	if ( door->GetUserManager().GetNumUsers() > 0 )
-	{
-		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
-		return;
+			stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
+			return; // a friend I can see opened the door, so all is well
+		}
 	}
 
 	// The open door is now suspicious.

@@ -4432,7 +4432,7 @@ bool idAI::CanSeeExt( idEntity *ent, const bool useFOV, const bool useLighting )
 
 // grayman #2859 - Can the AI see a point belonging to a target (not necessarily its origin)?
 
-bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target ) const
+bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target , bool checkLighting ) const // grayman #2959
 {
 	// Check FOV
 
@@ -4457,13 +4457,18 @@ bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target ) const
 		}
 	}
 
-	// Check lighting
+	// Check lighting?
 
-	idVec3 topPoint = point - (physicsObj.GetGravityNormal() * 32.0);
-	float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
-	idVec3 ownOrigin = physicsObj.GetOrigin();
+	if ( checkLighting )
+	{
+		idVec3 topPoint = point - (physicsObj.GetGravityNormal() * 32.0);
+		float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
+		idVec3 ownOrigin = physicsObj.GetOrigin();
 
-	return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
+		return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
+	}
+
+	return true;
 }
 
 /*
@@ -4514,7 +4519,7 @@ idVec3 idAI::CanSeeRope( idEntity *ent ) const
 			ropeAF->GetJointWorldTransform( jointList[joint2Index], gameLocal.time, joint2Org, axis );
 			float offset = gameLocal.random.RandomFloat();
 			idVec3 spot = joint1Org + ( joint2Org - joint1Org ) * offset;
-			if ( CanSeeTargetPoint( spot, rope ) )
+			if ( CanSeeTargetPoint( spot, rope, true ) ) // grayman #2959
 			{
 				return spot;
 			}

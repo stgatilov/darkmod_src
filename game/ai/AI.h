@@ -1508,7 +1508,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 
-	bool					CanSeeTargetPoint( idVec3 point, idEntity* target ) const; // grayman #2859
+	bool					CanSeeTargetPoint( idVec3 point, idEntity* target , bool checkLighting) const; // grayman #2859 & #2959
 
 	idVec3					CanSeeRope( idEntity *ent ) const; // grayman #2872
 
