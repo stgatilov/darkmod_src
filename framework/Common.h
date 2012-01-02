@@ -141,7 +141,8 @@ public:
 	virtual void				ActivateTool( bool active ) = 0;
 
 								// Writes the user's configuration to a file
-	virtual void				WriteConfigToFile( const char *filename ) = 0;
+								// greebo: Added the basePath option to allow for more control
+	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_modSavePath" ) = 0;
 
 								// Writes cvars with the given flags to a file.
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd ) = 0;

@@ -117,7 +117,7 @@ public:
 	virtual void				StartupVariable( const char *match, bool once );
 	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
 	virtual void				ActivateTool( bool active );
-	virtual void				WriteConfigToFile( const char *filename );
+	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_modSavePath" );
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd );
 	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) );
 	virtual void				EndRedirect( void );
@@ -1117,7 +1117,7 @@ void idCommonLocal::WriteFlaggedCVarsToFile( const char *filename, int flags, co
 idCommonLocal::WriteConfigToFile
 ==================
 */
-void idCommonLocal::WriteConfigToFile( const char *filename ) {
+void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePath ) {
 	idFile *f;
 #ifdef ID_WRITE_VERSION
 	ID_TIME_T t;
@@ -1127,7 +1127,7 @@ void idCommonLocal::WriteConfigToFile( const char *filename ) {
 	idBase64 out;
 #endif
 
-	f = fileSystem->OpenFileWrite( filename );
+	f = fileSystem->OpenFileWrite( filename, basePath );
 	if ( !f ) {
 		Printf ("Couldn't write %s.\n", filename );
 		return;

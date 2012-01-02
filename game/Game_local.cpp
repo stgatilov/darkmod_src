@@ -676,8 +676,9 @@ void idGameLocal::Shutdown( void ) {
 
 		if (!fs_game_base.IsEmpty())
 		{
-			// TODO: This writes the file into darkmod/fms/outpost/..darkmod/ instead of the darkmod/ root.
-			common->WriteConfigToFile("../" + fs_game_base + "/DoomConfig.cfg");
+			// This should write the file into darkmod/ instead of darkmod/fms/outpost/..darkmod/,
+			// therefore use fs_savePath as base.
+			common->WriteConfigToFile("../" + fs_game_base + "/DoomConfig.cfg", "fs_savePath");
 		}
 	}
 
