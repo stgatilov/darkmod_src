@@ -49,7 +49,9 @@
 
 #else
 
+#ifndef NO_MFC
 #include "../tools/comafx/StdAfx.h"
+#endif
 
 #endif
 
