@@ -425,7 +425,7 @@ if ( TARGET_CORE == '1' ):
 		Export( 'GLOBALS ' + GLOBALS ) # update idlib_objects
 		doom = SConscript( g_build + '/core/sys/scons/SConscript.core' )
 
-		InstallAs( '#doom.' + cpu, doom )
+		InstallAs( '#thedarkmod.' + cpu, doom )
 		
 	if ( DEDICATED == '1' or DEDICATED == '2' ):
 		local_dedicated = 1
