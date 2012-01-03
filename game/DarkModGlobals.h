@@ -187,6 +187,9 @@ public:
 	// Helper to retrieve the path to the game executable
 	static std::string GetEnginePath();
 
+	// Helper to retrieve the path of a mod, e.g. C:\Games\Doom3\alchemist
+	static std::string GetModPath(const std::string& modName);
+
 	// Converts a string to a logclass (LC_COUNT) if nothing found.
 	static LC_LogClass GetLogClassForString(const char* str);
 

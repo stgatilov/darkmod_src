@@ -914,10 +914,19 @@ void idCommonLocal::InitGameArguments()
 		{
 			// Set the fs_game CVAR to the value found in the .txt file
 			cvarSystem->SetCVarString("fs_game", mod.c_str());
+			fsGameDefined = true;
 
 			// Set the fs_game_base parameter too
 			cvarSystem->SetCVarString("fs_game_base", fsGameBase);
+			fsGameBaseDefined = true;
 		}
+	}
+
+	// If we still don't have no fs_game nor fs_game_base, fall back to "darkmod"
+	if (!fsGameDefined && !fsGameBaseDefined)
+	{
+		cvarSystem->SetCVarString("fs_game", "darkmod");
+		fsGameDefined = true;
 	}
 }
 
@@ -2940,7 +2949,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		// remove any prints from the notify lines
 		console->ClearNotifyLines();
 		
-		ClearCommandLine();
+		// greebo: Keep the console lines around, we need it when reloading the engine
+		//ClearCommandLine();
 
 		com_fullyInitialized = true;
 	}

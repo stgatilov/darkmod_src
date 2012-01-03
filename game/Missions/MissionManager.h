@@ -317,6 +317,9 @@ public:
 	// Installs mod (by fs_game name)
 	InstallResult InstallMod(const idStr& name);
 
+	// Writes the given mod name to the currentfm.txt file
+	bool WriteCurrentFmFile(const idStr& modName);
+
 	// Uninstalls the currently installed mod, basically clearing our currentfm.txt
 	void UninstallMod();
 

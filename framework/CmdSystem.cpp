@@ -755,7 +755,7 @@ idCmdSystemLocal::SetupReloadEngine
 ============
 */
 void idCmdSystemLocal::SetupReloadEngine( const idCmdArgs &args ) {
-	BufferCommandText( CMD_EXEC_APPEND, "reloadEngine\n" );
+	BufferCommandText( CMD_EXEC_APPEND, "reloadEngine menu\n" ); // greebo: disable the system console during reloadEngine
 	postReload = args;
 }
 

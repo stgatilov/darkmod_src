@@ -839,16 +839,12 @@ CMissionManager::InstallResult CMissionManager::InstallMod(int index)
 
 CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 {
-	// Path to the parent directory
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
 	CModInfoPtr info = GetModInfo(name); // result is always non-NULL
 
-	const idStr& modDirName = info->modName;
+	const idStr& modName = info->modName;
 
 	// Ensure that the target folder exists
-	fs::path targetFolder = parentPath / modDirName.c_str();
+	fs::path targetFolder = g_Global.GetModPath(modName.c_str());
 
 	if (!fs::create_directory(targetFolder))
 	{
@@ -858,6 +854,9 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 
 	// Path to the darkmod directory
 	fs::path darkmodPath = GetDarkmodPath();
+
+#if 0
+	// greebo: We don't copy PK4s around anymore, they remain in the fms/ subfolders
 
 	// Copy all PK4s from the FM folder (and all subdirectories)
 	idFileList* pk4Files = fileSystem->ListFilesTree(info->pathToFMPackage, ".pk4", false);
@@ -884,26 +883,10 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 	}
 
 	fileSystem->FreeFileList(pk4Files);
+#endif
 
-	// Path to file that holds the current FM name
-	fs::path currentFMPath(darkmodPath / cv_tdm_fm_current_file.GetString());
-
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.file_string().c_str());
-
-	// Save the name of the new mod
-	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
-
-	if (currentFM != NULL)
-	{
-		fputs(modDirName, currentFM);
-		fclose(currentFM);
-	}
-	else
-	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.file_string().c_str());
-	}
-
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
+	// Save the name to currentfm.txt
+	WriteCurrentFmFile(modName);
 
 	// Assemble the path to the FM's DoomConfig.cfg
 	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
@@ -951,10 +934,37 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 	return INSTALLED_OK;
 }
 
+bool CMissionManager::WriteCurrentFmFile(const idStr& modName)
+{
+	// Path to file that holds the current FM name
+	fs::path currentFMPath(GetDarkmodPath() / cv_tdm_fm_current_file.GetString());
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.file_string().c_str());
+
+	// Save the name of the new mod
+	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
+
+	if (currentFM != NULL)
+	{
+		fputs(modName, currentFM);
+		fclose(currentFM);
+	}
+	else
+	{
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.file_string().c_str());
+		return false;
+	}
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
+	return true;
+}
+
 void CMissionManager::UninstallMod()
 {
 	// To uninstall the current FM, just clear the FM name in currentfm.txt	
+	WriteCurrentFmFile("");
 
+#if 0
 	// Path to the darkmod directory
 	fs::path darkmodPath = GetDarkmodPath();
 
@@ -972,6 +982,7 @@ void CMissionManager::UninstallMod()
 		// Log removal error
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing current FM file %s.\r", currentFMPath.string().c_str());
 	}
+#endif
 }
 
 int CMissionManager::StartReloadDownloadableMods()

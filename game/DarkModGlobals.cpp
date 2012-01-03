@@ -846,6 +846,15 @@ void CGlobal::InitSurfaceHardness()
 	m_SurfaceHardnessHash.Add( m_SurfaceHardnessHash.GenerateKey("paper"), soft );
 }
 
+std::string CGlobal::GetModPath(const std::string& modName)
+{
+	fs::path path = GetDarkmodPath();	// c:\games\doom3\darkmod
+	path /= cv_tdm_fm_path.GetString();	// fms/
+	path /= modName;					// <fs_game>
+
+	return path.string();
+}
+
 std::string CGlobal::GetDarkmodPath()
 {
 	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");

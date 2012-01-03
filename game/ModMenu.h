@@ -64,7 +64,7 @@ private:
 	void UninstallMod(idUserInterface* gui);
 
 	// Restarts the game after mod installation
-	void RestartGame();
+	void RestartGame(bool restartProcess);
 };
 
 #endif	/* _MOD_MENU_H_ */

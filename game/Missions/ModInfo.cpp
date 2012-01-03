@@ -38,10 +38,7 @@ std::size_t CModInfo::GetModFolderSize()
 	_modFolderSizeComputed = true;
 	_modFolderSize = 0;
 
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
-	fs::path modPath = parentPath / modName.c_str();
+	fs::path modPath = g_Global.GetModPath(modName.c_str());
 
 	if (fs::exists(modPath))
 	{
@@ -190,12 +187,7 @@ void CModInfo::SaveToFile(idFile* file)
 
 idStr CModInfo::GetModFolderPath()
 {
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
-	fs::path modPath = parentPath / modName.c_str();
-
-	return modPath.file_string().c_str();
+	return g_Global.GetModPath(modName.c_str()).c_str();
 }
 
 bool CModInfo::HasModNotes()
