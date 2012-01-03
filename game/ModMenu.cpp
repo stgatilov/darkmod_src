@@ -160,8 +160,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	}
 	else if (cmd == "darkmodRestart")
 	{
-		// Get selected mod
-		RestartGame(false); // false == reloadEngine
+		RestartEngine();
 	}
 	else if (cmd == "briefing_show")
 	{
@@ -387,107 +386,8 @@ void CModMenu::UninstallMod(idUserInterface* gui)
 	gui->HandleNamedEvent("OnModUninstallFinished");
 }
 
-void CModMenu::RestartGame(bool restartProcess)
+void CModMenu::RestartEngine()
 {
-	if (restartProcess)
-	{
-		// Path to the darkmod directory
-		fs::path darkmodPath = g_Global.GetDarkmodPath();
-
-		// Path to the game executable
-		fs::path enginePath = g_Global.GetEnginePath();
-
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Engine Path: %s\r", enginePath.file_string().c_str());
-
-		// path to tdmlauncher
-		fs::path launcherExe;
-
-#ifdef _WINDOWS
-		launcherExe = darkmodPath / "tdmlauncher.exe";
-#elif __linux__
-		launcherExe = darkmodPath / "tdmlauncher.linux";
-#elif MACOS_X
-		launcherExe = darkmodPath / "tdmlauncher.macosx";
-
-		if (!fs::exists(launcherExe))
-		{
-			// Did not find tdmlauncher.macosx at the save path (~/Library/Application Support/Doom 3/darkmod)
-			// try to find it next to the engine path
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Did not find tdmlauncher.macosx at the save path %s\r", launcherExe.file_string().c_str());
-		
-			launcherExe = enginePath;
-
-			// remove executable
-			enginePath.remove_filename();
-
-			launcherExe /= "../../../darkmod/tdmlauncher.macosx";
-
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to find tdmlauncher.macosx at %s\r", launcherExe.file_string().c_str());
-		}
-
-#else
-	#error 'Unsupported platform.'
-#endif
-
-		if (!fs::exists(launcherExe))
-		{
-			DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not find TDM Launcher at %s\r", launcherExe.file_string().c_str());
-
-			gameLocal.Error("Could not find tdmlauncher!");
-			return;
-		}
-
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("TDM Launcher Path: %s\r", launcherExe.file_string().c_str());
-
-		// command line to spawn tdmlauncher
-		idStr commandLine(launcherExe.file_string().c_str());
-
-		idStr engineArgument(enginePath.string().c_str());
-
-		// greebo: Optional delay between restarts to fix sound system release issues in some Linux systems
-		idStr additionalDelay = "";
-		int restartDelay = cv_tdm_fm_restart_delay.GetInteger();
-#ifndef _WINDOWS
-		// always use at least 100ms on linux/macos, or the old process might still run while the 
-		// new process is already starting up:
-		restartDelay += 100;
-#endif
-
-		if (restartDelay > 0)
-		{
-			additionalDelay = va(" --delay=%i", restartDelay);
-		}
-
-#ifdef _WINDOWS
-		// Create a tdmlauncher process, setting the working directory to the doom directory
-		STARTUPINFO siStartupInfo;
-		PROCESS_INFORMATION piProcessInfo;
-
-		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
-		memset(&piProcessInfo, 0, sizeof(piProcessInfo));
-
-		siStartupInfo.cb = sizeof(siStartupInfo);
-
-		CreateProcess(NULL, (LPSTR) (commandLine + " " + engineArgument + additionalDelay).c_str(), NULL, NULL,  false, 0, NULL,
-			enginePath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
-#else
-		// start tdmlauncher
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Starting tdmlauncher %s with argument %s\r", commandLine.c_str(), engineArgument.c_str());
-		if (execlp(commandLine.c_str(), commandLine.c_str(), engineArgument.c_str(), additionalDelay.c_str(), NULL) == -1)
-		{
-			int errnum = errno;
-			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
-			_exit(EXIT_FAILURE);
-		}
-
-#endif
-
-		// Issue the quit command to the game
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
-	}
-	else
-	{
-		// We restart the game by issuing a restart engine command only, this activates any newly installed mod
-		cmdSystem->SetupReloadEngine(idCmdArgs());
-	}
+	// We restart the game by issuing a restart engine command only, this activates any newly installed mod
+	cmdSystem->SetupReloadEngine(idCmdArgs());
 }

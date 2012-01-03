@@ -184,9 +184,6 @@ public:
 	// Returns the darkmod path
 	static std::string GetDarkmodPath();
 
-	// Helper to retrieve the path to the game executable
-	static std::string GetEnginePath();
-
 	// Helper to retrieve the path of a mod, e.g. C:\Games\Doom3\alchemist
 	static std::string GetModPath(const std::string& modName);
 

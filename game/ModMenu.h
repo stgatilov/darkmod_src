@@ -63,8 +63,8 @@ private:
 	// Uninstalls the current FM
 	void UninstallMod(idUserInterface* gui);
 
-	// Restarts the game after mod installation
-	void RestartGame(bool restartProcess);
+	// Restarts the engine after mod installation
+	void RestartEngine();
 };
 
 #endif	/* _MOD_MENU_H_ */
