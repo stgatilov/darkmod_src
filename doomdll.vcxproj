@@ -39,7 +39,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>DoomDLL</ProjectName>
+    <ProjectName>Engine</ProjectName>
     <ProjectGuid>{49BEC5C6-B964-417A-851E-808886B57420}</ProjectGuid>
     <RootNamespace>DoomDLL</RootNamespace>
     <SccProjectName>
