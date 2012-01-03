@@ -435,7 +435,9 @@ const char *Sys_DefaultSavePath(void) {
 */
 const char* Sys_ModSavePath()
 {
-	sprintf( modSavepath, "%s/%s/%s", Sys_DefaultSavePath(), cvarSystem->GetCVarString("fs_game_base"), "fms" );
+	idStr fsGameBase = cvarSystem->GetCVarString("fs_game_base");
+
+	sprintf( modSavepath, "%s/%s/%s", Sys_DefaultSavePath(), fsGameBase.IsEmpty() ? "darkmod" : fsGameBase.c_str(), "fms" );
 	return modSavepath.c_str();
 }
 
