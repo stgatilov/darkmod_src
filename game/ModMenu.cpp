@@ -212,8 +212,8 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 
 		gui->SetStateBool("eraseSelectedModButtonVisible", missionSize > 0 && !missionIsCurrentlyInstalled);
 		
-		// 07208: "You're about to delete the contents of the mission folder from your disk, including savegames and screenshots:"
-		// 07209: "Note that the downloaded mission PK4 in your darkmod/fms/ folder will not be affected by this operation, you're still able to re-install the mission."
+		// 07208: "You're about to delete the gameplay contents of the mission folder from your disk (mainly savegames and screenshots):"
+		// 07209: "Note that the mission PK4 itself in your darkmod/fms/ folder will not be removed by this operation, you'll still able to play the mission."
 		idStr eraseMissionText = va( idStr( gameLocal.m_I18N->Translate( "#str_07208" ) ) + "\n\n%s\n\n" +
 					     gameLocal.m_I18N->Translate( "#str_07209" ), info->GetModFolderPath().c_str() );
 		gui->SetStateString("eraseMissionText", eraseMissionText);
