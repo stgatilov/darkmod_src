@@ -109,7 +109,7 @@ CModInfoPtr CMissionManager::GetModInfo(const idStr& name)
 	return _missionDB->GetModInfo(name);
 }
 
-void CMissionManager::EraseModFolder(const idStr& name)
+void CMissionManager::CleanupModFolder(const idStr& name)
 {
 	CModInfoPtr info = GetModInfo(name);
 

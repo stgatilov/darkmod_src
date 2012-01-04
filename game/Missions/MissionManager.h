@@ -290,7 +290,8 @@ public:
 	// not a campaign or if there is no next mission available
 	bool ProceedToNextMission();
 
-	void EraseModFolder(const idStr& name);
+	// Removes everything except for the mod PK4 and the metadata files from the mod save path
+	void CleanupModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission
 	void OnMissionComplete();

@@ -94,7 +94,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		if (info != NULL)
 		{
-			gameLocal.m_MissionManager->EraseModFolder(info->modName);
+			gameLocal.m_MissionManager->CleanupModFolder(info->modName);
 		}
 
 		gui->HandleNamedEvent("OnSelectedMissionErasedFromDisk");
