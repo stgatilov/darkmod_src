@@ -362,13 +362,13 @@ g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env_noopt.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 
-if ( int(JOBS) > 1 ):
-	print 'Using buffered process output'
-	silent = False
-	if ( SILENT == '1' ):
-		silent = True
-	scons_utils.SetupBufferedOutput( g_env, silent )
-	scons_utils.SetupBufferedOutput( g_game_env, silent )
+#if ( int(JOBS) > 1 ):
+#	print 'Using buffered process output'
+#	silent = False
+#	if ( SILENT == '1' ):
+#		silent = True
+#	scons_utils.SetupBufferedOutput( g_env, silent )
+#	scons_utils.SetupBufferedOutput( g_game_env, silent )
 
 # mark the globals
 
@@ -459,7 +459,7 @@ if ( TARGET_GAME == '1' ):
 		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
 		game_base = InstallAs( '#game%s-base.so' % cpu, game )
 		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#game01-base.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
+			Command( '#tdm_game02.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
 	# NOTE: no D3XP atm. add a TARGET_MONO_D3XP
