@@ -408,7 +408,7 @@ if ( NOCURL == '0' and ( TARGET_CORE == '1' or TARGET_MONO == '1' ) ):
 	else:
 		local_curl = 1
 	Export( 'GLOBALS ' + GLOBALS )
-	curl_lib = SConscript( 'sys/scons/SConscript.curl' )
+	curl_lib = [ '#linux/libcurl/libcurl.a' ] # Use the static one built for TDM
 
 if ( TARGET_CORE == '1' ):
 	local_gamedll = 1
