@@ -23,7 +23,7 @@ if you remove the 'return NULL;' after Error(), it only happens at -O3 / release
 see dmap.gcc.zip test map and .proc outputs
 */
 
-#include "../../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "dmap.h"

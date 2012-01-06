@@ -18,7 +18,7 @@
 ******************************************************************************/
 
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "tr_local.h"

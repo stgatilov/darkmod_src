@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "../../sys/win32/rc/AFEditor_resource.h"

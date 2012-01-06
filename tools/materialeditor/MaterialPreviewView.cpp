@@ -18,7 +18,7 @@
 ******************************************************************************/
 
 
-#include "../../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "../radiant/QE3.H"

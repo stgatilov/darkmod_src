@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 // included for image uploading for player stat graph
