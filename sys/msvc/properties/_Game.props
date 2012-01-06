@@ -4,6 +4,7 @@
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>Game Library</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)..\</OutDir>
+    <TargetName>gamex86</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -13,7 +14,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)gamex86.dll</OutputFile>
       <ModuleDefinitionFile>.\game\game.def</ModuleDefinitionFile>
       <AdditionalDependencies>ZipLoader.lib;libcurl.lib;DevIL.lib;libpng.lib;libjpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/win32/devil/lib;$(SolutionDir)/win32/libjpeg/lib;$(SolutionDir)/win32/libpng/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
