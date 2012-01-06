@@ -772,7 +772,7 @@
 		3A1768D4149354D60077AB23 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3A1768DB149354D60077AB23 /* liblibdevil.a.a */,
+				3A1768DB149354D60077AB23 /* libdevil.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1394,7 +1394,7 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		3A1768DB149354D60077AB23 /* liblibdevil.a.a */ = {
+		3A1768DB149354D60077AB23 /* libdevil.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libdevil.a;
@@ -1777,6 +1777,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -1821,7 +1822,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = /Users/Shared/darkmod_src/include;
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
