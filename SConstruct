@@ -339,6 +339,7 @@ g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPP
 scons_utils.SetupUtils( g_base_env )
 
 g_base_env.Append(CPPPATH = '#/include')
+g_base_env.Append(CPPPATH = '#/idlib')
 g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/include/devil')
