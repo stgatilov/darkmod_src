@@ -526,56 +526,56 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176A10149359330077AB23 /* ziploader.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A1769AD1493584D0077AB23 /* libziploader.a */;
+			remoteGlobalIDString = 3A1769AD1493584D0077AB23;
 			remoteInfo = ziploader;
 		};
 		3A176BEA149363140077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176BE6149363140077AB23 /* jpeg.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176B561493626B0077AB23 /* libjpeg.a */;
+			remoteGlobalIDString = 3A176B561493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 		3A176CD7149366330077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176CD0149366330077AB23 /* png.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176C98149365AD0077AB23 /* libpng.a */;
+			remoteGlobalIDString = 3A176C98149365AD0077AB23;
 			remoteInfo = png;
 		};
 		3A176D1A1493675B0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D161493675B0077AB23 /* devil.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A17681B149350DE0077AB23 /* libdevil.a */;
+			remoteGlobalIDString = 3A17681B149350DE0077AB23;
 			remoteInfo = devil;
 		};
 		3A176D5714936F5A0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176CD0149366330077AB23 /* png.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176C97149365AD0077AB23 /* png */;
+			remoteGlobalIDString = 3A176C97149365AD0077AB23;
 			remoteInfo = png;
 		};
 		3A176D5914936F5D0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176A10149359330077AB23 /* ziploader.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A1769AC1493584D0077AB23 /* ziploader */;
+			remoteGlobalIDString = 3A1769AC1493584D0077AB23;
 			remoteInfo = ziploader;
 		};
 		3A176D5B14936F5F0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176BE6149363140077AB23 /* jpeg.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176B551493626B0077AB23 /* jpeg */;
+			remoteGlobalIDString = 3A176B551493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 		3A176D5D14936F610077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D161493675B0077AB23 /* devil.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A17681A149350DE0077AB23 /* devil */;
+			remoteGlobalIDString = 3A17681A149350DE0077AB23;
 			remoteInfo = devil;
 		};
 		81225A200912C3A4005D34B9 /* PBXContainerItemProxy */ = {
@@ -2610,7 +2610,7 @@
 				PREBINDING = NO;
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = YES;
 			};
@@ -2659,7 +2659,7 @@
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = NO;
 			};

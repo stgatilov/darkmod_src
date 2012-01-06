@@ -244,14 +244,14 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A1768D3149354D60077AB23 /* devil.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A17681B149350DE0077AB23 /* liblibdevil.a.a */;
+			remoteGlobalIDString = 3A17681B149350DE0077AB23;
 			remoteInfo = devil;
 		};
 		3A176967149355C20077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A1768D3149354D60077AB23 /* devil.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A17681A149350DE0077AB23 /* devil */;
+			remoteGlobalIDString = 3A17681A149350DE0077AB23;
 			remoteInfo = devil;
 		};
 		8122597F0912BF1D005D34B9 /* PBXContainerItemProxy */ = {
@@ -1397,7 +1397,7 @@
 		3A1768DB149354D60077AB23 /* liblibdevil.a.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
-			path = liblibdevil.a.a;
+			path = libdevil.a;
 			remoteRef = 3A1768DA149354D60077AB23 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
