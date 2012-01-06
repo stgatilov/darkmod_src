@@ -11,7 +11,7 @@
  * Copyright (C) 2003, by Kristen Wegner (kristen@tima.net)
  */
 // Begin TDM
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 // end TDM
 

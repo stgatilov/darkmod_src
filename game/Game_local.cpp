@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4127 4996 4805 4800)

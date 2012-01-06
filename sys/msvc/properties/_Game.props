@@ -10,7 +10,7 @@
       <PreprocessorDefinitions>__DOOM__;GAME_DLL;IL_STATIC_LIB;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)gamex86.dll</OutputFile>

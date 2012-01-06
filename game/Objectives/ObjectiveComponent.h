@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_COMPONENT_H
 #define TDM_OBJECTIVE_COMPONENT_H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 /**
 * Objective component action types

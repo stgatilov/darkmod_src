@@ -29,7 +29,7 @@
 #ifndef MISSIONDATA_H
 #define MISSIONDATA_H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 #include "Objective.h"
 #include "ObjectiveComponent.h"

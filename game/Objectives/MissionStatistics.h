@@ -20,7 +20,7 @@
 #ifndef MISSIONSTATISTICS_H
 #define MISSIONSTATISTICS_H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 #include "Objective.h" // for objective state enum
 #include "../Inventory/LootType.h" // for loot type enum

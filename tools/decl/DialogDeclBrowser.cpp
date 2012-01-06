@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #include "../../sys/win32/rc/DeclEditor_resource.h"

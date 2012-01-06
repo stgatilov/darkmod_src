@@ -26,7 +26,7 @@ Event are used for scheduling tasks and for linking script commands.
 
 */
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

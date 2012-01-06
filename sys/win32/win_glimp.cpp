@@ -31,7 +31,7 @@
 ** Note that the GLW_xxx functions are Windows specific GL-subsystem
 ** related functions that are relevant ONLY to win_glimp.c
 */
-#include "precompiled.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #include "win_local.h"

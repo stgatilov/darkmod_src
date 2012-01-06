@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_LOCATION_H
 #define TDM_OBJECTIVE_LOCATION_H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 // Helper entity for objective locations
 class CObjectiveLocation : public idEntity

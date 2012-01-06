@@ -296,8 +296,11 @@ ziploader_list = SConscript( '../../sys/scons/SConscript.ziploader' )
 
 local_env = g_game_env.Clone()
 
+# The game files use the game/precompiled_game.h header, make sure it can be found
+local_env.Prepend(CPPPATH = '#/game')
+
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
+local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Winvalid-pch' ] )
 
 # Link the runtime statically, link statically against libjpeg.a and libpng.a
 # the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
@@ -312,6 +315,12 @@ local_env.Append(LIBS = [
 	File('#/linux/boost/lib/libboost_system.a'),
 	File('#/linux/boost/lib/libboost_thread.a')
 ])
+
+# greebo: Set up our precompiled header
+GCH_CPPFLAGS = local_env['CPPFLAGS']
+GCH_CPPFLAGS += ['-fPIC']
+
+local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
 
 # greebo: Use custom compiled devIL in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )

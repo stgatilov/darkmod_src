@@ -26,7 +26,7 @@
 ** QGL_Init() - loads libraries, assigns function pointers, etc.
 ** QGL_Shutdown() - unloads libraries, NULLs function pointers
 */
-#include "precompiled.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #include <float.h>

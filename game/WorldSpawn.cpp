@@ -26,7 +26,7 @@ Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 
 */
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

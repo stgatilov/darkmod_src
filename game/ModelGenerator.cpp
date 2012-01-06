@@ -33,7 +33,7 @@ TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vert
 	  and omit FinishSurfaces() on the combined model. Might speed it up a lot.
 */
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

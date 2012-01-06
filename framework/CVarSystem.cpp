@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 idCVar * idCVar::staticVars = NULL;

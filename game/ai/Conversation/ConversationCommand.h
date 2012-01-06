@@ -20,7 +20,7 @@
 #ifndef __AI_CONVERSATION_COMMAND_H__
 #define __AI_CONVERSATION_COMMAND_H__
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 #include <boost/shared_ptr.hpp>
 

@@ -60,6 +60,9 @@ for i in range( len( idlib_list ) ):
 local_env = g_env.Clone()
 local_env_noopt = g_env.Clone()
 
+# The idlib files use the idlib/precompiled.h header, make sure it's the first to be found
+local_env.Prepend(CPPPATH = '#/idlib')
+
 # max allowed -O1
 flags = OPTCPPFLAGS
 try:

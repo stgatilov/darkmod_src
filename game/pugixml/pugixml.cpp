@@ -12,7 +12,7 @@
  */
 
 // Begin TDM
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 // end TDM
 

@@ -338,8 +338,114 @@ if ( ID_MCHECK == '1' ):
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 scons_utils.SetupUtils( g_base_env )
 
+#######################################################################################
+# greebo: Precompiled header related
+#
+# This is taken from GchBuilder 1.1, the SCons builder for gcc's precompiled headers
+# Copyright (C) 2006  Tim Blechmann
+#
+
+import SCons.Action
+import SCons.Builder
+import SCons.Scanner.C
+import SCons.Util
+import SCons.Script
+import os
+
+GchAction = SCons.Action.Action('$GCHCOM', '$GCHCOMSTR')
+GchShAction = SCons.Action.Action('$GCHSHCOM', '$GCHSHCOMSTR')
+
+def gen_suffix(env, sources):
+    return sources[0].get_suffix() + env['GCHSUFFIX']
+
+GchShBuilder = SCons.Builder.Builder(action = GchShAction,
+                                     source_scanner = SCons.Scanner.C.CScanner(),
+                                     suffix = gen_suffix)
+
+GchBuilder = SCons.Builder.Builder(action = GchAction,
+                                   source_scanner = SCons.Scanner.C.CScanner(),
+                                   suffix = gen_suffix)
+
+def header_path(node):
+    h_path = node.abspath
+    idx = h_path.rfind('.gch')
+    if idx != -1:
+        h_path = h_path[0:idx]
+        if not os.path.isfile(h_path):
+            raise SCons.Errors.StopError("can't find header file: {0}".format(h_path))
+        return h_path
+
+    else:
+        raise SCons.Errors.StopError("{0} file doesn't have .gch extension".format(h_path))
+
+
+def static_pch_emitter(target,source,env):
+    SCons.Defaults.StaticObjectEmitter( target, source, env )
+    scanner = SCons.Scanner.C.CScanner()
+    path = scanner.path(env)
+
+    deps = scanner(source[0], env, path)
+    if env.get('Gch'):
+        h_path = header_path(env['Gch'])
+        if h_path in [x.abspath for x in deps]:
+            #print 'Found dep. on pch: ', target[0], ' -> ', env['Gch']
+            env.Depends(target, env['Gch'])
+
+    return (target, source)
+
+def shared_pch_emitter(target,source,env):
+    SCons.Defaults.SharedObjectEmitter( target, source, env )
+
+    scanner = SCons.Scanner.C.CScanner()
+    path = scanner.path(env)
+    deps = scanner(source[0], env, path)
+
+    if env.get('GchSh'):
+        h_path = header_path(env['GchSh'])
+        if h_path in [x.abspath for x in deps]:
+            #print 'Found dep. on pch (shared): ', target[0], ' -> ', env['Gch']
+            env.Depends(target, env['GchSh'])
+
+    return (target, source)
+
+def GchGenerate(env):
+    """
+    Add builders and construction variables for the Gch builder.
+    """
+    env.Append(BUILDERS = {
+        'gch': env.Builder(
+        action = GchAction,
+        target_factory = env.fs.File,
+        ),
+        'gchsh': env.Builder(
+        action = GchShAction,
+        target_factory = env.fs.File,
+        ),
+        })
+
+    try:
+        bld = env['BUILDERS']['Gch']
+        bldsh = env['BUILDERS']['GchSh']
+    except KeyError:
+        bld = GchBuilder
+        bldsh = GchShBuilder
+        env['BUILDERS']['Gch'] = bld
+        env['BUILDERS']['GchSh'] = bldsh
+
+    env['GCHCOM']     = '$CXX -Wall -o $TARGET -x c++-header -c $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCE'
+    env['GCHSHCOM']   = '$CXX -o $TARGET -x c++-header -c $SHCXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCE'
+    env['GCHSUFFIX']  = '.gch'
+
+    for suffix in SCons.Util.Split('.c .C .cc .cxx .cpp .c++'):
+        env['BUILDERS']['StaticObject'].add_emitter( suffix, static_pch_emitter )
+        env['BUILDERS']['SharedObject'].add_emitter( suffix, shared_pch_emitter )
+
+GchGenerate(g_base_env)
+
+#######################################################################################
+
+g_base_env.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found first
 g_base_env.Append(CPPPATH = '#/include')
-g_base_env.Append(CPPPATH = '#/idlib')
 g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/include/devil')

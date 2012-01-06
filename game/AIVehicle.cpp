@@ -20,7 +20,7 @@
 // Copyright (C) 2007 The Dark Mod Authors
 //
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #pragma hdrstop
 
 #include "AIVehicle.h"

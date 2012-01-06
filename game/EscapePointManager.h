@@ -19,7 +19,7 @@
 #ifndef ESCAPE_POINT_MANAGER__H
 #define ESCAPE_POINT_MANAGER__H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #include <map>
 #include <boost/shared_ptr.hpp>
 

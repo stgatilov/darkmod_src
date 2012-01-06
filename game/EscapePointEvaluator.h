@@ -19,7 +19,7 @@
 #ifndef ESCAPE_POINT_EVALUATOR__H
 #define ESCAPE_POINT_EVALUATOR__H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 #include <boost/shared_ptr.hpp>
 

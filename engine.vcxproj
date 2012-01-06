@@ -202,7 +202,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
@@ -213,7 +213,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -224,7 +224,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">
@@ -234,7 +234,7 @@
     <ClCompile>
       <PreprocessorDefinitions>NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
@@ -245,7 +245,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
@@ -256,7 +256,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
@@ -267,7 +267,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -278,7 +278,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">
@@ -288,7 +288,7 @@
     <ClCompile>
       <PreprocessorDefinitions>NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -317,6 +317,7 @@
     <ClInclude Include="framework\FileSystem.h" />
     <ClInclude Include="framework\KeyInput.h" />
     <ClInclude Include="framework\Licensee.h" />
+    <ClInclude Include="framework\precompiled_engine.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
     <ClInclude Include="framework\Unzip.h" />
@@ -1346,17 +1347,7 @@
     <ClCompile Include="framework\File.cpp" />
     <ClCompile Include="framework\FileSystem.cpp" />
     <ClCompile Include="framework\KeyInput.cpp" />
-    <ClCompile Include="framework\Session.cpp" />
-    <ClCompile Include="framework\Session_menu.cpp" />
-    <ClCompile Include="framework\Unzip.cpp" />
-    <ClCompile Include="framework\UsercmdGen.cpp" />
-    <ClCompile Include="framework\async\AsyncClient.cpp" />
-    <ClCompile Include="framework\async\AsyncNetwork.cpp" />
-    <ClCompile Include="framework\async\AsyncServer.cpp" />
-    <ClCompile Include="framework\async\MsgChannel.cpp" />
-    <ClCompile Include="framework\async\NetworkSystem.cpp" />
-    <ClCompile Include="framework\async\ServerScan.cpp" />
-    <ClCompile Include="idlib\precompiled.cpp">
+    <ClCompile Include="framework\precompiled_engine.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">Create</PrecompiledHeader>
@@ -1367,6 +1358,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="framework\Session.cpp" />
+    <ClCompile Include="framework\Session_menu.cpp" />
+    <ClCompile Include="framework\Unzip.cpp" />
+    <ClCompile Include="framework\UsercmdGen.cpp" />
+    <ClCompile Include="framework\async\AsyncClient.cpp" />
+    <ClCompile Include="framework\async\AsyncNetwork.cpp" />
+    <ClCompile Include="framework\async\AsyncServer.cpp" />
+    <ClCompile Include="framework\async\MsgChannel.cpp" />
+    <ClCompile Include="framework\async\NetworkSystem.cpp" />
+    <ClCompile Include="framework\async\ServerScan.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\draw_arb.cpp" />
     <ClCompile Include="renderer\draw_arb2.cpp" />

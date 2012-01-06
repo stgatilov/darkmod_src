@@ -20,7 +20,7 @@
 #ifndef __AI_MEMORY_H__
 #define __AI_MEMORY_H__
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #include "../BinaryFrobMover.h"
 #include "../FrobDoor.h"
 #include "DoorInfo.h"

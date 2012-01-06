@@ -624,7 +624,7 @@
     <ClCompile Include="game\script\Script_Compiler.cpp">
       <Filter>Script</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\precompiled.cpp" />
+    <ClCompile Include="game\precompiled_game.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1229,6 +1229,7 @@
     <ClInclude Include="game\script\Script_Compiler.h">
       <Filter>Script</Filter>
     </ClInclude>
+    <ClInclude Include="game\precompiled_game.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />

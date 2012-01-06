@@ -307,6 +307,14 @@ for i in range( len( ogg_list ) ):
 
 local_env = g_env.Clone()
 
+# To help finding the precompiled_engine.h 
+local_env.Prepend(CPPPATH = '#framework')
+g_env_noopt.Prepend(CPPPATH = '#framework')
+
+# greebo: Set up the precompiled headers for the engine project
+local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
+local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
+
 if ( local_dedicated == 1 ):
 	local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
 	# don't enable alsa for a dedicated server binary

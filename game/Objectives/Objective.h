@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_H
 #define TDM_OBJECTIVE_H
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 
 #include "BoolParseNode.h"
 #include "ObjectiveComponent.h"

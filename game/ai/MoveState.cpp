@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #include "MoveState.h"
 #pragma hdrstop
 

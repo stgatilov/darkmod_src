@@ -16,7 +16,7 @@
  $Author$ (Author of last commit)
  
 ******************************************************************************/
-#include "precompiled.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #include "MaterialDoc.h"

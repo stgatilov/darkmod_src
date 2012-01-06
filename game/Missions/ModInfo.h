@@ -20,7 +20,7 @@
 #ifndef _MOD_INFO_H_
 #define _MOD_INFO_H_
 
-#include "precompiled.h"
+#include "precompiled_game.h"
 #include <boost/shared_ptr.hpp>
 
 class CModInfoDecl;
