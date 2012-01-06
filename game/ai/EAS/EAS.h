@@ -20,7 +20,7 @@
 #ifndef __AI_EAS_H__
 #define __AI_EAS_H__
 
-#include "../../../idlib/precompiled.h"
+#include "precompiled.h"
 #include "../../MultiStateMover.h"
 #include "../../../game/ai/AAS_local.h"
 #include <set>

@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_H
 #define TDM_OBJECTIVE_H
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 
 #include "BoolParseNode.h"
 #include "ObjectiveComponent.h"

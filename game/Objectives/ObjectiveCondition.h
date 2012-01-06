@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_CONDITION_H
 #define TDM_OBJECTIVE_CONDITION_H
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 
 #include "Objective.h"
 

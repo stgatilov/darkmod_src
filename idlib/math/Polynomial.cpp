@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "../precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 const float EPSILON		= 1e-6f;

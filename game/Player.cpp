@@ -16,7 +16,7 @@
  $Author$ (Author of last commit)
  
 ******************************************************************************/
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4355) // greebo: Disable warning "'this' used in constructor"

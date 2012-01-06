@@ -23,7 +23,7 @@ Invisible entities that affect other entities or the world when activated.
 
 */
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #include "MoveState.h"
 #pragma hdrstop
 

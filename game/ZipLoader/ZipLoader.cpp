@@ -17,6 +17,7 @@
  
 ******************************************************************************/
 
+#include "precompiled.h"
 #pragma hdrstop
 #include "ZipLoader.h"
 

@@ -22,7 +22,7 @@
 * All inventory and frob functionality has been moved to idEntity
 **/
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

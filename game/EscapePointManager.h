@@ -19,7 +19,7 @@
 #ifndef ESCAPE_POINT_MANAGER__H
 #define ESCAPE_POINT_MANAGER__H
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #include <map>
 #include <boost/shared_ptr.hpp>
 

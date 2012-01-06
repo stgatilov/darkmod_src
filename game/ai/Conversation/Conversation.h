@@ -20,7 +20,7 @@
 #ifndef __AI_CONVERSATION_H__
 #define __AI_CONVERSATION_H__
 
-#include "../../../idlib/precompiled.h"
+#include "precompiled.h"
 
 #include "ConversationCommand.h"
 #include "../States/ConversationState.h"

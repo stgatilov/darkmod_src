@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_BOOLPARSENODE_H
 #define TDM_OBJECTIVE_BOOLPARSENODE_H
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 
 /**
 * Structure for parsing boolean logic

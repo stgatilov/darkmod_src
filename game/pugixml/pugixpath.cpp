@@ -11,7 +11,7 @@
  * Copyright (C) 2003, by Kristen Wegner (kristen@tima.net)
  */
 // Begin TDM
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 // end TDM
 

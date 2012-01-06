@@ -20,7 +20,7 @@
 #ifndef __GAMEPLAY_TIMER_H__
 #define __GAMEPLAY_TIMER_H__
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #include <ctime>
 
 /**

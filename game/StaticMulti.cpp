@@ -30,7 +30,7 @@ TODO: track skin changes on the different LOD stages
 
 */
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

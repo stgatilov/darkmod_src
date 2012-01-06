@@ -22,7 +22,7 @@
 
 #pragma hdrstop
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #include <boost/shared_ptr.hpp>
 #include "minizip/unzip.h"
 

@@ -19,7 +19,7 @@
 
 // Copyright (C) 2004 Id Software, Inc.
 //
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

@@ -12,7 +12,7 @@
  */
 
 // Begin TDM
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 // end TDM
 

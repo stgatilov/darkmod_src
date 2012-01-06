@@ -33,7 +33,7 @@ TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vert
 	  and omit FinishSurfaces() on the combined model. Might speed it up a lot.
 */
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

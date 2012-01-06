@@ -354,9 +354,6 @@
     <ClCompile Include="game\randomizer\ranrotw.cpp">
       <Filter>randomizer</Filter>
     </ClCompile>
-    <ClCompile Include="game\randomizer\userintf.cpp">
-      <Filter>randomizer</Filter>
-    </ClCompile>
     <ClCompile Include="game\randomizer\mersenne.cpp">
       <Filter>randomizer</Filter>
     </ClCompile>
@@ -627,6 +624,7 @@
     <ClCompile Include="game\script\Script_Compiler.cpp">
       <Filter>Script</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\precompiled.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">

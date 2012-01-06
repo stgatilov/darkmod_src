@@ -48,7 +48,7 @@
 #ifndef RELATIONS_H
 #define RELATIONS_H
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #include "DarkModGlobals.h"
 #include "MatrixSq.h"
 #include <boost/shared_ptr.hpp>
