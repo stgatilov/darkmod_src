@@ -390,6 +390,7 @@
 		3A537989148E8200006DC4CE /* Force_Push.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537987148E8200006DC4CE /* Force_Push.h */; };
 		3A537A58148E9F62006DC4CE /* Physics_Liquid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */; };
 		3A537A59148E9F62006DC4CE /* Physics_Liquid.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537A57148E9F62006DC4CE /* Physics_Liquid.h */; };
+		3AB237D014B78271001B0950 /* TypeInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A720912C42F005D34B9 /* TypeInfo.cpp */; };
 		81225A3A0912C3DB005D34B9 /* libidlib_pic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 81225A210912C3A4005D34B9 /* libidlib_pic.a */; };
 		81225AC40912C42F005D34B9 /* PlayerIcon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */; };
 		81225AC50912C42F005D34B9 /* Actor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3C0912C42F005D34B9 /* Actor.cpp */; };
@@ -439,7 +440,6 @@
 		81225AF40912C42F005D34B9 /* SysCmds.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A6F0912C42F005D34B9 /* SysCmds.h */; };
 		81225AF50912C42F005D34B9 /* SysCvar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A700912C42F005D34B9 /* SysCvar.cpp */; };
 		81225AF60912C42F005D34B9 /* SysCvar.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A710912C42F005D34B9 /* SysCvar.h */; };
-		81225AF70912C42F005D34B9 /* TypeInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A720912C42F005D34B9 /* TypeInfo.cpp */; };
 		81225AF80912C42F005D34B9 /* TypeInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A730912C42F005D34B9 /* TypeInfo.h */; };
 		81225AF90912C42F005D34B9 /* IK.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A740912C42F005D34B9 /* IK.cpp */; };
 		81225AFA0912C42F005D34B9 /* IK.h in Headers */ = {isa = PBXBuildFile; fileRef = 81225A750912C42F005D34B9 /* IK.h */; };
@@ -2313,7 +2313,6 @@
 				81225AF10912C42F005D34B9 /* SaveGame.cpp in Sources */,
 				81225AF30912C42F005D34B9 /* SysCmds.cpp in Sources */,
 				81225AF50912C42F005D34B9 /* SysCvar.cpp in Sources */,
-				81225AF70912C42F005D34B9 /* TypeInfo.cpp in Sources */,
 				81225AF90912C42F005D34B9 /* IK.cpp in Sources */,
 				81225AFB0912C42F005D34B9 /* Item.cpp in Sources */,
 				81225AFD0912C42F005D34B9 /* Light.cpp in Sources */,
@@ -2533,6 +2532,7 @@
 				3A537984148E81F1006DC4CE /* tdmAASFindEscape.cpp in Sources */,
 				3A537988148E8200006DC4CE /* Force_Push.cpp in Sources */,
 				3A537A58148E9F62006DC4CE /* Physics_Liquid.cpp in Sources */,
+				3AB237D014B78271001B0950 /* TypeInfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
