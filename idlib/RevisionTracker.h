@@ -63,4 +63,13 @@ public:
 	static RevisionTracker& Instance();
 };
 
+// Used to find the highest revision of all .cpp files calling this
+inline bool RegisterVersionedFile(const char* str)
+{
+	// greebo: Add the revision to the RevisionTracker class
+	RevisionTracker::ParseSVNIdString(str);
+
+	return true;
+}
+
 #endif /* __TDM_REVISION_TRACKER_H__ */

@@ -260,6 +260,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_game.h</PrecompiledHeaderFile>
     </ClCompile>
+    <Link />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
     <ClCompile>

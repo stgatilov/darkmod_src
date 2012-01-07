@@ -5,6 +5,7 @@
     <_PropertySheetDisplayName>Game Library</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)..\</OutDir>
     <TargetName>gamex86</TargetName>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
