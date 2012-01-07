@@ -173,8 +173,6 @@
 		3A5377D3148E81C3006DC4CE /* RawVector.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377B7148E81C3006DC4CE /* RawVector.h */; };
 		3A5377D4148E81C3006DC4CE /* Relations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377B8148E81C3006DC4CE /* Relations.cpp */; };
 		3A5377D5148E81C3006DC4CE /* Relations.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377B9148E81C3006DC4CE /* Relations.h */; };
-		3A5377D6148E81C3006DC4CE /* RevisionTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377BA148E81C3006DC4CE /* RevisionTracker.cpp */; };
-		3A5377D7148E81C3006DC4CE /* RevisionTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377BB148E81C3006DC4CE /* RevisionTracker.h */; };
 		3A537808148E81D7006DC4CE /* SEED.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377D8148E81D7006DC4CE /* SEED.cpp */; };
 		3A537809148E81D7006DC4CE /* SEED.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377D9148E81D7006DC4CE /* SEED.h */; };
 		3A53780A148E81D7006DC4CE /* LootRuleSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377DB148E81D7006DC4CE /* LootRuleSet.cpp */; };
@@ -775,8 +773,6 @@
 		3A5377B7148E81C3006DC4CE /* RawVector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RawVector.h; path = ../../game/RawVector.h; sourceTree = SOURCE_ROOT; };
 		3A5377B8148E81C3006DC4CE /* Relations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Relations.cpp; path = ../../game/Relations.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377B9148E81C3006DC4CE /* Relations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Relations.h; path = ../../game/Relations.h; sourceTree = SOURCE_ROOT; };
-		3A5377BA148E81C3006DC4CE /* RevisionTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RevisionTracker.cpp; path = ../../game/RevisionTracker.cpp; sourceTree = SOURCE_ROOT; };
-		3A5377BB148E81C3006DC4CE /* RevisionTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RevisionTracker.h; path = ../../game/RevisionTracker.h; sourceTree = SOURCE_ROOT; };
 		3A5377D8148E81D7006DC4CE /* SEED.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SEED.cpp; path = ../../game/SEED.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377D9148E81D7006DC4CE /* SEED.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SEED.h; path = ../../game/SEED.h; sourceTree = SOURCE_ROOT; };
 		3A5377DB148E81D7006DC4CE /* LootRuleSet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LootRuleSet.cpp; sourceTree = "<group>"; };
@@ -1322,8 +1318,6 @@
 				3A5377B7148E81C3006DC4CE /* RawVector.h */,
 				3A5377B8148E81C3006DC4CE /* Relations.cpp */,
 				3A5377B9148E81C3006DC4CE /* Relations.h */,
-				3A5377BA148E81C3006DC4CE /* RevisionTracker.cpp */,
-				3A5377BB148E81C3006DC4CE /* RevisionTracker.h */,
 				81225AAD0912C42F005D34B9 /* script */,
 				81225AB60912C42F005D34B9 /* SecurityCamera.cpp */,
 				81225AB70912C42F005D34B9 /* SecurityCamera.h */,
@@ -2043,7 +2037,6 @@
 				3A5377CE148E81C3006DC4CE /* randomc.h in Headers */,
 				3A5377D3148E81C3006DC4CE /* RawVector.h in Headers */,
 				3A5377D5148E81C3006DC4CE /* Relations.h in Headers */,
-				3A5377D7148E81C3006DC4CE /* RevisionTracker.h in Headers */,
 				3A537809148E81D7006DC4CE /* SEED.h in Headers */,
 				3A53780B148E81D7006DC4CE /* LootRuleSet.h in Headers */,
 				3A53780D148E81D7006DC4CE /* Shop.h in Headers */,
@@ -2431,7 +2424,6 @@
 				3A5377D1148E81C3006DC4CE /* userintf.cpp in Sources */,
 				3A5377D2148E81C3006DC4CE /* RawVector.cpp in Sources */,
 				3A5377D4148E81C3006DC4CE /* Relations.cpp in Sources */,
-				3A5377D6148E81C3006DC4CE /* RevisionTracker.cpp in Sources */,
 				3A537808148E81D7006DC4CE /* SEED.cpp in Sources */,
 				3A53780A148E81D7006DC4CE /* LootRuleSet.cpp in Sources */,
 				3A53780C148E81D7006DC4CE /* Shop.cpp in Sources */,
