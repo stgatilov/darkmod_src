@@ -160,7 +160,6 @@ ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 PickableLock.cpp \
 Relations.cpp \
-RevisionTracker.cpp \
 SndProp.cpp \
 SndPropLoader.cpp \
 TimerManager.cpp \
