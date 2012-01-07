@@ -6322,7 +6322,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 		// a starting point in the briefing?
 
 		bool foundSpot = false;
-		if ( m_StartPosition != "" )
+		if ( m_StartPosition != NULL && m_StartPosition[0] != 0x00 )
 		{
 			spot.ent = FindEntity( m_StartPosition );
 			if ( spot.ent != NULL )
