@@ -456,7 +456,7 @@ bool MovementSubsystem::AttemptToExtricate()
 	float extricateDistance = 1.5*(bnds[1][0] + bnds[1][1]); // 1.5 x (x_size/2 + y_size/2)
 	idAngles angles = owner->viewAxis.ToAngles();
 	float forward = angles.yaw;
-	float moveFraction = 0;		 // fractional distance from your origin to moveTo
+	//float moveFraction = 0;		 // fractional distance from your origin to moveTo
 
 	for (int i = 0 ; i < 3 ; i++)
 	{

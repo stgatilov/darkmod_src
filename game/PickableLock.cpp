@@ -504,7 +504,7 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 			// Pad the sound with a sample delay, for all but the last sample
 			int additionalDelay = (m_SoundPinSampleIndex == pattern.Num() - 1) ? 0 : cv_lp_sample_delay.GetInteger();
 
-			int sampleLength = PropPickSound(pickSound, ADVANCE_TO_NEXT_SAMPLE, additionalDelay);
+			PropPickSound(pickSound, ADVANCE_TO_NEXT_SAMPLE, additionalDelay);
 
 			success = true;
 			break;

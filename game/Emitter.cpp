@@ -291,7 +291,7 @@ void idFuncEmitter::Think( void )
 	idEntity::Think();
 
 	// extra models? Do LOD thinking for them:
-	const int num = m_models.Num();
+	//const int num = m_models.Num();
 	// start with 1
 /*	for (int i = 1; i < num; i++)
 	{

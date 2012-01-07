@@ -512,7 +512,7 @@ void idAF::AddBodyExtern
 	jointHandle_t joint 
 )
 {
-	int indexNew(0), indexExist(-1), matchID(0);
+	int indexNew(0),  matchID(0);
 	jointHandle_t tempJoint = INVALID_JOINT;
 
 	idVec3 origin;

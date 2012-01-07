@@ -207,7 +207,7 @@ void Cmd_AttachmentOffset_f( const idCmdArgs &args )
 	idStr attName = args.Argv(1);
 	idStr attPosName = args.Argv(2);
 
-	int attIndex = actor->GetAttachmentIndex(attName);
+	//int attIndex = actor->GetAttachmentIndex(attName);
 
 	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
 	if (pos == NULL)
@@ -253,7 +253,7 @@ void Cmd_AttachmentRot_f( const idCmdArgs &args )
 	idStr attName = args.Argv(1);
 	idStr attPosName = args.Argv(2);
 
-	int attIndex = actor->GetAttachmentIndex(attName);
+	//int attIndex = actor->GetAttachmentIndex(attName);
 
 	SAttachPosition* pos = actor->GetAttachPosition(attPosName);
 	if (pos == NULL)
@@ -2958,7 +2958,7 @@ bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureNam
 // 	gameLocal.Printf("Entering loop. \n" );
 
 	idToken tknParsedLine;
-	int i=0;
+	
 	for( nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
 	{
 		while(a_lexSource.ReadToken( &tknParsedLine )) 

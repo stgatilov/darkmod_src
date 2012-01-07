@@ -296,8 +296,6 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		idStr guiAvailable = va("modAvail%d", modIndex);
 		idStr guiCompleted = va("modCompleted%d", modIndex);
 
-		int available = 0;
-
 		int missionIndex = _modTop + modIndex;
 		int numMissions = gameLocal.m_MissionManager->GetNumMods();
 

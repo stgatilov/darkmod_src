@@ -1798,9 +1798,6 @@ void CTarget_SetObjectiveVisibility::Event_Activate( idEntity *activator )
 	// Get the visibility we should set the objectives to
 	bool bVisible = spawnArgs.GetBool("obj_visibility", "0");
 
-	// Find all values that match the given prefix
-	const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id");
-	
 	// Cycle through all matching spawnargs
 	for (const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id"); keyVal != NULL; 
 		 keyVal = spawnArgs.MatchPrefix("obj_id", keyVal)) 

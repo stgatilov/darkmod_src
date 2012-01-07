@@ -345,7 +345,7 @@ lod_handle CModelGenerator::RegisterLODData( const lod_handle handle ) {
 	{
 		// handle out of range
 		gameLocal.Error("ModelGenerator::RegisterLODData: Handle %i out of range 1..%i.", handle, n);
-		return -1;
+		return static_cast<lod_handle>(-1);
 	}
 
 	int h = handle - 1;
@@ -353,7 +353,7 @@ lod_handle CModelGenerator::RegisterLODData( const lod_handle handle ) {
 	{
 		// not registered
 		gameLocal.Error("ModelGenerator::RegisterLODData: LOD data %i has no users.", handle);
-		return -1;
+		return static_cast<lod_handle>(-1);
 	}
 	m_LODList[h].users ++;
 

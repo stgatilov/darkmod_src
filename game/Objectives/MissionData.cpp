@@ -388,7 +388,7 @@ bool	CMissionData::EvaluateObjective
 			)
 {
 	bool bReturnVal(false);
-	int value(0), index(0);
+	int value(0);
 
 	EComponentType CompType = pComp->m_Type;
 	ESpecificationMethod SpecMeth = pComp->m_SpecMethod[0];
@@ -2276,9 +2276,6 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	else if (cmd == "objective_open_request")
 	{
 		gui->HandleNamedEvent("GetObjectivesInfo");
-
-		// Holds the X start position for the objectives
-		int objStartXPos = -1;
 
 		// Let the GUI know which map to load
 		gui->SetStateString("mapStartCmd", va("exec 'map %s'", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str()));

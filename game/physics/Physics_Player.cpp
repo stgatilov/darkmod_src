@@ -333,7 +333,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 				// This is the max. distance we can move forward in this frame
 				idVec3 forward = time_left * current.velocity;
-				float forwardDist = forward.LengthFast();
+				//float forwardDist = forward.LengthFast();
 
 				// step down
 				idVec3 topStartPoint = downTrace.endpos + forward;
@@ -1099,7 +1099,7 @@ void idPhysics_Player::RopeMove( void )
 			if (topMostBody != NULL)
 			{
 				// Correct the pull direction using the orientation of the topmost body.
-				const idMat3& axis = topMostBody->GetWorldAxis();
+				//const idMat3& axis = topMostBody->GetWorldAxis();
 				direction = topMostBody->GetWorldAxis() * ropeShaft;
 			}
 

@@ -858,7 +858,7 @@ void Seed::Spawn( void ) {
 
 	m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.05" ));
 
-	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
+//	float cullRange = spawnArgs.GetFloat( "cull_range", "150" );
 //	gameLocal.Printf ("SEED %s: cull range = %0.2f.\n", GetName(), cullRange );
 
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );

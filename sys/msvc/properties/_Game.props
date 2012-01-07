@@ -13,6 +13,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>.\game\game.def</ModuleDefinitionFile>

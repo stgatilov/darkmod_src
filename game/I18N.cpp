@@ -291,7 +291,7 @@ int CI18N::LoadCharacterMapping( idStr& lang ) {
 		"ff"	"b2"			// remap character 0xff to 0xb2
 	}
 	*/
-	int i = 0;
+	
 	src.ExpectTokenString( "{" );
 	while ( src.ReadToken( &tok ) ) {
 		if ( tok == "}" ) {

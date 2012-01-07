@@ -301,7 +301,7 @@ bool CDarkmodHidingSpotTree::determineSpotRedundancy
 		return false;
 	}
 
-	float redundancyDistSqr = redundancyDistance*redundancyDistance;
+	//float redundancyDistSqr = redundancyDistance*redundancyDistance;
 
 	// Compare distance with other points in the area
 	for (int i = 0; i < p_areaNode->spots.Num(); i++)
@@ -662,8 +662,8 @@ bool CDarkmodHidingSpotTree::subDivideArea
 
 	// Make nodes for any subArea that isn't empty
 	bool b_originalUsed = false;
-	TDarkmodHidingSpotAreaNode* p_nodeAfterOriginal = in_p_areaNode->p_nextSibling;
-	TDarkmodHidingSpotAreaNode* p_nodeBeforeOriginal = in_p_areaNode->p_prevSibling;
+	//TDarkmodHidingSpotAreaNode* p_nodeAfterOriginal = in_p_areaNode->p_nextSibling;
+	//TDarkmodHidingSpotAreaNode* p_nodeBeforeOriginal = in_p_areaNode->p_prevSibling;
 	TDarkmodHidingSpotAreaNode* p_newNodePreviousSibling = in_p_areaNode;
 	TDarkmodHidingSpotAreaNode* p_newNodeNextSibling = in_p_areaNode->p_nextSibling;
 
@@ -915,7 +915,7 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot(unsigned int index)
 {
 	int spotDelta = index;
 	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
-	darkModHidingSpot* p_spotCursor = NULL;
+	//darkModHidingSpot* p_spotCursor = NULL;
 
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
@@ -956,7 +956,7 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 {
 	int spotDelta = index;
 	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
-	darkModHidingSpot* p_spotCursor = NULL;
+	//darkModHidingSpot* p_spotCursor = NULL;
 
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
@@ -1129,7 +1129,7 @@ bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& 
 		}
 
 		int splitPointIndex = p_area->spots.Num() - (p_area->spots.Num() / N);
-		int pointIndex = 0;
+		//int pointIndex = 0;
 
 		// Copy all points from [splitPointIndex...N] to the other tree
 		for (int i = splitPointIndex; i < p_area->spots.Num(); i++)

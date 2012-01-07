@@ -323,7 +323,6 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner,
 	CResponsePtr resp;
 	CStimResponsePtr sr;
 
-	float Radius = 0.0f;
 	StimState state( SS_DISABLED );
 	StimType typeOfStim;
 	

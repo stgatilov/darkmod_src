@@ -355,7 +355,7 @@ void CShop::LoadShopItemDefinitions()
 
 			const char* displayName = dict.GetString("displayName", "");
 			const char* displayDesc = dict.GetString("displayDesc", "");
-			const char* itemClassname = dict.GetString("itemClassname", "");
+			//const char* itemClassname = dict.GetString("itemClassname", "");
 			const char* image = dict.GetString("image", "");
 			int cost = dict.GetInt("price", "0");
 			bool stackable = dict.GetBool("stackable","0"); // grayman (#2376)

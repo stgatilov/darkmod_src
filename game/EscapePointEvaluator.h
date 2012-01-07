@@ -52,6 +52,10 @@ protected:
 
 	idVec3 _threatPosition;
 
+private:
+	// Silence compiler warning about assignment operators
+	EscapePointEvaluator& operator=(const EscapePointEvaluator& other) {}
+
 public:
 	// Default Constructor
 	EscapePointEvaluator(const EscapeConditions& conditions);

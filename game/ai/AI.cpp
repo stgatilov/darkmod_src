@@ -5245,7 +5245,7 @@ void idAI::AnimMove()
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
+	//monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
 	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {

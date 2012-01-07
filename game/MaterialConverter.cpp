@@ -53,7 +53,7 @@ MaterialConversionStatusReport::MaterialConversionStatusReport()
 //-------------------------------------------------------------
 bool MaterialParsingHelper::GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureName )
 {
-	int iOffset, nBrackets;
+	int iOffset;
 	a_strStageTextureName.Empty();
 
 	std::vector< idStr > arrStrInvalidTokens;
@@ -66,8 +66,8 @@ bool MaterialParsingHelper::GetValidStageExpression( idLexer &a_lexSource, idStr
 	// 	gameLocal.Printf("Entering loop. \n" );
 
 	idToken tknParsedLine;
-	int i=0;
-	for( nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
+
+	for(int nBrackets = 0 ; !a_lexSource.EndOfFile() ; )
 	{
 		while(a_lexSource.ReadToken( &tknParsedLine )) 
 		{

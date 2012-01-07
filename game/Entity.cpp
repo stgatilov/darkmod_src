@@ -9188,7 +9188,7 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		const idKeyValue *kv = spawnArgs.FindKey( scriptName.c_str() );
 		if( kv != NULL && kv->GetValue().Length() > 0 )
 		{
-			idThread* thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+			CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 			bFoundKey = true;
 			break;
 		}
@@ -9200,7 +9200,7 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		const idKeyValue *kv = spawnArgs.FindKey( "used_action_script" );
 		if( kv != NULL && kv->GetValue().Length() > 0 )
 		{
-			idThread* thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+			CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 		}
 	}
 
@@ -10821,25 +10821,17 @@ void idEntity::Event_GetLootAmount(int lootType)
 		case LOOT_GOLD:
 			idThread::ReturnInt(gold);
 			return;
-		break;
 
 		case LOOT_GOODS:
 			idThread::ReturnInt(goods);
 			return;
-		break;
 
 		case LOOT_JEWELS:
 			idThread::ReturnInt(jewelry);
 			return;
-		break;
-
-		default:
-			idThread::ReturnInt(total);
-			return;
-		break;
 	}
 
-	idThread::ReturnInt(0);
+	idThread::ReturnInt(total);
 }
 
 void idEntity::Event_ChangeLootAmount(int lootType, int amount)
@@ -11093,7 +11085,6 @@ void idEntity::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) 
 {
 	const CInventoryPtr& inventory = Inventory();
-	bool bIsLoot( false );
 
 	CInventoryCategoryPtr category = inventory->GetCategory(invCategory);
 	if (category == NULL) 

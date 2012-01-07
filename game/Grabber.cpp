@@ -1470,7 +1470,6 @@ bool CGrabber::ToggleEquip( void )
 
 bool CGrabber::Equip( void )
 {
-	bool rc(false);
 	idStr str;
 	idEntity *ent = m_dragEnt.GetEntity();
 
@@ -1672,7 +1671,7 @@ void CGrabber::ShoulderBody( idAFEntity_Base *body )
 	player->OnStartShoulderingBody(body);
 
 	// hide the body for now
-	idEntity *ent = m_EquippedEnt.GetEntity();
+	//idEntity *ent = m_EquippedEnt.GetEntity();
 
 	body->Unbind();
 	body->GetPhysics()->PutToRest();

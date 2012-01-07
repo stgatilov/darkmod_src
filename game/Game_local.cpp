@@ -5683,7 +5683,7 @@ idGameLocal::RequirementMet
 bool idGameLocal::RequirementMet( idEntity *activator, const idStr &requires, int removeItem ) {
 	if ( requires.Length() ) {
 		if ( activator->IsType( idPlayer::Type ) ) {
-			idPlayer *player = static_cast<idPlayer *>(activator);
+			//idPlayer *player = static_cast<idPlayer *>(activator);
 			idDict *item = NULL;//player->FindInventoryItem( requires );
 			if ( item ) {
 				if ( removeItem ) {
@@ -6322,7 +6322,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 		// a starting point in the briefing?
 
 		bool foundSpot = false;
-		if ( m_StartPosition != NULL && m_StartPosition[0] != 0x00 )
+		if ( m_StartPosition != NULL && m_StartPosition[0] != '\0' )
 		{
 			spot.ent = FindEntity( m_StartPosition );
 			if ( spot.ent != NULL )
@@ -7206,7 +7206,7 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 
 	idLight *pLightEntMainAmbient = NULL;
 	float fMaxRadius = 0.0f;
-	int j=1;
+
 	for (int i = 0; i < MAX_GENTITIES; i++)
 	{
 		// Find the ambient light with greatest radius.

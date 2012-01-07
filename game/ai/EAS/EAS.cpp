@@ -68,7 +68,7 @@ void tdmEAS::SetupClusterInfoStructures()
 
 	for (std::size_t i = 0; i < _clusterInfo.size(); i++)
 	{
-		const aasCluster_t& cluster = _aas->file->GetCluster(static_cast<int>(i));
+		//const aasCluster_t& cluster = _aas->file->GetCluster(static_cast<int>(i));
 		
 		_clusterInfo[i] = ClusterInfoPtr(new ClusterInfo);
 		_clusterInfo[i]->clusterNum = i;
