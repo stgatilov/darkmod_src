@@ -929,6 +929,7 @@
 		81C857240912ACE80095BC33 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "\"$(SYSTEM_DEVELOPER_DIR)/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks\"";
@@ -941,10 +942,12 @@
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_STYLE = STATIC;
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_pic;
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = YES;
 			};
@@ -953,6 +956,7 @@
 		81C857250912ACE80095BC33 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = "\"$(SYSTEM_DEVELOPER_DIR)/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks\"";
@@ -961,6 +965,7 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = (
 					"-finline",
@@ -975,6 +980,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_pic;
 				SYMROOT = build;
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = NO;
 			};
@@ -1032,6 +1038,7 @@
 		81C858C70912AD610095BC33 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "\"$(SYSTEM_DEVELOPER_DIR)/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks\"";
@@ -1041,6 +1048,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
 				INSTALL_PATH = "$(HOME)/lib";
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = "";
@@ -1049,6 +1057,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_nopic;
 				SECTORDER_FLAGS = "";
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
 				WARNING_CFLAGS = (
 					"-Wmost",
@@ -1061,6 +1070,7 @@
 		81C858C80912AD610095BC33 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = "\"$(SYSTEM_DEVELOPER_DIR)/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks\"";
@@ -1069,6 +1079,7 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = (
 					"-finline",
@@ -1083,6 +1094,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_nopic;
 				SYMROOT = build;
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = NO;
 			};
