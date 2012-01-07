@@ -20,6 +20,7 @@
       <AdditionalDependencies>ZipLoader.lib;libcurl.lib;DevIL.lib;libpng.lib;libjpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/win32/devil/lib;$(SolutionDir)/win32/libjpeg/lib;$(SolutionDir)/win32/libpng/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
       <Command>
