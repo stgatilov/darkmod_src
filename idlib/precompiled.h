@@ -107,7 +107,6 @@
 #include "../idlib/Lib.h"
 
 // framework
-#include "../framework/BuildVersion.h"
 #include "../framework/BuildDefines.h"
 #include "../framework/Licensee.h"
 #include "../framework/CmdSystem.h"

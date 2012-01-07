@@ -295,7 +295,6 @@
     <ClInclude Include="cm\CollisionModel.h" />
     <ClInclude Include="cm\CollisionModel_local.h" />
     <ClInclude Include="framework\BuildDefines.h" />
-    <ClInclude Include="framework\BuildVersion.h" />
     <ClInclude Include="framework\CmdSystem.h" />
     <ClInclude Include="framework\Common.h" />
     <ClInclude Include="framework\Compressor.h" />

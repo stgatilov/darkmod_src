@@ -23,7 +23,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
-#include "../RevisionTracker.h"
 
 #include "TypeInfo.h"
 
@@ -547,8 +546,8 @@ void idSaveGame::WriteSoundCommands( void ) {
 	gameSoundWorld->WriteToSaveGame( file );
 }
 
-void idSaveGame::WriteHeader() {
-	file->WriteInt( BUILD_NUMBER );
+void idSaveGame::WriteHeader()
+{
 	file->WriteInt(RevisionTracker::Instance().GetHighestRevision());
 	isCompressed = cv_savegame_compress.GetBool();
 	file->WriteBool(isCompressed);

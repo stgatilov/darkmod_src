@@ -117,9 +117,6 @@
     <ClInclude Include="framework\BuildDefines.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="framework\BuildVersion.h">
-      <Filter>Framework</Filter>
-    </ClInclude>
     <ClInclude Include="framework\CmdSystem.h">
       <Filter>Framework</Filter>
     </ClInclude>

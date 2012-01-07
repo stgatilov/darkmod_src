@@ -26,15 +26,3 @@
  * overwriting the .gch file of the previous run.
  */
 #include "../idlib/precompiled.h"
-
-// We need the revision tracker as well
-#include "../idlib/RevisionTracker.h"
-
-// Used to find the highest revision of all .cpp files calling this
-inline bool RegisterVersionedFile(const char* str)
-{
-	// greebo: Add the revision to the RevisionTracker class
-	RevisionTracker::ParseSVNIdString(str);
-
-	return true;
-}
