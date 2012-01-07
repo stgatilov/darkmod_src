@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "PropTree.h"
 #include "../../../sys/win32/rc/proptree_Resource.h"
 

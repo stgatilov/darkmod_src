@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 //#include "stdafx.h"
 #include "radiant.h"
 #include "GetString.h"	// for ErrorBox() etc

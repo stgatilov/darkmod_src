@@ -19,6 +19,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "MaterialPropTreeView.h"
 
 #define PROP_TREE_VIEW "PropTreeView"

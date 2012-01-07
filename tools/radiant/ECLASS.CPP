@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "qe3.h"
 #include "io.h"
 #include "../../renderer/tr_local.h"

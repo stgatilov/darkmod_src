@@ -29,6 +29,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include <float.h>
 #include "win_local.h"
 #include "../../renderer/tr_local.h"

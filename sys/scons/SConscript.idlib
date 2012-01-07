@@ -50,6 +50,7 @@ idlib_string = ' \
 	Token.cpp \
 	Base64.cpp \
 	Timer.cpp \
+	RevisionTracker.cpp \
 	Heap.cpp'
 
 idlib_list = scons_utils.BuildList( 'idlib', idlib_string )

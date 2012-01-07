@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../../sys/win32/rc/guied_resource.h"
 #include "../../renderer/tr_local.h"
 #include "../../ui/EditWindow.h"

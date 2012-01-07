@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"

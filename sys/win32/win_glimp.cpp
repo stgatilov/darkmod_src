@@ -34,6 +34,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "win_local.h"
 #include "rc/AFEditor_resource.h"
 #include "rc/doom_resource.h"

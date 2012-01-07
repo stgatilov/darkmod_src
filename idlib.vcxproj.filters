@@ -158,6 +158,7 @@
     <ClCompile Include="idlib\MapFile.cpp" />
     <ClCompile Include="idlib\precompiled.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
+    <ClCompile Include="idlib\RevisionTracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -348,5 +349,6 @@
     <ClInclude Include="idlib\MapFile.h" />
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="idlib\Timer.h" />
+    <ClInclude Include="idlib\RevisionTracker.h" />
   </ItemGroup>
 </Project>

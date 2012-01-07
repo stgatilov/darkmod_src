@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "AASFile.h"
 #include "AASFile_local.h"
 #include "AASCluster.h"

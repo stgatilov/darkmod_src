@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../../sys/win32/rc/SoundEditor_resource.h"
 
 #include "DialogSoundGroup.h"

@@ -473,7 +473,6 @@
     <ClCompile Include="game\PVSToAASMapping.cpp" />
     <ClCompile Include="game\RawVector.cpp" />
     <ClCompile Include="game\Relations.cpp" />
-    <ClCompile Include="game\RevisionTracker.cpp" />
     <ClCompile Include="game\ai\AAS_debug.cpp">
       <Filter>AI</Filter>
     </ClCompile>
@@ -999,7 +998,6 @@
     <ClInclude Include="game\Inventory\InventoryItem.h">
       <Filter>Inventory</Filter>
     </ClInclude>
-    <ClInclude Include="game\RevisionTracker.h" />
     <ClInclude Include="game\SecurityCamera.h" />
     <ClInclude Include="game\SEED.h" />
     <ClInclude Include="game\SmokeParticles.h" />

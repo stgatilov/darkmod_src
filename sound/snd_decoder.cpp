@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "snd_local.h"
 #include "OggVorbis/vorbis/codec.h"
 #include "OggVorbis/vorbis/vorbisfile.h"

@@ -39,7 +39,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ai/AI.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
-#include "RevisionTracker.h"
+#include "../idlib/RevisionTracker.h"
 #include "IniFile.h"
 #include <boost/filesystem.hpp>
 

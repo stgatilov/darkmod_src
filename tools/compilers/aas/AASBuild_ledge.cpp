@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "AASBuild_local.h"
 
 #define LEDGE_EPSILON		0.1f

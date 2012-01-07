@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #define JPEG_INTERNALS
 extern "C" {
 #include "jpeg-6/jpeglib.h"

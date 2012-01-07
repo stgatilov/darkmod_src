@@ -19,6 +19,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../framework/Session_local.h"
 #include "../renderer/Image.h"
 

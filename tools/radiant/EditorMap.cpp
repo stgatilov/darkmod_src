@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "qe3.h"
 
 int			mapModified;			// for quit confirmation (0 = clean, 1 = unsaved,

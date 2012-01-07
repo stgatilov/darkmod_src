@@ -17,12 +17,8 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled.h"
 #pragma hdrstop
-
-#pragma warning(disable : 4533 4800)
-
-static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "RevisionTracker.h"
 

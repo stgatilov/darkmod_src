@@ -20,6 +20,9 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
+#include "../idlib/RevisionTracker.h"
 #include "../renderer/Image.h"
 #include <iostream>
 
@@ -39,12 +42,31 @@ typedef enum {
 	#define BUILD_DEBUG ""
 #endif
 
-struct version_s {
-			version_s( void ) { sprintf( string, "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ ); }
-	char	string[256];
-} version;
+class EngineVersion
+{
+public:
+	EngineVersion()
+	{
+		memset(string, 0, 256);
+	}
 
-idCVar com_version( "si_version", version.string, CVAR_SYSTEM|CVAR_ROM|CVAR_SERVERINFO, "engine version" );
+	const char* Get()
+	{
+		if (string[0] == NULL)
+		{
+			sprintf( string, "%srev%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+		}
+
+		return string;
+	}
+
+private:
+	char	string[256];
+};
+
+EngineVersion engineVersion;
+
+idCVar com_version( "si_version", "not set", CVAR_SYSTEM|CVAR_ROM|CVAR_SERVERINFO, "engine version" );
 idCVar com_skipRenderer( "com_skipRenderer", "0", CVAR_BOOL|CVAR_SYSTEM, "skip the renderer completely" );
 idCVar com_machineSpec( "com_machineSpec", "-1", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM, "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality" );
 idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );
@@ -2856,9 +2878,10 @@ void idCommonLocal::SetMachineSpec( void ) {
 idCommonLocal::Init
 =================
 */
-void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
-	try {
-
+void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
+{
+	try
+	{
 		// set interface pointers used by idLib
 		idLib::sys			= sys;
 		idLib::common		= common;
@@ -2892,8 +2915,11 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		// register all static CVars
 		idCVar::RegisterStaticVars();
 
+		// Store the engine version into the CVAR
+		com_version.SetString(engineVersion.Get());
+
 		// print engine version
-		Printf( "%s\n", version.string );
+		Printf( "%s\n", com_version.GetString() );
 
 		// initialize key input/binding, done early so bind command exists
 		idKeyInput::Init();

@@ -1,6 +1,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "Unzip.h"
 
 /* unzip.h -- IO for uncompress .zip files using zlib 

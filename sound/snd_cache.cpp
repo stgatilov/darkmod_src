@@ -19,6 +19,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "snd_local.h"
 
 #define USE_SOUND_CACHE_ALLOCATOR

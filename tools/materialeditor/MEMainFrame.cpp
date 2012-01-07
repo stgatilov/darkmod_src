@@ -19,6 +19,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "MaterialEditor.h"
 #include "MEMainFrame.h"
 #include "MaterialDef.h"

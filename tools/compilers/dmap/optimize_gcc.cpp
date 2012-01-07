@@ -26,6 +26,8 @@ see dmap.gcc.zip test map and .proc outputs
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "dmap.h"
 
 extern idBounds optBounds;

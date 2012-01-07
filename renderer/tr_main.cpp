@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "tr_local.h"
 #ifdef __ppc__
 #include <vecLib/vecLib.h>

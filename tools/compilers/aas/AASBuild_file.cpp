@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "AASBuild_local.h"
 
 #define VERTEX_HASH_BOXSIZE				(1<<6)	// must be power of 2

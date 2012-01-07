@@ -43,13 +43,6 @@ const char *si_spectateArgs[]		= { "Play", "Spectate", NULL };
 const char *ui_skinArgs[]			= { "skins/characters/player/marine_mp", "skins/characters/player/marine_mp_red", "skins/characters/player/marine_mp_blue", "skins/characters/player/marine_mp_green", "skins/characters/player/marine_mp_yellow", NULL };
 const char *ui_teamArgs[]			= { "Red", "Blue", NULL }; 
 
-struct gameVersion_s {
-	gameVersion_s( void ) { sprintf( string, "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ ); }
-	char	string[256];
-} gameVersion;
-
-idCVar g_version(					"g_version",				gameVersion.string,	CVAR_GAME | CVAR_ROM, "game version" );
-
 /**
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/

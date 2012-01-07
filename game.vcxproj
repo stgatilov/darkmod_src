@@ -521,7 +521,6 @@
     <ClCompile Include="game\randomizer\ranrotw.cpp" />
     <ClCompile Include="game\RawVector.cpp" />
     <ClCompile Include="game\Relations.cpp" />
-    <ClCompile Include="game\RevisionTracker.cpp" />
     <ClCompile Include="game\script\Script_Compiler.cpp" />
     <ClCompile Include="game\script\Script_Interpreter.cpp" />
     <ClCompile Include="game\script\Script_Program.cpp" />
@@ -774,7 +773,6 @@
     <ClInclude Include="game\randomizer\_lrotl.h" />
     <ClInclude Include="game\RawVector.h" />
     <ClInclude Include="game\Relations.h" />
-    <ClInclude Include="game\RevisionTracker.h" />
     <ClInclude Include="game\script\Script_Compiler.h" />
     <ClInclude Include="game\script\Script_Interpreter.h" />
     <ClInclude Include="game\script\Script_Program.h" />

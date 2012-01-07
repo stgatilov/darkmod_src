@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "DebuggerApp.h"
 #include "DebuggerScript.h"
 #include "../../game/script/Script_Program.h"

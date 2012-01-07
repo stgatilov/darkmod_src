@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../../game/game.h"
 #include "../../sys/win32/win_local.h"
 #include "../../sys/win32/rc/common_resource.h"

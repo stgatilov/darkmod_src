@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../../sys/win32/rc/debugger_resource.h"
 #include "DebuggerApp.h"
 #include "DebuggerServer.h"

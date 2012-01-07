@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "../../game/gamesys/Event.h"
 #include "../../game/gamesys/Class.h"
 #include "../../game/script/Script_Program.h"

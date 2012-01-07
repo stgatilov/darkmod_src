@@ -20,6 +20,8 @@
 #include "precompiled_engine.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "ColorButton.h"
 
 static const int ARROW_SIZE_CX = 4 ;
