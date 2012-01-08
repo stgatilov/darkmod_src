@@ -12,6 +12,10 @@
 		3AB2382614B786D9001B0950 /* RevisionTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2382414B786D9001B0950 /* RevisionTracker.h */; };
 		3AB2382714B786E2001B0950 /* RevisionTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2382314B786D9001B0950 /* RevisionTracker.cpp */; };
 		3AB2382814B786E5001B0950 /* RevisionTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2382414B786D9001B0950 /* RevisionTracker.h */; };
+		3AB2386814B9A44D001B0950 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2386614B9A44D001B0950 /* Image.cpp */; };
+		3AB2386914B9A44D001B0950 /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2386714B9A44D001B0950 /* Image.h */; };
+		3AB2386A14B9A44D001B0950 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2386614B9A44D001B0950 /* Image.cpp */; };
+		3AB2386B14B9A44D001B0950 /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2386714B9A44D001B0950 /* Image.h */; };
 		81C857480912AD020095BC33 /* BitMsg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C857470912AD020095BC33 /* BitMsg.cpp */; };
 		81C857C90912AD0D0095BC33 /* Base64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C8574A0912AD0D0095BC33 /* Base64.cpp */; };
 		81C857CA0912AD0D0095BC33 /* Base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 81C8574B0912AD0D0095BC33 /* Base64.h */; };
@@ -254,6 +258,8 @@
 		3A1767C6149346E90077AB23 /* Frustum_gcc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Frustum_gcc.cpp; sourceTree = "<group>"; };
 		3AB2382314B786D9001B0950 /* RevisionTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RevisionTracker.cpp; path = ../../idlib/RevisionTracker.cpp; sourceTree = SOURCE_ROOT; };
 		3AB2382414B786D9001B0950 /* RevisionTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RevisionTracker.h; path = ../../idlib/RevisionTracker.h; sourceTree = SOURCE_ROOT; };
+		3AB2386614B9A44D001B0950 /* Image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Image.cpp; path = ../../idlib/Image.cpp; sourceTree = SOURCE_ROOT; };
+		3AB2386714B9A44D001B0950 /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Image.h; path = ../../idlib/Image.h; sourceTree = SOURCE_ROOT; };
 		81C857470912AD020095BC33 /* BitMsg.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = BitMsg.cpp; path = ../../idlib/BitMsg.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574A0912AD0D0095BC33 /* Base64.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Base64.cpp; path = ../../idlib/Base64.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574B0912AD0D0095BC33 /* Base64.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Base64.h; path = ../../idlib/Base64.h; sourceTree = SOURCE_ROOT; };
@@ -409,6 +415,8 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				3AB2386614B9A44D001B0950 /* Image.cpp */,
+				3AB2386714B9A44D001B0950 /* Image.h */,
 				3AB2382314B786D9001B0950 /* RevisionTracker.cpp */,
 				3AB2382414B786D9001B0950 /* RevisionTracker.h */,
 				81C857470912AD020095BC33 /* BitMsg.cpp */,
@@ -662,6 +670,7 @@
 				81C858C20912AD510095BC33 /* Timer.h in Headers */,
 				81C858C40912AD510095BC33 /* Token.h in Headers */,
 				3AB2382614B786D9001B0950 /* RevisionTracker.h in Headers */,
+				3AB2386914B9A44D001B0950 /* Image.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -737,6 +746,7 @@
 				81C858400912AD0D0095BC33 /* Timer.h in Headers */,
 				81C858420912AD0D0095BC33 /* Token.h in Headers */,
 				3AB2382814B786E5001B0950 /* RevisionTracker.h in Headers */,
+				3AB2386B14B9A44D001B0950 /* Image.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -862,6 +872,7 @@
 				81C858C30912AD510095BC33 /* Token.cpp in Sources */,
 				3A1767C7149346E90077AB23 /* Frustum_gcc.cpp in Sources */,
 				3AB2382514B786D9001B0950 /* RevisionTracker.cpp in Sources */,
+				3AB2386814B9A44D001B0950 /* Image.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -920,6 +931,7 @@
 				81C8583F0912AD0D0095BC33 /* Timer.cpp in Sources */,
 				81C858410912AD0D0095BC33 /* Token.cpp in Sources */,
 				3AB2382714B786E2001B0950 /* RevisionTracker.cpp in Sources */,
+				3AB2386A14B9A44D001B0950 /* Image.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -942,7 +954,10 @@
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../include/devil\"",
+					"\"$(SRCROOT)/../../include\"",
+				);
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_STYLE = STATIC;
 				PREBINDING = NO;
@@ -965,7 +980,10 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../include/devil\"",
+					"\"$(SRCROOT)/../../include\"",
+				);
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = (
 					"-finline",
@@ -1048,7 +1066,10 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../include\"",
+					"\"$(SRCROOT)/../../include/devil\"",
+				);
 				INSTALL_PATH = "$(HOME)/lib";
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = "";
@@ -1079,7 +1100,10 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../idlib/precompiled.h;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../include\"",
+					"\"$(SRCROOT)/../../include/devil\"",
+				);
 				LIBRARY_STYLE = STATIC;
 				OTHER_CFLAGS = (
 					"-finline",

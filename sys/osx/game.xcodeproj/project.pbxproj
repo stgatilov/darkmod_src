@@ -39,8 +39,6 @@
 		3A5376EA148E813B006DC4CE /* BloodMarker.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5376B6148E813B006DC4CE /* BloodMarker.h */; };
 		3A5376EB148E813B006DC4CE /* ButtonStateTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5376B7148E813B006DC4CE /* ButtonStateTracker.cpp */; };
 		3A5376EC148E813B006DC4CE /* ButtonStateTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5376B8148E813B006DC4CE /* ButtonStateTracker.h */; };
-		3A5376ED148E813B006DC4CE /* CImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5376B9148E813B006DC4CE /* CImage.cpp */; };
-		3A5376EE148E813B006DC4CE /* CImage.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5376BA148E813B006DC4CE /* CImage.h */; };
 		3A5376EF148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5376BB148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp */; };
 		3A5376F0148E813B006DC4CE /* DarkmodAASHidingSpotFinder.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5376BC148E813B006DC4CE /* DarkmodAASHidingSpotFinder.h */; };
 		3A5376F1148E813B006DC4CE /* DarkModGlobals.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5376BD148E813B006DC4CE /* DarkModGlobals.cpp */; };
@@ -637,8 +635,6 @@
 		3A5376B6148E813B006DC4CE /* BloodMarker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BloodMarker.h; path = ../../game/BloodMarker.h; sourceTree = SOURCE_ROOT; };
 		3A5376B7148E813B006DC4CE /* ButtonStateTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ButtonStateTracker.cpp; path = ../../game/ButtonStateTracker.cpp; sourceTree = SOURCE_ROOT; };
 		3A5376B8148E813B006DC4CE /* ButtonStateTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ButtonStateTracker.h; path = ../../game/ButtonStateTracker.h; sourceTree = SOURCE_ROOT; };
-		3A5376B9148E813B006DC4CE /* CImage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CImage.cpp; path = ../../game/CImage.cpp; sourceTree = SOURCE_ROOT; };
-		3A5376BA148E813B006DC4CE /* CImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CImage.h; path = ../../game/CImage.h; sourceTree = SOURCE_ROOT; };
 		3A5376BB148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarkmodAASHidingSpotFinder.cpp; path = ../../game/DarkmodAASHidingSpotFinder.cpp; sourceTree = SOURCE_ROOT; };
 		3A5376BC148E813B006DC4CE /* DarkmodAASHidingSpotFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DarkmodAASHidingSpotFinder.h; path = ../../game/DarkmodAASHidingSpotFinder.h; sourceTree = SOURCE_ROOT; };
 		3A5376BD148E813B006DC4CE /* DarkModGlobals.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarkModGlobals.cpp; path = ../../game/DarkModGlobals.cpp; sourceTree = SOURCE_ROOT; };
@@ -1183,8 +1179,6 @@
 				3A5376B8148E813B006DC4CE /* ButtonStateTracker.h */,
 				81225A570912C42F005D34B9 /* Camera.cpp */,
 				81225A580912C42F005D34B9 /* Camera.h */,
-				3A5376B9148E813B006DC4CE /* CImage.cpp */,
-				3A5376BA148E813B006DC4CE /* CImage.h */,
 				3A5376BB148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp */,
 				3A5376BC148E813B006DC4CE /* DarkmodAASHidingSpotFinder.h */,
 				3A5376BD148E813B006DC4CE /* DarkModGlobals.cpp */,
@@ -1969,7 +1963,6 @@
 				3A5376E8148E813B006DC4CE /* BinaryFrobMover.h in Headers */,
 				3A5376EA148E813B006DC4CE /* BloodMarker.h in Headers */,
 				3A5376EC148E813B006DC4CE /* ButtonStateTracker.h in Headers */,
-				3A5376EE148E813B006DC4CE /* CImage.h in Headers */,
 				3A5376F0148E813B006DC4CE /* DarkmodAASHidingSpotFinder.h in Headers */,
 				3A5376F2148E813B006DC4CE /* DarkModGlobals.h in Headers */,
 				3A5376F4148E813B006DC4CE /* darkmodHidingSpotTree.h in Headers */,
@@ -2358,7 +2351,6 @@
 				3A5376E7148E813B006DC4CE /* BinaryFrobMover.cpp in Sources */,
 				3A5376E9148E813B006DC4CE /* BloodMarker.cpp in Sources */,
 				3A5376EB148E813B006DC4CE /* ButtonStateTracker.cpp in Sources */,
-				3A5376ED148E813B006DC4CE /* CImage.cpp in Sources */,
 				3A5376EF148E813B006DC4CE /* DarkmodAASHidingSpotFinder.cpp in Sources */,
 				3A5376F1148E813B006DC4CE /* DarkModGlobals.cpp in Sources */,
 				3A5376F3148E813B006DC4CE /* darkmodHidingSpotTree.cpp in Sources */,

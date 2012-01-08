@@ -70,28 +70,28 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176B561493626B0077AB23 /* libjpeg.a */;
+			remoteGlobalIDString = 3A176B561493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 		3A176D6D14936F720077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D6914936F720077AB23 /* png.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176C98149365AD0077AB23 /* libpng.a */;
+			remoteGlobalIDString = 3A176C98149365AD0077AB23;
 			remoteInfo = png;
 		};
 		3A176D7114936F7C0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D6914936F720077AB23 /* png.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176C97149365AD0077AB23 /* png */;
+			remoteGlobalIDString = 3A176C97149365AD0077AB23;
 			remoteInfo = png;
 		};
 		3A176D7314936F7E0077AB23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A176D6314936F6C0077AB23 /* jpeg.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176B551493626B0077AB23 /* jpeg */;
+			remoteGlobalIDString = 3A176B551493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 /* End PBXContainerItemProxy section */

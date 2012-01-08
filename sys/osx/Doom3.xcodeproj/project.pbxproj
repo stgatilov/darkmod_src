@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		3A176D3314936ACC0077AB23 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176D3214936ACC0077AB23 /* libdevil.a */; };
+		3AB238F914B9C568001B0950 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238F814B9C568001B0950 /* libjpeg.a */; };
+		3AB238FF14B9C57A001B0950 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238FE14B9C57A001B0950 /* libpng.a */; };
+		3AB2390314B9C585001B0950 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB2390214B9C585001B0950 /* libziploader.a */; };
 		812258110912BC79005D34B9 /* snd_efxfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122565F0912BC78005D34B9 /* snd_efxfile.cpp */; };
 		812258120912BC79005D34B9 /* GEWindowWrapper_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */; };
 		812258130912BC79005D34B9 /* edit_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256630912BC79005D34B9 /* edit_stub.cpp */; };
@@ -84,52 +87,6 @@
 		812258790912BC79005D34B9 /* Image_process.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122571C0912BC79005D34B9 /* Image_process.cpp */; };
 		8122587A0912BC79005D34B9 /* Image_program.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122571D0912BC79005D34B9 /* Image_program.cpp */; };
 		8122587B0912BC79005D34B9 /* Interaction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122571E0912BC79005D34B9 /* Interaction.cpp */; };
-		8122587C0912BC79005D34B9 /* jcapimin.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257210912BC79005D34B9 /* jcapimin.c */; };
-		8122587D0912BC79005D34B9 /* jcapistd.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257220912BC79005D34B9 /* jcapistd.c */; };
-		8122587E0912BC79005D34B9 /* jccoefct.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257230912BC79005D34B9 /* jccoefct.c */; };
-		8122587F0912BC79005D34B9 /* jccolor.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257240912BC79005D34B9 /* jccolor.c */; };
-		812258800912BC79005D34B9 /* jcdctmgr.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257250912BC79005D34B9 /* jcdctmgr.c */; };
-		812258810912BC79005D34B9 /* jchuff.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257260912BC79005D34B9 /* jchuff.c */; };
-		812258820912BC79005D34B9 /* jcinit.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257280912BC79005D34B9 /* jcinit.c */; };
-		812258830912BC79005D34B9 /* jcmainct.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257290912BC79005D34B9 /* jcmainct.c */; };
-		812258840912BC79005D34B9 /* jcmarker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122572A0912BC79005D34B9 /* jcmarker.c */; };
-		812258850912BC79005D34B9 /* jcmaster.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122572B0912BC79005D34B9 /* jcmaster.c */; };
-		812258860912BC79005D34B9 /* jcomapi.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122572C0912BC79005D34B9 /* jcomapi.c */; };
-		812258870912BC79005D34B9 /* jcparam.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122572E0912BC79005D34B9 /* jcparam.c */; };
-		812258880912BC79005D34B9 /* jcphuff.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122572F0912BC79005D34B9 /* jcphuff.c */; };
-		812258890912BC79005D34B9 /* jcprepct.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257300912BC79005D34B9 /* jcprepct.c */; };
-		8122588A0912BC79005D34B9 /* jcsample.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257310912BC79005D34B9 /* jcsample.c */; };
-		8122588B0912BC79005D34B9 /* jctrans.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257320912BC79005D34B9 /* jctrans.c */; };
-		8122588C0912BC79005D34B9 /* jdapimin.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257330912BC79005D34B9 /* jdapimin.c */; };
-		8122588D0912BC79005D34B9 /* jdapistd.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257340912BC79005D34B9 /* jdapistd.c */; };
-		8122588E0912BC79005D34B9 /* jdatadst.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257350912BC79005D34B9 /* jdatadst.c */; };
-		8122588F0912BC79005D34B9 /* jdatasrc.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257360912BC79005D34B9 /* jdatasrc.c */; };
-		812258900912BC79005D34B9 /* jdcoefct.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257370912BC79005D34B9 /* jdcoefct.c */; };
-		812258910912BC79005D34B9 /* jdcolor.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257380912BC79005D34B9 /* jdcolor.c */; };
-		812258920912BC79005D34B9 /* jddctmgr.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122573A0912BC79005D34B9 /* jddctmgr.c */; };
-		812258930912BC79005D34B9 /* jdhuff.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122573B0912BC79005D34B9 /* jdhuff.c */; };
-		812258940912BC79005D34B9 /* jdinput.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122573D0912BC79005D34B9 /* jdinput.c */; };
-		812258950912BC79005D34B9 /* jdmainct.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122573E0912BC79005D34B9 /* jdmainct.c */; };
-		812258960912BC79005D34B9 /* jdmarker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122573F0912BC79005D34B9 /* jdmarker.c */; };
-		812258970912BC79005D34B9 /* jdmaster.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257400912BC79005D34B9 /* jdmaster.c */; };
-		812258980912BC79005D34B9 /* jdmerge.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257410912BC79005D34B9 /* jdmerge.c */; };
-		812258990912BC79005D34B9 /* jdphuff.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257420912BC79005D34B9 /* jdphuff.c */; };
-		8122589A0912BC79005D34B9 /* jdpostct.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257430912BC79005D34B9 /* jdpostct.c */; };
-		8122589B0912BC79005D34B9 /* jdsample.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257440912BC79005D34B9 /* jdsample.c */; };
-		8122589C0912BC79005D34B9 /* jdtrans.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257450912BC79005D34B9 /* jdtrans.c */; };
-		8122589D0912BC79005D34B9 /* jerror.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257460912BC79005D34B9 /* jerror.c */; };
-		8122589E0912BC79005D34B9 /* jfdctflt.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257480912BC79005D34B9 /* jfdctflt.c */; };
-		8122589F0912BC79005D34B9 /* jfdctfst.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257490912BC79005D34B9 /* jfdctfst.c */; };
-		812258A00912BC79005D34B9 /* jfdctint.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122574A0912BC79005D34B9 /* jfdctint.c */; };
-		812258A10912BC79005D34B9 /* jidctflt.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122574B0912BC79005D34B9 /* jidctflt.c */; };
-		812258A20912BC79005D34B9 /* jidctfst.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122574C0912BC79005D34B9 /* jidctfst.c */; };
-		812258A30912BC79005D34B9 /* jidctint.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122574D0912BC79005D34B9 /* jidctint.c */; };
-		812258A40912BC79005D34B9 /* jidctred.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122574E0912BC79005D34B9 /* jidctred.c */; };
-		812258A80912BC79005D34B9 /* jmemmgr.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257530912BC79005D34B9 /* jmemmgr.c */; };
-		812258AA0912BC79005D34B9 /* jmemnobs.c in Sources */ = {isa = PBXBuildFile; fileRef = 812257550912BC79005D34B9 /* jmemnobs.c */; };
-		812258AC0912BC79005D34B9 /* jquant1.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122575B0912BC79005D34B9 /* jquant1.c */; };
-		812258AD0912BC79005D34B9 /* jquant2.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122575C0912BC79005D34B9 /* jquant2.c */; };
-		812258AE0912BC79005D34B9 /* jutils.c in Sources */ = {isa = PBXBuildFile; fileRef = 8122575D0912BC79005D34B9 /* jutils.c */; };
 		812258AF0912BC79005D34B9 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122575F0912BC79005D34B9 /* Material.cpp */; };
 		812258B00912BC79005D34B9 /* MegaTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257610912BC79005D34B9 /* MegaTexture.cpp */; };
 		812258B10912BC79005D34B9 /* Model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257630912BC79005D34B9 /* Model.cpp */; };
@@ -254,6 +211,34 @@
 			remoteGlobalIDString = 3A17681A149350DE0077AB23;
 			remoteInfo = devil;
 		};
+		3AB238D314B9B04E001B0950 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A176B561493626B0077AB23 /* libjpeg.a */;
+			remoteInfo = jpeg;
+		};
+		3AB238D914B9B05C001B0950 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AB238D514B9B05C001B0950 /* png.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A176C98149365AD0077AB23 /* libpng.a */;
+			remoteInfo = png;
+		};
+		3AB238DB14B9B060001B0950 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A176B551493626B0077AB23 /* jpeg */;
+			remoteInfo = jpeg;
+		};
+		3AB238DD14B9B064001B0950 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AB238D514B9B05C001B0950 /* png.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A176C97149365AD0077AB23 /* png */;
+			remoteInfo = png;
+		};
 		8122597F0912BF1D005D34B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 812259790912BF1D005D34B9 /* idlib.xcodeproj */;
@@ -322,6 +307,11 @@
 		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
 		3A176D3214936ACC0077AB23 /* libdevil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdevil.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libdevil.a; sourceTree = "<absolute>"; };
 		3A176DDB1494CAA00077AB23 /* libidlib_pic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libidlib_pic.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libidlib_pic.a; sourceTree = "<absolute>"; };
+		3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = jpeg.xcodeproj; sourceTree = "<group>"; };
+		3AB238D514B9B05C001B0950 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = png.xcodeproj; sourceTree = "<group>"; };
+		3AB238F814B9C568001B0950 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libjpeg.a; sourceTree = "<absolute>"; };
+		3AB238FE14B9C57A001B0950 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libpng.a; sourceTree = "<absolute>"; };
+		3AB2390214B9C585001B0950 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libziploader.a; sourceTree = "<absolute>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -427,68 +417,6 @@
 		8122571D0912BC79005D34B9 /* Image_program.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Image_program.cpp; sourceTree = "<group>"; };
 		8122571E0912BC79005D34B9 /* Interaction.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Interaction.cpp; sourceTree = "<group>"; };
 		8122571F0912BC79005D34B9 /* Interaction.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = Interaction.h; sourceTree = "<group>"; };
-		812257210912BC79005D34B9 /* jcapimin.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcapimin.c; sourceTree = "<group>"; };
-		812257220912BC79005D34B9 /* jcapistd.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcapistd.c; sourceTree = "<group>"; };
-		812257230912BC79005D34B9 /* jccoefct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jccoefct.c; sourceTree = "<group>"; };
-		812257240912BC79005D34B9 /* jccolor.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jccolor.c; sourceTree = "<group>"; };
-		812257250912BC79005D34B9 /* jcdctmgr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcdctmgr.c; sourceTree = "<group>"; };
-		812257260912BC79005D34B9 /* jchuff.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jchuff.c; sourceTree = "<group>"; };
-		812257270912BC79005D34B9 /* jchuff.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jchuff.h; sourceTree = "<group>"; };
-		812257280912BC79005D34B9 /* jcinit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcinit.c; sourceTree = "<group>"; };
-		812257290912BC79005D34B9 /* jcmainct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcmainct.c; sourceTree = "<group>"; };
-		8122572A0912BC79005D34B9 /* jcmarker.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcmarker.c; sourceTree = "<group>"; };
-		8122572B0912BC79005D34B9 /* jcmaster.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcmaster.c; sourceTree = "<group>"; };
-		8122572C0912BC79005D34B9 /* jcomapi.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcomapi.c; sourceTree = "<group>"; };
-		8122572D0912BC79005D34B9 /* jconfig.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jconfig.h; sourceTree = "<group>"; };
-		8122572E0912BC79005D34B9 /* jcparam.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcparam.c; sourceTree = "<group>"; };
-		8122572F0912BC79005D34B9 /* jcphuff.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcphuff.c; sourceTree = "<group>"; };
-		812257300912BC79005D34B9 /* jcprepct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcprepct.c; sourceTree = "<group>"; };
-		812257310912BC79005D34B9 /* jcsample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jcsample.c; sourceTree = "<group>"; };
-		812257320912BC79005D34B9 /* jctrans.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jctrans.c; sourceTree = "<group>"; };
-		812257330912BC79005D34B9 /* jdapimin.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdapimin.c; sourceTree = "<group>"; };
-		812257340912BC79005D34B9 /* jdapistd.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdapistd.c; sourceTree = "<group>"; };
-		812257350912BC79005D34B9 /* jdatadst.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdatadst.c; sourceTree = "<group>"; };
-		812257360912BC79005D34B9 /* jdatasrc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdatasrc.c; sourceTree = "<group>"; };
-		812257370912BC79005D34B9 /* jdcoefct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdcoefct.c; sourceTree = "<group>"; };
-		812257380912BC79005D34B9 /* jdcolor.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdcolor.c; sourceTree = "<group>"; };
-		812257390912BC79005D34B9 /* jdct.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jdct.h; sourceTree = "<group>"; };
-		8122573A0912BC79005D34B9 /* jddctmgr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jddctmgr.c; sourceTree = "<group>"; };
-		8122573B0912BC79005D34B9 /* jdhuff.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdhuff.c; sourceTree = "<group>"; };
-		8122573C0912BC79005D34B9 /* jdhuff.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jdhuff.h; sourceTree = "<group>"; };
-		8122573D0912BC79005D34B9 /* jdinput.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdinput.c; sourceTree = "<group>"; };
-		8122573E0912BC79005D34B9 /* jdmainct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdmainct.c; sourceTree = "<group>"; };
-		8122573F0912BC79005D34B9 /* jdmarker.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdmarker.c; sourceTree = "<group>"; };
-		812257400912BC79005D34B9 /* jdmaster.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdmaster.c; sourceTree = "<group>"; };
-		812257410912BC79005D34B9 /* jdmerge.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdmerge.c; sourceTree = "<group>"; };
-		812257420912BC79005D34B9 /* jdphuff.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdphuff.c; sourceTree = "<group>"; };
-		812257430912BC79005D34B9 /* jdpostct.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdpostct.c; sourceTree = "<group>"; };
-		812257440912BC79005D34B9 /* jdsample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdsample.c; sourceTree = "<group>"; };
-		812257450912BC79005D34B9 /* jdtrans.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jdtrans.c; sourceTree = "<group>"; };
-		812257460912BC79005D34B9 /* jerror.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jerror.c; sourceTree = "<group>"; };
-		812257470912BC79005D34B9 /* jerror.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jerror.h; sourceTree = "<group>"; };
-		812257480912BC79005D34B9 /* jfdctflt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jfdctflt.c; sourceTree = "<group>"; };
-		812257490912BC79005D34B9 /* jfdctfst.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jfdctfst.c; sourceTree = "<group>"; };
-		8122574A0912BC79005D34B9 /* jfdctint.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jfdctint.c; sourceTree = "<group>"; };
-		8122574B0912BC79005D34B9 /* jidctflt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jidctflt.c; sourceTree = "<group>"; };
-		8122574C0912BC79005D34B9 /* jidctfst.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jidctfst.c; sourceTree = "<group>"; };
-		8122574D0912BC79005D34B9 /* jidctint.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jidctint.c; sourceTree = "<group>"; };
-		8122574E0912BC79005D34B9 /* jidctred.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jidctred.c; sourceTree = "<group>"; };
-		8122574F0912BC79005D34B9 /* jinclude.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jinclude.h; sourceTree = "<group>"; };
-		812257500912BC79005D34B9 /* jload.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jload.c; sourceTree = "<group>"; };
-		812257510912BC79005D34B9 /* jmemansi.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jmemansi.c; sourceTree = "<group>"; };
-		812257520912BC79005D34B9 /* jmemdos.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jmemdos.c; sourceTree = "<group>"; };
-		812257530912BC79005D34B9 /* jmemmgr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jmemmgr.c; sourceTree = "<group>"; };
-		812257540912BC79005D34B9 /* jmemname.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jmemname.c; sourceTree = "<group>"; };
-		812257550912BC79005D34B9 /* jmemnobs.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jmemnobs.c; sourceTree = "<group>"; };
-		812257560912BC79005D34B9 /* jmemsys.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jmemsys.h; sourceTree = "<group>"; };
-		812257570912BC79005D34B9 /* jmorecfg.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jmorecfg.h; sourceTree = "<group>"; };
-		812257580912BC79005D34B9 /* jpegint.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jpegint.h; sourceTree = "<group>"; };
-		812257590912BC79005D34B9 /* jpeglib.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jpeglib.h; sourceTree = "<group>"; };
-		8122575A0912BC79005D34B9 /* jpegtran.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jpegtran.c; sourceTree = "<group>"; };
-		8122575B0912BC79005D34B9 /* jquant1.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jquant1.c; sourceTree = "<group>"; };
-		8122575C0912BC79005D34B9 /* jquant2.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jquant2.c; sourceTree = "<group>"; };
-		8122575D0912BC79005D34B9 /* jutils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jutils.c; sourceTree = "<group>"; };
-		8122575E0912BC79005D34B9 /* jversion.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jversion.h; sourceTree = "<group>"; };
 		8122575F0912BC79005D34B9 /* Material.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Material.cpp; sourceTree = "<group>"; };
 		812257600912BC79005D34B9 /* Material.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = Material.h; sourceTree = "<group>"; };
 		812257610912BC79005D34B9 /* MegaTexture.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MegaTexture.cpp; sourceTree = "<group>"; };
@@ -692,6 +620,9 @@
 				812259B30912BFDC005D34B9 /* OpenGL.framework in Frameworks */,
 				812259B70912C056005D34B9 /* CoreAudio.framework in Frameworks */,
 				3A176D3314936ACC0077AB23 /* libdevil.a in Frameworks */,
+				3AB238F914B9C568001B0950 /* libjpeg.a in Frameworks */,
+				3AB238FF14B9C57A001B0950 /* libpng.a in Frameworks */,
+				3AB2390314B9C585001B0950 /* libziploader.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -727,6 +658,8 @@
 		29B97314FDCFA39411CA2CEA /* Doom3 */ = {
 			isa = PBXGroup;
 			children = (
+				3AB238D514B9B05C001B0950 /* png.xcodeproj */,
+				3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */,
 				3A1768D3149354D60077AB23 /* devil.xcodeproj */,
 				812256420912BC26005D34B9 /* Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -738,6 +671,9 @@
 				81225B840912C731005D34B9 /* game.xcodeproj */,
 				3A176D3214936ACC0077AB23 /* libdevil.a */,
 				3A176DDB1494CAA00077AB23 /* libidlib_pic.a */,
+				3AB238F814B9C568001B0950 /* libjpeg.a */,
+				3AB238FE14B9C57A001B0950 /* libpng.a */,
+				3AB2390214B9C585001B0950 /* libziploader.a */,
 			);
 			name = Doom3;
 			sourceTree = "<group>";
@@ -773,6 +709,22 @@
 			isa = PBXGroup;
 			children = (
 				3A1768DB149354D60077AB23 /* libdevil.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AB238D014B9B04E001B0950 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AB238D414B9B04E001B0950 /* libjpeg.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AB238D614B9B05C001B0950 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AB238DA14B9B05C001B0950 /* libpng.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1009,7 +961,6 @@
 				8122571D0912BC79005D34B9 /* Image_program.cpp */,
 				8122571E0912BC79005D34B9 /* Interaction.cpp */,
 				8122571F0912BC79005D34B9 /* Interaction.h */,
-				812257200912BC79005D34B9 /* jpeg-6 */,
 				8122575F0912BC79005D34B9 /* Material.cpp */,
 				812257600912BC79005D34B9 /* Material.h */,
 				812257610912BC79005D34B9 /* MegaTexture.cpp */,
@@ -1071,75 +1022,6 @@
 			name = renderer;
 			path = ../../renderer;
 			sourceTree = SOURCE_ROOT;
-		};
-		812257200912BC79005D34B9 /* jpeg-6 */ = {
-			isa = PBXGroup;
-			children = (
-				812257210912BC79005D34B9 /* jcapimin.c */,
-				812257220912BC79005D34B9 /* jcapistd.c */,
-				812257230912BC79005D34B9 /* jccoefct.c */,
-				812257240912BC79005D34B9 /* jccolor.c */,
-				812257250912BC79005D34B9 /* jcdctmgr.c */,
-				812257260912BC79005D34B9 /* jchuff.c */,
-				812257270912BC79005D34B9 /* jchuff.h */,
-				812257280912BC79005D34B9 /* jcinit.c */,
-				812257290912BC79005D34B9 /* jcmainct.c */,
-				8122572A0912BC79005D34B9 /* jcmarker.c */,
-				8122572B0912BC79005D34B9 /* jcmaster.c */,
-				8122572C0912BC79005D34B9 /* jcomapi.c */,
-				8122572D0912BC79005D34B9 /* jconfig.h */,
-				8122572E0912BC79005D34B9 /* jcparam.c */,
-				8122572F0912BC79005D34B9 /* jcphuff.c */,
-				812257300912BC79005D34B9 /* jcprepct.c */,
-				812257310912BC79005D34B9 /* jcsample.c */,
-				812257320912BC79005D34B9 /* jctrans.c */,
-				812257330912BC79005D34B9 /* jdapimin.c */,
-				812257340912BC79005D34B9 /* jdapistd.c */,
-				812257350912BC79005D34B9 /* jdatadst.c */,
-				812257360912BC79005D34B9 /* jdatasrc.c */,
-				812257370912BC79005D34B9 /* jdcoefct.c */,
-				812257380912BC79005D34B9 /* jdcolor.c */,
-				812257390912BC79005D34B9 /* jdct.h */,
-				8122573A0912BC79005D34B9 /* jddctmgr.c */,
-				8122573B0912BC79005D34B9 /* jdhuff.c */,
-				8122573C0912BC79005D34B9 /* jdhuff.h */,
-				8122573D0912BC79005D34B9 /* jdinput.c */,
-				8122573E0912BC79005D34B9 /* jdmainct.c */,
-				8122573F0912BC79005D34B9 /* jdmarker.c */,
-				812257400912BC79005D34B9 /* jdmaster.c */,
-				812257410912BC79005D34B9 /* jdmerge.c */,
-				812257420912BC79005D34B9 /* jdphuff.c */,
-				812257430912BC79005D34B9 /* jdpostct.c */,
-				812257440912BC79005D34B9 /* jdsample.c */,
-				812257450912BC79005D34B9 /* jdtrans.c */,
-				812257460912BC79005D34B9 /* jerror.c */,
-				812257470912BC79005D34B9 /* jerror.h */,
-				812257480912BC79005D34B9 /* jfdctflt.c */,
-				812257490912BC79005D34B9 /* jfdctfst.c */,
-				8122574A0912BC79005D34B9 /* jfdctint.c */,
-				8122574B0912BC79005D34B9 /* jidctflt.c */,
-				8122574C0912BC79005D34B9 /* jidctfst.c */,
-				8122574D0912BC79005D34B9 /* jidctint.c */,
-				8122574E0912BC79005D34B9 /* jidctred.c */,
-				8122574F0912BC79005D34B9 /* jinclude.h */,
-				812257500912BC79005D34B9 /* jload.c */,
-				812257510912BC79005D34B9 /* jmemansi.c */,
-				812257520912BC79005D34B9 /* jmemdos.c */,
-				812257530912BC79005D34B9 /* jmemmgr.c */,
-				812257540912BC79005D34B9 /* jmemname.c */,
-				812257550912BC79005D34B9 /* jmemnobs.c */,
-				812257560912BC79005D34B9 /* jmemsys.h */,
-				812257570912BC79005D34B9 /* jmorecfg.h */,
-				812257580912BC79005D34B9 /* jpegint.h */,
-				812257590912BC79005D34B9 /* jpeglib.h */,
-				8122575A0912BC79005D34B9 /* jpegtran.c */,
-				8122575B0912BC79005D34B9 /* jquant1.c */,
-				8122575C0912BC79005D34B9 /* jquant2.c */,
-				8122575D0912BC79005D34B9 /* jutils.c */,
-				8122575E0912BC79005D34B9 /* jversion.h */,
-			);
-			path = "jpeg-6";
-			sourceTree = "<group>";
 		};
 		812257980912BC79005D34B9 /* framework */ = {
 			isa = PBXGroup;
@@ -1337,6 +1219,8 @@
 				812259910912BF43005D34B9 /* PBXTargetDependency */,
 				81225B8D0912C73C005D34B9 /* PBXTargetDependency */,
 				3A176968149355C20077AB23 /* PBXTargetDependency */,
+				3AB238DC14B9B060001B0950 /* PBXTargetDependency */,
+				3AB238DE14B9B064001B0950 /* PBXTargetDependency */,
 			);
 			name = "Doom 3";
 			productInstallPath = "$(HOME)/Applications";
@@ -1382,8 +1266,16 @@
 					ProjectRef = 812259790912BF1D005D34B9 /* idlib.xcodeproj */;
 				},
 				{
+					ProductGroup = 3AB238D014B9B04E001B0950 /* Products */;
+					ProjectRef = 3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */;
+				},
+				{
 					ProductGroup = 8122598A0912BF38005D34B9 /* Products */;
 					ProjectRef = 812259890912BF38005D34B9 /* oggVorbis.xcodeproj */;
+				},
+				{
+					ProductGroup = 3AB238D614B9B05C001B0950 /* Products */;
+					ProjectRef = 3AB238D514B9B05C001B0950 /* png.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -1399,6 +1291,20 @@
 			fileType = archive.ar;
 			path = libdevil.a;
 			remoteRef = 3A1768DA149354D60077AB23 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3AB238D414B9B04E001B0950 /* libjpeg.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libjpeg.a;
+			remoteRef = 3AB238D314B9B04E001B0950 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3AB238DA14B9B05C001B0950 /* libpng.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libpng.a;
+			remoteRef = 3AB238D914B9B05C001B0950 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		812259800912BF1D005D34B9 /* libidlib_pic.a */ = {
@@ -1535,52 +1441,6 @@
 				812258790912BC79005D34B9 /* Image_process.cpp in Sources */,
 				8122587A0912BC79005D34B9 /* Image_program.cpp in Sources */,
 				8122587B0912BC79005D34B9 /* Interaction.cpp in Sources */,
-				8122587C0912BC79005D34B9 /* jcapimin.c in Sources */,
-				8122587D0912BC79005D34B9 /* jcapistd.c in Sources */,
-				8122587E0912BC79005D34B9 /* jccoefct.c in Sources */,
-				8122587F0912BC79005D34B9 /* jccolor.c in Sources */,
-				812258800912BC79005D34B9 /* jcdctmgr.c in Sources */,
-				812258810912BC79005D34B9 /* jchuff.c in Sources */,
-				812258820912BC79005D34B9 /* jcinit.c in Sources */,
-				812258830912BC79005D34B9 /* jcmainct.c in Sources */,
-				812258840912BC79005D34B9 /* jcmarker.c in Sources */,
-				812258850912BC79005D34B9 /* jcmaster.c in Sources */,
-				812258860912BC79005D34B9 /* jcomapi.c in Sources */,
-				812258870912BC79005D34B9 /* jcparam.c in Sources */,
-				812258880912BC79005D34B9 /* jcphuff.c in Sources */,
-				812258890912BC79005D34B9 /* jcprepct.c in Sources */,
-				8122588A0912BC79005D34B9 /* jcsample.c in Sources */,
-				8122588B0912BC79005D34B9 /* jctrans.c in Sources */,
-				8122588C0912BC79005D34B9 /* jdapimin.c in Sources */,
-				8122588D0912BC79005D34B9 /* jdapistd.c in Sources */,
-				8122588E0912BC79005D34B9 /* jdatadst.c in Sources */,
-				8122588F0912BC79005D34B9 /* jdatasrc.c in Sources */,
-				812258900912BC79005D34B9 /* jdcoefct.c in Sources */,
-				812258910912BC79005D34B9 /* jdcolor.c in Sources */,
-				812258920912BC79005D34B9 /* jddctmgr.c in Sources */,
-				812258930912BC79005D34B9 /* jdhuff.c in Sources */,
-				812258940912BC79005D34B9 /* jdinput.c in Sources */,
-				812258950912BC79005D34B9 /* jdmainct.c in Sources */,
-				812258960912BC79005D34B9 /* jdmarker.c in Sources */,
-				812258970912BC79005D34B9 /* jdmaster.c in Sources */,
-				812258980912BC79005D34B9 /* jdmerge.c in Sources */,
-				812258990912BC79005D34B9 /* jdphuff.c in Sources */,
-				8122589A0912BC79005D34B9 /* jdpostct.c in Sources */,
-				8122589B0912BC79005D34B9 /* jdsample.c in Sources */,
-				8122589C0912BC79005D34B9 /* jdtrans.c in Sources */,
-				8122589D0912BC79005D34B9 /* jerror.c in Sources */,
-				8122589E0912BC79005D34B9 /* jfdctflt.c in Sources */,
-				8122589F0912BC79005D34B9 /* jfdctfst.c in Sources */,
-				812258A00912BC79005D34B9 /* jfdctint.c in Sources */,
-				812258A10912BC79005D34B9 /* jidctflt.c in Sources */,
-				812258A20912BC79005D34B9 /* jidctfst.c in Sources */,
-				812258A30912BC79005D34B9 /* jidctint.c in Sources */,
-				812258A40912BC79005D34B9 /* jidctred.c in Sources */,
-				812258A80912BC79005D34B9 /* jmemmgr.c in Sources */,
-				812258AA0912BC79005D34B9 /* jmemnobs.c in Sources */,
-				812258AC0912BC79005D34B9 /* jquant1.c in Sources */,
-				812258AD0912BC79005D34B9 /* jquant2.c in Sources */,
-				812258AE0912BC79005D34B9 /* jutils.c in Sources */,
 				812258AF0912BC79005D34B9 /* Material.cpp in Sources */,
 				812258B00912BC79005D34B9 /* MegaTexture.cpp in Sources */,
 				812258B10912BC79005D34B9 /* Model.cpp in Sources */,
@@ -1686,6 +1546,16 @@
 			name = devil;
 			targetProxy = 3A176967149355C20077AB23 /* PBXContainerItemProxy */;
 		};
+		3AB238DC14B9B060001B0950 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = jpeg;
+			targetProxy = 3AB238DB14B9B060001B0950 /* PBXContainerItemProxy */;
+		};
+		3AB238DE14B9B064001B0950 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = png;
+			targetProxy = 3AB238DD14B9B064001B0950 /* PBXContainerItemProxy */;
+		};
 		812259840912BF2B005D34B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = idlib_nopic;
@@ -1769,15 +1639,18 @@
 					"\"$(SRCROOT)/../../macosx/libcurl\"",
 					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
 					"\"$(SRCROOT)/build/Release\"",
+					"\"$(SRCROOT)/../../macosx/boost/lib\"",
 				);
 				OTHER_LDFLAGS = (
+					"-lboost_system",
+					"-lboost_filesystem",
 					"-weak_framework",
 					OpenAL,
 					"-lcurl",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -1805,6 +1678,7 @@
 					"\"$(SRCROOT)/../../macosx/libcurl\"",
 					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
 					"\"$(SRCROOT)/build/Release\"",
+					"\"$(SRCROOT)/../../macosx/boost/lib\"",
 				);
 				OTHER_CFLAGS = (
 					"-finline",
@@ -1817,6 +1691,8 @@
 					"-fpermissive",
 				);
 				OTHER_LDFLAGS = (
+					"-lboost_system",
+					"-lboost_filesystem",
 					"-weak_framework",
 					OpenAL,
 					"-lcurl",
@@ -1824,7 +1700,7 @@
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
