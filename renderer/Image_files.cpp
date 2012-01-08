@@ -795,8 +795,8 @@ Interfaces with the huge libjpeg
 static void init_source (j_decompress_ptr cinfo) {}
 static boolean fill_input_buffer (j_decompress_ptr cinfo)
 {
-    ERREXIT(cinfo, JERR_INPUT_EMPTY);
-return TRUE;
+    //ERREXIT(cinfo, JERR_INPUT_EMPTY);
+	return TRUE;
 }
 static void skip_input_data (j_decompress_ptr cinfo, long num_bytes)
 {
@@ -815,7 +815,7 @@ static void jpeg_mem_src (j_decompress_ptr cinfo, void* buffer, long nbytes)
     if (cinfo->src == NULL) {   /* first time for this JPEG object? */
         cinfo->src = (struct jpeg_source_mgr *)
             (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-            SIZEOF(struct jpeg_source_mgr));
+            sizeof(struct jpeg_source_mgr));
     }
 
     src = (struct jpeg_source_mgr*) cinfo->src;
