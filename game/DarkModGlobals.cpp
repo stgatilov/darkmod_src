@@ -590,60 +590,6 @@ void DM_Printf(const char* fmt, ...)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
 }
 
-#if 0
-static const char TDM_SCREENSHOT_FILTER[] = "*screenshots[/\\]shot[0-9][0-9][0-9][0-9][0-9].*";
-void Screenshot_AppendFileListForExtension(idStrList &list, const char *directory, const char *extension) {
-	idFileList *ptr = fileSystem->ListFiles(directory, extension, false, true);
-	list.Append(ptr->GetList());
-	fileSystem->FreeFileList(ptr);
-}
-void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
-	static int index = -1;
-	// on first access: find the first free screenshot index
-	if (index < 0) {
-		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
-		//get directory path
-		idStr directory = filename;
-		directory.StripFilename();
-		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", directory.c_str());
-
-		//get sorted list of all files in this directory
-		idStrList allFiles;
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".png");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".bmp");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".jpg");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".tga");
-		for (int i = 0; i<allFiles.Num(); i++)
-			DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
-		idStrListSortPaths(allFiles);
-		DM_LOG(LC_MISC,LT_INFO)LOGSTRING("-----------\r");
-		for (int i = 0; i<allFiles.Num(); i++)
-			DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
-		//iterate through files from end to start, search for the last screenshot file
-		index = 1;
-		for (int i = allFiles.Num()-1; i>=0; i--)
-			if (allFiles[i].Filter(TDM_SCREENSHOT_FILTER, false)) {
-				DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
-				idStr strIndex, fileOnly;
-				fileOnly = allFiles[i];
-				fileOnly.StripPath();
-				fileOnly.Mid(4, 5, strIndex);
-				sscanf(strIndex.c_str(), "%d", &index);
-				index++;
-				break;
-			}
-	}
-
-	//process filename (set index and extension)
-	char fileOnly[256];
-	idStr::snPrintf(fileOnly, 256, "shot%05d.%s", index, extension);
-	filename.StripFilename();
-	filename.AppendPath(fileOnly);
-	//increase screenshot index
-	index++;
-}
-#endif
-
 int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath)
 {
 	// stgatilov: if it is lightgem render, save it to m_LightGemRenderBuffer
@@ -657,29 +603,6 @@ int DM_WriteFile(const char *relativePath, const void *buffer, int size, const c
 		
 		RETURN_META_VALUE(MRES_SUPERCEDE, size);
 	}
-
-#if 0
-	//stgatilov: intercept screenshot saving
-	if (idStr::Filter(TDM_SCREENSHOT_FILTER, relativePath, false)) {
-		// load screenshot file buffer into image
-		Image image;
-		image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)size, "TDM_screenshot");
-		// find the preferred image format
-		idStr extension = cv_screenshot_format.GetString();
-		Image::Format format = Image::GetFormatFromString(extension.c_str());
-		if (format == Image::AUTO_DETECT) {
-			DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Unknown screenshot extension %s, falling back to default.\r", extension.c_str());
-			format = Image::TGA;
-			extension = "tga";
-		}
-		// change extension and index of screenshot file
-		idStr changedPath(relativePath);
-		Screenshot_ChangeFilename(changedPath, extension.c_str());
-		// try to save image in other format
-		if (image.SaveImageToVfs(changedPath, format))
-			RETURN_META_VALUE(MRES_SUPERCEDE, size);
-	}
-#endif
 
 	RETURN_META_VALUE(MRES_IGNORED, 0);
 }
