@@ -13,6 +13,9 @@
 // Begin TDM
 #include "precompiled_game.h"
 #pragma hdrstop
+
+static bool versioned = RegisterVersionedFile("$Id$");
+
 // end TDM
 
 #include "pugixml.hpp"

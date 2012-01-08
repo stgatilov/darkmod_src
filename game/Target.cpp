@@ -26,7 +26,7 @@ Invisible entities that affect other entities or the world when activated.
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Game_local.h"
 #include "Objectives/MissionData.h"

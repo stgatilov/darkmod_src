@@ -76,7 +76,7 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 // define to output debug info about watched and combined entities
 //#define M_DEBUG_COMBINE
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "SEED.h"
 

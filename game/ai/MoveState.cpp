@@ -21,6 +21,8 @@
 #include "MoveState.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 /*
 =====================
 idMoveState::idMoveState

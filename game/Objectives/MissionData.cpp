@@ -20,9 +20,9 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
-#include "../Game_local.h"
+static bool versioned = RegisterVersionedFile("$Id$");
 
-static bool init_version = FileVersionList("$Id$", init_version);
+#include "../Game_local.h"
 
 #pragma warning(disable : 4996)
 

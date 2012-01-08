@@ -29,7 +29,7 @@ Event are used for scheduling tasks and for linking script commands.
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Event.h"
 #include "../Game_local.h"

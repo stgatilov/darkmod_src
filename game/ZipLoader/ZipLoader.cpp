@@ -19,6 +19,9 @@
 
 #include "precompiled_game.h"
 #pragma hdrstop
+
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "ZipLoader.h"
 
 #include <fstream>

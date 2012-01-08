@@ -35,7 +35,7 @@
 
 #include "Game_local.h"
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #pragma warning(disable : 4996)
 

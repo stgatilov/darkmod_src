@@ -23,6 +23,8 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "AIVehicle.h"
 #include "Game_local.h"
 #include "DarkModGlobals.h"

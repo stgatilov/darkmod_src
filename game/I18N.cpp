@@ -32,7 +32,7 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "I18N.h"
 #include "sourcehook/sourcehook.h"

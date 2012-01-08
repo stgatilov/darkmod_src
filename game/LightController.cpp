@@ -34,7 +34,7 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "LightController.h"
 

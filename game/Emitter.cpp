@@ -29,7 +29,7 @@ func_emitters - have one or more particle models
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Emitter.h"
 

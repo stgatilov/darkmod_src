@@ -35,7 +35,7 @@
  * @brief Contains the implementation of the SourceHook API
 */
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #if defined __GNUC__
 #include <stdint.h>

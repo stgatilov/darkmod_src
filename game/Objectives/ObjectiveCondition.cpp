@@ -20,11 +20,11 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
+static bool versioned = RegisterVersionedFile("$Id$");
+
 #include "MissionData.h"
 #include "ObjectiveCondition.h"
 #include "CampaignStatistics.h"
-
-static bool init_version = FileVersionList("$Id$", init_version);
 
 ObjectiveCondition::ObjectiveCondition() :
 	_type(INVALID_TYPE),

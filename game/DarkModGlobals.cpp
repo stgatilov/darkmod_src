@@ -29,7 +29,7 @@
 
 #pragma warning(disable : 4996 4800)
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "DarkModGlobals.h"
 #include "SndPropLoader.h"

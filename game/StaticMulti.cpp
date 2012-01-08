@@ -33,7 +33,7 @@ TODO: track skin changes on the different LOD stages
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id$", init_version);
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "StaticMulti.h"
 
