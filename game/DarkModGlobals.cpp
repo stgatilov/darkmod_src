@@ -878,8 +878,8 @@ std::string CGlobal::GetDarkmodPath()
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Base path is %s\r", cvarSystem->GetCVarString("fs_basePath"));
 
-	// basepath = something like c:\games\doom3, fs_game_base is usually darkmod
-	std::string darkmodPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basePath"), cvarSystem->GetCVarString("fs_game_base"), "");
+	// basepath = something like c:\games\doom3, modBaseName is usually darkmod
+	std::string darkmodPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basePath"), modBaseName, "");
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
 
