@@ -864,7 +864,11 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 
   /* Step 2: specify data source (eg, a file) */
 
+#if JPEG_LIB_VERSION >= 80
   jpeg_mem_src(&cinfo, fbuffer, len);
+#else
+  jpeg_stdio_src(&cinfo, fbuffer);
+#endif
 
   /* Step 3: read file parameters with jpeg_read_header() */
 
