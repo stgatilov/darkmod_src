@@ -189,8 +189,6 @@ extern idCVar cv_ai_search_show;
 extern idCVar cv_force_savegame_load;
 extern idCVar cv_savegame_compress;
 
-extern idCVar cv_screenshot_format;
-
 // angua: TDM toggle crouch
 extern idCVar cv_tdm_crouch_toggle;
 extern idCVar cv_tdm_crouch_toggle_hold_time;

@@ -17,23 +17,22 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
-
+#include "Image.h"
 #include <IL/il.h>
 
 #define IL_IMAGE_NONE ((ILuint)-1)
 
-CImage::CImage() :
+Image::Image() :
 	m_ImageId(IL_IMAGE_NONE),
 	m_Width(0),
 	m_Height(0),
 	m_Bpp(0)
 {}
 
-CImage::CImage(const idStr& name) :
+Image::Image(const idStr& name) :
 	m_ImageId(IL_IMAGE_NONE),
 	m_Name(name),
 	m_Width(0),
@@ -41,12 +40,12 @@ CImage::CImage(const idStr& name) :
 	m_Bpp(0)
 {}
 
-CImage::~CImage(void)
+Image::~Image(void)
 {
 	Unload();
 }
 
-ILenum CImage::GetILTypeForImageFormat(Format format)
+ILenum Image::GetILTypeForImageFormat(Format format)
 {
 	switch (format)
 	{
@@ -60,7 +59,7 @@ ILenum CImage::GetILTypeForImageFormat(Format format)
 	};
 }
 
-CImage::Format CImage::GetFormatFromString(const char *format) {
+Image::Format Image::GetFormatFromString(const char *format) {
 	if (idStr::Icmp(format, "tga") == 0) return TGA;
 	if (idStr::Icmp(format, "png") == 0) return PNG;
 	if (idStr::Icmp(format, "jpg") == 0) return JPG;
@@ -70,7 +69,7 @@ CImage::Format CImage::GetFormatFromString(const char *format) {
 	return AUTO_DETECT;
 }
 
-void CImage::Unload()
+void Image::Unload()
 {
 	if(m_ImageId != IL_IMAGE_NONE) {
 		ilDeleteImages(1, &m_ImageId);
@@ -79,7 +78,7 @@ void CImage::Unload()
 	m_Width = m_Height = m_Bpp = 0;
 }
 
-bool CImage::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int imageLength) {
+bool Image::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int imageLength) {
 	// generate new DevIL image
 	ilGenImages(1, &m_ImageId);
 	ilBindImage(m_ImageId);
@@ -88,7 +87,7 @@ bool CImage::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int im
 	if (ilLoadL(GetILTypeForImageFormat(AUTO_DETECT), imageBuffer, imageLength) == IL_FALSE)
 	{
 		// loading failed: print log message and free DevIL image
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not load image (name = %s): error message %s.\r", m_Name.c_str(), ilGetString(ilGetError()));
+		common->Warning("Could not load image (name = %s): error message %s.", m_Name.c_str(), ilGetString(ilGetError()));
 		Unload();
 		return false;
 	}
@@ -101,11 +100,11 @@ bool CImage::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int im
 	return true;
 }
 
-bool CImage::SaveDevILToFile(const char *filename, Format format) const {
+bool Image::SaveDevILToFile(const char *filename, Format format) const {
 	// check DevIL image for existence
 	if (m_ImageId == IL_IMAGE_NONE)
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image before loading data (%s).\r", filename);
+		common->Warning("Cannot save image before loading data (%s).", filename);
 		return false;
 	}
 	// bind DevIL image
@@ -113,13 +112,14 @@ bool CImage::SaveDevILToFile(const char *filename, Format format) const {
 
 	// set overwrite option
 	ilEnable(IL_FILE_OVERWRITE);
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Saving image to path: %s, type %d.\r", filename, format);
+	//DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Saving image to path: %s, type %d.\r", filename, format);
 
 	// try to save DevIL image to file
 	idStr filenameClone(filename);
+
 	if (!ilSave(GetILTypeForImageFormat(format), const_cast<char *>(filenameClone.c_str())))
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Could not save image to path %s (type %d): error message %s.\r", filename, format, ilGetString(ilGetError()));
+		common->Warning("Could not save image to path %s (type %d): error message %s.", filename, format, ilGetString(ilGetError()));
 		return false;
 	}
 
@@ -127,7 +127,7 @@ bool CImage::SaveDevILToFile(const char *filename, Format format) const {
 }
 
 
-bool CImage::LoadImageFromMemory(const unsigned char *imageBuffer, unsigned int imageLength, const char *name)
+bool Image::LoadImageFromMemory(const unsigned char *imageBuffer, unsigned int imageLength, const char *name)
 {
 	//unload previous image
 	Unload();
@@ -141,7 +141,7 @@ bool CImage::LoadImageFromMemory(const unsigned char *imageBuffer, unsigned int 
 	return LoadDevILFromLump(imageBuffer, imageLength);
 }
 
-bool CImage::LoadImageFromVfs(const char* filename)
+bool Image::LoadImageFromVfs(const char* filename)
 {
 	//unload previous image
 	Unload();
@@ -155,7 +155,7 @@ bool CImage::LoadImageFromVfs(const char* filename)
 	idFile *file = fileSystem->OpenFileRead(m_Name);
 	if (file == NULL)
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
+		common->Warning("Unable to load imagefile [%s]", m_Name.c_str());
 		return false;
 	}
 
@@ -170,7 +170,7 @@ bool CImage::LoadImageFromVfs(const char* filename)
 	return LoadDevILFromLump(&fileData[0], fileData.Num());
 }
 
-bool CImage::LoadImageFromFile(const fs::path& path)
+bool Image::LoadImageFromFile(const fs::path& path)
 {
 	//unload previous image
 	Unload();
@@ -182,7 +182,7 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 	FILE* file = NULL;
 	if (!fs::exists(path) || !(file = fopen(path.file_string().c_str(), "rb")))
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
+		common->Warning("Unable to load imagefile [%s]", m_Name.c_str());
 		return false;
 	}
 
@@ -197,7 +197,7 @@ bool CImage::LoadImageFromFile(const fs::path& path)
 	return LoadDevILFromLump(&fileData[0], fileData.Num());
 }
 
-unsigned int CImage::GetDataLength() const
+unsigned int Image::GetDataLength() const
 {
 	if (m_ImageId != IL_IMAGE_NONE)
 	{
@@ -208,7 +208,7 @@ unsigned int CImage::GetDataLength() const
 	return 0;
 }
 
-const unsigned char* CImage::GetImageData() const
+const unsigned char* Image::GetImageData() const
 {
 	if (m_ImageId != IL_IMAGE_NONE)
 	{
@@ -219,10 +219,11 @@ const unsigned char* CImage::GetImageData() const
 	return NULL;
 }
 
-bool CImage::SaveImageToFile(const fs::path& path, Format format) const
+bool Image::SaveImageToFile(const fs::path& path, Format format) const
 {
-	if (fs::is_directory(path)) {
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Cannot save image: file [%s] is directory\r", path.file_string().c_str());
+	if (fs::is_directory(path))
+	{
+		common->Warning("Cannot save image: file [%s] is directory", path.file_string().c_str());
 		return false;
 	}
 	//create directories if necessary
@@ -231,7 +232,7 @@ bool CImage::SaveImageToFile(const fs::path& path, Format format) const
 	return SaveDevILToFile(path.file_string().c_str(), format);
 }
 
-bool CImage::SaveImageToVfs(const char* filename, Format format) const
+bool Image::SaveImageToVfs(const char* filename, Format format) const
 {
 	//create directories if necessary
 	fileSystem->CloseFile(fileSystem->OpenFileWrite(filename));

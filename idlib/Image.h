@@ -25,6 +25,8 @@
 #include "../sound/sound.h"
 #endif
 
+#include "Str.h"
+
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
@@ -36,7 +38,7 @@ typedef unsigned int ILuint;
 typedef unsigned int ILenum;
 #endif
 
-class CImage
+class Image
 {
 public:
 	enum Format
@@ -54,10 +56,10 @@ public:
 	static Format GetFormatFromString(const char *format);
 
 
-	CImage();
-	CImage(const idStr& name);
+	Image();
+	Image(const idStr& name);
 	
-	~CImage();
+	~Image();
 	/**
 	 * Unload will set the image to not loaded and deallocate memory.
 	 */
@@ -107,7 +109,7 @@ protected:
 	// DevIL image ID (equal to -1 if image is not loaded)
 	ILuint			m_ImageId;
 
-	// Convert CImage::Format to ILenum
+	// Convert Image::Format to ILenum
 	static ILenum GetILTypeForImageFormat(Format format);
 
 	bool LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int imageLength);

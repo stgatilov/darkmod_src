@@ -120,7 +120,6 @@ AIVehicle.cpp \
 BinaryFrobMover.cpp \
 BloodMarker.cpp \
 ButtonStateTracker.cpp \
-CImage.cpp \
 DarkmodAASHidingSpotFinder.cpp \
 DarkModGlobals.cpp \
 darkmodHidingSpotTree.cpp \

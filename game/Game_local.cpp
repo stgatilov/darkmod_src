@@ -51,7 +51,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
 
-#include <IL/il.h>
 #include "randomizer/randomc.h"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -425,9 +424,6 @@ void idGameLocal::Init( void ) {
 	TestGameAPI();
 
 #else
-	// Initialize the image library, so we can use it later on.
-	ilInit();
-
 	// initialize idLib
 	idLib::Init();
 
@@ -545,7 +541,7 @@ void idGameLocal::Init( void ) {
 	m_ModelGenerator->Init();
 
 	// Initialise the image map manager
-	m_ImageMapManager = CImageMapManagerPtr(new CImageMapManager);
+	m_ImageMapManager = ImageMapManagerPtr(new ImageMapManager);
 	m_ImageMapManager->Init();
 
 	// Initialise the light controller

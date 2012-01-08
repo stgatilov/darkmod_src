@@ -91,7 +91,6 @@ Global
 		{49BEC5C6-B964-417A-851E-808886B57420}.Debug with inlines|Win32.ActiveCfg = Debug with inlines|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Debug with inlines|Win32.Build.0 = Debug with inlines|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Debug Without MFC|Win32.ActiveCfg = Debug Without MFC|Win32
-		{49BEC5C6-B964-417A-851E-808886B57420}.Debug Without MFC|Win32.Build.0 = Debug Without MFC|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Debug|Win32.ActiveCfg = Debug|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Debug|Win32.Build.0 = Debug|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Dedicated Debug with inlines|Win32.ActiveCfg = Dedicated Debug with inlines|Win32
@@ -101,7 +100,6 @@ Global
 		{49BEC5C6-B964-417A-851E-808886B57420}.Dedicated Release|Win32.ActiveCfg = Dedicated Release|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Dedicated Release|Win32.Build.0 = Dedicated Release|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Release Without MFC|Win32.ActiveCfg = Release Without MFC|Win32
-		{49BEC5C6-B964-417A-851E-808886B57420}.Release Without MFC|Win32.Build.0 = Release Without MFC|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Release|Win32.ActiveCfg = Release|Win32
 		{49BEC5C6-B964-417A-851E-808886B57420}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection

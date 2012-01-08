@@ -163,8 +163,8 @@ typedef boost::shared_ptr<CModMenu> CModMenuPtr;
 
 class CModelGenerator;
 typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
-class CImageMapManager;
-typedef boost::shared_ptr<CImageMapManager> CImageMapManagerPtr;
+class ImageMapManager;
+typedef boost::shared_ptr<ImageMapManager> ImageMapManagerPtr;
 class CLightController;
 typedef boost::shared_ptr<CLightController> CLightControllerPtr;
 class CI18N;
@@ -518,7 +518,7 @@ public:
 	/**
 	 * tels: The image mapmanager instance, for loading/sharing image maps for the SEED system.
 	 */
-	CImageMapManagerPtr		m_ImageMapManager;
+	ImageMapManagerPtr		m_ImageMapManager;
 
 	/**
 	 * tels: The light controller instance, used to control local ambient lights.

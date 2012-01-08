@@ -174,7 +174,6 @@ idCVar cv_mainmenu_confirmquit(		"tdm_mainmenu_confirmquit",      "1", CVAR_ARCH
 idCVar cv_force_savegame_load(		"tdm_force_savegame_load", "0",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 1 to skip code revision check on savegame load." );
 idCVar cv_savegame_compress(		"tdm_savegame_compress", "1",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 0 to disable savegame file compression." );
 
-idCVar cv_screenshot_format(		"tdm_screenshot_format", "jpg",   CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );
 /**
 * Dark Mod player movement
 * Use multipliers instead of setting a speed for each

@@ -199,6 +199,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcmtd.lib;ZipLoader.lib;libcurl.lib;DevIL.lib;libpng.lib;libjpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
@@ -261,6 +262,9 @@
       <PrecompiledHeaderFile>precompiled_game.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link />
+    <Link>
+      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
     <ClCompile>
@@ -387,7 +391,6 @@
     <ClCompile Include="game\BrittleFracture.cpp" />
     <ClCompile Include="game\ButtonStateTracker.cpp" />
     <ClCompile Include="game\Camera.cpp" />
-    <ClCompile Include="game\CImage.cpp" />
     <ClCompile Include="game\DarkmodAASHidingSpotFinder.cpp" />
     <ClCompile Include="game\DarkModGlobals.cpp" />
     <ClCompile Include="game\darkmodHidingSpotTree.cpp" />
@@ -654,7 +657,6 @@
     <ClInclude Include="game\BrittleFracture.h" />
     <ClInclude Include="game\ButtonStateTracker.h" />
     <ClInclude Include="game\Camera.h" />
-    <ClInclude Include="game\CImage.h" />
     <ClInclude Include="game\DarkmodAASHidingSpotFinder.h" />
     <ClInclude Include="game\DarkModGlobals.h" />
     <ClInclude Include="game\darkmodHidingSpotTree.h" />

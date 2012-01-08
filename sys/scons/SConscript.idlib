@@ -47,6 +47,7 @@ idlib_string = ' \
 	Parser.cpp \
 	MapFile.cpp \
 	CmdArgs.cpp \
+	Image.cpp \
 	Token.cpp \
 	Base64.cpp \
 	Timer.cpp \

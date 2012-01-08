@@ -411,7 +411,6 @@
     <ClCompile Include="game\BrittleFracture.cpp" />
     <ClCompile Include="game\ButtonStateTracker.cpp" />
     <ClCompile Include="game\Camera.cpp" />
-    <ClCompile Include="game\CImage.cpp" />
     <ClCompile Include="game\DarkmodAASHidingSpotFinder.cpp" />
     <ClCompile Include="game\DarkModGlobals.cpp" />
     <ClCompile Include="game\darkmodHidingSpotTree.cpp" />
@@ -1022,7 +1021,6 @@
     <ClInclude Include="game\BrittleFracture.h" />
     <ClInclude Include="game\ButtonStateTracker.h" />
     <ClInclude Include="game\Camera.h" />
-    <ClInclude Include="game\CImage.h" />
     <ClInclude Include="game\DarkmodAASHidingSpotFinder.h" />
     <ClInclude Include="game\DarkModGlobals.h" />
     <ClInclude Include="game\darkmodHidingSpotTree.h" />

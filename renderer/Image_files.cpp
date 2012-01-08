@@ -41,7 +41,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, bool ma
  */
 
 extern "C" {
-#include "jpeg-6/jpeglib.h"
+#include <jpeglib.h>
 
 	// hooks from jpeg lib to our system
 
@@ -813,6 +813,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
   /* More stuff */
   JSAMPARRAY buffer;		/* Output row buffer */
   int row_stride;		/* physical row width in output buffer */
+  int		len;		/* Buffer length */
   unsigned char *out;
   byte	*fbuffer;
   byte  *bbuf;
@@ -829,7 +830,6 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 	*pic = NULL;		// until proven otherwise
   }
   {
-		int		len;
 		idFile *f;
 
 		f = fileSystem->OpenFileRead( filename );
@@ -864,7 +864,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 
   /* Step 2: specify data source (eg, a file) */
 
-  jpeg_stdio_src(&cinfo, fbuffer);
+  jpeg_mem_src(&cinfo, fbuffer, len);
 
   /* Step 3: read file parameters with jpeg_read_header() */
 

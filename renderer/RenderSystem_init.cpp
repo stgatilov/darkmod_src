@@ -214,6 +214,9 @@ idCVar r_materialOverride( "r_materialOverride", "", CVAR_RENDERER, "overrides a
 
 idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 
+// greebo: screenshot format CVAR, by default convert the generated TGA to JPG
+idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );
+
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
@@ -1204,6 +1207,73 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	glConfig.vidHeight = oldHeight;
 }
 
+void Screenshot_AppendFileListForExtension(idStrList &list, const char *directory, const char *extension)
+{
+	idFileList *ptr = fileSystem->ListFiles(directory, extension, false, true);
+	list.Append(ptr->GetList());
+	fileSystem->FreeFileList(ptr);
+}
+
+static const char TDM_SCREENSHOT_FILTER[] = "*screenshots[/\\]shot[0-9][0-9][0-9][0-9][0-9].*";
+
+void Screenshot_ChangeFilename(idStr& filename, const char *extension)
+{
+	static int index = -1;
+
+	// on first access: find the first free screenshot index
+	if (index < 0)
+	{
+		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
+		//get directory path
+		idStr directory = filename;
+		directory.StripFilename();
+		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", directory.c_str());
+
+		//get sorted list of all files in this directory
+		idStrList allFiles;
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".png");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".bmp");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".jpg");
+		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".tga");
+
+		//for (int i = 0; i<allFiles.Num(); i++)
+			//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
+
+		idStrListSortPaths(allFiles);
+
+		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("-----------\r");
+
+		//for (int i = 0; i<allFiles.Num(); i++)
+		//	DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
+
+		//iterate through files from end to start, search for the last screenshot file
+		index = 1;
+
+		for (int i = allFiles.Num()-1; i>=0; i--)
+		{
+			if (allFiles[i].Filter(TDM_SCREENSHOT_FILTER, false))
+			{
+				//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
+				idStr strIndex, fileOnly;
+				fileOnly = allFiles[i];
+				fileOnly.StripPath();
+				fileOnly.Mid(4, 5, strIndex);
+				sscanf(strIndex.c_str(), "%d", &index);
+				index++;
+				break;
+			}
+		}
+	}
+
+	//process filename (set index and extension)
+	char fileOnly[256];
+	idStr::snPrintf(fileOnly, 256, "shot%05d.%s", index, extension);
+	filename.StripFilename();
+	filename.AppendPath(fileOnly);
+
+	//increase screenshot index
+	index++;
+}
 
 /*
 ================== 
@@ -1272,8 +1342,50 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	// _D3XP adds viewnote screenie save to cdpath
 	if ( strstr( fileName, "viewnote" ) ) {
 		fileSystem->WriteFile( fileName, buffer, c, "fs_cdpath" );
-	} else {
-		fileSystem->WriteFile( fileName, buffer, c );
+	} else
+	{
+		// greebo: Check if we should save a screen shot format other than TGA
+		if (idStr::Icmp(r_screenshot_format.GetString(), "tga") != 0)
+		{
+			// load screenshot file buffer into image
+			Image image;
+			image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot");
+
+			// find the preferred image format
+			idStr extension = r_screenshot_format.GetString();
+
+			Image::Format format = Image::GetFormatFromString(extension.c_str());
+
+			if (format == Image::AUTO_DETECT)
+			{
+				common->Warning("Unknown screenshot extension %s, falling back to default.", extension.c_str());
+
+				format = Image::TGA;
+				extension = "tga";
+			}
+
+			// change extension and index of screenshot file
+			idStr changedPath(fileName);
+
+			Screenshot_ChangeFilename(changedPath, extension.c_str());
+
+			// try to save image in other format
+			if (!image.SaveImageToVfs(changedPath, format))
+			{
+				common->Warning("Could not save screenshot: %s", changedPath.c_str());
+			}
+			else
+			{
+				common->Printf( "Wrote %s\n", changedPath.c_str() );
+			}
+		}
+		else
+		{
+			// Format is TGA, just save the buffer
+			fileSystem->WriteFile( fileName, buffer, c );
+
+			common->Printf( "Wrote %s\n", fileName );
+		}
 	}
 
 	R_StaticFree( buffer );
@@ -1390,8 +1502,6 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 	console->Close();
 
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
-
-	common->Printf( "Wrote %s\n", checkname.c_str() );
 }
 
 /*

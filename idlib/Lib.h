@@ -227,6 +227,7 @@ public:
 #include "BitMsg.h"
 #include "MapFile.h"
 #include "Timer.h"
+#include "Image.h"
 #include "RevisionTracker.h"
 
 #endif	/* !__LIB_H__ */

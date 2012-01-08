@@ -403,7 +403,7 @@ float LightGem::Calculate(idPlayer *player)
 
 void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 {
-	CImage *im = &g_Global.m_RenderImage ;
+	Image *im = &g_Global.m_RenderImage ;
 	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 

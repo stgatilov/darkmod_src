@@ -24,7 +24,7 @@
 #include "quaddefs.h"
 #define JPEG_INTERNALS
 extern "C" {
-#include "../../../renderer/jpeg-6/jpeglib.h"
+#include <jpeglib.h>
 }
 #pragma once
 

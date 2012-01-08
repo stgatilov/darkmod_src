@@ -8,6 +8,7 @@
     <ClCompile>
       <PreprocessorDefinitions>__IDLIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
 </Project>

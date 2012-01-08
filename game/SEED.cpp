@@ -773,8 +773,8 @@ Seed::Spawn
 void Seed::Spawn( void ) {
 
 	// DEBUG
-//	gameLocal.Printf( "SEED %s: Sizes: seed_entity_t %i, seed_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i, CImage %i.\n", 
-//			GetName(), sizeof(seed_entity_t), sizeof(seed_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity), sizeof(CImage) );
+//	gameLocal.Printf( "SEED %s: Sizes: seed_entity_t %i, seed_class_t %i, lod_data_t %i, idEntity %i, idStaticEntity %i, Image %i.\n", 
+//			GetName(), sizeof(seed_entity_t), sizeof(seed_class_t), sizeof(lod_data_t), sizeof(idEntity), sizeof(idStaticEntity), sizeof(Image) );
 
 	// if we subtract the render entity origin from the physics origin (this is where the mapper places
 	// the origin inside DR), we magically arrive at the true origin of the visible brush placed in DR.

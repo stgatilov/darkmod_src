@@ -37,25 +37,25 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 /*
 ===============
-CImageMapManager::CImageMapManager
+ImageMapManager::ImageMapManager
 ===============
 */
-CImageMapManager::CImageMapManager( void ) {
+ImageMapManager::ImageMapManager( void ) {
 	m_imageMaps.Clear();
 	m_lastError = "";
 }
 
-CImageMapManager::~CImageMapManager()
+ImageMapManager::~ImageMapManager()
 {
 	Shutdown();
 }
 
 /*
 ===============
-CImageMapManager::Save
+ImageMapManager::Save
 ===============
 */
-void CImageMapManager::Save( idSaveGame *savefile ) const {
+void ImageMapManager::Save( idSaveGame *savefile ) const {
 
 	int num = m_imageMaps.Num();
 	savefile->WriteInt( num );
@@ -69,10 +69,10 @@ void CImageMapManager::Save( idSaveGame *savefile ) const {
 
 /*
 ===============
-CImageMapManager::Restore
+ImageMapManager::Restore
 ===============
 */
-void CImageMapManager::Restore( idRestoreGame *savefile ) {
+void ImageMapManager::Restore( idRestoreGame *savefile ) {
 
 	int num;
 
@@ -102,19 +102,19 @@ void CImageMapManager::Restore( idRestoreGame *savefile ) {
 
 /*
 ===============
-CImageMapManager::Init
+ImageMapManager::Init
 ===============
 */
-void CImageMapManager::Init( void ) {
+void ImageMapManager::Init( void ) {
 	Clear();
 }
 
 /*
 ===============
-CImageMapManager::Clear
+ImageMapManager::Clear
 ===============
 */
-void CImageMapManager::Clear( void ) {
+void ImageMapManager::Clear( void ) {
 
 	int num = m_imageMaps.Num();
 
@@ -134,20 +134,20 @@ void CImageMapManager::Clear( void ) {
 
 /*
 ===============
-CImageMapManager::Shutdown
+ImageMapManager::Shutdown
 ===============
 */
-void CImageMapManager::Shutdown( void ) {
+void ImageMapManager::Shutdown( void ) {
 	Clear();
 }
 
 /*
 ===============
-CImageMapManager::GetImageMap - Create a new map entry by name
+ImageMapManager::GetImageMap - Create a new map entry by name
 
 ===============
 */
-int CImageMapManager::GetImageMap( idStr name ) {
+int ImageMapManager::GetImageMap( idStr name ) {
 	imagemap_t map;
 	// stgatilov: initialize if you don't wont to get 0xCCCCCCCC pointer=)
 	map.img = NULL;
@@ -241,9 +241,9 @@ int CImageMapManager::GetImageMap( idStr name ) {
 * If the map was previously freed, or never loaded, loads the map again. Returns
 * NULL in case the map cannot be loaded (file not found).
 */
-const unsigned char* CImageMapManager::GetMapData( const unsigned int id )
+const unsigned char* ImageMapManager::GetMapData( const unsigned int id )
 {
-	CImage*	img = GetImage( id );
+	Image*	img = GetImage( id );
 
 	if (img)
 	{
@@ -257,9 +257,9 @@ const unsigned char* CImageMapManager::GetMapData( const unsigned int id )
 /**
 * Returns the width in pixels of the image map.
 */
-unsigned int CImageMapManager::GetMapWidth( const unsigned int id )
+unsigned int ImageMapManager::GetMapWidth( const unsigned int id )
 {
-	CImage*	img = GetImage( id );
+	Image*	img = GetImage( id );
 
 	if (img)
 	{
@@ -273,8 +273,8 @@ unsigned int CImageMapManager::GetMapWidth( const unsigned int id )
 /**
 * Returns the width in pixels of the image map.
 */
-unsigned int CImageMapManager::GetMapHeight( const unsigned int id ) {
-	CImage*	img = GetImage( id );
+unsigned int ImageMapManager::GetMapHeight( const unsigned int id ) {
+	Image*	img = GetImage( id );
 
 	if (img)
 	{
@@ -288,8 +288,8 @@ unsigned int CImageMapManager::GetMapHeight( const unsigned int id ) {
 /**
 * Returns the bytes-per-pixel of the image map.
 */
-unsigned int CImageMapManager::GetMapBpp( const unsigned int id ) {
-	CImage*	img = GetImage( id );
+unsigned int ImageMapManager::GetMapBpp( const unsigned int id ) {
+	Image*	img = GetImage( id );
 
 	if (img)
 	{
@@ -303,7 +303,7 @@ unsigned int CImageMapManager::GetMapBpp( const unsigned int id ) {
 /**
 * Returns the filename of the map.
 */
-const char* CImageMapManager::GetMapName( const unsigned int id ) {
+const char* ImageMapManager::GetMapName( const unsigned int id ) {
 	imagemap_t* map = GetMap(id);
 
 	// error?
@@ -318,7 +318,7 @@ const char* CImageMapManager::GetMapName( const unsigned int id ) {
 /**
 * Returns the average density of the entire image (0..1.0).
 */
-float CImageMapManager::GetMapDensity( const unsigned int id ) {
+float ImageMapManager::GetMapDensity( const unsigned int id ) {
 	imagemap_t* map = GetMap(id);
 
 	// error?
@@ -335,8 +335,8 @@ float CImageMapManager::GetMapDensity( const unsigned int id ) {
 * Given the id of a formerly loaded map, returns a value between 0 and 255 for the
 * position on the map. xr and yr run from 0 .. 1.0.
 */
-unsigned int CImageMapManager::GetMapDataAt( const unsigned int id, const float xr, const float yr) {
-	CImage*	img = GetImage( id );
+unsigned int ImageMapManager::GetMapDataAt( const unsigned int id, const float xr, const float yr) {
+	Image*	img = GetImage( id );
 	if (!img)
 	{
 		return 0;
@@ -365,7 +365,7 @@ unsigned int CImageMapManager::GetMapDataAt( const unsigned int id, const float 
 * freed later. Return true for success, false for error (map not found or users
 * already == 0)
 */
-bool CImageMapManager::UnregisterMap( const unsigned int id ) {
+bool ImageMapManager::UnregisterMap( const unsigned int id ) {
 	imagemap_t* map = GetMap(id);
 
 	// error?
@@ -389,7 +389,7 @@ bool CImageMapManager::UnregisterMap( const unsigned int id ) {
 /**
 * For all maps where users == 0, the map data can be freed.
 */
-void CImageMapManager::FreeUnusedMaps( void ) {
+void ImageMapManager::FreeUnusedMaps( void ) {
 	int num = m_imageMaps.Num();
 
 	for (int i = 0; i < num; i++)
@@ -404,7 +404,7 @@ void CImageMapManager::FreeUnusedMaps( void ) {
 	return;
 }
 
-const char* CImageMapManager::GetLastError( void ) {
+const char* ImageMapManager::GetLastError( void ) {
 	return m_lastError.c_str();
 }
 
@@ -414,7 +414,7 @@ const char* CImageMapManager::GetLastError( void ) {
 * Loads the image from disk, makes sure BPP is 1, and computes the average
 * density.
 */
-bool CImageMapManager::LoadImage( imagemap_t* map ) {
+bool ImageMapManager::LoadImage( imagemap_t* map ) {
 	if (!map)
 	{
 		return false;
@@ -426,11 +426,11 @@ bool CImageMapManager::LoadImage( imagemap_t* map ) {
 	}
 
 	// map data not yet loaded, load it now
-	map->img = new CImage();
+	map->img = new Image();
 	// error allocating?
 	if (!map->img)
 	{
-		m_lastError = "Could not allocate new CImage()";
+		m_lastError = "Could not allocate new Image()";
 		return false;
 	}
 
@@ -473,7 +473,7 @@ bool CImageMapManager::LoadImage( imagemap_t* map ) {
 /**
 * Checks that the given map handle is valid. Returns ptr to imagemap_t or NULL.
 */
-imagemap_t*	CImageMapManager::GetMap( unsigned int handle )
+imagemap_t*	ImageMapManager::GetMap( unsigned int handle )
 {
 	if (handle > 0 && handle <= (unsigned int)m_imageMaps.Num())
 	{
@@ -487,7 +487,7 @@ imagemap_t*	CImageMapManager::GetMap( unsigned int handle )
 /**
 * Assure that the image was allocated and loaded, then return a ptr to it.
 */
-CImage*	CImageMapManager::GetImage( unsigned int handle )
+Image*	ImageMapManager::GetImage( unsigned int handle )
 {
 	if (handle > 0 && handle <= (unsigned int)m_imageMaps.Num())
 	{

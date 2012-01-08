@@ -119,14 +119,10 @@ static const char *LCString[LC_COUNT+1] = {
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
 int g_PLID = 0;
-//void DM_Printf(const char* fmt, ...);
 
 // stgatilov: Intercepts output of CaptureRenderToFile
 int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath);
 SH_DECL_HOOK4(idFileSystem, WriteFile, SH_NOATTRIB, 0, int, const char *, const void *, int, const char *);
-
-// greebo: Intercept declaration for idCommon::VPrintf 
-//SH_DECL_HOOK0_void_vafmt(idCommon, Printf, SH_NOATTRIB, 0);
 
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
@@ -459,7 +455,7 @@ CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 int CGlobal::AddImage(idStr const &Name, bool &Added)
 {
 	int rc = -1;
-	CImage *im;
+	Image *im;
 	Added = false;
 
 	if(Name.Length() == 0)
@@ -470,7 +466,7 @@ int CGlobal::AddImage(idStr const &Name, bool &Added)
 	if(GetImage(Name, rc) != NULL)
 		goto Quit;
 
-	im = new CImage(Name);
+	im = new Image(Name);
 
 	m_Image.Append(im);
 	rc = m_Image.Num()-1;
@@ -480,7 +476,7 @@ Quit:
 	return rc;
 }
 
-CImage *CGlobal::GetImage(int i)
+Image *CGlobal::GetImage(int i)
 {
 	if(i > m_Image.Num())
 		return NULL;
@@ -488,7 +484,7 @@ CImage *CGlobal::GetImage(int i)
 		return m_Image[i];
 }
 
-CImage *CGlobal::GetImage(idStr const &Name, int &Index)
+Image *CGlobal::GetImage(idStr const &Name, int &Index)
 {
 	int i, n;
 
@@ -545,7 +541,7 @@ void CLightMaterial::Restore( idRestoreGame *savefile )
 const unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &Bpp)
 {
 	const unsigned char *rc = NULL;
-	CImage *im;
+	Image *im;
 
 	if(m_FallOffIndex != -1)
 	{
@@ -565,7 +561,7 @@ const unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, 
 const unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 {
 	const unsigned char *rc = NULL;
-	CImage *im;
+	Image *im;
 
 	if(m_MapIndex != -1)
 	{
@@ -594,6 +590,7 @@ void DM_Printf(const char* fmt, ...)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
 }
 
+#if 0
 static const char TDM_SCREENSHOT_FILTER[] = "*screenshots[/\\]shot[0-9][0-9][0-9][0-9][0-9].*";
 void Screenshot_AppendFileListForExtension(idStrList &list, const char *directory, const char *extension) {
 	idFileList *ptr = fileSystem->ListFiles(directory, extension, false, true);
@@ -645,6 +642,7 @@ void Screenshot_ChangeFilename(idStr &filename, const char *extension) {
 	//increase screenshot index
 	index++;
 }
+#endif
 
 int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath)
 {
@@ -660,17 +658,18 @@ int DM_WriteFile(const char *relativePath, const void *buffer, int size, const c
 		RETURN_META_VALUE(MRES_SUPERCEDE, size);
 	}
 
+#if 0
 	//stgatilov: intercept screenshot saving
 	if (idStr::Filter(TDM_SCREENSHOT_FILTER, relativePath, false)) {
 		// load screenshot file buffer into image
-		CImage image;
+		Image image;
 		image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)size, "TDM_screenshot");
 		// find the preferred image format
 		idStr extension = cv_screenshot_format.GetString();
-		CImage::Format format = CImage::GetFormatFromString(extension.c_str());
-		if (format == CImage::AUTO_DETECT) {
+		Image::Format format = Image::GetFormatFromString(extension.c_str());
+		if (format == Image::AUTO_DETECT) {
 			DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Unknown screenshot extension %s, falling back to default.\r", extension.c_str());
-			format = CImage::TGA;
+			format = Image::TGA;
 			extension = "tga";
 		}
 		// change extension and index of screenshot file
@@ -680,6 +679,7 @@ int DM_WriteFile(const char *relativePath, const void *buffer, int size, const c
 		if (image.SaveImageToVfs(changedPath, format))
 			RETURN_META_VALUE(MRES_SUPERCEDE, size);
 	}
+#endif
 
 	RETURN_META_VALUE(MRES_IGNORED, 0);
 }

@@ -26,6 +26,8 @@
 #include <unistd.h>
 #endif
 
+#include <IL/il.h>
+
 /*
 ===============================================================================
 
@@ -72,6 +74,9 @@ void idLib::Init( void ) {
 
 	// initialize the dictionary string pools
 	idDict::Init();
+
+	// greebo: Initialize the image library, so we can use it later on.
+	ilInit();
 }
 
 /*
@@ -79,7 +84,10 @@ void idLib::Init( void ) {
 idLib::ShutDown
 ================
 */
-void idLib::ShutDown( void ) {
+void idLib::ShutDown( void )
+{
+	// greebo: shutdown the IL library
+	ilShutDown();
 
 	// shut down the dictionary string pools
 	idDict::Shutdown();
