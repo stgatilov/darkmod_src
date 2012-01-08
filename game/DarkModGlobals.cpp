@@ -139,35 +139,6 @@ SH_DECL_HOOK4(idFileSystem, WriteFile, SH_NOATTRIB, 0, int, const char *, const 
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 
-static idList<const char *> *s_FileVersion = NULL;
-
-bool FileVersionList(const char *str, bool state)
-{
-	if (s_FileVersion == NULL)
-	{
-		s_FileVersion = new idList<const char *>;
-	}
-
-	if (state == false)
-	{
-		s_FileVersion->AddUnique(str);
-
-		// greebo: Add the revision to the RevisionTracker class
-		RevisionTracker::ParseSVNIdString(str);
-	}
-
-	return true;
-}
-
-void FileVersionDump(void)
-{
-	int i, n;
-
-	n = s_FileVersion->Num();
-	for(i = 0; i < n; i++)
-		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s\r", (*s_FileVersion)[i]);
-}
-
 #ifdef MACOS_X
 // Platform-specific method to expand the ~ in a path with a full path
 // adjusted from http://developer.apple.com/library/mac/#qa/qa2007/qa1549.html
@@ -314,11 +285,6 @@ void CGlobal::Init()
 	if (darkmodIni)
 	{
 		LoadINISettings(darkmodIni);
-
-		if (darkmodIni->GetValue(INI_DEBUG_SECTION, "LogFileVersions") == "1")
-		{
-			FileVersionDump();
-		}
 	}
 	else
 	{

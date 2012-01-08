@@ -26,30 +26,6 @@
 #include "../framework/UsercmdGen.h"
 #endif
 
-#pragma warning(disable : 4996)
-/**
-*	Message pragma so we can show file and line info in comments easily
-*	Same principle as the one below but simpler to implement and use.
-*   Been using it for about 8 or 9 years not sure where I found it
-*	but I did have a subscription to windows developer journal so maybe thats where.
-*	Usage: #pragma Message( "your message goes here")
-*	
-*	Submitted by Thelvyn
-*
-* Here since I cannot include the globals file here.
-*/
-#ifndef MacroStr2
-#define MacroStr(x)   #x
-#define MacroStr2(x)  MacroStr(x)
-#define Message(desc) message(__FILE__ "(" MacroStr2(__LINE__) ") :" #desc)
-#endif
-
-
-/**
- * Global function to keep track of the files and it's version.
- */
-bool FileVersionList(const char *str, bool state);
-
 // enables water physics
 #define MOD_WATERPHYSICS
 
