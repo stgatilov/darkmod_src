@@ -27,8 +27,6 @@
 #include "precompiled_game.h"
 #pragma hdrstop
 
-#pragma warning(disable : 4996 4800)
-
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "DarkModGlobals.h"
@@ -39,7 +37,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ai/AI.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
-#include "../idlib/RevisionTracker.h"
 #include "IniFile.h"
 #include <boost/filesystem.hpp>
 
@@ -122,11 +119,7 @@ static const char *LCString[LC_COUNT+1] = {
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
 int g_PLID = 0;
-void DM_Frame();
 //void DM_Printf(const char* fmt, ...);
-
-// Intercept declarations
-SH_DECL_HOOK0_void(idCommon, Frame, SH_NOATTRIB, 0);
 
 // stgatilov: Intercepts output of CaptureRenderToFile
 int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath);
